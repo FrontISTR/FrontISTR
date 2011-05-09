@@ -12,13 +12,14 @@
 namespace pmw
 {
 
-CVector::CVector(/* const */ CMesh *pMesh)
+CVector::CVector(CMesh *pMesh, const uint& nDOF)
 {
-  //   	printf(" enter CVector::CVector \n");
+#ifdef ADVANCESOFT_DEBUG
+    printf(" enter CVector::CVector \n");
+#endif
 
   mpMesh = pMesh;
-  CNode *pNode = pMesh->getNode(0);
-  mnDOF = pNode->numOfTotalParam();// '10.10.06 修正 k.Takeda
+  mnDOF = nDOF;
   mnNode = pMesh->getNumOfNode();
   // mnNodeInternal = pMesh->???;  // TODO check if this is necessary
   
@@ -26,8 +27,10 @@ CVector::CVector(/* const */ CMesh *pMesh)
   for (int i = 0; i < mnNode; i++) {
     mvVector[i].resize(mnDOF);
   }
-  
-  //   	printf(" exit CVector::CVector \n");
+
+#ifdef ADVANCESOFT_DEBUG
+    printf(" exit CVector::CVector \n");
+#endif
 }
 
 CVector::CVector(const CVector *pVector)
@@ -68,7 +71,19 @@ CVector::ElemType &CVector::operator[](size_t idx)
 	return mvVector[idx];
 }
 
-void CVector::setZero()
+// Matrix 0 clear
+//
+void CVector::Vector_Clear()
+{
+    uint i,idof;
+    for(i=0; i < mnNode; i++){
+        for(idof=0; idof < mnDOF; idof++){
+            mvVector[i][idof] = 0.0;
+        };
+    };
+}
+
+void CVector::setZero()// use GMRES
 {
 	for (int i = 0; i < mnNode; i++) {
 		mvVector[i].clear();

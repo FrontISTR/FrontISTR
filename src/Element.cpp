@@ -44,6 +44,17 @@ void CElement::setNode(CNode* pNode, const uint& local_id)
     mmIDLocal[pNode->getID()]= local_id;
 }
 
+// mmIDLocal mapの付け直し(ID変更に伴う処理) '10.10.28
+//
+void CElement::ReInit_IDLocal()
+{
+    uint local_id, nNumOfNode = mvNode.size();
+    for(local_id=0; local_id < nNumOfNode; local_id++){
+        uint id = mvNode[local_id]->getID();
+        mmIDLocal[id] = local_id;
+    };
+}
+
 // each reserve for EdgeElement
 //
 void CElement::reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem)

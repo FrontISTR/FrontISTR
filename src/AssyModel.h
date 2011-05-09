@@ -37,24 +37,26 @@ protected:
 
     uint mMGLevel;
 
-    CAssyMatrix *mpAssyMatrix;
-    CAssyVector *mpAssyVector;
-    CAssyVector *mpAssyVector2;
+    CAssyMatrix **mvAssyMatrix;   // アセンブルマトリックス
+    CAssyVector **mvRHSAssyVector;// RHSベクトル
+    CAssyVector **mvSolAssyVector;// 解ベクトル
 
 public:
     // MultiGrid Level 確認用
     void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
     uint& getMGLevel(){ return mMGLevel;}
 
-    void setAssyMatrix(CAssyMatrix *assy){ mpAssyMatrix = assy;}
-    CAssyMatrix* getAssyMatrix(){ return mpAssyMatrix;}
-    void setAssyVector(CAssyVector *vect){ mpAssyVector = vect;}
-    CAssyVector* getAssyVector(){ return mpAssyVector;}
-    void setAssyVector2(CAssyVector *vect){ mpAssyVector2 = vect;}
-    CAssyVector* getAssyVector2(){ return mpAssyVector2;}
-
+    // Ax=b 管理
+    //
+    void GeneLinearAlgebra(const vuint& vDOF, CAssyModel *pCoarseAssyModel);//vDOF was each Ax=b DOF
+    CAssyMatrix* getAssyMatrix(const uint& index);   //index is Ax=b number
+    CAssyVector* getRHSAssyVector(const uint& index);//index is Ax=b number
+    CAssyVector* getSolutionAssyVector(const uint& index);//index is Ax=b number
+    
+    
+    
     // Mesh
-    //void   addMesh(CMesh *pMesh){  mvMesh.push_back(pMesh);}
+    //
     void   resizeMesh(const uint& size){ mvMesh.resize(size);}
     void   setMesh(CMesh *pMesh, const uint& i){  mvMesh[i] = pMesh;}
     CMesh* getMesh(const uint& index){ return mvMesh[index];}
@@ -63,6 +65,7 @@ public:
 
 
     // ContactMesh
+    //
     void  addContactMesh(CContactMesh *pContactMesh, const uint& id);
     void  resizeContactMesh(const uint& res_size){  mvContactMesh.resize(res_size);}
     void  setContactMesh(CContactMesh *pContactMesh, const uint& index, const uint& id){ mvContactMesh[index]= pContactMesh; mmContactID2Index[id]=index;}
@@ -72,10 +75,12 @@ public:
     uint getNumOfContactMesh(){ return mvContactMesh.size();}
 
     // IndexBucketMesh in AssyModel
+    //
     void intializeBucket(const uint& maxID, const uint& minID){ moBucketMesh.Initialize(maxID, minID); }
     void setBucket(const uint& id, const uint& index){ moBucketMesh.setIndexMesh(id, index); }
 
     // MeshIDの最大-最小
+    //
     void setMaxMeshID(const uint& maxID){ mMaxMeshID= maxID;}
     uint& getMaxMeshID(){ return mMaxMeshID;}
     void setMinMeshID(const uint& minID){ mMinMeshID= minID;}

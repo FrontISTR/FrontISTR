@@ -16,14 +16,12 @@ namespace pmw
 {
 
 //template<int NDOF>
-CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
+CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMatrixBCRS::CMatrixBCRS \n");
 #endif
-	CNode *pNode = pMesh->getNodeIX(0);
-	//mnDOF = pNode->numOfScalarParam() + pNode->numOfVectorParam();
-	mnDOF = pNode->numOfTotalParam();
+        mnDOF = nDOF;
 	mnNode = pMesh->getNumOfNode();
 	printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
 	mvIndexL.resize(mnNode+1); // K.Matsubara
@@ -35,8 +33,8 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 	for (int i_node = 0; i_node < mnNode; i_node++) {
 		std::vector<int> v_item_l;
 		std::vector<int> v_item_u;
-
-        pNode= pMesh->getNodeIX(i_node);
+        
+        CNode *pNode= pMesh->getNodeIX(i_node);
         uint i_node_id = pNode->getID();
 
         CElement *pElement;
@@ -117,10 +115,57 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 //template<int NDOF>
 CMatrixBCRS::~CMatrixBCRS()
 {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
 
-int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
+//
+// add NodalStiff_Matrix 
+//
+int CMatrixBCRS::Matrix_Add_Nodal(const uint& iNodeID, const uint& jNodeID, const double* NodalMatrix)
+{
+    uint nMatSize = mnDOF;
+    int kL, kU;
+    uint irow = iNodeID;
+    uint icol = jNodeID;
+    if( icol == irow ) {//対角項
+        
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvD[icol](ii,jj) += NodalMatrix[nMatSize*ii+jj];
+        }
+        
+    } else if( icol < irow ) {// 下三角
+        kL = -1;
+        for (int k = mvIndexL[irow]; k < mvIndexL[irow+1]; k++) {
+            if( icol == mvItemL[k] ) {
+                kL = k;
+            }
+        }
+        if( kL < 0 ) printf("***** error in matrix index ***** %d %d %d \n",irow,icol,kL);
+        
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvAL[kL](ii,jj) += NodalMatrix[nMatSize*ii+jj];
+        }
+
+    } else if( icol > irow ) {// 上三角
+        kU = -1;
+        for (int k = mvIndexU[irow]; k < mvIndexU[irow+1]; k++) {
+            if( icol == mvItemU[k] ) {
+                kU = k;
+            }
+        }
+        if( kU < 0 ) printf("***** error in matrix index ***** %d %d %d \n",irow,icol,kU);
+        
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvAU[kU](ii,jj) += NodalMatrix[nMatSize*ii+jj];
+        }
+    }
+    
+    return 1;
+}
+//
+// add ElementStiff_Matrix
+//
+int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, const uint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CMatrixBCRS::Matrix_Add_Elem %d %e \n", iElem, ElemMatrix[0]);
@@ -130,9 +175,6 @@ int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
     vector<CNode*> vNode= pElement->getNode();
     
     int nLocalNode = vNode.size();
-    //int mnNode = pMesh->getNumOfNode();
-    //mnDOF = vNode[0]->numOfScalarParam() + vNode[0]->numOfVectorParam();
-	mnDOF = vNode[0]->numOfVectorParam();
     int nMatSize = nLocalNode * mnDOF;
 
     for(int i=0; i< nLocalNode; i++) for(int j=0; j< nLocalNode; j++){
@@ -174,6 +216,27 @@ int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
     return 1;
 }
 
+// Matrix all 0 clear
+//
+void CMatrixBCRS::Matrix_Clear()
+{
+    for(uint i=0; i< mnNode; i++){
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvD[i](ii,jj) = 0.0;
+        };
+    };
+    for(uint i=0; i < mINL; i++){
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvAL[i](ii,jj) = 0.0;
+        };
+    };
+    for(uint i=0; i < mINU; i++){
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            mvAU[i](ii,jj) = 0.0;
+        };
+    };
+}
+
 void CMatrixBCRS::multVector(CVector *pV, CVector *pP) const
 {
 	for (int i = 0; i < mnNode; i++) {
@@ -203,7 +266,7 @@ int CMatrixBCRS::setupPreconditioner(int type)
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMatrixBCRS::setupPreconditioner \n");
 #endif
-  ublas::matrix<double> pA(3,3), pB(3,3), pC(3,3);
+  ublas::matrix<double> pA(mnDOF,mnDOF), pB(mnDOF,mnDOF), pC(mnDOF,mnDOF);
 
   mPrecond = type;
   int itype;
@@ -304,8 +367,8 @@ int CMatrixBCRS::setupSmoother(int type)
 
 int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
 {
-  CVector::ElemType WW(3);
-  ublas::zero_vector<double> vzero(3);
+  CVector::ElemType WW(mnDOF);
+  ublas::zero_vector<double> vzero(mnDOF);
 
   int itype;
   itype = -99;
@@ -363,7 +426,7 @@ int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
 int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
 {
   // call smoother (once)
-  CVector::ElemType WW(3);
+  CVector::ElemType WW(mnDOF);
   for(int i=0; i< mnNode; i++) {
     WW = (*pR)[i];
     for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {

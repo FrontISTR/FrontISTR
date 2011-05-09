@@ -31,10 +31,16 @@ __declspec(dllexport) int mw_file_write_();
 //----
 // linear solver API
 //----
-__declspec(dllexport) int mw_initialize_matrix_();
-__declspec(dllexport) int mw_initialize_vector_();
+//__declspec(dllexport) int mw_initialize_matrix_();
+//__declspec(dllexport) int mw_initialize_vector_();
+__declspec(dllexport) void mw_gene_linear_algebra_(int* num_of_algebra, int dof[]);
+__declspec(dllexport) void mw_select_algebra_(int* ieq);
 
 __declspec(dllexport) int mw_matrix_add_elem_(int* imesh,  int* ielem,  double elem_matrix[]);// standard
+__declspec(dllexport) int mw_matrix_add_node_(int* imesh, int* i_nid, int* j_nid, double nodal_matrix[]);
+
+__declspec(dllexport) void mw_matrix_clear_(int* imesh);// matrix 0 clear
+__declspec(dllexport) void mw_vector_clear_(int* imesh);// matrix 0 clear
 
 __declspec(dllexport) int mw_matrix_add_elem_24_(int* imesh, int* ielem, double elem_matrix[][24]);//Hexa   8Node * 3DOF, Quad 8Node * 3DOF, Quad 4Node * 6DOF
 __declspec(dllexport) int mw_matrix_add_elem_60_(int* imesh, int* ielem, double elem_matrix[][60]);//Hexa  20Node * 3DOF
@@ -50,13 +56,14 @@ __declspec(dllexport) int mw_matirx_add_elem_48_(int* imesh, int* ielem, double 
 __declspec(dllexport) int mw_matirx_add_elem_6_(int* imesh, int* ielem, double elem_matirx[][6]);  //Beam   2Node * 3DOF
 __declspec(dllexport) int mw_matirx_add_elem_10_(int* imesh, int* ielem, double elem_matirx[][10]);//Beam   2Node * 5DOF
 
-__declspec(dllexport) int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2);
-__declspec(dllexport) int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value);
+__declspec(dllexport) int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2);// matrix-D and solution_vector
+__declspec(dllexport) int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2);// matirix-D and rhs_vector
+__declspec(dllexport) int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value);// rhs_vector
 
 __declspec(dllexport) int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition);
 
-__declspec(dllexport) void mw_store_matrix_();
-__declspec(dllexport) void mw_load_matrix_();
+//__declspec(dllexport) void mw_store_matrix_();
+//__declspec(dllexport) void mw_load_matrix_();
 
 
 //----
@@ -258,12 +265,39 @@ __declspec(dllexport) double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int*
 //--
 // mpi
 //--
+__declspec(dllexport) int mw_mpi_int_();   // MPI_INT
+__declspec(dllexport) int mw_mpi_double_();// MPI_DOUBLE
+__declspec(dllexport) int mw_mpi_comm_();  // MPI_COMM_WORLD
+
 __declspec(dllexport) int mw_mpi_sum_();// op  ,use allreduce_r argument
 __declspec(dllexport) int mw_mpi_max_();// op  ,use allreduce_r argument
 __declspec(dllexport) int mw_mpi_min_();// op  ,use allreduce_r argument
+
 __declspec(dllexport) void mw_allreduce_r_(double val[], int* val_size, int* op);
+__declspec(dllexport) void mw_allreduce_i_(int val[], int* val_size, int* op);
+__declspec(dllexport) int mw_barrier_();
+__declspec(dllexport) int mw_abort_(int* error);
+__declspec(dllexport) int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt);
+__declspec(dllexport) int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt);
+__declspec(dllexport) int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root);
+__declspec(dllexport) int mw_gather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root);
+__declspec(dllexport) int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root);
+__declspec(dllexport) int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root);
+__declspec(dllexport) int mw_get_rank_();
+__declspec(dllexport) int mw_get_num_of_process_();
 __declspec(dllexport) void mw_send_recv_r2_(double buf[], int* dof_size);// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
 __declspec(dllexport) void mw_send_recv_r_();// 通信Nodeの値を入れ替えて更新
+
+
+//--
+// Element_Group { select AssyModel, select Mesh }
+//--
+__declspec(dllexport) int mw_get_num_of_elementgroup_();
+__declspec(dllexport) int mw_get_num_of_element_id_(int* igrp);
+__declspec(dllexport) int mw_get_element_id_with_elementgroup_(int* igrp, int* index);
+__declspec(dllexport) int mw_get_elementgroup_name_length_(int* igrp);
+__declspec(dllexport) void mw_get_elementgroup_name_(int* igrp, char* name, int* name_len);
+
 
 //----
 // logger

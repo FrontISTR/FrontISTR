@@ -15,7 +15,8 @@
 #include "FileBlockName.h"
 #include "Logger.h"
 
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
+#include <boost/tokenizer.hpp>
 
 #include "ElementType.h"
 
@@ -31,10 +32,13 @@ protected:
     Utility::CLogger  *mpLogger;
 
     string& getLineSt(ifstream& ifs);// getline()-> char* -> string
+    string& getLine(ifstream& ifs);// \r, \n, ',' => ' '
     bool TagCheck(string& s_line, const char* ctag);
 
     uint IntElemType(string& sElemType);
     uint IntBndType(string& sBndType);//文字列のDirichlet.or.Neumannをuintへ変更.
+
+    void Split(const string& s, char c, vstring& v);// s:対象文字列、c:区切り文字 , v:分割されたトークン
 public:
     virtual void setFactory(pmw::CMeshFactory *pFactory);
 

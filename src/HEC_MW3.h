@@ -83,8 +83,8 @@ protected:
     //APIで使用する作業用変数
     pmw::CAssyModel  *mpAssy;
     pmw::CAssyMatrix *mpAssyMatrix;
-    pmw::CAssyVector *mpAssyVector;
-    pmw::CAssyVector *mpAssyVector2;
+    pmw::CAssyVector *mpRHSAssyVector;//右辺ベクトル
+    pmw::CAssyVector *mpSolAssyVector;//解ベクトル
     pmw::CMesh       *mpMesh;
     pmw::CElement    *mpElement;
 
@@ -97,7 +97,7 @@ protected:
     pmw::CShapeTriangle *mpShapeTriangle;
     pmw::CShapeLine     *mpShapeLine;
 
-    //API 形状間数種類カタログ
+    //API 形状関数_種類カタログ
     pmw::CShapeFunctionCatalog *mpShapeCatalog;
     
     //形状関数 番号 => 辺番号 変換
@@ -118,31 +118,30 @@ public:
     //----
     // File関連
     //----
-    int FileRead(); // ファイル入力(MW3書式):AssyModel階層の構築
+    int FileRead(); // ファイル入力(MW3書式)
     int FileWrite();// ファイル出力
 
     //----
     // Solver
     //----
-    int Initialize_Matrix(); // 行列の初期化
-    int Initialize_Vector(); // 行列の初期化
-    int Matrix_Add_Elem(uint& iMesh, uint& iElem, double *ElemMatrix);
-    int Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);
-    int Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value);
+    void GeneLinearAlgebra(const uint& nNumOfAlgebra, uint* vDOF);//全Levelに方程式を生成 vDOF:方程式ごとのDOF
+    void SelectAlgebra(const uint& iequ);// mpAssyMatrix等にiequ番目の方程式をロード{ Levelは選択されているとする }
+
+    int Matrix_Add_Elem(const uint& iMesh, const uint& iElem, double *ElemMatrix);
+    int Matrix_Add_Node(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double *NodalMatrix);
+
+    void Matrix_Clear(const uint& iMesh);// Matrix all 0 clear
+    void Vector_Clear(const uint& iMesh);// Matrix all 0 clear
+
+    int Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);//行列対角項, 解ベクトル
+    int Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);   //行列対角項, 右辺ベクトル
+    int Set_BC_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value);                        //右辺ベクトル
+    
     void  Sample_Set_BC(uint iMesh);
+    
+    
     int Solve(uint& iter_max, double& tolerance, uint& method, uint& precondition);
-
-    void  StoreMatrix(){
-            mpAssy->setAssyMatrix(mpAssyMatrix);
-            mpAssy->setAssyVector(mpAssyVector);
-            mpAssy->setAssyVector2(mpAssyVector2);
-    }
-
-    void  LoadMatrix(){
-            mpAssyMatrix = mpAssy->getAssyMatrix();
-            mpAssyVector = mpAssy->getAssyVector();
-            mpAssyVector2 = mpAssy->getAssyVector2();
-    }
+    
     
     //----
     // MG constructor (Refiner)
@@ -390,9 +389,27 @@ public:
     //--
     // MPI (直接呼び出したい人向け)
     //--
-    int AllReduce_R(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld);
+    int AllReduce(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld);
+    int Barrier(int commworld);
+    int Abort(int commworld, int error);
+    int AllGather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm);
+    int Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
+    int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
+    int& GetRank();        //自分のプロセス-ランクを取得
+    int& GetNumOfProcess();
     void Send_Recv_R(double* buf, int dof_size);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
-    void Send_Recv_R();// 通信Nodeの値を入れ替えて更新
+    void Send_Recv_R();                         // 通信Nodeの値を入れ替えて更新
+
+
+
+    //--
+    // グループ { select された AssyModel,Meshを対象 }
+    //--
+    uint GetNumOfElementGroup();
+    uint GetNumOfElementID(const uint& iGrp);
+    uint& GetElementID_with_ElementGroup(const uint& iGrp, const uint& index);
+    uint GetElementGroupName_Length(const uint& iGrp);
+    string& GetElementGroupName(const uint& iGrp);
 
 
     //--

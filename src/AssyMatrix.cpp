@@ -21,77 +21,88 @@ typedef std::vector<CMatrixBCRS*> CVMat;
 typedef CVMat::iterator CVMatIter;
 typedef CVMat::const_iterator CVMatConstIter;
 
-CAssyMatrix::CAssyMatrix(/* const */ CAssyModel *pAssyModel)
+CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuint& vPartsID)
 {
 	mpAssyModel = pAssyModel;
+        mnDOF = nDOF;//アセンブル方程式のDOF
 	
 	for (int i = 0; i < pAssyModel->getNumOfMesh(); i++) {
 		CMesh *pMesh = pAssyModel->getMesh(i);
-		CMatrixBCRS *pMatrix = new CMatrixBCRS(pMesh);
+		CMatrixBCRS *pMatrix = new CMatrixBCRS(pMesh, mnDOF);
 		mvMatrix.push_back( pMatrix );
 	}
 
 	mMGLevel = pAssyModel->getMGLevel();
 	printf("mMGLevel %d \n",mMGLevel);
 
-	uint numOfContact= pAssyModel->getNumOfContactMesh();
+	uint numOfContact= pAssyModel->getNumOfContactMesh();/////////////////////////
 	printf("numOfContact %d \n",numOfContact);
 	
+        uint idof;
+        //DOF数ぶんの関係式
+        CEquation **vEquation;
+        vEquation = new CEquation*[mnDOF];
+        //////////////////////////////////////////////////////////////////
+        for(idof=0; idof < mnDOF; idof++) vEquation[idof]= new CEquation();
+        
+
 	for(uint icont = 0; icont < numOfContact; icont++){
 		CContactMesh* pConMesh= pAssyModel->getContactMesh(icont);
 		uint numOfSPoint = pConMesh->getNumOfSlavePoint();
 		printf("numOfSPoint, icont %d %d \n", numOfSPoint, icont);
 		
 		CMPCMatrix* mpc = new CMPCMatrix();
+
 		for(uint islave = 0; islave< numOfSPoint; islave++){
 			CContactNode* pSlaveNode = pConMesh->getSlaveConNode(islave);
 			uint mgLevel = mMGLevel;
 			if(pSlaveNode->have_MasterFaceID(mgLevel)){
-				CEquation *equation0 = new CEquation();
-				CEquation *equation1 = new CEquation();
-				CEquation *equation2 = new CEquation();
-				int masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
-				int smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
-				int snode = pSlaveNode->getNodeID();
-				printf("masterFaceID, islave, smesh, node %d %d %d %d\n"
-					,masterFaceID, islave, smesh, snode);
-				equation0->setSlave(smesh, snode, 0);
-				equation1->setSlave(smesh, snode, 1);
-				equation2->setSlave(smesh, snode, 2);
+
+				uint masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
+				uint smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
+				uint snode = pSlaveNode->getNodeID();
+				printf("masterFaceID, islave, smesh, node %d %d %d %d\n", masterFaceID, islave, smesh, snode);
+                                ///////////////////////////////////////////////////////////////////////////////
+                                for(idof=0; idof < mnDOF; idof++) vEquation[idof]->setSlave(smesh, snode, idof);
 				
 				CSkinFace* pMasterFace = pConMesh->getMasterFace_ID(masterFaceID);
-				int numOfVert= (int) pMasterFace->getNumOfNode();
+				uint numOfVert = pMasterFace->getNumOfNode();
 				printf("numOfVert %d \n",numOfVert);
 				
 				for(uint ivert=0; ivert< numOfVert; ivert++){
 					int mmesh = pMasterFace->getMeshID(); //pConMesh->getMasterMeshID(islave);
 					int node = ( pMasterFace->getNode(ivert) )->getNodeID();
 					double coef = pMasterFace->getCoef(pSlaveNode->getID(),ivert);
-					equation0->addMaster(mmesh, node, 0, coef);
-					equation1->addMaster(mmesh, node, 1, coef);
-					equation2->addMaster(mmesh, node, 2, coef);
+                                        /////////////////////////////////////////////////////////////////////////////////////
+                                        for(idof=0; idof < mnDOF; idof++) vEquation[idof]->addMaster(mmesh, node, idof, coef);
+
 					printf("ivert, mmesh, node, coef %d %d %d %e \n", ivert, mmesh, node, coef);
 				};
-				mpc->addEquation(equation0);
-				mpc->addEquation(equation1);
-				mpc->addEquation(equation2);
+                                ///////////////////////////////////////////////////////////////////
+                                for(idof=0; idof < mnDOF; idof++) mpc->addEquation(vEquation[idof]);
 			};
 		};
+                //////////////////////////
 		mvMPCMatrix.push_back(mpc);
+
 		printf("mvMPCMatrix.size() %d \n", (uint)mvMPCMatrix.size());
 	};
 }
 
 CAssyMatrix::~CAssyMatrix()
 {
-	// debug
-	// cout << "~CAssyMatrix" << endl;
 	for (CVMatIter im = mvMatrix.begin(); im != mvMatrix.end(); im++) {
 		delete *im;
-	}
+	};
 }
 
-int CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, int iMesh, int iElem, double *ElemMatrix)
+int CAssyMatrix::Matrix_Add_Nodal(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double* NodalMatrix)
+{
+    mvMatrix[iMesh]->Matrix_Add_Nodal(iNodeID, jNodeID, NodalMatrix);
+    return 1;
+}
+
+int CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, const uint& iMesh, const uint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CAssyMatrix::Matrix_Add_Elemm %d %d %e \n", iMesh, iElem, ElemMatrix[0]);
@@ -106,6 +117,11 @@ int CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, int iMesh, int iElem, d
     
     return 1;
 }
+void CAssyMatrix::Matrix_Clear(const uint& iMesh)
+{
+    mvMatrix[iMesh]->Matrix_Clear();
+}
+
 
 void CAssyMatrix::setValue(int imesh, int inode, int idof, double value)
 {
@@ -291,9 +307,9 @@ int CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int a
 {
 	relax(pF, pV, alpha1);
 	if (mpCoarseMatrix != 0) {
-		CAssyVector w(mpAssyModel);
-		CAssyVector fc(mpCoarseMatrix->mpAssyModel);
-		CAssyVector vc(mpCoarseMatrix->mpAssyModel);
+		CAssyVector w(mpAssyModel, mnDOF);
+		CAssyVector fc(mpCoarseMatrix->mpAssyModel, mnDOF);
+		CAssyVector vc(mpCoarseMatrix->mpAssyModel, mnDOF);
 
 		residual(pV, pF, &w);
 		w.restrictTo(&fc);
@@ -318,9 +334,9 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 	int mAlpha; // TODO: TEMPORARY!!!
 
 	if (mpCoarseMatrix != 0) {
-		CAssyVector w(mpAssyModel);
-		CAssyVector fc(mpCoarseMatrix->mpAssyModel);
-		CAssyVector vc(mpCoarseMatrix->mpAssyModel);
+		CAssyVector w(mpAssyModel, mnDOF);
+		CAssyVector fc(mpCoarseMatrix->mpAssyModel, mnDOF);
+		CAssyVector vc(mpCoarseMatrix->mpAssyModel, mnDOF);
 
 		residual(pV, pF, &w);
 		w.restrictTo(&fc);
@@ -332,10 +348,10 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 		//   solve(pF, pV, iter_solve);
 		precond(pF, pV, 1);
 	}
-//	relax(pF, pV, mAlpha);
+        //////	relax(pF, pV, mAlpha);
 	precond(pF, pV, 1);
 	printf(" exit CAssyMatrix::MGInitialGuess %d \n", mMGLevel);
 	return 1;
 }
 
-}
+}//namespace pmw;

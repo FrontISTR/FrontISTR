@@ -59,7 +59,7 @@ int CSolverCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector
 	// calc 1 / |{B}|^2
 	bnrm2_inv = 1.0 / pB->norm2();
 
-	int itype = getPrecondition();
+	int itype = getPrecondition();// 前処理
 	pA->setupPreconditioner( itype ); // TODO: rewrite to pA->precond(pR, pZ);
 	Z.setZero(); //K.Matsubara
 
@@ -68,6 +68,7 @@ int CSolverCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector
 		// {Z} = [Minv] {R}
 		iter_precond = 1;
 
+                // 前処理選択
 		if( itype == 2 ) {
 			Z.subst(pX);
 			pA->MGInitialGuess(&R, &Z);

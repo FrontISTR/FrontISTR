@@ -139,6 +139,11 @@ public:
     vector<CNode*>& getNode() { return mvNode;}
     CNode* getNode(const uint& local_id){ return mvNode[local_id];}
 
+    // mmIDLocal mapの付け直し(ID変更に伴う処理) '10.10.28
+    //
+    void ReInit_IDLocal();
+
+
 
     // Property
     virtual const uint& getType()=0;

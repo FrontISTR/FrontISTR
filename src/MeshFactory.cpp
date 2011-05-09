@@ -201,8 +201,9 @@ void CMeshFactory::MGMeshConstruct()
             // !注意 CMesh::setupAggregate()は,このルーチンの先頭のRefine準備でpMeshに対してコールするのでpProgMeshにはコールしない.
             
             // prolongation AssyModelに,pProgMeshをセット
+            //
             pProgAssy->setMesh(pProgMesh,pMesh->getMeshID());//progAssyModel に,progMeshをセット
-
+            
 
             // progMeshのNode逆引きセットアップ(CommMeshのRefineでprogMeshのBucketを使用)
             // --
@@ -218,6 +219,23 @@ void CMeshFactory::MGMeshConstruct()
             // <<<< end ::pProgMeshの生成処理 >>>>
             cout << "pProgMesh ノード数 == " << pProgMesh->getNumOfNode() << endl;//debug
 
+            // Elementグループ
+            //
+            uint iGrp, nNumOfGrp = pMesh->getNumOfElemGrp();
+            CElementGroup *pElemGrp, *pProgElemGrp;
+            for(iGrp=0; iGrp < nNumOfGrp; iGrp++){
+
+                pProgElemGrp = new CElementGroup;
+
+                pElemGrp = pMesh->getElemGrpIX(iGrp);
+                pElemGrp->refine(pProgElemGrp);
+
+                pProgElemGrp->setMesh(pProgMesh);
+                pProgElemGrp->setID(pElemGrp->getID());
+                pProgElemGrp->setName(pElemGrp->getName());
+
+                pProgMesh->addElemGrp(pProgElemGrp);
+            };
 
             // progCommMeshの前処理
             // --
@@ -1370,7 +1388,7 @@ void CMeshFactory::reserveMesh(const uint& mgLevel, const uint& num_of_mesh)
 
 // Mesh set to AssyModel
 //
-void CMeshFactory::GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint& index)
+void CMeshFactory::GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint& index, const uint& nProp)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
 
@@ -1382,6 +1400,7 @@ void CMeshFactory::GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint
     mpTMesh->setMGLevel(mgLevel);
     mpTMesh->setMaxMGLevel(mMGLevel);//Factoryのレベル==最大階層数
     mpTMesh->setSolutionType(mnSolutionType);
+    mpTMesh->setProp(nProp);
 
     mpTAssyModel->setBucket(mesh_id, index);
     mpTAssyModel->setMesh(mpTMesh, index);
@@ -3021,7 +3040,7 @@ void CMeshFactory::dividCommElem(CCommElement* pCommElem, vector<CCommElement*>&
 // --
 // コンタクトメッシュを全階層に生成
 // --
-void CMeshFactory::GeneContactMesh(const uint& contactID, const uint& myRank, const uint& transRank)
+void CMeshFactory::GeneContactMesh(const uint& contactID, const uint& myRank, const uint& transRank, const uint& nProp)
 {
     uint ilevel;
     for(ilevel=0; ilevel< mMGLevel+1; ilevel++){
@@ -3033,6 +3052,8 @@ void CMeshFactory::GeneContactMesh(const uint& contactID, const uint& myRank, co
 
         pContactMesh->setRank(myRank);
         pContactMesh->setTransmitRank(transRank);
+
+        pContactMesh->setProp(nProp);
         
         mpTAssyModel->addContactMesh(pContactMesh, contactID);
     };
@@ -3535,28 +3556,50 @@ void CMeshFactory::GeneCommNodeCM2(const uint& mgLevel, const uint& mesh_id, con
 }
 
 
+// --
+// グループ
+// --
+//
+// ・GroupObjectの生成
+// ・GroupID, GroupNameのセット
+//
+void CMeshFactory::GeneElemGrpOBJ(const uint& mgLevel, const uint& mesh_id, const vuint& vGrpID, vstring& vGrpName)//ElementGroupの生成
+{
+    CAssyModel *pAssyModel = mpGMGModel->getAssyModel(mgLevel);
+    CMesh *pMesh = pAssyModel->getMesh_ID(mesh_id);
 
+    uint i, nNumOfElemGrp = vGrpID.size();
+    for(i=0; i < nNumOfElemGrp; i++){
 
+        CElementGroup *pElemGrp = new CElementGroup;
 
+        pElemGrp->setMesh(pMesh);/// Mesh
 
+        uint nGrpID = vGrpID[i];
+        pElemGrp->setID(nGrpID);/// ID
 
+        string sGrpName = vGrpName[i];
+        pElemGrp->setName(sGrpName);/// Name
 
+        pMesh->addElemGrp(pElemGrp);
+    }
+}
+//
+// ・指定GrpIDへパラメーターをセット
+//
+void CMeshFactory::setElemID_with_ElemGrp(const uint& mgLevel, const uint& mesh_id, const uint& nGrpID, const vuint& vElemID)
+{
+    CAssyModel *pAssyModel = mpGMGModel->getAssyModel(mgLevel);
+    CMesh *pMesh = pAssyModel->getMesh_ID(mesh_id);
 
+    CElementGroup *pElemGrp = pMesh->getElemGrpID(nGrpID);
 
+    uint i, nNumOfElem=vElemID.size();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    for(i=0; i < nNumOfElem; i++){
+        pElemGrp->addElementID(vElemID[i]);
+    }
+}
 
 
 

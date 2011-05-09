@@ -29,14 +29,16 @@ int mw_initialize_1_(char* argv1, int* argv1_len, char* path, int* path_len)
     int argc = 1;// 1: exe program name
     char** argv;
 
-    char carg[(size_t)*argv1_len];
-    strncpy(carg, argv1, (size_t)*argv1_len);// 1: exe program name
+    size_t nLength = (size_t)*argv1_len + 1;
+    char carg[nLength];
+    strncpy(carg, argv1, nLength);// 1: exe program name
 
     argv = new char*[1];
     argv[0] = carg;
 
-    char cpath[(size_t)*path_len];
-    strncpy(cpath, path, (size_t)*path_len);// cnt file path
+    nLength = (size_t)*path_len + 1;
+    char cpath[nLength];
+    strncpy(cpath, path, nLength);// cnt file path
 
     return pMW->Initialize(argc, argv, cpath);
 }
@@ -45,18 +47,21 @@ int mw_initialize_2_(char* argv1, int* argv1_len, char* argv2, int* argv2_len, c
     int argc = 2;// 1: exe program name, 2: input file name
     char** argv;
 
-    char carg1[(size_t)*argv1_len];
-    strncpy(carg1, argv1, (size_t)*argv1_len);// 1: exe program name
+    size_t nLength = (size_t)*argv1_len + 1;
+    char carg1[nLength];
+    strncpy(carg1, argv1, nLength);// 1: exe program name
 
-    char carg2[(size_t)*argv2_len];
-    strncpy(carg2, argv2, (size_t)*argv2_len);// 2: input file name
+    nLength = (size_t)*argv2_len + 1;
+    char carg2[nLength];
+    strncpy(carg2, argv2, nLength);// 2: input file name
 
     argv = new char*[2];
     argv[0] = carg1;
     argv[1] = carg2;
 
-    char cpath[(size_t)*path_len];
-    strncpy(cpath, path, (size_t)*path_len);// cnt file path
+    nLength = (size_t)*path_len + 1;
+    char cpath[nLength];
+    strncpy(cpath, path, nLength);// cnt file path
 
     return pMW->Initialize(argc, argv, cpath);
 }
@@ -80,13 +85,26 @@ int mw_file_write_()
 //----
 // linear solver API
 //----
-int mw_initialize_matrix_()
+//int mw_initialize_matrix_()
+//{
+//    return pMW->Initialize_Matrix();
+//}
+//int mw_initialize_vector_()
+//{
+//    return pMW->Initialize_Vector();
+//}
+void mw_gene_linear_algebra_(int* num_of_algebra, int dof[])
 {
-    return pMW->Initialize_Matrix();
+    uint nNumOfAlgebra = (uint)*num_of_algebra;
+    uint vDOF[nNumOfAlgebra];
+    for(uint i=0; i < nNumOfAlgebra; i++) vDOF[i] = dof[i];
+
+    pMW->GeneLinearAlgebra(nNumOfAlgebra, vDOF);
 }
-int mw_initialize_vector_()
+void mw_select_algebra_(int* ieq)
 {
-    return pMW->Initialize_Vector();
+    uint iEqu = *ieq;
+    pMW->SelectAlgebra(iEqu);
 }
 
 // matrix add elem
@@ -97,6 +115,29 @@ int mw_matrix_add_elem_(int* imesh,  int* ielem,  double elem_matrix[])//standar
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, elem_matrix);
 }
+
+int mw_matrix_add_node_(int* imesh, int* i_nid, int* j_nid, double nodal_matrix[])
+{
+    uint iMesh = *imesh;
+    uint iNodeID = *i_nid;
+    uint jNodeID = *j_nid;
+
+    return pMW->Matrix_Add_Node(iMesh, iNodeID, jNodeID, nodal_matrix);
+}
+
+// matrix 0 clear
+//
+void mw_matrix_clear_(int* imesh)
+{
+    unsigned int iMesh = *imesh;
+    pMW->Matrix_Clear(iMesh);
+}
+void mw_vector_clear_(int* imesh)
+{
+    unsigned int iMesh = *imesh;
+    pMW->Vector_Clear(iMesh);
+}
+
 int mw_matrix_add_elem_24_(int* imesh, int* ielem, double elem_matrix[][24])//Hexa   8Node * 3DOF, Quad 8Node * 3DOF, Quad 4Node * 6DOF
 {
     uint nNumOfCol=24;
@@ -303,7 +344,19 @@ int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double*
     double Value1 = *value1;
     double Value2 = *value2;
 
-    return pMW->Set_BC(iMesh, iNode, iDOF, Value1, Value2);
+    // matrix-D and solution_vector
+    return pMW->Set_BC_Mat_SolVec(iMesh, iNode, iDOF, Value1, Value2);
+}
+int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2)
+{
+    unsigned int iMesh = *imesh;
+    unsigned int iNode = *inode;
+    unsigned int iDOF  = *idof;
+    double Value1 = *value1;
+    double Value2 = *value2;
+
+    // matrix-D and rhs_vector
+    return pMW->Set_BC_Mat_RHS(iMesh, iNode, iDOF, Value1, Value2);
 }
 int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value)
 {
@@ -312,7 +365,8 @@ int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value)
     unsigned int iDOF = *idof;
     double Value = *value;
 
-    return pMW->Set_BC(iMesh, iNode, iDOF, Value);
+    // rhs_vector
+    return pMW->Set_BC_RHS(iMesh, iNode, iDOF, Value);
 }
 
 // solver
@@ -325,14 +379,14 @@ int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition)
 
     return pMW->Solve(nIterMax, dTolerance, nMethod, nPreCondition);
 }
-void mw_store_matrix_()
-{
-    pMW->StoreMatrix();
-}
-void mw_load_matrix_()
-{
-    pMW->LoadMatrix();
-}
+//void mw_store_matrix_()
+//{
+//    pMW->StoreMatrix();
+//}
+//void mw_load_matrix_()
+//{
+//    pMW->LoadMatrix();
+//}
 
 //----
 // MG construct (refine)
@@ -365,9 +419,10 @@ int mw_get_num_of_assemble_model_()
 {
     return (int)pMW->GetNumOfAssembleModel();
 }
-void mw_select_assemble_model_(int mglevel)
+void mw_select_assemble_model_(int* mglevel)
 {
-    pMW->SelectAssembleModel(mglevel);
+    uint nMGLevel = *mglevel;
+    pMW->SelectAssembleModel(nMGLevel);
 }
 //
 // mesh part
@@ -970,6 +1025,10 @@ double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof)
 //--
 // mpi
 //--
+int mw_mpi_int_(){ return MPI_INT; }        // MPI_INT
+int mw_mpi_double_(){ return MPI_DOUBLE; }  // MPI_DOUBLE
+int mw_mpi_comm_(){ return MPI_COMM_WORLD; }// MPI_COMM_WORLD
+
 int mw_mpi_sum_(){ return MPI_SUM;}// op  ,use allreduce_r 
 int mw_mpi_max_(){ return MPI_MAX;}// op  ,use allreduce_r
 int mw_mpi_min_(){ return MPI_MIN;}// op  ,use allreduce_r
@@ -978,7 +1037,78 @@ void mw_allreduce_r_(double val[], int* val_size, int* op)
 {
     double rval[*val_size];
 
-    pMW->AllReduce_R(val, rval, *val_size, MPI_DOUBLE, *op, MPI_COMM_WORLD);
+    pMW->AllReduce(val, rval, *val_size, MPI_DOUBLE, *op, MPI_COMM_WORLD);
+}
+void mw_allreduce_i_(int val[], int* val_size, int* op)
+{
+    int rval[*val_size];
+
+    pMW->AllReduce(val, rval, *val_size, MPI_INT, *op, MPI_COMM_WORLD);
+}
+int mw_barrier_()
+{
+    return pMW->Barrier(MPI_COMM_WORLD);
+}
+int mw_abort_(int* error)
+{
+    return pMW->Abort(MPI_COMM_WORLD, *error);
+}
+int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt)
+{
+    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, MPI_COMM_WORLD);
+}
+int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt)
+{
+    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, MPI_COMM_WORLD);
+}
+int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
+{
+    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
+}
+int mw_gather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root)
+{
+    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
+}
+int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
+{
+    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
+}
+int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root)
+{
+    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
+}
+
+//int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* comm)
+//{
+//    return pMW->Allgather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *comm);
+//}
+//int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* comm)
+//{
+//    return pMW->Allgather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *comm);
+//}
+//int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root, int* comm)
+//{
+//    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, *comm);
+//}
+//int mw_gather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root, int* comm)
+//{
+//    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, *comm);
+//}
+//int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root, int* comm)
+//{
+//    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, *comm);
+//}
+//int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root, int* comm)
+//{
+//    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, *comm);
+//}
+int mw_get_rank_()
+{
+    return pMW->GetRank();
+}
+int mw_get_num_of_process_()
+{
+    return pMW->GetNumOfProcess();
 }
 void mw_send_recv_r2_(double buf[], int* dof_size)// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
 {
@@ -989,6 +1119,56 @@ void mw_send_recv_r_()// 通信Nodeの値を入れ替えて更新
     pMW->Send_Recv_R();
 }
 
+//--
+// Element_Group { select AssyModel, select Mesh }
+//--
+int mw_get_num_of_elementgroup_()
+{
+    return (int)pMW->GetNumOfElementGroup();
+}
+int mw_get_num_of_element_id_(int* igrp)
+{
+    uint iGrp = *igrp;
+
+    return (int)pMW->GetNumOfElementID(iGrp);
+}
+int mw_get_element_id_with_elementgroup_(int* igrp, int* index)
+{
+    uint iGrp = *igrp;
+    uint i = *index;
+
+    return (int)pMW->GetElementID_with_ElementGroup(iGrp, i);
+}
+int mw_get_elementgroup_name_length_(int* igrp)
+{
+    uint iGrp = *igrp;
+    int nLength = (int)pMW->GetElementGroupName_Length(iGrp) + 1;
+
+    return nLength;
+}
+void mw_get_elementgroup_name_(int* igrp, char* name, int* name_len)
+{
+    uint iGrp = *igrp;
+    string sName = pMW->GetElementGroupName(iGrp);
+    
+    uint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > (uint)*name_len){
+        uint nLength = (uint)*name_len-1;
+        for(i=0; i < nLength; i++){
+            name[i] = sName[i];
+        };
+        name[nLength]='\0';
+    }else{
+        for(i=0; i < nNumOfChar; i++){
+            name[i] = sName[i];
+        };
+        uint nLength = (uint)*name_len;
+        for(i=nNumOfChar; i < nLength; i++){
+            name[i] = '\0';
+        };
+    }
+}
 
 //----
 // logger
@@ -1003,9 +1183,11 @@ void mw_logger_set_device_(int* mode, int* device)
 }
 void mw_logger_info_ (int* mode, char* message, int* str_len)
 {
-    char cmsg[(size_t)*str_len];
-    strncpy(cmsg, message, (size_t)*str_len);
-
+    size_t nLength = (size_t)*str_len + 1;
+    
+    char cmsg[nLength];
+    strncpy(cmsg, message, nLength);
+    
     pMW->LoggerInfo(*mode, cmsg);
 }
 //----

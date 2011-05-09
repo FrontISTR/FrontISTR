@@ -51,6 +51,12 @@
 #include "SolutionType.h"
 
 
+// グループ
+#include "ElementGroup.h"
+
+// MPI
+#include "HEC_MPI.h"
+
 // Edge
 typedef std::pair<pmw::CNode*,pmw::CNode*> PairNode;
 
@@ -75,6 +81,10 @@ protected:
 
     // SolutionType
     uint   mnSolutionType;// FEM, FVM
+
+    // Property : 構造:0 || 流体:1 || ...未定
+    uint mnProp;
+
 
     // 計算領域の終端を表す番号 '09.09.09
     // --
@@ -135,9 +145,12 @@ protected:
     void setupParentNode(CNode* pNode0, CNode* pNode1, CNode* inNode);//辺から生成される子Nodeに,親Nodeにセット
     void setupParentNode(vector<CNode*>& vNode, CNode* inNode);       //面,体から生成される子Nodeに,1親Nodeをセット
     
+    
+    // グループ{ Element }
+    // --
+    vector<CElementGroup*> mvElementGroup;
+    map<uint, uint, less<uint> > mmElemGrpID2IX;//GrpID => Index
 
-    //debug 用途 dummy counter
-    //uint mnDummyCount;
 
 public:
     // Mesh ID
@@ -154,6 +167,11 @@ public:
     // SolutionType:: FEM .or. FVM
     //
     void setSolutionType(const uint& nSolutionType){ mnSolutionType = nSolutionType;}
+
+    // Property : 構造:0 || 流体:1 || ...
+    //
+    void  setProp(const uint& nProp){ mnProp = nProp;}
+    uint& getProp(){ return mnProp;}
 
 
     // Bucket
@@ -312,6 +330,19 @@ public:
     //  CMW::FinalizeRefine()からコール
     //
     void deleteAggregate_on_Node();//vertexのAggElemを削除 <= 全てのMesh処理が終わった後で呼び出す
+
+
+    // グループ { Element }
+    // --
+    void addElemGrp(CElementGroup* pElemGrp);
+    uint getNumOfElemGrp();
+    CElementGroup* getElemGrpIX(const uint& index);
+    CElementGroup* getElemGrpID(const uint& nGrpID);
+
+
+    // ID 決定の為のメソッド { 下位グリッドからの増加節点 }
+    //
+    uint increaseNode(CMesh *pRestMesh);
 };
 #endif
 }

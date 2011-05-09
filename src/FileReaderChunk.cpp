@@ -18,7 +18,7 @@ CFileReaderChunk::CFileReaderChunk()
 
     mpLogger = Utility::CLogger::Instance();
 
-    mvReader.reserve(20);
+    mvReader.reserve(22);
 
     mvReader.push_back(new CFileReaderNode());
     mvReader.push_back(new CFileReaderElement());
@@ -46,6 +46,10 @@ CFileReaderChunk::CFileReaderChunk()
     mvReader.push_back(new CFileReaderCommMesh2);
     mvReader.push_back(new CFileReaderCommFace);
     mvReader.push_back(new CFileReaderCommNodeCM2);
+
+    mvReader.push_back(new CFileReaderElementGroup);
+    mvReader.push_back(new CFileReaderElementGroupEntity);
+    
 }
 // Destructor
 //

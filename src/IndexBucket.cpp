@@ -23,22 +23,41 @@ CIndexBucket::~CIndexBucket()
     std::cout << "~CIndexBucket" << std::endl;
 }
 
-// resizeBucket
+// メンバークリア
 //
-void CIndexBucket::Initialize(const uint& max_nodeID, const uint& min_nodeID,
-		                      const uint& max_elemID, const uint& min_elemID)
+void CIndexBucket::clearBucketNode()
 {
-    maxNodeID = max_nodeID;
-    minNodeID = min_nodeID;
-    maxElementID = max_elemID;
-    minElementID = min_elemID;
-
-    defNodeID = maxNodeID - minNodeID;
-    defElementID = maxElementID - minElementID;
-
-    mvID2NodeIndex.resize(defNodeID + 1);
-    mvID2ElementIndex.resize(defElementID + 1);
+    mvID2NodeIndex.clear();
+    
+    maxNodeID = 0;
+    minNodeID = 0;
+    defNodeID = 0;
 }
+void CIndexBucket::clearBucketElement()
+{
+    mvID2ElementIndex.clear();
+    
+    maxElementID = 0;
+    minElementID = 0;
+    defElementID = 0;
+}
+
+//// resizeBucket
+////
+//void CIndexBucket::Initialize(const uint& max_nodeID, const uint& min_nodeID,
+//		                      const uint& max_elemID, const uint& min_elemID)
+//{
+//    maxNodeID = max_nodeID;
+//    minNodeID = min_nodeID;
+//    maxElementID = max_elemID;
+//    minElementID = min_elemID;
+//
+//    defNodeID = maxNodeID - minNodeID;
+//    defElementID = maxElementID - minElementID;
+//
+//    mvID2NodeIndex.resize(defNodeID + 1);
+//    mvID2ElementIndex.resize(defElementID + 1);
+//}
 
 //
 //

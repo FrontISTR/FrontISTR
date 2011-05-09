@@ -85,6 +85,7 @@ CMesh::~CMesh(void)
 //
 void CMesh::initBucketNode(const uint& max_id, const uint& min_id)
 {
+    moBucket.clearBucketNode();
     moBucket.resizeBucketNode(max_id, min_id);
 }
 // ID -> Index, setup
@@ -128,6 +129,7 @@ void CMesh::setupBucketNode()
 //
 void CMesh::initBucketElement(const uint& max_id, const uint& min_id)
 {
+    moBucket.clearBucketElement();
     moBucket.resizeBucketElement(max_id, min_id);
 }
 // ID -> Index, setup
@@ -1181,8 +1183,65 @@ void CMesh::deleteAggregate_on_Node()
 }
 
 
+//
+// グループ
+//
+void CMesh::addElemGrp(CElementGroup* pElemGrp)
+{
+    mvElementGroup.push_back(pElemGrp);
+
+    uint nGrpID = pElemGrp->getID();
+    mmElemGrpID2IX[nGrpID] = mvElementGroup.size() - 1;
+}
+
+uint CMesh::getNumOfElemGrp()
+{
+    return mvElementGroup.size();
+}
+
+CElementGroup* CMesh::getElemGrpIX(const uint& index)
+{
+    return mvElementGroup[index];
+}
+CElementGroup* CMesh::getElemGrpID(const uint& nGrpID)
+{
+    uint index = mmElemGrpID2IX[nGrpID];
+    return mvElementGroup[index];
+}
 
 
+//
+//  ID 決定の為のメソッド{ 下位グリッドからの増加節点 }
+//
+uint CMesh::increaseNode(CMesh* pRestMesh)
+{
+    uint nIncreNum = mvNode.size() - pRestMesh->getNumOfNode();
+    
+    uint icomm, nNumOfComm = mvCommMesh2.size();
+    CCommMesh2 *pCommMesh, *pRestCommMesh;
+    CHecMPI *pMPI = CHecMPI::Instance();
+    
+    uint nNumOfSRComN(0);    //small rank CommNode
+    uint nRestNumOfSRComN(0);//下位(restrict) small rank CommNode
+    uint nIncreComN(0);      //増加したsmall rank CommNode
+    
+    for(icomm=0; icomm < nNumOfComm; icomm++){
+        pCommMesh     = mvCommMesh2[icomm];
+        pRestCommMesh = pRestMesh->getCommMesh2IX(icomm);//下位グリッド通信メッシュ
+        
+        // 小Rankとの通信に使用される節点数の増加数
+        if(pCommMesh->getTrasmitRank() <  pMPI->getRank()){
+            nNumOfSRComN = pCommMesh->getCommVertNodeSize();
+            nRestNumOfSRComN = pRestCommMesh->getCommVertNodeSize();
+
+            nIncreComN += nNumOfSRComN - nRestNumOfSRComN;
+        }
+    };
+
+    nIncreNum -= nIncreComN;
+
+    return nIncreNum;
+}
 
 
 

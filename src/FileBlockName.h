@@ -92,6 +92,13 @@ struct FileBlockName{
     static const char* EndMaterial(){ return "End";}
 
 
+    // Group
+    // ----
+    static const char* StartElementGroup(){ return "ElementGroup";}
+    static const char* EndElementGroup(){ return "End";}
+
+    static const char* StartElementGroupEntity(){ return "ElementGroupEntity";}
+    static const char* EndElementGroupEntity(){ return "End";}
 
 
 

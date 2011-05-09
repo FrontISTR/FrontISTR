@@ -28,10 +28,14 @@ public:
 
 protected:
     uint mContactID;//MPC接続面ID
-    uint mLevel;//MultiGridレベル
+    uint mLevel;    //MultiGridレベル
     
     uint myRank;      //自身のrank
     uint transmitRank;//送信先rank
+
+    // Prop : 0:MPC  1:Contact
+    // ----
+    uint mnProp;
     
     //--
     //マスター スレーブのMeshIDは,Refine時に新Faceを取得する際に必要になる.
@@ -77,6 +81,12 @@ public:
 
     void setLevel(const uint& level){ mLevel= level;}
     uint& getLevel(){ return mLevel;}
+
+    // Prop : 0:MPC  1:Contact
+    // ----
+    void setProp(const uint& nProp){ mnProp = nProp;}
+    uint& getProp(){ return mnProp;}
+
     
     // 通信関連 '10.2.24
     void setRank(const uint& rank){ myRank= rank;}

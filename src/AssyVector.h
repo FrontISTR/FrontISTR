@@ -19,7 +19,7 @@ class CAssyModel;
 class CAssyVector
 {
 public:
-	CAssyVector(CAssyModel *pAssyModel);
+	CAssyVector(CAssyModel *pAssyModel, const uint& nDOF);
 	CAssyVector(const CAssyVector *pAssyVector);
 	virtual ~CAssyVector();
 
@@ -31,7 +31,9 @@ public:
 	const double &operator()(size_t meshID, size_t nodeID, size_t dof) const;
 	double &operator()(size_t meshID, size_t nodeID, size_t dof);
 
-	void setZero();
+        void Vector_Clear(const uint& iMesh);// Matrix 0 clear
+
+	void setZero();//use GMRES
 	void setValue(int imesh, int inode, int idof, double value);
 	double getValue(int imesh, int inode, int idof);
 	void add(const CAssyVector *pV);
@@ -53,11 +55,15 @@ public:
 		for (std::vector<CVector*>::const_iterator iv = mvVector.begin(); iv != mvVector.end(); iv++) (*iv)->print_elem();
 	};
 
+        uint& getDOF();
+
 private:
 	CAssyModel *mpAssyModel;
 
 	std::vector<CVector*> mvVector;
 	// commTable
+
+        uint mnDOF;//アセンブル方程式のDOF
 };
 
 }

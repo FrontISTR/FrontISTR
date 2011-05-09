@@ -20,6 +20,8 @@
 #include "FileWriterContactMesh.h"
 #include "FileWriterCommMesh2.h"
 
+#include "FileWriterElementGroup.h"
+
 namespace FileIO{
 class CFileWriterChunk{
 public:

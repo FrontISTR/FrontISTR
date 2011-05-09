@@ -12,7 +12,7 @@ using namespace FileIO;
 
 CFileWriterChunk::CFileWriterChunk()
 {
-    mvWriter.reserve(8);
+    mvWriter.reserve(9);
 
     mvWriter.push_back(new CFileWriterNode);
     mvWriter.push_back(new CFileWriterElement);
@@ -24,6 +24,8 @@ CFileWriterChunk::CFileWriterChunk()
 
     mvWriter.push_back(new CFileWriterContactMesh);
     mvWriter.push_back(new CFileWriterCommMesh2);
+
+    mvWriter.push_back(new CFileWriterElementGroup);
 }
 
 CFileWriterChunk::~CFileWriterChunk()

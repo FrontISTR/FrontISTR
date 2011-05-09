@@ -81,8 +81,8 @@ protected:
     //APIで使用する作業用変数
     CAssyModel  *mpAssy;
     CAssyMatrix *mpAssyMatrix;
-    CAssyVector *mpAssyVector;
-    CAssyVector *mpAssyVector2;
+    CAssyVector *mpRHSAssyVector;//右辺ベクトル
+    CAssyVector *mpSolAssyVector;//解ベクトル
     CMesh       *mpMesh;
     CElement    *mpElement;
 
@@ -116,20 +116,30 @@ public:
     //----
     // File関連
     //----
-    __declspec(dllexport) int FileRead(); // ファイル入力(MW3書式):AssyModel階層の構築
+    __declspec(dllexport) int FileRead(); // ファイル入力(MW3書式)
     __declspec(dllexport) int FileWrite();// ファイル出力
 
     //----
     // Solver
     //----
-    __declspec(dllexport) int Initialize_Matrix(); // 行列の初期化
-    __declspec(dllexport) int Initialize_Vector(); // 行列の初期化
-    __declspec(dllexport) int Matrix_Add_Elem(int iMesh, int iElem, double *ElemMatrix);
-    __declspec(dllexport) int Set_BC(int iMesh, int iNode, int iDof, double value1, double value2);
-    __declspec(dllexport) int Set_BC(int iMesh, int iNode, int iDof, double value);
-	__declspec(dllexport) void Sample_Set_BC(int iMesh);
-    __declspec(dllexport) int Solve(uint iter_max, double tolerance, uint method, uint precondition); 
+    __declspec(dllexport) void GeneLinearAlgebra(const uint& nNumOfAlgebra, uint* vDOF);
+    __declspec(dllexport) void SelectAlgebra(const uint& iequ);// mpAssyMatrix等にロード
 
+    __declspec(dllexport) int Matrix_Add_Elem(const uint& iMesh, const uint& iElem, double *ElemMatrix);
+    __declspec(dllexport) int Matrix_Add_Node(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double *NodalMatrix);
+
+    __declspec(dllexport) void Matrix_Clear(const uint& iMesh);// Matrix 0 clear
+    __declspec(dllexport) void Vector_Clear(const uint& iMesh);// Matrix 0 clear
+
+    __declspec(dllexport) int Set_BC_Mat_SolVec(int iMesh, int iNode, int iDof, double value1, double value2);//行列対角項, 解ベクトル
+    __declspec(dllexport) int Set_BC_Mat_RHS(int iMesh, int iNode, int iDof, double value1, double value2);   //行列対角項, 右辺ベクトル
+    __declspec(dllexport) int Set_BC_RHS(int iMesh, int iNode, int iDof, double value);                       //右辺ベクトル
+    
+    __declspec(dllexport) void Sample_Set_BC(int iMesh);
+    
+    __declspec(dllexport) int Solve(uint iter_max, double tolerance, uint method, uint precondition);
+    
+    
     //----
     // Refiner
     //----
@@ -375,11 +385,28 @@ public:
     //--
     // MPI (直接呼び出したい人向け)
     //--
-    __declspec(dllexport) int AllReduce_R(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld);
+    __declspec(dllexport) int AllReduce(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld);
+    __declspec(dllexport) int Barrier(int commworld);
+    __declspec(dllexport) int Abort(int commworld, int error);
+    __declspec(dllexport) int AllGather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm);
+    __declspec(dllexport) int Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
+    __declspec(dllexport) int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
+    __declspec(dllexport) int& GetRank(); //自分のプロセス-ランクを取得
+    __declspec(dllexport) int& GetNumOfProcess();
     __declspec(dllexport) void Send_Recv_R(double* buf, int dof_size);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
     __declspec(dllexport) void Send_Recv_R();// 通信Nodeの値を入れ替えて更新
 
 
+    //--
+    // グループ { select された AssyModel,Meshを対象 }
+    //--
+    __declspec(dllexport) uint GetNumOfElementGroup();
+    __declspec(dllexport) uint GetNumOfElementID(const uint& iGrp);
+    __declspec(dllexport) uint& GetElementID_with_ElementGroup(const uint& iGrp, const uint& index);
+    __declspec(dllexport) uint GetElementGroupName_Length(const uint& iGrp);
+    __declspec(dllexport) string& GetElementGroupName(const uint& iGrp);
+
+    
     //--
     // Logger
     //--

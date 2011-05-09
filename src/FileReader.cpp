@@ -72,7 +72,21 @@ string& CFileReader::getLineSt(ifstream& ifs)
 
     return msLine;
 }
+string& CFileReader::getLine(ifstream& ifs)
+{
+    msLine.clear();
 
+    getline(ifs, msLine);
+
+    uint i;
+    for(i=0; i< msLine.length(); i++){
+        if(msLine[i]=='\r') msLine[i]=' ';
+        if(msLine[i]==',')  msLine[i]=' ';
+        if(msLine[i]=='\n') msLine[i]=' ';
+    };
+
+    return msLine;
+}
 
 // Elementのタイプを表す文字列をElementTypeを表す符号なし整数(unsigned int)に変換
 // string => uint
@@ -113,6 +127,23 @@ uint CFileReader::IntBndType(string& sBndType)
     }
 }
 
+//
+// s:対象文字列、c:区切り文字 , v:分割されたトークン
+//
+void CFileReader::Split(const string& s, char c, vstring& v)
+{
+    string::size_type i = 0;
+    string::size_type j = s.find(c);
+
+    while(j != string::npos){
+        v.push_back(s.substr(i, j-i));
+        i = ++j;
+        j = s.find(c, j);
+
+        if(j == string::npos)
+            v.push_back(s.substr(i, s.length()));
+    };
+}
 
 
 

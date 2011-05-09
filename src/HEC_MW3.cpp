@@ -104,7 +104,6 @@ int CMW::Initialize(int argc, char** argv, const char* path)
     mpLogger->Info(Utility::LoggerMode::Info," HEC_MW3 Initialized");
 
     //cntファイルへのパス指定
-    //mpFileIO->setPathName(argv[1]);
     mpFileIO->setPathName(path);
 
     //cntファイルから入力ファイルのベースネームを取得
@@ -117,7 +116,7 @@ int CMW::Initialize(int argc, char** argv, const char* path)
     // ファイルパスにファイルベース名を追加, アンダースコアを追加
     msInputFileName += mpFileIO->getMeshFileBaseName() + "_";
     msOutputFileName+= mpFileIO->getMeshFileBaseName() + "_";
-    
+
     // 自分のrankを"ファイルベース名"に追加
     msInputFileName  += boost::lexical_cast<string>(rank);
     msOutputFileName += boost::lexical_cast<string>(rank);
@@ -168,38 +167,75 @@ int CMW::FileWrite()// const uint& nmgLevel
 }
 
 
-int CMW::Initialize_Matrix()// const uint& nmgLevel
+//int CMW::Initialize_Matrix()// const uint& nmgLevel
+//{
+//#ifdef ADVANCESOFT_DEBUG
+//   	printf(" enter CMW::Initialize_Matrix \n");
+//#endif
+//
+//	mpAssyMatrix = new CAssyMatrix(mpAssy);
+//	uint level = mpAssy->getMGLevel();
+//	mpAssyMatrix->setCoarseMatrix( NULL );
+//	if( level > 0 ) mpAssyMatrix->setCoarseMatrix( mpGMGModel->getAssyModel(level-1)->getAssyMatrix() );
+//
+//#ifdef ADVANCESOFT_DEBUG
+//   	printf(" exit CMW::Initialize_Matrix \n");
+//#endif
+//    return 1;
+//}
+//
+//int CMW::Initialize_Vector()// const uint& nmgLevel
+//{
+//#ifdef ADVANCESOFT_DEBUG
+//   	printf(" enter CMW::Initialize_Vector \n");
+//#endif
+//
+//	mpAssyVector = new CAssyVector(mpAssy);
+//	mpAssyVector2 = new CAssyVector(mpAssy);
+//#ifdef ADVANCESOFT_DEBUG
+//   	printf(" exit CMW::Initialize_Vector \n");
+//#endif
+//    return 1;
+//}
+
+//
+// 全Levelに方程式を生成(AssyMatrixのコースグリッドも、ここで設定される)
+//
+void CMW::GeneLinearAlgebra(const uint& nNumOfAlgebra, uint* vDOF)
 {
-#ifdef ADVANCESOFT_DEBUG
-   	printf(" enter CMW::Initialize_Matrix \n");
-#endif
+    vuint vecDOF;
+    vecDOF.reserve(nNumOfAlgebra);
+    for(uint idof=0; idof < nNumOfAlgebra; idof++){
+        vecDOF.push_back(vDOF[idof]);
+    };
 
-	mpAssyMatrix = new CAssyMatrix(mpAssy);
-	uint level = mpAssy->getMGLevel();
-	mpAssyMatrix->setCoarseMatrix( NULL );
-	if( level > 0 ) mpAssyMatrix->setCoarseMatrix( mpGMGModel->getAssyModel(level-1)->getAssyMatrix() );
+    CAssyModel *pAssyModel, *pCoaAssyModel;
+    uint iLevel, nNumOfLevel = mpGMGModel->getNumOfLevel();
+    for(iLevel=0; iLevel < nNumOfLevel; iLevel++){
+        pAssyModel = mpGMGModel->getAssyModel(iLevel);
 
-#ifdef ADVANCESOFT_DEBUG
-   	printf(" exit CMW::Initialize_Matrix \n");
-#endif
-    return 1;
+        if(iLevel > 0){
+            pCoaAssyModel = mpGMGModel->getAssyModel(iLevel-1);
+            pAssyModel->GeneLinearAlgebra(vecDOF, pCoaAssyModel);
+        }else{
+            pAssyModel->GeneLinearAlgebra(vecDOF, NULL);
+        }
+    };
+}
+//
+// iequ番目の方程式をロード{ Levelは選択済み == AssyModelは選択済み }
+//
+void CMW::SelectAlgebra(const uint& iequ)
+{
+    // AssyMatrixのコースグリッドはGeneLinearAlgebraで既に設定済み
+    //
+    mpAssyMatrix = mpAssy->getAssyMatrix(iequ);
+    mpRHSAssyVector = mpAssy->getRHSAssyVector(iequ);
+    mpSolAssyVector = mpAssy->getSolutionAssyVector(iequ);
 }
 
-int CMW::Initialize_Vector()// const uint& nmgLevel
-{
-#ifdef ADVANCESOFT_DEBUG
-   	printf(" enter CMW::Initialize_Vector \n");
-#endif
 
-	mpAssyVector = new CAssyVector(mpAssy);
-	mpAssyVector2 = new CAssyVector(mpAssy);
-#ifdef ADVANCESOFT_DEBUG
-   	printf(" exit CMW::Initialize_Vector \n");
-#endif
-    return 1;
-}
-
-int CMW::Matrix_Add_Elem(uint& iMesh, uint& iElem, double *ElemMatrix)
+int CMW::Matrix_Add_Elem(const uint& iMesh, const uint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CMW::Matrix_Add_Elem %d %e \n", iElem, ElemMatrix[0]);
@@ -211,6 +247,23 @@ int CMW::Matrix_Add_Elem(uint& iMesh, uint& iElem, double *ElemMatrix)
    	printf(" exit CMW::Matrix_Add_Elem \n");
 #endif
     return 1;
+}
+
+int CMW::Matrix_Add_Node(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double* NodalMatrix)
+{
+    return mpAssyMatrix->Matrix_Add_Nodal(iMesh, iNodeID, jNodeID, NodalMatrix);
+}
+
+// Matrix 0 clear
+//
+void CMW::Matrix_Clear(const uint& iMesh)
+{
+    mpAssyMatrix->Matrix_Clear(iMesh);
+}
+void CMW::Vector_Clear(const uint& iMesh)
+{
+    mpRHSAssyVector->Vector_Clear(iMesh);
+    mpSolAssyVector->Vector_Clear(iMesh);
 }
 
 void CMW::Sample_Set_BC(uint iMesh)
@@ -230,15 +283,15 @@ void CMW::Sample_Set_BC(uint iMesh)
 		if(abs( Z - 4.0 ) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 ) {
 			value0 = 1.0e6;
 			iDof0 = 0;
-			Set_BC( iMesh, iNode, iDof0, value0);
+			Set_BC_RHS( iMesh, iNode, iDof0, value0);
 		};
 		if( (abs( Z ) < 1.0e-5) || (abs( Z - 8.0 ) < 1.0e-5) ) {
 			value1 = 1.0e15;
 			value2 = 0.0;
 			iDof0 = 0; iDof1 = 1; iDof2 = 2;
-			Set_BC( iMesh, iNode, iDof0, value1, value2);
-			Set_BC( iMesh, iNode, iDof1, value1, value2);
-			Set_BC( iMesh, iNode, iDof2, value1, value2);
+			Set_BC_Mat_RHS( iMesh, iNode, iDof0, value1, value2);
+			Set_BC_Mat_RHS( iMesh, iNode, iDof1, value1, value2);
+			Set_BC_Mat_RHS( iMesh, iNode, iDof2, value1, value2);
 		}
 	};
 #ifdef ADVANCESOFT_DEBUG
@@ -246,31 +299,55 @@ void CMW::Sample_Set_BC(uint iMesh)
 #endif
 }
 
-int CMW::Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value)
+//
+// 右辺ベクトルへ境界値をセット
+//
+int CMW::Set_BC_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value)
 {
 #ifdef ADVANCESOFT_DEBUG
-	printf("enter CMW::Set_BC (1) %d %d %d %e \n", iMesh, iNode, iDof, value);
+	printf("enter CMW::Set_BC (RHS) %d %d %d %e \n", iMesh, iNode, iDof, value);
 #endif
 
-	mpAssyVector->setValue(iMesh, iNode, iDof, value);
+	mpRHSAssyVector->setValue(iMesh, iNode, iDof, value);
 
 #ifdef ADVANCESOFT_DEBUG
-	printf("exit CMW::Set_BC (1) \n");
+	printf("exit CMW::Set_BC (RHS) \n");
 #endif
 	return 1;
 }
-
-int CMW::Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
+//
+// 行列の対角項、解ベクトルへ境界値をセット
+//
+int CMW::Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
 {
 #ifdef ADVANCESOFT_DEBUG
-	printf("enter CMW::Set_BC (2) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
+	printf("enter CMW::Set_BC (Mat_SolVec) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
 #endif
 
 	mpAssyMatrix->setValue(iMesh, iNode, iDof, value1);
-	mpAssyVector->setValue(iMesh, iNode, iDof, value2);
+        //mpRHSAssyVector->setValue(iMesh, iNode, iDof, value2);
+	mpSolAssyVector->setValue(iMesh, iNode, iDof, value2);
 
 #ifdef ADVANCESOFT_DEBUG
-	printf("exit CMW::Set_BC (2) \n");
+	printf("exit CMW::Set_BC (Mat_SolVec) \n");
+#endif
+
+	return 1;
+}
+//
+// 行列の対角項、右辺ベクトルへ境界値をセット
+//
+int CMW::Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
+{
+#ifdef ADVANCESOFT_DEBUG
+	printf("enter CMW::Set_BC (Mat_RHS) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
+#endif
+
+	mpAssyMatrix->setValue(iMesh, iNode, iDof, value1);
+        mpRHSAssyVector->setValue(iMesh, iNode, iDof, value2);
+
+#ifdef ADVANCESOFT_DEBUG
+	printf("exit CMW::Set_BC (Mat_RHS) \n");
 #endif
 
 	return 1;
@@ -288,23 +365,24 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
    switch( method ){
         case( 1 ):
 	   {CSolverCG *solver = new CSolverCG(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log);
-	   solver->solve(mpAssyMatrix, mpAssyVector, mpAssyVector2);}
+	   solver->solve(mpAssyMatrix, mpRHSAssyVector, mpSolAssyVector);}
            break;
         case( 2 ):
 	   {CSolverBiCGSTAB *solver = new CSolverBiCGSTAB(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log);
-	   solver->solve(mpAssyMatrix, mpAssyVector, mpAssyVector2);}
+	   solver->solve(mpAssyMatrix, mpRHSAssyVector, mpSolAssyVector);}
            break;
         case( 3 ):
            {CSolverGPBiCG *solver = new CSolverGPBiCG(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log);
-	   solver->solve(mpAssyMatrix, mpAssyVector, mpAssyVector2);}
+	   solver->solve(mpAssyMatrix, mpRHSAssyVector, mpSolAssyVector);}
            break;
         case( 4 ):
 	   {CSolverGMRES *solver = new CSolverGMRES(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log);
-	   solver->solve(mpAssyMatrix, mpAssyVector, mpAssyVector2);}
+	   solver->solve(mpAssyMatrix, mpRHSAssyVector, mpSolAssyVector);}
            break;
         default:
            break;
     }
+
 
     uint iMesh, iMeshMax;
     iMeshMax = GetNumOfMeshPart();
@@ -316,32 +394,39 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
 	fprintf(fp1,"%d %d 3 0 0 \n",mpAssy->getMesh(iMesh)->getNumOfNode(), mpAssy->getMesh(iMesh)->getNumOfElement());
 	for(int i=0; i < mpAssy->getMesh(iMesh)->getNumOfNode(); i++)
 	{
-		fprintf(fp1,"%d %e %e %e\n",i, mpAssy->getMesh(iMesh)->getNodeIX(i)->getX(),
-		mpAssy->getMesh(iMesh)->getNodeIX(i)->getY(), mpAssy->getMesh(iMesh)->getNodeIX(i)->getZ());
+            double x = mpAssy->getMesh(iMesh)->getNodeIX(i)->getX();
+            double y = mpAssy->getMesh(iMesh)->getNodeIX(i)->getY();
+            double z = mpAssy->getMesh(iMesh)->getNodeIX(i)->getZ();
+            fprintf(fp1,"%d %e %e %e\n",i, x, y, z);
 	}
-	for(int i=0; i < mpAssy->getMesh(0)->getNumOfElement(); i++)
+        vector<CNode*> vNode;
+        //for(int i=0; i < mpAssy->getMesh(0)->getNumOfElement(); i++)
+	for(int i=0; i < mpAssy->getMesh(iMesh)->getNumOfElement(); i++)
 	{
-		fprintf(fp1,"%d 0 hex %d %d %d %d %d %d %d %d \n",i,
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(0)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(1)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(2)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(3)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(4)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(5)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(6)->getID(),
-		mpAssy->getMesh(iMesh)->getElementIX(i)->getNode(7)->getID());
+            vNode.clear();
+            CElement *pElem = mpAssy->getMesh(iMesh)->getElementIX(i);
+            vNode = pElem->getNode();
+            if(pElem->getType()==ElementType::Hexa){
+                fprintf(fp1,"%d 0 hex %d %d %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID());
+            }
+		
 	}
 	fprintf(fp1,"1 3 \n");
 	fprintf(fp1,"vector, aaa \n");
 	for(int i=0; i < mpAssy->getMesh(iMesh)->getNumOfNode(); i++)
 	{
-		double val0 = mpAssyVector2->getValue(iMesh, i, 0);
-		double val1 = mpAssyVector2->getValue(iMesh, i, 1);
-		double val2 = mpAssyVector2->getValue(iMesh, i, 2);
-		fprintf(fp1,"%d %e %e %e\n",i,val0, val1, val2);
-		mpAssy->getMesh(iMesh)->getNodeIX(i)->setVector(val0, 0);
-		mpAssy->getMesh(iMesh)->getNodeIX(i)->setVector(val1, 1);
-		mpAssy->getMesh(iMesh)->getNodeIX(i)->setVector(val2, 2);
+            uint nDOF=mpSolAssyVector->getDOF();
+            double val[nDOF];
+            for(uint idof=0; idof < nDOF; idof++){
+                val[idof] = mpSolAssyVector->getValue(iMesh, i, idof);
+            }
+            //for(uint idof=0; idof < nDOF; idof++){
+            //    mpAssy->getMesh(iMesh)->getNodeIX(i)->setVector(val[idof], idof);
+            //}
+            if(nDOF==3) fprintf(fp1,"%d %e %e %e\n",i,val[0], val[1], val[2]);
+                
 	}
 	fclose(fp1);
     }
@@ -2168,9 +2253,37 @@ double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& 
 //--
 // MPI (直接使用)
 //--
-int CMW::AllReduce_R(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld)
+int CMW::AllReduce(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld)
 {
-    mpMPI->Allreduce(sendbuf, recvbuf, buf_size, datatype, op, commworld);
+    return mpMPI->Allreduce(sendbuf, recvbuf, buf_size, datatype, op, commworld);
+}
+int CMW::Barrier(int commworld)
+{
+    return mpMPI->Barrier(commworld);
+}
+int CMW::Abort(int commworld, int error)
+{
+    return mpMPI->Abort(commworld, error);
+}
+int CMW::AllGather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm)
+{
+    return mpMPI->Allgather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, comm);
+}
+int CMW::Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+{
+    return mpMPI->Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm);
+}
+int CMW::Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
+{
+    return mpMPI->Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+}
+int& CMW::GetRank()//自分のプロセス-ランクを取得
+{
+    return mpMPI->getRank();
+}
+int& CMW::GetNumOfProcess()
+{
+    return mpMPI->getNumOfProcess();
 }
 
 // bufの値を送信 => 受信した値をbufに代入、Nodeにセット
@@ -2317,6 +2430,38 @@ void CMW::Send_Recv_R()
     };// iLevel
 }
 
+
+//--
+// グループ  { select された AssyModel,Meshを対象 }
+//--
+uint CMW::GetNumOfElementGroup()
+{
+    return mpMesh->getNumOfElemGrp();
+}
+uint CMW::GetNumOfElementID(const uint& iGrp)
+{
+    CElementGroup *pElemGrp = mpMesh->getElemGrpIX(iGrp);
+
+    return pElemGrp->getNumOfElementID();
+}
+uint& CMW::GetElementID_with_ElementGroup(const uint& iGrp, const uint& index)
+{
+    CElementGroup *pElemGrp = mpMesh->getElemGrpIX(iGrp);
+
+    return pElemGrp->getElementID(index);
+}
+uint CMW::GetElementGroupName_Length(const uint& iGrp)
+{
+    CElementGroup *pElemGrp = mpMesh->getElemGrpIX(iGrp);
+
+    return pElemGrp->getNameLength();
+}
+string& CMW::GetElementGroupName(const uint& iGrp)
+{
+    CElementGroup *pElemGrp = mpMesh->getElemGrpIX(iGrp);
+
+    return pElemGrp->getName();
+}
 
 
 //--

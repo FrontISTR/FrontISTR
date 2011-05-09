@@ -18,19 +18,21 @@ namespace pmw
 {
 
 class CMesh;
-class CSolverPre;
+//class CSolverPre;
 
 class CMatrixBCRS: public CMatrix
 {
 public:
-	CMatrixBCRS(/* const */ CMesh *pMesh);
+	CMatrixBCRS(CMesh *pMesh, const uint& nDOF);
 	virtual ~CMatrixBCRS();
 
-	int Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix);
+        int Matrix_Add_Nodal(const uint& iNodeID, const uint& jNodeID, const double* NodalMatrix);
+	int Matrix_Add_Elem(CMesh *pMesh, const uint& iElem, double *ElemMatrix);
+        
+        void Matrix_Clear();// Matrix 0 clear (非線形の行列更新の準備)
+        
 	virtual void multVector(CVector *pV, CVector *pP) const;
-	void multVector111(const CVector *pV, CVector *pP) const;
 	void setValue(int inode, int idof, double value);
-	void MatrixMult33(ublas::matrix<double> A, std::vector<double> B, std::vector<double> C);
 
 	int setupPreconditioner(int type);
 	int setupSmoother(int type);
@@ -62,7 +64,7 @@ private:
 
 	// smoother
 
-	friend class CSolverPreILU;
+	//friend class CSolverPreILU;
 };
 
 }

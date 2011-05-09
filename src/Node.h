@@ -38,9 +38,15 @@ protected:
     // 
     vector<CNode*> mvParentNode;//refine時にNodeの親となったNode
 
+    bool mbSComm;//通信相手が小RankのCommNode : Refineの新NodeのID決定時に利用
+
 public:
     // Nodeタイプ
     virtual uint& getType()=0;
+
+    // 通信相手が小RankのCommNode に所属しているか.否か.
+    void markingSCommNode();
+    bool isSCommNode();
 
 
     // parameter accessor

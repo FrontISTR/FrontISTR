@@ -30,20 +30,23 @@ protected:
 
 public:
     //
-    virtual void Initialize(const uint& max_nodeID, const uint& min_nodeID,
-                                const uint& max_elemID, const uint& min_elemID);
+    //    virtual void Initialize(const uint& max_nodeID, const uint& min_nodeID,
+    //                                const uint& max_elemID, const uint& min_elemID);
+
+    void clearBucketNode();
+    void clearBucketElement();
 
     // resize vector
-    virtual void resizeBucketNode(const uint& maxID, const uint& minID);
-    virtual void resizeBucketElement(const uint& maxID, const uint& minID);
+    void resizeBucketNode(const uint& maxID, const uint& minID);
+    void resizeBucketElement(const uint& maxID, const uint& minID);
 
     // setup mvID2Index
-    virtual void setIndexNode(const uint& id, const int& index_num);
-    virtual void setIndexElement(const uint& id, const int& index_num);
+    void setIndexNode(const uint& id, const int& index_num);
+    void setIndexElement(const uint& id, const int& index_num);
 
     // get Index
-    virtual int& getIndexNode(const uint& id){ return mvID2NodeIndex[id - minNodeID];}
-    virtual int& getIndexElement(const uint& id){ return mvID2ElementIndex[id - minElementID];}
+    int& getIndexNode(const uint& id){ return mvID2NodeIndex[id - minNodeID];}
+    int& getIndexElement(const uint& id){ return mvID2ElementIndex[id - minElementID];}
 };
 }
 #endif

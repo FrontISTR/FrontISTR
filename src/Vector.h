@@ -23,7 +23,7 @@ class CVector
 public:
 	typedef ublas::vector<double> ElemType;
 
-	CVector(/* const */ CMesh *pMesh);
+	CVector(CMesh *pMesh, const uint& nDOF);
 	CVector(const CVector *pVector);
 	virtual ~CVector();
 
@@ -31,6 +31,8 @@ public:
 	// size_t lenInternal() const;
 	const ElemType &operator[](size_t idx) const;
 	ElemType &operator[](size_t idx);
+
+        void Vector_Clear();// Matrix 0 clear
 
 	void setZero();
 	void setValue(int inode, int idof, double value);

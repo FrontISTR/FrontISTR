@@ -68,6 +68,13 @@
 // SolutionType
 #include "SolutionType.h"
 
+
+// グループ
+#include "ElementGroup.h"
+
+//MPI
+#include "HEC_MPI.h"
+
 namespace pmw{
 #ifndef _MESH_FACTORY_HH_E74C
 #define _MESH_FACTORY_HH_E74C
@@ -105,7 +112,7 @@ public:
     void GeneAssyModel(const uint& num_of_mgLevel);// AssyModelをmgLevel数ぶんだけ生成
     // each Mesh in AssyModel at mgLevel
     void reserveMesh(const uint& mgLevel,const uint& num_of_mesh);
-    void GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint& index);// MeshをAssyModelに生成 at mgLevel
+    void GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint& index, const uint& nProp);// MeshをAssyModelに生成 at mgLevel
 
 
     // Solution Type :: FEM .or. FVM
@@ -253,7 +260,7 @@ protected:
 public:
     // MPCの為の表面メッシュ(Skin)生成
     // --
-    void GeneContactMesh(const uint& contactID, const uint& myRank, const uint& tranRank);//接合メッシュの生成:ContactMesh数ぶんコール
+    void GeneContactMesh(const uint& contactID, const uint& myRank, const uint& tranRank, const uint& nProp);//接合メッシュの生成:ContactMesh数ぶんコール
     void GeneContactNode(const uint& mgLevel, const uint& contactID, const uint& conNodeID, const vdouble& vCoord,
             const string& s_param_type, const uint& numOfVector, const uint& numOfScalar,
             bool bmesh, const uint& meshID, const uint& nodeID,
@@ -281,6 +288,17 @@ public:
     void GeneCommFace(const uint& mgLevel, const uint& commeshID, const uint& face_id,
             const uint& mesh_id,const uint elem_id, const uint& elem_ent_num, const vuint& vCommNodeID);
     void GeneCommNodeCM2(const uint& mgLevel, const uint& mesh_id, const uint& node_id, const uint& commeshID, const uint& comm_node_id, const vdouble& vCoord);//CommMesh2用途
+
+
+    // --
+    // グループ
+    // --
+    // ・GroupObjectの生成
+    // ・GroupID, GroupNameのセット
+    void GeneElemGrpOBJ(const uint& mgLevel, const uint& mesh_id, const vuint& vGrpID, vstring& vGrpName);//ElementGroupの生成
+    // ・指定GrpIDへパラメーターをセット
+    void setElemID_with_ElemGrp(const uint& mgLevel, const uint& mesh_id, const uint& nGrpID, const vuint& vElemID);
+
 };
 #endif  //_MESH_FACTORY_HH_E74C
 }

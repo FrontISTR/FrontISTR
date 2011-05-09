@@ -116,6 +116,7 @@ int CHecMPI::Allreduce(void* sendbuf, void* recvbuf, int count, MPI_Datatype dat
 #ifdef HAVE_MPI
     return MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
 #else
+    recvbuf = sendbuf;
     return 0;
 #endif
 }
@@ -186,6 +187,15 @@ int CHecMPI::Recv(void* buf, int count, MPI_Datatype datatype, int source,
 #endif
 }
 
+int CHecMPI::Allgather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm)
+{
+#ifdef HAVE_MPI
+    return MPI_Allgather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, comm);
+#else
+    recvbuf = sendbuf;
+    return 0;
+#endif
+}
 //
 //
 int CHecMPI::Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype,
@@ -195,6 +205,7 @@ int CHecMPI::Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype,
 #ifdef HAVE_MPI
     return MPI_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm);
 #else
+    recvbuf = sendbuf;
     return 0;
 #endif
 }
@@ -208,6 +219,7 @@ int CHecMPI::Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
 #ifdef HAVE_MPI
     return MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 #else
+    recvbuf = sendbuf;
     return 0;
 #endif
 }

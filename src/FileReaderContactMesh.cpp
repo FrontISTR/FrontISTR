@@ -8,6 +8,7 @@
 //                      k.Takeda
 #include "FileReaderContactMesh.h"
 using namespace FileIO;
+using namespace boost;
 
 // construct & destruct
 //
@@ -26,6 +27,7 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
 {
     uint numOfContactMesh, maxID, minID;
     uint my_rank, trans_rank;
+    uint nProp(0);//属性: 0:MPC, 1:接触
     uint contactID, meshID, nodeID, rank, elemID, elemFaceID, shapeType;
     bool bmesh(false);//計算領域のContactMeshか？
     uint maslave;//マスター,スレーブ切り替え
@@ -63,10 +65,45 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                 sLine= getLineSt(ifs);
                 iss.clear();
                 iss.str(sLine);
-                // 接合MeshID::ContactMeshID, rank(接合Meshのrank)
-                iss >> contactID >> my_rank >> trans_rank;
+
+                //// 単純なRead
+                //// 接合MeshID::ContactMeshID, rank(接合Meshのrank)
+                ////
+                // iss >> contactID >> my_rank >> trans_rank >> nProp;
+
+                // boost トークン分割
+                // ----
+                char_separator<char> sep(" \t\n");
+                tokenizer< char_separator<char> > tokens(sLine, sep);
+
+                uint nCount(0);
+                typedef tokenizer< char_separator<char> >::iterator Iter;
+                for(Iter it=tokens.begin(); it != tokens.end(); ++it){
+                    string str = *it;
+                    if(nCount==0){ contactID = atoi(str.c_str());}
+                    if(nCount==1){ my_rank   = atoi(str.c_str());}
+                    if(nCount==2){ trans_rank= atoi(str.c_str());}
+                    if(nCount==3){ nProp     = atoi(str.c_str());}//入力ファイルにnPropが無い場合は、"初期値0:MPC"のまま.
+                    nCount++;
+                };
+
+////                vstring vToken;
+////                Split(sLine, ' ', vToken);
+////                uint nNumOfToken = vToken.size();
+////                if(nNumOfToken==3){
+////                    contactID = atoi(vToken[0].c_str());
+////                    my_rank   = atoi(vToken[1].c_str());
+////                    trans_rank= atoi(vToken[2].c_str());
+////                }
+////                if(nNumOfToken==4){
+////                    contactID = atoi(vToken[0].c_str());
+////                    my_rank   = atoi(vToken[1].c_str());
+////                    trans_rank= atoi(vToken[2].c_str());
+////                    nProp     = atoi(vToken[3].c_str());
+////                }
                 
-                mpFactory->GeneContactMesh(contactID, my_rank, trans_rank);
+                
+                mpFactory->GeneContactMesh(contactID, my_rank, trans_rank, nProp);//nPropが無い場合は、初期値0:MPC
 
                 sLine= getLineSt(ifs);
                 iss.clear();

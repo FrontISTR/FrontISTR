@@ -80,6 +80,10 @@
 #include "FileReaderCommNode_CM2.h"
 
 
+//グループ
+#include "FileReaderElementGroup.h"
+#include "FileReaderElementGroupEntity.h"
+
 namespace FileIO{
 class CFileReaderChunk
 {

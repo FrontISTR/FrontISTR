@@ -8,6 +8,7 @@
 !----
 ! HEC_MW3 construct & destruct
 !----
+integer mw_initialize
 integer mw_initialize_1
 integer mw_initialize_2
 integer mw_finalize
@@ -21,10 +22,14 @@ integer mw_file_write
 !----
 ! linear solver API
 !----
-integer mw_initialize_matrix
-integer mw_initialize_vector
+external mw_gene_linear_algebra
+external mw_select_algebra
 
 integer mw_matrix_add_elem
+integer mw_matrix_add_node
+
+external mw_matrix_clear
+external mw_vector_clear
 
 integer mw_matrix_add_elem_24
 integer mw_matrix_add_elem_60
@@ -41,18 +46,18 @@ integer mw_matirx_add_elem_6
 integer mw_matirx_add_elem_10
 
 integer mw_matrix_set_bc
+integer mw_matrix_rhs_set_bc
 integer mw_rhs_set_bc
 
 integer mw_solve
 
-external mw_store_matrix
-external mw_load_matrix
+
 
 
 !----
 ! MG construct (refine)
 !----
-integereger mw_refine
+integer mw_refine
 integer mw_mg_construct
 
 
@@ -247,12 +252,37 @@ double precision mw_get_bvolume_value
 !--
 ! mpi
 !--
+integer  mw_mpi_int
+integer  mw_mpi_double
+integer  mw_mpi_comm
+
 integer  mw_mpi_sum
 integer  mw_mpi_max
 integer  mw_mpi_min
+
 external mw_allreduce_r
+integer mw_barrier
+integer mw_abort
+integer mw_allgather_r
+integer mw_allgather_i
+integer mw_gather_r
+integer mw_gather_i
+integer mw_scatter_r
+integer mw_scatter_i
+integer mw_get_rank
+integer mw_get_num_of_process
 external mw_send_recv_r2
 external mw_send_recv_r
+
+
+//--
+// Element_Group { after select AssyModel, select Mesh }
+//--
+integer mw_get_num_of_elementgroup
+integer mw_get_num_of_element_id
+integer mw_get_elementgroup_name_length
+integer mw_get_element_id_with_elementgroup
+
 
 !----
 ! logger

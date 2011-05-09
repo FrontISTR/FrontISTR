@@ -47,6 +47,7 @@ public:
     // cntファイルからメッシュのベースネームを取得
     void ReadCntFile();
     string& getMeshFileBaseName(){return moCntReader.getMeshFileBaseName();}
+    
 
     void setPathName(const char* path);
     string& getPathName(){ return msPathName;}

@@ -19,8 +19,21 @@ typedef int MPI_Status;
 typedef int MPI_Datatype;
 typedef int MPI_Op;
 typedef int MPI_Fint;
-#define MPI_DOUBLE 0
+
+// MPI_Datatype
+//
+#define MPI_CHAR 0
+#define MPI_WCHAR 0
+#define MPI_SHORT 0
 #define MPI_INT 0
+#define MPI_LONG 0
+#define MPI_SIGNED_CHAR 0
+#define MPI_UNSIGNED_CHAR 0
+#define MPI_UNSIGNED_SHORT 0
+#define MPI_UNSIGNED 0        //unsigned int
+#define MPI_UNSIGEND_LONG 0
+#define MPI_FLOAT 0
+#define MPI_DOUBLE 0
 #define MPI_SUM 0
 #define MPI_PROD 0
 #define MPI_MAX 0
@@ -42,6 +55,7 @@ private:
     CHecMPI();
 public:
     virtual ~CHecMPI();
+
 
 
 private:
@@ -70,13 +84,14 @@ public:
     int Send(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
     int Recv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status);
 
-
+    int Allgather(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
+                  void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm);
     int Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype,
-                        void* recvbuf, int recvcount, MPI_Datatype recvtype,
-                        int root, MPI_Comm comm);
+               void* recvbuf, int recvcount, MPI_Datatype recvtype,
+               int root, MPI_Comm comm);
     int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
-                         void* recvbuf, int recvcnt, MPI_Datatype recvtype,
-                         int root, MPI_Comm comm);
+                void* recvbuf, int recvcnt, MPI_Datatype recvtype,
+                int root, MPI_Comm comm);
 
 };
 #endif	/* _HEC_MPI_H */

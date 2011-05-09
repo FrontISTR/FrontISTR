@@ -8,7 +8,8 @@
 #ifndef ASSYMATRIX_H_
 #define ASSYMATRIX_H_
 
-#include <vector>
+#include "CommonStd.h"
+#include "TypeDef.h"
 
 namespace pmw
 {
@@ -23,10 +24,15 @@ class CAssyModel;
 class CAssyMatrix
 {
 public:
-	CAssyMatrix(/* const */ CAssyModel *pAssyModel);
+	CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF);//, const vuint& vPartsID);//第二引数：アセンブルするメッシュパーツ指定
 	virtual ~CAssyMatrix();
 
-	int Matrix_Add_Elem(CAssyModel *pAssyModel, int iMesh, int iElem, double *ElemMatrix);
+        int Matrix_Add_Nodal(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double* NodalMatrix);
+	int Matrix_Add_Elem(CAssyModel *pAssyModel, const uint& iMesh, const uint& iElem, double *ElemMatrix);
+        void Matrix_Clear(const uint& iMesh);// Matrix 0 clear
+
+        uint& getDOF(){ return mnDOF;}
+
 	void setValue(int imesh, int inode, int idof, double value);
 	int multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW = 0) const;
 	int multMPC(CAssyVector *pV, CAssyVector *pP) const;
@@ -48,6 +54,7 @@ public:
 
 private:
 	CAssyModel *mpAssyModel;
+        uint mnDOF;//アセンブル方程式に対して、一つのDOF
 
 	std::vector<CMatrixBCRS*> mvMatrix;
 	std::vector<CContactMatrix*> mvContactMatrix;
@@ -56,7 +63,7 @@ private:
 	CSolver *mpSolver;
 
 	CAssyMatrix *mpCoarseMatrix;
-	unsigned int mMGLevel;
+	uint mMGLevel;
 };
 
 }
