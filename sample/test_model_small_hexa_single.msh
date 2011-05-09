@@ -1,0 +1,36 @@
+
+StartRefine
+  1
+EndRefine
+
+StartAssyModel
+  1  0  0
+  0 
+EndAssyModel
+
+
+StartNode 
+ 12   0   11  0  
+   V  0  3    0     0.00000     0.00000      0.00000  
+   V  0  3    1      10.00000     0.00000      0.00000  
+   V  0  3    2     10.0000      10.0000      0.0000  
+   V  0  3    3     0.0000      10.0000      0.00000  
+   V  0  3    4     0.00000     0.00000      10.00000  
+   V  0  3    5      10.00000     0.00000      10.00000  
+   V  0  3   6     10.0000      10.0000      10.0000  
+   V  0  3   7     0.0000      10.0000      10.00000 
+EndNode
+
+StartElement
+ 2   0   2  0
+ Hexa 0   0 1 2 3 4 5 6 7
+EndElement
+
+StartBoundaryNode
+ 0  0  0  0   
+EndBoundaryNode
+
+StartMaterial
+  1 
+	0 S40 2  YoungModule 7.20000e+010  Poisson 0.300000 
+EndMaterial
