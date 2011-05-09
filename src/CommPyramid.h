@@ -1,12 +1,20 @@
-/* 
- * File:   CommPyramid.h
- * Author: ktakeda
- *
- * Created on 2009/09/09, 18:11
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   CommPyramid.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "CommElement.h"
 #include "CommHexa.h"
-
 namespace pmw{
 #ifndef _COMMPYRAMID_H
 #define	_COMMPYRAMID_H
@@ -14,17 +22,10 @@ class CCommPyramid:public CCommElement{
 public:
     CCommPyramid();
     virtual ~CCommPyramid();
-
 public:
-    //debug method
     virtual bool isTypeCoincidence();
-
     virtual uint getShapeType(){ return ElementType::Pyramid;}
     virtual uint getBaseShapeType(){ return BaseElementType::Solid;}
-
-    //virtual void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
-    
 };
 #endif	/* _COMMPYRAMID_H */
 }
-

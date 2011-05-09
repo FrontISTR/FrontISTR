@@ -1,47 +1,45 @@
-//
-//  BoundaryVolume.cpp
-//
-//
-//
-//                          2009.05.18
-//                          2009.05.13
-//                          k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   BoundaryVolume.cxx
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "BoundaryVolume.h"
 using namespace pmw;
-
 CBoundaryVolume::CBoundaryVolume()
 {
     ;
 }
-
 CBoundaryVolume::~CBoundaryVolume()
 {
-//    //debug
-//    cout << "~CBoundaryVolume" << endl;
 }
-
-// 初期化
-// Type別のmvValueの領域確保
-//
 void CBoundaryVolume::initialize(const uint& bndType,const uint& dof)
 {
     mnType = bndType;
-
     switch(mnType){
-        case(BoundaryTypeVolume::Heat)://発熱
+        case(BoundaryTypeVolume::Heat):
             if(dof != 1){
                 Utility::CLogger *pLogger = Utility::CLogger::Instance();
                 pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
             }
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeVolume::Gravity)://重力
+        case(BoundaryTypeVolume::Gravity):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeVolume::Accel)://加速度
+        case(BoundaryTypeVolume::Accel):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeVolume::Centrifugal_Force)://遠心力(点1,点2の座標, 角速度)
+        case(BoundaryTypeVolume::Centrifugal_Force):
             if(dof != 7){
                 Utility::CLogger *pLogger = Utility::CLogger::Instance();
                 pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
@@ -53,5 +51,3 @@ void CBoundaryVolume::initialize(const uint& bndType,const uint& dof)
             break;
     }
 }
-
-

@@ -1,17 +1,23 @@
-/* 
- * File:   NodeConnectNodeTree.h
- * Author: ktakeda
- *
- * Created on 2009/08/11, 19:06
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   NodeConnectNodeTree.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _NODECONNECTNODETREE_H_209a9301_802f_414d_b5c4_c879ec87e1d1
 #define	_NODECONNECTNODETREE_H_209a9301_802f_414d_b5c4_c879ec87e1d1
-
 #include "CommonStd.h"
 #include "TypeDef.h"
-
-#include <iostream>//cout
-
+#include <iostream>
 namespace pmw{
 class CNodeConnectNodeTree{
 private:
@@ -22,9 +28,7 @@ public:
         return &moNodeConnect;
     }
     virtual ~CNodeConnectNodeTree();
-
 private:
-    // Nodeの接続先ノード配列
     vvuint mvHexaConnectNode;
     vvuint mvTetraConnectNode;
     vvuint mvPrismConnectNode;
@@ -32,9 +36,7 @@ private:
     vvuint mvQuadConnectNode;
     vvuint mvTriangleConnectNode;
     vvuint mvBeamConnectNode;
-
 public:
-    // 引数入力された局所番号の,接続先の局所番号列
     vuint& getHexaConnectNode(const uint& localID){ return mvHexaConnectNode[localID];}
     vuint& getTetraConnectNode(const uint& localID){ return mvTetraConnectNode[localID];}
     vuint& getPrismConnectNode(const uint& localID){ return mvPrismConnectNode[localID];}
@@ -45,5 +47,3 @@ public:
 };
 }
 #endif	/* _NODECONNECTNODETREE_H */
-
-

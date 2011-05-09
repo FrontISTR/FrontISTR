@@ -1,12 +1,20 @@
-/* 
- * File:   CommPrism.h
- * Author: ktakeda
- *
- * Created on 2009/09/08, 14:43
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   CommPrism.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "CommElement.h"
 #include "CommHexa.h"
-
 namespace pmw{
 #ifndef _COMMPRISM_H
 #define	_COMMPRISM_H
@@ -14,20 +22,10 @@ class CCommPrism:public CCommElement{
 public:
     CCommPrism();
     virtual ~CCommPrism();
-
 public:
-    //debug method
     virtual bool isTypeCoincidence();
-
     virtual uint getShapeType(){ return ElementType::Prism;}
     virtual uint getBaseShapeType(){ return BaseElementType::Solid;}
-
-    //virtual void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
-    
 };
 #endif	/* _COMMPRISM_H */
 }
-
-
-
-

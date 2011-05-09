@@ -1,20 +1,31 @@
-//
-//
-//                  2008.11.26
-//
-//                  k.Takeda
-#ifndef MATRIX_HH_43EFC09A_1513_4c70_8EEE_5E920635301B
-#define MATRIX_HH_43EFC09A_1513_4c70_8EEE_5E920635301B
-
-#include "CommonStd.h"
-
-namespace pmw{
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   Matrix.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#ifndef MATRIX_H_
+#define MATRIX_H_
+namespace pmw
+{
+class CVector;
 class CMatrix
 {
 public:
-    CMatrix(void);
-    virtual ~CMatrix(void);
+	CMatrix();
+	virtual ~CMatrix();
+	virtual void multVector(CVector *pV, CVector *pP) const = 0;
+	void residual(CVector *pV, const CVector *pF, CVector *pR) const;
+private:
 };
 }
-
-#endif
+#endif /* MATRIX_H_ */

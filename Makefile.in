@@ -1,0 +1,71 @@
+#==========================================================
+#
+# Software Name :HEC middleware Ver. 3.0beta
+#
+#   Makelfile for MW3
+#
+#                     Written by T.Takeda,    2010/06/01
+#                                K.Goto,      2010/01/12
+#                                K.Matsubara, 2010/06/01
+#
+#   Contact address : IIS, The University of Tokyo CISS
+#
+#==========================================================
+
+
+#
+# Where is my home?
+#
+MW3_HOME= /home/user1/MW3Linux
+MPICH_HOME= /home/user1/mpich-1.2.7p1
+
+
+#
+# Which compiler to use     
+#
+CPC= $(MPICH_HOME)/bin/mpicxx
+
+
+#
+# What options to be used by the compiler
+#
+COPT= -DHAVE_MPI 
+#COPT= -DHAVE_MPI -DADVANCESOFT_DEBUG 
+INC_DIR= $(MW3_HOME)/src
+
+
+#
+# What options to be used by the loader
+#
+LOPT= 
+LIB= $(MW3_HOME)/lib/libmw3.a
+LLIB= -L$(MW3_HOME)/lib -lmw3
+
+
+#
+# What archiving to use
+#
+AR = ar rv
+
+
+#
+# What to use for indexing the archive                                          
+#
+RANLIB = ar -ts
+#RANLIB = ranlib
+#RANLIB =
+
+
+#
+# Which mpirun to use
+#
+RUN= $(MPICH_HOME)/bin/mpirun
+EXE= $(MW3_HOME)/test/a.out
+
+#
+# How to compile c++ codes
+#
+.SUFFIXES: .cxx .o
+.cxx.o:
+	$(CPC) -c $(COPT) -I$(INC_DIR) $< -o $@
+

@@ -1,14 +1,20 @@
-/* 
- * File:   BoundaryType.h
- * Author: ktakeda
- *
- * Modify     2009/05/25
- * Created on 2009/05/14, 14:13
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   BoundaryType.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _BOUNDARYTYPE_H_f6a34053_61db_4c0c_8aeb_0a964eb6ee0f
 #define	_BOUNDARYTYPE_H_f6a34053_61db_4c0c_8aeb_0a964eb6ee0f
-
 namespace pmw{
 struct BoundaryTypeNode{
     enum {
@@ -32,11 +38,10 @@ struct BoundaryTypeVolume{
     enum {
         Accel,
         Gravity,
-        Centrifugal_Force,//遠心力
+        Centrifugal_Force,
         Heat
     };
 };
-
 struct BoundaryTypeFlow{
     enum {
         Velo_X,
@@ -51,4 +56,3 @@ struct BoundaryTypeFlow{
 };
 }
 #endif	/* _BOUNDARYTYPE_H */
-

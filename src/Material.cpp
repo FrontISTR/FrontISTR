@@ -1,34 +1,30 @@
-//
-//  Material.cpp
-//
-//  材質データ
-//
-//                          2009.05.18
-//                          2009.05.18
-//                          k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   Material.cxx
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "Material.h"
 using namespace pmw;
-
 #include <iostream>
-//
-//
 CMaterial::CMaterial()
 {
     ;
 }
-
 CMaterial::~CMaterial()
 {
-    //debug
     cout << "~CMaterial" << endl;
 }
-
-// 材質データのセット
-// --
 void CMaterial::setValue(const uint& prop_Type, const double& value)
 {
     mmValue[prop_Type]= value;
 }
-
-
-

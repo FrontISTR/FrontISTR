@@ -1,13 +1,20 @@
-/* 
- * File:   ElementProperty.h
- * Author: ktakeda
- *
- * Created on 2009/07/16, 12:40
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   ElementProperty.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _ELEMENTPROPERTY_H_2c62c37d_45fa_4831_adca_c5afc1cd61ae
 #define	_ELEMENTPROPERTY_H_2c62c37d_45fa_4831_adca_c5afc1cd61ae
-
 namespace pmw{
 struct NumberOfVertex{
     static uint Hexa(){return 8;}    
@@ -37,6 +44,4 @@ struct NumberOfFace{
     static uint Beam(){return 0;}
 };
 }
-
 #endif	/* _ELEMENTPROPERTY_H */
-

@@ -1,54 +1,51 @@
-//
-//  BoundaryNode.cpp
-//
-//  境界Node
-//
-//                          2009.05.13
-//                          2009.05.13
-//                          k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   BoundaryNode.cxx
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "BoundaryNode.h"
 using namespace pmw;
-
 CBoundaryNode::CBoundaryNode()
 {
     ;
 }
-
 CBoundaryNode::~CBoundaryNode()
 {
-//    //debug
-//    cout << "~CBoundaryNode" << endl;
 }
-
-
-// 初期化
-// Type別のmvValueの領域確保
-//
 void CBoundaryNode::initialize(const uint& bndType,const uint& dof)
 {
     mnType = bndType;
-
     switch(mnType){
-        case(BoundaryTypeNode::Disp)://変位
+        case(BoundaryTypeNode::Disp):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeNode::Accel)://加速度
+        case(BoundaryTypeNode::Accel):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeNode::Load)://荷重
+        case(BoundaryTypeNode::Load):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeNode::Temp)://温度
+        case(BoundaryTypeNode::Temp):
             if(dof != 1){
                 Utility::CLogger *pLogger = Utility::CLogger::Instance();
                 pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
             }
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeNode::Velo)://速度
+        case(BoundaryTypeNode::Velo):
             mvValue.resize(dof);
             break;
-        case(BoundaryTypeNode::Thermal_Flux)://集中熱流束
+        case(BoundaryTypeNode::Thermal_Flux):
             if(dof != 1){
                 Utility::CLogger *pLogger = Utility::CLogger::Instance();
                 pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
@@ -59,6 +56,3 @@ void CBoundaryNode::initialize(const uint& bndType,const uint& dof)
             break;
     }
 }
-
-
-

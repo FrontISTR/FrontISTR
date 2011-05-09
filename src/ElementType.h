@@ -1,69 +1,87 @@
-//
-//  Element Type
-//
-//				2009.05.11
-//				2008.12.04
-//				k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   ElementType.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
 #define ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
-
-
-//#define HEXA_TYPE     0
-//#define PRISM_TYPE    1
-//#define TETRA_TYPE    2
-//#define QUAD_TYPE     3
-//#define TRIANGLE_TYPE 4
-//#define BEAM_TYPE     5
-//#define BAR_TYPE      6
-//#define ROD_TYPE      7
-//#define MASS_TYPE     8
-
 namespace pmw{
-// Element
 struct ElementType{
     enum{
-        Polyhedral,
+        Polygon,
         Hexa,
         Hexa2,
+        HexaNic,
         Prism,
         Prism2,
         Pyramid,
         Pyramid2,
         Tetra,
         Tetra2,
-        Polygon,
         Quad,
         Quad2,
         Triangle,
         Triangle2,
         Beam,
         Beam2,
-        Bar,
-        Rod,
-        Mass,
-        Point//SkinFaceの型として利用
+        Point,
+        Limit
     };
 };
-
-// Property
+struct ShapeType{
+    enum{
+        Hexa81,
+        Hexa82,
+        Hexa201,
+        Hexa202,
+        Hexa203,
+        HexaNic111,
+        HexaNic118,
+        HexaNic1127,
+        Tetra41,
+        Tetra101,
+        Tetra104,
+        Tetra1015,
+        Prism62,
+        Prism156,
+        Prism159,
+        Prism1518,
+        Quad41,
+        Quad84,
+        Quad89,
+        Triangle31,
+        Triangle63,
+        Line21,
+        Line32,
+        Limit
+    };
+};
 struct ElementPropType{
     enum{
         Face,
         Edge,
-        Node
+        Node,
+        Limit
     };
 };
-
-// Material
 struct MaterialElement{
     enum{
         HeatTransfer,
         Spring,
-        Damper
+        Damper,
+        Limit
     };
 };
-
-// Base Type
 struct BaseElementType{
     enum{
         Solid,
@@ -71,10 +89,9 @@ struct BaseElementType{
         Beam,
         Point,
         Cell,
-        MaterialElement
+        MaterialElement,
+        Limit
     };
 };
 }
-#endif // ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
-
-
+#endif 

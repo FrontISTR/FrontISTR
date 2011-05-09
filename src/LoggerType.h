@@ -1,17 +1,21 @@
-/* 
- * File:   LoggerType.h
- * Author: ktakeda
- *
- * Modify     2009/05/08
- * Created on 2009/05/01, 18:04
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC middleware Ver. 3.0beta
+|
+|   LoggerType.h
+|
+|                     Written by T.Takeda,    2010/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _LOGGERTYPE_H_ed5a0f37_3221_4434_8701_9ee348e993c4
 #define	_LOGGERTYPE_H_ed5a0f37_3221_4434_8701_9ee348e993c4
-
 namespace Utility{
-// Logger Mode #
-//
 struct LoggerMode{
 enum{
     MWDebug,
@@ -22,9 +26,6 @@ enum{
     Invalid
 };
 };
-
-// Logger Output Device #
-//
 struct LoggerDevice{
 enum{
     Disk,
@@ -33,4 +34,3 @@ enum{
 };
 }
 #endif	/* _LOGGERTYPE_H */
-
