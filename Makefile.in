@@ -16,8 +16,8 @@
 #
 # Where is my home?
 #
-MW3_HOME= /home/user1/MW3Linux
-MPICH_HOME= /home/user1/mpich-1.2.7p1
+MW3_HOME= /home/okudalab/sato/FISTR/MW3
+MPICH_HOME= /usr/local/mpich-1.2.7p1-intel64-v11.1.064
 
 
 #
@@ -69,3 +69,5 @@ EXE= $(MW3_HOME)/test/a.out
 .cxx.o:
 	$(CPC) -c $(COPT) -I$(INC_DIR) $< -o $@
 
+.cpp.o:
+	$(CPC) -c $(COPT) -I$(INC_DIR) $< -o $@
