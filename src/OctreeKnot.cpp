@@ -42,7 +42,7 @@ void COctreeKnot::createChildKnot()
     inY=(maxY + minY)*0.5;
     inZ=(maxZ + minZ)*0.5;
     /*
-     *   }•ª‚©‚êæ‚Ì”ÍˆÍ
+     *   æåˆ†ã‹ã‚Œå…ˆã®ç¯„å›²
      *
      *       7.........6
      *     .         . |

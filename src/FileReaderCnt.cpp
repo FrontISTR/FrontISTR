@@ -32,7 +32,7 @@ bool CFileReaderCnt::Read(ifstream& ifs, string& sLine)
             if(sLine==FileBlockName::EndMeshFileName()) break;
             istringstream iss(sLine.c_str());
             iss >> msMeshFileBaseName;
-            mpLogger->Info(Utility::LoggerMode::Debug,"ƒx[ƒXƒtƒ@ƒCƒ‹–¼=> ",msMeshFileBaseName);
+            mpLogger->Info(Utility::LoggerMode::Debug,"ãƒ™ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«å=> ",msMeshFileBaseName);
         };
         return true;
     }else{

@@ -1297,7 +1297,7 @@ void CMeshFactory::GeneProgCommElem(CCommElement* pCommElem, vector<CCommElement
                 vProgCommElem.push_back(pProgCommElem);
             };
             dividCommElem(pCommElem, vProgCommElem);
-			mpLogger->Info(Utility::LoggerMode::MWDebug,"CommElem(Hexa)‚Ì•ªŠ„");
+			mpLogger->Info(Utility::LoggerMode::MWDebug,"CommElem(Hexa)ã®åˆ†å‰²");
             break;
         case(ElementType::Tetra):
             vProgCommElem.reserve(4);

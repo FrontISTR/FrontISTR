@@ -103,13 +103,13 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
     pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
     MPI_Status stat;
     MPI_Request request;
-    ofs << " -- Coefo—Íƒ`ƒFƒbƒN -- " << endl;
+    ofs << " -- Coefå‡ºåŠ›ãƒã‚§ãƒƒã‚¯ -- " << endl;
     for(icont=0; icont < numOfContact; icont++){
         pConMesh= pAssy->getContactMesh(icont);
         numOfSPoint= pConMesh->getNumOfSlavePoint();
         for(islave=0; islave< numOfSPoint; islave++){
             pSlaveNode = pConMesh->getSlaveConNode(islave);
-            ofs  << " ƒXƒŒ[ƒu“_ ConID= " << pSlaveNode->getID() ;
+            ofs  << " ã‚¹ãƒ¬ãƒ¼ãƒ–ç‚¹ ConID= " << pSlaveNode->getID() ;
             int my_rank;
             pMPI->Comm_rank(MPI_COMM_WORLD, &my_rank);
             if(pSlaveNode->getRank()== my_rank){
@@ -120,7 +120,7 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
             if(pSlaveNode->have_MasterFaceID(mgLevel)){
                 masterFaceID= pSlaveNode->getMasterFaceID(mgLevel);
                 pMasterFace= pConMesh->getMasterFace_ID(masterFaceID);
-                ofs << " ƒ}ƒXƒ^[–Ê ID= " << masterFaceID << endl;
+                ofs << " ãƒžã‚¹ã‚¿ãƒ¼é¢ ID= " << masterFaceID << endl;
                 int ivert, numOfVert;
                 numOfVert= (int)pMasterFace->getNumOfNode();
                 for(ivert=0; ivert< numOfVert; ivert++){
@@ -147,6 +147,6 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
 				}
             }
         };
-        ofs << " -- Coefo—Í  end  -- " << endl;
+        ofs << " -- Coefå‡ºåŠ›  end  -- " << endl;
     };
 }
