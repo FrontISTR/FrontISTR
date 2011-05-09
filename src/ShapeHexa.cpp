@@ -577,21 +577,19 @@ void CShapeHexa::Calc_dNdx8(const uint& numOfInteg, CElement *pElement)
 void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, CElement *pElement)
 //void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, vector<CNode*>& vVertNode, vector<CNode*>& vEdgeNode)
 {
-    // Elementの関数:辺ノードの取得
-    //  CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
-
     vector<CNode*> vNode= pElement->getNode();
-
-    CNode *pNode;
-    uint ishape,iedge;
     uint numOfShape(20);
-    // 要素の辺ノードをFrontISTR順に並び替えて,vNodeに追加
-    //
-    for(ishape=8; ishape< numOfShape; ishape++){
-        iedge= mpISTR2Edge->HexaEdgeNum(ishape);
-        pNode= pElement->getEdgeInterNode(iedge);
-        vNode.push_back(pNode);
-    };
+
+
+//    CNode *pNode;
+//    uint ishape,iedge;
+//    // 要素の辺ノードをFrontISTR順に並び替えて,vNodeに追加
+//    //
+//    for(ishape=8; ishape< numOfShape; ishape++){
+//        iedge= mpISTR2Edge->HexaEdgeNum(ishape);
+//        pNode= pElement->getEdgeInterNode(iedge);
+//        vNode.push_back(pNode);
+//    };
 
 
     uint dof(3);//3次元

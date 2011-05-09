@@ -196,6 +196,9 @@ public:
     uint  getElementSize(){ return mpMesh->getElementSize();}
     uint  getNodeSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getNodeSize();}
     uint  getElementSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getElementSize();}
+    // ID
+    uint& getNodeID(const uint& index);
+    uint& getElementID(const uint& index);
 
 
     //----
@@ -225,7 +228,29 @@ public:
     uint elemtype_triangle2();
     uint elemtype_line();
     uint elemtype_line2();
-
+    //----
+    // FrontISTR 要素タイプ
+    //----
+    uint fistr_elemtype_hexa();
+    uint fistr_elemtype_hexa2();
+    uint fistr_elemtype_tetra();
+    uint fistr_elemtype_tetra2();
+    uint fistr_elemtype_prism();
+    uint fistr_elemtype_prism2();
+    uint fistr_elemtype_quad();
+    uint fistr_elemtype_quad2();
+    uint fistr_elemtype_triangle();
+    uint fistr_elemtype_triangle2();
+    uint fistr_elemtype_line();
+    uint fistr_elemtype_line2();
+    //----
+    // FrontISTR 要素タイプ　=> MW3 要素タイプ 変換
+    //----
+    uint fistr_elemtype_to_mw3_elemtype(const uint& fistr_elemtype);
+    //----
+    // MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+    //----
+    uint mw3_elemtype_to_fistr_elemtype(const uint& mw3_elemtype);
 
 
     // --
@@ -384,6 +409,17 @@ public:
     double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof);
     uint GetNumOfBVolume(const uint& ibmesh);
     double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof);
+    //--
+    // Boundaryの名称
+    //--
+    uint GetBNodeMesh_NameLength(const uint& ibmesh);
+    string& GetBNodeMesh_Name(const uint& ibmesh);
+    uint GetBFaceMesh_NameLength(const uint& ibmesh);
+    string& GetBFaceMesh_Name(const uint& ibmesh);
+    uint GetBVolumeMesh_NameLength(const uint& ibmesh);
+    string& GetBVolumeMesh_Name(const uint& ibmesh);
+    uint GetBEdgeMesh_NameLength(const uint& ibmesh);
+    string& GetBEdgeMesh_Name(const uint& ibmesh);
 
 
     //--

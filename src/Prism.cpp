@@ -1,4 +1,6 @@
 
+#include <vector>
+
 #include "EdgeFaceTree.h"
 
 //
@@ -13,16 +15,30 @@
 using namespace pmw;
 
 uint CPrism::mnElemType = ElementType::Prism;
+uint CPrism::mnElemOrder = 1;
 uint CPrism::mNumOfFace = 5;
 uint CPrism::mNumOfEdge = 9;
 uint CPrism::mNumOfNode = 6;
+uint CPrism::mNumOfVert = 6;
 
 // コンストラクター&
 //          デストラクター
 //
 CPrism::CPrism()
 {
+    ;
+}
+
+CPrism::~CPrism()
+{
+//    //debug
+//    cout << "~CPrism" << endl;
+}
+
+void CPrism::initialize()
+{
     mvNode.resize(mNumOfNode);
+
     mvvEdgeElement.resize(mNumOfEdge);
 
     mvEdgeInterNode.resize(mNumOfEdge);
@@ -59,15 +75,13 @@ CPrism::CPrism()
     };
 }
 
-CPrism::~CPrism()
-{
-//    //debug
-//    cout << "~CPrism" << endl;
-}
-
 const uint& CPrism::getType()
 {
     return mnElemType;
+}
+const uint& CPrism::getOrder()
+{
+    return mnElemOrder;
 }
 
 // method

@@ -20,6 +20,8 @@ protected:
     uint mnID;     //境界ID(BoundaryID)
     uint mnBndType;//境界種類(Dirichlet | Neumann) :=> BNodeへの配分が異なる.
 
+    string msName; //境界名称
+
     uint mMGLevel;   //自身の階層Level
     uint mMaxMGLevel;//最大Level(BNode境界条件の領域確保に使用)
 
@@ -33,6 +35,10 @@ public:
     //境界ID(BoundaryID)
     void setID(const uint& id){ mnID= id;}
     uint& getID(){ return mnID;}
+
+    //境界名称
+    void setName(const string& name){ msName = name;}
+    string& getName(){ return msName;}
 
     //DOFの追加・代入・配列領域
     void addDOF(const uint& dof);

@@ -8,10 +8,11 @@
 using namespace pmw;
 
 uint CHexa::mnElemType = ElementType::Hexa;
+uint CHexa::mnElemOrder = ElementOrder::First;
 uint CHexa::mNumOfFace =  6;
 uint CHexa::mNumOfEdge = 12;
 uint CHexa::mNumOfNode =  8;
-
+uint CHexa::mNumOfVert =  8;
 
 
 #include "Logger.h"
@@ -19,7 +20,12 @@ uint CHexa::mNumOfNode =  8;
 //
 CHexa::CHexa(void):CSolidBase()
 {
+    ;
+}
+void CHexa::initialize()
+{
     mvNode.resize(mNumOfNode);
+    
     mvvEdgeElement.resize(mNumOfEdge);
     mvEdgeInterNode.resize(mNumOfEdge);
 
@@ -57,42 +63,21 @@ CHexa::CHexa(void):CSolidBase()
     };
 }
 
+
 CHexa::~CHexa(void)
 {
 //    //debug
 //    cout << "~CHexa" << endl;
 }
 
-//// each reserve for EdgeElement
-////
-//void CHexa::reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem)
-//{
-//    Utility::CLogger *pLogger = Utility::CLogger::Instance();
-//
-//    if(edgeIndex >= mNumOfEdge){
-//        pLogger->Info(Utility::LoggerMode::Error, "invalid EdgeIndex @CHexa::reserveEdgeElement");
-//        return;
-//    }
-//
-//    mvvEdgeElement[edgeIndex].reserve(numOfElem);
-//}
-//
-//// set to EdgeElement
-////
-//void CHexa::setEdgeElement(const uint& edgeIndex, CElement* pElem)
-//{
-//    Utility::CLogger *pLogger = Utility::CLogger::Instance();
-//
-//    if(edgeIndex >= mNumOfEdge){
-//        pLogger->Info(Utility::LoggerMode::Error, "invalid EdgeIndex @CHexa::setEdgeElement");
-//        return;
-//    }
-//
-//    mvvEdgeElement[edgeIndex].push_back(pElem);
-//}
+
 const uint& CHexa::getType()
 {
     return mnElemType;
+}
+const uint& CHexa::getOrder()
+{
+    return mnElemOrder;
 }
 
 bool CHexa::IndexCheck(const uint& propType, const uint& index, string& method_name)
@@ -316,22 +301,6 @@ uint& CHexa::getLocalFaceNum(const vuint& vLocalNodeNum)
 }
 
 
-
-//// 局所面番号に対応する、ノード配列を提供.
-////
-//vector<CNode*>& CHexa::getFaceNode(const uint& faceIndex)
-//{
-//    return mvvFaceNode[faceIndex];
-//}
-
-//// 局所面番号に対応する、ノード・インデックス配列を提供.
-////
-//vuint& CHexa::getFaceNodeID(const uint& faceIndex)
-//{
-//    vuint vNodeIndex;
-//
-//    return vNodeIndex;
-//}
 
 // 2 Edge -> Face Index( 2本の辺から、面番号を取得 )
 // 

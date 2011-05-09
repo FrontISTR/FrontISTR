@@ -19,9 +19,11 @@ public:
 
 private:
     static uint mnElemType;
+    static uint mnElemOrder;
     static uint mNumOfFace;
     static uint mNumOfEdge;
     static uint mNumOfNode;
+    static uint mNumOfVert;
 
     ////API 形状関数・導関数
     //pmw::CShapePrism    *mpShapePrism;
@@ -32,11 +34,16 @@ protected:
     //virtual uint& getLocalFaceNum(CNode* pNode0, CNode* pNode1, CNode* pNode2);
 
 public:
+    virtual void initialize();
+
+public:
     // Property
     virtual const uint& getType();
+    virtual const uint& getOrder();
     virtual const uint& getNumOfFace(){ return mNumOfFace;}
     virtual const uint& getNumOfEdge(){ return mNumOfEdge;}
     virtual const uint& getNumOfNode(){ return mNumOfNode;}
+    virtual const uint& getNumOfVert(){ return mNumOfVert;}
 
     // EdgeNode(Pair Node)
     // --

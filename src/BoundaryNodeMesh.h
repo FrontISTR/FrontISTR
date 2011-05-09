@@ -30,6 +30,8 @@ protected:
     uint mnID;  //BoundaryID
     uint mnBndType;//Dirichlet | Neumann
 
+    string msName; //境界名称
+
     // *節点への境界条件は,全ての階層で同じ*
     // *全てのMGLevelで同一のBoundaryNodeMeshを使用*
 
@@ -45,6 +47,10 @@ public:
     // BoundaryID
     void setID(const uint& boundID){ mnID= boundID;}
     uint& getID(){ return mnID;}
+
+    //境界名称
+    void setName(const string& name){ msName = name;}
+    string& getName(){ return msName;}
 
 
     uint getNumOfBNode(){ return mvBNode.size();}

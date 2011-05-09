@@ -161,15 +161,15 @@ public:
     // BoundaryMesh
     // --------
     void reserveBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id, const uint& num_of_bnd);
-    void GeneBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type);
+    void GeneBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name);
     void reserveBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id, const uint& num_of_bnd);
-    void GeneBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+    void GeneBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                               const uint& numOfDOF, const vuint& vDOF);
     void reserveBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_id, const uint& num_of_bnd);
-    void GeneBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+    void GeneBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                                 const uint& numOfDOF, const vuint& vDOF);
     void reserveBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id, const uint& num_of_bnd);
-    void GeneBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+    void GeneBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                               const uint& numOfDOF, const vuint& vDOF);
     uint getNumOfBounaryNodeMesh(const uint& mgLevel, const uint& mesh_id);
     uint getNumOfBounaryFaceMesh(const uint& mgLevel, const uint& mesh_id);
@@ -279,14 +279,16 @@ protected:
     void setProgHexaMPCMaster(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l);
     void setProgHexaMPCSlave(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l);
 
-    // CommMesh2(節点界面)の属性をprogElemにセット :Hexa専用
+    // 通信界面(要素分割:節点共有型)
+    //
+    // CommMesh2(節点-通信界面)の属性をprogElemにセット :Hexa専用
     void setProgHexaCommMesh2Entity(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l);
 public:
     void refineCommMesh2();
     void GeneCommMesh2(const uint& mgLevel, const uint& mesh_id, const uint& comID, const uint& numOfFace, const uint& numOfCommNode,
             const uint& myRank, const uint& nTransmitRank);
     void GeneCommFace(const uint& mgLevel, const uint& commeshID, const uint& face_id,
-            const uint& mesh_id,const uint elem_id, const uint& elem_ent_num, const vuint& vCommNodeID);
+            const uint& mesh_id,const uint elem_id, const uint& elem_ent_num, const uint& elem_type, const vuint& vCommNodeID);
     void GeneCommNodeCM2(const uint& mgLevel, const uint& mesh_id, const uint& node_id, const uint& commeshID, const uint& comm_node_id, const vdouble& vCoord);//CommMesh2用途
 
 

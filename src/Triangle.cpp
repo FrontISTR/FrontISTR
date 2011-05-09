@@ -1,4 +1,6 @@
 
+#include <vector>
+
 #include "FaceTree.h"
 
 //
@@ -10,14 +12,28 @@
 using namespace pmw;
 
 uint CTriangle::mnElemType = ElementType::Triangle;
+uint CTriangle::mnElemOrder = 1;
 uint CTriangle::mNumOfFace = 1;
 uint CTriangle::mNumOfEdge = 3;
 uint CTriangle::mNumOfNode = 3;
+uint CTriangle::mNumOfVert = 3;
 //
 //
 CTriangle::CTriangle()
 {
+    ;
+}
+
+CTriangle::~CTriangle()
+{
+//    //debug
+//    cout << "~CTriangle" << endl;
+}
+
+void CTriangle::initialize()
+{
     mvNode.resize(mNumOfNode);
+
     mvvEdgeElement.resize(mNumOfEdge);
 
     mvEdgeInterNode.resize(mNumOfEdge);
@@ -55,20 +71,15 @@ CTriangle::CTriangle()
     };
 }
 
-//
-//
-CTriangle::~CTriangle()
-{
-//    //debug
-//    cout << "~CTriangle" << endl;
-}
-
 
 const uint& CTriangle::getType()
 {
     return mnElemType;
 }
-
+const uint& CTriangle::getOrder()
+{
+    return mnElemOrder;
+}
 
 
 bool CTriangle::IndexCheck(const uint& propType, const uint& index, string& method_name)

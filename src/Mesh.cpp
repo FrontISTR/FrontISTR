@@ -311,11 +311,13 @@ CAggregateNode* CMesh::getAggNodeIX(const uint& inode)
     return mvAggNode[inode];
 }
 
+//
 // AggregateElement,AggregateNode のセットアップ
-// ---
-void CMesh::setupAggregate()
+//  :nLevelは、2次要素の初期(Level=0)処理のために使用
+// 
+void CMesh::setupAggregate(const uint& nLevel)
 {
-    CElement *pElem;   CNode *pNode;
+    CElement *pElem; CNode *pNode;
     uint ielem, local_id, inode;
 
     mNumOfNode= mvNode.size();
@@ -324,29 +326,47 @@ void CMesh::setupAggregate()
 
     // 第2段 以降のprolongationのときに,
     //  pNode(Vertex)のElemIndexに同じIDが入らないようにクリア.
+    //
     for(inode=0; inode< mNumOfNode; inode++){
         pNode= mvNode[inode];
 
         pNode->clearAggElemID();
         pNode->clearNeibElemVert();
     };
-    
-    // Node(Vertex)が所属する、要素のID番号をセット(in Node)
+
+
+    // Node(Vertex)が所属する、要素のID番号をセット(in Node) : 2次要素の辺の要素集合については、0段以外は集めない.
     //     (複数の要素に所属している)
     //    
     uint numOfLocalNode; uint elemID;
     for(ielem=0; ielem< mNumOfElement; ielem++){
         pElem = mvElement[ielem];
-        numOfLocalNode= pElem->getNumOfNode();
 
-        elemID = pElem->getID();
+        if(nLevel==0 && pElem->getOrder()==ElementOrder::Second){
+            // 2次要素( mgLevel == 0 )
+            numOfLocalNode= pElem->getNumOfNode();// <== 辺ノードを含めた要素ノード数
 
-        for(local_id=0; local_id< numOfLocalNode;local_id++){
-            pNode = pElem->getNode(local_id);
+            elemID = pElem->getID();
 
-            pNode->setAggElemID(elemID);      //Node自身に要素ID(AggElementID)をセット
-            pNode->setNeibElemVert(elemID,local_id);//Node自身に接続先の頂点番号をセット <= CommMeshのIndex管理で使用
-        };
+            for(local_id=0; local_id < numOfLocalNode; local_id++){
+                pNode = pElem->getNode(local_id);
+
+                pNode->setAggElemID(elemID);
+                pNode->setNeibElemVert(elemID, local_id);
+            };
+        }else{
+            // 1次要素 .or. 2次要素( mgLevel >= 1 )
+            numOfLocalNode= pElem->getNumOfVert();// <== 頂点数  2010.11.23
+
+            elemID = pElem->getID();
+
+            for(local_id=0; local_id< numOfLocalNode;local_id++){
+                pNode = pElem->getNode(local_id);
+
+                pNode->setAggElemID(elemID);      //Node自身に要素ID(AggElementID)をセット
+                pNode->setNeibElemVert(elemID,local_id);//Node自身に接続先の頂点番号をセット <= CommMeshのIndex管理で使用
+            };
+        }
     };
 
 
@@ -354,14 +374,13 @@ void CMesh::setupAggregate()
         CAggregateElement *pAggElem;
         uint iagg_elem, numOfAggElem;
         //
-        // Nodeにセットされた要素のIDを基に,AggregateElement(in Mesh)をセット
+        // Nodeにセットされた要素のIDを基に,AggregateElement(in Mesh)をセット: 2次要素の辺の要素集合については、setupEdgeElement()で集める.
         //
         //for(inode=0; inode< mvNode.size(); inode++){ // △09.08.11にnumOfNodeに変更
         for(inode=0; inode< mNumOfNode; inode++){
             pNode = mvNode[inode];
             numOfAggElem = pNode->getNumOfAggElem();
-
-            //pAggElem = mvAggElement[pNode->getID()];/////////// NodeIDに対して,AggElemをセット '09.09.30
+            
             pAggElem = mvAggElement[inode];// Node Indexに対して,AggElemをセット '10.10.07
 
             pAggElem->reserve(numOfAggElem);
@@ -386,8 +405,7 @@ void CMesh::setupAggregate()
         for(inode=0; inode< mNumOfNode; inode++){
             pNode= mvNode[inode];
             numOfAggElem= pNode->getNumOfAggElem();
-
-            //pAggNode = mvAggNode[pNode->getID()];///////////// NodeIDに対して,AggNodeをセット
+            
             pAggNode = mvAggNode[inode];// Node Indexに対して,AggNodeをセット '10.10.07
 
             pAggNode->reserveNode(numOfAggElem);
@@ -442,10 +460,6 @@ void CMesh::presetProgMesh(CMesh* pProgMesh)
                 progNumOfElem += 5;//増加数==5, 分割数==6
                 //numOfPrism++;
                 break;
-//            case(ElementType::Pyramid):case(ElementType::Pyramid2):
-//                progNumOfElem += 7;//増加数==7, 分割数==8
-//                //numOfPyramid++;
-//                break;
             case(ElementType::Quad):case(ElementType::Quad2):
                 progNumOfElem += 3;//増加数==3, 分割数==4
                 //numOfQuad++;
@@ -460,16 +474,8 @@ void CMesh::presetProgMesh(CMesh* pProgMesh)
                 break;
         }
     };
-////    // 増加ノード予測(大雑把) -> 見直しのこと.
-////    progNumOfNode += numOfHexa*7;//Hexa 辺ノード(3倍),面ノード(3倍),体ノード(1倍)
-////    progNumOfNode += numOfTetra*4;//Tetra 辺ノード(1倍),面ノード(2倍),体ノード(1倍)
-////    progNumOfNode += numOfPrism*5.5;//Prism 辺ノード(2倍),面ノード(2.5倍),体ノード(1倍)
-////    progNumOfNode += numOfPyramid*4;//Pyramid 辺ノード((2/3)倍),面ノード(2.5倍),体ノード(1倍)== (25/6) ~= 4
-////    progNumOfNode += numOfQuad*3;//Quad 辺ノード(2倍),面ノード(1倍),体ノード(0倍)
-////    progNumOfNode += numOfTriangle*2.5;//Triangle 辺ノード(1.5倍),面ノード(1倍),体ノード(0倍)
-////    progNumOfNode += numOfBeam;//Beam 辺ノード(1倍),面ノード(0倍),体ノード(0倍)
 
-    // 増加ノード予測(更に大雑把) => 2*2*2=8
+    // 増加ノード予測(大雑把) => 2*2*2=8
     progNumOfNode *= 8;
 
     pProgMesh->reserveNode(progNumOfNode);   //暫定的なノード数である.
@@ -507,7 +513,9 @@ void CMesh::presetProgMesh(CMesh* pProgMesh)
 // 各要素の辺に接する要素集合の集計(要素の自分自身のCElement*も集合に含まれる)=> 各要素に辺要素集合をセット
 //                && prolongation中間ノードの生成(現LevelのMeshでのノード数に影響なし)
 //
-void CMesh::setupEdgeElement(CMesh *pProgMesh)
+// nLevel:2次要素の場合のファーストステップ判定用
+//
+void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
 {
     // 節点の要素集合は取得済みとする(mvAggregateElement)
     //
@@ -519,7 +527,6 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh)
     //
     CElement *pOtherElem;
     vector<CElement*> vEdgeElem;//一つの要素の辺の要素集合
-    ////vector<uint> vEdgeElemIndex;//一つの要素の辺の要素Index集合
     uint nOtherEdge;// elem loop外の要素の辺(Edge)index番号
 
     //vint pairIndex;  pairIndex.resize(2);
@@ -545,95 +552,130 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh)
         pElem = mvElement[ielem];
         numOfEdge = pElem->getNumOfEdge();
         
-        // 辺 ループ
-        for(iedge=0; iedge< numOfEdge; iedge++){
-            
-            edgeNode = pElem->getPairNode(iedge);
-            pNode0= edgeNode.first;  pNode1= edgeNode.second;
-            
-            // 同一のEdgeを処理することを回避
-            if(!pElem->isEdgeElem(pNode0,pNode1)){
-                //pElem->getPairNode(pairIndex,iedge);
-                uint iagg,jagg, elemIndex0, elemIndex1, elemid0, elemid1;
-                uint numOfAggElem0=pNode0->getNumOfAggElem();// ノードの要素集合
-                uint numOfAggElem1=pNode1->getNumOfAggElem();// ノードの要素集合
+        // 辺ノードを生成してよいか.
+        //
+        bool bFlag=false;
+        if(pElem->getOrder()==ElementOrder::Second && nLevel > 0 ) bFlag=true;
+        if(pElem->getOrder()==ElementOrder::First)  bFlag=true;
 
-                pElem->reserveEdgeElement(iedge,numOfAggElem0);// ノードの要素集合の個数を越えることはないので、ノード要素集合数で確保
+        // 辺ノードの生成
+        if(bFlag){
+            // 辺 ループ
+            for(iedge=0; iedge< numOfEdge; iedge++){
+
+                edgeNode = pElem->getPairNode(iedge);
+                pNode0= edgeNode.first;  pNode1= edgeNode.second;
+
+                // 同一のEdgeを処理することを回避
+                if(!pElem->isEdgeElem(pNode0,pNode1)){
+                    //pElem->getPairNode(pairIndex,iedge);
+                    uint iagg,jagg, elemIndex0, elemIndex1, elemid0, elemid1;
+                    uint numOfAggElem0=pNode0->getNumOfAggElem();// ノードの要素集合
+                    uint numOfAggElem1=pNode1->getNumOfAggElem();// ノードの要素集合
+
+                    pElem->reserveEdgeElement(iedge,numOfAggElem0);// ノードの要素集合の個数を越えることはないので、ノード要素集合数で確保
 
 
-                // 両端のノードの要素集合比較による, 辺の要素集合
-                //
-                for(iagg=0; iagg< numOfAggElem0; iagg++){
-                    
-                    elemid0= pNode0->getAggElemID(iagg);
-                    elemIndex0= moBucket.getIndexElement(elemid0);
+                    // 両端のノードの要素集合比較による, 辺の要素集合
+                    //
+                    for(iagg=0; iagg< numOfAggElem0; iagg++){
 
-                    for(jagg=0; jagg< numOfAggElem1; jagg++){
+                        elemid0= pNode0->getAggElemID(iagg);
+                        elemIndex0= moBucket.getIndexElement(elemid0);
 
-                        elemid1= pNode1->getAggElemID(jagg);
-                        elemIndex1= moBucket.getIndexElement(elemid1);
+                        for(jagg=0; jagg< numOfAggElem1; jagg++){
 
-                        //pElem自身もEdgeElementに入れる.
-                        if(elemIndex0 == elemIndex1)
-                            pElem->setEdgeElement(iedge, mvElement[elemIndex0]);
+                            elemid1= pNode1->getAggElemID(jagg);
+                            elemIndex1= moBucket.getIndexElement(elemid1);
+
+                            //pElem自身もEdgeElementに入れる.
+                            if(elemIndex0 == elemIndex1)
+                                pElem->setEdgeElement(iedge, mvElement[elemIndex0]);
+                        };
                     };
-                };
 
-                
-                
-                // Edge(辺)中間ノードの生成.
-                inNode= GeneInterNode(pNode0);// 辺ノードの生成
 
-                // ノード2点間の平均
-                vdouble P0_coord= pNode0->getCoord();
-                vdouble P1_coord= pNode1->getCoord();
-                vdouble In_coord; In_coord.reserve(3);
-                for(uint i=0; i< 3; i++){ In_coord.push_back( (P0_coord[i] + P1_coord[i])*0.5 );}
+                    // Edge(辺)中間ノードの生成.
+                    inNode= GeneInterNode(pNode0);// 辺ノードの生成
 
-                inNode->setCoord(In_coord);//inNode(中間ノード)に座標値をセット
-                inNode->setID(indexCount); //indexCountノード数カウントのセット
-                
-                setupParentNode(pNode0,pNode1,inNode);//prolongater用Nodeのセット
-                //setupChildNode(pNode0,pNode1, inNode);//restriction用Nodeのセット
-                
-                pElem->setEdgeInterNode(inNode,iedge);//ループ要素自身に中間ノードをセット
-                pElem->setBoolEdgeElem(pNode0, pNode1);//iedgeにEdgeElementとNodeをセットしたことをスタンプ
-                
-                
-                if(pProgMesh){
-                    pProgMesh->setNode(inNode);//上位の頂点ノードに追加
-                    //setEdgeNode(inNode); //自分の辺ノードに追加
-                }else{
-                    //NULLの場合,Refine後の2次ノード設定(要素辺ノード)なので,辺ノード設定のみ
-                    //setEdgeNode(inNode);
-                }
-                
-                indexCount++;
+                    // ノード2点間の平均
+                    vdouble P0_coord= pNode0->getCoord();
+                    vdouble P1_coord= pNode1->getCoord();
+                    vdouble In_coord; In_coord.reserve(3);
+                    for(uint i=0; i< 3; i++){ In_coord.push_back( (P0_coord[i] + P1_coord[i])*0.5 );}
 
-                
-                vEdgeElem.clear();
-                // EdgeElement ループ:pElemの辺に集めた要素集合を、要素集合に含まれる要素の各辺にセットする
-                //
-                vEdgeElem= pElem->getEdgeElement(iedge);
-                uint n;
-                for(n=0; n< vEdgeElem.size(); n++){
-                    pOtherElem=vEdgeElem[n];
+                    inNode->setCoord(In_coord);//inNode(中間ノード)に座標値をセット
+                    inNode->setID(indexCount); //indexCountノード数カウントのセット
 
-                    //条件1.辺の要素集合にはpElem自身も入っているので,pElemを除外
-                    //条件2.辺の要素集合の要素の辺が既にEdge要素をセットしてあるか(isEdgeElem==false)判定
-                    if(pOtherElem->getID() != pElem->getID() && !pOtherElem->isEdgeElem(pNode0,pNode1)){
-                        nOtherEdge =pOtherElem->getEdgeIndex(pNode0, pNode1);//pNode0,pNode1に該当する辺のIndex番号
-                        pOtherElem->setEdgeAggElement(nOtherEdge,vEdgeElem);//集められた要素集合を一度にセット
-                        pOtherElem->setBoolEdgeElem(pNode0, pNode1);        //辺の要素集合をセット済みをスタンプ
+                    setupParentNode(pNode0,pNode1,inNode);//prolongater用Nodeのセット
 
-                        pOtherElem->setEdgeInterNode(inNode,nOtherEdge);//辺集合の要素に中間ノードをセット
+                    pElem->setEdgeInterNode(inNode,iedge);//ループ要素自身に中間ノードをセット
+                    pElem->setBoolEdgeElem(pNode0, pNode1);//iedgeにEdgeElementとNodeをセットしたことをスタンプ
+
+
+                    if(pProgMesh){
+                        pProgMesh->setNode(inNode);//上位の頂点ノードに追加
+                        //setEdgeNode(inNode); //自分の辺ノードに追加
+                    }else{
+                        //NULLの場合,Refine後の2次ノード設定
+                        //setEdgeNode(inNode);
                     }
-                };//for(vEdgeElemのループ)
-                
-            }//ifブロック終端(pElemの一つの辺の処理終端
+
+                    //-------------------------------------------------
+                    // 2次要素の場合：自身のMeshのノード集合に辺ノードをセット
+                    //-------------------------------------------------
+                    if(pElem->getOrder()==ElementOrder::Second){
+                        mvNode.push_back(inNode);
+                        mNumOfNode += 1;
+                        CAggregateElement *pTAggElem = new CAggregateElement;
+                        mvAggElement.push_back( pTAggElem );
+                        
+                        moBucket.re_resizeBucketNode(indexCount);//新規に追加された節点のID(新MaxID)
+                        moBucket.setIndexNode( indexCount, mvNode.size()-1 );
+                    }
+
+                    indexCount++;
+
+
+                    vEdgeElem.clear();
+                    // EdgeElement ループ:pElemの辺に集めた要素集合を、要素集合に含まれる要素の各辺にセットする
+                    //
+                    vEdgeElem= pElem->getEdgeElement(iedge);
+                    uint n;
+                    for(n=0; n< vEdgeElem.size(); n++){
+                        pOtherElem=vEdgeElem[n];
+
+                        //条件1.辺の要素集合にはpElem自身も入っているので,pElemを除外
+                        //条件2.辺の要素集合の要素の辺が既にEdge要素をセットしてあるか(isEdgeElem==false)判定
+                        if(pOtherElem->getID() != pElem->getID() && !pOtherElem->isEdgeElem(pNode0,pNode1)){
+                            nOtherEdge =pOtherElem->getEdgeIndex(pNode0, pNode1);//pNode0,pNode1に該当する辺のIndex番号
+                            pOtherElem->setEdgeAggElement(nOtherEdge,vEdgeElem);//集められた要素集合を一度にセット
+                            pOtherElem->setBoolEdgeElem(pNode0, pNode1);        //辺の要素集合をセット済みをスタンプ
+
+                            pOtherElem->setEdgeInterNode(inNode,nOtherEdge);//辺集合の要素に中間ノードをセット
+                        }
+                    };//for(vEdgeElemのループ)
+
+                    //---------------------------------------------------
+                    // 2次要素の場合：辺要素集合を"inNode"の要素集合としてセット
+                    //---------------------------------------------------
+                    if(pElem->getOrder()==ElementOrder::Second && mnSolutionType==SolutionType::FEM){
+                        uint index = mvNode.size() - 1;//このルーチンで生成してpushされたばかりなので.size-1
+                        CAggregateElement *pAggElem = mvAggElement[index];
+
+                        pAggElem->reserve(vEdgeElem.size());
+
+                        for(uint i=0; i < vEdgeElem.size(); i++){
+                            CElement *pEdgeElem = vEdgeElem[i];
+                            pAggElem->push(pEdgeElem);
+                        };
+                    }
+
+                }//ifブロック終端(pElemの一つの辺の処理終端
+            };//for ( iedge )
             
-        };//for ( iedge )
-        
+        }//if(bGeneEdgeNode) : 辺ノードを生成させるか否か.
+
     };//for (ielem)
 
     // 現時点でのノード数をセット
@@ -645,7 +687,18 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh)
     //cout << "pProgMesh NodeSize = " << pProgMesh->getNodeSize() << ", CMesh::setupEdgeElement" << endl;
     
 }
-
+//
+// 要素が二次要素の場合、要素クラス内で辺ノードをmvNodeに移し替え
+//
+void CMesh::replaceEdgeNode()
+{
+    uint ielem;
+    // 要素 ループ : 要素内の辺ノードを移し替え
+    for(ielem=0; ielem< mNumOfElement; ielem++){
+        mvElement[ielem]->replaseEdgeNode();
+    };
+    
+}
 
 
 // prolongationの為の,中間節点の生成(setupEdgeElementからコール) <= 現LevelのMeshでのノード数に影響なし
@@ -793,7 +846,6 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
                             pElem->setFaceNode(inNode, isurf);// Faceへノードをセット(要素ループしている要素)
                             
                             setupParentNode(vFaceCnvNode,inNode);//prolongater用Nodeのセット
-                            //setupChildNode(vFaceCnvNode, inNode);//restriction用Nodeのセット
                             
                             //隣接要素の"pNode0,pNode1,pNode2で構成される面へpElemをセット
                             //
@@ -817,7 +869,6 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
                     pProgMesh->setNode(inNode);
                     
                     setupParentNode(vFaceCnvNode,inNode);//prolongater用Nodeのセット
-                    //setupChildNode(vFaceCnvNode, inNode);//restriction用Nodeのセット
 
                     // IDのためのカウントアップ
                     indexCount++;
@@ -842,15 +893,12 @@ void CMesh::setupVolumeNode(CMesh *pProgMesh)
     CElement* pElem;
     CNode *pNode,*cntNode;
     vector<CNode*> vLocalNode;
-    uint numOfLocalNode;
+    uint nNumOfVert;
     vdouble vCoord;
     uint ielem, inode;
 
     uint indexCount;// prolongation MeshのノードID
     indexCount = pProgMesh->getNodeSize();
-
-    ////debug
-    //cout << "indexCount initial = " << indexCount << ", CMesh::setupVolumeNode" << endl;
 
 
     for(ielem=0; ielem< mNumOfElement; ielem++){
@@ -868,23 +916,26 @@ void CMesh::setupVolumeNode(CMesh *pProgMesh)
             vCoord.clear();
             vCoord.resize(3);
             vCoord[0]=0.0; vCoord[1]=0.0; vCoord[2]=0.0;
+            
+            nNumOfVert= pElem->getNumOfVert();// '10.11.24
+            vLocalNode.resize(nNumOfVert);
+
             //局所ノードの座標平均をとる
-            vLocalNode = pElem->getNode();
-            numOfLocalNode= pElem->getNumOfNode();
-            for(inode=0; inode< numOfLocalNode; inode++){
-                pNode= vLocalNode[inode];
+            for(inode=0; inode< nNumOfVert; inode++){
+                pNode= pElem->getNode(inode);
+                vLocalNode[inode] = pNode;
 
                 vCoord[0] += pNode->getX();
                 vCoord[1] += pNode->getY();
                 vCoord[2] += pNode->getZ();
             };
-            vCoord[0] /= (double)numOfLocalNode;  vCoord[1] /= (double)numOfLocalNode;  vCoord[2] /= (double)numOfLocalNode;
+            vCoord[0] /= (double)nNumOfVert;  vCoord[1] /= (double)nNumOfVert;  vCoord[2] /= (double)nNumOfVert;
+
 
             //生成した中心ノードに座標値をセット
             cntNode->setCoord(vCoord);
             
             setupParentNode(vLocalNode, cntNode);//prolongater用Nodeのセット
-            //setupChildNode(vLocalNode, cntNode); //restriction用Nodeのセット
 
             pProgMesh->setNode(cntNode);
             ++indexCount;
@@ -892,10 +943,6 @@ void CMesh::setupVolumeNode(CMesh *pProgMesh)
             pElem->setVolumeNode(cntNode);//要素へ中心ノードをセット
         }//if()エンド：要素の面が1を越える=> Solid要素
     };
-
-    ////debug
-    //cout << "indexCount final   = " << indexCount << ", CMesh::setupVolumeNode" << endl;
-    //cout << "pProgMesh NodeSize = " << pProgMesh->getNodeSize() << ", CMesh::setupVolumeNode" << endl;
 
     // 現時点でのノード数をセット
     // pProgMesh->setNumOfNode(indexCount);
@@ -1210,38 +1257,38 @@ CElementGroup* CMesh::getElemGrpID(const uint& nGrpID)
 }
 
 
-//
-//  ID 決定の為のメソッド{ 下位グリッドからの増加節点 }
-//
-uint CMesh::increaseNode(CMesh* pRestMesh)
-{
-    uint nIncreNum = mvNode.size() - pRestMesh->getNumOfNode();
-    
-    uint icomm, nNumOfComm = mvCommMesh2.size();
-    CCommMesh2 *pCommMesh, *pRestCommMesh;
-    CHecMPI *pMPI = CHecMPI::Instance();
-    
-    uint nNumOfSRComN(0);    //small rank CommNode
-    uint nRestNumOfSRComN(0);//下位(restrict) small rank CommNode
-    uint nIncreComN(0);      //増加したsmall rank CommNode
-    
-    for(icomm=0; icomm < nNumOfComm; icomm++){
-        pCommMesh     = mvCommMesh2[icomm];
-        pRestCommMesh = pRestMesh->getCommMesh2IX(icomm);//下位グリッド通信メッシュ
-        
-        // 小Rankとの通信に使用される節点数の増加数
-        if(pCommMesh->getTrasmitRank() <  pMPI->getRank()){
-            nNumOfSRComN = pCommMesh->getCommVertNodeSize();
-            nRestNumOfSRComN = pRestCommMesh->getCommVertNodeSize();
-
-            nIncreComN += nNumOfSRComN - nRestNumOfSRComN;
-        }
-    };
-
-    nIncreNum -= nIncreComN;
-
-    return nIncreNum;
-}
+//////
+//////  ID 決定の為のメソッド{ 下位グリッドからの増加節点 }
+//////
+////uint CMesh::increaseNode(CMesh* pRestMesh)
+////{
+////    uint nIncreNum = mvNode.size() - pRestMesh->getNumOfNode();
+////
+////    uint icomm, nNumOfComm = mvCommMesh2.size();
+////    CCommMesh2 *pCommMesh, *pRestCommMesh;
+////    CHecMPI *pMPI = CHecMPI::Instance();
+////
+////    uint nNumOfSRComN(0);    //small rank CommNode
+////    uint nRestNumOfSRComN(0);//下位(restrict) small rank CommNode
+////    uint nIncreComN(0);      //増加したsmall rank CommNode
+////    
+////    for(icomm=0; icomm < nNumOfComm; icomm++){
+////        pCommMesh     = mvCommMesh2[icomm];
+////        pRestCommMesh = pRestMesh->getCommMesh2IX(icomm);//下位グリッド通信メッシュ
+////
+////        // 小Rankとの通信に使用される節点数の増加数
+////        if(pCommMesh->getTrasmitRank() <  pMPI->getRank()){
+////            nNumOfSRComN = pCommMesh->getCommNodeSize();
+////            nRestNumOfSRComN = pRestCommMesh->getCommNodeSize();
+////
+////            nIncreComN += nNumOfSRComN - nRestNumOfSRComN;
+////        }
+////    };
+////
+////    nIncreNum -= nIncreComN;
+////
+////    return nIncreNum;
+////}
 
 
 

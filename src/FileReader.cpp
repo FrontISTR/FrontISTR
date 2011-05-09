@@ -95,18 +95,28 @@ uint CFileReader::IntElemType(string& sElemType)
 {
     if(sElemType=="Hexa"){
         return pmw::ElementType::Hexa;
+    }else if(sElemType=="Hexa2"){
+        return pmw::ElementType::Hexa2;
     }else if(sElemType=="Tetra"){
         return pmw::ElementType::Tetra;
+    }else if(sElemType=="Tetra2"){
+        return pmw::ElementType::Tetra2;
     }else if(sElemType=="Prism"){
         return pmw::ElementType::Prism;
-//    }else if(sElemType=="Pyramid"){
-//        return pmw::ElementType::Pyramid;
+    }else if(sElemType=="Prism2"){
+        return pmw::ElementType::Prism2;
     }else if(sElemType=="Quad"){
         return pmw::ElementType::Quad;
+    }else if(sElemType=="Quad2"){
+        return pmw::ElementType::Quad2;
     }else if(sElemType=="Triangle"){
         return pmw::ElementType::Triangle;
+    }else if(sElemType=="Triangle2"){
+        return pmw::ElementType::Triangle2;
     }else if(sElemType=="Beam"){
         return pmw::ElementType::Beam;
+    }else if(sElemType=="Beam2"){
+        return pmw::ElementType::Beam2;
     }else{
         mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CFileReader::IntElemType");
         return mpLogger->getUDummyValue();

@@ -5,6 +5,7 @@
 //              k.Takeda
 #include "FileReaderBoundaryVolumeMesh.h"
 using namespace FileIO;
+using namespace boost;
 
 CFileReaderBoundaryVolumeMesh::CFileReaderBoundaryVolumeMesh()
 {
@@ -20,7 +21,7 @@ bool CFileReaderBoundaryVolumeMesh::Read(ifstream& ifs, string& sLine)
     uint mgLevel(0);
     uint bnd_id, bnd_type, mesh_id, numOfBoundary, numOfDOF;
     vuint vDOF;
-    string s_bnd_type;
+    string s_bnd_type, s_bnd_name;
     istringstream iss;
 
     if( TagCheck(sLine, FileBlockName::StartBoundaryVolumeMesh()) ){
@@ -43,7 +44,7 @@ bool CFileReaderBoundaryVolumeMesh::Read(ifstream& ifs, string& sLine)
                 iss.clear();
                 iss.str(sLine);
                 
-                iss >> bnd_id >> s_bnd_type >> numOfDOF;
+                iss >> bnd_id >> s_bnd_type >> s_bnd_name >> numOfDOF;
 
                 bnd_type= IntBndType(s_bnd_type);
 
@@ -52,7 +53,7 @@ bool CFileReaderBoundaryVolumeMesh::Read(ifstream& ifs, string& sLine)
                     iss >> vDOF[i];
                 }
 
-                mpFactory->GeneBoundaryVolumeMesh(mgLevel, mesh_id, bnd_id, bnd_type, numOfDOF, vDOF);
+                mpFactory->GeneBoundaryVolumeMesh(mgLevel, mesh_id, bnd_id, bnd_type, s_bnd_name, numOfDOF, vDOF);
             };
         };
         return true;

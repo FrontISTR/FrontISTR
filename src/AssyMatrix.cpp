@@ -246,6 +246,8 @@ int CAssyMatrix::setupSmoother(int type)
 	return 1;
 }
 
+// pF:右辺ベクトル, pV:解ベクトル
+//
 int CAssyMatrix::solve(const CAssyVector *pF, CAssyVector *pV, int iter = 0) const
 {
 	int iter_save = mpSolver->getIterMax();
@@ -316,7 +318,7 @@ int CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int a
 		vc.setZero();
 
 		for (int i = 0; i < iter; i++) {
-			mpCoarseMatrix->MGCycle(&vc, &fc, iter, alpha1, alpha2);
+                    mpCoarseMatrix->MGCycle(&vc, &fc, iter, alpha1, alpha2);
 		}
 
 		w.prolongateFrom(&vc);
@@ -333,7 +335,8 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 	printf(" enter CAssyMatrix::MGInitialGuess %d \n", mMGLevel);
 	int mAlpha; // TODO: TEMPORARY!!!
 
-	if (mpCoarseMatrix != 0) {
+	//if (mpCoarseMatrix != 0) {
+        if (mpCoarseMatrix != NULL) {
 		CAssyVector w(mpAssyModel, mnDOF);
 		CAssyVector fc(mpCoarseMatrix->mpAssyModel, mnDOF);
 		CAssyVector vc(mpCoarseMatrix->mpAssyModel, mnDOF);
@@ -342,6 +345,9 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 		w.restrictTo(&fc);
 		vc.setZero();
 		mpCoarseMatrix->MGInitialGuess(&fc, &vc);
+                
+                cout << "AssyMatrix::MGInitialGuess, mgLevel = " << mMGLevel << endl;
+
 		w.prolongateFrom(&vc);
 		pV->add(&w);
 	} else {

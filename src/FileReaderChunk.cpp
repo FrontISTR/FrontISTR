@@ -13,9 +13,11 @@ using namespace FileIO;
 CFileReaderChunk::CFileReaderChunk()
 {
     //cntファイル名:とりあえず"mw3.cnt"としてある.<= 2009.09.22
-    //--
     msCntFileName= "mw3.cnt";
+    //
+    //    msCntFileName= "hecmw_ctrl.dat";
 
+    
     mpLogger = Utility::CLogger::Instance();
 
     mvReader.reserve(22);

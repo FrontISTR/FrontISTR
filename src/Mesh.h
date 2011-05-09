@@ -230,7 +230,7 @@ public:
     // Aggregate-Element & Aggregate-Node (Node数と同じだけ存在)
     // ---
     void resizeAggregate(const uint& res_size);// mvAggElement,mvAggNodeのリザーブ
-    void setupAggregate();                      // mvAggElement,mvAggNodeのセットアップ
+    void setupAggregate(const uint& nLevel);   // mvAggElement,mvAggNodeのセットアップ:nLevelは、2次要素の初期(Level=0)処理のために使用
 
     void setAggNode(CAggregateNode* pAggNode, const uint& inode);
     void setAggElement(CAggregateElement* pAggElem, const uint& inode);
@@ -250,9 +250,10 @@ public:
     //   引数：pProgMeshは、prolongationされた上位Mesh
     //
     void presetProgMesh(CMesh* pProgMesh);//prolongationノード&要素をセットする前に,土台Meshのデータをプリセット.
-    void setupEdgeElement(CMesh* pProgMesh);//新たに生成したNodeは,pProgMeshにセット. EdgeElementは,MeshのElementにセット.
+    void setupEdgeElement(CMesh* pProgMesh, const uint& nLevel);//新たに生成したNodeは,pProgMeshにセット. EdgeElementは,MeshのElementにセット.
     void setupFaceElement(CMesh* pProgMesh);//新たに生成したNodeは,pProgMeshにセット. FaceElementは,MeshのElementにセット.
     void setupVolumeNode(CMesh* pProgMesh); //新たに生成したNodeは,pProgMeshにセット
+    void replaceEdgeNode();//要素が二次要素の場合、要素クラス内で辺ノードをmvNodeに移し替え
 protected:
     CNode* GeneInterNode(CNode *pNode);
     void avgCoord(vector<CNode*> vCnvNode, CNode* pNode);//複数ノード座標の平均をpNodeにセット
@@ -340,9 +341,9 @@ public:
     CElementGroup* getElemGrpID(const uint& nGrpID);
 
 
-    // ID 決定の為のメソッド { 下位グリッドからの増加節点 }
-    //
-    uint increaseNode(CMesh *pRestMesh);
+////    // ID 決定の為のメソッド { 下位グリッドからの増加節点 }
+////    //
+////    uint increaseNode(CMesh *pRestMesh);
 };
 #endif
 }

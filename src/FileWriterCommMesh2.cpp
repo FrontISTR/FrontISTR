@@ -60,17 +60,19 @@ void CFileWriterCommMesh2::Write(ofstream& ofs, const uint& mgLevel)
 
            uint numOfCommNode;
            uint icnode;
-           numOfCommNode= pCommMesh2->getCommVertNodeSize();
+           numOfCommNode= pCommMesh2->getCommNodeSize();
            pmw::CCommNode *pCommNode;
            pmw::CNode     *pNode;
+
+           cout << "FileWriterCommMesh2::Write,  numOfCommNode==" << numOfCommNode << endl;
+
            //---
            //CommNode
            //---
            for(icnode=0; icnode< numOfCommNode; icnode++){
                // 通信するNodeID
-               pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
-               
-               pNode= pCommNode->getNode();
+               pCommNode = pCommMesh2->getCommNodeIX(icnode);
+               pNode = pCommNode->getNode();
 
                ofs << " Node ID : " << pNode->getID()
                    << ", X= " << pNode->getX()
@@ -91,24 +93,19 @@ void CFileWriterCommMesh2::Write(ofstream& ofs, const uint& mgLevel)
                
                ofs << "CommFace ID= " << pCommFace->getID();
                
-               uint ivert;
-               uint numOfVert= pCommFace->getVertCommNodeSize();
-               for(ivert=0; ivert < numOfVert; ivert++){
-
-                   pCommNode= pCommFace->getVertCommNode(ivert);
-
-                   ofs << ", " << pCommNode->getID();
-                      
-               };//ivert ループエンド(id出力)
+               //uint ivert;
+               uint numOfCommNode= pCommFace->getCommNodeSize();
+               
+               for(icnode=0; icnode < numOfCommNode; icnode++){
+                   pCommNode= pCommFace->getCommNode(icnode);
+                   ofs << ", " << pCommNode->getID(); 
+               };
                ofs << endl;
 
-               for(ivert=0; ivert < numOfVert; ivert++){
-
-                   pCommNode= pCommFace->getVertCommNode(ivert);
-
+               for(icnode=0; icnode < numOfCommNode; icnode++){
+                   pCommNode= pCommFace->getCommNode(icnode);
                    ofs << ":: X= " << pCommNode->getX() << ", Y= " << pCommNode->getY() << ", Z= " << pCommNode->getZ();
-
-               };//ivert ループエンド(coord出力)
+               };
                ofs << endl;
                
            };//comm_face ループエンド

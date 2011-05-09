@@ -395,17 +395,18 @@ void CShapeTetra::Calc_dNdx10(const uint& numOfInteg, CElement *pElement)
     //  CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
 
     vector<CNode*> vNode= pElement->getNode();
-
-    CNode *pNode;
-    uint ishape,iedge;
     uint numOfShape(10);
-    // 要素の辺ノードをFrontISTR順に並び替えて,vNodeに追加
-    //
-    for(ishape=4; ishape< numOfShape; ishape++){
-        iedge= mpISTR2Edge->TetraEdgeNum(ishape);
-        pNode= pElement->getEdgeInterNode(iedge);
-        vNode.push_back(pNode);
-    };
+
+//    CNode *pNode;
+//    uint ishape,iedge;
+//    // 要素の辺ノードをFrontISTR順に並び替えて,vNodeに追加
+//    //
+//    for(ishape=4; ishape< numOfShape; ishape++){
+//        iedge= mpISTR2Edge->TetraEdgeNum(ishape);
+//        pNode= pElement->getEdgeInterNode(iedge);
+//        vNode.push_back(pNode);
+//    };
+    
     uint dof(3);//3次元
     switch(numOfInteg){
         case(1):

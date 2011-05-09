@@ -9,14 +9,26 @@
 using namespace pmw;
 
 uint CBeam::mnElemType = ElementType::Beam;
+uint CBeam::mnElemOrder = 1;
 uint CBeam::mNumOfFace = 0;
 uint CBeam::mNumOfEdge = 1;
 uint CBeam::mNumOfNode = 2;
+uint CBeam::mNumOfVert = 2;
 //
 //
 CBeam::CBeam()
 {
+    ;
+}
+CBeam::~CBeam()
+{
+//    //debug
+//    cout << "~CBeam" << endl;
+}
+void CBeam::initialize()
+{
     mvNode.resize(mNumOfNode);
+
     mvvEdgeElement.resize(mNumOfEdge);
 
     mvEdgeInterNode.resize(mNumOfEdge);
@@ -30,7 +42,7 @@ CBeam::CBeam()
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
 
-    
+
     //通信界面(CommMesh2)属性:点
     mvbCommEntity = new bool[mNumOfNode];
     for(i=0; i< mNumOfNode; i++){
@@ -38,16 +50,13 @@ CBeam::CBeam()
     };
 }
 
-CBeam::~CBeam()
-{
-//    //debug
-//    cout << "~CBeam" << endl;
-}
-
-
 const uint& CBeam::getType()
 {
     return mnElemType;
+}
+const uint& CBeam::getOrder()
+{
+    return mnElemOrder;
 }
 
 

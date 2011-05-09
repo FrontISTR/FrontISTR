@@ -19,6 +19,7 @@
 #include <boost/tokenizer.hpp>
 
 #include "ElementType.h"
+#include "ElementProperty.h"
 
 namespace FileIO{
 class CFileReader{

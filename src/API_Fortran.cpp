@@ -479,6 +479,17 @@ void mw_get_element_edge_node_id_(int v_node_id[])
 {
     pMW->GetElementEdgeNodeID(v_node_id);
 }
+
+// id
+int mw_get_element_id_(int* index)
+{
+    return (int)pMW->getElementID(*index);
+}
+int mw_get_node_id_(int* index)
+{
+    return (int)pMW->getNodeID(*index);
+}
+
 //
 // node
 //
@@ -600,57 +611,48 @@ int mw_nodetype_sv_()
 //----
 // element type
 //----
-int mw_elemtype_hexa_()
-{
-    return pMW->elemtype_hexa();
-}
-int mw_elemtype_hexa2_()
-{
-    return pMW->elemtype_hexa2();
-}
-int mw_elemtype_tetra_()
-{
-    return pMW->elemtype_tetra();
-}
-int mw_elemtype_tetra2_()
-{
-    return pMW->elemtype_tetra2();
-}
-int mw_elemtype_prism_()
-{
-    return pMW->elemtype_prism();
-}
-int mw_elemtype_prism2_()
-{
-    return pMW->elemtype_prism2();
-}
-int mw_elemtype_quad_()
-{
-    return pMW->elemtype_quad();
-}
-int mw_elemtype_quad2_()
-{
-    return pMW->elemtype_quad2();
-}
-int mw_elemtype_triangle_()
-{
-    return pMW->elemtype_triangle();
-}
-int mw_elemtype_triangle2_()
-{
-    return pMW->elemtype_triangle2();
-}
-int mw_elemtype_line_()
-{
-    return pMW->elemtype_line();
-}
-int mw_elemtype_line2_()
-{
-    return pMW->elemtype_line2();
-}
+int mw_elemtype_hexa_(){  return pMW->elemtype_hexa();}
+int mw_elemtype_hexa2_(){  return pMW->elemtype_hexa2();}
+int mw_elemtype_tetra_(){  return pMW->elemtype_tetra();}
+int mw_elemtype_tetra2_(){ return pMW->elemtype_tetra2();}
+int mw_elemtype_prism_(){  return pMW->elemtype_prism();}
+int mw_elemtype_prism2_(){  return pMW->elemtype_prism2();}
+int mw_elemtype_quad_(){  return pMW->elemtype_quad();}
+int mw_elemtype_quad2_(){  return pMW->elemtype_quad2();}
+int mw_elemtype_triangle_(){  return pMW->elemtype_triangle();}
+int mw_elemtype_triangle2_(){  return pMW->elemtype_triangle2();}
+int mw_elemtype_line_(){  return pMW->elemtype_line();}
+int mw_elemtype_line2_(){  return pMW->elemtype_line2();}
 
-
-
+//----
+// frontISTR element type
+//----
+int mw_fistr_elemtype_hexa_(){  return (int)pMW->fistr_elemtype_hexa();}
+int mw_fistr_elemtype_hexa2_(){ return (int)pMW->fistr_elemtype_hexa2();}
+int mw_fistr_elemtype_tetra_(){  return (int)pMW->fistr_elemtype_tetra();}
+int mw_fistr_elemtype_tetra2_(){ return (int)pMW->fistr_elemtype_tetra2();}
+int mw_fistr_elemtype_prism_(){  return (int)pMW->fistr_elemtype_prism();}
+int mw_fistr_elemtype_prism2_(){ return (int)pMW->fistr_elemtype_prism2();}
+int mw_fistr_elemtype_quad_(){   return (int)pMW->fistr_elemtype_quad();}
+int mw_fistr_elemtype_quad2_(){  return (int)pMW->fistr_elemtype_quad2();}
+int mw_fistr_elemtype_triangle_(){ return (int)pMW->fistr_elemtype_triangle();}
+int mw_fistr_elemtype_triangle2_(){ return (int)pMW->fistr_elemtype_triangle2();}
+int mw_fistr_elemtype_line_(){  return (int)pMW->fistr_elemtype_line();}
+int mw_fistr_elemtype_line2_(){ return (int)pMW->fistr_elemtype_line2();}
+//----
+// frontISTR element type => MW3 element type
+//----
+int mw_fistr_elemtype_to_mw3_elemtype_(int* fistr_elemtype)
+{
+    return (int)pMW->fistr_elemtype_to_mw3_elemtype(*fistr_elemtype);
+}
+//----
+// MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+//----
+int mw_mw3_elemtype_to_fistr_elemtype_(int* mw3_elemtype)
+{
+    return (int)pMW->mw3_elemtype_to_fistr_elemtype(*mw3_elemtype);
+}
 
 //----
 // shape function
@@ -1019,6 +1021,114 @@ double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof)
 {
     return pMW->GetBVolumeValue(*ibmesh, *ibvol, *idof);
 }
+//--
+// boundary_mesh name
+//--
+int mw_get_bnode_mesh_namelength_(int* ibmesh)
+{
+    return pMW->GetBNodeMesh_NameLength(*ibmesh);
+}
+void mw_get_bnode_mesh_name_(int* ibmesh, char* name, int* name_len)
+{
+    string sName = pMW->GetBNodeMesh_Name(*ibmesh);
+    
+    uint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > (uint)*name_len){
+        uint nLength = (uint)*name_len-1;
+        for(i=0; i < nLength; i++){
+            name[i] = sName[i];
+        };
+        name[nLength]='\0';
+    }else{
+        for(i=0; i < nNumOfChar; i++){
+            name[i] = sName[i];
+        };
+        uint nLength = (uint)*name_len;
+        for(i=nNumOfChar; i < nLength; i++){
+            name[i] = '\0';
+        };
+    }
+}
+int mw_get_bface_mesh_namelength_(int* ibmesh)
+{
+    return pMW->GetBFaceMesh_NameLength(*ibmesh);
+}
+void mw_get_bface_mesh_name_(int* ibmesh, char* name, int* name_len)
+{
+    string sName = pMW->GetBFaceMesh_Name(*ibmesh);
+    
+    uint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > (uint)*name_len){
+        uint nLength = (uint)*name_len-1;
+        for(i=0; i < nLength; i++){
+            name[i] = sName[i];
+        };
+        name[nLength]='\0';
+    }else{
+        for(i=0; i < nNumOfChar; i++){
+            name[i] = sName[i];
+        };
+        uint nLength = (uint)*name_len;
+        for(i=nNumOfChar; i < nLength; i++){
+            name[i] = '\0';
+        };
+    }
+}
+int mw_get_bvolume_mesh_namelength_(int* ibmesh)
+{
+    return pMW->GetBVolumeMesh_NameLength(*ibmesh);
+}
+void mw_get_bvolume_mesh_name_(int* ibmesh, char* name, int* name_len)
+{
+    string sName = pMW->GetBVolumeMesh_Name(*ibmesh);
+    
+    uint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > (uint)*name_len){
+        uint nLength = (uint)*name_len-1;
+        for(i=0; i < nLength; i++){
+            name[i] = sName[i];
+        };
+        name[nLength]='\0';
+    }else{
+        for(i=0; i < nNumOfChar; i++){
+            name[i] = sName[i];
+        };
+        uint nLength = (uint)*name_len;
+        for(i=nNumOfChar; i < nLength; i++){
+            name[i] = '\0';
+        };
+    }
+}
+int mw_get_bedge_mesh_namelength_(int* ibmesh)
+{
+    return pMW->GetBEdgeMesh_NameLength(*ibmesh);
+}
+void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len)
+{
+    string sName = pMW->GetBEdgeMesh_Name(*ibmesh);
+    
+    uint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > (uint)*name_len){
+        uint nLength = (uint)*name_len-1;
+        for(i=0; i < nLength; i++){
+            name[i] = sName[i];
+        };
+        name[nLength]='\0';
+    }else{
+        for(i=0; i < nNumOfChar; i++){
+            name[i] = sName[i];
+        };
+        uint nLength = (uint)*name_len;
+        for(i=nNumOfChar; i < nLength; i++){
+            name[i] = '\0';
+        };
+    }
+}
+
 
 
 

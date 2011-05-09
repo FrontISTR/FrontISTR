@@ -13,10 +13,16 @@
 #include "Hexa.h"
 #include "Tetra.h"
 #include "Prism.h"
-//#include "Pyramid.h"
 #include "Quad.h"
 #include "Triangle.h"
 #include "Beam.h"
+
+#include "Hexa2.h"
+#include "Tetra2.h"
+#include "Prism2.h"
+#include "Quad2.h"
+#include "Triangle2.h"
+#include "Beam2.h"
 
 // CommElement
 #include "CommElement.h"

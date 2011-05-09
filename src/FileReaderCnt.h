@@ -7,6 +7,8 @@
 #include "CommonFile.h"
 #include "FileReader.h"
 
+#include "FileBlockNameMW2.h"// hecmw_ctrl.dat タグ
+
 namespace FileIO{
 #ifndef _FILEREADERCNT_H
 #define	_FILEREADERCNT_H

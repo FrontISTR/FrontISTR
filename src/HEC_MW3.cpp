@@ -738,6 +738,22 @@ void CMW::GetElementEdgeNodeID(int* vNodeID)
         vNodeID[iedge]= pNode->getID();
     };
 }
+
+// ID
+uint& CMW::getElementID(const uint& index)
+{
+    CElement* pElem = mpMesh->getElementIX(index);
+
+    return pElem->getID();
+}
+uint& CMW::getNodeID(const uint& index)
+{
+    CNode* pNode = mpMesh->getNodeIX(index);
+
+    return pNode->getID();
+}
+
+
 //
 // ノード
 //
@@ -2079,6 +2095,121 @@ uint CMW::elemtype_triangle2(){ return ElementType::Triangle2;}
 uint CMW::elemtype_line(){ return ElementType::Beam;}
 uint CMW::elemtype_line2(){ return ElementType::Beam2;}
 //----
+// FrontISTR 要素タイプ
+//----
+uint CMW::fistr_elemtype_hexa(){ return FistrElementType::Hexa;}
+uint CMW::fistr_elemtype_hexa2(){ return FistrElementType::Hexa2;}
+uint CMW::fistr_elemtype_tetra(){ return FistrElementType::Tetra;}
+uint CMW::fistr_elemtype_tetra2(){ return FistrElementType::Tetra2;}
+uint CMW::fistr_elemtype_prism(){ return FistrElementType::Prism;}
+uint CMW::fistr_elemtype_prism2(){ return FistrElementType::Prism2;}
+uint CMW::fistr_elemtype_quad(){ return FistrElementType::Quad;}
+uint CMW::fistr_elemtype_quad2(){ return FistrElementType::Quad2;}
+uint CMW::fistr_elemtype_triangle(){ return FistrElementType::Triangle;}
+uint CMW::fistr_elemtype_triangle2(){ return FistrElementType::Triangle2;}
+uint CMW::fistr_elemtype_line(){ return FistrElementType::Beam;}
+uint CMW::fistr_elemtype_line2(){ return FistrElementType::Beam2;}
+//----
+// FrontISTR 要素タイプ　=> MW3 要素タイプ 変換
+//----
+uint CMW::fistr_elemtype_to_mw3_elemtype(const uint& fistr_elemtype)
+{
+    switch(fistr_elemtype){
+        case(FistrElementType::Hexa):
+            return ElementType::Hexa;
+
+        case(FistrElementType::Hexa2):
+            return ElementType::Hexa2;
+
+        case(FistrElementType::Tetra):
+            return ElementType::Tetra;
+
+        case(FistrElementType::Tetra2):
+            return ElementType::Tetra2;
+
+        case(FistrElementType::Prism):
+            return ElementType::Prism;
+
+        case(FistrElementType::Prism2):
+            return ElementType::Prism2;
+
+        case(FistrElementType::Quad):
+            return ElementType::Quad;
+
+        case(FistrElementType::Quad2):
+            return ElementType::Quad2;
+
+        case(FistrElementType::Triangle):
+            return ElementType::Triangle;
+
+        case(FistrElementType::Triangle2):
+            return ElementType::Triangle2;
+
+        case(FistrElementType::Beam):
+            return ElementType::Beam;
+
+        case(FistrElementType::Beam2):
+            return ElementType::Beam2;
+
+        case(FistrElementType::Point):
+            return ElementType::Point;
+
+        case(FistrElementType::Limit):
+            return ElementType::Limit;
+    }
+}
+//----
+// MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+//----
+uint CMW::mw3_elemtype_to_fistr_elemtype(const uint& mw3_elemtype)
+{
+    switch(mw3_elemtype){
+        case(ElementType::Hexa):
+            return FistrElementType::Hexa;
+
+        case(ElementType::Hexa2):
+            return FistrElementType::Hexa2;
+
+        case(ElementType::Tetra):
+            return FistrElementType::Tetra;
+
+        case(ElementType::Tetra2):
+            return FistrElementType::Tetra2;
+
+        case(ElementType::Prism):
+            return FistrElementType::Prism;
+
+        case(ElementType::Prism2):
+            return FistrElementType::Prism2;
+
+        case(ElementType::Quad):
+            return FistrElementType::Quad;
+
+        case(ElementType::Quad2):
+            return FistrElementType::Quad2;
+
+        case(ElementType::Triangle):
+            return FistrElementType::Triangle;
+
+        case(ElementType::Triangle2):
+            return FistrElementType::Triangle2;
+
+        case(ElementType::Beam):
+            return FistrElementType::Beam;
+
+        case(ElementType::Beam2):
+            return FistrElementType::Beam2;
+
+        case(ElementType::Point):
+            return FistrElementType::Point;
+
+        case(ElementType::Limit):
+            return FistrElementType::Limit;
+    }
+}
+
+
+//----
 // 形状関数タイプ for Fortran
 //----
 uint CMW::shapetype_hexa81(){ return ShapeType::Hexa81;}
@@ -2101,6 +2232,7 @@ uint CMW::shapetype_tri31(){ return ShapeType::Triangle31;}
 uint CMW::shapetype_tri63(){ return ShapeType::Triangle63;}
 uint CMW::shapetype_line21(){ return ShapeType::Line21;}
 uint CMW::shapetype_line32(){ return ShapeType::Line32;}
+
 
 //--
 // Boundary :: 各Meshが所有するBoundaryMeshから境界値を取得
@@ -2322,6 +2454,76 @@ double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& 
 
     return pBVol->getBndValue(idof);
 }
+//--
+// Boundaryの名称
+//--
+uint CMW::GetBNodeMesh_NameLength(const uint& ibmesh)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+
+    string sBndName = pBNodeMesh->getName();
+
+    return sBndName.length();
+}
+string& CMW::GetBNodeMesh_Name(const uint& ibmesh)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+
+    return pBNodeMesh->getName();
+}
+uint CMW::GetBFaceMesh_NameLength(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    string sBndName = pBFaceMesh->getName();
+
+    return sBndName.length();
+}
+string& CMW::GetBFaceMesh_Name(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    return pBFaceMesh->getName();
+}
+uint CMW::GetBVolumeMesh_NameLength(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+    
+    string sBndName = pBVolMesh->getName();
+    
+    return sBndName.length();
+}
+string& CMW::GetBVolumeMesh_Name(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+    
+    return pBVolMesh->getName();
+}
+uint CMW::GetBEdgeMesh_NameLength(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    string sBndName = pBEdgeMesh->getName();
+
+    return sBndName.length();
+}
+string& CMW::GetBEdgeMesh_Name(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    return pBEdgeMesh->getName();
+}
+
+
+
 
 
 //--
@@ -2382,10 +2584,10 @@ void CMW::Send_Recv_R(double* buf, int dof_size)
 
                 int transRank = pCommMesh->getTrasmitRank();
 
-                uint icnode, nNumOfCommNode = pCommMesh->getCommVertNodeSize();
+                uint icnode, nNumOfCommNode = pCommMesh->getCommNodeSize();
                 CCommNode *pCommNode;
                 for(icnode=0; icnode < nNumOfCommNode; icnode++){
-                    pCommNode = pCommMesh->getCommVertNodeIX(icnode);
+                    pCommNode = pCommMesh->getCommNodeIX(icnode);
                     
                     double sendbuf[dof_size];
                     double recvbuf[dof_size];
@@ -2450,10 +2652,10 @@ void CMW::Send_Recv_R()
 
                 int transRank = pCommMesh->getTrasmitRank();
 
-                uint icnode, nNumOfCommNode = pCommMesh->getCommVertNodeSize();
+                uint icnode, nNumOfCommNode = pCommMesh->getCommNodeSize();
                 CCommNode *pCommNode;
                 for(icnode=0; icnode < nNumOfCommNode; icnode++){
-                    pCommNode = pCommMesh->getCommVertNodeIX(icnode);
+                    pCommNode = pCommMesh->getCommNodeIX(icnode);
                     CNode* pNode = pCommNode->getNode();
 
                     uint dof_size = pNode->numOfTotalParam();

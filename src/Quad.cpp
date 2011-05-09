@@ -1,4 +1,6 @@
 
+#include <vector>
+
 #include "FaceTree.h"
 
 //
@@ -10,14 +12,28 @@
 using namespace pmw;
 
 uint CQuad::mnElemType = ElementType::Quad;
+uint CQuad::mnElemOrder = 1;
 uint CQuad::mNumOfFace = 1;
 uint CQuad::mNumOfEdge = 4;
 uint CQuad::mNumOfNode = 4;
+uint CQuad::mNumOfVert = 4;
 //
 //
 CQuad::CQuad()
 {
+    ;
+}
+
+CQuad::~CQuad()
+{
+//    //debug
+//    cout << "~CQuad" << endl;
+}
+
+void CQuad::initialize()
+{
     mvNode.resize(mNumOfNode);
+
     mvvEdgeElement.resize(mNumOfEdge);
 
     mvEdgeInterNode.resize(mNumOfEdge);
@@ -55,16 +71,13 @@ CQuad::CQuad()
     };
 }
 
-CQuad::~CQuad()
-{
-//    //debug
-//    cout << "~CQuad" << endl;
-}
-
-
 const uint& CQuad::getType()
 {
     return mnElemType;
+}
+const uint& CQuad::getOrder()
+{
+    return mnElemOrder;
 }
 
 

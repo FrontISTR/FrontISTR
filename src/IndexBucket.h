@@ -39,6 +39,7 @@ public:
     // resize vector
     void resizeBucketNode(const uint& maxID, const uint& minID);
     void resizeBucketElement(const uint& maxID, const uint& minID);
+    void re_resizeBucketNode(const uint& new_maxID);//Nodeが追加された時の再resize
 
     // setup mvID2Index
     void setIndexNode(const uint& id, const int& index_num);

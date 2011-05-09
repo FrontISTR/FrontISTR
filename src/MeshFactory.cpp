@@ -70,12 +70,13 @@ void CMeshFactory::SGMeshConstruct()
 
     pAssy = mpGMGModel->getAssyModel(0);
 
+    uint nLevel=0;
     uint numOfMesh = pAssy->getNumOfMesh();
     uint imesh;
     for(imesh=0; imesh < numOfMesh; imesh++){
         pMesh = pAssy->getMesh(imesh);
 
-        pMesh->setupAggregate();
+        pMesh->setupAggregate(nLevel);
 
         string str = "SGMeshConstruct , pMesh->setupAggElement  at " + boost::lexical_cast<string>(imesh);
         mpLogger->Info(Utility::LoggerMode::MWDebug, str);
@@ -149,17 +150,19 @@ void CMeshFactory::MGMeshConstruct()
             //
             if(ilevel==0){
                 // 条件(ilevel >= 1) は, pProgMesh->setupAggregate()をMesh-Refine後に行ってあるので不要:CommMeshのRefineの為.
-                pMesh->setupAggregate(); //Node集合Element, Node集合Nodeの計算
+                pMesh->setupAggregate(ilevel); //Node集合Element, Node集合Nodeの計算
                 mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupAggElement finish at ilevel==0");
             }
             pMesh->presetProgMesh(pProgMesh);//prolongation_Meshのノード,要素リザーブ(reserve) && pMeshのノード,要素をセット
             mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->presetProgMesh finish");
-            pMesh->setupEdgeElement(pProgMesh);//辺(Edge)節点, 辺に集合する要素の計算
+            pMesh->setupEdgeElement(pProgMesh, ilevel);//辺(Edge)節点, 辺に集合する要素の計算
             mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupEdgeElement finish");
             pMesh->setupFaceElement(pProgMesh);//面(Face)節点, 面に隣接する要素の計算
             mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupFaceElement finish");
             pMesh->setupVolumeNode(pProgMesh); //体(Volume)節点:要素中心の節点
             mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupVolumeNode finish");
+
+            pMesh->replaceEdgeNode();//2次要素の場合、辺ノードを要素ノードとして移し替え
             
             // 新ElementID
             uint numOfElem = pMesh->getNumOfElement();
@@ -241,7 +244,7 @@ void CMeshFactory::MGMeshConstruct()
 
             // progCommMeshの前処理
             // --
-            pProgMesh->setupAggregate();
+            pProgMesh->setupAggregate(ilevel+1);
 
 
             ////////////////////////////////////////////////
@@ -316,6 +319,19 @@ void CMeshFactory::MGMeshConstruct()
 
         };//imesh ループ エンド
     };//ilevel ループ エンド
+    
+    //
+    // 2次要素の場合：最終LevelのMeshに辺ノードをprogMeshに生成
+    //
+    pAssy= mpGMGModel->getAssyModel(mMGLevel);//最終LevelのAssyModel
+    
+    numOfMesh= pAssy->getNumOfMesh();
+    for(imesh=0; imesh< numOfMesh; imesh++){
+        pMesh= pAssy->getMesh(imesh);
+        
+        pMesh->setupEdgeElement(NULL, mMGLevel);//2次要素として利用するため,最終レベルのMeshに辺ノードを生成
+        pMesh->replaceEdgeNode();//辺ノードを移し替え
+    };
 }
 
 // 再分割要素(progElem)の生成 2010.05.31VC++同様に変更
@@ -326,79 +342,136 @@ void CMeshFactory::GeneProgElem(const uint& ilevel,CElement* pElem, vector<CElem
     uint i;
     // divid Element(要素の分割)
     switch(pElem->getType()){
-        case(ElementType::Hexa):case(ElementType::Hexa2):
-
+        case(ElementType::Hexa):
             vProgElem.reserve(8);//分割された新しい要素の生成
             for(i=0; i< 8; i++){
                 pProgElem= new CHexa; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividHexa(pElem,vProgElem, elementID, pProgMesh);
-
             break;
-        case(ElementType::Tetra):case(ElementType::Tetra2):
 
+        case(ElementType::Hexa2):
+            vProgElem.reserve(8);//分割された新しい要素の生成
+            for(i=0; i< 8; i++){
+                pProgElem= new CHexa2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
+                vProgElem.push_back(pProgElem);
+            };
+            dividHexa(pElem,vProgElem, elementID, pProgMesh);
+            break;
+
+        case(ElementType::Tetra):
             vProgElem.reserve(4);//分割された新しい要素の生成
             for(i=0; i< 4; i++){
                 pProgElem= new CHexa; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividTetra(pElem,vProgElem, elementID, pProgMesh);
-
             break;
-        case(ElementType::Prism):case(ElementType::Prism2):
 
+        case(ElementType::Tetra2):
+            vProgElem.reserve(4);//分割された新しい要素の生成
+            for(i=0; i< 4; i++){
+                pProgElem= new CHexa2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+                
+                vProgElem.push_back(pProgElem);
+            };
+            dividTetra(pElem,vProgElem, elementID, pProgMesh);
+            break;
+
+        case(ElementType::Prism):
             vProgElem.reserve(6);//分割された新しい要素の生成
             for(i=0; i< 6; i++){
                 pProgElem= new CHexa; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividPrism(pElem,vProgElem, elementID,pProgMesh);
-
             break;
-//        case(ElementType::Pyramid):case(ElementType::Pyramid2):
-//
-//            vProgElem.reserve(8);//分割された新しい要素の生成
-//            for(i=0; i< 4; i++){
-//                pProgElem= new CHexa; pProgElem->setMGLevel(ilevel+1);
-//                vProgElem.push_back(pProgElem);
-//            };
-//            for(i=0; i< 4; i++){
-//                pProgElem= new CPyramid; pProgElem->setMGLevel(ilevel+1);
-//                vProgElem.push_back(pProgElem);
-//            };
-//            dividPyramid(pElem,vProgElem, elementID,pProgMesh);
-//
-//            break;
-        case(ElementType::Quad):case(ElementType::Quad2):
 
+        case(ElementType::Prism2):
+            vProgElem.reserve(6);//分割された新しい要素の生成
+            for(i=0; i< 6; i++){
+                pProgElem= new CHexa2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+                
+                vProgElem.push_back(pProgElem);
+            };
+            dividPrism(pElem,vProgElem, elementID,pProgMesh);
+            break;
+
+        case(ElementType::Quad):
             vProgElem.reserve(4);//分割された新しい要素の生成
             for(i=0; i< 4; i++){
                 pProgElem= new CQuad; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividQuad(pElem,vProgElem, elementID,pProgMesh);
-
             break;
-        case(ElementType::Triangle):case(ElementType::Triangle2):
 
+        case(ElementType::Quad2):
+            vProgElem.reserve(4);//分割された新しい要素の生成
+            for(i=0; i< 4; i++){
+                pProgElem= new CQuad2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
+                vProgElem.push_back(pProgElem);
+            };
+            dividQuad(pElem,vProgElem, elementID,pProgMesh);
+            break;
+
+        case(ElementType::Triangle):
             vProgElem.reserve(3);//分割された新しい要素の生成
             for(i=0; i< 3; i++){
                 pProgElem= new CQuad; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividTriangle(pElem,vProgElem, elementID,pProgMesh);
-
             break;
-        case(ElementType::Beam):case(ElementType::Beam2):
 
+        case(ElementType::Triangle2):
+            vProgElem.reserve(3);//分割された新しい要素の生成
+            for(i=0; i< 3; i++){
+                pProgElem= new CQuad2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
+                vProgElem.push_back(pProgElem);
+            };
+            dividTriangle(pElem,vProgElem, elementID,pProgMesh);
+            break;
+
+        case(ElementType::Beam):
             vProgElem.reserve(2);//分割された新しい要素の生成
             for(i=0; i< 2; i++){
                 pProgElem= new CBeam; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+
                 vProgElem.push_back(pProgElem);
             };
             dividBeam(pElem,vProgElem, elementID,pProgMesh);
+            break;
 
+        case(ElementType::Beam2):
+            vProgElem.reserve(2);//分割された新しい要素の生成
+            for(i=0; i< 2; i++){
+                pProgElem= new CBeam2; pProgElem->setMGLevel(ilevel+1);
+                pProgElem->initialize();
+                
+                vProgElem.push_back(pProgElem);
+            };
+            dividBeam(pElem,vProgElem, elementID,pProgMesh);
             break;
     }//switch エンド
 }
@@ -1484,6 +1557,7 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
     CElement *pElement;
 
     switch(type_num){
+        // 1次
         case(ElementType::Hexa):
             pElement = new CHexa;
             break;
@@ -1493,9 +1567,6 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
         case(ElementType::Prism):
             pElement = new CPrism;
             break;
-//        case(ElementType::Pyramid):
-//            pElement = new CPyramid;
-//            break;
         case(ElementType::Quad):
             pElement = new CQuad;
             break;
@@ -1505,10 +1576,30 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
         case(ElementType::Beam):
             pElement = new CBeam;
             break;
+        // 2次
+        case(ElementType::Hexa2):
+            pElement = new CHexa2;
+            break;
+        case(ElementType::Tetra2):
+            pElement = new CTetra2;
+            break;
+        case(ElementType::Prism2):
+            pElement = new CPrism2;
+            break;
+        case(ElementType::Quad2):
+            pElement = new CQuad2;
+            break;
+        case(ElementType::Triangle2):
+            pElement = new CTriangle2;
+            break;
+        case(ElementType::Beam2):
+            pElement = new CBeam2;
+            break;
         default:
             mpLogger->Info(Utility::LoggerMode::Error,"Error::GeneElement at Factory");
             break;
     }
+    pElement->initialize();
     pElement->setID(id);
 
     CNode *pNode;
@@ -1521,7 +1612,18 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
         pNode = mpTMesh->getNode(node_id[i]);
         pElement->setNode(pNode, i);
     };
-    //// pElement->setupFaceCnvNodes();// 局所ノードによる面構成をセットアップ
+    //2次要素の場合"EdgeInterNode"にセット
+    if(pElement->getOrder()==ElementOrder::Second){
+        uint iedge;
+        uint nNumOfVert = pElement->getNumOfVert();
+        for(iedge=0; iedge < pElement->getNumOfEdge(); iedge++){
+
+            uint nNodeID = node_id[nNumOfVert + iedge];
+
+            pNode = mpTMesh->getNode(nNodeID);
+            pElement->setEdgeInterNode(pNode, iedge);
+        };
+    }
     
     // Elem to Mesh
     //mpTMesh->setElement(pElement,id);
@@ -1592,7 +1694,7 @@ void CMeshFactory::reserveBoundaryNodeMesh(const uint& mgLevel, const uint& mesh
     mpTMesh->reserveBndNodeMesh(num_of_bnd);
 }
 // BoundaryNodeMesh 生成
-void CMeshFactory::GeneBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type)
+void CMeshFactory::GeneBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
     mpTMesh = mpTAssyModel->getMesh(mesh_id);
@@ -1601,6 +1703,7 @@ void CMeshFactory::GeneBoundaryNodeMesh(const uint& mgLevel, const uint& mesh_id
 
     pBNodeMesh->setID(bnd_id);
     pBNodeMesh->setBndType(bnd_type);
+    pBNodeMesh->setName(bnd_name);
 
     mpTMesh->setBndNodeMesh(pBNodeMesh);
 }
@@ -1620,7 +1723,7 @@ void CMeshFactory::reserveBoundaryFaceMesh(const uint& mgLevel, const uint& mesh
     mpTMesh->reserveBndFaceMesh(num_of_bnd);
 }
 // BoundaryFaceMesh 生成
-void CMeshFactory::GeneBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+void CMeshFactory::GeneBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                                         const uint& numOfDOF, const vuint& vDOF)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
@@ -1633,6 +1736,7 @@ void CMeshFactory::GeneBoundaryFaceMesh(const uint& mgLevel, const uint& mesh_id
     pBFaceMesh->setMaxMGLevel(mMGLevel);
     pBFaceMesh->setID(bnd_id);
     pBFaceMesh->setBndType(bnd_type);
+    pBFaceMesh->setName(bnd_name);
 
     pBFaceMesh->resizeDOF(numOfDOF);
 
@@ -1663,7 +1767,7 @@ void CMeshFactory::reserveBoundaryVolumeMesh(const uint& mgLevel, const uint& me
     mpTMesh->reserveBndVolumeMesh(num_of_bnd);
 }
 // BoundaryVolumeMesh 生成
-void CMeshFactory::GeneBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+void CMeshFactory::GeneBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                                           const uint& numOfDOF, const vuint& vDOF)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
@@ -1676,6 +1780,7 @@ void CMeshFactory::GeneBoundaryVolumeMesh(const uint& mgLevel, const uint& mesh_
     pBVolMesh->setMaxMGLevel(mMGLevel);
     pBVolMesh->setID(bnd_id);
     pBVolMesh->setBndType(bnd_type);
+    pBVolMesh->setName(bnd_name);
 
     pBVolMesh->resizeDOF(numOfDOF);
 
@@ -1706,7 +1811,7 @@ void CMeshFactory::reserveBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh
     mpTMesh->reserveBndEdgeMesh(num_of_bnd);
 }
 // BoundaryEdgeMesh 生成
-void CMeshFactory::GeneBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type,
+void CMeshFactory::GeneBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id, const uint& bnd_type, const string& bnd_name,
                    const uint& numOfDOF, const vuint& vDOF)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
@@ -1718,6 +1823,7 @@ void CMeshFactory::GeneBoundaryEdgeMesh(const uint& mgLevel, const uint& mesh_id
     pBEdgeMesh->setMaxMGLevel(mMGLevel);
     pBEdgeMesh->setID(bnd_id);
     pBEdgeMesh->setBndType(bnd_type);
+    pBEdgeMesh->setName(bnd_name);
 
     pBEdgeMesh->resizeDOF(numOfDOF);
     if(numOfDOF != vDOF.size()) mpLogger->Info(Utility::LoggerMode::Error, "CMeshFactory::GeneBoundaryEdgeMesh, invalid argument");
@@ -3325,9 +3431,6 @@ void CMeshFactory::refineCommMesh2()
     // --
     for(ilevel=0; ilevel< mMGLevel; ilevel++){
 
-        ////debug
-        //cout << "refineCommMesh2::ilevel= " << ilevel << endl;
-
         pAssy= mpGMGModel->getAssyModel(ilevel);
         pProgAssy= mpGMGModel->getAssyModel(ilevel+1);
         
@@ -3354,15 +3457,13 @@ void CMeshFactory::refineCommMesh2()
                 
                 pProgMesh->setCommMesh2(pProgCommMesh2);////<<<<< 上位のMeshへprogCommMesh2をセット
 
-
                 //--------------------
                 //CommMesh2のRefine準備
                 //--------------------
-                pCommMesh2->setupVertCommNode(pProgCommMesh2);//上位へ頂点のCommNodeをセット
+                pCommMesh2->setupCommNode(pProgCommMesh2);//上位へCommNodeをセット
                 pCommMesh2->setupAggFace();
-                pCommMesh2->setupEdgeCommNode(pProgCommMesh2);//上位へ辺のCommNodeをセット
+                pCommMesh2->setupEdgeCommNode(pProgCommMesh2, ilevel);//上位へ辺のCommNodeをセット
                 pCommMesh2->setupFaceCommNode(pProgCommMesh2);//上位へ面のCommNodeをセット
-                
                 
                 
                 //-----------------
@@ -3375,7 +3476,7 @@ void CMeshFactory::refineCommMesh2()
                     
                     //CommFaceが載っている要素
                     uint elemID = pCommFace->getElementID();
-                    CElement *pElem= pMesh->getElement(elemID);;
+                    CElement *pElem= pMesh->getElement(elemID);
                     
                     mvCommFace= pCommFace->refine(pElem);////// <<<<<<<<<<<<<<<<<< リファイン
 
@@ -3390,7 +3491,7 @@ void CMeshFactory::refineCommMesh2()
                         countID++;/////// 新IDカウントアップ: CommFace
                     };
                 };//ifaceループ
-
+                
                 
                 //-----------------------------
                 // CommFace:Quad,Triangleの場合
@@ -3425,7 +3526,6 @@ void CMeshFactory::refineCommMesh2()
 
                     }//if(NumOfEdge > 2)
 
-
                     // 辺のCommNodeへNodeをセット
                     //
                     PairCommNode pairCommNode;
@@ -3449,12 +3549,76 @@ void CMeshFactory::refineCommMesh2()
                         pEdgeCommNode->setNode(pEdgeNode);
                         
                     };//iedgeループ
-                };//ifaceループ
 
-            };//icommループ
-        };
-    };
-    
+                    //// 2 次要素の辺ノードをmvCommNodeへ移し替え => CommMesh2:setupEdgeCommNode に移動
+                    //// pCommFace->replaceEdgeCommNode();
+                    
+                };//ifaceループ
+            };//icomm ループ
+        };//imesh ループ
+    };// iLevel ループ
+
+    //
+    // 2次要素の場合、辺ノードを最終Levelに追加
+    // * 1次要素も辺に生成されるが、mvCommNodeには追加されない
+    //
+    pAssy= mpGMGModel->getAssyModel(mMGLevel);//最終LevelのAssyModel
+    uint imesh;
+    uint nNumOfMesh= pAssy->getNumOfMesh();
+    for(imesh=0; imesh < nNumOfMesh; imesh++){
+        pMesh= pAssy->getMesh(imesh);
+
+        uint icomm;
+        uint nNumOfComm= pMesh->getCommMesh2Size();
+
+        for(icomm=0; icomm< nNumOfComm; icomm++){
+            pCommMesh2= pMesh->getCommMesh2IX(icomm);
+
+            pCommMesh2->setupAggFace();
+            pCommMesh2->setupEdgeCommNode(NULL, ilevel);//上位へ辺のCommNodeをセット
+
+            // ---
+            // 辺CommNodeへNodeをセット
+            // ---
+            // Face
+            uint iface;
+            uint nNumOfFace = pCommMesh2->getCommFaceSize();
+            for(iface=0; iface< nNumOfFace; iface++){
+                pCommFace= pCommMesh2->getCommFaceIX(iface);
+
+                //CommFaceが載っている要素
+                uint elemID = pCommFace->getElementID();
+                CElement *pElem= pMesh->getElement(elemID);
+
+                // 辺のCommNodeへNodeをセット
+                //
+                PairCommNode pairCommNode;
+                CCommNode *pEdgeCommNode;
+                CNode *pNodeFir, *pNodeSec;
+                CNode *pEdgeNode;
+                uint iedge, numOfEdge;
+                numOfEdge= pCommFace->getNumOfEdge();
+
+                // Edge
+                for(iedge=0; iedge< numOfEdge; iedge++){
+                    pairCommNode= pCommFace->getEdgePairCommNode(iedge);
+
+                    pNodeFir= pairCommNode.first->getNode();
+                    pNodeSec= pairCommNode.second->getNode();
+
+                    uint edgeIndex;
+                    edgeIndex= pElem->getEdgeIndex(pNodeFir,pNodeSec);
+                    pEdgeNode= pElem->getEdgeInterNode(edgeIndex);
+
+                    pEdgeCommNode= pCommFace->getEdgeCommNode(iedge);
+                    pEdgeCommNode->setNode(pEdgeNode);
+
+                };//iedge loop
+            };//iface loop
+
+        };//icomm loop
+        
+    };//imesh loop
 }
 
 
@@ -3486,7 +3650,7 @@ void CMeshFactory::GeneCommMesh2(const uint& mgLevel, const uint& mesh_id, const
 // CommMesh2用途のCommFace生成
 // --
 void CMeshFactory::GeneCommFace(const uint& mgLevel, const uint& commeshID, const uint& face_id,
-            const uint& mesh_id,const uint elem_id, const uint& elem_ent_num, const vuint& vCommNodeID)
+            const uint& mesh_id,const uint elem_id, const uint& elem_ent_num, const uint& elem_type, const vuint& vCommNodeID)
 {
     mpTAssyModel= mpGMGModel->getAssyModel(mgLevel);
     mpTMesh= mpTAssyModel->getMesh_ID(mesh_id);
@@ -3505,36 +3669,76 @@ void CMeshFactory::GeneCommFace(const uint& mgLevel, const uint& commeshID, cons
     pCommFace->setElementID(elem_id);
     pCommFace->setElementFaceID(elem_ent_num);
     pCommFace->setMGLevel(mgLevel);
+    
+    uint nNumOfVert, nNumOfEdge, nOrder;
 
-    uint numOfVert= vCommNodeID.size();
-    uint numOfEdge;
-    switch(numOfVert)
+    switch(elem_type)
     {
-        case(4):
-            numOfEdge= 4;
+        case(ElementType::Quad):
+            nNumOfVert= 4; 
+            nNumOfEdge= 4;
+            nOrder = ElementOrder::First;
             break;
-        case(3):
-            numOfEdge= 3;
+
+        case(ElementType::Quad2):
+            nNumOfVert= 4;
+            nNumOfEdge= 4;
+            nOrder = ElementOrder::Second;
             break;
-        case(2):
-            numOfEdge= 1;
+
+        case(ElementType::Triangle):
+            nNumOfVert= 3;
+            nNumOfEdge= 3;
+            nOrder = ElementOrder::First;
             break;
+
+        case(ElementType::Triangle2):
+            nNumOfVert= 3;
+            nNumOfEdge= 3;
+            nOrder = ElementOrder::Second;
+            break;
+
+        case(ElementType::Beam):
+            nNumOfVert= 2;
+            nNumOfEdge= 1;
+            nOrder = ElementOrder::First;
+            break;
+
+        case(ElementType::Beam2):
+            nNumOfVert= 2;
+            nNumOfEdge= 1;
+            nOrder = ElementOrder::Second;
+            break;
+            
         default:
             break;
     }
-    pCommFace->initialize(numOfVert,numOfEdge);// CommFace初期化
+    pCommFace->initialize(nNumOfVert, nNumOfEdge, nOrder);// CommFace初期化
 
 
-    uint ivert, id;
-    numOfVert= vCommNodeID.size();
-
+    uint nNumOfNode = vCommNodeID.size();
+    uint i, id;
     CCommNode *pCommNode;
-    for(ivert=0; ivert< numOfVert; ivert++){
-        id= vCommNodeID[ivert];
-        pCommNode= mpTCommMesh2->getCommVertNode(id);
-        pCommFace->setVertCommNode(ivert, pCommNode);
+    for(i=0; i< nNumOfNode; i++){
+        id= vCommNodeID[i];
+        pCommNode= mpTCommMesh2->getCommNode(id);
+
+        pCommFace->setCommNode(i, pCommNode);
     };
-    
+
+
+    bool bSecond(false);
+    if(elem_type==ElementType::Quad2)     bSecond=true;
+    if(elem_type==ElementType::Triangle2) bSecond=true;
+    if(elem_type==ElementType::Beam2)     bSecond=true;
+
+    if(bSecond){
+        for(uint iedge=0; iedge< nNumOfEdge; iedge++){
+            id= vCommNodeID[nNumOfVert + iedge];
+            pCommNode= mpTCommMesh2->getCommNode(id);
+            pCommFace->setEdgeCommNode(pCommNode, iedge);
+        };
+    }
     mpTCommMesh2->addCommFace(pCommFace);
 }
 

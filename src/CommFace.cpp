@@ -1,8 +1,3 @@
-
-#include <vector>
-
-#include "Element.h"
-
 //
 //  CommFace.cpp
 //
@@ -10,6 +5,9 @@
 //
 //              2010.03.02
 //              k.Takeda
+#include <vector>
+#include "Element.h"
+
 #include "CommFace.h"
 #include "ElementType.h"
 using namespace pmw;
@@ -23,9 +21,25 @@ CCommFace::~CCommFace()
     ;
 }
 // 初期化
-void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge)
+void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge, const uint& nOrder)
 {
-    mvCommNode.resize(numOfVert);    //頂点ノード
+    // CommNodeサイズ、FaceTypeの設定
+    switch(numOfVert){
+        case(4):
+            if(ElementOrder::First== nOrder){ mFaceType= ElementType::Quad;  mvCommNode.resize(4);}
+            if(ElementOrder::Second==nOrder){ mFaceType= ElementType::Quad2; mvCommNode.resize(8);}
+            break;
+        case(3):
+            if(ElementOrder::First== nOrder){ mFaceType= ElementType::Triangle;  mvCommNode.resize(3);}
+            if(ElementOrder::Second==nOrder){ mFaceType= ElementType::Triangle2; mvCommNode.resize(6);}
+            break;
+        case(2):
+            if(ElementOrder::First== nOrder){ mFaceType= ElementType::Beam;  mvCommNode.resize(2);}
+            if(ElementOrder::Second==nOrder){ mFaceType= ElementType::Beam2; mvCommNode.resize(3);}
+            break;
+        default:
+            break;
+    }
     mvEdgeCommNode.resize(numOfEdge);//辺ノード
     
     mvEdgeCommFace.resize(numOfEdge);//辺に隣接する”面”
@@ -38,21 +52,31 @@ void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge)
     for(iedge=0; iedge< numOfEdge; iedge++){
         mvbEdgeMarking[iedge]= false;
     };
+}
 
+uint CCommFace::getOrder()
+{
+    switch(mFaceType){
+        case(ElementType::Quad):
+        case(ElementType::Triangle):
+        case(ElementType::Beam):
+            return ElementOrder::First;
 
-    //FaceTypeの設定
-    switch(numOfVert){
-        case(4):
-            mFaceType= ElementType::Quad;
-            break;
-        case(3):
-            mFaceType= ElementType::Triangle;
-            break;
-        case(2):
-            mFaceType= ElementType::Beam;
-            break;
-        default:
-            break;
+        case(ElementType::Quad2):
+        case(ElementType::Triangle2):
+        case(ElementType::Beam2):
+            return ElementOrder::Second;
+    }
+}
+uint CCommFace::getNumOfVert()
+{
+    switch(mFaceType){
+        case(ElementType::Quad):case(ElementType::Quad2):
+            return 4;
+        case(ElementType::Triangle):case(ElementType::Triangle2):
+            return 3;
+        case(ElementType::Beam):case(ElementType::Beam2):
+            return 2;
     }
 }
 
@@ -64,13 +88,16 @@ uint& CCommFace::getEdgeIndex(PairCommNode& pairCommNode)
     uint second_id= pairCommNode.second->getID();
     uint self_id;
     uint localNum0, localNum1;
-    uint numOfNode= mvCommNode.size();
+    uint numOfVert;
     uint inode;
 
     ////debug
     //cout << "CommFace::getEdgeIndex(pairCommNode), numOfNode= " << numOfNode << endl;
+    if(mNumOfEdge==3) numOfVert = 3;
+    if(mNumOfEdge==4) numOfVert = 4;
+    if(mNumOfEdge==1) numOfVert = 2;
 
-    for(inode=0; inode< numOfNode; inode++){
+    for(inode=0; inode< numOfVert; inode++){
         self_id=  mvCommNode[inode]->getID();
 
         ////debug
@@ -148,9 +175,9 @@ void CCommFace::setEdgeCommFace(CCommFace* pNeibFace, const uint& iedge)
 // 辺に隣接するFaceのセット タイプ2
 void CCommFace::setEdgeCommFace(CCommFace* pNeibFace, PairCommNode& pairCommNode)
 {
-//    //debug
-//    cout << "CCommFace::setEdgeCommFace(pFace, pairCommNode),  pair.first=  " << pairCommNode.first->getID()
-//                                                        << ",  pair.second= " << pairCommNode.second->getID() << endl;
+////    //debug
+////    cout << "CommFace::setEdgeCommFace(pFace, pairCommNode),  pair.first=  " << pairCommNode.first->getID()
+////                                                        << ",  pair.second= " << pairCommNode.second->getID() << endl;
 
     uint iedge= getEdgeIndex(pairCommNode);
     
@@ -212,21 +239,27 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
     uint progElemID;
     uint progEntityID;
     
-    uint numOfVert= mvCommNode.size();
+    uint numOfVert;
     uint numOfEdge;
+    uint nOrder;// 1次 || 2次 要素
     CCommFace* pCommFace;
-    switch(numOfVert){
-        case(4):
-            numOfEdge= 4;
 
+    switch(mFaceType){
+        case(ElementType::Quad):case(ElementType::Quad2):
+            numOfVert= 4;
+            numOfEdge= 4;
+            nOrder = pElement->getOrder();
+
+            
             // 頂点"0"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvCommNode[0]);
-            pCommFace->setVertCommNode(1, mvEdgeCommNode[0]);
-            pCommFace->setVertCommNode(2, mpFaceCommNode);
-            pCommFace->setVertCommNode(3, mvEdgeCommNode[3]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvCommNode[0]);
+            pCommFace->setCommNode(1, mvEdgeCommNode[0]);
+            pCommFace->setCommNode(2, mpFaceCommNode);
+            pCommFace->setCommNode(3, mvEdgeCommNode[3]);
             pCommFace->setMGLevel(mMGLevel+1);
+
 
             // CommNode[0]に対応するNodeにぶら下がるprogElement
             pNode= mvCommNode[0]->getNode();
@@ -244,11 +277,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
             // 頂点"1"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvEdgeCommNode[0]);
-            pCommFace->setVertCommNode(1, mvCommNode[1]);
-            pCommFace->setVertCommNode(2, mvEdgeCommNode[1]);
-            pCommFace->setVertCommNode(3, mpFaceCommNode);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvEdgeCommNode[0]);
+            pCommFace->setCommNode(1, mvCommNode[1]);
+            pCommFace->setCommNode(2, mvEdgeCommNode[1]);
+            pCommFace->setCommNode(3, mpFaceCommNode);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[1]に対応するNodeにぶら下がるprogElement
@@ -266,11 +299,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
             // 頂点"2"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mpFaceCommNode);
-            pCommFace->setVertCommNode(1, mvEdgeCommNode[1]);
-            pCommFace->setVertCommNode(2, mvCommNode[2]);
-            pCommFace->setVertCommNode(3, mvEdgeCommNode[2]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mpFaceCommNode);
+            pCommFace->setCommNode(1, mvEdgeCommNode[1]);
+            pCommFace->setCommNode(2, mvCommNode[2]);
+            pCommFace->setCommNode(3, mvEdgeCommNode[2]);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[2]に対応するNodeにぶら下がるprogElement
@@ -288,11 +321,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
             // 頂点"3"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvEdgeCommNode[3]);
-            pCommFace->setVertCommNode(1, mpFaceCommNode);
-            pCommFace->setVertCommNode(2, mvEdgeCommNode[2]);
-            pCommFace->setVertCommNode(3, mvCommNode[3]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvEdgeCommNode[3]);
+            pCommFace->setCommNode(1, mpFaceCommNode);
+            pCommFace->setCommNode(2, mvEdgeCommNode[2]);
+            pCommFace->setCommNode(3, mvCommNode[3]);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[3]に対応するNodeにぶら下がるElement
@@ -308,16 +341,20 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
             mvProgCommFace.push_back(pCommFace);
 
             break;
-        case(3):
-            numOfEdge= 3;
+
+        case(ElementType::Triangle):case(ElementType::Triangle2):
+            //三角形 => 四辺形を三個生成
+            numOfVert= 4;
+            numOfEdge= 4;
+            nOrder= pElement->getOrder();
 
             // 頂点"0"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvCommNode[0]);
-            pCommFace->setVertCommNode(1, mvEdgeCommNode[0]);
-            pCommFace->setVertCommNode(2, mpFaceCommNode);
-            pCommFace->setVertCommNode(3, mvEdgeCommNode[2]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvCommNode[0]);
+            pCommFace->setCommNode(1, mvEdgeCommNode[0]);
+            pCommFace->setCommNode(2, mpFaceCommNode);
+            pCommFace->setCommNode(3, mvEdgeCommNode[2]);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[0]に対応するNodeにぶら下がるprogElement
@@ -336,11 +373,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
             // 頂点"1"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvEdgeCommNode[0]);
-            pCommFace->setVertCommNode(1, mvCommNode[1]);
-            pCommFace->setVertCommNode(2, mvEdgeCommNode[1]);
-            pCommFace->setVertCommNode(3, mpFaceCommNode);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvEdgeCommNode[0]);
+            pCommFace->setCommNode(1, mvCommNode[1]);
+            pCommFace->setCommNode(2, mvEdgeCommNode[1]);
+            pCommFace->setCommNode(3, mpFaceCommNode);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[1]に対応するNodeにぶら下がるprogElement
@@ -359,11 +396,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
             // 頂点"2"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvEdgeCommNode[1]);
-            pCommFace->setVertCommNode(1, mvCommNode[2]);
-            pCommFace->setVertCommNode(2, mvEdgeCommNode[2]);
-            pCommFace->setVertCommNode(3, mpFaceCommNode);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvEdgeCommNode[1]);
+            pCommFace->setCommNode(1, mvCommNode[2]);
+            pCommFace->setCommNode(2, mvEdgeCommNode[2]);
+            pCommFace->setCommNode(3, mpFaceCommNode);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[2]に対応するNodeにぶら下がるprogElement
@@ -379,14 +416,17 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
             mvProgCommFace.push_back(pCommFace);
             
             break;
-        case(2):
+
+        case(ElementType::Beam):case(ElementType::Beam2):
+            numOfVert= 2;
             numOfEdge= 1;
+            nOrder= pElement->getOrder();
 
             // 頂点"0"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvCommNode[0]);
-            pCommFace->setVertCommNode(1, mvEdgeCommNode[0]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvCommNode[0]);
+            pCommFace->setCommNode(1, mvEdgeCommNode[0]);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[0]に対応するNodeにぶら下がるprogElement
@@ -401,13 +441,11 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
             mvProgCommFace.push_back(pCommFace);
 
 
-
-
             // 頂点"1"にぶら下がる新CommFace
             pCommFace= new CCommFace;//// <<<<<<<<<<<< 新CommFace生成
-            pCommFace->initialize(numOfVert, numOfEdge);
-            pCommFace->setVertCommNode(0, mvEdgeCommNode[0]);
-            pCommFace->setVertCommNode(1, mvCommNode[1]);
+            pCommFace->initialize(numOfVert, numOfEdge, nOrder);
+            pCommFace->setCommNode(0, mvEdgeCommNode[0]);
+            pCommFace->setCommNode(1, mvCommNode[1]);
             pCommFace->setMGLevel(mMGLevel+1);
 
             // CommNode[1]に対応するNodeにぶら下がるprogElement
@@ -422,6 +460,7 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
             mvProgCommFace.push_back(pCommFace);
             
             break;
+            
         default:
             break;
     }
@@ -429,10 +468,42 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
     return mvProgCommFace;
 }
 
+//
+// 2次要素面のときの辺ノード => mvCommNodeへ移設
+//
+void CCommFace::replaceEdgeCommNode()
+{
+    uint nNumOfVert;
+    switch(mFaceType){
+        case(ElementType::Quad):
+            return;////////////// quit
+        case(ElementType::Triangle):
+            return;////////////// quit
+        case(ElementType::Beam):
+            return;////////////// quit
 
+        case(ElementType::Quad2):
+            nNumOfVert=4;
+            break;
 
+        case(ElementType::Triangle2):
+            nNumOfVert=3;
+            break;
+
+        case(ElementType::Beam2):
+            nNumOfVert=2;
+            break;
+    }
+
+    uint iedge;
+    for(iedge=0; iedge < mNumOfEdge; iedge++){
+        mvCommNode[nNumOfVert + iedge] = mvEdgeCommNode[iedge];
+    };
+}
+
+//
 // Refine後のvector解放
-// ----
+// 
 void CCommFace::deleteProgData()
 {
     vector<CCommNode*>().swap(mvEdgeCommNode);// 辺に存在するNode (Refine用途)

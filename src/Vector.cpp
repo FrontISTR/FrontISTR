@@ -61,14 +61,30 @@ size_t CVector::size() const
 //	return mnNodeInternal * mnDOF;
 //}
 
-const CVector::ElemType &CVector::operator[](size_t idx) const
+//
+// Vector範囲内に存在するか. 
+//  *  prolongateFrom で利用 : 2次ノードの判定(2次ノードの親ノードはコースグリッドに存在しない)
+//
+bool CVector::isScopeNode(const uint& idx) const
 {
-	return mvVector[idx];
+    // 配列外を弾く
+    //  *2次要素での prolongateFrom 2次ノードはコースグリッドに存在しない場合
+    //
+    uint max = mvVector.size()-1;
+    if(idx > max){
+        return false;
+    }else{
+        return true;
+    }
+}
+const CVector::ElemType& CVector::operator[](size_t idx) const
+{
+    return mvVector[idx];
 }
 
-CVector::ElemType &CVector::operator[](size_t idx)
+CVector::ElemType& CVector::operator[](size_t idx)
 {
-	return mvVector[idx];
+    return mvVector[idx];
 }
 
 // Matrix 0 clear
@@ -172,24 +188,58 @@ int CVector::restrictTo(CVector *pV) const
 
 int CVector::prolongateFrom(const CVector *pV)
 {
-	// TODO implement CVector::prolongateFrom
+    // TODO implement CVector::prolongateFrom
+    
+    vector<uint> vQuadN;//2次ノードのインデックス番号 配列
 
-	for( uint i=0; i< mpMesh->getNumOfNode(); i++) {
-            CNode* node = mpMesh->getNodeIX(i);
-            uint numP = node->getNumOfParentNode();
-            if( numP == 0 ) {
-                mvVector[i] = (*pV)[i];
-            } else {
-                mvVector[i](0) = 0.0;mvVector[i](1) = 0.0;mvVector[i](2) = 0.0;
-                for(uint j=0; j<numP; j++) {
+    for( uint i=0; i< mpMesh->getNumOfNode(); i++) {
+        CNode* node = mpMesh->getNodeIX(i);
+        uint numP = node->getNumOfParentNode();
+
+        if( numP == 0 ) {
+            mvVector[i] = (*pV)[i];
+        } else {
+            //mvVector[i](0) = 0.0;mvVector[i](1) = 0.0;mvVector[i](2) = 0.0;
+            for(uint idof=0; idof < mnDOF; idof++) mvVector[i](idof) = 0.0;// 2010.11.30
+
+            //2次ノード判定
+            bool bQuad(false);
+            if(numP == 2){
+                for(uint j=0; j < numP; j++){
                     uint k = node->getParentNode(j)->getID();
+                    if( !pV->isScopeNode(k) ) bQuad=true;
+                };
+            }
+            if(bQuad) vQuadN.push_back(i);//2次ノードのノード・インデックス番号を収集
+
+            // 頂点のノードのプロロンゲート
+            if( !bQuad ){
+                for(uint j=0; j < numP; j++) {
+                    uint k = node->getParentNode(j)->getID();
+
                     mvVector[i] += (*pV)[k];
-                }
+                };
                 mvVector[i] = mvVector[i] / numP;
             }
-	}
 
-	return 0;//2010.05.14
+        }// if(numP==0):コースグリッド
+    };
+
+////    // 2次ノードの処理はあってもなくても変わらない:所詮推測値を入れているに過ぎないから
+////    //
+////    cout << "vQuadN.size == " << vQuadN.size() << endl;
+////
+////    // 2次ノードの値を同一レベルの頂点からセット
+////    for(uint i=0; i < vQuadN.size(); i++){
+////        uint idex = vQuadN[i];
+////        CNode* pNode = mpMesh->getNodeIX(idex);
+////        uint n1 = pNode->getParentNode(0)->getID();
+////        uint n2 = pNode->getParentNode(1)->getID();
+////
+////        mvVector[idex] = (mvVector[n1] + mvVector[n2]) * 0.5;
+////    }
+
+    return 0;//2010.05.14
 }
 
 }//namespace pmw

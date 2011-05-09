@@ -116,6 +116,10 @@ __declspec(dllexport) int mw_get_num_of_node_with_mesh_(int* imesh);
 __declspec(dllexport) int mw_get_num_of_element_();// in select mesh_part
 __declspec(dllexport) int mw_get_num_of_element_with_mesh_(int* imesh);
 
+// id
+__declspec(dllexport) int mw_get_element_id_(int* index);
+__declspec(dllexport) int mw_get_node_id_(int* index);
+
 //----
 // node type
 //----
@@ -137,9 +141,29 @@ __declspec(dllexport) int mw_elemtype_triangle_();
 __declspec(dllexport) int mw_elemtype_triangle2_();
 __declspec(dllexport) int mw_elemtype_line_();
 __declspec(dllexport) int mw_elemtype_line2_();
-
-
-
+//----
+// frontISTR element type
+//----
+__declspec(dllexport) int mw_fistr_elemtype_hexa_();
+__declspec(dllexport) int mw_fistr_elemtype_hexa2_();
+__declspec(dllexport) int mw_fistr_elemtype_tetra_();
+__declspec(dllexport) int mw_fistr_elemtype_tetra2_();
+__declspec(dllexport) int mw_fistr_elemtype_prism_();
+__declspec(dllexport) int mw_fistr_elemtype_prism2_();
+__declspec(dllexport) int mw_fistr_elemtype_quad_();
+__declspec(dllexport) int mw_fistr_elemtype_quad2_();
+__declspec(dllexport) int mw_fistr_elemtype_triangle_();
+__declspec(dllexport) int mw_fistr_elemtype_triangle2_();
+__declspec(dllexport) int mw_fistr_elemtype_line_();
+__declspec(dllexport) int mw_fistr_elemtype_line2_();
+//----
+// frontISTR element type => MW3 element type
+//----
+__declspec(dllexport) int mw_fistr_elemtype_to_mw3_elemtype_(int* fistr_elemtype);
+//----
+// MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+//----
+__declspec(dllexport) int mw_mw3_elemtype_to_fistr_elemtype_(int* mw3_elemtype);
 
 
 //----
@@ -260,6 +284,18 @@ __declspec(dllexport) int mw_get_num_of_bedge_(int* ibmesh);
 __declspec(dllexport) double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* idof);
 __declspec(dllexport) int mw_get_num_of_bvolume_(int* ibmesh);
 __declspec(dllexport) double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof);
+//--
+// boundary_mesh name
+//--
+__declspec(dllexport) int mw_get_bnode_mesh_namelength_(int* ibmesh);
+__declspec(dllexport) void mw_get_bnode_mesh_name_(int* ibmesh, char* name, int* name_len);
+__declspec(dllexport) int mw_get_bface_mesh_namelength_(int* ibmesh);
+__declspec(dllexport) void mw_get_bface_mesh_name_(int* ibmesh, char* name, int* name_len);
+__declspec(dllexport) int mw_get_bvolume_mesh_namelength_(int* ibmesh);
+__declspec(dllexport) void mw_get_bvolume_mesh_name_(int* ibmesh, char* name, int* name_len);
+__declspec(dllexport) int mw_get_bedge_mesh_namelength_(int* ibmesh);
+__declspec(dllexport) void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len);
+
 
 
 //--

@@ -1,5 +1,5 @@
 //
-//  old HEC_MW file_tag union
+//  HEC_MW 2.02    file_tag
 //  
 //
 //				2009.4.07
@@ -11,11 +11,11 @@
 
 namespace FileIO{
 struct FileBlockNameMW2{
-    // HEC_MW
+    // HEC_MW 2.02
     static const char* Comment(){ return "!!";}
     static const char* SingleExclamation(){ return "!";}// Exclamation(!)
 
-    // HEC_MW mesh file
+    // HEC_MW 2.02 mesh file
     static const char* Header(){ return "!HEADER";}
     static const char* Zero(){ return "!ZERO";}
     static const char* Node(){ return "!NODE";}
@@ -32,7 +32,7 @@ struct FileBlockNameMW2{
     static const char* Connectivity(){ return "!CONNECTIVITY";}
     static const char* End(){ return "!END";}
 
-    // HEC_MW cnt file
+    // HEC_MW 2.02 cnt file
     static const char* Control(){return "!CONTROL";}
     static const char* Mesh(){ return "!MESH";}	
     static const char* MeshGroup(){ return "!MESH GROUP";}

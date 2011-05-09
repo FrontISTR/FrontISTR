@@ -59,13 +59,23 @@ void CIndexBucket::clearBucketElement()
 //    mvID2ElementIndex.resize(defElementID + 1);
 //}
 
-//
+// 初期の領域確保
 //
 void CIndexBucket::resizeBucketNode(const uint &maxID, const uint &minID)
 {
     maxNodeID = maxID;
     minNodeID = minID;
     defNodeID = maxID - minID;
+
+    mvID2NodeIndex.resize(defNodeID+1);
+}
+//
+// Nodeが追加された時の再resize
+//
+void CIndexBucket::re_resizeBucketNode(const uint& new_maxID)
+{
+    maxNodeID = new_maxID;
+    defNodeID = maxNodeID - minNodeID;
 
     mvID2NodeIndex.resize(defNodeID+1);
 }

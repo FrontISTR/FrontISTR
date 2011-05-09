@@ -95,6 +95,8 @@ protected:
 
 
 public:
+    virtual void initialize()=0;
+
     // Element ID
     void setID(const uint& id){ mnID = id;}
     uint& getID(){ return mnID;}
@@ -147,35 +149,49 @@ public:
 
     // Property
     virtual const uint& getType()=0;
+    virtual const uint& getOrder()=0;//1次-2次要素判定
     virtual const uint& getNumOfFace()=0;
     virtual const uint& getNumOfEdge()=0;
     virtual const uint& getNumOfNode()=0;
+    virtual const uint& getNumOfVert()=0;
     virtual const uint& getEntityType()=0;
 
 
     // prolongation準備
     // ---------------
+    //
     // EdgeElement
+    //
     virtual PairNode getPairNode(const uint& iedge)=0;
     virtual void     getPairNode(vint& pairNodeIndex, const uint& iedge)=0;
     void reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem);
     void setEdgeElement(const uint& edgeIndex, CElement* pElem);
     void setEdgeAggElement(const uint& edgeIndex, vector<CElement*> vElement);
     vector<CElement*>& getEdgeElement(const uint& edgeIndex){ return mvvEdgeElement[edgeIndex];}
+    //
     // EdgeElement boolスタンプ
+    //
     virtual bool isEdgeElem(CNode* pNode0, CNode* pNode1)=0;
     virtual void setBoolEdgeElem(CNode* pNode0, CNode* pNode1)=0;
+    //
     // (局所ノード番号,局所ノード番号)に対応した辺の,Index番号
+    //
     virtual uint& getEdgeIndex(CNode* pNode0, CNode* pNode1)=0;
     virtual uint& getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)=0;
+    //
     // EdgeNode
     // set Intermediate Node for prolongation
     // (prolongation 辺ノード)
+    //
     void setEdgeInterNode(CNode* pNode, const uint& edgeIndex);
     CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
-    uint getEdgeInterNodeSize(){ mvEdgeInterNode.size();}//deleteProgDataの確認用
+    uint getEdgeInterNodeSize(){ mvEdgeInterNode.size();}//deleteProgData処理後の確認用
+    //
+    // 2次要素において、辺NodeをmvNodeに移し替える && 1次要素では何もしない.
+    //
+    virtual void replaseEdgeNode(){ ;}
 
-
+    //
     // FaceElement
     //
     void setFaceElement(CElement* pElem, const uint& faceIndex){ mvFaceElement[faceIndex]= pElem;}
@@ -208,6 +224,7 @@ public:
 
     // Node周囲の接続先Nodeを配列で返す.
     // (係数行列 作成用途, CMesh::setupAggregate)
+    //
     virtual vector<CNode*> getConnectNode(CNode* pNode)=0;
 
 
@@ -237,7 +254,7 @@ public:
     // Refine後
     // 1. 辺-面 Element*配列を解放
     // 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
-    // --
+    // 
     virtual void deleteProgData()=0;
 
 };

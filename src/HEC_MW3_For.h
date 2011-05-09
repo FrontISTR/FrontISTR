@@ -103,6 +103,10 @@ integer mw_get_num_of_node_with_mesh
 integer mw_get_num_of_element
 integer mw_get_num_of_element_with_mesh
 
+! id
+integer mw_get_element_id_
+integer mw_get_node_id_
+
 !----
 ! node type
 !----
@@ -124,9 +128,29 @@ integer mw_elemtype_triangle
 integer mw_elemtype_triangle2
 integer mw_elemtype_line
 integer mw_elemtype_line2
-
-
-
+!----
+! frontISTR element type
+!----
+integer mw_fistr_elemtype_hexa
+integer mw_fistr_elemtype_hexa2
+integer mw_fistr_elemtype_tetra
+integer mw_fistr_elemtype_tetra2
+integer mw_fistr_elemtype_prism
+integer mw_fistr_elemtype_prism2
+integer mw_fistr_elemtype_quad
+integer mw_fistr_elemtype_quad2
+integer mw_fistr_elemtype_triangle
+integer mw_fistr_elemtype_triangle2
+integer mw_fistr_elemtype_line
+integer mw_fistr_elemtype_line2
+!----
+! frontISTR element type => MW3 element type 
+!----
+integer mw_fistr_elemtype_to_mw3_elemtype
+!----
+! MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+!----
+integer mw_mw3_elemtype_to_fistr_elemtype
 
 
 !----
@@ -247,6 +271,19 @@ integer mw_get_num_of_bedge
 double precision mw_get_bedge_value
 integer mw_get_num_of_bvolume
 double precision mw_get_bvolume_value
+!--
+! boundary_mesh name
+!--
+integer mw_get_bnode_mesh_namelength
+external mw_get_bnode_mesh_name
+integer mw_get_bface_mesh_namelength
+external mw_get_bface_mesh_name
+integer mw_get_bvolume_mesh_namelength
+external mw_get_bvolume_mesh_name
+integer mw_get_bedge_mesh_namelength
+external mw_get_bedge_mesh_name
+
+
 
 
 !--

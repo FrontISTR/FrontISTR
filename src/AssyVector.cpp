@@ -193,14 +193,14 @@ void CAssyVector::updateCommBoundary()
       uint ic = 0;//BUFF index
 
       if( source < destination ) {
-	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
+	int numOfCommNode= pCommMesh2->getCommNodeSize();
 	
         if( numOfCommNode*mnDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
         
 	for(uint icnode=0; icnode < numOfCommNode; icnode++){
-	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
+	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
 
           for(uint idof=0; idof < mnDOF; idof++) BUFF[ic++] = (*iv)->getValue(inode, idof);
@@ -230,7 +230,7 @@ void CAssyVector::updateCommBoundary()
       uint ic = 0;//BUFF index
 
       if( source > destination ) {
-	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
+	int numOfCommNode= pCommMesh2->getCommNodeSize();
 
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
@@ -239,7 +239,7 @@ void CAssyVector::updateCommBoundary()
 	pMPI->Recv(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE, destination, 100+destination, MPI_COMM_WORLD, &stat);
 
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
-	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
+	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
 
           for(uint idof=0; idof < mnDOF; idof++) (*iv)->setValue(inode, idof, BUFF[ic++]);
@@ -270,32 +270,27 @@ void CAssyVector::sumupCommBoundary()
     for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
         
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source	 = pCommMesh2->getRank();
+      uint source      = pCommMesh2->getRank();
       uint destination = pCommMesh2->getTrasmitRank();
       uint ic = 0;//BUFF index
       
       if( source > destination ) {
-	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
+	int numOfCommNode= pCommMesh2->getCommNodeSize();
         
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
         
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
-	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
+	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
           
           for(uint idof=0; idof < mnDOF; idof++){
               BUFF[ic++] = (*iv)->getValue(inode, idof);
               (*iv)->setValue(inode, idof, 0.0);
           };
-	  //BUFF[ic++] = (*iv)->getValue(inode, 0);
-	  //BUFF[ic++] = (*iv)->getValue(inode, 1);
-	  //BUFF[ic++] = (*iv)->getValue(inode, 2);
-	  //(*iv)->setValue(inode, 0, 0.0);
-	  //(*iv)->setValue(inode, 1, 0.0);
-	  //(*iv)->setValue(inode, 2, 0.0);
-	}
+          
+	};
 	pMPI->Send(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE,destination,101,MPI_COMM_WORLD);
       }
     }
@@ -318,7 +313,7 @@ void CAssyVector::sumupCommBoundary()
       uint ic = 0;// BUFF index
 
       if( source < destination ) {
-	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
+	int numOfCommNode= pCommMesh2->getCommNodeSize();
 
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
@@ -327,7 +322,7 @@ void CAssyVector::sumupCommBoundary()
 	pMPI->Recv(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE,destination,101,MPI_COMM_WORLD,&stat);
 
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
-	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
+	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
 
           for(uint idof=0; idof < mnDOF; idof++) (*iv)->addValue(inode, idof, BUFF[ic++]);

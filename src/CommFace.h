@@ -36,6 +36,7 @@ private:
     uint mFaceType; //接合面の形をElementTypeで表現
 
 
+
     // 面の構成データ
     vector<CCommNode*>  mvCommNode;    // 面の頂点Node
     vector<CCommNode*>  mvEdgeCommNode;// 辺に存在するNode (Refine用途)
@@ -53,7 +54,7 @@ private:
 
 public:
     // 初期化(Type, vector_resize)
-    void initialize(const uint& numOfVert, const uint& numOfEdge);
+    void initialize(const uint& numOfVert, const uint& numOfEdge, const uint& nOrder);
     
     // ID
     void  setID(const uint& id){ mID= id;}
@@ -68,7 +69,10 @@ public:
     // 形状
     uint& getType(){ return mFaceType;}
     uint& getNumOfEdge(){ return mNumOfEdge;}
+    uint  getNumOfVert();
 
+    // 1次 || 2次
+    uint getOrder();
 
     // ラップしているMesh要素
     // ----
@@ -82,12 +86,16 @@ public:
 
 
 
-    // 頂点のノード
+    // 通信ノード全体
     // ----
-    void setVertCommNode(const uint& ivert, CCommNode* pCommNode){ mvCommNode[ivert]= pCommNode;}
-    uint getVertCommNodeSize(){ return mvCommNode.size();}
-    CCommNode* getVertCommNode(const uint& ivert){ return mvCommNode[ivert];}
-    vector<CCommNode*>& getVertCommNode(){ return mvCommNode;}
+    //void setVertCommNode(const uint& ivert, CCommNode* pCommNode){ mvCommNode[ivert]= pCommNode;}
+    void setCommNode(const uint& index, CCommNode* pCommNode){ mvCommNode[index]= pCommNode;}
+    //uint getVertCommNodeSize(){ return mvCommNode.size();}
+    uint getCommNodeSize(){ return mvCommNode.size();}
+    //CCommNode* getVertCommNode(const uint& ivert){ return mvCommNode[ivert];}
+    //vector<CCommNode*>& getVertCommNode(){ return mvCommNode;}
+    CCommNode* getCommNode(const uint& index){ return mvCommNode[index];}
+    vector<CCommNode*>& getCommNode(){ return mvCommNode;}
 
 
     // 辺の両端のCommNode
@@ -109,6 +117,9 @@ public:
     void markingEdgeNode(PairCommNode& pairCommNode);
     bool isEdgeNodeMarking(const uint& iedge){ return mvbEdgeMarking[iedge];}
 
+    // 2次要素面のときの辺ノード => mvCommNodeへ移設
+    //
+    void replaceEdgeCommNode();
 
 
     // 面ノード

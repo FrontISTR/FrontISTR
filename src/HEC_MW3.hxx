@@ -192,7 +192,9 @@ public:
     __declspec(dllexport) uint  getElementSize(){ return mpMesh->getElementSize();}
     __declspec(dllexport) uint  getNodeSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getNodeSize();}
     __declspec(dllexport) uint  getElementSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getElementSize();}
-
+    // ID
+    __declspec(dllexport) uint& getNodeID(const uint& index);
+    __declspec(dllexport) uint& getElementID(const uint& index);
 
     //----
     // メモリーの解放(Node::AggElemIDの解放):Mesh操作によるデータ構築の最後に実行
@@ -221,7 +223,29 @@ public:
     __declspec(dllexport) uint elemtype_triangle2();
     __declspec(dllexport) uint elemtype_line();
     __declspec(dllexport) uint elemtype_line2();
-
+    //----
+    // FrontISTR 要素タイプ
+    //----
+    __declspec(dllexport) uint fistr_elemtype_hexa();
+    __declspec(dllexport) uint fistr_elemtype_hexa2();
+    __declspec(dllexport) uint fistr_elemtype_tetra();
+    __declspec(dllexport) uint fistr_elemtype_tetra2();
+    __declspec(dllexport) uint fistr_elemtype_prism();
+    __declspec(dllexport) uint fistr_elemtype_prism2();
+    __declspec(dllexport) uint fistr_elemtype_quad();
+    __declspec(dllexport) uint fistr_elemtype_quad2();
+    __declspec(dllexport) uint fistr_elemtype_triangle();
+    __declspec(dllexport) uint fistr_elemtype_triangle2();
+    __declspec(dllexport) uint fistr_elemtype_line();
+    __declspec(dllexport) uint fistr_elemtype_line2();
+    //----
+    // FrontISTR 要素タイプ　=> MW3 要素タイプ 変換
+    //----
+    __declspec(dllexport) uint fistr_elemtype_to_mw3_elemtype(const uint& fistr_elemtype);
+    //----
+    // MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+    //----
+    __declspec(dllexport) uint mw3_elemtype_to_fistr_elemtype(const uint& mw3_elemtype);
 
 
     // --
@@ -380,6 +404,18 @@ public:
     __declspec(dllexport) double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof);
     __declspec(dllexport) uint GetNumOfBVolume(const uint& ibmesh);
     __declspec(dllexport) double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof);
+    //--
+    // Boundaryの名称
+    //--
+    __declspec(dllexport) uint GetBNodeMesh_NameLength(const uint& ibmesh);
+    __declspec(dllexport) string& GetBNodeMesh_Name(const uint& ibmesh);
+    __declspec(dllexport) uint GetBFaceMesh_NameLength(const uint& ibmesh);
+    __declspec(dllexport) string& GetBFaceMesh_Name(const uint& ibmesh);
+    __declspec(dllexport) uint GetBVolumeMesh_NameLength(const uint& ibmesh);
+    __declspec(dllexport) string& GetBVolumeMesh_Name(const uint& ibmesh);
+    __declspec(dllexport) uint GetBEdgeMesh_NameLength(const uint& ibmesh);
+    __declspec(dllexport) string& GetBEdgeMesh_Name(const uint& ibmesh);
+    
 
 
     //--

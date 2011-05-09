@@ -3,19 +3,35 @@
 //                  2009.06.19
 //                  2008.11.27
 //                  k.Takeda
+#include <vector>
+
 #include "Tetra.h"
 using namespace pmw;
 
 uint CTetra::mnElemType = ElementType::Tetra;
+uint CTetra::mnElemOrder = 1;
 uint CTetra::mNumOfFace = 4;
 uint CTetra::mNumOfEdge = 6;
 uint CTetra::mNumOfNode = 4;
+uint CTetra::mNumOfVert = 4;
 
 // construct & destruct
 //
 CTetra::CTetra(void)
 {
+    ;
+}
+
+CTetra::~CTetra(void)
+{
+//    //debug
+//    cout << "~CTetra" << endl;
+}
+
+void CTetra::initialize()
+{
     mvNode.resize(mNumOfNode);
+
     mvvEdgeElement.resize(mNumOfEdge);
 
     mvEdgeInterNode.resize(mNumOfEdge);
@@ -52,16 +68,13 @@ CTetra::CTetra(void)
     };
 }
 
-CTetra::~CTetra(void)
-{
-//    //debug
-//    cout << "~CTetra" << endl;
-}
-
-
 const uint& CTetra::getType()
 {
     return mnElemType;
+}
+const uint& CTetra::getOrder()
+{
+    return mnElemOrder;
 }
 
 

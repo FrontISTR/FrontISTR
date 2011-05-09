@@ -16,9 +16,7 @@ using namespace boost::numeric;
 
 namespace pmw
 {
-
 class CMesh;
-//class CSolverPre;
 
 class CMatrixBCRS: public CMatrix
 {
@@ -63,8 +61,6 @@ private:
 	int mPrecond;
 
 	// smoother
-
-	//friend class CSolverPreILU;
 };
 
 }

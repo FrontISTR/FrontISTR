@@ -31,43 +31,43 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 	mvIndexU[0] = 0;
 
 	for (int i_node = 0; i_node < mnNode; i_node++) {
-		std::vector<int> v_item_l;
-		std::vector<int> v_item_u;
-        
-        CNode *pNode= pMesh->getNodeIX(i_node);
-        uint i_node_id = pNode->getID();
+            std::vector<int> v_item_l;
+            std::vector<int> v_item_u;
 
-        CElement *pElement;
-        CAggregateElement *pAggElement= pMesh->getAggElem(i_node_id);
+            CNode *pNode= pMesh->getNodeIX(i_node);
+            uint i_node_id = pNode->getID();
 
-        uint numOfElement= pAggElement->getNumOfElement();
-        uint i_elem;
-        for(i_elem=0; i_elem < numOfElement; i_elem++){
-            pElement= pAggElement->get(i_elem);
-                
-            uint numOfNode= pElement->getNumOfNode();
-            uint k_node;
-            for (k_node = 0; k_node < numOfNode; k_node++) {
-                uint k_node_id = pElement->getNode(k_node)->getID();
-                if(k_node_id < i_node_id){
-                    v_item_l.push_back(k_node_id);
-                }else if(i_node_id < k_node_id){
-                    v_item_u.push_back(k_node_id);
-                }
+            CElement *pElement;
+            CAggregateElement *pAggElement= pMesh->getAggElem(i_node_id);
+
+            uint numOfElement= pAggElement->getNumOfElement();
+            uint i_elem;
+            for(i_elem=0; i_elem < numOfElement; i_elem++){
+                pElement= pAggElement->get(i_elem);
+
+                uint numOfNode= pElement->getNumOfNode();
+                uint k_node;
+                for (k_node = 0; k_node < numOfNode; k_node++) {
+                    uint k_node_id = pElement->getNode(k_node)->getID();
+                    if(k_node_id < i_node_id){
+                        v_item_l.push_back(k_node_id);
+                    }else if(i_node_id < k_node_id){
+                        v_item_u.push_back(k_node_id);
+                    }
+                };
             };
-        };
-            
-		std::sort(v_item_l.begin(), v_item_l.end());
-		std::vector<int>::iterator new_end = std::unique(v_item_l.begin(), v_item_l.end());
-		v_item_l.erase(new_end, v_item_l.end());
-		mvIndexL[i_node + 1] = mvIndexL[i_node] + v_item_l.size();
-		mvItemL.insert(mvItemL.end(), v_item_l.begin(), v_item_l.end());
 
-		std::sort(v_item_u.begin(), v_item_u.end());
-		new_end = std::unique(v_item_u.begin(), v_item_u.end());
-		v_item_u.erase(new_end, v_item_u.end());
-		mvIndexU[i_node + 1] = mvIndexU[i_node] + v_item_u.size();
-		mvItemU.insert(mvItemU.end(), v_item_u.begin(), v_item_u.end());
+            std::sort(v_item_l.begin(), v_item_l.end());
+            std::vector<int>::iterator new_end = std::unique(v_item_l.begin(), v_item_l.end());
+            v_item_l.erase(new_end, v_item_l.end());
+            mvIndexL[i_node + 1] = mvIndexL[i_node] + v_item_l.size();
+            mvItemL.insert(mvItemL.end(), v_item_l.begin(), v_item_l.end());
+
+            std::sort(v_item_u.begin(), v_item_u.end());
+            new_end = std::unique(v_item_u.begin(), v_item_u.end());
+            v_item_u.erase(new_end, v_item_u.end());
+            mvIndexU[i_node + 1] = mvIndexU[i_node] + v_item_u.size();
+            mvItemU.insert(mvItemU.end(), v_item_u.begin(), v_item_u.end());
 
 	}
 	mvD.resize(mnNode);

@@ -21,7 +21,9 @@ class CMesh;
 class CVector
 {
 public:
+        //////////////////////////////////////
 	typedef ublas::vector<double> ElemType;
+        //////////////////////////////////////
 
 	CVector(CMesh *pMesh, const uint& nDOF);
 	CVector(const CVector *pVector);
@@ -63,6 +65,8 @@ private:
 	// restrictor
 	// prolongator
 	CMesh *mpMesh;
+
+        bool isScopeNode(const uint& idx) const;//Vector範囲内に存在するか.
 };
 
 }

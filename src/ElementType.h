@@ -48,6 +48,40 @@ struct ElementType{
     };
 };
 
+// FrontISTR要素タイプ
+//
+struct FistrElementType{
+    enum{
+        Polygon=1,//Film
+        Hexa=361,
+        Hexa2=362,
+        Prism=351,
+        Prism2=352,
+        Tetra=341,
+        Tetra2=342,
+        Quad=241,
+        Quad2=242,
+        Triangle=231,
+        Triangle2=232,
+        Beam,
+        Beam2,
+        //Bar,
+        //Rod,
+        //Mass,
+        Point,//SkinFaceの型として利用
+        Limit//enumの終端
+    };
+};
+
+struct ElementOrder{
+    enum{
+        Zero,
+        First,
+        Second,
+        Limit//enumの終端
+    };
+};
+
 // ShapeFunctionType
 struct ShapeType{
     enum{
