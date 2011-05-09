@@ -1,56 +1,51 @@
 /*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   MatrixBCRS.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
-/*
  * MatrixBCRS.cpp
  *
  *  Created on: Oct 16, 2009
  *      Author: goto
  */
+
 #include "MatrixBCRS.h"
 #include "Mesh.h"
 #include "Node.h"
 #include "Element.h"
 #include "Vector.h"
 #include <algorithm>
+
 namespace pmw
 {
+
+//template<int NDOF>
 CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMatrixBCRS::CMatrixBCRS \n");
 #endif
 	CNode *pNode = pMesh->getNode(0);
+	//mnDOF = pNode->numOfScalarParam() + pNode->numOfVectorParam();
 	mnDOF = pNode->numOfVectorParam();
 	mnNode = pMesh->getNumOfNode();
 	printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
-	mvIndexL.resize(mnNode+1); 
-	mvIndexU.resize(mnNode+1); 
+	mvIndexL.resize(mnNode+1); // K.Matsubara
+	mvIndexU.resize(mnNode+1); // K.Matsubara
+
 	mvIndexL[0] = 0;
 	mvIndexU[0] = 0;
+
 	for (int i_node = 0; i_node < mnNode; i_node++) {
 		std::vector<int> v_item_l;
 		std::vector<int> v_item_u;
+
         pNode= pMesh->getNodeIX(i_node);
         uint i_node_id = pNode->getID();
+
         CElement *pElement;
         CAggregateElement *pAggElement= pMesh->getAggElem(i_node_id);
         uint numOfElement= pAggElement->getNumOfElement();
         uint i_elem;
         for(i_elem=0; i_elem < numOfElement; i_elem++){
             pElement= pAggElement->get(i_elem);
+                
             uint numOfNode= pElement->getNumOfNode();
             uint k_node;
             for (k_node = 0; k_node < numOfNode; k_node++) {
@@ -62,16 +57,19 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
                 }
             };
         };
+            
 		std::sort(v_item_l.begin(), v_item_l.end());
 		std::vector<int>::iterator new_end = std::unique(v_item_l.begin(), v_item_l.end());
 		v_item_l.erase(new_end, v_item_l.end());
 		mvIndexL[i_node + 1] = mvIndexL[i_node] + v_item_l.size();
 		mvItemL.insert(mvItemL.end(), v_item_l.begin(), v_item_l.end());
+
 		std::sort(v_item_u.begin(), v_item_u.end());
 		new_end = std::unique(v_item_u.begin(), v_item_u.end());
 		v_item_u.erase(new_end, v_item_u.end());
 		mvIndexU[i_node + 1] = mvIndexU[i_node] + v_item_u.size();
 		mvItemU.insert(mvItemU.end(), v_item_u.begin(), v_item_u.end());
+
 	}
 	mvD.resize(mnNode);
 	for (int i = 0; i < mnNode; i++) {
@@ -95,6 +93,7 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 		mvAU[i].resize(mnDOF, mnDOF);
 		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvAU[i](i1,i2)=0.0;
 	}
+
 #ifdef ADVANCESOFT_DEBUG	
 	for (int i = 0; i < mnNode; i++) {
 		printf(" %d %d %d ; ", i, mvIndexL[i], mvIndexL[i+1]-1);
@@ -113,20 +112,27 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 	printf("exit CMatrixBCRS::CMatrixBCRS \n");
 #endif
 }
+
+//template<int NDOF>
 CMatrixBCRS::~CMatrixBCRS()
 {
+	// TODO Auto-generated destructor stub
 }
+
 int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CMatrixBCRS::Matrix_Add_Elem %d %e \n", iElem, ElemMatrix[0]);
 #endif
+
     CElement *pElement = pMesh->getElementIX(iElem);
     vector<CNode*> vNode= pElement->getNode();
     int nLocalNode = vNode.size();
     int mnNode = pMesh->getNumOfNode();
+    //mnDOF = vNode[0]->numOfScalarParam() + vNode[0]->numOfVectorParam();
 	mnDOF = vNode[0]->numOfVectorParam();
     int nMatSize = nLocalNode * mnDOF;
+
     for(int i=0; i< nLocalNode; i++) for(int j=0; j< nLocalNode; j++){
 		int kL, kU;
 		uint irow = vNode[i]->getID();
@@ -162,8 +168,10 @@ int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
 #ifdef ADVANCESOFT_DEBUG
    	printf(" exit CMatrixBCRS::Matrix_Add_Elem \n");
 #endif
+
     return 1;
 }
+
 void CMatrixBCRS::multVector(CVector *pV, CVector *pP) const
 {
 	for (int i = 0; i < mnNode; i++) {
@@ -176,6 +184,7 @@ void CMatrixBCRS::multVector(CVector *pV, CVector *pP) const
 		}
 	}
 }
+
 void CMatrixBCRS::setValue(int inode, int idof, double value)
 {
 #ifdef ADVANCESOFT_DEBUG
@@ -186,23 +195,28 @@ void CMatrixBCRS::setValue(int inode, int idof, double value)
    	printf(" exit CMatrixBCRS::setValue \n");
 #endif
 }
+
 int CMatrixBCRS::setupPreconditioner(int type)
 {
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMatrixBCRS::setupPreconditioner \n");
 #endif
   ublas::matrix<double> pA(3,3), pB(3,3), pC(3,3);
+
   mPrecond = type;
   int itype;
+
   itype = -99;
   if( mPrecond == 1 ) itype = 2;
   if( mPrecond == 2 ) itype = 2;
   if( mPrecond == 3 ) itype = 2;
   if( mPrecond == 4 ) itype = 1;
   if( itype == -99 ) printf("setup precondition; fatal error %d\n", mPrecond);
+
   switch( itype ){
   case( 1 ):
     printf(" [TYPE:1] Preconditioner \n");
+    // D - L * D**(-1) * LT
     for (int i = 0; i < mnNode; i++) {
       pA = mvD[i];
       for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
@@ -214,6 +228,7 @@ int CMatrixBCRS::setupPreconditioner(int type)
     };
     break;
   case( 4 ):
+    // D - UT * D**(-1) * U
     printf(" [TYPE:4] Preconditioner \n");
     for (int i = 0; i < mnNode; i++) mvALU[i] = mvD[i];
     for (int i = 0; i < mnNode; i++) {
@@ -242,6 +257,7 @@ int CMatrixBCRS::setupPreconditioner(int type)
 #endif
   return 1;
 }
+
 double CMatrixBCRS::inverse(ublas::matrix<double> pA, ublas::matrix<double> *pB)
 {
 	double det = determinant( pA );
@@ -257,10 +273,13 @@ double CMatrixBCRS::inverse(ublas::matrix<double> pA, ublas::matrix<double> *pB)
 	(*pB)(2, 2) = Recip * ( pA(0, 0) * pA(1, 1) - pA(1, 0) * pA(0, 1) );
 	return det;
 }	
+
 void CMatrixBCRS::transpose(ublas::matrix<double> pA, ublas::matrix<double> *pB)
 {
 	for (int i=0; i< mnDOF; i++) for (int j=0; j<mnDOF; j++) (*pB)(i, j) = pA(j, i);
 }	
+
+
 double CMatrixBCRS::determinant(ublas::matrix<double> pA)
 {
 	double det = pA(0, 0) * pA(1, 1) * pA(2, 2)
@@ -271,16 +290,21 @@ double CMatrixBCRS::determinant(ublas::matrix<double> pA)
 		- pA(0, 0) * pA(2, 1) * pA(1, 2);
 	return det;
 }	
+
 int CMatrixBCRS::setupSmoother(int type)
 {
+	//
    	printf(" enter CMatrixBCRS::setupSmoother \n");
+   	
    	printf(" exit CMatrixBCRS::setupSmoother \n");
 	return 1;
 }
+
 int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
 {
   CVector::ElemType WW(3);
   ublas::zero_vector<double> vzero(3);
+
   int itype;
   itype = -99;
   if( mPrecond == 1 ) itype = 1;
@@ -288,6 +312,7 @@ int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
   if( mPrecond == 3 ) itype = 2;
   if( mPrecond == 4 ) itype = 1;
   if( itype == -99 ) printf("precond; fatal error %d\n", mPrecond, itype);
+
   switch( itype ){
   case( 0 ):
     pZ->subst(pR);
@@ -320,6 +345,7 @@ int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
 	}
 	WW = prod(mvALU[i], WW);
 	double omega = 0.5;
+	//					double omega = 1.0;
 	(*pZ)[i] = (*pZ)[i] + omega * ( WW - (*pZ)[i] );
       }
     }
@@ -331,8 +357,10 @@ int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
   }
 	return 1;
 }
+
 int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
 {
+  // call smoother (once)
   CVector::ElemType WW(3);
   for(int i=0; i< mnNode; i++) {
     WW = (*pR)[i];
@@ -348,4 +376,5 @@ int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
   }
   return 1;
 }
+
 }

@@ -7,13 +7,13 @@
 #include "API_Fortran.h"
 #include "HEC_MW3.h"
 
-pmw::CMWMain *pMW;
+pmw::CMW *pMW;
 
 //----
 // 1. HEC_MW3 construct & destruct
 //----
 void mw_initialize_(){
-    pMW = pmw::CMWMain::Instance();
+    pMW = pmw::CMW::Instance();
 }
 void mw_finalize_(){
     ;

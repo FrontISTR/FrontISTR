@@ -1,20 +1,12 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   ShapeTetra.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+/* 
+ * File:   ShapeTetra.h
+ * Author: ktakeda
+ *
+ * Created on 2010/01/28, 16:45
+ */
 #include "TypeDef.h"
 #include "ShapeFunctionBase.h"
+
 namespace pmw{
 #ifndef _SHAPETETRA_H
 #define	_SHAPETETRA_H
@@ -26,44 +18,84 @@ public:
         static CShapeTetra moShapeTetra;
         return &moShapeTetra;
     }
+
     virtual ~CShapeTetra();
+
 private:
+//    // MW3 辺番号 -> FrontISTR 2次節点番号
+//    uint mvEdge_2_ISTR[6];
+//    // FrontISTR -> MW3 辺番号
+//    uint mvISTR_2_Edge[10];
+
+    //積分座標(体積座標): L1,L2,L3
+    // 
     double mGzi1[1][3];
     double mGzi4[4][3];
     double mGzi15[15][3];
+
+    //積分点での重み
     double mW1[1];
     double mW4[4];
     double mW15[15];
-    vvdouble mvN41;  
-    vvdouble mvN101; 
-    vvdouble mvN104; 
-    vvdouble mvN1015;
-    vvvdouble mvdNdr41;  
-    vvvdouble mvdNdr101; 
-    vvvdouble mvdNdr104; 
-    vvvdouble mvdNdr1015;
+
+
+    //形状関数:N[積分点][i] : i番の形状関数
+    vvdouble mvN41;  //[1][4]    4節点要素  積分点1
+    vvdouble mvN101; //[1][10]  10節点要素  積分点1
+    vvdouble mvN104; //[4][10]  10節点要素  積分点4
+    vvdouble mvN1015;//[15][10] 10節点要素 積分点15
+
+    //導関数:dNdr[積分点][i][vol_coord]
+    vvvdouble mvdNdr41;  //[1][4][3]    4節点要素  積分点1
+    vvvdouble mvdNdr101; //[1][10][3]  10節点要素  積分点1
+    vvvdouble mvdNdr104; //[4][10][3]  10節点要素  積分点4
+    vvvdouble mvdNdr1015;//[15][10][3] 10節点要素 積分点15
+
+    //ヤコビアン
     CJacobian *mpJacobi41;
     CJacobian *mpJacobi101;
     CJacobian *mpJacobi104;
     CJacobian *mpJacobi1015;
-    vvvdouble mvdNdx41; 
-    vvvdouble mvdNdx101;
-    vvvdouble mvdNdx104;
-    vvvdouble mvdNdx1015;
+    //導関数(グローバル座標): dNdx[積分点][i][xyz]
+    vvvdouble mvdNdx41; //[1][4][3]
+    vvvdouble mvdNdx101;//[1][10][3]
+    vvvdouble mvdNdx104;//[4][10][3]
+    vvvdouble mvdNdx1015;//[15][10][3]
+
+    //detJ : 配列[igauss]
     vdouble mv_detJ41;
     vdouble mv_detJ101;
     vdouble mv_detJ104;
     vdouble mv_detJ1015;
+
+
+    
+    //形状関数 & 導関数のセットアップ
     void setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3]);
     void setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3]);
+
+
+
+    //形状関数
     void ShapeFunction4(vvdouble& N, const uint& igauss,
                          const double& L1, const double& L2, const double& L3);
     void ShapeFunction10(vvdouble& N, const uint& igauss,
                          const double& L1, const double& L2, const double& L3);
+
+    //導関数
     void ShapeDeriv4(vvvdouble& dNdr, const uint& igauss);
     void ShapeDeriv10(vvvdouble& dNdr, const uint& igauss,
                          const double& L1, const double& L2, const double& L3);
+
+    // Equivalent Node Force(等価節点力)
+    //                  のための形状関数積分
+    vdouble mvIntegValue10;
+    vdouble mvIntegValue4;
+    void setupIntegValue10();
+    void setupIntegValue4();
+
 public:
+    // 形状関数   引数:積分点位置index, 形状関数番号(節点)
     double& N41(const uint& igauss, const uint& ishape);
     double& N101(const uint& igauss, const uint& ishape);
     double& N104(const uint& igauss, const uint& ishape);
@@ -76,6 +108,8 @@ public:
     vvdouble& N101(){ return mvN101;}
     vvdouble& N104(){ return mvN104;}
     vvdouble& N1015(){ return mvN1015;}
+
+    // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
     double& dNdr41(const uint& igauss, const uint& ishape, const uint& axis);
     double& dNdr101(const uint& igauss, const uint& ishape, const uint& axis);
     double& dNdr104(const uint& igauss, const uint& ishape, const uint& axis);
@@ -88,25 +122,38 @@ public:
     vvvdouble& dNdr101(){ return mvdNdr101;}
     vvvdouble& dNdr104(){ return mvdNdr104;}
     vvvdouble& dNdr1015(){ return mvdNdr1015;}
+
+    
+    // 返り値:重みの配列, 引数:積分点数
     double* Weight(const uint& integNum);
+    // 返り値:重み, 引数:重みの配列Index
     double& Weight_pt1();
     double& Weight_pt4(const uint& igauss);
     double& Weight_pt15(const uint& igauss);
+
+    // dNdx 計算セットアップ
     void Calc_dNdx4(const uint& numOfInteg, CElement *pElement);
     void Calc_dNdx10(const uint& numOfInteg, CElement *pElement);
+
+    // dNdx (空間座標の導関数)
     double& dNdx41(const uint& igauss, const uint& ishape, const uint& axis){  return  mvdNdx41[igauss][ishape][axis];}
     double& dNdx101(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx101[igauss][ishape][axis];}
     double& dNdx104(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx104[igauss][ishape][axis];}
     double& dNdx1015(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx1015[igauss][ishape][axis];}
+
     vvdouble& dNdx41(const uint& igauss){  return  mvdNdx41[igauss];}
     vvdouble& dNdx101(const uint& igauss){ return mvdNdx101[igauss];}
     vvdouble& dNdx104(const uint& igauss){ return mvdNdx104[igauss];}
     vvdouble& dNdx1015(const uint& igauss){ return mvdNdx1015[igauss];}
+
     vvvdouble& dNdx41(){   return   mvdNdx41;}
     vvvdouble& dNdx101(){  return  mvdNdx101;}
     vvvdouble& dNdx104(){  return  mvdNdx104;}
     vvvdouble& dNdx1015(){ return mvdNdx1015;}
+
+    // detJ : [積分点][ishape]
     double& detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss);
+
     double& detJ41(const uint& igauss){ return mv_detJ41[igauss];}
     double& detJ101(const uint& igauss){ return mv_detJ101[igauss];}
     double& detJ104(const uint& igauss){ return mv_detJ104[igauss];}
@@ -115,6 +162,15 @@ public:
     vdouble& detJ101(){  return  mv_detJ101;}
     vdouble& detJ104(){  return  mv_detJ104;}
     vdouble& detJ1015(){ return mv_detJ1015;}
+
+
+    // 形状関数積分値
+    vdouble& getIntegValue10(){ return mvIntegValue10;}
+    vdouble& getIntegValue4(){ return mvIntegValue4;}
+    double& getIntegValue10(const uint& ishape){ return mvIntegValue10[ishape];}
+    double& getIntegValue4(const uint& ishape){ return mvIntegValue4[ishape];}
 };
 #endif	/* _SHAPETETRA_H */
 }
+
+

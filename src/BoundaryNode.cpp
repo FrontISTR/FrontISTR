@@ -1,58 +1,75 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   BoundaryNode.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  BoundaryNode.cpp
+//
+//  境界Node
+//
+//                          2009.05.13
+//                          2009.05.13
+//                          k.Takeda
+#include <vector>
+
 #include "BoundaryNode.h"
 using namespace pmw;
+
 CBoundaryNode::CBoundaryNode()
 {
     ;
 }
 CBoundaryNode::~CBoundaryNode()
 {
+//    //debug
+//    cout << "~CBoundaryNode" << endl;
 }
-void CBoundaryNode::initialize(const uint& bndType,const uint& dof)
+
+
+// Level数分の配列確保
+// ----
+void CBoundaryNode::resizeValue(const uint& numOfDiffLevel)
 {
-    mnType = bndType;
-    switch(mnType){
-        case(BoundaryTypeNode::Disp):
-            mvValue.resize(dof);
-            break;
-        case(BoundaryTypeNode::Accel):
-            mvValue.resize(dof);
-            break;
-        case(BoundaryTypeNode::Load):
-            mvValue.resize(dof);
-            break;
-        case(BoundaryTypeNode::Temp):
-            if(dof != 1){
-                Utility::CLogger *pLogger = Utility::CLogger::Instance();
-                pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
-            }
-            mvValue.resize(dof);
-            break;
-        case(BoundaryTypeNode::Velo):
-            mvValue.resize(dof);
-            break;
-        case(BoundaryTypeNode::Thermal_Flux):
-            if(dof != 1){
-                Utility::CLogger *pLogger = Utility::CLogger::Instance();
-                pLogger->Info(Utility::LoggerMode::Warn,"mismatch DOF, input dof =>",dof);
-            }
-            mvValue.resize(dof);
-            break;
-        default:
-            break;
-    }
+    mvValue.resize(numOfDiffLevel);
 }
+
+
+// ゼロクリア 
+// ----
+void CBoundaryNode::initValue(const uint& dof, const uint& mgLevel)
+{
+    uint diffLevel= mgLevel - mMGLevel;//diffLevelは,計算Levelと自身の差
+    
+    mvValue[diffLevel][dof]= 0.0;
+}
+
+
+// 代入
+// ---
+void CBoundaryNode::setValue(const uint& dof, const uint& mgLevel, const double& val)
+{
+    uint diffLevel= mgLevel - mMGLevel;
+
+    //cout << "BoundaryNode::setValue, diffLevel= " << diffLevel << ", mvValue.size=" << mvValue.size() << endl;
+
+    mvValue[diffLevel][dof]= val;
+}
+
+
+// 加算(足し合わせ)
+// ----
+void CBoundaryNode::addValue(const uint& dof, const uint& mgLevel, const double& val)
+{
+    uint diffLevel= mgLevel - mMGLevel;
+
+    mvValue[diffLevel][dof] += val;
+}
+
+
+// 境界値の提供
+// ----
+double& CBoundaryNode::getValue(const uint& dof, const uint& mgLevel)
+{
+    uint diffLevel= mgLevel - mMGLevel;
+
+    return mvValue[diffLevel][dof];
+}
+
+
+

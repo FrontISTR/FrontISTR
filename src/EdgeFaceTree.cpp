@@ -1,24 +1,26 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   EdgeFaceTree.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  EdgeFaceTree.cpp
+//
+//  Edge0, Edge1からFace局所インデックス番号を選択
+//
+//                          2009.06.30
+//                          2009.06.30
+//                          k.Takeda
+
 #include "EdgeFaceTree.h"
 #include "Logger.h"
 using namespace pmw;
+
+// construct
+//
 CEdgeFaceTree::CEdgeFaceTree()
 {
     uint iface,iedge;
+    
+    // Faceを構成するEdge番号
+    // --
+    
+    // Hexa
     uint hexedge[6][4]={
         {0,1,2,3},
         {4,7,6,5},
@@ -32,6 +34,8 @@ CEdgeFaceTree::CEdgeFaceTree()
             mHexaFaceConnEdge[iface][iedge]= hexedge[iface][iedge];
         };
     };
+    
+    // Tetra
     uint tetedge[4][3]={
         {0,1,2},
         {0,3,4},
@@ -43,6 +47,8 @@ CEdgeFaceTree::CEdgeFaceTree()
             mTetraFaceConnEdge[iface][iedge]= tetedge[iface][iedge];
         };
     };
+    
+    // Prism
     uint priedge[5][4]={
         {0,2,1,0},
         {8,7,6,8},
@@ -55,6 +61,8 @@ CEdgeFaceTree::CEdgeFaceTree()
             mPrismFaceConnEdge[iface][iedge]= priedge[iface][iedge];
         };
     };
+    
+    // Pyramid
     uint pyraedge[5][4]={
         {0,1,2,3},
         {1,4,5,1},
@@ -67,23 +75,37 @@ CEdgeFaceTree::CEdgeFaceTree()
             mPyramidFaceConnEdge[iface][iedge]= pyraedge[iface][iedge];
         };
     };
+    
+    // Quad
     uint quadedge[1][4]={
         {0,1,2,3}
     };
     for(iedge=0; iedge< 4; iedge++){
         mQuadFaceConnEdge[0][iedge]= quadedge[0][iedge];
     }
+    
+    // Triangle
     uint triedge[1][3]={
         {0,1,2}
     };
     for(iedge=0; iedge< 3; iedge++){
         mTriangleFaceConnEdge[0][iedge]= triedge[0][iedge];
     }
+    
 }
+// destruct
+//
 CEdgeFaceTree::~CEdgeFaceTree()
 {
     cout << "~CEdgeFaceTree" << endl;
 }
+
+// method
+// --
+// 辺2本から面(Face)番号を出力
+// --
+// Hexa
+//
 uint& CEdgeFaceTree::getHexaFaceIndex(const uint& edge0, const uint& edge1)
 {
     switch(edge0){
@@ -162,8 +184,12 @@ uint& CEdgeFaceTree::getHexaFaceIndex(const uint& edge0, const uint& edge1)
         default:
             break;
     }
+
     return mFaceIndex;
 }
+
+// Tetra
+// --
 uint& CEdgeFaceTree::getTetraFaceIndex(const uint& edge0, const uint& edge1)
 {
     switch(edge0){
@@ -203,11 +229,16 @@ uint& CEdgeFaceTree::getTetraFaceIndex(const uint& edge0, const uint& edge1)
             if(edge1==4){mFaceIndex=2;}
             if(edge1==1){mFaceIndex=2;}
             break;
+
         default:
             break;
     }
+
     return mFaceIndex;
 }
+
+// Prism
+// --
 uint& CEdgeFaceTree::getPrismFaceIndex(const uint& edge0, const uint& edge1)
 {
     switch(edge0){
@@ -265,11 +296,16 @@ uint& CEdgeFaceTree::getPrismFaceIndex(const uint& edge0, const uint& edge1)
             if(edge1==3){mFaceIndex=4;}
             if(edge1==5){mFaceIndex=4;}
             break;
+
         default:
             break;
     }
+
     return mFaceIndex;
 }
+
+// Pyramid
+// --
 uint& CEdgeFaceTree::getPyramidFaceIndex(const uint& edge0, const uint& edge1)
 {
     switch(edge0){
@@ -321,26 +357,48 @@ uint& CEdgeFaceTree::getPyramidFaceIndex(const uint& edge0, const uint& edge1)
             if(edge1==3){mFaceIndex=3;}
             if(edge1==6){mFaceIndex=3;}
             break;
+
         default:
             break;
     }
+
     return mFaceIndex;
 }
+
+// Quad
+// --
 uint& CEdgeFaceTree::getQuadFaceIndex(const uint& edge0, const uint& edge1)
 {
     if(edge0 > 3 || edge1 > 3){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
         pLogger->Info(Utility::LoggerMode::Error,"edge number over flow @CEdgeFaceTree::getQuadFaceIndex");
     }
+
     mFaceIndex=0;
+
     return mFaceIndex;
 }
+
+// Triangle
+// --
 uint& CEdgeFaceTree::getTriangleFaceIndex(const uint& edge0, const uint& edge1)
 {
     if(edge0 > 2 || edge1 > 2){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
         pLogger->Info(Utility::LoggerMode::Error,"edge number over flow @CEdgeFaceTree::getTriangleFaceIndex");
     }
+    
     mFaceIndex=0;
+
     return mFaceIndex;
 }
+
+
+
+
+
+
+
+
+
+

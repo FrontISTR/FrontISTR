@@ -1,58 +1,80 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   FileReaderBoundaryNode.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  FileReaderBoundaryNode.cpp
+//
+//
+//
+//                          2009.05.22
+//                          2009.05.22
+//                          k.Takeda
 #include "FileReaderBoundaryNode.h"
 using namespace FileIO;
+
+
 CFileReaderBoundaryNode::CFileReaderBoundaryNode()
 {
     ;
 }
+
 CFileReaderBoundaryNode::~CFileReaderBoundaryNode()
 {
     ;
 }
+
 bool CFileReaderBoundaryNode::Read(ifstream& ifs, string& sLine)
 {
-    uint    nNodeID, numOfBNode, nMeshID, maxID, minID, dof, bndType;
-    uint    nMGLevel(0);
-    vdouble vValue;
-    string  s_bndType;
+    uint bnode_id, node_id, dof;
+    uint mgLevel(0);
+    uint bnd_id, bnd_type, numOfBNode, mesh_id;
+    double val, x, y, z;
+    string s_bnd_type;
+    
+    istringstream iss;
+    
     if(TagCheck(sLine, FileBlockName::StartBoundaryNode()) ){
+        
         sLine = getLineSt(ifs);
-        istringstream iss(sLine.c_str());
-        iss >> numOfBNode >> nMeshID >> maxID >> minID;
-        mpFactory->reserveBoundaryNode(nMGLevel, nMeshID, numOfBNode);
-        vValue.clear();
-        while(true){
-            sLine = getLineSt(ifs);
+        iss.clear();
+        iss.str(sLine);
+
+        // NodeBoundaryID, 境界種類, MeshID, 境界節点数
+        iss >> bnd_id >> s_bnd_type >> mesh_id >> numOfBNode;
+
+        // 境界タイプ文字列を uint に変換
+        bnd_type= IntBndType(s_bnd_type);
+
+        while(!ifs.eof()){
+            sLine= getLineSt(ifs);
             if(TagCheck(sLine, FileBlockName::EndBoundaryNode())) break;
-            istringstream iss(sLine.c_str());
-            iss >> dof >> s_bndType >> nNodeID;
-            vValue.resize(dof);
-            for(uint i=0; i< dof; i++) iss >> vValue[i];
-            if(s_bndType=="Load") bndType = pmw::BoundaryTypeNode::Load;
-            if(s_bndType=="Disp") bndType = pmw::BoundaryTypeNode::Disp;
-            if(s_bndType=="Velo") bndType = pmw::BoundaryTypeNode::Velo;
-            if(s_bndType=="Accel")        bndType= pmw::BoundaryTypeNode::Accel;
-            if(s_bndType=="Temp")         bndType = pmw::BoundaryTypeNode::Temp;
-            if(s_bndType=="Thermal_Flux") bndType= pmw::BoundaryTypeNode::Thermal_Flux;
-            mpFactory->GeneBoundaryNode(nMGLevel, nMeshID, nNodeID, dof, bndType, vValue);
-            mpLogger->Monitor(Utility::LoggerMode::MWDebug, nNodeID, vValue, "FileReaderBoundaryNode");
+            iss.clear();
+            iss.str(sLine);
+            // BNodeID, NodeID, x, y, z, DOF, Value :=> x,y,z は未使用
+            iss >> bnode_id >> node_id >> x >> y >> z >> dof >> val;
+
+            //cout << "FileReaderBoundaryNode::read , GeneBoundaryNode A " << endl;
+
+            mpFactory->GeneBoundaryNode(mgLevel, bnd_id, bnd_type, mesh_id, node_id, bnode_id, dof, val);
+
+            //cout << "FileReaderBoundaryNode::read , GeneBoundaryNode B " << endl;
         };
+
         return true;
     }else{
         return false;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,34 +1,26 @@
 /*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   Matrix.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
-/*
  * Matrix.cpp
  *
  *  Created on: Jul 23, 2009
  *      Author: goto
  */
+
 #include "Matrix.h"
 #include "Vector.h"
+
 namespace pmw
 {
 CMatrix::CMatrix()
 {
+    // TODO Auto-generated constructor stub
+
 }
+
 CMatrix::~CMatrix()
 {
+    // TODO Auto-generated destructor stub
 }
+
 void CMatrix::residual(CVector *pV, const CVector *pF, CVector *pR) const
 {
     multVector(pV, pR);
@@ -37,4 +29,5 @@ void CMatrix::residual(CVector *pV, const CVector *pF, CVector *pR) const
             (*pR)[i] = (*pF)[i] - (*pR)[i];
     }
 }
+
 }

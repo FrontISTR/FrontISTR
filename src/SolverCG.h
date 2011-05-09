@@ -1,23 +1,18 @@
 /*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   SolverCG.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+ * SolverCG.h
+ *
+ *  Created on: Jul 23, 2009
+ *      Author: goto
+ */
+
 #ifndef SOLVERCG_H_
 #define SOLVERCG_H_
+
 #include "Solver.h"
+
 namespace pmw
 {
+
 class CSolverCG: public pmw::CSolver
 {
 public:
@@ -30,5 +25,7 @@ private:
 			int iter_max, double tolerance,
 			bool flag_iter_log, bool flag_time_log);
 };
+
 }
+
 #endif /* SOLVERCG_H_ */

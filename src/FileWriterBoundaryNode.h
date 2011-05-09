@@ -1,22 +1,14 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   FileWriterBoundaryNode.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
-#ifndef _FILEWRITERBOUNDARYNODE_H_127f4064_fe9e_44d9_9ec1_8e65c6a18d73
-#define	_FILEWRITERBOUNDARYNODE_H_127f4064_fe9e_44d9_9ec1_8e65c6a18d73
+/* 
+ * File:   FileWriterBoundaryNode.h
+ * Author: ktakeda
+ *
+ * Created on 2009/07/23, 17:57
+ */
 #include "FileWriter.h"
+
 namespace FileIO{
+#ifndef _FILEWRITERBOUNDARYNODE_H_
+#define	_FILEWRITERBOUNDARYNODE_H_    
 class CFileWriterBoundaryNode:public CFileWriter{
 public:
     CFileWriterBoundaryNode();
@@ -24,5 +16,8 @@ public:
 public:
     virtual void Write(ofstream& ofs, const uint& mgLevel);
 };
-}
 #endif	/* _FILEWRITERBOUNDARYNODE_H */
+}
+
+
+

@@ -1,27 +1,26 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   ShapeQuad.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  ShapeQuad.cpp
+//
+//
+//
+//
+//              2010.02.02
+//              k.Takeda
 #include "ShapeQuad.h"
 using namespace pmw;
+
 CShapeQuad::CShapeQuad()
 {
+    
+
+    //積分座標: gzi,eta
     mGzi1[0][0]= 0.0; mGzi1[0][1]= 0.0;
+
     mGzi4[0][0]= -0.5773502691896260;   mGzi4[0][1]= -0.5773502691896260;
     mGzi4[1][0]=  0.5773502691896260;   mGzi4[1][1]= -0.5773502691896260;
     mGzi4[2][0]= -0.5773502691896260;   mGzi4[2][1]=  0.5773502691896260;
     mGzi4[3][0]=  0.5773502691896260;   mGzi4[3][1]=  0.5773502691896260;
+
     mGzi9[0][0]= -0.7745966692414830;  mGzi9[0][1]= -0.7745966692414830;
     mGzi9[1][0]= -0.0;                 mGzi9[1][1]= -0.7745966692414830;
     mGzi9[2][0]= 0.7745966692414830;   mGzi9[2][1]= -0.7745966692414830;
@@ -31,50 +30,80 @@ CShapeQuad::CShapeQuad()
     mGzi9[6][0]= -0.7745966692414830;  mGzi9[6][1]=  0.7745966692414830;
     mGzi9[7][0]= -0.0;                 mGzi9[7][1]=  0.7745966692414830;
     mGzi9[8][0]= 0.7745966692414830;   mGzi9[8][1]=  0.7745966692414830;
+
+    //積分点の重み
     mW1[0]= 4.0;
     mW4[0]= 1.0; mW4[1]= 1.0; mW4[2]= 1.0; mW4[3]= 1.0;
+    
     mW9[0]= 0.3086419753086420; mW9[1]= 0.4938271604938270; mW9[2]= 0.3086419753086420;
     mW9[3]= 0.4938271604938270; mW9[4]= 0.7901234567901230; mW9[5]= 0.4938271604938270;
     mW9[6]= 0.3086419753086420; mW9[7]= 0.4938271604938270; mW9[8]= 0.3086419753086420;
+
+    //積分点数
     mvIntegNum.resize(3);
     mvIntegNum[0]= 1;
     mvIntegNum[1]= 4;
     mvIntegNum[2]= 9;
+    //1次元方向での積分点数
     mvIntegNum1D.resize(3);
     mvIntegNum1D[0]= 1;
     mvIntegNum1D[1]= 2;
     mvIntegNum1D[2]= 3;
+    
     uint numOfIntg,numOfShape,dof;
+    //領域確保
+    //--
+    //4節点要素 積分点1
     numOfIntg=1; numOfShape=4; dof=2;
     ResizeShape(mvN41, numOfIntg, numOfShape);
     ResizeDeriv(mvdNdr41, numOfIntg, numOfShape, dof);
     Resize2ndDeriv(mvd2Ndr41, numOfIntg, numOfShape,dof);
+    //8節点要素 積分点4
     numOfIntg=4; numOfShape=8; dof=2;
     ResizeShape(mvN84, numOfIntg, numOfShape);
     ResizeDeriv(mvdNdr84, numOfIntg, numOfShape, dof);
     Resize2ndDeriv(mvd2Ndr84, numOfIntg, numOfShape, dof);
+    //8節点要素 積分点9
     numOfIntg=9; numOfShape=8; dof=2;
     ResizeShape(mvN89, numOfIntg, numOfShape);
     ResizeDeriv(mvdNdr89, numOfIntg, numOfShape, dof);
     Resize2ndDeriv(mvd2Ndr89, numOfIntg, numOfShape, dof);
+
+
+
+    //形状関数 セットアップ
     setupShapeFunction(mvN41, 1, 4, mGzi1);
     setupShapeFunction(mvN84, 4, 8, mGzi4);
     setupShapeFunction(mvN89, 9, 8, mGzi9);
+    //導関数 セットアップ
     setupShapeDeriv(mvdNdr41, 1, 4, mGzi1);
     setupShapeDeriv(mvdNdr84, 4, 8, mGzi4);
     setupShapeDeriv(mvdNdr89, 9, 8, mGzi9);
+    //2次導関数 セットアップ
     setupShape2ndDeriv(mvd2Ndr41, 1, 4, mGzi1);
     setupShape2ndDeriv(mvd2Ndr84, 4, 8, mGzi4);
     setupShape2ndDeriv(mvd2Ndr89, 9, 8, mGzi9);
+
+
+    //形状関数の積分 セットアップ
+    mvIntegValue8.resize(8);
+    mvIntegValue4.resize(4);
+    setupIntegValue8();
+    setupIntegValue4();
 }
 CShapeQuad::~CShapeQuad()
 {
     ;
 }
+
+
+
+//形状関数のセットアップ
 void CShapeQuad::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][2])
 {
     uint igauss;
     double r,s;
+
     switch(numOfShape){
         case(4):
                 igauss= 0;
@@ -91,10 +120,12 @@ void CShapeQuad::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const ui
             break;
     }
 }
+//導関数のセットアップ
 void CShapeQuad::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][2])
 {
     uint igauss;
     double r,s;
+    
     switch(numOfShape){
         case(4):
                 igauss= 0;
@@ -111,10 +142,12 @@ void CShapeQuad::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const u
             break;
     }
 }
+//2次導関数のセットアップ
 void CShapeQuad::setupShape2ndDeriv(v4double& d2Ndr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][2])
 {
     uint igauss;
     double r,s;
+
     switch(numOfShape){
         case(4):
                 Shape_2ndDeriv4();
@@ -129,6 +162,9 @@ void CShapeQuad::setupShape2ndDeriv(v4double& d2Ndr, const uint& numOfIntg, cons
             break;
     }
 }
+
+
+//形状関数
 void CShapeQuad::ShapeFunction4(vvdouble& N, const uint& igauss,
                                     const double& r, const double& s)
 {
@@ -149,6 +185,8 @@ void CShapeQuad::ShapeFunction8(vvdouble& N, const uint& igauss,
     N[igauss][6]= 0.50*(1.0-r*r)*(1.0+s);
     N[igauss][7]= 0.50*(1.0-s*s)*(1.0-r);
 }
+
+//導関数
 void CShapeQuad::ShapeDeriv4(vvvdouble& dNdr, const uint& igauss,
                                     const double& r, const double& s)
 {
@@ -156,6 +194,7 @@ void CShapeQuad::ShapeDeriv4(vvvdouble& dNdr, const uint& igauss,
     dNdr[igauss][1][0]=   0.25*(1.0-s);
     dNdr[igauss][2][0]=   0.25*(1.0+s);
     dNdr[igauss][3][0]=  -0.25*(1.0+s);
+
     dNdr[igauss][0][1]=  -0.25*(1.0-r);
     dNdr[igauss][1][1]=  -0.25*(1.0+r);
     dNdr[igauss][2][1]=   0.25*(1.0+r);
@@ -172,6 +211,8 @@ void CShapeQuad::ShapeDeriv8(vvvdouble& dNdr, const uint& igauss,
     dNdr[igauss][5][0]=  0.50*(1.0-s*s);
     dNdr[igauss][6][0]= -r*(1.0+s);
     dNdr[igauss][7][0]= -0.50*(1.0-s*s);
+
+
     dNdr[igauss][0][1]=  0.25*(1.0-r)*(r+2.0*s);
     dNdr[igauss][1][1]= -0.25*(1.0+r)*(r-2.0*s);
     dNdr[igauss][2][1]=  0.25*(1.0+r)*(r+2.0*s);
@@ -181,18 +222,24 @@ void CShapeQuad::ShapeDeriv8(vvvdouble& dNdr, const uint& igauss,
     dNdr[igauss][6][1]=  0.50*(1.0-r*r);
     dNdr[igauss][7][1]= -s*(1.0-r);
 }
+
+
+//2次導関数
 void CShapeQuad::Shape_2ndDeriv4()
 {
     uint igauss(0);
+
     uint ishape;
     for(ishape=0; ishape < 4; ishape++){
         mvd2Ndr41[igauss][ishape][0][0]= 0.0;
         mvd2Ndr41[igauss][ishape][1][1]= 0.0;
     };
+    
     mvd2Ndr41[igauss][0][0][1]=  0.25;
     mvd2Ndr41[igauss][1][0][1]= -0.25;
     mvd2Ndr41[igauss][2][0][1]=  0.25;
     mvd2Ndr41[igauss][3][0][1]= -0.25;
+
     mvd2Ndr41[igauss][0][1][0]=  0.25;
     mvd2Ndr41[igauss][1][1][0]= -0.25;
     mvd2Ndr41[igauss][2][1][0]=  0.25;
@@ -209,6 +256,7 @@ void CShapeQuad::Shape_2ndDeriv8(v4double& d2Ndr, const uint& igauss,
     d2Ndr[igauss][5][0][0]=  0.0;
     d2Ndr[igauss][6][0][0]= -s-1.0;
     d2Ndr[igauss][7][0][0]=  0.0;
+
     d2Ndr[igauss][0][0][1]=  0.25-0.50*(r+s);
     d2Ndr[igauss][1][0][1]= -0.25-0.50*(r-s);
     d2Ndr[igauss][2][0][1]=  0.25+0.50*(r+s);
@@ -217,6 +265,7 @@ void CShapeQuad::Shape_2ndDeriv8(v4double& d2Ndr, const uint& igauss,
     d2Ndr[igauss][5][0][1]= -s;
     d2Ndr[igauss][6][0][1]= -r;
     d2Ndr[igauss][7][0][1]=  s;
+
     d2Ndr[igauss][0][1][0]=  0.25-0.50*(r+s);
     d2Ndr[igauss][1][1][0]= -0.25-0.50*(r-s);
     d2Ndr[igauss][2][1][0]=  0.25+0.50*(r+s);
@@ -225,6 +274,7 @@ void CShapeQuad::Shape_2ndDeriv8(v4double& d2Ndr, const uint& igauss,
     d2Ndr[igauss][5][1][0]= -s;
     d2Ndr[igauss][6][1][0]= -r;
     d2Ndr[igauss][7][1][0]=  s;
+
     d2Ndr[igauss][0][1][1]=  0.50*(1.0-r);
     d2Ndr[igauss][1][1][1]=  0.50*(1.0+r);
     d2Ndr[igauss][2][1][1]=  0.50*(1.0+r);
@@ -234,12 +284,21 @@ void CShapeQuad::Shape_2ndDeriv8(v4double& d2Ndr, const uint& igauss,
     d2Ndr[igauss][6][1][1]=  0.0;
     d2Ndr[igauss][7][1][1]=  r-1.0;
 }
+
+
+// 形状関数   引数:積分点, 形状関数
+// ----
 double& CShapeQuad::N41(const uint& igauss, const uint& ishape){ return mvN41[igauss][ishape];}
 double& CShapeQuad::N84(const uint& igauss, const uint& ishape){ return mvN84[igauss][ishape];}
 double& CShapeQuad::N89(const uint& igauss, const uint& ishape){ return mvN89[igauss][ishape];}
+
+// 導関数   引数:積分点, 形状関数, 微分方向
+// ----
 double& CShapeQuad::dNdr41(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr41[igauss][ishape][axis];}
 double& CShapeQuad::dNdr84(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr84[igauss][ishape][axis];}
 double& CShapeQuad::dNdr89(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr89[igauss][ishape][axis];}
+
+// 2次導関数 引数:積分点, 形状関数, 1階微分方向, 2階微分方向
 double& CShapeQuad::d2Ndr41(const uint& igauss, const uint& ishape, const uint& deriv_axis0, const uint& deriv_axis1)
 {
     return mvd2Ndr41[igauss][ishape][deriv_axis0][deriv_axis1];
@@ -252,6 +311,9 @@ double& CShapeQuad::d2Ndr89(const uint& igauss, const uint& ishape, const uint& 
 {
     return mvd2Ndr89[igauss][ishape][deriv_axis0][deriv_axis1];
 }
+
+// 返り値:重みの配列, 引数:積分点数
+// ----
 double* CShapeQuad::Weight(const uint& integNum)
 {
     switch(integNum){
@@ -268,6 +330,42 @@ double* CShapeQuad::Weight(const uint& integNum)
             break;
     }
 }
+
+// 返り値:重み, 引数:重みの配列Index
+// ----
 double& CShapeQuad::Weight_pt1(){ return mW1[0];}
 double& CShapeQuad::Weight_pt4(const uint& igauss){ return mW4[igauss];}
 double& CShapeQuad::Weight_pt9(const uint& igauss){ return mW9[igauss];}
+
+
+
+// 形状関数の積分値セットアップ：コンストラクタからコール
+// --
+// 8節点
+// --
+void CShapeQuad::setupIntegValue8()
+{
+    uint ishape;
+    // 頂点
+    for(ishape=0; ishape < 4; ishape++) mvIntegValue8[ishape]= -1.0/12.0;
+
+    // 辺
+    for(ishape=4; ishape < 8; ishape++) mvIntegValue8[ishape]=  1.0/3.0;
+}
+// --
+// 4節点
+// --
+void CShapeQuad::setupIntegValue4()
+{
+    uint ishape;
+    for(ishape=0; ishape < 4; ishape++) mvIntegValue4[ishape]= 0.25;
+}
+
+
+
+
+
+
+
+
+

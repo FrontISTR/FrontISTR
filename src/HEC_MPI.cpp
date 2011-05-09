@@ -1,20 +1,16 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   HEC_MPI.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  HEC_MW.cpp
+//
+//  mpichのラッパー
+//
+//                  2010.03.12
+//                  2009.08.24
+//                  k.Takeda
 #include "HEC_MPI.h"
 using namespace pmw;
+
+// construct & destruct
+//
 CHecMPI::CHecMPI()
 {
     ;
@@ -23,6 +19,9 @@ CHecMPI::~CHecMPI()
 {
     ;
 }
+
+// 初期化処理
+//
 void CHecMPI::Initialize(int argc, char** argv)
 {
 #ifdef HAVE_MPI
@@ -33,14 +32,21 @@ void CHecMPI::Initialize(int argc, char** argv)
     numOfProcess = 1;
     myRank = 0;
 #endif
+
+    //debug
     std::cout << " myRank => " << myRank << ",number of process => " << numOfProcess << std::endl;
 }
+// 終了処理
+//
 void CHecMPI::Finalize()
 {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
 }
+
+//
+//
 int CHecMPI::Isend(void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
 #ifdef HAVE_MPI
@@ -48,7 +54,41 @@ int CHecMPI::Isend(void* buf, int count, MPI_Datatype datatype, int dest, int ta
 #else
     return 0;
 #endif
+//#ifdef HAVE_MPI
+//    int rtc;
+//
+//	if( datatype == HECMW_INT ) {
+//        rtc = MPI_Isend( buf, count, MPI_INT, dest, tag, comm, request );
+//        if( rtc != MPI_SUCCESS ) {
+//            HECMW_set_error( HECMW_ALL_E1003, "MPI_Isend" );
+//            goto error;
+//        }
+//	} else if( datatype == HECMW_DOUBLE ) {
+//        rtc = MPI_Isend( buf, count, MPI_DOUBLE, dest, tag, comm, request );
+//        if( rtc != MPI_SUCCESS ) {
+//            HECMW_set_error( HECMW_ALL_E1003, "MPI_Isend" );
+//            goto error;
+//        }
+//	} else if( datatype == HECMW_CHAR ) {
+//        rtc = MPI_Isend( buf, count, MPI_CHAR, dest, tag, comm, request );
+//        if( rtc != MPI_SUCCESS ) {
+//            HECMW_set_error( HECMW_ALL_E1003, "MPI_Isend" );
+//            goto error;
+//        }
+//	} else {
+//        HECMW_set_error( HECMW_ALL_E1003, "Invalid data type is found" );
+//        goto error;
+//    }
+//    return 0;
+//error:
+//    return -1;
+//#else
+//	return 0;
+//#endif
 }
+
+//
+//
 int CHecMPI::Irecv(void* buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
 #ifdef HAVE_MPI
@@ -57,6 +97,9 @@ int CHecMPI::Irecv(void* buf, int count, MPI_Datatype datatype, int source, int 
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Wait(MPI_Request *request, MPI_Status *status)
 {
 #ifdef HAVE_MPI
@@ -65,6 +108,9 @@ int CHecMPI::Wait(MPI_Request *request, MPI_Status *status)
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Allreduce(void* sendbuf, void* recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
 #ifdef HAVE_MPI
@@ -73,6 +119,9 @@ int CHecMPI::Allreduce(void* sendbuf, void* recvbuf, int count, MPI_Datatype dat
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Barrier(MPI_Comm comm)
 {
 #ifdef HAVE_MPI
@@ -81,6 +130,9 @@ int CHecMPI::Barrier(MPI_Comm comm)
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Abort(MPI_Comm comm, int errorcode)
 {
 #ifdef HAVE_MPI
@@ -89,14 +141,25 @@ int CHecMPI::Abort(MPI_Comm comm, int errorcode)
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Comm_rank(MPI_Comm comm, int* rank)
 {
 #ifdef HAVE_MPI
     return MPI_Comm_rank(comm, rank);
 #else
+    *rank=0;
     return 0;
 #endif
 }
+
+// buf:送信データの先頭アドレス
+// count:送信データの個数
+// datatype:送信データの型
+// dest:受信先ランク
+// tag:メッセージ・タグ(送受信が同一)
+//
 int CHecMPI::Send(void* buf, int count, MPI_Datatype datatype, int dest,
                   int tag, MPI_Comm comm)
 {
@@ -106,6 +169,13 @@ int CHecMPI::Send(void* buf, int count, MPI_Datatype datatype, int dest,
     return 0;
 #endif
 }
+// buf:受信データの先頭アドレス
+// count:受信データの個数
+// datatype:受信データの型
+// source:送信元ランク
+// tag:メッセージ・タグ(送受信が同一)
+// status:受信状態
+//
 int CHecMPI::Recv(void* buf, int count, MPI_Datatype datatype, int source,
                       int tag, MPI_Comm comm, MPI_Status *status)
 {
@@ -115,6 +185,9 @@ int CHecMPI::Recv(void* buf, int count, MPI_Datatype datatype, int source,
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype,
                     void* recvbuf, int recvcount, MPI_Datatype recvtype,
                     int root, MPI_Comm comm)
@@ -125,6 +198,9 @@ int CHecMPI::Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype,
     return 0;
 #endif
 }
+
+//
+//
 int CHecMPI::Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
                      void* recvbuf, int recvcnt, MPI_Datatype recvtype,
                      int root, MPI_Comm comm)
@@ -135,3 +211,8 @@ int CHecMPI::Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
     return 0;
 #endif
 }
+
+
+
+
+

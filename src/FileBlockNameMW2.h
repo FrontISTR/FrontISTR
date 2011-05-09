@@ -1,24 +1,21 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   FileBlockNameMW2.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  old HEC_MW file_tag union
+//  
+//
+//				2009.4.07
+//				2009.3.24
+//				k.Takeda
+//
 #ifndef FILE_TAG_NAME_CC0B8D86_67BD_493a_B552_FBF00C1F9B02
 #define FILE_TAG_NAME_CC0B8D86_67BD_493a_B552_FBF00C1F9B02
+
 namespace FileIO{
 struct FileBlockNameMW2{
+    // HEC_MW
     static const char* Comment(){ return "!!";}
-    static const char* SingleExclamation(){ return "!";}
+    static const char* SingleExclamation(){ return "!";}// Exclamation(!)
+
+    // HEC_MW mesh file
     static const char* Header(){ return "!HEADER";}
     static const char* Zero(){ return "!ZERO";}
     static const char* Node(){ return "!NODE";}
@@ -34,6 +31,8 @@ struct FileBlockNameMW2{
     static const char* Include(){ return "!INCLUDE";}
     static const char* Connectivity(){ return "!CONNECTIVITY";}
     static const char* End(){ return "!END";}
+
+    // HEC_MW cnt file
     static const char* Control(){return "!CONTROL";}
     static const char* Mesh(){ return "!MESH";}	
     static const char* MeshGroup(){ return "!MESH GROUP";}

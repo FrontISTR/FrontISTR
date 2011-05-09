@@ -1,31 +1,35 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   ElementType.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  Element Type
+//
+//  終端として,Limitを追加 2010.02.12
+//
+//				2010.02.12
+//				2008.12.04
+//				k.Takeda
 #ifndef ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
 #define ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
+
+
+//#define HEXA_TYPE     0
+//#define PRISM_TYPE    1
+//#define TETRA_TYPE    2
+//#define QUAD_TYPE     3
+//#define TRIANGLE_TYPE 4
+//#define BEAM_TYPE     5
+//#define BAR_TYPE      6
+//#define ROD_TYPE      7
+//#define MASS_TYPE     8
+
 namespace pmw{
+// Element
 struct ElementType{
     enum{
-        Polygon,
+        Polygon,//Film
         Hexa,
         Hexa2,
         HexaNic,
         Prism,
         Prism2,
-        Pyramid,
-        Pyramid2,
         Tetra,
         Tetra2,
         Quad,
@@ -34,10 +38,15 @@ struct ElementType{
         Triangle2,
         Beam,
         Beam2,
-        Point,
-        Limit
+        //Bar,
+        //Rod,
+        //Mass,
+        Point,//SkinFaceの型として利用
+        Limit//enumの終端
     };
 };
+
+// ShapeFunctionType
 struct ShapeType{
     enum{
         Hexa81,
@@ -66,22 +75,29 @@ struct ShapeType{
         Limit
     };
 };
+
+
+// Property
 struct ElementPropType{
     enum{
         Face,
         Edge,
         Node,
-        Limit
+        Limit//enumの終端
     };
 };
+
+// Material
 struct MaterialElement{
     enum{
         HeatTransfer,
         Spring,
         Damper,
-        Limit
+        Limit//enumの終端
     };
 };
+
+// Base Type
 struct BaseElementType{
     enum{
         Solid,
@@ -90,8 +106,10 @@ struct BaseElementType{
         Point,
         Cell,
         MaterialElement,
-        Limit
+        Limit//enumの終端
     };
 };
 }
-#endif 
+#endif // ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
+
+

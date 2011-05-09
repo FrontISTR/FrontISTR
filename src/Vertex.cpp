@@ -1,24 +1,22 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   Vertex.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+// Vertex.cpp
+//				2008.12.18
+//				2008.12.18
+//				k.Takeda
 #include "Vertex.h"
 using namespace pmw;
+
 #include <iostream>
+//
+//
 CVertex::CVertex(void)
 {
+    // mID = -1;// not initialize
+    //mRank= -1;// non initialize
 }
+
 CVertex::~CVertex(void)
 {
+//    //debug
+//    std::cout << "~CVertex" << std::endl;
 }

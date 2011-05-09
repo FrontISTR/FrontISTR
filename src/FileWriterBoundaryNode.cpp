@@ -1,51 +1,99 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   FileWriterBoundaryNode.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  FileWriterBoundaryNode.cpp
+//
+//
+//
+//                  2009.07.23
+//                  2009.07.23
+//                  k.Takeda
+#include "BoundaryNode.h"
+#include "BoundaryNodeMesh.h"
 #include "FileWriterBoundaryNode.h"
+#include "./BoundaryType.h"
 using namespace FileIO;
+
 CFileWriterBoundaryNode::CFileWriterBoundaryNode()
 {
     ;
 }
+
 CFileWriterBoundaryNode::~CFileWriterBoundaryNode()
 {
     ;
 }
+
+
 void CFileWriterBoundaryNode::Write(ofstream& ofs, const uint& mgLevel)
 {
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
-   pmw::CBoundaryNode *pBndNode;
-   string white(" ");
+   
+   pmw::CBoundaryNodeMesh *pBndNodeMesh;
+   pmw::CBoundarySBNode *pBndNode;
+   pmw::CNode *pNode;
+
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
-   uint numOfPart= pAssyModel->getNumOfMesh();
-   uint numOfBndNode,numOfValue;
+   
    uint i,ii,iii;
+   uint numOfPart= pAssyModel->getNumOfMesh();
+   
    for(i=0; i< numOfPart; i++){
        pMesh= pAssyModel->getMesh(i);
-       ofs << " -- BoundaryNode Block Start -- " << ", mgLevel == " << mgLevel<< ", Mesh ID==" << pMesh->getMeshID() << endl;
-       numOfBndNode= pMesh->getNumOfBoundaryNode();
-       for(ii=0; ii< numOfBndNode; ii++){
-           pBndNode = pMesh->getBoundaryNode_withIndex(ii);
-           ofs << pBndNode->getID() << white;
-           numOfValue= pBndNode->CGeneralBoundary::numOfValue();
-           for(iii=0; iii< numOfValue; iii++){
-               ofs << pBndNode->CGeneralBoundary::getValue(iii) << white;
-           };
+       
+       uint numOfBndNodeMesh= pMesh->getNumOfBoundaryNodeMesh();
+       
+       for(ii=0; ii< numOfBndNodeMesh; ii++){
+           pBndNodeMesh= pMesh->getBndNodeMeshIX(ii);
+
+           ofs << "BoundaryID= " << pBndNodeMesh->getID() << ", BndType= ";
+           switch(pBndNodeMesh->getBndType()){
+               case(pmw::BoundaryType::Dirichlet):
+                   ofs << "Dirichlet";
+                   break;
+               case(pmw::BoundaryType::Neumann):
+                   ofs << "Neumann";
+                   break;
+               default:
+                   //TODO:pLogger
+                   break;
+           }
            ofs << endl;
-       };
-       ofs << " -- BoundaryNode Block end -- " << endl;
-   };
+
+           uint numOfBndNode= pBndNodeMesh->getNumOfBNode();
+           
+           for(iii=0; iii < numOfBndNode; iii++){
+               pBndNode= pBndNodeMesh->getBNodeIX(iii);
+               pNode= pBndNode->getNode();
+               
+               ofs << "BNodeID= " << pBndNode->getID() << ", NodeID= " << pNode->getID();
+               
+               uint idof, numOfDOF= pBndNode->getNumOfDOF();
+               for(idof=0; idof < numOfDOF; idof++){
+                   uint dof= pBndNode->getDOF(idof);
+                   ofs << ", BndValue[" << dof << "]= " << pBndNode->getValue(dof);
+               };
+               ofs << endl;
+               
+           };//BNode ループ
+       };//BoundaryNodeMesh ループ
+   };//Mesh ループ
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

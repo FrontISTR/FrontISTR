@@ -1,19 +1,11 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   CommBeam.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+/* 
+ * File:   CommBeam.h
+ * Author: ktakeda
+ *
+ * Created on 2009/09/10, 16:35
+ */
 #include "CommElement.h"
+
 namespace pmw{
 #ifndef _COMMBEAM_H
 #define	_COMMBEAM_H
@@ -21,10 +13,17 @@ class CCommBeam:public CCommElement{
 public:
     CCommBeam();
     virtual ~CCommBeam();
+    
 public:
+    //debug method
     virtual bool isTypeCoincidence();
+
     virtual uint getShapeType(){ return ElementType::Beam;}
     virtual uint getBaseShapeType(){ return BaseElementType::Beam;}
+
+    //virtual void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
+    
 };
 #endif	/* _COMMBEAM_H */
 }
+

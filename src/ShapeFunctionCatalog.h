@@ -1,22 +1,18 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   ShapeFunctionCatalog.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+/* 
+ * File:   ShapeFunctionCatalog.h
+ * Author: ktakeda
+ *
+ *  積分点数,節点数 の一覧
+ *
+ * Created on 2010/02/12, 16:26
+ */
 #include "TypeDef.h"
-#include <utility> 
+#include <utility> //pair
+
 #include "ElementType.h"
+
 typedef pair<uint,uint> integPair;
+
 namespace pmw{
 #ifndef _SHAPEFUNCTIONCATALOG_H
 #define	_SHAPEFUNCTIONCATALOG_H
@@ -29,17 +25,44 @@ public:
         return &moCatalog;
     }
     ~CShapeFunctionCatalog();
+
 private:
-    vuint mvShapeNum;     
-    vuint mvIntegPointNum;
-    vector<integPair> mvIntegPair;
-    vvuint mvIntegPointNumOfElemType;
+    // {外部が必要とする情報}
+    // 1.形状関数の種類数
+    //  ->  struct ShapeType <= enumの終端は"Limit"
+    //
+    // 2.形状関数種類別-形状関数の数
+    //
+    // 3.形状関数種類別-積分点の数
+    // 
+    vuint mvShapeNum;     //形状関数種類別-形状関数の数(節点の数)
+    vuint mvIntegPointNum;//形状関数種類別-積分点の数
+    vector<integPair> mvIntegPair;//first=積分点数, second=節点数
+
+    vvuint mvIntegPointNumOfElemType;//要素別-積分点種類-積分点数
 public:
+    // --
+    // 返り値: pair.first=積分点数, pair.second=節点数
+    // --
     integPair& getIntegPair(const uint& shapeType);
+
     uint& NumOfIntegPoint(const uint& shapeType);
     uint& NumOfShape(const uint& shapeType);
+
     uint  NumOfIntegPointType(const uint& elemType);
     uint& NumOfIntegPoint(const uint& elemType, const uint& integPtIndex);
 };
 #endif	/* _SHAPEFUNCTIONCATALOG_H */
 }
+
+
+
+
+
+
+
+
+
+
+
+

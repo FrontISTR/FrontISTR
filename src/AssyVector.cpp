@@ -1,48 +1,41 @@
 /*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   AssyVector.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
-/*
  * AssyVector.cpp
  *
  *  Created on: Oct 16, 2009
  *      Author: goto
  */
+
 #include "AssyVector.h"
 #include "AssyModel.h"
+
 #include "CommNode.h"
 #include "CommMesh2.h"
 #include "HEC_MPI.h"
+
 namespace pmw
 {
+
 typedef std::vector<CVector*> CVVec;
 typedef CVVec::iterator CVVecIter;
 typedef CVVec::const_iterator CVVecConstIter;
 #define N_COMM_BUFF 1024*32
 double BUFF[N_COMM_BUFF];
+
 CAssyVector::CAssyVector(CAssyModel *pAssyModel)
 : mpAssyModel( pAssyModel )
 {
 #ifdef ADVANCESOFT_DEBUG
+  //   	printf(" enter CAssyVector::CAssyVector %d \n", pAssyModel->getNumOfMesh());
 #endif
 	for (int i = 0; i < pAssyModel->getNumOfMesh(); i++) {
 		CVector *pVector = new CVector( pAssyModel->getMesh(i) );
 		mvVector.push_back(pVector);
 	}
 #ifdef ADVANCESOFT_DEBUG
+//   	printf(" exit CAssyVector::CAssyVector \n");
 #endif
 }
+
 CAssyVector::CAssyVector(const CAssyVector *pAssyVector)
 {
 	mpAssyModel = pAssyVector->mpAssyModel;
@@ -51,9 +44,13 @@ CAssyVector::CAssyVector(const CAssyVector *pAssyVector)
 		mvVector.push_back(pVector);
 	}
 }
+
 CAssyVector::~CAssyVector()
 {
+	// debug
+	// cout << "~CAssyVector" << endl;
 }
+
 size_t CAssyVector::size() const
 {
 	int sum = 0;
@@ -62,22 +59,27 @@ size_t CAssyVector::size() const
 	}
 	return sum;
 }
+
 const CVector::ElemType &CAssyVector::operator[](size_t idx) const
 {
+	// TODO better implementation
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
 		int len = (*icv)->size();
 		if (idx < len) return (**icv)[idx];
 		idx -= len;
 	}
 }
+
 CVector::ElemType &CAssyVector::operator[](size_t idx)
 {
+	// TODO better implementation
 	for (CVVecIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 		int len = (*iv)->size();
 		if (idx < len) return (**iv)[idx];
 		idx -= len;
 	}
 }
+
 const double &CAssyVector::operator()(size_t meshID, size_t nodeID, size_t dof) const
 {
 	return (*mvVector[meshID])[nodeID](dof);
@@ -86,20 +88,24 @@ double &CAssyVector::operator()(size_t meshID, size_t nodeID, size_t dof)
 {
 	return (*mvVector[meshID])[nodeID](dof);
 }
+
 void CAssyVector::setZero()
 {
 	for (CVVecIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 		(*iv)->setZero();
 	}
 }
+
 void CAssyVector::setValue(int imesh, int inode, int idof, double value)
 {
 	mvVector[imesh]->setValue(inode, idof, value);
 }
+
 double CAssyVector::getValue(int imesh, int inode, int idof)
 {
 	return( mvVector[imesh]->getValue(inode, idof) );
 }
+
 void CAssyVector::add(const CAssyVector *pV)
 {
 	CVVecConstIter icv = pV->mvVector.begin();
@@ -108,6 +114,7 @@ void CAssyVector::add(const CAssyVector *pV)
 		icv++;
 	}
 }
+
 void CAssyVector::subst(const CAssyVector *pV)
 {
 	CVVecConstIter icv = pV->mvVector.begin();
@@ -116,36 +123,46 @@ void CAssyVector::subst(const CAssyVector *pV)
 		icv++;
 	}
 }
+
 double CAssyVector::norm2() const
 {
 	double sum = 0;
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
 		sum += (*icv)->norm2();
 	}
+
 	pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
 	double sum0 = sum;
 	pMPI->Allreduce(&sum0, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
 	return sum;
 }
+
 double CAssyVector::innerProd(const CAssyVector *pX) const
 {
 	double sum = 0;
 	CVVecConstIter icX = pX->mvVector.begin();
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
 		sum += (*icv)->innerProd((*icX));
-		icX++; 
+		icX++; // K.Matsubara 2010.03.29
 	}
+
 	pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
 	double sum0 = sum;
 	pMPI->Allreduce(&sum0, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
 	return sum;
 }
+
 void CAssyVector::updateCommBoundary()
 {
   pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
   MPI_Status stat;
   uint imesh;
   int myrank = pMPI->getRank();
+//
+//  *** SEND PART ***
+//
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
@@ -172,6 +189,9 @@ void CAssyVector::updateCommBoundary()
     }
     imesh++;
   }
+//
+//  *** RECIEVE PART ***
+//
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
@@ -199,12 +219,16 @@ void CAssyVector::updateCommBoundary()
     imesh++;
   }
 }
+
 void CAssyVector::sumupCommBoundary()
 {
   pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
   MPI_Status stat;
   uint imesh;
   int myrank = pMPI->getRank();
+//
+// *** SEND PART ***
+//
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
@@ -234,6 +258,9 @@ void CAssyVector::sumupCommBoundary()
     }
     imesh++;
   }
+//
+// *** RECIEVE PART ***
+//
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
@@ -261,6 +288,7 @@ void CAssyVector::sumupCommBoundary()
     imesh++;
   }
 }
+
 int CAssyVector::restrictTo(CAssyVector *pVc) const
 {
 	CVVecIter ivc = pVc->mvVector.begin();
@@ -270,6 +298,7 @@ int CAssyVector::restrictTo(CAssyVector *pVc) const
 	}
 	return 1;
 }
+
 int CAssyVector::prolongateFrom(const CAssyVector *pcVc)
 {
 	CVVecConstIter icvc = pcVc->mvVector.begin();
@@ -279,16 +308,20 @@ int CAssyVector::prolongateFrom(const CAssyVector *pcVc)
 	}
 	return 1;
 }
+
 size_t CAssyVector::getNumOfVector() const
 {
 	return mvVector.size();
 }
+
 const CVector *CAssyVector::getVector(size_t index) const
 {
 	return mvVector[index];
 }
+
 CVector *CAssyVector::getVector(size_t index)
 {
 	return mvVector[index];
 }
+
 }

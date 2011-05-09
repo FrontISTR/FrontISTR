@@ -1,21 +1,33 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   BoundaryType.h
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
-#ifndef _BOUNDARYTYPE_H_f6a34053_61db_4c0c_8aeb_0a964eb6ee0f
-#define	_BOUNDARYTYPE_H_f6a34053_61db_4c0c_8aeb_0a964eb6ee0f
+/* 
+ * File:   BoundaryType.h
+ * Author: ktakeda
+ *
+ * Modify     2009/05/25
+ * Created on 2009/05/14, 14:13
+ */
+
 namespace pmw{
+#ifndef _BOUNDARYTYPE_H_
+#define	_BOUNDARYTYPE_H_
+// 境界条件種類
+struct BoundaryType{
+    enum{
+        Dirichlet,
+        Neumann,
+        Limit//終端
+    };
+};
+// 境界メッシュのタイプ
+struct BoundaryMeshType{
+    enum{
+        Node,
+        Edge,
+        Face,
+        Volume,
+        Limit//終端
+    };
+};
+
 struct BoundaryTypeNode{
     enum {
         Load,
@@ -23,7 +35,8 @@ struct BoundaryTypeNode{
         Velo,
         Accel,
         Temp,
-        Thermal_Flux
+        Thermal_Flux,
+        Limit//終端
     };
 };
 struct BoundaryTypeFace{
@@ -31,15 +44,17 @@ struct BoundaryTypeFace{
         Pressure,
         TractionVector,
         Temp,
-        Thermal_Flux
+        Thermal_Flux,
+        Limit//終端
     };
 };
 struct BoundaryTypeVolume{
     enum {
         Accel,
         Gravity,
-        Centrifugal_Force,
-        Heat
+        Centrifugal_Force,//遠心力
+        Heat,
+        Limit//終端
     };
 };
 struct BoundaryTypeFlow{
@@ -51,8 +66,11 @@ struct BoundaryTypeFlow{
         Temperature,
         Heat,
         Thermal_Flux,
-        OtherScalar
+        OtherScalar,
+        Limit//終端
     };
 };
-}
 #endif	/* _BOUNDARYTYPE_H */
+}
+
+

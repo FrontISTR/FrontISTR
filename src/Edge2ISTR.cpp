@@ -1,22 +1,19 @@
-/*
- ----------------------------------------------------------
-|
-| Software Name :HEC middleware Ver. 3.0beta
-|
-|   Edge2ISTR.cxx
-|
-|                     Written by T.Takeda,    2010/06/01
-|                                K.Goto,      2010/01/12
-|                                K.Matsubara, 2010/06/01
-|
-|   Contact address : IIS, The University of Tokyo CISS
-|
- ----------------------------------------------------------
-*/
+//
+//  Edge2ISTR.cpp
+//
+//
+//
+//
+//              2010.02.18
+//              k.Takeda
 #include "Edge2ISTR.h"
 using namespace pmw;
+
 CEdge2ISTR::CEdge2ISTR()
 {
+    // MW3 辺番号 -> FrontISTR 2次節点番号
+    // --
+    // Hexa
     mvHexa[0]=   8;
     mvHexa[1]=   9;
     mvHexa[2]=  10;
@@ -29,12 +26,14 @@ CEdge2ISTR::CEdge2ISTR()
     mvHexa[9]=  17;
     mvHexa[10]= 18;
     mvHexa[11]= 19;
+    // Tetra
     mvTetra[0]= 6;
     mvTetra[1]= 4;
     mvTetra[2]= 5;
     mvTetra[3]= 7;
     mvTetra[4]= 8;
     mvTetra[5]= 9;
+    // Prism
     mvPrism[0]=  8;
     mvPrism[1]=  7;
     mvPrism[2]=  6;
@@ -44,25 +43,33 @@ CEdge2ISTR::CEdge2ISTR()
     mvPrism[6]= 11;
     mvPrism[7]=  9;
     mvPrism[8]= 10;
+    // Quad
     mvQuad[0]= 4;
     mvQuad[1]= 5;
     mvQuad[2]= 6;
     mvQuad[3]= 7;
+    // Triangle
     mvTriangle[0]= 3;
     mvTriangle[1]= 4;
     mvTriangle[2]= 5;
+
     mpLogger= Utility::CLogger::Instance();
 }
 CEdge2ISTR::~CEdge2ISTR()
 {
     ;
 }
+
+
+// Edge番号 -> 形状関数 番号へ変換
+// --
 uint& CEdge2ISTR::HexaShapeNum(const uint& iedge)
 {
     if(iedge > 11){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 12");
         return mpLogger->getUDummyValue();
     }
+
     return mvHexa[iedge];
 }
 uint& CEdge2ISTR::TetraShapeNum(const uint& iedge)
@@ -71,6 +78,7 @@ uint& CEdge2ISTR::TetraShapeNum(const uint& iedge)
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 6");
         return mpLogger->getUDummyValue();
     }
+
     return mvTetra[iedge];
 }
 uint& CEdge2ISTR::PrismShapeNum(const uint& iedge)
@@ -79,6 +87,7 @@ uint& CEdge2ISTR::PrismShapeNum(const uint& iedge)
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 9");
         return mpLogger->getUDummyValue();
     }
+
     return mvPrism[iedge];
 }
 uint& CEdge2ISTR::QuadShapeNum(const uint& iedge)
@@ -87,6 +96,7 @@ uint& CEdge2ISTR::QuadShapeNum(const uint& iedge)
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 4");
         return mpLogger->getUDummyValue();
     }
+
     return mvQuad[iedge];
 }
 uint& CEdge2ISTR::TriangleShapeNum(const uint& iedge)
@@ -95,5 +105,23 @@ uint& CEdge2ISTR::TriangleShapeNum(const uint& iedge)
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 3");
         return mpLogger->getUDummyValue();
     }
+
     return mvTriangle[iedge];
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
