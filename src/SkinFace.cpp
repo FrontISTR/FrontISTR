@@ -22,8 +22,6 @@ CSkinFace::CSkinFace()
     mbSelfDom=false;//trueならば自身の計算領域内の表面Face
     
     mvNormalVector.resize(3);//面ベクトル
-
-    mpLogger= Utility::CLogger::Instance();//Loggerのインスタンス
 }
 CSkinFace::~CSkinFace()
 {
@@ -58,7 +56,7 @@ void CSkinFace::setShapeType(const uint& shapeType)
             break;
     }
     mvEdgeNode.resize(mNumOfEdge);
-    mvbEdgeMarking.resize(mNumOfEdge);
+    mvbEdgeMarking = new bool[mNumOfEdge];
     mvEdgeFace.resize(mNumOfEdge);
 
     ////debug
@@ -144,8 +142,9 @@ void CSkinFace::markingEdgeNode(PairConNode& pairConNode)
 }
 
 
-PairConNode& CSkinFace::getEdgePairNode(const uint& iedge)
+PairConNode CSkinFace::getEdgePairNode(const uint& iedge)
 {
+    PairConNode pairConNode;
     Utility::CLogger *pLogger;
 
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
@@ -167,10 +166,10 @@ PairConNode& CSkinFace::getEdgePairNode(const uint& iedge)
             break;
     }
     
-    mPairConNode.first = mvConNode[vertNum[0]];
-    mPairConNode.second= mvConNode[vertNum[1]];
+    pairConNode.first = mvConNode[vertNum[0]];
+    pairConNode.second= mvConNode[vertNum[1]];
     
-    return mPairConNode;
+    return pairConNode;
 }
 
 
@@ -566,23 +565,35 @@ vdouble& CSkinFace::getNzNormalVector()
 //
 void CSkinFace::addSlaveNode(CContactNode* pConNode)
 {
+    Utility::CLogger *pLogger = Utility::CLogger::Instance();//Loggerのインスタンス
     //警告メッセージ
-    mpLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::addSlaveNode");
+    pLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::addSlaveNode");
 }
 void CSkinFace::CalcSlave(const uint& islave, const uint& valType)
 {
+    Utility::CLogger *pLogger = Utility::CLogger::Instance();//Loggerのインスタンス
     //警告メッセージ
-    mpLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::CalcSlave");
+    pLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::CalcSlave");
 }
 double& CSkinFace::getCoef(const uint& slaveID, const uint& ivert)
 {
+    Utility::CLogger *pLogger = Utility::CLogger::Instance();//Loggerのインスタンス
     //警告メッセージ
-    mpLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::getCoef");
+    pLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::getCoef");
 
-    return mpLogger->getDDummyValue();
+    return pLogger->getDDummyValue();
 }
 
 
+// 辺ノードvectorのメモリー解放
+//
+void CSkinFace::deleteProgData()
+{
+    vector<CContactNode*>().swap(mvEdgeNode);
+    vector<CSkinFace*>().swap(mvEdgeFace);
+
+    delete []mvbEdgeMarking;
+}
 
 
 

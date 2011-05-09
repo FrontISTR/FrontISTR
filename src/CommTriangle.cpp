@@ -24,12 +24,12 @@ CCommTriangle::CCommTriangle()
     mvEdgeRank.resize(3);
     mvFaceRank.resize(1);
 
-    mvbSend.resize(3);
-    mvbRecv.resize(3);
-    mvbOther.resize(3);
+    mvbSend = new bool[3];
+    mvbRecv = new bool[3];
+    mvbOther = new bool[3];
 
-    mvbNodeIXCheck.resize(3);
-    mvbDNodeMarking.resize(3);
+    mvbNodeIXCheck = new bool[3];
+    mvbDNodeMarking = new bool[3];
     uint i;
     for(i=0; i< 3; i++){
         mvbNodeIXCheck[i]=false;

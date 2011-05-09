@@ -24,12 +24,12 @@ CCommPrism::CCommPrism()
     mvEdgeRank.resize(9);
     mvFaceRank.resize(5);
 
-    mvbSend.resize(6);
-    mvbRecv.resize(6);
-    mvbOther.resize(6);
+    mvbSend = new bool[6];
+    mvbRecv = new bool[6];
+    mvbOther = new bool[6];
 
-    mvbNodeIXCheck.resize(6);
-    mvbDNodeMarking.resize(6);
+    mvbNodeIXCheck = new bool[6];
+    mvbDNodeMarking = new bool[6];
     uint i;
     for(i=0; i< 6; i++){
         mvbNodeIXCheck[i]=false;

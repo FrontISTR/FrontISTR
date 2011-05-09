@@ -22,7 +22,7 @@ CBoundaryPrism::CBoundaryPrism()
     // ----
     uint i;
     // 辺
-    mvbMarkingEdge.resize(NumberOfEdge::Prism());
+    mvbMarkingEdge = new bool[NumberOfEdge::Prism()];
     for(i=0; i < NumberOfEdge::Prism(); i++){
         mvbMarkingEdge[i]=false;
     };
@@ -30,7 +30,7 @@ CBoundaryPrism::CBoundaryPrism()
     mvEdgeNeibVol.resize(NumberOfEdge::Prism());
 
     // 面
-    mvbMarkingFace.resize(NumberOfFace::Prism());
+    mvbMarkingFace = new bool[NumberOfFace::Prism()];
     for(i=0; i < NumberOfFace::Prism(); i++){
         mvbMarkingFace[i]=false;
     };
@@ -61,7 +61,7 @@ uint CBoundaryPrism::getNumOfFace()
 
 // Edge番号 -> pariBNode
 //
-PairBNode& CBoundaryPrism::getPairBNode(const uint& iedge)
+PairBNode CBoundaryPrism::getPairBNode(const uint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -72,10 +72,11 @@ PairBNode& CBoundaryPrism::getPairBNode(const uint& iedge)
     uint index1st = pLocalNum[0];
     uint index2nd = pLocalNum[1];
 
-    mPairBNode.first = mvBNode[index1st];
-    mPairBNode.second= mvBNode[index2nd];
+    PairBNode pairBNode;
+    pairBNode.first = mvBNode[index1st];
+    pairBNode.second= mvBNode[index2nd];
 
-    return mPairBNode;
+    return pairBNode;
 }
 
 
@@ -94,7 +95,7 @@ uint& CBoundaryPrism::getEdgeID(PairBNode& pairBNode)
 
 // 面を構成するBNode配列
 //
-vector<CBoundaryNode*>& CBoundaryPrism::getFaceCnvNodes(const uint& iface)
+vector<CBoundaryNode*> CBoundaryPrism::getFaceCnvNodes(const uint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
     CBoundaryNode *pBNode;
@@ -104,15 +105,16 @@ vector<CBoundaryNode*>& CBoundaryPrism::getFaceCnvNodes(const uint& iface)
     pvIndex= pFaceTree->getLocalNodePrismFace(iface);
     numOfVert= pFaceTree->getPrismFaceNumOfVert(iface);
 
-    mvFaceCnvNodes.clear();mvFaceCnvNodes.reserve(numOfVert);
+    vector<CBoundaryNode*> vFaceCnvNodes;
+    vFaceCnvNodes.reserve(numOfVert);
 
     for(i=0; i < numOfVert; i++){
         ivert= pvIndex[i];
         pBNode= mvBNode[ivert];
-        mvFaceCnvNodes.push_back(pBNode);
+        vFaceCnvNodes.push_back(pBNode);
     }
 
-    return mvFaceCnvNodes;
+    return vFaceCnvNodes;
 }
 
 // BNode配列 -> Face番号
@@ -290,6 +292,18 @@ void CBoundaryPrism::distDirichletVal(const uint& dof, const uint& mgLevel)
 }
 
 
+// Refine 後処理 : 辺-面 BNode vectorの解放
+//
+void CBoundaryPrism::deleteProgData()
+{
+    if(mpElement->getType()==ElementType::Prism){
+        vector<CBoundaryNode*>().swap(mvEdgeBNode);// 辺-BNode
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
+    }else{
+        // Prism2
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
+    }
+}
 
 
 

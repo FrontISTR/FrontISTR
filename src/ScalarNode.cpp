@@ -107,12 +107,12 @@ void CScalarNode::setVector(const double& val, const uint& index)
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method, at ScalarNode::setVector");
 }
 
-vdouble& CScalarNode::getVector()
+double& CScalarNode::getVector(const uint& i)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method, at ScalarNode::getVector");
 
-    return mvParam;
+    return mvParam[i];
 }
 
 

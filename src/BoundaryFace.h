@@ -30,7 +30,7 @@ protected:
 
     vuint mvEdgeNeibFace;//辺に隣接する面(自身は含まない)
     
-    PairBNode mPairBNode;//辺の両端のBNode, テンポラリー変数
+    //PairBNode mPairBNode;//辺の両端のBNode, テンポラリー変数
 
     vector<CBoundaryNode*> mvEdgeBNode;
     CBoundaryNode *mpFaceBNode;
@@ -46,7 +46,7 @@ public:
     
     
 protected:
-    vector<bool> mvbMarkingEdge;// 辺が使用済みか否か.
+    bool* mvbMarkingEdge;// 辺が使用済みか否か.
 
 public:
     void markingEdge(const uint& iedge);
@@ -56,7 +56,7 @@ public:
     void setEdgeBNode(const uint& iedge, CBoundaryNode *pEdgeBNode);
 
     uint getNumOfEdge();
-    PairBNode& getPairBNode(const uint& iedge);
+    PairBNode getPairBNode(const uint& iedge);
     uint& getEdgeID(PairBNode& pairBNode);
 
     void setFaceBNode(CBoundaryNode *pFaceBNode);
@@ -80,6 +80,8 @@ public:
     vector<CBoundaryFace*>& getProgParts(){ return mvProgBFace;}
 
     void distDirichletVal(const uint& dof, const uint& mgLevel);//上位グリッドBNodeへのディレクレ値の分配
+
+    void deleteProgData();//Refine時の辺BNode*の解放
 };
 #endif	/* _BOUNDARYFACE_H */
 }

@@ -81,6 +81,7 @@ public:
 private:
     CMeshFactory(void);
 public:
+    //CMeshFactory(void);
     virtual ~CMeshFactory(void);
 
 protected:
@@ -92,8 +93,7 @@ protected:
     CCommMesh2   *mpTCommMesh2;// 各 CommMesh2(節点共有型-通信) in Mesh
     
 
-    uint mMGLevel;//マルチグリッド階層数 => 1.ならマルチグリッドなし
-
+    uint    mMGLevel;//マルチグリッド階層数 => 1.ならマルチグリッドなし
     uint mnSolutionType;//FEM, FVM
 
     Utility::CLogger *mpLogger;
@@ -107,27 +107,28 @@ public:
     void reserveMesh(const uint& mgLevel,const uint& num_of_mesh);
     void GeneMesh(const uint& mgLevel, const uint& mesh_id, const uint& index);// MeshをAssyModelに生成 at mgLevel
 
+
     // Solution Type :: FEM .or. FVM
     void setSolutionType(const uint& nSolutionType){ mnSolutionType = nSolutionType;}
 
+    
     // Refine for MultiGrid
     // --------------------
     void setMGLevel(const uint& num_of_mglevel){ mMGLevel= num_of_mglevel;}
     uint& getMGLevel(){ return mMGLevel;}
-    void refineMesh();
+    void refineMesh();// <<<<<<<<<<<<< -- MultiGrid prolongation.
 protected:
     void MGMeshConstruct();// <<<<<<<<<<<<< -- MultiGrid prolongation.
     void SGMeshConstruct();// <<<<<<<<<<<<< -- SingleGrid
-
     void GeneProgElem(const uint& ilevel,CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividTetra(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
+    void dividPyramid(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividQuad(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividTriangle(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividBeam(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
 
-    
 public:
     // Node
     // ----
@@ -146,7 +147,7 @@ public:
 
     // Aggregate-Element, Aggregate-Node
     //
-    void reserveAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node);
+    void resizeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node);
     void GeneAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node);
 
 

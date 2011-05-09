@@ -29,10 +29,10 @@ public:
     virtual uint getNumOfFace();
 
 
-    virtual PairBNode& getPairBNode(const uint& iedge);
+    virtual PairBNode getPairBNode(const uint& iedge);
     virtual uint& getEdgeID(PairBNode& pairBNode);
 
-    virtual vector<CBoundaryNode*>& getFaceCnvNodes(const uint& iface);
+    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uint& iface);
     virtual uint& getFaceID(vector<CBoundaryNode*>& vBNode);
 
 
@@ -42,6 +42,9 @@ public:
     virtual double& calcVolume();// BoundaryVolumeの体積
 
     virtual void distDirichletVal(const uint& dof, const uint& mgLevel);//上位グリッドBNodeへのディレクレ値の分配
+    
+    
+    virtual void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
 };
 #endif	/* _BOUNDARYHEXA_H */
 }

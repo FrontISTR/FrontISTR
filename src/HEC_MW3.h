@@ -126,42 +126,31 @@ public:
     //----
     int Initialize_Matrix(); // 行列の初期化
     int Initialize_Vector(); // 行列の初期化
-    int Matrix_Add_Elem(int iMesh, int iElem, double *ElemMatrix);
-    int Set_BC(int iMesh, int iNode, int iDof, double value1, double value2);
-    int Set_BC(int iMesh, int iNode, int iDof, double value);
-    void  Sample_Set_BC(int iMesh);
-    int Solve(uint iter_max, double tolerance, uint method, uint precondition);
+    int Matrix_Add_Elem(uint& iMesh, uint& iElem, double *ElemMatrix);
+    int Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);
+    int Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value);
+    void  Sample_Set_BC(uint iMesh);
+    int Solve(uint& iter_max, double& tolerance, uint& method, uint& precondition);
 
+    void  StoreMatrix(){
+            mpAssy->setAssyMatrix(mpAssyMatrix);
+            mpAssy->setAssyVector(mpAssyVector);
+            mpAssy->setAssyVector2(mpAssyVector2);
+    }
+
+    void  LoadMatrix(){
+            mpAssyMatrix = mpAssy->getAssyMatrix();
+            mpAssyVector = mpAssy->getAssyVector();
+            mpAssyVector2 = mpAssy->getAssyVector2();
+    }
+    
     //----
-    // Refiner
+    // MG constructor (Refiner)
     //----
     int  Refine();//ファイル指定のマルチグリッドMeshデータ生成
 
-    //----
-    // FEM : 基本void(Fortran_API に合わせる為) : 引数のconst以外=>出力用
-    //----
-    // 作業用変数へ指定オブジェクトを選択:形状関数,導関数のループ処理用
-    void SelectAssyModel(const uint& mgLevel);
-    void SelectMesh_ID(const uint& mesh_id);
-    void SelectMesh_IX(const uint& index);
 
-    uint  getNodeSize(){ return mpMesh->getNodeSize();}
-    uint  getElementSize(){ return mpMesh->getElementSize();}
-    uint  getNodeSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getNodeSize();}
-    uint  getElementSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getElementSize();}
-
-	void  StoreMatrix(){
-		mpAssy->setAssyMatrix(mpAssyMatrix);
-		mpAssy->setAssyVector(mpAssyVector);
-		mpAssy->setAssyVector2(mpAssyVector2);
-	}
-	
-	void  LoadMatrix(){
-		mpAssyMatrix = mpAssy->getAssyMatrix();
-		mpAssyVector = mpAssy->getAssyVector();
-		mpAssyVector2 = mpAssy->getAssyVector2();
-	}
-
+    
     // ----
     // Fortran_API用 : 基本void(Fortran_API に合わせる為) : 引数のconst以外=>出力用
     // ----
@@ -173,37 +162,111 @@ public:
     //   4. Node (要素の構成NodeIDからNodeを取得)
     // ----
     // Assemble Modelの選択
-    void GetNumOfAssembleModel(uint& numOfAssembleModel);//Assemble Modelの個数==階層数(mMGLevel+1)
+    uint GetNumOfAssembleModel();//Assemble Modelの個数==階層数(mMGLevel+1)
     void SelectAssembleModel(const uint& mgLevel);
     // Meshの選択
-    void GetNumOfMeshPart(uint& numOfMeshPart);//Meshパーツの個数
+    uint GetNumOfMeshPart();//Meshパーツの個数
     void SelectMeshPart_ID(const uint& mesh_id);
     void SelectMeshPart_IX(const uint& index);
     // 要素の選択
     void SelectElement_ID(const uint& elem_id);
     void SelectElement_IX(const uint& index);
     // 選択されたMeshの要素の情報
-    void GetElementType(uint& elemType);
-    void GetNumOfElementVert(uint& numOfVert);//要素の頂点数
-    void GetElementVertNodeID(vuint& vNodeID);//要素の頂点のノードID
-    void GetNumOfElementEdge(uint& numOfEdge);//要素の辺数
-    void GetElementEdgeNodeID(vuint& vNodeID);//要素の辺のノードID
-    // 選択されたMeshのノードの座標
+    uint GetElementType();
+    uint GetNumOfElementVert();//要素の頂点数
+    void GetElementVertNodeID(int* vNodeID);//要素の頂点のノードID
+    uint GetNumOfElementEdge();//要素の辺数
+    void GetElementEdgeNodeID(int* vNodeID);//要素の辺のノードID
+    // 選択されたMeshのノード(Scalar or Vector)
     void GetNodeCoord(const uint& node_id, double& x, double& y, double& z);//ノードの座標
+    uint GetNumOfDOF(const uint& node_id);
+    uint GetNumOfScalar(const uint& node_id);
+    uint GetNumOfVector(const uint& node_id);
+    uint& GetNodeType(const uint& node_id);
+    void SetNodeValue(const uint& node_id, double value[]);
+    void SetNodeValue(const uint& node_id, const uint& idof, const double& value);
+    void GetNodeValue(const uint& node_id, double value[]);
+    double& GetNodeValue(const uint& node_id, const uint& idof);
+    // 選択されたMeshのノード(ScalarVector)
+    void SetSVNodeValue(const uint& node_id, double v_value[], double s_value[]);
+    void SetSVNodeValue(const uint& node_id, const uint& v_dof, const double& v_value, const uint& s_dof, const double& s_value);
+    void GetSVNodeValue(const uint& node_id, double v_value[], double s_value[]);
+    void GetSVNodeValue(const uint& node_id, const uint& v_dof, double& v_value, const uint& s_dof, double& s_value);
+    // 選択されたMeshのノード数、要素数
+    uint  getNodeSize(){ return mpMesh->getNodeSize();}
+    uint  getElementSize(){ return mpMesh->getElementSize();}
+    uint  getNodeSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getNodeSize();}
+    uint  getElementSize(uint iMesh){ return mpAssy->getMesh(iMesh)->getElementSize();}
+
+
+    //----
+    // メモリーの解放(Node::AggElemIDの解放):Mesh操作によるデータ構築の最後に実行
+    //----
+    void FinalizeRefine();
+
+
+    //----
+    // 節点タイプ for Fortran
+    //----
+    uint nodetype_s();
+    uint nodetype_v();
+    uint nodetype_sv();
+    //----
+    // 要素タイプ for Fortran
+    //----
+    uint elemtype_hexa();
+    uint elemtype_hexa2();
+    uint elemtype_tetra();
+    uint elemtype_tetra2();
+    uint elemtype_prism();
+    uint elemtype_prism2();
+    uint elemtype_quad();
+    uint elemtype_quad2();
+    uint elemtype_triangle();
+    uint elemtype_triangle2();
+    uint elemtype_line();
+    uint elemtype_line2();
+
+
 
     // --
     // 積分点数を返す
     // --
-    void NumOfIntegPoint(const uint& shapeType, uint& numOfInteg);
+    uint& NumOfIntegPoint(const uint& shapeType);
     
     //--
     // 形状関数
     //--
     // N(積分点ごと)
     void ShapeFunc_on_pt(const uint& shapeType, const uint& igauss, vdouble& N);//積分点での形状関数:N[igauss] を返す.
-    // N(まるごと)
+    void ShapeFunc_on_pt(uint shapeType, uint igauss, double N[]);// Fortran API
+    // N(丸ごと)
     void ShapeFunc(const uint& shapeType, vvdouble& N);//全積分点の形状関数:N を丸ごと返す.
-    
+    // ----
+    // Fortran API用 形状関数
+    // ----
+    // N[igauss][ishape]
+    double& ShapeFunc_Hexa81(int igauss, int ishape);
+    double& ShapeFunc_Hexa82(int igauss, int ishape);
+    double& ShapeFunc_Hexa201(int igauss, int ishape);
+    double& ShapeFunc_Hexa202(int igauss, int ishape);
+    double& ShapeFunc_Hexa203(int igauss, int ishape);
+    double& ShapeFunc_Tetra41(int igauss, int ishape);
+    double& ShapeFunc_Tetra101(int igauss, int ishape);
+    double& ShapeFunc_Tetra104(int igauss, int ishape);
+    double& ShapeFunc_Tetra1015(int igauss, int ishape);
+    double& ShapeFunc_Prism62(int igauss, int ishape);
+    double& ShapeFunc_Prism156(int igauss, int ishape);
+    double& ShapeFunc_Prism159(int igauss, int ishape);
+    double& ShapeFunc_Prism1518(int igauss, int ishape);
+    double& ShapeFunc_Quad41(int igauss, int ishape);
+    double& ShapeFunc_Quad84(int igauss, int ishape);
+    double& ShapeFunc_Quad89(int igauss, int ishape);
+    double& ShapeFunc_Triangle31(int igauss, int ishape);
+    double& ShapeFunc_Triangle63(int igauss, int ishape);
+    double& ShapeFunc_Line21(int igauss, int ishape);
+    double& ShapeFunc_Line32(int igauss, int ishape);
+
     //--
     // 自然座標での導関数
     //--
@@ -211,7 +274,31 @@ public:
     void dNdr_on_pt(const uint& shapeType, const uint& igauss, vvdouble& dNdr);
     // dN/dr(まるごと)
     void dNdr(const uint& shapeType, vvvdouble& dNdr);
-
+    // ----
+    // Fortran API用 導関数
+    // ----
+    // dNdr[igauss][ishape][iaxis]
+    void dNdr(const uint& shapeType, double dNdr[]);
+    double& dNdr_Hexa81_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Hexa82_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Hexa201_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Hexa202_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Hexa203_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tetra41_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tetra101_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tetra104_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tetra1015_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Prism62_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Prism156_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Prism159_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Prism1518_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Quad41_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Quad84_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Quad89_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tri31_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Tri63_on_pt_on_shape(int igauss, int ishape, int iaxis);
+    double& dNdr_Line21_on_pt_on_shape(int igauss, int ishape);
+    double& dNdr_Line32_on_pt_on_shape(int igauss, int ishape);
 
 
     //--
@@ -223,6 +310,8 @@ public:
     void dNdx_on_pt(const uint& igauss, vvdouble& dNdx);
     // dN/dx(まるごと)
     void dNdx(const uint& elemType, const uint& numOfInteg, const uint& elem_index, vvvdouble& dNdx);
+    // dN/dx(1次元配列  Fortran用途
+    void dNdx(const uint& elemType, const uint& numOfInteg, const uint& ielem, double dNdx[]);
 
     //--
     // J行列式 |J|
@@ -235,6 +324,92 @@ public:
     // Gauss積分点の重み:Weight
     //--
     void Weight(const uint& elemType, const uint& numOfInteg, const uint& igauss, double& w);
+
+    //----
+    // 形状関数タイプ for Fortran
+    //----
+    uint shapetype_hexa81();
+    uint shapetype_hexa82();
+    uint shapetype_hexa201();
+    uint shapetype_hexa202();
+    uint shapetype_hexa203();
+    uint shapetype_tetra41();
+    uint shapetype_tetra101();
+    uint shapetype_tetra104();
+    uint shapetype_tetra1015();
+    uint shapetype_prism62();
+    uint shapetype_prism156();
+    uint shapetype_prism159();
+    uint shapetype_prism1518();
+    uint shapetype_quad41();
+    uint shapetype_quad84();
+    uint shapetype_quad89();
+    uint shapetype_tri31();
+    uint shapetype_tri63();
+    uint shapetype_line21();
+    uint shapetype_line32();
+
+
+    //--
+    // Boundary :: 各Meshが所有するBoundaryMeshから境界値を取得
+    //--
+    uint GetNumOfBoundaryNodeMesh();
+    uint GetNumOfBoundaryFaceMesh();
+    uint GetNumOfBoundaryEdgeMesh();
+    uint GetNumOfBoundaryVolumeMesh();
+    uint GetNumOfBNode_BNodeMesh(const uint& ibmesh);
+    uint GetNumOfBNode_BFaceMesh(const uint& ibmesh);
+    uint GetNumOfBNode_BEdgeMesh(const uint& ibmesh);
+    uint GetNumOfBNode_BVolumeMesh(const uint& ibmesh);
+    uint GetNumOfDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode);
+    uint GetNumOfDOF_BFaceMesh(const uint& ibmesh);
+    uint GetNumOfDOF_BEdgeMesh(const uint& ibmesh);
+    uint GetNumOfDOF_BVolumeMesh(const uint& ibmesh);
+    //--
+    // BoundaryNode 境界値
+    //--
+    double& GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof);
+    double& GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
+    double& GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
+    double& GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
+    uint& GetNodeID_BNode_BNodeMesh(const uint& ibmesh, const uint& ibnode);
+    uint& GetNodeID_BNode_BFaceMesh(const uint& ibmesh, const uint& ibnode);
+    uint& GetNodeID_BNode_BEdgeMesh(const uint& ibmesh, const uint& ibnode);
+    uint& GetNodeID_BNode_BVolumeMesh(const uint& ibmesh, const uint& ibnode);
+    //--
+    // Face, Edge, Volume の境界値
+    //--
+    uint GetNumOfBFace(const uint& ibmesh);
+    double& GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& idof);
+    uint GetNumOfBEdge(const uint& ibmesh);
+    double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof);
+    uint GetNumOfBVolume(const uint& ibmesh);
+    double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof);
+
+
+    //--
+    // MPI (直接呼び出したい人向け)
+    //--
+    int AllReduce_R(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld);
+    void Send_Recv_R(double* buf, int dof_size);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
+    void Send_Recv_R();// 通信Nodeの値を入れ替えて更新
+
+
+    //--
+    // Logger
+    //--
+    void LoggerMode(const uint& mode);
+    void LoggerDevice(const uint& mode, const uint& device);
+    void LoggerInfo(const uint& mode, char* message);
+    //--
+    // Logger_Parameter for Fortran
+    //--
+    uint getErrorMode();
+    uint getWarnMode();
+    uint getInfoMode();
+    uint getDebugMode();
+    uint getDiskDevice();
+    uint getDisplayDevice();
 };
 #endif
 }

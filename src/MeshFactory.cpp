@@ -51,10 +51,10 @@ CMeshFactory::~CMeshFactory(void)
 }
 
 // MGを構築しない場合は、MeshのsetupAggregateだけを構築
-// 
+//
 void CMeshFactory::refineMesh()
 {
-    if(mMGLevel > 1){
+    if(mMGLevel > 0){
         MGMeshConstruct();// Multi Gridを構築
     }else{
         SGMeshConstruct();// Single Gridを構築
@@ -76,7 +76,7 @@ void CMeshFactory::SGMeshConstruct()
         pMesh = pAssy->getMesh(imesh);
 
         pMesh->setupAggregate();
-        
+
         string str = "SGMeshConstruct , pMesh->setupAggElement  at " + boost::lexical_cast<string>(imesh);
         mpLogger->Info(Utility::LoggerMode::MWDebug, str);
     };
@@ -92,25 +92,19 @@ void CMeshFactory::SGMeshConstruct()
 // 
 void CMeshFactory::MGMeshConstruct()
 {
-    // --- !注意 ---
-    // 階層数==0であってもCMesh::setupAggregateをコールするので,
-    // このルーチン(refineMesh)は,必須のルーチンである.
-    // -------------
-
-    //-- AseeyModel & Mesh --
+    // AseeyModel & Mesh --
     CAssyModel *pAssy, *pProgAssy;
     CMesh      *pMesh, *pProgMesh;
-    //-- Element
+    // Element
     CElement         *pElem=NULL;//元になった要素
     vector<CElement*> vProgElem; //分割された新しい要素達
-    CElement         *pProgElem=NULL;//分割された新しい要素
 
-    //-- 通信Mesh
+    // 通信Mesh
     CCommMesh  *pCommMesh, *pProgCommMesh;
-    //-- 通信要素(CommElem)
+    // 通信要素(CommElem)
     CCommElement      *pCommElem;//元になったCommElem(親のCommElem)
     vector<CCommElement*> vProgCommElem;//生成されるprogCommElemのコンテナ
-    //--
+    
     uint numOfCommMesh,numOfCommElemAll,numOfCommNode;
     uint icommesh,icomelem,iprocom;
     
@@ -119,7 +113,6 @@ void CMeshFactory::MGMeshConstruct()
     // ---
     pAssy= mpGMGModel->getAssyModel(0);
     uint numOfMesh= pAssy->getNumOfMesh();
-    
     
     uint ilevel,imesh,ielem;
     // ---
@@ -149,9 +142,7 @@ void CMeshFactory::MGMeshConstruct()
             //
             pProgMesh = new CMesh;          //Upper_Level Mesh ==(prolongation Mesh)
             pProgMesh->setMGLevel(ilevel+1);//上位MeshのMultiGridレベルを設定(初期pMeshはファイル読み込み時のLevel==0)
-            pProgMesh->setMaxMGLevel(mMGLevel);//Factoryのレベル=最大階層数
             pProgMesh->setMeshID(pMesh->getMeshID());//Mesh_ID は,同一のIDとする.
-            pProgMesh->setSolutionType(mnSolutionType);//FEM .or. FVM
 
             
             // Refineの準備, 頂点集合の要素と,辺-面-体積中心の節点生成(progMeshの節点生成),辺-面の要素集合
@@ -159,16 +150,16 @@ void CMeshFactory::MGMeshConstruct()
             if(ilevel==0){
                 // 条件(ilevel >= 1) は, pProgMesh->setupAggregate()をMesh-Refine後に行ってあるので不要:CommMeshのRefineの為.
                 pMesh->setupAggregate(); //Node集合Element, Node集合Nodeの計算
-                    mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupAggElement finish at ilevel==0");
+                mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupAggElement finish at ilevel==0");
             }
-            pMesh->presetProgMesh(pProgMesh);  //prolongation_Meshのノード,要素リザーブ(reserve) && pMeshのノード,要素をセット
-                    mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->presetProgMesh finish");
+            pMesh->presetProgMesh(pProgMesh);//prolongation_Meshのノード,要素リザーブ(reserve) && pMeshのノード,要素をセット
+            mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->presetProgMesh finish");
             pMesh->setupEdgeElement(pProgMesh);//辺(Edge)節点, 辺に集合する要素の計算
-                    mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupEdgeElement finish");
+            mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupEdgeElement finish");
             pMesh->setupFaceElement(pProgMesh);//面(Face)節点, 面に隣接する要素の計算
-                    mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupFaceElement finish");
+            mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupFaceElement finish");
             pMesh->setupVolumeNode(pProgMesh); //体(Volume)節点:要素中心の節点
-                    mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupVolumeNode finish");
+            mpLogger->Info(Utility::LoggerMode::MWDebug,"pMesh->setupVolumeNode finish");
             
             // 新ElementID
             uint numOfElem = pMesh->getNumOfElement();
@@ -176,54 +167,38 @@ void CMeshFactory::MGMeshConstruct()
                               // ElementのID(Index)初期値は,土台のMeshとは無関係 <= Nodeとは異なる.
 
             for(ielem=0; ielem< numOfElem; ielem++){
-                
                 pElem= pMesh->getElement(ielem);
+                vProgElem.clear();
                 
-                vProgElem.clear();// 分割 Elementコンテナのクリア
-                
-                //再分割要素の生成
-                GeneProgElem(ilevel, pElem, vProgElem, elementID, pProgMesh);//2010.5.31VC++同様に変更
-
-                uint i, nBaseType;
-                //生成されたElementの初期化
-                for(i=0; i< vProgElem.size(); i++){
-                    pProgElem= vProgElem[i];
-
-                    // 局所ノードによる面構成をセットアップ
-                    nBaseType= pProgElem->getEntityType();
-                    if(nBaseType==BaseElementType::Solid || nBaseType==BaseElementType::Shell)
-                        pProgElem->setupFaceCnvNodes();
-                };
-
-            };//ielem ループ エンド
+                GeneProgElem(ilevel, pElem, vProgElem, elementID, pProgMesh);//再分割要素の生成, 2010.5.31VC++同様に変更
+            };
             
             // ノード, 数要素数のセット
             pProgMesh->setupNumOfNode();
             pProgMesh->setupNumOfElement();
+            pProgMesh->setSolutionType(mnSolutionType);
             
             
-            // pProgMeshの AggregateElement, 
-            // pProgMeshの AggregateNode.
+            // pProgMeshの AggregateElement, AggregateNodeの生成
             // --
             uint numOfNode= pProgMesh->getNodeSize();
             CAggregateElement *pAggElem;
             CAggregateNode    *pAggNode;
-            pProgMesh->reserveAggregate(numOfNode);
+            pProgMesh->resizeAggregate(numOfNode);
 
-            if(SolutionType::FEM==mnSolutionType){
+            if(mnSolutionType==SolutionType::FEM){
                 for(uint iAgg=0; iAgg< numOfNode; iAgg++){
                     pAggElem = new CAggregateElement;
-                    pProgMesh->setAggElement(pAggElem);
+                    pProgMesh->setAggElement(pAggElem, iAgg);
                 };
             }
-            if(SolutionType::FVM==mnSolutionType){
+            if(mnSolutionType==SolutionType::FVM){
                 for(uint iAgg=0; iAgg< numOfNode; iAgg++){
                     pAggNode = new CAggregateNode;
-                    pProgMesh->setAggNode(pAggNode);
+                    pProgMesh->setAggNode(pAggNode, iAgg);
                 };
             }
             // !注意 CMesh::setupAggregate()は,このルーチンの先頭のRefine準備でpMeshに対してコールするのでpProgMeshにはコールしない.
-
             
             // prolongation AssyModelに,pProgMeshをセット
             pProgAssy->setMesh(pProgMesh,pMesh->getMeshID());//progAssyModel に,progMeshをセット
@@ -239,11 +214,9 @@ void CMeshFactory::MGMeshConstruct()
             uint progElemSize = pProgMesh->getElementSize();
             pProgMesh->initBucketElement(progElemSize+1,0);
             pProgMesh->setupBucketElement();
-            
-            
+
             // <<<< end ::pProgMeshの生成処理 >>>>
-            cout << "pProgMesh Node数    == " << pProgMesh->getNumOfNode()    << endl;//debug
-            cout << "pProgMesh Element数 == " << pProgMesh->getNumOfElement() << endl;//debug
+            cout << "pProgMesh ノード数 == " << pProgMesh->getNumOfNode() << endl;//debug
 
 
             // progCommMeshの前処理
@@ -252,7 +225,7 @@ void CMeshFactory::MGMeshConstruct()
 
 
             ////////////////////////////////////////////////
-            // ---- start ::pProgCommCommMeshの生成処理 -----
+            // <<<< start ::pProgCommCommMeshの生成処理 >>>>
             //
             numOfCommMesh= pMesh->getNumOfCommMesh();
             // --
@@ -310,6 +283,7 @@ void CMeshFactory::MGMeshConstruct()
 
             };//CommMeshループ・エンド
             
+
             // Mesh のNode,Elementの計算領域整理:MeshのmvNode,mvElementから計算に使用しないNode(DNode),Element(DElement)を移動
             // --
             pProgMesh->sortMesh();
@@ -317,32 +291,11 @@ void CMeshFactory::MGMeshConstruct()
             // Meshが,ソートされたので,Bucketを再セットアップ
             pProgMesh->setupBucketNode();//Bucketの"ID,Index"の一括処理
             pProgMesh->setupBucketElement();
-            // ------ end ::pProgCommCommMeshの生成処理 ------
+            //
+            // <<<< end ::pProgCommCommMeshの生成処理 >>>>
 
-
-            //cout << "Facetory::MGMeshConstruct, aaaaaaaaaaa" << endl;
-
-            pMesh->deleteProgData();// <<<<<<<<<< -- prolongationの後始末(辺-面のノード, 要素集合を削除)
-
-            //cout << "Facetory::MGMeshConstruct, bbbbbbbbbbb" << endl;
-            
         };//imesh ループ エンド
     };//ilevel ループ エンド
-
-
-
-    // 最終LevelのMeshにNode集合Node,Node集合Elementをセットする.
-    //
-    pAssy= mpGMGModel->getAssyModel(mMGLevel);//最終LevelのAssyModel
-    
-    numOfMesh= pAssy->getNumOfMesh();
-    for(imesh=0; imesh< numOfMesh; imesh++){
-        pMesh= pAssy->getMesh(imesh);
-        pMesh->setupAggregate();
-
-        //// 2次要素の場合
-        // pMesh->setupEdgeElement(NULL);//2次要素として利用するため,最終レベルのMeshに辺ノードを生成
-    };
 }
 
 // 再分割要素(progElem)の生成 2010.05.31VC++同様に変更
@@ -383,7 +336,20 @@ void CMeshFactory::GeneProgElem(const uint& ilevel,CElement* pElem, vector<CElem
             dividPrism(pElem,vProgElem, elementID,pProgMesh);
 
             break;
-        
+//        case(ElementType::Pyramid):case(ElementType::Pyramid2):
+//
+//            vProgElem.reserve(8);//分割された新しい要素の生成
+//            for(i=0; i< 4; i++){
+//                pProgElem= new CHexa; pProgElem->setMGLevel(ilevel+1);
+//                vProgElem.push_back(pProgElem);
+//            };
+//            for(i=0; i< 4; i++){
+//                pProgElem= new CPyramid; pProgElem->setMGLevel(ilevel+1);
+//                vProgElem.push_back(pProgElem);
+//            };
+//            dividPyramid(pElem,vProgElem, elementID,pProgMesh);
+//
+//            break;
         case(ElementType::Quad):case(ElementType::Quad2):
 
             vProgElem.reserve(4);//分割された新しい要素の生成
@@ -510,7 +476,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     
     // IDのセット
     for(i=0; i< 8; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
         vProgElem[i]->setID(elementID);          // <= elementIDは,いままでの数を数えているので,直前の配列数
         ++elementID;//直前の番号を渡した後でelementIDをカウントアップ
 
@@ -704,7 +670,7 @@ void CMeshFactory::dividTetra(CElement* pElem, vector<CElement*>& vProgElem, uin
 
     // IDのセット
     for(i=0; i< 4; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
 
         vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
         ++indexCount;
@@ -877,7 +843,7 @@ void CMeshFactory::dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uin
 
     // IDのセット
     for(i=0; i< 6; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
 
         vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
         ++indexCount;
@@ -1000,126 +966,122 @@ void CMeshFactory::dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uin
         };
     }
 }
+// ピラミッドの分割 <= 削除
+//
+void CMeshFactory::dividPyramid(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
+{
+    vector<CNode*> vVertNode;//頂点のノード
+    vector<CNode*> vEdgeNode;//辺のノード
+    vector<CNode*> vFaceNode;//面のノード
+    CNode          *pVolNode;//体中心のノード
+    
+    uint numOfVert,numOfEdge,numOfFace;//各要素の属性(分割の際に使用)
+    numOfVert= NumberOfVertex::Pyramid(); numOfFace= NumberOfFace::Pyramid(); numOfEdge= NumberOfEdge::Pyramid();
 
+    uint i;
+    //頂点のノード
+    vVertNode.resize(numOfVert); for(i=0; i< numOfVert; i++){ vVertNode[i] = pElem->getNode(i);}
+    //辺のノード
+    vEdgeNode.resize(numOfEdge);for(i=0; i< numOfEdge; i++){ vEdgeNode[i] = pElem->getEdgeInterNode(i);}
+    //面のノード
+    vFaceNode.resize(numOfFace); for(i=0; i< numOfFace; i++){ vFaceNode[i] = pElem->getFaceNode(i);}
+    //体ノード
+    pVolNode = pElem->getVolumeNode();
+    
+    // 要素 0
+    vProgElem[0]->setNode(vVertNode[0],0); vProgElem[0]->setNode(vEdgeNode[0],1);
+    vProgElem[0]->setNode(vFaceNode[0],2); vProgElem[0]->setNode(vEdgeNode[3],3);
+    vProgElem[0]->setNode(vEdgeNode[7],4); vProgElem[0]->setNode(vFaceNode[4],5);
+    vProgElem[0]->setNode(pVolNode,    6); vProgElem[0]->setNode(vFaceNode[3],7);
+    
+    pElem->setProgElem(vProgElem[0], 0);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
+    
+    // 要素 1
+    vProgElem[1]->setNode(vEdgeNode[0],0); vProgElem[1]->setNode(vVertNode[1],1);
+    vProgElem[1]->setNode(vEdgeNode[1],2); vProgElem[1]->setNode(vFaceNode[0],3);
+    vProgElem[1]->setNode(vFaceNode[4],4); vProgElem[1]->setNode(vEdgeNode[4],5);
+    vProgElem[1]->setNode(vFaceNode[1],6); vProgElem[1]->setNode(pVolNode,    7);
+    
+    pElem->setProgElem(vProgElem[1], 1);
+    
+    // 要素 2
+    vProgElem[2]->setNode(vFaceNode[0],0); vProgElem[2]->setNode(vEdgeNode[1],1);
+    vProgElem[2]->setNode(vVertNode[2],2); vProgElem[2]->setNode(vEdgeNode[2],3);
+    vProgElem[2]->setNode(pVolNode,    4); vProgElem[2]->setNode(vFaceNode[1],5);
+    vProgElem[2]->setNode(vEdgeNode[5],6); vProgElem[2]->setNode(vFaceNode[2],7);
+    
+    pElem->setProgElem(vProgElem[2], 2);
+    
+    // 要素 3
+    vProgElem[3]->setNode(vEdgeNode[3],0); vProgElem[3]->setNode(vFaceNode[0],1);
+    vProgElem[3]->setNode(vEdgeNode[2],2); vProgElem[3]->setNode(vVertNode[3],3);
+    vProgElem[3]->setNode(vFaceNode[3],4); vProgElem[3]->setNode(pVolNode,    5);
+    vProgElem[3]->setNode(vFaceNode[2],6); vProgElem[3]->setNode(vEdgeNode[6],7);
+    
+    pElem->setProgElem(vProgElem[3], 3);
+    
 
-//// ピラミッドの分割 <= 削除
-////
-//void CMeshFactory::dividPyramid(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
-//{
-//    vector<CNode*> vVertNode;//頂点のノード
-//    vector<CNode*> vEdgeNode;//辺のノード
-//    vector<CNode*> vFaceNode;//面のノード
-//    CNode          *pVolNode;//体中心のノード
-//
-//    uint numOfVert,numOfEdge,numOfFace;//各要素の属性(分割の際に使用)
-//    numOfVert= NumberOfVertex::Pyramid(); numOfFace= NumberOfFace::Pyramid(); numOfEdge= NumberOfEdge::Pyramid();
-//
-//    uint i;
-//    //頂点のノード
-//    vVertNode.resize(numOfVert); for(i=0; i< numOfVert; i++){ vVertNode[i] = pElem->getNode(i);}
-//    //辺のノード
-//    vEdgeNode.resize(numOfEdge);for(i=0; i< numOfEdge; i++){ vEdgeNode[i] = pElem->getEdgeInterNode(i);}
-//    //面のノード
-//    vFaceNode.resize(numOfFace); for(i=0; i< numOfFace; i++){ vFaceNode[i] = pElem->getFaceNode(i);}
-//    //体ノード
-//    pVolNode = pElem->getVolumeNode();
-//
-//    // 要素 0
-//    vProgElem[0]->setNode(vVertNode[0],0); vProgElem[0]->setNode(vEdgeNode[0],1);
-//    vProgElem[0]->setNode(vFaceNode[0],2); vProgElem[0]->setNode(vEdgeNode[3],3);
-//    vProgElem[0]->setNode(vEdgeNode[7],4); vProgElem[0]->setNode(vFaceNode[4],5);
-//    vProgElem[0]->setNode(pVolNode,    6); vProgElem[0]->setNode(vFaceNode[3],7);
-//
-//    pElem->setProgElem(vProgElem[0], 0);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
-//
-//    // 要素 1
-//    vProgElem[1]->setNode(vEdgeNode[0],0); vProgElem[1]->setNode(vVertNode[1],1);
-//    vProgElem[1]->setNode(vEdgeNode[1],2); vProgElem[1]->setNode(vFaceNode[0],3);
-//    vProgElem[1]->setNode(vFaceNode[4],4); vProgElem[1]->setNode(vEdgeNode[4],5);
-//    vProgElem[1]->setNode(vFaceNode[1],6); vProgElem[1]->setNode(pVolNode,    7);
-//
-//    pElem->setProgElem(vProgElem[1], 1);
-//
-//    // 要素 2
-//    vProgElem[2]->setNode(vFaceNode[0],0); vProgElem[2]->setNode(vEdgeNode[1],1);
-//    vProgElem[2]->setNode(vVertNode[2],2); vProgElem[2]->setNode(vEdgeNode[2],3);
-//    vProgElem[2]->setNode(pVolNode,    4); vProgElem[2]->setNode(vFaceNode[1],5);
-//    vProgElem[2]->setNode(vEdgeNode[5],6); vProgElem[2]->setNode(vFaceNode[2],7);
-//
-//    pElem->setProgElem(vProgElem[2], 2);
-//
-//    // 要素 3
-//    vProgElem[3]->setNode(vEdgeNode[3],0); vProgElem[3]->setNode(vFaceNode[0],1);
-//    vProgElem[3]->setNode(vEdgeNode[2],2); vProgElem[3]->setNode(vVertNode[3],3);
-//    vProgElem[3]->setNode(vFaceNode[3],4); vProgElem[3]->setNode(pVolNode,    5);
-//    vProgElem[3]->setNode(vFaceNode[2],6); vProgElem[3]->setNode(vEdgeNode[6],7);
-//
-//    pElem->setProgElem(vProgElem[3], 3);
-//
-//
-////    // 要素 4 (pyramid)
-////    vProgElem[4]->setNode(vEdgeNode[7],0); vProgElem[4]->setNode(vFaceNode[4],1);
-////    vProgElem[4]->setNode(pVolNode,    2); vProgElem[4]->setNode(vFaceNode[3],3);
-////    vProgElem[4]->setNode(vVertNode[4],4);
-////    // 要素 5 (pyramid)
-////    vProgElem[5]->setNode(vFaceNode[4],0); vProgElem[5]->setNode(vEdgeNode[4],1);
-////    vProgElem[5]->setNode(vFaceNode[1],2); vProgElem[5]->setNode(pVolNode,    3);
-////    vProgElem[5]->setNode(vVertNode[4],4);
-////    // 要素 6 (pyramid)
-////    vProgElem[6]->setNode(vFaceNode[1],0); vProgElem[6]->setNode(vEdgeNode[5],1);
-////    vProgElem[6]->setNode(vFaceNode[2],2); vProgElem[6]->setNode(pVolNode,    3);
-////    vProgElem[6]->setNode(vVertNode[4],4);
-////    // 要素 7 (pyramid)
-////    vProgElem[7]->setNode(vFaceNode[2],0); vProgElem[7]->setNode(vEdgeNode[6],1);
-////    vProgElem[7]->setNode(vFaceNode[3],2); vProgElem[7]->setNode(pVolNode,    3);
-////    vProgElem[7]->setNode(vVertNode[4],4);
-//
-//
 //    // 要素 4 (pyramid)
-//    vProgElem[4]->setNode(vEdgeNode[7],0); vProgElem[4]->setNode(vVertNode[4],1);
-//    vProgElem[4]->setNode(vEdgeNode[4],2); vProgElem[4]->setNode(vFaceNode[4],3);
-//    vProgElem[4]->setNode(pVolNode,    4);
-//
-//    // pyramid分割されたProgElemは全て頂点4を所有するので,
-//    // 頂点番号によるProgElemの分類に加えて,Face順に数える.
-//    pElem->setProgElem(vProgElem[4], 7);//FaceNode[4]
-//
+//    vProgElem[4]->setNode(vEdgeNode[7],0); vProgElem[4]->setNode(vFaceNode[4],1);
+//    vProgElem[4]->setNode(pVolNode,    2); vProgElem[4]->setNode(vFaceNode[3],3);
+//    vProgElem[4]->setNode(vVertNode[4],4);
 //    // 要素 5 (pyramid)
-//    vProgElem[5]->setNode(vEdgeNode[4],0); vProgElem[5]->setNode(vVertNode[4],1);
-//    vProgElem[5]->setNode(vEdgeNode[5],2); vProgElem[5]->setNode(vFaceNode[1],3);
-//    vProgElem[5]->setNode(pVolNode,    4);
-//
-//    pElem->setProgElem(vProgElem[5], 4);//FaceNode[1]
-//
+//    vProgElem[5]->setNode(vFaceNode[4],0); vProgElem[5]->setNode(vEdgeNode[4],1);
+//    vProgElem[5]->setNode(vFaceNode[1],2); vProgElem[5]->setNode(pVolNode,    3);
+//    vProgElem[5]->setNode(vVertNode[4],4);
 //    // 要素 6 (pyramid)
-//    vProgElem[6]->setNode(vEdgeNode[5],0); vProgElem[6]->setNode(vVertNode[4],1);
-//    vProgElem[6]->setNode(vEdgeNode[6],2); vProgElem[6]->setNode(vFaceNode[2],3);
-//    vProgElem[6]->setNode(pVolNode,    4);
-//
-//    pElem->setProgElem(vProgElem[6], 5);//FaceNode[2]
-//
+//    vProgElem[6]->setNode(vFaceNode[1],0); vProgElem[6]->setNode(vEdgeNode[5],1);
+//    vProgElem[6]->setNode(vFaceNode[2],2); vProgElem[6]->setNode(pVolNode,    3);
+//    vProgElem[6]->setNode(vVertNode[4],4);
 //    // 要素 7 (pyramid)
-//    vProgElem[7]->setNode(vEdgeNode[6],0); vProgElem[7]->setNode(vVertNode[4],1);
-//    vProgElem[7]->setNode(vEdgeNode[7],2); vProgElem[7]->setNode(vFaceNode[3],3);
-//    vProgElem[7]->setNode(pVolNode,    4);
-//
-//    pElem->setProgElem(vProgElem[7], 6);//FaceNode[3]
-//
-//    // IDのセット
-//    for(i=0; i< 8; i++){
-//        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
-//
-//        vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
-//        ++indexCount;
-//
-//        pProgMesh->setElement(vProgElem[i]);
-//    };
-//
-//    //MPCは実装しない=> ピラミッドは削除予定
-//
-//}
+//    vProgElem[7]->setNode(vFaceNode[2],0); vProgElem[7]->setNode(vEdgeNode[6],1);
+//    vProgElem[7]->setNode(vFaceNode[3],2); vProgElem[7]->setNode(pVolNode,    3);
+//    vProgElem[7]->setNode(vVertNode[4],4);
 
 
+    // 要素 4 (pyramid)
+    vProgElem[4]->setNode(vEdgeNode[7],0); vProgElem[4]->setNode(vVertNode[4],1);
+    vProgElem[4]->setNode(vEdgeNode[4],2); vProgElem[4]->setNode(vFaceNode[4],3);
+    vProgElem[4]->setNode(pVolNode,    4);
+    
+    // pyramid分割されたProgElemは全て頂点4を所有するので,
+    // 頂点番号によるProgElemの分類に加えて,Face順に数える.
+    pElem->setProgElem(vProgElem[4], 7);//FaceNode[4]
+    
+    // 要素 5 (pyramid)
+    vProgElem[5]->setNode(vEdgeNode[4],0); vProgElem[5]->setNode(vVertNode[4],1);
+    vProgElem[5]->setNode(vEdgeNode[5],2); vProgElem[5]->setNode(vFaceNode[1],3);
+    vProgElem[5]->setNode(pVolNode,    4);
+    
+    pElem->setProgElem(vProgElem[5], 4);//FaceNode[1]
+    
+    // 要素 6 (pyramid)
+    vProgElem[6]->setNode(vEdgeNode[5],0); vProgElem[6]->setNode(vVertNode[4],1);
+    vProgElem[6]->setNode(vEdgeNode[6],2); vProgElem[6]->setNode(vFaceNode[2],3);
+    vProgElem[6]->setNode(pVolNode,    4);
+    
+    pElem->setProgElem(vProgElem[6], 5);//FaceNode[2]
+    
+    // 要素 7 (pyramid)
+    vProgElem[7]->setNode(vEdgeNode[6],0); vProgElem[7]->setNode(vVertNode[4],1);
+    vProgElem[7]->setNode(vEdgeNode[7],2); vProgElem[7]->setNode(vFaceNode[3],3);
+    vProgElem[7]->setNode(pVolNode,    4);
+    
+    pElem->setProgElem(vProgElem[7], 6);//FaceNode[3]
+
+    // IDのセット
+    for(i=0; i< 8; i++){
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        
+        vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
+        ++indexCount;
+
+        pProgMesh->setElement(vProgElem[i]);
+    };
+
+    //MPCは実装しない=> ピラミッドは削除予定
+
+}
 // 四辺形の分割
 //
 void CMeshFactory::dividQuad(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
@@ -1165,7 +1127,7 @@ void CMeshFactory::dividQuad(CElement* pElem, vector<CElement*>& vProgElem, uint
 
     // IDのセット
     for(i=0; i< 4; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
 
         vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
         ++indexCount;
@@ -1255,7 +1217,7 @@ void CMeshFactory::dividTriangle(CElement* pElem, vector<CElement*>& vProgElem, 
 
     // IDのセット
     for(i=0; i< 3; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
 
         vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
         ++indexCount;
@@ -1328,7 +1290,7 @@ void CMeshFactory::dividBeam(CElement* pElem, vector<CElement*>& vProgElem, uint
 
     // IDのセット
     for(i=0; i< 2; i++){
-        vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
+        //vProgElem[i]->setParentID(pElem->getID());//親の要素IDをParentIDにセット
 
         vProgElem[i]->setID(indexCount);//配列Indexは直前の配列数
         ++indexCount;
@@ -1457,10 +1419,7 @@ void CMeshFactory::GeneNode(const uint& mgLevel, const uint& mesh_id, const uint
             break;
     }
     pNode->setID(id);// id は、連続したIndex番号にする予定(09.06.23)
-    //pNode->setIndex(id);//debug : 本来はIndex番号をセット
     pNode->setCoord(coord);
-    pNode->setMGLevel(mgLevel);
-
 
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);// MultiGrid Level==0
 
@@ -1513,6 +1472,9 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
         case(ElementType::Prism):
             pElement = new CPrism;
             break;
+//        case(ElementType::Pyramid):
+//            pElement = new CPyramid;
+//            break;
         case(ElementType::Quad):
             pElement = new CQuad;
             break;
@@ -1538,7 +1500,7 @@ void CMeshFactory::GeneElement(const uint& mgLevel, const uint& mesh_id, const u
         pNode = mpTMesh->getNode(node_id[i]);
         pElement->setNode(pNode, i);
     };
-    pElement->setupFaceCnvNodes();// 局所ノードによる面構成をセットアップ
+    //// pElement->setupFaceCnvNodes();// 局所ノードによる面構成をセットアップ
     
     // Elem to Mesh
     //mpTMesh->setElement(pElement,id);
@@ -1567,12 +1529,12 @@ void CMeshFactory::reserveElement(const uint& mgLevel, const uint& mesh_id, cons
 // 節点まわりの要素集合
 // Mesh::reserveAggElement
 //
-void CMeshFactory::reserveAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node)
+void CMeshFactory::resizeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
     mpTMesh = mpTAssyModel->getMesh(mesh_id);
 
-    mpTMesh->reserveAggregate(num_of_node);
+    mpTMesh->resizeAggregate(num_of_node);
 }
 
 void CMeshFactory::GeneAggregate(const uint& mgLevel, const uint& mesh_id, const uint& num_of_node)
@@ -1581,18 +1543,18 @@ void CMeshFactory::GeneAggregate(const uint& mgLevel, const uint& mesh_id, const
     mpTMesh = mpTAssyModel->getMesh(mesh_id);
 
     uint i;
-    if(SolutionType::FEM==mnSolutionType){
+    if(mnSolutionType==SolutionType::FEM){
         for(i=0; i< num_of_node; i++){
             CAggregateElement *pAggElem = new CAggregateElement;
 
-            mpTMesh->setAggElement(pAggElem);//Node周辺の要素集合
+            mpTMesh->setAggElement(pAggElem, i);//Node周辺の要素集合
         };
     }
-    if(SolutionType::FVM==mnSolutionType){
+    if(mnSolutionType==SolutionType::FVM){
         for(i=0; i< num_of_node; i++){
             CAggregateNode    *pAggNode = new CAggregateNode;
 
-            mpTMesh->setAggNode(pAggNode);//Nodeの接続Node集合
+            mpTMesh->setAggNode(pAggNode, i);//Node周辺のNode集合
         };
     }
 }
@@ -2638,7 +2600,9 @@ void CMeshFactory::GeneCommElement(const uint& mgLevel, const uint& mesh_id, con
         case(ElementType::Prism):
             pCommElem = new CCommPrism;
             break;
-
+//        case(ElementType::Pyramid):
+//            pCommElem = new CCommPyramid;
+//            break;
         case(ElementType::Quad):
             pCommElem = new CCommQuad;
             break;
@@ -2926,7 +2890,16 @@ void CMeshFactory::GeneProgCommElem(CCommElement* pCommElem, vector<CCommElement
             dividCommElem(pCommElem, vProgCommElem);
 
             break;
-
+//        case(ElementType::Pyramid):
+//            // Pyramid => Hexa縮退 ?
+//            vProgCommElem.reserve(8);
+//            for(ivert=0; ivert< 8; ivert++){
+//                pProgCommElem= new CCommHexa;// <<<<<<<<<-- prolongation CommElement
+//                vProgCommElem.push_back(pProgCommElem);
+//            };
+//            dividCommElem(pCommElem, vProgCommElem);
+//
+//            break;
         case(ElementType::Quad):
             vProgCommElem.reserve(4);
             for(ivert=0; ivert< 4; ivert++){

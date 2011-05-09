@@ -29,7 +29,17 @@ CCommElement::CCommElement()
 
 CCommElement::~CCommElement()
 {
-    ;
+    // Send-Recv 局所Node番号
+    // --
+    //
+    delete[] mvbSend; //頂点番号のノードがSend？ => CommMeshのSendノード収集に使用
+    delete[] mvbRecv; //頂点番号のノードがRecv？ => CommMeshのRecvノード収集に使用
+    delete[] mvbOther;//頂点番号のノードは無関係なRank？
+
+    // Node選択されたかマーキングするためのboolean
+    // --
+    delete[] mvbNodeIXCheck; //グローバルIndex生成時に,Nodeが選択されたかマーキング
+    delete[] mvbDNodeMarking;//DNodeとして選ばれたかマーキング
 }
 
 

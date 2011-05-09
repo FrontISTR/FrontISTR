@@ -22,10 +22,9 @@ CBoundaryVolumeMesh::CBoundaryVolumeMesh()
 {
     ;
 }
-
 CBoundaryVolumeMesh::~CBoundaryVolumeMesh()
 {
-    ;
+    for_each(mvBVolume.begin(), mvBVolume.end(), DeleteObject());
 }
 
 
@@ -706,7 +705,20 @@ void CBoundaryVolumeMesh::distDirichletValue_at_FGrid()
 //}
 
 
+// Refine 後処理 : 辺-面 BNode vectorの解放
+//
+void CBoundaryVolumeMesh::deleteProgData()
+{
+    uint ivol, nNumOfBVol = mvBVolume.size();
 
+    for(ivol=0; ivol < nNumOfBVol; ivol++){
+        mvBVolume[ivol]->deleteProgData();
+    };
+
+    vector<CBoundaryNode*>().swap(mvBEdgeBNode);
+    vector<CBoundaryNode*>().swap(mvBFaceBNode);
+    vector<CBoundaryNode*>().swap(mvBVolBNode);
+}
 
 
 

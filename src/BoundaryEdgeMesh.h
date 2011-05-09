@@ -59,6 +59,9 @@ public:
     // Refine 辺の再分割  => progBMeshにセット
     void refine(CBoundaryEdgeMesh *pProgEdgeMesh);
 
+    // Refine時のmvBEdgeBNodeの解放
+    void deleteProgData();
+
 protected:
     //Neumann条件の節点分配(形状関数による等価節点力:EquivalentNodeForce)
     //----

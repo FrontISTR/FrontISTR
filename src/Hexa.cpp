@@ -8,7 +8,6 @@
 using namespace pmw;
 
 uint CHexa::mnElemType = ElementType::Hexa;
-uint CHexa::mnElemType2= ElementType::Hexa2;//2次要素
 uint CHexa::mNumOfFace =  6;
 uint CHexa::mNumOfEdge = 12;
 uint CHexa::mNumOfNode =  8;
@@ -21,32 +20,38 @@ uint CHexa::mNumOfNode =  8;
 CHexa::CHexa(void):CSolidBase()
 {
     mvNode.resize(mNumOfNode);
-    mvInterNode.resize(mNumOfEdge + mNumOfFace);
-    mvvNeibElement.resize(mNumOfEdge + mNumOfFace);
+    mvvEdgeElement.resize(mNumOfEdge);
+    mvEdgeInterNode.resize(mNumOfEdge);
 
-    uint i;
-    for(i=mNumOfEdge; i < mNumOfEdge + mNumOfFace; i++){
-        mvvNeibElement[i].resize(1);//Faceに隣接する要素は1個に限定
-    }
-
-    // Edge, Face bool
+    // Edgeノード bool
     //
-    mvb_neib.reserve(mNumOfEdge + mNumOfFace);
-    for(i=0; i < mNumOfEdge + mNumOfFace; i++){
-        mvb_neib.push_back(false);
-    }
+    mvb_edge = new bool[mNumOfEdge];
+    uint i;
+    for(i=0; i< mNumOfEdge; i++){
+      mvb_edge[i]=false;
+    };
+
+    mvFaceElement.resize(mNumOfFace);
+    mvFaceNode.resize(mNumOfFace);
+
+    mvb_face = new bool[mNumOfFace];
+    // Face ノード bool
+    //
+    for(i=0; i< mNumOfFace; i++){
+        mvb_face[i]=false;
+    };
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
 
     //MPC属性
-    mvbMPCFace.resize(mNumOfFace);
+    mvbMPCFace = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbMPCFace[i]= false;
     };
 
     //通信界面(CommMesh2)属性
-    mvbCommEntity.resize(mNumOfFace);
+    mvbCommEntity = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbCommEntity[i]= false;
     };
@@ -58,7 +63,33 @@ CHexa::~CHexa(void)
 //    cout << "~CHexa" << endl;
 }
 
-
+//// each reserve for EdgeElement
+////
+//void CHexa::reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem)
+//{
+//    Utility::CLogger *pLogger = Utility::CLogger::Instance();
+//
+//    if(edgeIndex >= mNumOfEdge){
+//        pLogger->Info(Utility::LoggerMode::Error, "invalid EdgeIndex @CHexa::reserveEdgeElement");
+//        return;
+//    }
+//
+//    mvvEdgeElement[edgeIndex].reserve(numOfElem);
+//}
+//
+//// set to EdgeElement
+////
+//void CHexa::setEdgeElement(const uint& edgeIndex, CElement* pElem)
+//{
+//    Utility::CLogger *pLogger = Utility::CLogger::Instance();
+//
+//    if(edgeIndex >= mNumOfEdge){
+//        pLogger->Info(Utility::LoggerMode::Error, "invalid EdgeIndex @CHexa::setEdgeElement");
+//        return;
+//    }
+//
+//    mvvEdgeElement[edgeIndex].push_back(pElem);
+//}
 const uint& CHexa::getType()
 {
     return mnElemType;
@@ -95,72 +126,74 @@ bool CHexa::IndexCheck(const uint& propType, const uint& index, string& method_n
 }
 
 
-// out:(PariNode edgeNode)
+// 辺の両端のNode
 //
-PairNode& CHexa::getPairNode(const uint& edgeIndex)
+PairNode CHexa::getPairNode(const uint& iedge)
 {
-    switch(edgeIndex){
+    PairNode pairNode;
+
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[1];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[1];
             break;
         case(1):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[2];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[2];
             break;
         case(2):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[3];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[3];
             break;
         case(3):
-            mEdgeNode.first=mvNode[3];
-            mEdgeNode.second=mvNode[0];
+            pairNode.first=mvNode[3];
+            pairNode.second=mvNode[0];
             break;
         //surf 1 (upper surf)
         case(4):
-            mEdgeNode.first=mvNode[4];
-            mEdgeNode.second=mvNode[5];
+            pairNode.first=mvNode[4];
+            pairNode.second=mvNode[5];
             break;
         case(5):
-            mEdgeNode.first=mvNode[5];
-            mEdgeNode.second=mvNode[6];
+            pairNode.first=mvNode[5];
+            pairNode.second=mvNode[6];
             break;
         case(6):
-            mEdgeNode.first=mvNode[6];
-            mEdgeNode.second=mvNode[7];
+            pairNode.first=mvNode[6];
+            pairNode.second=mvNode[7];
             break;
         case(7):
-            mEdgeNode.first=mvNode[7];
-            mEdgeNode.second=mvNode[4];
+            pairNode.first=mvNode[7];
+            pairNode.second=mvNode[4];
             break;
         // connect edge (4本)
         case(8):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[4];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[4];
             break;
         case(9):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[5];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[5];
             break;
         case(10):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[6];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[6];
             break;
         case(11):
-            mEdgeNode.first=mvNode[3];
-            mEdgeNode.second=mvNode[7];
+            pairNode.first=mvNode[3];
+            pairNode.second=mvNode[7];
             break;
         default:
             break;
     }
 
-    return mEdgeNode;// PairNode
+    return pairNode;
 }
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CHexa::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
+void CHexa::getPairNode(vint& pairNodeIndex, const uint& iedge)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
     if(pairNodeIndex.size() != 2){
@@ -170,7 +203,7 @@ void CHexa::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
     
     // output is pairNodeIndex[2]
     //
-    switch(edgeIndex){
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
             pairNodeIndex[0]= mvNode[0]->getID();// <= getIndex()も用意したが、IDに統一する
@@ -232,24 +265,21 @@ void CHexa::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
 //
 uint& CHexa::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    getLocalNodeNum(pNode0, pNode1);//mvPairNodeLocalNumに値が入る.
+    //vuint pairIndex = getLocalNodeNum(pNode0, pNode1);
+    
+    uint id0, id1;//MeshでのノードのIndex番号
+    id0 = pNode0->getID();
+    id1 = pNode1->getID();
     
     CEdgeTree *edgeTree = CEdgeTree::Instance();
     
-    ////debug
-    //Utility::CLogger *pLogger= Utility::CLogger::Instance();
-    //pLogger->Info(Utility::LoggerMode::MWDebug,"CHexa::getEdgeIndex,  edgeIndex => ",edgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0],mvPairNodeLocalNum[1]));
-
-    return edgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Hexa 辺ツリー
+    return edgeTree->getHexaEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Hexa 辺ツリー
 }
 uint& CHexa::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
 {
-    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
-    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
-
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    return pEdgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+    return pEdgeTree->getHexaEdgeIndex(mmIDLocal[nodeID_0], mmIDLocal[nodeID_1]);
 }
 
 // EdgeElement集合がセット済みか?
@@ -260,7 +290,7 @@ bool CHexa::isEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Hexa 辺ツリー
 
-    return mvb_neib[edgeNum];
+    return mvb_edge[edgeNum];
 }
 
 // EdgeElement集合がセットされていることをスタンプ
@@ -271,7 +301,7 @@ void CHexa::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Hexa edgeツリー
 
-    mvb_neib[edgeNum]=true;// スタンプ
+    mvb_edge[edgeNum]=true;// スタンプ
 }
 
 
@@ -285,46 +315,7 @@ uint& CHexa::getLocalFaceNum(const vuint& vLocalNodeNum)
     return faceTree->getHexaFaceIndex2(vLocalNodeNum);
 }
 
-// Face Element
-//
-void CHexa::setFaceElement(CElement* pElem, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvvNeibElement[index][0]= pElem;
-}
 
-void CHexa::setFaceNode(CNode* pNode, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvInterNode[index]= pNode;
-}
-
-CNode* CHexa::getFaceNode(const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    return mvInterNode[index];
-}
-
-// 面(Face)に既に面ノードがセット済みかどうか
-//
-bool CHexa::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface= getFaceIndex(pNode0,pNode1,pNode2);
-
-    return mvb_neib[mNumOfEdge + iface];
-}
-
-// 面(Face)に面ノードがセットされたことをスタンプ
-//
-void CHexa::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface = getFaceIndex(pNode0,pNode1,pNode2);
-
-    ////debug
-    //cout << "iface = " << iface << ", CElement::setBoolFaceElem" << endl;
-
-    mvb_neib[mNumOfEdge + iface]=true;
-}
 
 //// 局所面番号に対応する、ノード配列を提供.
 ////
@@ -367,9 +358,9 @@ uint& CHexa::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 }
 
 
-// mvvFaceCnvNodeのセットアップ
+// Face構成Node
 //
-void CHexa::setupFaceCnvNodes()
+vector<CNode*> CHexa::getFaceCnvNodes(const uint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
@@ -377,20 +368,20 @@ void CHexa::setupFaceCnvNodes()
     uint* faceConnectivity;
 
     CNode *pNode;
-    mvvFaceCnvNode.resize(6);
-    uint iface, ivert, index;
+    vector<CNode*> vFaceCnvNode;
+    uint ivert, index;
 
-    for(iface=0; iface< 6; iface++){
-        mvvFaceCnvNode[iface].resize(4);
-        faceConnectivity= faceTree->getLocalNodeHexaFace(iface);
+    vFaceCnvNode.resize(4);
+    faceConnectivity= faceTree->getLocalNodeHexaFace(iface);//iFaceのコネクティビティ
 
-        for(ivert=0; ivert< 4; ivert++){
-            index= faceConnectivity[ivert];
-            pNode= mvNode[index];
+    for(ivert=0; ivert< 4; ivert++){
+        index= faceConnectivity[ivert];
+        pNode= mvNode[index];
 
-            mvvFaceCnvNode[iface][ivert]=pNode;
-        };
+        vFaceCnvNode[ivert]=pNode;
     };
+
+    return vFaceCnvNode;
 }
 
 
@@ -419,16 +410,30 @@ vector<CNode*> CHexa::getConnectNode(CNode* pNode)
 }
 
 
-// prolongation後の後始末
-// --
+//
+// 1. 辺-面 Element*配列を解放
+// 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
+//
 void CHexa::deleteProgData()
 {
-    CElement::deleteProgData();
+    // Edge
+    uint iedge;
+    for(iedge=0; iedge < mNumOfEdge; iedge++){
+        vector<CElement*>().swap(mvvEdgeElement[iedge]);
+    };
+    vector<vector<CElement*> >().swap(mvvEdgeElement);
+    vector<CNode*>().swap(mvEdgeInterNode);//2次要素の場合は残すこと
+    delete []mvb_edge;
     
-    // 辺ノード クリア(ポインターはそのまま、削除しない)
-    mvInterNode.clear();
-}
+    
+    // Face
+    vector<CElement*>().swap(mvFaceElement);
+    vector<CNode*>().swap(mvFaceNode);
+    delete []mvb_face;
 
+    delete []mvbMPCFace;   // 面番号のどれがMPCするのか
+    delete []mvbCommEntity;// CommMesh2の属性
+}
 
 
 

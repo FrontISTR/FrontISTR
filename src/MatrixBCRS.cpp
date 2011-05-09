@@ -21,9 +21,9 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMatrixBCRS::CMatrixBCRS \n");
 #endif
-	CNode *pNode = pMesh->getNode(0);
+	CNode *pNode = pMesh->getNodeIX(0);
 	//mnDOF = pNode->numOfScalarParam() + pNode->numOfVectorParam();
-	mnDOF = pNode->numOfVectorParam();
+	mnDOF = pNode->numOfTotalParam();
 	mnNode = pMesh->getNumOfNode();
 	printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
 	mvIndexL.resize(mnNode+1); // K.Matsubara
@@ -41,6 +41,7 @@ CMatrixBCRS::CMatrixBCRS(/* const */ CMesh *pMesh)
 
         CElement *pElement;
         CAggregateElement *pAggElement= pMesh->getAggElem(i_node_id);
+
         uint numOfElement= pAggElement->getNumOfElement();
         uint i_elem;
         for(i_elem=0; i_elem < numOfElement; i_elem++){
@@ -127,8 +128,9 @@ int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, uint iElem, double *ElemMatrix)
 
     CElement *pElement = pMesh->getElementIX(iElem);
     vector<CNode*> vNode= pElement->getNode();
+    
     int nLocalNode = vNode.size();
-    int mnNode = pMesh->getNumOfNode();
+    //int mnNode = pMesh->getNumOfNode();
     //mnDOF = vNode[0]->numOfScalarParam() + vNode[0]->numOfVectorParam();
 	mnDOF = vNode[0]->numOfVectorParam();
     int nMatSize = nLocalNode * mnDOF;

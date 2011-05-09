@@ -21,8 +21,7 @@ CBoundaryFace::CBoundaryFace()
 }
 CBoundaryFace::~CBoundaryFace()
 {
-//    //debug
-//    cout << "~CBoundaryFace" << endl;
+    delete []mvbMarkingEdge;
 }
 
 // 辺の数
@@ -47,15 +46,17 @@ uint CBoundaryFace::getNumOfEdge()
 // 3.markingの初期化
 void CBoundaryFace::setBFaceShape(const uint& elemType)
 { 
+    Utility::CLogger* pLogger = Utility::CLogger::Instance();
+
     mnShapeType= elemType;
     uint ivert;
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
             mvEdgeNeibFace.resize(4);
 
-            mvbMarkingEdge.reserve(4);
+            mvbMarkingEdge = new bool[4];
             for(ivert=0; ivert < 4; ivert++)
-                mvbMarkingEdge.push_back(false);//辺集合の為のマーキング初期化
+                mvbMarkingEdge[ivert] = false;//辺集合の為のマーキング初期化
 
             mvEdgeBNode.resize(4);
 
@@ -63,15 +64,15 @@ void CBoundaryFace::setBFaceShape(const uint& elemType)
         case(ElementType::Triangle):case(ElementType::Triangle2):
             mvEdgeNeibFace.resize(3);
 
-            mvbMarkingEdge.reserve(3);
+            mvbMarkingEdge = new bool[3];
             for(ivert=0; ivert < 3; ivert++)
-                mvbMarkingEdge.push_back(false);//辺集合の為のマーキング初期化
+                mvbMarkingEdge[ivert] = false;//辺集合の為のマーキング初期化
 
             mvEdgeBNode.resize(3);
 
             break;
         default:
-            mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::setBFaceShape");
+            pLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::setBFaceShape");
             break;
     }
 }
@@ -107,8 +108,10 @@ void CBoundaryFace::setFaceBNode(CBoundaryNode* pFaceBNode)
 
 // 辺の両端のBNode
 // ----
-PairBNode& CBoundaryFace::getPairBNode(const uint& iedge)
+PairBNode CBoundaryFace::getPairBNode(const uint& iedge)
 {
+    Utility::CLogger* pLogger = Utility::CLogger::Instance();
+
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
     uint *pLocalNum;
@@ -122,17 +125,18 @@ PairBNode& CBoundaryFace::getPairBNode(const uint& iedge)
             break;
 
         default:
-            mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::getPairBNode");
+            pLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::getPairBNode");
             break;
     }
 
     uint index1st = pLocalNum[0];
     uint index2nd = pLocalNum[1];
-    
-    mPairBNode.first = mvBNode[index1st];
-    mPairBNode.second= mvBNode[index2nd];
 
-    return mPairBNode;
+    PairBNode pairBNode;
+    pairBNode.first = mvBNode[index1st];
+    pairBNode.second= mvBNode[index2nd];
+
+    return pairBNode;
 }
 
 // 辺番号
@@ -176,6 +180,8 @@ uint& CBoundaryFace::getEdgeID(PairBNode& pairBNode)
 // ----
 void CBoundaryFace::setupNode()
 {
+    Utility::CLogger* pLogger = Utility::CLogger::Instance();
+
     uint numOfEdge;
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -185,7 +191,7 @@ void CBoundaryFace::setupNode()
             numOfEdge= NumberOfEdge::Triangle();
             break;
         default:
-            mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::setupNode");
+            pLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::setupNode");
             numOfEdge= NumberOfEdge::Default();
             break;
     }
@@ -229,6 +235,8 @@ void CBoundaryFace::setupNode()
 // ----
 void CBoundaryFace::refine(uint& countID, const vuint& vDOF)
 {
+    Utility::CLogger* pLogger = Utility::CLogger::Instance();
+
     uint numOfProg;
     uint iprog;
     CBoundaryFace *pProgBFace;
@@ -428,7 +436,7 @@ void CBoundaryFace::refine(uint& countID, const vuint& vDOF)
             break;
             
         default:
-            mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::refine");
+            pLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::refine");
             break;
     }
     
@@ -466,6 +474,8 @@ double CBoundaryFace::triArea(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 // ----
 double& CBoundaryFace::calcArea()
 {
+    Utility::CLogger* pLogger = Utility::CLogger::Instance();
+    
     CNode *pNode0, *pNode1, *pNode2;
 
     switch(mnShapeType){
@@ -497,7 +507,7 @@ double& CBoundaryFace::calcArea()
 
             break;
         default:
-            mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::Area");
+            pLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CBoundaryFace::Area");
             break;
     }
     
@@ -519,7 +529,7 @@ void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel)
     //
     switch(mnShapeType){
         case(ElementType::Quad):
-        case(ElementType::Quad2):// !!!! ここのGridでの辺BNodeのディレクレ値はセットしない !!!
+        case(ElementType::Quad2):// !!!! ここのGridでの辺BNodeのディレクレ値はセットしない !!! <= 2次要素は別に作る
             numOfEdge=4;
             for(iedge=0; iedge < numOfEdge; iedge++){
                 pnEdgeVert = pEdgeTree->getQuadLocalNodeNum(iedge);
@@ -534,10 +544,10 @@ void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel)
             };
             break;
         case(ElementType::Triangle):
-        case(ElementType::Triangle2):// !!!! ここのGridでの辺BNodeのディレクレ値はセットしない !!!
+        case(ElementType::Triangle2):// !!!! ここのGridでの辺BNodeのディレクレ値はセットしない !!! <= 2次要素は別に作る
             numOfEdge=3;
             for(iedge=0; iedge < numOfEdge; iedge++){
-                pnEdgeVert = pEdgeTree->getQuadLocalNodeNum(iedge);
+                pnEdgeVert = pEdgeTree->getTriangleLocalNodeNum(iedge);//QuadからTriangleに変更'10.10.07
 
                 dAveVal=0.0;
                 dAveVal += mvBNode[pnEdgeVert[0]]->getValue(dof, mgLevel);
@@ -574,8 +584,12 @@ void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel)
 }
 
 
-
-
+// Refine時の辺BNodeの解放
+//
+void CBoundaryFace::deleteProgData()
+{
+    vector<CBoundaryNode*>().swap(mvEdgeBNode);
+}
 
 
 

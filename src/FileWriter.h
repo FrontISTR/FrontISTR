@@ -23,12 +23,10 @@ public:
 
 protected:
     pmw::CGMGModel *mpGMGModel;
-
     uint mnSolutionType;
-
 public:
-    virtual void Write(ofstream& ofs, const uint& mgLevel)=0;
     void setSolutionType(const uint& nSolutionType);
+    virtual void Write(ofstream& ofs, const uint& mgLevel)=0;
 };
 }
 #endif	/* _FILEWRITER_H */

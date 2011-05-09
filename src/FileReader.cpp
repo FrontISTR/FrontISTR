@@ -85,6 +85,8 @@ uint CFileReader::IntElemType(string& sElemType)
         return pmw::ElementType::Tetra;
     }else if(sElemType=="Prism"){
         return pmw::ElementType::Prism;
+//    }else if(sElemType=="Pyramid"){
+//        return pmw::ElementType::Pyramid;
     }else if(sElemType=="Quad"){
         return pmw::ElementType::Quad;
     }else if(sElemType=="Triangle"){

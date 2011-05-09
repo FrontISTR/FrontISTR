@@ -169,6 +169,11 @@ public:
     //    => mvKnotへレイヤー数に応じたKnotを生成::(maxLayer+1)個分の八分木
     //
     void generateOctree(const uint& maxLayer);
+
+
+    // SkinFaceの辺ノードvectorのメモリー解放
+    //
+    void deleteProgData();
 };
 }
 #endif

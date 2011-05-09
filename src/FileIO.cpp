@@ -42,6 +42,14 @@ void CFileIO::setLogger(Utility::CLogger* pLogger)
     moReader.setLogger(pLogger);
 }
 
+// Solution Type
+void CFileIO::setSolutionType(const uint& nSolutionType)
+{
+    mnSolutionType = nSolutionType;
+
+    moWriter.setSolutionType(nSolutionType);
+}
+
 // メッシュファイルのベースネームが記述されているHEC_MW3.cntを読み込む.
 //  => *.mshベースネームを取得
 void CFileIO::ReadCntFile()
@@ -56,15 +64,6 @@ void CFileIO::ReadCntFile()
 void CFileIO::ReadFile(string filename)
 {
     moReader.Read(filename);
-}
-
-
-// Solution Type
-void CFileIO::setSolutionType(const uint& nSolutionType)
-{
-    mnSolutionType = nSolutionType;
-
-    moWriter.setSolutionType(nSolutionType);
 }
 
 // HEC_MW3 の標準出力ファイル

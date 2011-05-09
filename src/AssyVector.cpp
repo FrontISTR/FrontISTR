@@ -166,25 +166,35 @@ void CAssyVector::updateCommBoundary()
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    
+    CNode *pNode = pMesh->getNodeIX(0);  // '10.10.06
+    uint nDOF = pNode->numOfTotalParam();// 自由度取得 k.Takeda
+    
     uint numOfCommMesh2= pMesh->getCommMesh2Size();
     for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source	 = pCommMesh2->getRank();
+      uint source      = pCommMesh2->getRank();
       uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;
+      uint ic = 0;//BUFF index
+
       if( source < destination ) {
 	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
-	if( numOfCommNode*3 > N_COMM_BUFF )
+	
+        if( numOfCommNode*nDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
-		 ,numOfCommNode*3, N_COMM_BUFF);
-	for(uint icnode=0; icnode< numOfCommNode; icnode++){
+		 ,numOfCommNode*nDOF, N_COMM_BUFF);
+        
+	for(uint icnode=0; icnode < numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
-	  BUFF[ic++] = (*iv)->getValue(inode, 0);
-	  BUFF[ic++] = (*iv)->getValue(inode, 1);
-	  BUFF[ic++] = (*iv)->getValue(inode, 2);
+
+          for(uint idof=0; idof < nDOF; idof++) BUFF[ic++] = (*iv)->getValue(inode, idof);
+	  //BUFF[ic++] = (*iv)->getValue(inode, 0);
+	  //BUFF[ic++] = (*iv)->getValue(inode, 1);
+	  //BUFF[ic++] = (*iv)->getValue(inode, 2);
 	}
-	pMPI->Send(BUFF, numOfCommNode*3, MPI_DOUBLE, destination, 100+myrank, MPI_COMM_WORLD);
+	pMPI->Send(BUFF, numOfCommNode*nDOF, MPI_DOUBLE, destination, 100+myrank, MPI_COMM_WORLD);
       }
     }
     imesh++;
@@ -195,24 +205,35 @@ void CAssyVector::updateCommBoundary()
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+
+    CNode *pNode = pMesh->getNodeIX(0);  // '10.10.06
+    uint nDOF = pNode->numOfTotalParam();// 自由度取得 k.Takeda
+
     uint numOfCommMesh2= pMesh->getCommMesh2Size();
     for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source	 = pCommMesh2->getRank();
+      uint source      = pCommMesh2->getRank();
       uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;
+      uint ic = 0;//BUFF index
+
       if( source > destination ) {
 	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
-	if( numOfCommNode*3 > N_COMM_BUFF )
+
+	if( numOfCommNode*nDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
-		 ,numOfCommNode*3, N_COMM_BUFF);
-	pMPI->Recv(BUFF, numOfCommNode*3, MPI_DOUBLE, destination, 100+destination, MPI_COMM_WORLD, &stat);
+		 ,numOfCommNode*nDOF, N_COMM_BUFF);
+
+	pMPI->Recv(BUFF, numOfCommNode*nDOF, MPI_DOUBLE, destination, 100+destination, MPI_COMM_WORLD, &stat);
+
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
-	  (*iv)->setValue(inode, 0, BUFF[ic++]);
-	  (*iv)->setValue(inode, 1, BUFF[ic++]);
-	  (*iv)->setValue(inode, 2, BUFF[ic++]);
+
+          for(uint idof=0; idof < nDOF; idof++) (*iv)->setValue(inode, idof, BUFF[ic++]);
+	  //(*iv)->setValue(inode, 0, BUFF[ic++]);
+	  //(*iv)->setValue(inode, 1, BUFF[ic++]);
+	  //(*iv)->setValue(inode, 2, BUFF[ic++]);
 	}
       }
     }
@@ -225,35 +246,48 @@ void CAssyVector::sumupCommBoundary()
   pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
   MPI_Status stat;
   uint imesh;
-  int myrank = pMPI->getRank();
+  //int myrank = pMPI->getRank();// 使ってない.
 //
 // *** SEND PART ***
 //
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    
+    CNode *pNode = pMesh->getNodeIX(0);  // '10.10.06
+    uint nDOF = pNode->numOfTotalParam();// 自由度取得 k.Takeda
+    
     uint numOfCommMesh2= pMesh->getCommMesh2Size();
     for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+        
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
       uint source	 = pCommMesh2->getRank();
       uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;
+      uint ic = 0;//BUFF index
+      
       if( source > destination ) {
 	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
-	if( numOfCommNode*3 > N_COMM_BUFF )
+        
+	if( numOfCommNode*nDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
-		 ,numOfCommNode*3, N_COMM_BUFF);
+		 ,numOfCommNode*nDOF, N_COMM_BUFF);
+        
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
-	  BUFF[ic++] = (*iv)->getValue(inode, 0);
-	  BUFF[ic++] = (*iv)->getValue(inode, 1);
-	  BUFF[ic++] = (*iv)->getValue(inode, 2);
-	  (*iv)->setValue(inode, 0, 0.0);
-	  (*iv)->setValue(inode, 1, 0.0);
-	  (*iv)->setValue(inode, 2, 0.0);
+          
+          for(uint idof=0; idof < nDOF; idof++){
+              BUFF[ic++] = (*iv)->getValue(inode, idof);
+              (*iv)->setValue(inode, idof, 0.0);
+          };
+	  //BUFF[ic++] = (*iv)->getValue(inode, 0);
+	  //BUFF[ic++] = (*iv)->getValue(inode, 1);
+	  //BUFF[ic++] = (*iv)->getValue(inode, 2);
+	  //(*iv)->setValue(inode, 0, 0.0);
+	  //(*iv)->setValue(inode, 1, 0.0);
+	  //(*iv)->setValue(inode, 2, 0.0);
 	}
-	pMPI->Send(BUFF, numOfCommNode*3, MPI_DOUBLE,destination,101,MPI_COMM_WORLD);
+	pMPI->Send(BUFF, numOfCommNode*nDOF, MPI_DOUBLE,destination,101,MPI_COMM_WORLD);
       }
     }
     imesh++;
@@ -264,24 +298,35 @@ void CAssyVector::sumupCommBoundary()
   imesh = 0;
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+
+    CNode *pNode = pMesh->getNodeIX(0);  // '10.10.06
+    uint nDOF = pNode->numOfTotalParam();// 自由度取得 k.Takeda
+
     uint numOfCommMesh2= pMesh->getCommMesh2Size();
     for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
       uint source	 = pCommMesh2->getRank();
       uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;
+      uint ic = 0;// BUFF index
+
       if( source < destination ) {
 	int numOfCommNode= pCommMesh2->getCommVertNodeSize();
-	if( numOfCommNode*3 > N_COMM_BUFF )
+
+	if( numOfCommNode*nDOF > N_COMM_BUFF )
 	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
-		 ,numOfCommNode*3, N_COMM_BUFF);
-	pMPI->Recv(BUFF, numOfCommNode*3, MPI_DOUBLE,destination,101,MPI_COMM_WORLD,&stat);
+		 ,numOfCommNode*nDOF, N_COMM_BUFF);
+
+	pMPI->Recv(BUFF, numOfCommNode*nDOF, MPI_DOUBLE,destination,101,MPI_COMM_WORLD,&stat);
+
 	for(uint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommVertNodeIX(icnode);
 	  uint inode = pCommNode->getNode()->getID();
-	  (*iv)->addValue(inode, 0, BUFF[ic++]);
-	  (*iv)->addValue(inode, 1, BUFF[ic++]);
-	  (*iv)->addValue(inode, 2, BUFF[ic++]);
+
+          for(uint idof=0; idof < nDOF; idof++) (*iv)->addValue(inode, idof, BUFF[ic++]);
+	  //(*iv)->addValue(inode, 0, BUFF[ic++]);
+	  //(*iv)->addValue(inode, 1, BUFF[ic++]);
+	  //(*iv)->addValue(inode, 2, BUFF[ic++]);
 	}
       }
     }
@@ -324,4 +369,4 @@ CVector *CAssyVector::getVector(size_t index)
 	return mvVector[index];
 }
 
-}
+}//namespace pmw

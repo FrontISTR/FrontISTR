@@ -10,7 +10,6 @@
 using namespace pmw;
 
 uint CTriangle::mnElemType = ElementType::Triangle;
-uint CTriangle::mnElemType2= ElementType::Triangle2;//2次要素
 uint CTriangle::mNumOfFace = 1;
 uint CTriangle::mNumOfEdge = 3;
 uint CTriangle::mNumOfNode = 3;
@@ -19,33 +18,38 @@ uint CTriangle::mNumOfNode = 3;
 CTriangle::CTriangle()
 {
     mvNode.resize(mNumOfNode);
-    mvInterNode.resize(mNumOfEdge + mNumOfFace);
-    mvvNeibElement.resize(mNumOfEdge + mNumOfFace);
+    mvvEdgeElement.resize(mNumOfEdge);
 
+    mvEdgeInterNode.resize(mNumOfEdge);
+
+    mvb_edge = new bool[mNumOfEdge];
     uint i;
-    for(i=mNumOfEdge; i < mNumOfEdge + mNumOfFace; i++){
-        mvvNeibElement[i].resize(1);//Faceに隣接する要素は1個に限定
-    }
+    for(i=0; i< mNumOfEdge; i++){
+      mvb_edge[i] = false;
+    };
 
-    // Edge, Face bool
+    mvFaceElement.resize(mNumOfFace);
+    mvFaceNode.resize(mNumOfFace);
+
+    mvb_face = new bool[mNumOfFace];
+    // Face ノード bool
     //
-    mvb_neib.reserve(mNumOfEdge + mNumOfFace);
-    for(i=0; i < mNumOfEdge + mNumOfFace; i++){
-        mvb_neib.push_back(false);
-    }
+    for(i=0; i< mNumOfFace; i++){
+        mvb_face[i] = false;
+    };
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
 
 
     //MPC属性
-    mvbMPCFace.resize(mNumOfFace);
+    mvbMPCFace = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbMPCFace[i]= false;
     };
 
     //通信界面(CommMesh2)属性:辺
-    mvbCommEntity.resize(mNumOfEdge);
+    mvbCommEntity = new bool[mNumOfEdge];
     for(i=0; i< mNumOfEdge; i++){
         mvbCommEntity[i]= false;
     };
@@ -99,35 +103,37 @@ bool CTriangle::IndexCheck(const uint& propType, const uint& index, string& meth
 
 // out:(PariNode edgeNode)
 //
-PairNode& CTriangle::getPairNode(const uint& edgeIndex)
+PairNode CTriangle::getPairNode(const uint& iedge)
 {
-    switch(edgeIndex){
+    PairNode pairNode;
+
+    switch(iedge){
         //surf 0
         case(0):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[1];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[1];
             break;
         case(1):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[2];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[2];
             break;
         case(2):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[0];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[0];
             break;
 
         default:
             break;
     }
 
-    return mEdgeNode;
+    return pairNode;
 }
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CTriangle::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
+void CTriangle::getPairNode(vint& pairNodeIndex, const uint& iedge)
 {
-    switch(edgeIndex){
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
             pairNodeIndex[0]= mvNode[0]->getID();
@@ -151,20 +157,20 @@ void CTriangle::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
 //
 uint& CTriangle::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 { 
-    getLocalNodeNum(pNode0, pNode1);//mvPairNodeLocalNumに値が入る.
+    uint id0, id1;//MeshでのノードのIndex番号
+    id0 = pNode0->getID();
+    id1 = pNode1->getID();
+    
 
     CEdgeTree *edgeTree = CEdgeTree::Instance();
 
-    return edgeTree->getTriangleEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Triangle Edge Tree
+    return edgeTree->getTriangleEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Triangle Edge Tree
 }
 uint& CTriangle::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
 {
-    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
-    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
-
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    return pEdgeTree->getTriangleEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+    return pEdgeTree->getTriangleEdgeIndex(mmIDLocal[nodeID_0], mmIDLocal[nodeID_1]);
 }
 
 
@@ -194,7 +200,7 @@ bool CTriangle::isEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Triangle Edge Tree
 
-    return mvb_neib[edgeNum];
+    return mvb_edge[edgeNum];
 }
 
 // EdgeElement集合がセットされていることをスタンプ
@@ -207,7 +213,7 @@ void CTriangle::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Triangle Edge Tree
 
-    mvb_neib[edgeNum]=true;// スタンプ
+    mvb_edge[edgeNum]=true;// スタンプ
 }
 
 // 局所ノード番号が正しければ"0"を返す.
@@ -255,43 +261,6 @@ uint& CTriangle::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
     return mTempo;
 }
 
-// Face Element
-//
-void CTriangle::setFaceElement(CElement* pElem, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvvNeibElement[index][0]= pElem;
-}
-
-void CTriangle::setFaceNode(CNode* pNode, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvInterNode[index]= pNode;
-}
-
-CNode* CTriangle::getFaceNode(const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    return mvInterNode[index];
-}
-
-// 面(Face)に既に面ノードがセット済みかどうか
-//
-bool CTriangle::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface= getFaceIndex(pNode0,pNode1,pNode2);
-
-    return mvb_neib[mNumOfEdge + iface];
-}
-
-// 面(Face)に面ノードがセットされたことをスタンプ
-//
-void CTriangle::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface = getFaceIndex(pNode0,pNode1,pNode2);
-
-    mvb_neib[mNumOfEdge + iface]=true;
-}
 
 // 2 Edge => Face Index
 //
@@ -302,21 +271,22 @@ uint& CTriangle::getFaceIndex(const uint& edge0, const uint& edge1)
     return pTree->getTriangleFaceIndex(edge0, edge1);
 }
 
-// mvvFaceCnvNodeのセットアップ
+// Face構成ノード
 //
-void CTriangle::setupFaceCnvNodes()
+vector<CNode*> CTriangle::getFaceCnvNodes(const uint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CNode *pNode;
-    mvvFaceCnvNode.resize(1);
-    mvvFaceCnvNode[0].resize(3);
+    vector<CNode*> vFaceCnvNode;
+    vFaceCnvNode.resize(3);
     uint ivert;
 
     for(ivert=0; ivert< 3; ivert++){
         pNode= mvNode[ivert];
-        mvvFaceCnvNode[0][ivert]=pNode;
+        vFaceCnvNode[ivert]=pNode;
     };
+    return vFaceCnvNode;
 }
 
 
@@ -345,17 +315,31 @@ vector<CNode*> CTriangle::getConnectNode(CNode* pNode)
 }
 
 
-
-// prolongation後の後始末
-// --
+//
+// 1. 辺-面 Element*配列を解放
+// 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
+//
 void CTriangle::deleteProgData()
 {
-    CElement::deleteProgData();
+    // Edge
+    uint iedge;
+    for(iedge=0; iedge < mNumOfEdge; iedge++){
+        vector<CElement*>().swap(mvvEdgeElement[iedge]);
+    };
+    vector<vector<CElement*> >().swap(mvvEdgeElement);
+    vector<CNode*>().swap(mvEdgeInterNode);//2次要素の場合は残すこと
+    delete []mvb_edge;
 
-    // 辺ノード クリア(ポインターはそのまま、削除しない)
-    mvInterNode.clear();
+
+    // Face
+    vector<CElement*>().swap(mvFaceElement);
+    vector<CNode*>().swap(mvFaceNode);
+    delete []mvb_face;
+
+
+    delete []mvbMPCFace;   // 面番号のどれがMPCするのか
+    delete []mvbCommEntity;// CommMesh2の属性
 }
-
 
 
 

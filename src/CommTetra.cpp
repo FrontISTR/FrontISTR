@@ -24,12 +24,12 @@ CCommTetra::CCommTetra()
     mvEdgeRank.resize(6);
     mvFaceRank.resize(4);
 
-    mvbSend.resize(4);
-    mvbRecv.resize(4);
-    mvbOther.resize(4);
+    mvbSend = new bool[4];
+    mvbRecv = new bool[4];
+    mvbOther = new bool[4];
 
-    mvbNodeIXCheck.resize(4);
-    mvbDNodeMarking.resize(4);
+    mvbNodeIXCheck = new bool[4];
+    mvbDNodeMarking = new bool[4];
     uint i;
     for(i=0; i< 4; i++){
         mvbNodeIXCheck[i]=false;

@@ -25,14 +25,14 @@ CCommHexa::CCommHexa()
     mvEdgeRank.resize(12);
     mvFaceRank.resize(6);
 
-    mvbSend.resize(8);
-    mvbRecv.resize(8);
-    mvbOther.resize(8);
+    mvbSend = new bool[8];
+    mvbRecv = new bool[8];
+    mvbOther = new bool[8];
 
     // Node Index生成したか？Marking
     // DNodeとして取得されたか？Marking
-    mvbNodeIXCheck.resize(8);
-    mvbDNodeMarking.resize(8);
+    mvbNodeIXCheck = new bool[8];
+    mvbDNodeMarking = new bool[8];
     uint i;
     for(i=0; i< 8; i++){
         mvbNodeIXCheck[i]=false;

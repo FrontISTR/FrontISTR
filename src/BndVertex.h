@@ -43,6 +43,13 @@ public:
     uint getNumOfNeibElemVert(){ return mmNeibElemVertNum.size();}
     uint& getNeibElemIDVert(const uint& elemID){ return mmNeibElemVertNum[elemID];}
     void clearNeibElemVert(){ mmNeibElemVertNum.clear();}// 2段目以降のprolongationのために必要.
+    
+    
+    // AggregateElementの解放
+    //
+    // |全てのMesh処理が終わった後で呼び出す| = CMW::FinalizeRefine()の処理
+    //
+    void deleteAggregate();
 };
 #endif	/* _BVERTEX_H */
 }

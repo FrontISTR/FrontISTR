@@ -7,7 +7,6 @@
 using namespace pmw;
 
 uint CTetra::mnElemType = ElementType::Tetra;
-uint CTetra::mnElemType2= ElementType::Tetra2;//2次要素
 uint CTetra::mNumOfFace = 4;
 uint CTetra::mNumOfEdge = 6;
 uint CTetra::mNumOfNode = 4;
@@ -17,32 +16,37 @@ uint CTetra::mNumOfNode = 4;
 CTetra::CTetra(void)
 {
     mvNode.resize(mNumOfNode);
-    mvInterNode.resize(mNumOfEdge + mNumOfFace);
-    mvvNeibElement.resize(mNumOfEdge + mNumOfFace);
+    mvvEdgeElement.resize(mNumOfEdge);
 
+    mvEdgeInterNode.resize(mNumOfEdge);
+
+    mvb_edge = new bool[mNumOfEdge];
     uint i;
-    for(i=mNumOfEdge; i < mNumOfEdge + mNumOfFace; i++){
-        mvvNeibElement[i].resize(1);//Faceに隣接する要素は1個に限定
-    }
+    for(i=0; i< mNumOfEdge; i++){
+      mvb_edge[i] = false;
+    };
 
-    // Edge, Face bool
+    mvFaceElement.resize(mNumOfFace);
+    mvFaceNode.resize(mNumOfFace);
+
+    mvb_face = new bool[mNumOfFace];
+    // Face ノード bool
     //
-    mvb_neib.reserve(mNumOfEdge + mNumOfFace);
-    for(i=0; i < mNumOfEdge + mNumOfFace; i++){
-        mvb_neib.push_back(false);
-    }
+    for(i=0; i< mNumOfFace; i++){
+        mvb_face[i] = false;
+    };
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
 
     //MPC属性
-    mvbMPCFace.resize(mNumOfFace);
+    mvbMPCFace = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbMPCFace[i]= false;
     };
 
     //通信界面(CommMesh2)属性
-    mvbCommEntity.resize(mNumOfFace);
+    mvbCommEntity = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbCommEntity[i]= false;
     };
@@ -92,47 +96,49 @@ bool CTetra::IndexCheck(const uint& propType, const uint& index, string& method_
 
 // out:(PariNode edgeNode)
 //
-PairNode& CTetra::getPairNode(const uint& edgeIndex)
+PairNode CTetra::getPairNode(const uint& iedge)
 {
-    switch(edgeIndex){
+    PairNode pairNode;
+
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[1];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[1];
             break;
         case(1):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[2];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[2];
             break;
         case(2):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[0];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[0];
             break;
         // connect edge (3本)
         case(3):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[3];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[3];
             break;
         case(4):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[3];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[3];
             break;
         case(5):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[3];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[3];
             break;
         default:
             break;
     }
 
-    return mEdgeNode;
+    return pairNode;
 }
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CTetra::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
+void CTetra::getPairNode(vint& pairNodeIndex, const uint& iedge)
 {
-    switch(edgeIndex){
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
             pairNodeIndex[0]= mvNode[0]->getID();
@@ -169,23 +175,19 @@ void CTetra::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
 //
 uint& CTetra::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    getLocalNodeNum(pNode0, pNode1);//mvPairNodeLocalNumに値が入る.
-
+    uint id0, id1;//MeshでのノードのIndex番号
+    id0 = pNode0->getID();
+    id1 = pNode1->getID();
+    
     CEdgeTree *edgeTree = CEdgeTree::Instance();
 
-    ////debug
-    //cout << "CTetra::getEdgeIndex =" << edgeTree->getTetraEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]) << endl;
-
-    return edgeTree->getTetraEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Tetra Edge Tree
+    return edgeTree->getTetraEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Tetra Edge Tree
 }
 uint& CTetra::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
 {
-    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
-    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
-
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    return pEdgeTree->getTetraEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+    return pEdgeTree->getTetraEdgeIndex(mmIDLocal[nodeID_0], mmIDLocal[nodeID_1]);
 }
 
 // EdgeElement集合がセット済みか?
@@ -217,7 +219,7 @@ bool CTetra::isEdgeElem(CNode* pNode0, CNode* pNode1)
     //debug
     //cout << "CTetra::isEdgeElem edgeNum == " << edgeNum << endl;
 
-    return mvb_neib[edgeNum];
+    return mvb_edge[edgeNum];
 }
 
 // EdgeElement集合がセットされていることをスタンプ
@@ -230,7 +232,7 @@ void CTetra::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Tetra edge tree
 
-    mvb_neib[edgeNum]=true;// スタンプ
+    mvb_edge[edgeNum]=true;// スタンプ
 }
 
 
@@ -241,44 +243,6 @@ uint& CTetra::getLocalFaceNum(const vuint& vLocalNodeNum)
     CFaceTree *pFaceTree = CFaceTree::Instance();
     
     return pFaceTree->getTetraFaceIndex2(vLocalNodeNum);
-}
-
-// Face Element
-//
-void CTetra::setFaceElement(CElement* pElem, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvvNeibElement[index][0]= pElem;
-}
-
-void CTetra::setFaceNode(CNode* pNode, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvInterNode[index]= pNode;
-}
-
-CNode* CTetra::getFaceNode(const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    return mvInterNode[index];
-}
-
-// 面(Face)に既に面ノードがセット済みかどうか
-//
-bool CTetra::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface= getFaceIndex(pNode0,pNode1,pNode2);
-
-    return mvb_neib[mNumOfEdge + iface];
-}
-
-// 面(Face)に面ノードがセットされたことをスタンプ
-//
-void CTetra::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface = getFaceIndex(pNode0,pNode1,pNode2);
-
-    mvb_neib[mNumOfEdge + iface]=true;
 }
 
 // 3個のノードから面番号を取得
@@ -308,9 +272,9 @@ uint& CTetra::getFaceIndex(const uint& edge0, const uint& edge1)
     return pEdgeFace->getTetraFaceIndex(edge0, edge1);
 }
 
-// mvvFaceCnvNodeのセットアップ
+// Face構成Node
 //
-void CTetra::setupFaceCnvNodes()
+vector<CNode*> CTetra::getFaceCnvNodes(const uint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
@@ -318,20 +282,20 @@ void CTetra::setupFaceCnvNodes()
     uint* faceConnectivity;
 
     CNode *pNode;
-    mvvFaceCnvNode.resize(4);
-    uint iface, ivert, index;
+    vector<CNode*> vFaceCnvNode;
+    uint ivert, index;
+    
+    vFaceCnvNode.resize(3);
+    faceConnectivity= faceTree->getLocalNodeTetraFace(iface);//iFaceのコネクティビティ
 
-    for(iface=0; iface< 4; iface++){
-        mvvFaceCnvNode[iface].resize(3);
-        faceConnectivity= faceTree->getLocalNodeTetraFace(iface);
+    for(ivert=0; ivert< 3; ivert++){
+        index= faceConnectivity[ivert];
+        pNode= mvNode[index];
 
-        for(ivert=0; ivert< 3; ivert++){
-            index= faceConnectivity[ivert];
-            pNode= mvNode[index];
-
-            mvvFaceCnvNode[iface][ivert]=pNode;
-        };
+        vFaceCnvNode[ivert]=pNode;
     };
+    
+    return vFaceCnvNode;
 }
 
 
@@ -360,17 +324,30 @@ vector<CNode*> CTetra::getConnectNode(CNode* pNode)
 }
 
 
-
-// prolongation後の後始末
-// --
+//
+// 1. 辺-面 Element*配列を解放
+// 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
+//
 void CTetra::deleteProgData()
 {
-    CElement::deleteProgData();
+    // Edge
+    uint iedge;
+    for(iedge=0; iedge < mNumOfEdge; iedge++){
+        vector<CElement*>().swap(mvvEdgeElement[iedge]);
+    };
+    vector<vector<CElement*> >().swap(mvvEdgeElement);
+    vector<CNode*>().swap(mvEdgeInterNode);//2次要素の場合は残すこと
+    delete []mvb_edge;
 
-    // 辺ノード クリア(ポインターはそのまま、削除しない)
-    mvInterNode.clear();
+
+    // Face
+    vector<CElement*>().swap(mvFaceElement);
+    vector<CNode*>().swap(mvFaceNode);
+    delete []mvb_face;
+
+    
+    delete []mvbMPCFace;   // 面番号のどれがMPCするのか
+    delete []mvbCommEntity;// CommMesh2の属性
 }
-
-
 
 

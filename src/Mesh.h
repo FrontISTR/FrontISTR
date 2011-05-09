@@ -47,9 +47,9 @@
 // 通信節点界面(節点共有)
 #include "CommMesh2.h"
 
-
 // FEM, FVM
 #include "SolutionType.h"
+
 
 // Edge
 typedef std::pair<pmw::CNode*,pmw::CNode*> PairNode;
@@ -67,23 +67,25 @@ public:
     virtual ~CMesh(void);
 
 protected:
-    // SolutionType
-    uint   mnSolutionType;// FEM, FVM
-
     // Mesh
     // --
     uint            mnMeshID;   // Mesh ID
     vector<CNode*>    mvNode;   // Node
     vector<CElement*> mvElement;// Element
 
+    // SolutionType
+    uint   mnSolutionType;// FEM, FVM
+
     // 計算領域の終端を表す番号 '09.09.09
     // --
     uint mNodeEndIndex;//mvNode内の計算領域の終端Index(サイズ)  <= 計算に使用する配列数
     uint mElemEndIndex;//mvElement内の計算領域の終端Index(サイズ) <= 計算に使用する配列数
 
-//    // '10.03.02 2次要素ノード
-//    vector<CNode*> mvEdgeNode; //辺ノード
-//    map<uint, uint, less<uint> > mmEdgeNodeID2IX;//辺ノードID -> Index
+
+    //    // Node, Elementのハッシュ "ID => Index"  <- IndexBucketがあるので不要
+    //    // --
+    //    map<uint, uint, less<uint> > mmNodeIndex;
+    //    map<uint, uint, less<uint> > mmElementIndex;
 
 
     // 節点集合Node, 節点集合Element
@@ -95,7 +97,7 @@ protected:
     // restriction(下位_Mesh)のノード管理
     // 自分自身のノードではない -> 同じ型Meshの下位にくるrestriction_Meshのノードのdeleteを回避
     //    -> デストラクタで使用
-    uint mMGLevel;   //Mesh自身のMultiGrid_Level
+    uint mMGLevel;//Mesh自身のMultiGrid_Level
     uint mMaxMGLevel;//GMGModel全体での最大Level
 
 
@@ -133,12 +135,9 @@ protected:
     void setupParentNode(CNode* pNode0, CNode* pNode1, CNode* inNode);//辺から生成される子Nodeに,親Nodeにセット
     void setupParentNode(vector<CNode*>& vNode, CNode* inNode);       //面,体から生成される子Nodeに,1親Nodeをセット
     
-    //restriction用-子Nodeセット
-    void setupChildNode(CNode* pNode0, CNode* pNode1, CNode* inNode);//親Nodeに,辺から生成される子Nodeをセット
-    void setupChildNode(vector<CNode*>& vNode, CNode* inNode);       //親Nodeに,面,体から生成される子Nodeをセット
 
     //debug 用途 dummy counter
-    uint mnDummyCount;
+    //uint mnDummyCount;
 
 public:
     // Mesh ID
@@ -151,6 +150,10 @@ public:
     void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
     uint& getMGLevel(){return mMGLevel;}
     void setMaxMGLevel(const uint& maxLevel){ mMaxMGLevel= maxLevel;}
+
+    // SolutionType:: FEM .or. FVM
+    //
+    void setSolutionType(const uint& nSolutionType){ mnSolutionType = nSolutionType;}
 
 
     // Bucket
@@ -201,22 +204,25 @@ public:
     uint& getEfficientElementSize(){ return mElemEndIndex;}//計算に有効なElement配列数
 
 
-    // SolutionType:: FEM .or. FVM
-    void setSolutionType(const uint& nSolutionType){ mnSolutionType = nSolutionType;}
+
 
 
     // Aggregate
     // ---
     // Aggregate-Element & Aggregate-Node (Node数と同じだけ存在)
     // ---
-    void reserveAggregate(const uint& res_size);// AggElement,AggNodeのリザーブ
-    void setAggNode(CAggregateNode* pAggNode);
-    void setAggElement(CAggregateElement* pAggElem);
-    void setupAggregate();// mvAggElement,mvAggNodeのセットアップ
+    void resizeAggregate(const uint& res_size);// mvAggElement,mvAggNodeのリザーブ
+    void setupAggregate();                      // mvAggElement,mvAggNodeのセットアップ
+
+    void setAggNode(CAggregateNode* pAggNode, const uint& inode);
+    void setAggElement(CAggregateElement* pAggElem, const uint& inode);
+
     vector<CAggregateElement*>& getAggElems(){ return mvAggElement;}
-    vector<CAggregateNode*>& getAggNodes(){ return mvAggNode;}
+    vector<CAggregateNode*>&    getAggNodes(){ return mvAggNode;}
     CAggregateElement* getAggElem(const uint& node_id);
+    CAggregateElement* getAggElemIX(const uint& inode);
     CAggregateNode*    getAggNode(const uint& node_id);
+    CAggregateNode*    getAggNodeIX(const uint& inode);
 
     
     // prolongationの準備
@@ -288,7 +294,6 @@ public:
     
     
     
-    
     // 通信(CommMesh2):(節点共有型)
     // --
     void setCommMesh2(CCommMesh2 *pCommMesh2);
@@ -297,21 +302,16 @@ public:
     uint getCommMesh2Size(){ return mvCommMesh2.size();}
 
 
-
-//    //  辺Node : 2次要素対応
-//    //
-//    void setEdgeNode(CNode* pNode);
-//    CNode* getEdgeNode(const uint& id);
-//    uint getEdgeNodeSize(){ return mvEdgeNode.size();}
-
-
-public:
-    // prolongation後の処理
+    // Refine後の処理
     // --
-    // 辺-面-体積中心 Nodeの削除
-    // 辺-面 　　　　 隣接要素の削除
+    // 辺-面 Node*の削除
+    // 辺-面 Element*の削除
     // --
     void deleteProgData();
+
+    //  CMW::FinalizeRefine()からコール
+    //
+    void deleteAggregate_on_Node();//vertexのAggElemを削除 <= 全てのMesh処理が終わった後で呼び出す
 };
 #endif
 }

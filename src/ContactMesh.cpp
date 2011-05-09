@@ -807,6 +807,20 @@ void CContactMesh::generateOctree(const uint& maxLayer)
 }
 
 
+// SkinFaceの辺ノードvectorのメモリー解放
+//
+void CContactMesh::deleteProgData()
+{
+    uint nNumOfFace;
+    uint iFace;
+
+    nNumOfFace = mvFace.size();
+    for(iFace=0; iFace < nNumOfFace; iFace++) mvFace[iFace]->deleteProgData();
+
+    nNumOfFace = mvSlaveFace.size();
+    for(iFace=0; iFace < nNumOfFace; iFace++) mvSlaveFace[iFace]->deleteProgData();
+}
+
 
 
 

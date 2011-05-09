@@ -41,10 +41,10 @@ private:
     vector<CCommNode*>  mvEdgeCommNode;// 辺に存在するNode (Refine用途)
     CCommNode*          mpFaceCommNode;// 面に存在するNode (Refine用途)
     vector<CCommFace*>  mvEdgeCommFace;// 辺に隣接するFace,<<<<<-自分自身は除外.
-    vector<bool>  mvbEdgeMarking;//辺にノードを生成済みか.(辺ノード生成マーキング)
+    bool*  mvbEdgeMarking;//辺にノードを生成済みか.(辺ノード生成マーキング)
 
     // 辺の両端ペア
-    PairCommNode        mPairCommNode;//辺の両端ノード
+    //PairCommNode        mPairCommNode;//辺の両端ノード
     uint& getEdgeIndex(PairCommNode& pairCommNode);//両端のノードから辺番号を特定
 
 
@@ -92,7 +92,7 @@ public:
 
     // 辺の両端のCommNode
     // ----
-    PairCommNode& getEdgePairCommNode(const uint& iedge);
+    PairCommNode getEdgePairCommNode(const uint& iedge);
 
     // 辺ノード
     // ----
@@ -120,6 +120,11 @@ public:
     // 面の分割
     // ----
     vector<CCommFace*>& refine(CElement* pElement);
+
+
+    // Refine後のvector解放
+    // ----
+    void deleteProgData();
 
 };
 #endif	/* _COMMFACE_H */

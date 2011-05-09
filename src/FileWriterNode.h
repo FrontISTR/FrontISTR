@@ -13,6 +13,7 @@
 #include "Node.h"
 
 #include "FileWriter.h"
+#include "SolutionType.h"
 
 namespace FileIO{
 class CFileWriterNode:public CFileWriter{

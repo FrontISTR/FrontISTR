@@ -33,7 +33,7 @@ void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge)
     mNumOfEdge= numOfEdge;
 
     //辺マーキングの初期化
-    mvbEdgeMarking.resize(numOfEdge);
+    mvbEdgeMarking = new bool[numOfEdge];
     uint iedge;
     for(iedge=0; iedge< numOfEdge; iedge++){
         mvbEdgeMarking[iedge]= false;
@@ -105,7 +105,7 @@ uint& CCommFace::getEdgeIndex(PairCommNode& pairCommNode)
     }
 }
 
-PairCommNode& CCommFace::getEdgePairCommNode(const uint& iedge)
+PairCommNode CCommFace::getEdgePairCommNode(const uint& iedge)
 {
     Utility::CLogger *pLogger;
 
@@ -128,10 +128,12 @@ PairCommNode& CCommFace::getEdgePairCommNode(const uint& iedge)
             break;
     }
 
-    mPairCommNode.first = mvCommNode[vertNum[0]];
-    mPairCommNode.second= mvCommNode[vertNum[1]];
+    PairCommNode pairCommNode;
 
-    return mPairCommNode;
+    pairCommNode.first = mvCommNode[vertNum[0]];
+    pairCommNode.second= mvCommNode[vertNum[1]];
+
+    return pairCommNode;
 }
 
 
@@ -429,8 +431,17 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
 
 
-
-
+// Refine後のvector解放
+// ----
+void CCommFace::deleteProgData()
+{
+    vector<CCommNode*>().swap(mvEdgeCommNode);// 辺に存在するNode (Refine用途)
+    
+    vector<CCommFace*>().swap(mvEdgeCommFace);// 辺に隣接するFace
+    
+    
+    delete []mvbEdgeMarking;// 辺ノード生成マーキング
+}
 
 
 

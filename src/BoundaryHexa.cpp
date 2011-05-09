@@ -22,7 +22,7 @@ CBoundaryHexa::CBoundaryHexa()
     // ----
     uint i;
     // 辺
-    mvbMarkingEdge.resize(NumberOfEdge::Hexa());
+    mvbMarkingEdge = new bool[NumberOfEdge::Hexa()];
     for(i=0; i < NumberOfEdge::Hexa(); i++){
         mvbMarkingEdge[i]=false;
     };
@@ -30,7 +30,7 @@ CBoundaryHexa::CBoundaryHexa()
     mvEdgeNeibVol.resize(NumberOfEdge::Hexa());
 
     // 面
-    mvbMarkingFace.resize(NumberOfFace::Hexa());
+    mvbMarkingFace = new bool[NumberOfFace::Hexa()];
     for(i=0; i < NumberOfFace::Hexa(); i++){
         mvbMarkingFace[i]=false;
     };
@@ -60,7 +60,7 @@ uint CBoundaryHexa::getNumOfFace()
 
 // Edge番号 -> pariBNode
 //
-PairBNode& CBoundaryHexa::getPairBNode(const uint& iedge)
+PairBNode CBoundaryHexa::getPairBNode(const uint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -71,10 +71,11 @@ PairBNode& CBoundaryHexa::getPairBNode(const uint& iedge)
     uint index1st = pLocalNum[0];
     uint index2nd = pLocalNum[1];
 
-    mPairBNode.first = mvBNode[index1st];
-    mPairBNode.second= mvBNode[index2nd];
+    PairBNode pairBNode;
+    pairBNode.first = mvBNode[index1st];
+    pairBNode.second= mvBNode[index2nd];
 
-    return mPairBNode;
+    return pairBNode;
 }
 
 
@@ -93,7 +94,7 @@ uint& CBoundaryHexa::getEdgeID(PairBNode& pairBNode)
 
 // 面を構成するBNode配列
 //
-vector<CBoundaryNode*>& CBoundaryHexa::getFaceCnvNodes(const uint& iface)
+vector<CBoundaryNode*> CBoundaryHexa::getFaceCnvNodes(const uint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
     CBoundaryNode *pBNode;
@@ -103,15 +104,16 @@ vector<CBoundaryNode*>& CBoundaryHexa::getFaceCnvNodes(const uint& iface)
     pvIndex= pFaceTree->getLocalNodeHexaFace(iface);
     numOfVert= pFaceTree->getHexaFaceNumOfVert(iface);
 
-    mvFaceCnvNodes.clear();mvFaceCnvNodes.reserve(numOfVert);
+    vector<CBoundaryNode*> vFaceCnvNodes;//面を構成するBNode
+    vFaceCnvNodes.reserve(numOfVert);
 
     for(i=0; i < numOfVert; i++){
         ivert= pvIndex[i];
         pBNode= mvBNode[ivert];
-        mvFaceCnvNodes.push_back(pBNode);
+        vFaceCnvNodes.push_back(pBNode);
     }
 
-    return mvFaceCnvNodes;
+    return vFaceCnvNodes;
 }
 
 // BNode配列 -> Face番号
@@ -286,6 +288,22 @@ void CBoundaryHexa::distDirichletVal(const uint& dof, const uint& mgLevel)
         mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
     }
 }
+
+
+// Refine 後処理 : 辺-面 BNode vectorの解放
+// 
+void CBoundaryHexa::deleteProgData()
+{
+    if(mpElement->getType()==ElementType::Hexa){
+        vector<CBoundaryNode*>().swap(mvEdgeBNode);// 辺-BNode
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
+    }else{
+        // Hexa2
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
+    }
+}
+
+
 
 
 

@@ -64,15 +64,21 @@ public:
     void GeneEdgeBNode();// 辺ノード生成 { 辺-周囲の面集合処理を含む }
     void GeneFaceBNode();// 面ノード生成
 
-    uint getNumOfBEdge(){ return mvBEdgeBNode.size();}
-    CBoundaryNode* getEdgeBNode(const uint& iedge){ return mvBEdgeBNode[iedge];}// 辺ノード提供
-    CBoundaryNode* getFaceBNode(const uint& iface){ return mvBFaceBNode[iface];}// 面ノード提供
+//    uint getNumOfBEdge(){ return mvBEdgeBNode.size();}
+//    CBoundaryNode* getEdgeBNode(const uint& iedge){ return mvBEdgeBNode[iedge];}// 辺ノード提供
+//    CBoundaryNode* getFaceBNode(const uint& iface){ return mvBFaceBNode[iface];}// 面ノード提供
 
 
     // 境界要素の再分割 => progBMeshにセット
     // ----
     void refine(CBoundaryFaceMesh *pProgBFaceMesh);
-    
+
+    // Refine時のデータの解放
+    // ----
+    // 各Faceの辺BNodeの解放
+    // mvBEdgeBNodeの解放
+    // mvBFaceBNodeの解放
+    void deleteProgData();
     
 protected:
     //Neumann条件の節点分配(形状関数による等価節点力:EquivalentNodeForce)

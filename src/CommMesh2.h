@@ -79,6 +79,8 @@ public:
     //refine時の頂点CommNodeの代入(下位の頂点ノードは,そのまま上位でも使用)
     void setupVertCommNode(CCommMesh2* pProgCommMesh);
 
+    //Refine後のvector解放(辺ノード)
+    void deleteProgData();
 };
 #endif	/* _COMM_MESH2_H */
 }

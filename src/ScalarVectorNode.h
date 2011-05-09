@@ -46,7 +46,7 @@ public:
         }
         return mvScalarParam[i];
     }
-    virtual vdouble& getVector(){ return mvVectorParam;}
+    virtual double& getVector(const uint& i){ return mvVectorParam[i];}
 
     virtual uint numOfScalarParam();
     virtual uint numOfVectorParam();

@@ -19,7 +19,7 @@ CBoundaryEdgeMesh::CBoundaryEdgeMesh()
 
 CBoundaryEdgeMesh::~CBoundaryEdgeMesh()
 {
-    ;
+    for_each(mvBEdge.begin(), mvBEdge.end(), DeleteObject());
 }
 
 
@@ -325,6 +325,14 @@ void CBoundaryEdgeMesh::distDirichletValue_at_FGrid()
             pBEdge->distDirichletVal(dof, mMGLevel);
         };
     };
+}
+
+
+// Refine時のmvBEdgeBNodeの解放
+//
+void CBoundaryEdgeMesh::deleteProgData()
+{
+    vector<CBoundaryNode*>().swap(mvBEdgeBNode);
 }
 
 

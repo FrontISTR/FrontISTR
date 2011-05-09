@@ -22,6 +22,9 @@ typedef int MPI_Fint;
 #define MPI_DOUBLE 0
 #define MPI_INT 0
 #define MPI_SUM 0
+#define MPI_PROD 0
+#define MPI_MAX 0
+#define MPI_MIN 0
 #define MPI_COMM_WORLD 0
 #endif
 

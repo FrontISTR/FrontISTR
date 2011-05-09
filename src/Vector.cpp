@@ -18,7 +18,7 @@ CVector::CVector(/* const */ CMesh *pMesh)
 
   mpMesh = pMesh;
   CNode *pNode = pMesh->getNode(0);
-  mnDOF = pNode->numOfVectorParam();
+  mnDOF = pNode->numOfTotalParam();// '10.10.06 修正 k.Takeda
   mnNode = pMesh->getNumOfNode();
   // mnNodeInternal = pMesh->???;  // TODO check if this is necessary
   
@@ -160,21 +160,21 @@ int CVector::prolongateFrom(const CVector *pV)
 	// TODO implement CVector::prolongateFrom
 
 	for( uint i=0; i< mpMesh->getNumOfNode(); i++) {
-		CNode* node = mpMesh->getNodeIX(i);
-		uint numP = node->getNumOfParentNode();
-		if( numP == 0 ) {
-			mvVector[i] = (*pV)[i];
-		} else {
-			mvVector[i](0) = 0.0;mvVector[i](1) = 0.0;mvVector[i](2) = 0.0;
-			for(uint j=0; j<numP; j++) {
-				uint k = node->getParentNode(j)->getID();
-				mvVector[i] += (*pV)[k];
-			}
-			mvVector[i] = mvVector[i] / numP;
-		}
+            CNode* node = mpMesh->getNodeIX(i);
+            uint numP = node->getNumOfParentNode();
+            if( numP == 0 ) {
+                mvVector[i] = (*pV)[i];
+            } else {
+                mvVector[i](0) = 0.0;mvVector[i](1) = 0.0;mvVector[i](2) = 0.0;
+                for(uint j=0; j<numP; j++) {
+                    uint k = node->getParentNode(j)->getID();
+                    mvVector[i] += (*pV)[k];
+                }
+                mvVector[i] = mvVector[i] / numP;
+            }
 	}
 
 	return 0;//2010.05.14
 }
 
-}
+}//namespace pmw

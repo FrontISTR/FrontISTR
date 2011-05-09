@@ -384,6 +384,9 @@ uint& CProgElementTree::getVertProgVert(const uint& ivert, const uint& elemType)
         case(ElementType::Prism):
             mProgVert= mPrismVertChildVert[ivert];
             break;
+//        case(ElementType::Pyramid):
+//            mProgVert= mPyramidVertChildVert[ivert];
+//            break;
         case(ElementType::Quad):
             mProgVert= mQuadVertChildVert[ivert];
             break;
@@ -413,7 +416,9 @@ uint& CProgElementTree::getEdgeProgVert(const uint& iedge, const uint& child_add
         case(ElementType::Prism):
             mProgVert= mPrismEdgeChildVert[child_address][iedge];
             break;
-
+//        case(ElementType::Pyramid):
+//            mProgVert= mPyramidEdgeChildVert[child_address][iedge];
+//            break;
         case(ElementType::Quad):
             mProgVert= mQuadEdgeChildVert[child_address][iedge];
             break;
@@ -444,7 +449,9 @@ uint& CProgElementTree::getFaceProgVert(const uint& iface, const uint& child_add
         case(ElementType::Prism):
             mProgVert= mPrismFaceChildVert[child_address][iface];
             break;
-
+//        case(ElementType::Pyramid):
+//            mProgVert= mPyramidFaceChildVert[child_address][iface];
+//            break;
         case(ElementType::Quad):
             mProgVert= mQuadFaceChildVert[child_address][iface];
             break;
@@ -474,7 +481,9 @@ uint& CProgElementTree::getVolProgVert(const uint& child_address, const uint& el
         case(ElementType::Prism):
             mProgVert = mPrismVolChildVert[child_address];
             break;
-
+//        case(ElementType::Pyramid):
+//            mProgVert = mPyramidVolChildVert[child_address];
+//            break;
         case(ElementType::Quad):
             mProgVert = mQuadVolChildVert[child_address];
             break;

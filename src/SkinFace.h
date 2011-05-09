@@ -46,10 +46,12 @@ protected:
     vector<CContactNode*> mvConNode;
 
     // 辺に生成するContactNode (Refine用途)
+    //
     vector<CContactNode*> mvEdgeNode;//辺に生成するContactNode
-    vector<bool>          mvbEdgeMarking;//辺にノードを生成済みか.
+    //vector<bool>  mvbEdgeMarking;
+    bool* mvbEdgeMarking;            //辺にノードを生成済みか.
     vector<CSkinFace*>    mvEdgeFace;//辺に隣接するSkinFace,<<<<<<<<<<<<<-自分自身は除外.
-    PairConNode           mPairConNode;//辺の両端ノードのreturn value用
+    //PairConNode           mPairConNode;//辺の両端ノードのreturn value用
     uint& getEdgeIndex(PairConNode& pairConNode);//両端のノードから辺番号を特定
 
     // 面中心のContactNode (Refine用途)
@@ -71,8 +73,6 @@ protected:
     // 面ベクトル
     vdouble mvNormalVector;
     
-    // Logger
-    Utility::CLogger* mpLogger;
 public:
     virtual const char* getName(){return "SkinFace";}
 
@@ -139,7 +139,7 @@ public:
     
     // Refine関連(Refineのための辺ノード設置)
     // --
-    PairConNode& getEdgePairNode(const uint& iedge);
+    PairConNode getEdgePairNode(const uint& iedge);
     void setEdgeFace(CSkinFace* pFace, PairConNode& pairConNode);//隣接するSkinFaceのセット
     void setEdgeFace(CSkinFace* pFace, const uint& iedge);       //隣接するSkinFaceのセット
     void setEdgeConNode(CContactNode* pEdgeConNode, PairConNode& pairConNode);//mvEdgeNode:辺ノード(ContactNode)のセット
@@ -164,6 +164,10 @@ public:
     vdouble& CalcNzNormalVector();//面ベクトル(正規化)計算
     vdouble& getNzNormalVector();//面ベクトル(正規化)取得のみ
     
+    
+    // 辺ノードvectorのメモリー解放
+    //
+    void deleteProgData();
 };
 #endif	/* _SKINFACE_H */
 }

@@ -312,9 +312,14 @@ void CCommMesh2::setupFaceCommNode(CCommMesh2 *pProgCommMesh)
 }
 
 
+// Refine後のvector解放(辺ノード)
+//
+void CCommMesh2::deleteProgData()
+{
+    uint iface, nNumOfFace = mvCommFace.size();
 
-
-
+    for(iface=0; iface < nNumOfFace; iface++) mvCommFace[iface]->deleteProgData();
+}
 
 
 

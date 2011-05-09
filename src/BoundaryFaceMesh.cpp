@@ -22,7 +22,7 @@ CBoundaryFaceMesh::CBoundaryFaceMesh()
 
 CBoundaryFaceMesh::~CBoundaryFaceMesh()
 {
-    ;
+    for_each(mvBFace.begin(), mvBFace.end(), DeleteObject());
 }
 
 
@@ -497,8 +497,20 @@ void CBoundaryFaceMesh::distDirichletValue_at_FGrid()
 }
 
 
+// Refine時のデータの解放
+// ----
+// 各Faceの辺BNodeの解放
+// mvBEdgeBNodeの解放
+// mvBFaceBNodeの解放
+void CBoundaryFaceMesh::deleteProgData()
+{
+    uint iface, nNumOfBFace=mvBFace.size();
 
+    for(iface=0; iface < nNumOfBFace; iface++) mvBFace[iface]->deleteProgData();
 
+    vector<CBoundaryNode*>().swap(mvBEdgeBNode);
+    vector<CBoundaryNode*>().swap(mvBFaceBNode);
+}
 
 
 

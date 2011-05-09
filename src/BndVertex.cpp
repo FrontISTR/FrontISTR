@@ -19,7 +19,18 @@ CBndVertex::~CBndVertex()
 }
 
 
+// AggregateElementの解放
+//
+// |全てのMesh処理が終わった後で呼び出す|
+//
+void CBndVertex::deleteAggregate()
+{
+    vuint vTemp;
+    vector<unsigned int>(vTemp).swap(mvAggElementID);
 
+    map<uint, uint, less<uint> > mTemp;
+    map<uint, uint, less<uint> >(mTemp).swap(mmNeibElemVertNum);
+}
 
 
 

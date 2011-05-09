@@ -23,12 +23,12 @@ CCommBeam::CCommBeam()
     mvNodeRank.resize(2);
     mvEdgeRank.resize(1);
 
-    mvbSend.resize(2);
-    mvbRecv.resize(2);
-    mvbOther.resize(2);
+    mvbSend = new bool[2];
+    mvbRecv = new bool[2];
+    mvbOther = new bool[2];
 
-    mvbNodeIXCheck.resize(2);
-    mvbDNodeMarking.resize(2);
+    mvbNodeIXCheck = new bool[2];
+    mvbDNodeMarking = new bool[2];
     uint i;
     for(i=0; i< 2; i++){
         mvbNodeIXCheck[i]=false;

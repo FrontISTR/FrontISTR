@@ -44,6 +44,12 @@ string CFileWriterElement::StrType(const uint& elem_type)
         case(pmw::ElementType::Prism2):
             sType= "Prism2";
             break;
+//        case(pmw::ElementType::Pyramid):
+//            sType= "Pyramid";
+//            break;
+//        case(pmw::ElementType::Pyramid2):
+//            sType= "Pyramid2";
+//            break;
         case(pmw::ElementType::Quad):
             sType= "Quad";
             break;
@@ -109,17 +115,17 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
            };
            //debug
            {
-               //ofs << ",Edge Node ";
-               //uint numOfEdge,numOfFace, iedge, iface;
-               //numOfEdge= pElem->getNumOfEdge();
-               //for(iedge=0; iedge< numOfEdge; iedge++){
-               //    if(pElem->getEdgeInterNode(iedge)) ofs << pElem->getEdgeInterNode(iedge)->getID() << white;
-               //};
-               //ofs << ",Face Node ";
-               //numOfFace= pElem->getNumOfFace();
-               //for(iface=0; iface< numOfFace; iface++){
-               //    if(pElem->getFaceNode(iface)) ofs << pElem->getFaceNode(iface)->getID() << white;
-               //};
+               ofs << ",Edge Node ";
+               uint numOfEdge,numOfFace, iedge, iface;
+               numOfEdge= pElem->getEdgeInterNodeSize();
+               for(iedge=0; iedge< numOfEdge; iedge++){
+                   if(pElem->getEdgeInterNode(iedge)) ofs << pElem->getEdgeInterNode(iedge)->getID() << white;
+               };
+               ofs << ",Face Node ";
+               numOfFace= pElem->getFaceNodeSize();
+               for(iface=0; iface< numOfFace; iface++){
+                   if(pElem->getFaceNode(iface)) ofs << pElem->getFaceNode(iface)->getID() << white;
+               };
            }
            //debug end
 

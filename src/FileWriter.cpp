@@ -27,4 +27,3 @@ void CFileWriter::setSolutionType(const uint& nSolutionType)
 
 
 
-

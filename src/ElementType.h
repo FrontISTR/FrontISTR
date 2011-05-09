@@ -30,6 +30,8 @@ struct ElementType{
         HexaNic,
         Prism,
         Prism2,
+//        Pyramid,
+//        Pyramid2,
         Tetra,
         Tetra2,
         Quad,

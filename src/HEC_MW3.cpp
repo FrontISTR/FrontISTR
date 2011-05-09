@@ -16,7 +16,7 @@
 #include "SolverBiCGSTAB.h"
 #include "SolverGPBiCG.h"
 #include "SolverGMRES.h"
-#ifdef WIN32
+#ifdef MSVC
 #include "HEC_MW3.hxx"
 #else
 #include "HEC_MW3.h"
@@ -60,8 +60,7 @@ CMW::CMW(void)
     mpShapeQuad= pmw::CShapeQuad::Instance();
     mpShapeTriangle= pmw::CShapeTriangle::Instance();
     mpShapeLine= pmw::CShapeLine::Instance();
-//    // ヤコビアン
-//    mpJacobian= new CJacobian();
+
     // 形状間数カタログ
     mpShapeCatalog= pmw::CShapeFunctionCatalog::Instance();
 
@@ -75,13 +74,7 @@ CMW::CMW(void)
 //
 CMW::~CMW(void)
 {
-    // ↓これらは,シングルトンなのでExeの破棄のときに破棄される
-    //
-    //  mpGMGModel;
-    //  mpFactory;
-    //  mpFileIO;
-    //  mpMPI
-    //  mpLogger;
+    ;
 }
 
 // MPI, Logger の初期化
@@ -206,7 +199,7 @@ int CMW::Initialize_Vector()// const uint& nmgLevel
     return 1;
 }
 
-int CMW::Matrix_Add_Elem(int iMesh, int iElem, double *ElemMatrix)
+int CMW::Matrix_Add_Elem(uint& iMesh, uint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CMW::Matrix_Add_Elem %d %e \n", iElem, ElemMatrix[0]);
@@ -220,31 +213,27 @@ int CMW::Matrix_Add_Elem(int iMesh, int iElem, double *ElemMatrix)
     return 1;
 }
 
-void CMW::Sample_Set_BC(int iMesh)
+void CMW::Sample_Set_BC(uint iMesh)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf(" enter CMW::Sample_Set_BC \n");
 #endif
 
 	double X, Y, Z, value0, value1, value2;
-	int iDof0, iDof1, iDof2;
-	int iNodeMax = getNodeSize( iMesh );
+	uint iDof0, iDof1, iDof2;
+	uint iNodeMax = getNodeSize( iMesh );
 
-	for( int iNode = 0; iNode < iNodeMax; iNode++){  
+	for( uint iNode = 0; iNode < iNodeMax; iNode++){
 		X = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getX();
 		Y = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getY();
 		Z = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getZ();
 		if(abs( Z - 4.0 ) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 ) {
-//		if(abs( Z - 3.0 ) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 ) {
-//		if(abs(abs( Z - 4.0 )-1.0) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 ) {
-//		if(abs( Z - 4.0 ) < 1.0e-5 ) {
 			value0 = 1.0e6;
 			iDof0 = 0;
 			Set_BC( iMesh, iNode, iDof0, value0);
 		};
 		if( (abs( Z ) < 1.0e-5) || (abs( Z - 8.0 ) < 1.0e-5) ) {
 			value1 = 1.0e15;
-//			value1 = 1.0e10;
 			value2 = 0.0;
 			iDof0 = 0; iDof1 = 1; iDof2 = 2;
 			Set_BC( iMesh, iNode, iDof0, value1, value2);
@@ -257,7 +246,7 @@ void CMW::Sample_Set_BC(int iMesh)
 #endif
 }
 
-int CMW::Set_BC(int iMesh, int iNode, int iDof, double value)
+int CMW::Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMW::Set_BC (1) %d %d %d %e \n", iMesh, iNode, iDof, value);
@@ -271,7 +260,7 @@ int CMW::Set_BC(int iMesh, int iNode, int iDof, double value)
 	return 1;
 }
 
-int CMW::Set_BC(int iMesh, int iNode, int iDof, double value1, double value2)
+int CMW::Set_BC(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMW::Set_BC (2) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
@@ -287,7 +276,7 @@ int CMW::Set_BC(int iMesh, int iNode, int iDof, double value1, double value2)
 	return 1;
 }
 
-int CMW::Solve(uint iter_max, double tolerance, uint method, uint precondition)
+int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& precondition)
 {
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMW::Solve %d %e \n", iter_max, tolerance);
@@ -318,7 +307,7 @@ int CMW::Solve(uint iter_max, double tolerance, uint method, uint precondition)
     }
 
     uint iMesh, iMeshMax;
-    GetNumOfMeshPart(iMeshMax);
+    iMeshMax = GetNumOfMeshPart();
     for( iMesh = 0; iMesh < iMeshMax; iMesh++){
 	
 	FILE *fp1;
@@ -364,8 +353,10 @@ int CMW::Solve(uint iter_max, double tolerance, uint method, uint precondition)
     return 1;
 }
 
+//
 // 1.マルチグリッドのための,Refineメッシュ生成
 // 2.MPCのため,接合Meshのマスター面にスレーブ点をセット
+//
 int CMW::Refine()
 {
     uint ilevel,mgLevel;
@@ -395,8 +386,7 @@ int CMW::Refine()
         };
 
         mpFactory->refineCommMesh2();//要素分割型(節点共有型)の通信Mesh(CommMesh2)のRefine
-
-        mpFactory->refineBoundary();//境界条件の階層化
+        mpFactory->refineBoundary(); //境界条件の階層化
         
         return 1;
     }else{
@@ -406,6 +396,80 @@ int CMW::Refine()
     return 1;
 }
 
+//
+// メモリーの解放(Node::AggElemIDの解放):Mesh操作によるデータ構築の最後に実行
+//
+void CMW::FinalizeRefine()
+{
+    // Refineに用いたvectorの解放
+    //
+    CAssyModel *pAssy;
+    uint ilevel, mgLevel = mpFactory->getMGLevel();
+    
+    for(ilevel=0; ilevel < mgLevel+1; ilevel++){
+        pAssy = mpGMGModel->getAssyModel(ilevel);
+
+        CMesh *pMesh;
+        uint imesh, nNumOfMesh = pAssy->getNumOfMesh();
+
+        // Mesh      メッシュ本体
+        for(imesh=0; imesh < nNumOfMesh; imesh++){
+            pMesh = pAssy->getMesh(imesh);
+            
+            pMesh->deleteProgData();// Elementの各Edge,Face の Node*,Element* 配列 を解放
+            pMesh->deleteAggregate_on_Node();// Node::AggElemIDの解放
+
+            // CommMesh2 通信メッシュ
+            CCommMesh2 *pCommMesh;
+            uint icom, nNumOfCommMesh = pMesh->getCommMesh2Size();
+            for(icom=0; icom < nNumOfCommMesh; icom++){
+                pCommMesh = pMesh->getCommMesh2IX(icom);
+                
+                pCommMesh->deleteProgData();
+            };
+
+            // BoundaryVolumeMesh 境界メッシュ(体積)
+            CBoundaryVolumeMesh *pBVolMesh;
+            uint ibvol, nNumOfBVolMesh = pMesh->getNumOfBoundaryVolumeMesh();
+            for(ibvol=0; ibvol < nNumOfBVolMesh; ibvol++){
+                pBVolMesh = pMesh->getBndVolumeMeshIX(ibvol);
+
+                pBVolMesh->deleteProgData();
+            };
+
+            // BoundaryFaceMesh 境界メッシュ(面)
+            CBoundaryFaceMesh *pBFaceMesh;
+            uint ibface, nNumOfBFaceMesh = pMesh->getNumOfBoundaryFaceMesh();
+            for(ibface=0; ibface < nNumOfBFaceMesh; ibface++){
+                pBFaceMesh = pMesh->getBndFaceMeshIX(ibface);
+
+                pBFaceMesh->deleteProgData();
+            };
+
+            // BoundaryEdgeMesh 境界メッシュ(辺)
+            CBoundaryEdgeMesh *pBEdgeMesh;
+            uint ibedge, nNumOfBEdgeMesh = pMesh->getNumOfBoundaryEdgeMesh();
+            for(ibedge=0; ibedge < nNumOfBEdgeMesh; ibedge++){
+                pBEdgeMesh = pMesh->getBndEdgeMeshIX(ibedge);
+
+                pBEdgeMesh->deleteProgData();
+            };
+        };
+
+        // ContactMesh 接合面メッシュ
+        CContactMesh *pConMesh;
+        uint icmesh, nNumOfConMesh = pAssy->getNumOfContactMesh();
+
+        for(icmesh=0; icmesh < nNumOfConMesh; icmesh++){
+            pConMesh = pAssy->getContactMesh(icmesh);
+
+            pConMesh->deleteProgData();// SkinFaceの辺のConNode*配列を解放
+        };
+
+    };// iLevel
+    
+    
+}
 
 
 
@@ -415,9 +479,9 @@ int CMW::Refine()
 //-------------------------------
 
 // Assemble Modelの個数==階層数(mMGLevel+1)
-void CMW::GetNumOfAssembleModel(uint& numOfAssembleModel)
+uint CMW::GetNumOfAssembleModel()
 {
-    numOfAssembleModel= mpGMGModel->getNumOfLevel();
+    return mpGMGModel->getNumOfLevel();
 }
 
 // Assemble Modelの選択
@@ -427,9 +491,9 @@ void CMW::SelectAssembleModel(const uint& mgLevel)
 }
 
 // Meshパーツの個数
-void CMW::GetNumOfMeshPart(uint& numOfMeshPart)
+uint CMW::GetNumOfMeshPart()
 {
-    numOfMeshPart= mpAssy->getNumOfMesh();
+    return mpAssy->getNumOfMesh();
 }
 
 // Meshの選択 : IDによる選択
@@ -469,19 +533,19 @@ void CMW::SelectElement_IX(const uint& index)
     }
 }
 // Elementのタイプ取得
-void CMW::GetElementType(uint& elemType)
+uint CMW::GetElementType()
 {
-    elemType= mpElement->getType();
+    return mpElement->getType();
 }
 
 // Elementの頂点数
-void CMW::GetNumOfElementVert(uint& numOfVert)
+uint CMW::GetNumOfElementVert()
 {
-    numOfVert= mpElement->getNumOfNode();
+    return mpElement->getNumOfNode();
 }
 
 // Elementの頂点のノードID
-void CMW::GetElementVertNodeID(vuint& vNodeID)
+void CMW::GetElementVertNodeID(int* vNodeID)
 {
     uint numOfNode;
     numOfNode= mpElement->getNumOfNode();
@@ -496,13 +560,13 @@ void CMW::GetElementVertNodeID(vuint& vNodeID)
 }
 
 // Elementの辺の数
-void CMW::GetNumOfElementEdge(uint& numOfEdge)
+uint CMW::GetNumOfElementEdge()
 {
-    numOfEdge= mpElement->getNumOfEdge();
+    return mpElement->getNumOfEdge();
 }
 
 // Elementの辺のノードID
-void CMW::GetElementEdgeNodeID(vuint& vNodeID)
+void CMW::GetElementEdgeNodeID(int* vNodeID)
 {
     uint numOfEdge;
     numOfEdge= mpElement->getNumOfEdge();
@@ -515,8 +579,9 @@ void CMW::GetElementEdgeNodeID(vuint& vNodeID)
         vNodeID[iedge]= pNode->getID();
     };
 }
-
-// ノードの座標
+//
+// ノード
+//
 void CMW::GetNodeCoord(const uint& node_id, double& x, double& y, double& z)
 {
     CNode *pNode;
@@ -526,16 +591,180 @@ void CMW::GetNodeCoord(const uint& node_id, double& x, double& y, double& z)
     y= pNode->getY();
     z= pNode->getZ();
 }
+uint CMW::GetNumOfDOF(const uint& node_id)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    return pNode->numOfTotalParam();
+}
+uint CMW::GetNumOfScalar(const uint& node_id)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    return pNode->numOfScalarParam();
+}
+uint CMW::GetNumOfVector(const uint& node_id)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    return pNode->numOfVectorParam();
+}
+uint& CMW::GetNodeType(const uint& node_id)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    return pNode->getType();
+}
+void CMW::SetNodeValue(const uint& node_id, double value[])
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    uint numOfDOF = pNode->numOfTotalParam();
 
+    uint idof;
+    if(NodeType::Scalar==pNode->getType()){
+        for(idof=0; idof < numOfDOF; idof++){
+            pNode->setScalar(value[idof], idof);
+        };
+    }
+    if(NodeType::Vector==pNode->getType()){
+        for(idof=0; idof < numOfDOF; idof++){
+            pNode->setVector(value[idof], idof);
+        };
+    }
+    if(NodeType::ScalarVector==pNode->getType()){
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::SetNodeValue(const uint&, double[])");
+    }
+}
+void CMW::SetNodeValue(const uint& node_id, const uint& idof, const double& value)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    if(NodeType::Scalar==pNode->getType()){
+        pNode->setScalar(value, idof);
+    }
+    if(NodeType::Vector==pNode->getType()){
+        pNode->setVector(value, idof);
+    }
+    if(NodeType::ScalarVector==pNode->getType()){
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::SetNodeValue(const uint&, const uint&, double&)");
+    }
+}
 
+void CMW::GetNodeValue(const uint& node_id, double value[])
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    if(NodeType::Scalar==pNode->getType()){
+        uint idof, numOfScalar=pNode->numOfScalarParam();
+        for(idof=0; idof < numOfScalar; idof++)
+            value[idof] = pNode->getScalar(idof);
+    }
+    if(NodeType::Vector==pNode->getType()){
+        uint idof, numOfVector=pNode->numOfVectorParam();
+        for(idof=0; idof < numOfVector; idof++)
+            value[idof] = pNode->getVector(idof);
+    }
+    if(NodeType::ScalarVector==pNode->getType()){
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::GetNodeValue(uint&, double[])");
+    }
+}
+double& CMW::GetNodeValue(const uint& node_id, const uint& idof)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
 
+    if(NodeType::Scalar==pNode->getType()){
+        return pNode->getScalar(idof);
+    }
+    if(NodeType::Vector==pNode->getType()){
+        return pNode->getVector(idof);
+    }
+    if(NodeType::ScalarVector==pNode->getType()){
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::GetNodeValue(uint&, uint&)");
+        return pLogger->getDDummyValue();
+    }
+}
+//
+// ScalarVector Node
+//
+void CMW::SetSVNodeValue(const uint& node_id, double v_value[], double s_value[])
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
+
+    if(NodeType::ScalarVector==pNode->getType()){
+        uint idof;
+
+        uint numOfScalar=pNode->numOfScalarParam();
+        for(idof=0; idof < numOfScalar; idof++) pNode->setScalar(s_value[idof], idof);
+
+        uint numOfVector=pNode->numOfVectorParam();
+        for(idof=0; idof < numOfVector; idof++) pNode->setVector(v_value[idof], idof);
+
+    }else{
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::SetSVNodeValue(uint&, uint&, double&, uint&, double&)");
+    }
+}
+void CMW::SetSVNodeValue(const uint& node_id,
+        const uint& v_dof, const double& v_value, const uint& s_dof, const double& s_value)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
+
+    if(NodeType::ScalarVector==pNode->getType()){
+        pNode->setScalar(s_value, s_dof);
+        pNode->setVector(v_value, v_dof);
+    }else{
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::SetSVNodeValue(uint&, uint&, double&, uint&, double&)");
+    }
+}
+void CMW::GetSVNodeValue(const uint& node_id, double v_value[], double s_value[])
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
+
+    if(NodeType::ScalarVector==pNode->getType()){
+        uint idof;
+        uint numOfScalar = pNode->numOfScalarParam();
+        uint numOfVector = pNode->numOfVectorParam();
+
+        for(idof=0; idof < numOfScalar; idof++)
+            s_value[idof] = pNode->getScalar(idof);
+        for(idof=0; idof < numOfVector; idof++)
+            v_value[idof] = pNode->getVector(idof);
+    }else{
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::GetSVNodeValue(uint&, double [], double [])");
+    }
+}
+void CMW::GetSVNodeValue(const uint& node_id,
+        const uint& v_dof, double& v_value, const uint& s_dof, double& s_value)
+{
+    CNode *pNode;
+    pNode= mpMesh->getNode(node_id);
+
+    if(NodeType::ScalarVector==pNode->getType()){
+        s_value = pNode->getScalar(s_dof);
+        v_value = pNode->getVector(v_dof);
+    }else{
+        Utility::CLogger *pLogger = Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "NodeType mismatch, CMW::GetSVNodeValue(uint&, uint&, double&, uint&, double&)");
+    }
+}
 
 
 
@@ -544,12 +773,10 @@ void CMW::GetNodeCoord(const uint& node_id, double& x, double& y, double& z)
 // 積分点 情報: ShapeType別の積分点数を返す.
 //--
 // numOfInteg := 積分点数
-void CMW::NumOfIntegPoint(const uint& shapeType, uint& numOfInteg)
+uint& CMW::NumOfIntegPoint(const uint& shapeType)
 {
-    numOfInteg= mpShapeCatalog->NumOfIntegPoint(shapeType);
+    return mpShapeCatalog->NumOfIntegPoint(shapeType);
 }
-
-
 //    switch(shapeType){
 //        case(ShapeType::Hexa81):
 //            break;
@@ -681,6 +908,87 @@ void CMW::ShapeFunc_on_pt(const uint& shapeType, const uint& igauss, vdouble& N)
             break;
     }
 }
+void CMW::ShapeFunc_on_pt(uint shapeType, uint igauss, double N[])
+{
+    vdouble vN;
+
+    switch(shapeType){
+        case(ShapeType::Hexa81):
+            vN= mpShapeHexa->N81(igauss);
+            break;
+        case(ShapeType::Hexa82):
+            vN= mpShapeHexa->N82(igauss);
+            break;
+        case(ShapeType::Hexa201):
+            vN= mpShapeHexa->N201(igauss);
+            break;
+        case(ShapeType::Hexa202):
+            vN= mpShapeHexa->N202(igauss);
+            break;
+        case(ShapeType::Hexa203):
+            vN= mpShapeHexa->N203(igauss);
+            break;
+        case(ShapeType::HexaNic111):
+            vN= mpShapeHexaNic->N111(igauss);
+            break;
+        case(ShapeType::HexaNic118):
+            vN= mpShapeHexaNic->N118(igauss);
+            break;
+        case(ShapeType::HexaNic1127):
+            vN= mpShapeHexaNic->N1127(igauss);
+            break;
+        case(ShapeType::Tetra41):
+            vN= mpShapeTetra->N41(igauss);
+            break;
+        case(ShapeType::Tetra101):
+            vN= mpShapeTetra->N101(igauss);
+            break;
+        case(ShapeType::Tetra104):
+            vN= mpShapeTetra->N104(igauss);
+            break;
+        case(ShapeType::Tetra1015):
+            vN= mpShapeTetra->N1015(igauss);
+            break;
+        case(ShapeType::Prism62):
+            vN= mpShapePrism->N62(igauss);
+            break;
+        case(ShapeType::Prism156):
+            vN= mpShapePrism->N156(igauss);
+            break;
+        case(ShapeType::Prism159):
+            vN= mpShapePrism->N159(igauss);
+            break;
+        case(ShapeType::Prism1518):
+            vN= mpShapePrism->N1518(igauss);
+            break;
+        case(ShapeType::Quad41):
+            vN= mpShapeQuad->N41(igauss);
+            break;
+        case(ShapeType::Quad84):
+            vN= mpShapeQuad->N84(igauss);
+            break;
+        case(ShapeType::Quad89):
+            vN= mpShapeQuad->N89(igauss);
+            break;
+        case(ShapeType::Triangle31):
+            vN= mpShapeTriangle->N31(igauss);
+            break;
+        case(ShapeType::Triangle63):
+            vN= mpShapeTriangle->N63(igauss);
+            break;
+        case(ShapeType::Line21):
+            vN= mpShapeLine->N21(igauss);
+            break;
+        case(ShapeType::Line32):
+            vN= mpShapeLine->N32(igauss);
+            break;
+        default:
+            break;
+    }
+
+    uint i;
+    for(i=0; i < vN.size(); i++) N[i]=vN[i];
+}
 
 
 // N(まるごと)
@@ -760,6 +1068,92 @@ void CMW::ShapeFunc(const uint& shapeType, vvdouble& N)
             break;
     }
 }
+// ----
+// Fortran API用 形状関数
+// ----
+// N[igauss][ishape]
+//
+double& CMW::ShapeFunc_Hexa81(int igauss, int ishape)
+{
+    return mpShapeHexa->N81(igauss,ishape);
+}
+double& CMW::ShapeFunc_Hexa82(int igauss, int ishape)
+{
+    return mpShapeHexa->N82(igauss, ishape);
+}
+double& CMW::ShapeFunc_Hexa201(int igauss, int ishape)
+{
+    return mpShapeHexa->N201(igauss, ishape);
+}
+double& CMW::ShapeFunc_Hexa202(int igauss, int ishape)
+{
+    return mpShapeHexa->N202(igauss, ishape);
+}
+double& CMW::ShapeFunc_Hexa203(int igauss, int ishape)
+{
+    return mpShapeHexa->N203(igauss, ishape);
+}
+double& CMW::ShapeFunc_Tetra41(int igauss, int ishape)
+{
+    return mpShapeTetra->N41(igauss, ishape);
+}
+double& CMW::ShapeFunc_Tetra101(int igauss, int ishape)
+{
+    return mpShapeTetra->N101(igauss, ishape);
+}
+double& CMW::ShapeFunc_Tetra104(int igauss, int ishape)
+{
+    return mpShapeTetra->N104(igauss, ishape);
+}
+double& CMW::ShapeFunc_Tetra1015(int igauss, int ishape)
+{
+    return mpShapeTetra->N1015(igauss, ishape);
+}
+double& CMW::ShapeFunc_Prism62(int igauss, int ishape)
+{
+    return mpShapePrism->N62(igauss, ishape);
+}
+double& CMW::ShapeFunc_Prism156(int igauss, int ishape)
+{
+    return mpShapePrism->N156(igauss, ishape);
+}
+double& CMW::ShapeFunc_Prism159(int igauss, int ishape)
+{
+    return mpShapePrism->N159(igauss, ishape);
+}
+double& CMW::ShapeFunc_Prism1518(int igauss, int ishape)
+{
+    return mpShapePrism->N1518(igauss, ishape);
+}
+double& CMW::ShapeFunc_Quad41(int igauss, int ishape)
+{
+    return mpShapeQuad->N41(igauss, ishape);
+}
+double& CMW::ShapeFunc_Quad84(int igauss, int ishape)
+{
+    return mpShapeQuad->N84(igauss, ishape);
+}
+double& CMW::ShapeFunc_Quad89(int igauss, int ishape)
+{
+    return mpShapeQuad->N89(igauss, ishape);
+}
+double& CMW::ShapeFunc_Triangle31(int igauss, int ishape)
+{
+    return mpShapeTriangle->N31(igauss, ishape);
+}
+double& CMW::ShapeFunc_Triangle63(int igauss, int ishape)
+{
+    return mpShapeTriangle->N63(igauss, ishape);
+}
+double& CMW::ShapeFunc_Line21(int igauss, int ishape)
+{
+    return mpShapeLine->N21(igauss, ishape);
+}
+double& CMW::ShapeFunc_Line32(int igauss, int ishape)
+{
+    return mpShapeLine->N32(igauss, ishape);
+}
+
 
 
 // dN/dr(積分点ごと)
@@ -858,15 +1252,15 @@ void CMW::dNdr(const uint& shapeType, vvvdouble& dNdr)
         case(ShapeType::Hexa203):
             dNdr= mpShapeHexa->dNdr203();
             break;
-        case(ShapeType::HexaNic111):
-            dNdr= mpShapeHexaNic->dNdr111();
-            break;
-        case(ShapeType::HexaNic118):
-            dNdr= mpShapeHexaNic->dNdr118();
-            break;
-        case(ShapeType::HexaNic1127):
-            dNdr= mpShapeHexaNic->dNdr1127();
-            break;
+//        case(ShapeType::HexaNic111):
+//            dNdr= mpShapeHexaNic->dNdr111();
+//            break;
+//        case(ShapeType::HexaNic118):
+//            dNdr= mpShapeHexaNic->dNdr118();
+//            break;
+//        case(ShapeType::HexaNic1127):
+//            dNdr= mpShapeHexaNic->dNdr1127();
+//            break;
         case(ShapeType::Tetra41):
             dNdr= mpShapeTetra->dNdr41();
             break;
@@ -916,6 +1310,194 @@ void CMW::dNdr(const uint& shapeType, vvvdouble& dNdr)
             break;
     }
 }
+
+
+// ----
+// Fortran API用 導関数
+// ----
+// dNdr[igauss][ishape][iaxis]
+void CMW::dNdr(const uint& shapeType, double dNdr[])
+{
+    vvvdouble vdNdr;
+    uint numOfInteg, numOfShape, numOfAxis;
+
+    switch(shapeType){
+        case(ShapeType::Hexa81):
+            vdNdr= mpShapeHexa->dNdr81();
+            numOfInteg = 1; numOfShape = 8; numOfAxis = 3;
+            break;
+        case(ShapeType::Hexa82):
+            vdNdr= mpShapeHexa->dNdr82();
+            numOfInteg = 8; numOfShape = 8; numOfAxis = 3;
+            break;
+        case(ShapeType::Hexa201):
+            vdNdr= mpShapeHexa->dNdr201();
+            numOfInteg = 1; numOfShape = 20; numOfAxis = 3;
+            break;
+        case(ShapeType::Hexa202):
+            vdNdr= mpShapeHexa->dNdr202();
+            numOfInteg = 8; numOfShape = 20; numOfAxis = 3;
+            break;
+        case(ShapeType::Hexa203):
+            vdNdr= mpShapeHexa->dNdr203();
+            numOfInteg = 27; numOfShape = 20; numOfAxis = 3;
+            break;
+        case(ShapeType::Tetra41):
+            vdNdr= mpShapeTetra->dNdr41();
+            numOfInteg = 1; numOfShape = 4; numOfAxis = 3;
+            break;
+        case(ShapeType::Tetra101):
+            vdNdr= mpShapeTetra->dNdr101();
+            numOfInteg = 1; numOfShape = 10; numOfAxis = 3;
+            break;
+        case(ShapeType::Tetra104):
+            vdNdr= mpShapeTetra->dNdr104();
+            numOfInteg = 4; numOfShape = 10; numOfAxis = 3;
+            break;
+        case(ShapeType::Tetra1015):
+            vdNdr= mpShapeTetra->dNdr1015();
+            numOfInteg = 15; numOfShape = 10; numOfAxis = 3;
+            break;
+        case(ShapeType::Prism62):
+            vdNdr= mpShapePrism->dNdr62();
+            numOfInteg = 2; numOfShape = 6; numOfAxis = 3;
+            break;
+        case(ShapeType::Prism156):
+            vdNdr= mpShapePrism->dNdr156();
+            numOfInteg = 6; numOfShape = 15; numOfAxis = 3;
+            break;
+        case(ShapeType::Prism159):
+            vdNdr= mpShapePrism->dNdr159();
+            numOfInteg = 9; numOfShape = 15; numOfAxis = 3;
+            break;
+        case(ShapeType::Prism1518):
+            vdNdr= mpShapePrism->dNdr1518();
+            numOfInteg = 18; numOfShape = 15; numOfAxis = 3;
+            break;
+        case(ShapeType::Quad41):
+            vdNdr= mpShapeQuad->dNdr41();
+            numOfInteg = 1; numOfShape = 4; numOfAxis = 2;
+            break;
+        case(ShapeType::Quad84):
+            vdNdr= mpShapeQuad->dNdr84();
+            numOfInteg = 4; numOfShape = 8; numOfAxis = 2;
+            break;
+        case(ShapeType::Quad89):
+            vdNdr= mpShapeQuad->dNdr89();
+            numOfInteg = 9; numOfShape = 8; numOfAxis = 2;
+            break;
+        case(ShapeType::Triangle31):
+            vdNdr= mpShapeTriangle->dNdr31();
+            numOfInteg = 1; numOfShape = 3; numOfAxis = 2;
+            break;
+        case(ShapeType::Triangle63):
+            vdNdr= mpShapeTriangle->dNdr63();
+            numOfInteg = 3; numOfShape = 6; numOfAxis = 2;
+            break;
+        case(ShapeType::Line21):
+            vdNdr= mpShapeLine->dNdr21();
+            numOfInteg = 1; numOfShape = 2; numOfAxis = 1;
+            break;
+        case(ShapeType::Line32):
+            vdNdr= mpShapeLine->dNdr32();
+            numOfInteg = 2; numOfShape = 3; numOfAxis = 1;
+            break;
+        default:
+            break;
+    }
+
+    uint igauss,ishape,iaxis;
+    uint pos=0;
+    for(igauss=0; igauss < numOfInteg; igauss++){
+        for(ishape=0; ishape < numOfShape; ishape++){
+            for(iaxis=0; iaxis < numOfAxis; iaxis++){
+                dNdr[pos] = vdNdr[igauss][ishape][iaxis];
+                pos++;
+            }
+        }
+    }
+}
+double& CMW::dNdr_Hexa81_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeHexa->dNdr81(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Hexa82_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeHexa->dNdr82(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Hexa201_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeHexa->dNdr201(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Hexa202_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeHexa->dNdr202(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Hexa203_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeHexa->dNdr203(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tetra41_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTetra->dNdr41(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tetra101_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTetra->dNdr101(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tetra104_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTetra->dNdr104(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tetra1015_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTetra->dNdr1015(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Prism62_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapePrism->dNdr62(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Prism156_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapePrism->dNdr156(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Prism159_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapePrism->dNdr159(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Prism1518_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapePrism->dNdr1518(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Quad41_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeQuad->dNdr41(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Quad84_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeQuad->dNdr84(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Quad89_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeQuad->dNdr89(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tri31_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTriangle->dNdr31(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Tri63_on_pt_on_shape(int igauss, int ishape, int iaxis)
+{
+    return mpShapeTriangle->dNdr63(igauss, ishape, iaxis);
+}
+double& CMW::dNdr_Line21_on_pt_on_shape(int igauss, int ishape)
+{
+    return mpShapeLine->dNdr21(igauss, ishape);
+}
+double& CMW::dNdr_Line32_on_pt_on_shape(int igauss, int ishape)
+{
+    return mpShapeLine->dNdr32(igauss, ishape);
+}
+
 
 // dN/dx 計算
 //
@@ -1017,7 +1599,7 @@ void CMW::dNdx(const uint& elemType, const uint& numOfInteg, const uint& elem_in
     CElement *pElement;
     pElement= mpMesh->getElementIX(elem_index);
 
-    //switch文は,要素クラスにdNdx関数を移設すれば,解消するが,しばらくこのまま.
+    //switch文は,しばらくこのまま.
     switch(elemType){
         // 1次要素 Hexa
         case(ElementType::Hexa):
@@ -1091,6 +1673,50 @@ void CMW::dNdx(const uint& elemType, const uint& numOfInteg, const uint& elem_in
             break;
     }
 }
+//---
+// dNdx Fortran用途
+//---
+void CMW::dNdx(const uint& elemType, const uint& numOfInteg, const uint& ielem, double dNdx[])
+{
+    Calculate_dNdx(elemType, numOfInteg, ielem);
+
+    uint numOfShape;
+    switch(elemType){
+        case(ElementType::Hexa):
+            numOfShape = NumberOfNode::Hexa();
+            break;
+        case(ElementType::Hexa2):
+            numOfShape = NumberOfNode::Hexa2();
+            break;
+        case(ElementType::Tetra):
+            numOfShape = NumberOfNode::Tetra();
+            break;
+        case(ElementType::Tetra2):
+            numOfShape = NumberOfNode::Tetra2();
+            break;
+        case(ElementType::Prism):
+            numOfShape = NumberOfNode::Prism();
+            break;
+        case(ElementType::Prism2):
+            numOfShape = NumberOfNode::Prism2();
+            break;
+        default:
+            break;
+    }
+
+    uint igauss, ishape, iaxis;
+    uint pos=0;
+    for(igauss=0; igauss < numOfInteg; igauss++){
+        for(ishape=0; ishape < numOfShape; ishape++){
+            for(iaxis=0; iaxis < 3; iaxis++){
+
+                dNdx[pos] = mvdNdx[igauss][ishape][iaxis];
+                pos++;
+            };
+        };
+    };
+}
+
 
 //--
 // ヤコビアン行列式
@@ -1211,8 +1837,6 @@ void CMW::Weight(const uint& elemType, const uint& numOfInteg, const uint& igaus
             break;
     }
 }
-
-
 /*
     switch(elemType){
         // 1次要素 Hexa
@@ -1274,7 +1898,496 @@ void CMW::Weight(const uint& elemType, const uint& numOfInteg, const uint& igaus
             break;
     }
 */
+//----
+// 節点タイプ for Fortran
+//----
+uint CMW::nodetype_s(){ return NodeType::Scalar;}
+uint CMW::nodetype_v(){ return NodeType::Vector;}
+uint CMW::nodetype_sv(){ return NodeType::ScalarVector;}
+//----
+// 要素タイプ for Fortran
+//----
+uint CMW::elemtype_hexa(){ return ElementType::Hexa;}
+uint CMW::elemtype_hexa2(){ return ElementType::Hexa2;}
+uint CMW::elemtype_tetra(){ return ElementType::Tetra;}
+uint CMW::elemtype_tetra2(){ return ElementType::Tetra2;}
+uint CMW::elemtype_prism(){ return ElementType::Prism;}
+uint CMW::elemtype_prism2(){ return ElementType::Prism2;}
+uint CMW::elemtype_quad(){ return ElementType::Quad;}
+uint CMW::elemtype_quad2(){ return ElementType::Quad2;}
+uint CMW::elemtype_triangle(){ return ElementType::Triangle;}
+uint CMW::elemtype_triangle2(){ return ElementType::Triangle2;}
+uint CMW::elemtype_line(){ return ElementType::Beam;}
+uint CMW::elemtype_line2(){ return ElementType::Beam2;}
+//----
+// 形状関数タイプ for Fortran
+//----
+uint CMW::shapetype_hexa81(){ return ShapeType::Hexa81;}
+uint CMW::shapetype_hexa82(){ return ShapeType::Hexa82;}
+uint CMW::shapetype_hexa201(){ return ShapeType::Hexa201;}
+uint CMW::shapetype_hexa202(){ return ShapeType::Hexa202;}
+uint CMW::shapetype_hexa203(){ return ShapeType::Hexa203;}
+uint CMW::shapetype_tetra41(){ return ShapeType::Tetra41;}
+uint CMW::shapetype_tetra101(){ return ShapeType::Tetra101;}
+uint CMW::shapetype_tetra104(){ return ShapeType::Tetra104;}
+uint CMW::shapetype_tetra1015(){ return ShapeType::Tetra1015;}
+uint CMW::shapetype_prism62(){ return ShapeType::Prism62;}
+uint CMW::shapetype_prism156(){ return ShapeType::Prism156;}
+uint CMW::shapetype_prism159(){ return ShapeType::Prism159;}
+uint CMW::shapetype_prism1518(){ return ShapeType::Prism1518;}
+uint CMW::shapetype_quad41(){ return ShapeType::Quad41;}
+uint CMW::shapetype_quad84(){ return ShapeType::Quad84;}
+uint CMW::shapetype_quad89(){ return ShapeType::Quad89;}
+uint CMW::shapetype_tri31(){ return ShapeType::Triangle31;}
+uint CMW::shapetype_tri63(){ return ShapeType::Triangle63;}
+uint CMW::shapetype_line21(){ return ShapeType::Line21;}
+uint CMW::shapetype_line32(){ return ShapeType::Line32;}
+
+//--
+// Boundary :: 各Meshが所有するBoundaryMeshから境界値を取得
+//--
+uint CMW::GetNumOfBoundaryNodeMesh(){ return mpMesh->getNumOfBoundaryNodeMesh();}
+uint CMW::GetNumOfBoundaryFaceMesh(){ return mpMesh->getNumOfBoundaryFaceMesh();}
+uint CMW::GetNumOfBoundaryEdgeMesh(){ return mpMesh->getNumOfBoundaryEdgeMesh();}
+uint CMW::GetNumOfBoundaryVolumeMesh(){ return mpMesh->getNumOfBoundaryVolumeMesh();}
+// BNode
+uint CMW::GetNumOfBNode_BNodeMesh(const uint& ibmesh)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+    
+    return pBNodeMesh->getNumOfBNode();
+}
+uint CMW::GetNumOfBNode_BFaceMesh(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+    
+    return pBFaceMesh->getNumOfBNode();
+}
+uint CMW::GetNumOfBNode_BEdgeMesh(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+    
+    return pBEdgeMesh->getNumOfBNode();
+}
+uint CMW::GetNumOfBNode_BVolumeMesh(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+    
+    return pBVolMesh->getNumOfBNode();
+}
+// DOF
+uint CMW::GetNumOfDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+    
+    CBoundarySBNode *pBNode;
+    pBNode = pBNodeMesh->getBNodeIX(ibnode);
+    
+    return pBNode->getNumOfDOF();
+}
+uint CMW::GetNumOfDOF_BFaceMesh(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+    
+    return pBFaceMesh->getNumOfDOF();
+}
+uint CMW::GetNumOfDOF_BEdgeMesh(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+    
+    return pBEdgeMesh->getNumOfDOF();
+}
+uint CMW::GetNumOfDOF_BVolumeMesh(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+    
+    return pBVolMesh->getNumOfDOF();
+}
+//--
+// BoundaryNode 境界値
+//--
+double& CMW::GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+    
+    CBoundarySBNode *pBNode;
+    pBNode = pBNodeMesh->getBNodeIX(ibnode);
+    
+    return pBNode->getValue(idof);
+}
+double& CMW::GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+    
+    CBoundaryNode *pBNode;
+    pBNode = pBFaceMesh->getBNodeIX(ibnode);
+    
+    return pBNode->getValue(idof, mgLevel);
+}
+double& CMW::GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+    
+    CBoundaryNode *pBNode;
+    pBNode = pBEdgeMesh->getBNodeIX(ibnode);
+    
+    return pBNode->getValue(idof, mgLevel);
+}
+double& CMW::GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+    
+    CBoundaryNode *pBNode;
+    pBNode = pBVolMesh->getBNodeIX(ibnode);
+    
+    return pBNode->getValue(idof, mgLevel);
+}
+//--
+// Boundary Node の NodeID
+//--
+uint& CMW::GetNodeID_BNode_BNodeMesh(const uint& ibmesh, const uint& ibnode)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+    
+    CBoundarySBNode *pBNode;
+    pBNode = pBNodeMesh->getBNodeIX(ibnode);
+    
+    CNode *pNode;
+    pNode = pBNode->getNode();
+    
+    return pNode->getID();
+}
+uint& CMW::GetNodeID_BNode_BFaceMesh(const uint& ibmesh, const uint& ibnode)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    CBoundaryNode *pBNode;
+    pBNode = pBFaceMesh->getBNodeIX(ibnode);
+
+    CNode *pNode;
+    pNode = pBNode->getNode();
+
+    return pNode->getID();
+}
+uint& CMW::GetNodeID_BNode_BEdgeMesh(const uint& ibmesh, const uint& ibnode)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    CBoundaryNode *pBNode;
+    pBNode = pBEdgeMesh->getBNodeIX(ibnode);
+
+    CNode *pNode;
+    pNode = pBNode->getNode();
+
+    return pNode->getID();
+}
+uint& CMW::GetNodeID_BNode_BVolumeMesh(const uint& ibmesh, const uint& ibnode)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    CBoundaryNode *pBNode;
+    pBNode = pBVolMesh->getBNodeIX(ibnode);
+
+    CNode *pNode;
+    pNode = pBNode->getNode();
+
+    return pNode->getID();
+}
+//--
+// Face, Edge, Volume の境界値
+//--
+uint CMW::GetNumOfBFace(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    return pBFaceMesh->getNumOfBFace();
+}
+double& CMW::GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& idof)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    CBoundaryFace *pBFace;
+    pBFace = pBFaceMesh->getBFaceIX(ibface);
+
+    return pBFace->getBndValue(idof);
+}
+uint CMW::GetNumOfBEdge(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    return pBEdgeMesh->getNumOfEdge();
+}
+double& CMW::GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    CBoundaryEdge *pBEdge;
+    pBEdge = pBEdgeMesh->getBEdgeIX(ibedge);
+
+    return pBEdge->getBndValue(idof);
+}
+uint CMW::GetNumOfBVolume(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    return pBVolMesh->getNumOfVolume();
+}
+double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    CBoundaryVolume *pBVol;
+    pBVol = pBVolMesh->getBVolumeIX(ibvol);
+
+    return pBVol->getBndValue(idof);
+}
 
 
+//--
+// MPI (直接使用)
+//--
+int CMW::AllReduce_R(void* sendbuf, void* recvbuf, int buf_size, int datatype, int op, int commworld)
+{
+    mpMPI->Allreduce(sendbuf, recvbuf, buf_size, datatype, op, commworld);
+}
+
+// bufの値を送信 => 受信した値をbufに代入、Nodeにセット
+// # bufのサイズ == NumOfCommNode * dof_size
+//
+void CMW::Send_Recv_R(double* buf, int dof_size)
+{
+    uint iLevel, nNumOfLevel = mpGMGModel->getNumOfLevel();
+    CAssyModel *pAssy;
+    for(iLevel=0; iLevel < nNumOfLevel; iLevel++){
+        pAssy = mpGMGModel->getAssyModel(iLevel);
+
+        uint imesh, nNumOfMesh = pAssy->getNumOfMesh();
+        CMesh *pMesh;
+        for(imesh=0; imesh < nNumOfMesh; imesh++){
+            pMesh = pAssy->getMesh(imesh);
+
+            uint icmesh, nNumOfCommMesh = pMesh->getNumOfCommMesh();
+            CCommMesh2 *pCommMesh;
+            for(icmesh=0; icmesh < nNumOfCommMesh; icmesh++){
+                pCommMesh = pMesh->getCommMesh2IX(icmesh);
+
+                int transRank = pCommMesh->getTrasmitRank();
+
+                uint icnode, nNumOfCommNode = pCommMesh->getCommVertNodeSize();
+                CCommNode *pCommNode;
+                for(icnode=0; icnode < nNumOfCommNode; icnode++){
+                    pCommNode = pCommMesh->getCommVertNodeIX(icnode);
+                    
+                    double sendbuf[dof_size];
+                    double recvbuf[dof_size];
+
+                    uint idof;
+                    // 送信buf へ代入
+                    for(idof=0; idof < dof_size; idof++) sendbuf[idof] = buf[icnode*dof_size + idof];
+
+                    // 送信
+                    mpMPI->Send(sendbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD);
+
+
+                    // 受信
+                    MPI_Status sta;
+                    mpMPI->Recv(recvbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD, &sta);
+                    
+                    CNode* pNode = pCommNode->getNode();
+                    //
+                    // ・受信bufから引数bufへ代入
+                    // ・受信値をNodeの変数に代入
+                    //
+                    for(idof=0; idof < dof_size; idof++){
+                        
+                        buf[icnode*dof_size + idof] = recvbuf[idof];
+
+                        if(pNode->getType()==NodeType::Scalar) pNode->setScalar(recvbuf[idof], idof);
+                        if(pNode->getType()==NodeType::Vector) pNode->setVector(recvbuf[idof], idof);
+                        if(pNode->getType()==NodeType::ScalarVector){
+                            uint nNumScalar = pNode->numOfScalarParam();
+                            if(idof < nNumScalar){
+                                pNode->setScalar(recvbuf[idof], idof);
+                            }else{
+                                pNode->setVector(recvbuf[idof-nNumScalar], idof);
+                            }
+                        }
+                    };// idof (Total DOF)
+                };// icnode (CommNode)
+            };// icmesh (CommMesh)
+        };// imesh (Mesh)
+    };// iLevel
+}
+
+//
+// 通信Nodeの値を入れ替えて更新
+//
+void CMW::Send_Recv_R()
+{
+    uint iLevel, nNumOfLevel = mpGMGModel->getNumOfLevel();
+    CAssyModel *pAssy;
+    for(iLevel=0; iLevel < nNumOfLevel; iLevel++){
+        pAssy = mpGMGModel->getAssyModel(iLevel);
+
+        uint imesh, nNumOfMesh = pAssy->getNumOfMesh();
+        CMesh *pMesh;
+        for(imesh=0; imesh < nNumOfMesh; imesh++){
+            pMesh = pAssy->getMesh(imesh);
+
+            uint icmesh, nNumOfCommMesh = pMesh->getNumOfCommMesh();
+            CCommMesh2 *pCommMesh;
+            for(icmesh=0; icmesh < nNumOfCommMesh; icmesh++){
+                pCommMesh = pMesh->getCommMesh2IX(icmesh);
+
+                int transRank = pCommMesh->getTrasmitRank();
+
+                uint icnode, nNumOfCommNode = pCommMesh->getCommVertNodeSize();
+                CCommNode *pCommNode;
+                for(icnode=0; icnode < nNumOfCommNode; icnode++){
+                    pCommNode = pCommMesh->getCommVertNodeIX(icnode);
+                    CNode* pNode = pCommNode->getNode();
+
+                    uint dof_size = pNode->numOfTotalParam();
+                    double sendbuf[dof_size];
+                    double recvbuf[dof_size];
+
+                    uint idof;
+                    // 送信bufにNodeの変数値を代入
+                    //
+                    for(idof=0; idof < dof_size; idof++){
+                        if(pNode->getType()==NodeType::Scalar) sendbuf[idof] = pNode->getScalar(idof);
+                        if(pNode->getType()==NodeType::Vector) sendbuf[idof] = pNode->getVector(idof);
+                        if(pNode->getType()==NodeType::ScalarVector){
+                            uint nNumScalar = pNode->numOfScalarParam();
+                            if(idof < nNumScalar){
+                                sendbuf[idof] = pNode->getScalar(idof);
+                            }else{
+                                sendbuf[idof] = pNode->getVector(idof-nNumScalar);
+                            }
+                        }
+                    }
+
+                    // 送信
+                    mpMPI->Send(sendbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD);
+
+
+                    // 受信
+                    MPI_Status sta;
+                    mpMPI->Recv(recvbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD, &sta);
+
+                    // 受信値をNodeの変数に代入
+                    //
+                    for(idof=0; idof < dof_size; idof++){
+                        if(pNode->getType()==NodeType::Scalar) pNode->setScalar(recvbuf[idof], idof);
+                        if(pNode->getType()==NodeType::Vector) pNode->setVector(recvbuf[idof], idof);
+                        if(pNode->getType()==NodeType::ScalarVector){
+                            uint nNumScalar = pNode->numOfScalarParam();
+                            if(idof < nNumScalar){
+                                pNode->setScalar(recvbuf[idof], idof);
+                            }else{
+                                pNode->setVector(recvbuf[idof-nNumScalar], idof);
+                            }
+                        }
+                    };// idof (Total DOF)
+                };// icnode (CommNode)
+            };// icmesh (CommMesh)
+        };// imesh (Mesh)
+    };// iLevel
+}
+
+
+
+//--
+// Logger
+//--
+void CMW::LoggerMode(const uint& mode)
+{
+    switch(mode){
+        case(Utility::LoggerMode::Debug):case(Utility::LoggerMode::Error):
+        case(Utility::LoggerMode::Warn): case(Utility::LoggerMode::Info):
+
+            mpLogger->setMode(mode);
+            break;
+        default:
+            mpLogger->Info(Utility::LoggerMode::Error, "invalid logger mode, CMW::LoggerMode");
+            break;
+    }
+}
+void CMW::LoggerDevice(const uint& mode, const uint& device)
+{
+    switch(mode){
+        case(Utility::LoggerMode::Debug):case(Utility::LoggerMode::Error):
+        case(Utility::LoggerMode::Warn): case(Utility::LoggerMode::Info):
+
+            mpLogger->setProperty(mode, device);
+            break;
+        default:
+            mpLogger->Info(Utility::LoggerMode::Error, "invalid logger mode, CMW::LoggerDevice");
+            break;
+    }
+}
+void CMW::LoggerInfo(const uint& mode, char* message)
+{
+    string sMessage(message);
+    
+    switch(mode){
+        case(Utility::LoggerMode::Debug):case(Utility::LoggerMode::Error):
+        case(Utility::LoggerMode::Warn): case(Utility::LoggerMode::Info):
+            mpLogger->Info(mode, sMessage);
+            break;
+        default:
+            mpLogger->Info(Utility::LoggerMode::Error, "invalid logger mode, CMW::LoggerInfo");
+            break;
+    }
+}
+//--
+// Logger_Parameter for Fortran
+//--
+uint CMW::getErrorMode()
+{
+    return Utility::LoggerMode::Error;
+}
+uint CMW::getWarnMode()
+{
+    return Utility::LoggerMode::Warn;
+}
+uint CMW::getInfoMode()
+{
+    return Utility::LoggerMode::Info;
+}
+uint CMW::getDebugMode()
+{
+    return Utility::LoggerMode::Debug;
+}
+uint CMW::getDiskDevice()
+{
+    return Utility::LoggerDevice::Disk;
+}
+uint CMW::getDisplayDevice()
+{
+    return Utility::LoggerDevice::Display;
+}
 
 

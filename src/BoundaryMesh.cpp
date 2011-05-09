@@ -4,13 +4,15 @@
 //
 //              2010.05.06
 //              k.Takeda
+#include <vector>
+
 #include "BoundaryMesh.h"
 using namespace pmw;
 
 
 CBoundaryMesh::CBoundaryMesh()
 {
-    ;
+    if(mMaxMGLevel==mMGLevel) for_each(mvBNode.begin(), mvBNode.end(), DeleteObject());
 }
 CBoundaryMesh::~CBoundaryMesh()
 {

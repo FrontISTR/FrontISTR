@@ -76,7 +76,10 @@ bool CFileReaderCommElement::Read(ifstream& ifs, string& sLine)
                     vCommNodeID.resize(6);
                     for(ivert=0; ivert< 6; ivert++) iss >> vCommNodeID[ivert];
                     break;
-
+//                case(pmw::ElementType::Pyramid):
+//                    vCommNodeID.resize(5);
+//                    for(ivert=0; ivert< 5; ivert++) iss >> vCommNodeID[ivert];
+//                    break;
                 case(pmw::ElementType::Quad):
                     vCommNodeID.resize(4);
                     for(ivert=0; ivert< 4; ivert++) iss >> vCommNodeID[ivert];

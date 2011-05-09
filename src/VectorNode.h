@@ -39,7 +39,7 @@ public:
     virtual void setVector(const double& val, const uint& index);
 
     virtual double& getScalar(const uint& i);
-    virtual vdouble& getVector(){ return mvParam;}
+    virtual double& getVector(const uint& i){ return mvParam[i];}
 
     virtual uint numOfScalarParam();
     virtual uint numOfVectorParam();

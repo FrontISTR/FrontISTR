@@ -31,12 +31,9 @@ protected:
     // Mesh-ElementのエンティティID
     // => 常に0
 
-    vbool mvbMarkingEdge;
-    vbool mvbMarkingFace;
-
-    PairBNode mPairBNode;//辺の両端のBNode, テンポラリー変数
-    vector<CBoundaryNode*> mvFaceCnvNodes;//面を構成するBNode
-
+    bool* mvbMarkingEdge;
+    bool* mvbMarkingFace;
+    
     vector<CBoundaryNode*> mvEdgeBNode;// 辺-BNode
     vector<CBoundaryNode*> mvFaceBNode;// 面-BNode
     CBoundaryNode          *mpVolBNode;// 体-BNode
@@ -57,10 +54,10 @@ public:
     virtual uint getNumOfFace()=0;
 
     
-    virtual PairBNode& getPairBNode(const uint& iedge)=0;
+    virtual PairBNode getPairBNode(const uint& iedge)=0;//辺の両端のBNode
     virtual uint& getEdgeID(PairBNode& pairBNode)=0;
 
-    virtual vector<CBoundaryNode*>& getFaceCnvNodes(const uint& iface)=0;
+    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uint& iface)=0;//面を構成するBNode
     virtual uint& getFaceID(vector<CBoundaryNode*>& vBNode)=0;
 
 
@@ -103,6 +100,11 @@ public:
     double& getCubicVolume(){ return mCubicVolume;};
 
     virtual void distDirichletVal(const uint& dof, const uint& mgLevel)=0;//上位グリッドBNodeへのディレクレ値の分配
+
+
+    // Refine 後処理 : 辺-面 BNode vectorの解放
+    // ----
+    virtual void deleteProgData()=0;
 
 };
 #endif	/* _BOUNDARYELEMENT_H */

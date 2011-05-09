@@ -63,29 +63,29 @@ void CFileWriterNode::Write(ofstream& ofs, const uint& mgLevel)
        pBucket= pMesh->getBucket();
 
        //AggregateNodeの取得
-       if(pmw::SolutionType::FVM==mnSolutionType) vAggNode= pMesh->getAggNodes();
+       if(mnSolutionType==pmw::SolutionType::FVM) vAggNode= pMesh->getAggNodes();
 
        ofs << " -- Node Block Start -- " << ", mgLevel == " << mgLevel<< ", Mesh ID==" << pMesh->getMeshID() << endl;
 
        numOfNode= pMesh->getNumOfNode();//CMesh::numOfNode
-       ////debug
-       //cout << "ノード数 => " << numOfNode << ", CFileWriterNode::Write" << endl;
+//       //debug
+//       cout << "ノード数 => " << numOfNode << ", CFileWriterNode::Write" << endl;
 
        for(inode=0; inode< numOfNode; inode++){
 
            pNode= pMesh->getNodeIX(inode);
-           
+
            //ofs << imesh << white
            ofs << white           // <= Visual確認のためimesh出力なし
                << pNode->getID() << white
                << pNode->getX()  << white << pNode->getY() << white << pNode->getZ();
 
-           if(pmw::SolutionType::FVM==mnSolutionType){
+           if(mnSolutionType==pmw::SolutionType::FVM){
+               pAggNode= vAggNode[pNode->getID()];//NodeはID基準ー＞AggNode配列もIDに合わせてある
+
                ofs << white << "Connect_Nodes";
                //AggregateNodeの出力
                //
-               pAggNode= vAggNode[pNode->getID()];//NodeはID基準ー＞AggNode配列もIDに合わせてある
-
                numOfAggNode= pAggNode->getNumOfNode();
                for(iagg=0; iagg< numOfAggNode; iagg++){
                    pConnNode= pAggNode->getNode(iagg);

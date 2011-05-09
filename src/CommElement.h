@@ -38,12 +38,12 @@ protected:
     // Send-Recv 局所Node番号
     // --
     //
-    vbool mvbSend;//頂点番号のノードがSend？ => CommMeshのSendノード収集に使用
-    vbool mvbRecv;//頂点番号のノードがRecv？ => CommMeshのRecvノード収集に使用
-    vbool mvbOther;//頂点番号のノードは無関係なRank？
-    vector<CNode*> mvSendNode;// myRank所属ノード
-    vector<CNode*> mvRecvNode;// transmitRank所属ノード
-    vector<CNode*> mvOtherNode;//myRankでもtransmitRankでもない,別のRankに所属
+    bool* mvbSend; //頂点番号のノードがSend？ => CommMeshのSendノード収集に使用
+    bool* mvbRecv; //頂点番号のノードがRecv？ => CommMeshのRecvノード収集に使用
+    bool* mvbOther;//頂点番号のノードは無関係なRank？
+    vector<CNode*> mvSendNode; // myRank所属ノード
+    vector<CNode*> mvRecvNode; // transmitRank所属ノード
+    vector<CNode*> mvOtherNode;// myRankでもtransmitRankでもない,別のRankに所属
 
     // Node Index (CommMesh内でのNodeのIndex)<= Global Indexの代替
     // --
@@ -56,8 +56,8 @@ protected:
 
     // Node選択されたかマーキングするためのboolean
     // --
-    vector<bool> mvbNodeIXCheck;//グローバルIndex生成時に,Nodeが選択されたかマーキング
-    vector<bool> mvbDNodeMarking;//DNodeとして選ばれたかマーキング
+    bool* mvbNodeIXCheck; //グローバルIndex生成時に,Nodeが選択されたかマーキング
+    bool* mvbDNodeMarking;//DNodeとして選ばれたかマーキング
 
     Utility::CLogger *mpLogger;
 

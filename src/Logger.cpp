@@ -404,7 +404,7 @@ void CLogger::Info(const uint& mode, const string& message, const uint& num)
         return;
     }
 
-    msOutputString = message + ", ";
+    msOutputString = message;// + ", ";
     InfoToString(num);
 
     // 指定Modeでの動作可否判断
@@ -435,7 +435,7 @@ void CLogger::Info(const uint& mode, const string& message, const double& val)
         return;
     }
 
-    msOutputString = message + ", ";
+    msOutputString = message;// + ", ";
     InfoToString(val);
 
     // 指定Modeでの動作可否判断

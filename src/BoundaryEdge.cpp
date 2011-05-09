@@ -28,12 +28,14 @@ void CBoundaryEdge::setEdgeBNode(CBoundaryNode* pBNode)
     mpEdgeBNode= pBNode;
 }
 
-PairBNode& CBoundaryEdge::getPairBNode()
+PairBNode CBoundaryEdge::getPairBNode()
 {
-    mPairBNode.first = mvBNode[0];
-    mPairBNode.second= mvBNode[1];
+    PairBNode pairBNode;
 
-    return mPairBNode;
+    pairBNode.first = mvBNode[0];
+    pairBNode.second= mvBNode[1];
+
+    return pairBNode;
 }
 
 // 辺Nodeを,辺BoundaryNodeにセット

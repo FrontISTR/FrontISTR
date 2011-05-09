@@ -4,472 +4,1042 @@
 //                  2009.4.20
 //                  2009.2.27
 //                  k.Takeda
+#ifdef MSVC
+#include "API_Fortran.hxx"
+#else
 #include "API_Fortran.h"
+#endif
+
 #include "HEC_MW3.h"
 
 pmw::CMW *pMW;
-
 //----
-// 1. HEC_MW3 construct & destruct
+// HEC_MW3 construct & destruct
 //----
-void mw_initialize_(){
+#include <string.h>
+#include <math.h>
+int mw_initialize_(int* argc, char** argv, char* path) // for C
+{
     pMW = pmw::CMW::Instance();
-}
-void mw_finalize_(){
-    ;
-}
 
+    return pMW->Initialize(*argc, argv, path);// argc, argv <= MPI_Init 引数
+}
+int mw_initialize_1_(char* argv1, int* argv1_len, char* path, int* path_len)
+{
+    int argc = 1;// 1: exe program name
+    char** argv;
+
+    char carg[(size_t)*argv1_len];
+    strncpy(carg, argv1, (size_t)*argv1_len);// 1: exe program name
+
+    argv = new char*[1];
+    argv[0] = carg;
+
+    char cpath[(size_t)*path_len];
+    strncpy(cpath, path, (size_t)*path_len);// cnt file path
+
+    return pMW->Initialize(argc, argv, cpath);
+}
+int mw_initialize_2_(char* argv1, int* argv1_len, char* argv2, int* argv2_len, char* path, int* path_len)
+{
+    int argc = 2;// 1: exe program name, 2: input file name
+    char** argv;
+
+    char carg1[(size_t)*argv1_len];
+    strncpy(carg1, argv1, (size_t)*argv1_len);// 1: exe program name
+
+    char carg2[(size_t)*argv2_len];
+    strncpy(carg2, argv2, (size_t)*argv2_len);// 2: input file name
+
+    argv = new char*[2];
+    argv[0] = carg1;
+    argv[1] = carg2;
+
+    char cpath[(size_t)*path_len];
+    strncpy(cpath, path, (size_t)*path_len);// cnt file path
+
+    return pMW->Initialize(argc, argv, cpath);
+}
+int mw_finalize_()
+{
+    return pMW->Finalize();
+}
 
 //----
-// 2. file i/o API
+// file i/o API
 //----
-void mw_file_import_syscontrol_(int* modetype ){
-    ;//
+int mw_file_read_()
+{
+    return pMW->FileRead();
 }
-void mw_file_export_(int* modetype){
-    ;//
+int mw_file_write_()
+{
+    return pMW->FileWrite();
 }
-
-
-//----
-// 3.VISUALIZER API
-//----
-void mw_visualize_(int* assy_id, int* result_type){
-    ;
-}
-
 
 //----
-// 4. shape function API
+// linear solver API
 //----
-// gaussian integral point API
-void mw_gauss_(int* num_of_points, double *gzi_1d, double* weight){
-    ;
+int mw_initialize_matrix_()
+{
+    return pMW->Initialize_Matrix();
 }
-void mw_gauss_tetra_on_pt_(int* order, double* tetra_coord, double* weight){
-    ;
-}
-void mw_gauss_tetra_(int* order, double** tetra_coord, double* weight){
-    ;
-}
-void mw_gauss_tri_on_pt_(int* order, int* index, double* tri_coord, double* weight){
-    ;
-}
-void mw_gauss_tri_(int* order, double** tri_cood, double* weight){
-    ;
+int mw_initialize_vector_()
+{
+    return pMW->Initialize_Vector();
 }
 
+// matrix add elem
+int mw_matrix_add_elem_(int* imesh,  int* ielem,  double elem_matrix[])//standard
+{
+    unsigned int iMesh = *imesh;
+    unsigned int iElem = *ielem;
 
+    return pMW->Matrix_Add_Elem(iMesh, iElem, elem_matrix);
+}
+int mw_matrix_add_elem_24_(int* imesh, int* ielem, double elem_matrix[][24])//Hexa   8Node * 3DOF, Quad 8Node * 3DOF, Quad 4Node * 6DOF
+{
+    uint nNumOfCol=24;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matrix[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_60_(int* imesh, int* ielem, double elem_matrix[][60])//Hexa  20Node * 3DOF
+{
+    uint nNumOfCol=60;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matrix[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_12_(int* imesh, int* ielem, double elem_matirx[][12])//Tetra  4Node * 3DOF, Quad 4Node * 3DOF, Beam 2Node * 6DOF
+{
+    uint nNumOfCol=12;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_30_(int* imesh, int* ielem, double elem_matirx[][30])//Tetra 10Node * 3DOF, Tri  6Node * 5DOF
+{
+    uint nNumOfCol=30;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_18_(int* imesh, int* ielem, double elem_matirx[][18])//Prism  6Node * 3DOF, Tri  6Node * 3DOF, Beam 3Node * 6DOF
+{
+    uint nNumOfCol=18;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_45_(int* imesh, int* ielem, double elem_matirx[][45])//Prism 15Node * 3DOF
+{
+    uint nNumOfCol=45;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_20_(int* imesh, int* ielem, double elem_matirx[][20])//Quad   4Node * 5DOF
+{
+    uint nNumOfCol=20;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_40_(int* imesh, int* ielem, double elem_matirx[][40])//Quad   8Node * 5DOF
+{
+    uint nNumOfCol=40;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matrix_add_elem_15_(int* imesh, int* ielem, double elem_matirx[][15])//Tri    3Node * 5DOF, Beam 3Node * 5DOF
+{
+    uint nNumOfCol=15;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_9_(int* imesh, int* ielem, double elem_matirx[][9])  //Tri    3Node * 3DOF, Beam 3Node * 3DOF
+{
+    uint nNumOfCol=9;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_48_(int* imesh, int* ielem, double elem_matirx[][48])//Quad   8Node * 6DOF
+{
+    uint nNumOfCol=48;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_6_(int* imesh, int* ielem, double elem_matirx[][6])  //Beam   2Node * 3DOF
+{
+    uint nNumOfCol=6;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+int mw_matirx_add_elem_10_(int* imesh, int* ielem, double elem_matirx[][10])//Beam   2Node * 5DOF
+{
+    uint nNumOfCol=10;
+
+    double mat[nNumOfCol*nNumOfCol];
+
+    for(int i=0; i < nNumOfCol; i++)
+        for(int ii=0; ii < nNumOfCol; ii++)
+            mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
+
+    uint iMesh = *imesh;
+    uint iElem = *ielem;
+
+    return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
+}
+
+// set_bc
+//
+int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2)
+{
+    unsigned int iMesh = *imesh;
+    unsigned int iNode = *inode;
+    unsigned int iDOF  = *idof;
+    double Value1 = *value1;
+    double Value2 = *value2;
+
+    return pMW->Set_BC(iMesh, iNode, iDOF, Value1, Value2);
+}
+int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value)
+{
+    unsigned int iMesh = *imesh;
+    unsigned int iNode = *inode;
+    unsigned int iDOF = *idof;
+    double Value = *value;
+
+    return pMW->Set_BC(iMesh, iNode, iDOF, Value);
+}
+
+// solver
+int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition)
+{
+    unsigned int nIterMax = *iter_max;
+    double dTolerance = *tolerance;
+    unsigned int nMethod = *method;
+    unsigned int nPreCondition = *pre_condition;
+
+    return pMW->Solve(nIterMax, dTolerance, nMethod, nPreCondition);
+}
+void mw_store_matrix_()
+{
+    pMW->StoreMatrix();
+}
+void mw_load_matrix_()
+{
+    pMW->LoadMatrix();
+}
+
+//----
+// MG construct (refine)
+//----
+int mw_refine_()
+{
+    return pMW->Refine();
+}
+int mw_mg_construct_()
+{
+    return pMW->Refine();
+}
+
+void mw_finalize_refine_()
+{
+    pMW->FinalizeRefine();// release memory (final proc for mesh construct)
+}
+void mw_finalize_mg_construct_()
+{
+    pMW->FinalizeRefine();// release memory (final proc for mesh construct)
+}
+
+//----
+// model
 //----
 //
-//---
-void mw_elem_shapefunc_g_on_pt_(int* elem_type, double* gzi_coord, double* n){
-    ;
-}
-void mw_elem_shapefunc_g_(int* elem_type, int* integ_order, double** n, int* num_of_point){
-    ;
-}
-
-
-//----
+// assemble model
 //
-//---
-void mw_elem_dndr_on_pt_(int* elemtype, double* gzi_coord, double** dNdr){
-    ;
+int mw_get_num_of_assemble_model_()
+{
+    return (int)pMW->GetNumOfAssembleModel();
 }
-void mw_elem_dndr_(int* elemtype, int* integ_order, double*** dNdr){
-    ;
+void mw_select_assemble_model_(int mglevel)
+{
+    pMW->SelectAssembleModel(mglevel);
 }
-
-
-//----
 //
-//---
-void mw_elem_shapefunc_g2_on_pt_(int* elem_type, double* gzi_coord, double* N , double **dNdr){
-    ;
-}
-void mw_elem_shapefunc_g2_(int* elem_type, int* integ_order, double** N, double*** dNdr){
-    ;
-}
-
-
-//----
+// mesh part
 //
-//---
-void mw_elem_jacobian1_on_pt_(int* assy_id, int* elem_id, double* gzi_coord, double** jacobian){
-    ;
+int mw_get_num_of_mesh_part_()
+{
+    return (int)pMW->GetNumOfMeshPart();
 }
-void mw_elem_jacobian1_(int* assy_id, int* elem_id, int* integ_order, double*** jacobian){
-    ;
+void mw_select_mesh_part_with_id_(int* mesh_id)
+{
+    unsigned int nMeshID = *mesh_id;
+
+    pMW->SelectMeshPart_ID(nMeshID);
 }
+void mw_select_mesh_part_(int* index)
+{
+    unsigned int nIndex = *index;
 
-
-//----
+    pMW->SelectMeshPart_IX(nIndex);
+}
 //
-//---
-void mw_elem_jacobian2_on_pt_(int* assy_id, int* elem_id, double** dNdr, double** jacobian){
-    ;
-}
-void mw_elem_jacobian2_(int* assy_id, int* elem_id, int* integ_order, double*** dNdr, double*** jacobian){
-    ;
-}
-
-
-//----
+// element
 //
-//---
-void mw_matrix33_inv_(double** mat, double** invmat){
-    ;
+void mw_select_element_with_id_(int* elem_id)
+{
+    unsigned int nElemID = *elem_id;
+
+    pMW->SelectElement_ID(nElemID);
+}
+void mw_select_element_(int* index)
+{
+    unsigned int nIndex = *index;
+
+    pMW->SelectElement_IX(nIndex);
+}
+int mw_get_element_type_()
+{
+    return (int)pMW->GetElementType();
+}
+int mw_get_num_of_element_vert_()
+{
+    return (int)pMW->GetNumOfElementVert();
 }
 
-//----
+void mw_get_element_vert_node_id_(int v_node_id[])
+{
+    pMW->GetElementVertNodeID(v_node_id);
+}
+int mw_get_num_of_element_edge_()
+{
+    return (int)pMW->GetNumOfElementEdge();
+}
+void mw_get_element_edge_node_id_(int v_node_id[])
+{
+    pMW->GetElementEdgeNodeID(v_node_id);
+}
 //
-//----
-void mw_matrix33_det_(double** mat, double* det){
-    ;
-}
-
-//----
-// Element Volume
-//----
-void mw_element_volume_(int* assy_id, int* elem_id, double* volume){
-    ;
-}
-
-//----
-// Shape Function grad  (x,y,z)
-//----
-void mw_elem_dndx1_on_pt_(int* assy_id, int* elem_id, double* gzi_coord, double** dNdx){
-    ;
-}
-void mw_elem_dndx1_(int* assy_id, int* elem_id, int* integ_order, double*** dNdx){
-    ;
-}
-void mw_elem_dndx2_on_pt_( int* assy_id,  int* elem_id,  double** dNdr,  double** jacobian_inv,  double** dNdx){
-    ;
-}
-void mw_elem_dndx2_( int* assy_id,  int* elem_id,  int* integ_order,  double*** dNdr,  double*** jacobian_inv,  double*** dNdx){
-    ;
-}
-void mw_elem_shapefunc_x_on_pt_( int* assy_id, int* elem_id,  double* gzi_coord,  double* N,  double** dNdx){
-    ;
-}
-void mw_elem_shapefunc_x_( int* assy_id, int* elem_id, int* integ_order,  double** N, double*** dNdx){
-    ;
-}
-
-//----
-// Extrapolation
-//----
-void mw_value_extrapolation_( int* assy_id,  int* node_id,  int* value_type){
-    ;
-}
-
-//----
-// B matrix API
-//----
-void mw_elem_b_matrix1_on_pt_( int* assy_id,  int* elem_id,  int* integ_order,  int* integ_index,  double* weight,  double* det_jacobi, double** b_mat){
-    ;
-}
-void mw_elem_b_matrix1_( int* assy_id, int* elem_id,  int* integ_order,  double* weight,  double* det_jacobi,  double*** b_mat){
-    ;
-}
-void mw_elem_b_matrix2_on_pt_( int* assy_id, int*  elem_id, double** dNdx,  double** b_mat){
-    ;
-}
-void mw_elem_b_matrix2_( int* assy_id, int* elem_id,  int* integ_order, double***  dNdx,  double*** b_mat){
-    ;
-}
-
-//----
-// disp grad tensor
-//----
-void mw_elem_f_vector_( int* assy_id,  int* elem_id,  int* local_node_num,  double* f_vec ){
-    ;
-}
-
-//----
-// velocity grad tensor L,stretch tensor D, spin tensor W API
-//----
-void mw_elem_l_matrix_(  int* assy_id,  int* elem_id,  int* local_node_num, double** l_mat){
-    ;
-}
-void mw_elem_d_matrix_(  int* assy_id,  int* elem_id,  int* local_node_num, double** d_mat ){
-    ;
-}
-void mw_elem_w_matrix_(  int* assy_id,  int* elem_id,  int* local_node_num, double** w_mat ){
-    ;
-}
-
-//----
-//([B] = [Z1][Z2])
-//----
-void mw_elem_z1_matrix_ (  int* assy_id,  int* elem_id,  int* local_node_num,   double** z1_mat ){
-    ;
-}
-void mw_elem_z2_matrix_ (   int* assy_id,  int* elem_id,  int* local_node_num,   double** z2_mat ){
-    ;
-}
-
-
-//----
-// 5.matrix API
-//----
-void mw_initialize_matrix_(  int* number_of_matrix ){
-    ;
-}
-void mw_get_num_of_matrix_( int*  number_of_matrix ){
-    ;
-}
-void mw_finalize_matrix_( int* matrix_id ){
-    ;
-}
-
-//----
-// non-zero matrix construct API
-//----
-void mw_compress_matrix_(int* matrix_id ){
-    ;
-}
-
-//----
-// elem_matrix -> global matrix API
-//----
-void mw_matrix_add_elem_(int* matrix_id, int* assy_id,  int* elem_id,  double** elem_matrix){
-    ;
-}
-
-//----
-// matrix transpose
-//----
-void mw_matrix_transposed_( double* b_mat, double* bt_mat){
-    ;
-}
-
-//----
-// matrix product
-//----
-void mw_matrix_product_(double* b_mat, double* bt_mat, double* btb_mat){
-    ;
-}
-void mw_matrix_product_s_(double* b_mat, double* bt_mat, double* scalar_val, double* btb_mat){
-    ;
-}
-
-
-//----
-// 6.vector API
-//----
-void mw_initialize_vector_ ( int* number_of_vector ){
-    ;
-}
-void mw_get_num_of_vector_ (int*  number_of_vector ){
-    ;
-}
-void mw_finalize_vector_ ( int* vector_id ){
-    ;
-}
-
-//----
-// matrix vector product API
-//----
-void mw_multiply_matrix_vector_ ( double** matrix,  double* vector, double* result_vector){
-    ;
-}
-
-//----
-// vector product, norm API
-//----
-void mw_vector_inner_product_ (double* vector1,  double* vector2,  double* result){
-    ;
-}
-void mw_vector_norm_2_ ( double* vector, double* norm){
-    ;
-}
-void mw_vector_norm_inf_ (double* vector, double* norm){
-    ;
-}
-
-
-//----
-// 7. boundary API
-//----
-// element load -> add for global vector
+// node
 //
-void mw_vector_add_elem_ ( int* vector_id,  int* assy_id,  int* elem_id, double* elem_vector){
-    ;
+void mw_get_node_coord_(int* node_id, double* x, double* y, double* z)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+    double X,Y,Z;
+
+    pMW->GetNodeCoord(nNodeID,X,Y,Z);
+    
+    *x = X;
+    *y = Y;
+    *z = Z;
+}
+int mw_get_dof_(int* node_id)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+
+    return (int)pMW->GetNumOfDOF(nNodeID);
+}
+int mw_get_dof_scalar_(int* node_id)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+
+    return (int)pMW->GetNumOfScalar(nNodeID);
+}
+int mw_get_dof_vector_(int* node_id)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+
+    return (int)pMW->GetNumOfVector(nNodeID);
 }
 
-// boundary set API
-void mw_set_bc_ ( double** matrix,  double* rhs_vector, int* node_id, int* dof_id, double* val){
-    ;
+void mw_set_node_value_(int* node_id, double value[])
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+
+    pMW->SetNodeValue(nNodeID, value);
 }
+void mw_set_node_value_with_dof_(int* node_id, int* idof, double* value)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
+    unsigned int iDOF = *idof;
 
-
-//----
-// 8. MPC API
-//----
-void mw_set_mpc_ (double** matrix,  double* rhs_vector,  int* num_terms,  int* node_id,  int* dof_id,  double* coef){
-    ;
+    pMW->SetNodeValue(nNodeID, iDOF, *value);
 }
+void mw_get_node_value_(int* node_id, double value[])
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
 
+    pMW->GetNodeValue(nNodeID, value);
+}
+void mw_get_node_value_with_dof_(int* node_id, int* idof, double* value)
+{
+    unsigned int nNodeID = (unsigned int)*node_id;
 
-//----
-// 9. linear solver API
-//----
-// iterative API
+    *value = pMW->GetNodeValue(nNodeID, (unsigned int)*idof);
+}
 //
-void mw_solve_cg_ ( ){
-    ;
+// scalar_vector node
+//
+void mw_set_sv_node_value_(int* node_id, double v_value[], double s_value[])
+{
+    pMW->SetSVNodeValue(*node_id, v_value, s_value);
 }
-void mw_solve_gmres_ ( ){
-    ;
+void mw_set_sv_node_value_with_dof_(int* node_id, 
+        int* v_dof, double* v_value, int* s_dof, double* s_value)
+{
+    pMW->SetSVNodeValue(*node_id, *v_dof, *v_value, *s_dof, *s_value);
 }
-void mw_solve_bicgstab_ ( ){
-    ;
+void mw_get_sv_node_value_(int* node_id, double v_value[], double s_value[])
+{
+    pMW->GetSVNodeValue(*node_id, v_value, s_value);
 }
-void mw_solve_gpbicg_ ( ){
-    ;
-}
-
-//----
-// multigrid API
-//----
-void mw_solve_gmg_( int* cycle_type,  int* solve_type){
-    ;
-}
-
-//----
-// solver pre-process API
-//----
-void mw_pre_solve_ ( int*  pretype ){
-    ;
-}
-
-//----
-// direct solver API
-//----
-void mw_solve_direct_ ( ){
-    ;
+void mw_get_sv_node_value_with_dof_(int* node_id, 
+        int* v_dof, double* v_value, int* s_dof, double* s_value)
+{
+    pMW->GetSVNodeValue(*node_id, *v_dof, *v_value, *s_dof, *s_value);
 }
 
 
-//----
-// 10.essention API
-//----
-// Mesh data API
-void mw_get_number_of_assy_ ( int* num_of_assy){
-    ;
+// node size, element size
+int mw_get_num_of_node_()
+{
+    return (int)pMW->getNodeSize();
 }
-void mw_get_number_of_node_ ( int* assy_id,  int* num_of_node){
-    ;
+int mw_get_num_of_node_with_mesh_(int* imesh)
+{
+    unsigned int iMesh = *imesh;
+
+    return (int)pMW->getNodeSize(iMesh);
 }
-void mw_get_number_of_element_ ( int* assy_id,  int* num_of_element){
-    ;
+int mw_get_num_of_element_()
+{
+    return (int)pMW->getElementSize();
+}
+int mw_get_num_of_element_with_mesh_(int* imesh)
+{
+    unsigned int iMesh = *imesh;
+
+    return (int)pMW->getElementSize(iMesh);
 }
 
 //----
-// Element Type API
+// node type
 //----
-void mw_get_type_of_element_ (int* assy_id,  int* elem_id, int* element_type){
-    ;
+int mw_nodetype_s_()
+{
+    return pMW->nodetype_s();
 }
-void mw_get_number_of_local_node_(int* assy_id,  int* elem_id,  int* num_of_local_node){
-    ;
+int mw_nodetype_v_()
+{
+    return pMW->nodetype_v();
 }
-
+int mw_nodetype_sv_()
+{
+    return pMW->nodetype_sv();
+}
 //----
-// Node DOF Type API
+// element type
 //----
-void mw_get_type_of_node_ ( int* assy_id, int* elem_id,  int* local_node_id,  int* node_type){
-    ;
+int mw_elemtype_hexa_()
+{
+    return pMW->elemtype_hexa();
 }
-
-//----
-// Group API
-//----
-void mw_get_num_of_group_ ( int* group_type,  int* num_of_group){
-    ;
+int mw_elemtype_hexa2_()
+{
+    return pMW->elemtype_hexa2();
 }
-void mw_get_num_of_node_nodegroup_ (int*  group_id, int*  num_of_node){
-    ;
+int mw_elemtype_tetra_()
+{
+    return pMW->elemtype_tetra();
 }
-void mw_get_num_of_elem_elemgroup_ ( int* group_id, int*  num_of_element){
-    ;
+int mw_elemtype_tetra2_()
+{
+    return pMW->elemtype_tetra2();
 }
-void mw_get_node_index_ ( int* group_id,  int* node_index){
-    ;
+int mw_elemtype_prism_()
+{
+    return pMW->elemtype_prism();
 }
-void mw_get_elem_index_ ( int* group_id,  int* element_index){
-    ;
+int mw_elemtype_prism2_()
+{
+    return pMW->elemtype_prism2();
 }
-
-//----
-// Material API
-//----
-void mw_get_num_of_material_ ( int* num_of_material ){
-    ;
+int mw_elemtype_quad_()
+{
+    return pMW->elemtype_quad();
 }
-void mw_get_poisson_ (int* matrial_id,  double* poisson_val){
-    ;
+int mw_elemtype_quad2_()
+{
+    return pMW->elemtype_quad2();
 }
-void mw_get_young_coeff_ ( int* material_id,  double* val_e ){
-    ;
+int mw_elemtype_triangle_()
+{
+    return pMW->elemtype_triangle();
 }
-void mw_get_thermal_conduct_ (int*  material_id,   double* val_conductivity_k){
-    ;
+int mw_elemtype_triangle2_()
+{
+    return pMW->elemtype_triangle2();
 }
-void mw_get_thermal_expansion_ ( int* material_id,   double* val_expansion){
-    ;
+int mw_elemtype_line_()
+{
+    return pMW->elemtype_line();
 }
-
-//----
-// global info API
-//----
-void mw_get_max_ (int* val_type,  double* max_val){
-    ;
-}
-void mw_get_min_ (int* val_type, double* min_val){
-    ;
-}
-void mw_get_average_ (int* val_type,  double* ave_val){
-    ;
-}
-void mw_get_mw_sys_ (int* num_of_precess){
-    ;
-}
-
-//----
-// Section API
-//----
-
-void mw_get_section_prop_count_ ( int* section_tag_type, int*  num_of_section_property){
-    ;
-}
-void mw_get_section_prop_ (int* section_tag_type, int* sectin_prop_no,  double*  property){
-    ;
+int mw_elemtype_line2_()
+{
+    return pMW->elemtype_line2();
 }
 
 
+
+
 //----
-// 11.Utility PI
+// shape function
 //----
-void mw_get_memory_size_ (int* assy_id,  int* num_of_byte){
-    ;
+int mw_get_num_of_integ_point_(int* shape_type)
+{
+    unsigned int nShapeType = *shape_type;
+
+    return (int)pMW->NumOfIntegPoint(nShapeType);
+}
+void mw_shape_function_on_pt_(int* shape_type, int* igauss, double N[])
+{
+    unsigned int nShapeType = *shape_type;
+    unsigned int iGauss = *igauss;
+
+    pMW->ShapeFunc_on_pt(nShapeType, iGauss, N);
+}
+void mw_shape_function_hexa81_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Hexa81(*igauss, *ishape);
+}
+void mw_shape_function_hexa82_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Hexa82(*igauss, *ishape);
+}
+void mw_shape_function_hexa201_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Hexa201(*igauss, *ishape);
+}
+void mw_shape_function_hexa202_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Hexa202(*igauss, *ishape);
+}
+void mw_shape_function_hexa203_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Hexa203(*igauss, *ishape);
+}
+void mw_shape_function_tetra41_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Tetra41(*igauss, *ishape);
+}
+void mw_shape_function_tetra101_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Tetra101(*igauss, *ishape);
+}
+void mw_shape_function_tetra104_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Tetra104(*igauss, *ishape);
+}
+void mw_shape_function_tetra1015_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Tetra1015(*igauss, *ishape);
+}
+void mw_shape_function_prism62_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Prism62(*igauss, *ishape);
+}
+void mw_shape_function_prism156_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Prism156(*igauss, *ishape);
+}
+void mw_shape_function_prism159_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Prism159(*igauss, *ishape);
+}
+void mw_shape_function_prism1518_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Prism1518(*igauss, *ishape);
+}
+void mw_shape_function_quad41_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Quad41(*igauss, *ishape);
+}
+void mw_shape_function_quad84_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Quad84(*igauss, *ishape);
+}
+void mw_shape_function_quad89_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Quad89(*igauss, *ishape);
+}
+void mw_shape_function_tri31_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Triangle31(*igauss, *ishape);
+}
+void mw_shape_function_tri63_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Triangle63(*igauss, *ishape);
+}
+void mw_shape_function_line21_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Line21(*igauss, *ishape);
+}
+void mw_shape_function_line32_(int* igauss, int* ishape, double* N)
+{
+    *N = pMW->ShapeFunc_Line32(*igauss, *ishape);
+}
+
+
+//----
+// shape function deriv (rst coord)
+//----
+void mw_dndr_(int* shape_type, double dndr[])
+{
+    pMW->dNdr(*shape_type, dndr);
+}
+void mw_dndr_hexa81_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Hexa81_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_hexa82_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Hexa82_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_hexa201_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Hexa201_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_hexa202_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Hexa202_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_hexa203_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Hexa203_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tetra41_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tetra41_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tetra101_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tetra101_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tetra104_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tetra104_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tetra1015_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tetra1015_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_prism62_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Prism62_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_prism156_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Prism156_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_prism159_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Prism159_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_prism1518_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Prism1518_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_quad41_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Quad41_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_quad84_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Quad84_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_quad89_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Quad89_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tri31_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tri31_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_tri63_(int* igauss, int* ishape, int* iaxis, double* dndr)
+{
+    *dndr = pMW->dNdr_Tri63_on_pt_on_shape(*igauss, *ishape, *iaxis);
+}
+void mw_dndr_line21_(int* igauss, int* ishape, double* dndr)
+{
+    *dndr = pMW->dNdr_Line21_on_pt_on_shape(*igauss, *ishape);
+}
+void mw_dndr_line32_(int* igauss, int* ishape, double* dndr)
+{
+    *dndr = pMW->dNdr_Line32_on_pt_on_shape(*igauss, *ishape);
 }
 
 //----
-// Logger API
+// shape function deriv (xyz coord)
 //----
-void mw_logger_mode_ ( int* state_type){
-    ;
+void mw_dndx_(int* elem_type, int* num_of_integ, int* ielem, double dndx[])// [igauss][ishape][iaxis] : 積分点数 節点数 3(座標)
+{
+    pMW->dNdx(*elem_type, *num_of_integ, *ielem, dndx);
 }
-void mw_logger_property_ ( int* state_type,  int* output_type){
-    ;
+void mw_det_jacobian_(int* elem_type, int* num_of_integ, int* igauss, double* det_j)
+{
+    pMW->detJacobian(*elem_type, *num_of_integ, *igauss, *det_j);
 }
-void mw_logger_monitor_ ( int* state_type, int* id,  double* value, char* message, int* str_len){
-    ;
+void mw_weight_(int* elem_type, int* num_of_integ, int* igauss, double* w)
+{
+    pMW->Weight(*elem_type, *num_of_integ, *igauss, *w);
 }
-void mw_logger_info_ (int* state_type, char* message, int* str_len){
-    ;
+
+//----
+// shape function type
+//----
+int mw_shapetype_hexa81_()
+{
+    return pMW->shapetype_hexa81();
 }
+int mw_shapetype_hexa82_()
+{
+    return pMW->shapetype_hexa82();
+}
+int mw_shapetype_hexa201_()
+{
+    return pMW->shapetype_hexa201();
+}
+int mw_shapetype_hexa202_()
+{
+    return pMW->shapetype_hexa202();
+}
+int mw_shapetype_hexa203_()
+{
+    return pMW->shapetype_hexa203();
+}
+int mw_shapetype_tetra41_()
+{
+    return pMW->shapetype_tetra41();
+}
+int mw_shapetype_tetra101_()
+{
+    return pMW->shapetype_tetra101();
+}
+int mw_shapetype_tetra104_()
+{
+    return pMW->shapetype_tetra104();
+}
+int mw_shapetype_tetra1015_()
+{
+    return pMW->shapetype_tetra1015();
+}
+int mw_shapetype_prism62_()
+{
+    return pMW->shapetype_prism62();
+}
+int mw_shapetype_prism156_()
+{
+    return pMW->shapetype_prism156();
+}
+int mw_shapetype_prism159_()
+{
+    return pMW->shapetype_prism159();
+}
+int mw_shapetype_prism1518_()
+{
+    return pMW->shapetype_prism1518();
+}
+int mw_shapetype_quad41_()
+{
+    return pMW->shapetype_quad41();
+}
+int mw_shapetype_quad84_()
+{
+    return pMW->shapetype_quad84();
+}
+int mw_shapetype_quad89_()
+{
+    return pMW->shapetype_quad89();
+}
+int mw_shapetype_tri31_()
+{
+    return pMW->shapetype_tri31();
+}
+int mw_shapetype_tri63_()
+{
+    return pMW->shapetype_tri63();
+}
+int mw_shapetype_line21_()
+{
+    return pMW->shapetype_line21();
+}
+int mw_shapetype_line32_()
+{
+    return pMW->shapetype_line32();
+}
+
+
+//--
+// boundary mesh
+//--
+int mw_get_num_of_boundary_bnode_mesh_(){ return pMW->GetNumOfBoundaryNodeMesh();}
+int mw_get_num_of_boundary_bface_mesh_(){ return pMW->GetNumOfBoundaryFaceMesh();}
+int mw_get_num_of_boundary_bedge_mesh_(){ return pMW->GetNumOfBoundaryEdgeMesh();}
+int mw_get_num_of_boundary_bvolume_mesh_(){ return pMW->GetNumOfBoundaryVolumeMesh();}
+
+int mw_get_num_of_bnode_in_bnode_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BNodeMesh(*ibmesh);}
+int mw_get_num_of_bnode_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BFaceMesh(*ibmesh);}
+int mw_get_num_of_bnode_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BEdgeMesh(*ibmesh);}
+int mw_get_num_of_bnode_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BVolumeMesh(*ibmesh);}
+
+int mw_get_num_of_dof_in_bnode_mesh_(int* ibmesh, int* ibnode){ return pMW->GetNumOfDOF_BNodeMesh(*ibmesh, *ibnode);}
+int mw_get_num_of_dof_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BFaceMesh(*ibmesh);}
+int mw_get_num_of_dof_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BEdgeMesh(*ibmesh);}
+int mw_get_num_of_dof_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BVolumeMesh(*ibmesh);}
+//--
+// value of boundary node
+//--
+double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* idof)
+{
+    return pMW->GetBNodeValue_BNodeMesh(*ibmesh, *ibnode, *idof);
+}
+double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+{
+    return pMW->GetBNodeValue_BFaceMesh(*ibmesh, *ibnode, *idof, *mglevel);
+}
+double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+{
+    return pMW->GetBNodeValue_BEdgeMesh(*ibmesh, *ibnode, *idof, *mglevel);
+}
+double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+{
+    return pMW->GetBNodeValue_BVolumeMesh(*ibmesh, *ibnode, *idof, *mglevel);
+}
+// node id (in boundary node)
+int mw_get_node_id_in_bnode_mesh_(int* ibmesh, int* ibnode)
+{
+    return pMW->GetNodeID_BNode_BNodeMesh(*ibmesh, *ibnode);
+}
+int mw_get_node_id_in_bface_mesh_(int* ibmesh, int* ibnode)
+{
+    return pMW->GetNodeID_BNode_BFaceMesh(*ibmesh, *ibnode);
+}
+int mw_get_node_id_in_bedge_mesh_(int* ibmesh, int* ibnode)
+{
+    return pMW->GetNodeID_BNode_BEdgeMesh(*ibmesh, *ibnode);
+}
+int mw_get_node_id_in_bvolume_mesh_(int* ibmesh, int* ibnode)
+{
+    return pMW->GetNodeID_BNode_BVolumeMesh(*ibmesh, *ibnode);
+}
+//--
+// value of boundary face, edge, volume
+//--
+int mw_get_num_of_bface_(int* ibmesh)
+{
+    return pMW->GetNumOfBFace(*ibmesh);
+}
+double mw_get_bface_value_(int* ibmesh, int* ibface, int* idof)
+{
+    return pMW->GetBFaceValue(*ibmesh, *ibface, *idof);
+}
+int mw_get_num_of_bedge_(int* ibmesh)
+{
+    return pMW->GetNumOfBEdge(*ibmesh);
+}
+double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* idof)
+{
+    return pMW->GetBEdgeValue(*ibmesh, *ibedge, *idof);
+}
+int mw_get_num_of_bvolume_(int* ibmesh)
+{
+    return pMW->GetNumOfBVolume(*ibmesh);
+}
+double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof)
+{
+    return pMW->GetBVolumeValue(*ibmesh, *ibvol, *idof);
+}
+
+
+
+//--
+// mpi
+//--
+int mw_mpi_sum_(){ return MPI_SUM;}// op  ,use allreduce_r 
+int mw_mpi_max_(){ return MPI_MAX;}// op  ,use allreduce_r
+int mw_mpi_min_(){ return MPI_MIN;}// op  ,use allreduce_r
+
+void mw_allreduce_r_(double val[], int* val_size, int* op)
+{
+    double rval[*val_size];
+
+    pMW->AllReduce_R(val, rval, *val_size, MPI_DOUBLE, *op, MPI_COMM_WORLD);
+}
+void mw_send_recv_r2_(double buf[], int* dof_size)// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
+{
+    pMW->Send_Recv_R(buf, *dof_size);
+}
+void mw_send_recv_r_()// 通信Nodeの値を入れ替えて更新
+{
+    pMW->Send_Recv_R();
+}
+
+
+//----
+// logger
+//----
+void mw_logger_set_mode_(int* mode)
+{
+    pMW->LoggerMode(*mode);
+}
+void mw_logger_set_device_(int* mode, int* device)
+{
+    pMW->LoggerDevice(*mode, *device);
+}
+void mw_logger_info_ (int* mode, char* message, int* str_len)
+{
+    char cmsg[(size_t)*str_len];
+    strncpy(cmsg, message, (size_t)*str_len);
+
+    pMW->LoggerInfo(*mode, cmsg);
+}
+//----
+// logger parameter
+//----
+int mw_get_error_mode_()
+{
+    return pMW->getErrorMode();
+}
+int mw_get_warn_mode_()
+{
+    return pMW->getWarnMode();
+}
+int mw_get_info_mode_()
+{
+    return pMW->getInfoMode();
+}
+int mw_get_debug_mode_()
+{
+    return pMW->getDebugMode();
+}
+int mw_get_disk_device_()
+{
+    return pMW->getDiskDevice();
+}
+int mw_get_display_device_()
+{
+    return pMW->getDisplayDevice();
+}
+
+
+
+
+
+
+
+

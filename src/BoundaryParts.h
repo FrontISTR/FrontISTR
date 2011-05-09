@@ -37,8 +37,6 @@ protected:
 
     CElement *mpElement;//Boundaryが載ってる要素
 
-    Utility::CLogger *mpLogger;
-
 public:
     // 頂点(境界Node)
     void resizeBNode(const uint& res_size);

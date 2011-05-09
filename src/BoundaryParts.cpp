@@ -9,7 +9,7 @@ using namespace pmw;
 
 CBoundaryParts::CBoundaryParts()
 {
-    mpLogger= Utility::CLogger::Instance();
+    ;
 }
 CBoundaryParts::~CBoundaryParts()
 {

@@ -78,7 +78,7 @@ CAssyMatrix::CAssyMatrix(/* const */ CAssyModel *pAssyModel)
 			};
 		};
 		mvMPCMatrix.push_back(mpc);
-		printf("mvMPCMatrix.size() %d \n", mvMPCMatrix.size());
+		printf("mvMPCMatrix.size() %d \n", (uint)mvMPCMatrix.size());
 	};
 }
 

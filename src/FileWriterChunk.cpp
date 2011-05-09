@@ -45,8 +45,7 @@ void CFileWriterChunk::setSolutionType(const uint& nSolutionType)
     }
 }
 
-// method
-// --
+
 void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();

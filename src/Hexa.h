@@ -19,7 +19,6 @@ public:
 
 private:
     static uint mnElemType;
-    static uint mnElemType2;//2次要素
     static uint mNumOfFace;
     static uint mNumOfEdge;
     static uint mNumOfNode;
@@ -42,8 +41,8 @@ public:
 
     // EdgeNode(Pair Node)
     // --
-    virtual PairNode& getPairNode(const uint& edgeIndex);
-    virtual void getPairNode(vint& pairNodeIndex, const uint& edgeIndex);
+    virtual PairNode getPairNode(const uint& iedge);
+    virtual void getPairNode(vint& pairNodeIndex, const uint& iedge);
     virtual bool isEdgeElem(CNode* pNode0, CNode* pNode1);
     virtual void setBoolEdgeElem(CNode* pNode0, CNode* pNode1);
     //
@@ -51,19 +50,9 @@ public:
     virtual uint& getEdgeIndex(CNode* pNode0, CNode* pNode1);
     virtual uint& getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1);
 
-    // Face Element, Node
-    virtual void setFaceElement(CElement* pElem, const uint& faceIndex);
-    virtual void setFaceNode(CNode* pNode, const uint& faceIndex);
-    virtual CNode* getFaceNode(const uint& faceIndex);
-    virtual bool isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2);
-    virtual void setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2);
-
-
-    // FaceNode
+    // Face構成Node
     //
-    // vector<CNode*>& getFaceNode(const uint& faceIndex);
-    //
-    virtual void setupFaceCnvNodes();// mvvFaceCnvNodeのセットアップ   
+    virtual vector<CNode*> getFaceCnvNodes(const uint& iface);
 
 
     // Edge -> Face Index
@@ -72,12 +61,14 @@ public:
     virtual uint& getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2);
 
 
-    // Node周囲の接続先Nodeを配列で返す.
-    // (係数行列 作成用途, CMesh::setupAggregate)
+    // Node周囲の接続先Nodeを配列で返す.(係数行列 作成用途, CMesh::setupAggregate)
+    // 
     virtual vector<CNode*> getConnectNode(CNode* pNode);
 
 
-    // prolongation後の後始末
+    // Refine後
+    // 1. 辺-面 Element*配列を解放
+    // 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
     // --
     virtual void deleteProgData();
 };

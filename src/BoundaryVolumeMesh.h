@@ -29,6 +29,7 @@ protected:
     vector<CBoundaryVolume*> mvBVolume;
     map<uint, uint, less<uint> > mmBVolumeID2Index;
 
+    //(辺-面-体)にBNodeを生成して、Refineで使用
     vector<CBoundaryNode*> mvBEdgeBNode;
     vector<CBoundaryNode*> mvBFaceBNode;
     vector<CBoundaryNode*> mvBVolBNode;
@@ -59,13 +60,15 @@ public:
     void GeneFaceBNode();
     void GeneVolBNode();
 
-    CBoundaryNode* getEdgeBNode(const uint& iedge){  return mvBEdgeBNode[iedge];}// 辺BNode提供
-    CBoundaryNode* getFaceBNode(const uint& iface){  return mvBFaceBNode[iface];}// 面BNode提供
-    CBoundaryNode* getVolumeBNode(const uint& ivol){ return mvBVolBNode[ivol];}  // 体BNode提供
+//    CBoundaryNode* getEdgeBNode(const uint& iedge){  return mvBEdgeBNode[iedge];}// 辺BNode提供
+//    CBoundaryNode* getFaceBNode(const uint& iface){  return mvBFaceBNode[iface];}// 面BNode提供
+//    CBoundaryNode* getVolumeBNode(const uint& ivol){ return mvBVolBNode[ivol];}  // 体BNode提供
 
     // 境界要素の再分割 => progBMeshにセット
     // ----
     void refine(CBoundaryVolumeMesh *pProgBVolMesh);
+
+    void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
 
 protected:
     //Neumann条件の節点分配(形状関数による等価節点力:EquivalentNodeForce)

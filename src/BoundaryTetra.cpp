@@ -24,7 +24,7 @@ CBoundaryTetra::CBoundaryTetra()
     // ----
     uint i;
     // 辺
-    mvbMarkingEdge.resize(NumberOfEdge::Tetra());
+    mvbMarkingEdge = new bool[NumberOfEdge::Tetra()];
     for(i=0; i < NumberOfEdge::Tetra(); i++){
         mvbMarkingEdge[i]=false;
     };
@@ -32,7 +32,7 @@ CBoundaryTetra::CBoundaryTetra()
     mvEdgeNeibVol.resize(NumberOfEdge::Tetra());
 
     // 面
-    mvbMarkingFace.resize(NumberOfFace::Tetra());
+    mvbMarkingFace = new bool[NumberOfFace::Tetra()];
     for(i=0; i < NumberOfFace::Tetra(); i++){
         mvbMarkingFace[i]=false;
     };
@@ -65,7 +65,7 @@ uint CBoundaryTetra::getNumOfFace()
 
 // Edge番号 -> pariBNode
 //
-PairBNode& CBoundaryTetra::getPairBNode(const uint& iedge)
+PairBNode CBoundaryTetra::getPairBNode(const uint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -76,10 +76,11 @@ PairBNode& CBoundaryTetra::getPairBNode(const uint& iedge)
     uint index1st = pLocalNum[0];
     uint index2nd = pLocalNum[1];
 
-    mPairBNode.first = mvBNode[index1st];
-    mPairBNode.second= mvBNode[index2nd];
+    PairBNode pairBNode;
+    pairBNode.first = mvBNode[index1st];
+    pairBNode.second= mvBNode[index2nd];
 
-    return mPairBNode;
+    return pairBNode;
 }
 
 
@@ -98,7 +99,7 @@ uint& CBoundaryTetra::getEdgeID(PairBNode& pairBNode)
 
 // 面を構成するBNode配列
 //
-vector<CBoundaryNode*>& CBoundaryTetra::getFaceCnvNodes(const uint& iface)
+vector<CBoundaryNode*> CBoundaryTetra::getFaceCnvNodes(const uint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
     CBoundaryNode *pBNode;
@@ -108,16 +109,16 @@ vector<CBoundaryNode*>& CBoundaryTetra::getFaceCnvNodes(const uint& iface)
     pvIndex= pFaceTree->getLocalNodeTetraFace(iface);
     numOfVert= pFaceTree->getTetraFaceNumOfVert(iface);
 
-    mvFaceCnvNodes.clear();
-    mvFaceCnvNodes.reserve(numOfVert);
+    vector<CBoundaryNode*> vFaceCnvNodes;
+    vFaceCnvNodes.reserve(numOfVert);
 
     for(i=0; i < numOfVert; i++){
         ivert= pvIndex[i];
         pBNode= mvBNode[ivert];
-        mvFaceCnvNodes.push_back(pBNode);
+        vFaceCnvNodes.push_back(pBNode);
     }
 
-    return mvFaceCnvNodes;
+    return vFaceCnvNodes;
 }
 
 // BNode配列 -> Face番号
@@ -277,6 +278,20 @@ void CBoundaryTetra::distDirichletVal(const uint& dof, const uint& mgLevel)
     }
     if(mgLevel==0){
         mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+    }
+}
+
+
+// Refine 後処理 : 辺-面 BNode vectorの解放
+//
+void CBoundaryTetra::deleteProgData()
+{
+    if(mpElement->getType()==ElementType::Tetra){
+        vector<CBoundaryNode*>().swap(mvEdgeBNode);// 辺-BNode
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
+    }else{
+        // Tetra2
+        vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
     }
 }
 

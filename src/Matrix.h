@@ -16,11 +16,11 @@ class CVector;
 class CMatrix
 {
 public:
-	CMatrix();
-	virtual ~CMatrix();
+    CMatrix();
+    virtual ~CMatrix();
 
-	virtual void multVector(CVector *pV, CVector *pP) const = 0;
-	void residual(CVector *pV, const CVector *pF, CVector *pR) const;
+    virtual void multVector(CVector *pV, CVector *pP) const = 0;
+    void residual(CVector *pV, const CVector *pF, CVector *pR) const;
 
 private:
 };

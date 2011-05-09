@@ -10,7 +10,6 @@
 using namespace pmw;
 
 uint CQuad::mnElemType = ElementType::Quad;
-uint CQuad::mnElemType2= ElementType::Quad2;//2次要素
 uint CQuad::mNumOfFace = 1;
 uint CQuad::mNumOfEdge = 4;
 uint CQuad::mNumOfNode = 4;
@@ -19,33 +18,38 @@ uint CQuad::mNumOfNode = 4;
 CQuad::CQuad()
 {
     mvNode.resize(mNumOfNode);
-    mvInterNode.resize(mNumOfEdge + mNumOfFace);
-    mvvNeibElement.resize(mNumOfEdge + mNumOfFace);
+    mvvEdgeElement.resize(mNumOfEdge);
 
+    mvEdgeInterNode.resize(mNumOfEdge);
+
+    mvb_edge = new bool[mNumOfEdge];
     uint i;
-    for(i=mNumOfEdge; i < mNumOfEdge + mNumOfFace; i++){
-        mvvNeibElement[i].resize(1);//Faceに隣接する要素は1個に限定
-    }
+    for(i=0; i< mNumOfEdge; i++){
+      mvb_edge[i] = false;
+    };
 
-    // Edge, Face bool
+    mvFaceElement.resize(mNumOfFace);
+    mvFaceNode.resize(mNumOfFace);
+
+    mvb_face = new bool[mNumOfFace];
+    // Face ノード bool
     //
-    mvb_neib.reserve(mNumOfEdge + mNumOfFace);
-    for(i=0; i < mNumOfEdge + mNumOfFace; i++){
-        mvb_neib.push_back(false);
-    }
+    for(i=0; i< mNumOfFace; i++){
+        mvb_face[i] = false;
+    };
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
 
 
     //MPC属性
-    mvbMPCFace.resize(mNumOfFace);
+    mvbMPCFace = new bool[mNumOfFace];
     for(i=0; i< mNumOfFace; i++){
         mvbMPCFace[i]= false;
     };
 
     //通信界面(CommMesh2)属性:辺
-    mvbCommEntity.resize(mNumOfEdge);
+    mvbCommEntity = new bool[mNumOfEdge];
     for(i=0; i< mNumOfEdge; i++){
         mvbCommEntity[i]= false;
     };
@@ -99,37 +103,39 @@ bool CQuad::IndexCheck(const uint& propType, const uint& index, string& method_n
 
 // out:(PariNode edgeNode)
 //
-PairNode& CQuad::getPairNode(const uint& edgeIndex)
+PairNode CQuad::getPairNode(const uint& iedge)
 {
-    switch(edgeIndex){
+    PairNode pairNode;
+
+    switch(iedge){
         //surf 0
         case(0):
-            mEdgeNode.first=mvNode[0];
-            mEdgeNode.second=mvNode[1];
+            pairNode.first=mvNode[0];
+            pairNode.second=mvNode[1];
             break;
         case(1):
-            mEdgeNode.first=mvNode[1];
-            mEdgeNode.second=mvNode[2];
+            pairNode.first=mvNode[1];
+            pairNode.second=mvNode[2];
             break;
         case(2):
-            mEdgeNode.first=mvNode[2];
-            mEdgeNode.second=mvNode[3];
+            pairNode.first=mvNode[2];
+            pairNode.second=mvNode[3];
             break;
         case(3):
-            mEdgeNode.first=mvNode[3];
-            mEdgeNode.second=mvNode[0];
+            pairNode.first=mvNode[3];
+            pairNode.second=mvNode[0];
         default:
             break;
     }
 
-    return mEdgeNode;
+    return pairNode;
 }
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CQuad::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
+void CQuad::getPairNode(vint& pairNodeIndex, const uint& iedge)
 {
-    switch(edgeIndex){
+    switch(iedge){
         //surf 0 (low surf)
         case(0):
             pairNodeIndex[0]= mvNode[0]->getID();
@@ -157,20 +163,20 @@ void CQuad::getPairNode(vint& pairNodeIndex, const uint& edgeIndex)
 //
 uint& CQuad::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    getLocalNodeNum(pNode0, pNode1);//mvPairNodeLocalNumに値が入る.
-
+    uint id0, id1;//MeshでのノードのIndex番号
+    id0 = pNode0->getID();
+    id1 = pNode1->getID();
+    
+    
     CEdgeTree *edgeTree = CEdgeTree::Instance();
 
-    return edgeTree->getQuadEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Quad EdgeTree
+    return edgeTree->getQuadEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Quad EdgeTree
 }
 uint& CQuad::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
 {
-    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
-    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
-
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    return pEdgeTree->getQuadEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+    return pEdgeTree->getQuadEdgeIndex(mmIDLocal[nodeID_0], mmIDLocal[nodeID_1]);
 }
 
 
@@ -200,7 +206,7 @@ bool CQuad::isEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Quad
 
-    return mvb_neib[edgeNum];
+    return mvb_edge[edgeNum];
 }
 
 // EdgeElement集合がセットされていることをスタンプ
@@ -213,7 +219,7 @@ void CQuad::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     uint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Quad edge tree
 
-    mvb_neib[edgeNum]=true;// スタンプ
+    mvb_edge[edgeNum]=true;// スタンプ
 }
 
 
@@ -233,45 +239,6 @@ uint& CQuad::getLocalFaceNum(const vuint& vLocalNodeNum)
         mTempo=1;
     }
     return mTempo;
-}
-
-
-// Face Element
-//
-void CQuad::setFaceElement(CElement* pElem, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvvNeibElement[index][0]= pElem;
-}
-
-void CQuad::setFaceNode(CNode* pNode, const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    mvInterNode[index]= pNode;
-}
-
-CNode* CQuad::getFaceNode(const uint& faceIndex)
-{
-    uint index = mNumOfEdge + faceIndex;
-    return mvInterNode[index];
-}
-
-// 面(Face)に既に面ノードがセット済みかどうか
-//
-bool CQuad::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface= getFaceIndex(pNode0,pNode1,pNode2);
-
-    return mvb_neib[mNumOfEdge + iface];
-}
-
-// 面(Face)に面ノードがセットされたことをスタンプ
-//
-void CQuad::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
-{
-    uint iface = getFaceIndex(pNode0,pNode1,pNode2);
-
-    mvb_neib[mNumOfEdge + iface]=true;
 }
 
 //
@@ -310,21 +277,23 @@ uint& CQuad::getFaceIndex(const uint& edge0, const uint& edge1)
     return pTree->getQuadFaceIndex(edge0, edge1);
 }
 
-// mvvFaceCnvNodeのセットアップ
+// Face構成Node
 //
-void CQuad::setupFaceCnvNodes()
+vector<CNode*> CQuad::getFaceCnvNodes(const uint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CNode *pNode;
-    mvvFaceCnvNode.resize(1);
-    mvvFaceCnvNode[0].resize(4);
+    vector<CNode*> vFaceCnvNode;
+    vFaceCnvNode.resize(4);
     uint ivert;
 
     for(ivert=0; ivert< 4; ivert++){
         pNode= mvNode[ivert];
-        mvvFaceCnvNode[0][ivert]=pNode;
+        vFaceCnvNode[ivert]=pNode;
     };
+
+    return vFaceCnvNode;
 }
 
 
@@ -353,16 +322,31 @@ vector<CNode*> CQuad::getConnectNode(CNode* pNode)
 }
 
 
-// prolongation後の後始末
-// --
+//
+// 1. 辺-面 Element*配列を解放
+// 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
+//
 void CQuad::deleteProgData()
 {
-    CElement::deleteProgData();
+    // Edge
+    uint iedge;
+    for(iedge=0; iedge < mNumOfEdge; iedge++){
+        vector<CElement*>().swap(mvvEdgeElement[iedge]);
+    };
+    vector<vector<CElement*> >().swap(mvvEdgeElement);
+    vector<CNode*>().swap(mvEdgeInterNode);//2次要素の場合は残すこと
+    delete []mvb_edge;
 
-    // 辺ノード クリア(ポインターはそのまま、削除しない)
-    mvInterNode.clear();
+
+    // Face
+    vector<CElement*>().swap(mvFaceElement);
+    vector<CNode*>().swap(mvFaceNode);
+    delete []mvb_face;
+
+
+    delete []mvbMPCFace;   // 面番号のどれがMPCするのか
+    delete []mvbCommEntity;// CommMesh2の属性
 }
-
 
 
 

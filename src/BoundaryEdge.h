@@ -21,7 +21,7 @@ protected:
     uint mnElemEdgeID;//エンティティ:Mesh-Element-Edge-ID
     CBoundaryNode *mpEdgeBNode;// 辺中心のBNode
 
-    PairBNode mPairBNode;
+    //PairBNode mPairBNode;
 
     vector<CBoundaryEdge*> mvProgBEdge;
 
@@ -40,7 +40,7 @@ public:
     CBoundaryNode* getEdgeBNode(){ return mpEdgeBNode;}
 
     // 辺の両端のBNode
-    PairBNode& getPairBNode();
+    PairBNode getPairBNode();
 
     // 辺Nodeを,辺BoundaryNodeにセット
     void setupNode();
