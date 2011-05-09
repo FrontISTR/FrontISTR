@@ -44,6 +44,12 @@ CHexa::CHexa(void):CSolidBase()
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
+
+    //MPC属性
+    mvbMPCFace.resize(mNumOfFace);
+    for(i=0; i< mNumOfFace; i++){
+        mvbMPCFace[i]= false;
+    };
 }
 
 CHexa::~CHexa(void)
@@ -257,6 +263,15 @@ uint& CHexa::getEdgeIndex(CNode* pNode0, CNode* pNode1)
     //pLogger->Info(Utility::LoggerMode::MWDebug,"CHexa::getEdgeIndex,  edgeIndex => ",edgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0],mvPairNodeLocalNum[1]));
 
     return edgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Hexa 辺ツリー
+}
+uint& CHexa::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+{
+    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
+    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
+
+    CEdgeTree *pEdgeTree= CEdgeTree::Instance();
+
+    return pEdgeTree->getHexaEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
 }
 
 // EdgeElement集合がセット済みか?

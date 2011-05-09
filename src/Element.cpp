@@ -21,6 +21,11 @@ CElement::CElement(void)
     mbRComm=false;//デフォルトは,RCommElementではない(CommMeshに含まれているが,Nodeが全てmyRank)
 
     mCommID= -1;
+
+
+    //MPC属性
+    mbMaster=false;
+    mbSlave= false;
 }
 
 CElement::~CElement(void)
@@ -119,6 +124,19 @@ void CElement::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
     mvb_face[iface]=true;
 }
+
+
+// 子要素をNodeIDから提供する -> CSkinFace::refine()で利用
+// 
+CElement* CElement::getProgElem_NodeID(const uint& nodeID)
+{
+    uint ivert= mmIDLocal[nodeID];//NodeID -> 局所番号に変換
+    
+    return mvProgElement[ivert];
+}
+
+
+
 
 
 

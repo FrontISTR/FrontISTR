@@ -1,3 +1,6 @@
+
+#include <vector>
+
 //
 //  FileReaderChank.cpp
 //
@@ -5,6 +8,7 @@
 //			2008.12.09
 //			k.Takeda
 #include "FileReaderChunk.h"
+#include "FileReaderContactMesh.h"
 using namespace FileIO;
 
 // Constructor
@@ -34,6 +38,8 @@ CFileReaderChunk::CFileReaderChunk()
     mvReader.push_back(new CFileReaderCommMesh);
     mvReader.push_back(new CFileReaderCommNode);
     mvReader.push_back(new CFileReaderCommElement);
+
+    mvReader.push_back(new CFileReaderContactMesh);
 }
 // Destructor
 //

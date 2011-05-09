@@ -23,5 +23,21 @@ CAssyModel::~CAssyModel(void)
     cout << "~CAssyModel" << endl;
 }
 
+// Bucket経由によって,MeshID番号からMeshを取得
+//
+CMesh* CAssyModel::getMesh_ID(const uint& id)
+{
+    uint index= moBucketMesh.getIndexMesh(id);
 
+    return mvMesh[index];
+}
 
+// ContactMeshの追加
+// --
+void CAssyModel::addContactMesh(CContactMesh* pContactMesh, const uint& id)
+{
+    mvContactMesh.push_back(pContactMesh);
+
+    uint index= mvContactMesh.size()-1;
+    mmContactID2Index[id]= index;
+}

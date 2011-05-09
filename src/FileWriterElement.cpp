@@ -102,11 +102,6 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
            
            pElem= pMesh->getElementIX(ii);
 
-           ////debug
-           //cout << "pElem->getID => " << pElem->getID() << endl;
-           //cout << "Type         => " << pElem->getType() << endl;
-           //cout << "pElem->getNumOfNode => " << pElem->getNumOfNode() << endl;
-
            //ofs << pMesh->getMeshID() << white
            ofs << white  //Visualでの確認の為にMeshID出力はとりあえず中止
                << pElem->getID() << white
@@ -115,9 +110,6 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
            numOfNode= pElem->getNumOfNode();
            for(iii=0; iii< numOfNode; iii++){
                pNode= pElem->getNode(iii);
-
-               ////debug
-               //if(!pNode) cout << "pNode is NULL, index=" << iii << endl;
 
                ofs << pNode->getID() << white;
            };

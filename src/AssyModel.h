@@ -1,20 +1,23 @@
 //
-//  
+//  AssyModel.h
 //
 //
 //
 //
-//			2009.03.24
+//			2009.10.16
 //			2008.11.10
 //			k.Takeda
 #ifndef MODEL_HH_AF0F9F8A_E352_4c02_B787_1F8D3BD9D0C6
 #define MODEL_HH_AF0F9F8A_E352_4c02_B787_1F8D3BD9D0C6
 
 #include "CommonStd.h"
+#include "TypeDef.h"
 
 #include "Mesh.h"
 #include "ContactMesh.h"
 #include "IndexBucketMesh.h"
+
+#include <map>
 
 namespace pmw{
 class CAssyModel
@@ -24,7 +27,9 @@ public:
     virtual ~CAssyModel(void);
 
 protected:
+    uint mMaxMeshID,mMinMeshID;
     CIndexBucketMesh moBucketMesh;// Mesh_ID -> index
+    map<uint, uint, less<uint> > mmContactID2Index;//ContactMesh ID -> index
 
     vector<CMesh*> mvMesh;
     vector<CContactMesh*> mvContactMesh;
@@ -42,20 +47,27 @@ public:
     void   setMesh(CMesh *pMesh, const uint& i){  mvMesh[i] = pMesh;}
     CMesh* getMesh(const uint& index){ return mvMesh[index];}
     uint   getNumOfMesh(){ return mvMesh.size();}
+    CMesh* getMesh_ID(const uint& id);
 
 
     // ContactMesh
-    void  addContactMesh(CContactMesh *pContactMesh){ mvContactMesh.push_back(pContactMesh);}
-    void  resizeContactMesh(const uint& size){  mvContactMesh.resize(size);}
-    void  setContactMesh(CContactMesh *pContactMesh, const uint& i){ mvContactMesh[i] = pContactMesh;}
+    void  addContactMesh(CContactMesh *pContactMesh, const uint& id);
+    void  resizeContactMesh(const uint& res_size){  mvContactMesh.resize(res_size);}
+    void  setContactMesh(CContactMesh *pContactMesh, const uint& index, const uint& id){ mvContactMesh[index]= pContactMesh; mmContactID2Index[id]=index;}
 
-    CContactMesh* getContactMesh(const uint& i){  return mvContactMesh[i];}
-
+    CContactMesh* getContactMesh(const uint& index){  return mvContactMesh[index];}
+    CContactMesh* getContactMesh_ID(const uint& id){ uint i= mmContactID2Index[id]; return mvContactMesh[i];}
+    uint getNumOfContactMesh(){ return mvContactMesh.size();}
 
     // IndexBucketMesh in AssyModel
     void intializeBucket(const uint& maxID, const uint& minID){ moBucketMesh.Initialize(maxID, minID); }
     void setBucket(const uint& id, const uint& index){ moBucketMesh.setIndexMesh(id, index); }
 
+    // MeshIDの最大-最小
+    void setMaxMeshID(const uint& maxID){ mMaxMeshID= maxID;}
+    uint& getMaxMeshID(){ return mMaxMeshID;}
+    void setMinMeshID(const uint& minID){ mMinMeshID= minID;}
+    uint& getMinMeshID(){ return mMinMeshID;}
 };
 }
 #endif

@@ -55,6 +55,7 @@ public:
     uint& getQuadEdgeIndex(const uint& localNum0, const uint& localNum1);
     uint& getTriangleEdgeIndex(const uint& localNum0, const uint& localNum1);
     uint& getBeamEdgeIndex(const uint& localNum0, const uint& localNum1);
+    uint& getDisagTypeEdgeIndex(const uint& localNum0, const uint& localNum1);
     
     // 辺(Edge)番号から,端点の局所ノード番号を提供
     uint* getHexaLocalNodeNum(const uint& edgeNum){ return mHexaEdgeIndex[edgeNum];}

@@ -7,7 +7,6 @@
 //                      2009.06.19
 //                      k.Takeda
 #include <vector>
-
 #include "Element.h"
 
 #include "CommElement.h"
@@ -24,6 +23,8 @@ CCommMesh::CCommMesh(CIndexBucket* pBucket)
 }
 CCommMesh::~CCommMesh()
 {
+    for_each(mvCommElementAll.begin(), mvCommElementAll.end(), DeleteObject());
+
     //debug
     std::cout << "~CCommMesh" << std::endl;
 }

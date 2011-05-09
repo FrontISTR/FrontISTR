@@ -40,6 +40,13 @@ CTriangle::CTriangle()
 
     //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
+
+
+    //MPC属性
+    mvbMPCFace.resize(mNumOfFace);
+    for(i=0; i< mNumOfFace; i++){
+        mvbMPCFace[i]= false;
+    };
 }
 
 //
@@ -144,6 +151,16 @@ uint& CTriangle::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 
     return edgeTree->getTriangleEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Triangle Edge Tree
 }
+uint& CTriangle::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+{
+    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
+    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
+
+    CEdgeTree *pEdgeTree= CEdgeTree::Instance();
+
+    return pEdgeTree->getTriangleEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+}
+
 
 // EdgeElement集合がセット済みか?
 //

@@ -1,6 +1,6 @@
 //
-//
-//			2008.09.28
+//  Mesh.h
+//			2009.10.15
 //			2008.11.10
 //			k.Takeda
 #ifndef MESH_HH_C77868BF_2116_41b3_B667_59BA392FCC5C
@@ -36,6 +36,7 @@
 
 #include "QuickSort.h"
 
+
 // Edge
 typedef std::pair<pmw::CNode*,pmw::CNode*> PairNode;
 
@@ -61,10 +62,10 @@ protected:
     uint mNodeEndIndex;//mvNode内の計算領域の終端Index(サイズ)  <= 計算に使用する配列数
     uint mElemEndIndex;//mvElement内の計算領域の終端Index(サイズ) <= 計算に使用する配列数
 
-    // Node, Elementのハッシュ "ID => Index" '09.09.28
-    // --
-    map<uint, uint, less<uint> > mmNodeIndex;
-    map<uint, uint, less<uint> > mmElementIndex;
+    //    // Node, Elementのハッシュ "ID => Index"  <- IndexBucketがあるので不要
+    //    // --
+    //    map<uint, uint, less<uint> > mmNodeIndex;
+    //    map<uint, uint, less<uint> > mmElementIndex;
 
 
     // 節点集合Node, 節点集合Element
@@ -100,6 +101,9 @@ protected:
     BoundaryGroup<CBoundaryVolume*> mBoundaryVolumes;
 
 
+    //prolongater用-変数セットアップ
+    void setupParentsNode(CNode* pNode0, CNode* pNode1, CNode* inNode);//辺から生成されるNodeの親Nodeにセット
+    void setupParentsNode(vector<CNode*>& vNode, CNode* inNode);//面,体から生成されるNodeの親Nodeをセット
 
     //debug 用途 dummy counter
     uint mnDummyCount;
@@ -232,6 +236,23 @@ public:
     //  => prolongation時に発生 -> Factory::refineMesh()からコール
     // --
     void sortMesh();
+
 };
 }
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

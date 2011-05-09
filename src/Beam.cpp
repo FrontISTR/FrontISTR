@@ -105,11 +105,22 @@ uint& CBeam::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
     getLocalNodeNum(pNode0, pNode1);//mvPairNodeLocalNumに値が入る.
 
-    // Beam要素なので、”Edge_Index=0” 
+    // Beam要素なので,”Edge_Index=0”
     CEdgeTree *edgeTree = CEdgeTree::Instance();
     
     return edgeTree->getBeamEdgeIndex(mvPairNodeLocalNum[0],mvPairNodeLocalNum[1]);
 }
+uint& CBeam::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+{
+    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
+    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
+
+    CEdgeTree *pEdgeTree= CEdgeTree::Instance();
+    // Beam要素なので,”Edge_Index=0” だが,参照で返したいので,わざわざTreeを呼んでいる.
+    //
+    return pEdgeTree->getBeamEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
+}
+
 
 // EdgeElement集合がセット済みか?
 //

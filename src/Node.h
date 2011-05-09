@@ -27,12 +27,15 @@ protected:
 
     //// Arbitrary DOF (任意自由度) 変数コンテナー
     // vvdouble mvvArbitVar;
-
+    //
     // Solid :tx,ty,tz
     // Shell :tx,ty,tz, rx,ry,rz
     //
     // Solid: x, y, z, xy, yz, zx
     // Shell: Mx,My,Mxy,Qx,Qy
+    //
+    // ---> VectorNode,ScalarNode,VectorScalarNode に移設.
+
 
     uint mMGLevel;//MultiGrid Level
 
@@ -41,6 +44,11 @@ protected:
     //vector<vector<CNode*> >   mvvConnNode;// ConnectionNodes, 1st_index => MGLevel
     //vector<vector<uint> > mvvConnElemIndex;// ConnectionNodes, 1st_index => MGlevel
 
+    
+    // prolongater プロロンゲーター用
+    // 
+    vector<CNode*> mParentsNode;//refine時にNodeの親となったNode
+    
 public:
     // Node ID == Vertex ID
 
@@ -75,7 +83,14 @@ public:
     virtual uint numOfScalarParam()=0;
     virtual uint numOfVectorParam()=0;
 
+    
+    // prolongater
+    vector<CNode*>& getParentsNode(){ return mParentsNode;}
+    CNode* getParentsNode(const uint& index){ return mParentsNode[index];}
 
+    void reserveParentsNode(const uint& res_size){ mParentsNode.reserve(res_size);}
+    void addParentsNode(CNode* pNode){ mParentsNode.push_back(pNode);}
+    uint getNumOfParentsNode(){ return mParentsNode.size();}
 };
 }
 #endif

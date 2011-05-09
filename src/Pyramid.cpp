@@ -42,6 +42,13 @@ CPyramid::CPyramid()
 
     //CommElementのprolongation用
     mvProgElement.resize(8);//Hexa==4個,Pyramid==4個
+
+
+    //MPC属性
+    mvbMPCFace.resize(mNumOfFace);
+    for(i=0; i< mNumOfFace; i++){
+        mvbMPCFace[i]= false;
+    };
 }
 
 CPyramid::~CPyramid()
@@ -184,6 +191,15 @@ uint& CPyramid::getEdgeIndex(CNode* pNode0, CNode* pNode1)
     CEdgeTree *edgeTree = CEdgeTree::Instance();
 
     return edgeTree->getPyramidEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);//Pyramid Edge Tree
+}
+uint& CPyramid::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+{
+    mvPairNodeLocalNum[0]= mmIDLocal[nodeID_0];
+    mvPairNodeLocalNum[1]= mmIDLocal[nodeID_1];
+
+    CEdgeTree *pEdgeTree= CEdgeTree::Instance();
+
+    return pEdgeTree->getPyramidEdgeIndex(mvPairNodeLocalNum[0], mvPairNodeLocalNum[1]);
 }
 
 

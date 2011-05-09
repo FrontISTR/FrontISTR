@@ -41,30 +41,30 @@ namespace FileIO{
 struct FileBlockName{
     // Cnt
     // --
-    static const char* StartMeshFileName(){ return "StartMeshFileName";}
-    static const char* EndMeshFileName(){ return "EndMeshFileName";}
+    static const char* StartMeshFileName(){ return "MeshFileName";}
+    static const char* EndMeshFileName(){ return "End";}
 
 
     // Mesh
     // ----
     // Node
-    static const char* StartNode(){ return "StartNode";}
-    static const char* EndNode(){ return "EndNode";}
+    static const char* StartNode(){ return "Node";}
+    static const char* EndNode(){ return "End";}
     // Element
-    static const char* StartElement(){ return "StartElement";}
-    static const char* EndElement(){ return "EndElement";}
+    static const char* StartElement(){ return "Element";}
+    static const char* EndElement(){ return "End";}
     // BoundaryNode
-    static const char* StartBoundaryNode(){ return "StartBoundaryNode";}
-    static const char* EndBoundaryNode(){ return "EndBoundaryNode";}
+    static const char* StartBoundaryNode(){ return "BoundaryNode";}
+    static const char* EndBoundaryNode(){ return "End";}
     // BoundaryFace
-    static const char* StartBoundaryFace(){ return "StartBoundaryFace";}
-    static const char* EndBoundaryFace(){ return "EndBoundaryFace";}
+    static const char* StartBoundaryFace(){ return "BoundaryFace";}
+    static const char* EndBoundaryFace(){ return "End";}
     // BoundaryVolume
-    static const char* StartBoundaryVolume(){ return "StartBoundaryVolume";}
-    static const char* EndBoundaryVolume(){ return "EndBoundaryVolume";}
+    static const char* StartBoundaryVolume(){ return "BoundaryVolume";}
+    static const char* EndBoundaryVolume(){ return "End";}
     // Material
-    static const char* StartMaterial(){ return "StartMaterial";}
-    static const char* EndMaterial(){ return "EndMaterial";}
+    static const char* StartMaterial(){ return "Material";}
+    static const char* EndMaterial(){ return "End";}
 
 
 
@@ -73,14 +73,14 @@ struct FileBlockName{
     // Communication
     // --
     // CommMesh
-    static const char* StartCommMesh(){ return "StartCommMesh";}
-    static const char* EndCommMesh(){ return "EndCommMesh";}
+    static const char* StartCommMesh(){ return "CommMesh";}
+    static const char* EndCommMesh(){ return "End";}
     // CommNode
-    static const char* StartCommNode(){ return "StartCommNode";}
-    static const char* EndCommNode(){ return "EndCommNode";}
+    static const char* StartCommNode(){ return "CommNode";}
+    static const char* EndCommNode(){ return "End";}
     // CommElement
-    static const char* StartCommElement(){ return "StartCommElement";}
-    static const char* EndCommElement(){ return "EndCommElement";}
+    static const char* StartCommElement(){ return "CommElement";}
+    static const char* EndCommElement(){ return "End";}
 
 
 
@@ -88,18 +88,18 @@ struct FileBlockName{
     // GMGModel
     //  MultiGrid Model
     // --
-    static const char* StartRefine(){ return "StartRefine";}
-    static const char* EndRefine(){ return "EndRefine";}
+    static const char* StartRefine(){ return "Refine";}
+    static const char* EndRefine(){ return "End";}
     // AssyModel(Assembly Model)
-    static const char* StartAssyModel(){ return "StartAssyModel";}
-    static const char* EndAssyModel(){ return "EndAssyModel";}
+    static const char* StartAssyModel(){ return "AssyModel";}
+    static const char* EndAssyModel(){ return "End";}
     // Mesh(Part)
-    static const char* StartMesh(){ return "StartMesh";}
-    static const char* EndMesh(){ return "EndMesh";}
+    static const char* StartMesh(){ return "Mesh";}
+    static const char* EndMesh(){ return "End";}
     // ContactMesh(Interface)
-    static const char* StartContactMesh(){ return "StartContactMesh";}
-    static const char* EndContactMesh(){ return "EndContactMesh";}
-
+    static const char* StartContactMesh(){ return "ContactMesh";}
+    static const char* EndContactMesh(){ return "End";}
+    
 };
 }
 #endif

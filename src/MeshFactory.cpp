@@ -1,11 +1,17 @@
 
-#include "CommunicationMesh.h"
-#include "ProgElementTree.h"
-#include "CommElement.h"
+#include <vector>
+
+#include "FaceTree.h"
+#include "EdgeTree.h"
+#include "ContactNode.h"
+#include "ContactMesh.h"
 #include "AssyModel.h"
+
+
 #include "Element.h"
+
+
 #include "Mesh.h"
-#include "GMGModel.h"
 
 //
 //  MeshFactory.cpp
@@ -16,6 +22,7 @@
 //			2008.11.05
 //			k.Takeda
 #include "MeshFactory.h"
+#include "SkinFace.h"
 using namespace pmw;
 
 // construct & destruct
@@ -77,28 +84,22 @@ void CMeshFactory::refineMesh()
     for(ilevel=0; ilevel< mMGLevel; ilevel++){
         
         pAssy= mpGMGModel->getAssyModel(ilevel);
-
-        //debug
-        cout << "pAssy MultiGrid Level= " << pAssy->getMGLevel() << endl;
-
         
         // prolongation AssyModel
         //
         pProgAssy= mpGMGModel->getAssyModel(ilevel+1);//FileReadRefineブロックでAssyModelは生成済み
         pProgAssy->resizeMesh(numOfMesh);
+
+        pProgAssy->intializeBucket(pAssy->getMaxMeshID(),pAssy->getMinMeshID());//逆引き配列の領域確保
+        pProgAssy->setMaxMeshID(pAssy->getMaxMeshID());
+        pProgAssy->setMinMeshID(pAssy->getMinMeshID());
         // ---
         // Mesh(パーツ) ループ in AssyMode
         // ---
         for(imesh=0; imesh< numOfMesh; imesh++){
 
-            //debug
-            cout << "CMeshFactory::refineMesh, ilevel = " << ilevel << endl;
-            cout << "CMeshFactory::refineMesh, imesh  = " << imesh  << endl;
-
             pMesh= pAssy->getMesh(imesh);//Current_Level Mesh(最初期はLevel==0：ファイル読み込み時)
-
-            //debug
-            cout << "pMesh MultiGrid Level= " << pMesh->getMGLevel() << endl;
+            pProgAssy->setBucket(pMesh->getMeshID(), imesh);//progAssyの逆引きに"id-index"をセット
             
             // <<<< start ::pProgMeshの生成処理 >>>>
             //
@@ -378,9 +379,6 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     //    uint numOfVert,numOfEdge,numOfFace;//各要素の属性(分割の際に使用)
     //    numOfVert= NumberOfVertex::Hexa(); numOfFace= NumberOfFace::Hexa(); numOfEdge= NumberOfEdge::Hexa();
 
-    ////debug
-    //cout << "dividHexa start" << endl;
-
     uint i;
     //頂点のノード
     vVertNode.resize(8); for(i=0; i< 8; i++){ vVertNode[i] = pElem->getNode(i);}
@@ -407,7 +405,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[1]->setNode(vFaceNode[4],4); vProgElem[1]->setNode(vEdgeNode[9],5);
     vProgElem[1]->setNode(vFaceNode[2],6); vProgElem[1]->setNode(pVolNode,    7);
 
-    pElem->setProgElem(vProgElem[1], 1);
+    pElem->setProgElem(vProgElem[1], 1);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 2
     vProgElem[2]->setNode(vEdgeNode[8],0); vProgElem[2]->setNode(vFaceNode[4],1);
@@ -415,7 +413,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[2]->setNode(vVertNode[4],4); vProgElem[2]->setNode(vEdgeNode[4],5);
     vProgElem[2]->setNode(vFaceNode[1],6); vProgElem[2]->setNode(vEdgeNode[7],7);
 
-    pElem->setProgElem(vProgElem[2], 4);
+    pElem->setProgElem(vProgElem[2], 4);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 3
     vProgElem[3]->setNode(vFaceNode[4],0); vProgElem[3]->setNode(vEdgeNode[9],1);
@@ -423,7 +421,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[3]->setNode(vEdgeNode[4],4); vProgElem[3]->setNode(vVertNode[5],5);
     vProgElem[3]->setNode(vEdgeNode[5],6); vProgElem[3]->setNode(vFaceNode[1],7);
     
-    pElem->setProgElem(vProgElem[3], 5);
+    pElem->setProgElem(vProgElem[3], 5);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 4
     vProgElem[4]->setNode(vEdgeNode[3],0); vProgElem[4]->setNode(vFaceNode[0],1);
@@ -431,7 +429,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[4]->setNode(vFaceNode[3],4); vProgElem[4]->setNode(pVolNode,    5);
     vProgElem[4]->setNode(vFaceNode[5],6); vProgElem[4]->setNode(vEdgeNode[11],7);
     
-    pElem->setProgElem(vProgElem[4], 3);
+    pElem->setProgElem(vProgElem[4], 3);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 5
     vProgElem[5]->setNode(vFaceNode[0],0); vProgElem[5]->setNode(vEdgeNode[1],1);
@@ -439,7 +437,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[5]->setNode(pVolNode,    4); vProgElem[5]->setNode(vFaceNode[2],5);
     vProgElem[5]->setNode(vEdgeNode[10],6);vProgElem[5]->setNode(vFaceNode[5],7);
     
-    pElem->setProgElem(vProgElem[5], 2);
+    pElem->setProgElem(vProgElem[5], 2);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 6
     vProgElem[6]->setNode(vFaceNode[3],0); vProgElem[6]->setNode(pVolNode,    1);
@@ -447,7 +445,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[6]->setNode(vEdgeNode[7],4); vProgElem[6]->setNode(vFaceNode[1],5);
     vProgElem[6]->setNode(vEdgeNode[6],6); vProgElem[6]->setNode(vVertNode[7],7);
     
-    pElem->setProgElem(vProgElem[6], 7);
+    pElem->setProgElem(vProgElem[6], 7);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     // 要素 7
     vProgElem[7]->setNode(pVolNode,    0); vProgElem[7]->setNode(vFaceNode[2],1);
@@ -455,7 +453,7 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
     vProgElem[7]->setNode(vFaceNode[1],4); vProgElem[7]->setNode(vEdgeNode[5],5);
     vProgElem[7]->setNode(vVertNode[6],6); vProgElem[7]->setNode(vEdgeNode[6],7);
     
-    pElem->setProgElem(vProgElem[7], 6);
+    pElem->setProgElem(vProgElem[7], 6);//CommElemのために頂点番号(vVertNode)順に親ElemにProgElemをセット
 
     
     // IDのセット
@@ -467,10 +465,82 @@ void CMeshFactory::dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint
         pProgMesh->setElement(vProgElem[i]);
     };
 
-    ////debug
-    //cout << "dividHexa end" << endl;
-
+    // MPC面の属性セット
+    uint iface;
+    if(pElem->isMPCMaster()){
+        for(iface=0; iface< 8; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        setProgHexaMPCMaster(vProgElem, iface, 0,1,4,5);//Face_0 に生成される子要素:vProgElemの配列番号0,1,4,5
+                        break;
+                    case(1):
+                        setProgHexaMPCMaster(vProgElem, iface, 2,3,6,7);//Face_1 に生成される子要素:vProgElemの配列番号2,3,6,7
+                        break;
+                    case(2):
+                        setProgHexaMPCMaster(vProgElem, iface, 1,3,5,7);//Face_2 に生成される子要素:vProgElemの配列番号1,3,5,7
+                        break;
+                    case(3):
+                        setProgHexaMPCMaster(vProgElem, iface, 0,2,4,6);//Face_3 に生成される子要素:vProgElemの配列番号0,2,4,6
+                        break;
+                    case(4):
+                        setProgHexaMPCMaster(vProgElem, iface, 0,1,2,3);//Face_4 に生成される子要素:vProgElemの配列番号0,1,2,3
+                        break;
+                    case(5):
+                        setProgHexaMPCMaster(vProgElem, iface, 4,5,6,7);//Face_5 に生成される子要素:vProgElemの配列番号4,5,6,7
+                        break;
+                }
+            }
+        };
+    }
+    if(pElem->isMPCSlave()){
+        for(iface=0; iface< 8; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        setProgHexaMPCSlave(vProgElem, iface, 0,1,4,5);
+                        break;
+                    case(1):
+                        setProgHexaMPCSlave(vProgElem, iface, 2,3,6,7);
+                        break;
+                    case(2):
+                        setProgHexaMPCSlave(vProgElem, iface, 1,3,5,7);
+                        break;
+                    case(3):
+                        setProgHexaMPCSlave(vProgElem, iface, 0,2,4,6);
+                        break;
+                    case(4):
+                        setProgHexaMPCSlave(vProgElem, iface, 0,1,2,3);
+                        break;
+                    case(5):
+                        setProgHexaMPCSlave(vProgElem, iface, 4,5,6,7);
+                        break;
+                }
+            }
+        };
+    }
+    
 }
+
+// MPC面の属性をprogElemにセット
+// --
+// マスター
+void CMeshFactory::setProgHexaMPCMaster(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l)
+{
+    vProgElem[i]->markingMPCMaster(); vProgElem[i]->markingMPCFace(iface);
+    vProgElem[j]->markingMPCMaster(); vProgElem[j]->markingMPCFace(iface);
+    vProgElem[k]->markingMPCMaster(); vProgElem[k]->markingMPCFace(iface);
+    vProgElem[l]->markingMPCMaster(); vProgElem[l]->markingMPCFace(iface);
+}
+// スレーブ
+void CMeshFactory::setProgHexaMPCSlave(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l)
+{
+    vProgElem[i]->markingMPCSlave(); vProgElem[i]->markingMPCFace(iface);
+    vProgElem[j]->markingMPCSlave(); vProgElem[j]->markingMPCFace(iface);
+    vProgElem[k]->markingMPCSlave(); vProgElem[k]->markingMPCFace(iface);
+    vProgElem[l]->markingMPCSlave(); vProgElem[l]->markingMPCFace(iface);
+}
+
 // 4面体の分割
 //
 void CMeshFactory::dividTetra(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
@@ -549,7 +619,68 @@ void CMeshFactory::dividTetra(CElement* pElem, vector<CElement*>& vProgElem, uin
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    // MPC面の属性セット
+    uint iface;
+    if(pElem->isMPCMaster()){
+        for(iface=0; iface< 4; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(0);
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(0);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(0);
+                        break;
+                    case(1):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(2);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(2);
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(2);
+                        break;
+                    case(2):
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(3);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(5);
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(1);
+                        break;
+                    case(3):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(4);
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(4);
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(4);
+                        break;
+                }
+            }
+        };
+    }
+    if(pElem->isMPCSlave()){
+        for(iface=0; iface< 4; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(0);
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(0);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(0);
+                        break;
+                    case(1):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(2);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(2);
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(2);
+                        break;
+                    case(2):
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(3);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(5);
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(1);
+                        break;
+                    case(3):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(4);
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(4);
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(4);
+                        break;
+                }
+            }
+        };
+    }
 }
+
+
 // プリズムの分割
 //
 void CMeshFactory::dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
@@ -629,8 +760,83 @@ void CMeshFactory::dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uin
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    // MPC面の属性セット
+    uint iface;
+    if(pElem->isMPCMaster()){
+        for(iface=0; iface< 5; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(0);
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(0);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(0);
+                        break;
+                    case(1):
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(1);
+                        vProgElem[4]->markingMPCMaster(); vProgElem[4]->markingMPCFace(1);
+                        vProgElem[5]->markingMPCMaster(); vProgElem[5]->markingMPCFace(1);
+                        break;
+                    case(2):
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(2);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(2);
+                        vProgElem[4]->markingMPCMaster(); vProgElem[4]->markingMPCFace(2);
+                        vProgElem[5]->markingMPCMaster(); vProgElem[5]->markingMPCFace(2);
+                        break;
+                    case(3):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(3);
+                        vProgElem[2]->markingMPCMaster(); vProgElem[2]->markingMPCFace(5);
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(3);
+                        vProgElem[5]->markingMPCMaster(); vProgElem[5]->markingMPCFace(5);
+                        break;
+                    case(4):
+                        vProgElem[0]->markingMPCMaster(); vProgElem[0]->markingMPCFace(4);
+                        vProgElem[1]->markingMPCMaster(); vProgElem[1]->markingMPCFace(4);
+                        vProgElem[3]->markingMPCMaster(); vProgElem[3]->markingMPCFace(4);
+                        vProgElem[4]->markingMPCMaster(); vProgElem[4]->markingMPCFace(4);
+                        break;
+                }
+            }
+        };
+    }
+    if(pElem->isMPCSlave()){
+        for(iface=0; iface< 5; iface++){
+            if(pElem->isMPCFace(iface)){
+                switch(iface){
+                    case(0):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(0);
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(0);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(0);
+                        break;
+                    case(1):
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(1);
+                        vProgElem[4]->markingMPCSlave(); vProgElem[4]->markingMPCFace(1);
+                        vProgElem[5]->markingMPCSlave(); vProgElem[5]->markingMPCFace(1);
+                        break;
+                    case(2):
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(2);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(2);
+                        vProgElem[4]->markingMPCSlave(); vProgElem[4]->markingMPCFace(2);
+                        vProgElem[5]->markingMPCSlave(); vProgElem[5]->markingMPCFace(2);
+                        break;
+                    case(3):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(3);
+                        vProgElem[2]->markingMPCSlave(); vProgElem[2]->markingMPCFace(5);
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(3);
+                        vProgElem[5]->markingMPCSlave(); vProgElem[5]->markingMPCFace(5);
+                        break;
+                    case(4):
+                        vProgElem[0]->markingMPCSlave(); vProgElem[0]->markingMPCFace(4);
+                        vProgElem[1]->markingMPCSlave(); vProgElem[1]->markingMPCFace(4);
+                        vProgElem[3]->markingMPCSlave(); vProgElem[3]->markingMPCFace(4);
+                        vProgElem[4]->markingMPCSlave(); vProgElem[4]->markingMPCFace(4);
+                        break;
+                }
+            }
+        };
+    }
 }
-// ピラミッドの分割
+// ピラミッドの分割 <= 削除
 //
 void CMeshFactory::dividPyramid(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh)
 {
@@ -742,6 +948,9 @@ void CMeshFactory::dividPyramid(CElement* pElem, vector<CElement*>& vProgElem, u
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    //MPCは実装しない=> ピラミッドは削除予定
+
 }
 // 四辺形の分割
 //
@@ -795,6 +1004,15 @@ void CMeshFactory::dividQuad(CElement* pElem, vector<CElement*>& vProgElem, uint
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    // MPC面の属性セット
+    uint iprog;
+    if(pElem->isMPCMaster()){
+        for(iprog=0; iprog< 4; iprog++){ vProgElem[iprog]->markingMPCMaster(); vProgElem[iprog]->markingMPCFace(0);}
+    }
+    if(pElem->isMPCSlave()){
+        for(iprog=0; iprog< 4; iprog++){ vProgElem[iprog]->markingMPCSlave(); vProgElem[iprog]->markingMPCFace(0);}
+    }
 }
 // 三角形の分割
 //
@@ -842,6 +1060,15 @@ void CMeshFactory::dividTriangle(CElement* pElem, vector<CElement*>& vProgElem, 
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    // MPC面の属性セット
+    uint iprog;
+    if(pElem->isMPCMaster()){
+        for(iprog=0; iprog< 3; iprog++){ vProgElem[iprog]->markingMPCMaster(); vProgElem[iprog]->markingMPCFace(0);}
+    }
+    if(pElem->isMPCSlave()){
+        for(iprog=0; iprog< 3; iprog++){ vProgElem[iprog]->markingMPCSlave(); vProgElem[iprog]->markingMPCFace(0);}
+    }
 }
 // ビームの分割
 //
@@ -878,17 +1105,29 @@ void CMeshFactory::dividBeam(CElement* pElem, vector<CElement*>& vProgElem, uint
 
         pProgMesh->setElement(vProgElem[i]);
     };
+
+    // MPC面の属性セット
+    uint iprog;
+    if(pElem->isMPCMaster()){
+        for(iprog=0; iprog< 2; iprog++) vProgElem[iprog]->markingMPCMaster();
+    }
+    if(pElem->isMPCSlave()){
+        for(iprog=0; iprog< 2; iprog++) vProgElem[iprog]->markingMPCSlave();
+    }
 }
 
 
 
 // setup to BucketMesh in AssyModel
 //
-void CMeshFactory::setupBucketMesh(const uint& mgLevel, const uint& num_of_mesh, const uint& maxID, const uint& minID)
+void CMeshFactory::setupBucketMesh(const uint& mgLevel, const uint& maxID, const uint& minID)
 {
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
 
     mpTAssyModel->intializeBucket(maxID, minID);
+
+    mpTAssyModel->setMaxMeshID(maxID);
+    mpTAssyModel->setMinMeshID(minID);
 }
 
 
@@ -1850,6 +2089,248 @@ void CMeshFactory::dividCommElem(CCommElement* pCommElem, vector<CCommElement*>&
         ////debug
         //mpLogger->Info(Utility::LoggerMode::Debug,"Factory::dividCommElemのVolRank=>setNodeRank",(uint)nRank);
     };
+}
+
+
+
+
+// [コンタクトメッシュ数ぶん呼び出される]
+//  -------------------------------
+// ファイル入力時にレベル0のContactMesh要素へのマーキング
+//
+//  -> 全レベルのContactMeshは,ここで予め生成しておく.
+//  -> 自身と同じランクに所属する接合面は, setupContactMesh, setupSkin で生成される.
+// --
+// コンタクトメッシュを全階層に生成
+// --
+void CMeshFactory::GeneContactMesh(const uint& contactID)
+{
+    uint ilevel;
+    for(ilevel=0; ilevel< mMGLevel+1; ilevel++){
+        mpTAssyModel= mpGMGModel->getAssyModel(ilevel);
+
+        CContactMesh *pContactMesh= new CContactMesh;// 接合メッシュの生成
+        pContactMesh->setID(contactID);
+        pContactMesh->setLevel(ilevel);
+        
+        mpTAssyModel->addContactMesh(pContactMesh, contactID);
+    };
+}
+// コンタクトノードの生成(Level==0)
+//
+void CMeshFactory::GeneContactNode(const uint& mgLevel, const uint& contactID, const uint& conNodeID, const vdouble& vCoord,
+        const string& s_param_type, const uint& numOfVector, const uint& numOfScalar,
+        bool bmesh, const uint& meshID, const uint& nodeID,
+        const uint& rank, const uint& maslave)
+{
+    mpTAssyModel= mpGMGModel->getAssyModel(mgLevel);
+
+    CContactMesh *pConMesh= mpTAssyModel->getContactMesh_ID(contactID);
+    
+    CContactNode *pConNode= new CContactNode;
+    pConNode->setLevel(mgLevel);
+    pConNode->setID(conNodeID);
+    pConNode->setCoord(vCoord);
+    if(bmesh){ pConNode->setMeshID(meshID); pConNode->markingSelfMesh();}
+    if(bmesh){ pConNode->setNodeID(nodeID); pConNode->markingSelfNode();}
+    pConNode->setRank(rank);
+
+    if(s_param_type=="v" || s_param_type=="V" || s_param_type=="sv" || s_param_type=="SV"){
+        pConNode->resizeDisp(numOfVector);
+        pConNode->initDisp();
+    }
+    if(s_param_type=="s" || s_param_type=="S" || s_param_type=="sv" || s_param_type=="SV"){
+        pConNode->resizeScalar(numOfVector);
+        pConNode->initScalar();
+    }
+
+    pConMesh->addConNode(pConNode, conNodeID);
+
+    switch(maslave){
+    case(0)://マスターConNode
+        pConMesh->addMasterConNode(pConNode,conNodeID);
+        break;
+    case(1)://スレーブConNode
+        pConMesh->addSlaveConNode(pConNode,conNodeID);
+        break;
+    default:
+        break;
+    }
+}
+
+// マスター面の生成(Level==0)
+//
+//
+void CMeshFactory::GeneMasterFace(const uint& contactID, const uint& shapeType, const uint& masterFaceID,
+        bool bmesh, const uint& meshID, const uint& elemID, const uint& elemFaceID,
+        const vuint& vConNodeID)
+{
+    // レベル0の,マスター&スレーブ要素をマーキング
+    //  -> レベル0以外は,dividHexa()等でマーキング
+    //
+    uint mgLevel(0);
+    mpTAssyModel= mpGMGModel->getAssyModel(mgLevel);
+    CSkinFace *pMFace= new CMasterFace;
+
+    //初期化
+    pMFace->setShapeType(shapeType);
+
+    // bmesh がtrueの場合,自身のMeshの表面がSkinFaceになっているので,マーキングする.
+    if(bmesh){
+        CMesh *pMMesh;
+        pMMesh= mpTAssyModel->getMesh_ID(meshID);
+        
+        CElement *pMasterElem;
+        pMasterElem= pMMesh->getElement(elemID);
+        pMasterElem->markingMPCMaster();
+        pMasterElem->markingMPCFace(elemFaceID);
+        
+        pMFace->markingSelf();//自身のMeshの表面メッシュであることをマーキング
+        pMFace->setMeshID(meshID);
+        pMFace->setElementID(elemID);
+        pMFace->setFaceID(elemFaceID);
+    }
+    
+    CContactMesh *pConMesh= mpTAssyModel->getContactMesh_ID(contactID);
+    
+    pMFace->setID(masterFaceID);
+    uint icnode, numOfConNode(vConNodeID.size());
+    for(icnode=0; icnode< numOfConNode; icnode++){
+        CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
+        pMFace->addNode(pConNode);
+    };
+
+    pConMesh->addMasterFace(pMFace);
+}
+// スレーブ面の生成(Level==0)
+//
+//
+void CMeshFactory::GeneSlaveFace(const uint& contactID, const uint& shapeType, const uint& slaveFaceID,
+        bool bmesh, const uint& meshID, const uint& elemID, const uint& elemFaceID,
+        const vuint& vConNodeID)
+{
+    // レベル0の,マスター&スレーブ要素をマーキング
+    //  -> レベル0以外は,dividHexa()等でマーキング
+    //
+    uint mgLevel(0);
+    mpTAssyModel= mpGMGModel->getAssyModel(mgLevel);
+    CSkinFace *pSFace= new CSkinFace;
+
+    //初期化
+    pSFace->setShapeType(shapeType);
+
+    // bmesh がtrueの場合,自身のMeshの表面がSkinFaceになっているので,マーキングする.
+    if(bmesh){
+        CMesh *pSMesh;
+        pSMesh= mpTAssyModel->getMesh_ID(meshID);
+        
+        CElement *pSlaveElem;
+        pSlaveElem= pSMesh->getElement(elemID);
+        pSlaveElem->markingMPCSlave();
+        pSlaveElem->markingMPCFace(elemFaceID);
+
+        pSFace->markingSelf();//自身のMeshの表面メッシュであることをマーキング
+        pSFace->setMeshID(meshID);
+        pSFace->setElementID(elemID);
+        pSFace->setFaceID(elemFaceID);
+    }
+
+    CContactMesh *pConMesh= mpTAssyModel->getContactMesh_ID(contactID);
+    
+    pSFace->setID(slaveFaceID);
+    uint icnode, numOfConNode(vConNodeID.size());
+    for(icnode=0; icnode< numOfConNode; icnode++){
+        CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
+        pSFace->addNode(pConNode);
+    };
+
+    pConMesh->addSlaveFace(pSFace);
+}
+
+// MPC接触Mesh生成(全ての階層Level) : マスター面,スレーブ面のID番号の管理
+//  -> Level=0のマスター & スレーブはセット済み.
+//  -> Level=0から始めてprogMeshを利用する.
+// --
+void CMeshFactory::refineContactMesh()
+{
+    // Meshリファイン後に処理
+    // --
+    // ContactMeshをリファイン.
+    // --
+    CAssyModel *pAssy,*pProgAssy;
+    CContactMesh *pConMesh,*pProgConMesh;
+    uint countID;// <<<<<<<<<<<<<------- 辺,面中心に生成される新たなContactNodeのIDのためのカウンター
+    CSkinFace *pSkinFace;
+    vector<CSkinFace*> vProgFace;//refineで生成されるSkinFaceの子供
+    uint maslave;//マスター,スレーブ切り替えINDEX
+
+    uint meshID,elemID;
+    CMesh *pMesh;
+    CElement *pElem;
+
+    uint faceID;//progFaceのID番号生成用途
+    
+    uint ilevel;
+    for(ilevel=0; ilevel< mMGLevel; ilevel++){
+        pAssy =  mpGMGModel->getAssyModel(ilevel);    //カレントレベル
+        pProgAssy= mpGMGModel->getAssyModel(ilevel+1);//上段のレベル
+        
+        //debug
+        cout << "mgLevel= " << ilevel << endl;
+
+        uint numOfCont= pAssy->getNumOfContactMesh();
+        uint icont;
+        for(icont=0; icont< numOfCont; icont++){
+            pConMesh= pAssy->getContactMesh(icont);
+            pProgConMesh= pProgAssy->getContactMesh(icont);
+            
+            if(ilevel==0) countID= pConMesh->getNumOfConNode();//新たなノードのID 初期値
+
+            //debug
+            cout << "ContactMesh::setupEdgeConNode,setupFaceConNode コール" << endl;
+
+            pConMesh->setupAggSkinFace();//ContactNode周囲のSkinFaceIDを収集
+            pConMesh->setupEdgeConNode(pProgConMesh, countID);//辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
+            pConMesh->setupFaceConNode(pProgConMesh, countID);//面ノードの生成,新ノードをprogConMeshに追加,IDカウント
+            
+            //debug
+            cout << "ContactMesh::setupEdgeConNode,setupFaceConNode   終了" << endl;
+
+            uint numOfSkinFace;
+            uint iface;
+            
+            //マスター,スレーブ切り替えループ
+            for(maslave=0; maslave< 2; maslave++){
+                faceID=0;//新たな面IDカウンター(mvLevel別,ContactMesh別,マスター&スレーブ別なので,ここで"0"初期化)
+                
+                if(maslave==0) numOfSkinFace= pConMesh->getNumOfMasterFace();//マスター面数
+                if(maslave==1) numOfSkinFace= pConMesh->getNumOfSlaveFace();//スレーブ面数
+
+                for(iface=0; iface< numOfSkinFace; iface++){
+
+                    if(maslave==0)  pSkinFace= pConMesh->getMasterFace(iface);//マスター面
+                    if(maslave==1)  pSkinFace= pConMesh->getSlaveFace(iface);//スレーブ面
+                    
+                    // 自身のMeshに存在するMPC面であれば, RefinしたProgFaceにelemID,elemFaceID,NodeIDをセットする.
+                    //
+                    if(pSkinFace->isSelf() && pSkinFace->getNumOfEdge()!=0){
+                        meshID= pSkinFace->getMeshID(); elemID= pSkinFace->getElementID();
+                        pMesh= pAssy->getMesh_ID(meshID);
+                        pElem= pMesh->getElement(elemID);
+
+                        pSkinFace->refine(pElem, faceID);//// <<<<<<<<<-- 面のRefineと新FaceIDのカウントアップ
+                    }else{
+                        pSkinFace->refine(NULL, faceID);//// <<<<<<<<-- 面のRefineと新FaceIDのカウントアップ
+                    }
+                    vProgFace= pSkinFace->getProgFace();//RefineしたSkinFaceを取得
+
+                    if(maslave==0) pProgConMesh->addMasterFace(vProgFace);//progContactMeshにRefineしたSkinFaceを追加セット
+                    if(maslave==1) pProgConMesh->addSlaveFace(vProgFace); //  同上
+                    
+                };//ifaceループ
+            };//maslaveループ(マスター,スレーブ切り替え)
+        };//icontループ(ContactMesh)
+    };//ilevelループ(マルチグリッドLevel)
 }
 
 

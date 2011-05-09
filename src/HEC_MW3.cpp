@@ -136,7 +136,8 @@ int CMWMain::Refine()
 {
     if(mb_file){
         // ファイル読み込み後
-        mpFactory->refineMesh();// MultiGridデータの生成(通信Meshも含む)
+        mpFactory->refineMesh();       //MultiGridデータの生成(通信Meshも含む)
+        mpFactory->refineContactMesh();//接合Mesh(MPCメッシュ)のMultiGridデータ生成
         return 1;
     }else{
         mpLogger->Info(Utility::LoggerMode::Error," not read");

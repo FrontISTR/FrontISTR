@@ -55,7 +55,7 @@ bool CFileReaderCommElement::Read(ifstream& ifs, string& sLine)
             if(TagCheck(sLine, FileBlockName::EndCommElement()) ) break;
             
             istringstream iss(sLine.c_str());
-            // 書式：要素タイプ, ElementID, 各頂点のrank(下のswitch文で読み込み)
+            // 書式：要素タイプ, ElementID, 各頂点のCommNodeID(下のswitch文で読み込み)
             iss >> sElemType >> nElementID;
 
             nElemType= IntElemType(sElemType);//文字列をunsigned int に変換

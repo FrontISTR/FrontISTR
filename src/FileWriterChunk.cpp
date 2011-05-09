@@ -7,15 +7,17 @@
 //                  2009.07.23
 //                  k.Takeda
 #include "FileWriterChunk.h"
+#include "FileWriterContactMesh.h"
 using namespace FileIO;
 
 CFileWriterChunk::CFileWriterChunk()
 {
-    mvWriter.reserve(3);
+    mvWriter.reserve(4);
 
     mvWriter.push_back(new CFileWriterNode);
     mvWriter.push_back(new CFileWriterElement);
     mvWriter.push_back(new CFileWriterBoundaryNode);
+    mvWriter.push_back(new CFileWriterContactMesh);
 }
 
 CFileWriterChunk::~CFileWriterChunk()
@@ -43,7 +45,7 @@ void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
         };
     };
 
-//    //最終レベルだけ出力(debug?)
+//    //最終レベルだけ出力(debug)
 //    //
 //    uint i, ilevel=numOfLevel-1;
 //    //debug
@@ -52,7 +54,6 @@ void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
 //    for(i=0; i < mvWriter.size(); i++){
 //        mvWriter[i]->Write(ofs, ilevel);
 //    };
-
 
     ofs.close();
 }

@@ -41,6 +41,12 @@
 
 #include "boost/lexical_cast.hpp"//数=>文字変換
 
+// MPC
+#include "SkinFace.h"
+#include "MasterFace.h"
+#include "ContactMesh.h"
+#include "ContactNode.h"
+
 namespace pmw{
 class CMeshFactory
 {
@@ -140,7 +146,7 @@ public:
 
     // Bucket(in AssyModel) setup
     // --------------------------
-    void setupBucketMesh(const uint& mgLevel,const uint& num_of_mesh, const uint& maxID, const uint& minID);
+    void setupBucketMesh(const uint& mgLevel, const uint& maxID, const uint& minID);
 
 
     // Material
@@ -169,6 +175,27 @@ protected:
     // --
     void GeneProgCommElem(CCommElement* pCommElem, vector<CCommElement*>& vProgCommElem);//1個のCommElemに生成するprogCommElemの生成
     void dividCommElem(CCommElement* pCommElem, vector<CCommElement*>& vProgCommElem);//CommElemの分割
+    
+public:
+    // MPCの為の表面メッシュ(Skin)生成
+    // --
+    void GeneContactMesh(const uint& contactID);//接合メッシュの生成:ContactMesh数ぶんコール
+    void GeneContactNode(const uint& mgLevel, const uint& contactID, const uint& conNodeID, const vdouble& vCoord,
+            const string& s_param_type, const uint& numOfVector, const uint& numOfScalar,
+            bool bmesh, const uint& meshID, const uint& nodeID,
+            const uint& rank, const uint& maslave);
+    void GeneMasterFace(const uint& contactID, const uint& shapeType, const uint& masterFaceID,
+            bool bmesh, const uint& meshID, const uint& elemID, const uint& elemFaceID,
+            const vuint& vConNodeID);
+    void GeneSlaveFace(const uint& contactID, const uint& shapeType, const uint& slaveFaceID,
+            bool bmesh, const uint& meshID, const uint& elemID, const uint& elemFaceID,
+            const vuint& vConNodeID);
+
+    void refineContactMesh();
+
+protected:
+    void setProgHexaMPCMaster(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l);
+    void setProgHexaMPCSlave(vector<CElement*>& vProgElem, const uint& iface, const uint& i, const uint& j, const uint& k, const uint& l);
     
 };
 }

@@ -17,6 +17,7 @@ typedef vector<vector<int> > vvint;
 
 typedef vector<unsigned int> vuint;
 typedef vector<vector<unsigned int> > vvuint;
+typedef vector<vector<vector<unsigned int> > > vvvuint;
 
 typedef vector<double> vdouble;
 typedef vector<vector<double> > vvdouble;

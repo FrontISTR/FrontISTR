@@ -1,4 +1,9 @@
-
+//
+//  Mesh.cpp
+//
+//                  2009.10.15
+//                  2008.11.10
+//                  k.Takeda
 #include "Vertex.h"
 #include "LoggerType.h"
 #include "IndexBucket.h"
@@ -6,27 +11,22 @@
 #include "Logger.h"
 #include "Node.h"
 
-
 #include <vector>
 
-
 #include "VectorNode.h"
-
 
 #include "BoundaryGroup.h"
 #include "Element.h"
 
-
 #include "AggregateElement.h"
 
-//
-//				2008.11.10
-//				k.Takeda
 #include "Mesh.h"
 #include "ScalarNode.h"
 #include "ScalarVectorNode.h"
 using namespace pmw;
 
+// construct & destruct
+// --
 CMesh::CMesh(void)
 {
     mpLogger = Utility::CLogger::Instance();
@@ -86,17 +86,16 @@ CMesh::~CMesh(void)
 
     // 要素集合(AggretateElement)の削除
     //
-    CAggregateElement *pAggElem;
-    for(i=0; i< mvAggElement.size(); i++){
-        pAggElem= mvAggElement[i];
-        pNode= mvNode[i];// <= MultiGridレベルを調べるため.
+    for_each(mvAggElement.begin(), mvAggElement.end(), DeleteObject());
 
-        if(pAggElem){
-            // NodeのMGLevelによるAggElemの選別
-            if(pNode->getMGLevel()==mMGLevel) delete pAggElem;
-        }
-        mvAggElement.erase(mvAggElement.begin()+i);
-    };
+    // ノードの周囲ノード(AggregateNode)の削除
+    //
+    for_each(mvAggNode.begin(), mvAggNode.end(), DeleteObject());
+    
+    // CommMeshの削除
+    // --
+    for_each(mvCommMesh.begin(), mvCommMesh.end(), DeleteObject());
+
 
 
     // 境界ノード,面,体の削除
@@ -307,39 +306,7 @@ CElement* CMesh::getElementIX(const uint& index)
     return mvElement[index];
 }
 
-//// mvElement[index]
-////
-//CElement* CMesh::getElement(const uint& index)
-//{
-//    return mvElement[index];
-//}
 
-////
-//// Boundary Node (Displacement)
-////
-//void CMesh::setBDispNode(const uint& node_id)
-//{
-//    CNode* pNode;
-//    int index;
-//    index = moBucket.getIndexNode(node_id);
-//    pNode = mvNode[index];
-//
-//    moNodeBoundaryDisp.setID(node_id);
-//    moNodeBoundaryDisp.setNode(pNode);
-//}
-//
-//// Boundary Node
-////
-//void CMesh::setBLoadNode(const uint& node_id)
-//{
-//    CNode* pNode;
-//    int index;
-//    index = moBucket.getIndexNode(node_id);
-//    pNode = mvNode[index];
-//
-//    moNodeBoundaryLoad.setID(node_id);
-//    moNodeBoundaryLoad.setNode(pNode);
-//}
 
 // Aggregate-Element, Aggregate-Node
 // ---
@@ -366,18 +333,12 @@ void CMesh::setAggNode(CAggregateNode* pAggNode)
 // ---
 void CMesh::setupAggregate()
 {
-    ////debug
-    //Utility::CLogger *pLogger= Utility::CLogger::Instance();
-    
     CElement *pElem;   CNode *pNode;
     uint ielem, local_id, inode;
 
     mNumOfNode= mvNode.size();
     mNumOfElement= mvElement.size();
 
-    //debug
-    cout << "mNumOfNode    => " << mNumOfNode << endl;
-    cout << "mNumOfElement => " << mNumOfElement << endl;
 
     // 第2段 以降のprolongationのときに,
     //  pNode(Vertex)のElemIndexに同じIDが入らないようにクリア.
@@ -403,9 +364,6 @@ void CMesh::setupAggregate()
 
             pNode->setAggElemID(elemID);      //Node自身に要素ID(AggElementID)をセット
             pNode->setNeibElemVert(elemID,local_id);//Node自身に接続先の頂点番号をセット <= CommMeshのIndex管理で使用
-
-            ////debug
-            //cout << "Mesh::setupAggregate  pNode setElemIndex => " << elemID << endl;
         };
     };
 
@@ -442,9 +400,6 @@ void CMesh::setupAggregate()
         pNode= mvNode[inode];
         numOfAggElem= pNode->getNumOfAggElem();
 
-        ////debug
-        //cout << "mvAggNode.size => " << mvAggNode.size() << endl;
-
         pAggNode = mvAggNode[pNode->getID()];///////////// NodeIDに対して,AggNodeをセット
         pAggNode->reserveNode(numOfAggElem);
 
@@ -457,9 +412,6 @@ void CMesh::setupAggregate()
             // pNodeのIDに対応する辺の一方の端のNodeを拾う.
             vConnNode= pElem->getConnectNode(pNode);
             nNumOfConnNode= vConnNode.size();
-
-            ////debug
-            //cout << "nNumOfConnNode => " << nNumOfConnNode << endl;
 
             // Node集合にセットしていく.
             //
@@ -651,6 +603,9 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh)
 
                 inNode->setCoord(In_coord);//inNode(中間ノード)に座標値をセット
                 inNode->setID(indexCount); //indexCountノード数カウントのセット
+
+                //prolongater変数のセット
+                setupParentsNode(pNode0,pNode1,inNode);
                 
                 pElem->setEdgeInterNode(inNode,iedge);//ループ要素自身に中間ノードをセット
                 pElem->setBoolEdgeElem(pNode0, pNode1);//iedgeにEdgeElementとNodeをセットしたことをスタンプ
@@ -837,6 +792,8 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
                             pProgMesh->setNode(inNode);
                             pElem->setFaceNode(inNode, isurf);// Faceへノードをセット(要素ループしている要素)
 
+                            //prolongater変数のセット
+                            setupParentsNode(vFaceCnvNode, inNode);
                             
                             //隣接要素の"pNode0,pNode1,pNode2で構成される面へpElemをセット
                             //
@@ -859,7 +816,9 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
                     inNode->setID(indexCount);//IDをセット
                     pProgMesh->setNode(inNode);
                     
-                    
+                    //prolongater変数のセット
+                    setupParentsNode(vFaceCnvNode,inNode);
+
                     // IDのためのカウントアップ
                     indexCount++;
                     
@@ -924,6 +883,9 @@ void CMesh::setupVolumeNode(CMesh *pProgMesh)
             //生成した中心ノードに座標値をセット
             cntNode->setCoord(vCoord);
 
+            //prolongater変数のセット
+            setupParentsNode(vLocalNode, cntNode);
+
             pProgMesh->setNode(cntNode);
             ++indexCount;
 
@@ -967,6 +929,27 @@ void CMesh::avgCoord(vector<CNode*> vCnvNode, CNode *pNode)
     pNode->setCoord(vCoord);
 }
 
+
+// Refine時に生成される新Nodeの親Nodeを,Nodeにセットする
+// --
+// 辺から生成されるNode用
+void CMesh::setupParentsNode(CNode* pNode0, CNode* pNode1, CNode* inNode)
+{
+    inNode->reserveParentsNode(2);
+    inNode->addParentsNode(pNode0);
+    inNode->addParentsNode(pNode1);
+}
+// 面,要素から生成されるNode用
+void CMesh::setupParentsNode(vector<CNode*>& vNode, CNode* inNode)
+{
+    uint numOfParents= vNode.size();
+    inNode->reserveParentsNode(numOfParents);
+
+    uint ipare;
+    for(ipare=0; ipare< numOfParents; ipare++){
+        inNode->addParentsNode(vNode[ipare]);
+    };
+}
 
 
 
@@ -1140,7 +1123,6 @@ void CMesh::sortMesh()
     //        pElem->setID(index);
     //    }
 }
-
 
 
 

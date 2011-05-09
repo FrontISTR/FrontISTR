@@ -799,7 +799,13 @@ uint& CEdgeTree::getBeamEdgeIndex(const uint& localNum0, const uint& localNum1)
     return mEdgeNum;
 }
 
-
+// Disagreement(不一致)Typeの場合の辺番号:存在しない辺番号
+//
+uint& CEdgeTree::getDisagTypeEdgeIndex(const uint& localNum0, const uint& localNum1)
+{
+    mEdgeNum=999;
+    return mEdgeNum;
+}
 
 
 

@@ -41,7 +41,7 @@ protected:
     vuint mvPairNodeLocalNum;//ペアノードの局所ノード番号
     PairNode mEdgeNode;
 
-    map<uint, uint, less<uint> > mmIDLocal;//key:グローバルIndex => val:局所番号
+    map<uint, uint, less<uint> > mmIDLocal;//key:NodeID => val:局所頂点番号
 
 
 
@@ -84,7 +84,14 @@ protected:
     bool mbDComm;//DCommElementか？(prolongationにより,計算領域に属さなくなった要素)
     bool mbRComm;//CommMeshに含まれるが通信はしない(全てのランクがmyRank)
     int mCommID;//CommElementのID(DCommElementも含む)
-    
+
+
+
+    // MPCに使用する要素かどうか判定する属性
+    // --
+    bool mbMaster;
+    bool mbSlave;
+    vector<bool> mvbMPCFace;//面番号のどれがMPCするのか
 
 public:
     // Element ID
@@ -100,7 +107,12 @@ public:
     // CommElementのprolongation対応:(pyramid以外は,頂点番号順でProgElemを配置),(pyramidは,頂点順にHexa,面番号順にPyramid)
     // --
     void setProgElem(CElement* pProgElem, const uint& ivert){ mvProgElement[ivert]= pProgElem;}
-    CElement* getProgElem(const uint& ivert){ return mvProgElement[ivert];}
+    CElement* getProgElem(const uint& ivert){ return mvProgElement[ivert];}//ProgElementは,頂点番号順に配列に入っている.
+
+    // ContactMeshのprolongation対応
+    // --
+    CElement* getProgElem_NodeID(const uint& nodeID);//CSkinFace::refine()で利用
+    uint& getLocalVertNum(const uint& nodeID){ return mmIDLocal[nodeID]; }//NodeID -> 頂点番号(局所番号)
 
 
     // CommElementとの接続:CommElementに入っているか？,入っている場合のCommElementのIDは？
@@ -151,8 +163,9 @@ public:
     // EdgeElement boolスタンプ
     virtual bool isEdgeElem(CNode* pNode0, CNode* pNode1)=0;
     virtual void setBoolEdgeElem(CNode* pNode0, CNode* pNode1)=0;
-    // (局所ノード番号,局所ノード番号)に対応した辺の、Index番号
+    // (局所ノード番号,局所ノード番号)に対応した辺の,Index番号
     virtual uint& getEdgeIndex(CNode* pNode0, CNode* pNode1)=0;
+    virtual uint& getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)=0;
     // EdgeNode
     // set Intermediate Node for prolongation
     // (prolongation 辺ノード)
@@ -194,6 +207,20 @@ public:
     // Node周囲の接続先Nodeを配列で返す.
     // (係数行列 作成用途, CMesh::setupAggregate)
     virtual vector<CNode*> getConnectNode(CNode* pNode)=0;
+
+
+
+    // MPCに使用する要素か判定する属性
+    //
+    void markingMPCMaster(){ mbMaster= true;}
+    bool& isMPCMaster(){ return mbMaster;}
+
+    void markingMPCSlave(){ mbSlave= true;}
+    bool& isMPCSlave(){ return mbSlave;}
+
+    void markingMPCFace(const uint& iface){ mvbMPCFace[iface]= true;}
+    bool isMPCFace(const uint& iface){ return mvbMPCFace[iface];}
+
 };
 }
 #endif

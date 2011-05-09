@@ -40,7 +40,8 @@ struct ElementType{
         Beam2,
         Bar,
         Rod,
-        Mass
+        Mass,
+        Point//SkinFaceの型として利用
     };
 };
 

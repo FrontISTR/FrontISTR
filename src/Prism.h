@@ -44,6 +44,7 @@ public:
     //
     // (局所ノード番号,局所ノード番号)に対応した辺の、Index番号
     virtual uint& getEdgeIndex(CNode* pNode0, CNode* pNode1);
+    virtual uint& getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1);
 
     // Edge -> Face Index
     virtual uint& getFaceIndex(const uint& edge0, const uint& edge1);

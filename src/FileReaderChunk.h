@@ -61,6 +61,8 @@
 
 #include "FileReaderCnt.h"//mw3.cntファイル
 
+#include "FileReaderContactMesh.h"//MPCデータ(ContactMesh)
+
 namespace FileIO{
 class CFileReaderChunk
 {
