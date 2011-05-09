@@ -16,6 +16,10 @@
 #include "FileBlockName.h"
 #include "Logger.h"
 
+#include "boost/lexical_cast.hpp"
+
+#include "ElementType.h"
+
 namespace FileIO{
 class CFileReader{
 public:
@@ -30,6 +34,7 @@ protected:
     string& getLineSt(ifstream& ifs);// getline()-> char* -> string
     bool TagCheck(string& s_line, const char* ctag);
 
+    uint IntElemType(string& sElemType);
 public:
     virtual void setFactory(pmw::CMeshFactory *pFactory);
 

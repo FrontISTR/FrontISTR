@@ -12,7 +12,7 @@ uint CShellBase::mnBaseType = BaseElementType::Shell;
 
 //
 //
-CShellBase::CShellBase()
+CShellBase::CShellBase():CElement()
 {
     ;
 }

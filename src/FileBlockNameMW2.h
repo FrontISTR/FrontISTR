@@ -10,7 +10,7 @@
 #define FILE_TAG_NAME_CC0B8D86_67BD_493a_B552_FBF00C1F9B02
 
 namespace FileIO{
-union FileBlockNameMW2{
+struct FileBlockNameMW2{
     // HEC_MW
     static const char* Comment(){ return "!!";}
     static const char* SingleExclamation(){ return "!";}// Exclamation(!)

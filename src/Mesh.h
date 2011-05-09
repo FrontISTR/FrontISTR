@@ -1,6 +1,6 @@
 //
 //
-//			2008.05.15
+//			2008.09.28
 //			2008.11.10
 //			k.Takeda
 #ifndef MESH_HH_C77868BF_2116_41b3_B667_59BA392FCC5C
@@ -28,8 +28,13 @@
 // Node around Nodes
 #include "AggregateNode.h"
 
+// 通信領域
+#include <map>
+#include "CommunicationMesh.h"
 
 #include "IndexBucket.h"
+
+#include "QuickSort.h"
 
 // Edge
 typedef std::pair<pmw::CNode*,pmw::CNode*> PairNode;
@@ -46,13 +51,27 @@ public:
 
 protected:
     // Mesh
-    //
+    // --
     uint            mnMeshID;   // Mesh ID
     vector<CNode*>    mvNode;   // Node
     vector<CElement*> mvElement;// Element
-    
+
+    // 計算領域の終端を表す番号 '09.09.09
+    // --
+    uint mNodeEndIndex;//mvNode内の計算領域の終端Index(サイズ)  <= 計算に使用する配列数
+    uint mElemEndIndex;//mvElement内の計算領域の終端Index(サイズ) <= 計算に使用する配列数
+
+    // Node, Elementのハッシュ "ID => Index" '09.09.28
+    // --
+    map<uint, uint, less<uint> > mmNodeIndex;
+    map<uint, uint, less<uint> > mmElementIndex;
+
+
+    // 節点集合Node, 節点集合Element
+    // --
     vector<CAggregateElement*> mvAggElement;// Aggregate-Elemens(ノード周囲の要素集合を,ノード数分確保)
     vector<CAggregateNode*>    mvAggNode;   // Aggregate-Nodes(ノード周囲のノード集合を,ノード数ぶん確保)
+
 
     // restriction(下位_Mesh)のノード管理
     // 自分自身のノードではない -> 同じ型Meshの下位にくるrestriction_Meshのノードのdeleteを回避
@@ -60,16 +79,22 @@ protected:
     uint mMGLevel;//Mesh自身のMultiGrid_Level
 
 
+    // 通信領域(CommMesh)
+    // --
+    vector<CCommMesh*>     mvCommMesh;//Meshが通信する,通信領域を管理(通信領域Mesh=>CommMesh)
+    map<uint, uint, less<uint> > mmCommIndex;//CommID(通信番号:グローバル番号) => mvCommMesh Index
+    
+    
     // IndexBucket for "Node & Element"
-    //
+    // --
     CIndexBucket     moBucket;
 
-    uint numOfNode, numOfElement;// Number of Node, Element
-    uint maxNodeID, maxElementID;// max ID
-    uint minNodeID, minElementID;// min ID
+    uint mNumOfNode, mNumOfElement;// Number of Node, Element(ファイル入力時 => いらないかも)
+    uint maxNodeID, maxElementID;// max ID(ファイル入力時 => いらないかも)
+    uint minNodeID, minElementID;// min ID(ファイル入力時 => いらないかも)
 
     // BoundaryGroup_Template 
-    //
+    // --
     BoundaryGroup<CBoundaryNode*>   mBoundaryNodes;
     BoundaryGroup<CBoundaryFace*>   mBoundaryFaces;
     BoundaryGroup<CBoundaryVolume*> mBoundaryVolumes;
@@ -97,6 +122,7 @@ public:
     void setupBucketNodeIndex(const uint& id, const uint& index);
     void setupBucketNode();// 一括処理
     void initBucketElement(const uint& max_id, const uint& min_id);
+
     void setupBucketElementIndex(const uint& id, const uint& index);
     void setupBucketElement();// 一括処理
 
@@ -105,39 +131,45 @@ public:
 
     // Node
     //
-    virtual void reserveNode(const uint& num_of_node);
-    virtual void setNode(CNode* pNode);
-    virtual CNode* getNode_inID(const uint& id);
-    virtual CNode* getNode(const uint& index);
+    void reserveNode(const uint& num_of_node);
+    void setNode(CNode* pNode);
+    CNode* getNode(const uint& id);     //IDを指定してNode*を取得
+    CNode* getNodeIX(const uint& index);//直接Indexを指定してNode*を取得
 
     uint  getNodeSize(){ return mvNode.size();}
-    uint& getNumOfNode(){return numOfNode;}
+    uint& getNumOfNode(){return mNumOfNode;}
     //void setNumOfNode(const uint& num){ numOfNode= num;}// <= こちらを使用する場合は,setupNumOfNode()は不使用
-    void setupNumOfNode(){ numOfNode= mvNode.size();}   // <= こちらを使用する場合は,setNumOfNode()は不使用
+    void setupNumOfNode(){ mNumOfNode= mvNode.size();}   // <= こちらを使用する場合は,setNumOfNode()は不使用
+
+    // <<< 計算に使用するNode配列数 >>>
+    // --
+    uint& getEfficientNodeSize(){ return mNodeEndIndex;}//計算に有効なNode配列数
 
 
     // Element
     //
-    virtual void reserveElement(const uint& num_of_elem);
-    virtual void setElement(CElement* pElement);
-    virtual CElement* getElement_inID(const uint& id);
-    virtual CElement* getElement(const uint& index);
+    void reserveElement(const uint& num_of_elem);
+    void setElement(CElement* pElement);
+    CElement* getElement(const uint& id);     //IDを指定してElement*を取得
+    CElement* getElementIX(const uint& index);//直接Indexを指定してElement*を取得
+    vector<CElement*>& getElements(){ return mvElement;}
 
     uint  getElementSize(){ return mvElement.size();}
-    uint& getNumOfElement(){ return numOfElement;}
+    uint& getNumOfElement(){ return mNumOfElement;}
     //void setNumOfElement(const uint& num){ numOfElement= num;}// <= こちらを使用する場合は,setupNumOfElement()は不使用
-    void setupNumOfElement(){ numOfElement= mvElement.size();}// <= こちらを使用する場合は,setNumOfElement()は不使用
+    void setupNumOfElement(){ mNumOfElement= mvElement.size();}// <= こちらを使用する場合は,setNumOfElement()は不使用
+    
+    // <<< 計算に使用するElement配列数 >>>
+    // --
+    uint& getEfficientElementSize(){ return mElemEndIndex;}//計算に有効なElement配列数
+
+
+
 
 
     // Aggregate
     // ---
-    // Aggregate Elements (Node数と同じだけ存在)
-    //
-    //void reserveAggElement(const uint& res_size);
-    //void setAggElement(CAggregateElement* pAggElem);
-    //void setupAggElement(); // mvAggElementのセットアップ
-    //
-    // Aggregate-Element & Aggregate-Node
+    // Aggregate-Element & Aggregate-Node (Node数と同じだけ存在)
     // ---
     void reserveAggregate(const uint& res_size);// AggElement,AggNodeのリザーブ
     void setAggNode(CAggregateNode* pAggNode);
@@ -162,6 +194,8 @@ protected:
     void avgCoord(vector<CNode*> vCnvNode, CNode* pNode);//複数ノード座標の平均をpNodeにセット
 
 public:
+    // 境界条件
+    // --
     // Boundary Nodes
     void reserveBoundaryNode(const uint& res_size){ mBoundaryNodes.reserve(res_size);}
     void setBoundaryNode(CBoundaryNode *pBNode){ mBoundaryNodes.push(pBNode);}
@@ -182,6 +216,22 @@ public:
     CBoundaryVolume* getBoundaryVolume_withID(const uint& id){ return mBoundaryVolumes.get_withID(id);}
     CBoundaryVolume* getBoundaryVolume_withIndex(const uint& index){ return mBoundaryVolumes.get_withIndex(index);}
     uint getNumOfBoundaryVolume(){ return mBoundaryVolumes.NumOfBoundary();}
+
+
+    // 通信(CCommMesh):CommID => 通信番号
+    // --
+    void reserveCommMesh(const uint& res_size){ mvCommMesh.reserve(res_size);}//通信対象領域数に応じた,通信テーブル領域確保
+    void setCommMesh(CCommMesh* pCommMesh);// Hashデータ:mmCommIndex[commID] => vector Index もセット(CommMeshにはプロパティを全てセットしておくこと)
+    uint getNumOfCommMesh(){return mvCommMesh.size();}
+    CCommMesh* getCommMesh(const uint& comID);
+    CCommMesh* getCommMeshIX(const uint& index){ return mvCommMesh[index];}
+
+    // 通信で不要になったNode,Elementの並び替え
+    // --
+    // CommMesh内での名称：不要Node=>mvDNode, 不要Element=>mvDElement
+    //  => prolongation時に発生 -> Factory::refineMesh()からコール
+    // --
+    void sortMesh();
 };
 }
 #endif

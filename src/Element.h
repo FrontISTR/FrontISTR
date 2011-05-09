@@ -75,19 +75,55 @@ protected:
     // ノードから、面番号に変換、public:getFaceIndex に移行.
     // virtual uint& getLocalFaceNum(CNode* pNode0, CNode* pNode1, CNode* pNode2)=0;
 
+    
+    // 子要素:CommElementでのprolongation対応
+    // --
+    vector<CElement*> mvProgElement;//再分割した要素:頂点番号(局所ノード番号)順に配置
+
+    bool mbComm; //CommElementか？(通信に使用されるComm)
+    bool mbDComm;//DCommElementか？(prolongationにより,計算領域に属さなくなった要素)
+    bool mbRComm;//CommMeshに含まれるが通信はしない(全てのランクがmyRank)
+    int mCommID;//CommElementのID(DCommElementも含む)
+    
 
 public:
     // Element ID
     void setID(const uint& id){ mnID = id;}
+    //uint& getID(){ return mnID;}
     uint& getID(){ return mnID;}
+    
 
     // Parent_Element ID (再分割した要素の場合の親の要素)
     void setParentID(const uint& id){ parentID= id;}
     uint& getParentID(){ return parentID;}
 
-    // MultiGrid Level
+    // CommElementのprolongation対応:(pyramid以外は,頂点番号順でProgElemを配置),(pyramidは,頂点順にHexa,面番号順にPyramid)
+    // --
+    void setProgElem(CElement* pProgElem, const uint& ivert){ mvProgElement[ivert]= pProgElem;}
+    CElement* getProgElem(const uint& ivert){ return mvProgElement[ivert];}
+
+
+    // CommElementとの接続:CommElementに入っているか？,入っている場合のCommElementのIDは？
+    // --
+    void interCommElem(){ mbComm= true;}    //CommElementに所有されていることをスタンプ
+    bool& isInterCommElem(){ return mbComm;}//CommElementに所有されているか？
+    void setCommID(const int& comID){ mCommID= comID;}//IDは全てのCommElementで番号を連番
+    int& getCommID(){ return mCommID;}
+
+    // DCommElementに入っているか？(計算に供しない要素)
+    // --
+    void interDCommElem(){ mbDComm= true;}
+    bool& isInterDCommElem(){ return mbDComm;}
+
+    // RCommElement
+    void interRCommElem(){ mbRComm= true;}
+    bool& isInterRCommElem(){ return mbRComm;}
+
+
+    // MultiGrid Level <== Meshで管理するように改変予定,Elementに持たせる値ではない.
     void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
     uint& getMGLevel(){ return mMGLevel;}
+
 
     // Node*
     void  setNode(CNode* pNode,const uint& local_id);

@@ -24,10 +24,13 @@ namespace Utility{
 class CLogger{
 private:
     CLogger();
+    
+    uint myRank;//自分のrank
 
     ofstream ofs;
 
     string msPathName;   // Logファイルのパス名
+    string msLogFileBaseName;//Logファイルのベース名
     string msLogFileName;// Logファイル名
 
     ////map<string, string, less<string> > msOutputType; //Mode別の出力先(Monitor, Disk)
@@ -61,10 +64,13 @@ public:
 public:
     // Infomation Display
     void InfoDisplay();
+    
+    //// ランクの設定 => initializeLogFile
+    //void setRank(const uint& rank){ myRank= rank;}
 
     // LogFile
-    void setFileName(const string& filename);//Logファイル名の変更
-    void initializeLogFile();
+    void setFileBaseName(const string& filebase);//Logファイル名の変更
+    void initializeLogFile(const uint& rank);
     void finalizeLogFile();
 
     // Logger Prop

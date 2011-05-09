@@ -100,7 +100,7 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
        numOfElem= pMesh->getNumOfElement();
        for(ii=0; ii< numOfElem; ii++){
            
-           pElem= pMesh->getElement(ii);
+           pElem= pMesh->getElementIX(ii);
 
            ////debug
            //cout << "pElem->getID => " << pElem->getID() << endl;
@@ -138,9 +138,33 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
            //debug end
 
            ofs << endl;
-       };
+
+       };//Elementループエンド
        ofs << " -- Element Block End -- " << endl;
-   };
+
+       pmw::CCommMesh *pCommMesh;
+       pmw::CCommElement *pCommElem,*pDCommElem;
+       uint numOfCommMesh= pMesh->getNumOfCommMesh();
+       uint icom;
+       for(icom=0; icom< numOfCommMesh; icom++){
+           pCommMesh= pMesh->getCommMesh(icom);/////////////// <- 本来はCommID,修正の必要あり.
+
+           ofs << " -- CommElement -- " << endl;
+           uint numOfCommElem= pCommMesh->getNumOfCommElement();
+           uint icomelem;
+           for(icomelem=0; icomelem< numOfCommElem; icomelem++){
+               pCommElem= pCommMesh->getCommElement(icomelem);
+               ofs << "CommElem in ElemID => " << pCommElem->getElement()->getID() << endl;
+           }
+           ofs << " -- DCommElement -- " << endl;
+           uint numOfDCommElem= pCommMesh->getNumOfDCommElement();
+           for(icomelem=0; icomelem< numOfDCommElem; icomelem++){
+               pDCommElem= pCommMesh->getDCommElement(icomelem);
+               ofs << "DCommElem in ElemID => " << pDCommElem->getElement()->getID() << endl;
+           }
+       }//CommMeshループエンド
+
+   };//Meshループエンド
 }
 
 

@@ -9,7 +9,7 @@
 #define	_NODETYPE_H_0ca01a33_f12a_4ae4_9dde_3da45f62b934
 
 namespace pmw{
-union NodeType{
+struct NodeType{
     enum{
         Scalar,
         Vector,

@@ -10,7 +10,7 @@
 
 #include "FileReader.h"
 
-#include "MatrialType.h"
+#include "MatrialPropType.h"
 
 namespace FileIO{
 class CFileReaderMaterial:public CFileReader{

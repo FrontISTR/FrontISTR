@@ -15,6 +15,83 @@ using namespace pmw;
 //
 CEdgeFaceTree::CEdgeFaceTree()
 {
+    uint iface,iedge;
+    
+    // Faceを構成するEdge番号
+    // --
+    
+    // Hexa
+    uint hexedge[6][4]={
+        {0,1,2,3},
+        {4,7,6,5},
+        {1,9,5,10},
+        {11,7,8,3},
+        {0,8.4,9},
+        {2,10,6,11}
+    };
+    for(iface=0; iface< 6; iface++){
+        for(iedge=0; iedge< 4; iedge++){
+            mHexaFaceConnEdge[iface][iedge]= hexedge[iface][iedge];
+        };
+    };
+    
+    // Tetra
+    uint tetedge[4][3]={
+        {0,1,2},
+        {0,3,4},
+        {4,5,1},
+        {2,5,3}
+    };
+    for(iface=0; iface< 4; iface++){
+        for(iedge=0; iedge< 3; iedge++){
+            mTetraFaceConnEdge[iface][iedge]= tetedge[iface][iedge];
+        };
+    };
+    
+    // Prism
+    uint priedge[5][4]={
+        {0,2,1,0},
+        {8,7,6,8},
+        {0,3,6,4},
+        {4,7,5,2},
+        {1,5,8,3}
+    };
+    for(iface=0; iface< 5; iface++){
+        for(iedge=0; iedge< 4; iedge++){
+            mPrismFaceConnEdge[iface][iedge]= priedge[iface][iedge];
+        };
+    };
+    
+    // Pyramid
+    uint pyraedge[5][4]={
+        {0,1,2,3},
+        {1,4,5,1},
+        {2,5,6,2},
+        {6,1,3,6},
+        {0,7,4,0}
+    };
+    for(iface=0; iface< 5; iface++){
+        for(iedge=0; iedge< 4; iedge++){
+            mPyramidFaceConnEdge[iface][iedge]= pyraedge[iface][iedge];
+        };
+    };
+    
+    // Quad
+    uint quadedge[1][4]={
+        {0,1,2,3}
+    };
+    for(iedge=0; iedge< 4; iedge++){
+        mQuadFaceConnEdge[0][iedge]= quadedge[0][iedge];
+    }
+    
+    // Triangle
+    uint triedge[1][3]={
+        {0,1,2}
+    };
+    for(iedge=0; iedge< 3; iedge++){
+        mTriangleFaceConnEdge[0][iedge]= triedge[0][iedge];
+    }
+    
 }
 // destruct
 //

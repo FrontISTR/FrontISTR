@@ -11,8 +11,8 @@
 #include "TypeDef.h"
 
 #include "Logger.h"
-#include "Element4Factory.h" // Elemnt => Hexa,Tetra,Prism,Pyramid,Quad,Triangle,Beam
-
+#include "Element4Factory.h"// Elemnt => Hexa,Tetra,Prism,Pyramid,Quad,Triangle,Beam
+                            // CommElement => CommHexa, CommTetra, CommPrism
 #include "ElementProperty.h"// 頂点数,面数,辺数
 
 #include "ScalarNode.h"
@@ -31,7 +31,15 @@
 #include "AssyModel.h"
 #include "GMGModel.h"
 
+#include "IndexBucket.h"
+//#include "IndexBucketMesh.h"
+
 #include "Material.h"
+
+#include "CommunicationMesh.h"// CommElementによる,通信領域Mesh
+#include "ProgElementTree.h"// CommElementのprolongation時に利用
+
+#include "boost/lexical_cast.hpp"//数=>文字変換
 
 namespace pmw{
 class CMeshFactory
@@ -50,9 +58,11 @@ public:
 protected:
     CGMGModel    *mpGMGModel;
 
-    CAssyModel   *mpTAssyModel;// AssembledMesh Model
-    CMesh        *mpTMesh;     // each Mesh
-    uint    mNumOfMGLevel;//マルチグリッド階層数 => 1.ならマルチグリッドなし
+    CAssyModel   *mpTAssyModel;// 各 AssembledMesh Model
+    CMesh        *mpTMesh;     // 各 Mesh
+    CCommMesh    *mpTCommMesh; // 各 CommMesh(通信領域) in Mesh
+
+    uint    mMGLevel;//マルチグリッド階層数 => 1.ならマルチグリッドなし
 
     Utility::CLogger *mpLogger;
 
@@ -68,10 +78,11 @@ public:
 
     // Refine for MultiGrid
     // --------------------
-    void setMGLevel(const uint& num_of_mglevel){ mNumOfMGLevel= num_of_mglevel;}
-    uint& getMGLevel(){ return mNumOfMGLevel;}
-    void refineMesh();
+    void setMGLevel(const uint& num_of_mglevel){ mMGLevel= num_of_mglevel;}
+    uint& getMGLevel(){ return mMGLevel;}
+    void refineMesh();// <<<<<<<<<<<<< -- MultiGrid prolongation.
 protected:
+    void GeneProgElem(const uint& ilevel,CElement* pElem, CElement* pProgElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividHexa(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividTetra(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
     void dividPrism(CElement* pElem, vector<CElement*>& vProgElem, uint& indexCount, CMesh* pProgMesh);
@@ -87,6 +98,14 @@ public:
     void GeneNode(const uint& mgLevel, const uint& mesh_id, const uint& id, const vdouble& coord,
                   const uint& nodeType, const uint& numOfScaParam, const uint& numOfVecParam);
     void setupNode(const uint& mgLevel, const uint& mesh_id);//numOfNodeのセット
+
+
+    // Element
+    // -------
+    void reserveElement(const uint& mgLevel, const uint& mesh_id, const uint& num_of_element);
+    void GeneElement(const uint& mgLevel, const uint& mesh_id, const uint& id, const uint& type, const vint& node_id);
+    void setupElement(const uint& mgLevel, const uint& mesh_id);//numOfElementのセット    
+    
 
     // Aggregate-Element, Aggregate-Node
     //
@@ -106,11 +125,6 @@ public:
     void GeneBoundaryVolume(const uint& mgLevel, const uint& mesh_id, const uint& id,
                           const uint& dof, const uint& bndType,const vdouble& vVal);
 
-    // Element
-    // -------
-    void reserveElement(const uint& mgLevel, const uint& mesh_id, const uint& num_of_element);
-    void GeneElement(const uint& mgLevel, const uint& mesh_id, const uint& id, const uint& type, const vint& node_id);
-    void setupElement(const uint& mgLevel, const uint& mesh_id);//numOfElementのセット
 
 
     // Bucket(in Mesh) setup
@@ -132,8 +146,30 @@ public:
     // Material
     // --
     void reserveMaterial(const uint& res_size);
-    void GeneMaterial(const uint& material_id, string& name, vuint& vType, vdouble& vValue);
+    void GeneMaterial(const uint& mesh_id, const uint& material_id, string& name, vuint& vType, vdouble& vValue);
 
+
+    // 通信領域(CommunicationMesh)
+    // --
+    void reserveCommMesh(const uint& mgLevel, const uint& mesh_id, const uint& res_size);
+    void GeneCommMesh(const uint& mgLevel, const uint& mesh_id, const uint& comID, const uint& myRank, const uint& nTransmitRank);
+    // CommNode
+    void reserveCommNode(const uint& mgLevel, const uint& mesh_id, const uint& commesh_id, const uint& res_size);
+    void GeneCommNode(const uint& mgLevel, const uint& commNodeID, 
+                      const uint& mesh_id, const uint& commesh_id, const uint& nodeID, const uint& rank);
+    // CommElement
+    void reserveCommElement(const uint& mgLevel, const uint& mesh_id, const uint& commesh_id, const uint& res_size);
+    void GeneCommElement(const uint& mgLevel, const uint& mesh_id, const uint& commesh_id, 
+                                   const uint& nType, const uint& elemID, vuint& vCommNodeID);
+    
+protected:
+    // CommMeshのprolongation: Meshのprolongation処理に組み込み
+    // --
+    // refineMeshからコールされる,CommElemの再分割処理部分// <<<<<<<<< MultiGrid prolongation for CommMesh
+    // --
+    void GeneProgCommElem(CCommElement* pCommElem, vector<CCommElement*>& vProgCommElem);//1個のCommElemに生成するprogCommElemの生成
+    void dividCommElem(CCommElement* pCommElem, vector<CCommElement*>& vProgCommElem);//CommElemの分割
+    
 };
 }
 #endif

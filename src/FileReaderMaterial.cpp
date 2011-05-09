@@ -25,7 +25,7 @@ CFileReaderMaterial::~CFileReaderMaterial()
 bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
 {
     string sMaterialName;
-    uint   materialID, numOfMaterial, numOfItem;
+    uint   materialID, numOfMaterial, numOfItem, meshID;
     vstring vPropName;
     vuint   vPropType;
     vdouble vPropValue;
@@ -36,7 +36,7 @@ bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
         sLine = getLineSt(ifs);
         istringstream iss(sLine.c_str());
         
-        // 材料数,  MeshID <= MeshIDについては検討段階
+        // 材料数
         iss >> numOfMaterial;
 
         mpFactory->reserveMaterial(numOfMaterial);
@@ -46,10 +46,10 @@ bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
 
             if(TagCheck(sLine, FileBlockName::EndMaterial())) break;
 
-            // MaterialID, 材料名, アイテム数, Material Value (アイテム数だけ存在)
-            //
+            // MeshID, MaterialID, 材料名, アイテム数, Material Value (アイテム数だけ存在)
+            //  => MeshIDの追加 '09.09.21
             istringstream iss(sLine.c_str());
-            iss >> materialID >> sMaterialName >> numOfItem;
+            iss >> meshID >> materialID >> sMaterialName >> numOfItem;
             vPropName.resize(numOfItem);
             vPropType.resize(numOfItem);
             vPropValue.resize(numOfItem);
@@ -74,7 +74,7 @@ bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
                 mpLogger->Monitor(Utility::LoggerMode::MWDebug,vPropType[i],vPropValue[i],vPropName[i]);
             };
             
-            mpFactory->GeneMaterial(materialID, sMaterialName, vPropType, vPropValue);
+            mpFactory->GeneMaterial(meshID, materialID, sMaterialName, vPropType, vPropValue);
 
             vPropName.clear();
             vPropType.clear();

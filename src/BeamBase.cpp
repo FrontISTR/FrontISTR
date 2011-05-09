@@ -11,7 +11,7 @@ using namespace pmw;
 uint CBeamBase::mnBaseType = BaseElementType::Beam;
 //
 //
-CBeamBase::CBeamBase()
+CBeamBase::CBeamBase():CElement()
 {
 }
 

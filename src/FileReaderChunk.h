@@ -2,7 +2,7 @@
 //  FileReaderChank.h
 //  HEC_MW3 -> each block Reader
 //
-//			2009.03.23
+//			2009.09.22
 //			2008.12.08
 //			k.Takeda
 
@@ -51,23 +51,42 @@
 
 #include "FileReaderMaterial.h"
 
+#include "FileReaderCommMesh.h"
+#include "FileReaderCommNode.h"
+#include "FileReaderCommElement.h"
+
+#include "FileReaderBoundaryNode.h"
+#include "FileReaderBoundaryFace.h"
+#include "FileReaderBoundaryVolume.h"
+
+#include "FileReaderCnt.h"//mw3.cntファイル
+
 namespace FileIO{
 class CFileReaderChunk
 {
 public:
-	CFileReaderChunk();
-	CFileReaderChunk(pmw::CMeshFactory *pFactory);
-	virtual ~CFileReaderChunk();
+    CFileReaderChunk();
+    CFileReaderChunk(pmw::CMeshFactory *pFactory);
+    virtual ~CFileReaderChunk();
 
-protected:
-	vector<CFileReader*> mvReader;// Node,Element,etc...Reader
-        Utility::CLogger *mpLogger;
+private:
+    vector<CFileReader*> mvReader;// Node,Element,etc...Reader
+    CFileReaderCnt    *mpCntReader;// cntファイルReader
+
+    string  msCntFileName;//cntファイル名:名称は,固定名
+
+    Utility::CLogger *mpLogger;
 
 public:
-	void Read(string filename);// pMW
+    void setCntReader(CFileReaderCnt* pReader){ mpCntReader= pReader;}
 
-        void setFactory(pmw::CMeshFactory* pFactory);
-        void setLogger(Utility::CLogger *pLogger){ mpLogger = pLogger;}
+    void ReadCnt();// mw3.cnt読み込み
+    void Read(string filename);// pMW書式のメッシュファイル読み込み
+    
+    void setPath(string& filepath);
+
+    void setFactory(pmw::CMeshFactory* pFactory);
+    void setLogger(Utility::CLogger *pLogger){ mpLogger = pLogger;}
 };
 }
 #endif

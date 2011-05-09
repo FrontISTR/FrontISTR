@@ -18,7 +18,7 @@ uint CHexa::mNumOfNode =  8;
 #include "Logger.h"
 //
 //
-CHexa::CHexa(void)
+CHexa::CHexa(void):CSolidBase()
 {
     mvNode.resize(mNumOfNode);
     mvvEdgeElement.resize(mNumOfEdge);
@@ -41,7 +41,9 @@ CHexa::CHexa(void)
     for(i=0; i< mNumOfFace; i++){
         mvb_face.push_back(false);
     };
-    
+
+    //CommElementのprolongation用
+    mvProgElement.resize(mNumOfNode);
 }
 
 CHexa::~CHexa(void)

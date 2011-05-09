@@ -8,7 +8,7 @@ using namespace pmw;
 
 uint CSolidBase::mnBaseType = BaseElementType::Solid;
 
-CSolidBase::CSolidBase(void)
+CSolidBase::CSolidBase(void):CElement()
 {
 }
 

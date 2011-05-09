@@ -20,7 +20,7 @@
 
 namespace pmw{
 // Element
-union ElementType{
+struct ElementType{
     enum{
         Polyhedral,
         Hexa,
@@ -45,7 +45,7 @@ union ElementType{
 };
 
 // Property
-union ElementPropType{
+struct ElementPropType{
     enum{
         Face,
         Edge,
@@ -54,7 +54,7 @@ union ElementPropType{
 };
 
 // Material
-union MaterialElement{
+struct MaterialElement{
     enum{
         HeatTransfer,
         Spring,
@@ -63,7 +63,7 @@ union MaterialElement{
 };
 
 // Base Type
-union BaseElementType{
+struct BaseElementType{
     enum{
         Solid,
         Shell,

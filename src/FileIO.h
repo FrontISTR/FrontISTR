@@ -13,6 +13,8 @@
 #include "FileReaderChunk.h"
 #include "FileWriterChunk.h"
 
+#include "FileReaderCnt.h"//mw3.cnt
+
 namespace FileIO{
 class CFileIO
 {
@@ -31,11 +33,19 @@ private:
     CFileReaderChunk moReader;
     CFileWriterChunk moWriter;
 
+    CFileReaderCnt   moCntReader;
+
 public:
     void setFactory(pmw::CMeshFactory *pFactory);
     void setLogger(Utility::CLogger *pLogger);
 
-    // HEC_MW3 書式
+    // cntファイルからメッシュのベースネームを取得
+    void ReadCntFile();
+    string& getMeshFileBaseName(){return moCntReader.getMeshFileBaseName();}
+    string& getPathName(){ return msPathName;}
+
+
+    // HEC_MW3 書式のメッシュデータ
     void ReadFile(string filename);
     void WriteFile(string filename, const uint& nmgLevel);
 };

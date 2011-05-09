@@ -72,3 +72,31 @@ string& CFileReader::getLineSt(ifstream& ifs)
 
     return msLine;
 }
+
+
+// Elementのタイプを表す文字列をElementTypeを表す整数に変換
+// string => uint
+//
+uint CFileReader::IntElemType(string& sElemType)
+{
+    if(sElemType=="Hexa") return pmw::ElementType::Hexa;
+    if(sElemType=="Tetra")return pmw::ElementType::Tetra;
+    if(sElemType=="Prism")return pmw::ElementType::Prism;
+    if(sElemType=="Pyramid")return pmw::ElementType::Pyramid;
+    if(sElemType=="Quad") return pmw::ElementType::Quad;
+    if(sElemType=="Triangle")return pmw::ElementType::Triangle;
+    if(sElemType=="Beam") return pmw::ElementType::Beam;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

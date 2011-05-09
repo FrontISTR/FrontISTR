@@ -11,7 +11,8 @@ using namespace pmw;
 //
 CVertex::CVertex(void)
 {
-    // mID = -1;// not  initialize
+    // mID = -1;// not initialize
+    //mRank= -1;// non initialize
 }
 
 CVertex::~CVertex(void)

@@ -13,7 +13,6 @@ pmw::CMWMain *pMW;
 // 1. HEC_MW3 construct & destruct
 //----
 void mw_initialize_(){
-    //pMW = new pmw::CMWMain();
     pMW = pmw::CMWMain::Instance();
 }
 void mw_finalize_(){

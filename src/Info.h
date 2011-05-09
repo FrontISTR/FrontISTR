@@ -9,7 +9,7 @@
 #define	_INFO_H_62c11211_b4a0_4c3a_97c9_ec8f15c9330c
 
 namespace Utility{
-union Info{
+struct Info{
     static const char* Header(){return
     " --------------------------------------------------------------------------- \n"
     "|                                                                           |\n"

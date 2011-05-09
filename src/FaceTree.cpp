@@ -12,6 +12,10 @@ using namespace pmw;
 
 CFaceTree::CFaceTree()
 {
+    uint i,ii;    
+    
+    // 面を構成する頂点
+    // --
     // Hexa
     // --
     uint hface[6][4]={
@@ -23,7 +27,6 @@ CFaceTree::CFaceTree()
     {2,6,7,3}
     };
 
-    uint i,ii;
     for(i=0; i< 6; i++){
     for(ii=0; ii< 4; ii++){
         mHexaFaceIndex[i][ii]= hface[i][ii];
@@ -92,6 +95,84 @@ CFaceTree::CFaceTree()
         mTriangleFaceIndex[i]= tri[i];
     };
 
+    
+    // 頂点に接続する面
+    // --
+    // Hexa
+    uint hexconn[8][3]={
+        {0,4,3},
+        {0,4,2},
+        {0,2,5},
+        {0,3,5},
+        {1,4,3},
+        {1,4,2},
+        {1,2,5},
+        {1,3,5}
+    };
+    for(i=0; i< 8; i++){
+        for(ii=0; ii< 3; ii++){
+            mHexaConnFace[i][ii]= hexconn[i][ii];
+        }
+    }
+    
+    // Tetra
+    uint tetconn[4][3]={
+        {0,3,1},
+        {0,1,2},
+        {0,2,3},
+        {1,2,3}
+    };
+    for(i=0; i< 4; i++){
+        for(ii=0; ii< 3; ii++){
+            mTetraConnFace[i][ii]= tetconn[i][ii];
+        }
+    }
+    
+    // Prism
+    uint priconn[6][3]={
+        {0,4,2},
+        {0,2,3},
+        {0,4,3},
+        {1,4,2},
+        {1,2,3},
+        {1,3,4}
+    };
+    for(i=0; i< 6; i++){
+        for(ii=0; ii< 3; ii++){
+            mPrismConnFace[i][ii]= priconn[i][ii];
+        }
+    }
+    
+    // Pyramid
+    uint pyconn[5][4]={
+        {0,4,3,0},
+        {0,4,1,0},
+        {0,1,2,0},
+        {0,2,3,0},
+        {1,2,3,4}
+    };
+    for(i=0; i< 5; i++){
+        for(ii=0; ii< 4; ii++){
+            mPyramidConnFace[i][ii]= pyconn[i][ii];
+        }
+    }
+    
+    // Quad
+    uint quconn[4][1]={
+        {0},{0},{0},{0}
+    };
+    for(i=0; i< 4; i++){
+        mQuadConnFace[i][0]= quconn[i][0];
+    }
+    
+    // Triangle
+    uint triconn[3][1]={
+        {0},{0},{0}
+    };
+    for(i=0; i< 3; i++){
+        mTriangleConnFace[i][0]= triconn[i][0];
+    }
+    
 }
 CFaceTree::~CFaceTree()
 {

@@ -22,6 +22,8 @@ typedef vector<double> vdouble;
 typedef vector<vector<double> > vvdouble;
 
 typedef vector<string> vstring;
+
+typedef vector<bool> vbool;
 //---------------
 
 

@@ -39,6 +39,9 @@ CPyramid::CPyramid()
     for(i=0; i< mNumOfFace; i++){
         mvb_face.push_back(false);
     };
+
+    //CommElementのprolongation用
+    mvProgElement.resize(8);//Hexa==4個,Pyramid==4個
 }
 
 CPyramid::~CPyramid()

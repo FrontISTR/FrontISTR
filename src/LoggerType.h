@@ -12,7 +12,7 @@
 namespace Utility{
 // Logger Mode #
 //
-union LoggerMode{
+struct LoggerMode{
 enum{
     MWDebug,
     Debug,
@@ -25,7 +25,7 @@ enum{
 
 // Logger Output Device #
 //
-union LoggerDevice{
+struct LoggerDevice{
 enum{
     Disk,
     Display

@@ -8,9 +8,13 @@ using namespace Utility;
 
 CLogger::CLogger()
 {
-    // LogFile デフォルト
-    msPathName = "";
-    msLogFileName = "hec_mw3.log";
+    // パス名
+    // systemから*.exeパスを取得する必要があるが,まだしてない.
+    msPathName = "/home/ktakeda/NetBeansProjects/MW_Str/";
+
+    // LogFile デフォルトのファイルベース名
+    msLogFileBaseName = "hec_mw3";
+    
  
     // Mode デフォルト
     mnCurrentState = LoggerMode::Info;
@@ -41,21 +45,30 @@ void CLogger::InfoDisplay()
 }
 
 
-// Logファイル名の変更
+// Logファイルベース名の変更
 //
-void CLogger::setFileName(const string& filename)
+void CLogger::setFileBaseName(const string& filebase)
 {
-    msLogFileName = filename;
+    msLogFileBaseName = filebase;
 }
 
 // LogFile Open
 //
-void CLogger::initializeLogFile()
+void CLogger::initializeLogFile(const uint& rank)
 {
+    myRank= rank;
+
+    // LogFile名を作成
+    msLogFileName = msPathName + msLogFileBaseName + "_";
+    msLogFileName += boost::lexical_cast<string>(myRank);
+    msLogFileName += ".log";
+
+    // 古いLogを除去
     msOutputString = "Remove old LogFile";
     if(remove(msLogFileName.c_str()) == 0){
         cout << msLoggerPref << setfill(mcFillStr) << setw(60) << msOutputString << endl;
     }
+    
     
     ofs.open(msLogFileName.c_str(), ios::out | ios::app);
 }

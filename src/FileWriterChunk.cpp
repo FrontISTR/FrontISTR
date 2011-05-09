@@ -32,22 +32,26 @@ void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
 
     ofstream ofs(filename.c_str(),ios::out);
 
-//    uint i, ilevel;
-//    for(ilevel=0; ilevel< numOfLevel; ilevel++){
-//        for(i=0; i < mvWriter.size(); i++){
-//            mvWriter[i]->Write(ofs, ilevel);
-//        };
-//    };
+    uint i, ilevel;
+    for(ilevel=0; ilevel< numOfLevel; ilevel++){
 
-    //最終レベルだけ出力(debug?)
-    //
-    uint i, ilevel=numOfLevel-1;
-    //debug
-    cout << "FileWriterChunk,  ilevel= " << ilevel << endl;
-    
-    for(i=0; i < mvWriter.size(); i++){
-        mvWriter[i]->Write(ofs, ilevel);
+        //debug
+        cout << "FileWriterChunk,  ilevel= " << ilevel << endl;
+
+        for(i=0; i < mvWriter.size(); i++){
+            mvWriter[i]->Write(ofs, ilevel);
+        };
     };
+
+//    //最終レベルだけ出力(debug?)
+//    //
+//    uint i, ilevel=numOfLevel-1;
+//    //debug
+//    cout << "FileWriterChunk,  ilevel= " << ilevel << endl;
+//
+//    for(i=0; i < mvWriter.size(); i++){
+//        mvWriter[i]->Write(ofs, ilevel);
+//    };
 
 
     ofs.close();

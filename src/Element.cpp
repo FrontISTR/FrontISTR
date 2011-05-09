@@ -15,6 +15,12 @@ using namespace pmw;
 CElement::CElement(void)
 {
     mvPairNodeLocalNum.resize(2);//局所ノード番号ペアとして使用.
+
+    mbComm =false;//デフォルトは,CommElementではない.
+    mbDComm=false;//デフォルトは計算領域 => DCommElementではない.
+    mbRComm=false;//デフォルトは,RCommElementではない(CommMeshに含まれているが,Nodeが全てmyRank)
+
+    mCommID= -1;
 }
 
 CElement::~CElement(void)

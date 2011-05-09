@@ -13,12 +13,10 @@
 #ifndef PMW_MAIN_HH_C8955A70_0EE9_4f3e_82D1_FB32C9626513
 #define PMW_MAIN_HH_C8955A70_0EE9_4f3e_82D1_FB32C9626513
 
-#include "CommonStd.h"
 #include "TypeDef.h"
 
-//
 // MPI include
-// 
+#include "HEC_MPI.h"
 
 #include "FileIO.h"
 #include "Logger.h"
@@ -26,6 +24,8 @@
 #include "MeshFactory.h"
 #include "GMGModel.h"
 
+
+#include <boost/lexical_cast.hpp>
 
 namespace pmw{
 class CMWMain
@@ -52,13 +52,18 @@ protected:
     pmw::CGMGModel    *mpGMGModel;
     pmw::CMeshFactory  *mpFactory;
 
+    pmw::CHecMPI      *mpMPI;
+
     bool mb_file;//file読み込み後？
 
-public:
-    int FileRead(string& file_name); // マルチグリッド数のAssyModel生成、"Level=0"のMesh(アッセンブリーパーツ)生成
-    int FileWrite(string& file_name);// ファイル出力
+    string msInputFileName;
+    string msOutputFileName;
 
-    int Initialize();// MPI, Logger設定
+public:
+    int FileRead(); // マルチグリッド数のAssyModel生成、"Level=0"のMesh(アッセンブリーパーツ)生成
+    int FileWrite();// ファイル出力
+
+    int Initialize(int argc, char** argv);// 引数:MPI_Init用, Logger設定
     int Finalize();  // Loggerのログファイルclose
     
     

@@ -3,7 +3,7 @@
 //  各種の要素形状の、辺(Edge)のノード接続
 //
 //
-//                      2009.06.23
+//                      2009.09.01
 //                      2009.06.23
 //                      k.Takeda
 #include "EdgeTree.h"
@@ -14,7 +14,214 @@ using namespace pmw;
 //
 CEdgeTree::CEdgeTree()
 {
-    ;
+    uint i,ii;
+
+    // Edgeを構成する両端の局所ノード番号
+    //--
+    //Hexa
+    uint hexedge[12][2]={
+        {0,1},
+        {1,2},
+        {2,3},
+        {3,0},
+        {4,5},
+        {5,6},
+        {6,7},
+        {7,4},
+        {0,4},
+        {1,5},
+        {2,6},
+        {3,7}
+    };
+    for(i=0; i< 12; i++){
+        for(ii=0; ii< 2; ii++){
+            mHexaEdgeIndex[i][ii]= hexedge[i][ii];
+        };
+    };
+
+    //Tetra
+    uint tetedge[6][2]={
+        {0,1},
+        {1,2},
+        {2,0},
+        {0,3},
+        {1,3},
+        {2,3}
+    };
+    for(i=0; i< 6; i++){
+        for(ii=0; ii< 2; ii++){
+            mTetraEdgeIndex[i][ii]= tetedge[i][ii];
+        };
+    };
+
+    //Prism
+    uint priedge[9][2]={
+        {0,1},
+        {0,2},
+        {1,2},
+        {0,3},
+        {1,4},
+        {2,5},
+        {3,4},
+        {4,5},
+        {5,3}
+    };
+    for(i=0; i< 9; i++){
+        for(ii=0; ii< 2; ii++){
+            mPrismEdgeIndex[i][ii]= priedge[i][ii];
+        };
+    };
+
+    //Pyramid
+    uint pyedge[8][2]={
+        {0,1},
+        {1,2},
+        {2,3},
+        {3,0},
+        {1,4},
+        {2,4},
+        {3,4},
+        {0,4}
+    };
+    for(i=0; i< 8; i++){
+        for(ii=0; ii< 2; ii++){
+            mPyramidEdgeIndex[i][ii]= pyedge[i][ii];
+        };
+    };
+
+    //Quad
+    uint quedge[4][2]={
+        {0,1},
+        {1,2},
+        {2,3},
+        {3,0}
+    };
+    for(i=0; i< 4; i++){
+        for(ii=0; ii< 2; ii++){
+            mQuadEdgeIndex[i][ii]= quedge[i][ii];
+        };
+    };
+
+    //Triangle
+    uint triedge[3][2]={
+        {0,1},
+        {1,2},
+        {2,0}
+    };
+    for(i=0; i< 3; i++){
+        for(ii=0; ii< 2; ii++){
+            mTriangleEdgeIndex[i][ii]= triedge[i][ii];
+        };
+    };
+
+    //Beam
+    uint bmedge[1][2]={
+        {0,1}
+    };
+    for(i=0; i< 1; i++){
+        for(ii=0; ii< 2; ii++){
+            mBeamEdgeIndex[i][ii]= bmedge[i][ii];
+        };
+    };
+
+
+    // ノードに接続するEdge番号
+    // --
+    // Hexa
+    uint hexconn[8][3]={
+        {0,3,8},
+        {0,1,9},
+        {1,2,10},
+        {2,3,11},
+        {4,7,8},
+        {4,5,9},
+        {5,6,10},
+        {7,6,11}
+    };
+    for(i=0; i< 8; i++){
+        for(ii=0; ii< 3; ii++){
+            mHexaConnEdge[i][ii]= hexconn[i][ii];
+        }
+    }
+    
+    // Tetra
+    uint tetconn[4][3]={
+        {2,0,3},
+        {0,1,4},
+        {2,1,5},
+        {3,4,5}
+    };
+    for(i=0; i< 4; i++){
+        for(ii=0; ii< 3; ii++){
+            mTetraConnEdge[i][ii]= tetconn[i][ii];
+        }
+    }
+    
+    // Prism
+    uint priconn[6][3]={
+        {1,0,3},
+        {0,2,4},
+        {1,2,5},
+        {3,6,8},
+        {6,4,7},
+        {7,8,5}
+    };
+    for(i=0; i< 6; i++){
+        for(ii=0; ii< 3; ii++){
+            mPrismConnEdge[i][ii]= priconn[i][ii];
+        }
+    }
+    
+    // Pyramid
+    uint pyconn[5][4]={
+        {0,3,7,0},
+        {0,1,4,0},
+        {1,2,5,1},
+        {2,3,6,2},
+        {4,5,6,7}
+    };
+    for(i=0; i< 5; i++){
+        for(ii=0; ii< 4; ii++){
+            mPyramidConnEdge[i][ii]= pyconn[i][ii];
+        }
+    }
+    
+    // Quad
+    uint quconn[4][2]={
+        {0,3},
+        {0,1},
+        {1,2},
+        {2,3}
+    };
+    for(i=0; i< 4; i++){
+        for(ii=0; ii< 2; ii++){
+            mQuadConnEdge[i][ii]= quconn[i][ii];
+        }
+    }
+    
+    // Triangle
+    uint triconn[3][2]={
+        {0,2},
+        {0,1},
+        {1,2}
+    };
+    for(i=0; i< 3; i++){
+        for(ii=0; ii< 2; ii++){
+            mTriangleConnEdge[i][ii]= triconn[i][ii];
+        }
+    }
+    
+    // Beam
+    uint beconn[2][1]={
+        {0},
+        {0}
+    };
+    for(i=0; i< 2; i++){
+        for(ii=0; ii< 1; ii++){
+            mBeamConnEdge[i][ii]= beconn[i][ii];
+        }
+    }
+    
 }
 CEdgeTree::~CEdgeTree()
 {

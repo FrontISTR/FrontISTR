@@ -9,7 +9,7 @@
 #define	_ELEMENTPROPERTY_H_2c62c37d_45fa_4831_adca_c5afc1cd61ae
 
 namespace pmw{
-union NumberOfVertex{
+struct NumberOfVertex{
     static uint Hexa(){return 8;}    
     static uint Tetra(){return 4;}
     static uint Prism(){return 6;}
@@ -18,7 +18,7 @@ union NumberOfVertex{
     static uint Triangle(){return 3;}
     static uint Beam(){return 2;}
 };
-union NumberOfEdge{
+struct NumberOfEdge{
     static uint Hexa(){return 12;}
     static uint Tetra(){return 6;}
     static uint Prism(){return 9;}
@@ -27,7 +27,7 @@ union NumberOfEdge{
     static uint Triangle(){return 3;}
     static uint Beam(){return 1;}
 };
-union NumberOfFace{
+struct NumberOfFace{
     static uint Hexa(){return 6;}
     static uint Tetra(){return 4;}
     static uint Prism(){return 5;}

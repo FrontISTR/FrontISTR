@@ -21,6 +21,7 @@ private:
     
     uint  mFaceIndex;
 
+    // Faceを構成する頂点(局所ノード番号)
     uint mHexaFaceIndex[6][4];
     uint mTetraFaceIndex[4][3];
     uint mPrismFaceIndex[5][4];
@@ -30,6 +31,16 @@ private:
     
     //uint QuadVertSize,TriVertSize;//Faceの頂点数(四辺形=4,三角形=3)
     //uint HexFaceSize, TetFaceSize;//Face数(Hexa=6, Tetra=4)
+
+    // 頂点に接続する面番号
+    uint mHexaConnFace[8][3];
+    uint mTetraConnFace[4][3];
+    uint mPrismConnFace[6][3];
+    uint mPyramidConnFace[5][4];
+    uint mQuadConnFace[4][1];
+    uint mTriangleConnFace[3][1];
+
+
 public:
     static CFaceTree* Instance(){
         static CFaceTree faceTree;
@@ -59,6 +70,15 @@ public:
     uint* getLocalNodePyramidFace(const uint& faceIndex);
     uint* getLocalNodeQuadFace();
     uint* getLocalNodeTriangleFace();
+
+    // 局所ノード(Vertex)番号に接続する面(Face)番号
+    uint* getHexaConnFace(const uint& ivert){ return mHexaConnFace[ivert];}
+    uint* getTetraConnFace(const uint& ivert){ return mTetraConnFace[ivert];}
+    uint* getPrismConnFace(const uint& ivert){ return mPrismConnFace[ivert];}
+    uint* getPyramidConnFace(const uint& ivert){ return mPyramidConnFace[ivert];}
+    uint* getQuadConnFace(const uint& ivert){ return mQuadConnFace[ivert];}
+    uint* getTriangleConnFace(const uint& ivert){ return mTriangleConnFace[ivert];}
+
 };
 }
 

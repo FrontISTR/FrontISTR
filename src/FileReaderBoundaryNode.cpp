@@ -53,7 +53,7 @@ bool CFileReaderBoundaryNode::Read(ifstream& ifs, string& sLine)
 
             vValue.resize(dof);
 
-            for(uint i=0; i< dof; i++) iss >> vValue[i];
+            for(uint i=0; i< dof; i++) iss >> vValue[i];//dof数ぶんの値を読み込む
 
             // ファイル中に記述されている境界タイプ文字列をunsigned int に変換
             if(s_bndType=="Load") bndType = pmw::BoundaryTypeNode::Load;

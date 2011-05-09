@@ -24,6 +24,9 @@ CBeam::CBeam()
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge.push_back(false);
     };
+
+    //CommElementのprolongation用
+    mvProgElement.resize(mNumOfNode);
 }
 
 CBeam::~CBeam()

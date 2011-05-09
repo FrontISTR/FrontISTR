@@ -18,6 +18,16 @@
 #include "Triangle.h"
 #include "Beam.h"
 
+// CommElement
+#include "CommElement.h"
+#include "CommHexa.h"
+#include "CommTetra.h"
+#include "CommPrism.h"
+#include "CommPyramid.h"
+#include "CommQuad.h"
+#include "CommTriangle.h"
+#include "CommBeam.h"
+
 // Material Element
 #include "Film.h"
 

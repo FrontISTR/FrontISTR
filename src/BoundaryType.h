@@ -10,7 +10,7 @@
 #define	_BOUNDARYTYPE_H_f6a34053_61db_4c0c_8aeb_0a964eb6ee0f
 
 namespace pmw{
-union BoundaryTypeNode{
+struct BoundaryTypeNode{
     enum {
         Load,
         Disp,
@@ -20,7 +20,7 @@ union BoundaryTypeNode{
         Thermal_Flux
     };
 };
-union BoundaryTypeFace{
+struct BoundaryTypeFace{
     enum {
         Pressure,
         TractionVector,
@@ -28,7 +28,7 @@ union BoundaryTypeFace{
         Thermal_Flux
     };
 };
-union BoundaryTypeVolume{
+struct BoundaryTypeVolume{
     enum {
         Accel,
         Gravity,
@@ -37,7 +37,7 @@ union BoundaryTypeVolume{
     };
 };
 
-union BoundaryTypeFlow{
+struct BoundaryTypeFlow{
     enum {
         Velo_X,
         Velo_Y,
