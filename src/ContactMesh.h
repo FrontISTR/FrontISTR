@@ -157,7 +157,7 @@ public:
     // Refine関連
     // --
     void setupAggSkinFace();// ConNodeへ接続しているSkinFaceIDの集合をConNodeへセット.
-    void setupEdgeConNode(CContactMesh *pProgConMesh);// 辺に接続するSkinFaceのセットと辺ノードの生成,設置
+    void setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLevel);// 辺に接続するSkinFaceのセットと辺ノードの生成,設置
     void setupFaceConNode(CContactMesh *pProgConMesh);// 面中心に配置する面ノードの生成,設置
     void setupCoarseConNode(CContactMesh *pProgConMesh);//上位ContactMeshに自身のノードをセット.
 

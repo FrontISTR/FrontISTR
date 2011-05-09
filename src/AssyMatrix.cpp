@@ -25,6 +25,8 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 {
 	mpAssyModel = pAssyModel;
         mnDOF = nDOF;//アセンブル方程式のDOF
+
+        printf("mnDOF %d \n", mnDOF);//'10.12.27 追加
 	
 	for (int i = 0; i < pAssyModel->getNumOfMesh(); i++) {
 		CMesh *pMesh = pAssyModel->getMesh(i);
@@ -39,11 +41,10 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 	printf("numOfContact %d \n",numOfContact);
 	
         uint idof;
-        //DOF数ぶんの関係式
+        //DOF数ぶんの関係式ポインターを準備
         CEquation **vEquation;
         vEquation = new CEquation*[mnDOF];
-        //////////////////////////////////////////////////////////////////
-        for(idof=0; idof < mnDOF; idof++) vEquation[idof]= new CEquation();
+        
         
 
 	for(uint icont = 0; icont < numOfContact; icont++){
@@ -57,6 +58,8 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 			CContactNode* pSlaveNode = pConMesh->getSlaveConNode(islave);
 			uint mgLevel = mMGLevel;
 			if(pSlaveNode->have_MasterFaceID(mgLevel)){
+                                ////////////////// DOF数ぶんのMPC関係式 生成 ///////////////////////
+                                for(idof=0; idof < mnDOF; idof++) vEquation[idof]= new CEquation();
 
 				uint masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
 				uint smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
@@ -358,6 +361,18 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 	precond(pF, pV, 1);
 	printf(" exit CAssyMatrix::MGInitialGuess %d \n", mMGLevel);
 	return 1;
+}
+
+// デバッグ
+// ------
+// 2011.01.05
+//
+void CAssyMatrix::dump()
+{
+    uint i;
+    for(i=0; i < mvMatrix.size(); i++){
+        mvMatrix[i]->dump();
+    };
 }
 
 }//namespace pmw;

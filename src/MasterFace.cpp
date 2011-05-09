@@ -158,15 +158,16 @@ double& CMasterFace::DotProduct()
 void CMasterFace::addSlaveNode(CContactNode* pConNode)
 {
     int iprodp,iprodm;//外積の+,-のカウンター :: 面ベクトル(正規化)と同じ向きなら”+”. 逆向きなら"-"
-    int numOfVert;
+    int nNumOfVert;
     uint ivert,jvert;//頂点Index
 
-    numOfVert= (int)mvConNode.size();
+    nNumOfVert= this->getNumOfVert();//1次・2次要素どちらでも面の頂点数
+
     iprodp=0;
     iprodm=0;
-    for(ivert=0; ivert< numOfVert; ivert++){
+    for(ivert=0; ivert< nNumOfVert; ivert++){
         //隣の頂点番号
-        if(ivert==numOfVert-1){ jvert=0; }else{ jvert= ivert+1; }
+        if(ivert==nNumOfVert-1){ jvert=0; }else{ jvert= ivert+1; }
 
         //"pConNodeと頂点2個"の面ベクトル :: mvVector
         CrossProduct(pConNode, ivert, jvert);
@@ -182,10 +183,10 @@ void CMasterFace::addSlaveNode(CContactNode* pConNode)
     };
 
     //debug
-    cout << "MasterFace::addSlaveNode, numOfVert= " << numOfVert << ", +内外カウント = " << iprodp << ", -内外カウント = " << iprodm << endl;
+    cout << "MasterFace::addSlaveNode, numOfVert= " << nNumOfVert << ", +内外カウント = " << iprodp << ", -内外カウント = " << iprodm << endl;
 
     //外積のカウンターが(頂点数 or -頂点数)と一致ならば,面内と判定 => Slave点
-    if(iprodp==numOfVert || iprodm== -numOfVert){
+    if(iprodp==nNumOfVert || iprodm== -nNumOfVert){
 
         // スレーブ点として追加
         mvSlaveConNode.push_back(pConNode);
@@ -197,7 +198,8 @@ void CMasterFace::addSlaveNode(CContactNode* pConNode)
         // Coefの確保
         //  スレーブ点が追加される度にCoefの配列数を増加
         vdouble vCoef;
-        vCoef.resize(numOfVert);
+        uint nNumOfFaceNode = mvConNode.size();
+        vCoef.resize(nNumOfFaceNode);//面のノード数確保(1次・2次 両方の要素に対応するため面のノード数)
 
         mvvCoef.push_back(vCoef);
 
@@ -426,7 +428,7 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     //// mmvCoef所有の為のID
     //uint slaveID= pSlaveP->getID();
 
-    uint numOfVert= mvConNode.size();
+    uint numOfVert= this->getNumOfVert();
 
     // 対向する辺の最近接点
     //   E,Fベクトルの最近接点(vNP0,vNP1) => 近似交点(vOP)
@@ -446,10 +448,11 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     double dLenInP0InP1,dLenInP0SlaveP;//InterP0-InterP1の距離,InterP0-SlavePの距離
     vdouble vValSlaveP;//スレーブ点での補間値
     
+    // 三角形用途
     double  aArea;//三角形全体の面積
     vdouble vArea;//スレーブ点で3分割されてできる,3個の三角形
     vArea.resize(3);
-    
+
     // パラメータ種類別
     switch(valType){
         case(MPCValueType::Displacement):
@@ -469,7 +472,6 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     //debug 用途 ΣCoefのチェック用
     uint ideb;
     double deb;
-
 
     switch(numOfVert){
         case(4)://四辺形
@@ -625,29 +627,17 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
             // Quad頂点3 のCoef
             mvvCoef[islave][3]= CoefTermA(mvConNode[2],vInterP0,mvConNode[2],mvConNode[3]) * CoefTermB(vInterP1,pSlaveP, vInterP1,vInterP0);
             
-            
-            //    //debug
-            //    ///////////////////////
-            //    deb=0.0;
-            //    for(ideb=0; ideb< 4; ideb++){
-            //        deb += mvvCoef[islave][ideb];
-            //    };
-            //    if(deb>1.0){
-            //        cout << "SlaveP ID= " << pSlaveP->getID() << endl;
-            //        cout << "slave coord:" << endl;
-            //        cout << " x= " << pSlaveP->getX() << ",y= " << pSlaveP->getY() <<  ",z= " << pSlaveP->getZ() << endl;
-            //        cout << endl;
-            //
-            //        cout << "MasterFace ID= " << mID << endl;
-            //        cout << "master coord:" << endl;
-            //        cout << " x= " << mvConNode[0]->getX() << ",y= " << mvConNode[0]->getY() << ",z= " << mvConNode[0]->getZ() << endl;
-            //        cout << " x= " << mvConNode[1]->getX() << ",y= " << mvConNode[1]->getY() << ",z= " << mvConNode[1]->getZ() << endl;
-            //        cout << " x= " << mvConNode[2]->getX() << ",y= " << mvConNode[2]->getY() << ",z= " << mvConNode[2]->getZ() << endl;
-            //        cout << " x= " << mvConNode[3]->getX() << ",y= " << mvConNode[3]->getY() << ",z= " << mvConNode[3]->getZ() << endl;
-            //        cout << endl;
-            //    }
-            //    ///////////////////////
-            
+            // 2次要素の場合
+            if(mnOrder==ElementOrder::Second){
+                mvvCoef[islave][0] *= 0.5;
+                mvvCoef[islave][1] *= 0.5;
+                mvvCoef[islave][2] *= 0.5;
+                mvvCoef[islave][3] *= 0.5;
+                mvvCoef[islave][4] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+                mvvCoef[islave][5] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
+                mvvCoef[islave][6] = (mvvCoef[islave][2] + mvvCoef[islave][3])*0.5;
+                mvvCoef[islave][7] = (mvvCoef[islave][3] + mvvCoef[islave][0])*0.5;
+            }
             
             break;
 
@@ -734,10 +724,15 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
             mvvCoef[islave][1]= vArea[1]/aArea;// Tri 頂点1 のCoef
             mvvCoef[islave][2]= vArea[2]/aArea;// Tri 頂点2 のCoef
 
-            //debug
-            //cout << "MasterFace::CalcSlave, Coef[0]= " << mvvCoef[islave][0]
-            //                          << ", Coef[1]= " << mvvCoef[islave][1]
-            //                          << ", Coef[2]= " << mvvCoef[islave][2] << endl;
+            // 2次要素の場合
+            if(mnOrder==ElementOrder::Second){
+                mvvCoef[islave][0] *= 0.5;
+                mvvCoef[islave][1] *= 0.5;
+                mvvCoef[islave][2] *= 0.5;
+                mvvCoef[islave][3] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+                mvvCoef[islave][4] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
+                mvvCoef[islave][5] = (mvvCoef[islave][2] + mvvCoef[islave][0])*0.5;
+            }
 
             break;
 
@@ -772,6 +767,13 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
             //
             mvvCoef[islave][0]= CoefTermB(vInterP1,pSlaveP, vInterP0,vInterP1);// Beam 頂点0 のCoef
             mvvCoef[islave][1]= CoefTermB(vInterP0,pSlaveP, vInterP0,vInterP1);// Beam 頂点1 のCoef
+
+            // 2次要素の場合
+            if(mnOrder==ElementOrder::Second){
+                mvvCoef[islave][0] *= 0.5;
+                mvvCoef[islave][1] *= 0.5;
+                mvvCoef[islave][2] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+            }
 
             break;
 

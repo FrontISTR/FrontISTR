@@ -42,6 +42,8 @@ public:
 
 	int precond(const CVector *pR, CVector *pZ) const;
 	int relax(const CVector *pF, CVector *pV) const;
+
+        void dump();//2011.01.05 行列をダンプ
 private:
 	int mnNode;
 	int mnNodeInternal;

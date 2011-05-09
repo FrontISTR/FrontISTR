@@ -48,10 +48,10 @@ protected:
     // 辺に生成するContactNode (Refine用途)
     //
     vector<CContactNode*> mvEdgeNode;//辺に生成するContactNode
-    //vector<bool>  mvbEdgeMarking;
     bool* mvbEdgeMarking;            //辺にノードを生成済みか.
+
     vector<CSkinFace*>    mvEdgeFace;//辺に隣接するSkinFace,<<<<<<<<<<<<<-自分自身は除外.
-    //PairConNode           mPairConNode;//辺の両端ノードのreturn value用
+
     uint& getEdgeIndex(PairConNode& pairConNode);//両端のノードから辺番号を特定
 
     // 面中心のContactNode (Refine用途)
@@ -63,6 +63,8 @@ protected:
     // Shape(形状タイプ)
     uint mNumOfEdge;
     uint mShapeType;//ElementTypeによる定数
+
+    uint mnOrder;//1次｜2次 次数
 
     // refine()からコールされる関数
     // --
@@ -116,11 +118,14 @@ public:
     vector<CContactNode*>&  getNodes(){ return mvConNode;}
     CContactNode*  getNode(const uint& index){ return mvConNode[index];}
 
+
     // 形状タイプ
     // --
     void setShapeType(const uint& shapeType);
     uint& getShapeType(){ return mShapeType;}
     uint& getNumOfEdge(){ return mNumOfEdge;}
+    uint  getNumOfVert();
+    uint& getOrder(){ return mnOrder;}
     
 
 
@@ -164,7 +169,10 @@ public:
     vdouble& CalcNzNormalVector();//面ベクトル(正規化)計算
     vdouble& getNzNormalVector();//面ベクトル(正規化)取得のみ
     
-    
+    // 辺ノードを mvConNode へ移動 (2次要素面の場合)
+    //
+    void replaceEdgeNode();
+
     // 辺ノードvectorのメモリー解放
     //
     void deleteProgData();

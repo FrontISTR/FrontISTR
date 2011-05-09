@@ -363,7 +363,7 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
   bool flag_time_log = false;
   char cfile[100];
   
-   switch( method ){
+    switch( method ){
         case( 1 ):
 	   {CSolverCG *solver = new CSolverCG(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log);
 	   solver->solve(mpAssyMatrix, mpRHSAssyVector, mpSolAssyVector);}
@@ -383,6 +383,10 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
         default:
            break;
     }
+    
+////    //2011.01.05 行列をダンプ(標準出力)
+////    mpAssyMatrix->dump();
+
 
 
     //

@@ -3253,6 +3253,17 @@ void CMeshFactory::GeneMasterFace(const uint& contactID, const uint& shapeType, 
         CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
         pMFace->addNode(pConNode);
     };
+    //2次要素の場合、辺ノードをセットしておく
+    if(pMFace->getOrder()==ElementOrder::Second){
+        uint nNumOfEdge= pMFace->getNumOfEdge();
+        uint nNumOfVert= pMFace->getNumOfVert();
+        for(uint iedge=0; iedge < nNumOfEdge; iedge++){
+            CContactNode *pConNode= pMFace->getNode(nNumOfVert + iedge);
+            pMFace->setEdgeConNode(pConNode, iedge);
+            pMFace->markingEdgeNode(iedge);
+        };
+    }
+
 
     pConMesh->addMasterFace(pMFace);
 }
@@ -3300,6 +3311,16 @@ void CMeshFactory::GeneSlaveFace(const uint& contactID, const uint& shapeType, c
         CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
         pSFace->addNode(pConNode);
     };
+    //2次要素の場合、辺ノードをセットしておく
+    if(pSFace->getOrder()==ElementOrder::Second){
+        uint nNumOfEdge= pSFace->getNumOfEdge();
+        uint nNumOfVert= pSFace->getNumOfVert();
+        for(uint iedge=0; iedge < nNumOfEdge; iedge++){
+            CContactNode *pConNode= pSFace->getNode(nNumOfVert + iedge);
+            pSFace->setEdgeConNode(pConNode, iedge);
+            pSFace->markingEdgeNode(iedge);
+        };
+    }
 
     pConMesh->addSlaveFace(pSFace);
 }
@@ -3342,10 +3363,10 @@ void CMeshFactory::refineContactMesh()
             pConMesh= pAssy->getContactMesh(icont);
             pProgConMesh= pProgAssy->getContactMesh(icont);
             
-            pConMesh->setupCoarseConNode(pProgConMesh);//現在LevelのConMeshのノードを上位のConMeshに丸ごとセット
-            pConMesh->setupAggSkinFace();              //ContactNode周囲のSkinFaceIDを収集
-            pConMesh->setupEdgeConNode(pProgConMesh);  //辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
-            pConMesh->setupFaceConNode(pProgConMesh);  //面ノードの生成,新ノードをprogConMeshに追加,IDカウント
+            pConMesh->setupCoarseConNode(pProgConMesh);      //現在LevelのConMeshのノードを上位のConMeshに丸ごとセット
+            pConMesh->setupAggSkinFace();                    //ContactNode周囲のSkinFaceIDを収集
+            pConMesh->setupEdgeConNode(pProgConMesh, ilevel);//辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
+            pConMesh->setupFaceConNode(pProgConMesh);        //面ノードの生成,新ノードをprogConMeshに追加,IDカウント
             
             uint numOfSkinFace;
             uint iface;
@@ -3383,6 +3404,21 @@ void CMeshFactory::refineContactMesh()
             
         };//icontループ(ContactMesh)
     };//ilevelループ(マルチグリッドLevel)
+
+
+
+    // 2次要素対応(最終Levelに辺ノード生成)
+    // ----
+    pAssy =  mpGMGModel->getAssyModel(mMGLevel);//最終レベル
+    uint numOfCont= pAssy->getNumOfContactMesh();
+    uint icont;
+    for(icont=0; icont< numOfCont; icont++){
+        pConMesh= pAssy->getContactMesh(icont);
+
+        pConMesh->setupAggSkinFace();              //ContactNode周囲のSkinFaceIDを収集
+        pConMesh->setupEdgeConNode(NULL, mMGLevel);//辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
+    };
+
 
 
     // ContactMeshに,八分木を生成 

@@ -337,7 +337,7 @@ void CMesh::setupAggregate(const uint& nLevel)
 
     // Node(Vertex)が所属する、要素のID番号をセット(in Node) : 2次要素の辺の要素集合については、0段以外は集めない.
     //     (複数の要素に所属している)
-    //    
+    //
     uint numOfLocalNode; uint elemID;
     for(ielem=0; ielem< mNumOfElement; ielem++){
         pElem = mvElement[ielem];
@@ -368,6 +368,27 @@ void CMesh::setupAggregate(const uint& nLevel)
             };
         }
     };
+
+//    // テスト用途
+//    // ---------
+//    // Node(Vertex)が所属する、要素のID番号をセット(in Node)
+//    //
+//    //
+//    uint numOfLocalNode; uint elemID;
+//    for(ielem=0; ielem< mNumOfElement; ielem++){
+//        pElem = mvElement[ielem];
+//
+//        numOfLocalNode= pElem->getNumOfVert();// <== 頂点数  2010.11.23
+//
+//        elemID = pElem->getID();
+//
+//        for(local_id=0; local_id< numOfLocalNode;local_id++){
+//            pNode = pElem->getNode(local_id);
+//
+//            pNode->setAggElemID(elemID);      //Node自身に要素ID(AggElementID)をセット
+//            pNode->setNeibElemVert(elemID,local_id);//Node自身に接続先の頂点番号をセット <= CommMeshのIndex管理で使用
+//        };
+//    };
 
 
     if(mnSolutionType==SolutionType::FEM){

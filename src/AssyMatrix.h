@@ -52,6 +52,7 @@ public:
 	int MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int alpha1, int alpha2) const;
 	int MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const;
 
+        void dump();//2011.01.05 行列のダンプ
 private:
 	CAssyModel *mpAssyModel;
         uint mnDOF;//アセンブル方程式に対して、一つのDOF

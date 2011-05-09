@@ -34,21 +34,50 @@ void CSkinFace::setShapeType(const uint& shapeType)
 {
     Utility::CLogger *pLogger;
 
+
     switch(shapeType){
-        case(ElementType::Quad):case(ElementType::Quad2):
+        case(ElementType::Quad):
             mShapeType= ElementType::Quad;
             mNumOfEdge= NumberOfEdge::Quad();
+            mnOrder= ElementOrder::First;
             break;
-        case(ElementType::Triangle):case(ElementType::Triangle2):
+
+        case(ElementType::Quad2):
+            mShapeType= ElementType::Quad2;
+            mNumOfEdge= NumberOfEdge::Quad();
+            mnOrder= ElementOrder::Second;
+            break;
+
+        case(ElementType::Triangle):
             mShapeType= ElementType::Triangle;
             mNumOfEdge= NumberOfEdge::Triangle();
+            mnOrder= ElementOrder::First;
             break;
-        case(ElementType::Beam):case(ElementType::Beam2):
+
+        case(ElementType::Triangle2):
+            mShapeType= ElementType::Triangle2;
+            mNumOfEdge= NumberOfEdge::Triangle();
+            mnOrder= ElementOrder::Second;
+            break;
+
+        case(ElementType::Beam):
             mShapeType= ElementType::Beam;
             mNumOfEdge= NumberOfEdge::Beam();
+            mnOrder= ElementOrder::First;
+            break;
+
+        case(ElementType::Beam2):
+            mShapeType= ElementType::Beam2;
+            mNumOfEdge= NumberOfEdge::Beam();
+            mnOrder= ElementOrder::Second;
+            break;
+
         case(ElementType::Point):
             mShapeType= ElementType::Point;
             mNumOfEdge= 0;
+            mnOrder= ElementOrder::Zero;
+            break;
+
         default:
             //Errorメッセージ出力
             pLogger= Utility::CLogger::Instance();
@@ -67,6 +96,23 @@ void CSkinFace::setShapeType(const uint& shapeType)
         mvbEdgeMarking[iedge]=false;
     };
 
+}
+
+//
+// 頂点数
+//
+uint CSkinFace::getNumOfVert()
+{
+    switch(mShapeType){
+        case(ElementType::Quad):case(ElementType::Quad2):
+            return 4;
+        case(ElementType::Triangle):case(ElementType::Triangle2):
+            return 3;
+        case(ElementType::Beam):case(ElementType::Beam2):
+            return 2;
+        case(ElementType::Point):
+            return 1;
+    }
 }
 
 // タイプ1
@@ -260,7 +306,9 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);//新FaceはLevelが一段上がる
 
-                pFace->resizeNode(4);
+                if(mnOrder==ElementOrder::First)  pFace->resizeNode(4);
+                if(mnOrder==ElementOrder::Second) pFace->resizeNode(8);
+
                 pFace->setShapeType(ElementType::Quad);//4個の四辺形
                 pFace->setID(faceID);//再分割されたFaceのIDセット
                 faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
@@ -361,7 +409,9 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);//新Faceは,Level一段あげる
 
-                pFace->resizeNode(4);//四辺形 2010.7.14改修
+                if(mnOrder==ElementOrder::First)  pFace->resizeNode(4);//1次 四辺形 2010.7.14改修
+                if(mnOrder==ElementOrder::Second) pFace->resizeNode(8);//2次 四辺形
+
                 pFace->setShapeType(ElementType::Quad);//3個の四辺形
                 pFace->setID(faceID);//再分割されたFaceのIDセット
                 faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
@@ -458,7 +508,9 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);
                 
-                pFace->resizeNode(2);
+                if(mnOrder==ElementOrder::First)  pFace->resizeNode(2);
+                if(mnOrder==ElementOrder::Second) pFace->resizeNode(3);
+
                 pFace->setShapeType(ElementType::Beam);//2個の線分
                 pFace->setID(faceID);//再分割されたFaceのIDセット
                 faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
@@ -495,27 +547,6 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
 
             break;
     }//switch(mShapeType)
-
-
-
-    //    //debug
-    //    cout << "SkinFace::refine, EdgeConNode :"
-    //         <<  mvEdgeNode[0]->getID() << ", "
-    //         <<  mvEdgeNode[1]->getID() << ", "
-    //         <<  mvEdgeNode[2]->getID() << ", "
-    //         <<  mvEdgeNode[3]->getID() << endl;
-    //    //debug
-    //    cout << "SkinFace::refine, progFace : " << endl;
-    //    if(mShapeType==ElementType::Quad){
-    //        uint i;
-    //        for(i=0; i < 4; i++)
-    //            cout << ", face ID= " << mvProgFace[i]->getID()
-    //                 << ", conID= " << mvProgFace[i]->getNode(0)->getID()
-    //                 << ", conID= " << mvProgFace[i]->getNode(1)->getID()
-    //                 << ", conID= " << mvProgFace[i]->getNode(2)->getID()
-    //                 << ", conID= " << mvProgFace[i]->getNode(3)->getID()
-    //                 << endl;
-    //    }
 }
 
 
@@ -596,6 +627,22 @@ void CSkinFace::deleteProgData()
 }
 
 
+// 辺ノードを mvConNode へ移動 (2次要素面の場合)
+//
+void CSkinFace::replaceEdgeNode()
+{
+    if(mnOrder==ElementOrder::Second){
+        uint nNumOfVert;
+        if(mNumOfEdge==4) nNumOfVert=4;
+        if(mNumOfEdge==3) nNumOfVert=3;
+        if(mNumOfEdge==1) nNumOfVert=2;
+        if(mNumOfEdge==0) nNumOfVert=1;
+
+        for(uint iedge=0; iedge < mNumOfEdge; iedge++){
+            mvConNode[nNumOfVert + iedge] = mvEdgeNode[iedge];
+        };
+    }
+}
 
 
 

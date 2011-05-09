@@ -81,12 +81,18 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvALU[i](i1,i2)=0.0;
 	}
 	mINL = mvIndexL[mnNode];
+        cout << "MatrixBCRS::MatrixBCRS mINL=" << mINL << endl;
+
 	mvAL.resize(mINL);
 	for (int i = 0; i < mINL; i++) {
 		mvAL[i].resize(mnDOF, mnDOF);
 		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvAL[i](i1,i2)=0.0;
 	}
+
+
 	mINU = mvIndexU[mnNode];
+        cout << "MatrixBCRS::MatrixBCRS mINU=" << mINU << endl;
+
 	mvAU.resize(mINU);
 	for (int i = 0; i < mINU; i++) {
 		mvAU[i].resize(mnDOF, mnDOF);
@@ -442,4 +448,45 @@ int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
   return 1;
 }
 
+// デバッグ
+// ------
+// 2011.01.05
+//
+void CMatrixBCRS::dump()
+{
+    cout << " ---- mvD ---- " << endl;
+    for(uint i=0; i< mnNode; i++){
+        cout << "Node i:" << i << " ";
+
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            cout << mvD[i](ii,jj) << "  ";
+        };
+        
+        cout << endl;
+    };
+
+    cout << " ---- mvAL ---- " << endl;
+    for(uint i=0; i < mINL; i++){
+        cout << "mINL:" << i << " ";
+
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            cout << mvAL[i](ii,jj) << "  ";
+        };
+        
+        cout << endl;
+    };
+
+    cout << " ---- mvAU ---- " << endl;
+    for(uint i=0; i < mINU; i++){
+        cout << "mINU:" << i << " ";
+
+        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+            cout << mvAU[i](ii,jj) << "  ";
+        };
+        
+        cout << endl;
+    };
+    
 }
+
+}//namespace pmw
