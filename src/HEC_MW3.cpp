@@ -358,6 +358,7 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMW::Solve %d %e \n", iter_max, tolerance);
 #endif
+
   bool flag_iter_log = false;
   bool flag_time_log = false;
   char cfile[100];
@@ -384,6 +385,9 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
     }
 
 
+    //
+    // MicroAVS UCD format 出力
+    //
     uint iMesh, iMeshMax;
     iMeshMax = GetNumOfMeshPart();
     for( iMesh = 0; iMesh < iMeshMax; iMesh++){
@@ -398,42 +402,112 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
             double y = mpAssy->getMesh(iMesh)->getNodeIX(i)->getY();
             double z = mpAssy->getMesh(iMesh)->getNodeIX(i)->getZ();
             fprintf(fp1,"%d %e %e %e\n",i, x, y, z);
-	}
+
+	}// Node ループ END
+
         vector<CNode*> vNode;
-        //for(int i=0; i < mpAssy->getMesh(0)->getNumOfElement(); i++)
+        
 	for(int i=0; i < mpAssy->getMesh(iMesh)->getNumOfElement(); i++)
 	{
             vNode.clear();
             CElement *pElem = mpAssy->getMesh(iMesh)->getElementIX(i);
             vNode = pElem->getNode();
+            
             if(pElem->getType()==ElementType::Hexa){
                 fprintf(fp1,"%d 0 hex %d %d %d %d %d %d %d %d \n",i,
                         vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
                         vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID());
             }
-		
-	}
-	fprintf(fp1,"1 3 \n");
+            if(pElem->getType()==ElementType::Hexa2){
+                fprintf(fp1,"%d 0 hex2 %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID(),
+                        vNode[8]->getID(),vNode[9]->getID(),vNode[10]->getID(),vNode[11]->getID(),
+                        vNode[12]->getID(),vNode[13]->getID(),vNode[14]->getID(),vNode[15]->getID(),
+                        vNode[16]->getID(),vNode[17]->getID(),vNode[18]->getID(),vNode[19]->getID());
+            }
+            if(pElem->getType()==ElementType::Tetra){
+                fprintf(fp1,"%d 0 tet %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID());
+            }
+            if(pElem->getType()==ElementType::Tetra2){
+                fprintf(fp1,"%d 0 tet2 %d %d %d %d %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID(),
+                        vNode[8]->getID(),vNode[9]->getID());
+            }
+            if(pElem->getType()==ElementType::Prism){
+                fprintf(fp1,"%d 0 prism %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID());
+            }
+            if(pElem->getType()==ElementType::Prism2){
+                fprintf(fp1,"%d 0 prism2 %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID(),
+                        vNode[8]->getID(),vNode[9]->getID(),vNode[10]->getID(),vNode[11]->getID(),
+                        vNode[12]->getID(),vNode[13]->getID(),vNode[14]->getID());
+            }
+            if(pElem->getType()==ElementType::Quad){
+                fprintf(fp1,"%d 0 quad %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID());
+            }
+            if(pElem->getType()==ElementType::Quad2){
+                fprintf(fp1,"%d 0 quad2 %d %d %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID(),vNode[6]->getID(),vNode[7]->getID());
+            }
+            if(pElem->getType()==ElementType::Triangle){
+                fprintf(fp1,"%d 0 tri %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID());
+            }
+            if(pElem->getType()==ElementType::Triangle2){
+                fprintf(fp1,"%d 0 tri2 %d %d %d %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID(),vNode[3]->getID(),
+                        vNode[4]->getID(),vNode[5]->getID());
+            }
+            if(pElem->getType()==ElementType::Beam){
+                fprintf(fp1,"%d 0 line %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID());
+            }
+            if(pElem->getType()==ElementType::Beam2){
+                fprintf(fp1,"%d 0 line2 %d %d %d \n",i,
+                        vNode[0]->getID(),vNode[1]->getID(),vNode[2]->getID());
+            }
+	}// Element ループ END
+        
+        uint nDOF=mpSolAssyVector->getDOF();// 解ベクトルのDOF
+        
+	fprintf(fp1,"1 %d \n", nDOF);
 	fprintf(fp1,"vector, aaa \n");
+        
 	for(int i=0; i < mpAssy->getMesh(iMesh)->getNumOfNode(); i++)
 	{
-            uint nDOF=mpSolAssyVector->getDOF();
             double val[nDOF];
             for(uint idof=0; idof < nDOF; idof++){
-                val[idof] = mpSolAssyVector->getValue(iMesh, i, idof);
+                val[idof] = mpSolAssyVector->getValue(iMesh, i, idof);// 解ベクトルの内容
             }
             //for(uint idof=0; idof < nDOF; idof++){
             //    mpAssy->getMesh(iMesh)->getNodeIX(i)->setVector(val[idof], idof);
             //}
-            if(nDOF==3) fprintf(fp1,"%d %e %e %e\n",i,val[0], val[1], val[2]);
-                
-	}
+            if(nDOF==1) fprintf(fp1,"%d %e\n",i, val[0]);
+            if(nDOF==2) fprintf(fp1,"%d %e %e\n",i, val[0], val[1]);
+            if(nDOF==3) fprintf(fp1,"%d %e %e %e\n",i, val[0], val[1], val[2]);
+            if(nDOF==4) fprintf(fp1,"%d %e %e %e %e\n",i, val[0], val[1], val[2], val[3]);
+            if(nDOF==5) fprintf(fp1,"%d %e %e %e %e %e\n",i, val[0], val[1], val[2], val[3], val[4]);
+            if(nDOF==6) fprintf(fp1,"%d %e %e %e %e %e %e\n",i, val[0], val[1], val[2], val[3], val[4], val[5]);
+            if(nDOF==7) fprintf(fp1,"%d %e %e %e %e %e %e %e\n",i, val[0], val[1], val[2], val[3], val[4], val[5], val[6]);
+
+	}// Node ループ END
+
 	fclose(fp1);
-    }
+
+    }//iMesh ループ END
 
     printf(" --- end of output to a UCD file. (%s) --- \n", cfile);
+
 #ifdef ADVANCESOFT_DEBUG
-   	printf(" exit CMW::Solve \n");
+    printf(" exit CMW::Solve \n");
 #endif
     return 1;
 }

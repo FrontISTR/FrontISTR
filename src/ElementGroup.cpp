@@ -83,7 +83,9 @@ void CElementGroup::refine(CElementGroup* pProgElemG)
     for(iElem=0; iElem < nNumOfElem; iElem++){
         nElemID = mvElementID[iElem];
         pElem = mpMesh->getElement(nElemID);
-        
+
+        //cout << "ElementGroup::refine, pElem ID = " << pElem->getID() << endl;
+
         uint ivert, nNumOfVert = pElem->getNumOfNode();
         for(ivert=0; ivert < nNumOfVert; ivert++){
             pProgElem = pElem->getProgElem(ivert);

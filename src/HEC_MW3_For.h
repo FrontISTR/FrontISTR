@@ -275,9 +275,9 @@ external mw_send_recv_r2
 external mw_send_recv_r
 
 
-//--
-// Element_Group { after select AssyModel, select Mesh }
-//--
+!--
+! Element_Group { after select AssyModel, select Mesh }
+!--
 integer mw_get_num_of_elementgroup
 integer mw_get_num_of_element_id
 integer mw_get_elementgroup_name_length

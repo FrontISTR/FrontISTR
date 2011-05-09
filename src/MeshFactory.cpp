@@ -228,6 +228,7 @@ void CMeshFactory::MGMeshConstruct()
                 pProgElemGrp = new CElementGroup;
 
                 pElemGrp = pMesh->getElemGrpIX(iGrp);
+
                 pElemGrp->refine(pProgElemGrp);
 
                 pProgElemGrp->setMesh(pProgMesh);
@@ -236,6 +237,7 @@ void CMeshFactory::MGMeshConstruct()
 
                 pProgMesh->addElemGrp(pProgElemGrp);
             };
+            
 
             // progCommMeshの前処理
             // --
