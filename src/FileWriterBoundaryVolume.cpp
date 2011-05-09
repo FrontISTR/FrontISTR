@@ -56,6 +56,11 @@ void CFileWriterBoundaryVolume::Write(ofstream& ofs, const uint& mgLevel)
            }
            ofs << endl;
 
+           //Neumannの値、確認用
+           vdouble sumValue;
+           sumValue.resize(pBndVolumeMesh->getNumOfDOF());
+           for(uint idof=0; idof < pBndVolumeMesh->getNumOfDOF(); idof++)  sumValue[idof]=0.0;
+           
            uint numOfBndNode= pBndVolumeMesh->getNumOfBNode();
            for(iii=0; iii < numOfBndNode; iii++){
                pBndNode= pBndVolumeMesh->getBNodeIX(iii);
@@ -69,9 +74,20 @@ void CFileWriterBoundaryVolume::Write(ofstream& ofs, const uint& mgLevel)
                    uint dof = pBndVolumeMesh->getDOF(idof);
 
                    ofs << ", dof= " << dof << ", Value[" << idof << "]= " << pBndNode->getValue(dof, mgLevel);
+                   
+                   //Neumann Σ値
+                   sumValue[idof] += pBndNode->getValue(dof,mgLevel);
                };
                ofs << endl;
            };
+           //Neumann Σ値 確認
+           if(pBndVolumeMesh->getBndType()==pmw::BoundaryType::Neumann){
+               ofs << "BNode Value SumValue :";
+               for(uint idof=0; idof < pBndVolumeMesh->getNumOfDOF(); idof++){
+                   ofs << "  sumValue[" << idof << "]=" << sumValue[idof];
+               };
+               ofs << endl;
+           }
 
            uint numOfBndVolume= pBndVolumeMesh->getNumOfVolume();
            for(iii=0; iii < numOfBndVolume; iii++){

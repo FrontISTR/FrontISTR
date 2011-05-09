@@ -9,10 +9,10 @@ using namespace pmw;
 
 
 
-uint CBoundaryTetra::mnElemType = ElementType::Tetra;
-uint CBoundaryTetra::mNumOfFace = NumberOfFace::Tetra();
-uint CBoundaryTetra::mNumOfEdge = NumberOfEdge::Tetra();
-uint CBoundaryTetra::mNumOfNode = NumberOfVertex::Tetra();
+//uint CBoundaryTetra::mnElemType = ElementType::Tetra;
+//uint CBoundaryTetra::mNumOfFace = NumberOfFace::Tetra();
+//uint CBoundaryTetra::mNumOfEdge = NumberOfEdge::Tetra();
+//uint CBoundaryTetra::mNumOfNode = NumberOfVertex::Tetra();
 
 
 CBoundaryTetra::CBoundaryTetra()
@@ -38,6 +38,11 @@ CBoundaryTetra::CBoundaryTetra()
     };
     mvFaceBNode.resize(NumberOfFace::Tetra());
     mvFaceNeibVol.resize(NumberOfFace::Tetra());
+
+    for(i=0; i < NumberOfFace::Tetra(); i++){
+        mvFaceBNode[i]= NULL;
+    }
+    mpVolBNode= NULL;
 }
 
 CBoundaryTetra::~CBoundaryTetra()
@@ -51,16 +56,61 @@ CBoundaryTetra::~CBoundaryTetra()
 //
 uint CBoundaryTetra::getElemType()
 {
-    return mnElemType;
+    Utility::CLogger *pLogger = Utility::CLogger::Instance();
+
+    switch(mnOrder){
+        case(ElementOrder::First):
+            return ElementType::Tetra;
+        case(ElementOrder::Second):
+            return ElementType::Tetra2;
+        default:
+            pLogger->Info(Utility::LoggerMode::Error, "BoundaryTetra::getElemType, invalid mnOrder");
+            return ElementType::Limit;
+    }
 }
 uint CBoundaryTetra::getNumOfEdge()
 {
-    return mNumOfEdge;
+    return NumberOfEdge::Tetra();
 }
 
 uint CBoundaryTetra::getNumOfFace()
 {
-    return mNumOfFace;
+    return NumberOfFace::Tetra();
+}
+
+uint CBoundaryTetra::getNumOfNode()
+{
+    Utility::CLogger *pLogger = Utility::CLogger::Instance();
+
+    switch(mnOrder){
+        case(ElementOrder::First):
+            return NumberOfNode::Tetra();
+        case(ElementOrder::Second):
+            return NumberOfNode::Tetra2();
+        default:
+            pLogger->Info(Utility::LoggerMode::Error, "BoundaryTetra::getNumOfNode, invalid mnOrder");
+            return NumberOfNode::Default();
+    }
+}
+
+uint CBoundaryTetra::getNumOfVert()
+{
+    return NumberOfVertex::Tetra();
+}
+
+void CBoundaryTetra::setOrder(const uint& order)
+{
+    mnOrder = order;
+
+    switch(mnOrder){
+    case(ElementOrder::First):
+        mvBNode.resize(NumberOfNode::Tetra());
+        break;
+
+    case(ElementOrder::Second):
+        mvBNode.resize(NumberOfNode::Tetra2());
+        break;
+    }
 }
 
 // Edge番号 -> pariBNode
@@ -180,9 +230,10 @@ void CBoundaryTetra::refine(uint& countID, const vuint& vDOF)
         pProgVol = new CBoundaryHexa;// <<<<<<<<<<<<<<<<<<<<<<< new
 
         pProgVol->setID(countID);
+        pProgVol->setOrder(mnOrder);//resizeBNodeも含む
         countID++;
 
-        pProgVol->resizeBNode(8);
+        //pProgVol->resizeBNode(8);
 
         mvProgVolume.push_back(pProgVol);
 
@@ -225,15 +276,16 @@ double& CBoundaryTetra::calcVolume()
 
 // 上位グリッドBNodeへのディレクレ値の分配
 //
-void CBoundaryTetra::distDirichletVal(const uint& dof, const uint& mgLevel)
+void CBoundaryTetra::distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)
 {
     CEdgeTree *pEdgeTree = CEdgeTree::Instance();
 
     double dAveVal;
     uint iedge, *pnEdgeVert;
+    uint nNumOfEdge=NumberOfEdge::Tetra();
 
     // 辺のディレクレ値(上位グリッド)
-    for(iedge=0; iedge < mNumOfEdge; iedge++){
+    for(iedge=0; iedge < nNumOfEdge; iedge++){
         pnEdgeVert = pEdgeTree->getTetraLocalNodeNum(iedge);
 
         dAveVal = 0.0;
@@ -242,15 +294,25 @@ void CBoundaryTetra::distDirichletVal(const uint& dof, const uint& mgLevel)
 
         dAveVal *= 0.5;//平均値
 
-        mvEdgeBNode[iedge]->setValue(dof, mgLevel+1, dAveVal);//上位GridへDirichlet値をセット
+        if(mnOrder==ElementOrder::Second){
+            //2次要素
+            mvEdgeBNode[iedge]->setValue(dof, mgLevel,   dAveVal);//カレント・グリッドへDirichlet値をセット
+            if(mgLevel!=nMaxMGLevel)
+              mvEdgeBNode[iedge]->setValue(dof, mgLevel+1, dAveVal);//上位GridへDirichlet値をセット
+        }else{
+            //1次要素
+            if(mgLevel!=nMaxMGLevel)
+              mvEdgeBNode[iedge]->setValue(dof, mgLevel+1, dAveVal);//上位GridへDirichlet値をセット
+        }
     };
 
     CFaceTree *pFaceTree = CFaceTree::Instance();
 
     uint iface, *pnFaceVert, ivert;
+    uint nNumOfFace=NumberOfFace::Tetra();
 
     // 面のディレクレ値(上位グリッド)
-    for(iface=0; iface < mNumOfFace; iface++){
+    for(iface=0; iface < nNumOfFace; iface++){
         pnFaceVert = pFaceTree->getLocalNodeTetraFace(iface);
 
         dAveVal=0.0;
@@ -259,34 +321,54 @@ void CBoundaryTetra::distDirichletVal(const uint& dof, const uint& mgLevel)
         };
         dAveVal /= 3.0;//平均値
 
-        mvFaceBNode[iface]->setValue(dof, mgLevel+1, dAveVal);//上位グリッドへディレクレ値をセット
+        if(mgLevel!=nMaxMGLevel)
+          mvFaceBNode[iface]->setValue(dof, mgLevel+1, dAveVal);//上位グリッドへディレクレ値をセット
+        
     };
 
     // 体積中心のディレクレ値(上位グリッド)
     //    &  頂点の値をそのまま上位グリッドへ与える
     double dVertVal;
     dAveVal=0.0;
-    for(ivert=0; ivert < mNumOfNode; ivert++){
+    uint nNumOfVert=NumberOfVertex::Tetra();
+
+    for(ivert=0; ivert < nNumOfVert; ivert++){
         dVertVal = mvBNode[ivert]->getValue(dof, mgLevel);
         dAveVal += dVertVal;
 
-        mvBNode[ivert]->setValue(dof, mgLevel+1, dVertVal);//頂点の値を、そのまま上位Gridへセット
+        if(mgLevel!=nMaxMGLevel)
+          mvBNode[ivert]->setValue(dof, mgLevel+1, dVertVal);//頂点の値を、そのまま上位Gridへセット
     };
     if(mgLevel > 0){
         dAveVal *= 0.25;//平均値
-        mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
+
+        if(mgLevel!=nMaxMGLevel)
+          mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
     }
     if(mgLevel==0){
-        mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+        if(mgLevel!=nMaxMGLevel)
+          mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
     }
 }
 
+void CBoundaryTetra::replaceEdgeBNode(const uint& iedge)
+{
+    uint nNumOfVert=NumberOfVertex::Tetra();
+
+    CBoundaryNode *pBNode=mvEdgeBNode[iedge];
+
+    // mmBNodeID2Index[pBNode->getID()] = nNumOfVert + iedge;//// <<-- 頂点データ保護のためコメントアウト2011.02.08
+
+    mvBNode[nNumOfVert+iedge]=pBNode;
+}
 
 // Refine 後処理 : 辺-面 BNode vectorの解放
 //
 void CBoundaryTetra::deleteProgData()
 {
-    if(mpElement->getType()==ElementType::Tetra){
+    //if(mpElement->getType()==ElementType::Tetra){
+    if(mnOrder==ElementOrder::First){
+        // Tetra
         vector<CBoundaryNode*>().swap(mvEdgeBNode);// 辺-BNode
         vector<CBoundaryNode*>().swap(mvFaceBNode);// 面-BNode
     }else{

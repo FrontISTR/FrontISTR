@@ -35,10 +35,13 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
     uint conNodeID, numOfConNode, contactFaceID, numOfContactFace;
     
     vuint vConNodeID;
-    vuint quadConNodeID; quadConNodeID.resize(4);
-    vuint triConNodeID;  triConNodeID.resize(3);
-    vuint beamConNodeID; beamConNodeID.resize(2);
-    vuint pointConNodeID;pointConNodeID.resize(1);
+    vuint quadConNodeID;  quadConNodeID.resize(4);
+    vuint quad2ConNodeID; quad2ConNodeID.resize(8);
+    vuint triConNodeID;   triConNodeID.resize(3);
+    vuint tri2ConNodeID;  tri2ConNodeID.resize(6);
+    vuint beamConNodeID;  beamConNodeID.resize(2);
+    vuint beam2ConNodeID; beam2ConNodeID.resize(3);
+    vuint pointConNodeID; pointConNodeID.resize(1);
     
     vdouble vCoord; vCoord.resize(3);
     string shapeStr;//文字列"Quad","Triangle","Beam","Point"読み込み用途
@@ -66,11 +69,6 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                 iss.clear();
                 iss.str(sLine);
 
-                //// 単純なRead
-                //// 接合MeshID::ContactMeshID, rank(接合Meshのrank)
-                ////
-                // iss >> contactID >> my_rank >> trans_rank >> nProp;
-
                 // boost トークン分割
                 // ----
                 char_separator<char> sep(" \t\n");
@@ -86,21 +84,6 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                     if(nCount==3){ nProp     = atoi(str.c_str());}//入力ファイルにnPropが無い場合は、"初期値0:MPC"のまま.
                     nCount++;
                 };
-
-////                vstring vToken;
-////                Split(sLine, ' ', vToken);
-////                uint nNumOfToken = vToken.size();
-////                if(nNumOfToken==3){
-////                    contactID = atoi(vToken[0].c_str());
-////                    my_rank   = atoi(vToken[1].c_str());
-////                    trans_rank= atoi(vToken[2].c_str());
-////                }
-////                if(nNumOfToken==4){
-////                    contactID = atoi(vToken[0].c_str());
-////                    my_rank   = atoi(vToken[1].c_str());
-////                    trans_rank= atoi(vToken[2].c_str());
-////                    nProp     = atoi(vToken[3].c_str());
-////                }
                 
                 
                 mpFactory->GeneContactMesh(contactID, my_rank, trans_rank, nProp);//nPropが無い場合は、初期値0:MPC
@@ -121,11 +104,6 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                     // contactNodeID, X, Y, Z, meshID, nodeID, rank, マスタースレーブ, paramタイプ, 変位DOF, スカラー数
                     iss >> conNodeID >> vCoord[0] >> vCoord[1] >> vCoord[2] >> strData[0] >> strData[1] >> rank >> maslave;
                     iss >> sParamType >> numOfDisp >> numOfScalar;
-
-//                    //debug
-//                    cout << "FileReaderContactMesh::Read, conNodeID= " << conNodeID
-//                            << ", x=" << vCoord[0] << ", y=" << vCoord[1] << ", z=" << vCoord[2]
-//                            << ", strData[0]= " << strData[0] << ", strData[1]= " << strData[1] << endl;
                     
 
                     //対応するデータが存在する場合は("-"ではない場合),データを文字列から整数に変換
@@ -159,11 +137,6 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                         // 接合面ID,meshID,elemID,elemFaceID, shapeType, conNodeID.......
                         iss >> contactFaceID >> strData[0]  >> strData[1] >> strData[2] >> shapeStr;
 
-//                        //debug
-//                        cout << "FileReaderContactMesh::Read, ConFaceID= " << contactFaceID
-//                                << ", strData[0]= " << strData[0]
-//                                << ", strData[1]= " << strData[1] << ", strData[2]= " << strData[2] << endl;
-
 
                         //対応するデータが存在する場合は("-"ではない場合),データを文字列から整数に変換
                         bmesh=false;//フラグ初期化
@@ -173,34 +146,57 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                             elemID =  boost::lexical_cast<unsigned int>(strData[1]);
                             elemFaceID = boost::lexical_cast<unsigned int>(strData[2]);
                         }
+                        
                         // ContactNodeIDコネクティビティ 読み込み
                         vConNodeID.clear();
-                        if(shapeStr=="Quad"){
-                            shapeType= pmw::ElementType::Quad;
-                            iss >> quadConNodeID[0] >> quadConNodeID[1] >> quadConNodeID[2] >> quadConNodeID[3];
-
-                            vConNodeID= quadConNodeID;
+                        
+                        shapeType = IntElemType(shapeStr);
+                        
+                        switch(shapeType){
+                            case(pmw::ElementType::Quad):
+                                iss >> quadConNodeID[0] >> quadConNodeID[1] >> quadConNodeID[2] >> quadConNodeID[3];
+                                vConNodeID= quadConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Quad2):
+                                iss >> quad2ConNodeID[0] >> quad2ConNodeID[1] >> quad2ConNodeID[2] >> quad2ConNodeID[3]
+                                    >> quad2ConNodeID[4] >> quad2ConNodeID[5] >> quad2ConNodeID[6] >> quad2ConNodeID[7];
+                                vConNodeID= quad2ConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Triangle):
+                                iss >> triConNodeID[0] >> triConNodeID[1] >> triConNodeID[2];
+                                vConNodeID= triConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Triangle2):
+                                iss >> tri2ConNodeID[0] >> tri2ConNodeID[1] >> tri2ConNodeID[2]
+                                    >> tri2ConNodeID[3] >> tri2ConNodeID[4] >> tri2ConNodeID[5];
+                                vConNodeID= tri2ConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Beam):
+                                iss >> beamConNodeID[0] >> beamConNodeID[1];
+                                vConNodeID= beamConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Beam2):
+                                iss >> beam2ConNodeID[0] >> beam2ConNodeID[1] >> beam2ConNodeID[2];
+                                vConNodeID= beam2ConNodeID;
+                                break;
+                                
+                            case(pmw::ElementType::Point):
+                                iss >> pointConNodeID[0];
+                                vConNodeID= pointConNodeID;
+                                break;
+                                
+                            default:
+                                break;
                         }
-                        if(shapeStr=="Triangle"){
-                            shapeType= pmw::ElementType::Triangle;
-                            iss >> triConNodeID[0] >> triConNodeID[1] >> triConNodeID[2];
+                        
 
-                            vConNodeID= triConNodeID;
-                        }
-                        if(shapeStr=="Beam"){
-                            shapeType= pmw::ElementType::Beam;
-                            iss >> beamConNodeID[0] >> beamConNodeID[1];
-
-                            vConNodeID= beamConNodeID;
-                        }
-                        if(shapeStr=="Point"){
-                            shapeType= pmw::ElementType::Point;
-                            iss >> pointConNodeID[0];
-
-                            vConNodeID= pointConNodeID;
-                        }
-                        uint face_rank;
                         //Face rank
+                        uint face_rank;
                         iss >> face_rank;
                         
                         switch(maslave){//マスタースレーブswitch

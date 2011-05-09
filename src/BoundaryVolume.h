@@ -52,7 +52,10 @@ public:
     virtual uint getElemType()=0;
     virtual uint getNumOfEdge()=0;
     virtual uint getNumOfFace()=0;
+    virtual uint getNumOfNode()=0;
+    //Vertex ==> BoundaryParts::getNumOfVert()=0
 
+    virtual void setOrder(const uint& order)=0;//{ mnOrder=order;};//Hexa,Tetra,Prismの1次・2次
     
     virtual PairBNode getPairBNode(const uint& iedge)=0;//辺の両端のBNode
     virtual uint& getEdgeID(PairBNode& pairBNode)=0;
@@ -99,8 +102,9 @@ public:
     virtual double& calcVolume()=0;// BoundaryVolumeの体積計算(計算結果はmCubicVolumeへ)
     double& getCubicVolume(){ return mCubicVolume;};
 
-    virtual void distDirichletVal(const uint& dof, const uint& mgLevel)=0;//上位グリッドBNodeへのディレクレ値の分配
+    virtual void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)=0;//上位グリッドBNodeへのディレクレ値の分配
 
+    virtual void replaceEdgeBNode(const uint& iedge)=0;//2次要素の場合に辺BNodeをmvBNodeへ移設.
 
     // Refine 後処理 : 辺-面 BNode vectorの解放
     // ----

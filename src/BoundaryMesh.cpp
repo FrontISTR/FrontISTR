@@ -12,11 +12,12 @@ using namespace pmw;
 
 CBoundaryMesh::CBoundaryMesh()
 {
-    if(mMaxMGLevel==mMGLevel) for_each(mvBNode.begin(), mvBNode.end(), DeleteObject());
+    ////mbSecondOrder = false;
+    mnEdgeNodeCount = 0;
 }
 CBoundaryMesh::~CBoundaryMesh()
 {
-    ;
+    if(mMaxMGLevel==mMGLevel) for_each(mvBNode.begin(), mvBNode.end(), DeleteObject());
 }
 
 //---
@@ -88,12 +89,10 @@ void CBoundaryMesh::distValueBNode()
 {
     switch(mnBndType){
         case(BoundaryType::Neumann):
-
             distNeumannValue();
             break;
 
         case(BoundaryType::Dirichlet):
-
             distDirichletValue();
             break;
     }
@@ -110,7 +109,7 @@ void CBoundaryMesh::distDirichletValue()
     // ディレクレ条件が設定されていなければ,Errorを返す.
     // --
     if(mnBndType != BoundaryType::Dirichlet){
-        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryVolumeMesh::distDirichletValue");
+        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryMesh::distDirichletValue");
         return;
     }
 
@@ -120,7 +119,6 @@ void CBoundaryMesh::distDirichletValue()
     }else{
         distDirichletValue_at_FGrid();
     }
-
 }
 
 

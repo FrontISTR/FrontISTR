@@ -23,7 +23,7 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 #endif
         mnDOF = nDOF;
 	mnNode = pMesh->getNumOfNode();
-	printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
+	//printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
 	mvIndexL.resize(mnNode+1); // K.Matsubara
 	mvIndexU.resize(mnNode+1); // K.Matsubara
 
@@ -81,7 +81,7 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvALU[i](i1,i2)=0.0;
 	}
 	mINL = mvIndexL[mnNode];
-        cout << "MatrixBCRS::MatrixBCRS mINL=" << mINL << endl;
+        //cout << "MatrixBCRS::MatrixBCRS mINL=" << mINL << endl;
 
 	mvAL.resize(mINL);
 	for (int i = 0; i < mINL; i++) {
@@ -91,7 +91,7 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 
 
 	mINU = mvIndexU[mnNode];
-        cout << "MatrixBCRS::MatrixBCRS mINU=" << mINU << endl;
+        //cout << "MatrixBCRS::MatrixBCRS mINU=" << mINU << endl;
 
 	mvAU.resize(mINU);
 	for (int i = 0; i < mINU; i++) {
@@ -245,26 +245,75 @@ void CMatrixBCRS::Matrix_Clear()
 
 void CMatrixBCRS::multVector(CVector *pV, CVector *pP) const
 {
-	for (int i = 0; i < mnNode; i++) {
-		(*pP)[i] = prod(mvD[i], (*pV)[i]);
-		for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
-			(*pP)[i] += prod(mvAL[j], (*pV)[mvItemL[j]]);
-		}
-		for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
-			(*pP)[i] += prod(mvAU[j], (*pV)[mvItemU[j]]);
-		}
-	}
+    for (int i = 0; i < mnNode; i++) {
+        (*pP)[i] = prod(mvD[i], (*pV)[i]);
+        for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+                (*pP)[i] += prod(mvAL[j], (*pV)[mvItemL[j]]);
+        };
+        for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+                (*pP)[i] += prod(mvAU[j], (*pV)[mvItemU[j]]);
+        };
+    };
 }
 
-void CMatrixBCRS::setValue(int inode, int idof, double value)
+void CMatrixBCRS::setValue_D(const uint& inode, const uint& idof, const double& value)
+{
+    mvD[inode](idof, idof) = value;
+}
+
+void CMatrixBCRS::setValue(const uint& inode, const uint& idof, const double& value)
 {
 #ifdef ADVANCESOFT_DEBUG
-   	printf(" enter CMatrixBCRS::setValue \n");
+    printf(" enter CMatrixBCRS::setValue \n");
 #endif
-	mvD[inode](idof,idof) = value;
+//    // 対角項
+//    for(uint i=0; i < mnDOF; i++) for(uint j=0; j < mnDOF; j++)
+//        if(i != j)
+//            mvD[inode](i,j) = 0.0;
+
+    //inode のidof行、idof列 の非対角項を"0"
+    for(uint j=0; j < mnDOF; j++)
+        if(idof != j) mvD[inode](idof, j) = 0.0;
+    for(uint j=0; j < mnDOF; j++)
+        if(idof != j) mvD[inode](j, idof) = 0.0;
+    
+    mvD[inode](idof,idof) = value;
+    
 #ifdef ADVANCESOFT_DEBUG
-   	printf(" exit CMatrixBCRS::setValue \n");
+    printf(" exit CMatrixBCRS::setValue \n");
 #endif
+}
+void CMatrixBCRS::setZero_NonDiag(const uint& inode, const uint& idof)
+{
+    //-----------------
+    // 1行の非対角項を”0"
+    //-----------------
+    // 下三角
+    for(uint j=mvIndexL[inode]; j < mvIndexL[inode+1]; j++){
+        for(uint jdof=0; jdof < mnDOF; jdof++) mvAL[j](idof,jdof) = 0.0;
+    };
+    // 上三角
+    for(uint j=mvIndexU[inode]; j < mvIndexU[inode+1]; j++){
+        for(uint jdof=0; jdof < mnDOF; jdof++) mvAU[j](idof,jdof) = 0.0;
+    };
+
+    //-----------------
+    // 1列の非対角項を”0"
+    //-----------------
+    // 下三角
+    for(uint i=0; i < mINL; i++){
+        uint col=mvItemL[i];
+        if(col==inode){
+            for(uint jdof=0; jdof < mnDOF; jdof++) mvAL[i](jdof,idof) = 0.0;
+        }
+    };
+    // 上三角
+    for(uint i=0; i < mINU; i++){
+        uint col=mvItemU[i];
+        if(col==inode){
+            for(uint jdof=0; jdof < mnDOF; jdof++) mvAU[i](jdof,idof) = 0.0;
+        }
+    };
 }
 
 int CMatrixBCRS::setupPreconditioner(int type)

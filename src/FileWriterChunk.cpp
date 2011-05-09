@@ -50,6 +50,9 @@ void CFileWriterChunk::setSolutionType(const uint& nSolutionType)
 
 void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
 {
+////    cout << "FileWriterChunk::Write, filename=" << filename << endl;
+////    cout << "FileWriterChunk::Write, numOfLevel= " << numOfLevel << endl;
+
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::MWDebug,"Output Filename => ",filename);//debug
 
@@ -69,9 +72,11 @@ void CFileWriterChunk::Write(string& filename, const uint& numOfLevel)
 //    //最終レベルだけ出力(debug)
 //    //
 //    uint i, ilevel=numOfLevel-1;
-//    //debug
+//    debug
 //    cout << "FileWriterChunk,  ilevel= " << ilevel << endl;
 //
+//    ofstream ofs(filename.c_str(),ios::out);
+//    cout << "FileWriterChunk::Write, ccccccccccccccc" << endl;
 //    for(i=0; i < mvWriter.size(); i++){
 //        mvWriter[i]->Write(ofs, ilevel);
 //    };

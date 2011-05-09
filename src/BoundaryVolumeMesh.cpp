@@ -90,7 +90,8 @@ void CBoundaryVolumeMesh::setupAggVol()
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol= mvBVolume[ivol];
         
-        uint numOfVert= pBVol->getNumOfBNode();
+        //uint numOfVert= pBVol->getNumOfBNode();
+        uint numOfVert= pBVol->getNumOfVert();
         uint ivert;
         for(ivert=0; ivert < numOfVert; ivert++){
             pBNode= pBVol->getBNode(ivert);
@@ -121,9 +122,9 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
     uint ivol;
     CBoundaryVolume *pBVol;
 
-    CElement *pElem;//各BVolumeが所有するElement
-    CNode *pNode0,*pNode1;//辺の両端のNode(MeshのNode)
-    CNode *pEdgeNode;//辺中央のNode
+    CElement *pElem;      // 各BVolumeが所有するElement
+    CNode *pNode0,*pNode1;// 辺の両端のNode(MeshのNode)
+    CNode *pEdgeNode;     // 辺中央のNode
 
     uint countID= mvBNode.size();//EdgeBNodeのID初期値
 
@@ -136,14 +137,22 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
         for(iedge=0; iedge < numOfEdge; iedge++){
 
             if(!pBVol->isMarkingEdge(iedge)){
-
                 bool bfind(false);//辺に隣接Volが存在するか否かの真偽
 
-                pairBNode= pBVol->getPairBNode(iedge);
+                pairBNode= pBVol->getPairBNode(iedge);/// <<---
+                
+                // 辺中央のNodeを取得 => のちにEdgeBNodeにセット
+                // ----
+                pElem = pBVol->getElement();
+                pNode0 = pairBNode.first->getNode();
+                pNode1 = pairBNode.second->getNode();
+                uint nElemEdge= pElem->getEdgeIndex(pNode0, pNode1);
+
 
                 uint numOfiAgg= pairBNode.first->getNumOfAggElem();
                 uint numOfjAgg= pairBNode.second->getNumOfAggElem();
                 uint iAgg,jAgg, iVolID, jVolID;
+                
                 for(iAgg=0; iAgg < numOfiAgg; iAgg++){
                     iVolID= pairBNode.first->getAggElemID(iAgg);
 
@@ -157,10 +166,7 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
 
                                 // 生成
                                 CBoundaryNode *pEdgeBNode= new CBoundaryNode;// <<<<<<<<<<<<<< new
-
-                                // EdgeBNodeの属性設定
-                                pEdgeBNode->setMGLevel(mMGLevel+1);
-                                pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel);
+                                
                                 pEdgeBNode->setID(countID);
                                 countID++;
 
@@ -171,12 +177,15 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                                 pBVol->setEdgeNeibVol(iedge, iVolID);
                                 pBVol->markingEdge(iedge);
                                 pBVol->setEdgeBNode(iedge, pEdgeBNode);
-
+                                
 
                                 // 隣接するVolumeを取得
                                 uint neibIndex= mmBVolumeID2Index[iVolID];
                                 CBoundaryVolume *pNeibBVol= mvBVolume[neibIndex];
+                                
+                                //cout << "BoundaryVolumeMesh::GeneEdgeBNode, ---- C 0" << endl;
                                 uint jedge= pNeibBVol->getEdgeID(pairBNode);
+                                //cout << "BoundaryVolumeMesh::GeneEdgeBNode, ---- C 1" << endl;
 
                                 // pNeibBVol(隣接Vol)の"辺"にEdgeBNodeをセット
                                 pNeibBVol->setEdgeNeibVol(jedge, pBVol->getID());
@@ -184,14 +193,43 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                                 pNeibBVol->setEdgeBNode(jedge, pEdgeBNode);
                                 
 
-                                //辺中央のNodeを取得してEdgeBNodeにセット
+                                //辺中央のNodeを取得してEdgeBNodeにセット:for iAggの外に出した
                                 //----
-                                pElem = pBVol->getElement();
-                                pNode0 = pairBNode.first->getNode();
-                                pNode1 = pairBNode.second->getNode();
-                                uint nEdgeIndex = pElem->getEdgeIndex(pNode0, pNode1);
-                                pEdgeNode = pElem->getEdgeInterNode(nEdgeIndex);
+                                //pElem = pBVol->getElement();
+                                //pNode0 = pairBNode.first->getNode();
+                                //pNode1 = pairBNode.second->getNode();
+                                //uint nEdgeIndex = pElem->getEdgeIndex(pNode0, pNode1);
+
+                                pEdgeNode = pElem->getEdgeInterNode(nElemEdge);
                                 pEdgeBNode->setNode(pEdgeNode);
+
+                                //2次要素の場合 => 自身のmvBNodeに追加
+                                //----
+                                if(pBVol->getOrder()==ElementOrder::Second){
+                                    uint renum = mvBNode.size();
+                                    mvBNode.resize(renum+1);
+                                    mvBNode[renum]=pEdgeBNode;
+
+                                    mmBNodeID2Index[pEdgeBNode->getID()] = renum;
+
+                                    //辺BNodeに対応するAggIDをセット
+                                    mvAggregateVol.resize(renum+1);
+                                    mvAggregateVol[renum].push_back(pBVol->getID());
+                                    mvAggregateVol[renum].push_back(pNeibBVol->getID());
+                                    
+                                    pBVol->replaceEdgeBNode(iedge);    //2次要素の場合: 要素内のEdgeBNode -> mvBNodeに移設
+                                    pNeibBVol->replaceEdgeBNode(jedge);//2次要素の場合: 要素内のEdgeBNode -> mvBNodeに移設
+
+                                    // EdgeBNodeの属性設定(2次要素)
+                                    pEdgeBNode->setMGLevel(mMGLevel);
+                                    pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel + 1);
+                                }else{
+                                    // EdgeBNodeの属性設定(1次要素)
+                                    pEdgeBNode->setMGLevel(mMGLevel+1);
+                                    pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel);
+
+                                    mnEdgeNodeCount++;//progBMeshのmvBNodeサイズカウント用:this->refineで利用
+                                }
                             }
                         }
 
@@ -205,10 +243,7 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                 if(!bfind){
                     // 生成
                     CBoundaryNode *pEdgeBNode= new CBoundaryNode;// <<<<<<<<<<<<<<< new
-
-                    // EdgeBNodeの属性設定
-                    pEdgeBNode->setMGLevel(mMGLevel+1);
-                    pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel);
+                    
                     pEdgeBNode->setID(countID);
                     countID++;
 
@@ -220,17 +255,46 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                     pBVol->setEdgeBNode(iedge, pEdgeBNode);
 
 
-                    //辺中央のNodeを取得してEdgeBNodeにセット
+                    //辺中央のNodeを取得してEdgeBNodeにセット:for iAggの外に出した
                     //----
-                    pElem = pBVol->getElement();
-                    pNode0 = pairBNode.first->getNode();
-                    pNode1 = pairBNode.second->getNode();
-                    uint nEdgeIndex = pElem->getEdgeIndex(pNode0, pNode1);
-                    pEdgeNode = pElem->getEdgeInterNode(nEdgeIndex);
+                    //pElem = pBVol->getElement();
+                    //pNode0 = pairBNode.first->getNode();
+                    //pNode1 = pairBNode.second->getNode();
+                    //uint nEdgeIndex = pElem->getEdgeIndex(pNode0, pNode1);
+                    
+                    pEdgeNode = pElem->getEdgeInterNode(nElemEdge);
                     pEdgeBNode->setNode(pEdgeNode);
+
+
+                    //2次要素の場合 => 自身のmvBNodeに追加
+                    //----
+                    if(pBVol->getOrder()==ElementOrder::Second){
+                        uint renum = mvBNode.size();
+                        mvBNode.resize(renum+1);
+                        mvBNode[renum]=pEdgeBNode;
+
+                        mmBNodeID2Index[pEdgeBNode->getID()] = renum;
+
+                        //辺BNodeに対応するAggIDをセット
+                        mvAggregateVol.resize(renum+1);
+                        mvAggregateVol[renum].push_back(pBVol->getID());
+
+                        pBVol->replaceEdgeBNode(iedge);//2次要素の場合: 要素内のEdgeBNode -> mvBNodeに移設
+
+                        // EdgeBNodeの属性設定(2次要素)
+                        pEdgeBNode->setMGLevel(mMGLevel);
+                        pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel + 1);
+                    }else{
+                        // EdgeBNodeの属性設定(1次要素)
+                        pEdgeBNode->setMGLevel(mMGLevel+1);
+                        pEdgeBNode->resizeValue(mMaxMGLevel-mMGLevel);
+
+                        mnEdgeNodeCount++;//progBMeshのmvBNodeサイズカウント用:this->refineで利用
+                    }
                 }
             }// if(isMarkingEdge)
         };// iedge loop
+
     };// ivol loop
 }
 
@@ -437,10 +501,10 @@ void CBoundaryVolumeMesh::refine(CBoundaryVolumeMesh* pProgBVolMesh)
     //BNode(頂点,辺,面) => progBVolMeshにセット
     //----
     uint numOfBNode    = mvBNode.size();
-    uint numOfEdgeBNode= mvBEdgeBNode.size();
+    //uint numOfEdgeBNode= mvBEdgeBNode.size();
     uint numOfFaceBNode= mvBFaceBNode.size();
     uint numOfVolBNode = mvBVolBNode.size();
-    uint numOfProgBNode= numOfBNode + numOfEdgeBNode + numOfFaceBNode + numOfVolBNode;
+    uint numOfProgBNode= numOfBNode + mnEdgeNodeCount + numOfFaceBNode + numOfVolBNode;
 
     pProgBVolMesh->resizeBNode(numOfProgBNode);
     
@@ -455,7 +519,7 @@ void CBoundaryVolumeMesh::refine(CBoundaryVolumeMesh* pProgBVolMesh)
     
     // 辺BNode
     init = numOfBNode;
-    end  = numOfBNode + numOfEdgeBNode;
+    end  = numOfBNode + mnEdgeNodeCount;
     
     for(ibnode=init; ibnode < end; ibnode++){
         pProgBVolMesh->setBNode(ibnode, mvBEdgeBNode[ibnode-init]);
@@ -514,9 +578,6 @@ void CBoundaryVolumeMesh::distNeumannValue()
         };
     };
 
-    //debug
-    cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", aaaaaaaaaaa" << endl;
-
     //形状関数の積分値による配分
     double integVal, nodalVal, entVal;
     uint ivol, numOfVol=mvBVolume.size();
@@ -526,8 +587,8 @@ void CBoundaryVolumeMesh::distNeumannValue()
 
         numOfDOF = getNumOfDOF();
 
-        //debug
-        cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", numOfDOF=" << numOfDOF << endl;
+        ////debug
+        //cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", numOfDOF=" << numOfDOF << endl;
 
         // 自由度別の外力配分
         // ----
@@ -536,8 +597,8 @@ void CBoundaryVolumeMesh::distNeumannValue()
             dof = getDOF(idof);//自由度番号
             entVal = pBVol->getBndValue(dof);//体積の所有する境界値
 
-            //debug
-            cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", entVal=" << entVal << endl;
+            ////debug
+            //cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", entVal=" << entVal << endl;
 
             uint ivert;
             switch(pBVol->getElemType()){
@@ -546,10 +607,9 @@ void CBoundaryVolumeMesh::distNeumannValue()
                         integVal= pShHexa->getIntegralValue8(ivert);
                         nodalVal= entVal * integVal;// 等価節点力計算
                         
-                        //debug
-                        cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", nodalVal=" << nodalVal << endl;
+                        ////debug
+                        //cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", nodalVal=" << nodalVal << endl;
                         
-
                         pBNode= pBVol->getBNode(ivert);// 境界Node
                         pBNode->addValue(dof, mMGLevel, nodalVal);// 境界値として節点"外力に加算"
                     };
@@ -676,7 +736,7 @@ void CBoundaryVolumeMesh::distDirichletValue_at_FGrid()
         uint idof, dof;
         for(idof=0; idof < getNumOfDOF(); idof++){
             dof = getDOF(idof);
-            pBVol->distDirichletVal(dof, mMGLevel);
+            pBVol->distDirichletVal(dof, mMGLevel, mMaxMGLevel);
         };
     };
 }

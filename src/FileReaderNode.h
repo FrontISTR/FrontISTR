@@ -19,9 +19,7 @@ public:
     virtual ~CFileReaderNode();
 
 public:
-//    virtual bool Read(ifstream& ifs, char* line);
     virtual bool Read(ifstream& ifs, string& sLine);
-
 };
 }
 

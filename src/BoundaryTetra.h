@@ -14,22 +14,24 @@ class CBoundaryTetra:public CBoundaryVolume{
 public:
     CBoundaryTetra();
     virtual ~CBoundaryTetra();
-private:
-    static uint mnElemType;
-    static uint mNumOfFace;
-    static uint mNumOfEdge;
-    static uint mNumOfNode;
+//private:
+//    static uint mnElemType;
+//    static uint mNumOfFace;
+//    static uint mNumOfEdge;
+//    static uint mNumOfNode;
 
 protected:
     virtual uint* getLocalNode_Edge(const uint& iedge);
     virtual uint* getLocalNode_Face(const uint& iface);
 
 public:
-
     virtual uint getElemType();
     virtual uint getNumOfEdge();
     virtual uint getNumOfFace();
+    virtual uint getNumOfNode();
+    virtual uint getNumOfVert();
 
+    virtual void setOrder(const uint& order);
 
     virtual PairBNode getPairBNode(const uint& iedge);
     virtual uint& getEdgeID(PairBNode& pairBNode);
@@ -43,7 +45,9 @@ public:
 
     virtual double& calcVolume();// BoundaryVolumeの体積
 
-    virtual void distDirichletVal(const uint& dof, const uint& mgLevel);//上位グリッドBNodeへのディレクレ値の分配
+    virtual void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+
+    virtual void replaceEdgeBNode(const uint& iedge);//2次要素の場合に辺BNodeをmvBNodeへ移設.
 
     virtual void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
 };

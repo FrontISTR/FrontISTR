@@ -30,6 +30,9 @@ CSolverCG::~CSolverCG()
 	// TODO Auto-generated destructor stub
 }
 
+//
+// Ax=b :  pA, pX, pB
+//
 int CSolverCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
 		int iter_max, double tolerance,
 		bool flag_iter_log, bool flag_time_log)
@@ -52,6 +55,7 @@ int CSolverCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector
 
 	// {R} = {B} - [A] {X}
 	pA->residual(pX, pB, &R);
+
 //	printf(" pX->norm2() %e \n", pX->norm2());
 //	printf(" pB->norm2() %e \n", pB->norm2());
 //	printf(" &R->norm2() %e \n", (&R)->norm2());
@@ -102,16 +106,19 @@ int CSolverCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector
 		}
 
 		// {Q} = [A] {P}
-//		P.updateCommBoundary(); // for parallel processing
+                //		P.updateCommBoundary();// for parallel processing
 		pA->multVector(&P, &Q);
-//		Q.sumupCommBoundary(); // for parallel processing
-//		Q.updateCommBoundary(); // for parallel processing
+                //		Q.sumupCommBoundary(); // for parallel processing
+                //		Q.updateCommBoundary();// for parallel processing
 		
 //		printf(" - &P->norm2() %e \n", (&P)->norm2());
 //		printf(" - &Q->norm2() %e \n", (&Q)->norm2());
 
 		// alpha = rho / ({P} {Q})
 		alpha = rho / P.innerProd(&Q);
+
+//                Q.dump();//2011.01.19
+//                printf(" - P.innerProd(&Q) %e \n", P.innerProd(&Q));//2011.01.12
 
 //		printf(" - rho %e \n", rho);
 //		printf(" - alpha %e \n", alpha);

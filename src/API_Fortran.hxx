@@ -56,14 +56,31 @@ __declspec(dllexport) int mw_matirx_add_elem_48_(int* imesh, int* ielem, double 
 __declspec(dllexport) int mw_matirx_add_elem_6_(int* imesh, int* ielem, double elem_matirx[][6]);  //Beam   2Node * 3DOF
 __declspec(dllexport) int mw_matirx_add_elem_10_(int* imesh, int* ielem, double elem_matirx[][10]);//Beam   2Node * 5DOF
 
-__declspec(dllexport) int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2);// matrix-D and solution_vector
-__declspec(dllexport) int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2);// matirix-D and rhs_vector
-__declspec(dllexport) int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value);// rhs_vector
+//__declspec(dllexport) int mw_matrix_set_bc_(int* imesh, int* inode, int* dof, double* value1, double* value2);// matrix-D and solution_vector
+__declspec(dllexport) int mw_matrix_rhs_set_bc2_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval);// matirix-D, matrix_non_diag=0 and rhs_vector
+__declspec(dllexport) int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval);// matirix-D and rhs_vector
+__declspec(dllexport) int mw_rhs_set_bc_(int* imesh, int* inode, int* dof, double* value);// rhs_vector
+__declspec(dllexport) int mw_rhs_add_bc_(int* imesh, int* inode, int* dof, double* value);
 
 __declspec(dllexport) int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition);
 
-//__declspec(dllexport) void mw_store_matrix_();
-//__declspec(dllexport) void mw_load_matrix_();
+//--
+// solution_vector copy,  at select MG-Level && select Equation
+//--
+__declspec(dllexport) void mw_get_solution_vector_(double buf[], int* imesh);
+__declspec(dllexport) void mw_get_solution_assy_vector_(double buf[]);
+//--
+// rhs_vector copy,  at select MG-Level && select Equation
+//--
+__declspec(dllexport) void mw_get_rhs_vector_(double buf[], int* imesh);
+__declspec(dllexport) void mw_get_rhs_assy_vector_(double buf[]);
+
+//--
+// AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+//--
+__declspec(dllexport) void mw_mult_vector_(double vX[], double vB[]);
+
+
 
 
 //----
@@ -252,25 +269,41 @@ __declspec(dllexport) int mw_shapetype_line32_();
 //--
 // boundary mesh
 //--
+// number of boudary_mesh
 __declspec(dllexport) int mw_get_num_of_boundary_bnode_mesh_();
 __declspec(dllexport) int mw_get_num_of_boundary_bface_mesh_();
 __declspec(dllexport) int mw_get_num_of_boundary_bedge_mesh_();
 __declspec(dllexport) int mw_get_num_of_boundary_bvolume_mesh_();
+// BND type for each boundary_mesh { Neumann || Dirichlet }
+__declspec(dllexport) int mw_get_bnd_type_bnode_mesh_(int* ibmesh);
+__declspec(dllexport) int mw_get_bnd_type_bface_mesh_(int* ibmesh);
+__declspec(dllexport) int mw_get_bnd_type_bedge_mesh_(int* ibmesh);
+__declspec(dllexport) int mw_get_bnd_type_bvolume_mesh_(int* ibmesh);
+// BND type number
+__declspec(dllexport) int mw_get_neumann_type_();
+__declspec(dllexport) int mw_get_dirichlet_type_();
+// number of bnode for each boundary_mesh
 __declspec(dllexport) int mw_get_num_of_bnode_in_bnode_mesh_(int* ibmesh);
 __declspec(dllexport) int mw_get_num_of_bnode_in_bface_mesh_(int* ibmesh);
 __declspec(dllexport) int mw_get_num_of_bnode_in_bedge_mesh_(int* ibmesh);
 __declspec(dllexport) int mw_get_num_of_bnode_in_bvolume_mesh_(int* ibmesh);
+// number of DOF for each boundary_mesh
 __declspec(dllexport) int mw_get_num_of_dof_in_bnode_mesh_(int* ibmesh, int* ibnode);
 __declspec(dllexport) int mw_get_num_of_dof_in_bface_mesh_(int* ibmesh);
 __declspec(dllexport) int mw_get_num_of_dof_in_bedge_mesh_(int* ibmesh);
 __declspec(dllexport) int mw_get_num_of_dof_in_bvolume_mesh_(int* ibmesh);
+// DOF number for each boundary_mesh ( DOF_index => DOF Number )
+__declspec(dllexport) int mw_get_dof_bnode_mesh_(int* ibmesh, int* ibnode, int* idof);
+__declspec(dllexport) int mw_get_dof_bface_mesh_(int* ibmesh, int* idof);
+__declspec(dllexport) int mw_get_dof_bedge_mesh_(int* ibmesh, int* idof);
+__declspec(dllexport) int mw_get_dof_bvolume_mesh_(int* ibmesh, int* idof);
 //--
 // value of boundary node
 //--
-__declspec(dllexport) double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* idof);
-__declspec(dllexport) double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel);
-__declspec(dllexport) double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel);
-__declspec(dllexport) double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel);
+__declspec(dllexport) double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* dof);
+__declspec(dllexport) double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel);
+__declspec(dllexport) double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel);
+__declspec(dllexport) double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel);
 __declspec(dllexport) int mw_get_node_id_in_bnode_mesh_(int* ibmesh, int* ibnode);
 __declspec(dllexport) int mw_get_node_id_in_bface_mesh_(int* ibmesh, int* ibnode);
 __declspec(dllexport) int mw_get_node_id_in_bedge_mesh_(int* ibmesh, int* ibnode);
@@ -279,11 +312,11 @@ __declspec(dllexport) int mw_get_node_id_in_bvolume_mesh_(int* ibmesh, int* ibno
 // value of boundary face, edge, volume
 //--
 __declspec(dllexport) int mw_get_num_of_bface_(int* ibmesh);
-__declspec(dllexport) double mw_get_bface_value_(int* ibmesh, int* ibface, int* idof);
+__declspec(dllexport) double mw_get_bface_value_(int* ibmesh, int* ibface, int* dof);
 __declspec(dllexport) int mw_get_num_of_bedge_(int* ibmesh);
-__declspec(dllexport) double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* idof);
+__declspec(dllexport) double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* dof);
 __declspec(dllexport) int mw_get_num_of_bvolume_(int* ibmesh);
-__declspec(dllexport) double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof);
+__declspec(dllexport) double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* dof);
 //--
 // boundary_mesh name
 //--
@@ -295,6 +328,16 @@ __declspec(dllexport) int mw_get_bvolume_mesh_namelength_(int* ibmesh);
 __declspec(dllexport) void mw_get_bvolume_mesh_name_(int* ibmesh, char* name, int* name_len);
 __declspec(dllexport) int mw_get_bedge_mesh_namelength_(int* ibmesh);
 __declspec(dllexport) void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len);
+//--
+// entity_id of boundary_mesh (for FrontISTR)
+//--
+__declspec(dllexport) int mw_get_edge_id_bedge_(int*ibmesh, int* ibedge);
+__declspec(dllexport) int mw_get_elem_id_bedge_(int* ibmesh, int* ibedge);
+__declspec(dllexport) int mw_get_face_id_bface_(int* ibmesh, int* ibface);
+__declspec(dllexport) int mw_get_elem_id_bface_(int* ibmesh, int* ibface);
+__declspec(dllexport) int mw_get_elem_id_bvolume_(int* ibmesh, int* ibvol);
+
+
 
 
 
@@ -321,6 +364,11 @@ __declspec(dllexport) int mw_scatter_r_(double sendbuf[], int* sendcnt, double r
 __declspec(dllexport) int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root);
 __declspec(dllexport) int mw_get_rank_();
 __declspec(dllexport) int mw_get_num_of_process_();
+// 以下の３メソッドは、ペア
+__declspec(dllexport) int mw_get_num_of_neibpe_(int* imesh);//Meshパーツが通信する相手の数
+__declspec(dllexport) int mw_get_transrank_(int* imesh, int* ipe);//通信Mesh毎のランク番号
+__declspec(dllexport) void mw_send_recv_(double buf[], int* num_of_node, int* dof_size, int* trans_rank);//bufの値を送信-受信
+
 __declspec(dllexport) void mw_send_recv_r2_(double buf[], int* dof_size);// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
 __declspec(dllexport) void mw_send_recv_r_();// 通信Nodeの値を入れ替えて更新
 

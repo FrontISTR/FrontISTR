@@ -213,14 +213,16 @@ void CMeshFactory::MGMeshConstruct()
             uint progNodeSize = pProgMesh->getNodeSize();
             pProgMesh->initBucketNode(progNodeSize+1, 0);//Bucketの領域確保
             pProgMesh->setupBucketNode();                //Bucketの"ID,Index"の一括処理
+
             // progMeshのElement逆引きセットアップ
             // --
             uint progElemSize = pProgMesh->getElementSize();
             pProgMesh->initBucketElement(progElemSize+1,0);
             pProgMesh->setupBucketElement();
 
-            // <<<< end ::pProgMeshの生成処理 >>>>
-            cout << "pProgMesh ノード数 == " << pProgMesh->getNumOfNode() << endl;//debug
+            // <<<< end ::pProgMeshの生成処理 >>>> //
+            
+            //cout << "pProgMesh ノード数 == " << pProgMesh->getNumOfNode() << endl;//debug
 
             // Elementグループ
             //
@@ -1691,6 +1693,8 @@ void CMeshFactory::reserveBoundaryNodeMesh(const uint& mgLevel, const uint& mesh
     mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
     mpTMesh = mpTAssyModel->getMesh(mesh_id);
 
+    //    cout << "MeshFactory::reserveBoundaryNodeMesh, NumOfBnd " << num_of_bnd << endl;
+
     mpTMesh->reserveBndNodeMesh(num_of_bnd);
 }
 // BoundaryNodeMesh 生成
@@ -1856,6 +1860,9 @@ void CMeshFactory::GeneBoundaryNode(const uint& mgLevel, const uint& bnd_id, con
 
     CBoundaryNodeMesh* pBndNodeMesh= mpTMesh->getBndNodeMeshID(bnd_id);
     pBndNodeMesh->setBndType(bndType);
+
+    //    cout << "MeshFactory::GeneBoundaryNode, BndNodeMesh id " << pBndNodeMesh->getID() << ", bnd_id " << bnd_id
+    //         << ", BNode " << b_node_id << ", Node " << node_id << ", dof " << dof << endl;
     
     // *DOF違いの同一BNodeがセットされるので,BNodeIDによる選別.
     // ----
@@ -1939,8 +1946,18 @@ void CMeshFactory::initFaceAggregate(const uint& mgLevel, const uint& mesh_id, c
     // 境界面メッシュ
     CBoundaryFaceMesh *pBFaceMesh= mpTMesh->getBndFaceMeshID(bnd_id);
 
-    pBFaceMesh->resizeAggFace();
+    //pBFaceMesh->resizeAggFace();
     pBFaceMesh->setupAggFace();
+}
+void CMeshFactory::resizeFaceAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id)
+{
+    mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
+    mpTMesh = mpTAssyModel->getMesh(mesh_id);
+
+    // 境界面メッシュ
+    CBoundaryFaceMesh *pBFaceMesh= mpTMesh->getBndFaceMeshID(bnd_id);
+
+    pBFaceMesh->resizeAggFace();
 }
 // BoundaryFaceMeshの面(BoundaryFace) 生成
 // ----
@@ -2008,13 +2025,22 @@ void CMeshFactory::GeneBoundaryFace(const uint& mgLevel, const uint& bnd_id, con
         
         //cout << "pBFace id= " << pBFace->getID() << endl;
 
+        //uint iedge;
         switch(elemType){
             case(ElementType::Quad):case(ElementType::Quad2):
                 pBFace->resizeBNode(4);
                 break;
+            //case(ElementType::Quad2):
+            //    pBFace->resizeBNode(8);
+            //    for(iedge=0; iedge < 4; iedge++) pBFace->markingEdge(iedge);// 辺Nodeマーキング
+            //    break;
             case(ElementType::Triangle):case(ElementType::Triangle2):
                 pBFace->resizeBNode(3);
                 break;
+            //case(ElementType::Triangle2):
+            //    pBFace->resizeBNode(6);
+            //    for(iedge=0; iedge < 3; iedge++) pBFace->markingEdge(iedge);// 辺Nodeマーキング
+            //    break;
             default:
                 //TODO:Logger
                 break;
@@ -2027,26 +2053,35 @@ void CMeshFactory::GeneBoundaryFace(const uint& mgLevel, const uint& bnd_id, con
     if(!bfind){
         // 境界面節点
         CBoundaryNode *pBNode;
-        uint numOfVert= vBNodeID.size();
+        uint numOfVert= pBFace->getNumOfVert();
         uint ivert;
         for(ivert=0; ivert < numOfVert; ivert++){
-
             pBNode= pBFaceMesh->getBNodeID(vBNodeID[ivert]);
             pBFace->setBNode(ivert, pBNode);
-
-            // BoundaryMesh側でDOF管理に移行
-            //    //DOFのセット
-            //    // *重複する可能性があるので,現状のDOFをチェックの上でdof追加.
-            //    uint numOfDOF= pBNode->getNumOfDOF();
-            //    uint idof, crDOF;
-            //    bool bCheck(false);
-            //    for(idof=0; idof < numOfDOF; idof++){
-            //        crDOF= pBNode->getDOF(idof);
-            //        if(crDOF==dof) bCheck= true;
-            //    };
-            //    if(!bCheck) pBNode->addDOF(dof);
         };
+        uint iedge;
+        //2次の場合-辺BNodeをセット
+        if(pBFace->getOrder()==ElementOrder::Second){
+            
+            uint nNumOfVert = pBFace->getNumOfVert();
+            uint nNumOfEdge = pBFace->getNumOfEdge();
+            uint id;
+            for(iedge=0; iedge < nNumOfEdge; iedge++){
+                id = vBNodeID[nNumOfVert + iedge];
+                pBNode= pBFaceMesh->getBNodeID(id);
 
+                // 辺BNodeに対応する、AggFaceをセット
+                //
+                uint ibnode = pBFaceMesh->getBNodeIndex(id);
+                pBFaceMesh->setAggFace(ibnode, pBFace->getID());
+
+                pBFace->setEdgeBNode(iedge, pBNode);// 辺BNodeセット
+                pBFace->markingEdge(iedge);         // 辺マーキング
+            };
+
+            pBFace->replaceEdgeBNode();//mvBNodeへの移設
+        }
+        
         pBFace->calcArea();
     }
 }
@@ -2085,8 +2120,18 @@ void CMeshFactory::initVolumeAggregate(const uint& mgLevel, const uint& mesh_id,
     // 境界体積メッシュ
     CBoundaryVolumeMesh *pBVolumeMesh= mpTMesh->getBndVolumeMeshID(bnd_id);
 
-    pBVolumeMesh->resizeAggVol();
+    //pBVolumeMesh->resizeAggVol();
     pBVolumeMesh->setupAggVol();
+}
+void CMeshFactory::resizeVolumeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id)
+{
+    mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
+    mpTMesh = mpTAssyModel->getMesh(mesh_id);
+
+    // 境界体積メッシュ
+    CBoundaryVolumeMesh *pBVolumeMesh= mpTMesh->getBndVolumeMeshID(bnd_id);
+
+    pBVolumeMesh->resizeAggVol();
 }
 // BoundaryVolumeMeshの体積(BoundaryVolume) 生成
 // ----
@@ -2138,14 +2183,29 @@ void CMeshFactory::GeneBoundaryVolume(const uint& mgLevel, const uint& bnd_id, c
         // 新規にBVolumeを生成する場合
         // ----
         switch(elemType){
-            case(ElementType::Hexa):case(ElementType::Hexa2):
+            case(ElementType::Hexa):
                 pBVolume = new CBoundaryHexa;// <<<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::First);
                 break;
-            case(ElementType::Tetra):case(ElementType::Tetra2):
+            case(ElementType::Hexa2):
+                pBVolume = new CBoundaryHexa;// <<<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::Second);
+                break;
+            case(ElementType::Tetra):
                 pBVolume = new CBoundaryTetra;// <<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::First);
                 break;
-            case(ElementType::Prism):case(ElementType::Prism2):
+            case(ElementType::Tetra2):
+                pBVolume = new CBoundaryTetra;// <<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::Second);
+                break;
+            case(ElementType::Prism):
                 pBVolume = new CBoundaryPrism;// <<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::First);
+                break;
+            case(ElementType::Prism2):
+                pBVolume = new CBoundaryPrism;// <<<<<<<<<<<<< new
+                pBVolume->setOrder(ElementOrder::Second);
                 break;
             default:
                 mpLogger->Info(Utility::LoggerMode::Error, "invalid ElementType, CMeshFactory::GeneBoundaryVolume");
@@ -2159,20 +2219,34 @@ void CMeshFactory::GeneBoundaryVolume(const uint& mgLevel, const uint& bnd_id, c
         CElement *pElem= mpTMesh->getElement(elem_id);
         pBVolume->setElement(pElem);
 
-        switch(elemType){
-            case(ElementType::Hexa):case(ElementType::Hexa2):
-                pBVolume->resizeBNode(8);
-                break;
-            case(ElementType::Tetra):case(ElementType::Tetra2):
-                pBVolume->resizeBNode(4);
-                break;
-            case(ElementType::Prism):case(ElementType::Prism2):
-                pBVolume->resizeBNode(6);
-                break;
-            default:
-                // TODO:Logger
-                break;
-        }
+// -------- resizeBNode は、setOrder に移行
+//
+////        switch(elemType){
+////            case(ElementType::Hexa):case(ElementType::Hexa2):
+////                pBVolume->resizeBNode(8);
+////                break;
+////            //case(ElementType::Hexa2):
+////            //    pBVolume->resizeBNode(20);
+////            //    for(iedge=0; iedge < 12; iedge++) pBVolume->markingEdge(iedge);// 2次要素
+////            //    break;
+////            case(ElementType::Tetra):case(ElementType::Tetra2):
+////                pBVolume->resizeBNode(4);
+////                break;
+////            //case(ElementType::Tetra2):
+////            //    pBVolume->resizeBNode(10);
+////            //    for(iedge=0; iedge < 6; iedge++) pBVolume->markingEdge(iedge);//
+////            //    break;
+////            case(ElementType::Prism):case(ElementType::Prism2):
+////                pBVolume->resizeBNode(6);
+////                break;
+////            //case(ElementType::Prism2):
+////            //    pBVolume->resizeBNode(15);
+////            //    for(iedge=0; iedge < 9; iedge++) pBVolume->markingEdge(iedge);//
+////            //    break;
+////            default:
+////                // TODO:Logger
+////                break;
+////        }
 
         pBVolumeMesh->addBVolume(pBVolume);
     }
@@ -2181,25 +2255,32 @@ void CMeshFactory::GeneBoundaryVolume(const uint& mgLevel, const uint& bnd_id, c
     if(!bfind){
         // 境界体積節点
         CBoundaryNode *pBNode;
-        uint numOfVert= vBNodeID.size();
+        uint numOfVert= pBVolume->getNumOfVert();
         uint ivert;
         for(ivert=0; ivert < numOfVert; ivert++){
             pBNode= pBVolumeMesh->getBNodeID(vBNodeID[ivert]);
             pBVolume->setBNode(ivert, pBNode);
-
-            // BoundaryMeshでDOF管理に移行
-            // ---------
-            //    //DOFのセット
-            //    // *重複する可能性があるので,現状のDOFをチェックの上でdof追加.
-            //    uint numOfDOF= pBNode->getNumOfDOF();
-            //    uint idof, crDOF;
-            //    bool bCheck(false);
-            //    for(idof=0; idof < numOfDOF; idof++){
-            //        crDOF= pBNode->getDOF(idof);
-            //        if(crDOF==dof) bCheck= true;
-            //    };
-            //    if(!bCheck) pBNode->addDOF(dof);
         };
+        //2次要素の場合、辺BNodeをセット
+        if(pBVolume->getOrder()==ElementOrder::Second){
+            uint nNumOfVert = pBVolume->getNumOfVert();
+            uint nNumOfEdge = pBVolume->getNumOfEdge();
+            uint id;
+            for(uint iedge=0; iedge < nNumOfEdge; iedge++){
+                id = vBNodeID[nNumOfVert + iedge];
+                pBNode= pBVolumeMesh->getBNodeID(id);
+
+                // 辺BNodeに対応する、AggVolumeをセット
+                //
+                uint ibnode = pBVolumeMesh->getBNodeIndex(id);
+                pBVolumeMesh->setAggVol(ibnode, pBVolume->getID());
+
+                pBVolume->setEdgeBNode(iedge, pBNode);// 辺BNodeセット
+                pBVolume->markingEdge(iedge);         // 辺マーキング
+                
+                pBVolume->replaceEdgeBNode(iedge);//mvBNodeへの移設
+            };
+        }
 
         pBVolume->calcVolume();
     }
@@ -2246,10 +2327,19 @@ void CMeshFactory::initEdgeAggregate(const uint& mgLevel, const uint& mesh_id, c
     // 境界辺メッシュ
     CBoundaryEdgeMesh *pBEdgeMesh= mpTMesh->getBndEdgeMeshID(bnd_id);
 
-    pBEdgeMesh->resizeAggEdge();
+    //pBEdgeMesh->resizeAggEdge();
     pBEdgeMesh->setupAggEdge();
 }
+void CMeshFactory::resizeEdgeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id)
+{
+    mpTAssyModel = mpGMGModel->getAssyModel(mgLevel);
+    mpTMesh = mpTAssyModel->getMesh(mesh_id);
 
+    // 境界辺メッシュ
+    CBoundaryEdgeMesh *pBEdgeMesh= mpTMesh->getBndEdgeMeshID(bnd_id);
+
+    pBEdgeMesh->resizeAggEdge();
+}
 // BoundaryEdgeMeshの辺(BoundaryEdge) 生成
 // ----
 void CMeshFactory::GeneBoundaryEdge(const uint& mgLevel, const uint& bnd_id, const uint& bndType, const uint& elemType,
@@ -2314,6 +2404,9 @@ void CMeshFactory::GeneBoundaryEdge(const uint& mgLevel, const uint& bnd_id, con
             case(ElementType::Beam):case(ElementType::Beam2):
                 pBEdge->resizeBNode(2);
                 break;
+            //case(ElementType::Beam2):
+            //    pBEdge->resizeBNode(3);
+            //    break;
             default:
                 //TODO:Logger
                 break;
@@ -2323,28 +2416,27 @@ void CMeshFactory::GeneBoundaryEdge(const uint& mgLevel, const uint& bnd_id, con
     }
 
     if(!bfind){
-        // 境界辺節点
+        // 境界Edge両端節点
         CBoundaryNode *pBNode;
-        uint numOfVert= vBNodeID.size();
+        uint numOfVert= pBEdge->getNumOfVert();
         uint ivert;
         for(ivert=0; ivert < numOfVert; ivert++){
             pBNode= pBEdgeMesh->getBNodeID(vBNodeID[ivert]);
             pBEdge->setBNode(ivert, pBNode);
-            
-            // BoundaryMeshでDOF管理に移行.
-            // ---
-            //    //DOFのセット
-            //    // *重複する可能性があるので,現状のDOFをチェックの上でdof追加.
-            //    uint numOfDOF= pBNode->getNumOfDOF();
-            //    uint idof, crDOF;
-            //    bool bCheck(false);
-            //    for(idof=0; idof < numOfDOF; idof++){
-            //        crDOF= pBNode->getDOF(idof);
-            //        if(crDOF==dof) bCheck= true;
-            //    };
-            //    if(!bCheck) pBNode->addDOF(dof);
         };
+        // 2次要素の場合
+        if(pBEdge->getOrder()==ElementOrder::Second){
+            pBNode= pBEdgeMesh->getBNodeID(vBNodeID[2]);
 
+            // 辺BNodeに対応する、AggEdgeをセット
+            //
+            uint ibnode = pBEdgeMesh->getBNodeIndex(vBNodeID[2]);
+            pBEdgeMesh->setAggEdge(ibnode, pBEdge->getID());
+
+            pBEdge->setEdgeBNode(pBNode);
+
+            pBEdge->replaceEdgeBNode();//mvBNodeへの移設
+        }
         pBEdge->calcLength();
     }
 }
@@ -2361,11 +2453,15 @@ void CMeshFactory::refineBoundary()
         mpTAssyModel = mpGMGModel->getAssyModel(iLevel);
         CAssyModel *pProgAssy= mpGMGModel->getAssyModel(iLevel+1);
 
+        //cout << "MeshFactory::refineBoundary, iLevel " << iLevel << endl;
+
         numOfMesh= mpTAssyModel->getNumOfMesh();
         for(iMesh=0; iMesh < numOfMesh; iMesh++){
             
             mpTMesh = mpTAssyModel->getMesh(iMesh);
             CMesh *pProgMesh= pProgAssy->getMesh(iMesh);
+
+            //cout << "MeshFactory::refineBoundary, iMesh " << iMesh << endl;
 
             // BoundaryFaceMesh
             // ----
@@ -2373,9 +2469,10 @@ void CMeshFactory::refineBoundary()
             pProgMesh->reserveBndFaceMesh(numOfBFaceMesh);
             uint iBFaceMesh;
             for(iBFaceMesh=0; iBFaceMesh < numOfBFaceMesh; iBFaceMesh++){
+
+                //cout << "MeshFactory::refineBoundary, iBFaceMesh " << iBFaceMesh << endl;
                 
                 CBoundaryFaceMesh *pBFaceMesh= mpTMesh->getBndFaceMeshIX(iBFaceMesh);
-                
                 CBoundaryFaceMesh *pProgBFaceMesh= new CBoundaryFaceMesh;// <<<<<<<<<<<<<<<<< new
                 
                 pProgMesh->setBndFaceMesh(pProgBFaceMesh);
@@ -2387,7 +2484,7 @@ void CMeshFactory::refineBoundary()
                     dof = pBFaceMesh->getDOF(idof);
                     pProgBFaceMesh->setDOF(idof, dof);
                 }
-
+                
                 pBFaceMesh->GeneEdgeBNode();
                 pBFaceMesh->GeneFaceBNode();
                 
@@ -2404,15 +2501,15 @@ void CMeshFactory::refineBoundary()
                 pProgBFaceMesh->setMGLevel(iLevel+1);
                 pProgBFaceMesh->setMaxMGLevel(mMGLevel);
                 
-                //BNodeへの境界値の再配分
-                //--
-                if(BoundaryType::Dirichlet==pBFaceMesh->getBndType()){
-                    pBFaceMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
-                }
-                if(BoundaryType::Neumann==pBFaceMesh->getBndType()){
-                    if(iLevel==0) pBFaceMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
-                    pProgBFaceMesh->distValueBNode();//Neumann:子供の方でBNOdeへの配分を決める
-                }
+                //    //BNodeへの境界値の再配分
+                //    //--
+                //    if(BoundaryType::Dirichlet==pBFaceMesh->getBndType()){
+                //        pBFaceMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
+                //    }
+                //    if(BoundaryType::Neumann==pBFaceMesh->getBndType()){
+                //        if(iLevel==0) pBFaceMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
+                //        pProgBFaceMesh->distValueBNode();//Neumann:子供の方でBNodeへの配分を決める
+                //    }
             };
 
             // BoundaryEdgeMesh
@@ -2437,8 +2534,8 @@ void CMeshFactory::refineBoundary()
                 }
 
                 pBEdgeMesh->GeneEdgeBNode();
-                pBEdgeMesh->refine(pProgBEdgeMesh);// Refine
 
+                pBEdgeMesh->refine(pProgBEdgeMesh);// Refine
                 pProgBEdgeMesh->resizeAggEdge();
                 pProgBEdgeMesh->setupAggEdge();
 
@@ -2450,16 +2547,16 @@ void CMeshFactory::refineBoundary()
 
                 pProgBEdgeMesh->setMGLevel(iLevel+1);
                 pProgBEdgeMesh->setMaxMGLevel(mMGLevel);
-
-                //BNodeへの境界値の再配分
-                //--
-                if(BoundaryType::Dirichlet==pBEdgeMesh->getBndType()){
-                    pBEdgeMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
-                }
-                if(BoundaryType::Neumann==pBEdgeMesh->getBndType()){
-                    if(iLevel==0) pBEdgeMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
-                    pProgBEdgeMesh->distValueBNode();//Neumann:子供の方でBNOdeへの配分を決める
-                }
+                
+                //    //BNodeへの境界値の再配分
+                //    //--
+                //    if(BoundaryType::Dirichlet==pBEdgeMesh->getBndType()){
+                //        pBEdgeMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
+                //    }
+                //    if(BoundaryType::Neumann==pBEdgeMesh->getBndType()){
+                //        if(iLevel==0) pBEdgeMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
+                //        pProgBEdgeMesh->distValueBNode();//Neumann:子供の方でBNodeへの配分を決める
+                //    }
             };
 
             // BoundaryVolumeMesh
@@ -2500,21 +2597,116 @@ void CMeshFactory::refineBoundary()
                 pProgBVolMesh->setMGLevel(iLevel+1);
                 pProgBVolMesh->setMaxMGLevel(mMGLevel);
                 
-                //BNodeへの境界値の再配分
-                //--
-                if(BoundaryType::Dirichlet==pBVolMesh->getBndType()){
-                    pBVolMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
-                }
-                if(BoundaryType::Neumann==pBVolMesh->getBndType()){
-                    if(iLevel==0) pBVolMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
-                    pProgBVolMesh->distValueBNode();//Neumann:子供の方でBNOdeへの配分を決める
-                }
+                //    //BNodeへの境界値の再配分
+                //    //--
+                //    if(BoundaryType::Dirichlet==pBVolMesh->getBndType()){
+                //        pBVolMesh->distValueBNode();//Dirichlet:親の方でBNodeへの配分を決める
+                //    }
+                //    if(BoundaryType::Neumann==pBVolMesh->getBndType()){
+                //        if(iLevel==0) pBVolMesh->distValueBNode();//Level=0の場合は、親側でNeumannも分配
+                //        pProgBVolMesh->distValueBNode();//Neumann:子供の方でBNOdeへの配分を決める
+                //    }
             };
 
             // BoundaryNodeMesh : BNodeMeshGrp* を各階層にセット.
             // ----
             CBNodeMeshGrp* pBNodeMeshGrp= mpTMesh->getBNodeMeshGrp();
             pProgMesh->setBNodeMeshGrp(pBNodeMeshGrp);
+
+        };// iMesh loop-end
+
+    };// iLevel loop-end
+
+    
+
+    // 2次要素の場合：辺BNodeを最終レベルに生成
+    // ----
+    mpTAssyModel = mpGMGModel->getAssyModel(mMGLevel);
+
+    numOfMesh= mpTAssyModel->getNumOfMesh();
+
+    for(iMesh=0; iMesh < numOfMesh; iMesh++){
+        mpTMesh = mpTAssyModel->getMesh(iMesh);
+
+        uint numOfBFaceMesh= mpTMesh->getNumOfBoundaryFaceMesh();
+        uint iBFaceMesh;
+        for(iBFaceMesh=0; iBFaceMesh < numOfBFaceMesh; iBFaceMesh++){
+
+            CBoundaryFaceMesh *pBFaceMesh= mpTMesh->getBndFaceMeshIX(iBFaceMesh);
+
+            pBFaceMesh->GeneEdgeBNode();//辺BNode生成
+
+        };//iBFaceMesh loop-end
+
+        uint numOfBEdgeMesh= mpTMesh->getNumOfBoundaryEdgeMesh();
+        uint iBEdgeMesh;
+        for(iBEdgeMesh=0; iBEdgeMesh < numOfBEdgeMesh; iBEdgeMesh++){
+
+            CBoundaryEdgeMesh *pBEdgeMesh= mpTMesh->getBndEdgeMeshIX(iBEdgeMesh);
+
+            pBEdgeMesh->GeneEdgeBNode();//辺BNode生成
+
+        };//iBEdgeMesh loop-end
+
+        uint numOfBVolMesh= mpTMesh->getNumOfBoundaryVolumeMesh();
+        uint iBVolMesh;
+        for(iBVolMesh=0; iBVolMesh < numOfBVolMesh; iBVolMesh++){
+
+            CBoundaryVolumeMesh *pBVolMesh= mpTMesh->getBndVolumeMeshIX(iBVolMesh);
+
+            pBVolMesh->GeneEdgeBNode();//辺BNode生成
+
+        };//iBVolMesh loop-end
+
+    };//iMesh loop-end
+
+
+    // BNodeへの境界値-分配(0 〜 最終レベル:mMGLevel)
+    //
+    for(iLevel=0; iLevel < mMGLevel+1; iLevel++){
+        mpTAssyModel = mpGMGModel->getAssyModel(iLevel);
+        numOfMesh= mpTAssyModel->getNumOfMesh();
+
+        //cout << "MeshFactory::refineBoundary, Dist-Level " << iLevel << endl;
+
+        for(iMesh=0; iMesh < numOfMesh; iMesh++){
+            mpTMesh = mpTAssyModel->getMesh(iMesh);
+
+            uint numOfBFaceMesh= mpTMesh->getNumOfBoundaryFaceMesh();
+            uint iBFaceMesh;
+            for(iBFaceMesh=0; iBFaceMesh < numOfBFaceMesh; iBFaceMesh++){
+
+                CBoundaryFaceMesh *pBFaceMesh= mpTMesh->getBndFaceMeshIX(iBFaceMesh);
+
+                ///cout << "MeshFactory::refineBoundary, BFace distValueBNode ---(1) " << endl;
+                pBFaceMesh->distValueBNode();
+                ///cout << "MeshFactory::refineBoundary, BFace distValueBNode ---(2) " << endl;
+
+            };//iBFaceMesh loop-end
+
+            uint numOfBEdgeMesh= mpTMesh->getNumOfBoundaryEdgeMesh();
+            uint iBEdgeMesh;
+            for(iBEdgeMesh=0; iBEdgeMesh < numOfBEdgeMesh; iBEdgeMesh++){
+
+                CBoundaryEdgeMesh *pBEdgeMesh= mpTMesh->getBndEdgeMeshIX(iBEdgeMesh);
+
+                ///cout << "MeshFactory::refineBoundary, BEdge distValueBNode ---(1) " << endl;
+                pBEdgeMesh->distValueBNode();
+                ///cout << "MeshFactory::refineBoundary, BEdge distValueBNode ---(2) " << endl;
+
+            };//iBEdgeMesh loop-end
+
+            uint numOfBVolMesh= mpTMesh->getNumOfBoundaryVolumeMesh();
+            uint iBVolMesh;
+            for(iBVolMesh=0; iBVolMesh < numOfBVolMesh; iBVolMesh++){
+
+                CBoundaryVolumeMesh *pBVolMesh= mpTMesh->getBndVolumeMeshIX(iBVolMesh);
+
+                ///cout << "MeshFactory::refineBoundary, BVol distValueBNode ---(1) " << endl;
+                pBVolMesh->distValueBNode();
+                ///cout << "MeshFactory::refineBoundary, BVol distValueBNode ---(2) " << endl;
+
+            };//iBVolMesh loop-end
         };
     };
 }
@@ -3248,7 +3440,7 @@ void CMeshFactory::GeneMasterFace(const uint& contactID, const uint& shapeType, 
     pMFace->setRank(face_rank);
     pMFace->setLevel(mgLevel);// mgLevel=0 入力レベル
 
-    uint icnode, numOfConNode(vConNodeID.size());
+    uint icnode, numOfConNode = vConNodeID.size();
     for(icnode=0; icnode< numOfConNode; icnode++){
         CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
         pMFace->addNode(pConNode);
@@ -3306,7 +3498,7 @@ void CMeshFactory::GeneSlaveFace(const uint& contactID, const uint& shapeType, c
     pSFace->setRank(face_rank);
     pSFace->setLevel(mgLevel);// mgLevel=0 入力レベル
     
-    uint icnode, numOfConNode(vConNodeID.size());
+    uint icnode, numOfConNode = vConNodeID.size();
     for(icnode=0; icnode< numOfConNode; icnode++){
         CContactNode *pConNode= pConMesh->getContactNode_ID(vConNodeID[icnode]);
         pSFace->addNode(pConNode);
@@ -3356,17 +3548,20 @@ void CMeshFactory::refineContactMesh()
         pAssy =  mpGMGModel->getAssyModel(ilevel);    //カレントレベル
         pProgAssy= mpGMGModel->getAssyModel(ilevel+1);//上段のレベル
         
-        
+        //cout << "MeshFactory::refineContactMesh, iLevel=" << ilevel << endl;
+
         uint numOfCont= pAssy->getNumOfContactMesh();
         uint icont;
         for(icont=0; icont< numOfCont; icont++){
             pConMesh= pAssy->getContactMesh(icont);
             pProgConMesh= pProgAssy->getContactMesh(icont);
-            
+
+
             pConMesh->setupCoarseConNode(pProgConMesh);      //現在LevelのConMeshのノードを上位のConMeshに丸ごとセット
             pConMesh->setupAggSkinFace();                    //ContactNode周囲のSkinFaceIDを収集
             pConMesh->setupEdgeConNode(pProgConMesh, ilevel);//辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
             pConMesh->setupFaceConNode(pProgConMesh);        //面ノードの生成,新ノードをprogConMeshに追加,IDカウント
+
             
             uint numOfSkinFace;
             uint iface;
@@ -3388,7 +3583,7 @@ void CMeshFactory::refineContactMesh()
                         meshID= pSkinFace->getMeshID(); elemID= pSkinFace->getElementID();
                         pMesh= pAssy->getMesh_ID(meshID);
                         pElem= pMesh->getElement(elemID);
-
+                        
                         pSkinFace->refine(pElem, faceID);//// <<<<<<<<-- 面のRefineと新FaceIDのカウントアップ
                     }else{
                         pSkinFace->refine(NULL, faceID); //// <<<<<<<<-- 面のRefineと新FaceIDのカウントアップ
@@ -3412,12 +3607,46 @@ void CMeshFactory::refineContactMesh()
     pAssy =  mpGMGModel->getAssyModel(mMGLevel);//最終レベル
     uint numOfCont= pAssy->getNumOfContactMesh();
     uint icont;
-    for(icont=0; icont< numOfCont; icont++){
+    for(icont=0; icont < numOfCont; icont++){
         pConMesh= pAssy->getContactMesh(icont);
 
         pConMesh->setupAggSkinFace();              //ContactNode周囲のSkinFaceIDを収集
         pConMesh->setupEdgeConNode(NULL, mMGLevel);//辺ノードの生成,辺接続Faceのセット,新ノードをprogConMeshに追加,IDカウント
     };
+
+    // 2次要素対応(最終Levelの辺ConNodeに、メッシュNodeIDをセット)
+    // ----
+    for(icont=0; icont < numOfCont; icont++){
+        pConMesh= pAssy->getContactMesh(icont);
+        
+        //マスター,スレーブ切り替え
+        for(maslave=0; maslave < 2; maslave++){
+            uint numOfFace;
+            if(maslave==0) numOfFace = pConMesh->getNumOfMasterFace();
+            if(maslave==1) numOfFace = pConMesh->getNumOfSlaveFace();
+
+            uint iface;
+            for(iface=0; iface< numOfFace; iface++){
+                if(maslave==0)  pSkinFace= pConMesh->getMasterFace(iface);//マスター面
+                if(maslave==1)  pSkinFace= pConMesh->getSlaveFace(iface); //スレーブ面
+
+                // 2次要素
+                if(pSkinFace->getOrder()==ElementOrder::Second){
+                    //
+                    // 自身のMeshに存在するMPC面であれば, NodeIDをセットする.
+                    //
+                    if(pSkinFace->isSelf() && pSkinFace->getNumOfEdge()!=0){
+                        meshID= pSkinFace->getMeshID(); elemID= pSkinFace->getElementID();
+                        pMesh= pAssy->getMesh_ID(meshID);
+                        pElem= pMesh->getElement(elemID);
+
+                        pSkinFace->setupNodeID_2nd_LastLevel(pElem);//辺ConNodeに、NodeIDをセット
+                    }
+                }// 2次要素if
+                
+            };// ifaceループ
+        };// マスター スレーブ 切り替え
+    };// icont ループ
 
 
 

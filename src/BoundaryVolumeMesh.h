@@ -47,6 +47,7 @@ public:
         uint index= mmBVolumeID2Index[id];
         return mvBVolume[index];
     }
+    uint& getBVolumeIndex(const uint& id){ mmBVolumeID2Index[id];}
 
 
 protected:
@@ -55,6 +56,7 @@ protected:
 public:
     void resizeAggVol();
     void setupAggVol();
+    void setAggVol(const uint& ibnode, const uint& nVolumeID){ mvAggregateVol[ibnode].push_back(nVolumeID);}
 
     void GeneEdgeBNode();
     void GeneFaceBNode();
@@ -67,7 +69,7 @@ public:
     // 境界要素の再分割 => progBMeshにセット
     // ----
     void refine(CBoundaryVolumeMesh *pProgBVolMesh);
-
+    
     void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
 
 protected:
@@ -79,7 +81,6 @@ protected:
     // Level==0:BNode周囲の要素集合平均値
     // Level>=1:BNode間の平均
     //----
-    //virtual void distDirichletValue(); => BoundaryMeshへ
     virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
     virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
 };

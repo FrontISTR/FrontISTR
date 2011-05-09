@@ -236,6 +236,7 @@ CEdgeTree::~CEdgeTree()
 //
 uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
 {
+    
     // Edge(辺)のツリー
     switch(localNum0){
         case(0):
@@ -252,6 +253,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 0");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -269,6 +271,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 1");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -286,6 +289,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 2");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -303,6 +307,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 3");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -320,6 +325,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 4");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -337,6 +343,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 5");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -354,6 +361,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 6");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;
@@ -371,6 +379,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
                     break;
                 default:
                     mpLogger->Info(Utility::LoggerMode::Error, "EdgeTree::getHexaEdgeIndex, invalit vertex number, case 7");
+                    cout << "EdgeTree::getHexaEdgeIndex, Num0 " << localNum0 << ",  Num1 " << localNum1 << endl;
                     break;
             }
             break;

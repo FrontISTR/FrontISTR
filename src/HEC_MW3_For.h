@@ -45,11 +45,28 @@ integer mw_matirx_add_elem_48
 integer mw_matirx_add_elem_6
 integer mw_matirx_add_elem_10
 
-integer mw_matrix_set_bc
+integer mw_matrix_rhs_set_bc2
 integer mw_matrix_rhs_set_bc
 integer mw_rhs_set_bc
+integer mw_rhs_add_bc
 
 integer mw_solve
+
+!--
+! solution_vector copy, at select MG-Level && select Equation
+!--
+external mw_get_solution_vector
+external mw_get_solution_assy_vector
+!--
+! rhs_vector copy,  at select MG-Level && select Equation
+!--
+external mw_get_rhs_vector
+external mw_get_rhs_assy_vector
+
+!--
+! AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+!--
+external mw_mult_vector
 
 
 
@@ -239,18 +256,35 @@ integer mw_shapetype_line32
 !--
 ! boundary mesh
 !--
+! number of boudary_mesh
 integer mw_get_num_of_boundary_bnode_mesh
 integer mw_get_num_of_boundary_bface_mesh
 integer mw_get_num_of_boundary_bedge_mesh
 integer mw_get_num_of_boundary_bvolume_mesh
+! BND type for each boundary_mesh { Neumann || Dirichlet }
+integer mw_get_bnd_type_bnode_mesh
+integer mw_get_bnd_type_bface_mesh
+integer mw_get_bnd_type_bedge_mesh
+integer mw_get_bnd_type_bvolume_mesh
+! BND type number
+integer mw_get_neumann_type
+integer mw_get_dirichlet_type
+! number of bnode for each boundary_mesh
 integer mw_get_num_of_bnode_in_bnode_mesh
 integer mw_get_num_of_bnode_in_bface_mesh
 integer mw_get_num_of_bnode_in_bedge_mesh
 integer mw_get_num_of_bnode_in_bvolume_mesh
+! number of DOF for each boundary_mesh
 integer mw_get_num_of_dof_in_bnode_mesh
 integer mw_get_num_of_dof_in_bface_mesh
 integer mw_get_num_of_dof_in_bedge_mesh
 integer mw_get_num_of_dof_in_bvolume_mesh
+! DOF number for each boundary_mesh ( DOF_index => DOF Number )
+integer mw_get_dof_bnode_mesh
+integer mw_get_dof_bface_mesh
+integer mw_get_dof_bedge_mesh
+integer mw_get_dof_bvolume_mesh
+
 !--
 ! value of boundary node
 !--
@@ -282,7 +316,14 @@ integer mw_get_bvolume_mesh_namelength
 external mw_get_bvolume_mesh_name
 integer mw_get_bedge_mesh_namelength
 external mw_get_bedge_mesh_name
-
+!--
+! entity_id of boundary_mesh (for FrontISTR)
+!--
+integer mw_get_edge_id_bedge
+integer mw_get_elem_id_bedge
+integer mw_get_face_id_bface
+integer mw_get_elem_id_bface
+integer mw_get_elem_id_bvolume
 
 
 
@@ -308,6 +349,11 @@ integer mw_scatter_r
 integer mw_scatter_i
 integer mw_get_rank
 integer mw_get_num_of_process
+!--
+integer mw_get_num_of_neibpe
+integer mw_get_transrank
+external mw_send_recv
+!--
 external mw_send_recv_r2
 external mw_send_recv_r
 

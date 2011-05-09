@@ -43,7 +43,8 @@ public:
     // 面形状( Quad | Triangle )
     void setBFaceShape(const uint& elemType);
     uint& getBFaceShape(){ return mnShapeType;}
-    
+
+    virtual uint getNumOfVert();
     
 protected:
     bool* mvbMarkingEdge;// 辺が使用済みか否か.
@@ -61,7 +62,9 @@ public:
 
     void setFaceBNode(CBoundaryNode *pFaceBNode);
 
-    void setupNode();//BNodeにNodeをセット
+    //void setupNode();//BNodeにNodeをセット : 辺,面BNodeすべてにセット
+    void setupNode_Edge();
+    void setupNode_Face();
 
 
 protected:
@@ -79,7 +82,9 @@ public:
 
     vector<CBoundaryFace*>& getProgParts(){ return mvProgBFace;}
 
-    void distDirichletVal(const uint& dof, const uint& mgLevel);//上位グリッドBNodeへのディレクレ値の分配
+    void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+
+    void replaceEdgeBNode();//2次要素の場合、辺BNodeをmvBNodeに移設.
 
     void deleteProgData();//Refine時の辺BNode*の解放
 };

@@ -26,7 +26,15 @@ public:
     // BoundaryMeshオブジェクトの確保
     // --
     void reserve(const unsigned int& res_size){ mvBoundary.reserve(res_size); }
-    void push(T pBoundary){ mvBoundary.push_back(pBoundary);}
+    void push(T pBoundary){ 
+        
+        mvBoundary.push_back(pBoundary);
+        
+        unsigned int index = mvBoundary.size() - 1;
+        unsigned int id = pBoundary->getID();
+        
+        mIndexMap[id] = index;
+    }
 
 
     // 各Boundaryオブジェクトを生成した際にIDはセットするのでコメントアウト.

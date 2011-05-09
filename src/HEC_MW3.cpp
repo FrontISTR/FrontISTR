@@ -276,22 +276,35 @@ void CMW::Sample_Set_BC(uint iMesh)
 	uint iDof0, iDof1, iDof2;
 	uint iNodeMax = getNodeSize( iMesh );
 
+        //cout << " -- CMW::Sample_Set_BC -- " << endl;
+        
 	for( uint iNode = 0; iNode < iNodeMax; iNode++){
 		X = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getX();
 		Y = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getY();
 		Z = mpAssy->getMesh(iMesh)->getNodeIX(iNode)->getZ();
-		if(abs( Z - 4.0 ) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 ) {
-			value0 = 1.0e6;
-			iDof0 = 0;
-			Set_BC_RHS( iMesh, iNode, iDof0, value0);
+
+                ////debug
+                //cout << "Z = " << Z << endl;
+
+                // x=1.0 y=1.0 z=4.0 の一点荷重に変更'11.01.14 {以前、x=1.0 z=4.0 の辺の節点全て}
+		if(abs( Z - 4.0 ) < 1.0e-5 && abs( X - 1.0 ) < 1.0e-5 && abs( Y - 1.0) < 1.0e-5 ) {
+
+                    //cout << " Z=4.0  iNode:" << iNode << endl;
+
+                    value0 = 1.0e6;
+                    iDof0 = 0;
+                    Set_BC_RHS( iMesh, iNode, iDof0, value0);
 		};
 		if( (abs( Z ) < 1.0e-5) || (abs( Z - 8.0 ) < 1.0e-5) ) {
-			value1 = 1.0e15;
-			value2 = 0.0;
-			iDof0 = 0; iDof1 = 1; iDof2 = 2;
-			Set_BC_Mat_RHS( iMesh, iNode, iDof0, value1, value2);
-			Set_BC_Mat_RHS( iMesh, iNode, iDof1, value1, value2);
-			Set_BC_Mat_RHS( iMesh, iNode, iDof2, value1, value2);
+
+                    //cout << " Z=0.0  iNode:" << iNode << endl;
+                    
+                    value1 = 1.0e15;
+                    value2 = 0.0;
+                    iDof0 = 0; iDof1 = 1; iDof2 = 2;
+                    Set_BC_Mat_RHS( iMesh, iNode, iDof0, value1, value2);
+                    Set_BC_Mat_RHS( iMesh, iNode, iDof1, value1, value2);
+                    Set_BC_Mat_RHS( iMesh, iNode, iDof2, value1, value2);
 		}
 	};
 #ifdef ADVANCESOFT_DEBUG
@@ -302,49 +315,82 @@ void CMW::Sample_Set_BC(uint iMesh)
 //
 // 右辺ベクトルへ境界値をセット
 //
-int CMW::Set_BC_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value)
+int CMW::Set_BC_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& value)
 {
 #ifdef ADVANCESOFT_DEBUG
-	printf("enter CMW::Set_BC (RHS) %d %d %d %e \n", iMesh, iNode, iDof, value);
+    printf("enter CMW::Set_BC (RHS) %d %d %d %e \n", iMesh, iNode, iDof, value);
 #endif
 
-	mpRHSAssyVector->setValue(iMesh, iNode, iDof, value);
+    if(mpRHSAssyVector){
+        mpRHSAssyVector->setValue(iMesh, iNode, nDOF, value);
+        return 1;
+    }else{
+        return 0;
+    }
 
 #ifdef ADVANCESOFT_DEBUG
-	printf("exit CMW::Set_BC (RHS) \n");
+    printf("exit CMW::Set_BC (RHS) \n");
 #endif
-	return 1;
+	
 }
 //
-// 行列の対角項、解ベクトルへ境界値をセット
+// 右辺ベクトルへの境界値の加算
 //
-int CMW::Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
+int CMW::Add_BC_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& value)
 {
-#ifdef ADVANCESOFT_DEBUG
-	printf("enter CMW::Set_BC (Mat_SolVec) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
-#endif
+    if(mpRHSAssyVector){
+        mpRHSAssyVector->addValue(iMesh, iNode, nDOF, value);
+        return 1;
+    }else{
+        return 0;
+    }
+}
+//////
+////// 行列の対角項、解ベクトルへ境界値をセット
+//////
+////int CMW::Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& nDOF, double& value1, double& value2)
+////{
+////#ifdef ADVANCESOFT_DEBUG
+////	printf("enter CMW::Set_BC (Mat_SolVec) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
+////#endif
+////
+////	mpAssyMatrix->setValue(iMesh, iNode, nDOF, value1);
+////	mpSolAssyVector->setValue(iMesh, iNode, nDOF, value2);
+////
+////#ifdef ADVANCESOFT_DEBUG
+////	printf("exit CMW::Set_BC (Mat_SolVec) \n");
+////#endif
+////	return 1;
+////}
+////// 非対角項=0 処理
+////int CMW::SetZero_NonDiag(uint& iMesh, uint& iNode, uint& nDOF)
+////{
+////    mpAssyMatrix->setZero_NonDiag(iMesh, iNode, nDOF);
+////    return 1;
+////}
 
-	mpAssyMatrix->setValue(iMesh, iNode, iDof, value1);
-        //mpRHSAssyVector->setValue(iMesh, iNode, iDof, value2);
-	mpSolAssyVector->setValue(iMesh, iNode, iDof, value2);
+//
+// 対角項=Val,非対角項=0、右辺ベクトル
+//
+int CMW::Set_BC_Mat_RHS2(uint& iMesh, uint& iNode, uint& nDOF, double& diagValue, double& rhsValue)
+{
+    mpAssyMatrix->setZero_NonDiag(iMesh, iNode, nDOF);    // 非対角項=0 処理
+    mpAssyMatrix->setValue(iMesh, iNode, nDOF, diagValue);// 対角項
 
-#ifdef ADVANCESOFT_DEBUG
-	printf("exit CMW::Set_BC (Mat_SolVec) \n");
-#endif
-
-	return 1;
+    mpRHSAssyVector->setValue(iMesh, iNode, nDOF, rhsValue);
 }
 //
 // 行列の対角項、右辺ベクトルへ境界値をセット
 //
-int CMW::Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2)
+int CMW::Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& diagValue, double& rhsValue)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMW::Set_BC (Mat_RHS) %d %d %d %e %e \n", iMesh, iNode, iDof, value1, value2);
 #endif
 
-	mpAssyMatrix->setValue(iMesh, iNode, iDof, value1);
-        mpRHSAssyVector->setValue(iMesh, iNode, iDof, value2);
+	//mpAssyMatrix->setValue(iMesh, iNode, nDOF, diagValue);
+        mpAssyMatrix->setValue_D(iMesh, iNode, nDOF, diagValue);
+        mpRHSAssyVector->setValue(iMesh, iNode, nDOF, rhsValue);
 
 #ifdef ADVANCESOFT_DEBUG
 	printf("exit CMW::Set_BC (Mat_RHS) \n");
@@ -358,6 +404,20 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMW::Solve %d %e \n", iter_max, tolerance);
 #endif
+
+////    // 行列をダンプ
+////    cout << "-- Assy マトリックス --" << endl;
+////    mpAssyMatrix->dump();
+////    // ----
+////    // 列ベクトルをダンプ
+////    cout << "--   Sol ベクトル   --" << endl;
+////    mpSolAssyVector->dump();
+////    // ----
+////    // 列ベクトルをダンプ
+////    cout << "--   RHS ベクトル   --" << endl;
+////    mpRHSAssyVector->dump();
+
+
 
   bool flag_iter_log = false;
   bool flag_time_log = false;
@@ -384,10 +444,6 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
            break;
     }
     
-////    //2011.01.05 行列をダンプ(標準出力)
-////    mpAssyMatrix->dump();
-
-
 
     //
     // MicroAVS UCD format 出力
@@ -516,6 +572,134 @@ int CMW::Solve(uint& iter_max, double& tolerance, uint& method, uint& preconditi
     return 1;
 }
 
+
+//--
+// 解ベクトルをbufへコピー  (SelectされているLevel && Selectされている方程式番号)
+//--
+void CMW::GetSolution_Vector(double* buf, const uint& imesh)
+{
+    CVector *pVec = mpSolAssyVector->getVector(imesh);
+
+    CMesh *pMesh = mpAssy->getMesh(imesh);
+    uint nNumOfNode = pMesh->getNumOfNode();
+    uint nDOF = mpSolAssyVector->getDOF();
+
+    for(uint inode=0; inode < nNumOfNode; inode++){
+        for(uint idof=0; idof < nDOF; idof++){
+            buf[ inode*nDOF + idof ] = pVec->getValue(inode, idof);
+        };
+    };
+}
+void CMW::GetSolution_AssyVector(double* buf)
+{
+    uint nDOF = mpSolAssyVector->getDOF();
+    uint nNumOfMesh = mpAssy->getNumOfMesh();
+
+    for(uint iMesh=0; iMesh < nNumOfMesh; iMesh++){
+        CMesh *pMesh = mpAssy->getMesh(iMesh);
+
+        uint nNumOfNode = pMesh->getNodeSize();
+        uint nMeshSize = iMesh * nNumOfNode;
+
+        for(uint iNode=0; iNode < nNumOfNode; iNode++){
+            for(uint idof=0; idof < nDOF; idof++){
+                buf[nMeshSize + iNode*nDOF + idof] = mpSolAssyVector->getValue(iMesh, iNode, idof);
+            };
+        };
+    };
+}
+//--
+// 右辺ベクトルをbufへコピー (SelectされているLevel && Selectされている方程式番号)
+//--
+void CMW::GetRHS_Vector(double* buf, const uint& imesh)
+{
+    CVector *pVec = mpRHSAssyVector->getVector(imesh);
+
+    CMesh *pMesh = mpAssy->getMesh(imesh);
+    uint nNumOfNode = pMesh->getNumOfNode();
+    uint nDOF = mpRHSAssyVector->getDOF();
+
+    for(uint inode=0; inode < nNumOfNode; inode++){
+        for(uint idof=0; idof < nDOF; idof++){
+            buf[ inode*nDOF + idof ] = pVec->getValue(inode, idof);
+        };
+    };
+}
+void CMW::GetRHS_AssyVector(double* buf)
+{
+    uint nDOF = mpRHSAssyVector->getDOF();
+    uint nNumOfMesh = mpAssy->getNumOfMesh();
+
+    for(uint iMesh=0; iMesh < nNumOfMesh; iMesh++){
+        CMesh *pMesh = mpAssy->getMesh(iMesh);
+
+        uint nNumOfNode = pMesh->getNodeSize();
+        uint nMeshSize = iMesh * nNumOfNode;
+
+        for(uint iNode=0; iNode < nNumOfNode; iNode++){
+            for(uint idof=0; idof < nDOF; idof++){
+                buf[nMeshSize + iNode*nDOF + idof] = mpRHSAssyVector->getValue(iMesh, iNode, idof);
+            };
+        };
+    };
+}
+
+//----
+// AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+//----
+void CMW::multVector(double* vX, double* vB)
+{
+    CAssyVector vecX(mpSolAssyVector);
+    CAssyVector vecB(mpRHSAssyVector);
+
+    vecX.setZero();
+
+    // 入力値：Xベクトル値をAssyVectorに代入
+    //
+    uint nDOF = mpSolAssyVector->getDOF();
+    uint nNumOfMesh = mpAssy->getNumOfMesh();
+
+    for(uint iMesh=0; iMesh < nNumOfMesh; iMesh++){
+
+        CMesh *pMesh = mpAssy->getMesh(iMesh);
+        uint nNumOfNode = pMesh->getNodeSize();
+        uint nMeshSize = iMesh * nNumOfNode;
+
+        for(uint iNode=0; iNode < nNumOfNode; iNode++){
+            for(uint idof=0; idof < nDOF; idof++){
+                double val = vX[nMeshSize + iNode*nDOF + idof];
+                vecX.setValue(iMesh, iNode, idof, val);
+            };
+        };
+    };
+
+    vecB.setZero();
+    //
+    // A * vecX = vecB
+    //
+    for(uint iMesh=0; iMesh < nNumOfMesh; iMesh++){
+        mpAssyMatrix->multVector(iMesh, &vecX, &vecB);
+    };
+
+    // 出力値：BベクトルにAssyVectorの値を代入
+    //
+    for(uint iMesh=0; iMesh < nNumOfMesh; iMesh++){
+
+        CMesh *pMesh = mpAssy->getMesh(iMesh);
+        uint nNumOfNode = pMesh->getNodeSize();
+        uint nMeshSize = iMesh * nNumOfNode;
+
+        for(uint iNode=0; iNode < nNumOfNode; iNode++){
+            for(uint idof=0; idof < nDOF; idof++){
+                double val = vecB.getValue(iMesh, iNode, idof);
+                vB[nMeshSize + iNode*nDOF + idof] = val;
+            };
+        };
+    };
+}
+
+
+
 //
 // 1.マルチグリッドのための,Refineメッシュ生成
 // 2.MPCのため,接合Meshのマスター面にスレーブ点をセット
@@ -529,8 +713,12 @@ int CMW::Refine()
     
     if(mb_file){// ファイル読み込み後
         
+        //cout << "MW::Refine, A" << endl;
+
         mpFactory->refineMesh();       //MultiGridデータの生成(通信Meshも含む)
         mpFactory->refineContactMesh();//接合Mesh(MPCメッシュ)のMultiGridデータ生成
+
+        //cout << "MW::Refine, B" << endl;
         
         mgLevel= mpFactory->getMGLevel();
         // MPCのマスタースレーブ構成のセット
@@ -548,8 +736,12 @@ int CMW::Refine()
             };
         };
 
+        //cout << "MW::Refine, C" << endl;
+
         mpFactory->refineCommMesh2();//要素分割型(節点共有型)の通信Mesh(CommMesh2)のRefine
         mpFactory->refineBoundary(); //境界条件の階層化
+
+        //cout << "MW::Refine, D" << endl;
         
         return 1;
     }else{
@@ -2245,7 +2437,43 @@ uint CMW::GetNumOfBoundaryNodeMesh(){ return mpMesh->getNumOfBoundaryNodeMesh();
 uint CMW::GetNumOfBoundaryFaceMesh(){ return mpMesh->getNumOfBoundaryFaceMesh();}
 uint CMW::GetNumOfBoundaryEdgeMesh(){ return mpMesh->getNumOfBoundaryEdgeMesh();}
 uint CMW::GetNumOfBoundaryVolumeMesh(){ return mpMesh->getNumOfBoundaryVolumeMesh();}
-// BNode
+
+// BND Type (Neumann || Dirichlet)
+uint CMW::GetBNDType_BNodeMesh(const uint& ibmesh)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+
+    return pBNodeMesh->getBndType();
+}
+uint CMW::GetBNDType_BFaceMesh(const uint& ibmesh)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+    
+    return pBFaceMesh->getBndType();
+}
+uint CMW::GetBNDType_BEdgeMesh(const uint& ibmesh)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    return pBEdgeMesh->getBndType();
+}
+uint CMW::GetBNDType_BVolumeMesh(const uint& ibmesh)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    return pBVolMesh->getBndType();
+}
+// BoundaryTypeを表す型(定数)
+uint CMW::getNeumannType(){ return BoundaryType::Neumann;}
+uint CMW::getDirichletType(){ return BoundaryType::Dirichlet;}
+
+//--
+// BNode数
+//--
 uint CMW::GetNumOfBNode_BNodeMesh(const uint& ibmesh)
 {
     CBoundaryNodeMesh *pBNodeMesh;
@@ -2274,7 +2502,9 @@ uint CMW::GetNumOfBNode_BVolumeMesh(const uint& ibmesh)
     
     return pBVolMesh->getNumOfBNode();
 }
-// DOF
+//--
+// DOF数
+//--
 uint CMW::GetNumOfDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode)
 {
     CBoundaryNodeMesh *pBNodeMesh;
@@ -2307,9 +2537,43 @@ uint CMW::GetNumOfDOF_BVolumeMesh(const uint& ibmesh)
     return pBVolMesh->getNumOfDOF();
 }
 //--
+// Boundary DOF番号("DOFインデックス"に対応するDOF番号)
+//--
+uint CMW::GetDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof)
+{
+    CBoundaryNodeMesh *pBNodeMesh;
+    pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
+
+    CBoundarySBNode *pBNode;
+    pBNode = pBNodeMesh->getBNodeIX(ibnode);
+
+    return pBNode->getDOF(idof);
+}
+uint CMW::GetDOF_BFaceMesh(const uint& ibmesh, const uint& idof)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    return pBFaceMesh->getDOF(idof);
+}
+uint CMW::GetDOF_BEdgeMesh(const uint& ibmesh, const uint& idof)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    return pBEdgeMesh->getDOF(idof);
+}
+uint CMW::GetDOF_BVolumeMesh(const uint& ibmesh, const uint& idof)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    return pBVolMesh->getDOF(idof);
+}
+//--
 // BoundaryNode 境界値
 //--
-double& CMW::GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof)
+double& CMW::GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof)
 {
     CBoundaryNodeMesh *pBNodeMesh;
     pBNodeMesh = mpMesh->getBndNodeMeshIX(ibmesh);
@@ -2317,9 +2581,9 @@ double& CMW::GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, con
     CBoundarySBNode *pBNode;
     pBNode = pBNodeMesh->getBNodeIX(ibnode);
     
-    return pBNode->getValue(idof);
+    return pBNode->getValue(dof);
 }
-double& CMW::GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+double& CMW::GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel)
 {
     CBoundaryFaceMesh *pBFaceMesh;
     pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
@@ -2327,9 +2591,9 @@ double& CMW::GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, con
     CBoundaryNode *pBNode;
     pBNode = pBFaceMesh->getBNodeIX(ibnode);
     
-    return pBNode->getValue(idof, mgLevel);
+    return pBNode->getValue(dof, mgLevel);
 }
-double& CMW::GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+double& CMW::GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel)
 {
     CBoundaryEdgeMesh *pBEdgeMesh;
     pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
@@ -2337,9 +2601,9 @@ double& CMW::GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, con
     CBoundaryNode *pBNode;
     pBNode = pBEdgeMesh->getBNodeIX(ibnode);
     
-    return pBNode->getValue(idof, mgLevel);
+    return pBNode->getValue(dof, mgLevel);
 }
-double& CMW::GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel)
+double& CMW::GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel)
 {
     CBoundaryVolumeMesh *pBVolMesh;
     pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
@@ -2347,7 +2611,7 @@ double& CMW::GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, c
     CBoundaryNode *pBNode;
     pBNode = pBVolMesh->getBNodeIX(ibnode);
     
-    return pBNode->getValue(idof, mgLevel);
+    return pBNode->getValue(dof, mgLevel);
 }
 //--
 // Boundary Node の NodeID
@@ -2414,7 +2678,7 @@ uint CMW::GetNumOfBFace(const uint& ibmesh)
 
     return pBFaceMesh->getNumOfBFace();
 }
-double& CMW::GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& idof)
+double& CMW::GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& dof)
 {
     CBoundaryFaceMesh *pBFaceMesh;
     pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
@@ -2422,7 +2686,7 @@ double& CMW::GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& i
     CBoundaryFace *pBFace;
     pBFace = pBFaceMesh->getBFaceIX(ibface);
 
-    return pBFace->getBndValue(idof);
+    return pBFace->getBndValue(dof);
 }
 uint CMW::GetNumOfBEdge(const uint& ibmesh)
 {
@@ -2431,7 +2695,7 @@ uint CMW::GetNumOfBEdge(const uint& ibmesh)
 
     return pBEdgeMesh->getNumOfEdge();
 }
-double& CMW::GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof)
+double& CMW::GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& dof)
 {
     CBoundaryEdgeMesh *pBEdgeMesh;
     pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
@@ -2439,7 +2703,7 @@ double& CMW::GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& i
     CBoundaryEdge *pBEdge;
     pBEdge = pBEdgeMesh->getBEdgeIX(ibedge);
 
-    return pBEdge->getBndValue(idof);
+    return pBEdge->getBndValue(dof);
 }
 uint CMW::GetNumOfBVolume(const uint& ibmesh)
 {
@@ -2448,7 +2712,7 @@ uint CMW::GetNumOfBVolume(const uint& ibmesh)
 
     return pBVolMesh->getNumOfVolume();
 }
-double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof)
+double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& dof)
 {
     CBoundaryVolumeMesh *pBVolMesh;
     pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
@@ -2456,7 +2720,7 @@ double& CMW::GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& 
     CBoundaryVolume *pBVol;
     pBVol = pBVolMesh->getBVolumeIX(ibvol);
 
-    return pBVol->getBndValue(idof);
+    return pBVol->getBndValue(dof);
 }
 //--
 // Boundaryの名称
@@ -2525,7 +2789,59 @@ string& CMW::GetBEdgeMesh_Name(const uint& ibmesh)
 
     return pBEdgeMesh->getName();
 }
+//--
+// Entity_ID of BoundaryMesh (for FrontISTR)
+//--
+uint CMW::GetEdgeID_BEdge(const uint& ibmesh, const uint& ibedge)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
 
+    CBoundaryEdge *pBEdge;
+    pBEdge = pBEdgeMesh->getBEdgeIX(ibedge);
+
+    return pBEdge->getElementEdgeID();
+}
+uint CMW::GetElemID_BEdge(const uint& ibmesh, const uint& ibedge)
+{
+    CBoundaryEdgeMesh *pBEdgeMesh;
+    pBEdgeMesh = mpMesh->getBndEdgeMeshIX(ibmesh);
+
+    CBoundaryEdge *pBEdge;
+    pBEdge = pBEdgeMesh->getBEdgeIX(ibedge);
+
+    return pBEdge->getElementID();
+}
+uint CMW::GetFaceID_BFace(const uint& ibmesh, const uint& ibface)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    CBoundaryFace *pBFace;
+    pBFace = pBFaceMesh->getBFaceIX(ibface);
+
+    return pBFace->getElementFaceID();
+}
+uint CMW::GetElemID_BFace(const uint& ibmesh, const uint& ibface)
+{
+    CBoundaryFaceMesh *pBFaceMesh;
+    pBFaceMesh = mpMesh->getBndFaceMeshIX(ibmesh);
+
+    CBoundaryFace *pBFace;
+    pBFace = pBFaceMesh->getBFaceIX(ibface);
+
+    return pBFace->getElementID();
+}
+uint CMW::GetElemID_BVolume(const uint& ibmesh, const uint& ibvol)
+{
+    CBoundaryVolumeMesh *pBVolMesh;
+    pBVolMesh = mpMesh->getBndVolumeMeshIX(ibmesh);
+
+    CBoundaryVolume *pBVol;
+    pBVol = pBVolMesh->getBVolumeIX(ibvol);
+
+    return pBVol->getElementID();
+}
 
 
 
@@ -2566,10 +2882,42 @@ int& CMW::GetNumOfProcess()
     return mpMPI->getNumOfProcess();
 }
 
+// 以下の３メソッドは、ペア
+// -----
+// 1.Meshパーツが通信する相手の数 (SelectされているLevel)
+uint CMW::GetNumOfNeibPE(const uint& imesh)
+{
+    CMesh *pMesh = mpAssy->getMesh(imesh);
+    
+    return pMesh->getNumOfCommMesh();
+}
+// 2.通信Mesh毎のランク番号
+uint& CMW::GetTransRank(const uint& imesh, const uint& ipe)
+{
+    CMesh *pMesh = mpAssy->getMesh(imesh);
+    CCommMesh2 *pCommMesh = pMesh->getCommMesh2IX(ipe);
+
+    return pCommMesh->getTrasmitRank();
+}
+// 3.bufの値を送信、受信をbufに代入
+//
+void CMW::Send_Recv_R(double* buf, const uint& num_of_node, const uint& dof_size, const uint& trans_rank)
+{
+    uint nCount = num_of_node * dof_size;
+    
+    // 送信
+    mpMPI->Send(buf, nCount, MPI_DOUBLE, trans_rank, 0, MPI_COMM_WORLD);
+
+    // 受信
+    MPI_Status sta;
+    mpMPI->Recv(buf, nCount, MPI_DOUBLE, trans_rank, 0, MPI_COMM_WORLD, &sta);
+
+}
+
 // bufの値を送信 => 受信した値をbufに代入、Nodeにセット
 // # bufのサイズ == NumOfCommNode * dof_size
 //
-void CMW::Send_Recv_R(double* buf, int dof_size)
+void CMW::Send_Recv_R(double* buf, const uint& nDOF)
 {
     uint iLevel, nNumOfLevel = mpGMGModel->getNumOfLevel();
     CAssyModel *pAssy;
@@ -2593,29 +2941,29 @@ void CMW::Send_Recv_R(double* buf, int dof_size)
                 for(icnode=0; icnode < nNumOfCommNode; icnode++){
                     pCommNode = pCommMesh->getCommNodeIX(icnode);
                     
-                    double sendbuf[dof_size];
-                    double recvbuf[dof_size];
+                    double sendbuf[nDOF];
+                    double recvbuf[nDOF];
 
                     uint idof;
                     // 送信buf へ代入
-                    for(idof=0; idof < dof_size; idof++) sendbuf[idof] = buf[icnode*dof_size + idof];
+                    for(idof=0; idof < nDOF; idof++) sendbuf[idof] = buf[icnode*nDOF + idof];
 
                     // 送信
-                    mpMPI->Send(sendbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD);
+                    mpMPI->Send(sendbuf, nDOF, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD);
 
 
                     // 受信
                     MPI_Status sta;
-                    mpMPI->Recv(recvbuf, dof_size, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD, &sta);
+                    mpMPI->Recv(recvbuf, nDOF, MPI_DOUBLE, transRank, 0, MPI_COMM_WORLD, &sta);
                     
                     CNode* pNode = pCommNode->getNode();
                     //
                     // ・受信bufから引数bufへ代入
                     // ・受信値をNodeの変数に代入
                     //
-                    for(idof=0; idof < dof_size; idof++){
+                    for(idof=0; idof < nDOF; idof++){
                         
-                        buf[icnode*dof_size + idof] = recvbuf[idof];
+                        buf[icnode*nDOF + idof] = recvbuf[idof];
 
                         if(pNode->getType()==NodeType::Scalar) pNode->setScalar(recvbuf[idof], idof);
                         if(pNode->getType()==NodeType::Vector) pNode->setVector(recvbuf[idof], idof);
@@ -2709,6 +3057,7 @@ void CMW::Send_Recv_R()
         };// imesh (Mesh)
     };// iLevel
 }
+
 
 
 //--

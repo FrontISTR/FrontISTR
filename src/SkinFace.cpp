@@ -138,13 +138,18 @@ uint& CSkinFace::getEdgeIndex(PairConNode& pairConNode)
 {
     //pConNode0,pConNode1のインデックス番号から辺番号を特定
     uint localNum0, localNum1;
-    uint numOfNode= mvConNode.size();
+    uint nNumOfVert = getNumOfVert();
     uint icnode;
-    for(icnode=0; icnode< numOfNode; icnode++){
-        if(mvConNode[icnode]->getID() == pairConNode.first->getID()) localNum0=icnode;
+    
+    //cout << "SkinFace::getEdgeIndex(PairConNode& ), first=" << pairConNode.first->getID() << ", secont=" << pairConNode.second->getID() << endl;
+    
+    // 節点数から頂点数に変更(2次要素対応) '11.01.07 
+    for(icnode=0; icnode< nNumOfVert; icnode++){
+        if(mvConNode[icnode]->getID() == pairConNode.first->getID())  localNum0=icnode;
         if(mvConNode[icnode]->getID() == pairConNode.second->getID()) localNum1=icnode;
     };
 
+    //cout << "SkinFace::getEdgeIndex(PairConNode& ), localNum0=" << localNum0 << ", localNum1=" << localNum1 << endl;
     
     CEdgeTree* pEdgeTree= CEdgeTree::Instance();// 局所番号の組み合わせで辺番号が特定
     
@@ -161,12 +166,17 @@ uint& CSkinFace::getEdgeIndex(PairConNode& pairConNode)
         default:
             return pEdgeTree->getDisagTypeEdgeIndex(localNum0, localNum1);//999が返る.
     }
+    
 }
 
 void CSkinFace::setEdgeFace(CSkinFace* pFace, PairConNode& pairConNode)
 {
+    //cout << "SkinFace::setEdgeFace(CSkinFace*, PairConNode& ), --------- "  << endl;
+
     uint edgeNum= getEdgeIndex(pairConNode);
     
+    //cout << "SkinFace::setEdgeFace(CSkinFace*, PairConNode& ), edgeNum=" << edgeNum << endl;
+
     mvEdgeFace[edgeNum]= pFace;
 }
 void CSkinFace::setEdgeConNode(CContactNode* pEdgeConNode, PairConNode& pairConNode)
@@ -243,43 +253,61 @@ CSkinFace* CSkinFace::generateFace()
 // progFaceへ,ElementのNodeIDをセットする.
 //  -> refine()で要素の面IDをセットした後で呼び出す.
 //
-void CSkinFace::setupNodeID_progFace(CElement* pElem, const uint& numOfConNode)
+void CSkinFace::setupNodeID_progFace(CElement* pElem, const uint& numOfVert)
 {
-    uint ivert,nvert;
-    uint vnodeID[2];
-    uint elemEdgeIndex;
-    CNode *pEdgeNode, *pFaceNode;
-    
-    ////cout << "SkinFace::setupNodeID_progFace,  aaaaaaaaaaa" << ", ElemFaceID= " << mElementFaceID << endl;
-
-    // *面中心ノードへMeshのNodeIDをセット
+    CNode *pFaceNode;
+    // * 面中心ノードへMeshのNodeIDをセット
+    //
     pFaceNode= pElem->getFaceNode(mElementFaceID);//要素面中心のNode*
-    
-    ////cout << "SkinFace::setupNodeID_progFace,  bbbbbbbbbbbb" << endl;
-    
     mpFaceNode->setNodeID(pFaceNode->getID());
 
-    
 
-    // *辺中間ノードへMeshのNodeIDをセット
+    // * 辺中間ノードへMeshのNodeIDをセット
+    //
+    setupEdgeNodeID(pElem, numOfVert);
+}
+
+//
+// 辺に生成されたConNodeへ,メッシュのNodeIDをセット
+//
+void CSkinFace::setupEdgeNodeID(CElement* pElem, const uint& numOfVert)
+{
+    // * 辺中間ノードへMeshのNodeIDをセット
     // -----------------------------------------------------
     //  自身のConNodeが所有している,頂点のNodeIDを取得
     //   -> Elemの辺番号を取得
     //    -> 辺の中間Nodeを取得
     //     -> 辺中間NodeのIDを取得して自身の辺中間ConNodeにセット
     // -----------------------------------------------------
-    for(ivert=0; ivert< numOfConNode; ivert++){
-        if(ivert==numOfConNode-1){  nvert=0;}else{  nvert=ivert+1;}
-        //自身の頂点二つから,NodeIDを取得
-        vnodeID[0]= mvConNode[ivert]->getNodeID(); vnodeID[1]= mvConNode[nvert]->getNodeID();
+    uint ivert,nvert;
+    uint vnodeID[2];
+    uint elemEdgeIndex;
+    CNode *pEdgeNode;
 
-        elemEdgeIndex= pElem->getEdgeIndex(vnodeID[0],vnodeID[1]);//NodeIDからElemの辺番号を取得
+    for(ivert=0; ivert< numOfVert; ivert++){
+
+        if(ivert==numOfVert-1){  nvert=0; }else{  nvert=ivert+1; }
+
+        //自身の頂点二つから,NodeIDを取得
+        vnodeID[0]= mvConNode[ivert]->getNodeID();
+        vnodeID[1]= mvConNode[nvert]->getNodeID();
+
+        elemEdgeIndex= pElem->getEdgeIndex(vnodeID[0], vnodeID[1]);//NodeIDからElemの辺番号を取得
         pEdgeNode= pElem->getEdgeInterNode(elemEdgeIndex);
 
-        //辺のConNodeに,要素の辺NodeのIDをセット{ *辺番号は,始点の頂点番号と同じ }
-        mvEdgeNode[ivert]->setNodeID(pEdgeNode->getID());
-    };//ivertループ
-    
+        mvEdgeNode[ivert]->setNodeID(pEdgeNode->getID());//辺のConNodeに,要素の辺NodeのIDをセット{ *辺番号は,始点の頂点番号と同じ }
+    };
+}
+// 辺に生成されたConNodeへ、メッシュのNodeIDをセットする
+// --------
+// 2次要素 & 最終Level専用,  対象：自身
+// --------
+void CSkinFace::setupNodeID_2nd_LastLevel(CElement* pElem)
+{
+    uint numOfVert = this->getNumOfVert();
+    // * 辺中間ノードへMeshのNodeIDをセット
+    //
+    setupEdgeNodeID(pElem, numOfVert);
 }
 
 // Faceの"再分割" -> SkinFace(スレーブ面)を分割して再生産
@@ -290,7 +318,7 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
     uint nodeID;//要素のNodeID
     uint localNum;//要素の局所ノード番号
     
-    uint numOfConNode;//setupNodeID_progFace()用途
+    uint numOfVert;//setupNodeID_progFace()用途
     CNode *pEdgeNode; //BeamのNodeIDセットアップ用途
     
     uint iprog;
@@ -303,15 +331,17 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
             mvProgFace.reserve(4);
             for(iprog=0; iprog< 4; iprog++){
                 pFace = generateFace();//new CSkinFace, new MasterFace
+
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);//新FaceはLevelが一段上がる
 
+                //4個の四辺形(Quad,Quad2)
                 if(mnOrder==ElementOrder::First)  pFace->resizeNode(4);
                 if(mnOrder==ElementOrder::Second) pFace->resizeNode(8);
-
-                pFace->setShapeType(ElementType::Quad);//4個の四辺形
-                pFace->setID(faceID);//再分割されたFaceのIDセット
-                faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
+                pFace->setShapeType(mShapeType);
+                
+                pFace->setID(faceID);// 再分割されたFaceのIDセット
+                faceID++;            // FaceのIDカウントアップ <-- 次のFaceのID
                 
                 //自身のMeshに存在するSkinFaceの場合の処理(マーキング,MeshID,ElemID,ElemFaceID)
                 if(mbSelfDom){
@@ -329,13 +359,13 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                     //ElementIDをセット(要素番号)
                     pFace->setElementID(pProgElem->getID());//progElemのElementIDをセット
                     
-                    
                     //ElementFaceIDをセット(面番号)
                     switch(pElem->getType()){
                         case(ElementType::Hexa):case(ElementType::Quad):
                         case(ElementType::Hexa2):case(ElementType::Quad2):
                             pFace->setFaceID(mElementFaceID);//Hexa,Quadは,分割しても面番号は変わらない.
                             break;
+                            
                         case(ElementType::Prism):case(ElementType::Prism2):
                             //Prismの四辺形の面の場合(面番号==2,3,4)
                             localNum= pElem->getLocalVertNum(nodeID);//NodeIDに対応する,局所番号を取得
@@ -368,12 +398,10 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                             break;
                     }//switch(要素の型)
                     
-                    ///cout << "SkinFace::refine, aaaaaaaa" << endl;
-
-                    numOfConNode=4;
-                    setupNodeID_progFace(pElem, numOfConNode);//辺と面のConNodeへ,メッシュのNodeIDをセットする.
+                    numOfVert=4;//頂点数
+                    setupNodeID_progFace(pElem, numOfVert);//辺と面のConNodeへ,メッシュのNodeIDをセットする.
                     
-                    ///cout << "SkinFace::refine, bbbbbbbb" << endl;
+                    
                 }//if(mbSelfDom)
                 mvProgFace.push_back(pFace);
             };//iprogループ
@@ -409,12 +437,12 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);//新Faceは,Level一段あげる
 
-                if(mnOrder==ElementOrder::First)  pFace->resizeNode(4);//1次 四辺形 2010.7.14改修
-                if(mnOrder==ElementOrder::Second) pFace->resizeNode(8);//2次 四辺形
-
-                pFace->setShapeType(ElementType::Quad);//3個の四辺形
+                //分割後は 3個の四辺形
+                if(mnOrder==ElementOrder::First){  pFace->resizeNode(4); pFace->setShapeType(ElementType::Quad); }
+                if(mnOrder==ElementOrder::Second){ pFace->resizeNode(8); pFace->setShapeType(ElementType::Quad2);}
+                
                 pFace->setID(faceID);//再分割されたFaceのIDセット
-                faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
+                faceID++;            //FaceのIDカウントアップ <-- 次のFaceのID
 
                 if(mbSelfDom){
                     pFace->markingSelf();//計算領域に存在している要素面のSkinFace
@@ -477,8 +505,8 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                             break;
                     }//switch(要素の型)
                     
-                    numOfConNode=3;
-                    setupNodeID_progFace(pElem, numOfConNode);//辺と面のConNodeへ,メッシュのNodeIDをセットする.
+                    numOfVert=3;//頂点数
+                    setupNodeID_progFace(pElem, numOfVert);//辺と面のConNodeへ,メッシュのNodeIDをセットする.
                     
                 }//if(mbSelfDom)
                 mvProgFace.push_back(pFace);
@@ -508,12 +536,11 @@ void CSkinFace::refine(CElement *pElem, uint& faceID)
                 pFace->setRank(mRank);//新Faceは,rankに変化なし:節点界面での領域分割
                 pFace->setLevel(mLevel+1);
                 
-                if(mnOrder==ElementOrder::First)  pFace->resizeNode(2);
-                if(mnOrder==ElementOrder::Second) pFace->resizeNode(3);
-
-                pFace->setShapeType(ElementType::Beam);//2個の線分
+                if(mnOrder==ElementOrder::First){  pFace->resizeNode(2); pFace->setShapeType(ElementType::Beam); }//2個の線分
+                if(mnOrder==ElementOrder::Second){ pFace->resizeNode(3); pFace->setShapeType(ElementType::Beam2);}//2個の線分
+                
                 pFace->setID(faceID);//再分割されたFaceのIDセット
-                faceID++;//FaceのIDカウントアップ <-- 次のFaceのID
+                faceID++;            //FaceのIDカウントアップ <-- 次のFaceのID
                 if(mbSelfDom){
                     pFace->markingSelf();//計算領域に存在している要素面のSkinFace
                     pFace->setMeshID(mMeshID);

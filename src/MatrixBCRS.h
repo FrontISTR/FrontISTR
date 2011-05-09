@@ -30,7 +30,10 @@ public:
         void Matrix_Clear();// Matrix 0 clear (非線形の行列更新の準備)
         
 	virtual void multVector(CVector *pV, CVector *pP) const;
-	void setValue(int inode, int idof, double value);
+
+	void setValue(const uint& inode, const uint& idof, const double& value); //対角項に値をセット、mvD[inode]の行と列を0
+        void setValue_D(const uint& inode,const uint& idof, const double& value);//単純に対角項の値をセット
+        void setZero_NonDiag(const uint& inode, const uint& idof);
 
 	int setupPreconditioner(int type);
 	int setupSmoother(int type);

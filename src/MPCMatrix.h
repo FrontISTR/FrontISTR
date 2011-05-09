@@ -27,6 +27,7 @@ public:
 		mvEquation.push_back(equation);
 	};
 
+        void dump();//デバッグ MPCMatrixダンプ
 private:
 	size_t mnEquation;
 	std::vector<CEquation*> mvEquation;

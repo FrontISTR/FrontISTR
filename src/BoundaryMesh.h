@@ -31,6 +31,9 @@ protected:
     vuint  mvDOF;                            //DOF番号の配列
     map<uint, uint, less<uint> > mmDOF2Index;//DOF番号 => DOFインデックス
 
+    ////bool mbSecondOrder;//2次要素の境界メッシュBOOLEAN(mvBNodeのカウントで利用)
+    uint mnEdgeNodeCount;//2次要素が混じった際に、progBMeshのmvBNodeサイズが二重カウントにならないように途中でカウントアップする
+
 public:
     //境界ID(BoundaryID)
     void setID(const uint& id){ mnID= id;}
@@ -73,6 +76,7 @@ public:
         uint index= mmBNodeID2Index[id];
         return mvBNode[index];
     }
+    uint& getBNodeIndex(const uint& id){ return mmBNodeID2Index[id];}
 
 protected:
     virtual void distNeumannValue()=0;

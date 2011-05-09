@@ -318,6 +318,7 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
                                     pEdgeConNode->setID(countID);
                                     countID++;////////// 次の為にカウントアップ
 
+
                                     //ConNodeが自身のMeshに含まれているConNodeならば,MeshIDをセット
                                     if(pairConNode.first->getRank()==myRank){
                                         uint meshID= pairConNode.first->getMeshID();
@@ -350,12 +351,15 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
                                     pFace->setEdgeConNode(pEdgeConNode, iedge);
                                     pFace->markingEdgeNode(iedge);
 
+
                                     // 2次要素なので,ContactMesh自身のノードリストに加える
                                     if(pFace->getOrder()==ElementOrder::Second){
                                         this->addConNode(pEdgeConNode, countID);
                                         if(maslave==0) this->addMasterConNode(pEdgeConNode, countID);
                                         if(maslave==1) this->addSlaveConNode(pEdgeConNode,countID);
                                     }
+
+                                    ///if(!pNeibFace) cout << "ContactMesh::setupEdgeConNode, NeibFace is NULL" << endl;
 
                                     // pNeibFaceへの処理
                                     pNeibFace->setEdgeFace(pFace, pairConNode);
@@ -444,13 +448,13 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
     };//Master=0,Slave=1 ループ
 
     
-    // Factory::Refineで処理..
-    //
-    // ConNodeへNodeIDのセット,FaceへElementIDのセット
+    // --
+    // ConNodeへNodeIDのセット,FaceへElementIDのセット ==> SkinFace::refine() & SkinFace::setupNodeID_progFace()
     // --
     //  SkinFaceのmbSelfDomがTrueならば,Meshから辺ノードのID,要素IDを取得
     // 要素IDは,親要素からたどる.
 }
+
 
 
 
@@ -624,8 +628,8 @@ void CContactMesh::setupSPointOnMFace()
             //BBoxに入るスレーブ点か判定 => マスター面の中にあるか判定の上でスレーブとして追加
             if(mBoundingBox.judgeOBB(pConNode)){
                 //debug
-                cout << "ContactMesh::setupSPointOnMFace, pConNode id= " << pConNode->getID()
-                     << ", Node id= " << pConNode->getNodeID() << endl;
+                //cout << "ContactMesh::setupSPointOnMFace, pConNode id= " << pConNode->getID()
+                //     << ", Node id= " << pConNode->getNodeID() << endl;
 
                 pMFace->addSlaveNode(pConNode);
             }
@@ -653,7 +657,7 @@ void CContactMesh::setupMPC_Coef()
         
         numOfSlave= pMFace->getNumOfSlaveNode();
         //debug
-        cout << "ContactMesh::setupMPC_Coef, numOfSlaveNode= " << numOfSlave << endl;
+        //cout << "ContactMesh::setupMPC_Coef, numOfSlaveNode= " << numOfSlave << endl;
 
         for(islave=0; islave < numOfSlave; islave++){
             pMFace->CalcSlave(islave, MPCValueType::Displacement);

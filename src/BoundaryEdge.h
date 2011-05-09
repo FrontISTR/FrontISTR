@@ -19,6 +19,7 @@ public:
 
 protected:
     uint mnElemEdgeID;//エンティティ:Mesh-Element-Edge-ID
+
     CBoundaryNode *mpEdgeBNode;// 辺中心のBNode
 
     //PairBNode mPairBNode;
@@ -32,8 +33,10 @@ public:
     uint& getElementEdgeID(){ return mnElemEdgeID;}
 
     // 辺形状( Beam )
-    void setBEdgeShape(const uint& elemType){ mnShapeType= elemType;}
+    void setBEdgeShape(const uint& elemType);
     uint& getBEdgeShape(){ return mnShapeType;}
+
+    virtual uint getNumOfVert();
 
     // 辺中心のBNode
     void setEdgeBNode(CBoundaryNode *pBNode);
@@ -56,7 +59,9 @@ public:
 
     vector<CBoundaryEdge*>& getProgParts(){ return mvProgBEdge;}
 
-    void distDirichletVal(const uint& dof, const uint& mgLevel);//上位グリッドBNodeへのディレクレ値の分配
+    void replaceEdgeBNode();// 2次要素の場合、辺BNodeをmvBNodeに移設.
+
+    void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
 };
 #endif	/* _BOUNDARYEDGE_H */
 }

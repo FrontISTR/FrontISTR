@@ -35,6 +35,7 @@ public:
 
 	void setZero();//use GMRES
 	void setValue(int imesh, int inode, int idof, double value);
+        void addValue(const uint& imesh, const uint& inode, const uint& idof, const double& value);
 	double getValue(int imesh, int inode, int idof);
 	void add(const CAssyVector *pV);
 	void subst(const CAssyVector *pV);
@@ -56,6 +57,8 @@ public:
 	};
 
         uint& getDOF();
+
+        void dump();//2011.01.12 列ベクトルのダンプ
 
 private:
 	CAssyModel *mpAssyModel;

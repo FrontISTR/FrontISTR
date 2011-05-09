@@ -63,6 +63,9 @@ bool CFileReaderBoundaryFace::Read(ifstream& ifs, string& sLine)
 
             mpFactory->GeneBoundaryFaceNode(mgLevel, bnd_id, bnd_type, mesh_id, node_id, bnode_id);
         };
+
+        //初期Aggデータ領域確保
+        mpFactory->resizeFaceAggregate(mgLevel, mesh_id, bnd_id);
         
         while(!ifs.eof()){
             sLine = getLineSt(ifs);
@@ -75,38 +78,38 @@ bool CFileReaderBoundaryFace::Read(ifstream& ifs, string& sLine)
 
             // 形状タイプ, BFaceID, ElementID, EntityID, DOF, BNodeID.....BNodeID, Value
             iss >> s_bface_shape >> bface_id >> elem_id >> ent_id >> dof;
-
-            // BNodeID....BNodeIDの処理
+            
+            bface_shape = IntElemType(s_bface_shape);
+            
+            
             vBNodeID.clear();
-            if(s_bface_shape=="Quad"){
-                bface_shape= pmw::ElementType::Quad;
-                vBNodeID.resize(4);
-
-                for(ibnode=0; ibnode < 4; ibnode++){
-                    iss >> bnode_id;
-                    vBNodeID[ibnode]= bnode_id;
-                };
-
-            }else if(s_bface_shape=="Triangle"){
-                bface_shape= pmw::ElementType::Triangle;
-                vBNodeID.resize(3);
-
-                for(ibnode=0; ibnode < 3; ibnode++){
-                    iss >> bnode_id;
-                    vBNodeID[ibnode]= bnode_id;
-                };
-
-            }else{
-                //TODO:Logger => throw
+            uint nNumOfLocalNode;
+            // BNodeID....BNodeIDの処理
+            //
+            switch(bface_shape){
+                case(pmw::ElementType::Quad):
+                    nNumOfLocalNode=4;
+                    break;
+                case(pmw::ElementType::Quad2):
+                    nNumOfLocalNode=8;
+                    break;
+                case(pmw::ElementType::Triangle):
+                    nNumOfLocalNode=3;
+                    break;
+                case(pmw::ElementType::Triangle2):
+                    nNumOfLocalNode=6;
+                    break;
             }
+            vBNodeID.resize(nNumOfLocalNode);
+            for(ibnode=0; ibnode < nNumOfLocalNode; ibnode++){
+                iss >> bnode_id;
+                vBNodeID[ibnode]= bnode_id;
+            };
 
             iss >> val;// 境界値
 
-            //cout << "FileReaderBoundaryFace::read, GeneBoundaryFace A" << endl;
-
             mpFactory->GeneBoundaryFace(mgLevel, bnd_id, bnd_type, bface_shape,
                                             mesh_id, elem_id, ent_id, vBNodeID, bface_id, dof, val);
-
         };
 
         mpFactory->initFaceAggregate(mgLevel, mesh_id, bnd_id);//BNode,BFaceを全てセットしたあとに呼び出す

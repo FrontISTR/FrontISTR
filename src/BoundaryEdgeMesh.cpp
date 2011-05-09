@@ -108,6 +108,8 @@ void CBoundaryEdgeMesh::GeneEdgeBNode()
 {
     uint countID= mvBNode.size();// ID生成のベース番号
 
+    //cout << "BoundaryEdgeMesh::GeneEdgeBNode, countID " << countID << endl;
+
     uint numOfEdge= mvBEdge.size();
     uint iedge;
     
@@ -120,21 +122,48 @@ void CBoundaryEdgeMesh::GeneEdgeBNode()
 
         pBEdge= mvBEdge[iedge];
 
-        //新BNode(辺のBNode)
-        pBNode = new CBoundaryNode;//<<<<<<<<<<<<< new
+        if(!pBEdge->getEdgeBNode()){//初期設定の場合,EdgeBNodeが存在
+            //新BNode(辺のBNode)
+            pBNode = new CBoundaryNode;//<<<<<<<<<<<<< new
 
-        countID += iedge;
-        pBNode->setID(countID);        //新BNodeのID
-        pBNode->setMGLevel(mMGLevel+1);//新BNodeのLevel
-        pBNode->resizeValue(mMaxMGLevel-mMGLevel);
+            countID += iedge;
+            pBNode->setID(countID);        //新BNodeのID
+            
 
-        pBEdge->setEdgeBNode(pBNode);
-        mvBEdgeBNode.push_back(pBNode);
+            pBEdge->setEdgeBNode(pBNode);
+            mvBEdgeBNode.push_back(pBNode);
+
+            //2次要素の場合 -> 自身のmvBNodeに追加
+            if(pBEdge->getOrder()==ElementOrder::Second){
+                mvBNode.push_back(pBNode);
+                mmBNodeID2Index[pBNode->getID()] = mvBNode.size()-1;
+
+                //辺BNodeに対応するAggIDをセット
+                uint index = mvBNode.size()-1;
+                mvAggregateEdge.resize(mvBNode.size());
+                mvAggregateEdge[index].push_back(pBEdge->getID());
+
+                //属性設定(2次要素)：Level毎の境界値領域
+                pBNode->setMGLevel(mMGLevel);//新BNodeのLevel
+                pBNode->resizeValue(mMaxMGLevel-mMGLevel + 1);
+            }else{
+                //属性設定(1次要素)：Level毎の境界値領域
+                pBNode->setMGLevel(mMGLevel+1);//新BNodeのLevel
+                pBNode->resizeValue(mMaxMGLevel-mMGLevel);
+                
+                mnEdgeNodeCount++;//progBMeshのmvBNodeサイズカウント用:this->refineで利用
+            }
+
+            //辺"BNode"に,辺"Node"をセット
+            pBEdge->setupNode();
+
+            //2次要素の場合 -> pBEdge内の辺ノードをmvBNodeに移設
+            if(pBEdge->getOrder()==ElementOrder::Second)  pBEdge->replaceEdgeBNode();
+            
+        }// if(EdgeBNode)
         
-        
-        //辺"BNode"に,辺"Node"をセット
-        pBEdge->setupNode();
-    };
+    };// iedge loop
+    
 }
 
 
@@ -162,9 +191,9 @@ void CBoundaryEdgeMesh::refine(CBoundaryEdgeMesh* pProgEdgeMesh)
     };
 
     uint numOfBNode= mvBNode.size();
-    uint numOfEdgeBNode= mvBEdgeBNode.size();
-    uint numOfProgBNode= numOfBNode + numOfEdgeBNode;
 
+    //uint numOfEdgeBNode= mvBEdgeBNode.size();
+    uint numOfProgBNode= numOfBNode + mnEdgeNodeCount;
     pProgEdgeMesh->resizeBNode(numOfProgBNode);
 
     uint ibnode;
@@ -202,6 +231,7 @@ void CBoundaryEdgeMesh::distNeumannValue()
     uint inode,numOfBNode=mvBNode.size();
     CBoundaryNode *pBNode;
     
+
     //節点力-ゼロクリア
     for(inode=0; inode < numOfBNode; inode++){
         pBNode= mvBNode[inode];
@@ -212,34 +242,32 @@ void CBoundaryEdgeMesh::distNeumannValue()
             pBNode->initValue(dof, mMGLevel);//mgLevel別-自由度別の値をゼロクリア
         };
     };
+
     
     //等価節点力配分
     CShapeLine *pShLine = CShapeLine::Instance();//形状関数
     CBoundaryEdge *pBEdge;
-    uint  iedge, ivert, numOfEdge=mvBEdge.size();
+    uint  iedge, ivert, numOfEdge = mvBEdge.size();
     double entVal,integVal,nodalVal;
     
     for(iedge=0; iedge < numOfEdge; iedge++){
         pBEdge = mvBEdge[iedge];
+
+        //cout << "BoundaryEdgeMesh::distNeumannValue, BEdge " << iedge << endl;
+        //cout << "BoundaryEdgeMesh::distNeumannValue, NumOfBNode " << pBEdge->getNumOfBNode() << endl;
         
         uint numOfDOF = getNumOfDOF();
+        
         for(idof=0; idof < numOfDOF; idof++){
-            
             dof = getDOF(idof);
             entVal = pBEdge->getBndValue(dof);
-
-            //debug
-            cout << "CBoundaryEdgeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", entVal=" << entVal << endl;
             
             switch(pBEdge->getBEdgeShape()){
                 case(ElementType::Beam):
                     for(ivert=0; ivert < 2; ivert++){
                         integVal= pShLine->getIntegValue2(ivert);
                         nodalVal= integVal * entVal;//等価節点力
-
-                        //debug
-                        cout << "CBoundaryEdgeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", nodalVal=" << nodalVal << endl;
-
+                        
                         pBNode= pBEdge->getBNode(ivert);
                         pBNode->addValue(dof, mMGLevel, nodalVal);//加算
                     };
@@ -249,13 +277,19 @@ void CBoundaryEdgeMesh::distNeumannValue()
                         integVal= pShLine->getIntegValue3(ivert);
                         nodalVal= integVal * entVal;//等価節点力
 
+                        //cout << "BoundaryEdgeMesh::distNeumannValue, Nodal-Value " << nodalVal << endl;
+
                         pBNode= pBEdge->getBNode(ivert);
                         pBNode->addValue(dof, mMGLevel, nodalVal);//加算
                     };
                     break;
                 default:
+                    //TODO:Logger
                     break;
             }//switch
+
+            //cout << "CBoundaryEdgeMesh::distNeumannValue, switch end" << endl;
+
         };//idof loop
     };//iedge loop
 }
@@ -266,12 +300,13 @@ void CBoundaryEdgeMesh::distDirichletValue_at_CGrid()
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
 
-    // ノイマン条件が設定されていなければ,Errorを返す.
+    // ディレクレ条件が設定されていなければ,Errorを返す.
     // --
     if(mnBndType != BoundaryType::Dirichlet){
         pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryEdgeMesh::distDirichletValue");
         return;
     }
+    
 
     //節点集合
     uint inode, numOfBNode=mvBNode.size();
@@ -302,6 +337,8 @@ void CBoundaryEdgeMesh::distDirichletValue_at_CGrid()
             };
             dDirichletVal = dVal/dLength;// 節点値 = Σ(距離×値)/Σ(距離)
 
+            //cout << "BoundaryEdgeMesh::distDirichletValue_at_CGrid, Dirichlet_Val=" << dDirichletVal << endl;
+
             pBNode->setValue(dof, mMGLevel, dDirichletVal);
         };
     };
@@ -322,7 +359,7 @@ void CBoundaryEdgeMesh::distDirichletValue_at_FGrid()
         uint idof, dof;
         for(idof=0; idof < getNumOfDOF(); idof++){
             dof = getDOF(idof);
-            pBEdge->distDirichletVal(dof, mMGLevel);
+            pBEdge->distDirichletVal(dof, mMGLevel, mMaxMGLevel);
         };
     };
 }

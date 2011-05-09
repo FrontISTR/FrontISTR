@@ -33,7 +33,13 @@ public:
 
         uint& getDOF(){ return mnDOF;}
 
-	void setValue(int imesh, int inode, int idof, double value);
+	void setValue(const uint& imesh, const uint& inode, const uint& idof, const double& value);//for Boundary
+        void setValue_D(const uint& imesh, const uint& inode, const uint& idof, const double& value);
+        void setZero_NonDiag(const uint& imesh, const uint& inode, const uint& idof);
+        void multVector(const uint& imesh, CAssyVector *pX, CAssyVector *pB);// xに値を入れて、Ax=B でBを求める
+
+
+
 	int multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW = 0) const;
 	int multMPC(CAssyVector *pV, CAssyVector *pP) const;
 	int residual(CAssyVector *pV, const CAssyVector *pF, CAssyVector *pR) const;

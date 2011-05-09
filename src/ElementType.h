@@ -40,6 +40,8 @@ struct ElementType{
         Triangle2,
         Beam,
         Beam2,
+        Line,
+        Line2,
         //Bar,
         //Rod,
         //Mass,

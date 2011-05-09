@@ -50,11 +50,7 @@ bool CFileReaderBoundaryNode::Read(ifstream& ifs, string& sLine)
             // BNodeID, NodeID, x, y, z, DOF, Value :=> x,y,z は未使用
             iss >> bnode_id >> node_id >> x >> y >> z >> dof >> val;
 
-            //cout << "FileReaderBoundaryNode::read , GeneBoundaryNode A " << endl;
-
             mpFactory->GeneBoundaryNode(mgLevel, bnd_id, bnd_type, mesh_id, node_id, bnode_id, dof, val);
-
-            //cout << "FileReaderBoundaryNode::read , GeneBoundaryNode B " << endl;
         };
 
         return true;

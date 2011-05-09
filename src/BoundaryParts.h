@@ -30,6 +30,7 @@ protected:
     map<uint, uint, less<uint> > mmBNodeID2Index;
 
     uint mnShapeType;// Beam, Quad, Triangle, Tetra, Hexa
+    uint mnOrder;    // 1次 .or. 2次
     
     ////vuint mvDOF;// => BounaryMeshに移行.
     map<uint, double, less<uint> > mmValue;//Partsが所有するDOF境界値
@@ -46,7 +47,11 @@ public:
 
     uint& getVertIndex(CBoundaryNode *pBNode){ return mmBNodeID2Index[pBNode->getID()];}
 
+    // 1次 .or. 2次
+    uint& getOrder(){ return mnOrder;}
 
+    // 頂点数
+    virtual uint getNumOfVert()=0;
 
     // 境界パーツID(BFaceID,BEdgeID,BVolumeID)
     void setID(const uint& id){ mnID= id;}

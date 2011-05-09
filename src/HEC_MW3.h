@@ -133,15 +133,33 @@ public:
     void Matrix_Clear(const uint& iMesh);// Matrix all 0 clear
     void Vector_Clear(const uint& iMesh);// Matrix all 0 clear
 
-    int Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);//行列対角項, 解ベクトル
-    int Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value1, double& value2);   //行列対角項, 右辺ベクトル
-    int Set_BC_RHS(uint& iMesh, uint& iNode, uint& iDof, double& value);                        //右辺ベクトル
+    //int Set_BC_Mat_SolVec(uint& iMesh, uint& iNode, uint& nDOF, double& value1, double& value2);//行列対角項, 解ベクトル
+    //int SetZero_NonDiag(uint& iMesh, uint& iNode, uint& nDOF);
+    int Set_BC_Mat_RHS2(uint& iMesh, uint& iNode, uint& nDOF, double& diag_value, double& rhs_value);//対角項=Val,非対角項=0、右辺ベクトル
+    int Set_BC_Mat_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& diag_value, double& rhs_value); //行列対角項, 右辺ベクトル
+    int Set_BC_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& value);                        //右辺ベクトル
+    int Add_BC_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& value);                        //右辺ベクトルへの加算
     
     void  Sample_Set_BC(uint iMesh);
     
-    
     int Solve(uint& iter_max, double& tolerance, uint& method, uint& precondition);
-    
+
+    //--
+    // 解ベクトルをbufへコピー (SelectされているLevel && Selectされている方程式番号)
+    //--
+    void GetSolution_Vector(double* buf, const uint& imesh);
+    void GetSolution_AssyVector(double* buf);
+    //--
+    // 右辺ベクトルをbufへコピー (SelectされているLevel && Selectされている方程式番号)
+    //--
+    void GetRHS_Vector(double* buf, const uint& imesh);
+    void GetRHS_AssyVector(double* buf);
+
+    //--
+    // AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+    //--
+    void multVector(double* vX, double* vB);
+
     
     //----
     // MG constructor (Refiner)
@@ -377,25 +395,43 @@ public:
     //--
     // Boundary :: 各Meshが所有するBoundaryMeshから境界値を取得
     //--
+    // BoundaryMesh数
     uint GetNumOfBoundaryNodeMesh();
     uint GetNumOfBoundaryFaceMesh();
     uint GetNumOfBoundaryEdgeMesh();
     uint GetNumOfBoundaryVolumeMesh();
+    // BoundaryType { Neumann || Dirichlet }
+    uint GetBNDType_BNodeMesh(const uint& ibmesh);
+    uint GetBNDType_BFaceMesh(const uint& ibmesh);
+    uint GetBNDType_BEdgeMesh(const uint& ibmesh);
+    uint GetBNDType_BVolumeMesh(const uint& ibmesh);
+    // BoundaryTypeを表す型(定数)
+    uint getNeumannType();
+    uint getDirichletType();
+    // 境界節点数
     uint GetNumOfBNode_BNodeMesh(const uint& ibmesh);
     uint GetNumOfBNode_BFaceMesh(const uint& ibmesh);
     uint GetNumOfBNode_BEdgeMesh(const uint& ibmesh);
     uint GetNumOfBNode_BVolumeMesh(const uint& ibmesh);
+    // BoundaryのDOF数
     uint GetNumOfDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode);
     uint GetNumOfDOF_BFaceMesh(const uint& ibmesh);
     uint GetNumOfDOF_BEdgeMesh(const uint& ibmesh);
     uint GetNumOfDOF_BVolumeMesh(const uint& ibmesh);
+    // Boundary DOF番号("DOFインデックス"に対応するDOF番号)
+    uint GetDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof);
+    uint GetDOF_BFaceMesh(const uint& ibmesh, const uint& idof);
+    uint GetDOF_BEdgeMesh(const uint& ibmesh, const uint& idof);
+    uint GetDOF_BVolumeMesh(const uint& ibmesh, const uint& idof);
+
+
     //--
     // BoundaryNode 境界値
     //--
-    double& GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof);
-    double& GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
-    double& GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
-    double& GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
+    double& GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof);
+    double& GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
+    double& GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
+    double& GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
     uint& GetNodeID_BNode_BNodeMesh(const uint& ibmesh, const uint& ibnode);
     uint& GetNodeID_BNode_BFaceMesh(const uint& ibmesh, const uint& ibnode);
     uint& GetNodeID_BNode_BEdgeMesh(const uint& ibmesh, const uint& ibnode);
@@ -404,11 +440,11 @@ public:
     // Face, Edge, Volume の境界値
     //--
     uint GetNumOfBFace(const uint& ibmesh);
-    double& GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& idof);
+    double& GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& dof);
     uint GetNumOfBEdge(const uint& ibmesh);
-    double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof);
+    double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& dof);
     uint GetNumOfBVolume(const uint& ibmesh);
-    double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof);
+    double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& dof);
     //--
     // Boundaryの名称
     //--
@@ -420,6 +456,14 @@ public:
     string& GetBVolumeMesh_Name(const uint& ibmesh);
     uint GetBEdgeMesh_NameLength(const uint& ibmesh);
     string& GetBEdgeMesh_Name(const uint& ibmesh);
+    //--
+    // Entity_ID of BoundaryMesh (for FrontISTR)
+    //--
+    uint GetEdgeID_BEdge(const uint& ibmesh, const uint& ibedge);
+    uint GetElemID_BEdge(const uint& ibmesh, const uint& ibedge);
+    uint GetFaceID_BFace(const uint& ibmesh, const uint& ibface);
+    uint GetElemID_BFace(const uint& ibmesh, const uint& ibface);
+    uint GetElemID_BVolume(const uint& ibmesh, const uint& ibvol);
 
 
     //--
@@ -431,10 +475,17 @@ public:
     int AllGather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm);
     int Gather(void* sendbuf , int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
     int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
-    int& GetRank();        //自分のプロセス-ランクを取得
+    int& GetRank();//自分のプロセス-ランクを取得
     int& GetNumOfProcess();
-    void Send_Recv_R(double* buf, int dof_size);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
-    void Send_Recv_R();                         // 通信Nodeの値を入れ替えて更新
+    // 以下の３メソッドは、ペア
+    uint GetNumOfNeibPE(const uint& imesh);//Meshパーツが通信する相手の数
+    uint& GetTransRank(const uint& imesh, const uint& ipe);//通信Mesh毎のランク番号
+    void Send_Recv_R(double* buf, const uint& num_of_node, const uint& dof_size, const uint& trans_rank);//bufの値を送信-受信
+
+    void Send_Recv_R(double* buf, const uint& nDOF);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
+    void Send_Recv_R();                          // 通信Nodeの値を入れ替えて更新
+
+
 
 
 

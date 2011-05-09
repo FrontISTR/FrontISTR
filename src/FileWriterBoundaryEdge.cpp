@@ -56,6 +56,12 @@ void CFileWriterBoundaryEdge::Write(ofstream& ofs, const uint& mgLevel)
            ofs << endl;
 
            uint numOfBndNode= pBndEdgeMesh->getNumOfBNode();
+
+           //Neumannの値、確認用
+           vdouble sumValue;
+           sumValue.resize(pBndEdgeMesh->getNumOfDOF());
+           for(uint idof=0; idof < pBndEdgeMesh->getNumOfDOF(); idof++)  sumValue[idof]=0.0;
+
            for(iii=0; iii < numOfBndNode; iii++){
                pBndNode= pBndEdgeMesh->getBNodeIX(iii);
                pNode= pBndNode->getNode();
@@ -68,9 +74,20 @@ void CFileWriterBoundaryEdge::Write(ofstream& ofs, const uint& mgLevel)
                    uint dof = pBndEdgeMesh->getDOF(idof);
 
                    ofs << ", dof= " << dof << ", Value[" << idof << "]= " << pBndNode->getValue(dof, mgLevel);
+
+                   //Neumann Σ値
+                   sumValue[idof] += pBndNode->getValue(dof, mgLevel);
                };
                ofs << endl;
            };
+           //Neumann Σ値 確認
+           if(pBndEdgeMesh->getBndType()==pmw::BoundaryType::Neumann){
+               ofs << "BNode Value SumValue :";
+               for(uint idof=0; idof < pBndEdgeMesh->getNumOfDOF(); idof++){
+                   ofs << "  sumValue[" << idof << "]=" << sumValue[idof];
+               };
+               ofs << endl;
+           }
 
            uint numOfBndEdge= pBndEdgeMesh->getNumOfEdge();
            for(iii=0; iii < numOfBndEdge; iii++){

@@ -11,16 +11,37 @@
 //              2010.04.13
 //              k.Takeda
 #include "BoundaryEdge.h"
+#include "ElementProperty.h"
 using namespace pmw;
 
 CBoundaryEdge::CBoundaryEdge()
 {
-    ;
+    mpEdgeBNode = NULL;
 }
 
 CBoundaryEdge::~CBoundaryEdge()
 {
     ;
+}
+
+void CBoundaryEdge::setBEdgeShape(const uint& elemType)
+{
+    mnShapeType = elemType;
+
+    // 1次-2次 Order
+    switch(mnShapeType){
+        case(ElementType::Beam):case(ElementType::Line):
+            mnOrder = ElementOrder::First;
+            break;
+        case(ElementType::Beam2):case(ElementType::Line2):
+            mnOrder = ElementOrder::Second;
+            break;
+    }
+}
+
+uint CBoundaryEdge::getNumOfVert()
+{
+    return 2;
 }
 
 void CBoundaryEdge::setEdgeBNode(CBoundaryNode* pBNode)
@@ -69,7 +90,10 @@ void CBoundaryEdge::refine(uint& countID, const vuint& vDOF)
         pProgBEdge->resizeBNode(2);
         pProgBEdge->setID(countID);
         countID++;
-        pProgBEdge->setBEdgeShape(ElementType::Beam);// タイプをセット
+
+        // タイプをセット
+        if(mnOrder==ElementOrder::First) pProgBEdge->setBEdgeShape(ElementType::Beam);
+        if(mnOrder==ElementOrder::Second)pProgBEdge->setBEdgeShape(ElementType::Beam2);
 
         // 要素のNodeから要素頂点番号を取得 -> 子要素を取得
         CNode *pNode= mvBNode[ivert]->getNode();
@@ -101,7 +125,6 @@ void CBoundaryEdge::refine(uint& countID, const vuint& vDOF)
             dof = vDOF[idof];
             progValue = mmValue[dof]*coef;
 
-            //pProgBEdge->addDOF(dof);
             pProgBEdge->setBndValue(dof,progValue);
         };
     };
@@ -134,26 +157,63 @@ double& CBoundaryEdge::calcLength()
 }
 
 
+// 2次要素の場合、辺BNodeをmvBNodeに移設.
+//
+void CBoundaryEdge::replaceEdgeBNode()
+{
+    if(mnOrder==ElementOrder::Second){
+        mvBNode.resize(3);
+        mvBNode[2] = mpEdgeBNode;
+    }
+
+    //cout << "BoundaryEdge::replaceEdgeBNode, mvBNode.size " << mvBNode.size() << endl;
+}
+
+
 // 上位GridのBNodeへディレクレ値をセット
 //
-void CBoundaryEdge::distDirichletVal(const uint& dof, const uint& mgLevel)
+void CBoundaryEdge::distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)
 {
     double dAveVal(0.0), dVal;
-    
+
     dVal = mvBNode[0]->getValue(dof, mgLevel);
-    mvBNode[0]->setValue(dof, mgLevel+1, dVal);//上位グリッドへ下位の値をセット:頂点
+    if(mgLevel!=nMaxMGLevel){
+      mvBNode[0]->setValue(dof, mgLevel+1, dVal);//上位グリッドへ下位の値をセット:頂点
+    }
     dAveVal += dVal;
 
     dVal = mvBNode[1]->getValue(dof, mgLevel);
-    mvBNode[1]->setValue(dof, mgLevel+1, dVal);//上位グリッドへ下位の値をセット:頂点
+    if(mgLevel!=nMaxMGLevel){
+      mvBNode[1]->setValue(dof, mgLevel+1, dVal);//上位グリッドへ下位の値をセット:頂点
+    }
     dAveVal += dVal;
 
     if(mgLevel > 0){
         dAveVal *= 0.5;
-        mpEdgeBNode->setValue(dof, mgLevel+1, dAveVal);//辺中央のBNodeは、上位Gridへディレクレ値をセット
+
+        //辺BNodeへのディレクレ値
+        if(mnOrder==ElementOrder::Second){
+            //2次要素:カレント・グリッドと上位グリッド
+            mpEdgeBNode->setValue(dof, mgLevel,   dAveVal);
+            if(mgLevel!=nMaxMGLevel)
+              mpEdgeBNode->setValue(dof, mgLevel+1, dAveVal);//辺中央のBNodeは、上位Gridへディレクレ値をセット
+        }else{
+            //1次要素:上位グリッド
+            if(mgLevel!=nMaxMGLevel)
+              mpEdgeBNode->setValue(dof, mgLevel+1, dAveVal);//辺中央のBNodeは、上位Gridへディレクレ値をセット
+        }
     }
     if(mgLevel==0){
-        mpEdgeBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+        if(mnOrder==ElementOrder::Second){
+            //2次要素:カレント・グリッドと上位グリッド
+            mpEdgeBNode->setValue(dof, mgLevel,   mmValue[dof]);
+            if(mgLevel!=nMaxMGLevel)
+              mpEdgeBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+        }else{
+            //1次要素:上位グリッド
+            if(mgLevel!=nMaxMGLevel)
+              mpEdgeBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+        }
     }
 }
 

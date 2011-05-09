@@ -161,6 +161,7 @@ public:
     void setupFaceConNode(CContactMesh *pProgConMesh);// 面中心に配置する面ノードの生成,設置
     void setupCoarseConNode(CContactMesh *pProgConMesh);//上位ContactMeshに自身のノードをセット.
 
+    
 
     // マスター&スレーブ関連  :: EquationのCoefはMasterFace::CalcCoef()
     //                     :: スレーブ点の内外判定はMasterFace::addSlaveNode()

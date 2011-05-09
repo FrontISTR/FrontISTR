@@ -26,7 +26,7 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 	mpAssyModel = pAssyModel;
         mnDOF = nDOF;//アセンブル方程式のDOF
 
-        printf("mnDOF %d \n", mnDOF);//'10.12.27 追加
+        //printf("mnDOF %d \n", mnDOF);//'10.12.27 追加
 	
 	for (int i = 0; i < pAssyModel->getNumOfMesh(); i++) {
 		CMesh *pMesh = pAssyModel->getMesh(i);
@@ -35,10 +35,10 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 	}
 
 	mMGLevel = pAssyModel->getMGLevel();
-	printf("mMGLevel %d \n",mMGLevel);
+	//printf("mMGLevel %d \n",mMGLevel);
 
 	uint numOfContact= pAssyModel->getNumOfContactMesh();/////////////////////////
-	printf("numOfContact %d \n",numOfContact);
+	//printf("numOfContact %d \n",numOfContact);
 	
         uint idof;
         //DOF数ぶんの関係式ポインターを準備
@@ -50,7 +50,7 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 	for(uint icont = 0; icont < numOfContact; icont++){
 		CContactMesh* pConMesh= pAssyModel->getContactMesh(icont);
 		uint numOfSPoint = pConMesh->getNumOfSlavePoint();
-		printf("numOfSPoint, icont %d %d \n", numOfSPoint, icont);
+		//printf("numOfSPoint, icont %d %d \n", numOfSPoint, icont);
 		
 		CMPCMatrix* mpc = new CMPCMatrix();
 
@@ -64,13 +64,13 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 				uint masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
 				uint smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
 				uint snode = pSlaveNode->getNodeID();
-				printf("masterFaceID, islave, smesh, node %d %d %d %d\n", masterFaceID, islave, smesh, snode);
+				//printf("masterFaceID, islave, smesh, node %d %d %d %d\n", masterFaceID, islave, smesh, snode);
                                 ///////////////////////////////////////////////////////////////////////////////
                                 for(idof=0; idof < mnDOF; idof++) vEquation[idof]->setSlave(smesh, snode, idof);
 				
 				CSkinFace* pMasterFace = pConMesh->getMasterFace_ID(masterFaceID);
 				uint numOfVert = pMasterFace->getNumOfNode();
-				printf("numOfVert %d \n",numOfVert);
+				//printf("numOfVert %d \n",numOfVert);
 				
 				for(uint ivert=0; ivert< numOfVert; ivert++){
 					int mmesh = pMasterFace->getMeshID(); //pConMesh->getMasterMeshID(islave);
@@ -79,7 +79,7 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
                                         /////////////////////////////////////////////////////////////////////////////////////
                                         for(idof=0; idof < mnDOF; idof++) vEquation[idof]->addMaster(mmesh, node, idof, coef);
 
-					printf("ivert, mmesh, node, coef %d %d %d %e \n", ivert, mmesh, node, coef);
+					//printf("ivert, mmesh, node, coef %d %d %d %e \n", ivert, mmesh, node, coef);
 				};
                                 ///////////////////////////////////////////////////////////////////
                                 for(idof=0; idof < mnDOF; idof++) mpc->addEquation(vEquation[idof]);
@@ -88,7 +88,7 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
                 //////////////////////////
 		mvMPCMatrix.push_back(mpc);
 
-		printf("mvMPCMatrix.size() %d \n", (uint)mvMPCMatrix.size());
+		//printf("mvMPCMatrix.size() %d \n", (uint)mvMPCMatrix.size());
 	};
 }
 
@@ -125,18 +125,39 @@ void CAssyMatrix::Matrix_Clear(const uint& iMesh)
     mvMatrix[iMesh]->Matrix_Clear();
 }
 
-
-void CAssyMatrix::setValue(int imesh, int inode, int idof, double value)
+// 対角項=val, mvD[inode]の非対角項=0
+//
+void CAssyMatrix::setValue(const uint& imesh, const uint& inode, const uint& idof, const double& value)
 {
 #ifdef ADVANCESOFT_DEBUG
-	printf(" enter CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
+    printf(" enter CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
 #endif
 
-	mvMatrix[imesh]->setValue(inode, idof, value);
+    mvMatrix[imesh]->setValue(inode, idof, value);
 
 #ifdef ADVANCESOFT_DEBUG
-	printf(" exit CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
+    printf(" exit CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
 #endif
+}
+
+// 対角項=val
+//
+void CAssyMatrix::setValue_D(const uint& imesh, const uint& inode, const uint& idof, const double& value)
+{
+    mvMatrix[imesh]->setValue_D(inode, idof, value);
+}
+
+void CAssyMatrix::setZero_NonDiag(const uint& imesh, const uint& inode, const uint& idof)
+{
+    mvMatrix[imesh]->setZero_NonDiag(inode, idof);
+}
+
+
+// xに値を入れて、Ax=B でBを求める
+void CAssyMatrix::multVector(const uint& imesh, CAssyVector* pX, CAssyVector* pB)
+{
+    // calc: B = A x
+    mvMatrix[imesh]->multVector(pX->getVector(imesh), pB->getVector(imesh));
 }
 
 int CAssyMatrix::multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW) const
@@ -372,6 +393,9 @@ void CAssyMatrix::dump()
     uint i;
     for(i=0; i < mvMatrix.size(); i++){
         mvMatrix[i]->dump();
+    };
+    for(i=0; i < mvMPCMatrix.size(); i++){
+        mvMPCMatrix[i]->dump();
     };
 }
 

@@ -250,7 +250,7 @@ void CHexa::getPairNode(vint& pairNodeIndex, const uint& iedge)
 //
 uint& CHexa::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    //vuint pairIndex = getLocalNodeNum(pNode0, pNode1);
+    //cout << "Hexa::getEdgeIndex(pNode0, pNode1),  " << endl;
     
     uint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();

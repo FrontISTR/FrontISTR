@@ -131,13 +131,31 @@ public:
     __declspec(dllexport) void Matrix_Clear(const uint& iMesh);// Matrix 0 clear
     __declspec(dllexport) void Vector_Clear(const uint& iMesh);// Matrix 0 clear
 
-    __declspec(dllexport) int Set_BC_Mat_SolVec(int iMesh, int iNode, int iDof, double value1, double value2);//行列対角項, 解ベクトル
-    __declspec(dllexport) int Set_BC_Mat_RHS(int iMesh, int iNode, int iDof, double value1, double value2);   //行列対角項, 右辺ベクトル
-    __declspec(dllexport) int Set_BC_RHS(int iMesh, int iNode, int iDof, double value);                       //右辺ベクトル
-    
-    __declspec(dllexport) void Sample_Set_BC(int iMesh);
+//    __declspec(dllexport) int Set_BC_Mat_SolVec(int iMesh, int iNode, int nDOF, double value1, double value2);//行列対角項, 解ベクトル
+    __declspec(dllexport) int Set_BC_Mat_RHS2(uint& iMesh, uint& iNode, uint& nDOF, double& diag_value, double& rhs_value);//対角項=Val,非対角項=0、右辺ベクトル
+    __declspec(dllexport) int Set_BC_Mat_RHS(int iMesh, int iNode, int nDOF, double& diag_value, double& rhs_value);//行列対角項, 右辺ベクトル
+    __declspec(dllexport) int Set_BC_RHS(int iMesh, int iNode, int nDOF, double value);                       //右辺ベクトル
+    __declspec(dllexport) int Add_BC_RHS(uint& iMesh, uint& iNode, uint& nDOF, double& value);                //右辺ベクトルへの加算
+
     
     __declspec(dllexport) int Solve(uint iter_max, double tolerance, uint method, uint precondition);
+
+    //--
+    // 解ベクトルをbufへコピー (SelectされているLevel && Selectされている方程式番号)
+    //--
+    __declspec(dllexport) void GetSolution_Vector(double* buf, const uint& imesh);
+    __declspec(dllexport) void GetSolution_AssyVector(double* buf);
+    //--
+    // 右辺ベクトルをbufへコピー (SelectされているLevel && Selectされている方程式番号)
+    //--
+    __declspec(dllexport) void GetRHS_Vector(double* buf, const uint& imesh);
+    __declspec(dllexport) void GetRHS_AssyVector(double* buf);
+
+    //--
+    // AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+    //--
+    __declspec(dllexport) void multVector(double* vX, double* vB);
+
     
     
     //----
@@ -372,25 +390,41 @@ public:
     //--
     // Boundary :: 各Meshが所有するBoundaryMeshから境界値を取得
     //--
+    // BoundaryMesh数
     __declspec(dllexport) uint GetNumOfBoundaryNodeMesh();
     __declspec(dllexport) uint GetNumOfBoundaryFaceMesh();
     __declspec(dllexport) uint GetNumOfBoundaryEdgeMesh();
     __declspec(dllexport) uint GetNumOfBoundaryVolumeMesh();
+    // BoundaryType { Neumann || Dirichlet }
+    __declspec(dllexport) uint GetBNDType_BNodeMesh(const uint& ibmesh);
+    __declspec(dllexport) uint GetBNDType_BFaceMesh(const uint& ibmesh);
+    __declspec(dllexport) uint GetBNDType_BEdgeMesh(const uint& ibmesh);
+    __declspec(dllexport) uint GetBNDType_BVolumeMesh(const uint& ibmesh);
+    // BoundaryTypeを表す型(定数)
+    __declspec(dllexport) uint getNeumannType();
+    __declspec(dllexport) uint getDirichletType();
+    // 境界節点数
     __declspec(dllexport) uint GetNumOfBNode_BNodeMesh(const uint& ibmesh);
     __declspec(dllexport) uint GetNumOfBNode_BFaceMesh(const uint& ibmesh);
     __declspec(dllexport) uint GetNumOfBNode_BEdgeMesh(const uint& ibmesh);
     __declspec(dllexport) uint GetNumOfBNode_BVolumeMesh(const uint& ibmesh);
+    // BoundaryのDOF数
     __declspec(dllexport) uint GetNumOfDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode);
     __declspec(dllexport) uint GetNumOfDOF_BFaceMesh(const uint& ibmesh);
     __declspec(dllexport) uint GetNumOfDOF_BEdgeMesh(const uint& ibmesh);
     __declspec(dllexport) uint GetNumOfDOF_BVolumeMesh(const uint& ibmesh);
+    // Boundary DOF番号("DOFインデックス"に対応するDOF番号)
+    __declspec(dllexport) uint GetDOF_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof);
+    __declspec(dllexport) uint GetDOF_BFaceMesh(const uint& ibmesh, const uint& idof);
+    __declspec(dllexport) uint GetDOF_BEdgeMesh(const uint& ibmesh, const uint& idof);
+    __declspec(dllexport) uint GetDOF_BVolumeMesh(const uint& ibmesh, const uint& idof);
     //--
     // BoundaryNode 境界値
     //--
-    __declspec(dllexport) double& GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof);
-    __declspec(dllexport) double& GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
-    __declspec(dllexport) double& GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
-    __declspec(dllexport) double& GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& idof, const uint& mgLevel);
+    __declspec(dllexport) double& GetBNodeValue_BNodeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof);
+    __declspec(dllexport) double& GetBNodeValue_BFaceMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
+    __declspec(dllexport) double& GetBNodeValue_BEdgeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
+    __declspec(dllexport) double& GetBNodeValue_BVolumeMesh(const uint& ibmesh, const uint& ibnode, const uint& dof, const uint& mgLevel);
     __declspec(dllexport) uint& GetNodeID_BNode_BNodeMesh(const uint& ibmesh, const uint& ibnode);
     __declspec(dllexport) uint& GetNodeID_BNode_BFaceMesh(const uint& ibmesh, const uint& ibnode);
     __declspec(dllexport) uint& GetNodeID_BNode_BEdgeMesh(const uint& ibmesh, const uint& ibnode);
@@ -399,11 +433,11 @@ public:
     // Face, Edge, Volume の境界値
     //--
     __declspec(dllexport) uint GetNumOfBFace(const uint& ibmesh);
-    __declspec(dllexport) double& GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& idof);
+    __declspec(dllexport) double& GetBFaceValue(const uint& ibmesh, const uint& ibface, const uint& dof);
     __declspec(dllexport) uint GetNumOfBEdge(const uint& ibmesh);
-    __declspec(dllexport) double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& idof);
+    __declspec(dllexport) double& GetBEdgeValue(const uint& ibmesh, const uint& ibedge, const uint& dof);
     __declspec(dllexport) uint GetNumOfBVolume(const uint& ibmesh);
-    __declspec(dllexport) double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& idof);
+    __declspec(dllexport) double& GetBVolumeValue(const uint& ibmesh, const uint& ibvol, const uint& dof);
     //--
     // Boundaryの名称
     //--
@@ -415,7 +449,15 @@ public:
     __declspec(dllexport) string& GetBVolumeMesh_Name(const uint& ibmesh);
     __declspec(dllexport) uint GetBEdgeMesh_NameLength(const uint& ibmesh);
     __declspec(dllexport) string& GetBEdgeMesh_Name(const uint& ibmesh);
-    
+    //--
+    // Entity_ID of BoundaryMesh (for FrontISTR)
+    //--
+    __declspec(dllexport) uint GetEdgeID_BEdge(const uint& ibmesh, const uint& ibedge);
+    __declspec(dllexport) uint GetElemID_BEdge(const uint& ibmesh, const uint& ibedge);
+    __declspec(dllexport) uint GetFaceID_BFace(const uint& ibmesh, const uint& ibface);
+    __declspec(dllexport) uint GetElemID_BFace(const uint& ibmesh, const uint& ibface);
+    __declspec(dllexport) uint GetElemID_BVolume(const uint& ibmesh, const uint& ibvol);
+
 
 
     //--
@@ -429,7 +471,12 @@ public:
     __declspec(dllexport) int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
     __declspec(dllexport) int& GetRank(); //自分のプロセス-ランクを取得
     __declspec(dllexport) int& GetNumOfProcess();
-    __declspec(dllexport) void Send_Recv_R(double* buf, int dof_size);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
+    // 以下の３メソッドは、ペア
+    __declspec(dllexport) uint GetNumOfNeibPE(const uint& imesh);//Meshパーツが通信する相手の数
+    __declspec(dllexport) uint& GetTransRank(const uint& imesh, const uint& ipe);//通信Mesh毎のランク番号
+    __declspec(dllexport) void Send_Recv_R(double* buf, const uint& num_of_node, const uint& dof_size, const uint& trans_rank);//bufの値を送信-受信
+
+    __declspec(dllexport) void Send_Recv_R(double* buf, const uint& nDOF);// bufの値を送信, 受信値をNodeとbufに代入.   bufのサイズ == NumOfCommNode * dof_size
     __declspec(dllexport) void Send_Recv_R();// 通信Nodeの値を入れ替えて更新
 
 

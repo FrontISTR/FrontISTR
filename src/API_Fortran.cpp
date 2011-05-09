@@ -334,39 +334,60 @@ int mw_matirx_add_elem_10_(int* imesh, int* ielem, double elem_matirx[][10])//Be
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
 
-// set_bc
-//
-int mw_matrix_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2)
+////// set_bc
+//////
+////int mw_matrix_set_bc_(int* imesh, int* inode, int* dof, double* value1, double* value2)
+////{
+////    unsigned int iMesh = *imesh;
+////    unsigned int iNode = *inode;
+////    unsigned int nDOF  = *dof;
+////    double Value1 = *value1;
+////    double Value2 = *value2;
+////
+////    // matrix-D and solution_vector
+////    return pMW->Set_BC_Mat_SolVec(iMesh, iNode, nDOF, Value1, Value2);
+////}
+int mw_matrix_rhs_set_bc2_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval)
 {
-    unsigned int iMesh = *imesh;
-    unsigned int iNode = *inode;
-    unsigned int iDOF  = *idof;
-    double Value1 = *value1;
-    double Value2 = *value2;
+    uint iMesh = *imesh;
+    uint iNode = *inode;
+    uint nDOF  = *dof;
+    double dDiagValue = *diagval;
+    double dRHSValue = *rhsval;
 
-    // matrix-D and solution_vector
-    return pMW->Set_BC_Mat_SolVec(iMesh, iNode, iDOF, Value1, Value2);
+    // matirix-D=diagval, matrix_non_diag=0  , rhs_vector=rhsval
+    return pMW->Set_BC_Mat_RHS2(iMesh, iNode, nDOF, dDiagValue, dRHSValue);
 }
-int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value1, double* value2)
+int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval)
 {
-    unsigned int iMesh = *imesh;
-    unsigned int iNode = *inode;
-    unsigned int iDOF  = *idof;
-    double Value1 = *value1;
-    double Value2 = *value2;
+    uint iMesh = *imesh;
+    uint iNode = *inode;
+    uint nDOF  = *dof;
+    double dDiagValue = *diagval;
+    double dRHSValue = *rhsval;
 
     // matrix-D and rhs_vector
-    return pMW->Set_BC_Mat_RHS(iMesh, iNode, iDOF, Value1, Value2);
+    return pMW->Set_BC_Mat_RHS(iMesh, iNode, nDOF, dDiagValue, dRHSValue);
 }
-int mw_rhs_set_bc_(int* imesh, int* inode, int* idof, double* value)
+int mw_rhs_set_bc_(int* imesh, int* inode, int* dof, double* value)
 {
     unsigned int iMesh = *imesh;
     unsigned int iNode = *inode;
-    unsigned int iDOF = *idof;
+    unsigned int nDOF = *dof;
     double Value = *value;
 
     // rhs_vector
-    return pMW->Set_BC_RHS(iMesh, iNode, iDOF, Value);
+    return pMW->Set_BC_RHS(iMesh, iNode, nDOF, Value);
+}
+int mw_rhs_add_bc_(int* imesh, int* inode, int* dof, double* value)
+{
+    unsigned int iMesh = *imesh;
+    unsigned int iNode = *inode;
+    unsigned int nDOF = *dof;
+    double Value = *value;
+
+    // add rhs_vector
+    return pMW->Add_BC_RHS(iMesh, iNode, nDOF, Value);
 }
 
 // solver
@@ -379,14 +400,41 @@ int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition)
 
     return pMW->Solve(nIterMax, dTolerance, nMethod, nPreCondition);
 }
-//void mw_store_matrix_()
-//{
-//    pMW->StoreMatrix();
-//}
-//void mw_load_matrix_()
-//{
-//    pMW->LoadMatrix();
-//}
+//--
+// solution_vector copy,  at select MG-Level && select Equation
+//--
+void mw_get_solution_vector_(double buf[], int* imesh)
+{
+    uint iMesh = *imesh;
+    pMW->GetSolution_Vector(buf, iMesh);
+}
+void mw_get_solution_assy_vector_(double buf[])
+{
+    pMW->GetSolution_AssyVector(buf);
+}
+//--
+// rhs_vector copy,  at select MG-Level && select Equation
+//--
+void mw_get_rhs_vector_(double buf[], int* imesh)
+{
+    uint iMesh = *imesh;
+    pMW->GetRHS_Vector(buf, iMesh);
+}
+void mw_get_rhs_assy_vector_(double buf[])
+{
+    pMW->GetRHS_AssyVector(buf);
+}
+
+//--
+// AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
+//--
+void mw_mult_vector_(double vX[], double vB[])
+{
+    pMW->multVector(vX, vB);
+}
+
+
+
 
 //----
 // MG construct (refine)
@@ -944,38 +992,53 @@ int mw_shapetype_line32_()
 //--
 // boundary mesh
 //--
+// number of boudary_mesh
 int mw_get_num_of_boundary_bnode_mesh_(){ return pMW->GetNumOfBoundaryNodeMesh();}
 int mw_get_num_of_boundary_bface_mesh_(){ return pMW->GetNumOfBoundaryFaceMesh();}
 int mw_get_num_of_boundary_bedge_mesh_(){ return pMW->GetNumOfBoundaryEdgeMesh();}
 int mw_get_num_of_boundary_bvolume_mesh_(){ return pMW->GetNumOfBoundaryVolumeMesh();}
-
+// BND type for each boundary_mesh { Neumann || Dirichlet }
+int mw_get_bnd_type_bnode_mesh_(int* ibmesh){ return pMW->GetBNDType_BNodeMesh(*ibmesh);}
+int mw_get_bnd_type_bface_mesh_(int*ibmesh){ return pMW->GetBNDType_BFaceMesh(*ibmesh);}
+int mw_get_bnd_type_bedge_mesh_(int* ibmesh){ return pMW->GetBNDType_BEdgeMesh(*ibmesh);}
+int mw_get_bnd_type_bvolume_mesh_(int* ibmesh){ return pMW->GetBNDType_BVolumeMesh(*ibmesh);}
+// BND type number
+int mw_get_neumann_type_(){ return pMW->getNeumannType();}
+int mw_get_dirichlet_type_(){ return pMW->getDirichletType();}
+// number of bnode for each boundary_mesh
 int mw_get_num_of_bnode_in_bnode_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BNodeMesh(*ibmesh);}
 int mw_get_num_of_bnode_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BFaceMesh(*ibmesh);}
 int mw_get_num_of_bnode_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BEdgeMesh(*ibmesh);}
 int mw_get_num_of_bnode_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BVolumeMesh(*ibmesh);}
-
+// number of DOF for each boundary_mesh
 int mw_get_num_of_dof_in_bnode_mesh_(int* ibmesh, int* ibnode){ return pMW->GetNumOfDOF_BNodeMesh(*ibmesh, *ibnode);}
 int mw_get_num_of_dof_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BFaceMesh(*ibmesh);}
 int mw_get_num_of_dof_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BEdgeMesh(*ibmesh);}
 int mw_get_num_of_dof_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BVolumeMesh(*ibmesh);}
+// DOF number for each boundary_mesh ( DOF_index => DOF Number )
+int mw_get_dof_bnode_mesh_(int* ibmesh, int* ibnode, int* idof){ return pMW->GetDOF_BNodeMesh(*ibmesh, *ibnode, *idof);}
+int mw_get_dof_bface_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BFaceMesh(*ibmesh, *idof);}
+int mw_get_dof_bedge_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BEdgeMesh(*ibmesh, *idof);}
+int mw_get_dof_bvolume_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BVolumeMesh(*ibmesh, *idof);}
+
 //--
 // value of boundary node
 //--
-double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* idof)
+double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* dof)
 {
-    return pMW->GetBNodeValue_BNodeMesh(*ibmesh, *ibnode, *idof);
+    return pMW->GetBNodeValue_BNodeMesh(*ibmesh, *ibnode, *dof);
 }
-double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
 {
-    return pMW->GetBNodeValue_BFaceMesh(*ibmesh, *ibnode, *idof, *mglevel);
+    return pMW->GetBNodeValue_BFaceMesh(*ibmesh, *ibnode, *dof, *mglevel);
 }
-double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
 {
-    return pMW->GetBNodeValue_BEdgeMesh(*ibmesh, *ibnode, *idof, *mglevel);
+    return pMW->GetBNodeValue_BEdgeMesh(*ibmesh, *ibnode, *dof, *mglevel);
 }
-double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* idof, int* mglevel)
+double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
 {
-    return pMW->GetBNodeValue_BVolumeMesh(*ibmesh, *ibnode, *idof, *mglevel);
+    return pMW->GetBNodeValue_BVolumeMesh(*ibmesh, *ibnode, *dof, *mglevel);
 }
 // node id (in boundary node)
 int mw_get_node_id_in_bnode_mesh_(int* ibmesh, int* ibnode)
@@ -1001,25 +1064,25 @@ int mw_get_num_of_bface_(int* ibmesh)
 {
     return pMW->GetNumOfBFace(*ibmesh);
 }
-double mw_get_bface_value_(int* ibmesh, int* ibface, int* idof)
+double mw_get_bface_value_(int* ibmesh, int* ibface, int* dof)
 {
-    return pMW->GetBFaceValue(*ibmesh, *ibface, *idof);
+    return pMW->GetBFaceValue(*ibmesh, *ibface, *dof);
 }
 int mw_get_num_of_bedge_(int* ibmesh)
 {
     return pMW->GetNumOfBEdge(*ibmesh);
 }
-double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* idof)
+double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* dof)
 {
-    return pMW->GetBEdgeValue(*ibmesh, *ibedge, *idof);
+    return pMW->GetBEdgeValue(*ibmesh, *ibedge, *dof);
 }
 int mw_get_num_of_bvolume_(int* ibmesh)
 {
     return pMW->GetNumOfBVolume(*ibmesh);
 }
-double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* idof)
+double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* dof)
 {
-    return pMW->GetBVolumeValue(*ibmesh, *ibvol, *idof);
+    return pMW->GetBVolumeValue(*ibmesh, *ibvol, *dof);
 }
 //--
 // boundary_mesh name
@@ -1128,6 +1191,46 @@ void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len)
         };
     }
 }
+//--
+// entity_id of boundary_mesh (for FrontISTR)
+//--
+int mw_get_edge_id_bedge_(int* ibmesh, int* ibedge)
+{
+    uint iBMesh = *ibmesh;
+    uint iBEdge = *ibedge;
+
+    return pMW->GetEdgeID_BEdge(iBMesh, iBEdge);
+}
+int mw_get_elem_id_bedge_(int*ibmesh, int* ibedge)
+{
+    uint iBMesh = *ibmesh;
+    uint iBEdge = *ibedge;
+
+    return pMW->GetElemID_BEdge(iBMesh, iBEdge);
+}
+int mw_get_face_id_bface_(int* ibmesh, int* ibface)
+{
+    uint iBMesh = *ibmesh;
+    uint iBFace = *ibface;
+
+    return pMW->GetFaceID_BFace(iBMesh, iBFace);
+}
+int mw_get_elem_id_bface_(int* ibmesh, int* ibface)
+{
+    uint iBMesh = *ibmesh;
+    uint iBFace = *ibface;
+
+    return pMW->GetElemID_BFace(iBMesh, iBFace);
+}
+int mw_get_elem_id_bvolume_(int* ibmesh, int* ibvol)
+{
+    uint iBMesh = *ibmesh;
+    uint iBVol = *ibvol;
+
+    return pMW->GetElemID_BVolume(iBMesh, iBVol);
+}
+
+
 
 
 
@@ -1187,31 +1290,6 @@ int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int*
 {
     return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
 }
-
-//int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* comm)
-//{
-//    return pMW->Allgather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *comm);
-//}
-//int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* comm)
-//{
-//    return pMW->Allgather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *comm);
-//}
-//int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root, int* comm)
-//{
-//    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, *comm);
-//}
-//int mw_gather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root, int* comm)
-//{
-//    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, *comm);
-//}
-//int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root, int* comm)
-//{
-//    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, *comm);
-//}
-//int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root, int* comm)
-//{
-//    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, *comm);
-//}
 int mw_get_rank_()
 {
     return pMW->GetRank();
@@ -1220,6 +1298,27 @@ int mw_get_num_of_process_()
 {
     return pMW->GetNumOfProcess();
 }
+// 以下の３メソッドは、ペア
+int mw_get_num_of_neibpe_(int* imesh)//Meshパーツが通信する相手の数
+{
+    uint iMesh = *imesh;
+    return pMW->GetNumOfNeibPE(iMesh);
+}
+int mw_get_transrank_(int* imesh, int* ipe)//通信Mesh毎のランク番号
+{
+    uint iMesh = *imesh;
+    uint iPE = *ipe;
+    return pMW->GetTransRank(iMesh, iPE);
+}
+void mw_send_recv_(double buf[], int* num_of_node, int* dof_size, int* trans_rank)//bufの値を送信-受信
+{
+    uint nNumOfNode = *num_of_node;
+    uint nDOF = *dof_size;
+    uint transRank = *trans_rank;
+
+    pMW->Send_Recv_R(buf, nNumOfNode, nDOF, transRank);
+}
+
 void mw_send_recv_r2_(double buf[], int* dof_size)// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
 {
     pMW->Send_Recv_R(buf, *dof_size);

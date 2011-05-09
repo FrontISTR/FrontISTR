@@ -69,10 +69,16 @@ void CPrism2::initialize()
 //
 void CPrism2::replaseEdgeNode()
 {
+    CNode *pNode;
     uint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
-        mvNode[mNumOfVert + iedge] = mvEdgeInterNode[iedge];
+        pNode = mvEdgeInterNode[iedge];
+        mvNode[mNumOfVert + iedge] = pNode;
+
+        mmIDLocal[pNode->getID()] = mNumOfVert + iedge;
     };
+
+    //ReInit_IDLocal();
 }
 
 ////

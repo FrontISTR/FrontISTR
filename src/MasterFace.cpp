@@ -183,7 +183,7 @@ void CMasterFace::addSlaveNode(CContactNode* pConNode)
     };
 
     //debug
-    cout << "MasterFace::addSlaveNode, numOfVert= " << nNumOfVert << ", +内外カウント = " << iprodp << ", -内外カウント = " << iprodm << endl;
+    //cout << "MasterFace::addSlaveNode, numOfVert= " << nNumOfVert << ", +内外カウント = " << iprodp << ", -内外カウント = " << iprodm << endl;
 
     //外積のカウンターが(頂点数 or -頂点数)と一致ならば,面内と判定 => Slave点
     if(iprodp==nNumOfVert || iprodm== -nNumOfVert){
@@ -629,14 +629,21 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
             
             // 2次要素の場合
             if(mnOrder==ElementOrder::Second){
-                mvvCoef[islave][0] *= 0.5;
-                mvvCoef[islave][1] *= 0.5;
-                mvvCoef[islave][2] *= 0.5;
-                mvvCoef[islave][3] *= 0.5;
-                mvvCoef[islave][4] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
-                mvvCoef[islave][5] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
-                mvvCoef[islave][6] = (mvvCoef[islave][2] + mvvCoef[islave][3])*0.5;
-                mvvCoef[islave][7] = (mvvCoef[islave][3] + mvvCoef[islave][0])*0.5;
+                //    mvvCoef[islave][0] *= 0.5;
+                //    mvvCoef[islave][1] *= 0.5;
+                //    mvvCoef[islave][2] *= 0.5;
+                //    mvvCoef[islave][3] *= 0.5;
+                //    mvvCoef[islave][4] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+                //    mvvCoef[islave][5] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
+                //    mvvCoef[islave][6] = (mvvCoef[islave][2] + mvvCoef[islave][3])*0.5;
+                //    mvvCoef[islave][7] = (mvvCoef[islave][3] + mvvCoef[islave][0])*0.5;
+                
+                // 頂点のCoefだけ有効 : 辺の節点Ceof=0.0  2011.01.13
+                //
+                mvvCoef[islave][4] = 0.0;
+                mvvCoef[islave][5] = 0.0;
+                mvvCoef[islave][6] = 0.0;
+                mvvCoef[islave][7] = 0.0;
             }
             
             break;
@@ -726,12 +733,18 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
 
             // 2次要素の場合
             if(mnOrder==ElementOrder::Second){
-                mvvCoef[islave][0] *= 0.5;
-                mvvCoef[islave][1] *= 0.5;
-                mvvCoef[islave][2] *= 0.5;
-                mvvCoef[islave][3] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
-                mvvCoef[islave][4] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
-                mvvCoef[islave][5] = (mvvCoef[islave][2] + mvvCoef[islave][0])*0.5;
+                //    mvvCoef[islave][0] *= 0.5;
+                //    mvvCoef[islave][1] *= 0.5;
+                //    mvvCoef[islave][2] *= 0.5;
+                //    mvvCoef[islave][3] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+                //    mvvCoef[islave][4] = (mvvCoef[islave][1] + mvvCoef[islave][2])*0.5;
+                //    mvvCoef[islave][5] = (mvvCoef[islave][2] + mvvCoef[islave][0])*0.5;
+
+                // 頂点のCoefだけ有効 : 辺の節点Ceof=0.0  2011.01.13
+                //
+                mvvCoef[islave][3] = 0.0;
+                mvvCoef[islave][4] = 0.0;
+                mvvCoef[islave][5] = 0.0;
             }
 
             break;
@@ -770,9 +783,13 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
 
             // 2次要素の場合
             if(mnOrder==ElementOrder::Second){
-                mvvCoef[islave][0] *= 0.5;
-                mvvCoef[islave][1] *= 0.5;
-                mvvCoef[islave][2] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+                //mvvCoef[islave][0] *= 0.5;
+                //mvvCoef[islave][1] *= 0.5;
+                //mvvCoef[islave][2] = (mvvCoef[islave][0] + mvvCoef[islave][1])*0.5;
+
+                // 頂点のCoefだけ有効 : 辺の節点Ceof=0.0  2011.01.13
+                //
+                mvvCoef[islave][2] = 0.0;
             }
 
             break;

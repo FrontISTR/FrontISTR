@@ -182,6 +182,7 @@ public:
                           const uint& b_node_id, const uint& dof, const double& val);
     // 境界面メッシュ-節点
     void initFaceAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
+    void resizeFaceAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
     void GeneBoundaryFaceNode(const uint& mgLevel, const uint& bnd_id, const uint& bndType,
                           const uint& mesh_id, const uint& node_id,
                           const uint& b_node_id);
@@ -191,6 +192,7 @@ public:
                           const uint& b_face_id, const uint& dof, const double& val);
     // 境界体積メッシュ-節点
     void initVolumeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
+    void resizeVolumeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
     void GeneBoundaryVolumeNode(const uint& mgLevel, const uint& bnd_id, const uint& bndType,
                           const uint& mesh_id, const uint& node_id,
                           const uint& b_node_id);
@@ -200,6 +202,7 @@ public:
                             const uint& b_vol_id, const uint& dof, const double& val);
     // 境界辺メッシュ-節点
     void initEdgeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
+    void resizeEdgeAggregate(const uint& mgLevel, const uint& mesh_id, const uint& bnd_id);
     void GeneBoundaryEdgeNode(const uint& mgLevel, const uint& bnd_id, const uint& bndType,
                           const uint& mesh_id, const uint& node_id,
                           const uint& b_node_id);

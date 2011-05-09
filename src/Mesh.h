@@ -266,7 +266,10 @@ public:
     CBNodeMeshGrp* getBNodeMeshGrp(){ return mpBNodeMeshGrp;}
 
     void reserveBndNodeMesh(const uint& res_size){ mpBNodeMeshGrp->reserveBndNodeMesh(res_size);}
-    void setBndNodeMesh(CBoundaryNodeMesh *pBNodeMesh){ mpBNodeMeshGrp->setBndNodeMesh(pBNodeMesh);}
+    void setBndNodeMesh(CBoundaryNodeMesh *pBNodeMesh){
+        //cout << "Mesh::setBndNodeMesh, id " << pBNodeMesh->getID() << endl;
+        mpBNodeMeshGrp->setBndNodeMesh(pBNodeMesh);
+    }
     CBoundaryNodeMesh* getBndNodeMeshIX(const uint& index){ return mpBNodeMeshGrp->getBndNodeMeshIX(index);}
     CBoundaryNodeMesh* getBndNodeMeshID(const uint& id){ return mpBNodeMeshGrp->getBndNodeMeshID(id);}
     uint getNumOfBoundaryNodeMesh(){ return mpBNodeMeshGrp->getNumOfBoundaryNodeMesh();}

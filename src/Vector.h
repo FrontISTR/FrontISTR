@@ -57,6 +57,8 @@ public:
 	//	for(uint i=0;i<size();i++) printf("%d %e %e %e \n",i,mvVector[i](0),mvVector[i](1),mvVector[i](2));
 	//};
 
+        void dump();//2011.01.12 列ベクトルのダンプ
+
 private:
 	size_t mnNode;
 	size_t mnNodeInternal;

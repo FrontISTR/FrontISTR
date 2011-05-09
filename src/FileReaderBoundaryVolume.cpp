@@ -52,6 +52,8 @@ bool CFileReaderBoundaryVolume::Read(ifstream& ifs, string& sLine)
 
             mpFactory->GeneBoundaryVolumeNode(mgLevel, bnd_id, bnd_type, mesh_id, node_id, bnode_id);
         };
+
+        mpFactory->resizeVolumeAggregate(mgLevel, mesh_id, bnd_id);
         
         //BVolume
         //----
@@ -64,35 +66,55 @@ bool CFileReaderBoundaryVolume::Read(ifstream& ifs, string& sLine)
 
             iss >> s_shape_type >> bvol_id >> elem_id >> ent_id >> dof;
 
+            shape_type = IntElemType(s_shape_type);
+
             vBNodeID.clear();
-            if(s_shape_type=="Hexa"){
-                shape_type= pmw::ElementType::Hexa;
-                vBNodeID.resize(pmw::NumberOfVertex::Hexa());
-
-                for(ibnode=0; ibnode < pmw::NumberOfVertex::Hexa(); ibnode++){
-                    iss >> vBNodeID[ibnode];
-                };
-            }else if(s_shape_type=="Tetra"){
-                shape_type= pmw::ElementType::Tetra;
-                vBNodeID.resize(pmw::NumberOfVertex::Tetra());
-
-                for(ibnode=0; ibnode < pmw::NumberOfVertex::Tetra(); ibnode++){
-                    iss >> vBNodeID[ibnode];
-                };
-            }else if(s_shape_type=="Prism"){
-                shape_type= pmw::ElementType::Prism;
-                vBNodeID.resize(pmw::NumberOfVertex::Prism());
-
-                for(ibnode=0; ibnode < pmw::NumberOfVertex::Prism(); ibnode++){
-                    iss >> vBNodeID[ibnode];
-                };
-            }else{
-                ;//TODO: Logger => Error
+            switch(shape_type){
+                case(pmw::ElementType::Hexa):
+                    vBNodeID.resize(pmw::NumberOfNode::Hexa());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Hexa(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                case(pmw::ElementType::Hexa2):
+                    vBNodeID.resize(pmw::NumberOfNode::Hexa2());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Hexa2(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                case(pmw::ElementType::Tetra):
+                    vBNodeID.resize(pmw::NumberOfNode::Tetra());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Tetra(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                case(pmw::ElementType::Tetra2):
+                    vBNodeID.resize(pmw::NumberOfNode::Tetra2());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Tetra2(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                case(pmw::ElementType::Prism):
+                    vBNodeID.resize(pmw::NumberOfNode::Prism());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Prism(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                case(pmw::ElementType::Prism2):
+                    vBNodeID.resize(pmw::NumberOfNode::Prism2());
+                    for(ibnode=0; ibnode < pmw::NumberOfNode::Prism2(); ibnode++){
+                        iss >> vBNodeID[ibnode];
+                    };
+                    break;
+                default:
+                    //TODO: Logger->Error
+                    break;
             }
+
             iss >> val;
 
-            ////debug
-            //cout << "FileReaderBoundaryVolume::Read, type_name=" << s_shape_type << ", shape_type= " << shape_type << endl;
+            //debug
+            ///cout << "FileReaderBoundaryVolume::Read, type_name=" << s_shape_type << ", shape_type= " << shape_type << endl;
 
             mpFactory->GeneBoundaryVolume(mgLevel, bnd_id, bnd_type, shape_type,
                                           mesh_id, elem_id, vBNodeID, bvol_id, dof, val);

@@ -196,7 +196,7 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
         numOfSPoint= pConMesh->getNumOfSlavePoint();
 
         //debug
-        cout << "FileWriterContactMesh::Write, numOfSPoint= " << numOfSPoint << endl;
+        //cout << "FileWriterContactMesh::Write, numOfSPoint= " << numOfSPoint << endl;
         
         //スレーブ点 :ループ
         for(islave=0; islave< numOfSPoint; islave++){
@@ -204,8 +204,8 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
             pSlaveNode = pConMesh->getSlaveConNode(islave);
 
             //debug
-            cout << "FileWriterContactMesh::Write, pSlaveConNode id= " << pSlaveNode->getID()
-                 << ", myRank = " << pSlaveNode->getRank() << endl;
+            //cout << "FileWriterContactMesh::Write, pSlaveConNode id= " << pSlaveNode->getID()
+            //     << ", myRank = " << pSlaveNode->getRank() << endl;
             
             ofs << " スレーブ点 ConID= " << pSlaveNode->getID() ;
             

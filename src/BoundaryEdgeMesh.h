@@ -44,11 +44,13 @@ public:
         uint index= mmBEdgeID2Index[id];
         return mvBEdge[index];
     }
+    uint& getBEdgeIndex(const uint& id){ return mmBEdgeID2Index[id];}
 
     // 辺-集合
     void resizeAggEdge();
     vuint& getAggEdge(const uint& ibnode){ return mvAggregateEdge[ibnode];}
     void setupAggEdge();
+    void setAggEdge(const uint& ibnode, const uint& nEdgeID){ mvAggregateEdge[ibnode].push_back(nEdgeID);}
 
     // 辺ノード生成
     void GeneEdgeBNode();

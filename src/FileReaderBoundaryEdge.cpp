@@ -33,7 +33,6 @@ bool CFileReaderBoundaryEdge::Read(ifstream& ifs, string& sLine)
     istringstream iss;
 
     if( TagCheck(sLine, FileBlockName::StartBoundaryEdge()) ){
-        mpLogger->Info(Utility::LoggerMode::MWDebug, "FileReaderBoundaryEdge", sLine);
         
         sLine= getLineSt(ifs);
         iss.clear();
@@ -57,6 +56,8 @@ bool CFileReaderBoundaryEdge::Read(ifstream& ifs, string& sLine)
             mpFactory->GeneBoundaryEdgeNode(mgLevel, bnd_id, bnd_type, mesh_id, node_id, bnode_id);
         };
 
+        mpFactory->resizeEdgeAggregate(mgLevel, mesh_id, bnd_id);
+
         // Edge
         //
         while(!ifs.eof()){
@@ -69,18 +70,27 @@ bool CFileReaderBoundaryEdge::Read(ifstream& ifs, string& sLine)
             // 形状タイプ, BEdgeID, ElementID, EdgeID, DOF,     BNodeID, BNodeID, Value
             iss >> s_shape_type >> bedge_id >> elem_id >> ent_id >> dof;
 
+            shape_type = IntElemType(s_shape_type);
+
             vBNodeID.clear();
-            if(s_shape_type=="Line" || s_shape_type=="Beam"){
-                shape_type= pmw::ElementType::Beam;
-                vBNodeID.resize(2);
-
-                iss >> vBNodeID[0] >> vBNodeID[1] >> val;// BNodeID, BNodeID, Value
-            }else{
-                ;//TODO: Logger => Error
+            switch(shape_type){
+                case(pmw::ElementType::Beam):case(pmw::ElementType::Line):
+                    vBNodeID.resize(2);
+                    iss >> vBNodeID[0] >> vBNodeID[1] >> val;// BNodeID, BNodeID, Value
+                    break;
+                case(pmw::ElementType::Beam2):case(pmw::ElementType::Line2):
+                    vBNodeID.resize(3);
+                    iss >> vBNodeID[0] >> vBNodeID[1] >> vBNodeID[2] >> val;// BNodeID, BNodeID, Value
+                    break;
+                default:
+                    ;//TODO: Logger->Error
+                    break;
             }
-
             mpFactory->GeneBoundaryEdge(mgLevel, bnd_id, bnd_type, shape_type,
                                         mesh_id, elem_id, ent_id, vBNodeID, bedge_id, dof, val);
+            
+            //cout << "FileReaderBoundaryEdge::Read, val=" << val << ", dof=" << dof << endl;
+
         };//while end
 
         mpFactory->initEdgeAggregate(mgLevel, mesh_id, bnd_id);//BNode,BEdgeを全てセットした後に呼び出す

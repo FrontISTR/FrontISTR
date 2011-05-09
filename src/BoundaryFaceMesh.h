@@ -50,14 +50,18 @@ public:
         uint index= mmBFaceID2Index[id];
         return mvBFace[index];
     }
+    uint& getBFaceIndex(const uint& id){ return mmBFaceID2Index[id];}
 
 
 public:
     // 面-集合
     // ----
     void resizeAggFace();
-    vuint& getAggFace(const uint& iface){ return mvAggregateFace[iface];}
+    vuint& getAggFace(const uint& ibnode){ return mvAggregateFace[ibnode];}
     void setupAggFace();// 点-周囲の面集合
+
+    void setAggFace(const uint& ibnode, const uint& nFaceID){ mvAggregateFace[ibnode].push_back(nFaceID);}
+
 
     // refine準備
     // ----
@@ -89,6 +93,7 @@ protected:
     //----
     virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
     virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+    
 };
 #endif	/* _BOUNDARYFACEMESH_H */
 }

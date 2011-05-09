@@ -117,6 +117,11 @@ void CAssyVector::setValue(int imesh, int inode, int idof, double value)
 	mvVector[imesh]->setValue(inode, idof, value);
 }
 
+void CAssyVector::addValue(const uint& imesh, const uint& inode, const uint& idof, const double& value)
+{
+    mvVector[imesh]->addValue(inode, idof, value);
+}
+
 double CAssyVector::getValue(int imesh, int inode, int idof)
 {
 	return( mvVector[imesh]->getValue(inode, idof) );
@@ -369,6 +374,21 @@ const CVector *CAssyVector::getVector(size_t index) const
 CVector *CAssyVector::getVector(size_t index)
 {
 	return mvVector[index];
+}
+
+// デバッグ
+// -------
+// 列ベクトルのダンプ 2011.01.12
+//
+void CAssyVector::dump()
+{
+    uint nNumOfParts = mvVector.size();
+    uint ipart;
+    for(ipart=0; ipart < nNumOfParts; ipart++){
+        cout << " ---- iParts : " << ipart << " Vector ---- " << endl;
+        mvVector[ipart]->dump();
+    };
+    cout << endl;
 }
 
 }//namespace pmw

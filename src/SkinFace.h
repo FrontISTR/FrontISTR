@@ -70,7 +70,7 @@ protected:
     // --
     virtual CSkinFace* generateFace();//refine()でMasterFace,SkinFaceの型違い生成に使用
     CSkinFace* mpOtherFace;//自分以外のSkinFace(MasterFace),返り値-用途
-    void setupNodeID_progFace(CElement* pElem, const uint& numOfConNode);//辺,面に生成されたConNodeへ,メッシュのNodeIDをセットする
+
 
     // 面ベクトル
     vdouble mvNormalVector;
@@ -162,8 +162,17 @@ public:
     vector<CSkinFace*>& getProgFace(){ return mvProgFace;}
     CSkinFace* getProgFace(const uint& ivert){ return mvProgFace[ivert];}
     void refine(CElement* pElem, uint& faceID);////MasterFace, SlaveFaceの"再分割"
+protected:
+    //辺,面に生成されたConNodeへ,メッシュのNodeIDをセットする(対象：progFace)
+    void setupNodeID_progFace(CElement* pElem, const uint& numOfVert);
+    //辺に生成されたConNodeへ,メッシュのNodeIDをセット
+    void setupEdgeNodeID(CElement* pElem, const uint& numOfVert);
+public:
+    //辺に生成されたConNodeへ、メッシュのNodeIDをセットする(2次要素+最終Level専用) (対象：自身)
+    void setupNodeID_2nd_LastLevel(CElement* pElem);
 
 
+public:
     // 面ベクトル
     // --
     vdouble& CalcNzNormalVector();//面ベクトル(正規化)計算

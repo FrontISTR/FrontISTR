@@ -242,4 +242,19 @@ int CVector::prolongateFrom(const CVector *pV)
     return 0;//2010.05.14
 }
 
+// デバッグ
+// -------
+// 列ベクトルのダンプ 2011.01.12
+//
+void CVector::dump()
+{
+    uint i,j;
+    for(i = 0; i < mnNode; i++){
+        for(j = 0; j < mnDOF; j++){
+                cout << mvVector[i](j) << " ";
+        };
+    };
+    cout << endl;
+}
+
 }//namespace pmw

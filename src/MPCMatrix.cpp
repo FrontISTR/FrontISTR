@@ -52,21 +52,42 @@ void CMPCMatrix::multVector(CAssyVector *pV, CAssyVector *pP) const
 
 void CMPCMatrix::transMultVector(CAssyVector *pV, CAssyVector *pP) const
 {
-	pP->subst(pV);
+    pP->subst(pV);
 
-	for (CVEqnConstIter i_eqn = mvEquation.begin(); i_eqn != mvEquation.end(); i_eqn++) {
-		const CVEqTrm &vTerm = (*i_eqn)->getTerm();
+    for(CVEqnConstIter i_eqn = mvEquation.begin(); i_eqn != mvEquation.end(); i_eqn++){
+        const CVEqTrm &vTerm = (*i_eqn)->getTerm();
 
-		CVEqTrmConstIter j_term = vTerm.begin();
-		(*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof()) = 0.0;
-		double slave_val = (*pV)(j_term->meshID(), j_term->nodeID(), j_term->dof());
-		j_term++;
+        CVEqTrmConstIter j_term = vTerm.begin();
+        (*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof()) = 0.0;
+        double slave_val = (*pV)(j_term->meshID(), j_term->nodeID(), j_term->dof());
+        j_term++;
 
-		for (; j_term != vTerm.end(); j_term++) {
-			(*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof()) +=
-				j_term->coef() * slave_val;
-		}
-	}
+        for(; j_term != vTerm.end(); j_term++){
+            (*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof()) += j_term->coef() * slave_val;
+        };
+    };
 }
 
+// デバッグ
+// ------
+// 2011.01.13
+//
+void CMPCMatrix::dump()
+{
+    uint nNumOfEqu = mvEquation.size();
+    uint i,ii;
+    for(i=0; i < nNumOfEqu; i++){
+        uint nNumOfTerm;
+        nNumOfTerm = mvEquation[i]->numTerm();
+        
+        cout << " " ;
+        for(ii=0; ii < nNumOfTerm; ii++){
+            cout << " NodeID=" << mvEquation[i]->getTerm(ii).nodeID();
+            cout << " DOF=" << mvEquation[i]->getTerm(ii).dof();
+            cout << " Coef=" << mvEquation[i]->getTerm(ii).coef();
+        };
+        cout << endl;
+    };
 }
+
+}//namespace pmw
