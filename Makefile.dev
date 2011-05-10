@@ -1,0 +1,7 @@
+FSTREXEC_TARGETFILE      = starter
+COBJFILEPOSTFIX          = o
+
+BASE_CFLAGS              = -I.
+
+MV                       = mv -f
+RANLIB                   = ranlib

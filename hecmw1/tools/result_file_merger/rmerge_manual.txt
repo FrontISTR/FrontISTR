@@ -1,0 +1,7 @@
+
+ Usage : rmerge [options]      notice : only serial processing
+
+ [option]
+    -o [type] : output file type ( "text" or "binary" )
+    -refine   : result with refining
+

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table> 
+    <table prefix="HECMW-COUPLE">
+        <define type="error" name="E1001">
+            <message>Invalid argument is found</message>
+            <description>仮引数で渡された値が不正である</description>
+        </define>
+        <define type="warn" name="W1001">
+            <message>Invalid argument is found</message>
+            <description>仮引数で渡された値が不正である</description>
+        </define>
+        <define type="error" name="E1002">
+            <message>Invalid NULL pointer is found</message>
+            <description>不正なヌルポインタを検出した</description>
+        </define>
+        <define type="error" name="E1101">
+            <message>Invalid element type is found</message>
+            <description>不正な要素タイプを検出した</description>
+        </define>
+        <define type="error" name="E1102">
+            <message>Unsupported element type is found</message>
+            <description>サポート外の要素タイプを検出した</description>
+        </define>
+		<define type="error" name="E9999">
+			<message>Error occures in coupling interface module</message>
+			<description>連成カップリングモジュールでエラーが発生した</description>
+		</define>
+        <define type="error" name="E2001">
+            <message>Invalid token is found</message>
+            <description>不正なトークンを検出した</description>
+        </define>
+        <define type="error" name="E2002">
+            <message>Too long name</message>
+            <description>規定の長さを越えた名前を検出した</description>
+        </define>
+        <define tyhe="error" name="E2101">
+            <message>Error occured in !COUPLE UNIT section</message>
+            <description>連成カップラー制御データの!COUPLE UNITセクションにおいてエラーが発生した</description>
+        </define>
+        <define type="error" name="E2111">
+            <message>NAME option is not specified in !COUPLE UNIT section</message>
+            <description>連成カップラー制御データの!COUPLE UNITセクションにおいて，NAMEオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2112">
+            <message>NPROC option is not specified in !COUPLE UNIT section</message>
+            <description>連成カップラー制御データの!COUPLE UNITセクションにおいて，NPROCオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2113">
+            <message>Number of ranks specified in !COUPLE UNIT section is unmatched</message>
+            <description>連成カップラー制御データの!COUPLE UNITセクションにおいて指定されたプロセスランク番号の数が，NPROCオプションで指定されたプロセス数と一致しない</description>
+        </define>
+        <define type="error" name="E2201">
+            <message>Error occured in !COUPLE section</message>
+            <description>連成カップラー制御データの!COUPLEセクションにおいてエラーが発生した</description>
+        </define>
+        <define type="error" name="E2211">
+            <message>NAME option is not specified in !COUPLE section</message>
+            <description>連成カップラー制御データの!COUPLEセクションにおいて，NAMEオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2212">
+            <message>TYPE option is not specified in !COUPLE section</message>
+            <description>連成カップラー制御データの!COUPLEセクションにおいて，TYPEオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2213">
+            <message>UNIT1 option is not specified in !COUPLE section</message>
+            <description>連成カップラー制御データの!COUPLEセクションにおいて，UNIT1オプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2214">
+            <message>UNIT2 option is not specified in !COUPLE section</message>
+            <description>連成カップラー制御データの!COUPLEセクションにおいて，UNIT2オプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2301">
+            <message>Error occured in !COUPLE BOUNDARY section</message>
+            <description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいてエラーが発生した</description>
+        </define>
+        <define type="error" name="E2311">
+            <message>NAME option is not specified in !COUPLE BOUNDARY section</message>
+            <description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいて，NAMEオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2312">
+            <message>COUPLE option is not specified in !COUPLE BOUNDARY section</message>
+            <description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいて，COUPLEオプションが定義されていない</description>
+        </define>
+        <define type="error" name="E2313">
+            <message>DIRECTION option is not specified in !COUPLE BOUNDARY section</message>
+            <description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいて，DIRECTIONオプションが定義されていない</description>
+        </define>
+		<define type="error" name="E2321">
+			<message>!UNIT1 sub-section is not specified in !COUPLE BOUNDARY section</message>
+			<description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいて，!UNIT1サブセクションが定義されていない</description>
+		</define>
+		<define type="error" name="E2322">
+			<message>!UNIT2 sub-section is not specified in !COUPLE BOUNDARY section</message>
+			<description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいて，!UNIT2サブセクションが定義されていない</description>
+		</define>
+		<define type="error" name="E2323">
+			<message>GEOM option is not specified in !UNIT1 or !UNIT2 sub-section</message>
+			<description>連成カップラー制御データの!UNIT1もしくは!UNIT2サブセクションにおいて，GEOMオプションが定義されていない</description>
+		</define>
+		<define type="error" name="E2324">
+			<message>DATA option is not specified in !UNIT1 or !UNIT2 sub-section</message>
+			<description>連成カップラー制御データの!UNIT1もしくは!UNIT2サブセクションにおいて，DATAオプションが定義されていない</description>
+		</define>
+		<define type="error" name="E2325">
+			<message>Group name is not specified in !UNIT1 or !UNIT2 sub-section</message>
+			<description>連成カップラー制御データの!UNIT1もしくは!UNIT2サブセクションにおいて，連成境界グループ名が定義されていない</description>
+		</define>
+		<define type="error" name="E2326">
+			<message>GEOM and DATA options in !UNIT1 or !UNIT2 sub-section are inconsistent</message>
+			<description>連成カップラー制御データの!UNIT1もしくは!UNIT2サブセクションにおいて，GEOMオプションの値とDATAオプションの値の整合がとれていない</description>
+		</define>
+        <define type="error" name="E3001">
+            <message>Undefined couple id is specified</message>
+            <description>連成カップラー制御データで定義されていない連成情報識別IDが指定された</description>
+        </define>
+        <define type="error" name="E3002">
+            <message>Undefined coupling unit id is specified</message>
+            <description>連成カップラー制御データで定義されていない連成ユニット識別IDが指定された</description>
+        </define>
+        <define type="error" name="E3003">
+            <message>Undefined coupling boundary id is specified</message>
+            <description>連成カップラー制御データで定義されていない連成境界情報識別IDが指定された</description>
+        </define>
+		<define type="error" name="E3011">
+			<message>Undefined group name is specified</message>
+			<description>メッシュデータで定義されていないグループ名が指定された</description>
+		</define>
+        <define type="error" name="E3101">
+            <message>Invalid number of processes is specified</message>
+            <description>不正な割り当てプロセス数が指定された</description>
+        </define>
+        <define type="error" name="E3102">
+            <message>Number of processes is not matched</message>
+            <description>連成カップラー制御データで指定された総プロセス数と起動プロセス数が一致しない</description>
+        </define>
+        <define type="error" name="E3103">
+            <message>Invalid process number is specified</message>
+            <description>不正なプロセス番号が指定された</description>
+        </define>
+        <define type="error" name="E3104">
+            <message>process numbers are discontinuous</message>
+            <description>プロセス番号に飛び番が検出された</description>
+        </define>
+        <define type="error" name="E3111">
+            <message>Invalid couple type specifier is found</message>
+            <description>不正な連成タイプ指定子が指定された</description>
+        </define>
+        <define type="error" name="E3112">
+            <message>Several coupling type are specified</message>
+            <description>複数の連成タイプが指定されている</description>
+        </define>
+        <define type="error" name="E3121">
+            <message>Invalid coupling direction specifier is found</message>
+            <description>不正な連成方向指定子が指定された</description>
+        </define>
+        <define type="error" name="E3122">
+            <message>Invalid group type specifier is found</message>
+            <description>不正なグループタイプ指定子が指定された</description>
+        </define>
+        <define type="error" name="E3123">
+            <message>Invalid group type specifier for geometry data is found</message>
+            <description>連成境界形状の指定に不正なグループタイプ指定子が指定された</description>
+        </define>
+        <define type="error" name="E3124">
+            <message>Invalid group type specifier for data is found</message>
+            <description>連成境界の指定に不正なグループタイプ指定子が指定された</description>
+        </define>
+		<define type="error" name="E3125">
+			<message>Invalid coupling unit specifier is found</message>
+			<description>不正な連成ユニット指定子が指定された</description>
+		</define>
+		<define type="error" name="E3126">
+			<message>Invalid mapping type specifier is found</message>
+			<description>不正なマッピングタイプ指定子が指定された</description>
+		</define>
+		<define type="error" name="E3127">
+			<message>Invalid interpolation type specifier is found</message>
+			<description>不正な補間タイプ指定子が指定された</description>
+		</define>
+		<define type="error" name="E3201">
+			<message>Nonsupport element type is found</message>
+			<description>サポート外の要素タイプが検出された</description>
+		</define>
+		<define type="error" name="E3202">
+			<message>Nonsupport geometry type on couple boundary is found</message>
+			<description>サポート外の連成境界形状が検出された</description>
+		</define>
+        <define type="error" name="E8001">
+            <message>Error in MPI function</message>
+            <description>MPI関数内でエラーが発生した</description>
+        </define>
+        <define type="error" name="E8011">
+            <message>Invalid HECMW_Datatype is specified</message>
+            <description>不正な HECMW_Datatype が指定された</description>
+        </define>
+        <define type="error" name="E8012">
+            <message>Invalid HECMW_Op is specified</message>
+            <description>不正な HECMW_Op が指定された</description>
+        </define>
+    </table>
+</msg-table>

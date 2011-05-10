@@ -1,0 +1,21 @@
+
+1) Create hecmw_ctrl.dat file in the current directory.
+
+2) Describe input HECMW-ENTIRE or HECMW-DIST mesh file name in hecmw_ctrl.dat like following.
+
+ exp) for entire mesh named "mesh"
+
+	!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+	mesh
+
+ exp) for distributed mesh named "mesh"
+
+	!MESH, NAME=fstrMSH,TYPE=HECMW-DIST
+	mesh
+
+3) run hec2rcap like following.
+
+ exp) 4 domains are assumed and revocap mesh file name is assumed to be "rcap_mesh".
+
+	>mpirun -np 4 hec2rcap rcap_mesh
+

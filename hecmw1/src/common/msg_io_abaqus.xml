@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table> 
+	<table prefix="HECMW-IO-ABAQUS">
+		<define type="error" name="E0001">
+			<message>Failed to open ABAQUS mesh file</message>
+			<description>ABAQSUメッシュファイルのオープンに失敗した</description>
+		</define>
+		<define type="error" name="E0002">
+			<message>Failed to close ABAQUS mesh file</message>
+			<description>ABAQUSメッシュファイルのクローズに失敗した</description>
+		</define>
+		<define type="error" name="E0003">
+			<message>Unexpected EOF found</message>
+			<description>予期しないEOFを検出した</description>
+		</define>
+		<define type="error" name="W0095">
+			<message>Redefined material information, updated</message>
+			<description>同じ材料情報が再定義されてた</description>
+		</define>
+		<define type="error" name="E0096">
+			<message>This keyword must be appeared after *MATERIAL</message>
+			<description>*MATERIALが出現する以前に材料情報が定義されている</description>
+		</define>
+		<define type="error" name="W0097">
+			<message>Unsupported keyword found</message>
+			<description>未対応なキーワードを検出した</description>
+		</define>
+		<define type="error" name="E0098">
+			<message>Invalid token found while reading keyword</message>
+			<description>キーワード読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="warning" name="W0099">
+			<message>Skipped unsupported keyword</message>
+			<description>認識不能なキーワードを検出した</description>
+		</define>
+		<define type="error" name="E0100">
+			<message>*AMPLITUDE: Invalid token</message>
+			<description>*AMPLITUDE読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0101">
+			<message>*AMPLITUDE: Missing NAME</message>
+			<description>*AMPLITUDEの必須パラメータNAMEが見つからない</description>
+		</define>
+		<define type="error" name="E0200">
+			<message>*CONNECTIVITY: Invalid token</message>
+			<description>*CONNECTIVITY読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0300">
+			<message>*ECOPY: Invalid token</message>
+			<description>*ECOPY読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0400">
+			<message>*EGEN: Invalid token</message>
+			<description>*EGEN読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0500">
+			<message>*ELSET: Invalid token</message>
+			<description>*ELSET読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0501">
+			<message>*ELSET: Missing EGRP</message>
+			<description>*ELSETの必須パラメータEGRPが見つからない</description>
+		</define>
+		<define type="error" name="E0502">
+			<message>*ELSET: elem1,elem2 and increment must be positive integer</message>
+			<description>不正な要素開始ID、要素終了ID、増分を検出した</description>
+		</define>
+		<define type="error" name="E0503">
+			<message>*ELSET: Cannot generate element ID</message>
+			<description>要素IDの生成に失敗した</description>
+		</define>
+		<define type="error" name="E0600">
+			<message>*ELEMENT: Invalid token</message>
+			<description>*ELEMENT読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0601">
+			<message>*ELEMENT: Unsuppotred element type</message>
+			<description>未対応な要素タイプを検出した</description>
+		</define>
+		<define type="error" name="E0603">
+			<message>*ELEMENT: Element ID must be posivive integer</message>
+			<description>不正な要素IDを検出した</description>
+		</define>
+		<define type="error" name="E0604">
+			<message>*ELEMENT: Connectivity must be posivive integer</message>
+			<description>不正なコネクティビティを検出した</description>
+		</define>
+		<define type="error" name="E0605">
+			<message>*ELEMENT: Existent node required for connectiviy</message>
+			<description>存在しない節点IDをコネクティビティに使用している</description>
+		</define>
+		<define type="error" name="E0606">
+			<message>*ELEMENT: Missing TYPE</message>
+			<description>*ELEMENTの必須パラメータTYPEが見つからない</description>
+		</define>
+		<define type="error" name="E0700">
+			<message>*EQUATION: Invalid token</message>
+			<description>*EQUATION読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0701">
+			<message>*EQUATION: NEQ must be greater than 1</message>
+			<description>不正なNEQを検出した</description>
+		</define>
+		<define type="error" name="E0702">
+			<message>*EQUATION: Node must be defined by same type(Node ID or NGRP)</message>
+			<description>節点の指定に節点番号と節点グループの両方が使用されている</description>
+		</define>
+		<define type="error" name="E0703">
+			<message>*EQUATION: DOF must be between 1 and 6</message>
+			<description>不正な自由度が指定されている</description>
+		</define>
+		<define type="error" name="E0800">
+			<message>*HEADING: Invalid token</message>
+			<description>*HEADING読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0900">
+			<message>*INCLUDE: Invalid token</message>
+			<description>*INCLUDE読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0901">
+			<message>*INCLUDE: Missing INPUT</message>
+			<description>*INCLUDEの必須パラメータINPUTが見つからない</description>
+		</define>
+		<define type="error" name="E1000">
+			<message>*INITIAL CONDITION: Invalid token</message>
+			<description>*INITIAL CONDITION読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1001">
+			<message>*INITIAL CONDITION: Missing TYPE</message>
+			<description>*INITIAL CONDITIONの必須パラメータTYPEが見つからない</description>
+		</define>
+		<define type="error" name="E1002">
+			<message>*INITIAL CONDITION: Node ID must be posivive integer</message>
+			<description>不正な節点IDを検出した</description>
+		</define>
+		<define type="error" name="E1100">
+			<message>*MATERIAL: Invalid token</message>
+			<description>*MATERIAL読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1101">
+			<message>*MATERIAL: Missing NAME</message>
+			<description>*MATERIALの必須パラメータNAMEが見つからない</description>
+		</define>
+		<define type="error" name="E1102">
+			<message>*MATERIAL: Duplicated material name</message>
+			<description>同じ名前でMATERIALが再定義された</description>
+		</define>
+		<define type="error" name="E1103">
+			<message>*MATERIAL: ITEM must be positive integer</message>
+			<description>不正なITEMを検出した</description>
+		</define>
+		<define type="error" name="E1104">
+			<message>*MATERIAL: *ITEM value must be positive integer</message>
+			<description>不正な*ITEMを検出した</description>
+		</define>
+		<define type="error" name="E1105">
+			<message>*MATERIAL: *ITEM value must be 1 to SUBITEM</message>
+			<description>不正な*ITEMの値を検出した</description>
+		</define>
+		<define type="error" name="E1106">
+			<message>*MATERIAL: SUBITEM value must be positive integer</message>
+			<description>不正なSUBITEMを検出した</description>
+		</define>
+		<define type="error" name="E1107">
+			<message>*MATERIAL: Temperature must be greater than previous one</message>
+			<description>温度の低い順に定義されていない</description>
+		</define>
+		<define type="error" name="E1200">
+			<message>*NCOPY: Invalid token</message>
+			<description>*NCOPY読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1300">
+			<message>*NFILL: Invalid token</message>
+			<description>*NFILL読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1400">
+			<message>*NGEN: Invalid token</message>
+			<description>*NGEN読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1500">
+			<message>*NSET: Invalid token</message>
+			<description>*NSET読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1501">
+			<message>*NSET: Missing NGRP</message>
+			<description>*NSETの必須パラメータNGRPが見つからない</description>
+		</define>
+		<define type="error" name="E1502">
+			<message>*NSET: nod1,nod2 and increment must be positive integer</message>
+			<description>不正な節点開始ID、節点終了ID、増分を検出した</description>
+		</define>
+		<define type="error" name="E1503">
+			<message>*NSET: Cannot generate node ID</message>
+			<description>節点IDの生成に失敗した</description>
+		</define>
+		<define type="error" name="E1600">
+			<message>*NODE: Invalid token</message>
+			<description>*NODE読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1601">
+			<message>*NODE: Node ID must be positive integer</message>
+			<description>不正な節点IDを検出した</description>
+		</define>
+		<define type="error" name="E1700">
+			<message>*SHELL SECTION: Invalid token</message>
+			<description>*SHELL SECTION読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1701">
+			<message>*SHELL SECTION: Missing TYPE</message>
+			<description>*SHELL SECTIONの必須パラメータTYPEが見つからない</description>
+		</define>
+		<define type="error" name="E1702">
+			<message>*SHELL SECTION: Missing ELSET</message>
+			<description>*SHELL SECTIONの必須パラメータELSETが見つからない</description>
+		</define>
+		<define type="error" name="E1703">
+			<message>*SHELL SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
+			<description>互いに排他的なパラメータが同時に使用された</description>
+		</define>
+		<define type="error" name="E1704">
+			<message>*SHELL SECTION: COMPOSITE value must be positive integer</message>
+			<description>不正なCOMPOSITEの値を検出した</description>
+		</define>
+		<define type="error" name="E1705">
+			<message>*SHELL SECTION: THICKNESS must be greater than 0.0</message>
+			<description>不正なTHICKNESSの値を検出した</description>
+		</define>
+		<define type="error" name="E1706">
+			<message>*SHELL SECTION: INTEGPOINTS must be positive integer</message>
+			<description>不正なINTEGPOINTSの値を検出した</description>
+		</define>
+		<define type="error" name="E1707">
+			<message>*SHELL SECTION: Missing MATERIAL or COMPOSITE</message>
+			<description>*SHELL SECTIONの必須パラメータMATERIALまたはCOMPOSITEが見つからない</description>
+		</define>
+		<define type="error" name="E1800">
+			<message>*SGROUP: Invalid token</message>
+			<description>*SGROUP読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E1801">
+			<message>*SGROUP: Missing SGRP</message>
+			<description>*SGROUPの必須パラメータSGRPが見つからない</description>
+		</define>
+		<define type="error" name="E1900">
+			<message>*SYSTEM: Invalid token</message>
+			<description>*SYSTEM読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2000">
+			<message>*ZERO: Invalid token</message>
+			<description>*ZERO読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2100">
+			<message>*SOLID SECTION: Invalid token</message>
+			<description>*SOLID SECTION読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2101">
+			<message>*SOLID SECTION: Missing TYPE</message>
+			<description>*SOLID SECTIONの必須パラメータTYPEが見つからない</description>
+		</define>
+		<define type="error" name="E2102">
+			<message>*SOLID SECTION: Missing ELSET</message>
+			<description>*SOLID SECTIONの必須パラメータELSETが見つからない</description>
+		</define>
+		<define type="error" name="E2103">
+			<message>*SOLID SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
+			<description>互いに排他的なパラメータが同時に使用された</description>
+		</define>
+		<define type="error" name="E2104">
+			<message>*SOLID SECTION: COMPOSITE value must be positive integer</message>
+			<description>不正なCOMPOSITEの値を検出した</description>
+		</define>
+		<define type="error" name="E2105">
+			<message>*SOLID SECTION: THICKNESS must be greater than 0.0</message>
+			<description>不正なTHICKNESSの値を検出した</description>
+		</define>
+		<define type="error" name="E2106">
+			<message>*SOLID SECTION: INTEGPOINTS must be positive integer</message>
+			<description>不正なINTEGPOINTSの値を検出した</description>
+		</define>
+		<define type="error" name="E2107">
+			<message>*SOLID SECTION: Only one secopt can be allowed in element group</message>
+			<description>要素グループの要素は全て同じsecoptでなければならない</description>
+		</define>
+		<define type="error" name="E2108">
+			<message>*SOLID SECTION: Missing MATERIAL or COMPOSITE</message>
+			<description>*SOLID SECIOTNの必須パラメータMATERIALまたはCOMPOSITEが見つからない</description>
+		</define>
+		<define type="error" name="E2200">
+			<message>*DENSITY: Invalid token</message>
+			<description>*DENSITY読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2300">
+			<message>*ELASTIC: Invalid token</message>
+			<description>*ELASTIC読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2400">
+			<message>*SPECIFIC HEAT: Invalid token</message>
+			<description>*SPECIFIC HEAT読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2500">
+			<message>*CONDUCTIVITY: Invalid token</message>
+			<description>*CONDUCTIVITY読み込み中に予期しないトークンを検出した</description>
+		</define>
+	</table>
+</msg-table>
+

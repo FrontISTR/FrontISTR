@@ -1,0 +1,303 @@
+/*=====================================================================*
+ *                                                                     *
+ *   Software Name : HEC-MW Library for PC-cluster                     *
+ *         Version : 2.1                                               *
+ *                                                                     *
+ *     Last Update : 2006/06/01                                        *
+ *        Category : I/O and Utility                                   *
+ *                                                                     *
+ *            Written by Kazuaki Sakane (RIST)                         *
+ *                       Shin'ichi Ezure (RIST)                        *
+ *                                                                     *
+ *     Contact address :  IIS,The University of Tokyo RSS21 project    *
+ *                                                                     *
+ *     "Structural Analysis System for General-purpose Coupling        *
+ *      Simulations Using High End Computing Middleware (HEC-MW)"      *
+ *                                                                     *
+ *=====================================================================*/
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "hecmw_struct.h"
+#include "hecmw_util.h"
+#include "hecmw_result_copy_c2f.h"
+#include "hecmw_result.h"
+
+static struct hecmwST_result_data *result;
+int n_node;
+int n_elem;
+
+
+/*-----------------------------------------------------------------------------
+ * SetFunc
+ */
+
+static int
+set_nn_component(void *dst)
+{
+	*((int *)dst) = result->nn_component;
+	return 0;
+}
+
+
+static int
+set_nn_dof(void *dst)
+{
+	void *src;
+	int size;
+
+	if(result->nn_component <= 0) return 0;
+
+	src = result->nn_dof;
+	size = sizeof(*result->nn_dof) * result->nn_component;
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_node_label(void *dst)
+{
+	int i;
+
+	if(result->nn_component <= 0) return 0;
+
+	for(i=0; i < result->nn_component; i++) {
+		char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
+		char *src = result->node_label[i];
+		HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
+	}
+
+	return 0;
+}
+
+
+static int
+set_node_val_item(void *dst)
+{
+	void *src;
+	int i,n,size;
+
+	if(result->nn_component <= 0) return 0;
+
+	n = 0;
+	for(i=0; i < result->nn_component; i++) {
+		n += result->nn_dof[i];
+	}
+	src = result->node_val_item;
+	size = sizeof(*result->node_val_item) * n * n_node;
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_ne_component(void *dst)
+{
+	*((int *)dst) = result->ne_component;
+	return 0;
+}
+
+
+static int
+set_ne_dof(void *dst)
+{
+	void *src;
+	int size;
+
+	if(result->ne_component <= 0) return 0;
+
+	src = result->ne_dof;
+	size = sizeof(*result->ne_dof) * result->ne_component;
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_elem_label(void *dst)
+{
+	int i;
+
+	if(result->ne_component <= 0) return 0;
+
+	for(i=0; i < result->ne_component; i++) {
+		char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
+		char *src = result->elem_label[i];
+		HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
+	}
+
+	return 0;
+}
+
+
+static int
+set_elem_val_item(void *dst)
+{
+	void *src;
+	int i,n,size;
+
+	if(result->ne_component <= 0) return 0;
+
+	n = 0;
+	for(i=0; i < result->ne_component; i++) {
+		n += result->ne_dof[i];
+	}
+	src = result->elem_val_item;
+	size = sizeof(*result->elem_val_item) * n * n_elem;
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------------
+ * SetFunc table
+ */
+
+typedef int (*SetFunc)(void *);
+
+
+static struct func_table {
+	char *struct_name;
+	char *var_name;
+	SetFunc set_func;
+} functions[] = {
+/*  { Struct name, Variable name, memcpy function, check allocation function }*/
+	{"hecmwST_result_data","nn_component",  set_nn_component },
+	{"hecmwST_result_data","nn_dof",        set_nn_dof       },
+	{"hecmwST_result_data","node_label",    set_node_label   },
+	{"hecmwST_result_data","node_val_item", set_node_val_item},
+
+	{"hecmwST_result_data","ne_component",  set_ne_component },
+	{"hecmwST_result_data","ne_dof",        set_ne_dof       },
+	{"hecmwST_result_data","elem_label",    set_elem_label   },
+	{"hecmwST_result_data","elem_val_item", set_elem_val_item},
+};
+
+static const int NFUNC = sizeof(functions) / sizeof(functions[0]);
+
+
+
+static SetFunc
+get_set_func(char *struct_name, char *var_name)
+{
+	int i;
+
+	for(i=0; i < NFUNC; i++) {
+		if(strcmp(functions[i].struct_name, struct_name) == 0 
+		&& strcmp(functions[i].var_name, var_name) == 0) {
+			return functions[i].set_func;
+		}
+	}
+	return NULL;
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+int
+HECMW_result_copy_c2f_init(struct hecmwST_result_data *result_data, int nnode, int nelem)
+{
+	result = result_data;
+	n_node = nnode;
+	n_elem = nelem;
+	return 0;
+}
+
+
+int
+HECMW_result_copy_c2f_finalize(void)
+{
+	result = NULL;
+	return 0;
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_copy_c2f_set_if(char *struct_name, char *var_name,
+						void *dst, int *err, int len_struct, int len_var)
+{
+	SetFunc func;
+	char sname[HECMW_NAME_LEN+1];
+	char vname[HECMW_NAME_LEN+1];
+
+	*err = 1;
+
+	if(result == NULL) {
+		HECMW_set_error(HECMW_ALL_E0102,
+			"hecmw_result_copy_c2f_set_if(): 'result' has not initialized yet");
+		return;
+	}
+	if(struct_name == NULL) {
+		HECMW_set_error(HECMW_ALL_E0101,
+			"hecmw_result_copy_c2f_set_if(): 'sname' is NULL");
+		return;
+	}
+	if(var_name == NULL) {
+		HECMW_set_error(HECMW_ALL_E0101,
+			"hecmw_result_copy_c2f_set_if(): 'vname' is NULL");
+		return;
+	}
+	if(dst == NULL) {
+		HECMW_set_error(HECMW_ALL_E0101,
+			"hecmw_result_copy_c2f_set_if(): 'dst' is NULL");
+		return;
+	}
+
+	if(HECMW_strcpy_f2c_r(struct_name, len_struct, sname, sizeof(sname)) == NULL) {
+		return;
+	}
+	if(HECMW_strcpy_f2c_r(var_name, len_var, vname, sizeof(vname)) == NULL) {
+		return;
+	}
+
+	func = get_set_func(sname, vname);
+	if(func == NULL) {
+		HECMW_set_error(HECMW_ALL_E0102,
+			"hecmw_result_copy_c2f_set_if(): SetFunc not found");
+		return;
+	}
+
+	if((*func)(dst)) {
+		return;
+	}
+
+	*err = 0;	/* no error */
+}
+
+
+
+void
+hecmw_result_copy_c2f_set_if_(char *struct_name, char *var_name,
+						void *dst, int *err, int len_struct, int len_var)
+{
+	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
+}
+
+
+
+void
+hecmw_result_copy_c2f_set_if__(char *struct_name, char *var_name,
+						void *dst, int *err, int len_struct, int len_var)
+{
+	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
+}
+
+
+
+void
+HECMW_RESULT_COPY_C2F_SET_IF(char *struct_name, char *var_name,
+						void *dst, int *err, int len_struct, int len_var)
+{
+	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
+}
+

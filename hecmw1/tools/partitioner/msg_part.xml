@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table> 
+	<table prefix="HECMW-PART">
+		<define type="error" name="E0001">
+			<message>No such file or directory</message>
+			<description>指定したファイルが存在しない</description>
+		</define>
+		<define type="error" name="E0002">
+			<message>File close error</message>
+			<description>ファイルを閉じる際に予期せぬエラーが発生した</description>
+		</define>
+		<define type="error" name="E0003">
+			<message>Too long file name</message>
+			<description>ファイル名が長すぎる</description>
+		</define>
+		<define type="error" name="E0004">
+			<message>NULL pointer was found</message>
+			<description>不正なヌルポインタを検出した</description>
+		</define>
+		<define type="error" name="E0005">
+			<message>Invalid EOF is found</message>
+			<description>予期せぬEOFを検出した</description>
+		</define>
+        <define type="error" name="E0006">
+            <message>Invalid argument is found</message>
+            <description>不正な引数を検出した</description>
+        </define>
+		<define type="error" name="E0101">
+			<message>Invalid token found</message>
+			<description>無効なトークンを検出した</description>
+		</define>
+		<define type="error" name="E0111">
+			<message>'TYPE' must not be ommited</message>
+			<description>!PARTITIONの必須のオプションである'TYPE'が見つからない</description>
+		</define>
+		<define type="error" name="E0112">
+			<message>'TYPE' must be 'NODE-BASED' or 'ELEMENT-BASED'</message>
+			<description>'TYPE'に指定する値は'NODE-BASED'か'ELEMENT-BASED'でなければならない</description>
+		</define>
+		<define type="error" name="E0113">
+			<message>'=' is required after 'TYPE'</message>
+			<description>'TYPE'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0121">
+			<message>'METHOD' must not be ommited</message>
+			<description>!PARTITIONの必須のオプションである'METHOD'が見つからない</description>
+		</define>
+		<define type="error" name="E0122">
+			<message>'METHOD' must be 'RCB', 'KMETIS' or 'PMETIS'</message>
+			<description>METHODに指定する値は'RCB'か'KMETIS'か'PMETIS'でなければならない</description>
+		</define>
+		<define type="error" name="E0123">
+			<message>'=' is required after 'METHOD'</message>
+			<description>'METHOD'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0124">
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'PMETIS' is specfied in 'METHOD'.</message>
+			<description>-DHECMW_PART_WITH_METISオプション無しにビルドされているにもかかわらず，'METHOD'に'PMETIS'が指定された．</description>
+		</define>
+		<define type="error" name="E0125">
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'KMETIS' is specfied in 'METHOD'.</message>
+			<description>-DHECMW_PART_WITH_METISオプション無しにビルドされているにもかかわらず，'METHOD'に'KMETIS'が指定された．</description>
+		</define>
+		<define type="error" name="E0131">
+			<message>'DOMAIN' must not be ommited</message>
+			<description>!PARTITIONの必須のオプションである'DOMAIN'が見つからない</description>
+		</define>
+		<define type="error" name="E0132">
+			<message>'DOMAIN' must be natural number</message>
+			<description>'DOMAIN'に指定する値は自然数でなければならない</description>
+		</define>
+		<define type="error" name="E0133">
+			<message>'=' is required after 'DOMAIN'</message>
+			<description>'DOMAIN'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0134">
+			<message>'METHOD' is 'RCB', but 'DOMAIN' is not n-th power of 2</message>
+			<description>'METHOD'に'RCB'が指定されているが'DOMAIN'の値が2のべき乗でない</description>
+		</define>
+		<define type="error" name="E0141">
+			<message>'DEPTH' must be natural number</message>
+			<description>'DEPTH'に指定する値は自然数でなければならない</description>
+		</define>
+		<define type="error" name="E0142">
+			<message>'=' is required after 'DEPTH'</message>
+			<description>'DEPTH'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0151">
+			<message>UCD file name is too long</message>
+			<description>UCDファイル名が長すぎる</description>
+		</define>
+		<define type="error" name="E0152">
+			<message>'=' is required after 'UCD'</message>
+			<description>'UCD'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0153">
+			<message>UCD file name must start with number, alphabet, '.', '-', '_' or '/'</message>
+			<description>UCDファイル名は数字，アルファベット，'.'，'-'，'_'，'/'で始まらなければならない</description>
+		</define>
+		<define type="error" name="E0161">
+			<message>Partitioning directions must be 'x', 'y' or 'z'</message>
+			<description>RCB分割の分割軸方向の指定は'x'，'y'，'z'でなければならない</description>
+		</define>
+		<define type="error" name="E0162">
+			<message>Partitioning directions are not enough</message>
+			<description>分割軸方向の指定が足りない</description>
+		</define>
+		<define type="warn" name="W0163">
+			<message>Too many partitioning directions are specified</message>
+			<description>必要数以上の分割軸方向が指定された</description>
+		</define>
+		<define type="error" name="E0164">
+			<message>Partitioning directions must not be ommited, if 'METHOD' is 'RCB'</message>
+			<description>'METHOD'が'RCB'にもかかわらず分割軸方向の指定が省略された</description>
+		</define>
+		<define type="error" name="W0165">
+			<message>Partitioning directions are specified, although 'METHOD' is not 'RCB'</message>
+			<description>'METHOD'が'RCB'でないにもかかわらず分割軸方向の指定がなされている</description>
+		</define>
+		<define type="error" name="E0201">
+			<message>Invalid partitioning type is found</message>
+			<description>不正な領域分割タイプを検出した</description>
+		</define>
+		<define type="error" name="E0202">
+			<message>Invalid partitioning method is found</message>
+			<description>不正な領域分割法を検出した</description>
+		</define>
+		<define type="error" name="E0203">
+			<message>Invalid element type is found</message>
+			<description>不正な要素タイプを検出した</description>
+		</define>
+		<define type="error" name="E0204">
+			<message>Invalid partitioning direction is found</message>
+			<description>不正な分割軸方向を検出した</description>
+		</define>
+		<define type="error" name="E0205">
+			<message>Invalid number of sub-domains is found</message>
+			<description>不正な部分領域数を検出した</description>
+		</define>
+		<define type="error" name="E0206">
+			<message>Invalid overlapping depth is found</message>
+			<description>不正な部分領域間オーバーラップ深さを検出した</description>
+		</define>
+		<define type="error" name="E0211">
+			<message>Stack overflow</message>
+			<description>スタック配列がオーバーフローした</description>
+		</define>
+		<define type="error" name="E0301">
+			<message>Sub-domain number must be grater than or equal 0</message>
+			<description>部分領域番号が0より小さい</description>
+		</define>
+		<define type="error" name="E0302">
+			<message>Sub-domain number must be less than number of sub-domains</message>
+			<description>部分領域番号が部分領域数を超えている</description>
+		</define>
+		<define type="error" name="E0311">
+			<message>Number of nodes must be natural number</message>
+			<description>節点数が自然数でない</description>
+		</define>
+		<define type="error" name="E0312">
+			<message>Number of internal nodes must be grater than or equal 0</message>
+			<description>内部節点数が0より小さい</description>
+		</define>
+		<define type="error" name="E0313">
+			<message>Number of internal nodes must be less than or equal number of nodes</message>
+			<description>内部節点数が節点数より大きい</description>
+		</define>
+		<define type="error" name="E0321">
+			<message>Number of elements must be natural number</message>
+			<description>要素数が0より小さい</description>
+		</define>
+		<define type="error" name="E0322">
+			<message>Number of internal elements must be grater than or equal 0</message>
+			<description>内部要素数が0より小さい</description>
+		</define>
+		<define type="error" name="E0323">
+			<message>Number of internal elements must be less than or equal number of elements</message>
+			<description>内部要素数が要素数より大きい</description>
+		</define>
+		<define type="error" name="E0331">
+			<message>Number of neighboring sub-domains must be grater than or equal 0</message>
+			<description>隣接部分領域数が0より小さい</description>
+		</define>
+		<define type="warn" name="W0401">
+			<message>EQUATION_BLOCK is not found</message>
+			<description>EQUATION_BLOCKが見つからない</description>
+		</define>
+		<define type="error" name="E0501">
+			<message>Log file has not initialized yet</message>
+			<description>ログファイルの初期化処理が行われていない</description>
+		</define>
+		<define type="warn" name="W0502">
+			<message>Log file for partitioner has already initialized</message>
+			<description>ログファイルの初期化処理が複数回呼び出された</description>
+		</define>
+	</table>
+</msg-table>

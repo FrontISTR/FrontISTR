@@ -1,0 +1,79 @@
+2006-02-15  HEC-MW Group
+
+	[ Version 1.00 ]
+	HEC-MW is inherited all resouces from HPC-MW. The new version is 1.00.
+	This version can be executed on a computer without MPI and
+	on Windows' environment with or without MPI.
+
+--------------------------------------------------------------------------------
+
+2005-03-31  HPC-MW Group  <hpcmw@tokyo.rist.or.jp>
+
+	[ Version 2.00 ]
+	In this version, the library of coupling interface is newly available. For 
+	existing libraries, several new features were added, and some bugs were 
+	fixed.
+
+	* Parallel Visualization Library
+	- Parallel Streamline (PST) was newly available.
+
+	* Coupling Interface Library [New Feature]
+	- This library provides mesh mapping and interpolation between two programs.
+	  According to this library, it becomes possible to perform loose coupling 
+	  between two programs.
+
+--------------------------------------------------------------------------------
+2004-06-21  HPC-MW Group  <hpcmw@tokyo.rist.or.jp>
+
+	[ Version 1.00 ]
+	In this version, the libraries of adaptive mesh refinement (AMR) and dynamic
+	load balancing (DLB) are newly available. For the exsiting libraries, 
+	including, I/O, linear solvers and parallel visualizer, several new features
+	were added, and some bugs were fixed.
+
+	* I/O and Common Library
+	- Output routine for log data was changed so that every process outputs a 
+	  log file.
+	- Interface to the visualizer was changed.
+	- File format for distributed mesh was changed.
+	- New members were added to the structure for mesh data.
+	- !CONNECTIVITY is being newly supported in the HPC-MW entire mesh data.
+	- It became possible to specify the name of HPC-MW control file at the
+	  initialization routine.
+
+	* Parallel Linear Solver Library
+	- Subroutines "hpcmw_matvec_11", "hpcmw_matvec_22" and "hpcmw_matvec_33" for
+	  calculating matrix-vector product were added.
+	- Subroutines "hpcmw_allreduce_R" and "hpcmw_allreduce_I" for global 
+	  communication were modified.
+
+	* Parallel Visualization Library
+	- Some 2nd-order element types are now supported.
+	- It became possible to create deformation image.
+	- Problems underlying multiple element types were fixed.
+
+	* Adaptive Mesh Refinement (AMR) Library [New Feature]
+	- This library provides parallel adaptive mesh refinement for 1st-order 
+	  tetrahedral and triangular elements.
+
+	* Dynamic Load Balancing (DLB) Library [New Feature]
+	- This library creates distributed mesh data which balance the load of 
+	  every process by repartitioning.
+
+--------------------------------------------------------------------------------
+2003-11-21  HPC-MW Group  <hpcmw@tokyo.rist.or.jp>
+
+	[ Version 0.10 ]
+	This is the 1st release of "Library Type HPC Middleware" for PC-Cluster.
+	It is the proto-type version and the followings are available.
+
+	* HPC-MW Library
+	- I/O library
+	- parallel linear solver library
+	- parallel visualization library
+
+	* Utilities
+	- partitioning utility
+	- visualization utility
+	- mesh data converter from GeoFEM to HPC-MW
+

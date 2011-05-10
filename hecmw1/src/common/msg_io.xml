@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table> 
+	<table prefix="HECMW-IO">
+		<define type="error" name="E0001">
+			<message>Too long name</message>
+			<description>名前が長すぎる</description>
+		</define>
+		<define type="error" name="E0002">
+			<message>Too long file name</message>
+			<description>ファイル名が長すぎる</description>
+		</define>
+		<define type="error" name="E0003">
+			<message>Cannot use reserved name</message>
+			<description>予約済みの名前を使用している</description>
+		</define>
+		<define type="error" name="E0004">
+			<message>Not allow nested include</message>
+			<description>インクルードファイルがネストしている</description>
+		</define>
+		<define type="error" name="E0005">
+			<message>Failed to open include file</message>
+			<description>インクルードファイルのオープンに失敗した</description>
+		</define>
+		<define type="error" name="E0006">
+			<message>Failed to close include file</message>
+			<description>インクルードファイルのクローズに失敗した</description>
+		</define>
+		<define type="error" name="E0007">
+			<message>TYPE mismatch for name_ID</message>
+			<description>name_IDのTYPEが不正である</description>
+		</define>
+
+		<define type="warning" name="W1001">
+			<message>Adding element: Element has already defined, updated</message>
+			<description>要素が既に定義されていたため上書きされた</description>
+		</define>
+		<define type="warning" name="W1002">
+			<message>Adding to element group: Element doesn't found, ignored</message>
+			<description>定義されていない要素を要素グループに追加しようとした</description>
+		</define>
+		<define type="warning" name="W1003">
+			<message>Adding to element group: Element group has already had element, ignored</message>
+			<description>要素グループに既に含まれる要素を再度同じ要素グループに追加しようとした</description>
+		</define>
+		<define type="warning" name="W1004">
+			<message>Adding node: Node has already defined, updated</message>
+			<description>節点が既に定義されていたため上書きされた</description>
+		</define>
+		<define type="warning" name="W1005">
+			<message>Adding to node group: Node doesn't found, ignored</message>
+			<description>定義されていない節点を節点グループに追加しようとした</description>
+		</define>
+		<define type="warning" name="W1006">
+			<message>Adding to node group: Node group has already had node, ignored</message>
+			<description>節点グループに既に含まれる節点を再度同じ節点グループに追加しようとした</description>
+		</define>
+		<define type="warning" name="W1007">
+			<message>Adding to surface group: Element doesn't found, ignored</message>
+			<description>定義されていない要素を面グループに追加しようとした</description>
+		</define>
+		<define type="warning" name="W1008">
+			<message>Adding to surface group: Invalid combination of element and surface, ignored</message>
+			<description>要素と面番号の整合性がとれない</description>
+		</define>
+		<define type="warning" name="W1009">
+			<message>Adding to surface gorup: Surface group has already had the pare of element and surface, ignored</message>
+			<description>同じ要素と面番号の組を追加しようとした</description>
+		</define>
+		<define type="warning" name="W1010">
+			<message>Header updated</message>
+			<description>ヘッダが上書きされた</description>
+		</define>
+		<define type="warning" name="W1011">
+			<message>Zero temperature updated</message>
+			<description>絶対零度が上書きされた</description>
+		</define>
+		<define type="error" name="E1012">
+			<message>Element doesn't have section</message>
+			<description>要素がセクション情報を持っていない</description>
+		</define>
+		<define type="error" name="E1013">
+			<message>Cannot set section</message>
+			<description>セクション情報を設定できない</description>
+		</define>
+		<define type="error" name="E1014">
+			<message>No nodes defined</message>
+			<description>節点が定義されていない</description>
+		</define>
+		<define type="error" name="E1015">
+			<message>No elements defined</message>
+			<description>要素が定義されていない</description>
+		</define>
+		<define type="warning" name="W1016">
+			<message>INITIAL CONDITION: Node doesn't found, ignored</message>
+			<description>定義されていない節点を指定した</description>
+		</define>
+		<define type="warning" name="W1017">
+			<message>INITIAL CONDITION: Node group doesn't found, ignored</message>
+			<description>定義されていない節点グループ指定した</description>
+		</define>
+		<define type="error" name="E1018">
+			<message>INITIAL CONDITON: Cannot initialize node twice</message>
+			<description>既に初期条件が与えられるいる節点に対し、再度初期条件を与えた</description>
+		</define>
+		<define type="warning" name="W1019">
+			<message>EQUATION: Node doesn't found, ignored</message>
+			<description>定義されていない節点を指定した</description>
+		</define>
+		<define type="warning" name="W1020">
+			<message>EQUATION: Node grourp doesn't found, ignored</message>
+			<description>定義されていない節点グループを指定した</description>
+		</define>
+		<define type="error" name="E1021">
+			<message>EQUATION: # of node in node groups must be same, ignored</message>
+			<description>2つの節点グループに含まれる節点数は同じでなければならない</description>
+		</define>
+		<define type="error" name="E1022">
+			<message>EQUATION: Not allow the same pare of Node and DOF</message>
+			<description>同じ節点と自由度数の組み合わせは許されない</description>
+		</define>
+		<define type="error" name="E1023">
+			<message>No sections defined</message>
+			<description>セクションが定義されていない</description>
+		</define>
+		<define type="error" name="E1024">
+			<message>SECTION: Element group doesn't found</message>
+			<description>定義されていない要素をセクションで指定している</description>
+		</define>
+		<define type="error" name="E1025">
+			<message>SECTION: MATERIAL doesn't found</message>
+			<description>定義されていない物性をセクションで指定している</description>
+		</define>
+		<define type="error" name="E1026">
+			<message>SECTION: Invalid element type found in element group</message>
+			<description>要素グループにセクションタイプに合わない要素が含まれている</description>
+		</define>
+
+		<define type="error" name="E5001">
+			<message>Failed to open distributed mesh file</message>
+			<description>分散メッシュファイルのオープンに失敗した</description>
+		</define>
+		<define type="error" name="E5002">
+			<message>Failed to close distributed mesh file</message>
+			<description>分散メッシュファイルのクローズに失敗した</description>
+		</define>
+		<define type="error" name="E5003">
+			<message>Unexpected EOF found in distributed mesh file</message>
+			<description>分散メッシュファイル内に予期しないEOFを検出した</description>
+		</define>
+		<define type="error" name="E5004">
+			<message>IO error occured while readig distributed mesh file</message>
+			<description>分散メッシュファイルの入出力中にIOエラーが発生した</description>
+		</define>
+		<define type="error" name="E5005">
+			<message>Not a distributed mesh file</message>
+			<description>分散メッシュファイルではないファイルを読み込もうとした</description>
+		</define>
+		<define type="error" name="E5006">
+			<message>Invalid header in distributed mesh file</message>
+			<description>分散メッシュファイルのヘッダが異常である</description>
+		</define>
+	</table>
+</msg-table>

@@ -1,0 +1,59 @@
+DEBUGFLAGS               = -g
+F90DEBUGFLAGS            = -g
+
+FSTREXEC_TARGETFILE      = fistr2
+FSTRLIB_TARGETFILE       = libfistr.a
+FSTRLIB_F90TARGETFILE    = libffistr.a
+FSTRLIBS                 = -lffistr -lfistr
+
+HECMWLIBS                = -lfhecmw2 -lhecmw2 -lstdc++
+HECMWLIBS2               = -lfhecmw -lhecmw
+
+F90MODULEPOSTFIX         = mod
+COBJFILEPOSTFIX          = o
+CPPOBJFILEPOSTFIX        = o
+F90OBJFILEPOSTFIX        = o
+
+MV                       = mv -f
+RANLIB                   = ranlib
+
+DEBUG_OPTFLAGS           = -DDEBUG
+NODEBUG_OPTFLAGS         = -DNDEBUG
+
+BASE_CFLAGS              = -I.
+BASE_CPPFLAGS            = -I.
+BASE_F90FLAGS            = -I.
+
+MPI_CFLAGS               = -I$(MPIINCDIR)
+MPI_LDFLAGS              = -L$(MPILIBDIR) $(MPILIBS)
+MPI_F90FLAGS             = -I$(MPIINCDIR)
+MPI_F90LDFLAGS           = -L$(MPILIBDIR) $(MPILIBS)
+
+HECMW_CFLAGS             = -I$(HECMWINCDIR)
+HECMW_LDFLAGS            = -L$(HECMWLIBDIR) $(HECMWLIBS)
+HECMW_CPPFLAGS           = -I$(HECMWINCDIR)
+HECMW_CPPLDFLAGS         = -L$(HECMWLIBDIR) $(HECMWLIBS)
+HECMW_F90FLAGS           = -I$(HECMWINCDIR)
+HECMW_F90LDFLAGS         = -L$(HECMWLIBDIR) $(HECMWLIBS)
+
+HECMW_CFLAGS2            = -I$(HECMWINCDIR2)
+HECMW_LDFLAGS2           = -L$(HECMWLIBDIR2) $(HECMWLIBS2)
+HECMW_CPPFLAGS2          = -I$(HECMWINCDIR2)
+HECMW_CPPLDFLAGS2        = -L$(HECMWLIBDIR2) $(HECMWLIBS2)
+HECMW_F90FLAGS2          = -I$(HECMWINCDIR2)
+HECMW_F90LDFLAGS2        = -L$(HECMWLIBDIR2) $(HECMWLIBS2)
+
+FSTR_CFLAGS              = -I$(FSTRINCDIR)
+FSTR_LDFLAGS             = -L$(FSTRLIBDIR) $(FSTRLIBS)
+FSTR_CPPFLAGS            = -I$(FSTRINCDIR)
+FSTR_CPPLDFLAGS          = -L$(FSTRLIBDIR) $(FSTRLIBS)
+FSTR_F90FLAGS            = -I$(FSTRINCDIR)
+FSTR_F90LDFLAGS          = -L$(FSTRLIBDIR) $(FSTRLIBS)
+
+REVOCAPLIBS              = -lrcapf
+REVOCAP_F90FLAGS         = -I$(REVOCAPINCDIR)
+REVOCAP_F90LDFLAGS       = -L$(REVOCAPLIBDIR) $(REVOCAPLIBS)
+
+REFINERLIBS              = -lRcapRefiner -lstdc++
+REFINER_CFLAGS           = -DHECMW_WITH_REFINER -I$(REFINERINCDIR)
+REFINER_LDFLAGS          = -L$(REFINERLIBDIR) $(REFINERLIBS)

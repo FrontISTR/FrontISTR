@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table msgno_base="10000"> 
+	<include src="../src/common/msg_util.xml"/>
+	<include src="../src/common/msg_io.xml"/>
+	<include src="../src/common/msg_io_hec.xml"/>
+	<include src="../src/common/msg_io_geofem.xml"/>
+	<include src="../src/common/msg_io_abaqus.xml"/>
+    <include src="../src/couple/msg_couple.xml"/>
+	<include src="../tools/preprocess/partitioner/msg_part.xml"/>
+
+	<table prefix="HECMW-ALL">
+		<define type="error" name="E0001">
+			<message>Fatal error</message>
+			<description>深刻なエラーが発生した</description>
+		</define>
+		<define type="error" name="E0101">
+			<message>Illegal argument error</message>
+			<description>無効な引数である</description>
+		</define>
+		<define type="error" name="E0102">
+			<message>NULL poiner error</message>
+			<description>NULLポインタを検出した</description>
+		</define>
+
+		<define type="error" name="E1001">
+			<message>MPI initialization failed</message>
+			<description>MPIの初期化に失敗した</description>
+		</define>
+		<define type="error" name="E1002">
+			<message>MPI has not initialized yet</message>
+			<description>MPIが初期化されていない</description>
+		</define>
+		<define type="error" name="E1003">
+			<message>MPI operation failed</message>
+			<description>MPI利用中にエラーが発生した</description>
+		</define>
+	</table>
+</msg-table>
+

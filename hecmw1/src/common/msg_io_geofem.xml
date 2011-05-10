@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="x-euc-jp-unicode"?>
+
+<msg-table> 
+	<table prefix="HECMW-IO-GEOFEM">
+		<define type="error" name="E0001">
+			<message>Failed to open GeoFEM mesh file</message>
+			<description>GeoFEMメッシュファイルのオープンに失敗した</description>
+		</define>
+		<define type="error" name="E0002">
+			<message>Failed to close GeoFEM mesh file</message>
+			<description>GeoFEMメッシュファイルのクローズに失敗した</description>
+		</define>
+		<define type="error" name="E0003">
+			<message>Unexpected EOF found in GeoFEM mesh file</message>
+			<description>予期しないEOFを検出した</description>
+		</define>
+		<define type="error" name="E0004">
+			<message>Invalid data</message>
+			<description>無効／不適切なデータである</description>
+		</define>
+		<define type="error" name="E0301">
+			<message>NEIBPEtot must be 0 or more</message>
+			<description>無効な隣接領域総数を検出した</description>
+		</define>
+		<define type="error" name="E0302">
+			<message>NEIBPEtot must be 0 for initial mesh</message>
+			<description>初期メッシュではない</description>
+		</define>
+		<define type="error" name="E0303">
+			<message>NEIBPE must be less than NEIBPEtot</message>
+			<description>隣接領域番号と隣接領域総数の整合性がとれない</description>
+		</define>
+		<define type="error" name="E0311">
+			<message>NODtot must be  greater than 0</message>
+			<description>無効な総節点数を検出した</description>
+		</define>
+		<define type="error" name="E0312">
+			<message>intNODtot must be greater than 0</message>
+			<description>無効な総内点数を検出した</description>
+		</define>
+		<define type="error" name="E0313">
+			<message>NODtot must be equal to intNODtot for initial mesh</message>
+			<description>初期メッシュではない</description>
+		</define>
+		<define type="error" name="E0314">
+			<message>nGlobalID must be greater than 0</message>
+			<description>無効なグローバル節点番号を検出した</description>
+		</define>
+		<define type="error" name="E0321">
+			<message>ELMtot must be ID must be greater than 0</message>
+			<description>無効な総内点数を検出した</description>
+		</define>
+		<define type="error" name="E0322">
+			<message>Unsupported Element type</message>
+			<description>サポートしない要素番号を検出した</description>
+		</define>
+		<define type="error" name="E0323">
+			<message>Connectivity must be greater than 0 and &gt;= NODtot</message>
+			<description>要素のコネクティビティが無効である</description>
+		</define>
+		<define type="error" name="E0324">
+			<message>eGlobalID must be greater than 0</message>
+			<description>無効なグローバル要素番号を検出した</description>
+		</define>
+		<define type="error" name="E0331">
+			<message>IMPORT/EXPORTindex must be greater than 0</message>
+			<description>無効な通信テーブルインデックスを検出した</description>
+		</define>
+		<define type="error" name="E0332">
+			<message>IMPORT/EXPORTnode must be greater than 0 and &gt;= NODtot</message>
+			<description>無効な通信テーブルを検出した</description>
+		</define>
+		<define type="error" name="E0341">
+			<message>NODgrpTOT must be 0 or more</message>
+			<description>無効な総節点グループ数を検出した</description>
+		</define>
+		<define type="error" name="E0342">
+			<message>NODgrpINDEX must be greater than 0</message>
+			<description>節点グループのインデックスが無効である</description>
+		</define>
+		<define type="error" name="E0343">
+			<message>NODgrpITEM must be greater than 0 and &gt;= NODtot</message>
+			<description>節点グループのアイテムが無効である</description>
+		</define>
+		<define type="error" name="E0351">
+			<message>ELMgrpTOT must be 0 or more</message>
+			<description>無効な総要素グループ数を検出した</description>
+		</define>
+		<define type="error" name="E0352">
+			<message>ELMgrpINDEX must be greater than 0</message>
+			<description>要素グループのインデックスが無効である</description>
+		</define>
+		<define type="error" name="E0353">
+			<message>ELMgrpITEM must be greater than 0 and &gt;= ELMtot</message>
+			<description>要素グループのアイテムが無効である</description>
+		</define>
+		<define type="error" name="E0361">
+			<message>SUFgrpTOT must be 0 or more</message>
+			<description>無効な総面グループ数を検出した</description>
+		</define>
+		<define type="error" name="E0362">
+			<message>SUFgrpINDEX must be greater than 0</message>
+			<description>面グループのインデックスが無効である</description>
+		</define>
+		<define type="error" name="E0363">
+			<message>SUFgrpITEM must be greater than 0</message>
+			<description>面グループのアイテムが無効である</description>
+		</define>
+	</table>
+</msg-table>
+

@@ -1,0 +1,104 @@
+================================================================================
+
+  README for Library Type HEC-MW for PC-Cluster (English version)
+
+  2008.3.17  version 2.1
+
+  The University of Tokyo, RSS21 Project
+  "High-End Computing Middleware (HEC-MW)" Group.
+
+================================================================================
+
+(1) Programs in this archive
+  - Prototype of Library Type HEC Middleware for PC-Cluster
+    - I/O
+    - Parallel Linear Solvers
+    - Parallel Visualization
+    - Coupling Interface
+    - Adaptive Mesh Refinement
+    - Dynamic Load Balancing
+  - "hecmw_part" HEC-MW Partitioning Utility
+  - "hecmw_vis" & "hecmw_pst" HEC-MW Visualization Utility
+
+
+(2) Files in this directory
+  CHANGES           : change log (in English)
+  CHANGES.ja        : change log (in Japanese)
+  Makefile.am       : base file of makefile for installation
+  Makefile.conf     : setting file for users
+  Makefile.dev      : setting file for developers
+  README            : README (in English : this file)
+  README.ja         : README (in Japanese)
+  VERSION           : version information
+  RSS21_agree_ja.pdf: grant of license to RSS21 free software (in Japanese)
+  setup.sh          : shell script to create makefiles
+
+  doc/                        : manuals
+  doc/0803_001a_hecmw_PC_cluster_201_install_ja.pdf
+                              : installation manual (in Japanese)
+  doc/0803_001b_hecmw_PC_cluster_201_howtodevelop.pdf
+                              : how to develop using HEC-MW
+  doc/0803_001c_hecmw_PC_cluster_201_API.pdf
+                              : API reference
+  doc/0803_001d_hecmw_PC_cluster_201_io.pdf
+                              : manual for I/O and utility
+  doc/0803_001e_hecmw_PC_cluster_201_solver.pdf
+                              : manual for parallel linear solvers
+  doc/0803_001f_hecmw_PC_cluster_201_vis.pdf
+                              : manual for parallel visualizer
+  doc/0803_001g_hecmw_PC_cluster_201_AMR.pdf
+                              : manual for adaptive mesh refinement
+  doc/0803_001h_hecmw_PC_cluster_201_DLB.pdf
+                              : manual for dynamic load balancing
+  doc/0803_001i_hecmw_PC_cluster_201_couple.pdf
+                              : manual for coupling interface
+  doc/0803_001x_hecmw_part_201_users.pdf
+                              : manual for partitioning utility
+
+  etc/                        : various files
+
+  examples/                   : various test program
+
+  src/                        : source program for HEC-MW library
+  src/common/                 : I/O library, common files
+  src/couple/                 : couping interface library
+  src/hecmw/                  : unified module for HEC-MW library
+  src/operations/adaptive/    : adaptive mesh refinement library
+  src/operations/dynamic_load_balancing/
+                              : dynamic load balancing library
+  src/solver/                 : linear solver library
+  src/visualizer/             : parallel visualization library
+
+  tools/                         : utility programs
+  tools/postprocess/             : utility programs for post-processing
+  tools/postprocess/visualizer/  : HEC-MW visualization utility
+  tools/preprocess/              : utility programs for pre-processing
+  tools/preprocess/geofem2hpc/   : mesh converter from GeoFEM to HEC-MW
+  tools/preprocess/partitioner/  : HEC-MW partitioning utility
+
+  util/                          : setup files
+
+
+(3) Requirements
+  - C Compiler
+  - Fortran90 Compiler
+  - MPI Libraries
+  - METIS (Optional)
+  - ParMETIS (Optional)
+
+************************************ NOTICE ****************************************
+  Please read "RSS21_lic_agree.pdf" carefully BEFORE you start to use this software
+************************************************************************************
+
+(4) Installation
+Please proceed according to the following four steps, For more details, please 
+refer HEC-MW Installation Manual (currently in japanese, English Version will be
+soon available) in ${HECMWBUILDDIR}/doc directory.
+
+  1. modify ${HECMWBUILDDIR}/Makefile.conf according to your H/W and S/W
+     environment
+  2. go to ${HECMWBUILDDIR} and type "./setup.sh" to create makefiles
+  3. type "make" in the directory ${HECMWBUILDDIR}
+  4. type "make install" in the directory ${HECMWBUILDDIR} if compilation has 
+     been successfully terminated
+
