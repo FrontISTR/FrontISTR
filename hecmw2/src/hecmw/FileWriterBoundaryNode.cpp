@@ -23,7 +23,7 @@ CFileWriterBoundaryNode::~CFileWriterBoundaryNode()
 }
 
 
-void CFileWriterBoundaryNode::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterBoundaryNode::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
@@ -34,13 +34,13 @@ void CFileWriterBoundaryNode::Write(ofstream& ofs, const uint& mgLevel)
 
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
    
-   uint i,ii,iii;
-   uint numOfPart= pAssyModel->getNumOfMesh();
+   uiint i,ii,iii;
+   uiint numOfPart= pAssyModel->getNumOfMesh();
    
    for(i=0; i< numOfPart; i++){
        pMesh= pAssyModel->getMesh(i);
        
-       uint numOfBndNodeMesh= pMesh->getNumOfBoundaryNodeMesh();
+       uiint numOfBndNodeMesh= pMesh->getNumOfBoundaryNodeMesh();
        
        for(ii=0; ii< numOfBndNodeMesh; ii++){
            pBndNodeMesh= pMesh->getBndNodeMeshIX(ii);
@@ -59,7 +59,7 @@ void CFileWriterBoundaryNode::Write(ofstream& ofs, const uint& mgLevel)
            }
            ofs << endl;
 
-           uint numOfBndNode= pBndNodeMesh->getNumOfBNode();
+           uiint numOfBndNode= pBndNodeMesh->getNumOfBNode();
            
            for(iii=0; iii < numOfBndNode; iii++){
                pBndNode= pBndNodeMesh->getBNodeIX(iii);
@@ -67,9 +67,9 @@ void CFileWriterBoundaryNode::Write(ofstream& ofs, const uint& mgLevel)
                
                ofs << "BNodeID= " << pBndNode->getID() << ", NodeID= " << pNode->getID();
                
-               uint idof, numOfDOF= pBndNode->getNumOfDOF();
+               uiint idof, numOfDOF= pBndNode->getNumOfDOF();
                for(idof=0; idof < numOfDOF; idof++){
-                   uint dof= pBndNode->getDOF(idof);
+                   uiint dof= pBndNode->getDOF(idof);
                    ofs << ", BndValue[" << dof << "]= " << pBndNode->getValue(dof);
                };
                ofs << endl;

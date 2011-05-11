@@ -30,7 +30,7 @@ CCommTriangle::CCommTriangle()
 
     mvbNodeIXCheck = new bool[3];
     mvbDNodeMarking = new bool[3];
-    uint i;
+    uiint i;
     for(i=0; i< 3; i++){
         mvbNodeIXCheck[i]=false;
         mvbDNodeMarking[i]=false;

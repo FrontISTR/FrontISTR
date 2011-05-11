@@ -21,7 +21,7 @@ CCommFace::~CCommFace()
     ;
 }
 // 初期化
-void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge, const uint& nOrder)
+void CCommFace::initialize(const uiint& numOfVert, const uiint& numOfEdge, const uiint& nOrder)
 {
     // CommNodeサイズ、FaceTypeの設定
     switch(numOfVert){
@@ -48,13 +48,13 @@ void CCommFace::initialize(const uint& numOfVert, const uint& numOfEdge, const u
 
     //辺マーキングの初期化
     mvbEdgeMarking = new bool[numOfEdge];
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge< numOfEdge; iedge++){
         mvbEdgeMarking[iedge]= false;
     };
 }
 
-uint CCommFace::getOrder()
+uiint CCommFace::getOrder()
 {
     switch(mFaceType){
         case(ElementType::Quad):
@@ -68,7 +68,7 @@ uint CCommFace::getOrder()
             return ElementOrder::Second;
     }
 }
-uint CCommFace::getNumOfVert()
+uiint CCommFace::getNumOfVert()
 {
     switch(mFaceType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -81,15 +81,15 @@ uint CCommFace::getNumOfVert()
 }
 
 
-uint& CCommFace::getEdgeIndex(PairCommNode& pairCommNode)
+uiint& CCommFace::getEdgeIndex(PairCommNode& pairCommNode)
 {
     // Node0, Node1のインデックス番号から辺番号を特定
-    uint first_id=  pairCommNode.first->getID();
-    uint second_id= pairCommNode.second->getID();
-    uint self_id;
-    uint localNum0, localNum1;
-    uint numOfVert;
-    uint inode;
+    uiint first_id=  pairCommNode.first->getID();
+    uiint second_id= pairCommNode.second->getID();
+    uiint self_id;
+    uiint localNum0, localNum1;
+    uiint numOfVert;
+    uiint inode;
 
     ////debug
     //cout << "CommFace::getEdgeIndex(pairCommNode), numOfNode= " << numOfNode << endl;
@@ -132,12 +132,12 @@ uint& CCommFace::getEdgeIndex(PairCommNode& pairCommNode)
     }
 }
 
-PairCommNode CCommFace::getEdgePairCommNode(const uint& iedge)
+PairCommNode CCommFace::getEdgePairCommNode(const uiint& iedge)
 {
     Utility::CLogger *pLogger;
 
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
-    uint* vertNum;
+    uiint* vertNum;
     switch(mFaceType){
         case(ElementType::Quad):case(ElementType::Quad2):
             vertNum= pEdgeTree->getQuadLocalNodeNum(iedge);
@@ -168,7 +168,7 @@ PairCommNode CCommFace::getEdgePairCommNode(const uint& iedge)
 // Edge集合処理のFaceへの処理
 // ----
 // 辺に隣接するFaceのセット タイプ1
-void CCommFace::setEdgeCommFace(CCommFace* pNeibFace, const uint& iedge)
+void CCommFace::setEdgeCommFace(CCommFace* pNeibFace, const uiint& iedge)
 {
     mvEdgeCommFace[iedge]= pNeibFace;
 }
@@ -179,13 +179,13 @@ void CCommFace::setEdgeCommFace(CCommFace* pNeibFace, PairCommNode& pairCommNode
 ////    cout << "CommFace::setEdgeCommFace(pFace, pairCommNode),  pair.first=  " << pairCommNode.first->getID()
 ////                                                        << ",  pair.second= " << pairCommNode.second->getID() << endl;
 
-    uint iedge= getEdgeIndex(pairCommNode);
+    uiint iedge= getEdgeIndex(pairCommNode);
     
     mvEdgeCommFace[iedge]= pNeibFace;
 }
 
 // 辺ノードのセット 1
-void CCommFace::setEdgeCommNode(CCommNode* pEdgeCommNode, const uint& iedge)
+void CCommFace::setEdgeCommNode(CCommNode* pEdgeCommNode, const uiint& iedge)
 {
     mvEdgeCommNode[iedge]= pEdgeCommNode;
 
@@ -201,20 +201,20 @@ void CCommFace::setEdgeCommNode(CCommNode* pEdgeCommNode, const uint& iedge)
 // 辺ノードのセット 2
 void CCommFace::setEdgeCommNode(CCommNode* pEdgeCommNode, PairCommNode& pairCommNode)
 {
-    uint iedge= getEdgeIndex(pairCommNode);
+    uiint iedge= getEdgeIndex(pairCommNode);
     
     mvEdgeCommNode[iedge]= pEdgeCommNode;
 }
 
 // 辺ノード設置済みマーキング 1
-void CCommFace::markingEdgeNode(const uint& iedge)
+void CCommFace::markingEdgeNode(const uiint& iedge)
 {
     mvbEdgeMarking[iedge]= true;;
 }
 // 辺ノード設置済みマーキング 2
 void CCommFace::markingEdgeNode(PairCommNode& pairCommNode)
 {
-    uint iedge= getEdgeIndex(pairCommNode);
+    uiint iedge= getEdgeIndex(pairCommNode);
 
     mvbEdgeMarking[iedge]= true;
 }
@@ -235,13 +235,13 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 
     CElement *pProgElem;//再分割された子供要素
     CNode    *pNode;//CommNodeが所有する,頂点のノード
-    uint nodeID;
-    uint progElemID;
-    uint progEntityID;
+    uiint nodeID;
+    uiint progElemID;
+    uiint progEntityID;
     
-    uint numOfVert;
-    uint numOfEdge;
-    uint nOrder;// 1次 || 2次 要素
+    uiint numOfVert;
+    uiint numOfEdge;
+    uiint nOrder;// 1次 || 2次 要素
     CCommFace* pCommFace;
 
     switch(mFaceType){
@@ -473,7 +473,7 @@ vector<CCommFace*>& CCommFace::refine(CElement *pElement)
 //
 void CCommFace::replaceEdgeCommNode()
 {
-    uint nNumOfVert;
+    uiint nNumOfVert;
     switch(mFaceType){
         case(ElementType::Quad):
             return;////////////// quit
@@ -495,7 +495,7 @@ void CCommFace::replaceEdgeCommNode()
             break;
     }
 
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         mvCommNode[nNumOfVert + iedge] = mvEdgeCommNode[iedge];
     };

@@ -19,24 +19,24 @@ class CAssyModel;
 class CAssyVector
 {
 public:
-	CAssyVector(CAssyModel *pAssyModel, const uint& nDOF);
+	CAssyVector(CAssyModel *pAssyModel, const uiint& nDOF);
 	CAssyVector(const CAssyVector *pAssyVector);
 	virtual ~CAssyVector();
 
-	size_t size() const;
+	uiint size() const;
 	// int lenInternal() const;
-	const CVector::ElemType &operator[](size_t idx) const;
-	CVector::ElemType &operator[](size_t idx);
+	const CVector::ElemType &operator[](uiint idx) const;
+	CVector::ElemType &operator[](uiint idx);
 
-	const double &operator()(size_t meshID, size_t nodeID, size_t dof) const;
-	double &operator()(size_t meshID, size_t nodeID, size_t dof);
+	const double &operator()(uiint meshID, uiint nodeID, uiint dof) const;
+	double &operator()(uiint meshID, uiint nodeID, uiint dof);
 
-        void Vector_Clear(const uint& iMesh);// Matrix 0 clear
+        void Vector_Clear(const uiint& iMesh);// Matrix 0 clear
 
 	void setZero();//use GMRES
-	void setValue(int imesh, int inode, int idof, double value);
-        void addValue(const uint& imesh, const uint& inode, const uint& idof, const double& value);
-	double getValue(int imesh, int inode, int idof);
+	void setValue(uiint imesh, uiint inode, uiint idof, double value);
+        void addValue(const uiint& imesh, const uiint& inode, const uiint& idof, const double& value);
+	double& getValue(uiint imesh, uiint inode, uiint idof);
 	void add(const CAssyVector *pV);
 	void subst(const CAssyVector *pV);
 
@@ -45,18 +45,18 @@ public:
 	void updateCommBoundary();
 	void sumupCommBoundary();
 
-	int restrictTo(CAssyVector *pVc) const;
-	int prolongateFrom(const CAssyVector *pVc);
+	uiint restrictTo(CAssyVector *pVc) const;
+	uiint prolongateFrom(const CAssyVector *pVc);
 
-	size_t getNumOfVector() const;
-	const CVector *getVector(size_t index) const;
-	CVector *getVector(size_t index);
+	uiint getNumOfVector() const;
+	const CVector *getVector(uiint index) const;
+	CVector *getVector(uiint index);
 	
 	void print_elem() const {
 		for (std::vector<CVector*>::const_iterator iv = mvVector.begin(); iv != mvVector.end(); iv++) (*iv)->print_elem();
 	};
 
-        uint& getDOF();
+        uiint& getDOF();
 
         void dump();//2011.01.12 列ベクトルのダンプ
 
@@ -66,7 +66,7 @@ private:
 	std::vector<CVector*> mvVector;
 	// commTable
 
-        uint mnDOF;//アセンブル方程式のDOF
+        uiint mnDOF;//アセンブル方程式のDOF
 };
 
 }

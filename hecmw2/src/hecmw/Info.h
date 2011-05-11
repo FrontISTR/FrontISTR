@@ -13,7 +13,7 @@ struct Info{
     static const char* Header(){return
     " --------------------------------------------------------------------------- \n"
     "|                                                                           |\n"
-    "|                            HEC_MW3 Version 0.1Beta                        |\n"
+    "|                     HEC_MW ver4.0   MW3 ver0.2 Beta                       |\n"
     "|                                                                           |\n"
     "|        High-end fundamental middleware for finite element analysis        |\n"
     "|                                                                           |\n"

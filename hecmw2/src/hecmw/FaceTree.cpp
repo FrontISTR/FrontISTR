@@ -13,13 +13,13 @@ using namespace pmw;
 
 CFaceTree::CFaceTree()
 {
-    uint i,ii;    
+    uiint i,ii;
     
     // 面を構成する頂点
     // --
     // Hexa
     // --
-    uint hface[6][4]={
+    uiint hface[6][4]={
     {0,1,2,3},
     {4,7,6,5},
     {1,5,6,2},
@@ -36,7 +36,7 @@ CFaceTree::CFaceTree()
 
     // Tetra
     // --
-    uint tface[4][3]={
+    uiint tface[4][3]={
     {0,1,2},
     {0,3,1},
     {1,3,2},
@@ -51,7 +51,7 @@ CFaceTree::CFaceTree()
 
     // Prism
     // --
-    uint pface[5][4]={
+    uiint pface[5][4]={
     {0,1,2,0},// Tri:三角形(最初のノードを最後に追加して配列要素数を合わせてある)
     {3,5,4,3},// Tri:三角形
     {0,3,4,1},// Quad:四辺形
@@ -67,7 +67,7 @@ CFaceTree::CFaceTree()
 
     // Pyramid
     // --
-    uint pyface[5][4]={
+    uiint pyface[5][4]={
     {0,1,2,3},// Quad:四辺形
     {1,2,4,1},// Tri:三角形(最初のノードを最後に追加して配列要素数を合わせてある)
     {2,4,3,2},// Tri:三角形
@@ -84,14 +84,14 @@ CFaceTree::CFaceTree()
 
     // Quad
     // --
-    uint quad[4]={0,1,2,3};
+    uiint quad[4]={0,1,2,3};
     for(i=0; i< 4; i++){
         mQuadFaceIndex[i]= quad[i];
     };
 
     // Triangle
     // --
-    uint tri[3]={0,1,2};
+    uiint tri[3]={0,1,2};
     for(i=0; i< 3; i++){
         mTriangleFaceIndex[i]= tri[i];
     };
@@ -100,7 +100,7 @@ CFaceTree::CFaceTree()
     // 頂点に接続する面
     // --
     // Hexa
-    uint hexconn[8][3]={
+    uiint hexconn[8][3]={
         {0,4,3},
         {0,4,2},
         {0,2,5},
@@ -117,7 +117,7 @@ CFaceTree::CFaceTree()
     }
     
     // Tetra
-    uint tetconn[4][3]={
+    uiint tetconn[4][3]={
         {0,3,1},
         {0,1,2},
         {0,2,3},
@@ -130,7 +130,7 @@ CFaceTree::CFaceTree()
     }
     
     // Prism
-    uint priconn[6][3]={
+    uiint priconn[6][3]={
         {0,4,2},
         {0,2,3},
         {0,4,3},
@@ -145,7 +145,7 @@ CFaceTree::CFaceTree()
     }
     
     // Pyramid
-    uint pyconn[5][4]={
+    uiint pyconn[5][4]={
         {0,4,3,0},
         {0,4,1,0},
         {0,1,2,0},
@@ -159,7 +159,7 @@ CFaceTree::CFaceTree()
     }
     
     // Quad
-    uint quconn[4][1]={
+    uiint quconn[4][1]={
         {0},{0},{0},{0}
     };
     for(i=0; i< 4; i++){
@@ -167,7 +167,7 @@ CFaceTree::CFaceTree()
     }
     
     // Triangle
-    uint triconn[3][1]={
+    uiint triconn[3][1]={
         {0},{0},{0}
     };
     for(i=0; i< 3; i++){
@@ -210,17 +210,17 @@ CFaceTree::~CFaceTree()
 //
 // Hexa
 // --
-uint& CFaceTree::getHexaFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getHexaFaceIndex(const vuint& vLocalNodeIndex)
 {
-    uint faceIndex;
-    uint hitCount;
+    uiint faceIndex;
+    uiint hitCount;
 
     // ------------------------------------------------------
     // ! 局所ノード番号がループ順序で出てくることを期待していない処理
     // ------------------------------------------------------
 
     // 面の数==6, 面の頂点数==4
-    uint ia,ib;
+    uiint ia,ib;
     for(faceIndex=0; faceIndex< 6; faceIndex++){
         hitCount=0;//初期化
         for(ia=0; ia< 4; ia++){
@@ -239,7 +239,7 @@ uint& CFaceTree::getHexaFaceIndex(const vuint& vLocalNodeIndex)
 // --
 // 節点のツリーによる分岐 -> Faceを特定(四辺形なので,起点と対角点で面を特定)
 //
-uint& CFaceTree::getHexaFaceIndex2(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getHexaFaceIndex2(const vuint& vLocalNodeIndex)
 {
     switch(vLocalNodeIndex[0]){
     case(0)://起点 0
@@ -307,13 +307,13 @@ uint& CFaceTree::getHexaFaceIndex2(const vuint& vLocalNodeIndex)
 
 // Tetra
 // --
-uint& CFaceTree::getTetraFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getTetraFaceIndex(const vuint& vLocalNodeIndex)
 {
-    uint faceIndex;
-    uint hitCount;
+    uiint faceIndex;
+    uiint hitCount;
 
     // 面の数==4, 面の頂点数==3
-    uint ia,ib;
+    uiint ia,ib;
     for(faceIndex=0; faceIndex< 4; faceIndex++){
         hitCount=0;//初期化
         for(ia=0; ia< 3; ia++){
@@ -332,7 +332,7 @@ uint& CFaceTree::getTetraFaceIndex(const vuint& vLocalNodeIndex)
 // --
 // 節点のツリーによる分岐
 //
-uint& CFaceTree::getTetraFaceIndex2(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getTetraFaceIndex2(const vuint& vLocalNodeIndex)
 {
     switch(vLocalNodeIndex[0]){
         case(0):
@@ -431,16 +431,16 @@ uint& CFaceTree::getTetraFaceIndex2(const vuint& vLocalNodeIndex)
 
 // Prism
 // --
-uint& CFaceTree::getPrismFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getPrismFaceIndex(const vuint& vLocalNodeIndex)
 {
-    uint faceIndex;
-    uint hitCount;
+    uiint faceIndex;
+    uiint hitCount;
 
     // 面の数==5, 面の頂点数==4
     //   0番め,1番めのFaceは三角形であるが、頂点数を揃えるため4頂点にしてある.
     //   三角形の面は、最初の局所ノード番号を最後に再度使ってある.
     // => 3つの頂点のみチェックする.
-    uint ia,ib;
+    uiint ia,ib;
     for(faceIndex=0; faceIndex< 5; faceIndex++){
         hitCount=0;//初期化
         for(ia=0; ia< 3; ia++){
@@ -458,7 +458,7 @@ uint& CFaceTree::getPrismFaceIndex(const vuint& vLocalNodeIndex)
 // --
 // 節点のツリーによる分岐
 //
-uint& CFaceTree::getPrismFaceIndex2(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getPrismFaceIndex2(const vuint& vLocalNodeIndex)
 {
     switch(vLocalNodeIndex[0]){
         case(0):
@@ -600,15 +600,15 @@ uint& CFaceTree::getPrismFaceIndex2(const vuint& vLocalNodeIndex)
 
 // Pyramid
 // --
-uint& CFaceTree::getPyramidFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getPyramidFaceIndex(const vuint& vLocalNodeIndex)
 {
-    uint faceIndex;
-    uint hitCount;
+    uiint faceIndex;
+    uiint hitCount;
 
     // 面の数==5, 面の頂点数==4
     //   最初以外の、4つののFaceは三角形であるが、頂点数を揃えるため4頂点にしてある.
     //   三角形の面は、最初の局所ノード番号を最後に再度使ってある. ＝＞ 面は,結局3つの頂点のみチェックするので関係ない.
-    uint ia,ib;
+    uiint ia,ib;
     for(faceIndex=0; faceIndex< 5; faceIndex++){
         hitCount=0;//初期化
         for(ia=0; ia< 3; ia++){
@@ -627,7 +627,7 @@ uint& CFaceTree::getPyramidFaceIndex(const vuint& vLocalNodeIndex)
 // --
 // 節点のツリー構造による面探索
 //
-uint& CFaceTree::getPyramidFaceIndex2(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getPyramidFaceIndex2(const vuint& vLocalNodeIndex)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
 
@@ -762,13 +762,13 @@ uint& CFaceTree::getPyramidFaceIndex2(const vuint& vLocalNodeIndex)
 // --
 // ノードが一致すれば,面番号=”0”を返す.
 //
-uint& CFaceTree::getQuadFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getQuadFaceIndex(const vuint& vLocalNodeIndex)
 {
     // 面の頂点数==4であるが,
     //  面判定は3個の頂点で判定するので引数vuintのサイズ数を基準とする.
-    uint ia,ib;
-    uint hitCount=0;//初期化
-    uint numOfLocalNode = vLocalNodeIndex.size();
+    uiint ia,ib;
+    uiint hitCount=0;//初期化
+    uiint numOfLocalNode = vLocalNodeIndex.size();
 
     for(ia=0; ia< 4; ia++){
     for(ib=0; ib< numOfLocalNode; ib++){
@@ -791,12 +791,12 @@ uint& CFaceTree::getQuadFaceIndex(const vuint& vLocalNodeIndex)
 // --
 // ノードが一致すれば,面番号=”0”を返す.
 //
-uint& CFaceTree::getTriangleFaceIndex(const vuint& vLocalNodeIndex)
+uiint& CFaceTree::getTriangleFaceIndex(const vuint& vLocalNodeIndex)
 {
     // 面の頂点数==3
-    uint ia,ib;
-    uint hitCount=0;//初期化
-    uint numOfLocalNode = vLocalNodeIndex.size();
+    uiint ia,ib;
+    uiint hitCount=0;//初期化
+    uiint numOfLocalNode = vLocalNodeIndex.size();
     
     for(ia=0; ia< 3; ia++){
     for(ib=0; ib< numOfLocalNode; ib++){
@@ -817,7 +817,7 @@ uint& CFaceTree::getTriangleFaceIndex(const vuint& vLocalNodeIndex)
 
 // Default
 // --
-uint& CFaceTree::getDefaultFaceIndex()
+uiint& CFaceTree::getDefaultFaceIndex()
 {
     mFaceIndex= 0;
 
@@ -827,7 +827,7 @@ uint& CFaceTree::getDefaultFaceIndex()
 
 // Faceを表す局所ノード番号
 // --
-uint* CFaceTree::getLocalNodeFace(const uint& elemType, const uint& iface)
+uiint* CFaceTree::getLocalNodeFace(const uiint& elemType, const uiint& iface)
 {
     switch(elemType){
         case(ElementType::Hexa):case(ElementType::Hexa2):
@@ -864,7 +864,7 @@ uint* CFaceTree::getLocalNodeFace(const uint& elemType, const uint& iface)
 // --
 // Hexa
 // --
-uint* CFaceTree::getLocalNodeHexaFace(const uint& faceIndex)
+uiint* CFaceTree::getLocalNodeHexaFace(const uiint& faceIndex)
 {
     if(faceIndex >= 6){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
@@ -875,7 +875,7 @@ uint* CFaceTree::getLocalNodeHexaFace(const uint& faceIndex)
 }
 // Tetra
 // --
-uint* CFaceTree::getLocalNodeTetraFace(const uint& faceIndex)
+uiint* CFaceTree::getLocalNodeTetraFace(const uiint& faceIndex)
 {
     if(faceIndex >= 4){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
@@ -886,7 +886,7 @@ uint* CFaceTree::getLocalNodeTetraFace(const uint& faceIndex)
 }
 // Prism
 // --
-uint* CFaceTree::getLocalNodePrismFace(const uint& faceIndex)
+uiint* CFaceTree::getLocalNodePrismFace(const uiint& faceIndex)
 {
     if(faceIndex >= 5){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
@@ -897,7 +897,7 @@ uint* CFaceTree::getLocalNodePrismFace(const uint& faceIndex)
 }
 // Pyramid
 // --
-uint* CFaceTree::getLocalNodePyramidFace(const uint& faceIndex)
+uiint* CFaceTree::getLocalNodePyramidFace(const uiint& faceIndex)
 {
     if(faceIndex >= 5){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
@@ -908,13 +908,13 @@ uint* CFaceTree::getLocalNodePyramidFace(const uint& faceIndex)
 }
 // Quad
 // --
-uint* CFaceTree::getLocalNodeQuadFace()
+uiint* CFaceTree::getLocalNodeQuadFace()
 {
     return mQuadFaceIndex;
 }
 // Triangle
 // --
-uint* CFaceTree::getLocalNodeTriangleFace()
+uiint* CFaceTree::getLocalNodeTriangleFace()
 {
     return mTriangleFaceIndex;
 }

@@ -11,8 +11,8 @@
 #include "ElementType.h"
 using namespace pmw;
 
-uint CFilm::mnBaseType = BaseElementType::MaterialElement;
-uint CFilm::mnElemType = ElementType::Polygon;
+uiint CFilm::mnBaseType = BaseElementType::MaterialElement;
+uiint CFilm::mnElemType = ElementType::Polygon;
 
 CFilm::CFilm()
 {

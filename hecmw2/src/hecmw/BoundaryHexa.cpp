@@ -22,7 +22,7 @@ CBoundaryHexa::CBoundaryHexa()
     // mvbMarkingEdge初期化
     // mvbMarkingFace初期化
     // ----
-    uint i;
+    uiint i;
     // 辺
     mvbMarkingEdge = new bool[NumberOfEdge::Hexa()];
     for(i=0; i < NumberOfEdge::Hexa(); i++){
@@ -52,7 +52,7 @@ CBoundaryHexa::~CBoundaryHexa()
 
 // Volume 形状情報
 //
-uint CBoundaryHexa::getElemType()
+uiint CBoundaryHexa::getElemType()
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
     
@@ -66,15 +66,15 @@ uint CBoundaryHexa::getElemType()
             return ElementType::Limit;
     }
 }
-uint CBoundaryHexa::getNumOfEdge()
+uiint CBoundaryHexa::getNumOfEdge()
 {
     return NumberOfEdge::Hexa();
 }
-uint CBoundaryHexa::getNumOfFace()
+uiint CBoundaryHexa::getNumOfFace()
 {
     return NumberOfFace::Hexa();
 }
-uint CBoundaryHexa::getNumOfNode()
+uiint CBoundaryHexa::getNumOfNode()
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
@@ -88,12 +88,12 @@ uint CBoundaryHexa::getNumOfNode()
             return NumberOfNode::Default();
     }
 }
-uint CBoundaryHexa::getNumOfVert()
+uiint CBoundaryHexa::getNumOfVert()
 {
     return NumberOfVertex::Hexa();
 }
 
-void CBoundaryHexa::setOrder(const uint& order)
+void CBoundaryHexa::setOrder(const uiint& order)
 {
     mnOrder = order;
     
@@ -110,16 +110,16 @@ void CBoundaryHexa::setOrder(const uint& order)
 
 // Edge番号 -> pariBNode
 //
-PairBNode CBoundaryHexa::getPairBNode(const uint& iedge)
+PairBNode CBoundaryHexa::getPairBNode(const uiint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    uint *pLocalNum;
+    uiint *pLocalNum;
     
     pLocalNum= pEdgeTree->getHexaLocalNodeNum(iedge);
 
-    uint index1st = pLocalNum[0];
-    uint index2nd = pLocalNum[1];
+    uiint index1st = pLocalNum[0];
+    uiint index2nd = pLocalNum[1];
 
     PairBNode pairBNode;
     pairBNode.first = mvBNode[index1st];
@@ -137,12 +137,12 @@ PairBNode CBoundaryHexa::getPairBNode(const uint& iedge)
 
 // pairBNode -> Edge番号
 //
-uint& CBoundaryHexa::getEdgeID(PairBNode& pairBNode)
+uiint& CBoundaryHexa::getEdgeID(PairBNode& pairBNode)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    uint ivert= getVertIndex(pairBNode.first);
-    uint jvert= getVertIndex(pairBNode.second);
+    uiint ivert= getVertIndex(pairBNode.first);
+    uiint jvert= getVertIndex(pairBNode.second);
     
     //cout << "BoundaryHexa::getEdgeID, ivert " << ivert << ", jvert " << jvert << endl;
 
@@ -152,12 +152,12 @@ uint& CBoundaryHexa::getEdgeID(PairBNode& pairBNode)
 
 // 面を構成するBNode配列
 //
-vector<CBoundaryNode*> CBoundaryHexa::getFaceCnvNodes(const uint& iface)
+vector<CBoundaryNode*> CBoundaryHexa::getFaceCnvNodes(const uiint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
     CBoundaryNode *pBNode;
-    uint  ivert, i, numOfVert;
-    uint *pvIndex;
+    uiint  ivert, i, numOfVert;
+    uiint *pvIndex;
     
     pvIndex= pFaceTree->getLocalNodeHexaFace(iface);
     numOfVert= pFaceTree->getHexaFaceNumOfVert(iface);
@@ -176,13 +176,13 @@ vector<CBoundaryNode*> CBoundaryHexa::getFaceCnvNodes(const uint& iface)
 
 // BNode配列 -> Face番号
 //
-uint& CBoundaryHexa::getFaceID(vector<CBoundaryNode*>& vBNode)
+uiint& CBoundaryHexa::getFaceID(vector<CBoundaryNode*>& vBNode)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
 
     vuint vLocalVert;
     CBoundaryNode *pBNode;
-    uint ibnode, numOfBNode= vBNode.size();
+    uiint ibnode, numOfBNode= vBNode.size();
 
     vLocalVert.reserve(4);
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
@@ -194,14 +194,14 @@ uint& CBoundaryHexa::getFaceID(vector<CBoundaryNode*>& vBNode)
 }
 
 // 辺を構成する頂点番号
-uint* CBoundaryHexa::getLocalNode_Edge(const uint& iedge)
+uiint* CBoundaryHexa::getLocalNode_Edge(const uiint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
     return pEdgeTree->getHexaLocalNodeNum(iedge);
 }
 // 面を構成する頂点番号
-uint* CBoundaryHexa::getLocalNode_Face(const uint& iface)
+uiint* CBoundaryHexa::getLocalNode_Face(const uiint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
 
@@ -212,14 +212,14 @@ uint* CBoundaryHexa::getLocalNode_Face(const uint& iface)
 
 // Refine Volume再分割
 // ----
-void CBoundaryHexa::refine(uint& countID, const vuint& vDOF)
+void CBoundaryHexa::refine(uiint& countID, const vuint& vDOF)
 {
     CBoundaryVolume *pProgVol;
     CElement   *pProgElem;
     CNode      *pNode;
     CBoundaryNode *pBNode;
-    uint iprog, numOfProg;
-    uint nProgPos;
+    uiint iprog, numOfProg;
+    uiint nProgPos;
     double progCubicVol;//体積
     double coef;
 
@@ -271,8 +271,8 @@ void CBoundaryHexa::refine(uint& countID, const vuint& vDOF)
 double& CBoundaryHexa::calcVolume()
 {
     CDiscreteVolume *pDiscrete= CDiscreteVolume::Instance();
-    uint* discreHexa;
-    uint  i,ii;
+    uiint* discreHexa;
+    uiint  i,ii;
     CNode* vNode[4];
 
     mCubicVolume= 0.0;
@@ -291,13 +291,13 @@ double& CBoundaryHexa::calcVolume()
 
 // 上位グリッドBNodeへのディレクレ値の分配
 //
-void CBoundaryHexa::distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)
+void CBoundaryHexa::distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel)
 {
     CEdgeTree *pEdgeTree = CEdgeTree::Instance();
 
     double dAveVal;
-    uint iedge, *pnEdgeVert;
-    uint nNumOfEdge=NumberOfEdge::Hexa();
+    uiint iedge, *pnEdgeVert;
+    uiint nNumOfEdge=NumberOfEdge::Hexa();
     // 辺のディレクレ値(上位グリッド)
     for(iedge=0; iedge < nNumOfEdge; iedge++){
         pnEdgeVert = pEdgeTree->getHexaLocalNodeNum(iedge);
@@ -324,8 +324,8 @@ void CBoundaryHexa::distDirichletVal(const uint& dof, const uint& mgLevel, const
 
     CFaceTree *pFaceTree = CFaceTree::Instance();
 
-    uint iface, *pnFaceVert, ivert;
-    uint nNumOfFace = NumberOfFace::Hexa();
+    uiint iface, *pnFaceVert, ivert;
+    uiint nNumOfFace = NumberOfFace::Hexa();
 
     // 面のディレクレ値(上位グリッド)
     for(iface=0; iface < nNumOfFace; iface++){
@@ -346,7 +346,7 @@ void CBoundaryHexa::distDirichletVal(const uint& dof, const uint& mgLevel, const
     //    &  頂点の値をそのまま上位グリッドへ与える
     double dVertVal;
     dAveVal=0.0;
-    uint nNumOfVert=NumberOfVertex::Hexa();
+    uiint nNumOfVert=NumberOfVertex::Hexa();
 
     for(ivert=0; ivert < nNumOfVert; ivert++){
         dVertVal = mvBNode[ivert]->getValue(dof, mgLevel);
@@ -355,21 +355,26 @@ void CBoundaryHexa::distDirichletVal(const uint& dof, const uint& mgLevel, const
         if(mgLevel!=nMaxMGLevel)
           mvBNode[ivert]->setValue(dof, mgLevel+1, dVertVal);//頂点の値を、そのまま上位Gridへセット
     };
-    if(mgLevel > 0){
-        dAveVal *= 0.125;//平均値
+    // 体積中心値
+    dAveVal *= 0.125;//平均値
+    if(mgLevel!=nMaxMGLevel)
+        mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
 
-        if(mgLevel!=nMaxMGLevel)
-          mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
-    }
-    if(mgLevel==0){
-        if(mgLevel!=nMaxMGLevel)
-          mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
-    }
+////    if(mgLevel > 0){
+////        dAveVal *= 0.125;//平均値
+////
+////        if(mgLevel!=nMaxMGLevel)
+////          mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
+////    }
+////    if(mgLevel==0){
+////        if(mgLevel!=nMaxMGLevel)
+////          mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+////    }
 }
 
-void CBoundaryHexa::replaceEdgeBNode(const uint& iedge)
+void CBoundaryHexa::replaceEdgeBNode(const uiint& iedge)
 {
-    uint nNumOfVert=NumberOfVertex::Hexa();
+    uiint nNumOfVert=NumberOfVertex::Hexa();
 
     CBoundaryNode *pBNode=mvEdgeBNode[iedge];
 

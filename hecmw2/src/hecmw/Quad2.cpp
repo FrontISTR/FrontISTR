@@ -9,12 +9,12 @@
 using namespace pmw;
 
 
-uint CQuad2::mnElemType = ElementType::Quad2;
-uint CQuad2::mnElemOrder = 2;
-uint CQuad2::mNumOfFace = 1;
-uint CQuad2::mNumOfEdge = 4;
-uint CQuad2::mNumOfNode = 8;
-uint CQuad2::mNumOfVert = 4;
+uiint CQuad2::mnElemType = ElementType::Quad2;
+uiint CQuad2::mnElemOrder = 2;
+uiint CQuad2::mNumOfFace = 1;
+uiint CQuad2::mNumOfEdge = 4;
+uiint CQuad2::mNumOfNode = 8;
+uiint CQuad2::mNumOfVert = 4;
 
 CQuad2::CQuad2()
 {
@@ -33,7 +33,7 @@ void CQuad2::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -70,7 +70,7 @@ void CQuad2::initialize()
 //
 void CQuad2::replaseEdgeNode()
 {
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         mvNode[mNumOfVert + iedge] = mvEdgeInterNode[iedge];
     };

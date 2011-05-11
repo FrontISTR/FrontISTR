@@ -18,15 +18,15 @@ public:
     virtual ~CIndexBucketMesh();
 
 protected:
-    uint maxMeshID, minMeshID;
-    uint defMeshID;//　<= MaxID - MinID
+    uiint maxMeshID, minMeshID;
+    uiint defMeshID;//　<= MaxID - MinID
 
-    vint mvID2MeshIndex;
+    vuint mvID2MeshIndex;
 public:
-    virtual void Initialize(const uint& maxID, const uint& minID);    // mvID2Indexの領域確保, 変数初期化
-    virtual void resizeBucketMesh(const uint& size);                  // resize vector
-    virtual void setIndexMesh(const uint& id, const uint& index_num); // setup mvID2Index
-    virtual int& getIndexMesh(const uint& id){ return mvID2MeshIndex[ id - minMeshID];}// get Index
+    virtual void Initialize(const uiint& maxID, const uiint& minID);    // mvID2Indexの領域確保, 変数初期化
+    virtual void resizeBucketMesh(const uiint& size);                  // resize vector
+    virtual void setIndexMesh(const uiint& id, const uiint& index_num); // setup mvID2Index
+    virtual uiint& getIndexMesh(const uiint& id){ return mvID2MeshIndex[ id - minMeshID];}// get Index
 };
 }
 #endif	/* _INDEXBUCKET_Mesh_H_ */

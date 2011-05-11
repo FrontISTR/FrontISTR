@@ -20,9 +20,9 @@ CFileReaderCommMesh2::~CFileReaderCommMesh2()
 
 bool CFileReaderCommMesh2::Read(ifstream& ifs, string& sLine)
 {
-    uint  mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
-    uint  nMeshID, numOfCommMesh;
-    uint  nCommMeshID, numOfFace, numOfCommNode, myRank, nTransmitRank;
+    uiint  mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
+    uiint  nMeshID, numOfCommMesh;
+    uiint  nCommMeshID, numOfFace, numOfCommNode, myRank, nTransmitRank;
     
     istringstream iss;
     if(TagCheck(sLine, FileBlockName::StartCommMesh2()) ){
@@ -41,7 +41,7 @@ bool CFileReaderCommMesh2::Read(ifstream& ifs, string& sLine)
             //mpFactory->reserveCommMesh2(mgLevel, nMeshID, numOfCommMesh);//ファイル読み込みなので,mgLevel==0
 
             // "CommMesh2"数ぶんのCommMeshID, myRank, TrasmiRank
-            for(uint i=0; i< numOfCommMesh; i++){
+            for(uiint i=0; i< numOfCommMesh; i++){
                 sLine = getLineSt(ifs);
                 iss.clear();
                 iss.str(sLine);
@@ -59,7 +59,10 @@ bool CFileReaderCommMesh2::Read(ifstream& ifs, string& sLine)
     }
 }
 
-
+bool CFileReaderCommMesh2::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

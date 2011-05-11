@@ -18,11 +18,11 @@ CBoundaryParts::~CBoundaryParts()
 
 // BNodeのセット
 // ----
-void CBoundaryParts::resizeBNode(const uint& res_size)
+void CBoundaryParts::resizeBNode(const uiint& res_size)
 {
     mvBNode.resize(res_size);
 }
-void CBoundaryParts::setBNode(const uint& ivert, CBoundaryNode* pBNode)
+void CBoundaryParts::setBNode(const uiint& ivert, CBoundaryNode* pBNode)
 {
     mvBNode[ivert]= pBNode;
 
@@ -35,8 +35,8 @@ void CBoundaryParts::setupVertexElemID()
 {
     CBoundaryNode* pBNode;
 
-    uint numOfBNode= mvBNode.size();
-    uint ibnode;
+    uiint numOfBNode= mvBNode.size();
+    uiint ibnode;
 
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
         pBNode= mvBNode[ibnode];

@@ -11,7 +11,7 @@ using namespace pmw;
 
 CShapeFunctionCatalog::CShapeFunctionCatalog()
 {
-    uint itype;
+    uiint itype;
     //要素種類別-形状関数の数
     mvShapeNum.resize(ShapeType::Limit);
     for(itype=0; itype< ShapeType::Limit; itype++){
@@ -181,17 +181,17 @@ CShapeFunctionCatalog::~CShapeFunctionCatalog()
 // --
 // 返り値: first=積分点数, second=節点数
 // --
-integPair& CShapeFunctionCatalog::getIntegPair(const uint& shapeType)
+integPair& CShapeFunctionCatalog::getIntegPair(const uiint& shapeType)
 {
     return mvIntegPair[shapeType];
 }
 
-uint& CShapeFunctionCatalog::NumOfShape(const uint& shapeType)
+uiint& CShapeFunctionCatalog::NumOfShape(const uiint& shapeType)
 {
     return mvShapeNum[shapeType];
 }
 
-uint& CShapeFunctionCatalog::NumOfIntegPoint(const uint& shapeType)
+uiint& CShapeFunctionCatalog::NumOfIntegPoint(const uiint& shapeType)
 {
     return mvIntegPointNum[shapeType];
 }
@@ -199,13 +199,13 @@ uint& CShapeFunctionCatalog::NumOfIntegPoint(const uint& shapeType)
 
 // 要素タイプ別 積分点種類数
 // --
-uint CShapeFunctionCatalog::NumOfIntegPointType(const uint& elemType)
+uiint CShapeFunctionCatalog::NumOfIntegPointType(const uiint& elemType)
 {
     return mvIntegPointNumOfElemType[elemType].size();
 }
 // 要素タイプ別 - 積分点種類index - 積分点数
 // --
-uint& CShapeFunctionCatalog::NumOfIntegPoint(const uint& elemType, const uint& integPtIndex)
+uiint& CShapeFunctionCatalog::NumOfIntegPoint(const uiint& elemType, const uiint& integPtIndex)
 {
     return mvIntegPointNumOfElemType[elemType][integPtIndex];
 }

@@ -23,10 +23,10 @@ public:
     
 protected:
     //領域確保
-    void ResizeShape(vvdouble& N, const uint& numOfIntg, const uint& numOfShape);
-    void ResizeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const uint& dof);
-    void Resize2ndDeriv(v4double& d2Ndr, const uint& numOfIntg, const uint& numOfShape, const uint& dof);
-    void Resize_detJ(vdouble& detJ, const uint& numOfIntg);
+    void ResizeShape(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape);
+    void ResizeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const uiint& dof);
+    void Resize2ndDeriv(v4double& d2Ndr, const uiint& numOfIntg, const uiint& numOfShape, const uiint& dof);
+    void Resize_detJ(vdouble& detJ, const uiint& numOfIntg);
     
     //積分点数の一覧
     vuint mvIntegNum;  //積分点の個数( Hexaの場合は,3次元に展開した積分点数 )
@@ -35,15 +35,15 @@ protected:
     CISTR2Edge *mpISTR2Edge;
     CEdge2ISTR *mpEdge2ISTR;
     
-    void ShapeDerivXYZ(const uint& numOfInteg, const uint& numOfShape, const uint& dof,
+    void ShapeDerivXYZ(const uiint& numOfInteg, const uiint& numOfShape, const uiint& dof,
                     const vvvdouble& dNdr, CJacobian* pJacobi, vector<CNode*>& vNode,vvvdouble& dNdx, vdouble& detJ);
 public:
     // 積分点数
-    uint getNumOfIntegType(){ return mvIntegNum.size();}
-    uint& getNumOfInteg(const uint& i){ return mvIntegNum[i];}
+    uiint getNumOfIntegType(){ return mvIntegNum.size();}
+    uiint& getNumOfInteg(const uiint& i){ return mvIntegNum[i];}
     // Hexaでの1次元方向の積分点数
-    uint getNumOfIntegType1D(){ return mvIntegNum1D.size();}
-    uint& getNumOfInteg1D(const uint& i){ return mvIntegNum1D[i];}
+    uiint getNumOfIntegType1D(){ return mvIntegNum1D.size();}
+    uiint& getNumOfInteg1D(const uiint& i){ return mvIntegNum1D[i];}
 };
 #endif	/* _SHAPEFUNCTIONBASE_H */
 }

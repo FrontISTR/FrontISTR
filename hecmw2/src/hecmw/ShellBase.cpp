@@ -8,7 +8,7 @@
 #include "ElementType.h"
 using namespace pmw;
 
-uint CShellBase::mnBaseType = BaseElementType::Shell;
+uiint CShellBase::mnBaseType = BaseElementType::Shell;
 
 //
 //

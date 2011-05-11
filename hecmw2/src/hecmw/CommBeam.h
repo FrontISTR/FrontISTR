@@ -18,8 +18,8 @@ public:
     //debug method
     virtual bool isTypeCoincidence();
 
-    virtual uint getShapeType(){ return ElementType::Beam;}
-    virtual uint getBaseShapeType(){ return BaseElementType::Beam;}
+    virtual uiint getShapeType(){ return ElementType::Beam;}
+    virtual uiint getBaseShapeType(){ return BaseElementType::Beam;}
 
     //virtual void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
     

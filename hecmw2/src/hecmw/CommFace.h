@@ -22,18 +22,18 @@ public:
     CCommFace();
     virtual ~CCommFace();
 private:
-    uint mID;  //Face固有のID
+    uiint mID;  //Face固有のID
 
-    uint mMGLevel;//MultiGrid Level
+    uiint mMGLevel;//MultiGrid Level
 
     // 親Elementの表面
-    uint mMeshID;       //Faceが所属するMeshID
-    uint mElementID;    //Faceが所属する要素ID
-    uint mElementFaceID;//要素のFace番号(局所番号)
+    uiint mMeshID;       //Faceが所属するMeshID
+    uiint mElementID;    //Faceが所属する要素ID
+    uiint mElementFaceID;//要素のFace番号(局所番号)
 
     // 接合面の形
-    uint mNumOfEdge;//接合面形状は,1辺〜多辺(Polygon)
-    uint mFaceType; //接合面の形をElementTypeで表現
+    uiint mNumOfEdge;//接合面形状は,1辺〜多辺(Polygon)
+    uiint mFaceType; //接合面の形をElementTypeで表現
 
 
 
@@ -46,7 +46,7 @@ private:
 
     // 辺の両端ペア
     //PairCommNode        mPairCommNode;//辺の両端ノード
-    uint& getEdgeIndex(PairCommNode& pairCommNode);//両端のノードから辺番号を特定
+    uiint& getEdgeIndex(PairCommNode& pairCommNode);//両端のノードから辺番号を特定
 
 
     // Refin時の分割された新CommFace
@@ -54,34 +54,34 @@ private:
 
 public:
     // 初期化(Type, vector_resize)
-    void initialize(const uint& numOfVert, const uint& numOfEdge, const uint& nOrder);
+    void initialize(const uiint& numOfVert, const uiint& numOfEdge, const uiint& nOrder);
     
     // ID
-    void  setID(const uint& id){ mID= id;}
-    uint& getID(){ return mID;}
+    void  setID(const uiint& id){ mID= id;}
+    uiint& getID(){ return mID;}
 
     
     // MultiGrid Level
-    void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
-    uint& getMGLevel(){ return mMGLevel;}
+    void setMGLevel(const uiint& mgLevel){ mMGLevel= mgLevel;}
+    uiint& getMGLevel(){ return mMGLevel;}
 
 
     // 形状
-    uint& getType(){ return mFaceType;}
-    uint& getNumOfEdge(){ return mNumOfEdge;}
-    uint  getNumOfVert();
+    uiint& getType(){ return mFaceType;}
+    uiint& getNumOfEdge(){ return mNumOfEdge;}
+    uiint  getNumOfVert();
 
     // 1次 || 2次
-    uint getOrder();
+    uiint getOrder();
 
     // ラップしているMesh要素
     // ----
-    void setMeshID(const uint& meshID){ mMeshID= meshID;}
-    void setElementID(const uint& elemID){ mElementID= elemID;}
-    void setElementFaceID(const uint& iface){ mElementFaceID= iface;}
-    uint& getMeshID(){ return mMeshID;}
-    uint& getElementID(){ return mElementID;}
-    uint& getElementFaceID(){ return mElementFaceID;}
+    void setMeshID(const uiint& meshID){ mMeshID= meshID;}
+    void setElementID(const uiint& elemID){ mElementID= elemID;}
+    void setElementFaceID(const uiint& iface){ mElementFaceID= iface;}
+    uiint& getMeshID(){ return mMeshID;}
+    uiint& getElementID(){ return mElementID;}
+    uiint& getElementFaceID(){ return mElementFaceID;}
 
 
 
@@ -89,33 +89,33 @@ public:
     // 通信ノード全体
     // ----
     //void setVertCommNode(const uint& ivert, CCommNode* pCommNode){ mvCommNode[ivert]= pCommNode;}
-    void setCommNode(const uint& index, CCommNode* pCommNode){ mvCommNode[index]= pCommNode;}
+    void setCommNode(const uiint& index, CCommNode* pCommNode){ mvCommNode[index]= pCommNode;}
     //uint getVertCommNodeSize(){ return mvCommNode.size();}
-    uint getCommNodeSize(){ return mvCommNode.size();}
+    uiint getCommNodeSize(){ return mvCommNode.size();}
     //CCommNode* getVertCommNode(const uint& ivert){ return mvCommNode[ivert];}
     //vector<CCommNode*>& getVertCommNode(){ return mvCommNode;}
-    CCommNode* getCommNode(const uint& index){ return mvCommNode[index];}
+    CCommNode* getCommNode(const uiint& index){ return mvCommNode[index];}
     vector<CCommNode*>& getCommNode(){ return mvCommNode;}
 
 
     // 辺の両端のCommNode
     // ----
-    PairCommNode getEdgePairCommNode(const uint& iedge);
+    PairCommNode getEdgePairCommNode(const uiint& iedge);
 
     // 辺ノード
     // ----
-    CCommNode* getEdgeCommNode(const uint& iedge){  return  mvEdgeCommNode[iedge];}
+    CCommNode* getEdgeCommNode(const uiint& iedge){  return  mvEdgeCommNode[iedge];}
 
     
     // Edge集合処理のFaceへの処理
     // ----
-    void setEdgeCommFace(CCommFace* pNeibFace, const uint& iedge);
+    void setEdgeCommFace(CCommFace* pNeibFace, const uiint& iedge);
     void setEdgeCommFace(CCommFace* pNeibFace, PairCommNode& pairCommNode);
-    void setEdgeCommNode(CCommNode* pEdgeCommNode, const uint& iedge);
+    void setEdgeCommNode(CCommNode* pEdgeCommNode, const uiint& iedge);
     void setEdgeCommNode(CCommNode* pEdgeCommNode, PairCommNode& pairCommNode);
-    void markingEdgeNode(const uint& iedge);
+    void markingEdgeNode(const uiint& iedge);
     void markingEdgeNode(PairCommNode& pairCommNode);
-    bool isEdgeNodeMarking(const uint& iedge){ return mvbEdgeMarking[iedge];}
+    bool isEdgeNodeMarking(const uiint& iedge){ return mvbEdgeMarking[iedge];}
 
     // 2次要素面のときの辺ノード => mvCommNodeへ移設
     //

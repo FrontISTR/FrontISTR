@@ -27,7 +27,7 @@ CFileWriterContactMesh::~CFileWriterContactMesh()
 
 // MW3標準のファイル出力
 //
-void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterContactMesh::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
     pmw::CAssyModel *pAssy;
     pAssy= mpGMGModel->getAssyModel(mgLevel);
@@ -35,18 +35,18 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
     string white(" ");
 
     pmw::CContactMesh *pConMesh;
-    uint numOfContact;
-    uint icont;
+    uiint numOfContact;
+    uiint icont;
 
     pmw::CSkinFace *pSkinFace;
-    uint numOfSkinFace;
-    uint iface;
+    uiint numOfSkinFace;
+    uiint iface;
 
     pmw::CContactNode *pConNode;
-    uint numOfConNode;
-    uint icnode;
+    uiint numOfConNode;
+    uiint icnode;
 
-    uint maslave;//マスター,スレーブ切り替え
+    uiint maslave;//マスター,スレーブ切り替え
 
     // ----
     // 面構成Nodeの出力,Nodeのrank出力
@@ -160,8 +160,8 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
             ofs << " MasterFaceID= " << pSkinFace->getID();
 
             ofs << ", SlaveP::";
-            uint numOfSlaveP= pSkinFace->getNumOfSlaveNode();
-            uint isnode;
+            uiint numOfSlaveP= pSkinFace->getNumOfSlaveNode();
+            uiint isnode;
             for(isnode=0; isnode < numOfSlaveP; isnode++){
                 pConNode= pSkinFace->getSlaveNode(isnode);
 
@@ -173,8 +173,8 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
     };
 
 
-    uint numOfSPoint;
-    uint islave;
+    uiint numOfSPoint;
+    uiint islave;
     int  masterFaceID;
     pmw::CContactNode* pSlaveNode;
     pmw::CSkinFace* pMasterFace;
@@ -248,7 +248,7 @@ void CFileWriterContactMesh::Write(ofstream& ofs, const uint& mgLevel)
 
                 //MPI
                 int qnode_id[4];// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 注意!: MPIのためにスタティックにとってる.
-                uint rank_count(0);
+                uiint rank_count(0);
                 for(ivert=0; ivert< numOfVert; ivert++){
                     pMasterNode= pMasterFace->getNode(ivert);
                     qnode_id[ivert]= pMasterNode->getNodeID();

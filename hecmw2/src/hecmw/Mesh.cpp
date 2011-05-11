@@ -37,7 +37,7 @@ CMesh::CMesh(void)
     //mnDummyCount= 0;
 }
 
-CMesh::CMesh(const uint& numofnode, const uint& numofelem)
+CMesh::CMesh(const uiint& numofnode, const uiint& numofelem)
 {
     mpLogger = Utility::CLogger::Instance();
 
@@ -51,8 +51,8 @@ CMesh::CMesh(const uint& numofnode, const uint& numofelem)
 //
 CMesh::~CMesh(void)
 {
-    //debug
-    cout << "~CMesh start,  mMGLevel==" << mMGLevel << endl;
+    ////debug
+    //cout << "~CMesh start,  mMGLevel==" << mMGLevel << endl;
 
     // 要素集合(AggretateElement)の削除
     //
@@ -75,21 +75,21 @@ CMesh::~CMesh(void)
     for_each(mvElement.begin(), mvElement.end(), DeleteObject());
 
 
-    //debug
-    cout << "~CMesh   end,  mMGLevel==" << mMGLevel << endl;
+    ////debug
+    //cout << "~CMesh   end,  mMGLevel==" << mMGLevel << endl;
 }
 
 // Bucket setup -> Node
 //
 // case : max_id, min_id 判明
 //
-void CMesh::initBucketNode(const uint& max_id, const uint& min_id)
+void CMesh::initBucketNode(const uiint& max_id, const uiint& min_id)
 {
     moBucket.clearBucketNode();
     moBucket.resizeBucketNode(max_id, min_id);
 }
 // ID -> Index, setup
-void CMesh::setupBucketNodeIndex(const uint& id, const uint& index)
+void CMesh::setupBucketNodeIndex(const uiint& id, const uiint& index)
 {
     moBucket.setIndexNode(id, index);
 }
@@ -101,7 +101,7 @@ void CMesh::setupBucketNodeIndex(const uint& id, const uint& index)
 void CMesh::setupBucketNode()
 {
     CNode *pNode;
-    uint maxID,minID, i;
+    uiint maxID,minID, i;
 
     // init
     pNode = mvNode[0];
@@ -127,13 +127,13 @@ void CMesh::setupBucketNode()
 //
 // case : max_id, min_id 判明
 //
-void CMesh::initBucketElement(const uint& max_id, const uint& min_id)
+void CMesh::initBucketElement(const uiint& max_id, const uiint& min_id)
 {
     moBucket.clearBucketElement();
     moBucket.resizeBucketElement(max_id, min_id);
 }
 // ID -> Index, setup
-void CMesh::setupBucketElementIndex(const uint& id, const uint& index)
+void CMesh::setupBucketElementIndex(const uiint& id, const uiint& index)
 {
     moBucket.setIndexElement(id, index);
 }
@@ -145,7 +145,7 @@ void CMesh::setupBucketElementIndex(const uint& id, const uint& index)
 void CMesh::setupBucketElement()
 {
     CElement *pElement;
-    uint maxID,minID, i;
+    uiint maxID,minID, i;
 
     // init
     pElement = mvElement[0];
@@ -173,7 +173,7 @@ void CMesh::setupBucketElement()
 
 // Reserve mvNode
 //
-void CMesh::reserveNode(const uint& num_of_node)
+void CMesh::reserveNode(const uiint& num_of_node)
 {
     mvNode.reserve(num_of_node);
     //numOfNode= num_of_node;
@@ -196,9 +196,9 @@ void CMesh::setNode(CNode *pNode)
 
 // IDから配列のIndexを取得して,配列からNode*を取得
 //
-CNode* CMesh::getNode(const uint &id)
+CNode* CMesh::getNode(const uiint &id)
 {
-    uint index;
+    uiint index;
     index = moBucket.getIndexNode(id);
 
     //if(index==-1){ index=id;}//Indexが-1のIDは存在しない.
@@ -208,7 +208,7 @@ CNode* CMesh::getNode(const uint &id)
 
 // 直接Indexを指定してNode*を取得
 //
-CNode* CMesh::getNodeIX(const uint& index)
+CNode* CMesh::getNodeIX(const uiint& index)
 {
     return mvNode[index];
 }
@@ -221,7 +221,7 @@ CNode* CMesh::getNodeIX(const uint& index)
 
 // Reserve mvElement
 //
-void CMesh::reserveElement(const uint& num_of_elem)
+void CMesh::reserveElement(const uiint& num_of_elem)
 {
     mvElement.reserve(num_of_elem);
     //numOfElement= num_of_elem;
@@ -238,9 +238,9 @@ void CMesh::setElement(CElement *pElement)
 
 // IDからIndex番号を取得して,配列からCElement*を取得
 //
-CElement* CMesh::getElement(const uint& id)
+CElement* CMesh::getElement(const uiint& id)
 {
-    uint index;
+    uiint index;
     index = moBucket.getIndexElement(id);
 
     //if(index==-1){ index = id;}
@@ -250,7 +250,7 @@ CElement* CMesh::getElement(const uint& id)
 
 // 直接Indexを指定してElement*を取得
 //
-CElement* CMesh::getElementIX(const uint& index)
+CElement* CMesh::getElementIX(const uiint& index)
 {
     return mvElement[index];
 }
@@ -260,7 +260,7 @@ CElement* CMesh::getElementIX(const uint& index)
 // Aggregate-Element, Aggregate-Node
 // ---
 //
-void CMesh::resizeAggregate(const uint& res_size)
+void CMesh::resizeAggregate(const uiint& res_size)
 {
 //    mvAggElement.resize(res_size + 1);// 配列数とMaxIDがずれることは,ないはずなので＋１は不要…
 //    mvAggNode.resize(res_size + 1);   //
@@ -269,44 +269,44 @@ void CMesh::resizeAggregate(const uint& res_size)
     if(mnSolutionType==SolutionType::FVM) mvAggNode.resize(res_size);
 }
 
-void CMesh::setAggElement(CAggregateElement* pAggElem, const uint& inode)
+void CMesh::setAggElement(CAggregateElement* pAggElem, const uiint& inode)
 {
     mvAggElement[inode] = pAggElem;
 }
 
-void CMesh::setAggNode(CAggregateNode* pAggNode, const uint& inode)
+void CMesh::setAggNode(CAggregateNode* pAggNode, const uiint& inode)
 {
     mvAggNode[inode] = pAggNode;
 }
 
 // Node_ID に対応する,AggregateElementの提供
 //
-CAggregateElement* CMesh::getAggElem(const uint& node_id)
+CAggregateElement* CMesh::getAggElem(const uiint& node_id)
 {
-    uint index;
+    uiint index;
     index = moBucket.getIndexNode(node_id);
 
     return mvAggElement[index];
 }
 // 配列Indexに対応する、AggregateElementの提供
 //
-CAggregateElement* CMesh::getAggElemIX(const uint& inode)
+CAggregateElement* CMesh::getAggElemIX(const uiint& inode)
 {
     return mvAggElement[inode];
 }
 
 // Node_ID に対応する,AggregateNodeの提供
 //
-CAggregateNode* CMesh::getAggNode(const uint& node_id)
+CAggregateNode* CMesh::getAggNode(const uiint& node_id)
 {
-    uint index;
+    uiint index;
     index = moBucket.getIndexNode(node_id);
 
     return mvAggNode[index];
 }
 // 配列Indexに対応する、AggregateNodeの提供
 //
-CAggregateNode* CMesh::getAggNodeIX(const uint& inode)
+CAggregateNode* CMesh::getAggNodeIX(const uiint& inode)
 {
     return mvAggNode[inode];
 }
@@ -315,10 +315,10 @@ CAggregateNode* CMesh::getAggNodeIX(const uint& inode)
 // AggregateElement,AggregateNode のセットアップ
 //  :nLevelは、2次要素の初期(Level=0)処理のために使用
 // 
-void CMesh::setupAggregate(const uint& nLevel)
+void CMesh::setupAggregate(const uiint& nLevel)
 {
     CElement *pElem; CNode *pNode;
-    uint ielem, local_id, inode;
+    uiint ielem, local_id, inode;
 
     mNumOfNode= mvNode.size();
     mNumOfElement= mvElement.size();
@@ -338,7 +338,7 @@ void CMesh::setupAggregate(const uint& nLevel)
     // Node(Vertex)が所属する、要素のID番号をセット(in Node) : 2次要素の辺の要素集合については、0段以外は集めない.
     //     (複数の要素に所属している)
     //
-    uint numOfLocalNode; uint elemID;
+    uiint numOfLocalNode; uiint elemID;
     for(ielem=0; ielem< mNumOfElement; ielem++){
         pElem = mvElement[ielem];
 
@@ -393,7 +393,7 @@ void CMesh::setupAggregate(const uint& nLevel)
 
     if(mnSolutionType==SolutionType::FEM){
         CAggregateElement *pAggElem;
-        uint iagg_elem, numOfAggElem;
+        uiint iagg_elem, numOfAggElem;
         //
         // Nodeにセットされた要素のIDを基に,AggregateElement(in Mesh)をセット: 2次要素の辺の要素集合については、setupEdgeElement()で集める.
         //
@@ -419,8 +419,8 @@ void CMesh::setupAggregate(const uint& nLevel)
     if(mnSolutionType==SolutionType::FVM){
         CAggregateNode *pAggNode;
         vector<CNode*> vConnNode;
-        uint ncon, nNumOfConnNode;
-        uint iagg_elem, numOfAggElem;
+        uiint ncon, nNumOfConnNode;
+        uiint iagg_elem, numOfAggElem;
         // VertexのAggregateElementを基に,AggregateNodeをセット
         //
         for(inode=0; inode< mNumOfNode; inode++){
@@ -457,13 +457,13 @@ void CMesh::setupAggregate(const uint& nLevel)
 //
 void CMesh::presetProgMesh(CMesh* pProgMesh)
 {
-    uint progNumOfNode= mNumOfNode;
-    uint progNumOfElem= mNumOfElement;
+    uiint progNumOfNode= mNumOfNode;
+    uiint progNumOfElem= mNumOfElement;
     //uint numOfHexa(0),numOfTetra(0),numOfPrism(0),numOfPyramid(0),numOfQuad(0),numOfTriangle(0),numOfBeam(0);//現Meshの種類別数
     
     // 増加要素 予測
     CElement *pElem;
-    uint ielem;
+    uiint ielem;
     for(ielem=0; ielem< mNumOfElement; ielem++){
         pElem= mvElement[ielem];
         
@@ -505,7 +505,7 @@ void CMesh::presetProgMesh(CMesh* pProgMesh)
     // --
     // NodeデータをpProgMeshにセット
     // --
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfNode; i++){
         pProgMesh->setNode(mvNode[i]);
     };
@@ -536,7 +536,7 @@ void CMesh::presetProgMesh(CMesh* pProgMesh)
 //
 // nLevel:2次要素の場合のファーストステップ判定用
 //
-void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
+void CMesh::setupEdgeElement(CMesh *pProgMesh, const uiint& nLevel)
 {
     // 節点の要素集合は取得済みとする(mvAggregateElement)
     //
@@ -548,21 +548,28 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
     //
     CElement *pOtherElem;
     vector<CElement*> vEdgeElem;//一つの要素の辺の要素集合
-    uint nOtherEdge;// elem loop外の要素の辺(Edge)index番号
+    uiint nOtherEdge;// elem loop外の要素の辺(Edge)index番号
 
     //vint pairIndex;  pairIndex.resize(2);
-    uint numOfEdge;
-    uint ielem,iedge;
-    uint indexCount;//ノードID生成用
+    uiint numOfEdge;
+    uiint ielem,iedge;
+    uiint nInitNodeSize;//ノードID生成用
+    uiint indexCount;   //ノードID生成用
     CNode *inNode;  //中間ノード
 
     // ID 初期値
     if(pProgMesh){
         //prolongation MeshのノードIDの初期値
-        indexCount = pProgMesh->getNodeSize();
+        //    nInitNodeSize= pProgMesh->getNodeSize();
+        //    CNode *pNode = pProgMesh->getNodeIX(nInitNodeSize-1);
+        //    indexCount = pNode->getID()+1;
+        indexCount = moBucket.getMaxNodeID() + 1;
     }else{
         //Refine後の2次ノード設定用
-        indexCount= mvNode.size();//辺ノードの初期値
+        //    nInitNodeSize= mvNode.size();//辺ノードの初期値
+        //    CNode *pNode = mvNode[nInitNodeSize-1];
+        //    indexCount = pNode->getID()+1;
+        indexCount = moBucket.getMaxNodeID() + 1;
     }
 
     ////debug
@@ -590,9 +597,9 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
                 // 同一のEdgeを処理することを回避
                 if(!pElem->isEdgeElem(pNode0,pNode1)){
                     //pElem->getPairNode(pairIndex,iedge);
-                    uint iagg,jagg, elemIndex0, elemIndex1, elemid0, elemid1;
-                    uint numOfAggElem0=pNode0->getNumOfAggElem();// ノードの要素集合
-                    uint numOfAggElem1=pNode1->getNumOfAggElem();// ノードの要素集合
+                    uiint iagg,jagg, elemIndex0, elemIndex1, elemid0, elemid1;
+                    uiint numOfAggElem0=pNode0->getNumOfAggElem();// ノードの要素集合
+                    uiint numOfAggElem1=pNode1->getNumOfAggElem();// ノードの要素集合
 
                     pElem->reserveEdgeElement(iedge,numOfAggElem0);// ノードの要素集合の個数を越えることはないので、ノード要素集合数で確保
 
@@ -623,7 +630,7 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
                     vdouble P0_coord= pNode0->getCoord();
                     vdouble P1_coord= pNode1->getCoord();
                     vdouble In_coord; In_coord.reserve(3);
-                    for(uint i=0; i< 3; i++){ In_coord.push_back( (P0_coord[i] + P1_coord[i])*0.5 );}
+                    for(uiint i=0; i< 3; i++){ In_coord.push_back( (P0_coord[i] + P1_coord[i])*0.5 );}
 
                     inNode->setCoord(In_coord);//inNode(中間ノード)に座標値をセット
                     inNode->setID(indexCount); //indexCountノード数カウントのセット
@@ -662,7 +669,7 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
                     // EdgeElement ループ:pElemの辺に集めた要素集合を、要素集合に含まれる要素の各辺にセットする
                     //
                     vEdgeElem= pElem->getEdgeElement(iedge);
-                    uint n;
+                    uiint n;
                     for(n=0; n< vEdgeElem.size(); n++){
                         pOtherElem=vEdgeElem[n];
 
@@ -681,12 +688,12 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
                     // 2次要素の場合：辺要素集合を"inNode"の要素集合としてセット
                     //---------------------------------------------------
                     if(pElem->getOrder()==ElementOrder::Second && mnSolutionType==SolutionType::FEM){
-                        uint index = mvNode.size() - 1;//このルーチンで生成してpushされたばかりなので.size-1
+                        uiint index = mvNode.size() - 1;//このルーチンで生成してpushされたばかりなので.size-1
                         CAggregateElement *pAggElem = mvAggElement[index];
 
                         pAggElem->reserve(vEdgeElem.size());
 
-                        for(uint i=0; i < vEdgeElem.size(); i++){
+                        for(uiint i=0; i < vEdgeElem.size(); i++){
                             CElement *pEdgeElem = vEdgeElem[i];
                             pAggElem->push(pEdgeElem);
                         };
@@ -713,7 +720,7 @@ void CMesh::setupEdgeElement(CMesh *pProgMesh, const uint& nLevel)
 //
 void CMesh::replaceEdgeNode()
 {
-    uint ielem;
+    uiint ielem;
     // 要素 ループ : 要素内の辺ノードを移し替え
     for(ielem=0; ielem< mNumOfElement; ielem++){
         mvElement[ielem]->replaseEdgeNode();
@@ -727,31 +734,44 @@ void CMesh::replaceEdgeNode()
 CNode* CMesh::GeneInterNode(CNode* pNode)
 {
     CNode *inNode;
-    uint numOfScalar, numOfVector;
+    uiint nSDOF, nVDOF;
     // 要素内では同一種類のノードで構成されるので、片方のノードの型で判断
     // --
     // Scalar
     switch(pNode->getType()){
         case(NodeType::Scalar):
             inNode= new CScalarNode;
-            numOfScalar= pNode->numOfScalarParam();
-            inNode->resizeScalar(numOfScalar);//DOFの確保
+
+            //numOfScalar= pNode->numOfScalarParam();
+            //inNode->resizeScalar(numOfScalar);//DOFの確保
+            
+            nSDOF = pNode->getScalarDOF();
+            inNode->setScalarDOF(nSDOF);
 
             break;
         case(NodeType::Vector):
             inNode= new CVectorNode;
-            numOfVector= pNode->numOfVectorParam();
-            inNode->resizeVector(numOfVector);
+
+            //numOfVector= pNode->numOfVectorParam();
+            //inNode->resizeVector(numOfVector);
+
+            nVDOF = pNode->getVectorDOF();
+            inNode->setVectorDOF(nVDOF);
 
             break;
         case(NodeType::ScalarVector):
             inNode= new CScalarVectorNode;
 
-            numOfScalar= pNode->numOfScalarParam();
-            numOfVector= pNode->numOfVectorParam();
+            //numOfScalar= pNode->numOfScalarParam();
+            //numOfVector= pNode->numOfVectorParam();
+            //inNode->resizeScalar(numOfScalar);
+            //inNode->resizeVector(numOfVector);
 
-            inNode->resizeScalar(numOfScalar);
-            inNode->resizeVector(numOfVector);
+            nSDOF = pNode->getScalarDOF();
+            nVDOF = pNode->getVectorDOF();
+
+            inNode->setScalarDOF(nSDOF);
+            inNode->setVectorDOF(nVDOF);
 
             break;
         default:
@@ -774,17 +794,21 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
 {
     CElement *pElem;
     vector<CNode*> vFaceCnvNode;
-    uint  elemIndex0, elemIndex1, elemIndex2, elemid0, elemid1, elemid2;
+    uiint  elemIndex0, elemIndex1, elemIndex2, elemid0, elemid1, elemid2;
     CNode *pNode0,*pNode1,*pNode2;
     CNode *inNode;//中間ノード用ポインター
-    uint ielem,isurf,jsurf, iagg,jagg, kagg;
-    uint numAggElems0, numAggElems1, numAggElems2;
-    uint numOfFace;
+    uiint ielem,isurf,jsurf, iagg,jagg, kagg;
+    uiint numAggElems0, numAggElems1, numAggElems2;
+    uiint numOfFace;
 
     vuint vnShareElems0, vnShareElems1;//共有_要素インデックス
 
-    uint indexCount;// prolongation MeshのノードID
-    indexCount = pProgMesh->getNodeSize();
+    uiint nInitNodeSize;
+    uiint indexCount;// prolongation MeshのノードID
+
+    nInitNodeSize = pProgMesh->getNodeSize();
+    CNode *pNode= pProgMesh->getNodeIX(nInitNodeSize-1);
+    indexCount = pNode->getID()+1;
 
 
     for(ielem=0; ielem< mNumOfElement; ielem++){
@@ -847,9 +871,9 @@ void CMesh::setupFaceElement(CMesh* pProgMesh)
                 // 隣接要素が存在する面
                 if(vnShareElems1.size()> 1){
                     // pElem自身と隣接要素で2つ. 2つを越える場合は隣接要素形状が2分割されている.<= 現状のメッシュは隣接メッシュは一つとする.
-                    for(uint i=0; i< vnShareElems1.size(); i++){
+                    for(uiint i=0; i< vnShareElems1.size(); i++){
                         
-                        uint pElemIndex= moBucket.getIndexElement(pElem->getID());//// '09.10.01
+                        uiint pElemIndex= moBucket.getIndexElement(pElem->getID());//// '09.10.01
 
                         if(pElemIndex != vnShareElems1[i]){
                             
@@ -914,12 +938,16 @@ void CMesh::setupVolumeNode(CMesh *pProgMesh)
     CElement* pElem;
     CNode *pNode,*cntNode;
     vector<CNode*> vLocalNode;
-    uint nNumOfVert;
+    uiint nNumOfVert;
     vdouble vCoord;
-    uint ielem, inode;
+    uiint ielem, inode;
 
-    uint indexCount;// prolongation MeshのノードID
-    indexCount = pProgMesh->getNodeSize();
+    uiint nInitNodeSize;
+    uiint indexCount;// prolongation MeshのノードID
+
+    nInitNodeSize = pProgMesh->getNodeSize();
+    pNode= pProgMesh->getNodeIX(nInitNodeSize-1);
+    indexCount = pNode->getID()+1;
 
 
     for(ielem=0; ielem< mNumOfElement; ielem++){
@@ -977,10 +1005,10 @@ void CMesh::avgCoord(vector<CNode*> vCnvNode, CNode *pNode)
 {
     //inNodeの座標を計算(平均値)
     vdouble vCoord; vCoord.resize(3);
-    uint i;
+    uiint i;
     for(i=0; i< 3; i++){ vCoord[i]=0.0;}
 
-    uint numOfFaceNode = vCnvNode.size();
+    uiint numOfFaceNode = vCnvNode.size();
     for(i=0; i< numOfFaceNode; i++){
         vCoord[0] += vCnvNode[i]->getX();
         vCoord[1] += vCnvNode[i]->getY();
@@ -1010,10 +1038,10 @@ void CMesh::setupParentNode(CNode* pNode0, CNode* pNode1, CNode* inNode)
 // 面,要素から生成されるNode用
 void CMesh::setupParentNode(vector<CNode*>& vNode, CNode* inNode)
 {
-    uint numOfParent= vNode.size();
+    uiint numOfParent= vNode.size();
     inNode->reserveParentNode(numOfParent);
 
-    uint ipare;
+    uiint ipare;
     for(ipare=0; ipare< numOfParent; ipare++){
         inNode->addParentNode(vNode[ipare]);
     };
@@ -1050,13 +1078,13 @@ void CMesh::setCommMesh(CCommMesh* pCommMesh)
     mvCommMesh.push_back(pCommMesh);
 
     // CommIDからmvCommMeshのインデックス番号を取得できるようにHashをセット
-    uint comID= pCommMesh->getCommID();
+    uiint comID= pCommMesh->getCommID();
     mmCommIndex[comID]= mvCommMesh.size()-1;
 }
 
-CCommMesh* CMesh::getCommMesh(const uint& comID)
+CCommMesh* CMesh::getCommMesh(const uiint& comID)
 {
-    uint comIndex= mmCommIndex[comID];
+    uiint comIndex= mmCommIndex[comID];
 
     return mvCommMesh[comIndex];
 }
@@ -1072,24 +1100,24 @@ CCommMesh* CMesh::getCommMesh(const uint& comID)
 void CMesh::sortMesh()
 {
     //debug
-    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, initial mvNode.size    => ",(uint)mvNode.size());
-    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, initial mvElement.size => ",(uint)mvElement.size());
+    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, initial mvNode.size    => ",(uiint)mvNode.size());
+    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, initial mvElement.size => ",(uiint)mvElement.size());
 
 
     CNode *pNode, *pDNode;
     CElement *pElem, *pDElem;
-    uint numOfDNode, numOfDElement;
+    uiint numOfDNode, numOfDElement;
     
     CCommMesh *pCommMesh;
-    uint numOfComm= mvCommMesh.size();
+    uiint numOfComm= mvCommMesh.size();
     
     // mvNode,mvElementからDNode,DElementを検索してerase().
     // --
     // ○ mNodeEndIndex <= 計算に使用する配列数 をセット
     // ○ mElemEndIndex <= 計算に使用する配列数 をセット
     
-    uint icom;
-    uint idel;//eraseしたインデックス管理
+    uiint icom;
+    uiint idel;//eraseしたインデックス管理
 
     vector<CNode*>::iterator    itNode;
     vector<CElement*>::iterator itElement;
@@ -1167,7 +1195,7 @@ void CMesh::sortMesh()
     // --
     // mvNode,mvElementにDNode,DElementを追加して全体を保全
     // --
-    uint idnode, idelem;
+    uiint idnode, idelem;
     for(icom=0; icom< numOfComm; icom++){
         pCommMesh= mvCommMesh[icom];
         
@@ -1185,8 +1213,8 @@ void CMesh::sortMesh()
     };
 
     //debug
-    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, mvNode.size    => ",(uint)mvNode.size());
-    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, mvElement.size => ",(uint)mvElement.size());
+    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, mvNode.size    => ",(uiint)mvNode.size());
+    mpLogger->Info(Utility::LoggerMode::MWDebug,"Mesh::sortMesh, mvElement.size => ",(uiint)mvElement.size());
 
     //    --
     //    ↓ 下記処理は,中止 ：階層間でIDが変化すると,不都合
@@ -1219,9 +1247,9 @@ void CMesh::setCommMesh2(CCommMesh2* pCommMesh2)
     mmComm2Index[pCommMesh2->getID()]= mvCommMesh2.size()-1;//Hashデータ:mmComm2Index[commID] => vector Index
 }
 
-CCommMesh2* CMesh::getCommMesh2(const uint& comID)
+CCommMesh2* CMesh::getCommMesh2(const uiint& comID)
 {
-    uint index;
+    uiint index;
     index= mmComm2Index[comID];
 
     return mvCommMesh2[index];
@@ -1236,7 +1264,7 @@ CCommMesh2* CMesh::getCommMesh2(const uint& comID)
 // --
 void CMesh::deleteProgData()
 {
-    uint ielem;
+    uiint ielem;
     for(ielem=0; ielem < mNumOfElement; ielem++)
         mvElement[ielem]->deleteProgData();
 }
@@ -1245,7 +1273,7 @@ void CMesh::deleteProgData()
 //
 void CMesh::deleteAggregate_on_Node()
 {
-    uint inode;
+    uiint inode;
     for(inode=0; inode < mNumOfNode; inode++)
         mvNode[inode]->deleteAggregate();
 }
@@ -1258,22 +1286,22 @@ void CMesh::addElemGrp(CElementGroup* pElemGrp)
 {
     mvElementGroup.push_back(pElemGrp);
 
-    uint nGrpID = pElemGrp->getID();
+    uiint nGrpID = pElemGrp->getID();
     mmElemGrpID2IX[nGrpID] = mvElementGroup.size() - 1;
 }
 
-uint CMesh::getNumOfElemGrp()
+uiint CMesh::getNumOfElemGrp()
 {
     return mvElementGroup.size();
 }
 
-CElementGroup* CMesh::getElemGrpIX(const uint& index)
+CElementGroup* CMesh::getElemGrpIX(const uiint& index)
 {
     return mvElementGroup[index];
 }
-CElementGroup* CMesh::getElemGrpID(const uint& nGrpID)
+CElementGroup* CMesh::getElemGrpID(const uiint& nGrpID)
 {
-    uint index = mmElemGrpID2IX[nGrpID];
+    uiint index = mmElemGrpID2IX[nGrpID];
     return mvElementGroup[index];
 }
 

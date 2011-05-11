@@ -25,31 +25,31 @@ public:
 private:
     CEdgeFaceTree();
     // Face 番号
-    uint mFaceIndex;
+    uiint mFaceIndex;
 
     // Faceを構成するEdge番号
-    uint mHexaFaceConnEdge[6][4];
-    uint mTetraFaceConnEdge[4][3];
-    uint mPrismFaceConnEdge[5][4];
-    uint mPyramidFaceConnEdge[5][4];
-    uint mQuadFaceConnEdge[1][4];
-    uint mTriangleFaceConnEdge[1][3];
+    uiint mHexaFaceConnEdge[6][4];
+    uiint mTetraFaceConnEdge[4][3];
+    uiint mPrismFaceConnEdge[5][4];
+    uiint mPyramidFaceConnEdge[5][4];
+    uiint mQuadFaceConnEdge[1][4];
+    uiint mTriangleFaceConnEdge[1][3];
 
 public:
-    uint& getHexaFaceIndex(const uint& edge0, const uint& edge1);
-    uint& getTetraFaceIndex(const uint& edge0, const uint& edge1);
-    uint& getPrismFaceIndex(const uint& edge0, const uint& edge1);
-    uint& getPyramidFaceIndex(const uint& edge0, const uint& edge1);
-    uint& getQuadFaceIndex(const uint& edge0, const uint& edge1);
-    uint& getTriangleFaceIndex(const uint& edge0, const uint& edge1);
+    uiint& getHexaFaceIndex(const uiint& edge0, const uiint& edge1);
+    uiint& getTetraFaceIndex(const uiint& edge0, const uiint& edge1);
+    uiint& getPrismFaceIndex(const uiint& edge0, const uiint& edge1);
+    uiint& getPyramidFaceIndex(const uiint& edge0, const uiint& edge1);
+    uiint& getQuadFaceIndex(const uiint& edge0, const uiint& edge1);
+    uiint& getTriangleFaceIndex(const uiint& edge0, const uiint& edge1);
 
     // Faceを構成するEdge番号配列の提供
-    uint* getHexaFaceConnEdge(const uint& iface){ return mHexaFaceConnEdge[iface];}
-    uint* getTetraFaceConnEdge(const uint& iface){ return mTetraFaceConnEdge[iface];}
-    uint* getPrismFaceConnEdge(const uint& iface){ return mPrismFaceConnEdge[iface];}
-    uint* getPyramidFaceConnEdge(const uint& iface){ return mPyramidFaceConnEdge[iface];}
-    uint* getQuadFaceConnEdge(const uint& iface){ return mQuadFaceConnEdge[iface];}
-    uint* getTriangleFaceConnEdge(const uint& iface){ return mTriangleFaceConnEdge[iface];}
+    uiint* getHexaFaceConnEdge(const uiint& iface){ return mHexaFaceConnEdge[iface];}
+    uiint* getTetraFaceConnEdge(const uiint& iface){ return mTetraFaceConnEdge[iface];}
+    uiint* getPrismFaceConnEdge(const uiint& iface){ return mPrismFaceConnEdge[iface];}
+    uiint* getPyramidFaceConnEdge(const uiint& iface){ return mPyramidFaceConnEdge[iface];}
+    uiint* getQuadFaceConnEdge(const uiint& iface){ return mQuadFaceConnEdge[iface];}
+    uiint* getTriangleFaceConnEdge(const uiint& iface){ return mTriangleFaceConnEdge[iface];}
 };
 }
 

@@ -22,11 +22,11 @@ protected:
     BoundaryGroup<CBoundaryNodeMesh*> mGrpBndNodeMesh;
 
 public:
-    void reserveBndNodeMesh(const uint& res_size){ mGrpBndNodeMesh.reserve(res_size);}
+    void reserveBndNodeMesh(const uiint& res_size){ mGrpBndNodeMesh.reserve(res_size);}
     void setBndNodeMesh(CBoundaryNodeMesh *pBNodeMesh){ mGrpBndNodeMesh.push(pBNodeMesh);}
-    CBoundaryNodeMesh* getBndNodeMeshIX(const uint& index){ return mGrpBndNodeMesh.get_withIndex(index);}
-    CBoundaryNodeMesh* getBndNodeMeshID(const uint& id){ return mGrpBndNodeMesh.get_withID(id);}
-    uint getNumOfBoundaryNodeMesh(){ return mGrpBndNodeMesh.NumOfBoundary();}
+    CBoundaryNodeMesh* getBndNodeMeshIX(const uiint& index){ return mGrpBndNodeMesh.get_withIndex(index);}
+    CBoundaryNodeMesh* getBndNodeMeshID(const uiint& id){ return mGrpBndNodeMesh.get_withID(id);}
+    uiint getNumOfBoundaryNodeMesh(){ return mGrpBndNodeMesh.NumOfBoundary();}
 };
 #endif	/* _BNODEMESH_GRP_H */
 }

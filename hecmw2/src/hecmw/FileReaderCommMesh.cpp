@@ -25,11 +25,11 @@ CFileReaderCommMesh::~CFileReaderCommMesh()
 //
 bool CFileReaderCommMesh::Read(ifstream& ifs, string& sLine)
 {
-    uint mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
+    uiint mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
     
-    uint  numOfMesh, maxMeshID, minMeshID;
-    uint  nMeshID, numOfCommMesh;
-    uint  nCommMeshID, myRank,nTransmitRank;
+    uiint  numOfMesh, maxMeshID, minMeshID;
+    uiint  nMeshID, numOfCommMesh;
+    uiint  nCommMeshID, myRank,nTransmitRank;
 
     // Logger表示用
     string   sLinePara;
@@ -65,7 +65,7 @@ bool CFileReaderCommMesh::Read(ifstream& ifs, string& sLine)
 
             // CommMesh数ぶんのCommMeshID, myRank, TrasmiRank
             // --
-            for(uint i=0; i< numOfCommMesh; i++){
+            for(uiint i=0; i< numOfCommMesh; i++){
                 sLine = getLineSt(ifs);
                 istringstream issin(sLine.c_str());
 
@@ -89,5 +89,8 @@ bool CFileReaderCommMesh::Read(ifstream& ifs, string& sLine)
     }
 }
 
-
+bool CFileReaderCommMesh::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 

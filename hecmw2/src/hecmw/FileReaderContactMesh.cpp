@@ -25,14 +25,14 @@ CFileReaderContactMesh::~CFileReaderContactMesh()
 // --
 bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
 {
-    uint numOfContactMesh, maxID, minID;
-    uint my_rank, trans_rank;
-    uint nProp(0);//属性: 0:MPC, 1:接触
-    uint contactID, meshID, nodeID, rank, elemID, elemFaceID, shapeType;
+    uiint numOfContactMesh, maxID, minID;
+    uiint my_rank, trans_rank;
+    uiint nProp(0);//属性: 0:MPC, 1:接触
+    uiint contactID, meshID, nodeID, rank, elemID, elemFaceID, shapeType;
     bool bmesh(false);//計算領域のContactMeshか？
-    uint maslave;//マスター,スレーブ切り替え
-    uint mgLevel(0);
-    uint conNodeID, numOfConNode, contactFaceID, numOfContactFace;
+    uiint maslave;//マスター,スレーブ切り替え
+    uiint mgLevel(0);
+    uiint conNodeID, numOfConNode, contactFaceID, numOfContactFace;
     
     vuint vConNodeID;
     vuint quadConNodeID;  quadConNodeID.resize(4);
@@ -48,12 +48,12 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
     vstring strData; strData.resize(3);//文字列"-"の読み込み用途
 
     string sParamType;//ConNodeのパラメータタイプ(変位,スカラー,変位+スカラー)
-    uint numOfDisp,numOfScalar;
+    uiint numOfDisp,numOfScalar;
 
     if(TagCheck(sLine, FileBlockName::StartContactMesh()) ){// スタート タグ
 
         //debug
-        cout << "FileReaderContactMesh::Read" << endl;
+        //cout << "FileReaderContactMesh::Read" << endl;
 
         while(true){
             sLine = getLineSt(ifs);
@@ -62,8 +62,10 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
             istringstream iss(sLine.c_str());
             // 接合メッシュ数(MPCメッシュ数),MaxID,MinID
             iss >> numOfContactMesh >> maxID >> minID;// maxID,minIDは,使ってない…
+
+            //cout << "FileReaderContactMesh::Read  --- A" << endl;
             
-            uint icont;
+            uiint icont;
             for(icont=0; icont< numOfContactMesh; icont++){
                 sLine= getLineSt(ifs);
                 iss.clear();
@@ -74,7 +76,7 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                 char_separator<char> sep(" \t\n");
                 tokenizer< char_separator<char> > tokens(sLine, sep);
 
-                uint nCount(0);
+                uiint nCount(0);
                 typedef tokenizer< char_separator<char> >::iterator Iter;
                 for(Iter it=tokens.begin(); it != tokens.end(); ++it){
                     string str = *it;
@@ -84,6 +86,8 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                     if(nCount==3){ nProp     = atoi(str.c_str());}//入力ファイルにnPropが無い場合は、"初期値0:MPC"のまま.
                     nCount++;
                 };
+
+                //cout << "FileReaderContactMesh::Read  --- B" << endl;
                 
                 
                 mpFactory->GeneContactMesh(contactID, my_rank, trans_rank, nProp);//nPropが無い場合は、初期値0:MPC
@@ -95,7 +99,7 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                 // ContactNode数,MaxID,MinID
                 iss >> numOfConNode >> maxID >> minID;// maxID,minIDは,Factoryで使っていない…
 
-                uint icnode;
+                uiint icnode;
                 for(icnode=0; icnode< numOfConNode; icnode++){
                     sLine= getLineSt(ifs);
                     iss.clear();
@@ -119,6 +123,8 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                                                 bmesh, meshID, nodeID, rank, maslave);
                     
                 };//icnodeループ(ContactNodeループ)
+
+                //cout << "FileReaderContactMesh::Read  --- C" << endl;
                 
                 // maslave::マスター,スレーブ切り替え
                 for(maslave=0; maslave< 2; maslave++){
@@ -128,7 +134,7 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                     // 接合面の数,MaxID,MinID
                     iss >> numOfContactFace >> maxID >> minID;
 
-                    uint iface;
+                    uiint iface;
                     for(iface=0; iface< numOfContactFace; iface++){
                         sLine= getLineSt(ifs);
                         iss.clear();
@@ -196,7 +202,7 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
                         
 
                         //Face rank
-                        uint face_rank;
+                        uiint face_rank;
                         iss >> face_rank;
                         
                         switch(maslave){//マスタースレーブswitch
@@ -221,7 +227,10 @@ bool CFileReaderContactMesh::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderContactMesh::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

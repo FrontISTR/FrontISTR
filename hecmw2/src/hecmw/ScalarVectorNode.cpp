@@ -11,7 +11,7 @@ using namespace pmw;
 
 #include "Logger.h"
 
-uint CScalarVectorNode::mnType= NodeType::ScalarVector;
+uiint CScalarVectorNode::mnType= NodeType::ScalarVector;
 
 // construct & destruct
 //
@@ -25,92 +25,72 @@ CScalarVectorNode::~CScalarVectorNode()
 //    cout << "~CScalarVectorNode" << endl;
 }
 
-
-
-
-void CScalarVectorNode::Message_getScalar()
+void CScalarVectorNode::setScalarDOF(const uiint& nNDOF)
 {
-    Utility::CLogger *pLogger = Utility::CLogger::Instance();
-    pLogger->Info(Utility::LoggerMode::Warn,"invalid method, at ScalarVectorNode::getScalar");
+    mnNumOfSDOF= nNDOF;
+}
+void CScalarVectorNode::setVectorDOF(const uiint& nNDOF)
+{
+    mnNumOfVDOF= nNDOF;
+}
+uiint& CScalarVectorNode::getScalarDOF()
+{
+    return mnNumOfSDOF;
+}
+uiint& CScalarVectorNode::getVectorDOF()
+{
+    return mnNumOfVDOF;
+}
+uiint CScalarVectorNode::getTotalDOF()
+{
+    return mnNumOfSDOF + mnNumOfVDOF;
 }
 
-
+//
 // Parameter Reserve
 //
-
-//void CScalarVectorNode::reserveScalar(const uint& res_size)
-//{
-//    mvScalarParam.reserve(res_size);
-//}
-
-void CScalarVectorNode::resizeScalar(const uint& res_size)
-{
-    mvScalarParam.resize(res_size);
-}
-
-//void CScalarVectorNode::reserveVector(const uint& res_size)
-//{
-//    mvVectorParam.reserve(res_size);
-//}
-
-void CScalarVectorNode::resizeVector(const uint& res_size)
-{
-    mvVectorParam.resize(res_size);
-}
-
-
-
+////void CScalarVectorNode::resizeScalar(const uiint& res_size)
+////{
+////    mvScalarParam.resize(res_size);
+////}
+////
+////void CScalarVectorNode::resizeVector(const uiint& res_size)
+////{
+////    mvVectorParam.resize(res_size);
+////}
+//
 // Parameter setting
 //
-
-//void CScalarVectorNode::setScalar(const double& val)
-//{
-//    mvScalarParam.push_back(val);
-//}
-
-void CScalarVectorNode::setScalar(const double& val, const uint& index)
-{
-    mvScalarParam[index]= val;
-}
-
-//void CScalarVectorNode::setVector(const double& val)
-//{
-//    mvVectorParam.push_back(val);
-//}
-
-//void CScalarVectorNode::setVector(const vdouble& vVal)
-//{
-//    mvVectorParam = vVal;
-//}
-
-void CScalarVectorNode::setVector(const double& val, const uint& index)
-{
-    mvVectorParam[index]= val;
-}
-
+////void CScalarVectorNode::setScalar(const double& val, const uiint& index)
+////{
+////    mvScalarParam[index]= val;
+////}
+////
+////void CScalarVectorNode::setVector(const double& val, const uiint& index)
+////{
+////    mvVectorParam[index]= val;
+////}
+////
 //
-// get Method -> *.h
-//
-
 // Count for Parameter
 //
-uint CScalarVectorNode::numOfScalarParam()
-{
-    return mvScalarParam.size();
-}
-
-uint CScalarVectorNode::numOfVectorParam()
-{
-    return mvVectorParam.size();
-}
-
-
-// スカラー,ベクトル 総自由度
-//
-uint CScalarVectorNode::numOfTotalParam()
-{
-    return mvScalarParam.size() + mvVectorParam.size();
-}
+////uiint CScalarVectorNode::numOfScalarParam()
+////{
+////    return mvScalarParam.size();
+////}
+////
+////uiint CScalarVectorNode::numOfVectorParam()
+////{
+////    return mvVectorParam.size();
+////}
+////
+////
+////// スカラー,ベクトル 総自由度
+//////
+////uiint CScalarVectorNode::numOfTotalParam()
+////{
+////    return mvScalarParam.size() + mvVectorParam.size();
+////}
 
 
 

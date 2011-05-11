@@ -11,12 +11,12 @@
 #include "Triangle.h"
 using namespace pmw;
 
-uint CTriangle::mnElemType = ElementType::Triangle;
-uint CTriangle::mnElemOrder = 1;
-uint CTriangle::mNumOfFace = 1;
-uint CTriangle::mNumOfEdge = 3;
-uint CTriangle::mNumOfNode = 3;
-uint CTriangle::mNumOfVert = 3;
+uiint CTriangle::mnElemType = ElementType::Triangle;
+uiint CTriangle::mnElemOrder = 1;
+uiint CTriangle::mNumOfFace = 1;
+uiint CTriangle::mNumOfEdge = 3;
+uiint CTriangle::mNumOfNode = 3;
+uiint CTriangle::mNumOfVert = 3;
 //
 //
 CTriangle::CTriangle()
@@ -39,7 +39,7 @@ void CTriangle::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -72,21 +72,21 @@ void CTriangle::initialize()
 }
 
 
-const uint& CTriangle::getType()
+const uiint& CTriangle::getType()
 {
     return mnElemType;
 }
-const uint& CTriangle::getOrder()
+const uiint& CTriangle::getOrder()
 {
     return mnElemOrder;
 }
 
 
-bool CTriangle::IndexCheck(const uint& propType, const uint& index, string& method_name)
+bool CTriangle::IndexCheck(const uiint& propType, const uiint& index, string& method_name)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
-    uint numOfProp;
+    uiint numOfProp;
     switch(propType){
         case(ElementPropType::Face):
             numOfProp = mNumOfFace;
@@ -114,7 +114,7 @@ bool CTriangle::IndexCheck(const uint& propType, const uint& index, string& meth
 
 // out:(PariNode edgeNode)
 //
-PairNode CTriangle::getPairNode(const uint& iedge)
+PairNode CTriangle::getPairNode(const uiint& iedge)
 {
     PairNode pairNode;
 
@@ -142,7 +142,7 @@ PairNode CTriangle::getPairNode(const uint& iedge)
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CTriangle::getPairNode(vint& pairNodeIndex, const uint& iedge)
+void CTriangle::getPairNode(vint& pairNodeIndex, const uiint& iedge)
 {
     switch(iedge){
         //surf 0 (low surf)
@@ -166,9 +166,9 @@ void CTriangle::getPairNode(vint& pairNodeIndex, const uint& iedge)
 
 // ノードの局所番号に対応した辺(Edge)番号
 //
-uint& CTriangle::getEdgeIndex(CNode* pNode0, CNode* pNode1)
+uiint& CTriangle::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 { 
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -177,7 +177,7 @@ uint& CTriangle::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 
     return edgeTree->getTriangleEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Triangle Edge Tree
 }
-uint& CTriangle::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+uiint& CTriangle::getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -208,7 +208,7 @@ bool CTriangle::isEdgeElem(CNode* pNode0, CNode* pNode1)
 
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Triangle Edge Tree
 
     return mvb_edge[edgeNum];
@@ -221,7 +221,7 @@ void CTriangle::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     //vuint vLocalNum = getLocalNodeNum(pNode0, pNode1);
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Triangle Edge Tree
 
     mvb_edge[edgeNum]=true;// スタンプ
@@ -229,10 +229,10 @@ void CTriangle::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
 
 // 局所ノード番号が正しければ"0"を返す.
 //
-uint& CTriangle::getLocalFaceNum(const vuint& vLocalNodeNum)
+uiint& CTriangle::getLocalFaceNum(const vuint& vLocalNodeNum)
 {
     CFaceTree *pFaceTree = CFaceTree::Instance();
-    uint faceIndex = pFaceTree->getTriangleFaceIndex(vLocalNodeNum);
+    uiint faceIndex = pFaceTree->getTriangleFaceIndex(vLocalNodeNum);
 
     if(faceIndex==0){
         mTempo= 0;
@@ -246,7 +246,7 @@ uint& CTriangle::getLocalFaceNum(const vuint& vLocalNodeNum)
 
 // 3個のノードから、面番号を取得.
 //
-uint& CTriangle::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
+uiint& CTriangle::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
     // 面構成ノード -> 局所ノード番号
     // 局所ノード番号 -> 面番号==iface
@@ -260,7 +260,7 @@ uint& CTriangle::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
     vLocalNum[2]= 2;
 
     CFaceTree *faceTree = CFaceTree::Instance();
-    uint faceIndex = faceTree->getTriangleFaceIndex(vLocalNum);
+    uiint faceIndex = faceTree->getTriangleFaceIndex(vLocalNum);
 
     if(faceIndex==0){
         mTempo= 0;
@@ -275,7 +275,7 @@ uint& CTriangle::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 2 Edge => Face Index
 //
-uint& CTriangle::getFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CTriangle::getFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     CEdgeFaceTree *pTree= CEdgeFaceTree::Instance();
 
@@ -284,14 +284,14 @@ uint& CTriangle::getFaceIndex(const uint& edge0, const uint& edge1)
 
 // Face構成ノード
 //
-vector<CNode*> CTriangle::getFaceCnvNodes(const uint& iface)
+vector<CNode*> CTriangle::getFaceCnvNodes(const uiint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CNode *pNode;
     vector<CNode*> vFaceCnvNode;
     vFaceCnvNode.resize(3);
-    uint ivert;
+    uiint ivert;
 
     for(ivert=0; ivert< 3; ivert++){
         pNode= mvNode[ivert];
@@ -309,14 +309,14 @@ vector<CNode*> CTriangle::getConnectNode(CNode* pNode)
     vector<CNode*> vNode;
     vNode.reserve(2);
 
-    uint gID= pNode->getID();
-    uint localID= mmIDLocal[gID];
+    uiint gID= pNode->getID();
+    uiint localID= mmIDLocal[gID];
 
     CNodeConnectNodeTree *pConnTree = CNodeConnectNodeTree::Instance();
     vuint vLocalID;
     vLocalID= pConnTree->getTriangleConnectNode(localID);
 
-    uint i;
+    uiint i;
     for(i=0; i< 2; i++){
         localID= vLocalID[i];
         vNode.push_back(mvNode[localID]);
@@ -333,7 +333,7 @@ vector<CNode*> CTriangle::getConnectNode(CNode* pNode)
 void CTriangle::deleteProgData()
 {
     // Edge
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         vector<CElement*>().swap(mvvEdgeElement[iedge]);
     };

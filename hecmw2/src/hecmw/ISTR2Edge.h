@@ -27,18 +27,18 @@ private:
     Utility::CLogger *mpLogger;
 
     // FrontISTR -> MW3 辺番号 (頂点Overの番号について辺番号)
-    uint mvHexa[20];
-    uint mvTetra[10];
-    uint mvPrism[15];
-    uint mvQuad[8];
-    uint mvTriangle[6];
+    uiint mvHexa[20];
+    uiint mvTetra[10];
+    uiint mvPrism[15];
+    uiint mvQuad[8];
+    uiint mvTriangle[6];
 
 public:
-    uint& HexaEdgeNum(const uint& ishape);
-    uint& TetraEdgeNum(const uint& ishape);
-    uint& PrismEdgeNum(const uint& ishape);
-    uint& QuadEdgeNum(const uint& ishape);
-    uint& TriangleEdgeNum(const uint& ishape);
+    uiint& HexaEdgeNum(const uiint& ishape);
+    uiint& TetraEdgeNum(const uiint& ishape);
+    uiint& PrismEdgeNum(const uiint& ishape);
+    uiint& QuadEdgeNum(const uiint& ishape);
+    uiint& TriangleEdgeNum(const uiint& ishape);
 };
 #endif	/* _ISTR2EDGE_H */
 }

@@ -18,23 +18,25 @@ CLogger::CLogger()
  
     // Mode デフォルト
     mnCurrentState = LoggerMode::Info;
-    //cout << "CLogger() mnCurrentState => " << mnCurrentState << endl;//debug
 
     // OutputDevice デフォルト
     mvOutputDevice.resize(5);
     mvOutputDevice[LoggerMode::MWDebug]= LoggerDevice::Display;
-    mvOutputDevice[LoggerMode::Debug] = LoggerDevice::Display;
-    mvOutputDevice[LoggerMode::Error] = LoggerDevice::Display;
-    mvOutputDevice[LoggerMode::Warn]  = LoggerDevice::Display;
-    mvOutputDevice[LoggerMode::Info]  = LoggerDevice::Display;
+    mvOutputDevice[LoggerMode::Debug]  = LoggerDevice::Display;
+    mvOutputDevice[LoggerMode::Error]  = LoggerDevice::Display;
+    mvOutputDevice[LoggerMode::Warn]   = LoggerDevice::Display;
+    mvOutputDevice[LoggerMode::Info]   = LoggerDevice::Display;
 
     mcFillStr = '_';
-    msLoggerPref  = "Logger          ";
+    msLoggerPref  = "Logger    ";
+    
 
     // Loggerを引用している各メソッドで参照変数ダミーが必要になった場合に使用
     mdDummyValue= 0.0;
     muDummyValue= 0;
     miDummyValue= 0;
+
+    mnWidth = 66;//文字列出力幅
 }
 
 CLogger::~CLogger()
@@ -46,7 +48,7 @@ CLogger::~CLogger()
 //
 void CLogger::InfoDisplay()
 {
-    cout << Info::Header()  << endl;
+    cout << Info::Header() << endl;
 }
 
 
@@ -59,19 +61,23 @@ void CLogger::setFileBaseName(const string& filebase)
 
 // LogFile Open
 //
-void CLogger::initializeLogFile(const uint& rank)
+void CLogger::initializeLogFile(const uiint& rank)
 {
     myRank= rank;
 
     // LogFile名を作成
-    msLogFileName = msPathName + msLogFileBaseName + "_";
-    msLogFileName += boost::lexical_cast<string>(myRank);
+    msLogFileName = msPathName + msLogFileBaseName + ".";
+    stringstream ss;
+    ss << myRank;
+    msLogFileName += ss.str();
     msLogFileName += ".log";
 
     // 古いLogを除去
     msOutputString = "Remove old LogFile";
     if(remove(msLogFileName.c_str()) == 0){
-        cout << msLoggerPref << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+        //モード：MWDebugの場合 リムーブしたことを表示
+        if(mnCurrentState==LoggerMode::MWDebug)
+            cout << msLoggerPref << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
     }
     
     
@@ -88,7 +94,7 @@ void CLogger::finalizeLogFile()
 //
 // カレントModeの設定
 //
-void CLogger::setMode(const uint& mode)
+void CLogger::setMode(const uiint& mode)
 {
     switch(mode){
         case(LoggerMode::MWDebug):
@@ -108,7 +114,7 @@ void CLogger::setMode(const uint& mode)
             break;
         default:
             // 引数のチェック
-            cout << msLoggerPref << setfill(mcFillStr) << setw(60) << "Logger Mode mismatch, at setMode()" << endl;
+            cout << msLoggerPref << setfill(mcFillStr) << setw(mnWidth) << "Logger Mode mismatch, at setMode()" << endl;
             break;
     }
 }
@@ -116,11 +122,11 @@ void CLogger::setMode(const uint& mode)
 // StateType別に画面端末か、ディスクのどちらかに出力する -> プロパティの設定
 //
 //
-void CLogger::setProperty(const uint& mode, const uint& outputDevice)
+void CLogger::setProperty(const uiint& mode, const uiint& outputDevice)
 {
     // arg Check.
     if(outputDevice > LoggerDevice::Display){
-        cout << msLoggerPref << setfill(mcFillStr) << setw(60) << "Logger Device mismatch, at setProperty()" << endl;
+        cout << msLoggerPref << setfill(mcFillStr) << setw(mnWidth) << "Logger Device mismatch, at setProperty()" << endl;
         return;
     }
 
@@ -143,19 +149,19 @@ void CLogger::setProperty(const uint& mode, const uint& outputDevice)
             break;
         default:
             // arg Check.
-            cout << msLoggerPref << setfill(mcFillStr) << setw(60) << "Logger Mode mismatch, at setProperty()" << endl;
+            cout << msLoggerPref << setfill(mcFillStr) << setw(mnWidth) << "Logger Mode mismatch, at setProperty()" << endl;
             break;
     }    
 }
 
 // Mode範囲チェック
 //
-bool CLogger::BooleanMode(const uint& mode)
+bool CLogger::BooleanMode(const uiint& mode)
 {
     bool bCheck(false);
 
     if(mode >= LoggerMode::Invalid){
-        cout << msLoggerPref << setfill(mcFillStr) << setw(60) << "Logger Mode mismatch, ";
+        cout << msLoggerPref << setfill(mcFillStr) << setw(mnWidth) << "Logger Mode mismatch, ";
         bCheck=false;
     }else{
         bCheck=true;
@@ -166,23 +172,23 @@ bool CLogger::BooleanMode(const uint& mode)
 
 // Mode(unsigned int) => string
 //
-string& CLogger::ModeToString(const uint& mode)
+string& CLogger::ModeToString(const uiint& mode)
 {
     switch(mode){
         case(LoggerMode::MWDebug):
-            msModeString = "MW_Debug        ";
+            msModeString = "MW_Debug  ";
             break;
         case(LoggerMode::Debug):
-            msModeString = "Debug           ";
+            msModeString = "Debug     ";
             break;
         case(LoggerMode::Error):
-            msModeString = "Error           ";
+            msModeString = "Error     ";
             break;
         case(LoggerMode::Warn):
-            msModeString = "Warn            ";
+            msModeString = "Warn      ";
             break;
         case(LoggerMode::Info):
-            msModeString = "Info            ";
+            msModeString = "Info      ";
             break;
         default:
             msModeString = "LogMode Mismatch";
@@ -195,7 +201,7 @@ string& CLogger::ModeToString(const uint& mode)
 //
 // Monitor 1
 //
-void CLogger::Monitor(const uint& mode, const uint& id, const double& value, const string& message)
+void CLogger::Monitor(const uiint& mode, const uiint& id, const double& value, const string& message)
 {
     // Mode Check.
     //
@@ -209,24 +215,24 @@ void CLogger::Monitor(const uint& mode, const uint& id, const double& value, con
     //msOutputString += "@" + message;
     msOutputString = " ID=";
     ArgToString(id,value);
-    msOutputString += " @" + message;
+    msOutputString += " " + message;
     
     // 指定Modeでの動作の可否
     //
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
 // Monitor 2
 //
-void CLogger::Monitor(const uint& mode, const uint& id, const vdouble& vValue, const string& message)
+void CLogger::Monitor(const uiint& mode, const uiint& id, const vdouble& vValue, const string& message)
 {
     // Mode Check.
     //
@@ -237,24 +243,24 @@ void CLogger::Monitor(const uint& mode, const uint& id, const vdouble& vValue, c
 
     msOutputString = " ID=";
     ArgToString(id,vValue);
-    msOutputString += " @" + message;
+    msOutputString += " " + message;
 
     // 指定Modeでの動作の可否
     //
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
 // Monitor 3
 //
-void CLogger::Monitor(const uint& mode, const uint& id, const vint& vValue, const string& message)
+void CLogger::Monitor(const uiint& mode, const uiint& id, const vint& vValue, const string& message)
 {
     // Mode Check.
     //
@@ -265,19 +271,19 @@ void CLogger::Monitor(const uint& mode, const uint& id, const vint& vValue, cons
 
     msOutputString = " ID=";
     ArgToString(id,vValue);
-    msOutputString += " @" + message;
+    msOutputString += " " + message;
     
     // 指定Modeでの動作の可否
     //
     if(mode >= mnCurrentState){
-        uint i;
+        uiint i;
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
@@ -286,35 +292,46 @@ void CLogger::Monitor(const uint& mode, const uint& id, const vint& vValue, cons
 //  -----
 //  type.1
 //
-string& CLogger::ArgToString(const uint& id, const double& value)
+string& CLogger::ArgToString(const uiint& id, const double& value)
 {
-    msOutputString += boost::lexical_cast<string>(id);
+    stringstream ss;
+    ss << id;
+    msOutputString += ss.str();
     msOutputString += ",";
-    msOutputString += boost::lexical_cast<string>(value) + ",";
+    ss.clear(); ss.str("");
+    ss << value;
+    msOutputString += ss.str() + ",";
     
     return msOutputString;
 }
 //  type.2
 //
-string& CLogger::ArgToString(const uint& id, const vdouble& vValue)
+string& CLogger::ArgToString(const uiint& id, const vdouble& vValue)
 {
-    uint i;
-    msOutputString += boost::lexical_cast<string>(id);
+    stringstream ss;
+    ss << id;
+    msOutputString += ss.str();
     msOutputString += ",";
-    for(i=0; i < vValue.size(); i++){
-        msOutputString += boost::lexical_cast<string>(vValue[i]) + ",";
+    
+    for(uiint i=0; i < vValue.size(); i++){
+        ss.clear(); ss.str("");
+        ss << vValue[i];
+        msOutputString += ss.str() + ",";
     };
     return msOutputString;
 }
 //  type.3
 //
-string& CLogger::ArgToString(const uint& id, const vint& vValue)
+string& CLogger::ArgToString(const uiint& id, const vint& vValue)
 {
-    uint i;
-    msOutputString += boost::lexical_cast<string>(id);
+    stringstream ss;
+    ss << id;
+    msOutputString += ss.str();
     msOutputString += ",";
-    for(i=0; i < vValue.size(); i++){
-        msOutputString += boost::lexical_cast<string>(vValue[i]) + ",";
+    for(uiint i=0; i < vValue.size(); i++){
+        ss.clear(); ss.str("");
+        ss << vValue[i];
+        msOutputString += ss.str() + ",";
     };
     return msOutputString;
 }
@@ -322,20 +339,24 @@ string& CLogger::ArgToString(const uint& id, const vint& vValue)
 
 // Info()用 文字列変換
 //
-string& CLogger::InfoToString(const uint& num)
+string& CLogger::InfoToString(const uiint& num)
 {
-    msOutputString += boost::lexical_cast<string>(num);
+    stringstream ss;
+    ss << num;
+    msOutputString += ss.str();
     return msOutputString;
 }
 string& CLogger::InfoToString(const double& val)
 {
-    msOutputString += boost::lexical_cast<string>(val);
+    stringstream ss;
+    ss << val;
+    msOutputString += ss.str();
     return msOutputString;
 }
 
 // 指定Modeにあわせて、メッセージを出力
 //
-void CLogger::Info(const uint& mode, const string& message)
+void CLogger::Info(const uiint& mode, const string& message)
 {
     // Mode Check.
     //
@@ -351,21 +372,21 @@ void CLogger::Info(const uint& mode, const string& message)
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
             //debug
             //cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << "Disk write at CLogger::Info()" << endl;
 
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
 
 // Info string型
 //
-void CLogger::Info(const uint& mode, const string& message1, const string& message2)
+void CLogger::Info(const uiint& mode, const string& message1, const string& message2)
 {
     // Mode Check.
     //
@@ -381,21 +402,21 @@ void CLogger::Info(const uint& mode, const string& message1, const string& messa
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
             //debug
             //cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << "Disk write at CLogger::Info()" << endl;
 
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
 
 // Info unsigned int 型
 //
-void CLogger::Info(const uint& mode, const string& message, const uint& num)
+void CLogger::Info(const uiint& mode, const string& message, const uiint& num)
 {
     // Mode Check.
     //
@@ -412,21 +433,53 @@ void CLogger::Info(const uint& mode, const string& message, const uint& num)
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
             //debug
             //cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << "Disk write at CLogger::Info()" << endl;
 
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
+        }
+    }
+}
+// Info vstring vuint 型
+//
+void CLogger::Info(const uiint& mode, vstring& vMessage, vuint& vNumber)
+{
+    // Mode Check.
+    //
+    if(!BooleanMode(mode)){
+        cout <<  "at Info()" << endl;
+        return;
+    }
+
+    // msOutputStringに蓄積
+    msOutputString.clear();
+    for(uiint i=0; i < vMessage.size(); i++){
+        msOutputString += vMessage[i];
+        InfoToString(vNumber[i]);
+    };
+
+    // 指定Modeでの動作可否判断
+    //
+    if(mode >= mnCurrentState){
+        // Terminal Display
+        if(LoggerDevice::Display == mvOutputDevice[mode]){
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
+        }
+        // Disk File
+        if(LoggerDevice::Disk == mvOutputDevice[mode]){
+
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
 
-// Info double型
+// Info double 型
 //
-void CLogger::Info(const uint& mode, const string& message, const double& val)
+void CLogger::Info(const uiint& mode, const string& message, const double& val)
 {
     // Mode Check.
     //
@@ -443,14 +496,14 @@ void CLogger::Info(const uint& mode, const string& message, const double& val)
     if(mode >= mnCurrentState){
         // Terminal Display
         if(LoggerDevice::Display == mvOutputDevice[mode]){
-            cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            cout << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
         // Disk File
         if(LoggerDevice::Disk == mvOutputDevice[mode]){
             //debug
             //cout << ModeToString(mode) << setfill(mcFillStr) << setw(60) << "Disk write at CLogger::Info()" << endl;
 
-            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(60) << msOutputString << endl;
+            ofs << ModeToString(mode) << setfill(mcFillStr) << setw(mnWidth) << msOutputString << endl;
         }
     }
 }
@@ -462,13 +515,25 @@ double& CLogger::getDDummyValue()
 {
     return mdDummyValue;
 }
-uint& CLogger::getUDummyValue()
+uiint& CLogger::getUDummyValue()
 {
     return muDummyValue;
 }
-int& CLogger::getIDummyValue()
+iint& CLogger::getIDummyValue()
 {
     return miDummyValue;
+}
+void CLogger::setDDummyValue(const double& val)
+{
+    mdDummyValue= val;
+}
+void CLogger::setUDummyValue(const uiint& val)
+{
+    muDummyValue= val;
+}
+void CLogger::setIDummyValue(const iint& val)
+{
+    miDummyValue= val;
 }
 
 

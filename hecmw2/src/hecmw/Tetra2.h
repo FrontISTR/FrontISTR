@@ -15,24 +15,24 @@ public:
     virtual ~CTetra2();
 
 private:
-    static uint mnElemType;
-    static uint mnElemOrder;
-    static uint mNumOfFace;
-    static uint mNumOfEdge;
-    static uint mNumOfNode;
-    static uint mNumOfVert;
+    static uiint mnElemType;
+    static uiint mnElemOrder;
+    static uiint mNumOfFace;
+    static uiint mNumOfEdge;
+    static uiint mNumOfNode;
+    static uiint mNumOfVert;
 
 public:
     virtual void initialize();
     
 public:
     // Property
-    virtual const uint& getType(){ return mnElemType;}
-    virtual const uint& getOrder(){ return mnElemOrder;}
-    virtual const uint& getNumOfFace(){ return mNumOfFace;}
-    virtual const uint& getNumOfEdge(){ return mNumOfEdge;}
-    virtual const uint& getNumOfNode(){ return mNumOfNode;}
-    virtual const uint& getNumOfVert(){ return mNumOfVert;}
+    virtual const uiint& getType(){ return mnElemType;}
+    virtual const uiint& getOrder(){ return mnElemOrder;}
+    virtual const uiint& getNumOfFace(){ return mNumOfFace;}
+    virtual const uiint& getNumOfEdge(){ return mNumOfEdge;}
+    virtual const uiint& getNumOfNode(){ return mNumOfNode;}
+    virtual const uiint& getNumOfVert(){ return mNumOfVert;}
 
     //
     // 2次要素において、辺NodeをmvNodeに移し替える && 1次要素では何もしない.

@@ -27,8 +27,8 @@ public:
     virtual ~CBoundaryNodeMesh();
 
 protected:
-    uint mnID;  //BoundaryID
-    uint mnBndType;//Dirichlet | Neumann
+    uiint mnID;  //BoundaryID
+    uiint mnBndType;//Dirichlet | Neumann
 
     string msName; //境界名称
 
@@ -39,34 +39,34 @@ protected:
 
     vector<CBoundarySBNode*>  mvBNode;//境界節点
 
-    map<uint, uint, less<uint> > mmID2Index; // ID -> Index
-    map<uint, uint, less<uint> > mmNodeID2BNodeID; // NodeID -> BoundaryNodeID
+    map<uiint, uiint, less<uiint> > mmID2Index; // ID -> Index
+    map<uiint, uiint, less<uiint> > mmNodeID2BNodeID; // NodeID -> BoundaryNodeID
 
 
 public:
     // BoundaryID
-    void setID(const uint& boundID){ mnID= boundID;}
-    uint& getID(){ return mnID;}
+    void setID(const uiint& boundID){ mnID= boundID;}
+    uiint& getID(){ return mnID;}
 
     //境界名称
     void setName(const string& name){ msName = name;}
     string& getName(){ return msName;}
 
 
-    uint getNumOfBNode(){ return mvBNode.size();}
-    void resizeBNode(const uint& res_size);
-    void setBNode(const uint& index, CBoundarySBNode *pBNode);
+    uiint getNumOfBNode(){ return mvBNode.size();}
+    void resizeBNode(const uiint& res_size);
+    void setBNode(const uiint& index, CBoundarySBNode *pBNode);
     void addBNode(CBoundarySBNode *pBNode);
-    CBoundarySBNode* getBNodeIX(const uint& index){ return mvBNode[index];}
-    CBoundarySBNode* getBNodeID(const uint& id){
-        uint index= mmID2Index[id];
+    CBoundarySBNode* getBNodeIX(const uiint& index){ return mvBNode[index];}
+    CBoundarySBNode* getBNodeID(const uiint& id){
+        uiint index= mmID2Index[id];
         return mvBNode[index];
     }
 
 
     // Dirichlet | Neumann
-    void  setBndType(const uint& boundType);
-    uint& getBndType(){ return mnBndType;}
+    void  setBndType(const uiint& boundType);
+    uiint& getBndType(){ return mnBndType;}
 
     
 };

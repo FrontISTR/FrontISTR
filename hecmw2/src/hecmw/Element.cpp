@@ -37,7 +37,7 @@ CElement::~CElement(void)
 
 // ノードのセット、map<>へのセット(key:ID, val:ローカル番号)
 //
-void CElement::setNode(CNode* pNode, const uint& local_id)
+void CElement::setNode(CNode* pNode, const uiint& local_id)
 {
     mvNode[local_id] = pNode;
     
@@ -48,16 +48,16 @@ void CElement::setNode(CNode* pNode, const uint& local_id)
 //
 void CElement::ReInit_IDLocal()
 {
-    uint i, nNumOfNode = mvNode.size();
+    uiint i, nNumOfNode = mvNode.size();
     for(i=0; i < nNumOfNode; i++){
-        uint id = mvNode[i]->getID();
+        uiint id = mvNode[i]->getID();
         mmIDLocal[id] = i;
     };
 }
 
 // each reserve for EdgeElement
 //
-void CElement::reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem)
+void CElement::reserveEdgeElement(const uiint& edgeIndex, const uiint& numOfElem)
 {
     string s_msg("reserveEdgeElement");
     
@@ -72,7 +72,7 @@ void CElement::reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem)
 
 // set to EdgeElement
 //
-void CElement::setEdgeElement(const uint& edgeIndex, CElement* pElem)
+void CElement::setEdgeElement(const uiint& edgeIndex, CElement* pElem)
 {
     string s_msg("setEdgeElement");
 
@@ -85,14 +85,14 @@ void CElement::setEdgeElement(const uint& edgeIndex, CElement* pElem)
 
 // 既に集められた要素集合をセットする
 //
-void CElement::setEdgeAggElement(const uint& edgeIndex, vector<CElement*> vElement)
+void CElement::setEdgeAggElement(const uiint& edgeIndex, vector<CElement*> vElement)
 {
     mvvEdgeElement[edgeIndex] = vElement;
 }
 
 // set to InterNode on Edge
 //            prolongation用のノード
-void CElement::setEdgeInterNode(CNode* pNode, const uint& edgeIndex)
+void CElement::setEdgeInterNode(CNode* pNode, const uiint& edgeIndex)
 {
     mvEdgeInterNode[edgeIndex]=pNode;
 }
@@ -101,7 +101,7 @@ void CElement::setEdgeInterNode(CNode* pNode, const uint& edgeIndex)
 //
 vuint CElement::getLocalNodeNum(CNode* pNode0, CNode* pNode1)
 {
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -118,7 +118,7 @@ vuint CElement::getLocalNodeNum(CNode* pNode0, CNode* pNode1)
 //
 bool CElement::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
-    uint iface= getFaceIndex(pNode0,pNode1,pNode2);
+    uiint iface= getFaceIndex(pNode0,pNode1,pNode2);
 
     //debug
     //cout << "isFaceElem, iface => " << iface << endl;
@@ -131,7 +131,7 @@ bool CElement::isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 //
 void CElement::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
-    uint iface = getFaceIndex(pNode0,pNode1,pNode2);
+    uiint iface = getFaceIndex(pNode0,pNode1,pNode2);
 
     ////debug
     //cout << "iface = " << iface << ", CElement::setBoolFaceElem" << endl;
@@ -142,9 +142,9 @@ void CElement::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 子要素をNodeIDから提供する -> CSkinFace::refine()で利用
 // 
-CElement* CElement::getProgElem_NodeID(const uint& nodeID)
+CElement* CElement::getProgElem_NodeID(const uiint& nodeID)
 {
-    uint ivert= mmIDLocal[nodeID];//NodeID -> 局所番号に変換
+    uiint ivert= mmIDLocal[nodeID];//NodeID -> 局所番号に変換
     
     return mvProgElement[ivert];
 }

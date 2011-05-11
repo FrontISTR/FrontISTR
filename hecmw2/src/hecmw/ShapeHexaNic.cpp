@@ -66,7 +66,7 @@ CShapeHexaNic::CShapeHexaNic()
     // 1点 積分
     mW1[0]= 8.0;
     // 8点 積分(1次元での2点積分)
-    for(uint i=0; i < 8; i++) mW8[i]= 1.0;
+    for(uiint i=0; i < 8; i++) mW8[i]= 1.0;
     // 27点 積分(1次元での3点積分)
     mW27[0]=  0.171467764060357;  mW27[1]=  0.274348422496571;  mW27[2]=  0.171467764060357;
     mW27[3]=  0.274348422496571;  mW27[4]=  0.438957475994513;  mW27[5]=  0.274348422496571;
@@ -90,7 +90,7 @@ CShapeHexaNic::CShapeHexaNic()
     mvIntegNum1D[2]= 3;
 
     
-    uint numOfIntg,numOfShape,dof;
+    uiint numOfIntg,numOfShape,dof;
     //--
     //vector配列確保
     //--
@@ -151,9 +151,9 @@ CShapeHexaNic::~CShapeHexaNic()
 // ----
 void CShapeHexaNic::setupShapeFunction()
 {
-    uint igauss;
+    uiint igauss;
     double r,s,t;
-    uint numOfIntg;
+    uiint numOfIntg;
 
     r= mGzi1[0][0]; s= mGzi1[0][1]; t= mGzi1[0][2];
     //1点 積分 形状関数
@@ -176,9 +176,9 @@ void CShapeHexaNic::setupShapeFunction()
 // ----
 void CShapeHexaNic::setupShapeDeriv()
 {
-    uint igauss;
+    uiint igauss;
     double r,s,t;
-    uint numOfIntg;
+    uiint numOfIntg;
 
     r= mGzi1[0][0]; s= mGzi1[0][1]; t= mGzi1[0][2];
     //1点 積分
@@ -202,7 +202,7 @@ void CShapeHexaNic::setupShapeDeriv()
 // 形状関数
 // ----
 //void CShapeHexaNic::ShapeFunction11(double N[][11], const uint& igauss, const double& r, const double& s, const double& t)
-void CShapeHexaNic::ShapeFunction11(vvdouble& N, const uint& igauss, const double& r, const double& s, const double& t)
+void CShapeHexaNic::ShapeFunction11(vvdouble& N, const uiint& igauss, const double& r, const double& s, const double& t)
 {
     N[igauss][0]=  0.125*(1.0-r)*(1.0-s)*(1.0-t);
     N[igauss][1]=  0.125*(1.0+r)*(1.0-s)*(1.0-t);
@@ -219,7 +219,7 @@ void CShapeHexaNic::ShapeFunction11(vvdouble& N, const uint& igauss, const doubl
 // 導関数
 // ----
 //void CShapeHexaNic::ShapeDeriv11(double dNdr[][11][3], const uint& igauss, const double& r, const double& s, const double& t)
-void CShapeHexaNic::ShapeDeriv11(vvvdouble& dNdr, const uint& igauss, const double& r, const double& s, const double& t)
+void CShapeHexaNic::ShapeDeriv11(vvvdouble& dNdr, const uiint& igauss, const double& r, const double& s, const double& t)
 {
     dNdr[igauss][0][0]= -0.125*(1.0-s)*(1.0-t);
     dNdr[igauss][1][0]=  0.125*(1.0-s)*(1.0-t);
@@ -261,25 +261,25 @@ void CShapeHexaNic::ShapeDeriv11(vvvdouble& dNdr, const uint& igauss, const doub
 
 // 形状関数   引数:積分点位置index, 形状関数番号(節点)
 // ----
-double& CShapeHexaNic::N111(const uint& igauss, const uint& ishape){ return mvN111[igauss][ishape];}
-double& CShapeHexaNic::N118(const uint& igauss, const uint& ishape){ return mvN118[igauss][ishape];}
-double& CShapeHexaNic::N1127(const uint& igauss, const uint& ishape){ return mvN1127[igauss][ishape];}
-vdouble& CShapeHexaNic::N111(const uint& igauss){ return mvN111[igauss];}
-vdouble& CShapeHexaNic::N118(const uint& igauss){ return mvN118[igauss];}
-vdouble& CShapeHexaNic::N1127(const uint& igauss){ return mvN1127[igauss];}
+double& CShapeHexaNic::N111(const uiint& igauss, const uiint& ishape){ return mvN111[igauss][ishape];}
+double& CShapeHexaNic::N118(const uiint& igauss, const uiint& ishape){ return mvN118[igauss][ishape];}
+double& CShapeHexaNic::N1127(const uiint& igauss, const uiint& ishape){ return mvN1127[igauss][ishape];}
+vdouble& CShapeHexaNic::N111(const uiint& igauss){ return mvN111[igauss];}
+vdouble& CShapeHexaNic::N118(const uiint& igauss){ return mvN118[igauss];}
+vdouble& CShapeHexaNic::N1127(const uiint& igauss){ return mvN1127[igauss];}
 
 // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
 // ----
-double& CShapeHexaNic::dNdr111(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr111[igauss][ishape][axis];}
-double& CShapeHexaNic::dNdr118(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr118[igauss][ishape][axis];}
-double& CShapeHexaNic::dNdr1127(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr1127[igauss][ishape][axis];}
-vvdouble& CShapeHexaNic::dNdr111(const uint& igauss){ return mvdNdr111[igauss];}
-vvdouble& CShapeHexaNic::dNdr118(const uint& igauss){ return mvdNdr118[igauss];}
-vvdouble& CShapeHexaNic::dNdr1127(const uint& igauss){ return mvdNdr1127[igauss];}
+double& CShapeHexaNic::dNdr111(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr111[igauss][ishape][axis];}
+double& CShapeHexaNic::dNdr118(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr118[igauss][ishape][axis];}
+double& CShapeHexaNic::dNdr1127(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr1127[igauss][ishape][axis];}
+vvdouble& CShapeHexaNic::dNdr111(const uiint& igauss){ return mvdNdr111[igauss];}
+vvdouble& CShapeHexaNic::dNdr118(const uiint& igauss){ return mvdNdr118[igauss];}
+vvdouble& CShapeHexaNic::dNdr1127(const uiint& igauss){ return mvdNdr1127[igauss];}
 
 // 返り値:重みの配列, 引数:積分点数
 // ----
-double* CShapeHexaNic::Weight(const uint& integNum)
+double* CShapeHexaNic::Weight(const uiint& integNum)
 {
     switch(integNum){
         case(1):
@@ -298,12 +298,12 @@ double* CShapeHexaNic::Weight(const uint& integNum)
 // 返り値:重み, 引数:重みの配列Index
 // ----
 double& CShapeHexaNic::Weight_pt1(){ return mW1[0];}
-double& CShapeHexaNic::Weight_pt8(const uint& igauss){ return mW8[igauss];}
-double& CShapeHexaNic::Weight_pt27(const uint& igauss){ return mW27[igauss];}
+double& CShapeHexaNic::Weight_pt8(const uiint& igauss){ return mW8[igauss];}
+double& CShapeHexaNic::Weight_pt27(const uiint& igauss){ return mW27[igauss];}
 
 
 // dNdx 導関数(グローバル座標)
-void CShapeHexaNic::Calc_dNdx11(const uint& numOfInteg, CElement* pElement)
+void CShapeHexaNic::Calc_dNdx11(const uiint& numOfInteg, CElement* pElement)
 {
 //    vector<CNode*> vNode= pElement->getNode();
 //    uint numOfShape(11);
@@ -332,7 +332,7 @@ void CShapeHexaNic::Calc_dNdx11(const uint& numOfInteg, CElement* pElement)
 
 // detJ
 //
-double& CShapeHexaNic::detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss)
+double& CShapeHexaNic::detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss)
 {
     switch(elemType){
         case(ElementType::HexaNic):

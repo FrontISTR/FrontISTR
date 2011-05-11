@@ -11,12 +11,12 @@
 #include "Quad.h"
 using namespace pmw;
 
-uint CQuad::mnElemType = ElementType::Quad;
-uint CQuad::mnElemOrder = 1;
-uint CQuad::mNumOfFace = 1;
-uint CQuad::mNumOfEdge = 4;
-uint CQuad::mNumOfNode = 4;
-uint CQuad::mNumOfVert = 4;
+uiint CQuad::mnElemType = ElementType::Quad;
+uiint CQuad::mnElemOrder = 1;
+uiint CQuad::mNumOfFace = 1;
+uiint CQuad::mNumOfEdge = 4;
+uiint CQuad::mNumOfNode = 4;
+uiint CQuad::mNumOfVert = 4;
 //
 //
 CQuad::CQuad()
@@ -39,7 +39,7 @@ void CQuad::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -71,11 +71,11 @@ void CQuad::initialize()
     };
 }
 
-const uint& CQuad::getType()
+const uiint& CQuad::getType()
 {
     return mnElemType;
 }
-const uint& CQuad::getOrder()
+const uiint& CQuad::getOrder()
 {
     return mnElemOrder;
 }
@@ -84,11 +84,11 @@ const uint& CQuad::getOrder()
 // method
 // --
 //
-bool CQuad::IndexCheck(const uint& propType, const uint& index, string& method_name)
+bool CQuad::IndexCheck(const uiint& propType, const uiint& index, string& method_name)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
-    uint numOfProp;
+    uiint numOfProp;
     switch(propType){
         case(ElementPropType::Face):
             numOfProp = mNumOfFace;
@@ -116,7 +116,7 @@ bool CQuad::IndexCheck(const uint& propType, const uint& index, string& method_n
 
 // out:(PariNode edgeNode)
 //
-PairNode CQuad::getPairNode(const uint& iedge)
+PairNode CQuad::getPairNode(const uiint& iedge)
 {
     PairNode pairNode;
 
@@ -146,7 +146,7 @@ PairNode CQuad::getPairNode(const uint& iedge)
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CQuad::getPairNode(vint& pairNodeIndex, const uint& iedge)
+void CQuad::getPairNode(vint& pairNodeIndex, const uiint& iedge)
 {
     switch(iedge){
         //surf 0 (low surf)
@@ -174,9 +174,9 @@ void CQuad::getPairNode(vint& pairNodeIndex, const uint& iedge)
 
 // (局所ノード番号、局所ノード番号)に対応した辺(Edge)番号
 //
-uint& CQuad::getEdgeIndex(CNode* pNode0, CNode* pNode1)
+uiint& CQuad::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -185,7 +185,7 @@ uint& CQuad::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 
     return edgeTree->getQuadEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Quad EdgeTree
 }
-uint& CQuad::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+uiint& CQuad::getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -216,7 +216,7 @@ bool CQuad::isEdgeElem(CNode* pNode0, CNode* pNode1)
 
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Quad
 
     return mvb_edge[edgeNum];
@@ -229,7 +229,7 @@ void CQuad::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     //vuint vLocalNum = getLocalNodeNum(pNode0, pNode1);
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Quad edge tree
 
     mvb_edge[edgeNum]=true;// スタンプ
@@ -238,11 +238,11 @@ void CQuad::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
 
 // 局所ノード番号から、局所Face番号へ変換
 //
-uint& CQuad::getLocalFaceNum(const vuint& vLocalNodeNum)
+uiint& CQuad::getLocalFaceNum(const vuint& vLocalNodeNum)
 {
     CFaceTree *pFaceTree = CFaceTree::Instance();
     
-    uint faceIndex = pFaceTree->getQuadFaceIndex(vLocalNodeNum);
+    uiint faceIndex = pFaceTree->getQuadFaceIndex(vLocalNodeNum);
 
     if(faceIndex==0){
         mTempo=0;
@@ -256,7 +256,7 @@ uint& CQuad::getLocalFaceNum(const vuint& vLocalNodeNum)
 
 //
 //
-uint& CQuad::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
+uiint& CQuad::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
     // 面構成ノード -> 局所ノード番号
     // 局所ノード番号 -> 面番号==iface
@@ -268,7 +268,7 @@ uint& CQuad::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
     CFaceTree *faceTree = CFaceTree::Instance();
 
-    uint faceIndex = faceTree->getQuadFaceIndex(vLocalNum);
+    uiint faceIndex = faceTree->getQuadFaceIndex(vLocalNum);
     
     if(faceIndex==0){
         mTempo=0;
@@ -283,7 +283,7 @@ uint& CQuad::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 2 Edge => Face Index
 //
-uint& CQuad::getFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CQuad::getFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     CEdgeFaceTree *pTree = CEdgeFaceTree::Instance();
 
@@ -292,14 +292,14 @@ uint& CQuad::getFaceIndex(const uint& edge0, const uint& edge1)
 
 // Face構成Node
 //
-vector<CNode*> CQuad::getFaceCnvNodes(const uint& iface)
+vector<CNode*> CQuad::getFaceCnvNodes(const uiint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CNode *pNode;
     vector<CNode*> vFaceCnvNode;
     vFaceCnvNode.resize(4);
-    uint ivert;
+    uiint ivert;
 
     for(ivert=0; ivert< 4; ivert++){
         pNode= mvNode[ivert];
@@ -318,14 +318,14 @@ vector<CNode*> CQuad::getConnectNode(CNode* pNode)
     vector<CNode*> vNode;
     vNode.reserve(2);
 
-    uint gID= pNode->getID();
-    uint localID= mmIDLocal[gID];
+    uiint gID= pNode->getID();
+    uiint localID= mmIDLocal[gID];
 
     CNodeConnectNodeTree *pConnTree = CNodeConnectNodeTree::Instance();
     vuint vLocalID;
     vLocalID= pConnTree->getQuadConnectNode(localID);
 
-    uint i;
+    uiint i;
     for(i=0; i< 2; i++){
         localID= vLocalID[i];
         vNode.push_back(mvNode[localID]);
@@ -342,7 +342,7 @@ vector<CNode*> CQuad::getConnectNode(CNode* pNode)
 void CQuad::deleteProgData()
 {
     // Edge
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         vector<CElement*>().swap(mvvEdgeElement[iedge]);
     };

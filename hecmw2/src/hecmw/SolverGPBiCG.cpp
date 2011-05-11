@@ -14,10 +14,10 @@
 namespace pmw
 {
 
-CSolverGPBiCG::CSolverGPBiCG(int iter_max = 100,
+CSolverGPBiCG::CSolverGPBiCG(iint iter_max = 100,
 		double tolerance = 1.0e-8,
-		uint method = 1,
-		uint precondition = 1,
+		iint method = 1,
+		iint precondition = 1,
 		bool flag_iter_log = false,
 		bool flag_time_log = false)
 	: CSolver(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log)
@@ -31,13 +31,13 @@ CSolverGPBiCG::~CSolverGPBiCG()
 	// TODO Auto-generated destructor stub
 }
 
-int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
-		int iter_max, double tolerance,
+uiint CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
+		iint iter_max, double tolerance,
 		bool flag_iter_log, bool flag_time_log)
 {
 	double bnrm2_inv;
 	double alpha, beta, rho, rho_prev, resid;
-	int iter_precond; // TODO: class variable???
+	iint iter, iter_precond; // TODO: class variable???
 
    	printf(" --- start of GPBiCG solver --- \n");
 
@@ -56,7 +56,7 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 	CAssyVector WK(pX); //
 	CAssyVector W2(pX); //
 
-	int len = pB->size();
+	uiint len = pB->size();
 
 	// {R} = {B} - [A] {X}
 	// {Rt} = {R}
@@ -72,10 +72,10 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 	// rho = {Rt} {R}
 	rho = Rt.innerProd(&R);
 
-	int itype = getPrecondition();
+	iint itype = getPrecondition();
 	pA->setupPreconditioner( itype ); // TODO: rewrite to pA->precond(pR, pZ);
 
-	for (int iter = 0; iter < getIterMax(); iter++) {
+	for (iter = 0; iter < getIterMax(); iter++) {
 
 		// {Rp} = [Minv] {R}
 		iter_precond = 1;
@@ -91,11 +91,11 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 		// iter == 1:
 		//   {P} = {Rp}
 		if (iter > 0) {
-			for (int i = 0; i < len; i++) {
+			for (uiint i = 0; i < len; i++) {
 				P[i] = Rp[i] + beta * (P[i] - U[i]);
 			}
 		} else {
-			for (int i = 0; i < len; i++) {
+			for (uiint i = 0; i < len; i++) {
 				P[i] = Rp[i];
 			}
 		}
@@ -108,7 +108,7 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 
 		// {Y} = {T} - {R} + alpha (- {W1} + {Pt})
 		// {T} = {R} - alpha {Pt}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			Y[i] = T[i] - R[i] + alpha * (- W1[i] + Pt[i]);
 			T[i] = R[i] - alpha * Pt[i];
 		}
@@ -146,7 +146,7 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 		}
 		// {Tt} = [A] {Tt}
 		pA->multVector(&Tt, &WK);
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			Tt[i] = WK[i];
 		}
 
@@ -174,13 +174,13 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 		}
 		// {U} = qsi {W2} + eta ({T0} + {Rp} + beta {U})
 		// {Z} = qsi {Rp} - eta {Z} - alpha {U}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			U[i] = qsi * W2[i] + eta * (T0[i] - Rp[i] + beta * U[i]);
 			Z[i] = qsi * Rp[i] + eta * Z[i] - alpha * U[i];
 		}
 
 		// update {X}, {R}, {W}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			(*pX)[i] += alpha * P[i] + Z[i];
 			R[i] = T[i] - eta * Y[i] - qsi * Tt[i];
 			T0[i] = T[i];
@@ -199,7 +199,7 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 		beta = alpha * rho / (qsi * rho_prev);
 
 		// {W1} = {Tt} + beta {Pt}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			W1[i] = Tt[i] + beta * Pt[i];
 		}
 
@@ -209,13 +209,15 @@ int CSolverGPBiCG::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVe
 		// iteration history
 		if (getFlagIterLog()) {
 			// TODO: replace with logger
-			printf("%5d %16.6e\n", iter + 1, resid);
+			printf("%5ld %16.6e\n", iter + 1, resid);
 		}
-		printf("iteration:%5d, residue:%16.6e \n", iter + 1, resid);
+		printf("iteration:%5ld, residue:%16.6e \n", iter + 1, resid);
 
 		// check convergence
 		if (resid < getTolerance()) break;
 	}
+	
+	if( iter == getIterMax() ) return 0;
 
 	// K.Matsubara 2010.03.31
 	P.subst(pX);

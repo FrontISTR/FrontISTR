@@ -20,13 +20,13 @@ public:
 
 protected:
     //
-    uint maxNodeID, maxElementID;
-    uint minNodeID, minElementID;
-    uint defNodeID, defElementID;
+    uiint maxNodeID, maxElementID;
+    uiint minNodeID, minElementID;
+    uiint defNodeID, defElementID;
 
     //
-    vint mvID2NodeIndex;
-    vint mvID2ElementIndex;
+    vuint mvID2NodeIndex;
+    vuint mvID2ElementIndex;
 
 public:
     //
@@ -37,17 +37,23 @@ public:
     void clearBucketElement();
 
     // resize vector
-    void resizeBucketNode(const uint& maxID, const uint& minID);
-    void resizeBucketElement(const uint& maxID, const uint& minID);
-    void re_resizeBucketNode(const uint& new_maxID);//Nodeが追加された時の再resize
+    void resizeBucketNode(const uiint& maxID, const uiint& minID);
+    void resizeBucketElement(const uiint& maxID, const uiint& minID);
+    void re_resizeBucketNode(const uiint& new_maxID);//Nodeが追加された時の再resize
 
     // setup mvID2Index
-    void setIndexNode(const uint& id, const int& index_num);
-    void setIndexElement(const uint& id, const int& index_num);
+    void setIndexNode(const uiint& id, const int& index_num);
+    void setIndexElement(const uiint& id, const int& index_num);
 
     // get Index
-    int& getIndexNode(const uint& id){ return mvID2NodeIndex[id - minNodeID];}
-    int& getIndexElement(const uint& id){ return mvID2ElementIndex[id - minElementID];}
+    uiint& getIndexNode(const uiint& id){ return mvID2NodeIndex[id - minNodeID];}
+    uiint& getIndexElement(const uiint& id){ return mvID2ElementIndex[id - minElementID];}
+
+    // Max Min
+    uiint& getMaxNodeID(){ return maxNodeID;}
+    uiint& getMinNodeID(){ return minNodeID;}
+    uiint& getMaxElementID(){ return maxElementID;}
+    uiint& getMinElementID(){ return minElementID;}
 };
 }
 #endif

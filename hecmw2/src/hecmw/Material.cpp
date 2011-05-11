@@ -25,7 +25,7 @@ CMaterial::~CMaterial()
 
 // 材質データのセット
 // --
-void CMaterial::setValue(const uint& prop_Type, const double& value)
+void CMaterial::setValue(const uiint& prop_Type, const double& value)
 {
     mmValue[prop_Type]= value;
 }

@@ -91,7 +91,7 @@ CShapeTetra::CShapeTetra()
     mvIntegNum[1]= 4;
     mvIntegNum[2]= 15;
 
-    uint numOfIntg,numOfShape,dof;
+    uiint numOfIntg,numOfShape,dof;
     //--
     //vector配列確保
     //--
@@ -160,7 +160,7 @@ CShapeTetra::CShapeTetra()
     //--
     //導関数  :dNdr[積分点][i][vol_coord]
     //--
-    uint igauss= 0;
+    uiint igauss= 0;
     {
         ShapeDeriv4(mvdNdr41,igauss);// 4節点 1点積分
     }
@@ -186,10 +186,10 @@ CShapeTetra::~CShapeTetra()
 
 //形状関数 & 導関数のセットアップ
 //
-void CShapeTetra::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3])
+void CShapeTetra::setupShapeFunction(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3])
 {
     double L1,L2,L3;
-    uint igauss;
+    uiint igauss;
     
     switch(numOfShape){
         case(4):
@@ -212,10 +212,10 @@ void CShapeTetra::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const u
             break;
     }
 }
-void CShapeTetra::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3])
+void CShapeTetra::setupShapeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3])
 {
     double L1,L2,L3;
-    uint igauss;
+    uiint igauss;
     
     switch(numOfShape){
         case(4)://4節点
@@ -242,7 +242,7 @@ void CShapeTetra::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const 
 
 // 形状関数 4 Node
 //
-void CShapeTetra::ShapeFunction4(vvdouble& N, const uint& igauss,
+void CShapeTetra::ShapeFunction4(vvdouble& N, const uiint& igauss,
         const double& L1, const double& L2, const double& L3)
 {
     N[igauss][0]= 1.0 - L1 - L2 - L3;
@@ -252,7 +252,7 @@ void CShapeTetra::ShapeFunction4(vvdouble& N, const uint& igauss,
 }
 // 形状関数 10 Node
 //
-void CShapeTetra::ShapeFunction10(vvdouble& N, const uint& igauss, 
+void CShapeTetra::ShapeFunction10(vvdouble& N, const uiint& igauss,
         const double& L1, const double& L2, const double& L3)
 {
     double a= 1.0 - L1 - L2 - L3;
@@ -272,7 +272,7 @@ void CShapeTetra::ShapeFunction10(vvdouble& N, const uint& igauss,
 
 // 導関数 4 Node
 //
-void CShapeTetra::ShapeDeriv4(vvvdouble& dNdr, const uint& igauss)
+void CShapeTetra::ShapeDeriv4(vvvdouble& dNdr, const uiint& igauss)
 {
     dNdr[igauss][0][0] = -1.0;
     dNdr[igauss][1][0] =  1.0;
@@ -291,7 +291,7 @@ void CShapeTetra::ShapeDeriv4(vvvdouble& dNdr, const uint& igauss)
 }
 // 導関数 10 Node
 //
-void CShapeTetra::ShapeDeriv10(vvvdouble& dNdr, const uint& igauss,
+void CShapeTetra::ShapeDeriv10(vvvdouble& dNdr, const uiint& igauss,
         const double& L1, const double& L2, const double& L3)
 {
     double a= 1.0 - L1 - L2 - L3;
@@ -335,21 +335,21 @@ void CShapeTetra::ShapeDeriv10(vvvdouble& dNdr, const uint& igauss,
 
 // 形状関数   引数:積分点位置index, 形状関数番号(節点)
 // --
-double& CShapeTetra::N41(const uint& igauss, const uint& ishape){ return mvN41[igauss][ishape];}
-double& CShapeTetra::N101(const uint& igauss, const uint& ishape){ return mvN101[igauss][ishape];}
-double& CShapeTetra::N104(const uint& igauss, const uint& ishape){ return mvN104[igauss][ishape];}
-double& CShapeTetra::N1015(const uint& igauss, const uint& ishape){ return mvN1015[igauss][ishape];}
+double& CShapeTetra::N41(const uiint& igauss, const uiint& ishape){ return mvN41[igauss][ishape];}
+double& CShapeTetra::N101(const uiint& igauss, const uiint& ishape){ return mvN101[igauss][ishape];}
+double& CShapeTetra::N104(const uiint& igauss, const uiint& ishape){ return mvN104[igauss][ishape];}
+double& CShapeTetra::N1015(const uiint& igauss, const uiint& ishape){ return mvN1015[igauss][ishape];}
 
 // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
 // --
-double& CShapeTetra::dNdr41(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr41[igauss][ishape][axis];}
-double& CShapeTetra::dNdr101(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr101[igauss][ishape][axis];}
-double& CShapeTetra::dNdr104(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr104[igauss][ishape][axis];}
-double& CShapeTetra::dNdr1015(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr1015[igauss][ishape][axis];}
+double& CShapeTetra::dNdr41(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr41[igauss][ishape][axis];}
+double& CShapeTetra::dNdr101(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr101[igauss][ishape][axis];}
+double& CShapeTetra::dNdr104(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr104[igauss][ishape][axis];}
+double& CShapeTetra::dNdr1015(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr1015[igauss][ishape][axis];}
 
 // 返り値:重みの配列, 引数:積分点数
 // --
-double* CShapeTetra::Weight(const uint& integNum)
+double* CShapeTetra::Weight(const uiint& integNum)
 {
     switch(integNum){
         case(1):
@@ -367,17 +367,17 @@ double* CShapeTetra::Weight(const uint& integNum)
 }
 // 返り値:重み, 引数:重みの配列Index
 double& CShapeTetra::Weight_pt1() { return mW1[0];}
-double& CShapeTetra::Weight_pt4(const uint& igauss){ return mW4[igauss];}
-double& CShapeTetra::Weight_pt15(const uint& igauss){ return mW15[igauss];}
+double& CShapeTetra::Weight_pt4(const uiint& igauss){ return mW4[igauss];}
+double& CShapeTetra::Weight_pt15(const uiint& igauss){ return mW15[igauss];}
 
 
 // 4節点:Tetra dNdxのセットアップ
 // --
-void CShapeTetra::Calc_dNdx4(const uint& numOfInteg, CElement *pElement)
+void CShapeTetra::Calc_dNdx4(const uiint& numOfInteg, CElement *pElement)
 {
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(4);
-    uint dof(3);//3次元: J(3*3)行列
+    uiint numOfShape(4);
+    uiint dof(3);//3次元: J(3*3)行列
 
     switch(numOfInteg){
         case(1):
@@ -389,13 +389,13 @@ void CShapeTetra::Calc_dNdx4(const uint& numOfInteg, CElement *pElement)
 }
 // 10節点:Tetra2  dNdxのセットアップ
 // --
-void CShapeTetra::Calc_dNdx10(const uint& numOfInteg, CElement *pElement)
+void CShapeTetra::Calc_dNdx10(const uiint& numOfInteg, CElement *pElement)
 {
     // Elementの関数:辺ノードの取得
     //  CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
 
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(10);
+    uiint numOfShape(10);
 
 //    CNode *pNode;
 //    uint ishape,iedge;
@@ -407,7 +407,7 @@ void CShapeTetra::Calc_dNdx10(const uint& numOfInteg, CElement *pElement)
 //        vNode.push_back(pNode);
 //    };
     
-    uint dof(3);//3次元
+    uiint dof(3);//3次元
     switch(numOfInteg){
         case(1):
             ShapeDerivXYZ(numOfInteg, numOfShape, dof, mvdNdr101, mpJacobi101, vNode, mvdNdx101, mv_detJ101);
@@ -423,7 +423,7 @@ void CShapeTetra::Calc_dNdx10(const uint& numOfInteg, CElement *pElement)
 
 // detJ
 //
-double& CShapeTetra::detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss)
+double& CShapeTetra::detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss)
 {
     switch(elemType){
         case(ElementType::Tetra):
@@ -449,10 +449,10 @@ double& CShapeTetra::detJ(const uint& elemType, const uint& numOfInteg, const ui
 // --
 void CShapeTetra::setupIntegValue10()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 10; ishape++) mvIntegValue10[ishape]= 0.0;
     
-    uint igauss;
+    uiint igauss;
     for(igauss=0; igauss < 4; igauss++){
         for(ishape=0; ishape < 10; ishape++){
             mvIntegValue10[ishape] += mvN104[igauss][ishape];
@@ -467,7 +467,7 @@ void CShapeTetra::setupIntegValue10()
 // --
 void CShapeTetra::setupIntegValue4()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 4; ishape++) mvIntegValue4[ishape]= 0.25;
 }
 

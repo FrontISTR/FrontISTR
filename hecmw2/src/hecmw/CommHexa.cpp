@@ -33,7 +33,7 @@ CCommHexa::CCommHexa()
     // DNodeとして取得されたか？Marking
     mvbNodeIXCheck = new bool[8];
     mvbDNodeMarking = new bool[8];
-    uint i;
+    uiint i;
     for(i=0; i< 8; i++){
         mvbNodeIXCheck[i]=false;
         mvbDNodeMarking[i]=false;

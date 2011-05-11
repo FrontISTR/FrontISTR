@@ -24,52 +24,54 @@ CFileWriterCommMesh2::~CFileWriterCommMesh2()
 //
 //  通信テーブル出力サンプル
 //
-void CFileWriterCommMesh2::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterCommMesh2::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
+   Utility::CLogger *pLogger= Utility::CLogger::Instance();
+    
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
    pmw::CCommMesh2 *pCommMesh2;
 
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
 
-   uint numOfPart;
-   numOfPart= pAssyModel->getNumOfMesh();
+   uiint nNumOfPart;
+   nNumOfPart= pAssyModel->getNumOfMesh();
 
-   uint imesh;
+   uiint imesh;
    //---
    //Mesh
    //---
-   for(imesh=0; imesh< numOfPart; imesh++){
+   for(imesh=0; imesh< nNumOfPart; imesh++){
        pMesh= pAssyModel->getMesh(imesh);
 
        // Mesh ID (CommMesh2を所有しているMesh)
        ofs << " CommMesh2 in Mesh_ID:" << pMesh->getMeshID() << endl;
 
-       uint numOfCommMesh2;
-       numOfCommMesh2= pMesh->getCommMesh2Size();
-       uint icomm;
+       uiint nNumOfCommMesh2;
+       nNumOfCommMesh2= pMesh->getCommMesh2Size();
+       uiint icomm;
        //---
        //CommMesh2
        //---
-       for(icomm=0; icomm< numOfCommMesh2; icomm++){
+       for(icomm=0; icomm< nNumOfCommMesh2; icomm++){
            pCommMesh2= pMesh->getCommMesh2IX(icomm);
 
            // myRank(自身のランク) - TransmitRank(相手のランク)
            ofs << "CommMesh2 myRank:" << pCommMesh2->getRank() <<
                   ", CommMesh2 transmitRank:" << pCommMesh2->getTrasmitRank() << endl;
 
-           uint numOfCommNode;
-           uint icnode;
-           numOfCommNode= pCommMesh2->getCommNodeSize();
+           uiint nNumOfCommNode;
+           uiint icnode;
+           nNumOfCommNode= pCommMesh2->getCommNodeSize();
            pmw::CCommNode *pCommNode;
            pmw::CNode     *pNode;
 
-           cout << "FileWriterCommMesh2::Write,  numOfCommNode==" << numOfCommNode << endl;
-
+           pLogger->Info(Utility::LoggerMode::Info, "CommMesh2::nNumOfCommNode ", nNumOfCommNode);
+           
            //---
            //CommNode
            //---
-           for(icnode=0; icnode< numOfCommNode; icnode++){
+           for(icnode=0; icnode< nNumOfCommNode; icnode++){
                // 通信するNodeID
                pCommNode = pCommMesh2->getCommNodeIX(icnode);
                pNode = pCommNode->getNode();
@@ -83,26 +85,26 @@ void CFileWriterCommMesh2::Write(ofstream& ofs, const uint& mgLevel)
            //---
            //CommFace
            //---
-           uint numOfCommFace;
-           uint iface;
-           numOfCommFace= pCommMesh2->getCommFaceSize();
+           uiint nNumOfCommFace;
+           uiint iface;
+           nNumOfCommFace= pCommMesh2->getCommFaceSize();
            pmw::CCommFace *pCommFace;
-           for(iface=0; iface < numOfCommFace; iface++){
+           for(iface=0; iface < nNumOfCommFace; iface++){
                
                pCommFace= pCommMesh2->getCommFaceIX(iface);
                
                ofs << "CommFace ID= " << pCommFace->getID();
                
                //uint ivert;
-               uint numOfCommNode= pCommFace->getCommNodeSize();
+               uiint nNumOfCommNodeFace= pCommFace->getCommNodeSize();
                
-               for(icnode=0; icnode < numOfCommNode; icnode++){
+               for(icnode=0; icnode < nNumOfCommNodeFace; icnode++){
                    pCommNode= pCommFace->getCommNode(icnode);
                    ofs << ", " << pCommNode->getID(); 
                };
                ofs << endl;
 
-               for(icnode=0; icnode < numOfCommNode; icnode++){
+               for(icnode=0; icnode < nNumOfCommNodeFace; icnode++){
                    pCommNode= pCommFace->getCommNode(icnode);
                    ofs << ":: X= " << pCommNode->getX() << ", Y= " << pCommNode->getY() << ", Z= " << pCommNode->getZ();
                };

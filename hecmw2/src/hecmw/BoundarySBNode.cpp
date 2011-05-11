@@ -19,26 +19,26 @@ CBoundarySBNode::~CBoundarySBNode()
 
 // DOF
 // ---
-void CBoundarySBNode::addDOF(const uint& dof)
+void CBoundarySBNode::addDOF(const uiint& dof)
 {
     mvDOF.push_back(dof);
 }
-uint& CBoundarySBNode::getDOF(const uint& index)
+uiint& CBoundarySBNode::getDOF(const uiint& index)
 {
     return mvDOF[index];
 }
-uint CBoundarySBNode::getNumOfDOF()
+uiint CBoundarySBNode::getNumOfDOF()
 {
     return mvDOF.size();
 }
 
 // 境界値
 // ----
-void CBoundarySBNode::setValue(const uint& dof, const double& val)
+void CBoundarySBNode::setValue(const uiint& dof, const double& val)
 {
     mmValue[dof]= val;
 }
-double& CBoundarySBNode::getValue(const uint& dof)
+double& CBoundarySBNode::getValue(const uiint& dof)
 {
     return mmValue[dof];
 }

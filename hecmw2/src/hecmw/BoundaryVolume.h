@@ -43,37 +43,37 @@ protected:
 
 public:
     
-    void markingEdge(const uint& iedge){ mvbMarkingEdge[iedge]=true;}
-    void markingFace(const uint& iface){ mvbMarkingFace[iface]=true;}
+    void markingEdge(const uiint& iedge){ mvbMarkingEdge[iedge]=true;}
+    void markingFace(const uiint& iface){ mvbMarkingFace[iface]=true;}
 
-    bool isMarkingEdge(const uint& iedge){ return mvbMarkingEdge[iedge];}
-    bool isMarkingFace(const uint& iface){ return mvbMarkingFace[iface];}
+    bool isMarkingEdge(const uiint& iedge){ return mvbMarkingEdge[iedge];}
+    bool isMarkingFace(const uiint& iface){ return mvbMarkingFace[iface];}
 
-    virtual uint getElemType()=0;
-    virtual uint getNumOfEdge()=0;
-    virtual uint getNumOfFace()=0;
-    virtual uint getNumOfNode()=0;
+    virtual uiint getElemType()=0;
+    virtual uiint getNumOfEdge()=0;
+    virtual uiint getNumOfFace()=0;
+    virtual uiint getNumOfNode()=0;
     //Vertex ==> BoundaryParts::getNumOfVert()=0
 
-    virtual void setOrder(const uint& order)=0;//{ mnOrder=order;};//Hexa,Tetra,Prismの1次・2次
+    virtual void setOrder(const uiint& order)=0;//{ mnOrder=order;};//Hexa,Tetra,Prismの1次・2次
     
-    virtual PairBNode getPairBNode(const uint& iedge)=0;//辺の両端のBNode
-    virtual uint& getEdgeID(PairBNode& pairBNode)=0;
+    virtual PairBNode getPairBNode(const uiint& iedge)=0;//辺の両端のBNode
+    virtual uiint& getEdgeID(PairBNode& pairBNode)=0;
 
-    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uint& iface)=0;//面を構成するBNode
-    virtual uint& getFaceID(vector<CBoundaryNode*>& vBNode)=0;
+    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uiint& iface)=0;//面を構成するBNode
+    virtual uiint& getFaceID(vector<CBoundaryNode*>& vBNode)=0;
 
 
-    void setEdgeNeibVol(const uint& iedge, const uint& neibVolID);
-    void setFaceNeibVol(const uint& iface, const uint& neibVolID);
-    vuint& getEdgeNeibVolID(const uint& iedge){ return mvEdgeNeibVol[iedge];}
-    uint&  getFaceNeibVolID(const uint& iface){ return mvFaceNeibVol[iface];}
+    void setEdgeNeibVol(const uiint& iedge, const uiint& neibVolID);
+    void setFaceNeibVol(const uiint& iface, const uiint& neibVolID);
+    vuint& getEdgeNeibVolID(const uiint& iedge){ return mvEdgeNeibVol[iedge];}
+    uiint&  getFaceNeibVolID(const uiint& iface){ return mvFaceNeibVol[iface];}
 
-    void setEdgeBNode(const uint& iedge, CBoundaryNode *pBNode);
-    void setFaceBNode(const uint& iface, CBoundaryNode *pBNode);
+    void setEdgeBNode(const uiint& iedge, CBoundaryNode *pBNode);
+    void setFaceBNode(const uiint& iface, CBoundaryNode *pBNode);
     void setVolBNode(CBoundaryNode *pBNode);
-    CBoundaryNode* getEdgeBNode(const uint& iedge){ return mvEdgeBNode[iedge];}
-    CBoundaryNode* getFaceBNode(const uint& iface){ return mvFaceBNode[iface];}
+    CBoundaryNode* getEdgeBNode(const uiint& iedge){ return mvEdgeBNode[iedge];}
+    CBoundaryNode* getFaceBNode(const uiint& iface){ return mvFaceBNode[iface];}
     CBoundaryNode* getVolBNode(){ return mpVolBNode;}
 
 protected:
@@ -85,26 +85,26 @@ protected:
     double tetraVolume(CNode* pNode0, CNode* pNode1, CNode* pNode2, CNode* pNode3);//四面体の体積
 
 
-    uint dividHexa(const uint& iprog, CBoundaryVolume* pProgVol);//return は、子供がぶらさがる場所(BNodeの頂点番号)
-    uint dividTetra(const uint& iprog, CBoundaryVolume* pProgVol);
-    uint dividPrism(const uint& iprog, CBoundaryVolume* pProgVol);
+    uiint dividHexa(const uiint& iprog, CBoundaryVolume* pProgVol);//return は、子供がぶらさがる場所(BNodeの頂点番号)
+    uiint dividTetra(const uiint& iprog, CBoundaryVolume* pProgVol);
+    uiint dividPrism(const uiint& iprog, CBoundaryVolume* pProgVol);
 
     void distValue(CBoundaryVolume *pProgVol, const double& coef, const vuint& vDOF);//要素の境界値の分配
 
-    virtual uint* getLocalNode_Edge(const uint& iedge)=0;//setupNode_Edgeで使用
-    virtual uint* getLocalNode_Face(const uint& iface)=0;//setupNode_Faceで使用
+    virtual uiint* getLocalNode_Edge(const uiint& iedge)=0;//setupNode_Edgeで使用
+    virtual uiint* getLocalNode_Face(const uiint& iface)=0;//setupNode_Faceで使用
 public:
     // Refine 再分割
-    virtual void refine(uint& countID, const vuint& vDOF)=0;
+    virtual void refine(uiint& countID, const vuint& vDOF)=0;
 
     vector<CBoundaryVolume*>& getProgParts(){ return mvProgVolume;}
 
     virtual double& calcVolume()=0;// BoundaryVolumeの体積計算(計算結果はmCubicVolumeへ)
     double& getCubicVolume(){ return mCubicVolume;};
 
-    virtual void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)=0;//上位グリッドBNodeへのディレクレ値の分配
+    virtual void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel)=0;//上位グリッドBNodeへのディレクレ値の分配
 
-    virtual void replaceEdgeBNode(const uint& iedge)=0;//2次要素の場合に辺BNodeをmvBNodeへ移設.
+    virtual void replaceEdgeBNode(const uiint& iedge)=0;//2次要素の場合に辺BNodeをmvBNodeへ移設.
 
     // Refine 後処理 : 辺-面 BNode vectorの解放
     // ----

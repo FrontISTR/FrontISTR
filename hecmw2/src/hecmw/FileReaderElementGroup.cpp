@@ -18,12 +18,12 @@ CFileReaderElementGroup::~CFileReaderElementGroup()
 
 bool CFileReaderElementGroup::Read(ifstream& ifs, string& sLine)
 {
-    uint nGrpID, nMeshID;
+    uiint nGrpID, nMeshID;
     string sGrpName;
     
     vuint vMeshID;
-    map<uint, vuint, less<uint> > mavGrpID;
-    map<uint, vstring, less<uint> > mavGrpName;
+    map<uiint, vuint, less<uiint> > mavGrpID;
+    map<uiint, vstring, less<uiint> > mavGrpName;
 
     istringstream iss;
 
@@ -51,10 +51,10 @@ bool CFileReaderElementGroup::Read(ifstream& ifs, string& sLine)
         };
 
         sort(vMeshID.begin(), vMeshID.end());
-        vector<uint>::iterator unqEnd = unique(vMeshID.begin(), vMeshID.end());
+        vector<uiint>::iterator unqEnd = unique(vMeshID.begin(), vMeshID.end());
         vMeshID.erase(unqEnd, vMeshID.end());
 
-        vector<uint>::iterator it;
+        vector<uiint>::iterator it;
         for(it=vMeshID.begin(); it != vMeshID.end(); it++){
             nMeshID = *it;
             mpFactory->GeneElemGrpOBJ(0, nMeshID, mavGrpID[nMeshID], mavGrpName[nMeshID]);
@@ -67,7 +67,10 @@ bool CFileReaderElementGroup::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderElementGroup::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

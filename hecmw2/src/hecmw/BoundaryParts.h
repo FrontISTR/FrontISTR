@@ -23,51 +23,51 @@ public:
     virtual ~CBoundaryParts();
 
 protected:
-    uint mnID;
-    uint mnElementID; //Mesh-Element ID
+    uiint mnID;
+    uiint mnElementID; //Mesh-Element ID
 
     vector<CBoundaryNode*> mvBNode;// 頂点(値を分配するNode)
-    map<uint, uint, less<uint> > mmBNodeID2Index;
+    map<uiint, uiint, less<uiint> > mmBNodeID2Index;
 
-    uint mnShapeType;// Beam, Quad, Triangle, Tetra, Hexa
-    uint mnOrder;    // 1次 .or. 2次
+    uiint mnShapeType;// Beam, Quad, Triangle, Tetra, Hexa
+    uiint mnOrder;    // 1次 .or. 2次
     
     ////vuint mvDOF;// => BounaryMeshに移行.
-    map<uint, double, less<uint> > mmValue;//Partsが所有するDOF境界値
+    map<uiint, double, less<uiint> > mmValue;//Partsが所有するDOF境界値
 
 
     CElement *mpElement;//Boundaryが載ってる要素
 
 public:
     // 頂点(境界Node)
-    void resizeBNode(const uint& res_size);
-    void setBNode(const uint& ivert, CBoundaryNode *pBNode);
-    uint getNumOfBNode(){ return mvBNode.size();}
-    CBoundaryNode* getBNode(const uint& ivert){ return mvBNode[ivert];}
+    void resizeBNode(const uiint& res_size);
+    void setBNode(const uiint& ivert, CBoundaryNode *pBNode);
+    uiint getNumOfBNode(){ return mvBNode.size();}
+    CBoundaryNode* getBNode(const uiint& ibnode){ return mvBNode[ibnode];}
 
-    uint& getVertIndex(CBoundaryNode *pBNode){ return mmBNodeID2Index[pBNode->getID()];}
+    uiint& getVertIndex(CBoundaryNode *pBNode){ return mmBNodeID2Index[pBNode->getID()];}
 
     // 1次 .or. 2次
-    uint& getOrder(){ return mnOrder;}
+    uiint& getOrder(){ return mnOrder;}
 
     // 頂点数
-    virtual uint getNumOfVert()=0;
+    virtual uiint getNumOfVert()=0;
 
     // 境界パーツID(BFaceID,BEdgeID,BVolumeID)
-    void setID(const uint& id){ mnID= id;}
-    uint& getID(){ return mnID;}
+    void setID(const uiint& id){ mnID= id;}
+    uiint& getID(){ return mnID;}
 
     // Mesh-Element-ID(Element ID)
-    void setElementID(const uint& id){ mnElementID = id;}
-    uint& getElementID(){ return mnElementID;}
+    void setElementID(const uiint& id){ mnElementID = id;}
+    uiint& getElementID(){ return mnElementID;}
 
     // Mesh-Element
     void setElement(CElement *pElem){ mpElement= pElem;}
     CElement* getElement(){ return mpElement;}
 
     // 境界値
-    void setBndValue(const uint& dof, const double& val){ mmValue[dof]= val;}
-    double& getBndValue(const uint& dof){ return mmValue[dof];}
+    void setBndValue(const uiint& dof, const double& val){ mmValue[dof]= val;}
+    double& getBndValue(const uiint& dof){ return mmValue[dof];}
 
     
     // ----

@@ -71,20 +71,20 @@ private:
 
     
     //形状関数 & 導関数のセットアップ
-    void setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3]);
-    void setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3]);
+    void setupShapeFunction(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3]);
+    void setupShapeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3]);
 
 
     //形状関数
-    void ShapeFunction6(vvdouble& N, const uint& igauss,
+    void ShapeFunction6(vvdouble& N, const uiint& igauss,
                          const double& L1, const double& L2, const double& gzi);
-    void ShapeFunction15(vvdouble& N, const uint& igauss,
+    void ShapeFunction15(vvdouble& N, const uiint& igauss,
                          const double& L1, const double& L2, const double& gzi);
 
     //導関数
-    void ShapeDeriv6(vvvdouble& dNdr, const uint& igauss,
+    void ShapeDeriv6(vvvdouble& dNdr, const uiint& igauss,
                         const double& L1, const double& L2, const double& gzi);
-    void ShapeDeriv15(vvvdouble& dNdr, const uint& igauss,
+    void ShapeDeriv15(vvvdouble& dNdr, const uiint& igauss,
                          const double& L1, const double& L2, const double& gzi);
 
 
@@ -98,55 +98,55 @@ private:
 
 public:
     // 形状関数   引数:積分点位置index, 形状関数番号(節点)
-    double& N62(const uint& igauss, const uint& ishape);
-    double& N156(const uint& igauss, const uint& ishape);
-    double& N159(const uint& igauss, const uint& ishape);
-    double& N1518(const uint& igauss, const uint& ishape);
-    vdouble& N62(const uint& igauss){ return mvN62[igauss];}
-    vdouble& N156(const uint& igauss){ return mvN156[igauss];}
-    vdouble& N159(const uint& igauss){ return mvN159[igauss];}
-    vdouble& N1518(const uint& igauss){ return mvN1518[igauss];}
+    double& N62(const uiint& igauss, const uiint& ishape);
+    double& N156(const uiint& igauss, const uiint& ishape);
+    double& N159(const uiint& igauss, const uiint& ishape);
+    double& N1518(const uiint& igauss, const uiint& ishape);
+    vdouble& N62(const uiint& igauss){ return mvN62[igauss];}
+    vdouble& N156(const uiint& igauss){ return mvN156[igauss];}
+    vdouble& N159(const uiint& igauss){ return mvN159[igauss];}
+    vdouble& N1518(const uiint& igauss){ return mvN1518[igauss];}
     vvdouble& N62(){ return mvN62;}
     vvdouble& N156(){ return mvN156;}
     vvdouble& N159(){ return mvN159;}
     vvdouble& N1518(){ return mvN1518;}
 
     // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
-    double& dNdr62(const uint& igauss, const uint& ishape, const uint& axis);
-    double& dNdr156(const uint& igauss, const uint& ishape, const uint& axis);
-    double& dNdr159(const uint& igauss, const uint& ishape, const uint& axis);
-    double& dNdr1518(const uint& igauss, const uint& ishape, const uint& axis);
-    vvdouble& dNdr62(const uint& igauss){ return mvdNdr62[igauss];}
-    vvdouble& dNdr156(const uint& igauss){ return mvdNdr156[igauss];}
-    vvdouble& dNdr159(const uint& igauss){ return mvdNdr159[igauss];}
-    vvdouble& dNdr1518(const uint& igauss){ return mvdNdr1518[igauss];}
+    double& dNdr62(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    double& dNdr156(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    double& dNdr159(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    double& dNdr1518(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    vvdouble& dNdr62(const uiint& igauss){ return mvdNdr62[igauss];}
+    vvdouble& dNdr156(const uiint& igauss){ return mvdNdr156[igauss];}
+    vvdouble& dNdr159(const uiint& igauss){ return mvdNdr159[igauss];}
+    vvdouble& dNdr1518(const uiint& igauss){ return mvdNdr1518[igauss];}
     vvvdouble& dNdr62(){ return mvdNdr62;}
     vvvdouble& dNdr156(){ return mvdNdr156;}
     vvvdouble& dNdr159(){ return mvdNdr159;}
     vvvdouble& dNdr1518(){ return mvdNdr1518;}
 
     // 返り値:重みの配列, 引数:積分点数
-    double* Weight(const uint& integNum);
+    double* Weight(const uiint& integNum);
     // 返り値:重み, 引数:重みの配列Index
-    double& Weight_pt2(const uint& igauss);
-    double& Weight_pt6(const uint& igauss);
-    double& Weight_pt9(const uint& igauss);
-    double& Weight_pt18(const uint& igauss);
+    double& Weight_pt2(const uiint& igauss);
+    double& Weight_pt6(const uiint& igauss);
+    double& Weight_pt9(const uiint& igauss);
+    double& Weight_pt18(const uiint& igauss);
 
     // dNdx 計算セットアップ
-    void Calc_dNdx6(const uint& numOfInteg, CElement *pElement);
-    void Calc_dNdx15(const uint& numOfInteg, CElement *pElement);
+    void Calc_dNdx6(const uiint& numOfInteg, CElement *pElement);
+    void Calc_dNdx15(const uiint& numOfInteg, CElement *pElement);
 
     // dNdx (空間座標の導関数)
-    double& dNdx62(const uint& igauss, const uint& ishape, const uint& axis){  return  mvdNdx62[igauss][ishape][axis];}
-    double& dNdx156(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx156[igauss][ishape][axis];}
-    double& dNdx159(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx159[igauss][ishape][axis];}
-    double& dNdx1518(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx1518[igauss][ishape][axis];}
+    double& dNdx62(const uiint& igauss, const uiint& ishape, const uiint& axis){  return  mvdNdx62[igauss][ishape][axis];}
+    double& dNdx156(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdx156[igauss][ishape][axis];}
+    double& dNdx159(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdx159[igauss][ishape][axis];}
+    double& dNdx1518(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdx1518[igauss][ishape][axis];}
 
-    vvdouble& dNdx62(const uint& igauss){  return  mvdNdx62[igauss];}
-    vvdouble& dNdx156(const uint& igauss){ return mvdNdx156[igauss];}
-    vvdouble& dNdx159(const uint& igauss){ return mvdNdx159[igauss];}
-    vvdouble& dNdx1518(const uint& igauss){ return mvdNdx1518[igauss];}
+    vvdouble& dNdx62(const uiint& igauss){  return  mvdNdx62[igauss];}
+    vvdouble& dNdx156(const uiint& igauss){ return mvdNdx156[igauss];}
+    vvdouble& dNdx159(const uiint& igauss){ return mvdNdx159[igauss];}
+    vvdouble& dNdx1518(const uiint& igauss){ return mvdNdx1518[igauss];}
 
     vvvdouble& dNdx62(){   return   mvdNdx62;}
     vvvdouble& dNdx156(){  return  mvdNdx156;}
@@ -154,12 +154,12 @@ public:
     vvvdouble& dNdx1518(){ return mvdNdx1518;}
 
     // detJ : [積分点][ishape]
-    double& detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss);
+    double& detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss);
 
-    double& detJ62(const uint& igauss){ return mv_detJ62[igauss];}
-    double& detJ156(const uint& igauss){ return mv_detJ156[igauss];}
-    double& detJ159(const uint& igauss){ return mv_detJ159[igauss];}
-    double& detJ1518(const uint& igauss){ return mv_detJ1518[igauss];}
+    double& detJ62(const uiint& igauss){ return mv_detJ62[igauss];}
+    double& detJ156(const uiint& igauss){ return mv_detJ156[igauss];}
+    double& detJ159(const uiint& igauss){ return mv_detJ159[igauss];}
+    double& detJ1518(const uiint& igauss){ return mv_detJ1518[igauss];}
     vdouble& detJ62(){   return   mv_detJ62;}
     vdouble& detJ156(){  return  mv_detJ156;}
     vdouble& detJ159(){  return  mv_detJ159;}
@@ -169,8 +169,8 @@ public:
     // 形状関数積分値
     vdouble& getIntegValue15(){ return mvIntegValue15;}
     vdouble& getIntegValue6(){ return mvIntegValue6;}
-    double& getIntegValue15(const uint& ishape){ return mvIntegValue15[ishape];}
-    double& getIntegValue6(const uint& ishape){ return mvIntegValue6[ishape];}
+    double& getIntegValue15(const uiint& ishape){ return mvIntegValue15[ishape];}
+    double& getIntegValue6(const uiint& ishape){ return mvIntegValue6[ishape];}
 };
 #endif	/* _SHAPEPRISM_H */
 }

@@ -23,11 +23,11 @@ public:
     virtual ~CMaterial();
 
 private:
-    uint  mnID;
+    uiint  mnID;
     std::string msName;
-    uint  mMeshID;//Materialを使用するMeshID => Fileに記述された材質をMeshに割り当てるため.
+    uiint  mMeshID;//Materialを使用するMeshID => Fileに記述された材質をMeshに割り当てるため.
 
-    map<uint,double,less<uint> > mmValue;//uint==材質PropType => MaterialPropType.h
+    map<uiint,double,less<uiint> > mmValue;//uint==材質PropType => MaterialPropType.h
 
 
     //    // ↓ とりあえずイメージとして変数を用意してあるだけなので,削除予定.
@@ -45,13 +45,13 @@ private:
 public:
     // ID
     // --
-    void  setID(const uint& id){ mnID = id;}
-    uint& getID(){ return mnID;}
+    void  setID(const uiint& id){ mnID = id;}
+    uiint& getID(){ return mnID;}
 
     // MeshID
     // --
-    void  setMeshID(const uint& mesh_id){ mMeshID= mesh_id;}
-    uint& getMeshID(){ return mMeshID;}
+    void  setMeshID(const uiint& mesh_id){ mMeshID= mesh_id;}
+    uiint& getMeshID(){ return mMeshID;}
 
     // 名前
     // --
@@ -60,8 +60,8 @@ public:
 
     // 材質データ
     // --
-    void setValue(const uint& prop_Type, const double& value);
-    double& getValue(const uint& prop_Type){ return mmValue[prop_Type];}
+    void setValue(const uiint& prop_Type, const double& value);
+    double& getValue(const uiint& prop_Type){ return mmValue[prop_Type];}
 
 
     //    // ↓ 削除予定.(具体的なデータは,削除する)

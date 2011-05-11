@@ -22,6 +22,10 @@
 
 #include "FileWriterElementGroup.h"
 
+#include "FileWriterRes.h"
+
+#include <cstring> //strlen
+
 namespace FileIO{
 class CFileWriterChunk{
 public:
@@ -31,9 +35,26 @@ public:
 protected:
     vector<CFileWriter*> mvWriter;
 
+    ofstream m_ofs;//リザルト
+
+    bool mb_fstr;//拡張子の付け方管理(*resのステップ番号付け方)
+
 public:
-    void setSolutionType(const uint& nSolutionType);
-    void Write(string& filename, const uint& numOfLevel);
+    void setSolutionType(const uiint& nSolutionType);
+
+    // リスタートの拡張子の付け方管理のマーキング
+    void markingFstrStyle();
+
+    // Data Check(*.out)
+    void WriteDebug(string& filename, const uiint& nNumOfLevel);//Debug Write (Data Check)
+
+    // リスタート
+    void WriteRes(const uiint& nStep, string& filename, bool bBinary);//Res(Restart) File output
+
+    // リザルト
+    void PrintResult_Start(const uiint& nStep, string filename, bool bBinary);
+    void PrintResult(const uiint& width, char* format, vector<void*>& param);
+    void PrintResult_End();
 };
 }
 

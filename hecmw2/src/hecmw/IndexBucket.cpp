@@ -19,8 +19,8 @@ CIndexBucket::CIndexBucket()
 
 CIndexBucket::~CIndexBucket()
 {
-    //debug
-    std::cout << "~CIndexBucket" << std::endl;
+    ////debug
+    //std::cout << "~CIndexBucket" << std::endl;
 }
 
 // メンバークリア
@@ -61,7 +61,7 @@ void CIndexBucket::clearBucketElement()
 
 // 初期の領域確保
 //
-void CIndexBucket::resizeBucketNode(const uint &maxID, const uint &minID)
+void CIndexBucket::resizeBucketNode(const uiint &maxID, const uiint &minID)
 {
     maxNodeID = maxID;
     minNodeID = minID;
@@ -72,7 +72,7 @@ void CIndexBucket::resizeBucketNode(const uint &maxID, const uint &minID)
 //
 // Nodeが追加された時の再resize
 //
-void CIndexBucket::re_resizeBucketNode(const uint& new_maxID)
+void CIndexBucket::re_resizeBucketNode(const uiint& new_maxID)
 {
     maxNodeID = new_maxID;
     defNodeID = maxNodeID - minNodeID;
@@ -80,7 +80,7 @@ void CIndexBucket::re_resizeBucketNode(const uint& new_maxID)
     mvID2NodeIndex.resize(defNodeID+1);
 }
 
-void CIndexBucket::resizeBucketElement(const uint &maxID, const uint &minID)
+void CIndexBucket::resizeBucketElement(const uiint &maxID, const uiint &minID)
 {
     maxElementID = maxID;
     minElementID = minID;
@@ -92,12 +92,12 @@ void CIndexBucket::resizeBucketElement(const uint &maxID, const uint &minID)
 
 //
 //
-void CIndexBucket::setIndexNode(const uint& id, const int& index_num)
+void CIndexBucket::setIndexNode(const uiint& id, const int& index_num)
 {
     mvID2NodeIndex[id - minNodeID] = index_num;
 }
 
-void CIndexBucket::setIndexElement(const uint &id, const int &index_num)
+void CIndexBucket::setIndexElement(const uiint &id, const int &index_num)
 {
     mvID2ElementIndex[id - minElementID] = index_num;
 }

@@ -32,7 +32,7 @@ public:
 
 protected:
     vector<CBoundaryFace*> mvBFace;
-    map<uint, uint, less<uint> > mmBFaceID2Index;
+    map<uiint, uiint, less<uiint> > mmBFaceID2Index;
     
     vvuint mvAggregateFace;// BNodeの面-集合
 
@@ -41,26 +41,26 @@ protected:
 
 public:   
     //境界面 :=> BFace
-    void resizeBFace(const uint& res_size){ mvBFace.resize(res_size);}
-    void setBFace(const uint& index, CBoundaryFace *pBFace);
+    void resizeBFace(const uiint& res_size){ mvBFace.resize(res_size);}
+    void setBFace(const uiint& index, CBoundaryFace *pBFace);
     void addBFace(CBoundaryFace *pBFace);
-    uint getNumOfBFace(){ return mvBFace.size();}
-    CBoundaryFace* getBFaceIX(const uint& index){ return mvBFace[index];}
-    CBoundaryFace* getBFaceID(const uint& id){
-        uint index= mmBFaceID2Index[id];
+    uiint getNumOfBFace(){ return mvBFace.size();}
+    CBoundaryFace* getBFaceIX(const uiint& index){ return mvBFace[index];}
+    CBoundaryFace* getBFaceID(const uiint& id){
+        uiint index= mmBFaceID2Index[id];
         return mvBFace[index];
     }
-    uint& getBFaceIndex(const uint& id){ return mmBFaceID2Index[id];}
+    uiint& getBFaceIndex(const uiint& id){ return mmBFaceID2Index[id];}
 
 
 public:
     // 面-集合
     // ----
     void resizeAggFace();
-    vuint& getAggFace(const uint& ibnode){ return mvAggregateFace[ibnode];}
+    vuint& getAggFace(const uiint& ibnode){ return mvAggregateFace[ibnode];}
     void setupAggFace();// 点-周囲の面集合
 
-    void setAggFace(const uint& ibnode, const uint& nFaceID){ mvAggregateFace[ibnode].push_back(nFaceID);}
+    void setAggFace(const uiint& ibnode, const uiint& nFaceID){ mvAggregateFace[ibnode].push_back(nFaceID);}
 
 
     // refine準備
@@ -89,10 +89,11 @@ protected:
     //----
     virtual void distNeumannValue();
 
-    //Dirichlet条件の節点分配(BNode周囲の面集合平均値)
-    //----
-    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
-    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+////    //Dirichlet条件の節点分配(BNode周囲の面集合平均値)
+////    //----
+////    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
+////    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+    virtual void distDirichletValue();
     
 };
 #endif	/* _BOUNDARYFACEMESH_H */

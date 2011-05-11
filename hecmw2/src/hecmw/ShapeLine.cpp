@@ -35,7 +35,7 @@ CShapeLine::CShapeLine()
 
     
     
-    uint numOfIntg,numOfShape,dof;
+    uiint numOfIntg,numOfShape,dof;
     //領域確保
     numOfIntg=1; numOfShape=2; dof=1;
     ResizeShape(mvN21, numOfIntg,numOfShape);
@@ -70,7 +70,7 @@ CShapeLine::~CShapeLine()
 //----
 void CShapeLine::setupShapeFunction()
 {
-    uint igauss;
+    uiint igauss;
     double r;
 
     igauss=0;
@@ -78,7 +78,7 @@ void CShapeLine::setupShapeFunction()
     //2節点 1積分点
     ShapeFunction2(mvN21, igauss, r);
 
-    uint numOfIntg(2);
+    uiint numOfIntg(2);
     for(igauss=0; igauss< numOfIntg; igauss++){
         r= mGzi2[igauss][0];
         //3節点 2積分点
@@ -90,10 +90,10 @@ void CShapeLine::setupShapeDeriv()
     //2節点 1積分点
     ShapeDeriv2();
     
-    uint igauss;
+    uiint igauss;
     double r;
     
-    uint numOfIntg(2);
+    uiint numOfIntg(2);
     for(igauss=0; igauss< numOfIntg; igauss++){
         r= mGzi2[igauss][0];
         //3節点 2積分点
@@ -109,12 +109,12 @@ void CShapeLine::setupShape2ndDeriv()
 
 //形状関数
 //----
-void CShapeLine::ShapeFunction2(vvdouble& N, const uint& igauss, const double& r)
+void CShapeLine::ShapeFunction2(vvdouble& N, const uiint& igauss, const double& r)
 {
     N[igauss][0]= 0.50*(1.0-r);
     N[igauss][1]= 0.50*(1.0+r);
 }
-void CShapeLine::ShapeFunction3(vvdouble& N, const uint& igauss, const double& r)
+void CShapeLine::ShapeFunction3(vvdouble& N, const uiint& igauss, const double& r)
 {
     N[igauss][0]= -0.50*(1.0-r)*r;
     N[igauss][1]=  0.50*(1.0+r)*r;
@@ -125,12 +125,12 @@ void CShapeLine::ShapeFunction3(vvdouble& N, const uint& igauss, const double& r
 //----
 void CShapeLine::ShapeDeriv2()
 {
-    uint igauss(0);
+    uiint igauss(0);
     mvdNdr21[igauss][0][0]= -0.50;
     mvdNdr21[igauss][1][0]=  0.50;
 }
 //void CShapeLine::ShapeDeriv3(double dNdr[][3][1], const uint& igauss, const double& r)
-void CShapeLine::ShapeDeriv3(vvvdouble& dNdr, const uint& igauss, const double& r)
+void CShapeLine::ShapeDeriv3(vvvdouble& dNdr, const uiint& igauss, const double& r)
 {
     dNdr[igauss][0][0]=  r-0.50;
     dNdr[igauss][1][0]=  r+0.50;
@@ -141,13 +141,13 @@ void CShapeLine::ShapeDeriv3(vvvdouble& dNdr, const uint& igauss, const double& 
 //----
 void CShapeLine::Shape_2ndDeriv2()
 {
-    uint igauss(0);
+    uiint igauss(0);
     mvd2Ndr21[igauss][0][0][0]= 0.0;
     mvd2Ndr21[igauss][1][0][0]= 0.0;
 }
 void CShapeLine::Shape_2ndDeriv3()
 {
-    uint igauss(0);
+    uiint igauss(0);
     mvd2Ndr32[igauss][0][0][0]=  1.0;
     mvd2Ndr32[igauss][1][0][0]=  1.0;
     mvd2Ndr32[igauss][2][0][0]= -2.0;
@@ -155,22 +155,22 @@ void CShapeLine::Shape_2ndDeriv3()
 
 // 形状関数  引数:積分点, 形状関数
 // ----
-double& CShapeLine::N21(const uint& igauss, const uint& ishape){ return mvN21[igauss][ishape];}
-double& CShapeLine::N32(const uint& igauss, const uint& ishape){ return mvN32[igauss][ishape];}
+double& CShapeLine::N21(const uiint& igauss, const uiint& ishape){ return mvN21[igauss][ishape];}
+double& CShapeLine::N32(const uiint& igauss, const uiint& ishape){ return mvN32[igauss][ishape];}
 
 // 導関数   引数:積分点, 形状関数
 // ----
-double& CShapeLine::dNdr21(const uint& igauss, const uint& ishape){ return mvdNdr21[igauss][ishape][0];}
-double& CShapeLine::dNdr32(const uint& igauss, const uint& ishape){ return mvdNdr32[igauss][ishape][0];}
+double& CShapeLine::dNdr21(const uiint& igauss, const uiint& ishape){ return mvdNdr21[igauss][ishape][0];}
+double& CShapeLine::dNdr32(const uiint& igauss, const uiint& ishape){ return mvdNdr32[igauss][ishape][0];}
 
 // 2次導関数 引数:積分点, 形状関数
 // ----
-double& CShapeLine::d2Ndr21(const uint& igauss, const uint& ishape){ return mvd2Ndr21[igauss][ishape][0][0];}
-double& CShapeLine::d2Ndr32(const uint& igauss, const uint& ishape){ return mvd2Ndr32[igauss][ishape][0][0];}
+double& CShapeLine::d2Ndr21(const uiint& igauss, const uiint& ishape){ return mvd2Ndr21[igauss][ishape][0][0];}
+double& CShapeLine::d2Ndr32(const uiint& igauss, const uiint& ishape){ return mvd2Ndr32[igauss][ishape][0][0];}
 
 // 返り値:重みの配列, 引数:積分点数
 // ----
-double* CShapeLine::Weight(const uint& integNum)
+double* CShapeLine::Weight(const uiint& integNum)
 {
     switch(integNum){
         case(1):
@@ -187,7 +187,7 @@ double* CShapeLine::Weight(const uint& integNum)
 // 返り値:重み, 引数:重みの配列Index
 // ----
 double& CShapeLine::Weight_pt1(){ return mW1[0];}
-double& CShapeLine::Weight_pt2(const uint& igauss){ return mW2[igauss];}
+double& CShapeLine::Weight_pt2(const uiint& igauss){ return mW2[igauss];}
 
 
 
@@ -198,7 +198,7 @@ double& CShapeLine::Weight_pt2(const uint& igauss){ return mW2[igauss];}
 // --
 void CShapeLine::setupIntegValue3()
 {
-    uint ishape;
+    uiint ishape;
     // 両端(頂点)
     for(ishape=0; ishape < 2; ishape++) mvIntegValue3[ishape]= 1.0/6.0;
     // 辺
@@ -209,7 +209,7 @@ void CShapeLine::setupIntegValue3()
 // --
 void CShapeLine::setupIntegValue2()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 2; ishape++) mvIntegValue2[ishape]= 0.5;
 }
 

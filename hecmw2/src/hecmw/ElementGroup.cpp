@@ -27,11 +27,11 @@ void CElementGroup::setMesh(CMesh* pMesh)
 
 // ID
 //
-void CElementGroup::setID(const uint& id)
+void CElementGroup::setID(const uiint& id)
 {
     mnGrpID = id;
 }
-uint& CElementGroup::getID()
+uiint& CElementGroup::getID()
 {
     return mnGrpID;
 }
@@ -46,28 +46,28 @@ string& CElementGroup::getName()
 {
     return msGrpName;
 }
-uint CElementGroup::getNameLength()
+uiint CElementGroup::getNameLength()
 {
-    return (uint)msGrpName.length();
+    return (uiint)msGrpName.length();
 }
 
 // ElementGrpへElemIDを追加
 //
-void CElementGroup::addElementID(const uint& nElemID)
+void CElementGroup::addElementID(const uiint& nElemID)
 {
     mvElementID.push_back(nElemID);
 }
 
 // ElementGrpのElemID数
 //
-uint CElementGroup::getNumOfElementID()
+uiint CElementGroup::getNumOfElementID()
 {
     return mvElementID.size();
 }
 
 // ElementGrpのElemID
 //
-uint& CElementGroup::getElementID(const uint& index)
+uiint& CElementGroup::getElementID(const uiint& index)
 {
     return mvElementID[index];
 }
@@ -77,8 +77,8 @@ uint& CElementGroup::getElementID(const uint& index)
 //
 void CElementGroup::refine(CElementGroup* pProgElemG)
 {
-    uint iElem, nNumOfElem = mvElementID.size();
-    uint nElemID;
+    uiint iElem, nNumOfElem = mvElementID.size();
+    uiint nElemID;
     CElement *pElem, *pProgElem;
     for(iElem=0; iElem < nNumOfElem; iElem++){
         nElemID = mvElementID[iElem];
@@ -86,7 +86,7 @@ void CElementGroup::refine(CElementGroup* pProgElemG)
 
         //cout << "ElementGroup::refine, pElem ID = " << pElem->getID() << endl;
 
-        uint ivert, nNumOfVert = pElem->getNumOfNode();
+        uiint ivert, nNumOfVert = pElem->getNumOfNode();
         for(ivert=0; ivert < nNumOfVert; ivert++){
             pProgElem = pElem->getProgElem(ivert);
 

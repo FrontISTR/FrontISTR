@@ -19,7 +19,7 @@ CBoundaryNodeMesh::~CBoundaryNodeMesh()
 
 // Dirichlet .or. Neumann
 // --
-void CBoundaryNodeMesh::setBndType(const uint& boundType)
+void CBoundaryNodeMesh::setBndType(const uiint& boundType)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
 
@@ -37,23 +37,23 @@ void CBoundaryNodeMesh::setBndType(const uint& boundType)
 }
 
 
-void CBoundaryNodeMesh::resizeBNode(const uint& res_size)
+void CBoundaryNodeMesh::resizeBNode(const uiint& res_size)
 {
     mvBNode.resize(res_size);
 }
 
-void CBoundaryNodeMesh::setBNode(const uint& index, CBoundarySBNode* pBNode)
+void CBoundaryNodeMesh::setBNode(const uiint& index, CBoundarySBNode* pBNode)
 {
     // BoundaryNodeID => Index
     //
-    uint id= pBNode->getID();
+    uiint id= pBNode->getID();
     mmID2Index[id]= index;
 
 
     // NodeID => BoundaryNodeID
     //
     CNode *pNode= pBNode->getNode();
-    uint node_id= pNode->getID();
+    uiint node_id= pNode->getID();
     
     mmNodeID2BNodeID[node_id]= pBNode->getID();
 }
@@ -64,8 +64,8 @@ void CBoundaryNodeMesh::addBNode(CBoundarySBNode* pBNode)
 
     // BoundaryNodeID => Index
     //
-    uint index= mvBNode.size()-1;
-    uint id= pBNode->getID();
+    uiint index= mvBNode.size()-1;
+    uiint id= pBNode->getID();
 
     mmID2Index[id]= index;
     
@@ -73,7 +73,7 @@ void CBoundaryNodeMesh::addBNode(CBoundarySBNode* pBNode)
     // NodeID => BoundaryNodeID
     //
     CNode *pNode= pBNode->getNode();
-    uint node_id= pNode->getID();
+    uiint node_id= pNode->getID();
     
     mmNodeID2BNodeID[node_id]= pBNode->getID();
 }

@@ -27,7 +27,7 @@ CBoundaryFace::~CBoundaryFace()
 
 // 辺の数
 //
-uint CBoundaryFace::getNumOfEdge()
+uiint CBoundaryFace::getNumOfEdge()
 {
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -45,12 +45,12 @@ uint CBoundaryFace::getNumOfEdge()
 // 1.面の幾何形状のセット
 // 2.EdgeNeibFaceの領域確保
 // 3.markingの初期化
-void CBoundaryFace::setBFaceShape(const uint& elemType)
+void CBoundaryFace::setBFaceShape(const uiint& elemType)
 { 
     Utility::CLogger* pLogger = Utility::CLogger::Instance();
 
     mnShapeType= elemType;
-    uint ivert;
+    uiint ivert;
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
             mvEdgeNeibFace.resize(4);
@@ -88,7 +88,7 @@ void CBoundaryFace::setBFaceShape(const uint& elemType)
     }
 }
 
-uint CBoundaryFace::getNumOfVert()
+uiint CBoundaryFace::getNumOfVert()
 {
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -102,21 +102,21 @@ uint CBoundaryFace::getNumOfVert()
 
 // 辺-マーキング
 // ----
-void CBoundaryFace::markingEdge(const uint& iedge)
+void CBoundaryFace::markingEdge(const uiint& iedge)
 {
     mvbMarkingEdge[iedge]= true;
 }
 
 // 辺-隣接 面ID のセット(自身は含まない)
 // ----
-void CBoundaryFace::setEdgeNeibFace(const uint& iedge, const uint& neibFaceID)
+void CBoundaryFace::setEdgeNeibFace(const uiint& iedge, const uiint& neibFaceID)
 {
     mvEdgeNeibFace[iedge]= neibFaceID;
 }
 
 // EdgeBNodeのセット
 // ----
-void CBoundaryFace::setEdgeBNode(const uint& iedge, CBoundaryNode* pEdgeBNode)
+void CBoundaryFace::setEdgeBNode(const uiint& iedge, CBoundaryNode* pEdgeBNode)
 {
     mvEdgeBNode[iedge]= pEdgeBNode;
 }
@@ -131,13 +131,13 @@ void CBoundaryFace::setFaceBNode(CBoundaryNode* pFaceBNode)
 
 // 辺の両端のBNode
 // ----
-PairBNode CBoundaryFace::getPairBNode(const uint& iedge)
+PairBNode CBoundaryFace::getPairBNode(const uiint& iedge)
 {
     Utility::CLogger* pLogger = Utility::CLogger::Instance();
 
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    uint *pLocalNum;
+    uiint *pLocalNum;
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
             pLocalNum= pEdgeTree->getQuadLocalNodeNum(iedge);
@@ -152,8 +152,8 @@ PairBNode CBoundaryFace::getPairBNode(const uint& iedge)
             break;
     }
 
-    uint index1st = pLocalNum[0];
-    uint index2nd = pLocalNum[1];
+    uiint index1st = pLocalNum[0];
+    uiint index2nd = pLocalNum[1];
 
     PairBNode pairBNode;
     pairBNode.first = mvBNode[index1st];
@@ -164,12 +164,12 @@ PairBNode CBoundaryFace::getPairBNode(const uint& iedge)
 
 // 辺番号
 // ----
-uint& CBoundaryFace::getEdgeID(PairBNode& pairBNode)
+uiint& CBoundaryFace::getEdgeID(PairBNode& pairBNode)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
     
-    uint ivert= getVertIndex(pairBNode.first);
-    uint jvert= getVertIndex(pairBNode.second);
+    uiint ivert= getVertIndex(pairBNode.first);
+    uiint jvert= getVertIndex(pairBNode.second);
     
     switch(mnShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -190,14 +190,14 @@ uint& CBoundaryFace::getEdgeID(PairBNode& pairBNode)
 // ----
 void CBoundaryFace::setupNode_Edge()
 {
-    uint nNumOfEdge = getNumOfEdge();
+    uiint nNumOfEdge = getNumOfEdge();
     // 辺のBNodeにNodeをセット
     // ----
     CNode *pEdgeNode, *pNode0, *pNode1;
-    uint elemEdgeID;
+    uiint elemEdgeID;
 
     CBoundaryNode *pEdgeBNode, *pBNode0, *pBNode1;
-    uint iedge;
+    uiint iedge;
 
     for(iedge=0; iedge < nNumOfEdge; iedge++){
         pEdgeBNode= mvEdgeBNode[iedge];
@@ -285,25 +285,25 @@ void CBoundaryFace::setupNode_Face()
 // ----
 // 再分割 : countID==新FaceのID
 // ----
-void CBoundaryFace::refine(uint& countID, const vuint& vDOF)
+void CBoundaryFace::refine(uiint& countID, const vuint& vDOF)
 {
     Utility::CLogger* pLogger = Utility::CLogger::Instance();
 
-    uint numOfProg;
-    uint iprog;
+    uiint numOfProg;
+    uiint iprog;
     CBoundaryFace *pProgBFace;
     double progArea;
     double progValue;
     double coef; //面積比
-    uint idof, dof;//dofインデックスと,DOF番号
+    uiint idof, dof;//dofインデックスと,DOF番号
     
     CElement  *pProgElem;// 子要素
-    uint     nProgEntity;// 子要素Entity番号
-    uint         ipos;   // 親要素の頂点番号(子要素の位置)
+    uiint     nProgEntity;// 子要素Entity番号
+    uiint         ipos;   // 親要素の頂点番号(子要素の位置)
     CNode      *pNode;   // 親要素の頂点のNode
     vector<CNode*>  vNode;// progBFaceの頂点のNode
     CBoundaryNode *pBNode;// progBFaceのBNode
-    uint           ibnode;// progBFaceのindex
+    uiint           ibnode;// progBFaceのindex
 
     switch(mnShapeType){
         //----
@@ -571,13 +571,13 @@ double& CBoundaryFace::calcArea()
 
 // 上位GridのBNodeへディレクレ値を配分
 //
-void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)
+void CBoundaryFace::distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
     CEdgeTree *pEdgeTree = CEdgeTree::Instance();
-    uint *pnEdgeVert;
-    uint iedge, numOfEdge;
+    uiint *pnEdgeVert;
+    uiint iedge, numOfEdge;
     double dAveVal;
 
     // 辺のDirichlet値
@@ -639,7 +639,7 @@ void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel, const
 
     //面のDirichlet値 & ここで頂点になっているBNodeの上位GridへのDirichlet値
     //
-    uint ivert, numOfVert=getNumOfVert();
+    uiint ivert, numOfVert=getNumOfVert();
     double dVal;
     dAveVal=0.0;
     for(ivert=0; ivert < numOfVert; ivert++){
@@ -649,16 +649,21 @@ void CBoundaryFace::distDirichletVal(const uint& dof, const uint& mgLevel, const
         if(mgLevel!=nMaxMGLevel)
           mvBNode[ivert]->setValue(dof, mgLevel+1, dVal);//上位Gridへ下位の値をそのまま渡す:ディレクレ値(頂点)
     };
-    if(mgLevel > 0){
-        dAveVal /= (double)numOfVert;
-
-        if(mgLevel!=nMaxMGLevel)
-          mpFaceBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値(面中心)
-    }
-    if(mgLevel==0){
-        if(mgLevel!=nMaxMGLevel)
-          mpFaceBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
-    }
+    //面中心
+    dAveVal /= (double)numOfVert;
+    if(mgLevel!=nMaxMGLevel)
+      mpFaceBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値(面中心)
+    
+////    if(mgLevel > 0){
+////        dAveVal /= (double)numOfVert;
+////
+////        if(mgLevel!=nMaxMGLevel)
+////          mpFaceBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値(面中心)
+////    }
+////    if(mgLevel==0){
+////        if(mgLevel!=nMaxMGLevel)
+////          mpFaceBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+////    }
 }
 
 
@@ -670,9 +675,9 @@ void CBoundaryFace::replaceEdgeBNode()
     if(mnShapeType==ElementType::Quad2){
         mvBNode.resize(NumberOfNode::Quad2());
 
-        uint nNumOfVert=NumberOfVertex::Quad();
-        uint nNumOfEdge=NumberOfEdge::Quad();
-        uint iedge;
+        uiint nNumOfVert=NumberOfVertex::Quad();
+        uiint nNumOfEdge=NumberOfEdge::Quad();
+        uiint iedge;
 
         for(iedge=0; iedge < nNumOfEdge; iedge++){
             CBoundaryNode *pBNode = mvEdgeBNode[iedge];
@@ -683,9 +688,9 @@ void CBoundaryFace::replaceEdgeBNode()
     if(mnShapeType==ElementType::Triangle2){
         mvBNode.resize(NumberOfNode::Triangle2());
 
-        uint nNumOfVert=NumberOfVertex::Triangle();
-        uint nNumOfEdge=NumberOfEdge::Triangle();
-        uint iedge;
+        uiint nNumOfVert=NumberOfVertex::Triangle();
+        uiint nNumOfEdge=NumberOfEdge::Triangle();
+        uiint iedge;
 
         for(iedge=0; iedge < nNumOfEdge; iedge++){
             CBoundaryNode *pBNode = mvEdgeBNode[iedge];

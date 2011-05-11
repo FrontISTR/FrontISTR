@@ -14,12 +14,12 @@
 #include "Prism.h"
 using namespace pmw;
 
-uint CPrism::mnElemType = ElementType::Prism;
-uint CPrism::mnElemOrder = 1;
-uint CPrism::mNumOfFace = 5;
-uint CPrism::mNumOfEdge = 9;
-uint CPrism::mNumOfNode = 6;
-uint CPrism::mNumOfVert = 6;
+uiint CPrism::mnElemType = ElementType::Prism;
+uiint CPrism::mnElemOrder = 1;
+uiint CPrism::mNumOfFace = 5;
+uiint CPrism::mNumOfEdge = 9;
+uiint CPrism::mNumOfNode = 6;
+uiint CPrism::mNumOfVert = 6;
 
 // コンストラクター&
 //          デストラクター
@@ -44,7 +44,7 @@ void CPrism::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -75,11 +75,11 @@ void CPrism::initialize()
     };
 }
 
-const uint& CPrism::getType()
+const uiint& CPrism::getType()
 {
     return mnElemType;
 }
-const uint& CPrism::getOrder()
+const uiint& CPrism::getOrder()
 {
     return mnElemOrder;
 }
@@ -87,11 +87,11 @@ const uint& CPrism::getOrder()
 // method
 // --
 //
-bool CPrism::IndexCheck(const uint& propType, const uint& index, string& method_name)
+bool CPrism::IndexCheck(const uiint& propType, const uiint& index, string& method_name)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
-    uint numOfProp;
+    uiint numOfProp;
     switch(propType){
         case(ElementPropType::Face):
             numOfProp = mNumOfFace;
@@ -118,7 +118,7 @@ bool CPrism::IndexCheck(const uint& propType, const uint& index, string& method_
 
 // out:(PariNode edgeNode)
 //
-PairNode CPrism::getPairNode(const uint& iedge)
+PairNode CPrism::getPairNode(const uiint& iedge)
 {
     PairNode pairNode;
 
@@ -171,7 +171,7 @@ PairNode CPrism::getPairNode(const uint& iedge)
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CPrism::getPairNode(vint& pairNodeIndex, const uint& iedge)
+void CPrism::getPairNode(vint& pairNodeIndex, const uiint& iedge)
 {
     switch(iedge){
         //surf 0 (low surf)
@@ -221,9 +221,9 @@ void CPrism::getPairNode(vint& pairNodeIndex, const uint& iedge)
 
 // (局所ノード番号、局所ノード番号)に対応した、辺(Edge)番号
 //
-uint& CPrism::getEdgeIndex(CNode* pNode0, CNode* pNode1)
+uiint& CPrism::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -232,7 +232,7 @@ uint& CPrism::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 
     return edgeTree->getPrismEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Prism Edge Tree
 }
-uint& CPrism::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+uiint& CPrism::getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -264,7 +264,7 @@ bool CPrism::isEdgeElem(CNode* pNode0, CNode* pNode1)
 
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Prism edge tree
 
     return mvb_edge[edgeNum];
@@ -277,7 +277,7 @@ void CPrism::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     //vuint vLocalNum = getLocalNodeNum(pNode0, pNode1);
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Tetra edge tree
 
     mvb_edge[edgeNum]=true;// スタンプ
@@ -286,7 +286,7 @@ void CPrism::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
 
 // 局所ノード番号から、局所Face番号へ変換
 //
-uint& CPrism::getLocalFaceNum(const vuint& vLocalNodeNum)
+uiint& CPrism::getLocalFaceNum(const vuint& vLocalNodeNum)
 {
     CFaceTree *pFaceTree = CFaceTree::Instance();
     
@@ -295,7 +295,7 @@ uint& CPrism::getLocalFaceNum(const vuint& vLocalNodeNum)
 
 // 3個のノードから面番号を取得
 //
-uint& CPrism::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
+uiint& CPrism::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
     // 面構成ノード -> 局所ノード番号
     // 局所ノード番号 -> 面番号==iface
@@ -313,7 +313,7 @@ uint& CPrism::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 2 Edge -> Face Index
 //
-uint& CPrism::getFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CPrism::getFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     CEdgeFaceTree *pTree = CEdgeFaceTree::Instance();
 
@@ -322,17 +322,17 @@ uint& CPrism::getFaceIndex(const uint& edge0, const uint& edge1)
 
 // Face構成Node
 //
-vector<CNode*> CPrism::getFaceCnvNodes(const uint& iface)
+vector<CNode*> CPrism::getFaceCnvNodes(const uiint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CFaceTree *faceTree = CFaceTree::Instance();
-    uint* faceConnectivity;
+    uiint* faceConnectivity;
 
     CNode *pNode;
     vector<CNode*> vFaceCnvNode;
-    uint ivert, index;
-    uint numOfVert;
+    uiint ivert, index;
+    uiint numOfVert;
 
     if(iface==0 || iface==1){
         numOfVert=3;
@@ -362,14 +362,14 @@ vector<CNode*> CPrism::getConnectNode(CNode* pNode)
     vector<CNode*> vNode;
     vNode.reserve(3);
 
-    uint gID= pNode->getID();
-    uint localID= mmIDLocal[gID];
+    uiint gID= pNode->getID();
+    uiint localID= mmIDLocal[gID];
 
     CNodeConnectNodeTree *pConnTree = CNodeConnectNodeTree::Instance();
     vuint vLocalID;
     vLocalID= pConnTree->getPrismConnectNode(localID);
 
-    uint i;
+    uiint i;
     for(i=0; i< 3; i++){
         localID= vLocalID[i];
         vNode.push_back(mvNode[localID]);
@@ -386,7 +386,7 @@ vector<CNode*> CPrism::getConnectNode(CNode* pNode)
 void CPrism::deleteProgData()
 {
     // Edge
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         vector<CElement*>().swap(mvvEdgeElement[iedge]);
     };

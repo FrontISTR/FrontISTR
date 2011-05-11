@@ -14,7 +14,7 @@ public:
     CFileWriterBoundaryNode();
     virtual ~CFileWriterBoundaryNode();
 public:
-    virtual void Write(ofstream& ofs, const uint& mgLevel);
+    virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 #endif	/* _FILEWRITERBOUNDARYNODE_H */
 }

@@ -69,27 +69,27 @@ private:
     Utility::CLogger *mpLogger;
 public:
     CMesh(void);
-    CMesh(const uint& numofnode, const uint& numofelem);
+    CMesh(const uiint& numofnode, const uiint& numofelem);
     virtual ~CMesh(void);
 
 protected:
     // Mesh
     // --
-    uint            mnMeshID;   // Mesh ID
+    uiint            mnMeshID;   // Mesh ID
     vector<CNode*>    mvNode;   // Node
     vector<CElement*> mvElement;// Element
 
     // SolutionType
-    uint   mnSolutionType;// FEM, FVM
+    uiint   mnSolutionType;// FEM, FVM
 
     // Property : 構造:0 || 流体:1 || ...未定
-    uint mnProp;
+    uiint mnProp;
 
 
     // 計算領域の終端を表す番号 '09.09.09
     // --
-    uint mNodeEndIndex;//mvNode内の計算領域の終端Index(サイズ)  <= 計算に使用する配列数
-    uint mElemEndIndex;//mvElement内の計算領域の終端Index(サイズ) <= 計算に使用する配列数
+    uiint mNodeEndIndex;//mvNode内の計算領域の終端Index(サイズ)  <= 計算に使用する配列数
+    uiint mElemEndIndex;//mvElement内の計算領域の終端Index(サイズ) <= 計算に使用する配列数
 
 
     //    // Node, Elementのハッシュ "ID => Index"  <- IndexBucketがあるので不要
@@ -107,20 +107,20 @@ protected:
     // restriction(下位_Mesh)のノード管理
     // 自分自身のノードではない -> 同じ型Meshの下位にくるrestriction_Meshのノードのdeleteを回避
     //    -> デストラクタで使用
-    uint mMGLevel;//Mesh自身のMultiGrid_Level
-    uint mMaxMGLevel;//GMGModel全体での最大Level
+    uiint mMGLevel;//Mesh自身のMultiGrid_Level
+    uiint mMaxMGLevel;//GMGModel全体での最大Level
 
 
     // 通信領域(CommMesh)
     // --
     vector<CCommMesh*>     mvCommMesh;//Meshが通信する,通信領域を管理(通信領域Mesh=>CommMesh)
-    map<uint, uint, less<uint> > mmCommIndex;//CommID(通信番号:グローバル番号) => mvCommMesh Index
+    map<uiint, uiint, less<uiint> > mmCommIndex;//CommID(通信番号:グローバル番号) => mvCommMesh Index
     
     
     // 通信界面(CommMesh2):節点共有型
     // --
     vector<CCommMesh2*> mvCommMesh2;
-    map<uint, uint, less<uint> > mmComm2Index;//CommID(通信番号:グローバル番号) => mvCommMesh2 Index
+    map<uiint, uiint, less<uiint> > mmComm2Index;//CommID(通信番号:グローバル番号) => mvCommMesh2 Index
     
     
     
@@ -129,9 +129,9 @@ protected:
     // --
     CIndexBucket     moBucket;
 
-    uint mNumOfNode, mNumOfElement;// Number of Node, Element(ファイル入力時 => いらないかも)
-    uint maxNodeID,  maxElementID;// max ID(ファイル入力時 => いらないかも)
-    uint minNodeID,  minElementID;// min ID(ファイル入力時 => いらないかも)
+    uiint mNumOfNode, mNumOfElement;// Number of Node, Element(ファイル入力時 => いらないかも)
+    uiint maxNodeID,  maxElementID;// max ID(ファイル入力時 => いらないかも)
+    uiint minNodeID,  minElementID;// min ID(ファイル入力時 => いらないかも)
 
     // BoundaryGroup_Template エンティティ種類別に管理(節点,面,辺,体積)
     // --
@@ -149,77 +149,82 @@ protected:
     // グループ{ Element }
     // --
     vector<CElementGroup*> mvElementGroup;
-    map<uint, uint, less<uint> > mmElemGrpID2IX;//GrpID => Index
+    map<uiint, uiint, less<uiint> > mmElemGrpID2IX;//GrpID => Index
 
 
 public:
     // Mesh ID
     //
-    void setMeshID(const uint& id){ mnMeshID = id;}
-    uint& getMeshID(){ return mnMeshID;}
+    void setMeshID(const uiint& id){ mnMeshID = id;}
+    uiint& getMeshID(){ return mnMeshID;}
 
     // MultiGrid Level
     //
-    void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
-    uint& getMGLevel(){return mMGLevel;}
-    void setMaxMGLevel(const uint& maxLevel){ mMaxMGLevel= maxLevel;}
+    void setMGLevel(const uiint& mgLevel){ mMGLevel= mgLevel;}
+    uiint& getMGLevel(){return mMGLevel;}
+    void setMaxMGLevel(const uiint& maxLevel){ mMaxMGLevel= maxLevel;}
 
     // SolutionType:: FEM .or. FVM
     //
-    void setSolutionType(const uint& nSolutionType){ mnSolutionType = nSolutionType;}
+    void setSolutionType(const uiint& nSolutionType){ mnSolutionType = nSolutionType;}
 
     // Property : 構造:0 || 流体:1 || ...
     //
-    void  setProp(const uint& nProp){ mnProp = nProp;}
-    uint& getProp(){ return mnProp;}
+    void  setProp(const uiint& nProp){ mnProp = nProp;}
+    uiint& getProp(){ return mnProp;}
 
 
     // Bucket
     //
-    void initBucketNode(const uint& max_id, const uint& min_id);
-    void setupBucketNodeIndex(const uint& id, const uint& index);
+    void initBucketNode(const uiint& max_id, const uiint& min_id);
+    void setupBucketNodeIndex(const uiint& id, const uiint& index);
     void setupBucketNode();// 一括処理
-    void initBucketElement(const uint& max_id, const uint& min_id);
+    void initBucketElement(const uiint& max_id, const uiint& min_id);
 
-    void setupBucketElementIndex(const uint& id, const uint& index);
+    void setupBucketElementIndex(const uiint& id, const uiint& index);
     void setupBucketElement();// 一括処理
 
     virtual CIndexBucket* getBucket(){ return &moBucket;}
 
+    uiint& getMaxNodeID(){ return moBucket.getMaxNodeID();}
+    uiint& getMaxElementID(){ return moBucket.getMaxElementID();}
+    uiint& getMinNodeID(){ return moBucket.getMinNodeID();}
+    uiint& getMinElementID(){ return moBucket.getMinElementID();}
+
 
     // Node
     //
-    void reserveNode(const uint& num_of_node);
+    void reserveNode(const uiint& num_of_node);
     void setNode(CNode* pNode);
-    CNode* getNode(const uint& id);     //IDを指定してNode*を取得
-    CNode* getNodeIX(const uint& index);//直接Indexを指定してNode*を取得
+    CNode* getNode(const uiint& id);     //IDを指定してNode*を取得
+    CNode* getNodeIX(const uiint& index);//直接Indexを指定してNode*を取得
 
-    uint  getNodeSize(){ return mvNode.size();}
-    uint& getNumOfNode(){return mNumOfNode;}
+    uiint  getNodeSize(){ return mvNode.size();}
+    uiint& getNumOfNode(){return mNumOfNode;}
     //void setNumOfNode(const uint& num){ numOfNode= num;}// <= こちらを使用する場合は,setupNumOfNode()は不使用
     void setupNumOfNode(){ mNumOfNode= mvNode.size();}   // <= こちらを使用する場合は,setNumOfNode()は不使用
 
     // <<< 計算に使用するNode配列数 >>>
     // --
-    uint& getEfficientNodeSize(){ return mNodeEndIndex;}//計算に有効なNode配列数
+    uiint& getEfficientNodeSize(){ return mNodeEndIndex;}//計算に有効なNode配列数
 
 
     // Element
     //
-    void reserveElement(const uint& num_of_elem);
+    void reserveElement(const uiint& num_of_elem);
     void setElement(CElement* pElement);
-    CElement* getElement(const uint& id);     //IDを指定してElement*を取得
-    CElement* getElementIX(const uint& index);//直接Indexを指定してElement*を取得
+    CElement* getElement(const uiint& id);     //IDを指定してElement*を取得
+    CElement* getElementIX(const uiint& index);//直接Indexを指定してElement*を取得
     vector<CElement*>& getElements(){ return mvElement;}
 
-    uint  getElementSize(){ return mvElement.size();}
-    uint& getNumOfElement(){ return mNumOfElement;}
+    uiint  getElementSize(){ return mvElement.size();}
+    uiint& getNumOfElement(){ return mNumOfElement;}
     //void setNumOfElement(const uint& num){ numOfElement= num;}// <= こちらを使用する場合は,setupNumOfElement()は不使用
     void setupNumOfElement(){ mNumOfElement= mvElement.size();}// <= こちらを使用する場合は,setNumOfElement()は不使用
     
     // <<< 計算に使用するElement配列数 >>>
     // --
-    uint& getEfficientElementSize(){ return mElemEndIndex;}//計算に有効なElement配列数
+    uiint& getEfficientElementSize(){ return mElemEndIndex;}//計算に有効なElement配列数
 
 
 
@@ -229,18 +234,18 @@ public:
     // ---
     // Aggregate-Element & Aggregate-Node (Node数と同じだけ存在)
     // ---
-    void resizeAggregate(const uint& res_size);// mvAggElement,mvAggNodeのリザーブ
-    void setupAggregate(const uint& nLevel);   // mvAggElement,mvAggNodeのセットアップ:nLevelは、2次要素の初期(Level=0)処理のために使用
+    void resizeAggregate(const uiint& res_size);// mvAggElement,mvAggNodeのリザーブ
+    void setupAggregate(const uiint& nLevel);   // mvAggElement,mvAggNodeのセットアップ:nLevelは、2次要素の初期(Level=0)処理のために使用
 
-    void setAggNode(CAggregateNode* pAggNode, const uint& inode);
-    void setAggElement(CAggregateElement* pAggElem, const uint& inode);
+    void setAggNode(CAggregateNode* pAggNode, const uiint& inode);
+    void setAggElement(CAggregateElement* pAggElem, const uiint& inode);
 
     vector<CAggregateElement*>& getAggElems(){ return mvAggElement;}
     vector<CAggregateNode*>&    getAggNodes(){ return mvAggNode;}
-    CAggregateElement* getAggElem(const uint& node_id);
-    CAggregateElement* getAggElemIX(const uint& inode);
-    CAggregateNode*    getAggNode(const uint& node_id);
-    CAggregateNode*    getAggNodeIX(const uint& inode);
+    CAggregateElement* getAggElem(const uiint& node_id);
+    CAggregateElement* getAggElemIX(const uiint& inode);
+    CAggregateNode*    getAggNode(const uiint& node_id);
+    CAggregateNode*    getAggNodeIX(const uiint& inode);
 
     
     // prolongationの準備
@@ -250,7 +255,7 @@ public:
     //   引数：pProgMeshは、prolongationされた上位Mesh
     //
     void presetProgMesh(CMesh* pProgMesh);//prolongationノード&要素をセットする前に,土台Meshのデータをプリセット.
-    void setupEdgeElement(CMesh* pProgMesh, const uint& nLevel);//新たに生成したNodeは,pProgMeshにセット. EdgeElementは,MeshのElementにセット.
+    void setupEdgeElement(CMesh* pProgMesh, const uiint& nLevel);//新たに生成したNodeは,pProgMeshにセット. EdgeElementは,MeshのElementにセット.
     void setupFaceElement(CMesh* pProgMesh);//新たに生成したNodeは,pProgMeshにセット. FaceElementは,MeshのElementにセット.
     void setupVolumeNode(CMesh* pProgMesh); //新たに生成したNodeは,pProgMeshにセット
     void replaceEdgeNode();//要素が二次要素の場合、要素クラス内で辺ノードをmvNodeに移し替え
@@ -265,47 +270,47 @@ public:
     void setBNodeMeshGrp(CBNodeMeshGrp *pBNodeMeshGrp){ mpBNodeMeshGrp= pBNodeMeshGrp;}
     CBNodeMeshGrp* getBNodeMeshGrp(){ return mpBNodeMeshGrp;}
 
-    void reserveBndNodeMesh(const uint& res_size){ mpBNodeMeshGrp->reserveBndNodeMesh(res_size);}
+    void reserveBndNodeMesh(const uiint& res_size){ mpBNodeMeshGrp->reserveBndNodeMesh(res_size);}
     void setBndNodeMesh(CBoundaryNodeMesh *pBNodeMesh){
         //cout << "Mesh::setBndNodeMesh, id " << pBNodeMesh->getID() << endl;
         mpBNodeMeshGrp->setBndNodeMesh(pBNodeMesh);
     }
-    CBoundaryNodeMesh* getBndNodeMeshIX(const uint& index){ return mpBNodeMeshGrp->getBndNodeMeshIX(index);}
-    CBoundaryNodeMesh* getBndNodeMeshID(const uint& id){ return mpBNodeMeshGrp->getBndNodeMeshID(id);}
-    uint getNumOfBoundaryNodeMesh(){ return mpBNodeMeshGrp->getNumOfBoundaryNodeMesh();}
+    CBoundaryNodeMesh* getBndNodeMeshIX(const uiint& index){ return mpBNodeMeshGrp->getBndNodeMeshIX(index);}
+    CBoundaryNodeMesh* getBndNodeMeshID(const uiint& id){ return mpBNodeMeshGrp->getBndNodeMeshID(id);}
+    uiint getNumOfBoundaryNodeMesh(){ return mpBNodeMeshGrp->getNumOfBoundaryNodeMesh();}
 
 
     // Boundary Face
-    void reserveBndFaceMesh(const uint& res_size){ mGrpBndFaceMesh.reserve(res_size);}
+    void reserveBndFaceMesh(const uiint& res_size){ mGrpBndFaceMesh.reserve(res_size);}
     void setBndFaceMesh(CBoundaryFaceMesh *pBFaceMesh){ mGrpBndFaceMesh.push(pBFaceMesh);}
-    CBoundaryFaceMesh* getBndFaceMeshIX(const uint& index){ return mGrpBndFaceMesh.get_withIndex(index);}
-    CBoundaryFaceMesh* getBndFaceMeshID(const uint& id){ return mGrpBndFaceMesh.get_withID(id);}
-    uint getNumOfBoundaryFaceMesh(){ return mGrpBndFaceMesh.NumOfBoundary();}
+    CBoundaryFaceMesh* getBndFaceMeshIX(const uiint& index){ return mGrpBndFaceMesh.get_withIndex(index);}
+    CBoundaryFaceMesh* getBndFaceMeshID(const uiint& id){ return mGrpBndFaceMesh.get_withID(id);}
+    uiint getNumOfBoundaryFaceMesh(){ return mGrpBndFaceMesh.NumOfBoundary();}
 
     // Boundary Volume
-    void reserveBndVolumeMesh(const uint& res_size){ mGrpBndVolumeMesh.reserve(res_size);}
+    void reserveBndVolumeMesh(const uiint& res_size){ mGrpBndVolumeMesh.reserve(res_size);}
     void setBndVolumeMesh(CBoundaryVolumeMesh *pBVolMesh){ mGrpBndVolumeMesh.push(pBVolMesh);}
-    CBoundaryVolumeMesh* getBndVolumeMeshIX(const uint& index){ return mGrpBndVolumeMesh.get_withIndex(index);}
-    CBoundaryVolumeMesh* getBndVolumeMeshID(const uint& id){ return mGrpBndVolumeMesh.get_withID(id);}
-    uint getNumOfBoundaryVolumeMesh(){ return mGrpBndVolumeMesh.NumOfBoundary();}
+    CBoundaryVolumeMesh* getBndVolumeMeshIX(const uiint& index){ return mGrpBndVolumeMesh.get_withIndex(index);}
+    CBoundaryVolumeMesh* getBndVolumeMeshID(const uiint& id){ return mGrpBndVolumeMesh.get_withID(id);}
+    uiint getNumOfBoundaryVolumeMesh(){ return mGrpBndVolumeMesh.NumOfBoundary();}
 
     // Boundary Edge
-    void reserveBndEdgeMesh(const uint& res_size){ mGrpBndEdgeMesh.reserve(res_size);}
+    void reserveBndEdgeMesh(const uiint& res_size){ mGrpBndEdgeMesh.reserve(res_size);}
     void setBndEdgeMesh(CBoundaryEdgeMesh *pBEdgeMesh){ mGrpBndEdgeMesh.push(pBEdgeMesh);}
-    CBoundaryEdgeMesh* getBndEdgeMeshIX(const uint& index){ return mGrpBndEdgeMesh.get_withIndex(index);}
-    CBoundaryEdgeMesh* getBndEdgeMeshID(const uint& id){ return mGrpBndEdgeMesh.get_withID(id);}
-    uint getNumOfBoundaryEdgeMesh(){ return mGrpBndEdgeMesh.NumOfBoundary();}
+    CBoundaryEdgeMesh* getBndEdgeMeshIX(const uiint& index){ return mGrpBndEdgeMesh.get_withIndex(index);}
+    CBoundaryEdgeMesh* getBndEdgeMeshID(const uiint& id){ return mGrpBndEdgeMesh.get_withID(id);}
+    uiint getNumOfBoundaryEdgeMesh(){ return mGrpBndEdgeMesh.NumOfBoundary();}
 
 
 
 
     // 通信(CCommMesh):CommID => 通信番号
     // --
-    void reserveCommMesh(const uint& res_size){ mvCommMesh.reserve(res_size);}//通信対象領域数に応じた,通信テーブル領域確保
+    void reserveCommMesh(const uiint& res_size){ mvCommMesh.reserve(res_size);}//通信対象領域数に応じた,通信テーブル領域確保
     void setCommMesh(CCommMesh* pCommMesh);// Hashデータ:mmCommIndex[commID] => vector Index もセット(CommMeshにはプロパティを全てセットしておくこと)
-    uint getNumOfCommMesh(){return mvCommMesh.size();}
-    CCommMesh* getCommMesh(const uint& comID);
-    CCommMesh* getCommMeshIX(const uint& index){ return mvCommMesh[index];}
+    uiint getNumOfCommMesh(){return mvCommMesh.size();}
+    CCommMesh* getCommMesh(const uiint& comID);
+    CCommMesh* getCommMeshIX(const uiint& index){ return mvCommMesh[index];}
 
     // 通信で不要になったNode,Elementの並び替え
     // --
@@ -319,9 +324,9 @@ public:
     // 通信(CommMesh2):(節点共有型)
     // --
     void setCommMesh2(CCommMesh2 *pCommMesh2);
-    CCommMesh2* getCommMesh2(const uint& comID);
-    CCommMesh2* getCommMesh2IX(const uint& index){ return mvCommMesh2[index];}
-    uint getCommMesh2Size(){ return mvCommMesh2.size();}
+    CCommMesh2* getCommMesh2(const uiint& comID);
+    CCommMesh2* getCommMesh2IX(const uiint& index){ return mvCommMesh2[index];}
+    uiint getCommMesh2Size(){ return mvCommMesh2.size();}
 
 
     // Refine後の処理
@@ -339,9 +344,9 @@ public:
     // グループ { Element }
     // --
     void addElemGrp(CElementGroup* pElemGrp);
-    uint getNumOfElemGrp();
-    CElementGroup* getElemGrpIX(const uint& index);
-    CElementGroup* getElemGrpID(const uint& nGrpID);
+    uiint getNumOfElemGrp();
+    CElementGroup* getElemGrpIX(const uiint& index);
+    CElementGroup* getElemGrpID(const uiint& nGrpID);
 
 
 ////    // ID 決定の為のメソッド { 下位グリッドからの増加節点 }

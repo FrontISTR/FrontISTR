@@ -63,7 +63,7 @@ CEdge2ISTR::~CEdge2ISTR()
 
 // Edge番号 -> 形状関数 番号へ変換
 // --
-uint& CEdge2ISTR::HexaShapeNum(const uint& iedge)
+uiint& CEdge2ISTR::HexaShapeNum(const uiint& iedge)
 {
     if(iedge > 11){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 12");
@@ -72,7 +72,7 @@ uint& CEdge2ISTR::HexaShapeNum(const uint& iedge)
 
     return mvHexa[iedge];
 }
-uint& CEdge2ISTR::TetraShapeNum(const uint& iedge)
+uiint& CEdge2ISTR::TetraShapeNum(const uiint& iedge)
 {
     if(iedge > 5){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 6");
@@ -81,7 +81,7 @@ uint& CEdge2ISTR::TetraShapeNum(const uint& iedge)
 
     return mvTetra[iedge];
 }
-uint& CEdge2ISTR::PrismShapeNum(const uint& iedge)
+uiint& CEdge2ISTR::PrismShapeNum(const uiint& iedge)
 {
     if(iedge > 8){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 9");
@@ -90,7 +90,7 @@ uint& CEdge2ISTR::PrismShapeNum(const uint& iedge)
 
     return mvPrism[iedge];
 }
-uint& CEdge2ISTR::QuadShapeNum(const uint& iedge)
+uiint& CEdge2ISTR::QuadShapeNum(const uiint& iedge)
 {
     if(iedge > 3){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 4");
@@ -99,7 +99,7 @@ uint& CEdge2ISTR::QuadShapeNum(const uint& iedge)
 
     return mvQuad[iedge];
 }
-uint& CEdge2ISTR::TriangleShapeNum(const uint& iedge)
+uiint& CEdge2ISTR::TriangleShapeNum(const uiint& iedge)
 {
     if(iedge > 2){
         mpLogger->Info(Utility::LoggerMode::Error,"edge size over, edge num < 3");

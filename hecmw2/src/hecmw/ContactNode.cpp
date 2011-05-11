@@ -55,7 +55,7 @@ void CContactNode::markingSelfNode()
 //
 // "変位"の配列確保
 //
-void CContactNode::resizeDisp(const uint& dof)
+void CContactNode::resizeDisp(const uiint& dof)
 {
     mvDisplacement.resize(dof);
 }
@@ -64,8 +64,8 @@ void CContactNode::resizeDisp(const uint& dof)
 //
 void CContactNode::initDisp()
 {
-    uint numOfDOF;
-    uint idof;
+    uiint numOfDOF;
+    uiint idof;
     
     numOfDOF= mvDisplacement.size();
     for(idof=0; idof< numOfDOF; idof++){
@@ -75,7 +75,7 @@ void CContactNode::initDisp()
 
 // スカラーパラメータの配列確保(複数のスカラー)
 //
-void CContactNode::resizeScalar(const uint& numOfScalar)
+void CContactNode::resizeScalar(const uiint& numOfScalar)
 {
     mvScalar.resize(numOfScalar);
 }
@@ -84,8 +84,8 @@ void CContactNode::resizeScalar(const uint& numOfScalar)
 //
 void CContactNode::initScalar()
 {
-    uint numOfScalar= mvScalar.size();
-    uint i;
+    uiint numOfScalar= mvScalar.size();
+    uiint i;
 
     for(i=0; i< numOfScalar; i++){
         mvScalar[i]= 0.0;
@@ -103,16 +103,16 @@ void CContactNode::markingSlave()
 // ----
 // 各Levelでの,マスター面
 // ----
-void CContactNode::setMasterFaceID(const uint& faceID, const uint& level)
+void CContactNode::setMasterFaceID(const uiint& faceID, const uiint& level)
 {
     mmMasterFaceID[level]= faceID;
     mvbMasterFaceID[level-mLevel]=true;
 }
-uint& CContactNode::getMasterFaceID(const uint& level)
+uiint& CContactNode::getMasterFaceID(const uiint& level)
 {
     return mmMasterFaceID[level];
 }
-bool CContactNode::have_MasterFaceID(const uint& level)
+bool CContactNode::have_MasterFaceID(const uiint& level)
 {
     // 節点ごとに,自身のLevelから階層構造が始まるので,問い合わせLevelから自身のLevelを引く
     return mvbMasterFaceID[level - mLevel];
@@ -123,12 +123,12 @@ bool CContactNode::have_MasterFaceID(const uint& level)
 
 // 八分木
 //
-void CContactNode::resizeOctreeID(const uint& res_size)
+void CContactNode::resizeOctreeID(const uiint& res_size)
 {
     mvKnotID.resize(res_size);
 }
 
-void CContactNode::setOctreeID(const uint& layer, const uint& knot_id)
+void CContactNode::setOctreeID(const uiint& layer, const uiint& knot_id)
 {
 //    //debug
 //    cout << "contact_node ,layer= " << layer << ", knot_id= " << knot_id << endl;

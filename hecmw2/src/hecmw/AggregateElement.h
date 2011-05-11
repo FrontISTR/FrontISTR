@@ -18,17 +18,17 @@ public:
     virtual ~CAggregateElement();
 
 protected:
-    uint mnCoreNodeIndex;//AggElementの中心にいるNodeのIndex
+    uiint mnCoreNodeIndex;//AggElementの中心にいるNodeのIndex
     vector<CElement*> mvElement;
 
 public:
-    void setCoreNodeIndex(const uint& index){ mnCoreNodeIndex = index;}//中心に存在する節点Index
+    void setCoreNodeIndex(const uiint& index){ mnCoreNodeIndex = index;}//中心に存在する節点Index
 
-    void reserve(const uint& res_size){ mvElement.reserve(res_size);}
+    void reserve(const uiint& res_size){ mvElement.reserve(res_size);}
     void push(CElement* pElement){ mvElement.push_back(pElement);}
-    CElement* get(const uint& index){ return mvElement[index];}
+    CElement* get(const uiint& index){ return mvElement[index];}
 
-    uint getNumOfElement(){ return mvElement.size();}
+    uiint getNumOfElement(){ return mvElement.size();}
 };
 }
 

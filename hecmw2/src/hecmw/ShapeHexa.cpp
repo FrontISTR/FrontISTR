@@ -35,7 +35,7 @@ CShapeHexa::CShapeHexa()
 //        if(i>=8) mvISTR_2_Edge[i]= i-8;
 //    };
     
-    uint numOfIntg, numOfShape, dof;
+    uiint numOfIntg, numOfShape, dof;
     // vector領域確保
     // --
     // 8節点要素 積分点1
@@ -225,10 +225,10 @@ CShapeHexa::~CShapeHexa()
 //
 // 積分点での重み 3次元: w[ir]*w[is]*w[it]
 //
-void CShapeHexa::setupWeight3d(const double w[], const uint& numOfIntg, double w3d[])
+void CShapeHexa::setupWeight3d(const double w[], const uiint& numOfIntg, double w3d[])
 {
-    uint ir,is,it;//積分点座標,各辺(r,s,t)での位置
-    uint igauss;  //積分点の連番Index
+    uiint ir,is,it;//積分点座標,各辺(r,s,t)での位置
+    uiint igauss;  //積分点の連番Index
     //  numOfIntg == 1次元での積分点数
 
     igauss= 0;
@@ -246,10 +246,10 @@ void CShapeHexa::setupWeight3d(const double w[], const uint& numOfIntg, double w
 
 //形状関数のセットアップ
 //
-void CShapeHexa::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, double Gzi[])
+void CShapeHexa::setupShapeFunction(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape, double Gzi[])
 {
-    uint igauss;
-    uint ir,is,it;
+    uiint igauss;
+    uiint ir,is,it;
     double r,s,t;
     double r2,s2,t2;
 
@@ -286,10 +286,10 @@ void CShapeHexa::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const ui
 
 //導関数のセットアップ
 //
-void CShapeHexa::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, double Gzi[])
+void CShapeHexa::setupShapeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, double Gzi[])
 {
-    uint igauss;
-    uint ir,is,it;
+    uiint igauss;
+    uiint ir,is,it;
     double r,s,t;
     double r2,s2,t2;
     
@@ -326,7 +326,7 @@ void CShapeHexa::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const u
 
 // 8 節点の形状関数
 //
-void CShapeHexa::ShapeFunction8(vvdouble& N, const uint& igauss, 
+void CShapeHexa::ShapeFunction8(vvdouble& N, const uiint& igauss,
         const double& r, const double& s, const double& t)
 {
     N[igauss][0]= 0.125 * (1.0 - r) * (1.0 - s) * (1.0 - t);
@@ -341,7 +341,7 @@ void CShapeHexa::ShapeFunction8(vvdouble& N, const uint& igauss,
 // 20節点の形状関数
 //
 void CShapeHexa::ShapeFunction20(vvdouble& N,
-        const uint& igauss,
+        const uiint& igauss,
         const double& r, const double& s, const double& t,
         const double& r2, const double& s2, const double& t2)
 {
@@ -370,7 +370,7 @@ void CShapeHexa::ShapeFunction20(vvdouble& N,
 
 
 // 8 節点の形状導関数
-void CShapeHexa::ShapeDeriv8(vvvdouble& dNdr, const uint& igauss, 
+void CShapeHexa::ShapeDeriv8(vvvdouble& dNdr, const uiint& igauss,
         const double& r, const double& s, const double& t)
 {
     // dN/dr , dN/ds , dN/dt
@@ -388,7 +388,7 @@ void CShapeHexa::ShapeDeriv8(vvvdouble& dNdr, const uint& igauss,
 // 20節点の形状導関数
 //
 void CShapeHexa::ShapeDeriv20(vvvdouble& dNdr,
-        const uint& igauss,
+        const uiint& igauss,
         const double& r, const double& s, const double& t,
         const double& r2, const double& s2, const double& t2)
 {
@@ -462,40 +462,40 @@ void CShapeHexa::ShapeDeriv20(vvvdouble& dNdr,
 //--
 //形状関数   引数:積分点位置3次元上のIndex, 形状関数番号(節点)
 //--
-double& CShapeHexa::N81(const uint& igauss, const uint& ishape){  return mvN81[igauss][ishape];}
-double& CShapeHexa::N82(const uint& igauss, const uint& ishape){  return mvN82[igauss][ishape];}
-double& CShapeHexa::N201(const uint& igauss, const uint& ishape){ return mvN201[igauss][ishape];}
-double& CShapeHexa::N202(const uint& igauss, const uint& ishape){ return mvN202[igauss][ishape];}
-double& CShapeHexa::N203(const uint& igauss, const uint& ishape){ return mvN203[igauss][ishape];}
+double& CShapeHexa::N81(const uiint& igauss, const uiint& ishape){  return mvN81[igauss][ishape];}
+double& CShapeHexa::N82(const uiint& igauss, const uiint& ishape){  return mvN82[igauss][ishape];}
+double& CShapeHexa::N201(const uiint& igauss, const uiint& ishape){ return mvN201[igauss][ishape];}
+double& CShapeHexa::N202(const uiint& igauss, const uiint& ishape){ return mvN202[igauss][ishape];}
+double& CShapeHexa::N203(const uiint& igauss, const uiint& ishape){ return mvN203[igauss][ishape];}
 //double& CShapeHexa::N204(const uint& igauss, const uint& ishape){ return mvN204[igauss][ishape];}
 //double& CShapeHexa::N205(const uint& igauss, const uint& ishape){ return mvN205[igauss][ishape];}
-vdouble& CShapeHexa::N81(const uint& igauss){  return mvN81[igauss];}
-vdouble& CShapeHexa::N82(const uint& igauss){  return mvN82[igauss];}
-vdouble& CShapeHexa::N201(const uint& igauss){ return mvN201[igauss];}
-vdouble& CShapeHexa::N202(const uint& igauss){ return mvN202[igauss];}
-vdouble& CShapeHexa::N203(const uint& igauss){ return mvN203[igauss];}
+vdouble& CShapeHexa::N81(const uiint& igauss){  return mvN81[igauss];}
+vdouble& CShapeHexa::N82(const uiint& igauss){  return mvN82[igauss];}
+vdouble& CShapeHexa::N201(const uiint& igauss){ return mvN201[igauss];}
+vdouble& CShapeHexa::N202(const uiint& igauss){ return mvN202[igauss];}
+vdouble& CShapeHexa::N203(const uiint& igauss){ return mvN203[igauss];}
 
 //--
 //導関数   引数:積分点位置3次元上のIndex, 形状関数番号(節点),微分方向(axis:0,1,2)
 //--
-double& CShapeHexa::dNdr81(const uint& igauss, const uint& ishape, const uint& axis){  return mvdNdr81[igauss][ishape][axis];}
-double& CShapeHexa::dNdr82(const uint& igauss, const uint& ishape, const uint& axis){  return mvdNdr82[igauss][ishape][axis];}
-double& CShapeHexa::dNdr201(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr201[igauss][ishape][axis];}
-double& CShapeHexa::dNdr202(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr202[igauss][ishape][axis];}
-double& CShapeHexa::dNdr203(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr203[igauss][ishape][axis];}
+double& CShapeHexa::dNdr81(const uiint& igauss, const uiint& ishape, const uiint& axis){  return mvdNdr81[igauss][ishape][axis];}
+double& CShapeHexa::dNdr82(const uiint& igauss, const uiint& ishape, const uiint& axis){  return mvdNdr82[igauss][ishape][axis];}
+double& CShapeHexa::dNdr201(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr201[igauss][ishape][axis];}
+double& CShapeHexa::dNdr202(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr202[igauss][ishape][axis];}
+double& CShapeHexa::dNdr203(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr203[igauss][ishape][axis];}
 //double& CShapeHexa::dNdr204(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr204[igauss][ishape][axis];}
 //double& CShapeHexa::dNdr205(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr205[igauss][ishape][axis];}
-vvdouble& CShapeHexa::dNdr81(const uint& igauss){ return mvdNdr81[igauss];}
-vvdouble& CShapeHexa::dNdr82(const uint& igauss){ return mvdNdr82[igauss];}
-vvdouble& CShapeHexa::dNdr201(const uint& igauss){ return mvdNdr201[igauss];}
-vvdouble& CShapeHexa::dNdr202(const uint& igauss){ return mvdNdr202[igauss];}
-vvdouble& CShapeHexa::dNdr203(const uint& igauss){ return mvdNdr203[igauss];}
+vvdouble& CShapeHexa::dNdr81(const uiint& igauss){ return mvdNdr81[igauss];}
+vvdouble& CShapeHexa::dNdr82(const uiint& igauss){ return mvdNdr82[igauss];}
+vvdouble& CShapeHexa::dNdr201(const uiint& igauss){ return mvdNdr201[igauss];}
+vvdouble& CShapeHexa::dNdr202(const uiint& igauss){ return mvdNdr202[igauss];}
+vvdouble& CShapeHexa::dNdr203(const uiint& igauss){ return mvdNdr203[igauss];}
 
 // Weight 3D
 // --
 // 重み配列を返す, 引数:一次元での積分点数
 // --
-double* CShapeHexa::Weight3d(const uint& integNum1D)
+double* CShapeHexa::Weight3d(const uiint& integNum1D)
 {
     switch(integNum1D){
         case(1):
@@ -522,10 +522,10 @@ double* CShapeHexa::Weight3d(const uint& integNum1D)
 // 重みを直接返す, 引数:配列Index
 // --
 double& CShapeHexa::Weight3dpt1(){ return mW3d1[0];}
-double& CShapeHexa::Weight3dpt2(const uint& igauss){ return mW3d2[igauss];}
-double& CShapeHexa::Weight3dpt3(const uint& igauss){ return mW3d3[igauss];}
-double& CShapeHexa::Weight3dpt4(const uint& igauss){ return mW3d4[igauss];}
-double& CShapeHexa::Weight3dpt5(const uint& igauss){ return mW3d5[igauss];}
+double& CShapeHexa::Weight3dpt2(const uiint& igauss){ return mW3d2[igauss];}
+double& CShapeHexa::Weight3dpt3(const uiint& igauss){ return mW3d3[igauss];}
+double& CShapeHexa::Weight3dpt4(const uiint& igauss){ return mW3d4[igauss];}
+double& CShapeHexa::Weight3dpt5(const uiint& igauss){ return mW3d5[igauss];}
 
 // CShapeFunctionBase に移動
 //
@@ -556,12 +556,12 @@ double& CShapeHexa::Weight3dpt5(const uint& igauss){ return mW3d5[igauss];}
 
 // 8節点:Hexa dNdxのセットアップ
 // --
-void CShapeHexa::Calc_dNdx8(const uint& numOfInteg, CElement *pElement)
+void CShapeHexa::Calc_dNdx8(const uiint& numOfInteg, CElement *pElement)
 //void CShapeHexa::Calc_dNdx8(const uint& numOfInteg, vector<CNode*>& vNode)
 {
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(8);
-    uint dof(3);//3次元: J(3*3)行列
+    uiint numOfShape(8);
+    uiint dof(3);//3次元: J(3*3)行列
 
     switch(numOfInteg){
         case(1):
@@ -574,11 +574,11 @@ void CShapeHexa::Calc_dNdx8(const uint& numOfInteg, CElement *pElement)
 }
 // 20節点:Hexa2  dNdxのセットアップ
 // --
-void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, CElement *pElement)
+void CShapeHexa::Calc_dNdx20(const uiint& numOfInteg, CElement *pElement)
 //void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, vector<CNode*>& vVertNode, vector<CNode*>& vEdgeNode)
 {
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(20);
+    uiint numOfShape(20);
 
 
 //    CNode *pNode;
@@ -592,7 +592,7 @@ void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, CElement *pElement)
 //    };
 
 
-    uint dof(3);//3次元
+    uiint dof(3);//3次元
     switch(numOfInteg){
         case(1):
             ShapeDerivXYZ(numOfInteg, numOfShape, dof, mvdNdr201, mpJacobi201, vNode, mvdNdx201, mv_detJ201);
@@ -608,7 +608,7 @@ void CShapeHexa::Calc_dNdx20(const uint& numOfInteg, CElement *pElement)
 
 // detJ の提供
 //
-double& CShapeHexa::detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss, const uint& ishape)
+double& CShapeHexa::detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss, const uiint& ishape)
 {
     switch(elemType){
         case(ElementType::Hexa):
@@ -636,10 +636,10 @@ double& CShapeHexa::detJ(const uint& elemType, const uint& numOfInteg, const uin
 // --
 void CShapeHexa::setupIntegValue20()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 20; ishape++) mvIntegValue20[ishape]= 0.0;
 
-    uint igauss;
+    uiint igauss;
     for(igauss=0; igauss < 27; igauss++){
         for(ishape=0; ishape < 20; ishape++){
             mvIntegValue20[ishape] += mvN203[igauss][ishape];
@@ -654,7 +654,7 @@ void CShapeHexa::setupIntegValue20()
 // --
 void CShapeHexa::setupIntegValue8()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 8; ishape++){
         mvIntegValue8[ishape]= 0.125;
     };

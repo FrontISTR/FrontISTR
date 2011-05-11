@@ -38,8 +38,8 @@ public:
     virtual ~COctreeKnot();
 
 protected:
-    uint mLayer;//レイヤー番号
-    uint mID;   //箱番号(OctreeBox番号)
+    uiint mLayer;//レイヤー番号
+    uiint mID;   //箱番号(OctreeBox番号)
     
     
     COctreeKnot* mpParentKnot;       //親のKnot
@@ -55,10 +55,10 @@ protected:
 
 public:
     //レイヤー,箱番号(OctreeBox番号)
-    void setLayerID(const uint& layer){ mLayer= layer;}
-    void setID(const uint& id){ mID= id;}
-    uint& getLayerID(){ return mLayer;}
-    uint& getID(){ return mID;}
+    void setLayerID(const uiint& layer){ mLayer= layer;}
+    void setID(const uiint& id){ mID= id;}
+    uiint& getLayerID(){ return mLayer;}
+    uiint& getID(){ return mID;}
 
     //アイテムにOctreeKnotのレイヤーとIDをセット
     void setItemProp();
@@ -74,18 +74,18 @@ public:
     //CContactNode*  getItem(const uint& index){ return mvItem[index];}
 
     // マスター面の頂点(ContactNode*)
-    void reserveMasterNode(const uint& res_size){ mvMasterNode.reserve(res_size);}
+    void reserveMasterNode(const uiint& res_size){ mvMasterNode.reserve(res_size);}
     void addMasterNode(CContactNode* pConNode){ mvMasterNode.push_back(pConNode);}
-    uint getNumOfMasterNode(){ return mvMasterNode.size();}
+    uiint getNumOfMasterNode(){ return mvMasterNode.size();}
     vector<CContactNode*>& getMasterNode(){ return mvMasterNode;}
-    CContactNode*  getMasterNode(const uint& index){ return mvMasterNode[index];}
+    CContactNode*  getMasterNode(const uiint& index){ return mvMasterNode[index];}
 
     // スレーブ点
-    void reserveSlaveNode(const uint& res_size){ mvSlaveNode.reserve(res_size);}
+    void reserveSlaveNode(const uiint& res_size){ mvSlaveNode.reserve(res_size);}
     void addSlaveNode(CContactNode* pConNode){ mvSlaveNode.push_back(pConNode);}
-    uint getNumOfSlaveNode(){ return mvSlaveNode.size();}
+    uiint getNumOfSlaveNode(){ return mvSlaveNode.size();}
     vector<CContactNode*>& getSlaveNode(){ return mvSlaveNode;}
-    CContactNode*  getSlaveNode(const uint& index){ return mvSlaveNode[index];}
+    CContactNode*  getSlaveNode(const uiint& index){ return mvSlaveNode[index];}
 
 
     // Knotの場合の範囲(Box)指定
@@ -105,7 +105,7 @@ public:
     // 子Knot：枝分かれ先のKnot
     // --
     void createChildKnot();
-    COctreeKnot* getChildKnot(const uint& pos){ return mvChildKnot[pos];}
+    COctreeKnot* getChildKnot(const uiint& pos){ return mvChildKnot[pos];}
     void distItem();//自身のItem(マスター面の頂点,スレーブ点)をChildKnotへ分配
 };
 #endif	/* _OCTREEKNOT_H */

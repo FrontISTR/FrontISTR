@@ -9,12 +9,12 @@
 using namespace pmw;
 
 
-uint CTriangle2::mnElemType = ElementType::Triangle2;
-uint CTriangle2::mnElemOrder = 2;
-uint CTriangle2::mNumOfFace = 1;
-uint CTriangle2::mNumOfEdge = 3;
-uint CTriangle2::mNumOfNode = 6;
-uint CTriangle2::mNumOfVert = 3;
+uiint CTriangle2::mnElemType = ElementType::Triangle2;
+uiint CTriangle2::mnElemOrder = 2;
+uiint CTriangle2::mNumOfFace = 1;
+uiint CTriangle2::mNumOfEdge = 3;
+uiint CTriangle2::mNumOfNode = 6;
+uiint CTriangle2::mNumOfVert = 3;
 
 CTriangle2::CTriangle2()
 {
@@ -33,7 +33,7 @@ void CTriangle2::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -70,7 +70,7 @@ void CTriangle2::initialize()
 //
 void CTriangle2::replaseEdgeNode()
 {
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         mvNode[mNumOfVert + iedge] = mvEdgeInterNode[iedge];
     };

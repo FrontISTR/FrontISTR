@@ -14,7 +14,7 @@ public:
     CFileWriterElementGroup();
     virtual ~CFileWriterElementGroup();
 
-    virtual void Write(ofstream& ofs, const uint& mgLevel);
+    virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 #endif	/* FILEWRITERELEMENTGROUP_H */
 }

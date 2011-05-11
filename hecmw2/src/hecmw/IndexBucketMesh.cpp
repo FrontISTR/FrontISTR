@@ -18,13 +18,13 @@ CIndexBucketMesh::CIndexBucketMesh()
 
 CIndexBucketMesh::~CIndexBucketMesh()
 {
-    //debug
-    std::cout << "~CIndexBucketMesh" << std::endl;
+    ////debug
+    //std::cout << "~CIndexBucketMesh" << std::endl;
 }
 
 // 初期化::mvID2Indexの領域確保,変数初期化
 //
-void CIndexBucketMesh::Initialize(const uint& maxID, const uint& minID)
+void CIndexBucketMesh::Initialize(const uiint& maxID, const uiint& minID)
 {
     maxMeshID = maxID;
     minMeshID = minID;
@@ -35,14 +35,14 @@ void CIndexBucketMesh::Initialize(const uint& maxID, const uint& minID)
 
 // mvID2Index の resize
 //
-void CIndexBucketMesh::resizeBucketMesh(const uint& size)
+void CIndexBucketMesh::resizeBucketMesh(const uiint& size)
 {
     mvID2MeshIndex.resize(size);
 }
 
 // ID -> Index のセットアップ
 //
-void CIndexBucketMesh::setIndexMesh(const uint& id, const uint& index_num)
+void CIndexBucketMesh::setIndexMesh(const uiint& id, const uiint& index_num)
 {
     mvID2MeshIndex[id - minMeshID] = index_num;
 }

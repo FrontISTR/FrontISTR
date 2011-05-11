@@ -54,10 +54,10 @@ CCommMesh::~CCommMesh()
 // --
 void CCommMesh::AllocateCommElement()
 {
-    uint numOfCommElemAll= mvCommElementAll.size();
+    uiint numOfCommElemAll= mvCommElementAll.size();
     CCommElement* pCommElem;
     CElement* pElem;
-    uint icom;
+    uiint icom;
     for(icom=0; icom< numOfCommElemAll; icom++){
         pCommElem= mvCommElementAll[icom];
         pCommElem->sortNodeRank(mRankID, mTransmitRankID);
@@ -86,16 +86,16 @@ void CCommMesh::AllocateCommElement()
 //
 void CCommMesh::setupAggCommElement(vector<CElement*> &vElement)
 {
-    uint numOfCommElem= mvCommElementAll.size();
-    uint numOfVert;
-    uint numOfAggElem;
+    uiint numOfCommElem= mvCommElementAll.size();
+    uiint numOfVert;
+    uiint numOfAggElem;
     CElement* pElem;
     CCommElement* pCommElem;
     CCommElement* pNeibCommElem;
-    uint neibComID, neibVert;
+    uiint neibComID, neibVert;
     CNode* pNode;
-    uint icome,ivert,iagg;
-    uint elemID,elemIndex;
+    uiint icome,ivert,iagg;
+    uiint elemID,elemIndex;
 
     for(icome=0; icome< numOfCommElem; icome++){
         pCommElem= mvCommElementAll[icome];
@@ -142,12 +142,12 @@ void CCommMesh::setupAggCommElement(vector<CElement*> &vElement)
 // --
 void CCommMesh::sortCommNodeIndex()
 {
-    uint numOfCommElem= mvCommElementAll.size();
-    uint numOfVert;
+    uiint numOfCommElem= mvCommElementAll.size();
+    uiint numOfVert;
     CCommElement* pCommElem;
-    uint icome, ivert;
+    uiint icome, ivert;
 
-    uint comNodeIndex(0);//CommNodeIndexカウンター
+    uiint comNodeIndex(0);//CommNodeIndexカウンター
 
     // mvCommElementAllからNode全体を取得 => 全体にCommNodeIndexをつけていく. => Nodeのランクも収集
     // --
@@ -163,7 +163,7 @@ void CCommMesh::sortCommNodeIndex()
         };
     };
     //debug
-    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvNode.size => ", (uint)mvNode.size());
+    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvNode.size => ", (uiint)mvNode.size());
     
     
     
@@ -171,12 +171,12 @@ void CCommMesh::sortCommNodeIndex()
     // --
     // Indexが重複しないように,スタンプを用意
     // --
-    vbool vIndexCheck;  uint numOfNode= mvNode.size();
-    vIndexCheck.reserve(numOfNode);
-    for(uint i=0; i< numOfNode; i++){
-        vIndexCheck.push_back(false);
+    bool* vIndexCheck;  uiint numOfNode= mvNode.size();
+    vIndexCheck = new bool[numOfNode];
+    for(uiint i=0; i< numOfNode; i++){
+        vIndexCheck[i] = false;
     }
-    uint nIndex, rank;
+    uiint nIndex, rank;
     numOfCommElem= mvCommElement.size();
 
     for(icome=0; icome< numOfCommElem; icome++){
@@ -202,11 +202,12 @@ void CCommMesh::sortCommNodeIndex()
             }
         };
     };
+    delete []vIndexCheck;
 
     
     // DCommElementからElementを取得して,Mesh内の計算不要Elementを取得
     // 計算不要Elementをソート => MeshでのElement並び替えに使用
-    uint numOfDCommElem= mvDCommElement.size();
+    uiint numOfDCommElem= mvDCommElement.size();
     CCommElement* pDCommElem;
     CElement* pDElem;
     for(icome=0; icome< numOfDCommElem; icome++){
@@ -216,7 +217,7 @@ void CCommMesh::sortCommNodeIndex()
         mvDElement.push_back(pDElem);
     };
     //debug
-    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDElement.size => ", (uint)mvDElement.size());
+    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDElement.size => ", (uiint)mvDElement.size());
     
     // DCommElementからDNodeを,重複なきようにスタンプを押しながら取得
     //
@@ -230,7 +231,7 @@ void CCommMesh::sortCommNodeIndex()
         };
     };
     //debug
-    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDNode.size => ", (uint)mvDNode.size());
+    mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDNode.size => ", (uiint)mvDNode.size());
 
 
     // 計算不要Node, Elementのソート
@@ -238,7 +239,7 @@ void CCommMesh::sortCommNodeIndex()
     // mvDNodeをソート => MeshでのNode並び替えに使用
     // mvDElementをソート => MeshでのElement並び替えに使用
     // ----
-    uint maxIndex;
+    uiint maxIndex;
     
     if(mvDNode.size() > 0){
         //maxIndex= mvDNode.size()-1;
@@ -263,14 +264,14 @@ void CCommMesh::sortCommNodeIndex()
 // --
 void CCommMesh::setupMapID2CommID()
 {
-    uint numOfCommElem= mvCommElementAll.size();
-    uint numOfCommNode= mvNode.size();
+    uiint numOfCommElem= mvCommElementAll.size();
+    uiint numOfCommNode= mvNode.size();
 
     CNode* pNode;
     CElement* pElem;
     CCommElement* pCommElem;
 
-    uint index;
+    uiint index;
     // mapデータのセット
     // --
     // Node-ID から CommMeshのNodeインデックス

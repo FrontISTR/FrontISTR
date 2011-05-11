@@ -4,21 +4,21 @@
  *
  * Created on 2009/04/08, 16:58
  */
-
-#ifndef _FILEREADERREFINE_H_7c9bd15c_4fa3_4a86_9958_b82cf1dd8e0b
-#define	_FILEREADERREFINE_H_7c9bd15c_4fa3_4a86_9958_b82cf1dd8e0b
-
 #include "FileReader.h"
-using namespace FileIO;
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
+#ifndef _FILEREADER_REFINE_H_
+#define	_FILEREADER_REFINE_H_
 class CFileReaderRefine:public CFileReader{
 public:
     CFileReaderRefine();
     ~CFileReaderRefine();
 public:
     virtual bool Read(ifstream &ifs, string &sline);
+    virtual bool Read_bin(ifstream& ifs);
 };
+#endif	/* _FILEREADERREFINE_H_ */
 }
-#endif	/* _FILEREADERREFINE_H_7c9bd15c_4fa3_4a86_9958_b82cf1dd8e0b */
+
 

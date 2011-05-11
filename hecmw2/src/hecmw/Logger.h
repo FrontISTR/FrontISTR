@@ -11,7 +11,7 @@
 
 #include <iostream>
 #include <cstdio> //sprintf
-#include "boost/lexical_cast.hpp"
+//#include "boost/lexical_cast.hpp"
 
 #include "CommonFile.h"
 #include "CommonStd.h"
@@ -25,7 +25,7 @@ class CLogger{
 private:
     CLogger();
     
-    uint myRank;//自分のrank
+    uiint myRank;//自分のrank
 
     ofstream ofs;
 
@@ -36,7 +36,7 @@ private:
     ////map<string, string, less<string> > msOutputType; //Mode別の出力先(Monitor, Disk)
 
     vuint mvOutputDevice;// OutputDevice on Mode
-    uint  mnCurrentState;// Mode
+    uiint  mnCurrentState;// Mode
 
 
     string  msModeString;  // Mode 表示用(display) string
@@ -45,18 +45,20 @@ private:
     string  msLoggerPref;  // Logger Errorの表示用接頭辞
 
     double  mdDummyValue;// 参照変数ダミー :Loggerを引用している各メソッドで参照変数ダミーが必要になった場合に使用
-    uint    muDummyValue;// 参照変数ダミー :
-    int     miDummyValue;// 参照変数ダミー :
+    uiint   muDummyValue;// 参照変数ダミー :
+    iint    miDummyValue;// 参照変数ダミー :
 
-    bool    BooleanMode(const uint& mode);
-    string& ModeToString(const uint& mode);
+    bool    BooleanMode(const uiint& mode);
+    string& ModeToString(const uiint& mode);
 
-    string& ArgToString(const uint& id, const double& value);
-    string& ArgToString(const uint& id, const vdouble& vValue);
-    string& ArgToString(const uint& id, const vint& vValue);
+    string& ArgToString(const uiint& id, const double& value);
+    string& ArgToString(const uiint& id, const vdouble& vValue);
+    string& ArgToString(const uiint& id, const vint& vValue);
 
-    string& InfoToString(const uint& num);
+    string& InfoToString(const uiint& num);
     string& InfoToString(const double& val);
+
+    short mnWidth;
 
 public:
     static CLogger* Instance(){
@@ -74,26 +76,30 @@ public:
 
     // LogFile
     void setFileBaseName(const string& filebase);//Logファイル名の変更
-    void initializeLogFile(const uint& rank);
+    void initializeLogFile(const uiint& rank);
     void finalizeLogFile();
 
     // Logger Prop
-    void setMode(const uint& mode);
-    void setProperty(const uint& mode, const uint& outputDevice);
+    void setMode(const uiint& mode);
+    void setProperty(const uiint& mode, const uiint& outputDevice);
 
     // Logger Method
-    void Monitor(const uint& mode, const uint& id, const double& value, const string& message);
-    void Monitor(const uint& mode, const uint& id, const vdouble& vValue, const string& message);
-    void Monitor(const uint& mode, const uint& id, const vint& vValue, const string& message);
-    void Info(const uint& mode, const string& message);
-    void Info(const uint& mode, const string& message1, const string& message2);
-    void Info(const uint& mode, const string& message, const uint& num);
-    void Info(const uint& mode, const string& message, const double& val);
+    void Monitor(const uiint& mode, const uiint& id, const double& value, const string& message);
+    void Monitor(const uiint& mode, const uiint& id, const vdouble& vValue, const string& message);
+    void Monitor(const uiint& mode, const uiint& id, const vint& vValue, const string& message);
+    void Info(const uiint& mode, const string& message);
+    void Info(const uiint& mode, const string& message1, const string& message2);
+    void Info(const uiint& mode, const string& message, const uiint& num);
+    void Info(const uiint& mode, vstring& vMessage, vuint& vNumber);
+    void Info(const uiint& mode, const string& message, const double& val);
 
     // Loggerを引用している各メソッドで参照変数ダミーが必要になった場合に使用
+    void setDDummyValue(const double& val);
+    void setUDummyValue(const uiint& val);
+    void setIDummyValue(const iint& val);
     double& getDDummyValue();
-    uint&   getUDummyValue();
-    int&    getIDummyValue();
+    uiint&  getUDummyValue();
+    iint&   getIDummyValue();
 };
 }
 #endif	/* _LOGGER_H_ */

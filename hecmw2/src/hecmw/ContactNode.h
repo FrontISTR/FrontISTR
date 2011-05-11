@@ -30,10 +30,10 @@ public:
 protected:
     // Nodeを特定するパラメータ
     // --
-    uint myRank; //ランク
-    uint mMeshID;//メッシュ・ノードが所属するMesh <-- 計算領域に接合面が無い場合は,不定
-    uint mNodeID;//メッシュ・ノードのID <-- 計算領域に接合面が無い場合は,不定
-    uint mLevel;//MultiGridレベル
+    uiint myRank; //ランク
+    uiint mMeshID;//メッシュ・ノードが所属するMesh <-- 計算領域に接合面が無い場合は,不定
+    uiint mNodeID;//メッシュ・ノードのID <-- 計算領域に接合面が無い場合は,不定
+    uiint mLevel;//MultiGridレベル
 
     // 接合面のノードが計算領域に存在するか否か？
     // ・ ランクだけでは判別できないのでbool値を持たす
@@ -46,7 +46,7 @@ protected:
     vdouble mvScalar;//接合面の温度等のスカラー量
 
     // MPCソルバーの従属行列からのアクセスの為
-    uint mMFaceID;//自身がSlave点だった場合の所属Master面ID => mMFaceID 没
+    uiint mMFaceID;//自身がSlave点だった場合の所属Master面ID => mMFaceID 没
     bool mbSlave; //自身がSlave点か.(true == スレーブ点)
     bool mbMarkingMFace;//Master面IDをセットしたことをマーキング
 
@@ -54,12 +54,12 @@ protected:
 
     // 各Levelでのマスター面ID '10.03.05
     // ---------------------
-    map<uint, uint, less<uint> > mmMasterFaceID;// [iLevel]= MasterFaceID
+    map<uiint, uiint, less<uiint> > mmMasterFaceID;// [iLevel]= MasterFaceID
     vector<bool>                mvbMasterFaceID;// [iLevel]= true .or. false
 
     // 八分木
     // -----
-    vector<uint> mvKnotID;
+    vector<uiint> mvKnotID;
 
 public:
     void markingSelfMesh();
@@ -67,32 +67,32 @@ public:
 
     // Nodeを特定 <= Meshの節点
     // --
-    void  setLevel(const uint& level){ mLevel= level;}
-    uint& getLevel(){ return mLevel;}
+    void  setLevel(const uiint& level){ mLevel= level;}
+    uiint& getLevel(){ return mLevel;}
     void pushLevelMarking(){  mvbMasterFaceID.push_back(false);}
 
-    void  setRank(const uint& rank){ myRank= rank;}
-    uint& getRank(){ return myRank;}
-    void  setMeshID(const uint& meshID){ mMeshID= meshID;}
-    uint& getMeshID(){ return mMeshID;}
-    void  setNodeID(const uint& nodeID){ mNodeID= nodeID;}
-    uint& getNodeID(){ return mNodeID;}
+    void  setRank(const uiint& rank){ myRank= rank;}
+    uiint& getRank(){ return myRank;}
+    void  setMeshID(const uiint& meshID){ mMeshID= meshID;}
+    uiint& getMeshID(){ return mMeshID;}
+    void  setNodeID(const uiint& nodeID){ mNodeID= nodeID;}
+    uiint& getNodeID(){ return mNodeID;}
 
 
     // EQUATION関連
     // ---
     // 変位
-    void resizeDisp(const uint& dof);//変位の自由度配列の確保
+    void resizeDisp(const uiint& dof);//変位の自由度配列の確保
     void initDisp();//変位の初期化
-    void setDisp(const uint& idof, const double& disp){ mvDisplacement[idof]= disp;}
-    double& getDisp(const uint& idof){ return mvDisplacement[idof];}
-    uint getNumOfDisp(){return mvDisplacement.size();}
+    void setDisp(const uiint& idof, const double& disp){ mvDisplacement[idof]= disp;}
+    double& getDisp(const uiint& idof){ return mvDisplacement[idof];}
+    uiint getNumOfDisp(){return mvDisplacement.size();}
     // スカラー
-    void resizeScalar(const uint& numOfScalar);//スカラー量のパラメータ数分の配列確保
+    void resizeScalar(const uiint& numOfScalar);//スカラー量のパラメータ数分の配列確保
     void initScalar();//スカラーの初期化
-    void setScalar(const uint& i, const double& val){ mvScalar[i]=val;}
-    double& getScalar(const uint& i){ return mvScalar[i];}
-    uint getNumOfScalar(){return mvScalar.size();}
+    void setScalar(const uiint& i, const double& val){ mvScalar[i]=val;}
+    double& getScalar(const uiint& i){ return mvScalar[i];}
+    uiint getNumOfScalar(){return mvScalar.size();}
     
     // ----
     // Slave点の場合の所属マスター面ID管理
@@ -111,17 +111,17 @@ public:
     // ----
     // 各Levelでのマスター面ID
     // ----
-    void setMasterFaceID(const uint& faceID, const uint& level);
-    uint& getMasterFaceID(const uint& level);
-    bool have_MasterFaceID(const uint& level);
+    void setMasterFaceID(const uiint& faceID, const uiint& level);
+    uiint& getMasterFaceID(const uiint& level);
+    bool have_MasterFaceID(const uiint& level);
 
 
 
     // 八分木
     // -----
-    void  resizeOctreeID(const uint& res_size);
-    void  setOctreeID(const uint& layer, const uint& knot_id);
-    uint& getOctreeID(const uint& layer){ return mvKnotID[layer];}
+    void  resizeOctreeID(const uiint& res_size);
+    void  setOctreeID(const uiint& layer, const uiint& knot_id);
+    uiint& getOctreeID(const uiint& layer){ return mvKnotID[layer];}
 
 };
 #endif	/* _CONTACTNODE_H */

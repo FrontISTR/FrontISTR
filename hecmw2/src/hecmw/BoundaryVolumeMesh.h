@@ -27,7 +27,7 @@ public:
 
 protected:
     vector<CBoundaryVolume*> mvBVolume;
-    map<uint, uint, less<uint> > mmBVolumeID2Index;
+    map<uiint, uiint, less<uiint> > mmBVolumeID2Index;
 
     //(辺-面-体)にBNodeを生成して、Refineで使用
     vector<CBoundaryNode*> mvBEdgeBNode;
@@ -36,18 +36,18 @@ protected:
 
 public:
     //境界体積 :=> BVolume
-    void resizeVolume(const uint& res_size);
-    uint getNumOfVolume(){ return mvBVolume.size();}
+    void resizeVolume(const uiint& res_size);
+    uiint getNumOfVolume(){ return mvBVolume.size();}
     
-    void setBVolume(const uint& index, CBoundaryVolume *pBVolume);
+    void setBVolume(const uiint& index, CBoundaryVolume *pBVolume);
     void addBVolume(CBoundaryVolume *pBVolume);
 
-    CBoundaryVolume* getBVolumeIX(const uint& index){ return mvBVolume[index];}
-    CBoundaryVolume* getBVolumeID(const uint& id){
-        uint index= mmBVolumeID2Index[id];
+    CBoundaryVolume* getBVolumeIX(const uiint& index){ return mvBVolume[index];}
+    CBoundaryVolume* getBVolumeID(const uiint& id){
+        uiint index= mmBVolumeID2Index[id];
         return mvBVolume[index];
     }
-    uint& getBVolumeIndex(const uint& id){ mmBVolumeID2Index[id];}
+    uiint& getBVolumeIndex(const uiint& id){ mmBVolumeID2Index[id];}
 
 
 protected:
@@ -56,7 +56,7 @@ protected:
 public:
     void resizeAggVol();
     void setupAggVol();
-    void setAggVol(const uint& ibnode, const uint& nVolumeID){ mvAggregateVol[ibnode].push_back(nVolumeID);}
+    void setAggVol(const uiint& ibnode, const uiint& nVolumeID){ mvAggregateVol[ibnode].push_back(nVolumeID);}
 
     void GeneEdgeBNode();
     void GeneFaceBNode();
@@ -77,12 +77,13 @@ protected:
     //----
     virtual void distNeumannValue();
 
-    //Dirichlet条件の節点分配
-    // Level==0:BNode周囲の要素集合平均値
-    // Level>=1:BNode間の平均
-    //----
-    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
-    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+//    //Dirichlet条件の節点分配
+//    // Level==0:BNode周囲の要素集合平均値
+//    // Level>=1:BNode間の平均
+//    //----
+//    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
+//    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+    virtual void distDirichletValue();
 };
 #endif	/* _BOUNDARYVOLUMEMESH_H */
 }

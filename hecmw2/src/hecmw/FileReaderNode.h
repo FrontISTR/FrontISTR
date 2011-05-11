@@ -11,16 +11,18 @@
 #include "FileReader.h"
 
 #include "NodeType.h"
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
-    class CFileReaderNode:public CFileReader{
+class CFileReaderNode:public CFileReader{
 public:
     CFileReaderNode();
     virtual ~CFileReaderNode();
 
 public:
     virtual bool Read(ifstream& ifs, string& sLine);
+    virtual bool Read_bin(ifstream& ifs);
 };
 }
-
 #endif
+

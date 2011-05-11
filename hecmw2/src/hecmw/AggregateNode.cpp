@@ -33,7 +33,7 @@ void CAggregateNode::setNode(CNode* pNode)
 
 
     CNode* mvpNode;
-    uint i;
+    uiint i;
     bool bCheck(false);
     // 一致するIDが無ければ,AggregateNodeとしてpush_backする.
     //

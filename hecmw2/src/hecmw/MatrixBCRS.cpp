@@ -16,49 +16,61 @@ namespace pmw
 {
 
 //template<int NDOF>
-CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
+CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uiint& nDOF)
 {
 #ifdef ADVANCESOFT_DEBUG
 	printf("enter CMatrixBCRS::CMatrixBCRS \n");
 #endif
+//        cout << "MatrixBCRS::CMatrixBCRS --- Enter" << endl;
+
         mnDOF = nDOF;
 	mnNode = pMesh->getNumOfNode();
-	//printf("initialize in CMatrixBCRS %d %d \n",mnDOF,mnNode);
+
+        CIndexBucket *pBucket= pMesh->getBucket();
+
+        //cout << "MatrixBCRS::CMatrixBCRS  pMesh->getNumOfNode " << mnNode << endl;
+        //cout << "MatrixBCRS::CMatrixBCRS  pMesh->getNodeSize  " << pMesh->getNodeSize() << endl;
+	
 	mvIndexL.resize(mnNode+1); // K.Matsubara
 	mvIndexU.resize(mnNode+1); // K.Matsubara
 
 	mvIndexL[0] = 0;
 	mvIndexU[0] = 0;
 
-	for (int i_node = 0; i_node < mnNode; i_node++) {
-            std::vector<int> v_item_l;
-            std::vector<int> v_item_u;
+	for (uiint i_node = 0; i_node < mnNode; i_node++) {
+            std::vector<uiint> v_item_l;
+            std::vector<uiint> v_item_u;
 
             CNode *pNode= pMesh->getNodeIX(i_node);
-            uint i_node_id = pNode->getID();
+            uiint i_node_id = pNode->getID();
 
             CElement *pElement;
             CAggregateElement *pAggElement= pMesh->getAggElem(i_node_id);
 
-            uint numOfElement= pAggElement->getNumOfElement();
-            uint i_elem;
-            for(i_elem=0; i_elem < numOfElement; i_elem++){
+            uiint nNumOfElement= pAggElement->getNumOfElement();
+            uiint i_elem;
+            for(i_elem=0; i_elem < nNumOfElement; i_elem++){
                 pElement= pAggElement->get(i_elem);
 
-                uint numOfNode= pElement->getNumOfNode();
-                uint k_node;
-                for (k_node = 0; k_node < numOfNode; k_node++) {
-                    uint k_node_id = pElement->getNode(k_node)->getID();
+                uiint k_node, nNumOfNode= pElement->getNumOfNode();
+                for (k_node = 0; k_node < nNumOfNode; k_node++) {
+                    
+                    uiint k_node_id = pElement->getNode(k_node)->getID();
+                    uiint k_index = pBucket->getIndexNode(k_node_id);// ID -> index
+                    
                     if(k_node_id < i_node_id){
-                        v_item_l.push_back(k_node_id);
+                        //v_item_l.push_back(k_node_id);
+                        v_item_l.push_back(k_index);// index を保存 2011.04.21
+
                     }else if(i_node_id < k_node_id){
-                        v_item_u.push_back(k_node_id);
+                        //v_item_u.push_back(k_node_id);
+                        v_item_u.push_back(k_index);// index を保存 2011.04.21
                     }
                 };
             };
 
             std::sort(v_item_l.begin(), v_item_l.end());
-            std::vector<int>::iterator new_end = std::unique(v_item_l.begin(), v_item_l.end());
+            std::vector<uiint>::iterator new_end = std::unique(v_item_l.begin(), v_item_l.end());
             v_item_l.erase(new_end, v_item_l.end());
             mvIndexL[i_node + 1] = mvIndexL[i_node] + v_item_l.size();
             mvItemL.insert(mvItemL.end(), v_item_l.begin(), v_item_l.end());
@@ -71,46 +83,46 @@ CMatrixBCRS::CMatrixBCRS(CMesh *pMesh, const uint& nDOF)
 
 	}
 	mvD.resize(mnNode);
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvD[i].resize(mnDOF, mnDOF);
-		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvD[i](i1,i2)=0.0;
+		for(uiint i1=0; i1<mnDOF; i1++) for(uiint i2=0; i2<mnDOF; i2++) mvD[i](i1,i2)=0.0;
 	}
 	mvALU.resize(mnNode);
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvALU[i].resize(mnDOF, mnDOF);
-		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvALU[i](i1,i2)=0.0;
+		for(uiint i1=0; i1<mnDOF; i1++) for(uiint i2=0; i2<mnDOF; i2++) mvALU[i](i1,i2)=0.0;
 	}
 	mINL = mvIndexL[mnNode];
-        //cout << "MatrixBCRS::MatrixBCRS mINL=" << mINL << endl;
 
 	mvAL.resize(mINL);
-	for (int i = 0; i < mINL; i++) {
+	for (uiint i = 0; i < mINL; i++) {
 		mvAL[i].resize(mnDOF, mnDOF);
-		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvAL[i](i1,i2)=0.0;
+		for(uiint i1=0; i1<mnDOF; i1++) for(uiint i2=0; i2<mnDOF; i2++) mvAL[i](i1,i2)=0.0;
 	}
 
 
 	mINU = mvIndexU[mnNode];
-        //cout << "MatrixBCRS::MatrixBCRS mINU=" << mINU << endl;
 
 	mvAU.resize(mINU);
-	for (int i = 0; i < mINU; i++) {
+	for (uiint i = 0; i < mINU; i++) {
 		mvAU[i].resize(mnDOF, mnDOF);
-		for(int i1=0; i1<mnDOF; i1++) for(int i2=0; i2<mnDOF; i2++) mvAU[i](i1,i2)=0.0;
+		for(uiint i1=0; i1<mnDOF; i1++) for(uiint i2=0; i2<mnDOF; i2++) mvAU[i](i1,i2)=0.0;
 	}
+        
+//        cout << "MatrixBCRS::CMatrixBCRS --- End" << endl;
 
 #ifdef ADVANCESOFT_DEBUG	
-	for (int i = 0; i < mnNode; i++) {
-		printf(" %d %d %d ; ", i, mvIndexL[i], mvIndexL[i+1]-1);
-		for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
-			printf(" %d",mvItemL[j]);
+	for (uiint i = 0; i < mnNode; i++) {
+		printf(" %ld %ld %ld ; ", i, mvIndexL[i], mvIndexL[i+1]-1);
+		for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+			printf(" %ld",mvItemL[j]);
 		}
 		cout << endl;
 	}
-	for (int i = 0; i < mnNode; i++) {
-		printf(" %d %d %d ; ", i, mvIndexU[i], mvIndexU[i+1]-1);
-		for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
-			printf(" %d",mvItemU[j]);
+	for (uiint i = 0; i < mnNode; i++) {
+		printf(" %ld %ld %ld ; ", i, mvIndexU[i], mvIndexU[i+1]-1);
+		for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+			printf(" %ld",mvItemU[j]);
 		}
 		cout << endl;
 	}
@@ -127,41 +139,44 @@ CMatrixBCRS::~CMatrixBCRS()
 //
 // add NodalStiff_Matrix 
 //
-int CMatrixBCRS::Matrix_Add_Nodal(const uint& iNodeID, const uint& jNodeID, const double* NodalMatrix)
+uiint CMatrixBCRS::Matrix_Add_Nodal(const uiint& inode, const uiint& jnode, const double* NodalMatrix)
 {
-    uint nMatSize = mnDOF;
-    int kL, kU;
-    uint irow = iNodeID;
-    uint icol = jNodeID;
+    uiint nMatSize = mnDOF;
+    uiint kL, kU;
+    bool bL,bU;
+    uiint irow = inode;// i 節点インデックス
+    uiint icol = jnode;// j 節点インデックス
     if( icol == irow ) {//対角項
         
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvD[icol](ii,jj) += NodalMatrix[nMatSize*ii+jj];
         }
         
     } else if( icol < irow ) {// 下三角
-        kL = -1;
-        for (int k = mvIndexL[irow]; k < mvIndexL[irow+1]; k++) {
+        bL = false;
+        for (uiint k = mvIndexL[irow]; k < mvIndexL[irow+1]; k++) {
             if( icol == mvItemL[k] ) {
                 kL = k;
+                bL = true;
             }
         }
-        if( kL < 0 ) printf("***** error in matrix index ***** %d %d %d \n",irow,icol,kL);
+        if( !bL ) printf("***** error in matrix index ***** %ld %ld %s \n",irow,icol,"-1");
         
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvAL[kL](ii,jj) += NodalMatrix[nMatSize*ii+jj];
         }
 
     } else if( icol > irow ) {// 上三角
-        kU = -1;
-        for (int k = mvIndexU[irow]; k < mvIndexU[irow+1]; k++) {
+        bU = false;
+        for (uiint k = mvIndexU[irow]; k < mvIndexU[irow+1]; k++) {
             if( icol == mvItemU[k] ) {
                 kU = k;
+                bU = true;
             }
         }
-        if( kU < 0 ) printf("***** error in matrix index ***** %d %d %d \n",irow,icol,kU);
+        if( !bU ) printf("***** error in matrix index ***** %ld %ld %s \n",irow,icol,"-1");
         
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvAU[kU](ii,jj) += NodalMatrix[nMatSize*ii+jj];
         }
     }
@@ -171,52 +186,66 @@ int CMatrixBCRS::Matrix_Add_Nodal(const uint& iNodeID, const uint& jNodeID, cons
 //
 // add ElementStiff_Matrix
 //
-int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, const uint& iElem, double *ElemMatrix)
+uiint CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, const uiint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
-   	printf(" enter CMatrixBCRS::Matrix_Add_Elem %d %e \n", iElem, ElemMatrix[0]);
+    printf(" enter CMatrixBCRS::Matrix_Add_Elem %ld %e \n", iElem, ElemMatrix[0]);
 #endif
+//    cout << "MatrixBCRS::Matrix_Add_Elem --- Enter" << endl;
 
     CElement *pElement = pMesh->getElementIX(iElem);
     vector<CNode*> vNode= pElement->getNode();
     
-    int nLocalNode = vNode.size();
-    int nMatSize = nLocalNode * mnDOF;
+    uiint nLocalNode = vNode.size();
+    uiint nMatSize = nLocalNode * mnDOF;
 
-    for(int i=0; i< nLocalNode; i++) for(int j=0; j< nLocalNode; j++){
-		int kL, kU;
-		uint irow = vNode[i]->getID();
-		uint icol = vNode[j]->getID();
-		if( icol == irow ) {
-			for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
-			    mvD[icol](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF)+jj+j*mnDOF];
-			}
-		} else if( icol < irow ) {
-			kL = -1;
-			for (int k = mvIndexL[irow]; k < mvIndexL[irow+1]; k++) {
-				if( icol == mvItemL[k] ) {
-					kL = k;
-				}
-			}
-			if( kL < 0 ) printf("***** error in matrix index ***** %d %d %d %d %d \n",i,j,irow,icol,kL);
-			for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
-			    mvAL[kL](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF)+jj+j*mnDOF];
-			}
-		} else if( icol > irow ) {
-			kU = -1;
-			for (int k = mvIndexU[irow]; k < mvIndexU[irow+1]; k++) {
-				if( icol == mvItemU[k] ) {
-					kU = k;
-				}
-			}
-			if( kU < 0 ) printf("***** error in matrix index ***** %d %d %d %d %d \n",i,j,irow,icol,kU);
-			for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
-			    mvAU[kU](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF)+jj+j*mnDOF];
-			}
-		}
+    CIndexBucket *pBucket = pMesh->getBucket();
+
+    for(uiint i=0; i< nLocalNode; i++) for(uiint j=0; j< nLocalNode; j++){
+        uiint kL, kU;
+        bool bL, bU;
+        uiint iNodeID = vNode[i]->getID(); 
+        uiint jNodeID = vNode[j]->getID();
+        uiint irow = pBucket->getIndexNode(iNodeID);  ///cout << "MatrixBCRS::Matrix_Add_Elem  irow " << irow << endl;
+        uiint icol = pBucket->getIndexNode(jNodeID);  ///cout << "MatrixBCRS::Matrix_Add_Elem  icol " << icol << endl;
+        if( icol == irow ) {
+            for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
+                mvD[icol](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF) + jj+j*mnDOF];
+            }
+        } else if( icol < irow ) {
+            bL = false;
+            for (uiint k = mvIndexL[irow]; k < mvIndexL[irow+1]; k++) {
+                if( icol == mvItemL[k] ) { // Itemは節点IDの配列インデックス番号
+                    kL = k;
+                    bL = true;
+                }
+            }
+            if( !bL ) printf("***** error in matrix index ***** %ld %ld %ld %ld %s \n",i,j,irow,icol,"-1");
+
+            for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
+                mvAL[kL](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF)+jj+j*mnDOF];
+            }
+
+        } else if( icol > irow ) {
+            bU = false;
+            for (uiint k = mvIndexU[irow]; k < mvIndexU[irow+1]; k++) {
+                if( icol == mvItemU[k] ) { // Itemは節点IDの配列インデックス番号
+                    kU = k;
+                    bU = true;
+                }
+            }
+            if( !bU ) printf("***** error in matrix index ***** %ld %ld %ld %ld %s \n",i,j,irow,icol,"-1");
+
+            for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
+                mvAU[kU](ii,jj) += ElemMatrix[nMatSize*(ii+i*mnDOF) + jj+j*mnDOF];
+            }
+        }
     }
+
+//    cout << "MatrixBCRS::Matrix_Add_Elem --- End" << endl;
+
 #ifdef ADVANCESOFT_DEBUG
-   	printf(" exit CMatrixBCRS::Matrix_Add_Elem \n");
+    printf(" exit CMatrixBCRS::Matrix_Add_Elem \n");
 #endif
 
     return 1;
@@ -226,18 +255,18 @@ int CMatrixBCRS::Matrix_Add_Elem(CMesh *pMesh, const uint& iElem, double *ElemMa
 //
 void CMatrixBCRS::Matrix_Clear()
 {
-    for(uint i=0; i< mnNode; i++){
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+    for(uiint i=0; i< mnNode; i++){
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvD[i](ii,jj) = 0.0;
         };
     };
-    for(uint i=0; i < mINL; i++){
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+    for(uiint i=0; i < mINL; i++){
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvAL[i](ii,jj) = 0.0;
         };
     };
-    for(uint i=0; i < mINU; i++){
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+    for(uiint i=0; i < mINU; i++){
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             mvAU[i](ii,jj) = 0.0;
         };
     };
@@ -245,78 +274,121 @@ void CMatrixBCRS::Matrix_Clear()
 
 void CMatrixBCRS::multVector(CVector *pV, CVector *pP) const
 {
-    for (int i = 0; i < mnNode; i++) {
+    for (uiint i = 0; i < mnNode; i++) {
         (*pP)[i] = prod(mvD[i], (*pV)[i]);
-        for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
-                (*pP)[i] += prod(mvAL[j], (*pV)[mvItemL[j]]);
+
+        for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+            (*pP)[i] += prod(mvAL[j], (*pV)[mvItemL[j]]);//Itemは節点配列インデックス 2011.04.21
         };
-        for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
-                (*pP)[i] += prod(mvAU[j], (*pV)[mvItemU[j]]);
+        for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+            (*pP)[i] += prod(mvAU[j], (*pV)[mvItemU[j]]);//Itemは節点配列インデックス 2011.04.21
         };
     };
 }
 
-void CMatrixBCRS::setValue_D(const uint& inode, const uint& idof, const double& value)
+void CMatrixBCRS::setValue_D(const uiint& inode, const uiint& idof, const double& value)
 {
     mvD[inode](idof, idof) = value;
 }
 
-void CMatrixBCRS::setValue(const uint& inode, const uint& idof, const double& value)
+void CMatrixBCRS::setValue(const uiint& inode, const uiint& idof, const double& dDiag, CVector *pRHS, const double& dRHS)
 {
-#ifdef ADVANCESOFT_DEBUG
-    printf(" enter CMatrixBCRS::setValue \n");
-#endif
-//    // 対角項
-//    for(uint i=0; i < mnDOF; i++) for(uint j=0; j < mnDOF; j++)
-//        if(i != j)
-//            mvD[inode](i,j) = 0.0;
-
-    //inode のidof行、idof列 の非対角項を"0"
-    for(uint j=0; j < mnDOF; j++)
-        if(idof != j) mvD[inode](idof, j) = 0.0;
-    for(uint j=0; j < mnDOF; j++)
-        if(idof != j) mvD[inode](j, idof) = 0.0;
-    
-    mvD[inode](idof,idof) = value;
-    
-#ifdef ADVANCESOFT_DEBUG
-    printf(" exit CMatrixBCRS::setValue \n");
-#endif
+    // inode のidof行 の非対角項を"0"
+    for(uiint j=0; j < mnDOF; j++){
+        if(idof != j){
+            mvD[inode](idof, j) = 0.0;
+        }
+    };
+    // inode の idof列 の非対角項を"0"
+    for(uiint j=0; j < mnDOF; j++){
+        if(idof != j){
+            //// mvdAikX[inode][j] += mvD[inode](j, idof) * dRHS;// 0セットした行列の右辺への振替値
+            double diffVal = -mvD[inode](j, idof) * dRHS;// 0セットした行列の右辺への振替値
+            pRHS->addValue(inode, j, diffVal);
+            mvD[inode](j, idof) = 0.0;
+        }
+    };
+    //対角項
+    mvD[inode](idof,idof) = dDiag;
 }
-void CMatrixBCRS::setZero_NonDiag(const uint& inode, const uint& idof)
+void CMatrixBCRS::setZero_NonDiag(const uiint& inode, const uiint& idof, CVector* pRHS, const double& dRHS)
 {
+//    cout << "MatrixBCRS::setZero_NonDiag Enter" << endl;
+
     //-----------------
     // 1行の非対角項を”0"
     //-----------------
     // 下三角
-    for(uint j=mvIndexL[inode]; j < mvIndexL[inode+1]; j++){
-        for(uint jdof=0; jdof < mnDOF; jdof++) mvAL[j](idof,jdof) = 0.0;
+    for(uiint j=mvIndexL[inode]; j < mvIndexL[inode+1]; j++){
+        for(uiint jdof=0; jdof < mnDOF; jdof++){
+            mvAL[j](idof,jdof) = 0.0;
+        };
     };
     // 上三角
-    for(uint j=mvIndexU[inode]; j < mvIndexU[inode+1]; j++){
-        for(uint jdof=0; jdof < mnDOF; jdof++) mvAU[j](idof,jdof) = 0.0;
+    for(uiint j=mvIndexU[inode]; j < mvIndexU[inode+1]; j++){
+        for(uiint jdof=0; jdof < mnDOF; jdof++){
+            mvAU[j](idof,jdof) = 0.0;
+        };
     };
 
     //-----------------
-    // 1列の非対角項を”0"
+    // 列の非対角項ノードの(自由度)idof列を”0"
     //-----------------
     // 下三角
-    for(uint i=0; i < mINL; i++){
-        uint col=mvItemL[i];
+    //for(uint i=0; i < mINL; i++){
+    for(uiint jnode=0; jnode < mnNode; jnode++){
+    for(uiint i=mvIndexL[jnode]; i < mvIndexL[jnode+1]; i++){
+        uiint col=mvItemL[i];
+
         if(col==inode){
-            for(uint jdof=0; jdof < mnDOF; jdof++) mvAL[i](jdof,idof) = 0.0;
+        for(uiint jdof=0; jdof < mnDOF; jdof++){
+            double diffVal = -mvAL[i](jdof,idof) * dRHS;//colが出てきた行 => jnode
+            pRHS->addValue(jnode, jdof, diffVal);
+            mvAL[i](jdof,idof) = 0.0;
+        };
         }
+    };
     };
     // 上三角
-    for(uint i=0; i < mINU; i++){
-        uint col=mvItemU[i];
+    //for(uint i=0; i < mINU; i++){
+    for(uiint jnode=0; jnode < mnNode; jnode++){
+    for(uiint i=mvIndexU[jnode]; i < mvIndexU[jnode+1]; i++){
+        uiint col=mvItemU[i];
+
         if(col==inode){
-            for(uint jdof=0; jdof < mnDOF; jdof++) mvAU[i](jdof,idof) = 0.0;
+        for(uiint jdof=0; jdof < mnDOF; jdof++){
+            double diffVal = -mvAU[i](jdof, idof) * dRHS;//colが出てきた行 => jnode
+            pRHS->addValue(jnode, jdof, diffVal);
+            mvAU[i](jdof,idof) = 0.0;
+        };
         }
     };
+    };
+
+//    cout << "MatrixBCRS::setZero_NonDiag Exit" << endl;
 }
 
-int CMatrixBCRS::setupPreconditioner(int type)
+////void CMatrixBCRS::dirich_ProdVal_clear()
+////{
+////    // 0セット行列の右辺への振替値:初期化
+////    for(uint inode=0; inode < mnNode; inode++){
+////        for(uint idof=0; idof < mnDOF; idof++) mvdAikX[inode][idof] = 0.0;
+////    };
+////}
+
+////// 0セットした行列値の右辺への振替
+//////
+////void CMatrixBCRS::setDirichletRHS(CVector* pRHS)
+////{
+////    for(uint inode=0; inode < mnNode; inode++){
+////        for(uint idof=0; idof < mnDOF; idof++){
+////            pRHS->addValue(inode, idof, -mvdAikX[inode][idof]);
+////        };
+////    };
+////}
+
+
+uiint CMatrixBCRS::setupPreconditioner(iint type)
 {
 #ifdef ADVANCESOFT_DEBUG
   printf(" enter CMatrixBCRS::setupPreconditioner \n");
@@ -324,14 +396,14 @@ int CMatrixBCRS::setupPreconditioner(int type)
   ublas::matrix<double> pA(mnDOF,mnDOF), pB(mnDOF,mnDOF), pC(mnDOF,mnDOF);
 
   mPrecond = type;
-  int itype;
+  iint itype;
 
   itype = -99;
   if( mPrecond == 1 ) itype = 2;
   if( mPrecond == 2 ) itype = 2;
   if( mPrecond == 3 ) itype = 2;
   if( mPrecond == 4 ) itype = 1;
-  if( itype == -99 ) printf("setup precondition; fatal error %d\n", mPrecond);
+  if( itype == -99 ) printf("setup precondition; fatal error %ld\n", mPrecond);
 
   switch( itype ){
   case( 1 ):
@@ -339,7 +411,7 @@ int CMatrixBCRS::setupPreconditioner(int type)
     // D - L * D**(-1) * LT
     for (int i = 0; i < mnNode; i++) {
       pA = mvD[i];
-      for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+      for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
 	transpose(mvAL[j], &pB);
 	pC  = prod(mvAL[j], mvALU[mvItemL[j]] );
 	pA -= prod(pC, pB);
@@ -350,12 +422,12 @@ int CMatrixBCRS::setupPreconditioner(int type)
   case( 4 ):
     // D - UT * D**(-1) * U
     printf(" [TYPE:4] Preconditioner \n");
-    for (int i = 0; i < mnNode; i++) mvALU[i] = mvD[i];
-    for (int i = 0; i < mnNode; i++) {
+    for (uiint i = 0; i < mnNode; i++) mvALU[i] = mvD[i];
+    for (uiint i = 0; i < mnNode; i++) {
       pA = mvALU[i];
       inverse(pA, &mvALU[i]);
       pA = mvALU[i];
-      for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+      for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
 	pC  = prod(pA, mvAU[j]);
 	transpose(mvAU[j], &pB);
 	mvALU[mvItemU[j]] -= prod(pB, pC);
@@ -364,7 +436,7 @@ int CMatrixBCRS::setupPreconditioner(int type)
     break;
   case( 2 ):
     printf(" [TYPE:2] Preconditioner \n");
-    for (int i = 0; i < mnNode; i++) {
+    for (uiint i = 0; i < mnNode; i++) {
       inverse(mvD[i], &mvALU[i]);
     };
     break;
@@ -411,7 +483,7 @@ double CMatrixBCRS::determinant(ublas::matrix<double> pA)
 	return det;
 }	
 
-int CMatrixBCRS::setupSmoother(int type)
+uiint CMatrixBCRS::setupSmoother(iint type)
 {
 	//
    	printf(" enter CMatrixBCRS::setupSmoother \n");
@@ -420,47 +492,56 @@ int CMatrixBCRS::setupSmoother(int type)
 	return 1;
 }
 
-int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
+uiint CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
 {
   CVector::ElemType WW(mnDOF);
   ublas::zero_vector<double> vzero(mnDOF);
 
-  int itype;
+  iint itype;
   itype = -99;
   if( mPrecond == 1 ) itype = 1;
   if( mPrecond == 2 ) itype = 2;
   if( mPrecond == 3 ) itype = 2;
   if( mPrecond == 4 ) itype = 1;
-  if( itype == -99 ) printf("precond; fatal error %d\n", mPrecond, itype);
+  if( itype == -99 ) printf("precond; fatal error %ld\n", mPrecond, itype);
 
   switch( itype ){
   case( 0 ):
     pZ->subst(pR);
     break;
+
   case( 1 ):
     pZ->subst(pR);
-    for(int i=0; i< mnNode; i++) {
-      for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+    for(uiint i=0; i< mnNode; i++) {
+      for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
 	(*pZ)[i] -= prod(mvAL[j], (*pZ)[mvItemL[j]]);
       }
       (*pZ)[i] = prod(mvALU[i], (*pZ)[i]);
     }
-    for(int i = mnNode-1; i>-1 ; i--) {
+    //for(iint i= mnNode-1; i>-1 ; i--) {/// "iint":変数最大値が合致しない
+    //  WW(0)=0.0; WW(1)=0.0; WW(2)=0.0;
+    //  for (uint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+    //	WW += prod(mvAU[j], (*pZ)[mvItemU[j]]);
+    //  }
+    //  (*pZ)[i] -= prod(mvALU[i], WW);
+    //}
+    for(uiint i= mnNode-1; i >= 0 && i < mnNode; i--){/// "uint"
       WW(0)=0.0; WW(1)=0.0; WW(2)=0.0;
-      for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+      for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
 	WW += prod(mvAU[j], (*pZ)[mvItemU[j]]);
       }
       (*pZ)[i] -= prod(mvALU[i], WW);
     }
     break;
+
   case( 2 ):
-    for(int loop=0; loop<10; loop++) {
-      for(int i=0; i< mnNode; i++) {
+    for(uiint loop=0; loop < 10; loop++) {
+      for(uiint i=0; i< mnNode; i++) {
 	WW = (*pR)[i];
-	for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+	for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
 	  WW -= prod(mvAL[j], (*pZ)[mvItemL[j]]);
 	}
-	for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+	for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
 	  WW -= prod(mvAU[j], (*pZ)[mvItemU[j]]);
 	}
 	WW = prod(mvALU[i], WW);
@@ -470,24 +551,25 @@ int CMatrixBCRS::precond(const CVector *pR, CVector *pZ) const
       }
     }
     break;
+
   case( 3 ):
-    for(int i=0; i< mnNode; i++) (*pZ)[i] = vzero;
-    for(int i=0; i<50; i++) relax(pR, pZ);
+    for(uiint i=0; i< mnNode; i++) (*pZ)[i] = vzero;
+    for(uiint i=0; i< 50; i++) relax(pR, pZ);
     break;
   }
-	return 1;
+    return 1;
 }
 
-int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
+uiint CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
 {
   // call smoother (once)
   CVector::ElemType WW(mnDOF);
-  for(int i=0; i< mnNode; i++) {
+  for(uiint i=0; i< mnNode; i++) {
     WW = (*pR)[i];
-    for (int j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
+    for (uiint j = mvIndexL[i]; j < mvIndexL[i+1]; j++) {
       WW -= prod(mvAL[j], (*pZ)[mvItemL[j]]);
     }
-    for (int j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
+    for (uiint j = mvIndexU[i]; j < mvIndexU[i+1]; j++) {
       WW -= prod(mvAU[j], (*pZ)[mvItemU[j]]);
     }
     WW = prod(mvALU[i], WW);
@@ -504,10 +586,10 @@ int CMatrixBCRS::relax(const CVector *pR, CVector *pZ) const
 void CMatrixBCRS::dump()
 {
     cout << " ---- mvD ---- " << endl;
-    for(uint i=0; i< mnNode; i++){
+    for(uiint i=0; i< mnNode; i++){
         cout << "Node i:" << i << " ";
 
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             cout << mvD[i](ii,jj) << "  ";
         };
         
@@ -515,10 +597,10 @@ void CMatrixBCRS::dump()
     };
 
     cout << " ---- mvAL ---- " << endl;
-    for(uint i=0; i < mINL; i++){
+    for(uiint i=0; i < mINL; i++){
         cout << "mINL:" << i << " ";
 
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             cout << mvAL[i](ii,jj) << "  ";
         };
         
@@ -526,10 +608,10 @@ void CMatrixBCRS::dump()
     };
 
     cout << " ---- mvAU ---- " << endl;
-    for(uint i=0; i < mINU; i++){
+    for(uiint i=0; i < mINU; i++){
         cout << "mINU:" << i << " ";
 
-        for(int ii=0; ii < mnDOF; ii++) for(int jj=0; jj < mnDOF; jj++) {
+        for(uiint ii=0; ii < mnDOF; ii++) for(uiint jj=0; jj < mnDOF; jj++) {
             cout << mvAU[i](ii,jj) << "  ";
         };
         

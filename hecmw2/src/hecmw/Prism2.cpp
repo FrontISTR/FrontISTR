@@ -9,12 +9,12 @@
 using namespace pmw;
 
 
-uint CPrism2::mnElemType =  ElementType::Prism2;
-uint CPrism2::mnElemOrder = 2;
-uint CPrism2::mNumOfFace =  5;
-uint CPrism2::mNumOfEdge =  9;
-uint CPrism2::mNumOfNode = 15;
-uint CPrism2::mNumOfVert =  6;
+uiint CPrism2::mnElemType =  ElementType::Prism2;
+uiint CPrism2::mnElemOrder = 2;
+uiint CPrism2::mNumOfFace =  5;
+uiint CPrism2::mNumOfEdge =  9;
+uiint CPrism2::mNumOfNode = 15;
+uiint CPrism2::mNumOfVert =  6;
 
 CPrism2::CPrism2()
 {
@@ -33,7 +33,7 @@ void CPrism2::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -70,7 +70,7 @@ void CPrism2::initialize()
 void CPrism2::replaseEdgeNode()
 {
     CNode *pNode;
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         pNode = mvEdgeInterNode[iedge];
         mvNode[mNumOfVert + iedge] = pNode;

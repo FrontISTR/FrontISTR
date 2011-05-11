@@ -20,7 +20,7 @@ CBoundaryPrism::CBoundaryPrism()
     // mvbMarkingEdge初期化
     // mvbMarkingFace初期化
     // ----
-    uint i;
+    uiint i;
     // 辺
     mvbMarkingEdge = new bool[NumberOfEdge::Prism()];
     for(i=0; i < NumberOfEdge::Prism(); i++){
@@ -50,7 +50,7 @@ CBoundaryPrism::~CBoundaryPrism()
 
 // Volume 形状情報
 //
-uint CBoundaryPrism::getElemType()
+uiint CBoundaryPrism::getElemType()
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
@@ -64,17 +64,17 @@ uint CBoundaryPrism::getElemType()
             return ElementType::Limit;
     }
 }
-uint CBoundaryPrism::getNumOfEdge()
+uiint CBoundaryPrism::getNumOfEdge()
 {
     return NumberOfEdge::Prism();
 }
 
-uint CBoundaryPrism::getNumOfFace()
+uiint CBoundaryPrism::getNumOfFace()
 {
     return NumberOfFace::Prism();
 }
 
-uint CBoundaryPrism::getNumOfNode()
+uiint CBoundaryPrism::getNumOfNode()
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
@@ -89,12 +89,12 @@ uint CBoundaryPrism::getNumOfNode()
     }
 }
 
-uint CBoundaryPrism::getNumOfVert()
+uiint CBoundaryPrism::getNumOfVert()
 {
     return NumberOfVertex::Prism();;
 }
 
-void CBoundaryPrism::setOrder(const uint& order)
+void CBoundaryPrism::setOrder(const uiint& order)
 {
     mnOrder = order;
 
@@ -111,16 +111,16 @@ void CBoundaryPrism::setOrder(const uint& order)
 
 // Edge番号 -> pariBNode
 //
-PairBNode CBoundaryPrism::getPairBNode(const uint& iedge)
+PairBNode CBoundaryPrism::getPairBNode(const uiint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    uint *pLocalNum;
+    uiint *pLocalNum;
     
     pLocalNum= pEdgeTree->getPrismLocalNodeNum(iedge);
 
-    uint index1st = pLocalNum[0];
-    uint index2nd = pLocalNum[1];
+    uiint index1st = pLocalNum[0];
+    uiint index2nd = pLocalNum[1];
 
     PairBNode pairBNode;
     pairBNode.first = mvBNode[index1st];
@@ -132,12 +132,12 @@ PairBNode CBoundaryPrism::getPairBNode(const uint& iedge)
 
 // pairBNode -> Edge番号
 //
-uint& CBoundaryPrism::getEdgeID(PairBNode& pairBNode)
+uiint& CBoundaryPrism::getEdgeID(PairBNode& pairBNode)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
-    uint ivert= getVertIndex(pairBNode.first);
-    uint jvert= getVertIndex(pairBNode.second);
+    uiint ivert= getVertIndex(pairBNode.first);
+    uiint jvert= getVertIndex(pairBNode.second);
 
     return pEdgeTree->getPrismEdgeIndex(ivert, jvert);
 }
@@ -145,12 +145,12 @@ uint& CBoundaryPrism::getEdgeID(PairBNode& pairBNode)
 
 // 面を構成するBNode配列
 //
-vector<CBoundaryNode*> CBoundaryPrism::getFaceCnvNodes(const uint& iface)
+vector<CBoundaryNode*> CBoundaryPrism::getFaceCnvNodes(const uiint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
     CBoundaryNode *pBNode;
-    uint  ivert, i, numOfVert;
-    uint *pvIndex;
+    uiint  ivert, i, numOfVert;
+    uiint *pvIndex;
 
     pvIndex= pFaceTree->getLocalNodePrismFace(iface);
     numOfVert= pFaceTree->getPrismFaceNumOfVert(iface);
@@ -169,13 +169,13 @@ vector<CBoundaryNode*> CBoundaryPrism::getFaceCnvNodes(const uint& iface)
 
 // BNode配列 -> Face番号
 //
-uint& CBoundaryPrism::getFaceID(vector<CBoundaryNode*>& vBNode)
+uiint& CBoundaryPrism::getFaceID(vector<CBoundaryNode*>& vBNode)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
 
     vuint vLocalVert;
     CBoundaryNode *pBNode;
-    uint ibnode, numOfBNode= vBNode.size();
+    uiint ibnode, numOfBNode= vBNode.size();
 
     vLocalVert.reserve(4);
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
@@ -188,14 +188,14 @@ uint& CBoundaryPrism::getFaceID(vector<CBoundaryNode*>& vBNode)
 
 
 // 辺を構成する頂点番号
-uint* CBoundaryPrism::getLocalNode_Edge(const uint& iedge)
+uiint* CBoundaryPrism::getLocalNode_Edge(const uiint& iedge)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
     return pEdgeTree->getPrismLocalNodeNum(iedge);
 }
 // 面を構成する頂点番号
-uint* CBoundaryPrism::getLocalNode_Face(const uint& iface)
+uiint* CBoundaryPrism::getLocalNode_Face(const uiint& iface)
 {
     CFaceTree *pFaceTree= CFaceTree::Instance();
 
@@ -206,14 +206,14 @@ uint* CBoundaryPrism::getLocalNode_Face(const uint& iface)
 
 // Refine Volume再分割
 // ----
-void CBoundaryPrism::refine(uint& countID, const vuint& vDOF)
+void CBoundaryPrism::refine(uiint& countID, const vuint& vDOF)
 {
     CBoundaryVolume *pProgVol;
     CElement   *pProgElem;
     CNode      *pNode;
     CBoundaryNode *pBNode;
-    uint iprog, numOfProg;
-    uint nProgPos;
+    uiint iprog, numOfProg;
+    uiint nProgPos;
 
     double progCubicVol;//体積
     double coef;
@@ -258,8 +258,8 @@ void CBoundaryPrism::refine(uint& countID, const vuint& vDOF)
 double& CBoundaryPrism::calcVolume()
 {
     CDiscreteVolume *pDiscrete= CDiscreteVolume::Instance();
-    uint* discrePrism;
-    uint  i,ii;
+    uiint* discrePrism;
+    uiint  i,ii;
     CNode* vNode[4];
 
     mCubicVolume= 0.0;
@@ -279,13 +279,13 @@ double& CBoundaryPrism::calcVolume()
 
 // 上位グリッドBNodeへのディレクレ値の分配
 //
-void CBoundaryPrism::distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel)
+void CBoundaryPrism::distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel)
 {
     CEdgeTree *pEdgeTree = CEdgeTree::Instance();
 
     double dAveVal;
-    uint iedge, *pnEdgeVert;
-    uint nNumOfEdge=NumberOfEdge::Prism();
+    uiint iedge, *pnEdgeVert;
+    uiint nNumOfEdge=NumberOfEdge::Prism();
 
     // 辺のディレクレ値(上位グリッド)
     for(iedge=0; iedge < nNumOfEdge; iedge++){
@@ -311,8 +311,8 @@ void CBoundaryPrism::distDirichletVal(const uint& dof, const uint& mgLevel, cons
 
     CFaceTree *pFaceTree = CFaceTree::Instance();
 
-    uint iface, *pnFaceVert, ivert;
-    uint nNumOfFace=NumberOfFace::Prism();
+    uiint iface, *pnFaceVert, ivert;
+    uiint nNumOfFace=NumberOfFace::Prism();
 
     // 面のディレクレ値(上位グリッド)
     for(iface=0; iface < nNumOfFace; iface++){
@@ -339,7 +339,7 @@ void CBoundaryPrism::distDirichletVal(const uint& dof, const uint& mgLevel, cons
     //    &  頂点の値をそのまま上位グリッドへ与える
     double dVertVal;
     dAveVal=0.0;
-    uint nNumOfVert=NumberOfVertex::Prism();
+    uiint nNumOfVert=NumberOfVertex::Prism();
 
     for(ivert=0; ivert < nNumOfVert; ivert++){
         dVertVal = mvBNode[ivert]->getValue(dof, mgLevel);
@@ -348,20 +348,25 @@ void CBoundaryPrism::distDirichletVal(const uint& dof, const uint& mgLevel, cons
         if(mgLevel!=nMaxMGLevel)
           mvBNode[ivert]->setValue(dof, mgLevel+1, dVertVal);//頂点の値は、そのまま上位Gridへセット
     };
-    if(mgLevel > 0){
-        dAveVal /= 6.0;//平均値
-        if(mgLevel!=nMaxMGLevel)
-          mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
-    }
-    if(mgLevel==0){
-        if(mgLevel!=nMaxMGLevel)
-          mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
-    }
+    // 体積中心値
+    dAveVal /= 6.0;//平均値
+    if(mgLevel!=nMaxMGLevel)
+      mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
+
+////    if(mgLevel > 0){
+////        dAveVal /= 6.0;//平均値
+////        if(mgLevel!=nMaxMGLevel)
+////          mpVolBNode->setValue(dof, mgLevel+1, dAveVal);//上位Gridへディレクレ値をセット
+////    }
+////    if(mgLevel==0){
+////        if(mgLevel!=nMaxMGLevel)
+////          mpVolBNode->setValue(dof, mgLevel+1, mmValue[dof]);//Level==0の場合は、要素境界値をそのまま渡す(BNode自体は上位Grid)
+////    }
 }
 
-void CBoundaryPrism::replaceEdgeBNode(const uint& iedge)
+void CBoundaryPrism::replaceEdgeBNode(const uiint& iedge)
 {
-    uint nNumOfVert=NumberOfVertex::Prism();
+    uiint nNumOfVert=NumberOfVertex::Prism();
 
     CBoundaryNode *pBNode=mvEdgeBNode[iedge];
 

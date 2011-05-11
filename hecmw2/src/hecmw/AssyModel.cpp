@@ -20,26 +20,26 @@ CAssyModel::~CAssyModel(void)
     for_each(mvMesh.begin(), mvMesh.end(), DeleteObject());
     for_each(mvContactMesh.begin(), mvContactMesh.end(), DeleteObject());
 
-    //debug
-    cout << "~CAssyModel" << endl;
+    ////debug
+    //cout << "~CAssyModel" << endl;
 }
 
 // Bucket経由によって,MeshID番号からMeshを取得
 //
-CMesh* CAssyModel::getMesh_ID(const uint& id)
+CMesh* CAssyModel::getMesh_ID(const uiint& id)
 {
-    uint index= moBucketMesh.getIndexMesh(id);
+    uiint index= moBucketMesh.getIndexMesh(id);
 
     return mvMesh[index];
 }
 
 // ContactMeshの追加
 // --
-void CAssyModel::addContactMesh(CContactMesh* pContactMesh, const uint& id)
+void CAssyModel::addContactMesh(CContactMesh* pContactMesh, const uiint& id)
 {
     mvContactMesh.push_back(pContactMesh);
 
-    uint index= mvContactMesh.size()-1;
+    uiint index= mvContactMesh.size()-1;
     mmContactID2Index[id]= index;
 }
 
@@ -50,15 +50,15 @@ void CAssyModel::addContactMesh(CContactMesh* pContactMesh, const uint& id)
 //
 void CAssyModel::GeneLinearAlgebra(const vuint& vDOF, CAssyModel *pCoarseAssyModel)//, vvuint& vPartsID)
 {
-    uint nNumOfEquation = vDOF.size();
+    mNumOfEquation = vDOF.size();
     
-    mvAssyMatrix = new CAssyMatrix* [nNumOfEquation];
-    mvRHSAssyVector = new CAssyVector* [nNumOfEquation];
-    mvSolAssyVector = new CAssyVector* [nNumOfEquation];
+    mvAssyMatrix = new CAssyMatrix* [mNumOfEquation];
+    mvRHSAssyVector = new CAssyVector* [mNumOfEquation];
+    mvSolAssyVector = new CAssyVector* [mNumOfEquation];
     
-    uint i;
-    for(i=0; i < nNumOfEquation; i++){
-        uint nDOF = vDOF[i];
+    uiint i;
+    for(i=0; i < mNumOfEquation; i++){
+        uiint nDOF = vDOF[i];
         mvAssyMatrix[i] = new CAssyMatrix(this, nDOF);
         
         if(mMGLevel > 0){
@@ -71,15 +71,15 @@ void CAssyModel::GeneLinearAlgebra(const vuint& vDOF, CAssyModel *pCoarseAssyMod
         mvSolAssyVector[i] = new CAssyVector(this, nDOF);
     };
 }
-CAssyMatrix* CAssyModel::getAssyMatrix(const uint& index)
+CAssyMatrix* CAssyModel::getAssyMatrix(const uiint& index)
 {
     return mvAssyMatrix[index];
 }
-CAssyVector* CAssyModel::getRHSAssyVector(const uint& index)
+CAssyVector* CAssyModel::getRHSAssyVector(const uiint& index)
 {
     return mvRHSAssyVector[index];
 }
-CAssyVector* CAssyModel::getSolutionAssyVector(const uint& index)
+CAssyVector* CAssyModel::getSolutionAssyVector(const uiint& index)
 {
     return mvSolAssyVector[index];
 }

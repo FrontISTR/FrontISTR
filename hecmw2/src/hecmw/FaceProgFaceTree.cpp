@@ -9,8 +9,8 @@ using namespace pmw;
 
 CFaceProgFace::CFaceProgFace()
 {
-    uint nNumOfFace, nNumOfVert;
-    uint iface, ivert;
+    uiint nNumOfFace, nNumOfVert;
+    uiint iface, ivert;
 
     CFaceTree *pFaceTree = CFaceTree::Instance();
 
@@ -35,11 +35,11 @@ CFaceProgFace::CFaceProgFace()
     for(iface=0; iface < nNumOfFace; iface++){
 
         nNumOfVert = pFaceTree->getPrismFaceNumOfVert(iface);      //面を構成する節点数
-        uint* nLocalNode = pFaceTree->getLocalNodeTetraFace(iface);//面を構成する頂点の”要素構成 頂点番号”
+        uiint* nLocalNode = pFaceTree->getLocalNodeTetraFace(iface);//面を構成する頂点の”要素構成 頂点番号”
 
         for(ivert=0; ivert < nNumOfVert; ivert++){
 
-            uint nVertNum = nLocalNode[ivert];//要素構成の頂点番号
+            uiint nVertNum = nLocalNode[ivert];//要素構成の頂点番号
 
             switch(nVertNum){
                 case(0):
@@ -71,11 +71,11 @@ CFaceProgFace::CFaceProgFace()
     for(iface=0; iface < nNumOfFace; iface++){
 
         nNumOfVert = pFaceTree->getPrismFaceNumOfVert(iface);      //面を構成する節点数
-        uint* nLocalNode = pFaceTree->getLocalNodePrismFace(iface);//面を構成する頂点の”要素構成 頂点番号”
+        uiint* nLocalNode = pFaceTree->getLocalNodePrismFace(iface);//面を構成する頂点の”要素構成 頂点番号”
 
         for(ivert=0; ivert < nNumOfVert; ivert++){
             
-            uint nVertNum = nLocalNode[ivert];
+            uiint nVertNum = nLocalNode[ivert];
 
             // Prismの三角形の面の場合(面番号==0,1)
             // * 頂点 0,1,2 => 面番号 0
@@ -145,23 +145,23 @@ CFaceProgFace::~CFaceProgFace()
 
 // 親の面番号-親の面構成頂点番号 =＞ 子の面番号
 // 
-uint& CFaceProgFace::getProgFace_Hexa(const uint& nFace, const uint& nFaceVert)
+uiint& CFaceProgFace::getProgFace_Hexa(const uiint& nFace, const uiint& nFaceVert)
 {
     return mnHexaProgFace[nFace][nFaceVert];
 }
-uint& CFaceProgFace::getProgFace_Tetra(const uint& nFace, const uint& nFaceVert)
+uiint& CFaceProgFace::getProgFace_Tetra(const uiint& nFace, const uiint& nFaceVert)
 {
     return mnTetraProgFace[nFace][nFaceVert];
 }
-uint& CFaceProgFace::getProgFace_Prism(const uint& nFace, const uint& nFaceVert)
+uiint& CFaceProgFace::getProgFace_Prism(const uiint& nFace, const uiint& nFaceVert)
 {
     return mnPrismProgFace[nFace][nFaceVert];
 }
-uint& CFaceProgFace::getProgFace_Quad(const uint& nFace, const uint& nFaceVert)
+uiint& CFaceProgFace::getProgFace_Quad(const uiint& nFace, const uiint& nFaceVert)
 {
     return mnQuadProgFace[nFace][nFaceVert];
 }
-uint& CFaceProgFace::getProgFace_Triangle(const uint& nFace, const uint& nFaceVert)
+uiint& CFaceProgFace::getProgFace_Triangle(const uiint& nFace, const uiint& nFaceVert)
 {
     return mnTriangleProgFace[nFace][nFaceVert];
 }

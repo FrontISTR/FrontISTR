@@ -9,15 +9,66 @@
 ! HEC_MW3 construct & destruct
 !----
 integer mw_initialize
-integer mw_initialize_1
-integer mw_initialize_2
+integer mw_initialize_fstr
 integer mw_finalize
+!----
+! banner
+!----
+external mw_banner
 
 !----
 ! file i/o API
 !----
 integer mw_file_read
-integer mw_file_write
+integer mw_file_read_bin
+integer mw_file_read_fstr
+integer mw_file_read_bin_fstr
+integer mw_file_debug_write
+!----
+! fstr file_name (hecmw_ctrl)
+!----
+integer mw_get_fstr_filename_length_mesh
+integer mw_get_fstr_filename_length_control
+integer mw_get_fstr_filename_length_result
+integer mw_get_fstr_filename_length_restart
+integer mw_get_fstr_filename_length_part_in
+integer mw_get_fstr_filename_length_part_out
+integer mw_get_fstr_filename_length_vis_mesh
+integer mw_get_fstr_filename_length_vis_in
+integer mw_get_fstr_filename_length_vis_out
+
+external mw_get_fstr_filename_mesh
+external mw_get_fstr_filename_control
+external mw_get_fstr_filename_result
+external mw_get_fstr_filename_restart
+external mw_get_fstr_filename_part_in
+external mw_get_fstr_filename_part_out
+external mw_get_fstr_filename_vis_mesh
+external mw_get_fstr_filename_vis_in
+external mw_get_fstr_filename_vis_out
+
+!----
+! result, format= %d:int32*, %f:double*(fixed), %e:double*(scientific), %s:const char*
+!----
+external mw_rlt_start
+external mw_rlt_start_bin
+integer  mw_rlt_print
+external mw_rlt_end
+!----
+! output *.inp
+!----
+external mw_print_avs
+external mw_rec_avs_label
+external mw_rec_avs_variable
+external mw_print_avs_fem
+
+!----
+! restart, linear_algebra_equation info
+!----
+integer mw_file_write_res
+integer mw_set_restart
+integer mw_file_write_res_bin
+integer mw_set_restart_bin
 
 !----
 ! linear solver API
@@ -64,6 +115,17 @@ external mw_get_rhs_vector
 external mw_get_rhs_assy_vector
 
 !--
+! solution vector value, rhs vector value
+!--
+double precision mw_get_solution_assy_vector_val
+double precision mw_get_rhs_assy_vector_val
+!--
+! solution vector dof, rhs vector dof
+!--
+integer mw_get_solution_assy_vector_dof
+integer mw_get_rhs_assy_vector_dof
+
+!--
 ! AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
 !--
 external mw_mult_vector
@@ -104,15 +166,6 @@ integer mw_get_dof
 integer mw_get_dof_scalar
 integer mw_get_dof_vector
 
-external mw_set_node_value
-external mw_set_node_value_with_dof
-external mw_get_node_value
-external mw_get_node_value_with_dof
-
-external mw_set_sv_node_value
-external mw_set_sv_node_value_with_dof
-external mw_get_sv_node_value
-external mw_get_sv_node_value_with_dof
 
 ! node size, element size
 integer mw_get_num_of_node
@@ -123,6 +176,19 @@ integer mw_get_num_of_element_with_mesh
 ! id
 integer mw_get_element_id_
 integer mw_get_node_id_
+
+!----
+! node connectivity construct
+!----
+external mw_construct_node_connect_fem
+external mw_get_node_connect_fem_size
+external mw_get_node_connect_fem_item
+
+!--
+! node around element_id
+!--
+integer mw_get_num_of_aggregate_element
+integer mw_get_aggregate_element_id
 
 !----
 ! node type
@@ -161,11 +227,11 @@ integer mw_fistr_elemtype_triangle2
 integer mw_fistr_elemtype_line
 integer mw_fistr_elemtype_line2
 !----
-! frontISTR element type => MW3 element type 
+! FrontISTR element type => MW3 element type
 !----
 integer mw_fistr_elemtype_to_mw3_elemtype
 !----
-! MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
+! MW3 element type　=> FrontISTR element type
 !----
 integer mw_mw3_elemtype_to_fistr_elemtype
 
@@ -306,6 +372,15 @@ double precision mw_get_bedge_value
 integer mw_get_num_of_bvolume
 double precision mw_get_bvolume_value
 !--
+! node_id, face, edge, volume
+!--
+integer mw_get_num_of_node_bface
+integer mw_get_node_id_bface
+integer mw_get_num_of_node_bedge
+integer mw_get_node_id_bedge
+integer mw_get_num_of_node_bvolume
+integer mw_get_node_id_bvolume
+!--
 ! boundary_mesh name
 !--
 integer mw_get_bnode_mesh_namelength
@@ -338,6 +413,9 @@ integer  mw_mpi_sum
 integer  mw_mpi_max
 integer  mw_mpi_min
 
+integer mw_get_rank
+integer mw_get_num_of_process
+
 external mw_allreduce_r
 integer mw_barrier
 integer mw_abort
@@ -347,15 +425,15 @@ integer mw_gather_r
 integer mw_gather_i
 integer mw_scatter_r
 integer mw_scatter_i
-integer mw_get_rank
-integer mw_get_num_of_process
+integer mw_bcast_i
+integer mw_bcast_r
+integer mw_bcast_s
 !--
 integer mw_get_num_of_neibpe
 integer mw_get_transrank
-external mw_send_recv
-!--
-external mw_send_recv_r2
 external mw_send_recv_r
+external mw_send_recv_i
+
 
 
 !--

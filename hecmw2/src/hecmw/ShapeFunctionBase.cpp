@@ -23,9 +23,9 @@ CShapeFunctionBase::~CShapeFunctionBase()
 // ----
 // 形状関数 領域確保
 // ----
-void CShapeFunctionBase::ResizeShape(vvdouble& N, const uint& numOfIntg, const uint& numOfShape)
+void CShapeFunctionBase::ResizeShape(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape)
 {
-    uint igauss;
+    uiint igauss;
 
     N.resize(numOfIntg);
     for(igauss=0; igauss< numOfIntg; igauss++){
@@ -35,9 +35,9 @@ void CShapeFunctionBase::ResizeShape(vvdouble& N, const uint& numOfIntg, const u
 // ----
 // 導関数 領域確保
 // ----
-void CShapeFunctionBase::ResizeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const uint& dof)
+void CShapeFunctionBase::ResizeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const uiint& dof)
 {
-    uint igauss,ishape;
+    uiint igauss,ishape;
 
     dNdr.resize(numOfIntg);
     for(igauss=0; igauss< numOfIntg; igauss++){
@@ -50,9 +50,9 @@ void CShapeFunctionBase::ResizeDeriv(vvvdouble& dNdr, const uint& numOfIntg, con
 // ----
 // 2次導関数 領域確保
 // ----
-void CShapeFunctionBase::Resize2ndDeriv(v4double& d2Ndr, const uint& numOfIntg, const uint& numOfShape, const uint& dof)
+void CShapeFunctionBase::Resize2ndDeriv(v4double& d2Ndr, const uiint& numOfIntg, const uiint& numOfShape, const uiint& dof)
 {
-    uint igauss,ishape,ir;
+    uiint igauss,ishape,ir;
 
     d2Ndr.resize(numOfIntg);
     for(igauss=0; igauss < numOfIntg; igauss++){
@@ -70,9 +70,9 @@ void CShapeFunctionBase::Resize2ndDeriv(v4double& d2Ndr, const uint& numOfIntg, 
 // ----
 // detJ 配列の領域確保
 // ----
-void CShapeFunctionBase::Resize_detJ(vdouble& detJ, const uint& numOfIntg)
+void CShapeFunctionBase::Resize_detJ(vdouble& detJ, const uiint& numOfIntg)
 {
-    uint igauss;
+    uiint igauss;
 
     detJ.resize(numOfIntg);
     
@@ -80,10 +80,10 @@ void CShapeFunctionBase::Resize_detJ(vdouble& detJ, const uint& numOfIntg)
 
 //  dNdxの計算 3次元(3*3):dof==3
 //            2次元(2*2):dof==2
-void CShapeFunctionBase::ShapeDerivXYZ(const uint& numOfInteg, const uint& numOfShape, const uint& dof,
+void CShapeFunctionBase::ShapeDerivXYZ(const uiint& numOfInteg, const uiint& numOfShape, const uiint& dof,
                     const vvvdouble& dNdr, CJacobian* pJacobi, vector<CNode*>& vNode,vvvdouble& dNdx, vdouble& detJ)
 {
-    uint igauss,ishape,row,col;
+    uiint igauss,ishape,row,col;
     double val;//行列の加算結果 作業変数
     
     pJacobi->Calculate_J_invJ(dNdr, vNode);// J, invJ, detJ の計算

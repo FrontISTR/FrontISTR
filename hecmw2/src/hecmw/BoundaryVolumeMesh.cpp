@@ -28,15 +28,15 @@ CBoundaryVolumeMesh::~CBoundaryVolumeMesh()
 }
 
 
-void CBoundaryVolumeMesh::resizeVolume(const uint& res_size)
+void CBoundaryVolumeMesh::resizeVolume(const uiint& res_size)
 {
     mvBVolume.resize(res_size);
 }
 
 
-void CBoundaryVolumeMesh::setBVolume(const uint& index, CBoundaryVolume* pBVolume)
+void CBoundaryVolumeMesh::setBVolume(const uiint& index, CBoundaryVolume* pBVolume)
 {
-    uint id;
+    uiint id;
     id= pBVolume->getID();
 
     mmBVolumeID2Index[id]= index;
@@ -49,7 +49,7 @@ void CBoundaryVolumeMesh::addBVolume(CBoundaryVolume* pBVolume)
 {
     mvBVolume.push_back(pBVolume);
 
-    uint id;
+    uiint id;
     id= pBVolume->getID();
 
     mmBVolumeID2Index[id]= mvBVolume.size()-1;
@@ -61,7 +61,7 @@ void CBoundaryVolumeMesh::addBVolume(CBoundaryVolume* pBVolume)
 // ----
 void CBoundaryVolumeMesh::resizeAggVol()
 {
-    uint numOfAgg= mvBNode.size();
+    uiint numOfAgg= mvBNode.size();
     
     mvAggregateVol.resize(numOfAgg);
 }
@@ -70,9 +70,9 @@ void CBoundaryVolumeMesh::resizeAggVol()
 // ----
 void CBoundaryVolumeMesh::setupAggVol()
 {
-    uint numOfBNode= mvBNode.size();
+    uiint numOfBNode= mvBNode.size();
     CBoundaryNode  *pBNode;
-    uint ibnode;
+    uiint ibnode;
     //下位グリッドのAggデータをクリア
     //----
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
@@ -82,17 +82,17 @@ void CBoundaryVolumeMesh::setupAggVol()
         pBNode->clearNeibElemVert();
     };
     
-    uint numOfVol= mvBVolume.size();
+    uiint numOfVol= mvBVolume.size();
     CBoundaryVolume *pBVol;
-    uint ivol;
+    uiint ivol;
     //BNodeの周囲Volを集める
     //----
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol= mvBVolume[ivol];
         
         //uint numOfVert= pBVol->getNumOfBNode();
-        uint numOfVert= pBVol->getNumOfVert();
-        uint ivert;
+        uiint numOfVert= pBVol->getNumOfVert();
+        uiint ivert;
         for(ivert=0; ivert < numOfVert; ivert++){
             pBNode= pBVol->getBNode(ivert);
             pBNode->setAggElemID(pBVol->getID());
@@ -104,8 +104,8 @@ void CBoundaryVolumeMesh::setupAggVol()
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
         pBNode= mvBNode[ibnode];
 
-        uint numOfAgg= pBNode->getNumOfAggElem();
-        uint iAgg;
+        uiint numOfAgg= pBNode->getNumOfAggElem();
+        uiint iAgg;
 
         for(iAgg=0; iAgg < numOfAgg; iAgg++){
             mvAggregateVol[ibnode].push_back(pBNode->getAggElemID(iAgg));
@@ -118,21 +118,21 @@ void CBoundaryVolumeMesh::setupAggVol()
 //
 void CBoundaryVolumeMesh::GeneEdgeBNode()
 {
-    uint numOfVol= mvBVolume.size();
-    uint ivol;
+    uiint numOfVol= mvBVolume.size();
+    uiint ivol;
     CBoundaryVolume *pBVol;
 
     CElement *pElem;      // 各BVolumeが所有するElement
     CNode *pNode0,*pNode1;// 辺の両端のNode(MeshのNode)
     CNode *pEdgeNode;     // 辺中央のNode
 
-    uint countID= mvBNode.size();//EdgeBNodeのID初期値
+    uiint countID= mvBNode.size();//EdgeBNodeのID初期値
 
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol= mvBVolume[ivol];
 
-        uint numOfEdge= pBVol->getNumOfEdge();
-        uint iedge;
+        uiint numOfEdge= pBVol->getNumOfEdge();
+        uiint iedge;
         PairBNode pairBNode;
         for(iedge=0; iedge < numOfEdge; iedge++){
 
@@ -146,12 +146,12 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                 pElem = pBVol->getElement();
                 pNode0 = pairBNode.first->getNode();
                 pNode1 = pairBNode.second->getNode();
-                uint nElemEdge= pElem->getEdgeIndex(pNode0, pNode1);
+                uiint nElemEdge= pElem->getEdgeIndex(pNode0, pNode1);
 
 
-                uint numOfiAgg= pairBNode.first->getNumOfAggElem();
-                uint numOfjAgg= pairBNode.second->getNumOfAggElem();
-                uint iAgg,jAgg, iVolID, jVolID;
+                uiint numOfiAgg= pairBNode.first->getNumOfAggElem();
+                uiint numOfjAgg= pairBNode.second->getNumOfAggElem();
+                uiint iAgg,jAgg, iVolID, jVolID;
                 
                 for(iAgg=0; iAgg < numOfiAgg; iAgg++){
                     iVolID= pairBNode.first->getAggElemID(iAgg);
@@ -180,11 +180,11 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                                 
 
                                 // 隣接するVolumeを取得
-                                uint neibIndex= mmBVolumeID2Index[iVolID];
+                                uiint neibIndex= mmBVolumeID2Index[iVolID];
                                 CBoundaryVolume *pNeibBVol= mvBVolume[neibIndex];
                                 
                                 //cout << "BoundaryVolumeMesh::GeneEdgeBNode, ---- C 0" << endl;
-                                uint jedge= pNeibBVol->getEdgeID(pairBNode);
+                                uiint jedge= pNeibBVol->getEdgeID(pairBNode);
                                 //cout << "BoundaryVolumeMesh::GeneEdgeBNode, ---- C 1" << endl;
 
                                 // pNeibBVol(隣接Vol)の"辺"にEdgeBNodeをセット
@@ -206,7 +206,7 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                                 //2次要素の場合 => 自身のmvBNodeに追加
                                 //----
                                 if(pBVol->getOrder()==ElementOrder::Second){
-                                    uint renum = mvBNode.size();
+                                    uiint renum = mvBNode.size();
                                     mvBNode.resize(renum+1);
                                     mvBNode[renum]=pEdgeBNode;
 
@@ -269,7 +269,7 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
                     //2次要素の場合 => 自身のmvBNodeに追加
                     //----
                     if(pBVol->getOrder()==ElementOrder::Second){
-                        uint renum = mvBNode.size();
+                        uiint renum = mvBNode.size();
                         mvBNode.resize(renum+1);
                         mvBNode[renum]=pEdgeBNode;
 
@@ -302,7 +302,7 @@ void CBoundaryVolumeMesh::GeneEdgeBNode()
 //
 void CBoundaryVolumeMesh::GeneFaceBNode()
 {
-    uint numOfVol= mvBVolume.size();
+    uiint numOfVol= mvBVolume.size();
     CBoundaryVolume *pBVol;
     CBoundaryVolume *pNeibBVol;
 
@@ -310,16 +310,16 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
     vector<CNode*> vNode; vNode.resize(3);//面構成Node(MeshのNode)
     CNode *pFaceNode;//面中央のNode
 
-    uint countID= mvBNode.size() + mvBEdgeBNode.size();//FaceBNodeのID初期値
-    uint ivol;
+    uiint countID= mvBNode.size() + mvBEdgeBNode.size();//FaceBNodeのID初期値
+    uiint ivol;
     
     // 体積
     for(ivol=0; ivol < numOfVol; ivol++){
         
         pBVol= mvBVolume[ivol];
         
-        uint numOfFace= pBVol->getNumOfFace();
-        uint iface;
+        uiint numOfFace= pBVol->getNumOfFace();
+        uiint iface;
         vector<CBoundaryNode*> vBNode;
 
         // 面構成BNode
@@ -329,12 +329,12 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
 
                 vBNode= pBVol->getFaceCnvNodes(iface);
 
-                uint iVolID, jVolID, kVolID;
+                uiint iVolID, jVolID, kVolID;
 
-                uint iAgg, jAgg, kAgg;
-                uint numOfiAgg= vBNode[0]->getNumOfAggElem();
-                uint numOfjAgg= vBNode[1]->getNumOfAggElem();
-                uint numOfkAgg= vBNode[2]->getNumOfAggElem();
+                uiint iAgg, jAgg, kAgg;
+                uiint numOfiAgg= vBNode[0]->getNumOfAggElem();
+                uiint numOfjAgg= vBNode[1]->getNumOfAggElem();
+                uiint numOfkAgg= vBNode[2]->getNumOfAggElem();
 
                 bool bfind(false);//隣接Volの存在
 
@@ -370,9 +370,9 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
 
 
                                 // 隣接Vol
-                                uint neibIndex= mmBVolumeID2Index[iVolID];
+                                uiint neibIndex= mmBVolumeID2Index[iVolID];
                                 pNeibBVol= mvBVolume[neibIndex];
-                                uint neibFace= pNeibBVol->getFaceID(vBNode);
+                                uiint neibFace= pNeibBVol->getFaceID(vBNode);
 
                                 pNeibBVol->setFaceNeibVol(neibFace, pBVol->getID());
                                 pNeibBVol->markingFace(neibFace);
@@ -383,11 +383,11 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
                                 // Elementから面Nodeを取得して、FaceBNodeにセット
                                 // ----
                                 pElem = pBVol->getElement();
-                                uint ivert;
+                                uiint ivert;
                                 for(ivert=0; ivert < 3; ivert++){
                                     vNode[ivert] = vBNode[ivert]->getNode();
                                 };
-                                uint nFaceIndex = pElem->getFaceIndex(vNode[0],vNode[1],vNode[2]);
+                                uiint nFaceIndex = pElem->getFaceIndex(vNode[0],vNode[1],vNode[2]);
                                 pFaceNode = pElem->getFaceNode(nFaceIndex);
 
                                 pFaceBNode->setNode(pFaceNode);
@@ -420,11 +420,11 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
                     // Elementから面Nodeを取得して、FaceBNodeにセット
                     // ----
                     pElem = pBVol->getElement();
-                    uint ivert;
+                    uiint ivert;
                     for(ivert=0; ivert < 3; ivert++){
                         vNode[ivert] = vBNode[ivert]->getNode();
                     };
-                    uint nFaceIndex = pElem->getFaceIndex(vNode[0],vNode[1],vNode[2]);
+                    uiint nFaceIndex = pElem->getFaceIndex(vNode[0],vNode[1],vNode[2]);
                     pFaceNode = pElem->getFaceNode(nFaceIndex);
 
                     pFaceBNode->setNode(pFaceNode);
@@ -440,13 +440,13 @@ void CBoundaryVolumeMesh::GeneFaceBNode()
 //
 void CBoundaryVolumeMesh::GeneVolBNode()
 {
-    uint numOfVol= mvBVolume.size();
+    uiint numOfVol= mvBVolume.size();
     CBoundaryVolume *pBVol;
     CElement *pElem;//各BVoluemが所有するElement
     CNode *pNode;//Element中央のNode
 
-    uint countID= mvBNode.size() + mvBEdgeBNode.size() + mvBFaceBNode.size();//VolumeBNodeのID初期値
-    uint ivol;
+    uiint countID= mvBNode.size() + mvBEdgeBNode.size() + mvBFaceBNode.size();//VolumeBNodeのID初期値
+    uiint ivol;
 
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol= mvBVolume[ivol];
@@ -477,12 +477,12 @@ void CBoundaryVolumeMesh::GeneVolBNode()
 void CBoundaryVolumeMesh::refine(CBoundaryVolumeMesh* pProgBVolMesh)
 {
     CBoundaryVolume *pBVol;
-    uint ivol, numOfVol= mvBVolume.size();
+    uiint ivol, numOfVol= mvBVolume.size();
     vector<CBoundaryVolume*> vProgVol;// pBVolから生成される子BVolume
     //----
     //BVolumeの分割 => progBVolMeshにセット
     //----
-    uint countID(0);//新ID
+    uiint countID(0);//新ID
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol= mvBVolume[ivol];
 
@@ -491,7 +491,7 @@ void CBoundaryVolumeMesh::refine(CBoundaryVolumeMesh* pProgBVolMesh)
         vProgVol.clear();
         vProgVol= pBVol->getProgParts();
 
-        uint i;
+        uiint i;
         for(i=0; i < vProgVol.size(); i++){
             pProgBVolMesh->addBVolume(vProgVol[i]);
         };
@@ -500,18 +500,18 @@ void CBoundaryVolumeMesh::refine(CBoundaryVolumeMesh* pProgBVolMesh)
     //----
     //BNode(頂点,辺,面) => progBVolMeshにセット
     //----
-    uint numOfBNode    = mvBNode.size();
+    uiint numOfBNode    = mvBNode.size();
     //uint numOfEdgeBNode= mvBEdgeBNode.size();
-    uint numOfFaceBNode= mvBFaceBNode.size();
-    uint numOfVolBNode = mvBVolBNode.size();
-    uint numOfProgBNode= numOfBNode + mnEdgeNodeCount + numOfFaceBNode + numOfVolBNode;
+    uiint numOfFaceBNode= mvBFaceBNode.size();
+    uiint numOfVolBNode = mvBVolBNode.size();
+    uiint numOfProgBNode= numOfBNode + mnEdgeNodeCount + numOfFaceBNode + numOfVolBNode;
 
     pProgBVolMesh->resizeBNode(numOfProgBNode);
     
-    uint ibnode;
+    uiint ibnode;
     // 頂点BNode
-    uint init = 0;
-    uint end  = numOfBNode;
+    uiint init = 0;
+    uiint end  = numOfBNode;
     
     for(ibnode=init; ibnode < end; ibnode++){
         pProgBVolMesh->setBNode(ibnode, mvBNode[ibnode]);
@@ -561,15 +561,15 @@ void CBoundaryVolumeMesh::distNeumannValue()
     CShapeTetra *pShTetra = CShapeTetra::Instance();
     CShapePrism *pShPrism = CShapePrism::Instance();
 
-    uint inode, numOfBNode=mvBNode.size();
+    uiint inode, numOfBNode=mvBNode.size();
     CBoundaryNode *pBNode;
-    uint dof, idof;
+    uiint dof, idof;
     //節点力-ゼロクリア
     for(inode=0; inode < numOfBNode; inode++){
         pBNode= mvBNode[inode];
 
         //uint numOfDOF= pBNode->getNumOfDOF();
-        uint numOfDOF = getNumOfDOF();
+        uiint numOfDOF = getNumOfDOF();
 
         for(idof=0; idof < numOfDOF; idof++){
             //dof= pBNode->getDOF(idof);
@@ -580,8 +580,8 @@ void CBoundaryVolumeMesh::distNeumannValue()
 
     //形状関数の積分値による配分
     double integVal, nodalVal, entVal;
-    uint ivol, numOfVol=mvBVolume.size();
-    uint numOfDOF;
+    uiint ivol, numOfVol=mvBVolume.size();
+    uiint numOfDOF;
     for(ivol=0; ivol < numOfVol; ivol++){
         CBoundaryVolume *pBVol = mvBVolume[ivol];
 
@@ -600,7 +600,7 @@ void CBoundaryVolumeMesh::distNeumannValue()
             ////debug
             //cout << "CBoundaryVolumeMesh::distNeumannValue, mgLevel=" << mMGLevel << ", dof=" << dof << ", entVal=" << entVal << endl;
 
-            uint ivert;
+            uiint ivert;
             switch(pBVol->getElemType()){
                 case(ElementType::Hexa):
                     for(ivert=0; ivert < 8; ivert++){
@@ -667,73 +667,74 @@ void CBoundaryVolumeMesh::distNeumannValue()
     };//ivol ループ
 }
 
-// Coarse Grid の最初の処理
+//// Coarse Grid の最初の処理
+////
+//// Level==0:BNode周囲の要素集合平均値
+////
+//void CBoundaryVolumeMesh::distDirichletValue_at_CGrid()
+//{
+//    // 要素集合の平均をとるのはLevel=0の場合だけである
+//    // --
+//    if(mMGLevel!=0){
+//        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+//        pLogger->Info(Utility::LoggerMode::Error, "MG-Level Error,  CBoundaryVolumeMesh::distDirichletValue");
+//    }
 //
-// Level==0:BNode周囲の要素集合平均値
+//    //Solidの節点集合ごとに,DOFごとに,平均値をとる(Level==0)
+//    //
+//    uiint inode, numOfBNode=mvBNode.size();
+//    CBoundaryNode *pBNode;
+//    vuint vAggID; uiint numOfAggVol;
 //
-void CBoundaryVolumeMesh::distDirichletValue_at_CGrid()
-{
-    // 要素集合の平均をとるのはLevel=0の場合だけである
-    // --
-    if(mMGLevel!=0){
-        Utility::CLogger *pLogger= Utility::CLogger::Instance();
-        pLogger->Info(Utility::LoggerMode::Error, "MG-Level Error,  CBoundaryVolumeMesh::distDirichletValue");
-    }
-
-    //Solidの節点集合ごとに,DOFごとに,平均値をとる(Level==0)
-    //
-    uint inode, numOfBNode=mvBNode.size();
-    CBoundaryNode *pBNode;
-    vuint vAggID; uint numOfAggVol;
-
-    for(inode=0; inode < numOfBNode; inode++){
-        pBNode = mvBNode[inode];
-        vAggID = mvAggregateVol[inode];
-
-        numOfAggVol = vAggID.size();
-        uint iVol, nVolID, nVolIndex;
-        CBoundaryVolume *pBVol;
-        double dCubicVol, dVal;//節点周囲のVolの体積、境界値
-        double dDirichletVal;  //自由度別の節点境界値
-        uint idof, dof, numOfDOF=getNumOfDOF();
-
-        // 自由度別にディレクレ境界値を計算
-        //
-        for(idof=0; idof < numOfDOF; idof++){
-            dCubicVol=0.0; dVal=0.0;
-
-            //dof=pBNode->getDOF(idof);//自由度番号 <<<< VolumeMeshのBNodeの自由度番号管理とVolの自由度管理一致させる
-            dof=getDOF(idof);
-
-            for(iVol=0; iVol < numOfAggVol; iVol++){
-                nVolID = vAggID[iVol];
-                nVolIndex = mmBVolumeID2Index[nVolID];
-
-                pBVol = mvBVolume[nVolIndex];
-
-                dVal  += pBVol->getCubicVolume() * pBVol->getBndValue(dof);
-                dCubicVol += pBVol->getCubicVolume();
-            };
-            dDirichletVal = dVal/dCubicVol;// 節点値 = Σ(体積*値/Σ(体積)
-
-            pBNode->setValue(dof, mMGLevel, dDirichletVal);//境界値を代入
-        };
-    };
-}
-
-// Fine Grid
-// Level>=1:BNode間の平均
+//    for(inode=0; inode < numOfBNode; inode++){
+//        pBNode = mvBNode[inode];
+//        vAggID = mvAggregateVol[inode];
 //
-void CBoundaryVolumeMesh::distDirichletValue_at_FGrid()
+//        numOfAggVol = vAggID.size();
+//        uiint iVol, nVolID, nVolIndex;
+//        CBoundaryVolume *pBVol;
+//        double dCubicVol, dVal;//節点周囲のVolの体積、境界値
+//        double dDirichletVal;  //自由度別の節点境界値
+//        uiint idof, dof, numOfDOF=getNumOfDOF();
+//
+//        // 自由度別にディレクレ境界値を計算
+//        //
+//        for(idof=0; idof < numOfDOF; idof++){
+//            dCubicVol=0.0; dVal=0.0;
+//
+//            //dof=pBNode->getDOF(idof);//自由度番号 <<<< VolumeMeshのBNodeの自由度番号管理とVolの自由度管理一致させる
+//            dof=getDOF(idof);
+//
+//            for(iVol=0; iVol < numOfAggVol; iVol++){
+//                nVolID = vAggID[iVol];
+//                nVolIndex = mmBVolumeID2Index[nVolID];
+//
+//                pBVol = mvBVolume[nVolIndex];
+//
+//                dVal  += pBVol->getCubicVolume() * pBVol->getBndValue(dof);
+//                dCubicVol += pBVol->getCubicVolume();
+//            };
+//            dDirichletVal = dVal/dCubicVol;// 節点値 = Σ(体積*値/Σ(体積)
+//
+//            pBNode->setValue(dof, mMGLevel, dDirichletVal);//境界値を代入
+//        };
+//    };
+//}
+
+//// Fine Grid
+//// Level>=1:BNode間の平均
+////
+//void CBoundaryVolumeMesh::distDirichletValue_at_FGrid()
+void CBoundaryVolumeMesh::distDirichletValue()
 {
     //上位のグリッドの値をきめる
     //
-    uint ivol, numOfVol=mvBVolume.size();
+    uiint ivol, numOfVol=mvBVolume.size();
     CBoundaryVolume *pBVol;
     for(ivol=0; ivol < numOfVol; ivol++){
         pBVol = mvBVolume[ivol];
 
-        uint idof, dof;
+        uiint idof, dof;
         for(idof=0; idof < getNumOfDOF(); idof++){
             dof = getDOF(idof);
             pBVol->distDirichletVal(dof, mMGLevel, mMaxMGLevel);
@@ -769,7 +770,7 @@ void CBoundaryVolumeMesh::distDirichletValue_at_FGrid()
 //
 void CBoundaryVolumeMesh::deleteProgData()
 {
-    uint ivol, nNumOfBVol = mvBVolume.size();
+    uiint ivol, nNumOfBVol = mvBVolume.size();
 
     for(ivol=0; ivol < nNumOfBVol; ivol++){
         mvBVolume[ivol]->deleteProgData();

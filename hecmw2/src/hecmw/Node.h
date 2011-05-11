@@ -42,7 +42,7 @@ protected:
 
 public:
     // Nodeタイプ
-    virtual uint& getType()=0;
+    virtual uiint& getType()=0;
 
     // 通信相手が小RankのCommNode に所属しているか.否か.
     void markingSCommNode();
@@ -51,27 +51,31 @@ public:
 
     // parameter accessor
     //
-    virtual void resizeScalar(const uint& res_size)=0;
-    virtual void resizeVector(const uint& res_size)=0;
-
-    virtual void setScalar(const double& val, const uint& index)=0;
-    virtual void setVector(const double& val, const uint& index)=0;
-
-    virtual double& getScalar(const uint& i)=0;
-    virtual double& getVector(const uint& i)=0;
-
-    
-    virtual uint numOfScalarParam()=0;
-    virtual uint numOfVectorParam()=0;
-    virtual uint numOfTotalParam()=0;
+    virtual void setScalarDOF(const uiint& nNDOF)=0;
+    virtual void setVectorDOF(const uiint& nNDOF)=0;
+    virtual uiint& getScalarDOF()=0;
+    virtual uiint& getVectorDOF()=0;
+    virtual uiint getTotalDOF()=0;
+////    virtual void resizeScalar(const uiint& res_size)=0;
+////    virtual void resizeVector(const uiint& res_size)=0;
+////
+////    virtual void setScalar(const double& val, const uiint& index)=0;
+////    virtual void setVector(const double& val, const uiint& index)=0;
+////
+////    virtual double& getScalar(const uiint& i)=0;
+////    virtual double& getVector(const uiint& i)=0;
+////
+////    virtual uiint numOfScalarParam()=0;
+////    virtual uiint numOfVectorParam()=0;
+////    virtual uiint numOfTotalParam()=0;
 
     
     // for prolongate
     vector<CNode*>& getParentNode(){ return mvParentNode;}
-    CNode* getParentNode(const uint& index){ return mvParentNode[index];}
-    void reserveParentNode(const uint& res_size){ mvParentNode.reserve(res_size);}
+    CNode* getParentNode(const uiint& index){ return mvParentNode[index];}
+    void reserveParentNode(const uiint& res_size){ mvParentNode.reserve(res_size);}
     void addParentNode(CNode* pNode){ mvParentNode.push_back(pNode);}
-    uint getNumOfParentNode(){ return mvParentNode.size();}
+    uiint getNumOfParentNode(){ return mvParentNode.size();}
 };
 #endif
 }

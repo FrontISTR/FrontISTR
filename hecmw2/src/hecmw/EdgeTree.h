@@ -20,28 +20,28 @@ namespace pmw{
 class CEdgeTree{
 private:
     CEdgeTree();
-    uint mEdgeNum;  //Edge番号
+    uiint mEdgeNum;  //Edge番号
     //vuint mvNodeNum;//Edge番号の端点の局所ノード番号
 
     Utility::CLogger *mpLogger;
 
     // Edgeを構成する局所ノード番号
-    uint mHexaEdgeIndex[12][2];
-    uint mTetraEdgeIndex[6][2];
-    uint mPrismEdgeIndex[9][2];
-    uint mPyramidEdgeIndex[8][2];
-    uint mQuadEdgeIndex[4][2];
-    uint mTriangleEdgeIndex[3][2];
-    uint mBeamEdgeIndex[1][2];
+    uiint mHexaEdgeIndex[12][2];
+    uiint mTetraEdgeIndex[6][2];
+    uiint mPrismEdgeIndex[9][2];
+    uiint mPyramidEdgeIndex[8][2];
+    uiint mQuadEdgeIndex[4][2];
+    uiint mTriangleEdgeIndex[3][2];
+    uiint mBeamEdgeIndex[1][2];
 
     //Nodeが接続するEdge番号
-    uint mHexaConnEdge[8][3];
-    uint mTetraConnEdge[4][3];
-    uint mPrismConnEdge[6][3];
-    uint mPyramidConnEdge[5][4];
-    uint mQuadConnEdge[4][2];
-    uint mTriangleConnEdge[3][2];
-    uint mBeamConnEdge[2][1];
+    uiint mHexaConnEdge[8][3];
+    uiint mTetraConnEdge[4][3];
+    uiint mPrismConnEdge[6][3];
+    uiint mPyramidConnEdge[5][4];
+    uiint mQuadConnEdge[4][2];
+    uiint mTriangleConnEdge[3][2];
+    uiint mBeamConnEdge[2][1];
 
 public:
     static CEdgeTree* Instance(){
@@ -52,36 +52,36 @@ public:
 
 public:
     // 辺の端点の局所ノード番号から,辺(Edge)番号を提供
-    uint& getHexaEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getTetraEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getPrismEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getPyramidEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getQuadEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getTriangleEdgeIndex(const uint& localNum0, const uint& localNum1);
-    uint& getBeamEdgeIndex(const uint& localNum0, const uint& localNum1);
+    uiint& getHexaEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getTetraEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getPrismEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getPyramidEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getQuadEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getTriangleEdgeIndex(const uiint& localNum0, const uiint& localNum1);
+    uiint& getBeamEdgeIndex(const uiint& localNum0, const uiint& localNum1);
 
-    uint& getDisagTypeEdgeIndex(const uint& localNum0, const uint& localNum1);
+    uiint& getDisagTypeEdgeIndex(const uiint& localNum0, const uiint& localNum1);
     
     // 辺(Edge)番号から,端点の局所ノード番号を提供
-    uint* getHexaLocalNodeNum(const uint& edgeNum){ return mHexaEdgeIndex[edgeNum];}
-    uint* getTetraLocalNodeNum(const uint& edgeNum){ return mTetraEdgeIndex[edgeNum];}
-    uint* getPrismLocalNodeNum(const uint& edgeNum){ return mPrismEdgeIndex[edgeNum];}
-    uint* getPyramidLocalNodeNum(const uint& edgeNum){ return mPyramidEdgeIndex[edgeNum];}
-    uint* getQuadLocalNodeNum(const uint& edgeNum){ return mQuadEdgeIndex[edgeNum];}
-    uint* getTriangleLocalNodeNum(const uint& edgeNum){ return mTriangleEdgeIndex[edgeNum];}
-    uint* getBeamLocalNodeNum(const uint& edgeNum){ return mBeamEdgeIndex[edgeNum];}
+    uiint* getHexaLocalNodeNum(const uiint& edgeNum){ return mHexaEdgeIndex[edgeNum];}
+    uiint* getTetraLocalNodeNum(const uiint& edgeNum){ return mTetraEdgeIndex[edgeNum];}
+    uiint* getPrismLocalNodeNum(const uiint& edgeNum){ return mPrismEdgeIndex[edgeNum];}
+    uiint* getPyramidLocalNodeNum(const uiint& edgeNum){ return mPyramidEdgeIndex[edgeNum];}
+    uiint* getQuadLocalNodeNum(const uiint& edgeNum){ return mQuadEdgeIndex[edgeNum];}
+    uiint* getTriangleLocalNodeNum(const uiint& edgeNum){ return mTriangleEdgeIndex[edgeNum];}
+    uiint* getBeamLocalNodeNum(const uiint& edgeNum){ return mBeamEdgeIndex[edgeNum];}
     // 統合版
-    uint* getLocalNodeNum(const uint& elemType, const uint& iedge);
+    uiint* getLocalNodeNum(const uiint& elemType, const uiint& iedge);
 
     
     // 一点に接続する,辺の番号を提供
-    uint* getHexaConnEdge(const uint& ivert){ return mHexaConnEdge[ivert];}
-    uint* getTetraConnEdge(const uint& ivert){ return mTetraConnEdge[ivert];}
-    uint* getPrismConnEdge(const uint& ivert){ return mPrismConnEdge[ivert];}
-    uint* getPyramidConnEdge(const uint& ivert){ return mPyramidConnEdge[ivert];}
-    uint* getQuadConnEdge(const uint& ivert){ return mQuadConnEdge[ivert];}
-    uint* getTriangleConnEdge(const uint& ivert){ return mTriangleConnEdge[ivert];}
-    uint* getBeamConnEdge(const uint& ivert){ return mBeamConnEdge[ivert];}
+    uiint* getHexaConnEdge(const uiint& ivert){ return mHexaConnEdge[ivert];}
+    uiint* getTetraConnEdge(const uiint& ivert){ return mTetraConnEdge[ivert];}
+    uiint* getPrismConnEdge(const uiint& ivert){ return mPrismConnEdge[ivert];}
+    uiint* getPyramidConnEdge(const uiint& ivert){ return mPyramidConnEdge[ivert];}
+    uiint* getQuadConnEdge(const uiint& ivert){ return mQuadConnEdge[ivert];}
+    uiint* getTriangleConnEdge(const uiint& ivert){ return mTriangleConnEdge[ivert];}
+    uiint* getBeamConnEdge(const uiint& ivert){ return mBeamConnEdge[ivert];}
 };
 }
 

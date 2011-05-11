@@ -30,7 +30,7 @@ CCommPrism::CCommPrism()
 
     mvbNodeIXCheck = new bool[6];
     mvbDNodeMarking = new bool[6];
-    uint i;
+    uiint i;
     for(i=0; i< 6; i++){
         mvbNodeIXCheck[i]=false;
         mvbDNodeMarking[i]=false;

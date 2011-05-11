@@ -16,10 +16,10 @@ public:
     virtual ~CShellBase(void);
 
 protected:
-    static uint mnBaseType;
+    static uiint mnBaseType;
 
 public:
-    virtual const uint& getEntityType(){ return mnBaseType;}
+    virtual const uiint& getEntityType(){ return mnBaseType;}
 };
 }
 #endif

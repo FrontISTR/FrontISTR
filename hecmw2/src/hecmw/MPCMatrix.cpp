@@ -33,21 +33,21 @@ typedef CVEqTrm::const_iterator CVEqTrmConstIter;
 
 void CMPCMatrix::multVector(CAssyVector *pV, CAssyVector *pP) const
 {
-	pP->subst(pV);
+    pP->subst(pV);
 
-	for (CVEqnConstIter i_eqn = mvEquation.begin(); i_eqn != mvEquation.end(); i_eqn++) {
-		const CVEqTrm &vTerm = (*i_eqn)->getTerm();
+    for (CVEqnConstIter i_eqn = mvEquation.begin(); i_eqn != mvEquation.end(); i_eqn++) {
+        const CVEqTrm &vTerm = (*i_eqn)->getTerm();
 
-		CVEqTrmConstIter j_term = vTerm.begin();
-		double &slave_term = (*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof());
-		j_term++;
+        CVEqTrmConstIter j_term = vTerm.begin();
+        double &slave_term = (*pP)(j_term->meshID(), j_term->nodeID(), j_term->dof());
+        j_term++;
 
-		double sum = 0.0;
-		for (; j_term != vTerm.end(); j_term++) {
-			sum += j_term->coef() * (*pV)(j_term->meshID(), j_term->nodeID(), j_term->dof());
-		}
-		slave_term = sum;
-	}
+        double sum= 0.0;
+        for (; j_term != vTerm.end(); j_term++) {
+                sum += j_term->coef() * (*pV)(j_term->meshID(), j_term->nodeID(), j_term->dof());
+        }
+        slave_term = sum;
+    }
 }
 
 void CMPCMatrix::transMultVector(CAssyVector *pV, CAssyVector *pP) const
@@ -74,10 +74,10 @@ void CMPCMatrix::transMultVector(CAssyVector *pV, CAssyVector *pP) const
 //
 void CMPCMatrix::dump()
 {
-    uint nNumOfEqu = mvEquation.size();
-    uint i,ii;
+    uiint nNumOfEqu = mvEquation.size();
+    uiint i,ii;
     for(i=0; i < nNumOfEqu; i++){
-        uint nNumOfTerm;
+        uiint nNumOfTerm;
         nNumOfTerm = mvEquation[i]->numTerm();
         
         cout << " " ;

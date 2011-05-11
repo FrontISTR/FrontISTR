@@ -35,13 +35,13 @@ private:
 
 public:
     // 引数入力された局所番号の,接続先の局所番号列
-    vuint& getHexaConnectNode(const uint& localID){ return mvHexaConnectNode[localID];}
-    vuint& getTetraConnectNode(const uint& localID){ return mvTetraConnectNode[localID];}
-    vuint& getPrismConnectNode(const uint& localID){ return mvPrismConnectNode[localID];}
-    vuint& getPyramidConnectNode(const uint& localID){ return mvPyramidConnectNode[localID];}
-    vuint& getQuadConnectNode(const uint& localID){ return mvQuadConnectNode[localID];}
-    vuint& getTriangleConnectNode(const uint& localID){ return mvTriangleConnectNode[localID];}
-    vuint& getBeamConnectNode(const uint& localID){ return mvBeamConnectNode[localID];}
+    vuint& getHexaConnectNode(const uiint& localID){ return mvHexaConnectNode[localID];}
+    vuint& getTetraConnectNode(const uiint& localID){ return mvTetraConnectNode[localID];}
+    vuint& getPrismConnectNode(const uiint& localID){ return mvPrismConnectNode[localID];}
+    vuint& getPyramidConnectNode(const uiint& localID){ return mvPyramidConnectNode[localID];}
+    vuint& getQuadConnectNode(const uiint& localID){ return mvQuadConnectNode[localID];}
+    vuint& getTriangleConnectNode(const uiint& localID){ return mvTriangleConnectNode[localID];}
+    vuint& getBeamConnectNode(const uiint& localID){ return mvBeamConnectNode[localID];}
 };
 }
 #endif	/* _NODECONNECTNODETREE_H */

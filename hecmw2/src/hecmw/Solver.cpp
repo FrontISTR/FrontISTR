@@ -12,10 +12,10 @@
 namespace pmw
 {
 
-CSolver::CSolver(int iter_max = 100,
+CSolver::CSolver(iint iter_max = 100,
 		double tolerance = 1.0e-8,
-		uint method = 1,
-		uint precondition = 1,
+		iint method = 1,
+		iint precondition = 1,
 		bool flag_iter_log = false,
 		bool flag_time_log = false)
 	: mIterMax(iter_max),
@@ -47,12 +47,12 @@ void CSolver::setFlagNewCoef(bool flag_new)
 
 // IterMax
 
-void CSolver::setIterMax(int iter_new)
+void CSolver::setIterMax(iint iter_new)
 {
 	mIterMax = iter_new;
 }
 
-int CSolver::getIterMax()
+iint CSolver::getIterMax()
 {
 	return mIterMax;
 }
@@ -71,24 +71,24 @@ double CSolver::getTolerance()
 
 // Method
 
-void CSolver::setMethod(uint method)
+void CSolver::setMethod(uiint method)
 {
 	mMethod = method;
 }
 
-uint CSolver::getMethod()
+uiint CSolver::getMethod()
 {
 	return mMethod;
 }
 
 // Precondition
 
-void CSolver::setPrecondition(uint precondition)
+void CSolver::setPrecondition(iint precondition)
 {
 	mPrecondition = precondition;
 }
 
-uint CSolver::getPrecondition()
+iint CSolver::getPrecondition()
 {
 	return mPrecondition;
 }
@@ -119,7 +119,7 @@ bool CSolver::getFlagTimeLog()
 
 // solve
 
-int CSolver::solve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX)
+uiint CSolver::solve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX)
 {
 	// double time_start;
 	// double time_comm_setup;

@@ -108,7 +108,7 @@ CShapePrism::CShapePrism()
     mvIntegNum[2]= 9;
     mvIntegNum[3]= 18;
 
-    uint numOfIntg,numOfShape,dof;
+    uiint numOfIntg,numOfShape,dof;
     //vector 領域確保
     //--
     //積分点2 節点6
@@ -196,9 +196,9 @@ CShapePrism::~CShapePrism()
 
 // 形状関数のセットアップ
 //
-void CShapePrism::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3])
+void CShapePrism::setupShapeFunction(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3])
 {
-    uint igauss;
+    uiint igauss;
     double L1,L2,ze;
 
     switch(numOfShape){
@@ -225,9 +225,9 @@ void CShapePrism::setupShapeFunction(vvdouble& N, const uint& numOfIntg, const u
 
 // 導関数のセットアップ
 //
-void CShapePrism::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const uint& numOfShape, const double Gzi[][3])
+void CShapePrism::setupShapeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][3])
 {
-    uint igauss;
+    uiint igauss;
     double L1,L2,ze;
 
     switch(numOfShape){
@@ -255,7 +255,7 @@ void CShapePrism::setupShapeDeriv(vvvdouble& dNdr, const uint& numOfIntg, const 
 
 //形状関数
 //--
-void CShapePrism::ShapeFunction6(vvdouble& N, const uint& igauss,
+void CShapePrism::ShapeFunction6(vvdouble& N, const uiint& igauss,
                  const double& L1, const double& L2, const double& gzi)
 {
     double a= 1.0 - L1 - L2;
@@ -266,7 +266,7 @@ void CShapePrism::ShapeFunction6(vvdouble& N, const uint& igauss,
     N[igauss][4]= 0.50*L1*(1.0 + gzi);
     N[igauss][5]= 0.50*L2*(1.0 + gzi);
 }
-void CShapePrism::ShapeFunction15(vvdouble& N, const uint& igauss,
+void CShapePrism::ShapeFunction15(vvdouble& N, const uiint& igauss,
                  const double& L1, const double& L2, const double& gzi)
 {
     double a= 1.0 - L1 - L2;
@@ -291,7 +291,7 @@ void CShapePrism::ShapeFunction15(vvdouble& N, const uint& igauss,
 
 //導関数
 //--
-void CShapePrism::ShapeDeriv6(vvvdouble& dNdr, const uint& igauss,
+void CShapePrism::ShapeDeriv6(vvvdouble& dNdr, const uiint& igauss,
                  const double& L1, const double& L2, const double& gzi)
 {
     double a= 1.0 - L1 - L2;
@@ -323,7 +323,7 @@ void CShapePrism::ShapeDeriv6(vvvdouble& dNdr, const uint& igauss,
     dNdr[igauss][4][2]=  0.50*L1;
     dNdr[igauss][5][2]=  0.50*L2;
 }
-void CShapePrism::ShapeDeriv15(vvvdouble& dNdr, const uint& igauss,
+void CShapePrism::ShapeDeriv15(vvvdouble& dNdr, const uiint& igauss,
                  const double& L1, const double& L2, const double& gzi)
 {
     double a= 1.0- L1 - L2;
@@ -386,7 +386,7 @@ void CShapePrism::ShapeDeriv15(vvvdouble& dNdr, const uint& igauss,
 
 // 返り値:重みの配列, 引数:積分点数
 // ----
-double* CShapePrism::Weight(const uint& integNum)
+double* CShapePrism::Weight(const uiint& integNum)
 {
     switch(integNum){
         case(2):
@@ -408,33 +408,33 @@ double* CShapePrism::Weight(const uint& integNum)
 }
 // 返り値:重み, 引数:重みの配列Index
 // ----
-double& CShapePrism::Weight_pt2(const uint& igauss){ return mW2[igauss];}
-double& CShapePrism::Weight_pt6(const uint& igauss){ return mW6[igauss];}
-double& CShapePrism::Weight_pt9(const uint& igauss){  return mW9[igauss];}
-double& CShapePrism::Weight_pt18(const uint& igauss){ return mW18[igauss];}
+double& CShapePrism::Weight_pt2(const uiint& igauss){ return mW2[igauss];}
+double& CShapePrism::Weight_pt6(const uiint& igauss){ return mW6[igauss];}
+double& CShapePrism::Weight_pt9(const uiint& igauss){  return mW9[igauss];}
+double& CShapePrism::Weight_pt18(const uiint& igauss){ return mW18[igauss];}
 
 // 形状関数   引数:積分点位置index, 形状関数番号(節点)
 // ----
-double& CShapePrism::N62(const uint& igauss, const uint& ishape){ return mvN62[igauss][ishape];}
-double& CShapePrism::N156(const uint& igauss, const uint& ishape){ return mvN156[igauss][ishape];}
-double& CShapePrism::N159(const uint& igauss, const uint& ishape){  return mvN159[igauss][ishape];}
-double& CShapePrism::N1518(const uint& igauss, const uint& ishape){  return mvN1518[igauss][ishape];}
+double& CShapePrism::N62(const uiint& igauss, const uiint& ishape){ return mvN62[igauss][ishape];}
+double& CShapePrism::N156(const uiint& igauss, const uiint& ishape){ return mvN156[igauss][ishape];}
+double& CShapePrism::N159(const uiint& igauss, const uiint& ishape){  return mvN159[igauss][ishape];}
+double& CShapePrism::N1518(const uiint& igauss, const uiint& ishape){  return mvN1518[igauss][ishape];}
 
 // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
 // ----
-double& CShapePrism::dNdr62(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr62[igauss][ishape][axis];}
-double& CShapePrism::dNdr156(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdr156[igauss][ishape][axis];}
-double& CShapePrism::dNdr159(const uint& igauss, const uint& ishape, const uint& axis){  return mvdNdr159[igauss][ishape][axis];}
-double& CShapePrism::dNdr1518(const uint& igauss, const uint& ishape, const uint& axis){  return mvdNdr1518[igauss][ishape][axis];}
+double& CShapePrism::dNdr62(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr62[igauss][ishape][axis];}
+double& CShapePrism::dNdr156(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdr156[igauss][ishape][axis];}
+double& CShapePrism::dNdr159(const uiint& igauss, const uiint& ishape, const uiint& axis){  return mvdNdr159[igauss][ishape][axis];}
+double& CShapePrism::dNdr1518(const uiint& igauss, const uiint& ishape, const uiint& axis){  return mvdNdr1518[igauss][ishape][axis];}
 
 
 // 6節点:Prism dNdxのセットアップ
 // --
-void CShapePrism::Calc_dNdx6(const uint& numOfInteg, CElement *pElement)
+void CShapePrism::Calc_dNdx6(const uiint& numOfInteg, CElement *pElement)
 {
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(6);
-    uint dof(3);//3次元: J(3*3)行列
+    uiint numOfShape(6);
+    uiint dof(3);//3次元: J(3*3)行列
 
     switch(numOfInteg){
         case(2):
@@ -446,13 +446,13 @@ void CShapePrism::Calc_dNdx6(const uint& numOfInteg, CElement *pElement)
 }
 // 15節点:Prism2  dNdxのセットアップ
 // --
-void CShapePrism::Calc_dNdx15(const uint& numOfInteg, CElement *pElement)
+void CShapePrism::Calc_dNdx15(const uiint& numOfInteg, CElement *pElement)
 {
     // Elementの関数:辺ノードの取得
     //  CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
 
     vector<CNode*> vNode= pElement->getNode();
-    uint numOfShape(15);
+    uiint numOfShape(15);
 
 //    CNode *pNode;
 //    uint ishape,iedge;
@@ -464,7 +464,7 @@ void CShapePrism::Calc_dNdx15(const uint& numOfInteg, CElement *pElement)
 //        vNode.push_back(pNode);
 //    };
 
-    uint dof(3);//3次元
+    uiint dof(3);//3次元
     switch(numOfInteg){
         case(6):
             ShapeDerivXYZ(numOfInteg, numOfShape, dof, mvdNdr156, mpJacobi156, vNode, mvdNdx156, mv_detJ156);
@@ -480,7 +480,7 @@ void CShapePrism::Calc_dNdx15(const uint& numOfInteg, CElement *pElement)
 
 // detJ
 //
-double& CShapePrism::detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss)
+double& CShapePrism::detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss)
 {
     switch(elemType){
         case(ElementType::Prism):
@@ -506,10 +506,10 @@ double& CShapePrism::detJ(const uint& elemType, const uint& numOfInteg, const ui
 // --
 void CShapePrism::setupIntegValue15()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 15; ishape++) mvIntegValue15[ishape]= 0.0;
 
-    uint igauss;
+    uiint igauss;
     for(igauss=0; igauss < 9; igauss++){
         for(ishape=0; ishape < 15; ishape++){
             mvIntegValue15[ishape] += mvN159[igauss][ishape];
@@ -524,7 +524,7 @@ void CShapePrism::setupIntegValue15()
 // --
 void CShapePrism::setupIntegValue6()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 6; ishape++) mvIntegValue6[ishape]= 1.0/6.0; /* 0.16666666666666 */
 }
 

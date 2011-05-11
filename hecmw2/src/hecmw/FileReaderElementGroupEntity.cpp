@@ -18,8 +18,8 @@ CFileReaderElementGroupEntity::~CFileReaderElementGroupEntity()
 }
 bool CFileReaderElementGroupEntity::Read(ifstream& ifs, string& sLine)
 {
-    uint nGrpID;
-    uint nElemID, nMeshID;
+    uiint nGrpID;
+    uiint nElemID, nMeshID;
 
     vuint vElemID;
 
@@ -27,7 +27,7 @@ bool CFileReaderElementGroupEntity::Read(ifstream& ifs, string& sLine)
         //debug
         cout << "ElementGroupEntity:Block Name : " << sLine << endl;
 
-        uint nCount(0);
+        uiint nCount(0);
 
         while(!ifs.eof()){
             sLine = getLine(ifs);
@@ -63,7 +63,10 @@ bool CFileReaderElementGroupEntity::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderElementGroupEntity::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

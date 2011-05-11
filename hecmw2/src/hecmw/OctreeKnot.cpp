@@ -38,7 +38,7 @@ void COctreeKnot::createChildKnot()
     COctreeKnot *pKnot;
     mvChildKnot.reserve(8);
     // 枝分かれ先の生成
-    uint i;
+    uiint i;
     for(i=0; i< 8; i++){
         pKnot= new COctreeKnot;
         pKnot->setParentKnot(this);//子供に親を教えておく.
@@ -100,15 +100,15 @@ void COctreeKnot::distItem()
     CContactNode* pConNode;//選別するContactNode
     
     //スレーブ点の分配
-    uint numOfItem= mvSlaveNode.size();
-    uint i;
+    uiint numOfItem= mvSlaveNode.size();
+    uiint i;
     for(i=0; i< numOfItem; i++){
         pConNode= mvSlaveNode[i];
 
         bX=false; bY=false; bZ=false; //標準判定
         beX=false;beY=false;beZ=false;//等号のケース
 
-        uint distID;//debug用途
+        uiint distID;//debug用途
 
         // X軸分割 判定
         if(pConNode->getX() < inX) bX=true;//Xは小
@@ -171,7 +171,7 @@ void COctreeKnot::distItem()
 
         bX=false; bY=false; bZ=false; //標準判定
 
-        uint distID;//debug用途
+        uiint distID;//debug用途
 
         // X軸分割 判定
         if(pConNode->getX() < inX) bX=true;//Xは小
@@ -206,8 +206,8 @@ void COctreeKnot::distItem()
 void COctreeKnot::setItemProp()
 {
     CContactNode *pConNode;
-    uint numOfItem;
-    uint inode;
+    uiint numOfItem;
+    uiint inode;
     
     numOfItem= mvMasterNode.size();
     for(inode=0; inode < numOfItem; inode++){

@@ -25,18 +25,18 @@ private:
     Utility::CLogger *mpLogger;
 
     // MW3 辺番号 -> FrontISTR 2次節点番号
-    uint mvHexa[12];
-    uint mvTetra[6];
-    uint mvPrism[9];
-    uint mvQuad[4];
-    uint mvTriangle[3];
+    uiint mvHexa[12];
+    uiint mvTetra[6];
+    uiint mvPrism[9];
+    uiint mvQuad[4];
+    uiint mvTriangle[3];
 
 public:
-    uint& HexaShapeNum(const uint& iedge);
-    uint& TetraShapeNum(const uint& iedge);
-    uint& PrismShapeNum(const uint& iedge);
-    uint& QuadShapeNum(const uint& iedge);
-    uint& TriangleShapeNum(const uint& iedge);
+    uiint& HexaShapeNum(const uiint& iedge);
+    uiint& TetraShapeNum(const uiint& iedge);
+    uiint& PrismShapeNum(const uiint& iedge);
+    uiint& QuadShapeNum(const uiint& iedge);
+    uiint& TriangleShapeNum(const uiint& iedge);
 };
 #endif	/* _EDGE2ISTR_H */
 }

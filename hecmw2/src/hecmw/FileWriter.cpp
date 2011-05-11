@@ -20,7 +20,7 @@ CFileWriter::~CFileWriter()
     ;
 }
 
-void CFileWriter::setSolutionType(const uint& nSolutionType)
+void CFileWriter::setSolutionType(const uiint& nSolutionType)
 {
     mnSolutionType = nSolutionType;
 }

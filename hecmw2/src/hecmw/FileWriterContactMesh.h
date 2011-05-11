@@ -16,7 +16,7 @@ public:
     CFileWriterContactMesh();
     virtual ~CFileWriterContactMesh();
 
-    virtual void Write(ofstream& ofs, const uint& mgLevel);
+    virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 #endif	/* _FILEWRITERCONTACTMESH_H */
 }

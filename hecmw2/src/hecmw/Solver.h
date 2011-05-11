@@ -19,25 +19,25 @@ class CAssyVector;
 class CSolver
 {
 public:
-	CSolver(int iter_max, double tolerance,
-			uint method, uint precondition,
+	CSolver(iint iter_max, double tolerance,
+			iint method, iint precondition,
 			bool flag_iter, bool flag_time);
 	virtual ~CSolver();
 
 	void setFlagNewMesh(bool flag_new);
 	void setFlagNewCoef(bool flag_new);
 
-	void setIterMax(int iter_new);
-	int getIterMax();
+	void setIterMax(iint iter_new);
+	iint getIterMax();
 
 	void setTolerance(double tol_new);
 	double getTolerance();
 
-	void setMethod(uint method);
-	uint getMethod();
+	void setMethod(uiint method);
+	uiint getMethod();
 
-	void setPrecondition(uint precondition);
-	uint getPrecondition();
+	void setPrecondition(iint precondition);
+	iint getPrecondition();
 
 	void setFlagIterLog(bool flag_new);
 	bool getFlagIterLog();
@@ -45,17 +45,17 @@ public:
 	void setFlagTimeLog(bool flag_new);
 	bool getFlagTimeLog();
 
-	int solve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX);
+	uiint solve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX);
 
 private:
-	virtual int doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
-			int iter_max, double tolerance,
+	virtual uiint doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
+			iint iter_max, double tolerance,
 			bool flag_iter_log, bool flag_time_log) = 0;
 
-	int mIterMax;
+	iint mIterMax;
 	double mTolerance;
-	uint mMethod;
-	uint mPrecondition;
+	iint mMethod;
+	iint mPrecondition;
 	bool mFlagIterLog;
 	bool mFlagTimeLog;
 	bool mFlagNewMesh;

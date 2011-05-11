@@ -38,29 +38,29 @@ protected:
     // mID => BndVertex
     // mnBndType =>  BoundaryMesh, Dirichlet | Neumann は,BoundaryMeshが知っていれば良い.
 
-    uint mMGLevel; // 自身の所属Level
+    uiint mMGLevel; // 自身の所属Level
 
     //    //----
     //    // DOF番号管理
     //    //----
     //    vuint mvDOF;//境界のDOF番号
     
-    vector<map<uint, double, less<uint> > > mvValue;//[階層Level][DOF]別の境界値
+    vector<map<uiint, double, less<uiint> > > mvValue;//[階層Level][DOF]別の境界値
     
     CNode *mpNode;//境界条件が付与されるNode(Mesh-Node)
 
 public:
     //階層Level
-    void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
-    uint& getMGLevel(){ return mMGLevel;}
+    void setMGLevel(const uiint& mgLevel){ mMGLevel= mgLevel;}
+    uiint& getMGLevel(){ return mMGLevel;}
 
     //境界値
-    void resizeValue(const uint& numOfDiffLevel);//Level数分の配列確保(計算Levelと節点MGLevelの差)
+    void resizeValue(const uiint& numOfDiffLevel);//Level数分の配列確保(計算Levelと節点MGLevelの差)
 
-    void initValue(const uint& dof, const uint& mgLevel);//初期化(ゼロ・クリア)
-    void setValue(const uint& dof, const uint& mgLevel, const double& val);//代入
-    void addValue(const uint& dof, const uint& mgLevel, const double& val);//加算
-    double& getValue(const uint& dof, const uint& mgLevel);//境界値の提供
+    void initValue(const uiint& dof, const uiint& mgLevel);//初期化(ゼロ・クリア)
+    void setValue(const uiint& dof, const uiint& mgLevel, const double& val);//代入
+    void addValue(const uiint& dof, const uiint& mgLevel, const double& val);//加算
+    double& getValue(const uiint& dof, const uiint& mgLevel);//境界値の提供
 
 
     //メッシュ-節点

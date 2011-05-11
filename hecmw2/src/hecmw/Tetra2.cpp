@@ -9,12 +9,12 @@
 using namespace pmw;
 
 
-uint CTetra2::mnElemType = ElementType::Tetra2;
-uint CTetra2::mnElemOrder = 2;
-uint CTetra2::mNumOfFace = 4;
-uint CTetra2::mNumOfEdge = 6;
-uint CTetra2::mNumOfNode = 10;
-uint CTetra2::mNumOfVert = 4;
+uiint CTetra2::mnElemType = ElementType::Tetra2;
+uiint CTetra2::mnElemOrder = 2;
+uiint CTetra2::mNumOfFace = 4;
+uiint CTetra2::mNumOfEdge = 6;
+uiint CTetra2::mNumOfNode = 10;
+uiint CTetra2::mNumOfVert = 4;
 
 CTetra2::CTetra2()
 {
@@ -33,7 +33,7 @@ void CTetra2::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -70,7 +70,7 @@ void CTetra2::initialize()
 void CTetra2::replaseEdgeNode()
 {
     CNode *pNode;
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         pNode = mvEdgeInterNode[iedge];
         mvNode[mNumOfVert + iedge] = pNode;

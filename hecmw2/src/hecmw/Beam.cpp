@@ -8,12 +8,12 @@
 #include "Beam.h"
 using namespace pmw;
 
-uint CBeam::mnElemType = ElementType::Beam;
-uint CBeam::mnElemOrder = 1;
-uint CBeam::mNumOfFace = 0;
-uint CBeam::mNumOfEdge = 1;
-uint CBeam::mNumOfNode = 2;
-uint CBeam::mNumOfVert = 2;
+uiint CBeam::mnElemType = ElementType::Beam;
+uiint CBeam::mnElemOrder = 1;
+uiint CBeam::mNumOfFace = 0;
+uiint CBeam::mNumOfEdge = 1;
+uiint CBeam::mNumOfNode = 2;
+uiint CBeam::mNumOfVert = 2;
 //
 //
 CBeam::CBeam()
@@ -34,7 +34,7 @@ void CBeam::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -50,21 +50,21 @@ void CBeam::initialize()
     };
 }
 
-const uint& CBeam::getType()
+const uiint& CBeam::getType()
 {
     return mnElemType;
 }
-const uint& CBeam::getOrder()
+const uiint& CBeam::getOrder()
 {
     return mnElemOrder;
 }
 
 
-bool CBeam::IndexCheck(const uint& propType, const uint& index, string& method_name)
+bool CBeam::IndexCheck(const uiint& propType, const uiint& index, string& method_name)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
-    uint numOfProp;
+    uiint numOfProp;
     switch(propType){
         case(ElementPropType::Face):
             numOfProp = mNumOfFace;
@@ -92,7 +92,7 @@ bool CBeam::IndexCheck(const uint& propType, const uint& index, string& method_n
 
 // out:(PariNode edgeNode)
 //
-PairNode CBeam::getPairNode(const uint& iedge)
+PairNode CBeam::getPairNode(const uiint& iedge)
 {
     PairNode pairNode;
 
@@ -112,7 +112,7 @@ PairNode CBeam::getPairNode(const uint& iedge)
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CBeam::getPairNode(vint& pairNodeIndex, const uint& iedge)
+void CBeam::getPairNode(vint& pairNodeIndex, const uiint& iedge)
 {
     switch(iedge){
         //surf 0 (low surf)
@@ -128,9 +128,9 @@ void CBeam::getPairNode(vint& pairNodeIndex, const uint& iedge)
 
 // ノードの局所番号に対応する、Edgeのインデックス番号
 //
-uint& CBeam::getEdgeIndex(CNode* pNode0, CNode* pNode1)
+uiint& CBeam::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -139,7 +139,7 @@ uint& CBeam::getEdgeIndex(CNode* pNode0, CNode* pNode1)
     
     return edgeTree->getBeamEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);
 }
-uint& CBeam::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+uiint& CBeam::getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
     // Beam要素なので,”Edge_Index=0” だが,参照で返したいので,わざわざTreeを呼んでいる.
@@ -164,7 +164,7 @@ void CBeam::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
 
 // Face局所番号 -> Beamには存在しない.
 //
-uint& CBeam::getLocalFaceNum(const vuint& vLocalNodeNum)
+uiint& CBeam::getLocalFaceNum(const vuint& vLocalNodeNum)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method @CBeam::getLocalFaceNum");
@@ -173,7 +173,7 @@ uint& CBeam::getLocalFaceNum(const vuint& vLocalNodeNum)
 }
 //
 //
-uint& CBeam::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
+uiint& CBeam::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method @CBeam::getLocalFaceNum(arg:pNode)");
@@ -184,7 +184,7 @@ uint& CBeam::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 2 Edge => Face Index
 //
-uint& CBeam::getFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CBeam::getFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method @CBeam::getFaceIndex");
@@ -213,7 +213,7 @@ void CBeam::setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // mvvFaceCnvNodeのセットアップ
 //
-vector<CNode*> CBeam::getFaceCnvNodes(const uint& iface)
+vector<CNode*> CBeam::getFaceCnvNodes(const uiint& iface)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     pLogger->Info(Utility::LoggerMode::Warn,"invalid method @CBeam::setupFaceCnvNodes");
@@ -232,14 +232,14 @@ vector<CNode*> CBeam::getConnectNode(CNode* pNode)
     vector<CNode*> vNode;
     vNode.reserve(1);
 
-    uint gID= pNode->getID();
-    uint localID= mmIDLocal[gID];
+    uiint gID= pNode->getID();
+    uiint localID= mmIDLocal[gID];
 
     CNodeConnectNodeTree *pConnTree = CNodeConnectNodeTree::Instance();
     vuint vLocalID;
     vLocalID= pConnTree->getBeamConnectNode(localID);
 
-    uint i;
+    uiint i;
     for(i=0; i< 1; i++){
         localID= vLocalID[i];
         vNode.push_back(mvNode[localID]);
@@ -256,7 +256,7 @@ vector<CNode*> CBeam::getConnectNode(CNode* pNode)
 void CBeam::deleteProgData()
 {
     // Edge
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         vector<CElement*>().swap(mvvEdgeElement[iedge]);
     };

@@ -14,7 +14,7 @@ public:
     CFileWriterBoundaryFace();
     virtual ~CFileWriterBoundaryFace();
 public:
-    virtual void Write(ofstream& ofs, const uint& mgLevel);
+    virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 #endif	/* _FILEWRITERBOUNDARYFACE_H */
 }

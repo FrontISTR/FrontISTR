@@ -26,7 +26,7 @@ CFileWriterNode::~CFileWriterNode()
 
 // method
 // --
-void CFileWriterNode::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterNode::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
@@ -39,23 +39,23 @@ void CFileWriterNode::Write(ofstream& ofs, const uint& mgLevel)
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
    
    
-   uint numOfPart= pAssyModel->getNumOfMesh();
-   uint numOfNode;
-   uint imesh,inode;
+   uiint numOfPart= pAssyModel->getNumOfMesh();
+   uiint numOfNode;
+   uiint imesh,inode;
    ////debug
    //cout << "CFileWriteNode,  numOfPart == " << numOfPart << endl;
 
    pmw::CAggregateNode* pAggNode;
    vector<pmw::CAggregateNode*> vAggNode;
    pmw::CNode* pConnNode;
-   uint iagg, numOfAggNode;
+   uiint iagg, numOfAggNode;
 
    pmw::CIndexBucket* pBucket;
 
    //prolongater関連
-   uint numOfParent;//Refineで生成されたNodeの親Node数
+   uiint numOfParent;//Refineで生成されたNodeの親Node数
    pmw::CNode* parentNode;//Refineで生成されたNodeの親Node
-   uint ipare;
+   uiint ipare;
 
    for(imesh=0; imesh< numOfPart; imesh++){
        //Meshの取得
@@ -107,15 +107,15 @@ void CFileWriterNode::Write(ofstream& ofs, const uint& mgLevel)
            
        };//Nodeループエンド
 
-       uint numOfCommMesh= pMesh->getNumOfCommMesh();
-       uint icom, commNodeID;
+       uiint numOfCommMesh= pMesh->getNumOfCommMesh();
+       uiint icom, commNodeID;
        for(icom=0; icom< numOfCommMesh; icom++){
            //pCommMesh= pMesh->getCommMesh(icom);/////////<-CommIDが判明している場合は,CommIDを使用(Mesh内部でHashによりIndex変換される)
            pCommMesh= pMesh->getCommMeshIX(icom);
 
-           uint numOfSend= pCommMesh->getNumOfSendNode();
-           uint numOfRecv= pCommMesh->getNumOfRecvNode();
-           uint isend,irecv;
+           uiint numOfSend= pCommMesh->getNumOfSendNode();
+           uiint numOfRecv= pCommMesh->getNumOfRecvNode();
+           uiint isend,irecv;
            ofs << " -- Send Node -- " << endl;
            for(isend=0; isend< numOfSend; isend++){
                pNode= pCommMesh->getSendNodeIX(isend);

@@ -30,7 +30,7 @@ CCommQuad::CCommQuad()
 
     mvbNodeIXCheck = new bool[4];
     mvbDNodeMarking = new bool[4];
-    uint i;
+    uiint i;
     for(i=0; i< 4; i++){
         mvbNodeIXCheck[i]=false;
         mvbDNodeMarking[i]=false;

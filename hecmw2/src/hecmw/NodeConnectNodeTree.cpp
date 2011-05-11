@@ -13,7 +13,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
 {
     // Hexa
     // --
-    uint hexcon[8][3]={
+    uiint hexcon[8][3]={
     {1,3,4},
     {0,5,2},
     {1,3,6},
@@ -24,7 +24,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
     {4,3,6}
     };
     
-    uint i,ii;
+    uiint i,ii;
     mvHexaConnectNode.resize(8);
     for(i=0; i< 8; i++){
         mvHexaConnectNode[i].resize(3);
@@ -40,7 +40,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
 
     // Tetra
     // --
-    uint tetcon[4][3]={
+    uiint tetcon[4][3]={
     {2,3,1},
     {0,3,2},
     {1,3,0},
@@ -62,7 +62,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
 
     // Prism
     // --
-    uint pricon[6][3]={
+    uiint pricon[6][3]={
     {2,3,1},
     {0,4,2},
     {1,5,0},
@@ -86,7 +86,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
     
     // Pyramid
     // --
-    uint pycon[5][4]={
+    uiint pycon[5][4]={
     {1,4,3,1},// 本来は3つまで. 最後の値は先頭と同値
     {0,4,2,0},//  ↑ 同上
     {1,4,3,1},//  ↑ 同上
@@ -112,7 +112,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
     
     // Quad
     // --
-    uint qucon[4][2]={
+    uiint qucon[4][2]={
     {1,3},
     {0,2},
     {1,3},
@@ -134,7 +134,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
 
     // Triangle
     // --
-    uint tricon[3][2]={
+    uiint tricon[3][2]={
         {1,2},
         {0,2},
         {0,1}
@@ -154,7 +154,7 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
 
     // Beam
     // --
-    uint beamcon[2][1]={
+    uiint beamcon[2][1]={
         {1},
         {0}
     };

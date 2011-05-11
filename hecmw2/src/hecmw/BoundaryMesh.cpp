@@ -24,19 +24,19 @@ CBoundaryMesh::~CBoundaryMesh()
 //DOFの追加・代入・配列領域
 //---
 //DOFの追加
-void CBoundaryMesh::addDOF(const uint& dof)
+void CBoundaryMesh::addDOF(const uiint& dof)
 {
     mvDOF.push_back(dof);
     mmDOF2Index[dof] = mvDOF.size() - 1;
 }
 //DOFの代入
-void CBoundaryMesh::setDOF(const uint& index, const uint& dof)
+void CBoundaryMesh::setDOF(const uiint& index, const uiint& dof)
 {
     mvDOF[index] = dof;
     mmDOF2Index[dof] = index;
 }
 //DOF配列の領域確保
-void CBoundaryMesh::resizeDOF(const uint& res_size)
+void CBoundaryMesh::resizeDOF(const uiint& res_size)
 {
     mvDOF.resize(res_size);
 }
@@ -44,28 +44,35 @@ void CBoundaryMesh::resizeDOF(const uint& res_size)
 //DOFの提供・DOFインデックス・DOF数
 //---
 //DOFの提供
-uint& CBoundaryMesh::getDOF(const uint& index)
+uiint& CBoundaryMesh::getDOF(const uiint& index)
 {
     return mvDOF[index];
 }
 //DOFのインデックスの提供
-uint& CBoundaryMesh::getDOF_Index(const uint& dof)
+uiint& CBoundaryMesh::getDOF_Index(const uiint& dof)
 {
     return mmDOF2Index[dof];
 }
 //DOF数
-uint CBoundaryMesh::getNumOfDOF()
+uiint CBoundaryMesh::getNumOfDOF()
 {
     return mvDOF.size();
 }
 
-
-
-
-
-void CBoundaryMesh::setBNode(const uint& index, CBoundaryNode* pBNode)
+//CMWのRefineでコースグリッドのBNode境界条件の領域確保に使用 2011.04.22
+void CBoundaryMesh::resizeCGrid_BNodeValue(const uiint& maxLevel)
 {
-    uint id;
+    uiint i, nNumOfBNode= mvBNode.size();
+    for(i=0; i < nNumOfBNode; i++){
+        mvBNode[i]->resizeValue(maxLevel+1);
+    };
+}
+
+
+
+void CBoundaryMesh::setBNode(const uiint& index, CBoundaryNode* pBNode)
+{
+    uiint id;
     id= pBNode->getID();
 
     mmBNodeID2Index[id]= index;
@@ -76,7 +83,7 @@ void CBoundaryMesh::addBNode(CBoundaryNode* pBNode)
 {
     mvBNode.push_back(pBNode);
 
-    uint id;
+    uiint id;
     id= pBNode->getID();
 
     mmBNodeID2Index[id]= mvBNode.size()-1;
@@ -100,26 +107,27 @@ void CBoundaryMesh::distValueBNode()
 
 
 
-// ディレクレ型境界値のBNodeへの再配分
-//
-void CBoundaryMesh::distDirichletValue()
-{
-    Utility::CLogger *pLogger= Utility::CLogger::Instance();
-
-    // ディレクレ条件が設定されていなければ,Errorを返す.
-    // --
-    if(mnBndType != BoundaryType::Dirichlet){
-        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryMesh::distDirichletValue");
-        return;
-    }
-
-    if(mMGLevel==0){
-        distDirichletValue_at_CGrid();
-        if(mMaxMGLevel > 0) distDirichletValue_at_FGrid();
-    }else{
-        distDirichletValue_at_FGrid();
-    }
-}
+////// ディレクレ型境界値のBNodeへの再配分
+//////
+////void CBoundaryMesh::distDirichletValue()
+////{
+////    Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////
+////    // ディレクレ条件が設定されていなければ,Errorを返す.
+////    // --
+////    if(mnBndType != BoundaryType::Dirichlet){
+////        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryMesh::distDirichletValue");
+////        return;
+////    }
+////
+////
+////    if(mMGLevel==0){
+////        distDirichletValue_at_CGrid();
+////        if(mMaxMGLevel > 0) distDirichletValue_at_FGrid();
+////    }else{
+////        distDirichletValue_at_FGrid();
+////    }
+////}
 
 
 

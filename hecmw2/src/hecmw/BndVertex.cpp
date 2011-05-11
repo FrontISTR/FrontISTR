@@ -26,10 +26,10 @@ CBndVertex::~CBndVertex()
 void CBndVertex::deleteAggregate()
 {
     vuint vTemp;
-    vector<unsigned int>(vTemp).swap(mvAggElementID);
+    vector<uiint>(vTemp).swap(mvAggElementID);
 
-    map<uint, uint, less<uint> > mTemp;
-    map<uint, uint, less<uint> >(mTemp).swap(mmNeibElemVertNum);
+    map<uiint, uiint, less<uiint> > mTemp;
+    map<uiint, uiint, less<uiint> >(mTemp).swap(mmNeibElemVertNum);
 }
 
 

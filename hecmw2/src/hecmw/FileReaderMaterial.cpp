@@ -25,7 +25,7 @@ CFileReaderMaterial::~CFileReaderMaterial()
 bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
 {
     string sMaterialName;
-    uint   materialID, numOfMaterial, numOfItem, meshID;
+    uiint   materialID, numOfMaterial, numOfItem, meshID;
     vstring vPropName;
     vuint   vPropType;
     vdouble vPropValue;
@@ -55,7 +55,7 @@ bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
             vPropValue.resize(numOfItem);
             
 
-            for(uint i=0; i< numOfItem; i++){
+            for(uiint i=0; i< numOfItem; i++){
                 iss >> vPropName[i] >> vPropValue[i];
                 
                 //プロパティ名による,MateriapPropType選別
@@ -87,7 +87,10 @@ bool CFileReaderMaterial::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderMaterial::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

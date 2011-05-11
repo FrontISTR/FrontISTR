@@ -15,13 +15,13 @@ using namespace pmw;
 //
 CEdgeFaceTree::CEdgeFaceTree()
 {
-    uint iface,iedge;
+    uiint iface,iedge;
     
     // Faceを構成するEdge番号
     // --
     
     // Hexa
-    uint hexedge[6][4]={
+    uiint hexedge[6][4]={
         {0,1,2,3},
         {4,7,6,5},
         {1,9,5,10},
@@ -36,7 +36,7 @@ CEdgeFaceTree::CEdgeFaceTree()
     };
     
     // Tetra
-    uint tetedge[4][3]={
+    uiint tetedge[4][3]={
         {0,1,2},
         {0,3,4},
         {4,5,1},
@@ -49,7 +49,7 @@ CEdgeFaceTree::CEdgeFaceTree()
     };
     
     // Prism
-    uint priedge[5][4]={
+    uiint priedge[5][4]={
         {0,2,1,0},
         {8,7,6,8},
         {0,3,6,4},
@@ -63,7 +63,7 @@ CEdgeFaceTree::CEdgeFaceTree()
     };
     
     // Pyramid
-    uint pyraedge[5][4]={
+    uiint pyraedge[5][4]={
         {0,1,2,3},
         {1,4,5,1},
         {2,5,6,2},
@@ -77,7 +77,7 @@ CEdgeFaceTree::CEdgeFaceTree()
     };
     
     // Quad
-    uint quadedge[1][4]={
+    uiint quadedge[1][4]={
         {0,1,2,3}
     };
     for(iedge=0; iedge< 4; iedge++){
@@ -85,7 +85,7 @@ CEdgeFaceTree::CEdgeFaceTree()
     }
     
     // Triangle
-    uint triedge[1][3]={
+    uiint triedge[1][3]={
         {0,1,2}
     };
     for(iedge=0; iedge< 3; iedge++){
@@ -106,7 +106,7 @@ CEdgeFaceTree::~CEdgeFaceTree()
 // --
 // Hexa
 //
-uint& CEdgeFaceTree::getHexaFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getHexaFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     switch(edge0){
         case(0):
@@ -190,7 +190,7 @@ uint& CEdgeFaceTree::getHexaFaceIndex(const uint& edge0, const uint& edge1)
 
 // Tetra
 // --
-uint& CEdgeFaceTree::getTetraFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getTetraFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     switch(edge0){
         case(0):
@@ -239,7 +239,7 @@ uint& CEdgeFaceTree::getTetraFaceIndex(const uint& edge0, const uint& edge1)
 
 // Prism
 // --
-uint& CEdgeFaceTree::getPrismFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getPrismFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     switch(edge0){
         case(0):
@@ -306,7 +306,7 @@ uint& CEdgeFaceTree::getPrismFaceIndex(const uint& edge0, const uint& edge1)
 
 // Pyramid
 // --
-uint& CEdgeFaceTree::getPyramidFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getPyramidFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     switch(edge0){
         case(0):
@@ -367,7 +367,7 @@ uint& CEdgeFaceTree::getPyramidFaceIndex(const uint& edge0, const uint& edge1)
 
 // Quad
 // --
-uint& CEdgeFaceTree::getQuadFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getQuadFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     if(edge0 > 3 || edge1 > 3){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();
@@ -381,7 +381,7 @@ uint& CEdgeFaceTree::getQuadFaceIndex(const uint& edge0, const uint& edge1)
 
 // Triangle
 // --
-uint& CEdgeFaceTree::getTriangleFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CEdgeFaceTree::getTriangleFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     if(edge0 > 2 || edge1 > 2){
         Utility::CLogger *pLogger= Utility::CLogger::Instance();

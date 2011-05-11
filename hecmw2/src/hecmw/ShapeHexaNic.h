@@ -64,63 +64,63 @@ private:
 
     //形状関数
     //void ShapeFunction11(double N[][11], const uint& igauss, const double& r, const double& s, const double& t);
-    void ShapeFunction11(vvdouble& N, const uint& igauss, const double& r, const double& s, const double& t);
+    void ShapeFunction11(vvdouble& N, const uiint& igauss, const double& r, const double& s, const double& t);
     //導関数
     //void ShapeDeriv11(double dNdr[][11][3], const uint& igauss, const double& r, const double& s, const double& t);
-    void ShapeDeriv11(vvvdouble& dNdr, const uint& igauss, const double& r, const double& s, const double& t);
+    void ShapeDeriv11(vvvdouble& dNdr, const uiint& igauss, const double& r, const double& s, const double& t);
 
 
 public:
     // 形状関数   引数:積分点位置index, 形状関数番号(節点)
-    double& N111(const uint& igauss, const uint& ishape);
-    double& N118(const uint& igauss, const uint& ishape);
-    double& N1127(const uint& igauss, const uint& ishape);
-    vdouble& N111(const uint& igauss);
-    vdouble& N118(const uint& igauss);
-    vdouble& N1127(const uint& igauss);
+    double& N111(const uiint& igauss, const uiint& ishape);
+    double& N118(const uiint& igauss, const uiint& ishape);
+    double& N1127(const uiint& igauss, const uiint& ishape);
+    vdouble& N111(const uiint& igauss);
+    vdouble& N118(const uiint& igauss);
+    vdouble& N1127(const uiint& igauss);
     vvdouble& N111(){ return mvN111;}
     vvdouble& N118(){ return mvN118;}
     vvdouble& N1127(){ return mvN1127;}
     // 導関数   引数:積分点位置index, 形状関数番号(節点),微分方向(axis:0,1,2)
-    double& dNdr111(const uint& igauss, const uint& ishape, const uint& axis);
-    double& dNdr118(const uint& igauss, const uint& ishape, const uint& axis);
-    double& dNdr1127(const uint& igauss, const uint& ishape, const uint& axis);
-    vvdouble& dNdr111(const uint& igauss);
-    vvdouble& dNdr118(const uint& igauss);
-    vvdouble& dNdr1127(const uint& igauss);
+    double& dNdr111(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    double& dNdr118(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    double& dNdr1127(const uiint& igauss, const uiint& ishape, const uiint& axis);
+    vvdouble& dNdr111(const uiint& igauss);
+    vvdouble& dNdr118(const uiint& igauss);
+    vvdouble& dNdr1127(const uiint& igauss);
     vvvdouble& dNdr111(){ return mvdNdr111;}
     vvvdouble& dNdr118(){ return mvdNdr118;}
     vvvdouble& dNdr1127(){ return mvdNdr1127;}
 
     // 返り値:重みの配列, 引数:積分点数
-    double* Weight(const uint& integNum);
+    double* Weight(const uiint& integNum);
     // 返り値:重み, 引数:重みの配列Index
     double& Weight_pt1();
-    double& Weight_pt8(const uint& igauss);
-    double& Weight_pt27(const uint& igauss);
+    double& Weight_pt8(const uiint& igauss);
+    double& Weight_pt27(const uiint& igauss);
 
     // dNdx 計算セットアップ
-    void Calc_dNdx11(const uint& numOfInteg, CElement *pElement);
+    void Calc_dNdx11(const uiint& numOfInteg, CElement *pElement);
 
     // dNdx (空間座標の導関数)
-    double& dNdx111(const uint& igauss, const uint& ishape, const uint& axis){  return  mvdNdx111[igauss][ishape][axis];}
-    double& dNdx118(const uint& igauss, const uint& ishape, const uint& axis){  return  mvdNdx118[igauss][ishape][axis];}
-    double& dNdx1127(const uint& igauss, const uint& ishape, const uint& axis){ return mvdNdx1127[igauss][ishape][axis];}
+    double& dNdx111(const uiint& igauss, const uiint& ishape, const uiint& axis){  return  mvdNdx111[igauss][ishape][axis];}
+    double& dNdx118(const uiint& igauss, const uiint& ishape, const uiint& axis){  return  mvdNdx118[igauss][ishape][axis];}
+    double& dNdx1127(const uiint& igauss, const uiint& ishape, const uiint& axis){ return mvdNdx1127[igauss][ishape][axis];}
 
-    vvdouble& dNdx111(const uint& igauss){  return  mvdNdx111[igauss];}
-    vvdouble& dNdx118(const uint& igauss){  return  mvdNdx118[igauss];}
-    vvdouble& dNdx1127(const uint& igauss){ return mvdNdx1127[igauss];}
+    vvdouble& dNdx111(const uiint& igauss){  return  mvdNdx111[igauss];}
+    vvdouble& dNdx118(const uiint& igauss){  return  mvdNdx118[igauss];}
+    vvdouble& dNdx1127(const uiint& igauss){ return mvdNdx1127[igauss];}
 
     vvvdouble& dNdx111(){  return  mvdNdx111;}
     vvvdouble& dNdx118(){  return  mvdNdx118;}
     vvvdouble& dNdx1127(){ return mvdNdx1127;}
 
     // detJ : [積分点]
-    double& detJ(const uint& elemType, const uint& numOfInteg, const uint& igauss);
+    double& detJ(const uiint& elemType, const uiint& numOfInteg, const uiint& igauss);
 
-    double& detJ111(const uint& igauss){ return mv_detJ111[igauss];}
-    double& detJ118(const uint& igauss){ return mv_detJ118[igauss];}
-    double& detJ1127(const uint& igauss){ return mv_detJ1127[igauss];}
+    double& detJ111(const uiint& igauss){ return mv_detJ111[igauss];}
+    double& detJ118(const uiint& igauss){ return mv_detJ118[igauss];}
+    double& detJ1127(const uiint& igauss){ return mv_detJ1127[igauss];}
     vdouble& detJ111(){  return  mv_detJ111;}
     vdouble& detJ118(){  return  mv_detJ118;}
     vdouble& detJ1127(){ return mv_detJ1127;}

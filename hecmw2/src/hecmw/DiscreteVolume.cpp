@@ -10,13 +10,13 @@ using namespace pmw;
 CDiscreteVolume::CDiscreteVolume()
 {
     // Prismの頂点番号で表した3個のTetra
-    uint prismDiscre[3][4]={
+    uiint prismDiscre[3][4]={
         {0,4,3,5},
         {0,2,4,5},
         {0,2,1,4}
     };
     // Hexaの頂点番号で表した6個のTetra
-    uint hexaDiscre[6][4]={
+    uiint hexaDiscre[6][4]={
         {0,7,4,5},
         {0,7,5,1},
         {0,3,7,1},
@@ -26,7 +26,7 @@ CDiscreteVolume::CDiscreteVolume()
     };
 
     // classメンバーへコピー
-    uint i,ii;
+    uiint i,ii;
     for(i=0; i< 3; i++){
         for(ii=0; ii< 4; ii++){
             mPrismDiscre[i][ii]= prismDiscre[i][ii];

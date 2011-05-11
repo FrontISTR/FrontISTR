@@ -8,12 +8,12 @@
 #include "Hexa2.h"
 using namespace pmw;
 
-uint CHexa2::mnElemType = ElementType::Hexa2;
-uint CHexa2::mnElemOrder = 2;
-uint CHexa2::mNumOfFace =  6;
-uint CHexa2::mNumOfEdge = 12;
-uint CHexa2::mNumOfNode = 20;
-uint CHexa2::mNumOfVert =  8;
+uiint CHexa2::mnElemType = ElementType::Hexa2;
+uiint CHexa2::mnElemOrder = 2;
+uiint CHexa2::mNumOfFace =  6;
+uiint CHexa2::mNumOfEdge = 12;
+uiint CHexa2::mNumOfNode = 20;
+uiint CHexa2::mNumOfVert =  8;
 
 CHexa2::CHexa2()
 {
@@ -33,7 +33,7 @@ void CHexa2::initialize()
     // Edgeノード bool
     //
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i]=false;
     };
@@ -71,7 +71,7 @@ void CHexa2::initialize()
 void CHexa2::replaseEdgeNode()
 {
     CNode *pNode;
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         pNode = mvEdgeInterNode[iedge];
         mvNode[mNumOfVert + iedge] = pNode;

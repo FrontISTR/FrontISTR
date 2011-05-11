@@ -21,7 +21,7 @@ typedef std::vector<CMatrixBCRS*> CVMat;
 typedef CVMat::iterator CVMatIter;
 typedef CVMat::const_iterator CVMatConstIter;
 
-CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuint& vPartsID)
+CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uiint& nDOF)//, const vuint& vPartsID)
 {
 	mpAssyModel = pAssyModel;
         mnDOF = nDOF;//アセンブル方程式のDOF
@@ -37,49 +37,64 @@ CAssyMatrix::CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF)//, const vuin
 	mMGLevel = pAssyModel->getMGLevel();
 	//printf("mMGLevel %d \n",mMGLevel);
 
-	uint numOfContact= pAssyModel->getNumOfContactMesh();/////////////////////////
+	uiint numOfContact= pAssyModel->getNumOfContactMesh();/////////////////////////
 	//printf("numOfContact %d \n",numOfContact);
 	
-        uint idof;
+        uiint idof;
         //DOF数ぶんの関係式ポインターを準備
         CEquation **vEquation;
         vEquation = new CEquation*[mnDOF];
         
         
 
-	for(uint icont = 0; icont < numOfContact; icont++){
+	for(uiint icont = 0; icont < numOfContact; icont++){
 		CContactMesh* pConMesh= pAssyModel->getContactMesh(icont);
-		uint numOfSPoint = pConMesh->getNumOfSlavePoint();
+
+		uiint numOfSPoint = pConMesh->getNumOfSlavePoint();
 		//printf("numOfSPoint, icont %d %d \n", numOfSPoint, icont);
 		
 		CMPCMatrix* mpc = new CMPCMatrix();
 
-		for(uint islave = 0; islave< numOfSPoint; islave++){
+		for(uiint islave = 0; islave< numOfSPoint; islave++){
 			CContactNode* pSlaveNode = pConMesh->getSlaveConNode(islave);
-			uint mgLevel = mMGLevel;
+			uiint mgLevel = mMGLevel;
 			if(pSlaveNode->have_MasterFaceID(mgLevel)){
                                 ////////////////// DOF数ぶんのMPC関係式 生成 ///////////////////////
                                 for(idof=0; idof < mnDOF; idof++) vEquation[idof]= new CEquation();
 
-				uint masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
-				uint smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
-				uint snode = pSlaveNode->getNodeID();
-				//printf("masterFaceID, islave, smesh, node %d %d %d %d\n", masterFaceID, islave, smesh, snode);
+				uiint masterFaceID = pSlaveNode->getMasterFaceID(mgLevel);
+				uiint smesh = pSlaveNode->getMeshID(); //pConMesh->getSlaveMeshID(islave);
+                                uiint snode = pSlaveNode->getNodeID();
+                                // スレーブのMesh
+                                CMesh* pSMesh= pAssyModel->getMesh_ID(smesh);//今のところMeshIDとMesh_Indexが同値なのでこのまま 2011.04.22
+                                CIndexBucket *pSBucket= pSMesh->getBucket();
+                                
+                                uiint snode_ix = pSBucket->getIndexNode(snode);// Node index 2011.04.22
+				
+				//printf("masterFaceID, islave, smesh, node %d %d %d %d\n", masterFaceID, islave, smesh, snode_ix);
                                 ///////////////////////////////////////////////////////////////////////////////
-                                for(idof=0; idof < mnDOF; idof++) vEquation[idof]->setSlave(smesh, snode, idof);
+                                for(idof=0; idof < mnDOF; idof++) vEquation[idof]->setSlave(smesh, snode_ix, idof);
 				
 				CSkinFace* pMasterFace = pConMesh->getMasterFace_ID(masterFaceID);
-				uint numOfVert = pMasterFace->getNumOfNode();
+				uiint numOfVert = pMasterFace->getNumOfNode();
 				//printf("numOfVert %d \n",numOfVert);
 				
-				for(uint ivert=0; ivert< numOfVert; ivert++){
-					int mmesh = pMasterFace->getMeshID(); //pConMesh->getMasterMeshID(islave);
-					int node = ( pMasterFace->getNode(ivert) )->getNodeID();
-					double coef = pMasterFace->getCoef(pSlaveNode->getID(),ivert);
-                                        /////////////////////////////////////////////////////////////////////////////////////
-                                        for(idof=0; idof < mnDOF; idof++) vEquation[idof]->addMaster(mmesh, node, idof, coef);
+				for(uiint ivert=0; ivert< numOfVert; ivert++){
+					uiint mmesh = pMasterFace->getMeshID(); //pConMesh->getMasterMeshID(islave);
+					uiint node = ( pMasterFace->getNode(ivert) )->getNodeID();
+                                        // マスターのMesh
+                                        CMesh* pMMesh= pAssyModel->getMesh_ID(mmesh);//今のところMeshIDとMesh_Indexが同値なのでこのまま 2011.04.22
+                                        CIndexBucket *pMBucket= pMMesh->getBucket();
+                                        uiint node_ix = pMBucket->getIndexNode(node);// Node index 2011.04.22
+                                        
+                                        snode = pSlaveNode->getID();
+                                        snode_ix = pSBucket->getIndexNode(snode);// Node index 2011.04.22
 
-					//printf("ivert, mmesh, node, coef %d %d %d %e \n", ivert, mmesh, node, coef);
+					double coef = pMasterFace->getCoef(snode_ix, ivert);
+                                        /////////////////////////////////////////////////////////////////////////////////////
+                                        for(idof=0; idof < mnDOF; idof++) vEquation[idof]->addMaster(mmesh, node_ix, idof, coef);
+
+					//printf("ivert, mmesh, node, coef %d %d %d %e \n", ivert, mmesh, node_ix, coef);
 				};
                                 ///////////////////////////////////////////////////////////////////
                                 for(idof=0; idof < mnDOF; idof++) mpc->addEquation(vEquation[idof]);
@@ -99,13 +114,14 @@ CAssyMatrix::~CAssyMatrix()
 	};
 }
 
-int CAssyMatrix::Matrix_Add_Nodal(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double* NodalMatrix)
+// inode, jnode : 節点インデックス番号
+uiint CAssyMatrix::Matrix_Add_Nodal(const uiint& iMesh, const uiint& inode, const uiint& jnode, double* NodalMatrix)
 {
-    mvMatrix[iMesh]->Matrix_Add_Nodal(iNodeID, jNodeID, NodalMatrix);
+    mvMatrix[iMesh]->Matrix_Add_Nodal(inode, jnode, NodalMatrix);
     return 1;
 }
 
-int CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, const uint& iMesh, const uint& iElem, double *ElemMatrix)
+uiint CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, const uiint& iMesh, const uiint& iElem, double *ElemMatrix)
 {
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CAssyMatrix::Matrix_Add_Elemm %d %d %e \n", iMesh, iElem, ElemMatrix[0]);
@@ -120,54 +136,56 @@ int CAssyMatrix::Matrix_Add_Elem(CAssyModel *pAssyModel, const uint& iMesh, cons
     
     return 1;
 }
-void CAssyMatrix::Matrix_Clear(const uint& iMesh)
+void CAssyMatrix::Matrix_Clear(const uiint& iMesh)
 {
     mvMatrix[iMesh]->Matrix_Clear();
 }
 
-// 対角項=val, mvD[inode]の非対角項=0
+
+// 対角項=val : ペナルティ法用途
 //
-void CAssyMatrix::setValue(const uint& imesh, const uint& inode, const uint& idof, const double& value)
-{
-#ifdef ADVANCESOFT_DEBUG
-    printf(" enter CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
-#endif
-
-    mvMatrix[imesh]->setValue(inode, idof, value);
-
-#ifdef ADVANCESOFT_DEBUG
-    printf(" exit CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, value);
-#endif
-}
-
-// 対角項=val
-//
-void CAssyMatrix::setValue_D(const uint& imesh, const uint& inode, const uint& idof, const double& value)
+void CAssyMatrix::setValue_D(const uiint& imesh, const uiint& inode, const uiint& idof, const double& value)
 {
     mvMatrix[imesh]->setValue_D(inode, idof, value);
 }
 
-void CAssyMatrix::setZero_NonDiag(const uint& imesh, const uint& inode, const uint& idof)
+// 対角項=val, mvD[inode]の非対角項=0
+//
+void CAssyMatrix::setValue(const uiint& imesh, const uiint& inode, const uiint& idof, const double& dDiag, CAssyVector *pRHS, const double& dRHS)
 {
-    mvMatrix[imesh]->setZero_NonDiag(inode, idof);
+#ifdef ADVANCESOFT_DEBUG
+    printf(" enter CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, dDiag);
+#endif
+
+    mvMatrix[imesh]->setValue(inode, idof, dDiag, pRHS->getVector(imesh), dRHS);
+
+#ifdef ADVANCESOFT_DEBUG
+    printf(" exit CAssyMatrix::setValue %d %d %d %e \n", imesh, inode, idof, dDiag);
+#endif
+}
+
+void CAssyMatrix::setZero_NonDiag(const uiint& imesh, const uiint& inode, const uiint& idof, CAssyVector *pRHS, const double& dRHS)
+{
+    mvMatrix[imesh]->setZero_NonDiag(inode, idof, pRHS->getVector(imesh), dRHS);
 }
 
 
+
 // xに値を入れて、Ax=B でBを求める
-void CAssyMatrix::multVector(const uint& imesh, CAssyVector* pX, CAssyVector* pB)
+void CAssyMatrix::multVector(const uiint& imesh, CAssyVector* pX, CAssyVector* pB)
 {
     // calc: B = A x
     mvMatrix[imesh]->multVector(pX->getVector(imesh), pB->getVector(imesh));
 }
 
-int CAssyMatrix::multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW) const
+uiint CAssyMatrix::multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW) const
 {
-	pV->updateCommBoundary(); // for parallel processing
+	pV->updateCommBoundary(); // parallel, interface data exchange
 
 	if (mvMPCMatrix.size() == 0) {
 		// p = (A + Ac) v
 		// 1: calc p = A v
-		for (int i = 0; i < mvMatrix.size(); i++) {
+		for (uiint i = 0; i < mvMatrix.size(); i++) {
 			mvMatrix[i]->multVector(pV->getVector(i), pP->getVector(i));
 		}
 		// 1a: calc p += Ac v
@@ -180,64 +198,66 @@ int CAssyMatrix::multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW) c
 			pW = new CAssyVector(pP);
 		}
 		// 1: calc p = T'v
-		for (int i = 0; i < mvMPCMatrix.size(); i++) {
+		for (uiint i = 0; i < mvMPCMatrix.size(); i++) {
 			mvMPCMatrix[i]->multVector(pV, pP);
 		}
 		// 2: calc w = A p
-		for (int i = 0; i < mvMatrix.size(); i++) {
+		for (uiint i = 0; i < mvMatrix.size(); i++) {
 			mvMatrix[i]->multVector(pP->getVector(i), pW->getVector(i));
 		}
 		// 2a: calc w += Ac p
 		if (mvContactMatrix.size() > 0) {
-			for (int i = 0; i < mvContactMatrix.size(); i++) {
+			for (uiint i = 0; i < mvContactMatrix.size(); i++) {
 //				mvContactMatrix[i]->multVectorAdd(pP, pW);
 			}
 		}
 		// 3: calc p = T w
-		for (int i = 0; i < mvMPCMatrix.size(); i++) {
+		for (uiint i = 0; i < mvMPCMatrix.size(); i++) {
 			mvMPCMatrix[i]->transMultVector(pW, pP);
 		}
 	}
 
-	pP->sumupCommBoundary(); // for parallel processing
+	pP->sumupCommBoundary(); // parallel 
 	
 	return 1;
 }
 
-int CAssyMatrix::multMPC(CAssyVector *pV, CAssyVector *pP) const
+uiint CAssyMatrix::multMPC(CAssyVector *pV, CAssyVector *pP) const
 {
 	if (mvMPCMatrix.size() == 0) {
 	} else {
 		// 1: calc p = T'v
-		for (int i = 0; i < mvMPCMatrix.size(); i++) {
+		for (uiint i = 0; i < mvMPCMatrix.size(); i++) {
 			mvMPCMatrix[i]->multVector(pV, pP);
 		}
 	}
 	return 1;
 }
 
-int CAssyMatrix::residual(CAssyVector *pV, const CAssyVector *pF, CAssyVector *pR) const
+uiint CAssyMatrix::residual(CAssyVector *pV, const CAssyVector *pF, CAssyVector *pR) const
 {
-	// 1: r = A v
-	multVector(pV, pR);
-	// 2: r = f - r
-	for (int i = 0; i < pR->size(); i++) {
-		(*pR)[i] = (*pF)[i] - (*pR)[i];
-	}
-	return 1;
+    // 1: r = A v
+    multVector(pV, pR);
+
+    // 2: r = f - r
+    for (uiint i = 0; i < pR->size(); i++) {
+            (*pR)[i] = (*pF)[i] - (*pR)[i];
+    }
+
+    return 1;
 }
 
-int CAssyMatrix::setupSolver(int type)
+uiint CAssyMatrix::setupSolver(iint type)
 {
-	// TODO: implement setupSolver
-	// type
-	// iter
-	// tolerance
-	// others
-	return 1;
+    // TODO: implement setupSolver
+    // type
+    // iter
+    // tolerance
+    // others
+    return 1;
 }
 
-int CAssyMatrix::setupPreconditioner(int type) const
+uiint CAssyMatrix::setupPreconditioner(iint type) const
 {
 	// TODO: implement setupPreconditioner
 	// type
@@ -259,7 +279,7 @@ int CAssyMatrix::setupPreconditioner(int type) const
 	return 1;
 }
 
-int CAssyMatrix::setupSmoother(int type)
+uiint CAssyMatrix::setupSmoother(iint type)
 {
 	// TODO: implement setupSmoother
 	// type
@@ -272,22 +292,23 @@ int CAssyMatrix::setupSmoother(int type)
 
 // pF:右辺ベクトル, pV:解ベクトル
 //
-int CAssyMatrix::solve(const CAssyVector *pF, CAssyVector *pV, int iter = 0) const
+uiint CAssyMatrix::solve(const CAssyVector *pF, CAssyVector *pV, iint iter = 0) const
 {
 	int iter_save = mpSolver->getIterMax();
 	if (iter > 0) mpSolver->setIterMax(iter);
 	mpSolver->solve(this, pF, pV);
 	if (iter > 0) mpSolver->setIterMax(iter_save);
+
 	return 1;
 }
 
-int CAssyMatrix::precond(const CAssyVector *pR, CAssyVector *pZ, int iter) const
+uiint CAssyMatrix::precond(const CAssyVector *pR, CAssyVector *pZ, iint iter) const
 {
 	CAssyVector z_resid(pR);
 	pZ->setZero();
-	for (int i = 0; i < iter; i++) {
+	for (iint i = 0; i < iter; i++) {
 		//   for each matrix
-		int index = 0;
+		uiint index = 0;
 		for (CVMatConstIter im = mvMatrix.begin(); im != mvMatrix.end(); im++) {
 			//     call preconditioner
 			(*im)->precond(pR->getVector(index), z_resid.getVector(index));
@@ -305,13 +326,13 @@ int CAssyMatrix::precond(const CAssyVector *pR, CAssyVector *pZ, int iter) const
 	return 1;
 }
 
-int CAssyMatrix::relax(const CAssyVector *pF, CAssyVector *pV, int iter) const
+uiint CAssyMatrix::relax(const CAssyVector *pF, CAssyVector *pV, iint iter) const
 {
 	CAssyVector v_resid(pF);
 	pV->setZero();
-	for (int i = 0; i < iter; i++) {
+	for (iint i = 0; i < iter; i++) {
 		//   for each matrix
-		int index = 0;
+		uiint index = 0;
 		for (CVMatConstIter im = mvMatrix.begin(); im != mvMatrix.end(); im++) {
 			//     call preconditioner
 			(*im)->relax(pF->getVector(index), v_resid.getVector(index));
@@ -329,7 +350,7 @@ int CAssyMatrix::relax(const CAssyVector *pF, CAssyVector *pV, int iter) const
 	return 1;
 }
 
-int CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int alpha1, int alpha2) const
+uiint CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, iint iter, iint alpha1, iint alpha2) const
 {
 	relax(pF, pV, alpha1);
 	if (mpCoarseMatrix != 0) {
@@ -341,7 +362,7 @@ int CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int a
 		w.restrictTo(&fc);
 		vc.setZero();
 
-		for (int i = 0; i < iter; i++) {
+		for (iint i = 0; i < iter; i++) {
                     mpCoarseMatrix->MGCycle(&vc, &fc, iter, alpha1, alpha2);
 		}
 
@@ -354,9 +375,9 @@ int CAssyMatrix::MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int a
 	return 1;
 }
 
-int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
+uiint CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 {
-	printf(" enter CAssyMatrix::MGInitialGuess %d \n", mMGLevel);
+	printf(" enter CAssyMatrix::MGInitialGuess %ld \n", mMGLevel);
 	int mAlpha; // TODO: TEMPORARY!!!
 
 	//if (mpCoarseMatrix != 0) {
@@ -370,8 +391,6 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 		vc.setZero();
 		mpCoarseMatrix->MGInitialGuess(&fc, &vc);
                 
-                cout << "AssyMatrix::MGInitialGuess, mgLevel = " << mMGLevel << endl;
-
 		w.prolongateFrom(&vc);
 		pV->add(&w);
 	} else {
@@ -380,7 +399,7 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 	}
         //////	relax(pF, pV, mAlpha);
 	precond(pF, pV, 1);
-	printf(" exit CAssyMatrix::MGInitialGuess %d \n", mMGLevel);
+	printf(" exit CAssyMatrix::MGInitialGuess %ld \n", mMGLevel);
 	return 1;
 }
 
@@ -390,7 +409,7 @@ int CAssyMatrix::MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const
 //
 void CAssyMatrix::dump()
 {
-    uint i;
+    uiint i;
     for(i=0; i < mvMatrix.size(); i++){
         mvMatrix[i]->dump();
     };

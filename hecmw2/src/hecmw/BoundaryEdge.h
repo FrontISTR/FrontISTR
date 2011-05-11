@@ -18,7 +18,7 @@ public:
     virtual ~CBoundaryEdge();
 
 protected:
-    uint mnElemEdgeID;//エンティティ:Mesh-Element-Edge-ID
+    uiint mnElemEdgeID;//エンティティ:Mesh-Element-Edge-ID
 
     CBoundaryNode *mpEdgeBNode;// 辺中心のBNode
 
@@ -29,14 +29,14 @@ protected:
     double mLength;
 public:
     // 要素辺ID(Edge ID)
-    void setElementEdgeID(const uint& id){ mnElemEdgeID= id;}
-    uint& getElementEdgeID(){ return mnElemEdgeID;}
+    void setElementEdgeID(const uiint& id){ mnElemEdgeID= id;}
+    uiint& getElementEdgeID(){ return mnElemEdgeID;}
 
     // 辺形状( Beam )
-    void setBEdgeShape(const uint& elemType);
-    uint& getBEdgeShape(){ return mnShapeType;}
+    void setBEdgeShape(const uiint& elemType);
+    uiint& getBEdgeShape(){ return mnShapeType;}
 
-    virtual uint getNumOfVert();
+    virtual uiint getNumOfVert();
 
     // 辺中心のBNode
     void setEdgeBNode(CBoundaryNode *pBNode);
@@ -55,13 +55,13 @@ public:
 
     // 辺の再分割
     // ----
-    void refine(uint& countID, const vuint& vDOF);
+    void refine(uiint& countID, const vuint& vDOF);
 
     vector<CBoundaryEdge*>& getProgParts(){ return mvProgBEdge;}
 
     void replaceEdgeBNode();// 2次要素の場合、辺BNodeをmvBNodeに移設.
 
-    void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+    void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
 };
 #endif	/* _BOUNDARYEDGE_H */
 }

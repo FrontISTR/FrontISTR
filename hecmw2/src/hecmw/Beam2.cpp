@@ -10,12 +10,12 @@
 #include "AggregateElement.h"
 using namespace pmw;
 
-uint CBeam2::mnElemType = ElementType::Beam2;
-uint CBeam2::mnElemOrder = 2;
-uint CBeam2::mNumOfFace = 0;
-uint CBeam2::mNumOfEdge = 1;
-uint CBeam2::mNumOfNode = 3;
-uint CBeam2::mNumOfVert = 2;
+uiint CBeam2::mnElemType = ElementType::Beam2;
+uiint CBeam2::mnElemOrder = 2;
+uiint CBeam2::mNumOfFace = 0;
+uiint CBeam2::mNumOfEdge = 1;
+uiint CBeam2::mNumOfNode = 3;
+uiint CBeam2::mNumOfVert = 2;
 
 CBeam2::CBeam2()
 {
@@ -34,7 +34,7 @@ void CBeam2::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -55,7 +55,7 @@ void CBeam2::initialize()
 //
 void CBeam2::replaseEdgeNode()
 {
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         mvNode[mNumOfVert + iedge] = mvEdgeInterNode[iedge];
     };

@@ -14,7 +14,7 @@ using namespace pmw;
 
 CISTR2Edge::CISTR2Edge()
 {
-    uint i;
+    uiint i;
     // FrontISTR -> MW3 辺番号 (頂点Overの番号について辺番号)
     // --
     // Hexa 20 Node
@@ -66,7 +66,7 @@ CISTR2Edge::~CISTR2Edge()
 
 // 形状関数 番号 -> MW3の辺番号に変換
 // --
-uint& CISTR2Edge::HexaEdgeNum(const uint& ishape)
+uiint& CISTR2Edge::HexaEdgeNum(const uiint& ishape)
 {
     if(ishape < 8) mpLogger->Info(Utility::LoggerMode::Warn,"edge is shape num > 7");
     if(ishape > 19){
@@ -76,7 +76,7 @@ uint& CISTR2Edge::HexaEdgeNum(const uint& ishape)
     
     return mvHexa[ishape];
 }
-uint& CISTR2Edge::TetraEdgeNum(const uint& ishape)
+uiint& CISTR2Edge::TetraEdgeNum(const uiint& ishape)
 {
     if(ishape < 4) mpLogger->Info(Utility::LoggerMode::Warn,"edge is shape num > 3");
     if(ishape > 9){
@@ -86,7 +86,7 @@ uint& CISTR2Edge::TetraEdgeNum(const uint& ishape)
 
     return mvTetra[ishape];
 }
-uint& CISTR2Edge::PrismEdgeNum(const uint& ishape)
+uiint& CISTR2Edge::PrismEdgeNum(const uiint& ishape)
 {
     if(ishape < 6) mpLogger->Info(Utility::LoggerMode::Warn,"edge is shape num > 5");
     if(ishape > 14){
@@ -96,7 +96,7 @@ uint& CISTR2Edge::PrismEdgeNum(const uint& ishape)
 
     return mvPrism[ishape];
 }
-uint& CISTR2Edge::QuadEdgeNum(const uint& ishape)
+uiint& CISTR2Edge::QuadEdgeNum(const uiint& ishape)
 {
     if(ishape < 4) mpLogger->Info(Utility::LoggerMode::Warn,"edge is shape num > 3");
     if(ishape > 7){
@@ -106,7 +106,7 @@ uint& CISTR2Edge::QuadEdgeNum(const uint& ishape)
 
     return mvQuad[ishape];
 }
-uint& CISTR2Edge::TriangleEdgeNum(const uint& ishape)
+uiint& CISTR2Edge::TriangleEdgeNum(const uiint& ishape)
 {
     if(ishape < 3) mpLogger->Info(Utility::LoggerMode::Warn,"edge is shape num > 2");
     if(ishape > 5){

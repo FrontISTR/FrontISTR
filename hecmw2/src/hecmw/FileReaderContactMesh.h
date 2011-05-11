@@ -8,6 +8,7 @@
 #include "boost/lexical_cast.hpp"
 
 #include "ElementType.h"
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
 #ifndef _FILEREADERCONTACTMESH_H
@@ -18,6 +19,7 @@ public:
     virtual ~CFileReaderContactMesh();
 
     virtual bool Read(ifstream& ifs, string& sLine);
+    virtual bool Read_bin(ifstream& ifs);
 };
 #endif	/* _FILEREADERCONTACTMESH_H */
 }

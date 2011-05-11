@@ -21,31 +21,31 @@ public:
 //    static uint mNumOfNode;
 
 protected:
-    virtual uint* getLocalNode_Edge(const uint& iedge);
-    virtual uint* getLocalNode_Face(const uint& iface);
+    virtual uiint* getLocalNode_Edge(const uiint& iedge);
+    virtual uiint* getLocalNode_Face(const uiint& iface);
 
 public:
-    virtual uint getElemType();
-    virtual uint getNumOfEdge();
-    virtual uint getNumOfFace();
-    virtual uint getNumOfNode();
-    virtual uint getNumOfVert();
+    virtual uiint getElemType();
+    virtual uiint getNumOfEdge();
+    virtual uiint getNumOfFace();
+    virtual uiint getNumOfNode();
+    virtual uiint getNumOfVert();
 
-    virtual void setOrder(const uint& order);
+    virtual void setOrder(const uiint& order);
     
-    virtual PairBNode getPairBNode(const uint& iedge);
-    virtual uint& getEdgeID(PairBNode& pairBNode);
+    virtual PairBNode getPairBNode(const uiint& iedge);
+    virtual uiint& getEdgeID(PairBNode& pairBNode);
 
-    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uint& iface);
-    virtual uint& getFaceID(vector<CBoundaryNode*>& vBNode);
+    virtual vector<CBoundaryNode*> getFaceCnvNodes(const uiint& iface);
+    virtual uiint& getFaceID(vector<CBoundaryNode*>& vBNode);
     
     
-    virtual void refine(uint& countID, const vuint& vDOF);// Refine 再分割
+    virtual void refine(uiint& countID, const vuint& vDOF);// Refine 再分割
     virtual double& calcVolume();// BoundaryVolumeの体積
 
-    virtual void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+    virtual void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
 
-    virtual void replaceEdgeBNode(const uint& iedge);//2次要素の場合に辺BNodeをmvBNodeへ移設.
+    virtual void replaceEdgeBNode(const uiint& iedge);//2次要素の場合に辺BNodeをmvBNodeへ移設.
 
     virtual void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
 };

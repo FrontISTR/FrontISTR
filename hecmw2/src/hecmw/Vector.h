@@ -25,21 +25,21 @@ public:
 	typedef ublas::vector<double> ElemType;
         //////////////////////////////////////
 
-	CVector(CMesh *pMesh, const uint& nDOF);
+	CVector(CMesh *pMesh, const uiint& nDOF);
 	CVector(const CVector *pVector);
 	virtual ~CVector();
 
-	size_t size() const;
+	uiint size() const;
 	// size_t lenInternal() const;
-	const ElemType &operator[](size_t idx) const;
-	ElemType &operator[](size_t idx);
+	const ElemType &operator[](uiint idx) const;
+	ElemType &operator[](uiint idx);
 
         void Vector_Clear();// Matrix 0 clear
 
 	void setZero();
-	void setValue(int inode, int idof, double value);
-	void addValue(int inode, int idof, double value);
-	double getValue(int inode, int idof);
+	void setValue(uiint inode, uiint idof, double value);
+	void addValue(uiint inode, uiint idof, double value);
+	double& getValue(uiint inode, uiint idof);
 	void sumSV(double alpha, const CVector *pX, CVector *pY) const;
 	void addSV(double alpha, const CVector *pX);
 	void add(const CVector *pX);
@@ -50,8 +50,8 @@ public:
 	double innerProd(const CVector *pX) const;
 	void updateCommBoundary();
 
-	int restrictTo(CVector *pV) const;
-	int prolongateFrom(const CVector *pV);
+	uiint restrictTo(CVector *pV) const;
+	uiint prolongateFrom(const CVector *pV);
 
 	void print_elem() const ;//{
 	//	for(uint i=0;i<size();i++) printf("%d %e %e %e \n",i,mvVector[i](0),mvVector[i](1),mvVector[i](2));
@@ -60,15 +60,15 @@ public:
         void dump();//2011.01.12 列ベクトルのダンプ
 
 private:
-	size_t mnNode;
-	size_t mnNodeInternal;
+	uiint mnNode;
+	uiint mnNodeInternal;
 	int mnDOF;
 	std::vector<ElemType> mvVector;
 	// restrictor
 	// prolongator
 	CMesh *mpMesh;
 
-        bool isScopeNode(const uint& idx) const;//Vector範囲内に存在するか.
+        bool isScopeNode(const uiint& idx) const;//Vector範囲内に存在するか.
 };
 
 }

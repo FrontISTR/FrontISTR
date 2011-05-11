@@ -17,33 +17,35 @@ public:
     virtual ~CVectorNode();
 
 private:
-    static uint mnType;
+    static uiint mnType;
 
 protected:
-    vdouble mvParam;
+    ////    vdouble mvParam;
+    uiint mnNumOfDOF;
 
 public:
-    virtual uint& getType(){ return mnType;}
+    virtual uiint& getType(){ return mnType;}
 
     // parameter accessor
     //
-    //virtual void reserveScalar(const uint& res_size);
-    virtual void resizeScalar(const uint& res_size);
-    //virtual void reserveVector(const uint& res_size);
-    virtual void resizeVector(const uint& res_size);
+    virtual void setScalarDOF(const uiint& nNDOF);
+    virtual void setVectorDOF(const uiint& nNDOF);
+    virtual uiint& getScalarDOF();
+    virtual uiint& getVectorDOF();
+    virtual uiint getTotalDOF();
 
-    //virtual void setScalar(const double& val);
-    virtual void setScalar(const double& val, const uint& index);
-    //virtual void setVector(const vdouble& vVal);
-    //virtual void setVector(const double& val);
-    virtual void setVector(const double& val, const uint& index);
-
-    virtual double& getScalar(const uint& i);
-    virtual double& getVector(const uint& i){ return mvParam[i];}
-
-    virtual uint numOfScalarParam();
-    virtual uint numOfVectorParam();
-    virtual uint numOfTotalParam();
+////    virtual void resizeScalar(const uiint& res_size);
+////    virtual void resizeVector(const uiint& res_size);
+////
+////    virtual void setScalar(const double& val, const uiint& index);
+////    virtual void setVector(const double& val, const uiint& index);
+////
+////    virtual double& getScalar(const uiint& i);
+////    virtual double& getVector(const uiint& i){ return mvParam[i];}
+////
+////    virtual uiint numOfScalarParam();
+////    virtual uiint numOfVectorParam();
+////    virtual uiint numOfTotalParam();
 };
 }
 #endif	/* _VECTORNODE_H */

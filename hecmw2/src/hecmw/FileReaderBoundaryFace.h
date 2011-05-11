@@ -4,13 +4,12 @@
  *
  * Created on 2009/05/22, 18:09
  */
-
-#ifndef _FILEREADERBOUNDARYFACE_H_f063dd36_8770_411d_9871_71e18964240e
-#define	_FILEREADERBOUNDARYFACE_H_f063dd36_8770_411d_9871_71e18964240e
-
 #include "FileReader.h"
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
+#ifndef _FILEREADERBOUNDARYFACE_H_
+#define	_FILEREADERBOUNDARYFACE_H_
 class CFileReaderBoundaryFace:public CFileReader{
 public:
     CFileReaderBoundaryFace();
@@ -18,8 +17,10 @@ public:
 
 public:
    virtual bool Read(ifstream& ifs, string& sLine);
+   virtual bool Read_bin(ifstream& ifs);
 
 };
-}
 #endif	/* _FILEREADERBOUNDARYFACE_H */
+}
+
 

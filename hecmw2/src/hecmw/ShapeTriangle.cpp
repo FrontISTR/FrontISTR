@@ -37,7 +37,7 @@ CShapeTriangle::CShapeTriangle()
     mvIntegNum[1]= 3;
 
 
-    uint numOfIntg,numOfShape,dof;
+    uiint numOfIntg,numOfShape,dof;
     //領域確保
     numOfIntg=1; numOfShape=3; dof=2;
     ResizeShape(mvN31, numOfIntg,numOfShape);
@@ -70,8 +70,8 @@ CShapeTriangle::~CShapeTriangle()
 //形状関数 & 導関数のセットアップ
 void CShapeTriangle::setupShapeFunction()
 {
-    uint igauss;
-    uint numOfIntg;
+    uiint igauss;
+    uiint numOfIntg;
     double r,s;
 
     igauss= 0;
@@ -87,8 +87,8 @@ void CShapeTriangle::setupShapeFunction()
 }
 void CShapeTriangle::setupShapeDeriv()
 {
-    uint igauss;
-    uint numOfIntg;
+    uiint igauss;
+    uiint numOfIntg;
     double r,s;
 
     igauss= 0;
@@ -103,8 +103,8 @@ void CShapeTriangle::setupShapeDeriv()
 }
 void CShapeTriangle::setupShape2ndDeriv()
 {
-    uint igauss;
-    uint numOfIntg;
+    uiint igauss;
+    uiint numOfIntg;
 
     Shape_2ndDeriv3();
 
@@ -117,12 +117,12 @@ void CShapeTriangle::setupShape2ndDeriv()
 
 //形状関数
 //void CShapeTriangle::ShapeFunction3(double N[][3], const uint& igauss, const double& r, const double& s)
-void CShapeTriangle::ShapeFunction3(vvdouble& N, const uint& igauss, const double& r, const double& s)
+void CShapeTriangle::ShapeFunction3(vvdouble& N, const uiint& igauss, const double& r, const double& s)
 {
     N[igauss][0]= r;  N[igauss][1]= s;  N[igauss][2]= 1.0 - r - s;
 }
 //void CShapeTriangle::ShapeFunction6(double N[][6], const uint& igauss, const double& r, const double& s)
-void CShapeTriangle::ShapeFunction6(vvdouble& N, const uint& igauss, const double& r, const double& s)
+void CShapeTriangle::ShapeFunction6(vvdouble& N, const uiint& igauss, const double& r, const double& s)
 {
     double t= 1.0-r-s;
 
@@ -136,7 +136,7 @@ void CShapeTriangle::ShapeFunction6(vvdouble& N, const uint& igauss, const doubl
 
 //導関数
 //void CShapeTriangle::ShapeDeriv3(double dNdr[][3][2], const uint& igauss)
-void CShapeTriangle::ShapeDeriv3(vvvdouble& dNdr, const uint& igauss)
+void CShapeTriangle::ShapeDeriv3(vvvdouble& dNdr, const uiint& igauss)
 {
     dNdr[igauss][0][0]=  1.0;
     dNdr[igauss][1][0]=  0.0;
@@ -147,7 +147,7 @@ void CShapeTriangle::ShapeDeriv3(vvvdouble& dNdr, const uint& igauss)
     dNdr[igauss][2][1]= -1.0;
 }
 //void CShapeTriangle::ShapeDeriv6(double dNdr[][6][2], const uint& igauss, const double& r, const double& s)
-void CShapeTriangle::ShapeDeriv6(vvvdouble& dNdr, const uint& igauss, const double& r, const double& s)
+void CShapeTriangle::ShapeDeriv6(vvvdouble& dNdr, const uiint& igauss, const double& r, const double& s)
 {
     double t= 1.0-r-s;
 
@@ -169,7 +169,7 @@ void CShapeTriangle::ShapeDeriv6(vvvdouble& dNdr, const uint& igauss, const doub
 //2次導関数
 void CShapeTriangle::Shape_2ndDeriv3()
 {
-    uint ishape,iaxis,jaxis;
+    uiint ishape,iaxis,jaxis;
 
     for(ishape=0; ishape < 3; ishape++){
     for(iaxis=0;  iaxis  < 2; iaxis++) {
@@ -180,7 +180,7 @@ void CShapeTriangle::Shape_2ndDeriv3()
     };
 }
 //void CShapeTriangle::Shape_2ndDeriv6(double d2Ndr[][6][2][2], const uint& igauss)
-void CShapeTriangle::Shape_2ndDeriv6(v4double& d2Ndr, const uint& igauss)
+void CShapeTriangle::Shape_2ndDeriv6(v4double& d2Ndr, const uiint& igauss)
 {
     d2Ndr[igauss][0][0][0]=  4.0;  d2Ndr[igauss][0][0][1]=  4.0;
     d2Ndr[igauss][1][0][0]=  4.0;  d2Ndr[igauss][1][0][1]=  0.0;
@@ -200,31 +200,31 @@ void CShapeTriangle::Shape_2ndDeriv6(v4double& d2Ndr, const uint& igauss)
 
 // 形状関数   引数:積分点, 形状関数
 // ----
-double& CShapeTriangle::N31(const uint& igauss, const uint& ishape){ return mvN31[igauss][ishape];}
-double& CShapeTriangle::N63(const uint& igauss, const uint& ishape){ return mvN63[igauss][ishape];}
+double& CShapeTriangle::N31(const uiint& igauss, const uiint& ishape){ return mvN31[igauss][ishape];}
+double& CShapeTriangle::N63(const uiint& igauss, const uiint& ishape){ return mvN63[igauss][ishape];}
 
 // 導関数   引数:積分点, 形状関数,座標方向
 // ----
-double& CShapeTriangle::dNdr31(const uint& igauss, const uint& ishape, const uint& deriv_axis){
+double& CShapeTriangle::dNdr31(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis){
     return mvdNdr31[igauss][ishape][deriv_axis];
 }
-double& CShapeTriangle::dNdr63(const uint& igauss, const uint& ishape, const uint& deriv_axis){
+double& CShapeTriangle::dNdr63(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis){
     return mvdNdr63[igauss][ishape][deriv_axis];
 }
 
 // 2次導関数 引数:積分点, 形状関数, 座標方向, 座標方向
 // ----
-double& CShapeTriangle::d2Ndr31(const uint& igauss, const uint& ishape, const uint& iaxis, const uint& jaxis){
+double& CShapeTriangle::d2Ndr31(const uiint& igauss, const uiint& ishape, const uiint& iaxis, const uiint& jaxis){
     return mvd2Ndr31[igauss][ishape][iaxis][jaxis];
 }
-double& CShapeTriangle::d2Ndr63(const uint& igauss, const uint& ishape, const uint& iaxis, const uint& jaxis){
+double& CShapeTriangle::d2Ndr63(const uiint& igauss, const uiint& ishape, const uiint& iaxis, const uiint& jaxis){
     return mvd2Ndr63[igauss][ishape][iaxis][jaxis];
 }
 
 
 
 // 返り値:重みの配列, 引数:積分点数
-double* CShapeTriangle::Weight(const uint& integNum)
+double* CShapeTriangle::Weight(const uiint& integNum)
 {
     switch(integNum){
         case(1):
@@ -240,7 +240,7 @@ double* CShapeTriangle::Weight(const uint& integNum)
 }
 // 返り値:重み, 引数:重みの配列Index
 double& CShapeTriangle::Weight_pt1(){ return mW1[0];}
-double& CShapeTriangle::Weight_pt3(const uint& igauss){ return mW3[igauss];}
+double& CShapeTriangle::Weight_pt3(const uiint& igauss){ return mW3[igauss];}
 
 
 
@@ -250,7 +250,7 @@ double& CShapeTriangle::Weight_pt3(const uint& igauss){ return mW3[igauss];}
 // --
 void CShapeTriangle::setupIntegValue6()
 {
-    uint ishape;
+    uiint ishape;
     // 頂点
     for(ishape=0; ishape < 3; ishape++) mvIntegValue6[ishape]= 0.0;
     // 辺
@@ -261,7 +261,7 @@ void CShapeTriangle::setupIntegValue6()
 // --
 void CShapeTriangle::setupIntegValue3()
 {
-    uint ishape;
+    uiint ishape;
     for(ishape=0; ishape < 3; ishape++) mvIntegValue3[ishape]= 1.0/3.0;
 }
 

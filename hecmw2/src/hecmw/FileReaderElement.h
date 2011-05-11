@@ -8,10 +8,11 @@
 #include "TypeDef.h"
 
 #include "FileReader.h"
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
-#ifndef FILE_READER_ELEMENT_HH_F47C3D0E_0594_4815_A4B6_87EC43CFF668
-#define FILE_READER_ELEMENT_HH_F47C3D0E_0594_4815_A4B6_87EC43CFF668
+#ifndef FILE_READER_ELEMENT_HH_F
+#define FILE_READER_ELEMENT_HH_F
 class CFileReaderElement:public CFileReader{
 public:
     CFileReaderElement();
@@ -19,6 +20,7 @@ public:
 
 public:
     virtual bool Read(ifstream& ifs, string& sLine);
+    virtual bool Read_bin(ifstream& ifs);
 
 };
 #endif

@@ -9,6 +9,8 @@
 #include <iostream>
 using namespace std;
 
+#include "TypeDef.h"
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #else
@@ -60,15 +62,14 @@ public:
 
 private:
     int myRank;
-    int numOfProcess;
-
+    int nNumOfProcess;
 
 public:
     void Initialize(int argc, char **argv);//引数:argc,argvは,MPIの引数
     void Finalize();
 
     int& getRank(){ return myRank;}//自分のプロセス-ランクを取得
-    int& getNumOfProcess(){ return numOfProcess;}
+    int& getNumOfProcess(){ return nNumOfProcess;}
 
     // MPI ラップ関数
     //
@@ -92,6 +93,8 @@ public:
     int Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
                 void* recvbuf, int recvcnt, MPI_Datatype recvtype,
                 int root, MPI_Comm comm);
+
+    int Bcast(void* buf, int cnt, MPI_Datatype type, int root, MPI_Comm comm);
 
 };
 #endif	/* _HEC_MPI_H */

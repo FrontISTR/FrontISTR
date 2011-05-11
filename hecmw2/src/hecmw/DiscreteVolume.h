@@ -28,11 +28,11 @@ public:
     virtual ~CDiscreteVolume();
 
 private:
-    uint mPrismDiscre[3][4];// Prismの頂点番号で表した,3個のTetra
-    uint mHexaDiscre[6][4]; // Hexaの頂点番号で表した,6個のTetra
+    uiint mPrismDiscre[3][4];// Prismの頂点番号で表した,3個のTetra
+    uiint mHexaDiscre[6][4]; // Hexaの頂点番号で表した,6個のTetra
 public:
-    uint* getPrismDiscrete(const uint& index){ return mPrismDiscre[index];}
-    uint* getHexaDiscrete(const uint& index){ return mHexaDiscre[index];}
+    uiint* getPrismDiscrete(const uiint& index){ return mPrismDiscre[index];}
+    uiint* getHexaDiscrete(const uiint& index){ return mHexaDiscre[index];}
 };
 #endif	/* _DISCRETEVOLUME_H */
 }

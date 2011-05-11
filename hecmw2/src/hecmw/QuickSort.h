@@ -17,10 +17,10 @@ namespace pmw{
 // CNode*, CElement* を T としてIDを比較してソート
 // --
 template<class T>
-void QuicksortID(vector<T>& val, const uint& start, const uint& end){
-    uint i= start;//開始インデックス
-    uint j= end;  //終了インデックス
-    uint base= (val[start]->getID() + val[end]->getID())/2; //基準値(平均値)
+void QuicksortID(vector<T>& val, const uiint& start, const uiint& end){
+    uiint i= start;//開始インデックス
+    uiint j= end;  //終了インデックス
+    uiint base= (val[start]->getID() + val[end]->getID())/2; //基準値(平均値)
     //int base= val[start]->getID();//基準値
 
     ////debug
@@ -49,10 +49,10 @@ void QuicksortID(vector<T>& val, const uint& start, const uint& end){
 // ソート ID
 //--
 template<class T>
-void sortID(vector<T>& val, const uint& length)
+void sortID(vector<T>& val, const uiint& length)
 {
-    uint i;
-    uint j;
+    uiint i;
+    uiint j;
 
     for(i=0; i< length-1; i++){
         for(j=i+1; j< length; j++){

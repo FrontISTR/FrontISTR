@@ -25,7 +25,7 @@ public:
 
 protected:
     vector<CBoundaryEdge*> mvBEdge;
-    map<uint, uint, less<uint> > mmBEdgeID2Index;
+    map<uiint, uiint, less<uiint> > mmBEdgeID2Index;
 
     vvuint mvAggregateEdge;// BNodeの辺-集合
 
@@ -33,29 +33,29 @@ protected:
 
 public:
     // 境界辺 :=> BEdge
-    void resizeEdge(const uint& res_size);
-    uint getNumOfEdge(){ return mvBEdge.size();}
+    void resizeEdge(const uiint& res_size);
+    uiint getNumOfEdge(){ return mvBEdge.size();}
 
-    void setBEdge(const uint& index, CBoundaryEdge *pBEdge);
+    void setBEdge(const uiint& index, CBoundaryEdge *pBEdge);
     void addBEdge(CBoundaryEdge *pBEdge);
 
-    CBoundaryEdge* getBEdgeIX(const uint& index){ return mvBEdge[index];}
-    CBoundaryEdge* getBEdgeID(const uint& id){
-        uint index= mmBEdgeID2Index[id];
+    CBoundaryEdge* getBEdgeIX(const uiint& index){ return mvBEdge[index];}
+    CBoundaryEdge* getBEdgeID(const uiint& id){
+        uiint index= mmBEdgeID2Index[id];
         return mvBEdge[index];
     }
-    uint& getBEdgeIndex(const uint& id){ return mmBEdgeID2Index[id];}
+    uiint& getBEdgeIndex(const uiint& id){ return mmBEdgeID2Index[id];}
 
     // 辺-集合
     void resizeAggEdge();
-    vuint& getAggEdge(const uint& ibnode){ return mvAggregateEdge[ibnode];}
+    vuint& getAggEdge(const uiint& ibnode){ return mvAggregateEdge[ibnode];}
     void setupAggEdge();
-    void setAggEdge(const uint& ibnode, const uint& nEdgeID){ mvAggregateEdge[ibnode].push_back(nEdgeID);}
+    void setAggEdge(const uiint& ibnode, const uiint& nEdgeID){ mvAggregateEdge[ibnode].push_back(nEdgeID);}
 
     // 辺ノード生成
     void GeneEdgeBNode();
     // 辺ノード提供
-    CBoundaryNode* getEdgeBNode(const uint& iedge){ return mvBEdgeBNode[iedge];}
+    CBoundaryNode* getEdgeBNode(const uiint& iedge){ return mvBEdgeBNode[iedge];}
 
 
     // Refine 辺の再分割  => progBMeshにセット
@@ -69,10 +69,11 @@ protected:
     //----
     virtual void distNeumannValue();
 
-    //Dirichlet条件の節点分配(BNode周囲の面集合平均値)
-    //----
-    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
-    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+////    //Dirichlet条件の節点分配(BNode周囲の面集合平均値)
+////    //----
+////    virtual void distDirichletValue_at_CGrid();//Level==0(coarse grid)
+////    virtual void distDirichletValue_at_FGrid();//Level>=1(fine grid)
+    virtual void distDirichletValue();
 };
 #endif	/* _BOUNDARYEDGEMESH_H */
 }

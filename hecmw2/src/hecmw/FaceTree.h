@@ -19,35 +19,35 @@ class CFaceTree{
 private:
     CFaceTree();
     
-    uint  mFaceIndex;
+    uiint  mFaceIndex;
 
     // Faceを構成する頂点(局所ノード番号)
-    uint mHexaFaceIndex[6][4];
-    uint mTetraFaceIndex[4][3];
-    uint mPrismFaceIndex[5][4];
-    uint mPyramidFaceIndex[5][4];
-    uint mQuadFaceIndex[4];
-    uint mTriangleFaceIndex[3];
+    uiint mHexaFaceIndex[6][4];
+    uiint mTetraFaceIndex[4][3];
+    uiint mPrismFaceIndex[5][4];
+    uiint mPyramidFaceIndex[5][4];
+    uiint mQuadFaceIndex[4];
+    uiint mTriangleFaceIndex[3];
     
     //uint QuadVertSize,TriVertSize;//Faceの頂点数(四辺形=4,三角形=3)
     //uint HexFaceSize, TetFaceSize;//Face数(Hexa=6, Tetra=4)
 
     // 頂点に接続する面番号
-    uint mHexaConnFace[8][3];
-    uint mTetraConnFace[4][3];
-    uint mPrismConnFace[6][3];
-    uint mPyramidConnFace[5][4];
-    uint mQuadConnFace[4][1];
-    uint mTriangleConnFace[3][1];
+    uiint mHexaConnFace[8][3];
+    uiint mTetraConnFace[4][3];
+    uiint mPrismConnFace[6][3];
+    uiint mPyramidConnFace[5][4];
+    uiint mQuadConnFace[4][1];
+    uiint mTriangleConnFace[3][1];
 
 
     // 面番号ごとの頂点数
-    uint mHexaFaceNumOfVert[6];
-    uint mTetraFaceNumOfVert[4];
-    uint mPrismFaceNumOfVert[5];
-    uint mPyramidFaceNumOfVert[5];
-    uint mQuadFaceNumOfVert[1];
-    uint mTriangleFaceNumOfVert[1];
+    uiint mHexaFaceNumOfVert[6];
+    uiint mTetraFaceNumOfVert[4];
+    uiint mPrismFaceNumOfVert[5];
+    uiint mPyramidFaceNumOfVert[5];
+    uiint mQuadFaceNumOfVert[1];
+    uiint mTriangleFaceNumOfVert[1];
 
 
 public:
@@ -57,48 +57,48 @@ public:
     }
     virtual ~CFaceTree();
 
-    uint& getHexaFaceIndex(const vuint& vLocalNodeIndex);
-    uint& getHexaFaceIndex2(const vuint& vLocalNodeIndex);
+    uiint& getHexaFaceIndex(const vuint& vLocalNodeIndex);
+    uiint& getHexaFaceIndex2(const vuint& vLocalNodeIndex);
 
-    uint& getTetraFaceIndex(const vuint& vLocalNodeIndex);
-    uint& getTetraFaceIndex2(const vuint& vLocalNodeIndex);
+    uiint& getTetraFaceIndex(const vuint& vLocalNodeIndex);
+    uiint& getTetraFaceIndex2(const vuint& vLocalNodeIndex);
 
-    uint& getPrismFaceIndex(const vuint& vLocalNodeIndex);
-    uint& getPrismFaceIndex2(const vuint& vLocalNodeIndex);
+    uiint& getPrismFaceIndex(const vuint& vLocalNodeIndex);
+    uiint& getPrismFaceIndex2(const vuint& vLocalNodeIndex);
 
-    uint& getPyramidFaceIndex(const vuint& vLocalNodeIndex);
-    uint& getPyramidFaceIndex2(const vuint& vLocalNodeIndex);
+    uiint& getPyramidFaceIndex(const vuint& vLocalNodeIndex);
+    uiint& getPyramidFaceIndex2(const vuint& vLocalNodeIndex);
 
-    uint& getQuadFaceIndex(const vuint& vLocalNodeIndex);//ノードが一致すれば,面番号=”0”を返す.
-    uint& getTriangleFaceIndex(const vuint& vLocalNodeIndex);//ノードが一致すれば,面番号=”0”を返す.
+    uiint& getQuadFaceIndex(const vuint& vLocalNodeIndex);//ノードが一致すれば,面番号=”0”を返す.
+    uiint& getTriangleFaceIndex(const vuint& vLocalNodeIndex);//ノードが一致すれば,面番号=”0”を返す.
 
-    uint& getDefaultFaceIndex();//switch文のdefault用途
+    uiint& getDefaultFaceIndex();//switch文のdefault用途
 
     // Face番号 -> 局所ノード番号
-    uint* getLocalNodeHexaFace(const uint& faceIndex);
-    uint* getLocalNodeTetraFace(const uint& faceIndex);
-    uint* getLocalNodePrismFace(const uint& faceIndex);
-    uint* getLocalNodePyramidFace(const uint& faceIndex);
-    uint* getLocalNodeQuadFace();
-    uint* getLocalNodeTriangleFace();
+    uiint* getLocalNodeHexaFace(const uiint& faceIndex);
+    uiint* getLocalNodeTetraFace(const uiint& faceIndex);
+    uiint* getLocalNodePrismFace(const uiint& faceIndex);
+    uiint* getLocalNodePyramidFace(const uiint& faceIndex);
+    uiint* getLocalNodeQuadFace();
+    uiint* getLocalNodeTriangleFace();
     // Face番号 -> 局所ノード番号(引数:要素タイプ)
-    uint* getLocalNodeFace(const uint& elemType, const uint& iface);
+    uiint* getLocalNodeFace(const uiint& elemType, const uiint& iface);
 
     // 局所ノード(Vertex)番号に接続する面(Face)番号
-    uint* getHexaConnFace(const uint& ivert){ return mHexaConnFace[ivert];}
-    uint* getTetraConnFace(const uint& ivert){ return mTetraConnFace[ivert];}
-    uint* getPrismConnFace(const uint& ivert){ return mPrismConnFace[ivert];}
-    uint* getPyramidConnFace(const uint& ivert){ return mPyramidConnFace[ivert];}
-    uint* getQuadConnFace(const uint& ivert){ return mQuadConnFace[ivert];}
-    uint* getTriangleConnFace(const uint& ivert){ return mTriangleConnFace[ivert];}
+    uiint* getHexaConnFace(const uiint& ivert){ return mHexaConnFace[ivert];}
+    uiint* getTetraConnFace(const uiint& ivert){ return mTetraConnFace[ivert];}
+    uiint* getPrismConnFace(const uiint& ivert){ return mPrismConnFace[ivert];}
+    uiint* getPyramidConnFace(const uiint& ivert){ return mPyramidConnFace[ivert];}
+    uiint* getQuadConnFace(const uiint& ivert){ return mQuadConnFace[ivert];}
+    uiint* getTriangleConnFace(const uiint& ivert){ return mTriangleConnFace[ivert];}
 
     //面番号毎の頂点数
-    uint& getHexaFaceNumOfVert(const uint& iface){ return mHexaFaceNumOfVert[iface];}
-    uint& getTetraFaceNumOfVert(const uint& iface){ return mTetraFaceNumOfVert[iface];}
-    uint& getPrismFaceNumOfVert(const uint& iface){ return mPrismFaceNumOfVert[iface];}
-    uint& getPyramidFaceNumOfVert(const uint& iface){ return mPyramidFaceNumOfVert[iface];}
-    uint& getQuadFaceNumOfVert(const uint& iface){ return mQuadFaceNumOfVert[iface];}
-    uint& getTriangleFaceNumOfVert(const uint& iface){ return mTriangleFaceNumOfVert[iface];}
+    uiint& getHexaFaceNumOfVert(const uiint& iface){ return mHexaFaceNumOfVert[iface];}
+    uiint& getTetraFaceNumOfVert(const uiint& iface){ return mTetraFaceNumOfVert[iface];}
+    uiint& getPrismFaceNumOfVert(const uiint& iface){ return mPrismFaceNumOfVert[iface];}
+    uiint& getPyramidFaceNumOfVert(const uiint& iface){ return mPyramidFaceNumOfVert[iface];}
+    uiint& getQuadFaceNumOfVert(const uiint& iface){ return mQuadFaceNumOfVert[iface];}
+    uiint& getTriangleFaceNumOfVert(const uiint& iface){ return mTriangleFaceNumOfVert[iface];}
 };
 }
 

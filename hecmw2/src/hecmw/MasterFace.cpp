@@ -48,7 +48,7 @@ CSkinFace* CMasterFace::generateFace()
 // 外積
 //   引数:ConNodeを中心とした,頂点2点
 //
-vdouble& CMasterFace::CrossProduct(CContactNode *pConNode, const uint& ivert, const uint& jvert)
+vdouble& CMasterFace::CrossProduct(CContactNode *pConNode, const uiint& ivert, const uiint& jvert)
 {
     CContactNode *pVert0,*pVert1;
     pVert0= mvConNode[ivert];  pVert1= mvConNode[jvert];
@@ -116,8 +116,8 @@ double CMasterFace::VectorLength(const vdouble& vec, CContactNode* pConNode)
 
 // 線形補間 :ConNode0-ConNode1のidof番目の値の線形補間
 //
-double CMasterFace::LinearInter(const double& coeff, const uint& idof, 
-                                CContactNode* pConBaseNode, CContactNode* pConNode, const uint& valType)
+double CMasterFace::LinearInter(const double& coeff, const uiint& idof,
+                                CContactNode* pConBaseNode, CContactNode* pConNode, const uiint& valType)
 {
     double Value;
     
@@ -131,7 +131,7 @@ double CMasterFace::LinearInter(const double& coeff, const uint& idof,
     }
     return Value;
 }
-double CMasterFace::LinearInter(const double& coeff, const uint& idof, const vdouble& vBaseVal, const vdouble& vVal)
+double CMasterFace::LinearInter(const double& coeff, const uiint& idof, const vdouble& vBaseVal, const vdouble& vVal)
 {
     return coeff*(vVal[idof]-vBaseVal[idof]) + vBaseVal[idof];
 }
@@ -159,7 +159,7 @@ void CMasterFace::addSlaveNode(CContactNode* pConNode)
 {
     int iprodp,iprodm;//外積の+,-のカウンター :: 面ベクトル(正規化)と同じ向きなら”+”. 逆向きなら"-"
     int nNumOfVert;
-    uint ivert,jvert;//頂点Index
+    uiint ivert,jvert;//頂点Index
 
     nNumOfVert= this->getNumOfVert();//1次・2次要素どちらでも面の頂点数
 
@@ -198,7 +198,7 @@ void CMasterFace::addSlaveNode(CContactNode* pConNode)
         // Coefの確保
         //  スレーブ点が追加される度にCoefの配列数を増加
         vdouble vCoef;
-        uint nNumOfFaceNode = mvConNode.size();
+        uiint nNumOfFaceNode = mvConNode.size();
         vCoef.resize(nNumOfFaceNode);//面のノード数確保(1次・2次 両方の要素に対応するため面のノード数)
 
         mvvCoef.push_back(vCoef);
@@ -261,7 +261,7 @@ bool CMasterFace::NearCrossP(const vdouble& vL1, const vdouble& vL2, const vdoub
     //cout << "(v,v,v,p) mParam_D= " << mParam_D << endl;
     ///////////////////////////////////////
 
-    if(mParam_D <= 1.0E-6) bCrossP=false;//mParam_Dが0.0ならば平行 => 近接点は存在しない.
+    if( mParam_D <= 1.0E-6) bCrossP=false;//mParam_Dが0.0ならば平行 => 近接点は存在しない.
 
     return bCrossP;
 }
@@ -283,10 +283,25 @@ bool CMasterFace::NearCrossP(const vdouble& vL1, const vdouble& vL2, CContactNod
     //cout << "(v,v,p,p) mParam_D= " << mParam_D << endl;
     ///////////////////////////////////////
 
-    if(mParam_D <= 1.0E-6) bCrossP=false;//mParam_Dが0.0ならば平行 => 近接点は存在しない.
+    if( mParam_D <= 1.0E-6) bCrossP=false;//mParam_Dが0.0ならば平行 => 近接点は存在しない.
 
     return bCrossP;
 }
+
+//// Paramのクリア
+//void CMasterFace::clearParam()
+//{
+//    mParam_A=0.0;
+//    mParam_B=0.0;
+//    mParam_C=0.0;
+//    mParam_D=0.0;
+//    mParam_E=0.0;
+//    mParam_F=0.0;
+//
+//    mvParam_R[0]=0.0;
+//    mvParam_R[1]=0.0;
+//    mvParam_R[2]=0.0;
+//}
 
 // NearCrossP()関数の個別パラメータ計算
 //
@@ -417,7 +432,7 @@ double CMasterFace::CoefTermB(const vdouble& inP, CContactNode* pSlaveP, const v
 //  ・マスター面のスカラー => スレーブ点のスカラーの計算
 //  ・スカラー値は,ContactNodeが所有.
 //
-void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
+void CMasterFace::CalcSlave(const uiint& islave, const uiint& valType)
 {
     // 
     // * 2直線の最近接点の中間点を近似交点として,マスター面の変位後のスレーブ点を求める.
@@ -428,7 +443,7 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     //// mmvCoef所有の為のID
     //uint slaveID= pSlaveP->getID();
 
-    uint numOfVert= this->getNumOfVert();
+    uiint numOfVert= this->getNumOfVert();
 
     // 対向する辺の最近接点
     //   E,Fベクトルの最近接点(vNP0,vNP1) => 近似交点(vOP)
@@ -443,7 +458,7 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     vdouble vInterP0,vInterP1; vInterP0.resize(3);vInterP1.resize(3);//p2-p3の補間点, p0-p1の補間点
     double dLenP2P3,dLenP2InP,dLenP0P1,dLenP1InP;//p2-p3の距離,p2-InterP0の距離,p0-p1の距離,p1-InterP1の距離
     vdouble vValInterP0,vValInterP1;//p2-p3補間点の変位値,p0-p1補間点の変位値
-    uint numOfDOF,idof;//ConNodeの自由度数
+    uiint numOfDOF,idof;//ConNodeの自由度数
     
     double dLenInP0InP1,dLenInP0SlaveP;//InterP0-InterP1の距離,InterP0-SlavePの距離
     vdouble vValSlaveP;//スレーブ点での補間値
@@ -470,7 +485,7 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
     bool bEF;//左右の辺：EベクトルとFベクトルに交点があるか? の変数
 
     //debug 用途 ΣCoefのチェック用
-    uint ideb;
+    uiint ideb;
     double deb;
 
     switch(numOfVert){
@@ -508,8 +523,8 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
                 vOP[1]= (vNP0[1]+vNP1[1])*0.5;
                 vOP[2]= (vNP0[2]+vNP1[2])*0.5;
 
-                //debug
-                /////////////////////////////////////////////
+                ////debug
+                ///////////////////////////////////////////
                 //{
                 //    cout << "スレーブ点 ConID= " << pSlaveP->getID();
                 //    cout << "X= " << pSlaveP->getX() << ",Y= " << pSlaveP->getY() << ",Z= " << pSlaveP->getZ() << endl;
@@ -517,7 +532,7 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
                 //    cout << " E,Fベクトルの近似交点:" <<
                 //            "X= " << vOP[0] << ",Y= " << vOP[1] << ",Z= " << vOP[2] << endl;
                 //}
-                /////////////////////////////////////////////
+                ///////////////////////////////////////////
 
                 //OPとスレーブ点のベクトル
                 vPOP[0]= pSlaveP->getX() - vOP[0];
@@ -525,6 +540,8 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
                 vPOP[2]= pSlaveP->getZ() - vOP[2];
                 
             }else{// EとFが平行の場合
+                ////debug
+                //cout << "E-F 平行" << endl;
                 
                 vPOP[0]= vE[0];// vPOPは,vE,vFと同じ
                 vPOP[1]= vE[1];
@@ -827,9 +844,9 @@ void CMasterFace::CalcSlave(const uint& islave, const uint& valType)
 
 // スレーブ点ID,頂点番号を引数としてCoef を提供  => ConNodeからCoefを取得させる方向に変更.'10.02.23
 //   Coef== mvvCoef[islave][ivert]
-double& CMasterFace::getCoef(const uint& slaveID, const uint& ivert)
+double& CMasterFace::getCoef(const uiint& slaveID, const uiint& ivert)
 {
-    uint islave= mmSlaveID2Index[slaveID];
+    uiint islave= mmSlaveID2Index[slaveID];
 
     return mvvCoef[islave][ivert];
 }

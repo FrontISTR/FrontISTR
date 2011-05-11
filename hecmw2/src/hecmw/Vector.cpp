@@ -12,7 +12,7 @@
 namespace pmw
 {
 
-CVector::CVector(CMesh *pMesh, const uint& nDOF)
+CVector::CVector(CMesh *pMesh, const uiint& nDOF)
 {
 #ifdef ADVANCESOFT_DEBUG
     printf(" enter CVector::CVector \n");
@@ -24,7 +24,7 @@ CVector::CVector(CMesh *pMesh, const uint& nDOF)
   // mnNodeInternal = pMesh->???;  // TODO check if this is necessary
   
   mvVector.resize(mnNode);
-  for (int i = 0; i < mnNode; i++) {
+  for (uiint i = 0; i < mnNode; i++) {
     mvVector[i].resize(mnDOF);
   }
 
@@ -50,7 +50,7 @@ CVector::~CVector()
 	// TODO Auto-generated destructor stub
 }
 
-size_t CVector::size() const
+uiint CVector::size() const
 {
 	return mnNode;
 }
@@ -65,24 +65,24 @@ size_t CVector::size() const
 // Vector範囲内に存在するか. 
 //  *  prolongateFrom で利用 : 2次ノードの判定(2次ノードの親ノードはコースグリッドに存在しない)
 //
-bool CVector::isScopeNode(const uint& idx) const
+bool CVector::isScopeNode(const uiint& idx) const
 {
     // 配列外を弾く
     //  *2次要素での prolongateFrom 2次ノードはコースグリッドに存在しない場合
     //
-    uint max = mvVector.size()-1;
+    uiint max = mvVector.size()-1;
     if(idx > max){
         return false;
     }else{
         return true;
     }
 }
-const CVector::ElemType& CVector::operator[](size_t idx) const
+const CVector::ElemType& CVector::operator[](uiint idx) const
 {
     return mvVector[idx];
 }
 
-CVector::ElemType& CVector::operator[](size_t idx)
+CVector::ElemType& CVector::operator[](uiint idx)
 {
     return mvVector[idx];
 }
@@ -91,7 +91,7 @@ CVector::ElemType& CVector::operator[](size_t idx)
 //
 void CVector::Vector_Clear()
 {
-    uint i,idof;
+    uiint i,idof;
     for(i=0; i < mnNode; i++){
         for(idof=0; idof < mnDOF; idof++){
             mvVector[i][idof] = 0.0;
@@ -101,50 +101,50 @@ void CVector::Vector_Clear()
 
 void CVector::setZero()// use GMRES
 {
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvVector[i].clear();
 	}
 }
 
-void CVector::setValue(int inode, int idof, double value)
+void CVector::setValue(uiint inode, uiint idof, double value)
 {
 	mvVector[inode][idof] = value;
 }
 
-void CVector::addValue(int inode, int idof, double value)
+void CVector::addValue(uiint inode, uiint idof, double value)
 {
 	mvVector[inode][idof] += value;
 }
 
-double CVector::getValue(int inode, int idof)
+double& CVector::getValue(uiint inode, uiint idof)
 {
 	return( mvVector[inode][idof] );
 }
 
 void CVector::sumSV(double alpha, const CVector *pX, CVector *pY) const
 {
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		pY->mvVector[i] = mvVector[i] + alpha * pX->mvVector[i];
 	}
 }
 
 void CVector::addSV(double alpha, const CVector *pX)
 {
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvVector[i] += alpha * pX->mvVector[i];
 	}
 }
 
 void CVector::add(const CVector *pX)
 {
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvVector[i] += pX->mvVector[i];
 	}
 }
 
 void CVector::subst(const CVector *pX)
 {
-	for (int i = 0; i < mnNode; i++) {
+	for (uiint i = 0; i < mnNode; i++) {
 		mvVector[i] = pX->mvVector[i];
 	}
 }
@@ -157,8 +157,8 @@ double CVector::norm2() const
 double CVector::innerProd(const CVector *pX) const
 {
 	double sum = 0.0;
-	for (int i = 0; i < mnNode; i++) {
-		for (int j = 0; j < mnDOF; j++) {
+	for (uiint i = 0; i < mnNode; i++) {
+		for (uiint j = 0; j < mnDOF; j++) {
 			sum += mvVector[i](j) * pX->mvVector[i](j);
 		}
 	}
@@ -170,14 +170,14 @@ void CVector::updateCommBoundary()
 	// TODO implement CVector::updateCommBoundary
 }
 
-int CVector::restrictTo(CVector *pV) const
+uiint CVector::restrictTo(CVector *pV) const
 {
 	// TODO implement CVector::restrictTo
 	
 //	const CMesh *pMesh = getMesh();
-	for( uint i=0; i< mpMesh->getNumOfNode(); i++) {
+	for( uiint i=0; i< mpMesh->getNumOfNode(); i++) {
 		CNode* node = mpMesh->getNodeIX(i);
-		uint numP = node->getNumOfParentNode();
+		uiint numP = node->getNumOfParentNode();
 		if( numP == 0 ) {
 			(*pV)[i] = mvVector[i];
 		}
@@ -186,27 +186,27 @@ int CVector::restrictTo(CVector *pV) const
 	return 0;//2010.05.14
 }
 
-int CVector::prolongateFrom(const CVector *pV)
+uiint CVector::prolongateFrom(const CVector *pV)
 {
     // TODO implement CVector::prolongateFrom
     
-    vector<uint> vQuadN;//2次ノードのインデックス番号 配列
+    vector<uiint> vQuadN;//2次ノードのインデックス番号 配列
 
-    for( uint i=0; i< mpMesh->getNumOfNode(); i++) {
+    for( uiint i=0; i< mpMesh->getNumOfNode(); i++) {
         CNode* node = mpMesh->getNodeIX(i);
-        uint numP = node->getNumOfParentNode();
+        uiint numP = node->getNumOfParentNode();
 
         if( numP == 0 ) {
             mvVector[i] = (*pV)[i];
         } else {
             //mvVector[i](0) = 0.0;mvVector[i](1) = 0.0;mvVector[i](2) = 0.0;
-            for(uint idof=0; idof < mnDOF; idof++) mvVector[i](idof) = 0.0;// 2010.11.30
+            for(uiint idof=0; idof < mnDOF; idof++) mvVector[i](idof) = 0.0;// 2010.11.30
 
             //2次ノード判定
             bool bQuad(false);
             if(numP == 2){
-                for(uint j=0; j < numP; j++){
-                    uint k = node->getParentNode(j)->getID();
+                for(uiint j=0; j < numP; j++){
+                    uiint k = node->getParentNode(j)->getID();
                     if( !pV->isScopeNode(k) ) bQuad=true;
                 };
             }
@@ -214,8 +214,8 @@ int CVector::prolongateFrom(const CVector *pV)
 
             // 頂点のノードのプロロンゲート
             if( !bQuad ){
-                for(uint j=0; j < numP; j++) {
-                    uint k = node->getParentNode(j)->getID();
+                for(uiint j=0; j < numP; j++) {
+                    uiint k = node->getParentNode(j)->getID();
 
                     mvVector[i] += (*pV)[k];
                 };
@@ -248,7 +248,7 @@ int CVector::prolongateFrom(const CVector *pV)
 //
 void CVector::dump()
 {
-    uint i,j;
+    uiint i,j;
     for(i = 0; i < mnNode; i++){
         for(j = 0; j < mnDOF; j++){
                 cout << mvVector[i](j) << " ";

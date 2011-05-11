@@ -30,8 +30,8 @@ private:
     vvdouble mvInv33;// 3×3行列の逆行列
 
 public:
-    void setupRegion(const uint& numOfIntegPoint, const uint& numOfShape);//領域確保(積分点数-形状関数のJacobian)
-    void clearRegion(const uint& numOfIntegPoint, const uint& numOfShape);
+    void setupRegion(const uiint& numOfIntegPoint, const uiint& numOfShape);//領域確保(積分点数-形状関数のJacobian)
+    void clearRegion(const uiint& numOfIntegPoint, const uiint& numOfShape);
 
     // ヤコビアン行列-逆行列を要素単位で丸ごと計算
     // ----
@@ -44,13 +44,13 @@ public:
     // ----
     // [積分点]別の"J","invJ","detJ"の提供
     // ----
-    double& J(const uint& igauss, const uint& row, const uint& col){
+    double& J(const uiint& igauss, const uiint& row, const uiint& col){
         return mvJ[igauss][row][col];
     }
-    double& inverse_J(const uint& igauss, const uint& row, const uint& col){
+    double& inverse_J(const uiint& igauss, const uiint& row, const uiint& col){
         return mvInvJ[igauss][row][col];
     }
-    double& detJ(const uint& igauss){
+    double& detJ(const uiint& igauss){
         return mv_detJ[igauss];
     }
 

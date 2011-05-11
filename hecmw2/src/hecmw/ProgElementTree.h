@@ -25,100 +25,100 @@ public:
     virtual ~CProgElementTree();
 
 protected:
-    uint mInvalidNum;
+    uiint mInvalidNum;
 
-    uint mProgVert;//汎用メソッドの返り値用メンバー
+    uiint mProgVert;//汎用メソッドの返り値用メンバー
 
     //{親の頂点} => 子(progElem)の頂点
-    uint mHexaVertChildVert[8];
-    uint mTetraVertChildVert[4];
-    uint mPrismVertChildVert[6];
-    uint mPyramidVertChildVert[5];
-    uint mQuadVertChildVert[4];
-    uint mTriangleVertChildVert[3];
-    uint mBeamVertChildVert[2];
+    uiint mHexaVertChildVert[8];
+    uiint mTetraVertChildVert[4];
+    uiint mPrismVertChildVert[6];
+    uiint mPyramidVertChildVert[5];
+    uiint mQuadVertChildVert[4];
+    uiint mTriangleVertChildVert[3];
+    uiint mBeamVertChildVert[2];
 
     //{親の辺番号} => 子(progElem)の頂点番号:子(progElem)のAddress(親の頂点番号)別
-    uint mHexaEdgeChildVert[8][12];
-    uint mTetraEdgeChildVert[4][6];
-    uint mPrismEdgeChildVert[6][9];
-    uint mPyramidEdgeChildVert[8][8];//5番めの頂点には4個のPyramidがぶら下がる
-    uint mQuadEdgeChildVert[4][4];
-    uint mTriangleEdgeChildVert[3][3];
-    uint mBeamEdgeChildVert[2][1];
+    uiint mHexaEdgeChildVert[8][12];
+    uiint mTetraEdgeChildVert[4][6];
+    uiint mPrismEdgeChildVert[6][9];
+    uiint mPyramidEdgeChildVert[8][8];//5番めの頂点には4個のPyramidがぶら下がる
+    uiint mQuadEdgeChildVert[4][4];
+    uiint mTriangleEdgeChildVert[3][3];
+    uiint mBeamEdgeChildVert[2][1];
 
     //{親の面番号} => 子(progElem)の頂点番号:子(progElem)のAddress(親の頂点番号)別
-    uint mHexaFaceChildVert[8][6];
-    uint mTetraFaceChildVert[4][4];
-    uint mPrismFaceChildVert[6][5];
-    uint mPyramidFaceChildVert[8][5];//5番めの頂点には4個のPyramidがぶら下がる
-    uint mQuadFaceChildVert[4][1];
-    uint mTriangleFaceChildVert[3][1];
+    uiint mHexaFaceChildVert[8][6];
+    uiint mTetraFaceChildVert[4][4];
+    uiint mPrismFaceChildVert[6][5];
+    uiint mPyramidFaceChildVert[8][5];//5番めの頂点には4個のPyramidがぶら下がる
+    uiint mQuadFaceChildVert[4][1];
+    uiint mTriangleFaceChildVert[3][1];
     
     //{要素中心} => 子(progElem)の頂点番号:子(progElem)のAddress(親の頂点番号)別
-    uint mHexaVolChildVert[8];
-    uint mTetraVolChildVert[4];
-    uint mPrismVolChildVert[6];
-    uint mPyramidVolChildVert[8];//5番めの頂点には4個のPyramidがぶら下がる
-    uint mQuadVolChildVert[4];
-    uint mTriangleVolChildVert[3];
-    uint mBeamVolChildVert[2];
+    uiint mHexaVolChildVert[8];
+    uiint mTetraVolChildVert[4];
+    uiint mPrismVolChildVert[6];
+    uiint mPyramidVolChildVert[8];//5番めの頂点には4個のPyramidがぶら下がる
+    uiint mQuadVolChildVert[4];
+    uiint mTriangleVolChildVert[3];
+    uiint mBeamVolChildVert[2];
 
 public:
     // 子供の頂点番号が無い場合の数値.
-    uint& getInvalidNum(){ return mInvalidNum;}
+    uiint& getInvalidNum(){ return mInvalidNum;}
 
     // 子(progElem)のアドレス(親の頂点番号)から,子(progElem)の頂点番号を提供
     // --
-    uint& getHexaVertProgVert(const uint& child_address){ return mHexaVertChildVert[child_address];}
-    uint& getTetraVertProgVert(const uint& child_address){ return mTetraVertChildVert[child_address];}
-    uint& getPrismVertProgVert(const uint& child_address){ return mPrismVertChildVert[child_address];}
-    uint& getPyramidVertProgVert(const uint& child_address){ return mPyramidVertChildVert[child_address];}
-    uint& getQuadVertProgVert(const uint& child_address){ return mQuadVertChildVert[child_address];}
-    uint& getTriangleVertProgVert(const uint& child_address){ return mTriangleVertChildVert[child_address];}
-    uint& getBeamVertProgVert(const uint& child_address){ return mBeamVertChildVert[child_address];}
+    uiint& getHexaVertProgVert(const uiint& child_address){ return mHexaVertChildVert[child_address];}
+    uiint& getTetraVertProgVert(const uiint& child_address){ return mTetraVertChildVert[child_address];}
+    uiint& getPrismVertProgVert(const uiint& child_address){ return mPrismVertChildVert[child_address];}
+    uiint& getPyramidVertProgVert(const uiint& child_address){ return mPyramidVertChildVert[child_address];}
+    uiint& getQuadVertProgVert(const uiint& child_address){ return mQuadVertChildVert[child_address];}
+    uiint& getTriangleVertProgVert(const uiint& child_address){ return mTriangleVertChildVert[child_address];}
+    uiint& getBeamVertProgVert(const uiint& child_address){ return mBeamVertChildVert[child_address];}
 
-    uint& getVertProgVert(const uint& ivert, const uint& elemType);
+    uiint& getVertProgVert(const uiint& ivert, const uiint& elemType);
 
 
     // 子(progElem)のアドレス(親の頂点番号)と,親(Elem)の辺番号から,子供(progElem)の頂点番号を提供
     // --
     // iedge:親の辺番号, child_address:子供が居る場所(親の頂点番号)
-    uint& getHexaEdgeProgVert(const uint& iedge, const uint& child_address){ return mHexaEdgeChildVert[child_address][iedge];}
-    uint& getTetraEdgeProgVert(const uint& iedge, const uint& child_address){ return mTetraEdgeChildVert[child_address][iedge];}
-    uint& getPrismEdgeProgVert(const uint& iedge, const uint& child_address){ return mPrismEdgeChildVert[child_address][iedge];}
-    uint& getPyramidEdgeProgVert(const uint& iedge, const uint& child_address){ return mPyramidEdgeChildVert[child_address][iedge];}
-    uint& getQuadEdgeProgVert(const uint& iedge, const uint& child_address){ return mQuadEdgeChildVert[child_address][iedge];}
-    uint& getTriangleEdgeProgVert(const uint& iedge, const uint& child_address){ return mTriangleEdgeChildVert[child_address][iedge];}
-    uint& getBeamEdgeProgVert(const uint& iedge, const uint& child_address){ return mBeamEdgeChildVert[child_address][iedge];}
+    uiint& getHexaEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mHexaEdgeChildVert[child_address][iedge];}
+    uiint& getTetraEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mTetraEdgeChildVert[child_address][iedge];}
+    uiint& getPrismEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mPrismEdgeChildVert[child_address][iedge];}
+    uiint& getPyramidEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mPyramidEdgeChildVert[child_address][iedge];}
+    uiint& getQuadEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mQuadEdgeChildVert[child_address][iedge];}
+    uiint& getTriangleEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mTriangleEdgeChildVert[child_address][iedge];}
+    uiint& getBeamEdgeProgVert(const uiint& iedge, const uiint& child_address){ return mBeamEdgeChildVert[child_address][iedge];}
 
-    uint& getEdgeProgVert(const uint& iedge, const uint& child_address, const uint& elemType);
+    uiint& getEdgeProgVert(const uiint& iedge, const uiint& child_address, const uiint& elemType);
 
 
     // 子(progElem)のアドレス(親の頂点番号)と,親(Elem)の面番号から,子供(progElem)の頂点番号を提供
     // --
     // iface:親の面番号, child_address:子供が居る場所(親の頂点番号)
-    uint& getHexaFaceProgVert(const uint& iface, const uint& child_address){ return mHexaFaceChildVert[child_address][iface];}
-    uint& getTetraFaceProgVert(const uint& iface, const uint& child_address){ return mTetraFaceChildVert[child_address][iface];}
-    uint& getPrismFaceProgVert(const uint& iface, const uint& child_address){ return mPrismFaceChildVert[child_address][iface];}
-    uint& getPyramidFaceProgVert(const uint& iface, const uint& child_address){ return mPyramidFaceChildVert[child_address][iface];}
-    uint& getQuadFaceProgVert(const uint& iface, const uint& child_address){ return mQuadFaceChildVert[child_address][iface];}
-    uint& getTriangleFaceProgVert(const uint& iface, const uint& child_address){ return mTriangleFaceChildVert[child_address][iface];}
+    uiint& getHexaFaceProgVert(const uiint& iface, const uiint& child_address){ return mHexaFaceChildVert[child_address][iface];}
+    uiint& getTetraFaceProgVert(const uiint& iface, const uiint& child_address){ return mTetraFaceChildVert[child_address][iface];}
+    uiint& getPrismFaceProgVert(const uiint& iface, const uiint& child_address){ return mPrismFaceChildVert[child_address][iface];}
+    uiint& getPyramidFaceProgVert(const uiint& iface, const uiint& child_address){ return mPyramidFaceChildVert[child_address][iface];}
+    uiint& getQuadFaceProgVert(const uiint& iface, const uiint& child_address){ return mQuadFaceChildVert[child_address][iface];}
+    uiint& getTriangleFaceProgVert(const uiint& iface, const uiint& child_address){ return mTriangleFaceChildVert[child_address][iface];}
 
-    uint& getFaceProgVert(const uint& iface, const uint& child_address, const uint& elemType);
+    uiint& getFaceProgVert(const uiint& iface, const uiint& child_address, const uiint& elemType);
 
 
 
     // 子(progElem)のアドレス(親の頂点番号)から,親の要素中心 => 子供(progElem)の頂点番号を提供
-    uint& getHexaVolProgVert(const uint& child_address){ return mHexaVolChildVert[child_address];}
-    uint& getTetraVolProgVert(const uint& child_address){ return mTetraVolChildVert[child_address];}
-    uint& getPrismVolProgVert(const uint& child_address){ return mPrismVolChildVert[child_address];}
-    uint& getPyramidVolProgVert(const uint& child_address){ return mPyramidVolChildVert[child_address];}
-    uint& getQuadVolProgVert(const uint& child_address){ return mQuadVolChildVert[child_address];}
-    uint& getTriangleVolProgVert(const uint& child_address){ return mTriangleVolChildVert[child_address];}
-    uint& getBeamVolProgVert(const uint& child_address){ return mBeamVolChildVert[child_address];}
+    uiint& getHexaVolProgVert(const uiint& child_address){ return mHexaVolChildVert[child_address];}
+    uiint& getTetraVolProgVert(const uiint& child_address){ return mTetraVolChildVert[child_address];}
+    uiint& getPrismVolProgVert(const uiint& child_address){ return mPrismVolChildVert[child_address];}
+    uiint& getPyramidVolProgVert(const uiint& child_address){ return mPyramidVolChildVert[child_address];}
+    uiint& getQuadVolProgVert(const uiint& child_address){ return mQuadVolChildVert[child_address];}
+    uiint& getTriangleVolProgVert(const uiint& child_address){ return mTriangleVolChildVert[child_address];}
+    uiint& getBeamVolProgVert(const uiint& child_address){ return mBeamVolChildVert[child_address];}
 
-    uint& getVolProgVert(const uint& child_address, const uint& elemType);
+    uiint& getVolProgVert(const uiint& child_address, const uiint& elemType);
 
 };
 #endif	/* _PROGELEMENTTREE_H */

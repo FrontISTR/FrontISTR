@@ -22,7 +22,7 @@ CFileWriterBoundaryFace::~CFileWriterBoundaryFace()
     ;
 }
 
-void CFileWriterBoundaryFace::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterBoundaryFace::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
@@ -34,13 +34,13 @@ void CFileWriterBoundaryFace::Write(ofstream& ofs, const uint& mgLevel)
 
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
 
-   uint i,ii,iii;
-   uint numOfPart= pAssyModel->getNumOfMesh();
+   uiint i,ii,iii;
+   uiint numOfPart= pAssyModel->getNumOfMesh();
 
    for(i=0; i < numOfPart; i++){
        pMesh= pAssyModel->getMesh(i);
        
-       uint numOfBndMesh= pMesh->getNumOfBoundaryFaceMesh();
+       uiint numOfBndMesh= pMesh->getNumOfBoundaryFaceMesh();
        
        for(ii=0; ii < numOfBndMesh; ii++){
            pBndFaceMesh= pMesh->getBndFaceMeshIX(ii);
@@ -59,13 +59,13 @@ void CFileWriterBoundaryFace::Write(ofstream& ofs, const uint& mgLevel)
            }
            ofs << endl;
 
-           uint numOfBndNode= pBndFaceMesh->getNumOfBNode();
+           uiint numOfBndNode= pBndFaceMesh->getNumOfBNode();
            //cout << "FileWriterBoundaryFace::Write, numOfBndNode = " << numOfBndNode << endl;
 
            //Neumannの値、確認用
            vdouble sumValue;
            sumValue.resize(pBndFaceMesh->getNumOfDOF());
-           for(uint idof=0; idof < pBndFaceMesh->getNumOfDOF(); idof++) sumValue[idof]=0.0;
+           for(uiint idof=0; idof < pBndFaceMesh->getNumOfDOF(); idof++) sumValue[idof]=0.0;
 
            for(iii=0; iii < numOfBndNode; iii++){
 
@@ -77,10 +77,10 @@ void CFileWriterBoundaryFace::Write(ofstream& ofs, const uint& mgLevel)
                
                ofs << "BNodeID= " << pBndNode->getID() << ", NodeID= " << pNode->getID();
 
-               uint idof, numOfDOF= pBndFaceMesh->getNumOfDOF();
+               uiint idof, numOfDOF= pBndFaceMesh->getNumOfDOF();
                for(idof=0; idof < numOfDOF; idof++){
 
-                   uint dof = pBndFaceMesh->getDOF(idof);
+                   uiint dof = pBndFaceMesh->getDOF(idof);
 
                    ofs << ", dof= " << dof << ", Value[" << idof << "]= " << pBndNode->getValue(dof, mgLevel);
 
@@ -92,27 +92,30 @@ void CFileWriterBoundaryFace::Write(ofstream& ofs, const uint& mgLevel)
            //Neumann Σ値 確認
            if(pBndFaceMesh->getBndType()==pmw::BoundaryType::Neumann){
                ofs << "BNode Value SumValue :";
-               for(uint idof=0; idof < pBndFaceMesh->getNumOfDOF(); idof++){
+               for(uiint idof=0; idof < pBndFaceMesh->getNumOfDOF(); idof++){
                    ofs << "  sumValue[" << idof << "]=" << sumValue[idof];
                };
                ofs << endl;
            }
 
-           uint numOfBndFace= pBndFaceMesh->getNumOfBFace();
-           for(iii=0; iii < numOfBndFace; iii++){
-               pBndFace= pBndFaceMesh->getBFaceIX(iii);
+           //Neumann Face境界値 確認
+           if(pBndFaceMesh->getBndType()==pmw::BoundaryType::Neumann){
+               uiint numOfBndFace= pBndFaceMesh->getNumOfBFace();
+               for(iii=0; iii < numOfBndFace; iii++){
+                   pBndFace= pBndFaceMesh->getBFaceIX(iii);
 
-               ofs << "BFaceID= " << pBndFace->getID();
+                   ofs << "BFaceID= " << pBndFace->getID();
 
-               uint idof, numOfDOF= pBndFaceMesh->getNumOfDOF();
-               for(idof=0; idof < numOfDOF; idof++){
+                   uiint idof, numOfDOF= pBndFaceMesh->getNumOfDOF();
+                   for(idof=0; idof < numOfDOF; idof++){
 
-                   uint dof = pBndFaceMesh->getDOF(idof);
+                       uiint dof = pBndFaceMesh->getDOF(idof);
 
-                   ofs << ", Value[" << idof << "]= " << pBndFace->getBndValue(dof);
+                       ofs << ", Value[" << idof << "]= " << pBndFace->getBndValue(dof);
+                   };
+                   ofs << endl;
                };
-               ofs << endl;
-           };
+           }
        };
    };
 }

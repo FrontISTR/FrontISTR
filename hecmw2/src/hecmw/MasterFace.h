@@ -23,7 +23,7 @@ public:
 private:
     double mDotValue;//DotProduct() 参照変数
     vdouble mvVector;//CrossProduct() 参照変数 ::内外判定に用いるスレーブ点と頂点2点で構成される面ベクトル, 三角形面積用途
-    vdouble& CrossProduct(CContactNode* pConNode,const uint& ivert, const uint& jvert);//外積(ConNodeと頂点2点の外積)
+    vdouble& CrossProduct(CContactNode* pConNode,const uiint& ivert, const uiint& jvert);//外積(ConNodeと頂点2点の外積)
     double&  DotProduct();//内外判定用の内積(mvNormalVectorとmvVectorの内積):面ベクトルは,ContactMesh::setupSPointOnMFace()で計算がコールされている.
 
     double VectorLength(const vdouble& vec);
@@ -33,8 +33,8 @@ private:
     double VectorLength(const vdouble& vec, CContactNode *pConNode);
 
     // 線形補間 :BaseNode-ConNodeのidof番目の値の線形補間
-    double LinearInter(const double& coeff, const uint& idof, CContactNode *pConBaseNode, CContactNode *pConNode ,const uint& valType);
-    double LinearInter(const double& coeff, const uint& idof, const vdouble& vBaseVal, const vdouble& vVal);
+    double LinearInter(const double& coeff, const uiint& idof, CContactNode *pConBaseNode, CContactNode *pConNode ,const uiint& valType);
+    double LinearInter(const double& coeff, const uiint& idof, const vdouble& vBaseVal, const vdouble& vVal);
 
     // 2直線ベクトル L1,L2　の最近接点
     // -----
@@ -67,6 +67,9 @@ private:
     // ベクトルの正規化
     void Normalized(vdouble& vV);
 
+    //    // パラメータクリア
+    //    void clearParam();
+
 
     // スレーブ点ごとの,マスター面の構成ノードのCoef[islave][ivert]の配列Index
     vvdouble mvvCoef;
@@ -80,7 +83,7 @@ private:
     double CoefTermB(const vdouble& inP,CContactNode *pSlaveP, const vdouble& inP0, const vdouble& inP1);
 
     // スレーブ点ID to Index番号(mvSlaveConNodeのIndex番号)
-    std::map<uint,uint,less<uint> > mmSlaveID2Index;
+    std::map<uiint,uiint,less<uiint> > mmSlaveID2Index;
 
 protected:
     // Slaveノード
@@ -93,13 +96,13 @@ public:
     // Slaveノード : ContactMeshで,Slaveノードをセット
     // --
     virtual void addSlaveNode(CContactNode* pConNode);//内外判定を行い,内ならば追加. Coefの配列確保,ConNodeのCoefの配列確保
-    virtual CContactNode* getSlaveNode(const uint& index){ return mvSlaveConNode[index];}
-    virtual uint getNumOfSlaveNode(){ return mvSlaveConNode.size();}
+    virtual CContactNode* getSlaveNode(const uiint& index){ return mvSlaveConNode[index];}
+    virtual uiint getNumOfSlaveNode(){ return mvSlaveConNode.size();}
 
     // EQUATIONのCoef計算 :: valType is MPCValueType
-    virtual void CalcSlave(const uint& islave, const uint& valType);//マスター面の変位 => スレーブ点の変位/スカラー値, 変位/スカラーはContactNodeが所有.
+    virtual void CalcSlave(const uiint& islave, const uiint& valType);//マスター面の変位 => スレーブ点の変位/スカラー値, 変位/スカラーはContactNodeが所有.
     // EQUATIONのCoef :: MPCMatrixから呼ばれる.
-    virtual double& getCoef(const uint& slaveID, const uint& ivert);//スレーブ点ID,頂点番号を引数としてCoef を提供
+    virtual double& getCoef(const uiint& slaveID, const uiint& ivert);//スレーブ点ID,頂点番号を引数としてCoef を提供
 };
 }
 #endif

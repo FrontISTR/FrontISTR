@@ -34,12 +34,12 @@ public:
     virtual ~CElement(void);
 
 protected:
-    uint mnID;// Meshの要素Index番号
+    uiint mnID;// Meshの要素Index番号
     vector<CNode*> mvNode;
 
-    map<uint, uint, less<uint> > mmIDLocal;//key:NodeID => val:局所頂点番号
+    map<uiint, uiint, less<uiint> > mmIDLocal;//key:NodeID => val:局所頂点番号
     
-    uint mMGLevel;//MultiGrid Level
+    uiint mMGLevel;//MultiGrid Level
 
     
     // prolongation準備 (ノード周囲の要素集合は、ノードがIndex番号で所有)
@@ -60,13 +60,13 @@ protected:
 
 
     // Property Check
-    virtual bool IndexCheck(const uint& propType, const uint& index, string& method_name)=0;
+    virtual bool IndexCheck(const uiint& propType, const uiint& index, string& method_name)=0;
 
     // ノードから要素内の局所番号に変換
     vuint getLocalNodeNum(CNode* pNode0, CNode* pNode1);
 
     // 局所ノード番号から、面の局所番号に変換
-    virtual uint& getLocalFaceNum(const vuint& vLocalNodeNum)=0;
+    virtual uiint& getLocalFaceNum(const vuint& vLocalNodeNum)=0;
     
     
     // 子要素:CommElementでのprolongation対応
@@ -91,27 +91,27 @@ protected:
     // --
     bool mbCommMesh2;   //通信界面に使用される要素か
     bool* mvbCommEntity;//{Entity == 面番号(Solid),辺番号(Shell),点(Beam)}のどれがCommFaceに対応するのか
-    uint mnCommEntity;  //Entity番号{Solidの場合=面番号, Shellの場合=辺番号, Beamの場合=頂点番号}
+    uiint mnCommEntity;  //Entity番号{Solidの場合=面番号, Shellの場合=辺番号, Beamの場合=頂点番号}
 
 
 public:
     virtual void initialize()=0;
 
     // Element ID
-    void setID(const uint& id){ mnID = id;}
-    uint& getID(){ return mnID;}
+    void setID(const uiint& id){ mnID = id;}
+    uiint& getID(){ return mnID;}
     
 
     // CommElementのprolongation対応:(pyramid以外は,頂点番号順でProgElemを配置),(pyramidは,頂点順にHexa,面番号順にPyramid)
     // --
-    void setProgElem(CElement* pProgElem, const uint& ivert){ mvProgElement[ivert]= pProgElem;}
-    CElement* getProgElem(const uint& ivert){ return mvProgElement[ivert];}//ProgElementは,頂点番号順に配列に入っている.
+    void setProgElem(CElement* pProgElem, const uiint& ivert){ mvProgElement[ivert]= pProgElem;}
+    CElement* getProgElem(const uiint& ivert){ return mvProgElement[ivert];}//ProgElementは,頂点番号順に配列に入っている.
 
     // ContactMeshのprolongation対応
     // "CommMesh2"でもCommFace::refineで利用
     // --
-    CElement* getProgElem_NodeID(const uint& nodeID);//CSkinFace::refine()で利用
-    uint& getLocalVertNum(const uint& nodeID){ return mmIDLocal[nodeID]; }//NodeID -> 頂点番号(局所番号)
+    CElement* getProgElem_NodeID(const uiint& nodeID);//CSkinFace::refine()で利用
+    uiint& getLocalVertNum(const uiint& nodeID){ return mmIDLocal[nodeID]; }//NodeID -> 頂点番号(局所番号)
 
 
     // CommElementとの接続:CommElementに入っているか？,入っている場合のCommElementのIDは？
@@ -132,14 +132,14 @@ public:
 
 
     // MultiGrid Level <== Meshで管理するように改変予定,Elementに持たせる値ではない.
-    void setMGLevel(const uint& mgLevel){ mMGLevel= mgLevel;}
-    uint& getMGLevel(){ return mMGLevel;}
+    void setMGLevel(const uiint& mgLevel){ mMGLevel= mgLevel;}
+    uiint& getMGLevel(){ return mMGLevel;}
 
 
     // Node*
-    void  setNode(CNode* pNode,const uint& local_id);
+    void  setNode(CNode* pNode,const uiint& local_id);
     vector<CNode*>& getNode() { return mvNode;}
-    CNode* getNode(const uint& local_id){ return mvNode[local_id];}
+    CNode* getNode(const uiint& local_id){ return mvNode[local_id];}
 
     // mmIDLocal mapの付け直し
     //
@@ -148,13 +148,13 @@ public:
 
 
     // Property
-    virtual const uint& getType()=0;
-    virtual const uint& getOrder()=0;//1次-2次要素判定
-    virtual const uint& getNumOfFace()=0;
-    virtual const uint& getNumOfEdge()=0;
-    virtual const uint& getNumOfNode()=0;
-    virtual const uint& getNumOfVert()=0;
-    virtual const uint& getEntityType()=0;
+    virtual const uiint& getType()=0;
+    virtual const uiint& getOrder()=0;//1次-2次要素判定
+    virtual const uiint& getNumOfFace()=0;
+    virtual const uiint& getNumOfEdge()=0;
+    virtual const uiint& getNumOfNode()=0;
+    virtual const uiint& getNumOfVert()=0;
+    virtual const uiint& getEntityType()=0;
 
 
     // prolongation準備
@@ -162,12 +162,12 @@ public:
     //
     // EdgeElement
     //
-    virtual PairNode getPairNode(const uint& iedge)=0;
-    virtual void     getPairNode(vint& pairNodeIndex, const uint& iedge)=0;
-    void reserveEdgeElement(const uint& edgeIndex, const uint& numOfElem);
-    void setEdgeElement(const uint& edgeIndex, CElement* pElem);
-    void setEdgeAggElement(const uint& edgeIndex, vector<CElement*> vElement);
-    vector<CElement*>& getEdgeElement(const uint& edgeIndex){ return mvvEdgeElement[edgeIndex];}
+    virtual PairNode getPairNode(const uiint& iedge)=0;
+    virtual void     getPairNode(vint& pairNodeIndex, const uiint& iedge)=0;
+    void reserveEdgeElement(const uiint& edgeIndex, const uiint& numOfElem);
+    void setEdgeElement(const uiint& edgeIndex, CElement* pElem);
+    void setEdgeAggElement(const uiint& edgeIndex, vector<CElement*> vElement);
+    vector<CElement*>& getEdgeElement(const uiint& edgeIndex){ return mvvEdgeElement[edgeIndex];}
     //
     // EdgeElement boolスタンプ
     //
@@ -176,16 +176,16 @@ public:
     //
     // (局所ノード番号,局所ノード番号)に対応した辺の,Index番号
     //
-    virtual uint& getEdgeIndex(CNode* pNode0, CNode* pNode1)=0;
-    virtual uint& getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)=0;
+    virtual uiint& getEdgeIndex(CNode* pNode0, CNode* pNode1)=0;
+    virtual uiint& getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)=0;
     //
     // EdgeNode
     // set Intermediate Node for prolongation
     // (prolongation 辺ノード)
     //
-    void setEdgeInterNode(CNode* pNode, const uint& edgeIndex);
-    CNode* getEdgeInterNode(const uint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
-    uint getEdgeInterNodeSize(){ mvEdgeInterNode.size();}//deleteProgData処理後の確認用
+    void setEdgeInterNode(CNode* pNode, const uiint& edgeIndex);
+    CNode* getEdgeInterNode(const uiint& edgeIndex){ return mvEdgeInterNode[edgeIndex];}
+    uiint getEdgeInterNodeSize(){ mvEdgeInterNode.size();}//deleteProgData処理後の確認用
     //
     // 2次要素において、辺NodeをmvNodeに移し替える && 1次要素では何もしない.
     //
@@ -194,26 +194,26 @@ public:
     //
     // FaceElement
     //
-    void setFaceElement(CElement* pElem, const uint& faceIndex){ mvFaceElement[faceIndex]= pElem;}
+    void setFaceElement(CElement* pElem, const uiint& faceIndex){ mvFaceElement[faceIndex]= pElem;}
 
     // 面構成ノード配列
     //
-    virtual vector<CNode*> getFaceCnvNodes(const uint& iface)=0;
+    virtual vector<CNode*> getFaceCnvNodes(const uiint& iface)=0;
 
 
     //
     // FaceNode
     //
-    void setFaceNode(CNode* pNode, const uint& faceIndex){ mvFaceNode[faceIndex]= pNode;}
-    CNode* getFaceNode(const uint& faceIndex){ return mvFaceNode[faceIndex];}
+    void setFaceNode(CNode* pNode, const uiint& faceIndex){ mvFaceNode[faceIndex]= pNode;}
+    CNode* getFaceNode(const uiint& faceIndex){ return mvFaceNode[faceIndex];}
     virtual bool isFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2);     //Faceにノードがセットされているか？
     virtual void setBoolFaceElem(CNode* pNode0, CNode* pNode1, CNode* pNode2);//Faceノードがセットされたことをスタンプ
-    uint getFaceNodeSize(){ mvFaceNode.size();}//deleteProgDataの確認用
+    uiint getFaceNodeSize(){ mvFaceNode.size();}//deleteProgDataの確認用
 
     // Face index
     // 
-    virtual uint& getFaceIndex(const uint& edge0, const uint& edge1)=0;       // iFace  (2 Edges)
-    virtual uint& getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)=0;// iFace  (3 Nodes)
+    virtual uiint& getFaceIndex(const uiint& edge0, const uiint& edge1)=0;       // iFace  (2 Edges)
+    virtual uiint& getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)=0;// iFace  (3 Nodes)
 
 
     // CenterNode(Volume Center)
@@ -237,8 +237,8 @@ public:
     void markingMPCSlave(){ mbSlave= true;}
     bool& isMPCSlave(){ return mbSlave;}
 
-    void markingMPCFace(const uint& iface){ mvbMPCFace[iface]= true;}
-    bool isMPCFace(const uint& iface){ return mvbMPCFace[iface];}
+    void markingMPCFace(const uiint& iface){ mvbMPCFace[iface]= true;}
+    bool isMPCFace(const uiint& iface){ return mvbMPCFace[iface];}
 
 
     // CommMesh2に使用する要素か判定する属性
@@ -246,9 +246,9 @@ public:
     void markingCommMesh2(){ mbCommMesh2= true;}
     bool& isCommMesh2(){ return mbCommMesh2;}
 
-    void markingCommEntity(const uint& ient){ mnCommEntity= ient;  mvbCommEntity[ient]= true;}
-    bool isCommEntity(const uint& ient){ return mvbCommEntity[ient];}
-    uint& getCommEntityID(){ return  mnCommEntity;}
+    void markingCommEntity(const uiint& ient){ mnCommEntity= ient;  mvbCommEntity[ient]= true;}
+    bool isCommEntity(const uiint& ient){ return mvbCommEntity[ient];}
+    uiint& getCommEntityID(){ return  mnCommEntity;}
 
 
     // Refine後

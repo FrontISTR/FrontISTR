@@ -4,7 +4,7 @@
  *  Created on: Oct 16, 2009
  *      Author: goto
  */
-
+#include "TypeDef.h"
 #include <vector>
 
 namespace pmw
@@ -22,14 +22,14 @@ public:
 	void multVector(CAssyVector *pV, CAssyVector *pP) const;
 	void transMultVector(CAssyVector *pV, CAssyVector *pP) const;
 	void addEquation(CEquation* equation){
-		int id = mvEquation.size();
+		uiint id = mvEquation.size();
 		mnEquation = id + 1;
 		mvEquation.push_back(equation);
 	};
 
         void dump();//デバッグ MPCMatrixダンプ
 private:
-	size_t mnEquation;
+	uiint mnEquation;
 	std::vector<CEquation*> mvEquation;
 };
 #endif /* MPCMATRIX_H_ */

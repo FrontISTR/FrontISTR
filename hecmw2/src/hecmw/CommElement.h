@@ -27,7 +27,7 @@ public:
     virtual ~CCommElement();
 
 protected:
-    uint mID;
+    uiint mID;
     CElement* mpElement;//内包するMeshの要素
 
     //各頂点に共有CommElement集合を作る
@@ -68,27 +68,27 @@ protected:
     vuint mvNodeRank;//頂点ごとの所属計算領域(DomID <=rank)
     vuint mvEdgeRank;//辺 ごとの所属計算領域(DomID <=rank)
     vuint mvFaceRank;//面 ごとの所属計算領域(DomID <=rank)
-     uint  mVolRank; //体積中心の所属計算領域(DomID <=rank)
+     uiint  mVolRank; //体積中心の所属計算領域(DomID <=rank)
 public:
     // prolongation :Factoryで利用される
-    void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
+    void setupProgNodeRank(const uiint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
 
     // ID
-    void setID(const uint& id){ mID= id;}
-    uint& getID(){ return mID;}
+    void setID(const uiint& id){ mID= id;}
+    uiint& getID(){ return mID;}
 
 
     // 要素形状
-    virtual uint getShapeType()=0;
-    virtual uint getBaseShapeType()=0;
-    const uint& getNumOfVert(){ return mpElement->getNumOfNode();}
-    const uint& getNumOfEdge(){ return mpElement->getNumOfEdge();}
-    const uint& getNumOfFace(){ return mpElement->getNumOfFace();}
+    virtual uiint getShapeType()=0;
+    virtual uiint getBaseShapeType()=0;
+    const uiint& getNumOfVert(){ return mpElement->getNumOfNode();}
+    const uiint& getNumOfEdge(){ return mpElement->getNumOfEdge();}
+    const uiint& getNumOfFace(){ return mpElement->getNumOfFace();}
 
 
     // 頂点のRank設定
-    void setNodeRank(const uint& ivert, const uint& rank){ mvNodeRank[ivert]=rank;}//ファイル読み込み時(Level=0時の各Nodeのランク)
-    uint& getNodeRank(const uint& ivert){ return mvNodeRank[ivert];}
+    void setNodeRank(const uiint& ivert, const uiint& rank){ mvNodeRank[ivert]=rank;}//ファイル読み込み時(Level=0時の各Nodeのランク)
+    uiint& getNodeRank(const uiint& ivert){ return mvNodeRank[ivert];}
 
 
     // 所有Element
@@ -102,45 +102,45 @@ public:
     // comID:CommMeshグローバルNodeIndex(comID)のカウントアップ,Index値のセット,Marking
     // vNode:CommMeshのmvNodeを引数で受ける.
     // --
-    void setCommNodeIndex(const uint& ivert, uint& comID, vector<CNode*>& vCommMeshNode, vuint& vCommMeshNodeRank);
+    void setCommNodeIndex(const uiint& ivert, uiint& comID, vector<CNode*>& vCommMeshNode, vuint& vCommMeshNodeRank);
 protected:
-    void setNeibCommNodeIndex(const uint& ivert, const uint& comID);//隣接CommElemへのCommNodeIndex割り振り
+    void setNeibCommNodeIndex(const uiint& ivert, const uiint& comID);//隣接CommElemへのCommNodeIndex割り振り
 public:
-    uint& getCommNodeIndex(const uint& ivert){ return mvCommNodeIndex[ivert];}
+    uiint& getCommNodeIndex(const uiint& ivert){ return mvCommNodeIndex[ivert];}
 
     // DNode判定後に提供
     // => mbCommunication==false  但し-> Nodeを共有しているCommElemが,mbCommunication==trueの場合は除外
     // --
-    void getDNode(const uint& ivert, vector<CNode*>& vDNode);
+    void getDNode(const uiint& ivert, vector<CNode*>& vDNode);
 protected:
-    void markingDNode(const uint& ivert);
+    void markingDNode(const uiint& ivert);
 
 public:
-    bool isMarkingDNode(const uint& ivert){ return mvbDNodeMarking[ivert];}
+    bool isMarkingDNode(const uiint& ivert){ return mvbDNodeMarking[ivert];}
 
     // Nodeを提供
     // --
-    CNode* getNode(const uint& ivert){ return mpElement->getNode(ivert);}
+    CNode* getNode(const uiint& ivert){ return mpElement->getNode(ivert);}
     // Send,Recv Nodeを提供
     // --
     vector<CNode*>& getSendNode(){ return mvSendNode;}
     vector<CNode*>& getRecvNode(){ return mvRecvNode;}
-    uint getNumOfSendNode(){ return mvSendNode.size();}
-    uint getNumOfRecvNode(){ return mvRecvNode.size();}
-    CNode* getSendNode(const uint& i){ return mvSendNode[i];}
-    CNode* getRecvNode(const uint& i){ return mvRecvNode[i];}
+    uiint getNumOfSendNode(){ return mvSendNode.size();}
+    uiint getNumOfRecvNode(){ return mvRecvNode.size();}
+    CNode* getSendNode(const uiint& i){ return mvSendNode[i];}
+    CNode* getRecvNode(const uiint& i){ return mvRecvNode[i];}
 
     
     //頂点共有Element
-    void setAggCommElement(const uint& ivert, CCommElement* pComElem){ mvvAggCommElem[ivert].push_back(pComElem);}
-    void setNeibCommElemVert(const uint& ivert, const uint& neibVert){ mvvNeibCommElemVert[ivert].push_back(neibVert);}
+    void setAggCommElement(const uiint& ivert, CCommElement* pComElem){ mvvAggCommElem[ivert].push_back(pComElem);}
+    void setNeibCommElemVert(const uiint& ivert, const uiint& neibVert){ mvvNeibCommElemVert[ivert].push_back(neibVert);}
     
     
     // rank選別,CommElement選択(Tetra,Triangleは頂点間の関係だけで記述可能)
     // --
     bool isCommElement(){ return mbCommunication;}//通信に用いる要素か否か
     bool isRCommElement(){ return mbRCommunication;}//計算のみの要素に復帰した要素か否か
-    void sortNodeRank(const uint& myRank, const uint& transRank);//Send,Recv,Otherに選別,isCommElementのbool値設定
+    void sortNodeRank(const uiint& myRank, const uiint& transRank);//Send,Recv,Otherに選別,isCommElementのbool値設定
     
     
     //debug method 
@@ -149,10 +149,10 @@ public:
     // prolongation CommElement のRank提供
     // --
     vuint& getEdgeRank(){ return mvEdgeRank;}
-     uint& getEdgeRank(const uint& iedge){ return mvEdgeRank[iedge];}
+     uiint& getEdgeRank(const uiint& iedge){ return mvEdgeRank[iedge];}
     vuint& getFaceRank(){ return mvFaceRank;}
-     uint& getFaceRank(const uint& iface){ return mvFaceRank[iface];}
-     uint& getVolRank(){ return mVolRank;}
+     uiint& getFaceRank(const uiint& iface){ return mvFaceRank[iface];}
+     uiint& getVolRank(){ return mVolRank;}
 };
 #endif	/* _COMMELEMENT_H */
 }

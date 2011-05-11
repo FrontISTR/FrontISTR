@@ -18,11 +18,11 @@ CEdgeTree::CEdgeTree()
 {
     mpLogger = Utility::CLogger::Instance();
 
-    uint i,ii;
+    uiint i,ii;
     // Edgeを構成する両端の局所ノード番号
     //--
     //Hexa
-    uint hexedge[12][2]={
+    uiint hexedge[12][2]={
         {0,1},
         {1,2},
         {2,3},
@@ -43,7 +43,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Tetra
-    uint tetedge[6][2]={
+    uiint tetedge[6][2]={
         {0,1},
         {1,2},
         {2,0},
@@ -58,7 +58,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Prism
-    uint priedge[9][2]={
+    uiint priedge[9][2]={
         {0,1},
         {0,2},
         {1,2},
@@ -76,7 +76,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Pyramid
-    uint pyedge[8][2]={
+    uiint pyedge[8][2]={
         {0,1},
         {1,2},
         {2,3},
@@ -93,7 +93,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Quad
-    uint quedge[4][2]={
+    uiint quedge[4][2]={
         {0,1},
         {1,2},
         {2,3},
@@ -106,7 +106,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Triangle
-    uint triedge[3][2]={
+    uiint triedge[3][2]={
         {0,1},
         {1,2},
         {2,0}
@@ -118,7 +118,7 @@ CEdgeTree::CEdgeTree()
     };
 
     //Beam
-    uint bmedge[1][2]={
+    uiint bmedge[1][2]={
         {0,1}
     };
     for(i=0; i< 1; i++){
@@ -131,7 +131,7 @@ CEdgeTree::CEdgeTree()
     // ノードに接続するEdge番号
     // --
     // Hexa
-    uint hexconn[8][3]={
+    uiint hexconn[8][3]={
         {0,3,8},
         {0,1,9},
         {1,2,10},
@@ -148,7 +148,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Tetra
-    uint tetconn[4][3]={
+    uiint tetconn[4][3]={
         {2,0,3},
         {0,1,4},
         {2,1,5},
@@ -161,7 +161,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Prism
-    uint priconn[6][3]={
+    uiint priconn[6][3]={
         {1,0,3},
         {0,2,4},
         {1,2,5},
@@ -176,7 +176,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Pyramid
-    uint pyconn[5][4]={
+    uiint pyconn[5][4]={
         {0,3,7,0},
         {0,1,4,0},
         {1,2,5,1},
@@ -190,7 +190,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Quad
-    uint quconn[4][2]={
+    uiint quconn[4][2]={
         {0,3},
         {0,1},
         {1,2},
@@ -203,7 +203,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Triangle
-    uint triconn[3][2]={
+    uiint triconn[3][2]={
         {0,2},
         {0,1},
         {1,2}
@@ -215,7 +215,7 @@ CEdgeTree::CEdgeTree()
     }
     
     // Beam
-    uint beconn[2][1]={
+    uiint beconn[2][1]={
         {0},
         {0}
     };
@@ -234,7 +234,7 @@ CEdgeTree::~CEdgeTree()
 
 // Hexa 辺のノード接続
 //
-uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getHexaEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     
     // Edge(辺)のツリー
@@ -391,7 +391,7 @@ uint& CEdgeTree::getHexaEdgeIndex(const uint& localNum0, const uint& localNum1)
 
 // Tetra 辺のノード接続
 //
-uint& CEdgeTree::getTetraEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getTetraEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -468,7 +468,7 @@ uint& CEdgeTree::getTetraEdgeIndex(const uint& localNum0, const uint& localNum1)
 
 // Prism 辺のノード接続
 //
-uint& CEdgeTree::getPrismEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getPrismEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -577,7 +577,7 @@ uint& CEdgeTree::getPrismEdgeIndex(const uint& localNum0, const uint& localNum1)
 
 // Pyramid 辺のノード接続
 //
-uint& CEdgeTree::getPyramidEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getPyramidEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -673,7 +673,7 @@ uint& CEdgeTree::getPyramidEdgeIndex(const uint& localNum0, const uint& localNum
 
 // Quad 辺のノード接続
 //
-uint& CEdgeTree::getQuadEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getQuadEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -738,7 +738,7 @@ uint& CEdgeTree::getQuadEdgeIndex(const uint& localNum0, const uint& localNum1)
 
 // Triangle 辺のノード接続
 //
-uint& CEdgeTree::getTriangleEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getTriangleEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -791,7 +791,7 @@ uint& CEdgeTree::getTriangleEdgeIndex(const uint& localNum0, const uint& localNu
 
 // Beam 辺のノード接続
 //
-uint& CEdgeTree::getBeamEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getBeamEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     // Edge(辺)のツリー
     switch(localNum0){
@@ -821,7 +821,7 @@ uint& CEdgeTree::getBeamEdgeIndex(const uint& localNum0, const uint& localNum1)
 
 // Disagreement(不一致)Typeの場合の辺番号:存在しない辺番号
 //
-uint& CEdgeTree::getDisagTypeEdgeIndex(const uint& localNum0, const uint& localNum1)
+uiint& CEdgeTree::getDisagTypeEdgeIndex(const uiint& localNum0, const uiint& localNum1)
 {
     mEdgeNum=999;
     return mEdgeNum;
@@ -831,7 +831,7 @@ uint& CEdgeTree::getDisagTypeEdgeIndex(const uint& localNum0, const uint& localN
 
 // 辺(Edge)番号から,端点の局所ノード番号を提供: 統合版
 // ----
-uint* CEdgeTree::getLocalNodeNum(const uint& elemType, const uint& iedge)
+uiint* CEdgeTree::getLocalNodeNum(const uiint& elemType, const uiint& iedge)
 {
     switch(elemType){
         case(ElementType::Hexa):case(ElementType::Hexa2):

@@ -25,8 +25,8 @@ public:
 private:
     double mHeatTrans;//Heat Transfer Rate
     
-    static uint mnElemType;
-    static uint mnBaseType;
+    static uiint mnElemType;
+    static uiint mnBaseType;
 
 public:
     void setHeatTrans(const double& heat_trans);

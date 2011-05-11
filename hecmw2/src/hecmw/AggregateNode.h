@@ -19,20 +19,20 @@ public:
     virtual ~CAggregateNode();
 
 protected:
-    uint mID;//コア・ノード インデックス番号
+    uiint mID;//コア・ノード インデックス番号
     vector<CNode*> mvNode;
 
 public:
     // コアになるノードのID (インデックス番号)
-    void setID(const uint& index){ mID= index;}
-    uint& getID(){ return mID;}
+    void setID(const uiint& index){ mID= index;}
+    uiint& getID(){ return mID;}
 
     // コア・ノード周囲のノード => Aggregate Node
-    void reserveNode(const uint& res_size){ mvNode.reserve(res_size);}
+    void reserveNode(const uiint& res_size){ mvNode.reserve(res_size);}
     void setNode(CNode* pNode);//既に取得済みかどうかの判定の上でpush_back.
 
-    uint getNumOfNode(){ return mvNode.size();}
-    CNode* getNode(const uint& i){ return mvNode[i];}
+    uiint getNumOfNode(){ return mvNode.size();}
+    CNode* getNode(const uiint& i){ return mvNode[i];}
 
 
 };

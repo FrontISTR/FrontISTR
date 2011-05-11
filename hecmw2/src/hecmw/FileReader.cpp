@@ -32,7 +32,7 @@ bool CFileReader::TagCheck(string& s_line, const char* ctag)
 {
     bool bcheck(false);
 
-    uint i;
+    uiint i;
     for(i=0; i< s_line.length(); i++){
         if(s_line[i]=='\r') s_line[i]=' ';
         if(s_line[i]==',')  s_line[i]=' ';
@@ -42,9 +42,6 @@ bool CFileReader::TagCheck(string& s_line, const char* ctag)
     string stoken;
     while(iss >> stoken){
         if(stoken==ctag){
-            //debug
-            //cout << "TagCheck == " << stoken << endl;
-
             bcheck=true;
             return bcheck;
         }
@@ -64,10 +61,11 @@ string& CFileReader::getLineSt(ifstream& ifs)
     msLine.clear();
     msLine = c_Line;
 
-    uint i;
+    uiint i;
     for(i=0; i< msLine.length(); i++){
         if(msLine[i]=='\r') msLine[i]=' ';
         if(msLine[i]==',')  msLine[i]=' ';
+        if(msLine[i]=='\t') msLine[i]=' ';
     };
 
     return msLine;
@@ -78,11 +76,12 @@ string& CFileReader::getLine(ifstream& ifs)
 
     getline(ifs, msLine);
 
-    uint i;
+    uiint i;
     for(i=0; i< msLine.length(); i++){
         if(msLine[i]=='\r') msLine[i]=' ';
         if(msLine[i]==',')  msLine[i]=' ';
-        if(msLine[i]=='\n') msLine[i]=' ';
+        //if(msLine[i]=='\n') msLine[i]=' ';
+        if(msLine[i]=='\t') msLine[i]=' ';
     };
 
     return msLine;
@@ -91,7 +90,7 @@ string& CFileReader::getLine(ifstream& ifs)
 // Elementのタイプを表す文字列をElementTypeを表す符号なし整数(unsigned int)に変換
 // string => uint
 //
-uint CFileReader::IntElemType(string& sElemType)
+uiint CFileReader::IntElemType(string& sElemType)
 {
     if(sElemType=="Hexa"){
         return pmw::ElementType::Hexa;
@@ -125,7 +124,7 @@ uint CFileReader::IntElemType(string& sElemType)
 
 // 境界種類のDirichlet,Neumann をBoundaryTypeを表す符号なし整数(unsigned int)に変換
 // string => uint
-uint CFileReader::IntBndType(string& sBndType)
+uiint CFileReader::IntBndType(string& sBndType)
 {
     if(sBndType=="Dirichlet"){
         return pmw::BoundaryType::Dirichlet;
@@ -155,11 +154,142 @@ void CFileReader::Split(const string& s, char c, vstring& v)
     };
 }
 
+uiint CFileReader::getFileSize(ifstream& ifs)
+{
+    ifs.seekg(0, ios_base::end);
+    uiint nSize = ifs.tellg();
+    ifs.seekg(0, ios_base::beg);
+    return nSize;
+}
+bool CFileReader::Check_End(ifstream& ifs)
+{
+    char cTok[4];
+    ifs.read(cTok, 3);
+    cTok[3]='\0';
+    string sTok=cTok;
+    if(sTok==FileBlockName::End()){
+        return true;
+    }else{
+        ifs.seekg(-3, ios_base::cur);
+        return false;
+    }
+}
+bool CFileReader::Check_IntSize(bool& b32, bool& bCheck, string& sClassName)
+{
+    CFileReaderBinCheck *pBinCheck= CFileReaderBinCheck::Instance();
+    b32= pBinCheck->is32Bit();
 
+    //BinCheckのサイズ指定との整合性
+    bCheck=false;
+    if(b32){
+        if(sizeof(uiint)==sizeof(uint32)) bCheck=true;
+    }else{
+        if(sizeof(uiint)==sizeof(uint64)) bCheck=true;
+    }
+    if(!bCheck){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        mpLogger->Info(Utility::LoggerMode::Error, sClassName+"::Read_bin, mismatch intger size");
+        return false;
+    }
+    return true;
+}
+bool CFileReader::TagCheck_Bin(ifstream& ifs, bool bCheck, char cHead, const char *NameTag, const uiint& nLength)
+{
+    ifs.seekg(0, ios_base::beg);//先頭からチェック
 
+    bCheck=false;
+    string sTag;
+    while(!ifs.eof()){
+        char cTok;
+        ifs.read(&cTok, 1);
+        if(cTok==cHead){
+            ifs.seekg(-1, ios_base::cur);
 
+            char cTag[nLength+1];
+            ifs.read(cTag, nLength);
+            cTag[nLength]='\0';
+            sTag=cTag;
+            if( sTag==NameTag ){
+                bCheck=true;
+                break;
+            }else{
+                ifs.seekg(-(nLength-1), ios_base::cur);
+            }
+        }
+    };
+    return bCheck;
+}
 
+short CFileReader::Read_ElementType(ifstream& ifs, char* cEName, short nLength, const char* cEType, string& sType)
+{
+//    char cHexa[5], cTetra[6], cPrism[6];
+//    char cQuad[5], cTriangle[9];
+//    char cBeam[5];
+    char cTail;
+    
+//    ifs.read(cHexa, 4); cHexa[4]='\0';
+//    sType=cHexa;
+//    if(sType=="Hexa"){
+//        ifs.read(&cTail, 1);
+//        if(cTail=='2'){
+//            sType += "2";
+//            return sType;
+//        }else{
+//            ifs.seekg(-1, ios_base::cur);
+//            return sType;
+//        }
+//    }
+//    ifs.seekg(-5, ios_base::cur);
 
+    ifs.read(cEName, nLength-1); cEName[nLength-1]='\0';
+    sType=cEName;
+    if(sType==cEType){
+        ifs.read(&cTail, 1);
+        if(cTail=='2'){
+            sType += "2";
+            return 2;
+        }else{
+            ifs.seekg(-1, ios_base::cur);
+            return 1;
+        }
+    }
+    ifs.seekg(-nLength, ios_base::cur);
+
+    sType="";
+    return 0;
+}
+
+void CFileReader::Read_BndType(ifstream& ifs, string& sBndType)
+{
+    char cH;
+    ifs.read(&cH, 1);
+    if(cH=='D'){
+        ifs.seekg(8, ios_base::cur);//D_irichlet
+        sBndType="Dirichlet";
+    }
+    if(cH=='N'){
+        ifs.seekg(6, ios_base::cur);//N_eumann
+        sBndType="Neumann";
+    }
+}
+
+void CFileReader::Read_AnyName(ifstream& ifs, string& sName)
+{
+    sName.clear();
+    int nOK;
+    char cH;
+
+    while(!ifs.eof()){
+        ifs.read(&cH, 1);
+        nOK = isalnum(cH);//英数字(a-z, A-Z, 0-9)
+        if(nOK==0){
+            ifs.seekg(-1, ios_base::cur);
+            break;
+        }else{
+            sName += cH;
+        }
+    };
+}
 
 
 

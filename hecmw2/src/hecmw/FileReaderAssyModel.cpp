@@ -6,7 +6,7 @@
 //              k.Takeda
 #include "FileReaderAssyModel.h"
 using namespace FileIO;
-using namespace boost;
+//using namespace boost;
 //  construct & destruct
 //
 CFileReaderAssyModel::CFileReaderAssyModel()
@@ -23,25 +23,19 @@ CFileReaderAssyModel::~CFileReaderAssyModel()
 //
 bool CFileReaderAssyModel::Read(ifstream& ifs, string& sLine)
 {
-    
-    uint nMeshID, numOfMesh, maxID, minID, nProp, mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド==0
+    uiint nMeshID, nNumOfMesh, maxID, minID, nProp, mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド==0
     vuint vMeshID;
     vuint vProp(0);//属性: 0:構造，1:流体
     istringstream iss;
 
     // MeshIDデータ for AssyModel
     if(TagCheck(sLine, FileBlockName::StartAssyModel()) ){
-        //mpLogger->Info(Utility::LoggerMode::MWDebug, "FileReaderAssyModel", sLine);
-
-        //debug
-        cout << "FileReaderAssyModel::Read" << endl;
-
+        
         // メッシュ数,MaxID,MinID
-        //
-        sLine = getLineSt(ifs);
+        sLine = getLine(ifs);
         iss.clear();
         iss.str(sLine.c_str());
-        iss >> numOfMesh >> maxID >> minID;
+        iss >> nNumOfMesh >> maxID >> minID;
         
         // setup to BucketMesh in AssyModel
         mpFactory->setupBucketMesh(mgLevel, maxID, minID);
@@ -49,67 +43,88 @@ bool CFileReaderAssyModel::Read(ifstream& ifs, string& sLine)
         // MeshID の連続データ
         //
         while(!ifs.eof()){
-            sLine = getLineSt(ifs);
+            sLine = getLine(ifs);
             if(TagCheck(sLine, FileBlockName::EndAssyModel()) ) break;
 
             iss.clear();
             iss.str(sLine.c_str());
 
-            //// 単純なRead
-            //iss >> nMeshID;
-            //vMeshID.push_back(nMeshID);
-
-            // boost  トークン分割
-            // ----
-            char_separator<char> sep(" \t\n");
-            tokenizer< char_separator<char> > tokens(sLine, sep);
-
-            uint nCount(0);
-            typedef tokenizer< char_separator<char> >::iterator Iter;
-            for(Iter it=tokens.begin(); it != tokens.end(); ++it){
-                string str = *it;
-                if(nCount==0){ nMeshID = atoi(str.c_str()); vMeshID.push_back(nMeshID);}
-                if(nCount==1){ nProp   = atoi(str.c_str()); vProp.push_back(nProp);    }//入力ファイルにnPropが無ければvPropに値は入らない.
+            uiint nCount(0);
+            while(iss){
+                if(nCount==0){ iss >> nMeshID; vMeshID.push_back(nMeshID);}
+                if(nCount==1){ iss >> nProp;   vProp.push_back(nProp);}
                 nCount++;
-            };
-
-            
-////            vstring vToken;
-////            Split(sLine, ' ', vToken);
-////            uint nNumOfToken = vToken.size();
-////            cout << "vToken.size() = " << vToken.size() << endl;
-////            if(nNumOfToken==1){
-////
-////                nMeshID = atoi(vToken[0].c_str());
-////                vMeshID.push_back(nMeshID);
-////            }
-////            if(nNumOfToken==2){
-////                nMeshID = atoi(vToken[0].c_str());
-////                nProp   = atoi(vToken[1].c_str());
-////                vMeshID.push_back(nMeshID);
-////                vProp.push_back(nProp);
-////            }
+                if(nCount > 1) break;
+            }
+            //cout << "nMeshID " << nMeshID << " nProp " << nProp << endl;
         };
         // Meshの領域確保
         //
-        mpFactory->reserveMesh(mgLevel, numOfMesh);//ファイル読み込みなので,mgLevel=0
+        mpFactory->reserveMesh(mgLevel, nNumOfMesh);//ファイル読み込みなので,mgLevel=0
 
         // Meshの生成 for AssyModel(at mgLevel=0)
         //
-        uint imesh, nNumOfMesh=vMeshID.size();
-        if(vProp.size()==vMeshID.size()){
-            for(imesh=0; imesh < nNumOfMesh; imesh++){
-                mpFactory->GeneMesh(mgLevel, vMeshID[imesh], imesh, vProp[imesh]);
-            };
-        }else{
-            // vPropに値がセットされていない.(入力ファイルに定義されていなかった)
-            for(imesh=0; imesh < nNumOfMesh; imesh++){
-                mpFactory->GeneMesh(mgLevel, vMeshID[imesh], imesh, nProp);// nPropは初期値0:構造
-            };
-        }
-
+        uiint imesh;
+        for(imesh=0; imesh < nNumOfMesh; imesh++){
+            mpFactory->GeneMesh(mgLevel, vMeshID[imesh], imesh, vProp[imesh]);
+        };
         return true;
     }else{
         return false;
     }
 }
+
+bool CFileReaderAssyModel::Read_bin(ifstream& ifs)
+{
+    CFileReaderBinCheck *pBinCheck= CFileReaderBinCheck::Instance();
+    bool bOrder= pBinCheck->isByteOrderSwap();
+    
+    
+    bool b32, bCheck;
+    string sClassName("FileReaderAssyModel");
+    //BinCheckのサイズ指定との整合性
+    if( !Check_IntSize(b32, bCheck, sClassName) ) return false;
+
+    //AssyModelタグ
+    char cHead='A';
+    if( !TagCheck_Bin(ifs, bCheck, cHead, FileBlockName::StartAssyModel(), FileBlockName::AssyModel_Len())) return false;
+
+    
+    uiint nMeshID, nNumOfMesh, maxID, minID, nProp, mgLevel(0);// mgLevel=0
+    vuint vMeshID;
+    vuint vProp(0);//属性: 0:構造，1:流体
+
+    // メッシュ数,MaxID,MinID
+    ifs.read((char*)&nNumOfMesh, sizeof(uiint)); if(bOrder) pBinCheck->ByteOrderSwap(nNumOfMesh);
+    ifs.read((char*)&maxID, sizeof(uiint));      if(bOrder) pBinCheck->ByteOrderSwap(maxID);
+    ifs.read((char*)&minID, sizeof(uiint));      if(bOrder) pBinCheck->ByteOrderSwap(minID);
+
+    // setup to BucketMesh in AssyModel
+    mpFactory->setupBucketMesh(mgLevel, maxID, minID);
+
+    // MeshID の連続データ
+    //
+    while(!ifs.eof()){
+        if(Check_End(ifs)) break;
+
+        ifs.read((char*)&nMeshID, sizeof(uiint));  if(bOrder) pBinCheck->ByteOrderSwap(nMeshID);
+        vMeshID.push_back(nMeshID);
+
+        ifs.read((char*)&nProp, sizeof(uiint));    if(bOrder) pBinCheck->ByteOrderSwap(nProp);
+        vProp.push_back(nProp);
+    };
+    // Meshの領域確保
+    //
+    mpFactory->reserveMesh(mgLevel, nNumOfMesh);//ファイル読み込みなので,mgLevel=0
+
+    // Meshの生成  AssyModel
+    //
+    uiint imesh;
+    for(imesh=0; imesh < nNumOfMesh; imesh++){
+        mpFactory->GeneMesh(mgLevel, vMeshID[imesh], imesh, vProp[imesh]);
+    };
+
+    return true;
+   
+}
+

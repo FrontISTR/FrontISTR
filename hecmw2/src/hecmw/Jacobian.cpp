@@ -15,7 +15,7 @@ using namespace pmw;
 
 CJacobian::CJacobian()
 {
-    uint iaxis;
+    uiint iaxis;
     
     //3×3行列
     mvJ33.resize(3);
@@ -30,10 +30,10 @@ CJacobian::~CJacobian()
     ;
 }
 
-void CJacobian::setupRegion(const uint& numOfIntegPoint, const uint& numOfShape)
+void CJacobian::setupRegion(const uiint& numOfIntegPoint, const uiint& numOfShape)
 {
     // 積分点-形状関数ごとの3×3行列(J,InvJ)の確保
-    uint igauss,iaxis;
+    uiint igauss,iaxis;
 
     mvJ.resize(numOfIntegPoint);
     mvInvJ.resize(numOfIntegPoint);
@@ -49,9 +49,9 @@ void CJacobian::setupRegion(const uint& numOfIntegPoint, const uint& numOfShape)
 
     };
 }
-void CJacobian::clearRegion(const uint& numOfIntegPoint, const uint& numOfShape)
+void CJacobian::clearRegion(const uiint& numOfIntegPoint, const uiint& numOfShape)
 {
-    uint igauss,iaxis;
+    uiint igauss,iaxis;
 
     for(igauss=0; igauss< numOfIntegPoint; igauss++){
         for(iaxis=0; iaxis< 3; iaxis++){
@@ -75,17 +75,17 @@ void CJacobian::clearRegion(const uint& numOfIntegPoint, const uint& numOfShape)
 void CJacobian::Calculate_J_invJ(const vvvdouble& dNdr, vector<CNode*>& vElemNode)
 {
     //積分点数
-    uint ig,numOfIntg;
+    uiint ig,numOfIntg;
     numOfIntg= dNdr.size();
 
     //形状関数
-    uint ish,numOfShape;
+    uiint ish,numOfShape;
     numOfShape= vElemNode.size();
     CNode* pNode;
     double X,Y,Z;
 
     for(ig=0; ig< numOfIntg; ig++){
-        uint ir;
+        uiint ir;
         double sum_a, sum_b, sum_c;
         for(ir=0; ir< 3; ir++){
             sum_a=0.0; sum_b=0.0; sum_c=0.0;
@@ -103,7 +103,7 @@ void CJacobian::Calculate_J_invJ(const vvvdouble& dNdr, vector<CNode*>& vElemNod
             mvJ33[2][ir]= sum_c;
         };
         
-        uint row,col;
+        uiint row,col;
         //ヤコビアン行列の保存
         for(row=0; row< 3; row++){
             for(col=0; col< 3; col++){

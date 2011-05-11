@@ -24,44 +24,45 @@ class CAssyModel;
 class CAssyMatrix
 {
 public:
-	CAssyMatrix(CAssyModel *pAssyModel, const uint& nDOF);//, const vuint& vPartsID);//第二引数：アセンブルするメッシュパーツ指定
+	CAssyMatrix(CAssyModel *pAssyModel, const uiint& nDOF);//, const vuint& vPartsID);//第二引数：アセンブルするメッシュパーツ指定
 	virtual ~CAssyMatrix();
 
-        int Matrix_Add_Nodal(const uint& iMesh, const uint& iNodeID, const uint& jNodeID, double* NodalMatrix);
-	int Matrix_Add_Elem(CAssyModel *pAssyModel, const uint& iMesh, const uint& iElem, double *ElemMatrix);
-        void Matrix_Clear(const uint& iMesh);// Matrix 0 clear
+        uiint Matrix_Add_Nodal(const uiint& iMesh, const uiint& iNodeID, const uiint& jNodeID, double* NodalMatrix);
+	uiint Matrix_Add_Elem(CAssyModel *pAssyModel, const uiint& iMesh, const uiint& iElem, double *ElemMatrix);
+        void Matrix_Clear(const uiint& iMesh);// Matrix 0 clear
 
-        uint& getDOF(){ return mnDOF;}
+        uiint& getDOF(){ return mnDOF;}
 
-	void setValue(const uint& imesh, const uint& inode, const uint& idof, const double& value);//for Boundary
-        void setValue_D(const uint& imesh, const uint& inode, const uint& idof, const double& value);
-        void setZero_NonDiag(const uint& imesh, const uint& inode, const uint& idof);
-        void multVector(const uint& imesh, CAssyVector *pX, CAssyVector *pB);// xに値を入れて、Ax=B でBを求める
+        void setValue_D(const uiint& imesh, const uiint& inode, const uiint& idof, const double& value);
+	void setValue(const uiint& imesh, const uiint& inode, const uiint& idof, const double& dDiag, CAssyVector *pRHS, const double& dRHS);//for Boundary
+        void setZero_NonDiag(const uiint& imesh, const uiint& inode, const uiint& idof, CAssyVector *pRHS, const double& dRHS);
+        
+        void multVector(const uiint& imesh, CAssyVector *pX, CAssyVector *pB);// xに値を入れて、Ax=B でBを求める
 
 
 
-	int multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW = 0) const;
-	int multMPC(CAssyVector *pV, CAssyVector *pP) const;
-	int residual(CAssyVector *pV, const CAssyVector *pF, CAssyVector *pR) const;
+	uiint multVector(CAssyVector *pV, CAssyVector *pP, CAssyVector *pW = 0) const;
+	uiint multMPC(CAssyVector *pV, CAssyVector *pP) const;
+	uiint residual(CAssyVector *pV, const CAssyVector *pF, CAssyVector *pR) const;
 
-	int setupSolver(int type);
-	int setupPreconditioner(int type) const; 
-	int setupSmoother(int type);
+	uiint setupSolver(iint type);
+	uiint setupPreconditioner(iint type) const;
+	uiint setupSmoother(iint type);
 	
 	void setCoarseMatrix(CAssyMatrix *coarse) {mpCoarseMatrix = coarse;};
 	CAssyMatrix* getCoarseMatrix() { return mpCoarseMatrix;};
 
-	int solve(const CAssyVector *pF, CAssyVector *pV, int iter) const;
-	int precond(const CAssyVector *pR, CAssyVector *pZ, int iter) const;
-	int relax(const CAssyVector *pF, CAssyVector *pV, int iter) const;
+	uiint solve(const CAssyVector *pF, CAssyVector *pV, iint iter) const;
+	uiint precond(const CAssyVector *pR, CAssyVector *pZ, iint iter) const;
+	uiint relax(const CAssyVector *pF, CAssyVector *pV, iint iter) const;
 
-	int MGCycle(const CAssyVector *pF, CAssyVector *pV, int iter, int alpha1, int alpha2) const;
-	int MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const;
+	uiint MGCycle(const CAssyVector *pF, CAssyVector *pV, iint iter, iint alpha1, iint alpha2) const;
+	uiint MGInitialGuess(const CAssyVector *pF, CAssyVector *pV) const;
 
         void dump();//2011.01.05 行列のダンプ
 private:
 	CAssyModel *mpAssyModel;
-        uint mnDOF;//アセンブル方程式に対して、一つのDOF
+        uiint mnDOF;//アセンブル方程式に対して、一つのDOF
 
 	std::vector<CMatrixBCRS*> mvMatrix;
 	std::vector<CContactMatrix*> mvContactMatrix;
@@ -70,7 +71,7 @@ private:
 	CSolver *mpSolver;
 
 	CAssyMatrix *mpCoarseMatrix;
-	uint mMGLevel;
+	uiint mMGLevel;
 };
 
 }

@@ -55,13 +55,13 @@ private:
 
 
     //形状関数
-    void ShapeFunction2(vvdouble& N, const uint& igauss, const double& r);
-    void ShapeFunction3(vvdouble& N, const uint& igauss, const double& r);
+    void ShapeFunction2(vvdouble& N, const uiint& igauss, const double& r);
+    void ShapeFunction3(vvdouble& N, const uiint& igauss, const double& r);
 
     //導関数
     void ShapeDeriv2();
     //void ShapeDeriv3(double dNdr[][3][1], const uint& igauss, const double& r);
-    void ShapeDeriv3(vvvdouble& dNdr, const uint& igauss, const double& r);
+    void ShapeDeriv3(vvvdouble& dNdr, const uiint& igauss, const double& r);
 
     //2次導関数
     void Shape_2ndDeriv2();
@@ -77,39 +77,39 @@ private:
 
 public:
     // 形状関数  引数:積分点, 形状関数
-    double& N21(const uint& igauss, const uint& ishape);
-    double& N32(const uint& igauss, const uint& ishape);
-    vdouble& N21(const uint& igauss){ return mvN21[igauss];}
-    vdouble& N32(const uint& igauss){ return mvN32[igauss];}
+    double& N21(const uiint& igauss, const uiint& ishape);
+    double& N32(const uiint& igauss, const uiint& ishape);
+    vdouble& N21(const uiint& igauss){ return mvN21[igauss];}
+    vdouble& N32(const uiint& igauss){ return mvN32[igauss];}
     vvdouble& N21(){ return mvN21;}
     vvdouble& N32(){ return mvN32;}
     // 導関数   引数:積分点, 形状関数
-    double& dNdr21(const uint& igauss, const uint& ishape);
-    double& dNdr32(const uint& igauss, const uint& ishape);
-    vvdouble& dNdr21(const uint& igauss){ return mvdNdr21[igauss];}
-    vvdouble& dNdr32(const uint& igauss){ return mvdNdr32[igauss];}
+    double& dNdr21(const uiint& igauss, const uiint& ishape);
+    double& dNdr32(const uiint& igauss, const uiint& ishape);
+    vvdouble& dNdr21(const uiint& igauss){ return mvdNdr21[igauss];}
+    vvdouble& dNdr32(const uiint& igauss){ return mvdNdr32[igauss];}
     vvvdouble& dNdr21(){ return mvdNdr21;}
     vvvdouble& dNdr32(){ return mvdNdr32;}
     // 2次導関数 引数:積分点, 形状関数
-    double& d2Ndr21(const uint& igauss, const uint& ishape);
-    double& d2Ndr32(const uint& igauss, const uint& ishape);
-    vvvdouble& d2Ndr21(const uint& igauss){ return mvd2Ndr21[igauss];}
-    vvvdouble& d2Ndr32(const uint& igauss){ return mvd2Ndr32[igauss];}
+    double& d2Ndr21(const uiint& igauss, const uiint& ishape);
+    double& d2Ndr32(const uiint& igauss, const uiint& ishape);
+    vvvdouble& d2Ndr21(const uiint& igauss){ return mvd2Ndr21[igauss];}
+    vvvdouble& d2Ndr32(const uiint& igauss){ return mvd2Ndr32[igauss];}
     v4double& d2Ndr21(){ return mvd2Ndr21;}
     v4double& d2Ndr32(){ return mvd2Ndr32;}
 
     // 返り値:重みの配列, 引数:積分点数
-    double* Weight(const uint& integNum);
+    double* Weight(const uiint& integNum);
     // 返り値:重み, 引数:重みの配列Index
     double& Weight_pt1();
-    double& Weight_pt2(const uint& igauss);
+    double& Weight_pt2(const uiint& igauss);
 
 
     // 形状関数の積分値
     vdouble& getIntegValue3(){ return mvIntegValue3;}
     vdouble& getIntegValue2(){ return mvIntegValue2;}
-    double& getIntegValue3(const uint& ishape){ return mvIntegValue3[ishape];}
-    double& getIntegValue2(const uint& ishape){ return mvIntegValue2[ishape];}
+    double& getIntegValue3(const uiint& ishape){ return mvIntegValue3[ishape];}
+    double& getIntegValue2(const uiint& ishape){ return mvIntegValue2[ishape];}
 };
 #endif	/* _SHAPELINE_H */
 }

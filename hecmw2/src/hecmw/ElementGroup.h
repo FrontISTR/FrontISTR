@@ -23,23 +23,23 @@ protected:
     CMesh *mpMesh;
     vuint mvElementID;
 
-    uint mnGrpID;
+    uiint mnGrpID;
     string msGrpName;
 
 public:
     void setMesh(CMesh *pMesh);//ElemGrp自身が所属しているMeshポインター
 
-    void setID(const uint& id);
-    uint& getID();
+    void setID(const uiint& id);
+    uiint& getID();
 
     void setName(const string& sGrpName);
     string& getName();
-    uint getNameLength();
+    uiint getNameLength();
 
-    void addElementID(const uint& nElemID);
+    void addElementID(const uiint& nElemID);
 
-    uint getNumOfElementID();
-    uint& getElementID(const uint& index);
+    uiint getNumOfElementID();
+    uiint& getElementID(const uiint& index);
 
     void refine(CElementGroup* pProgElemG);
 };

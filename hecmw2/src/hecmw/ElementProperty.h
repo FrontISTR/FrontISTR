@@ -10,50 +10,50 @@
 
 namespace pmw{
 struct NumberOfVertex{
-    static uint Hexa(){return 8;}    
-    static uint Tetra(){return 4;}
-    static uint Prism(){return 6;}
-    static uint Pyramid(){return 5;}
-    static uint Quad(){return 4;}
-    static uint Triangle(){return 3;}
-    static uint Beam(){return 2;}
-    static uint Default(){return 0;}
+    static uiint Hexa(){return 8;}
+    static uiint Tetra(){return 4;}
+    static uiint Prism(){return 6;}
+    static uiint Pyramid(){return 5;}
+    static uiint Quad(){return 4;}
+    static uiint Triangle(){return 3;}
+    static uiint Beam(){return 2;}
+    static uiint Default(){return 0;}
 };
 struct NumberOfNode{
-    static uint Hexa(){return 8;}
-    static uint Hexa2(){return 20;}
-    static uint Tetra(){return 4;}
-    static uint Tetra2(){return 10;}
-    static uint Prism(){return 6;}
-    static uint Prism2(){return 15;}
-    static uint Pyramid(){return 5;}
-    static uint Quad(){return 4;}
-    static uint Quad2(){return 8;}
-    static uint Triangle(){return 3;}
-    static uint Triangle2(){return 6;}
-    static uint Beam(){return 2;}
-    static uint Beam2(){return 3;}
-    static uint Default(){return 0;}
+    static uiint Hexa(){return 8;}
+    static uiint Hexa2(){return 20;}
+    static uiint Tetra(){return 4;}
+    static uiint Tetra2(){return 10;}
+    static uiint Prism(){return 6;}
+    static uiint Prism2(){return 15;}
+    static uiint Pyramid(){return 5;}
+    static uiint Quad(){return 4;}
+    static uiint Quad2(){return 8;}
+    static uiint Triangle(){return 3;}
+    static uiint Triangle2(){return 6;}
+    static uiint Beam(){return 2;}
+    static uiint Beam2(){return 3;}
+    static uiint Default(){return 0;}
 };
 struct NumberOfEdge{
-    static uint Hexa(){return 12;}
-    static uint Tetra(){return 6;}
-    static uint Prism(){return 9;}
-    static uint Pyramid(){return 8;}
-    static uint Quad(){return 4;}
-    static uint Triangle(){return 3;}
-    static uint Beam(){return 1;}
-    static uint Default(){return 0;}
+    static uiint Hexa(){return 12;}
+    static uiint Tetra(){return 6;}
+    static uiint Prism(){return 9;}
+    static uiint Pyramid(){return 8;}
+    static uiint Quad(){return 4;}
+    static uiint Triangle(){return 3;}
+    static uiint Beam(){return 1;}
+    static uiint Default(){return 0;}
 };
 struct NumberOfFace{
-    static uint Hexa(){return 6;}
-    static uint Tetra(){return 4;}
-    static uint Prism(){return 5;}
-    static uint Pyramid(){return 5;}
-    static uint Quad(){return 1;}
-    static uint Triangle(){return 1;}
-    static uint Beam(){return 0;}
-    static uint Default(){return 0;}
+    static uiint Hexa(){return 6;}
+    static uiint Tetra(){return 4;}
+    static uiint Prism(){return 5;}
+    static uiint Pyramid(){return 5;}
+    static uiint Quad(){return 1;}
+    static uiint Triangle(){return 1;}
+    static uiint Beam(){return 0;}
+    static uiint Default(){return 0;}
 };
 }
 

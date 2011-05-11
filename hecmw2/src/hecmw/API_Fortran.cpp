@@ -16,374 +16,1039 @@ pmw::CMW *pMW;
 //----
 // HEC_MW3 construct & destruct
 //----
-#include <string.h>
-#include <math.h>
-int mw_initialize_(int* argc, char** argv, char* path) // for C
+
+// MW3 standard 
+iint mw_initialize_(int* argc, char** argv)
 {
     pMW = pmw::CMW::Instance();
 
-    return pMW->Initialize(*argc, argv, path);// argc, argv <= MPI_Init 引数
+    return pMW->Initialize(*argc, argv);
 }
-int mw_initialize_1_(char* argv1, int* argv1_len, char* path, int* path_len)
+// fstr style
+iint mw_initialize_fstr_(int* argc, char** argv, char* ctrlname)
 {
-    int argc = 1;// 1: exe program name
-    char** argv;
+    pMW = pmw::CMW::Instance();
 
-    size_t nLength = (size_t)*argv1_len + 1;
-    char carg[nLength];
-    strncpy(carg, argv1, nLength);// 1: exe program name
+    string sCtrlName= ctrlname;
 
-    argv = new char*[1];
-    argv[0] = carg;
-
-    nLength = (size_t)*path_len + 1;
-    char cpath[nLength];
-    strncpy(cpath, path, nLength);// cnt file path
-
-    return pMW->Initialize(argc, argv, cpath);
+    return pMW->Initialize_fstr(*argc, argv, sCtrlName);
 }
-int mw_initialize_2_(char* argv1, int* argv1_len, char* argv2, int* argv2_len, char* path, int* path_len)
-{
-    int argc = 2;// 1: exe program name, 2: input file name
-    char** argv;
-
-    size_t nLength = (size_t)*argv1_len + 1;
-    char carg1[nLength];
-    strncpy(carg1, argv1, nLength);// 1: exe program name
-
-    nLength = (size_t)*argv2_len + 1;
-    char carg2[nLength];
-    strncpy(carg2, argv2, nLength);// 2: input file name
-
-    argv = new char*[2];
-    argv[0] = carg1;
-    argv[1] = carg2;
-
-    nLength = (size_t)*path_len + 1;
-    char cpath[nLength];
-    strncpy(cpath, path, nLength);// cnt file path
-
-    return pMW->Initialize(argc, argv, cpath);
-}
-int mw_finalize_()
+iint mw_finalize_()
 {
     return pMW->Finalize();
 }
 
 //----
+// banner
+//----
+void mw_banner_()
+{
+    pMW->Banner_Display();
+}
+
+//----
 // file i/o API
 //----
-int mw_file_read_()
+iint mw_file_read_(char* basename)// mesh_file read:General
 {
-    return pMW->FileRead();
+    string sBasename= basename;
+
+    return pMW->FileRead(sBasename, false);
 }
-int mw_file_write_()
+//iint mw_file_read_bin_(char* basename)// mesh_file(binary) read:General
+//{
+//    string sBasename= basename;
+//
+//    return pMW->FileRead(sBasename, true);
+//}
+iint mw_file_read_fstr_() // mesh_file read:FrontISTR
 {
-    return pMW->FileWrite();
+    return pMW->FileRead_fstr(false);
 }
+//iint mw_file_read_bin_fstr_()// mesh_file read (binary file):FrontISTR
+//{
+//    return pMW->FileRead_fstr(true);
+//}
+iint mw_file_debug_write_() //data_check file write
+{
+    return pMW->FileDebugWrite();
+}
+//----
+// fstr file_name (hecmw_ctrl)
+//----
+iint mw_get_fstr_filename_length_mesh_()
+{
+    string sName = pMW->getFstr_FileName_Mesh();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr mesh filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_control_()
+{
+    string sName = pMW->getFstr_FileName_Control();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr control filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_result_()
+{
+    string sName = pMW->getFstr_FileName_Result();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr result filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_restart_()
+{
+    string sName = pMW->getFstr_FileName_Restart();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr restart filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_part_in_()
+{
+    string sName = pMW->getFstr_FileName_PartIn();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr part_in filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_part_out_()
+{
+    string sName = pMW->getFstr_FileName_PartOut();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr part_out filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_vis_mesh_()
+{
+    string sName = pMW->getFstr_FileName_VisMesh();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr vis_mesh filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_vis_in_()
+{
+    string sName = pMW->getFstr_FileName_VisIn();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr vis_in filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+iint mw_get_fstr_filename_length_vis_out_()
+{
+    string sName = pMW->getFstr_FileName_VisOut();
+    uiint nLength= sName.length();
+
+    if(nLength > IINT_MAX){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "int size over : fstr vis_out filename length");
+        return ERROR;
+    }else{
+        return nLength;
+    }
+}
+
+void mw_get_fstr_filename_mesh_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+    
+    string sName = pMW->getFstr_FileName_Mesh();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr mesh filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_control_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_Control();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr control filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_result_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_Result();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr result filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_restart_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_Restart();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr restart filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_part_in_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_PartIn();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr part_in filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_part_out_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_PartOut();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr part_out filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_vis_mesh_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_VisMesh();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr vis_mesh filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_vis_in_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+
+    string sName = pMW->getFstr_FileName_VisIn();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr vis_in filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+void mw_get_fstr_filename_vis_out_(char name[], iint* len)
+{
+    uiint ncLen = strlen(name);
+    
+    string sName = pMW->getFstr_FileName_VisOut();
+    uiint i, nLength = sName.length();
+
+    if(ncLen != nLength){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "name length mismatch : fstr vis_out filename length");
+    }
+
+    for(i=0; i < nLength; i++){
+        name[i]=sName[i];
+    }
+}
+
+//----
+// result
+//----
+void mw_rlt_start_(iint* step)
+{
+    if(*step < 0) return;
+
+    uiint nStep = *step;
+
+    pMW->PrintRlt_Start(nStep, false);
+}
+void mw_rlt_start_bin_(iint* step)
+{
+    if(*step < 0) return;
+
+    uiint nStep = *step;
+
+    pMW->PrintRlt_Start(nStep, true);
+}
+/* 
+ * format = %d:iint*, %f:double*(fixed), %e:double*(scientific), %s:const char*
+ */
+iint mw_rlt_print_(iint* width, char* format, ... )
+{
+    if(*width < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rlt_print_, minus value is invalid argument. width");
+        
+        return ERROR;
+    }
+
+    vector<void*> param;
+
+    iint *pnVal;  double *pdVal;  string sVal; char *cVal;
+    uiint nLength = strlen(format);
+    uiint nWidth = *width;
+
+    va_list list;
+
+    va_start( list, format);
+    for(uiint i=0; i < nLength; i++){
+        if(format[i] == '%'){
+            ++i;
+            switch( format[i] ){
+            case('d'):
+                pnVal= va_arg( list, iint* );
+
+                param.push_back(pnVal);
+                break;
+            case('f'):
+                pdVal= va_arg( list, double* );
+
+                param.push_back(pdVal);
+                break;
+            case('e'):
+                pdVal= va_arg( list, double* );
+
+                param.push_back(pdVal);
+                break;
+            case('s'):
+                sVal= va_arg( list, char* );
+
+                cVal = new char[sVal.length()+1];
+                strcpy(cVal, sVal.c_str());
+                param.push_back(cVal);
+                break;
+            default:
+                break;
+            }
+        }
+    };
+    va_end( list );
+
+
+    FileIO::CFileIO* pFileIO= FileIO::CFileIO::Instance();
+
+    pFileIO->PrintResult(nWidth,format, param);
+    
+    return SUCCESS;
+}
+void mw_rlt_end_()
+{
+    pMW->PrintRlt_End();
+}
+// output *.inp 
+void mw_print_avs_basis_()// basis variable output
+{
+    pMW->PrintMicroAVS_Basis();
+}
+void mw_rec_avs_label_(iint* imesh, char* label, char* unit, iint* ndof)
+{
+    if( *imesh < 0 ){
+        return;
+    }
+    if( *ndof < 0 ){
+        return;
+    }
+    uiint iMesh= *imesh;
+    uiint nDOF = *ndof;
+
+    pMW->recAVS_Label(iMesh, label, unit, nDOF);
+}
+void mw_rec_avs_variable_(iint* imesh, iint* num_of_node, char* label, double* value)
+{
+    if( *imesh < 0 ){
+        return;
+    }
+    if( *num_of_node < 0 ){
+        return;
+    }
+    uiint iMesh= *imesh;
+    uiint nNumOfNode= *num_of_node;
+
+    pMW->recAVS_Variable(iMesh, nNumOfNode, label, value);
+}
+void mw_print_avs_fem_()// record variable output
+{
+    pMW->PrintMicroAVS_FEM();
+}
+
+
+//----
+// restart, linear_algebra_equation info
+//----
+iint mw_file_write_res_(iint* step) // restart file write
+{
+    if(*step < 0){
+        return ERROR;
+    }
+    uiint nStep= *step;
+    return pMW->FileWriteRes(nStep, false);
+}
+iint mw_set_restart_(iint* step)// restart file read, linear_algebra_equation info
+{
+    if(*step < 0){
+        return ERROR;
+    }
+    uiint nStep= *step;
+    return pMW->SetRestart(nStep, false);
+}
+
+iint mw_file_write_res_bin_(iint* step)// restart file write (binary file)
+{
+    if(*step < 0){
+        return ERROR;
+    }
+    uiint nStep= *step;
+    return pMW->FileWriteRes(nStep, true);
+}
+iint mw_set_restart_bin_(iint* step)// restart file read, linear_algebra_equation info (binary file)
+{
+    if(*step < 0){
+        return ERROR;
+    }
+    uiint nStep= *step;
+    return pMW->SetRestart(nStep, true);
+}
+
 
 //----
 // linear solver API
 //----
-//int mw_initialize_matrix_()
-//{
-//    return pMW->Initialize_Matrix();
-//}
-//int mw_initialize_vector_()
-//{
-//    return pMW->Initialize_Vector();
-//}
-void mw_gene_linear_algebra_(int* num_of_algebra, int dof[])
+void mw_gene_linear_algebra_(iint* num_of_algebra, iint dof[])
 {
-    uint nNumOfAlgebra = (uint)*num_of_algebra;
-    uint vDOF[nNumOfAlgebra];
-    for(uint i=0; i < nNumOfAlgebra; i++) vDOF[i] = dof[i];
+    if(*num_of_algebra < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_gene_linear_algebra_, minus value is invalid argument. num_of_algebra");
+        
+        return;
+    }
+
+    uiint nNumOfAlgebra = (uiint)*num_of_algebra;
+    uiint vDOF[nNumOfAlgebra];
+    for(uiint i=0; i < nNumOfAlgebra; i++) vDOF[i] = dof[i];
 
     pMW->GeneLinearAlgebra(nNumOfAlgebra, vDOF);
 }
-void mw_select_algebra_(int* ieq)
+void mw_select_algebra_(iint* ieq)
 {
-    uint iEqu = *ieq;
+    if(*ieq < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_algebra_, minus value is invalid argument. ieq");
+        
+        return;
+    }
+
+    uiint iEqu = *ieq;
     pMW->SelectAlgebra(iEqu);
 }
 
 // matrix add elem
-int mw_matrix_add_elem_(int* imesh,  int* ielem,  double elem_matrix[])//standard
+iint mw_matrix_add_elem_(iint* imesh,  iint* ielem,  double elem_matrix[])//standard
 {
-    unsigned int iMesh = *imesh;
-    unsigned int iElem = *ielem;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_add_elem_, minus value is invalid argument. imesh");
+        
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_add_elem_, minus value is invalid argument. ielem");
+        
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, elem_matrix);
 }
 
-int mw_matrix_add_node_(int* imesh, int* i_nid, int* j_nid, double nodal_matrix[])
+iint mw_matrix_add_node_(iint* imesh, iint* i_index, iint* j_index, double nodal_matrix[])
 {
-    uint iMesh = *imesh;
-    uint iNodeID = *i_nid;
-    uint jNodeID = *j_nid;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_add_node_, minus value is invalid argument. imesh");
+        
+        return ERROR;
+    }
+    if(*i_index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_add_node_, minus value is invalid argument. i_index");
+        
+        return ERROR;
+    }
+    if(*j_index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_add_node_, minus value is invalid argument. j_index");
+        
+        return ERROR;
+    }
 
-    return pMW->Matrix_Add_Node(iMesh, iNodeID, jNodeID, nodal_matrix);
+    uiint iMesh = *imesh;
+    uiint inode = *i_index;
+    uiint jnode = *j_index;
+
+    return pMW->Matrix_Add_Node(iMesh, inode, jnode, nodal_matrix);
 }
 
 // matrix 0 clear
 //
-void mw_matrix_clear_(int* imesh)
+void mw_matrix_clear_(iint* imesh)
 {
-    unsigned int iMesh = *imesh;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_clear_, minus value is invalid argument. imesh");
+        
+        return;
+    }
+
+    uiint iMesh = *imesh;
     pMW->Matrix_Clear(iMesh);
 }
-void mw_vector_clear_(int* imesh)
+void mw_vector_clear_(iint* imesh)
 {
-    unsigned int iMesh = *imesh;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_vector_clear_, minus value is invalid argument. imesh");
+        
+        return;
+    }
+
+    uiint iMesh = *imesh;
     pMW->Vector_Clear(iMesh);
 }
 
-int mw_matrix_add_elem_24_(int* imesh, int* ielem, double elem_matrix[][24])//Hexa   8Node * 3DOF, Quad 8Node * 3DOF, Quad 4Node * 6DOF
+iint mw_matrix_add_elem_24_(iint* imesh, iint* ielem, double elem_matrix[][24])//Hexa   8Node * 3DOF, Quad 8Node * 3DOF, Quad 4Node * 6DOF
 {
-    uint nNumOfCol=24;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_24_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_24_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=24;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matrix[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_60_(int* imesh, int* ielem, double elem_matrix[][60])//Hexa  20Node * 3DOF
+iint mw_matrix_add_elem_60_(iint* imesh, iint* ielem, double elem_matrix[][60])//Hexa  20Node * 3DOF
 {
-    uint nNumOfCol=60;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_60_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_60_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=60;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matrix[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_12_(int* imesh, int* ielem, double elem_matirx[][12])//Tetra  4Node * 3DOF, Quad 4Node * 3DOF, Beam 2Node * 6DOF
+iint mw_matrix_add_elem_12_(iint* imesh, iint* ielem, double elem_matirx[][12])//Tetra  4Node * 3DOF, Quad 4Node * 3DOF, Beam 2Node * 6DOF
 {
-    uint nNumOfCol=12;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_12_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_12_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+    
+    uiint nNumOfCol=12;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_30_(int* imesh, int* ielem, double elem_matirx[][30])//Tetra 10Node * 3DOF, Tri  6Node * 5DOF
+iint mw_matrix_add_elem_30_(iint* imesh, iint* ielem, double elem_matirx[][30])//Tetra 10Node * 3DOF, Tri  6Node * 5DOF
 {
-    uint nNumOfCol=30;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_30_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_30_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=30;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_18_(int* imesh, int* ielem, double elem_matirx[][18])//Prism  6Node * 3DOF, Tri  6Node * 3DOF, Beam 3Node * 6DOF
+iint mw_matrix_add_elem_18_(iint* imesh, iint* ielem, double elem_matirx[][18])//Prism  6Node * 3DOF, Tri  6Node * 3DOF, Beam 3Node * 6DOF
 {
-    uint nNumOfCol=18;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_18_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_18_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=18;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_45_(int* imesh, int* ielem, double elem_matirx[][45])//Prism 15Node * 3DOF
+iint mw_matirx_add_elem_45_(iint* imesh, iint* ielem, double elem_matirx[][45])//Prism 15Node * 3DOF
 {
-    uint nNumOfCol=45;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_45_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_45_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=45;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_20_(int* imesh, int* ielem, double elem_matirx[][20])//Quad   4Node * 5DOF
+iint mw_matirx_add_elem_20_(iint* imesh, iint* ielem, double elem_matirx[][20])//Quad   4Node * 5DOF
 {
-    uint nNumOfCol=20;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_20_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_20_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=20;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_40_(int* imesh, int* ielem, double elem_matirx[][40])//Quad   8Node * 5DOF
+iint mw_matrix_add_elem_40_(iint* imesh, iint* ielem, double elem_matirx[][40])//Quad   8Node * 5DOF
 {
-    uint nNumOfCol=40;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_40_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_40_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=40;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matrix_add_elem_15_(int* imesh, int* ielem, double elem_matirx[][15])//Tri    3Node * 5DOF, Beam 3Node * 5DOF
+iint mw_matrix_add_elem_15_(iint* imesh, iint* ielem, double elem_matirx[][15])//Tri    3Node * 5DOF, Beam 3Node * 5DOF
 {
-    uint nNumOfCol=15;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_15_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_15_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=15;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_9_(int* imesh, int* ielem, double elem_matirx[][9])  //Tri    3Node * 3DOF, Beam 3Node * 3DOF
+iint mw_matirx_add_elem_9_(iint* imesh, iint* ielem, double elem_matirx[][9])  //Tri    3Node * 3DOF, Beam 3Node * 3DOF
 {
-    uint nNumOfCol=9;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_9_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_9_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=9;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_48_(int* imesh, int* ielem, double elem_matirx[][48])//Quad   8Node * 6DOF
+iint mw_matirx_add_elem_48_(iint* imesh, iint* ielem, double elem_matirx[][48])//Quad   8Node * 6DOF
 {
-    uint nNumOfCol=48;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_48_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_48_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=48;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_6_(int* imesh, int* ielem, double elem_matirx[][6])  //Beam   2Node * 3DOF
+iint mw_matirx_add_elem_6_(iint* imesh, iint* ielem, double elem_matirx[][6])  //Beam   2Node * 3DOF
 {
-    uint nNumOfCol=6;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_6_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_6_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=6;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
-int mw_matirx_add_elem_10_(int* imesh, int* ielem, double elem_matirx[][10])//Beam   2Node * 5DOF
+iint mw_matirx_add_elem_10_(iint* imesh, iint* ielem, double elem_matirx[][10])//Beam   2Node * 5DOF
 {
-    uint nNumOfCol=10;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_10_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ielem < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matirx_add_elem_10_, minus value is invalid argument. ielem");
+        return ERROR;
+    }
+
+    uiint nNumOfCol=10;
 
     double mat[nNumOfCol*nNumOfCol];
 
-    for(int i=0; i < nNumOfCol; i++)
-        for(int ii=0; ii < nNumOfCol; ii++)
+    for(uiint i=0; i < nNumOfCol; i++)
+        for(uiint ii=0; ii < nNumOfCol; ii++)
             mat[nNumOfCol*i+ii] = elem_matirx[i][ii];
 
-    uint iMesh = *imesh;
-    uint iElem = *ielem;
+    uiint iMesh = *imesh;
+    uiint iElem = *ielem;
 
     return pMW->Matrix_Add_Elem(iMesh, iElem, mat);
 }
 
-////// set_bc
-//////
-////int mw_matrix_set_bc_(int* imesh, int* inode, int* dof, double* value1, double* value2)
-////{
-////    unsigned int iMesh = *imesh;
-////    unsigned int iNode = *inode;
-////    unsigned int nDOF  = *dof;
-////    double Value1 = *value1;
-////    double Value2 = *value2;
-////
-////    // matrix-D and solution_vector
-////    return pMW->Set_BC_Mat_SolVec(iMesh, iNode, nDOF, Value1, Value2);
-////}
-int mw_matrix_rhs_set_bc2_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval)
+// set boundary condition
+//
+iint mw_matrix_rhs_set_bc2_(iint* imesh, iint* inode, iint* dof, double* diagval, double* solval)
 {
-    uint iMesh = *imesh;
-    uint iNode = *inode;
-    uint nDOF  = *dof;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc2_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc2_, minus value is invalid argument. inode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc2_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+    uiint iNode = *inode;
+    uiint nDOF  = *dof;
+    double dDiagValue = *diagval;
+    double dSolValue = *solval;
+
+    // matirix_diag=diagval, off_diag=0  , X=solval
+    return pMW->Set_BC_Mat_RHS2(iMesh, iNode, nDOF, dDiagValue, dSolValue);
+}
+// penalty method
+iint mw_matrix_rhs_set_bc_(iint* imesh, iint* inode, iint* dof, double* diagval, double* rhsval)
+{
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc_, minus value is invalid argument. inode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_matrix_rhs_set_bc_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+    uiint iNode = *inode;
+    uiint nDOF  = *dof;
     double dDiagValue = *diagval;
     double dRHSValue = *rhsval;
 
-    // matirix-D=diagval, matrix_non_diag=0  , rhs_vector=rhsval
-    return pMW->Set_BC_Mat_RHS2(iMesh, iNode, nDOF, dDiagValue, dRHSValue);
-}
-int mw_matrix_rhs_set_bc_(int* imesh, int* inode, int* dof, double* diagval, double* rhsval)
-{
-    uint iMesh = *imesh;
-    uint iNode = *inode;
-    uint nDOF  = *dof;
-    double dDiagValue = *diagval;
-    double dRHSValue = *rhsval;
-
-    // matrix-D and rhs_vector
+    // matrix_diag, rhs_vector
     return pMW->Set_BC_Mat_RHS(iMesh, iNode, nDOF, dDiagValue, dRHSValue);
 }
-int mw_rhs_set_bc_(int* imesh, int* inode, int* dof, double* value)
+iint mw_rhs_set_bc_(iint* imesh, iint* inode, iint* dof, double* value)
 {
-    unsigned int iMesh = *imesh;
-    unsigned int iNode = *inode;
-    unsigned int nDOF = *dof;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_set_bc_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_set_bc_, minus value is invalid argument. inode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_set_bc_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+    uiint iNode = *inode;
+    uiint nDOF = *dof;
     double Value = *value;
 
     // rhs_vector
     return pMW->Set_BC_RHS(iMesh, iNode, nDOF, Value);
 }
-int mw_rhs_add_bc_(int* imesh, int* inode, int* dof, double* value)
+iint mw_rhs_add_bc_(iint* imesh, iint* inode, iint* dof, double* value)
 {
-    unsigned int iMesh = *imesh;
-    unsigned int iNode = *inode;
-    unsigned int nDOF = *dof;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_add_bc_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_add_bc_, minus value is invalid argument. inode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_rhs_add_bc_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+    uiint iNode = *inode;
+    uiint nDOF = *dof;
     double Value = *value;
 
     // add rhs_vector
@@ -391,21 +1056,44 @@ int mw_rhs_add_bc_(int* imesh, int* inode, int* dof, double* value)
 }
 
 // solver
-int mw_solve_(int* iter_max, double* tolerance, int* method, int* pre_condition)
+iint mw_solve_(iint* iter_max, double* tolerance, iint* method, iint* pre_condition)
 {
-    unsigned int nIterMax = *iter_max;
+    if(*iter_max < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_solve_, minus value is invalid argument. iter_max");
+        return ERROR;
+    }
+    if(*method < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_solve_, minus value is invalid argument. method");
+        return ERROR;
+    }
+    if(*pre_condition < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_solve_, minus value is invalid argument. pre_condition");
+        return ERROR;
+    }
+
+    iint nIterMax = *iter_max;
     double dTolerance = *tolerance;
-    unsigned int nMethod = *method;
-    unsigned int nPreCondition = *pre_condition;
+    iint nMethod = *method;
+    iint nPreCondition = *pre_condition;
 
     return pMW->Solve(nIterMax, dTolerance, nMethod, nPreCondition);
 }
 //--
 // solution_vector copy,  at select MG-Level && select Equation
 //--
-void mw_get_solution_vector_(double buf[], int* imesh)
+void mw_get_solution_vector_(double buf[], iint* imesh)
 {
-    uint iMesh = *imesh;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_solution_vector_, minus value is invalid argument. imesh");
+
+        return;
+    }
+
+    uiint iMesh = *imesh;
     pMW->GetSolution_Vector(buf, iMesh);
 }
 void mw_get_solution_assy_vector_(double buf[])
@@ -415,14 +1103,100 @@ void mw_get_solution_assy_vector_(double buf[])
 //--
 // rhs_vector copy,  at select MG-Level && select Equation
 //--
-void mw_get_rhs_vector_(double buf[], int* imesh)
+void mw_get_rhs_vector_(double buf[], iint* imesh)
 {
-    uint iMesh = *imesh;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_rhs_vector_, minus value is invalid argument. imesh");
+        
+        return;
+    }
+    
+    uiint iMesh = *imesh;
     pMW->GetRHS_Vector(buf, iMesh);
 }
 void mw_get_rhs_assy_vector_(double buf[])
 {
     pMW->GetRHS_AssyVector(buf);
+}
+
+//--
+// solution vector value, rhs vector value
+//--
+double mw_get_solution_assy_vector_val_(iint* imesh, iint* inode, iint* idof)
+{
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_solution_assy_vector_val_, minus value is invalid argument. imesh");
+
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_solution_assy_vector_val_, minus value is invalid argument. inode");
+
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_solution_assy_vector_val_, minus value is invalid argument. idof");
+
+        return ERROR;
+    }
+
+    return pMW->GetSolutionVector_Val(*imesh, *inode, *idof);
+}
+double mw_get_rhs_assy_vector_val_(iint* imesh, iint* inode, iint* idof)
+{
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_rhs_assy_vector_val_, minus value is invalid argument. imesh");
+        
+        return ERROR;
+    }
+    if(*inode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_rhs_assy_vector_val_, minus value is invalid argument. inode");
+        
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_rhs_assy_vector_val_, minus value is invalid argument. idof");
+        
+        return ERROR;
+    }
+
+    return pMW->GetRHSVector_Val(*imesh, *inode, *idof);
+}
+//--
+// solution vector dof, rhs vector dof
+//--
+iint mw_get_solution_assy_vector_dof_()
+{
+    uiint nDOF= pMW->GetSolutionVector_DOF();
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_solution_assy_vector_dof_, return value is over INT_MAX");
+
+        return IINT_MAX;
+    }
+}
+iint mw_get_rhs_assy_vector_dof_()
+{
+    uiint nDOF= pMW->GetRHSVector_DOF();
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_rhs_assy_vector_dof_, return value is over INT_MAX");
+
+        return IINT_MAX;
+    }
 }
 
 //--
@@ -439,13 +1213,23 @@ void mw_mult_vector_(double vX[], double vB[])
 //----
 // MG construct (refine)
 //----
-int mw_refine_()
+iint mw_refine_(int* num_of_refine)
 {
-    return pMW->Refine();
+    if(*num_of_refine < 0){
+        return ERROR;
+    }
+    uiint nNumOfRefine = *num_of_refine;
+
+    return pMW->Refine(nNumOfRefine);
 }
-int mw_mg_construct_()
+iint mw_mg_construct_(int* num_of_refine)
 {
-    return pMW->Refine();
+    if(*num_of_refine < 0){
+        return ERROR;
+    }
+    uiint nNumOfRefine = *num_of_refine;
+
+    return pMW->Refine(nNumOfRefine);
 }
 
 void mw_finalize_refine_()
@@ -461,89 +1245,282 @@ void mw_finalize_mg_construct_()
 // model
 //----
 //
-// assemble model
+// number of assemble model == number of mglevel
 //
-int mw_get_num_of_assemble_model_()
+iint mw_get_num_of_assemble_model_()
 {
-    return (int)pMW->GetNumOfAssembleModel();
+    uiint nNumOfLevel= pMW->GetNumOfAssembleModel();
+
+    if(nNumOfLevel < IINT_MAX){
+        return nNumOfLevel;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_assemble_model_, return value is over INT_MAX");
+
+        return IINT_MAX;
+    }
 }
-void mw_select_assemble_model_(int* mglevel)
+void mw_select_assemble_model_(iint* mglevel)
 {
-    uint nMGLevel = *mglevel;
+    if(*mglevel < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_assemble_model_, minus value is invalid argument. mglevel");
+        
+        return;
+    }
+    
+    uiint nMGLevel = *mglevel;
     pMW->SelectAssembleModel(nMGLevel);
 }
 //
 // mesh part
 //
-int mw_get_num_of_mesh_part_()
+iint mw_get_num_of_mesh_part_()
 {
-    return (int)pMW->GetNumOfMeshPart();
+    uiint nNumOfMesh= pMW->GetNumOfMeshPart();
+
+    if(nNumOfMesh < IINT_MAX){
+        return nNumOfMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_mesh_part_, return value is over INT_MAX");
+        
+        return IINT_MAX;
+    }
 }
-void mw_select_mesh_part_with_id_(int* mesh_id)
+void mw_select_mesh_part_with_id_(iint* mesh_id)
 {
-    unsigned int nMeshID = *mesh_id;
+    if(*mesh_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_mesh_part_with_id_, minus value is invalid argument. mesh_id");
+        
+        return;
+    }
+
+    uiint nMeshID = *mesh_id;
 
     pMW->SelectMeshPart_ID(nMeshID);
 }
-void mw_select_mesh_part_(int* index)
+void mw_select_mesh_part_(iint* index)
 {
-    unsigned int nIndex = *index;
+    if(*index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_mesh_part_, minus value is invalid argument. index");
+        
+        return;
+    }
+
+    uiint nIndex = *index;
 
     pMW->SelectMeshPart_IX(nIndex);
 }
 //
 // element
 //
-void mw_select_element_with_id_(int* elem_id)
+void mw_select_element_with_id_(iint* elem_id)
 {
-    unsigned int nElemID = *elem_id;
+    if(*elem_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_element_with_id_, minus value is invalid argument. elem_id");
+        
+        return;
+    }
+
+    uiint nElemID = *elem_id;
 
     pMW->SelectElement_ID(nElemID);
 }
-void mw_select_element_(int* index)
+void mw_select_element_(iint* index)
 {
-    unsigned int nIndex = *index;
+    if(*index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_select_element_, minus value is invalid argument. index");
+
+        return;
+    }
+
+    uiint nIndex = *index;
 
     pMW->SelectElement_IX(nIndex);
 }
-int mw_get_element_type_()
+iint mw_get_element_type_()
 {
-    return (int)pMW->GetElementType();
+    return pMW->GetElementType();
 }
-int mw_get_num_of_element_vert_()
+iint mw_get_num_of_element_vert_()
 {
-    return (int)pMW->GetNumOfElementVert();
+    return pMW->GetNumOfElementVert();
 }
 
-void mw_get_element_vert_node_id_(int v_node_id[])
+void mw_get_element_vert_node_id_(iint v_node_id[])
 {
     pMW->GetElementVertNodeID(v_node_id);
 }
-int mw_get_num_of_element_edge_()
+iint mw_get_num_of_element_edge_()
 {
-    return (int)pMW->GetNumOfElementEdge();
+    return pMW->GetNumOfElementEdge();
 }
-void mw_get_element_edge_node_id_(int v_node_id[])
+void mw_get_element_edge_node_id_(iint v_node_id[])
 {
     pMW->GetElementEdgeNodeID(v_node_id);
 }
 
-// id
-int mw_get_element_id_(int* index)
+// id && index
+iint mw_get_node_id_(iint* index)
 {
-    return (int)pMW->getElementID(*index);
+    if(*index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_, minus value is invalid argument. index");
+        return ERROR;
+    }
+    uiint nIndex= *index;
+
+    uiint nNodeID= pMW->getNodeID(nIndex);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_node_id_(int* index)
+iint mw_get_element_id_(iint* index)
 {
-    return (int)pMW->getNodeID(*index);
+    if(*index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_id_, minus value is invalid argument. index");
+        return ERROR;
+    }
+    uiint nIndex= *index;
+
+    uiint nElemID= pMW->getElementID(nIndex);
+    
+    if(nElemID < IINT_MAX){
+        return nElemID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_id_, return value is over INT_MAX");
+        return IINT_MAX;
+    } 
+}
+iint mw_get_node_index_(iint* id)
+{
+    if(*id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_index_, minus value is invalid argument. id");
+        return ERROR;
+    }
+    uiint nID= *id;
+
+    uiint nIndex= pMW->getNodeIndex(nID);
+
+    if(nIndex < IINT_MAX){
+        return nIndex;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_index_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_element_index_(iint* id)
+{
+    if(*id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_index_, minus value is invalid argument. id");
+        return ERROR;
+    }
+    uiint nID= *id;
+
+    uiint nIndex= pMW->getElementIndex(nID);
+
+    if(nIndex < IINT_MAX){
+        return nIndex;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_index_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
 
-//
-// node
-//
-void mw_get_node_coord_(int* node_id, double* x, double* y, double* z)
+//--
+// node connectivity,  itemU[]:upper triangle, itemL[]:lower triangle
+//--
+void mw_construct_node_connect_fem_(iint* node_id)
 {
-    unsigned int nNodeID = (unsigned int)*node_id;
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_construct_node_connect_fem_, minus value is invalid argument. node_id");
+        return ;
+    }
+
+    uiint nNodeID = *node_id;
+    pMW->constructNodeConnectFEM(nNodeID);
+}
+void mw_get_node_connect_fem_size_(iint* num_itemu, iint* num_iteml)
+{
+    uiint nItemU, nItemL;
+    pMW->getNodeConnectFEM_Size(nItemU, nItemL);
+
+    *num_itemu = nItemU;
+    *num_iteml = nItemL;
+}
+void mw_get_node_connect_fem_item_(iint itemU[], iint itemL[])
+{
+    pMW->getNodeConnectFEM_Item_F(itemU, itemL);
+}
+//--
+// node around element_id
+//--
+iint mw_get_num_of_aggregate_element_(iint* node_id)
+{
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_coord_, minus value is invalid argument. node_id");
+        return ERROR;
+    }
+    uiint nNodeID= *node_id;
+
+    uiint nNumOfAggElem= pMW->getNumOfAggregateElement(nNodeID);
+
+    if(nNumOfAggElem > IINT_MAX){
+        return IINT_MAX;
+    }else{
+        return nNumOfAggElem;
+    }
+
+}
+iint mw_get_aggregate_element_id_(iint* node_id, iint* index)
+{
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_coord_, minus value is invalid argument. node_id");
+        return ERROR;
+    }
+    uiint nNodeID= *node_id;
+    uiint nIndex = *index;
+
+    uiint nElemID= pMW->getAggregateElementID(nNodeID, nIndex);
+
+    if(nElemID > IINT_MAX){
+        return IINT_MAX;
+    }else{
+        return nElemID;
+    }
+}
+
+//--
+// node
+//--
+void mw_get_node_coord_(iint* node_id, double* x, double* y, double* z)
+{
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_coord_, minus value is invalid argument. node_id");
+        return;
+    }
+
+    uiint nNodeID = *node_id;
     double X,Y,Z;
 
     pMW->GetNodeCoord(nNodeID,X,Y,Z);
@@ -552,438 +1529,1378 @@ void mw_get_node_coord_(int* node_id, double* x, double* y, double* z)
     *y = Y;
     *z = Z;
 }
-int mw_get_dof_(int* node_id)
+iint mw_get_dof_(iint* node_id)
 {
-    unsigned int nNodeID = (unsigned int)*node_id;
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_, minus value is invalid argument. node_id");
+        return ERROR;
+    }
 
-    return (int)pMW->GetNumOfDOF(nNodeID);
+    uiint nNodeID = *node_id;
+    uiint nNumOfDOF= pMW->GetNumOfDOF(nNodeID);
+
+    if(nNumOfDOF < IINT_MAX){
+        return nNumOfDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_dof_scalar_(int* node_id)
+iint mw_get_dof_scalar_(iint* node_id)
 {
-    unsigned int nNodeID = (unsigned int)*node_id;
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_scalar_, minus value is invalid argument. node_id");
+        return ERROR;
+    }
 
-    return (int)pMW->GetNumOfScalar(nNodeID);
+    uiint nNodeID = *node_id;
+    uiint nNumOfScalar= pMW->GetNumOfScalar(nNodeID);
+    
+    if(nNumOfScalar < IINT_MAX){
+        return nNumOfScalar;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_scalar_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_dof_vector_(int* node_id)
+iint mw_get_dof_vector_(iint* node_id)
 {
-    unsigned int nNodeID = (unsigned int)*node_id;
+    if(*node_id < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_vector_, minus value is invalid argument. node_id");
+        return ERROR;
+    }
 
-    return (int)pMW->GetNumOfVector(nNodeID);
+    uiint nNodeID = *node_id;
+    uiint nNumOfVector= pMW->GetNumOfVector(nNodeID);
+
+    if(nNumOfVector < IINT_MAX){
+        return nNumOfVector;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_vector_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
 
-void mw_set_node_value_(int* node_id, double value[])
-{
-    unsigned int nNodeID = (unsigned int)*node_id;
-
-    pMW->SetNodeValue(nNodeID, value);
-}
-void mw_set_node_value_with_dof_(int* node_id, int* idof, double* value)
-{
-    unsigned int nNodeID = (unsigned int)*node_id;
-    unsigned int iDOF = *idof;
-
-    pMW->SetNodeValue(nNodeID, iDOF, *value);
-}
-void mw_get_node_value_(int* node_id, double value[])
-{
-    unsigned int nNodeID = (unsigned int)*node_id;
-
-    pMW->GetNodeValue(nNodeID, value);
-}
-void mw_get_node_value_with_dof_(int* node_id, int* idof, double* value)
-{
-    unsigned int nNodeID = (unsigned int)*node_id;
-
-    *value = pMW->GetNodeValue(nNodeID, (unsigned int)*idof);
-}
+////void mw_set_node_value_(iint* node_id, double value[])
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_node_value_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////
+////    pMW->SetNodeValue(nNodeID, value);
+////}
+////void mw_set_node_value_with_dof_(iint* node_id, iint* idof, double* value)
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_node_value_with_dof_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////    if(*idof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_node_value_with_dof_, minus value is invalid argument. idof");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////    uiint iDOF = *idof;
+////
+////    pMW->SetNodeValue(nNodeID, iDOF, *value);
+////}
+////void mw_get_node_value_(iint* node_id, double value[])
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_value_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////
+////    pMW->GetNodeValue(nNodeID, value);
+////}
+////void mw_get_node_value_with_dof_(iint* node_id, iint* idof, double* value)
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_value_with_dof_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////    if(*idof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_value_with_dof_, minus value is invalid argument. idof");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////    uiint iDOF = *idof;
+////
+////    *value = pMW->GetNodeValue(nNodeID, iDOF);
+////}
 //
 // scalar_vector node
 //
-void mw_set_sv_node_value_(int* node_id, double v_value[], double s_value[])
-{
-    pMW->SetSVNodeValue(*node_id, v_value, s_value);
-}
-void mw_set_sv_node_value_with_dof_(int* node_id, 
-        int* v_dof, double* v_value, int* s_dof, double* s_value)
-{
-    pMW->SetSVNodeValue(*node_id, *v_dof, *v_value, *s_dof, *s_value);
-}
-void mw_get_sv_node_value_(int* node_id, double v_value[], double s_value[])
-{
-    pMW->GetSVNodeValue(*node_id, v_value, s_value);
-}
-void mw_get_sv_node_value_with_dof_(int* node_id, 
-        int* v_dof, double* v_value, int* s_dof, double* s_value)
-{
-    pMW->GetSVNodeValue(*node_id, *v_dof, *v_value, *s_dof, *s_value);
-}
+////void mw_set_sv_node_value_(iint* node_id, double v_value[], double s_value[])
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_sv_node_value_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////
+////    pMW->SetSVNodeValue(nNodeID, v_value, s_value);
+////}
+////void mw_set_sv_node_value_with_dof_(iint* node_id,
+////        iint* v_dof, double* v_value, iint* s_dof, double* s_value)
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_sv_node_value_with_dof_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////    if(*v_dof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_sv_node_value_with_dof_, minus value is invalid argument. v_dof");
+////        return;
+////    }
+////    if(*s_dof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_set_sv_node_value_with_dof_, minus value is invalid argument. s_dof");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////    uiint nvDOF = *v_dof;
+////    uiint nsDOF = *s_dof;
+////
+////    pMW->SetSVNodeValue(nNodeID, nvDOF, *v_value, nsDOF, *s_value);
+////}
+////void mw_get_sv_node_value_(iint* node_id, double v_value[], double s_value[])
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_sv_node_value_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////
+////    pMW->GetSVNodeValue(nNodeID, v_value, s_value);
+////}
+////void mw_get_sv_node_value_with_dof_(iint* node_id,
+////        iint* v_dof, double* v_value, iint* s_dof, double* s_value)
+////{
+////    if(*node_id < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_sv_node_value_with_dof_, minus value is invalid argument. node_id");
+////        return;
+////    }
+////    if(*v_dof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_sv_node_value_with_dof_, minus value is invalid argument. v_dof");
+////        return;
+////    }
+////    if(*s_dof < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_get_sv_node_value_with_dof_, minus value is invalid argument. s_dof");
+////        return;
+////    }
+////
+////    uiint nNodeID = *node_id;
+////    uiint nvDOF = *v_dof;
+////    uiint nsDOF = *s_dof;
+////
+////    pMW->GetSVNodeValue(nNodeID, nvDOF, *v_value, nsDOF, *s_value);
+////}
 
 
 // node size, element size
-int mw_get_num_of_node_()
+iint mw_get_num_of_node_()
 {
-    return (int)pMW->getNodeSize();
-}
-int mw_get_num_of_node_with_mesh_(int* imesh)
-{
-    unsigned int iMesh = *imesh;
+    uiint nNumOfNode= pMW->getNodeSize();
 
-    return (int)pMW->getNodeSize(iMesh);
+    if(nNumOfNode < IINT_MAX){
+        return nNumOfNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_num_of_element_()
+iint mw_get_num_of_node_with_mesh_(iint* imesh)
 {
-    return (int)pMW->getElementSize();
-}
-int mw_get_num_of_element_with_mesh_(int* imesh)
-{
-    unsigned int iMesh = *imesh;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_with_mesh_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    uiint iMesh = *imesh;
+    
+    uiint nNumOfNode= pMW->getNodeSize(iMesh);
 
-    return (int)pMW->getElementSize(iMesh);
+    if(nNumOfNode < IINT_MAX){
+        return nNumOfNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_with_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_element_()
+{
+    uiint nNumOfElem= pMW->getElementSize();
+
+    if(nNumOfElem < IINT_MAX){
+        return nNumOfElem;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_element_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_element_with_mesh_(iint* imesh)
+{
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_element_with_mesh_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+
+    uiint iMesh = *imesh;
+
+    uiint nNumOfElem= pMW->getElementSize(iMesh);
+
+    if(nNumOfElem < IINT_MAX){
+        return nNumOfElem;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_element_with_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
 
 //----
 // node type
 //----
-int mw_nodetype_s_()
+iint mw_nodetype_s_()
 {
     return pMW->nodetype_s();
 }
-int mw_nodetype_v_()
+iint mw_nodetype_v_()
 {
     return pMW->nodetype_v();
 }
-int mw_nodetype_sv_()
+iint mw_nodetype_sv_()
 {
     return pMW->nodetype_sv();
 }
 //----
 // element type
 //----
-int mw_elemtype_hexa_(){  return pMW->elemtype_hexa();}
-int mw_elemtype_hexa2_(){  return pMW->elemtype_hexa2();}
-int mw_elemtype_tetra_(){  return pMW->elemtype_tetra();}
-int mw_elemtype_tetra2_(){ return pMW->elemtype_tetra2();}
-int mw_elemtype_prism_(){  return pMW->elemtype_prism();}
-int mw_elemtype_prism2_(){  return pMW->elemtype_prism2();}
-int mw_elemtype_quad_(){  return pMW->elemtype_quad();}
-int mw_elemtype_quad2_(){  return pMW->elemtype_quad2();}
-int mw_elemtype_triangle_(){  return pMW->elemtype_triangle();}
-int mw_elemtype_triangle2_(){  return pMW->elemtype_triangle2();}
-int mw_elemtype_line_(){  return pMW->elemtype_line();}
-int mw_elemtype_line2_(){  return pMW->elemtype_line2();}
+iint mw_elemtype_hexa_(){  return pMW->elemtype_hexa();}
+iint mw_elemtype_hexa2_(){  return pMW->elemtype_hexa2();}
+iint mw_elemtype_tetra_(){  return pMW->elemtype_tetra();}
+iint mw_elemtype_tetra2_(){ return pMW->elemtype_tetra2();}
+iint mw_elemtype_prism_(){  return pMW->elemtype_prism();}
+iint mw_elemtype_prism2_(){  return pMW->elemtype_prism2();}
+iint mw_elemtype_quad_(){  return pMW->elemtype_quad();}
+iint mw_elemtype_quad2_(){  return pMW->elemtype_quad2();}
+iint mw_elemtype_triangle_(){  return pMW->elemtype_triangle();}
+iint mw_elemtype_triangle2_(){  return pMW->elemtype_triangle2();}
+iint mw_elemtype_line_(){  return pMW->elemtype_line();}
+iint mw_elemtype_line2_(){  return pMW->elemtype_line2();}
 
 //----
 // frontISTR element type
 //----
-int mw_fistr_elemtype_hexa_(){  return (int)pMW->fistr_elemtype_hexa();}
-int mw_fistr_elemtype_hexa2_(){ return (int)pMW->fistr_elemtype_hexa2();}
-int mw_fistr_elemtype_tetra_(){  return (int)pMW->fistr_elemtype_tetra();}
-int mw_fistr_elemtype_tetra2_(){ return (int)pMW->fistr_elemtype_tetra2();}
-int mw_fistr_elemtype_prism_(){  return (int)pMW->fistr_elemtype_prism();}
-int mw_fistr_elemtype_prism2_(){ return (int)pMW->fistr_elemtype_prism2();}
-int mw_fistr_elemtype_quad_(){   return (int)pMW->fistr_elemtype_quad();}
-int mw_fistr_elemtype_quad2_(){  return (int)pMW->fistr_elemtype_quad2();}
-int mw_fistr_elemtype_triangle_(){ return (int)pMW->fistr_elemtype_triangle();}
-int mw_fistr_elemtype_triangle2_(){ return (int)pMW->fistr_elemtype_triangle2();}
-int mw_fistr_elemtype_line_(){  return (int)pMW->fistr_elemtype_line();}
-int mw_fistr_elemtype_line2_(){ return (int)pMW->fistr_elemtype_line2();}
+iint mw_fistr_elemtype_hexa_(){  return pMW->fistr_elemtype_hexa();}
+iint mw_fistr_elemtype_hexa2_(){ return pMW->fistr_elemtype_hexa2();}
+iint mw_fistr_elemtype_tetra_(){  return pMW->fistr_elemtype_tetra();}
+iint mw_fistr_elemtype_tetra2_(){ return pMW->fistr_elemtype_tetra2();}
+iint mw_fistr_elemtype_prism_(){  return pMW->fistr_elemtype_prism();}
+iint mw_fistr_elemtype_prism2_(){ return pMW->fistr_elemtype_prism2();}
+iint mw_fistr_elemtype_quad_(){   return pMW->fistr_elemtype_quad();}
+iint mw_fistr_elemtype_quad2_(){  return pMW->fistr_elemtype_quad2();}
+iint mw_fistr_elemtype_triangle_(){ return pMW->fistr_elemtype_triangle();}
+iint mw_fistr_elemtype_triangle2_(){ return pMW->fistr_elemtype_triangle2();}
+iint mw_fistr_elemtype_line_(){  return pMW->fistr_elemtype_line();}
+iint mw_fistr_elemtype_line2_(){ return pMW->fistr_elemtype_line2();}
 //----
 // frontISTR element type => MW3 element type
 //----
-int mw_fistr_elemtype_to_mw3_elemtype_(int* fistr_elemtype)
+iint mw_fistr_elemtype_to_mw3_elemtype_(iint* fistr_elemtype)
 {
-    return (int)pMW->fistr_elemtype_to_mw3_elemtype(*fistr_elemtype);
+    if(*fistr_elemtype < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_fistr_elemtype_to_mw3_elemtype_, minus value is invalid argument. fistr_elemtype");
+        return ERROR;
+    }
+    uiint nElemType = *fistr_elemtype;
+
+    return pMW->fistr_elemtype_to_mw3_elemtype(nElemType);
 }
 //----
 // MW3 要素タイプ　=> FrontISTR 要素タイプ 変換
 //----
-int mw_mw3_elemtype_to_fistr_elemtype_(int* mw3_elemtype)
+iint mw_mw3_elemtype_to_fistr_elemtype_(iint* mw3_elemtype)
 {
-    return (int)pMW->mw3_elemtype_to_fistr_elemtype(*mw3_elemtype);
+    if(*mw3_elemtype < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_mw3_elemtype_to_fistr_elemtype_, minus value is invalid argument. mw3_elemtype");
+        return ERROR;
+    }
+    uiint nElemType = *mw3_elemtype;
+
+    return pMW->mw3_elemtype_to_fistr_elemtype(nElemType);
 }
 
 //----
 // shape function
 //----
-int mw_get_num_of_integ_point_(int* shape_type)
+iint mw_get_num_of_integ_point_(iint* shape_type)
 {
-    unsigned int nShapeType = *shape_type;
+    if(*shape_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_integ_point_, minus value is invalid argument. shape_type");
+        return ERROR;
+    }
 
-    return (int)pMW->NumOfIntegPoint(nShapeType);
+    uiint nShapeType = *shape_type;
+
+    return pMW->NumOfIntegPoint(nShapeType);
 }
-void mw_shape_function_on_pt_(int* shape_type, int* igauss, double N[])
+void mw_shape_function_on_pt_(iint* shape_type, iint* igauss, double N[])
 {
-    unsigned int nShapeType = *shape_type;
-    unsigned int iGauss = *igauss;
+    if(*shape_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_on_pt_, minus value is invalid argument. shape_type");
+        return;
+    }
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_on_pt_, minus value is invalid argument. igauss");
+        return;
+    }
+
+    uiint nShapeType = *shape_type;
+    uiint iGauss = *igauss;
 
     pMW->ShapeFunc_on_pt(nShapeType, iGauss, N);
 }
-void mw_shape_function_hexa81_(int* igauss, int* ishape, double* N)
+void mw_shape_function_hexa81_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Hexa81(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa81_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa81_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+    
+    *N = pMW->ShapeFunc_Hexa81(iGauss, nShape);
 }
-void mw_shape_function_hexa82_(int* igauss, int* ishape, double* N)
+void mw_shape_function_hexa82_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Hexa82(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa82_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa82_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Hexa82(iGauss, nShape);
 }
-void mw_shape_function_hexa201_(int* igauss, int* ishape, double* N)
+void mw_shape_function_hexa201_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Hexa201(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa201_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa201_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Hexa201(iGauss, nShape);
 }
-void mw_shape_function_hexa202_(int* igauss, int* ishape, double* N)
+void mw_shape_function_hexa202_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Hexa202(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa202_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa202_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Hexa202(iGauss, nShape);
 }
-void mw_shape_function_hexa203_(int* igauss, int* ishape, double* N)
+void mw_shape_function_hexa203_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Hexa203(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa203_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_hexa203_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Hexa203(iGauss, nShape);
 }
-void mw_shape_function_tetra41_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tetra41_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Tetra41(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra41_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra41_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Tetra41(iGauss, nShape);
 }
-void mw_shape_function_tetra101_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tetra101_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Tetra101(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra101_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra101_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Tetra101(iGauss, nShape);
 }
-void mw_shape_function_tetra104_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tetra104_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Tetra104(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra104_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra104_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Tetra104(iGauss, nShape);
 }
-void mw_shape_function_tetra1015_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tetra1015_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Tetra1015(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra1015_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tetra1015_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Tetra1015(iGauss, nShape);
 }
-void mw_shape_function_prism62_(int* igauss, int* ishape, double* N)
+void mw_shape_function_prism62_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Prism62(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism156_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism156_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Prism62(iGauss, nShape);
 }
-void mw_shape_function_prism156_(int* igauss, int* ishape, double* N)
+void mw_shape_function_prism156_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Prism156(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism156_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism156_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Prism156(iGauss, nShape);
 }
-void mw_shape_function_prism159_(int* igauss, int* ishape, double* N)
+void mw_shape_function_prism159_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Prism159(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism159_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism159_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Prism159(iGauss, nShape);
 }
-void mw_shape_function_prism1518_(int* igauss, int* ishape, double* N)
+void mw_shape_function_prism1518_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Prism1518(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism1518_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_prism1518_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+    
+    *N = pMW->ShapeFunc_Prism1518(iGauss, nShape);
 }
-void mw_shape_function_quad41_(int* igauss, int* ishape, double* N)
+void mw_shape_function_quad41_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Quad41(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad41_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad41_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Quad41(iGauss, nShape);
 }
-void mw_shape_function_quad84_(int* igauss, int* ishape, double* N)
+void mw_shape_function_quad84_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Quad84(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad84_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad84_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Quad84(iGauss, nShape);
 }
-void mw_shape_function_quad89_(int* igauss, int* ishape, double* N)
+void mw_shape_function_quad89_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Quad89(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad89_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_quad89_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Quad89(iGauss, nShape);
 }
-void mw_shape_function_tri31_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tri31_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Triangle31(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tri31_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tri31_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Triangle31(iGauss, nShape);
 }
-void mw_shape_function_tri63_(int* igauss, int* ishape, double* N)
+void mw_shape_function_tri63_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Triangle63(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tri63_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_tri63_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+
+    *N = pMW->ShapeFunc_Triangle63(iGauss, nShape);
 }
-void mw_shape_function_line21_(int* igauss, int* ishape, double* N)
+void mw_shape_function_line21_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Line21(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_line21_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_line21_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+    
+    *N = pMW->ShapeFunc_Line21(iGauss, nShape);
 }
-void mw_shape_function_line32_(int* igauss, int* ishape, double* N)
+void mw_shape_function_line32_(iint* igauss, iint* ishape, double* N)
 {
-    *N = pMW->ShapeFunc_Line32(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_line32_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_shape_function_line32_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint nShape = *ishape;
+    
+    *N = pMW->ShapeFunc_Line32(iGauss, nShape);
 }
 
 
 //----
 // shape function deriv (rst coord)
 //----
-void mw_dndr_(int* shape_type, double dndr[])
+void mw_dndr_(iint* shape_type, double dndr[])
 {
-    pMW->dNdr(*shape_type, dndr);
+    if(*shape_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_, minus value is invalid argument. shape_type");
+        return;
+    }
+
+    uiint nShapeType = *shape_type;
+
+    pMW->dNdr(nShapeType, dndr);
 }
-void mw_dndr_hexa81_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_hexa81_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Hexa81_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa81_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa81_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa81_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Hexa81_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_hexa82_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_hexa82_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Hexa82_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa82_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa82_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa82_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Hexa82_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_hexa201_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_hexa201_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Hexa201_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa201_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa201_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa201_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Hexa201_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_hexa202_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_hexa202_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Hexa202_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa202_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa202_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa202_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Hexa202_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_hexa203_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_hexa203_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Hexa203_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa203_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa203_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_hexa203_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Hexa203_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tetra41_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tetra41_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tetra41_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra41_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra41_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra41_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Tetra41_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tetra101_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tetra101_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tetra101_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra101_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra101_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra101_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+    
+    *dndr = pMW->dNdr_Tetra101_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tetra104_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tetra104_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tetra104_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra104_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra104_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra104_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Tetra104_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tetra1015_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tetra1015_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tetra1015_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra1015_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra1015_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tetra1015_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Tetra1015_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_prism62_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_prism62_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Prism62_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism62_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism62_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism62_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Prism62_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_prism156_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_prism156_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Prism156_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism156_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism156_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism156_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Prism156_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_prism159_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_prism159_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Prism159_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism159_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism159_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism159_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Prism159_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_prism1518_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_prism1518_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Prism1518_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism1518_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism1518_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_prism1518_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Prism1518_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_quad41_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_quad41_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Quad41_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad41_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad41_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad41_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Quad41_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_quad84_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_quad84_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Quad84_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad84_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad84_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad84_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Quad84_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_quad89_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_quad89_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Quad89_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad89_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad89_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_quad89_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Quad89_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tri31_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tri31_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tri31_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri31_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri31_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri31_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+
+    *dndr = pMW->dNdr_Tri31_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_tri63_(int* igauss, int* ishape, int* iaxis, double* dndr)
+void mw_dndr_tri63_(iint* igauss, iint* ishape, iint* iaxis, double* dndr)
 {
-    *dndr = pMW->dNdr_Tri63_on_pt_on_shape(*igauss, *ishape, *iaxis);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri63_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri63_, minus value is invalid argument. ishape");
+        return;
+    }
+    if(*iaxis  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_tri63_, minus value is invalid argument. iaxis");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+    uiint iAxis  = *iaxis;
+    
+    *dndr = pMW->dNdr_Tri63_on_pt_on_shape(iGauss, iShape, iAxis);
 }
-void mw_dndr_line21_(int* igauss, int* ishape, double* dndr)
+void mw_dndr_line21_(iint* igauss, iint* ishape, double* dndr)
 {
-    *dndr = pMW->dNdr_Line21_on_pt_on_shape(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_line21_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_line21_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+
+    *dndr = pMW->dNdr_Line21_on_pt_on_shape(iGauss, iShape);
 }
-void mw_dndr_line32_(int* igauss, int* ishape, double* dndr)
+void mw_dndr_line32_(iint* igauss, iint* ishape, double* dndr)
 {
-    *dndr = pMW->dNdr_Line32_on_pt_on_shape(*igauss, *ishape);
+    if(*igauss < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_line32_, minus value is invalid argument. igauss");
+        return;
+    }
+    if(*ishape < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndr_line32_, minus value is invalid argument. ishape");
+        return;
+    }
+
+    uiint iGauss = *igauss;
+    uiint iShape = *ishape;
+
+    *dndr = pMW->dNdr_Line32_on_pt_on_shape(iGauss, iShape);
 }
 
 //----
 // shape function deriv (xyz coord)
 //----
-void mw_dndx_(int* elem_type, int* num_of_integ, int* ielem, double dndx[])// [igauss][ishape][iaxis] : 積分点数 節点数 3(座標)
+void mw_dndx_(iint* elem_type, iint* num_of_integ, iint* ielem, double dndx[])// [igauss][ishape][iaxis] : 積分点数 節点数 3(座標)
 {
-    pMW->dNdx(*elem_type, *num_of_integ, *ielem, dndx);
+    if(*elem_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndx_, minus value is invalid argument. elem_type");
+        return;
+    }
+    if(*num_of_integ < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndx_, minus value is invalid argument. num_of_integ");
+        return;
+    }
+    if(*ielem  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_dndx_, minus value is invalid argument. ielem");
+        return;
+    }
+
+    uiint nElemType = *elem_type;
+    uiint nNumOfInteg = *num_of_integ;
+    uiint iElem  = *ielem;
+
+    pMW->dNdx(nElemType, nNumOfInteg, iElem, dndx);
 }
-void mw_det_jacobian_(int* elem_type, int* num_of_integ, int* igauss, double* det_j)
+void mw_det_jacobian_(iint* elem_type, iint* num_of_integ, iint* igauss, double* det_j)
 {
-    pMW->detJacobian(*elem_type, *num_of_integ, *igauss, *det_j);
+    if(*elem_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_det_jacobian_, minus value is invalid argument. elem_type");
+        return;
+    }
+    if(*num_of_integ < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_det_jacobian_, minus value is invalid argument. num_of_integ");
+        return;
+    }
+    if(*igauss  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_det_jacobian_, minus value is invalid argument. igauss");
+        return;
+    }
+
+    uiint nElemType = *elem_type;
+    uiint nNumOfInteg = *num_of_integ;
+    uiint iGauss  = *igauss;
+
+    pMW->detJacobian(nElemType, nNumOfInteg, iGauss, *det_j);
 }
-void mw_weight_(int* elem_type, int* num_of_integ, int* igauss, double* w)
+void mw_weight_(iint* elem_type, iint* num_of_integ, iint* igauss, double* w)
 {
-    pMW->Weight(*elem_type, *num_of_integ, *igauss, *w);
+    if(*elem_type < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_weight_, minus value is invalid argument. elem_type");
+        return;
+    }
+    if(*num_of_integ < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_weight_, minus value is invalid argument. num_of_integ");
+        return;
+    }
+    if(*igauss  < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_weight_, minus value is invalid argument. igauss");
+        return;
+    }
+
+    uiint nElemType = *elem_type;
+    uiint nNumOfInteg = *num_of_integ;
+    uiint iGauss  = *igauss;
+
+    pMW->Weight(nElemType, nNumOfInteg, iGauss, *w);
 }
 
 //----
 // shape function type
 //----
-int mw_shapetype_hexa81_()
+iint mw_shapetype_hexa81_()
 {
     return pMW->shapetype_hexa81();
 }
-int mw_shapetype_hexa82_()
+iint mw_shapetype_hexa82_()
 {
     return pMW->shapetype_hexa82();
 }
-int mw_shapetype_hexa201_()
+iint mw_shapetype_hexa201_()
 {
     return pMW->shapetype_hexa201();
 }
-int mw_shapetype_hexa202_()
+iint mw_shapetype_hexa202_()
 {
     return pMW->shapetype_hexa202();
 }
-int mw_shapetype_hexa203_()
+iint mw_shapetype_hexa203_()
 {
     return pMW->shapetype_hexa203();
 }
-int mw_shapetype_tetra41_()
+iint mw_shapetype_tetra41_()
 {
     return pMW->shapetype_tetra41();
 }
-int mw_shapetype_tetra101_()
+iint mw_shapetype_tetra101_()
 {
     return pMW->shapetype_tetra101();
 }
-int mw_shapetype_tetra104_()
+iint mw_shapetype_tetra104_()
 {
     return pMW->shapetype_tetra104();
 }
-int mw_shapetype_tetra1015_()
+iint mw_shapetype_tetra1015_()
 {
     return pMW->shapetype_tetra1015();
 }
-int mw_shapetype_prism62_()
+iint mw_shapetype_prism62_()
 {
     return pMW->shapetype_prism62();
 }
-int mw_shapetype_prism156_()
+iint mw_shapetype_prism156_()
 {
     return pMW->shapetype_prism156();
 }
-int mw_shapetype_prism159_()
+iint mw_shapetype_prism159_()
 {
     return pMW->shapetype_prism159();
 }
-int mw_shapetype_prism1518_()
+iint mw_shapetype_prism1518_()
 {
     return pMW->shapetype_prism1518();
 }
-int mw_shapetype_quad41_()
+iint mw_shapetype_quad41_()
 {
     return pMW->shapetype_quad41();
 }
-int mw_shapetype_quad84_()
+iint mw_shapetype_quad84_()
 {
     return pMW->shapetype_quad84();
 }
-int mw_shapetype_quad89_()
+iint mw_shapetype_quad89_()
 {
     return pMW->shapetype_quad89();
 }
-int mw_shapetype_tri31_()
+iint mw_shapetype_tri31_()
 {
     return pMW->shapetype_tri31();
 }
-int mw_shapetype_tri63_()
+iint mw_shapetype_tri63_()
 {
     return pMW->shapetype_tri63();
 }
-int mw_shapetype_line21_()
+iint mw_shapetype_line21_()
 {
     return pMW->shapetype_line21();
 }
-int mw_shapetype_line32_()
+iint mw_shapetype_line32_()
 {
     return pMW->shapetype_line32();
 }
@@ -993,112 +2910,911 @@ int mw_shapetype_line32_()
 // boundary mesh
 //--
 // number of boudary_mesh
-int mw_get_num_of_boundary_bnode_mesh_(){ return pMW->GetNumOfBoundaryNodeMesh();}
-int mw_get_num_of_boundary_bface_mesh_(){ return pMW->GetNumOfBoundaryFaceMesh();}
-int mw_get_num_of_boundary_bedge_mesh_(){ return pMW->GetNumOfBoundaryEdgeMesh();}
-int mw_get_num_of_boundary_bvolume_mesh_(){ return pMW->GetNumOfBoundaryVolumeMesh();}
+iint mw_get_num_of_boundary_bnode_mesh_()
+{ 
+    uiint nNumOfBNodeMesh= pMW->GetNumOfBoundaryNodeMesh();
+
+    if(nNumOfBNodeMesh < IINT_MAX){
+        return nNumOfBNodeMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_boundary_bnode_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_boundary_bface_mesh_()
+{ 
+    uiint nNumOfBFaceMesh= pMW->GetNumOfBoundaryFaceMesh();
+
+    if(nNumOfBFaceMesh < IINT_MAX){
+        return nNumOfBFaceMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_boundary_bface_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_boundary_bedge_mesh_()
+{
+    uiint nNumOfBEdgeMesh = pMW->GetNumOfBoundaryEdgeMesh();
+
+    if(nNumOfBEdgeMesh < IINT_MAX){
+        return nNumOfBEdgeMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_boundary_bedge_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_boundary_bvolume_mesh_()
+{ 
+    uiint nNumOfBVolMesh= pMW->GetNumOfBoundaryVolumeMesh();
+
+    if(nNumOfBVolMesh < IINT_MAX){
+        return nNumOfBVolMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_boundary_bvolume_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
 // BND type for each boundary_mesh { Neumann || Dirichlet }
-int mw_get_bnd_type_bnode_mesh_(int* ibmesh){ return pMW->GetBNDType_BNodeMesh(*ibmesh);}
-int mw_get_bnd_type_bface_mesh_(int*ibmesh){ return pMW->GetBNDType_BFaceMesh(*ibmesh);}
-int mw_get_bnd_type_bedge_mesh_(int* ibmesh){ return pMW->GetBNDType_BEdgeMesh(*ibmesh);}
-int mw_get_bnd_type_bvolume_mesh_(int* ibmesh){ return pMW->GetBNDType_BVolumeMesh(*ibmesh);}
+iint mw_get_bnd_type_bnode_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnd_type_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBNDType_BNodeMesh(iBMesh);
+}
+iint mw_get_bnd_type_bface_mesh_(iint*ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnd_type_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBNDType_BFaceMesh(iBMesh);
+}
+iint mw_get_bnd_type_bedge_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnd_type_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBNDType_BEdgeMesh(iBMesh);
+}
+iint mw_get_bnd_type_bvolume_mesh_(iint* ibmesh)
+{ 
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnd_type_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBNDType_BVolumeMesh(iBMesh);
+}
 // BND type number
-int mw_get_neumann_type_(){ return pMW->getNeumannType();}
-int mw_get_dirichlet_type_(){ return pMW->getDirichletType();}
+iint mw_get_neumann_type_(){ return pMW->getNeumannType();}
+iint mw_get_dirichlet_type_(){ return pMW->getDirichletType();}
+
 // number of bnode for each boundary_mesh
-int mw_get_num_of_bnode_in_bnode_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BNodeMesh(*ibmesh);}
-int mw_get_num_of_bnode_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BFaceMesh(*ibmesh);}
-int mw_get_num_of_bnode_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BEdgeMesh(*ibmesh);}
-int mw_get_num_of_bnode_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfBNode_BVolumeMesh(*ibmesh);}
+iint mw_get_num_of_bnode_in_bnode_mesh_(iint* ibmesh)
+{ 
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBNode= pMW->GetNumOfBNode_BNodeMesh(iBMesh);
+
+    if(nNumOfBNode < IINT_MAX){
+        return nNumOfBNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bnode_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_bnode_in_bface_mesh_(iint* ibmesh)
+{ 
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBNode= pMW->GetNumOfBNode_BFaceMesh(iBMesh);
+
+    if(nNumOfBNode < IINT_MAX){
+        return nNumOfBNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bface_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_bnode_in_bedge_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    
+    uiint nNumOfBNode= pMW->GetNumOfBNode_BEdgeMesh(iBMesh);
+
+    if(nNumOfBNode < IINT_MAX){
+        return nNumOfBNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bedge_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_bnode_in_bvolume_mesh_(iint* ibmesh)
+{ 
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBNode= pMW->GetNumOfBNode_BVolumeMesh(iBMesh);
+
+    if(nNumOfBNode < IINT_MAX){
+        return nNumOfBNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bnode_in_bvolume_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+
 // number of DOF for each boundary_mesh
-int mw_get_num_of_dof_in_bnode_mesh_(int* ibmesh, int* ibnode){ return pMW->GetNumOfDOF_BNodeMesh(*ibmesh, *ibnode);}
-int mw_get_num_of_dof_in_bface_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BFaceMesh(*ibmesh);}
-int mw_get_num_of_dof_in_bedge_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BEdgeMesh(*ibmesh);}
-int mw_get_num_of_dof_in_bvolume_mesh_(int* ibmesh){ return pMW->GetNumOfDOF_BVolumeMesh(*ibmesh);}
+iint mw_get_num_of_dof_in_bnode_mesh_(iint* ibmesh, iint* ibnode)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bnode_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+
+    uiint nNumOfDOF= pMW->GetNumOfDOF_BNodeMesh(iBMesh, iBNode);
+
+    if(nNumOfDOF < IINT_MAX){
+        return nNumOfDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bnode_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_dof_in_bface_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfDOF= pMW->GetNumOfDOF_BFaceMesh(iBMesh);
+
+    if(nNumOfDOF < IINT_MAX){
+        return nNumOfDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bface_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_dof_in_bedge_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfDOF= pMW->GetNumOfDOF_BEdgeMesh(iBMesh);
+
+    if(nNumOfDOF < IINT_MAX){
+        return nNumOfDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bedge_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_dof_in_bvolume_mesh_(iint* ibmesh)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfDOF= pMW->GetNumOfDOF_BVolumeMesh(iBMesh);
+
+    if(nNumOfDOF < IINT_MAX){
+        return nNumOfDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_dof_in_bvolume_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+
 // DOF number for each boundary_mesh ( DOF_index => DOF Number )
-int mw_get_dof_bnode_mesh_(int* ibmesh, int* ibnode, int* idof){ return pMW->GetDOF_BNodeMesh(*ibmesh, *ibnode, *idof);}
-int mw_get_dof_bface_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BFaceMesh(*ibmesh, *idof);}
-int mw_get_dof_bedge_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BEdgeMesh(*ibmesh, *idof);}
-int mw_get_dof_bvolume_mesh_(int* ibmesh, int* idof){ return pMW->GetDOF_BVolumeMesh(*ibmesh, *idof);}
+iint mw_get_dof_bnode_mesh_(iint* ibmesh, iint* ibnode, iint* idof)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bnode_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bnode_mesh_, minus value is invalid argument. idof");
+        return ERROR;
+    }
+    
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    uiint iDOF= *idof;
+
+    uiint nDOF= pMW->GetDOF_BNodeMesh(iBMesh, iBNode, iDOF);
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bnode_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_dof_bface_mesh_(iint* ibmesh, iint* idof)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bface_mesh_, minus value is invalid argument. idof");
+        return ERROR;
+    }
+    
+    uiint iBMesh= *ibmesh;
+    uiint iDOF= *idof;
+
+    uiint nDOF= pMW->GetDOF_BFaceMesh(iBMesh, iDOF);
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bface_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_dof_bedge_mesh_(iint* ibmesh, iint* idof)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bedge_mesh_, minus value is invalid argument. idof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iDOF= *idof;
+
+    uiint nDOF= pMW->GetDOF_BEdgeMesh(iBMesh, iDOF);
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bedge_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_dof_bvolume_mesh_(iint* ibmesh, iint* idof)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*idof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bvolume_mesh_, minus value is invalid argument. idof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iDOF= *idof;
+    
+    uiint nDOF= pMW->GetDOF_BVolumeMesh(iBMesh, iDOF);
+
+    if(nDOF < IINT_MAX){
+        return nDOF;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_dof_bvolume_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
 
 //--
 // value of boundary node
 //--
-double mw_get_bnode_value_in_bnode_mesh_(int* ibmesh, int* ibnode, int* dof)
+double mw_get_bnode_value_in_bnode_mesh_(iint* ibmesh, iint* ibnode, iint* dof)
 {
-    return pMW->GetBNodeValue_BNodeMesh(*ibmesh, *ibnode, *dof);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bnode_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bnode_mesh_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    uiint nDOF= *dof;
+
+    return pMW->GetBNodeValue_BNodeMesh(iBMesh, iBNode, nDOF);
 }
-double mw_get_bnode_value_in_bface_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
+double mw_get_bnode_value_in_bface_mesh_(iint* ibmesh, iint* ibnode, iint* dof, iint* mglevel)
 {
-    return pMW->GetBNodeValue_BFaceMesh(*ibmesh, *ibnode, *dof, *mglevel);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bface_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bface_mesh_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    uiint nDOF= *dof;
+
+    return pMW->GetBNodeValue_BFaceMesh(iBMesh, iBNode, nDOF, *mglevel);
 }
-double mw_get_bnode_value_in_bedge_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
+double mw_get_bnode_value_in_bedge_mesh_(iint* ibmesh, iint* ibnode, iint* dof, iint* mglevel)
 {
-    return pMW->GetBNodeValue_BEdgeMesh(*ibmesh, *ibnode, *dof, *mglevel);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bedge_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bedge_mesh_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    uiint nDOF= *dof;
+
+    return pMW->GetBNodeValue_BEdgeMesh(iBMesh, iBNode, nDOF, *mglevel);
 }
-double mw_get_bnode_value_in_bvolume_mesh_(int* ibmesh, int* ibnode, int* dof, int* mglevel)
+double mw_get_bnode_value_in_bvolume_mesh_(iint* ibmesh, iint* ibnode, iint* dof, iint* mglevel)
 {
-    return pMW->GetBNodeValue_BVolumeMesh(*ibmesh, *ibnode, *dof, *mglevel);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bvolume_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_value_in_bvolume_mesh_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+    
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    uiint nDOF= *dof;
+    
+    return pMW->GetBNodeValue_BVolumeMesh(iBMesh, iBNode, nDOF, *mglevel);
 }
+
 // node id (in boundary node)
-int mw_get_node_id_in_bnode_mesh_(int* ibmesh, int* ibnode)
+iint mw_get_node_id_in_bnode_mesh_(iint* ibmesh, iint* ibnode)
 {
-    return pMW->GetNodeID_BNode_BNodeMesh(*ibmesh, *ibnode);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bnode_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bnode_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    
+    uiint nNodeID= pMW->GetNodeID_BNode_BNodeMesh(iBMesh, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bnode_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_node_id_in_bface_mesh_(int* ibmesh, int* ibnode)
+iint mw_get_node_id_in_bface_mesh_(iint* ibmesh, iint* ibnode)
 {
-    return pMW->GetNodeID_BNode_BFaceMesh(*ibmesh, *ibnode);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bface_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bface_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+
+    uiint nNodeID= pMW->GetNodeID_BNode_BFaceMesh(iBMesh, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bface_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_node_id_in_bedge_mesh_(int* ibmesh, int* ibnode)
+iint mw_get_node_id_in_bedge_mesh_(iint* ibmesh, iint* ibnode)
 {
-    return pMW->GetNodeID_BNode_BEdgeMesh(*ibmesh, *ibnode);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bedge_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bedge_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+
+    uiint nNodeID= pMW->GetNodeID_BNode_BEdgeMesh(iBMesh, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bedge_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_node_id_in_bvolume_mesh_(int* ibmesh, int* ibnode)
+iint mw_get_node_id_in_bvolume_mesh_(iint* ibmesh, iint* ibnode)
 {
-    return pMW->GetNodeID_BNode_BVolumeMesh(*ibmesh, *ibnode);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bvolume_mesh_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bvolume_mesh_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+    uiint iBNode= *ibnode;
+    
+    uiint nNodeID= pMW->GetNodeID_BNode_BVolumeMesh(iBMesh, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_in_bvolume_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
+
 //--
 // value of boundary face, edge, volume
 //--
-int mw_get_num_of_bface_(int* ibmesh)
+iint mw_get_num_of_bface_(iint* ibmesh)
 {
-    return pMW->GetNumOfBFace(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bface_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBFace= pMW->GetNumOfBFace(iBMesh);
+
+    if(nNumOfBFace < IINT_MAX){
+        return nNumOfBFace;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bface_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-double mw_get_bface_value_(int* ibmesh, int* ibface, int* dof)
+double mw_get_bface_value_(iint* ibmesh, iint* ibface, iint* dof)
 {
-    return pMW->GetBFaceValue(*ibmesh, *ibface, *dof);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_value_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibface < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_value_, minus value is invalid argument. ibface");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_value_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+    uiint iBFace= *ibface;
+    uiint nDOF= *dof;
+    
+    return pMW->GetBFaceValue(iBMesh, iBFace, nDOF);
 }
-int mw_get_num_of_bedge_(int* ibmesh)
+iint mw_get_num_of_bedge_(iint* ibmesh)
 {
-    return pMW->GetNumOfBEdge(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bedge_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBEdge= pMW->GetNumOfBEdge(iBMesh);
+
+    if(nNumOfBEdge < IINT_MAX){
+        return nNumOfBEdge;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bedge_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-double mw_get_bedge_value_(int* ibmesh, int* ibedge, int* dof)
+double mw_get_bedge_value_(iint* ibmesh, iint* ibedge, iint* dof)
 {
-    return pMW->GetBEdgeValue(*ibmesh, *ibedge, *dof);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_value_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibedge < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_value_, minus value is invalid argument. ibedge");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_value_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBEdge= *ibedge;
+    uiint nDOF= *dof;
+
+    return pMW->GetBEdgeValue(iBMesh, iBEdge, nDOF);
 }
-int mw_get_num_of_bvolume_(int* ibmesh)
+iint mw_get_num_of_bvolume_(iint* ibmesh)
 {
-    return pMW->GetNumOfBVolume(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bvolume_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    uiint nNumOfBVol= pMW->GetNumOfBVolume(iBMesh);
+
+    if(nNumOfBVol < IINT_MAX){
+        return nNumOfBVol;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_bvolume_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-double mw_get_bvolume_value_(int* ibmesh, int* ibvol, int* dof)
+double mw_get_bvolume_value_(iint* ibmesh, iint* ibvol, iint* dof)
 {
-    return pMW->GetBVolumeValue(*ibmesh, *ibvol, *dof);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_value_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibvol < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_value_, minus value is invalid argument. ibvol");
+        return ERROR;
+    }
+    if(*dof < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_value_, minus value is invalid argument. dof");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBVol= *ibvol;
+    uiint nDOF= *dof;
+
+    return pMW->GetBVolumeValue(iBMesh, iBVol, nDOF);
 }
+//--
+// node_id, face, edge, volume
+//--
+iint mw_get_num_of_node_bface_(iint* ibmesh, iint* ibface)//BFaceのノード数
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bface_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibface < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bface_, minus value is invalid argument. ibface");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBFace= *ibface;
+
+    return pMW->GetNumOfNode_BFace(iBMesh, iBFace);
+}
+iint mw_get_node_id_bface_(iint* ibmesh, iint* ibface, iint* ibnode)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bface_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibface < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bface_, minus value is invalid argument. ibface");
+        return ERROR;
+    }
+    if(*ibnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bface_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+    
+    uiint iBMesh= *ibmesh;
+    uiint iBFace= *ibface;
+    uiint iBNode= *ibnode;
+
+    uiint nNodeID= pMW->GetNodeID_BFace(iBMesh, iBFace, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bface_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_node_bedge_(iint* ibmesh, iint* ibedge)//BEdgeのノード数
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bedge_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibedge < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bedge_, minus value is invalid argument. ibedge");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBEdge= *ibedge;
+
+    return pMW->GetNumOfNode_BEdge(iBMesh, iBEdge);
+}
+iint mw_get_node_id_bedge_(iint* ibmesh, iint* ibedge, iint* ibnode)
+{
+    if(*ibmesh < 0) {
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bedge_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibedge < 0) {
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bedge_, minus value is invalid argument. ibedge");
+        return ERROR;
+    }
+    if(*ibnode < 0) {
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bedge_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBEdge= *ibedge;
+    uiint iBNode= *ibnode;
+    
+    uiint nNodeID= pMW->GetNodeID_BEdge(iBMesh, iBEdge, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bedge_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_num_of_node_bvolume_(iint* ibmesh, iint* ibvol)//BVolumeのノード数
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bvolume_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibvol < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_node_bvolume_, minus value is invalid argument. ibvol");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBVol= *ibvol;
+
+    return pMW->GetNumOfNode_BVolume(iBMesh, iBVol);
+}
+iint mw_get_node_id_bvolume_(iint* ibmesh, iint* ibvol, iint* ibnode)
+{
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bvolume_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibvol < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bvolume_, minus value is invalid argument. ibvol");
+        return ERROR;
+    }
+    if(*ibnode < 0) {
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bvolume_, minus value is invalid argument. ibnode");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint iBVol= *ibvol;
+    uiint iBNode= *ibnode;
+
+    uiint nNodeID= pMW->GetNodeID_BVolume(iBMesh, iBVol, iBNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_bvolume_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+
 //--
 // boundary_mesh name
 //--
-int mw_get_bnode_mesh_namelength_(int* ibmesh)
+iint mw_get_bnode_mesh_namelength_(iint* ibmesh)
 {
-    return pMW->GetBNodeMesh_NameLength(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_mesh_namelength_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBNodeMesh_NameLength(iBMesh);
 }
-void mw_get_bnode_mesh_name_(int* ibmesh, char* name, int* name_len)
+void mw_get_bnode_mesh_name_(iint* ibmesh, char* name, iint* name_len)
 {
-    string sName = pMW->GetBNodeMesh_Name(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_mesh_name_, minus value is invalid argument. ibmesh");
+        return;
+    }
+    if(*name_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bnode_mesh_name_, minus value is invalid argument. name_len");
+        return;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint nNameLen= *name_len;
+
+    string sName = pMW->GetBNodeMesh_Name(iBMesh);
     
-    uint i, nNumOfChar = sName.length();
+    uiint i, nNumOfChar = sName.length();
     
-    if(nNumOfChar > (uint)*name_len){
-        uint nLength = (uint)*name_len-1;
+    if(nNumOfChar > nNameLen){
+        uiint nLength = nNameLen-1;
         for(i=0; i < nLength; i++){
             name[i] = sName[i];
         };
@@ -1107,24 +3823,46 @@ void mw_get_bnode_mesh_name_(int* ibmesh, char* name, int* name_len)
         for(i=0; i < nNumOfChar; i++){
             name[i] = sName[i];
         };
-        uint nLength = (uint)*name_len;
+        uiint nLength = nNameLen;
         for(i=nNumOfChar; i < nLength; i++){
             name[i] = '\0';
         };
     }
 }
-int mw_get_bface_mesh_namelength_(int* ibmesh)
+iint mw_get_bface_mesh_namelength_(iint* ibmesh)
 {
-    return pMW->GetBFaceMesh_NameLength(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_mesh_namelength_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+    
+    return pMW->GetBFaceMesh_NameLength(iBMesh);
 }
-void mw_get_bface_mesh_name_(int* ibmesh, char* name, int* name_len)
+void mw_get_bface_mesh_name_(iint* ibmesh, char* name, iint* name_len)
 {
-    string sName = pMW->GetBFaceMesh_Name(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_mesh_name_, minus value is invalid argument. ibmesh");
+        return;
+    }
+    if(*name_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bface_mesh_name_, minus value is invalid argument. name_len");
+        return;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint nNameLen= *name_len;
     
-    uint i, nNumOfChar = sName.length();
+    string sName = pMW->GetBFaceMesh_Name(iBMesh);
     
-    if(nNumOfChar > (uint)*name_len){
-        uint nLength = (uint)*name_len-1;
+    uiint i, nNumOfChar = sName.length();
+    
+    if(nNumOfChar > nNameLen){
+        uiint nLength = nNameLen-1;
         for(i=0; i < nLength; i++){
             name[i] = sName[i];
         };
@@ -1133,24 +3871,46 @@ void mw_get_bface_mesh_name_(int* ibmesh, char* name, int* name_len)
         for(i=0; i < nNumOfChar; i++){
             name[i] = sName[i];
         };
-        uint nLength = (uint)*name_len;
+        uiint nLength = nNameLen;
         for(i=nNumOfChar; i < nLength; i++){
             name[i] = '\0';
         };
     }
 }
-int mw_get_bvolume_mesh_namelength_(int* ibmesh)
+iint mw_get_bvolume_mesh_namelength_(iint* ibmesh)
 {
-    return pMW->GetBVolumeMesh_NameLength(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_mesh_namelength_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBVolumeMesh_NameLength(iBMesh);
 }
-void mw_get_bvolume_mesh_name_(int* ibmesh, char* name, int* name_len)
+void mw_get_bvolume_mesh_name_(iint* ibmesh, char* name, iint* name_len)
 {
-    string sName = pMW->GetBVolumeMesh_Name(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_mesh_name_, minus value is invalid argument. ibmesh");
+        return;
+    }
+    if(*name_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bvolume_mesh_name_, minus value is invalid argument. name_len");
+        return;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint nNameLen= *name_len;
+
+    string sName = pMW->GetBVolumeMesh_Name(iBMesh);
     
-    uint i, nNumOfChar = sName.length();
+    uiint i, nNumOfChar = sName.length();
     
-    if(nNumOfChar > (uint)*name_len){
-        uint nLength = (uint)*name_len-1;
+    if(nNumOfChar > nNameLen){
+        uiint nLength = nNameLen-1;
         for(i=0; i < nLength; i++){
             name[i] = sName[i];
         };
@@ -1159,24 +3919,45 @@ void mw_get_bvolume_mesh_name_(int* ibmesh, char* name, int* name_len)
         for(i=0; i < nNumOfChar; i++){
             name[i] = sName[i];
         };
-        uint nLength = (uint)*name_len;
+        uiint nLength = nNameLen;
         for(i=nNumOfChar; i < nLength; i++){
             name[i] = '\0';
         };
     }
 }
-int mw_get_bedge_mesh_namelength_(int* ibmesh)
+iint mw_get_bedge_mesh_namelength_(iint* ibmesh)
 {
-    return pMW->GetBEdgeMesh_NameLength(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_mesh_namelength_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    uiint iBMesh= *ibmesh;
+
+    return pMW->GetBEdgeMesh_NameLength(iBMesh);
 }
-void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len)
+void mw_get_bedge_mesh_name_(iint* ibmesh, char* name, iint* name_len)
 {
-    string sName = pMW->GetBEdgeMesh_Name(*ibmesh);
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_mesh_name_, minus value is invalid argument. ibmesh");
+        return;
+    }
+    if(*name_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_bedge_mesh_name_, minus value is invalid argument. name_len");
+        return;
+    }
+
+    uiint iBMesh= *ibmesh;
+    uiint nNameLen= *name_len;
+
+    string sName = pMW->GetBEdgeMesh_Name(iBMesh);
     
-    uint i, nNumOfChar = sName.length();
+    uiint i, nNumOfChar = sName.length();
     
-    if(nNumOfChar > (uint)*name_len){
-        uint nLength = (uint)*name_len-1;
+    if(nNumOfChar > nNameLen){
+        uiint nLength = nNameLen-1;
         for(i=0; i < nLength; i++){
             name[i] = sName[i];
         };
@@ -1185,7 +3966,7 @@ void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len)
         for(i=0; i < nNumOfChar; i++){
             name[i] = sName[i];
         };
-        uint nLength = (uint)*name_len;
+        uiint nLength = nNameLen;
         for(i=nNumOfChar; i < nLength; i++){
             name[i] = '\0';
         };
@@ -1194,40 +3975,135 @@ void mw_get_bedge_mesh_name_(int* ibmesh, char* name, int* name_len)
 //--
 // entity_id of boundary_mesh (for FrontISTR)
 //--
-int mw_get_edge_id_bedge_(int* ibmesh, int* ibedge)
+iint mw_get_edge_id_bedge_(iint* ibmesh, iint* ibedge)
 {
-    uint iBMesh = *ibmesh;
-    uint iBEdge = *ibedge;
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_edge_id_bedge_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibedge < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_edge_id_bedge_, minus value is invalid argument. ibedge");
+        return ERROR;
+    }
 
-    return pMW->GetEdgeID_BEdge(iBMesh, iBEdge);
+    uiint iBMesh = *ibmesh;
+    uiint iBEdge = *ibedge;
+
+    uiint nEdgeID= pMW->GetEdgeID_BEdge(iBMesh, iBEdge);
+
+    if(nEdgeID < IINT_MAX){
+        return nEdgeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_edge_id_bedge_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_elem_id_bedge_(int*ibmesh, int* ibedge)
+iint mw_get_elem_id_bedge_(iint*ibmesh, iint* ibedge)
 {
-    uint iBMesh = *ibmesh;
-    uint iBEdge = *ibedge;
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bedge_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibedge < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bedge_, minus value is invalid argument. ibedge");
+        return ERROR;
+    }
 
-    return pMW->GetElemID_BEdge(iBMesh, iBEdge);
+    uiint iBMesh = *ibmesh;
+    uiint iBEdge = *ibedge;
+
+    uiint nElemID= pMW->GetElemID_BEdge(iBMesh, iBEdge);
+
+    if(nElemID < IINT_MAX){
+        return nElemID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bedge_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_face_id_bface_(int* ibmesh, int* ibface)
+iint mw_get_face_id_bface_(iint* ibmesh, iint* ibface)
 {
-    uint iBMesh = *ibmesh;
-    uint iBFace = *ibface;
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_face_id_bface_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibface < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_face_id_bface_, minus value is invalid argument. ibface");
+        return ERROR;
+    }
 
-    return pMW->GetFaceID_BFace(iBMesh, iBFace);
+    uiint iBMesh = *ibmesh;
+    uiint iBFace = *ibface;
+
+    uiint nFaceID= pMW->GetFaceID_BFace(iBMesh, iBFace);
+
+    if(nFaceID < IINT_MAX){
+        return nFaceID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_face_id_bface_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_elem_id_bface_(int* ibmesh, int* ibface)
+iint mw_get_elem_id_bface_(iint* ibmesh, iint* ibface)
 {
-    uint iBMesh = *ibmesh;
-    uint iBFace = *ibface;
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bface_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibface < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bface_, minus value is invalid argument. ibface");
+        return ERROR;
+    }
 
-    return pMW->GetElemID_BFace(iBMesh, iBFace);
+    uiint iBMesh = *ibmesh;
+    uiint iBFace = *ibface;
+
+    uiint nElemID= pMW->GetElemID_BFace(iBMesh, iBFace);
+
+    if(nElemID < IINT_MAX){
+        return nElemID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bface_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_elem_id_bvolume_(int* ibmesh, int* ibvol)
+iint mw_get_elem_id_bvolume_(iint* ibmesh, iint* ibvol)
 {
-    uint iBMesh = *ibmesh;
-    uint iBVol = *ibvol;
+    if(*ibmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bvolume_, minus value is invalid argument. ibmesh");
+        return ERROR;
+    }
+    if(*ibvol < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bvolume_, minus value is invalid argument. ibvol");
+        return ERROR;
+    }
 
-    return pMW->GetElemID_BVolume(iBMesh, iBVol);
+    uiint iBMesh = *ibmesh;
+    uiint iBVol = *ibvol;
+
+    uiint nElemID= pMW->GetElemID_BVolume(iBMesh, iBVol);
+
+    if(nElemID < IINT_MAX){
+        return nElemID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elem_id_bvolume_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
 
 
@@ -1242,54 +4118,10 @@ int mw_mpi_int_(){ return MPI_INT; }        // MPI_INT
 int mw_mpi_double_(){ return MPI_DOUBLE; }  // MPI_DOUBLE
 int mw_mpi_comm_(){ return MPI_COMM_WORLD; }// MPI_COMM_WORLD
 
-int mw_mpi_sum_(){ return MPI_SUM;}// op  ,use allreduce_r 
+int mw_mpi_sum_(){ return MPI_SUM;}// op  ,use allreduce_r
 int mw_mpi_max_(){ return MPI_MAX;}// op  ,use allreduce_r
 int mw_mpi_min_(){ return MPI_MIN;}// op  ,use allreduce_r
 
-void mw_allreduce_r_(double val[], int* val_size, int* op)
-{
-    double rval[*val_size];
-
-    pMW->AllReduce(val, rval, *val_size, MPI_DOUBLE, *op, MPI_COMM_WORLD);
-}
-void mw_allreduce_i_(int val[], int* val_size, int* op)
-{
-    int rval[*val_size];
-
-    pMW->AllReduce(val, rval, *val_size, MPI_INT, *op, MPI_COMM_WORLD);
-}
-int mw_barrier_()
-{
-    return pMW->Barrier(MPI_COMM_WORLD);
-}
-int mw_abort_(int* error)
-{
-    return pMW->Abort(MPI_COMM_WORLD, *error);
-}
-int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt)
-{
-    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, MPI_COMM_WORLD);
-}
-int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt)
-{
-    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, MPI_COMM_WORLD);
-}
-int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
-{
-    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
-}
-int mw_gather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root)
-{
-    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
-}
-int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
-{
-    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
-}
-int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root)
-{
-    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
-}
 int mw_get_rank_()
 {
     return pMW->GetRank();
@@ -1298,72 +4130,415 @@ int mw_get_num_of_process_()
 {
     return pMW->GetNumOfProcess();
 }
-// 以下の３メソッドは、ペア
+
+void mw_allreduce_r_(double val[], int* val_size, int* op)
+{
+    if(*val_size < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allreduce_r_, minus value is invalid argument. val_size");
+        return;
+    }
+
+    double rval[*val_size];
+
+    pMW->AllReduce(val, rval, *val_size, MPI_DOUBLE, *op, MPI_COMM_WORLD);
+}
+void mw_allreduce_i_(iint val[], int* val_size, int* op)
+{
+    if(*val_size < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allreduce_i_, minus value is invalid argument. val_size");
+        return;
+    }
+
+    iint rval[*val_size];
+
+    pMW->AllReduce(val, rval, *val_size, MPI_INT, *op, MPI_COMM_WORLD);
+}
+int mw_barrier_()
+{
+    return pMW->Barrier(MPI_COMM_WORLD);
+}
+int mw_abort_(iint* error)
+{
+    return pMW->Abort(MPI_COMM_WORLD, *error);
+}
+int mw_allgather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allgather_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allgather_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    
+    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, MPI_COMM_WORLD);
+}
+int mw_allgather_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allgather_i_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_allgather_i_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    
+    return pMW->AllGather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, MPI_COMM_WORLD);
+}
+int mw_gather_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_gather_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_gather_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+
+    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
+}
+int mw_gather_i_(int sendbuf[], iint* sendcnt, int recvbuf[], int* recvcnt, int* root)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_gather_i_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_gather_i_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+
+    return pMW->Gather((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
+}
+int mw_scatter_r_(double sendbuf[], int* sendcnt, double recvbuf[], int* recvcnt, int* root)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_scatter_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_scatter_r_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+
+    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_DOUBLE, (void*)recvbuf, *recvcnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
+}
+int mw_scatter_i_(int sendbuf[], int* sendcnt, int recvbuf[], int* recvcnt, int* root)
+{
+    if(*sendcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_scatter_i_, minus value is invalid argument. sendcnt");
+        return ERROR;
+    }
+    if(*recvcnt < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_scatter_i_, minus value is invalid argument. recvcnt");
+        return ERROR;
+    }
+    
+    return pMW->Scatter((void*)sendbuf, *sendcnt, MPI_INT, (void*)recvbuf, *recvcnt, MPI_INT, *root, MPI_COMM_WORLD);
+}
+int mw_bcast_i_(int buf[], int* cnt, int* root)
+{
+    return pMW->Bcast(buf, *cnt, MPI_INT, *root, MPI_COMM_WORLD);
+}
+int mw_bcast_r_(double buf[], int* cnt, int* root)
+{
+    return pMW->Bcast(buf, *cnt, MPI_DOUBLE, *root, MPI_COMM_WORLD);
+}
+int mw_bcast_s_(char buf[], int* cnt, int* root)
+{
+    return pMW->Bcast(buf, *cnt, MPI_CHAR, *root, MPI_COMM_WORLD);
+}
+
+//
+// 以下の4メソッドは、ペア NumOfNeibPE--getTransRank--Send_Recv_R, _I
+//
 int mw_get_num_of_neibpe_(int* imesh)//Meshパーツが通信する相手の数
 {
-    uint iMesh = *imesh;
-    return pMW->GetNumOfNeibPE(iMesh);
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_neibpe_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    
+    uiint iMesh = *imesh;
+    
+    uiint nNumOfNeibPE= pMW->GetNumOfNeibPE(iMesh);
+
+    if(nNumOfNeibPE < IINT32_MAX){
+        return nNumOfNeibPE;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_neibpe_, return value is over INT_MAX");
+        return IINT32_MAX;
+    }
 }
 int mw_get_transrank_(int* imesh, int* ipe)//通信Mesh毎のランク番号
 {
-    uint iMesh = *imesh;
-    uint iPE = *ipe;
-    return pMW->GetTransRank(iMesh, iPE);
-}
-void mw_send_recv_(double buf[], int* num_of_node, int* dof_size, int* trans_rank)//bufの値を送信-受信
-{
-    uint nNumOfNode = *num_of_node;
-    uint nDOF = *dof_size;
-    uint transRank = *trans_rank;
+    if(*imesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_transrank_, minus value is invalid argument. imesh");
+        return ERROR;
+    }
+    if(*ipe < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_transrank_, minus value is invalid argument. ipe");
+        return ERROR;
+    }
 
-    pMW->Send_Recv_R(buf, nNumOfNode, nDOF, transRank);
+    int iMesh = *imesh;
+    int iPE = *ipe;
+
+    uiint nTransRank= pMW->GetTransRank(iMesh, iPE);
+
+    if(nTransRank < IINT32_MAX){
+        return nTransRank;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_transrank_, return value is over INT_MAX");
+        return IINT32_MAX;
+    }
+}
+void mw_send_recv_r_(double buf[], int* num_of_node, int* dof_size, int* trans_rank)//bufの値を送信-受信
+{
+    if(*num_of_node < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. num_of_node");
+        return;
+    }
+    if(*dof_size < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. dof_size");
+        return;
+    }
+    if(*trans_rank < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. trans_rank");
+        return;
+    }
+
+    int nNumOfNode = *num_of_node;
+    int nNumOfDOF = *dof_size;
+    int transRank = *trans_rank;
+
+    pMW->Send_Recv_R(buf, nNumOfNode, nNumOfDOF, transRank);
+}
+void mw_send_recv_i_(int buf[], int* num_of_node, int* dof_size, int* trans_rank)//bufの値を送信-受信
+{
+    if(*num_of_node < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. num_of_node");
+        return;
+    }
+    if(*dof_size < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. dof_size");
+        return;
+    }
+    if(*trans_rank < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_, minus value is invalid argument. trans_rank");
+        return;
+    }
+
+    int nNumOfNode = *num_of_node;
+    int nNumOfDOF = *dof_size;
+    int transRank = *trans_rank;
+
+    pMW->Send_Recv_I(buf, nNumOfNode, nNumOfDOF, transRank);
 }
 
-void mw_send_recv_r2_(double buf[], int* dof_size)// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
+////void mw_send_recv_r2_(double buf[], iint* dof_size)// bufの値を送信, 受信値をNodeとbufに代入. bufのサイズ == NumOfCommNode * dof_size
+////{
+////    if(*dof_size < 0){
+////        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+////        pLogger->Info(Utility::LoggerMode::Error, "mw_send_recv_r2_, minus value is invalid argument. dof_size");
+////        return;
+////    }
+////    uiint nNumOfDOF= *dof_size;
+////
+////    pMW->Send_Recv_R(buf, nNumOfDOF);
+////}
+////void mw_send_recv_r_()// 通信Nodeの値を入れ替えて更新
+////{
+////    pMW->Send_Recv_R();
+////}
+
+
+
+//--
+// CommMesh2 (通信Mesh) { select された AssyModel,Meshを対象 }
+// CommNode (通信Node) :  Visualizer 用途
+//--
+iint mw_get_num_of_comm_mesh_()
 {
-    pMW->Send_Recv_R(buf, *dof_size);
+    uiint nNumOfCommMesh= pMW->GetNumOfCommMesh();
+
+    if(nNumOfCommMesh < IINT_MAX){
+        return nNumOfCommMesh;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_comm_mesh_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-void mw_send_recv_r_()// 通信Nodeの値を入れ替えて更新
+iint mw_get_num_of_comm_node_(iint* icmesh)
 {
-    pMW->Send_Recv_R();
+    if(*icmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_comm_node_, minus value is invalid argument. icmesh");
+        return ERROR;
+    }
+    uiint iComMesh= *icmesh;
+
+    uiint nNumOfCommNode= pMW->GetNumOfCommNode(iComMesh);
+
+    if(nNumOfCommNode < IINT_MAX){
+        return nNumOfCommNode;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_comm_node_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
+iint mw_get_node_id_comm_node_(iint* icmesh, iint* icnode)//MeshのNodeID
+{
+    if(*icmesh < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_comm_node_, minus value is invalid argument. icmesh");
+        return ERROR;
+    }
+    if(*icnode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_comm_node_, minus value is invalid argument. icnode");
+        return ERROR;
+    }
+    uiint iComMesh= *icmesh;
+    uiint iComNode= *icnode;
+
+    uiint nNodeID= pMW->GetNodeID_CommNode(iComMesh, iComNode);
+
+    if(nNodeID < IINT_MAX){
+        return nNodeID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_node_id_comm_node_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+
+
 
 //--
 // Element_Group { select AssyModel, select Mesh }
 //--
-int mw_get_num_of_elementgroup_()
+iint mw_get_num_of_elementgroup_()
 {
-    return (int)pMW->GetNumOfElementGroup();
-}
-int mw_get_num_of_element_id_(int* igrp)
-{
-    uint iGrp = *igrp;
+    uiint nNumOfElemGrp= pMW->GetNumOfElementGroup();
 
-    return (int)pMW->GetNumOfElementID(iGrp);
+    if(nNumOfElemGrp < IINT_MAX){
+        return nNumOfElemGrp;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_elementgroup_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
 }
-int mw_get_element_id_with_elementgroup_(int* igrp, int* index)
+iint mw_get_num_of_element_id_(iint* igrp)
 {
-    uint iGrp = *igrp;
-    uint i = *index;
+    if(*igrp < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_element_id_, minus value is invalid argument. igrp");
+        return ERROR;
+    }
+    uiint iGrp = *igrp;
 
-    return (int)pMW->GetElementID_with_ElementGroup(iGrp, i);
+    uiint nNumOfElem= pMW->GetNumOfElementID(iGrp);
+
+    if(nNumOfElem < IINT_MAX){
+        return nNumOfElem;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_num_of_element_id_, INT_MAX over value");
+        return IINT_MAX;
+    }
 }
-int mw_get_elementgroup_name_length_(int* igrp)
+iint mw_get_element_id_with_elementgroup_(iint* igrp, iint* index)
 {
-    uint iGrp = *igrp;
-    int nLength = (int)pMW->GetElementGroupName_Length(iGrp) + 1;
+    if(*igrp < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_id_with_elementgroup_, minus value is invalid argument. igrp");
+        return ERROR;
+    }
+    if(*index < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_id_with_elementgroup_, minus value is invalid argument. index");
+        return ERROR;
+    }
+    uiint iGrp = *igrp;
+    uiint i = *index;
+
+    uiint nElemID= pMW->GetElementID_with_ElementGroup(iGrp, i);
+
+    if(nElemID < IINT_MAX){
+        return nElemID;
+    }else{
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_element_id_with_elementgroup_, return value is over INT_MAX");
+        return IINT_MAX;
+    }
+}
+iint mw_get_elementgroup_name_length_(iint* igrp)
+{
+    if(*igrp < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elementgroup_name_length_, minus value is invalid argument. igrp");
+        return ERROR;
+    }
+
+    uiint iGrp = *igrp;
+    iint nLength = pMW->GetElementGroupName_Length(iGrp) + 1;
 
     return nLength;
 }
-void mw_get_elementgroup_name_(int* igrp, char* name, int* name_len)
+void mw_get_elementgroup_name_(iint* igrp, char* name, iint* name_len)
 {
-    uint iGrp = *igrp;
+    if(*igrp < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elementgroup_name_, minus value is invalid argument. igrp");
+        return;
+    }
+    if(*name_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_get_elementgroup_name_, minus value is invalid argument. name_len");
+        return;
+    }
+
+    uiint iGrp = *igrp;
+    uiint nNameLen= *name_len;
+
     string sName = pMW->GetElementGroupName(iGrp);
     
-    uint i, nNumOfChar = sName.length();
+    uiint i, nNumOfChar = sName.length();
     
-    if(nNumOfChar > (uint)*name_len){
-        uint nLength = (uint)*name_len-1;
+    if(nNumOfChar > nNameLen){
+        uiint nLength = nNameLen-1;
         for(i=0; i < nLength; i++){
             name[i] = sName[i];
         };
@@ -1372,7 +4547,7 @@ void mw_get_elementgroup_name_(int* igrp, char* name, int* name_len)
         for(i=0; i < nNumOfChar; i++){
             name[i] = sName[i];
         };
-        uint nLength = (uint)*name_len;
+        uiint nLength = nNameLen;
         for(i=nNumOfChar; i < nLength; i++){
             name[i] = '\0';
         };
@@ -1382,47 +4557,80 @@ void mw_get_elementgroup_name_(int* igrp, char* name, int* name_len)
 //----
 // logger
 //----
-void mw_logger_set_mode_(int* mode)
+void mw_logger_set_mode_(iint* mode)
 {
-    pMW->LoggerMode(*mode);
+    if(*mode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_logger_set_mode_, minus value is invalid argument. mode");
+        return;
+    }
+    uiint nMode= *mode;
+
+    pMW->LoggerMode(nMode);
 }
-void mw_logger_set_device_(int* mode, int* device)
+void mw_logger_set_device_(iint* mode, iint* device)
 {
-    pMW->LoggerDevice(*mode, *device);
+    if(*mode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_logger_set_device_, minus value is invalid argument. mode");
+        return;
+    }
+    if(*device < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_logger_set_device_, minus value is invalid argument. device");
+        return;
+    }
+    uiint nMode= *mode;
+    uiint nDevice= *device;
+
+    pMW->LoggerDevice(nMode, nDevice);
 }
-void mw_logger_info_ (int* mode, char* message, int* str_len)
+void mw_logger_info_ (iint* mode, char* message, iint* str_len)
 {
-    size_t nLength = (size_t)*str_len + 1;
+    if(*mode < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_logger_info_, minus value is invalid argument. mode");
+        return;
+    }
+    if(*str_len < 0){
+        Utility::CLogger *pLogger= Utility::CLogger::Instance();
+        pLogger->Info(Utility::LoggerMode::Error, "mw_logger_info_, minus value is invalid argument. str_len");
+        return;
+    }
+    uiint nMode= *mode;
+    uiint nStrLen= *str_len;
+
+    uiint nLength = nStrLen + 1;
     
     char cmsg[nLength];
-    strncpy(cmsg, message, nLength);
+    strncpy(cmsg, message, nLength);//Null追加
     
-    pMW->LoggerInfo(*mode, cmsg);
+    pMW->LoggerInfo(nMode, cmsg);
 }
 //----
 // logger parameter
 //----
-int mw_get_error_mode_()
+iint mw_get_error_mode_()
 {
     return pMW->getErrorMode();
 }
-int mw_get_warn_mode_()
+iint mw_get_warn_mode_()
 {
     return pMW->getWarnMode();
 }
-int mw_get_info_mode_()
+iint mw_get_info_mode_()
 {
     return pMW->getInfoMode();
 }
-int mw_get_debug_mode_()
+iint mw_get_debug_mode_()
 {
     return pMW->getDebugMode();
 }
-int mw_get_disk_device_()
+iint mw_get_disk_device_()
 {
     return pMW->getDiskDevice();
 }
-int mw_get_display_device_()
+iint mw_get_display_device_()
 {
     return pMW->getDisplayDevice();
 }

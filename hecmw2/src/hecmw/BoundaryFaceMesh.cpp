@@ -26,9 +26,9 @@ CBoundaryFaceMesh::~CBoundaryFaceMesh()
 }
 
 
-void CBoundaryFaceMesh::setBFace(const uint& index, CBoundaryFace* pBFace)
+void CBoundaryFaceMesh::setBFace(const uiint& index, CBoundaryFace* pBFace)
 {
-    uint id;
+    uiint id;
     id= pBFace->getID();
     
     mmBFaceID2Index[id]= index;
@@ -39,7 +39,7 @@ void CBoundaryFaceMesh::addBFace(CBoundaryFace* pBFace)
 {
     mvBFace.push_back(pBFace);
 
-    uint id;
+    uiint id;
     id= pBFace->getID();
 
     mmBFaceID2Index[id]= mvBFace.size()-1;
@@ -50,7 +50,7 @@ void CBoundaryFaceMesh::addBFace(CBoundaryFace* pBFace)
 // ----
 void CBoundaryFaceMesh::resizeAggFace()
 {
-    uint numOfAgg= mvBNode.size();
+    uiint numOfAgg= mvBNode.size();
     mvAggregateFace.resize(numOfAgg);// BNodeの面-集合
 
     //cout << "BoundaryFaceMesh::resizeAggFace, numOfAgg " << numOfAgg << endl;
@@ -62,7 +62,7 @@ void CBoundaryFaceMesh::setupAggFace()
 {
     int numOfBNode= mvBNode.size();
     CBoundaryNode *pBNode;
-    uint ibnode;
+    uiint ibnode;
     //下位で収集した要素IDをクリア
     //----
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
@@ -72,17 +72,17 @@ void CBoundaryFaceMesh::setupAggFace()
         pBNode->clearNeibElemVert();
     };
     
-    uint numOfFace= mvBFace.size();
+    uiint numOfFace= mvBFace.size();
     CBoundaryFace *pBFace;
-    uint iface;
+    uiint iface;
     //BNodeに要素IDを集める
     //----
     for(iface=0; iface < numOfFace; iface++){
         pBFace= mvBFace[iface];
         
         //uint numOfVert= pBFace->getNumOfBNode();
-        uint numOfVert= pBFace->getNumOfVert();
-        uint ivert, faceID;
+        uiint numOfVert= pBFace->getNumOfVert();
+        uiint ivert, faceID;
         for(ivert=0; ivert < numOfVert; ivert++){
             pBNode= pBFace->getBNode(ivert);
             
@@ -96,8 +96,8 @@ void CBoundaryFaceMesh::setupAggFace()
     for(ibnode=0; ibnode < numOfBNode; ibnode++){
         pBNode= mvBNode[ibnode];
 
-        uint numOfAgg= pBNode->getNumOfAggElem();
-        uint iagg;
+        uiint numOfAgg= pBNode->getNumOfAggElem();
+        uiint iagg;
 
         for(iagg=0; iagg < numOfAgg; iagg++){
             mvAggregateFace[ibnode].push_back(pBNode->getAggElemID(iagg));
@@ -109,27 +109,27 @@ void CBoundaryFaceMesh::setupAggFace()
 // ----
 void CBoundaryFaceMesh::GeneEdgeBNode()
 {
-    uint countID= mvBNode.size();
+    uiint countID= mvBNode.size();
     
-    uint numOfBFace= mvBFace.size();
-    uint iface;
+    uiint numOfBFace= mvBFace.size();
+    uiint iface;
     CBoundaryFace *pBFace;
     bool bfind(false);
     for(iface=0; iface < numOfBFace; iface++){
         pBFace= mvBFace[iface];
         
-        uint numOfEdge= pBFace->getNumOfEdge();
+        uiint numOfEdge= pBFace->getNumOfEdge();
         PairBNode pairBNode;
-        uint iedge;
+        uiint iedge;
         
         for(iedge=0; iedge < numOfEdge; iedge++){
             if(!pBFace->isMarkingEdge(iedge)){
                 pairBNode= pBFace->getPairBNode(iedge);
 
-                uint numOfiAgg= pairBNode.first->getNumOfAggElem();
-                uint numOfjAgg= pairBNode.second->getNumOfAggElem();
-                uint iAgg,jAgg;
-                uint iFaceID,jFaceID;
+                uiint numOfiAgg= pairBNode.first->getNumOfAggElem();
+                uiint numOfjAgg= pairBNode.second->getNumOfAggElem();
+                uiint iAgg,jAgg;
+                uiint iFaceID,jFaceID;
                 bfind= false;
 
                 // 隣接Faceがあるとして処理 => 無い場合は"bfind(偽)"
@@ -161,9 +161,9 @@ void CBoundaryFaceMesh::GeneEdgeBNode()
                                 pBFace->setEdgeBNode(iedge, pEdgeBNode);
 
                                 // NeibFaceを取得
-                                uint neib_index= mmBFaceID2Index[iFaceID];
+                                uiint neib_index= mmBFaceID2Index[iFaceID];
                                 CBoundaryFace* pNeibBFace= mvBFace[neib_index];
-                                uint jedge= pNeibBFace->getEdgeID(pairBNode);
+                                uiint jedge= pNeibBFace->getEdgeID(pairBNode);
 
                                 // NeibFaceに"EdgeBNode,pBFace-ID"をセット
                                 pNeibBFace->setEdgeNeibFace(jedge, pBFace->getID());
@@ -177,7 +177,7 @@ void CBoundaryFaceMesh::GeneEdgeBNode()
                                     mmBNodeID2Index[pEdgeBNode->getID()] = mvBNode.size()-1;
                                     
                                     //辺BNodeのAggFace
-                                    uint index = mvBNode.size()-1;
+                                    uiint index = mvBNode.size()-1;
                                     mvAggregateFace.resize(mvBNode.size());
                                     mvAggregateFace[index].push_back(pBFace->getID());
                                     mvAggregateFace[index].push_back(pNeibBFace->getID());
@@ -230,7 +230,7 @@ void CBoundaryFaceMesh::GeneEdgeBNode()
                         mmBNodeID2Index[pEdgeBNode->getID()] = mvBNode.size()-1;
                         
                         //辺BNodeのAggFace
-                        uint index = mvBNode.size()-1;
+                        uiint index = mvBNode.size()-1;
                         mvAggregateFace.resize(mvBNode.size());
                         mvAggregateFace[index].push_back(pBFace->getID());
 
@@ -263,12 +263,12 @@ void CBoundaryFaceMesh::GeneEdgeBNode()
 // ----
 void CBoundaryFaceMesh::GeneFaceBNode()
 {
-    uint numOfFace= mvBFace.size();
+    uiint numOfFace= mvBFace.size();
     mvBFaceBNode.reserve(numOfFace);
     
     CBoundaryFace *pBFace;
-    uint iface;
-    uint countID= mvBNode.size() + mvBEdgeBNode.size();
+    uiint iface;
+    uiint countID= mvBNode.size() + mvBEdgeBNode.size();
     for(iface=0; iface < numOfFace; iface++){
         
         CBoundaryNode *pFaceBNode= new CBoundaryNode;
@@ -299,8 +299,8 @@ void CBoundaryFaceMesh::GeneFaceBNode()
 void CBoundaryFaceMesh::refine(CBoundaryFaceMesh *pProgBFaceMesh)
 {
     CBoundaryFace *pBFace;
-    uint iface, numOfFace= mvBFace.size();
-    uint countID(0);//新ID
+    uiint iface, numOfFace= mvBFace.size();
+    uiint countID(0);//新ID
     vector<CBoundaryFace*> vprogBFace;//pBFaceから生成される子BFace
     //----
     //BFaceの分割 => progFaceMeshにセット
@@ -313,7 +313,7 @@ void CBoundaryFaceMesh::refine(CBoundaryFaceMesh *pProgBFaceMesh)
         vprogBFace.clear();
         vprogBFace= pBFace->getProgParts();
         
-        uint i;
+        uiint i;
         for(i=0; i < vprogBFace.size(); i++){
             pProgBFaceMesh->addBFace(vprogBFace[i]);
         };
@@ -322,17 +322,17 @@ void CBoundaryFaceMesh::refine(CBoundaryFaceMesh *pProgBFaceMesh)
     //----
     //BNode(頂点,辺,面) => progFaceMeshにセット
     //----
-    uint numOfBNode    = mvBNode.size();
+    uiint numOfBNode    = mvBNode.size();
     //uint numOfEdgeBNode= mvBEdgeBNode.size();
-    uint numOfFaceBNode= mvBFaceBNode.size();
-    uint numOfProgBNode= numOfBNode + mnEdgeNodeCount + numOfFaceBNode;
+    uiint numOfFaceBNode= mvBFaceBNode.size();
+    uiint numOfProgBNode= numOfBNode + mnEdgeNodeCount + numOfFaceBNode;
     
     pProgBFaceMesh->resizeBNode(numOfProgBNode);
     
-    uint ibnode;
+    uiint ibnode;
     
-    uint init= 0;
-    uint end = numOfBNode;
+    uiint init= 0;
+    uiint end = numOfBNode;
 
     for(ibnode=init; ibnode < end; ibnode++){
         pProgBFaceMesh->setBNode(ibnode, mvBNode[ibnode]);
@@ -379,9 +379,9 @@ void CBoundaryFaceMesh::distNeumannValue()
     double entVal;  //面の所有する境界値
     double integVal;//形状関数の積分値(正規化)
     double nodalVal;
-    uint ivert, inode, numOfBNode= mvBNode.size();
-    uint iface, numOfFace= mvBFace.size();
-    uint idof, numOfDOF, dof;
+    uiint ivert, inode, numOfBNode= mvBNode.size();
+    uiint iface, numOfFace= mvBFace.size();
+    uiint idof, numOfDOF, dof;
 
     //節点力-ゼロクリア
     for(inode=0; inode < numOfBNode; inode++){
@@ -476,83 +476,84 @@ void CBoundaryFaceMesh::distNeumannValue()
 }
 
 
-// ----
-// Dirichlet境界値のBNodeへの配分(Level==0の場合の最初の処理)
-// ----
-void CBoundaryFaceMesh::distDirichletValue_at_CGrid()
-{
-    Utility::CLogger *pLogger= Utility::CLogger::Instance();
-
-    // ディレクレ条件が設定されていなければ,Errorを返す.
-    // --
-    if(mnBndType != BoundaryType::Dirichlet){
-        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryFaceMesh::distDirichletValue");
-        return;
-    }
-    
-    //節点の面集合ごとに平均値をとる
-    uint numOfBNode = mvBNode.size();
-    uint inode;
-    for(inode=0; inode < numOfBNode; inode++){
-
-        CBoundaryNode *pBNode = mvBNode[inode];
-
-        ////debug
-        //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, mgLevel=" << mMGLevel
-        //        << ", mvAggregateFace数=" << mvAggregateFace.size() << endl;
-
-        vuint vAggFace = mvAggregateFace[inode];
-        
-        uint numOfAggFace = vAggFace.size();
-        uint iface, nFaceID, nFaceIndex;
-        CBoundaryFace *pBFace;
-        double dArea, dVal, dDirichletVal;
-        uint idof, numOfDOF=getNumOfDOF();
-        uint dof;//自由度番号(idofは自由度配列のインデックス番号)
-
-
-        // 自由度別にディレクレ境界値を計算
-        //
-        for(idof=0; idof < numOfDOF; idof++){
-
-            dArea=0.0; dVal=0.0;
-            dof = getDOF(idof);
-
-            for(iface=0; iface < numOfAggFace; iface++){
-                nFaceID = vAggFace[iface];
-                nFaceIndex = mmBFaceID2Index[nFaceID];
-
-                //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, FaceID " << nFaceID << endl;
-
-                pBFace = mvBFace[nFaceIndex];
-
-                dVal  += pBFace->getArea() * pBFace->getBndValue(dof);
-                dArea += pBFace->getArea();
-            };
-            ////debug
-            //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, mgLevel=" << mMGLevel
-            //        << ", dVal=" << dVal << ", dArea=" << dArea << endl;
-
-            dDirichletVal = dVal/dArea;// 節点値 = Σ(面積*値)/Σ(面積)
-
-            pBNode->setValue(dof, mMGLevel, dDirichletVal);//境界値を代入
-        };
-    };
-}
-
-// Fine Grid
-// Level>=1:BNode間の平均
+//// ----
+//// Dirichlet境界値のBNodeへの配分(Level==0の場合の最初の処理)
+//// ----
+//void CBoundaryFaceMesh::distDirichletValue_at_CGrid()
+//{
+//    Utility::CLogger *pLogger= Utility::CLogger::Instance();
 //
-void CBoundaryFaceMesh::distDirichletValue_at_FGrid()
+//    // ディレクレ条件が設定されていなければ,Errorを返す.
+//    // --
+//    if(mnBndType != BoundaryType::Dirichlet){
+//        pLogger->Info(Utility::LoggerMode::Error, "BoundaryType Error,  CBoundaryFaceMesh::distDirichletValue");
+//        return;
+//    }
+//
+//    //節点の面集合ごとに平均値をとる
+//    uiint numOfBNode = mvBNode.size();
+//    uiint inode;
+//    for(inode=0; inode < numOfBNode; inode++){
+//
+//        CBoundaryNode *pBNode = mvBNode[inode];
+//
+//        ////debug
+//        //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, mgLevel=" << mMGLevel
+//        //        << ", mvAggregateFace数=" << mvAggregateFace.size() << endl;
+//
+//        vuint vAggFace = mvAggregateFace[inode];
+//
+//        uiint numOfAggFace = vAggFace.size();
+//        uiint iface, nFaceID, nFaceIndex;
+//        CBoundaryFace *pBFace;
+//        double dArea, dVal, dDirichletVal;
+//        uiint idof, numOfDOF=getNumOfDOF();
+//        uiint dof;//自由度番号(idofは自由度配列のインデックス番号)
+//
+//
+//        // 自由度別にディレクレ境界値を計算
+//        //
+//        for(idof=0; idof < numOfDOF; idof++){
+//
+//            dArea=0.0; dVal=0.0;
+//            dof = getDOF(idof);
+//
+//            for(iface=0; iface < numOfAggFace; iface++){
+//                nFaceID = vAggFace[iface];
+//                nFaceIndex = mmBFaceID2Index[nFaceID];
+//
+//                //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, FaceID " << nFaceID << endl;
+//
+//                pBFace = mvBFace[nFaceIndex];
+//
+//                dVal  += pBFace->getArea() * pBFace->getBndValue(dof);
+//                dArea += pBFace->getArea();
+//            };
+//            ////debug
+//            //cout << "CBoundaryFaceMesh::distDirichletValue_at_CGrid, mgLevel=" << mMGLevel
+//            //        << ", dVal=" << dVal << ", dArea=" << dArea << endl;
+//
+//            dDirichletVal = dVal/dArea;// 節点値 = Σ(面積*値)/Σ(面積)
+//
+//            pBNode->setValue(dof, mMGLevel, dDirichletVal);//境界値を代入
+//        };
+//    };
+//}
+
+//// Fine Grid
+//// Level>=1:BNode間の平均
+////
+//void CBoundaryFaceMesh::distDirichletValue_at_FGrid()
+void CBoundaryFaceMesh::distDirichletValue()
 {
     //上位のグリッドの値をきめる
     //
-    uint iface, numOfFace=mvBFace.size();
+    uiint iface, numOfFace=mvBFace.size();
     CBoundaryFace *pBFace;
     for(iface=0; iface < numOfFace; iface++){
         pBFace = mvBFace[iface];
 
-        uint idof, dof;
+        uiint idof, dof;
         for(idof=0; idof < getNumOfDOF(); idof++){
             dof = getDOF(idof);
             pBFace->distDirichletVal(dof, mMGLevel, mMaxMGLevel);
@@ -568,7 +569,7 @@ void CBoundaryFaceMesh::distDirichletValue_at_FGrid()
 // mvBFaceBNodeの解放
 void CBoundaryFaceMesh::deleteProgData()
 {
-    uint iface, nNumOfBFace=mvBFace.size();
+    uiint iface, nNumOfBFace=mvBFace.size();
 
     for(iface=0; iface < nNumOfBFace; iface++) mvBFace[iface]->deleteProgData();
 

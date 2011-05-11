@@ -23,7 +23,7 @@ CContactMesh::CContactMesh()
 }
 CContactMesh::~CContactMesh()
 {
-    std::cout  << "~CContactMesh, start" << std::endl;
+//    std::cout  << "~CContactMesh, start" << std::endl;
 
 //    // mgLevel別にdeleteしていく必要があるので,MeshのNodeと同様の処理でdeleteする.
 //    //
@@ -46,7 +46,7 @@ CContactMesh::~CContactMesh()
     // mgLevel別にdelete 2010.05.31 VC++仕様に合わせる
     //
     CContactNode *pConNode;
-    uint i;
+    uiint i;
     for(i=0; i < mvConNode.size() ; i++){
         pConNode = mvConNode[i];
         if(mLevel==pConNode->getLevel()) delete pConNode;
@@ -60,34 +60,32 @@ CContactMesh::~CContactMesh()
     // mvKnot (Octreeオブジェクトの破棄)
     // 
     vector<COctreeKnot*> vKnot;
-    uint numOfLayer= mvKnot.size();
-    uint ilayer;
+    uiint numOfLayer= mvKnot.size();
+    uiint ilayer;
     // Layer==0 は moOctreeKnot なので除外
     for(ilayer=1; ilayer < numOfLayer; ilayer++){
         vKnot= mvKnot[ilayer];
 
         for_each(vKnot.begin(), vKnot.end(), DeleteObject());
     };
-
-
-    std::cout  << "~CContactMesh, end " << ", mgLevel= " << mLevel << std::endl;
+//    std::cout  << "~CContactMesh, end " << ", mgLevel= " << mLevel << std::endl;
 }
 
 // ContactNodeの追加, mapデータへID,Indexを代入
 //
-void CContactMesh::addConNode(CContactNode* pConNode, const uint& id)
+void CContactMesh::addConNode(CContactNode* pConNode, const uiint& id)
 {
     mvConNode.push_back(pConNode);
     
     mmConNodeID2Index[id]= mvConNode.size()-1;
 }
-void CContactMesh::addMasterConNode(CContactNode* pConNode, const uint& id)
+void CContactMesh::addMasterConNode(CContactNode* pConNode, const uiint& id)
 {
     mvMasterConNode.push_back(pConNode);
 
     mmMasterConNodeID2Index[id]= mvMasterConNode.size()-1;
 }
-void CContactMesh::addSlaveConNode(CContactNode* pConNode, const uint& id)
+void CContactMesh::addSlaveConNode(CContactNode* pConNode, const uiint& id)
 {
     mvSlaveConNode.push_back(pConNode);
 
@@ -97,21 +95,21 @@ void CContactMesh::addSlaveConNode(CContactNode* pConNode, const uint& id)
 
 // MasterFaceの追加, mapデータへID,Indexを代入
 //
-void CContactMesh::addMasterMeshID(const uint& id)
+void CContactMesh::addMasterMeshID(const uiint& id)
 {
     mvMasterMeshID.push_back(id);
 
-    uint index= mvMasterMeshID.size()-1;
+    uiint index= mvMasterMeshID.size()-1;
     mmMasterMeshID2Index[id]= index;
 }
 
 // SlaveFaceの追加, mapデータへID,Indexを代入
 //
-void CContactMesh::addSlaveMeshID(const uint& id)
+void CContactMesh::addSlaveMeshID(const uiint& id)
 {
     mvSlaveMeshID.push_back(id);
 
-    uint index= mvSlaveMeshID.size()-1;
+    uiint index= mvSlaveMeshID.size()-1;
     mmSlaveMeshID2Index[id]= index;
 }
 
@@ -124,11 +122,11 @@ void CContactMesh::addSlaveMeshID(const uint& id)
 //
 void CContactMesh::setupCoarseConNode(CContactMesh* pProgConMesh)
 {
-    uint numOfNode;
+    uiint numOfNode;
     numOfNode= mvConNode.size();
     CContactNode *pConNode;
 
-    uint inode, id;
+    uiint inode, id;
     //全体
     for(inode=0; inode< numOfNode; inode++){
         pConNode= mvConNode[inode];
@@ -166,8 +164,8 @@ void CContactMesh::setupAggSkinFace()
     CSkinFace  *pSFace;
     CContactNode *pConNode;
     
-    uint numOfMFace(mvFace.size()), numOfSFace(mvSlaveFace.size()), numOfConNode;
-    uint iface,icnode;
+    uiint numOfMFace(mvFace.size()), numOfSFace(mvSlaveFace.size()), numOfConNode;
+    uiint iface,icnode;
 
     // 第2段 以降のprolongationのときに,
     //  VertexのElemIndexに同じIDが入らないようにクリア. 10.03.16
@@ -188,7 +186,7 @@ void CContactMesh::setupAggSkinFace()
 
 
 
-    uint nNumOfVert;
+    uiint nNumOfVert;
     for(iface=0; iface< numOfMFace; iface++){
         pMFace= mvFace[iface];
         nNumOfVert= pMFace->getNumOfVert();
@@ -219,19 +217,19 @@ void CContactMesh::setupAggSkinFace()
 //  countID:新しい辺ノードのためのノードIDカウンター
 //  pProgConMesh:プロロンゲーションする上位のContactMesh
 // 
-void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLevel)
+void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uiint& iLevel)
 {
     PairConNode pairConNode;
     CSkinFace *pFace, *pNeibFace;
     CContactNode* pEdgeConNode;
     vdouble vCoord; vCoord.resize(3);
-    uint numOfFace, numOfEdge;
-    uint level; //EdgeConNodeのmgLevel
-    uint numOfScalar,numOfDisp;//新ContactNodeのDOF
-    uint face_rank,rank;//新ConNodeのランク設定用
-    uint iface,iedge;
-    uint countID=mvConNode.size();//マスター,スレーブ関係なくID割り振り
-    uint maslave;
+    uiint numOfFace, numOfEdge;
+    uiint level; //EdgeConNodeのmgLevel
+    uiint numOfScalar,numOfDisp;//新ContactNodeのDOF
+    uiint face_rank,rank;//新ConNodeのランク設定用
+    uiint iface,iedge;
+    uiint countID=mvConNode.size();//マスター,スレーブ関係なくID割り振り
+    uiint maslave;
     // 0:マスター面, 1:スレーブ面
     for(maslave=0; maslave< 2; maslave++){
         
@@ -262,10 +260,10 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
                     if(!pFace->isEdgeNodeMarking(iedge)){
                         pairConNode= pFace->getEdgePairNode(iedge);
 
-                        uint numOfAggFaceA= pairConNode.first->getNumOfAggElem();
-                        uint numOfAggFaceB= pairConNode.second->getNumOfAggElem();
-                        uint faceIDa,faceIDb;
-                        uint iagg,jagg;
+                        uiint numOfAggFaceA= pairConNode.first->getNumOfAggElem();
+                        uiint numOfAggFaceB= pairConNode.second->getNumOfAggElem();
+                        uiint faceIDa,faceIDb;
+                        uiint iagg,jagg;
                         bool bfind(false);//隣接Faceが見つかった場合は,Trueに設定
                         // 隣接するFaceを検索してセット,かつ,辺ConNodeを生成してセット
                         // ----
@@ -284,7 +282,7 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
                                     // ----
                                     // ID => Index を利用して隣接Faceを取得
                                     // ----
-                                    uint index;
+                                    uiint index;
                                     if(maslave==0){
                                         index= mmMasterFaceID2Index[faceIDa];
                                         pNeibFace= mvFace[index];
@@ -321,7 +319,7 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
 
                                     //ConNodeが自身のMeshに含まれているConNodeならば,MeshIDをセット
                                     if(pairConNode.first->getRank()==myRank){
-                                        uint meshID= pairConNode.first->getMeshID();
+                                        uiint meshID= pairConNode.first->getMeshID();
                                         pEdgeConNode->setMeshID(meshID);
                                     }
 
@@ -402,7 +400,7 @@ void CContactMesh::setupEdgeConNode(CContactMesh *pProgConMesh, const uint& iLev
 
                             // ConNodeが自身のMeshに含まれているConNodeならば,MeshIDをセット
                             if(pairConNode.first->getRank()==myRank){
-                                uint meshID= pairConNode.first->getMeshID();
+                                uiint meshID= pairConNode.first->getMeshID();
                                 pEdgeConNode->setMeshID(meshID);
                             }
 
@@ -465,14 +463,14 @@ void CContactMesh::setupFaceConNode(CContactMesh *pProgConMesh)
 {
     CSkinFace *pFace;
     CContactNode *pConNode, *pConFaceNode;
-    uint numOfFace,numOfNode;
-    uint numOfScalar,numOfDisp;//新ContactNodeのDOF
-    uint iface,inode;
-    uint countID= pProgConMesh->getNumOfConNode();//EdgeNodeも加算されたサイズを取得(マスター,スレーブ関係なくID割り振り)
-    uint face_rank;
+    uiint numOfFace,numOfNode;
+    uiint numOfScalar,numOfDisp;//新ContactNodeのDOF
+    uiint iface,inode;
+    uiint countID= pProgConMesh->getNumOfConNode();//EdgeNodeも加算されたサイズを取得(マスター,スレーブ関係なくID割り振り)
+    uiint face_rank;
     vdouble vCoord; vCoord.resize(3);//面中心の座標
 
-    uint maslave;
+    uiint maslave;
     for(maslave=0; maslave< 2; maslave++){
         if(maslave==0) numOfFace= mvFace.size();     //マスター面
         if(maslave==1) numOfFace= mvSlaveFace.size();//スレーブ面
@@ -504,7 +502,7 @@ void CContactMesh::setupFaceConNode(CContactMesh *pProgConMesh)
             
             //ConNodeが自身のMeshに含まれているConNodeならば,MeshIDをセット
             if(pConNode->getRank()==myRank){
-                uint meshID= pConNode->getMeshID();
+                uiint meshID= pConNode->getMeshID();
                 pConFaceNode->setMeshID(meshID);
             }
 
@@ -542,7 +540,7 @@ void CContactMesh::addMasterFace(CSkinFace* pFace)
 void CContactMesh::addMasterFace(vector<CSkinFace*>& vface)
 {
     CSkinFace* pFace;
-    uint i, numOfFace(vface.size());
+    uiint i, numOfFace(vface.size());
     for(i=0; i< numOfFace; i++){
         pFace= vface[i];
         mvFace.push_back(pFace);
@@ -558,7 +556,7 @@ void CContactMesh::addSlaveFace(CSkinFace* pSlaveFace)
 void CContactMesh::addSlaveFace(vector<CSkinFace*>& vface)
 {
     CSkinFace* pFace;
-    uint i, numOfFace(vface.size());
+    uiint i, numOfFace(vface.size());
     for(i=0; i< numOfFace; i++){
         pFace= vface[i];
         mvSlaveFace.push_back(pFace);
@@ -574,10 +572,10 @@ void CContactMesh::setupSPointOnMFace()
 
     // Octreeによる検索
     //
-    uint maxLayer= mvKnot.size()-1;
-    uint numOfMaster= mvFace.size();
+    uiint maxLayer= mvKnot.size()-1;
+    uiint numOfMaster= mvFace.size();
     CSkinFace *pMFace;
-    uint imface;
+    uiint imface;
     
     ////debug
     //ofstream ofsd;
@@ -592,10 +590,10 @@ void CContactMesh::setupSPointOnMFace()
         //  Octreeのレイヤーを上げて,Octreeレイヤーを決定
         //
         CContactNode *pVertNode;
-        uint numOfVert= pMFace->getNumOfNode();
-        uint sum_knotID, knotID;
-        uint finalLayer(0);
-        uint iLayer, ivert;
+        uiint numOfVert= pMFace->getNumOfNode();
+        uiint sum_knotID, knotID;
+        uiint finalLayer(0);
+        uiint iLayer, ivert;
         for(iLayer=maxLayer; iLayer >= 0; iLayer--){
 
             sum_knotID =0;
@@ -613,14 +611,14 @@ void CContactMesh::setupSPointOnMFace()
         };
         //マスター面が全て入るOctreeKnot
         COctreeKnot *pKnot= mvKnot[finalLayer][knotID];
-        uint numOfSlaveNode= pKnot->getNumOfSlaveNode();
+        uiint numOfSlaveNode= pKnot->getNumOfSlaveNode();
         
         
         pMFace->CalcNzNormalVector();  //マスター面の面ベクトル(正規化)
         mBoundingBox.sizingOBB(pMFace);//BBox(マスター面サイズ)
 
         CContactNode* pConNode;
-        uint isnode;
+        uiint isnode;
         for(isnode=0; isnode< numOfSlaveNode; isnode++){
 
             pConNode= pKnot->getSlaveNode(isnode);
@@ -644,12 +642,12 @@ void CContactMesh::setupSPointOnMFace()
 //
 void CContactMesh::setupMPC_Coef()
 {
-    uint numOfMaster= mvFace.size();
+    uiint numOfMaster= mvFace.size();
     CSkinFace *pMFace;
-    uint imface;
+    uiint imface;
 
-    uint numOfSlave;
-    uint islave;
+    uiint numOfSlave;
+    uiint islave;
 
     for(imface=0; imface < numOfMaster; imface++){
 
@@ -684,9 +682,9 @@ void CContactMesh::setupMPC_Coef()
 // 
 // id からマスター面を返す.
 //
-CSkinFace* CContactMesh::getMasterFace_ID(const uint& id)
+CSkinFace* CContactMesh::getMasterFace_ID(const uiint& id)
 {
-    uint index= mmMasterFaceID2Index[id];
+    uiint index= mmMasterFaceID2Index[id];
 
     return mvFace[index];
 }
@@ -694,7 +692,7 @@ CSkinFace* CContactMesh::getMasterFace_ID(const uint& id)
 
 // 八分木全体の生成 (指定Layer数の八分木を生成)
 //
-void CContactMesh::generateOctree(const uint& maxLayer)
+void CContactMesh::generateOctree(const uiint& maxLayer)
 {
     //親八分木のサイズ
     double minX,maxX;
@@ -702,8 +700,8 @@ void CContactMesh::generateOctree(const uint& maxLayer)
     double minZ,maxZ;
     
     CContactNode *pConNode;
-    uint numOfConNode= mvConNode.size();
-    uint inode;
+    uiint numOfConNode= mvConNode.size();
+    uiint inode;
     for(inode=0; inode< numOfConNode; inode++){
 
         pConNode= mvConNode[inode];
@@ -743,7 +741,7 @@ void CContactMesh::generateOctree(const uint& maxLayer)
 
 
 
-    uint numOfMasterNode, numOfSlaveNode;
+    uiint numOfMasterNode, numOfSlaveNode;
     numOfMasterNode= mvMasterConNode.size();
     numOfSlaveNode= mvSlaveConNode.size();
 
@@ -773,13 +771,13 @@ void CContactMesh::generateOctree(const uint& maxLayer)
     mvKnot.resize(maxLayer+1);         //"maxLayer+1" 分のLayer数
     mvKnot[0].push_back(&moOctreeKnot);//Layer==0のKnotは,親Knotの1個
 
-    uint lastPos;
-    uint ilayer, prev_pos, child_pos;
+    uiint lastPos;
+    uiint ilayer, prev_pos, child_pos;
     // "maxLayer+1" ぶんのレイヤー数
     //
     for(ilayer=0; ilayer < maxLayer; ilayer++){
         
-        uint knotID(0); //nextKnotのID
+        uiint knotID(0); //nextKnotのID
 
         prevKnot= mvKnot[ilayer];      //プレブKnot
         lastPos= mvKnot[ilayer].size();//prevKnot ラストカウント
@@ -813,8 +811,8 @@ void CContactMesh::generateOctree(const uint& maxLayer)
 //
 void CContactMesh::deleteProgData()
 {
-    uint nNumOfFace;
-    uint iFace;
+    uiint nNumOfFace;
+    uiint iFace;
 
     nNumOfFace = mvFace.size();
     for(iFace=0; iFace < nNumOfFace; iFace++) mvFace[iFace]->deleteProgData();

@@ -14,10 +14,10 @@
 namespace pmw
 {
 
-CSolverBiCGSTAB::CSolverBiCGSTAB(int iter_max = 100,
+CSolverBiCGSTAB::CSolverBiCGSTAB(iint iter_max = 100,
 		double tolerance = 1.0e-8,
-		uint method = 1,
-		uint precondition = 1,
+		iint method = 1,
+		iint precondition = 1,
 		bool flag_iter_log = false,
 		bool flag_time_log = false)
 	: CSolver(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log)
@@ -30,13 +30,13 @@ CSolverBiCGSTAB::~CSolverBiCGSTAB()
 	// TODO Auto-generated destructor stub
 }
 
-int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
-		int iter_max, double tolerance,
+uiint CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
+		iint iter_max, double tolerance,
 		bool flag_iter_log, bool flag_time_log)
 {
 	double bnrm2_inv, snrm2;
 	double alpha, beta, omega, rho, rho_prev, resid;
-	int iter_precond; // TODO: class variable???
+	iint iter, iter_precond; // TODO: class variable???
 
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CSolverBiCGSTAB::doSolve1111 \n");
@@ -52,12 +52,12 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 	CAssyVector T (pX); //
 	CAssyVector V (pX); //
 
-	int len = pB->size();
+	uiint len = pB->size();
 
 	// {R} = {B} - [A] {X}
 	// {Rt} = {R}
 	pA->multVector(pX, &P);
-	for (int i = 0; i < len; i++) {
+	for (uiint i = 0; i < len; i++) {
 		R[i] = (*pB)[i] - P[i];
 		Rt[i] = R[i];
 	}
@@ -65,10 +65,10 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 	// calc 1 / |{B}|^2
 	bnrm2_inv = 1.0 / pB->norm2();
 
-	int itype = getPrecondition();
+	iint itype = getPrecondition();
 	pA->setupPreconditioner( itype ); // TODO: rewrite to pA->precond(pR, pZ);
 
-	for (int iter = 0; iter < getIterMax(); iter++) {
+	for (iter = 0; iter < getIterMax(); iter++) {
 
 		// rho = {Rt} {R}
 		rho = Rt.innerProd(&R);
@@ -80,11 +80,11 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 		//   {P} = {R}
 		if (iter > 0) {
 			beta = (rho * alpha) / (rho_prev * omega);
-			for (int i = 0; i < len; i++) {
+			for (uiint i = 0; i < len; i++) {
 				P[i] = R[i] + beta * (P[i] - omega * V[i]);
 			}
 		} else {
-			for (int i = 0; i < len; i++) {
+			for (uiint i = 0; i < len; i++) {
 				P[i] = R[i];
 			}
 		}
@@ -105,7 +105,7 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 		alpha = rho / Rt.innerProd(&V);
 
 		// {S} = {R} - alpha {V}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			S[i] = R[i] - alpha * V[i];
 		}
 
@@ -127,7 +127,7 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 
 		// {X} = {X} + alpha {Pt} + omega {St}
 		// {R} = {S} - omega {T}
-		for (int i = 0; i < len; i++) {
+		for (uiint i = 0; i < len; i++) {
 			(*pX)[i] += alpha * Pt[i] + omega * St[i];
 			R[i] = S[i] - omega * T[i];
 		}
@@ -141,9 +141,9 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 		// iteration history
 		if (getFlagIterLog()) {
 			// TODO: replace with logger
-			printf("%5d %16.6e\n", iter + 1, resid);
+			printf("%5ld %16.6e\n", iter + 1, resid);
 		}
-		printf("iteration:%5d, residue:%16.6e \n", iter + 1, resid);
+		printf("iteration:%5ld, residue:%16.6e \n", iter + 1, resid);
 		
 		// check convergence
 		if (resid < getTolerance()) break;
@@ -151,6 +151,8 @@ int CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssy
 		// rho_prev = rho
 		rho_prev = rho;
 	}
+	
+	if( iter == getIterMax() ) return 0;
 
 	// K.Matsubara 2010.03.31
 	P.subst(pX);

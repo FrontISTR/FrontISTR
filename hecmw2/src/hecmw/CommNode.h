@@ -20,7 +20,7 @@ public:
 protected:
     CNode* mpNode;
 
-    uint mLevel;
+    uiint mLevel;
 
 public:
     // root class Vertex
@@ -28,10 +28,10 @@ public:
     // 参照しているNode
     void   setNode(CNode* pNode){ mpNode= pNode;}
     CNode* getNode(){ return mpNode;}
-    uint&  getNodeID(){ return mpNode->getID();}
+    uiint&  getNodeID(){ return mpNode->getID();}
 
-    void setLevel(const uint& level){ mLevel= level;}
-    uint& getLevel(){ return mLevel;}
+    void setLevel(const uiint& level){ mLevel= level;}
+    uiint& getLevel(){ return mLevel;}
 };
 #endif	/* _COMMNODE_H */
 }

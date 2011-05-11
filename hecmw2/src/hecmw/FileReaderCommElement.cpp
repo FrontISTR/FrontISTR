@@ -24,14 +24,14 @@ CFileReaderCommElement::~CFileReaderCommElement()
 //
 bool CFileReaderCommElement::Read(ifstream& ifs, string& sLine)
 {
-    uint mgLevel(0);
+    uiint mgLevel(0);
 
-    uint  numOfCommElement, nMeshID, nCommMeshID, nMaxCommID, nMinCommID;
-    uint  nElementID;
+    uiint  numOfCommElement, nMeshID, nCommMeshID, nMaxCommID, nMinCommID;
+    uiint  nElementID;
     vuint vCommNodeID;
 
     string sElemType;
-    uint   nElemType;
+    uiint   nElemType;
 
     // CommElement
     if(TagCheck(sLine, FileBlockName::StartCommElement()) ){
@@ -62,7 +62,7 @@ bool CFileReaderCommElement::Read(ifstream& ifs, string& sLine)
 
             //各頂点のCommNodeID(CommMeshのノード・インデックス)
             vCommNodeID.clear();
-            uint ivert;
+            uiint ivert;
             switch(nElemType){
                 case(pmw::ElementType::Hexa):
                     vCommNodeID.resize(8);
@@ -107,7 +107,12 @@ bool CFileReaderCommElement::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderCommElement::Read_bin(ifstream& ifs)
+{
+    // 消去予定
+    mpLogger->Info(Utility::LoggerMode::Warn, "FileReaderCommElement Read_bin invalid method");
+    return false;
+}
 
 
 

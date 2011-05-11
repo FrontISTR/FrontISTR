@@ -21,7 +21,7 @@ CFileWriterElement::~CFileWriterElement()
 
 // method
 // --
-string CFileWriterElement::StrType(const uint& elem_type)
+string CFileWriterElement::StrType(const uiint& elem_type)
 {
     string sType;
 
@@ -76,7 +76,7 @@ string CFileWriterElement::StrType(const uint& elem_type)
 
     return sType;
 }
-void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterElement::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
    pmw::CAssyModel *pAssyModel;
    pmw::CMesh *pMesh;
@@ -86,9 +86,9 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
 
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
 
-   uint numOfPart= pAssyModel->getNumOfMesh();
-   uint numOfElem, numOfNode;
-   uint i,ii,iii;
+   uiint numOfPart= pAssyModel->getNumOfMesh();
+   uiint numOfElem, numOfNode;
+   uiint i,ii,iii;
    for(i=0; i< numOfPart; i++){
        pMesh= pAssyModel->getMesh(i);
 
@@ -116,7 +116,7 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
            //debug
            {
                ofs << ",Edge Node ";
-               uint numOfEdge,numOfFace, iedge, iface;
+               uiint numOfEdge,numOfFace, iedge, iface;
                numOfEdge= pElem->getEdgeInterNodeSize();
                for(iedge=0; iedge< numOfEdge; iedge++){
                    if(pElem->getEdgeInterNode(iedge)) ofs << pElem->getEdgeInterNode(iedge)->getID() << white;
@@ -136,20 +136,20 @@ void CFileWriterElement::Write(ofstream& ofs, const uint& mgLevel)
 
        pmw::CCommMesh *pCommMesh;
        pmw::CCommElement *pCommElem,*pDCommElem;
-       uint numOfCommMesh= pMesh->getNumOfCommMesh();
-       uint icom;
+       uiint numOfCommMesh= pMesh->getNumOfCommMesh();
+       uiint icom;
        for(icom=0; icom< numOfCommMesh; icom++){
            pCommMesh= pMesh->getCommMesh(icom);/////////////// <- 本来はCommID,修正の必要あり.
 
            ofs << " -- CommElement -- " << endl;
-           uint numOfCommElem= pCommMesh->getNumOfCommElement();
-           uint icomelem;
+           uiint numOfCommElem= pCommMesh->getNumOfCommElement();
+           uiint icomelem;
            for(icomelem=0; icomelem< numOfCommElem; icomelem++){
                pCommElem= pCommMesh->getCommElement(icomelem);
                ofs << "CommElem in ElemID => " << pCommElem->getElement()->getID() << endl;
            }
            ofs << " -- DCommElement -- " << endl;
-           uint numOfDCommElem= pCommMesh->getNumOfDCommElement();
+           uiint numOfDCommElem= pCommMesh->getNumOfDCommElement();
            for(icomelem=0; icomelem< numOfDCommElem; icomelem++){
                pDCommElem= pCommMesh->getDCommElement(icomelem);
                ofs << "DCommElem in ElemID => " << pDCommElem->getElement()->getID() << endl;

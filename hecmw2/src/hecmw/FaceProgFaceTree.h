@@ -22,19 +22,19 @@ public:
     ~CFaceProgFace();
 
 private:
-    uint mnHexaProgFace[6][4];//親の面番号-親の面構成頂点番号 =＞ 子の面番号
-    uint mnTetraProgFace[4][3];
-    uint mnPrismProgFace[5][4];
+    uiint mnHexaProgFace[6][4];//親の面番号-親の面構成頂点番号 =＞ 子の面番号
+    uiint mnTetraProgFace[4][3];
+    uiint mnPrismProgFace[5][4];
 
-    uint mnQuadProgFace[1][4];
-    uint mnTriangleProgFace[1][3];
+    uiint mnQuadProgFace[1][4];
+    uiint mnTriangleProgFace[1][3];
     
 public:
-    uint& getProgFace_Hexa(const uint& nFace, const uint& nFaceVert);
-    uint& getProgFace_Tetra(const uint& nFace, const uint& nFaceVert);
-    uint& getProgFace_Prism(const uint& nFace, const uint& nFaceVert);
-    uint& getProgFace_Quad(const uint& nFace, const uint& nFaceVert);
-    uint& getProgFace_Triangle(const uint& nFace, const uint& nFaceVert);
+    uiint& getProgFace_Hexa(const uiint& nFace, const uiint& nFaceVert);
+    uiint& getProgFace_Tetra(const uiint& nFace, const uiint& nFaceVert);
+    uiint& getProgFace_Prism(const uiint& nFace, const uiint& nFaceVert);
+    uiint& getProgFace_Quad(const uiint& nFace, const uiint& nFaceVert);
+    uiint& getProgFace_Triangle(const uiint& nFace, const uiint& nFaceVert);
 };
 #endif	/* FACEPROGFACETREE_H */
 }

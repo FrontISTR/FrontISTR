@@ -30,25 +30,25 @@ CBoundaryVolume::~CBoundaryVolume()
 
 
 // 辺に隣接するVolumeのIDをセット
-void CBoundaryVolume::setEdgeNeibVol(const uint& iedge, const uint& neibVolID)
+void CBoundaryVolume::setEdgeNeibVol(const uiint& iedge, const uiint& neibVolID)
 {
     mvEdgeNeibVol[iedge].push_back(neibVolID);
 }
 
 // 面に隣接するVolumeのIDをセット
-void CBoundaryVolume::setFaceNeibVol(const uint& iface, const uint& neibVolID)
+void CBoundaryVolume::setFaceNeibVol(const uiint& iface, const uiint& neibVolID)
 {
     mvFaceNeibVol[iface]= neibVolID;
 }
 
 // 辺のBNodeをセット
-void CBoundaryVolume::setEdgeBNode(const uint& iedge, CBoundaryNode* pBNode)
+void CBoundaryVolume::setEdgeBNode(const uiint& iedge, CBoundaryNode* pBNode)
 {
     mvEdgeBNode[iedge]= pBNode;
 }
 
 // 面のBNodeをセット
-void CBoundaryVolume::setFaceBNode(const uint& iface, CBoundaryNode* pBNode)
+void CBoundaryVolume::setFaceBNode(const uiint& iface, CBoundaryNode* pBNode)
 {
     mvFaceBNode[iface]= pBNode;
 }
@@ -148,7 +148,7 @@ void CBoundaryVolume::setVolBNode(CBoundaryNode* pBNode)
 // ----
 void CBoundaryVolume::distValue(CBoundaryVolume* pProgVol, const double& coef, const vuint& vDOF)
 {
-    uint idof, dof;
+    uiint idof, dof;
     double progValue;
 
     for(idof=0; idof < vDOF.size(); idof++){
@@ -165,7 +165,7 @@ void CBoundaryVolume::distValue(CBoundaryVolume* pProgVol, const double& coef, c
 // ----
 // BNodeセット: Hexa分割の子要素
 // ----
-uint CBoundaryVolume::dividHexa(const uint& iprog, CBoundaryVolume* pProgVol)
+uiint CBoundaryVolume::dividHexa(const uiint& iprog, CBoundaryVolume* pProgVol)
 {
     switch(iprog){
         case(0):
@@ -245,7 +245,7 @@ uint CBoundaryVolume::dividHexa(const uint& iprog, CBoundaryVolume* pProgVol)
 // ----
 // BNodeセット: Tetra分割の子要素
 // ----
-uint CBoundaryVolume::dividTetra(const uint& iprog, CBoundaryVolume* pProgVol)
+uiint CBoundaryVolume::dividTetra(const uiint& iprog, CBoundaryVolume* pProgVol)
 {
     switch(iprog){
         case(0):
@@ -289,7 +289,7 @@ uint CBoundaryVolume::dividTetra(const uint& iprog, CBoundaryVolume* pProgVol)
 // ----
 // BNodeセット: Prism分割の子要素
 // ----
-uint CBoundaryVolume::dividPrism(const uint& iprog, CBoundaryVolume* pProgVol)
+uiint CBoundaryVolume::dividPrism(const uiint& iprog, CBoundaryVolume* pProgVol)
 {
     switch(iprog){
         case(0):

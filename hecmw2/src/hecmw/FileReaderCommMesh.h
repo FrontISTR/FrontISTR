@@ -5,6 +5,7 @@
  * Created on 2009/09/17, 17:13
  */
 #include "FileReader.h"
+#include "FileReaderBinCheck.h" //入力ファイルとシステムのエンディアン相違判定
 
 namespace FileIO{
 #ifndef _FILEREADERCOMMMESH_H
@@ -16,6 +17,7 @@ public:
 
 public:
     virtual bool Read(ifstream& ifs, string& sline);
+    virtual bool Read_bin(ifstream& ifs);
 };
 #endif	/* _FILEREADERCOMMMESH_H */
 }

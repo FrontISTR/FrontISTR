@@ -22,7 +22,7 @@ public:
     virtual ~CBoundaryFace();
 
 protected:
-    uint mnElemFaceID;//エンティティID:Mesh-Element-Face-ID
+    uiint mnElemFaceID;//エンティティID:Mesh-Element-Face-ID
 
     //圧力(垂直荷重)
     //面方向の面力(粘性:Viscous Force)
@@ -37,28 +37,28 @@ protected:
 
 public:
     // 要素面ID(Face ID)
-    void setElementFaceID(const uint& id){ mnElemFaceID= id;}
-    uint& getElementFaceID(){ return mnElemFaceID;}
+    void setElementFaceID(const uiint& id){ mnElemFaceID= id;}
+    uiint& getElementFaceID(){ return mnElemFaceID;}
 
     // 面形状( Quad | Triangle )
-    void setBFaceShape(const uint& elemType);
-    uint& getBFaceShape(){ return mnShapeType;}
+    void setBFaceShape(const uiint& elemType);
+    uiint& getBFaceShape(){ return mnShapeType;}
 
-    virtual uint getNumOfVert();
+    virtual uiint getNumOfVert();
     
 protected:
     bool* mvbMarkingEdge;// 辺が使用済みか否か.
 
 public:
-    void markingEdge(const uint& iedge);
-    bool isMarkingEdge(const uint& iedge){ return mvbMarkingEdge[iedge];}
+    void markingEdge(const uiint& iedge);
+    bool isMarkingEdge(const uiint& iedge){ return mvbMarkingEdge[iedge];}
     
-    void setEdgeNeibFace(const uint& iedge, const uint& neibFaceID);
-    void setEdgeBNode(const uint& iedge, CBoundaryNode *pEdgeBNode);
+    void setEdgeNeibFace(const uiint& iedge, const uiint& neibFaceID);
+    void setEdgeBNode(const uiint& iedge, CBoundaryNode *pEdgeBNode);
 
-    uint getNumOfEdge();
-    PairBNode getPairBNode(const uint& iedge);
-    uint& getEdgeID(PairBNode& pairBNode);
+    uiint getNumOfEdge();
+    PairBNode getPairBNode(const uiint& iedge);
+    uiint& getEdgeID(PairBNode& pairBNode);
 
     void setFaceBNode(CBoundaryNode *pFaceBNode);
 
@@ -75,14 +75,14 @@ protected:
 
     
 public:
-    void refine(uint& countID, const vuint& vDOF);// 自身の再分割
+    void refine(uiint& countID, const vuint& vDOF);// 自身の再分割
     
     double& calcArea();//Faceの面積計算(境界値再配分の為)
     double& getArea(){ return mArea;}
 
     vector<CBoundaryFace*>& getProgParts(){ return mvProgBFace;}
 
-    void distDirichletVal(const uint& dof, const uint& mgLevel, const uint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+    void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
 
     void replaceEdgeBNode();//2次要素の場合、辺BNodeをmvBNodeに移設.
 

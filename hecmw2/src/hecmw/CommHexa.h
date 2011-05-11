@@ -18,8 +18,8 @@ public:
     //debug method
     virtual bool isTypeCoincidence();
 
-    virtual uint getShapeType(){ return ElementType::Hexa;}
-    virtual uint getBaseShapeType(){ return BaseElementType::Solid;}
+    virtual uiint getShapeType(){ return ElementType::Hexa;}
+    virtual uiint getBaseShapeType(){ return BaseElementType::Solid;}
 
 
     // prolongation

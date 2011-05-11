@@ -17,10 +17,10 @@ CFileWriterElementGroup::~CFileWriterElementGroup()
 }
 
 
-void CFileWriterElementGroup::Write(ofstream& ofs, const uint& mgLevel)
+void CFileWriterElementGroup::WriteDebug(ofstream& ofs, const uiint& mgLevel)
 {
-    uint iMesh, iGrp;
-    uint nNumOfMesh, nNumOfGrp;
+    uiint iMesh, iGrp;
+    uiint nNumOfMesh, nNumOfGrp;
 
     pmw::CAssyModel *pAssyModel = mpGMGModel->getAssyModel(mgLevel);
 
@@ -36,10 +36,10 @@ void CFileWriterElementGroup::Write(ofstream& ofs, const uint& mgLevel)
 
             ofs << "Element Group ID : " << pElemGrp->getID() << "  Name : " << pElemGrp->getName() << endl;
 
-            uint nNumOfElemID = pElemGrp->getNumOfElementID();
-            uint i;
+            uiint nNumOfElemID = pElemGrp->getNumOfElementID();
+            uiint i;
             for(i=0; i < nNumOfElemID; i++){
-                uint ElemID = pElemGrp->getElementID(i);
+                uiint ElemID = pElemGrp->getElementID(i);
 
                 ofs << ElemID << " ";
 

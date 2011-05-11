@@ -13,7 +13,7 @@ using namespace pmw;
 //
 CProgElementTree::CProgElementTree()
 {
-    uint ivert,iedge,iface,invalid;
+    uiint ivert,iedge,iface,invalid;
     invalid=9;//progElem(Hexa)の”最大頂点数+1” をInvalid Value とする
 
     mInvalidNum= invalid;//prolongationの頂点が無い配列に使用.
@@ -372,7 +372,7 @@ CProgElementTree::~CProgElementTree()
 }
 
 // 親の頂点番号=> 子の頂点番号
-uint& CProgElementTree::getVertProgVert(const uint& ivert, const uint& elemType)
+uiint& CProgElementTree::getVertProgVert(const uiint& ivert, const uiint& elemType)
 {
     switch(elemType){
         case(ElementType::Hexa):
@@ -404,7 +404,7 @@ uint& CProgElementTree::getVertProgVert(const uint& ivert, const uint& elemType)
 
 
 // 親の辺番号と子のアドレス(親の頂点番号) => 子供の頂点番号
-uint& CProgElementTree::getEdgeProgVert(const uint& iedge, const uint& child_address, const uint& elemType)
+uiint& CProgElementTree::getEdgeProgVert(const uiint& iedge, const uiint& child_address, const uiint& elemType)
 {
     switch(elemType){
         case(ElementType::Hexa):
@@ -435,7 +435,7 @@ uint& CProgElementTree::getEdgeProgVert(const uint& iedge, const uint& child_add
     return mProgVert;
 }
 
-uint& CProgElementTree::getFaceProgVert(const uint& iface, const uint& child_address, const uint& elemType)
+uiint& CProgElementTree::getFaceProgVert(const uiint& iface, const uiint& child_address, const uiint& elemType)
 {
     Utility::CLogger *pLogger= Utility::CLogger::Instance();
     
@@ -469,7 +469,7 @@ uint& CProgElementTree::getFaceProgVert(const uint& iface, const uint& child_add
     return mProgVert;
 }
 
-uint& CProgElementTree::getVolProgVert(const uint& child_address, const uint& elemType)
+uiint& CProgElementTree::getVolProgVert(const uiint& child_address, const uiint& elemType)
 {
     switch(elemType){
         case(ElementType::Hexa):

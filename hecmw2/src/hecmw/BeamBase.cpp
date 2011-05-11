@@ -8,7 +8,7 @@
 #include "ElementType.h"
 using namespace pmw;
 
-uint CBeamBase::mnBaseType = BaseElementType::Beam;
+uiint CBeamBase::mnBaseType = BaseElementType::Beam;
 //
 //
 CBeamBase::CBeamBase():CElement()

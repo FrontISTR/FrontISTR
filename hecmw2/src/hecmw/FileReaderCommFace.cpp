@@ -20,13 +20,13 @@ CFileReaderCommFace::~CFileReaderCommFace()
 
 bool CFileReaderCommFace::Read(ifstream& ifs, string& sLine)
 {
-    uint numOfCommFace;
-    uint comID, meshID;
-    uint elem_type, comm_face_id, elem_id, elem_ent_num;
+    uiint numOfCommFace;
+    uiint comID, meshID;
+    uiint elem_type, comm_face_id, elem_id, elem_ent_num;
     string sType;
     vuint vCommNodeID;
     
-    uint mgLevel(0);
+    uiint mgLevel(0);
     istringstream iss;
     if(TagCheck(sLine, FileBlockName::StartCommFace()) ){
         mpLogger->Info(Utility::LoggerMode::MWDebug, "FileReaderCommFace", sLine);
@@ -39,7 +39,7 @@ bool CFileReaderCommFace::Read(ifstream& ifs, string& sLine)
 
             iss >> comID >> meshID >> numOfCommFace;
 
-            uint iface;
+            uiint iface;
             for(iface=0; iface< numOfCommFace; iface++){
                 sLine= getLineSt(ifs);
                 iss.clear();
@@ -89,7 +89,10 @@ bool CFileReaderCommFace::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderCommFace::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

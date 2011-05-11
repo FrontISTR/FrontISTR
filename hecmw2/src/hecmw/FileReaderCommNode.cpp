@@ -25,10 +25,10 @@ CFileReaderCommNode::~CFileReaderCommNode()
 //
 bool CFileReaderCommNode::Read(ifstream& ifs, string& sLine)
 {
-    uint numOfNode, nCommMeshID, maxID, minID;
-    uint nCommNodeID, nMeshID, nNodeID, nRank;
+    uiint numOfNode, nCommMeshID, maxID, minID;
+    uiint nCommNodeID, nMeshID, nNodeID, nRank;
 
-    uint  mgLevel(0); // MultiGrid Level==0 ::ファイル入力時は 0
+    uiint  mgLevel(0); // MultiGrid Level==0 ::ファイル入力時は 0
 
     // CommMesh内のmvNode => MeshのNodeを取得してセット
     if(TagCheck(sLine, FileBlockName::StartCommNode()) ){
@@ -65,7 +65,10 @@ bool CFileReaderCommNode::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderCommNode::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

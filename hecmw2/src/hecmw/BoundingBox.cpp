@@ -46,8 +46,8 @@ CBoundingBox::~CBoundingBox()
 //
 void CBoundingBox::sizingABB(CSkinFace* pFace)
 {
-    uint numOfVert= pFace->getNumOfNode();
-    uint ivert;
+    uiint numOfVert= pFace->getNumOfNode();
+    uiint ivert;
     CContactNode* pConNode;
     // 初期値
     pConNode= pFace->getNode(0);
@@ -75,9 +75,9 @@ void CBoundingBox::sizingABB(CSkinFace* pFace)
 bool CBoundingBox::judgeABB(CSkinFace* pFace)
 {
     CContactNode* pConNode;
-    uint numOfConNode= pFace->getNumOfNode();
+    uiint numOfConNode= pFace->getNumOfNode();
     
-    uint icnode;
+    uiint icnode;
     bool bCheck(true);//初期値：TRUE
     for(icnode=0; icnode< numOfConNode; icnode++){
         pConNode= pFace->getNode(icnode);
@@ -122,8 +122,8 @@ bool CBoundingBox::judgeABB(CContactNode* pConNode)
 void CBoundingBox::sizingOBB(CSkinFace* pFace)
 {
     //OBB 中心点
-    uint numOfVert= pFace->getNumOfNode();
-    uint ivert;
+    uiint numOfVert= pFace->getNumOfNode();
+    uiint ivert;
     CContactNode* pConNode;
     mvOBBCenter[0]=0.0; mvOBBCenter[1]=0.0; mvOBBCenter[2]=0.0;
     for(ivert=0; ivert< numOfVert; ivert++){

@@ -29,7 +29,7 @@ CCommBeam::CCommBeam()
 
     mvbNodeIXCheck = new bool[2];
     mvbDNodeMarking = new bool[2];
-    uint i;
+    uiint i;
     for(i=0; i< 2; i++){
         mvbNodeIXCheck[i]=false;
         mvbDNodeMarking[i]=false;

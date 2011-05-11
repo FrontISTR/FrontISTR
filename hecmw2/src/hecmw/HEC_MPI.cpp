@@ -7,6 +7,7 @@
 //                  2009.08.24
 //                  k.Takeda
 #include "HEC_MPI.h"
+#include "Logger.h"
 using namespace pmw;
 
 // construct & destruct
@@ -26,18 +27,25 @@ void CHecMPI::Initialize(int argc, char** argv)
 {
 #ifdef HAVE_MPI
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &numOfProcess);
+    MPI_Comm_size(MPI_COMM_WORLD, &nNumOfProcess);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+    vstring vMessage; vMessage.resize(2);
+    vuint   vNumber;  vNumber.resize(2);
+
+    vMessage[0]= "MPI Initialize : PE "; vNumber[0]= myRank;
+    vMessage[1]= " Number of Process ";  vNumber[1]= nNumOfProcess;
+
+    //--------------------   Message   -----------------------
+    //  "MPI Initialize : PE "  ## "Number of Process"  ##
+    //--------------------------------------------------------
+    Utility::CLogger *pLogger= Utility::CLogger::Instance();
+    pLogger->Info(Utility::LoggerMode::Info, vMessage, vNumber);
 #else
-    numOfProcess = 1;
+    nNumOfProcess = 1;
     myRank = 0;
 #endif
-
-    //debug
-    std::cout << " myRank => " << myRank << ",number of process => " << numOfProcess << std::endl;
 }
-// 終了処理
-//
 void CHecMPI::Finalize()
 {
 #ifdef HAVE_MPI
@@ -220,6 +228,16 @@ int CHecMPI::Scatter(void* sendbuf, int sendcnt, MPI_Datatype sendtype,
     return MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 #else
     recvbuf = sendbuf;
+    return 0;
+#endif
+}
+
+int CHecMPI::Bcast(void* buf, int cnt, MPI_Datatype type, int root, MPI_Comm comm)
+{
+#ifdef HAVE_MPI
+    return MPI_Bcast(buf, cnt, type, root, comm);
+#else
+    buf = buf;
     return 0;
 #endif
 }

@@ -30,7 +30,7 @@ CSkinFace::~CSkinFace()
 
 // Shape(形状タイプ) => 辺ノード,隣接Face配列のresize()
 //
-void CSkinFace::setShapeType(const uint& shapeType)
+void CSkinFace::setShapeType(const uiint& shapeType)
 {
     Utility::CLogger *pLogger;
 
@@ -91,7 +91,7 @@ void CSkinFace::setShapeType(const uint& shapeType)
     ////debug
     //cout << "construct SkinFace, number of edge = " << mNumOfEdge << endl;
 
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge< mNumOfEdge; iedge++){
         mvbEdgeMarking[iedge]=false;
     };
@@ -101,7 +101,7 @@ void CSkinFace::setShapeType(const uint& shapeType)
 //
 // 頂点数
 //
-uint CSkinFace::getNumOfVert()
+uiint CSkinFace::getNumOfVert()
 {
     switch(mShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
@@ -120,11 +120,11 @@ uint CSkinFace::getNumOfVert()
 // --
 // 直接,辺番号を指定してセットする
 //
-void CSkinFace::setEdgeFace(CSkinFace* pFace, const uint& iedge)
+void CSkinFace::setEdgeFace(CSkinFace* pFace, const uiint& iedge)
 {
     mvEdgeFace[iedge]= pFace;
 }
-void CSkinFace::setEdgeConNode(CContactNode* pEdgeConNode, const uint& iedge)
+void CSkinFace::setEdgeConNode(CContactNode* pEdgeConNode, const uiint& iedge)
 {
     mvEdgeNode[iedge]= pEdgeConNode;
     mvbEdgeMarking[iedge]= true;
@@ -134,12 +134,12 @@ void CSkinFace::setEdgeConNode(CContactNode* pEdgeConNode, const uint& iedge)
 // Refineの為の辺ノードと隣接SkinFace 
 // 両端のContactNodeを指定してセットする== 隣接するSkinFaceからの両端ノード情報から,セットする辺を特定
 // --
-uint& CSkinFace::getEdgeIndex(PairConNode& pairConNode)
+uiint& CSkinFace::getEdgeIndex(PairConNode& pairConNode)
 {
     //pConNode0,pConNode1のインデックス番号から辺番号を特定
-    uint localNum0, localNum1;
-    uint nNumOfVert = getNumOfVert();
-    uint icnode;
+    uiint localNum0, localNum1;
+    uiint nNumOfVert = getNumOfVert();
+    uiint icnode;
     
     //cout << "SkinFace::getEdgeIndex(PairConNode& ), first=" << pairConNode.first->getID() << ", secont=" << pairConNode.second->getID() << endl;
     
@@ -173,7 +173,7 @@ void CSkinFace::setEdgeFace(CSkinFace* pFace, PairConNode& pairConNode)
 {
     //cout << "SkinFace::setEdgeFace(CSkinFace*, PairConNode& ), --------- "  << endl;
 
-    uint edgeNum= getEdgeIndex(pairConNode);
+    uiint edgeNum= getEdgeIndex(pairConNode);
     
     //cout << "SkinFace::setEdgeFace(CSkinFace*, PairConNode& ), edgeNum=" << edgeNum << endl;
 
@@ -181,30 +181,30 @@ void CSkinFace::setEdgeFace(CSkinFace* pFace, PairConNode& pairConNode)
 }
 void CSkinFace::setEdgeConNode(CContactNode* pEdgeConNode, PairConNode& pairConNode)
 {
-    uint edgeNum= getEdgeIndex(pairConNode);
+    uiint edgeNum= getEdgeIndex(pairConNode);
     
     mvEdgeNode[edgeNum]= pEdgeConNode;
 }
 bool CSkinFace::isEdgeNodeMarking(PairConNode& pairConNode)
 {
-    uint edgeNum= getEdgeIndex(pairConNode);
+    uiint edgeNum= getEdgeIndex(pairConNode);
     return mvbEdgeMarking[edgeNum];
 }
 void CSkinFace::markingEdgeNode(PairConNode& pairConNode)
 {
-    uint edgeNum= getEdgeIndex(pairConNode);
+    uiint edgeNum= getEdgeIndex(pairConNode);
 
     mvbEdgeMarking[edgeNum]= true;
 }
 
 
-PairConNode CSkinFace::getEdgePairNode(const uint& iedge)
+PairConNode CSkinFace::getEdgePairNode(const uiint& iedge)
 {
     PairConNode pairConNode;
     Utility::CLogger *pLogger;
 
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
-    uint* vertNum;
+    uiint* vertNum;
     switch(mShapeType){
         case(ElementType::Quad):case(ElementType::Quad2):
             vertNum= pEdgeTree->getQuadLocalNodeNum(iedge);
@@ -233,7 +233,7 @@ PairConNode CSkinFace::getEdgePairNode(const uint& iedge)
 //
 CContactNode* CSkinFace::getEdgeConNode(PairConNode& pairConNode)
 {
-    uint edgeNum= getEdgeIndex(pairConNode);
+    uiint edgeNum= getEdgeIndex(pairConNode);
 
     return mvEdgeNode[edgeNum];
 }
@@ -253,7 +253,7 @@ CSkinFace* CSkinFace::generateFace()
 // progFaceへ,ElementのNodeIDをセットする.
 //  -> refine()で要素の面IDをセットした後で呼び出す.
 //
-void CSkinFace::setupNodeID_progFace(CElement* pElem, const uint& numOfVert)
+void CSkinFace::setupNodeID_progFace(CElement* pElem, const uiint& numOfVert)
 {
     CNode *pFaceNode;
     // * 面中心ノードへMeshのNodeIDをセット
@@ -270,7 +270,7 @@ void CSkinFace::setupNodeID_progFace(CElement* pElem, const uint& numOfVert)
 //
 // 辺に生成されたConNodeへ,メッシュのNodeIDをセット
 //
-void CSkinFace::setupEdgeNodeID(CElement* pElem, const uint& numOfVert)
+void CSkinFace::setupEdgeNodeID(CElement* pElem, const uiint& numOfVert)
 {
     // * 辺中間ノードへMeshのNodeIDをセット
     // -----------------------------------------------------
@@ -279,9 +279,9 @@ void CSkinFace::setupEdgeNodeID(CElement* pElem, const uint& numOfVert)
     //    -> 辺の中間Nodeを取得
     //     -> 辺中間NodeのIDを取得して自身の辺中間ConNodeにセット
     // -----------------------------------------------------
-    uint ivert,nvert;
-    uint vnodeID[2];
-    uint elemEdgeIndex;
+    uiint ivert,nvert;
+    uiint vnodeID[2];
+    uiint elemEdgeIndex;
     CNode *pEdgeNode;
 
     for(ivert=0; ivert< numOfVert; ivert++){
@@ -304,7 +304,7 @@ void CSkinFace::setupEdgeNodeID(CElement* pElem, const uint& numOfVert)
 // --------
 void CSkinFace::setupNodeID_2nd_LastLevel(CElement* pElem)
 {
-    uint numOfVert = this->getNumOfVert();
+    uiint numOfVert = this->getNumOfVert();
     // * 辺中間ノードへMeshのNodeIDをセット
     //
     setupEdgeNodeID(pElem, numOfVert);
@@ -312,16 +312,16 @@ void CSkinFace::setupNodeID_2nd_LastLevel(CElement* pElem)
 
 // Faceの"再分割" -> SkinFace(スレーブ面)を分割して再生産
 // 
-void CSkinFace::refine(CElement *pElem, uint& faceID)
+void CSkinFace::refine(CElement *pElem, uiint& faceID)
 {
     CElement *pProgElem;//要素から分割された子要素
-    uint nodeID;//要素のNodeID
-    uint localNum;//要素の局所ノード番号
+    uiint nodeID;//要素のNodeID
+    uiint localNum;//要素の局所ノード番号
     
-    uint numOfVert;//setupNodeID_progFace()用途
+    uiint numOfVert;//setupNodeID_progFace()用途
     CNode *pEdgeNode; //BeamのNodeIDセットアップ用途
     
-    uint iprog;
+    uiint iprog;
     CSkinFace* pFace;
     switch(mShapeType){
         //---
@@ -627,13 +627,13 @@ void CSkinFace::addSlaveNode(CContactNode* pConNode)
     //警告メッセージ
     pLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::addSlaveNode");
 }
-void CSkinFace::CalcSlave(const uint& islave, const uint& valType)
+void CSkinFace::CalcSlave(const uiint& islave, const uiint& valType)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();//Loggerのインスタンス
     //警告メッセージ
     pLogger->Info(Utility::LoggerMode::Warn, "invalid method CSkinFace::CalcSlave");
 }
-double& CSkinFace::getCoef(const uint& slaveID, const uint& ivert)
+double& CSkinFace::getCoef(const uiint& slaveID, const uiint& ivert)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();//Loggerのインスタンス
     //警告メッセージ
@@ -659,13 +659,13 @@ void CSkinFace::deleteProgData()
 void CSkinFace::replaceEdgeNode()
 {
     if(mnOrder==ElementOrder::Second){
-        uint nNumOfVert;
+        uiint nNumOfVert;
         if(mNumOfEdge==4) nNumOfVert=4;
         if(mNumOfEdge==3) nNumOfVert=3;
         if(mNumOfEdge==1) nNumOfVert=2;
         if(mNumOfEdge==0) nNumOfVert=1;
 
-        for(uint iedge=0; iedge < mNumOfEdge; iedge++){
+        for(uiint iedge=0; iedge < mNumOfEdge; iedge++){
             mvConNode[nNumOfVert + iedge] = mvEdgeNode[iedge];
         };
     }

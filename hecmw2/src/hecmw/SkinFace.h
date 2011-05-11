@@ -33,14 +33,14 @@ public:
     virtual ~CSkinFace();
 
 protected:
-    uint mID;//SkinFace固有のID
-    uint mRank;//SkinFaceのrank
-    uint mLevel;//MG Level
+    uiint mID;//SkinFace固有のID
+    uiint mRank;//SkinFaceのrank
+    uiint mLevel;//MG Level
 
     bool mbSelfDom;//Mesh自身の計算領域内のSkinFaceか.
-    uint mMeshID;//Faceが所属するMeshID
-    uint mElementID;    //Faceが所属する要素ID
-    uint mElementFaceID;//要素のFace番号(局所番号)
+    uiint mMeshID;//Faceが所属するMeshID
+    uiint mElementID;    //Faceが所属する要素ID
+    uiint mElementFaceID;//要素のFace番号(局所番号)
 
     // 面の構成ContactNode
     vector<CContactNode*> mvConNode;
@@ -52,7 +52,7 @@ protected:
 
     vector<CSkinFace*>    mvEdgeFace;//辺に隣接するSkinFace,<<<<<<<<<<<<<-自分自身は除外.
 
-    uint& getEdgeIndex(PairConNode& pairConNode);//両端のノードから辺番号を特定
+    uiint& getEdgeIndex(PairConNode& pairConNode);//両端のノードから辺番号を特定
 
     // 面中心のContactNode (Refine用途)
     CContactNode *mpFaceNode;
@@ -61,10 +61,10 @@ protected:
     vector<CSkinFace*> mvProgFace;
 
     // Shape(形状タイプ)
-    uint mNumOfEdge;
-    uint mShapeType;//ElementTypeによる定数
+    uiint mNumOfEdge;
+    uiint mShapeType;//ElementTypeによる定数
 
-    uint mnOrder;//1次｜2次 次数
+    uiint mnOrder;//1次｜2次 次数
 
     // refine()からコールされる関数
     // --
@@ -79,16 +79,16 @@ public:
     virtual const char* getName(){return "SkinFace";}
 
     //Level
-    void setLevel(const uint& level){ mLevel= level;}
-    uint& getLevel(){ return mLevel;}
+    void setLevel(const uiint& level){ mLevel= level;}
+    uiint& getLevel(){ return mLevel;}
 
     //SkinFaceのrank
-    void setRank(const uint& rank){ mRank= rank;}
-    uint& getRank(){ return mRank;}
+    void setRank(const uiint& rank){ mRank= rank;}
+    uiint& getRank(){ return mRank;}
 
     //SkinFace固有のID
-    void setID(const uint& id){ mID= id;}
-    uint& getID(){ return mID;}
+    void setID(const uiint& id){ mID= id;}
+    uiint& getID(){ return mID;}
 
     // 所属Mesh-Element-ElemFace関連
     // 
@@ -96,36 +96,36 @@ public:
     bool isSelf(){ return mbSelfDom;}   //計算領域内に存在するSkinFaceか？
     
     // 所属MeshID
-    void setMeshID(const uint& meshID){ mMeshID= meshID;}
-    uint& getMeshID(){ return mMeshID;}
+    void setMeshID(const uiint& meshID){ mMeshID= meshID;}
+    uiint& getMeshID(){ return mMeshID;}
     // 所属要素のID
-    void  setElementID(const uint& id){ mElementID = id;}
-    uint& getElementID(){ return mElementID;}
+    void  setElementID(const uiint& id){ mElementID = id;}
+    uiint& getElementID(){ return mElementID;}
     // 面番号
-    void  setFaceID(const uint& faceID){ mElementFaceID= faceID;}
-    uint& getFaceID(){ return mElementFaceID;}
+    void  setFaceID(const uiint& faceID){ mElementFaceID= faceID;}
+    uiint& getFaceID(){ return mElementFaceID;}
 
 
     // Face構成のノード
     // --
-    void resizeNode(const uint& size){  mvConNode.resize(size);}
+    void resizeNode(const uiint& size){  mvConNode.resize(size);}
     void addNode(CContactNode* pConNode){ mvConNode.push_back(pConNode);}
-    void setNode(CContactNode* pConNode, const uint& index){ mvConNode[index] = pConNode;}
+    void setNode(CContactNode* pConNode, const uiint& index){ mvConNode[index] = pConNode;}
     void setNode(vector<CContactNode*>& vConNode){ mvConNode = vConNode;} // "="代入と同じ
     void operator=(vector<CContactNode*>& vConNode){ mvConNode = vConNode;}// ":=" setNode(vNode)
 
-    uint   getNumOfNode() { return mvConNode.size();}
+    uiint   getNumOfNode() { return mvConNode.size();}
     vector<CContactNode*>&  getNodes(){ return mvConNode;}
-    CContactNode*  getNode(const uint& index){ return mvConNode[index];}
+    CContactNode*  getNode(const uiint& index){ return mvConNode[index];}
 
 
     // 形状タイプ
     // --
-    void setShapeType(const uint& shapeType);
-    uint& getShapeType(){ return mShapeType;}
-    uint& getNumOfEdge(){ return mNumOfEdge;}
-    uint  getNumOfVert();
-    uint& getOrder(){ return mnOrder;}
+    void setShapeType(const uiint& shapeType);
+    uiint& getShapeType(){ return mShapeType;}
+    uiint& getNumOfEdge(){ return mNumOfEdge;}
+    uiint  getNumOfVert();
+    uiint& getOrder(){ return mnOrder;}
     
 
 
@@ -136,37 +136,37 @@ public:
     // <> MasterFace,SkinFaceともにSkinFace*で扱う.
     // --
     virtual void addSlaveNode(CContactNode* pConNode);// スレーブ点の追加, 警告メッセージあり
-    virtual CContactNode* getSlaveNode(const uint& index){ return NULL;}
-    virtual uint getNumOfSlaveNode(){ return 0;}
-    virtual void CalcSlave(const uint& islave, const uint& valType);// EQUATION::マスター面の値 => スレーブ点の値, SkinFaceなので警告メッセージあり
-    virtual double& getCoef(const uint& slaveID, const uint& ivert);
+    virtual CContactNode* getSlaveNode(const uiint& index){ return NULL;}
+    virtual uiint getNumOfSlaveNode(){ return 0;}
+    virtual void CalcSlave(const uiint& islave, const uiint& valType);// EQUATION::マスター面の値 => スレーブ点の値, SkinFaceなので警告メッセージあり
+    virtual double& getCoef(const uiint& slaveID, const uiint& ivert);
     
     
     // Refine関連(Refineのための辺ノード設置)
     // --
-    PairConNode getEdgePairNode(const uint& iedge);
+    PairConNode getEdgePairNode(const uiint& iedge);
     void setEdgeFace(CSkinFace* pFace, PairConNode& pairConNode);//隣接するSkinFaceのセット
-    void setEdgeFace(CSkinFace* pFace, const uint& iedge);       //隣接するSkinFaceのセット
+    void setEdgeFace(CSkinFace* pFace, const uiint& iedge);       //隣接するSkinFaceのセット
     void setEdgeConNode(CContactNode* pEdgeConNode, PairConNode& pairConNode);//mvEdgeNode:辺ノード(ContactNode)のセット
-    void setEdgeConNode(CContactNode* pEdgeConNode, const uint& iedge);       //mvEdgeNode:辺ノード(ContactNode)のセット
-    bool isEdgeNodeMarking(const uint& iedge){ return mvbEdgeMarking[iedge];}
+    void setEdgeConNode(CContactNode* pEdgeConNode, const uiint& iedge);       //mvEdgeNode:辺ノード(ContactNode)のセット
+    bool isEdgeNodeMarking(const uiint& iedge){ return mvbEdgeMarking[iedge];}
     bool isEdgeNodeMarking(PairConNode& pairConNode);
-    void markingEdgeNode(const uint& iedge){ mvbEdgeMarking[iedge]=true;}
+    void markingEdgeNode(const uiint& iedge){ mvbEdgeMarking[iedge]=true;}
     void markingEdgeNode(PairConNode& pairConNode);
     void setFaceConNode(CContactNode* pFaceConNode){ mpFaceNode= pFaceConNode;}//mpFaceNode:面中心ノード(ContactNode)のセット
 
-    CContactNode* getEdgeConNode(const uint& iedge){ return mvEdgeNode[iedge];}
+    CContactNode* getEdgeConNode(const uiint& iedge){ return mvEdgeNode[iedge];}
     CContactNode* getEdgeConNode(PairConNode& pairConNode);
     CContactNode* getFaceConNode(){ return mpFaceNode;}
     
     vector<CSkinFace*>& getProgFace(){ return mvProgFace;}
-    CSkinFace* getProgFace(const uint& ivert){ return mvProgFace[ivert];}
-    void refine(CElement* pElem, uint& faceID);////MasterFace, SlaveFaceの"再分割"
+    CSkinFace* getProgFace(const uiint& ivert){ return mvProgFace[ivert];}
+    void refine(CElement* pElem, uiint& faceID);////MasterFace, SlaveFaceの"再分割"
 protected:
     //辺,面に生成されたConNodeへ,メッシュのNodeIDをセットする(対象：progFace)
-    void setupNodeID_progFace(CElement* pElem, const uint& numOfVert);
+    void setupNodeID_progFace(CElement* pElem, const uiint& numOfVert);
     //辺に生成されたConNodeへ,メッシュのNodeIDをセット
-    void setupEdgeNodeID(CElement* pElem, const uint& numOfVert);
+    void setupEdgeNodeID(CElement* pElem, const uiint& numOfVert);
 public:
     //辺に生成されたConNodeへ、メッシュのNodeIDをセットする(2次要素+最終Level専用) (対象：自身)
     void setupNodeID_2nd_LastLevel(CElement* pElem);

@@ -8,12 +8,12 @@
 #include "Tetra.h"
 using namespace pmw;
 
-uint CTetra::mnElemType = ElementType::Tetra;
-uint CTetra::mnElemOrder = 1;
-uint CTetra::mNumOfFace = 4;
-uint CTetra::mNumOfEdge = 6;
-uint CTetra::mNumOfNode = 4;
-uint CTetra::mNumOfVert = 4;
+uiint CTetra::mnElemType = ElementType::Tetra;
+uiint CTetra::mnElemOrder = 1;
+uiint CTetra::mNumOfFace = 4;
+uiint CTetra::mNumOfEdge = 6;
+uiint CTetra::mNumOfNode = 4;
+uiint CTetra::mNumOfVert = 4;
 
 // construct & destruct
 //
@@ -37,7 +37,7 @@ void CTetra::initialize()
     mvEdgeInterNode.resize(mNumOfEdge);
 
     mvb_edge = new bool[mNumOfEdge];
-    uint i;
+    uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
@@ -68,21 +68,21 @@ void CTetra::initialize()
     };
 }
 
-const uint& CTetra::getType()
+const uiint& CTetra::getType()
 {
     return mnElemType;
 }
-const uint& CTetra::getOrder()
+const uiint& CTetra::getOrder()
 {
     return mnElemOrder;
 }
 
 
-bool CTetra::IndexCheck(const uint& propType, const uint& index, string& method_name)
+bool CTetra::IndexCheck(const uiint& propType, const uiint& index, string& method_name)
 {
     Utility::CLogger *pLogger = Utility::CLogger::Instance();
 
-    uint numOfProp;
+    uiint numOfProp;
     switch(propType){
         case(ElementPropType::Face):
             numOfProp = mNumOfFace;
@@ -109,7 +109,7 @@ bool CTetra::IndexCheck(const uint& propType, const uint& index, string& method_
 
 // out:(PariNode edgeNode)
 //
-PairNode CTetra::getPairNode(const uint& iedge)
+PairNode CTetra::getPairNode(const uiint& iedge)
 {
     PairNode pairNode;
 
@@ -149,7 +149,7 @@ PairNode CTetra::getPairNode(const uint& iedge)
 
 // out:(vint& pairNodeIndex) -> pair Node index num.
 //
-void CTetra::getPairNode(vint& pairNodeIndex, const uint& iedge)
+void CTetra::getPairNode(vint& pairNodeIndex, const uiint& iedge)
 {
     switch(iedge){
         //surf 0 (low surf)
@@ -186,9 +186,9 @@ void CTetra::getPairNode(vint& pairNodeIndex, const uint& iedge)
 
 // (局所ノード番号、局所ノード番号)に対応した、辺(Edge)番号
 //
-uint& CTetra::getEdgeIndex(CNode* pNode0, CNode* pNode1)
+uiint& CTetra::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 {
-    uint id0, id1;//MeshでのノードのIndex番号
+    uiint id0, id1;//MeshでのノードのIndex番号
     id0 = pNode0->getID();
     id1 = pNode1->getID();
     
@@ -196,7 +196,7 @@ uint& CTetra::getEdgeIndex(CNode* pNode0, CNode* pNode1)
 
     return edgeTree->getTetraEdgeIndex(mmIDLocal[id0], mmIDLocal[id1]);//Tetra Edge Tree
 }
-uint& CTetra::getEdgeIndex(const uint& nodeID_0, const uint& nodeID_1)
+uiint& CTetra::getEdgeIndex(const uiint& nodeID_0, const uiint& nodeID_1)
 {
     CEdgeTree *pEdgeTree= CEdgeTree::Instance();
 
@@ -226,7 +226,7 @@ bool CTetra::isEdgeElem(CNode* pNode0, CNode* pNode1)
 
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Tetra edge tree
 
     //debug
@@ -242,7 +242,7 @@ void CTetra::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
     //vuint vLocalNum = getLocalNodeNum(pNode0, pNode1);
 
     // Edgeに要素集合が作られているか? のbool値を返す
-    uint edgeNum;
+    uiint edgeNum;
     edgeNum = getEdgeIndex(pNode0, pNode1);//Tetra edge tree
 
     mvb_edge[edgeNum]=true;// スタンプ
@@ -251,7 +251,7 @@ void CTetra::setBoolEdgeElem(CNode* pNode0, CNode* pNode1)
 
 // 局所ノード番号から、局所Face番号へ変換
 //
-uint& CTetra::getLocalFaceNum(const vuint& vLocalNodeNum)
+uiint& CTetra::getLocalFaceNum(const vuint& vLocalNodeNum)
 {
     CFaceTree *pFaceTree = CFaceTree::Instance();
     
@@ -260,7 +260,7 @@ uint& CTetra::getLocalFaceNum(const vuint& vLocalNodeNum)
 
 // 3個のノードから面番号を取得
 //
-uint& CTetra::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
+uiint& CTetra::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 {
     // 面構成ノード -> 局所ノード番号
     // 局所ノード番号 -> 面番号==iface
@@ -278,7 +278,7 @@ uint& CTetra::getFaceIndex(CNode* pNode0, CNode* pNode1, CNode* pNode2)
 
 // 2 Edge -> Face Index
 //
-uint& CTetra::getFaceIndex(const uint& edge0, const uint& edge1)
+uiint& CTetra::getFaceIndex(const uiint& edge0, const uiint& edge1)
 {
     CEdgeFaceTree *pEdgeFace = CEdgeFaceTree::Instance();
 
@@ -287,16 +287,16 @@ uint& CTetra::getFaceIndex(const uint& edge0, const uint& edge1)
 
 // Face構成Node
 //
-vector<CNode*> CTetra::getFaceCnvNodes(const uint& iface)
+vector<CNode*> CTetra::getFaceCnvNodes(const uiint& iface)
 {
     // Face構成のノード・コネクティビティ
     //
     CFaceTree *faceTree = CFaceTree::Instance();
-    uint* faceConnectivity;
+    uiint* faceConnectivity;
 
     CNode *pNode;
     vector<CNode*> vFaceCnvNode;
-    uint ivert, index;
+    uiint ivert, index;
     
     vFaceCnvNode.resize(3);
     faceConnectivity= faceTree->getLocalNodeTetraFace(iface);//iFaceのコネクティビティ
@@ -320,14 +320,14 @@ vector<CNode*> CTetra::getConnectNode(CNode* pNode)
     vector<CNode*> vNode;
     vNode.reserve(3);
 
-    uint gID= pNode->getID();
-    uint localID= mmIDLocal[gID];
+    uiint gID= pNode->getID();
+    uiint localID= mmIDLocal[gID];
 
     CNodeConnectNodeTree *pConnTree = CNodeConnectNodeTree::Instance();
     vuint vLocalID;
     vLocalID= pConnTree->getTetraConnectNode(localID);
 
-    uint i;
+    uiint i;
     for(i=0; i< 3; i++){
         localID= vLocalID[i];
         vNode.push_back(mvNode[localID]);
@@ -344,7 +344,7 @@ vector<CNode*> CTetra::getConnectNode(CNode* pNode)
 void CTetra::deleteProgData()
 {
     // Edge
-    uint iedge;
+    uiint iedge;
     for(iedge=0; iedge < mNumOfEdge; iedge++){
         vector<CElement*>().swap(mvvEdgeElement[iedge]);
     };

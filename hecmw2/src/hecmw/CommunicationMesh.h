@@ -42,12 +42,12 @@ public:
     virtual ~CCommMesh();
     
 protected:
-    uint mCommID;//Meshが管理する通信領域番号(CommMesh自身の番号:CommunicationID)
-    uint mRankID;//CommMeshが属する,計算領域のID
+    uiint mCommID;//Meshが管理する通信領域番号(CommMesh自身の番号:CommunicationID)
+    uiint mRankID;//CommMeshが属する,計算領域のID
     
     // 通信領域は,1対1になるように定義されている
     // --
-    uint mTransmitRankID;//通信相手の計算領域ID:常に1対1
+    uiint mTransmitRankID;//通信相手の計算領域ID:常に1対1
     
     
     // CommMeshの要素
@@ -83,8 +83,8 @@ protected:
 
 
     // NodeIDからCommNodeIDを取得するHash
-    map<uint, uint, less<uint> > mmCommNodeIX;// NodeID => CommNodeID(Index番号)
-    map<uint, uint, less<uint> > mmCommElementIX;// ElementID => CommElementID(Index番号)
+    map<uiint, uiint, less<uiint> > mmCommNodeIX;// NodeID => CommNodeID(Index番号)
+    map<uiint, uiint, less<uiint> > mmCommElementIX;// ElementID => CommElementID(Index番号)
     
     
     // ◎ 計算に不要なNode,Element
@@ -99,16 +99,16 @@ protected:
     
 public:
     // 自身の通信番号(Communication_ID)
-    void setCommID(const uint& comID){ mCommID= comID;}
-    uint& getCommID(){ return mCommID;}
+    void setCommID(const uiint& comID){ mCommID= comID;}
+    uiint& getCommID(){ return mCommID;}
     
     // 所属する計算領域の番号(mpiのrank)
-    void setRankID(const uint& rank){ mRankID= rank;}
-    uint& getRankID(){ return mRankID;}
+    void setRankID(const uiint& rank){ mRankID= rank;}
+    uiint& getRankID(){ return mRankID;}
     
     // 通信相手の計算領域番号
-    void setTransmitRankID(const uint& rank){ mTransmitRankID = rank;}
-    uint& getTransmitRankID(){ return mTransmitRankID;}
+    void setTransmitRankID(const uiint& rank){ mTransmitRankID = rank;}
+    uiint& getTransmitRankID(){ return mTransmitRankID;}
     
     
     //    // Node rank 一覧 
@@ -120,64 +120,64 @@ public:
     
     // 全体のCCommElement
     // --
-    void reserveCommElementAll(const uint& res_size){ mvCommElementAll.reserve(res_size);}
+    void reserveCommElementAll(const uiint& res_size){ mvCommElementAll.reserve(res_size);}
     void setCommElementAll(CCommElement* pCommElem){ mvCommElementAll.push_back(pCommElem);}
-    uint getNumOfCommElementAll(){ return mvCommElementAll.size();}
-    CCommElement* getCommElementAll(const uint& all_com_index){ return mvCommElementAll[all_com_index];}
-    CElement* getElementAll(const uint& all_com_index){ return mvCommElementAll[all_com_index]->getElement();}
+    uiint getNumOfCommElementAll(){ return mvCommElementAll.size();}
+    CCommElement* getCommElementAll(const uiint& all_com_index){ return mvCommElementAll[all_com_index];}
+    CElement* getElementAll(const uiint& all_com_index){ return mvCommElementAll[all_com_index]->getElement();}
     
     // CommElement
     // --
     // 通信に使用される,オーバーラップ要素(共有要素):CCommElement
     //
-    uint getNumOfCommElement(){ return mvCommElement.size();}
-    CCommElement* getCommElement(const uint& com_index){ return mvCommElement[com_index];}//通信領域(Comm)のCommIndex(i)番目の"Comm要素"を取得
-    CElement* getElement(const uint& com_index){ return mvCommElement[com_index]->getElement();}//通信領域(Comm)のCommIndex(i)番目の"要素"を取得
+    uiint getNumOfCommElement(){ return mvCommElement.size();}
+    CCommElement* getCommElement(const uiint& com_index){ return mvCommElement[com_index];}//通信領域(Comm)のCommIndex(i)番目の"Comm要素"を取得
+    CElement* getElement(const uiint& com_index){ return mvCommElement[com_index]->getElement();}//通信領域(Comm)のCommIndex(i)番目の"要素"を取得
 
 
     // ・DNode:計算に使用されないNode
     // ・DCommElement:計算にしようされないCCommElement(prolongation後に発生)
     //   { 通信にも使用されない. }
     // --
-    uint getNumOfDNode(){ return mvDNode.size();}
+    uiint getNumOfDNode(){ return mvDNode.size();}
     //vector<CNode*> getDNode(){ return mvDNode;}
-    CNode* getDNode(const uint& dcom_index){ return mvDNode[dcom_index];}
+    CNode* getDNode(const uiint& dcom_index){ return mvDNode[dcom_index];}
 
-    uint getNumOfDCommElement(){ return mvDCommElement.size();}
-    CCommElement* getDCommElement(const uint& dcom_index){ return mvDCommElement[dcom_index];}
+    uiint getNumOfDCommElement(){ return mvDCommElement.size();}
+    CCommElement* getDCommElement(const uiint& dcom_index){ return mvDCommElement[dcom_index];}
     //CElement* getDElement(const uint& dcom_index){ return mvDCommElement[dcom_index]->getElement();}
-    CElement* getDElement(const uint& dcom_index){ return mvDElement[dcom_index];}//ソートされたDElementを使用
+    CElement* getDElement(const uiint& dcom_index){ return mvDElement[dcom_index];}//ソートされたDElementを使用
 
 
     // 送受信ノード全体
     // --
-    uint getNumOfNode(){ return mvNode.size();}
-    void reserveNode(const uint& res_size){ mvNode.reserve(res_size);}//Node配列確保(ファイル入力時,prolongation時に使用)
+    uiint getNumOfNode(){ return mvNode.size();}
+    void reserveNode(const uiint& res_size){ mvNode.reserve(res_size);}//Node配列確保(ファイル入力時,prolongation時に使用)
     void setNode(CNode* pNode){ mvNode.push_back(pNode);}             //Nodeのセット(ファイル入力時,prolongation時に使用)
-    CNode* getNode(const uint& com_index){ return mvNode[com_index];} //CommMesh内のノードIndex番号(CommNodeID)のノードを提供
+    CNode* getNode(const uiint& com_index){ return mvNode[com_index];} //CommMesh内のノードIndex番号(CommNodeID)のノードを提供
     
     
     // 送信ノード
     // --
     //void reserveSendNode(const uint& res_size){ mvSendNode.reserve(res_size);}//SendNode配列確保(ファイル入力時,prolongation時に使用)
-    void setSendNode(CNode* pNode, const uint& comNodeID){ mvSendCommNodeID.push_back(comNodeID); mvSendNode.push_back(pNode);}    //SendNodeのセット(ファイル入力時,prolongation時に使用)
-    CNode* getSendNodeIX(const uint& index){ return mvSendNode[index];}//通信領域(Comm)のSendNodeのindex番目の送信ノードを提供
-    uint getNumOfSendNode(){ return mvSendNode.size();}
-    uint& getSendCommNodeID(const uint& index){ return mvSendCommNodeID[index];}
+    void setSendNode(CNode* pNode, const uiint& comNodeID){ mvSendCommNodeID.push_back(comNodeID); mvSendNode.push_back(pNode);}    //SendNodeのセット(ファイル入力時,prolongation時に使用)
+    CNode* getSendNodeIX(const uiint& index){ return mvSendNode[index];}//通信領域(Comm)のSendNodeのindex番目の送信ノードを提供
+    uiint getNumOfSendNode(){ return mvSendNode.size();}
+    uiint& getSendCommNodeID(const uiint& index){ return mvSendCommNodeID[index];}
 
     // 受信ノード
     // --
     //void reserveRecvNode(const uint& res_size){ mvRecvNode.reserve(res_size);}//RecvNode配列確保(ファイル入力時,prolongation時に使用)
-    void setRecvNode(CNode* pNode, const uint& comNodeID){ mvRecvCommNodeID.push_back(comNodeID); mvRecvNode.push_back(pNode);}    //RecvNodeのセット(ファイル入力時,prolongation時に使用)
-    CNode* getRecvNodeIX(const uint& index){ return mvRecvNode[index];}//通信領域(Comm)のRecvNodeのindex番目の受信ノードを提供
-    uint getNumOfRecvNode(){ return mvRecvNode.size();}
-    uint& getRecvCommNodeID(const uint& index){ return mvRecvCommNodeID[index];}
+    void setRecvNode(CNode* pNode, const uiint& comNodeID){ mvRecvCommNodeID.push_back(comNodeID); mvRecvNode.push_back(pNode);}    //RecvNodeのセット(ファイル入力時,prolongation時に使用)
+    CNode* getRecvNodeIX(const uiint& index){ return mvRecvNode[index];}//通信領域(Comm)のRecvNodeのindex番目の受信ノードを提供
+    uiint getNumOfRecvNode(){ return mvRecvNode.size();}
+    uiint& getRecvCommNodeID(const uiint& index){ return mvRecvCommNodeID[index];}
 
     // rank
     // --
-    void resizeNodeRank(const uint& res_size){ mvNodeRank.resize(res_size);}
-    void setNodeRank(const uint& commNodeID, const uint& rank){ mvNodeRank[commNodeID]= rank;}//最初のファイル入力向け
-    uint& getNodeRank(const uint& commNodeID){ return  mvNodeRank[commNodeID];}
+    void resizeNodeRank(const uiint& res_size){ mvNodeRank.resize(res_size);}
+    void setNodeRank(const uiint& commNodeID, const uiint& rank){ mvNodeRank[commNodeID]= rank;}//最初のファイル入力向け
+    uiint& getNodeRank(const uiint& commNodeID){ return  mvNodeRank[commNodeID];}
 
 
     // prolongation

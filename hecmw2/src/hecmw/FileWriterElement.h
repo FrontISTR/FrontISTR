@@ -16,9 +16,9 @@ public:
     CFileWriterElement();
     virtual ~CFileWriterElement();
 private:
-    string StrType(const uint& elem_type);
+    string StrType(const uiint& elem_type);
 public:
-    virtual void Write(ofstream& ofs, const uint& mgLevel);
+    virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 }
 

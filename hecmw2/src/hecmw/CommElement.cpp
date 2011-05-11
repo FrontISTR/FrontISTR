@@ -47,7 +47,7 @@ CCommElement::~CCommElement()
 // --
 // 辺,面,体積中心の rank を決定{ mvNodeRank <= 頂点ごとのrankはセット済み}
 // --
-void CCommElement::setupProgNodeRank(const uint& mgLevel)
+void CCommElement::setupProgNodeRank(const uiint& mgLevel)
 {
     CEdgeTree *pEdgeTree = CEdgeTree::Instance();// 頂点に接続している辺番号
     //CFaceTree *pFaceTree = CFaceTree::Instance();// 頂点に接続している面番号
@@ -57,12 +57,12 @@ void CCommElement::setupProgNodeRank(const uint& mgLevel)
     
     // コンストラクタでサイズは決定されている.
     // --
-    uint numOfEdge= mvEdgeRank.size();//辺 ごとの所属計算領域(rank)
-    uint numOfFace= mvFaceRank.size();//面 ごとの所属計算領域(rank)
+    uiint numOfEdge= mvEdgeRank.size();//辺 ごとの所属計算領域(rank)
+    uiint numOfFace= mvFaceRank.size();//面 ごとの所属計算領域(rank)
     
     
-    uint iedge,iface;
-    uint *localNodes, *localEdges;
+    uiint iedge,iface;
+    uiint *localNodes, *localEdges;
     int   rankDiff;
 
     // 辺中心のRank
@@ -119,15 +119,15 @@ void CCommElement::setupProgNodeRank(const uint& mgLevel)
 
 // 通信に用いる要素か否か
 // --
-void CCommElement::sortNodeRank(const uint& myRank, const uint& transRank)
+void CCommElement::sortNodeRank(const uiint& myRank, const uiint& transRank)
 {
     //int  rankDiff;
     //int  justRank = transRank - myRank;
     mvSendNode.clear(); mvRecvNode.clear(); mvOtherNode.clear();
 
     CNode* pNode;
-    uint numOfVert(mpElement->getNumOfNode());
-    uint ivert;
+    uiint numOfVert(mpElement->getNumOfNode());
+    uiint ivert;
 
     for(ivert=0; ivert< numOfVert; ivert++){
         pNode= mpElement->getNode(ivert);
@@ -167,7 +167,7 @@ void CCommElement::sortNodeRank(const uint& myRank, const uint& transRank)
 // 隣接CommElemへのCommNodeIndex割り振り
 //  => setCommNodeIndexからコール
 //
-void CCommElement::setNeibCommNodeIndex(const uint& ivert, const uint& comID)
+void CCommElement::setNeibCommNodeIndex(const uiint& ivert, const uiint& comID)
 {
     if(!mvbNodeIXCheck[ivert]){
         mvCommNodeIndex[ivert]= comID;
@@ -179,7 +179,7 @@ void CCommElement::setNeibCommNodeIndex(const uint& ivert, const uint& comID)
 //  -> CommMeshの"sortCommNodeIndex"のループにインデックスの初期値が存在している.
 //  -> 引数:vNode == CommMeshのmvNode
 // --
-void CCommElement::setCommNodeIndex(const uint& ivert, uint& comID, vector<CNode*>& vNode, vuint& vCommMeshNodeRank)
+void CCommElement::setCommNodeIndex(const uiint& ivert, uiint& comID, vector<CNode*>& vNode, vuint& vCommMeshNodeRank)
 {
     CNode* pNode;
     // markingされていないノードにIndex割り振り,Indexのカウントアップ
@@ -208,10 +208,10 @@ void CCommElement::setCommNodeIndex(const uint& ivert, uint& comID, vector<CNode
         vuint vNeibVert = mvvNeibCommElemVert[ivert];
         
         CCommElement* neibCommElem;
-        uint neibVert;
+        uiint neibVert;
         
-        uint numOfAgg= vNeibCommElem.size();
-        uint iagg;
+        uiint numOfAgg= vNeibCommElem.size();
+        uiint iagg;
         // 頂点を共有しているCommElementのCommNodeにもマーキング&&Indexセット
         // --
         for(iagg=0; iagg< numOfAgg; iagg++){
@@ -230,7 +230,7 @@ void CCommElement::setCommNodeIndex(const uint& ivert, uint& comID, vector<CNode
 // --
 // => mbCommunication==false  但し-> Nodeを共有しているCommElemが,mbCommunication==trueの場合は除外
 //
-void CCommElement::getDNode(const uint& ivert, vector<CNode*>& vDNode)
+void CCommElement::getDNode(const uiint& ivert, vector<CNode*>& vDNode)
 {
     CNode* pDNode;
 
@@ -242,14 +242,14 @@ void CCommElement::getDNode(const uint& ivert, vector<CNode*>& vDNode)
         vuint vNeibVert = mvvNeibCommElemVert[ivert];
         
         CCommElement* neibCommElem;
-        uint neibVert;
+        uiint neibVert;
 
         ////debug
         //mpLogger->Info(Utility::LoggerMode::Debug,"CommElement::getDNode, vNeibCommElem.size => ",(uint)vNeibCommElem.size());
         //mpLogger->Info(Utility::LoggerMode::Debug,"CommElement::getDNode, vNeibVert.size => ",(uint)vNeibVert.size());
 
-        uint numOfAgg= vNeibCommElem.size();
-        uint iagg;
+        uiint numOfAgg= vNeibCommElem.size();
+        uiint iagg;
         bool bCommElem(false);
         // 頂点を共有しているCommElementの中に通信に使用されるCommElementがあるか?
         //   => isCommElementが一つでもtrueならば,通信に使用される.
@@ -290,7 +290,7 @@ void CCommElement::getDNode(const uint& ivert, vector<CNode*>& vDNode)
 
 // DNodeとしてカウント済みであることをマーキング
 //
-void CCommElement::markingDNode(const uint& ivert)
+void CCommElement::markingDNode(const uiint& ivert)
 {
     mvbDNodeMarking[ivert]=true;
 }

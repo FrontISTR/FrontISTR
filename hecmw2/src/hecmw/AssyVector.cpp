@@ -21,7 +21,7 @@ typedef CVVec::const_iterator CVVecConstIter;
 #define N_COMM_BUFF 1024*32
 double BUFF[N_COMM_BUFF];
 
-CAssyVector::CAssyVector(CAssyModel *pAssyModel, const uint& nDOF)
+CAssyVector::CAssyVector(CAssyModel *pAssyModel, const uiint& nDOF)
 : mpAssyModel( pAssyModel )
 {
 #ifdef ADVANCESOFT_DEBUG
@@ -55,52 +55,52 @@ CAssyVector::~CAssyVector()
 	// cout << "~CAssyVector" << endl;
 }
 
-uint& CAssyVector::getDOF()
+uiint& CAssyVector::getDOF()
 {
     return mnDOF;
 }
 
-size_t CAssyVector::size() const
+uiint CAssyVector::size() const
 {
-	int sum = 0;
+	uiint sum = 0;
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
 		sum += (*icv)->size();
 	}
 	return sum;
 }
 
-const CVector::ElemType &CAssyVector::operator[](size_t idx) const
+const CVector::ElemType &CAssyVector::operator[](uiint idx) const
 {
 	// TODO better implementation
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
-		int len = (*icv)->size();
+		uiint len = (*icv)->size();
 		if (idx < len) return (**icv)[idx];
 		idx -= len;
 	}
 }
 
-CVector::ElemType &CAssyVector::operator[](size_t idx)
+CVector::ElemType &CAssyVector::operator[](uiint idx)
 {
 	// TODO better implementation
 	for (CVVecIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
-		int len = (*iv)->size();
+		uiint len = (*iv)->size();
 		if (idx < len) return (**iv)[idx];
 		idx -= len;
 	}
 }
 
-const double &CAssyVector::operator()(size_t meshID, size_t nodeID, size_t dof) const
+const double &CAssyVector::operator()(uiint meshID, uiint nodeID, uiint dof) const
 {
 	return (*mvVector[meshID])[nodeID](dof);
 }
-double &CAssyVector::operator()(size_t meshID, size_t nodeID, size_t dof)
+double &CAssyVector::operator()(uiint meshID, uiint nodeID, uiint dof)
 {
 	return (*mvVector[meshID])[nodeID](dof);
 }
 
 // Matrix 0 clear
 //
-void CAssyVector::Vector_Clear(const uint& iMesh)
+void CAssyVector::Vector_Clear(const uiint& iMesh)
 {
     mvVector[iMesh]->Vector_Clear();
 }
@@ -112,17 +112,17 @@ void CAssyVector::setZero()
 	}
 }
 
-void CAssyVector::setValue(int imesh, int inode, int idof, double value)
+void CAssyVector::setValue(uiint imesh, uiint inode, uiint idof, double value)
 {
 	mvVector[imesh]->setValue(inode, idof, value);
 }
 
-void CAssyVector::addValue(const uint& imesh, const uint& inode, const uint& idof, const double& value)
+void CAssyVector::addValue(const uiint& imesh, const uiint& inode, const uiint& idof, const double& value)
 {
     mvVector[imesh]->addValue(inode, idof, value);
 }
 
-double CAssyVector::getValue(int imesh, int inode, int idof)
+double& CAssyVector::getValue(uiint imesh, uiint inode, uiint idof)
 {
 	return( mvVector[imesh]->getValue(inode, idof) );
 }
@@ -175,12 +175,15 @@ double CAssyVector::innerProd(const CAssyVector *pX) const
 	return sum;
 }
 
+//
+// parallel: interface data exchange
+//
 void CAssyVector::updateCommBoundary()
 {
   pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
   MPI_Status stat;
-  uint imesh;
-  int myrank = pMPI->getRank();
+  uiint imesh;
+  uiint myrank = pMPI->getRank();
   //
   //  *** SEND PART ***
   //
@@ -188,30 +191,30 @@ void CAssyVector::updateCommBoundary()
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    CIndexBucket *pBucket= pMesh->getBucket();
     
-    uint numOfCommMesh2= pMesh->getCommMesh2Size();
-    for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+    uiint numOfCommMesh2= pMesh->getCommMesh2Size();
+    for(uiint icomm=0; icomm< numOfCommMesh2; icomm++){
 
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source      = pCommMesh2->getRank();
-      uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;//BUFF index
+      iint source      = pCommMesh2->getRank();
+      iint destination = pCommMesh2->getTrasmitRank();
+      uiint ic = 0;//BUFF index
 
       if( source < destination ) {
-	int numOfCommNode= pCommMesh2->getCommNodeSize();
+	uiint numOfCommNode= pCommMesh2->getCommNodeSize();
 	
         if( numOfCommNode*mnDOF > N_COMM_BUFF )
-	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
+	  printf("Fatal Communication Error updateCommBoundary (%ld > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
         
-	for(uint icnode=0; icnode < numOfCommNode; icnode++){
+	for(uiint icnode=0; icnode < numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
-	  uint inode = pCommNode->getNode()->getID();
+          uiint nNodeID= pCommNode->getNode()->getID();
+	  uiint inode = pBucket->getIndexNode(nNodeID);
 
-          for(uint idof=0; idof < mnDOF; idof++) BUFF[ic++] = (*iv)->getValue(inode, idof);
-	  //BUFF[ic++] = (*iv)->getValue(inode, 0);
-	  //BUFF[ic++] = (*iv)->getValue(inode, 1);
-	  //BUFF[ic++] = (*iv)->getValue(inode, 2);
+          for(uiint idof=0; idof < mnDOF; idof++)
+              BUFF[ic++] = (*iv)->getValue(inode, idof);
 	}
 	pMPI->Send(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE, destination, 100+myrank, MPI_COMM_WORLD);
       }
@@ -225,32 +228,32 @@ void CAssyVector::updateCommBoundary()
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    CIndexBucket *pBucket= pMesh->getBucket();
 
-    uint numOfCommMesh2= pMesh->getCommMesh2Size();
-    for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+    uiint numOfCommMesh2= pMesh->getCommMesh2Size();
+    for(uiint icomm=0; icomm< numOfCommMesh2; icomm++){
 
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source      = pCommMesh2->getRank();
-      uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;//BUFF index
+      iint source      = pCommMesh2->getRank();
+      iint destination = pCommMesh2->getTrasmitRank();
+      uiint ic = 0;//BUFF index
 
       if( source > destination ) {
-	int numOfCommNode= pCommMesh2->getCommNodeSize();
+	uiint numOfCommNode= pCommMesh2->getCommNodeSize();
 
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
-	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
+	  printf("Fatal Communication Error updateCommBoundary (%ld > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
 
 	pMPI->Recv(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE, destination, 100+destination, MPI_COMM_WORLD, &stat);
 
-	for(uint icnode=0; icnode< numOfCommNode; icnode++){
+	for(uiint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
-	  uint inode = pCommNode->getNode()->getID();
+          uiint nNodeID= pCommNode->getNode()->getID();
+	  uiint inode = pBucket->getIndexNode(nNodeID);
 
-          for(uint idof=0; idof < mnDOF; idof++) (*iv)->setValue(inode, idof, BUFF[ic++]);
-	  //(*iv)->setValue(inode, 0, BUFF[ic++]);
-	  //(*iv)->setValue(inode, 1, BUFF[ic++]);
-	  //(*iv)->setValue(inode, 2, BUFF[ic++]);
+          for(uiint idof=0; idof < mnDOF; idof++)
+              (*iv)->setValue(inode, idof, BUFF[ic++]);
 	}
       }
     }
@@ -258,11 +261,14 @@ void CAssyVector::updateCommBoundary()
   }
 }
 
+//
+// parallel
+//
 void CAssyVector::sumupCommBoundary()
 {
   pmw::CHecMPI *pMPI= pmw::CHecMPI::Instance();
   MPI_Status stat;
-  uint imesh;
+  uiint imesh;
   //
   // *** SEND PART ***
   //
@@ -270,27 +276,29 @@ void CAssyVector::sumupCommBoundary()
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    CIndexBucket *pBucket= pMesh->getBucket();
     
-    uint numOfCommMesh2= pMesh->getCommMesh2Size();
-    for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+    uiint numOfCommMesh2= pMesh->getCommMesh2Size();
+    for(uiint icomm=0; icomm< numOfCommMesh2; icomm++){
         
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source      = pCommMesh2->getRank();
-      uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;//BUFF index
+      iint source      = pCommMesh2->getRank();
+      iint destination = pCommMesh2->getTrasmitRank();
+      uiint ic = 0;//BUFF index
       
       if( source > destination ) {
-	int numOfCommNode= pCommMesh2->getCommNodeSize();
+	uiint numOfCommNode= pCommMesh2->getCommNodeSize();
         
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
-	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
+	  printf("Fatal Communication Error updateCommBoundary (%ld > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
         
-	for(uint icnode=0; icnode< numOfCommNode; icnode++){
+	for(uiint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
-	  uint inode = pCommNode->getNode()->getID();
+          uiint nNodeID = pCommNode->getNode()->getID();
+	  uiint inode = pBucket->getIndexNode(nNodeID);
           
-          for(uint idof=0; idof < mnDOF; idof++){
+          for(uiint idof=0; idof < mnDOF; idof++){
               BUFF[ic++] = (*iv)->getValue(inode, idof);
               (*iv)->setValue(inode, idof, 0.0);
           };
@@ -308,32 +316,32 @@ void CAssyVector::sumupCommBoundary()
   for (CVVecConstIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
 
     CMesh *pMesh= mpAssyModel->getMesh(imesh);
+    CIndexBucket *pBucket= pMesh->getBucket();
 
-    uint numOfCommMesh2= pMesh->getCommMesh2Size();
-    for(uint icomm=0; icomm< numOfCommMesh2; icomm++){
+    uiint numOfCommMesh2= pMesh->getCommMesh2Size();
+    for(uiint icomm=0; icomm< numOfCommMesh2; icomm++){
 
       CCommMesh2 *pCommMesh2 = pMesh->getCommMesh2IX(icomm);
-      uint source	 = pCommMesh2->getRank();
-      uint destination = pCommMesh2->getTrasmitRank();
-      uint ic = 0;// BUFF index
+      iint source      = pCommMesh2->getRank();
+      iint destination = pCommMesh2->getTrasmitRank();
+      uiint ic = 0;// BUFF index
 
       if( source < destination ) {
-	int numOfCommNode= pCommMesh2->getCommNodeSize();
+	uiint numOfCommNode= pCommMesh2->getCommNodeSize();
 
 	if( numOfCommNode*mnDOF > N_COMM_BUFF )
-	  printf("Fatal Communication Error updateCommBoundary (%d > %d)"
+	  printf("Fatal Communication Error updateCommBoundary (%ld > %d)"
 		 ,numOfCommNode*mnDOF, N_COMM_BUFF);
 
 	pMPI->Recv(BUFF, numOfCommNode*mnDOF, MPI_DOUBLE,destination,101,MPI_COMM_WORLD,&stat);
 
-	for(uint icnode=0; icnode< numOfCommNode; icnode++){
+	for(uiint icnode=0; icnode< numOfCommNode; icnode++){
 	  CCommNode *pCommNode= pCommMesh2->getCommNodeIX(icnode);
-	  uint inode = pCommNode->getNode()->getID();
+          uiint nNodeID= pCommNode->getNode()->getID();
+	  uiint inode = pBucket->getIndexNode(nNodeID);
 
-          for(uint idof=0; idof < mnDOF; idof++) (*iv)->addValue(inode, idof, BUFF[ic++]);
-	  //(*iv)->addValue(inode, 0, BUFF[ic++]);
-	  //(*iv)->addValue(inode, 1, BUFF[ic++]);
-	  //(*iv)->addValue(inode, 2, BUFF[ic++]);
+          for(uiint idof=0; idof < mnDOF; idof++)
+              (*iv)->addValue(inode, idof, BUFF[ic++]);
 	}
       }
     }
@@ -341,7 +349,7 @@ void CAssyVector::sumupCommBoundary()
   }
 }
 
-int CAssyVector::restrictTo(CAssyVector *pVc) const
+uiint CAssyVector::restrictTo(CAssyVector *pVc) const
 {
 	CVVecIter ivc = pVc->mvVector.begin();
 	for (CVVecConstIter icv = mvVector.begin(); icv != mvVector.end(); icv++) {
@@ -351,7 +359,7 @@ int CAssyVector::restrictTo(CAssyVector *pVc) const
 	return 1;
 }
 
-int CAssyVector::prolongateFrom(const CAssyVector *pcVc)
+uiint CAssyVector::prolongateFrom(const CAssyVector *pcVc)
 {
 	CVVecConstIter icvc = pcVc->mvVector.begin();
 	for (CVVecIter iv = mvVector.begin(); iv != mvVector.end(); iv++) {
@@ -361,17 +369,17 @@ int CAssyVector::prolongateFrom(const CAssyVector *pcVc)
 	return 1;
 }
 
-size_t CAssyVector::getNumOfVector() const
+uiint CAssyVector::getNumOfVector() const
 {
 	return mvVector.size();
 }
 
-const CVector *CAssyVector::getVector(size_t index) const
+const CVector *CAssyVector::getVector(uiint index) const
 {
 	return mvVector[index];
 }
 
-CVector *CAssyVector::getVector(size_t index)
+CVector *CAssyVector::getVector(uiint index)
 {
 	return mvVector[index];
 }
@@ -382,8 +390,8 @@ CVector *CAssyVector::getVector(size_t index)
 //
 void CAssyVector::dump()
 {
-    uint nNumOfParts = mvVector.size();
-    uint ipart;
+    uiint nNumOfParts = mvVector.size();
+    uiint ipart;
     for(ipart=0; ipart < nNumOfParts; ipart++){
         cout << " ---- iParts : " << ipart << " Vector ---- " << endl;
         mvVector[ipart]->dump();

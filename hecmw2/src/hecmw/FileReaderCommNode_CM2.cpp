@@ -20,9 +20,9 @@ CFileReaderCommNodeCM2::~CFileReaderCommNodeCM2()
 
 bool CFileReaderCommNodeCM2::Read(ifstream& ifs, string& sLine)
 {
-    uint  mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
-    uint  comID, mesh_id, numOfCommNode;
-    uint  comm_node_id, node_id;
+    uiint  mgLevel(0);// mgLevel=0 ::ファイル入力時のマルチグリッド・レベルは恒等的に==0
+    uiint  comID, mesh_id, numOfCommNode;
+    uiint  comm_node_id, node_id;
     vdouble vCoord;  vCoord.resize(3);
 
     istringstream iss;
@@ -37,7 +37,7 @@ bool CFileReaderCommNodeCM2::Read(ifstream& ifs, string& sLine)
 
             iss >> comID >> mesh_id >> numOfCommNode;
 
-            for(uint i=0; i< numOfCommNode; i++){
+            for(uiint i=0; i< numOfCommNode; i++){
                 sLine = getLineSt(ifs);
                 iss.clear();
                 iss.str(sLine);
@@ -54,7 +54,10 @@ bool CFileReaderCommNodeCM2::Read(ifstream& ifs, string& sLine)
 }
 
 
-
+bool CFileReaderCommNodeCM2::Read_bin(ifstream& ifs)
+{
+    return true;
+}
 
 
 

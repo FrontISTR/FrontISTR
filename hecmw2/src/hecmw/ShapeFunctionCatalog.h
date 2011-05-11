@@ -11,7 +11,7 @@
 
 #include "ElementType.h"
 
-typedef pair<uint,uint> integPair;
+typedef pair<uiint,uiint> integPair;
 
 namespace pmw{
 #ifndef _SHAPEFUNCTIONCATALOG_H
@@ -44,13 +44,13 @@ public:
     // --
     // 返り値: pair.first=積分点数, pair.second=節点数
     // --
-    integPair& getIntegPair(const uint& shapeType);
+    integPair& getIntegPair(const uiint& shapeType);
 
-    uint& NumOfIntegPoint(const uint& shapeType);
-    uint& NumOfShape(const uint& shapeType);
+    uiint& NumOfIntegPoint(const uiint& shapeType);
+    uiint& NumOfShape(const uiint& shapeType);
 
-    uint  NumOfIntegPointType(const uint& elemType);
-    uint& NumOfIntegPoint(const uint& elemType, const uint& integPtIndex);
+    uiint  NumOfIntegPointType(const uiint& elemType);
+    uiint& NumOfIntegPoint(const uiint& elemType, const uiint& integPtIndex);
 };
 #endif	/* _SHAPEFUNCTIONCATALOG_H */
 }
