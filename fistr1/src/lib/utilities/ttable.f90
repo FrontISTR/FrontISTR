@@ -96,7 +96,7 @@ module m_table
     end subroutine
 	
     subroutine finalize_table( table )
-      type( tTable ), intent(in) :: table
+      type( tTable ), intent(inout) :: table
       if( associated( table%tbval ) ) deallocate( table%tbval )
     end subroutine
 	  
