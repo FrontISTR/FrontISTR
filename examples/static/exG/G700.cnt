@@ -1,0 +1,14 @@
+!!
+!! Control File for FSTR solver
+!!
+!BOUNDARY
+   FIX, 1, 6,     0.0
+!CLOAD
+   CL1,    3,    -0.25
+   CL2,    3,    -0.50
+   CL3,    3,    -0.25
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=DIRECT
+!END

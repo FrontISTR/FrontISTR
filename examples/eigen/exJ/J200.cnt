@@ -1,0 +1,15 @@
+!!
+!! Control File for FSTR solver
+!!
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 3, 1.0E-8, 60
+!BOUNDARY
+  FIX, 1, 2,     0.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=1,ITERLOG=NO,TIMELOG=YES
+  10000, 2
+ 1.0e-8, 1.0,  0.0
+!END

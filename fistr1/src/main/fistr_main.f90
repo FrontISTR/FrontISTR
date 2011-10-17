@@ -1,8 +1,8 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
-!      Module Name : Main Program                                      !
+!      Module Name : Main Program                                       !
 !                                                                      !
 !            Written by Toshio Nagashima (Sophia University)           !
 !                       Yasuji Fukahori (Univ. of Tokyo)               !
@@ -32,18 +32,20 @@ use m_fstr_precheck
 use m_fstr_rcap_io
 use fstr_solver_dynamic
 use fstr_debug_dump
+use fstr_matrix_con_contact                                     
 
 
         implicit none
-        type (hecmwST_local_mesh) :: hecMESH
-        type (hecmwST_matrix )    :: hecMAT
-        type (fstr_solid )        :: fstrSOLID
-        type (fstr_heat )         :: fstrHEAT
-        type (lczparam)           :: fstrEIG
-        type (fstr_dynamic )      :: fstrDYNAMIC
-        type ( hecmwST_result_data ) :: fstrRESULT
-        type (fstr_couple )       :: fstrCPL
-        character(len=HECMW_FILENAME_LEN) :: name_ID
+        type (hecmwST_local_mesh)              :: hecMESH
+        type (hecmwST_matrix )                 :: hecMAT
+        type (fstr_solid )                     :: fstrSOLID
+        type (fstrST_matrix_contact_lagrange)  :: fstrMAT               
+        type (fstr_heat )                      :: fstrHEAT
+        type (lczparam)                        :: fstrEIG
+        type (fstr_dynamic )                   :: fstrDYNAMIC
+        type ( hecmwST_result_data )           :: fstrRESULT
+        type (fstr_couple )                    :: fstrCPL
+        character(len=HECMW_FILENAME_LEN)     :: name_ID
 
         real(kind=kreal):: T1,T2,T3
 
@@ -53,7 +55,7 @@ use fstr_debug_dump
 
         call hecmw_init
 
-        call cpu_time(T1)
+        T1 = hecmw_Wtime()
 
         name_ID = 'fstrMSH'
         call hecmw_get_mesh( name_ID , hecMESH )
@@ -67,7 +69,7 @@ use fstr_debug_dump
 
         call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
 
-        CALL CPU_TIME(T2)
+        T2 = hecmw_Wtime()
 
         ! =============== ANALYSIS =====================
 
@@ -86,7 +88,7 @@ use fstr_debug_dump
                 call fstr_linear_dynamic_analysis
         end select
 
-        CALL CPU_TIME(T3)
+        T3 = hecmw_Wtime()
 
         write(ILOG,*)
         write(ILOG,*)           '===================================='
@@ -284,7 +286,7 @@ subroutine fstr_linear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Linear static analysis   **'
         end if
-        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
+        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )   
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_linear_static_analysis
@@ -303,7 +305,7 @@ subroutine fstr_nonlinear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrPR )
+        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )       
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_nonlinear_static_analysis

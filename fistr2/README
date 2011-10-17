@@ -1,0 +1,29 @@
+================================================================================
+
+  README of FrontISTR on HEC-MW (in English)
+
+  2011.06.01  Version 4.0
+
+  IIS,The University of Tokyo, CISS
+
+  Comments, Questions, Problems etc.
+    e-mail: software@ciss.iis.u-tokyo.ac.jp
+
+================================================================================
+
+(1) Programs in this archive
+  - FrontISTR structual analysis program
+
+(2) Files in this directory
+  README                      : README (in English : this file)
+  README.ja                   : README (in Japanese)
+  VERSION                     : version information
+  setup_fistr.sh      　　　　: shell script to create makefiles
+  Makefile.am                 : base file of makefile for installation
+  Makefile.dev                : setting file for developers
+
+  src/                        : source codes
+
+************************************ NOTICE *************************************
+Please read "CISS_lic_agree.pdf" carefully BEFORE you start to use this software.
+*********************************************************************************

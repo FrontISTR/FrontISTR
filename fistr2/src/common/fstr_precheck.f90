@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Library                                            !
 !                                                                      !
@@ -62,7 +62,7 @@ module m_fstr_precheck
          do iPart = 0, mw_get_num_of_mesh_part()-1
             call mw_select_mesh_part( iPart )
             do iElem = 0, mw_get_num_of_element()-1
-              call mw_select_element_with_id( iElem )
+              call mw_select_element( iElem )
               ic_type = mw_get_element_type()
 			  ic_type=361
 	!      if (.not. (hecmw_is_etype_rod(ic_type) .or. hecmw_is_etype_solid(ic_type))) then

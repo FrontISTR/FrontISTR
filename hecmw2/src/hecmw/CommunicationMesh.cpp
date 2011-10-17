@@ -1,21 +1,26 @@
-//
-//  CommunicationTable.cpp
-//
-//
-//
-//                      2009.06.19
-//                      2009.06.19
-//                      k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/CommunicationMesh.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include <vector>
 #include "Element.h"
-
 #include "CommElement.h"
 #include "CommunicationMesh.h"
 using namespace pmw;
-
 #include <iostream>
-// construct & destruct
-//
 CCommMesh::CCommMesh(CIndexBucket* pBucket)
 {
     mpBucket = pBucket;
@@ -24,34 +29,8 @@ CCommMesh::CCommMesh(CIndexBucket* pBucket)
 CCommMesh::~CCommMesh()
 {
     for_each(mvCommElementAll.begin(), mvCommElementAll.end(), DeleteObject());
-
-    //debug
     std::cout << "~CCommMesh" << std::endl;
 }
-
-// メッシュの再分割:prolongation(refineMesh)
-// --
-// ToDo:
-// --
-// mvCommElementの収集
-// mvNodeの収集(CommMesh内のIndex番号)
-// (CommMeshのIndex)と(MeshのIndex)のmap
-// mvSendNode,mvRecvNodeの収集 => MeshのIndexとのmap
-// mvDNode,mvDElementの収集
-
-//// prolongation のための辺,面,体積中心のNodeのランク設定
-//// => Factoryから直接CommElementのsetupProgNodeRank()が呼ばれているので,CommMeshには無い.
-
-
-
-// CommElementの配分(Allocate)
-//  => 通信:CommElement,非通信:DCommElement,全体:CommElementAll
-// --
-//  prolongation時(Refine)の,Communication(CommMesh)内でのIndex生成(Global番号相当)
-//  =>
-//   CommElementID, CommNodeIDの生成(全てのCommElementに連番：CommとDCommを分けずにIDを打つ)
-//   ElementにCommElementのIDをセット, ElementにCommElementに含まれることをスタンプ
-// --
 void CCommMesh::AllocateCommElement()
 {
     uiint numOfCommElemAll= mvCommElementAll.size();
@@ -61,29 +40,20 @@ void CCommMesh::AllocateCommElement()
     for(icom=0; icom< numOfCommElemAll; icom++){
         pCommElem= mvCommElementAll[icom];
         pCommElem->sortNodeRank(mRankID, mTransmitRankID);
-        
         pElem= pCommElem->getElement();
-
         if(pCommElem->isCommElement()){
-
             mvCommElement.push_back(pCommElem);
-            pElem->interCommElem(); //ElementにCommElementに含まれている事をスタンプ
-
-        }else if(!pCommElem->isRCommElement()){//通信に使われず&& 計算領域に含まれない(RCommElement は,頂点が全てmyRank)
-
+            pElem->interCommElem(); 
+        }else if(!pCommElem->isRCommElement()){
             mvDCommElement.push_back(pCommElem);
-            pElem->interDCommElem();//ElementにDCommElementに含まれていることをスタンプ
+            pElem->interDCommElem();
         }else{
-            pElem->interRCommElem();//CommMeshに含まれるが,通信には使わず(全てがmyRank),DCommElementでもない.
+            pElem->interRCommElem();
         }
-
         pCommElem->setID(icom);
         pElem->setCommID(icom);
     };
 }
-
-// 引数:vElementは,Mesh全体のElements
-//
 void CCommMesh::setupAggCommElement(vector<CElement*> &vElement)
 {
     uiint numOfCommElem= mvCommElementAll.size();
@@ -96,81 +66,42 @@ void CCommMesh::setupAggCommElement(vector<CElement*> &vElement)
     CNode* pNode;
     uiint icome,ivert,iagg;
     uiint elemID,elemIndex;
-
     for(icome=0; icome< numOfCommElem; icome++){
         pCommElem= mvCommElementAll[icome];
-
         numOfVert= pCommElem->getNumOfVert();
-        //--
         for(ivert=0; ivert< numOfVert; ivert++){
             pNode= pCommElem->getNode(ivert);
-
             numOfAggElem= pNode->getNumOfAggElem();
-            
-            //ElemからNodeの周辺の要素を取得 => CommElemにセット
-            //--
             for(iagg=0; iagg< numOfAggElem; iagg++){
-                
-                elemID= pNode->getAggElemID(iagg);//頂点で接続している要素ID
+                elemID= pNode->getAggElemID(iagg);
                 elemIndex= mpBucket->getIndexElement(elemID);
-
                 pElem= vElement[elemIndex];
-                
-                // 取得したElementが,CommMeshに該当すれば,要素を集める.
                 if(pElem->isInterCommElem()||pElem->isInterDCommElem()||pElem->isInterRCommElem()){
-
                     neibComID= pElem->getCommID();
-
-                    //頂点で接続しているCommElem
                     pNeibCommElem= mvCommElementAll[neibComID];
                     pCommElem->setAggCommElement(ivert, pNeibCommElem);
-
-                    //接続先の頂点番号
                     neibVert= pNode->getNeibElemIDVert(elemID);
                     pCommElem->setNeibCommElemVert(ivert,neibVert);
                 }
-            };//iagg ループ
-        };//ivert ループ
-    };//icome ループ
+            };
+        };
+    };
 }
-
-// CommElementAllから,mvNode全体,SendNode,RecvNodeを取得
-// --
-// => Send,Recv収集
-//   DCommElement,DNode のソート
-//   => Mesh本体のElement,Nodeの配列ソートに使用(使用するMeshと,カップラー向けのみのMeshに振り分け)
-// --
 void CCommMesh::sortCommNodeIndex()
 {
     uiint numOfCommElem= mvCommElementAll.size();
     uiint numOfVert;
     CCommElement* pCommElem;
     uiint icome, ivert;
-
-    uiint comNodeIndex(0);//CommNodeIndexカウンター
-
-    // mvCommElementAllからNode全体を取得 => 全体にCommNodeIndexをつけていく. => Nodeのランクも収集
-    // --
+    uiint comNodeIndex(0);
     for(icome=0; icome< numOfCommElem; icome++){
         pCommElem= mvCommElementAll[icome];
-        
         numOfVert= pCommElem->getNumOfVert();
         for(ivert=0; ivert< numOfVert; ivert++){
-            // CommElement内部で重複しないようにマーキングしながらcomNodeIndexをカウントアップ
-            //   => Node*をmvNodeに収集. Nodeランクも収集
-            //
             pCommElem->setCommNodeIndex(ivert, comNodeIndex, mvNode, mvNodeRank);
         };
     };
-    //debug
     mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvNode.size => ", (uiint)mvNode.size());
-    
-    
-    
-    // Send,Recvノードの収集
-    // --
-    // Indexが重複しないように,スタンプを用意
-    // --
     bool* vIndexCheck;  uiint numOfNode= mvNode.size();
     vIndexCheck = new bool[numOfNode];
     for(uiint i=0; i< numOfNode; i++){
@@ -178,18 +109,13 @@ void CCommMesh::sortCommNodeIndex()
     }
     uiint nIndex, rank;
     numOfCommElem= mvCommElement.size();
-
     for(icome=0; icome< numOfCommElem; icome++){
         pCommElem= mvCommElement[icome];
-        
         numOfVert= pCommElem->getNumOfVert();
         for(ivert=0; ivert< numOfVert; ivert++){
-
-            nIndex= pCommElem->getCommNodeIndex(ivert);//CommElementの頂点のCommNodeIDを取得
-
+            nIndex= pCommElem->getCommNodeIndex(ivert);
             if(!vIndexCheck[nIndex]){
                 rank= mvNodeRank[nIndex];
-
                 if(mRankID==rank){
                     mvSendNode.push_back(mvNode[nIndex]);
                     mvSendCommNodeID.push_back(nIndex);
@@ -198,123 +124,51 @@ void CCommMesh::sortCommNodeIndex()
                     mvRecvNode.push_back(mvNode[nIndex]);
                     mvRecvCommNodeID.push_back(nIndex);
                 }
-                vIndexCheck[nIndex]= true;//取得済み
+                vIndexCheck[nIndex]= true;
             }
         };
     };
     delete []vIndexCheck;
-
-    
-    // DCommElementからElementを取得して,Mesh内の計算不要Elementを取得
-    // 計算不要Elementをソート => MeshでのElement並び替えに使用
     uiint numOfDCommElem= mvDCommElement.size();
     CCommElement* pDCommElem;
     CElement* pDElem;
     for(icome=0; icome< numOfDCommElem; icome++){
         pDCommElem= mvDCommElement[icome];
         pDElem = pDCommElem->getElement();
-
         mvDElement.push_back(pDElem);
     };
-    //debug
     mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDElement.size => ", (uiint)mvDElement.size());
-    
-    // DCommElementからDNodeを,重複なきようにスタンプを押しながら取得
-    //
     for(icome=0; icome< numOfDCommElem; icome++){
         pDCommElem= mvDCommElement[icome];
-        
         numOfVert= pDCommElem->getNumOfVert();
         for(ivert=0; ivert< numOfVert; ivert++){
-            //// ↓ ////
-            pDCommElem->getDNode(ivert, mvDNode);//内部でDNodeか否かの判定処理を行って,mvDNodeにセットする.
+            pDCommElem->getDNode(ivert, mvDNode);
         };
     };
-    //debug
     mpLogger->Info(Utility::LoggerMode::Debug, "CommMesh::sortCommNodeIndex mvDNode.size => ", (uiint)mvDNode.size());
-
-
-    // 計算不要Node, Elementのソート
-    // --
-    // mvDNodeをソート => MeshでのNode並び替えに使用
-    // mvDElementをソート => MeshでのElement並び替えに使用
-    // ----
     uiint maxIndex;
-    
     if(mvDNode.size() > 0){
-        //maxIndex= mvDNode.size()-1;
-        //QuicksortID<CNode*>(mvDNode, 0, maxIndex);// クイック・ソート
-        sortID<CNode*>(mvDNode, mvDNode.size());//ソート
+        sortID<CNode*>(mvDNode, mvDNode.size());
     }
     if(mvDElement.size() > 0){
-        //maxIndex= mvDElement.size()-1;
-        //QuicksortID<CElement*>(mvDElement, 0, maxIndex);// クイック・ソート
-        sortID<CElement*>(mvDElement, mvDElement.size());// ソート
+        sortID<CElement*>(mvDElement, mvDElement.size());
     }
-    ////debug
-    //for(uint i=0; i< mvDElement.size(); i++){
-    //    mpLogger->Info(Utility::LoggerMode::Debug,"CommMesh::sortCommNodeIndex mvDElement ID => ", (uint)mvDElement[i]->getID());
-    //};
 }
-
-// 
-// mapデータのセットアップ
-//  mmCommNodeIX : NodeID => CommNodeID(Index番号)のHash
-//  mmCommElementIX : ElementID => CommElementID(Index番号)のHash
-// --
 void CCommMesh::setupMapID2CommID()
 {
     uiint numOfCommElem= mvCommElementAll.size();
     uiint numOfCommNode= mvNode.size();
-
     CNode* pNode;
     CElement* pElem;
     CCommElement* pCommElem;
-
     uiint index;
-    // mapデータのセット
-    // --
-    // Node-ID から CommMeshのNodeインデックス
-    // --
     for(index=0; index< numOfCommNode; index++){
         pNode= mvNode[index];
-
         mmCommNodeIX[pNode->getID()]= index;
     };
-    // Element-ID から CommMeshのCommElementインデックス
-    // --
     for(index=0; index< numOfCommElem; index++){
         pCommElem= mvCommElementAll[index];
         pElem= pCommElem->getElement();
-
         mmCommElementIX[pElem->getID()]= index;
     };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

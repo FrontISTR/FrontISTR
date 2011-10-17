@@ -1,0 +1,18 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ necking.msh
+!CONTROL, NAME=fstrCNT
+ necking.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ necking.res
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ necking.msh
+!RESULT, NAME=result, IO=IN
+ necking.res
+!RESULT, NAME=vis_out, IO=OUT
+ necking_vis

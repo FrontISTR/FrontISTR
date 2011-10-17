@@ -13,3 +13,8 @@ extern void compute_color_vr(int current_ijk[3], int color_mapping_style, double
 
 
 #endif /* HECMW_VIS_COLOR_COMPOSITE_VR_H_INCLUDED */
+
+
+
+
+

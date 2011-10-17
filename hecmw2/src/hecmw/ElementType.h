@@ -1,37 +1,30 @@
-//
-//  Element Type
-//
-//  終端として,Limitを追加 2010.02.12
-//
-//				2010.02.12
-//				2008.12.04
-//				k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/ElementType.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
 #define ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
-
-
-//#define HEXA_TYPE     0
-//#define PRISM_TYPE    1
-//#define TETRA_TYPE    2
-//#define QUAD_TYPE     3
-//#define TRIANGLE_TYPE 4
-//#define BEAM_TYPE     5
-//#define BAR_TYPE      6
-//#define ROD_TYPE      7
-//#define MASS_TYPE     8
-
 namespace pmw{
-// Element
 struct ElementType{
     enum{
-        Polygon,//Film
+        Polygon,
         Hexa,
         Hexa2,
         HexaNic,
         Prism,
         Prism2,
-//        Pyramid,
-//        Pyramid2,
         Tetra,
         Tetra2,
         Quad,
@@ -42,19 +35,13 @@ struct ElementType{
         Beam2,
         Line,
         Line2,
-        //Bar,
-        //Rod,
-        //Mass,
-        Point,//SkinFaceの型として利用
-        Limit//enumの終端
+        Point,
+        Limit
     };
 };
-
-// FrontISTR要素タイプ
-//
 struct FistrElementType{
     enum{
-        Polygon=1,//Film
+        Polygon=1,
         Hexa=361,
         Hexa2=362,
         Prism=351,
@@ -67,24 +54,18 @@ struct FistrElementType{
         Triangle2=232,
         Beam,
         Beam2,
-        //Bar,
-        //Rod,
-        //Mass,
-        Point,//SkinFaceの型として利用
-        Limit//enumの終端
+        Point,
+        Limit
     };
 };
-
 struct ElementOrder{
     enum{
         Zero,
         First,
         Second,
-        Limit//enumの終端
+        Limit
     };
 };
-
-// ShapeFunctionType
 struct ShapeType{
     enum{
         Hexa81,
@@ -113,29 +94,22 @@ struct ShapeType{
         Limit
     };
 };
-
-
-// Property
 struct ElementPropType{
     enum{
         Face,
         Edge,
         Node,
-        Limit//enumの終端
+        Limit
     };
 };
-
-// Material
 struct MaterialElement{
     enum{
         HeatTransfer,
         Spring,
         Damper,
-        Limit//enumの終端
+        Limit
     };
 };
-
-// Base Type
 struct BaseElementType{
     enum{
         Solid,
@@ -144,10 +118,8 @@ struct BaseElementType{
         Point,
         Cell,
         MaterialElement,
-        Limit//enumの終端
+        Limit
     };
 };
 }
-#endif // ELEMENT_TYPE_F9D2500C_A695_42ec_AE76_94578C5155EA
-
-
+#endif 

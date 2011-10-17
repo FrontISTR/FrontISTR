@@ -17,3 +17,4 @@ void put_neutral_middle(FILE *outfp);
 void put_neutral_409(FILE *outfp);
 
 #endif /* HECMW_VIS_COMBINE_H_INCLUDED */
+

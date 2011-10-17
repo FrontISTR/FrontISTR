@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -146,7 +146,9 @@ module m_heat_LIB_CONDUCTIVITY
               SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX+BY(I)*BY(J)*WGY
             enddo
           enddo
+        enddo
 !C
+      enddo
       RETURN
 
    end subroutine heat_THERMAL_231
@@ -229,7 +231,7 @@ module m_heat_LIB_CONDUCTIVITY
 !C
       RETURN
 
-   end heat_THERMAL_241
+   end subroutine
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_THERMAL_341( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB ) 
 !*---------------------------------------------------------------------*
@@ -356,8 +358,8 @@ module m_heat_LIB_CONDUCTIVITY
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-      DIMENSION XG(2),WGT(2),XG1(3),XG2(3),WGT1(3)
-     &         ,H(6),HR(6),HS(6),HT(6)
+      DIMENSION XG(2),WGT(2),XG1(3),XG2(3),WGT1(3)  &
+     &         ,H(6),HR(6),HS(6),HT(6) &
      &         ,BX(6),BY(6),BZ(6),CC(3) 
                   
       dimension temp(*),funcA(*),funcB(*)
@@ -543,7 +545,7 @@ module m_heat_LIB_CONDUCTIVITY
 
    end subroutine heat_THERMAL_351
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_361 (NN,XX,YY,ZZ,TT,IMAT,SS
+      SUBROUTINE heat_THERMAL_361 (NN,XX,YY,ZZ,TT,IMAT,SS        &
      &                                        ,ntab,temp,funcA,funcB)
 !*---------------------------------------------------------------------*
 !*
@@ -613,35 +615,35 @@ module m_heat_LIB_CONDUCTIVITY
             HT(8)= .125*RM*SP
 !
 !*JACOBI MATRIX 
-            XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
+            XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)  &
      &          +HR(5)*XX(5)+HR(6)*XX(6)+HR(7)*XX(7)+HR(8)*XX(8)
-            XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
+            XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)  &
      &          +HS(5)*XX(5)+HS(6)*XX(6)+HS(7)*XX(7)+HS(8)*XX(8)
-            XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4)
+            XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4)  &
      &          +HT(5)*XX(5)+HT(6)*XX(6)+HT(7)*XX(7)+HT(8)*XX(8)
 !
-            XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)
+            XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)  &
      &          +HR(5)*YY(5)+HR(6)*YY(6)+HR(7)*YY(7)+HR(8)*YY(8)
-            XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)
+            XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)  &
      &          +HS(5)*YY(5)+HS(6)*YY(6)+HS(7)*YY(7)+HS(8)*YY(8)
-            XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4)
+            XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4)  &
      &          +HT(5)*YY(5)+HT(6)*YY(6)+HT(7)*YY(7)+HT(8)*YY(8)
 !
-            XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)
+            XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)  &
      &          +HR(5)*ZZ(5)+HR(6)*ZZ(6)+HR(7)*ZZ(7)+HR(8)*ZZ(8)
-            XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)
+            XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)  &
      &          +HS(5)*ZZ(5)+HS(6)*ZZ(6)+HS(7)*ZZ(7)+HS(8)*ZZ(8)
-            XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)
+            XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)  &
      &          +HT(5)*ZZ(5)+HT(6)*ZZ(6)+HT(7)*ZZ(7)+HT(8)*ZZ(8)
 !  
 !*DETERMINANT OF JACOBIAN
 ! 
-            DET=XJ11*XJ22*XJ33
-     2         +XJ12*XJ23*XJ31
-     3         +XJ13*XJ21*XJ32
-     4         -XJ13*XJ22*XJ31
-     5         -XJ12*XJ21*XJ33
-     6         -XJ11*XJ23*XJ32
+            DET=XJ11*XJ22*XJ33  &
+     &         +XJ12*XJ23*XJ31  &
+     &         +XJ13*XJ21*XJ32  &
+     &         -XJ13*XJ22*XJ31  &
+     &         -XJ12*XJ21*XJ33  &
+     &         -XJ11*XJ23*XJ32
 !
 !* INVERSION OF JACOBIAN
 !
@@ -669,7 +671,7 @@ module m_heat_LIB_CONDUCTIVITY
             DO 20 I=1,NN
               CTEMP=CTEMP+H(I)*TT(I)
    20       CONTINUE
-            CALL heat_GET_CONDUCTIVITY
+            CALL heat_GET_CONDUCTIVITY         &
      &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)                         
 !
 !* WEIGT VALUE AT GAUSSIAN POINT
@@ -677,113 +679,113 @@ module m_heat_LIB_CONDUCTIVITY
             WGY=-CC(2)*WGT(LX)*WGT(LY)*WGT(LZ)*DET
             WGZ=-CC(3)*WGT(LX)*WGT(LY)*WGT(LZ)*DET
 !
-            SS( 1)=SS( 1)+BX(1)*BX(1)*WGX
-     &                   +BY(1)*BY(1)*WGY
+            SS( 1)=SS( 1)+BX(1)*BX(1)*WGX   &
+     &                   +BY(1)*BY(1)*WGY   &
      &                   +BZ(1)*BZ(1)*WGZ
-            SS( 2)=SS( 2)+BX(1)*BX(2)*WGX
-     &                   +BY(1)*BY(2)*WGY
+            SS( 2)=SS( 2)+BX(1)*BX(2)*WGX   &
+     &                   +BY(1)*BY(2)*WGY   &
      &                   +BZ(1)*BZ(2)*WGZ
-            SS( 3)=SS( 3)+BX(1)*BX(3)*WGX
-     &                   +BY(1)*BY(3)*WGY
+            SS( 3)=SS( 3)+BX(1)*BX(3)*WGX   &
+     &                   +BY(1)*BY(3)*WGY   &
      &                   +BZ(1)*BZ(3)*WGZ
-            SS( 4)=SS( 4)+BX(1)*BX(4)*WGX
-     &                   +BY(1)*BY(4)*WGY
+            SS( 4)=SS( 4)+BX(1)*BX(4)*WGX   &
+     &                   +BY(1)*BY(4)*WGY   &
      &                   +BZ(1)*BZ(4)*WGZ
-            SS( 5)=SS( 5)+BX(1)*BX(5)*WGX
-     &                   +BY(1)*BY(5)*WGY
+            SS( 5)=SS( 5)+BX(1)*BX(5)*WGX   &
+     &                   +BY(1)*BY(5)*WGY   &
      &                   +BZ(1)*BZ(5)*WGZ
-            SS( 6)=SS( 6)+BX(1)*BX(6)*WGX
-     &                   +BY(1)*BY(6)*WGY
+            SS( 6)=SS( 6)+BX(1)*BX(6)*WGX   &
+     &                   +BY(1)*BY(6)*WGY   &
      &                   +BZ(1)*BZ(6)*WGZ
-            SS( 7)=SS( 7)+BX(1)*BX(7)*WGX
-     &                   +BY(1)*BY(7)*WGY
+            SS( 7)=SS( 7)+BX(1)*BX(7)*WGX   &
+     &                   +BY(1)*BY(7)*WGY   &
      &                   +BZ(1)*BZ(7)*WGZ
-            SS( 8)=SS( 8)+BX(1)*BX(8)*WGX
-     &                   +BY(1)*BY(8)*WGY
+            SS( 8)=SS( 8)+BX(1)*BX(8)*WGX   &
+     &                   +BY(1)*BY(8)*WGY   &
      &                   +BZ(1)*BZ(8)*WGZ
-            SS(10)=SS(10)+BX(2)*BX(2)*WGX
-     &                   +BY(2)*BY(2)*WGY
+            SS(10)=SS(10)+BX(2)*BX(2)*WGX   &
+     &                   +BY(2)*BY(2)*WGY   &
      &                   +BZ(2)*BZ(2)*WGZ
-            SS(11)=SS(11)+BX(2)*BX(3)*WGX
-     &                   +BY(2)*BY(3)*WGY
+            SS(11)=SS(11)+BX(2)*BX(3)*WGX   &
+     &                   +BY(2)*BY(3)*WGY   &
      &                   +BZ(2)*BZ(3)*WGZ
-            SS(12)=SS(12)+BX(2)*BX(4)*WGX
-     &                   +BY(2)*BY(4)*WGY
+            SS(12)=SS(12)+BX(2)*BX(4)*WGX   &
+     &                   +BY(2)*BY(4)*WGY   &
      &                   +BZ(2)*BZ(4)*WGZ
-            SS(13)=SS(13)+BX(2)*BX(5)*WGX
-     &                   +BY(2)*BY(5)*WGY
+            SS(13)=SS(13)+BX(2)*BX(5)*WGX   &
+     &                   +BY(2)*BY(5)*WGY   &
      &                   +BZ(2)*BZ(5)*WGZ
-            SS(14)=SS(14)+BX(2)*BX(6)*WGX
-     &                   +BY(2)*BY(6)*WGY
+            SS(14)=SS(14)+BX(2)*BX(6)*WGX   &
+     &                   +BY(2)*BY(6)*WGY   &
      &                   +BZ(2)*BZ(6)*WGZ
-            SS(15)=SS(15)+BX(2)*BX(7)*WGX
-     &                   +BY(2)*BY(7)*WGY
+            SS(15)=SS(15)+BX(2)*BX(7)*WGX   &
+     &                   +BY(2)*BY(7)*WGY   &
      &                   +BZ(2)*BZ(7)*WGZ
-            SS(16)=SS(16)+BX(2)*BX(8)*WGX
-     &                   +BY(2)*BY(8)*WGY
+            SS(16)=SS(16)+BX(2)*BX(8)*WGX   &
+     &                   +BY(2)*BY(8)*WGY   &
      &                   +BZ(2)*BZ(8)*WGZ
-            SS(19)=SS(19)+BX(3)*BX(3)*WGX
-     &                   +BY(3)*BY(3)*WGY
+            SS(19)=SS(19)+BX(3)*BX(3)*WGX   &
+     &                   +BY(3)*BY(3)*WGY   &
      &                   +BZ(3)*BZ(3)*WGZ
-            SS(20)=SS(20)+BX(3)*BX(4)*WGX
-     &                   +BY(3)*BY(4)*WGY
+            SS(20)=SS(20)+BX(3)*BX(4)*WGX   &
+     &                   +BY(3)*BY(4)*WGY   &
      &                   +BZ(3)*BZ(4)*WGZ
-            SS(21)=SS(21)+BX(3)*BX(5)*WGX
-     &                   +BY(3)*BY(5)*WGY
+            SS(21)=SS(21)+BX(3)*BX(5)*WGX   &
+     &                   +BY(3)*BY(5)*WGY   &
      &                   +BZ(3)*BZ(5)*WGZ
-            SS(22)=SS(22)+BX(3)*BX(6)*WGX
-     &                   +BY(3)*BY(6)*WGY
+            SS(22)=SS(22)+BX(3)*BX(6)*WGX   &
+     &                   +BY(3)*BY(6)*WGY   &
      &                   +BZ(3)*BZ(6)*WGZ
-            SS(23)=SS(23)+BX(3)*BX(7)*WGX
-     &                   +BY(3)*BY(7)*WGY
+            SS(23)=SS(23)+BX(3)*BX(7)*WGX   &
+     &                   +BY(3)*BY(7)*WGY   &
      &                   +BZ(3)*BZ(7)*WGZ
-            SS(24)=SS(24)+BX(3)*BX(8)*WGX
-     &                   +BY(3)*BY(8)*WGY
+            SS(24)=SS(24)+BX(3)*BX(8)*WGX   &
+     &                   +BY(3)*BY(8)*WGY   &
      &                   +BZ(3)*BZ(8)*WGZ
-            SS(28)=SS(28)+BX(4)*BX(4)*WGX
-     &                   +BY(4)*BY(4)*WGY
+            SS(28)=SS(28)+BX(4)*BX(4)*WGX   &
+     &                   +BY(4)*BY(4)*WGY   &
      &                   +BZ(4)*BZ(4)*WGZ
-            SS(29)=SS(29)+BX(4)*BX(5)*WGX
-     &                   +BY(4)*BY(5)*WGY
+            SS(29)=SS(29)+BX(4)*BX(5)*WGX   &
+     &                   +BY(4)*BY(5)*WGY   &
      &                   +BZ(4)*BZ(5)*WGZ
-            SS(30)=SS(30)+BX(4)*BX(6)*WGX
-     &                   +BY(4)*BY(6)*WGY
+            SS(30)=SS(30)+BX(4)*BX(6)*WGX   &
+     &                   +BY(4)*BY(6)*WGY   &
      &                   +BZ(4)*BZ(6)*WGZ
-            SS(31)=SS(31)+BX(4)*BX(7)*WGX
-     &                   +BY(4)*BY(7)*WGY
+            SS(31)=SS(31)+BX(4)*BX(7)*WGX   &
+     &                   +BY(4)*BY(7)*WGY   &
      &                   +BZ(4)*BZ(7)*WGZ
-            SS(32)=SS(32)+BX(4)*BX(8)*WGX
-     &                   +BY(4)*BY(8)*WGY
+            SS(32)=SS(32)+BX(4)*BX(8)*WGX   &
+     &                   +BY(4)*BY(8)*WGY   &
      &                   +BZ(4)*BZ(8)*WGZ
-            SS(37)=SS(37)+BX(5)*BX(5)*WGX
-     &                   +BY(5)*BY(5)*WGY
+            SS(37)=SS(37)+BX(5)*BX(5)*WGX   &
+     &                   +BY(5)*BY(5)*WGY   &
      &                   +BZ(5)*BZ(5)*WGZ
-            SS(38)=SS(38)+BX(5)*BX(6)*WGX
-     &                   +BY(5)*BY(6)*WGY
+            SS(38)=SS(38)+BX(5)*BX(6)*WGX   &
+     &                   +BY(5)*BY(6)*WGY   &
      &                   +BZ(5)*BZ(6)*WGZ
-            SS(39)=SS(39)+BX(5)*BX(7)*WGX
-     &                   +BY(5)*BY(7)*WGY
+            SS(39)=SS(39)+BX(5)*BX(7)*WGX   &
+     &                   +BY(5)*BY(7)*WGY   &
      &                   +BZ(5)*BZ(7)*WGZ
-            SS(40)=SS(40)+BX(5)*BX(8)*WGX
-     &                   +BY(5)*BY(8)*WGY
+            SS(40)=SS(40)+BX(5)*BX(8)*WGX   &
+     &                   +BY(5)*BY(8)*WGY   &
      &                   +BZ(5)*BZ(8)*WGZ
-            SS(46)=SS(46)+BX(6)*BX(6)*WGX
-     &                   +BY(6)*BY(6)*WGY
+            SS(46)=SS(46)+BX(6)*BX(6)*WGX   &
+     &                   +BY(6)*BY(6)*WGY   &
      &                   +BZ(6)*BZ(6)*WGZ
-            SS(47)=SS(47)+BX(6)*BX(7)*WGX
-     &                   +BY(6)*BY(7)*WGY
+            SS(47)=SS(47)+BX(6)*BX(7)*WGX   &
+     &                   +BY(6)*BY(7)*WGY   &
      &                   +BZ(6)*BZ(7)*WGZ
-            SS(48)=SS(48)+BX(6)*BX(8)*WGX
-     &                   +BY(6)*BY(8)*WGY
+            SS(48)=SS(48)+BX(6)*BX(8)*WGX   &
+     &                   +BY(6)*BY(8)*WGY   &
      &                   +BZ(6)*BZ(8)*WGZ
-            SS(55)=SS(55)+BX(7)*BX(7)*WGX
-     &                   +BY(7)*BY(7)*WGY
+            SS(55)=SS(55)+BX(7)*BX(7)*WGX   &
+     &                   +BY(7)*BY(7)*WGY   &
      &                   +BZ(7)*BZ(7)*WGZ
-            SS(56)=SS(56)+BX(7)*BX(8)*WGX
-     &                   +BY(7)*BY(8)*WGY
+            SS(56)=SS(56)+BX(7)*BX(8)*WGX   &
+     &                   +BY(7)*BY(8)*WGY   &
      &                   +BZ(7)*BZ(8)*WGZ
-            SS(64)=SS(64)+BX(8)*BX(8)*WGX
-     &                   +BY(8)*BY(8)*WGY
+            SS(64)=SS(64)+BX(8)*BX(8)*WGX   &
+     &                   +BY(8)*BY(8)*WGY   &
      &                   +BZ(8)*BZ(8)*WGZ
 !
    40       CONTINUE
@@ -820,9 +822,9 @@ module m_heat_LIB_CONDUCTIVITY
       SS(63) = SS(56)
 !
       RETURN
-      END
+      END subroutine 
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_531 ( NN,XXX,YYY,ZZZ,TEMP,TZERO
+      SUBROUTINE heat_THERMAL_531 ( NN,XXX,YYY,ZZZ,TEMP,TZERO    &
      &                                   ,THICK,HH,RR1,RR2,SS )
 !*---------------------------------------------------------------------*
 !* 
@@ -835,9 +837,9 @@ module m_heat_LIB_CONDUCTIVITY
 
       write(*,*) 'TYPE=531 not yet available..'
       stop
-      end
+      end subroutine
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_541 ( NN,XXX,YYY,ZZZ,TEMP,TZERO
+      SUBROUTINE heat_THERMAL_541 ( NN,XXX,YYY,ZZZ,TEMP,TZERO    &
      &                                   ,THICK,HH,RR1,RR2,SS )
 !*---------------------------------------------------------------------*
 !* 
@@ -888,22 +890,22 @@ module m_heat_LIB_CONDUCTIVITY
       RRR1 = RR1**0.25
       RRR2 = RR2**0.25
 
-      HA1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )
+      HA1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )     &
      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR1
-      HA2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )
+      HA2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )     &
      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR1
-      HA3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )
+      HA3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )     &
      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR1
-      HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )
+      HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )     &
      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR1
  
-      HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )
+      HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )     &
      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR2
-      HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )
+      HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )     &
      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR2
-      HB3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )
+      HB3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )     &
      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR2
-      HB4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )
+      HB4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )     &
      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR2
 
       HHH = HH / THICK
@@ -944,7 +946,7 @@ module m_heat_LIB_CONDUCTIVITY
 !C   29 30 31 32 33 34 35 36       57 58 59 60 61 62 63   (64-36) 
 
       RETURN
-      END
+      END subroutine
 !*---------------------------------------------------------------------*
       SUBROUTINE heat_get_area ( XX,YY,ZZ,AA )
 !*---------------------------------------------------------------------*
@@ -958,7 +960,7 @@ module m_heat_LIB_CONDUCTIVITY
 !
       PI=4.0*ATAN(1.0)
 !
-      XG(1) =-0.57735 02691 89625 8
+      XG(1) =-0.5773502691896258
       XG(2) =-XG(1)
       AA=0.0
 !
@@ -1004,9 +1006,9 @@ module m_heat_LIB_CONDUCTIVITY
   200 CONTINUE
 
       RETURN
-      END
+      END subroutine
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_731 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS
+      SUBROUTINE heat_THERMAL_731 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS    &
      &                                        ,ntab,temp,funcA,funcB)
 !*---------------------------------------------------------------------*
 !*
@@ -1128,12 +1130,12 @@ module m_heat_LIB_CONDUCTIVITY
 !
 !*DETERMINANT OF JACOBIAN
 ! 
-            DET = XJ11*XJ22*XJ33
-     2          + XJ12*XJ23*XJ31
-     3          + XJ13*XJ21*XJ32
-     4          - XJ13*XJ22*XJ31
-     5          - XJ12*XJ21*XJ33
-     6          - XJ11*XJ23*XJ32
+            DET = XJ11*XJ22*XJ33   &
+     &          + XJ12*XJ23*XJ31   &
+     &          + XJ13*XJ21*XJ32   &
+     &          - XJ13*XJ22*XJ31   &
+     &          - XJ12*XJ21*XJ33   &
+     &          - XJ11*XJ23*XJ32
 !
 !* INVERSION OF JACOBIAN
 !
@@ -1208,23 +1210,23 @@ module m_heat_LIB_CONDUCTIVITY
                 BV(2) = HS(I)
                 BV(3) = 0.0
 
-                WK(1) = AMAT(1,1)*BV(1) 
-     &                + AMAT(1,2)*BV(2) 
+                WK(1) = AMAT(1,1)*BV(1)   &
+     &                + AMAT(1,2)*BV(2)   &
      &                + AMAT(1,3)*BV(3)
-                WK(2) = AMAT(2,1)*BV(1) 
-     &                + AMAT(2,2)*BV(2) 
+                WK(2) = AMAT(2,1)*BV(1)   &
+     &                + AMAT(2,2)*BV(2)   & 
      &                + AMAT(2,3)*BV(3)
-                WK(3) = AMAT(3,1)*BV(1) 
-     &                + AMAT(3,2)*BV(2) 
+                WK(3) = AMAT(3,1)*BV(1)   &
+     &                + AMAT(3,2)*BV(2)   &
      &                + AMAT(3,3)*BV(3)
-                BV(1) = THE(1,1)*WK(1)  
-     &                + THE(1,2)*WK(2)  
+                BV(1) = THE(1,1)*WK(1)    & 
+     &                + THE(1,2)*WK(2)    & 
      &                + THE(1,3)*WK(3)
-                BV(2) = THE(2,1)*WK(1)  
-     &                + THE(2,2)*WK(2)  
+                BV(2) = THE(2,1)*WK(1)    &
+     &                + THE(2,2)*WK(2)    & 
      &                + THE(2,3)*WK(3)
-                BV(3) = THE(3,1)*WK(1)  
-     &                + THE(3,2)*WK(2) 
+                BV(3) = THE(3,1)*WK(1)    &
+     &                + THE(3,2)*WK(2)    &
      &                + THE(3,3)*WK(3)
 
                 DTDX(I) = BV(1)
@@ -1239,7 +1241,7 @@ module m_heat_LIB_CONDUCTIVITY
               DO I = 1, NN
                 CTEMP = CTEMP + H(I)*TT(I)
               ENDDO
-              CALL heat_GET_CONDUCTIVITY
+              CALL heat_GET_CONDUCTIVITY   &
      &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )                         
 !
 !* SET INTEGRATION WEIGHT
@@ -1247,25 +1249,25 @@ module m_heat_LIB_CONDUCTIVITY
               VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
               VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
 !
-              SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX 
+              SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX   &
      &                        + DTDY(1)*DTDY(1)*VALY
-              SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX 
+              SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX   &
      &                        + DTDY(1)*DTDY(2)*VALY
-              SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX 
+              SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX   & 
      &                        + DTDY(1)*DTDY(3)*VALY
-              SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX 
+              SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX   & 
      &                        + DTDY(1)*DTDY(4)*VALY
-              SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX 
+              SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX   &
      &                        + DTDY(2)*DTDY(2)*VALY
-              SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX 
+              SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX   &
      &                        + DTDY(2)*DTDY(3)*VALY
-              SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX 
+              SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX   &
      &                        + DTDY(2)*DTDY(4)*VALY
-              SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX 
+              SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX   &
      &                        + DTDY(3)*DTDY(3)*VALY
-              SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX 
+              SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX   &
      &                        + DTDY(3)*DTDY(4)*VALY
-              SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX 
+              SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX   &
      &                        + DTDY(4)*DTDY(4)*VALY
 
   120     CONTINUE
@@ -1288,9 +1290,9 @@ module m_heat_LIB_CONDUCTIVITY
       SS(15) = SS(12)
 !
       RETURN
-      END
+      END subroutine
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_741 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS
+      SUBROUTINE heat_THERMAL_741 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS   &
      &                                        ,ntab,temp,funcA,funcB)
 !*---------------------------------------------------------------------*
 !*
@@ -1439,12 +1441,12 @@ module m_heat_LIB_CONDUCTIVITY
 !
 !*DETERMINANT OF JACOBIAN
 ! 
-            DET = XJ11*XJ22*XJ33
-     2          + XJ12*XJ23*XJ31
-     3          + XJ13*XJ21*XJ32
-     4          - XJ13*XJ22*XJ31
-     5          - XJ12*XJ21*XJ33
-     6          - XJ11*XJ23*XJ32
+            DET = XJ11*XJ22*XJ33   &
+     &          + XJ12*XJ23*XJ31   &
+     &          + XJ13*XJ21*XJ32   &
+     &          - XJ13*XJ22*XJ31   &
+     &          - XJ12*XJ21*XJ33   &
+     &          - XJ11*XJ23*XJ32
 !
 !* INVERSION OF JACOBIAN
 !
@@ -1519,23 +1521,23 @@ module m_heat_LIB_CONDUCTIVITY
                 BV(2) = HS(I)
                 BV(3) = 0.0
 
-                WK(1) = AMAT(1,1)*BV(1) 
-     &                + AMAT(1,2)*BV(2) 
+                WK(1) = AMAT(1,1)*BV(1)   &
+     &                + AMAT(1,2)*BV(2)   & 
      &                + AMAT(1,3)*BV(3)
-                WK(2) = AMAT(2,1)*BV(1) 
-     &                + AMAT(2,2)*BV(2) 
+                WK(2) = AMAT(2,1)*BV(1)   &
+     &                + AMAT(2,2)*BV(2)   &
      &                + AMAT(2,3)*BV(3)
-                WK(3) = AMAT(3,1)*BV(1) 
-     &                + AMAT(3,2)*BV(2) 
+                WK(3) = AMAT(3,1)*BV(1)   & 
+     &                + AMAT(3,2)*BV(2)   & 
      &                + AMAT(3,3)*BV(3)
-                BV(1) = THE(1,1)*WK(1)  
-     &                + THE(1,2)*WK(2)  
+                BV(1) = THE(1,1)*WK(1)     &
+     &                + THE(1,2)*WK(2)     &  
      &                + THE(1,3)*WK(3)
-                BV(2) = THE(2,1)*WK(1)  
-     &                + THE(2,2)*WK(2)  
+                BV(2) = THE(2,1)*WK(1)      &
+     &                + THE(2,2)*WK(2)     &  
      &                + THE(2,3)*WK(3)
-                BV(3) = THE(3,1)*WK(1)  
-     &                + THE(3,2)*WK(2) 
+                BV(3) = THE(3,1)*WK(1)      &
+     &                + THE(3,2)*WK(2)      &
      &                + THE(3,3)*WK(3)
 
                 DTDX(I) = BV(1)
@@ -1550,7 +1552,7 @@ module m_heat_LIB_CONDUCTIVITY
               DO I = 1, NN
                 CTEMP = CTEMP + H(I)*TT(I)
               ENDDO
-              CALL heat_GET_CONDUCTIVITY
+              CALL heat_GET_CONDUCTIVITY    &
      &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )                         
 !
 !* SET INTEGRATION WEIGHT
@@ -1558,25 +1560,25 @@ module m_heat_LIB_CONDUCTIVITY
               VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
               VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
 !
-              SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX 
+              SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX   &
      &                        + DTDY(1)*DTDY(1)*VALY
-              SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX 
+              SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX   &
      &                        + DTDY(1)*DTDY(2)*VALY
-              SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX 
+              SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX   &
      &                        + DTDY(1)*DTDY(3)*VALY
-              SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX 
+              SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX   &
      &                        + DTDY(1)*DTDY(4)*VALY
-              SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX 
+              SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX   &
      &                        + DTDY(2)*DTDY(2)*VALY
-              SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX 
+              SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX   &
      &                        + DTDY(2)*DTDY(3)*VALY
-              SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX 
+              SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX   &
      &                        + DTDY(2)*DTDY(4)*VALY
-              SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX 
+              SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX   &
      &                        + DTDY(3)*DTDY(3)*VALY
-              SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX 
+              SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX   &
      &                        + DTDY(3)*DTDY(4)*VALY
-              SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX 
+              SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX   &
      &                        + DTDY(4)*DTDY(4)*VALY
 
   120     CONTINUE
@@ -1591,9 +1593,9 @@ module m_heat_LIB_CONDUCTIVITY
       SS(15) = SS(12)
 !
       RETURN
-      END
+      END subroutine
 !C*--------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_232 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS 
+      SUBROUTINE heat_THERMAL_232 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS  & 
      &                                          ,ntab,temp,funcA,funcB)
 !C*--------------------------------------------------------------------*
 !C*
@@ -1676,7 +1678,7 @@ module m_heat_LIB_CONDUCTIVITY
           DO 30 I=1,NN
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
-          CALL heat_GET_CONDUCTIVITY
+          CALL heat_GET_CONDUCTIVITY  &
      &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)                         
 !C*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -1686,7 +1688,7 @@ module m_heat_LIB_CONDUCTIVITY
           DO 50 I = 1, NN
             DO 40 J = 1, NN
               IJ = IJ + 1
-              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX
+              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX &
      &                     +BY(I)*BY(J)*WGY
    40       CONTINUE
    50     CONTINUE
@@ -1695,9 +1697,9 @@ module m_heat_LIB_CONDUCTIVITY
   200 CONTINUE
 !C
       RETURN
-      END
+      END subroutine
 !C*--------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_242 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS 
+      SUBROUTINE heat_THERMAL_242 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS &
      &                                          ,ntab,temp,funcA,funcB)
 !C*--------------------------------------------------------------------*
 !C*
@@ -1775,7 +1777,7 @@ module m_heat_LIB_CONDUCTIVITY
           DO 30 I=1,NN
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
-          CALL heat_GET_CONDUCTIVITY
+          CALL heat_GET_CONDUCTIVITY  &
      &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)                         
 !*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
@@ -1785,7 +1787,7 @@ module m_heat_LIB_CONDUCTIVITY
           DO 50 I = 1, NN
             DO 40 J = 1, NN
               IJ = IJ + 1
-              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX
+              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX  &
      &                     +BY(I)*BY(J)*WGY
    40       CONTINUE
    50     CONTINUE
@@ -1794,9 +1796,9 @@ module m_heat_LIB_CONDUCTIVITY
   200 CONTINUE
 !C
       RETURN
-      END
+      END subroutine
 !C*--------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_342 (NN,XX,YY,ZZ,TT,IMAT,SS 
+      SUBROUTINE heat_THERMAL_342 (NN,XX,YY,ZZ,TT,IMAT,SS  &
      &                                          ,ntab,temp,funcA,funcB)
 !C*--------------------------------------------------------------------*
 !C*
@@ -1907,12 +1909,12 @@ module m_heat_LIB_CONDUCTIVITY
    40       CONTINUE
 !C
 !C* DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33
-     2         +XJ12*XJ23*XJ31
-     3         +XJ13*XJ21*XJ32
-     4         -XJ13*XJ22*XJ31
-     5         -XJ12*XJ21*XJ33
-     6         -XJ11*XJ23*XJ32
+            DET=XJ11*XJ22*XJ33  &
+     &         +XJ12*XJ23*XJ31  &
+     &         +XJ13*XJ21*XJ32  &
+     &         -XJ13*XJ22*XJ31  &
+     &         -XJ12*XJ21*XJ33  &
+     &         -XJ11*XJ23*XJ32
 !C* INVERSION OF JACOBIAN
             DUM=1.0/DET
             XJI11=DUM*( XJ22*XJ33-XJ23*XJ32)
@@ -1931,27 +1933,27 @@ module m_heat_LIB_CONDUCTIVITY
             DO 50 I=1,NN
               CTEMP=CTEMP+H(I)*TT(I)
    50       CONTINUE
-            CALL heat_GET_CONDUCTIVITY
+            CALL heat_GET_CONDUCTIVITY  &
      &                           ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
 !C
 !C* WEIGT VALUE AT GAUSSIAN POINT
             DET = -DET
-            WGX=CC(1)*WGT(L1)*WGT(L2)*WGT(L3)*DET
+            WGX=CC(1)*WGT(L1)*WGT(L2)*WGT(L3)*DET   &
      &                                       *(1.0-X3)*(1.0-X2-X3)*0.125
-            WGY=CC(2)*WGT(L1)*WGT(L2)*WGT(L3)*DET
+            WGY=CC(2)*WGT(L1)*WGT(L2)*WGT(L3)*DET   &
      &                                       *(1.0-X3)*(1.0-X2-X3)*0.125
-            WGZ=CC(3)*WGT(L1)*WGT(L2)*WGT(L3)*DET
+            WGZ=CC(3)*WGT(L1)*WGT(L2)*WGT(L3)*DET   &
      &                                       *(1.0-X3)*(1.0-X2-X3)*0.125
 !C
             DO 60 J=1, NN
-              BX(J)=XJI11*(HL1(J)-HL4(J))
-     &             +XJI12*(HL2(J)-HL4(J))
+              BX(J)=XJI11*(HL1(J)-HL4(J))   &
+     &             +XJI12*(HL2(J)-HL4(J))   &
      &             +XJI13*(HL3(J)-HL4(J))
-              BY(J)=XJI21*(HL1(J)-HL4(J))
-     &             +XJI22*(HL2(J)-HL4(J))
+              BY(J)=XJI21*(HL1(J)-HL4(J))   &
+     &             +XJI22*(HL2(J)-HL4(J))   &
      &             +XJI23*(HL3(J)-HL4(J))
-              BZ(J)=XJI31*(HL1(J)-HL4(J))
-     &             +XJI32*(HL2(J)-HL4(J))
+              BZ(J)=XJI31*(HL1(J)-HL4(J))   &
+     &             +XJI32*(HL2(J)-HL4(J))   &
      &             +XJI33*(HL3(J)-HL4(J))
    60       CONTINUE
 !C
@@ -1959,8 +1961,8 @@ module m_heat_LIB_CONDUCTIVITY
             DO 80 I = 1, NN
               DO 70 J = 1, NN
                 IJ = IJ + 1
-                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX
-     &                       +BY(I)*BY(J)*WGY
+                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX   &
+     &                       +BY(I)*BY(J)*WGY   &
      &                       +BZ(I)*BZ(J)*WGZ
    70         CONTINUE
    80       CONTINUE
@@ -1970,9 +1972,9 @@ module m_heat_LIB_CONDUCTIVITY
   300 CONTINUE
 !C
       RETURN
-      END
+      END subroutine
 !*---------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_352 (NN,XX,YY,ZZ,TT,IMAT,SS
+      SUBROUTINE heat_THERMAL_352 (NN,XX,YY,ZZ,TT,IMAT,SS  &
      &                                        ,ntab,temp,funcA,funcB)
 !*---------------------------------------------------------------------*
 !*
@@ -1981,7 +1983,7 @@ module m_heat_LIB_CONDUCTIVITY
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-      DIMENSION H(15),HL1(15),HL2(15),HL3(15),HZ(15)
+      DIMENSION H(15),HL1(15),HL2(15),HL3(15),HZ(15)  &
      &         ,BX(15),BY(15),BZ(15),CC(3) 
       dimension temp(*),funcA(*),funcB(*)
       REAL(kind=kreal) XG(3),WGT(3)
@@ -2108,19 +2110,19 @@ module m_heat_LIB_CONDUCTIVITY
    40       CONTINUE
 !C
 !C* DETERMINANT OF JACOBIAN
-            DET = XJ11*XJ22*XJ33
-     2           +XJ12*XJ23*XJ31
-     3           +XJ13*XJ21*XJ32
-     4           -XJ13*XJ22*XJ31
-     5           -XJ12*XJ21*XJ33
-     6           -XJ11*XJ23*XJ32
+            DET = XJ11*XJ22*XJ33  &
+     &           +XJ12*XJ23*XJ31  &
+     &           +XJ13*XJ21*XJ32  &
+     &           -XJ13*XJ22*XJ31  &
+     &           -XJ12*XJ21*XJ33  &
+     &           -XJ11*XJ23*XJ32
 !C 
 !C* CONDUCTIVITY AT CURRENT TEMPERATURE
             CTEMP=0.0
             DO 50 I=1,NN
               CTEMP = CTEMP+H(I)*TT(I)
    50       CONTINUE
-            CALL heat_GET_CONDUCTIVITY
+            CALL heat_GET_CONDUCTIVITY  &
      &               (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !C* WEIGT VALUE AT GAUSSIAN POINT
             WGX = CC(1)*WGT(L1)*WGT(L2)*WGT(LZ)*DET*(1.0-X2)*0.25
@@ -2140,11 +2142,11 @@ module m_heat_LIB_CONDUCTIVITY
             XJI33 = DUM*( XJ11*XJ22-XJ12*XJ21)
 !C
             DO 60 J=1,NN
-              BX(J) = XJI11*(HL1(J)-HL3(J))
+              BX(J) = XJI11*(HL1(J)-HL3(J))  &
      &                             +XJI12*(HL2(J)-HL3(J))+XJI13*HZ(J)
-              BY(J) = XJI21*(HL1(J)-HL3(J))
+              BY(J) = XJI21*(HL1(J)-HL3(J))  &
      &                             +XJI22*(HL2(J)-HL3(J))+XJI23*HZ(J)
-              BZ(J) = XJI31*(HL1(J)-HL3(J))
+              BZ(J) = XJI31*(HL1(J)-HL3(J))  &
      &                             +XJI32*(HL2(J)-HL3(J))+XJI33*HZ(J)
    60       CONTINUE
 !C
@@ -2152,8 +2154,8 @@ module m_heat_LIB_CONDUCTIVITY
             DO 80 I = 1, NN
               DO 70 J = 1, NN
                 IJ = IJ + 1
-                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX
-     &                       +BY(I)*BY(J)*WGY
+                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX   &
+     &                       +BY(I)*BY(J)*WGY   &
      &                       +BZ(I)*BZ(J)*WGZ
    70         CONTINUE
    80       CONTINUE
@@ -2163,9 +2165,9 @@ module m_heat_LIB_CONDUCTIVITY
   300 CONTINUE
 !C 
       RETURN
-      END
+      END subroutine
 !C*--------------------------------------------------------------------*
-      SUBROUTINE heat_THERMAL_362 (NN,XX,YY,ZZ,TT,IMAT,SS
+      SUBROUTINE heat_THERMAL_362 (NN,XX,YY,ZZ,TT,IMAT,SS  &
      &                                        ,ntab,temp,funcA,funcB)
 !C*--------------------------------------------------------------------*
 !C*
@@ -2306,12 +2308,12 @@ module m_heat_LIB_CONDUCTIVITY
               XJ33=XJ33+HT(I)*ZZ(I)
             ENDDO
 !C* DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33
-     2      +XJ12*XJ23*XJ31
-     3      +XJ13*XJ21*XJ32
-     4      -XJ13*XJ22*XJ31
-     5      -XJ12*XJ21*XJ33
-     6      -XJ11*XJ23*XJ32
+            DET=XJ11*XJ22*XJ33  & 
+     &      +XJ12*XJ23*XJ31     &
+     &      +XJ13*XJ21*XJ32     &
+     &      -XJ13*XJ22*XJ31     &
+     &      -XJ12*XJ21*XJ33     &
+     &      -XJ11*XJ23*XJ32
 !C
 !C* INVERSION OF JACOBIAN
 !C
@@ -2339,7 +2341,7 @@ module m_heat_LIB_CONDUCTIVITY
             DO 20 I=1,NN
               CTEMP=CTEMP+H(I)*TT(I)
    20       CONTINUE
-            CALL heat_GET_CONDUCTIVITY
+            CALL heat_GET_CONDUCTIVITY    &
      &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)                         
 !C
 !C* WEIGT VALUE AT GAUSSIAN POINT
@@ -2351,8 +2353,8 @@ module m_heat_LIB_CONDUCTIVITY
             DO 40 I = 1, NN
               DO 30 J = 1, NN
                 IJ = IJ + 1
-                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX
-     &                       +BY(I)*BY(J)*WGY
+                SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX   &
+     &                       +BY(I)*BY(J)*WGY   &
      &                       +BZ(I)*BZ(J)*WGZ
    30         CONTINUE
    40       CONTINUE
@@ -2362,7 +2364,7 @@ module m_heat_LIB_CONDUCTIVITY
   300 CONTINUE
 !
       RETURN
-      END
+      END subroutine
 !C***
 !C*** GET CONDUCTIVITY
 !C***
@@ -2395,5 +2397,5 @@ module m_heat_LIB_CONDUCTIVITY
       endif
       return
 
-   end subroutine heat_GET_CONDUCTIVITY
-end module m_heat_mat_ass_CONDUCTIVITY
+   end subroutine 
+end module 

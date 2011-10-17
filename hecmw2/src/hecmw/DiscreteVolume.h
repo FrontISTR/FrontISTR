@@ -1,19 +1,21 @@
-/* 
- * File:   DiscreteVolume.h
- * Author: ktakeda
- *
- * VolumeをTetraに分割するTree
- *
- *  スカラー三重積による体積計算用途
- *
- *  Prism-> 3個のTetra
- *  Hexa -> 2個のPrism -> 6個のTetra
- *
- * Created on 2010/06/22, 15:02
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/DiscreteVolume.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "TypeDef.h"
 #include "ElementType.h"
-
 namespace pmw{
 #ifndef _DISCRETEVOLUME_H
 #define	_DISCRETEVOLUME_H
@@ -26,14 +28,12 @@ public:
         return &moDisVol;
     }
     virtual ~CDiscreteVolume();
-
 private:
-    uiint mPrismDiscre[3][4];// Prismの頂点番号で表した,3個のTetra
-    uiint mHexaDiscre[6][4]; // Hexaの頂点番号で表した,6個のTetra
+    uiint mPrismDiscre[3][4];
+    uiint mHexaDiscre[6][4]; 
 public:
     uiint* getPrismDiscrete(const uiint& index){ return mPrismDiscre[index];}
     uiint* getHexaDiscrete(const uiint& index){ return mHexaDiscre[index];}
 };
 #endif	/* _DISCRETEVOLUME_H */
 }
-

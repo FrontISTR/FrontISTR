@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -43,7 +43,7 @@ module m_static_mat_ass_main
             call mw_matrix_clear( iPart )
             do iElem = 0, mw_get_num_of_element()-1
               icel = icel+1
-              call mw_select_element_with_id( iElem )
+              call mw_select_element( icel-1 )
               call  mw_get_element_vert_node_id( nids )
               nn = mw_get_num_of_element_vert()
               ic_type = mw_get_element_type()

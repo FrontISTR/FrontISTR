@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -34,7 +34,6 @@ use lczparm
 use m_step
 use m_out
 use mMechGauss
-use mContactDef
 
 implicit none
 
@@ -80,6 +79,8 @@ public
         integer              :: total_elem
         integer, allocatable :: part_nodes(:,:)
         integer, allocatable :: part_elems(:,:)
+        integer, allocatable :: global_node_ID(:)
+        integer, allocatable :: global_elem_ID(:)
 !C
 !C-- FILE NAME
 !C
@@ -286,7 +287,6 @@ public
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
-                type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
 !

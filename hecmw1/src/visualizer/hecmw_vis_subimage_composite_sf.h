@@ -5,3 +5,16 @@ void composite_subimage_sf(int pesize, int pixn, double *n_subimage, double *n_s
 		double *subimage, double *subopa);
 
 #endif /* HECMW_VIS_SUBIMAGE_COMPOSITE_SF_H_INCLUDED */
+
+
+
+
+
+
+
+
+
+
+
+
+

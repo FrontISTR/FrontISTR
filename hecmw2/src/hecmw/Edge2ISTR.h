@@ -1,14 +1,21 @@
-/* 
- * File:   Edge2ISTR.h
- * Author: ktakeda
- *
- * MW3 辺番号 -> FrontISTR 2次節点番号
- *
- * Created on 2010/02/18, 15:17
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/Edge2ISTR.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "TypeDef.h"
 #include "Logger.h"
-
 namespace pmw{
 #ifndef _EDGE2ISTR_H
 #define	_EDGE2ISTR_H
@@ -23,14 +30,11 @@ public:
     ~CEdge2ISTR();
 private:
     Utility::CLogger *mpLogger;
-
-    // MW3 辺番号 -> FrontISTR 2次節点番号
     uiint mvHexa[12];
     uiint mvTetra[6];
     uiint mvPrism[9];
     uiint mvQuad[4];
     uiint mvTriangle[3];
-
 public:
     uiint& HexaShapeNum(const uiint& iedge);
     uiint& TetraShapeNum(const uiint& iedge);
@@ -40,6 +44,3 @@ public:
 };
 #endif	/* _EDGE2ISTR_H */
 }
-
-
-

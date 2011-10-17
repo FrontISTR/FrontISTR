@@ -37,16 +37,13 @@ MPI_CFLAGS              = @mpi_cflags@
 HECMW_CFLAGS            = @hecmw_cflags@
 HECMW_CFLAGS2           = @hecmw_cflags2@
 FSTR_CFLAGS             = @fstr_cflags@
-REFINER_CFLAGS          = -I$(REFINERINCDIR)
-ALL_CFLAGS              = $(BASE_CFLAGS) $(FSTR_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS) ${REFINER_CFLAGS)
+ALL_CFLAGS              = $(BASE_CFLAGS) $(FSTR_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS                 = @ldflags@
 MPI_LDFLAGS             = @mpi_ldflags@
 HECMW_LDFLAGS           = @hecmw_ldflags@
 HECMW_LDFLAGS2          = @hecmw_ldflags2@
 FSTR_LDFLAGS            = @fstr_ldflags@
-REFINERLIBS             = -lRcapRefiner -lstdc++
-REFINER_LDFLAGS         = -L$(REFINERLIBDIR) $(REFINERLIBS)
-ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS) $(REFINER_LDFLAGS)
+ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS                = @optflags@
 
 REVOCAP_F90FLAGS        = @revocap_f90flags@
@@ -65,7 +62,7 @@ MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 HECMW_F90LDFLAGS2       = @hecmw_f90ldflags2@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(HECMW_F90LDFLAGS2) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(REFINER_LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(HECMW_F90LDFLAGS2) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@

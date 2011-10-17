@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Heat Analysis                                     !
 !                                                                      !
@@ -15,6 +15,7 @@
 !> \brief This module provides a subroutine to assemble heat conductance 
 !! attribution
 module m_heat_mat_ass_conductivity
+use elementInfo
    contains
 !C***
 !C*** MAT_ASS_CONDUCTIVITY

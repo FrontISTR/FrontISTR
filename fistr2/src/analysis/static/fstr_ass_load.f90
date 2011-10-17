@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -54,7 +54,7 @@ module m_fstr_ass_load
       integer(kind=kint) :: iwk(60)
       integer(kind=kint) :: nodLocal(20), nids(0:20)
       real(kind=kreal) :: tt(20), tt0(20)
-      integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, ik, i, j
+      integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, ik, i, j, iii
       integer(kind=kint) :: icel, ic_type, nn, iS, isect, iset, nsize
       integer(kind=kint) :: itype, iE, iErr, grpid, npart, pid
       real(kind=kreal) :: fval, rho, pa1
@@ -83,7 +83,9 @@ module m_fstr_ass_load
              if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
              read( fstrSOLID%cload_grp(igrp)%grp_name, *, IOSTAT=iErr ) ndID
              if( iErr==0 ) then
-                 ndID=part_nodes(iAss+1,pid+1)+ndID+1
+             !    ndID=part_nodes(iAss+1,pid+1)+ndID+1
+                 if( all(global_node_ID/=ndID) ) cycle
+                 ndID = mw_get_node_index( ndID )+1
                  do ik=1,assDOF(1)
                    if( fstrSOLID%cload_grp(igrp)%dof(ik)==1 ) then
                      fstrSOLID%GL(ndof*(ndID-1)+ik)=fstrSOLID%GL(ndof*(ndID-1)+ik)  &
@@ -94,11 +96,14 @@ module m_fstr_ass_load
                call mw_select_mesh_part_with_id(pid)
 			   do mwigrp = 0, mw_get_num_of_boundary_bnode_mesh()-1
                  nn = mw_get_bnode_mesh_namelength( mwigrp )
+                 header_name = ''
                  call mw_get_bnode_mesh_name(mwigrp, header_name, nn)
                  if( header_name(1:nn)/=trim(fstrSOLID%cload_grp(igrp)%grp_name) ) cycle
                  do  iNode=0, mw_get_num_of_bnode_in_bnode_mesh(mwigrp)-1
 			        ndID= mw_get_node_id_in_bnode_mesh(mwigrp, iNode)
-                    ndID= part_nodes(iAss+1,pid+1)+ndID+1
+                !    ndID= part_nodes(iAss+1,pid+1)+ndID+1
+                    if( all(global_node_ID/=ndID) ) cycle
+                    ndID = mw_get_node_index( ndID )+1
                     do ik=1,assDOF(1)
                       if( fstrSOLID%cload_grp(igrp)%dof(ik)==1 ) then
                         fstrSOLID%GL(ndof*(ndID-1)+ik)=fstrSOLID%GL(ndof*(ndID-1)+ik)  &
@@ -133,7 +138,9 @@ module m_fstr_ass_load
              
              read( fstrSOLID%dload_grp(igrp)%grp_name, *, IOSTAT=iErr ) ndID
              if( iErr==0 ) then   
-                 icel=part_elems(iAss+1,pid+1)+ndID+1
+             !    icel=part_elems(iAss+1,pid+1)+ndID+1
+                 if( all(global_elem_ID/=ndID) ) cycle
+                 icel = mw_get_element_index( ndID )
                  call mw_select_element_with_id( ndID )
                  call mw_get_element_vert_node_id( nids )
                  nn = mw_get_num_of_element_vert()
@@ -164,12 +171,14 @@ module m_fstr_ass_load
                if( fg_surf ) then
 			     do mwigrp = 0, mw_get_num_of_boundary_bface_mesh()-1
                    nn = mw_get_bface_mesh_namelength( mwigrp )
+                   header_name=''
                    call mw_get_bface_mesh_name(mwigrp, header_name, nn)
                    if( header_name(1:nn)/=trim(fstrSOLID%dload_grp(igrp)%grp_name) ) cycle
                    do  iElem=0, mw_get_num_of_bface( mwigrp )-1
 			           ndID= mw_get_elem_id_bface(mwigrp, iElem)
                        call mw_select_element_with_id( ndID )
-                       icel= part_elems(iAss+1,pid+1)+ndID+1                    
+                      ! icel= part_elems(iAss+1,pid+1)+ndID+1  
+                       icel = mw_get_element_index( ndID )		  
                        call  mw_get_element_vert_node_id( nids )
                        nn = mw_get_num_of_element_vert()
                        ic_type = mw_get_element_type()
@@ -205,7 +214,8 @@ module m_fstr_ass_load
                    do  iElem=0, mw_get_num_of_bvolume( mwigrp )-1
 			         ndID= mw_get_elem_id_bvolume(mwigrp, iElem)
                      call mw_select_element_with_id( ndID )
-                     icel= part_elems(iAss+1,pid+1)+ndID+1                    
+                    ! icel= part_elems(iAss+1,pid+1)+ndID+1   
+                     icel = mw_get_element_index( ndID )		
                      call  mw_get_element_vert_node_id( nids )
                      nn = mw_get_num_of_element_vert()
                      ic_type = mw_get_element_type()
@@ -245,27 +255,30 @@ module m_fstr_ass_load
 !C
 !C Update for fstrSOLID%GL
 !C 
+!      do iAss = 0, mw_get_num_of_assemble_model()-1
+!         call mw_select_assemble_model( iAss )
+!         do iPart = 0, mw_get_num_of_mesh_part()-1
+!            call mw_select_mesh_part( iPart )
+!            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
+!               ik = mw_get_transrank(iPart, iNode)
+!               ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
+!               call mw_send_recv_r(fstrSOLID%GL(part_nodes(iAss+1,iPart+1)+1:part_nodes(iAss+1,iPart+2)), ndID, ndof, ik)
+!            enddo
+!         enddo
+!      enddo
+
+      iii = -1	  
       do iAss = 0, mw_get_num_of_assemble_model()-1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
-            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
-               ik = mw_get_transrank(iPart, iNode)
-               ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
-               call mw_send_recv_r(fstrSOLID%GL(part_nodes(iAss+1,iPart+1)+1:part_nodes(iAss+1,iPart+2)), ndID, ndof, iNode)
-            enddo
-         enddo
-      enddo
-	  
-      do iAss = 0, mw_get_num_of_assemble_model()-1
-         call mw_select_assemble_model( iAss )
-         do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             do iNode = 0, mw_get_num_of_node()-1
-              ndID = part_nodes(iAss+1,iPart+1)+iNode
+            !  ndID = part_nodes(iAss+1,iPart+1)+iNode
+              iii = iii+1
+              ndID = mw_get_node_id( iii )
               do ik = 1, ndof
-                if( fstrSOLID%GL(ndof*ndID+ik)/=0.d0 ) then
-                  iErr= mw_rhs_set_bc(iPart, iNode, ik-1, factor*fstrSOLID%GL(ndof*ndID+ik))
+                if( fstrSOLID%GL(ndof*iii+ik)/=0.d0 ) then
+                  iErr= mw_rhs_set_bc(iPart, ndID, ik-1, factor*fstrSOLID%GL(ndof*iii+ik))
                 endif
               enddo
             enddo
@@ -323,7 +336,9 @@ module m_fstr_ass_load
              if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
              read( fstrSOLID%temp_grp(igrp)%grp_name, *, IOSTAT=iErr ) ndID
              if( iErr==0 ) then
-                 ndID=part_nodes(iAss+1,pid+1)+ndID+1
+            !     ndID=part_nodes(iAss+1,pid+1)+ndID+1
+                 if( all(global_node_ID/=ndID) ) cycle
+                 ndID = mw_get_node_index( ndID )
                  fstrSOLID%temperature(ndID)= fstrSOLID%temp_grp(igrp)%fval*factor
              else
                call mw_select_mesh_part_with_id(pid)
@@ -333,11 +348,9 @@ module m_fstr_ass_load
                  if( header_name(1:nn)/=trim(fstrSOLID%temp_grp(igrp)%grp_name) ) cycle
                  do  iNode=0, mw_get_num_of_bnode_in_bnode_mesh(mwigrp)-1
 			        ndID= mw_get_node_id_in_bnode_mesh(mwigrp, iNode)
-                    ndID= part_nodes(iAss+1,pid+1)+ndID+1
-                    do ik=1,assDOF(1)
-                      ndID=part_nodes(iAss+1,pid+1)+ndID+1
-                      fstrSOLID%temperature(ndID)= fstrSOLID%temp_grp(igrp)%fval*factor
-                    enddo
+                !    ndID= part_nodes(iAss+1,pid+1)+ndID+1
+                    ndID = mw_get_node_index( ndID )
+                    fstrSOLID%temperature(ndID)= fstrSOLID%temp_grp(igrp)%fval*factor
                  enddo
                enddo
              endif		   
@@ -359,7 +372,7 @@ module m_fstr_ass_load
             call mw_select_mesh_part( iPart )
             do iElem = 0, mw_get_num_of_element()-1
               icel = icel+1
-              call mw_select_element_with_id( iElem )
+              call mw_select_element( icel-1 )
               call  mw_get_element_vert_node_id( nids )
               nn = mw_get_num_of_element_vert()
               ic_type = mw_get_element_type()

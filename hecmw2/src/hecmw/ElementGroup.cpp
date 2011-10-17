@@ -1,13 +1,23 @@
-//
-// ElementGroup.cpp
-//
-//              2010.10.14
-//              k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/ElementGroup.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "ElementGroup.h"
 #include "Mesh.h"
 using namespace pmw;
-
-
 CElementGroup::CElementGroup()
 {
     ;
@@ -16,17 +26,10 @@ CElementGroup::~CElementGroup()
 {
     ;
 }
-
-
-// ElemGrp自身が所属しているMeshポインター
-//
 void CElementGroup::setMesh(CMesh* pMesh)
 {
     mpMesh = pMesh;
 }
-
-// ID
-//
 void CElementGroup::setID(const uiint& id)
 {
     mnGrpID = id;
@@ -35,9 +38,6 @@ uiint& CElementGroup::getID()
 {
     return mnGrpID;
 }
-
-// Name
-//
 void CElementGroup::setName(const string& sGrpName)
 {
     msGrpName = sGrpName;
@@ -50,31 +50,18 @@ uiint CElementGroup::getNameLength()
 {
     return (uiint)msGrpName.length();
 }
-
-// ElementGrpへElemIDを追加
-//
 void CElementGroup::addElementID(const uiint& nElemID)
 {
     mvElementID.push_back(nElemID);
 }
-
-// ElementGrpのElemID数
-//
 uiint CElementGroup::getNumOfElementID()
 {
     return mvElementID.size();
 }
-
-// ElementGrpのElemID
-//
 uiint& CElementGroup::getElementID(const uiint& index)
 {
     return mvElementID[index];
 }
-
-
-// 上位GridのElementGroupを生成
-//
 void CElementGroup::refine(CElementGroup* pProgElemG)
 {
     uiint iElem, nNumOfElem = mvElementID.size();
@@ -83,21 +70,10 @@ void CElementGroup::refine(CElementGroup* pProgElemG)
     for(iElem=0; iElem < nNumOfElem; iElem++){
         nElemID = mvElementID[iElem];
         pElem = mpMesh->getElement(nElemID);
-
-        //cout << "ElementGroup::refine, pElem ID = " << pElem->getID() << endl;
-
         uiint ivert, nNumOfVert = pElem->getNumOfNode();
         for(ivert=0; ivert < nNumOfVert; ivert++){
             pProgElem = pElem->getProgElem(ivert);
-
-            pProgElemG->addElementID(pProgElem->getID());//// 上位GridのElementGrpへElemIDを追加.
+            pProgElemG->addElementID(pProgElem->getID());
         };
     };
 }
-
-
-
-
-
-
-

@@ -1,26 +1,31 @@
 /*
- * Equation.h
- *
- *  Created on: Nov 11, 2009
- *      Author: goto
- */
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/Equation.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef EQUATION_H_
 #define EQUATION_H_
-
 #include <vector>
 #include <iostream>
 #include "EqnTerm.h"
-
 namespace pmw
 {
-
 class CEquation
 {
 public:
 	CEquation() : mnTerm(0), mConstTerm(0.0) {}
 	virtual ~CEquation() {}
-
 	void setSlave(uiint meshID, uiint nodeID, uiint dof)
 	{
 		clear();
@@ -41,25 +46,19 @@ public:
 	}
 	const CEqnTerm &getTerm(uiint idx) const { return mvTerm[idx]; }
 	const std::vector<CEqnTerm> &getTerm() const { return mvTerm; }
-
 	void setConstTerm(double const_term) { mConstTerm = const_term; }
 	const double &getConstTerm() const { return mConstTerm; }
-
 	const uiint &numTerm() const { return mnTerm; }
-
 	void clear()
 	{
 		mnTerm = 0;
 		mvTerm.resize(0);
 		mConstTerm = 0.0;
 	}
-
 private:
 	uiint mnTerm;
 	std::vector<CEqnTerm> mvTerm;
 	double mConstTerm;
 };
-
 }
-
 #endif /* EQUATION_H_ */

@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -63,7 +63,7 @@ module m_utilities
       integer, pointer :: carray(:)
 	  
       integer :: i, oldsize
-      integer, pointer :: dumarray(:)
+      integer, pointer :: dumarray(:) => null()
       if( .not. associated(carray) ) then
         allocate( carray(1) )
         carray(1) = iin

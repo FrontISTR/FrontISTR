@@ -18,6 +18,7 @@
 
 static struct hecmwST_local_mesh *static_mesh;
 static struct hecmwST_result_data *static_data;
+static int *external_node;
 
 static void memory_error(char *var)
 {
@@ -29,9 +30,10 @@ static void memory_error(char *var)
 struct hecmwST_local_mesh* MW3_get_mesh( int level, int partID )
 {
 	struct hecmwST_local_mesh *mesh;
-	int *part, *nnode, *nelem, *neighbor, *import, *export;
+	int *part, *nnode, *nelem, *neighbor, *import, *export, *importid, *reorderid, *sendbuff, *recvbuff;
 	int npart, total_nnode, total_nelem, nproc, iproc, inode, etype, mynode;
 	int i, j, k, n, m, count, ncount, ecount;
+	HECMW_Request request;
 
 	mynode = mw_get_rank_();
 
@@ -52,7 +54,7 @@ struct hecmwST_local_mesh* MW3_get_mesh( int level, int partID )
 		nelem[0] = 0;
 		for( i = 0; i < npart; i++ ) {
 			part[i] = i;
-			mw_select_mesh_part_with_id_( &part[i] );
+			mw_select_mesh_part_( &part[i] );
 			nnode[i+1] = nnode[i] + mw_get_num_of_node_();
 			nelem[i+1] = nelem[i] + mw_get_num_of_element_();
 			n = mw_get_num_of_neibpe_( &part[i] );
@@ -72,7 +74,7 @@ struct hecmwST_local_mesh* MW3_get_mesh( int level, int partID )
 		nnode[0] = 0;
 		nelem[0] = 0;
 		part[0] = partID;
-		mw_select_mesh_part_with_id_( &part[0] );
+		mw_select_mesh_part_( &part[0] );
 		nnode[1] = mw_get_num_of_node_();
 		nelem[1] = mw_get_num_of_element_();
 		n = mw_get_num_of_neibpe_( &part[0] );
@@ -83,18 +85,17 @@ struct hecmwST_local_mesh* MW3_get_mesh( int level, int partID )
 	}
 	total_nnode = nnode[npart];
 	total_nelem = nelem[npart];
-printf("mynode(%d) nproc(%d) npart(%d) nnode(%d) nelem(%d)\n", mynode, nproc, npart, total_nnode, total_nelem);
 
 	mesh = calloc( 1, sizeof(*mesh) );
 	if( !mesh ) memory_error( "mesh" );
 	mesh->n_node = total_nnode;
-	inode = 0;
+	i = 0;
+	inode = mw_get_node_id_( &i );
 	mesh->n_dof = mw_get_dof_( &inode );
 	mesh->n_elem = total_nelem;
 	mesh->ne_internal = total_nelem;
 	mesh->HECMW_COMM = mw_mpi_comm_();
 	mesh->my_rank = mynode;
-printf("mesh->n_dof(%d) mesh->HECMW_COMM(%d)\n", mesh->n_dof, mesh->HECMW_COMM);
 
 	for( i = 0; i < nproc; i++ ) {
 		if( neighbor[i] ) mesh->n_neighbor_pe++;
@@ -103,7 +104,10 @@ printf("mesh->n_dof(%d) mesh->HECMW_COMM(%d)\n", mesh->n_dof, mesh->HECMW_COMM);
 	if( !import ) memory_error( "import" );
 	export = calloc( total_nnode, sizeof(*export) );
 	if( !export ) memory_error( "export" );
-printf("mesh->n_neighbor_pe(%d)\n", mesh->n_neighbor_pe);
+	importid = malloc( sizeof(*importid) * total_nnode );
+	if( !importid ) memory_error( "importid" );
+	external_node = calloc( total_nnode, sizeof(*external_node) );
+	if( !external_node ) memory_error( "external_node" );
 
 	if( mesh->n_neighbor_pe ) {
 		mesh->neighbor_pe = malloc( sizeof(*mesh->neighbor_pe) * mesh->n_neighbor_pe );
@@ -113,26 +117,42 @@ printf("mesh->n_neighbor_pe(%d)\n", mesh->n_neighbor_pe);
 			if( neighbor[i] ) mesh->neighbor_pe[count++] = i;
 		}
 
+		count = 0;
 		for( i = 0; i < npart; i++ ) {
-			mw_select_mesh_part_with_id_( &part[i] );
+			mw_select_mesh_part_( &part[i] );
 			n = mw_get_num_of_comm_mesh_();
-printf("number of comm process = %d\n", n);
 			for( j = 0; j < n; j++ ) {
 				iproc = mw_get_transrank_( &part[i], &j );
 				m = mw_get_num_of_comm_node_( &j );
 				if( iproc > mynode ) {
+					sendbuff = malloc( sizeof(*sendbuff) * m );
 					for( k = 0; k < m; k++ ) {
 						inode = mw_get_node_id_comm_node_( &j, &k );
-						export[inode] = iproc + 1;
+						inode = mw_get_node_index_( &inode );
+						export[count+inode] = iproc + 1;
+						sendbuff[k] = count + inode;
 					}
-				} else {
-					for( k = 0; k < m; k++ ) {
-						inode = mw_get_node_id_comm_node_( &j, &k );
-						import[inode] = iproc + 1;
-					}
+					HECMW_Isend( sendbuff, m, HECMW_INT, iproc, 0, mesh->HECMW_COMM, &request );
+					free( sendbuff );
 				}
-printf("iproc(%d) m(%d)\n", iproc, m);
 			}
+			for( j = 0; j < n; j++ ) {
+				iproc = mw_get_transrank_( &part[i], &j );
+				m = mw_get_num_of_comm_node_( &j );
+				if( iproc < mynode ) {
+					recvbuff = malloc( sizeof(*recvbuff) * m );
+					HECMW_Irecv( recvbuff, m, HECMW_INT, iproc, 0, mesh->HECMW_COMM, &request );
+					for( k = 0; k < m; k++ ) {
+						inode = mw_get_node_id_comm_node_( &j, &k );
+						inode = mw_get_node_index_( &inode );
+						import[count+inode] = iproc + 1;
+						importid[count+inode] = recvbuff[k];
+						external_node[count+inode] = iproc + 1;
+					}
+					free( recvbuff );
+				}
+			}
+			count += mw_get_num_of_node_();
 		}
 
 		mesh->import_index = calloc( mesh->n_neighbor_pe + 1, sizeof(*mesh->import_index) );
@@ -142,12 +162,12 @@ printf("iproc(%d) m(%d)\n", iproc, m);
 		for( i = 0; i < total_nnode; i++ ) {
 			if( import[i] ) {
 				for( j = 0; j < mesh->n_neighbor_pe; j++ ) {
-					if( import[i] = (mesh->neighbor_pe[j]+1) ) mesh->import_index[j]++;
+					if( import[i] == (mesh->neighbor_pe[j]+1) ) mesh->import_index[j]++;
 				}
 			}
 			if( export[i] ) {
 				for( j = 0; j < mesh->n_neighbor_pe; j++ ) {
-					if( export[i] = (mesh->neighbor_pe[j]+1) ) mesh->export_index[j]++;
+					if( export[i] == (mesh->neighbor_pe[j]+1) ) mesh->export_index[j]++;
 				}
 			}
 		}
@@ -160,16 +180,20 @@ printf("iproc(%d) m(%d)\n", iproc, m);
 			}
 		}
 
-		mesh->import_item = malloc( sizeof(*mesh->import_item) * mesh->import_index[mesh->n_neighbor_pe] );
-		if( !mesh->import_item ) memory_error( "mesh->import_item" );
-		mesh->export_item = malloc( sizeof(*mesh->export_item) * mesh->export_index[mesh->n_neighbor_pe] );
-		if( !mesh->export_item ) memory_error( "mesh->export_item" );
+		if( mesh->import_index[mesh->n_neighbor_pe] ) {
+			mesh->import_item = malloc( sizeof(*mesh->import_item) * mesh->import_index[mesh->n_neighbor_pe] );
+			if( !mesh->import_item ) memory_error( "mesh->import_item" );
+		}
+		if( mesh->export_index[mesh->n_neighbor_pe] ) {
+			mesh->export_item = malloc( sizeof(*mesh->export_item) * mesh->export_index[mesh->n_neighbor_pe] );
+			if( !mesh->export_item ) memory_error( "mesh->export_item" );
+		}
 		ncount = 0;
 		ecount = 0;
 		for( i = 0; i < mesh->n_neighbor_pe; i++ ) {
 			for( j = 0; j < total_nnode; j++ ) {
-				if( import[j] = (mesh->neighbor_pe[i]+1) ) mesh->import_item[ncount++] = j + 1;
-				if( export[j] = (mesh->neighbor_pe[i]+1) ) mesh->export_item[ecount++] = j + 1;
+				if( import[j] == (mesh->neighbor_pe[i]+1) ) mesh->import_item[ncount++] = j + 1;
+				if( export[j] == (mesh->neighbor_pe[i]+1) ) mesh->export_item[ecount++] = j + 1;
 			}
 		}
 
@@ -177,33 +201,47 @@ printf("iproc(%d) m(%d)\n", iproc, m);
 	} else {
 		mesh->nn_internal = total_nnode;
 	}
-printf("mesh->nn_internal(%d)\n", mesh->nn_internal);
 
+	mesh->node_internal_list = malloc( sizeof(*mesh->node_internal_list) * mesh->nn_internal );
+	if( !mesh->node_internal_list ) memory_error( "mesh->node_internal_list" );
 	mesh->node_ID = malloc( sizeof(*mesh->node_ID) * total_nnode * 2 );
 	if( !mesh->node_ID ) memory_error( "mesh->node_ID" );
 	mesh->global_node_ID = malloc( sizeof(*mesh->global_node_ID) * total_nnode );
 	if( !mesh->global_node_ID ) memory_error( "mesh->global_node_ID" );
 	mesh->node = malloc( sizeof(*mesh->node) * total_nnode * 3 );
 	if( !mesh->node ) memory_error( "mesh->node" );
+	reorderid = malloc( sizeof(*reorderid) * total_nnode );
+	if( !reorderid ) memory_error( "reorderid" );
 	ncount = 0;
+	ecount = mesh->nn_internal;
+	count = 0;
 	for( i = 0; i < npart; i++ ) {
-		mw_select_mesh_part_with_id_( &part[i] );
+		mw_select_mesh_part_( &part[i] );
 		n = mw_get_num_of_node_();
 		for( j = 0; j < n; j++ ) {
-			inode = ncount + 1;
-			mesh->node_ID[2*ncount] = inode;
 			if( import[ncount] ) {
-				mesh->node_ID[2*ncount+1] = import[ncount] - 1;
+				mesh->node_ID[2*ecount] = importid[ncount] + 1;
+				mesh->node_ID[2*ecount+1] = import[ncount] - 1;
+				inode = mw_get_node_id_( &j );
+				mesh->global_node_ID[ecount] = inode;
+				mw_get_node_coord_( &inode, &mesh->node[3*ecount], &mesh->node[3*ecount+1], &mesh->node[3*ecount+2] );
+				reorderid[ncount] = ecount;
+				ecount++;
 			} else {
-				mesh->node_ID[2*ncount+1] = mesh->my_rank;
+				mesh->node_internal_list[count] = count + 1;
+				mesh->node_ID[2*count] = count + 1;
+				mesh->node_ID[2*count+1] = mesh->my_rank;
+				inode = mw_get_node_id_( &j );
+				mesh->global_node_ID[count] = inode;
+				mw_get_node_coord_( &inode, &mesh->node[3*count], &mesh->node[3*count+1], &mesh->node[3*count+2] );
+				reorderid[ncount] = count;
+				count++;
 			}
-			mesh->global_node_ID[ncount] = inode;
-			mw_get_node_coord_( &j, &mesh->node[3*ncount], &mesh->node[3*ncount+1], &mesh->node[3*ncount+2] );
 			ncount++;
 		}
 	}
 
-	mesh->elem_internal_list = malloc( sizeof(*mesh->elem_internal_list) * total_nelem );
+	mesh->elem_internal_list = malloc( sizeof(*mesh->elem_internal_list) * mesh->ne_internal );
 	if( !mesh->elem_internal_list ) memory_error( "mesh->elem_internal_list" );
 	mesh->elem_ID = malloc( sizeof(*mesh->elem_ID) * total_nelem * 2 );
 	if( !mesh->elem_ID ) memory_error( "mesh->elem_ID" );
@@ -216,15 +254,14 @@ printf("mesh->nn_internal(%d)\n", mesh->nn_internal);
 	ecount = 0;
 	mesh->elem_node_index[0] = 0;
 	for( i = 0; i < npart; i++ ) {
-		mw_select_mesh_part_with_id_( &part[i] );
+		mw_select_mesh_part_( &part[i] );
 		n = mw_get_num_of_element_();
 		for( j = 0; j < n; j++ ) {
-			inode = ecount + 1;
-			mesh->elem_ID[2*ecount] = inode;
+			mesh->elem_ID[2*ecount] = ecount + 1;
 			mesh->elem_ID[2*ecount+1] = mesh->my_rank;
-			mesh->elem_internal_list[ecount] = inode;
-			mesh->global_elem_ID[ecount] = inode;
-			mw_select_element_with_id_( &j );
+			mesh->elem_internal_list[ecount] = ecount + 1;
+			mesh->global_elem_ID[ecount] = mw_get_element_id_( &j );
+			mw_select_element_( &j );
 			etype = mw_get_element_type_();
 			mesh->elem_type[ecount] = mw_mw3_elemtype_to_fistr_elemtype_( &etype );
 			mesh->elem_node_index[ecount+1] = mesh->elem_node_index[ecount] + mw_get_num_of_element_vert_();
@@ -236,13 +273,14 @@ printf("mesh->nn_internal(%d)\n", mesh->nn_internal);
 	if( !mesh->elem_node_item ) memory_error( "mesh->elem_node_item" );
 	count = 0;
 	for( i = 0; i < npart; i++ ) {
-		mw_select_mesh_part_with_id_( &part[i] );
+		mw_select_mesh_part_( &part[i] );
 		n = mw_get_num_of_element_();
 		for( j = 0; j < n; j++ ) {
-			mw_select_element_with_id_( &j );
+			mw_select_element_( &j );
 			mw_get_element_vert_node_id_( &mesh->elem_node_item[mesh->elem_node_index[count]] );
 			for( k = mesh->elem_node_index[count]; k < mesh->elem_node_index[count+1]; k++ ) {
-				mesh->elem_node_item[k]++;
+				inode = mw_get_node_index_( &mesh->elem_node_item[k] ) + nnode[i];
+				mesh->elem_node_item[k] = reorderid[inode] + 1;
 			}
 			count++;
 		}
@@ -283,6 +321,8 @@ printf("mesh->nn_internal(%d)\n", mesh->nn_internal);
 	free( nelem );
 	free( neighbor );
 	free( import );
+	free( importid );
+	free( reorderid );
 	free( export );
 
 	return mesh;
@@ -316,6 +356,7 @@ void MW3_free_mesh( struct hecmwST_local_mesh* mesh )
 	free( mesh->global_node_ID );
 	free( mesh->node_ID );
 	free( mesh );
+	free( external_node );
 
 	return;
 }
@@ -376,7 +417,16 @@ int MW3_visualize_finalize( void )
 
 int MW3_result_init( struct hecmwST_local_mesh* mesh, int tstep, char* header )
 {
+	HECMW_Comm hecmw_comm;
+	HECMW_Group hecmw_group;
+	int comm_size, comm_rank;
 	int ierr;
+
+	hecmw_comm = mw_mpi_comm_();
+	comm_size = mw_get_num_of_process_();
+	comm_rank = mw_get_rank_();
+	hecmw_group = 0;
+	hecmw_comm_init_if( &hecmw_comm, &comm_size, &comm_rank, &hecmw_group);
 
 	ierr = HECMW_ctrl_init();
 	if( ierr < 0 ) return ierr;
@@ -388,7 +438,16 @@ int MW3_result_init( struct hecmwST_local_mesh* mesh, int tstep, char* header )
 
 int MW3_result_init_ex( char* ctrlfile, struct hecmwST_local_mesh* mesh, int tstep, char* header )
 {
+	HECMW_Comm hecmw_comm;
+	HECMW_Group hecmw_group;
+	int comm_size, comm_rank;
 	int ierr;
+
+	hecmw_comm = mw_mpi_comm_();
+	comm_size = mw_get_num_of_process_();
+	comm_rank = mw_get_rank_();
+	hecmw_group = 0;
+	hecmw_comm_init_if( &hecmw_comm, &comm_size, &comm_rank, &hecmw_group);
 
 	if( strlen(ctrlfile) ) {
 		ierr = HECMW_ctrl_init_ex( ctrlfile );
@@ -429,17 +488,38 @@ void mw3_visualize_init_ex_( char* ctrlfile, int* level, int* partID, int len )
 	HECMW_result_copy_f2c_init( static_data, static_mesh->n_node, static_mesh->n_elem );
 }
 
+void mw3_visualize_( int* timestep, int* max_timestep, int* is_force )
+{
+	double *data;
+	int n, size, i, j, count, icount, ecount;
+
+	n = 0;
+	for( i = 0; i < static_data->nn_component; i++ ) n += static_data->nn_dof[i];
+	size = sizeof(double) * static_mesh->n_node * n;
+	data = malloc( size );
+	if( !data ) memory_error( "node_conversion_data" );
+	memcpy( data, static_data->node_val_item, size );
+	count = 0;
+	icount = 0;
+	ecount = static_mesh->nn_internal * n;
+	for( i = 0; i < static_mesh->n_node; i++ ) {
+		if( external_node[i] ) {
+			for( j = 0; j < n; j++ ) static_data->node_val_item[ecount++] = data[count++];
+		} else {
+			for( j = 0; j < n; j++ ) static_data->node_val_item[icount++] = data[count++];
+		}
+	}
+	free( data );
+
+	HECMW_visualize( static_mesh, static_data, *timestep, *max_timestep, *is_force );
+}
+
 void mw3_visualize_finalize_( void )
 {
 	if( MW3_visualize_finalize() < 0 ) HECMW_abort( HECMW_comm_get_comm() );
 	HECMW_result_free( static_data );
 	HECMW_result_copy_f2c_finalize();
 	MW3_free_mesh( static_mesh );
-}
-
-void mw3_visualize_( int* timestep, int* max_timestep, int* is_force )
-{
-	HECMW_visualize( static_mesh, static_data, *timestep, *max_timestep, *is_force );
 }
 
 void mw3_result_init_( int* level, int* partID, int* tstep, char* header, int len )
@@ -464,6 +544,43 @@ void mw3_result_init_ex_( char* ctrlfile, int* level, int* partID, int* tstep, c
 	static_mesh = MW3_get_mesh( *level, *partID );
 
 	if( MW3_result_init_ex( filename, static_mesh, *tstep, headername ) < 0 ) HECMW_abort( HECMW_comm_get_comm() );
+}
+
+void mw3_result_add_( int* node_or_elem, int* n_dof, char* label, double* ptr, int len)
+{
+	double *data;
+	int size, i, j, count, icount, ecount;
+	char labelname[HECMW_NAME_LEN+1];
+
+	if( HECMW_strcpy_f2c_r( label, len, labelname, sizeof(labelname) ) == NULL ) return;
+
+	size = sizeof(double) * static_mesh->n_node * (*n_dof);
+	data = malloc( size );
+	if( !data ) memory_error( "node_conversion_data" );
+	if ( *node_or_elem == 1 ) {
+		count = 0;
+		icount = 0;
+		ecount = static_mesh->nn_internal * (*n_dof);
+		for( i = 0; i < static_mesh->n_node; i++ ) {
+			if( external_node[i] ) {
+				for( j = 0; j < *n_dof; j++ ) data[ecount++] = ptr[count++];
+			} else {
+				for( j = 0; j < *n_dof; j++ ) data[icount++] = ptr[count++];
+			}
+		}
+		if( HECMW_result_add( *node_or_elem, *n_dof, labelname, data ) < 0 ) HECMW_abort( HECMW_comm_get_comm() );
+	} else {
+		memcpy( data, ptr, size );
+		if( HECMW_result_add( *node_or_elem, *n_dof, labelname, data ) < 0 ) HECMW_abort( HECMW_comm_get_comm() );
+	}
+}
+
+void mw3_result_write_by_name_( char* name_ID, int len )
+{
+	char name[HECMW_NAME_LEN+1];
+
+	if( HECMW_strcpy_f2c_r( name_ID, len, name, sizeof(name) ) == NULL ) return;
+	if( HECMW_result_write_by_name( name ) < 0 ) HECMW_abort( HECMW_comm_get_comm() );
 }
 
 void mw3_result_finalize_( void )

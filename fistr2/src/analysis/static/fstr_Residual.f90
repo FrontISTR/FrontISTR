@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -56,7 +56,7 @@ module m_fstr_Residual
       do iAss = 0, mw_get_num_of_assemble_model()-1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             do iNode = 0, mw_get_num_of_node()-1
               ndID = part_nodes(iAss+1,iPart+1)+iNode
               do ik = 1, ndof
@@ -82,8 +82,8 @@ module m_fstr_Residual
 	         pid = fstrSOLID%boundary_grp(igrp)%part_id
              grpid= fstrSOLID%boundary_grp(igrp)%gid
              if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
-             read( fstrSOLID%boundary_grp(igrp)%grp_name, * ) ndID
-             if( ndID>=0 ) then
+             read( fstrSOLID%boundary_grp(igrp)%grp_name, * , IOSTAT=iErr ) ndID
+             if( iErr==0 ) then 
                  do ik=1,assDOF(1)
                    if( fstrSOLID%boundary_grp(igrp)%dof(ik)==1 ) then
                      iErr= mw_rhs_set_bc(pid, ndID, ik-1, 0.d0)
@@ -125,7 +125,7 @@ module m_fstr_Residual
       do iAss = 0, mw_get_num_of_assemble_model()-1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             snode = part_nodes(iAss+1,iPart+1)
             enode = part_nodes(iAss+1,iPart+2)
             call mw_get_rhs_vector(fstrSOLID%ddunode(snode*ndof+1:  &

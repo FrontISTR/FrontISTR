@@ -1,37 +1,32 @@
 ================================================================================
 
-  README of Library Type HEC-MW for PC-Cluster (日本語版)
+  README of HEC-MW (日本語版)
 
-  2008.03.17  version 2.1
+  2011.06.01  Version 2.3
 
-  The University of Tokyo, RSS21 Project
-  "High-End Computing Middleware (HEC-MW)" Group.
+  東京大学生産技術研究所
+　革新的シミュレーション研究センター
+
+  お問い合わせ先
+    e-mail:  software@ciss.iis.u-tokyo.ac.jp
 
 ================================================================================
 
 (1)本アーカイブに含まれるプログラム
-  - PCクラスタ用ライブラリ型HECミドルウェアプロトタイプ
+  - 有限要素解析基盤ミドルウェア
     - 並列I/O
     - 並列線形ソルバ
     - 並列可視化ライブラリ
-    - 連成カップリングインターフェイス
-    - 適応格子機能 (Adaptive Mesh Refinement: AMR)
-    - 動的負荷分散機能 (Dynamic Load Balancing: DLB)
   - "hecmw_part" HEC-MW領域分割ユーティリティ
-  - "hecmw_vis","hecmw_pst" HEC-MW可視化ユーティリティ
-
+  - "hecmw_vis"  HEC-MW可視化ユーティリティ
 
 (2)ディレクトリ構成
-  CHANGES                : 変更履歴 (英語版)
-  CHANGES.ja             : 変更履歴 (日本語版)
   Makefile.am            : makefileベースファイル
-  Makefile.conf          : 環境設定ファイル (ユーザ定義用)
   Makefile.dev           : 環境設定ファイル (開発者用)
   README                 : README (英語版)
   README.ja              : README (日本語版:このファイル)
   VERSION                : バージョン情報
-  RSS31_lic_agree_ja.pdf : フリーソフトウェア使用許諾書
-  setup.sh               : makefile作成用シェルスクリプト
+  setup_hecmw.sh         : makefile作成用シェルスクリプト
 
   doc/                           : マニュアル
   doc/0803_001a_hecmw_PC_cluster_201_install_ja.pdf
@@ -47,61 +42,15 @@
                                  : 線形ソルバライブラリ マニュアル
   doc/0803_001f_hecmw_PC_cluster_201_vis.pdf
                                  : 並列可視化ライブラリ マニュアル
-  doc/0803_001g_hecmw_PC_cluster_201_AMR.pdf
-                                 : 適応格子ライブラリ マニュアル
-  doc/0803_001h_hecmw_PC_cluster_201_DLB.pdf
-                                 : 動的負荷分散ライブラリ マニュアル
-  doc/0803_001i_hecmw_PC_cluster_201_couple.pdf
-                                 : 連成カップリングインターフェイス マニュアル
   doc/0803_001x_hecmw_part_201_users.pdf
                                  : 領域分割ユーティリティ ユーザーズマニュアル
 
-  etc/                           : テンプレートファイル
-
-  examples/                      : テストプログラム
-
   src/                           : HEC-MWライブラリソースファイル
-  src/common/                    : I/Oライブラリ，共通ファイル
-  src/couple/                    : 連成カップリングインターフェイスライブラリ
-  src/hecmw/                     : HEC-MWライブラリ統合モジュール
-  src/operations/adaptation/     : 適応格子ライブラリ
-  src/operations/dynamic_load_balancing/
-                                 : 動的負荷分散ライブラリ
-  src/solver/                    : 線形ソルバライブラリ
-  src/visualizer/                : 並列可視化ライブラリ
 
   tools/                         : ユーティリティプログラム
-  tools/postprocess/             : ポスト処理用ユーティリティプログラム
-  tools/postprocess/visualizer/  : 可視化ユーティリティ
-  tools/preprocess/              : プレ処理用ユーティリティプログラム
-  tools/preprocess/geofem2hec/   : メッシュデータコンバータ
-                                   (GeoFEM → HEC-MW単一領域)
-  tools/preprocess/partitioner/  : 領域分割ユーティリティ
 
   util/                          : セットアップファイル
 
-
-(3)必要なソフトウェア
-  - Cコンパイラ
-  - Fortran90コンパイラ
-  - MPI仕様に従った並列化ライブラリ
-  - METIS (オプション)
-  - ParMETIS (オプション)
-
-************************************* 注意 *************************************
-本ソフトウェアのご利用にあたっては，RSS21_lic_agree_ja.pdf をご利用の前に必ず
-お読みください．
-********************************************************************************
-
-(4)インストール
-インストールは以下の手順で行う．詳細は，${HECMWBUILDDIR}/doc にある，HEC-MWイン
-ストールマニュアル（現在は日本語版のみ）を参照のこと．
-
-  1. ${HECMWBUILDDIR}/Makefile.conf をHEC-MWをインストールするハードウェア，ソフ
-     トウェアに合わせて編集する
-  2. ${HECMWBUILDDIR}にて "./setup.sh" とタイプし，Makefileを作成する．
-  3. ${HECMWBUILDDIR}にて "make" とタイプし，ソースコードのコンパイルおよびリン
-     ンクを行う．
-  4. コンパイルが正常終了したら，${HECMWBUILDDIR}にて "make install" とタイプし，
-     ソフトウェアをインストールする．
-
+************************************* 注意 **********************************************
+本ソフトウェアのご利用にあたっては，CISS_lic_agree.pdf をご利用の前に必ずお読みください。
+*****************************************************************************************

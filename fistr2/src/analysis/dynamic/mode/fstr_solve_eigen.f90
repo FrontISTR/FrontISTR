@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Eigen Analysis                                    !
 !                                                                      !
@@ -587,10 +587,10 @@ contains
         call fstr_post(fstrSOLID,istep)
 
         if( IVISUAL.eq. 1 ) then
-        !  call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
-        !  call fstr2hecmw_mesh_conv(hecMESH)
-        !  call hecmw_visualize_init
-        !  ilast=1
+          call fstr_make_result(fstrSOLID,fstrRESULT)
+          call fstr2hecmw_mesh_conv(hecMESH)
+       !   call hecmw_visualize_init
+          ilast=1
         !  call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,ilast)
         !  call hecmw_visualize_finalize
         !  call hecmw2fstr_mesh_conv(hecMESH)

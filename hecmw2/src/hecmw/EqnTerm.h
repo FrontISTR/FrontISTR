@@ -1,13 +1,19 @@
 /*
- * EqnTerm.h
- *
- *  Created on: Nov 11, 2009
- *      Author: goto
- *
- */
-
-
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/EqnTerm.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 namespace pmw
 {
 #ifndef EQNTERM_H_
@@ -28,7 +34,6 @@ public:
 	const uiint &nodeID() const { return mNodeID; }
 	const uiint &dof() const { return mDOF; }
 	const double &coef() const { return mCoef; }
-
 private:
 	uiint mMeshID;
 	uiint mNodeID;
@@ -37,5 +42,3 @@ private:
 };
 #endif /* EQNTERM_H_ */
 }
-
-

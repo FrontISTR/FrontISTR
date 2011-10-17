@@ -1,0 +1,18 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ beam.msh
+!CONTROL, NAME=fstrCNT
+ beam.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ beam.res
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ beam.msh
+!RESULT, NAME=result, IO=IN
+ beam.res
+!RESULT, NAME=vis_out, IO=OUT
+ beam_vis

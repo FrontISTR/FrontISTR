@@ -1,43 +1,41 @@
-//
-//	FileReader.cpp
-//
-//			2008.12.09
-//			2008.12.09
-//			k.Takeda
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FileReader.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "FileReader.h"
 using namespace FileIO;
-
-//
-//
 CFileReader::CFileReader()
 {
     mpLogger = Utility::CLogger::Instance();
 }
-
 CFileReader::~CFileReader()
 {
 }
-
-// pmw::CMeshFactory Reader
-//
 void CFileReader::setFactory(pmw::CMeshFactory *pFactory)
 {
     mpFactory = pFactory;
 }
-
-// CFileBlockName, CFileTagName
-//
 bool CFileReader::TagCheck(string& s_line, const char* ctag)
 {
     bool bcheck(false);
-
     uiint i;
     for(i=0; i< s_line.length(); i++){
         if(s_line[i]=='\r') s_line[i]=' ';
         if(s_line[i]==',')  s_line[i]=' ';
     };
-
     istringstream iss(s_line.c_str());
     string stoken;
     while(iss >> stoken){
@@ -46,50 +44,34 @@ bool CFileReader::TagCheck(string& s_line, const char* ctag)
             return bcheck;
         }
     };
-
     return bcheck;
 }
-
-// getline()-> string
-//
 string& CFileReader::getLineSt(ifstream& ifs)
 {
     char c_Line[BUFFERLENGTH];
-
     ifs.getline(c_Line, sizeof(c_Line), '\n');
-
     msLine.clear();
     msLine = c_Line;
-
     uiint i;
     for(i=0; i< msLine.length(); i++){
         if(msLine[i]=='\r') msLine[i]=' ';
         if(msLine[i]==',')  msLine[i]=' ';
         if(msLine[i]=='\t') msLine[i]=' ';
     };
-
     return msLine;
 }
 string& CFileReader::getLine(ifstream& ifs)
 {
     msLine.clear();
-
     getline(ifs, msLine);
-
     uiint i;
     for(i=0; i< msLine.length(); i++){
         if(msLine[i]=='\r') msLine[i]=' ';
         if(msLine[i]==',')  msLine[i]=' ';
-        //if(msLine[i]=='\n') msLine[i]=' ';
         if(msLine[i]=='\t') msLine[i]=' ';
     };
-
     return msLine;
 }
-
-// Elementのタイプを表す文字列をElementTypeを表す符号なし整数(unsigned int)に変換
-// string => uint
-//
 uiint CFileReader::IntElemType(string& sElemType)
 {
     if(sElemType=="Hexa"){
@@ -121,9 +103,6 @@ uiint CFileReader::IntElemType(string& sElemType)
         return mpLogger->getUDummyValue();
     }
 }
-
-// 境界種類のDirichlet,Neumann をBoundaryTypeを表す符号なし整数(unsigned int)に変換
-// string => uint
 uiint CFileReader::IntBndType(string& sBndType)
 {
     if(sBndType=="Dirichlet"){
@@ -135,25 +114,18 @@ uiint CFileReader::IntBndType(string& sBndType)
         return mpLogger->getUDummyValue();
     }
 }
-
-//
-// s:対象文字列、c:区切り文字 , v:分割されたトークン
-//
 void CFileReader::Split(const string& s, char c, vstring& v)
 {
     string::size_type i = 0;
     string::size_type j = s.find(c);
-
     while(j != string::npos){
         v.push_back(s.substr(i, j-i));
         i = ++j;
         j = s.find(c, j);
-
         if(j == string::npos)
             v.push_back(s.substr(i, s.length()));
     };
 }
-
 uiint CFileReader::getFileSize(ifstream& ifs)
 {
     ifs.seekg(0, ios_base::end);
@@ -178,8 +150,6 @@ bool CFileReader::Check_IntSize(bool& b32, bool& bCheck, string& sClassName)
 {
     CFileReaderBinCheck *pBinCheck= CFileReaderBinCheck::Instance();
     b32= pBinCheck->is32Bit();
-
-    //BinCheckのサイズ指定との整合性
     bCheck=false;
     if(b32){
         if(sizeof(uiint)==sizeof(uint32)) bCheck=true;
@@ -195,8 +165,7 @@ bool CFileReader::Check_IntSize(bool& b32, bool& bCheck, string& sClassName)
 }
 bool CFileReader::TagCheck_Bin(ifstream& ifs, bool bCheck, char cHead, const char *NameTag, const uiint& nLength)
 {
-    ifs.seekg(0, ios_base::beg);//先頭からチェック
-
+    ifs.seekg(0, ios_base::beg);
     bCheck=false;
     string sTag;
     while(!ifs.eof()){
@@ -204,8 +173,8 @@ bool CFileReader::TagCheck_Bin(ifstream& ifs, bool bCheck, char cHead, const cha
         ifs.read(&cTok, 1);
         if(cTok==cHead){
             ifs.seekg(-1, ios_base::cur);
-
-            char cTag[nLength+1];
+            //char cTag[nLength+1];
+			char* cTag = new char[nLength+1];
             ifs.read(cTag, nLength);
             cTag[nLength]='\0';
             sTag=cTag;
@@ -215,32 +184,14 @@ bool CFileReader::TagCheck_Bin(ifstream& ifs, bool bCheck, char cHead, const cha
             }else{
                 ifs.seekg(-(nLength-1), ios_base::cur);
             }
+			delete [] cTag;
         }
     };
     return bCheck;
 }
-
 short CFileReader::Read_ElementType(ifstream& ifs, char* cEName, short nLength, const char* cEType, string& sType)
 {
-//    char cHexa[5], cTetra[6], cPrism[6];
-//    char cQuad[5], cTriangle[9];
-//    char cBeam[5];
     char cTail;
-    
-//    ifs.read(cHexa, 4); cHexa[4]='\0';
-//    sType=cHexa;
-//    if(sType=="Hexa"){
-//        ifs.read(&cTail, 1);
-//        if(cTail=='2'){
-//            sType += "2";
-//            return sType;
-//        }else{
-//            ifs.seekg(-1, ios_base::cur);
-//            return sType;
-//        }
-//    }
-//    ifs.seekg(-5, ios_base::cur);
-
     ifs.read(cEName, nLength-1); cEName[nLength-1]='\0';
     sType=cEName;
     if(sType==cEType){
@@ -254,34 +205,30 @@ short CFileReader::Read_ElementType(ifstream& ifs, char* cEName, short nLength, 
         }
     }
     ifs.seekg(-nLength, ios_base::cur);
-
     sType="";
     return 0;
 }
-
 void CFileReader::Read_BndType(ifstream& ifs, string& sBndType)
 {
     char cH;
     ifs.read(&cH, 1);
     if(cH=='D'){
-        ifs.seekg(8, ios_base::cur);//D_irichlet
+        ifs.seekg(8, ios_base::cur);
         sBndType="Dirichlet";
     }
     if(cH=='N'){
-        ifs.seekg(6, ios_base::cur);//N_eumann
+        ifs.seekg(6, ios_base::cur);
         sBndType="Neumann";
     }
 }
-
 void CFileReader::Read_AnyName(ifstream& ifs, string& sName)
 {
     sName.clear();
     int nOK;
     char cH;
-
     while(!ifs.eof()){
         ifs.read(&cH, 1);
-        nOK = isalnum(cH);//英数字(a-z, A-Z, 0-9)
+        nOK = isalnum(cH);
         if(nOK==0){
             ifs.seekg(-1, ios_base::cur);
             break;
@@ -290,6 +237,3 @@ void CFileReader::Read_AnyName(ifstream& ifs, string& sName)
         }
     };
 }
-
-
-

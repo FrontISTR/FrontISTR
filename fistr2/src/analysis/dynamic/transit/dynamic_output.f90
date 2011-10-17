@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Dynamic Transit Analysis                          !
 !                                                                      !
@@ -1984,10 +1984,10 @@ contains
 !C-- POST PROCESSING VIA MEMORY
 !C
       if( IVISUAL.eq. 1 ) then
-     !   call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
-     !   call fstr2hecmw_mesh_conv(hecMESH)
+        call fstr_make_result(fstrSOLID,fstrRESULT)
+        call fstr2hecmw_mesh_conv(hecMESH)
      !   call hecmw_visualize_init
-     !   idummy=1
+        idummy=1
      !   call hecmw_visualize(hecMESH,fstrRESULT,istep,fstrDYNAMIC%n_step,idummy)
      !   call hecmw_visualize_finalize
      !   call hecmw2fstr_mesh_conv(hecMESH)

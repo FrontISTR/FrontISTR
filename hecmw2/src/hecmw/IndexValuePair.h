@@ -1,16 +1,23 @@
 /*
- * IndexValuePair.h
- *
- *  Created on: Oct 7, 2009
- *      Author: goto
- */
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/IndexValuePair.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef INDEXVALUEPAIR_H_
 #define INDEXVALUEPAIR_H_
-
 namespace pmw
 {
-
 template<int NDOF>
 class CIndexValuePair
 {
@@ -24,7 +31,6 @@ public:
 	}
 	virtual ~CIndexValuePair() {}
 	int operator <(CIndexValuePair& other) {
-		// TODO: check!
 		if (m_i < other.m_i) return -1;
 		if (m_i > other.m_i) return 1;
 		if (m_j < other.m_j) return -1;
@@ -36,7 +42,5 @@ public:
 	int m_j;
 	double m_val[NDOF][NDOF];
 };
-
 }
-
 #endif /* INDEXVALUEPAIR_H_ */

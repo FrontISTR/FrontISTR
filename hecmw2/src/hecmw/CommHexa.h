@@ -1,11 +1,20 @@
-/* 
- * File:   CommHexa.h
- * Author: ktakeda
- *
- * Created on 2009/09/01, 15:56
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/CommHexa.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "CommElement.h"
-
 namespace pmw{
 #ifndef _COMMHEXA_H
 #define	_COMMHEXA_H
@@ -13,21 +22,10 @@ class CCommHexa:public CCommElement{
 public:
     CCommHexa();
     virtual ~CCommHexa();
-
 public:
-    //debug method
     virtual bool isTypeCoincidence();
-
     virtual uiint getShapeType(){ return ElementType::Hexa;}
     virtual uiint getBaseShapeType(){ return BaseElementType::Solid;}
-
-
-    // prolongation
-    //virtual void setupProgNodeRank(const uint& mgLevel);//ProgElemのNodeRankの決定.<= Edge,Face,Volumeのランクを決定と同義
-    
 };
 #endif	/* _COMMHEXA_H */
 }
-
-
-

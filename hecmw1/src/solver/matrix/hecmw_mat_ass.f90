@@ -1,7 +1,7 @@
 !======================================================================!
 !                                                                      !
 !   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.1                                                !
+!         Version : 2.3                                                !
 !                                                                      !
 !     Last Update : 2007/10/30                                         !
 !        Category : Matrix Operation                                   !
@@ -26,12 +26,13 @@ module hecmw_matrix_ass
    private
 
    public :: hecmw_mat_ass_elem
-   !public :: hecmw_mat_add_node
-   !public :: hecmw_array_search_i
+   public :: hecmw_mat_add_node
+   public :: hecmw_array_search_i
    public :: hecmw_mat_ass_equation
-   !public :: hecmw_mat_add_dof
+   public :: hecmw_mat_add_dof
    public :: hecmw_mat_ass_bc
    public :: hecmw_mat_ass_contact
+   public :: stf_get_block
 
    contains
 

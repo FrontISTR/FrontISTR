@@ -1,0 +1,13 @@
+!!
+!! Control File for FSTR solver
+!!
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 3
+!BOUNDARY
+  FIX, 1, 6,     0.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=DIRECT
+!END

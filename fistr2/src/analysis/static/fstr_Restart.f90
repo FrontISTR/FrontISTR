@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -62,21 +62,7 @@ module m_fstr_Restart
         enddo
       enddo
 	  
-      do i=1,restrt_step(3)
-        if( .not. associated(fstrSOLID%contacts(i)%states)) cycle
-        do j=1,size(fstrSOLID%contacts(i)%states)
-          read(fnum) nif
-          fstrSOLID%contacts(i)%states(j)%state=nif(1)
-          fstrSOLID%contacts(i)%states(j)%surface=nif(2)
-          read(fnum) fdum
-          fstrSOLID%contacts(i)%states(j)%distance=fdum(1)
-          read(fnum) fstrSOLID%contacts(i)%states(j)%lpos
-          read(fnum) fstrSOLID%contacts(i)%states(j)%gpos
-          read(fnum) fstrSOLID%contacts(i)%states(j)%direction
-          read(fnum) fstrSOLID%contacts(i)%states(j)%multiplier
-        enddo
-      enddo
-
+ 
       close( fnum)
       cstep = restrt_step(1)
       substep = restrt_step(2) + 1
@@ -108,7 +94,6 @@ module m_fstr_Restart
       restrt_step(1)=cstep
       restrt_step(2)=substep
 	  restrt_step(3)=0
-      if( associated(fstrSOLID%contacts) ) restrt_step(3)=size(fstrSOLID%contacts)
       write(fnum) restrt_step
       write(fnum) fstrSOLID%unode
       write(fnum) fstrSOLID%QFORCE
@@ -125,21 +110,6 @@ module m_fstr_Restart
               write(fnum) fstrSOLID%elements(i)%gausses(j)%istatus
             if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) )        &
                write(fnum) fstrSOLID%elements(i)%gausses(j)%fstatus
-        enddo
-      enddo
-	  
-      do i=1,restrt_step(3)
-        if( .not. associated(fstrSOLID%contacts(i)%states)) cycle
-        do j=1,size(fstrSOLID%contacts(i)%states)
-          nif(1)= fstrSOLID%contacts(i)%states(j)%state
-          nif(2)= fstrSOLID%contacts(i)%states(j)%surface
-          fdum(1)= fstrSOLID%contacts(i)%states(j)%distance
-          write(fnum) nif
-          write(fnum) fdum
-          write(fnum) fstrSOLID%contacts(i)%states(j)%lpos
-          write(fnum) fstrSOLID%contacts(i)%states(j)%gpos
-          write(fnum) fstrSOLID%contacts(i)%states(j)%direction
-          write(fnum) fstrSOLID%contacts(i)%states(j)%multiplier
         enddo
       enddo
 	    

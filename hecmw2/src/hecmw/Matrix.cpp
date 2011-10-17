@@ -1,26 +1,30 @@
 /*
- * Matrix.cpp
- *
- *  Created on: Jul 23, 2009
- *      Author: goto
- */
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/Matrix.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "Matrix.h"
 #include "Vector.h"
-
 namespace pmw
 {
 CMatrix::CMatrix()
 {
-    // TODO Auto-generated constructor stub
-
 }
-
 CMatrix::~CMatrix()
 {
-    // TODO Auto-generated destructor stub
 }
-
 void CMatrix::residual(CVector *pV, const CVector *pF, CVector *pR) const
 {
     multVector(pV, pR);
@@ -29,5 +33,4 @@ void CMatrix::residual(CVector *pV, const CVector *pF, CVector *pR) const
             (*pR)[i] = (*pF)[i] - (*pR)[i];
     }
 }
-
 }

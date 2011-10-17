@@ -1,0 +1,29 @@
+##
+## HEC-MW control file for FrontSTR
+## Auto created by fstr_srun.sh
+## Mon Jul 31 12:08:18 JST 2006
+##
+#!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE, REFINE=1
+#sample.msh
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST, REFINE=1
+sample_P02
+!CONTROL,NAME=fstrCNT
+sample.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+sample.res
+!RESULT,NAME=vis_out,IO=OUT
+sample.vis
+#
+#!MESH, NAME=entire2dist_in, TYPE=HECMW-ENTIRE, IO=IN, REFINE=1
+#sample.msh
+#!MESH, NAME=entire2dist_out, TYPE=HECMW-DIST, IO=OUT
+#sample_ref
+!MESH, NAME=entire2dist_in, TYPE=HECMW-DIST, IO=IN, REFINE=1
+sample_P02
+!MESH, NAME=entire2dist_out, TYPE=HECMW-DIST, IO=OUT
+sample_P02_ref
+
+!MESH, NAME=part_in, TYPE=HECMW-ENTIRE, IO=IN
+sample.msh
+!MESH, NAME=part_out, TYPE=HECMW-DIST, IO=OUT
+sample_P02

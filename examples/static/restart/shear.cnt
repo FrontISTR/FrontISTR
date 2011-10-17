@@ -1,0 +1,38 @@
+!VERSION
+    1
+!SOLUTION, TYPE = STATIC
+!STATIC,   TYPE = NLGEOM
+!BOUNDARY, GRPID = 1
+        1,        1,        3,   0.0000000000E+00
+        2,        1,        3,   0.0000000000E+00
+        5,        1,        3,   0.0000000000E+00
+        6,        1,        3,   0.0000000000E+00
+        3,        1,        1,   0.1
+	4,        1,        1,   0.1
+	7,        1,        1,   0.1
+        8,        1,        1,   0.1
+     3,2,2,0.
+     4,2,2,0.
+     7,2,2,0.
+     8,2,2,0.
+!STEP, SUBSTEPS = 3
+  BOUNDARY,    1
+!MATERIAL, NAME=M1
+!ELASTIC
+  10.0E+04,   0.0
+!PLASTIC
+  10.0E+04,   0.0
+!WRITE,RESULT, FREQENCY=1
+!ELEMENT_OUTPUT, POSITION=INTEG
+   STRAIN
+   STRESS
+!RESTART, FREQENCY=2, NAME=restart.dat
+!SOLVER, METHOD = CG, PRECOND = 1, ITERLOG = NO, TIMELOG = NO
+  10000,       2
+ 1.0E-12,     1.0,     0.0
+!WRITE,VISUAL
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+!output_type=FSTR_FEMAP_NEUTRAL
+!END

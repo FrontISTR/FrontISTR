@@ -1,0 +1,13 @@
+##
+## HEC-MW control file for FrontSTR
+## Auto created by fstr_srun.sh
+## Fri Mar 11 13:40:29 2011
+##
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+E741.msh
+!CONTROL,NAME=fstrCNT
+E700.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+E741.res
+!RESULT,NAME=vis_out,IO=OUT
+E741.vis

@@ -1,0 +1,41 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY,GRPID=1
+ BND0, 3, 3, 0.000000
+!BOUNDARY,GRPID=1
+ BND1, 1, 1, 0.000000
+ BND1, 2, 2, 0.000000
+ BND1, 3, 3, 0.000000
+!DLOAD,GRPID=1
+ DL0, S, 1.0
+!DLOAD,GRPID=1
+ DL1, S, 1.0
+!DLOAD,GRPID=1
+ DL2, S, 0.5
+### STEP
+!STEP, SUBSTEPS=10, CONVERG=1.0e-5
+ BOUNDARY, 1
+ LOAD, 1
+### Material
+!MATERIAL, NAME=M1
+!ELASTIC
+ 206.9, 0.325
+!PLASTIC, YIELD = DRUCKER-PRAGER
+ 500.0, 20.0, 0.0
+### Solver Setting
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 20000, 2
+ 1.0e-8, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!output_type = COMPLETE_AVS
+!END

@@ -1,14 +1,22 @@
-/* 
- * File:   BoundaryEdge.h
- * Author: ktakeda
- *
- * Created on 2010/04/13, 19:39
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/BoundaryEdge.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "BoundaryParts.h"
-#include <utility>//pair
-
+#include <utility>
 typedef std::pair<pmw::CBoundaryNode*, pmw::CBoundaryNode*> PairBNode;
-
 namespace pmw{
 #ifndef _BOUNDARYEDGE_H
 #define	_BOUNDARYEDGE_H
@@ -16,55 +24,27 @@ class CBoundaryEdge:public CBoundaryParts{
 public:
     CBoundaryEdge();
     virtual ~CBoundaryEdge();
-
 protected:
-    uiint mnElemEdgeID;//エンティティ:Mesh-Element-Edge-ID
-
-    CBoundaryNode *mpEdgeBNode;// 辺中心のBNode
-
-    //PairBNode mPairBNode;
-
+    uiint mnElemEdgeID;
+    CBoundaryNode *mpEdgeBNode;
     vector<CBoundaryEdge*> mvProgBEdge;
-
     double mLength;
 public:
-    // 要素辺ID(Edge ID)
     void setElementEdgeID(const uiint& id){ mnElemEdgeID= id;}
     uiint& getElementEdgeID(){ return mnElemEdgeID;}
-
-    // 辺形状( Beam )
     void setBEdgeShape(const uiint& elemType);
     uiint& getBEdgeShape(){ return mnShapeType;}
-
     virtual uiint getNumOfVert();
-
-    // 辺中心のBNode
     void setEdgeBNode(CBoundaryNode *pBNode);
     CBoundaryNode* getEdgeBNode(){ return mpEdgeBNode;}
-
-    // 辺の両端のBNode
     PairBNode getPairBNode();
-
-    // 辺Nodeを,辺BoundaryNodeにセット
     void setupNode();
-
-    // 線分の距離
     double& calcLength();
     double& getLength(){ return mLength;}
-
-
-    // 辺の再分割
-    // ----
     void refine(uiint& countID, const vuint& vDOF);
-
     vector<CBoundaryEdge*>& getProgParts(){ return mvProgBEdge;}
-
-    void replaceEdgeBNode();// 2次要素の場合、辺BNodeをmvBNodeに移設.
-
-    void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
+    void replaceEdgeBNode();
+    void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);
 };
 #endif	/* _BOUNDARYEDGE_H */
 }
-
-
-

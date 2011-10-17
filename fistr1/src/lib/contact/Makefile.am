@@ -78,7 +78,10 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 #------------------------------------------------------------------------------#
 OBJS =
 
-OBJSF =
+OBJSF = \
+        surf_ele.@f90objfilepostfix@ \
+        contact_lib.@f90objfilepostfix@ \
+        fstr_contact_def.@f90objfilepostfix@
 
 HEADERS =
 

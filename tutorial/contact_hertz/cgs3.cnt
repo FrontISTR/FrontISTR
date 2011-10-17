@@ -1,0 +1,35 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY, GRPID=1
+ ALL, 3, 3, 0.0
+ BOTTOM, 2, 2, 0.0
+ CENTER, 1, 1, 0.0
+ UPPER,  2, 2, -0.306
+!CONTACT_ALGO, TYPE=ALAGRANGE
+!CONTACT, GRPID=1
+ CP1, 0.0
+### STEP
+!STEP, SUBSTEPS=5, INCMAX=500, CONVERG=1.0e-4
+ BOUNDARY, 1
+ CONTACT,  1
+### Material
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1100, 0.0
+### Solver Setting
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=YES, TIMELOG=YES
+ 1000, 2
+ 1.0e-10, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = COMPLETE_REORDER_AVS
+!END

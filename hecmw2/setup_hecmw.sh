@@ -50,8 +50,6 @@ PARMETIS_LDFLAGS=""
 LIBSRCDIRS="\
     src \
     src/hecmw \
-    src/solver_direct_parallel \
-    src/solver_direct_parallel/metis \
     src/partitioner \
     src/visualizer"
 
@@ -217,6 +215,7 @@ fi
 			MPILIBS=""
 		else
 			BUILDTARGET="build-default"
+			CPPOPTFLAGS="${CPPOPTFLAGS} -DHAVE_MPI"
 		fi
 		ALLBUILDTARGET="${ALLBUILDTARGET} ${BUILDTARGET}"
 	else
@@ -234,8 +233,10 @@ fi
 	#
 	if [ ${WITHREFINER} -eq 1 ]; then
 		HECMW_CFLAGS="${HECMW_CFLAGS} ${REFINER_CFLAGS}"
+		HECMW_CPPFLAGS="${HECMW_CPPFLAGS} ${REFINER_CFLAGS}"
 		HECMW_F90FLAGS="${HECMW_F90FLAGS} ${REFINER_CFLAGS}"
 		HECMW_LDFLAGS="${HECMW_LDFLAGS} ${REFINER_LDFLAGS}"
+		HECMW_CPPLDFLAGS="${HECMW_CPPLDFLAGS} ${REFINER_LDFLAGS}"
 		HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} ${REFINER_LDFLAGS}"
 	fi
 

@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -47,10 +47,13 @@ module m_fstr_Result
     real(kind=kreal)   :: fdum, ndforce(6), ss(6)
     integer(kind=kint) :: i, k, ii, jj, nctrl, ninfo, ndof, ncomp, fnum
     integer(kind=kint) :: maxiter, itype, iS, iE, ic_type, icel
-    real(kind=kreal)   :: ndstrain(hecMESH%n_node*6), ndstress(hecMESH%n_node*7)
+    real(kind=kreal), allocatable :: ndstrain(:), ndstress(:)
     real(kind=kreal)   :: s11,s22,s33,s12,s23,s13,ps,smises, vdum(6)
     integer(kind=kint),pointer :: member(:)
     type ( hecmwST_result_data ) :: fstrRESULT
+
+    allocate( ndstrain(hecMESH%n_node*6), ndstress(hecMESH%n_node*7) )
+    call fstr_nodal_stress_3d( hecMESH,fstrSOLID,fstrPARAM, .false.)
 
     maxiter = fstrSOLID%step_ctrl(cstep)%max_iter
 	!    call hecmw_nullify_result_data( fstrRESULT )
@@ -335,6 +338,8 @@ module m_fstr_Result
           write(fnum,'(2i10,1p6e15.7)') totstep,jj,(fstrSOLID%unode(ndof*ii-ndof+k),k=1,ndof)
        enddo
     endif
+
+    deallocate( ndstrain, ndstress)
   end subroutine fstr_OutputResult
 
 !> Summarizer of output data which prints out max and min output values
@@ -348,8 +353,8 @@ module m_fstr_Result
 
       integer(kind=kint), intent(in) :: i_step
       real(kind=kreal), intent(in)   :: tt
-      real(kind=kreal), intent(in)   :: ndstrain(hecMESH%n_node*6)
-      real(kind=kreal), intent(in)   :: ndstress(hecMESH%n_node*7)
+      real(kind=kreal), intent(in)   :: ndstrain(:)
+      real(kind=kreal), intent(in)   :: ndstress(:)
 ! --- file name
       character(len=HECMW_HEADER_LEN) :: header
       character(len=HECMW_NAME_LEN) :: label
@@ -363,7 +368,7 @@ module m_fstr_Result
 	  
 !
 ! --- Time
-      write(fnum,'(''#### Resul time='',E10.4)') tt
+      write(fnum,'(''#### Result time='',E10.4)') tt
 ! --- Clear
       Umax=0.0d0
       Umin=0.0d0
@@ -542,7 +547,7 @@ module m_fstr_Result
           id = 1
           ndof=7
           label='STRESS'
-          call hecmw_result_add(id,ndof,label,ndSTRESS)
+          call hecmw_result_add(id,ndof,label,fstrSOLID%STRESS)
 ! --- STRESS @element
 !          id = 2
 !          ndof=7

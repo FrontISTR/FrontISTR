@@ -1,11 +1,20 @@
-/* 
- * File:   FileWriterBoundaryEdge.h
- * Author: ktakeda
- *
- * Created on 2010/05/07, 16:43
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FileWriterBoundaryEdge.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "FileWriter.h"
-
 namespace FileIO{
 #ifndef _FILEWRITERBOUNDARYEDGE_H
 #define	_FILEWRITERBOUNDARYEDGE_H
@@ -18,4 +27,3 @@ public:
 };
 #endif	/* _FILEWRITERBOUNDARYEDGE_H */
 }
-

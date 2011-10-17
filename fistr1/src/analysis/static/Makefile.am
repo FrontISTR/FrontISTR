@@ -84,6 +84,8 @@ OBJSF = \
         fstr_Restart.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         fstr_StiffMatrix.@f90objfilepostfix@ \
+        fstr_mat_con_contact.@f90objfilepostfix@ \
+        fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_Update.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
@@ -95,21 +97,33 @@ OBJSF = \
         static_post.@f90objfilepostfix@ \
         fstr_Result.@f90objfilepostfix@ \
         fstr_solve_LINEAR.@f90objfilepostfix@ \
+        set_arrays_DirectSolver.@f90objfilepostfix@ \
+        solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
+        solve_LINEQ_mkl.@f90objfilepostfix@ \
+        solve_LINEQ_contact.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
+
+OBJSF_MKL_DUMM = \
+        dummy_solve_LINEQ_mkl.@f90objfilepostfix@
 
 HEADERS =
 
 #------------------------------------------------------------------------------#
-all: @build_target@
+all: @build_target_mkl@
 
-@build_target@: $(TARGET) $(F90TARGET) install-module
+build-default: $(TARGET) $(F90TARGET) install-module
+
+build-without-mkl: $(TARGET) F90TARGET_MKL install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
 
 $(F90TARGET): $(OBJSF)
-	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF)
+	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) 
+
+F90TARGET_MKL: $(OBJSF) $(OBJSF_MKL_DUMM)
+	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_MKL_DUMM)
 
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.

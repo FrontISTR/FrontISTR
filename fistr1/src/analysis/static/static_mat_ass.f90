@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -28,6 +28,7 @@ module m_static_mat_ass
       use m_static_mat_ass_main
       use m_fstr_ass_load
       use m_fstr_AddBC
+      use fstr_matrix_con_contact                           
 
       implicit none
       integer(kind=kint) :: IFLAG, numnp, ndof, i
@@ -37,6 +38,8 @@ module m_static_mat_ass
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)         :: fstrSOLID
+      type (fstr_param       )  :: fstrPARAM          
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT                                                  
 !* LCZ
       type(lczparam) :: myEIG
 
@@ -64,7 +67,7 @@ module m_static_mat_ass
       write(IDBG,*) 'fstr_mat_ass_main: OK'
 
       IF(myEIG%eqset==0) THEN
-        call fstr_ass_load (1, hecMESH, hecMAT, fstrSOLID)
+        call fstr_ass_load (1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
         write(IDBG,*) 'fstr_mat_ass_load: OK'
 
       ELSE IF(myEIG%eqset==1) THEN
@@ -76,7 +79,7 @@ module m_static_mat_ass
 
       ENDIF
 
-      call fstr_AddBC(1, 1, hecMESH,hecMAT,fstrSOLID,1)
+      call fstr_AddBC(1, 1, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,1)
       write(IDBG,*) 'fstr_mat_ass_bc: OK'
 !C
 !C  RHS LOAD VECTOR CHECK

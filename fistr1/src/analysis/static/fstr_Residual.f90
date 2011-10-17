@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -75,7 +75,7 @@ module m_fstr_Residual
               - rhs*lambda 
         enddo
       enddo
-
+     
 !    Consider SPC condition
       do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
         grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
@@ -94,7 +94,7 @@ module m_fstr_Residual
           enddo
         enddo
       enddo
-
+ 
 !    	  
       if( ndof==3 ) then
         call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
@@ -122,5 +122,27 @@ module m_fstr_Residual
          write(IMSG,*) '####fstrNLGEOM_SetResidual finished'
       end if
       end function
+      
+!> Calculate square norm      
+      real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,fstrMAT)
+      use m_fstr
+      use fstr_matrix_con_contact
+      type (hecmwST_local_mesh),            intent(in) :: hecMESH    !< mesh information
+      type (hecmwST_matrix),                intent(in) :: hecMAT
+      type (fstr_solid),                    intent(in) :: fstrSOLID 
+      type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT 
+      character(len=13)                                :: flag   
+      integer :: i
+       fstr_get_norm_contact = 0.0d0   
+       if( flag=='residualForce' )then
+         do i=1,hecMESH%n_node*hecMESH%n_dof + fstrMAT%num_lagrange
+           fstr_get_norm_contact = fstr_get_norm_contact + hecMAT%B(i)*hecMAT%B(i)
+         enddo
+       elseif( flag=='        force' )then
+         do i=1,hecMESH%n_node*hecMESH%n_dof 
+           fstr_get_norm_contact = fstr_get_norm_contact + fstrSOLID%QFORCE(i)*fstrSOLID%QFORCE(i)
+         enddo
+       endif
+      end function        
 
 end module m_fstr_Residual

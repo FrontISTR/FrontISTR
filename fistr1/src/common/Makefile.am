@@ -87,13 +87,14 @@ OBJS = \
 OBJSF = \
 	hecmw2fstr_mesh_conv.@f90objfilepostfix@ \
 	fstr_setup_util.@f90objfilepostfix@ \
+	fstr_ctrl_modifier.@f90objfilepostfix@ \
+	fstr_contact.@f90objfilepostfix@ \
 	fstr_ctrl_common.@f90objfilepostfix@ \
 	fstr_ctrl_material.@f90objfilepostfix@ \
 	fstr_ctrl_static.@f90objfilepostfix@ \
 	fstr_ctrl_heat.@f90objfilepostfix@ \
 	fstr_ctrl_eigen.@f90objfilepostfix@ \
 	fstr_ctrl_dynamic.@f90objfilepostfix@ \
-	fstr_ctrl_modifier.@f90objfilepostfix@ \
 	fstr_get_prop.@f90objfilepostfix@ \
 	fstr_setup.@f90objfilepostfix@ \
 	fstr_debug_dump.@f90objfilepostfix@ \

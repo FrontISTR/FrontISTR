@@ -1,7 +1,7 @@
 !======================================================================!
 !                                                                      !
 !   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.1                                                !
+!         Version : 2.3                                                !
 !                                                                      !
 !     Last Update : 2006/06/01                                         !
 !        Category : Linear Solver                                      !
@@ -119,7 +119,7 @@
 
         if (RHS(1).eq.0.d0) then
           ERROR= 2002
-          call hecmw_solve_error (hecMESH, ERROR)
+!          call hecmw_solve_error (hecMESH, ERROR)
         endif
 
 !C

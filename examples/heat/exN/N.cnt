@@ -1,0 +1,20 @@
+!!
+!! Control File for HEAT solver
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+!FIXTEMP
+ XMIN,   0.0
+ XMAX, 500.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=2,ITERLOG=YES,TIMELOG=YES
+ 100,  2
+ 1.0e-8,1.0,0.0
+!WRITE,RESULT
+!WRITE,VISUAL
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+!END

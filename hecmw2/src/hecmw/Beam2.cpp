@@ -1,22 +1,30 @@
-//
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/Beam2.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include <vector>
-
-// Beam2.cpp
-//
-//              2010.11.19
-//              k.Takeda
 #include "Beam2.h"
 #include "AggregateElement.h"
 using namespace pmw;
-
 uiint CBeam2::mnElemType = ElementType::Beam2;
 uiint CBeam2::mnElemOrder = 2;
 uiint CBeam2::mNumOfFace = 0;
 uiint CBeam2::mNumOfEdge = 1;
 uiint CBeam2::mNumOfNode = 3;
 uiint CBeam2::mNumOfVert = 2;
-
 CBeam2::CBeam2()
 {
     ;
@@ -28,31 +36,19 @@ CBeam2::~CBeam2()
 void CBeam2::initialize()
 {
     mvNode.resize(mNumOfNode);
-
     mvvEdgeElement.resize(mNumOfEdge);
-
     mvEdgeInterNode.resize(mNumOfEdge);
-
     mvb_edge = new bool[mNumOfEdge];
     uiint i;
     for(i=0; i< mNumOfEdge; i++){
       mvb_edge[i] = false;
     };
-
-    //CommElementのprolongation用
     mvProgElement.resize(mNumOfNode);
-
-
-    //通信界面(CommMesh2)属性:点
     mvbCommEntity = new bool[mNumOfNode];
     for(i=0; i< mNumOfNode; i++){
         mvbCommEntity[i]= false;
     };
 }
-
-//
-// 辺ノードを、2次ノードへ入れ替え
-//
 void CBeam2::replaseEdgeNode()
 {
     uiint iedge;
@@ -60,36 +56,3 @@ void CBeam2::replaseEdgeNode()
         mvNode[mNumOfVert + iedge] = mvEdgeInterNode[iedge];
     };
 }
-
-////
-//// 1. 辺-面 Element*配列を解放
-//// 2. 辺-面 Node*   配列を解放 (2次要素は辺ノードを残す)
-////
-//void CBeam2::deleteProgData()
-//{
-//    // Edge
-//    uint iedge;
-//    for(iedge=0; iedge < mNumOfEdge; iedge++){
-//        vector<CElement*>().swap(mvvEdgeElement[iedge]);
-//    };
-//    vector<vector<CElement*> >().swap(mvvEdgeElement);
-//    //vector<CNode*>().swap(mvEdgeInterNode);//2次要素の場合は残すこと
-//    delete []mvb_edge;
-//
-//    delete []mvbCommEntity;
-//}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

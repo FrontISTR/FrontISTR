@@ -1,15 +1,22 @@
-/* 
- * File:   FileWriterElement.h
- * Author: ktakeda
- *
- * Created on 2009/07/23, 17:43
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FileWriterElement.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _FILEWRITERELEMENT_H_c12cc131_bab1_41f8_bf72_bed1a9257326
 #define	_FILEWRITERELEMENT_H_c12cc131_bab1_41f8_bf72_bed1a9257326
-
 #include "FileWriter.h"
-
 namespace FileIO{
 class CFileWriterElement:public CFileWriter{
 public:
@@ -21,6 +28,4 @@ public:
     virtual void WriteDebug(ofstream& ofs, const uiint& mgLevel);
 };
 }
-
 #endif	/* _FILEWRITERELEMENT_H */
-

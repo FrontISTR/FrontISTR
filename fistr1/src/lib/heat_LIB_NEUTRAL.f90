@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -82,7 +82,7 @@ contains
         rdum( 8) = CP
         rdum( 9) = RHO
 
-        write(INEU,'(1p10(E9.2,'',''))') ( rdum(i),i=0,9 )
+        write(INEU,'(1p,10(E9.2,'',''))') ( rdum(i),i=0,9 )
 
         write(INEU,*) '0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,'
         write(INEU,*) '0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,'

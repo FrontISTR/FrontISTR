@@ -416,19 +416,12 @@ input_result_header(struct hecmwST_result_data *result,
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
-	}
+	line_buf[ strlen(line_buf)-1 ] = 0;/* remove CR/LF*/
 	strcpy( head, line_buf );
 
 	/* n_node, n_elem */
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
-	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
 	}
 	if(sscanf(line_buf, "%d%d", n_node, n_elem) != 2) {
 		HECMW_set_error(HECMW_UTIL_E0205, "");
@@ -438,10 +431,6 @@ input_result_header(struct hecmwST_result_data *result,
 	/* nn_component, ne_component */
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
-	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
 	}
 	if(sscanf(line_buf, "%d%d", &result->nn_component, &result->ne_component) != 2) {
 		HECMW_set_error(HECMW_UTIL_E0205, "");
@@ -474,10 +463,6 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
-	}
 	i = n = 0;
 	buf = line_buf;
 	while(i < result->nn_component) {
@@ -485,10 +470,6 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 		if(p == NULL) {
 			if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 				return -1;
-			}
-			if(strstr(line_buf, "\r")) {
-				line_buf[ strlen(line_buf)-1 ] = 0;
-				line_buf[ strlen(line_buf)-1 ] = '\n';
 			}
 			buf = line_buf;
 			continue;
@@ -518,10 +499,6 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 		char label[HECMW_NAME_LEN+1];
 		if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 			return -1;
-		}
-		if(strstr(line_buf, "\r")) {
-			line_buf[ strlen(line_buf)-1 ] = 0;
-			line_buf[ strlen(line_buf)-1 ] = '\n';
 		}
 		rc = sscanf(line_buf, "%s", label);
 		if(rc == EOF) {
@@ -553,10 +530,6 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
-	}
 	i = 0;
 	label_counter = 0;
 	n++;         /**** For global node ID ****/
@@ -566,10 +539,6 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 		if(p == NULL) {
 			if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 				return -1;
-			}
-			if(strstr(line_buf, "\r")) {
-				line_buf[ strlen(line_buf)-1 ] = 0;
-				line_buf[ strlen(line_buf)-1 ] = '\n';
 			}
 			buf = line_buf;
 			continue;
@@ -618,21 +587,14 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
-	}
 	i = n = 0;
 	buf = line_buf;
 	while(i < result->ne_component) {
+
 		p = strtok(buf, DELIM);
 		if(p == NULL) {
 			if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 				return -1;
-			}
-			if(strstr(line_buf, "\r")) {
-				line_buf[ strlen(line_buf)-1 ] = 0;
-				line_buf[ strlen(line_buf)-1 ] = '\n';
 			}
 			buf = line_buf;
 			continue;
@@ -662,10 +624,6 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 		char label[HECMW_NAME_LEN+1];
 		if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 			return -1;
-		}
-		if(strstr(line_buf, "\r")) {
-			line_buf[ strlen(line_buf)-1 ] = 0;
-			line_buf[ strlen(line_buf)-1 ] = '\n';
 		}
 		rc = sscanf(line_buf, "%s", label);
 		if(rc == EOF) {
@@ -698,10 +656,6 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
-	if(strstr(line_buf, "\r")) {
-		line_buf[ strlen(line_buf)-1 ] = 0;
-		line_buf[ strlen(line_buf)-1 ] = '\n';
-	}
 	i = 0;
     label_counter = 0;
 	n++;          /**** For global element ID ****/
@@ -711,10 +665,6 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 		if(p == NULL) {
 			if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 				return -1;
-			}
-			if(strstr(line_buf, "\r")) {
-				line_buf[ strlen(line_buf)-1 ] = 0;
-				line_buf[ strlen(line_buf)-1 ] = '\n';
 			}
 			buf = line_buf;
 			continue;

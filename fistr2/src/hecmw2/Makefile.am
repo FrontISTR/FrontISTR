@@ -88,7 +88,6 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	mw3_interface.@f90objfilepostfix@ \
 	hecmw_struct.@f90objfilepostfix@
 
 HEADERS =

@@ -120,7 +120,7 @@ all: @build_target@
 	@cd user      && $(MAKE) @build_target@
 	@cd element   && $(MAKE) @build_target@
 	@cd physics   && $(MAKE) @build_target@
-#	@cd contact   && $(MAKE) @build_target@
+	@cd contact   && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
 BUILD_CURR: $(TARGET) $(F90TARGET) install-module

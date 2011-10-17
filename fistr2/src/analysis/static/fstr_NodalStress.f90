@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.1                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -32,8 +32,8 @@ module m_fstr_NodalStress
     use m_fstr
     use m_static_lib
     type (fstr_solid)      :: fstrSOLID                    !< fstr_solid
-    real(kind=kreal)       :: tdstrain(total_node*6)   !< nodal strain
-    real(kind=kreal)       :: tdstress(total_node*7)   !< nodal stress
+    real(kind=kreal)       :: tdstrain(:)                  !< nodal strain
+    real(kind=kreal)       :: tdstress(:)                  !< nodal stress
 	
     include "HEC_MW3_For.h"
 	
@@ -52,10 +52,13 @@ module m_fstr_NodalStress
 	integer(kind=kint) :: nids(0:20)
     integer :: iAss, iPart, iNode, iGrp, iErr
 
-    integer(kind=kint) :: nnumber(total_node)
-    real(kind=kreal)   :: ndstrain(total_node,6), ndstress(total_node,7)
-    real(kind=kreal)   :: temp(total_node)
+    real(kind=kreal), allocatable :: ndstrain(:,:), ndstress(:,:)
+    integer(kind=kint), allocatable :: nnumber(:)
+    real(kind=kreal), allocatable :: temp(:)
 
+    allocate( ndstrain(total_node,6), ndstress(total_node,7) )
+    allocate( nnumber(total_node) )
+    allocate( temp(total_node) )
 
 !*ZERO CLEAR
     ndstrain=0.d0; ndstress=0.d0
@@ -69,13 +72,12 @@ module m_fstr_NodalStress
     icel = 0	  
     do iAss = 0, mw_get_num_of_assemble_model()-1
      call mw_select_assemble_model( iAss )
-     call mw_select_algebra(0)
      do iPart = 0, mw_get_num_of_mesh_part()-1
         call mw_select_mesh_part( iPart )
         call mw_matrix_clear( iPart )
         do iElem = 0, mw_get_num_of_element()-1
           icel = icel+1
-          call mw_select_element_with_id( iElem )
+          call mw_select_element( icel-1 )
           call  mw_get_element_vert_node_id( nids )
           nn = mw_get_num_of_element_vert()
           ic_type = mw_get_element_type()
@@ -88,7 +90,7 @@ module m_fstr_NodalStress
 
 
           do j=1,nn
-            cid= part_nodes(iAss+1,iPart+1)+nids(j-1)+1
+            cid= mw_get_node_index( nids(j-1) )+1
             ndstrain( cid,: ) = ndstrain(cid,:) + edstrain(j,:)
             ndstress( cid,1:6 ) = ndstress(cid,1:6) + edstress(j,:)
             nnumber( cid )=nnumber( cid )+1
@@ -113,7 +115,6 @@ module m_fstr_NodalStress
 
       enddo       ! icel roop.
     enddo         ! ityp roop.
-
 
 !** Average over nodes
     do i=1,total_node
@@ -145,6 +146,10 @@ module m_fstr_NodalStress
       enddo
     enddo
 
+    deallocate( ndstrain )
+    deallocate( ndstress )
+    deallocate( nnumber)
+    deallocate( temp )
   end subroutine fstr_NodalStress3D
 
 

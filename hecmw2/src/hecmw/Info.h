@@ -1,13 +1,21 @@
-/* 
- * File:   Info.h
- * Author: ktakeda
- *
- * Created on 2009/05/12, 15:05
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/Info.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _INFO_H_62c11211_b4a0_4c3a_97c9_ec8f15c9330c
 #define	_INFO_H_62c11211_b4a0_4c3a_97c9_ec8f15c9330c
-
 namespace Utility{
 struct Info{
     static const char* Header(){return
@@ -23,6 +31,4 @@ struct Info{
     ;}
 };
 }
-
 #endif	/* _INFO_H */
-

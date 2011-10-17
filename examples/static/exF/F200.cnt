@@ -1,0 +1,16 @@
+!!
+!! Control File for FSTR solver
+!!
+!REFTEMP
+ 20.0
+!BOUNDARY
+  FIX, 1, 2, 0.0
+!TEMPERATURE
+  ALL, 120.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+  10000, 2
+ 1.0e-8, 1.0, 0.0
+!END

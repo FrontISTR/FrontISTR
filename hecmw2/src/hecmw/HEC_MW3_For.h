@@ -1,10 +1,19 @@
-!     
-! File:   HEC_MW3_For.f
-! Author: ktakeda
 !
-! Created on 2010/10/04, 15:25
+! ----------------------------------------------------------
+!|
+!| Software Name :HEC-MW Ver 4.0beta
+!|
+!|   ../src/HEC_MW3_For.h
+!|
+!|                     Written by T.Takeda,    2011/06/01
+!|                                Y.Sato       2011/06/01
+!|                                K.Goto,      2010/01/12
+!|                                K.Matsubara, 2010/06/01
+!|
+!|   Contact address : IIS, The University of Tokyo CISS
+!|
+! ----------------------------------------------------------
 !
-
 !----
 ! HEC_MW3 construct & destruct
 !----
@@ -15,7 +24,6 @@ integer mw_finalize
 ! banner
 !----
 external mw_banner
-
 !----
 ! file i/o API
 !----
@@ -36,7 +44,6 @@ integer mw_get_fstr_filename_length_part_out
 integer mw_get_fstr_filename_length_vis_mesh
 integer mw_get_fstr_filename_length_vis_in
 integer mw_get_fstr_filename_length_vis_out
-
 external mw_get_fstr_filename_mesh
 external mw_get_fstr_filename_control
 external mw_get_fstr_filename_result
@@ -46,7 +53,6 @@ external mw_get_fstr_filename_part_out
 external mw_get_fstr_filename_vis_mesh
 external mw_get_fstr_filename_vis_in
 external mw_get_fstr_filename_vis_out
-
 !----
 ! result, format= %d:int32*, %f:double*(fixed), %e:double*(scientific), %s:const char*
 !----
@@ -61,7 +67,6 @@ external mw_print_avs
 external mw_rec_avs_label
 external mw_rec_avs_variable
 external mw_print_avs_fem
-
 !----
 ! restart, linear_algebra_equation info
 !----
@@ -69,19 +74,15 @@ integer mw_file_write_res
 integer mw_set_restart
 integer mw_file_write_res_bin
 integer mw_set_restart_bin
-
 !----
 ! linear solver API
 !----
 external mw_gene_linear_algebra
 external mw_select_algebra
-
 integer mw_matrix_add_elem
 integer mw_matrix_add_node
-
 external mw_matrix_clear
 external mw_vector_clear
-
 integer mw_matrix_add_elem_24
 integer mw_matrix_add_elem_60
 integer mw_matrix_add_elem_12
@@ -95,14 +96,11 @@ integer mw_matirx_add_elem_9
 integer mw_matirx_add_elem_48
 integer mw_matirx_add_elem_6
 integer mw_matirx_add_elem_10
-
 integer mw_matrix_rhs_set_bc2
 integer mw_matrix_rhs_set_bc
 integer mw_rhs_set_bc
 integer mw_rhs_add_bc
-
 integer mw_solve
-
 !--
 ! solution_vector copy, at select MG-Level && select Equation
 !--
@@ -113,7 +111,6 @@ external mw_get_solution_assy_vector
 !--
 external mw_get_rhs_vector
 external mw_get_rhs_assy_vector
-
 !--
 ! solution vector value, rhs vector value
 !--
@@ -124,22 +121,15 @@ double precision mw_get_rhs_assy_vector_val
 !--
 integer mw_get_solution_assy_vector_dof
 integer mw_get_rhs_assy_vector_dof
-
 !--
 ! AssyMatrix * vX = vB , vector_size == NumOfMesh * NumOfNode * DOF
 !--
 external mw_mult_vector
-
-
-
-
 !----
 ! MG construct (refine)
 !----
 integer mw_refine
 integer mw_mg_construct
-
-
 !----
 ! model
 !----
@@ -155,41 +145,35 @@ external mw_select_element_with_id
 external mw_select_element
 integer mw_get_element_type
 integer mw_get_num_of_element_vert
-
 external mw_get_element_vert_node_id
 integer mw_get_num_of_element_edge
 external mw_get_element_edge_node_id
-
 ! node
 external mw_get_node_coord
 integer mw_get_dof
 integer mw_get_dof_scalar
 integer mw_get_dof_vector
-
-
 ! node size, element size
 integer mw_get_num_of_node
 integer mw_get_num_of_node_with_mesh
 integer mw_get_num_of_element
 integer mw_get_num_of_element_with_mesh
-
-! id
-integer mw_get_element_id_
-integer mw_get_node_id_
-
+! id && index
+integer mw_get_element_id
+integer mw_get_node_id
+integer mw_get_node_index
+integer mw_get_element_index
 !----
 ! node connectivity construct
 !----
 external mw_construct_node_connect_fem
 external mw_get_node_connect_fem_size
 external mw_get_node_connect_fem_item
-
 !--
 ! node around element_id
 !--
 integer mw_get_num_of_aggregate_element
 integer mw_get_aggregate_element_id
-
 !----
 ! node type
 !----
@@ -234,14 +218,11 @@ integer mw_fistr_elemtype_to_mw3_elemtype
 ! MW3 element type　=> FrontISTR element type
 !----
 integer mw_mw3_elemtype_to_fistr_elemtype
-
-
 !----
 ! shape function
 !----
 integer mw_get_num_of_integereg_pointeger
 external mw_shape_function_on_pt
-
 external mw_shape_function_hexa81
 external mw_shape_function_hexa82
 external mw_shape_function_hexa201
@@ -262,7 +243,6 @@ external mw_shape_function_tri31
 external mw_shape_function_tri63
 external mw_shape_function_line21
 external mw_shape_function_line32
-
 !----
 ! shape function deriv (rst coord)
 !----
@@ -293,7 +273,6 @@ external mw_dndr_line32
 external mw_dndx
 external mw_det_jacobian
 external mw_weight
-
 !----
 ! shape function type
 !----
@@ -317,8 +296,6 @@ integer mw_shapetype_tri31
 integer mw_shapetype_tri63
 integer mw_shapetype_line21
 integer mw_shapetype_line32
-
-
 !--
 ! boundary mesh
 !--
@@ -350,7 +327,6 @@ integer mw_get_dof_bnode_mesh
 integer mw_get_dof_bface_mesh
 integer mw_get_dof_bedge_mesh
 integer mw_get_dof_bvolume_mesh
-
 !--
 ! value of boundary node
 !--
@@ -399,23 +375,17 @@ integer mw_get_elem_id_bedge
 integer mw_get_face_id_bface
 integer mw_get_elem_id_bface
 integer mw_get_elem_id_bvolume
-
-
-
 !--
 ! mpi
 !--
 integer  mw_mpi_int
 integer  mw_mpi_double
 integer  mw_mpi_comm
-
 integer  mw_mpi_sum
 integer  mw_mpi_max
 integer  mw_mpi_min
-
 integer mw_get_rank
 integer mw_get_num_of_process
-
 external mw_allreduce_r
 integer mw_barrier
 integer mw_abort
@@ -433,9 +403,6 @@ integer mw_get_num_of_neibpe
 integer mw_get_transrank
 external mw_send_recv_r
 external mw_send_recv_i
-
-
-
 !--
 ! Element_Group { after select AssyModel, select Mesh }
 !--
@@ -443,8 +410,6 @@ integer mw_get_num_of_elementgroup
 integer mw_get_num_of_element_id
 integer mw_get_elementgroup_name_length
 integer mw_get_element_id_with_elementgroup
-
-
 !----
 ! logger
 !----
@@ -460,6 +425,3 @@ integer mw_get_info_mode
 integer mw_get_debug_mode
 integer mw_get_disk_device
 integer mw_get_display_device
-
-
-

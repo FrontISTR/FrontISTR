@@ -1,21 +1,29 @@
-//
-// DiscreteVolume.cpp
-//
-//
-//          2010.06.22
-//          k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/DiscreteVolume.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "DiscreteVolume.h"
 using namespace pmw;
-
 CDiscreteVolume::CDiscreteVolume()
 {
-    // Prismの頂点番号で表した3個のTetra
     uiint prismDiscre[3][4]={
         {0,4,3,5},
         {0,2,4,5},
         {0,2,1,4}
     };
-    // Hexaの頂点番号で表した6個のTetra
     uiint hexaDiscre[6][4]={
         {0,7,4,5},
         {0,7,5,1},
@@ -24,8 +32,6 @@ CDiscreteVolume::CDiscreteVolume()
         {3,6,5,1},
         {1,2,3,6}
     };
-
-    // classメンバーへコピー
     uiint i,ii;
     for(i=0; i< 3; i++){
         for(ii=0; ii< 4; ii++){
@@ -42,13 +48,3 @@ CDiscreteVolume::~CDiscreteVolume()
 {
     ;
 }
-
-
-
-
-
-
-
-
-
-

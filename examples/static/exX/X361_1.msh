@@ -1,0 +1,29 @@
+!HEADER
+TEST Prescribed biaxial strain history, plain strain
+##RESTART,WRITE
+!NODE
+   1, 0.,0.,0.
+   2, 1.,0.,0.
+   3, 1.,1.,0.
+   4, 0.,1.,0.
+   5, 0.,0.,1.
+   6, 1.,0.,1.
+   7, 1.,1.,1.
+   8, 0.,1.,1.
+!ELEMENT, TYPE=361,EGRP=EALL
+ 1, 1,2,3,4,5,6,7,8
+!SECTION, TYPE=SOLID, EGRP=EALL, MATERIAL=M1
+!MATERIAL, NAME=M1, ITEM=2
+!ITEM=1, SUBITEM=2
+ 4000.,      0.3
+!ITEM=2
+ 1.E-9
+!NGROUP, NGRP=BOT
+ 1,2,5,6
+!NGROUP, NGRP=TOP
+  3,4,7,8
+!NGROUP, NGRP=LEFT
+  1,4,5,8
+!NGROUP, NGRP=RIGHT
+  2,3,6,7
+!END

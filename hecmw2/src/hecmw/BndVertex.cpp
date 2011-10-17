@@ -1,14 +1,22 @@
-//
-//  BndVertex.cpp
-//
-//  座標を持たないVertex
-//    Vertexの親
-//
-//          2010.04.28
-//          k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/BndVertex.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "BndVertex.h"
 using namespace pmw;
-
 CBndVertex::CBndVertex()
 {
     ;
@@ -17,24 +25,10 @@ CBndVertex::~CBndVertex()
 {
     ;
 }
-
-
-// AggregateElementの解放
-//
-// |全てのMesh処理が終わった後で呼び出す|
-//
 void CBndVertex::deleteAggregate()
 {
     vuint vTemp;
     vector<uiint>(vTemp).swap(mvAggElementID);
-
     map<uiint, uiint, less<uiint> > mTemp;
     map<uiint, uiint, less<uiint> >(mTemp).swap(mmNeibElemVertNum);
 }
-
-
-
-
-
-
-

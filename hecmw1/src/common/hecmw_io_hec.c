@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.1                                               *
+ *         Version : 2.3                                               *
  *                                                                     *
  *     Last Update : 2007/06/29                                        *
  *        Category : I/O and Utility                                   *
@@ -1460,7 +1460,7 @@ read_equation_data_line2(int neq, double cnst)
 	int i,token;
 	int is_node = 0;
 	int is_ngrp = 0;
-	const int NITEM = 5;
+	const int NITEM = 7;
 	struct hecmw_io_mpcitem *mpcitem;
 
 	mpcitem = HECMW_malloc(sizeof(*mpcitem)*neq);

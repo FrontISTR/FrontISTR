@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Heat Analysis                                     !
 !                                                                      !
@@ -15,6 +15,7 @@
 
 !> ECHO for HEAT solver
 module m_heat_echo
+     use elementInfo
    contains
 
    subroutine heat_echo ( p, hecMESH, fstrHEAT )

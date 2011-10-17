@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -45,35 +45,35 @@ module m_fstr_Result
     real(kind=kreal)   :: fdum, ndforce(6), ss(6)
     integer(kind=kint) :: i, k, ii, jj, nctrl, ninfo, ndof, ncomp, fnum
     integer(kind=kint) :: maxiter, itype, iS, iE, ic_type, icel
-    real(kind=kreal)   :: ndstrain(total_node*6), ndstress(total_node*7)
+    real(kind=kreal), allocatable :: ndstrain(:), ndstress(:)
     real(kind=kreal)   :: s11,s22,s33,s12,s23,s13,ps,smises, vdum(6)
     integer(kind=kint),pointer :: member(:)
     type ( hecmwST_result_data ) :: fstrRESULT
-    integer :: level, partID, iErr
+    integer(kind=kint) :: level, partID, iErr
     character(len=HECMW_FILENAME_LEN) :: ctrlfile
 
-!-- POST PROCESSING VIA MEMORY
+    allocate( ndstrain(total_node*6), ndstress(total_node*7) )
+
     maxiter = fstrSOLID%step_ctrl(cstep)%max_iter
-	call hecmw_nullify_result_data( fstrRESULT )
 
     if( IVISUAL==1 ) then
-      level = 0
-      partID = -1
-      ctrlfile = 'hecmw_ctrl.dat'
-!      call fstr_nodal_stress_3d( hecMESH,fstrSOLID,fstrPARAM, .false.)
-      call fstr_make_result(fstrSOLID,fstrRESULT)
-      call mw3_visualize_init_ex(ctrlfile,level,partID)
-      call hecmw_result_copy_f2c(fstrRESULT,iErr)
-      if( iErr/=0 ) then
-        write(*,*) ' Fatal error: Fails in copying data for visualizer! '
-        write(IMSG,*) ' Fatal error: Fails in copying data for visualizer! '
-        call hecmw_abort(hecmw_comm_get_comm())
-      endif
-      call mw3_visualize(totstep,maxiter,0)
-      call mw3_visualize_finalize
-      call hecmw_result_free(fstrRESULT)
+       call fstr_NodalStress3D( fstrSOLID, fstrSOLID%STRAIN, fstrSOLID%STRESS )
+       call fstr_make_result(fstrSOLID,fstrRESULT)
+       level = 0
+       partID = -1
+       ctrlfile = 'hecmw_ctrl.dat'
+       call mw3_visualize_init_ex(ctrlfile,level,partID)
+       call hecmw_result_copy_f2c(fstrRESULT,iErr)
+       if( iErr/=0 ) then
+         write(*,*) ' Fatal error: Fails in copying data for visualizer! '
+         write(IMSG,*) ' Fatal error: Fails in copying data for visualizer! '
+         call hecmw_abort(hecmw_comm_get_comm())
+       endif
+       call mw3_visualize(totstep,maxiter,0)
+       call mw3_visualize_finalize
+       call hecmw_result_free(fstrRESULT)
     endif
-
+	
     if( .not. associated(fstrSOLID%output_ctrl) ) return
 
     ndof = assDOF(1)
@@ -273,6 +273,8 @@ module m_fstr_Result
        if( ndof == 3 ) call fstr_NodalStress3D( fstrSOLID, ndstrain, ndstress  )
        call fstrNLGEOM_Post(fnum,fstrSOLID,ttime,totstep,ndstrain,ndstress)
     enddo
+
+    deallocate( ndstrain, ndstress)
   end subroutine fstr_OutputResult
 
 !> Summarizer of output data which prints out max and min output values
@@ -280,7 +282,6 @@ module m_fstr_Result
   subroutine fstrNLGEOM_Post(fnum,fstrSOLID,tt,i_step,ndstrain, ndstress)
 !----------------------------------------------------------------------*
       use m_fstr
-      use m_mw3_interface
       use hecmw_result
       integer, intent(in)                   :: fnum
       type (fstr_solid), intent(in)         :: fstrSOLID
@@ -289,13 +290,13 @@ module m_fstr_Result
 
       integer(kind=kint), intent(in) :: i_step
       real(kind=kreal), intent(in)   :: tt
-      real(kind=kreal), intent(in)   :: ndstrain(total_node*6)
-      real(kind=kreal), intent(in)   :: ndstress(total_node*7)
+      real(kind=kreal), intent(in)   :: ndstrain(:)
+      real(kind=kreal), intent(in)   :: ndstress(:)
 ! --- file name
       character(len=HECMW_HEADER_LEN) :: header
       character(len=HECMW_NAME_LEN) :: label
       character(len=HECMW_NAME_LEN) :: nameID
-      integer :: level, partID
+      integer(kind=kint)            :: level, partID
       character(len=HECMW_FILENAME_LEN) :: ctrlfile
 ! --- Local variables
 ! --- Max Min
@@ -453,33 +454,48 @@ module m_fstr_Result
         level = 0
         partID = -1
         ctrlfile = 'hecmw_ctrl.dat'
-!C*** INITIALIZE
+! --- INITIALIZE
         header='*fstrresult'
         call mw3_result_init_ex(ctrlfile,level,partID,i_step,header)
-!C*** DISPLACEMENT
-        id = 1
-        label='DISPLACEMENT'
-        call hecmw_result_add(id,3,label,fstrSOLID%unode)
-!C*** STRAIN @node
-        id = 1
-        label='STRAIN'
-        call hecmw_result_add(id,6,label,fstrSOLID%STRAIN)
-!C*** STRESS @node
-        id = 1
-        label='STRESS'
-        call hecmw_result_add(id,7,label,fstrSOLID%STRESS)
-!C*** STRAIN @element 
-        id = 2
-        label='ESTRAIN'
-        call hecmw_result_add(id,6,label,fstrSOLID%ESTRAIN)
-!C*** STRESS @element
-        id = 2
-        label='ESTRESS'
-        call hecmw_result_add(id,7,label,fstrSOLID%ESTRESS)
-!C*** WRITE NOW
+! --- DISPLACEMENT
+!        if( fstrSOLID%iout_list(1) .eq. 1 ) then
+          id = 1
+          ndof=3
+          label='DISPLACEMENT'
+          call mw3_result_add(id,ndof,label,fstrSOLID%unode)
+!        end if
+
+        if( i_step .gt. 0) then
+!         if( fstrSOLID%iout_list(5) .eq. 1 ) then
+! --- STRAIN @node
+            id = 1
+            ndof=6
+            label='STRAIN'
+            call mw3_result_add(id,ndof,label,ndstrain)
+! --- STRAIN @element
+            id = 2
+            ndof=6
+            label='ESTRAIN'
+            call mw3_result_add(id,ndof,label,fstrSOLID%ESTRAIN)
+!         end if
+
+!         if( fstrSOLID%iout_list(6) .eq. 1 ) then
+! --- STRESS @node
+            id = 1
+            ndof=7
+            label='STRESS'
+            call mw3_result_add(id,ndof,label,ndstress)
+! --- STRESS @element
+            id = 2
+            ndof=7
+            label='ESTRESS'
+            call mw3_result_add(id,ndof,label,fstrSOLID%ESTRESS)
+!         end if
+        end if
+! --- WRITE
         nameID='fstrRES'
-        call hecmw_result_write_by_name(nameID)
-!C*** FINALIZE 
+        call mw3_result_write_by_name(nameID)
+! --- FINALIZE
         call mw3_result_finalize
       endif
 

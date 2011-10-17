@@ -1,18 +1,24 @@
 /*
- * SolverGMRES.h
- *
- *  Created on: Jul 24, 2009
- *      Author: goto
- */
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/SolverGMRES.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef SOLVERGMRES_H_
 #define SOLVERGMRES_H_
-
 #include "Solver.h"
-
 namespace pmw
 {
-
 class CSolverGMRES: public pmw::CSolver
 {
 public:
@@ -25,7 +31,5 @@ private:
 			iint iter_max, double tolerance,
 			bool flag_iter_log, bool flag_time_log);
 };
-
 }
-
 #endif /* SOLVERGMRES_H_ */

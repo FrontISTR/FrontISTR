@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -20,6 +20,8 @@ contains
 
       subroutine FSTR_POST(fstrSOLID,istep)
       use m_fstr
+      use elementInfo
+      use hecmw_result
       implicit none
       type (fstr_solid)         :: fstrSOLID
       integer                   :: istep
@@ -29,6 +31,8 @@ contains
       character(len=HECMW_HEADER_LEN) :: header
       character(len=HECMW_NAME_LEN) :: label
       character(len=HECMW_NAME_LEN) :: nameID
+      integer :: level, partID
+      character(len=HECMW_FILENAME_LEN) :: ctrlfile
 !C Max Min
       real(kind=kreal)    Umax(6), Umin(6)
       integer(kind=kint) IUmax(6),IUmin(6)
@@ -188,7 +192,38 @@ contains
           write(ILOG,1019) '//S23',ESmax(5),ESmin(5)
           write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
         endif
-        
+        if( IRESULT.eq.0 ) return
+        level = 0
+        partID = -1
+        ctrlfile = 'hecmw_ctrl.dat'
+!C*** INITIALIZE
+        header='*fstrresult'
+        call mw3_result_init_ex(ctrlfile,level,partID,istep,header)
+!C*** DISPLACEMENT
+        id = 1
+        label='DISPLACEMENT'
+        call mw3_result_add(id,3,label,fstrSOLID%unode)
+!C*** STRAIN @node
+        id = 1
+        label='STRAIN'
+        call mw3_result_add(id,6,label,fstrSOLID%STRAIN)
+!C*** STRESS @node
+        id = 1
+        label='STRESS'
+        call mw3_result_add(id,7,label,fstrSOLID%STRESS)
+!C*** STRAIN @element 
+        id = 2
+        label='ESTRAIN'
+        call mw3_result_add(id,6,label,fstrSOLID%ESTRAIN)
+!C*** STRESS @element
+        id = 2
+        label='ESTRESS'
+        call mw3_result_add(id,7,label,fstrSOLID%ESTRESS)
+!C*** WRITE NOW
+        nameID='fstrRES'
+        call mw3_result_write_by_name(nameID)
+!C*** FINALIZE 
+        call mw3_result_finalize
 !C
 !C*for 6D
       elseif( NDOF == 6 ) then
@@ -253,10 +288,45 @@ contains
           write(ILOG,1019) '//S23',ESmax( 4),ESmin( 4)
           write(ILOG,1019) '//S13',ESmax( 5),ESmin( 5)
           write(ILOG,1019) '//SMS',ESmax( 6),ESmin( 6)
-
         endif
+        if( IRESULT.eq.0 ) return
+        level = 0
+        partID = -1
+        ctrlfile = 'hecmw_ctrl.dat'
+!C*** INITIALIZE
+        header='*fstrresult'
+        call mw3_result_init_ex(ctrlfile,level,partID,istep,header)
+!C*** DISPLACEMENT
+        id = 1
+        ndof=6
+        label='DISPLACEMENT'
+        call mw3_result_add(id,ndof,label,fstrSOLID%unode)
+!C*** STRAIN @node
+        id = 1
+        ndof=10
+        label='STRAIN'
+        call mw3_result_add(id,ndof,label,fstrSOLID%STRAIN)
+!C*** STRESS @node
+        id = 1
+        ndof=12
+        label='STRESS'
+        call mw3_result_add(id,ndof,label,fstrSOLID%STRESS)
+!C*** STRAIN @element 
+        id = 2
+        ndof=10
+        label='ESTRAIN'
+        call mw3_result_add(id,ndof,label,fstrSOLID%ESTRAIN)
+!C*** STRESS @element
+        id = 2
+        ndof=12
+        label='ESTRESS'
+        call mw3_result_add(id,ndof,label,fstrSOLID%ESTRESS)
+!C*** WRITE NOW
+        nameID='fstrRES'
+        call mw3_result_write_by_name(nameID)
+!C*** FINALIZE 
+        call mw3_result_finalize
       endif
-        
  1009 format(a8,1pe12.4,i10,1pe12.4,i10)
  1019 format(a8,1pe12.4,1pe12.4)
       end subroutine FSTR_POST

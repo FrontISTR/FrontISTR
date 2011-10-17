@@ -1,0 +1,16 @@
+!!
+!! Control File for HEAT solver
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+!FIXTEMP
+ XMIN,   0.0
+!RADIATE
+ XMAX, R4, 1.11642E-8, 600.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=2
+ 2000,  2
+ 1.0e-8,1.0,0.0
+!END

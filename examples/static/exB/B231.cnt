@@ -1,0 +1,14 @@
+!!
+!! Control File for FSTR solver
+!!
+!BOUNDARY
+    FIX,  1,  2,  0.0
+!DLOAD
+ B230P2, P2,     -1.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=1,ITERLOG=YES,TIMELOG=YES,
+  10000, 2
+ 1.0e-8, 1.0, 0.0
+!END

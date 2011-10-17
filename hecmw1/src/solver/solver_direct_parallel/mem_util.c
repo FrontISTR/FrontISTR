@@ -12,3 +12,9 @@ void separator_print_exit(char *var)
     /* MPI_Finalize(); */
     exit(0);
 	}
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Eigen Analysis                                    !
 !                                                                      !
@@ -17,7 +17,7 @@ module m_fstr_EIG_setMASS
 use hecmw
 use m_eigen_lib
 use m_static_get_prop
-
+use elementInfo
 contains
 
 !C---------------------------------------------------------------------*

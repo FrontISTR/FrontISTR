@@ -1,19 +1,27 @@
 /*
- * SolverBiCGSTAB.cpp
- *
- *  Created on: Jul 24, 2009
- *      Author: goto
- */
-
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/SolverBiCGSTAB.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "SolverBiCGSTAB.h"
 #include "AssyMatrix.h"
 #include "AssyVector.h"
 #include <cmath>
-#include <cstdio>
 
 namespace pmw
 {
-
 CSolverBiCGSTAB::CSolverBiCGSTAB(iint iter_max = 100,
 		double tolerance = 1.0e-8,
 		iint method = 1,
@@ -22,62 +30,40 @@ CSolverBiCGSTAB::CSolverBiCGSTAB(iint iter_max = 100,
 		bool flag_time_log = false)
 	: CSolver(iter_max, tolerance, method, precondition, flag_iter_log, flag_time_log)
 {
-	// TODO Auto-generated constructor stub
 }
-
 CSolverBiCGSTAB::~CSolverBiCGSTAB()
 {
-	// TODO Auto-generated destructor stub
 }
-
 uiint CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAssyVector *pX,
 		iint iter_max, double tolerance,
 		bool flag_iter_log, bool flag_time_log)
 {
 	double bnrm2_inv, snrm2;
 	double alpha, beta, omega, rho, rho_prev, resid;
-	iint iter, iter_precond; // TODO: class variable???
-
+	iint iter, iter_precond; 
 #ifdef ADVANCESOFT_DEBUG
    	printf(" enter CSolverBiCGSTAB::doSolve1111 \n");
 #endif
    	printf(" --- start of BiCGSTAB solver --- \n");
-
-	CAssyVector R (pX); // same type as pB and pX
-	CAssyVector Rt(pX); //
-	CAssyVector P (pX); //
-	CAssyVector Pt(pX); //
+	CAssyVector R (pX); 
+	CAssyVector Rt(pX); 
+	CAssyVector P (pX); 
+	CAssyVector Pt(pX); 
 	CAssyVector S (pX);
-	CAssyVector &St= R;  // can be shared with R
-	CAssyVector T (pX); //
-	CAssyVector V (pX); //
-
+	CAssyVector &St= R;  
+	CAssyVector T (pX); 
+	CAssyVector V (pX); 
 	uiint len = pB->size();
-
-	// {R} = {B} - [A] {X}
-	// {Rt} = {R}
 	pA->multVector(pX, &P);
 	for (uiint i = 0; i < len; i++) {
 		R[i] = (*pB)[i] - P[i];
 		Rt[i] = R[i];
 	}
-
-	// calc 1 / |{B}|^2
 	bnrm2_inv = 1.0 / pB->norm2();
-
 	iint itype = getPrecondition();
-	pA->setupPreconditioner( itype ); // TODO: rewrite to pA->precond(pR, pZ);
-
+	pA->setupPreconditioner( itype ); 
 	for (iter = 0; iter < getIterMax(); iter++) {
-
-		// rho = {Rt} {R}
 		rho = Rt.innerProd(&R);
-
-		// iter > 0:
-		//   beta = (rho / rho_prev) * (alpha / omega)
-		//   {P} = {R} + beta ( {P} - omega {V} )
-		// iter == 1:
-		//   {P} = {R}
 		if (iter > 0) {
 			beta = (rho * alpha) / (rho_prev * omega);
 			for (uiint i = 0; i < len; i++) {
@@ -88,8 +74,6 @@ uiint CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAs
 				P[i] = R[i];
 			}
 		}
-
-		// {Pt} = [Minv] {P}
 		iter_precond = 1;
 		if( itype == 2 ) {
 			Pt.subst(pX);
@@ -97,73 +81,37 @@ uiint CSolverBiCGSTAB::doSolve(const CAssyMatrix *pA, const CAssyVector *pB, CAs
 		} else {
 		  pA->precond(&P, &Pt, iter_precond);
 		}
-
-		// {V} = [A] {Pt}
 		pA->multVector(&Pt, &V);
-
-		// alpha = rho / ({Rt} {V})
 		alpha = rho / Rt.innerProd(&V);
-
-		// {S} = {R} - alpha {V}
 		for (uiint i = 0; i < len; i++) {
 			S[i] = R[i] - alpha * V[i];
 		}
-
-		// {St} = [Minv] {S}
 		iter_precond = 1;
-
 		if( itype == 2 ) {
 			St.subst(pX);
 			pA->MGInitialGuess(&S, &St);
 		} else {
 		  pA->precond(&S, &St, iter_precond);
 		}
-		// {T} = [A] {St}
 		pA->multVector(&St, &T);
-
-		// omega = ({T} {S}) / ({T} {T})
 		omega = T.innerProd(&S) / T.norm2();
-		//printf(" - omega %e \n", omega);
-
-		// {X} = {X} + alpha {Pt} + omega {St}
-		// {R} = {S} - omega {T}
 		for (uiint i = 0; i < len; i++) {
 			(*pX)[i] += alpha * Pt[i] + omega * St[i];
 			R[i] = S[i] - omega * T[i];
 		}
-
-		// calc |{S}|^2
 		snrm2 = S.norm2();
-
-		// resid = |{S}| / |{B}|
 		resid = sqrt(snrm2 * bnrm2_inv);
-
-		// iteration history
 		if (getFlagIterLog()) {
-			// TODO: replace with logger
 			printf("%5ld %16.6e\n", iter + 1, resid);
 		}
 		printf("iteration:%5ld, residue:%16.6e \n", iter + 1, resid);
-		
-		// check convergence
 		if (resid < getTolerance()) break;
-
-		// rho_prev = rho
 		rho_prev = rho;
 	}
-	
 	if( iter == getIterMax() ) return 0;
-
-	// K.Matsubara 2010.03.31
 	P.subst(pX);
 	pA->multMPC(&P, pX);
-
-	// interface data exchange
-	//pX->updateCommBoundary();
-	
    	printf(" --- end of BiCGSTAB solver --- \n");
-
 	return 1;
 }
-
 }

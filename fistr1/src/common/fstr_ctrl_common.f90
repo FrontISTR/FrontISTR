@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -17,6 +17,7 @@
 module fstr_ctrl_common
 use m_fstr
 use hecmw
+use mContact                                                            
 
 implicit none
 
@@ -78,9 +79,9 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         real(kind=kreal) :: filter
         integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-        character(50) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT '
+        character(66) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag '   
 
-        integer(kind=kint) :: number_number = 5
+        integer(kind=kint) :: number_number = 5    
         integer(kind=kint) :: indirect_number = 4
         integer(kind=kint) :: iter, time
 
@@ -196,8 +197,8 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( ierr==0 ) then
           steps%initdt = fn
           steps%elapsetime = f1
-          steps%num_substep = int(f1/fn)
-          if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
+          steps%num_substep = int((f1+0.1*fn)/fn)
+          !if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
           sn = 2
         endif
 
@@ -210,7 +211,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
             bc_n = bc_n + 1
           else if( trim(header_name) == 'LOAD' ) then
             load_n = load_n +1
-          else if( trim(header_name) == 'CONTACT' ) then
+          else if( trim(header_name) == 'CONTACT' ) then       
             contact_n = contact_n+1
           else if( trim(header_name) == 'TEMPERATURE' ) then
          !   steps%Temperature = .true.
@@ -232,7 +233,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
           else if( trim(header_name) == 'LOAD' ) then
             load_n = load_n +1
             steps%Load(load_n) = bcid
-          else if( trim(header_name) == 'CONTACT' ) then
+          else if( trim(header_name) == 'CONTACT' ) then    
             contact_n = contact_n+1
             steps%Contact(contact_n) = bcid
           endif
@@ -491,6 +492,69 @@ logical function fstr_ctrl_get_outelem( ctrl, hecMESH, outinfo )
   fstr_ctrl_get_outelem = .true.
 
 end function fstr_ctrl_get_outelem
+
+!> Read in !CONTACT                                                           
+function fstr_ctrl_get_CONTACTALGO( ctrl, algo )           
+        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: algo
+        integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO    
+
+        integer(kind=kint) :: rcode
+        character(len=80) :: s
+        algo = kcaSLagrange
+        s = 'SLAGRANGE,ALAGRANGE '
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )   
+        fstr_ctrl_get_CONTACTALGO = rcode                                  
+end function fstr_ctrl_get_CONTACTALGO
+
+  !>  Read in contact definition
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo )    
+      integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
+      integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
+      integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm                    
+      type(tContact), intent(out)       :: contact(n)    !< contact definition
+      real(kind=kreal), intent(out)      :: np             !< penalty along contact nomral
+      real(kind=kreal), intent(out)      :: tp             !< penalty along contact tangent
+      real(kind=kreal), intent(out)      :: ntol           !< tolrence along contact nomral
+      real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
+
+      integer           :: rcode, ipt
+      character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID'
+      character(len=HECMW_NAME_LEN) :: data_fmt,ss
+      character(len=HECMW_NAME_LEN) :: cp_name(n)      
+      real(kind=kreal)  :: fcoeff(n),tPenalty(n) 
+      
+      tPenalty = 1.0d6                                            
+
+      write(ss,*)  HECMW_NAME_LEN
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr'                      
+
+      fstr_ctrl_get_CONTACT = .false.                               
+      contact(1)%ctype = 1   ! pure slave-master contact; default value
+      contact(1)%algtype = CONTACTSSLID ! small sliding contact; default value
+      rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )         
+      if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
+      if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '#', 1, 'I', contact(1)%group )/=0) return
+      do rcode=2,n
+        contact(rcode)%ctype = contact(1)%ctype
+        contact(rcode)%group = contact(1)%group
+        contact(rcode)%algtype = contact(1)%algtype
+      end do
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%tPenalty = tPenalty(rcode)        
+      enddo
+      
+      np = 0.d0;  tp=0.d0
+      ntol = 0.d0;  ttol=0.d0
+      if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
+      if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '#', 0, 'R', tp ) /= 0 ) return
+      if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
+      if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '#', 0, 'R', ttol ) /= 0 ) return
+      fstr_ctrl_get_CONTACT = .true.                                          
+  end function fstr_ctrl_get_CONTACT                                                
 
 
 end module fstr_ctrl_common

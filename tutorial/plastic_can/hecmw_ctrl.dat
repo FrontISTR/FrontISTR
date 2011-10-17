@@ -1,0 +1,18 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ can.msh
+!CONTROL, NAME=fstrCNT
+ can.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ can.res
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ can.msh
+!RESULT, NAME=result, IO=IN
+ can.res
+!RESULT, NAME=vis_out, IO=OUT
+ can_vis

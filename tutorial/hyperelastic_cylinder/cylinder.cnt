@@ -1,0 +1,39 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY,GRPID=1
+ LOADS, 3, 3, -5.0
+ FIX,   3, 3, 0.0
+ XSYMM, 1, 1, 0.0
+ YSYMM, 2, 2, 0.0
+### STEP
+!STEP, SUBSTEPS=5, CONVERG=1.0e-5
+ BOUNDARY, 1
+### Material
+!MATERIAL, NAME=MAT1
+!HYPERELASTIC, TYPE=MOONEY-RIVLIN
+ 0.1486, 0.4849, 0.0789
+### Output
+!NODE_OUTPUT
+ STRAIN
+ STRESS
+!ELEMENT_OUTPUT, POSITION=INTEG
+ STRAIN
+ STRESS
+### Solver Setting
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 10000, 2
+ 1.0e-8, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!output_type = COMPLETE_AVS
+!END

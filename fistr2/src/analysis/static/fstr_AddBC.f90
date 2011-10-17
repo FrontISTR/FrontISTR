@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.1                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -58,7 +58,9 @@ module m_fstr_AddBC
              if( iter>1 ) RHS=0.d0
              read( fstrSOLID%boundary_grp(igrp)%grp_name, * , IOSTAT=iErr ) ndID
              if( iErr==0 ) then
-                 ndID= part_nodes(iAss+1,pid+1)+ndID
+          !       ndID= part_nodes(iAss+1,pid+1)+ndID
+                 if( all(global_node_ID/=ndID) ) cycle
+              !   ndID = mw_get_node_index( ndID )
                  do ik=1,assDOF(1)
                    if( fstrSOLID%boundary_grp(igrp)%dof(ik)==1 ) then
                      iErr= mw_matrix_rhs_set_bc2(pid, ndID, ik-1, 1.D0, RHS)
@@ -68,11 +70,14 @@ module m_fstr_AddBC
                call mw_select_mesh_part_with_id(pid)
 			   do mwigrp = 0, mw_get_num_of_boundary_bnode_mesh()-1
                  nn = mw_get_bnode_mesh_namelength( mwigrp )
-                 call mw_get_bnode_mesh_name(mwigrp, header_name, nn)
+                 header_name=''
+                 call mw_get_bnode_mesh_name(mwigrp, header_name(1:nn), nn)
                  if( header_name(1:nn)/=trim(fstrSOLID%boundary_grp(igrp)%grp_name) ) cycle
                  do  iNode=0, mw_get_num_of_bnode_in_bnode_mesh(mwigrp)-1
 			        ndID= mw_get_node_id_in_bnode_mesh(pid, iNode)
-                    ndID= part_nodes(iAss+1,pid+1)+ndID
+               !     ndID= part_nodes(iAss+1,pid+1)+ndID
+                    if( all(global_node_ID/=ndID) ) cycle
+                !    ndID = mw_get_node_index( ndID )
                     do ik=1,6
                       if( fstrSOLID%boundary_grp(igrp)%dof(ik)==1 ) then
                         iErr= mw_matrix_rhs_set_bc2(pid, ndID, ik-1, 1.D0, RHS)

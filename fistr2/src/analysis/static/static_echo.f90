@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -47,7 +47,7 @@ module m_static_echo
          write( ILOG, * ) "Assmble model:", iAss+1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             write(ILOG, *) "Part:",iPart+1, part_nodes(iAss+1, iPart+1), part_nodes(iAss+1, iPart+2)  &
                  , part_elems(iAss+1, iPart+1), part_elems(iAss+1, iPart+2)
          enddo
@@ -65,13 +65,14 @@ module m_static_echo
       do iAss = 0, mw_get_num_of_assemble_model()-1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             do iNode = 0, mw_get_num_of_node()-1
-              call mw_get_node_coord( iNode, x,y,z )
+              call mw_get_node_coord( mw_get_node_id(iNode), x,y,z )
               write(ILOG,'(3i8,3e15.5)') iAss,iPart,iNode,x,y,z
             enddo
          enddo
       enddo
+
 !C
 !C +-------------------------------+
 !C | ELEMENT                       | 
@@ -84,7 +85,7 @@ module m_static_echo
          do iPart = 0, mw_get_num_of_mesh_part()-1
             call mw_select_mesh_part( iPart )
             do iElem = 0, mw_get_num_of_element()-1
-              call mw_select_element_with_id( iElem )
+              call mw_select_element( iElem )
               call  mw_get_element_vert_node_id( nids )
               nn = mw_get_num_of_element_vert()
               ic_type = mw_get_element_type()
@@ -93,7 +94,6 @@ module m_static_echo
          enddo
       enddo
 	  
-     
 !C +-------------------------------+
 !C | NODE GROUP                    | 
 !C +-------------------------------+
@@ -105,7 +105,8 @@ module m_static_echo
             call mw_select_mesh_part( iPart )
             do iGrp = 0,mw_get_num_of_boundary_bnode_mesh()-1      ! node group
                nn = mw_get_bnode_mesh_namelength( iGrp )
-               call mw_get_bnode_mesh_name(iGrp, header_name, nn)
+               header_name=''
+               call mw_get_bnode_mesh_name(iGrp, header_name(1:nn), nn)
                write(ILOG,*) "Node group:",header_name(1:nn)
 			   do  iNode=0, mw_get_num_of_bnode_in_bnode_mesh(iGrp)-1
 			        nn= mw_get_node_id_in_bnode_mesh(iGrp, iNode)
@@ -125,7 +126,8 @@ module m_static_echo
             call mw_select_mesh_part( iPart )
             do iGrp = 0, mw_get_num_of_elementgroup()-1
               nn = mw_get_elementgroup_name_length(iGrp)
-              call mw_get_elementgroup_name(iGrp, header_name, nn)
+              header_name=''
+              call mw_get_elementgroup_name(iGrp, header_name(1:nn), nn)
               write(ILOG,*) "Element group:",header_name(1:nn)
               do iElem = 0, mw_get_num_of_element_id(iGrp)-1
                 nn = mw_get_element_id_with_elementgroup( iGrp, iElem )
@@ -156,6 +158,5 @@ module m_static_echo
       enddo
 	  
       call flush(ILOG)
-
    end subroutine FSTR_ECHO
 end module m_static_echo

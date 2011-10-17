@@ -1,30 +1,33 @@
-//
-//  FileWriterElement.cpp
-//
-//
-//
-//                  2009.07.23
-//                  2009.07.23
-//                  k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FileWriterElement.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "FileWriterElement.h"
 using namespace FileIO;
-
 CFileWriterElement::CFileWriterElement()
 {
     ;
 }
-
 CFileWriterElement::~CFileWriterElement()
 {
     ;
 }
-
-// method
-// --
 string CFileWriterElement::StrType(const uiint& elem_type)
 {
     string sType;
-
     switch(elem_type){
         case(pmw::ElementType::Hexa):
             sType= "Hexa";
@@ -44,12 +47,6 @@ string CFileWriterElement::StrType(const uiint& elem_type)
         case(pmw::ElementType::Prism2):
             sType= "Prism2";
             break;
-//        case(pmw::ElementType::Pyramid):
-//            sType= "Pyramid";
-//            break;
-//        case(pmw::ElementType::Pyramid2):
-//            sType= "Pyramid2";
-//            break;
         case(pmw::ElementType::Quad):
             sType= "Quad";
             break;
@@ -73,7 +70,6 @@ string CFileWriterElement::StrType(const uiint& elem_type)
             pLogger->Info(Utility::LoggerMode::Error, "CFileWriterElement ", elem_type);
             break;
     }
-
     return sType;
 }
 void CFileWriterElement::WriteDebug(ofstream& ofs, const uiint& mgLevel)
@@ -83,37 +79,24 @@ void CFileWriterElement::WriteDebug(ofstream& ofs, const uiint& mgLevel)
    pmw::CElement *pElem;
    pmw::CNode   *pNode;
    string white(" ");
-
    pAssyModel= mpGMGModel->getAssyModel(mgLevel);
-
    uiint numOfPart= pAssyModel->getNumOfMesh();
    uiint numOfElem, numOfNode;
    uiint i,ii,iii;
    for(i=0; i< numOfPart; i++){
        pMesh= pAssyModel->getMesh(i);
-
        ofs << " -- Element Block Start -- " << ", mgLevel == " << mgLevel<< ", Mesh ID==" << pMesh->getMeshID() << endl;
-
-       ////debug
-       //cout << "FileWriterElement::Write, numOfElem => " << pMesh->getNumOfElement() << endl;
-       
        numOfElem= pMesh->getNumOfElement();
        for(ii=0; ii< numOfElem; ii++){
-           
            pElem= pMesh->getElementIX(ii);
-
-           //ofs << pMesh->getMeshID() << white
-           ofs << white  //Visualでの確認の為にMeshID出力はとりあえず中止
+           ofs << white  
                << pElem->getID() << white
                << StrType(pElem->getType()) << white;
-
            numOfNode= pElem->getNumOfNode();
            for(iii=0; iii< numOfNode; iii++){
                pNode= pElem->getNode(iii);
-
                ofs << pNode->getID() << white;
            };
-           //debug
            {
                ofs << ",Edge Node ";
                uiint numOfEdge,numOfFace, iedge, iface;
@@ -127,20 +110,15 @@ void CFileWriterElement::WriteDebug(ofstream& ofs, const uiint& mgLevel)
                    if(pElem->getFaceNode(iface)) ofs << pElem->getFaceNode(iface)->getID() << white;
                };
            }
-           //debug end
-
            ofs << endl;
-
-       };//Elementループエンド
+       };
        ofs << " -- Element Block End -- " << endl;
-
        pmw::CCommMesh *pCommMesh;
        pmw::CCommElement *pCommElem,*pDCommElem;
        uiint numOfCommMesh= pMesh->getNumOfCommMesh();
        uiint icom;
        for(icom=0; icom< numOfCommMesh; icom++){
-           pCommMesh= pMesh->getCommMesh(icom);/////////////// <- 本来はCommID,修正の必要あり.
-
+           pCommMesh= pMesh->getCommMesh(icom);
            ofs << " -- CommElement -- " << endl;
            uiint numOfCommElem= pCommMesh->getNumOfCommElement();
            uiint icomelem;
@@ -154,21 +132,6 @@ void CFileWriterElement::WriteDebug(ofstream& ofs, const uiint& mgLevel)
                pDCommElem= pCommMesh->getDCommElement(icomelem);
                ofs << "DCommElem in ElemID => " << pDCommElem->getElement()->getID() << endl;
            }
-       }//CommMeshループエンド
-
-   };//Meshループエンド
+       }
+   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

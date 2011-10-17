@@ -1,62 +1,47 @@
-/* 
- * File:   BoundaryPrism.h
- * Author: ktakeda
- *
- * Created on 2010/07/02, 17:10
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/BoundaryPrism.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "BoundaryVolume.h"
-#include "BoundaryHexa.h"//refineで使用
-
+#include "BoundaryHexa.h"
 namespace pmw{
 #ifndef _BOUNDARYPRISM_H
 #define	_BOUNDARYPRISM_H
 class CBoundaryPrism:public CBoundaryVolume{
 public:
-    CBoundaryPrism();// 形状( Tetra | Hexa | Prism )初期化
+    CBoundaryPrism();
     virtual ~CBoundaryPrism();
-//private:
-//    static uint mnElemType;
-//    static uint mNumOfFace;
-//    static uint mNumOfEdge;
-//    static uint mNumOfNode;
-
 protected:
     virtual uiint* getLocalNode_Edge(const uiint& iedge);
     virtual uiint* getLocalNode_Face(const uiint& iface);
-
 public:
     virtual uiint getElemType();
     virtual uiint getNumOfEdge();
     virtual uiint getNumOfFace();
     virtual uiint getNumOfNode();
     virtual uiint getNumOfVert();
-
     virtual void setOrder(const uiint& order);
-    
     virtual PairBNode getPairBNode(const uiint& iedge);
     virtual uiint& getEdgeID(PairBNode& pairBNode);
-
     virtual vector<CBoundaryNode*> getFaceCnvNodes(const uiint& iface);
     virtual uiint& getFaceID(vector<CBoundaryNode*>& vBNode);
-    
-    
-    virtual void refine(uiint& countID, const vuint& vDOF);// Refine 再分割
-    virtual double& calcVolume();// BoundaryVolumeの体積
-
-    virtual void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);//上位グリッドBNodeへのディレクレ値の分配
-
-    virtual void replaceEdgeBNode(const uiint& iedge);//2次要素の場合に辺BNodeをmvBNodeへ移設.
-
-    virtual void deleteProgData();// Refine 後処理 : 辺-面 BNode vectorの解放
+    virtual void refine(uiint& countID, const vuint& vDOF);
+    virtual double& calcVolume();
+    virtual void distDirichletVal(const uiint& dof, const uiint& mgLevel, const uiint& nMaxMGLevel);
+    virtual void replaceEdgeBNode(const uiint& iedge);
+    virtual void deleteProgData();
 };
 #endif	/* _BOUNDARYPRISM_H */
 }
-
-
-
-
-
-
-
-
-

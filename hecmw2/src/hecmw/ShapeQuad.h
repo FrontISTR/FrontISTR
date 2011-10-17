@@ -1,12 +1,21 @@
-/* 
- * File:   ShapeQuad.h
- * Author: ktakeda
- *
- * Created on 2010/02/02, 16:15
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/ShapeQuad.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "TypeDef.h"
 #include "ShapeFunctionBase.h"
-
 namespace pmw{
 #ifndef _SHAPEQUAD_H
 #define	_SHAPEQUAD_H
@@ -19,70 +28,41 @@ public:
         return &moShapeQuad;
     }    
     virtual ~CShapeQuad();
-
 private:
-//    // MW3 辺番号 -> FrontISTR 2次節点番号
-//    uint mvEdge_2_ISTR[4];
-//    // FrontISTR -> MW3 辺番号
-//    uint mvISTR_2_Edge[8];
-
-    //積分座標: gzi,eta
-    double mGzi1[1][2];  //1点 積分
-    double mGzi4[4][2];  //4点 積分
-    double mGzi9[9][2];  //9点 積分
-
-    //積分点の重み
-    double mW1[1];  //1点 積分
-    double mW4[4];  //4点 積分
-    double mW9[9];  //9点 積分
-
-
-    //形状関数:N[積分点][i] : i番の形状関数
-    vvdouble mvN41;//[1][4]  4節点要素 積分点1
-    vvdouble mvN84;//[4][8]  8節点要素 積分点4
-    vvdouble mvN89;//[9][8]  8節点要素 積分点9
-
-    //導関数: dNdr[積分点][i][coord]
-    vvvdouble mvdNdr41;//[1][4][2]  4節点要素 積分点1
-    vvvdouble mvdNdr84;//[4][8][2]  8節点要素 積分点4
-    vvvdouble mvdNdr89;//[9][8][2]  8節点要素 積分点9
-    //2次導関数: dNdr[積分点][i][coord][coord]
+    double mGzi1[1][2];  
+    double mGzi4[4][2];  
+    double mGzi9[9][2];  
+    double mW1[1];  
+    double mW4[4];  
+    double mW9[9];  
+    vvdouble mvN41;
+    vvdouble mvN84;
+    vvdouble mvN89;
+    vvvdouble mvdNdr41;
+    vvvdouble mvdNdr84;
+    vvvdouble mvdNdr89;
     v4double mvd2Ndr41;
     v4double mvd2Ndr84;
     v4double mvd2Ndr89;
-
-    
-    //形状関数 & 導関数のセットアップ
     void setupShapeFunction(vvdouble& N, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][2]);
     void setupShapeDeriv(vvvdouble& dNdr, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][2]);
     void setupShape2ndDeriv(v4double& d2Ndr, const uiint& numOfIntg, const uiint& numOfShape, const double Gzi[][2]);
-
-
-    //形状関数
     void ShapeFunction4(vvdouble& N, const uiint& igauss,
                          const double& r, const double& s);
     void ShapeFunction8(vvdouble& N, const uiint& igauss,
                          const double& r, const double& s);
-    //導関数
     void ShapeDeriv4(vvvdouble& dNdr, const uiint& igauss,
                         const double& r, const double& s);
     void ShapeDeriv8(vvvdouble& dNdr, const uiint& igauss,
                          const double& r, const double& s);
-    //2次導関数
     void Shape_2ndDeriv4();
     void Shape_2ndDeriv8(v4double& d2Ndr, const uiint& igauss,
                                 const double& r, const double& s);
-
-
-    // Equivalent Node Force(等価節点力)
-    //                  のための形状関数積分
     vdouble mvIntegValue8;
     vdouble mvIntegValue4;
     void setupIntegValue8();
     void setupIntegValue4();
-
 public:
-    // 形状関数   引数:積分点, 形状関数
     double& N41(const uiint& igauss, const uiint& ishape);
     double& N84(const uiint& igauss, const uiint& ishape);
     double& N89(const uiint& igauss, const uiint& ishape);
@@ -92,7 +72,6 @@ public:
     vvdouble& N41(){ return mvN41;}
     vvdouble& N84(){ return mvN84;}
     vvdouble& N89(){ return mvN89;}
-    // 導関数   引数:積分点, 形状関数,座標方向
     double& dNdr41(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis);
     double& dNdr84(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis);
     double& dNdr89(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis);
@@ -102,7 +81,6 @@ public:
     vvvdouble& dNdr41(){ return mvdNdr41;}
     vvvdouble& dNdr84(){ return mvdNdr84;}
     vvvdouble& dNdr89(){ return mvdNdr89;}
-    // 2次導関数 引数:積分点, 形状関数, 座標方向, 座標方向
     double& d2Ndr41(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis0, const uiint& deriv_axis1);
     double& d2Ndr84(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis0, const uiint& deriv_axis1);
     double& d2Ndr89(const uiint& igauss, const uiint& ishape, const uiint& deriv_axis0, const uiint& deriv_axis1);
@@ -112,17 +90,10 @@ public:
     v4double& d2Ndr41(){ return mvd2Ndr41;}
     v4double& d2Ndr84(){ return mvd2Ndr84;}
     v4double& d2Ndr89(){ return mvd2Ndr89;}
-
-
-    // 返り値:重みの配列, 引数:積分点数
     double* Weight(const uiint& integNum);
-    // 返り値:重み, 引数:重みの配列Index
     double& Weight_pt1();
     double& Weight_pt4(const uiint& igauss);
     double& Weight_pt9(const uiint& igauss);
-
-
-    // 形状関数の積分値
     vdouble& getIntegValue8(){ return mvIntegValue8;}
     vdouble& getIntegValue4(){ return mvIntegValue4;}
     double& getIntegValue8(const uiint& ishape){ return mvIntegValue8[ishape];}
@@ -130,14 +101,3 @@ public:
 };
 #endif	/* _SHAPEQUAD_H */
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -11,3 +11,10 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 		int my_rank, HECMW_Comm VIS_COMM,  int *empty_flag, double *var);
 
 #endif /* HECMW_VIS_NEW_REFINE_H_INCLUDED */
+
+
+
+
+
+
+

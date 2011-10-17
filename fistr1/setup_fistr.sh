@@ -7,6 +7,7 @@ GATHERMAKEFILES=0
 WITHTOOLS=0
 WITHRCAP=0
 WITHREFINER=0
+WITHMKL=0
 
 BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
@@ -14,6 +15,7 @@ BUILDTARGET_SERIAL="build-serial"
 TOOLSTARGET="build-tools"
 BUILDTARGET_RCAP="build-with-rcap"
 ALLBUILDTARGET=""
+BUILDTARGET_MKL="build-without-mkl"
 
 SETUPFILE="setup_fistr.sh"
 USER_CONFIGFILE="Makefile.conf"
@@ -59,6 +61,8 @@ do
 		WITHRCAP=1
 	elif [ "\"$i\"" = "\"-with-refiner\"" -o "\"$i\"" = "\"--with-refiner\"" ]; then
 		WITHREFINER=1
+	elif [ "\"$i\"" = "\"-with-mkl\"" -o "\"$i\"" = "\"--with-mkl\"" ]; then
+		WITHMKL=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	elif [ "\"$i\"" = "\"-gather-makefiles\"" -o "\"$i\"" = "\"--gather-makefiles\"" ]; then
@@ -71,6 +75,7 @@ do
 			--with-tools            compile tools
 			--with-revocap          link revocap
 			--with-refiner          link refiner
+			--with-mkl              link mkl
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
 			--show-all-options      print all options (show this message)
@@ -84,6 +89,7 @@ do
 			--with-tools            compile tools
 			--with-revocap          link revocap
 			--with-refiner          link refiner
+			--with-mkl              link mkl
 			-h, --help              show help(this message)
 		EOF
 		exit 1
@@ -174,6 +180,13 @@ if [ ${WITHREFINER} -eq 1 ]; then
 	HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} ${REFINER_LDFLAGS}"
 fi
 
+#
+# with mkl
+#
+if [ ${WITHMKL} -eq 1 ]; then
+	BUILDTARGET_MKL="build-default"
+fi
+
 #------------------------------------------------------------------------------#
 #
 # create Makefile
@@ -247,6 +260,7 @@ do
 		-e "s!@fstr_f90ldflags@!${FSTR_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
+		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \
 		-e "s!@refiner_cflags@!${REFINER_CFLAGS}!" \

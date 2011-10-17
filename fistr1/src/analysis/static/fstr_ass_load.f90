@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -32,7 +32,7 @@ module m_fstr_ass_load
 !>  -#  volume force
 !>  -#  thermal force
 
-    subroutine fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID)
+    subroutine fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)   
 !======================================================================!
       use m_fstr
       use m_static_lib
@@ -40,10 +40,11 @@ module m_fstr_ass_load
       use mMechGauss
       use mReadTemp
       use mULoad
-      integer, intent(in)                  :: cstep     !< current step
-      type (hecmwST_matrix),intent(inout)  :: hecMAT    !< hecmw matrix
-      type (hecmwST_local_mesh),intent(in) :: hecMESH   !< hecmw mesh
-      type (fstr_solid),intent(inout)      :: fstrSOLID !< fstr_solid
+      integer, intent(in)                  :: cstep       !< current step
+      type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
+      type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
+      type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
+      type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters     
 
       real(kind=kreal) :: xx(20), yy(20), zz(20)
       real(kind=kreal) :: params(0:6)
@@ -272,6 +273,12 @@ module m_fstr_ass_load
                hecMAT%B(iwk(j)) = hecMAT%B(iwk(j))+ vect(j)
             enddo
           enddo
+        enddo
+      endif
+      
+      if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo==kcaALagrange ) then    
+        do i=1,size(fstrSOLID%contacts)
+          call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
         enddo
       endif
 

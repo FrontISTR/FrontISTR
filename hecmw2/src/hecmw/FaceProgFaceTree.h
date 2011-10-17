@@ -1,13 +1,22 @@
-/* 
- * File:   FaceProgFaceTree.h
- * Author: ktakeda
- *
- * Created on 2010/10/15, 21:11
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FaceProgFaceTree.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "CommonStd.h"
 #include "TypeDef.h"
 #include "FaceTree.h"
-
 namespace pmw{
 #ifndef FACEPROGFACETREE_H
 #define	FACEPROGFACETREE_H
@@ -20,15 +29,12 @@ public:
         return &moProgFace;
     }
     ~CFaceProgFace();
-
 private:
-    uiint mnHexaProgFace[6][4];//親の面番号-親の面構成頂点番号 =＞ 子の面番号
+    uiint mnHexaProgFace[6][4];
     uiint mnTetraProgFace[4][3];
     uiint mnPrismProgFace[5][4];
-
     uiint mnQuadProgFace[1][4];
     uiint mnTriangleProgFace[1][3];
-    
 public:
     uiint& getProgFace_Hexa(const uiint& nFace, const uiint& nFaceVert);
     uiint& getProgFace_Tetra(const uiint& nFace, const uiint& nFaceVert);
@@ -38,6 +44,3 @@ public:
 };
 #endif	/* FACEPROGFACETREE_H */
 }
-
-
-

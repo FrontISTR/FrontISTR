@@ -1,17 +1,22 @@
-//
-//  FileReaderCommNode.cpp
-//
-//
-//
-//                  2009.09.18
-//                  2009.09.18
-//                  k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/FileReaderCommNode.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "FileReaderCommNode.h"
 using namespace FileIO;
-
-
-// construct & destruct
-//
 CFileReaderCommNode::CFileReaderCommNode()
 {
     ;
@@ -20,42 +25,21 @@ CFileReaderCommNode::~CFileReaderCommNode()
 {
     ;
 }
-
-// method
-//
 bool CFileReaderCommNode::Read(ifstream& ifs, string& sLine)
 {
     uiint numOfNode, nCommMeshID, maxID, minID;
     uiint nCommNodeID, nMeshID, nNodeID, nRank;
-
-    uiint  mgLevel(0); // MultiGrid Level==0 ::ファイル入力時は 0
-
-    // CommMesh内のmvNode => MeshのNodeを取得してセット
+    uiint  mgLevel(0); 
     if(TagCheck(sLine, FileBlockName::StartCommNode()) ){
-        //mpLogger->Info(Utility::LoggerMode::MWDebug, sLine);
-
         sLine = getLineSt(ifs);
         istringstream iss(sLine.c_str());
-
-        // CommMesh内ノード数, MeshID, CommMeshID, MaxID, MinID
         iss >> numOfNode >> nMeshID >> nCommMeshID >> maxID >> minID;
-
-        // mvNodeの配列数確保(CommNodeというものは,存在しない.)
-        // --
         mpFactory->reserveCommNode(mgLevel,nMeshID, nCommMeshID, numOfNode);
-
-        // CommNode 読み込み => Mesh::Nodeからオブジェクト取得
-        //   => CommMesh::mvNodeにセットされる.
         while(true){
             sLine = getLineSt(ifs);
             if(TagCheck(sLine, FileBlockName::EndCommNode()) ) break;
-
             istringstream iss(sLine.c_str());
-            // CommNodeID, NodeID, rank
             iss >> nCommNodeID >> nNodeID >> nRank;
-
-            // MeshからNodeを取得(CommNodeというものは,存在しない.),rankによりSend,Recv判定
-            // --
             mpFactory->GeneCommNode(mgLevel, nCommNodeID, nMeshID, nCommMeshID, nNodeID, nRank);
         };
         return true;
@@ -63,24 +47,7 @@ bool CFileReaderCommNode::Read(ifstream& ifs, string& sLine)
         return false;
     }
 }
-
-
 bool CFileReaderCommNode::Read_bin(ifstream& ifs)
 {
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

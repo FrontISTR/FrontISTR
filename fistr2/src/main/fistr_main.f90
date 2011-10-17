@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.1                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : Main subroutine                                   !
 !                                                                      !
@@ -39,24 +39,27 @@ program fstr_main
  
 	 integer :: i, narg, argv_len, path_len
 	 character(len=100) :: argv(10)
-	 character(len=100) :: cntpath = "./"// CHAR(0)
-	 character(len=100) :: datpath = "./"// CHAR(0)
+	 character(len=100) :: cntpath = "./hecmw_ctrl.dat"// CHAR(0)
 	
-     argv(1) = "./fstr"// CHAR(0)
-	 narg = command_argument_count()
+     argv(1) = "./fstr2"// CHAR(0)
+     narg = command_argument_count()
      if( narg>10 ) narg=10
+    ! if( narg<1 ) stop "You should input control file name"
+
      do i=1, narg
-         call get_command_argument( i, argv(i+1) )
-         argv(i+1) = argv(i+1)// CHAR(0)
+         call get_command_argument( i, argv(i) )
+         argv(i) = argv(i)// CHAR(0)
      enddo
 	 
-	 ierr = mw_initialize_fstr( narg, argv, cntpath, datpath )
+	! ierr = mw_initialize( narg, argv, path )
+	 ierr = mw_initialize_fstr( narg, argv, cntpath )
 	 
      myrank = mw_get_rank()
      nprocs = mw_get_num_of_process()
 	 
      ierr = mw_file_read_fstr()
-     ierr = mw_refine()
+     ierr = mw_refine(0)
+    ! ierr = mw_file_write()
 	 
 	 nAss = mw_get_num_of_assemble_model()
      call mw_select_assemble_model( 0 )
@@ -69,23 +72,39 @@ program fstr_main
          part_nodes( iAss+1, 1 ) = total_node
          part_elems( iAss+1, 1 ) = total_elem
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part_with_id( iPart )
+            call mw_select_mesh_part( iPart )
             total_node = total_node+ mw_get_num_of_node()
             total_elem = total_elem+ mw_get_num_of_element()
             part_nodes(iAss+1, iPart+2) = total_node
             part_elems(iAss+1, iPart+2) = total_elem
          enddo
      enddo
+
+     allocate( global_node_ID(total_node) )
+     allocate( global_elem_ID(total_elem) )
+	 total_node = 0	; total_elem=0 
+     do iAss = 0, mw_get_num_of_assemble_model()-1
+         call mw_select_assemble_model( iAss )
+         do iPart = 0, mw_get_num_of_mesh_part()-1
+            call mw_select_mesh_part( iPart )
+            do i = 0, mw_get_num_of_node()-1
+              total_node = total_node + 1
+              global_node_ID(total_node) = mw_get_node_id(i)
+            enddo
+            do i = 0, mw_get_num_of_element()-1
+              total_elem = total_elem + 1
+              global_elem_ID(total_elem) = mw_get_element_id(i)
+            enddo
+         enddo
+     enddo
 	 
      call cpu_time(T1)
 	 
-     call mw_get_fstr_filename_control( argv(10) )
-	 call fstr_init( argv(10) )
+	 call fstr_init()
      call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
 
      nAss = mw_get_num_of_assemble_model()
      
-	 
 	 call mw_gene_linear_algebra(1, assDOF)
     ! do iAss = 0, mw_get_num_of_assemble_model()-1
     !     call mw_select_assemble_model( iAss )
@@ -130,10 +149,16 @@ program fstr_main
 	 
 contains
 
-  subroutine fstr_init( cntfileName )
+  subroutine fstr_init( )
         use m_heat_init
         implicit none
-        character(len=*) :: cntfileNAME 
+        character(len=HECMW_NAME_LEN) :: cntfileNAME 
+        include "HEC_MW3_For.h"	
+        integer :: nlen
+		
+        nlen = mw_get_fstr_filename_length_control()
+        cntfileNAME(1:nlen)=' '
+        call mw_get_fstr_filename_control(cntfileNAME(1:nlen), nlen)
 
         call fstr_nullify_fstr_param ( fstrPR     )
         call fstr_nullify_fstr_solid ( fstrSOLID  )
@@ -143,7 +168,7 @@ contains
         call fstr_nullify_fstr_couple ( fstrCPL    )
 
         call fstr_init_file
-        call fstr_init_condition( cntFileName )
+        call fstr_init_condition( cntFileName(1:nlen) )
    
   end subroutine fstr_init
 

@@ -1,15 +1,23 @@
-//
-//  CommMesh2.cpp
-//
-//
-//
-//                  2010.03.02
-//                  k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/CommMesh2.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include <vector>
-
 #include "CommMesh2.h"
 using namespace pmw;
-
 CCommMesh2::CCommMesh2()
 {
     ;
@@ -21,12 +29,10 @@ CCommMesh2::~CCommMesh2()
     uiint inode;
     for(inode=0; inode< numOfNode; inode++){
         pCommNode= mvCommNode[inode];
-
         if(pCommNode->getLevel()==mMGLevel){
             delete pCommNode;
         }
     };
-
     uiint numOfFace= mvCommFace.size();
     CCommFace *pCommFace;
     uiint iface;
@@ -35,7 +41,6 @@ CCommMesh2::~CCommMesh2()
         delete pCommFace;
     };
 }
-
 void CCommMesh2::addCommNode(CCommNode* pCommNode)
 {
     mvCommNode.push_back(pCommNode);
@@ -50,83 +55,49 @@ CCommNode* CCommMesh2::getCommNode(const uiint& id)
 {
     uiint index;
     index= mmCommNodeID2Index[id];
-
     return mvCommNode[index];
 }
 CCommFace* CCommMesh2::getCommFace(const uiint& id)
 {
     uiint index;
     index= mmCommFaceID2Index[id];
-
     return mvCommFace[index];
 }
-
-
-////// 頂点CommNodeのProgCommMesh2への代入
-//////
-////void CCommMesh2::setupVertCommNode(CCommMesh2* pProgCommMesh)
-//
-// ---- 
-// ProgCommMesh2 へ mvCommNodeを代入
-// ----
 void CCommMesh2::setupCommNode(CCommMesh2* pProgCommMesh)
 {
     uiint numOfNode;
     CCommNode *pCommNode;
-    
     numOfNode= mvCommNode.size();
     pProgCommMesh->reserveCommNode(numOfNode);
-
     uiint inode;
     for(inode=0; inode< numOfNode; inode++){
         pCommNode= mvCommNode[inode];
         pProgCommMesh->addCommNode(pCommNode);
     };
 }
-
-
-// 頂点へのCommFace集合
-//
 void CCommMesh2::setupAggFace()
 {
     CCommFace *pCommFace;
     CCommNode *pCommNode;
-
     uiint numOfCommFace(mvCommFace.size());
     uiint numOfCommNode;
-
     uiint iface,inode;
-
-    //------------------------------
-    // 第2段目以降のAggFaceのために
-    //   下位Levelでセットされた,FaceIDをクリア
-    //------------------------------
     numOfCommNode= mvCommNode.size();
     for(inode=0; inode< numOfCommNode; inode++){
         pCommNode= mvCommNode[inode];
-
         pCommNode->clearAggElemID();
         pCommNode->clearNeibElemVert();
     };
-
-    
-
     for(iface=0; iface< numOfCommFace; iface++){
         pCommFace= mvCommFace[iface];
-
-        uiint nNumOfVert= pCommFace->getNumOfVert();//辺ノードがセットされる前なので頂点のみ
-        
+        uiint nNumOfVert= pCommFace->getNumOfVert();
         for(inode=0; inode< nNumOfVert; inode++){
             pCommNode= pCommFace->getCommNode(inode);
-
             pCommNode->setAggElemID(pCommFace->getID());
             pCommNode->setNeibElemVert(pCommFace->getID(), inode);
         };
     };
-    
 }
-// 辺への新CommNodeの追加
-//
 void CCommMesh2::setupEdgeCommNode(CCommMesh2 *pProgCommMesh, const uiint& nLevel)
 {
     PairCommNode pairCommNode;
@@ -135,163 +106,94 @@ void CCommMesh2::setupEdgeCommNode(CCommMesh2 *pProgCommMesh, const uiint& nLeve
     vdouble vCoord; vCoord.resize(3);
     uiint numOfFace, numOfEdge;
     uiint iface,iedge;
-
-    uiint countID= mvCommNode.size();//辺ノードID初期値
-    mEdgeCount= 0;//辺に生成するノード数のカウンター
-
+    uiint countID= mvCommNode.size();
+    mEdgeCount= 0;
     numOfFace= mvCommFace.size();
     for(iface=0; iface< numOfFace; iface++){
-        
         pFace= mvCommFace[iface];
-        
-        // 辺ノード生成 実行判定
         bool bExec(false);
         if(nLevel > 0 && pFace->getOrder()==ElementOrder::Second) bExec=true;
         if(pFace->getOrder()==ElementOrder::First) bExec=true;
-
-
-        // 辺ノード生成
-        //
         if(bExec){
             numOfEdge= pFace->getNumOfEdge();
-
             for(iedge=0; iedge< numOfEdge; iedge++){
                 if(!pFace->isEdgeNodeMarking(iedge)){
                     pairCommNode= pFace->getEdgePairCommNode(iedge);
-
                     uiint numOfAggFaceA= pairCommNode.first->getNumOfAggElem();
                     uiint numOfAggFaceB= pairCommNode.second->getNumOfAggElem();
                     uiint faceIDa,faceIDb;
                     uiint iagg,jagg;
-                    bool bfind(false);//隣接Faceが見つかった場合
-                    // ----
-                    // 隣接するFaceを検索してセット .&&. 辺CommNodeを生成してセット
-                    // ----
+                    bool bfind(false);
                     for(iagg=0; iagg< numOfAggFaceA; iagg++){
                         faceIDa= pairCommNode.first->getAggElemID(iagg);
-
                         for(jagg=0; jagg< numOfAggFaceB; jagg++){
                             faceIDb= pairCommNode.second->getAggElemID(jagg);
-
-                            // 辺に接続するFace(pFace自身は除外)
                             if(faceIDa==faceIDb && faceIDa!=pFace->getID()){
-
-                                // 隣のCommFace "ID => Index" 2010.05.12
                                 uiint index= mmCommFaceID2Index[faceIDa];
                                 pNeibFace= mvCommFace[index];
-
-                                pEdgeCommNode= new CCommNode;// <<<<- CommNode生成
-
-                                //------------------------
-                                // 辺ノードへの座標,IDのセット
-                                //------------------------
+                                pEdgeCommNode= new CCommNode;
                                 vCoord[0]= pairCommNode.first->getX(); vCoord[0]+= pairCommNode.second->getX(); vCoord[0] *= 0.5;
                                 vCoord[1]= pairCommNode.first->getY(); vCoord[1]+= pairCommNode.second->getY(); vCoord[1] *= 0.5;
                                 vCoord[2]= pairCommNode.first->getZ(); vCoord[2]+= pairCommNode.second->getZ(); vCoord[2] *= 0.5;
                                 pEdgeCommNode->setCoord(vCoord);
-
-                                pEdgeCommNode->setLevel(mMGLevel+1);//2010.05.27
+                                pEdgeCommNode->setLevel(mMGLevel+1);
                                 pEdgeCommNode->setID(countID);
-                                countID++;//////////  ID ,次の為にカウントアップ
-                                mEdgeCount++;// FaceNodeの為にカウントアップ
-
+                                countID++;
+                                mEdgeCount++;
                                 if(pProgCommMesh)
-                                    pProgCommMesh->addCommNode(pEdgeCommNode);// 上位CommMesh2 にノードを追加
-
-                                // 2次要素面の場合
-                                //
+                                    pProgCommMesh->addCommNode(pEdgeCommNode);
                                 if(pFace->getOrder()==ElementOrder::Second){
-                                    mvCommNode.push_back(pEdgeCommNode);// 自身のノード集合に追加
+                                    mvCommNode.push_back(pEdgeCommNode);
                                 }
-
-
-                                // pFaceへの処理
                                 pFace->setEdgeCommFace(pNeibFace, iedge);
                                 pFace->setEdgeCommNode(pEdgeCommNode, iedge);
                                 pFace->markingEdgeNode(iedge);
-
-
-                                // pNeibFaceへの処理
                                 pNeibFace->setEdgeCommFace(pFace, pairCommNode);
                                 pNeibFace->setEdgeCommNode(pEdgeCommNode, pairCommNode);
                                 pNeibFace->markingEdgeNode(pairCommNode);
-
-
-                                bfind=true;//1辺に隣接するFaceは一つなので(pFace自身は除外してる)
+                                bfind=true;
                                 break;
                             }
-                        };// jaggループ
-
-                        if(bfind) break;//iaggのループをブレイク(既に隣接Faceを発見したので)
-
-                    };// iaggループ
-
-
-                    // 隣接していない辺にCommNodeを生成
-                    // ----
+                        };
+                        if(bfind) break;
+                    };
                     if(!bfind){
-
-                        pEdgeCommNode= new CCommNode;// <<<<<<<<<- CommNode生成
-
-                        //------------------------
-                        // 辺ノードへの座標,IDのセット
-                        //------------------------
+                        pEdgeCommNode= new CCommNode;
                         vCoord[0]= pairCommNode.first->getX(); vCoord[0]+= pairCommNode.second->getX(); vCoord[0] *= 0.5;
                         vCoord[1]= pairCommNode.first->getY(); vCoord[1]+= pairCommNode.second->getY(); vCoord[1] *= 0.5;
                         vCoord[2]= pairCommNode.first->getZ(); vCoord[2]+= pairCommNode.second->getZ(); vCoord[2] *= 0.5;
                         pEdgeCommNode->setCoord(vCoord);
-
-                        pEdgeCommNode->setLevel(mMGLevel+1);//2010.05.27
+                        pEdgeCommNode->setLevel(mMGLevel+1);
                         pEdgeCommNode->setID(countID);
-                        countID++;////////// ID ,次の為にカウントアップ
-                        mEdgeCount++;// FaceNodeの為にカウントアップ
-
+                        countID++;
+                        mEdgeCount++;
                         if(pProgCommMesh)
-                            pProgCommMesh->addCommNode(pEdgeCommNode);// 上位CommMesh2にノードを追加
-
-                        // 2次要素面の場合
-                        //
+                            pProgCommMesh->addCommNode(pEdgeCommNode);
                         if(pFace->getOrder()==ElementOrder::Second){
-                            mvCommNode.push_back(pEdgeCommNode);// 自身のノード集合に追加
+                            mvCommNode.push_back(pEdgeCommNode);
                         }
-
-                        // pFaceへの処理
                         pFace->setEdgeCommNode(pEdgeCommNode, iedge);
                         pFace->markingEdgeNode(iedge);
                     }
-                }// !isEdgeNodeMarking
-            };// iedgeループ
-            
-            pFace->replaceEdgeCommNode();// 2次ノード対応
-        
-        }// if(bExec)
-        
-    };// ifaceループ
-
+                }
+            };
+            pFace->replaceEdgeCommNode();
+        }
+    };
 }
-
-// 面中心への新CommNodeの追加
-//
 void CCommMesh2::setupFaceCommNode(CCommMesh2 *pProgCommMesh)
 {
     uiint level;
     CCommNode *pFaceCommNode;
-    
     CCommFace *pFace;
     uiint numOfFace= mvCommFace.size();
     uiint iface;
-    //uint countID= mvCommNode.size()+mvEdgeCommNode.size();
     uiint countID= mvCommNode.size() + mEdgeCount;
-
     for(iface=0; iface< numOfFace; iface++){
         pFace= mvCommFace[iface];
-        
-        //-- Quad,TriangleのみにFaceNodeを追加 --//
         if(pFace->getNumOfEdge() > 2){
-            pFaceCommNode= new CCommNode;////////// <<<--- FaceのCommNode
-
+            pFaceCommNode= new CCommNode;
             pFace->setFaceCommNode(pFaceCommNode);
-
             vdouble vCoord; vCoord.resize(3);
             uiint numOfVert= pFace->getNumOfVert();
             CCommNode *pVertCommNode;
@@ -300,42 +202,19 @@ void CCommMesh2::setupFaceCommNode(CCommMesh2 *pProgCommMesh)
             level=0;
             for(ivert=0; ivert< numOfVert; ivert++){
                 pVertCommNode= pFace->getCommNode(ivert);
-
-                ////CommNodeの中から最大のLevelを見つける
-                //if(pVertCommNode->getLevel() > level) level= pVertCommNode->getLevel();
-
                 vCoord[0] += pVertCommNode->getX();  vCoord[1] += pVertCommNode->getY();  vCoord[2] += pVertCommNode->getZ();
             };
             vCoord[0] /= numOfVert; vCoord[1] /= numOfVert; vCoord[2] /= numOfVert;
-
-            //level++;//面を構成しているCommNodeより一段上へ.
-
-            pFaceCommNode->setLevel(mMGLevel+1);//2010.05.27
+            pFaceCommNode->setLevel(mMGLevel+1);
             pFaceCommNode->setCoord(vCoord);
             pFaceCommNode->setID(countID);
-            countID++;////////// ID カウントアップ
-
+            countID++;
             pProgCommMesh->addCommNode(pFaceCommNode);
-            //// mvFaceCommNode.push_back(pFaceCommNode);
         }
     };
 }
-
-
-// Refine後のvector解放(辺ノード)
-//
 void CCommMesh2::deleteProgData()
 {
     uiint iface, nNumOfFace = mvCommFace.size();
-
     for(iface=0; iface < nNumOfFace; iface++) mvCommFace[iface]->deleteProgData();
 }
-
-
-
-
-
-
-
-
-

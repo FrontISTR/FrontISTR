@@ -71,6 +71,7 @@ LIBSRCDIRS="\
     src/solver/solver_33 \
     src/solver/solver_direct \
     src/solver/solver_direct_parallel \
+    src/solver/solver_direct_lag \
     src/solver/communication \
     src/solver/init \
     src/visualizer \

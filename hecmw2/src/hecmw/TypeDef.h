@@ -1,16 +1,22 @@
-//
-//  TypeDef.h
-//
-//              2011.03.24
-//              2008.12.01
-//              k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/TypeDef.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef TYPE_DEF_HH_5B7AEEB4_B0BA_491b_83F7_F5AEFDCFD675
 #define TYPE_DEF_HH_5B7AEEB4_B0BA_491b_83F7_F5AEFDCFD675
-
 #include "CommonStd.h"
-
-
-///*--- MW3 ---*/
 #ifdef MSVC
  #ifdef INT64
  typedef unsigned __int64 uiint;
@@ -28,8 +34,6 @@
  typedef  int32_t iint;
  #endif
 #endif
-
-///*--- File ---*/
 #ifdef MSVC
  typedef __int32 int32;
  typedef __int64 int64;
@@ -41,8 +45,6 @@
  typedef uint32_t  uint32;
  typedef uint64_t  uint64;
 #endif
-
-///*--- MAX MIN ---*/
 #define IINT32_MAX  2147483647
 #define IINT32_MIN -2147483647
 #define UINT32_MAX  4294967295
@@ -51,8 +53,6 @@
 #define IINT64_MIN -9223372036854775807
 #define UINT64_MAX  18446744073709551615
 #define UINT64_MIN  0
-
-
 #ifdef INT64
  #define IINT_MAX IINT64_MAX
  #define IINT_MIN IINT64_MIN
@@ -64,29 +64,17 @@
  #define UIINT_MAX UINT32_MAX
  #define UIINT_MIN UINT32_MIN
 #endif
-
-  
-
-
-///*--- vector ---*/
 typedef vector<iint> vint;
 typedef vector<vector<iint> > vvint;
-
 typedef vector<uiint> vuint;
 typedef vector<vector<uiint> > vvuint;
 typedef vector<vector<vector<uiint> > > vvvuint;
-
 typedef vector<double> vdouble;
 typedef vector<vector<double> > vvdouble;
 typedef vector<vector<vector<double> > > vvvdouble;
 typedef vector<vector<vector<vector<double> > > > v4double;
 typedef vector<vector<vector<vector<vector<double> > > > > v5double;
-
 typedef vector<string> vstring;
-
-// File Format
 #define ASCII  0
 #define BINARY 1
-
 #endif
-

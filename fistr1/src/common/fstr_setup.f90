@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -22,6 +22,7 @@ use fstr_ctrl_heat
 use fstr_ctrl_eigen
 use fstr_ctrl_dynamic
 use fstr_ctrl_material
+use mContact                                                       
 use m_static_get_prop
 use m_out
 use m_step
@@ -80,7 +81,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
         integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp
         integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-        integer(kind=kint) :: c_eigen
+        integer(kind=kint) :: c_eigen, c_contact
         integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc
@@ -102,7 +103,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0
         c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
         c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-        c_eigen    = 0
+        c_eigen    = 0; c_contact  = 0                                  
         c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
         c_couple   = 0; c_material = 0
         c_mpc      = 0
@@ -161,6 +162,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!DLOAD' ) then
                         c_dload = c_dload + 1
                         call fstr_setup_DLOAD( ctrl, c_dload, P )
+                else if( header_name == '!CONTACT_ALGO' ) then                           
+                        call fstr_setup_CONTACTALGO( ctrl, P )       
+                else if( header_name == '!CONTACT' ) then                                 
+                        n = fstr_ctrl_get_data_line_n( ctrl )
+                        c_contact = c_contact + n        
                 else if( header_name == '!MATERIAL' ) then
                         c_material = c_material + 1
                 else if( header_name == '!TEMPERATURE' ) then
@@ -245,6 +251,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         end do
 !
 ! ----- 
+        if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )             
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         n = c_material
         if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
@@ -281,10 +288,37 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0
         c_material = 0
         c_output = 0
+        c_contact  = 0                                                
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
-          if( header_name == '!ISTEP'  ) then
+          ! ----- CONTACT condtion setting
+          if( header_name == '!CONTACT' ) then                          
+            n = fstr_ctrl_get_data_line_n( ctrl )
+            if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &    
+                ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then                                    
+                write(*,*) '### Error: Fail in read in contact condition : ', c_contact
+                write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
+                STOP
+            endif
+            ! initialize contact condition
+            if( ee>0.d0 ) cdotp = ee
+            if( pp>0.d0 ) mut = pp
+            if( rho>0.d0 ) cgn = rho
+            if( alpha>0.d0 ) cgt = alpha
+            do i=1,n
+              if( .not. fstr_contact_check( fstrSOLID%contacts(c_contact+i), P%MESH ) ) then
+                write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_contact
+                write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
+                stop
+              else
+                isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH )
+         !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
+              endif
+            enddo
+            c_contact = c_contact+n
+!
+          else if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
             if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
@@ -493,7 +527,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( version>0 .and. P%PARAM%solution_type==kstNLSTATIC ) then
+           if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -518,10 +552,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
              fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
            enddo
         endif
-!
+
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC  )            &
+           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN  ) &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )
@@ -1093,10 +1127,10 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
                         svRarray(4), svRarray(5) )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        if( svIarray(2) < 100 ) then
+        if( svIarray(2) <= 100 ) then                      
                 svIarray(99) = 1  ! indirect method
         else
-                svIarray(99) = 2  ! direct method
+                svIarray(99) = svIarray(2)-99 !2  ! direct method          
         end if
 
 end subroutine fstr_setup_SOLVER
@@ -2570,6 +2604,24 @@ subroutine fstr_setup_solid_nastran( ctrl, hecMESH, fstrSOLID )
         write(ILOG,*) '### Error : In !BOUNNDARY, TYPE=NASTRAN is not supported.'
         call hecmw_abort( hecmw_comm_get_comm())
 end subroutine fstr_setup_solid_nastran
+
+!-----------------------------------------------------------------------------!
+!> Read in !CONTACT                                                           !    
+!-----------------------------------------------------------------------------!
+
+subroutine fstr_setup_CONTACTALGO( ctrl, P )                                                                    
+        implicit none
+        integer(kind=kint) :: ctrl
+!        integer(kind=kint) :: counter
+        type(fstr_param_pack) :: P
+
+        integer(kind=kint) :: rcode
+       
+
+        rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo )       
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+end subroutine fstr_setup_CONTACTALGO                                       
 
 
 end module m_fstr_setup

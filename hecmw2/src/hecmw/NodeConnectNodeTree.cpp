@@ -1,18 +1,24 @@
-//
-//  NodeConnectNodeTree.cpp
-//
-//
-//
-//                  2009.08.11
-//                  2009.08.11
-//                  k.Takeda
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/NodeConnectNodeTree.cpp
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
+#include "HEC_MPI.h"
 #include "NodeConnectNodeTree.h"
 using namespace pmw;
-
 CNodeConnectNodeTree::CNodeConnectNodeTree()
 {
-    // Hexa
-    // --
     uiint hexcon[8][3]={
     {1,3,4},
     {0,5,2},
@@ -23,7 +29,6 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
     {5,2,7},
     {4,3,6}
     };
-    
     uiint i,ii;
     mvHexaConnectNode.resize(8);
     for(i=0; i< 8; i++){
@@ -34,19 +39,12 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvHexaConnectNode[i][ii]= hexcon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Hexa" << endl;
-
-
-    // Tetra
-    // --
     uiint tetcon[4][3]={
     {2,3,1},
     {0,3,2},
     {1,3,0},
     {2,0,1}
     };
-    
     mvTetraConnectNode.resize(4);
     for(i=0; i< 4; i++){
         mvTetraConnectNode[i].resize(3);
@@ -56,12 +54,6 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvTetraConnectNode[i][ii]= tetcon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Tetra" << endl;
-
-
-    // Prism
-    // --
     uiint pricon[6][3]={
     {2,3,1},
     {0,4,2},
@@ -70,7 +62,6 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
     {3,1,5},
     {4,3,2}
     };
-    
     mvPrismConnectNode.resize(6);
     for(i=0; i< 6; i++){
         mvPrismConnectNode[i].resize(3);
@@ -80,20 +71,13 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvPrismConnectNode[i][ii]= pricon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Prism" << endl;
-
-    
-    // Pyramid
-    // --
     uiint pycon[5][4]={
-    {1,4,3,1},// 本来は3つまで. 最後の値は先頭と同値
-    {0,4,2,0},//  ↑ 同上
-    {1,4,3,1},//  ↑ 同上
-    {0,4,2,0},//  ↑ 同上
-    {0,1,2,3} // ４節点と接続
+    {1,4,3,1},
+    {0,4,2,0},
+    {1,4,3,1},
+    {0,4,2,0},
+    {0,1,2,3} 
     };
-    
     mvPyramidConnectNode.resize(5);
     for(i=0; i< 5; i++){
         if(i!=4){
@@ -106,19 +90,12 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
         if(i!=4) for(ii=0; ii< 3; ii++) mvPyramidConnectNode[i][ii]= pycon[i][ii];
         if(i==4) for(ii=0; ii< 4; ii++) mvPyramidConnectNode[i][ii]= pycon[i][ii];
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Pyramid" << endl;
-
-    
-    // Quad
-    // --
     uiint qucon[4][2]={
     {1,3},
     {0,2},
     {1,3},
     {2,0}
     };
-
     mvQuadConnectNode.resize(4);
     for(i=0; i< 4; i++){
         mvQuadConnectNode[i].resize(2);
@@ -128,18 +105,11 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvQuadConnectNode[i][ii]= qucon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Quad" << endl;
-
-
-    // Triangle
-    // --
     uiint tricon[3][2]={
         {1,2},
         {0,2},
         {0,1}
     };
-
     mvTriangleConnectNode.resize(3);
     for(i=0; i< 3; i++){
         mvTriangleConnectNode[i].resize(2);
@@ -149,16 +119,10 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvTriangleConnectNode[i][ii]= tricon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Triangle" << endl;
-
-    // Beam
-    // --
     uiint beamcon[2][1]={
         {1},
         {0}
     };
-
     mvBeamConnectNode.resize(2);
     for(i=0; i< 2; i++){
         mvBeamConnectNode[i].resize(1);
@@ -168,16 +132,8 @@ CNodeConnectNodeTree::CNodeConnectNodeTree()
             mvBeamConnectNode[i][ii]= beamcon[i][ii];
         };
     };
-    ////debug
-    //cout << "CNodeConnectNodeTree() Beam" << endl;
-
 }
-
 CNodeConnectNodeTree::~CNodeConnectNodeTree()
 {
     ;
 }
-
-
-
-

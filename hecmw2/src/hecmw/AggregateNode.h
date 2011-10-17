@@ -1,40 +1,39 @@
-/* 
- * File:   AggregateNode.h
- * Author: ktakeda
- *
- * Created on 2009/08/11, 14:57
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/AggregateNode.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #ifndef _AGGREGATENODE_H_3dc2add2_f427_4db1_b0e3_6437869e9236
 #define	_AGGREGATENODE_H_3dc2add2_f427_4db1_b0e3_6437869e9236
-
 #include "CommonStd.h"
 #include "TypeDef.h"
-
 #include "Node.h"
-
 namespace pmw{
 class CAggregateNode{
 public:
     CAggregateNode();
     virtual ~CAggregateNode();
-
 protected:
-    uiint mID;//コア・ノード インデックス番号
+    uiint mID;
     vector<CNode*> mvNode;
-
 public:
-    // コアになるノードのID (インデックス番号)
     void setID(const uiint& index){ mID= index;}
     uiint& getID(){ return mID;}
-
-    // コア・ノード周囲のノード => Aggregate Node
     void reserveNode(const uiint& res_size){ mvNode.reserve(res_size);}
-    void setNode(CNode* pNode);//既に取得済みかどうかの判定の上でpush_back.
-
+    void setNode(CNode* pNode);
     uiint getNumOfNode(){ return mvNode.size();}
     CNode* getNode(const uiint& i){ return mvNode[i];}
-
-
 };
 }
 #endif	/* _AGGREGATENODE_H */

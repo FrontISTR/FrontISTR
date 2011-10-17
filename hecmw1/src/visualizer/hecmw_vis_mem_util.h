@@ -9,3 +9,12 @@ Point *alloc_verts(int num);
 Polygon *alloc_polygons(int num);
 
 #endif /* HECMW_VIS_MEM_UTIL_H_INCLUDED */
+
+
+
+
+
+
+
+
+

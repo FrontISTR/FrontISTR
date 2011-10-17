@@ -1,0 +1,36 @@
+================================================================================
+
+  README of HEC-MW (in English)
+
+  2011.06.01  Version 4.0
+
+  IIS,The University of Tokyo, CISS
+
+  Comments, Questions, Problems etc.
+    e-mail: software@ciss.iis.u-tokyo.ac.jp
+
+================================================================================
+
+(1) Programs in this archive
+  - HEC-MW fundamental middleware for finite element analysis
+    - I/O
+    - Parallel Linear Solvers
+    - Parallel Visualization
+  - "hecmw_part" HEC-MW Partitioning Utility
+  - "hecmw_vis"  HEC-MW Visualization Utility
+
+(2) Files in this directory
+  Makefile.am       : base file of makefile for installation
+  Makefile.dev      : setting file for developers
+  README            : README (in English : this file)
+  README.ja         : README (in Japanese)
+  VERSION           : version information
+  setup_hecmw.sh    : shell script to create makefiles
+
+  src/              : source program for HEC-MW library
+
+  tools/            : utility programs
+
+************************************ NOTICE *************************************
+Please read "CISS_lic_agree.pdf" carefully BEFORE you start to use this software.
+*********************************************************************************

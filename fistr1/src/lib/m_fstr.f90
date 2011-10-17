@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -34,6 +34,7 @@ use lczparm
 use m_step
 use m_out
 use mMechGauss
+use mContactDef                                                 
 
 implicit none
 
@@ -62,7 +63,10 @@ public
         integer(kind=kint),parameter :: ksmGMRES    =   3
         integer(kind=kint),parameter :: ksmGPBiCG   =   4
         integer(kind=kint),parameter :: ksmDIRECT   = 101
-
+        
+        ! contact analysis algorithm                                           
+        integer(kind=kint),parameter :: kcaSLagrange = 1
+        integer(kind=kint),parameter :: kcaALagrange = 2 
 
         ! boundary condition file type (bcf)
         integer(kind=kint),parameter :: kbcfFSTR    =   0  ! BC described in fstr control file (default)
@@ -173,6 +177,9 @@ public
                 ! for couple analysis
                 integer( kind=kint ) :: fg_couple          !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
+                
+                ! for contact analysis
+                integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)  
 !
         end type fstr_param
 !
@@ -254,12 +261,12 @@ public
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
 
                 ! ANALYSIS CONTROL for NLGEOM
-                integer(kind=kint) :: restart_nout   !< output interval of restart file
+                integer(kind=kint) :: restart_nout  !< output interval of restart file
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
 
 
-                real(kind=kreal)          :: FACTOR      (2)     !< factor of incrementation
+                real(kind=kreal)           :: FACTOR      (2)     !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
@@ -272,6 +279,7 @@ public
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
+                type( tContact ), pointer :: contacts(:)   =>null()  !< contact information     
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
 !
@@ -846,6 +854,16 @@ end subroutine fstr_param_init
           if( .not. associated(fstrSOLID%step_ctrl) ) return
           if( cstep>fstrSOLID%nstep_tot ) return
           fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
+        end function
+        
+        logical function fstr_isContactActive( fstrSOLID, nbc, cstep )            
+          type(fstr_solid)     :: fstrSOLID !< type fstr_solid
+          integer, intent(in) :: nbc       !< group id of boundary condition
+          integer, intent(in) :: cstep     !< current step number
+          fstr_isContactActive = .true.
+          if( .not. associated(fstrSOLID%step_ctrl) ) return
+          if( cstep>fstrSOLID%nstep_tot ) return
+          fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
         end function
 
 

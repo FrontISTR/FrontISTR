@@ -1,6 +1,6 @@
 /*=====================================================================*
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -31,10 +31,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <hecmw_config.h>
-
-#ifndef HECMW_SERIAL
-#include <hecmw_comm.h>
-#endif
 
 
 #define FSTR_CTRL_RCODE_PARAM_SUCCESS       0

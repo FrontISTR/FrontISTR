@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -52,7 +52,7 @@ contains
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL )
         use mMaterial
-        character(len=HECMW_FILENAME_LEN) :: cntl_filename
+        character(len=*) :: cntl_filename
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
@@ -162,9 +162,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!DLOAD' ) then
                         n = fstr_ctrl_get_data_line_n( ctrl )
                         c_dload = c_dload + n
-                else if( header_name == '!CONTACT' ) then
-                        n = fstr_ctrl_get_data_line_n( ctrl )
-                        c_contact = c_contact + n
                 else if( header_name == '!SECTION' ) then
                         c_section = c_section + 1
                 else if( header_name == '!AMPLITUDE' ) then
@@ -270,7 +267,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_section==0 ) stop "SECTION not defined!"
         allocate( MWSections( c_section ) )
         if( c_amp>0 ) allocate( MWAmplitudes( c_amp ) )
-        if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_output > 0 ) allocate( fstrSOLID%output_ctrl( c_output ) )
         if( c_material==0 ) stop "material property not defined!"
@@ -303,7 +299,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 ! ----- 
         rcode = fstr_ctrl_rewind( ctrl )
 !
-        c_contact  = 0
         c_istep    = 0
         c_material = 0
         c_output   = 0
@@ -314,13 +309,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_amp = 0
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
-!
-!         ----- CONTACT condtion setting
-          if( header_name == '!CONTACT' ) then
 
-            c_contact = c_contact+n
-!
-          else if( header_name == '!ISTEP'  ) then
+           if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
             if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
@@ -550,14 +540,33 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           fstrSOLID%reftemp = REF_TEMP
         endif
 
-        fstrSOLID%nstep_tot = 1
         if( associated(fstrSOLID%step_ctrl) )  then
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
+           if( version>0 .and. P%PARAM%solution_type==kstNLSTATIC ) then
+              write( *,* ) " ERROR: STEP not defined!"
+              write( idbg,* ) "ERROR: STEP not defined!"
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+           endif
+			  
            print *, "Step control not defined! Using defualt step=1"
+           fstrSOLID%nstep_tot = 1
            allocate( fstrSOLID%step_ctrl(1) )
            call init_stepInfo( fstrSOLID%step_ctrl(1) )
+           if( c_boundary>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(c_boundary) )
+           do i = 1, c_boundary
+             fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_grp(i)%gid
+           enddo
+           n = c_cload + c_dload
+           if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
+           do i = 1, c_cload
+             fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_grp(i)%gid
+           enddo
+           do i = 1, c_dload
+             fstrSOLID%step_ctrl(1)%Load(i+c_cload) = fstrSOLID%DLOAD_grp(i)%gid
+           enddo
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( fstrSOLID )
@@ -715,7 +724,7 @@ subroutine fstr_element_init( fstrSOLID )
             call mw_select_mesh_part( iPart )
             ngrp = mw_get_num_of_elementgroup()
             do iElem = 0, mw_get_num_of_element()-1
-               call mw_select_element_with_id( iElem )
+               call mw_select_element( iElem )
                ic_type = mw_get_element_type()
                ic_type = mw_mw3_elemtype_to_fistr_elemtype(ic_type)
                tcnt=tcnt+1
@@ -726,27 +735,26 @@ subroutine fstr_element_init( fstrSOLID )
                fstrSOLID%elements(tcnt)%etype = ic_type
 !          if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
                
-
                found = .false.
                do igrp = 0, ngrp-1
                  ng = mw_get_elementgroup_name_length(igrp)
-                 call mw_get_elementgroup_name(igrp, header_name, ng)
-                 header_name(ng:)=""
+                 header_name(:) =''
+                 call mw_get_elementgroup_name(igrp, header_name(1:ng), ng)
+				 header_name(ng:)=''
                  csect = -1
                  do isect=1, size(MWSections)
                      if( MWSections(isect)%egroup_name == header_name ) then
-                       csect = isect; exit
+                       csect = isect;  exit
                      endif
                  enddo
                  if( csect==-1 ) then
-                     write(IMSG, *) "Property of element group",iAss,iPart,i, "not defined"
-                     write(*, *) "Property of element group",iAss,iPart,i, "not defined"
+                     write(IMSG, *) "Property of element group",iAss,iPart,igrp, "not defined"
+                     write(*, *) "Property of element group",iAss,iPart,igrp, "not defined"
                      stop
                  endif
                  do i=0, mw_get_num_of_element_id(igrp)-1			   
                    cid = mw_get_element_id_with_elementgroup( igrp, i )
-                !   if( fstrSOLID%elements(tcnt)%iID == cid ) then
-                   if( cid == iElem ) then
+                   if( cid == mw_get_element_id(iElem) ) then
                      fstrSOLID%elements(tcnt)%iSect = csect
 					 found=.true.; exit
                    endif
@@ -759,21 +767,21 @@ subroutine fstr_element_init( fstrSOLID )
                   stop
                endif
 			   
-			   ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
+			   ndof = getSpaceDimension( fstrSOLID%elements(tcnt)%etype )
                if (ndof == 2) then              ! why do this???
                  assDOF(1) = 2
                  scid=MWSections(csect)%sect_opt
                  if( scid==0 ) then
-                   fstrSOLID%elements(i)%iset=1
+                   fstrSOLID%elements(tcnt)%iset=1
                  else if( scid==1) then
-                   fstrSOLID%elements(i)%iset=0
+                   fstrSOLID%elements(tcnt)%iset=0
                  else if( scid==2) then
-                   fstrSOLID%elements(i)%iset=2
+                   fstrSOLID%elements(tcnt)%iset=2
                  endif
                else
                  assDOF(1) = 3
-                 if( fstrSOLID%elements(i)%etype==731 .or.            &
-                     fstrSOLID%elements(i)%etype==741 ) assDOF(1)=6
+                 if( fstrSOLID%elements(tcnt)%etype==731 .or.            &
+                     fstrSOLID%elements(tcnt)%etype==741 ) assDOF(1)=6
                endif
 			   
 			   cid = MWSections(csect)%sect_mat_ID
@@ -805,12 +813,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
           deallocate( fstrSOLID%elements(i)%gausses )
         enddo
         deallocate( fstrSOLID%elements )
-        if( associated(fstrSOLID%contacts) ) then
-          do i=1,size(fstrSOLID%contacts)
-            call fstr_contact_finalize( fstrSOLID%contacts(i) )
-          enddo
-          deallocate( fstrSOLID%contacts )
-        endif
+
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
         endif
@@ -1098,15 +1101,15 @@ end subroutine
          .or. P%PARAM%solution_type == kstDYNAMIC ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 ) then
-                        allocate ( P%SOLID%STRAIN  (10*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (12*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (10*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (12*P%MESH%n_elem))
+                        allocate ( P%SOLID%STRAIN  (10*total_node))
+                        allocate ( P%SOLID%STRESS  (12*total_node))
+                        allocate ( P%SOLID%ESTRAIN  (10*total_elem))
+                        allocate ( P%SOLID%ESTRESS  (12*total_elem))
                 else
-                        allocate ( P%SOLID%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (7*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (7*P%MESH%n_elem))
+                        allocate ( P%SOLID%STRAIN  (6*total_node))
+                        allocate ( P%SOLID%STRESS  (7*total_node))
+                        allocate ( P%SOLID%ESTRAIN  (6*total_elem))
+                        allocate ( P%SOLID%ESTRESS  (7*total_elem))
                 end if
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0

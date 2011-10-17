@@ -37,13 +37,10 @@ CPP               = @cpp@
 CPPFLAGS          = @cppflags@
 BASE_CPPFLAGS     = @base_cppflags@
 HECMW_CPPFLAGS    = @hecmw_cppflags@
-REFINER_CFLAGS    = -I$(REFINERINCDIR)
-ALL_CPPFLAGS      = $(BASE_CPPFLAGS) $(HECMW_CPPFLAGS) $(MPI_CFLAGS) $(CPPFLAGS) $(REFINER_CFLAGS)
+ALL_CPPFLAGS      = $(BASE_CPPFLAGS) $(HECMW_CPPFLAGS) $(MPI_CFLAGS) $(CPPFLAGS)
 CPPLDFLAGS        = @cppldflags@
 HECMW_CPPLDFLAGS  = @hecmw_cppldflags@
-REFINERLIBS       = -lRcapRefiner -lstdc++
-REFINER_LDFLAGS   = -L$(REFINERLIBDIR) $(REFINERLIBS)
-ALL_CPPLDFLAGS    = $(HECMW_CPPLDFLAGS) $(MPI_LDFLAGS) $(CPPLDFLAGS) $(REFINER_LDFLAGS)
+ALL_CPPLDFLAGS    = $(HECMW_CPPLDFLAGS) $(MPI_LDFLAGS) $(CPPLDFLAGS)
 CPPOPTFLAGS       = @cppoptflags@
 
 F90               = @f90@
@@ -63,7 +60,6 @@ CP                = @cp@
 RM                = @rm@
 RANLIB            = @ranlib@
 MKDIR             = @mkdir@
-
 
 #-----------------------------------------------------------------------------#
 TARGET            = @hecmwlib_targetfile@

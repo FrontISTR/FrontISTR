@@ -1,15 +1,21 @@
-/* 
- * File:   ISTR2Edge.h
- * Author: ktakeda
- *
- * 節点番号の変換
- *　FrontISTRの節点番号(形状関数のShape番号) => MW3の頂点番号,辺番号
- *
- * Created on 2010/02/18, 15:14
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/ISTR2Edge.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "TypeDef.h"
 #include "Logger.h"
-
 namespace pmw{
 #ifndef _ISTR2EDGE_H
 #define	_ISTR2EDGE_H
@@ -22,17 +28,13 @@ public:
         return &moISTR2Edge;
     }
     ~CISTR2Edge();
-
 private:
     Utility::CLogger *mpLogger;
-
-    // FrontISTR -> MW3 辺番号 (頂点Overの番号について辺番号)
     uiint mvHexa[20];
     uiint mvTetra[10];
     uiint mvPrism[15];
     uiint mvQuad[8];
     uiint mvTriangle[6];
-
 public:
     uiint& HexaEdgeNum(const uiint& ishape);
     uiint& TetraEdgeNum(const uiint& ishape);
@@ -42,5 +44,3 @@ public:
 };
 #endif	/* _ISTR2EDGE_H */
 }
-
-

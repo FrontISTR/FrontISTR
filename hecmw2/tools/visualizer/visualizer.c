@@ -22,8 +22,7 @@ extern PVR_link *pvr;
 int
 main( int argc , char **argv )
 {
-	char cntpath[] = "./";
-	char datpath[] = "./";
+	char controlfile[] = "./hecmw_ctrl.dat";
 	int mynode, level, partID;
 	struct hecmwST_local_mesh* mesh;
 	struct hecmwST_result_data* data;
@@ -34,12 +33,11 @@ main( int argc , char **argv )
 	PSF_link *tp1;
 	PVR_link *tv1;
 
-	mw_initialize_fstr_( &argc, argv, cntpath, datpath );
+	mw_initialize_fstr_( &argc, argv, controlfile );
 
 	mynode = mw_get_rank_();
 
 	mw_file_read_fstr_();
-
 	level = 0;
 	partID = -1;
 	mesh = MW3_get_mesh( level, partID );

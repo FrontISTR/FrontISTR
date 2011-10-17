@@ -1,11 +1,11 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
 !            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
-!                                                                      !
+!                       Z. Sun(ASTOM)                                  !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -18,19 +18,22 @@
 !
 !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
 !>  \date       2009/01/30
+!>  \author     Z. Sun(ASTOM)
+!>  \date       2010/11
 !>  \version    0.00
 !
 !======================================================================!
 module m_fstr_solve_NLGEOM
 
 use m_fstr
-use hecmw
 use m_static_lib
 use m_static_post
 
 use m_fstr_NonLinearMethod
 use m_fstr_Result
 use m_fstr_Restart
+
+use fstr_matrix_con_contact                
 
     implicit none
 
@@ -39,15 +42,18 @@ contains
 !======================================================================!
 !> \brief This module provides main suborutine for nonlinear calculation.
 !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
+!>              Z. Sun(ASTOM)/2010/11
 !>  \date       2009/08/31
 !>  \version    0.00
 
-      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
+      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM)    
 !======================================================================!
-      type (hecmwST_local_mesh) :: hecMESH     !< mesh information
-      type (hecmwST_matrix    ) :: hecMAT      !< linear equation, its right side modified here
-      type (fstr_param       )  :: fstrPARAM   !< analysis control parameters
-      type (fstr_solid       )  :: fstrSOLID   !< we need boundary conditions of curr step
+      type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
+      type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
+      type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
+      type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
 
       integer(kind=kint) :: ndof, nn
 
@@ -55,7 +61,7 @@ contains
       integer(kind=kint) :: sub_step
       real(kind=kreal) :: tt, factor
       real(kind=kreal) :: time_1, time_2
-      logical          :: ctchange
+      logical          :: ctchanged                             
       integer(kind=kint) :: restart_step_num, restart_substep_num
 
       hecMAT%NDOF = hecMESH%n_dof
@@ -70,13 +76,13 @@ contains
       restart_step_num = 1
       restart_substep_num = 1
       fstrSOLID%unode = 0.0
-      step_count = 0
+      step_count = 0 !**
       if(fstrSOLID%restart_nout <0 ) then
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID)
+        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID) 
       endif
 
       fstrSOLID%FACTOR    =0.0
-
+                 
       do tot_step=restart_step_num, fstrSOLID%nstep_tot
         if(hecMESH%my_rank==0) write(*,*) ''
         if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
@@ -87,7 +93,7 @@ contains
         do sub_step = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
 
 ! ----- time history of factor
-          tt = sub_step*fstrSOLID%step_ctrl(tot_step)%initdt
+          tt = sub_step*fstrSOLID%step_ctrl(tot_step)%initdt          !**
           call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step-1,factor)
             fstrSOLID%FACTOR(1) = factor
           call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step, factor)
@@ -107,8 +113,18 @@ contains
           call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
 !       analysis algorithm ( Newton-Rapshon Method )
-          call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID,       &
-                           restart_step_num, sub_step, fstrPARAM   )
+          if( .not. associated( fstrSOLID%contacts ) ) then        
+            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &           
+                              restart_step_num, sub_step  )   
+          else
+            if( fstrPARAM%contact_algo == kcaSLagrange ) then                                
+              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )                                                                          
+            else if( fstrPARAM%contact_algo == kcaALagrange ) then                              
+              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
+                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )
+            endif                                                                                
+          endif   
 
           if( fstrSOLID%TEMP_irres==0 ) then
           if(fstrSOLID%restart_nout<0) then

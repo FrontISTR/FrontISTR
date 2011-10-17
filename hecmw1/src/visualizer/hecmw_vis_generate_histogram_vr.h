@@ -16,3 +16,5 @@ void find_feai_minmax(int num_of_features, double *fea_point, double mincolor, d
 
 
 #endif /* HECMW_VIS_GENERATE_HISTOGRAM_VR_H_INCLUDED */
+
+

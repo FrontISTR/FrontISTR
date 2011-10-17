@@ -12,3 +12,9 @@ void compute_color_sf(double p[3], double value, double n[3], int color_mapping_
 		double mincolor, double maxcolor, int display_method);
 
 #endif /* HECMW_VIS_COLOR_COMPOSITE_SF_H_INCLUDED */
+
+
+
+
+
+

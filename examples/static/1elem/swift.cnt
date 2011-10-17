@@ -1,0 +1,29 @@
+!VERSION
+    1
+!SOLUTION, TYPE = NLSTATIC
+!BOUNDARY, GRPID = 1
+        x0,       1,        1,   0.0000000000E+00
+        y0,       2,        2,   0.0000000000E+00
+        z0,       3,        3,   0.0000000000E+00
+        x1,       1,        1,   0.1000000000E+00
+!STEP, CONVERG=1.0e-6, SUBSTEPS = 10
+  BOUNDARY,    1
+!MATERIAL, NAME=M1
+!ELASTIC
+  21.0E+04,   0.3
+!PLASTIC, HARDEN=SWIFT
+  0.04,649.0,0.3
+!WRITE,RESULT,FREQENCY = 1
+!ELEMENT_OUTPUT, POSITION=INTEG
+   STRAIN
+   STRESS
+   PLSTRAIN
+!SOLVER, METHOD = CG, PRECOND = 1, ITERLOG = NO, TIMELOG = NO
+  10000,       2
+ 1.0E-12,     1.0,     0.0
+!WRITE,VISUAL
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+!output_type=FSTR_FEMAP_NEUTRAL
+!END

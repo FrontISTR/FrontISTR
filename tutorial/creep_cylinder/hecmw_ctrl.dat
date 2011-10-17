@@ -1,0 +1,18 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ cylinder.msh
+!CONTROL, NAME=fstrCNT
+ cylinder.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ cylinder.res
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ cylinder.msh
+!RESULT, NAME=result, IO=IN
+ cylinder.res
+!RESULT, NAME=vis_out, IO=OUT
+ cylinder_vis

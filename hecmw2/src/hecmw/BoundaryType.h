@@ -1,33 +1,38 @@
-/* 
- * File:   BoundaryType.h
- * Author: ktakeda
- *
- * Modify     2009/05/25
- * Created on 2009/05/14, 14:13
- */
-
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/BoundaryType.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 namespace pmw{
 #ifndef _BOUNDARYTYPE_H_
 #define	_BOUNDARYTYPE_H_
-// 境界条件種類
 struct BoundaryType{
     enum{
         Dirichlet,
         Neumann,
-        Limit//終端
+        Limit
     };
 };
-// 境界メッシュのタイプ
 struct BoundaryMeshType{
     enum{
         Node,
         Edge,
         Face,
         Volume,
-        Limit//終端
+        Limit
     };
 };
-
 struct BoundaryTypeNode{
     enum {
         Load,
@@ -36,7 +41,7 @@ struct BoundaryTypeNode{
         Accel,
         Temp,
         Thermal_Flux,
-        Limit//終端
+        Limit
     };
 };
 struct BoundaryTypeFace{
@@ -45,16 +50,16 @@ struct BoundaryTypeFace{
         TractionVector,
         Temp,
         Thermal_Flux,
-        Limit//終端
+        Limit
     };
 };
 struct BoundaryTypeVolume{
     enum {
         Accel,
         Gravity,
-        Centrifugal_Force,//遠心力
+        Centrifugal_Force,
         Heat,
-        Limit//終端
+        Limit
     };
 };
 struct BoundaryTypeFlow{
@@ -67,10 +72,8 @@ struct BoundaryTypeFlow{
         Heat,
         Thermal_Flux,
         OtherScalar,
-        Limit//終端
+        Limit
     };
 };
 #endif	/* _BOUNDARYTYPE_H */
 }
-
-

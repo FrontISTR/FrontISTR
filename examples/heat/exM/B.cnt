@@ -1,0 +1,20 @@
+!!
+!! Control File for HEAT solver
+!!
+!SOLUTION,TYPE=HEAT
+!STEP
+!HEAT
+!ECHO
+!FIXTEMP
+ XMIN,   0.0
+!CFLUX
+ XMAX1,  156.25
+ XMAX2,  312.5
+ XMAX3,  625.0 
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=2
+ 2000,  2
+ 1.0e-8,1.0,0.0
+!END

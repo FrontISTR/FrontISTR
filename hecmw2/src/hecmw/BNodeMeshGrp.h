@@ -1,15 +1,21 @@
-/* 
- * File:   BNodeMeshGrp.h
- * Author: ktakeda
- *
- * BoundaryGroup<BoundaryNodeMesh*> のラッパー
- * # 各階層が全て同一のBNodeMeshGrp* を所有する.
- *
- * Created on 2010/06/25, 14:30
- */
+/*
+ ----------------------------------------------------------
+|
+| Software Name :HEC-MW Ver 4.0beta
+|
+|   ../src/BNodeMeshGrp.h
+|
+|                     Written by T.Takeda,    2011/06/01
+|                                Y.Sato       2011/06/01
+|                                K.Goto,      2010/01/12
+|                                K.Matsubara, 2010/06/01
+|
+|   Contact address : IIS, The University of Tokyo CISS
+|
+ ----------------------------------------------------------
+*/
 #include "BoundaryGroup.h"
 #include "BoundaryNodeMesh.h"
-
 namespace pmw{
 #ifndef _BNODEMESH_GRP_H
 #define	_BNODEMESH_GRP_H
@@ -17,10 +23,8 @@ class CBNodeMeshGrp{
 public:
     CBNodeMeshGrp();
     virtual ~CBNodeMeshGrp();
-
 protected:
     BoundaryGroup<CBoundaryNodeMesh*> mGrpBndNodeMesh;
-
 public:
     void reserveBndNodeMesh(const uiint& res_size){ mGrpBndNodeMesh.reserve(res_size);}
     void setBndNodeMesh(CBoundaryNodeMesh *pBNodeMesh){ mGrpBndNodeMesh.push(pBNodeMesh);}
@@ -30,5 +34,3 @@ public:
 };
 #endif	/* _BNODEMESH_GRP_H */
 }
-
-

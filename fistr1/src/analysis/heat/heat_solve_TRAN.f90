@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 3.2                                   !
 !                                                                      !
 !      Module Name : Heat Analysis                                     !
 !                                                                      !
@@ -29,7 +29,7 @@ module m_heat_solve_TRAN
       use m_hecmw2fstr_mesh_conv
 
       implicit none
-      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,nd,id,ndof,maxincr, tstep
+      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,nd,id,ndof,maxincr,tstep
       real(kind=kreal)   CTIME,ST,DTIME,EETIME,DELMAX,DELMIN,TT,BETA,VAL,CHK,tmpmax,dltmp,tmpmax_myrank
 !C file name
       character(len=HECMW_HEADER_LEN) :: header
@@ -42,6 +42,9 @@ module m_heat_solve_TRAN
       type (fstr_param         ) :: fstrPARAM
       type (fstr_heat          ) :: fstrHEAT
 
+      integer(kind=kint) :: restart_step(1)
+      real(kind=kreal)   :: restart_time(1)
+      integer(kind=kint) :: restrt_data_size
 
       if( ISTEP .eq. 1 ) then
         ST = 0.0d0
@@ -76,11 +79,27 @@ module m_heat_solve_TRAN
       hecMAT%NDOF = 1
       hecMAT%Iarray(98) = 1   !Assmebly complete
 
+!C Restart read
+      if( fstrPARAM%fg_irres .eq. kYES ) then
+        call hecmw_restart_open()
+        call hecmw_restart_read_int(restart_step)
+        call hecmw_restart_read_real(restart_time)
+        call hecmw_restart_read_real(fstrHEAT%TEMP0)
+        call hecmw_restart_close()
+        tstep = restart_step(1)
+        TT = restart_time(1)
+
+        do i= 1, hecMESH%n_node
+          fstrHEAT%TEMPC(i)= fstrHEAT%TEMP0(i)
+          fstrHEAT%TEMP (i)= fstrHEAT%TEMP0(i)
+        enddo
+        write(ILOG,*) ' Restart read of temperatures: OK'
+      endif
+
 !C--------------------   START TRANSIET LOOP   ------------------------
       tr_loop: do
 !C--------------------
         incr = incr + 1
-        tstep= tstep+1
         if( TT+DTIME >= EETIME ) then
           DTIME = EETIME - TT
           TT = EETIME
@@ -193,7 +212,6 @@ module m_heat_solve_TRAN
             if( DELMIN .gt. 0.d0) then
               TT = TT - DTIME
               DTIME = 0.5*DTIME
-              tstep = tstep-1
               cycle tr_loop
             else
               call hecmw_abort( hecmw_comm_get_comm() )
@@ -231,7 +249,6 @@ module m_heat_solve_TRAN
             endif
             TT    = TT - DTIME
             DTIME = 0.5*DTIME
-            tstep = tstep-1
             cycle
           endif
 
@@ -245,6 +262,7 @@ module m_heat_solve_TRAN
 !C
 !C=== OUTPUT
 !C
+        tstep = tstep+1
         if( MOD(tstep,NPRINT)==0 .or. iend==1 ) then
           write(ILOG,*)
           write(ILOG,'(a,i6, a,f10.3)')    ' STEP =',tstep, ' Time  =',CTIME
@@ -288,16 +306,23 @@ module m_heat_solve_TRAN
             endif
           endif
 
+!C Restart write
           if( fstrPARAM%fg_iwres .eq. kYES ) then
-            !restrt_step(1) = i
-            !call hecmw_restart_add_int(restrt_step,size(restrt_step))
-            call hecmw_restart_add_real(fstrHEAT%TEMP,size(fstrHEAT%TEMP))
+            restart_step(1) = tstep
+            restart_time(1) = CTIME
+            restrt_data_size = size(restart_step)
+            call hecmw_restart_add_int(restart_step,restrt_data_size)
+            restrt_data_size = size(restart_time)
+            call hecmw_restart_add_real(restart_time,restrt_data_size)
+            restrt_data_size = size(fstrHEAT%TEMP)
+            call hecmw_restart_add_real(fstrHEAT%TEMP,restrt_data_size)
             call hecmw_restart_write()
             if( hecMESH%my_rank.eq.0 ) then
               write(IMSG,*) '### FSTR output Restart_File.'
               call flush(IMSG)
             endif
           endif
+
         endif
 
         if( iend.ne.0 ) exit
