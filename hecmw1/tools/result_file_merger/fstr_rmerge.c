@@ -65,7 +65,7 @@ int main(int argc, char** argv )
 	struct hecmwST_local_mesh* glmesh;
 	struct hecmwST_result_data* data;
 	fstr_res_info** res;
-	fstr_gl_t* glt;
+	fstr_glt* glt;
 	char header[ HECMW_HEADER_LEN+1 ];
 
 	log_fp = stderr;
@@ -81,16 +81,16 @@ int main(int argc, char** argv )
 	fprintf( log_fp, "table creating .. \n" );
 	glt = fstr_create_glt( mesh, area_n );
 	if( !glt ) {
-		fprintf( stderr, "ERROR : Cannot create global_local table." );
+		fprintf( stderr, "ERROR : Cannot create global_local table.\n" );
 		fstr_free_mesh( mesh, area_n );
 		exit( -1 );
 	}
 
 	glmesh = fstr_create_glmesh( glt );
 	if( !glmesh ) {
-		fprintf( stderr, "ERROR : Cannot create global table." );
+		fprintf( stderr, "ERROR : Cannot create global table.\n" );
 		fstr_free_mesh( mesh, area_n );
-		fstr_free_gl_t( glt );
+		fstr_free_glt( glt );
 		exit( -1 );
 	}
 
@@ -102,18 +102,18 @@ int main(int argc, char** argv )
 		if( !res ){
 			fprintf( stderr, "ERROR : Cannot create result structure.\n" );
 			fstr_free_mesh( mesh, area_n );
-			fstr_free_gl_t( glt );
+			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			exit( -1 );
 		}
 		fprintf( log_fp, "end\n" );
 
 		fprintf( log_fp, "step:%d .. combining .. ", step );
-		data = fstr_all_result( glt, res, area_n );
+		data = fstr_all_result( glt, res, refine );
 		if( !data ){
 			fprintf( stderr, "ERROR : Cannot combine result structure.\n" );
 			fstr_free_mesh( mesh, area_n );
-			fstr_free_gl_t( glt );
+			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			fstr_free_result( res, area_n );
 			exit( -1 );
@@ -132,7 +132,7 @@ int main(int argc, char** argv )
 		if( rcode ) {
 			fprintf( stderr, "ERROR : Cannot open/write file %s\n", out_fname );
 			fstr_free_mesh( mesh, area_n );
-			fstr_free_gl_t( glt );
+			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			fstr_free_result( res, area_n );
 			HECMW_result_free( data );
@@ -145,7 +145,7 @@ int main(int argc, char** argv )
 	}
 
 	fstr_free_mesh( mesh, area_n );
-	fstr_free_gl_t( glt );
+	fstr_free_glt( glt );
 	fstr_free_glmesh( glmesh );
 
 	HECMW_finalize();

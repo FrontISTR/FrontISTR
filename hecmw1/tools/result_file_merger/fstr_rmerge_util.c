@@ -9,17 +9,14 @@
 #include "fstr_rmerge_util.h"
 
 FILE* log_fp;
-int fg_log = 1;
 
 static
 void out_log( const char* fmt, ... )
 {
 	va_list arg;
-	if( fg_log ){
-		va_start( arg, fmt );
-		vfprintf( log_fp, fmt, arg );
-		va_end( arg );
-	}
+	va_start( arg, fmt );
+	vfprintf( log_fp, fmt, arg );
+	va_end( arg );
 }
 
 
@@ -172,8 +169,7 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 	char fname[ HECMW_FILENAME_LEN+1 ];
 	fstr_res_info** res;
 	struct hecmwST_result_data* data;
-	int i, j, k, count, num, nnode, nelem, nave, flag;
-	double sum[100];
+	int i, j, k, count, num, nnode, nelem, flag;
 	int *node_gid, *elem_gid;
 	int refine_nnode = 0;
 
@@ -262,23 +258,11 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 			count = 0;
 			for( j = 0; j < nelem; j++ ) {
 				if( elem_gid[j] > 0 ) {
-					if( !count ) {
-						for( k = 0; k < num; k++ ) sum[k] = data->elem_val_item[num*j+k];
-					} else {
-						for( k = 0; k < num; k++ ) {
-							res[i]->result->elem_val_item[num*(count-1)+k] = sum[k] / nave;
-							sum[k] = data->elem_val_item[num*j+k];
-						}
+					for( k = 0; k < num; k++ ) {
+						res[i]->result->elem_val_item[count++] = data->elem_val_item[num*j+k];
 					}
-					nave = 1;
-					count++;
-				} else {
-					if( nave == 8 * refine ) continue;
-					for( k = 0; k < num; k++ ) sum[k] += data->elem_val_item[num*j+k];
-					nave++;
 				}
 			}
-			for( k = 0; k < num; k++ ) res[i]->result->elem_val_item[num*(count-1)+k] = sum[k] / nave;
 
 			HECMW_result_free( data );
 
@@ -316,9 +300,9 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 /* ステップの全領域データの結合                                              */
 /*****************************************************************************/
 
-struct hecmwST_result_data* fstr_all_result( fstr_gl_t* glt, fstr_res_info** res, int area_n )
+struct hecmwST_result_data* fstr_all_result( fstr_glt* glt, fstr_res_info** res, int refine )
 {
-	int i, j, k, g_id, l_id, area;
+	int i, j, k, l_id, area;
 	int nitem, eitem, count, irec;
 	struct hecmwST_result_data* data;
 
@@ -354,19 +338,16 @@ struct hecmwST_result_data* fstr_all_result( fstr_gl_t* glt, fstr_res_info** res
 
 	count = 0;
 	for( i = 0; i < glt->elem_n; i++ ) {
-		g_id = glt->erec[i].global;
 		l_id = glt->erec[i].local;
 		area = glt->erec[i].area;
-		for( j = 0; j < res[area]->nelem_gid; j++ ) {
-			if( res[area]->elem_gid[j] == g_id ) {
-				l_id = j;
-				break;
-			}
-		}
 		irec = eitem * l_id;
 		for( j = 0; j < res[0]->result->ne_component; j++ ) {
 			for( k = 0; k < res[0]->result->ne_dof[j]; k++ ) {
-				data->elem_val_item[count++] = res[area]->result->elem_val_item[irec++];
+				if( refine ) {
+					data->elem_val_item[count++] = 0.0;
+				} else {
+					data->elem_val_item[count++] = res[area]->result->elem_val_item[irec++];
+				}
 			}
 		}
 	}
@@ -390,7 +371,7 @@ void fstr_free_result( fstr_res_info** res, int area_n )
 
 	if( !res ) return;
 
-	for( i=0; i<area_n; i++ ) {
+	for( i = 0; i < area_n; i++ ) {
 		HECMW_result_free( res[i]->result );
 		HECMW_free( res[i]->node_gid );
 		HECMW_free( res[i]->elem_gid );
@@ -402,7 +383,7 @@ void fstr_free_result( fstr_res_info** res, int area_n )
 
 
 /*****************************************************************************/
-/* グローバルとローカル、所属領域のテーブル fstr_gl_t の作成                 */
+/* グローバルとローカル、所属領域のテーブル fstr_glt の作成                  */
 /*****************************************************************************/
 
 static int cmp_global_glt( const fstr_gl_rec* g1, const fstr_gl_rec* g2)
@@ -412,13 +393,13 @@ static int cmp_global_glt( const fstr_gl_rec* g1, const fstr_gl_rec* g2)
 
 typedef int (*cmp_func)(const void*, const void*);
 
-fstr_gl_t* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n )
+fstr_glt* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n )
 {
 	int i, j, count;
 	int all_n, all_e;
 	fstr_gl_rec* nrec;
 	fstr_gl_rec* erec;
-	fstr_gl_t* glt;
+	fstr_glt* glt;
 
 	all_n = 0;
 	for( i = 0; i < area_n; i++ ) {
@@ -464,7 +445,7 @@ fstr_gl_t* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n )
 
 	qsort( erec, all_e, sizeof(fstr_gl_rec), (cmp_func)cmp_global_glt );
 
-	glt = HECMW_malloc( sizeof(fstr_gl_t) );
+	glt = HECMW_malloc( sizeof(fstr_glt) );
 	if( !glt ) return NULL;
 	glt->nrec = nrec;
 	glt->erec = erec;
@@ -476,10 +457,10 @@ fstr_gl_t* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n )
 
 
 /*****************************************************************************/
-/* fstr_gl_t の削除                                                          */
+/* fstr_glt の削除                                                           */
 /*****************************************************************************/
 
-void fstr_free_gl_t( fstr_gl_t* glt )
+void fstr_free_glt( fstr_glt* glt )
 {
 	if( !glt ) return;
 
@@ -494,7 +475,7 @@ void fstr_free_gl_t( fstr_gl_t* glt )
 /* 単一領域メッシュの作成                                                    */
 /*****************************************************************************/
 
-struct hecmwST_local_mesh* fstr_create_glmesh( fstr_gl_t* glt )
+struct hecmwST_local_mesh* fstr_create_glmesh( fstr_glt* glt )
 {
 	struct hecmwST_local_mesh* mesh;
 	int i;
