@@ -364,8 +364,6 @@ print_sect(FILE *fp)
 					"GAPCON: %E, GAPRAD1: %E, GAPRAD2: %E\n",
 					p->sect.interface.thickness, p->sect.interface.gapcon,
 					p->sect.interface.gaprad1, p->sect.interface.gaprad2);
-		} else {
-			HECMW_assert(0);
 		}
 	}
 	fprintf(fp, "END of SECTION\n");
@@ -468,8 +466,6 @@ print_contact(FILE *fp)
 			fprintf(fp, "TYPE=NODE-SURF, ");
 		} else if(p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
 			fprintf(fp, "TYPE=SURF-SURF, ");
-		} else {
-			HECMW_assert(0);
 		}
 		fprintf(fp, "SLAVE_GRP=%s, MASTER_GRP=%s\n",
 				p->slave_grp, p->master_grp);
@@ -745,8 +741,8 @@ HECMW_io_set_gridfile(char *gridfile)
 struct hecmw_io_amplitude *
 HECMW_io_add_amp(const char *name, int definition, int time, int value, double val, double t)
 {
-	static struct hecmw_io_amplitude *last_p = NULL;
-	struct hecmw_io_amplitude *p,*q;
+	static struct hecmw_io_amplitude *prev_amp = NULL;
+	struct hecmw_io_amplitude *p;
 	struct hecmw_io_amplitude_item *item;
 
 	if(name == NULL) {
@@ -758,31 +754,25 @@ HECMW_io_add_amp(const char *name, int definition, int time, int value, double v
 		return NULL;
 	}
 
-	if(last_p != NULL && strcmp(last_p->name, name) == 0) {
-		p = last_p;
+	if(prev_amp != NULL && strcmp(prev_amp->name, name) == 0) {
+		p = prev_amp;
 	} else {
-		q = NULL;
-		for(p=_amp; p; p=(q=p)->next) {
-			if(strcmp(p->name, name) == 0) break;
-		}
+		p = HECMW_malloc(sizeof(*p));
 		if(p == NULL) {
-			p = HECMW_malloc(sizeof(*p));
-			if(p == NULL) {
-				set_err(errno, "");
-				return NULL;
-			}
-			strcpy(p->name, name);
-			p->next = NULL;
-			p->item = NULL;
-			p->last = NULL;
-
-			if(q == NULL) {
-				_amp = p;
-			} else {
-				q->next = p;
-			}
+			set_err(errno, "");
+			return NULL;
 		}
-		last_p = p;
+		strcpy(p->name, name);
+		p->next = NULL;
+		p->item = NULL;
+		p->last = NULL;
+
+		if(prev_amp == NULL) {
+			_amp = p;
+		} else {
+			prev_amp->next = p;
+		}
+		prev_amp = p;
 	}
 	p->type_def = definition;
 	p->type_time = time;
@@ -824,36 +814,36 @@ HECMW_io_get_initial(int node)
 struct hecmw_io_initial *
 HECMW_io_add_initial(int type, int node, const char *ngrp , double val)
 {
-	struct hecmw_io_initial *init,*p,*q;
+	static struct hecmw_io_initial *prev_init = NULL;
+	struct hecmw_io_initial *p;
 
 	if(ngrp == NULL && node <= 0) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_initial(): ngrp,node");
 		return NULL;
 	}
 
-	init = HECMW_malloc(sizeof(*init));
-	if(init == NULL) {
+	p = HECMW_malloc(sizeof(*p));
+	if(p == NULL) {
 		set_err(errno, "");
 		return NULL;
 	}
 
 	if(ngrp) {
-		HECMW_assert(strlen(ngrp) <= HECMW_NAME_LEN);
-		strcpy(init->ngrp, ngrp);
+		strcpy(p->ngrp, ngrp);
 	}
-	init->type = type;
-	init->node = ngrp ? -1 : node;
-	init->val = val;
-	init->next = NULL;
+	p->type = type;
+	p->node = ngrp ? -1 : node;
+	p->val = val;
+	p->next = NULL;
 
-	q = NULL;
-	for(p=_init; p; p=(q=p)->next) ;
-	if(q == NULL) {
-		_init = init;
+	if(prev_init == NULL) {
+		_init = p;
 	} else {
-		q->next = init;
+		prev_init->next = p;
 	}
-	return init;
+	prev_init = p;
+
+	return p;
 }
 
 
@@ -1043,7 +1033,7 @@ error:
 int
 HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 {
-	int i,n;
+	int i;
 	struct hecmw_io_egrp *p,*q;
 
 	if(name == NULL) {
@@ -1064,35 +1054,29 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		if(strcmp(p->name, name) == 0) break;
 	}
 	if(p == NULL) {
-		struct hecmw_io_egrp *new_grp = HECMW_malloc(sizeof(*new_grp));
-		if(new_grp == NULL) {
+		p = HECMW_malloc(sizeof(*p));
+		if(p == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-		HECMW_assert(strlen(name) <= HECMW_NAME_LEN);
-		strcpy(new_grp->name, name);
-		new_grp->elem = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
-		if (new_grp->elem == NULL) {
+		strcpy(p->name, name);
+		p->elem = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
+		if (p->elem == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-		if (HECMW_set_int_init(new_grp->elem)) {
+		if (HECMW_set_int_init(p->elem)) {
 			set_err(errno, "");
 			return -1;
 		}
-		new_grp->next = NULL;
-		p = new_grp;
+		p->next = NULL;
 	}
 
-	n = 0;
 	for(i=0; i < nelem; i++) {
-		int eid = elem[i];
-
-		if (HECMW_set_int_add(p->elem, eid)) {
+		if (HECMW_set_int_add(p->elem, elem[i])) {
 			set_err(errno, "");
 			return -1;
 		}
-		n++;
 	}
 
 	if(HECMW_set_int_nval(p->elem) == 0) {
@@ -1110,7 +1094,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		q->next = p;
 	}
 
-	return n;
+	return nelem;
 }
 
 
@@ -1270,8 +1254,9 @@ HECMW_io_get_node_in_ngrp(const char *name)
 int
 HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 {
-	int i,n;
-	struct hecmw_io_ngrp *p,*q;
+	int i;
+	static struct hecmw_io_ngrp *prev_ngrp = NULL;
+	struct hecmw_io_ngrp *p;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_ngrp(): name");
@@ -1286,61 +1271,50 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		return -1;
 	}
 
-	q = NULL;
-	for(p=_ngrp; p; p=(q=p)->next) {
-		if(strcmp(p->name, name) == 0) break;
-	}
-	if(p == NULL) {
-		struct hecmw_io_ngrp *new_grp = HECMW_malloc(sizeof(*new_grp));
-		if(new_grp == NULL) {
+	if(prev_ngrp != NULL && strcmp(prev_ngrp->name, name) == 0) {
+		p = prev_ngrp;
+	} else {
+		p = HECMW_malloc(sizeof(*p));
+		if(p == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-
-		HECMW_assert(strlen(name) <= HECMW_NAME_LEN);
-
-		strcpy(new_grp->name, name);
-
-		new_grp->node = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
-		if (new_grp->node == NULL) {
+		strcpy(p->name, name);
+		p->node = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
+		if (p->node == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-		if (HECMW_set_int_init(new_grp->node)) {
+		if (HECMW_set_int_init(p->node)) {
 			set_err(errno, "");
 			return -1;
 		}
-		new_grp->next = NULL;
-		p = new_grp;
+		p->next = NULL;
 	}
 
-	n = 0;
 	for(i=0; i < nnode; i++) {
-		int nid = node[i];
-
-		if (HECMW_set_int_add(p->node, nid)) {
+		if (HECMW_set_int_add(p->node, node[i])) {
 			set_err(errno, "");
 			return -1;
 		}
-		n++;
 	}
 
 	if(HECMW_set_int_nval(p->node) == 0) {
 		/* new group && ignored all */
-		HECMW_assert(n == 0);
 		HECMW_set_int_finalize(p->node);
 		HECMW_free(p->node);
 		HECMW_free(p);
 		return 0;
 	}
 
-	if(q == NULL) {
+	if(prev_ngrp == NULL) {
 		_ngrp = p;
-	} else {
-		q->next = p;
+	} else if(strcmp(prev_ngrp->name, name) != 0) {
+		prev_ngrp->next = p;
 	}
+	prev_ngrp = p;
 
-	return n;
+	return nnode;
 }
 
 
@@ -1392,8 +1366,9 @@ HECMW_io_get_sgrp(const char *name)
 int
 HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 {
-	int i,n;
-	struct hecmw_io_sgrp *p,*q;
+	int i;
+	static struct hecmw_io_sgrp *prev_sgrp = NULL;
+	struct hecmw_io_sgrp *p;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_add_sgrp(): name");
@@ -1412,61 +1387,50 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		return -1;
 	}
 
-	q = NULL;
-	for(p=_sgrp; p; p=(q=p)->next) {
-		if(strcmp(p->name, name) == 0) break;
-	}
-	if(p == NULL) {
-		struct hecmw_io_sgrp *new_grp = HECMW_malloc(sizeof(*new_grp));
-		if(new_grp == NULL) {
+	if(prev_sgrp != NULL && strcmp(prev_sgrp->name, name) == 0) {
+		p = prev_sgrp;
+	} else {
+		p = HECMW_malloc(sizeof(*p));
+		if(p == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-
-		HECMW_assert(strlen(name) <= HECMW_NAME_LEN);
-
-		strcpy(new_grp->name, name);
-		new_grp->item = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
-		if (new_grp->item == NULL) {
+		strcpy(p->name, name);
+		p->item = (struct hecmw_set_int *) HECMW_malloc(sizeof(struct hecmw_set_int));
+		if (p->item == NULL) {
 			set_err(errno, "");
 			return -1;
 		}
-		if (HECMW_set_int_init(new_grp->item)) {
+		if (HECMW_set_int_init(p->item)) {
 			set_err(errno, "");
 			return -1;
 		}
-		new_grp->next = NULL;
-		p = new_grp;
+		p->next = NULL;
 	}
 
-	n = 0;
 	for(i=0; i < n_item; i++) {
-		int eid = elem[i];
-		int sid = surf[i];
-
-		if (HECMW_set_int_add(p->item, make_surf_key(eid, sid))) {
+		if (HECMW_set_int_add(p->item, make_surf_key(elem[i], surf[i]))) {
 			set_err(errno, "");
 			return -1;
 		}
-		n++;
 	}
 
 	if(HECMW_set_int_nval(p->item) == 0) {
 		/* new group && ignored all */
-		HECMW_assert(n == 0);
 		HECMW_set_int_finalize(p->item);
 		HECMW_free(p->item);
 		HECMW_free(p);
 		return 0;
 	}
 
-	if(q == NULL) {
+	if(prev_sgrp == NULL) {
 		_sgrp = p;
-	} else {
-		q->next = p;
+	} else if(strcmp(prev_sgrp->name, name) != 0) {
+		prev_sgrp->next = p;
 	}
+	prev_sgrp = p;
 
-	return n;
+	return n_item;
 }
 
 
@@ -1474,7 +1438,8 @@ struct hecmw_io_mpc *
 HECMW_io_add_mpc(int neq, const struct hecmw_io_mpcitem *mpcitem, double cnst)
 {
 	int i;
-	struct hecmw_io_mpc *mpc,*p,*q;
+	static struct hecmw_io_mpc *prev_mpc = NULL;
+	struct hecmw_io_mpc *p;
 	struct hecmw_io_mpcitem *item;
 
 	if(neq <= 0) {
@@ -1486,8 +1451,8 @@ HECMW_io_add_mpc(int neq, const struct hecmw_io_mpcitem *mpcitem, double cnst)
 		return NULL;
 	}
 
-	mpc = HECMW_malloc(sizeof(*mpc));
-	if(mpc == NULL) {
+	p = HECMW_malloc(sizeof(*p));
+	if(p == NULL) {
 		set_err(errno, "");
 		return NULL;
 	}
@@ -1510,50 +1475,50 @@ HECMW_io_add_mpc(int neq, const struct hecmw_io_mpcitem *mpcitem, double cnst)
 		dst->a = src->a;
 	}
 
-	mpc->neq = neq;
-	mpc->cnst = cnst;
-	mpc->item = item;
-	mpc->next = NULL;
+	p->neq = neq;
+	p->cnst = cnst;
+	p->item = item;
+	p->next = NULL;
 
-	q = NULL;
-	for(p=_mpc; p; p=(q=p)->next) ;
-	if(q == NULL) {
-		_mpc = mpc;
+	if(prev_mpc == NULL) {
+		_mpc = p;
 	} else {
-		q->next = mpc;
+		prev_mpc->next = p;
 	}
+	prev_mpc = p;
 
-	return mpc;
+	return p;
 }
 
 
 struct hecmw_io_section *
 HECMW_io_add_sect(struct hecmw_io_section *sect)
 {
-	struct hecmw_io_section *new_sect,*p,*q;
+	static struct hecmw_io_section *prev_sect = NULL;
+	struct hecmw_io_section *p;
 
 	if(sect == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_sect(): sect");
 		return NULL;
 	}
 
-	new_sect = HECMW_malloc(sizeof(*new_sect));
-	if(new_sect == NULL) {
+	p = HECMW_malloc(sizeof(*p));
+	if(p == NULL) {
 		set_err(errno, "");
 		return NULL;
 	}
 
-	*new_sect = *sect;
-	new_sect->next = NULL;
+	*p = *sect;
+	p->next = NULL;
 
-	q = NULL;
-	for(p=_sect; p; p=(q=p)->next) ;
-	if(q == NULL) {
-		_sect = new_sect;
+	if(prev_sect == NULL) {
+		_sect = p;
 	} else {
-		q->next = new_sect;
+		prev_sect->next = p;
 	}
-	return new_sect;
+	prev_sect = p;
+
+	return p;
 }
 
 
@@ -1577,21 +1542,20 @@ HECMW_io_get_mat(const char *name)
 struct hecmw_io_material *
 HECMW_io_add_mat(struct hecmw_io_material *mat)
 {
-	struct hecmw_io_material *p,*q;
+	static struct hecmw_io_material *prev_mat = NULL;
+	struct hecmw_io_material *p;
 
 	if(mat == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_mat(): mat");
 		return NULL;
 	}
 
-	q = NULL;
-	for(p=_mat; p; p=(q=p)->next) ;
-
-	if(q == NULL) {
+	if(prev_mat == NULL) {
 		_mat = mat;
 	} else {
-		q->next = mat;
+		prev_mat->next = mat;
 	}
+	prev_mat = mat;
 
 	return mat;
 }
@@ -1631,8 +1595,6 @@ HECMW_io_set_system(struct hecmw_system_param *system)
 void
 HECMW_io_set_zero(struct hecmw_io_zero *zero)
 {
-	HECMW_assert(zero);
-
 	if(_zero) {
 		HECMW_free(_zero);
 		set_warn(HECMW_IO_W1011, "");
@@ -1644,7 +1606,8 @@ HECMW_io_set_zero(struct hecmw_io_zero *zero)
 struct hecmw_io_contact *
 HECMW_io_add_contact(const char *name, int type, const char *slave_grp, const char *master_grp)
 {
-	struct hecmw_io_contact *p,*q,*contact;
+	static struct hecmw_io_contact *prev_contact = NULL;
+	struct hecmw_io_contact *p;
 
 	if(slave_grp == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_contact(): slave_grp");
@@ -1655,28 +1618,26 @@ HECMW_io_add_contact(const char *name, int type, const char *slave_grp, const ch
 		return NULL;
 	}
 
-	contact = (struct hecmw_io_contact *) malloc(sizeof(*contact));
-	if(contact == NULL) {
+	p = (struct hecmw_io_contact *) malloc(sizeof(*p));
+	if(p == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_contact(): contact");
 		return NULL;
 	}
 
-	strcpy(contact->name, name);
-	contact->type = type;
-	strcpy(contact->slave_grp, slave_grp);
-	strcpy(contact->master_grp, master_grp);
-	contact->next = NULL;
+	strcpy(p->name, name);
+	p->type = type;
+	strcpy(p->slave_grp, slave_grp);
+	strcpy(p->master_grp, master_grp);
+	p->next = NULL;
 
-	q = NULL;
-	for(p=_contact; p; p=(q=p)->next) ;
-
-	if(q == NULL) {
-		_contact = contact;
+	if(prev_contact == NULL) {
+		_contact = p;
 	} else {
-		q->next = contact;
+		prev_contact->next = p;
 	}
+	prev_contact = p;
 
-	return contact;
+	return p;
 }
 
 
@@ -3924,7 +3885,9 @@ post_equation(void)
 
 	if(post_equation_check_node_exists()) return -1;
 	if(post_equation_ngrp_to_node()) return -1;
+/* Delete because performance grow worse at large number of equations
 	if(post_equation_check_dup()) return -1;
+*/
 	if(post_equation_add_elem()) return -1;
 
 	return 0;
