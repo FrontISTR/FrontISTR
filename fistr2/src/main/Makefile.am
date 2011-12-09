@@ -1,127 +1,27 @@
-MPIDIR                  = @mpidir@
-MPIBINDIR               = @mpibindir@
-MPILIBDIR               = @mpilibdir@
-MPIINCDIR               = @mpiincdir@
-MPILIBS                 = @mpilibs@
+MAKE = @make@
 
-HECMWDIR                = ../../../hecmw2
-HECMWBINDIR             = $(HECMWDIR)/bin
-HECMWLIBDIR             = $(HECMWDIR)/lib
-HECMWINCDIR             = $(HECMWDIR)/include
-HECMWLIBS               = @hecmwlibs@
-HECMWDIR2               = ../../../hecmw1
-HECMWBINDIR2            = $(HECMWDIR2)/bin
-HECMWLIBDIR2            = $(HECMWDIR2)/lib
-HECMWINCDIR2            = $(HECMWDIR2)/include
-HECMWLIBS2              = @hecmwlibs2@
-
-FSTRBINDIR              = ../../bin
-FSTRLIBDIR              = ../../lib
-FSTRINCDIR              = ../../include
-FSTRLIBS                = @fstrlibs@
-
-REVOCAPDIR              = @revocapdir@
-REVOCAPINCDIR           = @revocapincdir@
-REVOCAPLIBDIR           = @revocaplibdir@
-REVOCAPLIBS             = @revocaplibs@
-
-REFINERDIR              = @refinerdir@
-REFINERINCDIR           = @refinerincdir@
-REFINERLIBDIR           = @refinerlibdir@
-REFINERLIBS             = @refinerlibs@
-
-CC                      = @cc@
-CFLAGS                  = @cflags@
-BASE_CFLAGS             = @base_cflags@
-MPI_CFLAGS              = @mpi_cflags@
-HECMW_CFLAGS            = @hecmw_cflags@
-HECMW_CFLAGS2           = @hecmw_cflags2@
-FSTR_CFLAGS             = @fstr_cflags@
-ALL_CFLAGS              = $(BASE_CFLAGS) $(FSTR_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS)
-LDFLAGS                 = @ldflags@
-MPI_LDFLAGS             = @mpi_ldflags@
-HECMW_LDFLAGS           = @hecmw_ldflags@
-HECMW_LDFLAGS2          = @hecmw_ldflags2@
-FSTR_LDFLAGS            = @fstr_ldflags@
-ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
-OPTFLAGS                = @optflags@
-
-REVOCAP_F90FLAGS        = @revocap_f90flags@
-REVOCAP_F90LDFLAGS      = @revocap_f90ldflags@
-
-F90                     = @f90@
-F90FLAGS                = @f90flags@
-BASE_F90FLAGS           = @base_f90flags@
-MPI_F90FLAGS            = @mpi_f90flags@
-HECMW_F90FLAGS          = @hecmw_f90flags@
-HECMW_F90FLAGS2         = @hecmw_f90flags2@
-FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(HECMW_F90FLAGS2) $(MPI_F90FLAGS) $(F90FLAGS)
-F90LDFLAGS              = @f90ldflags@
-MPI_F90LDFLAGS          = @mpi_f90ldflags@
-HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
-HECMW_F90LDFLAGS2       = @hecmw_f90ldflags2@
-FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(HECMW_F90LDFLAGS2) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
-F90OPTFLAGS             = @f90optflags@
-
-AR                      = @ar@
-CP                      = @cp@
-RM                      = @rm@
-RANLIB                  = @ranlib@
-MKDIR                   = @mkdir@
-
-#------------------------------------------------------------------------------#
-TARGET                  = @fstrexec_targetfile@
-
-F90MODULEPOSTFIX        = @f90modulepostfix@
-COBJFILEPOSTFIX         = @cobjfilepostfix@
-F90OBJFILEPOSTFIX       = @f90objfilepostfix@
-
-#------------------------------------------------------------------------------#
-.SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .f
-
-.c.@cobjfilepostfix@:
-	$(CC) -c $(ALL_CFLAGS) $(OPTFLAGS) $< -o $@
-
-.f90.@f90objfilepostfix@:
-	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
-
-.f.@f90objfilepostfix@:
-	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
-
-#------------------------------------------------------------------------------#
-OBJS =
-
-OBJSF = \
-	fistr_main.@f90objfilepostfix@
-
-HEADERS =
-
-#------------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: $(OBJSF) $(HECMWLIBDIR) $(HECMWLIBDIR2) $(FSTRLIBDIR)
-	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
-	-o $(TARGET) \
-	$(OBJSF) $(ALL_F90LDFLAGS)
-	$(CP) $(TARGET) $(FSTRBINDIR)/.
-
-build-with-rcap: $(OBJSF) $(HECMWLIBDIR) $(HECMWLIBDIR2) $(FSTRLIBDIR)
-	$(F90)  $(REVOCAP_F90FLAGS) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
-	-o $(TARGET) \
-	$(OBJSF) $(REVOCAP_F90LDFLAGS) $(ALL_F90LDFLAGS)
-	$(CP) $(TARGET) $(FSTRBINDIR)/.
-
-$(OBJS): $(HEADERS)
-
-$(OBJSF):
-
-install:
+@build_target@:
+	@cd common   && $(MAKE) install-header
+	@cd hecmw2   && $(MAKE) @build_target@
+	@cd lib      && $(MAKE) @build_target@
+	@cd common   && $(MAKE) @build_target@
+	@cd analysis && $(MAKE) @build_target@
+	@cd main     && $(MAKE) @build_target@
 
 clean:
-	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
+	@cd hecmw2   && $(MAKE) clean
+	@cd lib      && $(MAKE) clean
+	@cd common   && $(MAKE) clean
+	@cd analysis && $(MAKE) clean
+	@cd main     && $(MAKE) clean
 
-distclean: clean
-	$(RM) $(TARGET)
+distclean:
+	@cd hecmw2   && $(MAKE) distclean
+	@cd lib      && $(MAKE) distclean
+	@cd common   && $(MAKE) distclean
+	@cd analysis && $(MAKE) distclean
+	@cd main     && $(MAKE) distclean
+
+install:
