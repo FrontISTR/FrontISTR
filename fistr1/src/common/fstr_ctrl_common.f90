@@ -197,8 +197,8 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( ierr==0 ) then
           steps%initdt = fn
           steps%elapsetime = f1
-          steps%num_substep = int((f1+0.1*fn)/fn)
-          !if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
+          steps%num_substep = int(f1/fn)
+          if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
           sn = 2
         endif
 
@@ -288,7 +288,7 @@ function fstr_ctrl_get_COUPLE( ctrl, fg_first, surf_id, surf_id_len )
         write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),' '
 
         fstr_ctrl_get_COUPLE = -1
-        if( fstr_ctrl_get_param_ex( ctrl, 'FIRST ', 'NO,YES ', 0, 'P', fg_first )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', '1,2,3,4,5,6 ', 0, 'I', fg_first )/= 0) return
 
         surf_id_p => surf_id(1)
         fstr_ctrl_get_COUPLE = &

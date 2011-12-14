@@ -169,23 +169,17 @@ subroutine fstr_rcap_send( fstrCPL )
 
       write(IDBG,*) "fstr_rcap_send: start"
 
-      write(*,*) myrank, ": DEBUG:: fstr_rcap_send: calling rcapf_set_disp"
-
-      call rcapf_set_disp( fstrCPL%coupled_node,       &
-                           fstrCPL%coupled_node_n,     &
-                           fstrCPL%disp, fstrCPL%ndof )
-
-      write(*,*) myrank, ": DEBUG:: fstr_rcap_send: calling rcapf_set_velo"
+!      call rcapf_set_disp( fstrCPL%coupled_node,       &
+!                           fstrCPL%coupled_node_n,     &
+!                           fstrCPL%disp, fstrCPL%ndof )
 
       call rcapf_set_velo( fstrCPL%coupled_node,       &
                            fstrCPL%coupled_node_n,     &
                            fstrCPL%velo, fstrCPL%ndof )
 
-      write(*,*) myrank, ": DEBUG:: fstr_rcap_send: calling rcapf_set_accel"
-
-      call rcapf_set_accel( fstrCPL%coupled_node,       &
-                           fstrCPL%coupled_node_n,     &
-                           fstrCPL%accel, fstrCPL%ndof )
+!      call rcapf_set_accel( fstrCPL%coupled_node,       &
+!                            fstrCPL%coupled_node_n,     &
+!                            fstrCPL%accel, fstrCPL%ndof )
 
       write(IDBG,*) "fstr_rcap_send: end"
 
@@ -222,6 +216,18 @@ subroutine fstr_rcap_get( fstrCPL )
       write(IDBG,*) "fstr_rcap_get: end"
 
 end subroutine fstr_rcap_get
+!------------------------------------------------------------------------------
+subroutine fstr_get_convergence( revocap_flag )
+      implicit none
+      integer(kind=kint)  :: revocap_flag
+
+      write(IDBG,*) "fstr_get_convergence: start"
+
+      call rcapf_get_convergence( revocap_flag )
+
+      write(IDBG,*) "fstr_get_convergence: end"
+
+end subroutine fstr_get_convergence
 !------------------------------------------------------------------------------
 
 end module m_fstr_rcap_io

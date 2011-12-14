@@ -77,7 +77,18 @@ subroutine fstr_rcap_get( fstrCPL )
     call hecmw_abort( hecmw_comm_get_comm() )
 
 end subroutine fstr_rcap_get
+!------------------------------------------------------------------------------
+subroutine fstr_get_convergence( revocap_flag )
+    implicit none
+    integer(kind=kint)  :: revocap_flag
 
+    if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+    end if
+    call hecmw_abort( hecmw_comm_get_comm() )
+
+end subroutine fstr_get_convergence
+!------------------------------------------------------------------------------
 
 end module m_fstr_rcap_io
 
