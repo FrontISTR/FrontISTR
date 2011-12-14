@@ -4,7 +4,7 @@
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
-!                    Written by X. YUAN                                !
+!                    Written by Xi YUAN                                !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -80,6 +80,9 @@ contains
     use m_utilities
     type(tSurfElement), intent(inout) :: surf(:)
     integer :: i, j, ii,jj, nd1, nd2, nsurf
+    integer :: k, oldsize
+    integer, pointer :: dumarray(:)
+
     nsurf = size(surf)
     do i=1,nsurf
       do ii=1, size(surf(i)%nodes)
@@ -93,7 +96,25 @@ contains
             nd2 = surf(j)%nodes(jj)
             if( nd1==nd2 ) then
               surf(i)%n_neighbor = surf(i)%n_neighbor+1
-              call insert_int2array( j, surf(i)%neighbor )
+
+      if( .not. associated(surf(i)%neighbor) ) then
+        allocate( surf(i)%neighbor(1) )
+        surf(i)%neighbor(1) = j
+      else
+        oldsize = size( surf(i)%neighbor )
+        allocate( dumarray(oldsize) )
+        do k=1,oldsize
+          dumarray(k) = surf(i)%neighbor(k)
+        enddo
+        deallocate( surf(i)%neighbor )
+        allocate( surf(i)%neighbor(oldsize+1) )
+        do k=1,oldsize
+          surf(i)%neighbor(k) = dumarray(k)
+        enddo
+        surf(i)%neighbor(oldsize+1) = j
+      endif
+      if( associated(dumarray) ) deallocate( dumarray )
+
             endif
           enddo
         enddo		
