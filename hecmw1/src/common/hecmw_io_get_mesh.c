@@ -89,6 +89,9 @@ HECMW_get_mesh(char *name_ID)
 {
 	struct hecmw_ctrl_meshfiles *files;
 	struct hecmwST_local_mesh *mesh;
+	char filename[HECMW_FILENAME_LEN+1];
+	char *cad_filename;
+	FILE* fp;
 
 	files = HECMW_ctrl_get_meshfiles(name_ID);
 	if(files == NULL) return NULL;
@@ -99,7 +102,17 @@ HECMW_get_mesh(char *name_ID)
 		mesh = get_entire_mesh(files);
 	}
 
-	HECMW_dist_refine(&mesh, files->meshfiles[0].refine, NULL, NULL);
+	strcpy(filename, files->meshfiles[0].filename);
+	strtok(filename, ".");
+	strcat(filename, ".rnf");
+	if((fp = fopen(filename, "r")) == NULL) {
+		cad_filename = NULL;
+	} else {
+		fclose(fp);
+		cad_filename = filename;
+	}
+
+	HECMW_dist_refine(&mesh, files->meshfiles[0].refine, cad_filename, NULL);
 
 	HECMW_ctrl_free_meshfiles(files);
 

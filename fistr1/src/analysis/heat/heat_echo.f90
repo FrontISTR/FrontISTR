@@ -132,7 +132,11 @@ module m_heat_echo
 !C** node ID
           iS= hecMESH%elem_node_index(icel-1)
           do j=1,nn
-            nids(j)= hecMESH%global_node_ID(hecMESH%elem_node_item (iS+j))
+            if( hecMESH%n_refine > 0 ) then
+              nids(j)= hecMESH%elem_node_item (iS+j)
+            else
+              nids(j)= hecMESH%global_node_ID( hecMESH%elem_node_item (iS+j))
+            endif
           enddo
 !C** section  ID
           isect= hecMESH%section_ID(icel)
