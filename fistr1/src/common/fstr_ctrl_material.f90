@@ -590,7 +590,7 @@ integer function read_user_matl( ctrl, matval )
            fval(4,:), fval(5,:), fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) /= 0 ) return
         do i=1,10
         do j=1,10
-          matval(100+(i-1)*10+j)=fval(i,j)
+          matval((i-1)*10+j)=fval(i,j)
         enddo
         enddo
 			
