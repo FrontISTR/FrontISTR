@@ -136,7 +136,7 @@ contains
     if( fstrPARAM%fg_couple == 1) then
       if( fstrPARAM%fg_couple_first==5 .or. &
           fstrPARAM%fg_couple_first==6 ) then
-        allocate( prevB(0:hecMAT%NP)      ,STAT=ierror )
+        allocate( prevB(hecMAT%NP*ndof)      ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <fstr_solve_LINEAR_DYNAMIC, prevB>'
               write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
@@ -295,7 +295,7 @@ contains
         if( fstrPARAM%fg_couple_first==5 ) then
           call fstr_get_convergence( revocap_flag )
           if( revocap_flag==0 ) then
-            do j = 1, hecMAT%NP * 3
+            do j = 1, hecMAT%NP * ndof
               prevB(j) = hecMAT%B(j)
             enddo
           endif
@@ -309,7 +309,7 @@ contains
         endif
 
         if( fstrPARAM%fg_couple_first==6 ) then
-          do j = 1, hecMAT%NP * 3
+          do j = 1, hecMAT%NP * ndof
             prevB(j) = hecMAT%B(j)
           enddo
         endif
@@ -406,7 +406,7 @@ contains
         endif
 
         if( fstrPARAM%fg_couple_first==5 .and. revocap_flag==0 ) then
-          do j = 1, hecMAT%NP * 3
+          do j = 1, hecMAT%NP * ndof
             hecMAT%B(j) = prevB(j)
           enddo
           go to 1000
@@ -415,7 +415,7 @@ contains
         if( fstrPARAM%fg_couple_first==6 ) then
           call fstr_get_convergence( revocap_flag )
           if( revocap_flag == 0 ) then
-            do j = 1, hecMAT%NP * 3
+            do j = 1, hecMAT%NP * ndof
               hecMAT%B(j) = prevB(j)
             enddo
           endif
