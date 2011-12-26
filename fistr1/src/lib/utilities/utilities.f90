@@ -38,8 +38,9 @@ module m_utilities
 
 	  
   !> Insert an integer at end of a file name
-  subroutine append_int2name( n, fname )
+  subroutine append_int2name( n, fname, n1 )      
       integer, intent(in)             :: n
+      integer, intent(in), optional  ::  n1      
       character(len=*), intent(inout) :: fname  
       integer            :: npos, nlen
       character(len=128) :: tmpname, tmp
@@ -55,6 +56,10 @@ module m_utilities
         write( tmp, '(i6,a)') n,tmpname(npos:nlen)
         fname = tmpname(1:npos-1) // adjustl(tmp)
       endif
+      if(present(n1).and.n1/=0)then                    
+        write(tmp,'(i8)')n1 
+        fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)          
+      endif                                  
   end subroutine
   
   !> Insert an integer into a integer array

@@ -41,7 +41,7 @@ module m_set_arrays_directsolver_contact
 
 !> \brief This subroutine sets index arrays for direct sparse solver from those stored 
 !> \in the matrix structures defined in MODULE fstr_matrix_con_contact     
-    subroutine set_pointersANDindices_directSolver(hecMAT,fstrMAT)
+    subroutine set_pointersANDindices_directsolver(hecMAT,fstrMAT)
     
       type(hecmwST_matrix)                     :: hecMAT    !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT   !< type fstrST_matrix_contact_lagrange
@@ -64,7 +64,7 @@ module m_set_arrays_directsolver_contact
         numNon0 = (hecMAT%NPL+hecMAT%NPU+hecMAT%NP)*ndof**2 &
                 + (fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*ndof 
       endif
-              
+       
       if(allocated(pointers))deallocate(pointers)
       allocate(pointers(nn), stat=ierr) 
       if( ierr /= 0 ) stop " Allocation error, mkl%pointers "
@@ -112,7 +112,7 @@ module m_set_arrays_directsolver_contact
               indices(countNon0) = np*ndof + fstrMAT%itemU_lagrange(l) 
               countNon0 = countNon0 + 1    
             enddo
-          endif
+          endif                                                                                                                  
           pointers((i-1)*ndof+j+1) = countNon0
         enddo         
       enddo  
@@ -143,7 +143,7 @@ module m_set_arrays_directsolver_contact
     subroutine set_values_directsolver(hecMAT,fstrMAT)  
     
       type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix
-      type (fstrST_matrix_contact_lagrange)   :: fstrMAT   !< type fstrST_matrix_contact_lagrange 
+      type (fstrST_matrix_contact_lagrange)   :: fstrMAT   !< type fstrST_matrix_contact_lagrange                               
                                       
       integer (kind=kint)     :: np                        !< total number of nodes
       integer (kind=kint)     :: ndof                      !< degree of freedom
@@ -180,13 +180,13 @@ module m_set_arrays_directsolver_contact
                 countNon0 = countNon0 + 1
               enddo
             enddo
-            do k = 1, j-1
+            do k = 1, j-1                                                                                                           
               locINd = ((i-1)*ndof+j-1)*ndof + k                       
               values(countNon0) = hecMAT%D(locINd)
               countNon0 = countNon0 + 1
             enddo                                                             
           endif                                                              
-          do k = j, ndof
+          do k = j, ndof                                                                                                        
             locINd = ((i-1)*ndof+j-1)*ndof + k                       
             values(countNon0) = hecMAT%D(locINd)
             countNon0 = countNon0 + 1
@@ -218,7 +218,7 @@ module m_set_arrays_directsolver_contact
             enddo  
           enddo 
         enddo
-      endif 
+      endif                                                                                                         
       
     end subroutine set_values_directsolver    
 
@@ -229,7 +229,7 @@ module m_set_arrays_directsolver_contact
        fstr_is_matrixStruct_symmetric = .true.
        if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  & 
        fstr_is_matrixStruct_symmetric = .false.   
-     
+
      end function          
 
 

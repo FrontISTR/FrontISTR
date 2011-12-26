@@ -1994,7 +1994,7 @@ contains
 !C================================================================C
 !C-- subroutine dynamic_output_monit
 !C================================================================C
-  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, my_rank_monit_1)
+  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
       use hecmw
 !C
 !C-- global variable
@@ -2002,11 +2002,13 @@ contains
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( fstr_dynamic        ) :: fstrDYNAMIC
       type ( fstr_param          ) :: fstrPARAM
+      type ( lczparam            ) :: myEIG         
 !C
 !C-- local variable
 !C
-    integer(kind=kint) :: ii,jj
+    integer(kind=kint) :: ii,jj,ierr                
     integer(kind=kint) :: my_rank_monit_1
+    logical :: yes                                      
 
     if( mod(fstrDYNAMIC%i_step,fstrDYNAMIC%nout_monit) /= 0 ) return
 !!
@@ -2021,22 +2023,22 @@ contains
 !C-- displacement
         if( fstrDYNAMIC%iout_list(1) .eq. 1 ) then
 !!           write(dynamic_IW4,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
-                 ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
+           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &  
+                 ,fstrDYNAMIC%t_curr &
+                 ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )      
         end if
 !C-- velocity
         if( fstrDYNAMIC%iout_list(2) .eq. 1 ) then
 !!           write(dynamic_IW5,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
-                 ,jj ,fstrDYNAMIC%VEL ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
+           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &   
+                 ,fstrDYNAMIC%t_curr &
+                 ,jj ,fstrDYNAMIC%VEL ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )                 
         end if
 !C-- acceleration
         if( fstrDYNAMIC%iout_list(3) .eq. 1 ) then
 !!           write(dynamic_IW6,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
+           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &   
+                 ,fstrDYNAMIC%t_curr &
                  ,jj ,fstrDYNAMIC%ACC ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
         end if
 !!
@@ -2049,22 +2051,22 @@ contains
 !C-- displacement
         if( fstrDYNAMIC%iout_list(1) .eq. 1 ) then
 !!           write(dynamic_IW4,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
-                 ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )
+           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &   
+                 ,fstrDYNAMIC%t_curr &
+                 ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )         
         end if
 !C-- velocity
         if( fstrDYNAMIC%iout_list(2) .eq. 1 ) then
 !!           write(dynamic_IW5,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
-                 ,jj ,fstrDYNAMIC%VEL ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )
+           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &   
+                 ,fstrDYNAMIC%t_curr &
+                 ,jj ,fstrDYNAMIC%VEL ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )    
         end if
 !C-- acceleration
         if( fstrDYNAMIC%iout_list(3) .eq. 1 ) then
 !!           write(dynamic_IW6,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
+           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &   
+                 ,fstrDYNAMIC%t_curr &
                  ,jj ,fstrDYNAMIC%ACC ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )
         end if
 !
@@ -2073,23 +2075,24 @@ contains
 !C-- displacement
         if( fstrDYNAMIC%iout_list(1) .eq. 1 ) then
 !!           write(dynamic_IW4,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step &
-           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &
-                 ,fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step &
+           write(fstrDYNAMIC%dynamic_IW4,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step &  
+                 ,fstrDYNAMIC%t_curr &
                  ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
 !                ,jj ,fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 2 )
+
         end if
 !C-- velocity
         if( fstrDYNAMIC%iout_list(2) .eq. 1 ) then
 !!           write(dynamic_IW5,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step -1 &
-           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step -1 &
-                 ,fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1) &
+           write(fstrDYNAMIC%dynamic_IW5,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step -1 &  
+                 ,fstrDYNAMIC%t_curr-fstrDYNAMIC%t_delta &
                  ,jj ,fstrDYNAMIC%VEL ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
         end if
 !C-- acceleration
         if( fstrDYNAMIC%iout_list(3) .eq. 1 ) then
 !!           write(dynamic_IW6,'(i10,1pe12.4,i10,1p6e12.4)') fstrDYNAMIC%i_step -1 &
-           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step -1 &
-                 ,fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1) &
+           write(fstrDYNAMIC%dynamic_IW6,'(i10,1pe13.4e3,i10,1p6e13.4e3)') fstrDYNAMIC%i_step -1 &  
+                 ,fstrDYNAMIC%t_curr-fstrDYNAMIC%t_delta &
                  ,jj ,fstrDYNAMIC%ACC ( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , 1 )
         end if
 !
@@ -2097,6 +2100,32 @@ contains
 !
       end if
     end if
+    if( hecMESH%my_rank == 0 )then     
+      if(any(fstrDYNAMIC%iout_list(1:3) == 1)) then 
+        inquire(file='dyna_energy.txt',opened=yes)
+        if( .not. yes )then
+          open(fstrDYNAMIC%dynamic_IW7, file = 'dyna_energy.txt', status = 'replace', iostat=ierr )
+          if( ierr /= 0 ) then
+            write(*,*) 'stop due to file opening error <dyna_enrgy.txt>'
+            call hecmw_abort( hecmw_comm_get_comm()) 
+          endif 
+          write(fstrDYNAMIC%dynamic_IW7,*) ' time step', '     time    ',   &
+                                       '  kinetic energy', '   strain energy', '   total energy'     
+        endif
+        if(fstrDYNAMIC%i_step == 0) then
+           fstrDYNAMIC%kineticEnergy=0.0d0
+           do ii=1,hecMESH%n_node*hecMESH%n_dof
+             fstrDYNAMIC%kineticEnergy=fstrDYNAMIC%kineticEnergy+&
+                                       0.5d0*myEIG%mass(ii)*fstrDYNAMIC%VEL(ii,1)*fstrDYNAMIC%VEL(ii,1)  
+           enddo      
+        endif
+        fstrDYNAMIC%totalEnergy=fstrDYNAMIC%kineticEnergy+fstrDYNAMIC%strainEnergy    
+        write(fstrDYNAMIC%dynamic_IW7,'(i10,1pe13.4e3,1p3e16.4e3)') fstrDYNAMIC%i_step &       
+              ,fstrDYNAMIC%t_curr &
+              ,fstrDYNAMIC%kineticEnergy,fstrDYNAMIC%strainEnergy,fstrDYNAMIC%totalEnergy     
+      endif 
+      if(fstrDYNAMIC%i_step==fstrDYNAMIC%n_step)close(fstrDYNAMIC%dynamic_IW7)
+    endif                              
 	
 	call flush(fstrDYNAMIC%dynamic_IW4)
 
@@ -2119,7 +2148,7 @@ contains
 !C-- output new displacement, velocity and accelaration
       if( mod(istep,fstrDYNAMIC%nout) /= 0 ) return
 !
-      write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP =',istep,'TIME =',fstrDYNAMIC%t_delta*istep
+      write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP =',istep,'TIME =',fstrDYNAMIC%t_curr   
 !C-- output
 
       call flush(ILOG)
@@ -2134,7 +2163,7 @@ contains
       ENDIF
 	  
       ndof = hecMESH%n_dof
-
+      
 !C
 !C-- DISPLACEMENT
 !C
@@ -2161,16 +2190,17 @@ contains
         jj=fstrPARAM%global_local_id(1,i)
         ii=fstrPARAM%global_local_id(2,i)
 
-        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, 1),k=1,ndof)
+!        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, 1),k=1,ndof)   
+        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, 2),k=1,ndof)         
       enddo
       end if
 !C
-!C-- VELOCITY
+!C-- VELOCITY   
 !C
       if( fstrDYNAMIC%iout_list(2) ==1 ) then
         if(fstrDYNAMIC%i_step > 0) then
-          write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &
-                ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
+ !         write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &    
+ !               ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
         end if
 
       if( ndof == 3 ) then
@@ -2199,8 +2229,8 @@ contains
 !C
       if( fstrDYNAMIC%iout_list(3) == 1 ) then
         if(fstrDYNAMIC%i_step .gt. 0) then
-          write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &
-                ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
+!          write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &    
+!                ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
         end if
 
       write(ILOG,*) '#### ACCELERATION 3D'

@@ -52,8 +52,8 @@ contains
       type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
       type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
       type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                
+      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange                                            
 
       integer(kind=kint) :: ndof, nn
 
@@ -77,8 +77,14 @@ contains
       restart_substep_num = 1
       fstrSOLID%unode = 0.0
       step_count = 0 !**
+      infoCTChange%contactNode_previous = 0
       if(fstrSOLID%restart_nout <0 ) then
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID) 
+        if( .not. associated( fstrSOLID%contacts ) ) then   
+          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM)            
+        else                                                
+          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM, & 
+                                 infoCTChange%contactNode_previous)     
+        endif    
       endif
 
       fstrSOLID%FACTOR    =0.0
@@ -118,11 +124,11 @@ contains
                               restart_step_num, sub_step  )   
           else
             if( fstrPARAM%contact_algo == kcaSLagrange ) then                                
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
                                   restart_step_num, restart_substep_num, sub_step, infoCTChange )                                                                          
             else if( fstrPARAM%contact_algo == kcaALagrange ) then                              
-              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
-                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )
+              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &     
+                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )                                  
             endif                                                                                
           endif   
 
@@ -131,7 +137,12 @@ contains
             fstrSOLID%restart_nout = - fstrSOLID%restart_nout
           end if
           if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-            call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID)
+            if( .not. associated( fstrSOLID%contacts ) ) then                              
+              call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)      
+            else                                                                                                                          
+              call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &    
+                                      infoCTChange%contactNode_current)                  
+            endif    
           end if  
 
 ! ----- Result output (include visualize output)

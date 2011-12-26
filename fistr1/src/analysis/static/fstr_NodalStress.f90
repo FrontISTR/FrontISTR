@@ -35,8 +35,8 @@ module m_fstr_NodalStress
     type (hecmwST_local_mesh) :: hecMESH                   !< hecmw mesh
     type (hecmwST_matrix    ) :: hecMAT                    !< hemcw mesh
     type (fstr_solid)      :: fstrSOLID                    !< fstr_solid
-    real(kind=kreal)       :: tdstrain(:)                  !< nodal strain
-    real(kind=kreal)       :: tdstress(:)                  !< nodal stress
+    real(kind=kreal)       :: tdstrain(hecMESH%n_node*6)   !< nodal strain
+    real(kind=kreal)       :: tdstress(hecMESH%n_node*7)   !< nodal stress
 !** Local variables
     integer(kind=kint) :: i, ic_type, icel, ID_area, ie, ielem, ig, ig0
     integer(kind=kint) :: ii, ik , in, iS, iS0, iE0, itype, j, jj, jS, k, nn
@@ -50,13 +50,10 @@ module m_fstr_NodalStress
     real(kind=kreal) s11, s22, s33, s12, s23, s13, ps, smises
     real(kind=kreal) ddunode(3,20)
 
-    real(kind=kreal), allocatable :: ndstrain(:,:), ndstress(:,:)
-    integer(kind=kint), allocatable :: nnumber(:)
-    real(kind=kreal), allocatable :: temp(:)
+    integer(kind=kint) :: nnumber(hecMESH%n_node)
+    real(kind=kreal)   :: ndstrain(hecMESH%n_node,6), ndstress(hecMESH%n_node,7)
+    real(kind=kreal)   :: temp(hecMESH%n_node)
 
-    allocate( ndstrain(hecMESH%n_node,6), ndstress(hecMESH%n_node,7) )
-    allocate( nnumber(hecMESH%n_node) )
-    allocate( temp(hecMESH%n_node) )
 
 !*ZERO CLEAR
     ndstrain=0.d0; ndstress=0.d0
@@ -168,9 +165,6 @@ module m_fstr_NodalStress
       enddo
     enddo
 
-    deallocate( ndstrain, ndstress)
-    deallocate( nnumber)
-    deallocate( temp )
   end subroutine fstr_NodalStress3D
 
 

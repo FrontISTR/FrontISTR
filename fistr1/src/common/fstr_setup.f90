@@ -70,7 +70,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
         integer(kind=kint) :: version, resul, visual, femap
-        integer(kind=kint) :: rcode, n, i, j, cid, ierror
+        integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror                     
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
         real(kind=kreal) :: ee, pp, rho, alpha, thick
         logical          :: isOK
@@ -144,8 +144,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_echo = c_echo + 1
                         call fstr_setup_ECHO( ctrl, c_echo, P )
                 else if( header_name == '!RESTART' ) then
-                        call fstr_setup_RESTART( ctrl, n, restartfilNAME )
-                        fstrSOLID%restart_nout= n
+                        call fstr_setup_RESTART( ctrl, nout, nin, P%PARAM%restart_out_type,restartfilNAME )   
+                        fstrSOLID%restart_nout= nout                             
+                        fstrSOLID%restart_nin= nin                                  
+                        fstrDYNAMIC%restart_nout= nout                           
+                        fstrDYNAMIC%restart_nin= nin                                 
 !
                 !--------------- for static -------------------------
 !
@@ -527,7 +530,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+           if( version>0 ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -535,27 +538,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            endif
 			  
            print *, "Step control not defined! Using defualt step=1"
-           fstrSOLID%nstep_tot = 1
-           allocate( fstrSOLID%step_ctrl(1) )
-           call init_stepInfo( fstrSOLID%step_ctrl(1) )
-           n =  fstrSOLID%BOUNDARY_ngrp_tot
-           if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(n) )
-           do i = 1, n
-             fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_ngrp_GRPID(i)
-           enddo
-           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot
-           if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
-           do i = 1, fstrSOLID%CLOAD_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_ngrp_GRPID(i)
-           enddo
-           do i = 1, fstrSOLID%DLOAD_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
-           enddo
+           fstrSOLID%nstep_tot = 0
+          ! allocate( fstrSOLID%step_ctrl(1) )
+           !call init_stepInfo( fstrSOLID%step_ctrl(1) )
         endif
-
+!
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN  ) &
+           p%PARAM%solution_type==kstDYNAMIC  )            &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )
@@ -673,7 +663,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_solid)                :: fstrSOLID
 
-        integer :: i, j, ng, isect, ndof, id
+        integer :: i, j, ng, isect, ndof, id, nn            
 
         if( hecMESH%n_elem <=0 ) then
              stop "no element defined!"
@@ -705,6 +695,10 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
              fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
              call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
           enddo
+          
+          nn = hecmw_get_max_node(hecMESH%elem_type(i))           
+          allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))   
+          fstrSOLID%elements(i)%equiForces = 0.0d0                 
         enddo  
 end subroutine
 
@@ -716,12 +710,17 @@ subroutine fstr_solid_finalize( fstrSOLID )
           deallocate( fstrSOLID%materials )
         if( .not. associated(fstrSOLID%elements ) ) return
         do i=1,size(fstrSOLID%elements)
-          if( .not. associated(fstrSOLID%elements(i)%gausses) ) cycle
-          do j=1,size(fstrSOLID%elements(i)%gausses)
-            call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
-          enddo
-          deallocate( fstrSOLID%elements(i)%gausses )
-        enddo
+          if( associated(fstrSOLID%elements(i)%gausses) ) then           
+            do j=1,size(fstrSOLID%elements(i)%gausses)
+              call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
+            enddo
+            deallocate( fstrSOLID%elements(i)%gausses )
+          endif                                                              
+          if(associated(fstrSOLID%elements(i)%equiForces) ) then            
+            deallocate(fstrSOLID%elements(i)%equiForces)    
+          endif                                                               
+        enddo                                   
+          
         deallocate( fstrSOLID%elements )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
@@ -841,6 +840,7 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
         fstrDYNAMIC%t_start  = 0.0
+        fstrDYNAMIC%t_curr = 0.0d0             
         fstrDYNAMIC%t_end    = 1.0
         fstrDYNAMIC%t_delta  = 1.0
         fstrDYNAMIC%ganma    = 0.5
@@ -858,7 +858,7 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%iout_list(3) = 0
         fstrDYNAMIC%iout_list(4) = 0
         fstrDYNAMIC%iout_list(5) = 0
-        fstrDYNAMIC%iout_list(6) = 0
+        fstrDYNAMIC%iout_list(6) = 0 
 		
 end subroutine fstr_dynamic_init
 
@@ -1199,19 +1199,30 @@ subroutine fstr_setup_ECHO( ctrl, counter, P )
 end subroutine fstr_setup_ECHO
 
 !> Read in !RESTART
-subroutine fstr_setup_RESTART( ctrl, n, fname )
+subroutine fstr_setup_RESTART( ctrl, nout, nin, outtype, fname )     
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) :: n
+        integer(kind=kint) :: nout, nin                           
+        integer(kind=kint) :: outtype                                
         character(len=HECMW_FILENAME_LEN) :: fname
+        character(len=HECMW_FILENAME_LEN) :: s             
 
         integer(kind=kint) :: rcode
-        n = 0
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQENCY ',  '# ',    0,   'I',   n  )
+        nout = 0                          
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQENCY ',  '# ',    0,   'I',   nout  )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
+        nin = 0                                                                       
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'IN ',  '# ',    0,   'I',   nin  )    
+!        if( rcode /= 0 .and. nout < 0 ) call fstr_ctrl_err_stop                     
+        outtype = restart_outLast                                                    
+        s = 'LAST,ALL '                                                              
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', outtype )          
         fname=""
         rcode = fstr_ctrl_get_param_ex( ctrl, 'NAME ',     '# ',  0, 'S', fname )
         if( fname=="" .or. rcode /= 0 ) stop "STOP:You must input the restart file name!"
+        
+        
+        
 end subroutine fstr_setup_RESTART
 
 

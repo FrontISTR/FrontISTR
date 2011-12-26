@@ -28,6 +28,7 @@ use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
 use m_static_mat_ass_main
 use m_dynamic_post
+use fstr_matrix_con_contact                   
 
 !-------- for couple -------
 use m_dynamic_mat_ass_couple
@@ -54,6 +55,7 @@ contains
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange  
       type ( fstr_couple         ) :: fstrCPL         !for COUPLE
 
 !C
@@ -135,7 +137,7 @@ contains
 !
 !C-- output result of monitoring node
 !
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
     end if
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
@@ -188,9 +190,9 @@ contains
 !C
 !C-- geometrical boundary condition
 
-        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
 
 !C
 !C-- RHS LOAD VECTOR CHECK
@@ -278,7 +280,7 @@ contains
 !C
 !C-- output result of monitoring node
 !C
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
     enddo
 	
 	call cpu_time(time_2)

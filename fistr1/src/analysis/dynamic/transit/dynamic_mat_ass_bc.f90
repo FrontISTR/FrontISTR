@@ -25,15 +25,20 @@ contains
 
 
 !>  This subroutine setup disp bundary condition 
-      subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
+      subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
       use m_fstr
       use m_table_dyn
+      use fstr_matrix_con_contact                                                     
+      use m_addContactStiffness                                                          
+      use mContact                           
 
       implicit none
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid        ) :: fstrSOLID
       type ( fstr_dynamic     ) :: fstrDYNAMIC
+      type (fstr_param       )              :: fstrPARAM !< analysis control parameters                          
+      type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange   
       integer, optional         :: iter
 
       INTEGER(kind=kint) ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
@@ -56,8 +61,10 @@ contains
               RHS=0.d0
             else
               fstrDYNAMIC%i_step = fstrDYNAMIC%i_step-1
+              fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta       
               call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t1, flag_u)
               fstrDYNAMIC%i_step = fstrDYNAMIC%i_step+1
+              fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta       
               call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
               RHS = RHS * (f_t-f_t1)
             endif
@@ -65,7 +72,7 @@ contains
             call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
             RHS = RHS * f_t
           endif
-
+                 
           ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
           idofS = ityp/10
           idofE = ityp - idofS*10
@@ -78,6 +85,9 @@ contains
 
             do idof = idofS, idofE
               call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+              if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &                                            
+                  .and. fstrDYNAMIC%nlflag /= 0 .and. fstrDYNAMIC%idx_resp == 1 )  & 
+              call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)  
             enddo
           enddo
 

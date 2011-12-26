@@ -165,7 +165,7 @@ contains
       ENDIF
 
       RETURN
-      END
+      END subroutine
 
 end module m_time_log
  

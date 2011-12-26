@@ -26,7 +26,8 @@
 module fstr_matrix_con_contact     
 
       use m_fstr
-      use elementInfo                                                    
+      use elementInfo 
+      use mContact                                                                       
 
       implicit none
 
@@ -116,13 +117,14 @@ module fstr_matrix_con_contact
 
       num_lagrange = infoCTChange%contactNode_current                      
       fstrMAT%num_lagrange = num_lagrange  
-         
+      
 ! Get original list of related nodes                                 
       call getOriginalListOFrelatedNodes(hecMAT%NP,num_lagrange)     
        
 ! Construct new list of related nodes and Lagrange multipliers
       countNon0LU_node = NPL_org + NPU_org
-      countNon0LU_lagrange = 0  
+      countNon0LU_lagrange = 0 
+      if( fstr_is_contact_active() ) &                            
       call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange)      
 
 ! Construct new matrix structure(hecMAT&fstrMAT)
@@ -131,6 +133,7 @@ module fstr_matrix_con_contact
       call constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange)
          
 ! Copy Lagrange multipliers
+      if( fstr_is_contact_active() ) &                                 
       call fstr_copy_lagrange_contact(fstrSOLID,fstrMAT)
 
     end subroutine fstr_mat_con_contact
@@ -152,13 +155,15 @@ module fstr_matrix_con_contact
         list_nodeRelated(i)%num_node = num_nodeRelated_org                                                
         list_nodeRelated(i)%id_node(1:num_nodeRelated_org) = list_nodeRelated_org(i)%id_node(1:num_nodeRelated_org)
       enddo
-      
-      do i = np+1, np+num_lagrange  !hecMAT%NP+1, hecMAT%NP+num_lagrange
-        allocate(list_nodeRelated(i)%id_lagrange(5), stat=ierr)                       
-        if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_lagrange "
-        list_nodeRelated(i)%num_lagrange = 0                                  
-        list_nodeRelated(i)%id_lagrange = 0   
-      enddo    
+    
+      if( fstr_is_contact_active() ) then                
+        do i = np+1, np+num_lagrange  !hecMAT%NP+1, hecMAT%NP+num_lagrange
+          allocate(list_nodeRelated(i)%id_lagrange(5), stat=ierr)                       
+          if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_lagrange "
+          list_nodeRelated(i)%num_lagrange = 0                                  
+          list_nodeRelated(i)%id_lagrange = 0   
+        enddo  
+      endif                                      
     
     end subroutine getOriginalListOFrelatedNodes
     
@@ -190,7 +195,7 @@ module fstr_matrix_con_contact
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle  
           ctsurf = fstrSOLID%contacts(i)%states(j)%surface         
           etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
-          if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &                                   
+          if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &                                                     
           stop " ##Error: This element type is not supported in contact analysis !!! "   
           nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
           ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
@@ -213,7 +218,7 @@ module fstr_matrix_con_contact
               num_nodeRelated_org = list_nodeRelated_org(ndLocal(k))%num_node                   
               if( list_nodeRelated(ndLocal(k))%num_node == num_nodeRelated_org )then   
                 num = 10                    
-                if(k==1) num = 4                                                      
+                if(k==1) num = 4                                                                        
                 call reallocate_memory(num,list_nodeRelated(ndLocal(k)))   
               endif
             endif
@@ -268,17 +273,20 @@ module fstr_matrix_con_contact
       if(associated(hecMAT%itemL).and.associated(hecMAT%itemU))deallocate(hecMAT%itemL,hecMAT%itemU) 
       allocate(hecMAT%itemL(numNon0_node), hecMAT%itemU(numNon0_node), stat=ierr)
       if ( ierr /= 0) stop " Allocation error, hecMAT%itemL-hecMAT%itemU "
-      hecMAT%itemL = 0 ; hecMAT%itemU = 0      
+      hecMAT%itemL = 0 ; hecMAT%itemU = 0  
+          
       if(associated(fstrMAT%indexL_lagrange).and.associated(fstrMAT%indexU_lagrange)) &
                                                 deallocate(fstrMAT%indexL_lagrange,fstrMAT%indexU_lagrange)
-      allocate(fstrMAT%indexL_lagrange(0:fstrMAT%num_lagrange), fstrMAT%indexU_lagrange(0:hecMAT%NP), stat=ierr) 
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange-fstrMAT%indexU_lagrange "
-      fstrMAT%indexL_lagrange = 0 ; fstrMAT%indexU_lagrange = 0 
       if(associated(fstrMAT%itemL_lagrange).and.associated(fstrMAT%itemU_lagrange)) &
-                                                deallocate(fstrMAT%itemL_lagrange,fstrMAT%itemU_lagrange)
-      allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr) 
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange-fstrMAT%itemU_lagrange "
-      fstrMAT%itemL_lagrange = 0 ; fstrMAT%itemU_lagrange = 0   
+                                                deallocate(fstrMAT%itemL_lagrange,fstrMAT%itemU_lagrange)      
+      if( fstr_is_contact_active() ) then                                                                       
+        allocate(fstrMAT%indexL_lagrange(0:fstrMAT%num_lagrange), fstrMAT%indexU_lagrange(0:hecMAT%NP), stat=ierr) 
+        if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange-fstrMAT%indexU_lagrange "
+        fstrMAT%indexL_lagrange = 0 ; fstrMAT%indexU_lagrange = 0  
+        allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr) 
+        if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange-fstrMAT%itemU_lagrange "
+        fstrMAT%itemL_lagrange = 0 ; fstrMAT%itemU_lagrange = 0   
+      endif                                                              
               
       hecMAT%NPL = numNon0_node                                
       hecMAT%NPU = numNon0_node                                 
@@ -293,6 +301,7 @@ module fstr_matrix_con_contact
           
         list_nodeRelated(i)%num_node = count(list_nodeRelated(i)%id_node /= 0)        
         numI_node = list_nodeRelated(i)%num_node
+        if( fstr_is_contact_active() ) &                                     
         numI_lagrange = list_nodeRelated(i)%num_lagrange
         
         do j = 1, numI_node 
@@ -306,28 +315,32 @@ module fstr_matrix_con_contact
         enddo
         hecMAT%indexL(i) = countNon0L_node
         hecMAT%indexU(i) = countNon0U_node         
-        
-        do j = 1, numI_lagrange
-          countNon0U_lagrange = countNon0U_lagrange + 1 
-          fstrMAT%itemU_lagrange(countNon0U_lagrange) = list_nodeRelated(i)%id_lagrange(j)
-        enddo          
-        fstrMAT%indexU_lagrange(i) = countNon0U_lagrange              
+      
+        if( fstr_is_contact_active() ) then                                 
+          do j = 1, numI_lagrange
+            countNon0U_lagrange = countNon0U_lagrange + 1 
+            fstrMAT%itemU_lagrange(countNon0U_lagrange) = list_nodeRelated(i)%id_lagrange(j)
+          enddo          
+          fstrMAT%indexU_lagrange(i) = countNon0U_lagrange  
+        endif                                                                                                                          
        
         deallocate(list_nodeRelated(i)%id_node)  
         if(associated(list_nodeRelated(i)%id_lagrange)) deallocate(list_nodeRelated(i)%id_lagrange)   
       
       end do   
-    
-      countNon0L_lagrange = 0                    
-      do i = 1, fstrMAT%num_lagrange            
-        numI_lagrange = list_nodeRelated(hecMAT%NP+i)%num_lagrange     
-        do j = 1, numI_lagrange   
-          countNon0L_lagrange = countNon0L_lagrange + 1
-          fstrMAT%itemL_lagrange(countNon0L_lagrange) = list_nodeRelated(hecMAT%NP+i)%id_lagrange(j) 
-        enddo  
-        fstrMAT%indexL_lagrange(i) = countNon0L_lagrange  
-        deallocate(list_nodeRelated(hecMAT%NP+i)%id_lagrange)    
-      enddo 
+  
+      if( fstr_is_contact_active() ) then     
+        countNon0L_lagrange = 0                    
+        do i = 1, fstrMAT%num_lagrange            
+          numI_lagrange = list_nodeRelated(hecMAT%NP+i)%num_lagrange     
+          do j = 1, numI_lagrange   
+            countNon0L_lagrange = countNon0L_lagrange + 1
+            fstrMAT%itemL_lagrange(countNon0L_lagrange) = list_nodeRelated(hecMAT%NP+i)%id_lagrange(j) 
+          enddo  
+          fstrMAT%indexL_lagrange(i) = countNon0L_lagrange  
+          deallocate(list_nodeRelated(hecMAT%NP+i)%id_lagrange)    
+        enddo 
+      endif                                   
 
       deallocate(list_nodeRelated)
     
@@ -341,21 +354,22 @@ module fstr_matrix_con_contact
       if(associated(hecMAT%AU)) deallocate(hecMAT%AU) 
       allocate(hecMAT%AU(nn*hecMAT%NPU), stat=ierr) 
       if ( ierr /= 0 ) stop " Allocation error, hecMAT%AU "
-      hecMAT%AU = 0.0D0    
-
+      hecMAT%AU = 0.0D0   
+      
       if(associated(fstrMAT%AL_lagrange)) deallocate(fstrMAT%AL_lagrange)
-      allocate(fstrMAT%AL_lagrange(ndof*fstrMAT%numL_lagrange), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
-      fstrMAT%AL_lagrange = 0.0D0    
-
       if(associated(fstrMAT%AU_lagrange)) deallocate(fstrMAT%AU_lagrange)
-      allocate(fstrMAT%AU_lagrange(ndof*fstrMAT%numU_lagrange), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AU_lagrange "
-      fstrMAT%AU_lagrange = 0.0D0
-
       if(associated(fstrMAT%Lagrange)) deallocate(fstrMAT%Lagrange)
-      allocate(fstrMAT%Lagrange(fstrMAT%num_lagrange))      
-      fstrMAT%Lagrange = 0.0D0                                              
+                
+      if( fstr_is_contact_active() ) then                 
+        allocate(fstrMAT%AL_lagrange(ndof*fstrMAT%numL_lagrange), stat=ierr)
+        if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
+        fstrMAT%AL_lagrange = 0.0D0      
+        allocate(fstrMAT%AU_lagrange(ndof*fstrMAT%numU_lagrange), stat=ierr)
+        if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AU_lagrange "
+        fstrMAT%AU_lagrange = 0.0D0      
+        allocate(fstrMAT%Lagrange(fstrMAT%num_lagrange))      
+        fstrMAT%Lagrange = 0.0D0 
+      endif                                                                                                                     
 
       if(associated(hecMAT%B)) deallocate(hecMAT%B)  
       allocate(hecMAT%B(hecMAT%NP*ndof+fstrMAT%num_lagrange))      

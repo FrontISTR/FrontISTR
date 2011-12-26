@@ -48,9 +48,10 @@ MODULE mMechGauss
 ! ----------------------------------------------------------------------------
         !> All data should be recorded in every elements
         type tElement
-            integer                     :: etype                 !< element's type
-            integer                     :: iset                  !< plane strain, stress etc
-            type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
+            integer                     :: etype                    !< element's type
+            integer                     :: iset                     !< plane strain, stress etc
+            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces         
+            type(tGaussStatus), pointer :: gausses(:) => null()     !< info of qudrature points
         end type
 
   CONTAINS

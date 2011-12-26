@@ -250,12 +250,15 @@ contains
       clearance = 1.d-6                                                  
       if( contact%algtype<=2 ) return    
       do i= 1, size(contact%slave)
-        slave = contact%slave(i)        
+        slave = contact%slave(i)
         if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
           slforce(1:3)=ndforce(3*slave-2:3*slave)
           id = contact%states(i)%surface
-!          nlforce = contact%states(i)%multiplier(1)                          
-          nlforce= -dot_product( contact%states(i)%direction, slforce )                               
+          if( flag_ctAlgo=='SLagrange' ) then                                           
+            nlforce = contact%states(i)%multiplier(1)                                                          
+          elseif( flag_ctAlgo=='ALagrange' ) then
+            nlforce= -dot_product( contact%states(i)%direction, slforce )         
+          endif
           if( nlforce < -1.0d-8 ) then                                                            
             contact%states(i)%state = CONTACTFREE                                                        
             contact%states(i)%multiplier(:) = 0.d0 
@@ -266,7 +269,7 @@ contains
             endif                                                                                      
             infoCTChange%contact2free = infoCTChange%contact2free + 1                                   
             write(*,'(A,i5,A,i5,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
-                        elemID(contact%master(id)%eid), " with tensile force ", nlforce
+                        elemID(contact%master(id)%eid), " with tensile force ", nlforce            
             cycle
           endif
           active = .true.
@@ -361,7 +364,7 @@ contains
       logical            :: isin
       real(kind=kreal)    :: opos(2), odirec(3)
 
-      distclr = 1.d-1                                                  
+      distclr = 1.0d0          !1.d-1                                                  
       clearance = 1.d-6
 	          
       slave = contact%slave(nslave)
@@ -377,8 +380,7 @@ contains
          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       enddo
       call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &       
-            contact%states(nslave)%lpos, clearance )  
-            
+            contact%states(nslave)%lpos, clearance ) 
       if( .not. isin ) then                                                            
         do i=1, contact%master(sid0)%n_neighbor
           sid = contact%master(sid0)%neighbor(i)
@@ -388,7 +390,7 @@ contains
               iSS = contact%master(sid)%nodes(j)
               elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )  
+          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit 
@@ -396,7 +398,7 @@ contains
         enddo
       endif
       
-      if( .not. isin ) then   ! such case is considered to rarely or never occur     
+      if( .not. isin ) then   ! such case is considered to rarely or never occur 
         do sid= 1, size(contact%master)
           if( sid==sid0 ) cycle                          
           if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
@@ -406,7 +408,7 @@ contains
             iSS = contact%master(sid)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )    
+          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr ) 
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit

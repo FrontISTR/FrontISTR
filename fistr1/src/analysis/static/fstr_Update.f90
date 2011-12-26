@@ -40,7 +40,7 @@ module m_fstr_Update
 !>    -# 内力（等価節点力）の計算	\f$ Q_{n+1}^{(k-1)} ( u_{n+1}^{(k-1)} ) \f$
 !> \endif
 !
-subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter)
+subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)    
 !=====================================================================*
   use m_fstr
   use m_static_lib
@@ -62,6 +62,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter)
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
   real(kind=kreal)   :: tt(20), tt0(20), qf(20*6)
   integer            :: ig0,  ig, ik, in, ierror
+  
+  real(kind=kreal), optional :: strainEnergy                                           
 
   ndof = hecMAT%NDOF
   fstrSOLID%QFORCE=0.0d0
@@ -120,9 +122,9 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter)
                         thick,fstrSOLID%elements(icel)%iset,                                  &
                         total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
 						
-      else if ( ic_type==361 ) then
+      else if ( ic_type==361 ) then                      
         if( fstrPR%solution_type==kstSTATIC ) then
-          call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &
+          call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &   
                  tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:))
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
@@ -165,9 +167,20 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter)
           enddo
         enddo
 !
+! ----- calculate strain energy                          
+        if(present(strainEnergy))then
+          do j= 1, nn  
+            do i=1, ndof 
+              strainEnergy=strainEnergy+0.5d0*(fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)&
+                                              +qf(ndof*(j-1)+i))*ddu(i,j)   
+              fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)=qf(ndof*(j-1)+i)     
+            enddo  
+          enddo     
+        endif                                     
+
     enddo      ! icel
   enddo        ! itype
-  
+
 
 !C
 !C Update for fstrSOLID%QFORCE

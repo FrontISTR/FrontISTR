@@ -375,7 +375,7 @@ subroutine fstr_linear_dynamic_analysis
         end if
 
         call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
-                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL)
+                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrMAT)
 
 end subroutine fstr_linear_dynamic_analysis
 

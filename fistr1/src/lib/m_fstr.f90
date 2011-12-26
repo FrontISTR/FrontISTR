@@ -71,7 +71,10 @@ public
         ! boundary condition file type (bcf)
         integer(kind=kint),parameter :: kbcfFSTR    =   0  ! BC described in fstr control file (default)
         integer(kind=kint),parameter :: kbcfNASTRAN =   1  ! nastran file
-
+        
+        ! restart type                                                 
+        integer(kind=kint),parameter :: restart_outLast = 1            
+        integer(kind=kint),parameter :: restart_outAll  = 2             
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -178,6 +181,9 @@ public
                 integer( kind=kint ) :: fg_couple          !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
                 
+                ! for restart control                       
+                integer( kind=kint ) :: restart_out_type   !< output type of restart file  
+                
                 ! for contact analysis
                 integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)  
 !
@@ -264,6 +270,7 @@ public
                 integer(kind=kint) :: restart_nout  !< output interval of restart file
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
+                integer(kind=kint) :: restart_nin   !< input number of restart file        
 
 
                 real(kind=kreal)           :: FACTOR      (2)     !< factor of incrementation
@@ -392,11 +399,13 @@ public
                 ! TIME CONTROL
                 integer(kind=kint) :: n_step        ! total step number of analysis
                 real(kind=kreal)   :: t_start       ! start time of analysis
+                real(kind=kreal)   :: t_curr        ! current time of analysis      
                 real(kind=kreal)   :: t_end         ! end time of analysis
                 real(kind=kreal)   :: t_delta       ! time increment
                 integer(kind=kint) :: restart_nout  ! output interval of restart file
                                                     ! (if  .gt.0) restart file write
                                                     ! (if  .lt.0) restart file read and write
+                integer(kind=kint) :: restart_nin  !input number of restart file    
 
                 ! Newmark-beta parameter
                 real(kind=kreal)   :: ganma         ! Newmark-beta parameter ganma
@@ -406,7 +415,7 @@ public
                 integer(kind=kint) :: idx_mas       ! mass matrix type
 
                 ! damping control
-                integer(kind=kint) :: idx_dmp       ! damping type
+                integer(kind=kint) :: idx_dmp      ! damping type
                 real(kind=kreal)   :: ray_m         ! Rayleigh damping parameter Rm
                 real(kind=kreal)   :: ray_k         ! Rayleigh damping parameter Rk
 
@@ -415,19 +424,22 @@ public
                 integer(kind=kint) :: node_monit_1   ! node of monitoring result
                 integer(kind=kint) :: nout_monit     ! output interval of result monitoring
                 integer(kind=kint) :: i_step         ! step number
-                integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
+                integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output       
                                                      ! iout_list(1): displacement
                                                      ! iout_list(2): velocity
                                                      ! iout_list(3): acceleration
                                                      ! iout_list(4): reaction force
                                                      ! iout_list(5): strain
                                                      ! iout_list(6): stress
-
-
+            
                 ! VALUE
                 real(kind=kreal), pointer :: DISP  (:,:)     !> Displacement, U(t+dt), U(t), U(t-dt)
                 real(kind=kreal), pointer :: VEL   (:,:)     !> Velocity
                 real(kind=kreal), pointer :: ACC   (:,:)     !> Acceleration
+                
+                real(kind=kreal) :: kineticEnergy           
+                real(kind=kreal) :: strainEnergy                      
+                real(kind=kreal) :: totalEnergy               
 
                 ! temporary quantity
                 real(kind=kreal), pointer :: VEC1  (:)
@@ -437,6 +449,7 @@ public
                 integer(kind=kint) :: dynamic_IW4        =   74
                 integer(kind=kint) :: dynamic_IW5        =   75
                 integer(kind=kint) :: dynamic_IW6        =   76
+                integer(kind=kint) :: dynamic_IW7        =   77            
 
         end type fstr_dynamic
 !C ---------------------------------------------------------------------------- 

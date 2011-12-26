@@ -55,7 +55,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
   type (fstr_solid        )              :: fstrSOLID !< fstr_solid
   integer, intent(in)                   :: sub_step  !< substep number of current loading step
   type (fstr_param)                      :: fstrPARAM !< type fstr_param 
-  type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+  type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange                                    
 
   integer(kind=kint) :: ndof
   integer(kind=kint) :: i, iter, itemp, ttemp
@@ -177,7 +177,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
             fstrSOLID%restart_nout = - fstrSOLID%restart_nout
           end if
           if( mod(itemp,fstrSOLID%restart_nout) == 0 ) then
-            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID)
+            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID,fstrPARAM)    
           end if  
 
 ! ----- Result output (include visualize output)
@@ -373,7 +373,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
             fstrSOLID%restart_nout = - fstrSOLID%restart_nout
           end if
           if( mod(itemp,fstrSOLID%restart_nout) == 0 ) then
-            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID)
+            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID,fstrPARAM,infoCTChange%contactNode_current) 
           end if  
 
 ! ----- Result output (include visualize output)
@@ -394,7 +394,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   use mContact                                                                            
   use m_addContactStiffness  
   use m_set_arrays_directsolver_contact                               
-  use m_solve_LINEQ_contact
+  use m_solve_LINEQ_contact                                                                                                                            
 
   integer, intent(in)                   :: cstep        !< current loading step
   type (hecmwST_local_mesh)              :: hecMESH      !< hecmw mesh
@@ -416,8 +416,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID) ) then    
     write(*,*) ' This type of direct solver is not yet available in such case ! '
     write(*,*) ' Please use intel MKL direct solver !'
-    stop
-!    call  hecmw_abort(hecmw_comm_get_comm())
+    call  hecmw_abort(hecmw_comm_get_comm())
   endif        
   ctAlgo = fstrPARAM%contact_algo                                                        
 
@@ -429,11 +428,8 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   fstrSOLID%dunode(:)  = 0.d0                                                       
                                             
-  if( sub_step == restart_substep_num ) then       
-    if( cstep == restart_step_num ) then                
-      call fstr_save_originalMatrixStructure(hecMAT)   
-      infoCTChange%contactNode_previous = 0               
-    endif 
+  if( cstep==restart_step_num.and.sub_step==restart_substep_num  ) then       
+    call fstr_save_originalMatrixStructure(hecMAT)   
     symmetricMatrixStruc = .true.                      
     call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )   
     if ( fstr_is_contact_active() ) then                                                 
@@ -442,8 +438,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
     elseif( hecMAT%Iarray(99)==4 ) then                                                   
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change the solver type to intel MKL direct solver !'
-      stop
-!      call  hecmw_abort(hecmw_comm_get_comm()) 
+      call  hecmw_abort(hecmw_comm_get_comm()) 
     endif  
     call set_pointersANDindices_directsolver(hecMAT,fstrMAT)    
     if( hecMAT%Iarray(99)==3 ) &
@@ -482,14 +477,14 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )           
         
         if( fstr_is_contact_active() )  &                                    
-        call fstr_AddContactStiffness(cstep,hecMAT,fstrMAT,fstrSOLID)        
+        call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)        
 
 ! ----- Set Boundary condition
-        call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
+        call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)  
         
 !----- SOLVE [Kt]{du}={R}
-        call set_values_directsolver(hecMAT,fstrMAT)
-        call solve_LINEQ_contact(hecMAT,fstrMAT) 
+        call set_values_directsolver(hecMAT,fstrMAT)                                              
+        call solve_LINEQ_contact(hecMAT,fstrMAT)                 
    
 ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )  
@@ -549,24 +544,23 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then                      
         write(*,*) ' This type of direct solver is not yet available in such case ! '
         write(*,*) ' Please use intel MKL direct solver !'
-        stop
-!        call  hecmw_abort(hecmw_comm_get_comm())
+        call  hecmw_abort(hecmw_comm_get_comm())
       endif
  
       symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID)
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange) ) then
-        if( .not. fstr_is_contact_active() ) symmetricMatrixStruc = .true.
-        exit loopFORcontactAnalysis
+      if( .not. fstr_is_contact_active() ) symmetricMatrixStruc = .true.                                
+      if( fstr_is_contact_conv(ctAlgo,infoCTChange) ) then                                                                           
+        exit loopFORcontactAnalysis                                                                                                                              
       elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then  
-        call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange) 
-        call set_pointersANDindices_directsolver(hecMAT,fstrMAT) 
+        call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange)      
+        call set_pointersANDindices_directsolver(hecMAT,fstrMAT)       
         if( hecMAT%Iarray(99)==3 ) &     
-        call initialize_solver_mkl(hecMAT,fstrMAT)
+        call initialize_solver_mkl(hecMAT,fstrMAT)                                                                                                     
       endif 
-      if( count_step > max_iter_contact ) exit loopFORcontactAnalysis 
+      if( count_step > max_iter_contact ) exit loopFORcontactAnalysis                   
                                                                              
 
-    ENDDO loopFORcontactAnalysis
+    ENDDO loopFORcontactAnalysis                                             
     
 	
 !   ----- update the total displacement
@@ -582,12 +576,12 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       write(ISTA,'("### Converged in contact iteration : CPU time=",E10.4,"   iter=",I6)') tt-tt0,iter  
     endif
 	
-    if( fstrSOLID%TEMP_irres>0 ) then 
+    if( fstrSOLID%TEMP_irres>0 ) then                                  
           if(fstrSOLID%restart_nout<0) then
             fstrSOLID%restart_nout = - fstrSOLID%restart_nout
           end if
           if( mod(itemp,fstrSOLID%restart_nout) == 0 ) then
-            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID)
+            call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID,fstrPARAM,infoCTChange%contactNode_current) 
           end if  
 
 ! ----- Result output (include visualize output)

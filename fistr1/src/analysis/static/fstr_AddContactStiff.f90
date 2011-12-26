@@ -33,7 +33,6 @@ use m_fstr
 use elementInfo 
 use m_contact_lib
 use fstr_matrix_con_contact
-use hecmw_matrix_ass
 
 implicit none
 
@@ -41,9 +40,10 @@ contains
 
 !> \brief This subroutine obtains contact stiffness matrix of each contact pair
 !!  and assembles it into global stiffness matrix. 
-   subroutine fstr_AddContactStiffness(cstep,hecMAT,fstrMAT,fstrSOLID)               
+   subroutine fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)               
    
-      integer (kind=kint)                    :: cstep                                 !< current loding step  
+      integer (kind=kint)                    :: cstep                                 !< current loding step 
+      integer (kind=kint)                    :: iter     
       type(hecmwST_matrix)                    :: hecMAT                               !< type hecmwST_matrix
       type(fstr_solid)                        :: fstrSOLID                            !< type fstr_solid
       type(fstrST_matrix_contact_lagrange)    :: fstrMAT                              !< type fstrST_matrix_contact_lagrange
@@ -76,7 +76,7 @@ contains
           ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)      
 
 ! Obtain contact stiffness matrix of contact pair
-          call getContactStiffness(etype,nnode,fstrSOLID%contacts(i)%states(j),  &                                
+          call getContactStiffness(iter,etype,nnode,fstrSOLID%contacts(i)%states(j),  &                                
                                    fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,stiffness)   
 
 ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
@@ -91,9 +91,10 @@ contains
    
 
 !> \brief This subroutine obtains contact stiffness matrix of contact pair
-   subroutine getContactStiffness(etype,nnode,ctState,tPenalty,fcoeff,lagrange,stiffness) 
+   subroutine getContactStiffness(iter,etype,nnode,ctState,tPenalty,fcoeff,lagrange,stiffness) 
    
       type(tContactState)   :: ctState                                        !< type tContactState
+      integer (kind=kint)   :: iter 
       integer (kind=kint)   :: etype, nnode                                   !< type of master segment; number of nodes of master segment
       integer (kind=kint)   :: i, j, k, l 
       real(kind=kreal)      :: normal(3), shapefunc(nnode)                     !< normal vector at target point; shape functions 
@@ -121,52 +122,53 @@ contains
       enddo  
         
          
-     if( fcoeff /= 0 ) then                                             
- 
-        do i = 1, nnode+1                
-          do j = 1, i
-            do k = 1, 3
-              do l = 1, k     
-                stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) - tPenalty*nTm((i-1)*3+k)*nTm((j-1)*3+l)  
-                if( k==l ) then                                                                
-                  if(i==1 .and. j==1)then            
-                    stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) + tPenalty
-                  elseif(i>1 .and. j==1)then
-                    stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) - tPenalty*shapefunc(i-1)
-                  elseif(i>1 .and. j>1)then
-                    stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) + tPenalty*shapefunc(i-1)*shapefunc(j-1)
-                  endif                                          
-                endif                 
-                if(i==j .and. k==l) cycle                                    
-                stiffness((j-1)*3+l,(i-1)*3+k) = stiffness((i-1)*3+k,(j-1)*3+l)                             
-              enddo     
-            enddo     
-          enddo
-        enddo
-
-        if( ctstate%state == contactSlip ) then 
-          
-          tf_trial(1:3) = ctstate%tangentForce_trial(1:3)
-          length_tft = dsqrt(dot_product(tf_trial,tf_trial))  
-          tangent(1:3) = tf_trial(1:3)/length_tft
-         
-          tTm(1:3) = -tangent(1:3)
-          do i = 1, nnode                                                     
-            tTm(i*3+1:i*3+3) = shapefunc(i)*tangent(1:3)
-          enddo 
-          
-          do i = 1, nnode+1             
-            do j = 1, nnode+1           
+     if( fcoeff /= 0.0d0 ) then                                             
+       if( lagrange>0.0d0 .or. iter==1 ) then 
+       
+          do i = 1, nnode+1                
+            do j = 1, i
               do k = 1, 3
-                do l = 1, 3 
-                  stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l)       &
-                                                 + tPenalty*(-tTm((i-1)*3+k)*tTm((j-1)*3+l)  &
-                                                             +tTm((i-1)*3+k)*nTm((j-1)*3+l)*dot_product(tangent,normal))
+                do l = 1, k     
+                  stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) - tPenalty*nTm((i-1)*3+k)*nTm((j-1)*3+l)  
+                  if( k==l ) then                                                                
+                    if(i==1 .and. j==1)then            
+                      stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) + tPenalty
+                    elseif(i>1 .and. j==1)then
+                      stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) - tPenalty*shapefunc(i-1)
+                    elseif(i>1 .and. j>1)then
+                      stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) + tPenalty*shapefunc(i-1)*shapefunc(j-1)     
+                    endif                                          
+                  endif                 
+                  if(i==j .and. k==l) cycle                                    
+                  stiffness((j-1)*3+l,(i-1)*3+k) = stiffness((i-1)*3+k,(j-1)*3+l)                             
+                enddo     
+              enddo     
+            enddo
+          enddo
+
+          if( ctstate%state == contactSlip ) then 
+          
+            tf_trial(1:3) = ctstate%tangentForce_trial(1:3)
+            length_tft = dsqrt(dot_product(tf_trial,tf_trial))  
+            tangent(1:3) = tf_trial(1:3)/length_tft
+  
+            tTm(1:3) = -tangent(1:3)
+            do i = 1, nnode                                                     
+              tTm(i*3+1:i*3+3) = shapefunc(i)*tangent(1:3)
+            enddo 
+          
+            do i = 1, nnode+1             
+              do j = 1, nnode+1           
+                do k = 1, 3
+                  do l = 1, 3 
+                    stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l)       &
+                                                   + tPenalty*(-tTm((i-1)*3+k)*tTm((j-1)*3+l)  &
+                                                               +tTm((i-1)*3+k)*nTm((j-1)*3+l)*dot_product(tangent,normal))     
+                  enddo 
                 enddo 
               enddo 
             enddo 
-          enddo 
-          stiffness(1:(nnode+1)*3,1:(nnode+1)*3) = (fcoeff*lagrange/length_tft)*stiffness(1:(nnode+1)*3,1:(nnode+1)*3)  
+            stiffness(1:(nnode+1)*3,1:(nnode+1)*3) = (fcoeff*lagrange/length_tft)*stiffness(1:(nnode+1)*3,1:(nnode+1)*3)  
    
 !          
 !        do i = 1, (nnode + 1)*3
@@ -179,7 +181,7 @@ contains
 !            enddo !- k
 !          enddo !- j
 !        enddo !- i
-!        stiffness(1:(nnode+1)*3,1:(nnode+1)*3) = (fcoeff*dabs(lagrange)/length_tft)*stiffness(1:(nnode+1)*3,1:(nnode+1)*3)
+!        stiffness(1:(nnode+1)*3,1:(nnode+1)*3) = (fcoeff*dabs(lagrange)/length_tft)*stiffness(1:(nnode+1)*3,1:(nnode+1)*3)       
  
 !         j = (nnode+1)*3 + 1
 !         do i = 1, (nnode+1)*3
@@ -187,8 +189,8 @@ contains
 !         enddo  
          stiffness(1:(nnode+1)*3,(nnode+1)*3+1) = stiffness(1:(nnode+1)*3,(nnode+1)*3+1) - fcoeff*tTm(1:(nnode+1)*3)    
          
-       endif      
-            
+         endif      
+       endif           
      endif      
        
    end subroutine getContactStiffness  
@@ -196,6 +198,8 @@ contains
  
 !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix   
    subroutine fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,fstrMAT)
+ 
+     use hecmw_matrix_ass
  
      type(hecmwST_matrix)                    :: hecMAT                                     !< type hecmwST_matrix          
      type(fstrST_matrix_contact_lagrange)    :: fstrMAT                                    !< type fstrST_matrix_contact_lagrange
@@ -241,7 +245,7 @@ contains
      enddo  
             
      
-     if(fcoeff /= 0)then                                                                         
+     if(fcoeff /= 0.0d0)then                                                                         
      
        do i = 1, nnode + 1
          inod = ndLocal(i)
@@ -276,21 +280,21 @@ contains
       real(kind=kreal)                        :: rhs                                      !< value of prescribed displacement           
       
       id_lagrange = 0
-        
+                
       do i = 1, size(fstrSOLID%contacts)
       
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle                                 
                                                             
         do j = 1, size(fstrSOLID%contacts(i)%slave)
-        
+              
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle  
-
+    
           id_lagrange = id_lagrange + 1
           lagrange = fstrMAT%Lagrange(id_lagrange)
 
           fstrSOLID%contacts(i)%states(j)%multiplier(1) = fstrMAT%Lagrange(id_lagrange)     
-          
+              
           ctsurf = fstrSOLID%contacts(i)%states(j)%surface         
           etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
           nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
@@ -311,7 +315,7 @@ contains
         enddo
         
       enddo  
-      
+         
 !    Consider SPC condition                                                
       ndof = hecMAT%NDOF           
       do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -366,7 +370,7 @@ contains
       j = (nnode+1)*3 + 1  
       ctForce(j) = dot_product(nTm,ndCoord)      
 
-      if(fcoeff /= 0)then                     
+      if(fcoeff /= 0.0d0 .and. lagrange > 0.0d0)then                     
    
         call getTrialFricForceANDcheckFricState(nnode,tPenalty,fcoeff,lagrange,normal,shapefunc,nTm,ndDu,ctstate)   
         
@@ -378,7 +382,7 @@ contains
           tangent(1:3) = tf_trial(1:3)/length_tft  
           tf_final(1:3) = fcoeff*dabs(lagrange)*tangent(1:3)              
         endif 
-                                                   
+                                                     
         ctForce(1:3) = ctForce(1:3) - tf_final(1:3) 
         do j = 1, nnode
           ctForce(j*3+1:j*3+3) = ctForce(j*3+1:j*3+3) + shapefunc(j)*tf_final(1:3)
@@ -417,8 +421,9 @@ contains
        relativeDisp(i) = relativeDisp(i) - dotP*normal(i)                         
        ctstate%tangentForce_trial(i) = ctstate%tangentForce(i) -tPenalty*relativeDisp(i)
      enddo  
-     
-     tf_yield = fcoeff*dabs(lagrange)          
+       
+     tf_yield = fcoeff*dabs(lagrange) 
+     if(ctstate%state == contactSlip) tf_yield =0.99d0*tf_yield         
      if( dsqrt(dot_product(ctstate%tangentForce_trial,ctstate%tangentForce_trial)) <= tf_yield ) then 
        ctstate%state = contactStick
      else
@@ -449,7 +454,7 @@ contains
      enddo
      
      hecMAT%B(np*ndof+id_lagrange) = ctForce((nnode+1)*3+1)  
- 
+     
    end subroutine update_NDForce_contact
    
 
@@ -511,14 +516,14 @@ contains
           l = (nnode+1)*3 + 1  
           ctForce(l) = dot_product(nTm(1:(nnode+1)*3),ndCoord(1:(nnode+1)*3))     
 
-          if( fstrSOLID%contacts(i)%fcoeff/=0 )then                     
+          if( fstrSOLID%contacts(i)%fcoeff/=0.0d0 .and. lagrange>0.0d0 )then                     
             tf_final(1:3) = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)    
             ctForce(1:3) = ctForce(1:3) - tf_final(1:3) 
             do l = 1, nnode
               ctForce(l*3+1:l*3+3) = ctForce(l*3+1:l*3+3) + shapefunc(l)*tf_final(1:3)
             enddo 
           endif      
-                
+                 
           do l = 1, nnode + 1
             lnod = ndLocal(l) 
             hecMAT%B((lnod-1)*3+1:(lnod-1)*3+3) = hecMAT%B((lnod-1)*3+1:(lnod-1)*3+3) + ctForce((l-1)*3+1:(l-1)*3+3) 

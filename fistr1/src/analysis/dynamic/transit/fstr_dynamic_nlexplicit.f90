@@ -29,6 +29,7 @@ use m_dynamic_mat_ass_load
 use m_dynamic_post
 use m_fstr_Update
 use m_fstr_Restart
+use fstr_matrix_con_contact                   
 
 !-------- for couple -------
 use m_dynamic_mat_ass_couple
@@ -55,7 +56,8 @@ contains
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
-      type ( fstr_couple         ) :: fstrCPL         !for COUPLE
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange  
+      type ( fstr_couple         ) :: fstrCPL         !for COUPLE      
 
 !C
 !C-- local variable
@@ -112,7 +114,7 @@ contains
       end do
 
       call dynamic_nloutput(0,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
     end if
 	
 
@@ -145,9 +147,9 @@ contains
 !C
 !C-- geometrical boundary condition
 
-        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
+        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
+        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
 
 ! Finish the calculation 
         do j = 1 ,ndof*nnod
@@ -180,12 +182,12 @@ contains
 
 
       if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
-        call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC)
+        call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)   
       end if
 !
 !C-- output new displacement, velocity and accelaration
       call dynamic_nloutput(i,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
 	  
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 	  
