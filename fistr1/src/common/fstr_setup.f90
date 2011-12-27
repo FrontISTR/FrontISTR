@@ -1209,7 +1209,7 @@ subroutine fstr_setup_RESTART( ctrl, nout, nin, outtype, fname )
 
         integer(kind=kint) :: rcode
         nout = 0                          
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQENCY ',  '# ',    0,   'I',   nout  )
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ',  '# ',    0,   'I',   nout  )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
         nin = 0                                                                       
         rcode = fstr_ctrl_get_param_ex( ctrl, 'IN ',  '# ',    0,   'I',   nin  )    

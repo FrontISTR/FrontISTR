@@ -741,8 +741,8 @@ contains
           ID_area = hecMESH%elem_ID(icel*2)
           if( ID_area.eq.hecMESH%my_rank ) then
             call ElementStress_C2(ic_type,fstrSOLID%elements(icel)%gausses,estrain,estress)
-            fstrSOLID%ESTRAIN(6*ielem-5:6*ielem) = estrain
-            fstrSOLID%ESTRESS(7*ielem-6:7*ielem-1) = estress
+            fstrSOLID%ESTRAIN(6*ielem-5:6*ielem-2) = estrain
+            fstrSOLID%ESTRESS(7*ielem-6:7*ielem-3) = estress
             s11=fstrSOLID%ESTRESS(7*ielem-6)
             s22=fstrSOLID%ESTRESS(7*ielem-5)
             s33=fstrSOLID%ESTRESS(7*ielem-4)

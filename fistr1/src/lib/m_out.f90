@@ -184,7 +184,7 @@ subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
     islog = 0
   endif
   n=-1
-  rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQENCY ',   '# ',  0, 'I', n )
+  rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ',   '# ',  0, 'I', n )
   if( n>0 ) outctrl%freqency = n
     
 end subroutine

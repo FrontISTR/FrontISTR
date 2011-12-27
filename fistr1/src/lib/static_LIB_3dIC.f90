@@ -98,9 +98,9 @@ module m_static_LIB_3dIC
        !     [   0,  -2*b, 0   ]
        !     [   0,   0,  -2*c ]
        ! we don't call getShapeDeriv but use above value directly for computation efficiency
-       gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(:,1)/det
-       gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(:,2)/det
-       gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(:,3)/det
+       gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(1,:)/det
+       gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(2,:)/det
+       gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(3,:)/det
 
        wg=getWeight( fetype, LX )*det
        B(1:6,1:(nn+3)*NDOF)=0.d0
@@ -244,9 +244,9 @@ module m_static_LIB_3dIC
         !     [   0,  -2*b, 0   ]
         !     [   0,   0,  -2*c ]
         ! we don't call getShapeDeriv but use above value directly for computation efficiency
-        gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(:,1)/det
-        gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(:,2)/det
-        gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(:,3)/det
+        gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(1,:)/det
+        gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(2,:)/det
+        gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(3,:)/det
 
         wg=getWeight( fetype, IC )*det
         DO J=1,nn+3
@@ -285,9 +285,9 @@ module m_static_LIB_3dIC
         !     [   0,  -2*b, 0   ]
         !     [   0,   0,  -2*c ]
         ! we don't call getShapeDeriv but use above value directly for computation efficiency
-        gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(:,1)/det
-        gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(:,2)/det
-        gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(:,3)/det
+        gderiv(nn+1,:) = -2.d0*naturalcoord(1)*inverse(1,:)/det
+        gderiv(nn+2,:) = -2.d0*naturalcoord(2)*inverse(2,:)/det
+        gderiv(nn+3,:) = -2.d0*naturalcoord(3)*inverse(3,:)/det
 
             B(1:6,1:(NN+3)*NDOF)=0.d0
             DO J=1,NN+3
