@@ -33,6 +33,7 @@ use m_fstr
 use elementInfo 
 use m_contact_lib
 use fstr_matrix_con_contact
+use hecmw_matrix_ass
 
 implicit none
 
@@ -198,8 +199,6 @@ contains
  
 !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix   
    subroutine fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,fstrMAT)
- 
-     use hecmw_matrix_ass
  
      type(hecmwST_matrix)                    :: hecMAT                                     !< type hecmwST_matrix          
      type(fstrST_matrix_contact_lagrange)    :: fstrMAT                                    !< type fstrST_matrix_contact_lagrange

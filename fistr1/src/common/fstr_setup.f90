@@ -530,7 +530,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( version>0 ) then
+           if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -538,14 +538,27 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            endif
 			  
            print *, "Step control not defined! Using defualt step=1"
-           fstrSOLID%nstep_tot = 0
-          ! allocate( fstrSOLID%step_ctrl(1) )
-           !call init_stepInfo( fstrSOLID%step_ctrl(1) )
+           fstrSOLID%nstep_tot = 1
+           allocate( fstrSOLID%step_ctrl(1) )
+           call init_stepInfo( fstrSOLID%step_ctrl(1) )
+           n =  fstrSOLID%BOUNDARY_ngrp_tot
+           if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(n) )
+           do i = 1, n
+             fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_ngrp_GRPID(i)
+           enddo
+           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot
+           if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
+           do i = 1, fstrSOLID%CLOAD_ngrp_tot
+             fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_ngrp_GRPID(i)
+           enddo
+           do i = 1, fstrSOLID%DLOAD_ngrp_tot
+             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
+           enddo
         endif
 !
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC  )            &
+           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN )            &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )

@@ -81,7 +81,7 @@ contains
     type(tSurfElement), intent(inout) :: surf(:)
     integer :: i, j, ii,jj, nd1, nd2, nsurf
     integer :: k, oldsize
-    integer, pointer :: dumarray(:)
+    integer, pointer :: dumarray(:) => NULL()
 
     nsurf = size(surf)
     do i=1,nsurf

@@ -513,7 +513,7 @@ contains
 !C-- geometrical boundary condition
 
           call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)     
-!          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt) 
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt) 
           call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt) 
 
 ! ----- check convergence
@@ -535,7 +535,7 @@ contains
 ! ----- check convergence
         if( .not.fstr_is_contact_active() ) maxDLag= 0.0d0                    
         if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &        
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-5 ) exit   
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-6 ) exit   
           res1 = res
           
           call set_values_directsolver(hecMAT,fstrMAT)              
