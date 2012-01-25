@@ -193,7 +193,7 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 		nelem = HECMW_result_get_nelem( );
 		elem_gid = HECMW_malloc( nelem * sizeof(int) );
 		if( !elem_gid ) return NULL;
-		HECMW_result_get_elemID( elem_gid );
+		if( data->ne_component ) HECMW_result_get_elemID( elem_gid );
 
 		if( refine ) {
 			res[i]->result = HECMW_malloc( sizeof(struct hecmwST_result_data) );
