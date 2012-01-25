@@ -292,13 +292,11 @@ contains
 
 1000  continue
 
-        if( fstrPARAM%fg_couple_first==5 ) then
-          call fstr_get_convergence( revocap_flag )
-          if( revocap_flag==0 ) then
-            do j = 1, hecMAT%NP * ndof
-              prevB(j) = hecMAT%B(j)
-            enddo
-          endif
+        if( fstrPARAM%fg_couple_first==5 .or. &
+            fstrPARAM%fg_couple_first==6 ) then
+          do j = 1, hecMAT%NP * ndof
+            prevB(j) = hecMAT%B(j)
+          enddo
         endif
 
         if( fstrPARAM%fg_couple_first==1 .or. &
@@ -306,12 +304,6 @@ contains
             fstrPARAM%fg_couple_first==5 ) then
           call fstr_rcap_get( fstrCPL )
           call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-        endif
-
-        if( fstrPARAM%fg_couple_first==6 ) then
-          do j = 1, hecMAT%NP * ndof
-            prevB(j) = hecMAT%B(j)
-          enddo
         endif
 
 2000  continue
@@ -405,30 +397,32 @@ contains
           call fstr_rcap_send( fstrCPL )
         endif
 
-        if( fstrPARAM%fg_couple_first==5 .and. revocap_flag==0 ) then
-          do j = 1, hecMAT%NP * ndof
-            hecMAT%B(j) = prevB(j)
-          enddo
-          go to 1000
-        endif
-
-        if( fstrPARAM%fg_couple_first==6 ) then
+        if( fstrPARAM%fg_couple_first==5 .or. &
+            fstrPARAM%fg_couple_first==6 ) then
           call fstr_get_convergence( revocap_flag )
-          if( revocap_flag == 0 ) then
+          if( revocap_flag==0 ) then
             do j = 1, hecMAT%NP * ndof
               hecMAT%B(j) = prevB(j)
             enddo
+            if( fstrPARAM%fg_couple_first==5 ) then
+              go to 1000
+            else
+              call fstr_rcap_get( fstrCPL )
+              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+              go to 2000
+            endif
+          else
+            if( fstrPARAM%fg_couple_first==6 .and. &
+                i /= fstrDYNAMIC%n_step ) then
+              call fstr_rcap_get( fstrCPL )
+              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+            endif
           endif
         endif
 
-        if( fstrPARAM%fg_couple_first==4 .or. &
-            fstrPARAM%fg_couple_first==6 ) then
+        if( fstrPARAM%fg_couple_first==4 ) then
           call fstr_rcap_get( fstrCPL )
           call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-        endif
-
-        if( fstrPARAM%fg_couple_first==6 .and. revocap_flag==0 ) then
-          go to 2000
         endif
       endif
 !C *****************************************************
@@ -504,6 +498,18 @@ contains
             end if
     call hecMAT_finalize( MAT0 )
 
+    if( fstrPARAM%fg_couple == 1) then
+      if( fstrPARAM%fg_couple_first==5 .or. &
+          fstrPARAM%fg_couple_first==6 ) then
+        deallocate( prevB      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, prevB>'
+              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            endif
+      endif
+    endif
 
 !C-- end of implicit dynamic analysis
 !C
