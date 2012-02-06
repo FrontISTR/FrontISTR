@@ -436,9 +436,7 @@ contains
            write(*,*) ' Please change solver type to intel MKL direct solver !'
            call  hecmw_abort(hecmw_comm_get_comm()) 
          endif  
-         call set_pointersANDindices_directsolver(hecMAT,fstrMAT)    
-         if( hecMAT%Iarray(99)==3 ) &
-         call initialize_solver_mkl(hecMAT,fstrMAT)                         
+         call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
        endif                                                                
 	   
        do j = 1 ,ndof*nnod                  
@@ -537,7 +535,8 @@ contains
         if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &        
             relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-6 ) exit   
           res1 = res
-          
+          if( hecMAT%Iarray(99)==3 ) &
+          call initialize_solver_mkl(hecMAT,fstrMAT)           
           call set_values_directsolver(hecMAT,fstrMAT)              
           call solve_LINEQ_contact(hecMAT,fstrMAT)                     
 
@@ -582,9 +581,7 @@ contains
           exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then  
           call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange)      
-          call set_pointersANDindices_directsolver(hecMAT,fstrMAT)       
-          if( hecMAT%Iarray(99)==3 ) &     
-          call initialize_solver_mkl(hecMAT,fstrMAT)                                                                            
+          call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
         endif 
 
         if( count_step > max_iter_contact ) exit loopFORcontactAnalysis                            

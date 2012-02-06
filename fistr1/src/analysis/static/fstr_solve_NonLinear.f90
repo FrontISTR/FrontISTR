@@ -440,9 +440,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       write(*,*) ' Please change the solver type to intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm()) 
     endif  
-    call set_pointersANDindices_directsolver(hecMAT,fstrMAT)    
-    if( hecMAT%Iarray(99)==3 ) &
-    call initialize_solver_mkl(hecMAT,fstrMAT)                         
+    call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
   endif                                                                                
   
   stepcnt = 0                                                               
@@ -483,6 +481,8 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)  
         
 !----- SOLVE [Kt]{du}={R}
+        if( hecMAT%Iarray(99)==3 ) &
+        call initialize_solver_mkl(hecMAT,fstrMAT)                 
         call set_values_directsolver(hecMAT,fstrMAT)                                              
         call solve_LINEQ_contact(hecMAT,fstrMAT)                 
    
@@ -553,9 +553,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         exit loopFORcontactAnalysis                                                                                                                              
       elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then  
         call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange)      
-        call set_pointersANDindices_directsolver(hecMAT,fstrMAT)       
-        if( hecMAT%Iarray(99)==3 ) &     
-        call initialize_solver_mkl(hecMAT,fstrMAT)                                                                                                     
+        call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
       endif 
       if( count_step > max_iter_contact ) exit loopFORcontactAnalysis                   
                                                                              
