@@ -468,12 +468,12 @@ refine_node( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mes
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
+	rcapGetNodeSeq64( ref_mesh->n_node_gross, 1, ref_mesh->node );
+/*
 	for( i=0; i < mesh->n_node_gross*3; i++ ) {
-		ref_mesh->node[i] = mesh->node[i];
+		mesh->node[i] = ref_mesh->node[i];
 	}
-	rcapGetNodeSeq64( ref_mesh->n_node_gross - mesh->n_node_gross,
-			mesh->n_node_gross + 1,
-			ref_mesh->node ); /* NOTE: pass the top of the whole array */
+*/
 	return HECMW_SUCCESS;
 }
 
