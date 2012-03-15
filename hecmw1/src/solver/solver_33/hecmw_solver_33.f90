@@ -201,23 +201,49 @@
         if (     associated(hecMAT%ALU).and.PRECOND.lt.10) NSET= -1
 
         S1_time= HECMW_WTIME()
-        if (NSET.eq.0.and. PRECOND.lt.10) then
+        if (NSET.eq.0 .and. PRECOND.lt.10) then
           allocate (hecMAT%ALU(9*hecMAT%N))
         endif
-
         if (NSET.le.0 .and. PRECOND.lt.10) then
           hecMAT%ALU  = 0.d0
 
           do ii= 1, hecMAT%N
-            ALU(1,1)= hecMAT%D(9*ii-8)
-            ALU(1,2)= hecMAT%D(9*ii-7)
-            ALU(1,3)= hecMAT%D(9*ii-6)
-            ALU(2,1)= hecMAT%D(9*ii-5)
-            ALU(2,2)= hecMAT%D(9*ii-4)
-            ALU(2,3)= hecMAT%D(9*ii-3)
-            ALU(3,1)= hecMAT%D(9*ii-2)
-            ALU(3,2)= hecMAT%D(9*ii-1)
-            ALU(3,3)= hecMAT%D(9*ii  )
+            hecMAT%ALU(9*ii-8) = hecMAT%D(9*ii-8)
+            hecMAT%ALU(9*ii-7) = hecMAT%D(9*ii-7)
+            hecMAT%ALU(9*ii-6) = hecMAT%D(9*ii-6)
+            hecMAT%ALU(9*ii-5) = hecMAT%D(9*ii-5)
+            hecMAT%ALU(9*ii-4) = hecMAT%D(9*ii-4)
+            hecMAT%ALU(9*ii-3) = hecMAT%D(9*ii-3)
+            hecMAT%ALU(9*ii-2) = hecMAT%D(9*ii-2)
+            hecMAT%ALU(9*ii-1) = hecMAT%D(9*ii-1)
+            hecMAT%ALU(9*ii  ) = hecMAT%D(9*ii  )
+          enddo
+          if (hecMAT%cmat%n_val.gt.0) then
+            do k= 1, hecMAT%cmat%n_val
+              if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
+              ii = hecMAT%cmat%pair(k)%i
+              hecMAT%ALU(9*ii-8) = hecMAT%ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
+              hecMAT%ALU(9*ii-7) = hecMAT%ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
+              hecMAT%ALU(9*ii-6) = hecMAT%ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
+              hecMAT%ALU(9*ii-5) = hecMAT%ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
+              hecMAT%ALU(9*ii-4) = hecMAT%ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
+              hecMAT%ALU(9*ii-3) = hecMAT%ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
+              hecMAT%ALU(9*ii-2) = hecMAT%ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
+              hecMAT%ALU(9*ii-1) = hecMAT%ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
+              hecMAT%ALU(9*ii  ) = hecMAT%ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
+            enddo
+          endif
+
+          do ii= 1, hecMAT%N
+            ALU(1,1)= hecMAT%ALU(9*ii-8)
+            ALU(1,2)= hecMAT%ALU(9*ii-7)
+            ALU(1,3)= hecMAT%ALU(9*ii-6)
+            ALU(2,1)= hecMAT%ALU(9*ii-5)
+            ALU(2,2)= hecMAT%ALU(9*ii-4)
+            ALU(2,3)= hecMAT%ALU(9*ii-3)
+            ALU(3,1)= hecMAT%ALU(9*ii-2)
+            ALU(3,2)= hecMAT%ALU(9*ii-1)
+            ALU(3,3)= hecMAT%ALU(9*ii  )
             do k= 1, 3
               ALU(k,k)= 1.d0/ALU(k,k)
               do i= k+1, 3

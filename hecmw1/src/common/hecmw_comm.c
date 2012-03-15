@@ -749,6 +749,15 @@ HECMW_Comm HECMW_Comm_f2c(HECMW_Fint comm)
 #endif
 }
 
+HECMW_Group HECMW_Group_f2c(HECMW_Group group)
+{
+#ifndef HECMW_SERIAL
+  return MPI_Group_f2c(group);
+#else
+  return group;
+#endif
+}
+
 /*---------------------------------------------------------------------------*/
 
 
@@ -760,7 +769,7 @@ hecmw_comm_init_if(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
 	hecmw_comm = HECMW_Comm_f2c(*comm);
 	comm_size = *size;
 	comm_rank = *rank;
-	hecmw_group = *group;
+	hecmw_group = HECMW_Group_f2c(*group);
 }
 
 
