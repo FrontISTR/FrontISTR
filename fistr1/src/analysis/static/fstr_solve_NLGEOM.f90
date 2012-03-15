@@ -132,21 +132,21 @@ contains
             endif                                                                                
           endif   
 
-          if( fstrSOLID%TEMP_irres==0 ) then
-          if(fstrSOLID%restart_nout<0) then
-            fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-          end if
-          if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-            if( .not. associated( fstrSOLID%contacts ) ) then                              
-              call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)      
-            else                                                                                                                          
-              call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &    
+          if( fstrPARAM%solution_type/=6 .and. fstrSOLID%TEMP_irres==0 ) then
+            if(fstrSOLID%restart_nout<0) then
+              fstrSOLID%restart_nout = - fstrSOLID%restart_nout
+            end if
+            if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
+              if( .not. associated( fstrSOLID%contacts ) ) then                              
+                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)      
+              else                                                                                                                          
+                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &    
                                       infoCTChange%contactNode_current)                  
-            endif    
-          end if  
+              endif    
+            end if  
 
 ! ----- Result output (include visualize output)
-          call fstr_OutputResult( tot_step, step_count, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
+            call fstr_OutputResult( tot_step, step_count, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
           endif
 
           call cpu_time(time_2)
@@ -164,6 +164,7 @@ contains
 ! 
       IF(myrank == 0)THEN
         WRITE(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
+        WRITE(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
       ENDIF
 
       end subroutine FSTR_SOLVE_NLGEOM

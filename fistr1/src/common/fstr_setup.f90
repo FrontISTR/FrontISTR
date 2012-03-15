@@ -265,7 +265,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               cid = hecMESH%section%sect_mat_ID_item(i)
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
-              if( fstrPARAM%solution_type == kstNLSTATIC ) fstrSOLID%materials(cid)%nlgeom_flag = 1
+              if( fstrPARAM%solution_type == kstNLSTATIC .or. fstrPARAM%solution_type==6 ) & 
+                      fstrSOLID%materials(cid)%nlgeom_flag = 1
               call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick)
               fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
               fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
@@ -558,7 +559,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 !
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN )            &
+           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
+           p%PARAM%solution_type==6 )            &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )

@@ -11,6 +11,11 @@
 !                                                                      !
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
+!   Record of revision:
+!      Date            Programmer           Description of change
+!    =========         ==========           =====================
+!    Jan 6,2012        YUAN Xi       Eigen analysis considering effects
+!                                          of former static step
 !======================================================================!
 !> This module provides a function to control eigen analysis
 module m_fstr_solve_eigen
@@ -20,9 +25,12 @@ contains
 !C*** SOLVE EIGENVALUE PROBLEM
 !C***
 !C
-      subroutine fstr_solve_eigen(hecMESH,hecMAT,myEIG, &
-     &                            fstrSOLID,fstrRESULT,fstrPARAM)
+      subroutine fstr_solve_eigen(hecMESH,hecMAT,myEIG,fstrSOLID, &
+     &                            fstrRESULT,fstrPARAM, fstrMAT)
       use m_fstr
+      use m_fstr_StiffMatrix
+      use m_fstr_AddBC
+      use fstr_matrix_con_contact   
       use hecmw_util
 !C*-------- Modules for Lanczos method --------------*
       use lczparm
@@ -49,6 +57,7 @@ contains
       type (fstr_solid         ) :: fstrSOLID
       type (hecmwST_result_data) :: fstrRESULT
       type (fstr_param         ) :: fstrPARAM
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
 !C*-------- Parameters for Lanczos method -----------*
       type (lczparam) :: myEIG
@@ -96,7 +105,13 @@ contains
       ntotal = numnp*NDOF
 
 !C*------------ Assemble stiffness matrix ----------*
-      call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
+      if( fstrPARAM%solution_type==6 ) then
+        fstrSOLID%dunode = 0.d0
+        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )    
+        call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)  
+      else
+        call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
+      endif
       if( myrank == 0 ) then
          write(IMSG,*) 'fstr_mat_ass: OK'
       endif
@@ -551,10 +566,15 @@ contains
             write(IMSG,*)
             write(IMSG,*) 'hecmw_update_3_R: OK'
           endif
-          call fstr_output_3d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
-          if( myrank == 0 ) then
-            write(IMSG,*) 'fstr_output3d: OK'
-          endif
+          write(ILOG,*) '#### Eigen vector:', istep
+          write(ILOG,'(a)')'    NODE     X-DISP      Y-DISP      Z-DISP'
+          write(ILOG,'(a)')'---------+-----------+-----------+------------'
+          do i= 1, hecMESH%nn_internal
+            jj=fstrPARAM%global_local_id(1,i)
+            ii=fstrPARAM%global_local_id(2,i)
+            write(ILOG,'(i10,3e12.4)') jj,(hecMAT%X(3*(ii-1)+k),k=1,3)
+          enddo
+          call flush(ILOG)
 
         ELSE IF( NDOF .EQ. 2 ) THEN
           if (.not. ds) then !In case of Direct Solver prevent MPI
@@ -564,10 +584,16 @@ contains
             write(IMSG,*)
             write(IMSG,*) 'hecmw_update_2_R: OK'
           endif
-          call fstr_output_2d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
-          if( myrank == 0 ) then
-            write(IMSG,*) 'fstr_output2d: OK'
-          endif
+          write(ILOG,*) '#### DISPLACEMENT 2D'
+          write(ILOG,'(a)')                                      &
+                    '     NODE    X-DISP      Y-DISP   '
+          write(ILOG,'(a)')                                      &
+                    ' --------+-----------+------------'
+          do i= 1, hecMESH%nn_internal
+            jj=fstrPARAM%global_local_id(1,i)
+            ii=fstrPARAM%global_local_id(2,i)
+            write(ILOG,'(i10,2e12.4)') jj,(hecMAT%X(2*(ii-1)+k),k=1,2)
+         enddo
 
         ELSE IF(ndof.EQ.6) THEN
           if (.not. ds) then !In case of Direct Solver prevent MPI
@@ -577,29 +603,40 @@ contains
             write(IMSG,*)
             write(IMSG,*) 'hecmw_update_m_R: OK'
           endif
-          call fstr_output_6d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
-          if( myrank == 0 ) then
-            write(IMSG,*) 'fstr_output6d: OK'
-          endif
+          write(ILOG,*) '#### Eigen vector:', istep
+          write(ILOG,'(a,a)')                                            & 
+                    '     NODE    X-DISP      Y-DISP      Z-DISP   ' &
+                             ,'   X-ROT       Y-ROT       Z-ROT'
+          write(ILOG,'(a,a)')                                            & 
+                    ' --------+-----------+-----------+-----------+' &
+                             ,'-----------+-----------+-------------'
+          do i = 1, hecMESH%nn_internal
+            jj=fstrPARAM%global_local_id(1,i)
+            ii=fstrPARAM%global_local_id(2,i)
+            write(ILOG,'(i10,6e12.4)') jj,(hecMAT%X(6*(ii-1)+k),k=1,6)
+          enddo
 
         ENDIF
 !C
 !C-- POST PROCESSING VIA MEMORY
 !C
-        call fstr_post(hecMESH,hecMAT,fstrSOLID,istep)
 
         if( IVISUAL.eq. 1 ) then
-          call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
+          call FSTR_MAKE_EIGENRESULT(hecMESH,hecMAT%X,fstrRESULT)
           call fstr2hecmw_mesh_conv(hecMESH)
           call hecmw_visualize_init
-          ilast=1
-          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,ilast)
+          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,1)
           call hecmw_visualize_finalize
           call hecmw2fstr_mesh_conv(hecMESH)
           call hecmw_result_free(fstrRESULT)
         endif
       enddo
-      return
+	  
+      IF(myrank == 0)THEN
+        WRITE(IMSG,'("### FSTR_SOLVE_EIGEN FINISHED!")')
+        WRITE(*,'("### FSTR_SOLVE_EIGEN FINISHED!")')
+      ENDIF
+
       end subroutine fstr_solve_eigen
 
 end module m_fstr_solve_eigen

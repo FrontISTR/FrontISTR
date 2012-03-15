@@ -86,6 +86,8 @@ use fstr_matrix_con_contact
                 call fstr_heat_analysis
         case ( kstDYNAMIC )
                 call fstr_linear_dynamic_analysis
+        case ( 6 )
+                call fstr_static_eigen_analysis
         end select
 
         T3 = hecmw_Wtime()
@@ -328,7 +330,7 @@ subroutine fstr_eigen_analysis
         end if
 
         teachiter = .TRUE.
-        call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR )
+        call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
         tenditer = .TRUE.
 
 end subroutine fstr_eigen_analysis
@@ -378,6 +380,39 @@ subroutine fstr_linear_dynamic_analysis
                                         ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrMAT)
 
 end subroutine fstr_linear_dynamic_analysis
+
+!=============================================================================!
+!> Master subroutine of static -> eigen anaylsis
+!=============================================================================!
+
+subroutine fstr_static_eigen_analysis
+        implicit none
+
+        if( IECHO==1 ) call fstr_echo(hecMESH)
+
+        if(myrank == 0) THEN
+                write(IMSG,*)
+                write(IMSG,*)
+                write(IMSG,*)
+                write(IMSG,*) ' ***   STAGE Static -> Eigen analysis   **'
+                write(*,*) ' ***   STAGE Static -> Eigen analysis   **'
+                write(IMSG,*)
+                write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
+                write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
+        end if
+        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )  
+        teachiter = .TRUE.
+        if(myrank == 0) THEN
+                write(IMSG,*)
+                write(IMSG,*) ' ***   Stage 2: Eigenvalue analysis  **'
+                write(*,*)
+                write(*,*) ' ***   Stage 2: Eigenvalue analysis   **'
+        end if
+        call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
+        tenditer = .TRUE.
+        call fstr_solid_finalize( fstrSOLID )
+
+end subroutine fstr_static_eigen_analysis
 
 !=============================================================================!
 !> Finalizer                                                             !

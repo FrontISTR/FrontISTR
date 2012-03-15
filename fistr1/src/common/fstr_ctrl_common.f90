@@ -53,7 +53,7 @@ function fstr_ctrl_get_SOLUTION( ctrl, type )
         integer(kind=kint) :: rcode
         character(len=80) :: s
 
-        s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC '
+        s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN '
         rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', type )
         type = type -1
         fstr_ctrl_get_SOLUTION = rcode
