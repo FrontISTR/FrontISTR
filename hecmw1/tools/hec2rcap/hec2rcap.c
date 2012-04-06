@@ -17,9 +17,9 @@ static
 char* rcap_fname_header = NULL;
 
 
-//=============================================================================
+/*=============================================================================
 // convert
-//=============================================================================
+//===========================================================================*/
 
 
 static
@@ -55,6 +55,8 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 	int tbl342[] = { 0,1,2,3,6,5,7,4,9,8 };
 	int tbl361[] = { 0,1,2,3,4,5,6,7 };
 	int tbl362[] = { 0,1,2,3,4,5,6,7,8,9,10,11,16,17,18,19,12,13,14,15 };
+	int tbl351[] = { 0,1,2,3,4,5 };
+	int tbl371[] = { 4,0,3,2,1 };
 	int* tbl;
 
 	for( i= 0, etype_count= 0, elem_n= 0; i<mesh->n_elem_type; i++) {
@@ -74,6 +76,8 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 		case 342: nn = 10; rcap_etype = "Tet10"; tbl=tbl342; break;
 		case 361: nn =  8; rcap_etype =  "Hex8"; tbl=tbl361; break;
 		case 362: nn = 20; rcap_etype = "Hex20"; tbl=tbl362; break;
+		case 351: nn =  6; rcap_etype =  "Wed6"; tbl=tbl351; break;
+		case 371: nn =  5; rcap_etype =  "Pyr5"; tbl=tbl371; break;
 		default:
 			fprintf(stderr, "#Error : not supported element type %d\n", etype );
 			return 1;
@@ -102,6 +106,8 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 				case 342: nn = 10; rcap_etype = "Tet10"; tbl=tbl342; break;
 				case 361: nn =  8; rcap_etype =  "Hex8"; tbl=tbl361; break;
 				case 362: nn = 20; rcap_etype = "Hex20"; tbl=tbl362; break;
+				case 351: nn =  6; rcap_etype =  "Wed6"; tbl=tbl351; break;
+				case 371: nn =  5; rcap_etype =  "Pyr5"; tbl=tbl371; break;
 				default:
 					fprintf(stderr, "#Error : not supported element type %d\n", etype );
 					return 1;
@@ -130,9 +136,9 @@ int convert( struct hecmwST_local_mesh* mesh, FILE* fp )
 }
 
 
-//=============================================================================
+/*=============================================================================
 // main & etc
-//=============================================================================
+//===========================================================================*/
 
 /*
 static
