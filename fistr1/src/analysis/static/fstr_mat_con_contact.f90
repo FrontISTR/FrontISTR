@@ -44,10 +44,13 @@ module fstr_matrix_con_contact
         integer (kind=kint)            :: num_lagrange                               !< total number of Lagrange multipliers
         integer (kind=kint)            :: numL_lagrange, numU_lagrange               !< node-based number of non-zero items in lower triangular half of matrix
                                                                                       !< node-based number of non-zero items in upper triangular half of matrix
-        integer (kind=kint), pointer  :: indexL_lagrange(:), indexU_lagrange(:)     !< node-based index of first non-zero item of each row 
-        integer (kind=kint), pointer  :: itemL_lagrange(:), itemU_lagrange(:)       !< node-based column number of non-zero items
-        real (kind=kreal),    pointer  :: AL_lagrange(:), AU_lagrange(:)             !< values of non-zero items  
-        real (kind=kreal),    pointer  :: Lagrange(:)                                !< values of Lagrange multipliers                        
+        integer (kind=kint), pointer  :: indexL_lagrange(:) => NULL(), &     
+                                           indexU_lagrange(:) => NULL()               !< node-based index of first non-zero item of each row 
+        integer (kind=kint), pointer  :: itemL_lagrange(:) => NULL(), &      
+                                           itemU_lagrange(:) => NULL()                !< node-based column number of non-zero items
+        real (kind=kreal),    pointer  :: AL_lagrange(:) => NULL(), &         
+                                           AU_lagrange(:) => NULL()                   !< values of non-zero items  
+        real (kind=kreal),    pointer  :: Lagrange(:) => NULL()                      !< values of Lagrange multipliers                    
       end type fstrST_matrix_contact_lagrange
    
       integer (kind=kint),          save    :: NPL_org, NPU_org                      !< original number of non-zero items    

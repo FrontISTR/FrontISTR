@@ -14,7 +14,7 @@
 !======================================================================!
 !======================================================================!
 !
-!> \brief This module provides functions to set arrays for direcr sparse solver 
+!> \brief This module provides functions to set arrays for direct sparse solver 
 !> \in the case of using standard Lagrange multiplier algorithm for contact analysis.  
 !>
 !>  \author     Z. Sun(ASTOM)
@@ -30,6 +30,7 @@ module m_set_arrays_directsolver_contact
    
    implicit none
 
+   integer (kind=kint)               :: numNon0             
    integer (kind=kint), allocatable :: pointers(:)        !< ia     
    integer (kind=kint), allocatable :: indices(:)         !< ja    
    real (kind=kreal)   , allocatable :: values(:)          !< a                    
@@ -50,7 +51,6 @@ module m_set_arrays_directsolver_contact
       integer (kind=kint)     :: ndof                       !< degree of freedom
       integer (kind=kint)     :: num_lagrange               !< total number of Lagrange multipliers
       integer (kind=kint)     :: nn                         !< size of pointers
-      integer (kind=kint)     :: numNon0                    !< total number of non-zero items(elements) of stiffness matrix
       integer (kind=kint)     :: ierr                       !< error indicateor
       integer (kind=kint)     :: i, j, k, l, countNon0  
                    
@@ -74,12 +74,7 @@ module m_set_arrays_directsolver_contact
       allocate(indices(numNon0), stat=ierr) 
       if( ierr /= 0 ) stop " Allocation error, mkl%indices " 
       indices = 0
-      
-      if(allocated(values))deallocate(values)   
-      allocate(values(numNon0), stat=ierr) 
-      if( ierr /= 0 ) stop " Allocation error, mkl%values " 
-      values = 0.0D0
-   
+          
       pointers(1) = 1
       countNon0 = 1    
       
@@ -148,22 +143,12 @@ module m_set_arrays_directsolver_contact
       integer (kind=kint)     :: np                        !< total number of nodes
       integer (kind=kint)     :: ndof                      !< degree of freedom
       integer (kind=kint)     :: num_lagrange              !< total number of Lagrange multipliers
-      integer (kind=kint)     :: numNon0                   !< total number of non-zero items(elements) of stiffness matrix
       integer (kind=kint)     :: ierr                      !< error indicator
       integer (kind=kint)     :: i, j, k, l  
       integer (kind=kint)     :: countNon0, locINal, locINd, locINau, locINal_lag, locINau_lag    
                
       np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = fstrMAT%num_lagrange
-  
-      if( symmetricMatrixStruc )then                                 
-        numNon0 = hecMAT%NPU*ndof**2+hecMAT%NP*ndof*(ndof+1)/2 &
-                + (fstrMAT%numU_lagrange)*ndof+fstrMAT%num_lagrange
-      else                                                            
-        numNon0 = (hecMAT%NPL+hecMAT%NPU+hecMAT%NP)*ndof**2 &
-                + (fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*ndof 
-      endif                                                                
-              
-        
+         
       if(allocated(values))deallocate(values)    
       allocate(values(numNon0), stat=ierr) 
       if( ierr /= 0 ) stop " Allocation error, mkl%values " 

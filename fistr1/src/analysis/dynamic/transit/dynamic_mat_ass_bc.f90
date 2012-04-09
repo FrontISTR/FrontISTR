@@ -8,6 +8,7 @@
 !                       Yasuji Fukahori (Univ. of Tokyo)               !
 !                       Tomotaka Ogasawara (Univ. of Tokyo)            !
 !                       Xi YUAN( AdvanceSoft )                         !
+!                       Zhigang Sun(ASTOM)
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !

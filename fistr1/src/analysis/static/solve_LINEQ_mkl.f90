@@ -42,7 +42,7 @@ module m_solve_LINEQ_mkl
    real     (kind=kreal)          :: dparm(64)      	  
 !< ----------------------------------------------- input parameters for MKL solver
 
-   integer (kind=kint)           :: ntdf_previous                   !!- sun/20120201/  
+   integer (kind=kint)           :: ntdf_previous                    
 
   contains  
 
@@ -55,37 +55,27 @@ module m_solve_LINEQ_mkl
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT      !< type fstrST_matrix_contact_lagrange
      
       integer(kind=kint)                       :: ntdf         !< total degree of freedom
-      integer(kind=kint)                       :: numNon0          !!- sun/20120131/
       integer(kind=kint)                       :: idum, ierr
       real(kind=kreal)                          :: ddum
                      
         ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
-        ntdf_previous = ntdf                                       !!- sun/20120201/
+        ntdf_previous = ntdf                                        
 
-        maxfct = 1; mnum = 1; nrhs = 1; msglvl = 0; ierr = 0       !!- sun/20110201/
-        iparm = 0
-        iparm(1)  = 1; iparm(2)  = 2; iparm(3)  = 1; iparm(10) = 13
-        iparm(11) = 1; iparm(13) = 1; iparm(18) =-1; iparm(19) =-1
-!        iparm(21) = 1                                             !!- sun/20110201/
- 
-        if(.not.allocated(values))then                             !!- sun/20120201/-----------
-          if( symmetricMatrixStruc )then                                 
-             numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(hecMAT%NDOF+1)/2 &
-                     + (fstrMAT%numU_lagrange)*hecMAT%NDOF+fstrMAT%num_lagrange
-          else 
-             numNon0 = (hecMAT%NPL+hecMAT%NPU+hecMAT%NP)*hecMAT%NDOF**2 &
-                     + (fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*hecMAT%NDOF 
-          endif
-          allocate(values(numNon0), stat=ierr) 
-          if( ierr /= 0 ) stop " Allocation error, mkl%values " 
-          values = 0.0D0  
-        endif                                                       !!- sun/20120201/------------ 
+        maxfct = 1; mnum = 1; nrhs = 1; msglvl = 0; ierr = 0                                                                
+        iparm = 0                                                                  
+        iparm(1)  = 1; iparm(2)  = 2; iparm(3)  = 1; iparm(10) = 13    
+        iparm(11) = 1; iparm(13) = 1; iparm(18) =-1; iparm(19) =-1 
+!        iparm(21) = 1                                                 
+                         
+        allocate(values(numNon0), stat=ierr) 
+        if( ierr /= 0 ) stop " Allocation error, mkl%values " 
+        values = 0.0D0  
 
-        if(phase==33)then                                           !!- sun/20120201/------------
+        if(phase==33)then                                           
           phase = -1
           call pardiso(pt, maxfct, mnum, mtype, phase, ntdf_previous, ddum, idum, idum, &
                        idum, nrhs, iparm, msglvl, ddum, ddum, ierr) 
-        endif                                                       !!- sun/20120201/------------ 
+        endif                                                        
 
         if( symmetricMatrixStruc )then
           mtype = -2
@@ -100,7 +90,7 @@ module m_solve_LINEQ_mkl
           write(*,'(" initialize_solver_mkl: ERROR was detected in phase", 2I2)') phase,ierr
           stop
         endif
-        write(*,*) ' [Pardiso_MKL]: Initialization completed ! '     !!- sun/20120201/
+        write(*,*) ' [Pardiso_MKL]: Initialization completed ! '     
          
         deallocate(values)
          

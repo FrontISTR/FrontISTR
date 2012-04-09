@@ -204,15 +204,15 @@ contains
 !C
 !C-- time step loop
 !C
-    a1 = .5/fstrDYNAMIC%beta - 1.
-    a2 = 1./(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    a3 = 1./(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta**2)
-    b1 = ( .5*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1. )*fstrDYNAMIC%t_delta
-    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.
+    a1 = .5d0/fstrDYNAMIC%beta - 1.d0                              
+    a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta**2)
+    b1 = ( .5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta
+    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0
     b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
 
-    c1 = 1. + fstrDYNAMIC%ray_k*fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    c2 = 1./(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta**2) + &
+    c1 = 1.d0 + fstrDYNAMIC%ray_k*fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    c2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta**2) + &
         fstrDYNAMIC%ray_m*fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
 
 !!
@@ -237,6 +237,7 @@ contains
 !        time_1 =  hecmw_Wtime()
 !
        fstrDYNAMIC%i_step = i
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta           
 
 !C-- matrix [A]
     do j = 1 ,nn*hecMAT%NP

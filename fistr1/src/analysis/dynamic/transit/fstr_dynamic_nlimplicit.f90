@@ -5,7 +5,7 @@
 !      Module Name : Dynamic Transit Analysis                          !
 !                                                                      !
 !            Written by Xi YUAN (AdvanceSoft)                          !
-!                       Z. Sun(ASTOM)                                  !
+!                       Zhigang Sun(ASTOM)                                  !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -37,6 +37,8 @@ use m_fstr_rcap_io
 
 
 contains
+
+!> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
 
   subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
@@ -292,7 +294,8 @@ contains
 
   end subroutine fstr_solve_dynamic_nlimplicit
   
-  
+!> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method. 
+!> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.  
  subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &  
                                                        ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                                        ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange )
@@ -300,7 +303,8 @@ contains
     use mContact                                                                                                                   
     use m_addContactStiffness                              
     use m_set_arrays_directsolver_contact                                                
-    use m_solve_LINEQ_contact                               
+    use m_solve_LINEQ_contact 
+    use m_dynamic_init_variables                                                
       
     implicit none
 !C
@@ -329,7 +333,7 @@ contains
     
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
-    real(kind=kreal) :: bsize, res, res0, res1, relres             
+    real(kind=kreal) :: bsize, res, res1, rf                                
     real :: time_1, time_2
 
     integer(kind=kint) :: restrt_step_num
@@ -383,7 +387,11 @@ contains
 !C--
       hecMAT%Iarray(98) = 1   !Assmebly complete
       hecMAT%Iarray(97) = 1   !Need numerical factorization
-	  
+!C
+!C-- initialize variables 
+!C     
+      if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) & 
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC )                     
 !C
 !C
 !C-- time step loop
@@ -406,6 +414,19 @@ contains
 	
 	fstrDYNAMIC%VEC3(:) =0.d0  
 	hecMAT%X(:) =0.d0
+
+    call fstr_save_originalMatrixStructure(hecMAT)   
+    symmetricMatrixStruc = .true.                      
+    call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )   
+    if ( fstr_is_contact_active() ) then                                                 
+       call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)    
+       symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID) 
+    elseif( hecMAT%Iarray(99)==4 ) then                                                   
+       write(*,*) ' This type of direct solver is not yet available in such case ! '
+       write(*,*) ' Please change solver type to intel MKL direct solver !'
+       call  hecmw_abort(hecmw_comm_get_comm()) 
+    endif  
+    call set_pointersANDindices_directsolver(hecMAT,fstrMAT)    
 	
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
@@ -423,22 +444,7 @@ contains
        
        fstrSOLID%dunode(:) =0.d0
       ! call fstr_UpdateEPState( hecMESH, fstrSOLID )  
-      
-       if( i == restrt_step_num ) then           
-         call fstr_save_originalMatrixStructure(hecMAT)   
-         symmetricMatrixStruc = .true.                      
-         call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )   
-         if ( fstr_is_contact_active() ) then                                                 
-           call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)    
-           symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID) 
-         elseif( hecMAT%Iarray(99)==4 ) then                                                   
-           write(*,*) ' This type of direct solver is not yet available in such case ! '
-           write(*,*) ' Please change solver type to intel MKL direct solver !'
-           call  hecmw_abort(hecmw_comm_get_comm()) 
-         endif  
-         call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
-       endif                                                                
-	   
+ 	   
        do j = 1 ,ndof*nnod                  
            fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
            fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)  
@@ -449,8 +455,6 @@ contains
        stepcnt = 0                                                 
        loopFORcontactAnalysis: DO WHILE( .TRUE. )                                                                                 
          count_step = count_step + 1                               
-	     res1=0.d0
-         relres = 1.d0
          do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
            stepcnt=stepcnt+1                                      
            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_delta )
@@ -517,28 +521,22 @@ contains
 ! ----- check convergence
           res = dot_product( hecMAT%B, hecMAT%B )                                        
           res = sqrt(res)/hecMESH%n_node
-              
-          if( iter==1 ) res0=res
-          if( res0==0.d0 ) then
-            res0 =1.d0
-          else
-            relres = dabs(res1-res)/res0
-          endif
           if( hecMESH%my_rank==0 ) then
             if( mod(i,int(fstrDYNAMIC%nout/10)) == 0 )   &
-            write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res,relres
-            write(ISTA,'(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
+            write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res
+            write(ISTA,'(''iter='',I5,''- Residual'',2E15.7)')iter,res
           endif
 
 ! ----- check convergence
-        if( .not.fstr_is_contact_active() ) maxDLag= 0.0d0                    
-        if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &        
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-6 ) exit   
-          res1 = res
-          if( hecMAT%Iarray(99)==3 ) &
+          if( .not.fstr_is_contact_active() ) maxDLag= 0.0d0                    
+          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit   
+          rf=1.0d0                                                   
+          if( iter>1 .and. res>res1 )rf=0.5d0*rf                         
+          res1=res                                                                          
+          if( hecMAT%Iarray(99)==3 ) &                                              
           call initialize_solver_mkl(hecMAT,fstrMAT)           
           call set_values_directsolver(hecMAT,fstrMAT)              
-          call solve_LINEQ_contact(hecMAT,fstrMAT)                     
+          call solve_LINEQ_contact(hecMAT,fstrMAT,rf)                                                 
 
 ! ----- update the strain, stress, and internal force
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy ) 

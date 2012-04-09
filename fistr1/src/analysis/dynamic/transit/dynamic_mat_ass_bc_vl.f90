@@ -8,6 +8,7 @@
 !                       Yasuji Fukahori (Univ. of Tokyo)               !
 !                       Tomotaka Ogasawara (Univ. of Tokyo)            !
 !                       Xi YUAN( AdvanceSoft )                         !
+!                       Zhigang SUN(ASTOM)
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -50,6 +51,8 @@ contains
       INTEGER(kind=kint) dyn_step, flag_u
       real(kind=kreal) b2, b3, b4, c1
       real(kind=kreal) RHS, RHS0, f_t
+
+      if( fstrSOLID%VELOCITY_type == kbcInitial )return                    
 
       dyn_step = fstrDYNAMIC%i_step
       flag_u = 2
@@ -179,6 +182,8 @@ contains
 
       INTEGER(kind=kint) flag_u
       real(kind=kreal) RHS, f_t
+
+      if( fstrSOLID%VELOCITY_type == kbcTransit )return
 
       flag_u = 2
       NDOF = hecMAT%NDOF

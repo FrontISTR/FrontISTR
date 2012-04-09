@@ -5,6 +5,7 @@
 !      Module Name : Static Analysis                                   !
 !                                                                      !
 !            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
+!                       Z. Sun(ASTOM)                                  !
 !                                                                      !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
@@ -147,7 +148,7 @@ module m_fstr_Restart
             if( associated(fstrSOLID%elements(i)%gausses(j)%istatus) )        &
               write(fnum) fstrSOLID%elements(i)%gausses(j)%istatus
             if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) )        &
-               write(fnum) fstrSOLID%elements(i)%gausses(j)%fstatus
+              write(fnum) fstrSOLID%elements(i)%gausses(j)%fstatus
         enddo
       enddo
       
@@ -204,6 +205,7 @@ module m_fstr_Restart
       enddo  
       cstep=cstep+1                                                
       close(fnum)
+ 
       end subroutine
 	  
 !> write out restart file for dynamic analysis

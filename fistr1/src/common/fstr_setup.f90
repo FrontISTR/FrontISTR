@@ -2449,6 +2449,7 @@ subroutine fstr_setup_VELOCITY( ctrl, counter, P )
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
+        integer(kind=kint) :: vType                     
         character(HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: amp_id
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2475,10 +2476,12 @@ subroutine fstr_setup_VELOCITY( ctrl, counter, P )
         amp = ''
         val_ptr => P%SOLID%VELOCITY_ngrp_val(old_size+1:)
         val_ptr = 0
-        rcode = fstr_ctrl_get_VELOCITY( ctrl,  amp,   &
+        rcode = fstr_ctrl_get_VELOCITY( ctrl,  vType, amp,   &
                 grp_id_name, HECMW_NAME_LEN,  &
                 dof_ids, dof_ide, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
+        P%SOLID%VELOCITY_type = vType 
+        if( vType == kbcInitial ) P%DYN%VarInitialize = .true.                      
         call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id ) 
         call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
                 n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
@@ -2512,6 +2515,7 @@ subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
+        integer(kind=kint) :: aType                             
         character(HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: amp_id
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2539,10 +2543,12 @@ subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
         amp = ' '
         val_ptr => P%SOLID%ACCELERATION_ngrp_val(old_size+1:)
         val_ptr = 0
-        rcode = fstr_ctrl_get_ACCELERATION( ctrl,  amp,   &
+        rcode = fstr_ctrl_get_ACCELERATION( ctrl,  aType, amp,   &
                 grp_id_name, HECMW_NAME_LEN,  &
                 dof_ids, dof_ide,  val_ptr)
         if( rcode /= 0 ) call fstr_ctrl_err_stop
+        P%SOLID%ACCELERATION_type = aType
+        if( aType == kbcInitial )P%DYN%VarInitialize = .true.                    
         call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id ) 
         call node_grp_name_to_id_ex( P%MESH, '!ACCELERATION', &
                 n, grp_id_name, P%SOLID%ACCELERATION_ngrp_ID(old_size+1:))

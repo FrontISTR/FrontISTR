@@ -2141,12 +2141,19 @@ contains
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
-	  
+
+      integer :: idx
       integer :: ndof, i, ii,jj, k, ID_area, itype, iS, iE, ic_type, icel
       real(kind=kreal) :: s11,s22,s33,s12,s23,s13,ps,smises,ss(6)
 !
 !C-- output new displacement, velocity and accelaration
       if( mod(istep,fstrDYNAMIC%nout) /= 0 ) return
+!
+      if((fstrDYNAMIC%idx_eqa .eq. 1) .and. (fstrDYNAMIC%i_step .gt. 0)) then
+        idx = 2
+      else
+        idx = 1
+      endi
 !
       write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP =',istep,'TIME =',fstrDYNAMIC%t_curr   
 !C-- output
@@ -2191,7 +2198,7 @@ contains
         ii=fstrPARAM%global_local_id(2,i)
 
 !        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, 1),k=1,ndof)   
-        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, 2),k=1,ndof)         
+        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%DISP(ndof*(ii-1)+k, idx),k=1,ndof)           
       enddo
       end if
 !C
@@ -2220,7 +2227,8 @@ contains
         jj=fstrPARAM%global_local_id(1,i)
         ii=fstrPARAM%global_local_id(2,i)
 
-        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%VEL(ndof*(ii-1)+k, 1),k=1,ndof)
+!        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%VEL(ndof*(ii-1)+k, 1),k=1,ndof)       
+        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%VEL(ndof*(ii-1)+k, idx),k=1,ndof)         
       enddo
 
       end if
@@ -2240,7 +2248,8 @@ contains
         jj=fstrPARAM%global_local_id(1,i)
         ii=fstrPARAM%global_local_id(2,i)
 
-        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%ACC(ndof*(ii-1)+k, 1),k=1,ndof)
+!        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%ACC(ndof*(ii-1)+k, 1),k=1,ndof)       
+        write(ILOG,'(i10,3e12.4)') jj,(fstrDYNAMIC%ACC(ndof*(ii-1)+k, idx),k=1,ndof)           
       enddo
 
       end if

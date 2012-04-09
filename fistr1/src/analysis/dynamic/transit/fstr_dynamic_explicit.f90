@@ -28,7 +28,7 @@ use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
 use m_static_mat_ass_main
 use m_dynamic_post
-use fstr_matrix_con_contact                   
+use fstr_matrix_con_contact
 
 !-------- for couple -------
 use m_dynamic_mat_ass_couple
@@ -146,6 +146,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta        
 
 !C-- {vec3}=[KL]{U(t)}, second part of right hand of Eq.(1.1.22)
 

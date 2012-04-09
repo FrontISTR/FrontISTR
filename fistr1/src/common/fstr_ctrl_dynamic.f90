@@ -24,9 +24,10 @@ contains
 !* fstr_ctrl_get_nval                                                                              *!
 !* ----------------------------------------------------------------------------------------------- *!
 
-function fstr_ctrl_get_nval( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
+function fstr_ctrl_get_nval( ctrl, iType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
+        integer(kind=kint) :: iType 
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN),target :: node_id(:)
         character(len=HECMW_NAME_LEN),pointer :: node_id_p
@@ -35,12 +36,17 @@ function fstr_ctrl_get_nval( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, 
         integer(kind=kint),pointer :: dof_ide (:)
         real(kind=kreal),pointer :: value(:)
         integer(kind=kint) :: fstr_ctrl_get_nval
+        integer(kind=kint) :: rcode     
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss
         write(ss,*)  node_id_len
         write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'IIr '
 
+        iType=2                   
+        ss='INITIAL,TRANSIT'      
         fstr_ctrl_get_nval = -1
+        rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )   
+
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         node_id_p => node_id(1)
         fstr_ctrl_get_nval = &
@@ -49,9 +55,10 @@ function fstr_ctrl_get_nval( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, 
 end function fstr_ctrl_get_nval
 
 !> Read in !VELOCITY                                                                                      
-function fstr_ctrl_get_VELOCITY( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
+function fstr_ctrl_get_VELOCITY( ctrl, vType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
+        integer(kind=kint) vType   
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN) :: node_id(:)
         integer(kind=kint) :: node_id_len
@@ -61,14 +68,15 @@ function fstr_ctrl_get_VELOCITY( ctrl, amp, node_id, node_id_len, dof_ids, dof_i
         integer(kind=kint) :: fstr_ctrl_get_VELOCITY
 
         fstr_ctrl_get_VELOCITY = &
-          fstr_ctrl_get_nval( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
+          fstr_ctrl_get_nval( ctrl, vType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
 
 end function fstr_ctrl_get_VELOCITY
 
 !> Read in !ACCELERATION                                                               
-function fstr_ctrl_get_ACCELERATION( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
+function fstr_ctrl_get_ACCELERATION( ctrl, aType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
+        integer(kind=kint) :: aType     
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN) :: node_id(:)
         integer(kind=kint) :: node_id_len
@@ -78,7 +86,7 @@ function fstr_ctrl_get_ACCELERATION( ctrl, amp, node_id, node_id_len, dof_ids, d
         integer(kind=kint) :: fstr_ctrl_get_ACCELERATION
 
         fstr_ctrl_get_ACCELERATION = &
-          fstr_ctrl_get_nval( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
+          fstr_ctrl_get_nval( ctrl, aType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
 
 end function fstr_ctrl_get_ACCELERATION
 

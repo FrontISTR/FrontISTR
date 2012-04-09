@@ -417,12 +417,12 @@
           !integer(kind=kint) ::  ITERactual
 
 !          integer(kind=kint), pointer :: globalNODEID(:)
-          real(kind=kreal), pointer :: D(:), B(:), X(:), ALU(:)
-          real(kind=kreal), pointer :: AL(:), AU(:)
+          real(kind=kreal), pointer :: D(:)=>NULL(), B(:)=>NULL(), X(:)=>NULL(), ALU(:)=>NULL() 
+          real(kind=kreal), pointer :: AL(:)=>NULL(), AU(:)=>NULL()  
           !real(kind=kreal), pointer :: PAL(:), PAU(:)
           !real(kind=kreal), pointer :: ALUG_L(:), ALUG_U(:)
-          integer(kind=kint), pointer :: indexL(:), indexU(:)
-          integer(kind=kint), pointer ::  itemL(:),  itemU(:)
+          integer(kind=kint), pointer :: indexL(:)=>NULL(), indexU(:)=>NULL()  
+          integer(kind=kint), pointer ::  itemL(:)=>NULL(),  itemU(:)=>NULL() 
           !integer(kind=kint), pointer :: INL  (:), INU  (:)  ! used only in mat_con
           !integer(kind=kint), pointer :: INLmc(:), INUmc(:)
           !integer(kind=kint), pointer :: IAL  (:,:), IAU  (:,:)  ! used only in mat_con

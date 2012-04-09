@@ -72,6 +72,10 @@ public
         integer(kind=kint),parameter :: kbcfFSTR    =   0  ! BC described in fstr control file (default)
         integer(kind=kint),parameter :: kbcfNASTRAN =   1  ! nastran file
         
+        !
+        integer(kind=kint),parameter :: kbcInitial    =  1        
+        integer(kind=kint),parameter :: kbcTransit    =  2               
+
         ! restart type                                                 
         integer(kind=kint),parameter :: restart_outLast = 1            
         integer(kind=kint),parameter :: restart_outAll  = 2             
@@ -210,27 +214,29 @@ public
                 !!BOUNDARY
                 integer(kind=kint) :: BOUNDARY_ngrp_tot                    !< Following boundary conditions
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)
-!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)
-                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)  =>null()   
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()   
+!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)    =>null()   
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()   
+                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)   =>null()   
 
                 !!VELOCITY
+                integer(kind=kint) :: VELOCITY_type                
                 integer(kind=kint) :: VELOCITY_ngrp_tot                    !< Following velocity boundary condition
                 integer(kind=kint), pointer :: VELOCITY_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)
-                integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)
-                integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)
-                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)
+                integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()   
+                integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()   
+                integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()   
+                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)   =>null()   
 
                 !!ACCELERATION
+                integer(kind=kint) :: ACCELERATION_type              
                 integer(kind=kint) :: ACCELERATION_ngrp_tot                !< Following accelerate boundary condition
                 integer(kind=kint), pointer :: ACCELERATION_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_amp    (:)
-                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()   
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)  =>null()                   
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_amp    (:)  =>null()   
+                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)   =>null()   
 
                 !!CLOAD
                 integer(kind=kint) :: CLOAD_ngrp_tot                       !< Following concetrated external load
@@ -418,6 +424,9 @@ public
                 integer(kind=kint) :: idx_dmp      ! damping type
                 real(kind=kreal)   :: ray_m         ! Rayleigh damping parameter Rm
                 real(kind=kreal)   :: ray_k         ! Rayleigh damping parameter Rk
+
+                ! initialization control
+                logical           :: VarInitialize  ! initialization flag
 
                 ! OUTPUT CONTROL
                 integer(kind=kint) :: nout           ! output interval of result

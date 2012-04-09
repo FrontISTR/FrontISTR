@@ -121,6 +121,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta          
 !C
 !C-- mechanical boundary condition
 

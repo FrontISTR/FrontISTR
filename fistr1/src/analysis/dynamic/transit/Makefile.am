@@ -89,6 +89,7 @@ OBJSF = \
 	dynamic_mat_ass_bc_ac.@f90objfilepostfix@ \
 	dynamic_mat_ass_couple.@f90objfilepostfix@ \
 	dynamic_post.@f90objfilepostfix@ \
+	dynamic_var_init.@f90objfilepostfix@ \
 	dynamic_output.@f90objfilepostfix@ \
 	fstr_dynamic_explicit.@f90objfilepostfix@ \
 	fstr_dynamic_implicit.@f90objfilepostfix@ \

@@ -37,16 +37,22 @@ module m_solve_LINEQ_contact
   contains
     
 !> \brief This subroutine    
-    subroutine solve_LINEQ_contact(hecMAT,fstrMAT)          
+    subroutine solve_LINEQ_contact(hecMAT,fstrMAT,rf)          
   
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
-   
+      real(kind=kreal), optional              :: rf
+
+      real(kind=kreal)                         :: factor
+
       integer(kind=kint)                       :: ntdf   
       real(kind=kreal), allocatable            :: y(:)           !< right-hand side vector
       real(kind=kreal)                          :: residual_Max   !< maximum residual
      
       ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange 
+
+      factor = 1.0d0
+      if( present(rf) )factor = rf
          
       if( hecMAT%Iarray(99)==3 )then                   
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
@@ -65,6 +71,8 @@ module m_solve_LINEQ_contact
       endif                                                  
       deallocate(y)
       
+      hecMAT%X=factor*hecMAT%X
+
       deallocate(values)
    
     end subroutine solve_LINEQ_contact  

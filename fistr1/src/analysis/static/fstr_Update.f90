@@ -5,6 +5,7 @@
 !      Module Name : Static Analysis                                   !
 !                                                                      !
 !            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
+!                       Z. Sun (ASTOM)
 !                                                                      !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
