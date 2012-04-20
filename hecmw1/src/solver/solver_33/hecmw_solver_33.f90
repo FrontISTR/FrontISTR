@@ -39,6 +39,7 @@
         use m_hecmw_solve_error
         use m_hecmw_comm_f
         use hecmw_matrix_ass
+        use hecmw_matrix_contact
 
         implicit none
 
@@ -218,6 +219,7 @@
             hecMAT%ALU(9*ii-1) = hecMAT%D(9*ii-1)
             hecMAT%ALU(9*ii  ) = hecMAT%D(9*ii  )
           enddo
+
           if (hecMAT%cmat%n_val.gt.0) then
             do k= 1, hecMAT%cmat%n_val
               if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
@@ -232,6 +234,9 @@
               hecMAT%ALU(9*ii-1) = hecMAT%ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
               hecMAT%ALU(9*ii  ) = hecMAT%ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
             enddo
+
+            call hecmw_cmat_LU( hecMAT )
+
           endif
 
           do ii= 1, hecMAT%N
@@ -604,6 +609,10 @@
         write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
       endif
 !C===
+
+      if (hecMAT%cmat%n_val.gt.0) then
+        call hecmw_cmat_LU_free( hecMAT )
+      endif
 
       end subroutine hecmw_solve_33
       end module hecmw_solver_33

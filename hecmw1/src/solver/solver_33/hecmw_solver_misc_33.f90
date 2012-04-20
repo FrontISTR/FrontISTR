@@ -260,16 +260,19 @@ module hecmw_solver_misc_33
             SW3= SW3 - hecMAT%AL(9*j-2)*X1 - hecMAT%AL(9*j-1)*X2 - hecMAT%AL(9*j  )*X3
           enddo
 
-          do j= 1, hecMAT%cmat%n_val
-            if (hecMAT%cmat%pair(j)%i.ne.i) cycle
-            if (hecMAT%cmat%pair(j)%j.ge.i) cycle
-             X1= ZP(3*hecMAT%cmat%pair(j)%j-2)
-             X2= ZP(3*hecMAT%cmat%pair(j)%j-1)
-             X3= ZP(3*hecMAT%cmat%pair(j)%j  )
-            SW1= SW1-hecMAT%cmat%pair(j)%val(1,1)*X1-hecMAT%cmat%pair(j)%val(1,2)*X2-hecMAT%cmat%pair(j)%val(1,3)*X3
-            SW2= SW2-hecMAT%cmat%pair(j)%val(2,1)*X1-hecMAT%cmat%pair(j)%val(2,2)*X2-hecMAT%cmat%pair(j)%val(2,3)*X3
-            SW3= SW3-hecMAT%cmat%pair(j)%val(3,1)*X1-hecMAT%cmat%pair(j)%val(3,2)*X2-hecMAT%cmat%pair(j)%val(3,3)*X3
-          enddo
+          if (hecMAT%cmat%n_val.ne.0) then
+            isL= hecMAT%indexCL(i-1)+1
+            ieL= hecMAT%indexCL(i)
+            do j= isL, ieL
+                k= hecMAT%itemCL(j)
+               X1= ZP(3*k-2)
+               X2= ZP(3*k-1)
+               X3= ZP(3*k  )
+              SW1= SW1 - hecMAT%CAL(9*j-8)*X1 - hecMAT%CAL(9*j-7)*X2 - hecMAT%CAL(9*j-6)*X3
+              SW2= SW2 - hecMAT%CAL(9*j-5)*X1 - hecMAT%CAL(9*j-4)*X2 - hecMAT%CAL(9*j-3)*X3
+              SW3= SW3 - hecMAT%CAL(9*j-2)*X1 - hecMAT%CAL(9*j-1)*X2 - hecMAT%CAL(9*j  )*X3
+            enddo
+          endif
 
           X1= SW1
           X2= SW2
@@ -302,16 +305,19 @@ module hecmw_solver_misc_33
             SW3= SW3 + hecMAT%AU(9*j-2)*X1 + hecMAT%AU(9*j-1)*X2 + hecMAT%AU(9*j  )*X3
           enddo
 
-          do j= 1, hecMAT%cmat%n_val
-            if (hecMAT%cmat%pair(j)%i.ne.i) cycle
-            if (hecMAT%cmat%pair(j)%j.le.i) cycle
-             X1= ZP(3*hecMAT%cmat%pair(j)%j-2)
-             X2= ZP(3*hecMAT%cmat%pair(j)%j-1)
-             X3= ZP(3*hecMAT%cmat%pair(j)%j  )
-            SW1= SW1+hecMAT%cmat%pair(j)%val(1,1)*X1+hecMAT%cmat%pair(j)%val(1,2)*X2+hecMAT%cmat%pair(j)%val(1,3)*X3
-            SW2= SW2+hecMAT%cmat%pair(j)%val(2,1)*X1+hecMAT%cmat%pair(j)%val(2,2)*X2+hecMAT%cmat%pair(j)%val(2,3)*X3
-            SW3= SW3+hecMAT%cmat%pair(j)%val(3,1)*X1+hecMAT%cmat%pair(j)%val(3,2)*X2+hecMAT%cmat%pair(j)%val(3,3)*X3
-          enddo
+          if (hecMAT%cmat%n_val.gt.0) then
+            isU= hecMAT%indexCU(i-1) + 1
+            ieU= hecMAT%indexCU(i)
+            do j= isU, ieU
+                k= hecMAT%itemCU(j)
+               X1= ZP(3*k-2)
+               X2= ZP(3*k-1)
+               X3= ZP(3*k  )
+              SW1= SW1 + hecMAT%CAU(9*j-8)*X1 + hecMAT%CAU(9*j-7)*X2 + hecMAT%CAU(9*j-6)*X3
+              SW2= SW2 + hecMAT%CAU(9*j-5)*X1 + hecMAT%CAU(9*j-4)*X2 + hecMAT%CAU(9*j-3)*X3
+              SW3= SW3 + hecMAT%CAU(9*j-2)*X1 + hecMAT%CAU(9*j-1)*X2 + hecMAT%CAU(9*j  )*X3
+            enddo
+          endif
 
           X1= SW1
           X2= SW2

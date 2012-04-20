@@ -3,8 +3,8 @@
 !> \brief  This module provides functions to deal with contact condition
 !
 !>  \author     K. Goto(Advancesoft), X. YUAN(AdavanceSoft)
-!>  \date       2010/04/16
-!>  \version    0.00
+!>  \date       2010/11/26
+!>  \version    1.00
 !!
 !======================================================================!
 module hecmw_matrix_contact
@@ -19,6 +19,9 @@ module hecmw_matrix_contact
   public :: hecmw_cmat_pack
   public :: hecmw_cmat_multvec_add
   public :: hecmw_cmat_ass_bc
+  public :: hecmw_cmat_n_newpair
+  public :: hecmw_cmat_LU
+  public :: hecmw_cmat_LU_free
 
   integer(kind=kint), parameter :: CMAT_MAX_VAL_INIT = 128
   integer(kind=kint), parameter :: CMAT_MAX_VAL_GROW = 2
@@ -268,5 +271,101 @@ module hecmw_matrix_contact
       enddo 
 	  
    end subroutine hecmw_cmat_ass_bc
+   
+   !< number of new pair introduced by cmat ( symm only )
+   integer function hecmw_cmat_n_newpair(hecMAT, symm )
+      type(hecmwST_matrix), intent(in) :: hecMAT
+      integer, intent(in)              :: symm
+      integer(kind=kint) :: nval, ind, jnd, k, m, mnd
+      logical :: isfind
+	  
+        hecmw_cmat_n_newpair = 0	  
+        do nval=1,hecMAT%cmat%n_val
+          ind = hecMAT%cmat%pair(nval)%i
+          jnd = hecMAT%cmat%pair(nval)%j 
+		  
+          if( (symm==1) .and. (ind<jnd) ) cycle
+          if( ind==jnd ) cycle
+          isfind = .false.		
+          do k=1,hecMAT%NP
+            if( ind/=k .and. jnd/=k ) cycle
+		    do m= hecMAT%indexL(k-1)+1, hecMAT%indexL(k)
+              mnd= hecMAT%itemL(m)
+              if( (ind==k .and. jnd==mnd) .or. (ind==mnd .and. jnd==k) ) then
+			     isfind = .true.
+              endif
+              if ( isfind ) exit
+            enddo
+            if( isfind ) exit
+          enddo
+          if( .not. isfind ) hecmw_cmat_n_newpair = hecmw_cmat_n_newpair+1
+       enddo
+   end function hecmw_cmat_n_newpair
+
+  !< Assmble LU-part of cmat
+  subroutine hecmw_cmat_LU( hecMAT )
+      type (hecmwST_matrix) :: hecMAT
+      integer(kind=kint)    :: i, j, k, l, countCAL, countCAU
+
+write(*,*) "hecmw_cmat_LU in"
+      allocate (hecMAT%indexCL(0:hecMAT%NP), hecMAT%indexCU(0:hecMAT%NP))
+
+      hecMAT%indexCL = 0
+      hecMAT%indexCU = 0
+
+      do i= 1, hecMAT%NP
+        do j= 1, hecMAT%cmat%n_val
+          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
+            hecMAT%indexCL(i) = hecMAT%indexCL(i) + 1
+          endif
+          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
+            hecMAT%indexCU(i) = hecMAT%indexCU(i) + 1
+          endif
+        enddo
+        hecMAT%indexCL(i) = hecMAT%indexCL(i) + hecMAT%indexCL(i-1)
+        hecMAT%indexCU(i) = hecMAT%indexCU(i) + hecMAT%indexCU(i-1)
+      enddo
+write(*,*) "hecmw_cmat_LU 1 end"
+
+      hecMAT%NPCL = hecMAT%indexCL(hecMAT%NP)
+      hecMAT%NPCU = hecMAT%indexCU(hecMAT%NP)
+
+      allocate (hecMAT%itemCL(hecMAT%NPCL), hecMAT%itemCU(hecMAT%NPCU))
+      allocate (hecMAT%CAL(9*hecMAT%NPCL), hecMAT%CAU(9*hecMAT%NPCU))
+
+      countCAL = 0
+      countCAU = 0
+      do i= 1, hecMAT%NP
+        do j= 1, hecMAT%cmat%n_val
+          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
+            countCAL = countCAL + 1
+            hecMAT%itemCL(countCAL) = hecMAT%cmat%pair(j)%j
+            do k= 1, 3
+              do l= 1, 3
+                hecMAT%CAL(9*(countCAL-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
+              enddo
+            enddo
+          endif
+          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
+            countCAU = countCAU + 1
+            hecMAT%itemCU(countCAU) = hecMAT%cmat%pair(j)%j
+            do k= 1, 3
+              do l= 1, 3
+                hecMAT%CAU(9*(countCAU-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
+              enddo
+            enddo
+          endif
+        enddo
+      enddo
+write(*,*) "hecmw_cmat_LU 2 end"
+  end subroutine hecmw_cmat_LU
+
+  !< free LU-part of cmat
+  subroutine hecmw_cmat_LU_free( hecMAT )
+      type (hecmwST_matrix) :: hecMAT
+
+      deallocate (hecMAT%indexCL, hecMAT%itemCL, hecMAT%CAL)
+      deallocate (hecMAT%indexCU, hecMAT%itemCU, hecMAT%CAU)
+  end subroutine hecmw_cmat_LU_free
 
 end module hecmw_matrix_contact

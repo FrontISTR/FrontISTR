@@ -410,19 +410,19 @@
         end type hecmwST_matrix_contact
 
         type hecmwST_matrix
-          integer(kind=kint) ::  N, NP, NPL, NPU, NDOF
+          integer(kind=kint) ::  N, NP, NPL, NPU, NDOF, NPCL, NPCU
           !integer(kind=kint) ::  NU, NL  ! used only in mat_con
 !          integer(kind=kint)  N, NP, NE, NPL, NPU, NU, NL, NDOF
           !integer(kind=kint) ::  NCOLORtot, NHYP, npLX1, npUX1, NLmax, NUmax, NCOLORk
           !integer(kind=kint) ::  ITERactual
 
 !          integer(kind=kint), pointer :: globalNODEID(:)
-          real(kind=kreal), pointer :: D(:)=>NULL(), B(:)=>NULL(), X(:)=>NULL(), ALU(:)=>NULL() 
-          real(kind=kreal), pointer :: AL(:)=>NULL(), AU(:)=>NULL()  
+          real(kind=kreal), pointer :: D(:), B(:), X(:), ALU(:)
+          real(kind=kreal), pointer :: AL(:), AU(:), CAL(:), CAU(:)
           !real(kind=kreal), pointer :: PAL(:), PAU(:)
           !real(kind=kreal), pointer :: ALUG_L(:), ALUG_U(:)
-          integer(kind=kint), pointer :: indexL(:)=>NULL(), indexU(:)=>NULL()  
-          integer(kind=kint), pointer ::  itemL(:)=>NULL(),  itemU(:)=>NULL() 
+          integer(kind=kint), pointer :: indexL(:), indexU(:), indexCL(:), indexCU(:)
+          integer(kind=kint), pointer ::  itemL(:),  itemU(:), itemCL(:),  itemCU(:)
           !integer(kind=kint), pointer :: INL  (:), INU  (:)  ! used only in mat_con
           !integer(kind=kint), pointer :: INLmc(:), INUmc(:)
           !integer(kind=kint), pointer :: IAL  (:,:), IAU  (:,:)  ! used only in mat_con
@@ -790,6 +790,8 @@
         nullify( P%ALU )
         nullify( P%AL )
         nullify( P%AU )
+        nullify( P%CAL )
+        nullify( P%CAU )
         !nullify( P%PAL )
         !nullify( P%PAU )
         !nullify( P%ALUG_L )
@@ -798,6 +800,10 @@
         nullify( P%indexU )
         nullify( P%itemL )
         nullify( P%itemU )
+        nullify( P%indexCL )
+        nullify( P%indexCU )
+        nullify( P%itemCL )
+        nullify( P%itemCU )
         !nullify( P%INL   )
         !nullify( P%INU   )
         !nullify( P%INLmc )
