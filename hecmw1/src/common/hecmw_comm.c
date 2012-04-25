@@ -749,7 +749,7 @@ HECMW_Comm HECMW_Comm_f2c(HECMW_Fint comm)
 #endif
 }
 
-HECMW_Group HECMW_Group_f2c(HECMW_Group group)
+HECMW_Group HECMW_Group_f2c(HECMW_Fint group)
 {
 #ifndef HECMW_SERIAL
   return MPI_Group_f2c(group);
@@ -762,7 +762,7 @@ HECMW_Group HECMW_Group_f2c(HECMW_Group group)
 
 
 extern void
-hecmw_comm_init_if(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
+hecmw_comm_init_if(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	is_initialized = 1;
 
@@ -775,7 +775,7 @@ hecmw_comm_init_if(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
 
 
 extern void
-hecmw_comm_init_if_(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
+hecmw_comm_init_if_(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	hecmw_comm_init_if(comm, size, rank, group);
 }	
@@ -783,14 +783,14 @@ hecmw_comm_init_if_(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
 
 
 extern void
-hecmw_comm_init_if__(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
+hecmw_comm_init_if__(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	hecmw_comm_init_if(comm, size, rank, group);
 }	
 
 
 extern void
-HECMW_COMM_INIT_IF(HECMW_Fint *comm, int *size, int *rank, HECMW_Group *group)
+HECMW_COMM_INIT_IF(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	hecmw_comm_init_if(comm, size, rank, group);
 }
