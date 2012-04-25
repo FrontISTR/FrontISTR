@@ -91,6 +91,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt=stepcnt+1
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )           
+      call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
 ! ----- Set Boundary condition
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)  
@@ -124,7 +125,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
       enddo
 
 ! ----- Set residual
-      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID )       
+      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step )       
       res = fstr_get_residual( hecMAT%B, hecMESH )
 
 ! ----- Gather global residual
@@ -259,6 +260,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt=stepcnt+1
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )           
+        call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 ! ----- Contact
         if( fstr_is_contact_active() .and. stepcnt==1 )  then
           maxv = hecmw_mat_diag_max( hecMAT, hecMESH )
@@ -300,7 +302,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         enddo
 
 ! ----- Set residual
-        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID )       
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step )       
         if( fstr_is_contact_active() ) then                                     
           call fstr_update_contact0( hecMESH, fstrSOLID, hecMAT%B ) 
         endif
@@ -412,7 +414,6 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   real(kind=kreal)    :: tt0,tt, res, res0, res1, maxv, relres, tincr
   integer(kind=kint) :: restart_step_num,  restart_substep_num   
  
-
   if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID) ) then    
     write(*,*) ' This type of direct solver is not yet available in such case ! '
     write(*,*) ' Please use intel MKL direct solver !'
@@ -473,6 +474,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt=stepcnt+1
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )           
+        call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
         
         if( fstr_is_contact_active() )  &                                    
         call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)        
@@ -502,7 +504,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         endif         
 
 ! ----- Set residual
-        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID )      
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step )      
         
         if( fstr_is_contact_active() )  &                                  
         call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID) 

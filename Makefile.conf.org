@@ -38,19 +38,19 @@ REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
 
 # C compiler settings
-CC             = icc
+CC             = mpicc
 CFLAGS         =
 LDFLAGS        = -lm
 OPTFLAGS       = -O3
 
 # C++ compiler settings
-CPP            = icpc
-CPPFLAGS       =
+CPP            = mpic++
+CPPFLAGS       = -DMPICH_IGNORE_CXX_SEEK
 CPPLDFLAGS     =
 CPPOPTFLAGS    = -O3
 
 # Fortran compiler settings
-F90            = ifort
+F90            = mpif90
 F90FLAGS       =
 F90LDFLAGS     =
 F90OPTFLAGS    = -O2

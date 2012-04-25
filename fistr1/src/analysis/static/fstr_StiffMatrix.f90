@@ -31,10 +31,9 @@ module m_fstr_StiffMatrix
 subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
 !---------------------------------------------------------------------*
   use m_fstr
-  use m_static_LIB_2d
-  use m_static_LIB_3d
+  use m_static_LIB
+  use m_static_LIB_1d
   use m_static_LIB_C3D8
-  use m_static_LIB_3dIC
   use mMechGauss
 
   type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
@@ -45,7 +44,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   type( tMaterial ), pointer :: material     !< material information
 
   real(kind=kreal)   :: stiffness(20*6, 20*6)
-  integer(kind=kint) :: ierror, nodLOCAL(20)
+  integer(kind=kint) :: ierror, isect, ihead, nodLOCAL(20)
   real(kind=kreal)   :: tt(20), ecoord(3,20)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
@@ -91,6 +90,13 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                      stiffness(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &
                      u(1:2,1:nn) )
 					 
+      else if ( ic_type==301 ) then
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
+            stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
+
       else if ( ic_type==361 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3D8Bbar( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
@@ -111,14 +117,6 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                      stiffness(1:nn*ndof,1:nn*ndof), tincr, u(1:3,1:nn) )
         endif
 		
-
-!
-!      else if ( ic_type==731) then
-!        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
-!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
-!      else if ( ic_type==741) then
-!        call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
-!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
       else
         write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
         write(*,*) ' ic_type = ', ic_type

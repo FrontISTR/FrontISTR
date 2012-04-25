@@ -45,9 +45,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 !=====================================================================*
   use m_fstr
   use m_static_lib
-  use m_static_LIB_3d
+  use m_static_LIB_1d
   use m_static_LIB_C3D8
-  use m_static_LIB_3dIC
 
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -58,7 +57,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer(kind=kint) :: nodLOCAL(20)
   real(kind=kreal)   :: ecoord(3,20)
   real(kind=kreal)   :: thick
-  integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
+  integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j, isect, ihead
 
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
   real(kind=kreal)   :: tt(20), tt0(20), qf(20*6)
@@ -122,10 +121,18 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:),      &
                         thick,fstrSOLID%elements(icel)%iset,                                  &
                         total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
-						
+        
+      else if ( ic_type==301 ) then
+!        thick = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_THICK)
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), ddu(1:3,1:nn),  &
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
+        
       else if ( ic_type==361 ) then                      
         if( fstrPR%solution_type==kstSTATIC ) then
-          call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &   
+          call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &
                  tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:))
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
@@ -147,13 +154,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
         endif
 		
-
- !     else if ( ic_type==731) then
-!        call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
-!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
-!      else if ( ic_type==741) then
-!        call UPDATE_S4(xx,yy,zz,ee,pp,thick,local_stf)
-!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
       else
         write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
         write(*,*) ' ic_type = ', ic_type
@@ -213,6 +213,7 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
     iS= hecMESH%elem_type_index(itype-1) + 1
     iE= hecMESH%elem_type_index(itype  )
     ic_type= hecMESH%elem_type_item(itype)
+    if( ic_type==301 ) ic_type=111
     if (hecmw_is_etype_link(ic_type)) cycle
 
     ngauss = NumOfQuadPoints( ic_type )

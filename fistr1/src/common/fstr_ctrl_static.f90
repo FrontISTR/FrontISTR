@@ -257,6 +257,34 @@ function fstr_ctrl_get_TEMPERATURE( ctrl, irres, tstep, node_id, node_id_len, va
 end function fstr_ctrl_get_TEMPERATURE
 
 
+!* ----------------------------------------------------------------------------------------------- *!
+!> Read in !SPRING       
+!* ----------------------------------------------------------------------------------------------- *!
+
+function fstr_ctrl_get_SPRING( ctrl, amp, node_id, node_id_len, dof_id, value )
+        implicit none
+        integer(kind=kint) :: ctrl
+        character(len=HECMW_NAME_LEN) :: amp
+        character(len=HECMW_NAME_LEN),target  :: node_id(:)
+        character(len=HECMW_NAME_LEN),pointer :: node_id_p
+        integer(kind=kint) :: node_id_len
+        integer(kind=kint),pointer :: dof_id(:)
+        real(kind=kreal),pointer :: value(:)
+        integer(kind=kint) :: fstr_ctrl_get_SPRING
+
+        character(len=HECMW_NAME_LEN) :: data_fmt,ss
+        write(ss,*)  node_id_len
+        write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IR '
+
+        fstr_ctrl_get_SPRING = -1
+        if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
+        node_id_p => node_id(1)
+        fstr_ctrl_get_SPRING = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_id, value )
+
+end function fstr_ctrl_get_SPRING
+
+
 !----------------------------------------------------------------------
 !> Read in !ULOAD
 integer function fstr_ctrl_get_USERLOAD( ctrl )

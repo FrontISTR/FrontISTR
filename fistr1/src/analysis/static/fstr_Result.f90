@@ -196,7 +196,7 @@ module m_fstr_Result
                 ic_type= hecMESH%elem_type_item(itype)
 
                 if (hecmw_is_etype_link(ic_type)) cycle
-
+                if( ic_type==301 ) ic_type=111
                 ii = NumOfQuadPoints( ic_type )
                 do icel= iS, iE
                     jj = hecMESH%global_elem_ID(icel)
@@ -234,7 +234,7 @@ module m_fstr_Result
                 ic_type= hecMESH%elem_type_item(itype)
 
                 if (hecmw_is_etype_link(ic_type)) cycle
-
+                if( ic_type==301 ) ic_type=111
                 ii = NumOfQuadPoints( ic_type )
                 do icel= iS, iE
                     jj = hecMESH%global_elem_ID(icel)

@@ -87,6 +87,7 @@ OBJSF = \
         m_out.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
         GaussM.@f90objfilepostfix@ \
+        static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \
         static_LIB_3d.@f90objfilepostfix@ \
         static_LIB_C3D8.@f90objfilepostfix@ \

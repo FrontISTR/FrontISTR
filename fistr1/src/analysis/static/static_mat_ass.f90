@@ -64,6 +64,7 @@ module m_static_mat_ass
 
       fstrSOLID%factor(1)=0.d0; fstrSOLID%factor(2)=1.d0
       call fstr_mat_ass_main (hecMESH, hecMAT, fstrSOLID)
+      call fstr_AddSPRING(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       write(IDBG,*) 'fstr_mat_ass_main: OK'
 
       IF(myEIG%eqset==0) THEN

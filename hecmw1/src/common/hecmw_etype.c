@@ -35,7 +35,8 @@ HECMW_get_etype_UTIL2HECMW( int etype )
   case HECMW_MESH_ETYPE_TRI2:  return HECMW_ETYPE_TRI2;  
   case HECMW_MESH_ETYPE_TRI22:  return HECMW_ETYPE_TRI22;
   case HECMW_MESH_ETYPE_QUA1:  return HECMW_ETYPE_QUA1;  
-  case HECMW_MESH_ETYPE_QUA2:  return HECMW_ETYPE_QUA2;  
+  case HECMW_MESH_ETYPE_QUA2:  return HECMW_ETYPE_QUA2; 
+  case HECMW_MESH_ETYPE_ROD31:  return HECMW_ETYPE_ROD31;  
   case HECMW_MESH_ETYPE_TET1:  return HECMW_ETYPE_TET1;  
   case HECMW_MESH_ETYPE_TET2:  return HECMW_ETYPE_TET2; 
   case HECMW_MESH_ETYPE_TET22:  return HECMW_ETYPE_TET22;  
@@ -114,9 +115,10 @@ HECMW_get_etype_HECMW2UTIL( int etype )
   case HECMW_ETYPE_ROD2:  return HECMW_MESH_ETYPE_ROD2;  
   case HECMW_ETYPE_TRI1:  return HECMW_MESH_ETYPE_TRI1;  
   case HECMW_ETYPE_TRI2:  return HECMW_MESH_ETYPE_TRI2;  
-  case HECMW_ETYPE_TRI22:  return HECMW_MESH_ETYPE_TRI22; 
+  case HECMW_ETYPE_TRI22: return HECMW_MESH_ETYPE_TRI22; 
   case HECMW_ETYPE_QUA1:  return HECMW_MESH_ETYPE_QUA1;  
-  case HECMW_ETYPE_QUA2:  return HECMW_MESH_ETYPE_QUA2;  
+  case HECMW_ETYPE_QUA2:  return HECMW_MESH_ETYPE_QUA2; 
+  case HECMW_ETYPE_ROD31: return HECMW_MESH_ETYPE_ROD31;  
   case HECMW_ETYPE_TET1:  return HECMW_MESH_ETYPE_TET1;  
   case HECMW_ETYPE_TET2:  return HECMW_MESH_ETYPE_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MESH_ETYPE_TET22;
@@ -238,6 +240,7 @@ HECMW_get_max_node( int etype )
   case HECMW_ETYPE_TRI22: return HECMW_MAX_NODE_TRI2;  
   case HECMW_ETYPE_QUA1:  return HECMW_MAX_NODE_QUA1;  
   case HECMW_ETYPE_QUA2:  return HECMW_MAX_NODE_QUA2;  
+  case HECMW_ETYPE_ROD31: return HECMW_MAX_NODE_ROD31; 
   case HECMW_ETYPE_TET1:  return HECMW_MAX_NODE_TET1;  
   case HECMW_ETYPE_TET2:  return HECMW_MAX_NODE_TET2; 
   case HECMW_ETYPE_TET22: return HECMW_MAX_NODE_TET2; 
@@ -735,6 +738,7 @@ extern int
 HECMW_is_etype_solid(int etype)
 {
   switch(etype) {	
+  case 301:
   case 341:				/* fall through */
   case 342:				/* fall through */
   case 3422:

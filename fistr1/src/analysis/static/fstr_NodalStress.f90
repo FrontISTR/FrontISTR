@@ -32,6 +32,8 @@ module m_fstr_NodalStress
 !----------------------------------------------------------------------*
     use m_fstr
     use m_static_lib
+    use m_static_LIB_1d
+
     type (hecmwST_local_mesh) :: hecMESH                   !< hecmw mesh
     type (hecmwST_matrix    ) :: hecMAT                    !< hemcw mesh
     type (fstr_solid)      :: fstrSOLID                    !< fstr_solid
@@ -93,9 +95,15 @@ module m_fstr_NodalStress
       do icel= iS, iE
 
 !  --- calculate the nodal stress
-        call NodalStress_C3( ic_type, nn,                                       &
+        if( ic_type==301 ) then
+          call NodalStress_C1( ic_type, nn,                                       &
                              fstrSOLID%elements(icel)%gausses,                  &
                              edstrain(1:nn,:), edstress(1:nn,:)      )
+        else
+          call NodalStress_C3( ic_type, nn,                                       &
+                             fstrSOLID%elements(icel)%gausses,                  &
+                             edstrain(1:nn,:), edstress(1:nn,:)      )
+        endif
 
 !        write(*,'(a,i5,a)') '   edstrain  ( icel', icel, ')'
 !        do j=1,nn
@@ -116,9 +124,15 @@ module m_fstr_NodalStress
         ielem = icel
         ID_area = hecMESH%elem_ID(icel*2)
         if( ID_area==hecMESH%my_rank ) then
-          call ElementStress_C3( ic_type,                                       &
+          if( ic_type==301 ) then
+            call ElementStress_C1( ic_type,                                       &
                                  fstrSOLID%elements(icel)%gausses,              &
                                  estrain, estress     )
+          else
+            call ElementStress_C3( ic_type,                                       &
+                                 fstrSOLID%elements(icel)%gausses,              &
+                                 estrain, estress     )
+          endif
           fstrSOLID%ESTRAIN(6*ielem-5:6*ielem) = estrain
           fstrSOLID%ESTRESS(7*ielem-6:7*ielem-1) = estress
           s11=fstrSOLID%ESTRESS(7*ielem-6)

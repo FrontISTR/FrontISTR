@@ -61,7 +61,7 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
 
       ndof = hecMAT%NDOF
-      factor = fstrSOLID%factor(2)
+!      factor = fstrSOLID%factor(2)
       if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) factor=1.d0
 ! -------------------------------------------------------------------
 !  CLOAD
@@ -70,6 +70,10 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        factor = fstrSOLID%factor(2)
+        if( cstep > 1 ) then
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+        endif
         ig= fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp= fstrSOLID%CLOAD_ngrp_DOF(ig0)
         fval= fstrSOLID%CLOAD_ngrp_val(ig0)
@@ -88,6 +92,10 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%DLOAD_ngrp_tot
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        factor = fstrSOLID%factor(2)
+        if( cstep > 1 ) then
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+        endif
         ig= fstrSOLID%DLOAD_ngrp_ID(ig0)
         ltype= fstrSOLID%DLOAD_ngrp_LID(ig0)
         do i=0,6
@@ -160,7 +168,7 @@ module m_fstr_ass_load
           endif
 ! ----- Add vector
           do j=1,nsize
-              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
+              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+factor*vect(j)
           enddo
         enddo
       enddo
@@ -178,7 +186,8 @@ module m_fstr_ass_load
       endif
 	  
       do i=1, hecMESH%n_node*  hecMESH%n_dof
-          hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
+          hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
+!          hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
 !
 !
@@ -193,6 +202,10 @@ module m_fstr_ass_load
         do ig0= 1, fstrSOLID%TEMP_ngrp_tot
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+          factor = fstrSOLID%factor(2)
+          if( cstep > 1 ) then
+            if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+          endif
           ig= fstrSOLID%TEMP_ngrp_ID(ig0)
           fval=fstrSOLID%TEMP_ngrp_val(ig0)
           iS0= hecMESH%node_group%grp_index(ig-1) + 1
@@ -283,5 +296,42 @@ module m_fstr_ass_load
       endif
 
     end subroutine fstr_ass_load
+
+
+    subroutine fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      use m_fstr
+      use m_static_lib
+      integer, intent(in)                  :: cstep       !< current step
+      integer, intent(in)                  :: sub_step    !< current sub_step
+      type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
+      type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
+      type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
+      type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
+
+      integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num
+      real(kind=kreal) :: fval, fact
+
+      ndof = hecMAT%NDOF
+      do ig0= 1, fstrSOLID%SPRING_ngrp_tot
+        grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
+        if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%SPRING_ngrp_ID(ig0)
+        ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
+        fval= fstrSOLID%SPRING_ngrp_val(ig0)
+        if( fval < 0.d0 ) then
+          num = fstrSOLID%step_ctrl(cstep)%num_substep
+          fact = DFLOAT( num - sub_step ) / DFLOAT( num )
+          fval = - fval * fact
+        endif
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        do ik= iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          idx = ndof**2 * (in - 1) + ndof * (ityp - 1) + ityp
+          hecMAT%D(idx) = hecMAT%D(idx) + fval
+        enddo
+      enddo
+
+   end subroutine fstr_AddSPRING
 
 end module m_fstr_ass_load

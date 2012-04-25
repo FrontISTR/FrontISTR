@@ -79,7 +79,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
         ! counters
         integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
-        integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp
+        integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
         integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
         integer(kind=kint) :: c_eigen, c_contact
         integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
@@ -100,7 +100,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         P%CPL    => fstrCPL
 
         c_solution = 0; c_solver   = 0; c_step   = 0; c_write = 0; c_echo = 0;
-        c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0
+        c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
         c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
         c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
         c_eigen    = 0; c_contact  = 0                                  
@@ -175,6 +175,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!TEMPERATURE' ) then
                         c_temperature = c_temperature + 1
                         call fstr_setup_TEMPERATURE( ctrl, c_temperature, P )
+                else if( header_name == '!SPRING' ) then
+                        c_spring = c_spring + 1
+                        call fstr_setup_SPRING( ctrl, c_spring, P )
                 else if( header_name == '!REFTEMP' ) then
                         c_reftemp = c_reftemp + 1
                         call fstr_setup_REFTEMP( ctrl, c_reftemp, P )
@@ -555,6 +558,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            do i = 1, fstrSOLID%DLOAD_ngrp_tot
              fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
            enddo
+           do i = 1, fstrSOLID%SPRING_ngrp_tot
+             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%SPRING_ngrp_tot) = fstrSOLID%SPRING_ngrp_GRPID(i)
+           enddo
         endif
 !
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
@@ -583,6 +589,7 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%CLOAD_ngrp_tot    = 0
         fstrSOLID%DLOAD_ngrp_tot    = 0
         fstrSOLID%TEMP_ngrp_tot     = 0
+        fstrSOLID%SPRING_ngrp_tot   = 0
         fstrSOLID%TEMP_irres        = 0
         fstrSOLID%TEMP_tstep        = 1
         fstrSOLID%VELOCITY_ngrp_tot = 0
@@ -686,6 +693,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
         allocate( fstrSOLID%elements(hecMESH%n_elem) )
         do i=1,hecMESH%n_elem
           fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
+          if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
           if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
           ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
           if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )      
@@ -1598,6 +1606,59 @@ subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
         endif
 
 end subroutine fstr_setup_TEMPERATURE
+
+
+!-----------------------------------------------------------------------------!
+!> Read in !SPRING                                                            !
+!-----------------------------------------------------------------------------!
+
+subroutine fstr_setup_SPRING( ctrl, counter, P )
+        implicit none
+        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: counter
+        type(fstr_param_pack) :: P
+
+        integer(kind=kint) :: rcode
+        character(HECMW_NAME_LEN) :: amp
+        integer(kind=kint) :: amp_id
+        character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+        real(kind=kreal),pointer :: val_ptr(:)
+        integer(kind=kint),pointer :: id_ptr(:)
+        integer(kind=kint) :: i, n, old_size, new_size
+        integer(kind=kint) :: gid
+
+        if( P%SOLID%file_type /= kbcfFSTR ) return
+        gid = 1
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( n == 0 ) return
+        old_size = P%SOLID%SPRING_ngrp_tot
+        new_size = old_size + n
+        P%SOLID%SPRING_ngrp_tot = new_size
+        call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_GRPID, old_size, new_size )
+        call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_ID,  old_size, new_size )
+        call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_DOF, old_size, new_size )
+        call fstr_expand_real_array    ( P%SOLID%SPRING_ngrp_val, old_size, new_size )
+        call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
+
+        allocate( grp_id_name(n))
+        amp = ' '
+        val_ptr => P%SOLID%SPRING_ngrp_val(old_size+1:)
+        id_ptr =>P%SOLID%SPRING_ngrp_DOF(old_size+1:)
+        val_ptr = 0
+        rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+        call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id ) 
+        do i=1,n
+                P%SOLID%SPRING_ngrp_amp(old_size+i) = amp_id
+        end do
+        P%SOLID%SPRING_ngrp_GRPID(old_size+1:new_size) = gid
+        call node_grp_name_to_id_ex( P%MESH, '!SPRING', n, grp_id_name, P%SOLID%SPRING_ngrp_ID(old_size+1:))
+
+        deallocate( grp_id_name )
+
+end subroutine fstr_setup_SPRING
 
 
 !-----------------------------------------------------------------------------!

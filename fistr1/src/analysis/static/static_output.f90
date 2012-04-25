@@ -18,6 +18,7 @@
 module m_static_output
 
    use m_static_get_prop
+   use m_static_LIB_1d
    use m_static_LIB_2d
    use m_static_LIB_3d
    use m_static_LIB_shell
@@ -84,17 +85,21 @@ module m_static_output
       integer(kind=kint) nodLOCAL(20)
       REAL(kind=kreal) edstrain(20,6),edstress(20,6)
 !** Array for nodal recovery
-      integer (kind=KINT), dimension(:), allocatable :: nnumber
+      integer (kind=KINT), dimension(:), allocatable :: nnumber,tnumber
       real    (kind=KREAL), dimension(:), allocatable :: temp 
-      real(kind=KREAL), allocatable :: ndstrain(:,:),ndstress(:,:)
+      real(kind=KREAL), allocatable :: ndstrain(:,:),ndstress(:,:),tstrain(:,:),tstress(:,:)
 
 !*Allocate array
       allocate ( nnumber(hecMESH%n_node) )
       allocate( ndstrain(hecMESH%n_node,6), ndstress(hecMESH%n_node,7) )
+      allocate ( tnumber(hecMESH%n_node) )
+      allocate( tstrain(hecMESH%n_node,6), tstress(hecMESH%n_node,6) )
 !*ZERO CLEAR
       ndstrain=0.d0; ndstress=0.d0
+      tstrain=0.d0; tstress=0.d0
       arrayTotal=0
       nnumber=0
+      tnumber=0
 !C
 !C Set Temperature
 !C
@@ -143,21 +148,32 @@ module m_static_output
           enddo
 !C** Create local stiffness
           if( fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag ==0 ) then
-          if (ic_type==361) then
+          if( ic_type==361 ) then
             call UpdateST_C3D8IC(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn),        &
+                           edisp(1:nn*3),fstrSOLID%elements(icel)%gausses )
+          else if( ic_type==301 ) then
+            call UpdateST_C1( ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn), area,        &
                            edisp(1:nn*3),fstrSOLID%elements(icel)%gausses )
           else
             call UpdateST_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn),            &
                            edisp(1:nn*3),fstrSOLID%elements(icel)%gausses )
           endif
           endif
-          call NodalStress_C3(ic_type,nn,fstrSOLID%elements(icel)%gausses,edstrain(1:nn,:),edstress(1:nn,:) )
+          if( ic_type==301 ) then
+            call NodalStress_C1(ic_type,nn,fstrSOLID%elements(icel)%gausses,edstrain(1:nn,:),edstress(1:nn,:))
+          else
+            call NodalStress_C3(ic_type,nn,fstrSOLID%elements(icel)%gausses,edstrain(1:nn,:),edstress(1:nn,:))
+          endif
 !C** elem ID
 !!!          ielem = hecMESH%elem_ID(icel*2-1)
           ielem = icel
           ID_area = hecMESH%elem_ID(icel*2)
           if( ID_area==hecMESH%my_rank ) then
-            call ElementStress_C3(ic_type,fstrSOLID%elements(icel)%gausses,estrain,estress)
+            if( ic_type==301 ) then
+              call ElementStress_C1(ic_type,fstrSOLID%elements(icel)%gausses,estrain,estress)
+            else
+              call ElementStress_C3(ic_type,fstrSOLID%elements(icel)%gausses,estrain,estress)
+            endif
             fstrSOLID%ESTRAIN(6*ielem-5:6*ielem) = estrain
             fstrSOLID%ESTRESS(7*ielem-6:7*ielem-1) = estress
             s11=fstrSOLID%ESTRESS(7*ielem-6)
@@ -173,16 +189,27 @@ module m_static_output
           endif
 
           do j=1,nn
-            ndstrain( nodLocal(j),: ) = ndstrain(nodLOCAL(j),:) + edstrain(j,:)
-            ndstress( nodLocal(j),1:6 ) = ndstress(nodLOCAL(j),1:6) + edstress(j,:)
-            nnumber( nodLOCAL(j) )=nnumber( nodLOCAL(j) )+1
+            if( ic_type==301 ) then
+              tstrain( nodLocal(j),: ) = tstrain(nodLOCAL(j),:) + edstrain(j,:)
+              tstress( nodLocal(j),1:6 ) = tstress(nodLOCAL(j),1:6) + edstress(j,:)
+              tnumber( nodLOCAL(j) )=tnumber( nodLOCAL(j) )+1
+            else
+              ndstrain( nodLocal(j),: ) = ndstrain(nodLOCAL(j),:) + edstrain(j,:)
+              ndstress( nodLocal(j),1:6 ) = ndstress(nodLOCAL(j),1:6) + edstress(j,:)
+              nnumber( nodLOCAL(j) )=nnumber( nodLOCAL(j) )+1
+            endif
           enddo
         enddo
       enddo
 !** Average over nodes
       do i=1,hecMESH%n_node
-        ndstrain(i,:)=ndstrain(i,:)/nnumber(i)
-        ndstress(i,1:6)=ndstress(i,1:6)/nnumber(i)
+        if( tnumber(i).gt.0 ) then
+          ndstrain(i,:)=ndstrain(i,:)/nnumber(i) + tstrain(i,:)/tnumber(i)
+          ndstress(i,1:6)=ndstress(i,1:6)/nnumber(i) + tstress(i,1:6)/tnumber(i)
+        else
+          ndstrain(i,:)=ndstrain(i,:)/nnumber(i)
+          ndstress(i,1:6)=ndstress(i,1:6)/nnumber(i)
+        endif
       enddo
 !** CALCULATE von MISES stress
       do i=1,hecMESH%n_node
@@ -235,6 +262,7 @@ module m_static_output
       endif
 !*Deallocate array
       deallocate( nnumber,temp,ndstrain,ndstress)
+      deallocate( tnumber,tstrain,tstress)
       end subroutine fstr_nodal_stress_3d
 !C
 !C REACTION FORCE 3D
@@ -242,14 +270,15 @@ module m_static_output
       subroutine fstr_reaction_force_3d(hecMESH,fstrSOLID)
       use m_fstr
       use m_static_lib
+      use m_static_LIB_1d
       use m_static_LIB_3dIC
       implicit REAL(kind=kreal) (A-H,O-Z)
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)      :: fstrSOLID
 !** Local variables
-      REAL(kind=kreal) stiff(120,120)
+      REAL(kind=kreal) stiff(120,120), thick
       REAL(kind=kreal) edisp(60),force(60),ecoord(3,20)
-      integer(kind=kint) nodLOCAL(20)
+      integer(kind=kint) nodLOCAL(20), isect, ihead
       real    (kind=KREAL),dimension(:), allocatable :: spcForce
       integer (kind=KINT), dimension(:), allocatable :: id_spc
 !** Freedom
@@ -324,6 +353,11 @@ module m_static_output
 !C** Create local stiffness
             if (ic_type==361) then   
               call STF_C3D8IC( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses,stiff(1:nn*3,1:nn*3))
+            else if( ic_type==301 ) then
+              isect= hecMESH%section_ID(icel)
+              ihead = hecMESH%section%sect_R_index(isect-1)
+              thick = hecMESH%section%sect_R_item(ihead+1)
+              call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses,stiff(1:nn*3,1:nn*3) )
             else
               call STF_C3( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses,stiff(1:nn*3,1:nn*3), 1.d0)
             endif

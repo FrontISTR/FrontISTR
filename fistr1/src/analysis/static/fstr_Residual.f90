@@ -28,7 +28,7 @@ module m_fstr_Residual
   contains
 
 !C---------------------------------------------------------------------*
-      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID )
+      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID, sub_step)
 !C---------------------------------------------------------------------*
 !> In this subroutine, nodal force arose from prescribed displacement constarints 
 !> are cleared and nodal force residual is calculated. 
@@ -38,22 +38,44 @@ module m_fstr_Residual
       use m_fstr
       use mULoad
       integer(kind=kint), intent(in)       :: cstep      !< current step
+      integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
       type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
 !    Local variables
-      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof
+      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof,idx,num
       integer(kind=kint) :: grpid  
-      real(kind=kreal) :: rhs, lambda, factor
+      real(kind=kreal) :: rhs, lambda, factor, fval, fact
 
-      factor = fstrSOLID%factor(2)
+!      factor = fstrSOLID%factor(2)
       if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) factor=1.d0
 !    Set residual load
       do idof=1, hecMESH%n_node*  hecMESH%n_dof 
-        hecMAT%B(idof)=factor*fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+!        hecMAT%B(idof)=factor*fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
       end do
 	  ndof = hecMAT%NDOF
-	  
+
+      do ig0= 1, fstrSOLID%SPRING_ngrp_tot
+        grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
+        if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%SPRING_ngrp_ID(ig0)
+        ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
+        fval= fstrSOLID%SPRING_ngrp_val(ig0)
+        if( fval < 0.d0 ) then
+          num = fstrSOLID%step_ctrl(cstep)%num_substep
+          fact = DFLOAT( num - sub_step ) / DFLOAT( num )
+          fval = fval * fact
+        endif
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        do ik= iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          idx = ndof * (in - 1) + ityp
+          hecMAT%B(idx) = hecMAT%B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) )
+        enddo
+      enddo
+
 !    Consider Uload
       call uResidual( cstep, factor, hecMAT%B )
 

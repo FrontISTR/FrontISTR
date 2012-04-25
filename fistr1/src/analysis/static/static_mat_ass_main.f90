@@ -66,7 +66,7 @@ module m_static_mat_ass_main
             zz(j)=hecMESH%node(3*nodLOCAL(j))
           enddo
 !C** Create local stiffness
-          call fstr_local_stf_create(ndof, ic_type, xx, yy, zz, fstrSOLID%elements(icel)%gausses, &
+          call fstr_local_stf_create(hecMESH, ndof, ic_type, icel, xx, yy, zz, fstrSOLID%elements(icel)%gausses, &
                                      fstrSOLID%elements(icel)%iset, stiffness)
 !== CONSTRUCT the GLOBAL MATRIX STARTED
           call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)
@@ -80,13 +80,15 @@ module m_static_mat_ass_main
 
 
    !> Calculate stiff matrix of current element
-   subroutine FSTR_LOCAL_STF_CREATE(ndof, ic_type, xx, yy, zz, gausses, iset, stiffness)
+   subroutine FSTR_LOCAL_STF_CREATE(hecMESH, ndof, ic_type, icel, xx, yy, zz, gausses, iset, stiffness)
       use m_fstr
       use m_static_lib
+      use m_static_LIB_1d
       use m_static_LIB_3dIC
       use mMechGauss
 
-      integer(kind=kint) :: ndof, ic_type, iset
+      type (hecmwST_local_mesh) :: hecMESH
+      integer(kind=kint) :: ndof, ic_type, icel, iset
       real(kind=kreal) :: xx(:), yy(:), zz(:), stiffness(:, :)
       type( tGaussStatus ), intent(in) :: gausses(:)
       real(kind=kreal) :: ee, pp, thick,ecoord(3,20)
@@ -94,7 +96,7 @@ module m_static_mat_ass_main
 
 !** Local variables
       real(kind=kreal) :: local_stf(1830)
-      integer(kind=kint) :: nn
+      integer(kind=kint) :: nn, isect, ihead
 
 
       nn = hecmw_get_max_node(ic_type)
@@ -109,6 +111,12 @@ module m_static_mat_ass_main
       if ( ic_type==241 .or. ic_type==242 .or.    &
            ic_type==231 .or. ic_type==232 .or. ic_type==2322 ) then
         call STF_C2( ic_type,nn,ecoord(1:2,1:nn),gausses(:),thick,stiffness(1:nn*ndof,1:nn*ndof),iset)
+
+      else if ( ic_type==301 ) then
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,gausses(:),stiffness(1:nn*ndof,1:nn*ndof) )
 
       else if (ic_type==361) then
         call STF_C3D8IC( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof))

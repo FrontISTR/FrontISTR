@@ -261,6 +261,14 @@ public
                 integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
                 integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
                 real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
+                
+                !!SPRING
+                integer(kind=kint) :: SPRING_ngrp_tot                      !< Following spring boundary conditions
+                integer(kind=kint), pointer :: SPRING_ngrp_GRPID    (:) =>null()
+                integer(kind=kint), pointer :: SPRING_ngrp_ID       (:)
+                integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:)
+                integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
+                real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
 				
 				! for couple analysis
                 integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
@@ -539,6 +547,10 @@ contains
         nullify( S%DLOAD_ngrp_params )
         nullify( S%TEMP_ngrp_ID )
         nullify( S%TEMP_ngrp_val )
+        nullify( S%SPRING_ngrp_ID )
+        nullify( S%SPRING_ngrp_DOF )
+        nullify( S%SPRING_ngrp_amp )
+        nullify( S%SPRING_ngrp_val )
         nullify( S%STRESS )
         nullify( S%STRAIN )
         nullify( S%ESTRESS )
