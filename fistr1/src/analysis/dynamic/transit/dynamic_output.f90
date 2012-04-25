@@ -535,6 +535,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_param)         :: fstrPARAM
       type (fstr_solid)         :: fstrSOLID
+
       type (fstr_dynamic      ) :: fstrDYNAMIC
       integer(kind=kint) :: idx
       integer :: i,k, ii,jj
@@ -2153,7 +2154,7 @@ contains
         idx = 2
       else
         idx = 1
-      endi
+      endif
 !
       write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP =',istep,'TIME =',fstrDYNAMIC%t_curr   
 !C-- output
