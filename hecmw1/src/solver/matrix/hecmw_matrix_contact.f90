@@ -307,7 +307,6 @@ module hecmw_matrix_contact
       type (hecmwST_matrix) :: hecMAT
       integer(kind=kint)    :: i, j, k, l, countCAL, countCAU
 
-write(*,*) "hecmw_cmat_LU in"
       allocate (hecMAT%indexCL(0:hecMAT%NP), hecMAT%indexCU(0:hecMAT%NP))
 
       hecMAT%indexCL = 0
@@ -325,7 +324,6 @@ write(*,*) "hecmw_cmat_LU in"
         hecMAT%indexCL(i) = hecMAT%indexCL(i) + hecMAT%indexCL(i-1)
         hecMAT%indexCU(i) = hecMAT%indexCU(i) + hecMAT%indexCU(i-1)
       enddo
-write(*,*) "hecmw_cmat_LU 1 end"
 
       hecMAT%NPCL = hecMAT%indexCL(hecMAT%NP)
       hecMAT%NPCU = hecMAT%indexCU(hecMAT%NP)
@@ -357,7 +355,6 @@ write(*,*) "hecmw_cmat_LU 1 end"
           endif
         enddo
       enddo
-write(*,*) "hecmw_cmat_LU 2 end"
   end subroutine hecmw_cmat_LU
 
   !< free LU-part of cmat
