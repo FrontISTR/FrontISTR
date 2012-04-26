@@ -81,7 +81,7 @@ module m_fstr_ass_load
         iE0= hecMESH%node_group%grp_index(ig  )
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
-          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+fval
+          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
         enddo
       enddo
 !
