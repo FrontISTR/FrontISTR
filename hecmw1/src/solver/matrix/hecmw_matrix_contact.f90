@@ -32,6 +32,7 @@ module hecmw_matrix_contact
     type(hecmwST_matrix_contact) :: cmat
 
     nullify( cmat%pair )
+    cmat%max_val = 0
     call hecmw_cmat_clear( cmat)
   end subroutine hecmw_cmat_init
 
@@ -50,7 +51,6 @@ module hecmw_matrix_contact
     cmat%sorted = .true.
     cmat%max_row = 0
     cmat%max_col = 0
-    cmat%max_val = 0
   end subroutine hecmw_cmat_clear
 
   function compair_pair_by_index( p1, p2 )
