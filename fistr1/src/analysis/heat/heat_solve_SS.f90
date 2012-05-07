@@ -66,7 +66,7 @@ module m_heat_solve_SS
              enddo
         call flush(IDBG)
 
-        call heat_mat_ass_boundary( hecMESH, hecMAT, fstrHEAT, STIME, ETIME )
+        call heat_mat_ass_boundary( hecMESH, hecMAT, fstrHEAT, STIME, ETIME, 0.d0 )
              write(IDBG,*) 'mat_ass_boundary: OK'
              do i = 1, hecMESH%nn_internal
                write(IDBG,*) i, hecMAT%D(i)

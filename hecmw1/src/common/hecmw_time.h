@@ -22,6 +22,7 @@
 #ifndef HECMW_SERIAL
 #include "mpi.h"
 #else
+#include <time.h>
 #include <sys/timeb.h>
 #endif
 

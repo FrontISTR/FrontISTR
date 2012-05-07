@@ -84,7 +84,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_eigen, c_contact
         integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
         integer(kind=kint) :: c_couple, c_material
-        integer(kind=kint) :: c_mpc
+        integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep
         integer(kind=kint) :: c_output, islog
 
@@ -98,6 +98,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         P%HEAT   => fstrHEAT
         P%DYN    => fstrDYNAMIC
         P%CPL    => fstrCPL
+		
+        fstrPARAM%contact_algo = kcaALagrange
 
         c_solution = 0; c_solver   = 0; c_step   = 0; c_write = 0; c_echo = 0;
         c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
@@ -106,7 +108,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_eigen    = 0; c_contact  = 0                                  
         c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
         c_couple   = 0; c_material = 0
-        c_mpc      = 0
+        c_mpc      = 0; c_weldline = 0
         c_istep    = 0
         c_output   = 0
 
@@ -216,6 +218,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!SRADIATE' ) then
                         c_sradiate = c_sradiate + 1
                         call fstr_setup_SRADIATE( ctrl, c_sradiate, P )
+                else if( header_name == '!WELD_LINE' ) then
+                        c_weldline = c_weldline + 1
 
                 !--------------- for eigen -------------------------
 
@@ -257,7 +261,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         end do
 !
 ! ----- 
-        if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )             
+        if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
+        if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )	
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         n = c_material
         if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
@@ -295,7 +300,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0
         c_material = 0
         c_output = 0
-        c_contact  = 0                                                
+        c_contact  = 0
+        fstrHEAT%WL_tot = 0	
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -337,6 +343,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
+                stop
+            endif
+			
+          else if( header_name == '!WELD_LINE'  ) then
+            fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
+            if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
+                write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
+                write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
                 stop
             endif
 
@@ -835,7 +849,7 @@ subroutine fstr_heat_init( fstrHEAT )
         fstrHEAT%Q_SUF_tot   = 0
         fstrHEAT%R_SUF_tot   = 0
         fstrHEAT%H_SUF_tot   = 0
-
+        fstrHEAT%WL_tot      = 0
 end subroutine fstr_heat_init
 
 !> Initial setting of eigen ca;culation

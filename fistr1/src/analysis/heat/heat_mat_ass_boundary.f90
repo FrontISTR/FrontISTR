@@ -19,7 +19,7 @@ module m_heat_mat_ass_boundary
 !C***
 !C*** MAT_ASS_BOUNDARY
 !C***
-   subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,ATIME, BTIME )
+   subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,ATIME, BTIME, DTIME )
 
       use m_fstr
       use m_heat_mat_ass_bc_CFLUX
@@ -29,7 +29,7 @@ module m_heat_mat_ass_boundary
       use m_heat_mat_ass_bc_RADIATE
 
       implicit none
-      real(kind=kreal)   ATIME,BTIME,CTIME
+      real(kind=kreal)   ATIME,BTIME,CTIME, DTIME
       type (fstr_heat         ) :: fstrHEAT
       type (hecmwST_matrix    ) :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
@@ -47,7 +47,7 @@ module m_heat_mat_ass_boundary
 !C | !DFLUX  |
 !C +---------+
 !C===
-      call heat_mat_ass_bc_DFLUX ( hecMESH, hecMAT, fstrHEAT, CTIME )
+      call heat_mat_ass_bc_DFLUX ( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME )
 !C
 !C +--------+
 !C | !FILM  |

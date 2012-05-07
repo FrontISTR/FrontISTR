@@ -408,7 +408,7 @@
         end type hecmwST_matrix_contact
 
         type hecmwST_matrix
-          integer(kind=kint)  N, NP, NPL, NPU, NDOF
+          integer(kind=kint)  N, NP, NPL, NPU, NDOF, NPCL, NPCU
           !integer(kind=kint)  NU, NL  ! used only in mat_con
 !          integer(kind=kint)  N, NP, NE, NPL, NPU, NU, NL, NDOF
           !integer(kind=kint)  NCOLORtot, NHYP, npLX1, npUX1, NLmax, NUmax, NCOLORk
@@ -417,10 +417,12 @@
 !          integer(kind=kint), pointer :: globalNODEID(:)
           real(kind=kreal), pointer :: D(:), B(:), X(:), ALU(:)
           real(kind=kreal), pointer :: AL(:), AU(:)
-          !real(kind=kreal), pointer :: PAL(:), PAU(:)
+          real(kind=kreal), pointer :: CAL(:)=>null(), CAU(:)=>null()
           !real(kind=kreal), pointer :: ALUG_L(:), ALUG_U(:)
           integer(kind=kint), pointer :: indexL(:), indexU(:)
           integer(kind=kint), pointer ::  itemL(:),  itemU(:)
+          integer(kind=kint), pointer ::  indexCL(:)=>null(), indexCU(:)=>null()
+          integer(kind=kint), pointer ::  itemCL(:)=>null(),  itemCU(:)=>null()
           !integer(kind=kint), pointer :: INL  (:), INU  (:)  ! used only in mat_con
           !integer(kind=kint), pointer :: INLmc(:), INUmc(:)
           !integer(kind=kint), pointer :: IAL  (:,:), IAU  (:,:)  ! used only in mat_con

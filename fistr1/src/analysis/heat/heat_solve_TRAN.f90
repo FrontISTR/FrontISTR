@@ -149,7 +149,7 @@ module m_heat_solve_TRAN
               write(IDBG,*) 'mat_ass_capacity : OK'
               call flush(IDBG)
 
-          call heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,TT,ST )
+          call heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,TT,ST, DTIME )
               write(IDBG,*) 'mat_ass_boundary: OK'
               call flush(IDBG)
 			  

@@ -846,4 +846,38 @@ module m_static_LIB_3d
 
    END SUBROUTINE
    
+
+!> Volume of element
+!----------------------------------------------------------------------*
+   real(kind=kreal) function VOLUME_C3(ETYPE,NN,XX,YY,ZZ)
+!----------------------------------------------------------------------*
+      INTEGER(kind=kint), INTENT(IN)  :: ETYPE, NN
+      REAL(kind=kreal), INTENT(IN)    :: XX(:),YY(:),ZZ(:)
+      
+      REAL(kind=kreal) XJ(3,3),DET,WG
+      INTEGER(kind=kint) LX,I 
+      REAL(kind=kreal) localcoord(3),deriv(NN,3)
+
+      VOLUME_C3 = 0.d0
+! LOOP FOR INTEGRATION POINTS
+        DO  LX=1,NumOfQuadPoints( ETYPE )
+              CALL getQuadPoint( ETYPE, LX, localcoord )
+              CALL getShapeDeriv( ETYPE, localcoord, deriv )
+!  JACOBI MATRIX
+              XJ(1,1:3)= matmul( xx(1:NN), deriv(1:NN,1:3) )
+              XJ(2,1:3)= matmul( yy(1:NN), deriv(1:NN,1:3) )
+              XJ(3,1:3)= matmul( zz(1:NN), deriv(1:NN,1:3) )
+!DETERMINANT OF JACOBIAN
+              DET=XJ(1,1)*XJ(2,2)*XJ(3,3)                                                 &
+                 +XJ(2,1)*XJ(3,2)*XJ(1,3)                                                 &
+                 +XJ(3,1)*XJ(1,2)*XJ(2,3)                                                 &
+                 -XJ(3,1)*XJ(2,2)*XJ(1,3)                                                 &
+                 -XJ(2,1)*XJ(1,2)*XJ(3,3)                                                 &
+                 -XJ(1,1)*XJ(3,2)*XJ(2,3)
+
+              VOLUME_C3 = VOLUME_C3+getWeight( etype, LX )*DET
+        ENDDO
+       
+   end function VOLUME_C3
+   
 end module m_static_LIB_3d

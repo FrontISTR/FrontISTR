@@ -253,12 +253,9 @@ contains
         slave = contact%slave(i)
         if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
           slforce(1:3)=ndforce(3*slave-2:3*slave)
-          id = contact%states(i)%surface
-          if( flag_ctAlgo=='SLagrange' ) then                                           
-            nlforce = contact%states(i)%multiplier(1)                                                          
-          elseif( flag_ctAlgo=='ALagrange' ) then
-            nlforce= -dot_product( contact%states(i)%direction, slforce )         
-          endif
+          id = contact%states(i)%surface                     
+          nlforce = contact%states(i)%multiplier(1)                                                          
+
           if( nlforce < -1.0d-8 ) then                                                            
             contact%states(i)%state = CONTACTFREE                                                        
             contact%states(i)%multiplier(:) = 0.d0 
@@ -464,7 +461,7 @@ contains
       real(kind=kreal)    :: elemcrd(3, l_max_elem_node )
       real(kind=kreal)    :: dum, dxi(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: fric(2), f3(3)
+      real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
 
       slave = contact%slave(lslave)
       fcoeff = contact%fcoeff
@@ -486,11 +483,11 @@ contains
           call DispIncreMatrix( opos(:), etype, nn, elemcrd, tangent,   &
                               metric, dispmat )
           fric(1:2) = contact%states(lslave)%multiplier(2:3)
-          f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
+          f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
           B(3*slave-2:3*slave) = B(3*slave-2:3*slave)+f3(1:3)	
           do j=1,nn
             iSS = contact%master(omaster)%nodes(j)
-            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)- shapefunc(j)*f3(:)
+            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+f3(3*j+1:3*j+3)
           enddo
         endif
 	  
@@ -513,11 +510,11 @@ contains
           call DispIncreMatrix( contact%states(lslave)%lpos, etype, nn, elemcrd, tangent,   &
                               metric, dispmat )
           fric(1:2) = contact%states(lslave)%multiplier(2:3)
-          f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
+          f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
           B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
           do j=1,nn
             iSS = contact%master(master)%nodes(j)
-            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+ shapefunc(j)*f3(:)
+            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
           enddo
         endif
 
@@ -542,7 +539,7 @@ contains
       real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
       real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: fric(2), f3(3), edisp(3*l_max_elem_node+3)
+      real(kind=kreal)    :: fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
 
       do i= 1, size(contact%slave)
         if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
@@ -584,111 +581,21 @@ contains
         dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
         dxy(:) = matmul( metric, dxi )
         fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
-        f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
-        dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
-        if(  contact%states(i)%state==CONTACTSLIP ) then       
-          fric(:) = fric(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
+        f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
+
+        if(  contact%states(i)%state==CONTACTSLIP ) then 
+          dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
+          f3(:) = f3(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
         endif
         B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
         do j=1,nn
           iSS = contact%master(master)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+ shapefunc(j)*f3(:)
+          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
         enddo
       enddo
   end subroutine calcu_contact_force0
   
-  !>\brief This subroutine update contact condition as follows: 
-  !!-# Contact force from multipler and disp increment
-  !!-# Update multiplier
-  !!-# Update nodal force residual
-  !!-# convergent info of contact calculation
-  subroutine calcu_contact_force1( contact, coord, disp, ddisp, incdisp, fcoeff, mu,     &
-                                         mut, B, gnt )
-      type( tContact ), intent(inout)   :: contact        !< contact info
-      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate 
-      real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
-      real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
-      real(kind=kreal), intent(in)      :: incdisp(:)     !< disp increment of current substep
-      real(kind=kreal), intent(in)      :: fcoeff         !< frictional coeff
-      real(kind=kreal), intent(in)      :: mu, mut        !< penalty
-      real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
-      real(kind=kreal), intent(inout)   :: gnt(2)         !< convergency information
-
-      integer(kind=kint)  :: slave,  etype, master
-      integer(kind=kint)  :: nn, i, j, k, iSS, cnt
-      real(kind=kreal)    :: elemdisp(3,l_max_elem_node), tangent(3,2)
-      real(kind=kreal)    :: dg(3), elemg(3),elemcrd(3, l_max_elem_node )
-      real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
-      real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: lgnt(2), fric(2), f3(3), edisp(3*l_max_elem_node+3)
-
-      cnt = 0; lgnt(:) =0.d0
-      do i= 1, size(contact%slave)
-        if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
-        slave = contact%slave(i)
-        edisp(1:3) = incdisp(3*slave-2:3*slave)
-        master = contact%states(i)%surface
-		
-        nn = size( contact%master(master)%nodes )
-        etype = contact%master(master)%etype
-        do j=1,nn
-            iSS = contact%master(master)%nodes(j)
-            elemdisp(:,j) = incdisp(3*iSS-2:3*iSS)
-            edisp(3*j+1:3*j+3) = incdisp(3*iSS-2:3*iSS)
-            elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)+ddisp(3*iSS-2:3*iSS)
-        enddo
-        call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
-		
-        ! normal component
-        elemg = 0.d0
-        do j=1,nn
-           elemg(:) = elemg(:)+shapefunc(j)*elemdisp(:,j)
-        enddo
-        dg(:) = incdisp(3*slave-2:3*slave) -  elemg(:)
-        dgn = dot_product( contact%states(i)%direction, dg )
-        contact%states(i)%distance = contact%states(i)%distance - dgn
-        contact%states(i)%wkdist = contact%states(i)%wkdist - dgn
-        contact%states(i)%multiplier(1) = contact%states(i)%multiplier(1)-mu*contact%states(i)%wkdist
-        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-contact%states(i)%multiplier(1)  &
-                                                    *contact%states(i)%direction
-									
-        do j=1,nn
-          iSS = contact%master(master)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+contact%states(i)%multiplier(1)*        &
-                                      shapefunc(j)*contact%states(i)%direction
-        enddo
-        cnt = cnt+1
-        lgnt(1) = lgnt(1)- contact%states(i)%wkdist
-		
-        if( fcoeff==0.d0 ) cycle
-		! tangent component
-        call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
-                              metric, dispmat )
-        dxi(1) = dot_product( dispmat(1,1:nn*3+3), edisp(1:nn*3+3) )
-        dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
-        dxy(:) = matmul( metric, dxi )
-        fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
-        f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
-        dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
-        if(  dgn > fcoeff*contact%states(i)%multiplier(1) ) then
-          contact%states(i)%state = CONTACTSLIP
-          fric(:) = fric(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
-        else
-          contact%states(i)%state = CONTACTSTICK
-        endif
-        contact%states(i)%multiplier(2:3) = fric(:)
-        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
-        do j=1,nn
-          iSS = contact%master(master)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+ shapefunc(j)*f3(:)
-        enddo
-        dxy(:) = matmul( dg, tangent )
-        lgnt(2) = lgnt(2)+dsqrt( dxy(1)*dxy(1)+dxy(2)*dxy(2) )
-      enddo
-      if(cnt>0) lgnt(:) = lgnt(:)/cnt
-      gnt = gnt + lgnt
-  end subroutine calcu_contact_force1
-   
+     
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
   subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, mu, mut,   &
@@ -708,7 +615,7 @@ contains
       real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
       real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: lgnt(2), fric(2), f3(3), edisp(3*l_max_elem_node+3)
+      real(kind=kreal)    :: lgnt(2), fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
  
       cnt =0; lgnt(:)=0.d0
       do i= 1, size(contact%slave)
@@ -748,16 +655,24 @@ contains
         dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
         dxy(:) = matmul( metric, dxi )
         fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
-        f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
+        f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
         dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
+		if( contact%states(i)%multiplier(1)>0.d0 ) then
         if(  dgn > fcoeff*contact%states(i)%multiplier(1) ) then
-          if( contact%states(i)%state==CONTACTSTICK ) ctchanged= .true.        
+          if( contact%states(i)%state==CONTACTSTICK ) then
+		     ctchanged= .true.  
+	         print *, "Node", slave, "to slip state",dgn, fcoeff*contact%states(i)%multiplier(1)  
+          endif
           contact%states(i)%state = CONTACTSLIP
           fric(:) = fric(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
         else
-          if( contact%states(i)%state==CONTACTSLIP ) ctchanged= .true.         
+          if( contact%states(i)%state==CONTACTSLIP ) then
+             ctchanged= .true.       
+             print *, "Node", slave, "to stick state",dgn, fcoeff*contact%states(i)%multiplier(1)
+          endif			 
           contact%states(i)%state = CONTACTSTICK
         endif
+		endif
         contact%states(i)%multiplier(2:3) = fric(:)
         dxy(:) = matmul( dg, tangent )
         lgnt(2) = lgnt(2)+dsqrt( dxy(1)*dxy(1)+dxy(2)*dxy(2) )
@@ -779,7 +694,7 @@ contains
       real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
       real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: fric(2), f3(3)
+      real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
       fcoeff = contact%fcoeff
       do i= 1, size(contact%slave)
         if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
@@ -810,11 +725,11 @@ contains
                               metric, dispmat )
 							  
         fric(1:2) = contact%states(i)%multiplier(2:3) 
-        f3(:) = fric(1)*tangent(:,1)+fric(2)*tangent(:,2)
+        f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
         B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
         do j=1,nn
           iSS = contact%master(master)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+ shapefunc(j)*f3(:)
+          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
         enddo
       enddo
 

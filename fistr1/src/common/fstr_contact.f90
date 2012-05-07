@@ -269,23 +269,7 @@ contains
           
   end subroutine
   
-  !> Update lagrangian multiplier
-  subroutine fstr_update_contact1( hecMESH, fstrSOLID, incdisp, B )
-      type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< mesh
-      type(fstr_solid), intent(inout)        :: fstrSOLID   !< fstr_solid
-      real(kind=kreal), intent(in)           :: incdisp(:)  !< disp increment of curr step
-      real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
-	  
-      integer :: i, nc
-      gnt = 0.d0
-      nc = size(fstrSOLID%contacts)
-      do i=1, nc
-     !   if( contacts(i)%mpced ) cycle
-        call calcu_contact_force1( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
-            , fstrSOLID%dunode(:), incdisp, fstrSOLID%contacts(i)%fcoeff, mu, mut, B, gnt )
-      enddo
-      if( nc>0 ) gnt = gnt/nc
-  end subroutine
+
   
    !> Update lagrangian multiplier
   subroutine fstr_update_contact0( hecMESH, fstrSOLID, B )

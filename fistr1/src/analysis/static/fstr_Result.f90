@@ -40,7 +40,7 @@ module m_fstr_Result
     integer, intent(in)                   :: totstep     !< total steps
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
-    type (fstr_solid), intent(in)         :: fstrSOLID
+    type (fstr_solid), intent(inout)      :: fstrSOLID
     type (fstr_param),intent(in)          :: fstrPARAM
     real(kind=kreal),intent(in)           :: ttime
 

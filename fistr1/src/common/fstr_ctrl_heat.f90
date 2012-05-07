@@ -423,6 +423,35 @@ contains
         fstr_ctrl_get_SRADIATE = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name_p, value, sink )
 
     end function fstr_ctrl_get_SRADIATE
+	
+!* ----------------------------------------------------------------------------------------------- *!
+!> Read in !WELD_LINE  (heat)          
+!* ----------------------------------------------------------------------------------------------- *!
+
+    function fstr_ctrl_get_WELDLINE( ctrl, hecMESH, grp_name_len, weldline )
+        use fstr_setup_util
+        implicit none
+        integer(kind=kint), intent(in)       :: ctrl
+        type(hecmwST_local_mesh), intent(in) :: hecMESH
+        integer(kind=kint), intent(in)       :: grp_name_len
+        type(tWeldLine), intent(inout)       :: weldline
+        integer(kind=kint) :: fstr_ctrl_get_WELDLINE
+
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        character(len=HECMW_NAME_LEN) :: s1, grp_id_name(1)
+        integer :: grp_id(1)
+
+        fstr_ctrl_get_WELDLINE = -1
+        if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRRR ',   weldline%I, weldline%U, weldline%coe, weldline%v )/=0 ) return	
+        write(s1,*) grp_name_len
+        write(data_fmt,'(a,a,a)') 'S', trim(adjustl(s1)), 'IRRRR  '
+        if( fstr_ctrl_get_data_ex( ctrl, 2, data_fmt,  grp_id_name, weldline%xyz, weldline%n1, &
+              weldline%n2, weldline%distol, weldline%tstart )/=0 ) return
+        call elem_grp_name_to_id( hecMESH, 'WELD_LINE ', 1, grp_id_name, grp_id )
+        weldline%egrpid = grp_id(1)
+
+        fstr_ctrl_get_WELDLINE = 0
+    end function fstr_ctrl_get_WELDLINE
 
 !* ----------------------------------------------------------------------------------------------- *!
 end module fstr_ctrl_heat

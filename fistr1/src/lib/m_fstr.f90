@@ -296,6 +296,8 @@ public
                 real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
                 real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp icrement
                 real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
+                real(kind=kreal), pointer :: temp_bak(:)=> null()       
+                real(kind=kreal), pointer :: last_temp(:)=> null()
                 real(kind=kreal), pointer :: reftemp(:)    => null()   !< =reference temperature
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
@@ -393,6 +395,9 @@ public
                 integer, pointer          :: H_SUF_ampl(:,:)
                 integer, pointer          :: H_SUF_surf(:)
                 real(kind=kreal), pointer :: H_SUF_val(:,:)
+				
+                integer  :: WL_tot				
+                type(tWeldLine), pointer :: weldline(:) => null()
 
         end type fstr_heat
 
@@ -488,6 +493,22 @@ public
         integer( kind=kint ),pointer :: index(:)   ! size:total node num.
         !  -1:not relation, >1:index of coupled_node
     end type fstr_couple
+	
+!C ---------------------------------------------------------------------------- 
+!C
+!> Data for weld line
+!C
+    type tWeldLine
+        integer              :: egrpid		
+        real( kind=kreal )   :: I          
+        real( kind=kreal )   :: U         
+        real( kind=kreal )   :: coe      
+        real( kind=kreal )   :: v        
+        integer              :: xyz     
+        real(kind=kreal)     :: n1, n2
+        real(kind=kreal)     :: distol
+        real(kind=kreal)     :: tstart
+    end type tWeldLine
 
 !C ----------------------------------------------------------------------------
 !C-- GROBAL VARIABLES for MEMORY MANAGEMENT or TIME RECORDING
