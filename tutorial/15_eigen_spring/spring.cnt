@@ -1,0 +1,25 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 5, 1.0E-8, 60
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY
+ XFIX, 1, 1, 0.0
+ YFIX, 2, 2, 0.0
+ ZFIX, 3, 3, 0.0
+### Material
+# define in mesh file
+### Solver Setting
+!SOLVER,METHOD=DIRECT
+## Post Control
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!output_type = COMPLETE_AVS
+!END

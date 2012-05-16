@@ -1,0 +1,29 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY, GRPID=1
+ LOADS, 2, 2, -5.0
+ FIX,   1, 3, 0.0
+### STEP
+!STEP, SUBSTEPS=1, CONVERG=1.0e-5
+ BOUNDARY, 1
+### Material
+!MATERIAL, NAME=MAT1
+!HYPERELASTIC, TYPE=ARRUDA-BOYCE
+ 0.71, 1.7029, 0.1408
+### Solver Setting
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 10000, 2
+ 1.0e-8, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = COMPLETE_AVS
+!END

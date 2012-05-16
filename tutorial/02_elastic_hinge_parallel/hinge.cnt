@@ -1,0 +1,31 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!WRITE,RESULT
+!WRITE,VISUAL
+## Solver Control
+### Boundary Conditon
+!BOUNDARY
+ BND0, 1, 3, 0.000000
+!BOUNDARY
+ BND1, 1, 3, 0.000000
+!CLOAD
+ CL0, 1, 1.00000
+### Material
+!MATERIAL, NAME=STEEL
+!ELASTIC
+ 210000.0, 0.3
+!DENSITY
+ 7.85e-6
+### Solver Setting
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 10000, 2
+ 1.0e-08, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!output_type = COMPLETE_AVS
+!END

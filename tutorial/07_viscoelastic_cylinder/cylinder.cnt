@@ -1,0 +1,34 @@
+#  Control File for FISTR
+## Analysis Control
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,VISUAL
+!WRITE,RESULT
+## Solver Control
+### Boundary Conditon
+!BOUNDARY, GRPID=1
+ LOADS, 3, 3, -7.0
+ FIX,   3, 3, 0.0
+ XSYMM, 1, 1, 0.0
+ YSYMM, 2, 2, 0.0
+### STEP
+!STEP, TYPE=VISCO, CONVERG=1.0e-5
+ 0.2, 2.0
+ BOUNDARY, 1
+### Material
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 206900.0, 0.29
+!VISCOELASTIC
+ 0.5, 1.0
+### Solver Setting
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 10000, 2
+ 1.0e-8, 1.0, 0.0
+## Post Control
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!output_type = COMPLETE_AVS
+!END
