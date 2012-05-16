@@ -1288,6 +1288,7 @@ subroutine fstr_setup_COUPLE( ctrl, counter, P )
 
         allocate( grp_id_name(n))
         rcode = fstr_ctrl_get_COUPLE( ctrl,           &
+                        P%PARAM%fg_couple_type,       &
                         P%PARAM%fg_couple_first,      &
                         grp_id_name, HECMW_NAME_LEN  )
         if( rcode /= 0 ) call fstr_ctrl_err_stop

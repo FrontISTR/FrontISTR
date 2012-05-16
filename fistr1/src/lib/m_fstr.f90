@@ -183,6 +183,7 @@ public
 
                 ! for couple analysis
                 integer( kind=kint ) :: fg_couple          !< (default:0)
+                integer( kind=kint ) :: fg_couple_type     !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
                 
                 ! for restart control                       
@@ -875,6 +876,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
 
         ! for couple
         fstrPARAM%fg_couple      = 0
+        fstrPARAM%fg_couple_type = 0
         fstrPARAM%fg_couple_first= 0
 
         ! index table for global node ID sorting
