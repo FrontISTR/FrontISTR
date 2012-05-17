@@ -28,31 +28,31 @@ PARMETISLIBDIR = $(PARMETISDIR)
 PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 
 # Refiner
-REFINERDIR     = $(HOME)/REVOCAP_Refiner-0.4.3
+REFINERDIR     = $(HOME)/REVOCAP_Refiner
 REFINERINCDIR  = $(REFINERDIR)/Refiner
-REFINERLIBDIR  = $(REFINERDIR)/lib/x86_64-linux
+REFINERLIBDIR  = $(REFINERDIR)/lib
 
 # Coupler
-REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-1.3
+REVOCAPDIR     = $(HOME)/REVOCAP_Coupler
 REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
 
 # C compiler settings
-CC             = mpiicc
+CC             = mpicc
 CFLAGS         =
 LDFLAGS        = -lm
 OPTFLAGS       = -O3
 
 # C++ compiler settings
-CPP            = mpiicpc
-CPPFLAGS       = -I$(HOME)/include
+CPP            = mpic++
+CPPFLAGS       = -DMPICH_IGNORE_CXX_SEEK
 CPPLDFLAGS     =
 CPPOPTFLAGS    = -O3
 
 # Fortran compiler settings
-F90            = mpiifort
+F90            = mpif90
 F90FLAGS       =
-F90LDFLAGS     = -mkl=parallel -static-intel
+F90LDFLAGS     =
 F90OPTFLAGS    = -O2
 
 MAKE           = make

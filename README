@@ -2,7 +2,7 @@
 
   README of FrontISTR on HEC-MW (in English)
 
-  2011.06.01  Version 4.0
+  2012.06.01  Version 4.1
 
   IIS,The University of Tokyo, CISS
 
@@ -18,8 +18,8 @@
   README                      : README (in English : this file)
   README.ja                   : README (in Japanese)
   VERSION                     : version information
-  CISS_lic_agree2011_en.pdf   : grant of license to CISS free software (in English)
-  CISS_lic_agree2011_ja.pdf   : grant of license to CISS free software (in Japanese)
+  CISS_lic_agree2012_en.pdf   : grant of license to CISS free software (in English)
+  CISS_lic_agree2012_ja.pdf   : grant of license to CISS free software (in Japanese)
   METIS-copyright.txt         : METIS library copyright
   METIS-manual.pdf            : METIS library manual
   setup.sh & setup_fistr.sh   : shell script to create makefiles
@@ -41,13 +41,13 @@
 
   fistr/                      : starter program
 
-  fisrt1/                     : FrontISTR Ver.3.2
+  fisrt1/                     : FrontISTR Ver.3.3
 
-  fistr2/                     : FrontISTR Ver.4.0
+  fistr2/                     : FrontISTR Ver.4.1
 
-  hecmw1/                     : HEC-MW Ver.2.3
+  hecmw1/                     : HEC-MW Ver.2.4
 
-  hecmw2/                     : HEC-MW Ver.4.0
+  hecmw2/                     : HEC-MW Ver.4.1
 
   etc/                        : various setting files
 

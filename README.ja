@@ -2,7 +2,7 @@
 
   README of FrontISTR on HEC-MW (日本語版)
 
-  2011.06.01  Version 4.0
+  2012.06.01  Version 4.1
 
   東京大学生産技術研究所
 　革新的シミュレーション研究センター
@@ -19,8 +19,8 @@
   README                      : README (英語版)
   README.ja                   : README (日本語版:このファイル)
   VERSION                     : バージョン情報
-  CISS_lic_agree2011_en.pdf   : フリーソフトウェア使用許諾書 (英語版)
-  CISS_lic_agree2011_ja.pdf   : フリーソフトウェア使用許諾書 (日本語版)
+  CISS_lic_agree2012_en.pdf   : フリーソフトウェア使用許諾書 (英語版)
+  CISS_lic_agree2012_ja.pdf   : フリーソフトウェア使用許諾書 (日本語版)
   METIS-copyright.txt         : METIS使用許諾書
   METIS-manual.pdf            : METISライブラリマニュアル
   setup.sh & setup_fistr.sh　 : makefile作成用シェルスクリプト
@@ -29,7 +29,7 @@
   Makefile.dev       　　　　 : 環境設定ファイル (開発者用)
 
   doc/                        : ドキュメント
-  doc/FrontISTR_instalｌ_manual.pdf
+  doc/FrontISTR_install_manual.pdf
                               : FrontISTR インストールマニュアル
   doc/FrontISTR_user_manual.pdf
                               : FrontISTR ユーザーマニュアル
@@ -42,13 +42,13 @@
 
   fistr/                      : 起動プログラム
 
-  fistr1/                     : FrontISTR Ver.3.2
+  fistr1/                     : FrontISTR Ver.3.3
 
-  fistr2/                     : FrontISTR Ver.4.0
+  fistr2/                     : FrontISTR Ver.4.1
 
-  hecmw1/                     : HEC-MW Ver.2.3
+  hecmw1/                     : HEC-MW Ver.2.4
 
-  hecmw2/                     : HEC-MW Ver.4.0
+  hecmw2/                     : HEC-MW Ver.4.1
 
   etc/                        : 各種環境設定ファイル
 
