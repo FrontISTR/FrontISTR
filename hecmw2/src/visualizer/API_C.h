@@ -46,9 +46,11 @@ int mw_get_element_index_(int* id);
 int mw_fistr_elemtype_to_mw3_elemtype_(int* fistr_elemtype);
 int mw_mw3_elemtype_to_fistr_elemtype_(int* mw3_elemtype);
 
-int mw_mpi_int_();
-int mw_mpi_double_();
+#ifdef HAVE_MPI
+MPI_Comm mw_mpi_comm_();
+#else
 int mw_mpi_comm_();
+#endif
 int mw_get_rank_();
 int mw_get_num_of_process_();
 
