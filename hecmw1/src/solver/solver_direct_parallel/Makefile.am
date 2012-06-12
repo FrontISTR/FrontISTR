@@ -14,6 +14,13 @@ HECMWLIBDIR       = ../../../lib
 HECMWINCDIR       = ../../../include
 HECMWLIBS         = @hecmwlibs@
 
+METISDIR          = @metisdir@
+METISLIBDIR       = @metislibdir@
+METISINCDIR       = @metisincdir@
+METISLIBS         = @metislibs@
+METIS_CFLAGS      = @metis_cflags@
+METIS_LDFLAGS     = @metis_ldflags@
+
 REFINERDIR        = @refinerdir@
 REFINERINCDIR     = @refinerincdir@
 REFINERLIBDIR     = @refinerlibdir@
@@ -24,11 +31,11 @@ CFLAGS            = @cflags@
 BASE_CFLAGS       = @base_cflags@
 MPI_CFLAGS        = @mpi_cflags@
 HECMW_CFLAGS      = @hecmw_cflags@
-ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS        = $(METIS_CFLAGS) $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS           = @ldflags@
 MPI_LDFLAGS       = @mpi_ldflags@
 HECMW_LDFLAGS     = @hecmw_ldflags@
-ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS       = $(METIS_LDFLAGS) $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS          = @optflags@
 
 F90               = @f90@
@@ -72,62 +79,10 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 OBJS = \
-	balance.@cobjfilepostfix@ \
-	bucketsort.@cobjfilepostfix@ \
-	ccgraph.@cobjfilepostfix@ \
-	coarsen.@cobjfilepostfix@ \
-	compress.@cobjfilepostfix@ \
-	debug.@cobjfilepostfix@ \
-	estmem.@cobjfilepostfix@ \
-	fm.@cobjfilepostfix@ \
-	fortran.@cobjfilepostfix@ \
-	frename.@cobjfilepostfix@ \
-	graph.@cobjfilepostfix@ \
-	initpart.@cobjfilepostfix@ \
-	kmetis.@cobjfilepostfix@ \
-	kvmetis.@cobjfilepostfix@ \
-	kwayfm.@cobjfilepostfix@ \
-	kwayrefine.@cobjfilepostfix@ \
-	kwayvolfm.@cobjfilepostfix@ \
-	kwayvolrefine.@cobjfilepostfix@ \
-	match.@cobjfilepostfix@ \
 	matrix2graph.@cobjfilepostfix@ \
 	matrix_repart.@cobjfilepostfix@ \
-	mbalance.@cobjfilepostfix@ \
-	mbalance2.@cobjfilepostfix@ \
-	mcoarsen.@cobjfilepostfix@ \
 	mem_util.@cobjfilepostfix@ \
-	memory.@cobjfilepostfix@ \
-	mesh.@cobjfilepostfix@ \
-	meshpart.@cobjfilepostfix@ \
-	mfm.@cobjfilepostfix@ \
-	mfm2.@cobjfilepostfix@ \
-	mincover.@cobjfilepostfix@ \
-	minitpart.@cobjfilepostfix@ \
-	minitpart2.@cobjfilepostfix@ \
-	mkmetis.@cobjfilepostfix@ \
-	mkwayfmh.@cobjfilepostfix@ \
-	mkwayrefine.@cobjfilepostfix@ \
-	mmatch.@cobjfilepostfix@ \
-	mmd.@cobjfilepostfix@ \
-	mpmetis.@cobjfilepostfix@ \
-	mrefine.@cobjfilepostfix@ \
-	mrefine2.@cobjfilepostfix@ \
-	mutil.@cobjfilepostfix@ \
-	myqsort.@cobjfilepostfix@ \
-	ometis.@cobjfilepostfix@ \
-	parmetis.@cobjfilepostfix@ \
-	pmetis.@cobjfilepostfix@ \
-	pqueue.@cobjfilepostfix@ \
-	refine.@cobjfilepostfix@ \
-	separator.@cobjfilepostfix@ \
 	separator_c2f_c.@cobjfilepostfix@ \
-	sfm.@cobjfilepostfix@ \
-	srefine.@cobjfilepostfix@ \
-	stat.@cobjfilepostfix@ \
-	subdomains.@cobjfilepostfix@ \
-	timing.@cobjfilepostfix@ \
-	util.@cobjfilepostfix@
 
 OBJSF = \
 	m_irjc_matrix.@f90objfilepostfix@ \

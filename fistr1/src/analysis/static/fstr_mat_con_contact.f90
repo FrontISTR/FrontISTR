@@ -550,4 +550,20 @@ module fstr_matrix_con_contact
     end subroutine fstr_copy_lagrange_contact 
  
 
+!> \brief this function judges whether sitiffness matrix is symmetric or not
+    logical function fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+
+      type(fstr_solid )        :: fstrSOLID
+      type(hecmwST_local_mesh) :: hecMESH
+      integer (kind=kint)      :: is_in_contact
+
+      is_in_contact = 0
+      if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  &
+           is_in_contact = 1
+      call hecmw_allreduce_I1(hecMESH, is_in_contact, HECMW_MAX)
+      fstr_is_matrixStruct_symmetric = (is_in_contact == 0)
+
+    end function fstr_is_matrixStruct_symmetric
+
+
 end module fstr_matrix_con_contact

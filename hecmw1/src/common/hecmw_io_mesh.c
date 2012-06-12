@@ -1081,7 +1081,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 
 	if(HECMW_set_int_nval(p->elem) == 0) {
 		/* new group && ignored all */
-		HECMW_assert(n == 0);
+		HECMW_assert(nelem == 0);
 		HECMW_set_int_finalize(p->elem);
 		HECMW_free(p->elem);
 		HECMW_free(p);

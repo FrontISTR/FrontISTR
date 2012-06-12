@@ -79,7 +79,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         real(kind=kreal) :: filter
         integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-        character(66) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag '   
+        character(72) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS '
 
         integer(kind=kint) :: number_number = 5    
         integer(kind=kint) :: indirect_number = 4

@@ -37,18 +37,20 @@ OPTFLAGS                = @optflags@
 REVOCAP_F90FLAGS        = @revocap_f90flags@
 REVOCAP_F90LDFLAGS      = @revocap_f90ldflags@
 
+include ../../../Makefile.inc
+
 F90                     = @f90@
 F90FLAGS                = @f90flags@
 BASE_F90FLAGS           = @base_f90flags@
 MPI_F90FLAGS            = @mpi_f90flags@
 HECMW_F90FLAGS          = @hecmw_f90flags@
 FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS)
+ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS) $(F90FLAGS_EXTRA)
 F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(F90LDFLAGS_EXTRA)
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@
@@ -106,17 +108,25 @@ OBJSF = \
         precheck_LIB_2d.@f90objfilepostfix@ \
         precheck_LIB_3d.@f90objfilepostfix@ \
         precheck_LIB_shell.@f90objfilepostfix@ \
+        sparse_matrix.@f90objfilepostfix@ \
+        sparse_matrix_hec.@f90objfilepostfix@
+
+OBJSF2 = \
+        solve_LINEQ_MUMPS.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
         eigen_LIB.@f90objfilepostfix@ \
         heat_LIB.@f90objfilepostfix@
 
+OBJSF_MUMPS = MUMPS_wrapper.@f90objfilepostfix@
+OBJSF_MUMPS_DUMM = MUMPS_wrapper_dumm.@f90objfilepostfix@
+
 HEADERS =
 
 #------------------------------------------------------------------------------#
-all: @build_target@
+all: @build_target_mumps@
 
-@build_target@: 
+build-default:
 	@cd utilities && $(MAKE) @build_target@
 	@cd user      && $(MAKE) @build_target@
 	@cd element   && $(MAKE) @build_target@
@@ -124,13 +134,26 @@ all: @build_target@
 	@cd contact   && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
+build-with-mumps:
+	@cd utilities && $(MAKE) @build_target@
+	@cd user      && $(MAKE) @build_target@
+	@cd element   && $(MAKE) @build_target@
+	@cd physics   && $(MAKE) @build_target@
+	@cd contact   && $(MAKE) @build_target@
+	$(MAKE) BUILD_CURR_WITH_MUMPS
+
 BUILD_CURR: $(TARGET) $(F90TARGET) install-module
+
+BUILD_CURR_WITH_MUMPS: $(TARGET) F90TARGET_MUMPS install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF)
-	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF)
+$(F90TARGET): $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
+	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
+
+F90TARGET_MUMPS: $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
+	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
 
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.

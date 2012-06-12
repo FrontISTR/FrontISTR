@@ -42,10 +42,11 @@ module m_set_arrays_directsolver_contact
 
 !> \brief This subroutine sets index arrays for direct sparse solver from those stored 
 !> \in the matrix structures defined in MODULE fstr_matrix_con_contact     
-    subroutine set_pointersANDindices_directsolver(hecMAT,fstrMAT)
+    subroutine set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
     
       type(hecmwST_matrix)                     :: hecMAT    !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+      logical :: is_sym
     
       integer (kind=kint)     :: np                         !< total number of nodes
       integer (kind=kint)     :: ndof                       !< degree of freedom
@@ -54,6 +55,8 @@ module m_set_arrays_directsolver_contact
       integer (kind=kint)     :: ierr                       !< error indicateor
       integer (kind=kint)     :: i, j, k, l, countNon0  
                    
+      symmetricMatrixStruc = is_sym
+
       np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = fstrMAT%num_lagrange
       nn = np*ndof + num_lagrange + 1
      
@@ -207,15 +210,48 @@ module m_set_arrays_directsolver_contact
       
     end subroutine set_values_directsolver    
 
-    !> \brief this function judges whether sitiffness matrix is symmetric or not     
-    logical function fstr_is_matrixStruct_symmetric(fstrSOLID)        
-     
-       type(fstr_solid )     :: fstrSOLID
-       fstr_is_matrixStruct_symmetric = .true.
-       if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  & 
-       fstr_is_matrixStruct_symmetric = .false.   
+!> \brief This subroutine gets the residual vector
+    subroutine getApproximateB(ntdf,x,y)
 
-     end function          
+     integer(kind=kint)     :: ntdf                       !< total degree of freedom
+     integer(kind=kint)     :: i, j, k
+     real(kind=kreal)        :: x(ntdf)                    !< solution vector
+     real(kind=kreal)        :: y(ntdf)                    !< residual vector
+
+       y = 0.0d0
+       do i = 1, ntdf
+         do j = pointers(i), pointers(i+1)-1
+           k = indices(j)
+           y(i) = y(i) + values(j)*x(k)
+           if( symmetricMatrixStruc .and. k/=i )&
+           y(k)=y(k)+values(j)*x(i)
+         enddo
+       enddo
+
+     end subroutine getApproximateB
+     
+
+     subroutine checkResidual(hecMAT,fstrMAT)
+      type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix
+      type (fstrST_matrix_contact_lagrange)   :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+      integer(kind=kint)                       :: ntdf
+      real(kind=kreal), allocatable            :: y(:)           !< right-hand side vector
+      real(kind=kreal)                          :: residual_Max   !< maximum residual
+
+      ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
+
+      allocate(y(size(hecMAT%B)))
+      y = 0.0d0
+      call getApproximateB(ntdf,hecMAT%X,y)
+      residual_Max=MAXVAL(DABS(y-hecMAT%B))
+      write(*,*)' maximum residual = ',residual_Max
+      if( dabs(residual_Max) >= 1.0d-8) then
+        write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
+!        stop
+      endif
+      deallocate(y)
+
+    end subroutine checkResidual
 
 
 end module m_set_arrays_directsolver_contact

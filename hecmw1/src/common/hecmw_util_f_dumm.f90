@@ -38,6 +38,8 @@
         integer(kind=kint),parameter :: hecmw_double_precision = 53953
         integer(kind=kint),parameter :: hecmw_character        = 53954
 
+        integer(kind=kint),parameter :: hecmw_status_size = 1
+
         integer(kind=kint) :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
 !C
 !C +---------------+

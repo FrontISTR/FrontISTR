@@ -126,7 +126,8 @@ contains
         ID_area = hecMESH%elem_ID(i*2)
         if( ID_area.eq.hecMESH%my_rank ) then
           j=hecMESH%global_elem_ID(ii)
-          if( i.eq.1) then
+!          if( i.eq.1) then
+          if( hecMESH%elem_ID(i*2-1).eq.1) then
             do k=1,MDOF 
               EEmax(k)=fstrSOLID%ESTRAIN(MDOF*(ii-1)+k)
               EEmin(k)=fstrSOLID%ESTRAIN(MDOF*(ii-1)+k)
@@ -181,7 +182,8 @@ contains
         ID_area = hecMESH%elem_ID(i*2)
         if( ID_area.eq.hecMESH%my_rank ) then
           j=hecMESH%global_elem_ID(ii)
-          if( i.eq.1) then
+!          if( i.eq.1) then
+          if( hecMESH%elem_ID(i*2-1).eq.1) then
             do k=1,MDOF
               ESmax(k)=fstrSOLID%ESTRESS(MDOF*(ii-1)+k)
               ESmin(k)=fstrSOLID%ESTRESS(MDOF*(ii-1)+k)

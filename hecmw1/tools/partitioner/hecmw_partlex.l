@@ -38,12 +38,15 @@ TYPE		{ len += yyleng; return HECMW_PARTLEX_K_TYPE; }
 DOMAIN		{ len += yyleng; return HECMW_PARTLEX_K_DOMAIN; }
 DEPTH		{ len += yyleng; return HECMW_PARTLEX_K_DEPTH; }
 UCD		{ len += yyleng; return HECMW_PARTLEX_K_UCD; }
+CONTACT		{ len += yyleng; return HECMW_PARTLEX_K_CONTACT; }
 
 RCB		{ len += yyleng; return HECMW_PARTLEX_V_RCB; }
 KMETIS		{ len += yyleng; return HECMW_PARTLEX_V_KMETIS; }
 PMETIS		{ len += yyleng; return HECMW_PARTLEX_V_PMETIS; }
 NODE-BASED	{ len += yyleng; return HECMW_PARTLEX_V_NODE_BASED; }
 ELEMENT-BASED	{ len += yyleng; return HECMW_PARTLEX_V_ELEMENT_BASED; }
+DEFAULT		{ len += yyleng; return HECMW_PARTLEX_V_DEFAULT; }
+AGGREGATE	{ len += yyleng; return HECMW_PARTLEX_V_AGGREGATE; }
 
 =		{ len += yyleng; return '='; }
 ,		{ len += yyleng; return ','; }

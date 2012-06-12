@@ -302,7 +302,6 @@ contains
   
     use mContact                                                                                                                   
     use m_addContactStiffness                              
-    use m_set_arrays_directsolver_contact                                                
     use m_solve_LINEQ_contact 
     use m_dynamic_init_variables                                                
       
@@ -343,9 +342,17 @@ contains
     integer(kind=kint) :: stepcnt                                      
     real(kind=kreal)    :: maxDLag                                             
 
+    logical :: is_mat_symmetric
+    integer(kind=kint) :: n_node_global
+    integer(kind=kint) :: contact_changed_global
+
+! sum of n_node among all subdomains (to be used to calc res)
+    n_node_global = hecMESH%nn_internal
+    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
+
     ctAlgo = fstrPARAM%contact_algo                     
        
-    if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID) ) then     
+    if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH) ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please use intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm())
@@ -416,17 +423,16 @@ contains
 	hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)   
-    symmetricMatrixStruc = .true.                      
     call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )   
     if ( fstr_is_contact_active() ) then                                                 
        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)    
-       symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID) 
     elseif( hecMAT%Iarray(99)==4 ) then                                                   
        write(*,*) ' This type of direct solver is not yet available in such case ! '
        write(*,*) ' Please change solver type to intel MKL direct solver !'
        call  hecmw_abort(hecmw_comm_get_comm()) 
     endif  
-    call set_pointersANDindices_directsolver(hecMAT,fstrMAT)    
+    is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+    call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
 	
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
@@ -519,8 +525,8 @@ contains
           call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt) 
 
 ! ----- check convergence
-          res = dot_product( hecMAT%B, hecMAT%B )                                        
-          res = sqrt(res)/hecMESH%n_node
+          call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
+          res = sqrt(res)/n_node_global
           if( hecMESH%my_rank==0 ) then
             if( mod(i,int(fstrDYNAMIC%nout/10)) == 0 )   &
             write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res
@@ -529,14 +535,13 @@ contains
 
 ! ----- check convergence
           if( .not.fstr_is_contact_active() ) maxDLag= 0.0d0                    
+          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
           if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit   
           rf=1.0d0                                                   
           if( iter>1 .and. res>res1 )rf=0.5d0*rf                         
           res1=res                                                                          
-          if( hecMAT%Iarray(99)==3 ) &                                              
-          call initialize_solver_mkl(hecMAT,fstrMAT)           
-          call set_values_directsolver(hecMAT,fstrMAT)              
-          call solve_LINEQ_contact(hecMAT,fstrMAT,rf)                                                 
+
+          call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
 
 ! ----- update the strain, stress, and internal force
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy ) 
@@ -572,15 +577,19 @@ contains
           write(*,*) ' Please use intel MKL direct solver !'
           call  hecmw_abort(hecmw_comm_get_comm())
         endif
- 
-        symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID) 
-        if( .not. fstr_is_contact_active() ) symmetricMatrixStruc = .true.                
-        if( fstr_is_contact_conv(ctAlgo,infoCTChange) ) then                                                                            
+
+        is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+        contact_changed_global=0
+        if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
           exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then  
           call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange)      
-          call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
-        endif 
+          contact_changed_global=1
+        endif
+        call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
+        if (contact_changed_global > 0) then
+          call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
+        endif
 
         if( count_step > max_iter_contact ) exit loopFORcontactAnalysis                            
         

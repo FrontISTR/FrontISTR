@@ -32,10 +32,19 @@ extern int HECMW_varray_int_resize(struct hecmw_varray_int *varray, int len);
 
 extern int *HECMW_varray_int_get_v(struct hecmw_varray_int *varray);
 
+extern const int *HECMW_varray_int_get_cv(const struct hecmw_varray_int *varray);
+
 
 extern int HECMW_varray_int_copy(const struct hecmw_varray_int *varray,
 				 struct hecmw_varray_int *varray2);
 
 extern int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray);
+
+
+extern int HECMW_varray_int_assign(struct hecmw_varray_int *varray,
+                                   int begin, int end, int val);
+
+extern int HECMW_varray_int_insert(struct hecmw_varray_int *varray,
+                                   int index, int val);
 
 #endif /* HECMW_VARRAY_INT_INCLUDED */

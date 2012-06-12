@@ -17,7 +17,7 @@
  *=====================================================================*/
 
 #include "separator.h"
-extern Separator_result *separator;
+Separator_result *separator;
 
 extern void matrix2graph(int num_of_row, int num_of_col, int num_of_nzero, int *irow, int *jcol, GraphType *graph);
 

@@ -7,7 +7,7 @@ module hecmw_solver_misc_22
 !C*** hecmw_matvec_22
 !C***
 !C
-      subroutine hecmw_matvec_22 (hecMESH, hecMAT, X, Y, n)
+      subroutine hecmw_matvec_22 (hecMESH, hecMAT, X, Y, n, COMMtime)
       use hecmw_util
       use m_hecmw_comm_f
 
@@ -16,10 +16,16 @@ module hecmw_solver_misc_22
       real(kind=kreal), dimension(2*n) :: X, Y
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
+      real(kind=kreal), optional :: COMMtime
+
+      real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jS, jE, in
       real(kind=kreal) :: YV1, YV2, X1, X2
 
+      START_TIME= HECMW_WTIME()
       call hecmw_update_2_R (hecMESH, X, hecMAT%NP)
+      END_TIME= HECMW_WTIME()
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       do i= 1, hecMAT%N
         X1= X(2*i-1)
@@ -56,20 +62,55 @@ module hecmw_solver_misc_22
 !C*** hecmw_matresid_22
 !C***
 !C
-      subroutine hecmw_matresid_22 (hecMESH, hecMAT, X, B, R)
+      subroutine hecmw_matresid_22 (hecMESH, hecMAT, X, B, R, COMMtime)
       use hecmw_util
 
       implicit none
       real(kind=kreal) :: X(:), B(:), R(:)
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
-      integer(kind=kint) :: i
+      real(kind=kreal), optional :: COMMtime
 
-      call hecmw_matvec_22 (hecMESH, hecMAT, X, R, hecMAT%NP)
+      integer(kind=kint) :: i
+      real(kind=kreal) :: tcomm
+
+      tcomm=0.d0
+      call hecmw_matvec_22 (hecMESH, hecMAT, X, R, hecMAT%NP, tcomm)
       do i = 1, hecMAT%N * 2
         R(i) = B(i) - R(i)
       enddo
 
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
+
       end subroutine hecmw_matresid_22
+
+!C
+!C***
+!C*** hecmw_rel_resid_L2_22
+!C***
+!C
+      function hecmw_rel_resid_L2_22 (hecMESH, hecMAT, COMMtime)
+      use hecmw_util
+      use hecmw_solver_misc
+
+      implicit none
+      real(kind=kreal) :: hecmw_rel_resid_L2_22
+      type ( hecmwST_local_mesh ), intent(in) :: hecMESH
+      type ( hecmwST_matrix     ), intent(in) :: hecMAT
+      real(kind=kreal), optional :: COMMtime
+
+      real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
+      real(kind=kreal) :: bnorm2, rnorm2
+      real(kind=kreal) :: tcomm
+
+      tcomm=0.d0
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, tcomm)
+      call hecmw_matresid_22(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, tcomm)
+      hecmw_rel_resid_L2_22 = sqrt(rnorm2 / bnorm2)
+
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
+
+      end function hecmw_rel_resid_L2_22
 
 end module hecmw_solver_misc_22

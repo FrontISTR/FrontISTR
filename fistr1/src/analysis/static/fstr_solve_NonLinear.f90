@@ -63,6 +63,11 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
   real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr
   integer(kind=kint) :: restrt_step_num
   logical            :: convg     
+  integer(kind=kint) :: n_node_global
+
+! sum of n_node among all subdomains (to be used to calc res)
+  n_node_global = hecMESH%nn_internal
+  call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
   hecMAT%NDOF = hecMESH%n_dof
   ndof = hecMAT%NDOF
@@ -130,7 +135,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
 
 ! ----- Gather global residual
       call hecmw_allREDUCE_R1(hecMESH,res,hecmw_sum)
-      res = sqrt(res)/hecMESH%n_node
+      res = sqrt(res)/n_node_global
       if( iter==1 ) res0=res
       if( res0==0.d0 ) then
         res0 =1.d0
@@ -213,6 +218,11 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr
   integer(kind=kint) :: restart_step_num,  restart_substep_num
   logical            :: convg, ctchange
+  integer(kind=kint) :: n_node_global
+
+! sum of n_node among all subdomains (to be used to calc res)
+  n_node_global = hecMESH%nn_internal
+  call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
   ctAlgo = fstrPARAM%contact_algo                     
 
@@ -310,7 +320,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
 ! ----- Gather global residual
         call hecmw_allREDUCE_R1(hecMESH,res,hecmw_sum)
-        res = sqrt(res)/hecMESH%n_node
+        res = sqrt(res)/n_node_global
         if( iter==1 ) res0=res
         if( res0==0.d0 ) then
           res0 =1.d0
@@ -351,7 +361,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       endif
       if( fstr_is_contact_active() ) then    
         gnt(2)=gnt(2)/iter
-        convg = fstr_is_contact_conv(ctAlgo,infoCTChange)              
+        convg = fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
       endif      
 	
 !   ----- update the total displacement
@@ -395,7 +405,6 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   use mContact                                                                            
   use m_addContactStiffness  
-  use m_set_arrays_directsolver_contact                               
   use m_solve_LINEQ_contact                                                                                                                            
 
   integer, intent(in)                   :: cstep        !< current loading step
@@ -413,8 +422,15 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   integer(kind=kint) :: stepcnt, count_step                                             
   real(kind=kreal)    :: tt0,tt, res, res0, res1, maxv, relres, tincr
   integer(kind=kint) :: restart_step_num,  restart_substep_num   
+  logical :: is_mat_symmetric
+  integer(kind=kint) :: n_node_global
+  integer(kind=kint) :: contact_changed_global
+
+! sum of n_node among all subdomains (to be used to calc res)
+  n_node_global = hecMESH%nn_internal
+  call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
  
-  if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID) ) then    
+  if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH) ) then
     write(*,*) ' This type of direct solver is not yet available in such case ! '
     write(*,*) ' Please use intel MKL direct solver !'
     call  hecmw_abort(hecmw_comm_get_comm())
@@ -431,17 +447,16 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
                                             
   if( cstep==restart_step_num.and.sub_step==restart_substep_num  ) then       
     call fstr_save_originalMatrixStructure(hecMAT)   
-    symmetricMatrixStruc = .true.                      
     call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )   
     if ( fstr_is_contact_active() ) then                                                 
       call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)   
-      symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID) 
     elseif( hecMAT%Iarray(99)==4 ) then                                                   
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change the solver type to intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm()) 
     endif  
-    call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
+    is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+    call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
   endif                                                                                
   
   stepcnt = 0                                                               
@@ -483,11 +498,8 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)  
         
 !----- SOLVE [Kt]{du}={R}
-        if( hecMAT%Iarray(99)==3 ) &
-        call initialize_solver_mkl(hecMAT,fstrMAT)                 
-        call set_values_directsolver(hecMAT,fstrMAT)                                              
-        call solve_LINEQ_contact(hecMAT,fstrMAT)                 
-   
+        call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT)
+
 ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )  
 
@@ -511,7 +523,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
                     
         res = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)           
 
-        res = sqrt(res)/hecMESH%n_node
+        res = sqrt(res)/n_node_global
         if( iter==1 ) res0=res
         if( res0==0.d0 ) then
           res0 =1.d0
@@ -549,16 +561,19 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call  hecmw_abort(hecmw_comm_get_comm())
       endif
  
-      symmetricMatrixStruc = fstr_is_matrixStruct_symmetric(fstrSOLID)
-      if( .not. fstr_is_contact_active() ) symmetricMatrixStruc = .true.                                
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange) ) then                                                                           
+      is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+      contact_changed_global=0
+      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
         exit loopFORcontactAnalysis                                                                                                                              
       elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then  
         call fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange)      
-        call set_pointersANDindices_directsolver(hecMAT,fstrMAT)
+        contact_changed_global=1
+      endif
+      call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
+      if (contact_changed_global > 0) then
+        call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
       endif 
       if( count_step > max_iter_contact ) exit loopFORcontactAnalysis                   
-                                                                             
 
     ENDDO loopFORcontactAnalysis                                             
     

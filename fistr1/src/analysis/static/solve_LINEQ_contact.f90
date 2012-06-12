@@ -26,30 +26,47 @@
 
 module m_solve_LINEQ_contact                                 
 
-
    use m_fstr                                                  
-   use m_set_arrays_directsolver_contact              
    use m_solve_LINEQ_mkl                             
    use m_solve_LINEQ_direct_serial_lag                    
+   use m_solve_LINEQ_MUMPS_contact
+   use m_fstr_mat_resid_contact
    
   implicit none   
   
+  private
+  public :: solve_LINEQ_contact_init
+  public :: solve_LINEQ_contact
+
   contains
     
 !> \brief This subroutine    
-    subroutine solve_LINEQ_contact(hecMAT,fstrMAT,rf)          
+    subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+      type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
+      type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
+      type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
+      logical :: is_sym
+
+      if( hecMAT%Iarray(99)==3 )then
+        call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
+      elseif( hecMAT%Iarray(99)==4 )then
+        call solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
+      elseif( hecMAT%Iarray(99)==5 ) then
+        call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+      endif
+    end subroutine solve_LINEQ_contact_init
+
+
+!> \brief This subroutine
+    subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
   
+      type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
       real(kind=kreal), optional              :: rf
 
       real(kind=kreal)                         :: factor
-
-      integer(kind=kint)                       :: ntdf   
-      real(kind=kreal), allocatable            :: y(:)           !< right-hand side vector
-      real(kind=kreal)                          :: residual_Max   !< maximum residual
-     
-      ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange 
+      real(kind=kreal) :: resid
 
       factor = 1.0d0
       if( present(rf) )factor = rf
@@ -58,46 +75,22 @@ module m_solve_LINEQ_contact
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
+      elseif( hecMAT%Iarray(99)==5 ) then
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
       endif
      
-      allocate(y(size(hecMAT%B)))
-      y = 0.0d0  
-      call getApproximateB(ntdf,hecMAT%X,y)                                     
-      residual_Max=MAXVAL(DABS(y-hecMAT%B))  
-      write(*,*)' maximum residual = ',residual_Max                   
-      if( dabs(residual_Max) >= 1.0d-8) then                          
-        write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
-!        stop 
-      endif                                                  
-      deallocate(y)
+      resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
+      if (myrank==0) then
+        write(*,*) ' maximum residual = ', resid
+        if( resid >= 1.0d-8) then
+          write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
+!          stop
+        endif
+      endif
       
       hecMAT%X=factor*hecMAT%X
 
-      deallocate(values)
-   
     end subroutine solve_LINEQ_contact  
     
     
-!> \brief This subroutine gets the residual vector  
-    subroutine getApproximateB(ntdf,x,y)          
-   
-     integer(kind=kint)     :: ntdf                       !< total degree of freedom
-     integer(kind=kint)     :: i, j, k                    
-     real(kind=kreal)        :: x(ntdf)                    !< solution vector
-     real(kind=kreal)        :: y(ntdf)                    !< residual vector
-     
-       y = 0.0d0   
-       do i = 1, ntdf
-         do j = pointers(i), pointers(i+1)-1
-           k = indices(j)
-           y(i) = y(i) + values(j)*x(k)
-           if( symmetricMatrixStruc .and. k/=i )&         
-           y(k)=y(k)+values(j)*x(i)   
-         enddo           
-       enddo 
-                 
-     end subroutine getApproximateB   
-     
-   
-   
 end module m_solve_LINEQ_contact

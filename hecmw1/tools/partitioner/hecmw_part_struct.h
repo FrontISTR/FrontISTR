@@ -58,6 +58,8 @@ struct hecmw_part_cont_data {
     int n_my_domain;
     
     int *my_domain;
+    
+    int contact;
 };
 
 #endif  /* INC_HECMW_PART_STRUCT */

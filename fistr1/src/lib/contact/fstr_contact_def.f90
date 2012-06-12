@@ -148,7 +148,7 @@ contains
       type(tContact), intent(inout)     :: contact  !< contact definition
       type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
 
-      integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn
+      integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
 
       fstr_contact_init = .false.
       !  master surface
@@ -176,16 +176,22 @@ contains
         if( cgrp<=0 ) return
         is= hecMESH%node_group%grp_index(cgrp-1) + 1
         ie= hecMESH%node_group%grp_index(cgrp  )
-        nslave = ie-is+1
+        nslave = 0
+        do i=is,ie
+          if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal ) nslave = nslave + 1
+        enddo
         allocate( contact%slave(nslave) )
         allocate( contact%states(nslave) )
+        ii = 0
         do i=is,ie
-          contact%slave(i-is+1) = hecMESH%node_group%grp_item(i)
-          contact%states(i-is+1)%state = -1
-          contact%states(i-is+1)%multiplier(:) = 0.d0
-          contact%states(i-is+1)%tangentForce(:) = 0.d0            
-          contact%states(i-is+1)%tangentForce_trial(:) = 0.d0      
-          contact%states(i-is+1)%tangentForce_final(:) = 0.d0         
+          if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
+          ii = ii + 1
+          contact%slave(ii) = hecMESH%node_group%grp_item(i)
+          contact%states(ii)%state = -1
+          contact%states(ii)%multiplier(:) = 0.d0
+          contact%states(ii)%tangentForce(:) = 0.d0            
+          contact%states(ii)%tangentForce_trial(:) = 0.d0      
+          contact%states(ii)%tangentForce_final(:) = 0.d0         
         enddo
 !    endif
 

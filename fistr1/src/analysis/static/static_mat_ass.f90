@@ -54,10 +54,10 @@ module m_static_mat_ass
       hecMAT%NDOF = hecMESH%n_dof
 
       if (IFLAG==0) then
-        CALL memget(masbr,n2*hecMAT%NPL,8)
-        CALL memget(masbr,n2*hecMAT%NPU,8)
-        CALL memget(masbr,(n1*2+n2)*hecMAT%NP,8)
-        CALL memget(masbr,n2*hecMAT%N,8)
+!        CALL memget(masbr,n2*hecMAT%NPL,8)
+!        CALL memget(masbr,n2*hecMAT%NPU,8)
+!        CALL memget(masbr,(n1*2+n2)*hecMAT%NP,8)
+!        CALL memget(masbr,n2*hecMAT%N,8)
 
         IFLAG= 1
       endif

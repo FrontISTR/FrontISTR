@@ -35,6 +35,7 @@
 #include "hecmw_part_get_control.h"
 #include "hecmw_partition.h"
 #include "hecmw_ucd_print.h"
+#include "hecmw_graph.h"
 
 #ifdef HECMW_PART_WITH_METIS
 #  include "metis.h"
@@ -2401,9 +2402,374 @@ kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
 
 
 static int
-metis_partition_nb( struct hecmwST_local_mesh *global_mesh,
-                    const struct hecmw_part_cont_data *cont_data,
-                    const struct hecmw_part_edge_data *edge_data )
+pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
+{
+#ifdef HECMW_PART_WITH_METIS
+    int n=n_vertex;              /* number of vertices */
+    /* int *vwgt=NULL; */             /* weight for vertices */
+    int *adjwgt=NULL;            /* weight for edges */
+    int wgtflag=0;               /* flag of weight for edges */
+    int numflag=0;               /* flag of stating number of index */
+    int nparts=n_domain;         /* number of sub-domains */
+    int options[5]={0,0,0,0,0};  /* options for pMETIS */
+#endif
+    int edgecut=0;               /* number of edge-cut */
+
+#ifdef HECMW_PART_WITH_METIS
+    if (vwgt != NULL) wgtflag = 2;
+
+    /* pMETIS */
+    METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                              &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#endif
+
+    return edgecut;
+}
+
+
+static int
+kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
+{
+#ifdef HECMW_PART_WITH_METIS
+    int n=n_vertex;              /* number of vertices */
+    /* int *vwgt=NULL; */             /* weight for vertices */
+    int *adjwgt=NULL;            /* weight for edges */
+    int wgtflag=0;               /* flag of weight for edges */
+    int numflag=0;               /* flag of stating number of index */
+    int nparts=n_domain;         /* number of sub-domains */
+    int options[5]={0,0,0,0,0};  /* options for kMETIS */
+#endif
+    int edgecut=0;               /* number of edge-cut */
+
+#ifdef HECMW_PART_WITH_METIS
+    if (vwgt != NULL) wgtflag = 2;
+
+    METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                         &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#endif
+
+    return edgecut;
+}
+
+
+static int
+contact_agg_mark_node_group(int *mark,
+                struct hecmwST_local_mesh *global_mesh,
+                int gid,
+                int agg_id)
+{
+    struct hecmwST_node_grp *ngrp = global_mesh->node_group;
+    int istart, iend, i;
+
+    HECMW_assert( 0 < gid && gid <= ngrp->n_grp );
+
+    istart = ngrp->grp_index[gid-1];
+    iend = ngrp->grp_index[gid];
+    for (i = istart; i < iend; i++) {
+        int nid = ngrp->grp_item[i] - 1;
+        HECMW_assert( 0 <= nid && nid < global_mesh->n_node );
+        if (0 <= mark[nid] && mark[nid] < agg_id) {
+            /* the node is included in some other contact pair */
+            fprintf(stderr,
+                    "ERROR: node included in multiple node groups in different contact pairs,\n"
+                    "       which is not supported by CONTACT=AGGREGATE\n");
+            HECMW_abort( HECMW_comm_get_comm() );
+        }
+        mark[nid] = agg_id;
+    }
+    return RTC_NORMAL;
+}
+
+static int
+HECMW_get_num_surf_node(int etype, int sid)
+{
+    switch( etype ) {
+    case HECMW_ETYPE_TET1: return 3;
+    case HECMW_ETYPE_TET2: return 6;
+    case HECMW_ETYPE_HEX1: return 4;
+    case HECMW_ETYPE_HEX2: return 8;
+    default:
+        fprintf(stderr, "ERROR: parallel contact analysis of elem type %d not supported\n", etype);
+        return -1;
+    }
+    return -1;
+}
+
+static const int *
+HECMW_get_surf_node(int etype, int sid)
+{
+    HECMW_assert(0 < sid);
+
+    static const int elem_surf_tet1[4][3] =
+        { {1, 2, 3},
+          {0, 3, 2},
+          {0, 1, 3},
+          {0, 2, 1} };
+    static const int elem_surf_tet2[4][6] =
+        { {1, 4, 2, 9, 3, 8},
+          {0, 7, 3, 9, 2, 5},
+          {0, 6, 1, 8, 3, 7},
+          {0, 5, 2, 4, 1, 6} };
+    static const int elem_surf_hex1[6][4] =
+        { {3, 0, 4, 7},
+          {1, 2, 6, 5},
+          {0, 1, 5, 4},
+          {2, 3, 7, 6},
+          {3, 2, 1, 0},
+          {4, 5, 6, 7} };
+    static const int elem_surf_hex2[6][8] =
+        { {3, 11, 0, 16, 4, 15, 7, 19},
+          {1, 9, 2, 18, 6, 13, 5, 17},
+          {0, 8, 1, 17, 5, 12, 4, 16},
+          {2, 10, 3, 19, 7, 14, 6, 18},
+          {3, 10, 2, 9, 1, 8, 0, 11},
+          {4, 12, 5, 13, 6, 14, 7, 15} };
+    switch( etype ) {
+    case HECMW_ETYPE_TET1: return elem_surf_tet1[sid-1];
+    case HECMW_ETYPE_TET2: return elem_surf_tet2[sid-1];
+    case HECMW_ETYPE_HEX1: return elem_surf_hex1[sid-1];
+    case HECMW_ETYPE_HEX2: return elem_surf_hex2[sid-1];
+    }
+    fprintf(stderr, "ERROR: parallel contact analysis of element type %d not supported\n", etype);
+    return NULL;
+}
+
+static int
+HECMW_fistr_get_num_surf_node(int etype, int sid)
+{
+    switch( etype ) {
+    case HECMW_ETYPE_TET1: return 3;
+    case HECMW_ETYPE_TET2: return 6;
+    case HECMW_ETYPE_HEX1: return 4;
+    case HECMW_ETYPE_HEX2: return 8;
+    default:
+        fprintf(stderr, "ERROR: parallel contact analysis of elem type %d not supported\n", etype);
+        return -1;
+    }
+    return -1;
+}
+
+static const int *
+HECMW_fistr_get_surf_node(int etype, int sid)
+{
+    HECMW_assert(0 < sid);
+
+    static const int elem_surf_tet1[4][3] =
+        { {0, 1, 2},
+          {0, 1, 3},
+          {1, 2, 3},
+          {2, 0, 3} };
+    static const int elem_surf_tet2[4][6] =
+        { {0, 6, 1, 4, 2, 5},
+          {0, 6, 1, 8, 3, 7},
+          {1, 4, 2, 9, 3, 8},
+          {2, 5, 0, 9, 3, 7} };
+    static const int elem_surf_hex1[6][4] =
+        { {0, 1, 2, 3},
+          {4, 5, 6, 7},
+          {0, 1, 5, 4},
+          {1, 2, 6, 5},
+          {2, 3, 7, 6},
+          {3, 0, 4, 7} };
+    static const int elem_surf_hex2[6][8] =
+        { {0, 8, 1, 9, 2, 10, 3, 11},
+          {4, 12, 5, 13, 6, 14, 7, 15},
+          {0, 8, 1, 17, 5, 12, 4, 16},
+          {1, 9, 2, 18, 6, 13, 5, 17},
+          {2, 10, 3, 19, 7, 14, 6, 18},
+          {3, 11, 0, 16, 4, 15, 7, 19} };
+    switch( etype ) {
+    case HECMW_ETYPE_TET1: return elem_surf_tet1[sid-1];
+    case HECMW_ETYPE_TET2: return elem_surf_tet2[sid-1];
+    case HECMW_ETYPE_HEX1: return elem_surf_hex1[sid-1];
+    case HECMW_ETYPE_HEX2: return elem_surf_hex2[sid-1];
+    }
+    fprintf(stderr, "ERROR: parallel contact analysis of element type %d not supported\n", etype);
+    return NULL;
+}
+
+static int
+contact_agg_mark_surf_group(int *mark,
+                struct hecmwST_local_mesh *global_mesh,
+                int gid,
+                int agg_id)
+{
+    struct hecmwST_surf_grp *sgrp = global_mesh->surf_group;
+    int istart, iend, i, j;
+
+    HECMW_assert( 0 < gid && gid <= sgrp->n_grp );
+
+    /* get all nodes in the surface and mark them!!! */
+    istart = sgrp->grp_index[gid-1];
+    iend = sgrp->grp_index[gid];
+    for (i = istart; i < iend; i++) {
+        int eid = sgrp->grp_item[i*2] - 1;
+        int sid = sgrp->grp_item[i*2+1];
+        int *nop = global_mesh->elem_node_item + global_mesh->elem_node_index[eid];
+        int etype = global_mesh->elem_type[eid];
+        /** IF HEC-WM NUMBERING **/
+        /* int num_snode = HECMW_get_num_surf_node(etype, sid); */
+        /* const int *snode = HECMW_get_surf_node(etype, sid); */
+        /** ELSE IF FrontISTR NUMBERING **/
+        int num_snode = HECMW_fistr_get_num_surf_node(etype, sid);
+        const int *snode = HECMW_fistr_get_surf_node(etype, sid);
+        /** END IF **/
+        if (num_snode < 0 || snode == NULL) return RTC_ERROR;
+        for (j = 0; j < num_snode; j++) {
+            int nid = nop[ snode[j] ] - 1;
+            HECMW_assert( 0 <= nid && nid < global_mesh->n_node );
+            if (0 <= mark[nid] && mark[nid] < agg_id) {
+                /* the node is included in some other contact pair */
+                fprintf(stderr,
+                        "ERROR: node included in multiple surface groups in different contact pairs,\n"
+                        "       which is not supported by CONTACT=AGGREGATE\n");
+                HECMW_abort( HECMW_comm_get_comm() );
+            }
+            mark[nid] = agg_id;
+        }
+    }
+    return RTC_NORMAL;
+}
+
+static int
+metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
+                                const struct hecmw_part_cont_data *cont_data,
+                                const struct hecmw_part_edge_data *edge_data )
+{
+    int n_edgecut;
+    int *node_graph_index = NULL;  /* index for nodal graph */
+    int *node_graph_item = NULL;   /* member of nodal graph */
+    int *belong_domain = NULL;
+    int rtc;
+    int i;
+    struct hecmwST_contact_pair *cp;
+    int *mark;
+    int agg_id, gid;
+    int n_node2;
+    const int *node_graph_index2;
+    const int *node_graph_item2;
+    int *node_weight2;
+    struct hecmw_graph graph1, graph2;
+
+    HECMW_assert( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE );
+
+    node_graph_index = (int *)HECMW_calloc( global_mesh->n_node+1, sizeof(int) );
+    if( node_graph_index == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+    node_graph_item = (int *)HECMW_malloc( sizeof(int)*edge_data->n_edge*2 );
+    if( node_graph_item == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
+    rtc = create_node_graph( global_mesh, edge_data, node_graph_index, node_graph_item );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    /* aggregate contact pair if requested */
+    cp = global_mesh->contact_pair;
+    mark = (int *) HECMW_malloc( global_mesh->n_node * sizeof(int) );
+    for (i = 0; i < global_mesh->n_node; i++) {
+        mark[i] = -1;
+    }
+    agg_id = 0;
+    /* mark contact pairs */
+    for (i = 0; i < cp->n_pair; i++) {
+        /* slave */
+        if (cp->type[i] == HECMW_CONTACT_TYPE_NODE_SURF) {
+            gid = cp->slave_grp_id[i];
+            rtc = contact_agg_mark_node_group(mark, global_mesh, gid, agg_id);
+            if( rtc != RTC_NORMAL )  goto error;
+        } else { /* HECMW_CONTACT_TYPE_SURF_SURF */
+            gid = cp->slave_grp_id[i];
+            rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id);
+            if( rtc != RTC_NORMAL )  goto error;
+        }
+        /* master */
+        gid = cp->master_grp_id[i];
+        rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id);
+        if( rtc != RTC_NORMAL )  goto error;
+        agg_id++;
+    }
+    /* mark other nodes */
+    for (i = 0; i < global_mesh->n_node; i++) {
+        if (mark[i] < 0) {
+            mark[i] = agg_id++;
+        }
+    }
+    n_node2 = agg_id;
+
+    /* degenerate node graph */
+    rtc = HECMW_graph_init_with_arrays(&graph1, global_mesh->n_node, node_graph_index, node_graph_item);
+    if( rtc != RTC_NORMAL )  goto error;
+    rtc = HECMW_graph_init(&graph2);
+    if( rtc != RTC_NORMAL )  goto error;
+    rtc = HECMW_graph_degeneGraph(&graph2, &graph1, n_node2, mark);
+    if( rtc != RTC_NORMAL )  goto error;
+    HECMW_graph_finalize(&graph1);
+    node_graph_index2 = HECMW_graph_getEdgeIndex(&graph2);
+    node_graph_item2 = HECMW_graph_getEdgeItem(&graph2);
+
+    node_weight2 = (int *)HECMW_calloc( n_node2, sizeof(int) );
+    if( node_weight2 == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+    for (i = 0; i < global_mesh->n_node; i++) {
+        node_weight2[mark[i]] += 1;
+    }
+
+    belong_domain = (int *)HECMW_calloc( n_node2, sizeof(int) );
+    if( belong_domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
+    switch( cont_data->method ) {
+    case HECMW_PART_METHOD_PMETIS:  /* pMETIS */
+        n_edgecut = pmetis_interface_with_weight( n_node2, global_mesh->n_subdomain,
+                                                  node_graph_index2, node_graph_item2,
+                                                  node_weight2, belong_domain );
+        if( n_edgecut < 0 )  goto error;
+        break;
+
+    case HECMW_PART_METHOD_KMETIS:  /* kMETIS */
+        n_edgecut = kmetis_interface_with_weight( n_node2, global_mesh->n_subdomain,
+                                                  node_graph_index2, node_graph_item2,
+                                                  node_weight2, belong_domain );
+        if( n_edgecut < 0 )  goto error;
+        break;
+
+    default:
+        HECMW_set_error( HECMW_PART_E_INVALID_PMETHOD, "" );
+        goto error;
+    }
+
+    for( i=0; i<global_mesh->n_node; i++ ) {
+        global_mesh->node_ID[2*i+1] = belong_domain[ mark[i] ];
+    }
+
+    HECMW_graph_finalize(&graph2);
+    HECMW_free( node_graph_index );
+    HECMW_free( node_graph_item );
+    HECMW_free( belong_domain );
+
+    return n_edgecut;
+
+error:
+    HECMW_free( node_graph_index );
+    HECMW_free( node_graph_item );
+    HECMW_free( belong_domain );
+
+    return -1;
+}
+
+
+static int
+metis_partition_nb_default( struct hecmwST_local_mesh *global_mesh,
+                            const struct hecmw_part_cont_data *cont_data,
+                            const struct hecmw_part_edge_data *edge_data )
 {
     int n_edgecut;
     int *node_graph_index = NULL;  /* index for nodal graph */
@@ -2426,7 +2792,6 @@ metis_partition_nb( struct hecmwST_local_mesh *global_mesh,
 
     rtc = create_node_graph( global_mesh, edge_data, node_graph_index, node_graph_item );
     if( rtc != RTC_NORMAL )  goto error;
-
 
     belong_domain = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( belong_domain == NULL ) {
@@ -2468,6 +2833,19 @@ error:
     HECMW_free( belong_domain );
 
     return -1;
+}
+
+
+static int
+metis_partition_nb( struct hecmwST_local_mesh *global_mesh,
+                    const struct hecmw_part_cont_data *cont_data,
+                    const struct hecmw_part_edge_data *edge_data )
+{
+    if( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE ) {
+        return metis_partition_nb_contact_agg( global_mesh, cont_data, edge_data );
+    } else {
+        return metis_partition_nb_default( global_mesh, cont_data, edge_data );
+    }
 }
 
 
@@ -7314,27 +7692,76 @@ error:
 
 static int
 print_ucd_entire_set_node_data( struct hecmwST_local_mesh *global_mesh,
-                                struct hecmwST_result_data *result_data )
+                                struct hecmwST_result_data *result_data, char *node_flag )
 {
+    int size;
     int nn_item;
     int i;
 
-    result_data->nn_component = 0;
+    result_data->nn_component = 1;
 
-    result_data->nn_dof = NULL;
+    result_data->nn_dof = (int *)HECMW_malloc( sizeof(int)*result_data->nn_component );
+    if( result_data->nn_dof == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+    result_data->nn_dof[0] = 1;
 
-    result_data->node_label = NULL;
+    result_data->node_label = (char **)HECMW_malloc( sizeof(char *)*result_data->nn_component );
+    if( result_data->node_label == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    } else {
+        for( i=0; i<result_data->nn_component; i++ ) {
+            result_data->node_label[i] = NULL;
+        }
+    }
+    for( i=0; i<result_data->nn_component; i++ ) {
+        result_data->node_label[i] = (char *)HECMW_malloc( sizeof(char)*(HECMW_NAME_LEN+1) );
+        if( result_data->node_label[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
+    }
+    strcpy( result_data->node_label[0], "rank_of_node" );
 
     for( nn_item=0, i=0; i<result_data->nn_component; i++ ) {
         nn_item += result_data->nn_dof[i];
     }
 
-    result_data->node_val_item = NULL;
+    size = sizeof(double) * nn_item * global_mesh->n_node;
+    result_data->node_val_item = (double *)HECMW_malloc( size );
+    if( result_data->node_val_item == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
+    switch( global_mesh->hecmw_flag_parttype ) {
+    case HECMW_FLAG_PARTTYPE_NODEBASED:
+        for( i=0; i<global_mesh->n_node; i++ ) {
+            result_data->node_val_item[i] = (double)global_mesh->node_ID[2*i+1];
+        }
+        break;
+
+    case HECMW_FLAG_PARTTYPE_ELEMBASED:
+        for( i=0; i<global_mesh->n_node; i++ ) {
+            if( EVAL_BIT( node_flag[i], OVERLAP ) ) {
+                result_data->node_val_item[i] = (double)global_mesh->n_subdomain + 2.0;
+            } else {
+              result_data->node_val_item[i] = (double)global_mesh->node_ID[2*i+1];
+            }
+        }
+        break;
+
+    default:
+        HECMW_set_error( HECMW_PART_E_INVALID_PTYPE, "%d", global_mesh->hecmw_flag_parttype );
+        goto error;
+    }
 
     return RTC_NORMAL;
 
-/* error:      2007/12/27 S.Ito                */
-/*     free_struct_result_data( result_data ); */
+error:
+    free_struct_result_data( result_data );
 
     return RTC_ERROR;
 }
@@ -7420,7 +7847,7 @@ error:
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static int
-print_ucd_entire( struct hecmwST_local_mesh *global_mesh, char *elem_flag, char *ofname )
+print_ucd_entire( struct hecmwST_local_mesh *global_mesh, char *node_flag, char *elem_flag, char *ofname )
 {
     struct hecmwST_result_data *result_data;
 
@@ -7433,7 +7860,7 @@ print_ucd_entire( struct hecmwST_local_mesh *global_mesh, char *elem_flag, char 
     }
 
 
-    if( print_ucd_entire_set_node_data( global_mesh, result_data ) ) {
+    if( print_ucd_entire_set_node_data( global_mesh, result_data, node_flag ) ) {
         goto error;
     }
 
@@ -7443,7 +7870,7 @@ print_ucd_entire( struct hecmwST_local_mesh *global_mesh, char *elem_flag, char 
     }
 
 
-    if( HECMW_ucd_print( global_mesh, result_data, ofname ) ) {
+    if( HECMW_ucd_legacy_print( global_mesh, result_data, ofname ) ) {
         goto error;
     }
 
@@ -7632,7 +8059,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
 
     if( cont_data->is_print_ucd == 1 ) {
         if( global_mesh->my_rank == 0 ) {
-            print_ucd_entire( global_mesh, elem_flag, cont_data->ucd_file_name );
+            print_ucd_entire( global_mesh, node_flag, elem_flag, cont_data->ucd_file_name );
         }
     }
 

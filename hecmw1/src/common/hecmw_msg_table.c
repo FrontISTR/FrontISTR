@@ -287,6 +287,7 @@ struct hecmw_msgent hecmw_msg_table[] = {
 	{HECMW_PART_E0151,"HECMW-PART-E0151","UCD file name is too long"},
 	{HECMW_PART_E0152,"HECMW-PART-E0152","'=' required after 'UCD'"},
 	{HECMW_PART_E0153,"HECMW-PART-E0153","UCD file name must start with number, alphabet, '.', '-', '_' or '/'"},
+	{HECMW_PART_E0154,"HECMW-PART-E0154","'CONTACT' must be 'AGGREGATE' or 'DEFAULT'"},
 	{HECMW_PART_E0161,"HECMW-PART-E0161","Partitioning directions must be 'x', 'y' or 'z'"},
 	{HECMW_PART_E0162,"HECMW-PART-E0162","Partitioning directions are not enough"},
 	{HECMW_PART_E0164,"HECMW-PART-E0164","Partitioning directions must not be ommited, if 'METHOD' is 'RCB'"},

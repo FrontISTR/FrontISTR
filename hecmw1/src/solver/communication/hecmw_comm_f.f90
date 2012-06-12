@@ -34,6 +34,7 @@ contains
 
       subroutine hecmw_scatterv_DP(sbuf, sc, disp, rbuf, rc, root, comm)
       use hecmw_util
+      implicit none
       integer(kind=kint) :: sc      !send counts
       double precision   :: sbuf(sc) !send buffer
       integer(kind=kint) :: disp    !displacement
@@ -44,11 +45,132 @@ contains
       integer(kind=kint) :: ierr
 
       CALL MPI_scatterv( sbuf, sc, disp, MPI_DOUBLE_PRECISION, &
-                         rbuff, rc, MPI_DOUBLE_PRECISION, &
+                         rbuf, rc, MPI_DOUBLE_PRECISION, &
                          root, comm, ierr )
 
       end subroutine hecmw_scatterv_DP
 
+      function hecmw_operation_hec2mpi(operation)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: hecmw_operation_hec2mpi
+      integer(kind=kint) :: operation
+      if (operation == HECMW_SUM) then
+        hecmw_operation_hec2mpi = MPI_SUM
+      elseif (operation == HECMW_PROD) then
+        hecmw_operation_hec2mpi = MPI_PROD
+      elseif (operation == HECMW_MAX) then
+        hecmw_operation_hec2mpi = MPI_MAX
+      elseif (operation == HECMW_MIN) then
+        hecmw_operation_hec2mpi = MPI_MIN
+      endif
+      end function hecmw_operation_hec2mpi
+
+      subroutine hecmw_scatter_int_1(sbuf, rval, root, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sbuf(*) !send buffer
+      integer(kind=kint) :: rval !receive value
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      CALL MPI_scatter( sbuf, 1, MPI_INTEGER, &
+     &     rval, 1, MPI_INTEGER, root, comm, ierr )
+      end subroutine hecmw_scatter_int_1
+
+      subroutine hecmw_gather_int_1(sval, rbuf, root, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sval !send buffer
+      integer(kind=kint) :: rbuf(*) !receive buffer
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      CALL MPI_gather( sval, 1, MPI_INTEGER, &
+     &     rbuf, 1, MPI_INTEGER, root, comm, ierr )
+      end subroutine hecmw_gather_int_1
+
+      subroutine hecmw_scatterv_real(sbuf, scs, disp, &
+     &     rbuf, rc, root, comm)
+      use hecmw_util
+      implicit none
+      real(kind=kreal)   :: sbuf(*) !send buffer
+      integer(kind=kint) :: scs(*) !send counts
+      integer(kind=kint) :: disp(*) !displacement
+      real(kind=kreal)   :: rbuf(*) !receive buffer
+      integer(kind=kint) :: rc  !receive counts
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      CALL MPI_scatterv( sbuf, scs, disp, MPI_REAL8, &
+     &     rbuf, rc, MPI_REAL8, root, comm, ierr )
+      end subroutine hecmw_scatterv_real
+
+      subroutine hecmw_gatherv_real(sbuf, sc, &
+     &     rbuf, rcs, disp, root, comm)
+      use hecmw_util
+      implicit none
+      real(kind=kreal)   :: sbuf(*) !send buffer
+      integer(kind=kint) :: sc  !send counts
+      real(kind=kreal)   :: rbuf(*) !receive buffer
+      integer(kind=kint) :: rcs(*) !receive counts
+      integer(kind=kint) :: disp(*) !displacement
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      CALL MPI_gatherv( sbuf, sc, MPI_REAL8, &
+     &     rbuf, rcs, disp, MPI_REAL8, root, comm, ierr )
+      end subroutine hecmw_gatherv_real
+
+      subroutine hecmw_allreduce_int_1(sval, rval, op, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint)   :: sval !send val
+      integer(kind=kint)   :: rval !receive val
+      integer(kind=kint):: op, comm, ierr
+      call MPI_ALLREDUCE(sval, rval, 1, MPI_INTEGER, &
+     &     hecmw_operation_hec2mpi(op), comm, ierr)
+      end subroutine hecmw_allreduce_int_1
+
+      subroutine hecmw_isend_int(sbuf, sc, dest, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sbuf(*)
+      integer(kind=kint) :: sc
+      integer(kind=kint) :: dest
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      call MPI_ISEND(sbuf, sc, MPI_INTEGER, &
+     &     dest, tag, comm, req, ierr)
+      end subroutine hecmw_isend_int
+
+      subroutine hecmw_irecv_int(rbuf, rc, source, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      call MPI_IRECV(rbuf, rc, MPI_INTEGER, &
+     &     source, tag, comm, req, ierr)
+      end subroutine hecmw_irecv_int
+
+      subroutine hecmw_waitall(cnt, reqs, stats)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: cnt
+      integer(kind=kint) :: reqs(*)
+      integer(kind=kint) :: stats(MPI_STATUS_SIZE,*)
+      integer(kind=kint) :: ierr
+      call MPI_WAITALL(cnt, reqs, stats, ierr)
+      end subroutine hecmw_waitall
 !C
 !C***
 !C*** hecmw_allREDUCE

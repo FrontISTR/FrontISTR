@@ -20,6 +20,13 @@ REVOCAPINCDIR           = @revocapincdir@
 REVOCAPLIBDIR           = @revocaplibdir@
 REVOCAPLIBS             = @revocaplibs@
 
+METISDIR                = @metisdir@
+METISLIBDIR             = @metislibdir@
+METISINCDIR             = @metisincdir@
+METISLIBS               = @metislibs@
+METIS_CFLAGS            = @metis_cflags@
+METIS_LDFLAGS           = @metis_ldflags@
+
 REFINERDIR              = @refinerdir@
 REFINERINCDIR           = @refinerincdir@
 REFINERLIBDIR           = @refinerlibdir@
@@ -31,16 +38,18 @@ BASE_CFLAGS             = @base_cflags@
 MPI_CFLAGS              = @mpi_cflags@
 HECMW_CFLAGS            = @hecmw_cflags@
 FSTR_CFLAGS             = @fstr_cflags@
-ALL_CFLAGS              = $(BASE_CFLAGS) $(FSTR_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS              = $(BASE_CFLAGS) $(FSTR_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(METIS_CFLAGS) $(CFLAGS)
 LDFLAGS                 = @ldflags@
 MPI_LDFLAGS             = @mpi_ldflags@
 HECMW_LDFLAGS           = @hecmw_ldflags@
 FSTR_LDFLAGS            = @fstr_ldflags@
-ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(METIS_LDFLAGS) $(LDFLAGS)
 OPTFLAGS                = @optflags@
 
 REVOCAP_F90FLAGS        = @revocap_f90flags@
 REVOCAP_F90LDFLAGS      = @revocap_f90ldflags@
+
+include ../../../Makefile.inc
 
 F90                     = @f90@
 F90FLAGS                = @f90flags@
@@ -48,12 +57,12 @@ BASE_F90FLAGS           = @base_f90flags@
 MPI_F90FLAGS            = @mpi_f90flags@
 HECMW_F90FLAGS          = @hecmw_f90flags@
 FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS)
+ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(F90FLAGS_EXTRA) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS)
 F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(F90LDFLAGS_EXTRA) $(METIS_LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@

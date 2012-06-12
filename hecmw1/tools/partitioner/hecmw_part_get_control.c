@@ -250,6 +250,40 @@ part_cont_ucd( char *name )
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*  partitioning contact < CONTACT={ DEFAULT | AGGREGATE } >                  */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+static int
+part_cont_contact( void )
+{
+    int token;
+
+    /* '=' */
+    token = HECMW_partlex_next_token( );
+    if( token != '=' ) {
+        HECMW_log( HECMW_LOG_ERROR, HECMW_strmsg( HECMW_PART_E_CTRL_METHOD_NOEQ ) );
+        HECMW_log( HECMW_LOG_DEBUG, "%s:%d:%s (%s)",
+                              __FILE__, __LINE__, "part_cont_method", HECMW_partlex_get_text( ) );
+        return -1;
+    }
+
+    /* { DEFAULT | AGGREGATE } */
+    token = HECMW_partlex_next_token( );
+    switch( token ) {
+    case HECMW_PARTLEX_V_DEFAULT:     /* CONTACT=DEFAULT */
+        return HECMW_PART_CONTACT_DEFAULT;
+
+    case HECMW_PARTLEX_V_AGGREGATE:     /* CONTACT=AGGREGATE */
+        return HECMW_PART_CONTACT_AGGREGATE;
+
+    default:
+        HECMW_log( HECMW_LOG_ERROR, HECMW_strmsg( HECMW_PART_E_CTRL_CONTACT_INVAL ) );
+        HECMW_log( HECMW_LOG_DEBUG, "%s:%d:%s (%s)",
+                              __FILE__, __LINE__, "part_cont_method", HECMW_partlex_get_text( ) );
+        return -1;
+    }
+}
+
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  partitioning directions for RCB partitioning < x, y, z >                  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int
@@ -369,6 +403,7 @@ part_cont_partition( struct hecmw_part_cont_data *cont_data )
     cont_data->n_domain      = -1;
     cont_data->depth         = -1;
     cont_data->is_print_ucd  = -1;
+    cont_data->contact       = -1;
     strcpy( cont_data->ucd_file_name, "\0" );
 
     while( ( token = HECMW_partlex_next_token( ) ) != HECMW_PARTLEX_NL ||
@@ -397,6 +432,11 @@ part_cont_partition( struct hecmw_part_cont_data *cont_data )
         case HECMW_PARTLEX_K_UCD:     /* UCD */
             cont_data->is_print_ucd = part_cont_ucd( cont_data->ucd_file_name );
             if( cont_data->is_print_ucd < 0 )  return -1;
+            break;
+
+        case HECMW_PARTLEX_K_CONTACT:  /* CONTACT */
+            cont_data->contact = part_cont_contact( );
+            if( cont_data->contact < 0 )  return -1;
             break;
 
         default:

@@ -4,19 +4,32 @@ module m_solve_LINEQ_direct_serial_lag
   use fstr_matrix_con_contact
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
-! use hecmw_solver_    
+! use hecmw_solver_
 
 contains
 
+  subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
+
+    type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
+    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
+    logical                                  :: is_sym         !< symmetry of matrix
+
+    call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+
+  end subroutine solve_LINEQ_serial_lag_hecmw_init
+
+
   subroutine solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
-  
+
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
     integer (kind=4)                         :: ntdf, ilag_sta
     integer (kind=4)                         :: numNon0
     integer (kind=4)                         :: ierr, nprocs, myrank
-    
+
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
+
+    call set_values_directsolver(hecMAT,fstrMAT)
 
     ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1

@@ -87,16 +87,47 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: X(:), B(:), R(:)
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i
+      real(kind=kreal) :: tcomm
 
-      call hecmw_matvec_33 (hecMESH, hecMAT, X, R, COMMtime)
+      tcomm=0.d0
+      call hecmw_matvec_33 (hecMESH, hecMAT, X, R, tcomm)
       do i = 1, hecMAT%N * 3
         R(i) = B(i) - R(i)
       enddo
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end subroutine hecmw_matresid_33
+
+!C
+!C***
+!C*** hecmw_rel_resid_L2_33
+!C***
+!C
+      function hecmw_rel_resid_L2_33 (hecMESH, hecMAT, COMMtime)
+      use hecmw_util
+      use hecmw_solver_misc
+
+      implicit none
+      real(kind=kreal) :: hecmw_rel_resid_L2_33
+      type ( hecmwST_local_mesh ), intent(in) :: hecMESH
+      type ( hecmwST_matrix     ), intent(in) :: hecMAT
+      real(kind=kreal), optional :: COMMtime
+
+      real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
+      real(kind=kreal) :: bnorm2, rnorm2
+      real(kind=kreal) :: tcomm
+
+      tcomm=0.d0
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, tcomm)
+      call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, tcomm)
+      hecmw_rel_resid_L2_33 = sqrt(rnorm2 / bnorm2)
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
+
+      end function hecmw_rel_resid_L2_33
 
 !C
 !C***
@@ -110,7 +141,7 @@ module hecmw_solver_misc_33
       implicit none
       real(kind=kreal) :: X(:), Y(:)
       type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jj, k, kk
@@ -118,7 +149,7 @@ module hecmw_solver_misc_33
       START_TIME= HECMW_WTIME()
       call hecmw_update_3_R (hecMESH, X, hecMESH%n_node)
       END_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + END_TIME - START_TIME
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       do i= 1, hecMESH%nn_internal * hecMESH%n_dof
         Y(i)= X(i)
@@ -148,7 +179,7 @@ module hecmw_solver_misc_33
       implicit none
       real(kind=kreal) :: X(:), Y(:)
       type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jj, k, kk
@@ -156,7 +187,7 @@ module hecmw_solver_misc_33
       START_TIME= HECMW_WTIME()
       call hecmw_update_3_R (hecMESH, X, hecMESH%n_node)
       END_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + END_TIME - START_TIME
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       do i= 1, hecMESH%nn_internal * hecMESH%n_dof
         Y(i)= X(i)
@@ -186,11 +217,15 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: X(:), Y(:), W(:)
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
+      real(kind=kreal) :: tcomm
 
-      call hecmw_Tvec_33(hecMESH, X, Y, COMMtime)
-      call hecmw_matvec_33 (hecMESH, hecMAT, Y, W, COMMtime)
-      call hecmw_Ttvec_33(hecMESH, W, Y, COMMtime)
+      tcomm=0.d0
+      call hecmw_Tvec_33(hecMESH, X, Y, tcomm)
+      call hecmw_matvec_33 (hecMESH, hecMAT, Y, W, tcomm)
+      call hecmw_Ttvec_33(hecMESH, W, Y, tcomm)
+
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end subroutine hecmw_TtmatTvec_33
 
@@ -207,13 +242,15 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: R(:), Z(:), ZP(:)
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint ) :: PRECOND, iterPREmax
       integer(kind=kint ) :: i, j, k, iterPRE, isL, ieL, isU, ieU
       real   (kind=kreal) ::X1,X2,X3
       real   (kind=kreal) ::SW1,SW2,SW3
+      real   (kind=kreal) :: tcomm
 
+      tcomm=0.d0
       PRECOND = hecmw_mat_get_precond( hecMAT )
       iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
 
@@ -341,7 +378,7 @@ module hecmw_solver_misc_33
         if (iterPRE.eq.iterPREmax) exit
 
 !C--    {ZP} = {R} - [A] {Z}
-        call hecmw_matresid_33 (hecMESH, hecMAT, Z, R, ZP, COMMtime)
+        call hecmw_matresid_33 (hecMESH, hecMAT, Z, R, ZP, tcomm)
 
       enddo
       endif
@@ -369,6 +406,7 @@ module hecmw_solver_misc_33
       enddo
       endif
 !C===
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
       end subroutine hecmw_precond_33
 
 !C
@@ -409,10 +447,13 @@ module hecmw_solver_misc_33
       type (hecmwST_matrix)     :: hecMAT
       real(kind=kreal) :: B(:), W(:)
       real(kind=kreal), target :: BT(:)
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       real(kind=kreal), pointer :: XG(:)
       integer(kind=kint) :: i, k, kk
+      real(kind=kreal) :: tcomm
+
+      tcomm=0.d0
 !C
 !C +---------------------------+
 !C | {bt}= [T']({b} - [A]{xg}) |
@@ -428,10 +469,12 @@ module hecmw_solver_misc_33
       enddo
 
 !C-- {w} = {b} - [A]{xg}
-      call hecmw_matresid_33 (hecMESH, hecMAT, XG, B, W, COMMtime)
+      call hecmw_matresid_33 (hecMESH, hecMAT, XG, B, W, tcomm)
 
 !C-- {bt} = [T'] {w}
-      call hecmw_Ttvec_33(hecMESH, W, BT, COMMtime)
+      call hecmw_Ttvec_33(hecMESH, W, BT, tcomm)
+
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end subroutine hecmw_trans_b_33
 
@@ -446,12 +489,15 @@ module hecmw_solver_misc_33
       implicit none
       type (hecmwST_local_mesh) :: hecMESH
       real(kind=kreal) :: X(:), W(:)
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i, k, kk
+      real(kind=kreal) :: tcomm
+
+      tcomm=0.d0
 
 !C-- {tx} = [T]{x}
-      call hecmw_Tvec_33(hecMESH, X, W, COMMtime)
+      call hecmw_Tvec_33(hecMESH, X, W, tcomm)
 
 !C-- {x} = {tx} + {xg}
 
@@ -464,6 +510,8 @@ module hecmw_solver_misc_33
         kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
         X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
       enddo
+
+      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end subroutine hecmw_tback_x_33
 

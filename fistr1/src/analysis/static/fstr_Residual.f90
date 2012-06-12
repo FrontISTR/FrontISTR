@@ -133,13 +133,9 @@ module m_fstr_Residual
       use m_fstr
       real(kind=kreal), intent(in)         :: force(:)
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
-      integer :: i
-      fstr_get_residual =0.d0
-      do i=1,hecMESH%n_node*  hecMESH%n_dof
-        fstr_get_residual = fstr_get_residual + force(i)*force(i)
-      enddo
-    !  fstr_get_residual=dot_product( force(:), force(:) )
-    !  fstr_get_residual = fstr_get_residual/hecMESH%n_node
+      integer :: ndof
+      ndof = hecMESH%n_dof
+      call hecmw_innerProduct_R(hecMESH,ndof,force,force,fstr_get_residual)
       if( hecMESH%my_rank==0) then
          write(IMSG,*) '####fstrNLGEOM_SetResidual finished'
       end if
@@ -154,16 +150,21 @@ module m_fstr_Residual
       type (fstr_solid),                    intent(in) :: fstrSOLID 
       type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT 
       character(len=13)                                :: flag   
-      integer :: i
-       fstr_get_norm_contact = 0.0d0   
+      real (kind=kreal) :: tmp1,tmp2,bi
+      integer :: i,i0,ndof
        if( flag=='residualForce' )then
-         do i=1,hecMESH%n_node*hecMESH%n_dof + fstrMAT%num_lagrange
-           fstr_get_norm_contact = fstr_get_norm_contact + hecMAT%B(i)*hecMAT%B(i)
+         ndof = hecMESH%n_dof
+         call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
+         tmp2 = 0.0d0
+         i0 = hecMESH%n_node*ndof
+         do i=1,fstrMAT%num_lagrange
+           bi = hecMAT%B(i0+i)
+           tmp2 = tmp2 + bi*bi
          enddo
+         call hecmw_allreduce_R1(hecMESH,tmp2,HECMW_SUM)
+         fstr_get_norm_contact = tmp1 + tmp2
        elseif( flag=='        force' )then
-         do i=1,hecMESH%n_node*hecMESH%n_dof 
-           fstr_get_norm_contact = fstr_get_norm_contact + fstrSOLID%QFORCE(i)*fstrSOLID%QFORCE(i)
-         enddo
+         call hecmw_innerProduct_R(hecMESH,ndof,fstrSOLID%QFORCE,fstrSOLID%QFORCE,fstr_get_norm_contact)
        endif
       end function        
 

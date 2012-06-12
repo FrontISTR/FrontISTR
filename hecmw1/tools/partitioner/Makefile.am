@@ -82,6 +82,7 @@ OBJS = \
 	hecmw_mesh_edge_info.@cobjfilepostfix@ \
 	hecmw_part_get_control.@cobjfilepostfix@ \
 	hecmw_init_for_partition.@cobjfilepostfix@ \
+	hecmw_graph.@cobjfilepostfix@ \
 	hecmw_partition.@cobjfilepostfix@ \
 	hecmw_partitioner.@cobjfilepostfix@
 
@@ -93,6 +94,7 @@ HEADERS = \
 	hecmw_mesh_edge_info.h \
 	hecmw_part_get_control.h \
 	hecmw_init_for_partition.h \
+	hecmw_graph.h \
 	hecmw_partition.h
 
 LEXSRC = \

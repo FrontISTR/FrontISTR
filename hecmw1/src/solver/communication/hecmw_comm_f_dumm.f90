@@ -32,6 +32,7 @@ contains
 
       subroutine hecmw_scatterv_DP(sbuf, sc, disp, rbuf, rc, root, comm)
       use hecmw_util
+      implicit none
       double precision   :: sbuf(:) !send buffer
       integer(kind=kint) :: sc      !send counts
       integer(kind=kint) :: disp    !displacement
@@ -44,6 +45,99 @@ contains
 
       end subroutine hecmw_scatterv_DP
 
+      subroutine hecmw_scatter_int_1(sbuf, rval, root, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sbuf(*) !send buffer
+      integer(kind=kint) :: rval    !receive buffer
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      rval=sbuf(1)
+      end subroutine hecmw_scatter_int_1
+
+      subroutine hecmw_gather_int_1(sval, rbuf, root, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sval    !send buffer
+      integer(kind=kint) :: rbuf(*) !receive buffer
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      rbuf(1)=sval
+      end subroutine hecmw_gather_int_1
+
+      subroutine hecmw_scatterv_real(sbuf, scs, disp, &
+     &     rbuf, rc, root, comm)
+      use hecmw_util
+      implicit none
+      real(kind=kreal)   :: sbuf(*) !send buffer
+      integer(kind=kint) :: scs(*)  !send counts
+      integer(kind=kint) :: disp(*) !displacement
+      real(kind=kreal)   :: rbuf(*) !receive buffer
+      integer(kind=kint) :: rc      !receive counts
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      rbuf(1:rc)=sbuf(1:rc)
+      end subroutine hecmw_scatterv_real
+
+      subroutine hecmw_gatherv_real(sbuf, sc, &
+     &     rbuf, rcs, disp, root, comm)
+      use hecmw_util
+      implicit none
+      real(kind=kreal)   :: sbuf(*) !send buffer
+      integer(kind=kint) :: sc      !send counts
+      real(kind=kreal)   :: rbuf(*) !receive buffer
+      integer(kind=kint) :: rcs(*)  !receive counts
+      integer(kind=kint) :: disp(*) !displacement
+      integer(kind=kint) :: root
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      rbuf(1:rc)=sbuf(1:rc)
+      end subroutine hecmw_gatherv_real
+
+      subroutine hecmw_allreduce_int_1(sval, rval, op, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint)   :: sval !send buffer
+      integer(kind=kint)   :: rval !receive buffer
+      integer(kind=kint):: op, comm, ierr
+      rval=sval
+      end subroutine hecmw_allreduce_int_1
+
+      subroutine hecmw_isend_int(sbuf, sc, dest, tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sbuf(*)
+      integer(kind=kint) :: sc
+      integer(kind=kint) :: dest
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      return
+      end subroutine hecmw_isend
+
+      subroutine hecmw_irecv(rbuf, rc, source, tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      return
+      end subroutine hecmw_irecv
+
+      subroutine hecmw_waitall(cnt, reqs, stats)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: cnt
+      integer(kind=kint) :: reqs(*)
+      integer(kind=kint) :: stats(HECMW_STATUS_SIZE,*)
+      return
+      end subroutine hecmw_waitall
 !C
 !C***
 !C*** hecmw_allREDUCE

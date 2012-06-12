@@ -16,7 +16,7 @@ module hecmw_solver_misc
       integer(kind=kint) :: ndof
       integer(kind=kint) :: X(:), Y(:)
       integer(kind=kint)        :: sum
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i
       real(kind=kreal) :: START_TIME, END_TIME
@@ -29,7 +29,7 @@ module hecmw_solver_misc
       START_TIME= HECMW_WTIME()
       call hecmw_allreduce_I1 (hecMESH, sum, hecmw_sum)
       END_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + END_TIME - START_TIME
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       end subroutine hecmw_innerProduct_I
 
@@ -47,7 +47,7 @@ module hecmw_solver_misc
       integer(kind=kint) :: ndof
       real(kind=kreal) :: X(:), Y(:)
       real(kind=kreal)          :: sum
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i
       real(kind=kreal) :: START_TIME, END_TIME
@@ -60,7 +60,7 @@ module hecmw_solver_misc
       START_TIME= HECMW_WTIME()
       call hecmw_allreduce_R1 (hecMESH, sum, hecmw_sum)
       END_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + END_TIME - START_TIME
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       end subroutine hecmw_innerProduct_R
 

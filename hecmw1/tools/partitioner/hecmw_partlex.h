@@ -46,6 +46,8 @@
 
 #define HECMW_PARTLEX_K_UCD           3041
 
+#define HECMW_PARTLEX_K_CONTACT       3051
+
 
 #define HECMW_PARTLEX_V_NODE_BASED    3002
 
@@ -56,6 +58,10 @@
 #define HECMW_PARTLEX_V_KMETIS        3013
 
 #define HECMW_PARTLEX_V_PMETIS        3014
+
+#define HECMW_PARTLEX_V_DEFAULT       3052
+
+#define HECMW_PARTLEX_V_AGGREGATE     3053
 
 
 extern double HECMW_partlex_get_number( void );

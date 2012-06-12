@@ -261,7 +261,7 @@ module m_precheck_LIB_2d
       AL3 = a1 + a2
       almax = DMAX1( AL1,AL2,AL3 )
       almin = DMIN1( AL1,AL2,AL3 )
-   
+
    end subroutine  PRE_232
 !----------------------------------------------------------------------*
    subroutine PRE_242( XX,YY,thick,vol,almax,almin )
@@ -282,10 +282,10 @@ module m_precheck_LIB_2d
       INTEGER(kind=kint) LX,LY,I
       REAL(kind=kreal) RI,SI,RP,SP,RM,SM
       REAL(kind=kreal) XJ11,XJ21,XJ12,XJ22,DET,WG,area
-      REAL(kind=kreal) RX(8),SX(8)
+      !REAL(kind=kreal) RX(8),SX(8)
       REAL(kind=kreal)  a1,a2,AL1,AL2,AL3,AL4
-      DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
-      DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
+      !DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
+      !DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
 !*************************
       area = 0.0
       vol  = 0.0
@@ -355,6 +355,6 @@ module m_precheck_LIB_2d
       AL4 = a1 + a2
       almax = DMAX1( AL1,AL2,AL3,AL4 )
       almin = DMIN1( AL1,AL2,AL3,AL4 )
-      
+
    end subroutine PRE_242
 end module m_precheck_LIB_2d

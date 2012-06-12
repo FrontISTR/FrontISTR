@@ -71,9 +71,11 @@ contains
        active = a
   end subroutine
   
-  logical function fstr_is_contact_conv(ctAlgo,infoCTChange)               
+  logical function fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
       integer(kind=kint), intent(in)  :: ctAlgo                    !< contact analysis algorithm 
       type (fstr_info_contactChange), intent(in) :: infoCTChange   !< fstr_contactChange      
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      integer(kind=kint) :: is_conv
       fstr_is_contact_conv = .false.
       if( ctAlgo== kcaSLagrange ) then                                              
         if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
@@ -86,6 +88,14 @@ contains
     !      dabs( bakgnt(2)-gnt(2) )<cgn ) fstr_is_contact_conv = .true.
         bakgnt = gnt   
       endif                                                                        
+      is_conv = 0
+      if (fstr_is_contact_conv) is_conv = 1
+      call hecmw_allreduce_I1(hecMESH, is_conv, HECMW_MIN)
+      if (is_conv == 0) then
+        fstr_is_contact_conv = .false.
+      else
+        fstr_is_contact_conv = .true.
+      endif
   end function                                                  
   
   logical function fstr_is_matrixStructure_changed(infoCTChange)             

@@ -47,6 +47,16 @@ module m_solve_LINEQ_mkl
   contains  
 
 
+    subroutine solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
+
+      type (hecmwST_matrix)                    :: hecMAT       !< type hecmwST_matrix
+      type (fstrST_matrix_contact_lagrange)    :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+      logical                                  :: is_sym       !< symmetry of matrix
+
+        call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+
+    end subroutine solve_LINEQ_mkl_init
+
 !> \brief This subroutine executes phase 11 of intel MKL solver  
 !> \(see Intel(R) MKL Reference Manual)
     subroutine initialize_solver_mkl(hecMAT,fstrMAT)                
@@ -108,6 +118,9 @@ module m_solve_LINEQ_mkl
       real(kind=kreal)                          :: ddum     
       real(kind=kreal), allocatable            :: x(:)           !< solution vector
          
+      call initialize_solver_mkl(hecMAT,fstrMAT)
+      call set_values_directsolver(hecMAT,fstrMAT)
+
       ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
 
       phase = 22  

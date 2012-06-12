@@ -75,7 +75,6 @@ OBJS =
 
 OBJSF = \
 	hecmw_solver_misc_33.@f90objfilepostfix@ \
-	hecmw_SAI_lapack.@f90objfilepostfix@ \
 	hecmw_solve_SAImake_33.@f90objfilepostfix@ \
 	hecmw_solver_CG_33.@f90objfilepostfix@ \
 	hecmw_solver_BLCG_33.@f90objfilepostfix@ \

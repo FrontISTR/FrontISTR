@@ -33,16 +33,15 @@ typedef struct _tmp_grp_inf {
 	int   *item;
 } Tmp_grp_inf;
 */
-/*
+
 typedef struct _separation_result {
 	int   num_of_lgraph;
 	int   num_of_rgraph;
 	int   num_of_separator;
 	int   *lgraph;
 	int   *rgraph;
-	int   *separator;
+	int   *mseparator;
 } Separator_result;
-*/
 
 typedef struct _control_para_struct {
 	char    adaptive_repartition[4];

@@ -145,10 +145,11 @@ static int conv_index_ucd2hec_ln[] = {
   0, 1
 };
 
-extern int
-HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
-                 const struct hecmwST_result_data *result,
-                 const char *ofname )
+static int
+ucd_print( const struct hecmwST_local_mesh *mesh,
+           const struct hecmwST_result_data *result,
+           const char *ofname,
+           int flag_oldUCD )
 {
   int nn_item=0, ne_item=0;
   int node_index;
@@ -173,15 +174,27 @@ HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
 	return -1;
   }
 
-  /* comment part */
-  fprintf( fp, "# File Format : multi-step UCD data for unstructured mesh\n" );
-  fprintf( fp, "# created by HEC-MW ( %s )\n", HECMW_get_date( ) );
+  for( nn_item=0, i=0; i<result->nn_component; i++ ) {
+    nn_item += result->nn_dof[i];
+  }
+  for( ne_item=0, i=0; i<result->ne_component; i++ ) {
+    ne_item += result->ne_dof[i];
+  }
 
-  /* header part */
-  fprintf( fp, "%d\n", 1 );
-  fprintf( fp, "data\n" );
-  fprintf( fp, "step%d\n", 1 );
-  fprintf( fp, "%d %d\n", mesh->n_node, mesh->n_elem );
+  if (flag_oldUCD) {
+    fprintf( fp, "%d %d %d %d 0\n",
+             mesh->n_node, mesh->n_elem, nn_item, ne_item );
+  } else {
+    /* comment part */
+    fprintf( fp, "# File Format : multi-step UCD data for unstructured mesh\n" );
+    fprintf( fp, "# created by HEC-MW ( %s )\n", HECMW_get_date( ) );
+
+    /* header part */
+    fprintf( fp, "%d\n", 1 );
+    fprintf( fp, "data\n" );
+    fprintf( fp, "step%d\n", 1 );
+    fprintf( fp, "%d %d\n", mesh->n_node, mesh->n_elem );
+  }
 
   /* nodal information */
   for( i=0; i<mesh->n_node; i++ ) {
@@ -503,14 +516,9 @@ HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
   }
 
   /* data part */
-  for( nn_item=0, i=0; i<result->nn_component; i++ ) {
-    nn_item += result->nn_dof[i];
+  if (!flag_oldUCD) {
+    fprintf( fp, "%d %d\n", nn_item, ne_item );
   }
-  for( ne_item=0, i=0; i<result->ne_component; i++ ) {
-    ne_item += result->ne_dof[i];
-  }
-
-  fprintf( fp, "%d %d\n", nn_item, ne_item );
 
   if( result->nn_component > 0 ) {
     fprintf( fp, "%d", result->nn_component );
@@ -520,7 +528,7 @@ HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
     fprintf( fp, "\n" );
 
     for( i=0; i<result->nn_component; i++ ) {
-      fprintf( fp, "%s,\n", result->node_label[i] );
+      fprintf( fp, "%s, unit_unknown\n", result->node_label[i] );
     }
 
     for( i=0; i<mesh->n_node; i++ ) {
@@ -540,7 +548,7 @@ HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
     fprintf( fp, "\n" );
 
     for( i=0; i<result->ne_component; i++ ) {
-      fprintf( fp, "%s,\n", result->elem_label[i] );
+      fprintf( fp, "%s, unit_unknown\n", result->elem_label[i] );
     }
 
     for( i=0; i<mesh->n_elem; i++ ) {
@@ -555,4 +563,22 @@ HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
   fclose(fp);
   
   return 0;
+}
+
+extern int
+HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
+                 const struct hecmwST_result_data *result,
+                 const char *ofname )
+{
+  int flag_oldUCD = 0;
+  return ucd_print( mesh, result, ofname, flag_oldUCD );
+}
+
+extern int
+HECMW_ucd_legacy_print( const struct hecmwST_local_mesh *mesh,
+                        const struct hecmwST_result_data *result,
+                        const char *ofname )
+{
+  int flag_oldUCD = 1;
+  return ucd_print( mesh, result, ofname, flag_oldUCD );
 }

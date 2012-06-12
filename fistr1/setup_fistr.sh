@@ -8,6 +8,7 @@ WITHTOOLS=0
 WITHRCAP=0
 WITHREFINER=0
 WITHMKL=0
+WITHMUMPS=0
 
 BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
@@ -16,6 +17,7 @@ TOOLSTARGET="build-tools"
 BUILDTARGET_RCAP="build-with-rcap"
 ALLBUILDTARGET=""
 BUILDTARGET_MKL="build-without-mkl"
+BUILDTARGET_MUMPS="build-default"
 
 SETUPFILE="setup_fistr.sh"
 USER_CONFIGFILE="Makefile.conf"
@@ -63,6 +65,8 @@ do
 		WITHREFINER=1
 	elif [ "\"$i\"" = "\"-with-mkl\"" -o "\"$i\"" = "\"--with-mkl\"" ]; then
 		WITHMKL=1
+	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
+		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	elif [ "\"$i\"" = "\"-gather-makefiles\"" -o "\"$i\"" = "\"--gather-makefiles\"" ]; then
@@ -76,6 +80,7 @@ do
 			--with-revocap          link revocap
 			--with-refiner          link refiner
 			--with-mkl              link mkl
+			--with-mumps            link mumps
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
 			--show-all-options      print all options (show this message)
@@ -90,6 +95,7 @@ do
 			--with-revocap          link revocap
 			--with-refiner          link refiner
 			--with-mkl              link mkl
+			--with-mumps            link mumps
 			-h, --help              show help(this message)
 		EOF
 		exit 1
@@ -187,6 +193,13 @@ if [ ${WITHMKL} -eq 1 ]; then
 	BUILDTARGET_MKL="build-default"
 fi
 
+#
+# with mumps
+#
+if [ ${WITHMUMPS} -eq 1 ]; then
+	BUILDTARGET_MUMPS="build-with-mumps"
+fi
+
 #------------------------------------------------------------------------------#
 #
 # create Makefile
@@ -251,6 +264,14 @@ do
 		-e "s!@hecmw_cppldflags@!${HECMW_CPPLDFLAGS}!" \
 		-e "s!@hecmw_f90flags@!${HECMW_F90FLAGS}!" \
 		-e "s!@hecmw_f90ldflags@!${HECMW_F90LDFLAGS}!" \
+		-e "s!@metisdir@!${METISDIR}!" \
+		-e "s!@metislibdir@!${METISLIBDIR}!" \
+		-e "s!@metisincdir@!${METISINCDIR}!" \
+		-e "s!@metislibs@!${METISLIBS}!" \
+		-e "s!@metis_cflags@!${METIS_CFLAGS}!" \
+		-e "s!@metis_ldflags@!${METIS_LDFLAGS}!" \
+		-e "s!@metis_f90flags@!${METIS_F90FLAGS}!" \
+		-e "s!@metis_f90ldflags@!${METIS_F90LDFLAGS}!" \
 		-e "s!@fstrlibs@!${FSTRLIBS}!" \
 		-e "s!@fstr_cflags@!${FSTR_CFLAGS}!" \
 		-e "s!@fstr_ldflags@!${FSTR_LDFLAGS}!" \
@@ -261,6 +282,7 @@ do
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
+		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \
 		-e "s!@refiner_cflags@!${REFINER_CFLAGS}!" \

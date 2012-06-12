@@ -50,9 +50,9 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1,ind2
-      REAL(kind=kreal) RX(8),SX(8)
-      DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
-      DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
+      !REAL(kind=kreal) RX(8),SX(8)
+      !DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
+      !DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
       TYPE(lczparam) :: myEIG
 
       totdiag = 0.0
@@ -64,7 +64,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-! THICKNESS 
+! THICKNESS
       THICK=PARAM1
 !  FOR AX-SYM. ANALYSIS
       IF(ISET.EQ.2) THEN
@@ -204,7 +204,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-! THICKNESS 
+! THICKNESS
       THICK=PARAM1
 !  FOR AX-SYM. ANALYSIS
       IF(ISET.EQ.2) THEN
