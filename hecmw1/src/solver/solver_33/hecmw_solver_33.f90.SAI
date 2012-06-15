@@ -29,9 +29,13 @@
         use hecmw_solver_BiCGSTAB_33
         use hecmw_solver_GMRES_33
         use hecmw_solver_GPBiCG_33
+        use hecmw_solver_SAI_BiCGSTAB_33
+        use hecmw_solver_SAI_GMRES_33
+        use hecmw_solver_SAI_GPBiCG_33
         use hecmw_solver_BLCG_33
         use hecmw_solver_BLBiCGSTAB_33
         use hecmw_solver_BLGPBiCG_33
+        use hecmw_solve_SAI_make_33
         use m_hecmw_solve_error
         use m_hecmw_comm_f
         use hecmw_matrix_ass
@@ -50,6 +54,9 @@
         integer(kind=kint) :: iterPREmax, ii, i, j, k
 
         real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER
+        real(kind=kreal), dimension(:), allocatable :: ALsai, ALwk
+        integer (kind=kint), dimension(:), allocatable ::               &
+     &           indexLsai, itemLsai, indexLwk, itemLwk
 
         integer(kind=kint) :: ITERlog, TIMElog
         real(kind=kreal) :: TIME_setup, TIME_comm, TIME_soltot, TR
@@ -265,10 +272,86 @@
             hecMAT%ALU(9*ii  )= ALU(3,3)
           enddo
         endif
+!C===
 
+
+!C
+!C +-----+
+!C | SAI |
+!C +-----+
+!C===
+        if (PRECOND.eq.21) then
+          NPLU= hecMAT%NPL + hecMAT%NPU + hecMAT%NP
+          allocate (indexLwk(0:hecMAT%NP), itemLwk(NPLU), ALwk(9*NPLU))
+           itemLwk= 0
+          indexLwk= 0
+             ALwk= 0.d0
+          do i= 1, hecMAT%NP
+            indexLwk(i)= indexLwk(i-1) +                                &
+     &                  (hecMAT%indexL(i)-hecMAT%indexL(i-1)) + 1 +     &
+     &                  (hecMAT%indexU(i)-hecMAT%indexU(i-1))
+          enddo
+
+          do i= 1, hecMAT%NP
+            iS0 = indexLwk(i-1)
+            iS  = hecMAT%indexL(i-1)
+            inum= hecMAT%indexL(i)-hecMAT%indexL(i-1)
+            do k= iS+1, iS+inum
+              k0= k-iS+iS0
+              itemLwk(k0) = hecMAT%itemL(k)
+              ALwk(9*k0-8)= hecMAT%AL(9*k-8)
+              ALwk(9*k0-7)= hecMAT%AL(9*k-7)
+              ALwk(9*k0-6)= hecMAT%AL(9*k-6)
+              ALwk(9*k0-5)= hecMAT%AL(9*k-5)
+              ALwk(9*k0-4)= hecMAT%AL(9*k-4)
+              ALwk(9*k0-3)= hecMAT%AL(9*k-3)
+              ALwk(9*k0-2)= hecMAT%AL(9*k-2)
+              ALwk(9*k0-1)= hecMAT%AL(9*k-1)
+              ALwk(9*k0  )= hecMAT%AL(9*k  )
+            enddo
+
+            k0= inum + 1 + iS0
+            itemLwk(k0) = i
+            ALwk(9*k0-8)= hecMAT%D(9*i-8)
+            ALwk(9*k0-7)= hecMAT%D(9*i-7)
+            ALwk(9*k0-6)= hecMAT%D(9*i-6)
+            ALwk(9*k0-5)= hecMAT%D(9*i-5)
+            ALwk(9*k0-4)= hecMAT%D(9*i-4)
+            ALwk(9*k0-3)= hecMAT%D(9*i-3)
+            ALwk(9*k0-2)= hecMAT%D(9*i-2)
+            ALwk(9*k0-1)= hecMAT%D(9*i-1)
+            ALwk(9*k0  )= hecMAT%D(9*i  )
+
+            iS0 = inum + 1 + iS0
+            iS  = hecMAT%indexU(i-1)
+            inum= hecMAT%indexU(i)-hecMAT%indexU(i-1)
+            do k= iS+1, iS+inum
+              k0= k-iS+iS0
+              itemLwk(k0) = hecMAT%itemU(k)
+              ALwk(9*k0-8)= hecMAT%AU(9*k-8)
+              ALwk(9*k0-7)= hecMAT%AU(9*k-7)
+              ALwk(9*k0-6)= hecMAT%AU(9*k-6)
+              ALwk(9*k0-5)= hecMAT%AU(9*k-5)
+              ALwk(9*k0-4)= hecMAT%AU(9*k-4)
+              ALwk(9*k0-3)= hecMAT%AU(9*k-3)
+              ALwk(9*k0-2)= hecMAT%AU(9*k-2)
+              ALwk(9*k0-1)= hecMAT%AU(9*k-1)
+              ALwk(9*k0  )= hecMAT%AU(9*k  )
+            enddo
+          enddo
+
+          allocate (ALsai(9*NPLU))
+          allocate (indexLsai(0:hecMAT%NP), itemLsai(NPLU))
+
+          ISYM= 0
+          call hecmw_solve_SAImake_33                                   &
+     &     ( hecMAT%N, hecMAT%NP, NPLU, ALwk, ALsai, indexLwk, itemLwk, &
+     &       indexLsai, itemLsai, hecMAT%B, hecMAT%X, ISYM,             &
+     &       THRESH, FILTER)
+        endif
+!C===
         E1_time= HECMW_WTIME()
         TIME_setup= TIME_setup + E1_time - S1_time
-!C===
 
 !C
 !C +------------------+
@@ -447,6 +530,70 @@
      &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
      &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
       endif
+
+!C
+!C-- BiCGSTAB-SAI
+      if (METHOD.eq.2 .and. PRECOND.eq.21) then
+        ! imposing MPC by penalty
+        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
+
+        if (hecMESH%my_rank.eq.0) then
+          write (*,'(a)') '### 3x3 B-SAI-BiCGSTAB'
+        endif
+        call hecmw_solve_SAI_BiCGSTAB_33                                &
+     &     ( hecMAT%N, hecMAT%NP, NPLU, ALwk, ALsai, indexLwk, itemLwk, &
+     &       indexLsai, itemLsai, hecMAT%B, hecMAT%X,  RESID,           &
+     &       ITER, ERROR,  hecMESH%my_rank,                             &
+     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
+     &       hecMESH%import_index, hecMESH%import_item,                 &
+     &       hecMESH%export_index, hecMESH%export_item,                 &
+     &       hecMESH%MPI_COMM, TIME_setup, TIME_sol, TIME_comm, ITERLog)
+        deallocate (ALwk, ALsai, indexLwk, itemLwk, indexLsai, itemLsai)
+      endif
+
+!C
+!C-- GMRES-SAI
+      if (METHOD.eq.3 .and. PRECOND.eq.21) then
+        ! imposing MPC by penalty
+        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
+
+        if (hecMESH%my_rank.eq.0) then
+          write (*,'(a)') '### 3x3 B-SAI-GMRES'
+        endif
+        call hecmw_solve_SAI_GMRES_33                                   &
+     &     ( hecMAT%N, hecMAT%NP, NPLU, ALwk, ALsai, indexLwk, itemLwk, &
+     &       indexLsai, itemLsai, hecMAT%B, hecMAT%X,  RESID,           &
+     &       ITER, ERROR,  hecMESH%my_rank,                             &
+     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
+     &       hecMESH%import_index, hecMESH%import_item,                 &
+     &       hecMESH%export_index, hecMESH%export_item,                 &
+     &       hecMESH%MPI_COMM, NREST,                                   &
+     &       TIME_setup, TIME_sol, TIME_comm, ITERLog)
+        deallocate (ALwk, ALsai, indexLwk, itemLwk, indexLsai, itemLsai)
+      endif
+
+!C
+!C-- GPBiCG-SAI
+      if (METHOD.eq.4 .and. PRECOND.eq.21) then
+        ! imposing MPC by penalty
+        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
+
+        if (hecMESH%my_rank.eq.0) then
+          write (*,'(a)') '### 3x3 B-SAI-GPBiCG'
+        endif
+        call hecmw_solve_SAI_GPBiCG_33                                  &
+     &     ( hecMAT%N, hecMAT%NP, NPLU, ALwk, ALsai, indexLwk, itemLwk, &
+     &       indexLsai, itemLsai, hecMAT%B, hecMAT%X,  RESID,           &
+     &       ITER, ERROR,  hecMESH%my_rank,                             &
+     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
+     &       hecMESH%import_index, hecMESH%import_item,                 &
+     &       hecMESH%export_index, hecMESH%export_item,                 &
+     &       hecMESH%MPI_COMM, TIME_setup, TIME_sol, TIME_comm, ITERLog)
+        deallocate (ALwk, ALsai, indexLwk, itemLwk, indexLsai, itemLsai)
+      endif
+
+      !hecMAT%ITERactual = ITER
+      !hecMAT%RESIDactual= RESID
 
       if (RESID.gt.hecMAT%Rarray(1)) then
         call hecmw_solve_error (hecMESH, 3001)

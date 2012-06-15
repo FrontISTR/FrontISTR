@@ -411,11 +411,11 @@ contains
               hecMAT%B(j) = prevB(j)
             enddo
             if( fstrPARAM%fg_couple_type==5 ) then
-!              go to 1000
+              go to 1000
             else
               call fstr_rcap_get( fstrCPL )
               call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-!              go to 2000
+              go to 2000
             endif
           else
             if( fstrPARAM%fg_couple_type==6 .and. &

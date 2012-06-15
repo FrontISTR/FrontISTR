@@ -141,7 +141,17 @@ fi
 #
 if [ ${SERIAL} -eq 1 ];  then
 	CFLAGS="${CFLAGS} -DHECMW_SERIAL"
-	MPILIBS=""
+	MPI_CFLAGS=""
+	MPI_LDFLAGS=""
+	MPI_F90FLAGS=""
+	MPI_F90LDFLAGS=""
+else
+	if [ -z ${MPIDIR} ]; then
+		MPI_CFLAGS=""
+		MPI_LDFLAGS=""
+		MPI_F90FLAGS=""
+		MPI_F90LDFLAGS=""
+	fi
 fi
 
 #
@@ -153,6 +163,7 @@ if [ ${WITHRCAP} -eq 1 ]; then
 else
 	ALLBUILDTARGET=${BUILDTARGET}
 	REVOCAP_F90FLAGS=""
+	REVOCAP_F90LDFLAGS=""
 fi
 
 #

@@ -4,6 +4,8 @@ SERIAL=1
 DEBUGMODE=0
 REMOVEMAKEFILES=0
 GATHERMAKEFILES=0
+WITHMETIS=0
+WITHPARMETIS=0
 WITHTOOLS=0
 WITHRCAP=0
 WITHREFINER=0
@@ -57,6 +59,10 @@ do
 		DEBUGMODE=1
 	elif [ "\"$i\"" = "\"-p\"" -o "\"$i\"" = "\"-parallel\"" -o "\"$i\"" = "\"--parallel\"" ]; then
 		SERIAL=0
+	elif [ "\"$i\"" = "\"-with-metis\"" -o "\"$i\"" = "\"--with-metis\"" ]; then
+		WITHMETIS=1
+	elif [ "\"$i\"" = "\"-with-parmetis\"" -o "\"$i\"" = "\"--with-parmetis\"" ]; then
+		WITHPARMETIS=1
 	elif [ "\"$i\"" = "\"-with-tools\"" -o "\"$i\"" = "\"--with-tools\"" ]; then
 		WITHTOOLS=1
 	elif [ "\"$i\"" = "\"-with-revocap\"" -o "\"$i\"" = "\"--with-revocap\"" ]; then
@@ -77,6 +83,8 @@ do
 			-g, --debug             debug mode
 			-p, --parallel          for parallel environment with MPI
 			--with-tools            compile tools
+			--with-metis            compile with METIS
+			--with-parmetis         compile with ParMETIS
 			--with-revocap          link revocap
 			--with-refiner          link refiner
 			--with-mkl              link mkl
@@ -92,6 +100,8 @@ do
 			-g, --debug             debug mode
 			-p, --parallel          for parallel environment with MPI
 			--with-tools            compile tools
+			--with-metis            compile with METIS
+			--with-parmetis         compile with ParMETIS
 			--with-revocap          link revocap
 			--with-refiner          link refiner
 			--with-mkl              link mkl
@@ -157,7 +167,37 @@ fi
 #
 if [ ${SERIAL} -eq 1 ];  then
 	CFLAGS="${CFLAGS} -DHECMW_SERIAL"
-	MPILIBS=""
+	MPI_CFLAGS=""
+	MPI_LDFLAGS=""
+	MPI_F90FLAGS=""
+	MPI_F90LDFLAGS=""
+else
+	if [ -z ${MPIDIR} ]; then
+		MPI_CFLAGS=""
+		MPI_LDFLAGS=""
+		MPI_F90FLAGS=""
+		MPI_F90LDFLAGS=""
+	fi
+fi
+
+#
+# with metis
+#
+if [ ${WITHMETIS} -eq 0 ]; then
+	METIS_CFLAGS=""
+	METIS_LDFLAGS=""
+	METIS_F90FLAGS=""
+	METIS_F90LDFLAGS=""
+fi
+
+#
+# with parmetis
+#
+if [ ${WITHPARMETIS} -eq 0 ]; then
+	PARMETIS_CFLAGS=""
+	PARMETIS_LDFLAGS=""
+	PARMETIS_F90FLAGS=""
+	PARMETIS_F90LDFLAGS=""
 fi
 
 #
@@ -169,6 +209,7 @@ if [ ${WITHRCAP} -eq 1 ]; then
 else
 	ALLBUILDTARGET=${BUILDTARGET}
 	REVOCAP_F90FLAGS=""
+	REVOCAP_F90LDFLAGS=""
 fi
 
 #
@@ -198,6 +239,11 @@ fi
 #
 if [ ${WITHMUMPS} -eq 1 ]; then
 	BUILDTARGET_MUMPS="build-with-mumps"
+else
+	MUMPS_CFLAGS=""
+	MUMPS_LDFLAGS=""
+	MUMPS_F90FLAGS=""
+	MUMPS_F90LDFLAGS=""
 fi
 
 #------------------------------------------------------------------------------#
@@ -264,6 +310,13 @@ do
 		-e "s!@hecmw_cppldflags@!${HECMW_CPPLDFLAGS}!" \
 		-e "s!@hecmw_f90flags@!${HECMW_F90FLAGS}!" \
 		-e "s!@hecmw_f90ldflags@!${HECMW_F90LDFLAGS}!" \
+		-e "s!@fstrlibs@!${FSTRLIBS}!" \
+		-e "s!@fstr_cflags@!${FSTR_CFLAGS}!" \
+		-e "s!@fstr_ldflags@!${FSTR_LDFLAGS}!" \
+		-e "s!@fstr_cppflags@!${FSTR_CPPFLAGS}!" \
+		-e "s!@fstr_cppldflags@!${FSTR_CPPLDFLAGS}!" \
+		-e "s!@fstr_f90flags@!${FSTR_F90FLAGS}!" \
+		-e "s!@fstr_f90ldflags@!${FSTR_F90LDFLAGS}!" \
 		-e "s!@metisdir@!${METISDIR}!" \
 		-e "s!@metislibdir@!${METISLIBDIR}!" \
 		-e "s!@metisincdir@!${METISINCDIR}!" \
@@ -272,13 +325,22 @@ do
 		-e "s!@metis_ldflags@!${METIS_LDFLAGS}!" \
 		-e "s!@metis_f90flags@!${METIS_F90FLAGS}!" \
 		-e "s!@metis_f90ldflags@!${METIS_F90LDFLAGS}!" \
-		-e "s!@fstrlibs@!${FSTRLIBS}!" \
-		-e "s!@fstr_cflags@!${FSTR_CFLAGS}!" \
-		-e "s!@fstr_ldflags@!${FSTR_LDFLAGS}!" \
-		-e "s!@fstr_cppflags@!${FSTR_CPPFLAGS}!" \
-		-e "s!@fstr_cppldflags@!${FSTR_CPPLDFLAGS}!" \
-		-e "s!@fstr_f90flags@!${FSTR_F90FLAGS}!" \
-		-e "s!@fstr_f90ldflags@!${FSTR_F90LDFLAGS}!" \
+		-e "s!@parmetisdir@!${PARMETISDIR}!" \
+		-e "s!@parmetislibdir@!${PARMETISLIBDIR}!" \
+		-e "s!@parmetisincdir@!${PARMETISINCDIR}!" \
+		-e "s!@parmetislibs@!${PARMETISLIBS}!" \
+		-e "s!@parmetis_cflags@!${PARMETIS_CFLAGS}!" \
+		-e "s!@parmetis_ldflags@!${PARMETIS_LDFLAGS}!" \
+		-e "s!@parmetis_f90flags@!${PARMETIS_F90FLAGS}!" \
+		-e "s!@parmetis_f90ldflags@!${PARMETIS_F90LDFLAGS}!" \
+		-e "s!@mumpsdir@!${MUMPSDIR}!" \
+		-e "s!@mumpslibdir@!${MUMPSLIBDIR}!" \
+		-e "s!@mumpsincdir@!${MUMPSINCDIR}!" \
+		-e "s!@mumpslibs@!${MUMPSLIBS}!" \
+		-e "s!@mumps_cflags@!${MUMPS_CFLAGS}!" \
+		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
+		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
+		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \

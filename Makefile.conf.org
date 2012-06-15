@@ -7,8 +7,8 @@
 # MPI
 MPIDIR         =
 MPIBINDIR      =
-MPILIBDIR      = .
-MPIINCDIR      = .
+MPILIBDIR      =
+MPIINCDIR      =
 MPILIBS        =
 
 # for install option only
@@ -36,6 +36,11 @@ REFINERLIBDIR  = $(REFINERDIR)/lib
 REVOCAPDIR     = $(HOME)/REVOCAP_Coupler
 REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
+
+# MUMPS
+MUMPSDIR       = $(HOME)/MUMPS_4.10.0
+MUMPSINCDIR    = $(MUMPSDIR)/include
+MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
 CC             = mpicc

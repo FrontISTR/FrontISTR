@@ -16,7 +16,7 @@ use hecmw_msg
 use hecmw_msgno
 use hecmw_restart
 use hecmw_result
-use hecmw_solve_sai_make_33
+!use hecmw_solve_sai_make_33
 use hecmw_solver_11
 use hecmw_solver_22
 use hecmw_solver_33
@@ -36,9 +36,9 @@ use hecmw_solver_misc
 use hecmw_solver_misc_11
 use hecmw_solver_misc_22
 use hecmw_solver_misc_33
-use hecmw_solver_sai_bicgstab_33
-use hecmw_solver_sai_gmres_33
-use hecmw_solver_sai_gpbicg_33
+!use hecmw_solver_sai_bicgstab_33
+!use hecmw_solver_sai_gmres_33
+!use hecmw_solver_sai_gpbicg_33
 use hecmw_solver_sr_11
 use hecmw_solver_sr_11i
 use hecmw_solver_sr_22

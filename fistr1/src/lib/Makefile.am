@@ -15,6 +15,24 @@ FSTRLIBDIR              = ../../lib
 FSTRINCDIR              = ../../include
 FSTRLIBS                = @fstrlibs@
 
+METISDIR                = @metisdir@
+METISLIBDIR             = @metislibdir@
+METISINCDIR             = @metisincdir@
+METISLIBS               = @metislibs@
+METIS_CFLAGS            = @metis_cflags@
+METIS_LDFLAGS           = @metis_ldflags@
+METIS_F90FLAGS          = @metis_f90flags@
+METIS_F90LDFLAGS        = @metis_f90ldflags@
+
+MUMPSDIR                = @mumpsdir@
+MUMPSLIBDIR             = @mumpslibdir@
+MUMPSINCDIR             = @mumpsincdir@
+MUMPSLIBS               = @mumpslibs@
+MUMPS_CFLAGS            = @mumps_cflags@
+MUMPS_LDFLAGS           = @mumps_ldflags@
+MUMPS_F90FLAGS          = @mumps_f90flags@
+MUMPS_F90LDFLAGS        = @mumps_f90ldflags@
+
 REVOCAPDIR              = @revocapdir@
 REVOCAPINCDIR           = @revocapincdir@
 REVOCAPLIBDIR           = @revocaplibdir@
@@ -37,20 +55,18 @@ OPTFLAGS                = @optflags@
 REVOCAP_F90FLAGS        = @revocap_f90flags@
 REVOCAP_F90LDFLAGS      = @revocap_f90ldflags@
 
-include ../../../Makefile.inc
-
 F90                     = @f90@
 F90FLAGS                = @f90flags@
 BASE_F90FLAGS           = @base_f90flags@
 MPI_F90FLAGS            = @mpi_f90flags@
 HECMW_F90FLAGS          = @hecmw_f90flags@
 FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS) $(F90FLAGS_EXTRA)
+ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS) $(MUMPS_F90FLAGS)
 F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(F90LDFLAGS_EXTRA)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(MUMPS_F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@
@@ -119,6 +135,7 @@ OBJSF2 = \
         heat_LIB.@f90objfilepostfix@
 
 OBJSF_MUMPS = MUMPS_wrapper.@f90objfilepostfix@
+
 OBJSF_MUMPS_DUMM = MUMPS_wrapper_dumm.@f90objfilepostfix@
 
 HEADERS =

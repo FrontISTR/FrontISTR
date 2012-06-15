@@ -212,11 +212,20 @@ fi
 		if [ ${SERIAL} -eq 1 ]; then
 			BUILDTARGET="build-serial"
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
-			MPILIBS=""
+			MPI_CFLAGS=""
+			MPI_LDFLAGS=""
+			MPI_F90FLAGS=""
+			MPI_F90LDFLAGS=""
 		else
 			BUILDTARGET="build-default"
 			CPPOPTFLAGS="${CPPOPTFLAGS} -DHAVE_MPI"
 			OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
+			if [ -z ${MPIDIR} ]; then
+				MPI_CFLAGS=""
+				MPI_LDFLAGS=""
+				MPI_F90FLAGS=""
+				MPI_F90LDFLAGS=""
+			fi
 		fi
 		ALLBUILDTARGET="${ALLBUILDTARGET} ${BUILDTARGET}"
 	else
@@ -225,7 +234,10 @@ fi
 		ALLBUILDTARGET="${ALLBUILDTARGET} ${BUILDTARGET}"
 		if [ ${SERIAL} -eq 1 ]; then
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
-			MPILIBS=""
+			MPI_CFLAGS=""
+			MPI_LDFLAGS=""
+			MPI_F90FLAGS=""
+			MPI_F90LDFLAGS=""
 		fi
 	fi
 
