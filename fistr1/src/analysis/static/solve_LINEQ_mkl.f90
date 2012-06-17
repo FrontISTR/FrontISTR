@@ -77,6 +77,7 @@ module m_solve_LINEQ_mkl
         iparm(11) = 1; iparm(13) = 1; iparm(18) =-1; iparm(19) =-1 
 !        iparm(21) = 1                                                 
                          
+        if (allocated(values)) deallocate(values)
         allocate(values(numNon0), stat=ierr) 
         if( ierr /= 0 ) stop " Allocation error, mkl%values " 
         values = 0.0D0  
