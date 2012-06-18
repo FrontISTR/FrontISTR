@@ -14,6 +14,7 @@
 !> This module provides conversion routines between HEC data structure
 !! and DOF based sparse matrix structure (CSR/COO)
 module m_sparse_matrix_hec
+  use hecmw
   use m_fstr
   use m_sparse_matrix
   implicit none

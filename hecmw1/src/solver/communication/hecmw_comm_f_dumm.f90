@@ -94,7 +94,7 @@ contains
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
       integer(kind=kint) :: ierr
-      rbuf(1:rc)=sbuf(1:rc)
+      rbuf(1:sc)=sbuf(1:sc)
       end subroutine hecmw_gatherv_real
 
       subroutine hecmw_allreduce_int_1(sval, rval, op, comm)
@@ -116,7 +116,20 @@ contains
       integer(kind=kint) :: comm
       integer(kind=kint) :: req
       return
-      end subroutine hecmw_isend
+      end subroutine hecmw_isend_int
+	  
+      subroutine hecmw_irecv_int(rbuf, rc, source, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      end subroutine hecmw_irecv_int
 
       subroutine hecmw_irecv(rbuf, rc, source, tag, comm, req)
       use hecmw_util
