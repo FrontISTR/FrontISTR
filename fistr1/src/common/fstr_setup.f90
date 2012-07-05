@@ -518,7 +518,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
         if( P%PARAM%solution_type == kstSTATIC ) then
           do i=1, c_material
-            fstrSOLID%materials(c_material)%nlgeom_flag = 0
+            fstrSOLID%materials(i)%nlgeom_flag = 0
           enddo
         endif
      !   do i=1, c_material
@@ -542,6 +542,22 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call hecmw_abort( hecmw_comm_get_comm())
             end if
           fstrSOLID%reftemp = REF_TEMP
+          allocate ( fstrSOLID%last_temp( hecMESH%n_node )      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to allocation error <FSTR_SOLID, LAST_TEMP>'
+              write(idbg,*) '  rank = ', myrank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
+          fstrSOLID%last_temp = 0.d0
+          allocate ( fstrSOLID%temp_bak( hecMESH%n_node )      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to allocation error <FSTR_SOLID, TEMP_BAK>'
+              write(idbg,*) '  rank = ', myrank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
+          fstrSOLID%temp_bak = 0.d0
         endif
 
         if( associated(fstrSOLID%step_ctrl) )  then
@@ -826,6 +842,22 @@ subroutine fstr_solid_finalize( fstrSOLID )
         endif
         if( associated(fstrSOLID%reftemp) ) then
             deallocate(fstrSOLID%reftemp       ,STAT=ierror)
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, reftemp>'
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
+        endif
+        if( associated(fstrSOLID%last_temp) ) then
+            deallocate(fstrSOLID%last_temp       ,STAT=ierror)
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, reftemp>'
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
+        endif
+        if( associated(fstrSOLID%temp_bak) ) then
+            deallocate(fstrSOLID%temp_bak       ,STAT=ierror)
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, reftemp>'
               call flush(idbg)
