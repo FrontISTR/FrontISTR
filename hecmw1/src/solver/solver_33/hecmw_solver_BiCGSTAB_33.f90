@@ -123,7 +123,12 @@
       else
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2)
       endif
-      if (BNRM2.eq.0.d0) BNRM2 = 1.d0
+      if (BNRM2.eq.0.d0) then
+        iter = 0
+        MAXIT = 0
+        RESID = 0.d0
+        X = 0.d0
+      endif
 
 !C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then

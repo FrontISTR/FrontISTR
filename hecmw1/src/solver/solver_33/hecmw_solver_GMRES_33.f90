@@ -138,7 +138,12 @@
 !C      call MPI_allREDUCE (BNRM20, BNRM2, 1, MPI_DOUBLE_PRECISION,       &
 !C     &                    MPI_SUM, SOLVER_COMM, ierr)
 
-      if (BNRM2.eq.ZERO) BNRM2= ONE
+      if (BNRM2.eq.0.d0) then
+        iter = 0
+        MAXIT = 0
+        RESID = 0.d0
+        X = 0.d0
+      endif
 
       E_TIME= HECMW_WTIME()
       Tset= Tset + E_TIME - S_TIME
