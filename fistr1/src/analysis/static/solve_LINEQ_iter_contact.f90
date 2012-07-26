@@ -646,33 +646,6 @@ contains
 
   end subroutine trimatmul_TtKT
 
-  subroutine place_one_on_diag(BTtKT, iwS, num_lagrange)
-    implicit none
-    type (T_matrix), intent(inout) :: BTtKT
-    integer(kind=kint), intent(in) :: iwS(:)
-    integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: n, ndof, ndof2, ilag, i, idof, js, je, j, jj
-
-    n=BTtKT%n
-    ndof=BTtKT%ndof
-    ndof2=ndof*ndof
-
-    outer: do ilag=1,num_lagrange
-      i=(iwS(ilag)-1)/ndof+1
-      idof=mod(iwS(ilag)-1, ndof)+1
-      js=BTtKT%index(i-1)+1
-      je=BTtKT%index(i)
-      do j=js,je
-        jj=BTtKT%item(j)
-        if (jj==i) then
-          !write(*,*) ilag, i, idof
-          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=1.d0
-          cycle outer
-        endif
-      enddo
-    enddo outer
-  end subroutine place_one_on_diag
-
   subroutine blk_trimatmul_add(ndof, A, B, C, ABC)
     implicit none
     integer, intent(in) :: ndof
@@ -713,6 +686,33 @@ contains
 
     deallocate(AB)
   end subroutine blk_trimatmul_add
+
+  subroutine place_one_on_diag(BTtKT, iwS, num_lagrange)
+    implicit none
+    type (T_matrix), intent(inout) :: BTtKT
+    integer(kind=kint), intent(in) :: iwS(:)
+    integer(kind=kint), intent(in) :: num_lagrange
+    integer(kind=kint) :: n, ndof, ndof2, ilag, i, idof, js, je, j, jj
+
+    n=BTtKT%n
+    ndof=BTtKT%ndof
+    ndof2=ndof*ndof
+
+    outer: do ilag=1,num_lagrange
+      i=(iwS(ilag)-1)/ndof+1
+      idof=mod(iwS(ilag)-1, ndof)+1
+      js=BTtKT%index(i-1)+1
+      je=BTtKT%index(i)
+      do j=js,je
+        jj=BTtKT%item(j)
+        if (jj==i) then
+          !write(*,*) ilag, i, idof
+          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=1.d0
+          cycle outer
+        endif
+      enddo
+    enddo outer
+  end subroutine place_one_on_diag
 
   subroutine replace_hecmat(hecMAT, BTtKT)
     implicit none
@@ -802,17 +802,6 @@ contains
       if (hecMAT%itemU(i) <= 0) stop 'ERROR: negative itemU'
       if (hecMAT%itemU(i) > n) stop 'ERROR: too big itemU'
     enddo
-
-!!$    ! check diagonal
-!!$    do i=1,n
-!!$      write(*,*) hecMAT%D((i-1)*ndof2+1:i*ndof2)
-!!$      do idof=1,ndof
-!!$        idx=(i-1)*ndof2+(idof-1)*ndof+idof
-!!$        if (hecMAT%D(idx) == 0) then
-!!$          hecMAT%D(idx)=1.d0
-!!$        endif
-!!$      enddo
-!!$    enddo
   end subroutine replace_hecmat
 
   subroutine make_new_hecmat(hecMAT, BTtKT, hecTKT)
