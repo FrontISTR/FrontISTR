@@ -17,6 +17,7 @@ LEXONLY=0
 SERIAL=1
 WITHREFINER=0
 WITHPARACON=0
+WITHMUMPS=0
 
 #
 # Targets
@@ -31,6 +32,7 @@ LIBSTARGET="build-libs"
 TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
+BUILDTARGET_MUMPS="build-default"
 
 #
 # Files
@@ -73,6 +75,8 @@ LIBSRCDIRS="\
     src/solver/solver_direct \
     src/solver/solver_direct_parallel \
     src/solver/solver_direct_lag \
+    src/solver/sparse_matrix \
+    src/solver/solver_direct_mumps \
     src/solver/communication \
     src/solver/init \
     src/visualizer \
@@ -113,6 +117,8 @@ do
 		WITHREFINER=1
 	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
 		WITHPARACON=1
+	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
+		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 		GATHERMAKEFILES=0
@@ -145,6 +151,7 @@ do
 			--with-parmetis         compile with ParMETIS
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
+			--with-mumps            compile with MUMPS
 			--only-message          only create error message files
 			--only-lex              only perform lexical analyzer
 			--remove-makefiles      remove all MAKEFILEs
@@ -162,6 +169,7 @@ do
 			--with-parmetis         compile with ParMETIS
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
+			--with-mumps            compile with MUMPS
 			-h, --help              show help (this message)
 		EOF
 		exit 1
@@ -339,6 +347,18 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	if [ ${WITHPARACON} -eq 1 ]; then
 		HECMW_CFLAGS="${HECMW_CFLAGS} -DPARA_CONTACT"
 	fi
+
+	#
+	# with MUMPS
+	#
+	if [ ${WITHMUMPS} -eq 1 ]; then
+		BUILDTARGET_MUMPS="build-with-mumps"
+	else
+		MUMPS_CFLAGS=""
+		MUMPS_LDFLAGS=""
+		MUMPS_F90FLAGS=""
+		MUMPS_F90LDFLAGS=""
+	fi
 fi
 
 #------------------------------------------------------------------------------#
@@ -429,8 +449,17 @@ do
 		-e "s!@refinerincdir@!${REFINERINCDIR}!" \
 		-e "s!@refinerlibdir@!${REFINERLIBDIR}!" \
 		-e "s!@refinerlibs@!${REFINERLIBS}!" \
+		-e "s!@mumpsdir@!${MUMPSDIR}!" \
+		-e "s!@mumpslibdir@!${MUMPSLIBDIR}!" \
+		-e "s!@mumpsincdir@!${MUMPSINCDIR}!" \
+		-e "s!@mumpslibs@!${MUMPSLIBS}!" \
+		-e "s!@mumps_cflags@!${MUMPS_CFLAGS}!" \
+		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
+		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
+		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
+		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
 

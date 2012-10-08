@@ -63,7 +63,7 @@ contains
             +(fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*ndof
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
-    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
+    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof, paraContactFlag)
     if(fstrMAT%num_lagrange > 0) &
       print '(I3,A,4I10,A,2I10)',myrank,' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',fstrMAT%num_lagrange,spMAT%OFFSET
     nLag = fstrMAT%num_lagrange

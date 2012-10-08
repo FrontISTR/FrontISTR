@@ -13,7 +13,7 @@
 !======================================================================!
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_MUMPS_wrapper
-  use m_fstr
+  use hecmw_util
   use m_sparse_matrix
 
   private
@@ -21,10 +21,11 @@ module m_MUMPS_wrapper
 
 contains
 
-  subroutine mumps_wrapper(spMAT, job, istat)
+  subroutine mumps_wrapper(spMAT, job, paraContactFlag, istat)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
+    logical, intent(in) :: paraContactFlag
     integer(kind=kint), intent(out) :: istat
     stop "MUMPS not available"
   end subroutine mumps_wrapper

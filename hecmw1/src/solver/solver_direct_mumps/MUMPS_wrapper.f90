@@ -13,7 +13,8 @@
 !======================================================================!
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_MUMPS_wrapper
-  use m_fstr
+  use hecmw_util
+  use m_hecmw_comm_f
   use m_sparse_matrix
   include 'dmumps_struc.h'
 
@@ -25,12 +26,15 @@ module m_MUMPS_wrapper
 
 contains
 
-  subroutine mumps_wrapper(spMAT, job, istat)
+  subroutine mumps_wrapper(spMAT, job, paraContactFlag, istat)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
+    logical, intent(in) :: paraContactFlag
     integer(kind=kint), intent(out) :: istat
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr,myrank
+
+    myrank=hecmw_comm_get_rank()
 
     if (spMAT%type /= SPARSE_MATRIX_TYPE_COO) then
        write(*,*) 'ERROR: MUMPS require COO type sparse matrix'

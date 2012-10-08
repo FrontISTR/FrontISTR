@@ -14,8 +14,8 @@
 !> This module provides conversion routines between HEC data structure
 !! and DOF based sparse matrix structure (CSR/COO)
 module m_sparse_matrix_hec
-  use hecmw
-  use m_fstr
+  use hecmw_util
+  use m_hecmw_comm_f
   use m_sparse_matrix
   implicit none
 
@@ -47,15 +47,16 @@ contains
        NZ=(hecMAT%N+NU+NL)*ndof2
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
-    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF)
+    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF, .false.)
     spMAT%timelog = hecMAT%Iarray(22)
     call sparse_matrix_hec_set_prof(spMAT, hecMAT)
   end subroutine sparse_matrix_hec_init_prof
 
-  subroutine sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
+  subroutine sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof, paraContactFlag)
     type(sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof
+    logical, intent(in) :: paraContactFlag
     integer(kind=kint) :: n_export,n_import,i,j,is,ie,len,nn_external,id,i0,ierr
     integer(kind=kint), allocatable :: export_item_dof(:), import_item_dof(:)
     integer(kind=kint), allocatable :: send_request(:), recv_request(:)
@@ -232,7 +233,7 @@ contains
     if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii+1-spMAT%OFFSET)=m
     if (sparse_matrix_is_sym(spMAT) .and. m-1 < spMAT%NZ) spMAT%NZ=m-1
     if (m-1 /= spMAT%NZ) then
-       write(*,*) 'ERROR: sparse_matrix_set_ij on rank ',myrank
+       write(*,*) 'ERROR: sparse_matrix_set_ij on rank ',hecmw_comm_get_rank()
        write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ
        stop
     endif

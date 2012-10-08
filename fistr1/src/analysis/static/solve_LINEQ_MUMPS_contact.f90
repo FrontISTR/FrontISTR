@@ -44,7 +44,7 @@ contains
 
     if (INITIALIZED) then
        mumps_job=-2
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -62,7 +62,7 @@ contains
     spmat_type = SPARSE_MATRIX_TYPE_COO
     call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
     mumps_job=-1
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -71,7 +71,7 @@ contains
     ! ANALYSIS
     call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
     mumps_job=1
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -100,7 +100,7 @@ contains
       call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
     endif
     mumps_job=5
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
     rhs_force = rhs_b
     rhs_disp  = rhs_x
     if (istat < 0) then

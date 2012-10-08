@@ -128,24 +128,19 @@ OBJSF = \
         eigen_LIB_3d2mass.@f90objfilepostfix@ \
         precheck_LIB_2d.@f90objfilepostfix@ \
         precheck_LIB_3d.@f90objfilepostfix@ \
-        precheck_LIB_shell.@f90objfilepostfix@ \
-        sparse_matrix.@f90objfilepostfix@ \
-        sparse_matrix_hec.@f90objfilepostfix@
+        precheck_LIB_shell.@f90objfilepostfix@
 
 OBJSF2 = \
-        solve_LINEQ_MUMPS.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
         eigen_LIB.@f90objfilepostfix@ \
         heat_LIB.@f90objfilepostfix@
 
 OBJSF_MUMPS = \
-        MUMPS_wrapper.@f90objfilepostfix@ \
         m_Metis403API_f.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 OBJSF_MUMPS_DUMM = \
-        MUMPS_wrapper_dumm.@f90objfilepostfix@ \
         m_Metis403API_f_dumm.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
