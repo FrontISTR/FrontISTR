@@ -68,6 +68,8 @@ contains
     integer(kind=kint) :: ierror
     integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: my_rank_monit_1
+    integer(kind=kint) :: revocap_flag
+    real(kind=kreal),pointer :: prevB(:)
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: bsize, res
@@ -75,16 +77,30 @@ contains
 
     integer(kind=kint) :: restrt_step_num
 
-	  
+
     call cpu_time( time_1 )
-	  
+
 !--
     hecMAT%NDOF=hecMESH%n_dof
 
     nnod=hecMESH%n_node
     ndof=hecMAT%NDOF
     nn=ndof*ndof
-	
+
+!C--
+    if( fstrPARAM%fg_couple == 1) then
+      if( fstrPARAM%fg_couple_type==5 .or. &
+          fstrPARAM%fg_couple_type==6 ) then
+        allocate( prevB(hecMAT%NP*ndof)      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to allocation error <fstr_solve_NONLINEAR_DYNAMIC, prevB>'
+              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            endif
+      endif
+    endif
+
 	fstrSOLID%dunode(:) =0.d0
 
     a1 = 1.d0/fstrDYNAMIC%t_delta**2
@@ -130,21 +146,40 @@ contains
           hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
         end do
 
-!C ********************************************************************************
-!C for couple analysis
-        if( fstrPARAM%fg_couple ==1 ) then
-            if( fstrDYNAMIC%i_step > 1 .or. &
-               (fstrDYNAMIC%i_step==1 .and. fstrPARAM%fg_couple_first==1 )) then
-                  call fstr_rcap_get( fstrCPL )
-                  call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-            endif
-        endif
-!C ********************************************************************************
-
         do j = 1 ,ndof*nnod
           hecMAT%B(j) = hecMAT%B(j) + 2.d0*a1* myEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
                  + (- a1 + a2 * fstrDYNAMIC%ray_m) * myEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
         end do
+
+!C ********************************************************************************
+!C for couple analysis
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==5 .or. &
+              fstrPARAM%fg_couple_type==6 ) then
+            do j = 1, hecMAT%NP * ndof
+              prevB(j) = hecMAT%B(j)
+            enddo
+          endif
+        endif
+    do
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==1 .or. &
+              fstrPARAM%fg_couple_type==3 .or. &
+              fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
+          if( fstrPARAM%fg_couple_first /= 0 ) then
+            bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
+            if( bsize > 1.0 ) bsize = 1.0
+            do kkk0 = 1, fstrCPL%coupled_node_n
+              kkk1 = 3 * kkk0
+              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+            enddo
+          endif
+          call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+        endif
+!C ********************************************************************************
+
 !C
 !C-- geometrical boundary condition
 
@@ -163,6 +198,80 @@ contains
               call hecmw_abort( hecmw_comm_get_comm())
           end if
         end do
+
+!C *****************************************************
+!C for couple analysis
+      if( fstrPARAM%fg_couple == 1 ) then
+        if( fstrPARAM%fg_couple_type>1 ) then
+          do j=1, fstrCPL%coupled_node_n
+            if( fstrCPL%dof == 3 ) then
+              kkk0 = j*3
+              kkk1 = fstrCPL%coupled_node(j)*3
+
+              fstrCPL%disp (kkk0-2) = hecMAT%X(kkk1-2)
+              fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
+              fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
+
+              fstrCPL%velo (kkk0-2) = -b1*fstrDYNAMIC%ACC(kkk1-2,1) - b2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+                                       b3*( hecMAT%X(kkk1-2) - fstrDYNAMIC%DISP(kkk1-2,1) )
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       b3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       b3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-2) = -a1*fstrDYNAMIC%ACC(kkk1-2,1) - a2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+                                       a3*( hecMAT%X(kkk1-2) - fstrDYNAMIC%DISP(kkk1-2,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       a3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       a3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+            else
+              kkk0 = j*2
+              kkk1 = fstrCPL%coupled_node(j)*2
+
+              fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
+              fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
+
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       b3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       b3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       a3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       a3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+            endif
+          end do
+          call fstr_rcap_send( fstrCPL )
+        endif
+
+        select case ( fstrPARAM%fg_couple_type )
+        case (4)
+          call fstr_rcap_get( fstrCPL )
+        case (5)
+          call fstr_get_convergence( revocap_flag )
+          if( revocap_flag==0 ) then
+            do j = 1, hecMAT%NP * ndof
+              hecMAT%B(j) = prevB(j)
+            enddo
+            cycle
+          endif
+        case (6)
+          call fstr_get_convergence( revocap_flag )
+          if( revocap_flag==0 ) then
+            do j = 1, hecMAT%NP * ndof
+              hecMAT%B(j) = prevB(j)
+            enddo
+            call fstr_rcap_get( fstrCPL )
+            cycle
+          else
+            if( i /= fstrDYNAMIC%n_step ) call fstr_rcap_get( fstrCPL )
+          endif
+        end select
+      endif
+      exit
+    enddo
+!C *****************************************************
+
 !C
 !C-- new displacement, velocity and accelaration
 !C
@@ -180,7 +289,6 @@ contains
 	
 ! ----- update strain, stress, and internal force
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1 )
-
 
       if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
         call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)   
@@ -200,7 +308,20 @@ contains
           endif
       endif
     enddo
-	
+
+    if( fstrPARAM%fg_couple == 1) then
+      if( fstrPARAM%fg_couple_type==5 .or. &
+          fstrPARAM%fg_couple_type==6 ) then
+        deallocate( prevB      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to deallocation error <fstr_solve_NONLINEAR_DYNAMIC, prevB>'
+              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            endif
+      endif
+    endif
+
 	call cpu_time(time_2)
     if( hecMESH%my_rank == 0 ) then
         write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1

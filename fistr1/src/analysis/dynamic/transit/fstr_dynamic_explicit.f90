@@ -195,19 +195,19 @@ contains
 
 !C ********************************************************************************
 !C for couple analysis
-1000  continue
-      if( fstrPARAM%fg_couple == 1) then
-        if( fstrPARAM%fg_couple_type==5 .or. &
-            fstrPARAM%fg_couple_type==6 ) then
-          do j = 1, hecMAT%NP * ndof
-            prevB(j) = hecMAT%B(j)
-          enddo
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==5 .or. &
+              fstrPARAM%fg_couple_type==6 ) then
+            do j = 1, hecMAT%NP * ndof
+              prevB(j) = hecMAT%B(j)
+            enddo
+          endif
         endif
-
-        if( fstrPARAM%fg_couple_type==1 .or. &
-            fstrPARAM%fg_couple_type==3 .or. &
-            fstrPARAM%fg_couple_type==5 ) then
-          call fstr_rcap_get( fstrCPL )
+    do
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==1 .or. &
+              fstrPARAM%fg_couple_type==3 .or. &
+              fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
           if( fstrPARAM%fg_couple_first /= 0 ) then
             bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
             if( bsize > 1.0 ) bsize = 1.0
@@ -220,8 +220,6 @@ contains
           endif
           call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
         endif
-      endif
-2000  continue
 !C ********************************************************************************
 
 !C
@@ -299,12 +297,18 @@ contains
               fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
               fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
 
-              fstrCPL%velo (kkk0-2) = a2*( hecMAT%X(kkk1-2) - fstrDYNAMIC%DISP(kkk1-2,3) )
-              fstrCPL%velo (kkk0-1) = a2*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,3) )
-              fstrCPL%velo (kkk0  ) = a2*( hecMAT%X(kkk1  ) - fstrDYNAMIC%DISP(kkk1  ,3) )
-              fstrCPL%accel(kkk0-2) = a1*( hecMAT%X(kkk1-2) - 2.d0*fstrDYNAMIC%DISP(kkk1-2,1) +  fstrDYNAMIC%DISP(kkk1-2,3) )
-              fstrCPL%accel(kkk0-1) = a1*( hecMAT%X(kkk1-1) - 2.d0*fstrDYNAMIC%DISP(kkk1-1,1) +  fstrDYNAMIC%DISP(kkk1-1,3) )
-              fstrCPL%accel(kkk0  ) = a1*( hecMAT%X(kkk1  ) - 2.d0*fstrDYNAMIC%DISP(kkk1  ,1) +  fstrDYNAMIC%DISP(kkk1  ,3) )
+              fstrCPL%velo (kkk0-2) = -b1*fstrDYNAMIC%ACC(kkk1-2,1) - b2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+                                       b3*( hecMAT%X(kkk1-2) - fstrDYNAMIC%DISP(kkk1-2,1) )
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       b3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       b3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-2) = -a1*fstrDYNAMIC%ACC(kkk1-2,1) - a2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+                                       a3*( hecMAT%X(kkk1-2) - fstrDYNAMIC%DISP(kkk1-2,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       a3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       a3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
             else
               kkk0 = j*2
               kkk1 = fstrCPL%coupled_node(j)*2
@@ -312,43 +316,45 @@ contains
               fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
               fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
 
-              fstrCPL%velo (kkk0-1) = a2*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,3) )
-              fstrCPL%velo (kkk0  ) = a2*( hecMAT%X(kkk1  ) - fstrDYNAMIC%DISP(kkk1  ,3) )
-              fstrCPL%accel(kkk0-1) = a1*( hecMAT%X(kkk1-1) - 2.d0*fstrDYNAMIC%DISP(kkk1-1,1) +  fstrDYNAMIC%DISP(kkk1-1,3) )
-              fstrCPL%accel(kkk0  ) = a1*( hecMAT%X(kkk1  ) - 2.d0*fstrDYNAMIC%DISP(kkk1  ,1) +  fstrDYNAMIC%DISP(kkk1  ,3) )
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       b3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       b3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+                                       a3*( hecMAT%X(kkk1-1) - fstrDYNAMIC%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+                                       a3*( hecMAT%X(kkk1) - fstrDYNAMIC%DISP(kkk1,1) )
             endif
           end do
           call fstr_rcap_send( fstrCPL )
         endif
 
-        if( fstrPARAM%fg_couple_type==5 .or. &
-            fstrPARAM%fg_couple_type==6 ) then
+        select case ( fstrPARAM%fg_couple_type )
+        case (4)
+          call fstr_rcap_get( fstrCPL )
+        case (5)
           call fstr_get_convergence( revocap_flag )
           if( revocap_flag==0 ) then
             do j = 1, hecMAT%NP * ndof
               hecMAT%B(j) = prevB(j)
             enddo
-            if( fstrPARAM%fg_couple_type==5 ) then
-              go to 1000
-            else
-              call fstr_rcap_get( fstrCPL )
-              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-              go to 2000
-            endif
-          else
-            if( fstrPARAM%fg_couple_type==6 .and. &
-                i /= fstrDYNAMIC%n_step ) then
-              call fstr_rcap_get( fstrCPL )
-              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-            endif
+            cycle
           endif
-        endif
-
-        if( fstrPARAM%fg_couple_type==4 ) then
-          call fstr_rcap_get( fstrCPL )
-          call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-        endif
+        case (6)
+          call fstr_get_convergence( revocap_flag )
+          if( revocap_flag==0 ) then
+            do j = 1, hecMAT%NP * ndof
+              hecMAT%B(j) = prevB(j)
+            enddo
+            call fstr_rcap_get( fstrCPL )
+            cycle
+          else
+            if( i /= fstrDYNAMIC%n_step ) call fstr_rcap_get( fstrCPL )
+          endif
+        end select
       endif
+      exit
+    enddo
 !C *****************************************************
 
 !C

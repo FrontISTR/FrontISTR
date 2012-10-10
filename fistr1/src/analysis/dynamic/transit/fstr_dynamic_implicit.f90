@@ -289,37 +289,31 @@ contains
 
 !C ********************************************************************************
 !C for couple analysis
-      if( fstrPARAM%fg_couple == 1 .and. fstrPARAM%fg_couple_type==6 ) then
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==5 .or. &
+              fstrPARAM%fg_couple_type==6 ) then
             do j = 1, hecMAT%NP * ndof
               prevB(j) = hecMAT%B(j)
             enddo
-      endif
-      do
-        if( fstrPARAM%fg_couple == 1) then
-          if( fstrPARAM%fg_couple_type==5 ) then
-            do j = 1, hecMAT%NP * ndof
-              prevB(j) = hecMAT%B(j)
-            enddo
-          endif
-
-          if( fstrPARAM%fg_couple_type==1 .or. &
-            fstrPARAM%fg_couple_type==3 .or. &
-            fstrPARAM%fg_couple_type==5 ) then
-            call fstr_rcap_get( fstrCPL )
-            if( fstrPARAM%fg_couple_first /= 0 ) then
-              bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
-              if( bsize > 1.0 ) bsize = 1.0
-              do kkk0 = 1, fstrCPL%coupled_node_n
-                kkk1 = 3 * kkk0
-                fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-                fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-                fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-              enddo
-            endif
-            call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
           endif
         endif
-
+    do
+        if( fstrPARAM%fg_couple == 1 ) then
+          if( fstrPARAM%fg_couple_type==1 .or. &
+              fstrPARAM%fg_couple_type==3 .or. &
+              fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
+          if( fstrPARAM%fg_couple_first /= 0 ) then
+            bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
+            if( bsize > 1.0 ) bsize = 1.0
+            do kkk0 = 1, fstrCPL%coupled_node_n
+              kkk1 = 3 * kkk0
+              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+            enddo
+          endif
+          call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+        endif
 !C ********************************************************************************
 
 !C
@@ -407,10 +401,9 @@ contains
           call fstr_rcap_send( fstrCPL )
         endif
 
-        select case (fstrPARAM%fg_couple_type)
+        select case ( fstrPARAM%fg_couple_type )
         case (4)
           call fstr_rcap_get( fstrCPL )
-          call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
         case (5)
           call fstr_get_convergence( revocap_flag )
           if( revocap_flag==0 ) then
@@ -426,13 +419,9 @@ contains
               hecMAT%B(j) = prevB(j)
             enddo
             call fstr_rcap_get( fstrCPL )
-            call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
             cycle
           else
-            if( i /= fstrDYNAMIC%n_step ) then
-              call fstr_rcap_get( fstrCPL )
-              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-            endif
+            if( i /= fstrDYNAMIC%n_step ) call fstr_rcap_get( fstrCPL )
           endif
         end select
       endif

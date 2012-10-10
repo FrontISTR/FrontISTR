@@ -75,6 +75,7 @@ subroutine fstr_rcap_initialize( hecMESH, fstrPARAM, fstrCPL )
       if( err /= 0 ) goto 1000
       allocate( fstrCPL%index( hecMESH%n_node_gross ), stat=err)
       if( err /= 0 ) goto 1000
+      fstrCPL%trac = 0.0d0
       fstrCPL%index = -1
 
       write(IDBG,*) "fstr_rcap_initialize: calling rcapf_get_mathcing_node_id"
