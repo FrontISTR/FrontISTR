@@ -176,8 +176,9 @@ module m_static_LIB_C3D8
 
 !>  Update Strain stress of this element
 !----------------------------------------------------------------------*
-   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, ddu, qf ,gausses, iter, tincr, TT,T0  )
+   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, qf ,gausses, iter, tincr, TT,T0  )
 !---------------------------------------------------------------------*
+    use m_fstr, only : ref_temp
     use mMaterial
     use mMechGauss
     use m_MatMatrix
@@ -189,7 +190,6 @@ module m_static_LIB_C3D8
     real(kind=kreal),   INTENT(IN)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: u(3,nn)         !< \param [in] nodal dislplacements 
     real(kind=kreal),   INTENT(IN)     :: du(3,nn)        !< \param [in] nodal displacement ( solutions of solver )
-    real(kind=kreal),   INTENT(IN)     :: ddu(3,nn)       !< \param [in] nodal displacement ( solutions of solver )
     real(kind=kreal),   INTENT(OUT)    :: qf(nn*3)        !< \param [out] Internal Force    
     type(tGaussStatus), INTENT(INOUT)  :: gausses(:)      !< \param [out] status of qudrature points
     integer, intent(in)                :: iter
@@ -200,25 +200,25 @@ module m_static_LIB_C3D8
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof=3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn)
-    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, dt
+    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG
     integer(kind=kint) :: i, j, k, LX, mtype
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), R(3,3), spfunc(nn)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn)
     real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
-    real(kind=kreal)   :: dvol, vol0, Bbar(nn,3), derivdum(1:ndof,1:ndof)
-    real(kind=kreal)   :: B4,B6,B8, ttc,tt0, outa(1),ina(1), EPSTH(6)
+    real(kind=kreal)   :: dvol, vol0, Bbar(nn,3), derivdum(1:ndof,1:ndof), BBar2(nn,3)
+    real(kind=kreal)   :: B4,B6,B8, ttc,tt0, alp, outa(1),ina(1), EPSTH(6)
     logical            :: ierr
 
     qf(:)    = 0.d0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
     elem(:,:) = ecoord(:,:)
-    totaldisp(:,:) = u(:,:)+ ddu(:,:)
+    totaldisp(:,:) = u(:,:)+ du(:,:)
     if( flag == UPDATELAG ) then
-        elem(:,:) = (0.5D0*ddu(:,:)+u(:,:) ) +ecoord(:,:)
-        elem1(:,:) = (ddu(:,:)+u(:,:) ) +ecoord(:,:) 
+        elem(:,:) = (0.5D0*du(:,:)+u(:,:) ) +ecoord(:,:)
+        elem1(:,:) = (du(:,:)+u(:,:) ) +ecoord(:,:) 
       !  elem = elem1
-        totaldisp(:,:) = ddu(:,:)
+        totaldisp(:,:) = du(:,:)
     endif
 	
 	! dilatation at centroid
@@ -226,6 +226,7 @@ module m_static_LIB_C3D8
     CALL getGlobalDeriv( etype, nn, naturalcoord, elem, det, Bbar )
     derivdum= matmul( totaldisp(1:ndof,1:nn), Bbar(1:nn,1:ndof) )
     vol0 = (derivdum(1,1)+derivdum(2,2)+derivdum(3,3))/3.d0
+    if( flag == UPDATELAG ) CALL getGlobalDeriv( etype, nn, naturalcoord, elem1, det, Bbar2 )
 
     do LX=1, NumOfQuadPoints(etype)
       mtype = gausses(LX)%pMaterial%mtype
@@ -237,8 +238,6 @@ module m_static_LIB_C3D8
 	  gdispderiv(1,1) = gdispderiv(1,1)+dvol
       gdispderiv(2,2) = gdispderiv(2,2)+dvol
       gdispderiv(3,3) = gdispderiv(3,3)+dvol
-
-      WG=getWeight( etype, LX )*DET
 !
 ! ========================================================
 !     UPDATE STRAIN and STRESS
@@ -254,12 +253,16 @@ module m_static_LIB_C3D8
         ttc = dot_product( TT, spfunc )
         tt0 = dot_product( T0, spfunc )
         CALL MatlMatrix( gausses(LX), D3, D, tincr, ttc )
-        if( iter<=1 .or. flag==TOTALLAG ) THEN          
-		  ina(1) = ttc
+            
+          ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
           if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          EPSTH(1:3)=outa(1)*(ttc-tt0)
-        ENDIF
+          alp =outa(1)
+          ina(1) = tt0
+          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
+          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+          EPSTH(1:3)=ALP*(ttc-ref_temp)-outa(1)*(tt0-ref_temp)
+
       else
         CALL MatlMatrix( gausses(LX), D3, D, tincr )
       endif
@@ -277,7 +280,7 @@ module m_static_LIB_C3D8
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
           if( mtype==VISCOELASTIC .and. tincr/=0.d0 ) then
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
 			  gausses(LX)%stress = real(gausses(LX)%stress)
           endif	
         else if( flag==TOTALLAG ) then
@@ -297,13 +300,12 @@ module m_static_LIB_C3D8
             mtype==USERELASTIC .or. mtype==USERHYPERELASTIC .or. mtype==USERMATERIAL ) then
              gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( mtype==VISCOELASTIC &
-              .or. mtype==NORTON ) then
+          else if( (mtype==VISCOELASTIC &
+              .or. mtype==NORTON) .and. tincr/=0.d0  ) then
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-            dt = tincr
-			gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
+            gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
           else
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
@@ -315,54 +317,34 @@ module m_static_LIB_C3D8
           rot(1,2)= 0.5d0*(gdispderiv(1,2)-gdispderiv(2,1) );  rot(2,1) = -rot(1,2)
           rot(2,3)= 0.5d0*(gdispderiv(2,3)-gdispderiv(3,2) );  rot(3,2) = -rot(2,3)
           rot(1,3)= 0.5d0*(gdispderiv(1,3)-gdispderiv(3,1) );  rot(3,1) = -rot(1,3)
-          dumstress(1,1) = gausses(LX)%strain(1)
-          dumstress(2,2) = gausses(LX)%strain(2)
-          dumstress(3,3) = gausses(LX)%strain(3)
-          dumstress(1,2) = gausses(LX)%strain(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%strain(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%strain(6);  dumstress(1,3)=dumstress(3,1)
-          dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-		  
-          gausses(LX)%strain(1) = gausses(LX)%strain(1)+ dum(1,1)
-          gausses(LX)%strain(2) = gausses(LX)%strain(2)+ dum(2,2)
-          gausses(LX)%strain(3) = gausses(LX)%strain(3)+ dum(3,3)
-          gausses(LX)%strain(4) = gausses(LX)%strain(4)+ dum(1,2)
-          gausses(LX)%strain(5) = gausses(LX)%strain(5)+ dum(2,3)
-          gausses(LX)%strain(6) = gausses(LX)%strain(6)+ dum(3,1)
-          gausses(LX)%strain(1:6) = gausses(LX)%strain(1:6)+ dstrain(1:6)+EPSTH(:)
-		
-          if( mtype==VISCOELASTIC .and. tincr/=0.d0 ) then
-	          dt = tincr
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
-          else	
 
+          gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+ dstrain(1:6)+EPSTH(:)
+		
           dstress = ( matmul( D(1:6,1:6), dstrain(1:6) ) )
-          dumstress(1,1) = gausses(LX)%stress(1)
-          dumstress(2,2) = gausses(LX)%stress(2)
-          dumstress(3,3) = gausses(LX)%stress(3)
-          dumstress(1,2) = gausses(LX)%stress(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%stress(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%stress(6);  dumstress(1,3)=dumstress(3,1)
+          dumstress(1,1) = gausses(LX)%stress_bak(1)
+          dumstress(2,2) = gausses(LX)%stress_bak(2)
+          dumstress(3,3) = gausses(LX)%stress_bak(3)
+          dumstress(1,2) = gausses(LX)%stress_bak(4);  dumstress(2,1)=dumstress(1,2)
+          dumstress(2,3) = gausses(LX)%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
+          dumstress(3,1) = gausses(LX)%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
     
           dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-		  dum=0.d0
-          gausses(LX)%stress(1) = gausses(LX)%stress(1)+dstress(1)+ dum(1,1)
-          gausses(LX)%stress(2) = gausses(LX)%stress(2)+dstress(2)+ dum(2,2)
-          gausses(LX)%stress(3) = gausses(LX)%stress(3)+dstress(3)+ dum(3,3)
-          gausses(LX)%stress(4) = gausses(LX)%stress(4)+dstress(4)+ dum(1,2)
-          gausses(LX)%stress(5) = gausses(LX)%stress(5)+dstress(5)+ dum(2,3)
-          gausses(LX)%stress(6) = gausses(LX)%stress(6)+dstress(6)+ dum(3,1)
+          gausses(LX)%stress(1) = gausses(LX)%stress_bak(1)+dstress(1)+ dum(1,1)
+          gausses(LX)%stress(2) = gausses(LX)%stress_bak(2)+dstress(2)+ dum(2,2)
+          gausses(LX)%stress(3) = gausses(LX)%stress_bak(3)+dstress(3)+ dum(3,3)
+          gausses(LX)%stress(4) = gausses(LX)%stress_bak(4)+dstress(4)+ dum(1,2)
+          gausses(LX)%stress(5) = gausses(LX)%stress_bak(5)+dstress(5)+ dum(2,3)
+          gausses(LX)%stress(6) = gausses(LX)%stress_bak(6)+dstress(6)+ dum(3,1)
 		  
           if( mtype==USERMATERIAL ) then
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
           elseif( mtype==NORTON ) then
 	        gausses(LX)%pMaterial%mtype=mtype
 		    if( tincr/=0.d0 .and. any(gausses(LX)%stress/=0.d0) ) then
-              dt = tincr
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
+              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
             endif
           endif
-          endif
+
         endif
         if( isElastoplastic(mtype) ) then
           gausses(LX)%pMaterial%mtype=mtype
@@ -440,18 +422,18 @@ module m_static_LIB_C3D8
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv )
         B(1:6, 1:nn*ndof) = 0.0d0
         DO J=1,NN
-		  B4=(Bbar(J,1)-gderiv(J,1))/3.d0
-          B6=(Bbar(J,2)-gderiv(J,2))/3.d0
-          B8=(Bbar(J,3)-gderiv(J,3))/3.d0
+          B4=(Bbar2(J,1)-gderiv(J,1))/3.d0
+          B6=(Bbar2(J,2)-gderiv(J,2))/3.d0
+          B8=(Bbar2(J,3)-gderiv(J,3))/3.d0
           B(1,3*J-2)=gderiv(J,1)+B4
           B(1,3*J-1)=B6
           B(1,3*J  )=B8
 		
-		  B(2,3*J-2)=B4
+          B(2,3*J-2)=B4
           B(2,3*J-1)=gderiv(J,2)+B6
           B(2,3*J  )=B8
 		
-		  B(3,3*J-2)=B4
+          B(3,3*J-2)=B4
           B(3,3*J-1)=B6
           B(3,3*J  )=gderiv(J,3)+B8
 		  
@@ -465,11 +447,108 @@ module m_static_LIB_C3D8
       endif
 
 !!  calculate the Internal Force 
+      WG=getWeight( etype, LX )*DET
       qf(1:nn*ndof) = qf(1:nn*ndof) +                                   &
           matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
     enddo
 
 
    end subroutine Update_C3D8Bbar
+   
+   !> This subroutien calculate thermal loading
+!----------------------------------------------------------------------*
+   SUBROUTINE TLOAD_C3D8Bbar(ETYPE,NN,XX,YY,ZZ,TT,T0,gausses,VECT)
+!----------------------------------------------------------------------*
+      use m_fstr, only : ref_temp
+      USE mMechGauss
+      use m_MatMatrix
+      INTEGER(kind=kint), PARAMETER :: NDOF=3
+      INTEGER(kind=kint), INTENT(IN) :: ETYPE,NN
+      TYPE(tGaussStatus), INTENT(IN) :: gausses(:)          !< status of qudrature points
+      REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
+      REAL(kind=kreal), INTENT(OUT)  :: VECT(NN*NDOF)
+
+      REAL(kind=kreal) ALP,alp0, D(6,6),B(6,NDOF*NN)
+      REAL(kind=kreal) B4,B6,B8,DET,ecoord(3,NN)
+      INTEGER(kind=kint) J,LX
+      REAL(kind=kreal) EPS(6),SGM(6),H(NN)
+      REAL(kind=kreal) naturalcoord(3),gderiv(NN,3)
+      REAL(kind=kreal) WG, outa(1), ina(1), Bbar(nn,3)
+      REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS
+      logical   :: ierr
+
+      VECT(:)=0.d0
+	  
+      ecoord(1,:)=XX(:)
+      ecoord(2,:)=YY(:)
+      ecoord(3,:)=ZZ(:)
+	  
+	  naturalCoord=0.d0
+      CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, Bbar )
+
+! LOOP FOR INTEGRATION POINTS
+      DO LX=1,NumOfQuadPoints(etype)  
+        CALL getQuadPoint( etype, LX, naturalCoord(:) )
+        CALL getShapeFunc( ETYPE, naturalcoord, H(1:NN) )
+        CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
+
+!  WEIGHT VALUE AT GAUSSIAN POINT
+        WG=getWeight( etype, LX )*DET
+        B(1:6, 1:nn*ndof) = 0.0d0
+        DO J=1,NN
+          B4=(Bbar(J,1)-gderiv(J,1))/3.d0
+          B6=(Bbar(J,2)-gderiv(J,2))/3.d0
+          B8=(Bbar(J,3)-gderiv(J,3))/3.d0
+          B(1,3*J-2)=gderiv(J,1)+B4
+          B(1,3*J-1)=B6
+          B(1,3*J  )=B8
+		
+          B(2,3*J-2)=B4
+          B(2,3*J-1)=gderiv(J,2)+B6
+          B(2,3*J  )=B8
+		
+          B(3,3*J-2)=B4
+          B(3,3*J-1)=B6
+          B(3,3*J  )=gderiv(J,3)+B8
+		  
+          B(4,3*J-2) = gderiv(J,2)
+          B(4,3*J-1) = gderiv(J,1)
+          B(5,3*J-1) = gderiv(J,3)
+          B(5,3*J  ) = gderiv(J,2)
+          B(6,3*J-2) = gderiv(J,3)
+          B(6,3*J  ) = gderiv(J,1)
+        ENDDO
+
+            TEMPC=DOT_PRODUCT( H(1:NN),TT(1:NN) )
+            TEMP0=DOT_PRODUCT( H(1:NN),T0(1:NN) )
+			
+     !   CALL calElasticMatrix( gausses(LX)%pMaterial, D3, D, TEMPC  )
+        CALL MatlMatrix( gausses(LX), D3, D, 0.d0, TEMPC )
+        ina(1) = TEMPC
+        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
+		alp = outa(1)
+        if( ierr ) alp=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
+        ina(1) = TEMP0
+        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
+		alp0 = outa(1)
+        if( ierr ) alp0=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
+
+!**
+!** THERMAL EPS
+!**
+            THERMAL_EPS=ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+            EPS(1:3)=THERMAL_EPS
+            EPS(4:6)=0.d0
+			
+!**
+!** SET SGM  {s}=[D]{e}
+!**
+            SGM(:)=MATMUL( D(:,:),EPS(:) )
+!**
+!** CALCULATE LOAD {F}=[B]T{e}
+!**
+            VECT(1:NN*NDOF)=VECT(1:NN*NDOF)+MATMUL( SGM(:),B(:,:))*WG
+      ENDDO
+   end subroutine TLOAD_C3D8Bbar
     
 end module m_static_LIB_C3D8

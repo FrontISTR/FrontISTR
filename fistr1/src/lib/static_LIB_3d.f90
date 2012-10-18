@@ -352,6 +352,7 @@ module m_static_LIB_3d
 !----------------------------------------------------------------------*
    SUBROUTINE TLOAD_C3(ETYPE,NN,XX,YY,ZZ,TT,T0,gausses,VECT)
 !----------------------------------------------------------------------*
+      use m_fstr, only : ref_temp
       USE mMechGauss
       use m_MatMatrix
       use m_ElasticLinear
@@ -361,7 +362,7 @@ module m_static_LIB_3d
       REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
       REAL(kind=kreal), INTENT(OUT)  :: VECT(NN*NDOF)
 
-      REAL(kind=kreal) ALP,D(6,6),B(6,NDOF*NN)
+      REAL(kind=kreal) ALP,ALP0,D(6,6),B(6,NDOF*NN)
       REAL(kind=kreal) DET,ecoord(3,NN)
       INTEGER(kind=kint) J,LX
       REAL(kind=kreal) EPS(6),SGM(6),H(NN)
@@ -399,16 +400,20 @@ module m_static_LIB_3d
             TEMPC=DOT_PRODUCT( H(1:NN),TT(1:NN) )
             TEMP0=DOT_PRODUCT( H(1:NN),T0(1:NN) )
 			
-        CALL calElasticMatrix( gausses(LX)%pMaterial, D3, D, TEMPC  )
+        CALL MatlMatrix( gausses(LX), D3, D, 0.d0, tempc )
         ina(1) = TEMPC
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
 		alp = outa(1)
         if( ierr ) alp=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
+		ina(1) = TEMP0
+        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
+		alp0 = outa(1)
+        if( ierr ) alp0=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
 
 !**
 !** THERMAL EPS
 !**
-            THERMAL_EPS=ALP*(TEMPC-TEMP0)
+            THERMAL_EPS=ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
             EPS(1:3)=THERMAL_EPS
             EPS(4:6)=0.d0
 			
@@ -428,6 +433,7 @@ module m_static_LIB_3d
 !---------------------------------------------------------------------*
   SUBROUTINE UPDATE_C3( etype,nn,ecoord, u, ddu, qf ,gausses, iter, tincr, TT,T0  )
 !---------------------------------------------------------------------*
+    use m_fstr, only : ref_temp
     use mMaterial
     use mMechGauss
     use m_MatMatrix
@@ -448,7 +454,7 @@ module m_static_LIB_3d
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof=3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, dt, outa(1)
+    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, alp,outa(1)
     integer(kind=kint) :: i, j, k, LX, mtype
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn)
@@ -472,7 +478,6 @@ module m_static_LIB_3d
       call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv( etype, nn, naturalcoord, elem, det, gderiv )
 
-      WG=getWeight( etype, LX )*DET
 !
 ! ========================================================
 !     UPDATE STRAIN and STRESS
@@ -489,12 +494,16 @@ module m_static_LIB_3d
         ttc = dot_product( TT, spfunc )
         tt0 = dot_product( T0, spfunc )
         CALL MatlMatrix( gausses(LX), D3, D, tincr, ttc )
-        if( iter<=1 .or. flag==TOTALLAG ) THEN          
+         
           ina(1) = ttc
           call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
           if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          EPSTH(1:3)=outa(1)*(ttc-tt0)
-        endif
+          alp =outa(1)
+          ina(1) = tt0
+          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
+          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+          EPSTH(1:3)=ALP*(ttc-ref_temp)-outa(1)*(tt0-ref_temp)
+
       else
         CALL MatlMatrix( gausses(LX), D3, D, tincr )
       endif
@@ -523,18 +532,16 @@ module m_static_LIB_3d
                       +gdispderiv(2,2)*gdispderiv(2,3)+gdispderiv(3,2)*gdispderiv(3,3) )
           dstrain(6) = dstrain(6)+ (gdispderiv(1,1)*gdispderiv(1,3)    &
                       +gdispderiv(2,1)*gdispderiv(2,3)+gdispderiv(3,1)*gdispderiv(3,3) )
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           			  
           if( mtype == NEOHOOKE .or. mtype == MOONEYRIVLIN .or.  mtype == ARRUDABOYCE  .or.      &
             mtype==USERELASTIC .or. mtype==USERHYPERELASTIC .or. mtype==USERMATERIAL ) then
              gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( mtype==VISCOELASTIC &
-              .or. mtype==NORTON ) then
+          else if( (mtype==VISCOELASTIC &
+              .or. mtype==NORTON) .and. tincr/=0.d0 ) then
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-            dt = tincr  
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
           else
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
@@ -546,52 +553,37 @@ module m_static_LIB_3d
           rot(1,2)= 0.5d0*(gdispderiv(1,2)-gdispderiv(2,1) );  rot(2,1) = -rot(1,2)
           rot(2,3)= 0.5d0*(gdispderiv(2,3)-gdispderiv(3,2) );  rot(3,2) = -rot(2,3)
           rot(1,3)= 0.5d0*(gdispderiv(1,3)-gdispderiv(3,1) );  rot(3,1) = -rot(1,3)
-          dumstress(1,1) = gausses(LX)%strain(1)
-          dumstress(2,2) = gausses(LX)%strain(2)
-          dumstress(3,3) = gausses(LX)%strain(3)
-          dumstress(1,2) = gausses(LX)%strain(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%strain(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%strain(6);  dumstress(1,3)=dumstress(3,1)
-          dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-		  
-          gausses(LX)%strain(1) = gausses(LX)%strain(1)+ dum(1,1)
-          gausses(LX)%strain(2) = gausses(LX)%strain(2)+ dum(2,2)
-          gausses(LX)%strain(3) = gausses(LX)%strain(3)+ dum(3,3)
-          gausses(LX)%strain(4) = gausses(LX)%strain(4)+ dum(1,2)
-          gausses(LX)%strain(5) = gausses(LX)%strain(5)+ dum(2,3)
-          gausses(LX)%strain(6) = gausses(LX)%strain(6)+ dum(3,1)
-          gausses(LX)%strain(1:6) = gausses(LX)%strain(1:6)+ dstrain(1:6)+EPSTH(:)
+
+          gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+ dstrain(1:6)+EPSTH(:)
 		  
           if( mtype==VISCOELASTIC .and. tincr/=0.d0 ) then
-            dt = tincr
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
           else	
 
           dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
-          dumstress(1,1) = gausses(LX)%stress(1)
-          dumstress(2,2) = gausses(LX)%stress(2)
-          dumstress(3,3) = gausses(LX)%stress(3)
-          dumstress(1,2) = gausses(LX)%stress(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%stress(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%stress(6);  dumstress(1,3)=dumstress(3,1)
+          dumstress(1,1) = gausses(LX)%stress_bak(1)
+          dumstress(2,2) = gausses(LX)%stress_bak(2)
+          dumstress(3,3) = gausses(LX)%stress_bak(3)
+          dumstress(1,2) = gausses(LX)%stress_bak(4);  dumstress(2,1)=dumstress(1,2)
+          dumstress(2,3) = gausses(LX)%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
+          dumstress(3,1) = gausses(LX)%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
     
           dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-          gausses(LX)%stress(1) = gausses(LX)%stress(1)+dstress(1)+ dum(1,1)
-          gausses(LX)%stress(2) = gausses(LX)%stress(2)+dstress(2)+ dum(2,2)
-          gausses(LX)%stress(3) = gausses(LX)%stress(3)+dstress(3)+ dum(3,3)
-          gausses(LX)%stress(4) = gausses(LX)%stress(4)+dstress(4)+ dum(1,2)
-          gausses(LX)%stress(5) = gausses(LX)%stress(5)+dstress(5)+ dum(2,3)
-          gausses(LX)%stress(6) = gausses(LX)%stress(6)+dstress(6)+ dum(3,1)
+          gausses(LX)%stress(1) = gausses(LX)%stress_bak(1)+dstress(1)+ dum(1,1)
+          gausses(LX)%stress(2) = gausses(LX)%stress_bak(2)+dstress(2)+ dum(2,2)
+          gausses(LX)%stress(3) = gausses(LX)%stress_bak(3)+dstress(3)+ dum(3,3)
+          gausses(LX)%stress(4) = gausses(LX)%stress_bak(4)+dstress(4)+ dum(1,2)
+          gausses(LX)%stress(5) = gausses(LX)%stress_bak(5)+dstress(5)+ dum(2,3)
+          gausses(LX)%stress(6) = gausses(LX)%stress_bak(6)+dstress(6)+ dum(3,1)
 		  
           if( mtype==USERMATERIAL ) then
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
           else if( mtype==NORTON ) then
             gausses(LX)%pMaterial%mtype=mtype
 		    if( tincr/=0.d0 .and. any(gausses(LX)%stress/=0.d0) ) then
-              dt = tincr
               gausses(LX)%pMaterial%mtype=mtype
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, dt )
+              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
             endif
           endif
           endif
@@ -671,6 +663,7 @@ module m_static_LIB_3d
       endif
 
 !!  calculate the Internal Force 
+      WG=getWeight( etype, LX )*DET
       qf(1:nn*ndof) = qf(1:nn*ndof) +                                   &
           matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
     enddo
@@ -821,7 +814,6 @@ module m_static_LIB_3d
 
    END SUBROUTINE
    
-
 !> Volume of element
 !----------------------------------------------------------------------*
    real(kind=kreal) function VOLUME_C3(ETYPE,NN,XX,YY,ZZ)

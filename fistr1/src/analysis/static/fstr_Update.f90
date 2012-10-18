@@ -5,7 +5,6 @@
 !      Module Name : Static Analysis                                   !
 !                                                                      !
 !            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
-!                       Z. Sun (ASTOM)
 !                                                                      !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
@@ -41,12 +40,10 @@ module m_fstr_Update
 !>    -# 内力（等価節点力）の計算	\f$ Q_{n+1}^{(k-1)} ( u_{n+1}^{(k-1)} ) \f$
 !> \endif
 !
-subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)    
+subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)
 !=====================================================================*
   use m_fstr
   use m_static_lib
-  use m_static_LIB_1d
-  use m_static_LIB_C3D8
 
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -57,20 +54,20 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer(kind=kint) :: nodLOCAL(20)
   real(kind=kreal)   :: ecoord(3,20)
   real(kind=kreal)   :: thick
-  integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j, isect, ihead
+  integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
 
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
   real(kind=kreal)   :: tt(20), tt0(20), qf(20*6)
   integer            :: ig0,  ig, ik, in, ierror
-  
-  real(kind=kreal), optional :: strainEnergy                                           
+
+  real(kind=kreal), optional :: strainEnergy
 
   ndof = hecMAT%NDOF
   fstrSOLID%QFORCE=0.0d0
-  
-  
+
+
 ! --------------------------------------------------------------------
-!      updated 
+!      updated
 !         1. stress and strain  : ep^(k) = ep^(k-1)+dep^(k)
 !                                 sgm^(k) = sgm^(k-1)+dsgm^(k)
 !         2. Internal Force     : Q^(k-1) ( u^(k-1) )
@@ -100,18 +97,24 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
           ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)+i-3)
         enddo
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          tt0(j)=fstrSOLID%reftemp( nodLOCAL(j) ) 
+          if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
+             fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype==NORTON ) then
+            tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) ) 
+          else
+            tt0(j) = 0.d0
+            if( hecMESH%hecmw_flag_initcon==1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
+          endif
           tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
         endif
       enddo
 
-! nodal displacement 
+! nodal displacement
         do j=1,nn
           nodLOCAL(j)= hecMESH%elem_node_item (iiS+j)
           do i=1,ndof
             ddu(i,j) = hecMAT%X(ndof*nodLOCAL(j)+i-ndof)
             du(i,j)  = fstrSOLID%dunode(ndof*nodLOCAL(j)+i-ndof)
-            total_disp(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(i,j)
+            total_disp(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) 
           enddo
         enddo
 !
@@ -121,25 +124,22 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:),      &
                         thick,fstrSOLID%elements(icel)%iset,                                  &
                         total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
-        
+						
       else if ( ic_type==301 ) then
-!        thick = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_THICK)
-        isect= hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1)
-        call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), ddu(1:3,1:nn),  &
+        thick = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_THICK)
+        call UPDATE_C1(  ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), ddu(1:3,1:nn),  &
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
-        
-      else if ( ic_type==361 ) then                      
+						
+      else if ( ic_type==361 ) then
         if( fstrPR%solution_type==kstSTATIC ) then
           call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &
                  tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:))
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn),  &
+          call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn),   &
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
         else
-          call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn)       &
+          call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn)       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
         endif
         endif
@@ -147,13 +147,20 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.                          &
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), ddu(1:3,1:nn), qf(1:nn*ndof)       &
+          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), qf(1:nn*ndof)       &
                         ,fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
         else
-          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), ddu(1:3,1:nn)       &
+          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn)       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
         endif
-		
+
+
+ !     else if ( ic_type==731) then
+!        call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
+!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
+!      else if ( ic_type==741) then
+!        call UPDATE_S4(xx,yy,zz,ee,pp,thick,local_stf)
+!        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
       else
         write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
         write(*,*) ' ic_type = ', ic_type
@@ -168,16 +175,16 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
           enddo
         enddo
 !
-! ----- calculate strain energy                          
+! ----- calculate strain energy
         if(present(strainEnergy))then
-          do j= 1, nn  
-            do i=1, ndof 
+          do j= 1, nn
+            do i=1, ndof
               strainEnergy=strainEnergy+0.5d0*(fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)&
-                                              +qf(ndof*(j-1)+i))*ddu(i,j)   
-              fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)=qf(ndof*(j-1)+i)     
-            enddo  
-          enddo     
-        endif                                     
+                                              +qf(ndof*(j-1)+i))*ddu(i,j)
+              fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)=qf(ndof*(j-1)+i)
+            enddo
+          enddo
+        endif
 
     enddo      ! icel
   enddo        ! itype
@@ -185,7 +192,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
 !C
 !C Update for fstrSOLID%QFORCE
-!C 
+!C
       if( ndof==3 ) then
         call hecmw_update_3_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
       else if( ndof==2 ) then
@@ -193,7 +200,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       else if( ndof==6 ) then
         call hecmw_update_m_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node,6)
       endif
-  
+
 end subroutine fstr_UpdateNewton
 
 !> Update elastiplastic status
@@ -206,9 +213,16 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
   type (hecmwST_local_mesh)  :: hecMESH     !< hecmw mesh
   type (fstr_solid)          :: fstrSOLID   !< fstr_solid
   real(kind=kreal)           :: tincr
-  
+
   integer(kind=kint) :: itype, iS, iE, ic_type, icel, ngauss, i
   
+  
+      if( associated( fstrSOLID%temperature ) ) then 
+           do i=1, hecMESH%n_node
+             fstrSOLID%last_temp(i) = fstrSOLID%temperature(i)
+           end do
+      endif
+
       if( associated( fstrSOLID%temperature ) ) then 
            do i=1, hecMESH%n_node
              fstrSOLID%last_temp(i) = fstrSOLID%temperature(i)
@@ -230,16 +244,25 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
           call updateEPState( fstrSOLID%elements(icel)%gausses(i) )
         enddo
       elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
+        if( tincr>0.d0 ) then
         do i=1,ngauss
           fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
           call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
         enddo
+        endif
       elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == VISCOELASTIC ) then
+        if( tincr>0.d0 ) then 
         do i=1,ngauss
           fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
           call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
         enddo
+        endif
       endif
+	  
+      do i=1,ngauss
+        fstrSOLID%elements(icel)%gausses(i)%strain_bak = fstrSOLID%elements(icel)%gausses(i)%strain
+        fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
+      enddo
     enddo
   enddo
 end subroutine

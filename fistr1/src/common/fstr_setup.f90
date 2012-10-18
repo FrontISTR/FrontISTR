@@ -534,14 +534,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call hecmw_abort( hecmw_comm_get_comm())
             end if
           fstrSOLID%temperature = REF_TEMP
-          allocate ( fstrSOLID%reftemp( hecMESH%n_node )      ,STAT=ierror )
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <FSTR_SOLID, REFTEMP>'
-              write(idbg,*) '  rank = ', myrank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-          fstrSOLID%reftemp = REF_TEMP
           allocate ( fstrSOLID%last_temp( hecMESH%n_node )      ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, LAST_TEMP>'
@@ -836,14 +828,6 @@ subroutine fstr_solid_finalize( fstrSOLID )
             deallocate(fstrSOLID%temperature       ,STAT=ierror)
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, temperature>'
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-        endif
-        if( associated(fstrSOLID%reftemp) ) then
-            deallocate(fstrSOLID%reftemp       ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, reftemp>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if

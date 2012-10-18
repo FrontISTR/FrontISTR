@@ -43,15 +43,17 @@ MODULE mMechGauss
             real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
             real(kind=kreal)          :: plstrain               !< plastic strain
             real(kind=kreal)          :: ttime                  !< total time at the start of the current increment
+            real(kind=kreal)          :: strain_bak(6)          !< strain
+            real(kind=kreal)          :: stress_bak(6)              !< stress
         end type
 
 ! ----------------------------------------------------------------------------
         !> All data should be recorded in every elements
         type tElement
-            integer                     :: etype                    !< element's type
-            integer                     :: iset                     !< plane strain, stress etc
-            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces         
-            type(tGaussStatus), pointer :: gausses(:) => null()     !< info of qudrature points
+            integer                     :: etype                 !< element's type
+            integer                     :: iset                  !< plane strain, stress etc
+            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces    
+            type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
         end type
 
   CONTAINS
@@ -61,6 +63,7 @@ MODULE mMechGauss
     type( tGaussStatus ), intent(inout) :: gauss
     integer :: n
     gauss%strain=0.d0; gauss%stress=0.d0
+    gauss%strain_bak=0.d0; gauss%stress_bak=0.d0
     gauss%plstrain =0.d0
     gauss%ttime = 0.d0
     if( gauss%pMaterial%mtype==USERMATERIAL ) then

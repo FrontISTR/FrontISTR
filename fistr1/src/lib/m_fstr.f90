@@ -299,7 +299,6 @@ public
                 real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
                 real(kind=kreal), pointer :: temp_bak(:)=> null()       
                 real(kind=kreal), pointer :: last_temp(:)=> null()
-                real(kind=kreal), pointer :: reftemp(:)    => null()   !< =reference temperature
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties

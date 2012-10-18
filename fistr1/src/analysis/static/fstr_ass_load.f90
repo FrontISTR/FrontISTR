@@ -32,7 +32,7 @@ module m_fstr_ass_load
 !>  -#  volume force
 !>  -#  thermal force
 
-    subroutine fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)   
+    subroutine fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 !======================================================================!
       use m_fstr
       use m_static_lib
@@ -44,7 +44,7 @@ module m_fstr_ass_load
       type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
       type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
       type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
-      type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters     
+      type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
 
       real(kind=kreal) :: xx(20), yy(20), zz(20)
       real(kind=kreal) :: params(0:6)
@@ -61,7 +61,7 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
 
       ndof = hecMAT%NDOF
-!      factor = fstrSOLID%factor(2)
+      factor = fstrSOLID%factor(2)
       if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) factor=1.d0
 ! -------------------------------------------------------------------
 !  CLOAD
@@ -70,10 +70,6 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-        factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
-        endif
         ig= fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp= fstrSOLID%CLOAD_ngrp_DOF(ig0)
         fval= fstrSOLID%CLOAD_ngrp_val(ig0)
@@ -81,7 +77,7 @@ module m_fstr_ass_load
         iE0= hecMESH%node_group%grp_index(ig  )
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
-          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
+          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+fval
         enddo
       enddo
 !
@@ -92,10 +88,6 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%DLOAD_ngrp_tot
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-        factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
-        endif
         ig= fstrSOLID%DLOAD_ngrp_ID(ig0)
         ltype= fstrSOLID%DLOAD_ngrp_LID(ig0)
         do i=0,6
@@ -156,7 +148,7 @@ module m_fstr_ass_load
 ! ----- Create local stiffness
           if (ic_type==241 .or.ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322 ) then
             call DL_C2(ic_type,nn,xx(1:nn),yy(1:nn),rho,pa1,ltype,params,vect(1:nn*ndof),nsize,iset)
-			
+
           else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.     &
                    ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
             call DL_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,ltype,params,vect(1:nn*ndof),nsize)
@@ -168,26 +160,25 @@ module m_fstr_ass_load
           endif
 ! ----- Add vector
           do j=1,nsize
-              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+factor*vect(j)
+              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
           enddo
         enddo
       enddo
-	  
+
 ! -----Uload
       call uloading( cstep, factor, fstrSOLID%GL )
-	  
+
 !C
 !C Update for fstrSOLID%GL
-!C 
+!C
       if( hecMESH%n_dof==3 ) then
         call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       else if( hecMESH%n_dof==2 ) then
         call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       endif
-	  
+
       do i=1, hecMESH%n_node*  hecMESH%n_dof
-          hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
-!          hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
+          hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
 !
 !
@@ -198,14 +189,9 @@ module m_fstr_ass_load
 !C Set Temperature
 !C
       if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-        fstrSOLID%reftemp(:) = fstrSOLID%temperature(:)
         do ig0= 1, fstrSOLID%TEMP_ngrp_tot
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-          factor = fstrSOLID%factor(2)
-          if( cstep > 1 ) then
-            if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
-          endif
           ig= fstrSOLID%TEMP_ngrp_ID(ig0)
           fval=fstrSOLID%TEMP_ngrp_val(ig0)
           iS0= hecMESH%node_group%grp_index(ig-1) + 1
@@ -236,9 +222,9 @@ module m_fstr_ass_load
             do j=1,nn
               nodLOCAL(j)=hecMESH%elem_node_item(iS+j)
 ! ----- nodal coordinate
-              xx(j)=hecMESH%node(3*nodLOCAL(j)-2)
-              yy(j)=hecMESH%node(3*nodLOCAL(j)-1)
-              zz(j)=hecMESH%node(3*nodLOCAL(j)  )
+              xx(j)=hecMESH%node(3*nodLOCAL(j)-2)+fstrSOLID%unode(ndof*nodLOCAL(j)-2)
+              yy(j)=hecMESH%node(3*nodLOCAL(j)-1)+fstrSOLID%unode(ndof*nodLOCAL(j)-1)
+              zz(j)=hecMESH%node(3*nodLOCAL(j)  )+fstrSOLID%unode(ndof*nodLOCAL(j))
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) ) 
               tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
 ! ----- create iwk array ***
@@ -263,6 +249,10 @@ module m_fstr_ass_load
             if (ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 ) then
               call TLOAD_C2(ic_type,nn,xx(1:nn),yy(1:nn),tt(1:nn),tt0(1:nn),  &
 			         fstrSOLID%elements(icel)%gausses,pa1,iset,vect(1:nn*2) )
+					 
+            else if ( ic_type==361 ) then
+              call TLOAD_C3D8Bbar(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
+                            fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof) )
 
             else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.  &
                      ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
@@ -288,16 +278,15 @@ module m_fstr_ass_load
           enddo
         enddo
       endif
-      
-      if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo==kcaALagrange ) then    
+
+      if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo==kcaALagrange ) then
         do i=1,size(fstrSOLID%contacts)
           call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
         enddo
       endif
 
     end subroutine fstr_ass_load
-
-
+	
     subroutine fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       use m_fstr
       use m_static_lib

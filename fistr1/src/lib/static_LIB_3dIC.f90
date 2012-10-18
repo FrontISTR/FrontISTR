@@ -39,7 +39,6 @@ module m_static_LIB_3dIC
 !----------------------------------------------------------------------*
      use mMechGauss
      use m_MatMatrix
-     use m_static_LIB_3d, only: GEOMAT_C3
      INTEGER(kind=kint), INTENT(IN) :: etype          !< element type, not used here
      INTEGER(kind=kint), INTENT(IN) :: nn             !< number of elements nodes
      REAL(kind=kreal), INTENT(IN)   :: ecoord(3,nn)   !< nodal coord of curr element
@@ -87,10 +86,6 @@ module m_static_LIB_3dIC
      BN(1:9,1:(nn+3)*ndof) = 0.d0
      DO LX=1,NumOfQuadPoints(fetype)
        CALL MatlMatrix( gausses(LX), D3, D, 1.d0 )
-       IF( flag==UPDATELAG ) then
-         call GEOMAT_C3( gausses(LX)%stress, mat )
-         D(:,:) = D(:,:)+mat
-       ENDIF
        CALL getQuadPoint( fetype, LX, naturalCoord )
        CALL getGlobalDeriv( fetype, nn, naturalcoord, elem, det, gderiv(1:nn,1:3) )
        ! -- Derivative of shape function of imcompatible mode --

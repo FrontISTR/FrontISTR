@@ -60,7 +60,6 @@ module m_ElastoPlastic
      else
           call calElasticMatrix( matl, sectTYPE, De )
      endif
-   !  call calElasticMatrix( matl, sectType, De  )
 
      J1 = (stress(1)+stress(2)+stress(3))
      devia(1:3) = stress(1:3)-J1/3.d0
@@ -368,7 +367,7 @@ module m_ElastoPlastic
       use m_utilities, only : eigen3
       type( tMaterial ), intent(in)    :: matl        !< material properties
       real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
-      real(kind=kreal), intent(inout)  :: plstrain    !< plastic strain till current substep
+      real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
       integer, intent(inout)           :: istat       !< plastic state
       real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
       REAL(kind=kreal), INTENT(IN), optional :: temp  !< temperature
@@ -382,7 +381,7 @@ module m_ElastoPlastic
       real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
       real(kind=kreal) :: sita, fai, dep, trialprn(3)
       real(kind=kreal) :: a,b,siga,sigb,lamab(2),fab(2)
-      real(kind=kreal) :: resi(2,2), invd(2,2)
+      real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(1)
       logical          :: right, kinematic, ierr
       REAL(KIND=kreal) :: ftrial, betan, back(6)
 
@@ -392,21 +391,19 @@ module m_ElastoPlastic
        return
       endif
 	  
-      pstrain = fstat(1)
+      pstrain = plstrain
+      fstat_bak = plstrain
       if( present(temp) ) then
-        f = calYieldFunc( matl, stress, fstat, temp )
+        f = calYieldFunc( matl, stress, fstat_bak, temp )
       else
-        f = calYieldFunc( matl, stress, fstat )
+        f = calYieldFunc( matl, stress, fstat_bak )
       endif
       if( dabs(f)<tol ) then  ! yielded
         istat = 1
         return
       elseif( f<0.d0 ) then   ! not yielded or unloading
-        if( istat==0 ) return
-        if( plstrain==0.d0 ) then
           istat =0
           return
-        endif
       endif
       istat = 1           ! yielded	 
       KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
@@ -452,8 +449,8 @@ module m_ElastoPlastic
           endif
           dd= 3.d0*G+H+KH
           dlambda = dlambda+f/dd
-          if( plstrain+dlambda<0.d0 ) then
-            dlambda = -plstrain
+          if( dlambda<0.d0 ) then
+            dlambda = 0.d0
             istat=0; exit
           endif
           if( present(temp) ) then
@@ -468,7 +465,6 @@ module m_ElastoPlastic
           if( dabs(f)<tol*tol ) exit
         enddo
         pstrain = pstrain+dlambda
-        plstrain = plstrain+dlambda
         if( kinematic ) then
           KK = calCurrKinematic( matl, pstrain )
           fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
@@ -511,9 +507,9 @@ module m_ElastoPlastic
           dd= 4.d0*G*( 1.d0+sin(fai)*sin(sita)/3.d0 )+4.d0*K         &
              *sin(fai)*sin(sita)+4.d0*H*cos(fai)*cos(fai)
           dlambda = dlambda+f/dd
-          if( plstrain + 2.d0*dlambda*cos(fai)<0.d0 ) then
+          if( 2.d0*dlambda*cos(fai)<0.d0 ) then
             if( cos(fai)==0.d0 ) STOP "Math error in return mapping"
-            dlambda = -0.5d0*plstrain/cos(fai)
+            dlambda = 0.d0
             istat=0; exit
           endif
           dum = pstrain + 2.d0*dlambda*cos(fai)
@@ -529,7 +525,6 @@ module m_ElastoPlastic
           if( dabs(f)<tol ) exit
         enddo
         pstrain = pstrain + 2.d0*dlambda*cos(fai)
-        plstrain = plstrain + 2.d0*dlambda*cos(fai)
         prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(fai)/3.d0)  &
                  + 2.d0*K*sin(fai) )*dlambda
         prnstre(minp(1)) = prnstre(minp(1))+(2.d0*G*(1.d0-sin(fai)/3.d0)  &
@@ -557,9 +552,9 @@ module m_ElastoPlastic
           endif
           dd= G+K*fai*fai+H*dum*dum
           dlambda = dlambda+f/dd
-          if( plstrain+dum*dlambda<0.d0 ) then
+          if( dum*dlambda<0.d0 ) then
             if( dum==0.d0 ) STOP "Math error in return mapping"
-            dlambda = -plstrain/dum
+            dlambda = 0.d0
             istat=0; exit
           endif
           if( present(temp) ) then
@@ -571,7 +566,6 @@ module m_ElastoPlastic
           if( dabs(f)<tol*tol ) exit
         enddo
         pstrain = pstrain+dum*dlambda 
-        plstrain = plstrain+dum*dlambda 
         devia(:) = (1.d0-G*dlambda/yd)*devia(:)
         J1 = J1-K*fai*dlambda
         stress(1:3) = devia(1:3)+J1
@@ -585,7 +579,7 @@ module m_ElastoPlastic
    subroutine updateEPState( gauss )
       use mMechGauss
       type(tGaussStatus), intent(inout) :: gauss  ! status of curr gauss point
-      gauss%plstrain= 0.d0
+      gauss%plstrain= gauss%fstatus(1)
    end subroutine
 		 
 end module m_ElastoPlastic

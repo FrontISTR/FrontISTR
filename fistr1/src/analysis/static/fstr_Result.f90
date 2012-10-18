@@ -53,13 +53,15 @@ module m_fstr_Result
     type ( hecmwST_result_data ) :: fstrRESULT
 
     allocate( ndstrain(hecMESH%n_node*6), ndstress(hecMESH%n_node*7) )
-    call fstr_nodal_stress_3d( hecMESH,fstrSOLID,fstrPARAM, .false.)
+    call fstr_NodalStress3D(hecMESH, hecMAT, fstrSOLID,     &
+                              ndstrain, ndstress  )
+    fstrSOLID%STRAIN = ndstrain
+    fstrSOLID%STRESS = ndstress
 
     maxiter = fstrSOLID%step_ctrl(cstep)%max_iter
 	!    call hecmw_nullify_result_data( fstrRESULT )
     !-- POST PROCESSING VIA MEMORY
     if( IVISUAL==1 ) then
-          call fstr_nodal_stress_3d( hecMESH,fstrSOLID,fstrPARAM, .false.)
           call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
           call fstr2hecmw_mesh_conv(hecMESH)
           call hecmw_visualize_init
