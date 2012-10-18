@@ -208,6 +208,12 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
   real(kind=kreal)           :: tincr
   
   integer(kind=kint) :: itype, iS, iE, ic_type, icel, ngauss, i
+  
+      if( associated( fstrSOLID%temperature ) ) then 
+           do i=1, hecMESH%n_node
+             fstrSOLID%last_temp(i) = fstrSOLID%temperature(i)
+           end do
+      endif
 
   do itype= 1, hecMESH%n_elem_type
     iS= hecMESH%elem_type_index(itype-1) + 1

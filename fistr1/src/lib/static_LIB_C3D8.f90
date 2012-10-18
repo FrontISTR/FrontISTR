@@ -27,7 +27,6 @@ module m_static_LIB_C3D8
    SUBROUTINE STF_C3D8Bbar( etype,nn,ecoord,gausses,stiff, tincr, u,temperature )
     USE mMechGauss
     use m_MatMatrix
-    use m_static_LIB_3d, only: GEOMAT_C3
     INTEGER(kind=kint), INTENT(IN)  :: etype               !< element type
     INTEGER(kind=kint), INTENT(IN)  :: nn                  !< number of elemental nodes
     REAL(kind=kreal),   INTENT(IN)  :: ecoord(3,nn)        !< coordinates of elemental nodes
@@ -72,10 +71,6 @@ module m_static_LIB_C3D8
       else
         CALL MatlMatrix( gausses(LX), D3, D, tincr )
       endif
-      IF( flag==UPDATELAG ) then
-        call GEOMAT_C3( gausses(LX)%stress, mat )
-        D(:,:) = D(:,:)+mat
-      ENDIF
 	  
       WG=getWeight( etype, LX )*DET
       B(1:6,1:NN*NDOF)=0.d0

@@ -37,27 +37,6 @@ module m_static_LIB_3d
 !***********************************************************************
 !
 !
-!> This subroutine calculates geometric matrix which used by updated lagrange calculation
-  SUBROUTINE GEOMAT_C3( stress, mat )
-    REAL(kind=kreal), INTENT(IN)   :: stress(6)        !> stress
-    REAL(kind=kreal), INTENT(OUT)  :: mat(6,6)         !> geometric stiff matrix
-
-    mat(1,1)=2.d0*stress(1);              mat(1,2)=0.d0;            mat(1,3)=0.d0 
-    mat(1,4)=stress(4);                   mat(1,5)=0.d0;            mat(1,6)=stress(6)
-    mat(2,1)=mat(1,2);                    mat(2,2)=2.d0*stress(2);  mat(2,3)=0.d0 
-    mat(2,4)=stress(4);                   mat(2,5)=stress(5);       mat(2,6)=0.d0
-    mat(3,1)=mat(1,3);                    mat(3,2)=mat(2,3);        mat(3,3)=2.d0*stress(3)
-    mat(3,4)=0.d0;                        mat(3,5)=stress(5);       mat(3,6)=stress(6)
-
-    mat(4,1)=mat(1,4);                    mat(4,2)=mat(2,4);                    mat(4,3)=mat(3,4) 
-    mat(4,4)=0.5d0*(stress(1)+stress(2)); mat(4,5)=0.5d0*stress(6);             mat(4,6)=0.5d0*stress(5)
-    mat(5,1)=mat(1,5);                    mat(5,2)=mat(2,5);                    mat(5,3)=mat(3,5) 
-    mat(5,4)=mat(4,5);                    mat(5,5)=0.5d0*(stress(3)+stress(2)); mat(5,6)=0.5d0*stress(4)
-    mat(6,1)=mat(1,6);                    mat(6,2)=mat(2,6);                    mat(6,3)=mat(3,6)
-    mat(6,4)=mat(4,6);                    mat(6,5)=mat(5,6);               mat(6,6)=0.5d0*(stress(1)+stress(3));
-  END SUBROUTINE
-!
-!
 !
 !=====================================================================*
 !  STF_C3
@@ -110,11 +89,7 @@ module m_static_LIB_3d
       else
         CALL MatlMatrix( gausses(LX), D3, D, tincr )
       endif
-      IF( flag==UPDATELAG ) then
-        call GEOMAT_C3( gausses(LX)%stress, mat )
-        D(:,:) = D(:,:)+mat
-      ENDIF
-!
+
       WG=getWeight( etype, LX )*DET
       B(1:6,1:NN*NDOF)=0.d0
       DO J=1,NN

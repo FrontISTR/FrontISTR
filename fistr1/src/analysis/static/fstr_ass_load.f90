@@ -212,8 +212,8 @@ module m_fstr_ass_load
           iE0= hecMESH%node_group%grp_index(ig  )
           do ik= iS0, iE0
             in   = hecMESH%node_group%grp_item(ik)
-            pa1 = fstrSOLID%reftemp( in )
-            fstrSOLID%temperature( in ) = fval*factor
+            pa1 = fstrSOLID%temp_bak( in )
+            fstrSOLID%temperature( in ) = pa1+(fval-pa1)*factor
           enddo
         enddo
 
@@ -239,7 +239,7 @@ module m_fstr_ass_load
               xx(j)=hecMESH%node(3*nodLOCAL(j)-2)
               yy(j)=hecMESH%node(3*nodLOCAL(j)-1)
               zz(j)=hecMESH%node(3*nodLOCAL(j)  )
-              tt0(j)=fstrSOLID%reftemp( nodLOCAL(j) ) 
+              tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) ) 
               tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
 ! ----- create iwk array ***
               do i=1,ndof

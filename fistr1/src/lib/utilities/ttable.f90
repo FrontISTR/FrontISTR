@@ -133,21 +133,15 @@ module m_table
       TYPE(tTable), INTENT(OUT) :: lhs
       TYPE(tTable), INTENT(IN)  :: rhs
       integer :: i,j
-      if( rhs%tbcol<=0 .or. rhs%tbrow<=0 ) then
-         print *, "WARNING: Fail to fetch material property!"
-         return
-      endif
+      
       lhs%ndepends = rhs%ndepends
       lhs%tbcol = rhs%tbcol
       lhs%tbrow = rhs%tbrow
       lhs%tbindex(:) = rhs%tbindex(:)
       IF( associated( lhs%tbval ) ) deallocate( lhs%tbval )
+      if( rhs%tbcol<=0 .or. rhs%tbrow<=0 ) return
       allocate( lhs%tbval( lhs%tbcol, lhs%tbrow ) )
-    !  do i=1, rhs%tbcol
-    !  do j=1, rhs%tbrow
-        lhs%tbval(:,:) = rhs%tbval(:,:)
-    !  enddo
-    !  enddo
+      lhs%tbval(:,:) = rhs%tbval(:,:)
     END SUBROUTINE
 
 end module m_table
@@ -382,7 +376,7 @@ module Table_DICTS
             dd = ddd
             call GetTableData( a, cindex, table, dd, crow, outa )	
         elseif( a(cindex)>=table%tbval(ccol, crow+dd-1) ) then
-            crow = crow+dd-1
+            crow = crow+dd-ddd
             cindex = cindex+1
             dd = ddd
             call GetTableData( a, cindex, table, dd, crow, outa )	

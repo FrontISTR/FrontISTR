@@ -107,11 +107,11 @@ module mCreep
 !
       stri(:)=stri(:)/dstri
 
-      dg=(extval(2)+plstrain)/c1
       eqvs = extval(1)
       if( eqvs<1.d-10 ) eqvs=1.d-10
       f=aa*eqvs**xxn
       df=xxn*f/eqvs
+      dg=(f-plstrain)/c1
 !
 !     stiffness matrix
 !
@@ -161,7 +161,6 @@ module mCreep
        ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
 	   
       if( dtime==0.d0 ) return
-
 !
 !     state variables
 !
@@ -224,7 +223,7 @@ module mCreep
           if( eqvs<1.d-10 ) eqvs=1.d-10
           f=aa*eqvs**xxn
           df=xxn*f/eqvs
-          ddg=(c1*(f-plstrain)-c2*dg)/(um2*df+c2)
+          ddg=(c1*f-c2*dg)/(um2*df+c2)
           dg=dg+ddg
           if((ddg<dg*1.d-4).or.(ddg<1.d-10)) exit
         endif
@@ -237,7 +236,7 @@ module mCreep
 !
 !     state variables
 !
-      plstrain= plstrain+c1*dg
+      plstrain= c1*dg
       extval(1)=eqvs
 	  
    end subroutine
@@ -248,7 +247,6 @@ module mCreep
       type(tGaussStatus), intent(inout) :: gauss  ! status of curr gauss point
 
       gauss%fstatus(2) = gauss%fstatus(2)+gauss%plstrain
-      gauss%plstrain =0.d0
    end subroutine
    
 end module

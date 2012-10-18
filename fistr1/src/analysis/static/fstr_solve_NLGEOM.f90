@@ -68,6 +68,13 @@ contains
 
       ndof = hecMAT%NDOF
       nn = ndof*ndof
+	  
+      if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
+        do j=1, hecMESH%n_node
+          fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(j)
+          fstrSOLID%temperature(j) = hecMESH%node_init_val_item(j)
+        end do
+      endif
 
       if( fstrSOLID%restart_nout == 0 ) then
         fstrSOLID%restart_nout = 999999999
@@ -92,6 +99,12 @@ contains
       do tot_step=restart_step_num, fstrSOLID%nstep_tot
         if(hecMESH%my_rank==0) write(*,*) ''
         if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
+		
+        if( fstrSOLID%TEMP_ngrp_tot>0 ) then
+           do j=1, hecMESH%n_node
+             fstrSOLID%temp_bak(j) = fstrSOLID%temperature(j)
+           end do
+        endif
         
 ! -------------------------------------------------------------------------
 !      STEP LOOP
