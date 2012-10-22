@@ -46,7 +46,7 @@
         real(kind=kreal), dimension(3,3) :: ALU
         real(kind=kreal), dimension(3)   :: PW
 
-        integer(kind=kint) :: ITER, METHOD, PRECOND, NSET, ISYM
+        integer(kind=kint) :: ITER, METHOD, PRECOND, NSET
         integer(kind=kint) :: iterPREmax, ii, i, j, k
 
         real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER
@@ -58,7 +58,8 @@
 
         integer(kind=kint) :: NREST,NPLU,iS0,iS,inum,k0
         real(kind=kreal)   :: SIGMA,S1_time,E1_time,TIME_sol
-!C
+
+!C===
 !C +------------+
 !C | PARAMETERs |
 !C +------------+
@@ -87,10 +88,7 @@
         if (iterPREmax.lt.1) iterPREmax= 1
         if (iterPREmax.gt.4) iterPREmax= 4
 
-!        if (hecMESH%my_rank.eq.0) write (*,'(a)') ' '
 !C===
-
-!C
 !C +-------------+
 !C | ERROR CHECK |
 !C +-------------+
@@ -101,8 +99,8 @@
 !C-- ZERO RHS norm
         RHS(1)= 0.d0
         do i= 1, hecMAT%N
-          RHS(1)= RHS(1) + hecMAT%B(3*i-2)**2 + hecMAT%B(3*i-1)**2      &
-     &                                  + hecMAT%B(3*i  )**2
+          RHS(1)= RHS(1) + hecMAT%B(3*i-2)**2 + hecMAT%B(3*i-1)**2       &
+     &                   + hecMAT%B(3*i  )**2
         enddo
         if (hecMESH%mpc%n_mpc > 0) then
           do i= 1, hecMESH%mpc%n_mpc
@@ -113,7 +111,7 @@
 
         if (RHS(1).eq.0.d0) then
           ERROR= 2002
-!          call hecmw_solve_error (hecMESH, ERROR)
+          call hecmw_solve_error (hecMESH, ERROR)
         endif
 
 !C
@@ -160,14 +158,12 @@
           if (PRECOND.eq.10) IFLAG(1)= 0
           if (PRECOND.eq.11) IFLAG(1)= 0
           if (PRECOND.eq.12) IFLAG(1)= 0
-          if (PRECOND.eq.21) IFLAG(1)= 0
         endif
 
         if (METHOD.eq.3) then
           if (PRECOND.eq. 1) IFLAG(1)= 0
           if (PRECOND.eq. 2) IFLAG(1)= 0
           if (PRECOND.eq. 3) IFLAG(1)= 0
-          if (PRECOND.eq.21) IFLAG(1)= 0
         endif
 
         if (METHOD.eq.4) then
@@ -177,16 +173,14 @@
           if (PRECOND.eq.10) IFLAG(1)= 0
           if (PRECOND.eq.11) IFLAG(1)= 0
           if (PRECOND.eq.12) IFLAG(1)= 0
-          if (PRECOND.eq.21) IFLAG(1)= 0
         endif
 
         if (IFLAG(1).ne.0) then
           ERROR= 1001
           call hecmw_solve_error (hecMESH, ERROR)
         endif
-!C===
 
-!C
+!C===
 !C +-----------+
 !C | BLOCK LUs |
 !C +-----------+
@@ -268,9 +262,8 @@
 
         E1_time= HECMW_WTIME()
         TIME_setup= TIME_setup + E1_time - S1_time
-!C===
 
-!C
+!C===
 !C +------------------+
 !C | ITERATIVE solver |
 !C +------------------+
@@ -279,17 +272,17 @@
 !C
 !C-- CG
       if (METHOD.eq.1 .and. PRECOND.lt.10) then
-!        if (hecMESH%my_rank.eq.0) then
-!          if (PRECOND.eq.1) write (*,'(a,i3)') '### 3x3 B-IC-CG  (0)',  &
-!     &                                          iterPREmax
-!          if (PRECOND.eq.2) write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',  &
-!     &                                          iterPREmax
-!          if (PRECOND.eq.3) write (*,'(a,i3)') '### 3x3 B-scale-CG  ',  &
-!     &                                          iterPREmax
-!        endif
+        if (hecMESH%my_rank.eq.0) then
+          if (PRECOND.eq.1) write (*,'(a,i3)') '### 3x3 B-IC-CG  (0)',  &
+     &                                          iterPREmax
+          if (PRECOND.eq.2) write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',  &
+     &                                          iterPREmax
+          if (PRECOND.eq.3) write (*,'(a,i3)') '### 3x3 B-scale-CG  ',  &
+     &                                          iterPREmax
+        endif
 
-        call hecmw_solve_CG_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
-        &                       TIME_setup, TIME_sol, TIME_comm )
+        call hecmw_solve_CG_33( hecMESH,  hecMAT, ITER, RESID, ERROR,   &
+     &                          TIME_setup, TIME_sol, TIME_comm )
       endif
 
 !C
@@ -305,7 +298,7 @@
         endif
 
         call hecmw_solve_BiCGSTAB_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
-        &                             TIME_setup, TIME_sol, TIME_comm )
+     &                                TIME_setup, TIME_sol, TIME_comm )
       endif
 
 !C
@@ -461,7 +454,6 @@
         write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
         write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
       endif
-!C===
 
       if (hecMAT%cmat%n_val.gt.0) then
         call hecmw_cmat_LU_free( hecMAT )

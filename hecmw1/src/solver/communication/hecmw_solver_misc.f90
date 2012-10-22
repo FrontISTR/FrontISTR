@@ -26,10 +26,14 @@ module hecmw_solver_misc
          sum = sum + X(i)*Y(i)
       end do
 
+      if (present(COMMtime)) then
       START_TIME= HECMW_WTIME()
       call hecmw_allreduce_I1 (hecMESH, sum, hecmw_sum)
       END_TIME= HECMW_WTIME()
-      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+      COMMtime = COMMtime + END_TIME - START_TIME
+      else
+      call hecmw_allreduce_I1 (hecMESH, sum, hecmw_sum)
+      endif
 
       end subroutine hecmw_innerProduct_I
 
@@ -57,10 +61,14 @@ module hecmw_solver_misc
          sum = sum + X(i)*Y(i)
       end do
 
+      if (present(COMMtime)) then
       START_TIME= HECMW_WTIME()
       call hecmw_allreduce_R1 (hecMESH, sum, hecmw_sum)
       END_TIME= HECMW_WTIME()
-      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+      COMMtime = COMMtime + END_TIME - START_TIME
+      else
+      call hecmw_allreduce_R1 (hecMESH, sum, hecmw_sum)
+      endif
 
       end subroutine hecmw_innerProduct_R
 

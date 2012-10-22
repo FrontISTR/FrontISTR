@@ -22,10 +22,14 @@
       integer(kind=kint) :: i, j, jS, jE, in
       real(kind=kreal) :: YV
 
+      if (present(COMMtime)) then
       START_TIME= HECMW_WTIME()
       call hecmw_update_1_R (hecMESH, X, hecMAT%NP)
       END_TIME= HECMW_WTIME()
-      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+      COMMtime = COMMtime + END_TIME - START_TIME
+      else
+      call hecmw_update_1_R (hecMESH, X, hecMAT%NP)
+      endif
 
       do i= 1, hecMAT%N
         YV= hecMAT%D(i) * X(i)
@@ -61,15 +65,15 @@
       real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i
-      real(kind=kreal) :: tcomm
 
-      tcomm=0.d0
-      call hecmw_matvec_11 (hecMESH, hecMAT, X, R, hecMAT%NP, tcomm)
+      if (present(COMMtime)) then
+      call hecmw_matvec_11 (hecMESH, hecMAT, X, R, hecMAT%NP, COMMtime)
+      else
+      call hecmw_matvec_11 (hecMESH, hecMAT, X, R, hecMAT%NP)
+      endif
       do i = 1, hecMAT%N
         R(i) = B(i) - R(i)
       enddo
-
-      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end subroutine hecmw_matresid_11
 
@@ -90,15 +94,17 @@
 
       real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
       real(kind=kreal) :: bnorm2, rnorm2
-      real(kind=kreal) :: tcomm
 
-      tcomm=0.d0
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, tcomm)
-      call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, tcomm)
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, tcomm)
+      if (present(COMMtime)) then
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, COMMtime)
+      call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, COMMtime)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, COMMtime)
+      else
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2)
+      call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2)
+      endif
       hecmw_rel_resid_L2_11 = sqrt(rnorm2 / bnorm2)
-
-      if (present(COMMtime)) COMMtime=COMMtime+tcomm
 
       end function hecmw_rel_resid_L2_11
 

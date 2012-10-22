@@ -43,10 +43,10 @@
       real   (kind=kreal), intent(inout):: RESID, Tset, Tsol, Tcomm
 
       integer(kind=kint ) :: my_rank
-      integer(kind=kint ) :: ITERlog
+      integer(kind=kint ) :: ITERlog, TIMElog
       real(kind=kreal), pointer :: B(:), X(:)
 
-      real(kind=kreal), dimension(:,:),  allocatable       :: WW
+      real(kind=kreal), dimension(:,:), allocatable :: WW
 
       integer(kind=kint), parameter ::  R= 1
       integer(kind=kint), parameter ::  Z= 2
@@ -67,7 +67,8 @@
       real   (kind=kreal)::RHO,RHO1,BETA,C1,ALPHA,DNRM2
 
       S_TIME= HECMW_WTIME()
-!C
+
+!C===
 !C +-------+
 !C | INIT. |
 !C +-------+
@@ -77,14 +78,12 @@
       B => hecMAT%B
 
       ITERlog = hecmw_mat_get_iterlog( hecMAT )
+      TIMElog = hecmw_mat_get_timelog( hecMAT )
       MAXIT  = hecmw_mat_get_iter( hecMAT )
       TOL   = hecmw_mat_get_resid( hecMAT )
 
       totalmpc = hecMESH%mpc%n_mpc
-      START_TIME = HECMW_WTIME()
       call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-      END_TIME = HECMW_WTIME()
-      Tcomm = Tcomm + END_TIME - START_TIME
 
       ERROR = 0
 
@@ -92,9 +91,8 @@
       WW = 0.d0
 
       call hecmw_mpc_scale(hecMESH)
-!C===
 
-!C
+!C===
 !C +----------------------------------------------+
 !C | {r0}= [T']({b} - [A]{xg}) - [T'][A][T]{xini} |
 !C +----------------------------------------------+
@@ -106,11 +104,19 @@
           WW(i,BT) = B(i)
         enddo
        else
+        if (TIMElog.eq.1) then
         call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
+        else
+        call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK))
+        endif
       endif
 
 !C-- compute ||{bt}||
+      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+      else
+      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2)
+      endif
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -120,9 +126,17 @@
 
 !C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then
+        if (TIMElog.eq.1) then
         call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
+        else
+        call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX))
+        endif
        else
+        if (TIMElog.eq.1) then
         call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
+        else
+        call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK))
+        endif
       endif
 
 !C-- {r} = {bt} - {tatx}
@@ -132,30 +146,37 @@
 
       E_TIME = HECMW_WTIME()
       Tset = Tset + E_TIME - S_TIME
-!C===
-      Tcomm = 0.0d0
+
+      Tcomm = 0.d0
       S1_TIME = HECMW_WTIME()
 !C
-!C************************************************* Conjugate Gradient Iteration
+!C************************************************* Conjugate Gradient Iteration start
 !C
       do iter = 1, MAXIT
-!C
+
+!C===
 !C +----------------+
 !C | {z}= [Minv]{r} |
 !C +----------------+
 !C===
-!C
+      if (TIMElog.eq.1) then
       call hecmw_precond_33(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+      else
+      call hecmw_precond_33(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK))
+      endif
 
-!C
+!C===
 !C +---------------+
 !C | {RHO}= {r}{z} |
 !C +---------------+
 !C===
+      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,Z), RHO, Tcomm)
-!C===
+      else
+      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,Z), RHO)
+      endif
 
-!C
+!C===
 !C +-----------------------------+
 !C | {p} = {z} if      ITER=1    |
 !C | BETA= RHO / RHO1  otherwise |
@@ -171,51 +192,60 @@
            WW(i,P) = WW(i,Z) + BETA*WW(i,P)
          enddo
       endif
-!C===
 
-!C
+!C===
 !C +---------------------+
 !C | {q}= [T'][A][T] {p} |
 !C +---------------------+
 !C===
-
-!C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then
+        if (TIMElog.eq.1) then
         call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
+        else
+        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q))
+        endif
        else
+        if (TIMElog.eq.1) then
         call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK), Tcomm)
+        else
+        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK))
+        endif
       endif
-!C===
 
-!C
+!C===
 !C +---------------------+
 !C | ALPHA= RHO / {p}{q} |
 !C +---------------------+
 !C===
+      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,P), WW(:,Q), C1, Tcomm)
+      else
+      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,P), WW(:,Q), C1)
+      endif
 
       ALPHA= RHO / C1
-!C===
 
-!C
+!C===
 !C +----------------------+
 !C | {x}= {x} + ALPHA*{p} |
 !C | {r}= {r} - ALPHA*{q} |
 !C +----------------------+
 !C===
-
       do i = 1, hecMAT%N * 3
          X(i)  = X(i)    + ALPHA * WW(i,P)
         WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
 
+      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,R), DNRM2, Tcomm)
+      else
+      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,R), DNRM2)
+      endif
 
       RESID= dsqrt(DNRM2/BNRM2)
 
 !C##### ITERATION HISTORY
-        if (my_rank.eq.0.and.ITERLog.eq.1) write (*, 1000) ITER, RESID
- 1000   format (i7, 1pe16.6)
+      if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
 !C#####
 
       if ( RESID.le.TOL   ) exit
@@ -224,12 +254,16 @@
       RHO1 = RHO
 
       enddo
-!C===
-
+!C
+!C************************************************* Conjugate Gradient Iteration end
+!C
       if (totalmpc.ne.0) then
-       call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
+        if (TIMElog.eq.1) then
+        call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
+        else
+        call hecmw_tback_x_33(hecMESH, X, WW(:,WK))
+        endif
       endif
-
 !C
 !C-- INTERFACE data EXCHANGE
 !C
