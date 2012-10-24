@@ -499,14 +499,14 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         
 !----- SOLVE [Kt]{du}={R}
         call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT)
-
-! ----- update the strain, stress, and internal force
-        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )  
-
+		
 !   ----- update the small displacement and the displacement for 1step 
         do i=1,hecMESH%n_node*ndof
           fstrSOLID%dunode(i)  = fstrSOLID%dunode(i) + hecMAT%X(i)
         enddo
+
+! ----- update the strain, stress, and internal force
+        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )  
  
  ! ----- update the Lagrange multipliers   
         if( fstr_is_contact_active() ) then                             

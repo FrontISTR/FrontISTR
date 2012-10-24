@@ -60,7 +60,7 @@ module m_step
         stepinfo%amp_id = -1
         stepinfo%initdt = 1.d0
         stepinfo%elapsetime = 1.d0
-        stepinfo%converg = 1.d-6
+        stepinfo%converg = 1.d-3
      end subroutine
 
      !> Is boundary condition in this step active
