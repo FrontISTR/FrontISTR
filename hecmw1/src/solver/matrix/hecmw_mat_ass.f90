@@ -190,10 +190,9 @@ module hecmw_matrix_ass
       integer(kind=kint) :: NDIAG, impc, iS, iE, i, j, inod, idof, jnod, jdof
       logical :: is_internal_i, is_internal_j
 
-      if( hecMESH%mpc%n_mpc == 0 ) return
       if( hecmw_mat_get_penalized(hecMAT) == 1 .and. hecmw_mat_get_penalized_b(hecMAT) == 1) return
 
-      write(*,*) "INFO: imposing MPC by penalty"
+      ! write(*,*) "INFO: imposing MPC by penalty"
 
       penalty => hecMAT%Rarray(11)
 

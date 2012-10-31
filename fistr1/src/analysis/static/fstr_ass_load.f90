@@ -177,6 +177,7 @@ module m_fstr_ass_load
         call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       endif
 
+      call hecmw_mat_clear_b( hecMAT )
       do i=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo

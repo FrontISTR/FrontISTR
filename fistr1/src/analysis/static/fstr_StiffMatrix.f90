@@ -50,7 +50,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   integer            :: ig0, grpid, ig, iS0, iE0,ik, in
 
 ! ----- initialize
-  call hecMAT_clear( hecMAT )
+  call hecmw_mat_clear( hecMAT )
 
   ndof = hecMAT%NDOF
   do itype= 1, hecMESH%n_elem_type

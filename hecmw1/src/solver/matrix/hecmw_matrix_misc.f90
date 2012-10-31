@@ -12,14 +12,14 @@ module hecmw_matrix_misc
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
     call hecmw_cmat_clear( hecMAT%cmat )
-	call hecmw_mat_set_penalized( hecMAT, 0 )
+    call hecmw_mat_set_penalized( hecMAT, 0 )
   end subroutine hecmw_mat_clear
 
   subroutine hecmw_mat_clear_b( hecMAT )
     type(hecmwST_matrix) :: hecMAT
 
     hecMAT%B = 0.0d0
-	call hecmw_mat_set_penalized_b( hecMAT, 0 )
+    call hecmw_mat_set_penalized_b( hecMAT, 0 )
   end subroutine hecmw_mat_clear_b
 
   subroutine hecmw_mat_init( hecMAT )

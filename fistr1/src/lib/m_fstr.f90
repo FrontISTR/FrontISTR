@@ -827,22 +827,6 @@ end subroutine fstr_mat_init
         call hecmw_cmat_finalize(hecmAT%cmat)
         end subroutine hecMAT_finalize
 		
-! ----------------------------------------------------------------------------
-        subroutine hecMAT_clear( hecMAT )
-! ----------------------------------------------------------------------------
-!  Purpose: clear hecMAT matrix 
-!           Dec.2, 2009  YUAN Xi
-!  Notes: 1. Should be a function of middleware !
-!  This subroutine should completely rewritten next year
-! ----------------------------------------------------------------------------
-        type( hecmwST_matrix ) :: hecMAT
-        hecMAT%AL= 0.d0
-        hecMAT%AU= 0.d0
-        hecMAT%X = 0.d0
-        hecMAT%D = 0.d0
-        call hecmw_cmat_clear( hecMAT%cmat )
-        end subroutine hecMAT_clear
-		
 !> Initializer of structure fstr_param
 subroutine fstr_param_init( fstrPARAM, hecMESH )
         implicit none

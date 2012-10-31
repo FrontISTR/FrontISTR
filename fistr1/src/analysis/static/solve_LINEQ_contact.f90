@@ -70,7 +70,9 @@ module m_solve_LINEQ_contact
 
       factor = 1.0d0
       if( present(rf) )factor = rf
-         
+
+      call hecmw_mat_ass_equation( hecMESH, hecMAT )
+
       if( hecMAT%Iarray(99)==3 )then                   
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
