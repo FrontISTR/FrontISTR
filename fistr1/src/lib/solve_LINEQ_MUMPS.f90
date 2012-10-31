@@ -57,6 +57,7 @@ contains
          stop
        endif
        INITIALIZED = .true.
+       hecMAT%Iarray(98) = 1
     endif
 
 !* Flag to activate symbolic factorization: 1(yes) 0(no)  hecMESH%Iarray(98)
