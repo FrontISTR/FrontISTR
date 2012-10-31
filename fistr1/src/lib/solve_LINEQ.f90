@@ -65,7 +65,7 @@ module m_solve_LINEQ
 !* Flag to activate symbolic factorization: 1(yes) 0(no)  hecMESH%Iarray(98)
 !* Flag to activate numeric  factorization: 1(yes) 0(no)  hecMESH%Iarray(97)
 
-        call hec_mat_ass_equation( hecMESH, hecMAT )
+        call hecmw_mat_ass_equation( hecMESH, hecMAT )
 
         if (hecMAT%Iarray(2) .eq. 104) then
           call solve_LINEQ_MUMPS(hecMESH, hecMAT)
