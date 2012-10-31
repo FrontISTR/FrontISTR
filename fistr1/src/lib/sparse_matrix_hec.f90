@@ -279,20 +279,25 @@ contains
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr,i
     allocate(spMAT%rhs(spMAT%N_loc), stat=ierr)
     if (ierr /= 0) then
       write(*,*) " Allocation error, spMAT%rhs"
       call hecmw_abort(hecmw_comm_get_comm())
     endif
-    spMAT%rhs(1:spMAT%N_loc)=hecMAT%b(1:spMAT%N_loc)
+    do i=1,spMAT%N_loc
+      spMAT%rhs(i)=hecMAT%b(i)
+    enddo
   end subroutine sparse_matrix_hec_set_rhs
 
   subroutine sparse_matrix_hec_get_rhs(spMAT, hecMAT)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    hecMAT%x(1:spMAT%N_loc)=spMAT%rhs(1:spMAT%N_loc)
+    integer(kind=kint) :: i
+    do i=1,spMAT%N_loc
+      hecMAT%x(i)=spMAT%rhs(i)
+    enddo
     deallocate(spMAT%rhs)
   end subroutine sparse_matrix_hec_get_rhs
 

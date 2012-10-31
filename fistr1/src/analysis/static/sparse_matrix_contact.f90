@@ -306,7 +306,7 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(in) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    integer :: nndof,npndof,ierr
+    integer :: nndof,npndof,ierr,i
     allocate(spMAT%rhs(spMAT%N_loc), stat=ierr)
     if (ierr /= 0) then
       write(*,*) " Allocation error, spMAT%rhs"
@@ -314,10 +314,15 @@ contains
     endif
     nndof=hecMAT%N*hecMAT%ndof
     npndof=hecMAT%NP*hecMAT%ndof
-    spMAT%rhs(1:nndof) = hecMAT%b(1:nndof)
+    do i=1,nndof
+      spMAT%rhs(i) = hecMAT%b(i)
+    enddo
     ! skip external DOF in hecMAT%b
-    if (fstrMAT%num_lagrange > 0) &
-         spMAT%rhs(nndof+1:spMAT%N_loc) = hecMAT%b(npndof+1:npndof+fstrMAT%num_lagrange)
+    if (fstrMAT%num_lagrange > 0) then
+      do i=1,fstrMAT%num_lagrange
+        spMAT%rhs(nndof+i) = hecMAT%b(npndof+i)
+      enddo
+    endif
   end subroutine sparse_matrix_contact_set_rhs
 
   subroutine sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
@@ -325,13 +330,18 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    integer :: nndof,npndof
+    integer :: nndof,npndof,i
     nndof=hecMAT%N*hecMAT%ndof
     npndof=hecMAT%NP*hecMAT%ndof
-    hecMAT%x(1:nndof) = spMAT%rhs(1:nndof)
+    do i=1,nndof
+      hecMAT%x(i) = spMAT%rhs(i)
+    enddo
     ! TODO: call update to get external DOF from neighboring domains???
-    if (fstrMAT%num_lagrange > 0) &
-         hecMAT%x(npndof+1:npndof+fstrMAT%num_lagrange) = spMAT%rhs(nndof+1:spMAT%N_loc)
+    if (fstrMAT%num_lagrange > 0) then
+      do i=1,fstrMAT%num_lagrange
+        hecMAT%x(npndof+i) = spMAT%rhs(nndof+i)
+      enddo
+    endif
     deallocate(spMAT%rhs)
   end subroutine sparse_matrix_contact_get_rhs
 

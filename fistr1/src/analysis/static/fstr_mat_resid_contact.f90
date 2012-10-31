@@ -15,8 +15,8 @@ contains
     type (hecmwST_local_mesh  ) :: hecMESH
     type (hecmwST_matrix      ) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrS  end subroutine fstr_get_residual_contact
-    real(kind=kreal), intent(out) :: r(hecMAT%NDOF*hecMAT%NP)
-    real(kind=kreal), intent(out) :: rlag(fstrMAT%num_lagrange)
+    real(kind=kreal), intent(out) :: r(:)
+    real(kind=kreal), intent(out) :: rlag(:)
     real(kind=kreal) :: Tcomm,sum
     integer(kind=kint) :: i,idof,ii,i0,ls,le,l,loc0,ll,j,loc,l0,k
     integer(kind=kint) :: ndof,npndof
@@ -24,7 +24,6 @@ contains
     !! rlag = blag  - Llag x
     ndof=hecMAT%NDOF
     npndof=hecMAT%NP*ndof
-    r(1:npndof)=0.d0
     ! r = b - K x
     call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
     if (fstrMAT%num_lagrange > 0) then
@@ -72,12 +71,13 @@ contains
     type (hecmwST_local_mesh  ) :: hecMESH
     type (hecmwST_matrix      ) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
-    real(kind=kreal) :: rlag(fstrMAT%num_lagrange)
+    real(kind=kreal), allocatable :: r(:)
+    real(kind=kreal), allocatable :: rlag(:)
     real(kind=kreal) :: bnorm2, rnorm2
     real(kind=kreal) :: rlagnorm2
     real(kind=kreal) :: Tcomm
     integer(kind=kint) :: i
+    allocate(r(hecMAT%NDOF*hecMAT%NP),rlag(fstrMAT%num_lagrange))
     ! |b|^2
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
     call fstr_get_residual_contact(hecMESH, hecMAT, fstrMAT, r, rlag)
@@ -88,6 +88,7 @@ contains
     do i=1,fstrMAT%num_lagrange
       rlagnorm2=rlagnorm2+rlag(i)*rlag(i)
     enddo
+    deallocate(r,rlag)
     call hecmw_allreduce_R1(hecMESH, rlagnorm2, HECMW_SUM)
     ! |r_total|^2 = |r|^2 + |rlag|^2
     if (fstrMAT%num_lagrange > 0) rnorm2=rnorm2+rlagnorm2
@@ -102,16 +103,18 @@ contains
     type (hecmwST_local_mesh  ) :: hecMESH
     type (hecmwST_matrix      ) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
-    real(kind=kreal) :: rlag(fstrMAT%num_lagrange)
+    real(kind=kreal), allocatable :: r(:)
+    real(kind=kreal), allocatable :: rlag(:)
     real(kind=kreal) :: rmax, rlagmax
     real(kind=kreal) :: Tcomm
+    allocate(r(hecMAT%NDOF*hecMAT%NP),rlag(fstrMAT%num_lagrange))
     call fstr_get_residual_contact(hecMESH, hecMAT, fstrMAT, r, rlag)
     rmax = maxval(dabs(r))
     if (fstrMAT%num_lagrange > 0) then
-      rlagmax = maxval(dabs(rlag(1:fstrMAT%num_lagrange)))
+      rlagmax = maxval(dabs(rlag))
       if (rlagmax > rmax) rmax = rlagmax
     endif
+    deallocate(r,rlag)
     call hecmw_allreduce_R1(hecMESH, rmax, HECMW_MAX)
     fstr_get_resid_max_contact = rmax
   end function fstr_get_resid_max_contact

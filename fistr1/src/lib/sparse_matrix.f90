@@ -145,9 +145,11 @@ contains
   subroutine sparse_matrix_gather_rhs(spMAT, rhs_all)
     type (sparse_matrix), intent(in) :: spMAT
     real(kind=kreal), intent(out) :: rhs_all(:)
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr,i
     if (nprocs == 1) then
-       rhs_all(1:spMAT%N_loc) = spMAT%rhs(1:spMAT%N_loc)
+       do i=1,spMAT%N_loc
+          rhs_all(i) = spMAT%rhs(i)
+       enddo
     else
        call HECMW_GATHERV_REAL(spMAT%rhs, spMAT%N_loc, &
             rhs_all, spMAT%N_COUNTS, spMAT%DISPLS, &
@@ -158,9 +160,11 @@ contains
   subroutine sparse_matrix_scatter_rhs(spMAT, rhs_all)
     type (sparse_matrix), intent(inout) :: spMAT
     real(kind=kreal), intent(in) :: rhs_all(:)
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr,i
     if (nprocs == 1) then
-       spMAT%rhs(1:spMAT%N_loc) = rhs_all(1:spMAT%N_loc)
+       do i=1,spMAT%N_loc
+          spMAT%rhs(i) = rhs_all(i)
+       enddo
     else
        call HECMW_SCATTERV_REAL( &
             rhs_all, spMAT%N_COUNTS, spMAT%DISPLS, &

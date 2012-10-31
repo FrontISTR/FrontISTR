@@ -121,8 +121,10 @@ module hecmw_solver_misc_33
       type ( hecmwST_matrix     ), intent(in) :: hecMAT
       real(kind=kreal), optional :: COMMtime
 
-      real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
+      real(kind=kreal), allocatable :: r(:)
       real(kind=kreal) :: bnorm2, rnorm2
+
+      allocate(r(hecMAT%NDOF*hecMAT%NP))
 
       if (present(COMMtime)) then
       call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, COMMtime)
@@ -135,6 +137,7 @@ module hecmw_solver_misc_33
       endif
       hecmw_rel_resid_L2_33 = sqrt(rnorm2 / bnorm2)
 
+      deallocate(r)
       end function hecmw_rel_resid_L2_33
 
 !C
