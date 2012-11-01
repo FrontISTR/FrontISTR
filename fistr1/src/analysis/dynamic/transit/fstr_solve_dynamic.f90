@@ -140,6 +140,7 @@ contains
                                       infoCTChange%contactNode_previous)                
         endif                                                                     
         fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
+        hecMAT%Iarray(98) = 1
       end if
 
       if(fstrDYNAMIC%nlflag==0) then	  

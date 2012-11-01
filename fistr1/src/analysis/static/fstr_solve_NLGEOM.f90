@@ -91,7 +91,8 @@ contains
         else                                                
           call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM, & 
                                  infoCTChange%contactNode_previous)     
-        endif    
+        endif
+        hecMAT%Iarray(98) = 1
       endif
 
       fstrSOLID%FACTOR    =0.0
