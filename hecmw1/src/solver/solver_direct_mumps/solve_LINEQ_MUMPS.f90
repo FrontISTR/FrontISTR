@@ -35,7 +35,9 @@ contains
     integer(kind=kint) :: mumps_job
     integer(kind=kint) :: istat,myrank
     logical, parameter :: paraContactFlag = .false.
+    real(kind=kreal) :: t1,t2,t3
 
+    t1=hecmw_wtime()
     myrank=hecmw_comm_get_rank()
 
     if (INITIALIZED .and. hecMAT%Iarray(98) .eq. 1) then
@@ -94,6 +96,9 @@ contains
        if (myrank==0) write(*,*) ' [MUMPS]: Factorization completed.'
        hecMAT%Iarray(97) = 0
     endif
+
+    t2=hecmw_wtime()
+
     ! SOLUTION
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
     mumps_job=3
@@ -104,6 +109,12 @@ contains
     endif
     call sparse_matrix_hec_get_rhs(spMAT, hecMAT)
     if (myrank==0) write(*,*) ' [MUMPS]: Solution completed.'
+
+    t3=hecmw_wtime()
+    if (spMAT%timelog > 0) then
+      write(*,*) 'anal. and fact. time : ',t2-t1
+      write(*,*) 'solution time        : ',t3-t2
+    endif
 
     !call sparse_matrix_finalize(spMAT)
   end subroutine solve_LINEQ_MUMPS
