@@ -54,6 +54,16 @@ contains
        mumps_par%PAR = 1
     elseif (job>0) then
        call set_mumps_pointers(mumps_par, spMAT)
+       ! Out-Of-Core: 0:IN-CORE only, 1:OOC
+       mumps_par%ICNTL(22)=1
+       if (job==1 .or. job==4 .or. job==6) then
+          ! ordering: 0:auto, 1:seq, 2:par
+          mumps_par%ICNTL(28)=0
+          ! seq ord: 0:AMD, 1:USER, 2:AMF, 3:scotch, 4:pord, 5:metis, 6:QAMD, 7:auto
+          mumps_par%ICNTL(7)=7
+          ! par ord: 0:auto, 1:ptscotch, 2:parmetis
+          mumps_par%ICNTL(29)=0
+       endif
        if (job==3 .or. job==5 .or. job==6) then
           if (myrank == 0) then
             allocate(mumps_par%RHS(mumps_par%N), stat=ierr)
