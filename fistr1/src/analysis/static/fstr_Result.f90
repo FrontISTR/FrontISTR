@@ -37,7 +37,7 @@ module m_fstr_Result
     use fstr_setup_util
     use m_hecmw2fstr_mesh_conv
     integer, intent(in)                   :: cstep       !< current step number
-    integer, intent(in)                   :: totstep     !< total steps
+    integer, intent(in)                   :: totstep     !< step counter
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     type (fstr_solid), intent(inout)      :: fstrSOLID
@@ -46,7 +46,7 @@ module m_fstr_Result
 
     real(kind=kreal)   :: fdum, ndforce(6), ss(6)
     integer(kind=kint) :: i, k, ii, jj, nctrl, ninfo, ndof, ncomp, fnum
-    integer(kind=kint) :: maxiter, itype, iS, iE, ic_type, icel
+    integer(kind=kint) :: itype, iS, iE, ic_type, icel, maxstep, interval
     real(kind=kreal), allocatable :: ndstrain(:), ndstress(:)
     real(kind=kreal)   :: s11,s22,s33,s12,s23,s13,ps,smises, vdum(6)
     integer(kind=kint),pointer :: member(:)
@@ -58,15 +58,23 @@ module m_fstr_Result
     fstrSOLID%STRAIN = ndstrain
     fstrSOLID%STRESS = ndstress
 
-    maxiter = fstrSOLID%step_ctrl(cstep)%max_iter
-	!    call hecmw_nullify_result_data( fstrRESULT )
+    if( fstrSOLID%TEMP_irres>0 ) then
+        maxstep = fstrSOLID%TEMP_irres
+    else
+        maxstep = 0
+        do i = 1, cstep
+            maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
+        end do
+    endif
+
     !-- POST PROCESSING VIA MEMORY
-    if( IVISUAL==1 ) then
+    if( IVISUAL.eq.1 .and. &
+        (mod(totstep,fstrSOLID%output_ctrl(4)%freqency).eq.0 .or. totstep.eq.maxstep) ) then
+          interval = fstrSOLID%output_ctrl(4)%freqency
           call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
           call fstr2hecmw_mesh_conv(hecMESH)
           call hecmw_visualize_init
-
-          call hecmw_visualize(hecMESH,fstrRESULT,totstep,maxiter,0)
+          call hecmw_visualize(hecMESH,fstrRESULT,totstep,maxstep,interval)
           call hecmw_visualize_finalize
           call hecmw2fstr_mesh_conv(hecMESH)
           call hecmw_result_free(fstrRESULT)
@@ -323,7 +331,7 @@ module m_fstr_Result
 	   
 	   ! Summary & Result
        if( ndof == 3 ) call fstr_NodalStress3D( hecMESH, hecMAT, fstrSOLID, ndstrain, ndstress  )
-       call fstrNLGEOM_Post(fnum,hecMESH,fstrSOLID,ttime,totstep,ndstrain,ndstress)
+       call fstrNLGEOM_Post(fnum,hecMESH,fstrSOLID,ttime,maxstep,totstep,ndstrain,ndstress)
     endif
 
 	   
@@ -346,13 +354,14 @@ module m_fstr_Result
 
 !> Summarizer of output data which prints out max and min output values
 !----------------------------------------------------------------------*
-  subroutine fstrNLGEOM_Post(fnum,hecMESH,fstrSOLID,tt,i_step,ndstrain, ndstress)
+  subroutine fstrNLGEOM_Post(fnum,hecMESH,fstrSOLID,tt,maxstep,i_step,ndstrain, ndstress)
 !----------------------------------------------------------------------*
       use m_fstr
       integer, intent(in)                   :: fnum
       type (hecmwST_local_mesh), intent(in) :: hecMESH
       type (fstr_solid), intent(in)         :: fstrSOLID
 
+      integer(kind=kint), intent(in) :: maxstep
       integer(kind=kint), intent(in) :: i_step
       real(kind=kreal), intent(in)   :: tt
       real(kind=kreal), intent(in)   :: ndstrain(:)
@@ -366,11 +375,11 @@ module m_fstr_Result
       real(kind=kreal) Umax(3),Umin(3),Emax(6),Emin(6),Smax(7),Smin(7)
       integer(kind=kint) IUmax(3),IUmin(3),IEmax(6),IEmin(6),ISmax(7),ISmin(7)
 !
-      integer(kind=kint) j,i,k,nd,id,ndof,mdof
-	  
+      integer(kind=kint) j,i,k,id,ndof,mdof
+
 !
 ! --- Time
-      write(fnum,'(''#### Result time='',E10.4)') tt
+      write(fnum,'(''#### Result time='',E11.4)') tt
 ! --- Clear
       Umax=0.0d0
       Umin=0.0d0
@@ -515,12 +524,12 @@ module m_fstr_Result
           write(fnum,*) '//SMS',Smax(7),Smin(7)
         endif
 
-        if( IRESULT.eq.0 ) return
+        if( IRESULT.eq.0 .or. &
+            (mod(i_step,fstrSOLID%output_ctrl(3)%freqency).ne.0 .and. i_step.ne.maxstep) ) return
 ! --- Write Result File
 ! --- INITIALIZE
         header='*fstrresult'
-        nd = i_step
-        call hecmw_result_init(hecMESH,nd,header)
+        call hecmw_result_init(hecMESH,maxstep,i_step,header)
 ! --- ADD
 ! --- DISPLACEMENT
 !        if( fstrSOLID%iout_list(1) .eq. 1 ) then

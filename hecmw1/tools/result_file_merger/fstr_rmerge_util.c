@@ -9,6 +9,10 @@
 #include "fstr_rmerge_util.h"
 
 FILE* log_fp;
+int nrank;
+int strid;
+int endid;
+int intid;
 
 static
 void out_log( const char* fmt, ... )
@@ -25,11 +29,11 @@ void out_log( const char* fmt, ... )
 /*****************************************************************************/
 
 static
-int get_dist_fname( char* name_ID, char* fheader, int* fg_single, int* refine )
+int get_dist_fname( char* name_ID, char* fheader, int* fg_single, int* refine, int irank )
 {
 	struct hecmw_ctrl_meshfiles *files;
 
-	files = HECMW_ctrl_get_meshfiles_header( name_ID );
+	files = HECMW_ctrl_get_meshfiles_header_sub( name_ID, nrank, irank );
 	if( !files ) return -1;
 
 	if( files->n_mesh == 1 ) {
@@ -78,11 +82,11 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh( char* name_ID, int* area_nu
 	int i;
 	int area_n;
 	int fg_single;
-	char fheader[ HECMW_HEADER_LEN+1 ];
-	char fname[ HECMW_FILENAME_LEN+1 ];
+	char fheader[HECMW_HEADER_LEN+1];
+	char fname[HECMW_FILENAME_LEN+1];
 	struct hecmwST_local_mesh** mesh;
 
-	if( get_dist_fname( name_ID, fheader, &fg_single, refine ) ) return NULL;
+	if( get_dist_fname( name_ID, fheader, &fg_single, refine, 0 ) ) return NULL;
 
 	if( fg_single ) {
 		out_log( "mesh file type is NOT HECMW_DIST.\n" );
@@ -93,11 +97,20 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh( char* name_ID, int* area_nu
 		if( !mesh[0] ) return NULL;
 	} else {
 		out_log( "mesh file type is HECMW_DIST.\n" );
-		area_n = get_area_n( fheader );
-		if( area_n <= 0 ) return NULL;
+		if( nrank == 0 ) {
+			area_n = get_area_n( fheader );
+		} else {
+			area_n = nrank;
+		}
+		if( area_n == 0 ) return NULL;
 		mesh = HECMW_malloc( area_n * sizeof( struct hecmwST_local_mesh* ) );
 		for( i = 0; i < area_n; i++ ) {
-			sprintf( fname, "%s.%d", fheader, i );
+			if( nrank == 0 ) {
+				sprintf( fname, "%s.%d", fheader, i );
+			} else {
+				get_dist_fname( name_ID, fheader, &fg_single, refine, i );
+				sprintf( fname, "%s.%d", fheader, i );
+			}
 			out_log( "loading dist mesh from %s\n", fname );
 			mesh[i] = HECMW_get_dist_mesh( fname );
 			if( !mesh[i] ) return NULL;
@@ -134,12 +147,19 @@ void fstr_free_mesh( struct hecmwST_local_mesh** mesh, int area_n )
 int fstr_get_step_n( char* name_ID )
 {
 	FILE* fp;
-	int step;
-	char fheader[ HECMW_HEADER_LEN+1 ];
-	char fname[ HECMW_FILENAME_LEN+1 ];
+	int step, fg_text;
+	char *fheader;
+	char fname[HECMW_FILENAME_LEN+1];
 
-	if( HECMW_ctrl_get_result_fileheader( name_ID, fheader, HECMW_HEADER_LEN ) == NULL )
-		return 0;
+	if( endid != 1 ) return endid;
+
+	if( nrank == 0 ) {
+		if( ( fheader = HECMW_ctrl_get_result_fileheader( name_ID, 1, 1, &fg_text ) ) == NULL )
+			return 0;
+	} else {
+		if( ( fheader = HECMW_ctrl_get_result_fileheader_sub( name_ID, 1, 1, nrank, 0, &fg_text ) ) == NULL )
+			return 0;
+	}
 
 	step = 1;
 	while(1) {
@@ -165,16 +185,18 @@ int fstr_get_step_n( char* name_ID )
 
 fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int refine )
 {
-	char fheader[ HECMW_HEADER_LEN+1 ];
-	char fname[ HECMW_FILENAME_LEN+1 ];
+	char *fheader;
+	char fname[HECMW_FILENAME_LEN+1];
 	fstr_res_info** res;
 	struct hecmwST_result_data* data;
-	int i, j, k, count, num, nnode, nelem, flag;
+	int i, j, k, count, num, nnode, nelem, flag, fg_text;
 	int *node_gid, *elem_gid;
 	int refine_nnode = 0;
 
-	if( HECMW_ctrl_get_result_fileheader( name_ID, fheader, HECMW_HEADER_LEN ) == NULL )
-		return NULL;
+	if( nrank == 0 ) {
+		if( ( fheader = HECMW_ctrl_get_result_fileheader( name_ID, endid, step, &fg_text ) ) == NULL )
+			return 0;
+	}
 
 	res = HECMW_malloc( area_n * sizeof(fstr_res_info*) );
 	if( !res ) return NULL;
@@ -183,6 +205,10 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 		res[i] = HECMW_malloc( sizeof(fstr_res_info) );
 		if( !res[i] ) return NULL;
 
+		if( nrank != 0 ) {
+		if( ( fheader = HECMW_ctrl_get_result_fileheader_sub( name_ID, endid, step, nrank, i, &fg_text ) ) == NULL )
+			return 0;
+		}
 		sprintf( fname, "%s.%d.%d", fheader, i, step );
 		data = HECMW_result_read_by_fname( fname );
 		if( !data ) return NULL;
@@ -265,6 +291,8 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 			}
 
 			HECMW_result_free( data );
+			HECMW_result_free_nodeID();
+			HECMW_result_free_elemID();
 
 			res[i]->node_gid = HECMW_malloc( res[i]->nnode_gid * sizeof(int) );
 			if( !res[i]->node_gid ) return NULL;
@@ -511,4 +539,3 @@ void fstr_free_glmesh( struct hecmwST_local_mesh* mesh )
 	HECMW_free( mesh );
 	return;
 }
-

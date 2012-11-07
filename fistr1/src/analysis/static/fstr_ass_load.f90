@@ -205,7 +205,7 @@ module m_fstr_ass_load
         enddo
 
         if( fstrSOLID%TEMP_irres > 0 ) then
-          call read_temperature_result(hecMESH, fstrSOLID%TEMP_tstep, fstrSOLID%temperature)
+          call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, fstrSOLID%temperature)
         endif
 
 ! ----- element TYPE loop.

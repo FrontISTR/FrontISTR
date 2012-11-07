@@ -105,9 +105,7 @@ module m_fstr_solve_LINEAR
         call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        istep =0
-        idummy=0
-        call hecmw_visualize(hecMESH,fstrRESULT,istep,istep,idummy)
+        call hecmw_visualize(hecMESH,fstrRESULT,1,1,1)
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)

@@ -133,8 +133,8 @@ contains
 !C
     a1 = 1./fstrDYNAMIC%t_delta**2
     a2 = 1./(2.0*fstrDYNAMIC%t_delta)
-	
-! Restart output
+
+!C-- output initial condition
     if( restrt_step_num .eq. 1 ) then
 
       do j = 1 ,ndof*nnod
@@ -143,8 +143,6 @@ contains
         fstrDYNAMIC%DISP(j,2) = fstrDYNAMIC%DISP(j,1) - fstrDYNAMIC%VEL (j,1)/ a2 &
                             + fstrDYNAMIC%ACC (j,1)/ (2.0*a1) * 4.0
       end do
-
-!C-- output initial condition
 
       istep = 0
       call dynamic_output_and_post(istep,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
@@ -372,10 +370,8 @@ contains
     end do
 
 !!! restart  !!!
-    if(fstrDYNAMIC%restart_nout .lt. 0) then
-      fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-    end if
-    if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
+    if( fstrDYNAMIC%restart_nout > 0 .and. &
+        (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
       restrt_step(1) = i
       call hecmw_restart_add_int(restrt_step,size(restrt_step))
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))

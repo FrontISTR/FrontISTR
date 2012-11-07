@@ -16,18 +16,14 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "hecmw_struct.h"
 #include "hecmw_util.h"
-#include "hecmw_result_copy_c2f.h"
 #include "hecmw_result.h"
 
 static struct hecmwST_result_data *result;
-int n_node;
-int n_elem;
+static int nnode, nelem;
 
 
 /*-----------------------------------------------------------------------------
@@ -88,7 +84,7 @@ set_node_val_item(void *dst)
 		n += result->nn_dof[i];
 	}
 	src = result->node_val_item;
-	size = sizeof(*result->node_val_item) * n * n_node;
+	size = sizeof(*result->node_val_item) * n * nnode;
 	memcpy(dst, src, size);
 
 	return 0;
@@ -149,7 +145,7 @@ set_elem_val_item(void *dst)
 		n += result->ne_dof[i];
 	}
 	src = result->elem_val_item;
-	size = sizeof(*result->elem_val_item) * n * n_elem;
+	size = sizeof(*result->elem_val_item) * n * nelem;
 	memcpy(dst, src, size);
 
 	return 0;
@@ -161,7 +157,6 @@ set_elem_val_item(void *dst)
  */
 
 typedef int (*SetFunc)(void *);
-
 
 static struct func_table {
 	char *struct_name;
@@ -183,7 +178,6 @@ static struct func_table {
 static const int NFUNC = sizeof(functions) / sizeof(functions[0]);
 
 
-
 static SetFunc
 get_set_func(char *struct_name, char *var_name)
 {
@@ -201,12 +195,13 @@ get_set_func(char *struct_name, char *var_name)
 
 /*----------------------------------------------------------------------------*/
 
+
 int
-HECMW_result_copy_c2f_init(struct hecmwST_result_data *result_data, int nnode, int nelem)
+HECMW_result_copy_c2f_init(struct hecmwST_result_data *result_data, int n_node, int n_elem)
 {
 	result = result_data;
-	n_node = nnode;
-	n_elem = nelem;
+	nnode = n_node;
+	nelem = n_elem;
 	return 0;
 }
 
@@ -224,7 +219,7 @@ HECMW_result_copy_c2f_finalize(void)
 
 void
 hecmw_result_copy_c2f_set_if(char *struct_name, char *var_name,
-						void *dst, int *err, int len_struct, int len_var)
+							 void *dst, int *err, int len_struct, int len_var)
 {
 	SetFunc func;
 	char sname[HECMW_NAME_LEN+1];
@@ -271,33 +266,104 @@ hecmw_result_copy_c2f_set_if(char *struct_name, char *var_name,
 		return;
 	}
 
-	*err = 0;	/* no error */
+	*err = 0;
 }
-
-
 
 void
 hecmw_result_copy_c2f_set_if_(char *struct_name, char *var_name,
-						void *dst, int *err, int len_struct, int len_var)
+							  void *dst, int *err, int len_struct, int len_var)
 {
 	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
 }
-
-
 
 void
 hecmw_result_copy_c2f_set_if__(char *struct_name, char *var_name,
-						void *dst, int *err, int len_struct, int len_var)
+							   void *dst, int *err, int len_struct, int len_var)
 {
 	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
 }
-
-
 
 void
 HECMW_RESULT_COPY_C2F_SET_IF(char *struct_name, char *var_name,
-						void *dst, int *err, int len_struct, int len_var)
+							 void *dst, int *err, int len_struct, int len_var)
 {
 	hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct, len_var);
 }
 
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_read_by_name_if_(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
+{
+	hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err, len);
+}
+
+void
+hecmw_result_read_by_name_if__(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
+{
+	hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err, len);
+}
+
+void
+HECMW_RESULT_READ_BY_NAME_IF(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
+{
+	hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err, len);
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_read_finalize_if(int *err)
+{
+	*err = 1;
+	HECMW_result_free(result);
+	HECMW_result_free_nodeID();
+	HECMW_result_free_elemID();
+	*err = 0;
+}
+
+void
+hecmw_result_read_finalize_if_(int *err)
+{
+	hecmw_result_read_finalize_if(err);
+}
+
+void
+hecmw_result_read_finalize_if__(int *err)
+{
+	hecmw_result_read_finalize_if(err);
+}
+
+void
+HECMW_RESULT_READ_FINALIZE_IF(int *err)
+{
+	hecmw_result_read_finalize_if(err);
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_read_by_name_if(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
+{
+	char name_ID_str[HECMW_NAME_LEN+1];
+
+	*err = 1;
+
+	if(HECMW_strcpy_f2c_r(name_ID, len, name_ID_str, sizeof(name_ID_str)) == NULL) return;
+
+	result = HECMW_result_read_by_name(name_ID_str, *n_step, *i_step);
+	if(result == NULL) return;
+
+	nnode = HECMW_result_get_nnode();
+	nelem = HECMW_result_get_nelem();
+	*n_node = nnode;
+	*n_elem = nelem;
+
+	*err = 0;
+}

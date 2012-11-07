@@ -201,10 +201,10 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
-!          if (PRECOND.eq.1) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
-!          if (PRECOND.eq.2) write (*,'(a)') '### 2x2 B-SSOR-CG(0)'
-!          if (PRECOND.eq.3) write (*,'(a)') '### 2x2 B-scale-CG  '
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+          if (PRECOND.eq.1) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
+          if (PRECOND.eq.2) write (*,'(a)') '### 2x2 B-SSOR-CG(0)'
+          if (PRECOND.eq.3) write (*,'(a)') '### 2x2 B-scale-CG  '
         endif
 
         call hecmw_solve_CG_22                                          &
@@ -224,10 +224,10 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
-!          if (PRECOND.eq.10) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
-!          if (PRECOND.eq.11) write (*,'(a)') '### 2x2 B-IC-CG  (1)'
-!          if (PRECOND.eq.12) write (*,'(a)') '### 2x2 B-IC-CG  (2)'
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+          if (PRECOND.eq.10) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
+          if (PRECOND.eq.11) write (*,'(a)') '### 2x2 B-IC-CG  (1)'
+          if (PRECOND.eq.12) write (*,'(a)') '### 2x2 B-IC-CG  (2)'
         endif
 
         SIGMA     = 1.d0

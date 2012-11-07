@@ -59,8 +59,6 @@ contains
 !C
 !C-- local variable
 !C
-    
-
     integer(kind=kint) :: nnod, ndof, nn, numnp, n_nod_dof
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: kkk0, kkk1
@@ -445,10 +443,8 @@ contains
     end do
 
 !!! restart  !!!
-    if(fstrDYNAMIC%restart_nout .lt. 0) then
-      fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-    end if
-    if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
+    if( fstrDYNAMIC%restart_nout > 0 .and. &
+        (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
       restrt_step(1) = i
       call hecmw_restart_add_int(restrt_step,size(restrt_step))
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))

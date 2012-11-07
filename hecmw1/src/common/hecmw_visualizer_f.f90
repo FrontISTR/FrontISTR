@@ -33,13 +33,11 @@ module  hecmw_visualizer
 
 contains
 
-subroutine  hecmw_visualize( mesh, result_data, step, max_step, is_force )
+subroutine  hecmw_visualize( mesh, result_data, step, max_step, interval )
   implicit none
   type(hecmwST_local_mesh),  intent(in) :: mesh
   type(hecmwST_result_data), intent(in) :: result_data
-  integer(kind=kint),        intent(in) :: step
-  integer(kind=kint),        intent(in) :: max_step
-  integer(kind=kint),        intent(in) :: is_force
+  integer(kind=kint),        intent(in) :: step, max_step, interval
   integer(kind=kint)                    :: ierr
 
   call  hecmw_visualize_init_if( mesh%n_node, mesh%n_elem, ierr )
@@ -57,7 +55,7 @@ subroutine  hecmw_visualize( mesh, result_data, step, max_step, is_force )
     call  hecmw_abort( hecmw_comm_get_comm( ) )
   endif
 
-  call  hecmw_visualize_if( step, max_step, is_force, ierr )
+  call  hecmw_visualize_if( step, max_step, interval, ierr )
   if( ierr /= 0 )  then
     call  hecmw_abort( hecmw_comm_get_comm( ) )
   endif
@@ -91,4 +89,3 @@ subroutine hecmw_visualize_finalize( )
 end subroutine hecmw_visualize_finalize
 
 end module  hecmw_visualizer
-

@@ -219,6 +219,3 @@
 
       end subroutine hecmw_solve_11
       end module hecmw_solver_11
-
-
-

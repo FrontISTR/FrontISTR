@@ -290,8 +290,7 @@ contains
 !C*** Write Result File
 !C*** INITIALIZE
         header='*fstrresult'
-        nd = istep
-        call hecmw_result_init(hecMESH,nd,header)
+        call hecmw_result_init(hecMESH,1,1,header)
 !C*** ADD 
 !C*** DISPLACEMENT
         id = 1
@@ -464,8 +463,7 @@ contains
 !C*** Write Result File
 !C*** INITIALIZE
         header='*fstrresult'
-        nd = istep
-        call hecmw_result_init(hecMESH,nd,header)
+        call hecmw_result_init(hecMESH,1,1,header)
 !C*** ADD 
 !C*** DISPLACEMENT
         id = 1

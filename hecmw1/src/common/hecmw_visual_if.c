@@ -16,8 +16,6 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -26,7 +24,6 @@
 #include "hecmw_util.h"
 #include "hecmw_dist_copy_f2c.h"
 #include "hecmw_dist_free.h"
-#include "hecmw_result_copy_f2c.h"
 #include "hecmw_visualizer.h"
 
 static struct hecmwST_local_mesh *mesh;
@@ -107,57 +104,44 @@ alloc_result(void)
 
 /*----------------------------------------------------------------------------*/
 void
-hecmw_visualize_if(int *step, int *max_timestep, int *is_force, int *err)
+hecmw_visualize_if(int *step, int *max_timestep, int *interval, int *err)
 {
-	if(HECMW_visualize(mesh, result, *step, *max_timestep, *is_force)) {
-		*err = 1;
-		return;
-	}
-
+	*err = 1;
+	if(HECMW_visualize(mesh, result, *step, *max_timestep, *interval)) return;
 	*err = 0;
 }
 
 void
-hecmw_visualize_if_(int *step, int *max_timestep, int *is_force, int *err)
+hecmw_visualize_if_(int *step, int *max_timestep, int *interval, int *err)
 {
-	hecmw_visualize_if(step, max_timestep, is_force, err);
+	hecmw_visualize_if(step, max_timestep, interval, err);
 }
 
 void
-hecmw_visualize_if__(int *step, int *max_timestep, int *is_force, int *err)
+hecmw_visualize_if__(int *step, int *max_timestep, int *interval, int *err)
 {
-	hecmw_visualize_if(step, max_timestep, is_force, err);
+	hecmw_visualize_if(step, max_timestep, interval, err);
 }
 
 void
-HECMW_VISUALIZE_IF(int *step, int *max_timestep, int *is_force, int *err)
+HECMW_VISUALIZE_IF(int *step, int *max_timestep, int *interval, int *err)
 {
-	hecmw_visualize_if(step, max_timestep, is_force, err);
+	hecmw_visualize_if(step, max_timestep, interval, err);
 }
 
 /*----------------------------------------------------------------------------*/
 void
 hecmw_visualize_init_if(int *nnode, int *nelem, int *err)
 {
-	if(alloc_local_mesh()) {
-		*err = 1;
-		return;
-	}
+	*err = 1;
 
-	if(alloc_result()) {
-		*err = 1;
-		return;
-	}
+	if(alloc_local_mesh()) return;
 
-	if(HECMW_dist_copy_f2c_init(mesh)) {
-		*err = 1;
-		return;
-	}
+	if(alloc_result()) return;
 
-	if(HECMW_result_copy_f2c_init(result, *nnode, *nelem)) {
-		*err = 1;
-		return;
-	}
+	if(HECMW_dist_copy_f2c_init(mesh)) return;
+
+	if(HECMW_result_copy_f2c_init(result, *nnode, *nelem)) return;
 
 	*err = 0;
 }
@@ -184,17 +168,15 @@ HECMW_VISUALIZE_INIT_IF(int *nnode, int *nelem, int *err)
 void
 hecmw_visualize_finalize_if(int *err)
 {
-	if(HECMW_dist_copy_f2c_finalize()) {
-		*err = 1;
-		return;
-	}
+	*err = 0;
+
+	if(HECMW_dist_copy_f2c_finalize()) return;
+
+	if(HECMW_result_copy_f2c_finalize()) return;
+
 	HECMW_dist_free(mesh);
 	mesh = NULL;
 
-	if(HECMW_result_copy_f2c_finalize()) {
-		*err = 1;
-		return;
-	}
 	HECMW_result_free(result);
 	result = NULL;
 
@@ -223,11 +205,8 @@ HECMW_VISUALIZE_FINALIZE_IF(int *err)
 void
 hecmw_init_for_visual_if(int *err)
 {
-	if(HECMW_visualize_init()) {
-		*err = 1;
-		return;
-	}
-
+	*err = 1;
+	if(HECMW_visualize_init()) return;
 	*err = 0;
 }
 
@@ -253,11 +232,8 @@ HECMW_INIT_FOR_VISUAL_IF(int *err)
 void
 hecmw_finalize_for_visual_if(int *err)
 {
-	if(HECMW_visualize_finalize()) {
-		*err = 1;
-		return;
-	}
-
+	*err = 1;
+	if(HECMW_visualize_finalize()) return;
 	*err = 0;
 }
 

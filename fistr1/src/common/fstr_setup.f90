@@ -22,7 +22,7 @@ use fstr_ctrl_heat
 use fstr_ctrl_eigen
 use fstr_ctrl_dynamic
 use fstr_ctrl_material
-use mContact                                                       
+use mContact
 use m_static_get_prop
 use m_out
 use m_step
@@ -35,8 +35,8 @@ include 'fstr_ctrl_util_f.inc'
 
         !> Package of all data needs to initilize
         type fstr_param_pack
-                type(hecmwST_local_mesh), pointer :: MESH     
-                type(fstr_param), pointer         :: PARAM   
+                type(hecmwST_local_mesh), pointer :: MESH
+                type(fstr_param), pointer         :: PARAM
                 type(fstr_solid), pointer         :: SOLID
                 type(fstr_heat), pointer          :: HEAT
                 type(lczparam), pointer           :: EIGEN
@@ -47,7 +47,7 @@ include 'fstr_ctrl_util_f.inc'
 contains
 
 !=============================================================================!
-!> Read in and initialize control data                                                             !
+!> Read in and initialize control data                                        !
 !=============================================================================!
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL )
@@ -88,7 +88,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_istep
         integer(kind=kint) :: c_output, islog
 
-        write( logfileNAME, '(i5,''.log'')') myrank
+        write( logfileNAME, '(i5,''.log'')' ) myrank
 
         ! packaging
         P%MESH   => hecMESH
@@ -101,16 +101,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 		
         fstrPARAM%contact_algo = kcaALagrange
 
-        c_solution = 0; c_solver   = 0; c_step   = 0; c_write = 0; c_echo = 0;
+        c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0;
         c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
         c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
         c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-        c_eigen    = 0; c_contact  = 0                                  
+        c_eigen    = 0; c_contact  = 0
         c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
         c_couple   = 0; c_material = 0
         c_mpc      = 0; c_weldline = 0
         c_istep    = 0
-        c_output   = 0
 
         ctrl = fstr_ctrl_open( cntl_filename)
         if( ctrl < 0 ) then
@@ -131,47 +130,48 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_solver = c_solver + 1
                         call fstr_setup_SOLVER( ctrl, c_solver, P )
                 else if( header_name == '!ISTEP' ) then
-                    c_istep = c_istep + 1
+                        c_istep = c_istep + 1
                 else if( header_name == '!STEP' ) then
-                    if( version==0 ) then 
-                      c_step = c_step + 1
-                      call fstr_setup_STEP( ctrl, c_step, P )
-                    else
-                      c_istep = c_istep + 1
-                    endif
-        !        else if( header_name == '!WRITE' ) then
-        !                c_write = c_write + 1
-        !                call fstr_setup_WRITE( ctrl, c_write, P )
+                        if( version==0 ) then 
+                           c_step = c_step + 1
+                           call fstr_setup_STEP( ctrl, c_step, P )
+                        else
+                           c_istep = c_istep + 1
+                        endif
+                else if( header_name == '!WRITE' ) then
+                        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
+                        if( visual==1 ) P%PARAM%fg_visual= 1
+                        if( resul==1 ) P%PARAM%fg_result = 1
+                        c_output = c_output+1
                 else if( header_name == '!ECHO' ) then
                         c_echo = c_echo + 1
                         call fstr_setup_ECHO( ctrl, c_echo, P )
                 else if( header_name == '!RESTART' ) then
-                        call fstr_setup_RESTART( ctrl, nout, nin, P%PARAM%restart_out_type,restartfilNAME )   
-                        fstrSOLID%restart_nout= nout                             
-                        fstrSOLID%restart_nin= nin                                  
-                        fstrDYNAMIC%restart_nout= nout                           
-                        fstrDYNAMIC%restart_nin= nin                                 
-!
+                        call fstr_setup_RESTART( ctrl, nout )
+                        fstrSOLID%restart_nout= nout
+                        fstrDYNAMIC%restart_nout= nout
+                        fstrHEAT%restart_nout= nout
+
                 !--------------- for static -------------------------
-!
+
                 else if( header_name == '!STATIC' ) then
                         c_static = c_static + 1
                         call fstr_setup_STATIC( ctrl, c_static, P )
                 else if( header_name == '!BOUNDARY' ) then
-                  c_boundary = c_boundary + 1
-                  call fstr_setup_BOUNDARY( ctrl, c_boundary, P )
+                        c_boundary = c_boundary + 1
+                        call fstr_setup_BOUNDARY( ctrl, c_boundary, P )
                 else if( header_name == '!CLOAD' ) then
-                  c_cload = c_cload + 1
-                  call fstr_setup_CLOAD( ctrl, c_cload, P )
-                  n = fstr_ctrl_get_data_line_n( ctrl )
+                        c_cload = c_cload + 1
+                        call fstr_setup_CLOAD( ctrl, c_cload, P )
+                        n = fstr_ctrl_get_data_line_n( ctrl )
                 else if( header_name == '!DLOAD' ) then
                         c_dload = c_dload + 1
                         call fstr_setup_DLOAD( ctrl, c_dload, P )
-                else if( header_name == '!CONTACT_ALGO' ) then                           
-                        call fstr_setup_CONTACTALGO( ctrl, P )       
-                else if( header_name == '!CONTACT' ) then                                 
+                else if( header_name == '!CONTACT_ALGO' ) then
+                        call fstr_setup_CONTACTALGO( ctrl, P )
+                else if( header_name == '!CONTACT' ) then
                         n = fstr_ctrl_get_data_line_n( ctrl )
-                        c_contact = c_contact + n        
+                        c_contact = c_contact + n
                 else if( header_name == '!MATERIAL' ) then
                         c_material = c_material + 1
                 else if( header_name == '!TEMPERATURE' ) then
@@ -183,11 +183,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!REFTEMP' ) then
                         c_reftemp = c_reftemp + 1
                         call fstr_setup_REFTEMP( ctrl, c_reftemp, P )
-                else if( header_name == '!WRITE' ) then
-                        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
-                        if( visual==1 ) P%PARAM%fg_visual=1
-                        if( femap==1 ) c_output = c_output+1
-                        if( resul==1 ) P%PARAM%fg_result = 1
 
                 !--------------- for heat -------------------------
 
@@ -259,7 +254,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 ! next
                 if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
         end do
-!
+
 ! ----- 
         if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
         if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )	
@@ -287,16 +282,20 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         c_output = c_output+1		
-        allocate( fstrSOLID%output_ctrl( c_output ) )
-		
+        allocate( fstrSOLID%output_ctrl( 4 ) )
+!        allocate( fstrSOLID%output_ctrl( c_output ) )
+
 		! log file
         call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
         fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
         fstrSOLID%output_ctrl( 1 )%filenum = ILOG
-!
+        call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
+        call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
+        call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
+
 ! ----- 
         rcode = fstr_ctrl_rewind( ctrl )
-!
+
         c_istep    = 0
         c_material = 0
         c_output = 0
@@ -330,7 +329,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               endif
             enddo
             c_contact = c_contact+n
-!
+
           else if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
             if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
@@ -464,20 +463,24 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 c_output=1
                 outctrl%filename = trim(logfileNAME)
                 outctrl%filenum = ILOG
-                call fstr_init_outctrl(fstrSOLID%output_ctrl(c_output))
                 call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-        !      call print_output_ctrl( 6, fstrSOLID%output_ctrl(c_output) ); pause
             endif
             if( femap == 1 ) then
                 c_output=2
                 write( outctrl%filename, *) 'utable.',myrank,".dat"
                 outctrl%filenum = IUTB
-                call fstr_init_outctrl(fstrSOLID%output_ctrl(c_output))
                 call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
                 open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
-!              call print_output_ctrl( 6, fstrSOLID%output_ctrl(c_output) )
             endif
-            
+            if( resul == 1 ) then
+                c_output=3
+                call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+            endif
+            if( visual == 1 ) then
+                c_output=4
+                call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
+            endif
+
           else if( header_name == '!NODE_OUTPUT' ) then
             if( c_output >0 ) then
                if( .not. fstr_ctrl_get_outnode( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
@@ -511,10 +514,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           else if( header_name == '!END' ) then
                         exit
           endif
-!
+
           if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
         end do
-!
+
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
         if( P%PARAM%solution_type == kstSTATIC ) then
           do i=1, c_material
@@ -584,12 +587,18 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
              fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%SPRING_ngrp_tot) = fstrSOLID%SPRING_ngrp_GRPID(i)
            enddo
         endif
-!
+
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
            p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
            p%PARAM%solution_type==6 )            &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
+
+        if( p%PARAM%solution_type == kstHEAT) then
+          p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
+          p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
+        endif
+
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )
 		
@@ -1251,31 +1260,20 @@ subroutine fstr_setup_ECHO( ctrl, counter, P )
 
 end subroutine fstr_setup_ECHO
 
-!> Read in !RESTART
-subroutine fstr_setup_RESTART( ctrl, nout, nin, outtype, fname )     
+
+!-----------------------------------------------------------------------------!
+!> Read in !RESTART                                                         !
+!-----------------------------------------------------------------------------!
+subroutine fstr_setup_RESTART( ctrl, nout )
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) :: nout, nin                           
-        integer(kind=kint) :: outtype                                
-        character(len=HECMW_FILENAME_LEN) :: fname
-        character(len=HECMW_FILENAME_LEN) :: s             
+        integer(kind=kint) :: nout
 
         integer(kind=kint) :: rcode
-        nout = 0                          
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ',  '# ',    0,   'I',   nout  )
+        nout = 0
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', nout )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        nin = 0                                                                       
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'IN ',  '# ',    0,   'I',   nin  )    
-!        if( rcode /= 0 .and. nout < 0 ) call fstr_ctrl_err_stop                     
-        outtype = restart_outLast                                                    
-        s = 'LAST,ALL '                                                              
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', outtype )          
-        fname=""
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'NAME ',     '# ',  0, 'S', fname )
-        if( fname=="" .or. rcode /= 0 ) stop "STOP:You must input the restart file name!"
-        
-        
-        
+
 end subroutine fstr_setup_RESTART
 
 
@@ -1582,9 +1580,8 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         deallocate( new_params )
         deallocate( fg_surface )
 end subroutine fstr_setup_DLOAD
-!
-!
-!
+
+
 !-----------------------------------------------------------------------------!
 !> Read in !TEMPERATURE                                                  !
 !-----------------------------------------------------------------------------!
@@ -2513,7 +2510,6 @@ subroutine fstr_setup_DYNAMIC( ctrl, counter, P )
                 P%DYN%t_start, &
                 P%DYN%t_end,   &
                 P%DYN%t_delta, &
-                P%DYN%restart_nout, &
                 P%DYN%ganma,   &
                 P%DYN%beta,    &
                 P%DYN%idx_mas, &

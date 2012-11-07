@@ -92,7 +92,7 @@ end function fstr_ctrl_get_ACCELERATION
 
 !> Read in !DYNAMIC                                            
 function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
-                idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, restart_nout, &
+                idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
                 ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
                 nout, node_monit_1, nout_monit, iout_list )
         implicit none
@@ -122,7 +122,6 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         real(kind=kreal)   :: ray_k
 
         ! OUTPUT CONTROL
-        integer(kind=kint) :: restart_nout
         integer(kind=kint) :: nout
         integer(kind=kint) :: node_monit_1
         integer(kind=kint) :: nout_monit
@@ -142,7 +141,7 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         nlflag=nlflag-1
 		
         if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
-        if( fstr_ctrl_get_data_ex( ctrl, 2, 'rriri ', t_start, t_end, n_step, t_delta, restart_nout )/=0 ) return
+        if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   ganma, beta )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 4, 'iirr ', idx_mas, idx_dmp, ray_m, ray_k )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 5, 'iii ',   nout, node_monit_1, nout_monit )/=0 ) return

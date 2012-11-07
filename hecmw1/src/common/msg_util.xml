@@ -136,6 +136,15 @@
 			<description>グループ化不可能なメッシュタイプのメッシュを指定した</description>
 		</define>
 
+		<define type="error" name="E0060">
+			<message>!SUBDIR: Invalid token in control file</message>
+			<description>!SUBDIR読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E0061">
+			<message>!SUBDIR: Missing ON/OFF"</message>
+			<description>!SUBDIRに必須のパラメータON/OFFが見つからない</description>
+		</define>
+
 		<define type="error" name="E0101">
 			<message>Failed to open restart file</message>
 			<description>リスタートファイルのオープンに失敗した</description>

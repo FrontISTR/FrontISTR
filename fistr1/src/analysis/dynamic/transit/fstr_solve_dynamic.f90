@@ -22,7 +22,7 @@ use fstr_dynamic_implicit
 use fstr_dynamic_explicit
 use fstr_dynamic_nlexplicit
 use fstr_dynamic_nlimplicit
-use fstr_matrix_con_contact       
+use fstr_matrix_con_contact
 
 contains
 
@@ -30,8 +30,8 @@ contains
 !> Master subroutine for dynamic analysis
 !C================================================================C
   subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,myEIG   &
-                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &      
-                                      ,fstrCPL,fstrMAT )                  
+                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+                                      ,fstrCPL,fstrMAT )
       use m_fstr_setup
       implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
@@ -43,11 +43,11 @@ contains
       type ( fstr_dynamic        ) :: fstrDYNAMIC
       type ( fstr_couple         ) :: fstrCPL         !for COUPLE
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                 
-      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange          
-      
-	  
+      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
+
       integer(kind=kint) :: i,j,i_flg_1, my_rank_monit_1, ierror
-      integer(kind=kint) :: restrt_step_num, substep
+      integer(kind=kint) :: restrt_step_num
+      integer(kind=kint) :: restrt_step(1)
 
 
       if(dabs(fstrDYNAMIC%t_delta) < 1.0e-20) then
@@ -64,7 +64,7 @@ contains
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-	  
+
       my_rank_monit_1 = 999999999
       i_flg_1 = 0
 
@@ -83,7 +83,7 @@ contains
         end if
         enddo
       end if
-	  
+
 !C
 !C-- file open for local use
 !C
@@ -104,25 +104,22 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
         end if
       endif
-	  
+
 !C
 !C-- initial condition
-!C	  
+!C
 	  fstrDYNAMIC%DISP = 0.d0
       fstrDYNAMIC%VEL  = 0.d0
       fstrDYNAMIC%ACC  = 0.d0
       fstrSOLID%unode(:)  =0.d0
 	  fstrSOLID%QFORCE(:) =0.d0
-	  fstrDYNAMIC%kineticEnergy=0.d0                            
+	  fstrDYNAMIC%kineticEnergy=0.d0
 	  fstrDYNAMIC%strainEnergy=0.d0
-	  fstrDYNAMIC%totalEnergy=0.d0                            
+	  fstrDYNAMIC%totalEnergy=0.d0
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
-	  
+
 ! ---- restart 
-      if( fstrDYNAMIC%restart_nout == 0 ) then
-        fstrDYNAMIC%restart_nout = 999999999
-      end if
-	  
+
       restrt_step_num = 1
       fstrDYNAMIC%i_step = 0
       infoCTChange%contactNode_previous = 0
@@ -131,20 +128,21 @@ contains
         call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
         call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
         call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+      endif
 
-      else if(fstrDYNAMIC%restart_nout < 0 ) then
-        if( .not. associated( fstrSOLID%contacts ) ) then                                 
-          call fstr_read_restart_dyna(restrt_step_num,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM) 
-        else                                                
-          call fstr_read_restart_dyna(restrt_step_num,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,& 
-                                      infoCTChange%contactNode_previous)                
-        endif                                                                     
-        fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-        hecMAT%Iarray(98) = 1
-      end if
-
-      if(fstrDYNAMIC%nlflag==0) then	  
+      if(fstrDYNAMIC%nlflag==0) then
         if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
+             if(fstrDYNAMIC%restart_nout < 0 ) then
+               call hecmw_restart_open()
+               call hecmw_restart_read_int(restrt_step)
+               restrt_step_num = restrt_step(1) + 1
+               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
+               call hecmw_restart_read_real(fstrDYNAMIC%VEL (:,1))
+               call hecmw_restart_read_real(fstrDYNAMIC%ACC (:,1))
+               call hecmw_restart_close()
+               fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
+               hecMAT%Iarray(98) = 1
+             endif
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                  call fstr_solve_dynamic_implicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
@@ -157,12 +155,20 @@ contains
              end if
 
         else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
-
+             if(fstrDYNAMIC%restart_nout < 0 ) then
+               call hecmw_restart_open()
+               call hecmw_restart_read_int(restrt_step)
+               restrt_step_num = restrt_step(1) + 1
+               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
+               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,3))
+               call hecmw_restart_close()
+               fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
+               hecMAT%Iarray(98) = 1
+             endif
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                 call fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, my_rank_monit_1, restrt_step_num )
-
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
                     write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
@@ -170,17 +176,29 @@ contains
                  call hecmw_abort( hecmw_comm_get_comm())
              end if
         end if
+
       else
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          if( .not. associated( fstrSOLID%contacts ) ) then
+            call fstr_read_restart_dyna(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
+          else                                                
+            call fstr_read_restart_dyna(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+                                        infoCTChange%contactNode_previous)
+          endif
+          restrt_step_num = restrt_step_num + 1
+          fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
+          hecMAT%Iarray(98) = 1
+        end if
         if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
-               if(.not. associated( fstrSOLID%contacts ) ) then                              
+               if(.not. associated( fstrSOLID%contacts ) ) then
                  call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, my_rank_monit_1, restrt_step_num )
-               elseif( fstrPARAM%contact_algo == kcaSLagrange ) then                         
+               elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
                  call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange ) 
+                                      ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange )
                endif                                                                                                              
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
@@ -203,7 +221,7 @@ contains
              end if
         end if
       endif
-	  
+
 !C-- file close for local use
       if( hecMESH%my_rank == my_rank_monit_1 ) then
         CLOSE(fstrDYNAMIC%dynamic_IW4)
@@ -211,10 +229,10 @@ contains
         CLOSE(fstrDYNAMIC%dynamic_IW6)
       endif
 !C-- end of finalization
-		 
+
       call fstr_dynamic_finalize( fstrDYNAMIC )
       call hecMAT_finalize( hecMAT )
-	  
+
 	      deallocate( myEIG%mass    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, mass>'
@@ -224,6 +242,5 @@ contains
             end if
 
   end subroutine fstr_solve_DYNAMIC
-
 
 end module fstr_solver_dynamic

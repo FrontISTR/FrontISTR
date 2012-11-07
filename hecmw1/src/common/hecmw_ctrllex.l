@@ -43,16 +43,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 !RESULT		{ return flag_header ? HECMW_CTRLLEX_H_RESULT : ' '; }
 ^!RESTART	{ set_flag_header(1); return HECMW_CTRLLEX_H_RESTART; }
 !RESTART	{ return flag_header ? HECMW_CTRLLEX_H_RESTART : ' '; }
-^!COUPLE" "?UNIT	{ set_flag_header(1); return HECMW_CTRLLEX_H_COUPLE_UNIT; }
-!COUPLE" "?UNIT		{ return flag_header ? HECMW_CTRLLEX_H_COUPLE_UNIT : ' '; }
-^!COUPLE	{ set_flag_header(1); return HECMW_CTRLLEX_H_COUPLE; }
-!COUPLE	{ return flag_header ? HECMW_CTRLLEX_H_COUPLE : ' '; }
-^!COUPLE" "?BOUNDARY	{ set_flag_header(1); return HECMW_CTRLLEX_H_COUPLE_BOUNDARY; }
-!COUPLE" "?BOUNDARY		{ return flag_header ? HECMW_CTRLLEX_H_COUPLE_BOUNDARY : ' '; }
-^!UNIT1	{ set_flag_header(1); return HECMW_CTRLLEX_H_UNIT1; }
-!UNIT1	{ return flag_header ? HECMW_CTRLLEX_H_UNIT1 : ' '; }
-^!UNIT2	{ set_flag_header(1); return HECMW_CTRLLEX_H_UNIT2; }
-!UNIT2	{ return flag_header ? HECMW_CTRLLEX_H_UNIT2 : ' '; }
+^!SUBDIR	{ set_flag_header(1); return HECMW_CTRLLEX_H_SUBDIR; }
+!SUBDIR		{ return flag_header ? HECMW_CTRLLEX_H_SUBDIR : ' '; }
 
 ABAQUS			{ set_flag_header(0); return HECMW_CTRLLEX_K_ABAQUS; }
 DIR				{ set_flag_header(0); return HECMW_CTRLLEX_K_DIR; }
@@ -63,30 +55,14 @@ HECMW-ENTIRE	{ set_flag_header(0); return HECMW_CTRLLEX_K_HECMW_ENTIRE; }
 IN				{ set_flag_header(0); return HECMW_CTRLLEX_K_IN; }
 INOUT			{ set_flag_header(0); return HECMW_CTRLLEX_K_INOUT; }
 IO				{ set_flag_header(0); return HECMW_CTRLLEX_K_IO; }
-REFINE			{ set_flag_header(0); return HECMW_CTRLLEX_K_REFINE; }
+LIMIT			{ set_flag_header(0); return HECMW_CTRLLEX_K_LIMIT; }
 NAME			{ set_flag_header(0); return HECMW_CTRLLEX_K_NAME; }
 NASTRAN			{ set_flag_header(0); return HECMW_CTRLLEX_K_NASTRAN; }
+ON				{ set_flag_header(0); return HECMW_CTRLLEX_K_ON; }
+OFF				{ set_flag_header(0); return HECMW_CTRLLEX_K_OFF; }
 OUT				{ set_flag_header(0); return HECMW_CTRLLEX_K_OUT; }
+REFINE			{ set_flag_header(0); return HECMW_CTRLLEX_K_REFINE; }
 TYPE			{ set_flag_header(0); return HECMW_CTRLLEX_K_TYPE; }
-NPROC			{ set_flag_header(0); return HECMW_CTRLLEX_K_NPROC; }
-MXN				{ set_flag_header(0); return HECMW_CTRLLEX_K_MXN; }
-MAXMN			{ set_flag_header(0); return HECMW_CTRLLEX_K_MAXMN; }
-MANUAL			{ set_flag_header(0); return HECMW_CTRLLEX_K_MANUAL; }
-UNIT1			{ set_flag_header(0); return HECMW_CTRLLEX_K_UNIT1; }
-UNIT2			{ set_flag_header(0); return HECMW_CTRLLEX_K_UNIT2; }
-COUPLE			{ set_flag_header(0); return HECMW_CTRLLEX_K_COUPLE; }
-DIRECTION		{ set_flag_header(0); return HECMW_CTRLLEX_K_DIRECTION; }
-UNIT1_TO_UNIT2	{ set_flag_header(0); return HECMW_CTRLLEX_K_UNIT1_TO_UNIT2; }
-UNIT2_TO_UNIT1	{ set_flag_header(0); return HECMW_CTRLLEX_K_UNIT2_TO_UNIT1; }
-INTERPOLATION	{ set_flag_header(0); return HECMW_CTRLLEX_K_INTERPOLATION; }
-TOLERANCE		{ set_flag_header(0); return HECMW_CTRLLEX_K_TOLERANCE; }
-BBCOEF			{ set_flag_header(0); return HECMW_CTRLLEX_K_BBCOEF; }
-BGCOEF			{ set_flag_header(0); return HECMW_CTRLLEX_K_BGCOEF; }
-GEOM			{ set_flag_header(0); return HECMW_CTRLLEX_K_GEOM; }
-DATA			{ set_flag_header(0); return HECMW_CTRLLEX_K_DATA; }
-NODE			{ set_flag_header(0); return HECMW_CTRLLEX_K_NODE; }
-SURFACE			{ set_flag_header(0); return HECMW_CTRLLEX_K_SURFACE; }
-ELEMENT			{ set_flag_header(0); return HECMW_CTRLLEX_K_ELEMENT; }
 
 
 =			{ set_flag_header(0); return '='; }
@@ -210,5 +186,3 @@ HECMW_ctrlwrap(void)
 {
 	return 1;
 }
-
-

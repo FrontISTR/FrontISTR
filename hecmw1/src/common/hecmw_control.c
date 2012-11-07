@@ -17,19 +17,17 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "hecmw_util.h"
 #include "hecmw_control.h"
 #include "hecmw_ctrllex.h"
 #include "hecmw_path.h"
-/* #include "hecmw_couple_control.h"  2007/12/27 S.Ito */
 
 
 static char ctrl_filename[HECMW_FILENAME_LEN+1];
@@ -53,14 +51,12 @@ struct mesh_entry {
 	struct mesh_entry *next;
 };
 
-
 struct mesh_grp_entry {
 	char *name_ID;
 	int n_mesh;
 	struct mesh_entry **mesh;
 	struct mesh_grp_entry *next;
 };
-
 
 struct restart_entry {
 	char *name_ID;
@@ -72,7 +68,6 @@ struct restart_entry {
 	struct restart_entry *next;
 };
 
-
 struct result_entry {
 	char *name_ID;
 	int io;
@@ -83,7 +78,6 @@ struct result_entry {
 	struct result_entry *next;
 };
 
-
 struct ctrl_entry {
 	char *name_ID;
 	char *filename;
@@ -91,6 +85,9 @@ struct ctrl_entry {
 };
 
 
+static int subdir_on = 0;
+
+static int nlimit;
 
 static struct ctrl_entry *ctrl_ent;
 
@@ -102,6 +99,8 @@ static struct restart_entry *restart_ent;
 
 static struct result_entry *result_ent;
 
+
+/*----------------------------------------------------------------------------*/
 
 static int
 is_entire_mesh(int type)
@@ -115,34 +114,34 @@ is_entire_mesh(int type)
 	return 0;
 }
 
-#if 0
-static int
-is_dist_mesh(int type)
-{
-	return (type == HECMW_CTRL_FTYPE_HECMW_DIST) ? 1 : 0;
-}
-#endif
 
-/* return dir + prefix + file + suffix + .rank */
+/* return dir + subdir + prefix + file + suffix + .rank */
 static char *
-make_filename(char *dir, char *prefix, char *file, char *suffix, int flag_rank)
+make_filename(char *dir, char *subdir, char *prefix, char *file, char *suffix, int myrank, int flag_rank)
 {
 	static char filename[HECMW_FILENAME_LEN+1];
-	char rank[100];
-
-	HECMW_assert(file);
+	char rank[10];
+	char separator[10];
 
 	strcpy(filename, "");
 	if(dir && strlen(dir) > 0) {
-		char separator[10];
 		sprintf(separator, "%c", HECMW_get_path_separator());
 		if((strlen(dir) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
 		sprintf(filename, "%s%s", dir, separator);
 	}
 
-	if(prefix) {
-		if((strlen(filename) + strlen(prefix)) > HECMW_FILENAME_LEN) return NULL;
+	if(subdir && strlen(subdir) > 0) {
+		sprintf(separator, "%c", HECMW_get_path_separator());
+		if((strlen(filename) + strlen(subdir) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
+		strcat(filename, subdir);
+		strcat(filename, separator);
+	}
+
+	if(prefix && strlen(prefix) > 0) {
+		sprintf(separator, "%c", HECMW_get_path_separator());
+		if((strlen(filename) + strlen(prefix) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
 		strcat(filename, prefix);
+		strcat(filename, separator);
 	}
 
 	if((strlen(filename) + strlen(file)) > HECMW_FILENAME_LEN) return NULL;
@@ -154,7 +153,7 @@ make_filename(char *dir, char *prefix, char *file, char *suffix, int flag_rank)
 	}
 
 	if(flag_rank) {
-		sprintf(rank, ".%d", HECMW_comm_get_rank());
+		sprintf(rank, ".%d", myrank);
 		if((strlen(filename) + strlen(rank)) > HECMW_FILENAME_LEN) return NULL;
 		strcat(filename, rank);
 	}
@@ -310,18 +309,6 @@ get_result_entry(char *name_ID)
 }
 
 
-static struct result_entry *
-get_result_entry_by_io(int io)
-{
-	struct result_entry *p;
-
-	for(p=result_ent; p; p=p->next) {
-		if(p->io & io) return p;	/* attention!! arg io is bitmap */
-	}
-	return NULL;
-}
-
-
 static struct ctrl_entry *
 get_ctrl_entry(char *name_ID)
 {
@@ -397,7 +384,6 @@ add_mesh_entry(struct mesh_entry *mesh)
 }
 
 
-/* for !MESH GROUP */
 static struct mesh_grp_entry *
 make_mesh_group_entry(char *name_ID, int n_mesh, char **mesh)
 {
@@ -462,13 +448,6 @@ make_result_entry(char *name_ID, int io, int fg_text, char *filename)
 	char *p;
 	struct result_entry *result = NULL;
 
-	HECMW_assert(name_ID);
-	HECMW_assert(strlen(name_ID) < HECMW_NAME_LEN);
-	HECMW_assert(filename);
-	HECMW_assert(strlen(filename) < HECMW_FILENAME_LEN);
-	HECMW_assert(io == HECMW_CTRL_FILE_IO_IN || io == HECMW_CTRL_FILE_IO_OUT);
-	HECMW_assert(fg_text == 0 || fg_text == 1 );
-
 	result = HECMW_calloc(1, sizeof(*result));
 	if(result == NULL) {
 		HECMW_set_error(errno, "");
@@ -527,14 +506,6 @@ make_restart_entry(char *name_ID, int io, char *filename)
 	char *p;
 	struct restart_entry *restart = NULL;
 
-	HECMW_assert(name_ID);
-	HECMW_assert(strlen(name_ID) < HECMW_NAME_LEN);
-	HECMW_assert(filename);
-	HECMW_assert(strlen(filename) < HECMW_FILENAME_LEN);
-	HECMW_assert(io == HECMW_CTRL_FILE_IO_IN
-			|| io == HECMW_CTRL_FILE_IO_OUT
-			|| io == HECMW_CTRL_FILE_IO_INOUT);
-
 	restart = HECMW_calloc(1, sizeof(*restart));
 	if(restart == NULL) {
 		HECMW_set_error(errno, "");
@@ -591,11 +562,6 @@ make_ctrl_entry(char *name_ID, char *filename)
 {
 	char *p;
 	struct ctrl_entry *ctrl = NULL;
-
-	HECMW_assert(name_ID);
-	HECMW_assert(strlen(name_ID) < HECMW_NAME_LEN);
-	HECMW_assert(filename);
-	HECMW_assert(strlen(filename) < HECMW_FILENAME_LEN);
 
 	ctrl = HECMW_calloc(1, sizeof(*ctrl));
 	if(ctrl == NULL) {
@@ -693,10 +659,7 @@ set_err_token(int token, int msgno, const char *fmt, ...)
 }
 
 
-
-/*------------------------------------------------------------------------------
-  ReadFunc
-*/
+/*----------------------------------------------------------------------------*/
 
 static int
 read_mesh_header(void)
@@ -948,6 +911,13 @@ read_mesh(void)
 			HECMW_assert(0);
 		}
 	}
+
+	/* check */
+	if(!strcmp(name,"fstrMSH") && type==HECMW_CTRL_FTYPE_HECMW_ENTIRE && HECMW_comm_get_size()>1) {
+		set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -1313,8 +1283,7 @@ read_result(void)
 	int flag_name = 0;	/* flag for NAME */
 	int flag_io = 0;	/* flag for IO */
 	int io;
-	int fg_text = 1; /* default : text */
-
+	int fg_text;		/* default : text */
 	char name[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
@@ -1322,6 +1291,8 @@ read_result(void)
 		ST_HEADER_LINE_PARAM,
 		ST_DATA_LINE,
 	};
+
+	fg_text = 1;
 
 	state = ST_HEADER_LINE;
 	while(state != ST_FINISHED) {
@@ -1718,6 +1689,112 @@ read_control(void)
 	return 0;
 }
 
+
+/*----------------------------------------------------------------------------*/
+
+static int
+read_subdir_head(void)
+{
+	int token;
+
+	/* !SUBDIR */
+	token = HECMW_ctrllex_next_token();
+	if(token != HECMW_CTRLLEX_H_SUBDIR) {
+		set_err(HECMW_UTIL_E0060, "!SUBDIR required");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_ctrllex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_UTIL_E0060, "',' required after !SUBDIR");
+		return -1;
+	}
+	return 0;
+}
+
+
+static int
+read_subdir_head_param_limit(void)
+{
+	int token;
+	char *p;
+
+	token = HECMW_ctrllex_next_token();
+	if(token != '=') {
+		set_err_token(token, HECMW_UTIL_E0060, "'=' required after LIMIT");
+		return -1;
+	}
+	/* LIMIT value */
+	token = HECMW_ctrllex_next_token();
+	if(token != HECMW_CTRLLEX_INT) {
+		set_err_token(token, HECMW_UTIL_E0060, "Invalid LIMIT");
+		return -1;
+	} else {
+		nlimit = HECMW_ctrllex_get_number();
+	}
+	return 0;
+}
+
+
+static int
+read_subdir(void)
+{
+	int token,state;
+	int flag_name = 0;	/* flag for NAME */
+	char name[HECMW_NAME_LEN+1] = "";
+	enum {
+		ST_FINISHED,
+		ST_HEADER_LINE,
+		ST_HEADER_LINE_PARAM,
+	};
+
+	nlimit = 5000;
+
+	state = ST_HEADER_LINE;
+	while(state != ST_FINISHED) {
+		if(state == ST_HEADER_LINE) {
+			if(read_subdir_head()) return -1;
+			/* set next state */
+			state = ST_HEADER_LINE_PARAM;
+		} else if(state == ST_HEADER_LINE_PARAM) {
+			token = HECMW_ctrllex_next_token();
+			if(token == HECMW_CTRLLEX_K_ON) {
+				/* must */
+				subdir_on = 1;
+				flag_name = 1;
+			} else if(token == HECMW_CTRLLEX_K_OFF) {
+				/* must */
+				subdir_on = 0;
+				flag_name = 1;
+			} else if(token == HECMW_CTRLLEX_K_LIMIT) {
+				if(read_subdir_head_param_limit()) return -1;
+			} else {
+				set_err_token(token, HECMW_UTIL_E0060, "Unknown parameter");
+				return -1;
+			}
+			/* check next parameter */
+			token = HECMW_ctrllex_next_token();
+			if(token == HECMW_CTRLLEX_NL) {
+				if(!flag_name) {
+					set_err(HECMW_UTIL_E0061, "");
+					return -1;
+				}
+				state = ST_FINISHED;
+			} else if(token == ',') {
+				;	/* continue this state */
+			} else {
+				set_err_token(token, HECMW_UTIL_E0060, "Unknown parameter");
+				return -1;
+			}
+		} else {
+			HECMW_assert(0);
+		}
+	}
+	return 0;
+}
+
+
 /*------------------------------------------------------------------------------
   ReadFunc table
 */
@@ -1734,9 +1811,7 @@ static struct read_func_table {
 	{ HECMW_CTRLLEX_H_MESH_GROUP, read_meshgrp },
 	{ HECMW_CTRLLEX_H_RESULT,  read_result  },
 	{ HECMW_CTRLLEX_H_RESTART, read_restart },
-/*     { HECMW_CTRLLEX_H_COUPLE_UNIT, HECMW_couple_ctrl_unit },          2007/12/27 S.Ito */
-/*     { HECMW_CTRLLEX_H_COUPLE, HECMW_couple_ctrl_couple },             2007/12/27 S.Ito */
-/* 	{ HECMW_CTRLLEX_H_COUPLE_BOUNDARY, HECMW_couple_ctrl_boundary }, 2007/12/27 S.Ito */
+	{ HECMW_CTRLLEX_H_SUBDIR, read_subdir },
 };
 
 #define N_READ_FUNC (sizeof(read_func_table) / sizeof(read_func_table[0]))
@@ -1783,7 +1858,6 @@ parse(void)
 	}
 	return 0;
 }
-
 
 
 
@@ -1861,17 +1935,27 @@ HECMW_ctrl_free_meshfiles(struct hecmw_ctrl_meshfiles *meshfiles)
 }
 
 
+
 static struct hecmw_ctrl_meshfiles *
-make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int flag_rank_none)
+make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int n_rank, int i_rank, int flag_rank_none)
 {
-	int i,flag_rank;
+	int i,flag_rank,nrank,myrank,irank;
 	char *fname;
 	struct hecmw_ctrl_meshfiles *files;
+	char prefix[10];
 
 	files = HECMW_malloc(sizeof(*files));
 	if(files == NULL) {
 		HECMW_set_error(errno, "");
 		return NULL;
+	}
+
+	if(n_rank == 0) {
+		nrank  = HECMW_comm_get_size();
+		myrank = HECMW_comm_get_rank();
+	} else {
+		nrank  = n_rank;
+		myrank = i_rank;
 	}
 
 	files->n_mesh = n_mesh;
@@ -1900,7 +1984,19 @@ make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int flag_rank_none)
 			}
 		}
 
-		fname = make_filename(NULL, "",  ment->filename, "", flag_rank);
+		if(ment->type == HECMW_CTRL_FTYPE_HECMW_ENTIRE) {
+				fname = make_filename(NULL, NULL, NULL, ment->filename, "", myrank, flag_rank);
+		} else {
+			if(subdir_on && nrank > nlimit) {
+				irank = myrank / nlimit;
+				sprintf(prefix, "RANK%d", irank);
+				fname = make_filename("MESH", NULL, prefix, ment->filename, "", myrank, flag_rank);
+			} else if(subdir_on) {
+				fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank, flag_rank);
+			} else {
+				fname = make_filename(NULL, NULL, NULL, ment->filename, "", myrank, flag_rank);
+			}
+		}
 		if(fname == NULL) {
 			HECMW_set_error(HECMW_IO_E0002, "Cannot create mesh filename");
 			return NULL;
@@ -1917,7 +2013,7 @@ make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int flag_rank_none)
 
 
 static struct hecmw_ctrl_meshfiles *
-get_meshfiles(char *name_ID, int flag_rank_none)
+get_meshfiles(char *name_ID, int n_rank, int i_rank, int flag_rank_none)
 {
 	struct mesh_entry *mesh;
 	struct mesh_grp_entry *mesh_grp;
@@ -1925,14 +2021,14 @@ get_meshfiles(char *name_ID, int flag_rank_none)
 
 	mesh_grp = get_mesh_grp_entry(name_ID);
 	if(mesh_grp) {
-		files = make_meshfiles_struct(mesh_grp->n_mesh, mesh_grp->mesh, flag_rank_none);
+		files = make_meshfiles_struct(mesh_grp->n_mesh, mesh_grp->mesh, n_rank, i_rank, flag_rank_none);
 		if(files == NULL) return NULL;
 	}
 
 	if(files == NULL) {
 		mesh = get_mesh_entry(name_ID);
 		if(mesh) {
-			files = make_meshfiles_struct(1, &mesh, flag_rank_none);
+			files = make_meshfiles_struct(1, &mesh, n_rank, i_rank, flag_rank_none);
 			if(files == NULL) return NULL;
 		}
 	}
@@ -1946,28 +2042,42 @@ get_meshfiles(char *name_ID, int flag_rank_none)
 }
 
 
-
 struct hecmw_ctrl_meshfiles *
 HECMW_ctrl_get_meshfiles(char *name_ID)
 {
-	return get_meshfiles(name_ID, 0);
+	return get_meshfiles(name_ID, 0, 0, 0);
 }
-
 
 
 struct hecmw_ctrl_meshfiles *
 HECMW_ctrl_get_meshfiles_header(char *name_ID)
 {
-	return get_meshfiles(name_ID, 1);
+	return get_meshfiles(name_ID, 0, 0, 1);
 }
 
 
-static char *
-get_result_file(char *name_ID, char *buf, int bufsize, int* fg_text, int flag_rank_none)
+struct hecmw_ctrl_meshfiles *
+HECMW_ctrl_get_meshfiles_sub(char *name_ID, int n_rank, int i_rank)
 {
-	int len;
+	return get_meshfiles(name_ID, n_rank, i_rank, 0);
+}
+
+
+struct hecmw_ctrl_meshfiles *
+HECMW_ctrl_get_meshfiles_header_sub(char *name_ID, int n_rank, int i_rank)
+{
+	return get_meshfiles(name_ID, n_rank, i_rank, 1);
+}
+
+
+
+static char *
+get_result_file(char *name_ID, int nstep, int istep, int n_rank, int i_rank, int* fg_text, int flag_rank_none)
+{
+	int nrank,myrank,irank;
 	char *fname, *retfname;
 	struct result_entry *result;
+	char subname[10],prefix[10];
 
 	result = get_result_entry(name_ID);
 	if(result == NULL) {
@@ -1975,124 +2085,85 @@ get_result_file(char *name_ID, char *buf, int bufsize, int* fg_text, int flag_ra
 		return NULL;
 	}
 
-	fname = make_filename(NULL, NULL, result->filename,
-			NULL, flag_rank_none ? 0 : 1);
+	if(n_rank == 0) {
+		nrank  = HECMW_comm_get_size();
+		myrank = HECMW_comm_get_rank();
+	} else {
+		nrank  = n_rank;
+		myrank = i_rank;
+	}
+
+	if(subdir_on && !strcmp(name_ID, "vis_out")) {
+		fname = make_filename(name_ID, NULL, NULL, result->filename, "", myrank, flag_rank_none);
+	} else if(subdir_on && nstep > 1 && nrank > nlimit) {
+		sprintf(subname, "STEP%d", istep);
+		irank = myrank / nlimit;
+		sprintf(prefix, "RANK%d", irank);
+		fname = make_filename(name_ID, subname, prefix, result->filename, "", myrank, flag_rank_none);
+	} else if(subdir_on && nstep > 1) {
+		sprintf(subname, "STEP%d", istep);
+		fname = make_filename(name_ID, subname, NULL, result->filename, "", myrank, flag_rank_none);
+	} else if(subdir_on && nrank > nlimit) {
+		irank = myrank / nlimit;
+		sprintf(prefix, "RANK%d", irank);
+		fname = make_filename(name_ID, NULL, prefix, result->filename, "", myrank, flag_rank_none);
+	} else if(subdir_on) {
+		fname = make_filename(name_ID, NULL, NULL, result->filename, "", myrank, flag_rank_none);
+	} else {
+		fname = make_filename(NULL, NULL, NULL, result->filename, "", myrank, flag_rank_none);
+	}
 	if(fname == NULL) {
 		HECMW_set_error(HECMW_IO_E0002, "Cannot create result filename");
 		return NULL;
 	}
 
-	if(buf == NULL) {
-		retfname = HECMW_strdup(fname);
-		if(retfname == NULL) {
-			HECMW_set_error(errno, "");
-			return NULL;
-		}
-	} else {
-		len = strlen(fname);
-		if(bufsize <= len) {
-			len = bufsize - 1;
-		}
-		strncpy(buf, fname, len);
-		buf[len] = '\0';
-		retfname = buf;
+	retfname = HECMW_strdup(fname);
+	if(retfname == NULL) {
+		HECMW_set_error(errno, "");
+		return NULL;
 	}
-
 	*fg_text = result->fg_text;
-	return retfname;
-}
-
-
-
-char *
-HECMW_ctrl_get_result_file(char *name_ID, char *buf, int bufsize, int* fg_text)
-{
-	return get_result_file(name_ID, buf, bufsize, fg_text, 0);
-}
-
-char*
-HECMW_ctrl_get_result_file_type(char *name_ID, char *buf, int bufsize, int* fg_text)
-{
-	return get_result_file(name_ID, buf, bufsize, fg_text, 0 );
-}
-
-
-
-char *
-HECMW_ctrl_get_result_fileheader(char *name_ID, char *buf, int bufsize)
-{
-	int fg_text = 1;
-	return get_result_file(name_ID, buf, bufsize, &fg_text, 1);
-}
-
-static char *
-get_result_file_by_io(int io, char *buf, int bufsize, int* fg_text, int flag_rank_none)
-{
-	int len;
-	char *fname, *retfname;
-	struct result_entry *p;
-
-	p = get_result_entry_by_io(io);
-	if(p == NULL) {
-		HECMW_set_error(HECMW_UTIL_E0025, "");
-		return NULL;
-	}
-
-	fname = make_filename(NULL, NULL, p->filename, NULL, flag_rank_none ? 0 : 1);
-	if(fname == NULL) {
-		HECMW_set_error(HECMW_IO_E0002, "Cannot create result filename");
-		return NULL;
-	}
-
-	if(buf == NULL) {
-		retfname = HECMW_strdup(fname);
-		if(retfname == NULL) {
-			HECMW_set_error(errno, "");
-			return NULL;
-		}
-	} else {
-		len = strlen(fname);
-		if(bufsize <= len) {
-			len = bufsize - 1;
-		}
-		strncpy(buf, fname, len);
-		buf[len] = '\0';
-		retfname = buf;
-	}
 
 	return retfname;
 }
 
 
 char *
-HECMW_ctrl_get_result_file_by_io(int io, char *buf, int bufsize, int* fg_text)
+HECMW_ctrl_get_result_file(char *name_ID, int nstep, int istep, int* fg_text)
 {
-	return get_result_file_by_io(io, buf, bufsize, fg_text, 0);
+	return get_result_file(name_ID, nstep, istep, 0, 0, fg_text, 1);
 }
 
-char*
-HECMW_ctrl_get_result_file_type_by_io(int io, char *buf, int bufsize, int* fg_text)
+
+char *
+HECMW_ctrl_get_result_fileheader(char *name_ID, int nstep, int istep, int* fg_text)
 {
-	return get_result_file_by_io(io, buf, bufsize, fg_text, 0);
+	return get_result_file(name_ID, nstep, istep, 0, 0, fg_text, 0);
+}
+
+
+char *
+HECMW_ctrl_get_result_file_sub(char *name_ID, int nstep, int istep, int n_rank, int i_rank, int* fg_text)
+{
+	return get_result_file(name_ID, nstep, istep, n_rank, i_rank, fg_text, 1);
+}
+
+
+char *
+HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int nstep, int istep, int n_rank, int i_rank, int* fg_text)
+{
+	return get_result_file(name_ID, nstep, istep, n_rank, i_rank, fg_text, 0);
 }
 
 
 
 char *
-HECMW_ctrl_get_result_fileheader_by_io(int io, char *buf, int bufsize)
+HECMW_ctrl_get_restart_file(char *name_ID)
 {
-	int fg_text = 1;
-	return get_result_file_by_io(io, buf, bufsize, &fg_text, 1);
-}
-
-
-
-char *
-HECMW_ctrl_get_restart_file(char *name_ID, char *buf, int bufsize)
-{
-	int len;
+	int nrank,myrank,irank;
 	char *fname, *retfname;
 	struct restart_entry *restart;
+	char prefix[10];
 
 	restart = get_restart_entry(name_ID);
 	if(restart == NULL) {
@@ -2100,39 +2171,40 @@ HECMW_ctrl_get_restart_file(char *name_ID, char *buf, int bufsize)
 		return NULL;
 	}
 
-	fname = make_filename(NULL, NULL, restart->filename, NULL, 1);
+	nrank  = HECMW_comm_get_size();
+	myrank = HECMW_comm_get_rank();
+
+	if(subdir_on && nrank > nlimit) {
+		irank = myrank / nlimit;
+		sprintf(prefix, "RANK%d", irank);
+		fname = make_filename(name_ID, NULL, prefix, restart->filename, "", myrank, 1);
+	} else if(subdir_on) {
+		fname = make_filename(name_ID, NULL, NULL, restart->filename, "", myrank, 1);
+	} else {
+		fname = make_filename(NULL, NULL, NULL, restart->filename, "", myrank, 1);
+	}
 	if(fname == NULL) {
 		HECMW_set_error(HECMW_IO_E0002, "Cannot create restart filename");
 		return NULL;
 	}
 
-	if(buf == NULL) {
-		retfname = HECMW_strdup(fname);
-		if(retfname == NULL) {
-			HECMW_set_error(errno, "");
-			return NULL;
-		}
-	} else {
-		len = strlen(fname);
-		if(bufsize <= len) {
-			len = bufsize - 1;
-		}
-		strncpy(buf, fname, len);
-		buf[len] = '\0';
-		retfname = buf;
+	retfname = HECMW_strdup(fname);
+	if(retfname == NULL) {
+		HECMW_set_error(errno, "");
+		return NULL;
 	}
 
 	return retfname;
 }
 
 
-
 char *
-HECMW_ctrl_get_restart_file_by_io(int io, char *buf, int bufsize)
+HECMW_ctrl_get_restart_file_by_io(int io)
 {
-	int len;
+	int nrank,myrank,irank;
 	char *fname, *retfname;
 	struct restart_entry *p;
+	char prefix[10];
 
 	p = get_restart_entry_by_io(io);
 	if(p == NULL) {
@@ -2140,26 +2212,27 @@ HECMW_ctrl_get_restart_file_by_io(int io, char *buf, int bufsize)
 		return NULL;
 	}
 
-	fname = make_filename(NULL, NULL, p->filename, NULL, 1);
+	nrank  = HECMW_comm_get_size();
+	myrank = HECMW_comm_get_rank();
+
+	if(subdir_on && nrank > nlimit) {
+		irank = myrank / nlimit;
+		sprintf(prefix, "RANK%d", irank);
+		fname = make_filename(p->name_ID, NULL, prefix, p->filename, "", myrank, 1);
+	} else if(subdir_on) {
+		fname = make_filename(p->name_ID, NULL, NULL, p->filename, "", myrank, 1);
+	} else {
+		fname = make_filename(NULL, NULL, NULL, p->filename, "", myrank, 1);
+	}
 	if(fname == NULL) {
 		HECMW_set_error(HECMW_IO_E0002, "Cannot create restart filename");
 		return NULL;
 	}
 
-	if(buf == NULL) {
-		retfname = HECMW_strdup(fname);
-		if(retfname == NULL) {
-			HECMW_set_error(errno, "");
-			return NULL;
-		}
-	} else {
-		len = strlen(fname);
-		if(bufsize <= len) {
-			len = bufsize - 1;
-		}
-		strncpy(buf, fname, len);
-		buf[len] = '\0';
-		retfname = buf;
+	retfname = HECMW_strdup(fname);
+	if(retfname == NULL) {
+		HECMW_set_error(errno, "");
+		return NULL;
 	}
 
 	return retfname;
@@ -2168,10 +2241,9 @@ HECMW_ctrl_get_restart_file_by_io(int io, char *buf, int bufsize)
 
 
 char *
-HECMW_ctrl_get_control_file(char *name_ID, char *buf, int bufsize)
+HECMW_ctrl_get_control_file(char *name_ID)
 {
-	int len;
-	char *fname, *retfname;
+	char *fname;
 	struct ctrl_entry *ctrl;
 
 	ctrl = get_ctrl_entry(name_ID);
@@ -2180,25 +2252,9 @@ HECMW_ctrl_get_control_file(char *name_ID, char *buf, int bufsize)
 		return NULL;
 	}
 
-	fname = ctrl->filename;
+	fname = HECMW_strdup(ctrl->filename);
 
-	if(buf == NULL) {
-		retfname = HECMW_strdup(fname);
-		if(retfname == NULL) {
-			HECMW_set_error(errno, "");
-			return NULL;
-		}
-	} else {
-		len = strlen(fname);
-		if(bufsize <= len) {
-			len = bufsize - 1;
-		}
-		strncpy(buf, fname, len);
-		buf[len] = '\0';
-		retfname = buf;
-	}
-
-	return retfname;
+	return fname;
 }
 
 
@@ -2209,8 +2265,45 @@ HECMW_ctrl_is_exists_control(char *name_ID)
 }
 
 
+int
+HECMW_ctrl_make_subdir(char *filename)
+{
+	char fname[HECMW_FILENAME_LEN+1];
+	char dirname[HECMW_FILENAME_LEN+1];
+	char *token;
+	char separator[10];
+	mode_t mode;
+
+	mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+	strcpy(fname, filename);
+	sprintf(separator, "%c", HECMW_get_path_separator());
+
+	token = strtok(fname, separator);
+	sprintf(dirname, "%s", token);
+	token = strtok(NULL, separator);
+	while(token) {
+		if(opendir(dirname) == NULL) {
+			if(mkdir(dirname, mode) != 0) {
+				if(errno != EEXIST) return -1;
+			}
+		}
+		strcat(dirname, separator);
+		strcat(dirname, token);
+		token = strtok(NULL, separator);
+	}
+
+	return 0;
+}
 
 
+int
+HECMW_ctrl_is_subdir(void)
+{
+	return subdir_on;
+}
+
+
+/*---------------------------------------------------------------------------*/
 
 void
 hecmw_ctrl_init_if(int *err)
@@ -2220,23 +2313,17 @@ hecmw_ctrl_init_if(int *err)
 	*err = 0;
 }
 
-
-
 void
 hecmw_ctrl_init_if_(int *err)
 {
 	hecmw_ctrl_init_if(err);
 }
 
-
-
 void
 hecmw_ctrl_init_if__(int *err)
 {
 	hecmw_ctrl_init_if(err);
 }
-
-
 
 void
 HECMW_CTRL_INIT_IF(int *err)
@@ -2260,23 +2347,17 @@ hecmw_ctrl_init_ex_if(char *ctrlfile, int *err, int len)
 	*err = 0;
 }
 
-
-
 void
 hecmw_ctrl_init_ex_if_(char *ctrlfile, int *err, int len)
 {
 	hecmw_ctrl_init_ex_if(ctrlfile, err, len);
 }
 
-
-
 void
 hecmw_ctrl_init_ex_if__(char *ctrlfile, int *err, int len)
 {
 	hecmw_ctrl_init_ex_if(ctrlfile, err, len);
 }
-
-
 
 void
 HECMW_CTRL_INIT_EX_IF(char *ctrlfile, int *err, int len)
@@ -2287,14 +2368,11 @@ HECMW_CTRL_INIT_EX_IF(char *ctrlfile, int *err, int len)
 
 /*---------------------------------------------------------------------------*/
 
-
 void
 hecmw_ctrl_finalize_if(void)
 {
 	HECMW_ctrl_finalize();
 }
-
-
 
 void
 hecmw_ctrl_finalize_if_(void)
@@ -2302,15 +2380,11 @@ hecmw_ctrl_finalize_if_(void)
 	hecmw_ctrl_finalize_if();
 }
 
-
-
 void
 hecmw_ctrl_finalize_if__(void)
 {
 	hecmw_ctrl_finalize_if();
 }
-
-
 
 void
 HECMW_CTRL_FINALIZE_IF(void)
@@ -2321,25 +2395,22 @@ HECMW_CTRL_FINALIZE_IF(void)
 
 /*---------------------------------------------------------------------------*/
 
-
 void
 hecmw_ctrl_get_control_file_if(char *name_ID, char *buf, int *err, int name_len, int buf_len)
 {
 	char c_name_ID[HECMW_NAME_LEN+1];
-	char c_buf[HECMW_FILENAME_LEN+1];
+	char *c_buf;
 
 	*err = 1;
 
 	if(HECMW_strcpy_f2c_r(name_ID, name_len, c_name_ID, sizeof(c_name_ID)) == NULL) return;
 
-	if(HECMW_ctrl_get_control_file(c_name_ID, c_buf, sizeof(c_buf)) == NULL) return;
+	if((c_buf = HECMW_ctrl_get_control_file(c_name_ID)) == NULL) return;
 
 	if(HECMW_strcpy_c2f(c_buf, buf, buf_len) == 0) return;
 
 	*err = 0;
 }
-
-
 
 void
 hecmw_ctrl_get_control_file_if_(char *name_ID, char *buf, int *err, int name_len, int buf_len)
@@ -2347,15 +2418,11 @@ hecmw_ctrl_get_control_file_if_(char *name_ID, char *buf, int *err, int name_len
 	hecmw_ctrl_get_control_file_if(name_ID, buf, err, name_len, buf_len);
 }
 
-
-
 void
 hecmw_ctrl_get_control_file_if__(char *name_ID, char *buf, int *err, int name_len, int buf_len)
 {
 	hecmw_ctrl_get_control_file_if(name_ID, buf, err, name_len, buf_len);
 }
-
-
 
 void
 HECMW_CTRL_GET_CONTROL_FILE_IF(char *name_ID, char *buf, int *err, int name_len, int buf_len)
@@ -2363,3 +2430,65 @@ HECMW_CTRL_GET_CONTROL_FILE_IF(char *name_ID, char *buf, int *err, int name_len,
 	hecmw_ctrl_get_control_file_if(name_ID, buf, err, name_len, buf_len);
 }
 
+
+/*---------------------------------------------------------------------------*/
+
+void
+hecmw_ctrl_make_subdir(char *filename, int *err, int len)
+{
+	char fname[HECMW_FILENAME_LEN+1];
+
+	*err = 1;
+
+	if(HECMW_strcpy_f2c_r(filename, len, fname, sizeof(fname)) == NULL) return;
+
+	if(HECMW_ctrl_make_subdir(fname) != 0) return;
+
+	*err = 0;
+}
+
+void
+hecmw_ctrl_make_subdir_(char *filename, int *err, int len)
+{
+	hecmw_ctrl_make_subdir(filename, err, len);
+}
+
+void
+hecmw_ctrl_make_subdir__(char *filename, int *err, int len)
+{
+	hecmw_ctrl_make_subdir(filename, err, len);
+}
+
+void
+HECMW_CTRL_MAKE_SUBDIR(char *filename, int *err, int len)
+{
+	hecmw_ctrl_make_subdir(filename, err, len);
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+void
+hecmw_ctrl_is_subdir(int *flag, int *limit)
+{
+	*flag = subdir_on;
+	*limit = nlimit;
+}
+
+void
+hecmw_ctrl_is_subdir_(int *flag, int *limit)
+{
+	hecmw_ctrl_is_subdir(flag, limit);
+}
+
+void
+hecmw_ctrl_is_subdir__(int *flag, int *limit)
+{
+	hecmw_ctrl_is_subdir(flag, limit);
+}
+
+void
+HECMW_CTRL_IS_SUBDIR(int *flag, int *limit)
+{
+	hecmw_ctrl_is_subdir(flag, limit);
+}

@@ -18,7 +18,7 @@ module m_heat_solve_TRAN
 !C
 !C** TRANSIENT
 !C
-   subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME, maxincr )
+   subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
 
       use m_fstr
       use m_heat_mat_ass_conductivity
@@ -29,7 +29,7 @@ module m_heat_solve_TRAN
       use m_hecmw2fstr_mesh_conv
 
       implicit none
-      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,nd,id,ndof,maxincr,tstep
+      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,id,ndof,max_step,tstep,interval
       real(kind=kreal)   CTIME,ST,DTIME,EETIME,DELMAX,DELMIN,TT,BETA,VAL,CHK,tmpmax,dltmp,tmpmax_myrank
 !C file name
       character(len=HECMW_HEADER_LEN) :: header
@@ -72,6 +72,7 @@ module m_heat_solve_TRAN
       write(*,*) '    TT=',TT
       write(*,*) 'NPRINT=',NPRINT
 
+      max_step = ( EETIME + 0.1d0 * DTIME ) / DTIME
       BETA = 0.5
       incr = 0
       iend = 0
@@ -80,7 +81,8 @@ module m_heat_solve_TRAN
       hecMAT%Iarray(98) = 1   !Assmebly complete
 
 !C Restart read
-      if( fstrPARAM%fg_irres .eq. kYES ) then
+      if( fstrHEAT%restart_nout < 0 ) then
+        fstrHEAT%restart_nout = -fstrHEAT%restart_nout
         call hecmw_restart_open()
         call hecmw_restart_read_int(restart_step)
         call hecmw_restart_read_real(restart_time)
@@ -100,7 +102,7 @@ module m_heat_solve_TRAN
       tr_loop: do
 !C--------------------
         incr = incr + 1
-        if( TT+DTIME >= EETIME ) then
+        if( TT+DTIME*1.0000001d0 >= EETIME ) then
           DTIME = EETIME - TT
           TT = EETIME
           iend = 1
@@ -112,22 +114,14 @@ module m_heat_solve_TRAN
 
         if( hecMESH%my_rank.eq.0 ) then
             write(IMSG,*)
-            write(IMSG,*) '// INCREMENT NO. =',incr, TT, DTIME
+            write(IMSG,*) '// INCREMENT NO. =', incr, TT, DTIME
             write(*,*)
-            write(*,*) '// INCREMENT NO. =',incr, TT, DTIME
+            write(*,*) '// INCREMENT NO. =', incr, TT, DTIME
         endif
 
         if( DTIME .lt.DELMIN ) then
           if( hecMESH%my_rank.eq.0 ) then
             write(IMSG,*) ' !!! DELTA TIME EXCEEDED TOLERANCE OF TIME INCREMENT'
-            call flush(IMSG)
-          endif
-          call hecmw_abort( hecmw_comm_get_comm() )
-        endif
-
-        if( incr > maxincr ) then
-          if( hecMESH%my_rank==0 ) then
-            write(IMSG,*) ' !!! NUMBER OF INCREMENTS EXCEEDED MAXIMUM INCREMENTS'
             call flush(IMSG)
           endif
           call hecmw_abort( hecmw_comm_get_comm() )
@@ -274,10 +268,9 @@ module m_heat_solve_TRAN
           enddo
           call flush(ILOG)
 
-          if( IRESULT==1 ) then
-            nd = tstep
+          if( IRESULT.eq.1 .and. (mod(tstep,IRRES).eq.0 .or. tstep.eq.max_step) ) then
             header = '*fstrresult'
-            call hecmw_result_init( hecMESH,nd,header )
+            call hecmw_result_init( hecMESH,max_step,tstep,header )
             id    = 1
             ndof  = 1
             label = 'TEMPERATURE'
@@ -291,12 +284,13 @@ module m_heat_solve_TRAN
             endif
           endif
 
-          if( IVISUAL.eq.1 ) then
+          if( IVISUAL.eq.1 .and. (mod(tstep,IWRES).eq.0 .or. tstep.eq.max_step) ) then
+            interval = IWRES
             call heat_init_result ( hecMESH, fstrRESULT )
             call heat_make_result ( hecMESH, fstrHEAT, fstrRESULT )
             call fstr2hecmw_mesh_conv(hecMESH)
             call hecmw_visualize_init
-            call hecmw_visualize ( hecMESH,fstrRESULT,tstep,tstep,0 )
+            call hecmw_visualize ( hecMESH,fstrRESULT,tstep,max_step,interval )
             call hecmw_visualize_finalize
             call hecmw2fstr_mesh_conv(hecMESH)
             call hecmw_result_free(fstrRESULT)
@@ -307,7 +301,7 @@ module m_heat_solve_TRAN
           endif
 
 !C Restart write
-          if( fstrPARAM%fg_iwres .eq. kYES ) then
+          if( fstrHEAT%restart_nout > 0 .and. (mod(tstep,fstrHEAT%restart_nout).eq.0 .or. tstep.eq.max_step) ) then
             restart_step(1) = tstep
             restart_time(1) = CTIME
             restrt_data_size = size(restart_step)

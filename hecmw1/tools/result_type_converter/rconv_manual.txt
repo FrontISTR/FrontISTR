@@ -3,6 +3,8 @@
 
  [option]
     -o [file] : output file name without rank and step number
-    -s [step] : step number (default:1)
+	-s [step] : start step number    ( default:1 )
+	-e [step] : end step number      ( default:1 )
+	-i [step] : interval step number ( default:1 )
     -h        : help
 

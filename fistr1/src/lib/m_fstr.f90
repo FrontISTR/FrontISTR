@@ -318,6 +318,7 @@ public
                 ! TIME CONTROL
                 real(kind=kreal) :: TEMTOL
                 integer :: STEPtot
+                integer(kind=kint) :: restart_nout
                 real(kind=kreal), pointer :: STEP_DLTIME(:),STEP_EETIME(:)
                 real(kind=kreal), pointer :: STEP_DELMIN(:),STEP_DELMAX(:)
 

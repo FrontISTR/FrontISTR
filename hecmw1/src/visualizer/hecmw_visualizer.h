@@ -34,12 +34,10 @@ int
 HECMW_visualize_init_by_comm(HECMW_Comm comm);
 
 int
-HECMW_visualize( struct hecmwST_local_mesh *mesh,
-		struct hecmwST_result_data *result,
-		int timestep, int max_timestep, int is_force );
+HECMW_visualize( struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *result,
+				 int timestep, int max_timestep, int interval );
 
 int
 HECMW_visualize_finalize(void);
-
 
 #endif /* HECMW_VISUALIZER_H_INCLUDED */

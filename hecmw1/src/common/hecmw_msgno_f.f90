@@ -340,21 +340,23 @@ module hecmw_msgno
     integer(kind=kint),parameter :: HECMW_UTIL_E0053 = 10332
     integer(kind=kint),parameter :: HECMW_UTIL_E0054 = 10333
     integer(kind=kint),parameter :: HECMW_UTIL_E0055 = 10334
-    integer(kind=kint),parameter :: HECMW_UTIL_E0101 = 10335
-    integer(kind=kint),parameter :: HECMW_UTIL_E0102 = 10336
-    integer(kind=kint),parameter :: HECMW_UTIL_E0103 = 10337
-    integer(kind=kint),parameter :: HECMW_UTIL_E0104 = 10338
-    integer(kind=kint),parameter :: HECMW_UTIL_E0105 = 10339
-    integer(kind=kint),parameter :: HECMW_UTIL_E0201 = 10340
-    integer(kind=kint),parameter :: HECMW_UTIL_E0202 = 10341
-    integer(kind=kint),parameter :: HECMW_UTIL_E0203 = 10342
-    integer(kind=kint),parameter :: HECMW_UTIL_E0204 = 10343
-    integer(kind=kint),parameter :: HECMW_UTIL_E0205 = 10344
-    integer(kind=kint),parameter :: HECMW_UTIL_E0206 = 10345
-    integer(kind=kint),parameter :: HECMW_UTIL_E0207 = 10346
-    integer(kind=kint),parameter :: HECMW_UTIL_E9001 = 10347
-    integer(kind=kint),parameter :: HECMW_UTIL_E9011 = 10348
-    integer(kind=kint),parameter :: HECMW_UTIL_E9012 = 10349
-    integer(kind=kint),parameter :: HECMW_UTIL_E9013 = 10350
+    integer(kind=kint),parameter :: HECMW_UTIL_E0060 = 10335
+    integer(kind=kint),parameter :: HECMW_UTIL_E0061 = 10336
+    integer(kind=kint),parameter :: HECMW_UTIL_E0101 = 10337
+    integer(kind=kint),parameter :: HECMW_UTIL_E0102 = 10338
+    integer(kind=kint),parameter :: HECMW_UTIL_E0103 = 10339
+    integer(kind=kint),parameter :: HECMW_UTIL_E0104 = 10340
+    integer(kind=kint),parameter :: HECMW_UTIL_E0105 = 10341
+    integer(kind=kint),parameter :: HECMW_UTIL_E0201 = 10342
+    integer(kind=kint),parameter :: HECMW_UTIL_E0202 = 10343
+    integer(kind=kint),parameter :: HECMW_UTIL_E0203 = 10344
+    integer(kind=kint),parameter :: HECMW_UTIL_E0204 = 10345
+    integer(kind=kint),parameter :: HECMW_UTIL_E0205 = 10346
+    integer(kind=kint),parameter :: HECMW_UTIL_E0206 = 10347
+    integer(kind=kint),parameter :: HECMW_UTIL_E0207 = 10348
+    integer(kind=kint),parameter :: HECMW_UTIL_E9001 = 10349
+    integer(kind=kint),parameter :: HECMW_UTIL_E9011 = 10350
+    integer(kind=kint),parameter :: HECMW_UTIL_E9012 = 10351
+    integer(kind=kint),parameter :: HECMW_UTIL_E9013 = 10352
 
 end module hecmw_msgno

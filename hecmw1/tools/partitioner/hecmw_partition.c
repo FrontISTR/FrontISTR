@@ -15,7 +15,6 @@
  *                                                                     *
  *=====================================================================*/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8074,7 +8073,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         if( rtc != 0 )  goto error;
 
 
-        ofheader = HECMW_ctrl_get_meshfiles_header( "part_out" );
+        ofheader = HECMW_ctrl_get_meshfiles_header_sub( "part_out", global_mesh->n_subdomain, current_domain );
         if( ofheader == NULL ) {
             HECMW_log( HECMW_LOG_ERROR, "not set output file header" );
             goto error;

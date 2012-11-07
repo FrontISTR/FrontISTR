@@ -301,12 +301,12 @@ contains
           write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
           write(ILOG,1019) '//SMS',ESmax(7),ESmin(7)
         endif
-        if( IRESULT.eq.0 ) return
+        if( IRESULT.eq.0 .or. &
+            (mod(istep,fstrSOLID%output_ctrl(3)%freqency).ne.0 .and. istep.ne.fstrDYNAMIC%n_step) ) return
 !C*** Write Result File
 !C*** INITIALIZE
         header='*fstrresult'
-        nd = istep
-        call hecmw_result_init(hecMESH,nd,header)
+        call hecmw_result_init(hecMESH,fstrDYNAMIC%n_step,istep,header)
 !C*** ADD 
 !C-- implicit dynamic analysis
         if(fstrDYNAMIC%idx_eqa .eq. 1) then
@@ -534,12 +534,12 @@ contains
           write(ILOG,1019) '//S13(-)',ESmax(11),ESmin(11)
           write(ILOG,1019) '//SMS(-)',ESmax(12),ESmin(12)
         endif
-        if( IRESULT.eq.0 ) return
+        if( IRESULT.eq.0 .or. &
+            (mod(istep,fstrSOLID%output_ctrl(3)%freqency).ne.0 .and. istep.ne.fstrDYNAMIC%n_step) ) return
 !C*** Write Result File
 !C*** INITIALIZE
         header='*fstrresult'
-        nd = istep
-        call hecmw_result_init(hecMESH,nd,header)
+        call hecmw_result_init(hecMESH,fstrDYNAMIC%n_step,istep,header)
 !C*** ADD 
 
 !C--- shell DISPLACEMENT

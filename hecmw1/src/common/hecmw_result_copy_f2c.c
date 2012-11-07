@@ -16,8 +16,6 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,11 +23,10 @@
 #include "hecmw_config.h"
 #include "hecmw_result.h"
 #include "hecmw_util.h"
-#include "hecmw_result_copy_f2c.h"
 
-static int n_node;
-static int n_elem;
 static struct hecmwST_result_data *result;
+static int nnode, nelem;
+
 
 /*-----------------------------------------------------------------------------
  * SetFunc
@@ -137,7 +134,7 @@ set_node_val_item(void *src)
   for(i=0; i < result->nn_component; i++) {
 	  n += result->nn_dof[i];
   }
-  size = sizeof(*result->node_val_item)*n*n_node;
+  size = sizeof(*result->node_val_item)*n*nnode;
   result->node_val_item = HECMW_malloc(size);
   if(result->node_val_item == NULL) {
     HECMW_set_error(errno, "");
@@ -158,7 +155,7 @@ set_elem_val_item(void *src)
   for(i=0; i < result->ne_component; i++) {
 	  n += result->ne_dof[i];
   }
-  size = sizeof(*result->elem_val_item)*n*n_elem;
+  size = sizeof(*result->elem_val_item)*n*nelem;
   result->elem_val_item = HECMW_malloc(size);
   if(result->elem_val_item == NULL) {
     HECMW_set_error(errno, "");
@@ -194,7 +191,6 @@ static struct func_table {
 static const int NFUNC = sizeof(functions) / sizeof(functions[0]);
 
 
-
 static SetFunc
 get_set_func(char *struct_name, char *var_name)
 {
@@ -209,101 +205,200 @@ get_set_func(char *struct_name, char *var_name)
   return NULL;
 }
 
+
 /*----------------------------------------------------------------------------*/
 
-extern int
-HECMW_result_copy_f2c_init( struct hecmwST_result_data *result_data, int nnode, int nelem )
+
+int
+HECMW_result_copy_f2c_init(struct hecmwST_result_data *result_data, int n_node, int n_elem)
 {
-  memset(result_data, 0, sizeof(*result_data));
-  result = result_data;
-  n_node = nnode;
-  n_elem = nelem;
-  return 0;
+	result = result_data;
+	nnode = n_node;
+	nelem = n_elem;
+	return 0;
 }
 
-/*----------------------------------------------------------------------------*/
 
-extern int
-HECMW_result_copy_f2c_finalize( void )
+int
+HECMW_result_copy_f2c_finalize(void)
 {
-  result = NULL;
-  return 0;
+	result = NULL;
+	return 0;
 }
 
+
 /*----------------------------------------------------------------------------*/
 
 
-extern void
+void
 hecmw_result_copy_f2c_set_if( char *struct_name, char *var_name,
                               void *src, int *err, int slen, int vlen )
 {
-  SetFunc func;
-  char sname[HECMW_NAME_LEN+1];
-  char vname[HECMW_NAME_LEN+1];
+	SetFunc func;
+	char sname[HECMW_NAME_LEN+1];
+	char vname[HECMW_NAME_LEN+1];
 
-  *err = 1;
+	*err = 1;
 
-  if( result == NULL ) {
-    HECMW_set_error(HECMW_ALL_E0102,
-               "hecmw_result_copy_f2c_set_if(): 'result' has not initialized yet" );
+	if( result == NULL ) {
+		HECMW_set_error(HECMW_ALL_E0102,
+			"hecmw_result_copy_f2c_set_if(): 'result' has not initialized yet" );
+		return;
+	}
+	if( struct_name == NULL ) {
+		HECMW_set_error(HECMW_ALL_E0101,
+			"hecmw_result_copy_f2c_set_if(): 'sname' is NULL" );
     return;
-  }
-  if( struct_name == NULL ) {
-    HECMW_set_error(HECMW_ALL_E0101,
-               "hecmw_result_copy_f2c_set_if(): 'sname' is NULL" );
-    return;
-  }
-  if( var_name == NULL ) {
-    HECMW_set_error(HECMW_ALL_E0101,
-               "hecmw_result_copy_f2c_set_if(): 'vname' is NULL" );
-    return;
-  }
+	}
+	if( var_name == NULL ) {
+		HECMW_set_error(HECMW_ALL_E0101,
+			"hecmw_result_copy_f2c_set_if(): 'vname' is NULL" );
+		return;
+	}
 
-  if( HECMW_strcpy_f2c_r( struct_name, slen, sname, sizeof(sname) ) == NULL ) {
-    return;
-  }
+	if( HECMW_strcpy_f2c_r( struct_name, slen, sname, sizeof(sname) ) == NULL ) {
+		return;
+	}
 
-  if( HECMW_strcpy_f2c_r( var_name, vlen, vname, sizeof(vname) ) == NULL ) {
-    return;
-  }
+	if( HECMW_strcpy_f2c_r( var_name, vlen, vname, sizeof(vname) ) == NULL ) {
+		return;
+	}
 
-  func = get_set_func( sname, vname );
-  if( func == NULL ) {
-    HECMW_set_error(HECMW_ALL_E0102, "hecmw_result_copy_f2c_set_if(): SetFunc not found" );
-    return;
-  }
+	func = get_set_func( sname, vname );
+	if( func == NULL ) {
+		HECMW_set_error(HECMW_ALL_E0102, "hecmw_result_copy_f2c_set_if(): SetFunc not found" );
+		return;
+	}
 
-  if((*func)(src)) {
-	  return;
-  }
+	if((*func)(src)) {
+		return;
+	}
 
-  *err = 0;  /* no error */
+	*err = 0;
 }
 
-
-
-extern void
+void
 hecmw_result_copy_f2c_set_if_( char *struct_name, char *var_name,
                                void *src, int *err, int slen, int vlen )
 {
-  hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
+	hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
 }
-
-
 
 extern void
 hecmw_result_copy_f2c_set_if__( char *struct_name, char *var_name,
                                 void *src, int *err, int slen, int vlen )
 {
-  hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
+	hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
 }
-
-
 
 extern void
 HECMW_RESULT_COPY_F2C_SET_IF( char *struct_name, char *var_name,
                                 void *src, int *err, int slen, int vlen )
 {
-  hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
+	hecmw_result_copy_f2c_set_if( struct_name, var_name, src, err, slen, vlen );
 }
 
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_write_st_init_if(int *err)
+{
+	*err = 1;
+	result = HECMW_calloc(1, sizeof(*result));
+	if(result == NULL) {
+		HECMW_set_error(errno, "");
+		return;
+	}
+
+	nnode = HECMW_result_get_nnode();
+	nelem = HECMW_result_get_nelem();
+	*err = 0;
+}
+
+void
+hecmw_result_write_st_init_if_(int *err)
+{
+	hecmw_result_write_st_init_if(err);
+}
+
+void
+hecmw_result_write_st_init_if__(int *err)
+{
+	hecmw_result_write_st_init_if(err);
+}
+
+void
+HECMW_RESULT_WRITE_ST_INIT_IF(int *err)
+{
+	hecmw_result_write_st_init_if(err);
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_write_st_finalize_if(int *err)
+{
+	HECMW_result_free(result);
+
+	*err = 0;
+}
+
+void
+hecmw_result_write_st_finalize_if_(int *err)
+{
+	hecmw_result_write_st_finalize_if(err);
+}
+
+void
+hecmw_result_write_st_finalize_if__(int *err)
+{
+	hecmw_result_write_st_finalize_if(err);
+}
+
+void
+HECMW_RESULT_WRITE_ST_FINALIZE_IF(int *err)
+{
+	hecmw_result_write_st_finalize_if(err);
+}
+
+
+/*----------------------------------------------------------------------------*/
+
+
+void
+hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len)
+{
+	char name_ID_str[HECMW_NAME_LEN+1];
+	char head[HECMW_HEADER_LEN+1];
+
+	*err = 1;
+
+	if(HECMW_strcpy_f2c_r(name_ID, len, name_ID_str, sizeof(name_ID_str)) == NULL) return;
+
+	HECMW_result_get_header(head);
+	if(HECMW_result_write_ST_by_name(name_ID_str, result, nnode, nelem, head)) return;
+
+	*err = 0;
+}
+
+void
+hecmw_result_write_st_by_name_if_(char *name_ID, int *err, int len)
+{
+	hecmw_result_write_st_by_name_if(name_ID, err, len);
+}
+
+void
+hecmw_result_write_st_by_name_if__(char *name_ID, int *err, int len)
+{
+	hecmw_result_write_st_by_name_if(name_ID, err, len);
+}
+
+void
+HECMW_RESULT_WRITE_ST_BY_NAME_IF(char *name_ID, int *err, int len)
+{
+	hecmw_result_write_st_by_name_if(name_ID, err, len);
+}

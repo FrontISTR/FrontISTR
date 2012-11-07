@@ -3,16 +3,19 @@ MODULE mReadTemp
   contains
 
 !> Read in temperature distribution from external file
-    subroutine read_temperature_result(hecMESH, tstep, temp)
+    subroutine read_temperature_result(hecMESH, nstep, tstep, temp)
+      use hecmw_result
       use m_fstr
       type(hecmwST_local_mesh) :: hecMESH
-      integer(kind=kint) :: tstep
+      integer(kind=kint) :: nstep, tstep
       real(kind=kreal),pointer :: temp(:)
       type(hecmwST_result_data) :: result
+      character(len=HECMW_NAME_LEN) :: name_ID
       integer(kind=kint) :: i
 
       call hecmw_nullify_result_data( result )
-      call hecmw_result_read(tstep, result)
+      name_ID = 'fstrTEMP'
+      call hecmw_result_read_by_name(name_ID, nstep, tstep, result)
 
       if (result%nn_component /= 1 .or. result%nn_dof(1) /= 1) then
         write(*,*) ' Read temperature result failed; not heat analysis result'

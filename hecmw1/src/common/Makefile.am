@@ -133,8 +133,6 @@ OBJS = \
 	hecmw_result.@cobjfilepostfix@ \
 	hecmw_result_copy_c2f.@cobjfilepostfix@ \
 	hecmw_result_copy_f2c.@cobjfilepostfix@ \
-	hecmw_result_read_if.@cobjfilepostfix@ \
-	hecmw_result_write_if.@cobjfilepostfix@ \
 	hecmw_visual_if.@cobjfilepostfix@ \
 	hecmw_system.@cobjfilepostfix@ \
 	hecmw_time.@cobjfilepostfix@

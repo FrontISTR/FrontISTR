@@ -290,23 +290,17 @@ contains
 ! ----- update strain, stress, and internal force
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1 )
 
-      if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
-        call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)   
+      if( fstrDYNAMIC%restart_nout > 0 .and. &
+          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
+        call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
       end if
 !
 !C-- output new displacement, velocity and accelaration
       call dynamic_nloutput(i,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
 	  
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 	  
-      if( hecMESH%my_rank==0 ) then
-          if( mod(i,int(fstrDYNAMIC%nout/100)) == 0 ) then
-             res = maxval( dabs(fstrDYNAMIC%DISP(:,1)) )
-             write(*,*) "Time:",real(i*fstrDYNAMIC%t_delta),"Max disp.=",real(res)
-             write(ISTA,*) "Time:",real(i*fstrDYNAMIC%t_delta),"Max disp.=",real(res)
-          endif
-      endif
     enddo
 
     if( fstrPARAM%fg_couple == 1) then
@@ -328,6 +322,5 @@ contains
     end if
 
   end subroutine fstr_solve_dynamic_nlexplicit
-
 
 end module fstr_dynamic_nlexplicit

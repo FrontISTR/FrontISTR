@@ -16,8 +16,6 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "hecmw_struct.h"
@@ -56,14 +54,6 @@ get_entire_mesh(struct hecmw_ctrl_meshfiles *files)
 			case HECMW_CTRL_FTYPE_ABAQUS:
 				if(HECMW_read_abaqus_mesh(file->filename)) return NULL;
 				break;
-#if 0
-			case HECMW_CTRL_FTYPE_NASTRAN:
-				if(HECMW_read_nastran_mesh(file->filename)) return NULL;
-				break;
-			case HECMW_CTRL_FTYPE_FEMAP:
-				if(HECMW_get_femap_mesh(file->filename)) return NULL;
-				break;
-#endif
 			default:
 				HECMW_assert(0);
 		}
@@ -97,7 +87,8 @@ HECMW_get_mesh(char *name_ID)
 	if(files == NULL) return NULL;
 
 	if(files->n_mesh == 1 && files->meshfiles[0].type == HECMW_CTRL_FTYPE_HECMW_DIST) {
-		mesh = HECMW_get_dist_mesh(files->meshfiles[0].filename);
+		strcpy(filename, files->meshfiles[0].filename);
+		mesh = HECMW_get_dist_mesh(filename);
 	} else {
 		mesh = get_entire_mesh(files);
 	}
@@ -118,4 +109,3 @@ HECMW_get_mesh(char *name_ID)
 
 	return mesh;
 }
-

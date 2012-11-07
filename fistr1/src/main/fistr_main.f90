@@ -77,7 +77,7 @@ use fstr_matrix_con_contact
         case ( kstPRECHECK )
                 call fstr_precheck( hecMESH )
         case ( kstSTATIC )
-                call fstr_linear_static_analysis				
+                call fstr_linear_static_analysis
         case ( kstNLSTATIC )
                 call fstr_nonlinear_static_analysis
         case ( kstEIGEN )
@@ -92,13 +92,14 @@ use fstr_matrix_con_contact
 
         T3 = hecmw_Wtime()
 
-        write(ILOG,*)
-        write(ILOG,*)           '===================================='
-        write(ILOG,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
-        write(ILOG,'(a,f10.2)') '           pre (sec) :', T2 - T1
-        write(ILOG,'(a,f10.2)') '         solve (sec) :', T3 - T2
-        write(ILOG,*)           '===================================='
-        call flush(ILOG)
+        if(hecMESH%my_rank==0) then
+          write(*,*)
+          write(*,*)           '===================================='
+          write(*,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
+          write(*,'(a,f10.2)') '           pre (sec) :', T2 - T1
+          write(*,'(a,f10.2)') '         solve (sec) :', T3 - T2
+          write(*,*)           '===================================='
+        end if
 
         ! =============== FINALIZE =====================
 
@@ -181,22 +182,47 @@ end subroutine fstr_init
 !> Open all files preparing calculation
 subroutine fstr_init_file
         implicit none
-        character(len=HECMW_FILENAME_LEN) :: s
+        character(len=HECMW_FILENAME_LEN) :: s, r
         character(len=HECMW_FILENAME_LEN) :: stafileNAME
         character(len=HECMW_FILENAME_LEN) :: logfileNAME
         character(len=HECMW_FILENAME_LEN) :: msgfileNAME
         character(len=HECMW_FILENAME_LEN) :: dbgfileNAME
-        integer :: stat
+        integer :: stat, flag, limit, irank
 
         ! set file name --------------------------------
 
-        write( logfileNAME, '(i5,''.log'')') myrank
-        logfileNAME = adjustl(logfileNAME)
+        call hecmw_ctrl_is_subdir( flag, limit )
+        write(s,*) myrank
+        if( flag == 0 ) then
+          write( logfileNAME, '(a,a)') trim(adjustl(s)), '.log'
+          logfileNAME = adjustl(logfileNAME)
+          write( dbgfileNAME, '(a,a)') 'FSTR.dbg.', trim(adjustl(s))
+          dbgfileNAME = adjustl(dbgfileNAME)
+        else
+          if( nprocs > limit ) then
+            irank = myrank / limit
+            write(r,*) irank
+            write( logfileNAME, '(a,a,a,a,a)') 'LOG/RANK', trim(adjustl(r)), '/', trim(adjustl(s)), '.log'
+            logfileNAME = adjustl(logfileNAME)
+            call hecmw_ctrl_make_subdir( logfileNAME, stat )
+            if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
+            write( dbgfileNAME, '(a,a,a,a,a)') 'DBG/RANK', trim(adjustl(r)), '/', 'FSTR.dbg.', trim(adjustl(s))
+            dbgfileNAME = adjustl(dbgfileNAME)
+            call hecmw_ctrl_make_subdir( dbgfileNAME, stat )
+            if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
+          else
+            write( logfileNAME, '(a,a,a)') 'LOG/', trim(adjustl(s)), '.log'
+            logfileNAME = adjustl(logfileNAME)
+            call hecmw_ctrl_make_subdir( logfileNAME, stat )
+            if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
+            write( dbgfileNAME, '(a,a,a)') 'DBG/', 'FSTR.dbg.', trim(adjustl(s))
+            dbgfileNAME = adjustl(dbgfileNAME)
+            call hecmw_ctrl_make_subdir( dbgfileNAME, stat )
+            if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
+          end if
+        end if
         stafileNAME = 'FSTR.sta'
         msgfileNAME = 'FSTR.msg'
-        write(s,*) myrank
-        write( dbgfileNAME, '(a,a)') 'FSTR.dbg.', trim(adjustl(s))
-        dbgfileNAME = adjustl(dbgfileNAME)
 
         ! open & opening message out -------------------
 
@@ -349,8 +375,7 @@ subroutine fstr_heat_analysis
                 write(IMSG,*) ' ***   STAGE Heat analysis    **'
         end if
 
-        if( associated(fstrSOLID%step_ctrl) ) INCMAX = fstrSOLID%step_ctrl(1)%max_incr
-        call fstr_solve_HEAT( hecMESH, hecMAT, fstrRESULT, fstrPR, fstrHEAT, INCMAX )
+        call fstr_solve_HEAT( hecMESH, hecMAT, fstrRESULT, fstrPR, fstrHEAT )
 
 end subroutine fstr_heat_analysis
 

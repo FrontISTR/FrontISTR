@@ -344,6 +344,8 @@ struct hecmw_msgent hecmw_msg_table[] = {
 	{HECMW_UTIL_E0053,"HECMW-UTIL-E0053","!MESH GROUP: NAME already defined"},
 	{HECMW_UTIL_E0054,"HECMW-UTIL-E0054","!MESH GROUP: No !MESH GROUP or no such NAME in !MESH GROUP"},
 	{HECMW_UTIL_E0055,"HECMW-UTIL-E0055","!MESH GROUP: TYPE mismatch"},
+	{HECMW_UTIL_E0060,"HECMW-UTIL-E0060","!SUBDIR: Invalid token in control file"},
+	{HECMW_UTIL_E0061,"HECMW-UTIL-E0061","!SUBDIR: Missing ON/OFF"},
 	{HECMW_UTIL_E0101,"HECMW-UTIL-E0101","Failed to open restart file"},
 	{HECMW_UTIL_E0102,"HECMW-UTIL-E0102","Failed to close restart file"},
 	{HECMW_UTIL_E0103,"HECMW-UTIL-E0103","Restart file not opened yet"},

@@ -272,7 +272,7 @@
 !C
 !C-- CG
       if (METHOD.eq.1 .and. PRECOND.lt.10) then
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.1) write (*,'(a,i3)') '### 3x3 B-IC-CG  (0)',  &
      &                                          iterPREmax
           if (PRECOND.eq.2) write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',  &
@@ -288,7 +288,7 @@
 !C
 !C-- BiCGSTAB
       if (METHOD.eq.2 .and. PRECOND.lt.10) then
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.1) write (*,'(a,i3)')                          &
      &                   '### 3x3 B-ILU-BiCGSTAB (0)', iterPREmax
           if (PRECOND.eq.2) write (*,'(a,i3)')                          &
@@ -307,7 +307,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.1) write (*,'(a,i3)')                          &
      &                   '### 3x3 B-ILU-GMRES (0)', iterPREmax
           if (PRECOND.eq.2) write (*,'(a,i3)')                          &
@@ -335,7 +335,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.1) write (*,'(a,i3)')                          &
      &                   '### 3x3 B-ILU-GPBiCG   (0)', iterPREmax
           if (PRECOND.eq.2) write (*,'(a,i3)')                          &
@@ -363,7 +363,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.10) write (*,'(a)') '### 3x3 B-IC-CG  (0)'
           if (PRECOND.eq.11) write (*,'(a)') '### 3x3 B-IC-CG  (1)'
           if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-IC-CG  (2)'
@@ -390,7 +390,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.10) write (*,'(a)')                            &
      &                       '### 3x3 B-IlU-BiCGSTAB (0)'
           if (PRECOND.eq.11) write (*,'(a)')                            &
@@ -420,7 +420,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
           if (PRECOND.eq.10) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (0)'
           if (PRECOND.eq.11) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (1)'
           if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (2)'

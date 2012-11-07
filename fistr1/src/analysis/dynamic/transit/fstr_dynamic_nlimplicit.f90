@@ -74,7 +74,12 @@ contains
     real :: time_1, time_2
 
     integer(kind=kint) :: restrt_step_num
+    integer(kind=kint) :: n_node_global
 
+
+! sum of n_node among all subdomains (to be used to calc res)
+    n_node_global = hecMESH%nn_internal
+    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     hecMAT%NDOF=hecMESH%n_dof
 
@@ -147,8 +152,6 @@ contains
 	
        if(hecMESH%my_rank==0) then
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr   
-         if( mod(i,int(fstrDYNAMIC%nout/10)) == 0 )   &                        
-            write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr    
        endif
 
        do j = 1 ,ndof*nnod
@@ -235,12 +238,10 @@ contains
         call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
 
 ! ----- check convergence
-		res = dot_product( hecMAT%B, hecMAT%B )
-        res = sqrt(res)/hecMESH%n_node
+        call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
+        res = dsqrt(res)/n_node_global
         if( hecMESH%my_rank==0 ) then
-          if( mod(i,int(fstrDYNAMIC%nout/10)) == 0 )   &
-             write(*,'(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res
-          write(ISTA,'(''iter='',I5,''- Residual'',2E15.7)')iter,res
+          write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
         endif
         if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
 		
@@ -335,9 +336,9 @@ contains
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
           fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
-                               a3*fstrSOLID%dunode(j)
+                                  a3*fstrSOLID%dunode(j)
           fstrDYNAMIC%VEL (j,2) = -b1*fstrDYNAMIC%ACC(j,1) - b2*fstrDYNAMIC%VEL(j,1) + &
-                               b3*fstrSOLID%dunode(j)
+                                  b3*fstrSOLID%dunode(j)
           fstrDYNAMIC%ACC (j,1) = fstrDYNAMIC%ACC (j,2)
           fstrDYNAMIC%VEL (j,1) = fstrDYNAMIC%VEL (j,2)
 
@@ -349,8 +350,9 @@ contains
       enddo
 
 !---  Restart info
-      if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
-        call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)    
+      if( fstrDYNAMIC%restart_nout > 0 .and. &
+          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
+        call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
       end if
 !
 !C-- output new displacement, velocity and accelaration
@@ -358,7 +360,7 @@ contains
 !C
 !C-- output result of monitoring node
 !C
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
 	  
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -605,11 +607,11 @@ contains
 
 ! ----- check convergence
           call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
-          res = sqrt(res)/n_node_global
+          res = dsqrt(res)/n_node_global
           if( hecMESH%my_rank==0 ) then
             if( mod(i,int(fstrDYNAMIC%nout/10)) == 0 )   &
             write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res
-            write(ISTA,'(''iter='',I5,''- Residual'',2E15.7)')iter,res
+            write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
           endif
 
 ! ----- check convergence
@@ -694,9 +696,10 @@ contains
       enddo
 
 !---  Restart info
-      if( mod(i,fstrDYNAMIC%restart_nout) == 0 ) then
-        call fstr_write_restart_dyna(i,0,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-                                     infoCTChange%contactNode_current)               
+      if( fstrDYNAMIC%restart_nout > 0 .and. &
+          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
+        call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+                                     infoCTChange%contactNode_current)
       end if
 !
 !C-- output new displacement, velocity and accelaration
@@ -704,7 +707,7 @@ contains
 !C
 !C-- output result of monitoring node
 !C
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -718,8 +721,5 @@ contains
     end if
 
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag 
-  
-  
-
 
 end module fstr_dynamic_nlimplicit

@@ -112,6 +112,7 @@ contains
       else
         call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
       endif
+
       if( myrank == 0 ) then
          write(IMSG,*) 'fstr_mat_ass: OK'
       endif
@@ -621,11 +622,12 @@ contains
 !C-- POST PROCESSING VIA MEMORY
 !C
 
-        if( IVISUAL.eq. 1 ) then
+      if( IVISUAL.eq.1 .and. mod(istep,fstrSOLID%output_ctrl(4)%freqency).eq.0 ) then
+          interval = fstrSOLID%output_ctrl(4)%freqency
           call FSTR_MAKE_EIGENRESULT(hecMESH,hecMAT%X,fstrRESULT)
           call fstr2hecmw_mesh_conv(hecMESH)
           call hecmw_visualize_init
-          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,1)
+          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,interval)
           call hecmw_visualize_finalize
           call hecmw2fstr_mesh_conv(hecMESH)
           call hecmw_result_free(fstrRESULT)

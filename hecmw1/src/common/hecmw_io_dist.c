@@ -15,16 +15,6 @@
  *                                                                     *
  *=====================================================================*/
 
-
-
-
-/*                                                                            */
-/*  File    : hecmw_io_dist.c                                                 */
-/*  Purpose : scan & print HEC-MW distributed mesh format data                */
-/*  Author  : Shin'ichi Ezure                                                 */
-/*  Created : Sep. 05th, 2003.                                                */
-/*                                                                            */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -2710,7 +2700,7 @@ print_contact_info( const struct hecmwST_contact_pair *cpair, FILE *fp )
 /*                                                                            */
 /*============================================================================*/
 extern int
-HECMW_put_dist_mesh( const struct hecmwST_local_mesh *mesh, const char *fname )
+HECMW_put_dist_mesh( const struct hecmwST_local_mesh *mesh, char *fname )
 {
   FILE *fp;
 
@@ -2718,6 +2708,10 @@ HECMW_put_dist_mesh( const struct hecmwST_local_mesh *mesh, const char *fname )
   if(fname == NULL) {
     HECMW_set_error(HECMW_IO_E5001, "Filename is NULL)");
 	return -1;
+  }
+
+  if(HECMW_ctrl_is_subdir()) {
+    if(HECMW_ctrl_make_subdir(fname)) return 0;
   }
 
   /* open file */

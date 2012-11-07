@@ -17,14 +17,14 @@
 module m_fstr_solve_heat
 contains
 
-   subroutine fstr_solve_heat( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT, maxiter )
+   subroutine fstr_solve_heat( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT )
 
       use m_fstr
       use m_heat_solve_SS
       use m_heat_solve_TRAN
 
       implicit none
-      integer(kind=kint) i,in,ISTEP,ISS, maxiter
+      integer(kind=kint) i,in,ISTEP,ISS
       real(kind=kreal)   CTIME
       type (hecmwST_local_mesh  ) :: hecMESH
       type (hecmwST_matrix      ) :: hecMAT
@@ -110,7 +110,7 @@ contains
           write(IDBG,*) ' heat_solve_SS: OK'
           call flush(IDBG)
         else
-         call heat_solve_TRAN( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME, maxiter )
+         call heat_solve_TRAN( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
 
           write(IDBG,*) ' heat_solve_TRAN: OK'
           call flush(IDBG)

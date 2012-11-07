@@ -1925,7 +1925,7 @@ contains
   subroutine dynamic_output_and_post(istep,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
       use hecmw
 
-      integer (kind = kint) :: istep
+      integer (kind = kint) :: istep, interval
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
       type ( fstr_solid          ) :: fstrSOLID
@@ -1935,7 +1935,8 @@ contains
 
 !
 !C-- output new displacement, velocity and accelaration
-      if( mod(istep,fstrDYNAMIC%nout) /= 0 ) return
+      if( IRESULT.eq.1 .and. &
+          (mod(istep,fstrSOLID%output_ctrl(3)%freqency).eq.0 .or. istep.eq.fstrDYNAMIC%n_step) ) then
 !
       write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP =',istep,'TIME =',fstrDYNAMIC%t_delta*istep
 !C-- output
@@ -1975,15 +1976,18 @@ contains
 !C
       call dynamic_post(hecMESH,hecMAT,fstrSOLID,istep,fstrDYNAMIC)
 
+      endif
+
 !C
 !C-- POST PROCESSING VIA MEMORY
 !C
-      if( IVISUAL.eq. 1 ) then
+      if( IVISUAL.eq.1 .and. &
+          (mod(istep,fstrSOLID%output_ctrl(4)%freqency).eq.0 .or. istep.eq.fstrDYNAMIC%n_step) ) then
+        interval = fstrSOLID%output_ctrl(4)%freqency
         call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        idummy=1
-        call hecmw_visualize(hecMESH,fstrRESULT,istep,fstrDYNAMIC%n_step,idummy)
+        call hecmw_visualize(hecMESH,fstrRESULT,istep,fstrDYNAMIC%n_step,interval)
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)
@@ -2135,7 +2139,7 @@ contains
   subroutine dynamic_nloutput(istep,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
       use hecmw
 
-      integer (kind = kint) :: istep
+      integer (kind = kint) :: istep, interval
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
       type ( fstr_solid          ) :: fstrSOLID
@@ -2148,7 +2152,8 @@ contains
       real(kind=kreal) :: s11,s22,s33,s12,s23,s13,ps,smises,ss(6)
 !
 !C-- output new displacement, velocity and accelaration
-      if( mod(istep,fstrDYNAMIC%nout) /= 0 ) return
+      if( IRESULT.eq.1 .and. &
+          (mod(istep,fstrSOLID%output_ctrl(3)%freqency).eq.0 .or. istep.eq.fstrDYNAMIC%n_step) ) then
 !
       if((fstrDYNAMIC%idx_eqa .eq. 1) .and. (fstrDYNAMIC%i_step .gt. 0)) then
         idx = 2
@@ -2356,15 +2361,18 @@ contains
 !C
       call dynamic_post(hecMESH,hecMAT,fstrSOLID,istep,fstrDYNAMIC)
 
+      endif
+
 !C
 !C-- POST PROCESSING VIA MEMORY
 !C
-      if( IVISUAL==1 ) then
+      if( IVISUAL.eq.1 .and. &
+          (mod(istep,fstrSOLID%output_ctrl(4)%freqency).eq.0 .or. istep.eq.fstrDYNAMIC%n_step) ) then
+        interval = fstrSOLID%output_ctrl(4)%freqency
         call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        idummy=1
-        call hecmw_visualize(hecMESH,fstrRESULT,istep,fstrDYNAMIC%n_step,idummy)
+        call hecmw_visualize(hecMESH,fstrRESULT,istep,fstrDYNAMIC%n_step,interval)
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)

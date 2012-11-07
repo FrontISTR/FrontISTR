@@ -173,9 +173,7 @@ subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
   if( fstr_ctrl_get_param_ex( ctrl, 'RESULT ',  '# ',    0,   'E',   res    )/= 0) return
   if( fstr_ctrl_get_param_ex( ctrl, 'VISUAL ',  '# ',    0,   'E',   visual )/= 0) return
   if( fstr_ctrl_get_param_ex( ctrl, 'UTABLE ',   '# ',    0,   'E',   femap  )/= 0) return
- ! if( res==1 ) islog=1
-  if( islog /= 1 .and. res/=1 ) return
-  
+
   call fstr_init_outctrl(outctrl)
   ss =""
   rcode = fstr_ctrl_get_param_ex( ctrl, 'FILE ',   '# ',  0, 'S', ss )
@@ -183,10 +181,10 @@ subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
     outctrl%filename = trim(ss)
     islog = 0
   endif
-  n=-1
+  outctrl%freqency = 1
   rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ',   '# ',  0, 'I', n )
   if( n>0 ) outctrl%freqency = n
-    
+
 end subroutine
 
 subroutine print_output_ctrl( nfile, outctrl )

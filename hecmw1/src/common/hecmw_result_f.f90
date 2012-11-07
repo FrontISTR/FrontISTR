@@ -24,18 +24,17 @@ module hecmw_result
     public :: hecmw_nullify_result_data
     public :: hecmw_result_copy_c2f
     public :: hecmw_result_copy_f2c
-    public :: hecmw_result_read
     public :: hecmw_result_init
     public :: hecmw_result_add
-!    public :: hecmw_result_add2d
-    public :: hecmw_result_write
     public :: hecmw_result_write_by_name
-    public :: hecmw_result_write_st
     public :: hecmw_result_write_st_by_name
     public :: hecmw_result_finalize
     public :: hecmw_result_free
+    public :: hecmw_result_read_by_name
     private :: put_node_component
     private :: put_elem_component
+    private :: get_node_component
+    private :: get_elem_component
 
     character(len=HECMW_NAME_LEN) :: sname,vname
 
@@ -69,15 +68,16 @@ module hecmw_result
 !C=============================================================================
 !C Write result data to file
 !C=============================================================================
-    subroutine hecmw_result_init(hecMESH, tstep, header)
+
+    subroutine hecmw_result_init(hecMESH, n_step, i_step, header)
         type(hecmwST_local_mesh):: hecMESH
-        integer(kind=kint) :: nnode, nelem, tstep, ierr
+        integer(kind=kint) :: nnode, nelem, n_step, i_step, ierr
         character(len=HECMW_HEADER_LEN) :: header
 
         nnode = hecMESH%n_node
         nelem = hecMESH%n_elem
-        
-        call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, tstep, header, ierr)
+
+        call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, n_step, i_step, header, ierr)
         if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_result_init
 
@@ -92,14 +92,6 @@ module hecmw_result
     end subroutine hecmw_result_add
 
 
-    subroutine hecmw_result_write()
-        integer(kind=kint) :: ierr
-
-        call hecmw_result_write_if(ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-    end subroutine hecmw_result_write
-
-
     subroutine hecmw_result_write_by_name(name_ID)
         integer(kind=kint) :: ierr
         character(len=HECMW_NAME_LEN) :: name_ID 
@@ -109,70 +101,45 @@ module hecmw_result
     end subroutine hecmw_result_write_by_name
 
 
-    subroutine hecmw_result_write_st(result_data, n_node, n_elem, tstep, header)
-        integer(kind=kint) :: n_node, n_elem, tstep, ierr
-        type(hecmwST_result_data):: result_data
-        character(len=HECMW_HEADER_LEN):: header
-
-        call hecmw_result_write_st_init_if(n_node, n_elem, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_copy_f2c(result_data, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_write_st_if(n_node, n_elem, tstep, header, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_w_st_finalize_if(ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-    end subroutine hecmw_result_write_st
-
-
-    subroutine hecmw_result_write_st_by_name(name_ID, result_data, n_node, n_elem, tstep, header)
-        integer(kind=kint) :: n_node, n_elem, tstep, ierr
-        type(hecmwST_result_data):: result_data
-        character(len=HECMW_NAME_LEN):: name_ID
-        character(len=HECMW_HEADER_LEN):: header
-
-        call hecmw_result_write_st_init_if(n_node, n_elem, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_copy_f2c(result_data, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_write_st_byname_if(name_ID, n_node, n_elem, tstep, header, ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-        call hecmw_result_w_st_finalize_if(ierr)
-        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-    end subroutine hecmw_result_write_st_by_name
-
-
     subroutine hecmw_result_finalize()
         integer(kind=kint) :: ierr
-        
+
         call hecmw_result_finalize_if(ierr)
         if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_result_finalize
 
 
-    subroutine  hecmw_result_copy_f2c( result_data, ierr )
+    subroutine hecmw_result_write_st_by_name(name_ID, result_data)
+        integer(kind=kint) :: ierr
+        type(hecmwST_result_data):: result_data
+        character(len=HECMW_NAME_LEN):: name_ID
 
+		call hecmw_result_write_st_init_if(ierr)
+        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+        call hecmw_result_copy_f2c(result_data, ierr)
+        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+        call hecmw_result_write_st_by_name_if(name_ID, ierr)
+        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+        call hecmw_result_write_st_finalize_if(ierr)
+        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+    end subroutine hecmw_result_write_st_by_name
+
+
+    subroutine  hecmw_result_copy_f2c( result_data, ierr )
         type(hecmwST_result_data), intent(in)    :: result_data
         integer(kind=kint),        intent(inout) :: ierr 
 
-        ierr = 0
-
         call  put_node_component( result_data, ierr )
         if( ierr /= 0 )  return
-
         call  put_elem_component( result_data, ierr )
         if( ierr /= 0 )  return
-
     end subroutine  hecmw_result_copy_f2c
 
 
     subroutine  put_node_component( result_data, ierr )
-
         type(hecmwST_result_data), intent(in)    :: result_data
         integer(kind=kint),        intent(inout) :: ierr
-!        external                                 :: hecmw_result_copy_f2c_set_if
 
-        ierr  = 0
         sname = "hecmwST_result_data"
 
         vname = "nn_component"
@@ -180,11 +147,10 @@ module hecmw_result
         if( ierr /= 0 )  return
 
         if( result_data%nn_component /= 0 )  then
-
           vname = "nn_dof"
           call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%nn_dof, ierr )
           if( ierr /= 0 )  return
-  
+
           vname = "node_label"
           call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%node_label, ierr )
           if( ierr /= 0 )  return
@@ -192,18 +158,13 @@ module hecmw_result
           vname = "node_val_item"
           call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%node_val_item, ierr )
           if( ierr /= 0 )  return
-
         endif
-
     end subroutine  put_node_component
 
     subroutine  put_elem_component( result_data, ierr )
-
         type(hecmwST_result_data), intent(in)    :: result_data
         integer(kind=kint),        intent(inout) :: ierr
-!        external                                 :: hecmw_result_copy_f2c_set_if
 
-        ierr  = 0
         sname = "hecmwST_result_data"
 
         vname = "ne_component"
@@ -211,7 +172,6 @@ module hecmw_result
         if( ierr /= 0 )  return
 
         if( result_data%ne_component /= 0 )  then
-
           vname = "ne_dof"
           call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%ne_dof, ierr )
           if( ierr /= 0 )  return
@@ -223,48 +183,31 @@ module hecmw_result
           vname = "elem_val_item"
           call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%elem_val_item, ierr )
           if( ierr /= 0 )  return
-
         endif
-
     end subroutine  put_elem_component
-
 
 !C=============================================================================
 !C Read result data from file
 !C=============================================================================
-    subroutine hecmw_result_read(tstep, result)
-        integer(kind=kint) :: ierr,tstep, n_node, n_elem  
-        type(hecmwST_result_data) :: result
 
-        call hecmw_result_read_init_if(tstep, n_node, n_elem, ierr) 
-        if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
-
-        call hecmw_result_copy_c2f(result, n_node, n_elem, ierr) 
-        if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
-
-        call hecmw_result_read_finalize_if(ierr) 
-        if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
-    end subroutine hecmw_result_read
-
-
-    subroutine hecmw_result_read_by_name(name_ID, tstep, result)
-        integer(kind=kint) :: ierr,tstep,n_node,n_elem 
+    subroutine hecmw_result_read_by_name(name_ID, n_step, i_step, result)
+        integer(kind=kint) :: n_node, n_elem, n_step, i_step, ierr
         character(len=HECMW_NAME_LEN) :: name_ID
         type(hecmwST_result_data) :: result
 
-        call hecmw_result_read_initbyname_if(name_ID,tstep,n_node, n_elem,ierr) 
+        call hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_result_copy_c2f(result, n_node, n_elem, ierr) 
+        call hecmw_result_copy_c2f(result, n_node, n_elem, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_result_read_finalize_if(ierr) 
+        call hecmw_result_read_finalize_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_result_read_by_name
 
 
-    subroutine hecmw_result_copy_c2f(result, n_node, n_elem, ierr) 
-        integer(kind=kint) :: n_node, n_elem, ierr  
+    subroutine hecmw_result_copy_c2f(result, n_node, n_elem, ierr)
+        integer(kind=kint) :: n_node, n_elem, ierr
         type(hecmwST_result_data) :: result
 
         call get_node_component(result, n_node, ierr)
@@ -332,8 +275,8 @@ module hecmw_result
         endif
     end subroutine get_elem_component
 
-    subroutine  hecmw_result_free( result_data )
 
+    subroutine  hecmw_result_free( result_data )
       type(hecmwST_result_data), intent(inout) :: result_data
       integer(kind=kint)                       :: ierr
 
@@ -386,8 +329,6 @@ module hecmw_result
           call  hecmw_abort( hecmw_comm_get_comm( ) )
         endif
       endif
-
     end subroutine  hecmw_result_free
 
 end module hecmw_result
-

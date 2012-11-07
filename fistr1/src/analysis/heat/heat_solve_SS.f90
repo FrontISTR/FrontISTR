@@ -26,7 +26,7 @@ module m_heat_solve_SS
       use m_hecmw2fstr_mesh_conv
 
       implicit none
-      integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,nd,id,ndof,jstep, bup_n_dof
+      integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,id,ndof,bup_n_dof
       real(kind=kreal)   CTIME,BETA,STIME,VAL,CHK,TMAX,TMIN,temp
 !C file name
       character(len=HECMW_HEADER_LEN) :: header
@@ -186,9 +186,8 @@ module m_heat_solve_SS
       call flush(ILOG)
 !C===
       if( IRESULT.eq.1 ) then
-        nd = ISTEP
         header = '*fstrresult'
-        call hecmw_result_init ( hecMESH,nd,header )
+        call hecmw_result_init ( hecMESH,1,1,header )
         id    = 1
         ndof  = 1
         label = 'TEMPERATURE'
@@ -207,9 +206,7 @@ module m_heat_solve_SS
         call heat_make_result ( hecMESH, fstrHEAT, fstrRESULT )
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        jstep  = 0
-        idummy = 0
-        call hecmw_visualize ( hecMESH,fstrRESULT,jstep,jstep,idummy )
+        call hecmw_visualize ( hecMESH,fstrRESULT,1,1,1 )
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)

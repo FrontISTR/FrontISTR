@@ -1,7 +1,12 @@
 
- Usage : rmerge [options] output file header
+ Usage : rmerge [options] output_fileheader
     * notice : only serial processing
 
  [option]
-    -o [type] : output file type ( "text" or "binary" )
+	-o [type] : output file type     ( "text" or "binary" )
+	-n [rank] : number of ranks      ( default:0 )
+	-s [step] : start step number    ( default:1 )
+	-e [step] : end step number      ( default:1 )
+	-i [step] : interval step number ( default:1 )
+    -h        : help
 

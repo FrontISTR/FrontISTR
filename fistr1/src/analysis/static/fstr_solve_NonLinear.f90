@@ -175,7 +175,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
 
     call cpu_time(tt)
     if( hecMESH%my_rank==0) then
-      write(ISTA,'("### Converged in NR ietration : CPU time=",E10.4,"   iter=",I6)') tt-tt0,iter
+      write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
     if( fstrSOLID%TEMP_irres>0 ) then
@@ -377,7 +377,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
     call cpu_time(tt)
     if( hecMESH%my_rank==0) then
-      write(ISTA,'("### Converged in NR ietration : CPU time=",E10.4,"   iter=",I6)') tt-tt0,iter
+      write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 	
     if( fstrSOLID%TEMP_irres>0 ) then                                  
@@ -588,7 +588,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
     call cpu_time(tt)
     if( hecMESH%my_rank==0) then
-      write(ISTA,'("### Converged in contact iteration : CPU time=",E10.4,"   iter=",I6)') tt-tt0,iter  
+      write(ISTA,'("### Converged in contact iteration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter  
     endif
 	
     if( fstrSOLID%TEMP_irres>0 ) then                                  
