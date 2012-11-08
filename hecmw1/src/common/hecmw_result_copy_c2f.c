@@ -295,6 +295,26 @@ HECMW_RESULT_COPY_C2F_SET_IF(char *struct_name, char *var_name,
 
 
 void
+hecmw_result_read_by_name_if(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
+{
+	char name_ID_str[HECMW_NAME_LEN+1];
+
+	*err = 1;
+
+	if(HECMW_strcpy_f2c_r(name_ID, len, name_ID_str, sizeof(name_ID_str)) == NULL) return;
+
+	result = HECMW_result_read_by_name(name_ID_str, *n_step, *i_step);
+	if(result == NULL) return;
+
+	nnode = HECMW_result_get_nnode();
+	nelem = HECMW_result_get_nelem();
+	*n_node = nnode;
+	*n_elem = nelem;
+
+	*err = 0;
+}
+
+void
 hecmw_result_read_by_name_if_(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
 {
 	hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err, len);
@@ -342,28 +362,4 @@ void
 HECMW_RESULT_READ_FINALIZE_IF(int *err)
 {
 	hecmw_result_read_finalize_if(err);
-}
-
-
-/*----------------------------------------------------------------------------*/
-
-
-void
-hecmw_result_read_by_name_if(char *name_ID, int* n_step, int* i_step, int* n_node, int* n_elem, int *err, int len)
-{
-	char name_ID_str[HECMW_NAME_LEN+1];
-
-	*err = 1;
-
-	if(HECMW_strcpy_f2c_r(name_ID, len, name_ID_str, sizeof(name_ID_str)) == NULL) return;
-
-	result = HECMW_result_read_by_name(name_ID_str, *n_step, *i_step);
-	if(result == NULL) return;
-
-	nnode = HECMW_result_get_nnode();
-	nelem = HECMW_result_get_nelem();
-	*n_node = nnode;
-	*n_elem = nelem;
-
-	*err = 0;
 }
