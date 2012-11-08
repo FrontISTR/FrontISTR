@@ -22,6 +22,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "hecmw_util.h"
@@ -2273,6 +2274,7 @@ HECMW_ctrl_make_subdir(char *filename)
 	char *token;
 	char separator[10];
 	mode_t mode;
+	DIR *dp;
 
 	mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 	strcpy(fname, filename);
@@ -2282,10 +2284,12 @@ HECMW_ctrl_make_subdir(char *filename)
 	sprintf(dirname, "%s", token);
 	token = strtok(NULL, separator);
 	while(token) {
-		if(opendir(dirname) == NULL) {
+		if((dp = opendir(dirname)) == NULL) {
 			if(mkdir(dirname, mode) != 0) {
 				if(errno != EEXIST) return -1;
 			}
+		} else {
+			closedir(dp);
 		}
 		strcat(dirname, separator);
 		strcat(dirname, token);
