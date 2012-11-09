@@ -29,21 +29,9 @@ struct restart_list {
 	struct restart_list *next;
 };
 
-struct restart_ent {
-	int n;
-	struct restart_list *rst;
-};
-
-
-static struct restart_list *restart_list;
+static struct restart_list *first_list = NULL;
+static struct restart_list *previ_list = NULL;
 static FILE *restart_fp;
-
-struct fortran_remainder {
-	void *ptr;
-	struct fortran_remainder *next;
-};
-
-static struct fortran_remainder *remainder;	/* for Fortran */
 
 
 static void
@@ -51,11 +39,12 @@ clear(void)
 {
 	struct restart_list *p,*q;
 
-	for(p=restart_list; p; p=q) {
+	for(p=first_list; p; p=q) {
 		q = p->next;
 		HECMW_free(p);
 	}
-	restart_list = NULL;
+	first_list = NULL;
+	previ_list = NULL;
 }
 
 
@@ -136,7 +125,6 @@ HECMW_restart_read(void *addr)
 		HECMW_set_error(rc, "");
 		return NULL;
 	}
-	HECMW_assert(size > 0);
 
 	/* read data */
 	if(addr == NULL) {
@@ -161,7 +149,7 @@ HECMW_restart_read(void *addr)
 int
 HECMW_restart_add(void *data, size_t size)
 {
-	struct restart_list *p,*q,*rst;
+	struct restart_list *rst;
 
 	rst = HECMW_malloc(sizeof(*rst));
 	if(rst == NULL) {
@@ -173,14 +161,9 @@ HECMW_restart_add(void *data, size_t size)
 	rst->size = size;
 	rst->next = NULL;
 
-	q = NULL;	
-	for(p=restart_list; p; p=(q=p)->next) ;
-
-	if(q == NULL) {
-		restart_list = rst;
-	} else {
-		q->next = rst;
-	}
+	if(previ_list != NULL) previ_list->next = rst;
+	previ_list = rst;
+	if(first_list == NULL) first_list = rst;
 
 	return 0;
 }
@@ -221,16 +204,12 @@ restart_write(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 int
 HECMW_restart_write_by_name(char *name_ID)
 {
-	int rc,n;
 	FILE *fp;
 	struct restart_list *p;
 	char *filename;
+	int rc;
 
-	n = 0;
-	for(p=restart_list; p; p=p->next) {
-		n++;
-	}
-	if(n == 0) return 0;
+	if(previ_list == NULL) return 0;
 
 	if(name_ID) {
 		if((filename = HECMW_ctrl_get_restart_file(name_ID)) == NULL) return -1;
@@ -249,7 +228,7 @@ HECMW_restart_write_by_name(char *name_ID)
 		return -1;
 	}
 
-	for(p=restart_list; p; p=p->next) {
+	for(p=first_list; p; p=p->next) {
 		/* write size */
 		rc = restart_write(&p->size, sizeof(p->size), 1, fp);
 		if(rc) {
@@ -458,7 +437,6 @@ restart_add_alloc(void *data, int byte, int n_data)
 {
 	int size;
 	void *cdata;
-	struct fortran_remainder *remain;
 
 	size = byte * n_data;
 	cdata = HECMW_malloc(size);
@@ -467,15 +445,6 @@ restart_add_alloc(void *data, int byte, int n_data)
 		return NULL;
 	}
 	memcpy(cdata, data, size);
-
-	remain = HECMW_malloc(sizeof(*remain));
-	if(remain == NULL) {
-		HECMW_set_error(errno, "");
-		return NULL;
-	}
-	remain->ptr = cdata;
-	remain->next = remainder;
-	remainder = remain;
 
 	return cdata;
 }
@@ -556,7 +525,6 @@ hecmw_restart_write_by_name_if(char *name_ID, int *err, int len)
 {
 	char *name = NULL;
 	char cname[HECMW_NAME_LEN+1];
-	struct fortran_remainder *p,*q;
 
 	*err = 1;
 
@@ -566,13 +534,6 @@ hecmw_restart_write_by_name_if(char *name_ID, int *err, int len)
 	}
 
 	if(HECMW_restart_write_by_name(name)) return;
-
-	for(p=remainder; p; p=q) {
-		q = p->next;
-		HECMW_free(p->ptr);
-		HECMW_free(p);
-	}
-	remainder = NULL;
 
 	*err = 0;
 }
