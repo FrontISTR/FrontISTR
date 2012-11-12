@@ -2276,7 +2276,9 @@ HECMW_ctrl_make_subdir(char *filename)
 	mode_t mode;
 	DIR *dp;
 
+#ifndef _WINDOWS
 	mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+#endif
 	strcpy(fname, filename);
 	sprintf(separator, "%c", HECMW_get_path_separator());
 
@@ -2285,7 +2287,11 @@ HECMW_ctrl_make_subdir(char *filename)
 	token = strtok(NULL, separator);
 	while(token) {
 		if((dp = opendir(dirname)) == NULL) {
+#ifndef _WINDOWS
 			if(mkdir(dirname, mode) != 0) {
+#else
+            if(mkdir(dirname) != 0) {
+#endif
 				if(errno != EEXIST) return -1;
 			}
 		} else {
