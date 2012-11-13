@@ -395,8 +395,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(n), WR(n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_11                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -426,8 +424,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(2*n), WR(2*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_22                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -457,8 +453,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(3*n), WR(3*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_33                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -488,8 +482,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(m*n), WR(m*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_mm                                     &
      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -519,8 +511,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(n), WR(n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_11i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -550,8 +540,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(2*n), WR(2*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_22i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -581,8 +569,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(3*n), WR(3*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_33i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -612,8 +598,6 @@ contains
       n = hecMESH%n_node
 
       allocate (WS(m*n), WR(m*n))
-      WS= 0.d0
-      WR= 0.d0
       call hecmw_solve_SEND_RECV_mmi                                    &
      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
      &     hecMESH%import_index, hecMESH%import_item,                   &

@@ -70,17 +70,12 @@
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
-!$omp parallel do private (ii)
-!*voption indep (WS,X,NOD_EXPORT)
-!VOPTION INDEP, VEC
-!CDIR NODEP
         do k= istart+1, istart+inum
           ii   = m*NOD_EXPORT(k)
           do kk= 1, m
             WS(m*k-kk+1)= X(ii-kk+1)
           enddo
         enddo
-!$omp end parallel do
 
         call MPI_ISEND (WS(m*istart+1), m*inum,MPI_DOUBLE_PRECISION,    &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
@@ -100,17 +95,12 @@
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-!$omp parallel do private (ii)
-!*voption indep (WR,X,NOD_IMPORT)
-!VOPTION INDEP, VEC
-!CDIR NODEP
       do k= istart+1, istart+inum
         ii   = m*NOD_IMPORT(k)
         do kk= 1, m
           X(ii-kk+1)= WR(m*k-kk+1)
         enddo
       enddo
-!$omp end parallel do
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
