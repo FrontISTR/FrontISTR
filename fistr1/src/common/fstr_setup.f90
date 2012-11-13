@@ -787,7 +787,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
         endif
         if(associated(fstrSOLID%output_ctrl) ) then
            do i=1,size(fstrSOLID%output_ctrl)
-              if( fstrSOLID%output_ctrl(i)%filenum/=ILOG )  &
+              if( fstrSOLID%output_ctrl(i)%filenum==IUTB )  &
                 close(fstrSOLID%output_ctrl(i)%filenum)
            enddo
            deallocate(fstrSOLID%output_ctrl)
