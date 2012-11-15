@@ -1301,6 +1301,7 @@ set_sect_I_item(void *dst)
 	struct hecmwST_section *sect = mesh->section;
 
 	if(sect->n_sect <= 0) return 0;
+    if( sect->sect_I_item==NULL ) return 0;
 
 	src = sect->sect_I_item;
 	size = sizeof(*sect->sect_I_item) * sect->sect_I_index[sect->n_sect];
