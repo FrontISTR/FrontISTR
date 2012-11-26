@@ -92,12 +92,16 @@ module elementInfo
     integer, parameter :: fe_hex8n    = 361
     integer, parameter :: fe_hex20n   = 362
     integer, parameter :: fe_hex27n   = 363
+	
+	integer, parameter :: fe_beam2n   = 611
+    integer, parameter :: fe_beam3n   = 612
 
     integer, parameter :: fe_tri3n_shell  = 731
     integer, parameter :: fe_tri6n_shell  = 732
     integer, parameter :: fe_dsg3_shell   = 733
     integer, parameter :: fe_mitc4_shell  = 741
     integer, parameter :: fe_mitc8_shell  = 742
+    integer, parameter :: fe_mitc9_shell  = 743
 	
  ! ---------------------------------------------
 
@@ -125,9 +129,9 @@ module elementInfo
       integer, intent(in) :: etype     !< element type
 
       select case (etype)
-      case (fe_line2n)
+      case (fe_line2n, fe_beam2n)
         getNumberOfNodes = 2
-      case (fe_line3n)
+      case (fe_line3n, fe_beam3n)
         getNumberOfNodes = 3
       case (fe_tri3n, fe_tri3n_shell )
         getNumberOfNodes = 3
@@ -137,6 +141,8 @@ module elementInfo
         getNumberOfnodes = 4
       case ( fe_quad8n, fe_mitc8_shell )
         getNumberOfNodes = 8
+      case ( fe_mitc9_shell )
+        getNumberOfNodes = 9
       case ( fe_tet4n )
         getNumberOfNodes = 4
       case ( fe_tet10n, fe_tet10nc )
@@ -164,7 +170,7 @@ module elementInfo
         getNumberOfSubface = 2
       case (fe_tri3n, fe_tri3n_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell  )
         getNumberOfSubface = 3
-      case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell )
+      case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell, fe_mitc9_shell )
         getNumberOfSubface = 4
       case ( fe_tet4n, fe_tet10n, fe_tet10nc )
         getNumberOfSubface = 4
@@ -346,7 +352,7 @@ module elementInfo
         case (4)
           nodes(1) = 4; nodes(2)=1
         end select
-      case ( fe_quad8n, fe_mitc8_shell )
+      case ( fe_quad8n, fe_mitc8_shell, fe_mitc9_shell )
         outtype = fe_line3n
         select case (innumber )
         case (1)
@@ -369,7 +375,7 @@ module elementInfo
   integer function NumOfQuadPoints( fetype )
       integer, intent(in) :: fetype         !< element type
       select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n)
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
@@ -383,7 +389,7 @@ module elementInfo
         NumOfQuadPoints = 9
       case ( fe_hex8n, fe_mitc4_shell )
         NumOfQuadPoints = 8
-      case ( fe_hex20n, fe_mitc8_shell )
+      case ( fe_hex20n, fe_mitc8_shell, fe_mitc9_shell )
         NumOfQuadPoints = 27
       case ( fe_prism6n, fe_tri3n_shell )
         NumOfQuadPoints = 2
@@ -424,7 +430,7 @@ module elementInfo
         pos(1:2)=gauss2d3(:,np)
       case ( fe_hex8n, fe_mitc4_shell )
         pos(1:3)=gauss3d2(:,np)
-      case ( fe_hex20n, fe_mitc8_shell )
+      case ( fe_hex20n, fe_mitc8_shell, fe_mitc9_shell )
         pos(1:3)=gauss3d3(:,np)
       case ( fe_prism6n, fe_tri3n_shell )
         pos(1:3)=gauss3d7(:,np)

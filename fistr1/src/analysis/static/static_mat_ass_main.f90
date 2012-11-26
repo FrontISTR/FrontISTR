@@ -133,6 +133,8 @@ module m_static_mat_ass_main
         thick = hecMESH%section%sect_R_item(ihead+1) 
         call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
         call fstr_local_stf_restore(local_stf, nn*ndof, stiffness)
+      else if ( ic_type==743) then
+	  
       else
         write(*,*) '###ERROR### : Element type not supported for linear static analysis'
         write(*,*) ' ic_type = ', ic_type
