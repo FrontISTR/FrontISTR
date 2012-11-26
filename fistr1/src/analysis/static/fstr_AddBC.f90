@@ -92,12 +92,6 @@ module m_fstr_AddBC
           RHS = fstrSOLID%mpc_const(ig0)*factor
           hecMESH%mpc%mpc_const(ig0) = RHS
       enddo
-!C
-!C Message
-!C
-      if( hecMESH%my_rank==0) then
-         write(IMSG,*) '####fstr_AddBC finished'
-      end if
 
       end subroutine fstr_AddBC
 

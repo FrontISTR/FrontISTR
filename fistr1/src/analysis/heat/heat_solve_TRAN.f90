@@ -45,7 +45,8 @@ module m_heat_solve_TRAN
       integer(kind=kint) :: restart_step(1)
       real(kind=kreal)   :: restart_time(1)
       integer(kind=kint) :: restrt_data_size
-
+      integer, parameter :: miniter = 4
+	  
       if( ISTEP .eq. 1 ) then
         ST = 0.0d0
       else
@@ -117,6 +118,7 @@ module m_heat_solve_TRAN
             write(IMSG,*) '// INCREMENT NO. =', incr, TT, DTIME
             write(*,*)
             write(*,*) '// INCREMENT NO. =', incr, TT, DTIME
+            write(IDBG,*) '// INCREMENT NO. =',incr, TT, DTIME
         endif
 
         if( DTIME .lt.DELMIN ) then
@@ -246,7 +248,7 @@ module m_heat_solve_TRAN
             cycle
           endif
 
-          if ( iterALL .le. 2 ) DTIME = DTIME * 2.0
+          if ( iterALL <=  miniter ) DTIME = DTIME * 1.5d0
         endif
 
         do i= 1, hecMESH%n_node
@@ -260,13 +262,6 @@ module m_heat_solve_TRAN
         if( MOD(tstep,NPRINT)==0 .or. iend==1 ) then
           write(ILOG,*)
           write(ILOG,'(a,i6, a,f10.3)')    ' STEP =',tstep, ' Time  =',CTIME
-          write(ILOG,*) '     Node   Temperature   '
-          write(ILOG,*) '--------------------------'
-          do i= 1, hecMESH%nn_internal
-            inod=fstrPARAM%global_local_id(1,i)
-            write (ILOG,'(i8,f12.4)') inod, fstrHEAT%TEMP(i)
-          enddo
-          call flush(ILOG)
 
           if( IRESULT.eq.1 .and. (mod(tstep,IRRES).eq.0 .or. tstep.eq.max_step) ) then
             header = '*fstrresult'
@@ -286,6 +281,7 @@ module m_heat_solve_TRAN
 
           if( IVISUAL.eq.1 .and. (mod(tstep,IWRES).eq.0 .or. tstep.eq.max_step) ) then
             interval = IWRES
+            if( mod(tstep,50)==0 .or. tstep==1 .or. iend==1 ) then
             call heat_init_result ( hecMESH, fstrRESULT )
             call heat_make_result ( hecMESH, fstrHEAT, fstrRESULT )
             call fstr2hecmw_mesh_conv(hecMESH)
@@ -297,6 +293,7 @@ module m_heat_solve_TRAN
             if( hecMESH%my_rank.eq.0 ) then
               write(IMSG,*) '### FSTR output Visual_File.'
               call flush(IMSG)
+            endif
             endif
           endif
 

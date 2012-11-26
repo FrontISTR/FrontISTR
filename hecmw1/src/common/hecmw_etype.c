@@ -59,7 +59,8 @@ HECMW_get_etype_UTIL2HECMW( int etype )
   case HECMW_MESH_ETYPE_SHT1:  return HECMW_ETYPE_SHT1;  
   case HECMW_MESH_ETYPE_SHT2:  return HECMW_ETYPE_SHT2;  
   case HECMW_MESH_ETYPE_SHQ1:  return HECMW_ETYPE_SHQ1;  
-  case HECMW_MESH_ETYPE_SHQ2:  return HECMW_ETYPE_SHQ2;  
+  case HECMW_MESH_ETYPE_SHQ2:  return HECMW_ETYPE_SHQ2;
+  case HECMW_MESH_ETYPE_SHQ3:  return HECMW_ETYPE_SHQ3;  
   case HECMW_MESH_ETYPE_LN11:  return HECMW_ETYPE_LN11;  
   case HECMW_MESH_ETYPE_LN12:  return HECMW_ETYPE_LN12;  
   case HECMW_MESH_ETYPE_LN13:  return HECMW_ETYPE_LN13;  
@@ -141,7 +142,8 @@ HECMW_get_etype_HECMW2UTIL( int etype )
   case HECMW_ETYPE_SHT1:  return HECMW_MESH_ETYPE_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MESH_ETYPE_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MESH_ETYPE_SHQ1;  
-  case HECMW_ETYPE_SHQ2:  return HECMW_MESH_ETYPE_SHQ2;  
+  case HECMW_ETYPE_SHQ2:  return HECMW_MESH_ETYPE_SHQ2; 
+  case HECMW_ETYPE_SHQ3:  return HECMW_MESH_ETYPE_SHQ3; 
   case HECMW_ETYPE_LN11:  return HECMW_MESH_ETYPE_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MESH_ETYPE_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MESH_ETYPE_LN13;  
@@ -263,7 +265,8 @@ HECMW_get_max_node( int etype )
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_NODE_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_NODE_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_NODE_SHQ1;  
-  case HECMW_ETYPE_SHQ2:  return HECMW_MAX_NODE_SHQ2;  
+  case HECMW_ETYPE_SHQ2:  return HECMW_MAX_NODE_SHQ2;
+  case HECMW_ETYPE_SHQ3:  return HECMW_MAX_NODE_SHQ3;
   case HECMW_ETYPE_LN11:  return HECMW_MAX_NODE_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_NODE_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_NODE_LN13;  
@@ -663,6 +666,7 @@ extern char
   case HECMW_ETYPE_SHT2:  return HECMW_UCD_LABEL_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_UCD_LABEL_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_UCD_LABEL_SHQ2;  
+  case HECMW_ETYPE_SHQ3:  return HECMW_UCD_LABEL_SHQ2;
   case HECMW_ETYPE_LN11:  return HECMW_UCD_LABEL_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_UCD_LABEL_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_UCD_LABEL_LN13;  
@@ -790,6 +794,7 @@ HECMW_is_etype_shell(int etype)
   case 731:				/* fall through */
   case 732:				/* fall through */
   case 741:				/* fall through */
+  case 743:
   case 742:	return 1;
   }
   return 0;

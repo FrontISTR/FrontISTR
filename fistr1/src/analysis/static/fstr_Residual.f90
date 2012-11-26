@@ -136,9 +136,6 @@ module m_fstr_Residual
       integer :: ndof
       ndof = hecMESH%n_dof
       call hecmw_innerProduct_R(hecMESH,ndof,force,force,fstr_get_residual)
-      if( hecMESH%my_rank==0) then
-         write(IMSG,*) '####fstrNLGEOM_SetResidual finished'
-      end if
       end function
       
 !> Calculate square norm      

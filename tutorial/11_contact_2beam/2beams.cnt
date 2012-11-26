@@ -21,7 +21,7 @@
  2.1e+5, 0.3
 !PLASTIC,YIELD=MISES
  500.0, 10.0
-!SOLVER,METHOD=DIRECTmkl
+!SOLVER,METHOD=MUMPS
 ## Post Control
 !VISUAL, method=PSR
 !surface_num=1

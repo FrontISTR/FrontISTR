@@ -153,10 +153,13 @@ module m_fstr_NodalStress
 !    stop
 
 !** Average over nodes
-    do i=1,hecMESH%n_node
+    do i=1,hecMESH%nn_internal
+      if( nnumber(i)==0 ) cycle
       ndstrain(i,:)=ndstrain(i,:)/nnumber(i)
       ndstress(i,1:6)=ndstress(i,1:6)/nnumber(i)
     enddo
+    call hecmw_update_m_R (hecMESH,ndstrain,hecMAT%NP,6)
+    call hecmw_update_m_R (hecMESH,ndstress,hecMAT%NP,7)
 !** CALCULATE von MISES stress
     do i=1,hecMESH%n_node
       s11=ndstress(i,1)

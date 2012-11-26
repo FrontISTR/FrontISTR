@@ -163,6 +163,13 @@ femap_write_elem(FILE *outfp, int mynode,
 			for (m = 0; m < 8; m++)
 				nna[m] = nn[m];
 		}
+		else if (ietyp == 743)
+		{
+			istyp = 18;
+			itopo = 5;
+			for (m = 0; m < 8; m++)
+				nna[m] = nn[m];
+		}
 		else if (ietyp == 341)
 		{
 			istyp = 25;
@@ -1480,7 +1487,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 		node_num = 3;
 	}
 	else if ((mesh->elem_type[0] == 241) || (mesh->elem_type[0] == 242)
-			|| (mesh->elem_type[0] == 741) || (mesh->elem_type[0] == 742))
+			|| (mesh->elem_type[0] == 741) || (mesh->elem_type[0] == 742) || (mesh->elem_type[0] == 743) )
 	{
 		elem_type_bin = 3;
 		node_num = 4;

@@ -754,7 +754,7 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 		free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
-	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742)) {
+	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742) || (mesh->elem_type[0]==743)) {
 		connect=(int *)calloc(mesh->n_elem*8, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");
@@ -873,7 +873,7 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 		free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
-	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742)) {
+	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742) || (mesh->elem_type[0]==743)) {
 		connect=(int *)calloc(mesh->n_elem*8, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");

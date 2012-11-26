@@ -83,8 +83,6 @@ module m_static_mat_ass_main
    subroutine FSTR_LOCAL_STF_CREATE(hecMESH, ndof, ic_type, icel, xx, yy, zz, gausses, iset, stiffness)
       use m_fstr
       use m_static_lib
-      use m_static_LIB_1d
-      use m_static_LIB_3dIC
       use mMechGauss
 
       type (hecmwST_local_mesh) :: hecMESH
@@ -106,10 +104,9 @@ module m_static_mat_ass_main
       material => gausses(1)%pMaterial
       ee = material%variables(M_YOUNGS)
       pp = material%variables(M_POISSON)
-      thick = material%variables(M_THICK)
-      if(  getSpaceDimension( ic_type )==2 ) thick =1.d0
       if ( ic_type==241 .or. ic_type==242 .or.    &
            ic_type==231 .or. ic_type==232 .or. ic_type==2322 ) then
+        thick =1.d0
         call STF_C2( ic_type,nn,ecoord(1:2,1:nn),gausses(:),thick,stiffness(1:nn*ndof,1:nn*ndof),iset)
 
       else if ( ic_type==301 ) then
@@ -125,9 +122,15 @@ module m_static_mat_ass_main
         call STF_C3( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof),1.d0)
 		
       else if ( ic_type==731) then
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
         call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
         call fstr_local_stf_restore(local_stf, nn*ndof, stiffness)
       else if ( ic_type==741) then
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1) 
         call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
         call fstr_local_stf_restore(local_stf, nn*ndof, stiffness)
       else

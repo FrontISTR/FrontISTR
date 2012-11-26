@@ -109,14 +109,8 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
 
           if( hecMESH%n_dof==3 ) then
              call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
-             if( hecMESH%my_rank==0) then
-                write(IMSG,*) 'hecmw_update_3_R: OK'
-             end if
           else if( hecMESH%n_dof==2 ) then
              call hecmw_update_2_R (hecMESH, hecMAT%X, hecMAT%NP)
-             if( hecMESH%my_rank==0) then
-                write(IMSG,*) 'hecmw_update_2_R: OK'
-             end if
           endif
 		  
 !   ----- update the small displacement and the displacement for 1step 
