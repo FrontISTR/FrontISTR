@@ -120,21 +120,13 @@ module m_static_mat_ass_main
       else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.     &
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         call STF_C3( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof),1.d0)
-		
-      else if ( ic_type==731) then
+
+      else if( ( ic_type==741 ) .or. ( ic_type==743 ) .or. ( ic_type==731 ) ) then
         isect= hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
-        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
-        call fstr_local_stf_restore(local_stf, nn*ndof, stiffness)
-      else if ( ic_type==741) then
-        isect= hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1) 
-        call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
-        call fstr_local_stf_restore(local_stf, nn*ndof, stiffness)
-      else if ( ic_type==743) then
-	  
+        call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick)
+
       else
         write(*,*) '###ERROR### : Element type not supported for linear static analysis'
         write(*,*) ' ic_type = ', ic_type
@@ -142,29 +134,5 @@ module m_static_mat_ass_main
       endif
 
    end subroutine FSTR_LOCAL_STF_CREATE
-
-   !> restore stiff matrix in 1-dimensional form into 2-dimwnsion array
-   subroutine FSTR_LOCAL_STF_RESTORE(local_stf, mat_size, stiffness)
-      use m_fstr
-
-      implicit none
-
-      real(kind=kreal) :: local_stf(:), stiffness(:, :)
-      integer(kind=kint) :: mat_size
-
-!** Local variables
-      integer(kind=kint) :: i, j, num
-
-      do i = 1, mat_size
-        do j = 1, i-1
-          num = (i-1)*i/2 + j
-          stiffness(i, j) = local_stf(num)
-          stiffness(j, i) = local_stf(num)
-        enddo
-        num = i*(i+1)/2
-        stiffness(i, i) = local_stf(num)
-      enddo
-   end subroutine FSTR_LOCAL_STF_RESTORE
-
 
 end module m_static_mat_ass_main

@@ -48,4 +48,37 @@ module shape_tri3n
       func(:,:,:) = 0.d0
     end subroutine
 
+
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE NodalNaturalCoord_tri3n(nncoord)
+!####################################################################
+      
+      IMPLICIT NONE
+      
+!--------------------------------------------------------------------
+      
+      REAL(KIND = kreal), INTENT(OUT) :: nncoord(3, 1)
+      
+!--------------------------------------------------------------------
+      
+      ! xi-coordinate at a node in a local element
+      nncoord(1, 1) =  1.0D0
+      nncoord(2, 1) =  0.0D0
+      nncoord(3, 1) =  0.0D0
+      ! eta-coordinate at a node in a local element
+      nncoord(1, 2) =  0.0D0
+      nncoord(2, 2) =  1.0D0
+      nncoord(3, 2) =  0.0D0
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE NodalNaturalCoord_tri3n
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
+
 end module

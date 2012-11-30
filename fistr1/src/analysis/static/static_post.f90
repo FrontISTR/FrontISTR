@@ -28,13 +28,13 @@ contains
       character(len=HECMW_NAME_LEN) :: label
       character(len=HECMW_NAME_LEN) :: nameID
 !C Max Min
-      real(kind=kreal)    Umax(6), Umin(6), Emax(10), Emin(10)        &
-                                             ,Smax(12), Smin(12)
-      integer(kind=kint) IUmax(6),IUmin(6),IEmax(10),IEmin(10)        &
-                                            ,ISmax(12),ISmin(12)
+      real(kind=kreal)    Umax(6), Umin(6), Emax(14), Emin(14)        &
+                                             ,Smax(14), Smin(14)
+      integer(kind=kint) IUmax(6),IUmin(6),IEmax(14),IEmin(14)        &
+                                            ,ISmax(14),ISmin(14)
 
-      real(kind=kreal)    EEmax(10), EEmin(10) ,ESmax(12), ESmin(12)
-      integer(kind=kint) IEEmax(10),IEEmin(10),IESmax(12),IESmin(12)
+      real(kind=kreal)    EEmax(14), EEmin(14) ,ESmax(14), ESmin(14)
+      integer(kind=kint) IEEmax(14),IEEmin(14),IESmax(14),IESmin(14)
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
 
@@ -94,7 +94,7 @@ contains
 !C*** Show Strain
       if( NDOF == 2 ) NDOF = 3
       if( NDOF == 3 ) MDOF = 6
-      if( NDOF == 6 ) MDOF = 10
+      if( NDOF == 6 ) MDOF = 14
       write(IDBG,*) '#### STRAIN@POST'
 !C @node
       do i= 1, hecMESH%nn_internal
@@ -150,7 +150,7 @@ contains
       enddo
 !C*** Show Stress
       if( NDOF .eq. 3 ) MDOF = 7
-      if( NDOF .eq. 6 ) MDOF = 12
+      if( NDOF .eq. 6 ) MDOF = 14
       write(IDBG,*) '#### STRESS@POST'
 !C @node
       do i= 1, hecMESH%nn_internal
@@ -329,82 +329,100 @@ contains
         write(ILOG,1009)'//R3    ',Umax(6),IUmax(6),Umin(6),IUmin(6)
         write(ILOG,1009)'//E11(+)',Emax( 1),IEmax( 1),Emin( 1),IEmin( 1)
         write(ILOG,1009)'//E22(+)',Emax( 2),IEmax( 2),Emin( 2),IEmin( 2)
-        write(ILOG,1009)'//E12(+)',Emax( 3),IEmax( 3),Emin( 3),IEmin( 3)
-        write(ILOG,1009)'//E23(+)',Emax( 4),IEmax( 4),Emin( 4),IEmin( 4)
-        write(ILOG,1009)'//E13(+)',Emax( 5),IEmax( 5),Emin( 5),IEmin( 5)
-        write(ILOG,1009)'//E11(-)',Emax( 6),IEmax( 6),Emin( 6),IEmin( 6)
-        write(ILOG,1009)'//E22(-)',Emax( 7),IEmax( 7),Emin( 7),IEmin( 7)
-        write(ILOG,1009)'//E12(-)',Emax( 8),IEmax( 8),Emin( 8),IEmin( 8)
-        write(ILOG,1009)'//E23(-)',Emax( 9),IEmax( 9),Emin( 9),IEmin( 9)
-        write(ILOG,1009)'//E13(-)',Emax(10),IEmax(10),Emin(10),IEmin(10)
+        write(ILOG,1009)'//E33(+)',Emax( 3),IEmax( 3),Emin( 3),IEmin( 3)
+        write(ILOG,1009)'//E12(+)',Emax( 4),IEmax( 4),Emin( 4),IEmin( 4)
+        write(ILOG,1009)'//E23(+)',Emax( 5),IEmax( 5),Emin( 5),IEmin( 5)
+        write(ILOG,1009)'//E31(+)',Emax( 6),IEmax( 6),Emin( 6),IEmin( 6)
+        write(ILOG,1009)'//EEQ(+)',Emax( 7),IEmax( 7),Emin( 7),IEmin( 7)
+        write(ILOG,1009)'//E11(-)',Emax( 8),IEmax( 8),Emin( 8),IEmin( 8)
+        write(ILOG,1009)'//E22(-)',Emax( 9),IEmax( 9),Emin( 9),IEmin( 9)
+        write(ILOG,1009)'//E33(-)',Emax(10),IEmax(10),Emin(10),IEmin(10)
+        write(ILOG,1009)'//E12(-)',Emax(11),IEmax(11),Emin(11),IEmin(11)
+        write(ILOG,1009)'//E23(-)',Emax(12),IEmax(12),Emin(12),IEmin(12)
+        write(ILOG,1009)'//E31(-)',Emax(13),IEmax(13),Emin(13),IEmin(13)
+        write(ILOG,1009)'//EEQ(-)',Emax(14),IEmax(14),Emin(14),IEmin(14)
         write(ILOG,1009)'//S11(+)',Smax( 1),ISmax( 1),Smin( 1),ISmin( 1)
         write(ILOG,1009)'//S22(+)',Smax( 2),ISmax( 2),Smin( 2),ISmin( 2)
-        write(ILOG,1009)'//S12(+)',Smax( 3),ISmax( 3),Smin( 3),ISmin( 3)
-        write(ILOG,1009)'//S23(+)',Smax( 4),ISmax( 4),Smin( 4),ISmin( 4)
-        write(ILOG,1009)'//S13(+)',Smax( 5),ISmax( 5),Smin( 5),ISmin( 5)
-        write(ILOG,1009)'//SMS(+)',Smax( 6),ISmax( 6),Smin( 6),ISmin( 6)
-        write(ILOG,1009)'//S11(-)',Smax( 7),ISmax( 7),Smin( 7),ISmin( 7)
-        write(ILOG,1009)'//S22(-)',Smax( 8),ISmax( 8),Smin( 8),ISmin( 8)
-        write(ILOG,1009)'//S12(-)',Smax( 9),ISmax( 9),Smin( 9),ISmin( 9)
-        write(ILOG,1009)'//S23(-)',Smax(10),ISmax(10),Smin(10),ISmin(10)
-        write(ILOG,1009)'//S13(-)',Smax(11),ISmax(11),Smin(11),ISmin(11)
-        write(ILOG,1009)'//SMS(-)',Smax(12),ISmax(12),Smin(12),ISmin(12)
+        write(ILOG,1009)'//S33(+)',Smax( 3),ISmax( 3),Smin( 3),ISmin( 3)
+        write(ILOG,1009)'//S12(+)',Smax( 4),ISmax( 4),Smin( 4),ISmin( 4)
+        write(ILOG,1009)'//S23(+)',Smax( 5),ISmax( 5),Smin( 5),ISmin( 5)
+        write(ILOG,1009)'//S31(+)',Smax( 6),ISmax( 6),Smin( 6),ISmin( 6)
+        write(ILOG,1009)'//SMS(+)',Smax( 7),ISmax( 7),Smin( 7),ISmin( 7)
+        write(ILOG,1009)'//S11(-)',Smax( 8),ISmax( 8),Smin( 8),ISmin( 8)
+        write(ILOG,1009)'//S22(-)',Smax( 9),ISmax( 9),Smin( 9),ISmin( 9)
+        write(ILOG,1009)'//S33(-)',Smax(10),ISmax(10),Smin(10),ISmin(10)
+        write(ILOG,1009)'//S12(-)',Smax(11),ISmax(11),Smin(11),ISmin(11)
+        write(ILOG,1009)'//S23(-)',Smax(12),ISmax(12),Smin(12),ISmin(12)
+        write(ILOG,1009)'//S31(-)',Smax(13),ISmax(13),Smin(13),ISmin(13)
+        write(ILOG,1009)'//SMS(-)',Smax(14),ISmax(14),Smin(14),ISmin(14)
         write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
         write(ILOG,1009)'//E11(+)'                                        &
                               ,EEmax( 1),IEEmax( 1),EEmin( 1),IEEmin( 1)
         write(ILOG,1009)'//E22(+)'                                        &
                               ,EEmax( 2),IEEmax( 2),EEmin( 2),IEEmin( 2)
-        write(ILOG,1009)'//E12(+)'                                        &
+        write(ILOG,1009)'//E33(+)'                                        &
                               ,EEmax( 3),IEEmax( 3),EEmin( 3),IEEmin( 3)
-        write(ILOG,1009)'//E23(+)'                                        &
+        write(ILOG,1009)'//E12(+)'                                        &
                               ,EEmax( 4),IEEmax( 4),EEmin( 4),IEEmin( 4)
-        write(ILOG,1009)'//E13(+)'                                        &
+        write(ILOG,1009)'//E23(+)'                                        &
                               ,EEmax( 5),IEEmax( 5),EEmin( 5),IEEmin( 5)
-        write(ILOG,1009)'//E11(-)'                                        &
+        write(ILOG,1009)'//E31(+)'                                        &
                               ,EEmax( 6),IEEmax( 6),EEmin( 6),IEEmin( 6)
-        write(ILOG,1009)'//E22(-)'                                        &
+        write(ILOG,1009)'//EEQ(+)'                                        &
                               ,EEmax( 7),IEEmax( 7),EEmin( 7),IEEmin( 7)
-        write(ILOG,1009)'//E12(-)'                                        &
+        write(ILOG,1009)'//E11(-)'                                        &
                               ,EEmax( 8),IEEmax( 8),EEmin( 8),IEEmin( 8)
-        write(ILOG,1009)'//E23(-)'                                        &
+        write(ILOG,1009)'//E22(-)'                                        &
                               ,EEmax( 9),IEEmax( 9),EEmin( 9),IEEmin( 9)
-        write(ILOG,1009)'//E13(-)'                                        &
+        write(ILOG,1009)'//E33(-)'                                        &
                               ,EEmax(10),IEEmax(10),EEmin(10),IEEmin(10)
+        write(ILOG,1009)'//E12(-)'                                        &
+                              ,EEmax(11),IEEmax(11),EEmin(11),IEEmin(11)
+        write(ILOG,1009)'//E23(-)'                                        &
+                              ,EEmax(12),IEEmax(12),EEmin(12),IEEmin(12)
+        write(ILOG,1009)'//E31(-)'                                        &
+                              ,EEmax(13),IEEmax(13),EEmin(13),IEEmin(13)
+        write(ILOG,1009)'//EEQ(-)'                                        &
+                              ,EEmax(14),IEEmax(14),EEmin(14),IEEmin(14)
         write(ILOG,1009)'//S11(+)'                                        &
                               ,ESmax( 1),IESmax( 1),ESmin( 1),IESmin( 1)
         write(ILOG,1009)'//S22(+)'                                        &
                               ,ESmax( 2),IESmax( 2),ESmin( 2),IESmin( 2)
-        write(ILOG,1009)'//S12(+)'                                        &
+        write(ILOG,1009)'//S33(+)'                                        &
                               ,ESmax( 3),IESmax( 3),ESmin( 3),IESmin( 3)
-        write(ILOG,1009)'//S23(+)'                                        &
+        write(ILOG,1009)'//S12(+)'                                        &
                               ,ESmax( 4),IESmax( 4),ESmin( 4),IESmin( 4)
-        write(ILOG,1009)'//S13(+)'                                        &
+        write(ILOG,1009)'//S23(+)'                                        &
                               ,ESmax( 5),IESmax( 5),ESmin( 5),IESmin( 5)
-        write(ILOG,1009)'//SMS(+)'                                        &
+        write(ILOG,1009)'//S31(+)'                                        &
                               ,ESmax( 6),IESmax( 6),ESmin( 6),IESmin( 6)
-        write(ILOG,1009)'//S11(-)'                                        &
+        write(ILOG,1009)'//SMS(+)'                                        &
                               ,ESmax( 7),IESmax( 7),ESmin( 7),IESmin( 7)
-        write(ILOG,1009)'//S22(-)'                                        &
+        write(ILOG,1009)'//S11(-)'                                        &
                               ,ESmax( 8),IESmax( 8),ESmin( 8),IESmin( 8)
-        write(ILOG,1009)'//S12(-)'                                        &
+        write(ILOG,1009)'//S22(-)'                                        &
                               ,ESmax( 9),IESmax( 9),ESmin( 9),IESmin( 9)
-        write(ILOG,1009)'//S23(-)'                                        &
+        write(ILOG,1009)'//S33(-)'                                        &
                               ,ESmax(10),IESmax(10),ESmin(10),IESmin(10)
-        write(ILOG,1009)'//S13(-)'                                        &
+        write(ILOG,1009)'//S12(-)'                                        &
                               ,ESmax(11),IESmax(11),ESmin(11),IESmin(11)
-        write(ILOG,1009)'//SMS(-)'                                        &
+        write(ILOG,1009)'//S23(-)'                                        &
                               ,ESmax(12),IESmax(12),ESmin(12),IESmin(12)
+        write(ILOG,1009)'//S31(-)'                                        &
+                              ,ESmax(13),IESmax(13),ESmin(13),IESmin(13)
+        write(ILOG,1009)'//SMS(-)'                                        &
+                              ,ESmax(14),IESmax(14),ESmin(14),IESmin(14)
 !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax, 6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin, 6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,10,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,10,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,12,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,10,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,10,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Emax,14,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Emin,14,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Smax,14,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Smin,14,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,EEmax,14,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,EEmin,14,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,ESmax,14,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,ESmin,14,hecmw_min)
         if( hecMESH%my_rank .eq. 0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1    ',Umax(1),Umin(1)
@@ -415,49 +433,61 @@ contains
           write(ILOG,1019) '//R3    ',Umax(6),Umin(6)
           write(ILOG,1019) '//E11(+)',Emax( 1),Emin( 1)
           write(ILOG,1019) '//E22(+)',Emax( 2),Emin( 2)
-          write(ILOG,1019) '//E12(+)',Emax( 3),Emin( 3)
-          write(ILOG,1019) '//E23(+)',Emax( 4),Emin( 4)
-          write(ILOG,1019) '//E13(+)',Emax( 5),Emin( 5)
-          write(ILOG,1019) '//E11(-)',Emax( 6),Emin( 6)
-          write(ILOG,1019) '//E22(-)',Emax( 7),Emin( 7)
-          write(ILOG,1019) '//E12(-)',Emax( 8),Emin( 8)
-          write(ILOG,1019) '//E23(-)',Emax( 9),Emin( 9)
-          write(ILOG,1019) '//E13(-)',Emax(10),Emin(10)
+          write(ILOG,1019) '//E33(+)',Emax( 3),Emin( 3)
+          write(ILOG,1019) '//E12(+)',Emax( 4),Emin( 4)
+          write(ILOG,1019) '//E23(+)',Emax( 5),Emin( 5)
+          write(ILOG,1019) '//E31(+)',Emax( 6),Emin( 6)
+          write(ILOG,1019) '//EEQ(+)',Emax( 7),Emin( 7)
+          write(ILOG,1019) '//E11(-)',Emax( 8),Emin( 8)
+          write(ILOG,1019) '//E22(-)',Emax( 9),Emin( 9)
+          write(ILOG,1019) '//E33(-)',Emax(10),Emin(10)
+          write(ILOG,1019) '//E12(-)',Emax(11),Emin(11)
+          write(ILOG,1019) '//E23(-)',Emax(12),Emin(12)
+          write(ILOG,1019) '//E31(-)',Emax(13),Emin(13)
+          write(ILOG,1019) '//EEQ(-)',Emax(14),Emin(14)
           write(ILOG,1019) '//S11(+)',Smax( 1),Smin( 1)
           write(ILOG,1019) '//S22(+)',Smax( 2),Smin( 2)
-          write(ILOG,1019) '//S12(+)',Smax( 3),Smin( 3)
-          write(ILOG,1019) '//S23(+)',Smax( 4),Smin( 4)
-          write(ILOG,1019) '//S13(+)',Smax( 5),Smin( 5)
-          write(ILOG,1019) '//SMS(+)',Smax( 6),Smin( 6)
-          write(ILOG,1019) '//S11(-)',Smax( 7),Smin( 7)
-          write(ILOG,1019) '//S22(-)',Smax( 8),Smin( 8)
-          write(ILOG,1019) '//S12(-)',Smax( 9),Smin( 9)
-          write(ILOG,1019) '//S23(-)',Smax(10),Smin(10)
-          write(ILOG,1019) '//S13(-)',Smax(11),Smin(11)
-          write(ILOG,1019) '//SMS(-)',Smax(12),Smin(12)
+          write(ILOG,1019) '//S33(+)',Smax( 3),Smin( 3)
+          write(ILOG,1019) '//S12(+)',Smax( 4),Smin( 4)
+          write(ILOG,1019) '//S23(+)',Smax( 5),Smin( 5)
+          write(ILOG,1019) '//S31(+)',Smax( 6),Smin( 6)
+          write(ILOG,1019) '//SMS(+)',Smax( 7),Smin( 7)
+          write(ILOG,1019) '//S11(-)',Smax( 8),Smin( 8)
+          write(ILOG,1019) '//S22(-)',Smax( 9),Smin( 9)
+          write(ILOG,1019) '//S33(-)',Smax(10),Smin(10)
+          write(ILOG,1019) '//S12(-)',Smax(11),Smin(11)
+          write(ILOG,1019) '//S23(-)',Smax(12),Smin(12)
+          write(ILOG,1019) '//S31(-)',Smax(13),Smin(13)
+          write(ILOG,1019) '//SMS(-)',Smax(14),Smin(14)
           write(ILOG,*) '##### @Element :Max/Min####'
           write(ILOG,1019) '//E11(+)',EEmax( 1),EEmin( 1)
           write(ILOG,1019) '//E22(+)',EEmax( 2),EEmin( 2)
-          write(ILOG,1019) '//E12(+)',EEmax( 3),EEmin( 3)
-          write(ILOG,1019) '//E23(+)',EEmax( 4),EEmin( 4)
-          write(ILOG,1019) '//E13(+)',EEmax( 5),EEmin( 5)
-          write(ILOG,1019) '//E11(-)',EEmax( 6),EEmin( 6)
-          write(ILOG,1019) '//E22(-)',EEmax( 7),EEmin( 7)
-          write(ILOG,1019) '//E12(-)',EEmax( 8),EEmin( 8)
-          write(ILOG,1019) '//E23(-)',EEmax( 9),EEmin( 9)
-          write(ILOG,1019) '//E13(-)',EEmax(10),EEmin(10)
+          write(ILOG,1019) '//E33(+)',EEmax( 3),EEmin( 3)
+          write(ILOG,1019) '//E12(+)',EEmax( 4),EEmin( 4)
+          write(ILOG,1019) '//E23(+)',EEmax( 5),EEmin( 5)
+          write(ILOG,1019) '//E31(+)',EEmax( 6),EEmin( 6)
+          write(ILOG,1019) '//EEQ(+)',EEmax( 7),EEmin( 7)
+          write(ILOG,1019) '//E11(-)',EEmax( 8),EEmin( 8)
+          write(ILOG,1019) '//E22(-)',EEmax( 9),EEmin( 9)
+          write(ILOG,1019) '//E33(-)',EEmax(10),EEmin(10)
+          write(ILOG,1019) '//E12(-)',EEmax(11),EEmin(11)
+          write(ILOG,1019) '//E23(-)',EEmax(12),EEmin(12)
+          write(ILOG,1019) '//E31(-)',EEmax(13),EEmin(13)
+          write(ILOG,1019) '//EEQ(-)',EEmax(14),EEmin(14)
           write(ILOG,1019) '//S11(+)',ESmax( 1),ESmin( 1)
           write(ILOG,1019) '//S22(+)',ESmax( 2),ESmin( 2)
-          write(ILOG,1019) '//S12(+)',ESmax( 3),ESmin( 3)
-          write(ILOG,1019) '//S23(+)',ESmax( 4),ESmin( 4)
-          write(ILOG,1019) '//S13(+)',ESmax( 5),ESmin( 5)
-          write(ILOG,1019) '//SMS(+)',ESmax( 6),ESmin( 6)
-          write(ILOG,1019) '//S11(-)',ESmax( 7),ESmin( 7)
-          write(ILOG,1019) '//S22(-)',ESmax( 8),ESmin( 8)
-          write(ILOG,1019) '//S12(-)',ESmax( 9),ESmin( 9)
-          write(ILOG,1019) '//S23(-)',ESmax(10),ESmin(10)
-          write(ILOG,1019) '//S13(-)',ESmax(11),ESmin(11)
-          write(ILOG,1019) '//SMS(-)',ESmax(12),ESmin(12)
+          write(ILOG,1019) '//S33(+)',ESmax( 3),ESmin( 3)
+          write(ILOG,1019) '//S12(+)',ESmax( 4),ESmin( 4)
+          write(ILOG,1019) '//S23(+)',ESmax( 5),ESmin( 5)
+          write(ILOG,1019) '//S31(+)',ESmax( 6),ESmin( 6)
+          write(ILOG,1019) '//SMS(+)',ESmax( 7),ESmin( 7)
+          write(ILOG,1019) '//S11(-)',ESmax( 8),ESmin( 8)
+          write(ILOG,1019) '//S22(-)',ESmax( 9),ESmin( 9)
+          write(ILOG,1019) '//S33(-)',ESmax(10),ESmin(10)
+          write(ILOG,1019) '//S12(-)',ESmax(11),ESmin(11)
+          write(ILOG,1019) '//S23(-)',ESmax(12),ESmin(12)
+          write(ILOG,1019) '//S31(-)',ESmax(13),ESmin(13)
+          write(ILOG,1019) '//SMS(-)',ESmax(14),ESmin(14)
         endif
         if( IRESULT.eq.0 ) return
 !C*** Write Result File
@@ -472,22 +502,22 @@ contains
         call hecmw_result_add(id,ndof,label,fstrSOLID%unode)
 !C*** STRAIN @node
         id = 1
-        ndof=10
+        ndof=14
         label='STRAIN'
         call hecmw_result_add(id,ndof,label,fstrSOLID%STRAIN)
 !C*** STRESS @node
         id = 1
-        ndof=12
+        ndof=14
         label='STRESS'
         call hecmw_result_add(id,ndof,label,fstrSOLID%STRESS)
 !C*** STRAIN @element 
         id = 2
-        ndof=10
+        ndof=14
         label='ESTRAIN'
         call hecmw_result_add(id,ndof,label,fstrSOLID%ESTRAIN)
 !C*** STRESS @element
         id = 2
-        ndof=12
+        ndof=14
         label='ESTRESS'
         call hecmw_result_add(id,ndof,label,fstrSOLID%ESTRESS)
 !C*** WRITE NOW

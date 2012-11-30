@@ -79,7 +79,7 @@ module m_fstr_solve_LINEAR
         call fstr_output_2d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
       else if( hecMESH%n_dof==6) THEN
         call hecmw_update_m_R (hecMESH,hecMAT%X,hecMAT%NP,hecMESH%n_dof)
-        call fstr_output_6d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
+        call fstr_output_6d_Shell(hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       endif 
 	  
 !C-- OUTPUT FOR ELEMENTS

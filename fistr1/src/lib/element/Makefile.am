@@ -85,6 +85,7 @@ OBJSF = \
 	tri6n.@f90objfilepostfix@ \
 	quad4n.@f90objfilepostfix@ \
 	quad8n.@f90objfilepostfix@ \
+	quad9n.@f90objfilepostfix@ \
 	hex8n.@f90objfilepostfix@ \
 	hex20n.@f90objfilepostfix@ \
 	tet4n.@f90objfilepostfix@ \

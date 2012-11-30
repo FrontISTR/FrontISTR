@@ -60,26 +60,26 @@ contains
         fstrRESULT%ne_component=0
         allocate( fstrRESULT%nn_dof(3) )
         allocate( fstrRESULT%node_label(3) )
-        allocate( fstrRESULT%node_val_item(28*hecMESH%n_node))
+        allocate( fstrRESULT%node_val_item(34*hecMESH%n_node))
         fstrRESULT%nn_dof(1)=6
-        fstrRESULT%nn_dof(2)=10
-        fstrRESULT%nn_dof(3)=12
+        fstrRESULT%nn_dof(2)=14
+        fstrRESULT%nn_dof(3)=14
         fstrRESULT%node_label(1)='DISPLACEMENT'
         fstrRESULT%node_label(2)='STRAIN'
         fstrRESULT%node_label(3)='STRESS'
 !C*** Set Displacement/Strain/Stress @node
         do i= 1, hecMESH%n_node
           do k=1,6
-            fstrRESULT%node_val_item(28*(i-1)+k)       &          
+            fstrRESULT%node_val_item(34*(i-1)+k)       &
             =fstrSOLID%unode(6*(i-1)+k)
           enddo
-          do k=1,10
-            fstrRESULT%node_val_item(28*(i-1)+k+6)     &                
-            =fstrSOLID%STRAIN(10*(i-1)+k)
+          do k=1,14
+            fstrRESULT%node_val_item(34*(i-1)+k+6)     &
+            =fstrSOLID%STRAIN(14*(i-1)+k)
           enddo
-          do k=1,12
-            fstrRESULT%node_val_item(28*(i-1)+k+16)    &                
-            =fstrSOLID%STRESS(12*(i-1)+k)
+          do k=1,14
+            fstrRESULT%node_val_item(34*(i-1)+k+20)    &
+            =fstrSOLID%STRESS(14*(i-1)+k)
           enddo
         enddo
       endif

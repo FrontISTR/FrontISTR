@@ -44,7 +44,7 @@ contains
       integer(kind=kint) pind(20),istart
       integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF
       integer(kind=kint) ierror,kk,iax,jk
-      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa
+      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
       real(kind=kreal) xx1(20),yy1(20),zz1(20),Area
       real(kind=kreal) x(20),  y(20),  z(20),  AA,Volume,val
       real(kind=kreal) smax,chkmass
@@ -86,7 +86,7 @@ contains
 !C
           isect = hecMESH%section_ID(icel)
           iax = hecMESH%section%sect_opt(isect)
-          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick)
+          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick,alpha_over_mu)
 !C
           do j = 1,nn
             nid = hecMESH%global_node_ID(nodLOCAL(j))

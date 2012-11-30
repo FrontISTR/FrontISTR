@@ -144,10 +144,8 @@ module m_dynamic_mat_ass_load
                    ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
             call DL_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,ltype,params,vect(1:nn*ndof),nsize)
 !
-          else if ( ic_type.eq.741 ) then
-            call DL_S4( xx,yy,zz,rho,thick,ltype,params,vect,nsize )
-          else if ( ic_type.EQ.731 ) then
-            call DL_S3( xx,yy,zz,rho,thick,ltype,params,vect,nsize )
+          else if( ( ic_type==741 ) .or. ( ic_type==743 ) .or. ( ic_type==731 ) ) then
+            call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize)
           endif
 !
 !!!!!!  time history
@@ -244,7 +242,7 @@ module m_dynamic_mat_ass_load
               call TLOAD_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
                             fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof) )
 !
-            else if ( ic_type.eq.741 .or. ic_type.eq.731 ) then
+            else if ( ic_type.eq.741 .or. ic_type.eq.743 .or. ic_type.eq.731 ) then
               if( myrank .eq. 0 ) then
                 WRITE(IMSG,*) '*------------------------', &
                                '-------------------*'

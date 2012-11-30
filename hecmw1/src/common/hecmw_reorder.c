@@ -916,6 +916,7 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
     case HECMW_ETYPE_SHT2:
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
+    case HECMW_ETYPE_SHQ3:
       n_dof = BIT_DOF_SIX;
       break;
 

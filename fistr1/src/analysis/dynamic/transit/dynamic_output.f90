@@ -1014,711 +1014,946 @@ contains
 !C***
 !C*** OUTPUT for FSTR solver
 !C***
-      subroutine dynamic_output_6d( hecMESH,hecMAT,fstrSOLID,fstrPARAM, fstrDYNAMIC)
-      type ( hecmwST_matrix     ) :: hecMAT
-      type ( hecmwST_local_mesh ) :: hecMESH
-      type ( fstr_solid         ) :: fstrSOLID
-      type ( fstr_param         ) :: fstrPARAM
-      type (fstr_dynamic        ) :: fstrDYNAMIC
-
-      INTEGER(kind=kint) NDOF
-      integer(kind=kint) :: idx
-      integer :: ig, ig0, iE0, ik, iE, icel
-      integer :: i,j,k, ielem, ii,jj
-
-      NDOF = hecMESH%n_dof
-!C
-!C-- displacement, velocity and accelaration
-!C
-      if((fstrDYNAMIC%idx_eqa .eq. 1) .and. (fstrDYNAMIC%i_step .gt. 0)) then
-        idx = 2
-      else
-        idx = 1
-      endif
-!C
-!C-- SET DISPLACEMENT
-!C
-      do i = 1, hecMESH%n_node
-        do j = 1, NDOF
-          fstrSOLID%unode(NDOF*(i-1)+j)= fstrDYNAMIC%DISP(NDOF*(i-1)+j, idx)
-        enddo
-      enddo
-
-!C
-!C-- DISPLACEMENT
-!C
-      if( fstrDYNAMIC%iout_list(1) .eq. 1 ) then
-
-      write(ILOG,*) '#### DISPLACEMENT SHELL'
-      write(ILOG,'(a,a)')                                              &
-                    '     NODE    X-DISP      Y-DISP      Z-DISP   '   &
-                             ,'   X-ROT       Y-ROT       Z-ROT'
-      write(ILOG,'(a,a)')                                              &
-                    ' --------+-----------+-----------+-----------+'   &
-                             ,'-----------+-----------+-------------'
-      do i= 1, hecMESH%nn_internal
-        jj=fstrPARAM%global_local_id(1,i)
-        ii=fstrPARAM%global_local_id(2,i)
-
-        write(ILOG,'(i10,6e12.4)') jj,(fstrDYNAMIC%DISP(6*(ii-1)+k, idx),k=1,6)
-      enddo
-
-      end if
-!C
-!C-- VELOCITY
-!C
-      if( fstrDYNAMIC%iout_list(2) .eq. 1 ) then
-
-       if(fstrDYNAMIC%idx_eqa .eq. 11) then
-        if(fstrDYNAMIC%i_step .gt. 0) then
-          write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &
-                ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
-        end if
-       end if
-
-      write(ILOG,*) '#### VELOCITY SHELL'
-      write(ILOG,'(a,a)')                                              &
-                    '     NODE    X-VELO      Y-VELO      Z-VELO   '   &
-                             ,'   X-ROT-VEL   Y-ROT-VEL   Z-ROT-VEL'
-      write(ILOG,'(a,a)')                                              &
-                    ' --------+-----------+-----------+-----------+'   &
-                             ,'-----------+-----------+-------------'
-      do i= 1, hecMESH%nn_internal
-        jj=fstrPARAM%global_local_id(1,i)
-        ii=fstrPARAM%global_local_id(2,i)
-
-        write(ILOG,'(i10,6e12.4)') jj,(fstrDYNAMIC%VEL(6*(ii-1)+k, idx),k=1,6)
-      enddo
-
-      end if
-!C
-!C-- ACCELERATION
-!C
-      if( fstrDYNAMIC%iout_list(3) .eq. 1 ) then
-
-       if(fstrDYNAMIC%idx_eqa .eq. 11) then
-        if(fstrDYNAMIC%i_step .gt. 0) then
-          write(ILOG,'(a,i10,5x,a,1pe12.4)') 'STEP-1 =' ,fstrDYNAMIC%i_step-1   &
-                ,'TIME-dt =',fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step -1)
-        end if
-       end if
-
-      write(ILOG,*) '#### ACCELERATION SHELL'
-      write(ILOG,'(a,a)')                                              &
-                    '     NODE    X-ACCE      Y-ACCE      Z-ACCE   '   &
-                             ,'   X-ROT-ACC   Y-ROT-ACC   Z-ROT-ACC'
-      write(ILOG,'(a,a)')                                              &
-                    ' --------+-----------+-----------+-----------+'   &
-                             ,'-----------+-----------+-------------'
-      do i= 1, hecMESH%nn_internal
-        jj=fstrPARAM%global_local_id(1,i)
-        ii=fstrPARAM%global_local_id(2,i)
-
-        write(ILOG,'(i10,6e12.4)') jj,(fstrDYNAMIC%ACC(6*(ii-1)+k, idx),k=1,6)
-      enddo
-
-      end if
-!C
-!C-- end of displacement, velocity and accelaration
-!C
-!C
-!C-- reaction force, strain and stress
-!C
-!      if(fstrDYNAMIC%i_step .gt. 0) then
-!C
-!C-- REACTION FORCE
-!C
-      write(ILOG,*) '#### REACTION FORCE SHELL'
-      call dynamic_reaction_force_6d( hecMESH, fstrSOLID, fstrDYNAMIC)
-      call flush(ILOG)
-!C
-!C-- NODAL STRESS
-!C
-      write(ILOG,*) '#### NODAL STRAIN/STRESS SHELL'
-      call dynamic_nodal_stress_6d( hecMESH, fstrSOLID,fstrPARAM, fstrDYNAMIC)
-      call flush(ILOG)
-!!
-!      end if
-!C
-!C-- end of reaction force, strain and stress
-!C
-      end subroutine dynamic_output_6d
 
 
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE dynamic_output_6d_Shell                              &
+                 (hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC) 
+!####################################################################
+      
+      IMPLICIT NONE
+      
+!--------------------------------------------------------------------
+      
+      TYPE(hecmwST_matrix)     :: hecMAT
+      TYPE(hecmwST_local_mesh) :: hecMESH
+      TYPE(fstr_solid)         :: fstrSOLID
+      TYPE(fstr_param)         :: fstrPARAM
+      TYPE(fstr_dynamic)       :: fstrDYNAMIC
+      
+!--------------------------------------------------------------------
+      
+      INTEGER(KIND = kint) :: i, j, k
+      INTEGER(KIND = kint) :: ii, jj
+      INTEGER(KIND = kint) :: ndof
+      INTEGER(KIND = kint) :: idx
+      
+!--------------------------------------------------------------------
+      
+      ! ndof = hecMESH%n_dof
+      ndof = hecMESH%n_dof
+      
+!--------------------------------------------------------------------
+      
+      ! Displacement, Velocity and Accelaration
+      IF( ( fstrDYNAMIC%idx_eqa .EQ. 1 ) .AND. &
+          ( fstrDYNAMIC%i_step .GT. 0 ) ) THEN 
+       
+       idx = 2
+       
+      ELSE
+       
+       idx = 1
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      ! Displacement
+      DO i = 1, hecMESH%n_node
+       
+       DO j = 1, ndof
+        
+        fstrSOLID%unode( ndof*(i-1)+j )= fstrDYNAMIC%DISP( ndof*(i-1)+j, idx )
+        
+       END DO
+       
+      END DO
+      
+      IF( fstrDYNAMIC%iout_list(1) .EQ. 1 ) THEN
+       
+       WRITE(ILOG, *) '#### DISPLACEMENT SHELL'
+       WRITE(ILOG, '(A, A)')                                         &
+                   '     NODE    X-DISP      Y-DISP      Z-DISP   ', &
+                   '   X-ROT       Y-ROT       Z-ROT'                
+       WRITE(ILOG, '(A, A)')                                         &
+                   ' --------+-----------+-----------+-----------+', &
+                   '-----------+-----------+-------------'           
+       
+       DO i= 1, hecMESH%nn_internal
+        
+        jj = fstrPARAM%global_local_id(1, i)
+        ii = fstrPARAM%global_local_id(2, i)
+        
+        WRITE( ILOG, '(I10, 6E12.4)' )                                     &
+               jj, ( fstrDYNAMIC%DISP( ndof*(ii-1)+k, idx ), k = 1, ndof ) 
+        
+       END DO
+       
+      END IF
 
-!C
-!C NODAL STRESS SHELL
-!C
-      subroutine dynamic_nodal_stress_6d(hecMESH,fstrSOLID,fstrPARAM, fstrDYNAMIC)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (fstr_solid)         :: fstrSOLID
-      type (fstr_param)      :: fstrPARAM
-      type (fstr_dynamic      ) :: fstrDYNAMIC
-
-!** Local variables
-      REAL(kind=kreal) xx(8),yy(8),zz(8),ri(4),si(4)
-      REAL(kind=kreal) val, edisp(48), tt(8), tt0(8)
-      integer(kind=kint) nodLOCAL(8),ierror
-      REAL(kind=kreal) array(11)
-
-!** Array for nodal recovery
-      real    (kind=KREAL),dimension(:,:),allocatable::arrayTotal_U
-      real    (kind=KREAL),dimension(:,:),allocatable::arrayTotal_D
-      integer (kind=KINT), dimension(:),  allocatable::nnumber
-      real    (kind=KREAL),dimension(:),  allocatable::temp
-      real    (kind=kreal) ee,pp,rho,alpha,thick, ti
-      integer :: ig, ig0, iS0, iE0, ik, iS, iE, ic_type, nn, jS, icel
-      integer :: i,j,k, in, itype, ielem, ID_area, ii,jj, isect
-      real(kind=KREAL) :: s11, s22, s33, s12, s23, s13, ps, smises
-      real(kind=KREAL) :: s1, s2, s3, s4,s5
-
-      data ri / -1.0,  1.0, 1.0, -1.0 /
-      data si / -1.0, -1.0, 1.0,  1.0 /
-
-!*Allocate array
-      allocate ( arrayTotal_U(hecMESH%n_node,11)   ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_nodal_stress_6d, arrayTotal_U>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      allocate ( arrayTotal_D(hecMESH%n_node,11)   ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_nodal_stress_6d, arrayTotal_D>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      allocate ( nnumber(hecMESH%n_node)           ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_nodal_stress_6d, nnumber>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
- 
-      arrayTotal_U = 0.0d0
-      arrayTotal_D = 0.0d0
-      nnumber = 0
-!C
-!C Set Temperature
-
-      allocate ( temp(hecMESH%n_node)               ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_nodal_stress_6d, temp>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
-      temp = 0.0D0
-      if( fstrSOLID%TEMP_ngrp_tot > 0 ) then
-        do ig0 = 1, fstrSOLID%TEMP_ngrp_tot
-          ig  = fstrSOLID%TEMP_ngrp_ID(ig0)
-          val = fstrSOLID%TEMP_ngrp_val(ig0)
-          iS  = hecMESH%node_group%grp_index(ig-1) + 1
-          iE  = hecMESH%node_group%grp_index(ig  )
-          do ik = iS, iE
-            in = hecMESH%node_group%grp_item(ik)
-            temp(in) = val
-          enddo
-        enddo
-      endif
-!C
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-
-      do itype  = 1, hecMESH%n_elem_type
-        iS      = hecMESH%elem_type_index(itype-1) + 1
-        iE      = hecMESH%elem_type_index(itype  )
-        ic_type = hecMESH%elem_type_item(itype)
-        if (.not. hecmw_is_etype_shell(ic_type)) cycle
-!C        
-        nn = hecmw_get_max_node(ic_type)
-!C
-        do icel = iS, iE
-          jS = hecMESH%elem_node_index(icel-1)
-          do j = 1, nn
-            nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-            xx(j)  = hecMESH%node(3*nodLOCAL(j)-2)
-            yy(j)  = hecMESH%node(3*nodLOCAL(j)-1)
-            zz(j)  = hecMESH%node(3*nodLOCAL(j))
-            tt(j)  = temp( nodLOCAL(j) )
-            tt0(j) = ref_temp
-
-            edisp(6*j-5) = fstrSOLID%unode(6*nodLOCAL(j)-5)
-            edisp(6*j-4) = fstrSOLID%unode(6*nodLOCAL(j)-4)
-            edisp(6*j-3) = fstrSOLID%unode(6*nodLOCAL(j)-3)
-            edisp(6*j-2) = fstrSOLID%unode(6*nodLOCAL(j)-2)
-            edisp(6*j-1) = fstrSOLID%unode(6*nodLOCAL(j)-1)
-            edisp(6*j  ) = fstrSOLID%unode(6*nodLOCAL(j))
-          enddo
-
-!C** Get Properties
-          isect = hecMESH%section_ID(icel)
-          call FSTR_GET_PROP( hecMESH,isect,ee,pp,rho,alpha,thick )
-!C** Create local stiffness             
-!C** elem ID
-!!        ielem = hecMESH%elem_ID(icel*2-1)
-          ielem = icel
-          ID_area = hecMESH%elem_ID(icel*2)
-          if( ID_area.eq.hecMESH%my_rank ) then
-            fstrSOLID%ESTRAIN(10*ielem-9) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-8) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-7) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-6) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-5) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-4) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-3) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-2) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem-1) = 0.0D0
-            fstrSOLID%ESTRAIN(10*ielem  ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-11) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-10) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-9 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-8 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-7 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-6 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-5 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-4 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-3 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-2 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem-1 ) = 0.0D0
-            fstrSOLID%ESTRESS(12*ielem   ) = 0.0D0
-          end if
-
-          if     (ic_type.eq.731) then
-            ti = 1.0
-            call RCV_S3( xx,yy,zz,ee,pp,thick,edisp,ti,array )
-            do j = 1, 3
-              jj = nodLOCAL(j)
-              do k = 1, 11
-                arrayTotal_U(jj,k) = arrayTotal_U(jj,k) + array(k)
-              enddo
-            enddo
-  
-            if( ID_area.eq.hecMESH%my_rank ) then
-              fstrSOLID%ESTRAIN(10*ielem-9 ) = array(1)/nn
-              fstrSOLID%ESTRAIN(10*ielem-8 ) = array(2)/nn
-              fstrSOLID%ESTRAIN(10*ielem-7 ) = array(3)/nn
-              fstrSOLID%ESTRAIN(10*ielem-6 ) = array(4)/nn
-              fstrSOLID%ESTRAIN(10*ielem-5 ) = array(5)/nn
-              fstrSOLID%ESTRESS(12*ielem-11) = array(6)/nn
-              fstrSOLID%ESTRESS(12*ielem-10) = array(7)/nn
-              fstrSOLID%ESTRESS(12*ielem-9 ) = array(8)/nn
-              fstrSOLID%ESTRESS(12*ielem-8 ) = array(9)/nn
-              fstrSOLID%ESTRESS(12*ielem-7 ) = array(10)/nn
-              s11=fstrSOLID%ESTRESS(12*ielem-11)
-              s22=fstrSOLID%ESTRESS(12*ielem-10)
-              s33=0.0D0
-              s12=fstrSOLID%ESTRESS(12*ielem-9 )
-              s23=fstrSOLID%ESTRESS(12*ielem-8 )
-              s13=fstrSOLID%ESTRESS(12*ielem-7 )
-              ps=(s11+s22+s33)/3.0
-              smises=0.5*( (s11-ps)**2+(s22-ps)**2+(s33-ps)**2 ) +s12**2+s23**2+s13**2
-              fstrSOLID%ESTRESS(12*ielem-6)=sqrt(3.0*smises)
-            end if
-
-            ti = -1.0
-            call RCV_S3( xx,yy,zz,ee,pp,thick,edisp,ti,array )
-            do j = 1, 3
-              jj = nodLOCAL(j)
-              do k = 1, 11
-                arrayTotal_D(jj,k) = arrayTotal_D(jj,k) + array(k)
-              enddo
-              nnumber(jj) = nnumber(jj) + 1
-            enddo
-
-            if( ID_area.eq.hecMESH%my_rank ) then
-              fstrSOLID%ESTRAIN(10*ielem-4) = array(1)/nn
-              fstrSOLID%ESTRAIN(10*ielem-3) = array(2)/nn
-              fstrSOLID%ESTRAIN(10*ielem-2) = array(3)/nn
-              fstrSOLID%ESTRAIN(10*ielem-1) = array(4)/nn
-              fstrSOLID%ESTRAIN(10*ielem  ) = array(5)/nn
-              fstrSOLID%ESTRESS(12*ielem-5) = array(6)/nn
-              fstrSOLID%ESTRESS(12*ielem-4) = array(7)/nn
-              fstrSOLID%ESTRESS(12*ielem-3) = array(8)/nn
-              fstrSOLID%ESTRESS(12*ielem-2) = array(9)/nn
-              fstrSOLID%ESTRESS(12*ielem-1) = array(10)/nn
-              s11=fstrSOLID%ESTRESS(12*ielem-5)
-              s22=fstrSOLID%ESTRESS(12*ielem-4)
-              s33=0.0D0
-              s12=fstrSOLID%ESTRESS(12*ielem-3)
-              s23=fstrSOLID%ESTRESS(12*ielem-2)
-              s13=fstrSOLID%ESTRESS(12*ielem-1)
-              ps=(s11+s22+s33)/3.0
-              smises=0.5*( (s11-ps)**2+(s22-ps)**2+(s33-ps)**2 ) +s12**2+s23**2+s13**2
-              fstrSOLID%ESTRESS(12*ielem)=sqrt(3.0*smises)
-            end if
-
-          elseif (ic_type.eq.741) then
-            do j = 1, 4
-              jj = nodLOCAL(j)
-              ti = 1.0
-              call RCV_S4( xx,yy,zz,ee,pp,thick,edisp,ri(j),si(j),ti,array )
-              do k = 1, 11
-                arrayTotal_U(jj,k) = arrayTotal_U(jj,k) + array(k)
-              enddo
-
-            if( ID_area.eq.hecMESH%my_rank ) then
-              fstrSOLID%ESTRAIN(10*ielem-9 ) = fstrSOLID%ESTRAIN(10*ielem-9 ) + array(1)/nn
-              fstrSOLID%ESTRAIN(10*ielem-8 ) = fstrSOLID%ESTRAIN(10*ielem-8 ) + array(2)/nn
-              fstrSOLID%ESTRAIN(10*ielem-7 ) = fstrSOLID%ESTRAIN(10*ielem-7 ) + array(3)/nn
-              fstrSOLID%ESTRAIN(10*ielem-6 ) = fstrSOLID%ESTRAIN(10*ielem-6 ) + array(4)/nn
-              fstrSOLID%ESTRAIN(10*ielem-5 ) = fstrSOLID%ESTRAIN(10*ielem-5 ) + array(5)/nn
-              fstrSOLID%ESTRESS(12*ielem-11) = fstrSOLID%ESTRESS(12*ielem-11) + array(6)/nn
-              fstrSOLID%ESTRESS(12*ielem-10) = fstrSOLID%ESTRESS(12*ielem-10) + array(7)/nn
-              fstrSOLID%ESTRESS(12*ielem-9 ) = fstrSOLID%ESTRESS(12*ielem-9 ) + array(8)/nn
-              fstrSOLID%ESTRESS(12*ielem-8 ) = fstrSOLID%ESTRESS(12*ielem-8 ) + array(9)/nn
-              fstrSOLID%ESTRESS(12*ielem-7 ) = fstrSOLID%ESTRESS(12*ielem-7 ) + array(10)/nn
-            end if
-            enddo
-
-            if( ID_area.eq.hecMESH%my_rank ) then
-              s11=fstrSOLID%ESTRESS(12*ielem-11)
-              s22=fstrSOLID%ESTRESS(12*ielem-10)
-              s33=0.0D0
-              s12=fstrSOLID%ESTRESS(12*ielem-9 )
-              s23=fstrSOLID%ESTRESS(12*ielem-8 )
-              s13=fstrSOLID%ESTRESS(12*ielem-7 )
-              ps=(s11+s22+s33)/3.0
-              smises=0.5*( (s11-ps)**2+(s22-ps)**2+(s33-ps)**2 ) +s12**2+s23**2+s13**2
-              fstrSOLID%ESTRESS(12*ielem-6)=sqrt(3.0*smises)
-            end if
-
-            do j = 1, 4
-              jj = nodLOCAL(j)
-              ti = -1.0
-              call RCV_S4( xx,yy,zz,ee,pp,thick,edisp,ri(j),si(j),ti,array )
-              do k = 1, 11
-                arrayTotal_D(jj,k) = arrayTotal_D(jj,k) + array(k)
-              enddo
-              nnumber(jj) = nnumber(jj) + 1
-
-              if( ID_area.eq.hecMESH%my_rank ) then
-                fstrSOLID%ESTRAIN(10*ielem-4) = fstrSOLID%ESTRAIN(10*ielem-4) + array(1)/nn
-                fstrSOLID%ESTRAIN(10*ielem-3) = fstrSOLID%ESTRAIN(10*ielem-3) + array(2)/nn
-                fstrSOLID%ESTRAIN(10*ielem-2) = fstrSOLID%ESTRAIN(10*ielem-2) + array(3)/nn
-                fstrSOLID%ESTRAIN(10*ielem-1) = fstrSOLID%ESTRAIN(10*ielem-1) + array(4)/nn
-                fstrSOLID%ESTRAIN(10*ielem  ) = fstrSOLID%ESTRAIN(10*ielem  ) + array(5)/nn
-                fstrSOLID%ESTRESS(12*ielem-5) = fstrSOLID%ESTRESS(12*ielem-5) + array(6)/nn
-                fstrSOLID%ESTRESS(12*ielem-4) = fstrSOLID%ESTRESS(12*ielem-4) + array(7)/nn
-                fstrSOLID%ESTRESS(12*ielem-3) = fstrSOLID%ESTRESS(12*ielem-3) + array(8)/nn
-                fstrSOLID%ESTRESS(12*ielem-2) = fstrSOLID%ESTRESS(12*ielem-2) + array(9)/nn
-                fstrSOLID%ESTRESS(12*ielem-1) = fstrSOLID%ESTRESS(12*ielem-1) + array(10)/nn
-              end if
-            enddo
-
-            if( ID_area.eq.hecMESH%my_rank ) then
-              s11=fstrSOLID%ESTRESS(12*ielem-5)
-              s22=fstrSOLID%ESTRESS(12*ielem-4)
-              s33=0.0D0
-              s12=fstrSOLID%ESTRESS(12*ielem-3)
-              s23=fstrSOLID%ESTRESS(12*ielem-2)
-              s13=fstrSOLID%ESTRESS(12*ielem-1)
-              ps=(s11+s22+s33)/3.0
-              smises=0.5*( (s11-ps)**2+(s22-ps)**2+(s33-ps)**2 ) +s12**2+s23**2+s13**2
-              fstrSOLID%ESTRESS(12*ielem)=sqrt(3.0*smises)
-            end if
-
-          endif
-        enddo
-      enddo
-
-!** Average over nodes
-
-      do i = 1, hecMESH%n_node
-
-        do j = 1, 11
-          arrayTotal_U(i,j) = arrayTotal_U(i,j) / FLOAT(nnumber(i))
-          arrayTotal_D(i,j) = arrayTotal_D(i,j) / FLOAT(nnumber(i))
-
-          if( j < 6 ) then 
-            fstrSOLID%STRAIN(10*(i-1)+j  ) = arrayTotal_U(i,j)        
-            fstrSOLID%STRAIN(10*(i-1)+j+5) = arrayTotal_D(i,j)        
-          else
-            fstrSOLID%STRESS(12*(i-1)+j-5) = arrayTotal_U(i,j)        
-            fstrSOLID%STRESS(12*(i-1)+j+1) = arrayTotal_D(i,j)        
-          endif
-
-        enddo
-
-!** RE-CALCULATE von MISES stress
-
-        s1 = fstrSOLID%STRESS(12*(i-1)+1)
-        s2 = fstrSOLID%STRESS(12*(i-1)+2)
-        s3 = fstrSOLID%STRESS(12*(i-1)+3)
-        s4 = fstrSOLID%STRESS(12*(i-1)+4)
-        s5 = fstrSOLID%STRESS(12*(i-1)+5)
-        fstrSOLID%STRESS(12*(i-1)+6) = DSQRT( s1*s1 + s2*s2 - s1*s2 + 3.0d0*s3*s3 )
-
-        s1 = fstrSOLID%STRESS(12*(i-1)+7)
-        s2 = fstrSOLID%STRESS(12*(i-1)+8)
-        s3 = fstrSOLID%STRESS(12*(i-1)+9)
-        s4 = fstrSOLID%STRESS(12*(i-1)+10)
-        s5 = fstrSOLID%STRESS(12*(i-1)+11)
-        fstrSOLID%STRESS(12*i) = DSQRT( s1*s1 + s2*s2 - s1*s2 + 3.0d0*s3*s3 )
-
-      enddo
-
-!** Show
-      if( fstrDYNAMIC%iout_list(5) .eq. 1 ) then
-      write(ILOG,*) '#### STRAIN'
-      write(ILOG,'(a,a)')                                              &
-               '     NODE          E11         E22         E12     '   &
-                             ,'    E23         E13'
-      write(ILOG,'(a,a)')                                              &
-               '  ------------+-----------+-----------+-----------+'   &
-                             ,'-----------+-------------'
-      do i=1,hecMESH%nn_internal
-        jj=fstrPARAM%global_local_id(1,i)
-        ii=fstrPARAM%global_local_id(2,i)
-        write(ILOG,'(i10,a5,1p5e12.4)') jj,' (+) ',(fstrSOLID%STRAIN(10*(ii-1)+k),k=1,5)
-        write(ILOG,'(10x,a5,1p5e12.4)')   ' (-) ',(fstrSOLID%STRAIN(10*(ii-1)+k),k=6,10)
-      enddo
-      end if
-
-      if( fstrDYNAMIC%iout_list(6) .eq. 1 ) then
-      write(ILOG,*) '#### STRESS'
-      write(ILOG,'(a,a)')                                               &
-               '     NODE          S11         S22         S12     '    &
-                             ,'    S23         S13        MISES'
-      write(ILOG,'(a,a)')                                               &
-               '  ------------+-----------+-----------+-----------+'    &
-                             ,'-----------+-----------+-------------'
-      do i=1,hecMESH%nn_internal
-        jj=fstrPARAM%global_local_id(1,i)
-        ii=fstrPARAM%global_local_id(2,i)
-        write(ILOG,'(i10,a5,1p6e12.4)') jj,' (+) ',(fstrSOLID%STRESS(12*(ii-1)+k),k=1,6)
-        write(ILOG,'(10x,a5,1p6e12.4)')   ' (-) ',(fstrSOLID%STRESS(12*(ii-1)+k),k=7,12)
-      enddo
-      end if
-
-      deallocate( arrayTotal_U   ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_nodal_stress_6d, arrayTotal_U>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      deallocate( arrayTotal_D   ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_nodal_stress_6d, arrayTotal_D>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      deallocate( nnumber        ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_nodal_stress_6d, nnumber>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      deallocate( temp           ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_nodal_stress_6d, temp>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
-      end subroutine dynamic_nodal_stress_6d
-
-
-!C
-!C REACTION FORCE SHELL
-!C
-      subroutine dynamic_reaction_force_6d(hecMESH,fstrSOLID, fstrDYNAMIC)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (fstr_solid)         :: fstrSOLID
-      type (fstr_dynamic      ) :: fstrDYNAMIC
-
-!** Local variables
-      REAL(kind=kreal)    xx(8),yy(8),zz(8)
-      REAL(kind=kreal)    edisp(48),force(48),local_stf(1176)
-      integer(kind=kint) nodLOCAL(8),ierror
-
-      real   (kind=KREAL),dimension(:), allocatable :: spcForce
-      integer(kind=KINT), dimension(:), allocatable :: id_spc
-	  real    (kind=kreal) ee,pp,rho,alpha,thick, ti
-      integer :: ig, ig0, iS0, iE0, ik, iS, iE, ic_type, nn, jS, icel, isid, isect, num
-      integer :: i,j,k,kk, in, itype, ielem, ID_area, ii,jj, NDOF, icount, nspc, ifspc
-
-!C Allocate array
-      allocate ( id_spc( hecMESH%n_node )      ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_reaction_force_6d, id_spc>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
+!--------------------------------------------------------------------
+      
+      ! Velocity
+      IF( fstrDYNAMIC%iout_list(2) .EQ. 1 ) THEN
+       
+       IF( fstrDYNAMIC%idx_eqa .EQ. 11 ) THEN
+        
+        IF( fstrDYNAMIC%i_step .GT. 0 ) THEN
+         
+         WRITE( ILOG, '(A, I10, 5X, A, 1PE12.4)' )                            &
+                      'STEP-1 =', fstrDYNAMIC%i_step-1,                       &
+                      'TIME-dt =', fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step-1) 
+         
+        END IF
+        
+       END IF
+       
+       WRITE(ILOG, *) '#### VELOCITY SHELL'
+       WRITE(ILOG, '(A,A)')                                          &
+                   '     NODE    X-VELO      Y-VELO      Z-VELO   ', &
+                   '   X-ROT-VEL   Y-ROT-VEL   Z-ROT-VEL'            
+       WRITE(ILOG, '(A,A)')                                          &
+                   ' --------+-----------+-----------+-----------+', &
+                   '-----------+-----------+-------------'           
+       
+       DO i= 1, hecMESH%nn_internal
+        
+        jj = fstrPARAM%global_local_id(1, i)
+        ii = fstrPARAM%global_local_id(2, i)
+        
+        WRITE( ILOG, '(I10, 6E12.4)' )                                    &
+               jj, ( fstrDYNAMIC%VEL( ndof*(ii-1)+k, idx ), k = 1, ndof ) 
+        
+       END DO
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      ! Acceleration
+      IF( fstrDYNAMIC%iout_list(3) .EQ. 1 ) THEN
+       
+       IF( fstrDYNAMIC%idx_eqa .EQ. 11 ) THEN
+        
+        IF( fstrDYNAMIC%i_step .GT. 0 ) THEN
+         
+         WRITE( ILOG, '(A, I10, 5X, A, 1PE12.4)')                       &
+                'STEP-1 =' , fstrDYNAMIC%i_step-1,                      &
+                'TIME-dt =', fstrDYNAMIC%t_delta*(fstrDYNAMIC%i_step-1) 
+         
+        END IF
+        
+       END IF
+       
+       WRITE(ILOG, *) '#### ACCELERATION SHELL'
+       WRITE(ILOG, '(A, A)')                                         &
+                   '     NODE    X-ACCE      Y-ACCE      Z-ACCE   ', &
+                   '   X-ROT-ACC   Y-ROT-ACC   Z-ROT-ACC'            
+       WRITE(ILOG, '(A, A)')                                         &
+                   ' --------+-----------+-----------+-----------+', &
+                   '-----------+-----------+-------------'           
+       
+       DO i= 1, hecMESH%nn_internal
+        
+        jj = fstrPARAM%global_local_id(1, i)
+        ii = fstrPARAM%global_local_id(2, i)
+        
+        WRITE( ILOG, '(I10, 6E12.4)' )                                    &
+               jj, ( fstrDYNAMIC%ACC( ndof*(ii-1)+k, idx ), k = 1, ndof ) 
+        
+       END DO
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      ! Reaction force
+      WRITE(ILOG, *) '#### REACTION FORCE SHELL'
+      
+      CALL dynamic_reaction_force_6d_Shell   &
+           (hecMESH, fstrSOLID, fstrDYNAMIC) 
+      
+      CALL flush(ILOG)
+      
+!--------------------------------------------------------------------
+      
+      ! Nodal stress
+      WRITE(ILOG, *) '#### NODAL STRAIN/STRESS SHELL'
+      
+      CALL dynamic_nodal_stress_6d_Shell                &
+           (hecMESH, fstrSOLID, fstrPARAM, fstrDYNAMIC) 
+      
+      CALL flush(ILOG)
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE dynamic_output_6d_Shell
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+      
+      
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE dynamic_reaction_force_6d_Shell   &
+                 (hecMESH, fstrSOLID, fstrDYNAMIC) 
+!####################################################################
+      
+      IMPLICIT NONE
+      
+!--------------------------------------------------------------------
+      
+      TYPE(hecmwST_local_mesh) :: hecMESH
+      TYPE(fstr_solid)         :: fstrSOLID
+      TYPE(fstr_dynamic)       :: fstrDYNAMIC
+      
+!--------------------------------------------------------------------
+      
+      REAL(KIND = kreal) :: edisp(6*9), force(6*9)
+      REAL(KIND = kreal), ALLOCATABLE   :: spcForce(:)
+      REAL(KIND = kreal) :: ecoord(3, 9)
+      REAL(KIND = kreal) :: stiff(6*9, 6*9)
+      REAL(KIND = kreal) :: thick
+      
+      INTEGER(KIND = kint) :: i, j, k
+      INTEGER(KIND = kint) :: ndof
+      INTEGER(KIND = kint) :: nodLOCAL(9)
+      INTEGER(KIND = kint) :: icount
+      INTEGER(KIND = kint) :: ig, ig0
+      INTEGER(KIND = kint) :: itype, ic_type, iS, iE, iS0, iE0
+      INTEGER(KIND = kint) :: ik, kk
+      INTEGER(KIND = kint) :: in, isid
+      INTEGER(KIND = kint) :: nspc
+      INTEGER(KIND = kint) :: nn
+      INTEGER(KIND = kint) :: icel, jS
+      INTEGER(KIND = kint) :: ifspc
+      INTEGER(KIND = kint) :: isect, ihead
+      INTEGER(KIND = kint), ALLOCATABLE :: id_spc(:)
+      
+!--------------------------------------------------------------------
+      
+      ALLOCATE( id_spc( hecMESH%n_node ) )
+      
       id_spc = 0
-
-      NDOF = hecMESH%n_dof
-!C
-!C  SPC Nodal Check Flag
-!C 
+      
+!--------------------------------------------------------------------
+      
+      ndof = hecMESH%n_dof
+      
+!--------------------------------------------------------------------
+      
+      ! SPC Nodal Check Flag
       icount = 0
-      do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
-
-        ig = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-        iS = hecMESH%node_group%grp_index(ig-1) + 1
-        iE = hecMESH%node_group%grp_index(ig  )
-
-        do ik = iS, iE
-          in = hecMESH%node_group%grp_item(ik)
-          if( id_spc(in) .eq. 0 ) then
-            icount = icount + 1
-            id_spc(in) = icount
-          endif
-        enddo
-
-      enddo
-
+      
+      DO ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+       
+       ig = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+       iS = hecMESH%node_group%grp_index(ig-1) + 1
+       iE = hecMESH%node_group%grp_index(ig  )
+       
+       DO ik = iS, iE
+        
+        in = hecMESH%node_group%grp_item(ik)
+        
+        IF( id_spc(in) .EQ. 0 ) THEN
+         
+         icount = icount+1
+         
+         id_spc(in) = icount
+         
+        END IF
+        
+       END DO
+       
+      END DO
+      
       icount = 0
-      do i = 1, hecMESH%n_node
-        if( id_spc(i).ge.1 ) icount = icount + 1
-      enddo
+      
+      DO i = 1, hecMESH%n_node
+       
+       IF( id_spc(i) .GE. 1 ) icount = icount+1
+       
+      END DO
+      
       nspc = icount
-
-!C Allocate array
-      if( nspc .gt. 0 ) then
-         allocate ( spcForce(nspc*NDOF)    ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <dynamic_reaction_force_6d, spcForce>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
-         spcForce = 0.0
-      else
-        deallocate ( id_spc                ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_reaction_force_6d, id_spc>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
-        return
-      endif
-
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-
-      do itype = 1, hecMESH%n_elem_type
-        iS = hecMESH%elem_type_index(itype-1) + 1
-        iE = hecMESH%elem_type_index(itype  )
-        ic_type= hecMESH%elem_type_item(itype)
-        if (.not. hecmw_is_etype_shell(ic_type)) cycle
-
-!C** Set number of nodes        
-        nn = hecmw_get_max_node(ic_type)
-
-        do icel = iS, iE
-          jS = hecMESH%elem_node_index(icel-1)
-          do j = 1, nn
-            nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-            xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )
-            yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
-            zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
-            edisp( 6*j-5 ) = fstrSOLID%unode( 6*nodLOCAL(j)-5 )
-            edisp( 6*j-4 ) = fstrSOLID%unode( 6*nodLOCAL(j)-4 )
-            edisp( 6*j-3 ) = fstrSOLID%unode( 6*nodLOCAL(j)-3 )
-            edisp( 6*j-2 ) = fstrSOLID%unode( 6*nodLOCAL(j)-2 )
-            edisp( 6*j-1 ) = fstrSOLID%unode( 6*nodLOCAL(j)-1 )
-            edisp( 6*j   ) = fstrSOLID%unode( 6*nodLOCAL(j)   )
-          enddo
-
-          ifspc = 0
-          do j = 1, nn
-            if( id_spc( nodLOCAL(j) ) .ge. 1 ) ifspc = 1
-          enddo
-
-          if( ifspc .eq. 1 ) then
-!C** Get Properties
-            isect = hecMESH%section_ID(icel)
-            call FSTR_GET_PROP(hecMESH,isect,ee,pp,rho,alpha,thick)
-
-!C** Create local stiffness             
-            if     ( ic_type.EQ.731 ) then
-              call STF_S3 ( xx,yy,zz,ee,pp,thick,local_stf )
-            elseif ( ic_type.eq.741 ) then
-              call STF_S4 ( xx,yy,zz,ee,pp,thick,local_stf )
-            endif
-
-!C*** [K]{U} ****
-            force = 0.0
-            do jj = 1, nn*NDOF
-              do ii = 1, jj-1
-                num = ( (jj-1)*jj + 2*ii ) / 2
-                force(ii) = force(ii) + local_stf(num)*edisp(jj)
-                force(jj) = force(jj) + local_stf(num)*edisp(ii)
-              enddo
-              num = ( (jj-1)*jj + 2*jj ) / 2
-              force(jj) = force(jj) + local_stf(num)*edisp(jj)
-            enddo
-
-!C*** Add SPC FORCE ****
-            do j = 1, nn
-              isid = id_spc( nodLOCAL(j) )
-              if( isid .gt. 0 ) then
-                do k = 1, NDOF
-                  kk = NDOF*(isid-1) + k
-                  spcForce(kk) = spcForce(kk) + force( NDOF*(j-1)+k )
-                enddo
-              endif
-            enddo
-
-          endif
-
-        enddo
-      enddo
-
-!C*** Show
-      if( fstrDYNAMIC%iout_list(4) .eq. 1 ) then
-
-      write(ILOG,'(a,a)')                                             &
-                    '   NODE      X-REAC      Y-REAC      Z-REAC   '  &
-                             ,'  RX-REAC     RY-REAC     RZ-REAC'
-      write(ILOG,'(a,a)')                                             &
-                    ' --------+-----------+-----------+-----------+'  &
-                             ,'-----------+-----------+-------------'
-      do i = 1, hecMESH%nn_internal
+      
+      ! Allocate array
+      IF( nspc .GT. 0 ) THEN
+       
+       ALLOCATE( spcForce(nspc*ndof) )
+       
+       spcForce = 0.0D0
+       
+      ELSE
+       
+       DEALLOCATE ( id_spc )
+       
+       RETURN
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      ! +-------------------------------+
+      ! | according to ELEMENT TYPE     |
+      ! +-------------------------------+
+      DO itype = 1, hecMESH%n_elem_type
+       
+       !--------------------------------------------------------
+       
+       iS = hecMESH%elem_type_index(itype-1)+1
+       iE = hecMESH%elem_type_index(itype  )
+       
+       ic_type = hecMESH%elem_type_item(itype)
+       
+       !--------------------------------------------------------
+       
+       IF( .NOT. hecmw_is_etype_shell(ic_type) ) CYCLE
+       
+       !--------------------------------------------------------
+       
+       !** Set number of nodes
+       nn = hecmw_get_max_node(ic_type)
+       
+       !--------------------------------------------------------
+       
+       DO icel = iS, iE
+        
+        jS = hecMESH%elem_node_index(icel-1)
+        
+        !--------------------------------------------------
+        
+        DO j = 1, nn
+         
+         nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+         
+         ecoord(1, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+1 )
+         ecoord(2, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+2 )
+         ecoord(3, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+3 )
+         
+         DO k = 1, ndof
+          
+          edisp( ndof*(j-1)+k ) = fstrSOLID%unode( ndof*( nodLOCAL(j)-1 )+k )
+          
+         END DO
+         
+        END DO
+        
+        !--------------------------------------------------
+        
+        ifspc = 0
+        
+        DO j = 1, nn
+         
+         IF( id_spc( nodLOCAL(j) ) .GE. 1 ) ifspc = 1
+         
+        END DO
+        
+        !--------------------------------------------------
+        
+        IF( ifspc .EQ. 1 ) THEN
+         
+         !--------------------------------------------
+         
+         isect = hecMESH%section_ID(icel)
+         ihead = hecMESH%section%sect_R_index(isect-1)
+         thick = hecMESH%section%sect_R_item(ihead+1)
+         
+         !--------------------------------------------
+         
+         IF( ( ic_type .EQ. 741 ) .OR. ( ic_type .EQ. 743 ) .OR. &
+             ( ic_type .EQ. 731 ) ) THEN                         
+          
+          CALL STF_Shell_MITC                                                     &
+               ( ic_type, nn, ndof, ecoord(:, 1:nn),                              &
+                 fstrSOLID%elements(icel)%gausses, stiff(1:6*nn, 1:6*nn), thick ) 
+          
+         END IF
+         
+         !--------------------------------------------
+         
+         force(1:ndof*nn)= MATMUL( stiff(1:ndof*nn,1:ndof*nn), edisp(1:ndof*nn) )
+         
+         !--------------------------------------------
+         
+         !*** Add SPC FORCE ****
+         DO j = 1, nn
+          
+          isid = id_spc( nodLOCAL(j) )
+          
+          IF( isid .GT. 0 ) THEN
+           
+           DO k = 1, ndof
+            
+            kk = ndof*(isid-1)+k
+            
+            spcForce(kk) = spcForce(kk) + force( ndof*(j-1)+k )
+            
+           END DO
+           
+          END IF
+          
+         END DO
+         
+         !--------------------------------------------
+         
+        END IF
+        
+        !--------------------------------------------------
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+      END DO
+      
+!--------------------------------------------------------------------
+      
+      IF( fstrDYNAMIC%iout_list(4) .EQ. 1 ) THEN
+       
+       WRITE(ILOG, '(A, A)')                                         &
+                   '   NODE      X-REAC      Y-REAC      Z-REAC   ', &
+                   '  RX-REAC     RY-REAC     RZ-REAC'               
+       WRITE(ILOG, '(A, A)')                                         &
+                   ' --------+-----------+-----------+-----------+', &
+                   '-----------+-----------+-------------'           
+       
+       DO i = 1, hecMESH%nn_internal
+        
         in = hecMESH%global_node_ID(i)
+        
         isid = id_spc(i)
-        if( isid .gt. 0 ) then
-          write(ILOG,'(i10,1p6e12.4)') in                             &
-          , spcForce( NDOF*(isid-1)+1 ), spcForce( NDOF*(isid-1)+2 )  &
-          , spcForce( NDOF*(isid-1)+3 ), spcForce( NDOF*(isid-1)+4 )  &
-          , spcForce( NDOF*(isid-1)+5 ), spcForce( NDOF*(isid-1)+6 ) 
-        endif
-      enddo
+        
+        IF( isid .GT. 0 ) THEN
+         
+         WRITE( ILOG, '(I10, 1P6E12.4)' )                        &
+                in, ( spcForce( ndof*(isid-1)+k ), k = 1, ndof ) 
+         
+        END IF
+        
+       END DO
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      DEALLOCATE( id_spc )
+      DEALLOCATE( spcForce )
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE dynamic_reaction_force_6d_Shell
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+      
+      
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE dynamic_nodal_stress_6d_Shell                &
+                 (hecMESH, fstrSOLID, fstrPARAM, fstrDYNAMIC) 
+!####################################################################
+      
+      IMPLICIT NONE
+      
+!--------------------------------------------------------------------
+      
+      TYPE(hecmwST_local_mesh) :: hecMESH
+      TYPE(fstr_solid)         :: fstrSOLID
+      TYPE(fstr_param)         :: fstrPARAM
+      TYPE(fstr_dynamic)       :: fstrDYNAMIC
+      
+!--------------------------------------------------------------------
+      
+      REAL(KIND = kreal) :: ecoord(3, 9)
+      REAL(KIND = kreal) :: edisp(6, 9)
+      REAL(KIND = kreal) :: stress(6), strain(6)
+      REAL(KIND = kreal) :: thick
+      REAL(KIND = kreal) :: exx, eyy, ezz, exy, eyz, ezx
+      REAL(KIND = kreal) :: e_equiv
+      REAL(KIND = kreal) :: sxx, syy, szz, sxy, syz, szx
+      REAL(KIND = kreal) :: s_mises
+      REAL(KIND = kreal) :: ti
+      REAL(KIND = kreal), ALLOCATABLE :: ndstrain_plus(:, :)
+      REAL(KIND = kreal), ALLOCATABLE :: ndstrain_minus(:, :)
+      REAL(KIND = kreal), ALLOCATABLE :: ndstress_plus(:, :)
+      REAL(KIND = kreal), ALLOCATABLE :: ndstress_minus(:, :)
+      
+      INTEGER(KIND = kint) :: nodLOCAL(9)
+      INTEGER(KIND = kint), ALLOCATABLE :: nnumber(:)
+      INTEGER(KIND = kint) :: i, j, k
+      INTEGER(KIND = kint) :: ii, jj
+      INTEGER(KIND = kint) :: itype, iS, iE, ic_type, icel
+      INTEGER(KIND = kint) :: ndof, nn, jS, isect, ihead, ielem, ID_area
+      
+!--------------------------------------------------------------------
+      
+      ndof = hecMESH%n_dof
+      
+!--------------------------------------------------------------------
+      
+      ALLOCATE( ndstrain_plus(hecMESH%n_node, 7) )
+      ALLOCATE( ndstrain_minus(hecMESH%n_node, 7) )
+      
+      ndstrain_plus  = 0.0D0
+      ndstrain_minus = 0.0D0
+      
+      ALLOCATE( ndstress_plus(hecMESH%n_node, 7) )
+      ALLOCATE( ndstress_minus(hecMESH%n_node, 7) )
+      
+      ndstress_plus  = 0.0D0
+      ndstress_minus = 0.0D0
+      
+      ALLOCATE( nnumber(hecMESH%n_node) )
+      
+      nnumber = 0
+      
+!--------------------------------------------------------------------
+      
+      ! +-------------------------------+
+      ! | according to ELEMENT TYPE     |
+      ! +-------------------------------+
+      
+      DO itype  = 1, hecMESH%n_elem_type
+       
+       !--------------------------------------------------------
+       
+       iS = hecMESH%elem_type_index(itype-1)+1
+       iE = hecMESH%elem_type_index(itype  )
+       
+       ic_type = hecMESH%elem_type_item(itype)
+       
+       !--------------------------------------------------------
+       
+       IF( .NOT. hecmw_is_etype_shell(ic_type) ) CYCLE
+       
+       !--------------------------------------------------------
+       
+       nn = hecmw_get_max_node(ic_type)
+       
+       !--------------------------------------------------------
+       
+       DO icel = iS, iE
+        
+        jS = hecMESH%elem_node_index(icel-1)
+        
+        DO j = 1, nn
+         
+         nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+         
+         ecoord(1, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+1 )
+         ecoord(2, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+2 )
+         ecoord(3, j) = hecMESH%node( 3*( nodLOCAL(j)-1 )+3 )
+         
+         DO k = 1, ndof
+          
+          edisp(k, j) = fstrSOLID%unode( ndof*( nodLOCAL(j)-1 )+k )
+          
+         END DO
+         
+        END DO
+        
+        !--------------------------------------------------
+        
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        
+        !--------------------------------------------------
+        
+        !** Create local stiffness
+        !** elem ID
+        ielem = icel
+        
+        ID_area = hecMESH%elem_ID(icel*2)
+        
+        IF( ID_area.EQ.hecMESH%my_rank ) THEN
+         
+         DO k = 1, 14
+          
+          fstrSOLID%ESTRAIN( 14*(ielem-1)+k ) = 0.0D0
+          fstrSOLID%ESTRESS( 14*(ielem-1)+k ) = 0.0D0
+          
+         END DO
+         
+        END IF
+        
+        !--------------------------------------------------
+        
+        IF( ( ic_type .EQ. 741 ) .OR. ( ic_type .EQ. 743 ) .OR. &
+            ( ic_type .EQ. 731 ) ) THEN                         
+         
+         !--------------------------------------------
+         
+         ti = 1.0D0
+         
+         CALL ElementStress_Shell_MITC                                             &
+              (ic_type, nn, ndof, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+               strain, stress, thick, ti)                                          
+         
+         !--------------------------------------------
+         
+         DO j = 1, nn
+          
+          jj = nodLOCAL(j)
+          
+          DO k = 1, 6
+           
+           ndstrain_plus(jj, k) = ndstrain_plus(jj, k)+strain(k)
+           
+          END DO
+          
+          DO k = 1, 6
+           
+           ndstress_plus(jj, k) = ndstress_plus(jj, k)+stress(k)
+           
+          END DO
+          
+         END DO
+         
+         IF( ID_area .EQ. hecMESH%my_rank ) THEN
+          
+          DO k = 1, 6
+           
+           fstrSOLID%ESTRAIN( 14*( ielem-1 )+k ) = strain(k)/nn
+           
+          END DO
+          
+          exx = fstrSOLID%ESTRAIN( 14*(ielem-1)+1 )
+          eyy = fstrSOLID%ESTRAIN( 14*(ielem-1)+2 )
+          ezz = fstrSOLID%ESTRAIN( 14*(ielem-1)+3 )
+          exy = fstrSOLID%ESTRAIN( 14*(ielem-1)+4 )
+          eyz = fstrSOLID%ESTRAIN( 14*(ielem-1)+5 )
+          ezx = fstrSOLID%ESTRAIN( 14*(ielem-1)+6 )
+          
+          e_equiv = ( ( exx-eyy )*( exx-eyy )         &
+                     +( eyy-ezz )*( eyy-ezz )         &
+                     +( ezz-exx )*( ezz-exx ) )       &
+                   +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
+          
+          fstrSOLID%ESTRAIN( 14*(ielem-1)+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
+          
+          DO k = 1, 6
+           
+           fstrSOLID%ESTRESS( 14*(ielem-1)+k ) = stress(k)/nn
+           
+          END DO
+          
+          sxx = fstrSOLID%ESTRESS( 14*(ielem-1)+1 )
+          syy = fstrSOLID%ESTRESS( 14*(ielem-1)+2 )
+          szz = fstrSOLID%ESTRESS( 14*(ielem-1)+3 )
+          sxy = fstrSOLID%ESTRESS( 14*(ielem-1)+4 )
+          syz = fstrSOLID%ESTRESS( 14*(ielem-1)+5 )
+          szx = fstrSOLID%ESTRESS( 14*(ielem-1)+6 )
+          
+          s_mises = ( ( sxx-syy )*( sxx-syy )         &
+                     +( syy-szz )*( syy-szz )         &
+                     +( szz-sxx )*( szz-sxx ) )       &
+                   +6.0D0*( sxy*sxy+syz*syz+szx*szx ) 
+          
+          fstrSOLID%ESTRESS( 14*(ielem-1)+7 ) = DSQRT( 0.5D0*s_mises )
+          
+         END IF
+         
+         !--------------------------------------------
+         
+         ti = -1.0D0
+         
+         CALL ElementStress_Shell_MITC                                             &
+              (ic_type, nn, ndof, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+               strain, stress, thick, ti)                                          
+         
+         !--------------------------------------------
+         
+         DO j = 1, nn
+          
+          jj = nodLOCAL(j)
+          
+          DO k = 1, 6
+           
+           ndstrain_minus(jj, k) = ndstrain_minus(jj, k)+strain(k)
+           
+          END DO
+          
+          DO k = 1, 6
+           
+           ndstress_minus(jj, k) = ndstress_minus(jj, k)+stress(k)
+           
+          END DO
+          
+         END DO
+         
+         IF( ID_area .EQ. hecMESH%my_rank ) THEN
+          
+          DO k = 1, 6
+           
+           fstrSOLID%ESTRAIN( 14*(ielem-1)+7+k ) = strain(k)/nn
+           
+          END DO
+          
+          exx = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+1 )
+          eyy = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+2 )
+          ezz = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+3 )
+          exy = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+4 )
+          eyz = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+5 )
+          ezx = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+6 )
+          
+          e_equiv = ( ( exx-eyy )*( exx-eyy )         &
+                     +( eyy-ezz )*( eyy-ezz )         &
+                     +( ezz-exx )*( ezz-exx ) )       &
+                   +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
+          
+          fstrSOLID%ESTRAIN( 14*(ielem-1)+7+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
+          
+          DO k = 1, 6
+           
+           fstrSOLID%ESTRESS( 14*(ielem-1)+7+k ) = stress(k)/nn
+           
+          END DO
+          
+          sxx = fstrSOLID%ESTRESS( 14*(ielem-1)+7+1 )
+          syy = fstrSOLID%ESTRESS( 14*(ielem-1)+7+2 )
+          szz = fstrSOLID%ESTRESS( 14*(ielem-1)+7+3 )
+          sxy = fstrSOLID%ESTRESS( 14*(ielem-1)+7+4 )
+          syz = fstrSOLID%ESTRESS( 14*(ielem-1)+7+5 )
+          szx = fstrSOLID%ESTRESS( 14*(ielem-1)+7+6 )
+          
+          s_mises = ( ( sxx-syy )*( sxx-syy )         &
+                     +( syy-szz )*( syy-szz )         &
+                     +( szz-sxx )*( szz-sxx ) )       &
+                   +6.0D0*( sxy*sxy+syz*syz+szx*szx ) 
+          
+          fstrSOLID%ESTRESS( 14*(ielem-1)+7+7 ) = DSQRT( 0.5D0*s_mises )
+          
+         END IF
+         
+         !--------------------------------------------
+         
+         DO j = 1, nn
+          
+          jj = nodLOCAL(j)
+          
+          nnumber(jj) = nnumber(jj)+1
+          
+         END DO
+         
+         !--------------------------------------------
+         
+        END IF
+        
+        !--------------------------------------------------
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+      END DO
+      
+!--------------------------------------------------------------------
+      
+      !** Average over nodes
+      DO i = 1, hecMESH%n_node
+       
+       DO j = 1, 6
+        
+        ndstrain_plus(i, j)                         &
+        = ndstrain_plus(i, j) /DFLOAT( nnumber(i) ) 
+        
+        ndstrain_minus(i, j)                        &
+        = ndstrain_minus(i, j)/DFLOAT( nnumber(i) ) 
+        
+       END DO
+       
+       DO j = 1, 6
+        
+        ndstress_plus(i, j)                         &
+        = ndstress_plus(i, j) /DFLOAT( nnumber(i) ) 
+        
+        ndstress_minus(i, j)                        &
+        = ndstress_minus(i, j)/DFLOAT( nnumber(i) ) 
+        
+       END DO
+       
+      END DO
+      
+!--------------------------------------------------------------------
+      
+      DO i = 1, hecMESH%n_node
+       
+       !--------------------------------------------------------
+       
+       DO k = 1, 6
+        
+        fstrSOLID%STRAIN( 14*(i-1)+k ) = ndstrain_plus(i, k)
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+       exx = fstrSOLID%STRAIN( 14*(i-1)+1 )
+       eyy = fstrSOLID%STRAIN( 14*(i-1)+2 )
+       ezz = fstrSOLID%STRAIN( 14*(i-1)+3 )
+       exy = fstrSOLID%STRAIN( 14*(i-1)+4 )
+       eyz = fstrSOLID%STRAIN( 14*(i-1)+5 )
+       ezx = fstrSOLID%STRAIN( 14*(i-1)+6 )
+       
+       e_equiv = ( ( exx-eyy )*( exx-eyy )         &
+                  +( eyy-ezz )*( eyy-ezz )         &
+                  +( ezz-exx )*( ezz-exx ) )       &
+                +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
+       
+       fstrSOLID%STRAIN( 14*(i-1)+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
+       
+       !--------------------------------------------------------
+       
+       DO k = 1, 6
+        
+        fstrSOLID%STRAIN( 14*(i-1)+7+k ) = ndstrain_minus(i, k)
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+       exx = fstrSOLID%STRAIN( 14*(i-1)+7+1 )
+       eyy = fstrSOLID%STRAIN( 14*(i-1)+7+2 )
+       ezz = fstrSOLID%STRAIN( 14*(i-1)+7+3 )
+       exy = fstrSOLID%STRAIN( 14*(i-1)+7+4 )
+       eyz = fstrSOLID%STRAIN( 14*(i-1)+7+5 )
+       ezx = fstrSOLID%STRAIN( 14*(i-1)+7+6 )
+       
+       e_equiv = ( ( exx-eyy )*( exx-eyy )         &
+                  +( eyy-ezz )*( eyy-ezz )         &
+                  +( ezz-exx )*( ezz-exx ) )       &
+                +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
+       
+       fstrSOLID%STRAIN( 14*(i-1)+7+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
+       
+       !--------------------------------------------------------
+       
+       DO k = 1, 6
+        
+        fstrSOLID%STRESS( 14*(i-1)+k ) = ndstress_plus(i, k)
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+       sxx = fstrSOLID%STRESS( 14*(i-1)+1 )
+       syy = fstrSOLID%STRESS( 14*(i-1)+2 )
+       szz = fstrSOLID%STRESS( 14*(i-1)+3 )
+       sxy = fstrSOLID%STRESS( 14*(i-1)+4 )
+       syz = fstrSOLID%STRESS( 14*(i-1)+5 )
+       szx = fstrSOLID%STRESS( 14*(i-1)+6 )
+       
+       s_mises = ( ( sxx-syy )*( sxx-syy )         &
+                  +( syy-szz )*( syy-szz )         &
+                  +( szz-sxx )*( szz-sxx ) )       &
+                +6.0D0*( sxy*sxy+syz*syz+szx*szx ) 
+       
+       fstrSOLID%STRESS( 14*(i-1)+7 ) = DSQRT( 0.5D0*s_mises )
+       
+       !--------------------------------------------------------
+       
+       DO k = 1, 6
+        
+        fstrSOLID%STRESS( 14*(i-1)+7+k ) = ndstress_minus(i, k)
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+       sxx = fstrSOLID%STRESS( 14*(i-1)+7+1 )
+       syy = fstrSOLID%STRESS( 14*(i-1)+7+2 )
+       szz = fstrSOLID%STRESS( 14*(i-1)+7+3 )
+       sxy = fstrSOLID%STRESS( 14*(i-1)+7+4 )
+       syz = fstrSOLID%STRESS( 14*(i-1)+7+5 )
+       szx = fstrSOLID%STRESS( 14*(i-1)+7+6 )
+       
+       s_mises = ( ( sxx-syy )*( sxx-syy )         &
+                  +( syy-szz )*( syy-szz )         &
+                  +( szz-sxx )*( szz-sxx ) )       &
+                +6.0D0*( sxy*sxy+syz*syz+szx*szx ) 
+       
+       fstrSOLID%STRESS( 14*(i-1)+7+7 ) = DSQRT( 0.5D0*s_mises )
+       
+       !--------------------------------------------------------
+       
+      END DO
+      
+!--------------------------------------------------------------------
+      
+      IF( fstrDYNAMIC%iout_list(5) .EQ. 1 ) THEN
+       
+       WRITE(ILOG,*) '#### STRAIN'
+       WRITE(ILOG, '(A, A)')                                       &
+                 '     NODE     E11         E22         E33     ', &
+                 '    E12         E23         E31        EQUIV'  
+       WRITE(ILOG, '(A, A)')                                       &
+                 '  -------+-----------+-----------+-----------+', &
+               '-----------+-----------+-----------+------------'  
+       
+       DO i = 1, hecMESH%nn_internal
+        
+        jj = fstrPARAM%global_local_id(1, i)
+        ii = fstrPARAM%global_local_id(2, i)
+        
+        WRITE(ILOG, '(I10, A5, 1P7E12.4)')                                &
+              jj,' (+) ', ( fstrSOLID%STRAIN( 14*(ii-1)+k   ), k = 1, 7 ) 
+        WRITE(ILOG, '(10X, A5, 1P7E12.4)')                                &
+                 ' (-) ', ( fstrSOLID%STRAIN( 14*(ii-1)+k+7 ), k = 1, 7 ) 
+        
+       END DO
+       
+      END IF
+      
+      IF( fstrDYNAMIC%iout_list(6) .EQ. 1 ) THEN
+       
+       WRITE(ILOG,*) '#### STRESS'
+       WRITE(ILOG, '(A, A)')                                          &
+                    '     NODE     S11         S22         S33     ', &
+                      '    S12         S23         S31      MISES'  
+       WRITE(ILOG, '(A, A)')                                          &
+                    '  -------+-----------+-----------+-----------+', &
+                  '-----------+-----------+-----------+------------'  
+       
+       DO i = 1, hecMESH%nn_internal
+        
+        jj = fstrPARAM%global_local_id(1, i)
+        ii = fstrPARAM%global_local_id(2, i)
+        
+        WRITE(ILOG, '(I10, A5, 1P7E12.4)')                                 &
+              jj, ' (+) ', ( fstrSOLID%STRESS( 14*(ii-1)+k   ), k = 1, 7 ) 
+        WRITE(ILOG, '(10X, A5, 1P7E12.4)')                                 &
+                  ' (-) ', ( fstrSOLID%STRESS( 14*(ii-1)+k+7 ), k = 1, 7 ) 
+        
+       END DO
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      DEALLOCATE( ndstress_plus )
+      DEALLOCATE( ndstress_minus )
+      DEALLOCATE( ndstrain_plus )
+      DEALLOCATE( ndstrain_minus )
+      DEALLOCATE( nnumber )
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE dynamic_nodal_stress_6d_Shell
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
 
-      end if
 
-      deallocate ( id_spc          ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_reaction_force_6d, id_spc>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-      deallocate ( spcForce        ,STAT=ierror)
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <dynamic_reaction_force_6d, spcForce>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
-
-      end subroutine dynamic_reaction_force_6d
 !C 
 !C OUTPUT FOR ELEMENTS
 !C
@@ -1815,44 +2050,69 @@ contains
 
       elseif( hecMESH%n_dof .eq. 6 ) then
 
-        if( fstrDYNAMIC%iout_list(5) .eq. 1 ) then
-        write(ILOG,*) '#### SHELL STRAIN @Element'
-        write(ILOG,'(a,a)')                                            &
-               '  ELEMENT          E11         E22         E12     '   &
-                             ,'    E23         E13'
-        write(ILOG,'(a,a)')                                           &
-               '  ------------+-----------+-----------+-----------+'  &
-                             ,'-----------+-------------'
-        do i=1,hecMESH%n_elem
-!!        ii = hecMESH%elem_ID(i*2-1)
+        IF( fstrDYNAMIC%iout_list(5) .EQ. 1 ) THEN
+         
+         WRITE( ILOG, '(a,a)' )                                              &
+                '  ------------+-----------+-----------+-----------+',       &
+                              '-----------+-----------+-------------'        
+         
+         WRITE(ILOG, *) '#### SHELL STRAIN @Element'
+         WRITE( ILOG, '(A, A)' )                                             &
+                '  ELEMENT          E11         E22         E33     ',       &
+                               '    E12         E23         E31       EQUIV' 
+         WRITE( ILOG, '(A, A)' )                                             &
+                '  ------------+-----------+-----------+-----------+',       &
+                              '-----------+-----------+-------------'        
+         
+         DO i = 1, hecMESH%n_elem
+          
           ii = i
           jj = hecMESH%global_elem_ID(i)
+          
           ID_area = hecMESH%elem_ID(i*2)
-          if( ID_area.eq.hecMESH%my_rank ) then
-            write(ILOG,'(i10,a5,1p5e12.4)') jj,' (+) ',(fstrSOLID%ESTRAIN(10*(ii-1)+k),k=1,5)
-            write(ILOG,'(10x,a5,1p5e12.4)')    ' (-) ',(fstrSOLID%ESTRAIN(10*(ii-1)+k),k=6,10)
-          end if
-        enddo
-        end if
+          
+          IF( ID_area .EQ. hecMESH%my_rank ) then
+           
+           WRITE( ILOG, '(I10, A5, 1P7E12.4)' )                                &
+                  jj, ' (+) ', ( fstrSOLID%ESTRAIN( 14*(ii-1)+k ), k = 1, 7  ) 
+           WRITE( ILOG, '(10X, A5, 1P7E12.4)' )                                &
+                      ' (-) ', ( fstrSOLID%ESTRAIN( 14*(ii-1)+k ), k = 8, 14 ) 
+           
+          END IF
+          
+         END DO
+         
+        END IF
 
-        if( fstrDYNAMIC%iout_list(6) .eq. 1 ) then
-        write(ILOG,*) '#### SHELL STRESS @Element'
-        write(ILOG,'(a,a)')                                             &
-               '  ELEMENT          S11         S22         S12     '    &
-                             ,'    S23         S13        MISES'
-        write(ILOG,'(a,a)')                                             &
-               '  ------------+-----------+-----------+-----------+'    &
-                             ,'-----------+-----------+-------------'
-        do i=1,hecMESH%n_elem
-!!        ii = hecMESH%elem_ID(i*2-1)
+        IF( fstrDYNAMIC%iout_list(6) .EQ. 1 ) THEN
+         
+         WRITE(ILOG, *) '#### SHELL STRESS @Element'
+         WRITE( ILOG, '(A, A)' )                                             &
+                '  ELEMENT          S11         S22         S33     ',       &
+                               '    S12         S23         S31       MISES' 
+         WRITE( ILOG, '(A, A)' )                                             &
+                '  ------------+-----------+-----------+-----------+',       &
+                              '-----------+-----------+-------------'        
+       
+         
+         DO i = 1, hecMESH%n_elem
+          
           ii = i
           jj = hecMESH%global_elem_ID(i)
+          
           ID_area = hecMESH%elem_ID(i*2)
-          if( ID_area.eq.hecMESH%my_rank ) then
-            write(ILOG,'(i10,a5,1p6e12.4)') jj,' (+) ',(fstrSOLID%ESTRESS(12*(ii-1)+k),k=1,6)
-            write(ILOG,'(10x,a5,1p6e12.4)')    ' (-) ',(fstrSOLID%ESTRESS(12*(ii-1)+k),k=7,12)
-          end if
-        enddo
+          
+          IF( ID_area .EQ. hecMESH%my_rank ) THEN
+           
+           WRITE( ILOG, '(I10, A5, 1P7E12.4)' )                              &
+                  jj, ' (+) ', ( fstrSOLID%ESTRESS(14*(ii-1)+k), k = 1, 7  ) 
+           WRITE( ILOG, '(10X, A5, 1P7E12.4)' )                              &
+                      ' (-) ', ( fstrSOLID%ESTRESS(14*(ii-1)+k), k = 8, 14 ) 
+           
+          END IF
+          
+         END DO
+         
         end if
 
       endif
@@ -1958,7 +2218,7 @@ contains
       else if( hecMESH%n_dof .eq. 2 ) then
         call dynamic_output_2d(hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrDYNAMIC)
       else if( hecMESH%n_dof.EQ.6) THEN
-        call dynamic_output_6d(hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrDYNAMIC)
+        call dynamic_output_6d_Shell(hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC)
       endif
 
 !C-- OUTPUT FOR ELEMENTS

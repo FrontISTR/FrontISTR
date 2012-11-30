@@ -63,4 +63,39 @@ MODULE shape_quad4n
       func(:,2,2) = 0.d0
     end subroutine
 
+
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE NodalNaturalCoord_quad4n(nncoord)
+!####################################################################
+      
+      IMPLICIT NONE
+      
+!--------------------------------------------------------------------
+      
+      REAL(KIND = kreal), INTENT(OUT) :: nncoord(4, 1)
+      
+!--------------------------------------------------------------------
+      
+      ! xi-coordinate at a node in a local element
+      nncoord(1, 1) = -1.0D0
+      nncoord(2, 1) =  1.0D0
+      nncoord(3, 1) =  1.0D0
+      nncoord(4, 1) = -1.0D0
+      ! eta-coordinate at a node in a local element
+      nncoord(1, 2) = -1.0D0
+      nncoord(2, 2) = -1.0D0
+      nncoord(3, 2) =  1.0D0
+      nncoord(4, 2) =  1.0D0
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE NodalNaturalCoord_quad4n
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
+
 END MODULE

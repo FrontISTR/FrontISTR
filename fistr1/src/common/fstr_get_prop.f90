@@ -21,7 +21,7 @@ module m_static_get_prop
 !C*** GET_PROP for FSTR solver
 !C***
 !C
-   SUBROUTINE fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick)
+   SUBROUTINE fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu)
 
       use m_fstr
       
@@ -38,6 +38,7 @@ module m_static_get_prop
       !PAUSE
       !do i = 1,n_item
        thick = hecMESH%section%sect_R_item(ihead+1)
+       
        IF(thick.LE.0.0) STOP "Zero thickness <= 0 is illegal"
        !Print *,'cval:',cval
        !PAUSE
@@ -53,6 +54,7 @@ module m_static_get_prop
       ihead=hecMESH%material%mat_ITEM_index(mid-1)
 !C Get ITEM of Meterial (Young's Modulus & Possion's Ratio
       pp=0.0
+      alpha_over_mu = 0.0
       if( n_item .lt. 1 ) then
         write(IMSG,*) 'n_item=',n_item
         write(IMSG,*) '###Error 1'
@@ -74,6 +76,10 @@ module m_static_get_prop
         endif
         if ( n_subitem.ge.2 ) then
           pp=hecMESH%material%mat_val(mpos+2)
+        endif
+        alpha_over_mu=1.0D-3
+        if ( n_subitem.ge.3 ) then
+          alpha_over_mu=hecMESH%material%mat_val(mpos+3)
         endif
       endif
 !C Get ITEM of Meterial (Density)
@@ -110,5 +116,6 @@ module m_static_get_prop
           alpha=hecMESH%material%mat_val(mpos+1)
         endif
       endif
+      
    end subroutine FSTR_GET_PROP
 end module m_static_get_prop

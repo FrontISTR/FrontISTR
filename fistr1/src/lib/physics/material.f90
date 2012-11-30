@@ -104,6 +104,8 @@ MODULE mMaterial
       INTEGER, PARAMETER :: M_KINEHARD = 10
 
       INTEGER, PARAMETER :: M_EXAPNSION = 20
+      
+      INTEGER, PARAMETER :: M_ALPHA_OVER_MU = 21
 
       ! 80~100, hardening parameter
 	  

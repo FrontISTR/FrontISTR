@@ -205,4 +205,133 @@ subroutine mat_c2d( cijkl, dij, itype )
 
 end subroutine mat_c2d
 
+
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE MatlMatrix_Shell                        &
+                 (gauss, sectType, D,                    &
+                  e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
+                  alpha)                                 
+!####################################################################
+      
+      TYPE(tGaussStatus), INTENT(IN)  :: gauss
+      INTEGER, INTENT(IN)             :: sectType
+      REAL(KIND = kreal), INTENT(OUT) :: D(:, :)
+      REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3)
+      REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)
+      REAL(KIND = kreal), INTENT(OUT) :: alpha
+      
+!--------------------------------------------------------------------
+      
+      REAL(KIND = kreal)       :: c(3, 3, 3, 3)
+      TYPE(tMaterial), POINTER :: matl
+      
+!--------------------------------------------------------------------
+      
+      matl => gauss%pMaterial
+      
+!--------------------------------------------------------------------
+      
+      IF( isElastic(matl%mtype) ) THEN
+       
+       CALL LinearElastic_Shell                     &
+            (matl, sectType, c,                     &
+             e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
+             alpha)                                 
+       
+       CALL mat_c2d_Shell(c, D, sectType)
+       
+      ELSE
+       
+       STOP "Material type not supported!"
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE MatlMatrix_Shell
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+      
+      
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE mat_c2d_Shell(c, D, itype)
+!####################################################################
+      
+      REAL(KIND = kreal), INTENT(IN)  :: c(:, :, :, :)
+      REAL(KIND = kreal), INTENT(OUT) :: D(:, :)
+      INTEGER, INTENT(IN)             :: itype
+      
+!--------------------------------------------------------------------
+      
+      INTEGER :: index_i(5), index_j(5), &
+                 index_k(5), index_l(5)  
+      INTEGER :: i, j, k, l
+      INTEGER :: is, js
+      
+!--------------------------------------------------------------------
+      
+      index_i(1) = 1
+      index_i(2) = 2
+      index_i(3) = 1
+      index_i(4) = 2
+      index_i(5) = 3
+      
+      index_j(1) = 1
+      index_j(2) = 2
+      index_j(3) = 2
+      index_j(4) = 3
+      index_j(5) = 1
+      
+      index_k(1) = 1
+      index_k(2) = 2
+      index_k(3) = 1
+      index_k(4) = 2
+      index_k(5) = 3
+       
+      index_l(1) = 1
+      index_l(2) = 2
+      index_l(3) = 2
+      index_l(4) = 3
+      index_l(5) = 1
+      
+!--------------------------------------------------------------------
+      
+      D(:, :) = 0.0D0
+      
+!--------------------------------------------------------------------
+      
+      SELECT CASE( itype )
+      CASE( Shell )
+       
+       DO js = 1, 5
+        
+        DO is = 1, 5
+         
+         i = index_i(is)
+         j = index_j(is)
+         k = index_k(js)
+         l = index_l(js)
+         
+         D(is, js) = c(i, j, k, l)
+         
+        END DO
+        
+       END DO
+       
+      END SELECT
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE mat_c2d_Shell
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
 end module m_MatMatrix

@@ -62,6 +62,7 @@ module elementInfo
   use shape_tri6n
   use shape_quad4n
   use shape_quad8n
+  use shape_quad9n
   use shape_hex8n
   use shape_hex20n
   use shape_tet4n
@@ -92,17 +93,17 @@ module elementInfo
     integer, parameter :: fe_hex8n    = 361
     integer, parameter :: fe_hex20n   = 362
     integer, parameter :: fe_hex27n   = 363
-	
-	integer, parameter :: fe_beam2n   = 611
+
+    integer, parameter :: fe_beam2n   = 611
     integer, parameter :: fe_beam3n   = 612
 
-    integer, parameter :: fe_tri3n_shell  = 731
     integer, parameter :: fe_tri6n_shell  = 732
     integer, parameter :: fe_dsg3_shell   = 733
+    integer, parameter :: fe_mitc3_shell  = 731
     integer, parameter :: fe_mitc4_shell  = 741
     integer, parameter :: fe_mitc8_shell  = 742
     integer, parameter :: fe_mitc9_shell  = 743
-	
+
  ! ---------------------------------------------
 
   contains
@@ -133,7 +134,7 @@ module elementInfo
         getNumberOfNodes = 2
       case (fe_line3n, fe_beam3n)
         getNumberOfNodes = 3
-      case (fe_tri3n, fe_tri3n_shell )
+      case (fe_tri3n, fe_mitc3_shell )
         getNumberOfNodes = 3
       case ( fe_tri6n, fe_tri6nc, fe_tri6n_shell )
         getNumberOfNodes = 6
@@ -168,7 +169,7 @@ module elementInfo
       select case (etype)
       case (fe_line2n, fe_line3n)
         getNumberOfSubface = 2
-      case (fe_tri3n, fe_tri3n_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell  )
+      case (fe_tri3n, fe_mitc3_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell  )
         getNumberOfSubface = 3
       case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell, fe_mitc9_shell )
         getNumberOfSubface = 4
@@ -320,7 +321,7 @@ module elementInfo
           nodes(1)=6;  nodes(2)=4;  nodes(3)=1;  nodes(4)=3
           nodes(5)=12; nodes(6)=13; nodes(7)=9;  nodes(8)=15
         end select
-      case ( fe_tri3n, fe_tri3n_shell )
+      case ( fe_tri3n, fe_mitc3_shell )
         outtype = fe_line2n
         select case (innumber )
         case (1)
@@ -383,16 +384,18 @@ module elementInfo
         NumOfQuadPoints = 4
       case (fe_line3n )
         NumOfQuadPoints = 2
-      case ( fe_quad4n )
+      case ( fe_quad4n, fe_mitc4_shell )
         NumOfQuadPoints = 4
-      case ( fe_quad8n )
+      case ( fe_quad8n, fe_mitc9_shell )
         NumOfQuadPoints = 9
-      case ( fe_hex8n, fe_mitc4_shell )
+      case ( fe_hex8n )
         NumOfQuadPoints = 8
-      case ( fe_hex20n, fe_mitc8_shell, fe_mitc9_shell )
+      case ( fe_hex20n, fe_mitc8_shell )
         NumOfQuadPoints = 27
-      case ( fe_prism6n, fe_tri3n_shell )
+      case ( fe_prism6n )
         NumOfQuadPoints = 2
+      case ( fe_mitc3_shell )
+        NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
         NumOfQuadPoints = 9
       case ( fe_tet10n )
@@ -420,19 +423,19 @@ module elementInfo
       select case (fetype)
       case (fe_tri3n)
         pos(1:2)=gauss2d4(:,np)
-      case (fe_tri6n )
+      case ( fe_tri6n, fe_mitc3_shell )
         pos(1:2)=gauss2d5(:,np)
       case (fe_tri6nc )
         pos(1:2)=gauss2d6(:,np)
-      case ( fe_quad4n )
+      case ( fe_quad4n, fe_mitc4_shell )
         pos(1:2)=gauss2d2(:,np)
-      case ( fe_quad8n )
+      case ( fe_quad8n, fe_mitc9_shell )
         pos(1:2)=gauss2d3(:,np)
-      case ( fe_hex8n, fe_mitc4_shell )
+      case ( fe_hex8n )
         pos(1:3)=gauss3d2(:,np)
-      case ( fe_hex20n, fe_mitc8_shell, fe_mitc9_shell )
+      case ( fe_hex20n, fe_mitc8_shell )
         pos(1:3)=gauss3d3(:,np)
-      case ( fe_prism6n, fe_tri3n_shell )
+      case ( fe_prism6n )
         pos(1:3)=gauss3d7(:,np)
       case ( fe_prism15n, fe_tri6n_shell )
         pos(1:3)=gauss3d8(:,np)
@@ -464,11 +467,11 @@ module elementInfo
       select case (fetype)
       case (fe_tri3n)
         getWeight = weight2d4(1)
-      case (fe_tri6n)
+      case ( fe_tri6n, fe_mitc3_shell )
         getWeight = weight2d5(np)
-      case ( fe_quad4n )
+      case ( fe_quad4n, fe_mitc4_shell )
         getWeight = weight2d2(np)
-      case ( fe_quad8n )
+      case ( fe_quad8n, fe_mitc9_shell )
         getWeight = weight2d3(np)
       case ( fe_hex8n )
         getWeight = weight3d2(np)
@@ -502,18 +505,21 @@ module elementInfo
       real(kind=kreal), intent(out) :: shapederiv(:,:)    !< deivative of shape function
 
       select case (fetype)
-      case (fe_tri3n)
+      case ( fe_tri3n, fe_mitc3_shell )
         !error check
         call ShapeDeriv_tri3n(shapederiv(1:3,1:2))
       case (fe_tri6n)
         !error check
         call ShapeDeriv_tri6n(localcoord,shapederiv(1:6,1:2) )
-      case (fe_quad4n)
+      case ( fe_quad4n, fe_mitc4_shell )
         !error check
         call ShapeDeriv_quad4n(localcoord,shapederiv(1:4,1:2))
       case (fe_quad8n)
         !error check
         call ShapeDeriv_quad8n(localcoord,shapederiv(1:8,1:2))
+      case ( fe_mitc9_shell )
+        !error check
+        call ShapeDeriv_quad9n(localcoord,shapederiv(1:9,1:2))
       case (fe_hex8n)
         ! error check
         call ShapeDeriv_hex8n(localcoord,shapederiv(1:8,1:3))
@@ -543,13 +549,13 @@ module elementInfo
       real(kind=kreal), intent(out) :: shapederiv(:,:,:)  !< 2nd order shape derivatives
 
       select case (fetype)
-      case (fe_tri3n)
+      case ( fe_tri3n, fe_mitc3_shell )
         !error check
         call Shape2ndDeriv_tri3n(shapederiv(1:3,1:2,1:2))
       case (fe_tri6n)
         !error check
         call Shape2ndDeriv_tri6n(shapederiv(1:6,1:2,1:2))
-      case (fe_quad4n)
+      case ( fe_quad4n, fe_mitc4_shell )
         !error check
         call Shape2ndDeriv_quad4n(shapederiv(1:4,1:2,1:2))
       case (fe_quad8n)
@@ -568,13 +574,13 @@ module elementInfo
       real(kind=kreal), intent(out) :: func(:)           !< shape function
 
       select case (fetype)
-      case (fe_tri3n)
+      case ( fe_tri3n, fe_mitc3_shell )
         !error check
         call ShapeFunc_tri3n(localcoord,func(1:3))
       case (fe_tri6n)
         !error check
         call ShapeFunc_tri6n(localcoord,func(1:6))
-      case (fe_quad4n)
+      case ( fe_quad4n, fe_mitc4_shell )
         !error check
         call ShapeFunc_quad4n(localcoord,func(1:4))
       case (fe_quad8n)
@@ -583,6 +589,9 @@ module elementInfo
       case (fe_hex8n)
         ! error check
         call ShapeFunc_hex8n(localcoord,func(1:8))
+      case ( fe_mitc9_shell )
+        !error check
+        call ShapeFunc_quad9n(localcoord,func(1:9))
       case (fe_hex20n)
         ! error check
         call ShapeFunc_hex20n(localcoord,func(1:20))
@@ -607,7 +616,51 @@ module elementInfo
         ! error message
       end select
   end subroutine
-  
+
+
+      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+!####################################################################
+      SUBROUTINE getNodalNaturalCoord(fetype, nncoord)
+!####################################################################
+      
+      INTEGER, INTENT(IN)             :: fetype
+      REAL(KIND = kreal), INTENT(OUT) :: nncoord(:, :)
+      
+!--------------------------------------------------------------------
+      
+      SELECT CASE( fetype )
+      CASE( fe_tri3n, fe_mitc3_shell )
+       
+       !error check
+       CALL NodalNaturalCoord_tri3n( nncoord(1:3, 1:2) )
+       
+      CASE( fe_quad4n, fe_mitc4_shell )
+       
+       !error check
+       CALL NodalNaturalCoord_quad4n( nncoord(1:4, 1:2) )
+       
+      CASE( fe_mitc9_shell )
+       
+       !error check
+       CALL NodalNaturalCoord_quad9n( nncoord(1:9, 1:2) )
+       
+      CASE DEFAULT
+       
+       ! error message
+       STOP "Element type not defined-sde"
+       
+      END SELECT
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE getNodalNaturalCoord
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
+
   !> Calculate shape derivative in global coordinate system
   subroutine getGlobalDeriv( fetype, nn, localcoord, elecoord, det, gderiv )
       integer, intent(in)           :: fetype          !< element type

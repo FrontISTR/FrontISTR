@@ -72,7 +72,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: version, resul, visual, femap
         integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror                     
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
-        real(kind=kreal) :: ee, pp, rho, alpha, thick
+        real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
         character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
@@ -270,13 +270,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call initMaterial(  fstrSOLID%materials(cid) )
               if( fstrPARAM%solution_type == kstNLSTATIC .or. fstrPARAM%solution_type==6 ) & 
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
-              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick)
+              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,alpha_over_mu)
               fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
               fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
               fstrSOLID%materials(cid)%variables(M_POISSON)=pp
               fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
               fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
               fstrSOLID%materials(cid)%variables(M_THICK)=thick
+              fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
               fstrSOLID%materials(cid)%mtype = ELASTIC
            enddo
         endif
@@ -642,7 +643,7 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
 
         ndof=hecMESH%n_dof
         ic_type= hecMESH%elem_type_item(1)
-        if( ic_type==741 .or. ic_type==731 ) ndof=6
+        if( ic_type==741 .or. ic_type==743 .or. ic_type==731 ) ndof=6
 
         ntotal=ndof*hecMESH%n_node
         allocate ( fstrSOLID%GL( ntotal )          ,STAT=ierror )
@@ -1072,10 +1073,10 @@ end subroutine
          .or. P%PARAM%solution_type == kstDYNAMIC ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 ) then
-                        allocate ( P%SOLID%STRAIN  (10*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (12*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (10*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (12*P%MESH%n_elem))
+                        allocate ( P%SOLID%STRAIN  (14*P%MESH%n_node))
+                        allocate ( P%SOLID%STRESS  (14*P%MESH%n_node))
+                        allocate ( P%SOLID%ESTRAIN  (14*P%MESH%n_elem))
+                        allocate ( P%SOLID%ESTRESS  (14*P%MESH%n_elem))
                 else
                         allocate ( P%SOLID%STRAIN  (6*P%MESH%n_node))
                         allocate ( P%SOLID%STRESS  (7*P%MESH%n_node))
