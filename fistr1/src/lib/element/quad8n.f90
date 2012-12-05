@@ -14,7 +14,7 @@
 !======================================================================!
 !                                                                      !
 !> \brief  This module contains functions for interpolation in 8 node 
-!!   qudrilateral element (Serendipity  interpolation) 
+!!   quadrilateral element (Serendipity  interpolation) 
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/05/08

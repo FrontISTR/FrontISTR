@@ -18,10 +18,7 @@
 module m_static_output
 
    use m_static_get_prop
-   use m_static_LIB_1d
-   use m_static_LIB_2d
-   use m_static_LIB_3d
-   use m_static_LIB_shell
+   use m_static_LIB
 
    contains
 
@@ -1084,7 +1081,7 @@ module m_static_output
       ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
 !####################################################################
       SUBROUTINE fstr_nodal_stress_6d_Shell               &
-                 (hecMESH, fstrSOLID, fstrPARAM, ifwrite) 
+                 (hecMESH, fstrSOLID, fstrPARAM, iout_list) 
 !####################################################################
       
       USE m_fstr
@@ -1099,13 +1096,13 @@ module m_static_output
       TYPE(hecmwST_local_mesh) :: hecMESH
       TYPE(fstr_solid)         :: fstrSOLID
       TYPE(fstr_param)         :: fstrPARAM
-      LOGICAL, OPTIONAL        :: ifwrite
+      INTEGER, OPTIONAL        :: iout_list(:)
       
 !--------------------------------------------------------------------
       
       REAL(KIND = kreal) :: ecoord(3, 9)
       REAL(KIND = kreal) :: edisp(6, 9)
-      REAL(KIND = kreal) :: stress(6), strain(6)
+      REAL(KIND = kreal) :: stress(9,6), strain(9,6)
       REAL(KIND = kreal) :: thick
       REAL(KIND = kreal) :: exx, eyy, ezz, exy, eyz, ezx
       REAL(KIND = kreal) :: e_equiv
@@ -1239,25 +1236,23 @@ module m_static_output
           
           DO k = 1, 6
            
-           ndstrain_plus(jj, k) = ndstrain_plus(jj, k)+strain(k)
-           
-          END DO
-          
-          DO k = 1, 6
-           
-           ndstress_plus(jj, k) = ndstress_plus(jj, k)+stress(k)
+           ndstrain_plus(jj, k) = ndstrain_plus(jj, k)+strain(j,k)           
+           ndstress_plus(jj, k) = ndstress_plus(jj, k)+stress(j, k)
            
           END DO
           
          END DO
          
-         IF( ID_area .EQ. hecMESH%my_rank ) THEN
+         IF( ID_area == hecMESH%my_rank ) THEN
           
+          DO j=1,nn		 
           DO k = 1, 6
-           
-           fstrSOLID%ESTRAIN( 14*( ielem-1 )+k ) = strain(k)/nn
-           
+             fstrSOLID%ESTRAIN( 14*(ielem-1)+k ) = fstrSOLID%ESTRAIN( 14*(ielem-1)+k ) + strain(j,k)
+             fstrSOLID%ESTRESS( 14*(ielem-1)+k ) = fstrSOLID%ESTRESS( 14*(ielem-1)+k ) + stress(j,k)
           END DO
+          ENDDO
+          fstrSOLID%ESTRAIN( 14*(ielem-1)+1:14*(ielem-1)+6 ) = fstrSOLID%ESTRAIN( 14*(ielem-1)+1:14*(ielem-1)+6 )/nn
+          fstrSOLID%ESTRESS( 14*(ielem-1)+1:14*(ielem-1)+6 ) = fstrSOLID%ESTRESS( 14*(ielem-1)+1:14*(ielem-1)+6 )/nn
           
           exx = fstrSOLID%ESTRAIN( 14*(ielem-1)+1 )
           eyy = fstrSOLID%ESTRAIN( 14*(ielem-1)+2 )
@@ -1272,13 +1267,7 @@ module m_static_output
                    +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
           
           fstrSOLID%ESTRAIN( 14*(ielem-1)+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
-          
-          DO k = 1, 6
-           
-           fstrSOLID%ESTRESS( 14*(ielem-1)+k ) = stress(k)/nn
-           
-          END DO
-          
+                   
           sxx = fstrSOLID%ESTRESS( 14*(ielem-1)+1 )
           syy = fstrSOLID%ESTRESS( 14*(ielem-1)+2 )
           szz = fstrSOLID%ESTRESS( 14*(ielem-1)+3 )
@@ -1311,25 +1300,23 @@ module m_static_output
           
           DO k = 1, 6
            
-           ndstrain_minus(jj, k) = ndstrain_minus(jj, k)+strain(k)
-           
-          END DO
-          
-          DO k = 1, 6
-           
-           ndstress_minus(jj, k) = ndstress_minus(jj, k)+stress(k)
+           ndstrain_minus(jj, k) = ndstrain_minus(jj, k)+strain(j,k)      
+           ndstress_minus(jj, k) = ndstress_minus(jj, k)+stress(j,k)
            
           END DO
           
          END DO
          
-         IF( ID_area .EQ. hecMESH%my_rank ) THEN
-          
+         IF( ID_area == hecMESH%my_rank ) THEN
+
+          DO j=1,nn		 
           DO k = 1, 6
-           
-           fstrSOLID%ESTRAIN( 14*(ielem-1)+7+k ) = strain(k)/nn
-           
+             fstrSOLID%ESTRAIN( 14*(ielem-1)+7+k ) = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+k ) + strain(j,k)
+             fstrSOLID%ESTRESS( 14*(ielem-1)+7+k ) = fstrSOLID%ESTRESS( 14*(ielem-1)+7+k ) + stress(j,k)
           END DO
+          ENDDO
+          fstrSOLID%ESTRAIN( 14*(ielem-1)+8:14*(ielem-1)+13 ) = fstrSOLID%ESTRAIN( 14*(ielem-1)+8:14*(ielem-1)+13 )/nn
+          fstrSOLID%ESTRESS( 14*(ielem-1)+8:14*(ielem-1)+13 ) = fstrSOLID%ESTRESS( 14*(ielem-1)+8:14*(ielem-1)+13 )/nn 
           
           exx = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+1 )
           eyy = fstrSOLID%ESTRAIN( 14*(ielem-1)+7+2 )
@@ -1344,12 +1331,6 @@ module m_static_output
                    +6.0D0*( exy*exy+eyz*eyz+ezx*ezx ) 
           
           fstrSOLID%ESTRAIN( 14*(ielem-1)+7+7 ) = DSQRT( 2.0D0*e_equiv )/3.0D0
-          
-          DO k = 1, 6
-           
-           fstrSOLID%ESTRESS( 14*(ielem-1)+7+k ) = stress(k)/nn
-           
-          END DO
           
           sxx = fstrSOLID%ESTRESS( 14*(ielem-1)+7+1 )
           syy = fstrSOLID%ESTRESS( 14*(ielem-1)+7+2 )
@@ -1522,7 +1503,7 @@ module m_static_output
       
 !--------------------------------------------------------------------
       
-      IF( .NOT. PRESENT(ifwrite) ) THEN
+      IF( .NOT. PRESENT(iout_list) .or. ( PRESENT(iout_list) .and. iout_list(5)==1) ) THEN
        
        WRITE(ILOG, *) '#### STRAIN'
        WRITE(ILOG, '(A, A)')                                       &
@@ -1543,6 +1524,9 @@ module m_static_output
                  ' (-) ', ( fstrSOLID%STRAIN( 14*(ii-1)+k+7 ), k = 1, 7 ) 
         
        END DO
+      ENDIF
+	 
+      IF( .NOT. PRESENT(iout_list) .or. ( PRESENT(iout_list) .and. iout_list(6)==1) ) THEN
        
        WRITE(ILOG, *) '#### STRESS'
        WRITE(ILOG, '(A, A)')                                          &

@@ -1,3 +1,26 @@
+!======================================================================!
+!                                                                      !
+! Software Name : FrontISTR Ver. 4.1                                   !
+!                                                                      !
+!      Module Name : lib                                               !
+!                                                                      !
+!                   Written by Gaku Hashimoto, The University of Tokyo !
+!                                                                      !
+!      Contact address :  IIS,The University of Tokyo, CISS            !
+!                                                                      !
+!      "Structural Analysis for Large Scale Assembly"                  !
+!                                                                      !
+!======================================================================!
+!======================================================================!
+!                                                                      !
+!> \brief  This module contains functions for interpolation in 9 node 
+!!   quadrilateral element
+!                                                                      !
+!>  \author     Gaku Hashimoto, The University of Tokyo
+!>  \date       2012/11/15
+!>  \version    0.00
+!======================================================================!
+
       MODULE shape_quad9n
 !####################################################################
       
@@ -11,8 +34,7 @@
       
       CONTAINS
       
-      
-      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+
 !####################################################################
       SUBROUTINE ShapeFunc_quad9n(lcoord, func)
 !####################################################################
@@ -80,10 +102,7 @@
 !####################################################################
       END SUBROUTINE ShapeFunc_quad9n
 !####################################################################
-      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
-      
-      
-      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+
 !####################################################################
       SUBROUTINE ShapeDeriv_quad9n(lcoord, func)
 !####################################################################
@@ -166,10 +185,7 @@
 !####################################################################
       END SUBROUTINE ShapeDeriv_quad9n
 !####################################################################
-      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
-      
-      
-      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+
 !####################################################################
       SUBROUTINE NodalNaturalCoord_quad9n(nncoord)
 !####################################################################
@@ -206,8 +222,5 @@
 !####################################################################
       END SUBROUTINE NodalNaturalCoord_quad9n
 !####################################################################
-      ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
-      
-      
-!####################################################################
+
       END MODULE shape_quad9n
