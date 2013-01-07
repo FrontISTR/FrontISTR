@@ -65,6 +65,7 @@ contains
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
+    integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
     integer(kind=kint) :: kkk0, kkk1
@@ -76,6 +77,14 @@ contains
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
 
+
+!C*-------- solver control -----------*
+      logical :: ds = .false. !using Direct Solver or not
+
+! in case of direct solver
+      if (hecMAT%Iarray(99) .eq. 2) then
+        ds = .true.
+      end if
 
 ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -237,16 +246,41 @@ contains
         call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
         call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
 
-! ----- check convergence
-        call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
-        res = dsqrt(res)/n_node_global
+!C
+!C-- RHS LOAD VECTOR CHECK
+!C
+        numnp=hecMAT%NP
+        bsize=0.0
+        do iiii5 = 1,numnp*ndof
+          bsize=bsize+hecMAT%B(iiii5)**2
+        enddo
+!C-- Gather RHS vector
+        if (.not. ds) then !In case of Direct Solver prevent MPI
+          call hecmw_allREDUCE_R1( hecMESH,bsize,hecmw_sum )
+        end if
+
+        iexit = 0
+        if( bsize < 1.0e-31 ) then
+          iexit = 1
+          if( hecMESH%my_rank .eq. 0 ) then
+            WRITE(IMSG,*) '###Load Vector Error!'
+          endif
+        endif
+
+        res = dsqrt(bsize)/n_node_global
         if( hecMESH%my_rank==0 ) then
           write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
         endif
-        if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
-		
-        CALL solve_LINEQ(hecMESH,hecMAT,imsg)
-	
+
+!C
+!C-- linear solver [A]{X} = {B}
+!C
+        if( iexit .eq. 1 ) then
+          hecMAT%X = 0.0
+        else
+          CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+        end if
+
 ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy ) 
         do j=1,hecMESH%n_node*ndof

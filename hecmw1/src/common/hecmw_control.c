@@ -1990,7 +1990,7 @@ make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int n_rank, int i_ra
 		} else {
 			if(subdir_on && nrank > nlimit) {
 				irank = myrank / nlimit;
-				sprintf(prefix, "RANK%d", irank);
+				sprintf(prefix, "TRUNK%d", irank);
 				fname = make_filename("MESH", NULL, prefix, ment->filename, "", myrank, flag_rank);
 			} else if(subdir_on) {
 				fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank, flag_rank);
@@ -2099,14 +2099,14 @@ get_result_file(char *name_ID, int nstep, int istep, int n_rank, int i_rank, int
 	} else if(subdir_on && nstep > 1 && nrank > nlimit) {
 		sprintf(subname, "STEP%d", istep);
 		irank = myrank / nlimit;
-		sprintf(prefix, "RANK%d", irank);
+		sprintf(prefix, "TRUNK%d", irank);
 		fname = make_filename(name_ID, subname, prefix, result->filename, "", myrank, flag_rank_none);
 	} else if(subdir_on && nstep > 1) {
 		sprintf(subname, "STEP%d", istep);
 		fname = make_filename(name_ID, subname, NULL, result->filename, "", myrank, flag_rank_none);
 	} else if(subdir_on && nrank > nlimit) {
 		irank = myrank / nlimit;
-		sprintf(prefix, "RANK%d", irank);
+		sprintf(prefix, "TRUNK%d", irank);
 		fname = make_filename(name_ID, NULL, prefix, result->filename, "", myrank, flag_rank_none);
 	} else if(subdir_on) {
 		fname = make_filename(name_ID, NULL, NULL, result->filename, "", myrank, flag_rank_none);
@@ -2177,7 +2177,7 @@ HECMW_ctrl_get_restart_file(char *name_ID)
 
 	if(subdir_on && nrank > nlimit) {
 		irank = myrank / nlimit;
-		sprintf(prefix, "RANK%d", irank);
+		sprintf(prefix, "TRUNK%d", irank);
 		fname = make_filename(name_ID, NULL, prefix, restart->filename, "", myrank, 1);
 	} else if(subdir_on) {
 		fname = make_filename(name_ID, NULL, NULL, restart->filename, "", myrank, 1);
@@ -2218,7 +2218,7 @@ HECMW_ctrl_get_restart_file_by_io(int io)
 
 	if(subdir_on && nrank > nlimit) {
 		irank = myrank / nlimit;
-		sprintf(prefix, "RANK%d", irank);
+		sprintf(prefix, "TRUNK%d", irank);
 		fname = make_filename(p->name_ID, NULL, prefix, p->filename, "", myrank, 1);
 	} else if(subdir_on) {
 		fname = make_filename(p->name_ID, NULL, NULL, p->filename, "", myrank, 1);

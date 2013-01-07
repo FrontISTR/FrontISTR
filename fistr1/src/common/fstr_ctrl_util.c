@@ -1058,13 +1058,14 @@ int fstr_ctrl_open_( char* filename )
 		index = 0;
 		is_first = 0;
 	} else {
+		index = -1;
 		for(i =0; i<ctrl_list_size; i++) {
 			if( ctrl_list[i] == NULL ) {
 				index = i;
 				break;
 			}
 		}
-		return -1;
+		if( index < 0 ) return -1;
 	}
 	ctrl_list[index] = fstr_ctrl_open( fname );
 	if( ctrl_list[index] == NULL )
