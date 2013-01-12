@@ -28,6 +28,7 @@ module hecmw_result
     public :: hecmw_result_add
     public :: hecmw_result_write_by_name
     public :: hecmw_result_write_st_by_name
+    public :: hecmw_result_write_by_addfname
     public :: hecmw_result_finalize
     public :: hecmw_result_free
     public :: hecmw_result_read_by_name
@@ -94,7 +95,7 @@ module hecmw_result
 
     subroutine hecmw_result_write_by_name(name_ID)
         integer(kind=kint) :: ierr
-        character(len=HECMW_NAME_LEN) :: name_ID 
+        character(len=HECMW_NAME_LEN) :: name_ID
 
         call hecmw_result_write_by_name_if(name_ID, ierr)
         if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
@@ -123,6 +124,15 @@ module hecmw_result
         call hecmw_result_write_st_finalize_if(ierr)
         if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_result_write_st_by_name
+
+
+    subroutine hecmw_result_write_by_addfname(name_ID, addfname)
+        integer(kind=kint) :: ierr
+        character(len=HECMW_NAME_LEN) :: name_ID, addfname
+
+        call hecmw_result_write_by_addfname_if(name_ID, addfname, ierr)
+        if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+    end subroutine hecmw_result_write_by_addfname
 
 
     subroutine  hecmw_result_copy_f2c( result_data, ierr )

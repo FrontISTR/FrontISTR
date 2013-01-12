@@ -282,11 +282,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            enddo
         endif
 
-        c_output = c_output+1		
-        allocate( fstrSOLID%output_ctrl( 4 ) )
+!        c_output = c_output+1
 !        allocate( fstrSOLID%output_ctrl( c_output ) )
-
-		! log file
+        allocate( fstrSOLID%output_ctrl( 4 ) )
         call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
         fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
         fstrSOLID%output_ctrl( 1 )%filenum = ILOG
@@ -459,7 +457,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
 ! == Following output control ==
           else if( header_name == '!WRITE' ) then
-            call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap)
+            call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
             if( islog == 1 ) then
                 c_output=1
                 outctrl%filename = trim(logfileNAME)
@@ -482,34 +480,41 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
             endif
 
-          else if( header_name == '!NODE_OUTPUT' ) then
-            if( c_output >0 ) then
-               if( .not. fstr_ctrl_get_outnode( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
-                 write(*,*) '### Error: Fail in read in node output definition : ' , c_output
-                 write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
-                 stop
-               endif
-			   if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
-                 do i=1,hecMESH%node_group%n_grp
-                   if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
-                     fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
-                   endif
-                 enddo
-               endif
+          else if( header_name == '!OUTPUT_RES' ) then
+            c_output=3
+            if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+               write(*,*) '### Error: Fail in read in node output definition : ' , c_output
+               write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
+               stop
             endif
-          else if( header_name == '!ELEMENT_OUTPUT' ) then
-            if( c_output >0 ) then
-               if( .not. fstr_ctrl_get_outelem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
-                 write(*,*) '### Error: Fail in read in element output definition : ' , c_output
-                 write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
-                 stop
-               endif
+			if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+               c_output=2
+               do i=1,hecMESH%node_group%n_grp
+                 if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
+                   fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
+                 endif
+               enddo
+            endif
+          else if( header_name == '!OUTPUT_VIS' ) then
+            c_output=4
+            if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
+              write(*,*) '### Error: Fail in read in element output definition : ' , c_output
+              write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
+              stop
+            endif
+			if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+               c_output=2
+               do i=1,hecMESH%node_group%n_grp
+                 if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
+                   fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
+                 endif
+               enddo
             endif
           else if( header_name == '!ULOAD' ) then
             if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
-                 write(*,*) '### Error: Fail in read in ULOAD definition : ' 
-                 write(ILOG,*) '### Error: Fail in read in ULOAD definition : '
-                 stop
+              write(*,*) '### Error: Fail in read in ULOAD definition : ' 
+              write(ILOG,*) '### Error: Fail in read in ULOAD definition : '
+              stop
             endif
 
           else if( header_name == '!END' ) then
@@ -525,9 +530,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             fstrSOLID%materials(i)%nlgeom_flag = 0
           enddo
         endif
-     !   do i=1, c_material
-    !     call printMaterial( 6, fstrSOLID%materials(i) ); pause
-     !   enddo
 
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then 
           allocate ( fstrSOLID%temperature( hecMESH%n_node )      ,STAT=ierror )
@@ -602,9 +604,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )
-		
-end subroutine fstr_setup
 
+end subroutine fstr_setup
 
 
 !> Initializer of structure fstr_solid
@@ -629,7 +630,6 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%COUPLE_ngrp_tot   = 0
 
         fstrSOLID%restart_nout= 0
-
 
 end subroutine fstr_solid_init
 
@@ -1070,7 +1070,8 @@ end subroutine
         if( P%PARAM%solution_type == kstSTATIC &
          .or. P%PARAM%solution_type == kstNLSTATIC  &
          .or. P%PARAM%solution_type == kstEIGEN  &
-         .or. P%PARAM%solution_type == kstDYNAMIC ) then
+         .or. P%PARAM%solution_type == kstDYNAMIC &
+         .or. P%PARAM%solution_type == 6 ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 ) then
                         allocate ( P%SOLID%STRAIN  (14*P%MESH%n_node))
@@ -1214,7 +1215,7 @@ subroutine fstr_setup_STEP( ctrl, counter, P )
         integer(kind=kint) :: rcode, iproc
 
         amp = ' '
-        rcode = fstr_ctrl_get_STEP( ctrl, amp, iproc, P%PARAM%incmax )
+        rcode = fstr_ctrl_get_STEP( ctrl, amp, iproc )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
         call amp_name_to_id( P%MESH, '!STEP', amp, amp_id )
     !    P%SOLID%NLSTATIC_ngrp_amp = amp_id;
@@ -1745,8 +1746,6 @@ subroutine fstr_setup_HEAT( ctrl, counter, P )
         P%PARAM%eps = 1.0e-6
 
         rcode = fstr_ctrl_get_HEAT(   ctrl,        &
-                                P%PARAM%fg_irres,  &
-                                P%PARAM%fg_iwres,  &
                                 P%PARAM%dtime,     &
                                 P%PARAM%etime,     &
                                 P%PARAM%dtmin,     &

@@ -125,11 +125,10 @@ end function fstr_ctrl_get_SOLVER
 
 
 !> Read in !STEP                                                                            
-function fstr_ctrl_get_STEP( ctrl, amp, iproc, incmax )
+function fstr_ctrl_get_STEP( ctrl, amp, iproc )
         integer(kind=kint) :: ctrl
         character(len=HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: iproc
-        integer(kind=kint) :: incmax
         integer(kind=kint) :: fstr_ctrl_get_STEP
 
         integer(kind=kint) :: ipt = 0
@@ -138,7 +137,6 @@ function fstr_ctrl_get_STEP( ctrl, amp, iproc, incmax )
         fstr_ctrl_get_STEP = -1
 
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',     '# ',  0, 'S', amp )/= 0) return
-        if( fstr_ctrl_get_param_ex( ctrl, 'INCMAX ', '# ',           0,   'I',   incmax )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STANDARD,NLGEOM ', 0, 'P',   ipt    )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'NLGEOM ',  '# ',           0,    'E',   ip     )/= 0) return
 
@@ -175,9 +173,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STATIC,VISCO ', 0, 'P', steps%solution )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'SUBSTEPS ',  '# ',  0, 'I', steps%num_substep )/= 0) return
         steps%initdt = 1.d0/steps%num_substep
-        if( fstr_ctrl_get_param_ex( ctrl, 'INCMAX ',  '# ',  0, 'I', steps%max_incr )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'ITMAX ',  '# ',  0, 'I', steps%max_iter )/= 0) return
-        if( fstr_ctrl_get_param_ex( ctrl, 'MAXINC ',  '# ',  0, 'I', steps%max_incr )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'MAXITER ',  '# ',  0, 'I', steps%max_iter )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
         amp = ""
@@ -314,186 +310,64 @@ function fstr_ctrl_get_MPC( ctrl, penalty )
 
 end function fstr_ctrl_get_MPC
 
-!> Read in !NODE_OUTPUT
-logical function fstr_ctrl_get_outnode( ctrl, hecMESH, outinfo )
+!> Read in !OUTPUT_RES & !OUTPUT_VIS
+logical function fstr_ctrl_get_outitem( ctrl, hecMESH, outinfo )
   use fstr_setup_util
   use m_out
   integer(kind=kint), intent(in)        :: ctrl      !< readed data
   type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
   type( output_info ), intent(out)      :: outinfo   !< output information
 
-  integer(kind=kint) :: rcode, citem, ipos
-  integer(kind=kint) :: n, i, grpid(1)
-  character(len=HECMW_NAME_LEN) :: data_fmt,ss
-  character(len=HECMW_NAME_LEN),allocatable :: header_name(:), onoff(:), vtype(:)
-  logical  :: available 
-  
-  write(ss,*)  HECMW_NAME_LEN
-  write( data_fmt, '(a,a,a,a,a,a)') 'S', trim(adjustl(ss)),'s', trim(adjustl(ss)),'s', trim(adjustl(ss))
+  integer(kind=kint) :: rcode, ipos
+  integer(kind=kint) :: n, i, j
+  character(len=HECMW_NAME_LEN) :: data_fmt, ss
+  character(len=HECMW_NAME_LEN), allocatable :: header_name(:), onoff(:), vtype(:)
 
-  fstr_ctrl_get_outnode = .false.
+  write( ss, * )  HECMW_NAME_LEN
+  write( data_fmt, '(a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss))
+!  write( data_fmt, '(a,a,a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss))
 
-  outinfo%grp_id_name ="ALL"
-  rcode = fstr_ctrl_get_param_ex( ctrl, 'NGROUP ',   '# ',  0, 'S', outinfo%grp_id_name )
+  fstr_ctrl_get_outitem = .false.
+
+  outinfo%grp_id_name = "ALL"
+  rcode = fstr_ctrl_get_param_ex( ctrl, 'GROUP ', '# ', 0, 'S', outinfo%grp_id_name )
   ipos = 0
-  rcode = fstr_ctrl_get_param_ex( ctrl, 'ACTION ',   'SUM ', 0, 'P',   ipos )
+  rcode = fstr_ctrl_get_param_ex( ctrl, 'ACTION ', 'SUM ', 0, 'P', ipos )
   outinfo%actn = ipos
-!  if( len(trim(ss1(1)))>0 ) then
-!    call node_grp_name_to_id_ex( hecMESH, '!NODE OUTPUT', 1, ss1, grpid )
-!    outinfo%GroupID = grpid(1)
-!  endif
 
   n = fstr_ctrl_get_data_line_n( ctrl )
   if( n == 0 ) return
   allocate( header_name(n), onoff(n), vtype(n) )
-  vtype(:) = "";  onoff(:)=""
-  rcode=fstr_ctrl_get_data_array_ex( ctrl, data_fmt, header_name, onoff, vtype ) 
+  header_name(:) = ""; vtype(:) = "";  onoff(:) = ""
+  rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, header_name, onoff )
+!  rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, header_name, onoff, vtype )
 
-  do i=1,n
-    if( len( trim(header_name(i)) )==0 ) return
-    available = .false.
-    citem = -1
-    if( trim(header_name(i)) == 'DISP' ) then
-        available = .true.
-        citem = 1
-    else if( trim(header_name(i)) == 'REAC' ) then
-        available = .true.
-        citem = 2
-    else if( trim(header_name(i)) == 'TEMPERATURE ' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "TEMPERATURE"
-        outinfo%vtype(outinfo%num_items) = -1
-    else if( trim(header_name(i)) == 'STRAIN' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "STRAIN"
-        outinfo%vtype(outinfo%num_items) = -3
-    else if( trim(header_name(i)) == 'STRESS' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "STRESS"
-        outinfo%vtype(outinfo%num_items) = -3
-    else if( trim(header_name(i)) == 'MISESSTRESS ' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "MISES STRESS"
-        outinfo%vtype(outinfo%num_items) = -1
-    endif
-    if( .not. available ) cycle
-    if( citem==-1 ) citem = outinfo%num_items
-    if( len( trim(vtype(i)) )>0 ) then
-        if( fstr_str2index( vtype(i), n ) ) then
-          outinfo%vtype(citem)=n
-        else if( trim(vtype(i))=="SCALE") then
-          outinfo%vtype(citem)=-1
-        else if( trim(vtype(i))=="VECTOR") then
-          outinfo%vtype(citem)=-2
-        else if( trim(vtype(i))=="SYMTENSOR") then
-          outinfo%vtype(citem)=-3
-        else if( trim(vtype(i))=="TENSOR") then
-          outinfo%vtype(citem)=-4
-        else
-          return      ! incorrect varibale type
+  do i = 1, n
+    do j = 1, outinfo%num_items
+      if( trim(header_name(i)) == outinfo%keyWord(j) ) then
+        outinfo%on(j) = .true.
+        if( trim(onoff(i)) == 'OFF' ) outinfo%on(j) = .false.
+        if( len( trim(vtype(i)) )>0 ) then
+          if( fstr_str2index( vtype(i), ipos ) ) then
+            outinfo%vtype(j) = ipos
+          else if( trim(vtype(i)) == "SCALER" ) then
+            outinfo%vtype(j) = -1
+          else if( trim(vtype(i)) == "VECTOR" ) then
+            outinfo%vtype(j) = -2
+          else if( trim(vtype(i)) == "SYMTENSOR" ) then
+            outinfo%vtype(j) = -3
+          else if( trim(vtype(i)) == "TENSOR" ) then
+            outinfo%vtype(j) = -4
+          endif
         endif
-    endif
-    outinfo%on(citem)= .true.
-    if( trim(onoff(i)) == 'OFF') outinfo%on(citem)= .false.
+      endif
+    enddo
   enddo
 
   deallocate( header_name, onoff, vtype )
-  fstr_ctrl_get_outnode = .true.
+  fstr_ctrl_get_outitem = .true.
 
-end function 
-
-!> Read in !ELEMENT_OUTPUT
-logical function fstr_ctrl_get_outelem( ctrl, hecMESH, outinfo )
-  use fstr_setup_util
-  use m_out
-  integer(kind=kint), intent(in)        :: ctrl      !< readed data
-  type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-  type( output_info ),intent(out)       :: outinfo   !< output information
-
-  integer(kind=kint) :: rcode, citem, ipos
-  integer(kind=kint) :: n, i, grpid(1)
-  character(len=HECMW_NAME_LEN) :: data_fmt,ss, ss1(1)
-  character(len=HECMW_NAME_LEN),allocatable :: header_name(:), onoff(:), vtype(:)
-  logical  :: available 
-  
-  write(ss,*)  HECMW_NAME_LEN
-  write( data_fmt, '(a,a,a,a,a,a)') 'S', trim(adjustl(ss)),'s', trim(adjustl(ss)),'s', trim(adjustl(ss))
-
-  fstr_ctrl_get_outelem = .false.
-
-  outinfo%grp_id_name ="ALL"
-  rcode = fstr_ctrl_get_param_ex( ctrl, 'EGROUP ',   '# ',  0, 'S', outinfo%grp_id_name )
- ! if( len(trim(ss1(1)))>0 ) then
- !   call elem_grp_name_to_id( hecMESH, '!ELEMENT OUTPUT', 1, ss1, grpid )
- !   outinfo%GroupID = grpid(1)
- ! endif
-  ipos = 2
-  ss = 'CENTER,AVERAGE,INTEG,NODE '
-  if( fstr_ctrl_get_param_ex( ctrl, 'POSITION ',   ss, 0, 'P',   ipos  )/= 0) return
-  if( ipos>0 ) ipos=ipos-1
-
-  n = fstr_ctrl_get_data_line_n( ctrl )
-  if( n == 0 ) return
-  allocate( header_name(n), onoff(n), vtype(n) )
-  onoff=""; vtype=""
-  if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, header_name, onoff, vtype ) /= 0 ) return
-
-  do i=1,n
-    available = .false.
-    citem = -1
-    if( trim(header_name(i)) == 'STRAIN' ) then
-        available = .true.
-        citem = 3
-    else if( trim(header_name(i)) == 'STRESS' ) then
-        available = .true.
-        citem = 4
-    else if( trim(header_name(i)) == 'MISESSTRESS ' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "MISES STRESS"
-        outinfo%vtype(outinfo%num_items) = -1
-    else if( trim(header_name(i)) == 'PLSTRAIN' ) then
-        available = .true.
-        outinfo%num_items = outinfo%num_items+1
-        if( outinfo%num_items>MAXOUT ) return
-        outinfo%keyWord(outinfo%num_items) = "PLASTIC_STRAIN"
-        outinfo%vtype(outinfo%num_items) = -1
-    endif
-    if( .not. available ) cycle
-    if( citem==-1 ) citem = outinfo%num_items
-    outinfo%location(citem) = ipos
-    if( len( trim(vtype(i)) )>0 ) then
-        if( fstr_str2index( vtype(i), n ) ) then
-          outinfo%vtype(citem)=n
-        else if( trim(vtype(i))=="SCALE") then
-          outinfo%vtype(citem)=-1
-        else if( trim(vtype(i))=="VECTOR") then
-          outinfo%vtype(citem)=-2
-        else if( trim(vtype(i))=="SYMTENSOR") then
-          outinfo%vtype(citem)=-3
-        else if( trim(vtype(i))=="TENSOR") then
-          outinfo%vtype(citem)=-4
-        else
-          return      ! incorrect varibale type
-        endif
-    endif
-    outinfo%on(citem)= .true.
-    if( trim(onoff(i)) == 'OFF') outinfo%on(citem)= .false.
-  enddo
-
-  deallocate( header_name, onoff, vtype )
-  fstr_ctrl_get_outelem = .true.
-
-end function fstr_ctrl_get_outelem
+end function fstr_ctrl_get_outitem
 
 !> Read in !CONTACT                                                           
 function fstr_ctrl_get_CONTACTALGO( ctrl, algo )           

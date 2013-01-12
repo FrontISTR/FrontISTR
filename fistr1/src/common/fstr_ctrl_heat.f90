@@ -41,11 +41,9 @@ contains
 
 
 !> Read in !HEAT                                                                      
-    function fstr_ctrl_get_HEAT( ctrl, irres, iwres, dt, etime, dtmin, deltmx, itmax, eps )
+    function fstr_ctrl_get_HEAT( ctrl, dt, etime, dtmin, deltmx, itmax, eps )
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) :: irres
-        integer(kind=kint) :: iwres
         real(kind=kreal),pointer :: dt(:)
         real(kind=kreal),pointer :: etime(:)
         real(kind=kreal),pointer :: dtmin(:)
@@ -59,12 +57,6 @@ contains
         fstr_ctrl_get_HEAT = -1
 
         ! JP-7
-        result = 0
-        if( fstr_ctrl_get_param_ex( ctrl, 'RESTART ',  'R,W,RW ',    0,     'P',   result    )/= 0) return
-
-        if( result == 1 .or. result == 3) irres = kYES
-        if( result == 2 .or. result == 3) iwres = kYES
-
         if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrir ', dt, etime, dtmin, deltmx, itmax, eps )/= 0) return
 
         fstr_ctrl_get_HEAT = 0

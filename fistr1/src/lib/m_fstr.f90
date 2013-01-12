@@ -127,8 +127,6 @@ public
 !C
 !C-- ANALYSIS CONTROL for NLGEOM and HEAT
 !C
-        integer(kind=kint),pointer :: INCMAX
-
         !for static
         !CAUTION)
         !   DT,ETIME and EPS will be integrated in fstr_param
@@ -150,9 +148,6 @@ public
         type fstr_param
                 integer(kind=kint) :: solution_type !< solution type number
                 integer(kind=kint) :: solver_method !< solver method number
-
-                !!STEP
-                integer(kind=kint) :: incmax           !< (=INCMAX)
 
                 !!STATIC !HEAT
                 integer(kind=kint) :: analysis_n      !< Number of analysis
@@ -838,9 +833,6 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
 
         fstrPARAM%solution_type = kstSTATIC
         fstrPARAM%solver_method = ksmCG
-
-        !!STEP
-        fstrPARAM%incmax = 100
 
         !!STATIC !HEAT
         fstrPARAM%analysis_n = 0

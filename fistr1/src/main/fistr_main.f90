@@ -141,7 +141,6 @@ subroutine fstr_init
         EPS = 1.0e-6
 
         ! -------  grobal pointer setting ----------
-        INCMAX   => fstrPR%incmax
         REF_TEMP => fstrPR%ref_temp
         IECHO    => fstrPR%fg_echo
         IRESULT  => fstrPR%fg_result

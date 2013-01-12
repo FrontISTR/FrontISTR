@@ -534,6 +534,29 @@ HECMW_result_write_ST_by_name(char *name_ID, struct hecmwST_result_data *result,
 }
 
 
+int
+HECMW_result_write_by_addfname(char *name_ID, char *addfname)
+{
+	char *filename;
+	int fg_text, myrank;
+
+	if((filename = HECMW_ctrl_get_result_fileheader(name_ID, nstep, istep, &fg_text)) == NULL) return -1;
+
+	sprintf(filename+strlen(filename), "%s", addfname);
+	myrank = HECMW_comm_get_rank();
+	sprintf(filename+strlen(filename), ".%d", myrank);
+	sprintf(filename+strlen(filename), ".%d", istep);
+
+	if( fg_text ){
+		if(HECMW_result_write_txt_by_fname(filename)) return -1;
+	} else {
+		if(HECMW_result_write_bin_by_fname(filename)) return -1;
+	}
+
+	return 0;
+}
+
+
 struct hecmwST_result_data *
 HECMW_result_read_by_fname(char *filename)
 {
@@ -794,4 +817,47 @@ void
 HECMW_RESULT_WRITE_BY_NAME_IF(char *name_ID, int *err, int len)
 {
 	hecmw_result_write_by_name_if(name_ID, err, len);
+}
+
+
+void
+hecmw_result_write_by_addfname_if(char *name_ID, char *addfname, int *err, int len1, int len2)
+{
+	char name_ID_str[HECMW_NAME_LEN+1];
+	char addfname_str[HECMW_NAME_LEN+1];
+	struct fortran_remainder *p,*q;
+
+	*err = 1;
+
+	if(HECMW_strcpy_f2c_r(name_ID, len1, name_ID_str, sizeof(name_ID_str)) == NULL) return;
+	if(HECMW_strcpy_f2c_r(addfname, len2, addfname_str, sizeof(name_ID_str)) == NULL) return;
+
+	if(HECMW_result_write_by_addfname(name_ID_str, addfname_str)) return;
+
+	for(p=remainder; p; p=q) {
+		q = p->next;
+		HECMW_free(p->ptr);
+		HECMW_free(p);
+	}
+	remainder = NULL;
+
+	*err = 0;
+}
+
+void
+hecmw_result_write_by_addfname_if_(char *name_ID, char *addfname, int *err, int len1, int len2)
+{
+	hecmw_result_write_by_addfname_if(name_ID, addfname, err, len1, len2);
+}
+
+void
+hecmw_result_write_by_addfname_if__(char *name_ID, char *addfname, int *err, int len1, int len2)
+{
+	hecmw_result_write_by_addfname_if(name_ID, addfname, err, len1, len2);
+}
+
+void
+HECMW_RESULT_WRITE_BY_ADDFNAME_IF(char *name_ID, char *addfname, int *err, int len1, int len2)
+{
+	hecmw_result_write_by_addfname_if(name_ID, addfname, err, len1, len2);
 }

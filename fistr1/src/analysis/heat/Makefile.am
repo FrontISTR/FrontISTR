@@ -90,7 +90,6 @@ OBJSF = \
 	heat_mat_ass_boundary.@f90objfilepostfix@ \
 	heat_mat_ass_capacity.@f90objfilepostfix@ \
 	heat_mat_ass_conductivity.@f90objfilepostfix@ \
-	heat_make_result.@f90objfilepostfix@ \
 	heat_solve_SS.@f90objfilepostfix@ \
 	heat_solve_TRAN.@f90objfilepostfix@ \
 	fstr_solve_heat.@f90objfilepostfix@

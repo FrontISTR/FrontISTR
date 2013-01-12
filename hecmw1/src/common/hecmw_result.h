@@ -37,6 +37,7 @@ extern int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elem
 extern int HECMW_result_finalize(void);
 extern int HECMW_result_add(int node_or_elem, int n_dof, char *label, double *ptr);
 extern int HECMW_result_write_by_name(char *name_ID);
+extern int HECMW_result_write_by_addfname(char *name_ID, char *addfname);
 extern int HECMW_result_write_bin_by_fname(char *filename);
 extern int HECMW_result_write_txt_by_fname(char *filename);
 

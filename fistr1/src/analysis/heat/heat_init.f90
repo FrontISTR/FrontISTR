@@ -241,24 +241,5 @@ module m_heat_init
       enddo
 !C===
    end subroutine heat_init_material
-!C***
-!C***   INIT RESULT
-!C***
-   subroutine heat_init_result(hecMESH,fstrRESULT)
 
-      use m_fstr
-
-      implicit none
-      type (hecmwST_local_mesh ) :: hecMESH
-      type (hecmwST_result_data) :: fstrRESULT
-!C*** 
-      fstrRESULT%nn_component=1
-      fstrRESULT%ne_component=0
-      allocate( fstrRESULT%nn_dof(1) )
-      allocate( fstrRESULT%node_label(1) )
-      allocate( fstrRESULT%node_val_item(hecMESH%n_node))
-      fstrRESULT%nn_dof(1)=1
-      fstrRESULT%node_label(1)='TEMPERATURE'
-
-   end subroutine heat_init_result
 end module m_heat_init

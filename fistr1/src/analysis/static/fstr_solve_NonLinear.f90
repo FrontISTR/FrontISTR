@@ -27,15 +27,14 @@
 module m_fstr_NonLinearMethod
 
 use m_fstr
-
 use m_static_lib
+use m_static_output
 
 use m_fstr_StiffMatrix
 use m_fstr_Update
 use m_fstr_ass_load
 use m_fstr_AddBC
 use m_fstr_Residual
-use m_fstr_Result
 use m_fstr_Restart
 use fstr_matrix_con_contact
 
@@ -181,7 +180,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
           end if  
 
 ! ----- Result output (include visualize output)
-          call fstr_OutputResult( cstep, itemp, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
+          call fstr_static_Output( cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type )
     endif
 
     if( fstrSOLID%TEMP_irres>1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1
@@ -383,7 +382,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           end if  
 
 ! ----- Result output (include visualize output)
-        call fstr_OutputResult( cstep, itemp, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
+          call fstr_static_Output( cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type )
     endif                                                             
   
     if( fstrSOLID%TEMP_irres>1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1  
@@ -594,7 +593,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           end if  
 
 ! ----- Result output (include visualize output)
-          call fstr_OutputResult( cstep, itemp, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
+          call fstr_static_Output( cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type )
     endif                                                             
   
     if( fstrSOLID%TEMP_irres>1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1 

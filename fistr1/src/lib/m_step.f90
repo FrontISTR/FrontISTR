@@ -39,7 +39,6 @@ module m_step
       
       integer :: num_substep                    !< substeps user given
       integer :: max_iter                       !< max number of iteration
-      integer :: max_incr                       !< max number of increment
       integer :: amp_id                         !< id of amplitude definition
       real(kind=kreal) :: initdt                !< time increment
       real(kind=kreal) :: elapsetime            !< elapse time of this step
@@ -56,7 +55,6 @@ module m_step
         stepinfo%solution = stepStatic
         stepinfo%num_substep = 1
         stepinfo%max_iter = 50
-        stepinfo%max_incr = 100
         stepinfo%amp_id = -1
         stepinfo%initdt = 1.d0
         stepinfo%elapsetime = 1.d0

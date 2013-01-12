@@ -22,22 +22,21 @@ module m_heat_solve_SS
       use m_heat_mat_ass_conductivity
       use m_heat_mat_ass_boundary
       use m_heat_init
-      use m_heat_make_result
       use m_hecmw2fstr_mesh_conv
 
       implicit none
-      integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,id,ndof,bup_n_dof
+      integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,bup_n_dof
       real(kind=kreal)   CTIME,BETA,STIME,VAL,CHK,TMAX,TMIN,temp
-!C file name
-      character(len=HECMW_HEADER_LEN) :: header
-      character(len=HECMW_NAME_LEN) :: label
-      character(len=HECMW_NAME_LEN) :: nameID
 
       type (hecmwST_local_mesh  ) :: hecMESH
       type (hecmwST_matrix      ) :: hecMAT
       type (hecmwST_result_data ) :: fstrRESULT
       type (fstr_param          ) :: fstrPARAM
       type (fstr_heat           ) :: fstrHEAT
+
+      character(len=HECMW_HEADER_LEN) :: header
+      character(len=HECMW_NAME_LEN)   :: label
+      character(len=HECMW_NAME_LEN)   :: nameID
 
       BETA    = 1.0d0
       STIME   = 0.0d0
@@ -155,65 +154,55 @@ module m_heat_solve_SS
       LMAX = -1
       LMIN = -1
 
-      write(ILOG,*) 
+      write(ILOG,*)
       write(ILOG,'(a,i6)')    ' ISTEP =',ISTEP
       write(ILOG,'(a,f10.3)') ' Time  =',CTIME
-      write(ILOG,*) 
-      write(ILOG,*) '     Node   Temperature   '
-      write(ILOG,*) '--------------------------'
 
       do i = 1, hecMESH%nn_internal
         inod = fstrPARAM%global_local_id(1,i)
         ii = fstrPARAM%global_local_id(2,i)
         temp = fstrHEAT%TEMP(ii)
-        write(ILOG,'(I10,f12.3)')  inod, temp 
         if( temp .gt. TMAX ) THEN
-          TMAX = temp                   
-          LMAX = inod                  
+          TMAX = temp
+          LMAX = inod
         endif
         if( temp .lt. TMIN ) THEN
-          TMIN = temp                   
-          LMIN = inod                  
+          TMIN = temp
+          LMIN = inod
         endif
       enddo
 
-      write(ILOG,*) 
       write(ILOG,'(a,f10.3,i10)') ' Maximum Temperature :',TMAX
       write(ILOG,'(a,i10)')       ' Maximum Node No.    :',LMAX
       write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature :',TMIN
       write(ILOG,'(a,i10)')       ' Minimum Node No.    :',LMIN
-      write(ILOG,*) 
-      call flush(ILOG)
-!C===
+
       if( IRESULT.eq.1 ) then
         header = '*fstrresult'
-        call hecmw_result_init ( hecMESH,1,1,header )
-        id    = 1
-        ndof  = 1
+        call hecmw_result_init(hecMESH,1,1,header)
         label = 'TEMPERATURE'
-        call hecmw_result_add(id,ndof,label,fstrHEAT%TEMP)
+        call hecmw_result_add(1,1,label,fstrHEAT%TEMP)
         nameID = 'fstrRES'
         call hecmw_result_write_by_name(nameID)
         call hecmw_result_finalize
-        if( hecMESH%my_rank.eq.0 ) then
-          write(IMSG,*) '### FSTR output Result_File.'
-          call flush(IMSG)
-        endif
       endif
 
       if( IVISUAL.eq.1 ) then
-        call heat_init_result ( hecMESH, fstrRESULT )
-        call heat_make_result ( hecMESH, fstrHEAT, fstrRESULT )
+        call hecmw_nullify_result_data(fstrRESULT)
+        fstrRESULT%nn_component = 1
+        fstrRESULT%ne_component = 0
+        allocate(fstrRESULT%nn_dof(1))
+        allocate(fstrRESULT%node_label(1))
+        allocate(fstrRESULT%node_val_item(hecMESH%n_node))
+        fstrRESULT%nn_dof(1) = 1
+        fstrRESULT%node_label(1) = 'TEMPERATURE'
+        fstrRESULT%node_val_item = fstrHEAT%TEMP
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        call hecmw_visualize ( hecMESH,fstrRESULT,1,1,1 )
+        call hecmw_visualize (hecMESH,fstrRESULT,1,1,1)
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)
-        if( hecMESH%my_rank.eq.0 ) then  
-          write(IMSG,*) '### FSTR output Visual_File.'
-          call flush(IMSG)
-        endif
       endif
 
    end subroutine heat_solve_SS

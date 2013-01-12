@@ -44,10 +44,8 @@ contains
       use m_fstr_EIG_setMASS
       use m_fstr_EIG_tridiag
       use m_static_lib
-      use m_static_output
       use m_static_mat_ass
       use m_static_make_result
-      use m_static_post
       use m_hecmw2fstr_mesh_conv
 
       implicit REAL(kind=kreal) (A-H,O-Z)
@@ -58,6 +56,10 @@ contains
       type (hecmwST_result_data) :: fstrRESULT
       type (fstr_param         ) :: fstrPARAM
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+
+      character(len=HECMW_HEADER_LEN) :: header
+      character(len=HECMW_NAME_LEN)   :: label
+      character(len=HECMW_NAME_LEN)   :: nameID
 
 !C*-------- Parameters for Lanczos method -----------*
       type (lczparam) :: myEIG
@@ -549,91 +551,47 @@ contains
       nstep = myEIG%nget
 
       do istep = 1, nstep
-        write(ILOG,*)
-        write(ILOG,'(a,i6)') ' Mode No.',istep
-        write(ILOG,*)
-        if (.not. ds) then !In case of Direct Solver prevent MPI
-          CALL hecmw_bcast_I1(hecMESH,istep,0)
-        end if
         do i=1,ntotal
           hecMAT%X(i) = ewk(i,istep)
         enddo
 
         IF(NDOF.EQ.3) THEN
-          if (.not. ds) then !In case of Direct Solver prevent MPI
-            call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
-          end if
-          if( myrank == 0 ) then
-            write(IMSG,*)
-            write(IMSG,*) 'hecmw_update_3_R: OK'
-          endif
-          write(ILOG,*) '#### Eigen vector:', istep
-          write(ILOG,'(a)')'    NODE     X-DISP      Y-DISP      Z-DISP'
-          write(ILOG,'(a)')'---------+-----------+-----------+------------'
-          do i= 1, hecMESH%nn_internal
-            jj=fstrPARAM%global_local_id(1,i)
-            ii=fstrPARAM%global_local_id(2,i)
-            write(ILOG,'(i10,3e12.4)') jj,(hecMAT%X(3*(ii-1)+k),k=1,3)
-          enddo
-          call flush(ILOG)
-
+          call hecmw_update_3_R(hecMESH,hecMAT%X,hecMAT%NP)
         ELSE IF( NDOF .EQ. 2 ) THEN
-          if (.not. ds) then !In case of Direct Solver prevent MPI
-            call hecmw_update_2_R (hecMESH, hecMAT%X, hecMAT%NP)
-          end if
-          if( myrank == 0 ) then
-            write(IMSG,*)
-            write(IMSG,*) 'hecmw_update_2_R: OK'
-          endif
-          write(ILOG,*) '#### DISPLACEMENT 2D'
-          write(ILOG,'(a)')                                      &
-                    '     NODE    X-DISP      Y-DISP   '
-          write(ILOG,'(a)')                                      &
-                    ' --------+-----------+------------'
-          do i= 1, hecMESH%nn_internal
-            jj=fstrPARAM%global_local_id(1,i)
-            ii=fstrPARAM%global_local_id(2,i)
-            write(ILOG,'(i10,2e12.4)') jj,(hecMAT%X(2*(ii-1)+k),k=1,2)
-         enddo
-
+          call hecmw_update_2_R(hecMESH,hecMAT%X,hecMAT%NP)
         ELSE IF(ndof.EQ.6) THEN
-          if (.not. ds) then !In case of Direct Solver prevent MPI
-            call hecmw_update_m_R (hecMESH, hecMAT%X, hecMAT%NP,ndof)
-          end if
-          if( myrank == 0 ) then
-            write(IMSG,*)
-            write(IMSG,*) 'hecmw_update_m_R: OK'
-          endif
-          write(ILOG,*) '#### Eigen vector:', istep
-          write(ILOG,'(a,a)')                                            & 
-                    '     NODE    X-DISP      Y-DISP      Z-DISP   ' &
-                             ,'   X-ROT       Y-ROT       Z-ROT'
-          write(ILOG,'(a,a)')                                            & 
-                    ' --------+-----------+-----------+-----------+' &
-                             ,'-----------+-----------+-------------'
-          do i = 1, hecMESH%nn_internal
-            jj=fstrPARAM%global_local_id(1,i)
-            ii=fstrPARAM%global_local_id(2,i)
-            write(ILOG,'(i10,6e12.4)') jj,(hecMAT%X(6*(ii-1)+k),k=1,6)
-          enddo
-
+          call hecmw_update_m_R(hecMESH,hecMAT%X,hecMAT%NP,ndof)
         ENDIF
-!C
-!C-- POST PROCESSING VIA MEMORY
-!C
 
-      if( IVISUAL.eq.1 .and. mod(istep,fstrSOLID%output_ctrl(4)%freqency).eq.0 ) then
-          interval = fstrSOLID%output_ctrl(4)%freqency
-          call FSTR_MAKE_EIGENRESULT(hecMESH,hecMAT%X,fstrRESULT)
+        if( IRESULT.eq.1 ) then
+          header = "*fstrresult"
+          call hecmw_result_init(hecMESH,nstep,istep,header)
+          label = "DISPLACEMENT"
+          call hecmw_result_add(1,NDOF,label,hecMAT%X)
+          nameID = "fstrRES"
+          call hecmw_result_write_by_name(nameID)
+          call hecmw_result_finalize
+        endif
+
+        if( IVISUAL.eq.1 ) then
+          call hecmw_nullify_result_data(fstrRESULT)
+          fstrRESULT%nn_component = 1
+          fstrRESULT%ne_component = 0
+          allocate(fstrRESULT%nn_dof(1))
+          allocate(fstrRESULT%node_label(1))
+          allocate(fstrRESULT%node_val_item(NDOF*hecMAT%NP))
+          fstrRESULT%nn_dof(1) = NDOF
+          fstrRESULT%node_label(1) = 'DISPLACEMENT'
+          fstrRESULT%node_val_item = hecMAT%X
           call fstr2hecmw_mesh_conv(hecMESH)
           call hecmw_visualize_init
-          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,interval)
+          call hecmw_visualize(hecMESH,fstrRESULT,istep,nstep,1)
           call hecmw_visualize_finalize
           call hecmw2fstr_mesh_conv(hecMESH)
           call hecmw_result_free(fstrRESULT)
         endif
       enddo
-	  
+
       IF(myrank == 0)THEN
         WRITE(IMSG,'("### FSTR_SOLVE_EIGEN FINISHED!")')
         WRITE(*,'("### FSTR_SOLVE_EIGEN FINISHED!")')

@@ -265,6 +265,299 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
       enddo
     enddo
   enddo
-end subroutine
+end subroutine fstr_UpdateState
+
+!> Update at linear static analysis
+subroutine fstr_Update3D( hecMESH, fstrSOLID )
+  use m_fstr
+  use m_static_lib
+  type (hecmwST_local_mesh) :: hecMESH
+  type (fstr_solid)         :: fstrSOLID
+!C** local variables
+  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, isect, ihead, iflag
+  integer(kind=kint) :: nodLOCAL(8)
+  real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), edisp(60), force(60)
+  real(kind=kreal)   :: ecoord(3,20), stiff(60,60)
+  real(kind=kreal)   :: thick
+  real(kind=kreal), allocatable :: temp(:)
+  integer(kind=kint), allocatable :: id_spc(:)
+
+!C
+!C set temperature
+!C
+  allocate( temp(hecMESH%n_node) )
+  temp = 0.0d0
+  do i = 1, fstrSOLID%TEMP_ngrp_tot
+    ig = fstrSOLID%TEMP_ngrp_ID(i)
+    iS = hecMESH%node_group%grp_index(ig-1) + 1
+    iE = hecMESH%node_group%grp_index(ig  )
+    do j = iS, iE
+      temp( hecMESH%node_group%grp_item(j) ) = fstrSOLID%TEMP_ngrp_val(i)
+    enddo
+  enddo
+!C
+!C set boundary force
+!C
+  fstrSOLID%QFORCE = 0.0d0
+  allocate ( id_spc(hecMESH%n_node) )
+  id_spc = 0
+  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
+    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
+    iS = hecMESH%node_group%grp_index(ig-1) + 1
+    iE = hecMESH%node_group%grp_index(ig  )
+    do j = iS, iE
+      id_spc( hecMESH%node_group%grp_item(j) ) = 1
+    enddo
+  enddo
+
+!C +-------------------------------+
+!C | according to ELEMENT TYPE     |
+!C +-------------------------------+
+  do itype = 1, hecMESH%n_elem_type
+    iS = hecMESH%elem_type_index(itype-1) + 1
+    iE = hecMESH%elem_type_index(itype  )
+    ic_type = hecMESH%elem_type_item(itype)
+    if( ic_type == fe_tet10nc ) ic_type = fe_tet10n
+    if( .not. hecmw_is_etype_solid(ic_type) ) cycle
+    nn = hecmw_get_max_node( ic_type )
+!C element loop
+    do icel = iS, iE
+      jS = hecMESH%elem_node_index(icel-1)
+      do j = 1, nn
+        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+        xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
+        yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
+        zz(j) = hecMESH%node(3*nodLOCAL(j)  )
+        tt(j) = temp( nodLOCAL(j) )
+        tt0(j)= ref_temp
+        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
+        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
+        ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
+        edisp(3*j-2) = fstrSOLID%unode(3*nodLOCAL(j)-2)
+        edisp(3*j-1) = fstrSOLID%unode(3*nodLOCAL(j)-1)
+        edisp(3*j  ) = fstrSOLID%unode(3*nodLOCAL(j)  )
+      enddo
+!--- calculate stress and strain of gauss points
+      if( ic_type == 361 ) then
+        call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses )
+      else if( ic_type == 301 ) then
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        call UpdateST_C1( ic_type, nn, xx, yy, zz, thick, edisp, fstrSOLID%elements(icel)%gausses )
+      else
+        call UpdateST_C3( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses )
+      endif
+!--- calculate reaction force
+      iflag = 0
+      do j = 1, nn
+        if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+      enddo
+      if( iflag == 1 ) then
+        if( ic_type == 361 ) then
+          call STF_C3D8IC( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff )
+        else if( ic_type == 301 ) then
+          isect = hecMESH%section_ID(icel)
+          ihead = hecMESH%section%sect_R_index(isect-1)
+          thick = hecMESH%section%sect_R_item(ihead+1)
+          call STF_C1( ic_type, nn, ecoord, thick, fstrSOLID%elements(icel)%gausses, stiff )
+        else
+          call STF_C3( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, 1.0d0 )
+        endif
+        force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
+        do j = 1, nn
+          if( id_spc( nodLOCAL(j) ) == 1 ) then
+            fstrSOLID%QFORCE(3*nodLOCAL(j)-2) = fstrSOLID%QFORCE(3*nodLOCAL(j)-2) + force(3*j-2)
+            fstrSOLID%QFORCE(3*nodLOCAL(j)-1) = fstrSOLID%QFORCE(3*nodLOCAL(j)-1) + force(3*j-1)
+            fstrSOLID%QFORCE(3*nodLOCAL(j)  ) = fstrSOLID%QFORCE(3*nodLOCAL(j)  ) + force(3*j  )
+          endif
+        enddo
+      endif
+    enddo
+  enddo
+
+  call hecmw_update_3_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )
+
+  deallocate( temp )
+  deallocate( id_spc )
+end subroutine fstr_Update3D
+
+!> Update at linear static analysis
+subroutine fstr_Update2D( hecMESH, fstrSOLID )
+  use m_fstr
+  use m_static_lib
+  type (hecmwST_local_mesh) :: hecMESH
+  type (fstr_solid)         :: fstrSOLID
+!C** local variables
+  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, iflag
+  integer(kind=kint) :: nodLOCAL(8)
+  real(kind=kreal)   :: xx(8), yy(8), tt(8), tt0(8), edisp(16), force(16)
+  real(kind=kreal)   :: ecoord(2,8), stiff(16,16)
+  real(kind=kreal), allocatable :: temp(:)
+  integer(kind=kint), allocatable :: id_spc(:)
+
+!C
+!C set temperature
+!C
+  allocate( temp(hecMESH%n_node) )
+  temp = 0.0d0
+  do i = 1, fstrSOLID%TEMP_ngrp_tot
+    ig = fstrSOLID%TEMP_ngrp_ID(i)
+    iS = hecMESH%node_group%grp_index(ig-1) + 1
+    iE = hecMESH%node_group%grp_index(ig  )
+    do j = iS, iE
+      temp( hecMESH%node_group%grp_item(j) ) = fstrSOLID%TEMP_ngrp_val(i)
+    enddo
+  enddo
+!C
+!C set boundary force
+!C
+  fstrSOLID%QFORCE = 0.0d0
+  allocate ( id_spc(hecMESH%n_node) )
+  id_spc = 0
+  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
+    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
+    iS = hecMESH%node_group%grp_index(ig-1) + 1
+    iE = hecMESH%node_group%grp_index(ig  )
+    do j = iS, iE
+      id_spc( hecMESH%node_group%grp_item(j) ) = 1
+    enddo
+  enddo
+
+!C +-------------------------------+
+!C | according to ELEMENT TYPE     |
+!C +-------------------------------+
+  do itype = 1, hecMESH%n_elem_type
+    iS = hecMESH%elem_type_index(itype-1) + 1
+    iE = hecMESH%elem_type_index(itype  )
+    ic_type = hecMESH%elem_type_item(itype)
+    if( .not. hecmw_is_etype_surface(ic_type) ) cycle
+    nn = hecmw_get_max_node( ic_type )
+!C element loop
+    do icel = iS, iE
+      jS = hecMESH%elem_node_index(icel-1)
+      do j = 1, nn
+        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+        xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
+        yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
+        tt(j) = temp( nodLOCAL(j) )
+        tt0(j)= ref_temp
+        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
+        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
+        edisp(2*j-1) = fstrSOLID%unode(2*nodLOCAL(j)-1)
+        edisp(2*j  ) = fstrSOLID%unode(2*nodLOCAL(j)  )
+      enddo
+!--- calculate stress and strain of gauss points
+      call UpdateST_C2( ic_type, nn, xx, yy, tt, tt0, 1.0d0, fstrSOLID%elements(icel)%iset, &
+                        edisp, fstrSOLID%elements(icel)%gausses )
+!--- calculate reaction force
+      iflag = 0
+      do j = 1, nn
+        if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+      enddo
+      if( iflag == 1 ) then
+        call STF_C2( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, 1.0d0, &
+                     stiff, fstrSOLID%elements(icel)%iset )
+        force(1:nn*2) = matmul( stiff(1:nn*2,1:nn*2), edisp(1:nn*2) )
+        do j = 1, nn
+          if( id_spc( nodLOCAL(j) ) == 1 ) then
+            fstrSOLID%QFORCE(2*nodLOCAL(j)-1) = fstrSOLID%QFORCE(2*nodLOCAL(j)-1) + force(2*j-1)
+            fstrSOLID%QFORCE(2*nodLOCAL(j)  ) = fstrSOLID%QFORCE(2*nodLOCAL(j)  ) + force(2*j  )
+          endif
+        enddo
+      endif
+    enddo
+  enddo
+
+  call hecmw_update_2_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )
+
+  deallocate( temp )
+  deallocate( id_spc )
+end subroutine fstr_Update2D
+
+!> Update at linear static analysis
+subroutine fstr_Update6D( hecMESH, fstrSOLID )
+  use m_fstr
+  use m_static_lib
+  type (hecmwST_local_mesh) :: hecMESH
+  type (fstr_solid)         :: fstrSOLID
+!C** local variables
+  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, isect, ihead, iflag
+  integer(kind=kint) :: nodLOCAL(9)
+  real(kind=kreal)   :: ecoord(3,9), edisp(54), force(54), stiff(54,54)
+  real(kind=kreal)   :: thick
+  integer(kind=kint), allocatable :: id_spc(:)
+
+!C
+!C set boundary force
+!C
+  fstrSOLID%QFORCE = 0.0d0
+  allocate ( id_spc(hecMESH%n_node) )
+  id_spc = 0
+  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
+    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
+    iS = hecMESH%node_group%grp_index(ig-1) + 1
+    iE = hecMESH%node_group%grp_index(ig  )
+    do j = iS, iE
+      id_spc( hecMESH%node_group%grp_item(j) ) = 1
+    enddo
+  enddo
+
+!C +-------------------------------+
+!C | according to ELEMENT TYPE     |
+!C +-------------------------------+
+  do itype = 1, hecMESH%n_elem_type
+    iS = hecMESH%elem_type_index(itype-1) + 1
+    iE = hecMESH%elem_type_index(itype  )
+    ic_type = hecMESH%elem_type_item(itype)
+    if( .not. hecmw_is_etype_shell(ic_type) ) cycle
+    nn = hecmw_get_max_node( ic_type )
+!C element loop
+    do icel = iS, iE
+      jS = hecMESH%elem_node_index(icel-1)
+      do j = 1, nn
+        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
+        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
+        ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
+        edisp(6*j-5) = fstrSOLID%unode(6*nodLOCAL(j)-5)
+        edisp(6*j-4) = fstrSOLID%unode(6*nodLOCAL(j)-4)
+        edisp(6*j-3) = fstrSOLID%unode(6*nodLOCAL(j)-3)
+        edisp(6*j-2) = fstrSOLID%unode(6*nodLOCAL(j)-2)
+        edisp(6*j-1) = fstrSOLID%unode(6*nodLOCAL(j)-1)
+        edisp(6*j  ) = fstrSOLID%unode(6*nodLOCAL(j)  )
+      enddo
+      isect = hecMESH%section_ID(icel)
+      ihead = hecMESH%section%sect_R_index(isect-1)
+      thick = hecMESH%section%sect_R_item(ihead+1)
+!--- calculate reaction force
+      if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
+        iflag = 0
+        do j = 1, nn
+          if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+        enddo
+        if( iflag == 1 ) then
+          call STF_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, &
+                               stiff, thick )
+          force(1:nn*6) = matmul( stiff(1:nn*6,1:nn*6), edisp(1:nn*6) )
+          do j = 1, nn
+            if( id_spc( nodLOCAL(j) ) == 1 ) then
+              fstrSOLID%QFORCE(6*nodLOCAL(j)-5) = fstrSOLID%QFORCE(6*nodLOCAL(j)-5) + force(6*j-5)
+              fstrSOLID%QFORCE(6*nodLOCAL(j)-4) = fstrSOLID%QFORCE(6*nodLOCAL(j)-4) + force(6*j-4)
+              fstrSOLID%QFORCE(6*nodLOCAL(j)-3) = fstrSOLID%QFORCE(6*nodLOCAL(j)-3) + force(6*j-3)
+              fstrSOLID%QFORCE(6*nodLOCAL(j)-2) = fstrSOLID%QFORCE(6*nodLOCAL(j)-2) + force(6*j-2)
+              fstrSOLID%QFORCE(6*nodLOCAL(j)-1) = fstrSOLID%QFORCE(6*nodLOCAL(j)-1) + force(6*j-1)
+              fstrSOLID%QFORCE(6*nodLOCAL(j)  ) = fstrSOLID%QFORCE(6*nodLOCAL(j)  ) + force(6*j  )
+            endif
+          enddo
+        endif
+      endif
+    enddo
+  enddo
+
+  call hecmw_update_m_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node, 6 )
+
+  deallocate( id_spc )
+end subroutine fstr_Update6D
 
 end module m_fstr_Update

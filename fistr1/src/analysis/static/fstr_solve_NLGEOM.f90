@@ -27,13 +27,12 @@ module m_fstr_solve_NLGEOM
 
 use m_fstr
 use m_static_lib
-use m_static_post
+use m_static_output
 
 use m_fstr_NonLinearMethod
-use m_fstr_Result
 use m_fstr_Restart
 
-use fstr_matrix_con_contact                
+use fstr_matrix_con_contact
 
     implicit none
 
@@ -146,7 +145,7 @@ contains
             endif                                                                                
           endif   
 
-          if( fstrPARAM%solution_type/=6 .and. fstrSOLID%TEMP_irres==0 ) then
+          if( fstrSOLID%TEMP_irres==0 ) then
             if(fstrSOLID%restart_nout<0) then
               fstrSOLID%restart_nout = - fstrSOLID%restart_nout
             end if
@@ -158,10 +157,10 @@ contains
                                       infoCTChange%contactNode_current)                  
               endif    
             end if  
+          endif
 
 ! ----- Result output (include visualize output)
-            call fstr_OutputResult( tot_step, step_count, hecMESH, hecMAT, fstrSOLID, fstrPARAM, tt )
-          endif
+          call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
 
           call cpu_time(time_2)
           if( hecMESH%my_rank==0) then

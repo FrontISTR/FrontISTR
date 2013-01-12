@@ -19,7 +19,6 @@ module fstr_dynamic_explicit
 use m_fstr
 use lczparm
 use m_static_lib
-use m_static_make_result
 use m_dynamic_output
 use m_fstr_EIG_setMASS
 use m_dynamic_mat_ass_bc_ac
@@ -27,7 +26,6 @@ use m_dynamic_mat_ass_bc
 use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
 use m_static_mat_ass_main
-use m_dynamic_post
 use fstr_matrix_con_contact
 
 !-------- for couple -------
@@ -64,7 +62,7 @@ contains
     integer(kind=kint) :: nnod, ndof, nn, numnp, n_nod_dof
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: kkk0, kkk1
-    integer(kind=kint) :: ierror, istep, idummy
+    integer(kind=kint) :: ierror, idummy
     integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
@@ -144,12 +142,12 @@ contains
                             + fstrDYNAMIC%ACC (j,1)/ (2.0*a1) * 4.0
       end do
 
-      istep = 0
-      call dynamic_output_and_post(istep,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-!
+!C-- output new displacement, velocity and accelaration
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+
 !C-- output result of monitoring node
-!
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+
     end if
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
@@ -378,14 +376,13 @@ contains
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,3),size(fstrDYNAMIC%DISP(:,3)))
       call hecmw_restart_write()
     end if
-!
+
 !C-- output new displacement, velocity and accelaration
-      istep = i
-      call dynamic_output_and_post(istep,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-!C
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+
 !C-- output result of monitoring node
-!C
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+
     enddo
 
     if( fstrPARAM%fg_couple == 1) then

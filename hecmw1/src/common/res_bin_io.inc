@@ -10,11 +10,13 @@ static
 int write_bin_header(FILE* fp)
 {
 	char* s = (char*)RES_BIN_HEADER;
-	int n = strlen(s);
+	int n;
 	char nbyte[3];
 
+	n = strlen(s);
 	if( fwrite( s, sizeof(char), n, fp) != n ) return -1;
-	sprintf( nbyte, "%2d", sizeof(long) );
+	n = sizeof(long);
+	sprintf( nbyte, "%2d", n );
 	if( fwrite( nbyte, sizeof(char), 2, fp) != 2 ) return -1;
 	return 0;
 }

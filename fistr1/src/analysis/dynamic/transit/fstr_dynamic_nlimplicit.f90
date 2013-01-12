@@ -25,7 +25,6 @@ use m_dynamic_mat_ass_bc
 use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
 use m_fstr_StiffMatrix
-use m_dynamic_post
 use m_fstr_Update
 use m_fstr_Restart
 use fstr_matrix_con_contact
@@ -144,8 +143,8 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call dynamic_nloutput(0,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)   
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0
@@ -388,14 +387,13 @@ contains
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
         call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
       end if
-!
+
 !C-- output new displacement, velocity and accelaration
-      call dynamic_nloutput(i,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-!C
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+
 !C-- output result of monitoring node
-!C
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
-	  
+
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
     enddo
@@ -530,7 +528,7 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call dynamic_nloutput(0,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
     end if
 	
@@ -735,12 +733,11 @@ contains
         call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
                                      infoCTChange%contactNode_current)
       end if
-!
+
 !C-- output new displacement, velocity and accelaration
-      call dynamic_nloutput(i,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-!C
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+
 !C-- output result of monitoring node
-!C
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )

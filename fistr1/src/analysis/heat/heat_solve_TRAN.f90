@@ -25,16 +25,11 @@ module m_heat_solve_TRAN
       use m_heat_mat_ass_capacity
       use m_heat_mat_ass_boundary
       use m_heat_init
-      use m_heat_make_result
       use m_hecmw2fstr_mesh_conv
 
       implicit none
-      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,id,ndof,max_step,tstep,interval
+      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,max_step,tstep,interval
       real(kind=kreal)   CTIME,ST,DTIME,EETIME,DELMAX,DELMIN,TT,BETA,VAL,CHK,tmpmax,dltmp,tmpmax_myrank
-!C file name
-      character(len=HECMW_HEADER_LEN) :: header
-      character(len=HECMW_NAME_LEN) :: label
-      character(len=HECMW_NAME_LEN) :: nameID
 
       type (hecmwST_local_mesh ) :: hecMESH
       type (hecmwST_matrix     ) :: hecMAT
@@ -46,7 +41,11 @@ module m_heat_solve_TRAN
       real(kind=kreal)   :: restart_time(1)
       integer(kind=kint) :: restrt_data_size
       integer, parameter :: miniter = 4
-	  
+
+      character(len=HECMW_HEADER_LEN) :: header
+      character(len=HECMW_NAME_LEN)   :: label
+      character(len=HECMW_NAME_LEN)   :: nameID
+
       if( ISTEP .eq. 1 ) then
         ST = 0.0d0
       else
@@ -63,7 +62,6 @@ module m_heat_solve_TRAN
       ITM    = fstrPARAM%itmax(ISTEP)
       EPS    = fstrPARAM%eps(ISTEP)
       TT     = CTIME
-      if( NPRINT.eq.0 ) NPRINT = 1
       write(*,*) ' DTIME=',DTIME
       write(*,*) 'EETIME=',EETIME
       write(*,*) 'DELMIN=',DELMIN
@@ -71,7 +69,6 @@ module m_heat_solve_TRAN
       write(*,*) '   ITM=',ITM
       write(*,*) '   EPS=',EPS
       write(*,*) '    TT=',TT
-      write(*,*) 'NPRINT=',NPRINT
 
       max_step = ( EETIME + 0.1d0 * DTIME ) / DTIME
       BETA = 0.5
@@ -121,7 +118,7 @@ module m_heat_solve_TRAN
             write(IDBG,*) '// INCREMENT NO. =',incr, TT, DTIME
         endif
 
-        if( DTIME .lt.DELMIN ) then
+        if( DTIME .lt. DELMIN ) then
           if( hecMESH%my_rank.eq.0 ) then
             write(IMSG,*) ' !!! DELTA TIME EXCEEDED TOLERANCE OF TIME INCREMENT'
             call flush(IMSG)
@@ -259,43 +256,37 @@ module m_heat_solve_TRAN
 !C=== OUTPUT
 !C
         tstep = tstep+1
-        if( MOD(tstep,NPRINT)==0 .or. iend==1 ) then
-          write(ILOG,*)
-          write(ILOG,'(a,i6, a,f10.3)')    ' STEP =',tstep, ' Time  =',CTIME
+        write(ILOG,*)
+        write(ILOG,'(a,i6, a,f10.3)') ' STEP =', tstep, ' Time  =', CTIME
 
-          if( IRESULT.eq.1 .and. (mod(tstep,IRRES).eq.0 .or. tstep.eq.max_step) ) then
-            header = '*fstrresult'
-            call hecmw_result_init( hecMESH,max_step,tstep,header )
-            id    = 1
-            ndof  = 1
-            label = 'TEMPERATURE'
-            call hecmw_result_add(id,ndof,label,fstrHEAT%TEMP)
-            nameID = 'fstrRES'
-            call hecmw_result_write_by_name(nameID)
-            call hecmw_result_finalize
-            if( hecMESH%my_rank.eq.0 ) then
-              write(IMSG,*) '### FSTR output Result_File.'
-              call flush(IMSG)
-            endif
-          endif
+        if( IRESULT.eq.1 .and. (mod(tstep,IRRES).eq.0 .or. tstep.eq.max_step) ) then
+          header = '*fstrresult'
+          call hecmw_result_init(hecMESH,max_step,tstep,header)
+          label = 'TEMPERATURE'
+          call hecmw_result_add(1,1,label,fstrHEAT%TEMP)
+          nameID = 'fstrRES'
+          call hecmw_result_write_by_name(nameID)
+          call hecmw_result_finalize
+        endif
 
-          if( IVISUAL.eq.1 .and. (mod(tstep,IWRES).eq.0 .or. tstep.eq.max_step) ) then
-            interval = IWRES
-            if( mod(tstep,50)==0 .or. tstep==1 .or. iend==1 ) then
-            call heat_init_result ( hecMESH, fstrRESULT )
-            call heat_make_result ( hecMESH, fstrHEAT, fstrRESULT )
-            call fstr2hecmw_mesh_conv(hecMESH)
-            call hecmw_visualize_init
-            call hecmw_visualize ( hecMESH,fstrRESULT,tstep,max_step,interval )
-            call hecmw_visualize_finalize
-            call hecmw2fstr_mesh_conv(hecMESH)
-            call hecmw_result_free(fstrRESULT)
-            if( hecMESH%my_rank.eq.0 ) then
-              write(IMSG,*) '### FSTR output Visual_File.'
-              call flush(IMSG)
-            endif
-            endif
-          endif
+        if( IVISUAL.eq.1 .and. (mod(tstep,IWRES).eq.0 .or. tstep.eq.max_step) ) then
+          interval = IWRES
+          call hecmw_nullify_result_data(fstrRESULT)
+          fstrRESULT%nn_component = 1
+          fstrRESULT%ne_component = 0
+          allocate(fstrRESULT%nn_dof(1))
+          allocate(fstrRESULT%node_label(1))
+          allocate(fstrRESULT%node_val_item(hecMESH%n_node))
+          fstrRESULT%nn_dof(1) = 1
+          fstrRESULT%node_label(1) = 'TEMPERATURE'
+          fstrRESULT%node_val_item = fstrHEAT%TEMP
+          call fstr2hecmw_mesh_conv(hecMESH)
+          call hecmw_visualize_init
+          call hecmw_visualize (hecMESH,fstrRESULT,tstep,max_step,interval)
+          call hecmw_visualize_finalize
+          call hecmw2fstr_mesh_conv(hecMESH)
+          call hecmw_result_free(fstrRESULT)
+        endif
 
 !C Restart write
           if( fstrHEAT%restart_nout > 0 .and. (mod(tstep,fstrHEAT%restart_nout).eq.0 .or. tstep.eq.max_step) ) then
@@ -314,11 +305,9 @@ module m_heat_solve_TRAN
             endif
           endif
 
-        endif
-
         if( iend.ne.0 ) exit
       enddo tr_loop
-!C--------------------   START TRANSIET LOOP   ------------------------
+!C--------------------   END TRANSIET LOOP   ------------------------
 
    end subroutine heat_solve_TRAN
 end module m_heat_solve_TRAN

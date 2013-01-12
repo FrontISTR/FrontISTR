@@ -26,9 +26,8 @@ module m_fstr_solve_LINEAR
       use hecmw_solver_33
       use hecmw_solver_direct
       use m_solve_lineq
-      use m_static_make_result
+      use m_fstr_Update
       use m_static_output
-      use m_static_post
       use m_hecmw2fstr_mesh_conv
 
       implicit REAL(kind=kreal) (A-H,O-Z)
@@ -39,7 +38,7 @@ module m_fstr_solve_LINEAR
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
 
-      integer(kind=kint)    :: nstep, istep
+      integer(kind=kint) :: i
 !C
 !C-- MATRIX ASSEMBLING
 !C
@@ -70,20 +69,21 @@ module m_fstr_solve_LINEAR
       ENDIF
 
 !C
-!C-- OUTPUT FOR NODES
+!C-- UPDATE DISPLACEMENT, STRAIN, STRESS
+!C
+      do i = 1, hecMESH%n_node*hecMESH%n_dof
+        fstrSOLID%unode(i) = hecMAT%X(i)
+      enddo
       if( hecMESH%n_dof==3 ) then
-        call hecmw_update_3_R ( hecMESH, hecMAT%X, hecMAT%NP )
-        call fstr_output_3d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
+        call hecmw_update_3_R ( hecMESH, fstrSOLID%unode, hecMAT%NP )
+        call fstr_Update3D ( hecMESH, fstrSOLID )
       else if( hecMESH%n_dof==2 ) then
-        call hecmw_update_2_R (hecMESH, hecMAT%X, hecMAT%NP)
-        call fstr_output_2d(hecMESH,hecMAT,fstrSOLID,fstrPARAM)
+        call hecmw_update_2_R ( hecMESH, fstrSOLID%unode, hecMAT%NP )
+        call fstr_Update2D ( hecMESH, fstrSOLID )
       else if( hecMESH%n_dof==6) THEN
-        call hecmw_update_m_R (hecMESH,hecMAT%X,hecMAT%NP,hecMESH%n_dof)
-        call fstr_output_6d_Shell(hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call hecmw_update_m_R ( hecMESH, fstrSOLID%unode, hecMAT%NP, hecMESH%n_dof )
+        call fstr_Update6D ( hecMESH, fstrSOLID )
       endif 
-	  
-!C-- OUTPUT FOR ELEMENTS
-      call fstr_output_elem(hecMESH,fstrSOLID)
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)
@@ -95,21 +95,7 @@ module m_fstr_solve_LINEAR
 !C
 !C-- POST PROCESSING
 !C
-      nstep = 1
-      istep = 1
-      call fstr_post(hecMESH,hecMAT,fstrSOLID,istep)
-!C
-!C-- POST PROCESSING VIA MEMORY
-!C
-      if( IVISUAL==1 ) then
-        call fstr_make_result(hecMESH,fstrSOLID,fstrRESULT)
-        call fstr2hecmw_mesh_conv(hecMESH)
-        call hecmw_visualize_init
-        call hecmw_visualize(hecMESH,fstrRESULT,1,1,1)
-        call hecmw_visualize_finalize
-        call hecmw2fstr_mesh_conv(hecMESH)
-        call hecmw_result_free(fstrRESULT)
-      endif
+      call fstr_static_Output( 1, 1, hecMESH, fstrSOLID, fstrPR%solution_type )
 
       end subroutine FSTR_SOLVE_LINEAR
 end module m_fstr_solve_LINEAR

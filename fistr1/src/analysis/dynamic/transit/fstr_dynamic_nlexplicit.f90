@@ -19,17 +19,15 @@ module fstr_dynamic_nlexplicit
 use m_fstr
 use lczparm
 use m_static_lib
-use m_static_make_result
 use m_dynamic_output
 use m_fstr_EIG_setMASS
 use m_dynamic_mat_ass_bc_ac
 use m_dynamic_mat_ass_bc
 use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
-use m_dynamic_post
 use m_fstr_Update
 use m_fstr_Restart
-use fstr_matrix_con_contact                   
+use fstr_matrix_con_contact
 
 !-------- for couple -------
 use m_dynamic_mat_ass_couple
@@ -129,8 +127,8 @@ contains
                             + fstrDYNAMIC%ACC (j,1)/ (2.d0*a1) * 4.d0
       end do
 
-      call dynamic_nloutput(0,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
     end if
 	
 
@@ -296,7 +294,7 @@ contains
       end if
 !
 !C-- output new displacement, velocity and accelaration
-      call dynamic_nloutput(i,hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
 	  
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
