@@ -111,9 +111,9 @@ contains
     if (myrank==0) write(*,*) ' [MUMPS]: Solution completed.'
 
     t3=hecmw_wtime()
-    if (spMAT%timelog > 0) then
-      write(*,*) 'anal. and fact. time : ',t2-t1
-      write(*,*) 'solution time        : ',t3-t2
+    if (myrank==0 .and. spMAT%timelog > 0) then
+      write(*,*) 'setup time : ',t2-t1
+      write(*,*) 'solve time : ',t3-t2
     endif
 
     !call sparse_matrix_finalize(spMAT)

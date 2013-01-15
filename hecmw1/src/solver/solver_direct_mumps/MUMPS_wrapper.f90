@@ -55,7 +55,7 @@ contains
     elseif (job>0) then
        call set_mumps_pointers(mumps_par, spMAT)
        ! Out-Of-Core: 0:IN-CORE only, 1:OOC
-       mumps_par%ICNTL(22)=1
+       mumps_par%ICNTL(22)=0
        if (job==1 .or. job==4 .or. job==6) then
           ! ordering: 0:auto, 1:seq, 2:par
           mumps_par%ICNTL(28)=0
@@ -63,6 +63,9 @@ contains
           mumps_par%ICNTL(7)=7
           ! par ord: 0:auto, 1:ptscotch, 2:parmetis
           mumps_par%ICNTL(29)=0
+       endif
+       if (job==2 .or. job==4 .or. job==5 .or. job==6) then
+         mumps_par%ICNTL(14)=60
        endif
        if (job==3 .or. job==5 .or. job==6) then
           if (myrank == 0) then
