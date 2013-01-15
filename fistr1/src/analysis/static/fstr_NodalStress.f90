@@ -175,7 +175,7 @@ module m_fstr_NodalStress
       else
         ndstrain(i,1:6) = ndstrain(i,1:6) / nnumber(i)
         ndstress(i,1:6) = ndstress(i,1:6) / nnumber(i)
-        tdstrain(i,1:6) = tdstrain(i,1:6) / nnumber(i)
+        thstrain(i,1:6) = thstrain(i,1:6) / nnumber(i)
       endif
     enddo
 !C** calculate von MISES stress
