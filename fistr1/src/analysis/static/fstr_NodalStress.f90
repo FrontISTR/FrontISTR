@@ -38,22 +38,19 @@ module m_fstr_NodalStress
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 !C** local variables
     integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, ic_type, nn, ni, ID_area
-    integer(kind=kint) :: nodLOCAL(20)
     real(kind=kreal)   :: estrain(6), estress(6), tstrain(6), naturalCoord(3)
     real(kind=kreal)   :: edstrain(20,6), edstress(20,6), tdstrain(20,6)
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
-    real(kind=kreal), allocatable :: ndstrain(:,:), ndstress(:,:), thstrain(:,:), func(:,:), inv_func(:,:)
+    real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
     real(kind=kreal), allocatable :: trstrain(:,:), trstress(:,:)
     integer(kind=kint), allocatable :: nnumber(:), tnumber(:)
 
-    allocate( ndstrain(hecMESH%n_node,6), ndstress(hecMESH%n_node,7) )
-    allocate( thstrain(hecMESH%n_node,6) )
     allocate( nnumber(hecMESH%n_node) )
-    allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,7) )
+    allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,6) )
     allocate( tnumber(hecMESH%n_node) )
-    ndstrain = 0.0d0
-    ndstress = 0.0d0
-    thstrain = 0.0d0
+    fstrSOLID%STRAIN = 0.0d0
+    fstrSOLID%STRESS = 0.0d0
+    if( associated(tnstrain) ) tnstrain = 0.0d0
     trstrain = 0.0d0
     trstress = 0.0d0
     nnumber = 0
@@ -129,16 +126,16 @@ module m_fstr_NodalStress
 !                               edstrain(1:nn,1:6), edstress(1:nn,1:6), tdstrain(1:nn,1:6) )
         endif
         do j = 1, nn
-          nodLOCAL(j)= hecMESH%elem_node_item(jS+j)
+          ic = hecMESH%elem_node_item(jS+j)
           if( ic_type == 301 ) then
-            trstrain(nodLocal(j),1:6) = trstrain(nodLOCAL(j),1:6) + edstrain(j,1:6)
-            trstress(nodLocal(j),1:6) = trstress(nodLOCAL(j),1:6) + edstress(j,1:6)
-            tnumber(nodLOCAL(j)) = tnumber(nodLOCAL(j)) + 1
+            trstrain(ic,1:6) = trstrain(ic,1:6) + edstrain(j,1:6)
+            trstress(ic,1:6) = trstress(ic,1:6) + edstress(j,1:6)
+            tnumber(ic) = tnumber(ic) + 1
           else
-            ndstrain(nodLocal(j),1:6) = ndstrain(nodLOCAL(j),1:6) + edstrain(j,1:6)
-            ndstress(nodLocal(j),1:6) = ndstress(nodLOCAL(j),1:6) + edstress(j,1:6)
-            thstrain(nodLocal(j),1:6) = thstrain(nodLOCAL(j),1:6) + tdstrain(j,1:6)
-            nnumber(nodLOCAL(j)) = nnumber(nodLOCAL(j)) + 1
+            fstrSOLID%STRAIN(6*ic-5:6*ic) = fstrSOLID%STRAIN(6*ic-5:6*ic) + edstrain(j,1:6)
+            fstrSOLID%STRESS(7*ic-6:7*ic-1) = fstrSOLID%STRESS(7*ic-6:7*ic-1) + edstress(j,1:6)
+            if( associated(tnstrain) ) tnstrain(6*ic-5:6*ic) = tnstrain(6*ic-5:6*ic) + tdstrain(j,1:6)
+            nnumber(ic) = nnumber(ic) + 1
           endif
         enddo
 !--- calculate elemental stress and strain
@@ -170,38 +167,28 @@ module m_fstr_NodalStress
     do i = 1, hecMESH%nn_internal
       if( nnumber(i) == 0 ) cycle
       if( tnumber(i) /= 0 ) then
-        ndstrain(i,1:6) = ndstrain(i,1:6) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
-        ndstress(i,1:6) = ndstress(i,1:6) / nnumber(i) + trstress(i,1:6) / tnumber(i)
+        fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
+        fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i) + trstress(i,1:6) / tnumber(i)
       else
-        ndstrain(i,1:6) = ndstrain(i,1:6) / nnumber(i)
-        ndstress(i,1:6) = ndstress(i,1:6) / nnumber(i)
-        thstrain(i,1:6) = thstrain(i,1:6) / nnumber(i)
+        fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i)
+        fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i)
+        if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
       endif
     enddo
 !C** calculate von MISES stress
     do i = 1, hecMESH%n_node
-      s11 = ndstress(i,1)
-      s22 = ndstress(i,2)
-      s33 = ndstress(i,3)
-      s12 = ndstress(i,4)
-      s23 = ndstress(i,5)
-      s13 = ndstress(i,6)
+      s11 = fstrSOLID%STRESS(7*i-6)
+      s22 = fstrSOLID%STRESS(7*i-5)
+      s33 = fstrSOLID%STRESS(7*i-4)
+      s12 = fstrSOLID%STRESS(7*i-3)
+      s23 = fstrSOLID%STRESS(7*i-2)
+      s13 = fstrSOLID%STRESS(7*i-1)
       ps = ( s11 + s22 + s33 ) / 3.0
       smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      ndstress(i,7) = sqrt( 3.0d0 * smises )
-    enddo
-!C** set array 
-    do i = 1, hecMESH%n_node
-      do j = 1, 6
-        fstrSOLID%STRAIN(6*(i-1)+j) = ndstrain(i,j)
-        if( associated(tnstrain) ) tnstrain(6*(i-1)+j) = tdstrain(i,j)
-      enddo
-      do j = 1, 7
-        fstrSOLID%STRESS(7*(i-1)+j) = ndstress(i,j)
-      enddo
+      fstrSOLID%STRESS(7*i) = sqrt( 3.0d0 * smises )
     enddo
 
-    deallocate( ndstrain, ndstress, trstrain, trstress )
+    deallocate( trstrain, trstress )
     deallocate( nnumber, tnumber )
   end subroutine fstr_NodalStress3D
 
@@ -363,19 +350,15 @@ module m_fstr_NodalStress
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 !C** local variables
     integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, ic_type, nn, ni, ID_area
-    integer(kind=kint) :: nodLOCAL(8)
     real(kind=kreal)   :: estrain(4), estress(4), tstrain(4), naturalCoord(4)
     real(kind=kreal)   :: edstrain(8,4), edstress(8,4), tdstrain(8,4)
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
-    real(kind=kreal), allocatable :: ndstrain(:,:), ndstress(:,:), thstrain(:,:), func(:,:), inv_func(:,:)
+    real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
     integer(kind=kint), allocatable :: nnumber(:)
 
-    allocate( ndstrain(hecMESH%n_node,4), ndstress(hecMESH%n_node,5) )
-    allocate( thstrain(hecMESH%n_node,4) )
     allocate( nnumber(hecMESH%n_node) )
-    ndstrain = 0.0d0
-    ndstress = 0.0d0
-    thstrain = 0.0d0
+    fstrSOLID%STRAIN = 0.0d0
+    fstrSOLID%STRESS = 0.0d0
     nnumber = 0
 
 !C +-------------------------------+
@@ -431,11 +414,15 @@ module m_fstr_NodalStress
 !                               edstrain(1:nn,1:4), edstress(1:nn,1:4), tdstrain(1:nn,1:4) )
         endif
         do j = 1, nn
-          nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-          ndstrain(nodLocal(j),1:4) = ndstrain(nodLOCAL(j),1:4) + edstrain(j,1:4)
-          ndstress(nodLocal(j),1:4) = ndstress(nodLOCAL(j),1:4) + edstress(j,1:4)
-          thstrain(nodLocal(j),1:4) = thstrain(nodLOCAL(j),1:4) + tdstrain(j,1:4)
-          nnumber(nodLOCAL(j)) = nnumber(nodLOCAL(j)) + 1
+          ic = hecMESH%elem_node_item(jS+j)
+          fstrSOLID%STRAIN(6*ic-5:6*ic-2) = fstrSOLID%STRAIN(6*ic-5:6*ic-2) + edstrain(j,1:4)
+          fstrSOLID%STRESS(7*ic-6:7*ic-3) = fstrSOLID%STRESS(7*ic-6:7*ic-3) + edstress(j,1:4)
+          if( associated(tnstrain) ) then
+            tnstrain(3*ic-2) = tnstrain(3*ic-2) + tdstrain(j,1)
+            tnstrain(3*ic-1) = tnstrain(3*ic-1) + tdstrain(j,2)
+            tnstrain(3*ic  ) = tnstrain(3*ic  ) + tdstrain(j,4)
+          endif
+          nnumber(ic) = nnumber(ic) + 1
         enddo
 !--- calculate elemental stress and strain
         if( ID_area == hecMESH%my_rank ) then
@@ -443,7 +430,11 @@ module m_fstr_NodalStress
 !          call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress, tstrain )
           fstrSOLID%ESTRAIN(6*icel-5:6*icel-2) = estrain
           fstrSOLID%ESTRESS(7*icel-6:7*icel-3) = estress
-          if( associated(testrain) ) testrain(6*icel-5:6*icel-2) = tstrain
+          if( associated(testrain) ) then
+            testrain(3*icel-2) = tstrain(1)
+            testrain(3*icel-1) = tstrain(2)
+            testrain(3*icel  ) = tstrain(4)
+          endif
           s11 = fstrSOLID%ESTRESS(7*icel-6)
           s22 = fstrSOLID%ESTRESS(7*icel-5)
           s33 = fstrSOLID%ESTRESS(7*icel-4)
@@ -461,45 +452,36 @@ module m_fstr_NodalStress
 !C** average over nodes
     do i = 1, hecMESH%nn_internal
       if( nnumber(i) == 0 ) cycle
-      ndstrain(i,1:4) = ndstrain(i,1:4) / nnumber(i)
-      ndstress(i,1:4) = ndstress(i,1:4) / nnumber(i)
-      thstrain(i,1:4) = thstrain(i,1:4) / nnumber(i)
+      fstrSOLID%STRAIN(6*i-5:6*i-2) = fstrSOLID%STRAIN(6*i-5:6*i-2) / nnumber(i)
+      fstrSOLID%STRESS(7*i-6:7*i-3) = fstrSOLID%STRESS(7*i-6:7*i-3) / nnumber(i)
+      if( associated(tnstrain) ) tnstrain(3*i-2:3*i) = tnstrain(3*i-2:3*i) / nnumber(i)
     enddo
 !C** calculate von MISES stress
     do i = 1, hecMESH%n_node
-      s11 = ndstress(i,1)
-      s22 = ndstress(i,2)
-      s33 = ndstress(i,3)
-      s12 = ndstress(i,4)
+      s11 = fstrSOLID%STRESS(7*i-6)
+      s22 = fstrSOLID%STRESS(7*i-5)
+      s33 = fstrSOLID%STRESS(7*i-4)
+      s12 = fstrSOLID%STRESS(7*i-3)
       s23 = 0.0d0
       s13 = 0.0d0
       ps = ( s11 + s22 + s33 ) / 3.0
       smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      ndstress(i,5) = sqrt( 3.0d0 * smises )
+      fstrSOLID%ESTRESS(7*i) = sqrt( 3.0d0 * smises )
     enddo
 !C** set array 
     do i = 1, hecMESH%n_node
-      fstrSOLID%STRAIN(6*(i-1)+1) = ndstrain(i,1)
-      fstrSOLID%STRAIN(6*(i-1)+2) = ndstrain(i,2)
-      fstrSOLID%STRAIN(6*(i-1)+3) = ndstrain(i,4)
+      fstrSOLID%STRAIN(6*(i-1)+3) = fstrSOLID%STRAIN(6*(i-1)+4)
       fstrSOLID%STRAIN(6*(i-1)+4) = 0.0d0
-      fstrSOLID%STRAIN(6*(i-1)+5) = 0.0d0
-      fstrSOLID%STRAIN(6*(i-1)+6) = 0.0d0
-      fstrSOLID%STRESS(7*(i-1)+1) = ndstress(i,1)
-      fstrSOLID%STRESS(7*(i-1)+2) = ndstress(i,2)
-      fstrSOLID%STRESS(7*(i-1)+3) = ndstress(i,4)
-      fstrSOLID%STRESS(7*(i-1)+4) = ndstress(i,5)
-      fstrSOLID%STRESS(7*(i-1)+5) = 0.0d0
-      fstrSOLID%STRESS(7*(i-1)+6) = 0.0d0
-      fstrSOLID%STRESS(7*(i-1)+7) = 0.0d0
-      if( associated(tnstrain) ) then
-        tnstrain(6*(i-1)+1) = thstrain(i,1)
-        tnstrain(6*(i-1)+2) = thstrain(i,2)
-        tnstrain(6*(i-1)+3) = thstrain(i,4)
-      endif
+      fstrSOLID%STRESS(7*(i-1)+3) = fstrSOLID%STRESS(7*(i-1)+4)
+      fstrSOLID%STRESS(7*(i-1)+4) = fstrSOLID%STRESS(7*i)
+      fstrSOLID%STRESS(7*i) = 0.0d0
+      fstrSOLID%ESTRAIN(6*(i-1)+3) = fstrSOLID%ESTRAIN(6*(i-1)+4)
+      fstrSOLID%ESTRAIN(6*(i-1)+4) = 0.0d0
+      fstrSOLID%ESTRESS(7*(i-1)+3) = fstrSOLID%ESTRESS(7*(i-1)+4)
+      fstrSOLID%ESTRESS(7*(i-1)+4) = fstrSOLID%ESTRESS(7*i)
+      fstrSOLID%ESTRESS(7*i) = 0.0d0
     enddo
 
-    deallocate( ndstrain, ndstress, thstrain )
     deallocate( nnumber )
   end subroutine fstr_NodalStress2D
 
