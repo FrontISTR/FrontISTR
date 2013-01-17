@@ -474,6 +474,8 @@ public
                 integer(kind=kint) :: dynamic_IW5        =   75
                 integer(kind=kint) :: dynamic_IW6        =   76
                 integer(kind=kint) :: dynamic_IW7        =   77            
+                integer(kind=kint) :: dynamic_IW8        =   78
+                integer(kind=kint) :: dynamic_IW9        =   79
 
         end type fstr_dynamic
 !C ---------------------------------------------------------------------------- 

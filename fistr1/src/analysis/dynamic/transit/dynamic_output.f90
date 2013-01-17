@@ -635,15 +635,16 @@ module m_dynamic_output
 !C================================================================C
 !C-- subroutine dynamic_output_monit
 !C================================================================C
-  subroutine dynamic_output_monit( hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1 )
+  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
     use m_fstr
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( fstr_param          ) :: fstrPARAM
     type ( fstr_dynamic        ) :: fstrDYNAMIC
     type ( lczparam            ) :: myEIG
+    type ( fstr_solid          ) :: fstrSOLID
     integer(kind=kint) :: my_rank_monit_1
 
-    integer(kind=kint) :: idx, ii, jj, ierr
+    integer(kind=kint) :: idx, ii, jj, ierr, ncmp
     logical :: yes
 
     if( mod(fstrDYNAMIC%i_step,fstrDYNAMIC%nout_monit)/=0 ) return
@@ -675,6 +676,29 @@ module m_dynamic_output
                fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
                fstrDYNAMIC%ACC( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
         end if
+
+!C-- strain
+      if( fstrDYNAMIC%iout_list(5) > 0 ) then
+        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+          ncmp = 6
+        else
+          ncmp = 14
+        endif
+        write( fstrDYNAMIC%dynamic_IW8, '(i10,1pe13.4e3,i10,1p6e13.4e3)') &
+               fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
+               fstrSOLID%STRAIN( ncmp*(ii-1)+1 : ncmp*ii )
+      end if
+!C-- stress
+      if( fstrDYNAMIC%iout_list(6) > 0 ) then
+        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+          ncmp = 7
+        else
+          ncmp = 14
+        endif
+        write( fstrDYNAMIC%dynamic_IW9, '(i10,1pe13.4e3,i10,1p7e13.4e3)') &
+               fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
+               fstrSOLID%STRESS( ncmp*(ii-1)+1 : ncmp*ii )
+      end if
     endif
 
     if( hecMESH%my_rank==0 ) then

@@ -146,7 +146,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
 
     end if
 !!
@@ -381,7 +381,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
 
     enddo
 

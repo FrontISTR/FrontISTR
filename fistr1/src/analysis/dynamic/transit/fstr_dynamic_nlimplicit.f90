@@ -145,7 +145,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0
@@ -393,7 +393,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -538,7 +538,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0  
@@ -818,7 +818,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 

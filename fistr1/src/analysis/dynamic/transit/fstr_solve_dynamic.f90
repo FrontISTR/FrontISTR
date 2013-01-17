@@ -106,6 +106,17 @@ contains
           write(*,*) 'stop due to file opening error <dyna_acce_p1.txt>'
           call hecmw_abort( hecmw_comm_get_comm())
         end if
+
+        OPEN(fstrDYNAMIC%dynamic_IW8,FILE='dyna_strain_p1.txt', status = 'replace', iostat=ierror)
+        if( ierror /= 0 ) then
+          write(*,*) 'stop due to file opening error <dyna_disp_p1.txt>'
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
+        OPEN(fstrDYNAMIC%dynamic_IW9,FILE='dyna_stress_p1.txt', status = 'replace', iostat=ierror)
+        if( ierror /= 0 ) then
+          write(*,*) 'stop due to file opening error <dyna_disp_p1.txt>'
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
       endif
 
 !C
@@ -242,6 +253,9 @@ contains
         CLOSE(fstrDYNAMIC%dynamic_IW4)
         CLOSE(fstrDYNAMIC%dynamic_IW5)
         CLOSE(fstrDYNAMIC%dynamic_IW6)
+
+        CLOSE(fstrDYNAMIC%dynamic_IW8)
+        CLOSE(fstrDYNAMIC%dynamic_IW9)
       endif
 !C-- end of finalization
 
