@@ -37,7 +37,7 @@ module m_fstr_NodalStress
     type (fstr_solid)         :: fstrSOLID
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 !C** local variables
-    integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, ic_type, nn, ni, ID_area
+    integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, ic_type, nn, ni, ID_area, truss
     real(kind=kreal)   :: estrain(6), estress(6), tstrain(6), naturalCoord(3)
     real(kind=kreal)   :: edstrain(20,6), edstress(20,6), tdstrain(20,6)
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
@@ -45,16 +45,24 @@ module m_fstr_NodalStress
     real(kind=kreal), allocatable :: trstrain(:,:), trstress(:,:)
     integer(kind=kint), allocatable :: nnumber(:), tnumber(:)
 
-    allocate( nnumber(hecMESH%n_node) )
-    allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,6) )
-    allocate( tnumber(hecMESH%n_node) )
     fstrSOLID%STRAIN = 0.0d0
     fstrSOLID%STRESS = 0.0d0
-    if( associated(tnstrain) ) tnstrain = 0.0d0
-    trstrain = 0.0d0
-    trstress = 0.0d0
+    allocate( nnumber(hecMESH%n_node) )
     nnumber = 0
-    tnumber = 0
+    if( associated(tnstrain) ) tnstrain = 0.0d0
+
+    truss = 0
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type == 301 ) truss = 1
+    enddo
+    if( truss == 1 ) then
+      allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,6) )
+      allocate( tnumber(hecMESH%n_node) )
+      trstrain = 0.0d0
+      trstress = 0.0d0
+      tnumber = 0
+    endif
 
 !C +-------------------------------+
 !C | according to ELEMENT TYPE     |
@@ -166,7 +174,7 @@ module m_fstr_NodalStress
 !C** average over nodes
     do i = 1, hecMESH%nn_internal
       if( nnumber(i) == 0 ) cycle
-      if( tnumber(i) /= 0 ) then
+      if( truss == 1 .and. tnumber(i) /= 0 ) then
         fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
         fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i) + trstress(i,1:6) / tnumber(i)
       else
@@ -188,8 +196,11 @@ module m_fstr_NodalStress
       fstrSOLID%STRESS(7*i) = sqrt( 3.0d0 * smises )
     enddo
 
-    deallocate( trstrain, trstress )
-    deallocate( nnumber, tnumber )
+    deallocate( nnumber )
+    if( truss == 1 ) then
+      deallocate( trstrain, trstress )
+      deallocate( tnumber )
+    endif
   end subroutine fstr_NodalStress3D
 
 !----------------------------------------------------------------------*

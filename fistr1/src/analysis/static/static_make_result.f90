@@ -65,14 +65,14 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(3) .and. ndof==6 ) then
           id = 1
           nitem = 6
-          label = 'NodalSTRAIN+'
+          label = 'NodalSTRAINplus'
           do i = 1, hecMESH%n_node
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%STRAIN(14*(i-1)+j)
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalSTRAIN-'
+          label = 'NodalSTRAINminus'
           do i = 1, hecMESH%n_node
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%STRAIN(14*(i-1)+6+j)
@@ -89,14 +89,14 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(4) .and. ndof==6 ) then
           id = 1
           nitem = 6
-          label = 'NodalSTRESS+'
+          label = 'NodalSTRESSplus'
           do i = 1, hecMESH%n_node
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%STRESS(14*(i-1)+j)
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalSTRESS-'
+          label = 'NodalSTRESSminus'
           do i = 1, hecMESH%n_node
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%STRESS(14*(i-1)+6+j)
@@ -118,12 +118,12 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(5) .and. ndof==6 ) then
           id = 1
           nitem = 1
-          label = 'NodalMISES+'
+          label = 'NodalMISESplus'
           do i = 1, hecMESH%n_node
             work(i) = fstrSOLID%STRESS(14*i-1)
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalMISES-'
+          label = 'NodalMISESminus'
           do i = 1, hecMESH%n_node
             work(i) = fstrSOLID%STRESS(14*i)
           enddo
@@ -141,14 +141,14 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(6) .and. ndof==6 ) then
           id = 2
           nitem = 6
-          label = 'ElementalSTRAIN+'
+          label = 'ElementalSTRAINplus'
           do i = 1, hecMESH%n_elem
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%ESTRAIN(14*(i-1)+j)
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalSTRAIN-'
+          label = 'ElementalSTRAINminus'
           do i = 1, hecMESH%n_elem
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%ESTRAIN(14*(i-1)+6+j)
@@ -165,14 +165,14 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(7) .and. ndof==6 ) then
           id = 2
           nitem = 6
-          label = 'ElementalSTRESS+'
+          label = 'ElementalSTRESSplus'
           do i = 1, hecMESH%n_elem
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%ESTRESS(14*(i-1)+j)
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalSTRESS-'
+          label = 'ElementalSTRESSminus'
           do i = 1, hecMESH%n_elem
             do j = 1, 6
               work(6*(i-1)+j) = fstrSOLID%ESTRESS(14*(i-1)+6+j)
@@ -194,12 +194,12 @@ module m_static_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(8) .and. ndof==6 ) then
           id = 1
           nitem = 1
-          label = 'ElementalMISES+'
+          label = 'ElementalMISESplus'
           do i = 1, hecMESH%n_elem
             work(i) = fstrSOLID%ESTRESS(14*i-1)
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalMISES-'
+          label = 'ElementalMISESminus'
           do i = 1, hecMESH%n_elem
             work(i) = fstrSOLID%ESTRESS(14*i)
           enddo
