@@ -201,11 +201,11 @@ subroutine fstr_init_file
           if( nprocs > limit ) then
             irank = myrank / limit
             write(r,*) irank
-            write( logfileNAME, '(a,a,a,a,a)') 'LOG/RANK', trim(adjustl(r)), '/', trim(adjustl(s)), '.log'
+            write( logfileNAME, '(a,a,a,a,a)') 'LOG/TRUNK', trim(adjustl(r)), '/', trim(adjustl(s)), '.log'
             logfileNAME = adjustl(logfileNAME)
             call hecmw_ctrl_make_subdir( logfileNAME, stat )
             if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
-            write( dbgfileNAME, '(a,a,a,a,a)') 'DBG/RANK', trim(adjustl(r)), '/', 'FSTR.dbg.', trim(adjustl(s))
+            write( dbgfileNAME, '(a,a,a,a,a)') 'DBG/TRUNK', trim(adjustl(r)), '/', 'FSTR.dbg.', trim(adjustl(s))
             dbgfileNAME = adjustl(dbgfileNAME)
             call hecmw_ctrl_make_subdir( dbgfileNAME, stat )
             if( stat /= 0 ) call fstr_setup_util_err_stop( '### Cannot create directory' )
