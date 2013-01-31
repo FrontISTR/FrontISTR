@@ -208,6 +208,7 @@ subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
     outctrl%filename = trim(ss)
   endif
   outctrl%freqency = 1
+  n = 0
   rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', n )
   if( n>0 ) outctrl%freqency = n
 end subroutine
