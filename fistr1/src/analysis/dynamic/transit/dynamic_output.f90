@@ -94,7 +94,7 @@ module m_dynamic_output
           call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, tnstrain, testrain )
     endif
 
-    if( IVISUAL==1 .and. ndof/=6 .and. &
+    if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
           call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT, tnstrain, testrain )

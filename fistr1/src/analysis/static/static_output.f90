@@ -88,7 +88,7 @@ module m_static_output
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 0 )
     endif
 
-    if( IVISUAL==1 .and. ndof/=6 .and. &
+    if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
           call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, tnstrain, testrain )
