@@ -367,9 +367,9 @@ module m_fstr_NodalStress
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
     integer(kind=kint), allocatable :: nnumber(:)
 
-    allocate( nnumber(hecMESH%n_node) )
     fstrSOLID%STRAIN = 0.0d0
     fstrSOLID%STRESS = 0.0d0
+    allocate( nnumber(hecMESH%n_node) )
     nnumber = 0
 
 !C +-------------------------------+
@@ -623,6 +623,8 @@ module m_fstr_NodalStress
     real(kind=kreal), allocatable :: ndstress_plus(:,:), ndstress_minus(:,:)
     integer(kind=kint), allocatable :: nnumber(:)
 
+    fstrSOLID%ESTRAIN = 0.0d0
+    fstrSOLID%ESTRESS = 0.0d0
     allocate ( ndstrain_plus(hecMESH%n_node,7) )
     allocate ( ndstrain_minus(hecMESH%n_node,7) )
     allocate ( ndstress_plus(hecMESH%n_node,7) )
@@ -695,8 +697,8 @@ module m_fstr_NodalStress
           do j = 1, nn
             i = nodLOCAL(j)
             do k = 1, 6
-              ndstrain_minus(i,k) = ndstrain_minus(i,k) + strain(i,k)
-              ndstress_minus(i,k) = ndstress_minus(i,k) + stress(i,k)
+              ndstrain_minus(i,k) = ndstrain_minus(i,k) + strain(j,k)
+              ndstress_minus(i,k) = ndstress_minus(i,k) + stress(j,k)
             enddo
             nnumber(i) = nnumber(i) + 1
           enddo
@@ -725,9 +727,9 @@ module m_fstr_NodalStress
     do i = 1, hecMESH%n_node
       do j = 1, 6
         ndstrain_plus(i,j) = ndstrain_plus(i,j) / nnumber(i)
-        ndstress_plus(i,j) = ndstrain_plus(i,j) / nnumber(i)
+        ndstress_plus(i,j) = ndstress_plus(i,j) / nnumber(i)
         ndstrain_minus(i,j) = ndstrain_minus(i,j) / nnumber(i)
-        ndstress_minus(i,j) = ndstrain_minus(i,j) / nnumber(i)
+        ndstress_minus(i,j) = ndstress_minus(i,j) / nnumber(i)
         fstrSOLID%STRAIN(14*(i-1)+j) = ndstrain_plus(i,j)
         fstrSOLID%STRESS(14*(i-1)+j) = ndstress_plus(i,j)
         fstrSOLID%STRAIN(14*(i-1)+j+6) = ndstrain_minus(i,j)

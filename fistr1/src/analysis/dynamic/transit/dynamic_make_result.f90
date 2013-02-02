@@ -228,7 +228,7 @@ module m_dynamic_make_result
         endif
 ! --- MISES @element
         if( fstrSOLID%output_ctrl(3)%outinfo%on(8) .and. ndof==6 ) then
-          id = 1
+          id = 2
           nitem = 1
           label = 'ElementalMISESplus'
           do i = 1, hecMESH%n_elem
@@ -397,7 +397,7 @@ module m_dynamic_make_result
           nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
         endif
 ! --- STRESS @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(7) .and. ndof==6 ) then
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(4) .and. ndof==6 ) then
           ncomp = ncomp + 2
           nitem = nitem + mdof
         else if( fstrSOLID%output_ctrl(4)%outinfo%on(4) ) then
@@ -516,22 +516,22 @@ module m_dynamic_make_result
           iitem = iitem + nn
         endif
 ! --- STRESS @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(7) .and. ndof==6 ) then
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(4) .and. ndof==6 ) then
           ncomp = ncomp + 1
           fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'ElementalSTRESSplus'
-          do i = 1, hecMESH%n_elem
+          fstrRESULT%node_label(ncomp) = 'NodalSTRESSplus'
+          do i = 1, hecMESH%n_node
             do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%ESTRESS(14*(i-1)+j)
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(14*(i-1)+j)
             enddo
           enddo
           iitem = iitem + 6
           ncomp = ncomp + 1
           fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'ElementalSTRESSminus'
-          do i = 1, hecMESH%n_elem
+          fstrRESULT%node_label(ncomp) = 'NodalSTRESSminus'
+          do i = 1, hecMESH%n_node
             do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%ESTRESS(14*(i-1)+6+j)
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(14*(i-1)+6+j)
             enddo
           enddo
           iitem = iitem + 6
