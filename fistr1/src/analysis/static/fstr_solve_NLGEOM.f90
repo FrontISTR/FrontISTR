@@ -157,10 +157,10 @@ contains
                                       infoCTChange%contactNode_current)                  
               endif    
             end if  
-          endif
 
 ! ----- Result output (include visualize output)
-          call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
+            call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
+          endif
 
           call cpu_time(time_2)
           if( hecMESH%my_rank==0) then
