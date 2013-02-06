@@ -57,7 +57,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
   type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
   integer(kind=kint) :: ndof
-  integer(kind=kint) :: i, iter, itemp, ttemp
+  integer(kind=kint) :: i, iter, itemp, ttemp, tintl
   integer(kind=kint) :: al_step, stepcnt
   real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr
   integer(kind=kint) :: restrt_step_num
@@ -78,8 +78,12 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
 
   stepcnt = 0
   ttemp = 1
-  if( fstrSOLID%TEMP_irres>1 ) ttemp = fstrSOLID%TEMP_irres
-  do itemp = fstrSOLID%TEMP_tstep, ttemp
+  tintl = 1
+  if( fstrSOLID%TEMP_irres>1 ) then
+    ttemp = fstrSOLID%TEMP_irres
+    tintl = fstrSOLID%TEMP_interval
+  endif
+  do itemp = fstrSOLID%TEMP_tstep, ttemp, tintl
     if( fstrSOLID%TEMP_irres>0 ) then
       if( hecMESH%my_rank==0 ) then
         write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
@@ -183,7 +187,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
           call fstr_static_Output( cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type )
     endif
 
-    if( fstrSOLID%TEMP_irres>1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1
+    if( fstrSOLID%TEMP_irres>1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep + tintl
   enddo
 
 end subroutine fstr_Newton

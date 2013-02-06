@@ -625,6 +625,7 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%SPRING_ngrp_tot   = 0
         fstrSOLID%TEMP_irres        = 0
         fstrSOLID%TEMP_tstep        = 1
+        fstrSOLID%TEMP_interval     = 1
         fstrSOLID%VELOCITY_ngrp_tot = 0
         fstrSOLID%ACCELERATION_ngrp_tot = 0
         fstrSOLID%COUPLE_ngrp_tot   = 0
@@ -1621,6 +1622,7 @@ subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
         rcode = fstr_ctrl_get_TEMPERATURE( ctrl,      &
                         P%SOLID%TEMP_irres,           &
                         P%SOLID%TEMP_tstep,           &
+                        P%SOLID%TEMP_interval,        &
                         grp_id_name, HECMW_NAME_LEN,  &
                         val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop

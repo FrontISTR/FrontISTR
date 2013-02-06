@@ -226,11 +226,12 @@ end function fstr_ctrl_get_REFTEMP
 !> Read in !TEMPERATURE        
 !* ----------------------------------------------------------------------------------------------- *!
 
-function fstr_ctrl_get_TEMPERATURE( ctrl, irres, tstep, node_id, node_id_len, value )
+function fstr_ctrl_get_TEMPERATURE( ctrl, irres, tstep, tintl, node_id, node_id_len, value )
         implicit none
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: irres
         integer(kind=kint) :: tstep
+        integer(kind=kint) :: tintl
         character(len=HECMW_NAME_LEN), target :: node_id(:)
         character(len=HECMW_NAME_LEN), pointer:: node_id_p
         integer(kind=kint) :: node_id_len
@@ -242,6 +243,7 @@ function fstr_ctrl_get_TEMPERATURE( ctrl, irres, tstep, node_id, node_id_len, va
         irres = 0
         if( fstr_ctrl_get_param_ex( ctrl, 'READRESULT ', '# ', 0, 'I', irres )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'SSTEP ',      '# ', 0, 'I', tstep )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'INTERVAL ',   '# ', 0, 'I', tintl )/= 0) return
         if( irres > 0 ) then
           fstr_ctrl_get_TEMPERATURE = 0
           return

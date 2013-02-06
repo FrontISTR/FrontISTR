@@ -254,6 +254,7 @@ public
                 integer(kind=kint) :: TEMP_ngrp_tot                        !< Following tempearture conditions
                 integer(kind=kint) :: TEMP_irres
                 integer(kind=kint) :: TEMP_tstep
+                integer(kind=kint) :: TEMP_interval
                 integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
                 integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
                 real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
