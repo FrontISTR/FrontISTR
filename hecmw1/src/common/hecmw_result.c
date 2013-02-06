@@ -637,12 +637,14 @@ void
 HECMW_result_free_nodeID(void)
 {
 	HECMW_free(node_global_ID);
+	node_global_ID = NULL;
 }
 
 void
 HECMW_result_free_elemID(void)
 {
 	HECMW_free(elem_global_ID);
+	elem_global_ID = NULL;
 }
 
 
@@ -692,6 +694,8 @@ void hecmw_result_finalize_if(int *err)
 {
 	*err = 1;
 	if(HECMW_result_finalize()) return;
+	node_global_ID = NULL;
+	elem_global_ID = NULL;
 	*err = 0;
 }
 
