@@ -18,7 +18,6 @@
 module hecmw_result
     use hecmw_util
     implicit none
-    private
 
     public :: hecmwST_result_data
     public :: hecmw_nullify_result_data
@@ -37,8 +36,6 @@ module hecmw_result
     private :: get_node_component
     private :: get_elem_component
 
-    character(len=HECMW_NAME_LEN) :: sname,vname
-
     type hecmwST_result_data
         integer(kind=kint) :: nn_component
         integer(kind=kint) :: ne_component
@@ -49,6 +46,9 @@ module hecmw_result
         real(kind=kreal),pointer :: node_val_item(:)
         real(kind=kreal),pointer :: elem_val_item(:)
     end type hecmwST_result_data
+
+    private
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     contains
 

@@ -48,8 +48,8 @@ static char line_buf[LINEBUF_SIZE+1];
 static struct result_list *node_list; 
 static struct result_list *elem_list; 
 
-static int *node_global_ID;
-static int *elem_global_ID;
+static int *node_global_ID = NULL;
+static int *elem_global_ID = NULL;
 
 struct fortran_remainder {
 	double *ptr;

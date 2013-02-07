@@ -27,7 +27,7 @@ MODULE mReadTemp
 
       call hecmw_result_free(result)
 
-      write(IDBG,*) ' Read temperature from result file: OK'
+      write(IDBG,*) ' Read temperature from result file : OK'
     end subroutine read_temperature_result
 	
 END MODULE
