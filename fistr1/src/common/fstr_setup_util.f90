@@ -1105,7 +1105,7 @@ subroutine fstr_setup_visualize( ctrl )
         integer(kind=kint) :: rcode
         integer(kind=kint) :: i, start_n, end_n
         character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
-        integer(kind=kint), parameter :: buffsize = 255
+        integer(kind=kint), parameter :: buffsize = 127
         character( buffsize ) :: buff
         character( buffsize ) :: head
         character( buffsize ) :: msg
