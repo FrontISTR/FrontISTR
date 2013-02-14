@@ -156,6 +156,8 @@ int main(int argc, char** argv )
 		exit( -1 );
 	}
 
+	fstr_free_mesh( mesh, area_n );
+
 	step_n = fstr_get_step_n( "fstrRES" );
 
 	for( step = strid; step <= step_n; step++ ) {
@@ -165,7 +167,6 @@ int main(int argc, char** argv )
 		res = fstr_get_all_result( "fstrRES", step, area_n, refine );
 		if( !res ){
 			fprintf( stderr, "ERROR : Cannot create result structure.\n" );
-			fstr_free_mesh( mesh, area_n );
 			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			exit( -1 );
@@ -176,7 +177,6 @@ int main(int argc, char** argv )
 		data = fstr_all_result( glt, res, refine );
 		if( !data ){
 			fprintf( stderr, "ERROR : Cannot combine result structure.\n" );
-			fstr_free_mesh( mesh, area_n );
 			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			fstr_free_result( res, area_n );
@@ -212,7 +212,6 @@ int main(int argc, char** argv )
 		}
 		if( rcode ) {
 			fprintf( stderr, "ERROR : Cannot open/write file %s\n", out_fname );
-			fstr_free_mesh( mesh, area_n );
 			fstr_free_glt( glt );
 			fstr_free_glmesh( glmesh );
 			fstr_free_result( res, area_n );
@@ -225,7 +224,6 @@ int main(int argc, char** argv )
 		HECMW_result_free( data );
 	}
 
-	fstr_free_mesh( mesh, area_n );
 	fstr_free_glt( glt );
 	fstr_free_glmesh( glmesh );
 

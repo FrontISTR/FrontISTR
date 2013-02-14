@@ -174,7 +174,8 @@ module m_fstr_NodalStress
 !C** average over nodes
     do i = 1, hecMESH%nn_internal
       if( nnumber(i) == 0 ) cycle
-      if( truss == 1 .and. tnumber(i) /= 0 ) then
+      if( truss == 1 ) then
+        if( tnumber(i) == 0 ) cycle
         fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
         fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i) + trstress(i,1:6) / tnumber(i)
       else
