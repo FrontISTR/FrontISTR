@@ -70,17 +70,41 @@ contains
        mumps_par%ICNTL(1)=6
        mumps_par%ICNTL(2)=0
        mumps_par%ICNTL(3)=0
-       mumps_par%ICNTL(4)=1
+       mumps_par%ICNTL(4)=0
     endif
 
     mumps_par%JOB = job
-    call DMUMPS(mumps_par)
-    istat = mumps_par%INFOG(1)
-    if (istat < 0) then
-       write(*,*) 'ERROR: MUMPS job=',job
-       return
-    endif
+    do
+       call DMUMPS(mumps_par)
+       istat = mumps_par%INFOG(1)
+       if (istat >= 0) exit
+       if (istat == -9 .and. mumps_par%ICNTL(14) < 200) then
+          mumps_par%ICNTL(14) = mumps_par%ICNTL(14) + 20
+          if (myrank == 0) &
+               write(*,*) 'INFO: MUMPS increasing relaxation parameter to', &
+               mumps_par%ICNTL(14)
+       elseif (istat < 0) then
+          if (myrank == 0) then
+             write(*,*) 'ERROR: MUMPS job=',job,&
+                  ', INFOG(1)=',istat,', INFOG(2)=',mumps_par%INFOG(2)
+          endif
+          return
+       endif
+    enddo
 
+    if (job==-1) then
+       ! ordering: 0:auto, 1:seq, 2:par
+       mumps_par%ICNTL(28)=2
+       ! seq ord: 0:AMD, 1:USER, 2:AMF, 3:scotch, 4:pord, 5:metis, 6:QAMD, 7:auto
+       mumps_par%ICNTL(7)=7
+       ! par ord: 0:auto, 1:ptscotch, 2:parmetis
+       mumps_par%ICNTL(29)=0
+       ! relaxation parameter
+       mumps_par%ICNTL(14)=20
+       ! iterative refinement
+       mumps_par%ICNTL(10)=3
+       mumps_par%CNTL(2)=1.0e-8
+    endif
     if (job==3 .or. job==5 .or. job==6) then
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        if (myrank == 0) deallocate(mumps_par%RHS)
