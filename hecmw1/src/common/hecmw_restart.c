@@ -41,6 +41,7 @@ clear(void)
 
 	for(p=first_list; p; p=q) {
 		q = p->next;
+		HECMW_free(p->data);
 		HECMW_free(p);
 	}
 	first_list = NULL;
@@ -63,8 +64,10 @@ HECMW_restart_open_by_name(char *name_ID)
 
 	if((restart_fp = fopen(filename, "rb")) == NULL) {
 		HECMW_set_error(HECMW_UTIL_E0101, "File: %s, %s", filename, HECMW_strmsg(errno));
+		HECMW_free(filename);
 		return -1;
 	}
+	HECMW_free(filename);
 	return 0;
 }
 
@@ -220,13 +223,15 @@ HECMW_restart_write_by_name(char *name_ID)
 	}
 
 	if(HECMW_ctrl_is_subdir()) {
-		if(HECMW_ctrl_make_subdir(filename)) return -1;
+		if(HECMW_ctrl_make_subdir(filename)) { HECMW_free(filename); return -1; }
 	}
 
 	if((fp = fopen(filename , "w")) == NULL) {
 		HECMW_set_error(HECMW_UTIL_E0101, "File: %s, %s", filename, HECMW_strmsg(errno));
+		HECMW_free(filename);
 		return -1;
 	}
+	HECMW_free(filename);
 
 	for(p=first_list; p; p=p->next) {
 		/* write size */

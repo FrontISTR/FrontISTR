@@ -23,6 +23,7 @@
 #include "hecmw_vis_bmp.h"
 #include "hecmw_vis_font_texture.h"
 #include "hecmw_vis_mem_util.h"
+#include "hecmw_malloc.h"
 
 void generate_histogram_graph_sf(struct surface_module *sf, int *color_list, struct hecmwST_result_data *data,
 		double *mivalue, double *mavalue, Result *result, int mynode,
@@ -79,7 +80,7 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list, str
 		fp=fopen("histogram.bmp", "wb");
 		if(fp==NULL)
 			HECMW_vis_print_exit("Cannot generate the histogram output file");
-		graph=(double *)calloc(400*530*3, sizeof(double));
+		graph=(double *)HECMW_calloc(400*530*3, sizeof(double));
 		if(graph==NULL)
 			HECMW_vis_memory_exit("graph");
 		for(i=0;i<400*530*3;i++)
@@ -234,7 +235,7 @@ void generate_histogram_graph_sf(struct surface_module *sf, int *color_list, str
 
 
 		fclose(fp);
-		free(graph);
+		HECMW_free(graph);
 	}
 	return;
 }

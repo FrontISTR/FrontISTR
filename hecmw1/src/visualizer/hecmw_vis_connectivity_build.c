@@ -20,6 +20,7 @@
 #include <math.h>
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_comm_util.h"
+#include "hecmw_malloc.h"
 
 
 void find_index_connectivity(struct hecmwST_local_mesh *mesh, int *index_connect)
@@ -103,7 +104,7 @@ void add_to_hash(int elemID, int faceID, int hashID, Hash_table *h_table)
 {
 	Hash_table *p1, *p2;
 
-	if((p1=(Hash_table *)malloc(sizeof(Hash_table)))==NULL)
+	if((p1=(Hash_table *)HECMW_malloc(sizeof(Hash_table)))==NULL)
 		HECMW_vis_memory_exit("hash_table: p1");
 	h_table[hashID].elemID++;
 	p2=h_table[hashID].next_elem;
@@ -272,10 +273,10 @@ void h_free(Hash_table *h_table,int maxadd)
 		while(p1!=NULL) {
 			p2=p1;
 			p1=p1->next_elem;
-			free(p2);
+			HECMW_free(p2);
 		}
 	}
-	free(h_table);
+	HECMW_free(h_table);
 	return;
 }
 
@@ -286,10 +287,10 @@ void free_b_patch(Boundary_patch *b_patch)
 	p1=b_patch->next_patch;
 	while(p1!=NULL) {
 		p2=p1->next_patch;
-		free(p1);
+		HECMW_free(p1);
 		p1=p2;
 	}
-	free(b_patch);
+	HECMW_free(b_patch);
 	return;
 }
 
@@ -389,7 +390,7 @@ void add_one_patch(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST
 	if(flag==1) {
 		for(k=0;k<3;k++) {
 			if(node_hit[node[k]-1]==-1) {
-				p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+				p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 				if(p1==NULL)
 					HECMW_vis_memory_exit("p1");
 				b_point->ident++;
@@ -427,7 +428,7 @@ void add_one_patch(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST
 				patch[index_patch]=node_hit[node[k]-1];
 			}
 		}
-		t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+		t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 		if(t1==NULL)
 			HECMW_vis_memory_exit("t1");
 		t2=head_b_patch->patch_link;
@@ -456,7 +457,7 @@ void add_two_patch(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST
 	index_patch=-1;
 	for(k=0;k<4;k++) {
 		if(node_hit[node[k]-1]==-1) {
-			p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+			p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 			if(p1==NULL)
 				HECMW_vis_memory_exit("p1");
 			b_point->ident++;
@@ -499,7 +500,7 @@ void add_two_patch(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST
 	if((node[0]==node[1]) || (node[0]==node[2]) || (node[1]==node[2]))
 		flag=0;
 	if(flag==1) {
-		t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+		t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 		if(t1==NULL)
 			HECMW_vis_memory_exit("t1");
 		t2=head_b_patch->patch_link;
@@ -514,7 +515,7 @@ void add_two_patch(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST
 	if((node[0]==node[2]) || (node[0]==node[3]) || (node[2]==node[3]))
 		flag=0;
 	if(flag==1) {
-		t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+		t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 		if(t1==NULL)
 			HECMW_vis_memory_exit("t1");
 		t2=head_b_patch->patch_link;
@@ -567,7 +568,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		tn_component+=data->nn_dof[i];
 	generate_face(index_face_tetra, face_tetra, index_face_prism, face_prism,index_face_hexa, face_hexa);
 	if(init_flag==1) {
-		nelem_dist=(int *)calloc(pesize+1, sizeof(int));
+		nelem_dist=(int *)HECMW_calloc(pesize+1, sizeof(int));
 		if(mynode==0) {
 			nelem_dist[0]=0;
 			nelem_dist[1]=mesh->ne_internal;
@@ -590,7 +591,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		fprintf(stderr, "\n");
 	}
 		 */
-		mesh->global_elem_ID=(int *)calloc(mesh->n_elem, sizeof(int));
+		mesh->global_elem_ID=(int *)HECMW_calloc(mesh->n_elem, sizeof(int));
 		if(mesh->global_elem_ID==NULL)
 			HECMW_vis_memory_exit("Global_elem_ID");
 		for(i=0;i<mesh->n_elem;i++)
@@ -598,19 +599,19 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 
 
 		HECMW_Barrier(VIS_COMM);
-		if((h_table=(Hash_table *)calloc(mesh->n_node*4-3, sizeof(Hash_table)))==NULL)
+		if((h_table=(Hash_table *)HECMW_calloc(mesh->n_node*4-3, sizeof(Hash_table)))==NULL)
 			HECMW_vis_memory_exit("h_table");
 		for(i=0;i<mesh->n_node*4-3;i++) {
 			h_table[i].elemID=0;
 			h_table[i].next_elem=NULL;
 		}
-		index_connect=(int *)calloc(mesh->n_elem+1, sizeof(int));
+		index_connect=(int *)HECMW_calloc(mesh->n_elem+1, sizeof(int));
 		if(index_connect==NULL)
 			HECMW_vis_memory_exit("index_connect");
 		find_index_connectivity(mesh, index_connect);
 
-		/*   if((connect=(int *)calloc(index_connect[mesh->n_elem]*3, sizeof(int)))==NULL) */
-		if((connect=(int *)calloc(index_connect[mesh->n_elem]*3+20, sizeof(int)))==NULL) /* Modyfied S. Ito at 10/3/2007 */
+		/*   if((connect=(int *)HECMW_calloc(index_connect[mesh->n_elem]*3, sizeof(int)))==NULL) */
+		if((connect=(int *)HECMW_calloc(index_connect[mesh->n_elem]*3+20, sizeof(int)))==NULL) /* Modyfied S. Ito at 10/3/2007 */
 			HECMW_vis_memory_exit("connect");
 		/*  i*3: elem_id; i*3+1: face_id   i*3+2: pe_id */
 		for(i=0;i<index_connect[mesh->n_elem]*3;i++)
@@ -629,18 +630,18 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		}
 
 		if(mesh->n_neighbor_pe>0) {
-			if((export_no_element=(int *)calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
+			if((export_no_element=(int *)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
 				HECMW_vis_memory_exit("export_no_element");
-			if((import_no_element=(int *)calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
+			if((import_no_element=(int *)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
 				HECMW_vis_memory_exit("import_no_element");
-			if((index_import_element=(int *)calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
+			if((index_import_element=(int *)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
 				HECMW_vis_memory_exit("import_no_element");
 
 			for(i=0;i<mesh->n_neighbor_pe;i++)
 				export_no_element[i]=0;
-			if((export_elem=(int *)calloc(mesh->n_neighbor_pe*mesh->n_elem, sizeof(int)))==NULL)
+			if((export_elem=(int *)HECMW_calloc(mesh->n_neighbor_pe*mesh->n_elem, sizeof(int)))==NULL)
 				HECMW_vis_memory_exit("export_elem");
-			if((flag=(int *) calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
+			if((flag=(int *) HECMW_calloc(mesh->n_neighbor_pe, sizeof(int)))==NULL)
 				HECMW_vis_memory_exit("flag_connect");
 
 			for(i=0;i<mesh->n_neighbor_pe*mesh->n_elem;i++)
@@ -687,13 +688,13 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 						if(export_no_element[i]>0) {
 							/*                   fprintf(stderr, "the export number for PE %d in pe %d is %d\n", pe_no, mynode, export_no_element[i]);
 							 */
-							if((global_id=(int *)calloc(export_no_element[i], sizeof(int)))==NULL)
+							if((global_id=(int *)HECMW_calloc(export_no_element[i], sizeof(int)))==NULL)
 								HECMW_vis_memory_exit("global_id");
-							index_a_connect=(int *)calloc(export_no_element[i]+1, sizeof(int));
+							index_a_connect=(int *)HECMW_calloc(export_no_element[i]+1, sizeof(int));
 							if(index_a_connect==NULL)
 								HECMW_vis_memory_exit("index_a_connect");
 							find_index_a_connect(mesh, export_no_element[i], i, export_elem, index_a_connect);
-							if((among_connect=(int *)calloc(index_a_connect[export_no_element[i]]*3, sizeof(int)))==NULL)
+							if((among_connect=(int *)HECMW_calloc(index_a_connect[export_no_element[i]]*3, sizeof(int)))==NULL)
 								HECMW_vis_memory_exit("among_connect");
 							for(j=0;j<export_no_element[i];j++) {
 								global_id[j]=*(export_elem[i*mesh->n_elem+j]+mesh->global_elem_ID);
@@ -712,9 +713,9 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 							HECMW_Send(index_a_connect, export_no_element[i]+1, HECMW_INT, pe_no, 0, VIS_COMM);
 							HECMW_Send(among_connect, index_a_connect[export_no_element[i]]*3, HECMW_INT, pe_no, 0, VIS_COMM);
 
-							free(global_id);
-							free(index_a_connect);
-							free(among_connect);
+							HECMW_free(global_id);
+							HECMW_free(index_a_connect);
+							HECMW_free(among_connect);
 						}
 					}  /* end of if ==pe_no */
 				} /* end of for i */
@@ -722,12 +723,12 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 			/* else if (mynode==pe_no) { */
 			else if (mynode==pe_no && pesize > 1) { /* Modified by S. Ito at 10/2/2007 */
 				/* receive overlapped element data from other pes */
-				if((g_id=(int **)calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
+				if((g_id=(int **)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
 					HECMW_vis_memory_exit("g_id");
 
-				if((a_connect=(int **)calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
+				if((a_connect=(int **)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
 					HECMW_vis_memory_exit("a_connect");
-				if((index_a=(int **)calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
+				if((index_a=(int **)HECMW_calloc(mesh->n_neighbor_pe, sizeof(int *)))==NULL)
 					HECMW_vis_memory_exit("index_a");
 
 
@@ -738,15 +739,15 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 					if(import_no_element[i]>0) {
 						HECMW_Recv(&index_import_element[i], 1, HECMW_INT, j, HECMW_ANY_TAG,
 								VIS_COMM, &stat);
-						if((g_id[i]=(int *)calloc(import_no_element[i], sizeof(int)))==NULL)
+						if((g_id[i]=(int *)HECMW_calloc(import_no_element[i], sizeof(int)))==NULL)
 							HECMW_vis_memory_exit("g_id");
 
 						HECMW_Recv(g_id[i], import_no_element[i], HECMW_INT, j, HECMW_ANY_TAG,
 								VIS_COMM, &stat);
-						if((index_a[i]=(int *)calloc(import_no_element[i]+1, sizeof(int)))==NULL)
+						if((index_a[i]=(int *)HECMW_calloc(import_no_element[i]+1, sizeof(int)))==NULL)
 							HECMW_vis_memory_exit("index_a");
 
-						if((a_connect[i]=(int *)calloc(index_import_element[i]*3, sizeof(int)))==NULL)
+						if((a_connect[i]=(int *)HECMW_calloc(index_import_element[i]*3, sizeof(int)))==NULL)
 							HECMW_vis_memory_exit("a_connect");
 						HECMW_Recv(index_a[i], import_no_element[i]+1, HECMW_INT, j, HECMW_ANY_TAG,
 								VIS_COMM, &stat);
@@ -779,9 +780,9 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 						}
 					}
 				}
-				free(a_connect);
-				free(g_id);
-				free(index_a);
+				HECMW_free(a_connect);
+				HECMW_free(g_id);
+				HECMW_free(index_a);
 			} /* end of if mynode==pe_no */
 			/* finish in one pe_no */
 			HECMW_Barrier(VIS_COMM);
@@ -789,7 +790,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		/*	  fprintf(stderr,"Finish the connectivity build among PES\n");
 		 */
 	}
-	/*  b_patch=(Boundary_patch *)malloc(sizeof(Boundary_patch));
+	/*  b_patch=(Boundary_patch *)HECMW_malloc(sizeof(Boundary_patch));
   if(b_patch==NULL)
 	  HECMW_vis_memory_exit("b_patch");
   p1=b_patch;
@@ -799,14 +800,14 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		connect=global_connect->connect;
 	}
 
-	b_point=(Tetra_point *)malloc(sizeof(Tetra_point));
-	head_b_patch=(Head_patch_tetra *)malloc(sizeof(Head_patch_tetra));
+	b_point=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
+	head_b_patch=(Head_patch_tetra *)HECMW_malloc(sizeof(Head_patch_tetra));
 	if((b_point==NULL) || (head_b_patch==NULL))
 		HECMW_vis_memory_exit("boundary: initialization");
 	b_point->ident=0;
 	head_b_patch->num_patch=0;
 
-	node_hit=(int *)calloc(mesh->n_node, sizeof(int));
+	node_hit=(int *)HECMW_calloc(mesh->n_node, sizeof(int));
 	if(node_hit==NULL)
 		HECMW_vis_memory_exit("node_hit");
 	for(i=0;i<mesh->n_node;i++)
@@ -863,17 +864,17 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 				}
 			}
 		}
-	free(node_hit);
+	HECMW_free(node_hit);
 	if(head_b_patch->num_patch>0) {
 		result[sf_i].n_vertex=b_point->ident;
 		result[sf_i].n_patch=head_b_patch->num_patch;
-		result[sf_i].vertex=(double *)calloc(result[sf_i].n_vertex*3,sizeof(double));
-		result[sf_i].color=(double *)calloc(result[sf_i].n_vertex, sizeof(double));
-		result[sf_i].patch=(int *)calloc(result[sf_i].n_patch*3, sizeof(int));
+		result[sf_i].vertex=(double *)HECMW_calloc(result[sf_i].n_vertex*3,sizeof(double));
+		result[sf_i].color=(double *)HECMW_calloc(result[sf_i].n_vertex, sizeof(double));
+		result[sf_i].patch=(int *)HECMW_calloc(result[sf_i].n_patch*3, sizeof(int));
 		if((result[sf_i].vertex==NULL) || (result[sf_i].patch==NULL) || (result[sf_i].color==NULL))
 			HECMW_vis_memory_exit("Boundary: vertex, patch and color");
 		if(sff->deform_display_on==1) {
-			result[sf_i].disp=(double *)calloc(result[sf_i].n_vertex*3,sizeof(double));
+			result[sf_i].disp=(double *)HECMW_calloc(result[sf_i].n_vertex*3,sizeof(double));
 			if(result[sf_i].disp==NULL)
 				HECMW_vis_memory_exit("Boundary: disp");
 		}
@@ -893,9 +894,9 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 
 			p2=p1;
 			p1=p1->nextpoint;
-			free(p2);
+			HECMW_free(p2);
 		}
-		free(b_point);
+		HECMW_free(b_point);
 	}
 	if(head_b_patch->num_patch>0) {
 		t1=head_b_patch->patch_link;
@@ -904,15 +905,15 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 				result[sf_i].patch[i*3+j]=*tvertex+t1->patch[j];
 			t2=t1;
 			t1=t1->next_patch;
-			free(t2);
+			HECMW_free(t2);
 		}
-		free(head_b_patch);
+		HECMW_free(head_b_patch);
 	}
 
 	*tvertex+=result[sf_i].n_vertex;
 	*tpatch+=result[sf_i].n_patch;
-	/*          free(index_connect);
-          free(connect);
+	/*          HECMW_free(index_connect);
+          HECMW_free(connect);
 	 */
 	if(init_flag==1) {
 		global_connect->index_connect=index_connect;

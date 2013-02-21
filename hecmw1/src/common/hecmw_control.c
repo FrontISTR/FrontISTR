@@ -2410,6 +2410,7 @@ hecmw_ctrl_get_control_file_if(char *name_ID, char *buf, int *err, int name_len,
 {
 	char c_name_ID[HECMW_NAME_LEN+1];
 	char *c_buf;
+	int ret;
 
 	*err = 1;
 
@@ -2417,7 +2418,9 @@ hecmw_ctrl_get_control_file_if(char *name_ID, char *buf, int *err, int name_len,
 
 	if((c_buf = HECMW_ctrl_get_control_file(c_name_ID)) == NULL) return;
 
-	if(HECMW_strcpy_c2f(c_buf, buf, buf_len) == 0) return;
+	ret = HECMW_strcpy_c2f(c_buf, buf, buf_len);
+	HECMW_free(c_buf);
+	if(ret == 0) return;
 
 	*err = 0;
 }

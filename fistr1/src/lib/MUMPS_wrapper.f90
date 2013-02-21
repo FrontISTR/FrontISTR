@@ -52,10 +52,12 @@ contains
        if (job==3 .or. job==5 .or. job==6) then
           if (myrank == 0) then
             allocate(mumps_par%RHS(mumps_par%N), stat=ierr)
-            if (ierr /= 0) then
-              write(*,*) " Allocation error, mumps_par%RHS"
-              call hecmw_abort(hecmw_comm_get_comm())
-            endif
+          else
+            allocate(mumps_par%RHS(1), stat=ierr)
+          endif
+          if (ierr /= 0) then
+            write(*,*) " Allocation error, mumps_par%RHS"
+            call hecmw_abort(hecmw_comm_get_comm())
           endif
           call sparse_matrix_gather_rhs(spMAT, mumps_par%RHS)
        endif
@@ -107,7 +109,7 @@ contains
     endif
     if (job==3 .or. job==5 .or. job==6) then
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
-       if (myrank == 0) deallocate(mumps_par%RHS)
+       deallocate(mumps_par%RHS)
     endif
   end subroutine mumps_wrapper
 

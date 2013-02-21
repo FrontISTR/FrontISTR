@@ -23,6 +23,7 @@
 #include "hecmw_vis_read_control.h"
 #include "hecmw_vis_surface_main.h"
 #include "hecmw_vis_pvr_main.h"
+#include "hecmw_malloc.h"
 
 PSF_link *psf;
 PVR_link *pvr;
@@ -50,12 +51,12 @@ HECMW_visualize_init_by_comm(HECMW_Comm VIS_COMM)
 			HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0011: Cannot open control file");
 	}
 
-	psf=(PSF_link *)malloc(sizeof(PSF_link));
+	psf=(PSF_link *)HECMW_malloc(sizeof(PSF_link));
 	if(psf==NULL)
 		HECMW_vis_memory_exit("psf");
 	psf->next_psf=NULL;
 	psf->num_of_psf=0;
-	pvr=(PVR_link *)malloc(sizeof(PVR_link));
+	pvr=(PVR_link *)HECMW_malloc(sizeof(PVR_link));
 	if(pvr==NULL)
 		HECMW_vis_memory_exit("pvr");
 	pvr->next_pvr=NULL;
@@ -165,6 +166,7 @@ HECMW_visualize( struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 			}
 		}
 	}
+	HECMW_free(outfile);
 
 	return 0;
 }
@@ -181,19 +183,23 @@ HECMW_visualize_finalize( void )
 		for(i=0;i<psf->num_of_psf;i++) {
 			tp2=tp1;
 			tp1=tp1->next_psf;
-			free(tp2);
+			HECMW_free(tp2->sf);
+			if (tp2->sr->light_point) HECMW_free(tp2->sr->light_point);
+			HECMW_free(tp2->sr);
+			HECMW_free(tp2);
 		}
 	}
-	free(psf);
+	HECMW_free(psf);
 	if(pvr->num_of_pvr>0) {
 		tv1=pvr->next_pvr;
 		for(i=0;i<pvr->num_of_pvr;i++) {
 			tv2=tv1;
 			tv1=tv1->next_pvr;
-			free(tv2);
+			HECMW_free(tv2->vr);
+			HECMW_free(tv2);
 		}
 	}
-	free(pvr);
+	HECMW_free(pvr);
 
 	return 0;
 }

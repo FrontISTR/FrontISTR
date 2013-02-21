@@ -26,6 +26,7 @@
 #include "hecmw_vis_case_table.h"
 #include "hecmw_vis_tetra_intersect.h"
 #include "hecmw_vis_patch_const.h"
+#include "hecmw_malloc.h"
 
 
 int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data,
@@ -78,7 +79,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 	for(i=0;i<data->nn_component;i++)
 		tn_component+=data->nn_dof[i];
 
-	/*  prism = (Prism *)malloc(sizeof(Prism));
+	/*  prism = (Prism *)HECMW_malloc(sizeof(Prism));
 	 */
 	if(mesh->elem_type[0]>300) {
 		flag_hexa=0;
@@ -104,25 +105,25 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 					if(flag_hexa==0) {
 						flag_hexa=1;
 
-						CS_polys_head = (Polygon **)malloc(sizeof(Polygon *));
-						CS_verts_head = (Point **)calloc(TABLE_SIZE, sizeof(Point *));
+						CS_polys_head = (Polygon **)HECMW_malloc(sizeof(Polygon *));
+						CS_verts_head = (Point **)HECMW_calloc(TABLE_SIZE, sizeof(Point *));
 						sum_table = TABLE_SIZE;
-						CS_verts_tail = (Point **)calloc(sum_table, sizeof(Point *));
-						CS_verts_refer = (Point **)calloc(sum_table, sizeof(Point *));
+						CS_verts_tail = (Point **)HECMW_calloc(sum_table, sizeof(Point *));
+						CS_verts_refer = (Point **)HECMW_calloc(sum_table, sizeof(Point *));
 						for (j= 0; j < sum_table; j++) {
 							if ((CS_verts_refer[j] = CS_verts_tail[j] = CS_verts_head[j]
 							                                                          = alloc_verts(VERTEX_PACK)) == NULL)
 								HECMW_vis_memory_exit("verts for hexahedra");
 						}
 
-						CS_polys_tail = (Polygon **)malloc(sizeof(Polygon *));
+						CS_polys_tail = (Polygon **)HECMW_malloc(sizeof(Polygon *));
 						if ((*CS_polys_tail = *CS_polys_head =
 							alloc_polygons(POLYGON_PACK)) == NULL)
 							HECMW_vis_memory_exit("CS_polys_tail");
 
-						alpha_cube.isosurf = (int **)malloc(sizeof(int *));
-						beta_cube.isosurf = (int **)malloc(sizeof(int *));
-						cell = (Cell *)malloc(sizeof(Cell));
+						alpha_cube.isosurf = (int **)HECMW_malloc(sizeof(int *));
+						beta_cube.isosurf = (int **)HECMW_malloc(sizeof(int *));
+						cell = (Cell *)HECMW_malloc(sizeof(Cell));
 					}
 					get_data(sff,mesh, data, tmp_int, cell, tn_component);
 					if(sff->surface_style==2) {
@@ -160,10 +161,10 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 					if(flag_tetra==0) {
 						flag_tetra=1;
 						/* initialize  */
-						tetra = (Tetra *)malloc(sizeof(Tetra));
-						vertex_hash_table=(Hash_vertex *)calloc(mesh->n_node*2, sizeof(Hash_vertex));
-						tetra_point=(Tetra_point *)malloc(sizeof(Tetra_point));
-						head_patch_tetra=(Head_patch_tetra *)malloc(sizeof(Head_patch_tetra));
+						tetra = (Tetra *)HECMW_malloc(sizeof(Tetra));
+						vertex_hash_table=(Hash_vertex *)HECMW_calloc(mesh->n_node*2, sizeof(Hash_vertex));
+						tetra_point=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
+						head_patch_tetra=(Head_patch_tetra *)HECMW_malloc(sizeof(Head_patch_tetra));
 						if((vertex_hash_table==NULL) || (tetra==NULL) || (tetra_point==NULL) || (head_patch_tetra==NULL))
 							HECMW_vis_memory_exit("initialize tetra");
 						for(j=0;j<mesh->n_node*2;j++) {
@@ -182,16 +183,16 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 		if(flag_tetra==1) {
 			num_nh_verts=tetra_point->ident;
 			num_nh_patch=head_patch_tetra->num_patch;
-			free(tetra);
+			HECMW_free(tetra);
 			for(j=0;j<mesh->n_node*2;j++) {
 				h1=vertex_hash_table[j].next_vertex;
 				for(i=0;i<vertex_hash_table[j].ident;i++) {
 					h2=h1->next_vertex;
-					free(h1);
+					HECMW_free(h1);
 					h1=h2;
 				}
 			}
-			free(vertex_hash_table);
+			HECMW_free(vertex_hash_table);
 		}
 
 
@@ -204,7 +205,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 
 			*sum_v = sum_verts;
 			*sum_t = sum_table;
-			free(cell);
+			HECMW_free(cell);
 
 			CS_polys = *CS_polys_head;
 
@@ -230,9 +231,9 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 		if((sum_verts+num_nh_verts)>0) {
 			result[sf_i].n_vertex=sum_verts+num_nh_verts;
 			result[sf_i].n_patch=sum_polys+num_nh_patch;
-			result[sf_i].vertex=(double *)calloc(result[sf_i].n_vertex*3, sizeof(double));
-			result[sf_i].patch=(int *)calloc(result[sf_i].n_patch*3, sizeof(int));
-			result[sf_i].color=(double *)calloc(result[sf_i].n_vertex, sizeof(double));
+			result[sf_i].vertex=(double *)HECMW_calloc(result[sf_i].n_vertex*3, sizeof(double));
+			result[sf_i].patch=(int *)HECMW_calloc(result[sf_i].n_patch*3, sizeof(int));
+			result[sf_i].color=(double *)HECMW_calloc(result[sf_i].n_vertex, sizeof(double));
 			if((result[sf_i].vertex==NULL) || (result[sf_i].patch==NULL) || (result[sf_i].color==NULL))
 				HECMW_vis_memory_exit("result");
 		}
@@ -269,7 +270,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 
 			/*  make polygon table and decide vertex ID
       of each object (alpha,beta,cross)  */
-			/*  trilist=(Triangle *)calloc(sum_polys+1,sizeof(Triangle));
+			/*  trilist=(Triangle *)HECMW_calloc(sum_polys+1,sizeof(Triangle));
 			 */
 			CS_polys_tmp = CS_polys = *CS_polys_head;
 			i = 0;
@@ -335,9 +336,9 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 				result[sf_i].color[sum_verts+p1->ident]=p1->cdata;
 				p2=p1;
 				p1=p1->nextpoint;
-				free(p2);
+				HECMW_free(p2);
 			}
-			free(tetra_point);
+			HECMW_free(tetra_point);
 		}
 		if(num_nh_patch>0) {
 			t1=head_patch_tetra->patch_link;
@@ -350,9 +351,9 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 				}
 				t2=t1;
 				t1=t1->next_patch;
-				free(t2);
+				HECMW_free(t2);
 			}
-			free(head_patch_tetra);
+			HECMW_free(head_patch_tetra);
 		}
 
 
@@ -381,9 +382,9 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 				result[sf_i].n_patch+=2;
 		}
 		result[sf_i].n_vertex=mesh->n_node;
-		result[sf_i].vertex=(double *)calloc(mesh->n_node*3, sizeof(double));
-		result[sf_i].color=(double *)calloc(mesh->n_node, sizeof(double));
-		result[sf_i].patch=(int *)calloc(result[sf_i].n_patch*3, sizeof(int));
+		result[sf_i].vertex=(double *)HECMW_calloc(mesh->n_node*3, sizeof(double));
+		result[sf_i].color=(double *)HECMW_calloc(mesh->n_node, sizeof(double));
+		result[sf_i].patch=(int *)HECMW_calloc(result[sf_i].n_patch*3, sizeof(int));
 		if((result[sf_i].vertex==NULL) || (result[sf_i].color==NULL) || (result[sf_i].patch==NULL))
 			HECMW_vis_memory_exit("result: vertex, color and patch");
 		for(i=0;i<mesh->n_node;i++) {
@@ -528,9 +529,9 @@ int chk_node_data(struct visual_buf *v, int s_comp, int c_comp)
 	for (i = 0; i < v->mesh->n_neighbor_pe; i++) {
 		ne = v->mesh->neighbor_pe[i];
 		n_export_node = v->mesh->export_index[i+1] - v->mesh->export_index[i];
-		global_node_id = (int *)calloc(n_export_node, sizeof(int));
-		shape_data = (double *)calloc(n_export_node, sizeof(double));
-		color_data = (double *)calloc(n_export_node, sizeof(double));
+		global_node_id = (int *)HECMW_calloc(n_export_node, sizeof(int));
+		shape_data = (double *)HECMW_calloc(n_export_node, sizeof(double));
+		color_data = (double *)HECMW_calloc(n_export_node, sizeof(double));
 		for (j = 0; j < n_export_node; j++) {
 			global_node_id[j]
 			               = v->mesh->global_node_id[v->mesh->export_node[export_base + j] - 1];
@@ -544,9 +545,9 @@ int chk_node_data(struct visual_buf *v, int s_comp, int c_comp)
 		HECMW_Send(shape_data, n_export_node, HECMW_DOUBLE, ne, 0, geofem_app_comm);
 		HECMW_Send(color_data, n_export_node, HECMW_DOUBLE, ne, 0, geofem_app_comm);
 
-		free(global_node_id);
-		free(shape_data);
-		free(color_data);
+		HECMW_free(global_node_id);
+		HECMW_free(shape_data);
+		HECMW_free(color_data);
 		export_base = v->mesh->export_index[i+1];
 
 		n_import_node = v->mesh->import_index[i+1] - v->mesh->import_index[i];
@@ -555,9 +556,9 @@ int chk_node_data(struct visual_buf *v, int s_comp, int c_comp)
 		if (imp_node != n_import_node) {
 			GEOFEM_abort(711, "chk_node_data error\n");
 		}
-		global_node_id = (int *)calloc(n_import_node, sizeof(int));
-		shape_data = (double *)calloc(n_import_node, sizeof(double));
-		color_data = (double *)calloc(n_import_node, sizeof(double));
+		global_node_id = (int *)HECMW_calloc(n_import_node, sizeof(int));
+		shape_data = (double *)HECMW_calloc(n_import_node, sizeof(double));
+		color_data = (double *)HECMW_calloc(n_import_node, sizeof(double));
 		HECMW_Recv(global_node_id, n_import_node, HECMW_INT, ne, HECMW_ANY_TAG,
 				geofem_app_comm, &stat);
 		HECMW_Recv(shape_data, n_import_node, HECMW_DOUBLE, ne, HECMW_ANY_TAG,
@@ -574,9 +575,9 @@ int chk_node_data(struct visual_buf *v, int s_comp, int c_comp)
 				}
 			}
 		}
-		free(global_node_id);
-		free(shape_data);
-		free(color_data);
+		HECMW_free(global_node_id);
+		HECMW_free(shape_data);
+		HECMW_free(color_data);
 		import_base = v->mesh->import_index[i+1];
 	}
 
@@ -714,7 +715,7 @@ void line_find(double isocolor, double c[3], Fgeom g[3], int k, Isohead *isohead
 			/*this edge is isoline*/
 			isohead[k].linenum++;
 			p1=isohead[k].nextline;
-			p2=(Isoline *)malloc(sizeof(Isoline));
+			p2=(Isoline *)HECMW_malloc(sizeof(Isoline));
 
 			p2->point[0].x=g[j].x;
 			p2->point[0].y=g[j].y;
@@ -738,7 +739,7 @@ void line_find(double isocolor, double c[3], Fgeom g[3], int k, Isohead *isohead
 	if(pnum==1) {
 		isohead[k].linenum++;
 		p1=isohead[k].nextline;
-		p2=(Isoline *)malloc(sizeof(Isoline));
+		p2=(Isoline *)HECMW_malloc(sizeof(Isoline));
 		for(m=0;m<2;m++) {
 			p2->point[m].x=isopoint[m].x;
 			p2->point[m].y=isopoint[m].y;
@@ -760,10 +761,10 @@ void isoline_free(int isonum,Isohead *isohead)
 		while(p1!=NULL) {
 			p2=p1;
 			p1=p1->nextline;
-			free(p2);
+			HECMW_free(p2);
 		}
 	}
-	free(isohead);
+	HECMW_free(isohead);
 	return;
 }
 

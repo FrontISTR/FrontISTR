@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include "hecmw_vis_ray_trace.h"
+#include "hecmw_malloc.h"
 
 
 #if 0
@@ -250,7 +251,7 @@ int find_surface_point(int index,VR_data *vd,double in[3], double out[3], double
 	double  tmp_dd, tmp_p[7];
 
 	num_surp=0;
-	surf_p1=(double *)calloc(7*vd->surface[index].num, sizeof(double));
+	surf_p1=(double *)HECMW_calloc(7*vd->surface[index].num, sizeof(double));
 	if(surf_p1==NULL) {
 		fprintf(stderr, "There is no enough memory for surf_p\n"),
 		exit(0);
@@ -352,8 +353,8 @@ int find_surface_point(int index,VR_data *vd,double in[3], double out[3], double
 	/*delete overlapped point*/
 	num_surp1=0;
 	if(num_surp>0) {
-		dd=(double *)calloc(num_surp, sizeof(double));
-		o_flag=(int *)calloc(num_surp, sizeof(int));
+		dd=(double *)HECMW_calloc(num_surp, sizeof(double));
+		o_flag=(int *)HECMW_calloc(num_surp, sizeof(int));
 		if((dd==NULL) || (o_flag==NULL)) {
 			fprintf(stderr, "There is no enough memory for dd and overlap_flag\n");
 			exit(0);
@@ -392,9 +393,9 @@ int find_surface_point(int index,VR_data *vd,double in[3], double out[3], double
 				num_surp1++;
 			}
 		}
-		free(dd);
-		free(o_flag);
-		free(surf_p1);
+		HECMW_free(dd);
+		HECMW_free(o_flag);
+		HECMW_free(surf_p1);
 	}
 	return(num_surp1);
 }

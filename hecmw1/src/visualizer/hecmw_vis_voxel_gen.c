@@ -22,6 +22,7 @@
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_comm_util.h"
 #include "hecmw_vis_ray_trace.h"
+#include "hecmw_malloc.h"
 
 
 void voxel_gen(double range[6], double c_range[2], int nv[3], double *voxel_dxyz, double *voxel_orig_xyz, int *level,
@@ -49,7 +50,7 @@ void voxel_gen(double range[6], double c_range[2], int nv[3], double *voxel_dxyz
 	HECMW_Comm_size(VIS_COMM, &pe_size);
 
 
-	s_range=(double *)calloc(6*pe_size, sizeof(double));
+	s_range=(double *)HECMW_calloc(6*pe_size, sizeof(double));
 	if(s_range==NULL)
 		HECMW_vis_memory_exit("s_range");
 	if(display_range_on==0) {
@@ -112,12 +113,12 @@ void voxel_gen(double range[6], double c_range[2], int nv[3], double *voxel_dxyz
 			dx=(trange[1]-trange[0])/nv[0];
 			dy=(trange[3]-trange[2])/nv[1];
 			dz=(trange[5]-trange[4])/nv[2];
-			neipe=(int *)calloc(pe_size, sizeof(int));
+			neipe=(int *)HECMW_calloc(pe_size, sizeof(int));
 			if(neipe==NULL)
 				HECMW_vis_memory_exit("in voxel_gen: neipe");
 			if(n_voxel==0)
 				HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E1042: n_voxel_x,n_voxel_y, and n_voxel_z cannot be less or equal to 0");
-			/*  vox->info = (Voxel_info *)calloc(n_voxel, sizeof(Voxel_info));
+			/*  vox->info = (Voxel_info *)HECMW_calloc(n_voxel, sizeof(Voxel_info));
   if(vox->info==NULL) {
 	  fprintf(stderr, "There is no enough memory for vox\n");
 	  exit(0);

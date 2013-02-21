@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef HECMW_MALLOC
 #define HECMW_malloc(size) HECMW_malloc_(size, __FILE__, __LINE__)

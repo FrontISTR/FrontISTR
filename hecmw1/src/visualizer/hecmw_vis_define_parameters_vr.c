@@ -18,6 +18,7 @@
 #include "hecmw_vis_ray_trace.h"
 
 #include "hecmw_font_texture.h"
+#include "hecmw_malloc.h"
 
 void find_color_minmax(double *var, int *empty_flag, int nx, int ny, int nz, double *mincolor, double *maxcolor)
 {
@@ -76,7 +77,7 @@ void generate_histogram_graph(double tmincolor, double tmaxcolor, double *var, i
 			fprintf(stderr, "Cannot generate the histogram output file\n");
 			exit(0);
 		}
-		graph=(double *)calloc(400*530*3, sizeof(double));
+		graph=(double *)HECMW_calloc(400*530*3, sizeof(double));
 		if(graph==NULL) {
 			fprintf(stderr, "There is no enough memory for graph\n");
 			exit(0);
@@ -235,7 +236,7 @@ void generate_histogram_graph(double tmincolor, double tmaxcolor, double *var, i
 
 
 		fclose(fp);
-		free(graph);
+		HECMW_free(graph);
 	}
 	return;
 }

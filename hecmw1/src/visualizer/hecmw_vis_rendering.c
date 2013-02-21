@@ -32,6 +32,7 @@
 #include "hecmw_vis_generate_histogram_sf.h"
 #include "hecmw_vis_surface_compute.h"
 #include "hecmw_vis_color_mapping.h"
+#include "hecmw_malloc.h"
 
 double *image;
 int ms,ns;
@@ -101,8 +102,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
   start_timestep=1;
   end_timestep=1000;
 	 */
-	mivalue=(double *)calloc(data->nn_component, sizeof(double));
-	mavalue=(double *)calloc(data->nn_component, sizeof(double));
+	mivalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
+	mavalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
 	if((mivalue==NULL) || (mavalue==NULL))
 		HECMW_vis_memory_exit("mivalue, mavalue");
 	if(pesize>1) {
@@ -140,7 +141,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 		generate_histogram_graph_sf(sf, color_list, data, mivalue, mavalue, result, mynode, pesize, VIS_COMM, sr->color_system_type);
 	if(sr->color_mapping_style==4) {
 		sr->interval_mapping_num=10;
-		sr->interval_point=(double *)calloc(22, sizeof(double));
+		sr->interval_point=(double *)HECMW_calloc(22, sizeof(double));
 		generate_interval_point_sf(sf, color_list, data, mivalue, mavalue, result, mynode, pesize, VIS_COMM, sr->interval_point);
 	}
 	if(stat_para[70]==0) {
@@ -225,7 +226,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 	}
 
 	if(stat_para[26]==0) {
-		sr->light_point=(double *)calloc(3, sizeof(double));
+		sr->light_point=(double *)HECMW_calloc(3, sizeof(double));
 		if(sr->light_point==NULL)
 			HECMW_vis_memory_exit("sr: light_point");
 
@@ -575,10 +576,10 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 		for(jjj=0;jjj<sr->deform_num_of_frames;jjj++) {
 			if(sr->deform_num_of_frames>1)
 				fprintf(stderr, "Start rendering deformation frame %d\n", jjj);
-			image=(double *)calloc(sr->xr*sr->yr*3, sizeof(double));
+			image=(double *)HECMW_calloc(sr->xr*sr->yr*3, sizeof(double));
 			if(image==NULL)
 				HECMW_vis_memory_exit("image");
-			/*   accum_opa=(double *)calloc(sr->xr*sr->yr, sizeof(double));
+			/*   accum_opa=(double *)HECMW_calloc(sr->xr*sr->yr, sizeof(double));
    if(accum_opa==NULL) {
 	   fprintf(stderr, "There is no enough memory: image\n");
 	   exit(0);
@@ -598,7 +599,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 		   accum_opa[j*xr+i]=0.0;
 	   }
 			 */
-			z_buffer=(double *)calloc(sr->xr*sr->yr, sizeof(double));
+			z_buffer=(double *)HECMW_calloc(sr->xr*sr->yr, sizeof(double));
 			if(z_buffer==NULL)
 				HECMW_vis_memory_exit("z_buffer");
 			for(j=0;j<sr->xr*sr->yr;j++)
@@ -639,9 +640,9 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 				if(sf[iii+1].deform_display_on==1) {
 					if((sf[iii+1].initial_style==2) || (sf[iii+1].initial_style==3)){
 						if(sr->smooth_shading==1) {
-							v_normal=(double *)calloc(result[iii].n_vertex*3, sizeof(double));
-							p_normal=(double *)calloc(result[iii].n_patch*4, sizeof(double));
-							v_num=(int *)calloc(result[iii].n_vertex, sizeof(int));
+							v_normal=(double *)HECMW_calloc(result[iii].n_vertex*3, sizeof(double));
+							p_normal=(double *)HECMW_calloc(result[iii].n_patch*4, sizeof(double));
+							v_num=(int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
 							if((v_normal==NULL) || (v_num==NULL) || (p_normal==NULL))
 								HECMW_vis_memory_exit("v_normal, p_normal");
 							for(k=0;k<result[iii].n_vertex;k++)
@@ -733,9 +734,9 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 					if((sf[iii+1].deform_style==2) || (sf[iii+1].deform_style==3)){
 						normal_flag=1;
 						if(sr->smooth_shading==1) {
-							v_normal=(double *)calloc(result[iii].n_vertex*3, sizeof(double));
-							p_normal=(double *)calloc(result[iii].n_patch*4, sizeof(double));
-							v_num=(int *)calloc(result[iii].n_vertex, sizeof(int));
+							v_normal=(double *)HECMW_calloc(result[iii].n_vertex*3, sizeof(double));
+							p_normal=(double *)HECMW_calloc(result[iii].n_patch*4, sizeof(double));
+							v_num=(int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
 							if((v_normal==NULL) || (v_num==NULL) || (p_normal==NULL))
 								HECMW_vis_memory_exit("v_normal_d, p_normal");
 							for(k=0;k<result[iii].n_vertex;k++)
@@ -1209,8 +1210,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 
 					if((sf[iii+1].display_method!=1) && (sf[iii+1].display_method!=4)) {
 						deltac=(maxcolor-mincolor)/(sf[iii+1].isoline_number+1);
-						iso_value=(double *)calloc(sf[iii+1].isoline_number, sizeof(double));
-						iso_rgb=(double *)calloc(sf[iii+1].isoline_number*3, sizeof(double));
+						iso_value=(double *)HECMW_calloc(sf[iii+1].isoline_number, sizeof(double));
+						iso_rgb=(double *)HECMW_calloc(sf[iii+1].isoline_number*3, sizeof(double));
 						for(m=0;m<sf[iii+1].isoline_number;m++) {
 							iso_value[m]=mincolor+deltac*(m+1);
 							if(sr->isoline_color[0]==-1.0) {
@@ -1242,9 +1243,9 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 					else {
 						normal_flag=1;
 						if(sr->smooth_shading==1) {
-							v_normal=(double *)calloc(result[iii].n_vertex*3, sizeof(double));
-							p_normal=(double *)calloc(result[iii].n_patch*4, sizeof(double));
-							v_num=(int *)calloc(result[iii].n_vertex, sizeof(int));
+							v_normal=(double *)HECMW_calloc(result[iii].n_vertex*3, sizeof(double));
+							p_normal=(double *)HECMW_calloc(result[iii].n_patch*4, sizeof(double));
+							v_num=(int *)HECMW_calloc(result[iii].n_vertex, sizeof(int));
 							if((v_normal==NULL) || (v_num==NULL) || (p_normal==NULL))
 								HECMW_vis_memory_exit("v_normal, p_normal");
 							for(k=0;k<result[iii].n_vertex;k++)
@@ -1460,8 +1461,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 
 					}
 					if((sf[iii+1].display_method!=1) && (sf[iii+1].display_method!=4)) {
-						free(iso_value);
-						free(iso_rgb);
+						HECMW_free(iso_value);
+						HECMW_free(iso_rgb);
 					}
 				} /* if deform_display=0 */
 			}
@@ -1481,8 +1482,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 				pix0_num=sr->xr*sr->yr-pix_num*(pesize-1);
 				if(mynode==0) pixn=pix0_num;
 				if(mynode!=0) pixn=pix_num;
-				n_subimage=(double *)calloc(pesize*pixn*3, sizeof(double));
-				n_subopa=(double *)calloc(pesize*pixn, sizeof(double));
+				n_subimage=(double *)HECMW_calloc(pesize*pixn*3, sizeof(double));
+				n_subopa=(double *)HECMW_calloc(pesize*pixn, sizeof(double));
 				if((n_subimage==NULL) || (n_subopa==NULL))
 					HECMW_vis_memory_exit("n_subimage, n_subopa");
 
@@ -1500,8 +1501,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 					for(j=0;j<pixn;j++)
 						n_subopa[mynode*pixn+j]=z_buffer[pix0_num+(mynode-1)*pix_num+j];
 
-				subimage=(double *)calloc(pixn*3, sizeof(double));
-				subopa=(double *)calloc(pixn, sizeof(double));
+				subimage=(double *)HECMW_calloc(pixn*3, sizeof(double));
+				subopa=(double *)HECMW_calloc(pixn, sizeof(double));
 				if((subimage==NULL) || (subopa==NULL))
 					HECMW_vis_memory_exit("subimage, subopa");
 				HECMW_Barrier(VIS_COMM);
@@ -1511,12 +1512,12 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 						for(k=0;k<pesize;k++) {
 							if(k!=i) {
 								if(k==0) {
-									subimage1=(double *)calloc(pix0_num*3, sizeof(double));
-									subopa1=(double *)calloc(pix0_num, sizeof(double));
+									subimage1=(double *)HECMW_calloc(pix0_num*3, sizeof(double));
+									subopa1=(double *)HECMW_calloc(pix0_num, sizeof(double));
 								}
 								else if(k!=0) {
-									subimage1=(double *)calloc(pix_num*3, sizeof(double));
-									subopa1=(double *)calloc(pix_num, sizeof(double));
+									subimage1=(double *)HECMW_calloc(pix_num*3, sizeof(double));
+									subopa1=(double *)HECMW_calloc(pix_num, sizeof(double));
 								}
 
 								if((subimage1==NULL) || (subopa1==NULL))
@@ -1542,8 +1543,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 									HECMW_Send(subopa1, pix_num, HECMW_DOUBLE, k, 0, VIS_COMM);
 								}
 
-								free(subimage1);
-								free(subopa1);
+								HECMW_free(subimage1);
+								HECMW_free(subopa1);
 							} /*if k!=i */
 						} /*loop k*/
 
@@ -1566,9 +1567,9 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 
 
 				composite_subimage_sf(pesize, pixn, n_subimage, n_subopa, subimage, subopa);
-				free(n_subimage);
-				free(n_subopa);
-				/*	free(subopa);
+				HECMW_free(n_subimage);
+				HECMW_free(n_subopa);
+				/*	HECMW_free(subopa);
 				 */
 				/*send subimage to master PE */
 				if(mynode!=0) {
@@ -1792,8 +1793,8 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 
 
 				}
-				free(subimage);
-				free(subopa);
+				HECMW_free(subimage);
+				HECMW_free(subopa);
 			}
 			if(mynode==0) {
 
@@ -1991,12 +1992,12 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 				fclose(outfp);
 
 			}
-			free(image);
-			free(z_buffer);
+			HECMW_free(image);
+			HECMW_free(z_buffer);
 			if(sr->smooth_shading==1) {
-				free(v_normal);
-				free(p_normal);
-				free(v_num);
+				HECMW_free(v_normal);
+				HECMW_free(p_normal);
+				HECMW_free(v_num);
 			}
 
 		}
@@ -2004,10 +2005,10 @@ void HECMW_vis_rendering_surface(struct surface_module *sf, Parameter_rendering 
 
 	/*
   if(pvr->surface_on==1) {
-	free(surface->color);
-	free(surface->vertex);
-	free(surface->patch);
-	free(surface);
+	HECMW_free(surface->color);
+	HECMW_free(surface->vertex);
+	HECMW_free(surface->patch);
+	HECMW_free(surface);
   }
 	 */
 	/*  fclose(fp2);

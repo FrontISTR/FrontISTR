@@ -18,6 +18,7 @@
 #include "hecmw_vis_comm_util.h"
 
 #include "hecmw_vis_mem_util.h"
+#include "hecmw_malloc.h"
 
 int HECMW_ANY_TAG;
 
@@ -31,7 +32,7 @@ void whole_copy_array(int *recv_num, int *global_recv_num, int mynode, int pesiz
 	if(mynode==0) {
 		for(j=0;j<pesize+1;j++)
 			global_recv_num[j]=recv_num[j];
-		tmp_recv=(int *)calloc(pesize+1, sizeof(int));
+		tmp_recv=(int *)HECMW_calloc(pesize+1, sizeof(int));
 		if(tmp_recv==NULL)
 			HECMW_vis_memory_exit("tmp_recv");
 		for(i=1;i<pesize;i++) {
@@ -41,7 +42,7 @@ void whole_copy_array(int *recv_num, int *global_recv_num, int mynode, int pesiz
 		}
 		for(i=1;i<pesize;i++)
 			HECMW_Send(global_recv_num,(pesize+1)*pesize,HECMW_INT, i, 0, repart_comm);
-		free(tmp_recv);
+		HECMW_free(tmp_recv);
 	}
 	else {
 		HECMW_Send(recv_num, pesize+1, HECMW_INT, 0, 0, repart_comm);
@@ -66,16 +67,16 @@ int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *s
 	int	num;
 
 	if (nflag == 0) {
-		sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
 		if (sta1 == NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: stat1");
-		sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
 		if (sta2 == NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: stat2");
-		if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: req1");
-		if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: req2");
 		nflag = 1;
@@ -91,10 +92,10 @@ int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *s
 		 */
 	}
 	HECMW_Barrier(repart_comm);
-	free(sta1);
-	free(sta2);
-	free(req1);
-	free(req2);
+	HECMW_free(sta1);
+	HECMW_free(sta2);
+	HECMW_free(req1);
+	HECMW_free(req2);
 
 	return 1;
 }
@@ -118,16 +119,16 @@ int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECM
   stack_export[my_rank+1]=stack_import[my_rank+1]-stack_import[my_rank];
 
   if (nflag == 0) {
-    sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
+    sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
     if (sta1 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat1");
-    sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
+    sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
     if (sta2 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat2");
-    if ((req1 = (HECMW_Request *)calloc(pesize-1, sizeof(HECMW_Request)))
+    if ((req1 = (HECMW_Request *)HECMW_calloc(pesize-1, sizeof(HECMW_Request)))
 	== NULL)
 	    HECMW_vis_memory_exit("HECMW_STATUS: req1");
-    if ((req2 = (HECMW_Request *)calloc(pesize-1, sizeof(HECMW_Request)))
+    if ((req2 = (HECMW_Request *)HECMW_calloc(pesize-1, sizeof(HECMW_Request)))
 	== NULL)
 	   HECMW_vis_memory_exit("HECMW_STATUS: req2");
     nflag = 1;
@@ -155,10 +156,10 @@ int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECM
 
   HECMW_Barrier(repart_comm);
 
-  free(sta1);
-  free(sta2);
-  free(req1);
-  free(req2);
+  HECMW_free(sta1);
+  HECMW_free(sta2);
+  HECMW_free(req1);
+  HECMW_free(req2);
 	 */
 	for(i=0;i<pesize;i++) {
 		if(i!=my_rank) {
@@ -198,21 +199,21 @@ int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int 
 	int	k;
 	int   *ws, *wr;
 
-	ws=(int *)calloc(n, sizeof(int));
-	wr=(int *)calloc(n, sizeof(int));
+	ws=(int *)HECMW_calloc(n, sizeof(int));
+	wr=(int *)HECMW_calloc(n, sizeof(int));
 	if((ws==NULL) || (wr==NULL))
 		HECMW_vis_memory_exit("send_recv: ws, wr");
 	if (nflag == 0) {
-		sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
 		if (sta1 == NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: stat1");
-		sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
 		if (sta2 == NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: stat2");
-		if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: req1");
-		if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("HECMW_STATUS: req2");
 		nflag = 1;
@@ -255,12 +256,12 @@ int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int 
 	/*
   HECMW_Waitall(neibpetot, req1, sta1);
 	 */
-	free(sta1);
-	free(sta2);
-	free(req1);
-	free(req2);
-	free(ws);
-	free(wr);
+	HECMW_free(sta1);
+	HECMW_free(sta2);
+	HECMW_free(req1);
+	HECMW_free(req2);
+	HECMW_free(ws);
+	HECMW_free(wr);
 	return 1;
 }
 
@@ -277,21 +278,21 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, 
 	int	k;
 	double   *ws, *wr;
 
-	ws=(double *)calloc(n, sizeof(double));
-	wr=(double *)calloc(n, sizeof(double));
+	ws=(double *)HECMW_calloc(n, sizeof(double));
+	wr=(double *)HECMW_calloc(n, sizeof(double));
 	if((ws==NULL) || (wr==NULL))
 		HECMW_vis_memory_exit("send_recv: ws, wr");
 	if (nflag == 0) {
-		sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
+		sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
 		if (sta1 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta1");
-		sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
+		sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
 		if (sta2 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta12");
-		if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req1");
-		if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(neibpetot, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req2");
 		nflag = 1;
@@ -341,12 +342,12 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, 
 
 	/*  HECMW_Waitall(neibpetot, req1, sta1);
 	 */
-	free(sta1);
-	free(sta2);
-	free(req1);
-	free(req2);
-	free(ws);
-	free(wr);
+	HECMW_free(sta1);
+	HECMW_free(sta2);
+	HECMW_free(req1);
+	HECMW_free(req2);
+	HECMW_free(ws);
+	HECMW_free(wr);
 	return 1;
 }
 
@@ -373,26 +374,26 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 	int	k;
 	int   *ws, *wr;
 
-	ws=(int *)calloc(n1, sizeof(int));
-	wr=(int *)calloc(n2, sizeof(int));
+	ws=(int *)HECMW_calloc(n1, sizeof(int));
+	wr=(int *)HECMW_calloc(n2, sizeof(int));
 	if((ws==NULL) || (wr==NULL))
 		HECMW_vis_memory_exit("ws, wr");
 	if (nflag == 0) {
-		/*    sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		/*    sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
     if (sta1 == NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
-    sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+    sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
     if (sta2 == NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
 		 */
-		if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req1");
-		if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req2");
 		nflag = 1;
@@ -446,13 +447,13 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 	/*
   HECMW_Waitall(neibpetot, req1, sta1);
 
-  free(sta1);
-  free(sta2);
+  HECMW_free(sta1);
+  HECMW_free(sta2);
 	 */
-	free(req1);
-	free(req2);
-	free(ws);
-	free(wr);
+	HECMW_free(req1);
+	HECMW_free(req2);
+	HECMW_free(ws);
+	HECMW_free(wr);
 	return;
 }
 
@@ -473,17 +474,17 @@ void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 	int	k;
 
 	if (nflag == 0) {
-		sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
+		sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
 		if (sta1 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta1");
-		sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
+		sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
 		if (sta2 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta2");
 
-		if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req1");
-		if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req2");
 		nflag = 1;
@@ -523,11 +524,11 @@ void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 
 	HECMW_Waitall(pesize, req1, sta1);
 
-	free(sta1);
-	free(sta2);
+	HECMW_free(sta1);
+	HECMW_free(sta2);
 
-	free(req1);
-	free(req2);
+	HECMW_free(req1);
+	HECMW_free(req2);
 	return;
 }
 
@@ -546,17 +547,17 @@ void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 	int	k;
 
 	if (nflag == 0) {
-		sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
+		sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
 		if (sta1 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta1");
-		sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
+		sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
 		if (sta2 == NULL)
 			HECMW_vis_memory_exit("send_recv: sta2");
 
-		if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req1");
-		if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req2");
 		nflag = 1;
@@ -598,11 +599,11 @@ void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 
 	HECMW_Waitall(pesize, req1, sta1);
 
-	free(sta1);
-	free(sta2);
+	HECMW_free(sta1);
+	HECMW_free(sta2);
 
-	free(req1);
-	free(req2);
+	HECMW_free(req1);
+	HECMW_free(req2);
 	return;
 }
 
@@ -661,26 +662,26 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
 	int	k;
 	double   *ws, *wr;
 
-	ws=(double *)calloc(n1, sizeof(int));
-	wr=(double *)calloc(n2, sizeof(int));
+	ws=(double *)HECMW_calloc(n1, sizeof(int));
+	wr=(double *)HECMW_calloc(n2, sizeof(int));
 	if((ws==NULL) || (wr==NULL))
 		HECMW_vis_memory_exit("send_recv: ws,wr");
 	if (nflag == 0) {
-		/*    sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+		/*    sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
     if (sta1 == NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
-    sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
+    sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
     if (sta2 == NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
 		 */
-		if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req1 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req1");
-		if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
+		if ((req2 = (HECMW_Request *)HECMW_calloc(pesize, sizeof(HECMW_Request)))
 				== NULL)
 			HECMW_vis_memory_exit("send_recv: req2");
 		nflag = 1;
@@ -723,12 +724,12 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
 	/*
   HECMW_Waitall(neibpetot, req1, sta1);
 
-  free(sta1);
-  free(sta2);
+  HECMW_free(sta1);
+  HECMW_free(sta2);
 	 */
-	free(req1);
-	free(req2);
-	free(ws);
-	free(wr);
+	HECMW_free(req1);
+	HECMW_free(req2);
+	HECMW_free(ws);
+	HECMW_free(wr);
 	return;
 }

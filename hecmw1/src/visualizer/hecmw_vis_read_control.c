@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "hecmw_vis_mem_util.h"
+#include "hecmw_malloc.h"
 
 
 int is_blank_line(char *buf){
@@ -324,7 +325,7 @@ static int set_keyword_visual(char *buf, PSF_link *psf, PVR_link *pvr) {
 
 	if((strncmp(para, "PSR", 3)==0) || (strncmp(para, "psr", 3)==0)) {
 		flag=1;
-		p1=(PSF_link *)calloc(1,sizeof(PSF_link));
+		p1=(PSF_link *)HECMW_calloc(1,sizeof(PSF_link));
 		if(p1==NULL)
 			HECMW_vis_memory_exit("PSF_link: p1");
 		p2=psf->next_psf;
@@ -367,7 +368,7 @@ static int set_keyword_visual(char *buf, PSF_link *psf, PVR_link *pvr) {
 	}
 	if((strncmp(para, "PVR", 3)==0) || (strncmp(para, "pvr", 3)==0)) {
 		flag=2;
-		t1=(PVR_link *)malloc(sizeof(PVR_link));
+		t1=(PVR_link *)HECMW_malloc(sizeof(PVR_link));
 		if(t1==NULL)
 			HECMW_vis_memory_exit("PVR_link: t1");
 		t2=pvr->next_pvr;
@@ -502,167 +503,167 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 		if((visual_method==1) && (cont_flag==1)) {
 			visual_method=0;
 			surface_num=get_keyword_surface_num(buf);
-			sf=(struct surface_module *)calloc(surface_num+1, sizeof(struct surface_module));
+			sf=(struct surface_module *)HECMW_calloc(surface_num+1, sizeof(struct surface_module));
 			if(sf==NULL)
 				HECMW_vis_memory_exit("surface parameters: sf");
 			sf[0].surface_style=surface_num;
-			sr=(Parameter_rendering *)calloc(1, sizeof(Parameter_rendering));
+			sr=(Parameter_rendering *)HECMW_calloc(1, sizeof(Parameter_rendering));
 			if(sr==NULL)
 				HECMW_vis_memory_exit("rendering parameters: sr");
 			sr->projection_style=1;
-			parameters=(char **)calloc(NUM_CONTROL_PSF, sizeof(char *));
-			len_para=(int *)calloc(NUM_CONTROL_PSF, sizeof(int));
-			stat_para=(int *)calloc(NUM_CONTROL_PSF, sizeof(int));
+			parameters=(char **)HECMW_calloc(NUM_CONTROL_PSF, sizeof(char *));
+			len_para=(int *)HECMW_calloc(NUM_CONTROL_PSF, sizeof(int));
+			stat_para=(int *)HECMW_calloc(NUM_CONTROL_PSF, sizeof(int));
 			for(i=0;i<NUM_CONTROL_PSF;i++) {
-				parameters[i]=(char *)calloc(128, sizeof(char));
+				parameters[i]=(char *)HECMW_calloc(128, sizeof(char));
 				if(parameters[i]==NULL)
 					HECMW_vis_memory_exit("tempory parameters: Parameter");
 			}
-			parameters[0]="surface_style";
+			strcpy(parameters[0], "surface_style");
 			len_para[0]=12;
-			parameters[1]="group_name";
+			strcpy(parameters[1], "group_name");
 			len_para[1]=10;
-			parameters[2]="defined_style";
+			strcpy(parameters[2], "defined_style");
 			len_para[2]=12;
-			parameters[3]="data_comp_name";
+			strcpy(parameters[3], "data_comp_name");
 			len_para[3]=12;
-			parameters[4]="data_comp";
+			strcpy(parameters[4], "data_comp");
 			len_para[4]=9;
-			parameters[5]="data_subcomp_name";
+			strcpy(parameters[5], "data_subcomp_name");
 			len_para[5]=14;
-			parameters[6]="data_subcomp";
+			strcpy(parameters[6], "data_subcomp");
 			len_para[6]=12;
-			parameters[7]="iso_value";
+			strcpy(parameters[7], "iso_value");
 			len_para[7]=9;
-			parameters[8]="method";
+			strcpy(parameters[8], "method");
 			len_para[8]=6;
-			parameters[9]="point";
+			strcpy(parameters[9], "point");
 			len_para[9]=5;
-			parameters[10]="radius";
+			strcpy(parameters[10], "radius");
 			len_para[10]=6;
-			parameters[11]="length";
+			strcpy(parameters[11], "length");
 			len_para[11]=6;
-			parameters[12]="coef";
+			strcpy(parameters[12], "coef");
 			len_para[12]=4;
-			parameters[13]="display_method";
+			strcpy(parameters[13], "display_method");
 			len_para[13]=14;
-			parameters[14]="color_comp_name";
+			strcpy(parameters[14], "color_comp_name");
 			len_para[14]=14;
-			parameters[15]="color_comp";
+			strcpy(parameters[15], "color_comp");
 			len_para[15]=10;
-			parameters[16]="color_subcomp_name";
+			strcpy(parameters[16], "color_subcomp_name");
 			len_para[16]=18;
-			parameters[17]="color_subcomp";
+			strcpy(parameters[17], "color_subcomp");
 			len_para[17]=13;
-			parameters[18]="isoline_number";
+			strcpy(parameters[18], "isoline_number");
 			len_para[18]=14;
-			parameters[19]="specified_color";
+			strcpy(parameters[19], "specified_color");
 			len_para[19]=14;
-			parameters[20]="output_type";
+			strcpy(parameters[20], "output_type");
 			len_para[20]=11;
-			parameters[21]="range_filename";
+			strcpy(parameters[21], "range_filename");
 			len_para[21]=10;
-			parameters[22]="normalize_on";
+			strcpy(parameters[22], "normalize_on");
 			len_para[22]=12;
 
-			parameters[23]="x_resolution";
-			parameters[24]="y_resolution";
+			strcpy(parameters[23], "x_resolution");
+			strcpy(parameters[24], "y_resolution");
 			len_para[23]=len_para[24]=12;
-			parameters[25]="num_of_lights";
+			strcpy(parameters[25], "num_of_lights");
 			len_para[25]=13;
-			parameters[26]="position_of_lights";
+			strcpy(parameters[26], "position_of_lights");
 			len_para[26]=18;
-			parameters[27]="viewpoint";
+			strcpy(parameters[27], "viewpoint");
 			len_para[27]=9;
-			parameters[28]="look_at_point";
+			strcpy(parameters[28], "look_at_point");
 			len_para[28]=13;
-			parameters[29]="up_direction";
+			strcpy(parameters[29], "up_direction");
 			len_para[29]=12;
-			parameters[30]="ambient_coef";
+			strcpy(parameters[30], "ambient_coef");
 			len_para[30]=12;
-			parameters[31]="diffuse_coef";
+			strcpy(parameters[31], "diffuse_coef");
 			len_para[31]=12;
-			parameters[32]="specular_coef";
+			strcpy(parameters[32], "specular_coef");
 			len_para[32]=13;
-			parameters[33]="color_mapping_style";
+			strcpy(parameters[33], "color_mapping_style");
 			len_para[33]=19;
-			parameters[34]="interval_mapping_num";
+			strcpy(parameters[34], "interval_mapping_num");
 			len_para[34]=20;
-			parameters[35]="interval_mapping";
+			strcpy(parameters[35], "interval_mapping");
 			len_para[35]=16;
-			parameters[36]="rotate_style";
+			strcpy(parameters[36], "rotate_style");
 			len_para[36]=12;
-			parameters[37]="rotate_num_of_frames";
+			strcpy(parameters[37], "rotate_num_of_frames");
 			len_para[37]=15;
-			parameters[38]="color_mapping_bar_on";
+			strcpy(parameters[38], "color_mapping_bar_on");
 			len_para[38]=17;
-			parameters[39]="scale_marking_on";
+			strcpy(parameters[39], "scale_marking_on");
 			len_para[39]=15;
-			parameters[40]="background_color";
+			strcpy(parameters[40], "background_color");
 			len_para[40]=12;
-			parameters[41]="font_color";
+			strcpy(parameters[41], "font_color");
 			len_para[41]=9;
-			parameters[42]="color_system_type";
+			strcpy(parameters[42], "color_system_type");
 			len_para[42]=12;
-			parameters[43]="font_size";
+			strcpy(parameters[43], "font_size");
 			len_para[43]=8;
-			parameters[44]="color_bar_style";
+			strcpy(parameters[44], "color_bar_style");
 			len_para[44]=13;
-			parameters[45]="fixed_range_on";
+			strcpy(parameters[45], "fixed_range_on");
 			len_para[45]=11;
-			parameters[46]="range_value";
+			strcpy(parameters[46], "range_value");
 			len_para[46]=11;
-			parameters[47]="num_of_scale";
+			strcpy(parameters[47], "num_of_scale");
 			len_para[47]=11;
-			parameters[48]="mark_0_on";
+			strcpy(parameters[48], "mark_0_on");
 			len_para[48]=9;
-			parameters[49]="opacity_mapping_style";
+			strcpy(parameters[49], "opacity_mapping_style");
 			len_para[49]=21;
-			parameters[50]="opa_value";
+			strcpy(parameters[50], "opa_value");
 			len_para[50]=8;
-			parameters[51]="num_of_features";
+			strcpy(parameters[51], "num_of_features");
 			len_para[51]=14;
-			parameters[52]="fea_point";
+			strcpy(parameters[52], "fea_point");
 			len_para[52]=8;
-			parameters[53]="lookup_filename";
+			strcpy(parameters[53], "lookup_filename");
 			len_para[53]=15;
-			parameters[54]="histogram_on";
+			strcpy(parameters[54], "histogram_on");
 			len_para[54]=11;
-			parameters[55]="boundary_line_on";
+			strcpy(parameters[55], "boundary_line_on");
 			len_para[55]=11;
-			parameters[56]="isoline_color";
+			strcpy(parameters[56], "isoline_color");
 			len_para[56]=12;
-			parameters[57]="time_mark_on";
+			strcpy(parameters[57], "time_mark_on");
 			len_para[57]=10;
-			parameters[58]="fixed_scale_mark";
+			strcpy(parameters[58], "fixed_scale_mark");
 			len_para[58]=15;
-			parameters[59]="deform_display_on";
+			strcpy(parameters[59], "deform_display_on");
 			len_para[59]=13;
-			parameters[60]="deform_scale";
+			strcpy(parameters[60], "deform_scale");
 			len_para[60]=11;
-			parameters[61]="initial_style";
+			strcpy(parameters[61], "initial_style");
 			len_para[61]=12;
-			parameters[62]="deform_style";
+			strcpy(parameters[62], "deform_style");
 			len_para[62]=11;
-			parameters[63]="deform_comp_name";
+			strcpy(parameters[63], "deform_comp_name");
 			len_para[63]=15;
-			parameters[64]="deform_comp";
+			strcpy(parameters[64], "deform_comp");
 			len_para[64]=11;
-			parameters[65]="initial_line_color";
+			strcpy(parameters[65], "initial_line_color");
 			len_para[65]=15;
-			parameters[66]="deform_line_color";
+			strcpy(parameters[66], "deform_line_color");
 			len_para[66]=15;
-			parameters[67]="deform_num_of_frames";
+			strcpy(parameters[67], "deform_num_of_frames");
 			len_para[67]=15;
-			parameters[68]="smooth_shading_on";
+			strcpy(parameters[68], "smooth_shading_on");
 			len_para[68]=15;
-			parameters[69]="real_deform_scale";
+			strcpy(parameters[69], "real_deform_scale");
 			len_para[69]=16;
-			parameters[70]="fixed_mesh_range";
+			strcpy(parameters[70], "fixed_mesh_range");
 			len_para[70]=14;
-			parameters[71]="start_time";
+			strcpy(parameters[71], "start_time");
 			len_para[71]=9;
-			parameters[72]="time_interval";
+			strcpy(parameters[72], "time_interval");
 			len_para[72]=9;
 
 			for(i=0;i<NUM_CONTROL_PSF;i++) {
@@ -846,7 +847,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 										sr->num_of_lights=get_int_item(para, buf, &location);
 										break;
 									case 26:
-										sr->light_point=(double *)calloc(sr->num_of_lights*3, sizeof(double));
+										sr->light_point=(double *)HECMW_calloc(sr->num_of_lights*3, sizeof(double));
 										if(sr->light_point==NULL)
 											HECMW_vis_memory_exit("sr: light_point");
 
@@ -900,7 +901,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 										break;
 									case 35:
 										if(sr->color_mapping_style==2) {
-											sr->interval_point=(double *)calloc(2, sizeof(double));
+											sr->interval_point=(double *)HECMW_calloc(2, sizeof(double));
 
 											if(sr->interval_point==NULL)
 												HECMW_vis_memory_exit("interval_point");
@@ -909,7 +910,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 											sr->interval_point[1]=get_double_item(para, buf, &location);
 										}
 										else if(sr->color_mapping_style==3) {
-											sr->interval_point=(double *)calloc(2*(sr->interval_mapping_num+1), sizeof(double));
+											sr->interval_point=(double *)HECMW_calloc(2*(sr->interval_mapping_num+1), sizeof(double));
 											if(sr->interval_point==NULL)
 												HECMW_vis_memory_exit("interval_point");
 
@@ -983,10 +984,10 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 										break;
 									case 52:
 										if(sr->transfer_function_style==3)
-											sr->fea_point=(double *)calloc(sr->num_of_features*3, sizeof(double));
+											sr->fea_point=(double *)HECMW_calloc(sr->num_of_features*3, sizeof(double));
 
 										else if(sr->transfer_function_style==4)
-											sr->fea_point=(double *)calloc(sr->num_of_features*3, sizeof(double));
+											sr->fea_point=(double *)HECMW_calloc(sr->num_of_features*3, sizeof(double));
 										if(sr->fea_point==NULL)
 											HECMW_vis_memory_exit("sr: fea_point");
 
@@ -1513,130 +1514,132 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 
 			for(i=0;i<NUM_CONTROL_PSF;i++)
 				p1->stat_para[i]=stat_para[i];
-			free(parameters);
-			free(stat_para);
-			free(len_para);
+			for(i=0;i<NUM_CONTROL_PSF;i++)
+				HECMW_free(parameters[i]);
+			HECMW_free(parameters);
+			HECMW_free(stat_para);
+			HECMW_free(len_para);
 
 		} /*end if visual_method=1 */
 		else if((visual_method==2) && (cont_flag==1)) {
 			visual_method=0;
-			vr=(Parameter_vr *)malloc(sizeof(Parameter_vr));
+			vr=(Parameter_vr *)HECMW_malloc(sizeof(Parameter_vr));
 			if(vr==NULL)
 				HECMW_vis_memory_exit("PVR parameters: vr");
 			vr->projection_style=1;
 
 
 			for(i=0;i<NUM_CONTROL_PVR;i++) {
-				parameters=(char **)calloc(NUM_CONTROL_PVR, sizeof(char *));
-				len_para=(int *)calloc(NUM_CONTROL_PVR, sizeof(int));
-				stat_para=(int *)calloc(NUM_CONTROL_PVR, sizeof(int));
-				parameters[i]=(char *)calloc(128, sizeof(char));
+				parameters=(char **)HECMW_calloc(NUM_CONTROL_PVR, sizeof(char *));
+				len_para=(int *)HECMW_calloc(NUM_CONTROL_PVR, sizeof(int));
+				stat_para=(int *)HECMW_calloc(NUM_CONTROL_PVR, sizeof(int));
+				parameters[i]=(char *)HECMW_calloc(128, sizeof(char));
 				if(parameters[i]==NULL)
 					HECMW_vis_memory_exit("tempory variable parameters");
 			}
 			vr->opa_value=0.0;
 			vr->color_comp=-1;
 			vr->color_subcomp=-1;
-			parameters[0]="maximum_refinement";
+			strcpy(parameters[0], "maximum_refinement");
 			len_para[0]=18;
-			parameters[1]="x_resolution";
-			parameters[2]="y_resolution";
+			strcpy(parameters[1], "x_resolution");
+			strcpy(parameters[2], "y_resolution");
 			len_para[1]=len_para[2]=12;
-			parameters[3]="num_of_lights";
+			strcpy(parameters[3], "num_of_lights");
 			len_para[3]=13;
-			parameters[4]="position_of_lights";
+			strcpy(parameters[4], "position_of_lights");
 			len_para[4]=18;
-			parameters[5]="viewpoint";
+			strcpy(parameters[5], "viewpoint");
 			len_para[5]=9;
-			parameters[6]="look_at_point";
+			strcpy(parameters[6], "look_at_point");
 			len_para[6]=13;
-			parameters[7]="up_direction";
+			strcpy(parameters[7], "up_direction");
 			len_para[7]=12;
-			parameters[8]="ambient_coef";
+			strcpy(parameters[8], "ambient_coef");
 			len_para[8]=12;
-			parameters[9]="diffuse_coef";
+			strcpy(parameters[9], "diffuse_coef");
 			len_para[9]=12;
-			parameters[10]="specular_coef";
+			strcpy(parameters[10], "specular_coef");
 			len_para[10]=13;
-			parameters[11]="surface_on";
+			strcpy(parameters[11], "surface_on");
 			len_para[11]=10;
-			parameters[12]="surface_opacity";
+			strcpy(parameters[12], "surface_opacity");
 			len_para[12]=15;
-			parameters[13]="color_mapping_style";
+			strcpy(parameters[13], "color_mapping_style");
 			len_para[13]=19;
-			parameters[14]="interval_mapping_num";
+			strcpy(parameters[14], "interval_mapping_num");
 			len_para[14]=20;
-			parameters[15]="interval_mapping";
+			strcpy(parameters[15], "interval_mapping");
 			len_para[15]=16;
-			parameters[16]="opacity_mapping_style";
+			strcpy(parameters[16], "opacity_mapping_style");
 			len_para[16]=21;
-			parameters[17]="opacity_value";
+			strcpy(parameters[17], "opacity_value");
 			len_para[17]=13;
-			parameters[18]="num_of_features";
+			strcpy(parameters[18], "num_of_features");
 			len_para[18]=14;
-			parameters[19]="feature_points";
+			strcpy(parameters[19], "feature_points");
 			len_para[19]=14;
-			parameters[20]="lookup_filename";
+			strcpy(parameters[20], "lookup_filename");
 			len_para[20]=15;
-			parameters[21]="rotate_style";
+			strcpy(parameters[21], "rotate_style");
 			len_para[21]=12;
-			parameters[22]="voxel_filename";
+			strcpy(parameters[22], "voxel_filename");
 			len_para[22]=10;
-			parameters[23]="color_mapping_bar_on";
+			strcpy(parameters[23], "color_mapping_bar_on");
 			len_para[23]=17;
-			parameters[24]="scale_marking_on";
+			strcpy(parameters[24], "scale_marking_on");
 			len_para[24]=15;
-			parameters[25]="color_comp_name";
+			strcpy(parameters[25], "color_comp_name");
 			len_para[25]=14;
-			parameters[26]="color_subcomp_name";
+			strcpy(parameters[26], "color_subcomp_name");
 			len_para[26]=17;
-			parameters[27]="n_voxel_x";
+			strcpy(parameters[27], "n_voxel_x");
 			len_para[27]=9;
-			parameters[28]="n_voxel_y";
+			strcpy(parameters[28], "n_voxel_y");
 			len_para[28]=9;
-			parameters[29]="n_voxel_z";
+			strcpy(parameters[29], "n_voxel_z");
 			len_para[29]=9;
-			parameters[30]="surface_filename";
+			strcpy(parameters[30], "surface_filename");
 			len_para[30]=12;
-			parameters[31]="num_of_frames";
+			strcpy(parameters[31], "num_of_frames");
 			len_para[31]=12;
-			parameters[32]="background_color";
+			strcpy(parameters[32], "background_color");
 			len_para[32]=12;
-			parameters[33]="font_color";
+			strcpy(parameters[33], "font_color");
 			len_para[33]=9;
-			parameters[34]="color_system_type";
+			strcpy(parameters[34], "color_system_type");
 			len_para[34]=12;
-			parameters[35]="font_size";
+			strcpy(parameters[35], "font_size");
 			len_para[35]=8;
-			parameters[36]="color_bar_style";
+			strcpy(parameters[36], "color_bar_style");
 			len_para[36]=13;
-			parameters[37]="fixed_range_on";
+			strcpy(parameters[37], "fixed_range_on");
 			len_para[37]=11;
-			parameters[38]="range_value";
+			strcpy(parameters[38], "range_value");
 			len_para[38]=11;
-			parameters[39]="num_of_scale";
+			strcpy(parameters[39], "num_of_scale");
 			len_para[39]=11;
-			parameters[40]="mark_0_on";
+			strcpy(parameters[40], "mark_0_on");
 			len_para[40]=9;
-			parameters[41]="remove_0_display_on";
+			strcpy(parameters[41], "remove_0_display_on");
 			len_para[41]=17;
-			parameters[42]="x_specified_level";
+			strcpy(parameters[42], "x_specified_level");
 			len_para[42]=15;
-			parameters[43]="y_specified_level";
+			strcpy(parameters[43], "y_specified_level");
 			len_para[43]=15;
-			parameters[44]="z_specified_level";
+			strcpy(parameters[44], "z_specified_level");
 			len_para[44]=15;
-			parameters[45]="histogram_on";
+			strcpy(parameters[45], "histogram_on");
 			len_para[45]=10;
-			parameters[46]="display_range";
+			strcpy(parameters[46], "display_range");
 			len_para[46]=13;
-			parameters[47]="time_mark_on";
+			strcpy(parameters[47], "time_mark_on");
 			len_para[47]=10;
-			parameters[48]="fixed_scale_mark";
+			strcpy(parameters[48], "fixed_scale_mark");
 			len_para[48]=15;
-			parameters[49]="color_comp";
+			strcpy(parameters[49], "color_comp");
 			len_para[49]=9;
-			parameters[50]="color_subcomp";
+			strcpy(parameters[50], "color_subcomp");
 			len_para[50]=12;
 
 
@@ -1682,7 +1685,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 							vr->num_of_lights=get_int_item(para, buf, &location);
 							break;
 						case 4:
-							vr->light_point=(double *)calloc(vr->num_of_lights*3, sizeof(double));
+							vr->light_point=(double *)HECMW_calloc(vr->num_of_lights*3, sizeof(double));
 							if(vr->light_point==NULL)
 								HECMW_vis_memory_exit("Parameter vr: light_point");
 
@@ -1743,7 +1746,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 							break;
 						case 15:
 							if(vr->color_mapping_style==2) {
-								vr->interval_point=(double *)calloc(2, sizeof(double));
+								vr->interval_point=(double *)HECMW_calloc(2, sizeof(double));
 
 								if(vr->interval_point==NULL)
 									HECMW_vis_memory_exit("interval point");
@@ -1752,7 +1755,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 								vr->interval_point[1]=get_double_item(para, buf, &location);
 							}
 							else if(vr->color_mapping_style==3) {
-								vr->interval_point=(double *)calloc(2*(vr->interval_mapping_num+1), sizeof(double));
+								vr->interval_point=(double *)HECMW_calloc(2*(vr->interval_mapping_num+1), sizeof(double));
 								if(vr->interval_point==NULL)
 									HECMW_vis_memory_exit("interval point");
 
@@ -1779,10 +1782,10 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 							break;
 						case 19:
 							if(vr->transfer_function_style==3)
-								vr->fea_point=(double *)calloc(vr->num_of_features*3, sizeof(double));
+								vr->fea_point=(double *)HECMW_calloc(vr->num_of_features*3, sizeof(double));
 
 							else if(vr->transfer_function_style==4)
-								vr->fea_point=(double *)calloc(vr->num_of_features*3, sizeof(double));
+								vr->fea_point=(double *)HECMW_calloc(vr->num_of_features*3, sizeof(double));
 							if(vr->fea_point==NULL)
 								HECMW_vis_memory_exit("vr: fea_point");
 
@@ -2223,9 +2226,11 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 
 			for(i=0;i<NUM_CONTROL_PVR;i++)
 				t1->stat_para[i]=stat_para[i];
-			free(parameters);
-			free(stat_para);
-			free(len_para);
+			for(i=0;i<NUM_CONTROL_PVR;i++)
+				HECMW_free(parameters[i]);
+			HECMW_free(parameters);
+			HECMW_free(stat_para);
+			HECMW_free(len_para);
 		} /*end if visual_method=2 */
 
 

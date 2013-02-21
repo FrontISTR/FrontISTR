@@ -39,7 +39,7 @@ void HECMW_vis_print_exit(char *var)
 
 void mfree(void *pointer)
 {
-	free(pointer);
+	HECMW_free(pointer);
 	pointer = NULL;
 }
 
@@ -48,7 +48,7 @@ Point *alloc_verts(int num)
 	int i;
 	Point *verts;
 
-	if ((verts = (Point *) calloc(num,sizeof(Point))) == NULL) {
+	if ((verts = (Point *) HECMW_calloc(num,sizeof(Point))) == NULL) {
 		fprintf(stderr,"There is not enough memory, alloc_verts\n");
 		return NULL;
 	}
@@ -70,7 +70,7 @@ Polygon *alloc_polygons(int num)
 	int	i;
 	Polygon *polygons;
 
-	if ((polygons = (Polygon *) calloc(num,sizeof(Polygon))) == NULL) {
+	if ((polygons = (Polygon *) HECMW_calloc(num,sizeof(Polygon))) == NULL) {
 		fprintf(stderr,"There is not enough memory, alloc_polygons\n");
 		return NULL;
 	}

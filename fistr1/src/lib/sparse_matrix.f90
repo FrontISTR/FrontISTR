@@ -199,13 +199,13 @@ contains
     integer(kind=kint) :: i,ierr
     ! OFFSET
     !if (myrank == 0) then
-       if (associated(spMAT%N_COUNTS)) deallocate(spMAT%N_COUNTS)
-       if (associated(spMAT%DISPLS)) deallocate(spMAT%DISPLS)
-       allocate(spMAT%N_COUNTS(nprocs), spMAT%DISPLS(nprocs), stat=ierr)
-       if (ierr /= 0) then
-         write(*,*) " Allocation error, spMAT%N_COUNTS, spMAT%DISPLS"
-         call hecmw_abort(hecmw_comm_get_comm())
-       endif
+    if (associated(spMAT%N_COUNTS)) deallocate(spMAT%N_COUNTS)
+    if (associated(spMAT%DISPLS)) deallocate(spMAT%DISPLS)
+    allocate(spMAT%N_COUNTS(nprocs), spMAT%DISPLS(nprocs), stat=ierr)
+    if (ierr /= 0) then
+      write(*,*) " Allocation error, spMAT%N_COUNTS, spMAT%DISPLS"
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
     !endif
     if (nprocs > 1) then
        call HECMW_GATHER_INT_1(spMAT%N_loc, &

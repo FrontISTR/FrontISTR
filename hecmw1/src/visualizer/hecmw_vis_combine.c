@@ -22,6 +22,7 @@
 #include <math.h>
 #include "hecmw_vis_comm_util.h"
 #include "hecmw_vis_generate_histogram_sf.c"
+#include "hecmw_malloc.h"
 
 
 static void find_minmax_disp(struct surface_module *sf, Result *result,HECMW_Comm VIS_COMM, double disp_min[5],
@@ -120,8 +121,8 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		tmaxz=maxz;
 	}
 	rgbrange[0]=rgbrange[1]=rgbrange[2]=1.0;
-	mivalue=(double *)calloc(data->nn_component, sizeof(double));
-	mavalue=(double *)calloc(data->nn_component, sizeof(double));
+	mivalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
+	mavalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
 	if((mivalue==NULL) || (mavalue==NULL))
 		HECMW_vis_memory_exit("mivalue, mavalue");
 	if(pesize>1) {
@@ -140,8 +141,8 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		HECMW_Send(&tpatch, 1, HECMW_INT, MASTER_PE, 0, VIS_COMM);
 	}
 	if (mynode == MASTER_PE) {
-		n_vertex = (int *)calloc(pesize, sizeof(int));
-		n_patch = (int *)calloc(pesize, sizeof(int));
+		n_vertex = (int *)HECMW_calloc(pesize, sizeof(int));
+		n_patch = (int *)HECMW_calloc(pesize, sizeof(int));
 
 		n_vertex[MASTER_PE]=tvertex;
 		n_patch[MASTER_PE]=tpatch;
@@ -212,7 +213,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 
 	if (mynode != 0) {
 		if (tvertex>0) {
-			vcoord = (double *) calloc(tvertex*3, sizeof(double));
+			vcoord = (double *) HECMW_calloc(tvertex*3, sizeof(double));
 			if (vcoord == NULL)
 				HECMW_vis_memory_exit("vcoord");
 
@@ -243,7 +244,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 
 	if (mynode == 0) {
 		if (n_vertex[0]>0) {
-			vcoord = (double *) calloc(n_vertex[0]*3, sizeof(double));
+			vcoord = (double *) HECMW_calloc(n_vertex[0]*3, sizeof(double));
 			if (vcoord == NULL)
 				HECMW_vis_memory_exit("vcoord");
 			s_vertex=0;
@@ -269,7 +270,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		}
 		for (i = 1; i < pesize; i++) {
 			if (n_vertex[i]>0) {
-				coord= (double *)calloc(n_vertex[i]*3, sizeof(double));
+				coord= (double *)HECMW_calloc(n_vertex[i]*3, sizeof(double));
 				HECMW_Recv(coord, n_vertex[i]*3, HECMW_DOUBLE, i, HECMW_ANY_TAG,
 						VIS_COMM, &stat);
 				/*  sprintf(outfile3, "%s.%d.%d.tmp", outfile1, *timestep, i);
@@ -295,14 +296,14 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 						fprintf(outfp, "%d,0,0,1,46,0,0,0,0,0,0,%e,%e,%e,\n", nbase+j+1, coord[j*3], coord[j*3+1], coord[j*3+2]);
 
 				}
-				free(coord);
+				HECMW_free(coord);
 			}
 		}
 	}
 	/* send patches----- */
 	if(mynode!=0) {
 		if (tpatch>0) {
-			plist = (int *) calloc(tpatch*3, sizeof(int));
+			plist = (int *) HECMW_calloc(tpatch*3, sizeof(int));
 			if (plist== NULL)
 				HECMW_vis_memory_exit("plist");
 			s_patch=0;
@@ -340,7 +341,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		}
 
 		if (n_patch[0]>0) {
-			plist = (int *) calloc(n_patch[0]*3, sizeof(int));
+			plist = (int *) HECMW_calloc(n_patch[0]*3, sizeof(int));
 			if (plist== NULL)
 				HECMW_vis_memory_exit("plist");
 			/*	for(i=0;i<n_patch[0];i++) {
@@ -391,7 +392,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 
 		for (i = 1; i < pesize; i++) {
 			if (n_patch[i]>0) {
-				pplist= (int *)calloc(n_patch[i]*3, sizeof(int));
+				pplist= (int *)HECMW_calloc(n_patch[i]*3, sizeof(int));
 				HECMW_Recv(pplist, n_patch[i]*3, HECMW_INT, i, HECMW_ANY_TAG,
 						VIS_COMM, &stat);
 				nbase=0; pbase=0;
@@ -419,7 +420,7 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 				}
 
 
-				free(pplist);
+				HECMW_free(pplist);
 			}
 		}
 	}
@@ -433,12 +434,12 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 
 	if(mynode!=0) {
 		if (tvertex>0) {
-			vcolor = (double *) calloc(tvertex, sizeof(double));
+			vcolor = (double *) HECMW_calloc(tvertex, sizeof(double));
 			if(sf[1].deform_display_on==1)
-				vdisp=(double *)calloc(tvertex*3, sizeof(double));
+				vdisp=(double *)HECMW_calloc(tvertex*3, sizeof(double));
 
-			c_style=(int *) calloc(tvertex, sizeof(int));
-			c_colorid=(int *)calloc(tvertex, sizeof(int));
+			c_style=(int *) HECMW_calloc(tvertex, sizeof(int));
+			c_colorid=(int *)HECMW_calloc(tvertex, sizeof(int));
 			if ((vcolor== NULL) || (c_style==NULL) || (c_colorid==NULL))
 				HECMW_vis_memory_exit("vcolor, c_style and c_colorid");
 			s_vertex=0;
@@ -470,15 +471,15 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		}
 
 		if(tvertex>0) {
-			free(vcoord);
-			free(vcolor);
-			free(c_style);
-			free(c_colorid);
+			HECMW_free(vcoord);
+			HECMW_free(vcolor);
+			HECMW_free(c_style);
+			HECMW_free(c_colorid);
 			if(sf[1].deform_display_on==1)
-				free(vdisp);
+				HECMW_free(vdisp);
 		}
 		if(tpatch>0)
-			free(plist);
+			HECMW_free(plist);
 
 	}
 	if(mynode==0) {
@@ -667,8 +668,8 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 				fprintf(outfp, "   451\n");
 				/* first find maximum data value */
 				find_minmax_disp(sf, result,VIS_COMM, disp_min, disp_max, pesize);
-				tcolor=(double *)calloc(n_node, sizeof(double));
-				tdisp=(double *)calloc(n_node*4, sizeof(double));
+				tcolor=(double *)HECMW_calloc(n_node, sizeof(double));
+				tdisp=(double *)HECMW_calloc(n_node*4, sizeof(double));
 
 			}
 			if((sf[1].output_type==4) && (sf[1].deform_display_on!=1)) {
@@ -687,11 +688,11 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 
 
 			}
-			vcolor= (double *)calloc(n_vertex[0], sizeof(double));
-			c_style=(int *)calloc(n_vertex[0], sizeof(int));
-			c_colorid=(int *)calloc(n_vertex[0], sizeof(int));
+			vcolor= (double *)HECMW_calloc(n_vertex[0], sizeof(double));
+			c_style=(int *)HECMW_calloc(n_vertex[0], sizeof(int));
+			c_colorid=(int *)HECMW_calloc(n_vertex[0], sizeof(int));
 			if(sf[1].deform_display_on==1)
-				vdisp=(double *)calloc(n_vertex[0]*3, sizeof(double));
+				vdisp=(double *)HECMW_calloc(n_vertex[0]*3, sizeof(double));
 
 
 
@@ -780,11 +781,11 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 		}
 		for (i = 1; i < pesize; i++) {
 			if (n_vertex[i]>0) {
-				ccolor= (double *)calloc(n_vertex[i], sizeof(double));
-				vc_style=(int *)calloc(n_vertex[i], sizeof(int));
-				v_colorid=(int *)calloc(n_vertex[i], sizeof(int));
+				ccolor= (double *)HECMW_calloc(n_vertex[i], sizeof(double));
+				vc_style=(int *)HECMW_calloc(n_vertex[i], sizeof(int));
+				v_colorid=(int *)HECMW_calloc(n_vertex[i], sizeof(int));
 				if(sf[1].deform_display_on==1)
-					cdisp=(double *)calloc(n_vertex[i]*3, sizeof(double));
+					cdisp=(double *)HECMW_calloc(n_vertex[i]*3, sizeof(double));
 
 
 				HECMW_Recv(ccolor, n_vertex[i], HECMW_DOUBLE, i, HECMW_ANY_TAG,
@@ -861,25 +862,25 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 						fprintf(outfp, "%e %e %e\n", r,g,b);
 
 				}
-				free(ccolor);
-				free(vc_style);
-				free(v_colorid);
+				HECMW_free(ccolor);
+				HECMW_free(vc_style);
+				HECMW_free(v_colorid);
 				if(sf[1].deform_display_on==1)
-					free(cdisp);
+					HECMW_free(cdisp);
 			}
 		}
 
 		if(n_vertex[0]>0) {
-			free(vcoord);
+			HECMW_free(vcoord);
 
-			free(vcolor);
-			free(c_style);
-			free(c_colorid);
+			HECMW_free(vcolor);
+			HECMW_free(c_style);
+			HECMW_free(c_colorid);
 			if(sf[1].deform_display_on==1)
-				free(vdisp);
+				HECMW_free(vdisp);
 		}
 		if(n_patch[0]>0)
-			free(plist);
+			HECMW_free(plist);
 
 	}
 	if(mynode==0) {

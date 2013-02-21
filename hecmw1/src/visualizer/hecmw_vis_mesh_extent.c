@@ -18,6 +18,7 @@
 #include "hecmw_vis_mesh_extent.h"
 
 #include <stdlib.h>
+#include "hecmw_malloc.h"
 
 
 int calc_extent(struct hecmwST_local_mesh *mesh, double *extent)
@@ -68,8 +69,8 @@ int calc_voxel_level(int n_voxel, struct hecmwST_local_mesh *mesh, double *voxel
 	int	rank;
 
 
-	extent_xyz = (double *)calloc(n_voxel*3, sizeof(double));
-	result_xyz = (double *)calloc(n_voxel*3, sizeof(double));
+	extent_xyz = (double *)HECMW_calloc(n_voxel*3, sizeof(double));
+	result_xyz = (double *)HECMW_calloc(n_voxel*3, sizeof(double));
 
 	for (i = 0; i < n_voxel*3; i++) {
 		extent_xyz[i] = voxel_dxyz[i];
@@ -151,8 +152,8 @@ int calc_voxel_level(int n_voxel, struct hecmwST_local_mesh *mesh, double *voxel
 	}
 
 
-	free(extent_xyz);
-	free(result_xyz);
+	HECMW_free(extent_xyz);
+	HECMW_free(result_xyz);
 
 	return 1;
 }

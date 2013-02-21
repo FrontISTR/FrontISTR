@@ -22,6 +22,7 @@
 #include "hecmw_vis_comm_util.h"
 #include "hecmw_vis_resampling.h"
 #include "hecmw_vis_ray_trace.h"
+#include "hecmw_malloc.h"
 
 
 /* static void free_headpatch(Head_surfacep_info *head_patch, int nx, int ny, int nz); */
@@ -430,7 +431,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 	int inside, nodeID;
 
 	HECMW_Comm_size(VIS_COMM, &pe_size);
-	cubehead=(Cube_head *)calloc(n_voxel, sizeof(Cube_head));
+	cubehead=(Cube_head *)HECMW_calloc(n_voxel, sizeof(Cube_head));
 	if(cubehead==NULL)
 		HECMW_vis_memory_exit("In refinement: cubehead");
 	for(i=0;i<n_voxel;i++) {
@@ -513,7 +514,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 										if(inside==1) {
 
 											cubehead[m1].point_num++;
-											p1=(Cube_point *)malloc(sizeof(Cube_point));
+											p1=(Cube_point *)HECMW_malloc(sizeof(Cube_point));
 											if(p1==NULL)
 												HECMW_vis_memory_exit("new_refine: p1");
 											p1->code[0]=n1;
@@ -531,7 +532,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 				} /* end of element loop */
 			} /* end of if */
 		} /* end of m1, m2 loop */
-	/*		  pe_vox=(int *)calloc(pe_size, sizeof(int));
+	/*		  pe_vox=(int *)HECMW_calloc(pe_size, sizeof(int));
 		  if(pe_vox==NULL) {
 			  fprintf(stderr, "There is no enough memory for pe_vox\n");
 			  exit(0);
@@ -544,22 +545,22 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 	/* start send cube points for each voxel in this PE */
 
 	/*		    if (nflag == 0) {
-    if ((sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status)))
+    if ((sta1 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status)))
 	== NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
-    if ((sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status)))
+    if ((sta2 = (HECMW_Status *)HECMW_calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status)))
 	== NULL) {
     fprintf(stderr, "Not enough memory\n");
     exit(1);
     }
-    if ((req1 = (HECMW_Request *)calloc(pe_size-1, sizeof(HECMW_Request)))
+    if ((req1 = (HECMW_Request *)HECMW_calloc(pe_size-1, sizeof(HECMW_Request)))
 	== NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
     }
-    if ((req2 = (HECMW_Request *)calloc(pe_size-1, sizeof(HECMW_Request)))
+    if ((req2 = (HECMW_Request *)HECMW_calloc(pe_size-1, sizeof(HECMW_Request)))
 	== NULL) {
       fprintf(stderr, "Not enough memory\n");
       exit(1);
@@ -583,8 +584,8 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 				 */
 			}
 			else if(cubehead[m1].point_num>0) {
-				code=(int *)calloc(3*cubehead[m1].point_num, sizeof(int));
-				value=(double *)calloc(cubehead[m1].point_num, sizeof(double));
+				code=(int *)HECMW_calloc(3*cubehead[m1].point_num, sizeof(int));
+				value=(double *)HECMW_calloc(cubehead[m1].point_num, sizeof(double));
 				if((code==NULL) || (value==NULL))
 					HECMW_vis_memory_exit("new_refine: code, value");
 				p1=cubehead[m1].cube_link;
@@ -604,8 +605,8 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
             HECMW_Isend(code,3*cubehead[m1].point_num,HECMW_INT, pe_id, 0, VIS_COMM,&req1[pe_id]);
 			HECMW_Isend(value, cubehead[m1].point_num,HECMW_DOUBLE, pe_id, 0, VIS_COMM,&req1[pe_id]);
 			HECMW_Isend(gradient, 3*cubehead[m1].point_num,HECMW_DOUBLE, pe_id, 0, VIS_COMM,&req1[pe_id]);
-				 */			free(code);
-				 free(value);
+				 */			HECMW_free(code);
+				 HECMW_free(value);
 			} /*end of else ifnum>0*/
 			/*		  fprintf(stderr, "on pe %d finish send vox %d to pe %d\n", my_rank, m1, pe_id);
 			 */
@@ -670,8 +671,8 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 
 					/*					 HECMW_Irecv(&point_num, 1, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &req2[i]);
 					 */					 if(point_num>0) {
-						 code=(int *)calloc(3*point_num, sizeof(int));
-						 value=(double *)calloc(point_num, sizeof(double));
+						 code=(int *)HECMW_calloc(3*point_num, sizeof(int));
+						 value=(double *)HECMW_calloc(point_num, sizeof(double));
 						 if((code==NULL) || (value==NULL))
 							 HECMW_vis_memory_exit("new_refine: code, value");
 						 HECMW_Recv(code, point_num*3, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
@@ -693,18 +694,18 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 							  empty_flag[k1*(ny+1)*(nx+1)+j1*(nx+1)+i1]=1;
 
 						  }
-						  free(code);
-						  free(value);
+						  HECMW_free(code);
+						  HECMW_free(value);
 					 }/* end of ifpoint_num>0*/
 				} /* end of pe loop */
 			/*				   fprintf(stderr, "Finish to receive\n");
 			 */
 			/* third, organize to octree */
 			/*
-		  free(sta1);
-  free(sta2);
-  free(req1);
-  free(req2);
+		  HECMW_free(sta1);
+  HECMW_free(sta2);
+  HECMW_free(req1);
+  HECMW_free(req2);
 			 */
 			/* fourth, output result file */
 			/*	sprintf(filename, "%s-%d.%d", outfile, node->iter, m1);
@@ -735,7 +736,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 		HECMW_Barrier(VIS_COMM);
 	}
 
-	/* free application memory */
+	/* HECMW_free application memory */
 	free_cubehead(cubehead, n_voxel);
 
 	return;
@@ -753,11 +754,11 @@ static void free_headpatch(Head_surfacep_info *head_patch, int nx, int ny, int n
 			while(p1!=NULL) {
 				p2=p1;
 				p1=p1->next_patch;
-				free(p2);
+				HECMW_free(p2);
 			}
 		}
 	}
-	free(head_patch);
+	HECMW_free(head_patch);
 	return;
 }
 #endif
@@ -773,11 +774,11 @@ static void free_cubehead(Cube_head *cubehead, int voxn)
 			while(p1!=NULL) {
 				p2=p1;
 				p1=p1->next_point;
-				free(p2);
+				HECMW_free(p2);
 			}
 		}
 	}
-	free(cubehead);
+	HECMW_free(cubehead);
 	return;
 }
 

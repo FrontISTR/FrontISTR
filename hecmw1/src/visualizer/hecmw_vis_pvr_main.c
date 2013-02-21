@@ -32,6 +32,7 @@
 #include "hecmw_vis_subimage_composite_vr.h"
 #include "hecmw_vis_font_texture.h"
 #include "hecmw_vis_resampling.h"
+#include "hecmw_malloc.h"
 
 
 double *voxel_dxyz, *voxel_orig_xyz;
@@ -142,7 +143,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
          fprintf(stderr, "There is not such a control file:%s\n", contfile1);
           exit (0);
 	  }
-      vr=(Parameter_vr *)malloc(sizeof(Parameter_vr));
+      vr=(Parameter_vr *)HECMW_malloc(sizeof(Parameter_vr));
 	  if(vr==NULL)
 		  HECMW_vis_memory_exit("vr");
 
@@ -159,16 +160,16 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	 */
 
 	if((*init_flag==1) || (num_of_pvr>1)) {
-		voxel_dxyz=(double *)calloc(pesize*3, sizeof(double));
-		voxel_orig_xyz=(double *)calloc(pesize*3, sizeof(double));
-		level=(int *) calloc(pesize*3, sizeof(int));
-		voxel_n_neighbor_pe=(int *)calloc(pesize, sizeof(int));
-		voxel_neighbor_pe=(int **)calloc(pesize, sizeof(int *));
+		voxel_dxyz=(double *)HECMW_calloc(pesize*3, sizeof(double));
+		voxel_orig_xyz=(double *)HECMW_calloc(pesize*3, sizeof(double));
+		level=(int *) HECMW_calloc(pesize*3, sizeof(int));
+		voxel_n_neighbor_pe=(int *)HECMW_calloc(pesize, sizeof(int));
+		voxel_neighbor_pe=(int **)HECMW_calloc(pesize, sizeof(int *));
 		if((voxel_dxyz==NULL) || (voxel_orig_xyz==NULL) || (level==NULL) || (voxel_n_neighbor_pe==NULL) || (voxel_neighbor_pe==NULL))
 			HECMW_vis_memory_exit("voxel information");
 
 		for(j=0;j<pesize;j++) {
-			voxel_neighbor_pe[j]=(int *)calloc(pesize, sizeof(int));
+			voxel_neighbor_pe[j]=(int *)HECMW_calloc(pesize, sizeof(int));
 			if(voxel_neighbor_pe[j]==NULL)
 				HECMW_vis_memory_exit("voxel_neighbor_pe[j]");
 			for(k=0;k<pesize;k++)
@@ -184,14 +185,14 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	} /* end of *init_flag=1 */
 
 
-	node1 = (double *)calloc(mesh->n_node, sizeof(double));
+	node1 = (double *)HECMW_calloc(mesh->n_node, sizeof(double));
 
 	transform_ucd_pvr(data, node1, mesh, vr,mynode, pesize,
 			VIS_COMM,voxel_dxyz, voxel_orig_xyz, level, voxel_n_neighbor_pe, voxel_neighbor_pe, stat_para[22], stat_para[46],
 			*init_flag, num_of_pvr);
 	surface=NULL;
 	/*  if(pvr->surface_on==1) {
-  surface=(In_surface *)malloc(sizeof(In_surface));
+  surface=(In_surface *)HECMW_malloc(sizeof(In_surface));
   if(surface==NULL) {
 	  fprintf(stderr, "There is no enough memory for surface\n");
 	  exit(0);
@@ -199,7 +200,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
   }
 	 */
 	if(*init_flag==1) {
-		extent = (double *)calloc(mesh->n_elem*6, sizeof(double));
+		extent = (double *)HECMW_calloc(mesh->n_elem*6, sizeof(double));
 		if(extent==NULL)
 			HECMW_vis_memory_exit("extent");
 		calc_extent(mesh, extent);
@@ -244,9 +245,9 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	}
 
 #ifdef slow
-	phi_x = (double *)calloc(n_node, sizeof(double));
-	phi_y = (double *)calloc(n_node, sizeof(double));
-	phi_z = (double *)calloc(n_node, sizeof(double));
+	phi_x = (double *)HECMW_calloc(n_node, sizeof(double));
+	phi_y = (double *)HECMW_calloc(n_node, sizeof(double));
+	phi_z = (double *)HECMW_calloc(n_node, sizeof(double));
 	for(i=0;i<n_node;i++) {
 		phi_x[i]=0.0;
 		phi_y[i]=0.0;
@@ -286,10 +287,10 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	nx=level[mynode*3];
 	ny=level[mynode*3+1];
 	nz=level[mynode*3+2];
-	empty_flag=(int *)calloc((nx+1)*(ny+1)*(nz+1), sizeof(int));
-	var=(double *)calloc((nx+1)*(ny+1)*(nz+1), sizeof(double));
+	empty_flag=(int *)HECMW_calloc((nx+1)*(ny+1)*(nz+1), sizeof(int));
+	var=(double *)HECMW_calloc((nx+1)*(ny+1)*(nz+1), sizeof(double));
 #ifdef slow
-	grad_var=(double *)calloc((nx+1)*(ny+1)*(nz+1)*3, sizeof(double));
+	grad_var=(double *)HECMW_calloc((nx+1)*(ny+1)*(nz+1)*3, sizeof(double));
 	if((grad_var==NULL) || (var==NULL) || (empty_flag==NULL)) {
 		fprintf(stderr, "There is no enough memory: empty_flag, var, gradient\n");
 		exit(0);
@@ -299,9 +300,9 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	refinement(mesh, node1, n_voxel, voxel_dxyz, voxel_orig_xyz, level,
 			voxel_n_neighbor_pe, voxel_neighbor_pe, extent,  mynode, VIS_COMM, empty_flag, var);
 #ifdef slow
-	free(phi_x);
-	free(phi_y);
-	free(phi_z);
+	HECMW_free(phi_x);
+	HECMW_free(phi_y);
+	HECMW_free(phi_z);
 #endif
 	HECMW_Barrier(VIS_COMM);
 
@@ -311,7 +312,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 		fprintf(stderr, " The time for refinement is %lf the total time up to now is %lf\n", t3-t2, t3-t1);
 		t2=t3;
 	}
-	free(node1);
+	HECMW_free(node1);
 	mincolor=tmincolor=1.0E17;
 	maxcolor=tmaxcolor=-1.0E17;
 	find_color_minmax_vr(var, empty_flag, nx, ny, nz, &mincolor, &maxcolor);
@@ -366,7 +367,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	trange[4]=tminz; trange[5]=tmaxz;
 	if((*init_flag==1) || (num_of_pvr>1)) {
 		if(stat_para[4]==0) {
-			vr->light_point=(double *)calloc(3, sizeof(double));
+			vr->light_point=(double *)HECMW_calloc(3, sizeof(double));
 			if(vr->light_point==NULL)
 				HECMW_vis_memory_exit("light_point");
 
@@ -649,7 +650,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 	   if(time_step==0) {
 
    if(transfer_function_style==7) {
-	   opa_table=(double *)calloc(256, sizeof(double));
+	   opa_table=(double *)HECMW_calloc(256, sizeof(double));
 	   if(opa_table==NULL) {
 		   fprintf(stderr, " There is no enough memory: opa_table\n");
 		   exit(0);
@@ -675,10 +676,10 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 			tav_length=av_length;
 
 		/* Build hierachical tree*/
-		image=(double *)calloc(vr->xr*vr->yr*3, sizeof(double));
+		image=(double *)HECMW_calloc(vr->xr*vr->yr*3, sizeof(double));
 		if(image==NULL)
 			HECMW_vis_memory_exit("image");
-		accum_opa=(double *)calloc(vr->xr*vr->yr, sizeof(double));
+		accum_opa=(double *)HECMW_calloc(vr->xr*vr->yr, sizeof(double));
 		if(accum_opa==NULL)
 			HECMW_vis_memory_exit("accum_opa");
 		/*}
@@ -795,8 +796,8 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 			pix0_num=vr->xr*vr->yr-pix_num*(pesize-1);
 			if(mynode==0) pixn=pix0_num;
 			if(mynode!=0) pixn=pix_num;
-			n_subimage=(double *)calloc(pesize*pixn*3, sizeof(double));
-			n_subopa=(double *)calloc(pesize*pixn, sizeof(double));
+			n_subimage=(double *)HECMW_calloc(pesize*pixn*3, sizeof(double));
+			n_subopa=(double *)HECMW_calloc(pesize*pixn, sizeof(double));
 			if((n_subimage==NULL) || (n_subopa==NULL))
 				HECMW_vis_memory_exit("n_subimage, n_subopa");
 
@@ -814,8 +815,8 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 				for(j=0;j<pixn;j++)
 					n_subopa[mynode*pixn+j]=accum_opa[pix0_num+(mynode-1)*pix_num+j];
 
-			subimage=(double *)calloc(pixn*3, sizeof(double));
-			subopa=(double *)calloc(pixn, sizeof(double));
+			subimage=(double *)HECMW_calloc(pixn*3, sizeof(double));
+			subopa=(double *)HECMW_calloc(pixn, sizeof(double));
 			if((subimage==NULL) || (subopa==NULL))
 				HECMW_vis_memory_exit("subimage, subopa");
 			HECMW_Barrier(VIS_COMM);
@@ -827,12 +828,12 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 					for(k=0;k<pesize;k++) {
 						if(k!=i) {
 							if(k==0) {
-								subimage1=(double *)calloc(pix0_num*3, sizeof(double));
-								subopa1=(double *)calloc(pix0_num, sizeof(double));
+								subimage1=(double *)HECMW_calloc(pix0_num*3, sizeof(double));
+								subopa1=(double *)HECMW_calloc(pix0_num, sizeof(double));
 							}
 							else if(k!=0) {
-								subimage1=(double *)calloc(pix_num*3, sizeof(double));
-								subopa1=(double *)calloc(pix_num, sizeof(double));
+								subimage1=(double *)HECMW_calloc(pix_num*3, sizeof(double));
+								subopa1=(double *)HECMW_calloc(pix_num, sizeof(double));
 							}
 
 							if((subimage1==NULL) || (subopa1==NULL))
@@ -858,8 +859,8 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 								HECMW_Send(subopa1, pix_num, HECMW_DOUBLE, k, 0, VIS_COMM);
 							}
 
-							free(subimage1);
-							free(subopa1);
+							HECMW_free(subimage1);
+							HECMW_free(subopa1);
 						} /*if k!=i */
 					} /*loop k*/
 
@@ -885,13 +886,13 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 					+SQR(center[2]-vr->view_point_d[2]));
 			if(mynode!=0) {
 				HECMW_Send(&dis_c_v, 1, HECMW_DOUBLE, MASTER_PE, 0, VIS_COMM);
-				pe_id=(int *)calloc(pesize, sizeof(int));
+				pe_id=(int *)HECMW_calloc(pesize, sizeof(int));
 				if(pe_id==NULL)
 					HECMW_vis_memory_exit("pe_id");
 				HECMW_Recv(pe_id, pesize, HECMW_INT, MASTER_PE, HECMW_ANY_TAG, VIS_COMM, &stat);
 			}
 			if(mynode==0) {
-				ndis_c_v=(double *)calloc(pesize, sizeof(double));
+				ndis_c_v=(double *)HECMW_calloc(pesize, sizeof(double));
 				if(ndis_c_v==NULL)
 					HECMW_vis_memory_exit("ndis_c_v");
 				ndis_c_v[0]=dis_c_v;
@@ -899,7 +900,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 					HECMW_Recv(&dis_c_v, 1, HECMW_DOUBLE, i, HECMW_ANY_TAG, VIS_COMM, &stat);
 					ndis_c_v[i]=dis_c_v;
 				}
-				pe_id=(int *)calloc(pesize, sizeof(int));
+				pe_id=(int *)HECMW_calloc(pesize, sizeof(int));
 				if(pe_id==NULL)
 					HECMW_vis_memory_exit("pe_id");
 				for(i=0;i<pesize;i++)
@@ -922,9 +923,9 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 			 */
 
 			composite_subimage_vr(pesize, pe_id, pixn, n_subimage, n_subopa, subimage);
-			free(n_subimage);
-			free(n_subopa);
-			free(subopa);
+			HECMW_free(n_subimage);
+			HECMW_free(n_subopa);
+			HECMW_free(subopa);
 			/*send subimage to master PE */
 			if(mynode!=0)
 				HECMW_Send(subimage, pixn*3, HECMW_DOUBLE, 0, 0, VIS_COMM);
@@ -937,7 +938,7 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 						image[pix0_num*3+(i-1)*pix_num*3+j]=subimage[j];
 				}
 			}
-			free(subimage);
+			HECMW_free(subimage);
 		}
 		if(mynode==0) {
 			fprintf(stderr, " Finish combining \n");
@@ -1099,20 +1100,20 @@ double *light_point, view_point_d[3], screen_point[3], up[3], k_ads[3], *interva
 
 		}
 	}
-	free(var);
+	HECMW_free(var);
 #ifdef slow
-	free(grad_var);
+	HECMW_free(grad_var);
 #endif
-	free(empty_flag);
-	free(image);
-	free(accum_opa);
+	HECMW_free(empty_flag);
+	HECMW_free(image);
+	HECMW_free(accum_opa);
 	if(num_of_pvr>1) {
-		free(voxel_dxyz);
-		free(voxel_orig_xyz);
-		free(level);
-		free(voxel_n_neighbor_pe);
-		free(voxel_neighbor_pe);
-		free(extent);
+		HECMW_free(voxel_dxyz);
+		HECMW_free(voxel_orig_xyz);
+		HECMW_free(level);
+		HECMW_free(voxel_n_neighbor_pe);
+		HECMW_free(voxel_neighbor_pe);
+		HECMW_free(extent);
 	}
 	if(mynode==0) {
 		fprintf(stderr, " Finish the module\n");

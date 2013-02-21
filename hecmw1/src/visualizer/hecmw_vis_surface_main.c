@@ -28,6 +28,7 @@
 #include "hecmw_vis_rendering.h"
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_output_femap.h"
+#include "hecmw_malloc.h"
 
 static void conv_compname_integer(struct surface_module *sf, struct hecmwST_result_data *data);
 static void chk_sf_param(struct surface_module *sf, struct hecmwST_result_data *data,int ii);
@@ -120,12 +121,12 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 		shell2hexa(mesh, data, VIS_COMM);
 	conv_compname_integer(sf, data);
 
-	bdflag = (int *)calloc(mesh->n_elem, sizeof(int));
+	bdflag = (int *)HECMW_calloc(mesh->n_elem, sizeof(int));
 	if(bdflag==NULL)
 		HECMW_vis_memory_exit("bdflag");
 
 	tvertex=0; tpatch=0;
-	color_list=(int *)calloc(data->nn_component, sizeof(int));
+	color_list=(int *)HECMW_calloc(data->nn_component, sizeof(int));
 	if(color_list==NULL)
 		HECMW_vis_memory_exit("color_list");
 	for(ii=0;ii<data->nn_component;ii++)
@@ -136,10 +137,10 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 				color_list[sf[ii].color_comp]=1;
 		}
 	}
-	minvalue=(double *)calloc(data->nn_component, sizeof(double));
-	mincolor=(double *)calloc(data->nn_component, sizeof(double));
-	maxvalue=(double *)calloc(data->nn_component, sizeof(double));
-	maxcolor=(double *)calloc(data->nn_component, sizeof(double));
+	minvalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
+	mincolor=(double *)HECMW_calloc(data->nn_component, sizeof(double));
+	maxvalue=(double *)HECMW_calloc(data->nn_component, sizeof(double));
+	maxcolor=(double *)HECMW_calloc(data->nn_component, sizeof(double));
 	if((minvalue==NULL) || (mincolor==NULL) || (maxvalue==NULL) || (maxcolor==NULL))
 		HECMW_vis_memory_exit("minmax_color");
 	for(ii=0;ii<data->nn_component; ii++) {
@@ -149,8 +150,8 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 	mic=1.0E17;
 	mac=-1.0E17;
 
-	sff = (Surface *)malloc(sizeof(Surface));
-	result=(Result *)calloc(sf[0].surface_style, sizeof(Result));
+	sff = (Surface *)HECMW_malloc(sizeof(Surface));
+	result=(Result *)HECMW_calloc(sf[0].surface_style, sizeof(Result));
 	if((sff==NULL) || (result==NULL))
 		HECMW_vis_memory_exit("sff and result");
 	for(ii=0;ii<sf[0].surface_style;ii++) {
@@ -189,7 +190,7 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 
 			if(sff->surface_style==1) {
 				if(first_boundary==1) {
-					global_connect=(Connect_inf *)malloc(sizeof(Connect_inf));
+					global_connect=(Connect_inf *)HECMW_malloc(sizeof(Connect_inf));
 					if(global_connect==NULL)
 						HECMW_vis_memory_exit("global_connect");
 				}
@@ -270,7 +271,7 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 	}
 	/*  fclose(vfile); fclose(pfile);  fclose(cfile);
 	 */
-	free(bdflag);
+	HECMW_free(bdflag);
 	HECMW_Barrier(VIS_COMM);
 	if(mynode==MASTER_PE) {
 		t3=HECMW_Wtime();
@@ -298,21 +299,21 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 	}
 	for(ii=0;ii<sf[0].surface_style;ii++) {
 		if(result[ii].n_vertex>0) {
-			free(result[ii].vertex);
-			free(result[ii].color);
+			HECMW_free(result[ii].vertex);
+			HECMW_free(result[ii].color);
 		}
 		if(result[ii].n_patch>0)
-			free(result[ii].patch);
+			HECMW_free(result[ii].patch);
 	}
-	free(result);
+	HECMW_free(result);
 	/*
-  free(sff);
+  HECMW_free(sff);
 	 */
-	free(color_list);
-	free(mincolor);
-	free(maxcolor);
-	free(minvalue);
-	free(maxvalue);
+	HECMW_free(color_list);
+	HECMW_free(mincolor);
+	HECMW_free(maxcolor);
+	HECMW_free(minvalue);
+	HECMW_free(maxvalue);
 	HECMW_Barrier(VIS_COMM);
 	/*}
   if(mynode==0) {
@@ -495,7 +496,7 @@ static void copy_control_para(Surface *sff,  struct surface_module *sf, int ii)
 
 	sff->surface_style=sf[ii].surface_style;
 	if(sff->surface_style==1) {
-		/*		sff->group_name=(char *)calloc(100, sizeof(char));
+		/*		sff->group_name=(char *)HECMW_calloc(100, sizeof(char));
 		if(sff->group_name==NULL)
 			HECMW_vis_memory_exit("group_name");
 		sff->group_name=sf[ii].group_name;
@@ -723,7 +724,7 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 	/*	thickness=1.0;
 	 */
 	thickness=mesh->section->sect_R_item[0];
-	coord=(double *)calloc(2*mesh->n_node*3, sizeof(double));
+	coord=(double *)HECMW_calloc(2*mesh->n_node*3, sizeof(double));
 	if(coord==NULL)
 		HECMW_vis_memory_exit("coord");
 
@@ -734,11 +735,11 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 			coord[(i*2+1)*3+j]=mesh->node[i*3+j];
 		coord[(i*2+1)*3+2]=mesh->node[i*3+2]+thickness;
 	}
-	free(mesh->node);
+	HECMW_free(mesh->node);
 
 	mesh->node=coord;
 	if((mesh->elem_type[0]==731) || (mesh->elem_type[0]==732)) {
-		connect=(int *)calloc(mesh->n_elem*6, sizeof(int));
+		connect=(int *)HECMW_calloc(mesh->n_elem*6, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");
 		for(i=0;i<mesh->n_elem;i++) {
@@ -751,11 +752,11 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 			mesh->elem_type[i]=351;
 		for(i=0;i<mesh->n_elem+1;i++)
 			mesh->elem_node_index[i]=6*i;
-		free(mesh->elem_node_item);
+		HECMW_free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
 	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742) || (mesh->elem_type[0]==743)) {
-		connect=(int *)calloc(mesh->n_elem*8, sizeof(int));
+		connect=(int *)HECMW_calloc(mesh->n_elem*8, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");
 		for(i=0;i<mesh->n_elem;i++) {
@@ -773,13 +774,13 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 			mesh->elem_type[i]=361;
 		for(i=0;i<mesh->n_elem+1;i++)
 			mesh->elem_node_index[i]=8*i;
-		free(mesh->elem_node_item);
+		HECMW_free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
 	tn_component=0;
 	for(i=0;i<data->nn_component;i++)
 		tn_component+=data->nn_dof[i];
-	value=(double *)calloc(tn_component*mesh->n_node*2, sizeof(double));
+	value=(double *)HECMW_calloc(tn_component*mesh->n_node*2, sizeof(double));
 	if(value==NULL)
 		HECMW_vis_memory_exit("value");
 	for(i=0;i<mesh->n_node;i++) {
@@ -788,7 +789,7 @@ void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *dat
 		for(j=0;j<tn_component;j++)
 			value[(i*2+1)*tn_component+j]=data->node_val_item[i*tn_component+j];
 	}
-	free(data->node_val_item);
+	HECMW_free(data->node_val_item);
 	data->node_val_item=value;
 
 	fprintf(stderr, "It is ok to transform shell to solid\n");
@@ -842,7 +843,7 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 	}
 	thickness=0.01*sqrt((trange[1]-trange[0])*(trange[1]-trange[0])+(trange[3]-trange[2])*(trange[3]-trange[2])+
 			(trange[5]-trange[4])*(trange[5]-trange[4]));
-	coord=(double *)calloc(2*mesh->n_node*3, sizeof(double));
+	coord=(double *)HECMW_calloc(2*mesh->n_node*3, sizeof(double));
 	if(coord==NULL)
 		HECMW_vis_memory_exit("coord");
 
@@ -853,11 +854,11 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 			coord[(i*2+1)*3+j]=mesh->node[i*3+j];
 		coord[(i*2+1)*3+2]=mesh->node[i*3+2]+thickness;
 	}
-	free(mesh->node);
+	HECMW_free(mesh->node);
 
 	mesh->node=coord;
 	if((mesh->elem_type[0]==731) || (mesh->elem_type[0]==732)) {
-		connect=(int *)calloc(mesh->n_elem*6, sizeof(int));
+		connect=(int *)HECMW_calloc(mesh->n_elem*6, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");
 		for(i=0;i<mesh->n_elem;i++) {
@@ -870,11 +871,11 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 			mesh->elem_type[i]=351;
 		for(i=0;i<mesh->n_elem+1;i++)
 			mesh->elem_node_index[i]=6*i;
-		free(mesh->elem_node_item);
+		HECMW_free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
 	else if((mesh->elem_type[0]==741) || (mesh->elem_type[0]==742) || (mesh->elem_type[0]==743)) {
-		connect=(int *)calloc(mesh->n_elem*8, sizeof(int));
+		connect=(int *)HECMW_calloc(mesh->n_elem*8, sizeof(int));
 		if(connect==NULL)
 			HECMW_vis_memory_exit("connect");
 		for(i=0;i<mesh->n_elem;i++) {
@@ -892,13 +893,13 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 			mesh->elem_type[i]=361;
 		for(i=0;i<mesh->n_elem+1;i++)
 			mesh->elem_node_index[i]=8*i;
-		free(mesh->elem_node_item);
+		HECMW_free(mesh->elem_node_item);
 		mesh->elem_node_item=connect;
 	}
 	tn_component=0;
 	for(i=0;i<data->nn_component;i++)
 		tn_component+=data->nn_dof[i];
-	value=(double *)calloc(tn_component*mesh->n_node*2, sizeof(double));
+	value=(double *)HECMW_calloc(tn_component*mesh->n_node*2, sizeof(double));
 	if(value==NULL)
 		HECMW_vis_memory_exit("value");
 	for(i=0;i<mesh->n_node;i++) {
@@ -907,7 +908,7 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh, struct hecmwST_result_da
 		for(j=0;j<tn_component;j++)
 			value[(i*2+1)*tn_component+j]=data->node_val_item[i*tn_component+j];
 	}
-	free(data->node_val_item);
+	HECMW_free(data->node_val_item);
 	data->node_val_item=value;
 
 	fprintf(stderr, "It is ok to transform shell to solid\n");

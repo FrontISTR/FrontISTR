@@ -23,6 +23,7 @@
 #include "hecmw_vis_bmp.h"
 #include "hecmw_vis_font_texture.h"
 #include "hecmw_vis_mem_util.h"
+#include "hecmw_malloc.h"
 
 
 void find_color_minmax_vr(double *var, int *empty_flag, int nx, int ny, int nz, double *mincolor, double *maxcolor)
@@ -80,7 +81,7 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor, double *var
 		fp=fopen("histogram.bmp", "wb");
 		if(fp==NULL)
 			HECMW_vis_print_exit("Cannot generate the histogram output file");
-		graph=(double *)calloc(400*530*3, sizeof(double));
+		graph=(double *)HECMW_calloc(400*530*3, sizeof(double));
 		if(graph==NULL)
 			HECMW_vis_memory_exit("graph");
 		for(i=0;i<400*530*3;i++)
@@ -235,7 +236,7 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor, double *var
 
 
 		fclose(fp);
-		free(graph);
+		HECMW_free(graph);
 	}
 	return;
 }

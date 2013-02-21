@@ -22,6 +22,7 @@
 #include <math.h>
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_voxel_gen.h"
+#include "hecmw_malloc.h"
 
 
 /* This program is used to transform GeoFEM UCD files into PVR data format */
@@ -112,7 +113,7 @@ void transform_ucd_pvr(struct hecmwST_result_data *data, double *node1,  struct 
         exit (0);
 	 }
 
-     v = (struct visual_buf *)malloc(sizeof(struct visual_buf));
+     v = (struct visual_buf *)HECMW_malloc(sizeof(struct visual_buf));
      color_comp=read_ucd(infp, v, range, c_range, str_color, color_subcomp);
      fclose(infp);
   fprintf(outfp, "%d\n", v->mesh->n_node);

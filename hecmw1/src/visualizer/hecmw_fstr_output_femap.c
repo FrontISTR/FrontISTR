@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "hecmw_malloc.h"
 #include "hecmw_etype.h"
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_comm_util.h"
@@ -331,8 +332,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 					&stat);
 			if (tmp_int > 0)
 			{
-				tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-				tmp_recv_d = (double *) calloc (tmp_int * 3, sizeof (double));
+				tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_recv_d = (double *) HECMW_calloc (tmp_int * 3, sizeof (double));
 				if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 					HECMW_vis_memory_exit ("tmp_recv");
 
@@ -346,8 +347,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 							tmp_recv_i[j], tmp_recv_d[j * 3],
 							tmp_recv_d[j * 3 + 1], tmp_recv_d[j * 3 + 2]);
 
-				free (tmp_recv_i);
-				free (tmp_recv_d);
+				HECMW_free (tmp_recv_i);
+				HECMW_free (tmp_recv_d);
 			}
 		}
 		fprintf (outfp, "   -1\n");
@@ -399,11 +400,11 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 			{
 				HECMW_Recv (&tmp_int2, 1, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
 
-				tmp_elem_global_ID = (int *) calloc (tmp_int, sizeof (int));
-				tmp_elem_ID = (int *) calloc (tmp_int * 2, sizeof (int));
-				tmp_elem_type = (int *) calloc (tmp_int, sizeof (int));
-				tmp_section_ID = (int *) calloc (tmp_int, sizeof (int));
-				tmp_elem_node_index = (int *) calloc (tmp_int + 1, sizeof (int));
+				tmp_elem_global_ID = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_elem_ID = (int *) HECMW_calloc (tmp_int * 2, sizeof (int));
+				tmp_elem_type = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_section_ID = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_elem_node_index = (int *) HECMW_calloc (tmp_int + 1, sizeof (int));
 				if ((tmp_elem_global_ID == NULL) || (tmp_elem_ID == NULL)
 						|| (tmp_elem_type == NULL) || (tmp_section_ID == NULL))
 					HECMW_vis_memory_exit ("tmp recv");
@@ -419,8 +420,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 				HECMW_Recv (tmp_elem_node_index, tmp_int + 1, HECMW_INT, j,
 						HECMW_ANY_TAG, VIS_COMM, &stat);
 
-				tmp_elem_node_item = (int *) calloc (tmp_elem_node_index[tmp_int], sizeof (int));
-				tmp_node_global_ID = (int *) calloc (tmp_int2, sizeof (int));
+				tmp_elem_node_item = (int *) HECMW_calloc (tmp_elem_node_index[tmp_int], sizeof (int));
+				tmp_node_global_ID = (int *) HECMW_calloc (tmp_int2, sizeof (int));
 
 				HECMW_Recv (tmp_elem_node_item, tmp_elem_node_index[tmp_int],
 						HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
@@ -435,13 +436,13 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						tmp_node_global_ID,
 						mesh->section->sect_opt);
 
-				free (tmp_elem_global_ID);
-				free (tmp_elem_ID);
-				free (tmp_elem_type);
-				free (tmp_section_ID);
-				free (tmp_elem_node_index);
-				free (tmp_elem_node_item);
-				free (tmp_node_global_ID);
+				HECMW_free (tmp_elem_global_ID);
+				HECMW_free (tmp_elem_ID);
+				HECMW_free (tmp_elem_type);
+				HECMW_free (tmp_section_ID);
+				HECMW_free (tmp_elem_node_index);
+				HECMW_free (tmp_elem_node_item);
+				HECMW_free (tmp_node_global_ID);
 			}
 		}
 		fprintf (outfp, "   -1\n");
@@ -482,14 +483,14 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 				HECMW_Send (mesh->global_node_ID, mesh->nn_internal, HECMW_INT,
 						MASTER_PE, 0, VIS_COMM);
 
-				tmp_send_d = (double *) calloc (mesh->nn_internal, sizeof (double));
+				tmp_send_d = (double *) HECMW_calloc (mesh->nn_internal, sizeof (double));
 
 				for (i = 0; i < mesh->nn_internal; i++)
 					tmp_send_d[i] = data->node_val_item[i * tn_component + temp_base];
 
 				HECMW_Send (tmp_send_d, mesh->nn_internal, HECMW_DOUBLE, MASTER_PE, 0, VIS_COMM);
 
-				free (tmp_send_d);
+				HECMW_free (tmp_send_d);
 			}
 		}
 		else
@@ -515,8 +516,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						&stat);
 				if (tmp_int > 0)
 				{
-					tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-					tmp_recv_d = (double *) calloc (tmp_int, sizeof (double));
+					tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+					tmp_recv_d = (double *) HECMW_calloc (tmp_int, sizeof (double));
 					if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 						HECMW_vis_memory_exit ("tmp_recv");
 					HECMW_Recv (tmp_recv_i, tmp_int, HECMW_INT, i,
@@ -526,8 +527,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 					for (j = 0; j < tmp_int; j++)
 						fprintf (outfp, "%8d,%15.7e,\n", tmp_recv_i[j],
 								tmp_recv_d[j]);
-					free (tmp_recv_i);
-					free (tmp_recv_d);
+					HECMW_free (tmp_recv_i);
+					HECMW_free (tmp_recv_d);
 				}
 			}
 			fprintf (outfp, "-1,0.\n");
@@ -570,7 +571,7 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 			HECMW_Send (mesh->global_node_ID, mesh->nn_internal, HECMW_INT,
 					MASTER_PE, 0, VIS_COMM);
 
-			tmp_send_d = (double *) calloc (mesh->nn_internal, sizeof (double));
+			tmp_send_d = (double *) HECMW_calloc (mesh->nn_internal, sizeof (double));
 
 			for (i = 0; i < mesh->nn_internal; i++)
 			{
@@ -636,7 +637,7 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 							MASTER_PE, 0, VIS_COMM);
 				}
 			}
-			free (tmp_send_d);
+			HECMW_free (tmp_send_d);
 
 		}
 	}
@@ -686,8 +687,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						&stat);
 				if (tmp_int > 0)
 				{
-					tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-					tmp_recv_d = (double *) calloc (tmp_int, sizeof (double));
+					tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+					tmp_recv_d = (double *) HECMW_calloc (tmp_int, sizeof (double));
 					if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 						HECMW_vis_memory_exit ("tmp_recv");
 					HECMW_Recv (tmp_recv_i, tmp_int, HECMW_INT, i,
@@ -697,8 +698,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 					for (j = 0; j < tmp_int; j++)
 						fprintf (outfp, "%8d,%15.7e,\n", tmp_recv_i[j],
 								tmp_recv_d[j]);
-					free (tmp_recv_i);
-					free (tmp_recv_d);
+					HECMW_free (tmp_recv_i);
+					HECMW_free (tmp_recv_d);
 				}
 			}
 			fprintf (outfp, "-1,0.\n");
@@ -738,9 +739,9 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 							VIS_COMM, &stat);
 					if (tmp_int > 0)
 					{
-						tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
+						tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
 						tmp_recv_d =
-							(double *) calloc (tmp_int, sizeof (double));
+							(double *) HECMW_calloc (tmp_int, sizeof (double));
 						if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 							HECMW_vis_memory_exit ("tmp_recv");
 						HECMW_Recv (tmp_recv_i, tmp_int, HECMW_INT, i,
@@ -750,8 +751,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						for (j = 0; j < tmp_int; j++)
 							fprintf (outfp, "%8d,%15.7e,\n", tmp_recv_i[j],
 									tmp_recv_d[j]);
-						free (tmp_recv_i);
-						free (tmp_recv_d);
+						HECMW_free (tmp_recv_i);
+						HECMW_free (tmp_recv_d);
 					}
 				}
 				fprintf (outfp, "-1,0.\n");
@@ -808,8 +809,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 							VIS_COMM, &stat);
 					if (tmp_int > 0)
 					{
-						tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-						tmp_recv_d = (double *) calloc (tmp_int, sizeof (double));
+						tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+						tmp_recv_d = (double *) HECMW_calloc (tmp_int, sizeof (double));
 						if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 							HECMW_vis_memory_exit ("tmp_recv");
 
@@ -821,8 +822,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						for (j = 0; j < tmp_int; j++)
 							fprintf (outfp, "%8d,%15.7e,\n", tmp_recv_i[j], tmp_recv_d[j]);
 
-						free (tmp_recv_i);
-						free (tmp_recv_d);
+						HECMW_free (tmp_recv_i);
+						HECMW_free (tmp_recv_d);
 					}
 				}
 				fprintf (outfp, "-1,0.\n");
@@ -851,8 +852,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 
 		if (mynode != 0)
 		{
-			tmp_send_i = (int *) calloc (mesh->nn_internal, sizeof (int));
-			tmp_send_d = (double *) calloc (mesh->ne_internal, sizeof (double));
+			tmp_send_i = (int *) HECMW_calloc (mesh->nn_internal, sizeof (int));
+			tmp_send_d = (double *) HECMW_calloc (mesh->ne_internal, sizeof (double));
 
 			for (j = 0; j < 7; j++)
 			{
@@ -909,8 +910,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 							VIS_COMM, &stat);
 					if (tmp_int > 0)
 					{
-						tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-						tmp_recv_d = (double *) calloc (tmp_int, sizeof (double));
+						tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+						tmp_recv_d = (double *) HECMW_calloc (tmp_int, sizeof (double));
 						if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 							HECMW_vis_memory_exit ("tmp_recv");
 
@@ -922,8 +923,8 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 						for (j = 0; j < tmp_int; j++)
 							fprintf (outfp, "%8d,%15.7e,\n", tmp_recv_i[j], tmp_recv_d[j]);
 
-						free (tmp_recv_i);
-						free (tmp_recv_d);
+						HECMW_free (tmp_recv_i);
+						HECMW_free (tmp_recv_d);
 					}
 				}
 				fprintf (outfp, "-1,0.\n");
@@ -1139,10 +1140,10 @@ avs_output (struct hecmwST_local_mesh *mesh,
 	if (mynode == 0)
 	{
 		/* allocate offset arrays */
-		nid_offsets = (int *) calloc(pesize + 1, sizeof(int));
+		nid_offsets = (int *) HECMW_calloc(pesize + 1, sizeof(int));
 		if (nid_offsets == NULL)
 			HECMW_vis_memory_exit("nid_offset");
-		eid_offsets = (int *) calloc(pesize + 1, sizeof(int));
+		eid_offsets = (int *) HECMW_calloc(pesize + 1, sizeof(int));
 		if (eid_offsets == NULL)
 			HECMW_vis_memory_exit("eid_offset");
 
@@ -1189,14 +1190,14 @@ avs_output (struct hecmwST_local_mesh *mesh,
 
 				if (flag_global_ID)
 				{
-					tmp_global_node_ID = (int *) calloc (tmp_nn_internal, sizeof (int));
+					tmp_global_node_ID = (int *) HECMW_calloc (tmp_nn_internal, sizeof (int));
 					if (tmp_global_node_ID == NULL)
 						HECMW_vis_memory_exit ("tmp recv: global_node_ID");
 
 					HECMW_Recv (tmp_global_node_ID, tmp_nn_internal, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
 				}
 
-				tmp_node = (double *) calloc (tmp_nn_internal * 3, sizeof (double));
+				tmp_node = (double *) HECMW_calloc (tmp_nn_internal * 3, sizeof (double));
 				if (tmp_node == NULL)
 					HECMW_vis_memory_exit ("tmp recv: node");
 
@@ -1205,8 +1206,8 @@ avs_output (struct hecmwST_local_mesh *mesh,
 				avs_write_node_coord(outfp, tmp_nn_internal, tmp_global_node_ID, tmp_node, flag_global_ID, nid_offsets[i]);
 
 				if (flag_global_ID)
-					free (tmp_global_node_ID);
-				free (tmp_node);
+					HECMW_free (tmp_global_node_ID);
+				HECMW_free (tmp_node);
 			}
 		}
 	}
@@ -1272,9 +1273,9 @@ avs_output (struct hecmwST_local_mesh *mesh,
 
 				HECMW_Recv (&tmp_n_node, 1, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
 
-				tmp_elem_ID = (int *) calloc (tmp_n_elem * 2, sizeof (int));
-				tmp_elem_type = (int *) calloc (tmp_n_elem, sizeof (int));
-				tmp_elem_node_index = (int *) calloc (tmp_n_elem + 1, sizeof (int));
+				tmp_elem_ID = (int *) HECMW_calloc (tmp_n_elem * 2, sizeof (int));
+				tmp_elem_type = (int *) HECMW_calloc (tmp_n_elem, sizeof (int));
+				tmp_elem_node_index = (int *) HECMW_calloc (tmp_n_elem + 1, sizeof (int));
 				if ((tmp_elem_ID == NULL) || (tmp_elem_type == NULL) || (tmp_elem_node_index == NULL))
 					HECMW_vis_memory_exit ("tmp recv: elem_ID, elem_type, elem_node_index");
 
@@ -1282,7 +1283,7 @@ avs_output (struct hecmwST_local_mesh *mesh,
 				HECMW_Recv (tmp_elem_type, tmp_n_elem, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
 				HECMW_Recv (tmp_elem_node_index, tmp_n_elem + 1, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
 
-				tmp_elem_node_item = (int *) calloc (tmp_elem_node_index[tmp_n_elem], sizeof (int));
+				tmp_elem_node_item = (int *) HECMW_calloc (tmp_elem_node_index[tmp_n_elem], sizeof (int));
 				if (tmp_elem_node_item == NULL)
 					HECMW_vis_memory_exit ("tmp recv: elem_node_item");
 
@@ -1290,8 +1291,8 @@ avs_output (struct hecmwST_local_mesh *mesh,
 
 				if (flag_global_ID)
 				{
-					tmp_global_elem_ID = (int *) calloc (tmp_n_elem, sizeof (int));
-					tmp_global_node_ID = (int *) calloc (tmp_n_node, sizeof (int));
+					tmp_global_elem_ID = (int *) HECMW_calloc (tmp_n_elem, sizeof (int));
+					tmp_global_node_ID = (int *) HECMW_calloc (tmp_n_node, sizeof (int));
 					if ((tmp_global_elem_ID == NULL) || (tmp_global_node_ID == NULL))
 						HECMW_vis_memory_exit("tmp recv: global_elem_ID, global_node_ID");
 
@@ -1305,7 +1306,7 @@ avs_output (struct hecmwST_local_mesh *mesh,
 					tmp_global_elem_ID = NULL;
 					tmp_global_node_ID = NULL;
 
-					tmp_node_ID = (int *) calloc (tmp_n_node * 2, sizeof (int));
+					tmp_node_ID = (int *) HECMW_calloc (tmp_n_node * 2, sizeof (int));
 					if ((tmp_node_ID == NULL))
 						HECMW_vis_memory_exit("tmp recv: node_ID");
 
@@ -1319,19 +1320,19 @@ avs_output (struct hecmwST_local_mesh *mesh,
 						flag_global_ID, flag_skip_ext, flag_oldUCD,
 						nid_offsets, eid_offsets[j]);
 
-				free (tmp_elem_ID);
-				free (tmp_elem_type);
-				free (tmp_elem_node_index);
-				free (tmp_elem_node_item);
+				HECMW_free (tmp_elem_ID);
+				HECMW_free (tmp_elem_type);
+				HECMW_free (tmp_elem_node_index);
+				HECMW_free (tmp_elem_node_item);
 
 				if (flag_global_ID)
 				{
-					free (tmp_global_elem_ID);
-					free (tmp_global_node_ID);
+					HECMW_free (tmp_global_elem_ID);
+					HECMW_free (tmp_global_node_ID);
 				}
 				else
 				{
-					free (tmp_node_ID);
+					HECMW_free (tmp_node_ID);
 				}
 			}
 		}
@@ -1374,14 +1375,14 @@ avs_output (struct hecmwST_local_mesh *mesh,
 
 				if (flag_global_ID)
 				{
-					tmp_global_node_ID = (int *) calloc (tmp_nn_internal, sizeof (int));
+					tmp_global_node_ID = (int *) HECMW_calloc (tmp_nn_internal, sizeof (int));
 					if (tmp_global_node_ID == NULL)
 						HECMW_vis_memory_exit ("tmp recv: global_node_ID (for data)");
 
 					HECMW_Recv (tmp_global_node_ID, tmp_nn_internal, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
 				}
 
-				tmp_node_val_item = (double *) calloc (tmp_nn_internal * tn_component, sizeof (double));
+				tmp_node_val_item = (double *) HECMW_calloc (tmp_nn_internal * tn_component, sizeof (double));
 				if (tmp_node_val_item == NULL)
 					HECMW_vis_memory_exit ("tmp recv: node_val_item");
 
@@ -1390,15 +1391,15 @@ avs_output (struct hecmwST_local_mesh *mesh,
 				avs_write_node_data(outfp, tmp_nn_internal, tmp_global_node_ID, tn_component, tmp_node_val_item, flag_global_ID, nid_offsets[i]);
 
 				if (flag_global_ID)
-					free (tmp_global_node_ID);
-				free (tmp_node_val_item);
+					HECMW_free (tmp_global_node_ID);
+				HECMW_free (tmp_node_val_item);
 			}
 		}
 	}
 
 	if (mynode == 0) {
-		free(nid_offsets);
-		free(eid_offsets);
+		HECMW_free(nid_offsets);
+		HECMW_free(eid_offsets);
 		fclose (outfp);
 	}
 
@@ -1612,8 +1613,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 					&stat);
 			if (tmp_int > 0)
 			{
-				tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
-				tmp_recv_d = (double *) calloc (tmp_int * 3, sizeof (double));
+				tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_recv_d = (double *) HECMW_calloc (tmp_int * 3, sizeof (double));
 				if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 					HECMW_vis_memory_exit ("tmp_recv");
 				HECMW_Recv (tmp_recv_i, tmp_int, HECMW_INT, i, HECMW_ANY_TAG,
@@ -1638,8 +1639,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 					fwrite (xyz, 4, 3, fp);
 
 				}
-				free (tmp_recv_i);
-				free (tmp_recv_d);
+				HECMW_free (tmp_recv_i);
+				HECMW_free (tmp_recv_d);
 			}
 		}
 	}
@@ -1657,7 +1658,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 	}
 	if (mynode == 0)
 	{
-		tmp_global_id = (int *) calloc (total_n_elem, sizeof (int));
+		tmp_global_id = (int *) HECMW_calloc (total_n_elem, sizeof (int));
 		if (tmp_global_id == NULL)
 			HECMW_vis_memory_exit ("tmp_global_id");
 		count = 0;
@@ -1676,8 +1677,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 					&stat);
 			if (tmp_int > 0)
 			{
-				tmp_elem_global_ID = (int *) calloc (tmp_int, sizeof (int));
-				tmp_elem_ID = (int *) calloc (tmp_int * 2, sizeof (int));
+				tmp_elem_global_ID = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_elem_ID = (int *) HECMW_calloc (tmp_int * 2, sizeof (int));
 				if ((tmp_elem_global_ID == NULL) || (tmp_elem_ID == NULL))
 					HECMW_vis_memory_exit ("tmp recv");
 				HECMW_Recv (tmp_elem_global_ID, tmp_int, HECMW_INT, j,
@@ -1693,8 +1694,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 						count++;
 					}
 				}
-				free (tmp_elem_global_ID);
-				free (tmp_elem_ID);
+				HECMW_free (tmp_elem_global_ID);
+				HECMW_free (tmp_elem_ID);
 			}
 		}
 	}
@@ -1800,12 +1801,12 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 			{
 				HECMW_Recv (&tmp_int2, 1, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM,
 						&stat);
-				tmp_elem_global_ID = (int *) calloc (tmp_int, sizeof (int));
-				tmp_elem_ID = (int *) calloc (tmp_int * 2, sizeof (int));
-				tmp_elem_type = (int *) calloc (tmp_int, sizeof (int));
-				tmp_section_ID = (int *) calloc (tmp_int, sizeof (int));
+				tmp_elem_global_ID = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_elem_ID = (int *) HECMW_calloc (tmp_int * 2, sizeof (int));
+				tmp_elem_type = (int *) HECMW_calloc (tmp_int, sizeof (int));
+				tmp_section_ID = (int *) HECMW_calloc (tmp_int, sizeof (int));
 				tmp_elem_node_index =
-					(int *) calloc (tmp_int + 1, sizeof (int));
+					(int *) HECMW_calloc (tmp_int + 1, sizeof (int));
 				if ((tmp_elem_global_ID == NULL) || (tmp_elem_ID == NULL)
 						|| (tmp_elem_type == NULL) || (tmp_section_ID == NULL))
 					HECMW_vis_memory_exit ("tmp recv");
@@ -1816,8 +1817,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 				HECMW_Recv (tmp_elem_node_index, tmp_int + 1, HECMW_INT, j,
 						HECMW_ANY_TAG, VIS_COMM, &stat);
 				tmp_elem_node_item =
-					(int *) calloc (tmp_elem_node_index[tmp_int], sizeof (int));
-				tmp_node_global_ID = (int *) calloc (tmp_int2, sizeof (int));
+					(int *) HECMW_calloc (tmp_elem_node_index[tmp_int], sizeof (int));
+				tmp_node_global_ID = (int *) HECMW_calloc (tmp_int2, sizeof (int));
 				HECMW_Recv (tmp_elem_node_item, tmp_elem_node_index[tmp_int],
 						HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
 				HECMW_Recv (tmp_node_global_ID, tmp_int2, HECMW_INT, j,
@@ -1859,16 +1860,16 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 						}
 					}
 				}
-				free (tmp_elem_global_ID);
-				free (tmp_elem_ID);
-				free (tmp_elem_type);
-				free (tmp_section_ID);
-				free (tmp_elem_node_index);
-				free (tmp_elem_node_item);
-				free (tmp_node_global_ID);
+				HECMW_free (tmp_elem_global_ID);
+				HECMW_free (tmp_elem_ID);
+				HECMW_free (tmp_elem_type);
+				HECMW_free (tmp_section_ID);
+				HECMW_free (tmp_elem_node_index);
+				HECMW_free (tmp_elem_node_item);
+				HECMW_free (tmp_node_global_ID);
 			}
 		}
-		free (tmp_global_id);
+		HECMW_free (tmp_global_id);
 	}
 
 	if (mynode == 0)
@@ -1918,7 +1919,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 			HECMW_Send (mesh->global_node_ID, mesh->nn_internal, HECMW_INT,
 					MASTER_PE, 0, VIS_COMM);
 			tmp_send_d =
-				(double *) calloc (mesh->nn_internal * tn_component,
+				(double *) HECMW_calloc (mesh->nn_internal * tn_component,
 						sizeof (double));
 			for (i = 0; i < mesh->nn_internal * tn_component; i++)
 				tmp_send_d[i] = data->node_val_item[i];
@@ -1926,7 +1927,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 			HECMW_Send (tmp_send_d, mesh->nn_internal * tn_component,
 					HECMW_DOUBLE, MASTER_PE, 0, VIS_COMM);
 
-			free (tmp_send_d);
+			HECMW_free (tmp_send_d);
 
 		}
 	}
@@ -1950,9 +1951,9 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 					&stat);
 			if (tmp_int > 0)
 			{
-				tmp_recv_i = (int *) calloc (tmp_int, sizeof (int));
+				tmp_recv_i = (int *) HECMW_calloc (tmp_int, sizeof (int));
 				tmp_recv_d =
-					(double *) calloc (tmp_int * tn_component, sizeof (double));
+					(double *) HECMW_calloc (tmp_int * tn_component, sizeof (double));
 				if ((tmp_recv_i == NULL) || (tmp_recv_d == NULL))
 					HECMW_vis_memory_exit ("tmp_recv");
 				HECMW_Recv (tmp_recv_i, tmp_int, HECMW_INT, i, HECMW_ANY_TAG,
@@ -1970,8 +1971,8 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 						fwrite (&tmp_d_conv, 4, 1, fp);
 					}
 				}
-				free (tmp_recv_i);
-				free (tmp_recv_d);
+				HECMW_free (tmp_recv_i);
+				HECMW_free (tmp_recv_d);
 			}
 		}
 		num_celldata = 0;

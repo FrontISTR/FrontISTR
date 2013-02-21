@@ -184,7 +184,7 @@ module m_static_LIB_3dIC
       xj(1:9,1:9)= tmpstiff(nn*NDOF+1:(nn+3)*NDOF,nn*NDOF+1:(nn+3)*NDOF)
       call calInverse(9, xj)
       tmpk = matmul( tmpstiff( 1:nn*NDOF,nn*NDOF+1:(nn+3)*NDOF ), xj )
-      stiff = tmpstiff(1:nn*NDOF,1:nn*NDOF)- matmul( tmpk, tmpstiff(nn*NDOF+1:(nn+3)*NDOF,1:nn*NDOF)  )
+      stiff(1:nn*NDOF,1:nn*NDOF) = tmpstiff(1:nn*NDOF,1:nn*NDOF)- matmul( tmpk, tmpstiff(nn*NDOF+1:(nn+3)*NDOF,1:nn*NDOF)  )
 
    end subroutine STF_C3D8IC
 

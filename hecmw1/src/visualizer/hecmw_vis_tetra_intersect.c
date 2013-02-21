@@ -20,6 +20,7 @@
 #include <math.h>
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_case_table.h"
+#include "hecmw_malloc.h"
 
 int get_tetra_data(Surface *sff, struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data,
 		int elemID, Tetra *tetra, int tn_component)
@@ -137,7 +138,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 	if((num_gt_0!=0) && (num_gt_0!=4)) { /* There are patches inside the tetra */
 
 		if((num_gt_0==1) || (num_gt_0==3)) { /* There is one patch inside the tetra */
-			t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+			t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 			if(t1==NULL)
 				HECMW_vis_memory_exit("t1");
 			t2=head_patch_tetra->patch_link;
@@ -167,7 +168,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 					tmp_int=tetra->local_vid[v0_id]+tetra->local_vid[i];
 					/*					if(vertex_hash_table[tmp_int].ident==0) {
 						vertex_hash_table[tmp_int].ident++;
-						h1=(Hash_vertex *)malloc(sizeof(Hash_vertex));
+						h1=(Hash_vertex *)HECMW_malloc(sizeof(Hash_vertex));
 						if(h1==NULL)
 							HECMW_vis_memory_exit("h1");
 					    vertex_hash_table[tmp_int].next_vertex=h1;
@@ -175,7 +176,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 						h1->ident=tetra_point->ident;
 						for(j=0;j<3;j++)
 							h1->geom[j]=point[j];
-						p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+						p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 						if(p1==NULL)
 							HECMW_vis_memory_exit("p1");
 						tetra_point->ident++;
@@ -206,7 +207,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 					}
 					if(flag_existing==0) { /*adding new vertex */
 						vertex_hash_table[tmp_int].ident++;
-						h1=(Hash_vertex *)malloc(sizeof(Hash_vertex));
+						h1=(Hash_vertex *)HECMW_malloc(sizeof(Hash_vertex));
 						if(h1==NULL)
 							HECMW_vis_memory_exit("h1");
 						h2=vertex_hash_table[tmp_int].next_vertex;
@@ -215,7 +216,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 						h1->ident=tetra_point->ident;
 						for(j=0;j<3;j++)
 							h1->geom[j]=point[j];
-						p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+						p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 						if(p1==NULL)
 							HECMW_vis_memory_exit("p1");
 						tetra_point->ident++;
@@ -333,7 +334,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 				tmp_int=tetra->local_vid[v1]+tetra->local_vid[v2];
 				/*					if(vertex_hash_table[tmp_int].ident==0) {
 						vertex_hash_table[tmp_int].ident++;
-						h1=(Hash_vertex *)malloc(sizeof(Hash_vertex));
+						h1=(Hash_vertex *)HECMW_malloc(sizeof(Hash_vertex));
 						if(h1==NULL)
 							HECMW_vis_memory_exit("h1");
 					    vertex_hash_table[tmp_int].next_vertex=h1;
@@ -341,7 +342,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 						h1->ident=tetra_point->ident;
 						for(j=0;j<3;j++)
 							h1->geom[j]=point[j];
-						p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+						p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 						if(p1==NULL)
 							HECMW_vis_memory_exit("p1");
 						tetra_point->ident++;
@@ -373,7 +374,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 				}
 				if(flag_existing==0) { /*adding new vertex */
 					vertex_hash_table[tmp_int].ident++;
-					h1=(Hash_vertex *)malloc(sizeof(Hash_vertex));
+					h1=(Hash_vertex *)HECMW_malloc(sizeof(Hash_vertex));
 					if(h1==NULL)
 						HECMW_vis_memory_exit("h1");
 					h2=vertex_hash_table[tmp_int].next_vertex;
@@ -382,7 +383,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 					h1->ident=tetra_point->ident;
 					for(j=0;j<3;j++)
 						h1->geom[j]=point[j];
-					p1=(Tetra_point *)malloc(sizeof(Tetra_point));
+					p1=(Tetra_point *)HECMW_malloc(sizeof(Tetra_point));
 					if(p1==NULL)
 						HECMW_vis_memory_exit("p1");
 					tetra_point->ident++;
@@ -433,7 +434,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 			}
 
 
-			t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+			t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 			if(t1==NULL)
 				HECMW_vis_memory_exit("t1");
 			t2=head_patch_tetra->patch_link;
@@ -442,7 +443,7 @@ void find_intersection_tetra(Tetra *tetra, double isovalue, Tetra_point *tetra_p
 			t1->next_patch=t2;
 			for(j=0;j<3;j++)
 				t1->patch[j]=patch[j];
-			t1=(Patch_tetra *)malloc(sizeof(Patch_tetra));
+			t1=(Patch_tetra *)HECMW_malloc(sizeof(Patch_tetra));
 			if(t1==NULL)
 				HECMW_vis_memory_exit("t1");
 			t2=head_patch_tetra->patch_link;

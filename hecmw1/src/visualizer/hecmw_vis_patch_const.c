@@ -22,6 +22,7 @@
 #include <math.h>
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_calc_attr.h"
+#include "hecmw_malloc.h"
 
 int merge_vol_iso(int iso_type, Cell *cell,
 		double falpha, Cube_polygons *alpha_cube, double fbeta,
@@ -59,7 +60,7 @@ int merge_vol_iso(int iso_type, Cell *cell,
 			i = 0;
 			do {
 				(*CS_polys_tail)->type = 0;
-				(*CS_polys_tail)->plist = (int *) calloc(4, sizeof(int));
+				(*CS_polys_tail)->plist = (int *) HECMW_calloc(4, sizeof(int));
 				(*CS_polys_tail)->plist[0] = 3;
 				(*CS_polys_tail)->plist[1] = alpha_vident[alpha_iso[i++]];
 				(*CS_polys_tail)->plist[2] = alpha_vident[alpha_iso[i++]];
@@ -88,7 +89,7 @@ int merge_vol_iso(int iso_type, Cell *cell,
 			i = 0;
 			do {
 				(*CS_polys_tail)->type = 1;
-				(*CS_polys_tail)->plist = (int *) calloc(4, sizeof(int));
+				(*CS_polys_tail)->plist = (int *) HECMW_calloc(4, sizeof(int));
 				(*CS_polys_tail)->plist[0] = 3;
 				(*CS_polys_tail)->plist[1] = beta_vident[beta_iso[i++]];
 				(*CS_polys_tail)->plist[2] = beta_vident[beta_iso[i++]];

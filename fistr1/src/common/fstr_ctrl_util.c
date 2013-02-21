@@ -15,6 +15,7 @@
 #define fstr_ctrl_util_MAIN
 
 #include "fstr_ctrl_util.h"
+#include "hecmw_malloc.h"
 
 
 #ifndef TRUE
@@ -76,11 +77,11 @@ static void fstr_ctrl_data_finalize( fstr_ctrl_data* ctrl )
 	int i;
 
 	for( i=0; i<ctrl->rec_n;i++ ){
-		free(ctrl->rec[i].line);
+		HECMW_free(ctrl->rec[i].line);
 	}
-	free(ctrl->rec);
-	free(ctrl->header_pos);
-	free(ctrl->data_line_n);
+	HECMW_free(ctrl->rec);
+	HECMW_free(ctrl->header_pos);
+	HECMW_free(ctrl->data_line_n);
 }
 
 int fstr_ctrl_rewind__( int* ctrl )
@@ -196,7 +197,7 @@ static int set_fstr_ctrl_data( const char* fname, fstr_ctrl_data* ctrl )
 			}
 		}
 		ctrl->rec[rec_count].line_no = line_no;
-		ctrl->rec[rec_count].line = malloc( sizeof(char) * (strlen( buff )+1));
+		ctrl->rec[rec_count].line = HECMW_malloc( sizeof(char) * (strlen( buff )+1));
 
 		if( ctrl->rec[rec_count].line == NULL ) {
 			printf("Not enough memory\n");
@@ -224,15 +225,15 @@ static int create_fstr_ctrl_data( const char* fname, fstr_ctrl_data* ctrl )
 	if( count_line_and_header_number( fname, &line_n, &header_n )) return -1;
 
 	ctrl->rec_n = line_n;
-	ctrl->rec = (ctrl_rec*)malloc( sizeof(ctrl_rec) * line_n );
+	ctrl->rec = (ctrl_rec*)HECMW_malloc( sizeof(ctrl_rec) * line_n );
 	for(i=0; i<line_n; i++) {
 		ctrl->rec[i].line = NULL;
 		ctrl->rec[i].line_no = 0;
 	}
 
 	ctrl->header_n = header_n;
-	ctrl->header_pos = (int*)malloc( sizeof(int) * header_n );
-	ctrl->data_line_n = (int*)malloc( sizeof(int) * header_n );
+	ctrl->header_pos = (int*)HECMW_malloc( sizeof(int) * header_n );
+	ctrl->data_line_n = (int*)HECMW_malloc( sizeof(int) * header_n );
 	for(i=0; i<header_n; i++) {
 		ctrl->header_pos[i] = 0;
 		ctrl->data_line_n[i] = 0;
@@ -259,7 +260,7 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename )
 {
 	fstr_ctrl_data* ctrl;
 
-	ctrl = (fstr_ctrl_data*)malloc( sizeof( fstr_ctrl_data ) );
+	ctrl = (fstr_ctrl_data*)HECMW_malloc( sizeof( fstr_ctrl_data ) );
 	if(!ctrl) return NULL;
 
 #if 0  /* all PE reading fstr contorl */
@@ -275,7 +276,7 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename )
 		}
 		HECMW_Bcast( &err, 1, HECMW_INT, 0, comm );
 		if( err ) {
-			free( ctrl );
+			HECMW_free( ctrl );
 			return NULL;
 		}
 
@@ -283,7 +284,7 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename )
 
 		HECMW_Bcast( &ctrl->rec_n,    1, HECMW_INT, 0, comm );
 		if( myrank != 0 ){
-			ctrl->rec = malloc( sizeof( ctrl_rec ) * ctrl->rec_n );
+			ctrl->rec = HECMW_malloc( sizeof( ctrl_rec ) * ctrl->rec_n );
 		}
 		for( i=0; i<ctrl->rec_n; i++ ){
 			int line_size;
@@ -291,7 +292,7 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename )
 				line_size = strlen( ctrl->rec[i].line ) + 1;
 			HECMW_Bcast( &line_size,  1, HECMW_INT, 0, comm );
 			if( myrank != 0 ) {
-				ctrl->rec[i].line = malloc( sizeof(char) * line_size );
+				ctrl->rec[i].line = HECMW_malloc( sizeof(char) * line_size );
 			}
 			HECMW_Bcast( ctrl->rec[i].line,    line_size, HECMW_CHAR, 0, comm );
 			HECMW_Bcast( &ctrl->rec[i].line_no,        1, HECMW_INT,  0, comm );
@@ -301,20 +302,20 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename )
 
 		HECMW_Bcast( &ctrl->header_n, 1, HECMW_INT, 0, comm );
 		if( myrank != 0 ){
-			ctrl->header_pos = malloc( sizeof( int ) * ctrl->header_n );
+			ctrl->header_pos = HECMW_malloc( sizeof( int ) * ctrl->header_n );
 		}
 		HECMW_Bcast( ctrl->header_pos, ctrl->header_n, HECMW_INT, 0, comm );
 
 		/* data line  ----------------------------------------------------- */
 
 		if( myrank != 0 ){
-			ctrl->data_line_n = malloc( sizeof( int ) * ctrl->header_n );
+			ctrl->data_line_n = HECMW_malloc( sizeof( int ) * ctrl->header_n );
 		}
 		HECMW_Bcast( ctrl->data_line_n, ctrl->header_n, HECMW_INT, 0, comm );
 	}
 #else
 	if( create_fstr_ctrl_data( filename, ctrl )) {
-		free( ctrl );
+		HECMW_free( ctrl );
 		return NULL;
 	}
 #endif
@@ -1624,6 +1625,7 @@ int FSTR_CTRL_GET_DATA_ARRAY_EX__( int* ctrl, const char* format, ... )
 int fstr_ctrl_close_( int* ctrl )
 {
 	int fg = fstr_ctrl_close( ctrl_list[*ctrl] );
+	HECMW_free(ctrl_list[*ctrl]);
 	ctrl_list[*ctrl] = NULL;
 	return fg;
 }
