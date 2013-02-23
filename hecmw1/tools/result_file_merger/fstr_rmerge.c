@@ -12,7 +12,7 @@
 FILE* log_fp;
 int nrank = 0;
 int strid = 1;
-int endid = 1;
+int endid = 0;
 int intid = 1;
 
 void error_stop( void )

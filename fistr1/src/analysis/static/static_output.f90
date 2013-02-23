@@ -80,6 +80,8 @@ module m_static_output
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 1 )
       endif
+      if( associated(tnstrain) ) deallocate( tnstrain )
+      if( associated(testrain) ) deallocate( testrain )
       return
     endif
 

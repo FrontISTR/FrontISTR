@@ -6,7 +6,7 @@
 	-o [type] : output file type     ( "text" or "binary" )
 	-n [rank] : number of ranks      ( default:0 )
 	-s [step] : start step number    ( default:1 )
-	-e [step] : end step number      ( default:1 )
+	-e [step] : end step number      ( default:0 )
 	-i [step] : interval step number ( default:1 )
     -h        : help
 
