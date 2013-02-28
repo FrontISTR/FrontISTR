@@ -320,5 +320,14 @@ module m_utilities
       ENDDO
     
    end subroutine calInverse
+   
+   subroutine cross_product(v1,v2,vn)
+    real(kind=kreal),intent(in)	::	v1(3),v2(3)
+    real(kind=kreal),intent(out)	::	vn(3)
+
+    vn(1) = v1(2)*v2(3) - v1(3)*v2(2)
+    vn(2) = v1(3)*v2(1) - v1(1)*v2(3)
+    vn(3) = v1(1)*v2(2) - v1(2)*v2(1)
+  end subroutine cross_product
 		
 end module 

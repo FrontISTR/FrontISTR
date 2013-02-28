@@ -201,7 +201,7 @@ contains
 
 
       jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
-      tincre = fstrSOLID%step_ctrl( cstep )%initdt
+      tincre = 1.d0 / fstrSOLID%step_ctrl( cstep )%num_substep
 
       if( jj_n_amp <= 0 ) then  ! Amplitude not defined
           f_t = tincre*substep
