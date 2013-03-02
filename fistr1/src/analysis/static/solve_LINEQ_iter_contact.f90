@@ -45,7 +45,7 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    integer :: ndof
+    integer :: ndof, method_org
     integer, allocatable :: iw2(:), iwS(:)
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
     type(T_matrix) :: Tmat, Ttmat
@@ -54,7 +54,15 @@ contains
 
     if (fstrMAT%num_lagrange == 0) then
 
+      ! use CG because the matrix is symmetric
+      method_org = hecmw_mat_get_method(hecMAT)
+      call hecmw_mat_set_method(hecMAT, 1)
+
+      ! solve
       call hecmw_solve_33(hecMESH, hecMAT)
+
+      ! restore solver setting
+      call hecmw_mat_set_method(hecMAT, method_org)
 
     else
 
@@ -94,6 +102,9 @@ contains
 
       call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
            fstrMAT%num_lagrange, hecTKT%B)
+
+      ! use CG when the matrix is symmetric
+      if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
       ! solve
       call hecmw_solve_33(hecMESH, hecTKT)
