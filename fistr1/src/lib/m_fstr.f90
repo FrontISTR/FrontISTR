@@ -446,7 +446,7 @@ public
 
                 ! OUTPUT CONTROL
                 integer(kind=kint) :: nout           ! output interval of result
-                integer(kind=kint) :: node_monit_1   ! node of monitoring result
+                integer(kind=kint) :: ngrp_monit     ! node of monitoring result
                 integer(kind=kint) :: nout_monit     ! output interval of result monitoring
                 integer(kind=kint) :: i_step         ! step number
                 integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output       
@@ -471,12 +471,12 @@ public
                 real(kind=kreal), pointer :: VEC2  (:)
                 real(kind=kreal), pointer :: VEC3  (:)
 				
-                integer(kind=kint) :: dynamic_IW4        =   74
-                integer(kind=kint) :: dynamic_IW5        =   75
-                integer(kind=kint) :: dynamic_IW6        =   76
-                integer(kind=kint) :: dynamic_IW7        =   77            
-                integer(kind=kint) :: dynamic_IW8        =   78
-                integer(kind=kint) :: dynamic_IW9        =   79
+                integer(kind=kint) :: dynamic_IW4        =   204
+                integer(kind=kint) :: dynamic_IW5        =   205
+                integer(kind=kint) :: dynamic_IW6        =   206
+                integer(kind=kint) :: dynamic_IW7        =   207
+                integer(kind=kint) :: dynamic_IW8        =   208
+                integer(kind=kint) :: dynamic_IW9        =   209
 
         end type fstr_dynamic
 !C ---------------------------------------------------------------------------- 

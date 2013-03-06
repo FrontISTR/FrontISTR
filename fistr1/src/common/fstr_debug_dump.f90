@@ -307,7 +307,7 @@ subroutine dump_fstr_dynamic( d )
         write(*,*) 'ray_k    ', d%ray_k
         write(*,*) 'restart_nout',d%restart_nout
         write(*,*) 'nout     ', d%nout
-        write(*,*) 'node_monit_1', d%node_monit_1
+        write(*,*) 'ngrp_monit  ', d%ngrp_monit
         write(*,*) 'nout_monit  ', d%nout_monit
         write(*,*) 'iout_list   ', d%iout_list
         write(*,*)

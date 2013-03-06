@@ -42,7 +42,7 @@ contains
 
   subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
 
     implicit none
 !C
@@ -66,7 +66,6 @@ contains
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
     integer(kind=kint) :: iiii5, iexit
-    integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
     integer(kind=kint) :: kkk0, kkk1
 
@@ -147,7 +146,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0
@@ -406,7 +405,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -425,7 +424,7 @@ contains
 !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.  
  subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &  
                                                        ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                                       ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange  &
+                                                       ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange  &
                                                        ,conMAT )
   
     use mContact                                                                                                                   
@@ -457,7 +456,6 @@ contains
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
-    integer(kind=kint) :: my_rank_monit_1    
     
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
@@ -551,7 +549,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0  
@@ -831,7 +829,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 

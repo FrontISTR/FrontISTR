@@ -40,7 +40,7 @@ contains
 !C================================================================C
   subroutine fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
 
     implicit none
 !C
@@ -64,7 +64,6 @@ contains
     integer(kind=kint) :: kkk0, kkk1
     integer(kind=kint) :: ierror, idummy
     integer(kind=kint) :: iiii5, iexit
-    integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
     real(kind=kreal),pointer :: prevB(:)
 
@@ -148,7 +147,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
     end if
 !!
@@ -394,7 +393,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
     enddo
 

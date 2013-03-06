@@ -48,7 +48,8 @@ contains
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                 
       type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
       type ( hecmwST_matrix      ),optional :: conMAT
-      integer(kind=kint) :: i,j,i_flg_1, my_rank_monit_1, ierror
+      integer(kind=kint) :: i,j,num_monit,ig,iS,iE,ik,in,ing,iunitS,iunit,ierror
+      character(len=HECMW_FILENAME_LEN) :: fname
       integer(kind=kint) :: restrt_step_num
       integer(kind=kint) :: restrt_step(1)
 
@@ -68,55 +69,80 @@ contains
               call hecmw_abort( hecmw_comm_get_comm())
             end if
 
-      my_rank_monit_1 = 999999999
-      i_flg_1 = 0
-
-      if( i_flg_1 .ne. 1 ) then
-        do i= 1, hecMESH%nn_internal
-        if( fstrPARAM%global_local_id(1,i) .eq. fstrDYNAMIC%node_monit_1 ) then
-          fstrDYNAMIC%node_monit_1 = i
-          i_flg_1 = 1
-          do j= 1, hecMESH%nn_internal
-            if( j == i ) then
-              my_rank_monit_1 = hecMESH%node_ID(2*j)
-              exit
-            end if
-          end do
-          exit
-        end if
-        enddo
-      end if
-
 !C
 !C-- file open for local use
 !C
-      if( hecMESH%my_rank == my_rank_monit_1 ) then
-        OPEN(fstrDYNAMIC%dynamic_IW4,FILE='dyna_disp_p1.txt', status = 'replace', iostat=ierror)
+      if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
+      num_monit = 0
+      ig = fstrDYNAMIC%ngrp_monit
+      iS = hecMESH%node_group%grp_index(ig-1)+1
+      iE = hecMESH%node_group%grp_index(ig)
+      do ik=iS,iE
+        num_monit = num_monit+1
+        in = hecMESH%node_group%grp_item(ik)
+        ing = hecMESH%global_node_id(in)
+        iunitS = 10*(num_monit-1)
+
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW4
+        write(fname,'(a,i0,a)') 'dyna_disp_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        else
+          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+        endif
         if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error <dyna_disp_p1.txt>'
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
-        OPEN(fstrDYNAMIC%dynamic_IW5,FILE='dyna_velo_p1.txt', status = 'replace', iostat=ierror)
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error <dyna_velo_p1.txt>'
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
-        OPEN(fstrDYNAMIC%dynamic_IW6,FILE='dyna_acce_p1.txt', status = 'replace', iostat=ierror)
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error <dyna_acce_p1.txt>'
+          write(*,*) 'stop due to file opening error',trim(fname)
           call hecmw_abort( hecmw_comm_get_comm())
         end if
 
-        OPEN(fstrDYNAMIC%dynamic_IW8,FILE='dyna_strain_p1.txt', status = 'replace', iostat=ierror)
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW5
+        write(fname,'(a,i0,a)') 'dyna_velo_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        else
+          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+        endif
         if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error <dyna_disp_p1.txt>'
+          write(*,*) 'stop due to file opening error',trim(fname)
           call hecmw_abort( hecmw_comm_get_comm())
         end if
-        OPEN(fstrDYNAMIC%dynamic_IW9,FILE='dyna_stress_p1.txt', status = 'replace', iostat=ierror)
+
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW6
+        write(fname,'(a,i0,a)') 'dyna_acce_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        else
+          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+        endif
         if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error <dyna_disp_p1.txt>'
+          write(*,*) 'stop due to file opening error',trim(fname)
           call hecmw_abort( hecmw_comm_get_comm())
         end if
+
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW8
+        write(fname,'(a,i0,a)') 'dyna_strain_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        else
+          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+        endif
+        if( ierror /= 0 ) then
+          write(*,*) 'stop due to file opening error',trim(fname)
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
+
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW9
+        write(fname,'(a,i0,a)') 'dyna_stress_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        else
+          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+        endif
+        if( ierror /= 0 ) then
+          write(*,*) 'stop due to file opening error',trim(fname)
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
+      enddo
       endif
 
 !C
@@ -160,12 +186,12 @@ contains
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                  call fstr_solve_dynamic_implicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
                     !write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
                     call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, &
-                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
+                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, &
                                                        restrt_step_num)
                  end if
              end if
@@ -184,12 +210,12 @@ contains
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                 call fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
                     !write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
                     call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, &
-                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
+                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, &
                                                        restrt_step_num)
                  end if
              end if
@@ -212,18 +238,18 @@ contains
                if(.not. associated( fstrSOLID%contacts ) ) then
                  call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
                elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
 !                ----  For Parallel Contact with Multi-Partition Domains
                  if(paraContactFlag.and.present(conMAT)) then
                    call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange   &
+                                      ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange   &
                                       ,conMAT )
                  else
                    call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange )
+                                      ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange )
                  endif
                endif                                                                                                              
              else if(fstrDYNAMIC%idx_resp == 2) then
@@ -237,7 +263,7 @@ contains
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                 call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
 
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
@@ -249,13 +275,15 @@ contains
       endif
 
 !C-- file close for local use
-      if( hecMESH%my_rank == my_rank_monit_1 ) then
-        CLOSE(fstrDYNAMIC%dynamic_IW4)
-        CLOSE(fstrDYNAMIC%dynamic_IW5)
-        CLOSE(fstrDYNAMIC%dynamic_IW6)
-
-        CLOSE(fstrDYNAMIC%dynamic_IW8)
-        CLOSE(fstrDYNAMIC%dynamic_IW9)
+      if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
+      do i=1,num_monit
+        iunitS = 10*(i-1)
+        CLOSE(iunitS + fstrDYNAMIC%dynamic_IW4)
+        CLOSE(iunitS + fstrDYNAMIC%dynamic_IW5)
+        CLOSE(iunitS + fstrDYNAMIC%dynamic_IW6)
+        CLOSE(iunitS + fstrDYNAMIC%dynamic_IW8)
+        CLOSE(iunitS + fstrDYNAMIC%dynamic_IW9)
+      enddo
       endif
 !C-- end of finalization
 

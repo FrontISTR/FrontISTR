@@ -94,7 +94,7 @@ end function fstr_ctrl_get_ACCELERATION
 function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
                 idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
                 ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
-                nout, node_monit_1, nout_monit, iout_list )
+                nout, node_id, node_id_len, nout_monit, iout_list )
         implicit none
         integer(kind=kint) :: ctrl
 
@@ -123,12 +123,14 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
 
         ! OUTPUT CONTROL
         integer(kind=kint) :: nout
-        integer(kind=kint) :: node_monit_1
+        character(len=HECMW_NAME_LEN) :: node_id
+        integer(kind=kint) :: node_id_len
         integer(kind=kint) :: nout_monit
         integer(kind=kint) :: iout_list(6)
 		
         integer(kind=kint) :: rcode
         character(len=80) :: s
+        character(len=HECMW_NAME_LEN) :: data_fmt,ss
 
         integer(kind=kint) :: fstr_ctrl_get_DYNAMIC
 
@@ -144,7 +146,9 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   ganma, beta )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 4, 'iirr ', idx_mas, idx_dmp, ray_m, ray_k )/=0 ) return
-        if( fstr_ctrl_get_data_ex( ctrl, 5, 'iii ',   nout, node_monit_1, nout_monit )/=0 ) return
+        write(ss,*) node_id_len
+        write(data_fmt,'(a,a,a)') 'iS',trim(adjustl(ss)),'i '
+        if( fstr_ctrl_get_data_ex( ctrl, 5, data_fmt, nout, node_id, nout_monit )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 6, 'iiiiii ', &
                 iout_list(1), iout_list(2), iout_list(3), iout_list(4), iout_list(5), iout_list(6) )/=0 ) return
         fstr_ctrl_get_DYNAMIC = 0
