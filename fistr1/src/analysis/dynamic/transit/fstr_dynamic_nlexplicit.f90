@@ -75,6 +75,8 @@ contains
 
     integer(kind=kint) :: restrt_step_num
 
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846
+
 
     call cpu_time( time_1 )
 
@@ -167,6 +169,17 @@ contains
           if( fstrPARAM%fg_couple_first /= 0 ) then
             bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
             if( bsize > 1.0 ) bsize = 1.0
+            do kkk0 = 1, fstrCPL%coupled_node_n
+              kkk1 = 3 * kkk0
+              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+            enddo
+          endif
+          if( fstrPARAM%fg_couple_window > 0 ) then
+            j = i - restrt_step_num + 1
+            kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+            bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
             do kkk0 = 1, fstrCPL%coupled_node_n
               kkk1 = 3 * kkk0
               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
