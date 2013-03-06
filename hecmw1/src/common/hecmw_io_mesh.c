@@ -359,6 +359,10 @@ print_sect(FILE *fp)
 		} else if(p->type == HECMW_SECT_TYPE_SHELL) {
 			fprintf(fp, "TYPE: SHELL, THICKNESS: %E, INTEGPOINTS: %d\n",
 					p->sect.shell.thickness, p->sect.shell.integpoints);
+		} else if(p->type == HECMW_SECT_TYPE_BEAM) {
+			fprintf(fp, "TYPE: BEAM, Reference vector: %E %E %E, Iyy: %E\n",
+					p->sect.beam.vxyz[0], p->sect.beam.vxyz[1], p->sect.beam.vxyz[2],
+					p->sect.beam.Iyy);
 		} else if(p->type == HECMW_SECT_TYPE_INTERFACE) {
 			fprintf(fp, "TYPE: INTERFACE, THICKNESS: %E, "
 					"GAPCON: %E, GAPRAD1: %E, GAPRAD2: %E\n",
@@ -2678,7 +2682,7 @@ setup_sect(struct hecmwST_local_mesh *mesh)
 			nreal++;	/* thickness */
 			nint++;		/* integpoints */
 		} else if(p->type == HECMW_SECT_TYPE_BEAM) {
-			return -1;
+			nreal += 7; /* vxyz3, Iyy, Izz, Jx */
 		} else if(p->type == HECMW_SECT_TYPE_INTERFACE) {
 			nreal += 4;	/* thickness, gapcon, gaprad1, gaprad2 */
 		} else {
@@ -2801,7 +2805,16 @@ setup_sect(struct hecmwST_local_mesh *mesh)
 			sect->sect_I_item[iidx] = p->sect.shell.integpoints;
 			sect->sect_R_item[ridx] = p->sect.shell.thickness;
 		} else if(p->type == HECMW_SECT_TYPE_BEAM) {
-			return -1;
+			sect->sect_I_index[i+1] = sect->sect_I_index[i] + 0;
+			sect->sect_R_index[i+1] = sect->sect_R_index[i] + 7;
+			HECMW_assert(ridx+6 <= nreal);
+			sect->sect_R_item[ridx] = p->sect.beam.vxyz[0];
+			sect->sect_R_item[ridx+1] = p->sect.beam.vxyz[1];
+			sect->sect_R_item[ridx+2] = p->sect.beam.vxyz[2];
+			sect->sect_R_item[ridx+3] = p->sect.beam.area;
+            sect->sect_R_item[ridx+4] = p->sect.beam.Iyy;
+			sect->sect_R_item[ridx+5] = p->sect.beam.Izz;
+			sect->sect_R_item[ridx+6] = p->sect.beam.Jx;
 		} else if(p->type == HECMW_SECT_TYPE_INTERFACE) {
 			sect->sect_I_index[i+1] = sect->sect_I_index[i] + 0;
 			sect->sect_R_index[i+1] = sect->sect_R_index[i] + 4;
@@ -3937,6 +3950,12 @@ post_section_check_egrp(void)
 				case HECMW_SECT_TYPE_SOLID:
 					if(!HECMW_is_etype_solid(elem->type)) {
 						set_err(HECMW_IO_E1026, "Only solid element allowed in EGRP %s", p->egrp);
+						goto error;
+					}
+					break;
+				case HECMW_SECT_TYPE_BEAM:
+					if(!HECMW_is_etype_beam(elem->type)) {
+						set_err(HECMW_IO_E1026, "Only beam element allowed in EGRP %s", p->egrp);
 						goto error;
 					}
 					break;

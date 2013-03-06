@@ -3095,6 +3095,8 @@ read_section_param_type(int *type)
 		*type = HECMW_SECT_TYPE_SOLID;
 	} else if(token == HECMW_HECLEX_K_SHELL) {
 		*type = HECMW_SECT_TYPE_SHELL;
+    } else if(token == HECMW_HECLEX_K_BEAM) {
+		*type = HECMW_SECT_TYPE_BEAM;
 	} else if(token == HECMW_HECLEX_K_INTERFACE) {
 		*type = HECMW_SECT_TYPE_INTERFACE;
 	} else {
@@ -3300,13 +3302,159 @@ read_section_shell(union hecmw_io_section_item *sect_item)
 	/* NL */
 	token = HECMW_heclex_next_token();
 	if(token != HECMW_HECLEX_NL) {
-		set_err_token(token, HECMW_IO_HEC_E1700, "NL required agter INTEGPOINTS");
+		set_err_token(token, HECMW_IO_HEC_E1700, "NL required after INTEGPOINTS");
 		return -1;
 	}
 
 	/* set */
 	sect_item->shell.thickness = thickness;
 	sect_item->shell.integpoints = integpoints;
+
+	return 0;
+}
+
+static int
+read_section_beam(union hecmw_io_section_item *sect_item)
+{
+	double nx,ny,nz, area, Iyy, Izz, Jx;
+	int token;
+
+	/* vx */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		nx = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "vx reuiqred");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vx");
+		return -1;
+	}
+	
+	/* vy */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		ny = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "vy reuiqred");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vy");
+		return -1;
+	}
+	
+	/* vz */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		nz = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "vz reuiqred");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vz");
+		return -1;
+	}
+
+	/* area */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		area = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "area required");
+		return -1;
+	}
+	if(area <= 0) {
+		set_err(HECMW_IO_HEC_E1707, "");
+		return -1;
+	}
+	
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vz");
+		return -1;
+	}
+	
+	/* Iyy */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		Iyy = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "Iyy reuiqred");
+		return -1;
+	}
+	if(Iyy <= 0) {
+		set_err(HECMW_IO_HEC_E1708, "");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after Iyy");
+		return -1;
+	}
+	
+	/* Izz */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		Izz = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "Izz reuiqred");
+		return -1;
+	}
+	if(Izz <= 0) {
+		set_err(HECMW_IO_HEC_E1709, "");
+		return -1;
+	}
+
+	/* ',' */
+	token = HECMW_heclex_next_token();
+	if(token != ',') {
+		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after Izz");
+		return -1;
+	}
+	
+	/* Jx */
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
+		Jx = HECMW_heclex_get_number();
+	} else {
+		set_err_token(token, HECMW_IO_HEC_E1700, "Jx reuiqred");
+		return -1;
+	}
+	if(Jx <= 0) {
+		set_err(HECMW_IO_HEC_E1710, "");
+		return -1;
+	}
+
+	/* NL */
+	token = HECMW_heclex_next_token();
+	if(token != HECMW_HECLEX_NL) {
+		set_err_token(token, HECMW_IO_HEC_E1700, "NL required after Jx");
+		return -1;
+	}
+
+	/* set */
+	sect_item->beam.vxyz[0] = nx;
+    sect_item->beam.vxyz[1] = ny;
+    sect_item->beam.vxyz[2] = nz;
+	sect_item->beam.area = area;
+    sect_item->beam.Iyy = Iyy;
+    sect_item->beam.Izz = Izz;
+    sect_item->beam.Jx = Jx;
 
 	return 0;
 }
@@ -3438,6 +3586,7 @@ read_section(void)
 		ST_DATA_INCLUDE,
 		ST_DATA_LINE_SOLID,
 		ST_DATA_LINE_SHELL,
+		ST_DATA_LINE_BEAM,
 		ST_DATA_LINE_INTERFACE,
 		ST_DATA_LINE_REGIST
 	};
@@ -3507,6 +3656,8 @@ read_section(void)
 					state = ST_DATA_LINE_SOLID;
 				} else if(type == HECMW_SECT_TYPE_SHELL) {
 					state = ST_DATA_LINE_SHELL;
+				} else if(type == HECMW_SECT_TYPE_BEAM) {
+					state = ST_DATA_LINE_BEAM;
 				} else if(type == HECMW_SECT_TYPE_INTERFACE) {
 					state = ST_DATA_LINE_INTERFACE;
 				} else {
@@ -3528,6 +3679,8 @@ read_section(void)
 				state = ST_DATA_LINE_SOLID;
 			} else if(type == HECMW_SECT_TYPE_SHELL) {
 				state = ST_DATA_LINE_SHELL;
+			} else if(type == HECMW_SECT_TYPE_BEAM) {
+					state = ST_DATA_LINE_BEAM;
 			} else if(type == HECMW_SECT_TYPE_INTERFACE) {
 				state = ST_DATA_LINE_INTERFACE;
 			} else {
@@ -3547,6 +3700,13 @@ read_section(void)
 
 			if(read_section_shell(&sect_item)) return -1;
 			state = ST_DATA_LINE_REGIST;
+		} else if(state == ST_DATA_LINE_BEAM) {
+			HECMW_assert(flag_egrp);
+			HECMW_assert(flag_type);
+			HECMW_assert(type == HECMW_SECT_TYPE_BEAM);
+
+			if(read_section_beam(&sect_item)) return -1;
+			state = ST_DATA_LINE_REGIST; 
 		} else if(state == ST_DATA_LINE_INTERFACE) {
 			HECMW_assert(flag_egrp);
 			HECMW_assert(flag_type);

@@ -664,6 +664,9 @@ module hecmw_dist_copy_c2f_f
                 call hecmw_dist_copy_c2f_set_if(sname, vname, sect%sect_R_item, ierr)
                 if(ierr /= 0) return
             endif
+			
+            allocate(sect%sect_orien_ID(sect%n_sect))
+            sect%sect_orien_ID(:) = -1
         endif
     end subroutine get_sect
 

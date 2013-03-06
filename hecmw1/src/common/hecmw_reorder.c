@@ -908,7 +908,7 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
       /* beam element */
     case HECMW_ETYPE_BEM1:
     case HECMW_ETYPE_BEM2:
-      n_dof = BIT_DOF_THREE;
+      n_dof = BIT_DOF_SIX;
       break;
 
       /* surface shell element */

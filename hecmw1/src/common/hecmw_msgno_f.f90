@@ -239,6 +239,10 @@ module hecmw_msgno
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1704 = 10233
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1705 = 10234
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1706 = 10235
+    integer(kind=kint),parameter :: HECMW_IO_HEC_E1707 = 10240 
+    integer(kind=kint),parameter :: HECMW_IO_HEC_E1708 = 10241 
+	integer(kind=kint),parameter :: HECMW_IO_HEC_E1709 = 10242
+	integer(kind=kint),parameter :: HECMW_IO_HEC_E1710 = 10243
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1800 = 10236
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1801 = 10237
     integer(kind=kint),parameter :: HECMW_IO_HEC_E1900 = 10238

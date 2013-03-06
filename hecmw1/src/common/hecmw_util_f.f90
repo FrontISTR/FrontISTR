@@ -58,6 +58,7 @@
           integer(kind=kint),pointer :: sect_I_item(:)
           integer(kind=kint),pointer :: sect_R_index(:)
           real(kind=kreal),pointer   :: sect_R_item(:)
+          integer(kind=kint),pointer :: sect_orien_ID(:) => null()
         end type hecmwST_section
 
 !C      for hecmwST_section%sect_type

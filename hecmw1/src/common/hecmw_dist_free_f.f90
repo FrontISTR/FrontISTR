@@ -123,6 +123,7 @@ module hecmw_dist_free_f
         if(associated(sect%sect_I_item)) deallocate(sect%sect_I_item)
         if(associated(sect%sect_R_index)) deallocate(sect%sect_R_index)
         if(associated(sect%sect_R_item)) deallocate(sect%sect_R_item)
+        if(associated(sect%sect_orien_ID)) deallocate(sect%sect_orien_ID)
     end subroutine free_sect
 
 
