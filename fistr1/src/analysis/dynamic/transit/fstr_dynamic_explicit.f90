@@ -157,7 +157,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta        
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
 !C-- {vec3}=[KL]{U(t)}, second part of right hand of Eq.(1.1.22)
 

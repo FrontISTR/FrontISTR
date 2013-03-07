@@ -158,7 +158,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i                                                  
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta                      
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 	
        if(hecMESH%my_rank==0) then
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr   
@@ -583,7 +583,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step             
 
        fstrDYNAMIC%i_step = i                                                  
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta                      
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 	
        if(hecMESH%my_rank==0) then
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr   

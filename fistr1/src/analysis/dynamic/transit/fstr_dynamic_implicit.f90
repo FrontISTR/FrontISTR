@@ -231,7 +231,7 @@ contains
 !        time_1 =  hecmw_Wtime()
 !
        fstrDYNAMIC%i_step = i
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta           
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
 !C-- matrix [A]
       do j = 1 ,nn*hecMAT%NP
