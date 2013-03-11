@@ -78,8 +78,9 @@ contains
       iS = hecMESH%node_group%grp_index(ig-1)+1
       iE = hecMESH%node_group%grp_index(ig)
       do ik=iS,iE
-        num_monit = num_monit+1
         in = hecMESH%node_group%grp_item(ik)
+        if (in > hecMESH%nn_internal) cycle
+        num_monit = num_monit+1
         ing = hecMESH%global_node_id(in)
         iunitS = 10*(num_monit-1)
 

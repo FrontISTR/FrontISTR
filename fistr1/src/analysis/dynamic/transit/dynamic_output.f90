@@ -660,8 +660,9 @@ module m_dynamic_output
     iS = hecMESH%node_group%grp_index(ig-1)+1
     iE = hecMESH%node_group%grp_index(ig)
     do ik=iS,iE
-      num_monit = num_monit+1
       ii = hecMESH%node_group%grp_item(ik)
+      if (ii > hecMESH%nn_internal) cycle
+      num_monit = num_monit+1
       jj = hecMESH%global_node_id(ii)
       iunitS = 10*(num_monit-1)
 
