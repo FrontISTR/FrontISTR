@@ -62,7 +62,7 @@ module m_fstr_ass_load
 
       ndof = hecMAT%NDOF
       factor = fstrSOLID%factor(2)
-      if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) factor=1.d0
+
 ! -------------------------------------------------------------------
 !  CLOAD
 ! -------------------------------------------------------------------

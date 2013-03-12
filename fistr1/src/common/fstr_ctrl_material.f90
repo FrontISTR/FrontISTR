@@ -256,7 +256,7 @@ integer function fstr_ctrl_get_VISCOELASTICITY( ctrl, mattype, nlgeom, dict )
         rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
         if( depends>1 ) depends=1   ! temperature depends only currently
         depends = 0
-        nlgeom = UPDATELAG   !default value
+        nlgeom = TOTALLAG   !default value
 		if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
         if( ipt/=0 ) nlgeom = INFINITE
 

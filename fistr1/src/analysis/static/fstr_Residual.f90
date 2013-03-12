@@ -47,12 +47,11 @@ module m_fstr_Residual
       integer(kind=kint) :: grpid  
       real(kind=kreal) :: rhs, lambda, factor, fval, fact
 
-!      factor = fstrSOLID%factor(2)
-      if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) factor=1.d0
+      factor = fstrSOLID%factor(2)
 !    Set residual load
       do idof=1, hecMESH%n_node*  hecMESH%n_dof 
-        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
-!        hecMAT%B(idof)=factor*fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+!        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+        hecMAT%B(idof)=factor*fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
       end do
 	  ndof = hecMAT%NDOF
 

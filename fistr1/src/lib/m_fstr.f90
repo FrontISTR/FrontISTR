@@ -31,6 +31,7 @@
 module m_fstr
 use hecmw
 use lczparm
+use m_common_struct
 use m_step
 use m_out
 use mMechGauss
