@@ -30,7 +30,7 @@ contains
 !> This subrouitne set acceleration boundary condition in dynamic analysis
 !C***
 
-      subroutine DYNAMIC_MAT_ASS_BC_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, fstrMAT, iter) 
+      subroutine DYNAMIC_MAT_ASS_BC_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, fstrMAT, iter, conMAT) 
       use m_fstr
       use m_table_dyn
       use fstr_matrix_con_contact                                                    
@@ -45,6 +45,7 @@ contains
       type (fstr_param       )              :: fstrPARAM !< analysis control parameters                           
       type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange          
       integer, optional         :: iter
+      type (hecmwST_matrix),optional     :: conMAT
 
       INTEGER(kind=kint) ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
       INTEGER(kind=kint) dyn_step, flag_u
@@ -103,10 +104,19 @@ contains
                 + b3*fstrDYNAMIC%ACC (NDOF*in-(NDOF-idof),1)    &
                 + b4*RHS0
               endif
-              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+              if(present(conMAT)) then
+                call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
+              else
+                call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+              endif
               if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &                                        
-                  .and. fstrDYNAMIC%nlflag /= 0 .and. fstrDYNAMIC%idx_resp == 1 ) & 
-              call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)  
+                  .and. fstrDYNAMIC%nlflag /= 0 .and. fstrDYNAMIC%idx_resp == 1 ) then
+                if(present(conMAT)) then
+                  call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+                else   
+                  call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)  
+                endif
+              endif 
             enddo
           enddo
 

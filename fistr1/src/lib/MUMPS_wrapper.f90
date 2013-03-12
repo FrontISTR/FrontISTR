@@ -21,6 +21,7 @@ module m_MUMPS_wrapper
   public :: mumps_wrapper
 
   type (dmumps_struc), save :: mumps_par
+  real(kreal),public  ::  rhs_b,rhs_x
 
 contains
 
@@ -60,6 +61,18 @@ contains
             call hecmw_abort(hecmw_comm_get_comm())
           endif
           call sparse_matrix_gather_rhs(spMAT, mumps_par%RHS)
+          if(paraContactFlag) then
+            if(myrank == 0) then
+              mumps_par%RHS(:) = mumps_par%RHS(:) + spMAT%rhs_con_sum(:)
+              deallocate(spMAT%rhs_con_sum,stat=ierr)
+              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
+            endif
+            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
+          else
+            if(myrank == 0) then
+              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
+            endif
+          endif
        endif
     endif
 
@@ -108,6 +121,10 @@ contains
        mumps_par%CNTL(2)=1.0e-8
     endif
     if (job==3 .or. job==5 .or. job==6) then
+       if(myrank == 0) then
+         rhs_x = dot_product(mumps_par%RHS,mumps_par%RHS)
+       endif
+       call MPI_BCAST(rhs_x,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        deallocate(mumps_par%RHS)
     endif

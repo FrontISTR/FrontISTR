@@ -45,7 +45,7 @@ contains
 !>  \date       2009/08/31
 !>  \version    0.00
 
-      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM)    
+      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)    
 !======================================================================!
       type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
       type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
@@ -53,6 +53,7 @@ contains
       type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                
       type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange                                            
+      type (hecmwST_matrix    ),optional     :: conMAT
 
       integer(kind=kint) :: ndof, nn
 
@@ -136,9 +137,15 @@ contains
             call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &           
                               restart_step_num, sub_step  )   
           else
-            if( fstrPARAM%contact_algo == kcaSLagrange ) then                                
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
-                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )                                                                          
+            if( fstrPARAM%contact_algo == kcaSLagrange ) then
+!     ----  For Parallel Contact with Multi-Partition Domains
+              if(paraContactFlag.and.present(conMAT)) then
+                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
+                                    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )               
+              else
+                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
+                                    restart_step_num, restart_substep_num, sub_step, infoCTChange )                   
+              endif
             else if( fstrPARAM%contact_algo == kcaALagrange ) then                              
               call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &     
                                   restart_step_num, restart_substep_num, sub_step, infoCTChange )                                  

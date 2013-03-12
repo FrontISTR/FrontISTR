@@ -86,6 +86,10 @@ public
         integer(kind = kint) :: myrank
         integer(kind = kint) :: nprocs
 !C
+!C-- PARALLEL CONTACT FLAG
+!C
+        logical   ::  paraContactFlag = .false.
+!C
 !C-- FILE NAME
 !C
         character(len=HECMW_FILENAME_LEN):: cntfilNAME

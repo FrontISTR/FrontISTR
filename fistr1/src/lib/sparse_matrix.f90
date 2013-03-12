@@ -56,6 +56,9 @@ module m_sparse_matrix
      integer(kind=kint), pointer :: conv_ext(:) => null()
      integer(kind=kint) :: timelog
      logical :: is_initialized = .false.
+!
+     real(kreal),pointer    ::  rhs_con(:) => null()
+     real(kreal),pointer    ::  rhs_con_sum(:) => null()
   end type sparse_matrix
 
 contains
@@ -219,6 +222,7 @@ contains
        enddo
        spMAT%OFFSET = spMAT%DISPLS(1)
     endif
+    call MPI_BCAST(spMAT%DISPLS,nprocs,MPI_INTEGER,0,hecmw_comm_get_comm(),ierr)
     if (nprocs > 1) then
        call HECMW_SCATTER_INT_1(spMAT%DISPLS, &
             spMAT%OFFSET, &

@@ -44,6 +44,9 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 !=====================================================================*
   use m_fstr
   use m_static_lib
+#ifdef PARA_CONTACT
+  use m_fstr_para_contact
+#endif
 
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -194,7 +197,11 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 !C Update for fstrSOLID%QFORCE
 !C
       if( ndof==3 ) then
-        call hecmw_update_3_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
+        if(paraContactFlag) then
+          call paraContact_update_3_R(hecMESH,fstrSOLID%QFORCE)
+        else
+          call hecmw_update_3_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
+        endif
       else if( ndof==2 ) then
         call hecmw_update_2_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
       else if( ndof==6 ) then

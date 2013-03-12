@@ -19,6 +19,9 @@ program fstr_main
 
 use hecmw
 use m_fstr
+#ifdef PARA_CONTACT
+use m_fstr_para_contact
+#endif
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
 use m_fstr_solve_linear
@@ -33,11 +36,15 @@ use m_fstr_rcap_io
 use fstr_solver_dynamic
 use fstr_debug_dump
 use fstr_matrix_con_contact                                     
+use m_fstr_freqdata
 
 
         implicit none
-        type (hecmwST_local_mesh)              :: hecMESH
+        type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
         type (hecmwST_matrix )                 :: hecMAT
+#ifdef PARA_CONTACT
+        type (hecmwST_matrix )                 :: conMAT
+#endif
         type (fstr_solid )                     :: fstrSOLID
         type (fstrST_matrix_contact_lagrange)  :: fstrMAT               
         type (fstr_heat )                      :: fstrHEAT
@@ -45,6 +52,7 @@ use fstr_matrix_con_contact
         type (fstr_dynamic )                   :: fstrDYNAMIC
         type ( hecmwST_result_data )           :: fstrRESULT
         type (fstr_couple )                    :: fstrCPL
+        type (fstr_freqanalysis)               :: fstrFREQ
         character(len=HECMW_FILENAME_LEN)     :: name_ID
 
         real(kind=kreal):: T1,T2,T3
@@ -54,16 +62,36 @@ use fstr_matrix_con_contact
         ! =============== INITIALIZE ===================
 
         call hecmw_init
+        myrank = hecmw_comm_get_rank()
+        nprocs = hecmw_comm_get_size()
 
         T1 = hecmw_Wtime()
 
         name_ID = 'fstrMSH'
+#ifdef PARA_CONTACT
+!        paraContactFlag = .true.
+        if(nprocs == 1) then
+!          paraContactFlag = .false.
+          paraContactFlag = .true.
+          call hecmw_get_mesh( name_ID , hecMESH )
+          hecMESH%nn_middle = hecMESH%n_node
+        else
+          paraContactFlag = .true.
+          call hecmw_get_mesh( name_ID , hecMESH_G )
+          call paraContact_DomainPartition(hecMESH_G,hecMesh)
+          call hecmw_nullify_mesh(hecMESH_G)
+        endif
+#else
         call hecmw_get_mesh( name_ID , hecMESH )
-        call hecmw2fstr_mesh_conv( hecMESH )
-
         myrank = hecMESH%my_rank
         nprocs = hecMESH%PETOT
-		
+#endif
+        if(myrank == 0) then
+          print *,'paraContactFlag',paraContactFlag
+        endif
+        
+        
+        call hecmw2fstr_mesh_conv( hecMESH )
 
         call fstr_init
 
@@ -131,6 +159,10 @@ subroutine fstr_init
         call fstr_nullify_fstr_couple ( fstrCPL    )
 !        call fstr_nullify_fstr_mpc_rigid( fstrMPCRIGID )
 
+!     ----  For Parallel Contact with Multi-Partition Domains
+#ifdef PARA_CONTACT
+          call hecmw_nullify_matrix( conMAT )
+#endif
         call fstr_init_file
 		
 		! ----  default setting of global params ---
@@ -279,7 +311,7 @@ subroutine fstr_init_condition
         svRarray(:) = hecMAT%Rarray(:)
         svIarray(:) = hecMAT%Iarray(:)
         call fstr_setup( cntfileNAME, hecMESH, fstrPR, fstrSOLID,   &
-                           fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL )
+                           fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         hecMAT%Rarray(:) = svRarray(:)
         hecMAT%Iarray(:) = svIarray(:)
 
@@ -332,7 +364,12 @@ subroutine fstr_nonlinear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )       
+!     ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag) then
+          call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
+        else
+          call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        endif
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_nonlinear_static_analysis
@@ -400,8 +437,16 @@ subroutine fstr_linear_dynamic_analysis
            endif
         end if
 
-        call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
-                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrMAT)
+
+!     ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag) then
+          call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
+                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT  &
+                                        ,conMAT )
+        else
+          call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
+                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+        endif
 
 end subroutine fstr_linear_dynamic_analysis
 

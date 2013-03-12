@@ -31,7 +31,7 @@ module m_fstr_AddBC
 
 !>  Add Essential Boundary Conditions
 !------------------------------------------------------------------------------------------*
-      subroutine fstr_AddBC(cstep,substep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,iter)
+      subroutine fstr_AddBC(cstep,substep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,iter,conMAT)
 !------------------------------------------------------------------------------------------*
       use m_fstr
       use fstr_matrix_con_contact
@@ -45,6 +45,7 @@ module m_fstr_AddBC
       type (fstr_param       )              :: fstrPARAM !< analysis control parameters
       type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
       integer(kind=kint)                    :: iter      !< NR iterations
+      type (hecmwST_matrix),optional        :: conMAT    !< hecmw matrix for contact only
 
       integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
       real(kind=kreal) :: RHS,factor
@@ -77,10 +78,19 @@ module m_fstr_AddBC
           in = hecMESH%node_group%grp_item(ik)
 !
           do idof = idofS, idofE
-            call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+            if(present(conMAT)) then
+              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
+            else
+              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+            endif
             if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstNLSTATIC   &
-                                         .and. fstrPARAM%contact_algo == kcaSLagrange ) &
-            call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+                                         .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+              if(present(conMAT)) then
+                call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+              else
+                call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+              endif
+            endif
           enddo
         enddo
       enddo

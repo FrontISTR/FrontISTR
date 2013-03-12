@@ -262,12 +262,13 @@ contains
  
 !> \brief This subroutine obtains contact nodal force vector of each contact pair
 !! and assembles it into right-hand side vector to update non-equilibrated nodal force vector. 
-   subroutine fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)                                                                              
+   subroutine fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)                                                                              
                                                                               
       type(hecmwST_local_mesh)                :: hecMESH                                  !< type hecmwST_local_mesh
       type(hecmwST_matrix)                    :: hecMAT                                   !< type hecmwST_matrix
       type(fstr_solid)                        :: fstrSOLID                                !< type fstr_solid
       type(fstrST_matrix_contact_lagrange)    :: fstrMAT                                  !< type fstrST_matrix_contact_lagrange
+      type(hecmwST_matrix),optional           :: conMAT                                   !< type hecmwST_matrix for contact part only
       integer (kind=kint)                    :: ctsurf, etype, nnode, ndLocal(9)          !< contants of type tContact
       integer (kind=kint)                    :: i, j, k, id_lagrange    
       real(kind=kreal)                        :: ndCoord(9*3), ndDu(9*3)                  !< nodal coordinates ; nodal displacement increment
@@ -308,8 +309,12 @@ contains
 ! Obtain contact nodal force vector of contact pair      
           call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &                        
                                     fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctForce)  
-! Update non-eqilibrited force vector          
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,ctForce,hecMAT) 
+! Update non-eqilibrited force vector
+          if(present(conMAT)) then
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,ctForce,conMAT)
+          else        
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,ctForce,hecMAT) 
+          endif
                            
         enddo
         
@@ -331,6 +336,7 @@ contains
           idof2 = ityp - idof1*10
           do idof=idof1,idof2
             hecMAT%B( ndof*(in-1) + idof ) = 0.d0
+            if(present(conMAT)) conMAT%B( ndof*(in-1) + idof ) = 0.d0
           enddo
         enddo
       enddo 

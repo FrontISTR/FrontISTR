@@ -23,6 +23,7 @@ use fstr_dynamic_explicit
 use fstr_dynamic_nlexplicit
 use fstr_dynamic_nlimplicit
 use fstr_matrix_con_contact
+use fstr_frequency_analysis  !Frequency analysis module
 
 contains
 
@@ -30,8 +31,9 @@ contains
 !> Master subroutine for dynamic analysis
 !C================================================================C
   subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,myEIG   &
-                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL,fstrMAT )
+                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &      
+                                      ,fstrCPL,fstrFREQ, fstrMAT  &
+                                      ,conMAT )                  
       use m_fstr_setup
       implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
@@ -42,9 +44,10 @@ contains
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
       type ( fstr_couple         ) :: fstrCPL         !for COUPLE
+      type ( fstr_freqanalysis   ) :: fstrFREQ
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                 
       type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
-
+      type ( hecmwST_matrix      ),optional :: conMAT
       integer(kind=kint) :: i,j,i_flg_1, my_rank_monit_1, ierror
       integer(kind=kint) :: restrt_step_num
       integer(kind=kint) :: restrt_step(1)
@@ -149,7 +152,10 @@ contains
                                       ,fstrCPL, my_rank_monit_1, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
-                    write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
+                    !write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
+                    call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, &
+                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
+                                                       restrt_step_num)
                  end if
                  call hecmw_abort( hecmw_comm_get_comm())
              end if
@@ -171,7 +177,10 @@ contains
                                       ,fstrCPL, my_rank_monit_1, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
-                    write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
+                    !write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'
+                    call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, &
+                                                       fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
+                                                       restrt_step_num)
                  end if
                  call hecmw_abort( hecmw_comm_get_comm())
              end if
@@ -196,9 +205,17 @@ contains
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, my_rank_monit_1, restrt_step_num )
                elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
-                 call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
+!                ----  For Parallel Contact with Multi-Partition Domains
+                 if(paraContactFlag.and.present(conMAT)) then
+                   call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
+                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+                                      ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange   &
+                                      ,conMAT )
+                 else
+                   call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange )
+                 endif
                endif                                                                                                              
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then

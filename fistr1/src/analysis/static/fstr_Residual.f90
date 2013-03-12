@@ -28,7 +28,7 @@ module m_fstr_Residual
   contains
 
 !C---------------------------------------------------------------------*
-      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID, sub_step)
+      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID, sub_step,conMAT)
 !C---------------------------------------------------------------------*
 !> In this subroutine, nodal force arose from prescribed displacement constarints 
 !> are cleared and nodal force residual is calculated. 
@@ -37,17 +37,23 @@ module m_fstr_Residual
 !!-#  equation (or mpc) 
       use m_fstr
       use mULoad
+#ifdef PARA_CONTACT
+      use m_fstr_para_contact
+#endif
       integer(kind=kint), intent(in)       :: cstep      !< current step
       integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
       type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
+      type (hecmwST_matrix),intent(inout),optional  :: conMAT
 !    Local variables
       integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof,idx,num
       integer(kind=kint) :: grpid  
       real(kind=kreal) :: rhs, lambda, factor, fval, fact
 
+
       factor = fstrSOLID%factor(2)
+
 !    Set residual load
       do idof=1, hecMESH%n_node*  hecMESH%n_dof 
 !        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
@@ -112,13 +118,18 @@ module m_fstr_Residual
           idof2 = ityp - idof1*10
           do idof=idof1,idof2
             hecMAT%B( ndof*(in-1) + idof ) = 0.d0
+            if(present(conMAT)) conMAT%B( ndof*(in-1) + idof ) = 0.0D0
           enddo
         enddo
       enddo
  
 !    	  
       if( ndof==3 ) then
-        call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
+        if(paraContactFlag) then
+          call paraContact_update_3_R(hecMESH,hecMAT%B)
+        else
+          call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
+        endif
       else if( ndof==2 ) then
         call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
       else if( ndof==6 ) then
@@ -162,6 +173,73 @@ module m_fstr_Residual
        elseif( flag=='        force' )then
          call hecmw_innerProduct_R(hecMESH,ndof,fstrSOLID%QFORCE,fstrSOLID%QFORCE,fstr_get_norm_contact)
        endif
-      end function        
+      end function
+
+ !
+      function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT) result(rhsB)
+      use m_fstr
+      use fstr_matrix_con_contact
+      use m_solve_LINEQ_MUMPS_contact
+      type (hecmwST_matrix),                intent(in) :: hecMAT
+      type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
+      type (hecmwST_matrix),                intent(in) :: conMAT
+!
+      real(kreal),allocatable   ::  rhs_con(:),rhs_con_sum(:),rhs_normal_sum(:)
+      real(kreal) ::  rhsB
+      integer(kint)   ::  i,j,N,i0,ierr,ndof,N_loc,nndof
+!
+      N = spMAT%N
+      N_Loc = spMAT%N_loc
+      allocate(rhs_con(N),stat=ierr)
+      rhs_con(:) = 0.0D0
+      ndof = hecMAT%ndof
+      do i= hecMAT%N+1,hecMAT%NP
+!        i0 = getExternalGlobalIndex(i,ndof,hecMAT%N)
+        i0 = spMAT%conv_ext(ndof*(i-hecMAT%N))-ndof
+
+        if((i0 < 0.or.i0 > N)) then
+!          print *,myrank,'ext dummy',i,i0/ndof
+          do j=1,ndof
+            if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
+              print *,myrank,'i0',i,'conMAT%b',conMAT%b((i-1)*ndof+j)
+              stop
+            endif
+          enddo
+        else
+          rhs_con(i0+1:i0+ndof) = conMAT%b((i-1)*ndof+1:i*ndof)
+        endif
+      enddo
+!
+      if(myrank == 0) then
+        allocate(rhs_con_sum(N),stat=ierr)
+        rhs_con_sum(:) = 0.0D0
+      endif
+      call MPI_REDUCE(rhs_con,rhs_con_sum,N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
+      
+      deallocate(rhs_con,stat=ierr)
+      allocate(rhs_con(N_loc),stat=ierr)
+      nndof = hecMAT%N*ndof
+      rhs_con(1:nndof) = hecMAT%B(1:nndof) + conMAT%B(1:nndof)
+      i0 = hecMAT%NP*ndof
+      do i=1,fstrMAT%num_lagrange
+        rhs_con(nndof+i) = conMAT%B(i0+i)
+      enddo
+!
+      if(myrank == 0) then
+        allocate(rhs_normal_sum(N),stat=ierr)
+        rhs_normal_sum(:) = 0.0D0
+      endif
+      call gatherRHS(spMAT, rhs_con, rhs_normal_sum)
+      if(myrank == 0) then
+        rhs_con_sum(:) = rhs_con_sum(:) + rhs_normal_sum(:)
+        rhsB = dot_product(rhs_con_sum, rhs_con_sum)
+      endif
+      
+      call MPI_BCAST(rhsB,1,MPI_DOUBLE_PRECISION,0,hecmw_comm_get_comm(),ierr)
+      
+      if(allocated(rhs_con)) deallocate(rhs_con,stat=ierr)
+      if(allocated(rhs_con)) deallocate(rhs_con_sum,stat=ierr)
+      if(allocated(rhs_normal_sum)) deallocate(rhs_normal_sum,stat=ierr)         
+      end function fstr_get_norm_para_contact
 
 end module m_fstr_Residual

@@ -44,6 +44,7 @@ LIBSRCDIRS="\
     src/analysis/dynamic \
     src/analysis/dynamic/mode \
     src/analysis/dynamic/transit \
+    src/analysis/dynamic/freq \
     src/main \
     tools \
     tools/neu2fstr \

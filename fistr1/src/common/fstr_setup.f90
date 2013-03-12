@@ -27,7 +27,7 @@ use m_static_get_prop
 use m_out
 use m_step
 use m_utilities
-
+use m_fstr_freqdata, only : fstr_freqanalysis, kFLOADCASE_RE, kFLOADCASE_IM
 implicit none
 
 include 'fstr_ctrl_util_f.inc'
@@ -42,6 +42,7 @@ include 'fstr_ctrl_util_f.inc'
                 type(lczparam), pointer           :: EIGEN
                 type(fstr_dynamic), pointer       :: DYN
                 type(fstr_couple), pointer        :: CPL
+                type(fstr_freqanalysis), pointer  :: FREQ
         end type fstr_param_pack
 
 contains
@@ -50,7 +51,7 @@ contains
 !> Read in and initialize control data                                        !
 !=============================================================================!
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
-        fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL )
+        fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         use mMaterial
         character(len=HECMW_FILENAME_LEN) :: cntl_filename
         type(hecmwST_local_mesh),target :: hecMESH
@@ -60,6 +61,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(fstr_heat),target    :: fstrHEAT
         type(fstr_dynamic),target :: fstrDYNAMIC
         type(fstr_couple),target  :: fstrCPL
+        type(fstr_freqanalysis), target :: fstrFREQ
 		
         integer(kind=kint) :: ctrl
         type(fstr_param_pack) :: P
@@ -83,6 +85,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
         integer(kind=kint) :: c_eigen, c_contact
         integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
+        integer(kind=kint) :: c_fload, c_eigenread
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep
@@ -98,6 +101,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         P%HEAT   => fstrHEAT
         P%DYN    => fstrDYNAMIC
         P%CPL    => fstrCPL
+        P%FREQ   => fstrFREQ
 		
         fstrPARAM%contact_algo = kcaALagrange
 
@@ -110,6 +114,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_couple   = 0; c_material = 0
         c_mpc      = 0; c_weldline = 0
         c_istep    = 0
+        c_fload    = 0; c_eigenread = 0
 
         ctrl = fstr_ctrl_open( cntl_filename)
         if( ctrl < 0 ) then
@@ -234,6 +239,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_acceleration = c_acceleration + 1
                         call fstr_setup_ACCELERATION( ctrl, c_eigen, P )
 
+                !--------------- for dynamic -------------------------
+                else if( header_name == '!FLOAD' ) then
+                        c_fload = c_fload + 1
+                        call fstr_setup_FLOAD( ctrl , c_fload, P )
+                else if( header_name == '!EIGENREAD' ) then
+                        c_eigenread = c_eigenread + 1
+                        call fstr_setup_eigenread( ctrl, c_eigenread, P )
+
                 !--------------- for couple -------------------------
 
                 else if( header_name == '!COUPLE' ) then
@@ -323,7 +336,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
                 stop
               else
-                isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH )
+                isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH   &
+#ifdef PARA_CONTACT
+                                                                                  ,myrank &
+#endif
+                                                                                    )
          !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
               endif
             enddo
@@ -1493,6 +1510,11 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         deallocate( grp_id_name )
 
 end subroutine fstr_setup_CLOAD
+
+!-----------------------------------------------------------------------------!
+!> Read !FLOAD                                                        !
+!-----------------------------------------------------------------------------!
+include 'fstr_ctrl_freq.f90'
 
 !-----------------------------------------------------------------------------!
 !> Reset !DLOAD                                                        !

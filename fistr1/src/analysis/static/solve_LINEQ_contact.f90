@@ -37,6 +37,7 @@ module m_solve_LINEQ_contact
   private
   public :: solve_LINEQ_contact_init
   public :: solve_LINEQ_contact
+  real(kreal),public  ::  q_residual,x_residual
 
   contains
     
@@ -58,29 +59,43 @@ module m_solve_LINEQ_contact
 
 
 !> \brief This subroutine
-    subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
+    subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf,conMAT)
   
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
       real(kind=kreal), optional              :: rf
+      type (hecmwST_matrix),optional           :: conMAT
 
       real(kind=kreal)                         :: factor
       real(kind=kreal) :: resid
 
       factor = 1.0d0
       if( present(rf) )factor = rf
-
-      call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      if(paraContactFlag.and.present(conMAT)) then
+      else
+        call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      endif
 
       if( hecMAT%Iarray(99)==3 )then                   
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==5 ) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
+! ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag.and.present(conMAT)) then
+          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+          q_residual = rhs_force
+          x_residual = rhs_disp
+        else
+          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
+          q_residual = rhs_force
+          x_residual = rhs_disp
+        endif
       endif
      
+      if(paraContactFlag.and.present(conMAT)) then
+      else
       resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
       if (myrank==0) then
         write(*,*) ' maximum residual = ', resid
@@ -88,6 +103,7 @@ module m_solve_LINEQ_contact
           write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
 !          stop
         endif
+      endif
       endif
       
       hecMAT%X=factor*hecMAT%X

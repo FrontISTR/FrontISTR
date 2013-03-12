@@ -144,11 +144,13 @@ contains
   end function
   
   !>  Initializer of tContactState
-  logical function fstr_contact_init( contact, hecMESH )
+  logical function fstr_contact_init( contact, hecMESH,myrank )
       type(tContact), intent(inout)     :: contact  !< contact definition
       type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+      integer(kint),intent(in),optional :: myrank
 
       integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
+      integer  :: count,nslave_bc=0,nodeID
 
       fstr_contact_init = .false.
       !  master surface
@@ -156,6 +158,34 @@ contains
       if( cgrp<=0 ) return
       is= hecMESH%surf_group%grp_index(cgrp-1) + 1
       ie= hecMESH%surf_group%grp_index(cgrp  )
+#ifdef PARA_CONTACT
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%surf_group%grp_item(2*i-1)
+        if(present(myrank)) then
+          if(hecMESH%elem_ID(ic*2) == myrank) count = count + 1
+        else
+          count = count + 1
+        endif
+      enddo
+      allocate( contact%master(count) )
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%surf_group%grp_item(2*i-1)       
+        if(present(myrank)) then
+          if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        endif
+        count = count + 1
+        nsurf = hecMESH%surf_group%grp_item(2*i)
+        ic_type = hecMESH%elem_type(ic)
+        call initialize_surf( ic, ic_type, nsurf, contact%master(count) )
+        iss = hecMESH%elem_node_index(ic-1)
+        do j=1, size( contact%master(count)%nodes )
+          nn = contact%master(count)%nodes(j)
+          contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        enddo
+      enddo
+#else
       allocate( contact%master(ie-is+1) )
       do i=is,ie
         ic   = hecMESH%surf_group%grp_item(2*i-1)
@@ -168,9 +198,10 @@ contains
           contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
-
+#endif
 
     ! slave surface
+    nslave_bc = 0
 !    if( contact%ctype==1 ) then
         cgrp = contact%surf_id1
         if( cgrp<=0 ) return
@@ -178,13 +209,25 @@ contains
         ie= hecMESH%node_group%grp_index(cgrp  )
         nslave = 0
         do i=is,ie
-          if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal ) nslave = nslave + 1
+          nodeID = hecMESH%global_node_ID(hecMESH%node_group%grp_item(i))
+          if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal) then
+            nslave = nslave + 1
+#ifdef PARA_CONTACT
+          elseif(hecMESH%node_group%grp_item(i) >  hecMESH%nn_internal) then
+            nslave = nslave + 1
+#endif
+          else
+            nslave_bc = nslave_bc + 1
+          endif
         enddo
         allocate( contact%slave(nslave) )
         allocate( contact%states(nslave) )
         ii = 0
         do i=is,ie
-          if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
+#ifdef PARA_CONTACT
+#else
+          if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
+#endif
           ii = ii + 1
           contact%slave(ii) = hecMESH%node_group%grp_item(i)
           contact%states(ii)%state = -1
@@ -251,6 +294,11 @@ contains
       real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
       real(kind=kreal)    :: nlforce, slforce(3)
       logical             :: isin
+!
+#ifdef CONTACT_FILTER
+      integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
+      real(kreal) :: width = 4.0D0,x0(3)
+#endif
           
       active = .false.
       clearance = 1.d-6                                                  
@@ -281,7 +329,35 @@ contains
 
         else if( contact%states(i)%state==CONTACTFREE ) then
           coord(:) = currpos(3*slave-2:3*slave)
+#ifdef CONTACT_FILTER
+          nMaster = 0
+#endif
           do id= 1, size(contact%master)
+          
+#ifdef CONTACT_FILTER
+            nn = size( contact%master(id)%nodes )
+            do j=1,nn
+              iSS = contact%master(id)%nodes(j)
+              elem(1:3,j) = currpos(3*iSS-2:3*iSS)
+            enddo
+            x0(:) = coord(:)
+            call getMinMaxBoxIDPassedByMultiPoint(elem(1:3,1:nn),x0,width,minID,maxID)
+            if(minID(1) <= 1.and.maxID(1) >= 1.and. &
+               minID(2) <= 1.and.maxID(2) >= 1.and. &
+               minID(3) <= 1.and.maxID(3) >= 1) then
+              nMaster = nMaster + 1
+              if(nMaster > size(indexMaster)) then
+                stop 'Error: Too many master faces are possibly in contact!'
+              endif
+              indexMaster(nMaster) = id
+            endif
+          enddo 
+
+          if(nMaster == 0) cycle
+!          do id= 1, size(contact%master)
+          do idm = 1,nMaster
+            id = indexMaster(idm)
+#endif
             etype = contact%master(id)%etype
             nn = size( contact%master(id)%nodes )
             do j=1,nn
@@ -740,5 +816,27 @@ contains
       enddo
 
   end subroutine ass_contact_force
+  
+subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
+  real(kreal),intent(in)      ::  x(:,:)  ! Multi-Points' coordinate in space
+  real(kreal),intent(in)      ::  x0(3)
+  real(kreal),intent(in)      ::  width
+  integer(kint),intent(out)   ::  minID(3)
+  integer(kint),intent(out)   ::  maxID(3)
+!
+  integer(kint) ::  i,j,boxID(3)
+!
+    do i=1,size(x,2)
+      boxID(:) = (x(:,i)-x0(:))/width + 1
+      if(i == 1) then
+        minID(:) = boxID(:)
+        maxID(:) = boxID(:)
+      endif
+      do j=1,3
+        if(boxID(j) < minID(j)) minID(j) = boxID(j)
+        if(boxID(j) > maxID(j)) maxID(j) = boxID(j)
+      enddo
+    enddo
+end subroutine getMinMaxBoxIDPassedByMultiPoint
    
 end module mContactDef

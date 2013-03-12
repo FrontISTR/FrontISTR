@@ -60,6 +60,8 @@ contains
     integer(kind=kint), allocatable :: export_item_dof(:), import_item_dof(:)
     integer(kind=kint), allocatable :: send_request(:), recv_request(:)
     integer(kind=kint), allocatable :: send_status(:,:), recv_status(:,:)
+    integer(kint)   :: dummy_buf(1),pid,lid,j0
+    dummy_buf(1) = -1
     ! COMMUNICATE NUMBERING
     if (hecMESH%n_neighbor_pe==0) return
     allocate(send_request(hecMESH%n_neighbor_pe), &
@@ -87,9 +89,19 @@ contains
        is=ndof*hecMESH%export_index(i-1)+1
        ie=ndof*hecMESH%export_index(i)
        len=ie-is+1
-       call HECMW_Isend_INT(export_item_dof(is:ie), len, &
-            hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-            send_request(i))
+       if(len == 0) then
+         is = ie
+         if(is == 0) is = 1
+       endif
+       if(len == 0) then
+          call HECMW_Isend_INT(dummy_buf, len, &
+               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
+               send_request(i))
+       else
+          call HECMW_Isend_INT(export_item_dof(is:ie), len, &
+               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
+               send_request(i))
+       endif
     enddo
     ! receive import list
     n_import = hecMESH%import_index(hecMESH%n_neighbor_pe)
@@ -102,9 +114,19 @@ contains
        is=ndof*hecMESH%import_index(i-1)+1
        ie=ndof*hecMESH%import_index(i)
        len=ie-is+1
-       call HECMW_Irecv_INT(import_item_dof(is:ie), len, &
-            hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-            recv_request(i))
+       if(len == 0) then
+         is = ie
+         if(is == 0) is = 1
+       endif
+       if(len == 0) then
+          call HECMW_Irecv_INT(dummy_buf, len, &
+               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
+               recv_request(i))
+       else
+          call HECMW_Irecv_INT(import_item_dof(is:ie), len, &
+               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
+               recv_request(i))
+       endif
     enddo
     ! waitall
     call HECMW_Waitall(hecMESH%n_neighbor_pe, send_request, send_status)
@@ -119,6 +141,18 @@ contains
       write(*,*) " Allocation error, spMAT%conv_ext"
       call hecmw_abort(hecmw_comm_get_comm())
     endif
+    spMAT%conv_ext(:) = -1
+    if(paraContactFlag) then
+      do i=1,nn_external
+        id = i + hecMESH%nn_internal
+        pid = hecMESH%node_ID(id*2)
+        lid = hecMESH%node_ID(id*2-1)
+        j0 = spMAT%DISPLS(pid+1) + (lid-1)*ndof
+        do j=1,ndof
+          spMAT%conv_ext((i-1)*ndof+j) = j0+j
+        enddo
+      enddo
+    else
     do i=1,n_import
        id=hecMESH%import_item(i)-hecMESH%nn_internal
        i0=ndof*(id-1)
@@ -126,6 +160,7 @@ contains
           spMAT%conv_ext(i0+j)=import_item_dof(ndof*(i-1)+j)
        enddo
     enddo
+    endif
     ! dealloc
     deallocate(import_item_dof)
   end subroutine sparse_matrix_hec_set_conv_ext

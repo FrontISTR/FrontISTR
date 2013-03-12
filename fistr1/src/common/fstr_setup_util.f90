@@ -562,6 +562,69 @@ end subroutine node_grp_name_to_id_ex
 
 !------------------------------------------------------------------------------
 
+!Find node/surf group from name or nodeid
+ subroutine nodesurf_grp_name_to_id_ex(hecMESH, header_name, n, grp_id_name, grp_ID, grp_TYPE)
+     use m_fstr_freqdata
+     implicit none
+     type (hecmwST_local_mesh),target :: hecMESH
+     character(len=*)                 :: header_name
+     integer(kind=kint) :: n
+     character(len=HECMW_NAME_LEN) :: grp_id_name(:)
+     integer(kind=kint) :: grp_ID(:)
+     integer(kind=kint) :: grp_TYPE(:)
+
+     integer(kind=kint) :: i, id
+     integer(kind=kint) :: no, no_count, exist_n
+     integer(kind=kint),pointer :: no_list(:)
+     character(HECMW_NAME_LEN) :: name
+     character(len=256) :: msg
+
+     allocate( no_list( n ))
+     no_count = 0
+     do i = 1, n
+             if( fstr_str2index( grp_id_name(i), no )) then
+                     no_count = no_count + 1
+                     no_list(no_count) = no
+                     grp_ID(i)  = hecMESH%node_group%n_grp + no_count
+                     grp_TYPE(i) = kFLOADTYPE_NODE
+             else
+                     !Find node group
+                     grp_ID(i) = -1
+                     do id = 1, hecMESH%node_group%n_grp
+                             if (fstr_streqr(hecMESH%node_group%grp_name(id), grp_id_name(i))) then
+                                     grp_ID(i)   = id
+                                     grp_TYPE(i) = kFLOADTYPE_NODE
+                                     exit
+                             end if
+                     end do
+                     !Find surf group
+                     if (grp_ID(i) == -1) then
+                             do id = 1, hecMESH%surf_group%n_grp
+                                      if (fstr_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
+                                             grp_ID(i)   = id
+                                             grp_TYPE(i) = kFLOADTYPE_SURF
+                                             exit
+                                      end if
+                             end do
+                     end if
+                        
+                     !not fouund => exit
+                     if( grp_ID(i) == -1 ) then
+                             write(msg,*) '### Error: ', header_name,' : Node group "',grp_id_name(i),'" does not exist.'
+                             call fstr_setup_util_err_stop(msg)
+                     end if
+             end if
+     end do
+     if( no_count > 0 ) then
+             name = 'node_grp'
+             exist_n = append_single_group( hecMESH, name, no_count, no_list )
+     end if
+
+     deallocate( no_list )
+    
+end subroutine
+
+
 subroutine elem_grp_name_to_id_ex( hecMESH, header_name, n, grp_id_name, grp_ID )
         implicit none
         type (hecmwST_local_mesh),target :: hecMESH
