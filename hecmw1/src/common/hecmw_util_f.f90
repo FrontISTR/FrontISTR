@@ -244,6 +244,8 @@
 !C-- NODE
           integer(kind=kint)         :: n_node
           integer(kind=kint)         :: n_node_gross
+!         For parallel contact with hanging slave nodes
+          integer(kind=kint)         :: nn_middle
           integer(kind=kint)         :: nn_internal
           integer(kind=kint)         :: n_dof
           integer(kind=kint)         :: n_dof_grp

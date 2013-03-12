@@ -35,11 +35,11 @@ static char ctrl_filename[HECMW_FILENAME_LEN+1];
 
 
 static int table_entire_mesh[] = {
-	HECMW_CTRL_FTYPE_HECMW_ENTIRE,	/* HEC-MWÁ´ÂÎ¥á¥Ã¥·¥å */
-	HECMW_CTRL_FTYPE_GEOFEM,		/* GeoFEMÁ´ÂÎ¥á¥Ã¥·¥å */
-	HECMW_CTRL_FTYPE_ABAQUS,		/* ABAQUS¥á¥Ã¥·¥å */
-	HECMW_CTRL_FTYPE_NASTRAN,		/* NASTRAN¥á¥Ã¥·¥å */
-	HECMW_CTRL_FTYPE_FEMAP,			/* FEMAP¥á¥Ã¥·¥å */
+	HECMW_CTRL_FTYPE_HECMW_ENTIRE,	/* HEC-MWÁ´ÂÎ¥á¥Ã¥·¥E*/
+	HECMW_CTRL_FTYPE_GEOFEM,		/* GeoFEMÁ´ÂÎ¥á¥Ã¥·¥E*/
+	HECMW_CTRL_FTYPE_ABAQUS,		/* ABAQUS¥á¥Ã¥·¥E*/
+	HECMW_CTRL_FTYPE_NASTRAN,		/* NASTRAN¥á¥Ã¥·¥E*/
+	HECMW_CTRL_FTYPE_FEMAP,			/* FEMAP¥á¥Ã¥·¥E*/
 };
 
 
@@ -916,7 +916,8 @@ read_mesh(void)
 	/* check */
 	if(!strcmp(name,"fstrMSH") && type==HECMW_CTRL_FTYPE_HECMW_ENTIRE && HECMW_comm_get_size()>1) {
 		set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");
-		return -1;
+		// return -1;
+		return 0;
 	}
 
 	return 0;

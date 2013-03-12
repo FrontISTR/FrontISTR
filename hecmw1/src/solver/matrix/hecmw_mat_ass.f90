@@ -292,10 +292,11 @@ module hecmw_matrix_ass
 !C*** MAT_ASS_BC
 !C***
 !C
-   subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS)
+   subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS, conMAT)
       type (hecmwST_matrix)     :: hecMAT
       integer(kind=kint) :: inode, idof
       real(kind=kreal) :: RHS
+      type (hecmwST_matrix),optional     :: conMAT
       integer(kind=kint) :: NDOF, in, i, ii, iii, ndof2, k, iS, iE, iiS, iiE, ik
 
       NDOF = hecMAT%NDOF
@@ -304,6 +305,7 @@ module hecmw_matrix_ass
       !C-- DIAGONAL block
 
       hecMAT%B(NDOF*inode-(NDOF-idof)) = RHS
+      if(present(conMAT)) conMAT%B(NDOF*inode-(NDOF-idof)) = 0.0D0
       ndof2 = NDOF*NDOF
       ii  = ndof2 - idof
 
@@ -311,6 +313,10 @@ module hecmw_matrix_ass
         IF( i .NE. NDOF-idof ) THEN
           hecMAT%B(NDOF*inode-i) = hecMAT%B(NDOF*inode-i)        &
                                  - hecMAT%D(ndof2*inode-ii)*RHS
+          if(present(conMAT)) then
+            conMAT%B(NDOF*inode-i) = conMAT%B(NDOF*inode-i)        &
+                                   - conMAT%D(ndof2*inode-ii)*RHS
+          endif
         ENDIF
         ii = ii - NDOF
       END DO
@@ -320,6 +326,7 @@ module hecmw_matrix_ass
 
       DO i = 0, NDOF - 1
         hecMAT%D(ndof2*inode-ii+i)=0.d0
+        if(present(conMAT)) conMAT%D(ndof2*inode-ii+i)=0.d0
       END DO
 
       !*Set diagonal column to zero
@@ -327,8 +334,10 @@ module hecmw_matrix_ass
       DO i = 1, NDOF
         IF( i.NE.idof ) THEN
           hecMAT%D(ndof2*inode-ii) = 0.d0
+          if(present(conMAT)) conMAT%D(ndof2*inode-ii) = 0.d0
         ELSE
           hecMAT%D(ndof2*inode-ii) = 1.d0
+          if(present(conMAT)) conMAT%D(ndof2*inode-ii) = 0.d0
         ENDIF
         ii = ii - NDOF
       END DO
@@ -344,6 +353,7 @@ module hecmw_matrix_ass
         !*row (left)
         DO i = 0, NDOF - 1
           hecMAT%AL(ndof2*k-ii+i) = 0.d0
+          if(present(conMAT)) conMAT%AL(ndof2*k-ii+i) = 0.d0
         END DO
 
         !*column (upper)
@@ -357,6 +367,11 @@ module hecmw_matrix_ass
               hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
                                   - hecMAT%AU(ndof2*ik-iii)*RHS
               hecMAT%AU(ndof2*ik-iii)= 0.d0
+              if(present(conMAT)) then
+                conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
+                                    - conMAT%AU(ndof2*ik-iii)*RHS
+                conMAT%AU(ndof2*ik-iii)= 0.d0
+              endif
               iii = iii - NDOF
             END DO
             exit
@@ -374,6 +389,7 @@ module hecmw_matrix_ass
         !*row (right)
         DO i = 0,NDOF-1
           hecMAT%AU(ndof2*k-ii+i) = 0.d0
+          if(present(conMAT)) conMAT%AU(ndof2*k-ii+i) = 0.d0
         END DO
 
         !*column (lower)
@@ -388,6 +404,11 @@ module hecmw_matrix_ass
               hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
                                   - hecMAT%AL(ndof2*ik-iii)*RHS
               hecMAT%AL(ndof2*ik-iii) = 0.d0
+              if(present(conMAT)) then
+                conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
+                                    - conMAT%AL(ndof2*ik-iii)*RHS
+                conMAT%AL(ndof2*ik-iii) = 0.d0
+              endif
               iii = iii - NDOF
             END DO
             exit
