@@ -82,7 +82,6 @@ contains
   end subroutine solve_LINEQ_MUMPS_contact_init
 
   subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,fstrMAT,conMAT)
-    implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange

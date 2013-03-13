@@ -37,9 +37,9 @@ module m_fstr_Residual
 !!-#  equation (or mpc) 
       use m_fstr
       use mULoad
-#ifdef PARA_CONTACT
+!#ifdef PARA_CONTACT
       use m_fstr_para_contact
-#endif
+!#endif
       integer(kind=kint), intent(in)       :: cstep      !< current step
       integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information

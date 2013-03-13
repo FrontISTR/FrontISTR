@@ -19,9 +19,9 @@ program fstr_main
 
 use hecmw
 use m_fstr
-#ifdef PARA_CONTACT
+!#ifdef PARA_CONTACT
 use m_fstr_para_contact
-#endif
+!#endif
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
 use m_fstr_solve_linear
@@ -42,9 +42,9 @@ use m_fstr_freqdata
         implicit none
         type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
         type (hecmwST_matrix )                 :: hecMAT
-#ifdef PARA_CONTACT
+!#ifdef PARA_CONTACT
         type (hecmwST_matrix )                 :: conMAT
-#endif
+!#endif
         type (fstr_solid )                     :: fstrSOLID
         type (fstrST_matrix_contact_lagrange)  :: fstrMAT               
         type (fstr_heat )                      :: fstrHEAT
@@ -68,24 +68,26 @@ use m_fstr_freqdata
         T1 = hecmw_Wtime()
 
         name_ID = 'fstrMSH'
-#ifdef PARA_CONTACT
-!        paraContactFlag = .true.
-        if(nprocs == 1) then
-!          paraContactFlag = .false.
+!#ifdef PARA_CONTACT
+        if(useEntireMesh()) then
           paraContactFlag = .true.
-          call hecmw_get_mesh( name_ID , hecMESH )
-          hecMESH%nn_middle = hecMESH%n_node
+          if(nprocs == 1) then    
+            call hecmw_get_mesh( name_ID , hecMESH )
+            hecMESH%nn_middle = hecMESH%n_node
+          else
+            call hecmw_get_mesh( name_ID , hecMESH_G )
+            call paraContact_DomainPartition(hecMESH_G,hecMesh)
+            call hecmw_nullify_mesh(hecMESH_G)
+          endif
         else
-          paraContactFlag = .true.
-          call hecmw_get_mesh( name_ID , hecMESH_G )
-          call paraContact_DomainPartition(hecMESH_G,hecMesh)
-          call hecmw_nullify_mesh(hecMESH_G)
+          paraContactFlag = .false.
+          call hecmw_get_mesh( name_ID , hecMESH )
         endif
-#else
-        call hecmw_get_mesh( name_ID , hecMESH )
-        myrank = hecMESH%my_rank
-        nprocs = hecMESH%PETOT
-#endif
+!#else
+!        call hecmw_get_mesh( name_ID , hecMESH )
+!        myrank = hecMESH%my_rank
+!        nprocs = hecMESH%PETOT
+!#endif
         if(myrank == 0) then
           print *,'paraContactFlag',paraContactFlag
         endif
@@ -160,9 +162,9 @@ subroutine fstr_init
 !        call fstr_nullify_fstr_mpc_rigid( fstrMPCRIGID )
 
 !     ----  For Parallel Contact with Multi-Partition Domains
-#ifdef PARA_CONTACT
-          call hecmw_nullify_matrix( conMAT )
-#endif
+!#ifdef PARA_CONTACT
+        call hecmw_nullify_matrix( conMAT )
+!#endif
         call fstr_init_file
 		
 		! ----  default setting of global params ---

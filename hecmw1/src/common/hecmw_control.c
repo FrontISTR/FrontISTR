@@ -915,9 +915,12 @@ read_mesh(void)
 
 	/* check */
 	if(!strcmp(name,"fstrMSH") && type==HECMW_CTRL_FTYPE_HECMW_ENTIRE && HECMW_comm_get_size()>1) {
+#ifdef PARA_CONTACT
+    return 0;
+#else
 		set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");
-		// return -1;
-		return 0;
+		return -1;
+#endif
 	}
 
 	return 0;

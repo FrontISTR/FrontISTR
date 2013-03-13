@@ -166,31 +166,30 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
     endif
     call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
     
-#ifdef OUTPUT_PARTITION
-    if(myrank == 0) then
+!#ifdef OUTPUT_PARTITION
+!    if(myrank == 0) then
+!      do i=1,mak%ne
+!        ppid = 0
+!        count = 0
+!        do j=mak%eptr(i),mak%eptr(i+1)-1
+!          if(part(mak%eind(j)) /= ppid) then
+!            ppid = part(mak%eind(j))
+!            count = count + 1
+!          endif
+!        enddo
+!        if(count > 1) then
+!          mak%egrp(i) = 1
+!        elseif(count == 1) then
+!          mak%egrp(i) = ppid + 1
+!        else
+!          stop 'error:'
+!        endif
+!      enddo
+!      write(name,'(A,I2.2)')'full_mesh_init_np',nparts
+!      call Mak_WriteFile(mak,name)
+!    endif
+!#endif
 
-      do i=1,mak%ne
-        ppid = 0
-        count = 0
-        do j=mak%eptr(i),mak%eptr(i+1)-1
-          if(part(mak%eind(j)) /= ppid) then
-            ppid = part(mak%eind(j))
-            count = count + 1
-          endif
-        enddo
-        if(count > 1) then
-          mak%egrp(i) = 1
-        elseif(count == 1) then
-          mak%egrp(i) = ppid + 1
-        else
-          stop 'error:'
-        endif
-      enddo
-!      name = 'full_mesh_init'
-      write(name,'(A,I2.2)')'full_mesh_init_np',nparts
-      call Mak_WriteFile(mak,name)
-    endif
-#endif
 !   Get local hecMESH from global one and partition info
     partID = myrank + 1
 !    call Mak_GetLocalMesh_NodeBase1_all(mak,nparts,part,partID,mak_loc,indexNodeG2L,indexElmtG2L)
@@ -385,7 +384,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     do i=1,hecMESH_G%surf_group%n_grp
       maxNum = max(maxNum,hecMESH_G%surf_group%grp_index(i)- hecMESH_G%surf_group%grp_index(i-1))
     enddo
-    call paraContact_getHecmwLocalSurfaceGroup(hecMESH_G%surf_group,hecMESH_L%surf_group,indexElmtG2L(:,partID),maxNum,hecMESH_G,part,partID)
+    call paraContact_getHecmwLocalSurfaceGroup(hecMESH_G%surf_group,hecMESH_L%surf_group, &
+         indexElmtG2L(:,partID),maxNum,hecMESH_G,part,partID)
 
 !-- Contact pair data
     call paraContact_copyHecmwContactPair(hecMESH_G%contact_pair,hecMESH_L%contact_pair)
@@ -892,7 +892,8 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
     do i=1,hecMESH_G%surf_group%n_grp
       maxNum = max(maxNum,hecMESH_G%surf_group%grp_index(i)- hecMESH_G%surf_group%grp_index(i-1))
     enddo
-    call paraContact_getHecmwLocalSurfaceGroup(hecMESH_G%surf_group,hecMESH_L%surf_group,indexElmtG2L(:,partID),maxNum,hecMESH_G,part,partID)
+    call paraContact_getHecmwLocalSurfaceGroup(hecMESH_G%surf_group,hecMESH_L%surf_group, &
+         indexElmtG2L(:,partID),maxNum,hecMESH_G,part,partID)
 
 !-- Contact pair data
       call paraContact_copyHecmwContactPair(hecMESH_G%contact_pair,hecMESH_L%contact_pair)
@@ -1090,7 +1091,8 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
     do i=1,size(help)
       if(help(i) /= 0) then
         hecMESH_L%n_neighbor_pe = hecMESH_L%n_neighbor_pe + 1
-        hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe-1)+1:hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)) = helpnode(1:help(i),i)
+        hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe-1)+  &
+                              1:hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)) = helpnode(1:help(i),i)
       endif
     enddo
 !!  export_index, export_item
@@ -1306,7 +1308,8 @@ function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportS
     exportSlavePE(:) = 0
 !
     nodeGID = hecMESH_L%global_node_ID(nodeLID)
-    if(hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair) stop 'hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair'
+    if(hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair)  &
+       stop 'hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair'
     do i=1,hecMESH_L%contact_pair%n_pair
       surf_grp_ID = hecMESH_L%contact_pair%master_grp_id(i)
 !     This partation has contact pair master group
@@ -1474,7 +1477,7 @@ subroutine paraContact_getHecmwLocalNodeGroup(ngrpIn,ngrpOut,indexNodeG2L,maxNod
     ngrpOut%n_bc = ngrpIn%n_bc
     if(ngrpOut%n_bc == 0) return
     print *,'node_group%bc_... are not implemented!'
-    pause
+!    pause
 end subroutine paraContact_getHecmwLocalNodeGroup
 
 subroutine paraContact_getHecmwLocalElementGroup(egrpIn,egrpOut,indexElmtG2L,maxElemInGroup)
@@ -1524,7 +1527,7 @@ subroutine paraContact_getHecmwLocalElementGroup(egrpIn,egrpOut,indexElmtG2L,max
     egrpOut%n_bc = egrpIn%n_bc
     if(egrpOut%n_bc == 0) return
     print *,'elem_group%bc_... are not implemented!'
-    pause
+!    pause
 end subroutine paraContact_getHecmwLocalElementGroup
 
 subroutine paraContact_getHecmwLocalSurfaceGroup(egrpIn,egrpOut,indexElmtG2L,maxSurfInGroup,hecMESH_G,part,partID)
@@ -1590,7 +1593,7 @@ subroutine paraContact_getHecmwLocalSurfaceGroup(egrpIn,egrpOut,indexElmtG2L,max
     egrpOut%n_bc = egrpIn%n_bc
     if(egrpOut%n_bc == 0) return
     print *,'elem_group%bc_... are not implemented!'
-    pause
+!    pause
 end subroutine paraContact_getHecmwLocalSurfaceGroup
 
 subroutine paraContact_copyHecmwContactPair(contactIn,contactOut)
@@ -1657,6 +1660,7 @@ end subroutine copyClearMatrix
 
 !Update external nodal data
 subroutine paraContact_CreateExportImport(hecMESH)
+  use hecmw_util
   type (hecmwST_local_mesh),intent(in)  ::  hecMESH
 !
   integer(kint)   ::  i,j,pid,count,istat,ierr,inum
@@ -1882,5 +1886,53 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
     if(allocated(req1)) deallocate (req1)
     if(allocated(req2)) deallocate (req2)
 end subroutine paraContact_send_recv_33
+
+function useEntireMesh() result(yes)
+  logical ::  yes
+!
+  logical ::  log
+  character(len=256)  ::  tx
+  integer ::  istat
+    yes = .false.
+    inquire(file='hecmw_ctrl.dat',exist=log)
+    if(.not.log) then
+      stop 'Error: hecmw_ctrl.dat file does not exist!'
+    else
+      open(14,file='hecmw_ctrl.dat',status='old')
+      do
+        read(14,'(a)',iostat=istat)tx
+        if(istat < 0) exit
+        if(istat > 0) print *, 'Read Error!'
+        if(tx == '') cycle
+        if(tx(1:5) == '!MESH') then
+          if(foundToken(tx,'!MESH').and.    &
+             foundToken(tx,'fstrMSH').and.  &
+             foundToken(tx,'HECMW-ENTIRE')) then
+            yes = .true.
+            return
+          endif
+        endif
+      enddo
+    endif
+end function useEntireMesh
+
+function foundToken(string,token) result(yes)
+  character(*),intent(in) ::  string,token
+  logical :: yes
+!
+  integer ::  i,j,ns,nt
+    yes = .false.
+    ns = len_trim(string)
+    nt = len_trim(token)
+    next_char : do i=1,ns
+      if(string(i:i) /= token(1:1)) cycle
+      do j=1,nt-1
+        if(i+j > ns) cycle next_char
+        if(string(i+j:i+j) /= token(j+1:j+1)) cycle next_char
+      enddo
+      yes = .true.
+      return
+    enddo next_char
+end function foundToken
       
 end module m_fstr_para_contact

@@ -40,6 +40,9 @@ module m_fstr_ass_load
       use mMechGauss
       use mReadTemp
       use mULoad
+!#ifdef PARA_CONTACT
+      use m_fstr_para_contact
+!#endif
       integer, intent(in)                  :: cstep       !< current step
       type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
       type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh

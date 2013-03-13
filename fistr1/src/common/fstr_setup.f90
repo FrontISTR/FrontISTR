@@ -336,11 +336,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
                 stop
               else
-                isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH   &
-#ifdef PARA_CONTACT
+                if(paraContactFlag) then
+                  isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH   &
+!#ifdef PARA_CONTACT
                                                                                   ,myrank &
-#endif
+!#endif
                                                                                     )
+                else
+                  isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH)
+                endif
          !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
               endif
             enddo

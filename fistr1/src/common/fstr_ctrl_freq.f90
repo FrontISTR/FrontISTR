@@ -79,7 +79,8 @@
     rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
-    call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
+    call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
+         P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
     
     deallocate( grp_id_name )
     return

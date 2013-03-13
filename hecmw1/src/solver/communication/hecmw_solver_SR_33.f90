@@ -72,21 +72,12 @@
         inum  = STACK_EXPORT(neib  ) - istart
         do k= istart+1, istart+inum
                ii   = 3*NOD_EXPORT(k)
-! Bug?
-!           WS(3*k-2)= X(ii-2)
-!           WS(3*k-1)= X(ii-1)
-!           WS(3*k  )= X(ii  )
-! Fixed version
-           WS(3*(k-istart)-2)= X(ii-2)
-           WS(3*(k-istart)-1)= X(ii-1)
-           WS(3*(k-istart)  )= X(ii  )
+           WS(3*k-2)= X(ii-2)
+           WS(3*k-1)= X(ii-1)
+           WS(3*k  )= X(ii  )
         enddo
 
-! Bug?
-!        call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
-!     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
-! Fixed version
-        call MPI_ISEND (WS(1), 3*inum,MPI_DOUBLE_PRECISION,    &
+        call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
       enddo
 
