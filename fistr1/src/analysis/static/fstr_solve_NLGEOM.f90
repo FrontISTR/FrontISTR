@@ -208,12 +208,15 @@ contains
 
 
       jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
-      tincre = 1.d0 / fstrSOLID%step_ctrl( cstep )%num_substep
+      jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
       if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+          tincre = 1.d0 / fstrSOLID%step_ctrl( cstep )%num_substep
           f_t = tincre*substep
+          if( f_t>1.d0 ) f_t=1.d0
 
       else
+          tincre = fstrSOLID%step_ctrl( cstep )%initdt
           jj1 = hecMESH%amp%amp_index(jj_n_amp - 1)
           jj2 = hecMESH%amp%amp_index(jj_n_amp)
 

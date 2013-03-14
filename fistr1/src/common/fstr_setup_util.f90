@@ -191,7 +191,7 @@ end subroutine backset_group_pointers
 function node_global_to_local( hecMESH, list, n )
         implicit none
         type (hecmwST_local_mesh), target :: hecMESH
-        integer(kind=kint), pointer :: list(:)
+        integer(kind=kint) :: list(:)
         integer(kind=kint) :: n, i, j
         logical:: fg
         integer(kind=kint):: node_global_to_local

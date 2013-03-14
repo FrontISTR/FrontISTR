@@ -15,9 +15,10 @@
 !
 !> \brief  This module provides functions for viscoelastic calculation
 !
-!>  \author     X.Yuan(Advancesoft)
-!>  \date       2010/10/06
-!>  \version    0.00
+!>  \author                date              version 
+!>  X.Yuan(Advancesoft)    2010/10/06        original
+!>  X.Yuan                 2012/09/18        add trs function(WLF, ARRHENIUS)       
+!>  
 !
 !======================================================================!
 module mViscoElastic
@@ -26,7 +27,7 @@ module mViscoElastic
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
   
-  private :: hvisc
+  private :: hvisc, trs, trsinc
 	
   contains
 
@@ -48,6 +49,53 @@ module mViscoElastic
 
   end function
   
+  !> Compute trs time increment
+  real(kind=kreal) function trsinc(tn1,tn,mtype, mvar)
+      real(kind=kreal), intent(in) :: tn1     !< temperature at time n+1
+      real(kind=kreal), intent(in) :: tn      !< temperature at time n
+      integer, intent(in)          :: mtype   !< material type
+      real(kind=kreal), intent(in) :: mvar(:) !< material properties
+	  
+      real(kind=kreal)  ::  hsn1, hsn, asn1, asn
+
+      if(mtype==VISCOELASTIC+2) then   ! Arrhenius
+
+        hsn1 = mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+        hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+        asn1 = dexp(-hsn1)
+        asn = dexp(-hsn)
+        
+      else   ! WLF
+
+        hsn1 = mvar(2)*( tn1-mvar(1) )/ (mvar(3)+tn1-mvar(1) )*dlog(10.d0)
+        hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
+        asn1 = dexp(hsn1)
+        asn = dexp(hsn)
+
+      endif
+	  
+      trsinc = (asn1-asn)/(hsn1-hsn)
+
+  end function
+  
+  !> Compute trs time
+  real(kind=kreal) function trs(tn,mtype, mvar)
+      real(kind=kreal), intent(in) :: tn      !< temperature at current step
+      integer, intent(in)          :: mtype   !< material type
+      real(kind=kreal), intent(in) :: mvar(:) !< material properties
+	  
+      real(kind=kreal)  ::  hsn
+
+      if(mtype==VISCOELASTIC+2) then   ! Arrhenius
+        hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+      else   ! WLF
+        hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
+      endif
+	  
+      trs = dexp(hsn)
+
+  end function
+  
 !-------------------------------------------------------------------------------
 !> This subroutine calculates tangent moduli for isotropic viscoelastic material
 !-------------------------------------------------------------------------------
@@ -61,7 +109,7 @@ module mViscoElastic
 
       integer   i,j, n
       real(kind=kreal) :: G,Gg,K,Kg, gfac,exp_n,mu_0,mu_n,dq_n,dtau
-      real(kind=kreal) :: ina(1), outa(2), EE, PP
+      real(kind=kreal) :: ina(1), outa(2), EE, PP, ddt
 
       type(tTable), pointer  :: dicval
       logical :: ierr
@@ -76,7 +124,8 @@ module mViscoElastic
         endif
         return
       endif	  
-	  
+
+      ddt = dt
       if( present(temp) ) then
         ina(1) = temp
         call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
@@ -87,6 +136,7 @@ module mViscoElastic
           EE = outa(1)
           PP = outa(2)
         endif
+        if( matl%mtype>VISCOELASTIC ) ddt=trs(temp,matl%mtype, matl%variables)*dt
       else
         EE = matl%variables(M_YOUNGS)
         PP = matl%variables(M_POISSON)
@@ -96,6 +146,8 @@ module mViscoElastic
 
       G = EE/(2.d0*(1.d0 + PP))
       K = EE/(3.d0*(1.d0 - 2.d0*PP))
+      
+      
 
 !     Set properties for integrating the q_i terms
 
@@ -107,7 +159,7 @@ module mViscoElastic
 	  
       do n = 1,dicval%tbrow
         mu_n  = dicval%tbval(1,n)
-        dtau  = dt/dicval%tbval(2,n)
+        dtau  = ddt/dicval%tbval(2,n)
         exp_n = dexp(-dtau)
 
         dq_n = mu_n * hvisc(dtau,exp_n)
@@ -138,23 +190,25 @@ module mViscoElastic
   
 !-------------------------------------------------------------------------------
 !> This subroutine provides to update stress for viscoelastic material
-  subroutine UpdateViscoelastic(matl, sectType, eps, sig, vsig, dt, temp)
+  subroutine UpdateViscoelastic(matl, sectType, eps, sig, vsig, dt, temp, tempn)
       TYPE( tMaterial ), INTENT(IN)   :: matl      !< material properties
       INTEGER, INTENT(IN)             :: sectType  !< not used currently
       REAL(KIND=kreal), INTENT(IN)    :: eps(6)    !< strain after this step
       REAL(KIND=kreal), INTENT(out)   :: sig(6)    !< stress
       REAL(KIND=kreal), INTENT(inout) :: vsig(:)   !< Visco stress components
       REAL(KIND=kreal), INTENT(IN)    :: dt        !< time increment
-      REAL(KIND=kreal), OPTIONAL      :: temp      !> temprature
+      REAL(KIND=kreal), OPTIONAL      :: temp      !> current temprature
+      REAL(KIND=kreal), OPTIONAL      :: tempn     !> temperature at last step
 
       integer   i,j, n
       real(kind=kreal) :: G,Gg,K,Kg,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
-      real(kind=kreal) :: ina(1), outa(2), EE, PP
+      real(kind=kreal) :: ina(1), outa(2), EE, PP, ddt
 
       real(kind=kreal) :: devstrain(6), en(6)
       type(tTable), pointer  :: dicval
       logical :: ierr
 
+      ddt = dt
       if( present(temp) ) then
         ina(1) = temp
         call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
@@ -165,6 +219,7 @@ module mViscoElastic
           EE = outa(1)
           PP = outa(2)
         endif
+        if( matl%mtype>VISCOELASTIC ) ddt=trsinc(temp,tempn, matl%mtype, matl%variables)*dt
       else
         EE = matl%variables(M_YOUNGS)
         PP = matl%variables(M_POISSON)
@@ -174,7 +229,7 @@ module mViscoElastic
 
       G = EE/(2.d0*(1.d0 + PP))
       K = EE/(3.d0*(1.d0 - 2.d0*PP))
-
+      
 !     Compute volumetric strain and deviatoric components
 
       theta = (eps(1) + eps(2) + eps(3))/3.d0
@@ -197,7 +252,7 @@ module mViscoElastic
 
       do n = 1,dicval%tbrow
         mu_n  = dicval%tbval(1,n)
-        dtau  = dt/dicval%tbval(2,n)
+        dtau  = ddt/dicval%tbval(2,n)
         exp_n = dexp(-dtau)
 
         dq_n = mu_n * hvisc(dtau,exp_n)

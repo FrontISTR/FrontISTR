@@ -298,6 +298,27 @@ integer function fstr_ctrl_get_VISCOELASTICITY( ctrl, mattype, nlgeom, dict )
 end function fstr_ctrl_get_VISCOELASTICITY
 
 
+!> Read in !TRS
+integer function fstr_ctrl_get_TRS( ctrl, mattype, matval )
+        integer(kind=kint), intent(in)    :: ctrl
+        integer(kind=kint), intent(inout) :: mattype
+        real(kind=kreal),intent(out)      :: matval(:)
+		
+        integer :: ipt
+        character(len=256) :: s
+		
+        ipt=1
+        s = 'WLF,ARRHENIUS '
+        if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ',  s, 0, 'P',   ipt    ) /= 0 ) return
+
+        fstr_ctrl_get_TRS = &
+                fstr_ctrl_get_data_ex( ctrl, 1, "RRR ", matval(1), matval(2), matval(3) )
+        if( fstr_ctrl_get_TRS/=0 ) return
+        mattype = mattype+ipt
+
+end function fstr_ctrl_get_TRS
+
+
 !----------------------------------------------------------------------
 !> Read in !PLASTIC
 integer function fstr_ctrl_get_PLASTICITY( ctrl, mattype, nlgeom, matval, mattable, dict )

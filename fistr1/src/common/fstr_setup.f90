@@ -88,7 +88,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_fload, c_eigenread
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
-        integer(kind=kint) :: c_istep
+        integer(kind=kint) :: c_istep, c_localcoord, c_section
         integer(kind=kint) :: c_output, islog
 
         write( logfileNAME, '(i5,''.log'')' ) myrank
@@ -111,9 +111,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
         c_eigen    = 0; c_contact  = 0
         c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
-        c_couple   = 0; c_material = 0
+        c_couple   = 0; c_material = 0; c_section =0
         c_mpc      = 0; c_weldline = 0
-        c_istep    = 0
+        c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
 
         ctrl = fstr_ctrl_open( cntl_filename)
@@ -156,6 +156,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         fstrSOLID%restart_nout= nout
                         fstrDYNAMIC%restart_nout= nout
                         fstrHEAT%restart_nout= nout
+                else if( header_name == '!ORIENTATION' ) then
+                        c_localcoord = c_localcoord + 1
 
                 !--------------- for static -------------------------
 
@@ -312,12 +314,22 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_material = 0
         c_output = 0
         c_contact  = 0
+        c_localcoord = 0
+        c_section = 0
         fstrHEAT%WL_tot = 0	
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+		  
+          if( header_name == '!ORIENTATION' ) then
+                        c_localcoord = c_localcoord + 1
+                        if( fstr_setup_ORIENTATION( ctrl, hecMESH, c_localcoord, g_LocalCoordSys(c_localcoord) )/=0 ) then
+                          write(*,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
+                          write(ILOG,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
+                          stop
+                        endif
 
           ! ----- CONTACT condtion setting
-          if( header_name == '!CONTACT' ) then                          
+          elseif( header_name == '!CONTACT' ) then                          
             n = fstr_ctrl_get_data_line_n( ctrl )
             if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &    
                 ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then                                    
@@ -370,6 +382,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
                 write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
                 write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
+                stop
+            endif
+			
+          else if( header_name == '!SECTION'  ) then
+            c_section = c_section+1
+            if( fstr_ctrl_get_SECTION( ctrl, hecMESH )/=0 ) then
+                write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
+                write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
                 stop
             endif
 
@@ -434,6 +454,19 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
                  write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
                  stop
+              endif
+            endif
+          else if( header_name == '!TRS' ) then
+            if( cid >0 ) then
+              if( fstrSOLID%materials(cid)%mtype/=VISCOELASTIC ) then
+                 write(*,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! ' 
+                 write(ILOG,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! ' 
+              else
+                 if( fstr_ctrl_get_TRS( ctrl, fstrSOLID%materials(cid)%mtype, fstrSOLID%materials(cid)%variables)/=0 ) then
+                   write(*,*) '### Error: Fail in read in TRS definition : ' , cid
+                   write(ILOG,*) '### Error: Fail in read in TRS definition : ', cid
+                   stop
+                 endif
               endif
             endif
           else if( header_name == '!CREEP' ) then
@@ -1220,6 +1253,88 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
         end if
 
 end subroutine fstr_setup_SOLVER
+
+!* ----------------------------------------------------------------------------------------------- *!
+!> Read in !ORIENTATION       
+!* ----------------------------------------------------------------------------------------------- *!
+
+integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
+        implicit none
+        integer(kind=kint)         :: ctrl
+        type( hecmwST_local_mesh ) :: hecMESH
+        integer                    :: cnt
+        type( tLocalCoordSys )     :: coordsys
+
+        integer                   :: j, iS, iE, grp_id(1)
+        character(len=HECMW_NAME_LEN) :: grp_id_name(1)
+
+        integer :: nid, dtype
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        real(kind=kreal) :: fdum, xyza(3), xyzb(3), xyzc(3), ff1(3), ff2(3), ff3(3)
+
+        fstr_setup_ORIENTATION = -1
+
+		nid = 1
+        coordsys%sys_type = 10
+
+        nid = 1	
+        data_fmt = 'COORDINATES,NODES '
+        if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', data_fmt, 0, 'P', nid )/=0 ) return
+        dtype = nid-1
+        coordsys%sys_type = coordsys%sys_type + dtype
+
+        if( fstr_ctrl_get_param_ex( ctrl, 'NAME ',  '# ',  1, 'S', grp_id_name(1) )/= 0) return
+        coordsys%sys_name = grp_id_name(1)
+        call fstr_strupr( coordsys%sys_name )
+
+        if( dtype==0 ) then		
+          data_fmt = "RRRRRRrrr "
+          xyzc(:) = 0.d0
+          if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, xyza(1), xyza(2),  &
+                xyza(3), xyzb(1), xyzb(2), xyzb(3), xyzc(1), xyzc(2), xyzc(3) )/=0 ) return
+          if( coordsys%sys_type==10 ) then
+            ff1 = xyza-xyzc
+            fdum = dsqrt( dot_product(ff1, ff1) )
+            if( fdum==0.d0 ) return
+            ff1 = ff1/fdum
+            ff2 = xyzb-xyzc
+            call cross_product(ff1,ff2,ff3)
+            coordsys%CoordSys(1,:) = ff1
+
+            fdum = dsqrt( dot_product(ff3, ff3) )
+            if( fdum==0.d0 ) return
+            coordsys%CoordSys(3,:) = ff3/fdum
+
+            call cross_product(coordsys%CoordSys(3,:), coordsys%CoordSys(1,:), coordsys%CoordSys(2,:) )
+          else
+            coordsys%CoordSys(1,:) = xyza
+            coordsys%CoordSys(2,:) = xyzb
+          endif
+		
+        else
+          coordsys%node_ID(3) = 0   ! global origin
+          data_fmt = "IIi "
+          if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, coordsys%node_ID(1),  &
+                coordsys%node_ID(2), coordsys%node_ID(3) )/=0 ) return
+          if( coordsys%node_ID(3) == 0 ) then
+            nid = node_global_to_local( hecMESH, coordsys%node_ID(1:2), 2 )
+            if( nid/=0 .and. nid/=2 ) then
+               write(*,*) "We cannot define coordinate system using nodes in other CPU!"
+               write(IDBG,*) "We cannot define coordinate system using nodes in other CPU!"
+               return
+            endif
+          else
+            nid = node_global_to_local( hecMESH, coordsys%node_ID, 3 )
+            if( nid/=0 .and. nid/=3 ) then
+               write(*,*) "We cannot define coordinate system using nodes in other CPU!"
+               write(IDBG,*) "We cannot define coordinate system using nodes in other CPU!"
+               return
+            endif
+          endif
+        endif
+
+        fstr_setup_ORIENTATION = 0
+end function fstr_setup_ORIENTATION
 
 
 !-----------------------------------------------------------------------------!
