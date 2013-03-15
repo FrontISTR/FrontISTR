@@ -69,7 +69,8 @@ MODULE mMaterial
       INTEGER, PARAMETER :: USERMATERIAL          = 100000
   
       INTEGER, PARAMETER :: ELASTIC               = 110000
-      INTEGER, PARAMETER :: USERELASTIC           = 111000
+      INTEGER, PARAMETER :: MN_ORTHOELASTIC       = 111000
+      INTEGER, PARAMETER :: USERELASTIC           = 112000
 	  
       INTEGER, PARAMETER :: EPLASTIC              = 120000
 	  
@@ -111,8 +112,10 @@ MODULE mMaterial
 	  
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
+      CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_YIELD = 'YIELD'               ! plastic strain, yield stress
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_THEMOEXP = 'THEMOEXP'         ! thermo expansion coefficient
+      CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOEXP = 'ORTHOEXP'         ! thermo expansion coefficient
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
 
@@ -123,6 +126,7 @@ MODULE mMaterial
     integer                    :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(200)    !< material properties
+    integer                    :: cdsys_ID          !< ID of material coordinate system
     integer                    :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
@@ -250,7 +254,7 @@ MODULE mMaterial
     itype = fetchDigit( 1, mtype )
     if( itype/=1 ) return  ! not defomration problem
     itype = fetchDigit( 2, mtype )
-    if( itype/=1 .or. itype/=2 ) return  ! not defomration problem
+    if( itype/=1 .and. itype/=2 ) return  ! not defomration problem
     getElasticType = fetchDigit( 3, mtype )
   end function
 
@@ -303,6 +307,15 @@ MODULE mMaterial
     isElastoplastic = .false.
     itype = fetchDigit( 2, mtype )
     if( itype==2 ) isElastoplastic = .true.
+  end function
+  
+!> If it is an viscoelastic material?
+  logical function isViscoelastic( mtype )
+    INTEGER, INTENT(IN) :: mtype
+    integer :: itype
+    isViscoelastic = .false.
+    itype = fetchDigit( 2, mtype )
+    if( itype==4 ) isViscoelastic = .true.
   end function
 
 !> Set material type of elastoplastic to elastic

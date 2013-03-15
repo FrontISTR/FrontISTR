@@ -1,12 +1,25 @@
 !======================================================================!
+!                                                                      !
+! Software Name : FrontISTR Ver. 4.0                                   !
+!                                                                      !
+!      Module Name : lib                                               !
+!                                                                      !
+!            Written by X. YUAN, K. SATO (AdavanceSoft)                !
+!                                                                      !
+!      Contact address :  IIS,The University of Tokyo, CISS            !
+!                                                                      !
+!      "Structural Analysis for Large Scale Assembly"                  !
+!                                                                      !
+!======================================================================!
+!======================================================================!
 !
 !> \brief  This module contains several strategy to free locking problem
 !> in Eight-node hexagonal element
 !>
 
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/04/01
-!>  \version    0.00
+!>  \author                date                  version 
+!>  X.Yuan(Advancesoft)    2010/04/01        original
+!>  X.Yuan                 2013/03/18        consider anisotropic materials
 !                                                                      !
 !======================================================================!
 module m_static_LIB_C3D8
@@ -24,15 +37,17 @@ module m_static_LIB_C3D8
 !>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15, 
 !>  pp1413-1418,1980
 !----------------------------------------------------------------------*
-   SUBROUTINE STF_C3D8Bbar( etype,nn,ecoord,gausses,stiff, tincr, u,temperature )
+   SUBROUTINE STF_C3D8Bbar( etype,nn,ecoord,gausses,stiff, tincr, coords, u,temperature )
     USE mMechGauss
     use m_MatMatrix
+    use m_common_struct
     INTEGER(kind=kint), INTENT(IN)  :: etype               !< element type
     INTEGER(kind=kint), INTENT(IN)  :: nn                  !< number of elemental nodes
     REAL(kind=kreal),   INTENT(IN)  :: ecoord(3,nn)        !< coordinates of elemental nodes
     TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)          !< status of qudrature points
     REAL(kind=kreal),   INTENT(OUT) :: stiff(:,:)          !< stiff matrix
     real(kind=kreal),   intent(in)  :: tincr               !< time increment
+    REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)         !< variables to define matreial coordinate system
     REAL(kind=kreal),   INTENT(IN), optional :: u(:,:)     !< nodal displacemwent
     REAL(kind=kreal),   INTENT(IN), optional :: temperature(nn)     !< temperature
 
@@ -41,13 +56,13 @@ module m_static_LIB_C3D8
     REAL(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
     REAL(kind=kreal) gderiv(NN,3),stress(6),mat(6,6)
     REAL(kind=kreal) DET,WG, temp, spfunc(NN)
-    INTEGER(kind=kint) I,J,LX
+    INTEGER          I,J,LX, cdsys_ID, serr
     REAL(kind=kreal) naturalCoord(3)
     REAL(kind=kreal) gdispderiv(3,3)
     REAL(kind=kreal) B1(6,NDOF*NN), Bbar(NN,3)
     REAL(kind=kreal) Smat(9,9), elem(3,nn)
     REAL(kind=kreal) BN(9,NDOF*NN), SBN(9,NDOF*NN)
-	REAL(kind=kreal) B4,B6,B8,Vol
+	REAL(kind=kreal) B4,B6,B8,Vol, coordsys(3,3)
 
     stiff(:,:) = 0.d0
     ! we suppose the same material type in the element
@@ -56,6 +71,8 @@ module m_static_LIB_C3D8
     elem(:,:) = ecoord(:,:)
     if( flag == UPDATELAG ) elem(:,:) = ecoord(:,:) + u(:,:)
 	
+    cdsys_ID = gausses(1)%pMaterial%cdsys_ID
+	
 	! dilatation component at centroid
     naturalCoord=0.d0
     CALL getGlobalDeriv( etype, nn, naturalcoord, elem, det, Bbar )
@@ -63,13 +80,21 @@ module m_static_LIB_C3D8
     DO LX=1,NumOfQuadPoints(etype)
       CALL getQuadPoint( etype, LX, naturalCoord(:) )
       CALL getGlobalDeriv( etype, nn, naturalcoord, elem, det, gderiv )
+	  
+      if( cdsys_ID>0 ) then
+        call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys(:,:), serr)
+        if( serr==-1 ) stop "Fail to setup local coordinate"
+        if( serr==-2 ) then
+           write(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        endif
+      endif
 
       if( present(temperature) ) then
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         temp = dot_product( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, temp )
       else
-        CALL MatlMatrix( gausses(LX), D3, D, tincr )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
       endif
 	  
       WG=getWeight( etype, LX )*DET
@@ -176,9 +201,9 @@ module m_static_LIB_C3D8
 
 !>  Update Strain stress of this element
 !----------------------------------------------------------------------*
-   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, qf ,gausses, iter, tincr, TT,T0  )
+   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, coords, qf ,gausses, iter, tincr, TT,T0  )
 !---------------------------------------------------------------------*
-    use m_fstr, only : ref_temp
+    use m_fstr
     use mMaterial
     use mMechGauss
     use m_MatMatrix
@@ -189,7 +214,8 @@ module m_static_LIB_C3D8
     integer(kind=kint), INTENT(IN)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: u(3,nn)         !< \param [in] nodal dislplacements 
-    real(kind=kreal),   INTENT(IN)     :: du(3,nn)        !< \param [in] nodal displacement ( solutions of solver )
+    real(kind=kreal),   INTENT(IN)     :: du(3,nn)        !< \param [in] nodal displacement increment
+    REAL(kind=kreal), INTENT(INOUT)    :: coords(3,3)     !< variables to define matreial coordinate system
     real(kind=kreal),   INTENT(OUT)    :: qf(nn*3)        !< \param [out] Internal Force    
     type(tGaussStatus), INTENT(INOUT)  :: gausses(:)      !< \param [out] status of qudrature points
     integer, intent(in)                :: iter
@@ -201,13 +227,13 @@ module m_static_LIB_C3D8
     integer(kind=kint), parameter :: ndof=3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn)
     real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG
-    integer(kind=kint) :: i, j, k, LX, mtype
+    integer(kind=kint) :: i, j, k, LX, mtype, cdsys_ID, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), R(3,3), spfunc(nn)
-    real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn)
+    real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
     real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
     real(kind=kreal)   :: dvol, vol0, Bbar(nn,3), derivdum(1:ndof,1:ndof), BBar2(nn,3)
-    real(kind=kreal)   :: B4,B6,B8, ttc,tt0, alp, outa(1),ina(1), EPSTH(6)
-    logical            :: ierr
+    real(kind=kreal)   :: B4,B6,B8, ttc,tt0, alp,alp0, alpo(3),alpo0(3),outa(1),ina(1), EPSTH(6)
+    logical            :: ierr, matlaniso
 
     qf(:)    = 0.d0
     ! we suppose the same material type in the element
@@ -219,6 +245,14 @@ module m_static_LIB_C3D8
         elem1(:,:) = (du(:,:)+u(:,:) ) +ecoord(:,:) 
       !  elem = elem1
         totaldisp(:,:) = du(:,:)
+    endif
+
+    cdsys_ID = gausses(1)%pMaterial%cdsys_ID
+    matlaniso = .false.
+    if( cdsys_ID>0 .and. present(TT) ) then
+       ina = TT(1)
+       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+       if( .not. ierr ) matlaniso = .true.
     endif
 	
 	! dilatation at centroid
@@ -232,6 +266,14 @@ module m_static_LIB_C3D8
       mtype = gausses(LX)%pMaterial%mtype
       call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv( etype, nn, naturalcoord, elem, det, gderiv )
+	  
+      if( cdsys_ID>0 ) then
+        call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys(:,:), serr)
+        if( serr==-1 ) stop "Fail to setup local coordinate"
+        if( serr==-2 ) then
+           write(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        endif
+      endif
 	  
 	  gdispderiv(1:ndof,1:ndof) = matmul( totaldisp(1:ndof,1:nn), gderiv(1:nn,1:ndof) )
 	  dvol = vol0-(gdispderiv(1,1)+gdispderiv(2,2)+gdispderiv(3,3))/3.d0
@@ -252,19 +294,39 @@ module m_static_LIB_C3D8
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         ttc = dot_product( TT, spfunc )
         tt0 = dot_product( T0, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, ttc )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc )
             
           ina(1) = ttc
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          alp =outa(1)
+          if( matlaniso ) then
+               call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
+               if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+          else
+               call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+               if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+               alp = outa(1)
+          endif
           ina(1) = tt0
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          EPSTH(1:3)=ALP*(ttc-ref_temp)-outa(1)*(tt0-ref_temp)
+          if( matlaniso  ) then
+               call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
+               if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+          else
+              call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+              if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+              alp0 = outa(1)
+          endif
+          if( matlaniso ) then
+              do j=1,3
+                EPSTH(j)=ALPO(j)*(ttc-ref_temp)-alpo0(j)*(tt0-ref_temp)
+              enddo
+              call transformation(coordsys(:,:), tm)  
+              EPSTH(:) = matmul( EPSTH(:), tm  )      ! to global coord 
+              EPSTH(4:6)=EPSTH(4:6)*2.d0 
+          else
+              EPSTH(1:3)=ALP*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+          endif
 
       else
-        CALL MatlMatrix( gausses(LX), D3, D, tincr )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
       endif
 
 !       Small strain
@@ -457,25 +519,35 @@ module m_static_LIB_C3D8
    
    !> This subroutien calculate thermal loading
 !----------------------------------------------------------------------*
-   SUBROUTINE TLOAD_C3D8Bbar(ETYPE,NN,XX,YY,ZZ,TT,T0,gausses,VECT)
+   SUBROUTINE TLOAD_C3D8Bbar(ETYPE,NN,XX,YY,ZZ,TT,T0,gausses,VECT,coords)
 !----------------------------------------------------------------------*
-      use m_fstr, only : ref_temp
+      use m_fstr
       USE mMechGauss
       use m_MatMatrix
+      use m_utilities
       INTEGER(kind=kint), PARAMETER :: NDOF=3
       INTEGER(kind=kint), INTENT(IN) :: ETYPE,NN
       TYPE(tGaussStatus), INTENT(IN) :: gausses(:)          !< status of qudrature points
       REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
       REAL(kind=kreal), INTENT(OUT)  :: VECT(NN*NDOF)
+      REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)       !< variables to define matreial coordinate system
 
       REAL(kind=kreal) ALP,alp0, D(6,6),B(6,NDOF*NN)
       REAL(kind=kreal) B4,B6,B8,DET,ecoord(3,NN)
-      INTEGER(kind=kint) J,LX
-      REAL(kind=kreal) EPS(6),SGM(6),H(NN)
+      INTEGER(kind=kint) J,LX, cdsys_ID, serr
+      REAL(kind=kreal) estrain(6),SGM(6),H(NN)
       REAL(kind=kreal) naturalcoord(3),gderiv(NN,3)
-      REAL(kind=kreal) WG, outa(1), ina(1), Bbar(nn,3)
-      REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS
-      logical   :: ierr
+      REAL(kind=kreal) WG, outa(1), ina(1), Bbar(nn,3),alpo(3),alpo0(3), coordsys(3,3)
+      REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS, tm(6,6)
+      logical   :: ierr, matlaniso
+	  
+        matlaniso = .false.
+        cdsys_ID = gausses(1)%pMaterial%cdsys_ID
+        if( cdsys_ID>0 ) then   ! cannot define aniso exapansion when no local coord defined
+          ina = TT(1)
+          call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+          if( .not. ierr ) matlaniso = .true.
+        endif
 
       VECT(:)=0.d0
 	  
@@ -491,6 +563,14 @@ module m_static_LIB_C3D8
         CALL getQuadPoint( etype, LX, naturalCoord(:) )
         CALL getShapeFunc( ETYPE, naturalcoord, H(1:NN) )
         CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
+		
+        if( matlaniso ) then
+          call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys, serr)
+          if( serr==-1 ) stop "Fail to setup local coordinate"
+          if( serr==-2 ) then
+            write(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          endif
+        endif
 
 !  WEIGHT VALUE AT GAUSSIAN POINT
         WG=getWeight( etype, LX )*DET
@@ -523,27 +603,48 @@ module m_static_LIB_C3D8
             TEMP0=DOT_PRODUCT( H(1:NN),T0(1:NN) )
 			
      !   CALL calElasticMatrix( gausses(LX)%pMaterial, D3, D, TEMPC  )
-        CALL MatlMatrix( gausses(LX), D3, D, 0.d0, TEMPC )
-        ina(1) = TEMPC
-        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
-		alp = outa(1)
-        if( ierr ) alp=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
-        ina(1) = TEMP0
-        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa, ierr, ina )
-		alp0 = outa(1)
-        if( ierr ) alp0=gausses(LX)%pMaterial%variables(M_EXAPNSION)  
+        CALL MatlMatrix( gausses(LX), D3, D, 0.d0, coordsys, TEMPC )
+		
+            ina(1) = TEMPC
+            if( matlaniso ) then
+               call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
+               if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+            else
+               call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+               if( ierr ) stop "Fails in fetching expansion coefficient!"
+               alp = outa(1)
+            endif
+            ina(1) = TEMP0
+            if( matlaniso  ) then
+               call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
+               if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+            else
+              call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+              if( ierr ) stop "Fails in fetching expansion coefficient!"
+              alp0 = outa(1)
+            endif
 
 !**
-!** THERMAL EPS
+!** THERMAL strain
 !**
-            THERMAL_EPS=ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
-            EPS(1:3)=THERMAL_EPS
-            EPS(4:6)=0.d0
+            if( matlaniso ) then
+              do j=1,3
+                estrain(j)=ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
+              enddo
+              estrain(4:6)=0.d0
+              call transformation(coordsys, tm) 
+              estrain(:) = matmul( estrain(:), tm  )      ! to global coord  
+              estrain(4:6)=estrain(4:6)*2.d0 
+            else
+              THERMAL_EPS=ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+              estrain(1:3)=THERMAL_EPS
+              estrain(4:6)=0.d0
+            endif
 			
 !**
 !** SET SGM  {s}=[D]{e}
 !**
-            SGM(:)=MATMUL( D(:,:),EPS(:) )
+            SGM(:)=MATMUL( D(:,:),estrain(:) )
 !**
 !** CALCULATE LOAD {F}=[B]T{e}
 !**

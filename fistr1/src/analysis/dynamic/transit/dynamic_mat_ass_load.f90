@@ -44,11 +44,11 @@ module m_dynamic_mat_ass_load
       real(kind=kreal) :: vect(60)
       integer(kind=kint) :: iwk(60)
       integer(kind=kint) :: nodLocal(20)
-      real(kind=kreal) :: tt(20), tt0(20)
+      real(kind=kreal) :: tt(20), tt0(20), coords(3,3)
       real(kind=kreal),pointer:: temp(:)
       integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
       integer(kind=kint) :: icel, ic_type, nn, iS, isect, id, iset, nsize
-      integer(kind=kint) :: itype, iE
+      integer(kind=kint) :: itype, iE, cdsys_ID
       real(kind=kreal) :: val, rho, thick, pa1
       logical :: fg_surf
  
@@ -219,6 +219,8 @@ module m_dynamic_mat_ass_load
             enddo
 !C** section  ID
             isect= hecMESH%section_ID(icel)
+            cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
+            call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
 
 !C** Section Data
             if (ndof .eq. 2) then
@@ -240,7 +242,7 @@ module m_dynamic_mat_ass_load
             else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.  &
                      ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
               call TLOAD_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
-                            fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof) )
+                            fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof), coords )
 !
             else if ( ic_type.eq.741 .or. ic_type.eq.743 .or. ic_type.eq.731 ) then
               if( myrank .eq. 0 ) then

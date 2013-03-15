@@ -1,17 +1,22 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 4.0                                   !
 !                                                                      !
 !      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
+!   Record of revision:
+!      Date            Programmer           Description of change
+!    =========         ==========           =====================
+!                       YUAN Xi                 Original
+!    Nov.,2012          YUAN Xi                 Ortho added
+!                                          
 !======================================================================!
-!> \brief  This module provides function on elastic material
+!> \brief  This module provides functions for elastic material
+
 module m_ElasticLinear
   use mMaterial
 
@@ -20,7 +25,7 @@ module m_ElasticLinear
 
   contains
 
-!> Calculate elastic matrix
+!> Calculate isotropic elastic matrix
    SUBROUTINE calElasticMatrix( matl, sectType, D, temp  )
    TYPE( tMaterial ), INTENT(IN) :: matl       !> material properties
    INTEGER, INTENT(IN)           :: sectType   !> plane strain/stress or 3D 
@@ -34,8 +39,8 @@ module m_ElasticLinear
      ina(1) = temp
      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
      if( ierr ) then
-	   EE = matl%variables(M_YOUNGS)
-       PP = matl%variables(M_POISSON)
+       ee = matl%variables(M_YOUNGS)
+       pp = matl%variables(M_POISSON)
      else
        EE = outa(1)
        PP = outa(2)
@@ -43,14 +48,15 @@ module m_ElasticLinear
    else
      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr )
      if( ierr ) then
-	   EE = matl%variables(M_YOUNGS)
-       PP = matl%variables(M_POISSON)
+       ee = matl%variables(M_YOUNGS)
+       pp = matl%variables(M_POISSON)
      else
        EE = outa(1)
        PP = outa(2)
      endif
    endif
    
+  
      SELECT CASE (sectType)
      CASE (D3)
        D(1,1)=EE*(1.0-PP)/(1.0-2.0*PP)/(1.0+PP)
@@ -77,7 +83,7 @@ module m_ElasticLinear
        D(3,1)=0.0
        D(3,2)=0.0
        D(3,3)=COEF1*COEF2
-     CASE (PlaneStrain)
+     CASE (Planestrain)
        COEF1=EE/((1.0+PP)*(1.0-2.0*PP))
        COEF2=EE/(2.0*(1.0+PP))
        D(1,1)=COEF1*(1.0-PP)
@@ -108,13 +114,77 @@ module m_ElasticLinear
        D(4,2)=D(2,4)
        D(4,3)=0.0
        D(4,4)=D(1,1)
-     CASE (Shell)
+     CASE DEFAULT     
+       STOP "Section type not defined"
      END SELECT
 
    END SUBROUTINE
+   
+   
+   !> Calculate orthotropic elastic matrix
+   SUBROUTINE calElasticMatrix_ortho( matl, sectType, bij, DMAT, temp  )
+   use m_utilities
+   TYPE( tMaterial ), INTENT(IN) :: matl       !> material properties
+   INTEGER, INTENT(IN)           :: sectType   !> plane strain/stress or 3D 
+   REAL(KIND=kreal), INTENT(IN)  :: bij(3,3)   !> director
+   REAL(KIND=kreal), INTENT(OUT) :: DMAT(:,:)  !> elastic matrix
+   REAL(KIND=kreal), OPTIONAL    :: temp       !> temprature
+   REAL(KIND=kreal) :: E1, E2, E3, G12, G23, G13, nyu12, nyu23,nyu13
+   REAL(KIND=kreal) :: nyu21,nyu32,nyu31, delta1, ina(1), outa(9)
+   REAL(KIND=kreal) :: tm(6,6)
+   logical :: ierr
 
+   if( present(temp) ) then
+     ina(1) = temp
+     call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr, ina )
+     if( ierr ) then
+        stop "Fails in fetching orthotropic elastic constants!"
+     endif
+   else
+     call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr )
+     if( ierr ) then
+       stop "Fails in fetching orthotropic elastic constants!"
+     endif
+   endif
+   
+  
+         E1    = outa(1) 
+         E2    = outa(2) 
+         E3    = outa(3) 
+         nyu12 = outa(4) 
+         nyu13 = outa(5) 
+         nyu23 = outa(6) 
+         G12   = outa(7) 
+         G13   = outa(8) 
+         G23   = outa(9) 
+         nyu21 = E2/E1*nyu12 
+         nyu32 = E3/E2*nyu23 
+         nyu31 = E3/E1*nyu13 
+         delta1 = 1.d0/(1.d0 -nyu12*nyu21 -nyu23*nyu32 -nyu31*nyu13 -2.d0*nyu21*nyu32*nyu13)
 
-      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+         DMAT(:,:)=0.d0	 
+         DMAT(1,1) = E1*(1.d0-nyu23*nyu32)*delta1
+         DMAT(2,2) = E2*(1.d0-nyu13*nyu31)*delta1      
+         DMAT(3,3) = E3*(1.d0-nyu12*nyu21)*delta1   
+         DMAT(1,2) = E1*(nyu21+nyu31*nyu23)*delta1
+         DMAT(1,3) = E1*(nyu31+nyu21*nyu32)*delta1   
+         DMAT(2,3) = E2*(nyu32+nyu12*nyu31)*delta1         
+         DMAT(4,4) = G12 
+         DMAT(5,5) = G23 
+         DMAT(6,6) = G13
+
+         DMAT(2,1) = DMAT(1,2) 
+         DMAT(3,2) = DMAT(2,3)    
+         DMAT(3,1) = DMAT(1,3)   
+
+         call transformation(bij, tm) 
+
+         dmat = matmul( (tm), dmat)
+	     dmat = matmul( dmat, transpose(tm) )
+
+   END SUBROUTINE
+   
+   !< calculate contravariant elastic tensor
 !####################################################################
       SUBROUTINE LinearElastic_Shell                     &
                  (matl, sectType, c,                     &
@@ -125,8 +195,8 @@ module m_ElasticLinear
       TYPE( tMaterial ), INTENT(IN)   :: matl
       INTEGER, INTENT(IN)             :: sectType
       REAL(KIND = kreal), INTENT(OUT) :: c(:, :, :, :)
-      REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3)
-      REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)
+      REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3) !< local Orthonormal frame
+      REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)            !< contravaraint frame
       REAL(KIND = kreal), INTENT(OUT) :: alpha
       
 !--------------------------------------------------------------------
@@ -465,6 +535,7 @@ module m_ElasticLinear
       END SUBROUTINE LinearElastic_Shell
 !####################################################################
       ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
+
 
 
 end module m_ElasticLinear

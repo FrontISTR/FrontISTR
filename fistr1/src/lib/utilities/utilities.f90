@@ -329,5 +329,40 @@ module m_utilities
     vn(2) = v1(3)*v2(1) - v1(1)*v2(3)
     vn(3) = v1(1)*v2(2) - v1(2)*v2(1)
   end subroutine cross_product
+  
+  subroutine transformation(jacob, tm) 
+  real(kind=kreal),intent(in)	::	jacob(3,3)   !< Jacobian
+  real(kind=kreal),intent(out)	::	tm(6,6)      !< transform matrix
+
+  integer		::	i,j,k,m,nDim,nTensorDim
+
+    do i=1,3
+      do j=1,3
+	    tm(i,j)= jacob(i,j)*jacob(i,j)
+      enddo
+      tm(i,4) = jacob(i,1)*jacob(i,2)
+      tm(i,5) = jacob(i,2)*jacob(i,3)
+      tm(i,6) = jacob(i,3)*jacob(i,1)
+    enddo
+    tm(4,1) = 2.d0*jacob(1,1)*jacob(2,1)
+    tm(5,1) = 2.d0*jacob(2,1)*jacob(3,1)
+    tm(6,1) = 2.d0*jacob(3,1)*jacob(1,1)
+    tm(4,2) = 2.d0*jacob(1,2)*jacob(2,2)
+    tm(5,2) = 2.d0*jacob(2,2)*jacob(3,2)
+    tm(6,2) = 2.d0*jacob(3,2)*jacob(1,2)
+    tm(4,3) = 2.d0*jacob(1,3)*jacob(2,3)
+    tm(5,3) = 2.d0*jacob(2,3)*jacob(3,3)
+    tm(6,3) = 2.d0*jacob(3,3)*jacob(1,3)
+    tm(4,4) = jacob(1,1)*jacob(2,2) + jacob(1,2)*jacob(2,1)
+    tm(5,4) = jacob(2,1)*jacob(3,2) + jacob(2,2)*jacob(3,1)
+    tm(6,4) = jacob(3,1)*jacob(1,2) + jacob(3,2)*jacob(1,1)
+    tm(4,5) = jacob(1,2)*jacob(2,3) + jacob(1,3)*jacob(2,2)
+    tm(5,5) = jacob(2,2)*jacob(3,3) + jacob(2,3)*jacob(3,2)
+    tm(6,5) = jacob(3,2)*jacob(1,3) + jacob(3,3)*jacob(1,2)
+    tm(4,6) = jacob(1,3)*jacob(2,1) + jacob(1,1)*jacob(2,3)
+    tm(5,6) = jacob(2,3)*jacob(3,1) + jacob(2,1)*jacob(3,3)
+    tm(6,6) = jacob(3,3)*jacob(1,1) + jacob(3,1)*jacob(1,3)
+
+  end subroutine transformation
 		
 end module 

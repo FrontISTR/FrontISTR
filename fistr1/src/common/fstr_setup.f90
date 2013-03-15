@@ -274,6 +274,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
         if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )	
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
+        if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
+
         n = c_material
         if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
         if( n==0 ) stop "material property not defined!"
@@ -801,6 +803,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
           if( isect<0 .or. isect>hecMESH%section%n_sect )   &
              stop "Error in element's section definition"
           id = hecMESH%section%sect_mat_ID_item(isect)
+          fstrSOLID%materials(id)%cdsys_ID = hecMESH%section%sect_orien_ID(isect)
           do j=1,ng
              fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
              call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )

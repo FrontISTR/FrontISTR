@@ -16,10 +16,10 @@
 !
 !> \brief  This module provides function to calcualte tangent stiffness matrix.
 !!
-!>  \author     X. YUAN(AdavanceSoft)
-!>  \date       2010/08/26
-!>  \version    0.00
-!!
+!>  \author                date                  version 
+!>  X.Yuan(Advancesoft)    2010/08/26        original
+!>  X.Yuan                 2013/03/18        consider anisotropic materials
+!
 !======================================================================!
 module m_fstr_StiffMatrix
    implicit none
@@ -46,8 +46,8 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   real(kind=kreal)   :: tt(20), ecoord(3,20)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
-  real(kind=kreal)   :: u(3,20), du(3,20)
-  integer            :: ig0, grpid, ig, iS0, iE0,ik, in
+  real(kind=kreal)   :: u(3,20), du(3,20), coords(3,3)
+  integer            :: ig0, grpid, ig, iS0, iE0,ik, in, cdsys_ID
 
 ! ----- initialize
   call hecmw_mat_clear( hecMAT )
@@ -79,6 +79,9 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
            tt(j)=fstrSOLID%temperature( nodLOCAL(j) )
       enddo
+	  
+      cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
+      if( cdsys_ID>0 ) call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
 
       material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
       thick = material%variables(M_THICK)
@@ -98,10 +101,10 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
       else if ( ic_type==361 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3D8Bbar( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, u(1:3,1:nn), tt(1:nn) )
+                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn), tt(1:nn) )
         else
           call STF_C3D8Bbar( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, u(1:3,1:nn) )
+                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn) )
         endif
 
 
@@ -109,10 +112,10 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, u(1:3,1:nn), tt(1:nn) )
+                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn), tt(1:nn) )
         else
           call STF_C3( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, u(1:3,1:nn) )
+                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn) )
         endif
 
 

@@ -904,6 +904,33 @@ end subroutine fstr_param_init
           if( cstep>fstrSOLID%nstep_tot ) return
           fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
         end function
+		
+		!< This subroutine fetch coords defined by local coordinate system	
+        subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
+           integer, intent(in)             :: cdsys_ID      !< id of local coordinate
+           type (hecmwST_local_mesh)       :: hecMESH       !< mesh information
+           type (fstr_solid),intent(inout) :: fstrSOLID     !< fstr_solid
+           real(kind=kreal), intent(out)   :: coords(3,3)
+		   
+           integer :: ik
+
+           coords =0.d0		   
+           if( cdsys_ID>0 ) then
+                 if( isCoordNeeds(g_LocalCoordSys(cdsys_ID)) ) then
+                    coords=g_LocalCoordSys(cdsys_ID)%CoordSys
+                 else
+                    ik=g_LocalCoordSys(cdsys_ID)%node_ID(1)
+                    coords(1,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+                                + fstrSOLID%dunode(3*ik-2:3*ik)
+                    ik=g_LocalCoordSys(cdsys_ID)%node_ID(2)
+                    coords(2,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+                                + fstrSOLID%dunode(3*ik-2:3*ik)
+                    ik=g_LocalCoordSys(cdsys_ID)%node_ID(3)
+                    if(ik>0) coords(3,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+                                + fstrSOLID%dunode(3*ik-2:3*ik)
+                 endif
+           endif
+        end subroutine
 
 
 end module m_fstr

@@ -57,7 +57,7 @@ module m_static_LIB_2d
       REAL(kind=kreal) THICK,PAI
       REAL(kind=kreal) DET,RR,WG
       REAL(kind=kreal) localcoord(2)
-      REAL(kind=kreal) gderiv(NN,2)
+      REAL(kind=kreal) gderiv(NN,2), cdsys(3,3)
       INTEGER(kind=kint) J,LX
       real(kind=kreal) gdispderiv(2,2)
       real(kind=kreal) B1(4,nn*ndof)
@@ -75,7 +75,7 @@ module m_static_LIB_2d
       ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
       DO LX=1,NumOfQuadPoints( ETYPE )
-        CALL MatlMatrix( gausses(LX), ISET, D,1.d0 )
+        CALL MatlMatrix( gausses(LX), ISET, D,1.d0,cdsys )
         if( .not. present(u) ) flag=INFINITE    ! enforce to infinite deformation analysis
 
         if( flag==1 .and. ISET == 2 ) then
@@ -448,7 +448,7 @@ module m_static_LIB_2d
     real(kind=kreal)   :: det, WG
     real(kind=kreal)   :: localCoord(2)
     real(kind=kreal)   :: gderiv(nn,2), dstrain(4)
-    real(kind=kreal)   :: gdispderiv(2,2)
+    real(kind=kreal)   :: gdispderiv(2,2), cdsys(3,3)
     integer(kind=kint) :: j, LX
     real(kind=kreal)   :: totaldisp(2*nn)
 !
@@ -467,7 +467,7 @@ module m_static_LIB_2d
     ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1, NumOfQuadPoints(etype)
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0  )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, cdsys  )
 
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
@@ -528,7 +528,7 @@ end subroutine UPDATE_C2
       REAL(kind=kreal) EPS(4),SGM(4),EPSTH(4),deriv(NN,2)
       REAL(kind=kreal) XJ(2,2),DNDE(2,NN),DET,RR,DUM
       REAL(kind=kreal) XJI(2,2),localcoord(2)
-      REAL(kind=kreal) PAI,THICK,EE,PP
+      REAL(kind=kreal) PAI,THICK,EE,PP, cdsys(3,3)
       INTEGER(kind=kint) J,K
       REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS
       REAL(kind=kreal) ARRAY_TEMP(8)
@@ -547,7 +547,7 @@ end subroutine UPDATE_C2
           EE = gauss(IC)%pMaterial%variables(M_YOUNGS)
           PP = gauss(IC)%pMaterial%variables(M_POISSON)
           ALP = gauss(IC)%pMaterial%variables(M_EXAPNSION)
-          CALL MatlMatrix( gauss(IC), ISET, D, 1.d0  )
+          CALL MatlMatrix( gauss(IC), ISET, D, 1.d0, cdsys  )
           CALL getQuadPoint( ETYPE, IC, localcoord )
           CALL getShapeDeriv( ETYPE, localcoord, deriv(:,:) )
           CALL getShapeFunc( ETYPE, localcoord, H(1:NN) )

@@ -89,7 +89,7 @@ module m_static_mat_ass_main
       integer(kind=kint) :: ndof, ic_type, icel, iset
       real(kind=kreal) :: xx(:), yy(:), zz(:), stiffness(:, :)
       type( tGaussStatus ), intent(in) :: gausses(:)
-      real(kind=kreal) :: ee, pp, thick,ecoord(3,20)
+      real(kind=kreal) :: ee, pp, thick,ecoord(3,20), coords(3,3)
       type( tMaterial ), pointer :: material
 
 !** Local variables
@@ -119,7 +119,7 @@ module m_static_mat_ass_main
         call STF_C3D8IC( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof))
       else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.     &
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
-        call STF_C3( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof),1.d0)
+        call STF_C3( ic_type,nn,ecoord(:,1:nn),gausses(:),stiffness(1:nn*ndof,1:nn*ndof),1.d0, coords)
 
       else if( ( ic_type==741 ) .or. ( ic_type==743 ) .or. ( ic_type==731 ) ) then
         isect= hecMESH%section_ID(icel)

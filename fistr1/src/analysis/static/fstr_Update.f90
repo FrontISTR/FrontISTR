@@ -14,12 +14,12 @@
 !======================================================================!
 !======================================================================!
 !
-!> \brief  This module provides functions to do update.
+!> \brief  This module provides function to calcualte to do updates
 !!
-!>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
-!>  \date       2009/08/28
-!>  \version    0.00
-!!
+!>  \author                date                  version 
+!>  X.Yuan(Advancesoft)    2010/08/28        original
+!>  X.Yuan                 2013/03/18        consider anisotropic materials
+!
 !======================================================================!
 module m_fstr_Update
   implicit none
@@ -60,8 +60,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
 
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
-  real(kind=kreal)   :: tt(20), tt0(20), qf(20*6)
-  integer            :: ig0,  ig, ik, in, ierror
+  real(kind=kreal)   :: tt(20), tt0(20), qf(20*6), coords(3,3)
+  integer            :: ig0,  ig, ik, in, ierror, cdsys_ID
 
   real(kind=kreal), optional :: strainEnergy
 
@@ -120,6 +120,9 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
             total_disp(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) 
           enddo
         enddo
+		
+      cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
+      if( cdsys_ID>0 ) call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
 !
 ! ===== calculate the Internal Force
       if(  getSpaceDimension( ic_type )==2 ) thick =1.d0
@@ -139,10 +142,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                  tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:))
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn),   &
+          call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords,   &
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
         else
-          call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn)       &
+          call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
         endif
         endif
@@ -150,10 +153,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.                          &
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), qf(1:nn*ndof)       &
+          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords, qf(1:nn*ndof)       &
                         ,fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
         else
-          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn)       &
+          call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
         endif
 
@@ -285,7 +288,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
   integer(kind=kint) :: nodLOCAL(8)
   real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), edisp(60), force(60)
   real(kind=kreal)   :: ecoord(3,20), stiff(60,60)
-  real(kind=kreal)   :: thick
+  real(kind=kreal)   :: thick, coords(3,3)
   real(kind=kreal), allocatable :: temp(:)
   integer(kind=kint), allocatable :: id_spc(:)
 
@@ -369,7 +372,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
           thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_C1( ic_type, nn, ecoord, thick, fstrSOLID%elements(icel)%gausses, stiff )
         else
-          call STF_C3( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, 1.0d0 )
+          call STF_C3( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, 1.0d0, coords )
         endif
         force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
         do j = 1, nn

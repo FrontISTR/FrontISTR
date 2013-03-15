@@ -57,7 +57,7 @@ module m_static_LIB_3dIC
      REAL(kind=kreal) det, wg, elem(3,nn), mat(6,6)
      INTEGER(kind=kint) I,J,LX, fetype
      REAL(kind=kreal) naturalCoord(3),unode(3,nn+3)
-     REAL(kind=kreal) gdispderiv(3,3)
+     REAL(kind=kreal) gdispderiv(3,3), coordsys(3,3)
      REAL(kind=kreal) B1(6,NDOF*(nn+3))
      REAL(kind=kreal) Smat(9,9)
      REAL(kind=kreal) BN(9,NDOF*(nn+3)), SBN(9,NDOF*(NN+3))
@@ -85,7 +85,7 @@ module m_static_LIB_3dIC
      B1(1:6,1:(nn+3)*NDOF)=0.d0
      BN(1:9,1:(nn+3)*ndof) = 0.d0
      DO LX=1,NumOfQuadPoints(fetype)
-       CALL MatlMatrix( gausses(LX), D3, D, 1.d0 )
+       CALL MatlMatrix( gausses(LX), D3, D, 1.d0, coordsys)
        CALL getQuadPoint( fetype, LX, naturalCoord )
        CALL getGlobalDeriv( fetype, nn, naturalcoord, elem, det, gderiv(1:nn,1:3) )
        ! -- Derivative of shape function of imcompatible mode --
@@ -212,7 +212,7 @@ module m_static_LIB_3dIC
       REAL(kind=kreal) EPS(6),SGM(6),xj(9,9)
       real(kind=kreal) jacobian(3,3),inverse(3,3)
       REAL(kind=kreal) stiff((nn+3)*3,(nn+3)*3)
-      REAL(kind=kreal) tmpforce(9),cdisp((nn+3)*3)
+      REAL(kind=kreal) tmpforce(9),cdisp((nn+3)*3), coordsys(3,3)
       REAL(kind=kreal) EPSTH(6),THERMAL_EPS,TEMPC,TEMP0
       INTEGER(kind=kint) IC
 
@@ -231,7 +231,7 @@ module m_static_LIB_3dIC
       stiff(:,:) = 0.d0
       B(1:6,1:(nn+3)*NDOF)=0.d0
       DO IC=1,NumOfQuadPoints(fetype)
-        CALL MatlMatrix( gauss(IC), D3, D, 1.d0 )
+        CALL MatlMatrix( gauss(IC), D3, D, 1.d0, coordsys )
         CALL getQuadPoint( fetype, IC, naturalCoord )
         CALL getGlobalDeriv( fetype, nn, naturalcoord, ecoord, det, gderiv(1:nn,1:3) )
         ! -- Derivative of shape function of imcompatible mode --
@@ -271,7 +271,7 @@ module m_static_LIB_3dIC
 ! ---- Now strain and stress calculation
       DO IC=1,NumOfQuadPoints(etype)
         ALP = gauss(IC)%pMaterial%variables(M_EXAPNSION)
-        CALL MatlMatrix( gauss(IC), D3, D, 1.d0  )
+        CALL MatlMatrix( gauss(IC), D3, D, 1.d0 , coordsys )
         CALL getQuadPoint( etype, IC, naturalCoord(:) )
         CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv(1:nn,1:3) )
         CALL getShapeFunc( etype, naturalcoord, H(1:NN) )

@@ -80,6 +80,7 @@ integer function fstr_ctrl_get_ELASTICITY( ctrl, mattype, nlgeom, matval, dict )
         real(kind=kreal),pointer :: fval(:,:)
         character(len=HECMW_NAME_LEN) :: data_fmt
         type( tTable )        :: mattable
+        logical            :: isok
         character(len=256) :: s
 
         fstr_ctrl_get_ELASTICITY = -1
@@ -88,16 +89,16 @@ integer function fstr_ctrl_get_ELASTICITY( ctrl, mattype, nlgeom, matval, dict )
         if( depends>1 ) depends=1   ! temperature depends only currently
         if( depends > 3 ) stop "We cannot read dependencies>3 right now"
         nlgeom = TOTALLAG   !default value
-        if( fstr_ctrl_get_param_ex( ctrl, 'CAUCHY ',  '# ',    0,   'E',   ipt )/= 0) return
-        if( ipt/=0 ) nlgeom = UPDATELAG
+        if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
+        if( ipt/=0 ) nlgeom = INFINITE
 
         ipt=1
-        s = 'ISOTROPIC,USER '
+        s = 'ISOTROPIC,ORTHOTROPIC,USER '
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
 
+        n = fstr_ctrl_get_data_line_n( ctrl )
         ! ISOTROPIC
         if( ipt==1 ) then
-            n = fstr_ctrl_get_data_line_n( ctrl )
             allocate( fval(2+depends,n) )
             if( depends==0 ) then
               data_fmt = "RR "
@@ -117,8 +118,39 @@ integer function fstr_ctrl_get_ELASTICITY( ctrl, mattype, nlgeom, matval, dict )
 		!	  call print_table( mattable, 6 ); pause
             endif
             mattype = ELASTIC
-        
+			
+        ! ORTHOTROPIC		
         else if( ipt==2 ) THEN
+            allocate( fval(9+depends,n) )
+            if( depends==0 ) then
+              data_fmt = "RRRRRRRRR "
+              fstr_ctrl_get_ELASTICITY = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
+               fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
+               fval(7,:), fval(8,:), fval(9,:) ) 
+            else if( depends==1 ) then
+              data_fmt = "RRRRRRRRRR "
+              fstr_ctrl_get_ELASTICITY = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
+               fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
+               fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) 
+            endif
+            if( fstr_ctrl_get_ELASTICITY ==0 ) then
+              isok = .true.
+              do i=1,n
+                if( fval(1,i)<=0.d0 .or. fval(2,i)<=0.d0 .or. fval(3,i)<=0.d0  .or.  &
+                    fval(7,i)<=0.d0 .or. fval(8,i)<=0.d0 .or. fval(9,i)<=0.d0 ) then
+                   isok = .false.;  fstr_ctrl_get_ELASTICITY=1; exit
+                endif
+              enddo
+              if( isok ) then
+                call init_table( mattable, depends, 9+depends,n, fval )
+                call dict_add_key( dict, MC_ORTHOELASTIC, mattable )
+                mattype = MN_ORTHOELASTIC
+              endif
+            endif
+        
+        else if( ipt==3 ) THEN
             allocate( fval(10,10) )
             fval =0.d0
             fstr_ctrl_get_ELASTICITY = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
@@ -561,40 +593,64 @@ integer function fstr_ctrl_get_EXPANSION_COEFF( ctrl, matval, dict )
         real(kind=kreal),intent(out)   :: matval(:)
         type(DICT_STRUCT), pointer     :: dict
 
-        integer(kind=kint) :: i, n, rcode, depends
+        integer(kind=kint) :: i, n, rcode, depends, ipt
         real(kind=kreal),pointer :: fval(:,:)
         type( tTable )           :: mttable
-        character(len=HECMW_NAME_LEN) :: data_fmt
+        character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
         data_fmt = "R "
 
         fstr_ctrl_get_EXPANSION_COEFF = -1
 		n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) return               ! fail in reading plastic
+		
+        ss = 'ISOTROPIC,ORTHOTROPIC '
+        ipt = 1  !default 
+        if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  ss, 0, 'P',   ipt    ) /= 0 ) return
 
         depends = 0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
         if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
 
-        allocate( fval(depends+1, n) )
-        do i=2,1+depends
+        if( ipt==1 ) then
+          allocate( fval(depends+1, n) )
+          do i=2,1+depends
                data_fmt = data_fmt //"R "
-        enddo
-        if( depends==0 ) then
-          fstr_ctrl_get_EXPANSION_COEFF = &
-            fstr_ctrl_get_data_array_ex( ctrl, "R ", fval(1,:) )
+          enddo
+          if( depends==0 ) then
+            fstr_ctrl_get_EXPANSION_COEFF = &
+              fstr_ctrl_get_data_array_ex( ctrl, "R ", fval(1,:) )
+          else
+            fstr_ctrl_get_EXPANSION_COEFF = &
+              fstr_ctrl_get_data_array_ex( ctrl, "RR ", fval(1,:), fval(2,:) )
+          endif
+          if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
+            matval(M_EXAPNSION) = fval(1,1)
+            call init_table( mttable,depends, 1+depends, n, fval )
+            call dict_add_key( dict, MC_THEMOEXP, mttable )		
+          endif
         else
-          fstr_ctrl_get_EXPANSION_COEFF = &
-            fstr_ctrl_get_data_array_ex( ctrl, "RR ", fval(1,:), fval(2,:) )
-        endif
-        if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
-          matval(M_EXAPNSION) = fval(1,1)
-          call init_table( mttable,depends, 1+depends, n, fval )
-          call dict_add_key( dict, MC_THEMOEXP, mttable )		
+          allocate( fval(3+depends,n) )
+          do i=2,3+depends
+               data_fmt = trim(data_fmt) //"R "
+          enddo
+          if( depends==0 ) then
+            fstr_ctrl_get_EXPANSION_COEFF = &
+              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+          elseif( depends==1 ) then
+            fstr_ctrl_get_EXPANSION_COEFF = &
+              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+          endif
+          if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
+            call init_table( mttable, depends, 3+depends,n, fval )
+            if( fstr_ctrl_get_EXPANSION_COEFF==0 ) call dict_add_key( dict, MC_ORTHOEXP, mttable )
+          endif
         endif
 
+        call finalize_table( mttable )
         if( associated(fval) ) deallocate(fval)
 end function fstr_ctrl_get_EXPANSION_COEFF
+
 
 
 integer function read_user_matl( ctrl, matval )
