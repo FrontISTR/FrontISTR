@@ -19,6 +19,9 @@ program fstr_main
 
 use hecmw
 use m_fstr
+!#ifdef PARA_CONTACT
+use m_fstr_para_contact
+!#endif
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
 use m_fstr_solve_linear
@@ -32,24 +35,28 @@ use m_fstr_precheck
 use m_fstr_rcap_io
 use fstr_solver_dynamic
 use fstr_debug_dump
-use fstr_matrix_con_contact
+use fstr_matrix_con_contact                                     
 use m_fstr_freqdata
 
 
         implicit none
-        type (hecmwST_local_mesh)              :: hecMESH
+        type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
         type (hecmwST_matrix )                 :: hecMAT
+!#ifdef PARA_CONTACT
+        type (hecmwST_matrix )                 :: conMAT
+!#endif
         type (fstr_solid )                     :: fstrSOLID
-        type (fstrST_matrix_contact_lagrange)  :: fstrMAT
+        type (fstrST_matrix_contact_lagrange)  :: fstrMAT               
         type (fstr_heat )                      :: fstrHEAT
         type (lczparam)                        :: fstrEIG
         type (fstr_dynamic )                   :: fstrDYNAMIC
         type ( hecmwST_result_data )           :: fstrRESULT
         type (fstr_couple )                    :: fstrCPL
         type (fstr_freqanalysis)               :: fstrFREQ
-        character(len=HECMW_FILENAME_LEN)      :: name_ID
+        character(len=HECMW_FILENAME_LEN)     :: name_ID
 
-        real(kind=kreal) :: T1,T2,T3
+        real(kind=kreal):: T1,T2,T3
+        integer :: is_entire
 
         T1=0.0; T2=0.0; T3=0.0
 
@@ -62,10 +69,33 @@ use m_fstr_freqdata
         T1 = hecmw_Wtime()
 
         name_ID = 'fstrMSH'
-        call hecmw_get_mesh( name_ID , hecMESH )
-
-        paraContactFlag = .false.
-
+!#ifdef PARA_CONTACT
+        call hecmw_mesh_is_entire( is_entire )
+write(*,*) 'is_entire', is_entire
+        if( is_entire == 1 ) then
+          paraContactFlag = .true.
+          if(nprocs == 1) then    
+            call hecmw_get_mesh( name_ID , hecMESH )
+            hecMESH%nn_middle = hecMESH%n_node
+          else
+            call hecmw_get_mesh( name_ID , hecMESH_G )
+            call paraContact_DomainPartition(hecMESH_G,hecMesh)
+            call hecmw_nullify_mesh(hecMESH_G)
+          endif
+        else
+          paraContactFlag = .false.
+          call hecmw_get_mesh( name_ID , hecMESH )
+        endif
+!#else
+!        call hecmw_get_mesh( name_ID , hecMESH )
+!        myrank = hecMESH%my_rank
+!        nprocs = hecMESH%PETOT
+!#endif
+        if(myrank == 0) then
+          print *,'paraContactFlag',paraContactFlag
+        endif
+        
+        
         call hecmw2fstr_mesh_conv( hecMESH )
 
         call fstr_init
@@ -122,6 +152,7 @@ contains
 subroutine fstr_init
         implicit none
 
+
         ! set pointer to null
         call hecmw_nullify_matrix( hecMAT )
         call hecmw_nullify_result_data( fstrRESULT )
@@ -133,9 +164,14 @@ subroutine fstr_init
         call fstr_nullify_fstr_couple ( fstrCPL    )
 !        call fstr_nullify_fstr_mpc_rigid( fstrMPCRIGID )
 
+!     ----  For Parallel Contact with Multi-Partition Domains
+!#ifdef PARA_CONTACT
+        call hecmw_nullify_matrix( conMAT )
+!#endif
         call fstr_init_file
 		
 		! ----  default setting of global params ---
+
         DT = 1
         ETIME = 1
         ITMAX = 20
@@ -153,18 +189,20 @@ subroutine fstr_init
         IWRES    => fstrPR%fg_iwres
         NRRES    => fstrPR%nrres
         NPRINT   => fstrPR%nprint
-
+	
         call hecmw_mat_con(hecMESH, hecMAT)
 
         ! ------- initial value setting -------------
+
         call fstr_mat_init  ( hecMAT   )
         call fstr_param_init( fstrPR, hecMESH )
-
+		
+		
         call fstr_solid_init( hecMESH, fstrSOLID )
         call fstr_eigen_init( fstrEIG )
         call fstr_heat_init ( fstrHEAT  )
         call fstr_dynamic_init( fstrDYNAMIC  )
-
+		
         call fstr_init_condition
         hecMAT%NDOF = hecMESH%n_dof
         if( kstHEAT == fstrPR%solution_type ) then
@@ -173,7 +211,7 @@ subroutine fstr_init
           hecMAT%NDOF = 1
         endif
         call hecMAT_init( hecMAT )
-
+        
 end subroutine fstr_init
 
 !------------------------------------------------------------------------------
@@ -188,6 +226,7 @@ subroutine fstr_init_file
         integer :: stat, flag, limit, irank
 
         ! set file name --------------------------------
+
         call hecmw_ctrl_is_subdir( flag, limit )
         write(s,*) myrank
         if( flag == 0 ) then
@@ -222,6 +261,7 @@ subroutine fstr_init_file
         msgfileNAME = 'FSTR.msg'
 
         ! open & opening message out -------------------
+
         ! MSGFILE
         if( myrank == 0) then
                 open(IMSG, file=msgfileNAME, status='replace', iostat=stat)
@@ -267,6 +307,7 @@ subroutine fstr_init_condition
         character(len=HECMW_FILENAME_LEN) :: cntfileNAME 
 
         ! get fstr control & setup paramters -----------
+
         name_ID='fstrCNT'
         call hecmw_ctrl_get_control_file( name_ID, cntfileNAME )
 
@@ -281,7 +322,9 @@ subroutine fstr_init_condition
 
         write(*,*) 'fstr_setup: OK'; call flush(6)
 
+
         ! Timing and memory monitor initializations
+
          minit = .TRUE.
          tinit = .TRUE.
          tenditer = .FALSE.
@@ -292,7 +335,7 @@ subroutine fstr_init_condition
 end subroutine fstr_init_condition
 
 !=============================================================================!
-!> Master subroutine of linear static analysis                                !
+!> Master subroutine of linear static analysis
 !=============================================================================!
 
 subroutine fstr_linear_static_analysis
@@ -307,13 +350,13 @@ subroutine fstr_linear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Linear static analysis   **'
         end if
-        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
+        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )   
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_linear_static_analysis
 
 !=============================================================================!
-!> Master subroutine of nonlinear static analysis                             !
+!> Master subroutine of nonlinear static analysis                                           !
 !=============================================================================!
 
 subroutine fstr_nonlinear_static_analysis
@@ -326,15 +369,18 @@ subroutine fstr_nonlinear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
-
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-
+!     ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag) then
+          call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
+        else
+          call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        endif
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_nonlinear_static_analysis
 
 !=============================================================================!
-!> Master subroutine of eigen analysis                                        !
+!> Master subroutine of eigen analysis                                                    !
 !=============================================================================!
 
 subroutine fstr_eigen_analysis
@@ -357,7 +403,7 @@ subroutine fstr_eigen_analysis
 end subroutine fstr_eigen_analysis
 
 !=============================================================================!
-!> Master subroutine of heat analysis                                         !
+!> Master subroutine of heat analysis                                                      !
 !=============================================================================!
 
 subroutine fstr_heat_analysis
@@ -374,8 +420,9 @@ subroutine fstr_heat_analysis
 
 end subroutine fstr_heat_analysis
 
+
 !=============================================================================!
-!> Master subroutine of dynamic analysis                                      !
+!> Master subroutine of dynamic analysis                                              !
 !=============================================================================!
 
 subroutine fstr_linear_dynamic_analysis
@@ -395,13 +442,21 @@ subroutine fstr_linear_dynamic_analysis
            endif
         end if
 
-        call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
-                                 ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+
+!     ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag) then
+          call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
+                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT  &
+                                        ,conMAT )
+        else
+          call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
+                                        ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+        endif
 
 end subroutine fstr_linear_dynamic_analysis
 
 !=============================================================================!
-!> Master subroutine of static -> eigen anaylsis                              !
+!> Master subroutine of static -> eigen anaylsis
 !=============================================================================!
 
 subroutine fstr_static_eigen_analysis
@@ -434,7 +489,7 @@ subroutine fstr_static_eigen_analysis
 end subroutine fstr_static_eigen_analysis
 
 !=============================================================================!
-!> Finalizer                                                                  !
+!> Finalizer                                                             !
 !=============================================================================!
 
 subroutine fstr_finalize
@@ -459,6 +514,7 @@ subroutine fstr_finalize
         call hecMAT_finalize( hecMAT )
 
         close(IDBG)
+
 
 end subroutine fstr_finalize
 

@@ -80,7 +80,7 @@ F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(METIS_F90LDFLAGS) $(PARMETIS_F90LDFLAGS) $(REVOCAP_F90LDFLAGS) $(MPI_F90LDFLAGS) $(METIS_LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(METIS_F90LDFLAGS) $(PARMETIS_F90LDFLAGS) $(REVOCAP_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@
@@ -115,10 +115,14 @@ OBJS =
 OBJSF = \
 	fistr_main.@f90objfilepostfix@
 
+OBJSFP = \
+	fistr_main_contact.@f90objfilepostfix@
+
+
 HEADERS =
 
 #------------------------------------------------------------------------------#
-all: @build_target@
+all: @build_target_paracon@
 
 build-default: $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
@@ -126,15 +130,17 @@ build-default: $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(OBJSF) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
-build-with-rcap: $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
+build-with-paracon: $(OBJSFP) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
-	$(OBJSF) $(ALL_F90LDFLAGS)
+	$(OBJSFP) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
 $(OBJS): $(HEADERS)
 
 $(OBJSF):
+
+$(OBJSFP):
 
 install:
 

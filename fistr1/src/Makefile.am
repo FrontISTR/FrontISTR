@@ -7,7 +7,7 @@ all: @build_target@
 	@cd lib      && $(MAKE) @build_target_mumps@
 	@cd common   && $(MAKE) @build_target@
 	@cd analysis && $(MAKE) @build_target@
-	@cd main     && $(MAKE) @build_target@
+	@cd main     && $(MAKE) @build_target_paracon@
 
 clean:
 	@cd lib      && $(MAKE) clean

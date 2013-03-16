@@ -11,6 +11,7 @@ WITHRCAP=0
 WITHREFINER=0
 WITHMKL=0
 WITHMUMPS=0
+WITHPARACON=0
 
 BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
@@ -20,6 +21,7 @@ BUILDTARGET_RCAP="build-with-rcap"
 ALLBUILDTARGET=""
 BUILDTARGET_MKL="build-without-mkl"
 BUILDTARGET_MUMPS="build-default"
+BUILDTARGET_PARACON="build-default"
 
 SETUPFILE="setup_fistr.sh"
 USER_CONFIGFILE="Makefile.conf"
@@ -74,6 +76,8 @@ do
 		WITHMKL=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
+	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
+		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	elif [ "\"$i\"" = "\"-gather-makefiles\"" -o "\"$i\"" = "\"--gather-makefiles\"" ]; then
@@ -90,6 +94,7 @@ do
 			--with-refiner          link refiner
 			--with-mkl              link mkl
 			--with-mumps            link mumps
+			--with-paracon          compile parallel contact
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
 			--show-all-options      print all options (show this message)
@@ -107,6 +112,7 @@ do
 			--with-refiner          link refiner
 			--with-mkl              link mkl
 			--with-mumps            link mumps
+			--with-paracon          compile parallel contact
 			-h, --help              show help(this message)
 		EOF
 		exit 1
@@ -247,6 +253,13 @@ else
 	MUMPS_F90LDFLAGS=""
 fi
 
+#
+# with paracon
+#
+if [ ${WITHPARACON} -eq 1 ]; then
+	BUILDTARGET_PARACON="build-with-paracon"
+fi
+
 #------------------------------------------------------------------------------#
 #
 # create Makefile
@@ -346,6 +359,7 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
+		-e "s!@build_target_paracon@!${BUILDTARGET_PARACON}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \
 		-e "s!@refiner_cflags@!${REFINER_CFLAGS}!" \

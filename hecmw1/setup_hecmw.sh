@@ -7,7 +7,7 @@ WITHFORTRAN=1
 DEBUGMODE=0
 WITHLEX=0
 WITHMESSAGE=0
-WITHMETIS=1
+WITHMETIS=0
 WITHPARMETIS=0
 WITHTOOLS=0
 REMOVEMAKEFILES=0
@@ -16,6 +16,7 @@ MESSAGEONLY=0
 LEXONLY=0
 SERIAL=1
 WITHREFINER=0
+WITHPARACON=0
 
 #
 # Targets
@@ -110,6 +111,8 @@ do
 		WITHTOOLS=1
 	elif [ "\"$i\"" = "\"-with-refiner\"" -o "\"$i\"" = "\"--with-refiner\"" ]; then
 		WITHREFINER=1
+	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
+		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 		GATHERMAKEFILES=0
@@ -141,6 +144,7 @@ do
 			--with-metis            compile with METIS
 			--with-parmetis         compile with ParMETIS
 			--with-refiner          compile with REVOCAP_Refiner
+			--with-paracon          for parallel contact
 			--only-message          only create error message files
 			--only-lex              only perform lexical analyzer
 			--remove-makefiles      remove all MAKEFILEs
@@ -157,6 +161,7 @@ do
 			--with-metis            compile with METIS
 			--with-parmetis         compile with ParMETIS
 			--with-refiner          compile with REVOCAP_Refiner
+			--with-paracon          for parallel contact
 			-h, --help              show help (this message)
 		EOF
 		exit 1
@@ -326,6 +331,13 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 		HECMW_F90FLAGS="${HECMW_F90FLAGS} ${REFINER_CFLAGS}"
 		HECMW_LDFLAGS="${HECMW_LDFLAGS} ${REFINER_LDFLAGS}"
 		HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} ${REFINER_LDFLAGS}"
+	fi
+
+	#
+	# with paracon
+	#
+	if [ ${WITHPARACON} -eq 1 ]; then
+		HECMW_CFLAGS="${HECMW_CFLAGS} -DPARA_CONTACT"
 	fi
 fi
 
