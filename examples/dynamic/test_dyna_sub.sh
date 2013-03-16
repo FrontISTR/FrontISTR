@@ -5,8 +5,8 @@
 # FrontSTR Test for Examples
 
 PATH=../../../bin:$PATH
-fstr=fstr
-launcher=../../../tools/launcher/fstr_srun.sh
+fstr=fistr1
+launcher=../../../fistr1/tools/launcher/fstr_srun.sh
 
 test_log="test.log"
 
@@ -47,7 +47,6 @@ print_u () {
 		fi
 	done
 }
-
 
 
 print_shell_u () {

@@ -5,4 +5,3 @@
 ./clean_heat.sh
 ./clean_dynamic.sh
 
-

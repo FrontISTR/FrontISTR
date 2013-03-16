@@ -7,8 +7,8 @@
 # MPI
 MPIDIR         =
 MPIBINDIR      =
-MPILIBDIR      = .
-MPIINCDIR      = .
+MPILIBDIR      =
+MPIINCDIR      =
 MPILIBS        =
 
 # for install option only
@@ -28,14 +28,19 @@ PARMETISLIBDIR = $(PARMETISDIR)
 PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 
 # Refiner
-REFINERDIR     = $(HOME)/REVOCAP_Refiner
+REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.0
 REFINERINCDIR  = $(REFINERDIR)/Refiner
-REFINERLIBDIR  = $(REFINERDIR)/lib
+REFINERLIBDIR  = $(REFINERDIR)/lib/x86_64-linux
 
 # Coupler
-REVOCAPDIR     = $(HOME)/REVOCAP_Coupler
+REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-1.6.2
 REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
+
+# MUMPS
+MUMPSDIR       = $(HOME)/MUMPS_4.10.0
+MUMPSINCDIR    = $(MUMPSDIR)/include
+MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
 CC             = mpicc
@@ -52,7 +57,7 @@ CPPOPTFLAGS    = -O3
 # Fortran compiler settings
 F90            = mpif90
 F90FLAGS       =
-F90LDFLAGS     =
+F90LDFLAGS     = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64
 F90OPTFLAGS    = -O2
 
 MAKE           = make

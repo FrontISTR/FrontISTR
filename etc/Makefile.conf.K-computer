@@ -5,10 +5,10 @@
 ##################################################
 
 # MPI
-MPIDIR         = $(HOME)/mpich2-install
-MPIBINDIR      = $(MPIDIR)/bin
-MPILIBDIR      = $(MPIDIR)/lib
-MPIINCDIR      = $(MPIDIR)/include
+MPIDIR         =
+MPIBINDIR      =
+MPILIBDIR      =
+MPIINCDIR      =
 MPILIBS        =
 
 # for install option only
@@ -30,7 +30,7 @@ PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 # Refiner
 REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.0
 REFINERINCDIR  = $(REFINERDIR)/Refiner
-REFINERLIBDIR  = $(REFINERDIR)/lib/x86_64-linux
+REFINERLIBDIR  = $(REFINERDIR)/lib/sparc_64-linux
 
 # Coupler
 REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-1.6.2
@@ -43,22 +43,22 @@ MUMPSINCDIR    = $(MUMPSDIR)/include
 MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
-CC             = mpicc
-CFLAGS         =
+CC             = mpifccpx
+CFLAGS         = -Kfast
 LDFLAGS        = -lm
 OPTFLAGS       = -O3
 
 # C++ compiler settings
-CPP            = mpic++
-CPPFLAGS       =
+CPP            = mpiFCCpx
+CPPFLAGS       = -Kfast -DMPICH_IGNORE_CXX_SEEK
 CPPLDFLAGS     =
 CPPOPTFLAGS    = -O3
 
 # Fortran compiler settings
-F90            = mpif90
-F90FLAGS       =
-F90LDFLAGS     =
-F90OPTFLAGS    = -O2
+F90            = mpifrtpx
+F90FLAGS       = -Kfast,openmp
+F90LDFLAGS     = -SCALAPACK -SSL2BLAMP
+F90OPTFLAGS    =
 
 MAKE           = make
 AR             = ar ruv

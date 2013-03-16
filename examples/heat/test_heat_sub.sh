@@ -5,8 +5,8 @@
 # FrontSTR Test for Examples
 
 PATH=../../../bin:$PATH
-fstr=fstr
-launcher=../../../tools/launcher/fstr_srun.sh
+fstr=fistr1
+launcher=../../../fistr1/tools/launcher/fstr_srun.sh
 
 test_log=${1}
 
@@ -21,7 +21,6 @@ print_u () {
 		fi
 	done
 }
-
 
 
 # run [mesh] [cnt]
@@ -43,11 +42,9 @@ run () {
 }
 
 
-
 ############################# MAIN ################################
 
 
 run $2 $3
-
 
 
