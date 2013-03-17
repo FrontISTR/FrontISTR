@@ -2,7 +2,7 @@
 
 export model_2d="\
 	D231\
-     D232\
+    D232\
 	D241\
 	D242"
 
@@ -23,6 +23,4 @@ export cnt_3d=D300.cnt
 export cnt_shell=D700.cnt
 
 ../test_static_sub.sh $*
-
-
 

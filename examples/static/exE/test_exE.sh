@@ -24,5 +24,3 @@ export cnt_shell=E700.cnt
 
 ../test_static_sub.sh $*
 
-
-

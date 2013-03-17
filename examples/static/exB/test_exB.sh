@@ -2,7 +2,7 @@
 
 export model_2d="\
 	B231\
-       B232\
+    B232\
 	B241\
 	B242"
 
@@ -19,5 +19,4 @@ export model_shell="\
 	B741"
 
 ../test_static_sub2.sh $*
-
 

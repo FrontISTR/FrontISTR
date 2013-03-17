@@ -24,5 +24,3 @@ export cnt_shell=K700.cnt
 
 ../test_eigen_sub.sh $*
 
-
-

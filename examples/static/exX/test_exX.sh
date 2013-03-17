@@ -12,4 +12,3 @@ export model_shell=""
 
 ../test_static_sub2.sh $*
 
-

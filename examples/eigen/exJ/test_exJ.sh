@@ -22,5 +22,3 @@ export cnt_shell=
 
 ../test_eigen_sub.sh $*
 
-
-

@@ -2,19 +2,21 @@
 
 DIRS="\
 	heat\
-	heat/exM \
-	heat/exN \
-	heat/exO \
-	heat/exP \
-	heat/exQ \
-	heat/exR \
-	heat/exS \
-	heat/exT"
-
+	heat/exM\
+	heat/exN\
+	heat/exO\
+	heat/exP\
+	heat/exQ\
+	heat/exR\
+	heat/exS\
+	heat/exT\
+	heat/exU\
+	heat/exV"
 
 for i in ${DIRS}
 do
 	echo "clean up ${i}"
+	rm -f $i/*.dat
 	rm -f $i/*.log
 	rm -f $i/*.msg
 	rm -f $i/*.sta

@@ -1,10 +1,10 @@
 #!/bin/sh
 
 export model_2d="\
-       C231\
-       C232\
-       C241\
-       C242"
+    C231\
+    C232\
+    C241\
+    C242"
 
 export model_3d="\
 	C341\
@@ -22,8 +22,5 @@ export cnt_2d=C200.cnt
 export cnt_3d=C300.cnt
 export cnt_shell=C700.cnt
 
-
 ../test_static_sub.sh $*
-
-
 
