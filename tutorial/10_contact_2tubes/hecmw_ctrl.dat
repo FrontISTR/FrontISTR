@@ -7,12 +7,5 @@
  2tubes.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  2tubes.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- 2tubes.msh
-!RESULT, NAME=result, IO=IN
- 2tubes.res
 !RESULT, NAME=vis_out, IO=OUT
  2tubes_vis

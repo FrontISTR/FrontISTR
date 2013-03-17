@@ -7,12 +7,5 @@
  plateToGround.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  plateToGround.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- plateToGround.msh
-!RESULT, NAME=result, IO=IN
- plateToGround.res
 !RESULT, NAME=vis_out, IO=OUT
  plateToGround_vis

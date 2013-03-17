@@ -7,12 +7,5 @@
  2beams.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  2beams.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- 2beams.msh
-!RESULT, NAME=result, IO=IN
- 2beams.res
 !RESULT, NAME=vis_out, IO=OUT
  2beams_vis

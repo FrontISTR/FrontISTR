@@ -7,12 +7,5 @@
  spring.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  spring.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- spring.msh
-!RESULT, NAME=result, IO=IN
- spring.res
 !RESULT, NAME=vis_out, IO=OUT
  spring_vis

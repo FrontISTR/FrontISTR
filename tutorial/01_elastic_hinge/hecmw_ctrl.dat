@@ -7,12 +7,5 @@
  hinge.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  hinge.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- hinge.msh
-!RESULT, NAME=result, IO=IN
- hinge.res
 !RESULT, NAME=vis_out, IO=OUT
  hinge_vis

@@ -7,12 +7,5 @@
  block.cnt
 !RESULT, NAME=fstrRES, IO=OUT
  block.res
-#
-# for visualizer
-#
-!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
- block.msh
-!RESULT, NAME=result, IO=IN
- block.res
 !RESULT, NAME=vis_out, IO=OUT
  block_vis
