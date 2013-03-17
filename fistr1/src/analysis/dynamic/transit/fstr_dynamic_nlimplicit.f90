@@ -271,7 +271,7 @@ contains
         if( hecMESH%my_rank==0 ) then
           write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
         endif
-
+        if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
 !C
 !C-- linear solver [A]{X} = {B}
 !C
