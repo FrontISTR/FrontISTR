@@ -67,8 +67,8 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
       allocate(part(hecMESH_G%n_node),stat=istat)
       nparts = nprocs
       nvtxs = mak%nn
-      allocate(options(0:4),stat=istat)
-      options(0) = 0
+      allocate(options(5),stat=istat)
+      options(:) = 0
       numflag = 1
       wgtflag = 0
 !      ncon = 1
