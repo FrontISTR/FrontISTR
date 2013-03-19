@@ -1,0 +1,17 @@
+##
+## HEC-MW control file for FrontSTR
+## Auto created by fstr_srun.sh
+## Fri Nov 26 16:02:33 2010
+##
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+beam.msh
+!CONTROL,NAME=fstrCNT
+beam_freq.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+beam.res
+!RESULT,NAME=vis_out,IO=OUT
+beam.vis
+!RESULT,NAME=fstrDYNA,IO=OUT
+beam_dyna.res
+!RESULT,NAME=result-in,IO=IN
+eig_beam.res
