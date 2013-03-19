@@ -44,7 +44,7 @@ MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
 CC             = mpicc
-CFLAGS         =
+CFLAGS         = -D_WINDOWS
 LDFLAGS        = -lm
 OPTFLAGS       = -O3
 
