@@ -47,7 +47,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
   real(kind=kreal)   :: u(3,20), du(3,20), coords(3,3)
-  integer            :: ig0, grpid, ig, iS0, iE0,ik, in, cdsys_ID
+  integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
 
 ! ----- initialize
   call hecmw_mat_clear( hecMAT )
@@ -92,9 +92,9 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                      u(1:2,1:nn) )
 					 
       else if ( ic_type==301 ) then
-      !  isect= hecMESH%section_ID(icel)
-      !  ihead = hecMESH%section%sect_R_index(isect-1)
-      !  thick = hecMESH%section%sect_R_item(ihead+1)
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
         call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
             stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 

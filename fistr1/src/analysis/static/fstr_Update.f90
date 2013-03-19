@@ -61,7 +61,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
   real(kind=kreal)   :: tt(20), tt0(20), qf(20*6), coords(3,3)
-  integer            :: ig0,  ig, ik, in, ierror, cdsys_ID
+  integer            :: ig0,  ig, ik, in, ierror, isect, ihead, cdsys_ID
 
   real(kind=kreal), optional :: strainEnergy
 
@@ -132,7 +132,9 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                         total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
 						
       else if ( ic_type==301 ) then
-        thick = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_THICK)
+        isect= hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
         call UPDATE_C1(  ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), ddu(1:3,1:nn),  &
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
 						

@@ -71,7 +71,6 @@ use m_fstr_freqdata
         name_ID = 'fstrMSH'
 !#ifdef PARA_CONTACT
         call hecmw_mesh_is_entire( is_entire )
-write(*,*) 'is_entire', is_entire
         if( is_entire == 1 ) then
           paraContactFlag = .true.
           if(nprocs == 1) then    

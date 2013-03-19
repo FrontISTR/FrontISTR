@@ -65,7 +65,6 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
 
       ndof = hecMAT%NDOF
-      factor = fstrSOLID%factor(2)
 
 ! -------------------------------------------------------------------
 !  CLOAD
@@ -74,6 +73,10 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        factor = fstrSOLID%factor(2)
+        if( cstep > 1 ) then
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+        endif
         ig= fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp= fstrSOLID%CLOAD_ngrp_DOF(ig0)
         fval= fstrSOLID%CLOAD_ngrp_val(ig0)
@@ -81,7 +84,7 @@ module m_fstr_ass_load
         iE0= hecMESH%node_group%grp_index(ig  )
         do ik= iS0, iE0
           in   = hecMESH%node_group%grp_item(ik)
-          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+fval
+          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
         enddo
       enddo
 !
@@ -92,6 +95,10 @@ module m_fstr_ass_load
       do ig0= 1, fstrSOLID%DLOAD_ngrp_tot
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+        factor = fstrSOLID%factor(2)
+        if( cstep > 1 ) then
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+        endif
         ig= fstrSOLID%DLOAD_ngrp_ID(ig0)
         ltype= fstrSOLID%DLOAD_ngrp_LID(ig0)
         do i=0,6
@@ -162,7 +169,7 @@ module m_fstr_ass_load
           endif
 ! ----- Add vector
           do j=1,nsize
-              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
+              fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+factor*vect(j)
           enddo
         enddo
       enddo
@@ -185,7 +192,7 @@ module m_fstr_ass_load
 
       call hecmw_mat_clear_b( hecMAT )
       do i=1, hecMESH%n_node*  hecMESH%n_dof
-          hecMAT%B(i)=factor*fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
+          hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
 !
 !

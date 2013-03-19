@@ -111,7 +111,7 @@ contains
 
     if (job==-1) then
        ! ordering: 0:auto, 1:seq, 2:par
-       mumps_par%ICNTL(28)=2
+       mumps_par%ICNTL(28)=0
        ! seq ord: 0:AMD, 1:USER, 2:AMF, 3:scotch, 4:pord, 5:metis, 6:QAMD, 7:auto
        mumps_par%ICNTL(7)=7
        ! par ord: 0:auto, 1:ptscotch, 2:parmetis
