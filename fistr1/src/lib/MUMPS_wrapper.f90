@@ -64,10 +64,12 @@ contains
           if(paraContactFlag) then
             if(myrank == 0) then
               mumps_par%RHS(:) = mumps_par%RHS(:) + spMAT%rhs_con_sum(:)
-              deallocate(spMAT%rhs_con_sum,stat=ierr)
+!              deallocate(spMAT%rhs_con_sum,stat=ierr)
               rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
             endif
-            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
+            deallocate(spMAT%rhs_con_sum,stat=ierr)
+            call hecmw_bcast_R1_comm (rhs_b, 0, mumps_par%COMM)
+!            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
           else
             if(myrank == 0) then
               rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
@@ -124,7 +126,8 @@ contains
        if(myrank == 0) then
          rhs_x = dot_product(mumps_par%RHS,mumps_par%RHS)
        endif
-       call MPI_BCAST(rhs_x,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
+       call hecmw_bcast_R1_comm (rhs_x, 0, mumps_par%COMM)
+!       call MPI_BCAST(rhs_x,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        deallocate(mumps_par%RHS)
     endif

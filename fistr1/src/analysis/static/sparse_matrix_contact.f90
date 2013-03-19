@@ -808,11 +808,12 @@ contains
       endif
       
     enddo
-    if(myrank == 0) then
+!    if(myrank == 0) then
       allocate(spMAT%rhs_con_sum(spMAT%N),stat=ierr)
       spMAT%rhs_con_sum(:) = 0.0D0
-    endif
-    call MPI_REDUCE(spMAT%rhs_con,spMAT%rhs_con_sum,spMAT%N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
+!    endif
+    call hecmw_allreduce_DP(spMAT%rhs_con,spMAT%rhs_con_sum,spMAT%N,hecmw_sum,hecmw_comm_get_comm())
+!    call MPI_REDUCE(spMAT%rhs_con,spMAT%rhs_con_sum,spMAT%N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
     deallocate(spMAT%rhs_con,stat=ierr)     
   end subroutine sparse_matrix_para_contact_set_rhs
 

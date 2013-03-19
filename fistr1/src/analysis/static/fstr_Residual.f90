@@ -176,13 +176,14 @@ module m_fstr_Residual
       end function
 
  !
-      function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT) result(rhsB)
+      function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) result(rhsB)
       use m_fstr
       use fstr_matrix_con_contact
       use m_solve_LINEQ_MUMPS_contact
       type (hecmwST_matrix),                intent(in) :: hecMAT
       type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
       type (hecmwST_matrix),                intent(in) :: conMAT
+      type (hecmwST_local_mesh),            intent(in) :: hecMESH 
 !
       real(kreal),allocatable   ::  rhs_con(:),rhs_con_sum(:),rhs_normal_sum(:)
       real(kreal) ::  rhsB
@@ -210,11 +211,12 @@ module m_fstr_Residual
         endif
       enddo
 !
-      if(myrank == 0) then
+!      if(myrank == 0) then
         allocate(rhs_con_sum(N),stat=ierr)
         rhs_con_sum(:) = 0.0D0
-      endif
-      call MPI_REDUCE(rhs_con,rhs_con_sum,N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
+!      endif
+      call hecmw_allreduce_DP(rhs_con,rhs_con_sum,N,hecmw_sum,hecmw_comm_get_comm())
+!      call MPI_REDUCE(rhs_con,rhs_con_sum,N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
       
       deallocate(rhs_con,stat=ierr)
       allocate(rhs_con(N_loc),stat=ierr)
@@ -235,10 +237,11 @@ module m_fstr_Residual
         rhsB = dot_product(rhs_con_sum, rhs_con_sum)
       endif
       
-      call MPI_BCAST(rhsB,1,MPI_DOUBLE_PRECISION,0,hecmw_comm_get_comm(),ierr)
+      call hecmw_bcast_R1(hecMESH,rhsB,0)
+!      call MPI_BCAST(rhsB,1,MPI_DOUBLE_PRECISION,0,hecmw_comm_get_comm(),ierr)
       
       if(allocated(rhs_con)) deallocate(rhs_con,stat=ierr)
-      if(allocated(rhs_con)) deallocate(rhs_con_sum,stat=ierr)
+      if(allocated(rhs_con_sum)) deallocate(rhs_con_sum,stat=ierr)
       if(allocated(rhs_normal_sum)) deallocate(rhs_normal_sum,stat=ierr)         
       end function fstr_get_norm_para_contact
 

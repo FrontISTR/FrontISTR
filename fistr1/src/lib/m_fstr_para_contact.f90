@@ -162,9 +162,10 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
       nparts = nprocs
     endif
     if(nprocs > 1) then
-      call MPI_BCAST(part,hecMESH_G%n_node,MPI_INTEGER,0,hecMESH_G%MPI_COMM,istat)
+      call hecmw_bcast_I(hecMESH_G,part,hecMESH_G%n_node,0)
+!      call MPI_BCAST(part,hecMESH_G%n_node,MPI_INTEGER,0,hecMESH_G%MPI_COMM,istat)
     endif
-    call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH_G)
     
 !#ifdef OUTPUT_PARTITION
 !    if(myrank == 0) then
@@ -200,7 +201,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
     
 !    call rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
     call paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
-    call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH_G)
     call paraContact_CreateExportImport(hecMESH_L)
     if(myrank == 0) then
 !      write(*,'(A,I15,A,I15)')'number of edgecut :',objval,'/',size(adjncy)/2
@@ -208,11 +209,11 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
       write(*,'(A8,4A15)')' rankID','          nodes',' internal nodes','          elems',' internal elems'
     endif
 !
-    call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH_G)
     write(*,'(I8,5I15)')myrank,hecMESH_L%n_node,hecMesh_L%nn_internal,hecMESH_L%n_elem,hecMESH_L%ne_internal,hecMesh_L%nn_middle
 !    enddo
 !
-    call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH_G)
 !    stop
      
     if(associated(indexNodeG2L)) deallocate(indexNodeG2L,stat=istat)
@@ -1402,6 +1403,10 @@ subroutine paraContact_copyHecmwSection(sectIn,sectOut)
       allocate(sectOut%sect_R_item(size(sectIn%sect_R_item)),stat=istat)
       sectOut%sect_R_item(:) = sectIn%sect_R_item(:)
     endif
+    if(associated(sectIn%sect_orien_ID)) then
+      allocate(sectOut%sect_orien_ID(size(sectIn%sect_orien_ID)),stat=istat)
+      sectOut%sect_orien_ID(:) = sectIn%sect_orien_ID(:)
+    endif
 
 end subroutine paraContact_copyHecmwSection
 
@@ -1704,14 +1709,15 @@ subroutine paraContact_CreateExportImport(hecMESH)
       enddo
       import_item(import_index(j-1) + help(pid)) = hecMESH%node_ID(i*2-1)
     enddo
-    call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH)
 !
 !   Send to PEs which contain the import nodes as internal nodes
     do i=0,nprocs-1
-      call MPI_GATHER(help(i),1,MPI_INTEGER,expMap,1,MPI_INTEGER,i,hecMESH%MPI_COMM,ierr)
+      call hecmw_gather_int_1(help(i), expMap, i, hecMESH%MPI_COMM)
+!      call MPI_GATHER(help(i),1,MPI_INTEGER,expMap,1,MPI_INTEGER,i,hecMESH%MPI_COMM,ierr)
     enddo
 !    print *,myrank,'expMap',expMap(:)
-    call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH)
 !
     npe_export = 0
     count = 0
@@ -1736,28 +1742,32 @@ subroutine paraContact_CreateExportImport(hecMESH)
       enddo
 !      print *,myrank,'ext_idx',export_index(:)
     endif
-    call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH)
 !    
     allocate(req_s(npe_import),stat=istat)
     if(npe_export > 0) allocate(req_r(npe_export),stat=istat)
-    allocate(sta_s(MPI_STATUS_SIZE,npe_import),stat=istat)
-    if(npe_export > 0) allocate(sta_r(MPI_STATUS_SIZE,npe_export),stat=istat)
+    allocate(sta_s(hecmw_status_size,npe_import),stat=istat)
+    if(npe_export > 0) allocate(sta_r(hecmw_status_size,npe_export),stat=istat)
     
     do i=1,npe_import
       inum = import_index(i) - import_index(i-1)
-      call MPI_ISEND(import_item(import_index(i-1)+1),inum,MPI_INTEGER,import_pe(i),0,hecMESH%MPI_COMM,req_s(i),ierr)
+      call hecmw_isend_int(import_item(import_index(i-1)+1),inum,import_pe(i),0,hecMESH%MPI_COMM,req_s(i))
+!      call MPI_ISEND(import_item(import_index(i-1)+1),inum,MPI_INTEGER,import_pe(i),0,hecMESH%MPI_COMM,req_s(i),ierr)
     enddo
     
     if(npe_export > 0) then
       do i=1,npe_export
         inum = export_index(i) - export_index(i-1)
-        call MPI_IRECV(export_item(export_index(i-1)+1),inum,MPI_INTEGER,export_pe(i),0,hecMESH%MPI_COMM,req_r(i),ierr)
+        call hecmw_irecv_int(export_item(export_index(i-1)+1),inum,export_pe(i),0,hecMESH%MPI_COMM,req_r(i))
+!        call MPI_IRECV(export_item(export_index(i-1)+1),inum,MPI_INTEGER,export_pe(i),0,hecMESH%MPI_COMM,req_r(i),ierr)
       enddo
-      call MPI_WAITALL(npe_export,req_r,sta_r,ierr)
+      call hecmw_waitall(npe_export,req_r,sta_r)
+!      call MPI_WAITALL(npe_export,req_r,sta_r,ierr)
     endif
-    call MPI_WAITALL(npe_import,req_s,sta_s,ierr)
+    call hecmw_waitall(npe_import,req_s,sta_s)
+!    call MPI_WAITALL(npe_import,req_s,sta_s,ierr)
     
-    call MPI_BARRIER(hecMESH%MPI_COMM,ierr) 
+    call hecmw_BARRIER(hecMESH) 
 !
     help(:) = 0
     do i=hecMESH%nn_internal+1,hecMESH%n_node
@@ -1793,7 +1803,7 @@ subroutine paraContact_CreateExportImport(hecMESH)
 !      enddo
 !    endif
 !    
-    call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+    call hecmw_BARRIER(hecMESH)
     if(allocated(help)) deallocate(help,stat=istat)
     if(allocated(expMap)) deallocate(expMap,stat=istat)
     if(allocated(req_s)) deallocate(req_s,stat=istat)
@@ -1836,8 +1846,8 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
 !
 !C
 !C-- INIT.
-    if(npe_export > 0) allocate (sta1(MPI_STATUS_SIZE,npe_export),stat=ierr)
-    allocate (sta2(MPI_STATUS_SIZE,npe_import),stat=ierr)
+    if(npe_export > 0) allocate (sta1(hecmw_status_size,npe_export),stat=ierr)
+    allocate (sta2(hecmw_status_size,npe_import),stat=ierr)
     if(npe_export > 0) allocate (req1(npe_export),stat=ierr)
     allocate (req2(npe_import),stat=ierr)
        
@@ -1853,9 +1863,9 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
         WS(3*(k-istart)-1)= X(ii-1)
         WS(3*(k-istart)  )= X(ii  )
       enddo
-  
-      call MPI_ISEND (WS(1), 3*inum,MPI_DOUBLE_PRECISION,    &
-                      export_pe(neib), 0, SOLVER_COMM, req1(neib), ierr)
+      call hecmw_isend_r(WS(1),3*inum,export_pe(neib),0,SOLVER_COMM,req1(neib))
+!      call MPI_ISEND (WS(1), 3*inum,MPI_DOUBLE_PRECISION,    &
+!                      export_pe(neib), 0, SOLVER_COMM, req1(neib), ierr)
     enddo
 
 !C
@@ -1863,11 +1873,13 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
     do neib= 1, npe_import
       istart= import_index(neib-1)
       inum  = import_index(neib  ) - istart
-      call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
-                      import_pe(neib), 0, SOLVER_COMM, req2(neib), ierr)
+      call hecmw_irecv_r(WR(3*istart+1),3*inum,import_pe(neib),0,SOLVER_COMM,req2(neib))
+!      call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
+!                      import_pe(neib), 0, SOLVER_COMM, req2(neib), ierr)
     enddo
 
-    call MPI_WAITALL (npe_import, req2, sta2, ierr)
+    call hecmw_waitall(npe_import, req2, sta2)
+!    call MPI_WAITALL (npe_import, req2, sta2, ierr)
    
     do neib= 1, npe_import
       istart= import_index(neib-1)
@@ -1880,7 +1892,10 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
       enddo
     enddo
 
-    if(npe_export > 0) call MPI_WAITALL (npe_export, req1, sta1, ierr)
+    if(npe_export > 0) then
+      call hecmw_waitall(npe_export, req1, sta1)
+!      call MPI_WAITALL (npe_export, req1, sta1, ierr)
+    endif
     if(allocated(sta1)) deallocate (sta1)
     if(allocated(sta2)) deallocate (sta2)
     if(allocated(req1)) deallocate (req1)

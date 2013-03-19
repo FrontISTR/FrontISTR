@@ -117,6 +117,18 @@ contains
       integer(kind=kint) :: req
       return
       end subroutine hecmw_isend_int
+      
+      subroutine hecmw_isend_r(sbuf, sc, dest, tag, comm, req)
+      use hecmw_util
+      implicit none
+      real(kind=kreal) :: sbuf(*)
+      integer(kind=kint) :: sc
+      integer(kind=kint) :: dest
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      return
+      end subroutine hecmw_isend_r
 	  
       subroutine hecmw_irecv_int(rbuf, rc, source, &
      &     tag, comm, req)
@@ -130,6 +142,19 @@ contains
       integer(kind=kint) :: req
       integer(kind=kint) :: ierr
       end subroutine hecmw_irecv_int
+      
+      subroutine hecmw_irecv_r(rbuf, rc, source, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      real(kind=kreal) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      end subroutine hecmw_irecv_r
 
       subroutine hecmw_irecv(rbuf, rc, source, tag, comm, req)
       use hecmw_util
@@ -220,6 +245,13 @@ contains
       real(kind=kreal), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_R
+      
+      subroutine hecmw_bcast_R_comm (VAL, n, nbase, comm)
+      use hecmw_util
+      integer(kind=kint):: n, nbase
+      real(kind=kreal), dimension(n) :: VAL
+      integer(kind=kint):: comm
+      end subroutine hecmw_bcast_R_comm
 
       subroutine hecmw_bcast_R1 (hecMESH, VAL, nbase)
       use hecmw_util
@@ -227,6 +259,13 @@ contains
       real(kind=kreal) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_R1
+      
+      subroutine hecmw_bcast_R1_comm (VAL, nbase, comm)
+      use hecmw_util
+      integer(kind=kint):: nbase
+      real(kind=kreal):: VAL
+      integer(kind=kint):: comm
+      end subroutine hecmw_bcast_R1_comm
 !C
 !C***
 !C*** hecmw_bcast_I
@@ -239,6 +278,13 @@ contains
       integer(kind=kint), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_I
+      
+      subroutine hecmw_bcast_I_comm (VAL, n, nbase, comm)
+      use hecmw_util
+      integer(kind=kint):: n, nbase
+      integer(kind=kint), dimension(n) :: VAL
+      integer(kind=kint):: comm
+      end subroutine hecmw_bcast_I_comm
 
       subroutine hecmw_bcast_I1 (hecMESH, VAL, nbase)
       use hecmw_util
@@ -246,6 +292,13 @@ contains
       integer(kind=kint):: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_I1
+
+      subroutine hecmw_bcast_I1_comm (VAL, nbase, comm)
+      use hecmw_util
+      integer(kind=kint):: nbase
+      integer(kind=kint):: VAL
+      integer(kind=kint):: comm
+      end subroutine hecmw_bcast_I1_comm
 !C
 !C***
 !C*** hecmw_bcast_C
@@ -258,6 +311,14 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_bcast_C
+      
+      subroutine hecmw_bcast_C_comm (VAL, n, nn, nbase, comm)
+      use hecmw_util
+      integer(kind=kint):: n, nn, nbase
+      character(len=n) :: VAL(nn)
+      integer(kind=kint):: comm
+
+      end subroutine hecmw_bcast_C_comm
 
 !C
 !C***

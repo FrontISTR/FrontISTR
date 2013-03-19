@@ -222,7 +222,8 @@ contains
        enddo
        spMAT%OFFSET = spMAT%DISPLS(1)
     endif
-    call MPI_BCAST(spMAT%DISPLS,nprocs,MPI_INTEGER,0,hecmw_comm_get_comm(),ierr)
+    call hecmw_bcast_I_comm (spMAT%DISPLS, nprocs, 0, hecmw_comm_get_comm())
+!    call MPI_BCAST(spMAT%DISPLS,nprocs,MPI_INTEGER,0,hecmw_comm_get_comm(),ierr)
     if (nprocs > 1) then
        call HECMW_SCATTER_INT_1(spMAT%DISPLS, &
             spMAT%OFFSET, &

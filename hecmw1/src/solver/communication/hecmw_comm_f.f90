@@ -146,6 +146,21 @@ contains
       call MPI_ISEND(sbuf, sc, MPI_INTEGER, &
      &     dest, tag, comm, req, ierr)
       end subroutine hecmw_isend_int
+      
+      subroutine hecmw_isend_r(sbuf, sc, dest, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sc
+      double precision, dimension(sc) :: sbuf
+      integer(kind=kint) :: dest
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      call MPI_ISEND(sbuf, sc, MPI_DOUBLE_PRECISION, &
+     &     dest, tag, comm, req, ierr)
+      end subroutine hecmw_isend_r
 
       subroutine hecmw_irecv_int(rbuf, rc, source, &
      &     tag, comm, req)
@@ -161,6 +176,21 @@ contains
       call MPI_IRECV(rbuf, rc, MPI_INTEGER, &
      &     source, tag, comm, req, ierr)
       end subroutine hecmw_irecv_int
+      
+      subroutine hecmw_irecv_r(rbuf, rc, source, &
+     &     tag, comm, req)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rc
+      double precision, dimension(rc) :: rbuf
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: req
+      integer(kind=kint) :: ierr
+      call MPI_IRECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
+     &     source, tag, comm, req, ierr)
+      end subroutine hecmw_irecv_r
 
       subroutine hecmw_waitall(cnt, reqs, stats)
       use hecmw_util
@@ -323,6 +353,15 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
       call MPI_BCAST (VAL, n, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
       end subroutine hecmw_bcast_R
+      
+      subroutine hecmw_bcast_R_comm (VAL, n, nbase, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: n, nbase, ierr
+      real(kind=kreal), dimension(n) :: VAL
+      integer(kind=kint):: comm
+      call MPI_BCAST (VAL, n, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
+      end subroutine hecmw_bcast_R_comm
 
       subroutine hecmw_bcast_R1 (hecMESH, s, nbase)
       use hecmw_util
@@ -335,6 +374,18 @@ contains
       call MPI_BCAST (VAL, 1, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
       end subroutine hecmw_bcast_R1
+      
+      subroutine hecmw_bcast_R1_comm (s, nbase, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: nbase, ierr
+      real(kind=kreal) :: s
+      real(kind=kreal), dimension(1) :: VAL
+      integer(kind=kint):: comm
+      VAL(1)=s
+      call MPI_BCAST (VAL, 1, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
+      s = VAL(1)
+      end subroutine hecmw_bcast_R1_comm
 !C
 !C***
 !C*** hecmw_bcast_I
@@ -348,6 +399,15 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
       call MPI_BCAST (VAL, n, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
       end subroutine hecmw_bcast_I
+      
+      subroutine hecmw_bcast_I_comm (VAL, n, nbase, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: n, nbase, ierr
+      integer(kind=kint), dimension(n) :: VAL
+      integer(kind=kint):: comm
+      call MPI_BCAST (VAL, n, MPI_INTEGER, nbase, comm, ierr)
+      end subroutine hecmw_bcast_I_comm
 
       subroutine hecmw_bcast_I1 (hecMESH, s, nbase)
       use hecmw_util
@@ -359,6 +419,17 @@ contains
       call MPI_BCAST (VAL, 1, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
       end subroutine hecmw_bcast_I1
+      
+      subroutine hecmw_bcast_I1_comm (s, nbase, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: nbase, ierr,s
+      integer(kind=kint), dimension(1) :: VAL
+      integer(kind=kint):: comm
+      VAL(1) = s
+      call MPI_BCAST (VAL, 1, MPI_INTEGER, nbase, comm, ierr)
+      s = VAL(1)
+      end subroutine hecmw_bcast_I1_comm
 !C
 !C***
 !C*** hecmw_bcast_C
@@ -374,6 +445,17 @@ contains
       call MPI_BCAST (VAL, n*nn, MPI_CHARACTER, nbase, hecMESH%MPI_COMM,&
      &                                                 ierr)
       end subroutine hecmw_bcast_C
+      
+      subroutine hecmw_bcast_C_comm (VAL, n, nn, nbase, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: n, nn, nbase, ierr
+      character(len=n) :: VAL(nn)
+      integer(kind=kint):: comm
+
+      call MPI_BCAST (VAL, n*nn, MPI_CHARACTER, nbase, comm,&
+     &                                                 ierr)
+      end subroutine hecmw_bcast_C_comm
 
 !C
 !C***

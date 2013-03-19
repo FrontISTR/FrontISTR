@@ -675,7 +675,7 @@ contains
 ! ----- check convergence
 !   ----  For Parallel Contact with Multi-Partition Domains
           if(paraContactFlag.and.present(conMAT)) then
-            res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT) 
+            res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) 
           else
             call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
           endif

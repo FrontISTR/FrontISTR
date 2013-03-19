@@ -507,9 +507,9 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       res1=0.d0
       relres = 1.d0
       do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
-      call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+      call hecmw_BARRIER(hecMESH)
       if(myrank == 0)print *,'-------------------------------------------------'
-      call MPI_BARRIER(hecMESH%MPI_COMM,ierr)
+      call hecmw_BARRIER(hecMESH)
         stepcnt=stepcnt+1
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )           
         call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
@@ -587,7 +587,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         endif 
                     
         if(paraContactFlag.and.present(conMAT)) then
-          res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT) 
+          res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) 
         else
           res = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
         endif
