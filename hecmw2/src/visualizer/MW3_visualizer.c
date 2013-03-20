@@ -431,7 +431,7 @@ int MW3_result_init( struct hecmwST_local_mesh* mesh, int tstep, char* header )
 	ierr = HECMW_ctrl_init();
 	if( ierr < 0 ) return ierr;
 
-	HECMW_result_init( mesh, tstep, header);
+	HECMW_result_init( mesh, tstep, tstep, header);
 
 	return 0;
 }
@@ -456,7 +456,7 @@ int MW3_result_init_ex( char* ctrlfile, struct hecmwST_local_mesh* mesh, int tst
 	}
 	if( ierr < 0 ) return ierr;
 
-	HECMW_result_init( mesh, tstep, header);
+	HECMW_result_init( mesh, tstep, tstep, header);
 
 	return 0;
 }

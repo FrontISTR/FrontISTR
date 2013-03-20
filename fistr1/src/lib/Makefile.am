@@ -102,14 +102,12 @@ OBJS =
 OBJSF = \
         fstr_lczparm.@f90objfilepostfix@ \
         m_step.@f90objfilepostfix@ \
-        m_Metis403API_f.@f90objfilepostfix@ \
         m_Makrose.@f90objfilepostfix@ \
         m_MakrosePartMesh.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
 		m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
         m_fstr_freqdata.@f90objfilepostfix@ \
-        m_fstr_para_contact.@f90objfilepostfix@ \
         GaussM.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \
@@ -141,9 +139,15 @@ OBJSF2 = \
         eigen_LIB.@f90objfilepostfix@ \
         heat_LIB.@f90objfilepostfix@
 
-OBJSF_MUMPS = MUMPS_wrapper.@f90objfilepostfix@
+OBJSF_MUMPS = \
+        MUMPS_wrapper.@f90objfilepostfix@ \
+        m_Metis403API_f.@f90objfilepostfix@ \
+        m_fstr_para_contact.@f90objfilepostfix@
 
-OBJSF_MUMPS_DUMM = MUMPS_wrapper_dumm.@f90objfilepostfix@
+OBJSF_MUMPS_DUMM = \
+        MUMPS_wrapper_dumm.@f90objfilepostfix@ \
+        m_Metis403API_f_dumm.@f90objfilepostfix@ \
+        m_fstr_para_contact.@f90objfilepostfix@
 
 HEADERS =
 

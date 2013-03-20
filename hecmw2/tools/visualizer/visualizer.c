@@ -29,7 +29,7 @@ main( int argc , char **argv )
 	char* header;
 	char buf[HECMW_FILENAME_LEN], resultfile[HECMW_FILENAME_LEN];
 	char ctrlfile[HECMW_FILENAME_LEN];
-	int min_step, max_step, timestep, i;
+	int min_step, max_step, timestep, i, fg_text;
 	PSF_link *tp1;
 	PVR_link *tv1;
 
@@ -104,7 +104,7 @@ main( int argc , char **argv )
 		}
 		if( read_flag == 0 ) continue;
 
-		header = HECMW_ctrl_get_result_fileheader( "result", buf, HECMW_FILENAME_LEN );
+		header = HECMW_ctrl_get_result_fileheader( "fstrRES", max_step, timestep, &fg_text );
 		sprintf( resultfile, "%s.%d.%d", header, mynode, timestep );
 		data = HECMW_result_read_by_fname( resultfile );
 		if( data == NULL ) HECMW_abort( HECMW_comm_get_comm() );

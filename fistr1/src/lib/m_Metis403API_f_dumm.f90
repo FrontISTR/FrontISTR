@@ -215,11 +215,6 @@ function METIS_mCPartGraphRecursive                 &
   integer(idx_t),intent(out)        ::  edgecut
   integer(idx_t),pointer            ::  part(:)
 !
-  type(c_ptr)   ::  xadj_ptr,adjncy_ptr
-  type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
-  type(c_ptr)   ::  options_ptr
-  type(c_ptr)   ::  part_ptr
-!
   edgecut = 0
   ierr = 0
 end function METIS_mCPartGraphRecursive
