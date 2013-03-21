@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -313,7 +313,7 @@ integer function fstr_ctrl_get_TEMPERATURE( ctrl, npos, temp_grp, irres, tstep )
         endif
 	
         write(ss,*)  HECMW_NAME_LEN
-        write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'r '
+        write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'R '
 
         fstr_ctrl_get_TEMPERATURE = -1
 

@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -35,7 +35,7 @@ module m_fstr_Result
     use m_static_make_result
     use m_static_output
     use fstr_setup_util
-    use hecmw_result
+    use m_fstr_visualize
 
     integer, intent(in)                   :: cstep       !< current step number
     integer, intent(in)                   :: totstep     !< total steps
@@ -45,33 +45,23 @@ module m_fstr_Result
     real(kind=kreal)   :: fdum, ndforce(6), ss(6)
     integer(kind=kint) :: i, k, ii, jj, nctrl, ninfo, ndof, ncomp, fnum
     integer(kind=kint) :: maxiter, itype, iS, iE, ic_type, icel
-    real(kind=kreal), allocatable :: ndstrain(:), ndstress(:)
+    real(kind=kreal)   :: ndstrain(total_node*6), ndstress(total_node*7)
     real(kind=kreal)   :: s11,s22,s33,s12,s23,s13,ps,smises, vdum(6)
     integer(kind=kint),pointer :: member(:)
     type ( hecmwST_result_data ) :: fstrRESULT
-    integer(kind=kint) :: level, partID, iErr
-    character(len=HECMW_FILENAME_LEN) :: ctrlfile
-
-    allocate( ndstrain(total_node*6), ndstress(total_node*7) )
 
     maxiter = fstrSOLID%step_ctrl(cstep)%max_iter
-
+	!    call hecmw_nullify_result_data( fstrRESULT )
+    !-- POST PROCESSING VIA MEMORY
     if( IVISUAL==1 ) then
-       call fstr_NodalStress3D( fstrSOLID, fstrSOLID%STRAIN, fstrSOLID%STRESS )
-       call fstr_make_result(fstrSOLID,fstrRESULT)
-       level = 0
-       partID = -1
-       ctrlfile = 'hecmw_ctrl.dat'
-       call mw3_visualize_init_ex(ctrlfile,level,partID)
-       call hecmw_result_copy_f2c(fstrRESULT,iErr)
-       if( iErr/=0 ) then
-         write(*,*) ' Fatal error: Fails in copying data for visualizer! '
-         write(IMSG,*) ' Fatal error: Fails in copying data for visualizer! '
-         call hecmw_abort(hecmw_comm_get_comm())
-       endif
-       call mw3_visualize(totstep,maxiter,0)
-       call mw3_visualize_finalize
-       call hecmw_result_free(fstrRESULT)
+          call fstr_NodalStress3D( fstrSOLID, fstrSOLID%STRAIN, fstrSOLID%STRESS)
+      !    call fstr_make_result(fstrSOLID,fstrRESULT)
+      !    call hecmw_visualize_init
+
+      !   call hecmw_visualize(hecMESH,fstrRESULT,totstep,maxiter,0)
+      !   call hecmw_visualize_finalize
+      !    call hecmw_result_free(fstrRESULT)
+          call fstr_visualize( cstep, totstep, fstrSOLID, ttime ) 
     endif
 	
     if( .not. associated(fstrSOLID%output_ctrl) ) return
@@ -273,8 +263,6 @@ module m_fstr_Result
        if( ndof == 3 ) call fstr_NodalStress3D( fstrSOLID, ndstrain, ndstress  )
        call fstrNLGEOM_Post(fnum,fstrSOLID,ttime,totstep,ndstrain,ndstress)
     enddo
-
-    deallocate( ndstrain, ndstress)
   end subroutine fstr_OutputResult
 
 !> Summarizer of output data which prints out max and min output values
@@ -282,7 +270,6 @@ module m_fstr_Result
   subroutine fstrNLGEOM_Post(fnum,fstrSOLID,tt,i_step,ndstrain, ndstress)
 !----------------------------------------------------------------------*
       use m_fstr
-      use hecmw_result
       integer, intent(in)                   :: fnum
       type (fstr_solid), intent(in)         :: fstrSOLID
 	  
@@ -290,14 +277,12 @@ module m_fstr_Result
 
       integer(kind=kint), intent(in) :: i_step
       real(kind=kreal), intent(in)   :: tt
-      real(kind=kreal), intent(in)   :: ndstrain(:)
-      real(kind=kreal), intent(in)   :: ndstress(:)
+      real(kind=kreal), intent(in)   :: ndstrain(total_node*6)
+      real(kind=kreal), intent(in)   :: ndstress(total_node*7)
 ! --- file name
       character(len=HECMW_HEADER_LEN) :: header
       character(len=HECMW_NAME_LEN) :: label
       character(len=HECMW_NAME_LEN) :: nameID
-      integer(kind=kint)            :: level, partID
-      character(len=HECMW_FILENAME_LEN) :: ctrlfile
 ! --- Local variables
 ! --- Max Min
       real(kind=kreal), target :: Umax(3),Umin(3),Emax(6),Emin(6),Smax(7),Smin(7)
@@ -451,53 +436,57 @@ module m_fstr_Result
         endif
 
         if( IRESULT.eq.0 ) return
-        level = 0
-        partID = -1
-        ctrlfile = 'hecmw_ctrl.dat'
+! --- Write Result File
 ! --- INITIALIZE
         header='*fstrresult'
-        call mw3_result_init_ex(ctrlfile,level,partID,i_step,header)
+        nd = i_step
+    !    call hecmw_result_init(nd,header, total_node, total_elem, global_node_ID, global_elem_ID)
+! --- ADD
 ! --- DISPLACEMENT
 !        if( fstrSOLID%iout_list(1) .eq. 1 ) then
           id = 1
           ndof=3
           label='DISPLACEMENT'
-          call mw3_result_add(id,ndof,label,fstrSOLID%unode)
+    !      call hecmw_result_add(id,ndof,label,fstrSOLID%unode)
 !        end if
-
+!
         if( i_step .gt. 0) then
-!         if( fstrSOLID%iout_list(5) .eq. 1 ) then
+!        if( fstrSOLID%iout_list(5) .eq. 1 ) then
 ! --- STRAIN @node
-            id = 1
-            ndof=6
-            label='STRAIN'
-            call mw3_result_add(id,ndof,label,ndstrain)
+          id = 1
+          ndof=6
+          label='STRAIN'
+     !     call hecmw_result_add(id,ndof,label,fstrSOLID%STRAIN)
 ! --- STRAIN @element
-            id = 2
-            ndof=6
-            label='ESTRAIN'
-            call mw3_result_add(id,ndof,label,fstrSOLID%ESTRAIN)
-!         end if
-
-!         if( fstrSOLID%iout_list(6) .eq. 1 ) then
+!          id = 2
+!          ndof=6
+!          label='ESTRAIN'
+!          call hecmw_result_add(id,ndof,label,fstrSOLID%ESTRAIN)
+!        end if
+!
+!        if( fstrSOLID%iout_list(6) .eq. 1 ) then
 ! --- STRESS @node
-            id = 1
-            ndof=7
-            label='STRESS'
-            call mw3_result_add(id,ndof,label,ndstress)
+          id = 1
+          ndof=7
+          label='STRESS'
+       !   call hecmw_result_add(id,ndof,label,ndSTRESS)
 ! --- STRESS @element
-            id = 2
-            ndof=7
-            label='ESTRESS'
-            call mw3_result_add(id,ndof,label,fstrSOLID%ESTRESS)
-!         end if
+!          id = 2
+!          ndof=7
+!          label='ESTRESS'
+!          call hecmw_result_add(id,ndof,label,fstrSOLID%ESTRESS)
+!        end if
         end if
-! --- WRITE
+!
         nameID='fstrRES'
-        call mw3_result_write_by_name(nameID)
+      !  call hecmw_result_write_by_name(nameID)
 ! --- FINALIZE
-        call mw3_result_finalize
+     !   call hecmw_result_finalize
+!
       endif
 
   end subroutine fstrNLGEOM_Post
+!
+!
+!
 end module m_fstr_Result

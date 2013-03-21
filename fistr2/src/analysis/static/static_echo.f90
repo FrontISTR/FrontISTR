@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -28,7 +28,7 @@ module m_static_echo
       type (fstr_solid )        :: fstrSOLID
 
 
-      integer(kind=kint) :: i,j,nn,ic_type
+      integer(kind=kint) :: i,j,nn,ic_type, cnt
       integer(kind=kint) :: icel,isect,ig1,iS0,iE0,ik
       integer(kind=kint) :: nid, itype
       real(kind=kreal) :: x,y,z
@@ -67,8 +67,9 @@ module m_static_echo
          do iPart = 0, mw_get_num_of_mesh_part()-1
             call mw_select_mesh_part( iPart )
             do iNode = 0, mw_get_num_of_node()-1
-              call mw_get_node_coord( mw_get_node_id(iNode), x,y,z )
-              write(ILOG,'(3i8,3e15.5)') iAss,iPart,iNode,x,y,z
+              nid = mw_get_node_id(iNode)
+              call mw_get_node_coord( nid, x,y,z )
+              write(ILOG,'(3i8,3e15.5)') iAss,iPart,nid,x,y,z
             enddo
          enddo
       enddo
@@ -158,5 +159,6 @@ module m_static_echo
       enddo
 	  
       call flush(ILOG)
+      print *, "end of echo"
    end subroutine FSTR_ECHO
 end module m_static_echo

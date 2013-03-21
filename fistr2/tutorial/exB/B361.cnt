@@ -1,0 +1,25 @@
+!!
+!! Control File for FSTR solver
+!!
+!BOUNDARY
+    FIX, 1, 3, 0.0
+!DLOAD
+ B360P2, P2,   1.0
+!SECTION, TYPE=SOLID, EGRP=EALL, MATERIAL=M1
+ 1.0
+!MATERIAL, NAME=M1, ITEM=1
+!ELASTIC
+ 4000.,      0.3
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=1,ITERLOG=YES,TIMELOG=YES,
+  10000, 2
+ 1.0e-8, 1.0, 0.0
+!WRITE,RESULT
+!WRITE,VISUAL
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+!output_type=VTK
+!END

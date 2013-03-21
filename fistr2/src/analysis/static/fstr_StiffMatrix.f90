@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -31,10 +31,7 @@ module m_fstr_StiffMatrix
 subroutine fstr_StiffMatrix ( fstrSOLID, cstep, tincr, factor)
 !---------------------------------------------------------------------*
   use m_fstr
-  use m_static_LIB_2d
-  use m_static_LIB_3d
-  use m_static_LIB_C3D8
-  use m_static_LIB_3dIC
+  use m_static_LIB
   use mMechGauss
   
   include "HEC_MW3_For.h"
@@ -62,13 +59,12 @@ subroutine fstr_StiffMatrix ( fstrSOLID, cstep, tincr, factor)
   icel = 0	  
   do iAss = 0, mw_get_num_of_assemble_model()-1
      call mw_select_assemble_model( iAss )
-  !   call mw_select_algebra(0)
      do iPart = 0, mw_get_num_of_mesh_part()-1
         call mw_select_mesh_part( iPart )
         call mw_matrix_clear( iPart )
         do iElem = 0, mw_get_num_of_element()-1
               icel = icel+1
-              call mw_select_element( icel-1 )
+              call mw_select_element( iElem )
               call  mw_get_element_vert_node_id( nids )
               nn = mw_get_num_of_element_vert()
               ic_type = mw_get_element_type()
@@ -79,7 +75,7 @@ subroutine fstr_StiffMatrix ( fstrSOLID, cstep, tincr, factor)
                 ecoord(1,iNode)=x
                 ecoord(2,iNode)=y
                 ecoord(3,iNode)=z
-	            cid= part_nodes(iAss+1,iPart+1)+cid+1
+                cid = part_nodes(iAss+1,iPart+1)+mw_get_node_index( cid )+1
                 do i=1,ndof
                   du(i,iNode) = fstrSOLID%dunode(ndof*cid+i-ndof)
                   u(i,iNode)  = fstrSOLID%unode(ndof*cid+i-ndof) + du(i,iNode)

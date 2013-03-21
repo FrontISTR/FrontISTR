@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -66,7 +66,7 @@ subroutine fstr_UpdateNewton ( fstrSOLID, substep,tincr,factor,iter)
 
   real(kind=kreal)   :: total_disp(3,20),ddu(3,20)
   real(kind=kreal)   :: tt(20), tt0(20), qf(20*3)
-  integer            :: ig0, grpid, ig, iS0, iE0,ik, in, ierror
+  integer            :: ig0, grpid, ig, iS0, iE0,ik, in, ierror, snode, enode
 
   ndof = assDOF(1)
   fstrSOLID%QFORCE=0.0d0
@@ -86,10 +86,11 @@ subroutine fstr_UpdateNewton ( fstrSOLID, substep,tincr,factor,iter)
   do iAss = 0, mw_get_num_of_assemble_model()-1
      call mw_select_assemble_model( iAss )
      do iPart = 0, mw_get_num_of_mesh_part()-1
+        snode = part_nodes(iAss+1, iPart+1)
         call mw_select_mesh_part( iPart )
         do iElem = 0, mw_get_num_of_element()-1
           icel = icel+1
-          call mw_select_element( icel-1 )
+          call mw_select_element( iElem )
           call  mw_get_element_vert_node_id( nids )
           nn = mw_get_num_of_element_vert()
           ic_type = mw_get_element_type()
@@ -100,8 +101,7 @@ subroutine fstr_UpdateNewton ( fstrSOLID, substep,tincr,factor,iter)
             ecoord(1,iNode)=x
             ecoord(2,iNode)=y
             ecoord(3,iNode)=z
-            !cid= part_nodes(iAss+1,iPart+1)+nids(iNode-1)+1
-            cid = mw_get_node_index( cid )+1
+            cid = mw_get_node_index( cid )+1+snode
             if( associated(fstrSOLID%temp_grp) .or. fstrSOLID%TEMP_irres == 1 ) then
                      tt0(iNode)=fstrSOLID%reftemp( cid ) 
                      tt(iNode) = fstrSOLID%temperature( cid ) 
@@ -112,8 +112,9 @@ subroutine fstr_UpdateNewton ( fstrSOLID, substep,tincr,factor,iter)
                    total_disp(i,iNode) = fstrSOLID%unode(ndof*(cid-1)+i) +  &
                                        fstrSOLID%dunode(ndof*(cid-1)+i)
             enddo
+	!		print *, iAss, icel, iNode, total_disp(:,iNode)
           enddo
- 
+
           if(  getSpaceDimension( ic_type )==2 ) thick =1.d0
           if ( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 ) then
             call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:),      &
@@ -158,22 +159,25 @@ subroutine fstr_UpdateNewton ( fstrSOLID, substep,tincr,factor,iter)
         enddo
      enddo
   enddo
-  
+ 
 !C
 !C Update for fstrSOLID%QFORCE
 !C 
-!  do iAss = 0, mw_get_num_of_assemble_model()-1
-!         call mw_select_assemble_model( iAss )
-!         do iPart = 0, mw_get_num_of_mesh_part()-1
-!            call mw_select_mesh_part( iPart )
-!            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
-!               ik = mw_get_transrank(iPart, iNode)
-!               ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
-!               call mw_send_recv_r(fstrSOLID%QFORCE(part_nodes(iAss+1,iPart+1)+1:part_nodes(iAss+1,iPart+2)), ndID, ndof, ik)
-!            enddo
-!         enddo
-!  enddo
-  
+  do iAss = 0, mw_get_num_of_assemble_model()-1
+         call mw_select_assemble_model( iAss )
+         do iPart = 0, mw_get_num_of_mesh_part()-1
+            call mw_select_mesh_part( iPart )
+            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
+           !    ik = mw_get_transrank(iPart, iNode)
+               snode = part_nodes(iAss+1,iPart+1)
+               enode = part_nodes(iAss+1,iPart+2) 
+           !    ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
+               call mw_sumup(iAss, iPart, fstrSOLID%QFORCE(snode*ndof+1:enode*ndof), ndof)
+           !    call mw_send_recv_r(fstrSOLID%QFORCE(snode*ndof+1:enode*ndof), ndID, ndof, ik)
+            enddo
+         enddo
+  enddo
+
 end subroutine fstr_UpdateNewton
 
 !> Update elastiplastic status
@@ -186,7 +190,7 @@ subroutine fstr_UpdateEPState( fstrSOLID)
   
   type (fstr_solid)          :: fstrSOLID   !< fstr_solid
   
-  integer(kind=kint) :: nn, ic_type, icel, ngauss, i
+  integer(kind=kint) :: ic_type, icel, ngauss, i
   integer :: iAss, iPart, iElem, iNode, iGrp
  
   icel = 0
@@ -197,7 +201,6 @@ subroutine fstr_UpdateEPState( fstrSOLID)
       do iElem = 0, mw_get_num_of_element()-1
         icel = icel+1
         call mw_select_element( iElem )
-        nn = mw_get_num_of_element_vert()
         ic_type = mw_get_element_type()
         ic_type = mw_mw3_elemtype_to_fistr_elemtype(ic_type)
         ngauss = NumOfQuadPoints( ic_type )

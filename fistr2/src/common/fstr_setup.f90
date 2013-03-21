@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -112,7 +112,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 		
         call fstr_setup_init( P )
 
-        ctrl = fstr_ctrl_open( cntl_filename)
+        ctrl = fstr_ctrl_open( cntl_filename//char(0) )
         if( ctrl < 0 ) then
                 write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
                 write(ILOG,*) '### Error: Cannot open FSTR control file : ', cntl_filename
@@ -266,6 +266,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 ! ----- 
         if( c_section==0 ) stop "SECTION not defined!"
         allocate( MWSections( c_section ) )
+        do i=1,c_section
+          MWSections(i)%sect_R_item = 0.d0
+        enddo
         if( c_amp>0 ) allocate( MWAmplitudes( c_amp ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_output > 0 ) allocate( fstrSOLID%output_ctrl( c_output ) )
@@ -290,7 +293,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           enddo
         endif
         if( c_temperature>0 ) then
-          allocate(fstrSOLID%boundary_grp(c_temperature) )
+          allocate(fstrSOLID%temp_grp(c_temperature) )
           do i=1,c_temperature
             call init_ndscalar_grp( fstrSOLID%temp_grp(i) )
           enddo
@@ -307,6 +310,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_dload = 0
         c_boundary = 0
         c_amp = 0
+        c_temperature = 0
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -482,6 +486,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 !              call print_output_ctrl( 6, fstrSOLID%output_ctrl(cr_output) )
               endif
             endif
+			
+          else if( header_name == '!OUTPUT_TYPE=VTK' ) then
+		    gVisType=1
+			
+          else if( header_name == '!OUTPUT_TYPE=MICROAVS' ) then
+		    gVisType=2
+			
+          else if( header_name == '!OUTPUT_TYPE=FVUNS' ) then
+		    gVisType=3
             
           else if( header_name == '!NODE_OUTPUT' ) then
             if( c_output >0 ) then
@@ -521,8 +534,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           enddo
         endif
 
-        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres == 1 ) then 
-          allocate ( fstrSOLID%temperature( hecMESH%n_node )      ,STAT=ierror )
+        if( c_temperature>0 .or. fstrSOLID%TEMP_irres == 1 ) then 
+          allocate ( fstrSOLID%temperature( total_node )      ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, TEMPERATURE>'
               write(idbg,*) '  rank = ', myrank,'  ierror = ',ierror
@@ -530,7 +543,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call hecmw_abort( hecmw_comm_get_comm())
             end if
           fstrSOLID%temperature = REF_TEMP
-          allocate ( fstrSOLID%reftemp( hecMESH%n_node )      ,STAT=ierror )
+          allocate ( fstrSOLID%reftemp( total_node )      ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, REFTEMP>'
               write(idbg,*) '  rank = ', myrank,'  ierror = ',ierror
@@ -540,18 +553,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           fstrSOLID%reftemp = REF_TEMP
         endif
 
+        fstrSOLID%nstep_tot = 1
         if( associated(fstrSOLID%step_ctrl) )  then
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( version>0 .and. P%PARAM%solution_type==kstNLSTATIC ) then
-              write( *,* ) " ERROR: STEP not defined!"
-              write( idbg,* ) "ERROR: STEP not defined!"
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-           endif
-			  
            print *, "Step control not defined! Using defualt step=1"
+           allocate( fstrSOLID%step_ctrl(1) )
            fstrSOLID%nstep_tot = 1
            allocate( fstrSOLID%step_ctrl(1) )
            call init_stepInfo( fstrSOLID%step_ctrl(1) )
@@ -559,13 +567,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            do i = 1, c_boundary
              fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_grp(i)%gid
            enddo
-           n = c_cload + c_dload
+           n = c_cload + c_dload + c_temperature
            if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
            do i = 1, c_cload
              fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_grp(i)%gid
            enddo
            do i = 1, c_dload
              fstrSOLID%step_ctrl(1)%Load(i+c_cload) = fstrSOLID%DLOAD_grp(i)%gid
+           enddo
+            do i = 1, c_temperature
+             fstrSOLID%step_ctrl(1)%Load(i+c_cload+c_dload) = fstrSOLID%temp_grp(i)%gid
            enddo
         endif
 
@@ -740,7 +751,7 @@ subroutine fstr_element_init( fstrSOLID )
                  ng = mw_get_elementgroup_name_length(igrp)
                  header_name(:) =''
                  call mw_get_elementgroup_name(igrp, header_name(1:ng), ng)
-				 header_name(ng:)=''
+
                  csect = -1
                  do isect=1, size(MWSections)
                      if( MWSections(isect)%egroup_name == header_name ) then
@@ -1125,7 +1136,7 @@ end subroutine
         endif
 
         if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
-                call fstr_setup_visualize( ctrl )
+     !           call fstr_setup_visualize( ctrl )
         end if
 
     !    call hecmw_barrier( P%MESH ) ! JP-7
@@ -2387,6 +2398,7 @@ subroutine hecMW_init_section( matls )
         nsect = size(MWSections)
         do i=1, nsect
           isfind = .false.
+          MWSections(i)%sect_R_item = 0.d0
           do j=1, size(matls)
             if( MWSections(i)%mat_name == matls(j)%name ) then
                MWSections(i)%sect_mat_ID = j

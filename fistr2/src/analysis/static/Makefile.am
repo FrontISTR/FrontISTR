@@ -102,6 +102,7 @@ OBJSF = \
         static_mat_ass.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
         static_post.@f90objfilepostfix@ \
+		fstr_visualize.@f90objfilepostfix@ \
         fstr_Result.@f90objfilepostfix@ \
         fstr_solve_LINEAR.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \

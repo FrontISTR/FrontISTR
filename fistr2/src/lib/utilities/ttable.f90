@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : Data structure                                    !
 !                                                                      !
@@ -161,7 +161,7 @@ end module m_table
 !======================================================================!
 
 module Table_DICTS
-    use m_table
+    use m_Table, DICT_DATA => tTable
     implicit none
 	integer, parameter, private :: kreal = kind(0.0d0)
 	
@@ -176,7 +176,7 @@ module Table_DICTS
       character(len=*), intent(in)   :: key     !< parameter key
       type(DICT_STRUCT), pointer     :: dict    !< data table
       logical, intent(out)           :: ierr
-      type(tTable)                :: dicval
+      type(DICT_DATA)                :: dicval
 
       dicval = dict_get_key( dict, key )
       ierr = .false.
@@ -191,7 +191,7 @@ module Table_DICTS
     integer function fetch_TableRow( key, dict )
       character(len=*), intent(in)   :: key     !< parameter key
       type(DICT_STRUCT), pointer     :: dict    !< data table
-      type(tTable)                :: dicval
+      type(DICT_DATA)                :: dicval
 
       dicval = dict_get_key( dict, key )
       fetch_TableRow = -1
@@ -209,7 +209,7 @@ module Table_DICTS
       real(kind=kreal), intent(out)  :: outa    !< gradient
       logical, intent(out)           :: ierr
 	  
-      type(tTable)                :: dicval
+      type(DICT_DATA)                :: dicval
       integer          :: i, j, na, dd, crow, cindex
       integer          :: cindex1(MAXINDEX), cindex2(MAXINDEX)
       dicval = dict_get_key( dict, key )
@@ -234,7 +234,7 @@ module Table_DICTS
     recursive subroutine GetTableGrad( a, cindex, table, dd, crow, outa )
       real(kind=kreal), intent(in)   :: a(:)
       integer, intent(inout)         :: cindex
-      type(tTable)                :: table
+      type(DICT_DATA)                :: table
       integer, intent(inout)         :: dd, crow
       real(kind=kreal), intent(out)  :: outa
 
@@ -303,7 +303,7 @@ module Table_DICTS
       logical, intent(out)           :: ierr    !< erro message
       real(kind=kreal), intent(in), optional   :: a(:)    !< automatic variables
 	  
-      type(tTable)                :: dicval
+      type(DICT_DATA)                :: dicval
       integer          :: nval, na, dd, crow, cindex
 	  
       dicval = dict_get_key( dict, key )
@@ -344,7 +344,7 @@ module Table_DICTS
     recursive subroutine GetTableData( a, cindex, table, dd, crow, outa )
       real(kind=kreal), intent(in)   :: a(:)
       integer, intent(inout)         :: cindex
-      type(tTable)                :: table
+      type(DICT_DATA)                :: table
       integer, intent(inout)         :: dd, crow
       real(kind=kreal), intent(out)  :: outa(:)
 	  
@@ -417,7 +417,7 @@ module Table_DICTS
       type(DICT_STRUCT), pointer     :: dict
       integer, intent(in)            :: fname
 	  
-      type(tTable)             :: dicval
+      type(DICT_DATA)             :: dicval
       type(LINKED_LIST), pointer  :: current
       integer :: i
       do i = 1,size(dict%table)

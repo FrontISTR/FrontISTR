@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.1                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -32,8 +32,8 @@ module m_fstr_NodalStress
     use m_fstr
     use m_static_lib
     type (fstr_solid)      :: fstrSOLID                    !< fstr_solid
-    real(kind=kreal)       :: tdstrain(:)                  !< nodal strain
-    real(kind=kreal)       :: tdstress(:)                  !< nodal stress
+    real(kind=kreal)       :: tdstrain(total_node*6)   !< nodal strain
+    real(kind=kreal)       :: tdstress(total_node*7)   !< nodal stress
 	
     include "HEC_MW3_For.h"
 	
@@ -50,35 +50,32 @@ module m_fstr_NodalStress
     real(kind=kreal) ddunode(3,20)
 	
 	integer(kind=kint) :: nids(0:20)
-    integer :: iAss, iPart, iNode, iGrp, iErr
+    integer :: iAss, iPart, iNode, iGrp, iErr, npart, snode, enode
 
-    real(kind=kreal), allocatable :: ndstrain(:,:), ndstress(:,:)
-    integer(kind=kint), allocatable :: nnumber(:)
-    real(kind=kreal), allocatable :: temp(:)
+    integer(kind=kint) :: nnumber(total_node)
+    real(kind=kreal)   :: ndstrain(total_node,6), ndstress(total_node,7)
+    real(kind=kreal)   :: temp(total_node)
 
-    allocate( ndstrain(total_node,6), ndstress(total_node,7) )
-    allocate( nnumber(total_node) )
-    allocate( temp(total_node) )
 
 !*ZERO CLEAR
     ndstrain=0.d0; ndstress=0.d0
     arrayTotal=0
     nnumber=0
-!
-!C
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-    icel = 0	  
-    do iAss = 0, mw_get_num_of_assemble_model()-1
+
+	iAss = mw_get_num_of_assemble_model()-1
+    nPart = mw_get_num_of_mesh_part()-1
+    icel = part_elems(iAss+1, nPart+1)
+    snode = part_nodes(iAss+1, nPart+1)
+    enode = part_nodes(iAss+1, nPart+2)
+
      call mw_select_assemble_model( iAss )
-     do iPart = 0, mw_get_num_of_mesh_part()-1
+     do iPart = 0, nPart
         call mw_select_mesh_part( iPart )
         call mw_matrix_clear( iPart )
         do iElem = 0, mw_get_num_of_element()-1
           icel = icel+1
-          call mw_select_element( icel-1 )
-          call  mw_get_element_vert_node_id( nids )
+          call mw_select_element( iElem )
+          call  mw_get_element_vert_node_index( nids )
           nn = mw_get_num_of_element_vert()
           ic_type = mw_get_element_type()
           ic_type = mw_mw3_elemtype_to_fistr_elemtype(ic_type)
@@ -90,7 +87,7 @@ module m_fstr_NodalStress
 
 
           do j=1,nn
-            cid= mw_get_node_index( nids(j-1) )+1
+            cid= nids(j-1)+1+snode
             ndstrain( cid,: ) = ndstrain(cid,:) + edstrain(j,:)
             ndstress( cid,1:6 ) = ndstress(cid,1:6) + edstress(j,:)
             nnumber( cid )=nnumber( cid )+1
@@ -114,15 +111,17 @@ module m_fstr_NodalStress
         enddo
 
       enddo       ! icel roop.
-    enddo         ! ityp roop.
+
+
 
 !** Average over nodes
-    do i=1,total_node
+    do i=snode+1,enode
+      if( nnumber(i)<=0 ) cycle
       ndstrain(i,:)=ndstrain(i,:)/nnumber(i)
       ndstress(i,1:6)=ndstress(i,1:6)/nnumber(i)
     enddo
 !** CALCULATE von MISES stress
-    do i=1,total_node
+    do i=1,snode+1,enode
       s11=ndstress(i,1)
       s22=ndstress(i,2)
       s33=ndstress(i,3)
@@ -135,7 +134,7 @@ module m_fstr_NodalStress
       ndstress(i,7)=sqrt(3.d0*smises)
     enddo
 !** Set Array 
-    do i=1,total_node
+    do i=snode+1,enode
       do j=1,6
   !      fstrSOLID%STRAIN(6*(i-1)+j)=ndstrain(i,j)
 		tdSTRAIN(6*(i-1)+j)=ndstrain(i,j)
@@ -146,10 +145,6 @@ module m_fstr_NodalStress
       enddo
     enddo
 
-    deallocate( ndstrain )
-    deallocate( ndstress )
-    deallocate( nnumber)
-    deallocate( temp )
   end subroutine fstr_NodalStress3D
 
 

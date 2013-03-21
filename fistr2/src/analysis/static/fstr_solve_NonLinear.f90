@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.1                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -98,7 +98,7 @@ subroutine fstr_Newton( cstep, fstrSOLID, restrt_step_num, sub_step, factor   )
       do iAss = 0, mw_get_num_of_assemble_model()-1
          call mw_select_assemble_model( iAss )
          do iPart = 0, mw_get_num_of_mesh_part()-1
-            call mw_select_mesh_part( iPart )
+            call mw_select_mesh_part_with_id( iPart )
             snode = part_nodes(iAss+1,iPart+1)
             enode = part_nodes(iAss+1,iPart+2)
             call mw_get_solution_vector(fstrSOLID%ddunode(snode*ndof+1:  &

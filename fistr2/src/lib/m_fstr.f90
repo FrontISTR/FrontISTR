@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -34,6 +34,7 @@ use lczparm
 use m_step
 use m_out
 use mMechGauss
+use mContactDef
 
 implicit none
 
@@ -67,6 +68,9 @@ public
         ! boundary condition file type (bcf)
         integer(kind=kint),parameter :: kbcfFSTR    =   0  ! BC described in fstr control file (default)
         integer(kind=kint),parameter :: kbcfNASTRAN =   1  ! nastran file
+		
+		! visualize type
+        integer :: gVisType = 1  !1: vtk;  2:avs;   3:uns
 
 !C
 !C-- PARALLEL EXECUTION
@@ -256,7 +260,7 @@ public
                 integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
                 real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
 				
-				type( fstr_ndscalar_grp ), pointer :: temp_grp(:) =>null()
+                type( fstr_ndscalar_grp ), pointer :: temp_grp(:) =>null()
 				
 				! for couple analysis
                 integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
@@ -287,6 +291,7 @@ public
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
+                type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
 !

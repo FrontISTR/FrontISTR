@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.0                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -20,6 +20,7 @@ use m_solve_LINEQ
 
 use m_static_LIB_2d
 use m_static_LIB_3d
+use m_static_LIB_C3D8
 use m_static_LIB_3dIC
 
 use m_static_LIB_shell

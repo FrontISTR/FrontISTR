@@ -17,7 +17,7 @@
 !> \brief  This module provides functions to take into acount external load
 !!
 !>  \author                date                  version 
-!>  X.Yuan(Advancesoft)    2010/08/26        original
+!>  X.Yuan(Advancesoft)    2009/08/26        original
 !>  X.Yuan                 2013/03/18        consider anisotropic expansion
 !
 !======================================================================!

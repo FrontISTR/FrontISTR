@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
+! Software Name : FrontISTR Ver. 3.1                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -187,17 +187,17 @@ subroutine fstr_Update( fstrSOLID, substep,tincr,factor,iter)
 !C
 !C Update for fstrSOLID%QFORCE
 !C 
-!  do iAss = 0, mw_get_num_of_assemble_model()-1
-!         call mw_select_assemble_model( iAss )
-!         do iPart = 0, mw_get_num_of_mesh_part()-1
-!            call mw_select_mesh_part( iPart )
-!            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
-!               ik = mw_get_transrank(iPart, iNode)
-!               ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
-!               call mw_send_recv_r(fstrSOLID%QFORCE(part_nodes(iAss+1,iPart+1)+1:part_nodes(iAss+1,iPart+2)), ndID, ndof, ik)
-!            enddo
-!         enddo
-!  enddo
+  do iAss = 0, mw_get_num_of_assemble_model()-1
+         call mw_select_assemble_model( iAss )
+         do iPart = 0, mw_get_num_of_mesh_part()-1
+            call mw_select_mesh_part_with_id( iPart )
+            do iNode = 0, mw_get_num_of_neibpe(iPart)-1
+               ik = mw_get_transrank(iPart, iNode)
+               ndID = part_nodes(iAss+1,iPart+2) - part_nodes(iAss+1,iPart+1)
+               call mw_send_recv_r(fstrSOLID%QFORCE(part_nodes(iAss+1,iPart+1)+1:part_nodes(iAss+1,iPart+2)), ndID, ndof, ik)
+            enddo
+         enddo
+  enddo
   
 end subroutine fstr_Update
 

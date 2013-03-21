@@ -17,7 +17,7 @@
 !> \brief  This module provides function to calcualte to do updates
 !!
 !>  \author                date                  version 
-!>  X.Yuan(Advancesoft)    2010/08/28        original
+!>  X.Yuan(Advancesoft)    2009/08/28        original
 !>  X.Yuan                 2013/03/18        consider anisotropic materials
 !
 !======================================================================!
