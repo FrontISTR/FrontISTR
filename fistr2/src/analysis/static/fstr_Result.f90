@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.0                                   !
+! Software Name : FrontISTR Ver. 4.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -292,7 +292,7 @@ module m_fstr_Result
       integer(kind=kint) j,i,k,nd,id,ndof,mdof
 !
 ! --- Time
-      write(fnum,'(''#### Resul time='',E10.4)') tt
+      write(fnum,'(''#### Resul time='',E11.4)') tt
 ! --- Clear
       Umax=0.0d0
       Umin=0.0d0

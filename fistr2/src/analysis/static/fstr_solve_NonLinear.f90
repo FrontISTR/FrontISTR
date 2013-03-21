@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.1                                   !
+! Software Name : FrontISTR Ver. 4.2                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -162,7 +162,7 @@ subroutine fstr_Newton( cstep, fstrSOLID, restrt_step_num, sub_step, factor   )
 
   call cpu_time(tt)
   if( myrank==0) then
-   write(ISTA,'("### Converged in NR ietration : CPU time=",E10.4,"   iter=",I6)') tt-tt0,iter
+   write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
   endif
 
 end subroutine fstr_Newton
