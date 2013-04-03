@@ -281,7 +281,7 @@ integer function fstr_ctrl_get_VISCOELASTICITY( ctrl, mattype, nlgeom, dict )
                 fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
             endif
             if( fstr_ctrl_get_VISCOELASTICITY ==0 ) then
-              call init_table( mattable, depends, 2+depends,n, fval )
+              call init_table( mattable, 1, 2+depends,n, fval )
               call dict_add_key( dict, MC_VISCOELASTIC, mattable )
 		!	  call print_table( mattable, 6 ); pause
             endif
