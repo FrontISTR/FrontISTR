@@ -352,7 +352,7 @@ module hecmw_solver_misc_33
           SW1= 0.d0
           SW2= 0.d0
           SW3= 0.d0
-          do j= isU, ieU
+          do j= ieU, isU, -1
               k= hecMAT%itemU(j)
              X1= ZP(3*k-2)
              X2= ZP(3*k-1)

@@ -547,11 +547,12 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 			disp_comp = j;
 		}
 	}
-	stress_comp = 2;
+	stress_comp = 0;
 	for (j = 0; j < data->nn_component; j++)
 	{
 		name_len = strlen (data->node_label[j]);
-		if (strncmp ("STRESS", data->node_label[j], name_len) == 0)
+		if (strncmp ("NodalSTRESS", data->node_label[j], name_len) == 0 ||
+			strncmp ("NodalSTRESSplus", data->node_label[j], name_len) == 0)
 		{
 			stress_comp = j;
 		}
@@ -624,7 +625,7 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 			}
 			else
 			{
-				for (j = 0; j < 12; j++)
+				for (j = 0; j < 14; j++)
 				{
 					HECMW_Send (&mesh->nn_internal, 1, HECMW_INT, MASTER_PE, 0,
 							VIS_COMM);
@@ -763,32 +764,36 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 			char *nodal_stress_ids_shell[] = {
 					"1,70011,1,",
 					"1,70012,1,",
+					"1,70013,1,",
 					"1,70014,1,",
 					"1,70015,1,",
 					"1,70016,1,",
-					"1,70017,1,",
 					"1,71011,1,",
 					"1,71012,1,",
+					"1,71013,1,",
 					"1,71014,1,",
 					"1,71015,1,",
 					"1,71016,1,",
+					"1,70017,1,",
 					"1,71017,1,"
 			};
 			char *nodal_stress_titles_shell[] = {
 					"Plate Top X Normal Stress",
 					"Plate Top Y Normal Stress",
+					"Plate Top Z Normal Stress",
 					"Plate Top XY Shear Stress",
 					"Plate Top YZ Shear Stress",
 					"Plate Top XZ Shear Stress",
-					"Plate Top Von Mises Stress",
 					"Plate Bot X Normal Stress",
 					"Plate Bot Y Normal Stress",
+					"Plate Bot Z Normal Stress",
 					"Plate Bot XY Shear Stress",
 					"Plate Bot YZ Shear Stress",
 					"Plate Bot XZ Shear Stress",
+					"Plate Top Von Mises Stress",
 					"Plate Bot Von Mises Stress"
 			};
-			for (k = 0; k < 12; k++)
+			for (k = 0; k < 14; k++)
 			{
 				fprintf (outfp, "%s\n", nodal_stress_ids_shell[k]);
 				fprintf (outfp, "%s\n", nodal_stress_titles_shell[k]);
@@ -840,7 +845,7 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 		for (j = 0; j < data->ne_component; j++)
 		{
 			name_len = strlen (data->elem_label[j]);
-			if (strncmp ("STRESS", data->elem_label[j], name_len) == 0)
+			if (strncmp ("ElementalSTRESS", data->elem_label[j], name_len) == 0)
 			{
 				stress_comp = j;
 			}

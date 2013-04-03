@@ -69,17 +69,18 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh, struct hecmwST_res
 		find=0;
 		for(j=0;j<data->nn_component;j++) {
 			name_len=strlen(data->node_label[j]);
-			if(strncmp("STRESS", data->node_label[j], name_len)==0 ||
+			if(strncmp("NodalSTRESS", data->node_label[j], name_len)==0 ||
+			   strncmp("NodalSTRESSplus", data->node_label[j], name_len)==0 ||
 			   strncmp("TEMPERATURE", data->node_label[j], name_len)==0) {
 				find=1;
 				break;
 			}
 		}
 		if(find==0) {
-			if(mynode==0)
-				fprintf(stderr, "The current library only support the FEAMAP output for structure/heat analysis result.\n");
-			fprintf(stderr, "The AVS UCD format output will be output for your dataset\n");
-			sf[1].output_type=1;
+			if(mynode==0) {
+				fprintf(stderr, "The current library only support the FEMAP output for structure/heat analysis result.\n");
+			}
+			return;
 		}
 		else {
 			ii=0;
