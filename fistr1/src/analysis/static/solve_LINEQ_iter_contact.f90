@@ -45,11 +45,17 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    integer :: method_org
+    integer :: method_org, precond_org
     logical :: fg_eliminate
 
     ! set if use eliminate version or not
-    fg_eliminate = .false.
+    precond_org = hecmw_mat_get_precond(hecMAT)
+    if (precond_org >= 30) then
+      fg_eliminate = .false.
+      call hecmw_mat_set_precond(hecMAT, precond_org - 20)
+    else
+      fg_eliminate = .true.
+    endif
 
     if (fstrMAT%num_lagrange == 0) then
       write(0,*) 'INFO: no contact'
@@ -67,6 +73,10 @@ contains
       else
         call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
       endif
+    endif
+
+    if (precond_org >= 30) then
+      call hecmw_mat_set_precond(hecMAT, precond_org)
     endif
   end subroutine solve_LINEQ_iter_contact
 
