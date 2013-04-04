@@ -304,9 +304,12 @@ contains
       logical             :: isin
 !
 !#ifdef CONTACT_FILTER
-      integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
+      !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
+      integer, allocatable :: indexMaster(:),itmp(:)
+      integer   ::  nMaster=0,minID(3),maxID(3),idm,nMasterMax=100
       real(kreal) :: width = 4.0D0,x0(3)
 !#endif
+      allocate(indexMaster(nMasterMax))
           
       active = .false.
       clearance = 1.d-6                                                  
@@ -355,7 +358,15 @@ contains
                minID(3) <= 1.and.maxID(3) >= 1) then
               nMaster = nMaster + 1
               if(nMaster > size(indexMaster)) then
-                stop 'Error: Too many master faces are possibly in contact!'
+                !stop 'Error: Too many master faces are possibly in contact!'
+                allocate(itmp(nMasterMax))
+                itmp(:) = indexMaster(:)
+                deallocate(indexMaster)
+                allocate(indexMaster(nMasterMax*2))
+                indexMaster(1:nMastermax) = itmp(1:nMasterMax)
+                deallocate(itmp)
+                nMasterMax = nMasterMax*2
+                write(*,*) 'Info: increased nMasterMax to ', nMasterMax
               endif
               indexMaster(nMaster) = id
             endif
@@ -389,6 +400,7 @@ contains
         endif
       enddo
              
+      deallocate(indexMaster)
   end subroutine scan_contact_state
 
   !> Calculate averaged nodal normal
