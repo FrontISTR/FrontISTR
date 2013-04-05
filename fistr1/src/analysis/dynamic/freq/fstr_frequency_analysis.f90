@@ -559,54 +559,97 @@ contains
   !---- vals
     integer(kind=kint), parameter   :: MAXNODE=100
     integer(kind=kint)               :: sgrpID, is, ie, ic, nsurf, ic_type, outtype, node_index(MAXNODE)
-    integer(kind=kint)               :: nn, iss, vecsize, nodeid, dof_index
-    integer(kind=kint)               :: i, j, k
-    integer(kind=kint), allocatable :: nodedofcnt(:)
-    real(kind=kreal), allocatable    :: valre(:), valim(:)
+    integer(kind=kint)               :: nn, iss, nodeid, dof_index, ndof
+    integer(kind=kint)               :: i, j, k, l, m, isn, nsize
+    integer(kind=kint)               :: iwk(60), nodLOCAL(20)
+    real(kind=kreal)                  :: vect(60), xx(20), yy(20), zz(20), forcere(3), forceim(3)
   !---- body
     
-    vecsize = size(loadvecRe)
-    allocate(nodedofcnt(vecsize))
-    allocate(valre(vecsize))
-    allocate(valim(vecsize))
-    nodedofcnt(:) = 0
-    valre(:) = 0.0D0
-    valim(:) = 0.0D0
-        
+    ndof = 3
     do i=1,freqData%FLOAD_ngrp_tot
       if(freqData%FLOAD_ngrp_TYPE(i) == kFLOADTYPE_SURF) then  !FLOAD type=surface
-        sgrpID = freqData%FLOAD_ngrp_ID(i)
+        sgrpID     = freqData%FLOAD_ngrp_ID(i)
+        dof_index  = freqData%FLOAD_ngrp_DOF(i)
+        forcere(:) = 0.0D0
+        forceim(:) = 0.0D0
+        forcere(dof_index) = freqData%FLOAD_ngrp_valre(i)
+        forceim(dof_index) = freqData%FLOAD_ngrp_valim(i)
+        
         is = hecMESH%surf_group%grp_index(sgrpID-1) + 1
         ie = hecMESH%surf_group%grp_index(sgrpID)
         do j=is, ie
           ic      = hecMESH%surf_group%grp_item(2*j-1)
           nsurf   = hecMESH%surf_group%grp_item(2*j)
           ic_type = hecMESH%elem_type(ic)
-          call getSubFace( ic_type, nsurf, outtype, node_index)
-          nn = getNumberOfNodes( outtype )
-          iss = hecMESH%elem_node_index(ic-1)
+          nn  = hecmw_get_max_node(ic_type)
+          isn = hecMESH%elem_node_index(ic-1)
           do k=1, nn
-            nodeid    = hecMESH%elem_node_item(iss + node_index(k))
-            dof_index = freqData%FLOAD_ngrp_DOF(i)
-            valre((nodeid-1)*numdof + dof_index) = valre((nodeid-1)*numdof + dof_index) + freqData%FLOAD_ngrp_valre(i)
-            valim((nodeid-1)*numdof + dof_index) = valim((nodeid-1)*numdof + dof_index) + freqData%FLOAD_ngrp_valim(i)
-            nodedofcnt((nodeid-1)*numdof + dof_index) = nodedofcnt((nodeid-1)*numdof + dof_index) + 1
+            nodLOCAL(k) = hecMESH%elem_node_item(isn+k)
+            xx(k) = hecMESH%node(3*nodLOCAL(k)-2)
+            yy(k) = hecMESH%node(3*nodLOCAL(k)-1)
+            zz(k) = hecMESH%node(3*nodLOCAL(k)  )
+            do l=1, ndof
+              iwk(ndof*(k-1)+l) = ndof*(nodLOCAL(k)-1)+l
+            end do 
+          end do
+          
+          call DL_C3_freq(ic_type, nn, xx, yy, zz, nsurf, forcere, vect, nsize)
+          do k=1,nsize
+            loadvecRe(iwk(k)) = loadvecRe(iwk(k)) + vect(k)
+          end do
+          
+          call DL_C3_freq(ic_type, nn, xx, yy, zz, nsurf, forceim, vect, nsize)
+          do k=1,nsize
+            loadvecIm(iwk(k)) = loadvecIm(iwk(k)) + vect(k)
           end do
         end do
       end if
     end do
-    
-    do i=1,vecsize
-      if(nodedofcnt(i) > 0) then
-        loadvecRe(i) = loadvecRe(i) + valre(i) / dble(nodedofcnt(i))
-        loadvecIm(i) = loadvecIm(i) + valim(i) / dble(nodedofcnt(i))
-      end if
-    end do
-    
-    deallocate(nodedofcnt)
-    deallocate(valre)
-    deallocate(valim)
+
     return
+  end subroutine
+  
+  subroutine DL_C3_freq(ETYPE, NN, XX, YY, ZZ, LTYPE, force, VECT, nsize)
+  !---- args
+    integer(kind=kint),    intent(in) :: ETYPE     !--solid element type
+    integer(kind=kint),    intent(in) :: NN        !--node num
+    integer(kind=kint),    intent(in) :: LTYPE     !--solid element face
+    real(kind=kreal),       intent(in) :: XX(:)     !--node x pos
+    real(kind=kreal),       intent(in) :: YY(:)     !--node y pos
+    real(kind=kreal),       intent(in) :: ZZ(:)     !--node z pos
+    real(kind=kreal),       intent(in) :: force(3)  !--node surfforce
+    real(kind=kreal),    intent(inout) :: VECT(:)
+    integer(kind=kint), intent(inout) :: nsize
+  !---- vals
+    integer(kind=kint),parameter :: NDOF=3
+    real(kind=kreal)               :: WG
+    integer(kind=kint)            :: NOD(NN)
+    real(kind=kreal)               :: elecoord(3,NN), localcoord(3)
+    real(kind=kreal)               :: H(NN)
+    integer(kind=kint)            :: I, IG2, NSUR, SURTYPE    
+  !---- body 
+  
+    call getSubFace( ETYPE, LTYPE, SURTYPE, NOD )
+    NSUR = getNumberOfNodes( SURTYPE )  
+        
+    do I=1,NSUR
+      elecoord(1,i)=XX(NOD(I))
+      elecoord(2,i)=YY(NOD(i))
+      elecoord(3,i)=ZZ(NOD(i))
+    end do
+    nsize         = NN*NDOF
+    VECT(1:NSIZE) = 0.0D0
+    do IG2=1,NumOfQuadPoints( SURTYPE )
+      call getQuadPoint( SURTYPE, IG2, localcoord(1:2) )
+      call getShapeFunc( SURTYPE, localcoord(1:2), H(1:NSUR) )
+
+      WG=getWeight( SURTYPE, IG2 )
+      do I=1,NSUR
+        VECT(3*NOD(I)-2)=VECT(3*NOD(I)-2)+WG*H(I)*force(1)
+        VECT(3*NOD(I)-1)=VECT(3*NOD(I)-1)+WG*H(I)*force(2)
+        VECT(3*NOD(I)  )=VECT(3*NOD(I)  )+WG*H(I)*force(3)
+      end do
+    end do
   end subroutine
   
   subroutine assemble_nodeload(hecMESH, freqData, numdof, loadvecRe, loadvecIm)
