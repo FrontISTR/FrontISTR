@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.1                                   !
+! Software Name : FrontISTR Ver. 4.2                                   !
 !                                                                      !
 !      Module Name : Main subroutine                                   !
 !                                                                      !
@@ -66,7 +66,7 @@ program fstr_main
      nRefine = mw_get_fstr_refine_num()
      refinetype = mw_get_fstr_refine_type()
 	 
-     if( refinetype==0 ) then
+     if( refinetype/=0 ) then
          argv_len = mw_get_fstr_filename_length_cadfit()
          call mw_get_fstr_filename_cadfit(fname, argv_len)
          fname = fname// CHAR(0)
