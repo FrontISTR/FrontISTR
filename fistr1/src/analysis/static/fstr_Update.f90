@@ -60,7 +60,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
 
   real(kind=kreal)   :: total_disp(6,20),du(6,20),ddu(6,20)
-  real(kind=kreal)   :: tt(20), tt0(20), qf(20*6), coords(3,3)
+  real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3,3)
   integer            :: ig0,  ig, ik, in, ierror, isect, ihead, cdsys_ID
 
   real(kind=kreal), optional :: strainEnergy
@@ -107,6 +107,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
             tt0(j) = 0.d0
             if( hecMESH%hecmw_flag_initcon==1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
           endif
+          ttn(j)=fstrSOLID%last_temp( nodLOCAL(j) )
           tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
         endif
       enddo
@@ -145,7 +146,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords,   &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
         else
           call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
@@ -156,7 +157,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords, qf(1:nn*ndof)       &
-                        ,fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn)  )
+                        ,fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
         else
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords       &
                         , qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr  )
@@ -235,12 +236,6 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
            end do
       endif
 
-      if( associated( fstrSOLID%temperature ) ) then 
-           do i=1, hecMESH%n_node
-             fstrSOLID%last_temp(i) = fstrSOLID%temperature(i)
-           end do
-      endif
-
   do itype= 1, hecMESH%n_elem_type
     iS= hecMESH%elem_type_index(itype-1) + 1
     iE= hecMESH%elem_type_index(itype  )
@@ -262,7 +257,7 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
           call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
         enddo
         endif
-      elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == VISCOELASTIC ) then
+      elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
         if( tincr>0.d0 ) then 
         do i=1,ngauss
           fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr

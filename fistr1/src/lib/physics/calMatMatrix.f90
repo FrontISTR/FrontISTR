@@ -5,7 +5,6 @@
 !      Module Name : lib                                               !
 !                                                                      !
 !                    Written by Xi YUAN (AdavanceSoft)                 !
-!                               K. Satoh (Advancesoft)                 !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -15,9 +14,9 @@
 !======================================================================!
 !>  \brief   This module manages calculation relates with materials
 !!
-!>  \author     Xi YUAN (AdavanceSoft), K. Satoh (Advancesoft)
-!>  \date       2010/01/12
-!>  \version    0.00
+!>  \author                date                  version 
+!>  X.Yuan(Advancesoft)    2010/01/12        original
+!>  X.Yuan                 2013/03/18        consider anisotropic & temp dependent
 !======================================================================!
 
 module m_MatMatrix
@@ -51,7 +50,7 @@ module m_MatMatrix
       REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
       REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
       REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
-  
+ 
       integer :: i  
       real(kind=kreal)            :: cijkl(3,3,3,3)
       TYPE( tMaterial ), pointer  :: matl
@@ -83,6 +82,7 @@ module m_MatMatrix
           print *, "Elasticity type", matl%mtype, "not supported"
           stop 
         endif
+
       elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then 
         call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain  )
         call mat_c2d( cijkl, matrix, sectType )
@@ -118,30 +118,39 @@ module m_MatMatrix
 
 !
 !> Update strain and stress for elastic and hyperelastic materials
-    subroutine StressUpdate( gauss, sectType, strain, stress, dt )
+    subroutine StressUpdate( gauss, sectType, strain, stress, dt, temp, tempn )
       type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
       integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
       real(kind=kreal), intent(in)        :: strain(6)  !> strain
       real(kind=kreal), intent(out)       :: stress(6)  !> stress
       real(kind=kreal), intent(in), optional  :: dt         !> time increment
+      REAL(KIND=kreal), OPTIONAL          :: temp       !> current temprature
+      REAL(KIND=kreal), OPTIONAL          :: tempn      !> temperature at last step
 
-      select case ( gauss%pMaterial%mtype )
-        case ( NEOHOOKE, MOONEYRIVLIN )  ! Mooney-Livlin Hyperelastic material
+      if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then
           call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress )
-        case ( ARRUDABOYCE )  ! Arruda-Boyce Hyperelastic material
+      elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
           call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
-        case ( USERHYPERELASTIC, USERELASTIC ) ! user-defined 
+      elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined 
           call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
-        case ( VISCOELASTIC ) 
+      elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
           if( .not. present(dt) ) stop "error in viscoelastic update!"
-          call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dt )
-        case ( NORTON ) 
+          if( present(temp) .and. present(tempn) ) then
+            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dt, temp, tempn )
+          else
+            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dt )
+          endif
+      elseif ( gauss%pMaterial%mtype==NORTON ) then
           if( .not. present(dt)  ) stop "error in viscoelastic update!"
-          call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime )
-        case ( USERMATERIAL)  ! user-defined 
+          if( present(temp) ) then
+            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime, temp )
+          else
+            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime )
+          endif
+      elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined 
           call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
              strain, stress, gauss%fstatus, dt, gauss%ttime )      
-      end select
+      end if
 
     end subroutine StressUpdate
 
@@ -223,8 +232,7 @@ subroutine mat_c2d( cijkl, dij, itype )
 
 end subroutine mat_c2d
 
-
-      ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
+! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
 !####################################################################
       SUBROUTINE MatlMatrix_Shell                        &
                  (gauss, sectType, D,                    &

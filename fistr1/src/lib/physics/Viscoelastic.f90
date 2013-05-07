@@ -259,8 +259,8 @@ module mViscoElastic
         mu_0 = mu_0 + mu_n
 
         do i = 1,6
-          vsig((2*n-1)*6+i) = exp_n*vsig((n-1)*6+i) + dq_n*(devstrain(i) - en(i))
-          sig(i)  = sig(i) + vsig((2*n-1)*6+i)
+          vsig((n-1)*12+i+6) = exp_n*vsig((n-1)*12+i) + dq_n*(devstrain(i) - en(i))
+          sig(i)  = sig(i) + vsig((n-1)*12+i+6)
         end do 
       end do
 
@@ -290,7 +290,7 @@ module mViscoElastic
       nrow = fetch_TableRow( MC_VISCOELASTIC, gauss%pMaterial%dict )
       do n = 1,nrow
         do i = 1,6
-          gauss%fstatus((n-1)*6+i) = gauss%fstatus((2*n-1)*6+i) 
+          gauss%fstatus((n-1)*12+i) = gauss%fstatus((n-1)*12+i+6) 
         end do 
       end do
       vstrain = gauss%strain

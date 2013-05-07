@@ -208,7 +208,6 @@ contains
 
 
       jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
-      jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
       if( jj_n_amp <= 0 ) then  ! Amplitude not defined
           tincre = 1.d0 / fstrSOLID%step_ctrl( cstep )%num_substep
@@ -228,6 +227,7 @@ contains
           if(t_t .gt. hecMESH%amp%amp_table(jj2)) then
              f_t = hecMESH%amp%amp_val(jj2)
           else if(t_t .le. hecMESH%amp%amp_table(jj2)) then
+             flag=0
              do i = jj1, jj2
                 if(t_t .le. hecMESH%amp%amp_table(i)) then
                   s2 = i

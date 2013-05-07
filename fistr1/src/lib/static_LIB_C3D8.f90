@@ -1,25 +1,12 @@
 !======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 4.0                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN, K. SATO (AdavanceSoft)                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
 !
 !> \brief  This module contains several strategy to free locking problem
 !> in Eight-node hexagonal element
 !>
 
-!>  \author                date                  version 
-!>  X.Yuan(Advancesoft)    2010/04/01        original
-!>  X.Yuan                 2013/03/18        consider anisotropic materials
+!>  \author     Xi YUAN (AdavanceSoft)
+!>  \date       2010/04/01
+!>  \version    0.00
 !                                                                      !
 !======================================================================!
 module m_static_LIB_C3D8
@@ -37,7 +24,7 @@ module m_static_LIB_C3D8
 !>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15, 
 !>  pp1413-1418,1980
 !----------------------------------------------------------------------*
-   SUBROUTINE STF_C3D8Bbar( etype,nn,ecoord,gausses,stiff, tincr, coords, u,temperature )
+   SUBROUTINE STF_C3D8Bbar( etype,nn,ecoord,gausses,stiff, tincr, coords,u, temperature )
     USE mMechGauss
     use m_MatMatrix
     use m_common_struct
@@ -47,7 +34,7 @@ module m_static_LIB_C3D8
     TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)          !< status of qudrature points
     REAL(kind=kreal),   INTENT(OUT) :: stiff(:,:)          !< stiff matrix
     real(kind=kreal),   intent(in)  :: tincr               !< time increment
-    REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)         !< variables to define matreial coordinate system
+    REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)     !< variables to define matreial coordinate system
     REAL(kind=kreal),   INTENT(IN), optional :: u(:,:)     !< nodal displacemwent
     REAL(kind=kreal),   INTENT(IN), optional :: temperature(nn)     !< temperature
 
@@ -56,7 +43,7 @@ module m_static_LIB_C3D8
     REAL(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
     REAL(kind=kreal) gderiv(NN,3),stress(6),mat(6,6)
     REAL(kind=kreal) DET,WG, temp, spfunc(NN)
-    INTEGER          I,J,LX, cdsys_ID, serr
+    INTEGER(kind=kint) I,J,LX, cdsys_ID, serr
     REAL(kind=kreal) naturalCoord(3)
     REAL(kind=kreal) gdispderiv(3,3)
     REAL(kind=kreal) B1(6,NDOF*NN), Bbar(NN,3)
@@ -201,7 +188,7 @@ module m_static_LIB_C3D8
 
 !>  Update Strain stress of this element
 !----------------------------------------------------------------------*
-   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, coords, qf ,gausses, iter, tincr, TT,T0  )
+   SUBROUTINE Update_C3D8Bbar(etype,nn,ecoord, u, du, coords, qf ,gausses, iter, tincr, TT,T0, TN  )
 !---------------------------------------------------------------------*
     use m_fstr
     use mMaterial
@@ -222,6 +209,7 @@ module m_static_LIB_C3D8
 	real(kind=kreal),    intent(in)    :: tincr           !< time increment
     REAL(kind=kreal),   INTENT(IN), optional :: TT(nn)    !< current temperature
     REAL(kind=kreal),   INTENT(IN), optional :: T0(nn)    !< reference temperature
+    REAL(kind=kreal),   INTENT(IN), optional :: TN(nn)    !< reference temperature
 
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof=3
@@ -232,7 +220,7 @@ module m_static_LIB_C3D8
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
     real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
     real(kind=kreal)   :: dvol, vol0, Bbar(nn,3), derivdum(1:ndof,1:ndof), BBar2(nn,3)
-    real(kind=kreal)   :: B4,B6,B8, ttc,tt0, alp,alp0, alpo(3),alpo0(3),outa(1),ina(1), EPSTH(6)
+    real(kind=kreal)   :: B4,B6,B8, ttc,tt0,ttn, alp,alp0, alpo(3),alpo0(3),outa(1),ina(1), EPSTH(6)
     logical            :: ierr, matlaniso
 
     qf(:)    = 0.d0
@@ -246,15 +234,15 @@ module m_static_LIB_C3D8
       !  elem = elem1
         totaldisp(:,:) = du(:,:)
     endif
-
-    cdsys_ID = gausses(1)%pMaterial%cdsys_ID
+	
+	cdsys_ID = gausses(1)%pMaterial%cdsys_ID
     matlaniso = .false.
     if( cdsys_ID>0 .and. present(TT) ) then
        ina = TT(1)
        call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
        if( .not. ierr ) matlaniso = .true.
     endif
-	
+
 	! dilatation at centroid
 	naturalCoord=0.d0
     CALL getGlobalDeriv( etype, nn, naturalcoord, elem, det, Bbar )
@@ -274,7 +262,7 @@ module m_static_LIB_C3D8
            write(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
         endif
       endif
-	  
+ 
 	  gdispderiv(1:ndof,1:ndof) = matmul( totaldisp(1:ndof,1:nn), gderiv(1:nn,1:ndof) )
 	  dvol = vol0-(gdispderiv(1,1)+gdispderiv(2,2)+gdispderiv(3,3))/3.d0
 	  gdispderiv(1,1) = gdispderiv(1,1)+dvol
@@ -294,6 +282,7 @@ module m_static_LIB_C3D8
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         ttc = dot_product( TT, spfunc )
         tt0 = dot_product( T0, spfunc )
+        ttn = dot_product( TN, spfunc )
         CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc )
             
           ina(1) = ttc
@@ -341,9 +330,13 @@ module m_static_LIB_C3D8
         if( flag==INFINITE ) then
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
-          if( mtype==VISCOELASTIC .and. tincr/=0.d0 ) then
-              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
-			  gausses(LX)%stress = real(gausses(LX)%stress)
+          if( isViscoelastic(mtype) .and. tincr/=0.d0 ) then
+              if( present(TT) .and. present(T0) ) then
+                call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+              else
+                call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+              endif
+              gausses(LX)%stress = real(gausses(LX)%stress)
           endif	
         else if( flag==TOTALLAG ) then
 !       Green-Lagrange strain
@@ -362,19 +355,21 @@ module m_static_LIB_C3D8
             mtype==USERELASTIC .or. mtype==USERHYPERELASTIC .or. mtype==USERMATERIAL ) then
              gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( (mtype==VISCOELASTIC &
+          else if( (isViscoelastic(mtype) &
               .or. mtype==NORTON) .and. tincr/=0.d0  ) then
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            if( present(TT) .and. present(T0) ) then
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            else
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            endif
           else
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
           endif
         else if( flag==UPDATELAG ) then
-        !  call GEOMAT_C3( gausses(LX)%stress, mat )
-        !  D(:,:) = D(:,:)+mat(:,:)
           rot =0.d0
           rot(1,2)= 0.5d0*(gdispderiv(1,2)-gdispderiv(2,1) );  rot(2,1) = -rot(1,2)
           rot(2,3)= 0.5d0*(gdispderiv(2,3)-gdispderiv(3,2) );  rot(3,2) = -rot(2,3)
@@ -403,7 +398,11 @@ module m_static_LIB_C3D8
           elseif( mtype==NORTON ) then
 	        gausses(LX)%pMaterial%mtype=mtype
 		    if( tincr/=0.d0 .and. any(gausses(LX)%stress/=0.d0) ) then
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              if( present(TT) .and. present(T0) ) then
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr, ttc, ttn )
+              else
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              endif    
             endif
           endif
 
@@ -514,7 +513,6 @@ module m_static_LIB_C3D8
           matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
     enddo
 
-
    end subroutine Update_C3D8Bbar
    
    !> This subroutien calculate thermal loading
@@ -525,11 +523,11 @@ module m_static_LIB_C3D8
       USE mMechGauss
       use m_MatMatrix
       use m_utilities
-      INTEGER(kind=kint), PARAMETER :: NDOF=3
-      INTEGER(kind=kint), INTENT(IN) :: ETYPE,NN
-      TYPE(tGaussStatus), INTENT(IN) :: gausses(:)          !< status of qudrature points
-      REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
-      REAL(kind=kreal), INTENT(OUT)  :: VECT(NN*NDOF)
+      INTEGER(kind=kint), PARAMETER   :: NDOF=3
+      INTEGER(kind=kint), INTENT(IN)  :: ETYPE,NN
+      TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)          !< status of qudrature points
+      REAL(kind=kreal), INTENT(IN)    :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
+      REAL(kind=kreal), INTENT(OUT)   :: VECT(NN*NDOF)
       REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)       !< variables to define matreial coordinate system
 
       REAL(kind=kreal) ALP,alp0, D(6,6),B(6,NDOF*NN)

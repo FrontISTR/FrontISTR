@@ -206,6 +206,10 @@ module m_fstr_ass_load
         do ig0= 1, fstrSOLID%TEMP_ngrp_tot
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+          factor = fstrSOLID%factor(2)
+          if( cstep > 1 ) then
+            if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+          endif
           ig= fstrSOLID%TEMP_ngrp_ID(ig0)
           fval=fstrSOLID%TEMP_ngrp_val(ig0)
           iS0= hecMESH%node_group%grp_index(ig-1) + 1

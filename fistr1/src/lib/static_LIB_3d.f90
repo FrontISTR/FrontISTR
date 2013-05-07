@@ -18,7 +18,6 @@
 !>  \author                date                  version 
 !>  X.Yuan(Advancesoft)    2009/08/03        original
 !>  X.Yuan                 2013/03/18        consider anisotropic materials
-!>
 !======================================================================!
 module m_static_LIB_3d
    use hecmw, only : kint, kreal
@@ -28,15 +27,13 @@ module m_static_LIB_3d
    contains
 
 !=====================================================================*
-!  STF_C3
-!=====================================================================*
 !>  This subroutine calculate stiff matrix of general solid elements
 !
 !>  \author     X. YUAN, K. SATO (AdavanceSoft)
 !>  \date       2009/08/03
 !>  \version    0.00
 
-  SUBROUTINE STF_C3( etype,nn,ecoord,gausses,stiff, tincr, coords, u ,temperature)
+  SUBROUTINE STF_C3( etype,nn,ecoord,gausses,stiff, tincr, coords,u ,temperature)
     USE mMechGauss
     use m_MatMatrix
     use m_common_struct
@@ -46,7 +43,7 @@ module m_static_LIB_3d
     TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)          !< status of qudrature points
     REAL(kind=kreal),   INTENT(OUT) :: stiff(:,:)          !< stiff matrix
     real(kind=kreal),    intent(in) :: tincr               !< time increment
-    REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)         !< variables to define matreial coordinate system
+    REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)     !< variables to define matreial coordinate system
     REAL(kind=kreal),   INTENT(IN), optional :: temperature(nn)     !< temperature
     REAL(kind=kreal),   INTENT(IN), optional :: u(:,:)     !< nodal displacemwent
 !
@@ -357,17 +354,17 @@ module m_static_LIB_3d
       USE mMechGauss
       use m_MatMatrix
       use m_utilities
-      INTEGER(kind=kint), PARAMETER :: NDOF=3
-      INTEGER(kind=kint), INTENT(IN) :: ETYPE,NN
-      TYPE(tGaussStatus), INTENT(IN) :: gausses(:)          !< status of qudrature points
-      REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
-      REAL(kind=kreal), INTENT(OUT)  :: VECT(NN*NDOF)
-       REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)       !< variables to define matreial coordinate system
+      INTEGER(kind=kint), PARAMETER   :: NDOF=3
+      INTEGER(kind=kint), INTENT(IN)  :: ETYPE,NN
+      TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)          !< status of qudrature points
+      REAL(kind=kreal), INTENT(IN)    :: XX(NN),YY(NN),ZZ(NN),TT(NN),T0(NN)
+      REAL(kind=kreal), INTENT(OUT)   :: VECT(NN*NDOF)
+      REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)       !< variables to define matreial coordinate system
 
       REAL(kind=kreal) ALP,ALP0,D(6,6),B(6,NDOF*NN)
-      REAL(kind=kreal) DET,ecoord(3,NN), coordsys(3,3)
+      REAL(kind=kreal) DET,ecoord(3,NN)
       INTEGER(kind=kint) J,LX, cdsys_ID, serr
-      REAL(kind=kreal) EPSTH(6),SGM(6),H(NN),alpo(3),alpo0(3)
+      REAL(kind=kreal) EPSTH(6),SGM(6),H(NN),alpo(3),alpo0(3), coordsys(3,3)
       REAL(kind=kreal) naturalcoord(3),gderiv(NN,3)
       REAL(kind=kreal) WG, outa(1), ina(1)
       REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS, tm(6,6)
@@ -418,8 +415,8 @@ module m_static_LIB_3d
             TEMPC=DOT_PRODUCT( H(1:NN),TT(1:NN) )
             TEMP0=DOT_PRODUCT( H(1:NN),T0(1:NN) )
 			
-            CALL MatlMatrix( gausses(LX), D3, D, 0.d0, coordsys, tempc )
-			
+        CALL MatlMatrix( gausses(LX), D3, D, 0.d0, coordsys, tempc )
+		
             ina(1) = TEMPC
             if( matlaniso ) then
                call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
@@ -470,7 +467,7 @@ module m_static_LIB_3d
 !
 !> Update strain and stress inside element
 !---------------------------------------------------------------------*
-  SUBROUTINE UPDATE_C3( etype,nn,ecoord, u, ddu, coords, qf ,gausses, iter, tincr, TT,T0  )
+  SUBROUTINE UPDATE_C3( etype,nn,ecoord, u, ddu, coords, qf ,gausses, iter, tincr, TT,T0, TN  )
 !---------------------------------------------------------------------*
     use m_fstr
     use mMaterial
@@ -478,12 +475,11 @@ module m_static_LIB_3d
     use m_MatMatrix
     use m_ElastoPlastic
     use m_utilities
-! I/F VARIAVLES
     integer(kind=kint), INTENT(IN)     :: etype           !< \param [in] element type
     integer(kind=kint), INTENT(IN)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: u(3,nn)         !< \param [in] nodal dislplacements 
-    real(kind=kreal),   INTENT(IN)     :: ddu(3,nn)       !< \param [in] nodal displacement ( solutions of solver )
+    real(kind=kreal),   INTENT(IN)     :: ddu(3,nn)       !< \param [in] nodal displacement
     REAL(kind=kreal), INTENT(INOUT)    :: coords(3,3)     !< variables to define matreial coordinate system
     real(kind=kreal),   INTENT(OUT)    :: qf(nn*3)        !< \param [out] Internal Force    
     type(tGaussStatus), INTENT(INOUT)  :: gausses(:)      !< \param [out] status of qudrature points
@@ -491,11 +487,12 @@ module m_static_LIB_3d
 	real(kind=kreal),    intent(in)    :: tincr           !< time increment
     REAL(kind=kreal),   INTENT(IN), optional :: TT(nn)    !< current temperature
     REAL(kind=kreal),   INTENT(IN), optional :: T0(nn)    !< reference temperature
+    REAL(kind=kreal),   INTENT(IN), optional :: TN(nn)    !< reference temperature
 ! LCOAL VARIAVLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof=3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, outa(1)
+    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, ttn,outa(1)
     integer(kind=kint) :: i, j, k, LX, mtype, cdsys_ID, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
@@ -551,6 +548,7 @@ module m_static_LIB_3d
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         ttc = dot_product( TT, spfunc )
         tt0 = dot_product( T0, spfunc )
+        ttn = dot_product( TN, spfunc )
         CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc )
          
           ina(1) = ttc
@@ -583,7 +581,7 @@ module m_static_LIB_3d
           endif
 
       else
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr , coordsys)
       endif
 
 !       Small strain
@@ -599,6 +597,14 @@ module m_static_LIB_3d
         if( flag==INFINITE ) then
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
+          if( isViscoelastic(mtype) .and. tincr/=0.d0 ) then
+              if( present(TT) .and. present(T0) ) then
+                call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+              else
+                call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+              endif
+              gausses(LX)%stress = real(gausses(LX)%stress)
+          endif	
         else if( flag==TOTALLAG ) then
 !       Green-Lagrange strain
           dstrain(1) = dstrain(1) +0.5d0*dot_product( gdispderiv(:,1), gdispderiv(:,1) )
@@ -615,11 +621,15 @@ module m_static_LIB_3d
             mtype==USERELASTIC .or. mtype==USERHYPERELASTIC .or. mtype==USERMATERIAL ) then
              gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( (mtype==VISCOELASTIC &
+          else if( ( isViscoelastic(mtype) &
               .or. mtype==NORTON) .and. tincr/=0.d0 ) then
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            if( present(TT) .and. present(T0) ) then
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            else
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            endif
           else
             gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
             gausses(LX)%stress(1:6) = matmul( D(1:6,1:6), dstrain(1:6) )
@@ -634,9 +644,13 @@ module m_static_LIB_3d
 
           gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+ dstrain(1:6)+EPSTH(:)
 		  
-          if( mtype==VISCOELASTIC .and. tincr/=0.d0 ) then
+          if( isViscoelastic(mtype) .and. tincr/=0.d0 ) then
             gausses(LX)%pMaterial%mtype=mtype
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            if( present(TT) .and. present(T0) ) then
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, tt0 )
+            else
+              call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            endif
           else	
 
           dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
@@ -661,7 +675,11 @@ module m_static_LIB_3d
             gausses(LX)%pMaterial%mtype=mtype
 		    if( tincr/=0.d0 .and. any(gausses(LX)%stress/=0.d0) ) then
               gausses(LX)%pMaterial%mtype=mtype
-              call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              if( present(TT) .and. present(T0) ) then
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr, ttc, ttn )
+              else
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              endif
             endif
           endif
           endif
@@ -749,6 +767,7 @@ module m_static_LIB_3d
   end subroutine UPDATE_C3
 !
 !
+!
 !----------------------------------------------------------------------*
    SUBROUTINE UpdateST_C3(ETYPE,NN,XX,YY,ZZ,TT,T0,EDISP,gauss)
 !----------------------------------------------------------------------*
@@ -781,7 +800,7 @@ module m_static_LIB_3d
 ! LOOP FOR INTEGRATION POINTS
       DO IC=1,NumOfQuadPoints(etype)
         ALP = gauss(IC)%pMaterial%variables(M_EXAPNSION)
-        CALL MatlMatrix( gauss(IC), D3, D, 1.d0, cdsys )
+        CALL MatlMatrix( gauss(IC), D3, D, 1.d0, cdsys  )
         CALL getQuadPoint( etype, IC, naturalCoord(:) )
         CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv )
         CALL getShapeFunc( etype, naturalcoord, H(1:NN) )

@@ -56,8 +56,7 @@ module m_fstr_Residual
 
 !    Set residual load
       do idof=1, hecMESH%n_node*  hecMESH%n_dof 
-!        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
-        hecMAT%B(idof)=factor*fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+        hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
       end do
 	  ndof = hecMAT%NDOF
 
