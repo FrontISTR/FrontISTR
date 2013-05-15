@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -75,7 +75,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
   if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
   call cpu_time(tt0)
 
-
+  hecMAT%X = 0.d0
 
   stepcnt = 0
   ttemp = 1
@@ -235,7 +235,9 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
     call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
     if(hecMESH%my_rank==0) write(*,*)
   endif
-  
+
+  hecMAT%X = 0.d0
+
   stepcnt = 0                                                               
   ttemp = 1
   if( fstrSOLID%TEMP_irres>1 ) ttemp = fstrSOLID%TEMP_irres

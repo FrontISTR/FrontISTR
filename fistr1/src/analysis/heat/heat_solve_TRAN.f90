@@ -77,6 +77,7 @@ module m_heat_solve_TRAN
       tstep = 0
       hecMAT%NDOF = 1
       hecMAT%Iarray(98) = 1   !Assmebly complete
+      hecMAT%X = 0.0d0
 
 !C Restart read
       if( fstrHEAT%restart_nout < 0 ) then
