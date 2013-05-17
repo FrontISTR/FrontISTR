@@ -80,7 +80,7 @@ MODULE mMechGauss
       endif
       gauss%istatus = 0
       gauss%fstatus = 0.d0
-    else if( gauss%pMaterial%mtype==VISCOELASTIC ) then
+    else if( isViscoelastic(gauss%pMaterial%mtype) ) then
       n = fetch_TableRow( MC_VISCOELASTIC, gauss%pMaterial%dict )
       if( n>0 ) then
         allocate( gauss%fstatus(12*n+6) )    ! visco stress components
