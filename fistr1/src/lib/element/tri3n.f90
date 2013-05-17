@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -58,7 +58,7 @@ module shape_tri3n
       
 !--------------------------------------------------------------------
       
-      REAL(KIND = kreal), INTENT(OUT) :: nncoord(3, 1)
+      REAL(KIND = kreal), INTENT(OUT) :: nncoord(3, 2)
       
 !--------------------------------------------------------------------
       
