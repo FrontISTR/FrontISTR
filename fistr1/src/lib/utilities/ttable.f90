@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Data structure                                    !
 !                                                                      !
@@ -357,13 +357,13 @@ module Table_DICTS
 	  nval = size(outa)
 
       if( ddd==1 ) then
-        if( a(cindex)<=table%tbval(ccol, crow) ) then
+        if( a(cindex)<table%tbval(ccol, crow) ) then
            outa(:) = table%tbval(1:ccol-1, crow)
         elseif( a(cindex)>=table%tbval(ccol, crow+dd-1) ) then
            outa(:) = table%tbval(1:ccol-1, crow+dd-1)
         else
           do i=crow, crow+dd-1
-            if( a(cindex)>table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+1) ) then 
+            if( a(cindex)>=table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+1) ) then 
               lambda = (a(cindex)-table%tbval(ccol, i))/(table%tbval(ccol, i+1)-table%tbval(ccol, i))
               outa(:) = (1.d0-lambda)*table%tbval(1:ccol-1, i)+ lambda* table%tbval(1:ccol-1, i+1) 
               exit
