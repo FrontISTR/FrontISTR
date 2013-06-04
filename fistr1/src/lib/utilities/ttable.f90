@@ -247,7 +247,7 @@ module Table_DICTS
         elseif( a(cindex)>=table%tbval(2, crow+dd-1) ) then
            outa = 0.d0
         else
-          do i=crow, crow+dd-1
+          do i=crow, crow+dd-2
             if( a(cindex)>=table%tbval(2, i) .and. a(cindex)<table%tbval(2, i+1) ) then 
               outa = (table%tbval(1, i+1)-table%tbval(1, i))/(table%tbval(2, i+1)-table%tbval(2, i))
               exit
@@ -265,7 +265,7 @@ module Table_DICTS
               dd = ddd
               call GetTableGrad( a, cindex, table, dd, crow, outa )	
         else
-          do i=crow, crow+dd-1, ddd
+          do i=crow, crow+dd-2, ddd
             if( a(cindex)==table%tbval(ccol, i) ) then
               crow = i
               cindex = cindex+1
@@ -354,7 +354,7 @@ module Table_DICTS
 
       ddd = dd / table%tbindex(cindex)
       ccol = table%tbcol-cindex+1
-	  nval = size(outa)
+      nval = size(outa)
 
       if( ddd==1 ) then
         if( a(cindex)<table%tbval(ccol, crow) ) then
@@ -362,7 +362,7 @@ module Table_DICTS
         elseif( a(cindex)>=table%tbval(ccol, crow+dd-1) ) then
            outa(:) = table%tbval(1:ccol-1, crow+dd-1)
         else
-          do i=crow, crow+dd-1
+          do i=crow, crow+dd-2
             if( a(cindex)>=table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+1) ) then 
               lambda = (a(cindex)-table%tbval(ccol, i))/(table%tbval(ccol, i+1)-table%tbval(ccol, i))
               outa(:) = (1.d0-lambda)*table%tbval(1:ccol-1, i)+ lambda* table%tbval(1:ccol-1, i+1) 
@@ -381,7 +381,7 @@ module Table_DICTS
             dd = ddd
             call GetTableData( a, cindex, table, dd, crow, outa )	
         else
-          do i=crow, crow+dd-1, ddd
+          do i=crow, crow+dd-2, ddd
             if( a(cindex)==table%tbval(ccol, i) ) then
               crow = i
               cindex = cindex+1
