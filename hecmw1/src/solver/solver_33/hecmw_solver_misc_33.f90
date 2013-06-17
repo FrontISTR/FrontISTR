@@ -365,7 +365,7 @@ module hecmw_solver_misc_33
           if (hecMAT%cmat%n_val.gt.0) then
             isU= hecMAT%indexCU(i-1) + 1
             ieU= hecMAT%indexCU(i)
-            do j= isU, ieU
+            do j= ieU, isU, -1
                 k= hecMAT%itemCU(j)
                X1= ZP(3*k-2)
                X2= ZP(3*k-1)
