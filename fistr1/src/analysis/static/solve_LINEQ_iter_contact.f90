@@ -91,6 +91,10 @@ contains
     type(T_matrix) :: Tmat, Ttmat
     type(T_matrix) :: BTmat, BTtmat, BTtKT
     type(hecmwST_matrix) :: hecTKT
+    real(kind=kreal) :: t1
+
+    t1 = hecmw_wtime()
+    write(0,*) 'INFO: solve_eliminate start', hecmw_wtime()-t1
 
     ndof=hecMAT%NDOF
     allocate(iw2(hecMAT%N*ndof))
@@ -100,14 +104,14 @@ contains
     ! choose slave DOFs to be eliminated with Lag. DOFs
     call choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL)
     call make_wSU(fstrMAT, hecMAT%N, ndof, iw2, wSU)
-    write(0,*) 'INFO: Slave DOFs successfully chosen'
+    write(0,*) 'INFO: Slave DOFs successfully chosen', hecmw_wtime()-t1
 
     ! make transformation matrix and its transpose
     call make_Tmat(hecMAT, fstrMAT, iw2, wSL, Tmat)
     !call write_Tmat(Tmat, 0)
     call make_Ttmat(hecMAT, fstrMAT, iw2, iwS, wSU, Ttmat)
     !call write_Tmat(Ttmat, 0)
-    write(0,*) 'INFO: Making Tmat and Ttmat done'
+    write(0,*) 'INFO: Making Tmat and Ttmat done', hecmw_wtime()-t1
 
     ! make 3x3-block version of Tmat
     call blocking_Tmat(Tmat, ndof, BTmat)
@@ -116,12 +120,12 @@ contains
     call blocking_Tmat(Ttmat, ndof, BTtmat)
     !call write_Tmat(BTtmat, 0)
     call free_Tmat(Ttmat)
-    write(0,*) 'INFO: Blocking Tmat and Ttmat done'
+    write(0,*) 'INFO: Blocking Tmat and Ttmat done', hecmw_wtime()-t1
 
     ! perform three matrices multiplication for elimination
     call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
     !call write_Tmat(BTtKT, 0)
-    write(0,*) 'INFO: trimatmul done'
+    write(0,*) 'INFO: trimatmul done', hecmw_wtime()-t1
 
     ! place 1s where the DOF is eliminated
     call place_one_on_diag(BTtKT, iwS, fstrMAT%num_lagrange)
@@ -130,29 +134,35 @@ contains
     !call replace_hecmat(hecMAT, BTtKT)
     call make_new_hecmat(hecMAT, BTtKT, hecTKT)
     call free_Tmat(BTtKT)
+    write(0,*) 'INFO: converted to HEC-MW matrix', hecmw_wtime()-t1
 
     ! make new RHS
     call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
          fstrMAT%num_lagrange, hecTKT%B)
+    write(0,*) 'INFO: calculated RHS', hecmw_wtime()-t1
 
     ! use CG when the matrix is symmetric
     if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
     call hecmw_solve_33(hecMESH, hecTKT)
+    write(0,*) 'INFO: solver finished', hecmw_wtime()-t1
 
     ! calc u_s
     call matvec_tmat(BTmat, hecTKT%X, hecMAT%X)
     call subst_Blag(hecMAT, iwS, wSL, fstrMAT%num_lagrange)
+    write(0,*) 'INFO: calculated disp', hecmw_wtime()-t1
 
     ! calc lambda
     call comp_lag(hecMAT, iwS, wSU, fstrMAT%num_lagrange)
+    write(0,*) 'INFO: calculated lag', hecmw_wtime()-t1
 
     ! free matrices
     call free_Tmat(BTtmat)
     call free_Tmat(BTmat)
     call free_hecmat(hecTKT)
     deallocate(iw2, iwS)
+    write(0,*) 'INFO: solve_eliminate end', hecmw_wtime()-t1
   end subroutine solve_eliminate
 
   subroutine choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL)
@@ -1040,8 +1050,10 @@ contains
     integer :: i, ls, le, l, j, jb_lag, ib_lag, idof, jdof, ilag, k, ks, ke
     integer, allocatable :: iwUr(:), iwUc(:), iwLr(:), iwLc(:)
     type(hecmwST_matrix) :: hecMATLag
+    real(kind=kreal) :: t1
 
-    write(0,*) 'INFO: solve_no_eliminate'
+    t1 = hecmw_wtime()
+    write(0,*) 'INFO: solve_no_eliminate, start', hecmw_wtime()-t1
 
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
@@ -1248,6 +1260,8 @@ contains
     hecMATLag%Iarray=hecMAT%Iarray
     hecMATLag%Rarray=hecMAT%Rarray
 
+    write(0,*) 'INFO: made hecMATLag', hecmw_wtime()-t1
+
     call hecmw_solve_33(hecMESH, hecMATLag)
 
     do i = 1, hecMAT%N*ndof+fstrMAT%num_lagrange
@@ -1256,7 +1270,7 @@ contains
 
     call free_hecmat(hecMATLag)
 
-    write(0,*) 'INFO: solve_no_eliminate end'
+    write(0,*) 'INFO: solve_no_eliminate end', hecmw_wtime()-t1
   end subroutine solve_no_eliminate
 
 end module m_solve_LINEQ_iter_contact
