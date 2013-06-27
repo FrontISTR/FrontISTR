@@ -478,7 +478,7 @@ module m_fstr_NodalStress
       s13 = 0.0d0
       ps = ( s11 + s22 + s33 ) / 3.0
       smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      fstrSOLID%ESTRESS(7*i) = sqrt( 3.0d0 * smises )
+      fstrSOLID%STRESS(7*i) = sqrt( 3.0d0 * smises )
     enddo
 !C** set array 
     do i = 1, hecMESH%n_node

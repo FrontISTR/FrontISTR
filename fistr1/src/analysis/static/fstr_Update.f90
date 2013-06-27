@@ -282,7 +282,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
   type (fstr_solid)         :: fstrSOLID
 !C** local variables
   integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, isect, ihead, iflag
-  integer(kind=kint) :: nodLOCAL(8)
+  integer(kind=kint) :: nodLOCAL(20)
   real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), edisp(60), force(60)
   real(kind=kreal)   :: ecoord(3,20), stiff(60,60)
   real(kind=kreal)   :: thick, coords(3,3)

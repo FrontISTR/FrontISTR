@@ -411,15 +411,10 @@ module hecmw_solver_misc_33
 !C
 !C== Block SCALING
       if (PRECOND.eq.3) then
-
-      do i= 1, hecMAT%N * 3
-        Z(i)= R(i)
-      enddo
-
       do i= 1, hecMAT%N
-        X1= Z(3*i-2)
-        X2= Z(3*i-1)
-        X3= Z(3*i  )
+        X1= R(3*i-2)
+        X2= R(3*i-1)
+        X3= R(3*i  )
         X2= X2 - hecMAT%ALU(9*i-5)*X1
         X3= X3 - hecMAT%ALU(9*i-2)*X1 - hecMAT%ALU(9*i-1)*X2
         X3= hecMAT%ALU(9*i  )*  X3
