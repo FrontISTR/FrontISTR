@@ -381,7 +381,7 @@ module m_ElastoPlastic
       real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
       real(kind=kreal) :: sita, fai, dep, trialprn(3)
       real(kind=kreal) :: a,b,siga,sigb,lamab(2),fab(2)
-      real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(1)
+      real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(6)
       logical          :: right, kinematic, ierr
       REAL(KIND=kreal) :: ftrial, betan, back(6)
 
