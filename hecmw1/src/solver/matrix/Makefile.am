@@ -82,7 +82,8 @@ OBJSF = \
 	hecmw_matrix_reorder.@f90objfilepostfix@ \
 	hecmw_mat_con.@f90objfilepostfix@ \
 	hecmw_mat_ass.@f90objfilepostfix@ \
-	hecmw_matrix_dump.@f90objfilepostfix@
+	hecmw_matrix_dump.@f90objfilepostfix@ \
+	hecmw_local_matrix.@f90objfilepostfix@
 
 HEADERS =
 
