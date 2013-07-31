@@ -625,7 +625,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call hecmw_abort( hecmw_comm_get_comm())
            endif
 			  
-           print *, "Step control not defined! Using defualt step=1"
+           print *, "Step control not defined! Using default step=1"
            fstrSOLID%nstep_tot = 1
            allocate( fstrSOLID%step_ctrl(1) )
            call init_stepInfo( fstrSOLID%step_ctrl(1) )
@@ -634,13 +634,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            do i = 1, n
              fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_ngrp_GRPID(i)
            enddo
-           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot
+           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot +  fstrSOLID%TEMP_ngrp_tot
            if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
            do i = 1, fstrSOLID%CLOAD_ngrp_tot
              fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_ngrp_GRPID(i)
            enddo
            do i = 1, fstrSOLID%DLOAD_ngrp_tot
              fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
+           enddo
+            do i = 1, fstrSOLID%TEMP_ngrp_tot
+             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%DLOAD_ngrp_tot) = fstrSOLID%TEMP_ngrp_GRPID(i)
            enddo
            do i = 1, fstrSOLID%SPRING_ngrp_tot
              fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%SPRING_ngrp_tot) = fstrSOLID%SPRING_ngrp_GRPID(i)
