@@ -231,7 +231,7 @@ contains
     call calcDispVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
     
     do im=1, numdisp
-      time = (t_end-t_start)/dble(numfreq)*dble(im-1) + t_start
+      time = (t_end-t_start)/dble(numdisp)*dble(im-1) + t_start
       call calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dvaRe, dvaIm)    
       dx  = dvaRe(3*(idnode-1)+1)
       dy  = dvaRe(3*(idnode-1)+2)
@@ -239,10 +239,6 @@ contains
       dxi = dvaIm(3*(idnode-1)+1)
       dyi = dvaIm(3*(idnode-1)+2)
       dzi = dvaIm(3*(idnode-1)+3)
-      !dx  = sqrt(dvaRe(3*(idnode-1)+0)**2 + dvaIm(3*(idnode-1)+0)**2)
-      !dy  = sqrt(dvaRe(3*(idnode-1)+1)**2 + dvaIm(3*(idnode-1)+1)**2)
-      !dz  = sqrt(dvaRe(3*(idnode-1)+2)**2 + dvaIm(3*(idnode-1)+2)**2)
-      !write(*,'(7E12.3)') time, dx, dy, dz, dxi, dyi, dzi
       
       call calcVelVectorTime(freqData, time, omega, bjRe, bjIm, velRe, velIm)
       call calcAccVectorTime(freqData, time, omega, bjRe, bjIm, accRe, accIm)
@@ -276,7 +272,7 @@ contains
     deallocate(velIm)
     deallocate(accRe)
     deallocate(accIm)
-    stop  
+
   end subroutine
   
   subroutine read_eigen_values(logfile, startmode, endmode, eigenvalue, anglfreq)
@@ -406,6 +402,7 @@ contains
     name = 'result-in'
     nmode = (endmode-startmode)+1
     do imode=startmode, endmode
+      call nullify_result_data(eigenres)
       call hecmw_result_read_by_name(name, nmode, imode, eigenres)
       
       nallcomp = 0
@@ -442,6 +439,21 @@ contains
       if(associated(res%node_val_item)) deallocate(res%node_val_item)
       if(associated(res%elem_val_item))  deallocate(res%elem_val_item)
     end subroutine
+
+    subroutine nullify_result_data(res)
+    !---- args
+      type(hecmwST_result_data) :: res
+    !---- vals
+    !---- body
+      nullify(res%nn_dof)
+      nullify(res%ne_dof)
+      nullify(res%node_label)
+      nullify(res%elem_label)
+      nullify(res%node_val_item)
+      nullify(res%elem_val_item)
+    end subroutine
+
+
   end subroutine
   
 !  subroutine output_resfile(hecMESH, nummode, eigenval, eigenvec)

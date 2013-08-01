@@ -157,7 +157,6 @@ contains
                                                        fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
                                                        restrt_step_num)
                  end if
-                 call hecmw_abort( hecmw_comm_get_comm())
              end if
 
         else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
@@ -182,7 +181,6 @@ contains
                                                        fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, &
                                                        restrt_step_num)
                  end if
-                 call hecmw_abort( hecmw_comm_get_comm())
              end if
         end if
 

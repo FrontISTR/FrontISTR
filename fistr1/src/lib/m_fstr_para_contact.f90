@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Dynamic Transit Analysis                          !
 !                                                                      !
@@ -369,8 +369,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 !-- General data
     hecMESH_L%gridfile              = hecMESH_G%gridfile
     hecMESH_L%hecmw_n_file          = hecMESH_G%hecmw_n_file
-    allocate(hecMESH_L%files(size(hecMESH_G%files)),stat=istat)
-    hecMESH_L%files                 = hecMESH_G%files
+    !allocate(hecMESH_L%files(size(hecMESH_G%files)),stat=istat)
+    !hecMESH_L%files                 = hecMESH_G%files
     hecMESH_L%header                = hecMESH_G%header
     hecMESH_L%hecmw_flag_adapt      = hecMESH_G%hecmw_flag_adapt
     hecMESH_L%hecmw_flag_initcon    = hecMESH_G%hecmw_flag_initcon
@@ -821,6 +821,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     call paraContact_copyHecmwSection(hecMESH_G%section,hecMESH_L%section)
 
 !-- MPC data (is not supported)
+    hecMESH_L%mpc%n_mpc = 0
 
 !-- Amplitude data
     call paraContact_copyHecmwAmplitude(hecMESH_G%amp,hecMESH_L%amp)
