@@ -23,6 +23,7 @@
 #include "hecmw_result.h"
 #include "hecmw_util.h"
 #include "hecmw_dist_copy_f2c.h"
+#include "hecmw_result_copy_f2c.h"
 #include "hecmw_dist_free.h"
 #include "hecmw_visualizer.h"
 

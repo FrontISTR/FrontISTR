@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.3                                               *
+ *         Version : 2.5                                               *
  *                                                                     *
  *     Last Update : 2007/05/02                                        *
  *        Category : I/O and Utility                                   *
@@ -71,23 +71,16 @@ HECMW_Comm_group( HECMW_Comm comm, HECMW_Group *group );
 
 
 extern int HECMW_comm_init(int *argc, char ***argv);
-
-
+extern int HECMW_comm_is_initialized(void);
 extern HECMW_Comm HECMW_comm_get_comm(void);
-
-
 extern int HECMW_comm_get_size(void);
-
-
 extern int HECMW_comm_get_rank(void);
-
-
 extern HECMW_Group HECMW_comm_get_group(void);
-
 extern HECMW_Fint HECMW_Comm_c2f(HECMW_Comm comm);
-
 extern HECMW_Comm HECMW_Comm_f2c(HECMW_Fint comm);
-
 extern int HECMW_comm_is_initialized(void);
 
+
+extern void
+hecmw_comm_init_if(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group);
 #endif

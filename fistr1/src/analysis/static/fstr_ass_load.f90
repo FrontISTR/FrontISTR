@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -240,9 +240,14 @@ module m_fstr_ass_load
             do j=1,nn
               nodLOCAL(j)=hecMESH%elem_node_item(iS+j)
 ! ----- nodal coordinate
-              xx(j)=hecMESH%node(3*nodLOCAL(j)-2)+fstrSOLID%unode(ndof*nodLOCAL(j)-2)
-              yy(j)=hecMESH%node(3*nodLOCAL(j)-1)+fstrSOLID%unode(ndof*nodLOCAL(j)-1)
-              zz(j)=hecMESH%node(3*nodLOCAL(j)  )+fstrSOLID%unode(ndof*nodLOCAL(j))
+              if (ndof==2) then
+                xx(j)=hecMESH%node(3*nodLOCAL(j)-2)+fstrSOLID%unode(ndof*nodLOCAL(j)-1)
+                yy(j)=hecMESH%node(3*nodLOCAL(j)-1)+fstrSOLID%unode(ndof*nodLOCAL(j)  )
+              else if (ndof==3) then
+                xx(j)=hecMESH%node(3*nodLOCAL(j)-2)+fstrSOLID%unode(ndof*nodLOCAL(j)-2)
+                yy(j)=hecMESH%node(3*nodLOCAL(j)-1)+fstrSOLID%unode(ndof*nodLOCAL(j)-1)
+                zz(j)=hecMESH%node(3*nodLOCAL(j)  )+fstrSOLID%unode(ndof*nodLOCAL(j))
+              endif
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) ) 
               tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
 ! ----- create iwk array ***
@@ -270,12 +275,12 @@ module m_fstr_ass_load
             if (ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 ) then
               call TLOAD_C2(ic_type,nn,xx(1:nn),yy(1:nn),tt(1:nn),tt0(1:nn),  &
 			         fstrSOLID%elements(icel)%gausses,pa1,iset,vect(1:nn*2) )
-					 
-            else if ( ic_type==361 ) then
+
+            else if ( ic_type==361 .and. fstrPR%solution_type==kstNLSTATIC ) then
               call TLOAD_C3D8Bbar(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
                             fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof),coords )
 
-            else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.  &
+            else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or. &
                      ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
               call TLOAD_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
                             fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof),coords )

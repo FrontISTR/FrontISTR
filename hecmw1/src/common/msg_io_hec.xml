@@ -147,7 +147,7 @@
 			<description>不正な!ITEMを検出した</description>
 		</define>
 		<define type="error" name="E1105">
-			<message>!MATERIAL: !ITEM value must be 1 to SUBITEM</message>
+			<message>!MATERIAL: !ITEM value must be from 1 to SUBITEM</message>
 			<description>不正な!ITEMの値を検出した</description>
 		</define>
 		<define type="error" name="E1106">
@@ -222,6 +222,22 @@
 			<message>!SECTION: INTEGPOINTS must be positive integer</message>
 			<description>不正なINTEGPOINTSの値を検出した</description>
 		</define>
+		<define type="error" name="E1707">
+			<message>!SECTION: AREA must be positive</message>
+			<description>不正な梁の断面積値を検出した</description>
+		</define>
+		<define type="error" name="E1708">
+			<message>!SECTION: Iyy must be positive</message>
+			<description>不正なIyyの値を検出した</description>
+		</define>
+		<define type="error" name="E1709">
+			<message>!SECTION: Izz must be positive</message>
+			<description>不正なIzzの値を検出した</description>
+		</define>
+		<define type="error" name="E1710">
+			<message>!SECTION: Jx must be positive</message>
+			<description>不正なJxの値を検出した</description>
+		</define>
 		<define type="error" name="E1800">
 			<message>!SGROUP: Invalid token</message>
 			<description>!SGROUP読み込み中に予期しないトークンを検出した</description>
@@ -237,6 +253,14 @@
 		<define type="error" name="E2000">
 			<message>!ZERO: Invalid token</message>
 			<description>!ZERO読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2100">
+			<message>!CONTACT PAIR: Invalid token</message>
+			<description>!CONTACT読み込み中に予期しないトークンを検出した</description>
+		</define>
+		<define type="error" name="E2101">
+			<message>!CONTACT PAIR: Missing NAME</message>
+			<description>!CONTACTの必須パラメータNAMEが見つからない</description>
 		</define>
 	</table>
 </msg-table>

@@ -609,7 +609,7 @@ module m_static_LIB_C3D8
                if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
             else
                call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-               if( ierr ) stop "Fails in fetching expansion coefficient!"
+               if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
                alp = outa(1)
             endif
             ina(1) = TEMP0
@@ -617,9 +617,9 @@ module m_static_LIB_C3D8
                call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
                if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
             else
-              call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-              if( ierr ) stop "Fails in fetching expansion coefficient!"
-              alp0 = outa(1)
+               call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+               if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+               alp0 = outa(1)
             endif
 
 !**

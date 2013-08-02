@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -487,6 +487,8 @@ module m_fstr_NodalStress
       fstrSOLID%STRESS(7*(i-1)+3) = fstrSOLID%STRESS(7*(i-1)+4)
       fstrSOLID%STRESS(7*(i-1)+4) = fstrSOLID%STRESS(7*i)
       fstrSOLID%STRESS(7*i) = 0.0d0
+    enddo
+    do i = 1, hecMESH%n_elem
       fstrSOLID%ESTRAIN(6*(i-1)+3) = fstrSOLID%ESTRAIN(6*(i-1)+4)
       fstrSOLID%ESTRAIN(6*(i-1)+4) = 0.0d0
       fstrSOLID%ESTRESS(7*(i-1)+3) = fstrSOLID%ESTRESS(7*(i-1)+4)
@@ -617,7 +619,7 @@ module m_fstr_NodalStress
 !C** local variables
     integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, k, ic_type, nn, isect, ihead, ID_area
     integer(kind=kint) :: nodLOCAL(9)
-    real(kind=kreal)   :: ecoord(3,9), edisp(54), strain(9,6), stress(9,6)
+    real(kind=kreal)   :: ecoord(3,9), edisp(6,9), strain(9,6), stress(9,6)
     real(kind=kreal)   :: thick
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
     real(kind=kreal), allocatable :: ndstrain_plus(:,:), ndstrain_minus(:,:)
@@ -655,20 +657,20 @@ module m_fstr_NodalStress
           ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
           ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
           ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
-          edisp(6*j-5) = fstrSOLID%unode(6*nodLOCAL(j)-5)
-          edisp(6*j-4) = fstrSOLID%unode(6*nodLOCAL(j)-4)
-          edisp(6*j-3) = fstrSOLID%unode(6*nodLOCAL(j)-3)
-          edisp(6*j-2) = fstrSOLID%unode(6*nodLOCAL(j)-2)
-          edisp(6*j-1) = fstrSOLID%unode(6*nodLOCAL(j)-1)
-          edisp(6*j  ) = fstrSOLID%unode(6*nodLOCAL(j)  )
+          edisp(1,j) = fstrSOLID%unode(6*nodLOCAL(j)-5)
+          edisp(2,j) = fstrSOLID%unode(6*nodLOCAL(j)-4)
+          edisp(3,j) = fstrSOLID%unode(6*nodLOCAL(j)-3)
+          edisp(4,j) = fstrSOLID%unode(6*nodLOCAL(j)-2)
+          edisp(5,j) = fstrSOLID%unode(6*nodLOCAL(j)-1)
+          edisp(6,j) = fstrSOLID%unode(6*nodLOCAL(j)  )
         enddo
         isect = hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
 !--- calculate elemental stress and strain
         if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
-          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                                         strain, stress, thick, 1.0d0)
+          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+                                         edisp(1:6,1:nn), strain, stress, thick, 1.0d0)
           do j = 1, nn
             i = nodLOCAL(j)
             do k = 1, 6
@@ -693,8 +695,8 @@ module m_fstr_NodalStress
             smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
             fstrSOLID%ESTRESS(14*icel-1) = sqrt( 3.0d0 * smises )
           endif
-          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                                         strain, stress, thick, -1.0d0)
+          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+                                         edisp(1:6,1:nn), strain, stress, thick, -1.0d0)
           do j = 1, nn
             i = nodLOCAL(j)
             do k = 1, 6

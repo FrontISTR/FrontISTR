@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -39,7 +39,7 @@ module m_fstr_solve_LINEAR
       type ( fstr_param          ) :: fstrPARAM
 
       integer(kind=kint) :: i
-	  
+
       if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
         do j=1, hecMESH%n_node
           fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(j)

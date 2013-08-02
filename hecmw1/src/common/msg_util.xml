@@ -141,7 +141,7 @@
 			<description>!SUBDIR読み込み中に予期しないトークンを検出した</description>
 		</define>
 		<define type="error" name="E0061">
-			<message>!SUBDIR: Missing ON/OFF"</message>
+			<message>!SUBDIR: Missing ON/OFF</message>
 			<description>!SUBDIRに必須のパラメータON/OFFが見つからない</description>
 		</define>
 

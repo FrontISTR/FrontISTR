@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -52,7 +52,7 @@ module m_ElastoPlastic
      kinematic = isKinematicHarden( matl%mtype )
      khard = 0.d0
      if( kinematic ) then
-       back(:) = extval(2:7)
+       back(1:6) = extval(1:6)
        khard = calKinematicHarden( matl, extval(1) )
      endif
      if( present( temperature ) ) then
@@ -144,7 +144,7 @@ module m_ElastoPlastic
      REAL(kind=kreal) :: eqvs, sita, fai, J1,J2,J3, devia(6)
      REAL(KIND=kreal) :: back(6)
      kinematic = isKinematicHarden( matl%mtype )
-     if( kinematic ) back(:) = extval(2:7)
+     if( kinematic ) back(1:6) = extval(1:6)
 	 
      ytype = getYieldFunction( matl%mtype )
      J1 = (stress(1)+stress(2)+stress(3))
@@ -321,7 +321,7 @@ module m_ElastoPlastic
      REAL(KIND=kreal) :: pstrain, back(6)
 	 
      kinematic = isKinematicHarden( matl%mtype )
-     if( kinematic ) back(:) = extval(2:7)
+     if( kinematic ) back(1:6) = extval(1:6)
 	 
      pstrain = extval(1)
      ytype = getYieldFunction( matl%mtype )
@@ -410,7 +410,7 @@ module m_ElastoPlastic
 	  
       kinematic = isKinematicHarden( matl%mtype )
       if( kinematic ) then
-        back(:) = fstat(2:7)
+        back(1:6) = fstat(1:6)
         betan = calCurrKinematic( matl, pstrain )
       endif
 	  
@@ -467,7 +467,7 @@ module m_ElastoPlastic
         pstrain = pstrain+dlambda
         if( kinematic ) then
           KK = calCurrKinematic( matl, pstrain )
-          fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
+          fstat(1:6) = back(:)+(KK-betan)*devia(:)/yd
         endif
         devia(:) = (1.d0-3.d0*dlambda*G/yd)*devia(:)
         stress(1:3) = devia(1:3)+J1

@@ -1,7 +1,7 @@
 !======================================================================!
 !                                                                      !
 !   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.3                                                !
+!         Version : 2.5                                                !
 !                                                                      !
 !     Last Update : 2006/06/01                                         !
 !        Category : I/O and Utility                                    !
@@ -518,9 +518,9 @@
 !C***
 !C
       subroutine hecmw_abort(comm)
-      integer(kind=kint) :: comm
+      integer(kind=kint) :: comm, errorcode, ierror
 
-      call MPI_ABORT(comm)
+      call MPI_ABORT(comm, errorcode, ierror)
       end subroutine hecmw_abort
 
 !C

@@ -7,7 +7,7 @@
 	<include src="../src/common/msg_io_geofem.xml"/>
 	<include src="../src/common/msg_io_abaqus.xml"/>
     <include src="../src/couple/msg_couple.xml"/>
-	<include src="../tools/preprocess/partitioner/msg_part.xml"/>
+	<include src="../tools/partitioner/msg_part.xml"/>
 
 	<table prefix="HECMW-ALL">
 		<define type="error" name="E0001">

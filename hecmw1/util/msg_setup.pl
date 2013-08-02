@@ -2,19 +2,17 @@
 
 use strict;
 use XML::Parser;
-use Jcode;
 
 ###### global ############################
 
-my $xml;		# ¥¿¡¬¥Èô§¥æ¡¦¡£¡¦¡¢¡¦ë
+my $xml;		# master message file
 my %msg = ();	# messages
 my %desc = ();	# description
 my @inc = ();	# include files
-my $msgfile = "hpcmw_msg_table.c";
-my $msgnofile = "hpcmw_msgno.h";
-my $msgnofile_fortran = "hpcmw_msgno_f.f90";
+my $msgfile = "hecmw_msg_table.c";
+my $msgnofile = "hecmw_msgno.h";
+my $msgnofile_fortran = "hecmw_msgno_f.f90";
 
-# XML¡¦¥à¡£¥·¡¦¥±¥Ø¥à
 my $msg_table = 0;
 my $include = 0;
 my $table = 0;
@@ -48,10 +46,8 @@ foreach (@inc) {
 
 
 ###### init ######################
-# ¥Æ¥è¥¨¥±¡¦¥å¡£¥·¡¦þ£¥·¡¦¥Î¡£¡Ö¥Æ¥è¥¨¥±¥¯ê¦¥Û¥Ï¥¯¥µ€€€€€€¡¬¥Èô§¥æ¡¦¡£¡¦¡¢¡¦ö¦¥©¡¢ò¾ðÈ¥¿
 
 sub init {
-	# XML::Parser¡¦¥Þ¡¦€€¥Î¡¦òÂ¡¬¥Èê
 	my $p = new XML::Parser(Handlers => {	Start => \&start_element,
 											End	  => \&end_element,
 											Char  => \&characters,
@@ -130,8 +126,6 @@ sub end_element {
 		if($desc{$msgno}) {
 			die "Redefinition of '$msgno' in message table\n";
 		}
-		&Jcode::convert(\$desc_chars, 'euc','utf8');
-		$desc{$msgno} = $desc_chars;
 	} else {
 		die "Unknown element $element\n";
 	}
@@ -169,46 +163,25 @@ sub create {
 	}
 
 print MSGFILE <<END_OF_MSGFILE_HEADER;
-/** \@file $msgfile
- * HPC-MW¡¦â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¡¦¥Ë¡£¥·¡¦¥è¡¦ë
- *
- * \@date
- * \@author
- */
-#include <stdio.h>
-#include "hpcmw_msg.h"
 
-/**
- * HPC-MW¡¦â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¡¦¥Ë¡£¥·¡¦¥è¡¦ë
- *
- * ¡¦â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¥Í¥è¥±ì¦¥Í¡¢¥¹¡¢ø¦¥Ò¥Ä¥ß¥¢€€¥±¡¢ö§â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¡¢€€¥Ï¥Ì¥·¡¢¥±¡¢ë
- */
-struct hpcmw_msgent hpcmw_msg_table[] = {
+#include <stdio.h>
+#include "hecmw_msg.h"
+
+struct hecmw_msgent hecmw_msg_table[] = {
 END_OF_MSGFILE_HEADER
 
 print MSGNOFILE <<END_OF_MSGNOFILE_HEADER;
-/** \@file $msgnofile
- * HPC-MW¡¦â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¥Í¥è¥±ìÆô·¥Á
- *
- * \@date
- * \@author
- */
 
-#ifndef HPCMW_MSGNO_INCLUDED 
-#define HPCMW_MSGNO_INCLUDED
+#ifndef HECMW_MSGNO_INCLUDED 
+#define HECMW_MSGNO_INCLUDED
 
-/**
- * ¡¦¥ë¡£¥·¡¦¥±¥Í¥è¥±æ
- *
- * ¡¦â§¥Æ¡¦¥µ¡£¥·¡¦¥¯¥Í¥è¥±ì¦¥Þ¡£¡Ö¡¦¥ë¡£¥·¡¦¥±¥Í¥è¥±ì¦ð¦ô¦äÄî¦¥å¡¢¡¢
- */
-#define HPCMW_MSGNO_BASE $msgno_base
+#define HECMW_MSGNO_BASE $msgno_base
 
 END_OF_MSGNOFILE_HEADER
 
 print MSGNOFILEF <<END_OF_MSGNOFILEF_HEADER;
-module hpcmw_msgno
-    use hpcmw_util
+module hecmw_msgno
+    use hecmw_util
 
 END_OF_MSGNOFILEF_HEADER
 
@@ -236,7 +209,7 @@ END_OF_MSGNOFILE_FOOTER
 
 print MSGNOFILEF <<END_OF_MSGNOFILEF_FOOTER;
 
-end module hpcmw_msgno
+end module hecmw_msgno
 END_OF_MSGNOFILEF_FOOTER
 
 	close MSGFILE;

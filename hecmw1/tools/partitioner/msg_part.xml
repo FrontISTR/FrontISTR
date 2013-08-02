@@ -15,15 +15,15 @@
 			<description>ファイル名が長すぎる</description>
 		</define>
 		<define type="error" name="E0004">
-			<message>NULL pointer was found</message>
+			<message>NULL pointer found</message>
 			<description>不正なヌルポインタを検出した</description>
 		</define>
 		<define type="error" name="E0005">
-			<message>Invalid EOF is found</message>
+			<message>Invalid EOF found</message>
 			<description>予期せぬEOFを検出した</description>
 		</define>
         <define type="error" name="E0006">
-            <message>Invalid argument is found</message>
+            <message>Invalid argument found</message>
             <description>不正な引数を検出した</description>
         </define>
 		<define type="error" name="E0101">
@@ -39,7 +39,7 @@
 			<description>'TYPE'に指定する値は'NODE-BASED'か'ELEMENT-BASED'でなければならない</description>
 		</define>
 		<define type="error" name="E0113">
-			<message>'=' is required after 'TYPE'</message>
+			<message>'=' required after 'TYPE'</message>
 			<description>'TYPE'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0121">
@@ -51,7 +51,7 @@
 			<description>METHODに指定する値は'RCB'か'KMETIS'か'PMETIS'でなければならない</description>
 		</define>
 		<define type="error" name="E0123">
-			<message>'=' is required after 'METHOD'</message>
+			<message>'=' required after 'METHOD'</message>
 			<description>'METHOD'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0124">
@@ -71,7 +71,7 @@
 			<description>'DOMAIN'に指定する値は自然数でなければならない</description>
 		</define>
 		<define type="error" name="E0133">
-			<message>'=' is required after 'DOMAIN'</message>
+			<message>'=' required after 'DOMAIN'</message>
 			<description>'DOMAIN'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0134">
@@ -83,7 +83,7 @@
 			<description>'DEPTH'に指定する値は自然数でなければならない</description>
 		</define>
 		<define type="error" name="E0142">
-			<message>'=' is required after 'DEPTH'</message>
+			<message>'=' required after 'DEPTH'</message>
 			<description>'DEPTH'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0151">
@@ -91,12 +91,16 @@
 			<description>UCDファイル名が長すぎる</description>
 		</define>
 		<define type="error" name="E0152">
-			<message>'=' is required after 'UCD'</message>
+			<message>'=' required after 'UCD'</message>
 			<description>'UCD'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0153">
 			<message>UCD file name must start with number, alphabet, '.', '-', '_' or '/'</message>
 			<description>UCDファイル名は数字，アルファベット，'.'，'-'，'_'，'/'で始まらなければならない</description>
+		</define>
+		<define type="error" name="E0154">
+			<message>'CONTACT' must be 'AGGREGATE' or 'DEFAULT'</message>
+			<description>不正なパラメータが設定された</description>
 		</define>
 		<define type="error" name="E0161">
 			<message>Partitioning directions must be 'x', 'y' or 'z'</message>
@@ -119,27 +123,27 @@
 			<description>'METHOD'が'RCB'でないにもかかわらず分割軸方向の指定がなされている</description>
 		</define>
 		<define type="error" name="E0201">
-			<message>Invalid partitioning type is found</message>
+			<message>Invalid partitioning type found</message>
 			<description>不正な領域分割タイプを検出した</description>
 		</define>
 		<define type="error" name="E0202">
-			<message>Invalid partitioning method is found</message>
+			<message>Invalid partitioning method found</message>
 			<description>不正な領域分割法を検出した</description>
 		</define>
 		<define type="error" name="E0203">
-			<message>Invalid element type is found</message>
+			<message>Invalid element type found</message>
 			<description>不正な要素タイプを検出した</description>
 		</define>
 		<define type="error" name="E0204">
-			<message>Invalid partitioning direction is found</message>
+			<message>Invalid partitioning direction found</message>
 			<description>不正な分割軸方向を検出した</description>
 		</define>
 		<define type="error" name="E0205">
-			<message>Invalid number of sub-domains is found</message>
+			<message>Invalid number of sub-domains found</message>
 			<description>不正な部分領域数を検出した</description>
 		</define>
 		<define type="error" name="E0206">
-			<message>Invalid overlapping depth is found</message>
+			<message>Invalid overlapping depth found</message>
 			<description>不正な部分領域間オーバーラップ深さを検出した</description>
 		</define>
 		<define type="error" name="E0211">
@@ -147,7 +151,7 @@
 			<description>スタック配列がオーバーフローした</description>
 		</define>
 		<define type="error" name="E0301">
-			<message>Sub-domain number must be grater than or equal 0</message>
+			<message>Sub-domain number must be grater than or equal to 0</message>
 			<description>部分領域番号が0より小さい</description>
 		</define>
 		<define type="error" name="E0302">
@@ -159,11 +163,11 @@
 			<description>節点数が自然数でない</description>
 		</define>
 		<define type="error" name="E0312">
-			<message>Number of internal nodes must be grater than or equal 0</message>
+			<message>Number of internal nodes must be grater than or equal to 0</message>
 			<description>内部節点数が0より小さい</description>
 		</define>
 		<define type="error" name="E0313">
-			<message>Number of internal nodes must be less than or equal number of nodes</message>
+			<message>Number of internal nodes must be less than or equal to number of nodes</message>
 			<description>内部節点数が節点数より大きい</description>
 		</define>
 		<define type="error" name="E0321">
@@ -171,19 +175,19 @@
 			<description>要素数が0より小さい</description>
 		</define>
 		<define type="error" name="E0322">
-			<message>Number of internal elements must be grater than or equal 0</message>
+			<message>Number of internal elements must be grater than or equal to 0</message>
 			<description>内部要素数が0より小さい</description>
 		</define>
 		<define type="error" name="E0323">
-			<message>Number of internal elements must be less than or equal number of elements</message>
+			<message>Number of internal elements must be less than or equal to number of elements</message>
 			<description>内部要素数が要素数より大きい</description>
 		</define>
 		<define type="error" name="E0331">
-			<message>Number of neighboring sub-domains must be grater than or equal 0</message>
+			<message>Number of neighboring sub-domains must be grater than or equal to 0</message>
 			<description>隣接部分領域数が0より小さい</description>
 		</define>
 		<define type="warn" name="W0401">
-			<message>EQUATION_BLOCK is not found</message>
+			<message>EQUATION_BLOCK not found</message>
 			<description>EQUATION_BLOCKが見つからない</description>
 		</define>
 		<define type="error" name="E0501">

@@ -16,7 +16,7 @@ path="\
 for i in ${path}
 do
 	cd ${i}
-	conv_${i}.sh $*
+	./conv_${i}.sh $*
 	cd ..
 done
 

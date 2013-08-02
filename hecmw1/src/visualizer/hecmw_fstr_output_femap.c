@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.3                                               *
+ *         Version : 2.5                                               *
  *                                                                     *
  *     Last Update : 2006/06/01                                        *
  *        Category : Visualization                                     *
@@ -109,9 +109,9 @@ femap_write_elem(FILE *outfp, int mynode,
 			nna[0] = nn[0];
 			nna[1] = nn[1];
 			nna[2] = nn[2];
-			nna[4] = nn[3];
-			nna[5] = nn[4];
-			nna[6] = nn[5];
+			nna[4] = nn[5];
+			nna[5] = nn[3];
+			nna[6] = nn[4];
 		}
 		else if (ietyp == 732)
 		{
@@ -120,9 +120,9 @@ femap_write_elem(FILE *outfp, int mynode,
 			nna[0] = nn[0];
 			nna[1] = nn[1];
 			nna[2] = nn[2];
-			nna[4] = nn[3];
-			nna[5] = nn[4];
-			nna[6] = nn[5];
+			nna[4] = nn[5];
+			nna[5] = nn[3];
+			nna[6] = nn[4];
 		}
 		else if (ietyp == 241)
 		{
@@ -806,7 +806,7 @@ HECMW_fstr_output_femap (struct hecmwST_local_mesh *mesh,
 				for (i = 0; i < mesh->nn_internal; i++)
 				{
 					tmp = data->node_val_item[i * tn_component + stress_base + k];
-					fprintf (outfp, "%i8,%15.7e,\n", mesh->global_node_ID[i], tmp);
+					fprintf (outfp, "%8i,%15.7e,\n", mesh->global_node_ID[i], tmp);
 				}
 				for (i = 1; i < pesize; i++)
 				{

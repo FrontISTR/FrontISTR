@@ -185,8 +185,6 @@
 126, 19, 45, 18, 16
 !NGROUP, NGRP=_PickedSet2, GENERATE
  1,  55,   1
-!EGROUP, EGRP=_PickedSet2, GENERATE
- 1,  126,  1
 !NGROUP, NGRP=_PickedSet4
  3, 4, 6, 7
 !NGROUP, NGRP=_PickedSet5

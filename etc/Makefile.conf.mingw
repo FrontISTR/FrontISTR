@@ -45,13 +45,13 @@ MUMPSLIBDIR    = $(MUMPSDIR)/lib
 # C compiler settings
 CC             = gcc
 CFLAGS         = -D_WINDOWS
-LDFLAGS        = -lm
+LDFLAGS        = -lm -static
 OPTFLAGS       = -O3
 
 # C++ compiler settings
 CPP            = g++
 CPPFLAGS       = -I$(HOME)/include
-CPPLDFLAGS     =
+CPPLDFLAGS     = -static
 CPPOPTFLAGS    = -O3
 
 # Fortran compiler settings

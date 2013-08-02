@@ -313,7 +313,7 @@ int CNFData::ReadRecNext( char type, void* value )
 		}
 		break;
 	case 'B':
-		if(sscanf( token, "%d", (int*)value) != 1){
+		if(sscanf( token, "%d", (unsigned char*)value) != 1){
 			throw CNFError(NFE_INVALID_TOKEN, line, rec_column);
 		}
 		break;

@@ -31,7 +31,7 @@
 #endif
 
 
-typedef long int      nf_int;   // 4 byte
+typedef int           nf_int;   // 4 byte
 typedef unsigned char nf_bool;  // 1 byte
 typedef double        nf_float; // 8 byte
 typedef char          nf_char;  // 1 byte

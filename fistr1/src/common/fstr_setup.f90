@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -634,19 +634,24 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            do i = 1, n
              fstrSOLID%step_ctrl(1)%Boundary(i) = fstrSOLID%BOUNDARY_ngrp_GRPID(i)
            enddo
-           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot +  fstrSOLID%TEMP_ngrp_tot
+           n = fstrSOLID%CLOAD_ngrp_tot + fstrSOLID%DLOAD_ngrp_tot + fstrSOLID%TEMP_ngrp_tot + fstrSOLID%SPRING_ngrp_tot
            if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Load(n) )
+           n = 0
            do i = 1, fstrSOLID%CLOAD_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i) = fstrSOLID%CLOAD_ngrp_GRPID(i)
+             n = n + 1
+             fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%CLOAD_ngrp_GRPID(i)
            enddo
            do i = 1, fstrSOLID%DLOAD_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot) = fstrSOLID%DLOAD_ngrp_GRPID(i)
+             n = n + 1
+             fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%DLOAD_ngrp_GRPID(i)
            enddo
-            do i = 1, fstrSOLID%TEMP_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%DLOAD_ngrp_tot) = fstrSOLID%TEMP_ngrp_GRPID(i)
+           do i = 1, fstrSOLID%TEMP_ngrp_tot
+             n = n + 1
+             fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%TEMP_ngrp_GRPID(i)
            enddo
            do i = 1, fstrSOLID%SPRING_ngrp_tot
-             fstrSOLID%step_ctrl(1)%Load(i+fstrSOLID%CLOAD_ngrp_tot+fstrSOLID%SPRING_ngrp_tot) = fstrSOLID%SPRING_ngrp_GRPID(i)
+             n = n + 1
+             fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
            enddo
         endif
 

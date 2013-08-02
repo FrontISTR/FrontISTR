@@ -5,7 +5,6 @@ DIRS="\
 	B \
 	C \
 	D \
-	E \
 	heat \
 	."
 

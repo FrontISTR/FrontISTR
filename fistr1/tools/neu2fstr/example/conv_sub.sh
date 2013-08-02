@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-neu2fstr=../../bin/neu2fstr
+neu2fstr=../../neu2fstr
 
 for i in ${model}
 do

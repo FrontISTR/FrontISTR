@@ -15,7 +15,7 @@
 			<description>予約済みの名前を使用している</description>
 		</define>
 		<define type="error" name="E0004">
-			<message>Not allow nested include</message>
+			<message>Nested include not allowed</message>
 			<description>インクルードファイルがネストしている</description>
 		</define>
 		<define type="error" name="E0005">
@@ -30,41 +30,40 @@
 			<message>TYPE mismatch for name_ID</message>
 			<description>name_IDのTYPEが不正である</description>
 		</define>
-
 		<define type="warning" name="W1001">
-			<message>Adding element: Element has already defined, updated</message>
+			<message>Checking element: Element has already defined, updated</message>
 			<description>要素が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1002">
-			<message>Adding to element group: Element doesn't found, ignored</message>
+			<message>Checking element group: Element not found, ignored</message>
 			<description>定義されていない要素を要素グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1003">
-			<message>Adding to element group: Element group has already had element, ignored</message>
+			<message>Checking element group: Duplicate element found, ignored</message>
 			<description>要素グループに既に含まれる要素を再度同じ要素グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1004">
-			<message>Adding node: Node has already defined, updated</message>
+			<message>Checking node: Node has already defined, updated</message>
 			<description>節点が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1005">
-			<message>Adding to node group: Node doesn't found, ignored</message>
+			<message>Checking node group: Node not found, ignored</message>
 			<description>定義されていない節点を節点グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1006">
-			<message>Adding to node group: Node group has already had node, ignored</message>
+			<message>Checking node group: Duplicate node found, ignored</message>
 			<description>節点グループに既に含まれる節点を再度同じ節点グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1007">
-			<message>Adding to surface group: Element doesn't found, ignored</message>
+			<message>Checking surface group: Element not found, ignored</message>
 			<description>定義されていない要素を面グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1008">
-			<message>Adding to surface group: Invalid combination of element and surface, ignored</message>
+			<message>Checking surface group: Invalid combination of element and surface, ignored</message>
 			<description>要素と面番号の整合性がとれない</description>
 		</define>
 		<define type="warning" name="W1009">
-			<message>Adding to surface gorup: Surface group has already had the pare of element and surface, ignored</message>
+			<message>Checking surface gorup: Duplicate pair of element and surface found, ignored</message>
 			<description>同じ要素と面番号の組を追加しようとした</description>
 		</define>
 		<define type="warning" name="W1010">
@@ -92,11 +91,11 @@
 			<description>要素が定義されていない</description>
 		</define>
 		<define type="warning" name="W1016">
-			<message>INITIAL CONDITION: Node doesn't found, ignored</message>
+			<message>INITIAL CONDITION: Node not found, ignored</message>
 			<description>定義されていない節点を指定した</description>
 		</define>
 		<define type="warning" name="W1017">
-			<message>INITIAL CONDITION: Node group doesn't found, ignored</message>
+			<message>INITIAL CONDITION: Node group not found, ignored</message>
 			<description>定義されていない節点グループ指定した</description>
 		</define>
 		<define type="error" name="E1018">
@@ -104,11 +103,11 @@
 			<description>既に初期条件が与えられるいる節点に対し、再度初期条件を与えた</description>
 		</define>
 		<define type="warning" name="W1019">
-			<message>EQUATION: Node doesn't found, ignored</message>
+			<message>EQUATION: Node not found, ignored</message>
 			<description>定義されていない節点を指定した</description>
 		</define>
 		<define type="warning" name="W1020">
-			<message>EQUATION: Node grourp doesn't found, ignored</message>
+			<message>EQUATION: Node grourp not found, ignored</message>
 			<description>定義されていない節点グループを指定した</description>
 		</define>
 		<define type="error" name="E1021">
@@ -116,7 +115,7 @@
 			<description>2つの節点グループに含まれる節点数は同じでなければならない</description>
 		</define>
 		<define type="error" name="E1022">
-			<message>EQUATION: Not allow the same pare of Node and DOF</message>
+			<message>EQUATION: Same pair of Node and DOF not allowed</message>
 			<description>同じ節点と自由度数の組み合わせは許されない</description>
 		</define>
 		<define type="error" name="E1023">
@@ -124,18 +123,29 @@
 			<description>セクションが定義されていない</description>
 		</define>
 		<define type="error" name="E1024">
-			<message>SECTION: Element group doesn't found</message>
+			<message>SECTION: Element group not found</message>
 			<description>定義されていない要素をセクションで指定している</description>
 		</define>
 		<define type="error" name="E1025">
-			<message>SECTION: MATERIAL doesn't found</message>
+			<message>SECTION: MATERIAL not found</message>
 			<description>定義されていない物性をセクションで指定している</description>
 		</define>
 		<define type="error" name="E1026">
 			<message>SECTION: Invalid element type found in element group</message>
 			<description>要素グループにセクションタイプに合わない要素が含まれている</description>
 		</define>
-
+		<define type="error" name="E1027">
+			<message>ELEMENT: Existent node requied for connectiviy</message>
+			<description>要素のコネクティビティに定義されていない節点が含まれている</description>
+		</define>
+		<define type="error" name="E1028">
+			<message>CONTACT: Surface group not found</message>
+			<description>接触ペアのマスター面グループが定義されていない</description>
+		</define>
+		<define type="error" name="E1029">
+			<message>CONTACT: Node group not found</message>
+			<description>接触ペアのスレーブ節点グループが定義されていない</description>
+		</define>
 		<define type="error" name="E5001">
 			<message>Failed to open distributed mesh file</message>
 			<description>分散メッシュファイルのオープンに失敗した</description>

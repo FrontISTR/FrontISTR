@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Static Analysis                                   !
 !                                                                      !
@@ -142,7 +142,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       else if ( ic_type==361 ) then
         if( fstrPR%solution_type==kstSTATIC ) then
           call UpdateST_C3D8IC(ic_type,nn,ecoord(1,1:nn),ecoord(2,1:nn),ecoord(3,1:nn),       &
-                 tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:))
+                 tt(1:nn), tt0(1:nn),ddu(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:),coords)
         else
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call UPDATE_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), coords,   &
@@ -346,14 +346,14 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
       enddo
 !--- calculate stress and strain of gauss points
       if( ic_type == 361 ) then
-        call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses )
+        call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, coords )
       else if( ic_type == 301 ) then
         isect = hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
         call UpdateST_C1( ic_type, nn, xx, yy, zz, thick, edisp, fstrSOLID%elements(icel)%gausses )
       else
-        call UpdateST_C3( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses )
+        call UpdateST_C3( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, coords )
       endif
 !--- calculate reaction force
       iflag = 0
@@ -544,8 +544,8 @@ subroutine fstr_Update6D( hecMESH, fstrSOLID )
           if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
         enddo
         if( iflag == 1 ) then
-          call STF_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, &
-                               stiff, thick )
+          call STF_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+                               stiff(1:nn*6,1:nn*6), thick )
           force(1:nn*6) = matmul( stiff(1:nn*6,1:nn*6), edisp(1:nn*6) )
           do j = 1, nn
             if( id_spc( nodLOCAL(j) ) == 1 ) then

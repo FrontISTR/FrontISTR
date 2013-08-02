@@ -84,10 +84,6 @@ static void fstr_ctrl_data_finalize( fstr_ctrl_data* ctrl )
 	HECMW_free(ctrl->data_line_n);
 }
 
-int fstr_ctrl_rewind__( int* ctrl )
-{
-	return fstr_ctrl_tmp_rewind( ctrl_list[*ctrl] );
-}
 
 int fstr_ctrl_tmp_rewind( fstr_ctrl_data* ctrl )
 {
@@ -95,6 +91,10 @@ int fstr_ctrl_tmp_rewind( fstr_ctrl_data* ctrl )
 	return 0;
 }
 
+int fstr_ctrl_rewind__( int* ctrl )
+{
+	return fstr_ctrl_tmp_rewind( ctrl_list[*ctrl] );
+}
 
 int fstr_ctrl_rewind( int* ctrl ) { return fstr_ctrl_rewind__( ctrl ); }
 int fstr_ctrl_rewind_( int* ctrl ) { return fstr_ctrl_rewind__( ctrl ); }
