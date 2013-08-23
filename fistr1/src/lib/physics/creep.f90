@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -15,9 +15,9 @@
 !
 !> \brief  This module provides functions for creep calculation
 !
-!>  \author     X.Yuan(Advancesoft)
-!>  \date       2010/10/06
-!>  \version    0.00
+!>  Author     date       version
+!>  X.Yuan   2010/10/06     0.0     Original
+!>  X.Yuan   2013/08/20     1.0     Bug fixed thanks to indication from K.Inagaki
 !
 !======================================================================!
 module mCreep
@@ -30,7 +30,7 @@ module mCreep
 
   contains
   
-    !> This subrooutine calculates stiffness for elastically isotropic
+    !> This subroutine calculates stiffness for elastically isotropic
     !>     materials with isotropic creep
     subroutine iso_creep(matl, sectType, stress, strain, extval,plstrain,            &
              dtime,ttime,stiffness, temp)
@@ -48,13 +48,9 @@ module mCreep
       integer :: i, j
       logical :: ierr
       real(kind=kreal) :: ina(1), outa(3)
-      real(kind=kreal) :: xxa, xxn, aa
+      real(kind=kreal) :: xxn, aa
 
-      real(kind=kreal) :: c1,c2,c3,e,un,um2,dg,    &
-       ddg,stri(6),p,eeq,dstri,c4,c5,f,df, eqvs
-
-      c1 =dsqrt(2.d0/3.d0)
-      c2 = 2.d0/3.d0
+      real(kind=kreal) :: c3,e,un,G,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
 !
 !     elastic
 !
@@ -84,13 +80,11 @@ module mCreep
         else
           call fetch_TableData( MC_NORTON, matl%dict, outa, ierr )
         endif
-        xxa=outa(1)*(ttime+dtime)**outa(3)
-        if(xxa<1.d-20) xxa=1.d-20
         xxn=outa(2)
-        aa=xxa*dtime
+        aa=outa(1)*((ttime+dtime)**(outa(3)+1.d0)-ttime**(outa(3)+1.d0))/(outa(3)+1.d0)
       endif
 
-      um2=e/(1.d0+un)
+      G=0.5d0*e/(1.d0+un)
 !
 !     creep
 !
@@ -100,24 +94,23 @@ module mCreep
          stri(i)=stri(i)+p
       enddo
 !
-      dstri=dsqrt(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
-           2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6)))
+      dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
+           2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
 !
 !     unit trial vector
 !
       stri(:)=stri(:)/dstri
 
-      eqvs = extval(1)
+      eqvs = dstri
       if( eqvs<1.d-10 ) eqvs=1.d-10
       f=aa*eqvs**xxn
       df=xxn*f/eqvs
-      dg=(f-plstrain)/c1
 !
 !     stiffness matrix
 !
-      c3=um2*um2
-      c4=c3*dg/dstri
-      c3=c4-c3*df/(um2*df+c2)
+      c3=6.d0*G*G
+      c4=c3*plstrain/(dstri+3.d0*G*plstrain)
+      c3=c4-c3*df/(3.d0*G*df+1.d0)
       c5=c4/3.d0
 
       do i=1,6
@@ -134,11 +127,10 @@ module mCreep
       do i=4,6
         stiffness(i,i) = stiffness(i,i) - c4/2.d0
       enddo
-
-	  
+  
    end subroutine
    
-   !> This subrooutine calculates stresses and creep status for an elastically isotropic
+   !> This subroutine calculates stresses and creep status for an elastically isotropic
    !>     material with isotropic creep
    subroutine update_iso_creep(matl, sectType, strain, stress, extval,plstrain,                &
              dtime,ttime,temp)
@@ -155,17 +147,11 @@ module mCreep
       integer :: i
       logical :: ierr
       real(kind=kreal) :: ina(1), outa(3)
-      real(kind=kreal) :: xxa, xxn, aa
+      real(kind=kreal) :: xxn, aa
 
-      real(kind=kreal) :: c1,c2,c3,e,un,um2,dg,    &
-       ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
+      real(kind=kreal) :: c3,e,un,G,dg,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
 	   
       if( dtime==0.d0 ) return
-!
-!     state variables
-!
-      c1 = dsqrt(2.d0/3.d0)
-	  c2 = 2.d0/3.d0
 !
 !     elastic constants
 !
@@ -193,14 +179,12 @@ module mCreep
         if( ierr ) then
           stop "error in isotropic elasticity definition"
         else
-          xxa=outa(1)*(ttime+dtime)**outa(3)
-          if(xxa<1.d-20) xxa=1.d-20
           xxn=outa(2)
-          aa=xxa*dtime
+          aa=outa(1)*((ttime+dtime)**(outa(3)+1.d0)-ttime**(outa(3)+1.d0))/(outa(3)+1.d0)
         endif
       endif
 
-      um2=e/(1.d0+un)
+      G=0.5d0*e/(1.d0+un)
 
 !
 !     creep
@@ -211,34 +195,33 @@ module mCreep
          stri(i)=stri(i)+p
       enddo
 !
-      dstri=dsqrt(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
-           2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6)))    
+      dstri=dsqrt(1.5d0*(stri(1)*stri(1)+stri(2)*stri(2)+stri(3)*stri(3)+    &
+           2.d0*(stri(4)*stri(4)+stri(5)*stri(5)+stri(6)*stri(6))) )
 !
 !     determination of the consistency parameter
 !
       dg=0.d0
       do
         if( matl%mtype==NORTON ) then
-          eqvs = (dstri-um2*dg)/c1
-          if( eqvs<1.d-10 ) eqvs=1.d-10
+          eqvs = dstri-3.d0*G*dg
           f=aa*eqvs**xxn
           df=xxn*f/eqvs
-          ddg=(c1*f-c2*dg)/(um2*df+c2)
-          dg=dg+ddg
-          if((ddg<dg*1.d-4).or.(ddg<1.d-10)) exit
+          ddg = (f-dg)/(3.d0*G*df+1.d0)
+          dg = dg+ddg
+          if((ddg<dg*1.d-6).or.(ddg<1.d-12)) exit
         endif
       enddo
 	  
-	  stri(:) = stri(:)-um2*dg*stri(:)/dstri
+      stri(:) = stri(:)-3.d0*G*dg*stri(:)/dstri
       stress(1:3) = stri(1:3)-p
       stress(4:6) = stri(4:6)
 		
 !
 !     state variables
 !
-      plstrain= c1*dg
+      plstrain= dg
       extval(1)=eqvs
-	  
+ 
    end subroutine
    
    !> Update viscoplastic state 
