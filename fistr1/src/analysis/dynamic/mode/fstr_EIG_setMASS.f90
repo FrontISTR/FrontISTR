@@ -87,6 +87,10 @@ contains
           isect = hecMESH%section_ID(icel)
           iax = hecMESH%section%sect_opt(isect)
           CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick,alpha_over_mu)
+          if( rho<=0.d0 ) then
+            print *, "WARNING: Density of element",icel,"not defined!"
+            WRITE(IMSG,*) "WARNING: Density of element",icel,"not defined!"
+          endif
 !C
           do j = 1,nn
             nid = hecMESH%global_node_ID(nodLOCAL(j))
