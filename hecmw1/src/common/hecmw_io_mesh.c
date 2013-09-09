@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.3                                               *
+ *         Version : 2.5                                               *
  *                                                                     *
  *     Last Update : 2007/06/29                                        *
  *        Category : I/O and Utility                                   *
@@ -3990,7 +3990,7 @@ post_section_check_mat_exists(void)
 				break;
 			}
 		}
-		if(!found) {
+		if(p->type != HECMW_SECT_TYPE_INTERFACE && !found) {
 			set_err(HECMW_IO_E1025, "MATERIAL %s not found", p->material);
 			return -1;
 		}

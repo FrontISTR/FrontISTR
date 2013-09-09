@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Heat Analysis                                     !
 !                                                                      !
@@ -56,12 +56,11 @@ module m_heat_mat_ass_conductivity
         iE= hecMESH%elem_type_index(itype  )
         ic_type= hecMESH%elem_type_item(itype)
 
-!!              write(IDBG,*) 'iS,iE,ic_type,',iS,iE,ic_type
-
         do icel = iS, iE
           isect = hecMESH%section_ID(icel)
           IMAT = hecMESH%section%sect_mat_ID_item(isect)
 
+          if( hecMESH%section%sect_type(isect) .ne. 4 ) then
             ntab = fstrHEAT%CONDtab(IMAT)
             do itab = 1, ntab
               temp(itab)  = fstrHEAT%CONDtemp (IMAT,itab)
@@ -70,17 +69,9 @@ module m_heat_mat_ass_conductivity
             enddo
             funcA(ntab+1) = fstrHEAT%CONDfuncA(IMAT,ntab+1)
             funcB(ntab+1) = fstrHEAT%CONDfuncB(IMAT,ntab+1)
+          endif
 
           in0 = hecMESH%elem_node_index(icel-1)
-
-!!              if( mod(icel,10000).eq.0 ) then
-!!                write(IDBG,*) 'ic_type,icel,isect,IMAT,ntab,in0:'
-!!                write(IDBG,'(6i10)') ic_type,icel,isect,IMAT,ntab,in0
-!!                write(IDBG,*) (temp(i),i=1,ntab)
-!!                write(IDBG,*) (funcA(i),i=1,ntab)
-!!                write(IDBG,*) (funcB(i),i=1,ntab)
-!!                call flush(IDBG)
-!!              endif
 
           nn = hecmw_get_max_node(ic_type)
           do i = 1, nn
@@ -166,12 +157,7 @@ module m_heat_mat_ass_conductivity
             THICK = hecMESH%section%sect_R_item(is)
             call heat_THERMAL_741 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
           endif
-!!
-!!              if( mod(icel,10000).eq.0 ) then
-!!                write(IDBG,'(1p8e12.4)') ( SS(i),i=1,nn*nn )
-!!                call flush(IDBG)
-!!              endif
-!!
+
           ic = 0
           do ip = 1, nn
             inod = nodLOCAL(ip)

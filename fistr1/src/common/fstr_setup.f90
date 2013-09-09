@@ -50,11 +50,12 @@ contains
 !=============================================================================!
 !> Read in and initialize control data                                        !
 !=============================================================================!
-subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
+subroutine fstr_setup( cntl_filename, hecMESH, hecMAT, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         use mMaterial
         character(len=HECMW_FILENAME_LEN) :: cntl_filename
         type(hecmwST_local_mesh),target :: hecMESH
+        type(hecmwST_matrix ),target    :: hecMAT
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
         type(lczparam),target     :: fstrEIG
@@ -282,6 +283,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         allocate( fstrSOLID%materials( n ) )
         if( hecMESH%section%n_sect >0 ) then
            do i=1,hecMESH%section%n_sect
+              if( hecMESH%section%sect_type(i) == 4 ) cycle
               cid = hecMESH%section%sect_mat_ID_item(i)
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
@@ -659,7 +661,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
            p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
            p%PARAM%solution_type==6 )            &
-          call fstr_solid_alloc( hecMESH, fstrSOLID )
+          call fstr_solid_alloc( hecMESH, hecMAT, fstrSOLID )
 
         if( p%PARAM%solution_type == kstHEAT) then
           p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
@@ -678,8 +680,6 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_solid)                :: fstrSOLID
 
-        integer :: ndof, ntotal, ierror, ic_type
-
         fstrSOLID%file_type  = kbcfFSTR
 
         fstrSOLID%BOUNDARY_ngrp_tot = 0
@@ -695,22 +695,19 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%COUPLE_ngrp_tot   = 0
 
         fstrSOLID%restart_nout= 0
-
 end subroutine fstr_solid_init
 
 !> Initializer of structure fstr_solid
-subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
+subroutine fstr_solid_alloc( hecMESH, hecMAT, fstrSOLID )
         use m_fstr
         type(hecmwST_local_mesh),target :: hecMESH
+        type(hecmwST_matrix ),target    :: hecMAT
         type(fstr_solid)                :: fstrSOLID
 
-        integer :: ndof, ntotal, ierror, ic_type
+        integer :: ntotal, ierror
 
-        ndof=hecMESH%n_dof
-        ic_type= hecMESH%elem_type_item(1)
-        if( ic_type==741 .or. ic_type==743 .or. ic_type==731 ) ndof=6
+        ntotal=hecMAT_get_node_narray( hecMAT )
 
-        ntotal=ndof*hecMESH%n_node
         allocate ( fstrSOLID%GL( ntotal )          ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL>'
@@ -782,7 +779,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_solid)                :: fstrSOLID
 
-        integer :: i, j, ng, isect, ndof, id, nn            
+        integer :: i, j, ng, isect, ndof, id, nn
 
         if( hecMESH%n_elem <=0 ) then
              stop "no element defined!"
@@ -793,7 +790,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
           if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
           if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
           ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
-          if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )      
+          if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
           
           isect= hecMESH%section_ID(i)
           ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
@@ -816,10 +813,10 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
              fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
              call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
           enddo
-          
-          nn = hecmw_get_max_node(hecMESH%elem_type(i))           
-          allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))   
-          fstrSOLID%elements(i)%equiForces = 0.0d0                 
+
+          nn = hecmw_get_max_node(hecMESH%elem_type(i))
+          allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
+          fstrSOLID%elements(i)%equiForces = 0.0d0
         enddo  
 end subroutine
 
@@ -831,17 +828,16 @@ subroutine fstr_solid_finalize( fstrSOLID )
           deallocate( fstrSOLID%materials )
         if( .not. associated(fstrSOLID%elements ) ) return
         do i=1,size(fstrSOLID%elements)
-          if( associated(fstrSOLID%elements(i)%gausses) ) then           
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
             do j=1,size(fstrSOLID%elements(i)%gausses)
               call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
             enddo
             deallocate( fstrSOLID%elements(i)%gausses )
-          endif                                                              
-          if(associated(fstrSOLID%elements(i)%equiForces) ) then            
-            deallocate(fstrSOLID%elements(i)%equiForces)    
-          endif                                                               
-        enddo                                   
-          
+          endif
+          if(associated(fstrSOLID%elements(i)%equiForces) ) then
+            deallocate(fstrSOLID%elements(i)%equiForces)
+          endif
+        enddo
         deallocate( fstrSOLID%elements )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
@@ -859,7 +855,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
            enddo
            deallocate(fstrSOLID%output_ctrl)
         endif
-        
+
         if( associated(fstrSOLID%GL) ) then
             deallocate(fstrSOLID%GL               ,STAT=ierror)
             if( ierror /= 0 ) then
@@ -924,7 +920,6 @@ subroutine fstr_solid_finalize( fstrSOLID )
               call hecmw_abort( hecmw_comm_get_comm())
             end if
         endif
-
 end subroutine
 
 !> Initial setting of heat analysis
