@@ -129,8 +129,10 @@ contains
     ! header
     write(iDump,"(A)") '%%CSR matrix real general'
     nnz = ndof2 * (n + hecMAT%indexL(n) + hecMAT%indexU(n))
+    write(iDump,"(A)") '% nrow ncol nnonzero'
     write(iDump,"(I0,' ',I0,' ',I0)") n*ndof, np*ndof, nnz
     ! index
+    write(iDump,"(A)") '% index(0:nrow)'
     idx = 0
     write(iDump, "(I0)") idx
     do i = 1, n
@@ -142,6 +144,7 @@ contains
       end do
     end do
     ! item
+    write(iDump,"(A)") '% item(1:nnonzero)'
     do i = 1, n
       i0 = (i-1)*ndof
       do idof = 1, ndof
@@ -170,6 +173,7 @@ contains
       end do
     end do
     ! values
+    write(iDump,"(A)") '% value(1:nnonzero)'
     idxD = 0
     do i = 1, n
       i0 = (i-1)*ndof
@@ -234,8 +238,10 @@ contains
     ! header
     write(iDump,"(A)") '%%Block-CSR matrix real general'
     nnz = n + hecMAT%indexL(n) + hecMAT%indexU(n)
+    write(iDump,"(A)") '% nrow ncol nnonzero ndof'
     write(iDump,"(I0,' ',I0,' ',I0,' ',I0)") n, np, nnz, ndof
     ! index
+    write(iDump,"(A)") '% index(0:nrow)'
     idx = 0
     write(iDump, "(I0)") idx
     do i = 1, n
@@ -245,6 +251,7 @@ contains
       write(iDump, "(I0)") idx
     end do
     ! item
+    write(iDump,"(A)") '% item(1:nnonzero)'
     do i = 1, n
       ! Lower
       do j = hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
@@ -258,6 +265,7 @@ contains
       end do
     end do
     ! values
+    write(iDump,"(A)") '% value(1:nnonzero*ndof*ndof)'
     idxD0 = 0
     do i = 1, n
       ! Lower
