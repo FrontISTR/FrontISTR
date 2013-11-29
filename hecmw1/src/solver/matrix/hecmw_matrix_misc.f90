@@ -39,6 +39,8 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
+
+    call hecmw_mat_set_dump( hecMAT, 0 )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
@@ -190,6 +192,18 @@ module hecmw_matrix_misc
 
     hecMAT%Rarray(1) = resid
   end subroutine hecmw_mat_set_resid
+
+  function hecmw_mat_get_dump( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_dump
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_dump = hecMAT%Iarray(31)
+  end function hecmw_mat_get_dump
+
+  subroutine hecmw_mat_set_dump( hecMAT, dump_type )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: dump_type
+    hecMAT%Iarray(31) = dump_type
+  end subroutine hecmw_mat_set_dump
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid

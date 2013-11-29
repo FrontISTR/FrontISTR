@@ -695,6 +695,7 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Iarray(6) =   10    ! = nrest
         hecMAT%Iarray(21)=  kNO    ! = iterlog
         hecMAT%Iarray(22)=  kNO    ! = timelog
+        hecMAT%Iarray(31)=    0    ! = dumptype
 
         hecMAT%Rarray(1) =  1.0e-8 ! = resid
         hecMAT%Rarray(2) =  1.0    ! = sigma_diag

@@ -103,6 +103,8 @@ module m_solve_LINEQ
 !C
       END SELECT
 !C
+      call hecmw_mat_dump(hecMAT)
+!C
        RETURN
 
    end subroutine solve_LINEQ
