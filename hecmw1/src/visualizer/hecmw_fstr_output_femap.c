@@ -1999,7 +1999,7 @@ HECMW_separate_avs_output (struct hecmwST_local_mesh *mesh,
 	int total_n_node, total_n_elem;
 	int tn_component, te_component;
 
-	int flag_oldUCD = 0;
+	int flag_oldUCD = 1;
 	int flag_global_ID = 0;
 	int flag_Scalar = 0;
 	int flag_skip_ext = 0;

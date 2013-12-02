@@ -4,6 +4,7 @@
 *.out
 *.log
 *.inp
+*.bmp
 lib/**/*
 Makefile
 *~

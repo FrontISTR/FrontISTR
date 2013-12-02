@@ -43,75 +43,155 @@
 /*  convert elem_node_item                                                    */
 /*                                                                            */
 /*============================================================================*/
+static const int *
+get_enode_h2r( int etype, int *ierror )
+{
+	/* tetra, prism, hexa: no need to convert */
+	static const int enode_pyr_h2r[13] =
+		{4, 0, 1, 2, 3,  9, 10, 11, 12, 5, 6, 7, 8};
+	static const int enode_rod2_h2r[3] = {0, 2, 1};
+	const int *enode_h2r;
+
+	*ierror = 0;
+
+	switch( etype ) {
+	case HECMW_ETYPE_ROD1:
+	case HECMW_ETYPE_ROD31:
+	case HECMW_ETYPE_TRI1:
+	case HECMW_ETYPE_TRI2:
+	case HECMW_ETYPE_QUA1:
+	case HECMW_ETYPE_QUA2:
+	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET2:
+	case HECMW_ETYPE_PRI1:
+	case HECMW_ETYPE_PRI2:
+	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX2:
+	case HECMW_ETYPE_BEM1:
+	case HECMW_ETYPE_SHT1:
+	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHQ1:
+	case HECMW_ETYPE_SHQ2:
+		enode_h2r = NULL;
+		break;
+	case HECMW_ETYPE_PYR1:
+	case HECMW_ETYPE_PYR2:
+		enode_h2r = enode_pyr_h2r;
+		break;
+	case HECMW_ETYPE_ROD2:
+	case HECMW_ETYPE_BEM2:
+		enode_h2r = enode_rod2_h2r;
+		break;
+	default:
+		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		*ierror = 1;
+		enode_h2r = NULL;
+		break;
+	}
+	return enode_h2r;
+}
+
+static const int *
+get_enode_r2h( int etype, int *ierror )
+{
+	/* tetra, prism, hexa: no need to convert */
+	static const int enode_pyr_r2h[13] =
+		{1, 2, 3, 4, 0,  9, 10, 11, 12, 5, 6, 7, 8};
+	static const int enode_rod2_r2h[3] = {0, 2, 1};
+	const int *enode_r2h;
+
+	*ierror = 0;
+
+	switch( etype ) {
+	case HECMW_ETYPE_ROD1:
+	case HECMW_ETYPE_ROD31:
+	case HECMW_ETYPE_TRI1:
+	case HECMW_ETYPE_TRI2:
+	case HECMW_ETYPE_QUA1:
+	case HECMW_ETYPE_QUA2:
+	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET2:
+	case HECMW_ETYPE_PRI1:
+	case HECMW_ETYPE_PRI2:
+	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX2:
+	case HECMW_ETYPE_BEM1:
+	case HECMW_ETYPE_SHT1:
+	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHQ1:
+	case HECMW_ETYPE_SHQ2:
+		enode_r2h = NULL;
+		break;
+	case HECMW_ETYPE_PYR1:
+	case HECMW_ETYPE_PYR2:
+		enode_r2h = enode_pyr_r2h;
+		break;
+	case HECMW_ETYPE_ROD2:
+	case HECMW_ETYPE_BEM2:
+		enode_r2h = enode_rod2_r2h;
+		break;
+	default:
+		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		*ierror = 1;
+		enode_r2h = NULL;
+	}
+	return enode_r2h;
+}
+
 static int
 elem_node_item_hecmw2rcap( struct hecmwST_local_mesh *mesh)
 {
-	/* tetra, prism, hexa: no need to convert */
-	static const int enode_pyr_h2r[13] = {4, 0, 1, 2, 3,  9, 10, 11, 12, 5, 6, 7, 8};
-
 	int i, j;
-	int etype;
+	int etype, ierror;
 	const int *enode_h2r;
 	int *enode;
-	int nn;
+	int nn, istart, iend;
 	int temp_enode[HECMW_MAX_NODE_MAX];
 
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		etype = mesh->elem_type[i];
-
-		switch( etype ) {
-		case HECMW_ETYPE_PYR1:
-		case HECMW_ETYPE_PYR2:
-			enode_h2r = enode_pyr_h2r;
-			break;
-		default:
-			enode_h2r = NULL;
-		}
+	for( i=0; i < mesh->n_elem_type; i++ ) {
+		etype = mesh->elem_type_item[i];
+		enode_h2r = get_enode_h2r( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
 		if( enode_h2r == NULL ) continue;
-
-		enode = mesh->elem_node_item + mesh->elem_node_item[i];
 		nn = HECMW_get_max_node( etype );
-		for( j=0; j < nn; j++ )
-			temp_enode[j] = enode_h2r[enode[j]];
-		for( j=0; j < nn; j++ )
-			enode[j] = temp_enode[j];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		for( j=istart; j < iend; j++) {
+			enode = mesh->elem_node_item + mesh->elem_node_index[i];
+			for( j=0; j < nn; j++ )
+				temp_enode[j] = enode[enode_h2r[j]];
+			for( j=0; j < nn; j++ )
+				enode[j] = temp_enode[j];
+		}
 	}
 	return HECMW_SUCCESS;
 }
 
-
 static int
 elem_node_item_rcap2hecmw( struct hecmwST_local_mesh *mesh)
 {
-	/* tetra, prism, hexa: no need to convert */
-	static const int enode_pyr_r2h[13] = {1, 2, 3, 4, 0,  9, 10, 11, 12, 5, 6, 7, 8};
-
 	int i, j;
-	int etype;
+	int etype, ierror;
 	const int *enode_r2h;
 	int *enode;
-	int nn;
+	int nn, istart, iend;
 	int temp_enode[HECMW_MAX_NODE_MAX];
 
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		etype = mesh->elem_type[i];
-
-		switch( etype ) {
-		case HECMW_ETYPE_PYR1:
-		case HECMW_ETYPE_PYR2:
-			enode_r2h = enode_pyr_r2h;
-			break;
-		default:
-			enode_r2h = NULL;
-		}
+	for( i=0; i < mesh->n_elem_type; i++ ) {
+		etype = mesh->elem_type_item[i];
+		enode_r2h = get_enode_r2h( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
 		if( enode_r2h == NULL ) continue;
-
-		enode = mesh->elem_node_item + mesh->elem_node_item[i];
 		nn = HECMW_get_max_node( etype );
-		for( j=0; j < nn; j++ )
-			temp_enode[j] = enode_pyr_r2h[enode[j]];
-		for( j=0; j < nn; j++ )
-			enode[j] = temp_enode[j];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		for( j=istart; j < iend; j++) {
+			enode = mesh->elem_node_item + mesh->elem_node_index[i];
+			for( j=0; j < nn; j++ )
+				temp_enode[j] = enode[enode_r2h[j]];
+			for( j=0; j < nn; j++ )
+				enode[j] = temp_enode[j];
+		}
 	}
 	return HECMW_SUCCESS;
 }
@@ -122,22 +202,127 @@ elem_node_item_rcap2hecmw( struct hecmwST_local_mesh *mesh)
 /*  convert surface IDs                                                       */
 /*                                                                            */
 /*============================================================================*/
-static int
-surf_ID_hecmw2rcap( struct hecmwST_local_mesh *mesh )
+static const int *
+get_sid_h2r( int etype, int *ierror )
 {
+	/*
+	 * TODO: add support for shell elements
+	 */
+
 	/* HECMW to RCAP */
 	/*
+	static const int sid_tri_h2r[4] = {-1, 0, 1, 2};
+	static const int sid_qua_h2r[5] = {-1, 3, 1, 0, 2};
 	static const int sid_tet_h2r[5] = {-1, 0, 1, 2, 3};
 	static const int sid_pri_h2r[6] = {-1, 3, 4, 2, 0, 1};
 	static const int sid_hex_h2r[7] = {-1, 5, 3, 2, 4, 0, 1};
 	static const int sid_pyr_h2r[6] = {-1, 3, 1, 0, 2, 4};
 	*/
 	/* FSTR to RCAP*/
+	static const int sid_tri_h2r[4] = {-1, 2, 0, 1};
+	static const int sid_qua_h2r[5] = {-1, 0, 1, 2, 3};
 	static const int sid_tet_h2r[5] = {-1, 3, 2, 0, 1};
 	static const int sid_pri_h2r[6] = {-1, 0, 1, 2, 3, 4};
 	static const int sid_hex_h2r[7] = {-1, 0, 1, 2, 3, 4, 5};
 	static const int sid_pyr_h2r[6] = {-1, 3, 1, 0, 2, 4}; /* TEMPORARY: same as HECMW */
 
+	const int *sid_h2r;
+	*ierror = 0;
+	switch( etype ) {
+	case HECMW_ETYPE_TRI1:
+	case HECMW_ETYPE_TRI2:
+		sid_h2r = sid_tri_h2r;
+		break;
+	case HECMW_ETYPE_QUA1:
+	case HECMW_ETYPE_QUA2:
+		sid_h2r = sid_qua_h2r;
+		break;
+	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET2:
+		sid_h2r = sid_tet_h2r;
+		break;
+	case HECMW_ETYPE_PRI1:
+	case HECMW_ETYPE_PRI2:
+		sid_h2r = sid_pri_h2r;
+		break;
+	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX2:
+		sid_h2r = sid_hex_h2r;
+		break;
+	case HECMW_ETYPE_PYR1:
+	case HECMW_ETYPE_PYR2:
+		sid_h2r = sid_pyr_h2r;
+		break;
+	default:
+		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		*ierror = 1;
+		sid_h2r = NULL;
+	}
+	return sid_h2r;
+}
+
+static const int *
+get_sid_r2h( int etype, int *ierror )
+{
+	/*
+	 * TODO: add support for shell elements
+	 */
+
+	/* RCAP to HECMW */
+	/*
+	static const int sid_tri_r2h[3] = {1, 2, 3};
+	static const int sid_qua_r2h[4] = {3, 2, 4, 1};
+	static const int sid_tet_r2h[4] = {1, 2, 3, 4};
+	static const int sid_pri_r2h[5] = {4, 5, 3, 1, 2};
+	static const int sid_hex_r2h[6] = {1, 2, 3, 4, 5, 6};
+	static const int sid_pyr_r2h[5] = {3, 2, 4, 1, 5};
+	*/
+	/* RCAP to FSTR */
+	static const int sid_tri_r2h[3] = {2, 3, 1};
+	static const int sid_qua_r2h[4] = {1, 2, 3, 4};
+	static const int sid_tet_r2h[4] = {3, 4, 2, 1};
+	static const int sid_pri_r2h[5] = {1, 2, 3, 4, 5};
+	static const int sid_hex_r2h[6] = {1, 2, 3, 4, 5, 6};
+	static const int sid_pyr_r2h[5] = {3, 2, 4, 1, 5}; /* TEMPORARY: same as HECMW */
+
+	const int *sid_r2h;
+	*ierror = 0;
+	switch( etype ) {
+	case HECMW_ETYPE_TRI1:
+	case HECMW_ETYPE_TRI2:
+		sid_r2h = sid_tri_r2h;
+		break;
+	case HECMW_ETYPE_QUA1:
+	case HECMW_ETYPE_QUA2:
+		sid_r2h = sid_qua_r2h;
+		break;
+	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET2:
+		sid_r2h = sid_tet_r2h;
+		break;
+	case HECMW_ETYPE_PRI1:
+	case HECMW_ETYPE_PRI2:
+		sid_r2h = sid_pri_r2h;
+		break;
+	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX2:
+		sid_r2h = sid_hex_r2h;
+		break;
+	case HECMW_ETYPE_PYR1:
+	case HECMW_ETYPE_PYR2:
+		sid_r2h = sid_pyr_r2h;
+		break;
+	default:
+		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		*ierror = 1;
+		sid_r2h = NULL;
+	}
+	return sid_r2h;
+}
+
+static int
+surf_ID_hecmw2rcap( struct hecmwST_local_mesh *mesh )
+{
 	struct hecmwST_surf_grp *grp = mesh->surf_group;
 	int i;
 
@@ -146,29 +331,14 @@ surf_ID_hecmw2rcap( struct hecmwST_local_mesh *mesh )
 	for( i=0; i < grp->grp_index[grp->n_grp]; i++ ) {
 		int eid = grp->grp_item[2*i];
 		int *sid_p = &(grp->grp_item[2*i+1]);
+		const int *sid_h2r;
+		int ierror;
 
 		HECMW_assert( 0 < eid && eid <= mesh->n_elem_gross );
-		switch( mesh->elem_type[eid-1] ) {
-		case HECMW_ETYPE_TET1:
-		case HECMW_ETYPE_TET2:
-			*sid_p = sid_tet_h2r[*sid_p];
-			break;
-		case HECMW_ETYPE_PRI1:
-		case HECMW_ETYPE_PRI2:
-			*sid_p = sid_pri_h2r[*sid_p];
-			break;
-		case HECMW_ETYPE_HEX1:
-		case HECMW_ETYPE_HEX2:
-			*sid_p = sid_hex_h2r[*sid_p];
-			break;
-		case HECMW_ETYPE_PYR1:
-		case HECMW_ETYPE_PYR2:
-			*sid_p = sid_pyr_h2r[*sid_p];
-			break;
-		default:
-			HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
-			return HECMW_ERROR;
-		}
+
+		sid_h2r = get_sid_h2r( mesh->elem_type[eid-1], &ierror );
+		if( ierror ) return HECMW_ERROR;
+		*sid_p = sid_h2r[*sid_p];
 	}
 	return HECMW_SUCCESS;
 }
@@ -177,19 +347,6 @@ surf_ID_hecmw2rcap( struct hecmwST_local_mesh *mesh )
 static int
 surf_ID_rcap2hecmw( struct hecmwST_local_mesh *mesh )
 {
-	/* RCAP to HECMW */
-	/*
-	static const int sid_tet_r2h[4] = {1, 2, 3, 4};
-	static const int sid_pri_r2h[5] = {4, 5, 3, 1, 2};
-	static const int sid_hex_r2h[6] = {1, 2, 3, 4, 5, 6};
-	static const int sid_pyr_r2h[5] = {3, 2, 4, 1, 5};
-	*/
-	/* RCAP to FSTR */
-	static const int sid_tet_r2h[4] = {3, 4, 2, 1};
-	static const int sid_pri_r2h[5] = {1, 2, 3, 4, 5};
-	static const int sid_hex_r2h[6] = {1, 2, 3, 4, 5, 6};
-	static const int sid_pyr_r2h[5] = {3, 2, 4, 1, 5}; /* TEMPORARY: same as HECMW */
-
 	struct hecmwST_surf_grp *grp = mesh->surf_group;
 	int i;
 
@@ -198,34 +355,64 @@ surf_ID_rcap2hecmw( struct hecmwST_local_mesh *mesh )
 	for( i=0; i < grp->grp_index[grp->n_grp]; i++ ) {
 		int eid = grp->grp_item[2*i];
 		int *sid_p = &(grp->grp_item[2*i+1]);
+		const int *sid_r2h;
+		int ierror;
 
 		HECMW_assert( 0 < eid && eid <= mesh->n_elem_gross );
 
-		switch( mesh->elem_type[eid-1] ) {
-		case HECMW_ETYPE_TET1:
-		case HECMW_ETYPE_TET2:
-			*sid_p = sid_tet_r2h[*sid_p];
-			break;
-		case HECMW_ETYPE_PRI1:
-		case HECMW_ETYPE_PRI2:
-			*sid_p = sid_pri_r2h[*sid_p];
-			break;
-		case HECMW_ETYPE_HEX1:
-		case HECMW_ETYPE_HEX2:
-			*sid_p = sid_hex_r2h[*sid_p];
-			break;
-		case HECMW_ETYPE_PYR1:
-		case HECMW_ETYPE_PYR2:
-			*sid_p = sid_pyr_r2h[*sid_p];
-			break;
-		default:
-			HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
-			return HECMW_ERROR;
-		}
+		sid_r2h = get_sid_r2h( mesh->elem_type[eid-1], &ierror );
+		if( ierror ) return HECMW_ERROR;
+		*sid_p = sid_r2h[*sid_p];
 	}
 	return HECMW_SUCCESS;
 }
 
+
+/*============================================================================*/
+/*                                                                            */
+/* for models with multiple element types                                     */
+/*                                                                            */
+/*============================================================================*/
+static int
+get_elem_ndiv( int etype, int *ierror )
+{
+	int ndiv;
+	*ierror = 0;
+	switch( etype ) {
+	case HECMW_ETYPE_ROD1:
+	case HECMW_ETYPE_ROD2:
+	case HECMW_ETYPE_ROD31:
+	case HECMW_ETYPE_BEM1:
+	case HECMW_ETYPE_BEM2:
+		ndiv = 2;
+		break;
+	case HECMW_ETYPE_TRI1:
+	case HECMW_ETYPE_TRI2:
+	case HECMW_ETYPE_QUA1:
+	case HECMW_ETYPE_QUA2:
+	case HECMW_ETYPE_SHT1:
+	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHQ1:
+	case HECMW_ETYPE_SHQ2:
+		ndiv = 4;
+		break;
+	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET2:
+	case HECMW_ETYPE_PRI1:
+	case HECMW_ETYPE_PRI2:
+	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX2:
+	case HECMW_ETYPE_PYR1:
+	case HECMW_ETYPE_PYR2:
+		ndiv = 8;
+		break;
+	default:
+		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		*ierror = 1;
+		ndiv = 1;
+	}
+	return ndiv;
+}
 
 /*============================================================================*/
 /*                                                                            */
@@ -367,12 +554,13 @@ static int
 elem_type_hecmw2rcap(int etype)
 {
 	switch( etype ) {
-	case HECMW_ETYPE_ROD1: return RCAP_SEGMENT;;
+	case HECMW_ETYPE_ROD1: return RCAP_SEGMENT;
 	case HECMW_ETYPE_ROD2: return RCAP_SEGMENT2;
 	case HECMW_ETYPE_TRI1: return RCAP_TRIANGLE;
 	case HECMW_ETYPE_TRI2: return RCAP_TRIANGLE2;
 	case HECMW_ETYPE_QUA1: return RCAP_QUAD;
 	case HECMW_ETYPE_QUA2: return RCAP_QUAD2;
+	case HECMW_ETYPE_ROD31:return RCAP_SEGMENT;
 	case HECMW_ETYPE_TET1: return RCAP_TETRAHEDRON;
 	case HECMW_ETYPE_TET2: return RCAP_TETRAHEDRON2;
 	case HECMW_ETYPE_PRI1: return RCAP_WEDGE;
@@ -381,54 +569,63 @@ elem_type_hecmw2rcap(int etype)
 	case HECMW_ETYPE_PYR2: return RCAP_PYRAMID2;
 	case HECMW_ETYPE_HEX1: return RCAP_HEXAHEDRON;
 	case HECMW_ETYPE_HEX2: return RCAP_HEXAHEDRON2;
+	case HECMW_ETYPE_BEM1: return RCAP_SEGMENT;
+	case HECMW_ETYPE_BEM2: return RCAP_SEGMENT2;
+	case HECMW_ETYPE_SHT1: return RCAP_TRIANGLE;
+	case HECMW_ETYPE_SHT2: return RCAP_TRIANGLE2;
+	case HECMW_ETYPE_SHQ1: return RCAP_QUAD;
+	case HECMW_ETYPE_SHQ2: return RCAP_QUAD2;
 	}
-	return HECMW_ERROR;
+	return RCAP_UNKNOWNTYPE;
 }
 
 static int
 refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
 	int i, j;
-	int n_elem_gross;
-
-	if( mesh->n_elem_type > 1) {
-		HECMW_log(HECMW_LOG_ERROR,
-				"Refinement of multiple element type not supported yet.\n");
-		return HECMW_ERROR;
-	}
+	int n_elem_ref_tot;
+	size_t n_enode_ref_tot;
+	int *elem_node_index_ref;
+	int *elem_node_item_ref;
 
 	HECMW_log( HECMW_LOG_DEBUG, "rank=%d: Original Element Count = %d\n", mesh->my_rank, mesh->n_elem_gross );
 
-	/* ref_mesh->n_elem_gross = mesh->n_elem_gross * 8; */ /* TEMPORARY */
-	ref_mesh->n_elem_gross = rcapRefineElement(mesh->n_elem_gross,
-				elem_type_hecmw2rcap( mesh->elem_type[0] ),
-				mesh->elem_node_item,
-				NULL);
+	/*
+	 * count num of elems after refinement
+	 */
+	n_elem_ref_tot = 0;
+	n_enode_ref_tot = 0;
+	for( i=0; i < mesh->n_elem_type; i++ ) {
+		int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn;
+		int *elem_node_item;
+		int ndiv, ierror;
+		etype = mesh->elem_type_item[i];
+		ndiv = get_elem_ndiv(etype, &ierror);
+		if( ierror ) return HECMW_ERROR;
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		etype_rcap = elem_type_hecmw2rcap( etype );
+		elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+		n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, NULL );
+		assert( n_elem_ref == n_elem * ndiv );
+		n_elem_ref_tot += n_elem_ref;
+		nn = HECMW_get_max_node( etype );
+		n_enode_ref_tot += nn * n_elem_ref;
+	}
+	ref_mesh->n_elem_gross = n_elem_ref_tot;
 
 	HECMW_log( HECMW_LOG_DEBUG, "rank=%d: Refined Element Count will be %d\n", mesh->my_rank, ref_mesh->n_elem_gross );
 
-	if( ref_mesh->n_elem_gross <= 0 ) {
-		HECMW_log(HECMW_LOG_ERROR, "Refiner returned 0 element.\n");
-		return HECMW_ERROR;
-	}
-
-	/* elem_node_index */
-	ref_mesh->elem_node_index = (int *) HECMW_malloc( sizeof(int) * (ref_mesh->n_elem_gross + 1) );
+	/*
+	 * allocate memory
+	 */
+	ref_mesh->elem_node_index = (int *) HECMW_malloc( sizeof(int) * (n_elem_ref_tot + 1) );
 	if( ref_mesh->elem_node_index == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
-	ref_mesh->elem_node_index[0] = 0;
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		int npe = mesh->elem_node_index[i+1] - mesh->elem_node_index[i]; /* nodes per element */
-		for( j=8*i; j < 8*i+8; j++ ) {
-			ref_mesh->elem_node_index[j+1] = ref_mesh->elem_node_index[j] + npe;
-		}
-	}
-
-	/* elem_node_item */
-	ref_mesh->elem_node_item =
-		(int *) HECMW_calloc( ref_mesh->elem_node_index[ref_mesh->n_elem_gross], sizeof(int) );
+	ref_mesh->elem_node_item = (int *) HECMW_calloc( n_enode_ref_tot, sizeof(int) );
 	if( ref_mesh->elem_node_item == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
@@ -436,14 +633,35 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 
 	HECMW_assert( rcapGetNodeCount() == mesh->n_node_gross );
 
-	n_elem_gross = rcapRefineElement(mesh->n_elem_gross,
-			elem_type_hecmw2rcap( mesh->elem_type[0] ),
-			mesh->elem_node_item,
-			ref_mesh->elem_node_item); /* NOTE: elem_node_item needs to be initialized */
+	/*
+	 * perform actual refinement
+	 */
+	ref_mesh->elem_node_index[0] = 0;
+	elem_node_index_ref = ref_mesh->elem_node_index;
+	elem_node_item_ref = ref_mesh->elem_node_item;
+	n_elem_ref_tot = 0;
+	for( i=0; i < mesh->n_elem_type; i++ ) {
+		int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn;
+		int *elem_node_item;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		etype_rcap = elem_type_hecmw2rcap( etype );
+		elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+		n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, elem_node_item_ref );
+		nn = HECMW_get_max_node( etype );
+		for( j=0; j < n_elem_ref; j++ ) {
+			elem_node_index_ref[j+1] = elem_node_index_ref[j] + nn;
+		}
+		elem_node_index_ref += n_elem_ref;
+		elem_node_item_ref += nn * n_elem_ref;
+		n_elem_ref_tot += n_elem_ref;
+	}
 
-	HECMW_log( HECMW_LOG_DEBUG, "rank=%d: Refined Element Count = %d\n", mesh->my_rank, n_elem_gross );
+	HECMW_log( HECMW_LOG_DEBUG, "rank=%d: Refined Element Count = %d\n", mesh->my_rank, n_elem_ref_tot );
 
-	HECMW_assert( n_elem_gross == ref_mesh->n_elem_gross );
+	HECMW_assert( n_elem_ref_tot == ref_mesh->n_elem_gross );
 
 	rcapCommit();
 	return HECMW_SUCCESS;
@@ -718,95 +936,237 @@ call_refiner( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_me
 /*                                                                            */
 /*============================================================================*/
 static int
-rebuild_elem_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+rebuild_elem_ID( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
-	int i, j;
+	int i, j, k;
 	int count;
+	int *elem_ID_org;
+	int *elem_ID_ref;
 
-	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding element info...\n", mesh->my_rank);
-
-	/* elem_ID */
 	ref_mesh->elem_ID = (int *) HECMW_malloc( sizeof(int) * ref_mesh->n_elem_gross * 2 );
 	if( ref_mesh->elem_ID == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
 	count = 0;
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		for( j = 8*i; j < 8*i+8; j++ ) {
-			count++;
-			ref_mesh->elem_ID[2*j  ] = -count; /* TEMPORARY */
-			ref_mesh->elem_ID[2*j+1] = mesh->elem_ID[2*i+1]; /* to be corrected later */
+	elem_ID_org = mesh->elem_ID;
+	elem_ID_ref = ref_mesh->elem_ID;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
+
+		for( j=0; j < n_elem; j++ ) {
+			int rank = elem_ID_org[1];
+			for( k=0; k < ndiv; k++ ) {
+				count++;
+				elem_ID_ref[0] = -count; /* TEMPORARY */
+				elem_ID_ref[1] = rank; /* to be corrected later */
+				elem_ID_ref += 2;
+			}
+			elem_ID_org += 2;
 		}
 	}
+	return HECMW_SUCCESS;
+}
 
-	/* global_elem_ID */
+static int
+rebuild_global_elem_ID( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	int i, j, k;
+	int count;
+	int *global_elem_ID_org;
+	int *global_elem_ID_ref;
+
 	ref_mesh->global_elem_ID = (int *) HECMW_malloc( sizeof(int) * ref_mesh->n_elem_gross );
 	if( ref_mesh->global_elem_ID == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
 	count = 0;
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		ref_mesh->global_elem_ID[8*i] = mesh->global_elem_ID[i];
-		for( j = 8*i+1; j < 8*i+8; j++) {
-			count++;
-			ref_mesh->global_elem_ID[j] = -count;
+	global_elem_ID_org = mesh->global_elem_ID;
+	global_elem_ID_ref = ref_mesh->global_elem_ID;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
+
+		for( j=0; j < n_elem; j++ ) {
+			global_elem_ID_ref[0] = global_elem_ID_org[0];
+			for( k=1; k < ndiv; k++ ) {
+				count++;
+				global_elem_ID_ref[k] = -count;
+			}
+			global_elem_ID_org += 1;
+			global_elem_ID_ref += ndiv;
 		}
 	}
+	return HECMW_SUCCESS;
+}
 
-	/* elem_type */
+static int
+rebuild_elem_type( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	int i, j, k;
+	int *elem_type_ref;
+
 	ref_mesh->elem_type = (int *) HECMW_malloc( sizeof(int) * ref_mesh->n_elem_gross );
 	if( ref_mesh->elem_type == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		for( j = 8*i; j < 8*i+8; j++) {
-			ref_mesh->elem_type[j] = mesh->elem_type[i];
+	elem_type_ref = ref_mesh->elem_type;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
+
+		for( j=0; j < n_elem; j++ ) {
+			for( k=0; k < ndiv; k++ ) {
+				elem_type_ref[k] = etype;
+			}
+			elem_type_ref += ndiv;
 		}
 	}
+	return HECMW_SUCCESS;
+}
 
-	/* section_ID */
+static int
+rebuild_section_ID( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	int i, j, k;
+	int *section_ID_org;
+	int *section_ID_ref;
 	ref_mesh->section_ID = (int *) HECMW_malloc( sizeof(int) * ref_mesh->n_elem_gross );
 	if( ref_mesh->section_ID == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		for( j = 8*i; j < 8*i+8; j++) {
-			ref_mesh->section_ID[j] = mesh->section_ID[i];
+	section_ID_org = mesh->section_ID;
+	section_ID_ref = ref_mesh->section_ID;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
+
+		for( j=0; j < n_elem; j++ ) {
+			int sect_id = section_ID_org[0];
+			for( k=0; k < ndiv; k++ ) {
+				section_ID_ref[k] = sect_id;
+			}
+			section_ID_org += 1;
+			section_ID_ref += ndiv;
 		}
 	}
+	return HECMW_SUCCESS;
+}
 
-	/* elem_mat_ID_index */
+static int
+rebuild_elem_mat_ID_index( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	int i, j, k;
+	int *elem_mat_ID_index_org;
+	int *elem_mat_ID_index_ref;
+
 	ref_mesh->elem_mat_ID_index = (int *) HECMW_malloc( sizeof(int) * (ref_mesh->n_elem_gross + 1) );
 	if( ref_mesh->elem_mat_ID_index == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
 	ref_mesh->elem_mat_ID_index[0] = 0;
-	for( i=0; i < mesh->n_elem_gross; i++ ) {
-		int n = mesh->elem_mat_ID_index[i+1] - mesh->elem_mat_ID_index[i];
-		for( j = 8*i; j < 8*i+8; j++ ) {
-			ref_mesh->elem_mat_ID_index[j+1] = ref_mesh->elem_mat_ID_index[j] + n;
+	elem_mat_ID_index_org = mesh->elem_mat_ID_index;
+	elem_mat_ID_index_ref = ref_mesh->elem_mat_ID_index;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
+
+		for( j=0; j < n_elem; j++ ) {
+			int n = elem_mat_ID_index_org[1] - elem_mat_ID_index_org[0];
+			for( k=0; k < ndiv; k++ ) {
+				elem_mat_ID_index_ref[k+1] = elem_mat_ID_index_ref[k] + n;
+			}
+			elem_mat_ID_index_org += 1;
+			elem_mat_ID_index_ref += ndiv;
 		}
 	}
+	return HECMW_SUCCESS;
+}
 
-	/* elem_mat_ID_item */
+static int
+rebuild_elem_mat_ID_item( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	int i, j, k, l;
+	int *elem_mat_ID_index_org;
+	int *elem_mat_ID_item_org;
+	int *elem_mat_ID_item_ref;
+
 	ref_mesh->elem_mat_ID_item =
 		(int *) HECMW_malloc( sizeof(int) * ref_mesh->elem_mat_ID_index[ref_mesh->n_elem_gross] );
 	if( ref_mesh->elem_mat_ID_item == NULL ) {
 		HECMW_set_error(errno, "");
 		return HECMW_ERROR;
 	}
-	for( i=0; i < mesh->elem_mat_ID_index[mesh->n_elem_gross]; i++ ) {
-		for( j = 8*i; j < 8*i+8; j++ ) {
-			ref_mesh->elem_mat_ID_item[j] = mesh->elem_mat_ID_item[i];
-		}
-	} /* TODO: check this! */
+	elem_mat_ID_index_org = mesh->elem_mat_ID_index;
+	elem_mat_ID_item_org = mesh->elem_mat_ID_item;
+	elem_mat_ID_item_ref = ref_mesh->elem_mat_ID_item;
+	for( i=0; i < mesh->n_elem_type; i++) {
+		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		etype = mesh->elem_type_item[i];
+		istart = mesh->elem_type_index[i];
+		iend = mesh->elem_type_index[i+1];
+		n_elem = iend - istart;
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return HECMW_ERROR;
 
-	/* n_elem_mat_ID */
+		for( j=0; j < n_elem; j++ ) {
+			int n = elem_mat_ID_index_org[1] - elem_mat_ID_index_org[0];
+			for( k=0; k < ndiv; k++ ) {
+				for( l=0; l < n; l++) {
+					elem_mat_ID_item_ref[l] = elem_mat_ID_item_org[l];
+				}
+				elem_mat_ID_item_ref += n;
+			}
+			elem_mat_ID_index_org += 1;
+			elem_mat_ID_item_org += n;
+		}
+	}
+	return HECMW_SUCCESS;
+}
+
+static int
+rebuild_elem_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+
+	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding element info...\n", mesh->my_rank);
+
+	if( rebuild_elem_ID( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_global_elem_ID( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_elem_type( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_section_ID( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_elem_mat_ID_index( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_elem_mat_ID_item( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
 	ref_mesh->n_elem_mat_ID = ref_mesh->elem_mat_ID_index[ref_mesh->n_elem_gross];
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding element info.\n", mesh->my_rank);
@@ -936,6 +1296,13 @@ elem_type_rcap2hecmw(int etype)
 }
 
 static int
+get_rcap_elem_max_node(int etype_rcap)
+{
+	int etype_hecmw = elem_type_rcap2hecmw( etype_rcap );
+	return HECMW_get_max_node( etype_hecmw );
+}
+
+static int
 determine_node_rank(const struct hecmwST_local_mesh *mesh,
 		const struct hecmw_varray_int *shared,
 		struct hecmwST_local_mesh *ref_mesh)
@@ -969,14 +1336,13 @@ determine_node_rank(const struct hecmwST_local_mesh *mesh,
 	while( HECMW_set_int_iter_next( &boundary_nodes, &bnode ) ) {
 		int original[HECMW_MAX_NODE_MAX];
 		int orig_type_rcap = rcapGetOriginal( bnode, original );
-		int orig_type_hecmw = elem_type_rcap2hecmw( orig_type_rcap );
 		int min_rank = mesh->n_subdomain;
 		int max_rank = -1;
 		int nn;
 
 		HECMW_assert( orig_type_rcap != RCAP_UNKNOWNTYPE );
 
-		nn = HECMW_get_max_node( orig_type_hecmw );
+		nn = get_rcap_elem_max_node( orig_type_rcap );
 
 		for( k=0; k < nn; k++ ) {
 			int rank;
@@ -1446,9 +1812,6 @@ copy_elem_etype( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mes
 			HECMW_set_error(errno, "");
 			return HECMW_ERROR;
 		}
-		for( i=0; i < mesh->n_elem_type+1; i++ ) {
-			ref_mesh->elem_type_index[i] = mesh->elem_type_index[i] * 8; /* TEMPORARY */
-		}
 
 		/* elem_type_item */
 		ref_mesh->elem_type_item = (int *) HECMW_malloc( sizeof(int) * mesh->n_elem_type );
@@ -1456,8 +1819,16 @@ copy_elem_etype( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mes
 			HECMW_set_error(errno, "");
 			return HECMW_ERROR;
 		}
+
+		ref_mesh->elem_type_index[0] = 0;
 		for( i=0; i < mesh->n_elem_type; i++ ) {
-			ref_mesh->elem_type_item[i] = mesh->elem_type_item[i];
+			int etype, ierror, ndiv, nelem;
+			etype = mesh->elem_type_item[i];
+			ndiv = get_elem_ndiv( etype, &ierror );
+			if( ierror ) return HECMW_ERROR;
+			nelem = mesh->elem_type_index[i+1] - mesh->elem_type_index[i];
+			ref_mesh->elem_type_index[i+1] = ref_mesh->elem_type_index[i] + nelem * ndiv;
+			ref_mesh->elem_type_item[i] = etype;
 		}
 	}
 	return HECMW_SUCCESS;
@@ -2442,6 +2813,8 @@ HECMW_dist_refine(struct hecmwST_local_mesh **mesh,
 	int error_flag = HECMW_SUCCESS;
 	int i;
 
+	HECMW_setloglv(HECMW_LOG_DEBUG);
+
 	if( refine <= 0 ) return HECMW_SUCCESS;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refinement requested; starting...\n", (*mesh)->my_rank);
@@ -2469,7 +2842,7 @@ HECMW_dist_refine(struct hecmwST_local_mesh **mesh,
 		HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refining(%d)...\n", (*mesh)->my_rank, i+1);
 
 		if( refine_dist_mesh( *mesh, ref_mesh ) != HECMW_SUCCESS ) {
-			HECMW_log(HECMW_LOG_ERROR, "Refinement failed\n");
+			HECMW_log(HECMW_LOG_ERROR, "rank=%d: Refinement failed\n", (*mesh)->my_rank);
 			error_flag = HECMW_ERROR;
 			break;
 		}

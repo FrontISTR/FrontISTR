@@ -103,7 +103,10 @@ HECMW_get_mesh(char *name_ID)
 		cad_filename = filename;
 	}
 
-	HECMW_dist_refine(&mesh, files->meshfiles[0].refine, cad_filename, NULL);
+	if(HECMW_dist_refine(&mesh, files->meshfiles[0].refine, cad_filename, NULL) != HECMW_SUCCESS) {
+		HECMW_dist_free(mesh);
+		return NULL;
+	}
 
 	HECMW_ctrl_free_meshfiles(files);
 

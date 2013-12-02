@@ -1,6 +1,6 @@
 #!/bin/sh
-PART=../../../../../bin/hecmw_part
-FSTR=../../../../../bin/fstr
+PART=../../../../../hecmw1/bin/hecmw_part1
+FSTR=../../../../../fistr1/bin/fistr1
 NPROCS=3
 
 exec 2> test_run.log

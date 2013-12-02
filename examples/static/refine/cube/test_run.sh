@@ -1,5 +1,5 @@
 #!/bin/sh
-FSTR=../../../../bin/fstr
+FSTR=../../../../fistr1/bin/fistr1
 NPROCS=1
 
 exec 2> test_run.log
