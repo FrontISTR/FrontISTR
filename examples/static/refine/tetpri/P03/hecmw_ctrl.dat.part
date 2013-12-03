@@ -1,0 +1,4 @@
+!MESH, NAME=part_in, TYPE=HECMW-ENTIRE, IO=IN
+../sample.msh
+!MESH, NAME=part_out, TYPE=HECMW-DIST, IO=OUT
+sample_P03
