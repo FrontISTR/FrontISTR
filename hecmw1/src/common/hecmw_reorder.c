@@ -920,6 +920,13 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
       n_dof = BIT_DOF_SIX;
       break;
 
+	/* surface shell element (351 361) */
+    case HECMW_ETYPE_SHT6:
+    case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_BEM3:
+      n_dof = BIT_DOF_THREE;
+      break;
+	  
       /* link element for MPC */
     case HECMW_ETYPE_LN11:
     case HECMW_ETYPE_LN12:

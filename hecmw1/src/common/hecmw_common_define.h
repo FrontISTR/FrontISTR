@@ -56,11 +56,14 @@
 #define HECMW_ETYPE_JTQ2 542
 #define HECMW_ETYPE_BEM1 611
 #define HECMW_ETYPE_BEM2 612
+#define HECMW_ETYPE_BEM3 621 /* mixed beam-341*/
 #define HECMW_ETYPE_SHT1 731
 #define HECMW_ETYPE_SHT2 732
 #define HECMW_ETYPE_SHQ1 741
 #define HECMW_ETYPE_SHQ2 742
 #define HECMW_ETYPE_SHQ3 743
+#define HECMW_ETYPE_SHT6 761 /* mixed shell-solid */
+#define HECMW_ETYPE_SHQ8 781
 #define HECMW_ETYPE_LN11 911
 #define HECMW_ETYPE_LN12 912
 #define HECMW_ETYPE_LN13 913
@@ -125,6 +128,7 @@
 #define HECMW_GEOFEM_ETYPE_JTQ2 522
 #define HECMW_GEOFEM_ETYPE_BEM1 611
 #define HECMW_GEOFEM_ETYPE_BEM2 612
+#define HECMW_GEOFEM_ETYPE_BEM3 621 /* mixed beam-341*/
 #define HECMW_GEOFEM_ETYPE_SHT1 711
 #define HECMW_GEOFEM_ETYPE_SHT2 712
 #define HECMW_GEOFEM_ETYPE_SHQ1 721
@@ -133,7 +137,7 @@
 /*
  *   element types in mesh utility
  */
-#define HECMW_MESH_ETYPE_MAX  68
+#define HECMW_MESH_ETYPE_MAX  71
 
 #define HECMW_MESH_ETYPE_PNT  0
 #define HECMW_MESH_ETYPE_ROD1 1
@@ -160,11 +164,14 @@
 #define HECMW_MESH_ETYPE_JTQ2 22
 #define HECMW_MESH_ETYPE_BEM1 23
 #define HECMW_MESH_ETYPE_BEM2 24
+#define HECMW_MESH_ETYPE_BEM3 71 /* mixed beam-341*/
 #define HECMW_MESH_ETYPE_SHT1 25
 #define HECMW_MESH_ETYPE_SHT2 26
 #define HECMW_MESH_ETYPE_SHQ1 27
 #define HECMW_MESH_ETYPE_SHQ2 28
 #define HECMW_MESH_ETYPE_SHQ3 68
+#define HECMW_MESH_ETYPE_SHT6 69 /* mixed shell-solid */
+#define HECMW_MESH_ETYPE_SHQ8 70
 #define HECMW_MESH_ETYPE_LN11 29
 #define HECMW_MESH_ETYPE_LN12 30
 #define HECMW_MESH_ETYPE_LN13 31
@@ -233,10 +240,13 @@
 #define HECMW_UCD_LABEL_JTQ2 "hex2"
 #define HECMW_UCD_LABEL_BEM1 "line"
 #define HECMW_UCD_LABEL_BEM2 "line2"
+#define HECMW_UCD_LABEL_BEM3 "line" /* mixed beam-341*/
 #define HECMW_UCD_LABEL_SHT1 "tri"
 #define HECMW_UCD_LABEL_SHT2 "tri2"
 #define HECMW_UCD_LABEL_SHQ1 "quad"
 #define HECMW_UCD_LABEL_SHQ2 "quad2"
+#define HECMW_UCD_LABEL_SHT6 "tri" /* mixed shell-solid */
+#define HECMW_UCD_LABEL_SHQ8 "quad"
 #define HECMW_UCD_LABEL_LN11 "line"
 #define HECMW_UCD_LABEL_LN12 "line"
 #define HECMW_UCD_LABEL_LN13 "line"
@@ -286,7 +296,7 @@
 #define HECMW_MAX_NODE_TRI2  6
 #define HECMW_MAX_NODE_QUA1  4
 #define HECMW_MAX_NODE_QUA2  8
-#define HECMW_MAX_NODE_ROD31  2
+#define HECMW_MAX_NODE_ROD31 2
 #define HECMW_MAX_NODE_TET1  4
 #define HECMW_MAX_NODE_TET2 10
 #define HECMW_MAX_NODE_PRI1  6
@@ -305,11 +315,14 @@
 #define HECMW_MAX_NODE_JTQ2 16
 #define HECMW_MAX_NODE_BEM1  2
 #define HECMW_MAX_NODE_BEM2  3
+#define HECMW_MAX_NODE_BEM3  4 /* mixed beam-341*/
 #define HECMW_MAX_NODE_SHT1  3
 #define HECMW_MAX_NODE_SHT2  6
 #define HECMW_MAX_NODE_SHQ1  4
 #define HECMW_MAX_NODE_SHQ2  8
 #define HECMW_MAX_NODE_SHQ3  9
+#define HECMW_MAX_NODE_SHT6  6 /* mixed shell-solid */
+#define HECMW_MAX_NODE_SHQ8  8
 #define HECMW_MAX_NODE_LN11  2
 #define HECMW_MAX_NODE_LN12  2
 #define HECMW_MAX_NODE_LN13  2
@@ -377,10 +390,13 @@
 #define HECMW_MAX_EDGE_JTQ2 20
 #define HECMW_MAX_EDGE_BEM1  1
 #define HECMW_MAX_EDGE_BEM2  2
+#define HECMW_MAX_EDGE_BEM3  6 /* mixed beam-341*/
 #define HECMW_MAX_EDGE_SHT1  3
 #define HECMW_MAX_EDGE_SHT2  6
 #define HECMW_MAX_EDGE_SHQ1  4
 #define HECMW_MAX_EDGE_SHQ2  8
+#define HECMW_MAX_EDGE_SHT6  9 /* mixed shell-solid */
+#define HECMW_MAX_EDGE_SHQ8 12
 #define HECMW_MAX_EDGE_LN11  1
 #define HECMW_MAX_EDGE_LN12  1
 #define HECMW_MAX_EDGE_LN13  1
@@ -448,10 +464,13 @@
 #define HECMW_MAX_SURF_JTQ2  2
 #define HECMW_MAX_SURF_BEM1  0
 #define HECMW_MAX_SURF_BEM2  0
+#define HECMW_MAX_SURF_BEM3  4 /* mixed beam-341*/
 #define HECMW_MAX_SURF_SHT1  2
 #define HECMW_MAX_SURF_SHT2  2
 #define HECMW_MAX_SURF_SHQ1  2
 #define HECMW_MAX_SURF_SHQ2  2
+#define HECMW_MAX_SURF_SHT6  5 /* mixed shell-solid */
+#define HECMW_MAX_SURF_SHQ8  6
 #define HECMW_MAX_SURF_LN11  0
 #define HECMW_MAX_SURF_LN12  0
 #define HECMW_MAX_SURF_LN13  0
@@ -519,10 +538,13 @@
 #define HECMW_MAX_TSUF_JTQ2  0
 #define HECMW_MAX_TSUF_BEM1  0
 #define HECMW_MAX_TSUF_BEM2  0
+#define HECMW_MAX_TSUF_BEM3  4 /* mixed beam-341*/
 #define HECMW_MAX_TSUF_SHT1  2
 #define HECMW_MAX_TSUF_SHT2  2
 #define HECMW_MAX_TSUF_SHQ1  0
 #define HECMW_MAX_TSUF_SHQ2  0
+#define HECMW_MAX_TSUF_SHT6  2 /* mixed shell-solid */
+#define HECMW_MAX_TSUF_SHQ8  0
 #define HECMW_MAX_TSUF_LN11  0
 #define HECMW_MAX_TSUF_LN12  0
 #define HECMW_MAX_TSUF_LN13  0
@@ -590,10 +612,13 @@
 #define HECMW_MAX_QSUF_JTQ2  2
 #define HECMW_MAX_QSUF_BEM1  0
 #define HECMW_MAX_QSUF_BEM2  0
+#define HECMW_MAX_QSUF_BEM3  0 /* mixed beam-341*/
 #define HECMW_MAX_QSUF_SHT1  0
 #define HECMW_MAX_QSUF_SHT2  0
 #define HECMW_MAX_QSUF_SHQ1  2
 #define HECMW_MAX_QSUF_SHQ2  2
+#define HECMW_MAX_QSUF_SHT6  3 /* mixed shell-solid */
+#define HECMW_MAX_QSUF_SHQ8  6
 #define HECMW_MAX_QSUF_LN11  0
 #define HECMW_MAX_QSUF_LN12  0
 #define HECMW_MAX_QSUF_LN13  0

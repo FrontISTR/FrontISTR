@@ -1003,6 +1003,40 @@ error:
     return -1;
 }
 
+static int
+edge_info_bem3( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
+{
+    int node[4], node_index;
+    int edge[6];
+    int i, j;
+
+    for( i=is; i<ie; i++ ) {
+        node_index = local_mesh->elem_node_index[i];
+        for( j=0; j<4; j++ ) {
+            node[j] = local_mesh->elem_node_item[node_index+j];
+        }
+
+        edge[0] = HECMW_mesh_hsort_edge( node[0], node[1] );
+        if( edge[0] < 0 )  goto error;
+        edge[1] = HECMW_mesh_hsort_edge( node[1], node[2] );
+        if( edge[1] < 0 )  goto error;
+        edge[2] = HECMW_mesh_hsort_edge( node[2], node[0] );
+        if( edge[2] < 0 )  goto error;
+        edge[3] = HECMW_mesh_hsort_edge( node[0], node[3] );
+        if( edge[3] < 0 )  goto error;
+        edge[4] = HECMW_mesh_hsort_edge( node[1], node[3] );
+        if( edge[4] < 0 )  goto error;
+        edge[5] = HECMW_mesh_hsort_edge( node[2], node[3] );
+        if( edge[5] < 0 )  goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
+}
+
+
 
 static int
 edge_info_sht1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
@@ -1133,6 +1167,89 @@ error:
     return -1;
 }
 
+static int
+edge_info_sht6( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
+{
+     int node[6], node_index;
+    int edge[9];
+    int i, j;
+
+    for( i=is; i<ie; i++ ) {
+        node_index = local_mesh->elem_node_index[i];
+        for( j=0; j<6; j++ ) {
+            node[j] = local_mesh->elem_node_item[node_index+j];
+        }
+
+        edge[0] = HECMW_mesh_hsort_edge( node[0], node[1] );
+        if( edge[0] < 0 )  goto error;
+        edge[1] = HECMW_mesh_hsort_edge( node[1], node[2] );
+        if( edge[1] < 0 )  goto error;
+        edge[2] = HECMW_mesh_hsort_edge( node[2], node[0] );
+        if( edge[2] < 0 )  goto error;
+        edge[3] = HECMW_mesh_hsort_edge( node[3], node[4] );
+        if( edge[3] < 0 )  goto error;
+        edge[4] = HECMW_mesh_hsort_edge( node[4], node[5] );
+        if( edge[4] < 0 )  goto error;
+        edge[5] = HECMW_mesh_hsort_edge( node[5], node[3] );
+        if( edge[5] < 0 )  goto error;
+        edge[6] = HECMW_mesh_hsort_edge( node[0], node[3] );
+        if( edge[6] < 0 )  goto error;
+        edge[7] = HECMW_mesh_hsort_edge( node[1], node[4] );
+        if( edge[7] < 0 )  goto error;
+        edge[8] = HECMW_mesh_hsort_edge( node[2], node[5] );
+        if( edge[8] < 0 )  goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
+}
+
+static int
+edge_info_shq8( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
+{
+    int node[8], node_index;
+    int edge[12];
+    int i, j;
+
+    for( i=is; i<ie; i++ ) {
+        node_index = local_mesh->elem_node_index[i];
+        for( j=0; j<8; j++ ) {
+            node[j] = local_mesh->elem_node_item[node_index+j];
+        }
+
+        edge[ 0] = HECMW_mesh_hsort_edge( node[0], node[1] );
+        if( edge[ 0] < 0 )  goto error;
+        edge[ 1] = HECMW_mesh_hsort_edge( node[1], node[2] );
+        if( edge[ 1] < 0 )  goto error;
+        edge[ 2] = HECMW_mesh_hsort_edge( node[2], node[3] );
+        if( edge[ 2] < 0 )  goto error;
+        edge[ 3] = HECMW_mesh_hsort_edge( node[3], node[0] );
+        if( edge[ 3] < 0 )  goto error;
+        edge[ 4] = HECMW_mesh_hsort_edge( node[4], node[5] );
+        if( edge[ 4] < 0 )  goto error;
+        edge[ 5] = HECMW_mesh_hsort_edge( node[5], node[6] );
+        if( edge[ 5] < 0 )  goto error;
+        edge[ 6] = HECMW_mesh_hsort_edge( node[6], node[7] );
+        if( edge[ 6] < 0 )  goto error;
+        edge[ 7] = HECMW_mesh_hsort_edge( node[7], node[4] );
+        if( edge[ 7] < 0 )  goto error;
+        edge[ 8] = HECMW_mesh_hsort_edge( node[0], node[4] );
+        if( edge[ 8] < 0 )  goto error;
+        edge[ 9] = HECMW_mesh_hsort_edge( node[1], node[5] );
+        if( edge[ 9] < 0 )  goto error;
+        edge[10] = HECMW_mesh_hsort_edge( node[2], node[6] );
+        if( edge[10] < 0 )  goto error;
+        edge[11] = HECMW_mesh_hsort_edge( node[3], node[7] );
+        if( edge[11] < 0 )  goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
+}
 
 extern int
 HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
@@ -1241,6 +1358,9 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_BEM2:  /* beam ( 2nd order ) */
             if( edge_info_bem2( local_mesh, is, ie ) )  goto error;
             break;
+		 case HECMW_ETYPE_BEM3:  /* beam ( Mixed beam 341) */
+            if( edge_info_bem3( local_mesh, is, ie ) )  goto error;
+            break;
 
             
         case HECMW_ETYPE_SHT1:  /* triangluar shell ( 1st order ) */
@@ -1254,6 +1374,12 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             break;
         case HECMW_ETYPE_SHQ2:  /* quadrilateral shell ( 2nd order ) */
             if( edge_info_shq2( local_mesh, is, ie ) )  goto error;
+            break;
+		case HECMW_ETYPE_SHT6:  /* triangluar shell ( Mixed solid ) */
+            if( edge_info_sht6( local_mesh, is, ie ) )  goto error;
+            break;
+		case HECMW_ETYPE_SHQ8:  /* quadrilateral shell ( Mixed solid ) */
+            if( edge_info_shq8( local_mesh, is, ie ) )  goto error;
             break;
 
         case HECMW_ETYPE_LN11:

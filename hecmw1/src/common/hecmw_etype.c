@@ -56,11 +56,14 @@ HECMW_get_etype_UTIL2HECMW( int etype )
   case HECMW_MESH_ETYPE_JTQ2:  return HECMW_ETYPE_JTQ2;  
   case HECMW_MESH_ETYPE_BEM1:  return HECMW_ETYPE_BEM1;  
   case HECMW_MESH_ETYPE_BEM2:  return HECMW_ETYPE_BEM2;  
+  case HECMW_MESH_ETYPE_BEM3:  return HECMW_ETYPE_BEM3;  /* mixed beam-341*/ 
   case HECMW_MESH_ETYPE_SHT1:  return HECMW_ETYPE_SHT1;  
   case HECMW_MESH_ETYPE_SHT2:  return HECMW_ETYPE_SHT2;  
   case HECMW_MESH_ETYPE_SHQ1:  return HECMW_ETYPE_SHQ1;  
   case HECMW_MESH_ETYPE_SHQ2:  return HECMW_ETYPE_SHQ2;
   case HECMW_MESH_ETYPE_SHQ3:  return HECMW_ETYPE_SHQ3;  
+  case HECMW_MESH_ETYPE_SHT6:  return HECMW_ETYPE_SHT6;  /* mixed shell-solid */
+  case HECMW_MESH_ETYPE_SHQ8:  return HECMW_ETYPE_SHQ8; 
   case HECMW_MESH_ETYPE_LN11:  return HECMW_ETYPE_LN11;  
   case HECMW_MESH_ETYPE_LN12:  return HECMW_ETYPE_LN12;  
   case HECMW_MESH_ETYPE_LN13:  return HECMW_ETYPE_LN13;  
@@ -139,11 +142,14 @@ HECMW_get_etype_HECMW2UTIL( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MESH_ETYPE_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MESH_ETYPE_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MESH_ETYPE_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MESH_ETYPE_BEM3; /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_MESH_ETYPE_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MESH_ETYPE_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MESH_ETYPE_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MESH_ETYPE_SHQ2; 
-  case HECMW_ETYPE_SHQ3:  return HECMW_MESH_ETYPE_SHQ3; 
+  case HECMW_ETYPE_SHQ3:  return HECMW_MESH_ETYPE_SHQ3;
+  case HECMW_ETYPE_SHT6:  return HECMW_MESH_ETYPE_SHT6; /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MESH_ETYPE_SHQ8;   
   case HECMW_ETYPE_LN11:  return HECMW_MESH_ETYPE_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MESH_ETYPE_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MESH_ETYPE_LN13;  
@@ -217,6 +223,7 @@ HECMW_get_etype_GeoFEM2HECMW( int etype )
   case HECMW_GEOFEM_ETYPE_JTQ2:  return HECMW_ETYPE_JTQ2;  
   case HECMW_GEOFEM_ETYPE_BEM1:  return HECMW_ETYPE_BEM1;  
   case HECMW_GEOFEM_ETYPE_BEM2:  return HECMW_ETYPE_BEM2;  
+  case HECMW_GEOFEM_ETYPE_BEM3:  return HECMW_ETYPE_BEM3; 
   case HECMW_GEOFEM_ETYPE_SHT1:  return HECMW_ETYPE_SHT1;  
   case HECMW_GEOFEM_ETYPE_SHT2:  return HECMW_ETYPE_SHT2;  
   case HECMW_GEOFEM_ETYPE_SHQ1:  return HECMW_ETYPE_SHQ1;  
@@ -262,11 +269,14 @@ HECMW_get_max_node( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MAX_NODE_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MAX_NODE_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MAX_NODE_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MAX_NODE_BEM3;  /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_NODE_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_NODE_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_NODE_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MAX_NODE_SHQ2;
   case HECMW_ETYPE_SHQ3:  return HECMW_MAX_NODE_SHQ3;
+  case HECMW_ETYPE_SHT6:  return HECMW_MAX_NODE_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MAX_NODE_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_MAX_NODE_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_NODE_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_NODE_LN13;  
@@ -343,10 +353,13 @@ HECMW_get_max_edge( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MAX_EDGE_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MAX_EDGE_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MAX_EDGE_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MAX_EDGE_BEM3;  /* mixed beam-341*/  
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_EDGE_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_EDGE_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_EDGE_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MAX_EDGE_SHQ2;  
+  case HECMW_ETYPE_SHT6:  return HECMW_MAX_EDGE_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MAX_EDGE_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_MAX_EDGE_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_EDGE_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_EDGE_LN13;  
@@ -423,10 +436,13 @@ HECMW_get_max_surf( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MAX_SURF_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MAX_SURF_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MAX_SURF_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MAX_SURF_BEM3;   /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_SURF_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_SURF_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_SURF_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MAX_SURF_SHQ2;  
+  case HECMW_ETYPE_SHT6:  return HECMW_MAX_SURF_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MAX_SURF_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_MAX_SURF_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_SURF_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_SURF_LN13;  
@@ -502,10 +518,13 @@ HECMW_get_max_tsuf( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MAX_TSUF_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MAX_TSUF_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MAX_TSUF_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MAX_TSUF_BEM3;  /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_TSUF_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_TSUF_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_TSUF_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MAX_TSUF_SHQ2;  
+  case HECMW_ETYPE_SHT6:  return HECMW_MAX_TSUF_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MAX_TSUF_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_MAX_TSUF_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_TSUF_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_TSUF_LN13;  
@@ -582,10 +601,13 @@ HECMW_get_max_qsuf( int etype )
   case HECMW_ETYPE_JTQ2:  return HECMW_MAX_QSUF_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_MAX_QSUF_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_MAX_QSUF_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_MAX_QSUF_BEM3;  /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_MAX_QSUF_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_MAX_QSUF_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_MAX_QSUF_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_MAX_QSUF_SHQ2;  
+  case HECMW_ETYPE_SHT6:  return HECMW_MAX_QSUF_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_MAX_QSUF_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_MAX_QSUF_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_MAX_QSUF_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_MAX_QSUF_LN13;  
@@ -662,11 +684,14 @@ extern char
   case HECMW_ETYPE_JTQ2:  return HECMW_UCD_LABEL_JTQ2;  
   case HECMW_ETYPE_BEM1:  return HECMW_UCD_LABEL_BEM1;  
   case HECMW_ETYPE_BEM2:  return HECMW_UCD_LABEL_BEM2;  
+  case HECMW_ETYPE_BEM3:  return HECMW_UCD_LABEL_BEM3;  /* mixed beam-341*/
   case HECMW_ETYPE_SHT1:  return HECMW_UCD_LABEL_SHT1;  
   case HECMW_ETYPE_SHT2:  return HECMW_UCD_LABEL_SHT2;  
   case HECMW_ETYPE_SHQ1:  return HECMW_UCD_LABEL_SHQ1;  
   case HECMW_ETYPE_SHQ2:  return HECMW_UCD_LABEL_SHQ2;  
   case HECMW_ETYPE_SHQ3:  return HECMW_UCD_LABEL_SHQ2;
+  case HECMW_ETYPE_SHT6:  return HECMW_UCD_LABEL_SHT6;  /* mixed shell-solid */
+  case HECMW_ETYPE_SHQ8:  return HECMW_UCD_LABEL_SHQ8; 
   case HECMW_ETYPE_LN11:  return HECMW_UCD_LABEL_LN11;  
   case HECMW_ETYPE_LN12:  return HECMW_UCD_LABEL_LN12;  
   case HECMW_ETYPE_LN13:  return HECMW_UCD_LABEL_LN13;  
@@ -781,7 +806,8 @@ HECMW_is_etype_beam(int etype)
 {
   switch(etype) {	
   case 611:				/* fall through */
-  case 612:	return 1;
+  case 612:
+  case 621:	return 1;
   }
   return 0;
 }	
@@ -795,6 +821,8 @@ HECMW_is_etype_shell(int etype)
   case 732:				/* fall through */
   case 741:				/* fall through */
   case 743:
+  case 761:
+  case 781:
   case 742:	return 1;
   }
   return 0;
