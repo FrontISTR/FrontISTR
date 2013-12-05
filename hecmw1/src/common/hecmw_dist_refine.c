@@ -332,7 +332,7 @@ get_sid_r2h( int etype, int *ierror )
 	case HECMW_ETYPE_SHQ1:
 	case HECMW_ETYPE_SHQ2:
 	case HECMW_ETYPE_SHQ8:
-		sid_h2r = NULL;
+		sid_r2h = NULL;
 		break;
 	default:
 		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
@@ -360,7 +360,7 @@ surf_ID_hecmw2rcap( struct hecmwST_local_mesh *mesh )
 
 		sid_h2r = get_sid_h2r( mesh->elem_type[eid-1], &ierror );
 		if( ierror ) return HECMW_ERROR;
-		*sid_p = sid_h2r[*sid_p];
+		if( sid_h2r ) *sid_p = sid_h2r[*sid_p];
 	}
 	return HECMW_SUCCESS;
 }
@@ -384,7 +384,7 @@ surf_ID_rcap2hecmw( struct hecmwST_local_mesh *mesh )
 
 		sid_r2h = get_sid_r2h( mesh->elem_type[eid-1], &ierror );
 		if( ierror ) return HECMW_ERROR;
-		*sid_p = sid_r2h[*sid_p];
+		if( sid_r2h ) *sid_p = sid_r2h[*sid_p];
 	}
 	return HECMW_SUCCESS;
 }
@@ -494,18 +494,59 @@ register_elem_groups( struct hecmwST_elem_grp *grp )
 }
 
 
-static void
-register_surf_groups( struct hecmwST_surf_grp *grp )
+static int
+register_surf_groups( struct hecmwST_local_mesh *mesh )
 {
-	int i;
+	struct hecmwST_surf_grp *grp = mesh->surf_group;
+	int i, j;
 	char rcap_name[80];
+
+	struct hecmw_varray_int sh1, sh2, other;
 
 	for( i=0; i < grp->n_grp; i++ ) {
 		int start = grp->grp_index[i];
 		int num = grp->grp_index[i+1] - start;
 		int *array = grp->grp_item + start * 2;
+
+		if( HECMW_varray_int_init( &sh1 ) != HECMW_SUCCESS ) return HECMW_ERROR;
+		if( HECMW_varray_int_init( &sh2 ) != HECMW_SUCCESS ) return HECMW_ERROR;
+		if( HECMW_varray_int_init( &other ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
+		for( j=0; j < num; j++ ) {
+			int elem = array[j*2];
+			int surf = array[j*2+1];
+			int etype = mesh->elem_type[elem-1];
+			if( HECMW_is_etype_shell( etype ) ) {
+				if( surf == 1 ) {
+					if( HECMW_varray_int_append( &sh1, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+				} else {
+					HECMW_assert( surf == 2 );
+					if( HECMW_varray_int_append( &sh2, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+				}
+			} else {
+				if( HECMW_varray_int_append( &other, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+				if( HECMW_varray_int_append( &other, surf ) != HECMW_SUCCESS ) return HECMW_ERROR;
+			}
+		}
+
+		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
+		num = HECMW_varray_int_nval( &sh1 );
+		array = HECMW_varray_int_get_v( &sh1 );
+		rcapAppendElementGroup( rcap_name, num, array );
+
+		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
+		num = HECMW_varray_int_nval( &sh2 );
+		array = HECMW_varray_int_get_v( &sh2 );
+		rcapAppendElementGroup( rcap_name, num, array );
+
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
+		num = HECMW_varray_int_nval( &other );
+		array = HECMW_varray_int_get_v( &other );
 		rcapAppendFaceGroup( rcap_name, num, array );
+
+		HECMW_varray_int_finalize( &sh1 );
+		HECMW_varray_int_finalize( &sh2 );
+		HECMW_varray_int_finalize( &other );
 	}
 }
 
@@ -545,7 +586,7 @@ prepare_refiner( struct hecmwST_local_mesh *mesh,
 	register_node( mesh );
 	register_node_groups( mesh->node_group );
 	register_elem_groups( mesh->elem_group );
-	register_surf_groups( mesh->surf_group );
+	register_surf_groups( mesh );
 	register_shared_elements( mesh );
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n", mesh->my_rank);
@@ -633,7 +674,7 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		etype_rcap = elem_type_hecmw2rcap( etype );
 		elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
 		n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, NULL );
-		assert( n_elem_ref == n_elem * ndiv );
+		HECMW_assert( n_elem_ref == n_elem * ndiv );
 		n_elem_ref_tot += n_elem_ref;
 		nn = HECMW_get_max_node( etype );
 		n_enode_ref_tot += nn * n_elem_ref;
@@ -899,31 +940,78 @@ refine_surf_group_info( struct hecmwST_surf_grp *grp, struct hecmwST_surf_grp *r
 	}
 	ref_grp->grp_index[0] = 0;
 	for( i=0; i < grp->n_grp; i++ ) {
+		int num;
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
-		ref_grp->grp_index[i+1] =
-			ref_grp->grp_index[i] + rcapGetFaceGroupCount( rcap_name );
+		num = rcapGetFaceGroupCount( rcap_name );
+		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
+		num += rcapGetElementGroupCount( rcap_name );
+		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
+		num += rcapGetElementGroupCount( rcap_name );
+		ref_grp->grp_index[i+1] = ref_grp->grp_index[i] + num;
 	}
+	HECMW_assert( ref_grp->grp_index[grp->n_grp] >= 0 );
 
 	/* grp_item */
-	if( ref_grp->grp_index[grp->n_grp] > 0 ) {
-		ref_grp->grp_item =
-			(int *) HECMW_calloc( ref_grp->grp_index[grp->n_grp] * 2, sizeof(int) );
-		if( ref_grp->grp_item == NULL ) {
+	if( ref_grp->grp_index[grp->n_grp] == 0 ) {
+		ref_grp->grp_item = NULL;
+		return HECMW_SUCCESS;
+	}
+	ref_grp->grp_item =
+		(int *) HECMW_calloc( ref_grp->grp_index[grp->n_grp] * 2, sizeof(int) );
+	if( ref_grp->grp_item == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for( i=0; i < grp->n_grp; i++ ) {
+		int start = ref_grp->grp_index[i];
+		int num_tot = ref_grp->grp_index[i+1] - start;
+		int *array, *tmp;
+		int num, j;
+		if( num_tot == 0 ) continue;
+
+		array = ref_grp->grp_item + start * 2;
+
+		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
+		num = rcapGetFaceGroupCount( rcap_name );
+		rcapGetFaceGroup( rcap_name, num, array );
+
+		num_tot -= num;
+		if( num_tot == 0 ) continue;
+		array += num * 2;
+
+		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
+		num = rcapGetElementGroupCount( rcap_name );
+		tmp = (int *) HECMW_calloc( num * 2, sizeof(int) );
+		if( tmp == NULL ) {
 			HECMW_set_error(errno, "");
 			return HECMW_ERROR;
 		}
-		for( i=0; i < grp->n_grp; i++ ) {
-			int start = ref_grp->grp_index[i];
-			int num = ref_grp->grp_index[i+1] - start;
-			if( num > 0 ) {
-				int *array = ref_grp->grp_item + start * 2;
-				sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
-				rcapGetFaceGroup( rcap_name, num, array );
-			}
-
+		rcapGetElementGroup( rcap_name, num, tmp );
+		for( j=0; j < num; j++ ) {
+			array[j*2] = tmp[j];
+			array[j*2+1] = 1;
 		}
-	} else {
-		ref_grp->grp_item = NULL;
+		HECMW_free( tmp );
+
+		num_tot -= num;
+		if( num_tot == 0 ) continue;
+		array += num * 2;
+
+		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
+		num = rcapGetElementGroupCount( rcap_name );
+		tmp = (int *) HECMW_calloc( num * 2, sizeof(int) );
+		if( tmp == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+		rcapGetElementGroup( rcap_name, num, tmp );
+		for( j=0; j < num; j++ ) {
+			array[j*2] = tmp[j];
+			array[j*2+1] = 2;
+		}
+		HECMW_free( tmp );
+
+		HECMW_assert( (num_tot -= num) == 0 );
 	}
 	return HECMW_SUCCESS;
 }
