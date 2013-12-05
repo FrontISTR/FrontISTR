@@ -807,7 +807,7 @@ HECMW_is_etype_beam(int etype)
   switch(etype) {	
   case 611:				/* fall through */
   case 612:
-  case 621:	return 1;
+  case 641:	return 1;
   }
   return 0;
 }	

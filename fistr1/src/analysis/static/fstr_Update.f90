@@ -288,6 +288,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
   real(kind=kreal)   :: thick, coords(3,3)
   real(kind=kreal), allocatable :: temp(:)
   integer(kind=kint), allocatable :: id_spc(:)
+  real(kind=kreal) :: a
 
 !C
 !C set temperature
@@ -345,6 +346,53 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
         edisp(3*j  ) = fstrSOLID%unode(3*nodLOCAL(j)  )
       enddo
 !--- calculate stress and strain of gauss points
+      
+      IF( ic_type == 641 ) THEN
+       
+       isect = hecMESH%section_ID(icel)
+       ihead = hecMESH%section%sect_R_index(isect-1)
+       
+       CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiff )
+       
+       iflag = 0
+       
+       DO j = 1, nn
+        
+        IF( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+        
+       END DO
+       
+       if( iflag == 1 ) THEN
+        
+        IF( ic_type == 641 ) THEN
+         
+         isect = hecMESH%section_ID(icel)
+         ihead = hecMESH%section%sect_R_index(isect-1)
+         
+         CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiff )
+          
+        END IF
+        
+        force(1:nn*3) = MATMUL( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
+        
+        DO j = 1, nn
+         
+         IF( id_spc( nodLOCAL(j) ) == 1 ) THEN
+          
+          fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 )+force(3*j-2)
+          fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 )+force(3*j-1)
+          fstrSOLID%QFORCE( 3*nodLOCAL(j)   ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)   )+force(3*j  )
+          
+         END IF
+         
+        END DO
+        
+       ENDIF
+       
+       CYCLE
+       
+      END IF
+      
       if( ic_type == 361 ) then
         call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, coords )
       else if( ic_type == 301 ) then

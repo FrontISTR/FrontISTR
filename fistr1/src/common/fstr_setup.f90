@@ -75,6 +75,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror                     
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
         real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
+        real(kind=kreal) :: beam_radius,                          &
+                            beam_angle1, beam_angle2, beam_angle3,&
+                            beam_angle4, beam_angle5, beam_angle6 
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
         character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
@@ -288,7 +291,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call initMaterial(  fstrSOLID%materials(cid) )
               if( fstrPARAM%solution_type == kstNLSTATIC .or. fstrPARAM%solution_type==6 ) & 
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
-              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,alpha_over_mu)
+              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,alpha_over_mu,  &
+                                 beam_radius,beam_angle1,beam_angle2,beam_angle3,&
+                                 beam_angle4,beam_angle5,beam_angle6)            
               fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
               fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
               fstrSOLID%materials(cid)%variables(M_POISSON)=pp
@@ -296,6 +301,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
               fstrSOLID%materials(cid)%variables(M_THICK)=thick
               fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
+              fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
+              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
               fstrSOLID%materials(cid)%mtype = ELASTIC
            enddo
         endif

@@ -21,8 +21,9 @@ module m_static_get_prop
 !C*** GET_PROP for FSTR solver
 !C***
 !C
-   SUBROUTINE fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu)
-
+   SUBROUTINE fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu, &
+                            beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
+                            beam_angle4,beam_angle5,beam_angle6)               
       use m_fstr
       
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
@@ -38,8 +39,8 @@ module m_static_get_prop
       !PAUSE
       !do i = 1,n_item
        thick = hecMESH%section%sect_R_item(ihead+1)
-       
-       IF(thick.LE.0.0) STOP "Zero thickness <= 0 is illegal"
+       !
+       !IF(thick.LE.0.0) STOP "Zero thickness <= 0 is illegal"
        !Print *,'cval:',cval
        !PAUSE
       !end do
@@ -55,6 +56,13 @@ module m_static_get_prop
 !C Get ITEM of Meterial (Young's Modulus & Possion's Ratio
       pp=0.0
       alpha_over_mu = 0.0
+      beam_radius = 0.0
+      beam_angle1 = 0.0
+      beam_angle2 = 0.0
+      beam_angle3 = 0.0
+      beam_angle4 = 0.0
+      beam_angle5 = 0.0
+      beam_angle6 = 0.0
       if( n_item .lt. 1 ) then
         write(IMSG,*) 'n_item=',n_item
         write(IMSG,*) '###Error 1'
@@ -80,6 +88,16 @@ module m_static_get_prop
         alpha_over_mu=1.0D-3
         if ( n_subitem.ge.3 ) then
           alpha_over_mu=hecMESH%material%mat_val(mpos+3)
+        endif
+        if ( n_subitem.ge.9 ) then
+          alpha_over_mu = 0.0D0
+          beam_radius = hecMESH%material%mat_val(mpos+3)
+          beam_angle1 = hecMESH%material%mat_val(mpos+4)
+          beam_angle2 = hecMESH%material%mat_val(mpos+5)
+          beam_angle3 = hecMESH%material%mat_val(mpos+6)
+          beam_angle4 = hecMESH%material%mat_val(mpos+7)
+          beam_angle5 = hecMESH%material%mat_val(mpos+8)
+          beam_angle6 = hecMESH%material%mat_val(mpos+9)
         endif
       endif
 !C Get ITEM of Meterial (Density)

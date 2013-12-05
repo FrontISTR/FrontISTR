@@ -63,6 +63,8 @@ module m_fstr_ass_load
       logical :: fg_surf
       integer(kind=kint) :: tstep
       type( tMaterial ), pointer :: material     !< material information
+      integer(kind=kint) :: ihead
+      real(kind=kreal) :: a
 
       ndof = hecMAT%NDOF
 
@@ -271,6 +273,22 @@ module m_fstr_ass_load
               endif
               pa1=1.d0
             endif
+            
+            IF( ic_type == 641 ) THEN
+             
+             isect= hecMESH%section_ID(icel)
+             ihead = hecMESH%section%sect_R_index(isect-1)
+             
+             CALL TLOAD_Beam_641( ic_type, nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
+                                  fstrSOLID%elements(icel)%gausses, hecMESH%section%sect_R_item(ihead+1:), &
+                                  vect(1:nn*ndof) )                                                        
+                 
+             DO j = 1, ndof*nn
+              hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j) 
+             END DO
+             CYCLE
+            END IF
+            
 ! ----- Create local stiffness
             if (ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 ) then
               call TLOAD_C2(ic_type,nn,xx(1:nn),yy(1:nn),tt(1:nn),tt0(1:nn),  &

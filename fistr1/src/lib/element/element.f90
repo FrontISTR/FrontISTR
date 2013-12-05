@@ -96,6 +96,7 @@ module elementInfo
 
     integer, parameter :: fe_beam2n   = 611
     integer, parameter :: fe_beam3n   = 612
+    integer, parameter :: fe_beam341  = 641
 
     integer, parameter :: fe_tri6n_shell  = 732
     integer, parameter :: fe_dsg3_shell   = 733
@@ -103,6 +104,9 @@ module elementInfo
     integer, parameter :: fe_mitc4_shell  = 741
     integer, parameter :: fe_mitc8_shell  = 742
     integer, parameter :: fe_mitc9_shell  = 743
+	
+    integer, parameter :: fe_mitc3_shell361  = 761
+    integer, parameter :: fe_mitc4_shell361  = 781
 
  ! ---------------------------------------------
 
@@ -140,19 +144,19 @@ module elementInfo
         getNumberOfNodes = 6
       case ( fe_quad4n, fe_mitc4_shell )
         getNumberOfnodes = 4
-      case ( fe_quad8n, fe_mitc8_shell )
+      case ( fe_quad8n, fe_mitc8_shell)
         getNumberOfNodes = 8
       case ( fe_mitc9_shell )
         getNumberOfNodes = 9
-      case ( fe_tet4n )
+      case ( fe_tet4n, fe_beam341 )
         getNumberOfNodes = 4
       case ( fe_tet10n, fe_tet10nc )
         getNumberOfNodes = 10
-      case ( fe_prism6n )
+      case ( fe_prism6n, fe_mitc3_shell361 )
         getNumberOfNodes = 6
       case ( fe_prism15n )
         getNumberOfNodes = 15
-      case ( fe_hex8n )
+      case ( fe_hex8n, fe_mitc4_shell361  )
         getNumberOfNodes = 8
       case ( fe_hex20n )
         getNumberOfNodes = 20
@@ -173,11 +177,11 @@ module elementInfo
         getNumberOfSubface = 3
       case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell, fe_mitc9_shell )
         getNumberOfSubface = 4
-      case ( fe_tet4n, fe_tet10n, fe_tet10nc )
+      case ( fe_tet4n, fe_tet10n, fe_tet10nc, fe_beam341 )
         getNumberOfSubface = 4
-      case ( fe_prism6n, fe_prism15n  )
+      case ( fe_prism6n, fe_prism15n, fe_mitc3_shell361 )
         getNumberOfSubface = 5
-      case ( fe_hex8n, fe_hex20n )
+      case ( fe_hex8n, fe_hex20n, fe_mitc4_shell361 )
         getNumberOfSubface = 8
       case default
         getNumberOfSubface = -1
@@ -194,7 +198,7 @@ module elementInfo
 
       if( innumber>getNumberOfSubface( intype ) ) stop "Error in getting subface"
       select case ( intype )
-      case (fe_tet4n)
+      case (fe_tet4n, fe_beam341)
         outtype = fe_tri3n
         select case ( innumber )
         case (1)
@@ -365,6 +369,42 @@ module elementInfo
         case (4)
           nodes(1) = 4; nodes(2)=1;  nodes(3)=8
         end select
+      case (fe_mitc3_shell361)
+        select case ( innumber )
+        case (1)
+          outtype = fe_tri3n
+          nodes(1)=1; nodes(2)=2; nodes(3)=3
+        case (2)
+          outtype = fe_tri3n
+          nodes(1)=6; nodes(2)=5; nodes(3)=4
+        case (3)
+          outtype = fe_quad4n
+          nodes(1)=4; nodes(2)=5; nodes(3)=2; nodes(4)=1
+        case (4)
+          outtype = fe_quad4n
+          nodes(1)=5; nodes(2)=6; nodes(3)=3; nodes(4)=2
+        case (5)
+          outtype = fe_quad4n
+          nodes(1)=6; nodes(2)=4; nodes(3)=1; nodes(4)=3
+        end select
+      case ( fe_mitc4_shell361 )
+        outtype = fe_quad4n
+        select case ( innumber )
+        case (1)
+          nodes(1)=1; nodes(2)=2; nodes(3)=3; nodes(4)=4
+        case (2)
+          nodes(1)=8; nodes(2)=7; nodes(3)=6; nodes(4)=5
+        case (3)
+          nodes(1)=5; nodes(2)=6; nodes(3)=2; nodes(4)=1
+        case (4)
+          nodes(1)=6; nodes(2)=7; nodes(3)=3; nodes(4)=2
+        case (5)
+          nodes(1)=7; nodes(2)=8; nodes(3)=4; nodes(4)=3
+        case (6)
+          nodes(1)=8; nodes(2)=5; nodes(3)=1; nodes(4)=4
+        case default
+          ! error
+        end select
       case default
          outtype = fe_unknown
          stop "element type not defined-sbs"
@@ -376,7 +416,7 @@ module elementInfo
   integer function NumOfQuadPoints( fetype )
       integer, intent(in) :: fetype         !< element type
       select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n )
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n, fe_beam341 )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
@@ -388,11 +428,11 @@ module elementInfo
         NumOfQuadPoints = 4
       case ( fe_quad8n, fe_mitc9_shell )
         NumOfQuadPoints = 9
-      case ( fe_hex8n )
+      case ( fe_hex8n, fe_mitc4_shell361 )
         NumOfQuadPoints = 8
       case ( fe_hex20n, fe_mitc8_shell )
         NumOfQuadPoints = 27
-      case ( fe_prism6n )
+      case ( fe_prism6n, fe_mitc3_shell361 )
         NumOfQuadPoints = 2
       case ( fe_mitc3_shell )
         NumOfQuadPoints = 3
@@ -431,15 +471,15 @@ module elementInfo
         pos(1:2)=gauss2d2(:,np)
       case ( fe_quad8n, fe_mitc9_shell )
         pos(1:2)=gauss2d3(:,np)
-      case ( fe_hex8n )
+      case ( fe_hex8n, fe_mitc4_shell361 )
         pos(1:3)=gauss3d2(:,np)
       case ( fe_hex20n, fe_mitc8_shell )
         pos(1:3)=gauss3d3(:,np)
-      case ( fe_prism6n )
+      case ( fe_prism6n, fe_mitc3_shell361 )
         pos(1:3)=gauss3d7(:,np)
       case ( fe_prism15n, fe_tri6n_shell )
         pos(1:3)=gauss3d8(:,np)
-      case ( fe_tet4n )
+      case ( fe_tet4n, fe_beam341 )
         pos(1:3)=gauss3d4(:,np)
       case ( fe_tet10n )
         pos(1:3)=gauss3d5(:,np)
@@ -473,15 +513,15 @@ module elementInfo
         getWeight = weight2d2(np)
       case ( fe_quad8n, fe_mitc9_shell )
         getWeight = weight2d3(np)
-      case ( fe_hex8n )
+      case ( fe_hex8n, fe_mitc4_shell361 )
         getWeight = weight3d2(np)
       case ( fe_hex20n)
         getWeight = weight3d3(np)
-      case ( fe_prism6n )
+      case ( fe_prism6n, fe_mitc3_shell361 )
         getWeight = weight3d7(np)
       case ( fe_prism15n )
         getWeight = weight3d8(np)
-      case ( fe_tet4n )
+      case ( fe_tet4n, fe_beam341 )
         getWeight = weight3d4(1)
       case ( fe_tet10n )
         getWeight = weight3d5(np)
@@ -520,17 +560,17 @@ module elementInfo
       case ( fe_mitc9_shell )
         !error check
         call ShapeDeriv_quad9n(localcoord,shapederiv(1:9,1:2))
-      case (fe_hex8n)
+      case (fe_hex8n, fe_mitc4_shell361)
         ! error check
         call ShapeDeriv_hex8n(localcoord,shapederiv(1:8,1:3))
       case (fe_hex20n)
         ! error check
         call ShapeDeriv_hex20n(localcoord, shapederiv(1:20,1:3))
-      case (fe_prism6n)
+      case (fe_prism6n, fe_mitc3_shell361)
         call ShapeDeriv_prism6n(localcoord,shapederiv(1:6,1:3))
       case (fe_prism15n)
         call ShapeDeriv_prism15n(localcoord,shapederiv(1:15,1:3))
-      case (fe_tet4n)
+      case (fe_tet4n, fe_beam341)
         ! error check
         call ShapeDeriv_tet4n(shapederiv(1:4,1:3))
       case (fe_tet10n)
@@ -586,7 +626,7 @@ module elementInfo
       case (fe_quad8n)
         !error check
         call ShapeFunc_quad8n(localcoord,func(1:8))
-      case (fe_hex8n)
+      case (fe_hex8n, fe_mitc4_shell361)
         ! error check
         call ShapeFunc_hex8n(localcoord,func(1:8))
       case ( fe_mitc9_shell )
@@ -595,11 +635,11 @@ module elementInfo
       case (fe_hex20n)
         ! error check
         call ShapeFunc_hex20n(localcoord,func(1:20))
-      case (fe_prism6n)
+      case (fe_prism6n, fe_mitc3_shell361)
         call ShapeFunc_prism6n(localcoord,func(1:6))
       case (fe_prism15n)
         call ShapeFunc_prism15n(localcoord,func(1:15))
-      case (fe_tet4n)
+      case (fe_tet4n, fe_beam341)
         ! error check
         call ShapeFunc_tet4n(localcoord,func(1:4))
       case (fe_tet10n)
@@ -629,12 +669,12 @@ module elementInfo
 !--------------------------------------------------------------------
       
       SELECT CASE( fetype )
-      CASE( fe_tri3n, fe_mitc3_shell )
+      CASE( fe_tri3n, fe_mitc3_shell, fe_mitc3_shell361 )
        
        !error check
        CALL NodalNaturalCoord_tri3n( nncoord(1:3, 1:2) )
        
-      CASE( fe_quad4n, fe_mitc4_shell )
+      CASE( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361 )
        
        !error check
        CALL NodalNaturalCoord_quad4n( nncoord(1:4, 1:2) )
@@ -1093,13 +1133,13 @@ module elementInfo
       case (fe_quad8n)
         !error check
         call ShapeFunc_quad8n(localcoord,func(1:8))
-      case (fe_hex8n)
+      case (fe_hex8n, fe_mitc4_shell361)
         ! error check
         call ShapeFunc_hex8n(localcoord,func(1:8))
       case (fe_hex20n)
         ! error check
         call ShapeFunc_hex20n(localcoord,func(1:20))
-      case (fe_prism6n)
+      case (fe_prism6n, fe_mitc3_shell361)
         FORALL(i=1:3)
           nodev(i,:) = gaussv(1,:)
         END FORALL

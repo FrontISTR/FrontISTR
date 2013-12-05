@@ -108,6 +108,14 @@ MODULE mMaterial
       
       INTEGER, PARAMETER :: M_ALPHA_OVER_MU = 21
 
+      INTEGER, PARAMETER :: M_BEAM_RADIUS = 22
+      INTEGER, PARAMETER :: M_BEAM_ANGLE1 = 23
+      INTEGER, PARAMETER :: M_BEAM_ANGLE2 = 24
+      INTEGER, PARAMETER :: M_BEAM_ANGLE3 = 25
+      INTEGER, PARAMETER :: M_BEAM_ANGLE4 = 26
+      INTEGER, PARAMETER :: M_BEAM_ANGLE5 = 27
+      INTEGER, PARAMETER :: M_BEAM_ANGLE6 = 28
+      
       ! 80~100, hardening parameter
 	  
    ! Dictionary constants

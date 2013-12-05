@@ -45,6 +45,11 @@ contains
       integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF
       integer(kind=kint) ierror,kk,iax,jk
       real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
+      integer(kind=kint) :: ihead
+      real(kind=kreal) :: a
+      real(kind=kreal) :: beam_radius,                          &
+                          beam_angle1, beam_angle2, beam_angle3,&
+                          beam_angle4, beam_angle5, beam_angle6 
       real(kind=kreal) xx1(20),yy1(20),zz1(20),Area
       real(kind=kreal) x(20),  y(20),  z(20),  AA,Volume,val
       real(kind=kreal) smax,chkmass
@@ -85,8 +90,12 @@ contains
           enddo
 !C
           isect = hecMESH%section_ID(icel)
+          ihead = hecMESH%section%sect_R_index(isect-1)
           iax = hecMESH%section%sect_opt(isect)
-          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick,alpha_over_mu)
+          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick,alpha_over_mu,&
+                             beam_radius,beam_angle1,beam_angle2,beam_angle3, &
+                             beam_angle4,beam_angle5,beam_angle6)             
+          
           if( rho<=0.d0 ) then
             print *, "WARNING: Density of element",icel,"not defined!"
             WRITE(IMSG,*) "WARNING: Density of element",icel,"not defined!"
@@ -127,6 +136,12 @@ contains
           elseif( ic_type.EQ.741 ) then 
             call face4( xx,yy,zz,AA )
             val = AA/4.0*thick*rho
+          elseif( ( ic_type.EQ.611 ) .or. ( ic_type.EQ.641 ) ) then
+            AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
+                       +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
+                       +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
+            a = hecMESH%section%sect_R_item(ihead+4)
+            val = 0.25D0*AA*a*rho
           endif
 !C
           do j = 1,nn
@@ -140,6 +155,29 @@ contains
               myEIG%mass(js+4) = myEIG%mass(js+4) + val*thick**2/12.0
               myEIG%mass(js+5) = myEIG%mass(js+5) + val*thick**2/12.0
               myEIG%mass(js+6) = myEIG%mass(js+6) + val*thick**2/12.0
+            elseif( ic_type.EQ.611 ) then
+              myEIG%mass(js+1) = myEIG%mass(js+1) + val
+              myEIG%mass(js+2) = myEIG%mass(js+2) + val
+              myEIG%mass(js+3) = myEIG%mass(js+3) + val
+              !myEIG%mass(js+4) = myEIG%mass(js+4) + val*beam_area/12.0
+              !myEIG%mass(js+5) = myEIG%mass(js+5) + val*beam_area/12.0
+              !myEIG%mass(js+6) = myEIG%mass(js+6) + val*beam_area/12.0
+              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0
+              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0
+              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0
+            elseif( ic_type.EQ.641 ) then
+              IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) ) THEN
+               myEIG%mass(js+1) = myEIG%mass(js+1)+val
+               myEIG%mass(js+2) = myEIG%mass(js+2)+val
+               myEIG%mass(js+3) = myEIG%mass(js+3)+val
+              ELSE IF( ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN
+               ! myEIG%mass(js+1) = myEIG%mass(js+1)+val*beam_area/12.0D0
+               ! myEIG%mass(js+2) = myEIG%mass(js+2)+val*beam_area/12.0D0
+               ! myEIG%mass(js+3) = myEIG%mass(js+3)+val*beam_area/12.0D0
+               myEIG%mass(js+1) = myEIG%mass(js+1)+0.0D0
+               myEIG%mass(js+2) = myEIG%mass(js+2)+0.0D0
+               myEIG%mass(js+3) = myEIG%mass(js+3)+0.0D0
+              END IF
             else
               jj = NDOF*( j-1 )
               do k = 1, NDOF
