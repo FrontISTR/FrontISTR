@@ -68,10 +68,13 @@ get_enode_h2r( int etype, int *ierror )
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
+	case HECMW_ETYPE_BEM3:
 	case HECMW_ETYPE_SHT1:
 	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHT6:
 	case HECMW_ETYPE_SHQ1:
 	case HECMW_ETYPE_SHQ2:
+	case HECMW_ETYPE_SHQ8:
 		enode_h2r = NULL;
 		break;
 	case HECMW_ETYPE_PYR1:
@@ -116,10 +119,13 @@ get_enode_r2h( int etype, int *ierror )
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
+	case HECMW_ETYPE_BEM3:
 	case HECMW_ETYPE_SHT1:
 	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHT6:
 	case HECMW_ETYPE_SHQ1:
 	case HECMW_ETYPE_SHQ2:
+	case HECMW_ETYPE_SHQ8:
 		enode_r2h = NULL;
 		break;
 	case HECMW_ETYPE_PYR1:
@@ -253,6 +259,14 @@ get_sid_h2r( int etype, int *ierror )
 	case HECMW_ETYPE_PYR2:
 		sid_h2r = sid_pyr_h2r;
 		break;
+	case HECMW_ETYPE_SHT1:
+	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHT6:
+	case HECMW_ETYPE_SHQ1:
+	case HECMW_ETYPE_SHQ2:
+	case HECMW_ETYPE_SHQ8:
+		sid_h2r = NULL;
+		break;
 	default:
 		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
 		*ierror = 1;
@@ -311,6 +325,14 @@ get_sid_r2h( int etype, int *ierror )
 	case HECMW_ETYPE_PYR1:
 	case HECMW_ETYPE_PYR2:
 		sid_r2h = sid_pyr_r2h;
+		break;
+	case HECMW_ETYPE_SHT1:
+	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHT6:
+	case HECMW_ETYPE_SHQ1:
+	case HECMW_ETYPE_SHQ2:
+	case HECMW_ETYPE_SHQ8:
+		sid_h2r = NULL;
 		break;
 	default:
 		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
@@ -384,6 +406,7 @@ get_elem_ndiv( int etype, int *ierror )
 	case HECMW_ETYPE_ROD31:
 	case HECMW_ETYPE_BEM1:
 	case HECMW_ETYPE_BEM2:
+	case HECMW_ETYPE_BEM3:
 		ndiv = 2;
 		break;
 	case HECMW_ETYPE_TRI1:
@@ -392,8 +415,10 @@ get_elem_ndiv( int etype, int *ierror )
 	case HECMW_ETYPE_QUA2:
 	case HECMW_ETYPE_SHT1:
 	case HECMW_ETYPE_SHT2:
+	case HECMW_ETYPE_SHT6:
 	case HECMW_ETYPE_SHQ1:
 	case HECMW_ETYPE_SHQ2:
+	case HECMW_ETYPE_SHQ8:
 		ndiv = 4;
 		break;
 	case HECMW_ETYPE_TET1:
