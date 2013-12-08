@@ -54,6 +54,8 @@ get_enode_h2r( int etype, int *ierror )
 
 	*ierror = 0;
 
+	if( HECMW_is_etype_link( etype ) ) return NULL;
+
 	switch( etype ) {
 	case HECMW_ETYPE_ROD1:
 	case HECMW_ETYPE_ROD31:
@@ -86,7 +88,7 @@ get_enode_h2r( int etype, int *ierror )
 		enode_h2r = enode_rod2_h2r;
 		break;
 	default:
-		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		HECMW_log(HECMW_LOG_ERROR, "Element type %d not supported for rerinement.\n", etype);
 		*ierror = 1;
 		enode_h2r = NULL;
 		break;
@@ -104,6 +106,8 @@ get_enode_r2h( int etype, int *ierror )
 	const int *enode_r2h;
 
 	*ierror = 0;
+
+	if( HECMW_is_etype_link( etype ) ) return NULL;
 
 	switch( etype ) {
 	case HECMW_ETYPE_ROD1:
@@ -137,7 +141,7 @@ get_enode_r2h( int etype, int *ierror )
 		enode_r2h = enode_rod2_r2h;
 		break;
 	default:
-		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		HECMW_log(HECMW_LOG_ERROR, "Element type %d not supported for refinement.\n", etype);
 		*ierror = 1;
 		enode_r2h = NULL;
 	}
@@ -211,10 +215,6 @@ elem_node_item_rcap2hecmw( struct hecmwST_local_mesh *mesh)
 static const int *
 get_sid_h2r( int etype, int *ierror )
 {
-	/*
-	 * TODO: add support for shell elements
-	 */
-
 	/* HECMW to RCAP */
 	/*
 	static const int sid_tri_h2r[4] = {-1, 0, 1, 2};
@@ -268,7 +268,7 @@ get_sid_h2r( int etype, int *ierror )
 		sid_h2r = NULL;
 		break;
 	default:
-		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		HECMW_log(HECMW_LOG_ERROR, "Element type %d not supported for refinement.\n", etype);
 		*ierror = 1;
 		sid_h2r = NULL;
 	}
@@ -278,10 +278,6 @@ get_sid_h2r( int etype, int *ierror )
 static const int *
 get_sid_r2h( int etype, int *ierror )
 {
-	/*
-	 * TODO: add support for shell elements
-	 */
-
 	/* RCAP to HECMW */
 	/*
 	static const int sid_tri_r2h[3] = {1, 2, 3};
@@ -335,7 +331,7 @@ get_sid_r2h( int etype, int *ierror )
 		sid_r2h = NULL;
 		break;
 	default:
-		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+		HECMW_log(HECMW_LOG_ERROR, "Element type %d not supported for refinement.\n", etype);
 		*ierror = 1;
 		sid_r2h = NULL;
 	}
@@ -395,46 +391,31 @@ surf_ID_rcap2hecmw( struct hecmwST_local_mesh *mesh )
 /* for models with multiple element types                                     */
 /*                                                                            */
 /*============================================================================*/
+#define NDIV_SEG   2
+#define NDIV_SURF  4
+#define NDIV_BODY  8
+#define NDIV_OTHER 1
+#define NDIV_MAX   8
+
 static int
 get_elem_ndiv( int etype, int *ierror )
 {
 	int ndiv;
 	*ierror = 0;
-	switch( etype ) {
-	case HECMW_ETYPE_ROD1:
-	case HECMW_ETYPE_ROD2:
-	case HECMW_ETYPE_ROD31:
-	case HECMW_ETYPE_BEM1:
-	case HECMW_ETYPE_BEM2:
-	case HECMW_ETYPE_BEM3:
-		ndiv = 2;
-		break;
-	case HECMW_ETYPE_TRI1:
-	case HECMW_ETYPE_TRI2:
-	case HECMW_ETYPE_QUA1:
-	case HECMW_ETYPE_QUA2:
-	case HECMW_ETYPE_SHT1:
-	case HECMW_ETYPE_SHT2:
-	case HECMW_ETYPE_SHT6:
-	case HECMW_ETYPE_SHQ1:
-	case HECMW_ETYPE_SHQ2:
-	case HECMW_ETYPE_SHQ8:
-		ndiv = 4;
-		break;
-	case HECMW_ETYPE_TET1:
-	case HECMW_ETYPE_TET2:
-	case HECMW_ETYPE_PRI1:
-	case HECMW_ETYPE_PRI2:
-	case HECMW_ETYPE_HEX1:
-	case HECMW_ETYPE_HEX2:
-	case HECMW_ETYPE_PYR1:
-	case HECMW_ETYPE_PYR2:
-		ndiv = 8;
-		break;
-	default:
-		HECMW_log(HECMW_LOG_ERROR, "Element type not supported by REVOCAP_Refiner.\n");
+	if( HECMW_is_etype_rod( etype ) ||
+	    HECMW_is_etype_beam( etype ) ) {
+		ndiv = NDIV_SEG;
+	} else if( HECMW_is_etype_surface( etype ) ||
+		   HECMW_is_etype_shell( etype ) ) {
+		ndiv = NDIV_SURF;
+	} else if( HECMW_is_etype_solid( etype ) ) {
+		ndiv = NDIV_BODY;
+	} else if( HECMW_is_etype_link( etype ) ) {
+		ndiv = NDIV_OTHER;
+	} else {
+		HECMW_log(HECMW_LOG_ERROR, "Element type %d not supported for refinement.\n", etype);
 		*ierror = 1;
-		ndiv = 1;
+		ndiv = NDIV_OTHER;
 	}
 	return ndiv;
 }
@@ -475,7 +456,7 @@ register_node_groups( struct hecmwST_node_grp *grp )
 	}
 }
 
-
+/*
 static void
 register_elem_groups( struct hecmwST_elem_grp *grp )
 {
@@ -492,8 +473,8 @@ register_elem_groups( struct hecmwST_elem_grp *grp )
 		rcapAppendElementGroup( rcap_name, num, array );
 	}
 }
-
-
+*/
+/*
 static int
 register_surf_groups( struct hecmwST_local_mesh *mesh )
 {
@@ -549,8 +530,46 @@ register_surf_groups( struct hecmwST_local_mesh *mesh )
 		HECMW_varray_int_finalize( &other );
 	}
 }
+*/
+static int
+register_surf_groups( struct hecmwST_local_mesh *mesh )
+{
+	struct hecmwST_surf_grp *grp = mesh->surf_group;
+	int i, j;
+	char rcap_name[80];
 
+	struct hecmw_varray_int other;
 
+	for( i=0; i < grp->n_grp; i++ ) {
+		int start = grp->grp_index[i];
+		int num = grp->grp_index[i+1] - start;
+		int *array = grp->grp_item + start * 2;
+
+		if( HECMW_varray_int_init( &other ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
+		for( j=0; j < num; j++ ) {
+			int elem = array[j*2];
+			int surf = array[j*2+1];
+			int etype = mesh->elem_type[elem-1];
+
+			/* ignore shell surface */
+			if( HECMW_is_etype_shell( etype ) ) continue;
+
+			if( HECMW_varray_int_append( &other, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+			if( HECMW_varray_int_append( &other, surf ) != HECMW_SUCCESS ) return HECMW_ERROR;
+		}
+
+		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
+		num = HECMW_varray_int_nval( &other );
+		array = HECMW_varray_int_get_v( &other );
+		rcapAppendFaceGroup( rcap_name, num, array );
+
+		HECMW_varray_int_finalize( &other );
+	}
+	return HECMW_SUCCESS;
+}
+
+/*
 static void
 register_shared_elements( struct hecmwST_local_mesh *mesh )
 {
@@ -565,6 +584,7 @@ register_shared_elements( struct hecmwST_local_mesh *mesh )
 		rcapAppendElementGroup( rcap_name, num, array );
 	}
 }
+*/
 
 static int
 prepare_refiner( struct hecmwST_local_mesh *mesh,
@@ -585,9 +605,9 @@ prepare_refiner( struct hecmwST_local_mesh *mesh,
 	}
 	register_node( mesh );
 	register_node_groups( mesh->node_group );
-	register_elem_groups( mesh->elem_group );
-	register_surf_groups( mesh );
-	register_shared_elements( mesh );
+	/* register_elem_groups( mesh->elem_group ); */
+	if( register_surf_groups( mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	/* register_shared_elements( mesh ); */
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
@@ -646,6 +666,18 @@ elem_type_hecmw2rcap(int etype)
 }
 
 static int
+is_etype_33struct( int etype )
+{
+	switch( etype ) {
+	case HECMW_ETYPE_BEM3:
+	case HECMW_ETYPE_SHT6:
+	case HECMW_ETYPE_SHQ8:
+		return 1;
+	}
+	return 0;
+}
+
+static int
 refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
 	int i, j;
@@ -666,14 +698,21 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		int *elem_node_item;
 		int ndiv, ierror;
 		etype = mesh->elem_type_item[i];
-		ndiv = get_elem_ndiv(etype, &ierror);
+		ndiv = get_elem_ndiv( etype, &ierror );
 		if( ierror ) return HECMW_ERROR;
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
 		n_elem = iend - istart;
-		etype_rcap = elem_type_hecmw2rcap( etype );
-		elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
-		n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, NULL );
+		if( HECMW_is_etype_link( etype ) ) {
+			n_elem_ref = n_elem;
+		} else {
+			int is33 = is_etype_33struct( etype );
+			if( is33 ) n_elem *= 2;
+			etype_rcap = elem_type_hecmw2rcap( etype );
+			elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+			n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, NULL );
+			if( is33 ) n_elem_ref /= 2;
+		}
 		HECMW_assert( n_elem_ref == n_elem * ndiv );
 		n_elem_ref_tot += n_elem_ref;
 		nn = HECMW_get_max_node( etype );
@@ -713,10 +752,20 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
 		n_elem = iend - istart;
-		etype_rcap = elem_type_hecmw2rcap( etype );
-		elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
-		n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, elem_node_item_ref );
 		nn = HECMW_get_max_node( etype );
+		if( HECMW_is_etype_link( etype ) ) {
+			n_elem_ref = n_elem;
+			for( j=0; j < n_elem * nn; j++ ) {
+				elem_node_item_ref[j] = elem_node_item[j];
+			}
+		} else {
+			int is33 = is_etype_33struct( etype );
+			if( is33 ) n_elem *= 2;
+			etype_rcap = elem_type_hecmw2rcap( etype );
+			elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+			n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, elem_node_item_ref );
+			if( is33 ) n_elem_ref /= 2;
+		}
 		for( j=0; j < n_elem_ref; j++ ) {
 			elem_node_index_ref[j+1] = elem_node_index_ref[j] + nn;
 		}
@@ -737,8 +786,6 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 static int
 refine_node( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
-	int i;
-
 	/* n_node_gross */
 	ref_mesh->n_node_gross = rcapGetNodeCount();
 
@@ -753,11 +800,7 @@ refine_node( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mes
 		return HECMW_ERROR;
 	}
 	rcapGetNodeSeq64( ref_mesh->n_node_gross, 1, ref_mesh->node );
-/*
-	for( i=0; i < mesh->n_node_gross*3; i++ ) {
-		mesh->node[i] = ref_mesh->node[i];
-	}
-*/
+
 	return HECMW_SUCCESS;
 }
 
@@ -837,10 +880,84 @@ refine_node_group_info( struct hecmwST_node_grp *grp, struct hecmwST_node_grp *r
 
 
 static int
-refine_elem_group_info( struct hecmwST_elem_grp *grp, struct hecmwST_elem_grp *ref_grp, int ref_n_elem_gross )
+get_refined_element_count( const struct hecmwST_local_mesh *mesh, int n_elem, int *elem_list )
+{
+	int i, eid, etype, ierror, ndiv;
+	int n_elem_ref = 0;
+	for( i=0; i < n_elem; i++ ) {
+		eid = elem_list[i];
+		HECMW_assert( 0 < eid && eid <= mesh->n_elem_gross );
+		etype = mesh->elem_type[ eid - 1 ];
+		ndiv = get_elem_ndiv( etype, &ierror );
+		if( ierror ) return -1;
+		n_elem_ref += ndiv;
+	}
+	return n_elem_ref;
+}
+
+static int
+get_refined_elements( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh,
+		      int eid, int *eid_ref )
+{
+	int i, etype, ierror, ndiv;
+	int etype_idx, eid_type;
+	int offset;
+
+	HECMW_assert( 0 < eid );
+	HECMW_assert( eid <= mesh->n_elem_gross );
+	HECMW_assert( eid_ref );
+
+	etype = mesh->elem_type[ eid - 1 ];
+	ndiv = get_elem_ndiv( etype, &ierror );
+	if( ierror ) return -1;
+	etype_idx = -1;
+	eid_type = -1;
+	for( i=0; i < mesh->n_elem_type; i++ ) {
+		if( mesh->elem_type_item[i] == etype ) {
+			etype_idx = i;
+			HECMW_assert( mesh->elem_type_index[i] < eid );
+			HECMW_assert( eid <= mesh->elem_type_index[i+1] );
+			eid_type = eid - mesh->elem_type_index[i];
+			break;
+		}
+	}
+	HECMW_assert( etype_idx >= 0 );
+	HECMW_assert( eid_type > 0 );
+
+	offset = ref_mesh->elem_type_index[ etype_idx ] + (eid_type-1) * ndiv + 1;
+	for( i=0; i < ndiv; i++ ) {
+		eid_ref[i] = offset + i;
+	}
+	return ndiv;
+}
+
+static int
+get_refined_elem_list( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh,
+		       int n_elem, int *elem_list, int *elem_list_ref )
+{
+	int i, j;
+	int eid_ref[NDIV_MAX];
+	int *el_ref = elem_list_ref;
+	int n_elem_ref = 0;
+	for( i=0; i < n_elem; i++ ) {
+		int ndiv = get_refined_elements( mesh, ref_mesh, elem_list[i], eid_ref );
+		if( ndiv < 0 ) return -1;
+		for( j=0; j < ndiv; j++ ) {
+			el_ref[j] = eid_ref[j];
+		}
+		el_ref += ndiv;
+		n_elem_ref += ndiv;
+	}
+	return n_elem_ref;
+}
+
+static int
+refine_elem_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
 	int i;
-	char rcap_name[80];
+	struct hecmwST_elem_grp *grp = mesh->elem_group;
+	struct hecmwST_elem_grp *ref_grp = ref_mesh->elem_group;
+	int ref_n_elem_gross = ref_mesh->n_elem_gross;
 
 	ref_grp->n_grp = grp->n_grp;
 
@@ -851,6 +968,7 @@ refine_elem_group_info( struct hecmwST_elem_grp *grp, struct hecmwST_elem_grp *r
 		return HECMW_ERROR;
 	}
 	/* ALL */
+	HECMW_assert( strcmp( grp->grp_name[0], "ALL" ) == 0 );
 	ref_grp->grp_name[0] = HECMW_strdup( "ALL" );
 	if( ref_grp->grp_name[0] == NULL ) {
 		HECMW_set_error(errno, "");
@@ -876,9 +994,14 @@ refine_elem_group_info( struct hecmwST_elem_grp *grp, struct hecmwST_elem_grp *r
 	ref_grp->grp_index[1] = ref_n_elem_gross;
 	/* other groups */
 	for( i=1; i < grp->n_grp; i++ ) {
-		sprintf( rcap_name, "EG_%s", grp->grp_name[i] );
-		ref_grp->grp_index[i+1] =
-			ref_grp->grp_index[i] + rcapGetElementGroupCount( rcap_name );
+		int start, n_elem, n_elem_ref;
+		int *elem_list;
+		start = grp->grp_index[i];
+		n_elem = grp->grp_index[i+1] - start;
+		elem_list = grp->grp_item + start;
+		n_elem_ref = get_refined_element_count( mesh, n_elem, elem_list );
+		if( n_elem_ref < 0 ) return HECMW_ERROR;
+		ref_grp->grp_index[i+1] = ref_grp->grp_index[i] + n_elem_ref;
 	}
 
 	/* grp_item */
@@ -895,13 +1018,18 @@ refine_elem_group_info( struct hecmwST_elem_grp *grp, struct hecmwST_elem_grp *r
 		}
 		/* other groups */
 		for( i=1; i < grp->n_grp; i++ ) {
-			int start = ref_grp->grp_index[i];
-			int num = ref_grp->grp_index[i+1] - start;
-			if( num > 0 ) {
-				int *array = ref_grp->grp_item + start;
-				sprintf( rcap_name, "EG_%s", grp->grp_name[i] );
-				rcapGetElementGroup( rcap_name, num, array );
-			}
+			int start, start_ref, n_elem, n_elem_ref, ret;
+			int *elem_list, *elem_list_ref;
+			start_ref = ref_grp->grp_index[i];
+			n_elem_ref = ref_grp->grp_index[i+1] - start_ref;
+			HECMW_assert( n_elem_ref >= 0 );
+			if( n_elem_ref == 0 ) continue;
+			start = grp->grp_index[i];
+			n_elem = grp->grp_index[i+1] - start;
+			elem_list = grp->grp_item + start;
+			elem_list_ref = ref_grp->grp_item + start_ref;
+			ret = get_refined_elem_list( mesh, ref_mesh, n_elem, elem_list, elem_list_ref );
+			HECMW_assert( ret == n_elem_ref );
 		}
 	} else {
 		ref_grp->grp_item = NULL;
@@ -911,9 +1039,11 @@ refine_elem_group_info( struct hecmwST_elem_grp *grp, struct hecmwST_elem_grp *r
 
 
 static int
-refine_surf_group_info( struct hecmwST_surf_grp *grp, struct hecmwST_surf_grp *ref_grp )
+refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
-	int i;
+	struct hecmwST_surf_grp *grp = mesh->surf_group;
+	struct hecmwST_surf_grp *ref_grp = ref_mesh->surf_group;
+	int i, j;
 	char rcap_name[80];
 
 	ref_grp->n_grp = grp->n_grp;
@@ -940,14 +1070,25 @@ refine_surf_group_info( struct hecmwST_surf_grp *grp, struct hecmwST_surf_grp *r
 	}
 	ref_grp->grp_index[0] = 0;
 	for( i=0; i < grp->n_grp; i++ ) {
-		int num;
+		int start = grp->grp_index[i];
+		int num = grp->grp_index[i+1] - start;
+		int *array = grp->grp_item + start * 2;
+		int num_sh, num_other;
+
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
-		num = rcapGetFaceGroupCount( rcap_name );
-		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
-		num += rcapGetElementGroupCount( rcap_name );
-		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
-		num += rcapGetElementGroupCount( rcap_name );
-		ref_grp->grp_index[i+1] = ref_grp->grp_index[i] + num;
+		num_other = rcapGetFaceGroupCount( rcap_name );
+
+		/* count shell surface */
+		num_sh = 0;
+		for( j=0; j < num; j++ ) {
+			int elem = array[j*2];
+			int etype = mesh->elem_type[elem-1];
+			if( ! HECMW_is_etype_shell( etype ) ) continue;
+			num_sh += 1;
+		}
+		num_sh *= NDIV_SURF;
+
+		ref_grp->grp_index[i+1] = ref_grp->grp_index[i] + num_other + num_sh;
 	}
 	HECMW_assert( ref_grp->grp_index[grp->n_grp] >= 0 );
 
@@ -963,55 +1104,85 @@ refine_surf_group_info( struct hecmwST_surf_grp *grp, struct hecmwST_surf_grp *r
 		return HECMW_ERROR;
 	}
 	for( i=0; i < grp->n_grp; i++ ) {
-		int start = ref_grp->grp_index[i];
-		int num_tot = ref_grp->grp_index[i+1] - start;
-		int *array, *tmp;
-		int num, j;
-		if( num_tot == 0 ) continue;
+		struct hecmw_varray_int sh1, sh2;
+		int start, num_tot, n_elem, ret;
+		int start_ref, num_ref, num_tot_ref, n_elem_ref;
+		int *array, *array_ref, *elem_list, *elem_list_ref;
 
-		array = ref_grp->grp_item + start * 2;
+		start_ref = ref_grp->grp_index[i];
+		num_tot_ref = ref_grp->grp_index[i+1] - start_ref;
+		if( num_tot_ref == 0 ) continue;
+		array_ref = ref_grp->grp_item + start_ref * 2;
 
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
-		num = rcapGetFaceGroupCount( rcap_name );
-		rcapGetFaceGroup( rcap_name, num, array );
+		num_ref = rcapGetFaceGroupCount( rcap_name );
+		rcapGetFaceGroup( rcap_name, num_ref, array_ref );
 
-		num_tot -= num;
-		if( num_tot == 0 ) continue;
-		array += num * 2;
+		num_tot_ref -= num_ref;
+		if( num_tot_ref == 0 ) continue;
+		array_ref += num_ref * 2;
 
-		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
-		num = rcapGetElementGroupCount( rcap_name );
-		tmp = (int *) HECMW_calloc( num * 2, sizeof(int) );
-		if( tmp == NULL ) {
+		if( HECMW_varray_int_init( &sh1 ) != HECMW_SUCCESS ) return HECMW_ERROR;
+		if( HECMW_varray_int_init( &sh2 ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
+		/* collect shell surface */
+		start = grp->grp_index[i];
+		num_tot = grp->grp_index[i+1] - start;
+		array = grp->grp_item + start * 2;
+		for( j=0; j < num_tot; j++ ) {
+			int elem, etype, surf;
+			elem = array[j*2];
+			surf = array[j*2+1];
+			etype = mesh->elem_type[elem-1];
+			if( ! HECMW_is_etype_shell( etype ) ) continue;
+			if( surf == 1 ) {
+				if( HECMW_varray_int_append( &sh1, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+			} else {
+				HECMW_assert( surf == 2 );
+				if( HECMW_varray_int_append( &sh2, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
+			}
+		}
+
+		n_elem = HECMW_varray_int_nval( &sh1 );
+		elem_list = HECMW_varray_int_get_v( &sh1 );
+		n_elem_ref = n_elem * NDIV_SURF;
+		elem_list_ref = (int *) HECMW_calloc( n_elem_ref, sizeof(int) );
+		if( elem_list_ref == NULL ) {
 			HECMW_set_error(errno, "");
 			return HECMW_ERROR;
 		}
-		rcapGetElementGroup( rcap_name, num, tmp );
-		for( j=0; j < num; j++ ) {
-			array[j*2] = tmp[j];
-			array[j*2+1] = 1;
+		ret = get_refined_elem_list( mesh, ref_mesh, n_elem, elem_list, elem_list_ref );
+		HECMW_assert( ret == n_elem_ref );
+		for( j=0; j < n_elem_ref; j++ ) {
+			array_ref[j*2] = elem_list_ref[j];
+			array_ref[j*2+1] = 1;
 		}
-		HECMW_free( tmp );
+		HECMW_free( elem_list_ref );
 
-		num_tot -= num;
-		if( num_tot == 0 ) continue;
-		array += num * 2;
+		num_tot_ref -= n_elem_ref;
+		if( num_tot_ref == 0 ) continue;
+		array_ref += n_elem_ref * 2;
 
-		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
-		num = rcapGetElementGroupCount( rcap_name );
-		tmp = (int *) HECMW_calloc( num * 2, sizeof(int) );
-		if( tmp == NULL ) {
+		n_elem = HECMW_varray_int_nval( &sh2 );
+		elem_list = HECMW_varray_int_get_v( &sh2 );
+		n_elem_ref = n_elem * NDIV_SURF;
+		elem_list_ref = (int *) HECMW_calloc( n_elem_ref, sizeof(int) );
+		if( elem_list_ref == NULL ) {
 			HECMW_set_error(errno, "");
 			return HECMW_ERROR;
 		}
-		rcapGetElementGroup( rcap_name, num, tmp );
-		for( j=0; j < num; j++ ) {
-			array[j*2] = tmp[j];
-			array[j*2+1] = 2;
+		ret = get_refined_elem_list( mesh, ref_mesh, n_elem, elem_list, elem_list_ref );
+		HECMW_assert( ret == n_elem_ref );
+		for( j=0; j < n_elem_ref; j++ ) {
+			array_ref[j*2] = elem_list_ref[j];
+			array_ref[j*2+1] = 2;
 		}
-		HECMW_free( tmp );
+		HECMW_free( elem_list_ref );
 
-		HECMW_assert( (num_tot -= num) == 0 );
+		HECMW_varray_int_finalize( &sh1 );
+		HECMW_varray_int_finalize( &sh2 );
+
+		HECMW_assert( (num_tot_ref -= n_elem_ref) == 0 );
 	}
 	return HECMW_SUCCESS;
 }
@@ -1031,10 +1202,10 @@ call_refiner( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_me
 	if( refine_node_group_info( mesh->node_group, ref_mesh->node_group, ref_mesh->n_node_gross ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
-	if( refine_elem_group_info( mesh->elem_group, ref_mesh->elem_group, ref_mesh->n_elem_gross ) != HECMW_SUCCESS ) {
+	if( refine_elem_group_info( mesh, ref_mesh ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
-	if( refine_surf_group_info( mesh->surf_group, ref_mesh->surf_group ) != HECMW_SUCCESS ) {
+	if( refine_surf_group_info( mesh, ref_mesh ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
 
@@ -1104,7 +1275,7 @@ rebuild_global_elem_ID( const struct hecmwST_local_mesh *mesh, struct hecmwST_lo
 	global_elem_ID_org = mesh->global_elem_ID;
 	global_elem_ID_ref = ref_mesh->global_elem_ID;
 	for( i=0; i < mesh->n_elem_type; i++) {
-		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		int etype, istart, iend, n_elem, ierror, ndiv;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
@@ -1138,7 +1309,7 @@ rebuild_elem_type( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_m
 	}
 	elem_type_ref = ref_mesh->elem_type;
 	for( i=0; i < mesh->n_elem_type; i++) {
-		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		int etype, istart, iend, n_elem, ierror, ndiv;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
@@ -1170,7 +1341,7 @@ rebuild_section_ID( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_
 	section_ID_org = mesh->section_ID;
 	section_ID_ref = ref_mesh->section_ID;
 	for( i=0; i < mesh->n_elem_type; i++) {
-		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		int etype, istart, iend, n_elem, ierror, ndiv;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
@@ -1206,7 +1377,7 @@ rebuild_elem_mat_ID_index( const struct hecmwST_local_mesh *mesh, struct hecmwST
 	elem_mat_ID_index_org = mesh->elem_mat_ID_index;
 	elem_mat_ID_index_ref = ref_mesh->elem_mat_ID_index;
 	for( i=0; i < mesh->n_elem_type; i++) {
-		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		int etype, istart, iend, n_elem, ierror, ndiv;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
@@ -1244,7 +1415,7 @@ rebuild_elem_mat_ID_item( const struct hecmwST_local_mesh *mesh, struct hecmwST_
 	elem_mat_ID_item_org = mesh->elem_mat_ID_item;
 	elem_mat_ID_item_ref = ref_mesh->elem_mat_ID_item;
 	for( i=0; i < mesh->n_elem_type; i++) {
-		int etype, istart, iend, n_elem, ierror, ndiv, istart_ref;
+		int etype, istart, iend, n_elem, ierror, ndiv;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
@@ -1371,16 +1542,23 @@ rebuild_node_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_m
  */
 
 static int
-get_refined_shared(struct hecmw_varray_int *shared, int n_neighbor_pe)
+get_refined_shared(const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh,
+		   struct hecmw_varray_int *shared)
 {
-	int i, len;
-	char rcap_name[80];
+	int i;
 
-	for( i=0; i < n_neighbor_pe; i++ ) {
-		sprintf( rcap_name, "SH_%d", i );
-		len = rcapGetElementGroupCount( rcap_name );
-		HECMW_varray_int_resize( shared + i, len );
-		rcapGetElementGroup( rcap_name, len, HECMW_varray_int_get_v( shared + i ) );
+	for( i=0; i < mesh->n_neighbor_pe; i++ ) {
+		int start, n_elem, n_elem_ref, ret;
+		int *elem_list, *elem_list_ref;
+		start = mesh->shared_index[i];
+		n_elem = mesh->shared_index[i+1] - start;
+		elem_list = mesh->shared_item + start;
+		n_elem_ref = get_refined_element_count( mesh, n_elem, elem_list );
+		if( n_elem_ref < 0 ) return HECMW_ERROR;
+		HECMW_varray_int_resize( shared + i, n_elem_ref );
+		elem_list_ref = HECMW_varray_int_get_v( shared + i );
+		ret = get_refined_elem_list( mesh, ref_mesh, n_elem, elem_list, elem_list_ref );
+		HECMW_assert( ret == n_elem_ref );
 	}
 	return HECMW_SUCCESS;
 }
@@ -1767,7 +1945,7 @@ rebuild_comm_tables( const struct hecmwST_local_mesh *mesh, struct hecmwST_local
 	for( i=0; i < mesh->n_neighbor_pe; i++ ) {
 		HECMW_varray_int_init( shared + i );
 	}
-	if( get_refined_shared(shared, mesh->n_neighbor_pe) != HECMW_SUCCESS ) {
+	if( get_refined_shared(mesh, ref_mesh, shared) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
 
