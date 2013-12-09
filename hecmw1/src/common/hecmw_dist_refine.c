@@ -657,10 +657,13 @@ elem_type_hecmw2rcap(int etype)
 	case HECMW_ETYPE_HEX2: return RCAP_HEXAHEDRON2;
 	case HECMW_ETYPE_BEM1: return RCAP_SEGMENT;
 	case HECMW_ETYPE_BEM2: return RCAP_SEGMENT2;
+	case HECMW_ETYPE_BEM3: return RCAP_SEGMENT;
 	case HECMW_ETYPE_SHT1: return RCAP_TRIANGLE;
 	case HECMW_ETYPE_SHT2: return RCAP_TRIANGLE2;
+	case HECMW_ETYPE_SHT6: return RCAP_TRIANGLE;
 	case HECMW_ETYPE_SHQ1: return RCAP_QUAD;
 	case HECMW_ETYPE_SHQ2: return RCAP_QUAD2;
+	case HECMW_ETYPE_SHQ8: return RCAP_QUAD;
 	}
 	return RCAP_UNKNOWNTYPE;
 }
@@ -709,9 +712,10 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 			int is33 = is_etype_33struct( etype );
 			if( is33 ) n_elem *= 2;
 			etype_rcap = elem_type_hecmw2rcap( etype );
+			HECMW_assert( etype_rcap != RCAP_UNKNOWNTYPE );
 			elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
 			n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, NULL );
-			if( is33 ) n_elem_ref /= 2;
+			if( is33 ) { n_elem_ref /= 2; n_elem /= 2; }
 		}
 		HECMW_assert( n_elem_ref == n_elem * ndiv );
 		n_elem_ref_tot += n_elem_ref;
@@ -764,7 +768,36 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 			etype_rcap = elem_type_hecmw2rcap( etype );
 			elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
 			n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, elem_node_item_ref );
-			if( is33 ) n_elem_ref /= 2;
+			if( is33 ) {
+				int nn, nn_2, ndiv, nn_tot, ierror;
+				int j, k, l;
+				int tmp[32];
+				int *enode1, *enode2;
+				n_elem /= 2;
+				n_elem_ref /= 2;
+				nn = HECMW_get_max_node( etype );
+				nn_2 = nn / 2;
+				ndiv = get_elem_ndiv( etype, &ierror );
+				if( ierror ) return HECMW_ERROR;
+				nn_tot = ndiv * nn;
+				enode1 = elem_node_item_ref;
+				enode2 = enode1 + nn_2 * ndiv;
+				for( j=0; j < n_elem; j++ ) {
+					int *tmp_p = tmp;
+					for( k=0; k < ndiv; k++ ) {
+						for( l=0; l < nn_2; l++ ) {
+							tmp[l] = enode1[l];
+							tmp[nn_2 + l] = enode2[l];
+						}
+						tmp_p += nn;
+					}
+					for( k=0; k < nn_tot; k++ ) {
+						enode1[k] = tmp[k];
+					}
+					enode1 += nn_tot;
+					enode2 += nn_tot;
+				}
+			}
 		}
 		for( j=0; j < n_elem_ref; j++ ) {
 			elem_node_index_ref[j+1] = elem_node_index_ref[j] + nn;
