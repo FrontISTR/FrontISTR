@@ -669,15 +669,38 @@ elem_type_hecmw2rcap(int etype)
 }
 
 static int
-is_etype_33struct( int etype )
+reorder_enode_33struct(int etype, int n_elem, int *elem_node_item_ref)
 {
-	switch( etype ) {
-	case HECMW_ETYPE_BEM3:
-	case HECMW_ETYPE_SHT6:
-	case HECMW_ETYPE_SHQ8:
-		return 1;
+	int nn, nn_2, ndiv, nn_tot, ierror;
+	int j, k, l;
+	int tmp[32];
+	int *enode1, *enode2;
+	nn = HECMW_get_max_node( etype );
+	nn_2 = nn / 2;
+	ndiv = get_elem_ndiv( etype, &ierror );
+	if( ierror ) return HECMW_ERROR;
+	nn_tot = ndiv * nn;
+	enode1 = elem_node_item_ref;
+	enode2 = enode1 + nn_2 * ndiv;
+	for( j=0; j < n_elem; j++ ) {
+		int *tmp_p = tmp;
+		int *en1 = enode1;
+		for( k=0; k < ndiv; k++ ) {
+			for( l=0; l < nn_2; l++ ) {
+				tmp_p[l] = enode1[l];
+				tmp_p[nn_2 + l] = enode2[l];
+			}
+			tmp_p += nn;
+			enode1 += nn_2;
+			enode2 += nn_2;
+		}
+		for( k=0; k < nn_tot; k++ ) {
+			en1[k] = tmp[k];
+		}
+		enode1 += nn_2 * ndiv;
+		enode2 += nn_2 * ndiv;
 	}
-	return 0;
+	return HECMW_SUCCESS;
 }
 
 static int
@@ -709,7 +732,7 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		if( HECMW_is_etype_link( etype ) ) {
 			n_elem_ref = n_elem;
 		} else {
-			int is33 = is_etype_33struct( etype );
+			int is33 = HECMW_is_etype_33struct( etype );
 			if( is33 ) n_elem *= 2;
 			etype_rcap = elem_type_hecmw2rcap( etype );
 			HECMW_assert( etype_rcap != RCAP_UNKNOWNTYPE );
@@ -763,40 +786,15 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 				elem_node_item_ref[j] = elem_node_item[j];
 			}
 		} else {
-			int is33 = is_etype_33struct( etype );
+			int is33 = HECMW_is_etype_33struct( etype );
 			if( is33 ) n_elem *= 2;
 			etype_rcap = elem_type_hecmw2rcap( etype );
 			elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
 			n_elem_ref = rcapRefineElement( n_elem, etype_rcap, elem_node_item, elem_node_item_ref );
 			if( is33 ) {
-				int nn, nn_2, ndiv, nn_tot, ierror;
-				int j, k, l;
-				int tmp[32];
-				int *enode1, *enode2;
 				n_elem /= 2;
 				n_elem_ref /= 2;
-				nn = HECMW_get_max_node( etype );
-				nn_2 = nn / 2;
-				ndiv = get_elem_ndiv( etype, &ierror );
-				if( ierror ) return HECMW_ERROR;
-				nn_tot = ndiv * nn;
-				enode1 = elem_node_item_ref;
-				enode2 = enode1 + nn_2 * ndiv;
-				for( j=0; j < n_elem; j++ ) {
-					int *tmp_p = tmp;
-					for( k=0; k < ndiv; k++ ) {
-						for( l=0; l < nn_2; l++ ) {
-							tmp[l] = enode1[l];
-							tmp[nn_2 + l] = enode2[l];
-						}
-						tmp_p += nn;
-					}
-					for( k=0; k < nn_tot; k++ ) {
-						enode1[k] = tmp[k];
-					}
-					enode1 += nn_tot;
-					enode2 += nn_tot;
-				}
+				reorder_enode_33struct(etype, n_elem, elem_node_item_ref);
 			}
 		}
 		for( j=0; j < n_elem_ref; j++ ) {

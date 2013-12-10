@@ -873,6 +873,16 @@ HECMW_is_etype_link(int etype)
 	return 0;
 }
 
+extern int
+HECMW_is_etype_33struct(int etype)
+{
+	switch( etype ) {
+	case HECMW_ETYPE_BEM3:	/* fall through */
+	case HECMW_ETYPE_SHT6:	/* fall through */
+	case HECMW_ETYPE_SHQ8:	return 1;
+	}
+	return 0;
+}
 
 /* interface for fortran -- added by Kazuya Goto (AdvanceSoft) */
 
@@ -907,3 +917,7 @@ int HECMW_IS_ETYPE_SHELL_IF(int *etype) { return HECMW_is_etype_shell(*etype); }
 int hecmw_is_etype_link_if_(int *etype) { return HECMW_is_etype_link(*etype); }
 int hecmw_is_etype_link_if__(int *etype) { return HECMW_is_etype_link(*etype); }
 int HECMW_IS_ETYPE_LINK_IF(int *etype) { return HECMW_is_etype_link(*etype); }
+
+int hecmw_is_etype_33struct_if_(int *etype) { return HECMW_is_etype_33struct(*etype); }
+int hecmw_is_etype_33struct_if__(int *etype) { return HECMW_is_etype_33struct(*etype); }
+int HECMW_IS_ETYPE_33STRUCT_IF(int *etype) { return HECMW_is_etype_33struct(*etype); }

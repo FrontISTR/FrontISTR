@@ -1033,6 +1033,7 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 			etype--;
 		}
 		node_num = HECMW_get_max_node(etype);
+		if (HECMW_is_etype_33struct(etype)) node_num /= 2;
 
 		for (j = 0; j < node_num; j++) {
 			int nid = elem_node_item[elem_node_index[i] + j] - 1;

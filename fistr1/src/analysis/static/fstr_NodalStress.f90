@@ -149,7 +149,7 @@ module m_fstr_NodalStress
          
          ntemp = 0
          
-         IF( SIZE( fstrSOLID%temperature ) .NE. 0 ) THEN
+         IF( associated( fstrSOLID%temperature ) ) THEN
           
           ntemp = 1
           

@@ -122,4 +122,17 @@ module hecmw_etype
         endif
     end function hecmw_is_etype_link
 
+    function hecmw_is_etype_33struct(etype)
+        logical :: hecmw_is_etype_33struct
+        integer(kind=kint) :: etype
+        external hecmw_is_etype_33struct_if
+        integer(kind=kint) :: hecmw_is_etype_33struct_if
+
+        if (hecmw_is_etype_33struct_if(etype) /= 0) then
+            hecmw_is_etype_33struct = .true.
+        else
+            hecmw_is_etype_33struct = .false.
+        endif
+    end function hecmw_is_etype_33struct
+
 end module hecmw_etype
