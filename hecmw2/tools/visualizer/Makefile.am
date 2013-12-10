@@ -29,14 +29,12 @@ BASE_CFLAGS            = @base_cflags@
 MPI_CFLAGS             = @mpi_cflags@
 HECMW_CFLAGS           = @hecmw_cflags@
 HECMW_CFLAGS2          = @hecmw_cflags2@
-VISUALIZER_CFLAGS      = @visualizer_cflags@
-ALL_CFLAGS             = $(VISUALIZER_CFLAGS) $(BASE_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS             = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS                = @ldflags@
 MPI_LDFLAGS            = @mpi_ldflags@
 HECMW_LDFLAGS          = @hecmw_ldflags@
 HECMW_LDFLAGS2         = @hecmw_ldflags2@
-VISUALIZER_LDFLAGS     = @visualizer_ldflags@
-ALL_LDFLAGS            = $(VISUALIZER_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS            = $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS               = @optflags@
 
 CPP                    = @cpp@

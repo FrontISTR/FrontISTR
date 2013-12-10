@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST
+modelp.msh
+!CONTROL,NAME=fstrCNT
+model.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+modelp.res
+!RESULT,NAME=vis_out,IO=OUT
+modelp.vis

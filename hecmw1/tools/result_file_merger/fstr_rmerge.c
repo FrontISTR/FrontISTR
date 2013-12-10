@@ -1,7 +1,7 @@
 /*
 	fstr_rmerge Ver.1.4
 	2011.05.11 by K.Suemitsu (AdvanceSoft)
-	2004.11.10 by N.Imai (RIST)
+	2004.21.10 by N.Imai (RIST)
 	--------------------------------------------------
 	FISTR result 出力ファイルを１つのファイルに統合する。
 	計算に用いたコントロールファイル、メッシュデータが必要

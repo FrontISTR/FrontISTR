@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.1                                   !
+! Software Name : FrontISTR Ver. 4.2                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !

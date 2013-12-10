@@ -50,7 +50,7 @@ OPTFLAGS       = -O3
 
 # C++ compiler settings
 CPP            = mpic++
-CPPFLAGS       = -DMPICH_IGNORE_CXX_SEEK
+CPPFLAGS       =
 CPPLDFLAGS     =
 CPPOPTFLAGS    = -O3
 

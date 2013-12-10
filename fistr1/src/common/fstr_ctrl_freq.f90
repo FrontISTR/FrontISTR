@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : Steady-state harmonic response analysis           !
 !                                                                      !
@@ -130,4 +130,4 @@
     return
 
   end subroutine
-  
+ 

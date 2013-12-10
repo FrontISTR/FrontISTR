@@ -1,0 +1,18 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ a341.msh
+!CONTROL, NAME=fstrCNT
+ A300.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ a341.res
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ a341.msh
+!RESULT, NAME=result, IO=IN
+ a341.res
+!RESULT, NAME=vis_out, IO=OUT
+ a341_vis

@@ -48,9 +48,9 @@ install:
 	if [ ! -d $(BINDIR) ]; then \
 		$(MKDIR) $(BINDIR); \
 	fi
-	$(CP) ./$(TARGET) $(BINDIR)/fistr
-	$(CP) ./$(TARGET) $(BINDIR)/hecmw_part
-	$(CP) ./$(TARGET) $(BINDIR)/hecmw_vis
+#	$(CP) ./$(TARGET) $(BINDIR)/fistr
+#	$(CP) ./$(TARGET) $(BINDIR)/hecmw_part
+#	$(CP) ./$(TARGET) $(BINDIR)/hecmw_vis
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX)

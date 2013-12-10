@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.2                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
@@ -17,7 +17,7 @@
 !         Version : 0.00                                               !
 !                                                                      !
 !     Last Update : 2009/06/10                                         !
-!        Category : FE of mechanical analysis                                     !
+!        Category : FE of mechanical analysis                          !
 !                                                                      !
 !            Written by Xi YUAN (AdvanceSoft)                          !
 !                                                                      !

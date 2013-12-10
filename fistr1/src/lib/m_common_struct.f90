@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-!   FrontISTR Ver. 4.0                                                 !
+!   FrontISTR Ver. 4.2                                                 !
 !                                                                      !
 !     Last Update : 2012/10/22                                         !
 !        Category : Data stucture                                      !

@@ -50,11 +50,11 @@ PARMETIS_LDFLAGS=""
 LIBSRCDIRS="\
     src \
     src/hecmw \
-    src/partitioner \
     src/visualizer"
 
 TOOLSDIRS="\
     tools \
+    tools/conv2mw3 \
     tools/partitioner \
     tools/visualizer"
 
@@ -288,6 +288,7 @@ do
 		-e "s!@mkdir@!${MKDIR}!" \
 		-e "s!@hecmwlib_targetfile@!${HECMWLIB_TARGETFILE}!" \
 		-e "s!@hecmwlib_f90targetfile@!${HECMWLIB_F90TARGETFILE}!" \
+		-e "s!@converter_targetfile@!${CONVERTER_TARGETFILE}!" \
 		-e "s!@partitioner_targetfile@!${PARTITIONER_TARGETFILE}!" \
 		-e "s!@visualizer_targetfile@!${VISUALIZER_TARGETFILE}!" \
 		-e "s!@f90modulepostfix@!${F90MODULEPOSTFIX}!" \
@@ -329,16 +330,6 @@ do
 		-e "s!@parmetis_ldflags@!${PARMETIS_LDFLAGS}!" \
 		-e "s!@parmetis_f90flags@!${PARMETIS_F90FLAGS}!" \
 		-e "s!@parmetis_f90ldflags@!${PARMETIS_F90LDFLAGS}!" \
-		-e "s!@partitioner_cflags@!${PARTITIONER_CFLAGS}!" \
-		-e "s!@partitioner_ldflags@!${PARTITIONER_LDFLAGS}!" \
-		-e "s!@partitioner_optflags@!${PARTITIONER_OPTFLAGS}!" \
-		-e "s!@partitioner_f90flags@!${PARTITIONER_F90FLAGS}!" \
-		-e "s!@partitioner_f90ldflags@!${PARTITIONER_F90LDFLAGS}!" \
-		-e "s!@partitioner_f90optflags@!${PARTITIONER_F90OPTFLAGS}!" \
-		-e "s!@visualizer_cflags@!${VISUALIZER_CFLAGS}!" \
-		-e "s!@visualizer_ldflags@!${VISUALIZER_LDFLAGS}!" \
-		-e "s!@visualizer_f90flags@!${VISUALIZER_F90FLAGS}!" \
-		-e "s!@visualizer_f90ldflags@!${VISUALIZER_F90LDFLAGS}!" \
 		-e "s!@refinerdir@!${REFINERDIR}!" \
 		-e "s!@refinerincdir@!${REFINERINCDIR}!" \
 		-e "s!@refinerlibdir@!${REFINERLIBDIR}!" \

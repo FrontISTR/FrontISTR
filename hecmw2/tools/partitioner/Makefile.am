@@ -23,32 +23,35 @@ REFINERINCDIR          = @refinerincdir@
 REFINERLIBDIR          = @refinerlibdir@
 REFINERLIBS            = @refinerlibs@
 
+METISDIR               = @metisdir@
+METISLIBDIR            = @metislibdir@
+METISINCDIR            = @metisincdir@
+METISLIBS              = @metislibs@
+METIS_CFLAGS           = @metis_cflags@
+METIS_LDFLAGS          = @metis_ldflags@
+
 CC                     = @cc@
 CFLAGS                 = @cflags@
 BASE_CFLAGS            = @base_cflags@
 MPI_CFLAGS             = @mpi_cflags@
 HECMW_CFLAGS           = @hecmw_cflags@
-HECMW_CFLAGS2          = @hecmw_cflags2@
 METIS_CFLAGS           = @metis_cflags@
-PRTITIONER_CFLAGS      = @partitioner_cflags@
-ALL_CFLAGS             = $(PRTITIONER_CFLAGS) $(METIS_CFLAGS) $(BASE_CFLAGS) $(HECMW_CFLAGS) $(HECMW_CFLAGS2) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS             = $(METIS_CFLAGS) $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS                = @ldflags@
 MPI_LDFLAGS            = @mpi_ldflags@
 HECMW_LDFLAGS          = @hecmw_ldflags@
-HECMW_LDFLAGS2         = @hecmw_ldflags2@
 METIS_LDFLAGS          = @metis_ldflags@
-PRTITIONER_LDFLAGS     = @partitioner_ldflags@
-ALL_LDFLAGS            = $(PRTITIONER_LDFLAGS) $(METIS_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS            = $(METIS_LDFLAGS) $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS               = @optflags@
 
 CPP                    = @cpp@
 CPPFLAGS               = @cppflags@
 BASE_CPPFLAGS          = @base_cppflags@
 HECMW_CPPFLAGS         = @hecmw_cppflags@
-ALL_CPPFLAGS           = $(BASE_CPPFLAGS) $(HECMW_CPPFLAGS) $(MPI_CFLAGS) $(CPPFLAGS)
+ALL_CPPFLAGS           = $(BASE_CPPFLAGS) $(HECMW_CPPFLAGS) $(METIS_CFLAGS) $(MPI_CFLAGS) $(CPPFLAGS)
 CPPLDFLAGS             = @cppldflags@
 HECMW_CPPLDFLAGS       = @hecmw_cppldflags@
-ALL_CPPLDFLAGS         = $(HECMW_CPPLDFLAGS) $(MPI_LDFLAGS) $(CPPLDFLAGS)
+ALL_CPPLDFLAGS         = $(HECMW_CPPLDFLAGS) $(METIS_LDFLAGS) $(MPI_LDFLAGS) $(CPPLDFLAGS)
 CPPOPTFLAGS            = @cppoptflags@
 
 F90                    = @f90@
@@ -93,7 +96,10 @@ F90OBJFILEPOSTFIX      = @f90objfilepostfix@
 #-----------------------------------------------------------------------------#
 OBJS =
 
-OBJSP =
+OBJSP = \
+	func.@cppobjfilepostfix@ \
+	Partitioner.@cppobjfilepostfix@ \
+	part.@cppobjfilepostfix@
 
 OBJSF =
 
@@ -104,9 +110,9 @@ all: @build_target@
 
 @build_target@: $(TARGET)
 
-$(TARGET): $(OBJS) $(HECMWLIBDIR)/*.* $(HECMWLIBDIR2)/*.*
-	$(CC) $(ALL_CFLAGS) $(OPTFLAGS) \
-	-o $@ $(OBJS) $(ALL_LDFLAGS)
+$(TARGET): $(OBJSP) $(HECMWLIBDIR)/*.* $(HECMWLIBDIR2)/*.*
+	$(CPP) $(ALL_CPPFLAGS) $(CPPOPTFLAGS) \
+	-o $@ $(OBJSP) $(ALL_CPPLDFLAGS)
 	$(CP) $(TARGET) $(HECMWBINDIR)/.
 
 $(OBJS): $(HEADERS)
