@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST, REFINE=0
+sample_P02
+!CONTROL,NAME=fstrCNT
+../sample.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+sample0.res
+!RESULT,NAME=vis_out,IO=OUT
+sample0.vis
