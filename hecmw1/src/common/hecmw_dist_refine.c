@@ -512,7 +512,13 @@ prepare_refiner( struct hecmwST_local_mesh *mesh,
 		rcapSetPartitionFilename( part_filename );
 	}
 	register_node( mesh );
+
+	/* node groups are refined by REVOCAP_Refiner */
 	register_node_groups( mesh->node_group );
+
+	/* element groups are refined by myself */
+
+	/* surface groups are refined by REVOCAP_Refiner except for shell surface */
 	if( register_surf_groups( mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n", mesh->my_rank);
@@ -815,6 +821,9 @@ refine_node_group_info( struct hecmwST_node_grp *grp, struct hecmwST_node_grp *r
 	return HECMW_SUCCESS;
 }
 
+/*
+ * static functions for refining element groups
+ */
 
 static int
 get_refined_element_count( const struct hecmwST_local_mesh *mesh, int n_elem, int *elem_list )
@@ -887,6 +896,10 @@ get_refined_elem_list( const struct hecmwST_local_mesh *mesh, struct hecmwST_loc
 	}
 	return n_elem_ref;
 }
+
+/*
+ * refinement of element groups is done by myself
+ */
 
 static int
 refine_elem_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
@@ -974,6 +987,10 @@ refine_elem_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 	return HECMW_SUCCESS;
 }
 
+/*
+ * refinement of surface groups except for shell surface is done by REVOCAP_Refiner
+ * refinement of shell surfaces is done by myself
+ */
 
 static int
 refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
@@ -1012,10 +1029,11 @@ refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 		int *array = grp->grp_item + start * 2;
 		int num_sh, num_other;
 
+		/* count surfaces except for shell */
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
 		num_other = rcapGetFaceGroupCount( rcap_name );
 
-		/* count shell surface */
+		/* count shell surfaces */
 		num_sh = 0;
 		for( j=0; j < num; j++ ) {
 			int elem = array[j*2];
@@ -1051,6 +1069,7 @@ refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 		if( num_tot_ref == 0 ) continue;
 		array_ref = ref_grp->grp_item + start_ref * 2;
 
+		/* get surfaces from REVOCAP_Refiner */
 		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
 		num_ref = rcapGetFaceGroupCount( rcap_name );
 		rcapGetFaceGroup( rcap_name, num_ref, array_ref );
@@ -1058,6 +1077,10 @@ refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 		num_tot_ref -= num_ref;
 		if( num_tot_ref == 0 ) continue;
 		array_ref += num_ref * 2;
+
+		/*
+		 * make refined shell surfaces by myself
+		 */
 
 		if( HECMW_varray_int_init( &sh1 ) != HECMW_SUCCESS ) return HECMW_ERROR;
 		if( HECMW_varray_int_init( &sh2 ) != HECMW_SUCCESS ) return HECMW_ERROR;
@@ -1080,6 +1103,7 @@ refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 			}
 		}
 
+		/* 1st surface of shells */
 		n_elem = HECMW_varray_int_nval( &sh1 );
 		elem_list = HECMW_varray_int_get_v( &sh1 );
 		n_elem_ref = n_elem * NDIV_SURF;
@@ -1100,6 +1124,7 @@ refine_surf_group_info( struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 		if( num_tot_ref == 0 ) continue;
 		array_ref += n_elem_ref * 2;
 
+		/* 2nd surface of shells */
 		n_elem = HECMW_varray_int_nval( &sh2 );
 		elem_list = HECMW_varray_int_get_v( &sh2 );
 		n_elem_ref = n_elem * NDIV_SURF;
