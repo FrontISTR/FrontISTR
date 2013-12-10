@@ -456,81 +456,6 @@ register_node_groups( struct hecmwST_node_grp *grp )
 	}
 }
 
-/*
-static void
-register_elem_groups( struct hecmwST_elem_grp *grp )
-{
-	int i;
-	char rcap_name[80];
-
-	HECMW_assert( strcmp( grp->grp_name[0], "ALL" ) == 0 );
-
-	for( i=1; i < grp->n_grp; i++ ) {
-		int start = grp->grp_index[i];
-		int num = grp->grp_index[i+1] - start;
-		int *array = grp->grp_item + start;
-		sprintf( rcap_name, "EG_%s", grp->grp_name[i] );
-		rcapAppendElementGroup( rcap_name, num, array );
-	}
-}
-*/
-/*
-static int
-register_surf_groups( struct hecmwST_local_mesh *mesh )
-{
-	struct hecmwST_surf_grp *grp = mesh->surf_group;
-	int i, j;
-	char rcap_name[80];
-
-	struct hecmw_varray_int sh1, sh2, other;
-
-	for( i=0; i < grp->n_grp; i++ ) {
-		int start = grp->grp_index[i];
-		int num = grp->grp_index[i+1] - start;
-		int *array = grp->grp_item + start * 2;
-
-		if( HECMW_varray_int_init( &sh1 ) != HECMW_SUCCESS ) return HECMW_ERROR;
-		if( HECMW_varray_int_init( &sh2 ) != HECMW_SUCCESS ) return HECMW_ERROR;
-		if( HECMW_varray_int_init( &other ) != HECMW_SUCCESS ) return HECMW_ERROR;
-
-		for( j=0; j < num; j++ ) {
-			int elem = array[j*2];
-			int surf = array[j*2+1];
-			int etype = mesh->elem_type[elem-1];
-			if( HECMW_is_etype_shell( etype ) ) {
-				if( surf == 1 ) {
-					if( HECMW_varray_int_append( &sh1, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
-				} else {
-					HECMW_assert( surf == 2 );
-					if( HECMW_varray_int_append( &sh2, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
-				}
-			} else {
-				if( HECMW_varray_int_append( &other, elem ) != HECMW_SUCCESS ) return HECMW_ERROR;
-				if( HECMW_varray_int_append( &other, surf ) != HECMW_SUCCESS ) return HECMW_ERROR;
-			}
-		}
-
-		sprintf( rcap_name, "SG_%s_SH1", grp->grp_name[i] );
-		num = HECMW_varray_int_nval( &sh1 );
-		array = HECMW_varray_int_get_v( &sh1 );
-		rcapAppendElementGroup( rcap_name, num, array );
-
-		sprintf( rcap_name, "SG_%s_SH2", grp->grp_name[i] );
-		num = HECMW_varray_int_nval( &sh2 );
-		array = HECMW_varray_int_get_v( &sh2 );
-		rcapAppendElementGroup( rcap_name, num, array );
-
-		sprintf( rcap_name, "SG_%s", grp->grp_name[i] );
-		num = HECMW_varray_int_nval( &other );
-		array = HECMW_varray_int_get_v( &other );
-		rcapAppendFaceGroup( rcap_name, num, array );
-
-		HECMW_varray_int_finalize( &sh1 );
-		HECMW_varray_int_finalize( &sh2 );
-		HECMW_varray_int_finalize( &other );
-	}
-}
-*/
 static int
 register_surf_groups( struct hecmwST_local_mesh *mesh )
 {
@@ -569,23 +494,6 @@ register_surf_groups( struct hecmwST_local_mesh *mesh )
 	return HECMW_SUCCESS;
 }
 
-/*
-static void
-register_shared_elements( struct hecmwST_local_mesh *mesh )
-{
-	int i;
-	char rcap_name[80];
-
-	for( i=0; i < mesh->n_neighbor_pe; i++ ) {
-		int start = mesh->shared_index[i];
-		int num = mesh->shared_index[i+1] - start;
-		int *array = mesh->shared_item + start;
-		sprintf( rcap_name, "SH_%d", i );
-		rcapAppendElementGroup( rcap_name, num, array );
-	}
-}
-*/
-
 static int
 prepare_refiner( struct hecmwST_local_mesh *mesh,
 		const char *cad_filename,
@@ -605,9 +513,7 @@ prepare_refiner( struct hecmwST_local_mesh *mesh,
 	}
 	register_node( mesh );
 	register_node_groups( mesh->node_group );
-	/* register_elem_groups( mesh->elem_group ); */
 	if( register_surf_groups( mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
-	/* register_shared_elements( mesh ); */
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
@@ -3134,8 +3040,6 @@ HECMW_dist_refine(struct hecmwST_local_mesh **mesh,
 {
 	int error_flag = HECMW_SUCCESS;
 	int i;
-
-	HECMW_setloglv(HECMW_LOG_DEBUG);
 
 	if( refine <= 0 ) return HECMW_SUCCESS;
 
