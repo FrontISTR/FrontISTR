@@ -42,6 +42,8 @@ module m_solve_LINEQ
 !* Call Iterative Solver
       CASE (1)
 !C
+        call hecmw_mat_dump(hecMAT, hecMESH)
+
         SELECT CASE(hecMESH%n_dof)
         CASE(1)
 !          WRITE(*,*) "Calling 1x1 Iterative Solver..."
@@ -57,6 +59,8 @@ module m_solve_LINEQ
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
           call hecmw_abort( hecmw_comm_get_comm())
         END SELECT
+
+        call hecmw_mat_dump_solution(hecMAT)
 !C
 !* Call Direct Solver
       CASE(2:)
@@ -66,6 +70,8 @@ module m_solve_LINEQ
 !* Flag to activate numeric  factorization: 1(yes) 0(no)  hecMESH%Iarray(97)
 
         call hecmw_mat_ass_equation( hecMESH, hecMAT )
+
+        call hecmw_mat_dump(hecMAT, hecMESH)
 
         if (hecMAT%Iarray(2) .eq. 104) then
           call solve_LINEQ_MUMPS(hecMESH, hecMAT)
@@ -100,10 +106,10 @@ module m_solve_LINEQ
 !            stop
           endif
         endif
+
+        call hecmw_mat_dump_solution(hecMAT)
 !C
       END SELECT
-!C
-      call hecmw_mat_dump(hecMAT)
 !C
        RETURN
 

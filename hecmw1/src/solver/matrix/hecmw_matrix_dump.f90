@@ -3,6 +3,17 @@ module hecmw_matrix_dump
   use hecmw_matrix_misc
   use m_hecmw_comm_f
 
+  private
+
+  public :: HECMW_MAT_DUMP_TYPE_NONE
+  public :: HECMW_MAT_DUMP_TYPE_MM
+  public :: HECMW_MAT_DUMP_TYPE_CSR
+  public :: HECMW_MAT_DUMP_TYPE_BSR
+
+  public :: hecmw_mat_dump
+  public :: hecmw_mat_dump_rhs
+  public :: hecmw_mat_dump_solution
+
   integer(kind=kint), parameter :: HECMW_MAT_DUMP_TYPE_NONE = 0
   integer(kind=kint), parameter :: HECMW_MAT_DUMP_TYPE_MM   = 1
   integer(kind=kint), parameter :: HECMW_MAT_DUMP_TYPE_CSR  = 2
@@ -12,9 +23,10 @@ module hecmw_matrix_dump
 
 contains
 
-  subroutine hecmw_mat_dump( hecMAT )
+  subroutine hecmw_mat_dump( hecMAT, hecMESH )
     implicit none
     type(hecmwST_matrix) :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
     NumCall = NumCall + 1
     select case( hecmw_mat_get_dump(hecMAT) )
     case (HECMW_MAT_DUMP_TYPE_NONE)
@@ -27,7 +39,10 @@ contains
       call hecmw_mat_dump_bsr(hecMAT)
     end select
     call hecmw_mat_dump_rhs(hecMAT)
-    call hecmw_mat_dump_solution(hecMAT)
+    if (hecmw_mat_get_dump_exit(hecMAT) /= 0) then
+      call hecmw_barrier( hecMESH )
+      stop "Exiting program after dumping matrix"
+    end if
   end subroutine hecmw_mat_dump
 
   subroutine make_file_name(ext, fname)

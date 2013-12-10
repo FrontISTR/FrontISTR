@@ -41,6 +41,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
 
     call hecmw_mat_set_dump( hecMAT, 0 )
+    call hecmw_mat_set_dump_exit( hecMAT, 0 )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
@@ -204,6 +205,18 @@ module hecmw_matrix_misc
     integer(kind=kint) :: dump_type
     hecMAT%Iarray(31) = dump_type
   end subroutine hecmw_mat_set_dump
+
+  function hecmw_mat_get_dump_exit( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_dump_exit
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_dump_exit = hecMAT%Iarray(32)
+  end function hecmw_mat_get_dump_exit
+
+  subroutine hecmw_mat_set_dump_exit( hecMAT, dump_exit )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: dump_exit
+    hecMAT%Iarray(32) = dump_exit
+  end subroutine hecmw_mat_set_dump_exit
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid

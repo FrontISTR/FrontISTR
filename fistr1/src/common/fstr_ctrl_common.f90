@@ -62,7 +62,7 @@ end function fstr_ctrl_get_SOLUTION
 
 !> Read in !SOLVER
 function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, nier, &
-                                iterpremax, nrest, dumptype, &
+                                iterpremax, nrest, dumptype, dumpexit,&
                                 resid, singma_diag, sigma, thresh, filter )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: method
@@ -74,6 +74,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         integer(kind=kint) :: iterpremax
         integer(kind=kint) :: nrest
         integer(kind=kint) :: dumptype
+        integer(kind=kint) :: dumpexit
         real(kind=kreal) :: resid
         real(kind=kreal) :: singma_diag
         real(kind=kreal) :: sigma
@@ -101,6 +102,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES ',           0,   'P',   time ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dumptype ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dumpexit ) /= 0) return
         ! JP-1
         if( method > number_number ) then  ! JP-2
                 method = method - number_number
