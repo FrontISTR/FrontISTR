@@ -3,8 +3,15 @@
 !!
 !BOUNDARY
     XFIX,  1,  3, 0.0
+#    XFIX,  1,  1, 0.0
+#    YFIX,  2,  2, 0.0
+#    ZFIX,  3,  3, 0.0
+#    1114,  3,  3,-1.0
+#    TIP,   1,  3, 0.0
 !CLOAD
- 1113,  3,   -1.0
+ 1114,  3,   -1.0
+#!DLOAD
+#    TOP,   S,  1.0
 !!
 !! SOLVER CONTROL
 !!
