@@ -12,6 +12,7 @@ use hecmw_matrix_ass
 use hecmw_matrix_con
 use hecmw_matrix_contact
 use hecmw_matrix_misc
+use hecmw_matrix_dump
 use hecmw_msg
 use hecmw_msgno
 use hecmw_restart
