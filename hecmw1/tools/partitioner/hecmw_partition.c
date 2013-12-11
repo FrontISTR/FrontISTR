@@ -5762,7 +5762,6 @@ clear_node_global2local( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( global_mesh );
     HECMW_assert( local_mesh );
     HECMW_assert( node_global2local );
-    HECMW_assert( node_flag );
 
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
@@ -6149,7 +6148,6 @@ clear_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( global_mesh );
     HECMW_assert( local_mesh );
     HECMW_assert( elem_global2local );
-    HECMW_assert( elem_flag );
 
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
