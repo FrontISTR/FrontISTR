@@ -21,11 +21,10 @@ module m_MUMPS_wrapper
 
 contains
 
-  subroutine mumps_wrapper(spMAT, job, paraContactFlag, istat)
+  subroutine mumps_wrapper(spMAT, job, istat)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
-    logical, intent(in) :: paraContactFlag
     integer(kind=kint), intent(out) :: istat
     stop "MUMPS not available"
   end subroutine mumps_wrapper

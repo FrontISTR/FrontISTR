@@ -26,7 +26,6 @@ module m_solve_LINEQ_MUMPS_contact
 
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
-  real(kreal),public  ::  rhs_force,rhs_disp
 
 contains
 
@@ -43,7 +42,7 @@ contains
 
     if (INITIALIZED) then
        mumps_job=-2
-       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+       call mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -61,7 +60,7 @@ contains
     spmat_type = SPARSE_MATRIX_TYPE_COO
     call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
     mumps_job=-1
-    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+    call mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -70,7 +69,7 @@ contains
     ! ANALYSIS
     call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
     mumps_job=1
-    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+    call mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -81,6 +80,7 @@ contains
   end subroutine solve_LINEQ_MUMPS_contact_init
 
   subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+    implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
@@ -92,16 +92,14 @@ contains
 !  ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
       call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
-      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)    
+      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)
     else
       call sparse_matrix_contact_set_vals(spMAT, hecMAT, fstrMAT)
-    !call sparse_matrix_dump(spMAT)
+      !call sparse_matrix_dump(spMAT)
       call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
     endif
     mumps_job=5
-    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
-    rhs_force = rhs_b
-    rhs_disp  = rhs_x
+    call mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop

@@ -22,15 +22,13 @@ module m_MUMPS_wrapper
   public :: mumps_wrapper
 
   type (dmumps_struc), save :: mumps_par
-  real(kreal),public  ::  rhs_b,rhs_x
 
 contains
 
-  subroutine mumps_wrapper(spMAT, job, paraContactFlag, istat)
+  subroutine mumps_wrapper(spMAT, job, istat)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
-    logical, intent(in) :: paraContactFlag
     integer(kind=kint), intent(out) :: istat
     integer(kind=kint) :: ierr,myrank
 
@@ -65,17 +63,6 @@ contains
             call hecmw_abort(hecmw_comm_get_comm())
           endif
           call sparse_matrix_gather_rhs(spMAT, mumps_par%RHS)
-          if(paraContactFlag) then
-            if(myrank == 0) then
-              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
-            endif
-            call hecmw_bcast_R1_comm (rhs_b, 0, mumps_par%COMM)
-!            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
-          else
-            if(myrank == 0) then
-              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
-            endif
-          endif
        endif
     endif
 
@@ -126,11 +113,6 @@ contains
        mumps_par%ICNTL(22)=0
     endif
     if (job==3 .or. job==5 .or. job==6) then
-       if(myrank == 0) then
-         rhs_x = dot_product(mumps_par%RHS,mumps_par%RHS)
-       endif
-       call hecmw_bcast_R1_comm (rhs_x, 0, mumps_par%COMM)
-!       call MPI_BCAST(rhs_x,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        deallocate(mumps_par%RHS)
     endif

@@ -241,4 +241,27 @@ module m_fstr_Residual
 
       end function fstr_get_norm_para_contact
 
+      function fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH) result(rhsX)
+      use m_fstr
+      use fstr_matrix_con_contact
+      implicit none
+      type (hecmwST_matrix),                intent(in) :: hecMAT
+      type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
+      type (hecmwST_local_mesh),            intent(in) :: hecMESH
+      real(kind=kreal) ::  rhsX
+      integer(kind=kint) :: nndof, npndof, i
+
+      nndof = hecMAT%N * hecMAT%NDOF
+      npndof = hecMAT%NP * hecMAT%NDOF
+      rhsX = 0.d0
+      do i=1,nndof
+        rhsX = rhsX + hecMAT%X(i) ** 2
+      end do
+      do i=1,fstrMAT%num_lagrange
+        rhsX = rhsX + hecMAT%X(npndof+i) ** 2
+      end do
+      call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)
+
+      end function fstr_get_x_norm_contact
+
 end module m_fstr_Residual

@@ -34,7 +34,6 @@ contains
     integer(kind=kint) :: spmat_symtype
     integer(kind=kint) :: mumps_job
     integer(kind=kint) :: istat,myrank
-    logical, parameter :: paraContactFlag = .false.
     real(kind=kreal) :: t1,t2,t3
 
     t1=hecmw_wtime()
@@ -42,7 +41,7 @@ contains
 
     if (INITIALIZED .and. hecMAT%Iarray(98) .eq. 1) then
        mumps_job=-2
-       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+       call mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -56,7 +55,7 @@ contains
        spmat_symtype = SPARSE_MATRIX_SYMTYPE_SPD
        call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
        mumps_job = -1
-       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+       call mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -74,7 +73,7 @@ contains
        call sparse_matrix_hec_set_vals(spMAT, hecMAT)
        !call sparse_matrix_dump(spMAT)
        mumps_job=4
-       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+       call mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -88,7 +87,7 @@ contains
        call sparse_matrix_hec_set_vals(spMAT, hecMAT)
        !call sparse_matrix_dump(spMAT)
        mumps_job=2
-       call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+       call mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -102,7 +101,7 @@ contains
     ! SOLUTION
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
     mumps_job=3
-    call mumps_wrapper(spMAT, mumps_job, paraContactFlag, istat)
+    call mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
