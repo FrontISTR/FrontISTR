@@ -67,6 +67,16 @@ contains
       rbuf(1)=sval
       end subroutine hecmw_gather_int_1
 
+      subroutine hecmw_allgather_int_1(sval, rbuf, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sval    !send buffer
+      integer(kind=kint) :: rbuf(*) !receive buffer
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      rbuf(1)=sval
+      end subroutine hecmw_allgather_int_1
+
       subroutine hecmw_scatterv_real(sbuf, scs, disp, &
      &     rbuf, rc, root, comm)
       use hecmw_util

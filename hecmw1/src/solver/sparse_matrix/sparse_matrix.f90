@@ -212,24 +212,14 @@ contains
     endif
     !endif
     if (nprocs > 1) then
-       call HECMW_GATHER_INT_1(spMAT%N_loc, &
-            spMAT%N_COUNTS, &
-            0, hecmw_comm_get_comm())
+       call HECMW_ALLGATHER_INT_1(spMAT%N_loc, &
+            spMAT%N_COUNTS, hecmw_comm_get_comm())
     endif
-    if (myrank == 0) then
-       spMAT%DISPLS(1)=0
-       do i=1,nprocs-1
-          spMAT%DISPLS(i+1)=spMAT%DISPLS(i)+spMAT%N_COUNTS(i)
-       enddo
-       spMAT%OFFSET = spMAT%DISPLS(1)
-    endif
-    call hecmw_bcast_I_comm (spMAT%DISPLS, nprocs, 0, hecmw_comm_get_comm())
-!    call MPI_BCAST(spMAT%DISPLS,nprocs,MPI_INTEGER,0,hecmw_comm_get_comm(),ierr)
-    if (nprocs > 1) then
-       call HECMW_SCATTER_INT_1(spMAT%DISPLS, &
-            spMAT%OFFSET, &
-            0, hecmw_comm_get_comm())
-    endif
+    spMAT%DISPLS(1)=0
+    do i=1,nprocs-1
+      spMAT%DISPLS(i+1)=spMAT%DISPLS(i)+spMAT%N_COUNTS(i)
+    enddo
+    spMAT%OFFSET = spMAT%DISPLS(myrank+1)
   end subroutine sparse_matrix_set_offsets
 
   subroutine sparse_matrix_allocate_arrays(spMAT, NZ)
