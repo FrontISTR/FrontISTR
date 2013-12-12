@@ -23,7 +23,6 @@ module m_solve_LINEQ_MUMPS_contact
   private
   public :: solve_LINEQ_MUMPS_contact_init
   public :: solve_LINEQ_MUMPS_contact
-  public :: gatherRHS
 
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
@@ -112,19 +111,5 @@ contains
 
     !call sparse_matrix_finalize(spMAT)
   end subroutine solve_LINEQ_MUMPS_contact
-  
-  subroutine gatherRHS(spMAT,rhs_loc, rhs_all)
-    type (sparse_matrix), intent(in)  :: spMAT
-    real(kind=kreal), intent(in)  :: rhs_loc(:)
-    real(kind=kreal), intent(out) :: rhs_all(:)
-    integer(kind=kint) :: ierr
-    if (nprocs == 1) then
-       rhs_all(1:spMAT%N_loc) = rhs_loc(1:spMAT%N_loc)
-    else
-       call HECMW_GATHERV_REAL(rhs_loc, spMAT%N_loc, &
-            rhs_all, spMAT%N_COUNTS, spMAT%DISPLS, &
-            0, hecmw_comm_get_comm())
-    endif
-  end subroutine gatherRHS
 
 end module m_solve_LINEQ_MUMPS_contact
