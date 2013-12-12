@@ -26,7 +26,7 @@ module m_solve_LINEQ_MUMPS_contact
   public :: gatherRHS
 
   logical, save :: INITIALIZED = .false.
-  type (sparse_matrix), public,save :: spMAT
+  type (sparse_matrix), save :: spMAT
   real(kreal),public  ::  rhs_force,rhs_disp
 
 contains

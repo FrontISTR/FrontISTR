@@ -178,25 +178,39 @@ module m_fstr_Residual
       function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) result(rhsB)
       use m_fstr
       use fstr_matrix_con_contact
-      use m_solve_LINEQ_MUMPS_contact
+      implicit none
       type (hecmwST_matrix),                intent(in) :: hecMAT
       type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
       type (hecmwST_matrix),                intent(in) :: conMAT
-      type (hecmwST_local_mesh),            intent(in) :: hecMESH 
+      type (hecmwST_local_mesh),            intent(in) :: hecMESH
 !
-      real(kreal),allocatable   ::  rhs_con(:),rhs_con_sum(:),rhs_normal_sum(:)
-      real(kreal) ::  rhsB
-      integer(kint)   ::  i,j,N,i0,ierr,ndof,N_loc,nndof
+      real(kind=kreal) ::  rhsB
+      integer(kind=kint) ::  i,j,N,i0,ndof,N_loc,nndof
+      integer(kind=kint) :: offset, pid, lid
+      integer(kind=kint), allocatable :: displs(:)
+      real(kind=kreal), allocatable :: rhs_con_all(:), rhs_con(:)
 !
-      N = spMAT%N
-      N_Loc = spMAT%N_loc
-      allocate(rhs_con(N),stat=ierr)
-      rhs_con(:) = 0.0D0
       ndof = hecMAT%ndof
+      nndof = hecMAT%N*ndof
+      N_loc = nndof + fstrMAT%num_lagrange
+      allocate(displs(0:nprocs))
+      displs(:) = 0
+      displs(myrank+1) = N_loc
+      call hecmw_allreduce_I(hecMESH, displs, nprocs+1, hecmw_sum)
+      do i=1,nprocs
+        displs(i) = displs(i-1) + displs(i)
+      end do
+      offset = displs(myrank)
+      N = displs(nprocs)
+      allocate(rhs_con_all(N))
+      do i=1,N
+        rhs_con_all(i) = 0.0D0
+      end do
       do i= hecMAT%N+1,hecMAT%NP
 !        i0 = getExternalGlobalIndex(i,ndof,hecMAT%N)
-        i0 = spMAT%conv_ext(ndof*(i-hecMAT%N))-ndof
-
+        pid = hecMESH%node_ID(i*2)
+        lid = hecMESH%node_ID(i*2-1)
+        i0 = displs(pid) + (lid-1)*ndof
         if((i0 < 0.or.i0 > N)) then
 !          print *,myrank,'ext dummy',i,i0/ndof
           do j=1,ndof
@@ -206,42 +220,25 @@ module m_fstr_Residual
             endif
           enddo
         else
-          rhs_con(i0+1:i0+ndof) = conMAT%b((i-1)*ndof+1:i*ndof)
+          rhs_con_all(i0+1:i0+ndof) = conMAT%b((i-1)*ndof+1:i*ndof)
         endif
       enddo
-!
-!      if(myrank == 0) then
-        allocate(rhs_con_sum(N),stat=ierr)
-        rhs_con_sum(:) = 0.0D0
-!      endif
-      call hecmw_allreduce_DP(rhs_con,rhs_con_sum,N,hecmw_sum,hecmw_comm_get_comm())
-!      call MPI_REDUCE(rhs_con,rhs_con_sum,N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
-      
-      deallocate(rhs_con,stat=ierr)
-      allocate(rhs_con(N_loc),stat=ierr)
-      nndof = hecMAT%N*ndof
-      rhs_con(1:nndof) = hecMAT%B(1:nndof) + conMAT%B(1:nndof)
+      deallocate(displs)
+      call hecmw_allreduce_R(hecMESH, rhs_con_all, N, hecmw_sum)
+      allocate(rhs_con(N_loc))
+      do i=1,nndof
+        rhs_con(i) = rhs_con_all(offset+i) + hecMAT%B(i) + conMAT%B(i)
+      end do
+      deallocate(rhs_con_all)
       i0 = hecMAT%NP*ndof
       do i=1,fstrMAT%num_lagrange
         rhs_con(nndof+i) = conMAT%B(i0+i)
       enddo
-!
-      if(myrank == 0) then
-        allocate(rhs_normal_sum(N),stat=ierr)
-        rhs_normal_sum(:) = 0.0D0
-      endif
-      call gatherRHS(spMAT, rhs_con, rhs_normal_sum)
-      if(myrank == 0) then
-        rhs_con_sum(:) = rhs_con_sum(:) + rhs_normal_sum(:)
-        rhsB = dot_product(rhs_con_sum, rhs_con_sum)
-      endif
-      
-      call hecmw_bcast_R1(hecMESH,rhsB,0)
-!      call MPI_BCAST(rhsB,1,MPI_DOUBLE_PRECISION,0,hecmw_comm_get_comm(),ierr)
-      
-      if(allocated(rhs_con)) deallocate(rhs_con,stat=ierr)
-      if(allocated(rhs_con_sum)) deallocate(rhs_con_sum,stat=ierr)
-      if(allocated(rhs_normal_sum)) deallocate(rhs_normal_sum,stat=ierr)         
+      rhsB = 0.d0
+      rhsB = dot_product(rhs_con, rhs_con)
+      call hecmw_allreduce_R1(hecMESH, rhsB, hecmw_sum)
+      deallocate(rhs_con)
+
       end function fstr_get_norm_para_contact
 
 end module m_fstr_Residual
