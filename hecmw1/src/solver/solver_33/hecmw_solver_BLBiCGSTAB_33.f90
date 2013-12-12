@@ -83,7 +83,7 @@
       integer(kind=kint )::ip,i,j,k,isU,ieU,isL,ieL
       real   (kind=kreal)::S_TIME,E_TIME,START_TIME,END_TIME,SETupTIME
       real   (kind=kreal)::BNRM20,BNRM2,X1,X2,X3,C20,C2
-      real   (kind=kreal)::D11,D22,D33
+      real   (kind=kreal)::D11,D22,D33, ALUtmp(3,3)
       real   (kind=kreal)::RHO,RHO0,RHO1,BETA,ALPHA,DNRM20,DNRM2
       real   (kind=kreal)::WVAL1,WVAL2,WVAL3,SW1,SW2,SW3
       real   (kind=kreal)::COMMtime,OMEGA
@@ -122,13 +122,13 @@
         WW= 0.d0
         do i= 1, N
           WW(3*i-2,1)= D(9*i-8)
-          WW(3*i-1,1)= D(9*i-7)
-          WW(3*i  ,1)= D(9*i-6)
-          WW(3*i-2,2)= D(9*i-5)
+          WW(3*i-2,2)= D(9*i-7)
+          WW(3*i-2,3)= D(9*i-6)
+          WW(3*i-1,1)= D(9*i-5)
           WW(3*i-1,2)= D(9*i-4)
-          WW(3*i  ,2)= D(9*i-3)
-          WW(3*i-2,3)= D(9*i-2)
-          WW(3*i-1,3)= D(9*i-1)
+          WW(3*i-1,3)= D(9*i-3)
+          WW(3*i  ,1)= D(9*i-2)
+          WW(3*i  ,2)= D(9*i-1)
           WW(3*i  ,3)= D(9*i  )
         enddo
 
@@ -147,13 +147,13 @@
 
         do i= N+1, NP
           D(9*i-8)= WW(3*i-2,1)
-          D(9*i-7)= WW(3*i-1,1)
-          D(9*i-6)= WW(3*i  ,1)
-          D(9*i-5)= WW(3*i-2,2)
+          D(9*i-7)= WW(3*i-2,2)
+          D(9*i-6)= WW(3*i-2,3)
+          D(9*i-5)= WW(3*i-1,1)
           D(9*i-4)= WW(3*i-1,2)
-          D(9*i-3)= WW(3*i  ,2)
-          D(9*i-2)= WW(3*i-2,3)
-          D(9*i-1)= WW(3*i-1,3)
+          D(9*i-3)= WW(3*i-1,3)
+          D(9*i-2)= WW(3*i  ,1)
+          D(9*i-1)= WW(3*i  ,2)
           D(9*i  )= WW(3*i  ,3)
         enddo
 
@@ -172,19 +172,37 @@
           D11= D(9*ip-8) * SIGMA_DIAG
           D22= D(9*ip-4) * SIGMA_DIAG
           D33= D(9*ip  ) * SIGMA_DIAG
-          call ILU1a33 (ALU(9*ip-8),                                    &
+          call ILU1a33 (ALUtmp,                                    &
      &                  D11      , D(9*ip-7), D(9*ip-6),                &
      &                  D(9*ip-5), D22      , D(9*ip-3),                &
      &                  D(9*ip-2), D(9*ip-1), D33)
+          ALU(9*ip-8)= ALUtmp(1,1)
+          ALU(9*ip-7)= ALUtmp(1,2)
+          ALU(9*ip-6)= ALUtmp(1,3)
+          ALU(9*ip-5)= ALUtmp(2,1)
+          ALU(9*ip-4)= ALUtmp(2,2)
+          ALU(9*ip-3)= ALUtmp(2,3)
+          ALU(9*ip-2)= ALUtmp(3,1)
+          ALU(9*ip-1)= ALUtmp(3,2)
+          ALU(9*ip  )= ALUtmp(3,3)
         enddo
       endif
 
       if (PRECOND.eq.11.or.PRECOND.eq.12) then
         do ip= 1, NP
-          call ILU1a33 (ALU(9*ip-8),                                    &
+          call ILU1a33 (ALUtmp,                                    &
      &                  Dlu0(9*ip-8), Dlu0(9*ip-7), Dlu0(9*ip-6),       &
      &                  Dlu0(9*ip-5), Dlu0(9*ip-4), Dlu0(9*ip-3),       &
      &                  Dlu0(9*ip-2), Dlu0(9*ip-1), Dlu0(9*ip  ))
+          ALU(9*ip-8)= ALUtmp(1,1)
+          ALU(9*ip-7)= ALUtmp(1,2)
+          ALU(9*ip-6)= ALUtmp(1,3)
+          ALU(9*ip-5)= ALUtmp(2,1)
+          ALU(9*ip-4)= ALUtmp(2,2)
+          ALU(9*ip-3)= ALUtmp(2,3)
+          ALU(9*ip-2)= ALUtmp(3,1)
+          ALU(9*ip-1)= ALUtmp(3,2)
+          ALU(9*ip  )= ALUtmp(3,3)
         enddo
       endif
 !C===
@@ -256,8 +274,6 @@
 !C===
 
       START_TIME= HECMW_WTIME()
-
-      iter= 0
 !C===
 
 !C
@@ -883,11 +899,10 @@
       implicit none
       integer(kind=kint), dimension(:), allocatable :: IW1, IW2
       integer(kind=kint), dimension(:), allocatable :: IWsL, IWsU
-      integer(kind=kint), dimension(:), allocatable :: inumFI1L, inumFI1U
       real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
       real (kind=kreal)  :: D12,D13,D21,D23,D31,D32
       integer(kind=kint) :: NPLf1,NPLf2,NPUf1
-      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj,NB
+      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
       integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
 
 !C
@@ -905,7 +920,7 @@
       inumFI1U= 0
 
       NPLf1= 0
-      NPLf2= 0
+      NPUf1= 0
       do i= 2, NP
         icou= 0
         IW1= 0
@@ -941,8 +956,6 @@
 
 !C
 !C-- specify fill-in
-      NB= 3 
-
       allocate (IWsL(0:NP), IWsU(0:NP))
       allocate (FI1L (NPL+NPLf1), FI1U (NPU+NPUf1))
       allocate (ALlu0(9*(NPL+NPLf1)), AUlu0(9*(NPU+NPUf1)))
@@ -1224,7 +1237,7 @@
       real (kind=kreal), dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
       real (kind=kreal)  :: D12,D13,D21,D23,D31,D32
       integer(kind=kint) :: NPLf1,NPLf2,NPUf1,NPUf2,iAS,iconIK,iconKJ
-      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj,NB
+      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
       integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
 !C
 !C +------------------+  
@@ -1241,7 +1254,7 @@
       inumFI2U= 0
 
       NPLf1= 0
-      NPLf2= 0
+      NPUf1= 0
       do i= 2, NP
         icou= 0
         IW1= 0
@@ -1396,10 +1409,10 @@
 !C
 !C-- specify fill-in
       allocate (FI1L(NPL+NPLf1+NPLf2))
-      allocate (FI1U(NPL+NPLf1+NPLf2))
+      allocate (FI1U(NPU+NPUf1+NPUf2))
 
       allocate (iconFI1L(NPL+NPLf1+NPLf2))
-      allocate (iconFI1U(NPL+NPLf1+NPLf2))
+      allocate (iconFI1U(NPU+NPUf1+NPUf2))
 
       IWsL= 0
       IWsU= 0
@@ -1486,9 +1499,8 @@
 !C | SORT and RECONSTRUCT matrix considering fill-in |
 !C +-------------------------------------------------+
 !C===
-      NB= 3
       allocate (ALlu0(9*(NPL+NPLf1+NPLf2)))
-      allocate (AUlu0(9*(NPL+NPLf1+NPLf2)))
+      allocate (AUlu0(9*(NPU+NPUf1+NPUf2)))
 
       ALlu0= 0.d0
       AUlu0= 0.d0

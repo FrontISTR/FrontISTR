@@ -290,9 +290,13 @@ module hecmw_solver_misc_33
 !C== Block SSOR
       if (PRECOND.le.2) then
 
-      do i= 1, hecMAT%NP * 3
+      do i= 1, hecMAT%N * 3
         ZP(i)= R(i)
       enddo
+      do i= 1+ hecMAT%N * 3, hecMAT%NP * 3
+        ZP(i) = 0.d0
+      enddo
+
       do i= 1, hecMAT%NP * 3
         Z(i)= 0.d0
       enddo

@@ -29,9 +29,9 @@
 !C    using the Conjugate Gradient iterative method with the following
 !C    FULL-BLOCK TYPE preconditioners :
 !C
-!C      (1) Block IC(0) with Additive Shcwartz Domain Decomposition       
-!C      (2) Block IC(1) with Additive Shcwartz Domain Decomposition       
-!C      (3) Block IC(2) with Additive Shcwartz Domain Decomposition       
+!C      (1) Block IC(0) with Additive Schwartz Domain Decomposition
+!C      (2) Block IC(1) with Additive Schwartz Domain Decomposition
+!C      (3) Block IC(2) with Additive Schwartz Domain Decomposition
 !C
       subroutine hecmw_solve_BLCG_33                                    &
      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU,               &
@@ -86,7 +86,7 @@
       ! local variables
       integer(kind=kint )::i,j,k,isU,ieU,isL,ieL,iterPRE,indexA,indexB,indexC
       integer(kind=kint )::ip,ip1,ip2,ip3,inod,iq1,iq2,iq3
-      real   (kind=kreal):: TOL, D11,D22,D33
+      real   (kind=kreal):: TOL, D11,D22,D33, ALUtmp(3,3)
       real   (kind=kreal)::S_TIME,E_TIME,START_TIME,END_TIME,SETupTIME
       real   (kind=kreal)::BNRM20,BNRM2,X1,X2,X3
       real   (kind=kreal)::RHO,RHO0,RHO1,BETA,C10,C1,ALPHA,DNRM20,DNRM2
@@ -104,7 +104,7 @@
       allocate (WW(3*NP,4))
       allocate (WS(3*NP), WR(3*NP))
       allocate (SCALE(3*NP))
-      allocate (ALU(9*NP))
+      allocate (ALU(9*N))
 
       COMMtime= 0.d0
 
@@ -125,13 +125,13 @@
 !*voption indep (WW,D)
         do i= 1, N
           WW(3*i-2,1)= D(9*i-8)
-          WW(3*i-1,1)= D(9*i-7)
-          WW(3*i  ,1)= D(9*i-6)
-          WW(3*i-2,2)= D(9*i-5)
+          WW(3*i-2,2)= D(9*i-7)
+          WW(3*i-2,3)= D(9*i-6)
+          WW(3*i-1,1)= D(9*i-5)
           WW(3*i-1,2)= D(9*i-4)
-          WW(3*i  ,2)= D(9*i-3)
-          WW(3*i-2,3)= D(9*i-2)
-          WW(3*i-1,3)= D(9*i-1)
+          WW(3*i-1,3)= D(9*i-3)
+          WW(3*i  ,1)= D(9*i-2)
+          WW(3*i  ,2)= D(9*i-1)
           WW(3*i  ,3)= D(9*i  )
         enddo
 
@@ -151,13 +151,13 @@
 !*voption indep (D,WW)
         do i= N+1, NP
           D(9*i-8)= WW(3*i-2,1)
-          D(9*i-7)= WW(3*i-1,1)
-          D(9*i-6)= WW(3*i  ,1)
-          D(9*i-5)= WW(3*i-2,2)
+          D(9*i-7)= WW(3*i-2,2)
+          D(9*i-6)= WW(3*i-2,3)
+          D(9*i-5)= WW(3*i-1,1)
           D(9*i-4)= WW(3*i-1,2)
-          D(9*i-3)= WW(3*i  ,2)
-          D(9*i-2)= WW(3*i-2,3)
-          D(9*i-1)= WW(3*i-1,3)
+          D(9*i-3)= WW(3*i-1,3)
+          D(9*i-2)= WW(3*i  ,1)
+          D(9*i-1)= WW(3*i  ,2)
           D(9*i  )= WW(3*i  ,3)
         enddo
 
@@ -236,23 +236,41 @@
       if (PRECOND.eq.12) call FORM_ILU2_33
 
       if (PRECOND.eq.10) then
-        do ip= 1, NP
+        do ip= 1, N
           D11= D(9*ip-8) * SIGMA_DIAG
           D22= D(9*ip-4) * SIGMA_DIAG
           D33= D(9*ip  ) * SIGMA_DIAG
-          call ILU1a33 (ALU(9*ip-8),                                    &
+          call ILU1a33 (ALUtmp,                                    &
      &                  D11      , D(9*ip-7), D(9*ip-6),                &
      &                  D(9*ip-5), D22      , D(9*ip-3),                &
      &                  D(9*ip-2), D(9*ip-1), D33)
+          ALU(9*ip-8)= ALUtmp(1,1)
+          ALU(9*ip-7)= ALUtmp(1,2)
+          ALU(9*ip-6)= ALUtmp(1,3)
+          ALU(9*ip-5)= ALUtmp(2,1)
+          ALU(9*ip-4)= ALUtmp(2,2)
+          ALU(9*ip-3)= ALUtmp(2,3)
+          ALU(9*ip-2)= ALUtmp(3,1)
+          ALU(9*ip-1)= ALUtmp(3,2)
+          ALU(9*ip  )= ALUtmp(3,3)
         enddo
       endif
 
       if (PRECOND.eq.11.or.PRECOND.eq.12) then
-        do ip= 1, NP
-          call ILU1a33 (ALU(9*ip-8),                                    &
+        do ip= 1, N
+          call ILU1a33 (ALUtmp,                                    &
      &                  Dlu0(9*ip-8), Dlu0(9*ip-7), Dlu0(9*ip-6),       &
      &                  Dlu0(9*ip-5), Dlu0(9*ip-4), Dlu0(9*ip-3),       &
      &                  Dlu0(9*ip-2), Dlu0(9*ip-1), Dlu0(9*ip  ))
+          ALU(9*ip-8)= ALUtmp(1,1)
+          ALU(9*ip-7)= ALUtmp(1,2)
+          ALU(9*ip-6)= ALUtmp(1,3)
+          ALU(9*ip-5)= ALUtmp(2,1)
+          ALU(9*ip-4)= ALUtmp(2,2)
+          ALU(9*ip-3)= ALUtmp(2,3)
+          ALU(9*ip-2)= ALUtmp(3,1)
+          ALU(9*ip-1)= ALUtmp(3,2)
+          ALU(9*ip  )= ALUtmp(3,3)
         enddo
       endif
 !C===
@@ -322,7 +340,6 @@
 !C     &                    MPI_SUM, SOLVER_COMM, ierr)
 
       if (BNRM2.eq.0.d0) BNRM2= 1.d0
-      ITER = 0
 
        END_TIME= HECMW_WTIME()
       SETupTIME= END_TIME - START_TIME
@@ -352,6 +369,11 @@
         WW(3*i-1,indexA)= WW(3*i-1,indexC)
         WW(3*i  ,indexA)= WW(3*i  ,indexC)
       enddo
+      do i= 1+N, NP
+        WW(3*i-2,indexA)= 0.d0
+        WW(3*i-1,indexA)= 0.d0
+        WW(3*i  ,indexA)= 0.d0
+      enddo
 
       do i= 1, NP
         WW(3*i-2,indexB )= 0.d0
@@ -360,11 +382,6 @@
       enddo
 
       do iterPRE= 1, iterPREmax
-        do i= 1+N, NP
-          WW(3*i-2,indexA)= 0.d0
-          WW(3*i-1,indexA)= 0.d0
-          WW(3*i  ,indexA)= 0.d0
-        enddo
 
 !C
 !C-- FORWARD
@@ -430,22 +447,21 @@
 !C
 !C-- additive Schwartz
 
-      S_TIME= HECMW_WTIME()
-        call hecmw_solve_SEND_RECV_33                                   &
-     &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexA),            &
-     &       SOLVER_COMM,  my_rank)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
-
-        do i= 1, NP
-          WW(3*i-2,indexB)= WW(3*i-2,indexB) + WW(3*i-2,indexA)         
-          WW(3*i-1,indexB)= WW(3*i-1,indexB) + WW(3*i-1,indexA)         
-          WW(3*i  ,indexB)= WW(3*i  ,indexB) + WW(3*i  ,indexA)         
+        do i= 1, N
+          WW(3*i-2,indexB)= WW(3*i-2,indexB) + WW(3*i-2,indexA)
+          WW(3*i-1,indexB)= WW(3*i-1,indexB) + WW(3*i-1,indexA)
+          WW(3*i  ,indexB)= WW(3*i  ,indexB) + WW(3*i  ,indexA)
         enddo
 
+        if (iterPRE.eq.iterPREmax) exit
 
-        if (iterPRE.eq.iterPREmax) goto 750
+        S_TIME= HECMW_WTIME()
+        call hecmw_solve_SEND_RECV_33                                   &
+     &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexB),            &
+     &       SOLVER_COMM,  my_rank)
+        E_TIME= HECMW_WTIME()
+        COMMtime = COMMtime + E_TIME - S_TIME
 
         do j= 1, N
            X1= WW(3*j-2,indexB)
@@ -477,8 +493,6 @@
           WW(3*j-1,indexA)= WV2
           WW(3*j  ,indexA)= WV3
         enddo
- 
- 750    continue
 
       enddo
       endif
@@ -491,6 +505,11 @@
         WW(3*i-1,indexA)= WW(3*i-1,indexC)
         WW(3*i  ,indexA)= WW(3*i  ,indexC)
       enddo
+      do i= 1+N, NP
+        WW(3*i-2,indexA)= 0.d0
+        WW(3*i-1,indexA)= 0.d0
+        WW(3*i  ,indexA)= 0.d0
+      enddo
 
       do i= 1, NP
         WW(3*i-2,indexB )= 0.d0
@@ -499,11 +518,6 @@
       enddo
 
       do iterPRE= 1, iterPREmax
-        do i= 1+N, NP
-          WW(3*i-2,indexA)= 0.d0
-          WW(3*i-1,indexA)= 0.d0
-          WW(3*i  ,indexA)= 0.d0
-        enddo
 
 !C
 !C-- FORWARD
@@ -585,7 +599,7 @@
           WW(3*i  ,indexB)= WW(3*i  ,indexB) + WW(3*i  ,indexA)         
         enddo
 
-        if (iterPRE.eq.iterPREmax) goto 850
+        if (iterPRE.eq.iterPREmax) exit
 
         do j= 1, N
            X1= WW(3*j-2,indexB)
@@ -616,8 +630,6 @@
           WW(3*j-1,indexA)= WV2
           WW(3*j  ,indexA)= WV3
         enddo
- 
- 850    continue
 
       enddo
       endif
@@ -881,11 +893,10 @@
       implicit none
       integer(kind=kint), dimension(:), allocatable :: IW1, IW2
       integer(kind=kint), dimension(:), allocatable :: IWsL, IWsU
-      integer(kind=kint), dimension(:), allocatable :: inumFI1L, inumFI1U
       real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
       real (kind=kreal)  :: D12,D13,D21,D23,D31,D32
       integer(kind=kint) :: NPLf1,NPLf2,NPUf1
-      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj,NB
+      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
       integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
 !C
 !C +--------------+
@@ -902,7 +913,7 @@
       inumFI1U= 0
 
       NPLf1= 0
-      NPLf2= 0
+      NPUf1= 0
       do i= 2, NP
         icou= 0
         IW1= 0
@@ -938,8 +949,6 @@
 
 !C
 !C-- specify fill-in
-      NB= 3 
-
       allocate (IWsL(0:NP), IWsU(0:NP))
       allocate (FI1L (NPL+NPLf1), FI1U (NPU+NPUf1))
       allocate (ALlu0(9*(NPL+NPLf1)), AUlu0(9*(NPU+NPUf1)))
@@ -1221,7 +1230,7 @@
       real (kind=kreal), dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
       real (kind=kreal)  :: D12,D13,D21,D23,D31,D32
       integer(kind=kint) :: NPLf1,NPLf2,NPUf1,NPUf2,iAS,iconIK,iconKJ
-      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj,NB
+      integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
       integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
 
 !C
@@ -1239,7 +1248,7 @@
       inumFI2U= 0
 
       NPLf1= 0
-      NPLf2= 0
+      NPUf1= 0
       do i= 2, NP
         icou= 0
         IW1= 0
@@ -1394,10 +1403,10 @@
 !C
 !C-- specify fill-in
       allocate (FI1L(NPL+NPLf1+NPLf2))
-      allocate (FI1U(NPL+NPLf1+NPLf2))
+      allocate (FI1U(NPU+NPUf1+NPUf2))
 
       allocate (iconFI1L(NPL+NPLf1+NPLf2))
-      allocate (iconFI1U(NPL+NPLf1+NPLf2))
+      allocate (iconFI1U(NPU+NPUf1+NPUf2))
 
       IWsL= 0
       IWsU= 0
@@ -1484,9 +1493,8 @@
 !C | SORT and RECONSTRUCT matrix considering fill-in |
 !C +-------------------------------------------------+
 !C===
-      NB= 3
       allocate (ALlu0(9*(NPL+NPLf1+NPLf2)))
-      allocate (AUlu0(9*(NPL+NPLf1+NPLf2)))
+      allocate (AUlu0(9*(NPU+NPUf1+NPUf2)))
 
       ALlu0= 0.d0
       AUlu0= 0.d0
@@ -1918,7 +1926,7 @@
       use hecmw_util
       implicit none
       real(kind=kreal) :: ALU(3,3), PW(3)
-      real(kind=kreal) :: D11,D12,D13,D21,D22,D23,D31,D32,D33,ALO
+      real(kind=kreal) :: D11,D12,D13,D21,D22,D23,D31,D32,D33
       integer(kind=kint) :: i,j,k,L
  
       ALU(1,1)= D11
@@ -1932,15 +1940,6 @@
       ALU(3,3)= D33
 
       do k= 1, 3
-         L = k
-        ALO= dabs(ALU(L,k))
-        do i= k+1, 3
-          if (dabs(ALU(i,k)).gt.ALO) then
-             L = i
-            ALO= dabs(ALU(L,k))
-          endif
-        enddo
-
         ALU(k,k)= 1.d0/ALU(k,k)
         do i= k+1, 3
           ALU(i,k)= ALU(i,k) * ALU(k,k)
