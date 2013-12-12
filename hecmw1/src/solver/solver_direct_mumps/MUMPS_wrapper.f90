@@ -67,11 +67,8 @@ contains
           call sparse_matrix_gather_rhs(spMAT, mumps_par%RHS)
           if(paraContactFlag) then
             if(myrank == 0) then
-              mumps_par%RHS(:) = mumps_par%RHS(:) + spMAT%rhs_con_sum(:)
-!              deallocate(spMAT%rhs_con_sum,stat=ierr)
               rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
             endif
-            deallocate(spMAT%rhs_con_sum,stat=ierr)
             call hecmw_bcast_R1_comm (rhs_b, 0, mumps_par%COMM)
 !            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
           else

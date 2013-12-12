@@ -57,9 +57,6 @@ module m_sparse_matrix
      integer(kind=kint), pointer :: conv_ext(:) => null()
      integer(kind=kint) :: timelog
      logical :: is_initialized = .false.
-!
-     real(kreal),pointer    ::  rhs_con(:) => null()
-     real(kreal),pointer    ::  rhs_con_sum(:) => null()
   end type sparse_matrix
 
 contains
