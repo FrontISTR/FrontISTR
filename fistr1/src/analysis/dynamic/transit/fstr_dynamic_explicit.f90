@@ -74,7 +74,7 @@ contains
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step(1)
 
-    real(kind=kreal), parameter :: PI = 3.14159265358979323846
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not

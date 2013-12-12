@@ -74,7 +74,7 @@ contains
 
     integer(kind=kint) :: restrt_step_num
 
-    real(kind=kreal), parameter :: PI = 3.14159265358979323846
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
 
     call cpu_time( time_1 )

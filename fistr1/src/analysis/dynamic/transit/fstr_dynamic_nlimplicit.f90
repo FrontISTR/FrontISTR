@@ -76,7 +76,7 @@ contains
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
 
-    real(kind=kreal), parameter :: PI = 3.14159265358979323846
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
 
 !C*-------- solver control -----------*
