@@ -3117,7 +3117,37 @@ reorder_elems( struct hecmwST_local_mesh *mesh, int *old2new, int *new2old )
 		HECMW_free( mesh->section_ID );
 		mesh->section_ID = new_section_ID;
 	}
-	/* TODO: renumber elem_mat_ID_index, elem_mat_ID_item */
+	/* elem_mat_ID_index, elem_mat_ID_item */
+	{
+		int *new_emID_index, *new_emID_item;
+		new_emID_index = (int *) HECMW_malloc( sizeof(int) * (mesh->n_elem_gross + 1) );
+		if( new_emID_index == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+		new_emID_item = (int *) HECMW_malloc( sizeof(int) * mesh->elem_mat_ID_index[mesh->n_elem_gross] );
+		if( new_emID_item == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+		new_emID_index[0] = 0;
+		for( i=0; i < mesh->n_elem_gross; i++ ) {
+			int old, js_old, je_old, len, js_new, j;
+			old = new2old[i];
+			js_old = mesh->elem_mat_ID_index[old];
+			je_old = mesh->elem_mat_ID_index[old+1];
+			len = je_old - js_old;
+			js_new = new_emID_index[i];
+			new_emID_index[i+1] = js_new + len;
+			for( j=0; j < len; j++ ) {
+				new_emID_item[js_new+j] = mesh->elem_mat_ID_item[js_old+j];
+			}
+		}
+		HECMW_free( mesh->elem_mat_ID_index );
+		HECMW_free( mesh->elem_mat_ID_item );
+		mesh->elem_mat_ID_index = new_emID_index;
+		mesh->elem_mat_ID_item = new_emID_item;
+	}
 
 	/*
 	 * Update using old2new
