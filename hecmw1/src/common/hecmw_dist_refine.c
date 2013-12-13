@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2009/02/16                                        *
+ *     Last Update : 2013/12/13                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by GOTO, Kazuya (AdvanceSoft)                    *
+ *            Written by GOTO, Kazuya (PExProCS)                       *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *
