@@ -51,7 +51,7 @@ contains
        NU=hecMAT%indexU(NN)
        NZ=NN*(ndof2+ndof)/2+NU*ndof2 &
             +fstrMAT%numU_lagrange*ndof
-       
+
 !!$#ifdef NEED_DIAG
 !!$       NZ=NZ+fstrMAT%num_lagrange
 !!$#endif
@@ -63,7 +63,7 @@ contains
             +(fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*ndof
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
-    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof, paraContactFlag)
+    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
     if(fstrMAT%num_lagrange > 0) &
       print '(I3,A,4I10,A,2I10)',myrank,' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',fstrMAT%num_lagrange,spMAT%OFFSET
     nLag = fstrMAT%num_lagrange
@@ -193,7 +193,7 @@ contains
        call hecmw_abort(hecmw_comm_get_comm())
     endif
   end subroutine sparse_matrix_contact_set_prof
-  
+
   subroutine sparse_matrix_para_contact_set_prof(spMAT, hecMAT, fstrMAT)
     type(sparse_matrix), intent(inout) :: spMAT
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -301,7 +301,7 @@ contains
               m=m+1
             enddo
           enddo
-          
+
           ! Diag
           !offset_d=ndof2*(i-1)+ndof*(idof-1)
           if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
@@ -312,7 +312,7 @@ contains
             !spMAT%A(m)=hecMAT%D(offset_d+jdof)
             m=m+1
           enddo
-!     
+!
           ! Upper
           ls=hecMAT%indexU(i-1)+1
           le=hecMAT%indexU(i)
@@ -321,7 +321,7 @@ contains
             if (j <= hecMAT%N) then
               j0=spMAT%OFFSET+ndof*(j-1)
             else
-              j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof   
+              j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
             endif
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
             !offset_u=ndof2*(l-1)+ndof*(idof-1)
@@ -333,14 +333,14 @@ contains
               m=m+1
             enddo
           enddo
-!     
+!
           ! Upper COL Lagrange
           if (fstrMAT%num_lagrange > 0) then
             j0=spMAT%OFFSET+ndof*hecMAT%N
             ls=fstrMAT%indexU_lagrange(i-1)+1
             le=fstrMAT%indexU_lagrange(i)
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) then
-            
+
             else
               do l=ls,le
                 j=fstrMAT%itemU_lagrange(l)
@@ -367,9 +367,9 @@ contains
           if (j <= hecMAT%N) then
             j0=spMAT%OFFSET+ndof*(j-1)
           else
-            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof   
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
           endif
-          if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle            
+          if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
 !          j0=spMAT%OFFSET+ndof*(j-1)
           do jdof=1,ndof
             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
@@ -514,7 +514,7 @@ contains
          stop "ERROR: sparse_matrix_contact_set_a"
     if (m-1 /= spMAT%NZ) stop "ERROR: sparse_matrix_contact_set_a"
   end subroutine sparse_matrix_contact_set_vals
-  
+
   subroutine sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
     type(sparse_matrix), intent(inout) :: spMAT
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -638,7 +638,7 @@ contains
               m=m+1
             enddo
           enddo
-         
+
           ! Diag
           offset_d=ndof2*(i-1)+ndof*(idof-1)
           if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
@@ -682,9 +682,9 @@ contains
             ls=fstrMAT%indexU_lagrange(i-1)+1
             le=fstrMAT%indexU_lagrange(i)
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) then
-!             Do nothing           
+!             Do nothing
             else
-              do l=ls,le 
+              do l=ls,le
                 if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
                      stop "ERROR: sparse_matrix_contact_set_a"
                 if (spMAT%JCN(m)/=j0+fstrMAT%itemU_lagrange(l)) &
@@ -711,7 +711,7 @@ contains
           if (j <= hecMAT%N) then
             j0=spMAT%OFFSET+ndof*(j-1)
           else
-            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof             
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
           endif
           if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
           do jdof=1,ndof

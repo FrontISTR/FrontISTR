@@ -47,123 +47,35 @@ contains
        NZ=(hecMAT%N+NU+NL)*ndof2
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
-    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF, .false.)
+    call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF)
     spMAT%timelog = hecMAT%Iarray(22)
     call sparse_matrix_hec_set_prof(spMAT, hecMAT)
   end subroutine sparse_matrix_hec_init_prof
 
-  subroutine sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof, paraContactFlag)
+  subroutine sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
     type(sparse_matrix), intent(inout) :: spMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof
-    logical, intent(in) :: paraContactFlag
-    integer(kind=kint) :: n_export,n_import,i,j,is,ie,len,nn_external,id,i0,ierr
-    integer(kind=kint), allocatable :: export_item_dof(:), import_item_dof(:)
-    integer(kind=kint), allocatable :: send_request(:), recv_request(:)
-    integer(kind=kint), allocatable :: send_status(:,:), recv_status(:,:)
-    integer(kint)   :: dummy_buf(1),pid,lid,j0
-    dummy_buf(1) = -1
-    ! COMMUNICATE NUMBERING
+    integer(kind=kint) :: i,j,nn_external,id,ierr
+    integer(kint)   :: pid,lid,j0
     if (hecMESH%n_neighbor_pe==0) return
-    allocate(send_request(hecMESH%n_neighbor_pe), &
-         recv_request(hecMESH%n_neighbor_pe), &
-         send_status(HECMW_STATUS_SIZE, hecMESH%n_neighbor_pe), &
-         recv_status(HECMW_STATUS_SIZE, hecMESH%n_neighbor_pe), stat=ierr)
-    if (ierr /= 0) then
-      write(*,*) " Allocation error, [send,recv]_[request,status]"
-      call hecmw_abort(hecmw_comm_get_comm())
-    endif
-    ! send export list
-    n_export = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    allocate(export_item_dof(n_export*ndof), stat=ierr)
-    if (ierr /= 0) then
-      write(*,*) " Allocation error, export_item_dof"
-      call hecmw_abort(hecmw_comm_get_comm())
-    endif
-    do i=1,n_export
-       do j=1,ndof
-          export_item_dof(ndof*(i-1)+j)= &
-               spMAT%OFFSET+ndof*(hecMESH%export_item(i)-1)+j
-       enddo
-    enddo
-    do i=1,hecMESH%n_neighbor_pe
-       is=ndof*hecMESH%export_index(i-1)+1
-       ie=ndof*hecMESH%export_index(i)
-       len=ie-is+1
-       if(len == 0) then
-         is = ie
-         if(is == 0) is = 1
-       endif
-       if(len == 0) then
-          call HECMW_Isend_INT(dummy_buf, len, &
-               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-               send_request(i))
-       else
-          call HECMW_Isend_INT(export_item_dof(is:ie), len, &
-               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-               send_request(i))
-       endif
-    enddo
-    ! receive import list
-    n_import = hecMESH%import_index(hecMESH%n_neighbor_pe)
-    allocate(import_item_dof(n_import*ndof), stat=ierr)
-    if (ierr /= 0) then
-      write(*,*) " Allocation error, import_item_dof"
-      call hecmw_abort(hecmw_comm_get_comm())
-    endif
-    do i=1,hecMESH%n_neighbor_pe
-       is=ndof*hecMESH%import_index(i-1)+1
-       ie=ndof*hecMESH%import_index(i)
-       len=ie-is+1
-       if(len == 0) then
-         is = ie
-         if(is == 0) is = 1
-       endif
-       if(len == 0) then
-          call HECMW_Irecv_INT(dummy_buf, len, &
-               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-               recv_request(i))
-       else
-          call HECMW_Irecv_INT(import_item_dof(is:ie), len, &
-               hecMESH%neighbor_pe(i), 0, hecmw_comm_get_comm(), &
-               recv_request(i))
-       endif
-    enddo
-    ! waitall
-    call HECMW_Waitall(hecMESH%n_neighbor_pe, send_request, send_status)
-    call HECMW_Waitall(hecMESH%n_neighbor_pe, recv_request, recv_status)
-    ! dealloc
-    deallocate(export_item_dof)
-    deallocate(send_request, recv_request, send_status, recv_status)
     ! create conversion list
     nn_external = hecMESH%n_node - hecMESH%nn_internal
-    allocate(spMAT%conv_ext(nn_external*ndof))
+    allocate(spMAT%conv_ext(nn_external*ndof), stat=ierr)
     if (ierr /= 0) then
       write(*,*) " Allocation error, spMAT%conv_ext"
       call hecmw_abort(hecmw_comm_get_comm())
     endif
     spMAT%conv_ext(:) = -1
-    if(paraContactFlag) then
-      do i=1,nn_external
-        id = i + hecMESH%nn_internal
-        pid = hecMESH%node_ID(id*2)
-        lid = hecMESH%node_ID(id*2-1)
-        j0 = spMAT%DISPLS(pid+1) + (lid-1)*ndof
-        do j=1,ndof
-          spMAT%conv_ext((i-1)*ndof+j) = j0+j
-        enddo
+    do i=1,nn_external
+      id = i + hecMESH%nn_internal
+      pid = hecMESH%node_ID(id*2)
+      lid = hecMESH%node_ID(id*2-1)
+      j0 = spMAT%DISPLS(pid+1) + (lid-1)*ndof
+      do j=1,ndof
+        spMAT%conv_ext((i-1)*ndof+j) = j0+j
       enddo
-    else
-    do i=1,n_import
-       id=hecMESH%import_item(i)-hecMESH%nn_internal
-       i0=ndof*(id-1)
-       do j=1,ndof
-          spMAT%conv_ext(i0+j)=import_item_dof(ndof*(i-1)+j)
-       enddo
     enddo
-    endif
-    ! dealloc
-    deallocate(import_item_dof)
   end subroutine sparse_matrix_hec_set_conv_ext
 
   subroutine sparse_matrix_hec_set_prof(spMAT, hecMAT)
