@@ -118,6 +118,14 @@ MODULE mMaterial
       
       ! 80~100, hardening parameter
 	  
+	!<********** Laminated Shell material properties  **********
+!		INTEGER, PARAMETER :: SHELL material properties = 101~220 
+
+	!********** Use for i_variables **********
+		INTEGER, PARAMETER :: M_SHELL_SOLID = 298
+		INTEGER, PARAMETER :: M_TOTAL_LAYER = 299
+		INTEGER, PARAMETER :: M_SHELL_MATLTYPE = 300
+		
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -133,7 +141,7 @@ MODULE mMaterial
     integer                    :: mtype             !< material type
     integer                    :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
-    real(kind=kreal)           :: variables(200)    !< material properties
+    real(kind=kreal)           :: variables(300)    !< material properties
     integer                    :: cdsys_ID          !< ID of material coordinate system
     integer                    :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
@@ -151,8 +159,8 @@ MODULE mMaterial
     material%nfstatus = 0                ! Default: no status 
     material%nlgeom_flag = INFINITE     ! Default: INFINITE ANALYSIS
     material%variables = 0.d0            ! not defined yet
-	
-    call dict_create( material%dict, 'INIT', DICT_NULL )
+
+	call dict_create( material%dict, 'INIT', DICT_NULL )
   END SUBROUTINE
 
 !> Initializer

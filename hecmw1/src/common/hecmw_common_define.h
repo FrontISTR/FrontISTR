@@ -246,7 +246,7 @@
 #define HECMW_UCD_LABEL_SHQ1 "quad"
 #define HECMW_UCD_LABEL_SHQ2 "quad2"
 #define HECMW_UCD_LABEL_SHT6 "tri" /* mixed shell-solid */
-#define HECMW_UCD_LABEL_SHQ8 "quad"
+#define HECMW_UCD_LABEL_SHQ8 "quad" /* mixed shell-solid */
 #define HECMW_UCD_LABEL_LN11 "line"
 #define HECMW_UCD_LABEL_LN12 "line"
 #define HECMW_UCD_LABEL_LN13 "line"

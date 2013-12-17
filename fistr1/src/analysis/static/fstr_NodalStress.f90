@@ -21,297 +21,469 @@
 !!
 !======================================================================!
 module m_fstr_NodalStress
-  implicit none
-
-  private :: NodalStress_INV3, NodalStress_INV2, inverse_func
-
-  contains
+	implicit none
+	private :: NodalStress_INV3, NodalStress_INV2, inverse_func
+	contains
 
 !> Calculate NODAL STRESS of solid elements
 !----------------------------------------------------------------------*
-  subroutine fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
+	subroutine fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
 !----------------------------------------------------------------------*
-    use m_fstr
-    use m_static_lib
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+	use m_fstr
+	use m_static_lib
+	type (hecmwST_local_mesh) :: hecMESH
+	type (fstr_solid)         :: fstrSOLID
+	real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 !C** local variables
-    integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, ic_type, nn, ni, ID_area, truss
-    real(kind=kreal)   :: estrain(6), estress(6), tstrain(6), naturalCoord(3)
-    real(kind=kreal)   :: edstrain(20,6), edstress(20,6), tdstrain(20,6)
-    real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
-    real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
-    real(kind=kreal), allocatable :: trstrain(:,:), trstress(:,:)
-    integer(kind=kint), allocatable :: nnumber(:), tnumber(:)
-    real(kind = kreal)   :: ecoord(3, 20), edisp(60)
-    real(kind = kreal)   :: tt(20), t0(20)
-    real(kind = kreal)   :: a
-    integer(kind = kint) :: nodlocal(20)
-    integer(kind = kint) :: ntemp
-    integer(kind = kint) :: isect, ihead
+	integer(kind=kint) :: itype, icel, ic, iS, iE, jS, i, j, k, m, it, bb, ic_type, nn, ni, ID_area, truss
+	integer(kind=kint) :: flag_dof, shellmatl
+	real(kind=kreal)   :: estrain(6), estress(6), tstrain(6), naturalCoord(3)
+	real(kind=kreal)   :: edstrain(20,6), edstress(20,6), tdstrain(20,6)
+	real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
+	real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
+	real(kind=kreal), allocatable :: trstrain(:,:), trstress(:,:)
+	integer(kind=kint), allocatable :: nnumber(:), tnumber(:)
+	real(kind = kreal)   :: ecoord(3, 20), edisp(60)
+	real(kind = kreal)   :: tt(20), t0(20)
+	real(kind = kreal)   :: a
+	integer(kind = kint) :: nodlocal(20)
+	integer(kind = kint) :: ntemp
+!********** Shell-Solid Mixed Analysis	
+	integer(kind=kint) :: isect, ihead, cid
+	integer(kind=kint) :: n_layer, n_total_layer, com_total_layer
+	real(kind=kreal)   :: strain(9,6), stress(9,6)
+	real(kind=kreal)   :: thick, thick_layer, sublayer, aa
+	real(kind=kreal)   :: t11, t22, t33, t12, t23, t13, tmises
+	real(kind=kreal), allocatable :: ndstrain_plus(:,:), ndstrain_minus(:,:)
+	real(kind=kreal), allocatable :: ndstress_plus(:,:), ndstress_minus(:,:)
 
-    fstrSOLID%STRAIN = 0.0d0
-    fstrSOLID%STRESS = 0.0d0
-    allocate( nnumber(hecMESH%n_node) )
-    nnumber = 0
-    if( associated(tnstrain) ) tnstrain = 0.0d0
+	n_total_layer = 1
+	flag_dof = 0
+	
+	do it=1,hecMESH%section%n_sect
+		cid = hecMESH%section%sect_mat_ID_item(it)
+		sublayer =  int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
+		if (sublayer > n_total_layer)then
+			n_total_layer = sublayer
+		endif
+	enddo
+	do it=1,hecMESH%n_elem_type
+		aa =  hecMESH%elem_type_item(it)
+		if (aa == 761 .or. aa == 781)then
+			flag_dof = 1
+		endif
+	enddo
+	 	
+	fstrSOLID%STRAIN = 0.0d0
+	fstrSOLID%STRESS = 0.0d0
+	allocate( nnumber(hecMESH%n_node) )
+	nnumber = 0
 
-    truss = 0
-    do itype = 1, hecMESH%n_elem_type
-      ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type == 301 ) truss = 1
-      IF( ic_type == 641 ) truss = 2
-    enddo
+	allocate ( ndstrain_plus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstrain_minus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstress_plus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstress_minus(hecMESH%n_node,6*n_total_layer) )
+	ndstrain_plus = 0.0d0
+	ndstrain_minus = 0.0d0
+	ndstress_plus = 0.0d0
+	ndstress_minus = 0.0d0
+	thick_layer = 0.0d0
+	nodlocal=0.0
+	if( associated(tnstrain) ) tnstrain = 0.0d0
+
+	truss = 0
+	do itype = 1, hecMESH%n_elem_type
+		ic_type = hecMESH%elem_type_item(itype)
+		if( ic_type == 301 ) truss = 1
+		IF( ic_type == 641 ) truss = 2
+	enddo
     if( ( truss == 1 ) .or. ( truss == 2 ) ) then
-      allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,6) )
-      allocate( tnumber(hecMESH%n_node) )
-      trstrain = 0.0d0
-      trstress = 0.0d0
-      tnumber = 0
-    endif
-
+		allocate( trstrain(hecMESH%n_node,6), trstress(hecMESH%n_node,6) )
+		allocate( tnumber(hecMESH%n_node) )
+		trstrain = 0.0d0
+		trstress = 0.0d0
+		tnumber = 0
+	endif
 !C +-------------------------------+
 !C | according to ELEMENT TYPE     |
 !C +-------------------------------+
-    do itype = 1, hecMESH%n_elem_type
-      iS = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type == fe_tet10nc ) ic_type = fe_tet10n
-      !if( .not. hecmw_is_etype_solid(ic_type) ) cycle
-      if( .not. hecmw_is_etype_solid(ic_type) ) then
-       if( ic_type /= 641 ) then
-        cycle
-       end if
-      end if
+	do itype = 1, hecMESH%n_elem_type
+		iS = hecMESH%elem_type_index(itype-1) + 1
+		iE = hecMESH%elem_type_index(itype  )
+		ic_type = hecMESH%elem_type_item(itype)
+		if( ic_type == fe_tet10nc ) ic_type = fe_tet10n
+		if( .not. (hecmw_is_etype_solid(ic_type) .or. ic_type == 781 .or. ic_type == 761 .or. ic_type == fe_beam341 ) ) cycle
 !C** set number of nodes and shape function
-      nn = hecmw_get_max_node( ic_type )
-      ni = NumOfQuadPoints( ic_type )
-      allocate( func(ni,nn), inv_func(nn,ni) )
-      if( ic_type == fe_tet10n ) then
-        ic = hecmw_get_max_node( fe_tet4n )
-        do i = 1, ni
-          call getQuadPoint( ic_type, i, naturalCoord )
-          call getShapeFunc( fe_tet4n, naturalCoord, func(i,1:ic) )
-        enddo
-        call inverse_func( ic, func, inv_func )
-      else if( ic_type == fe_hex8n ) then
-        do i = 1, ni
-          call getQuadPoint( ic_type, i, naturalCoord )
-          call getShapeFunc( ic_type, naturalCoord, func(i,1:nn) )
-        enddo
-        call inverse_func( ni, func, inv_func )
-      else if( ic_type == fe_prism15n ) then
-        ic = 0
-        do i = 1, ni
-          if( i==1 .or. i==2 .or. i==3 .or. i==7 .or. i==8 .or. i==9 ) then
-            ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
-            call getShapeFunc( fe_prism6n, naturalCoord, func(ic,1:6) )
-          endif
-        enddo
-        call inverse_func( ic, func, inv_func )
-        ni = ic
-      else if( ic_type == fe_hex20n ) then
-        ic = 0
-        do i = 1, ni
-          if( i==1 .or. i==3 .or. i==7 .or. i==9 .or. &
-              i==19 .or. i==21 .or. i==25 .or. i==27 ) then
-            ic = ic + 1
-            call getQuadPoint( ic_type, i, naturalCoord )
-            call getShapeFunc( fe_hex8n, naturalCoord, func(ic,1:8) )
-           endif
-        enddo
-        call inverse_func( ic, func, inv_func )
-        ni = ic
-      endif
+		nn = hecmw_get_max_node( ic_type )
+		ni = NumOfQuadPoints( ic_type )
+		allocate( func(ni,nn), inv_func(nn,ni) )
+		if( ic_type == fe_tet10n) then
+			ic = hecmw_get_max_node( fe_tet4n )
+			do i = 1, ni
+				call getQuadPoint( ic_type, i, naturalCoord )
+				call getShapeFunc( fe_tet4n, naturalCoord, func(i,1:ic) )
+			enddo
+			call inverse_func( ic, func, inv_func )
+		else if( ic_type == fe_hex8n .or. ic_type == 781 ) then
+			do i = 1, ni
+				call getQuadPoint( ic_type, i, naturalCoord )
+				call getShapeFunc( ic_type, naturalCoord, func(i,1:nn) )
+			enddo
+			call inverse_func( ni, func, inv_func )
+		else if( ic_type == fe_prism15n ) then
+			ic = 0
+			do i = 1, ni
+				if( i==1 .or. i==2 .or. i==3 .or. i==7 .or. i==8 .or. i==9 ) then
+					ic = ic + 1
+					call getQuadPoint( ic_type, i, naturalCoord )
+					call getShapeFunc( fe_prism6n, naturalCoord, func(ic,1:6) )
+				endif
+			enddo
+			call inverse_func( ic, func, inv_func )
+			ni = ic
+		else if( ic_type == fe_hex20n ) then
+			ic = 0
+			do i = 1, ni
+				if( i==1 .or. i==3 .or. i==7 .or. i==9 .or. &
+				 i==19 .or. i==21 .or. i==25 .or. i==27 ) then
+					ic = ic + 1
+					call getQuadPoint( ic_type, i, naturalCoord )
+					call getShapeFunc( fe_hex8n, naturalCoord, func(ic,1:8) )
+				endif
+			enddo
+			call inverse_func( ic, func, inv_func )
+			ni = ic
+		endif
 !C** element loop
-      do icel = iS, iE
-        jS = hecMESH%elem_node_index(icel-1)
-        ID_area = hecMESH%elem_ID(icel*2)
-        
-        IF( ic_type == 641 ) THEN
-         
-         DO j = 1, nn
-          
-          nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-          
-          ecoord(1, j) = hecMESH%node(3*nodLOCAL(j)-2)
-          ecoord(2, j) = hecMESH%node(3*nodLOCAL(j)-1)
-          ecoord(3, j) = hecMESH%node(3*nodLOCAL(j)  )
-          
-          edisp(3*j-2) = fstrSOLID%unode(3*nodLOCAL(j)-2)
-          edisp(3*j-1) = fstrSOLID%unode(3*nodLOCAL(j)-1)
-          edisp(3*j  ) = fstrSOLID%unode(3*nodLOCAL(j)  )
-          
-         END DO
-         
-         ntemp = 0
-         
-         IF( associated( fstrSOLID%temperature ) ) THEN
-          
-          ntemp = 1
-          
-          DO j = 1, nn
-           
-           nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-           
-           t0(j) = fstrSOLID%last_temp( nodLOCAL(j) )
-           tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
-           
-          END DO
-          
-         END IF
-         
-         isect= hecMESH%section_ID(icel)
-         ihead = hecMESH%section%sect_R_index(isect-1)
-         
-         CALL NodalStress_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses,              &
+		do icel = iS, iE
+			jS = hecMESH%elem_node_index(icel-1)
+			ID_area = hecMESH%elem_ID(icel*2)
+			isect= hecMESH%section_ID(icel)
+			ihead = hecMESH%section%sect_R_index(isect-1)
+			thick = hecMESH%section%sect_R_item(ihead+1)
+			if( ic_type == 641 ) THEN
+				DO j = 1, 4
+					nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+					
+					ecoord(1, j) = hecMESH%node(3*nodLOCAL(j)-2)
+					ecoord(2, j) = hecMESH%node(3*nodLOCAL(j)-1)
+					ecoord(3, j) = hecMESH%node(3*nodLOCAL(j)  )
+					edisp(3*j-2) = fstrSOLID%unode(3*nodLOCAL(j)-2)
+					edisp(3*j-1) = fstrSOLID%unode(3*nodLOCAL(j)-1)
+					edisp(3*j  ) = fstrSOLID%unode(3*nodLOCAL(j)  )
+				END DO
+					ntemp = 0
+				IF( associated( fstrSOLID%temperature ) ) THEN
+					ntemp = 1         
+					DO j = 1, 4
+						nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+
+						t0(j) = fstrSOLID%last_temp( nodLOCAL(j) )
+						tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
+					END DO
+				END IF
+				CALL NodalStress_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses,         &
                                     hecMESH%section%sect_R_item(ihead+1:), edisp,                       &
                                     edstrain(1:nn,1:6), edstress(1:nn,1:6), tt(1:nn), t0(1:nn), ntemp ) 
-         
-         DO j = 1, nn
-          
-          ic = hecMESH%elem_node_item(jS+j)
-          
-          trstrain(ic, 1:6) = trstrain(ic, 1:6)+edstrain(j, 1:6)
-          trstress(ic, 1:6) = trstress(ic, 1:6)+edstress(j, 1:6)
-          tnumber(ic) = tnumber(ic)+1
-          
-         END DO
-         
-         IF( ID_area == hecMESH%my_rank ) then
-          
-          estrain(1) = fstrSOLID%elements(icel)%gausses(1)%strain(1)
-          estrain(2) = fstrSOLID%elements(icel)%gausses(1)%strain(2)
-          estrain(3) = fstrSOLID%elements(icel)%gausses(1)%strain(3)
-          estrain(4) = fstrSOLID%elements(icel)%gausses(1)%strain(4)
-          estrain(5) = fstrSOLID%elements(icel)%gausses(1)%strain(5)
-          estrain(6) = fstrSOLID%elements(icel)%gausses(1)%strain(6)
-          
-          estress(1) = fstrSOLID%elements(icel)%gausses(1)%stress(1)
-          estress(2) = fstrSOLID%elements(icel)%gausses(1)%stress(2)
-          estress(3) = fstrSOLID%elements(icel)%gausses(1)%stress(3)
-          estress(4) = fstrSOLID%elements(icel)%gausses(1)%stress(4)
-          estress(5) = fstrSOLID%elements(icel)%gausses(1)%stress(5)
-          estress(6) = fstrSOLID%elements(icel)%gausses(1)%stress(6)
-          
-          fstrSOLID%ESTRAIN(6*icel-5:6*icel)   = estrain(1:6)
-          fstrSOLID%ESTRESS(7*icel-6:7*icel-1) = estress(1:6)
-          
-          IF( ASSOCIATED( testrain ) ) testrain(6*icel-5:6*icel) = tstrain
-          
-          !fstrSOLID%ESTRESS(7*icel) = 0.0D0
-          
-         END IF
-         
-         CYCLE
-         
-        END IF
-        
-!--- calculate nodal stress and strain
-        if( ic_type == 301 ) then
-          call NodalStress_C1( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
-                               edstrain(1:nn,1:6), edstress(1:nn,1:6) )
-        else if( ic_type == fe_tet10n .or. ic_type == fe_hex8n .or. &
-                 ic_type == fe_prism15n .or. ic_type == fe_hex20n ) then
-          call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
-                                 inv_func, edstrain(1:nn,1:6), edstress(1:nn,1:6), &
-                                 tdstrain(1:nn,1:6) )
-        else
-          call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
-                               edstrain(1:nn,1:6), edstress(1:nn,1:6) )
-!          call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
-!                               edstrain(1:nn,1:6), edstress(1:nn,1:6), tdstrain(1:nn,1:6) )
-        endif
-        do j = 1, nn
-          ic = hecMESH%elem_node_item(jS+j)
-          if( ic_type == 301 ) then
-            trstrain(ic,1:6) = trstrain(ic,1:6) + edstrain(j,1:6)
-            trstress(ic,1:6) = trstress(ic,1:6) + edstress(j,1:6)
-            tnumber(ic) = tnumber(ic) + 1
-          else
-            fstrSOLID%STRAIN(6*ic-5:6*ic) = fstrSOLID%STRAIN(6*ic-5:6*ic) + edstrain(j,1:6)
-            fstrSOLID%STRESS(7*ic-6:7*ic-1) = fstrSOLID%STRESS(7*ic-6:7*ic-1) + edstress(j,1:6)
-            if( associated(tnstrain) ) tnstrain(6*ic-5:6*ic) = tnstrain(6*ic-5:6*ic) + tdstrain(j,1:6)
-            nnumber(ic) = nnumber(ic) + 1
-          endif
-        enddo
+				DO j = 1, 2
+					ic = hecMESH%elem_node_item(jS+j)
+
+					trstrain(ic, 1:6) = trstrain(ic, 1:6)+edstrain(j, 1:6)
+					trstress(ic, 1:6) = trstress(ic, 1:6)+edstress(j, 1:6)
+					tnumber(ic) = tnumber(ic)+1
+				END DO
+				
+				IF( ID_area == hecMESH%my_rank ) then
+					estrain(1) = fstrSOLID%elements(icel)%gausses(1)%strain(1)
+					estrain(2) = fstrSOLID%elements(icel)%gausses(1)%strain(2)
+					estrain(3) = fstrSOLID%elements(icel)%gausses(1)%strain(3)
+					estrain(4) = fstrSOLID%elements(icel)%gausses(1)%strain(4)
+					estrain(5) = fstrSOLID%elements(icel)%gausses(1)%strain(5)
+					estrain(6) = fstrSOLID%elements(icel)%gausses(1)%strain(6)
+
+					estress(1) = fstrSOLID%elements(icel)%gausses(1)%stress(1)
+					estress(2) = fstrSOLID%elements(icel)%gausses(1)%stress(2)
+					estress(3) = fstrSOLID%elements(icel)%gausses(1)%stress(3)
+					estress(4) = fstrSOLID%elements(icel)%gausses(1)%stress(4)
+					estress(5) = fstrSOLID%elements(icel)%gausses(1)%stress(5)
+					estress(6) = fstrSOLID%elements(icel)%gausses(1)%stress(6)
+
+					fstrSOLID%ESTRAIN(6*icel-5:6*icel)   = estrain(1:6)
+					fstrSOLID%ESTRESS(7*icel-6:7*icel-1) = estress(1:6)
+					IF( ASSOCIATED( testrain ) ) testrain(6*icel-5:6*icel) = tstrain
+				END IF
+				CYCLE
+			endif
+			if ( ic_type == 781) then
+!********** Shell-Solid mixed analysis **********
+				nn = 4
+				do j = 1, 4
+					nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+					ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
+					ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
+					ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
+					edisp(6*j-5) = fstrSOLID%unode(3*nodLOCAL(j)-2)
+					edisp(6*j-4) = fstrSOLID%unode(3*nodLOCAL(j)-1)
+					edisp(6*j-3) = fstrSOLID%unode(3*nodLOCAL(j)  )
+					nodLOCAL(j+4) = hecMESH%elem_node_item(jS+j+4)
+					ecoord(1,j+4) = hecMESH%node(3*nodLOCAL(j+4)-2)
+					ecoord(2,j+4) = hecMESH%node(3*nodLOCAL(j+4)-1)
+					ecoord(3,j+4) = hecMESH%node(3*nodLOCAL(j+4)  )
+					edisp(6*j-2) = fstrSOLID%unode(3*nodLOCAL(j+4)-2)
+					edisp(6*j-1) = fstrSOLID%unode(3*nodLOCAL(j+4)-1)
+					edisp(6*j  ) = fstrSOLID%unode(3*nodLOCAL(j+4)  )
+				enddo
 !--- calculate elemental stress and strain
-        if( ID_area == hecMESH%my_rank ) then
-          if( ic_type == 301 ) then
-            call ElementStress_C1( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
-          else
-            call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
-!            call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress, tstrain )
-          endif
-          fstrSOLID%ESTRAIN(6*icel-5:6*icel) = estrain
-          fstrSOLID%ESTRESS(7*icel-6:7*icel-1) = estress
-          if( associated(testrain) ) testrain(6*icel-5:6*icel) = tstrain
-          s11 = fstrSOLID%ESTRESS(7*icel-6)
-          s22 = fstrSOLID%ESTRESS(7*icel-5)
-          s33 = fstrSOLID%ESTRESS(7*icel-4)
-          s12 = fstrSOLID%ESTRESS(7*icel-3)
-          s23 = fstrSOLID%ESTRESS(7*icel-2)
-          s13 = fstrSOLID%ESTRESS(7*icel-1)
-          ps = ( s11 + s22 + s33 ) / 3.0
-          smises = 0.5d0 * ( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2 + s13**2
-          fstrSOLID%ESTRESS(7*icel) = sqrt( 3.0d0 * smises )
-        endif
-      enddo
-      deallocate( func, inv_func )
-    enddo
+				ic_type = 741
+				n_total_layer =  int(fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
+				DO n_layer=1,n_total_layer
+					call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                                         strain, stress, thick, 1.0d0, n_layer, n_total_layer)
+					do j = 1, nn
+						i = nodLOCAL(j)
+						m = nodLOCAL(j+4)
+						do k = 1, 6
+							ndstrain_plus(i,6*(n_layer-1)+k) = ndstrain_plus(i,6*(n_layer-1)+k) + strain(j,k)
+							ndstress_plus(i,6*(n_layer-1)+k) = ndstress_plus(i,6*(n_layer-1)+k) + stress(j,k)
+							ndstrain_plus(m,6*(n_layer-1)+k) = ndstrain_plus(m,6*(n_layer-1)+k) + strain(j,k)
+							ndstress_plus(m,6*(n_layer-1)+k) = ndstress_plus(m,6*(n_layer-1)+k) + stress(j,k)
+						enddo
+					enddo
+					if( ID_area == hecMESH%my_rank ) then
+						do j = 1, nn
+						do k = 1, 6
+							fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k) = fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k) + strain(j,k)/nn
+							fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k) = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k) + stress(j,k)/nn
+						enddo
+						enddo
+						s11 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+1)
+						s22 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+2)
+						s33 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+3)
+						s12 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+4)
+						s23 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+5)
+						s13 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+6)
+						ps = ( s11 + s22 + s33 ) / 3.0
+						smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+						fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+13) = sqrt( 3.0d0 * smises )
+						t11 = s11
+						t22 = s22
+						t33 = s33
+						t12 = s12
+						t23 = s23
+						t13 = s13
+						tmises = smises
+					endif
+					call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                                         strain, stress, thick, -1.0d0, n_layer, n_total_layer)
+					do j = 1, nn
+						i = nodLOCAL(j)
+						m = nodLOCAL(j+4)
+						do k = 1, 6
+							ndstrain_minus(i,6*(n_layer-1)+k) = ndstrain_minus(i,6*(n_layer-1)+k) + strain(j,k)
+							ndstress_minus(i,6*(n_layer-1)+k) = ndstress_minus(i,6*(n_layer-1)+k) + stress(j,k)
+							ndstrain_minus(m,6*(n_layer-1)+k) = ndstrain_minus(m,6*(n_layer-1)+k) + strain(j,k)
+							ndstress_minus(m,6*(n_layer-1)+k) = ndstress_minus(m,6*(n_layer-1)+k) + stress(j,k)
+						enddo
+						nnumber(i) = nnumber(i) + 1
+						nnumber(m) = nnumber(m) + 1
+					enddo
+					if( ID_area == hecMESH%my_rank ) then
+						do j = 1, nn
+						do k = 1, 6
+							fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+14*(n_layer-1)+k+6) = fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+14*(n_layer-1)+k+6) + strain(j,k)/nn
+							fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) + stress(j,k)/nn
+						enddo
+						enddo
+						s11 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+7)
+						s22 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+8)
+						s33 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+9)
+						s12 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+10)
+						s23 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+11)
+						s13 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+12)
+						ps = ( s11 + s22 + s33 ) / 3.0
+						smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+						fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+14) = sqrt( 3.0d0 * smises )
+					endif
+					shellmatl = int(fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+					if (shellmatl == 0)then
+						thick_layer = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(100+3*n_layer)
+					elseif (shellmatl == 1)then
+						thick_layer = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(100+8*n_layer-5)
+					else
+						write(*,*)"ERROR : shellmatl isnot correct"; stop
+					endif
+					!  ********** input of Sectional Stress ********** 
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-5) =  0.5d0*(sqrt( 3.0d0 * smises )+sqrt( 3.0d0 * tmises ))*thick_layer / thick
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-4) = (t11+s11)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-3) = (t22+s22)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-2) = (t12+s12)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-1) = (t23+s23)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel  ) = (t13+s13)*thick_layer*0.5d0
+				ENDDO     !DO n_layer=1,n_total_layer
+				ic_type = 781
+!********** Shell-Solid mixed analysis end **********
+			elseif( ic_type == 301 ) then
+				call NodalStress_C1( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+					edstrain(1:nn,1:6), edstress(1:nn,1:6) )
+			else if( ic_type == fe_tet10n .or. ic_type == fe_hex8n .or. &
+				ic_type == fe_prism15n .or. ic_type == fe_hex20n ) then
+				call NodalStress_INV3( ic_type, ni, fstrSOLID%elements(icel)%gausses, &
+					inv_func, edstrain(1:nn,1:6), edstress(1:nn,1:6), tdstrain(1:nn,1:6) )
+			else
+				call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
+				edstrain(1:nn,1:6), edstress(1:nn,1:6) )
+			endif
 
+!--- calculate elemental stress and strain
+			if (flag_dof == 1 .and. (ic_type /= 781 .or. ic_type /= 761) )then
+				do j = 1, nn
+				   ic = hecMESH%elem_node_item(jS+j)
+					fstrSOLID%STRAIN(12*n_total_layer*(ic-1)+1:12*n_total_layer*(ic-1)+6) = fstrSOLID%STRAIN(12*n_total_layer*(ic-1)+1:12*n_total_layer*(ic-1)+6) + edstrain(j,1:6)
+					fstrSOLID%STRESS(14*n_total_layer*(ic-1)+1:14*n_total_layer*(ic-1)+6) = fstrSOLID%STRESS(14*n_total_layer*(ic-1)+1:14*n_total_layer*(ic-1)+6) + edstress(j,1:6)
+					if( associated(tnstrain) ) tnstrain(6*ic-5:6*ic) = tnstrain(6*ic-5:6*ic) + tdstrain(j,1:6)
+					nnumber(ic) = nnumber(ic) + 1
+				enddo
+
+				if( ID_area == hecMESH%my_rank ) then
+					call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+					fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+1:12*n_total_layer*(icel-1)+6) = estrain
+					fstrSOLID%ESTRESS(14*n_total_layer*(icel-1)+1:14*n_total_layer*(icel-1)+6) = estress
+				if( associated(testrain) ) testrain(6*icel-5:6*icel) = tstrain
+					s11 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+1)
+					s22 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+2)
+					s33 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+3)
+					s12 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+4)
+					s23 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+5)
+					s13 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+6)
+					ps = ( s11 + s22 + s33 ) / 3.0
+					smises = 0.5d0 * ( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2 + s13**2
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+13) = sqrt( 3.0d0 * smises )
+				endif
+		   elseif(flag_dof == 0)then
+				do j = 1, nn
+					ic = hecMESH%elem_node_item(jS+j)
+					if( ic_type == 301 ) then
+						trstrain(ic,1:6) = trstrain(ic,1:6) + edstrain(j,1:6)
+						trstress(ic,1:6) = trstress(ic,1:6) + edstress(j,1:6)
+						tnumber(ic) = tnumber(ic) + 1
+					else
+						fstrSOLID%STRAIN(6*ic-5:6*ic) = fstrSOLID%STRAIN(6*ic-5:6*ic) + edstrain(j,1:6)
+						fstrSOLID%STRESS(7*ic-6:7*ic-1) = fstrSOLID%STRESS(7*ic-6:7*ic-1) + edstress(j,1:6)
+						if( associated(tnstrain) ) tnstrain(6*ic-5:6*ic) = tnstrain(6*ic-5:6*ic) + tdstrain(j,1:6)
+						nnumber(ic) = nnumber(ic) + 1
+					endif
+				enddo
+
+				if( ID_area == hecMESH%my_rank ) then
+					if( ic_type == 301 ) then
+						call ElementStress_C1( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+					else
+						call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
+					endif
+					fstrSOLID%ESTRAIN(6*icel-5:6*icel) = estrain
+					fstrSOLID%ESTRESS(7*icel-6:7*icel-1) = estress
+					if( associated(testrain) ) testrain(6*icel-5:6*icel) = tstrain
+					s11 = fstrSOLID%ESTRESS(7*icel-6)
+					s22 = fstrSOLID%ESTRESS(7*icel-5)
+					s33 = fstrSOLID%ESTRESS(7*icel-4)
+					s12 = fstrSOLID%ESTRESS(7*icel-3)
+					s23 = fstrSOLID%ESTRESS(7*icel-2)
+					s13 = fstrSOLID%ESTRESS(7*icel-1)
+					ps = ( s11 + s22 + s33 ) / 3.0
+					smises = 0.5d0 * ( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2 + s13**2
+					fstrSOLID%ESTRESS(7*icel) = sqrt( 3.0d0 * smises )
+				endif
+			endif
+		enddo
+		deallocate( func, inv_func )
+	enddo
+		
+	if(  ic_type == 781 )then  
+		write(*,*) "Nodal stress shell 781"
+		do i = 1, hecMESH%n_node
+			if( nnumber(i) == 0 ) cycle
+			do n_layer=1,n_total_layer
+				do j = 1, 6
+					ndstrain_plus(i,6*(n_layer-1)+j) = ndstrain_plus(i,6*(n_layer-1)+j) / nnumber(i)
+					ndstress_plus(i,6*(n_layer-1)+j) = ndstress_plus(i,6*(n_layer-1)+j) / nnumber(i)
+					ndstrain_minus(i,6*(n_layer-1)+j) = ndstrain_minus(i,6*(n_layer-1)+j) / nnumber(i)
+					ndstress_minus(i,6*(n_layer-1)+j) = ndstress_minus(i,6*(n_layer-1)+j) / nnumber(i)
+					fstrSOLID%STRAIN(12*n_total_layer*(i-1)+12*(n_layer-1)+j) = ndstrain_plus(i,3*(n_layer-1)+j)
+					fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+j) = ndstress_plus(i,3*(n_layer-1)+j)
+					fstrSOLID%STRAIN(12*n_total_layer*(i-1)+12*(n_layer-1)+j+6) = ndstrain_minus(i,3*(n_layer-1)+j)
+					fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+j+6) = ndstress_minus(i,3*(n_layer-1)+j)
+				enddo
+				s11 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+1)
+				s22 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+2)
+				s33 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+3)
+				s12 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+4)
+				s23 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+5)
+				s13 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+6)
+				ps = ( s11 + s22 + s33 ) / 3.0
+				tmises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+				fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+13) = sqrt( 3.0d0 * tmises )
+				s11 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+7)
+				s22 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+8)
+				s33 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+9)
+				s12 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+10)
+				s23 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+11)
+				s13 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+12)
+				ps = ( s11 + s22 + s33 ) / 3.0
+				smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+				fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+14) = sqrt( 3.0d0 * smises )
+			enddo
+		enddo
+	else
+		
 !C** average over nodes
-    do i = 1, hecMESH%nn_internal
-      if( truss == 2 ) then
-        if( tnumber(i) /= 0 ) then
-          fstrSOLID%STRAIN(6*i-5:6*i) = trstrain(i,1:6)/tnumber(i)
-          fstrSOLID%STRESS(7*i-6:7*i-1) = trstress(i,1:6)/tnumber(i)
-        endif
-        cycle
-      end if
-      if( nnumber(i) == 0 ) cycle
-      if( truss == 1 ) then
-        if( tnumber(i) /= 0 ) then
-          fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
-          fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i) + trstress(i,1:6) / tnumber(i)
-          if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
-        else
-          fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i)
-          fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i)
-          if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
-        endif
-      else
-        fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i)
-        fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i)
-        if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
-      endif
-    enddo
+		do i = 1, hecMESH%nn_internal
+			if( truss == 2 ) then
+				if( tnumber(i) /= 0 ) then
+				fstrSOLID%STRAIN(6*i-5:6*i) = trstrain(i,1:6)/tnumber(i)
+				fstrSOLID%STRESS(7*i-6:7*i-1) = trstress(i,1:6)/tnumber(i)
+				endif
+				cycle
+			endif 
+			if( nnumber(i) == 0 ) cycle
+			if( truss == 1 ) then
+				if( tnumber(i) /= 0 ) then
+					fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i) + trstrain(i,1:6) / tnumber(i)
+					fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i) + trstress(i,1:6) / tnumber(i)
+					if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
+				else
+					fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i)
+					fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i)
+					if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
+				endif
+			else
+				fstrSOLID%STRAIN(6*i-5:6*i) = fstrSOLID%STRAIN(6*i-5:6*i) / nnumber(i)
+				fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) / nnumber(i)
+				if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
+			endif
+		enddo
+		
 !C** calculate von MISES stress
-    do i = 1, hecMESH%n_node
-      if( truss == 2 ) then
-       fstrSOLID%STRESS(7*i) = 0.0
-       cycle
-      end if
-      s11 = fstrSOLID%STRESS(7*i-6)
-      s22 = fstrSOLID%STRESS(7*i-5)
-      s33 = fstrSOLID%STRESS(7*i-4)
-      s12 = fstrSOLID%STRESS(7*i-3)
-      s23 = fstrSOLID%STRESS(7*i-2)
-      s13 = fstrSOLID%STRESS(7*i-1)
-      ps = ( s11 + s22 + s33 ) / 3.0
-      smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      fstrSOLID%STRESS(7*i) = sqrt( 3.0d0 * smises )
-    enddo
-
-    deallocate( nnumber )
-    if( ( truss == 1 ) .or. ( truss == 2 ) ) then
-      deallocate( trstrain, trstress )
-      deallocate( tnumber )
-    endif
-  end subroutine fstr_NodalStress3D
+		do i = 1, hecMESH%n_node
+			s11 = fstrSOLID%STRESS(7*i-6)
+			s22 = fstrSOLID%STRESS(7*i-5)
+			s33 = fstrSOLID%STRESS(7*i-4)
+			s12 = fstrSOLID%STRESS(7*i-3)
+			s23 = fstrSOLID%STRESS(7*i-2)
+			s13 = fstrSOLID%STRESS(7*i-1)
+			ps = ( s11 + s22 + s33 ) / 3.0
+			smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+			fstrSOLID%STRESS(7*i) = sqrt( 3.0d0 * smises )
+		enddo
+	endif
+	  
+	deallocate( nnumber )
+	deallocate( ndstrain_plus, ndstrain_minus )
+	deallocate( ndstress_plus, ndstress_minus )
+	if( ( truss == 1 ) .or. ( truss == 2 ) ) then
+		deallocate( trstrain, trstress )
+		deallocate( tnumber )
+	endif
+	end subroutine fstr_NodalStress3D
 
 !----------------------------------------------------------------------*
   subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain )
@@ -719,157 +891,197 @@ module m_fstr_NodalStress
 
 !> Calculate NODAL STRESS of shell elements
 !----------------------------------------------------------------------*
-  subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
+	subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
 !----------------------------------------------------------------------*
-    use m_fstr
-    use m_static_lib
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
+	use m_fstr
+	use m_static_lib
+	type (hecmwST_local_mesh) :: hecMESH
+	type (fstr_solid)         :: fstrSOLID
 !C** local variables
-    integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, k, ic_type, nn, isect, ihead, ID_area
-    integer(kind=kint) :: nodLOCAL(9)
-    real(kind=kreal)   :: ecoord(3,9), edisp(6,9), strain(9,6), stress(9,6)
-    real(kind=kreal)   :: thick
-    real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
-    real(kind=kreal), allocatable :: ndstrain_plus(:,:), ndstrain_minus(:,:)
-    real(kind=kreal), allocatable :: ndstress_plus(:,:), ndstress_minus(:,:)
-    integer(kind=kint), allocatable :: nnumber(:)
+	integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, k, it, ic_type, nn, isect, ihead, ID_area
+	integer(kind=kint) :: nodLOCAL(9), n_layer, n_total_layer, com_total_layer, shellmatl
+	real(kind=kreal)   :: ecoord(3,9), edisp(6,9), strain(9,6), stress(9,6)
+	real(kind=kreal)   :: thick, thick_layer
+	real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
+	real(kind=kreal), allocatable :: ndstrain_plus(:,:), ndstrain_minus(:,:)
+	real(kind=kreal), allocatable :: ndstress_plus(:,:), ndstress_minus(:,:)
+	integer(kind=kint), allocatable :: nnumber(:)
 
-    fstrSOLID%ESTRAIN = 0.0d0
-    fstrSOLID%ESTRESS = 0.0d0
-    allocate ( ndstrain_plus(hecMESH%n_node,7) )
-    allocate ( ndstrain_minus(hecMESH%n_node,7) )
-    allocate ( ndstress_plus(hecMESH%n_node,7) )
-    allocate ( ndstress_minus(hecMESH%n_node,7) )
-    allocate ( nnumber(hecMESH%n_node) )
-    ndstrain_plus = 0.0d0
-    ndstrain_minus = 0.0d0
-    ndstress_plus = 0.0d0
-    ndstress_minus = 0.0d0
-    nnumber = 0
+	fstrSOLID%ESTRAIN = 0.0d0
+	fstrSOLID%ESTRESS = 0.0d0
+	n_total_layer = 1
+	
+	do it = 1, hecMESH%material%n_mat
+		com_total_layer =  int(fstrSOLID%materials(it)%variables(M_TOTAL_LAYER))
+		if (com_total_layer >= n_total_layer)then
+			n_total_layer = com_total_layer
+		endif
+	enddo
+	  
+	allocate ( ndstrain_plus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstrain_minus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstress_plus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( ndstress_minus(hecMESH%n_node,6*n_total_layer) )
+	allocate ( nnumber(hecMESH%n_node) )
+	ndstrain_plus = 0.0d0
+	ndstrain_minus = 0.0d0
+	ndstress_plus = 0.0d0
+	ndstress_minus = 0.0d0
+	nnumber = 0
+	thick_layer = 0.0d0
 
 !C +-------------------------------+
 !C | according to ELEMENT TYPE     |
 !C +-------------------------------+
-    do itype = 1, hecMESH%n_elem_type
-      iS = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      if( .not. hecmw_is_etype_shell(ic_type) ) cycle
-      nn = hecmw_get_max_node( ic_type )
+	do itype = 1, hecMESH%n_elem_type
+		iS = hecMESH%elem_type_index(itype-1) + 1
+		iE = hecMESH%elem_type_index(itype  )
+		ic_type = hecMESH%elem_type_item(itype)
+		if( .not. hecmw_is_etype_shell(ic_type) ) cycle
+		nn = hecmw_get_max_node( ic_type )
 !C** element loop
-      do icel = iS, iE
-        jS = hecMESH%elem_node_index(icel-1)
-        ID_area = hecMESH%elem_ID(icel*2)
-        do j = 1, nn
-          nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-          ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
-          ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
-          ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
-          edisp(1,j) = fstrSOLID%unode(6*nodLOCAL(j)-5)
-          edisp(2,j) = fstrSOLID%unode(6*nodLOCAL(j)-4)
-          edisp(3,j) = fstrSOLID%unode(6*nodLOCAL(j)-3)
-          edisp(4,j) = fstrSOLID%unode(6*nodLOCAL(j)-2)
-          edisp(5,j) = fstrSOLID%unode(6*nodLOCAL(j)-1)
-          edisp(6,j) = fstrSOLID%unode(6*nodLOCAL(j)  )
-        enddo
-        isect = hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1)
+		do icel = iS, iE
+			jS = hecMESH%elem_node_index(icel-1)
+			ID_area = hecMESH%elem_ID(icel*2)
+			do j = 1, nn
+				nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+				ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
+				ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
+				ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
+				edisp(1,j) = fstrSOLID%unode(6*nodLOCAL(j)-5)
+				edisp(2,j) = fstrSOLID%unode(6*nodLOCAL(j)-4)
+				edisp(3,j) = fstrSOLID%unode(6*nodLOCAL(j)-3)
+				edisp(4,j) = fstrSOLID%unode(6*nodLOCAL(j)-2)
+				edisp(5,j) = fstrSOLID%unode(6*nodLOCAL(j)-1)
+				edisp(6,j) = fstrSOLID%unode(6*nodLOCAL(j)  )
+			enddo
+			isect = hecMESH%section_ID(icel)
+			ihead = hecMESH%section%sect_R_index(isect-1)
+			thick = hecMESH%section%sect_R_item(ihead+1)
 !--- calculate elemental stress and strain
-        if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
-          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
-                                         edisp(1:6,1:nn), strain, stress, thick, 1.0d0)
-          do j = 1, nn
-            i = nodLOCAL(j)
-            do k = 1, 6
-              ndstrain_plus(i,k) = ndstrain_plus(i,k) + strain(j,k)
-              ndstress_plus(i,k) = ndstress_plus(i,k) + stress(j,k)
-            enddo
-          enddo
-          if( ID_area == hecMESH%my_rank ) then
-            do j = 1, nn
-              do k = 1, 6
-                fstrSOLID%ESTRAIN(14*(icel-1)+k) = fstrSOLID%ESTRAIN(14*(icel-1)+k) + strain(j,k)/nn
-                fstrSOLID%ESTRESS(14*(icel-1)+k) = fstrSOLID%ESTRESS(14*(icel-1)+k) + stress(j,k)/nn
-              enddo
-            enddo
-            s11 = fstrSOLID%ESTRESS(14*icel-13)
-            s22 = fstrSOLID%ESTRESS(14*icel-12)
-            s33 = fstrSOLID%ESTRESS(14*icel-11)
-            s12 = fstrSOLID%ESTRESS(14*icel-10)
-            s23 = fstrSOLID%ESTRESS(14*icel-9 )
-            s13 = fstrSOLID%ESTRESS(14*icel-8 )
-            ps = ( s11 + s22 + s33 ) / 3.0
-            smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-            fstrSOLID%ESTRESS(14*icel-1) = sqrt( 3.0d0 * smises )
-          endif
-          call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
-                                         edisp(1:6,1:nn), strain, stress, thick, -1.0d0)
-          do j = 1, nn
-            i = nodLOCAL(j)
-            do k = 1, 6
-              ndstrain_minus(i,k) = ndstrain_minus(i,k) + strain(j,k)
-              ndstress_minus(i,k) = ndstress_minus(i,k) + stress(j,k)
-            enddo
-            nnumber(i) = nnumber(i) + 1
-          enddo
-          if( ID_area == hecMESH%my_rank ) then
-            do j = 1, nn
-              do k = 1, 6
-                fstrSOLID%ESTRAIN(14*(icel-1)+k+6) = fstrSOLID%ESTRAIN(14*(icel-1)+k+6) + strain(j,k)/nn
-                fstrSOLID%ESTRESS(14*(icel-1)+k+6) = fstrSOLID%ESTRESS(14*(icel-1)+k+6) + stress(j,k)/nn
-              enddo
-            enddo
-            s11 = fstrSOLID%ESTRESS(14*icel-7)
-            s22 = fstrSOLID%ESTRESS(14*icel-6)
-            s33 = fstrSOLID%ESTRESS(14*icel-5)
-            s12 = fstrSOLID%ESTRESS(14*icel-4)
-            s23 = fstrSOLID%ESTRESS(14*icel-3)
-            s13 = fstrSOLID%ESTRESS(14*icel-2)
-            ps = ( s11 + s22 + s33 ) / 3.0
-            smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-            fstrSOLID%ESTRESS(14*icel) = sqrt( 3.0d0 * smises )
-          endif
-        endif
-      enddo
-    enddo
-
+			if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
+				n_total_layer =  int(fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
+				DO n_layer=1,n_total_layer
+					call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+											 edisp(1:6,1:nn), strain, stress, thick, 1.0d0, n_layer, n_total_layer)
+					do j = 1, nn
+					i = nodLOCAL(j)
+					do k = 1, 6
+						ndstrain_plus(i,6*(n_layer-1)+k) = ndstrain_plus(i,6*(n_layer-1)+k) + strain(j,k)
+						ndstress_plus(i,6*(n_layer-1)+k) = ndstress_plus(i,6*(n_layer-1)+k) + stress(j,k)
+					enddo
+					enddo
+					if( ID_area == hecMESH%my_rank ) then
+						do j = 1, nn
+						do k = 1, 6
+							fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k) = fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k) + strain(j,k)/nn
+							fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k) = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k) + stress(j,k)/nn
+						enddo
+						enddo
+						s11 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+1)
+						s22 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+2)
+						s33 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+3)
+						s12 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+4)
+						s23 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+5)
+						s13 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+6)
+						ps = ( s11 + s22 + s33 ) / 3.0d0
+						smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+						fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+13) = sqrt( 3.0d0 * smises )
+						t11 = s11
+						t22 = s22
+						t33 = s33
+						t12 = s12
+						t23 = s23
+						t13 = s13
+						tmises = smises
+					endif
+			  
+					call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+											 edisp(1:6,1:nn), strain, stress, thick, -1.0d0, n_layer, n_total_layer)
+					do j = 1, nn
+						i = nodLOCAL(j)
+						do k = 1, 6
+							ndstrain_minus(i,6*(n_layer-1)+k) = ndstrain_minus(i,6*(n_layer-1)+k) + strain(j,k)
+							ndstress_minus(i,6*(n_layer-1)+k) = ndstress_minus(i,6*(n_layer-1)+k) + stress(j,k)
+						enddo
+						nnumber(i) = nnumber(i) + 1
+					enddo
+					if( ID_area == hecMESH%my_rank ) then
+						do j = 1, nn
+						do k = 1, 6
+							fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k+6) = fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k+6) + strain(j,k)/nn
+							fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) + stress(j,k)/nn
+						enddo
+						enddo
+						s11 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+7)
+						s22 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+8)
+						s33 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+9)
+						s12 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+10)
+						s23 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+11)
+						s13 = fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+12)
+						ps = ( s11 + s22 + s33 ) / 3.0
+						smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+						fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+14) = sqrt( 3.0d0 * smises )
+					endif
+					shellmatl = int(fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+					if (shellmatl == 0)then
+						thick_layer = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(100+3*n_layer)
+					elseif (shellmatl == 1)then
+						thick_layer = fstrSOLID%elements(icel)%gausses(1)%pMaterial%variables(100+8*n_layer-5)
+					else
+						write(*,*)"ERROR : shellmatl isnot correct"; stop
+					endif
+					!  ********** input of Sectional Stress ********** 
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-5) = 0.5d0*(sqrt( 3.0d0 * smises )+sqrt( 3.0d0 * tmises ))*thick_layer / thick
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-4) = (t11+s11)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-3) = (t22+s22)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-2) = (t12+s12)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel-1) = (t23+s23)*thick_layer*0.5d0
+					fstrSOLID%ESTRESS((14*n_total_layer+6)*icel  ) = (t13+s13)*thick_layer*0.5d0
+				ENDDO     !DO n_layer=1,n_total_layer
+			endif
+		enddo
+	enddo
+	
 !C** average over nodes
-    do i = 1, hecMESH%n_node
-      do j = 1, 6
-        ndstrain_plus(i,j) = ndstrain_plus(i,j) / nnumber(i)
-        ndstress_plus(i,j) = ndstress_plus(i,j) / nnumber(i)
-        ndstrain_minus(i,j) = ndstrain_minus(i,j) / nnumber(i)
-        ndstress_minus(i,j) = ndstress_minus(i,j) / nnumber(i)
-        fstrSOLID%STRAIN(14*(i-1)+j) = ndstrain_plus(i,j)
-        fstrSOLID%STRESS(14*(i-1)+j) = ndstress_plus(i,j)
-        fstrSOLID%STRAIN(14*(i-1)+j+6) = ndstrain_minus(i,j)
-        fstrSOLID%STRESS(14*(i-1)+j+6) = ndstress_minus(i,j)
-      enddo
-      s11 = fstrSOLID%STRESS(14*i-13)
-      s22 = fstrSOLID%STRESS(14*i-12)
-      s33 = fstrSOLID%STRESS(14*i-11)
-      s12 = fstrSOLID%STRESS(14*i-10)
-      s23 = fstrSOLID%STRESS(14*i-9 )
-      s13 = fstrSOLID%STRESS(14*i-8 )
-      ps = ( s11 + s22 + s33 ) / 3.0
-      smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      fstrSOLID%STRESS(14*i-1) = sqrt( 3.0d0 * smises )
-      s11 = fstrSOLID%STRESS(14*i-7)
-      s22 = fstrSOLID%STRESS(14*i-6)
-      s33 = fstrSOLID%STRESS(14*i-5)
-      s12 = fstrSOLID%STRESS(14*i-4)
-      s23 = fstrSOLID%STRESS(14*i-3)
-      s13 = fstrSOLID%STRESS(14*i-2)
-      ps = ( s11 + s22 + s33 ) / 3.0
-      smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
-      fstrSOLID%STRESS(14*i) = sqrt( 3.0d0 * smises )
-    enddo
+	do i = 1, hecMESH%n_node
+		do n_layer=1,n_total_layer
+			do j = 1, 6
+				ndstrain_plus(i,6*(n_layer-1)+j) = ndstrain_plus(i,6*(n_layer-1)+j) / nnumber(i)
+				ndstress_plus(i,6*(n_layer-1)+j) = ndstress_plus(i,6*(n_layer-1)+j) / nnumber(i)
+				ndstrain_minus(i,6*(n_layer-1)+j) = ndstrain_minus(i,6*(n_layer-1)+j) / nnumber(i)
+				ndstress_minus(i,6*(n_layer-1)+j) = ndstress_minus(i,6*(n_layer-1)+j) / nnumber(i)
+				fstrSOLID%STRAIN(12*n_total_layer*(i-1)+12*(n_layer-1)+j) = ndstrain_plus(i,6*(n_layer-1)+j)
+				fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+j) = ndstress_plus(i,6*(n_layer-1)+j)
+				fstrSOLID%STRAIN(12*n_total_layer*(i-1)+12*(n_layer-1)+j+6) = ndstrain_minus(i,6*(n_layer-1)+j)
+				fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+j+6) = ndstress_minus(i,6*(n_layer-1)+j)
+			enddo
+			s11 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+1)
+			s22 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+2)
+			s33 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+3)
+			s12 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+4)
+			s23 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+5)
+			s13 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+6)
+			ps = ( s11 + s22 + s33 ) / 3.0
+			tmises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+			fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+13) = sqrt( 3.0d0 * tmises )
+			s11 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+7)
+			s22 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+8)
+			s33 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+9)
+			s12 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+10)
+			s23 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+11)
+			s13 = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+12)
+			ps = ( s11 + s22 + s33 ) / 3.0
+			smises = 0.5d0 *( (s11-ps)**2 + (s22-ps)**2 + (s33-ps)**2 ) + s12**2 + s23**2+ s13**2
+			fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+14) = sqrt( 3.0d0 * smises )
+		enddo
+	enddo
+	
+	deallocate( ndstrain_plus, ndstrain_minus )
+	deallocate( ndstress_plus, ndstress_minus )
+	deallocate( nnumber )
+	write(*,*) "fstr Nodal Setress Sucsess"
 
-    deallocate( ndstrain_plus, ndstrain_minus )
-    deallocate( ndstress_plus, ndstress_minus )
-    deallocate( nnumber )
-  end subroutine fstr_NodalStress6D
+end subroutine fstr_NodalStress6D
 
 end module m_fstr_NodalStress

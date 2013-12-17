@@ -105,7 +105,7 @@ module elementInfo
     integer, parameter :: fe_mitc8_shell  = 742
     integer, parameter :: fe_mitc9_shell  = 743
 	
-    integer, parameter :: fe_mitc3_shell361  = 761
+	integer, parameter :: fe_mitc3_shell361  = 761
     integer, parameter :: fe_mitc4_shell361  = 781
 
  ! ---------------------------------------------
@@ -416,7 +416,7 @@ module elementInfo
   integer function NumOfQuadPoints( fetype )
       integer, intent(in) :: fetype         !< element type
       select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n, fe_beam341 )
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341 )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
@@ -438,7 +438,7 @@ module elementInfo
         NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
         NumOfQuadPoints = 9
-      case ( fe_tet10n )
+      case ( fe_tet10n)
         NumOfQuadPoints = 4
       case ( fe_tet10nc )
         NumOfQuadPoints = 12
@@ -1148,7 +1148,7 @@ module elementInfo
         END FORALL
       case (fe_prism15n)
         call ShapeFunc_prism15n(localcoord,func(1:15))
-      case (fe_tet4n)
+      case (fe_tet4n, fe_beam341)
         ! error check
         FORALL(i=1:nnode)
           nodev(i,:) = gaussv(1,:)

@@ -8,12 +8,12 @@
 !                                                                      !
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
-!   Record of revision:
-!      Date            Programmer           Description of change
-!    =========         ==========           =====================
-!                       YUAN Xi                 Original
-!    Nov.,2012          YUAN Xi                 Ortho added
-!                                          
+!   Record of revision:                                                !
+!      Date            Programmer           Description of change      !
+!    =========         ==========           =====================      !
+!                       YUAN Xi                 Original               !
+!    Nov.,2012          YUAN Xi                 Ortho added            !
+!                                                                      !
 !======================================================================!
 !> \brief  This module provides functions for elastic material
 
@@ -189,97 +189,247 @@ module m_ElasticLinear
       SUBROUTINE LinearElastic_Shell                     &
                  (matl, sectType, c,                     &
                   e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-                  alpha)                                 
+                  alpha, n_layer)                                 
 !####################################################################
       
-      TYPE( tMaterial ), INTENT(IN)   :: matl
-      INTEGER, INTENT(IN)             :: sectType
-      REAL(KIND = kreal), INTENT(OUT) :: c(:, :, :, :)
-      REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3) !< local Orthonormal frame
-      REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)            !< contravaraint frame
-      REAL(KIND = kreal), INTENT(OUT) :: alpha
+		TYPE( tMaterial ), INTENT(IN)   :: matl
+		INTEGER, INTENT(IN)             :: sectType, n_layer
+		REAL(KIND = kreal), INTENT(OUT) :: c(:, :, :, :)
+		REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3) !< local Orthonormal frame
+		REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)            !< contravaraint frame
+		REAL(KIND = kreal), INTENT(OUT) :: alpha
+      
+!--------------------------------------------------------------------
+
+		REAL(KIND = kreal) :: ee, pp, ee2, g12, g23, g31, theta, pp2
+		REAL(KIND = kreal) :: coef1, coef2
+		REAL(KIND = kreal) :: outa(2)
+		REAL(KIND = kreal) :: lambda1, lambda2, mu, k_correction
+		REAL(KIND = kreal) :: c_hat(3, 3, 3, 3), D(5,5), D_hat(5,5), D_temp(5,5), T(5,5)
+		REAL(KIND = kreal) :: e_hat_dot_cg(3, 3)
+		REAL(KIND = kreal) :: alpha_over_mu
+
+		INTEGER :: index_i(5), index_j(5), index_k(5), index_l(5)
+		INTEGER :: is, js, ii, ij, ik, il
+		INTEGER :: i, j, k, l, total_layer, matl_type
+
+		LOGICAL :: ierr
       
 !--------------------------------------------------------------------
       
-      REAL(KIND = kreal) :: ee, pp
-      REAL(KIND = kreal) :: coef1, coef2
-      REAL(KIND = kreal) :: outa(2)
-      REAL(KIND = kreal) :: lambda1, lambda2, mu, k_correction
-      REAL(KIND = kreal) :: c_hat(3, 3, 3, 3)
-      REAL(KIND = kreal) :: e_hat_dot_cg(3, 3)
-      REAL(KIND = kreal) :: alpha_over_mu
-      
-      INTEGER :: i, j, k, l
-      
-      LOGICAL :: ierr
+		CALL fetch_TableData(MC_ISOELASTIC, matl%dict, outa, ierr)
       
 !--------------------------------------------------------------------
+
+		matl_type = int(matl%variables(M_SHELL_MATLTYPE))
+		IF(matl_type == 0)THEN
+			IF( ierr ) THEN
+				total_layer = int(matl%variables(M_TOTAL_LAYER))
+				IF( total_layer .ge. 2) THEN
+				ee = matl%variables(100+3*n_layer-2)
+				pp = matl%variables(100+3*n_layer-1)
+				alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
+				ELSE 
+				ee = matl%variables(M_YOUNGS)
+				pp = matl%variables(M_POISSON)
+				alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
+				END IF
+			ELSE
+
+				ee = outa(1)
+				pp = outa(2)
+				alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
+
+			END IF
       
-      CALL fetch_TableData(MC_ISOELASTIC, matl%dict, outa, ierr)
+	!--------------------------------------------------------------------
       
-!--------------------------------------------------------------------
+		! Elastic constant
+		lambda1 = ee/( 1.0D0-pp*pp )
+		lambda2 = pp*lambda1
+		mu      = 0.5D0*ee/( 1.0D0+pp )
       
-      IF( ierr ) THEN
-       
-       ee = matl%variables(M_YOUNGS)
-       pp = matl%variables(M_POISSON)
-       
-       alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
-       
-      ELSE
-       
-       ee = outa(1)
-       pp = outa(2)
-       
-       alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
-       
-      END IF
+	!--------------------------------------------------------------------
       
-!--------------------------------------------------------------------
+		! Shear correction factor
+		k_correction = 5.0D0/6.0D0
+		!k_correction = 1.0D0
       
-      ! Elastic constant
-      lambda1 = ee/( 1.0D0-pp*pp )
-      lambda2 = pp*lambda1
-      mu      = 0.5D0*ee/( 1.0D0+pp )
+	!--------------------------------------------------------------------
       
-!--------------------------------------------------------------------
+		alpha = alpha_over_mu*mu
+      
+	!--------------------------------------------------------------------
+      
+		! Constitutive tensor
+		c_hat(:, :, :, :) = 0.0D0
+
+	!--------------------------------------------------------
+       
+		c_hat(1, 1, 1, 1) = lambda1
+		c_hat(1, 1, 2, 2) = lambda2
+		c_hat(2, 2, 1, 1) = lambda2
+		c_hat(2, 2, 2, 2) = lambda1
+		c_hat(1, 2, 1, 2) = mu
+		c_hat(1, 2, 2, 1) = mu
+		c_hat(2, 1, 1, 2) = mu
+		c_hat(2, 1, 2, 1) = mu
+		c_hat(1, 3, 1, 3) = k_correction*mu
+		c_hat(1, 3, 3, 1) = k_correction*mu
+		c_hat(2, 3, 2, 3) = k_correction*mu
+		c_hat(2, 3, 3, 2) = k_correction*mu
+		c_hat(3, 1, 3, 1) = k_correction*mu
+		c_hat(3, 1, 1, 3) = k_correction*mu
+		c_hat(3, 2, 3, 2) = k_correction*mu
+		c_hat(3, 2, 2, 3) = k_correction*mu
+       
+!--------------------------------------------------------
+	   
+		ELSEIF(matl_type == 1)THEN
+!			write(*,*) 'TOTAL_LAYER', matl%variables(M_TOTAL_LAYER)
+			total_layer = int(matl%variables(M_TOTAL_LAYER))
+			
+			ee = matl%variables(100+8*n_layer-7)
+			pp = matl%variables(100+8*n_layer-6)
+			ee2 = matl%variables(100+8*n_layer-4)
+			g12 = matl%variables(100+8*n_layer-3)
+			g23 = matl%variables(100+8*n_layer-2)
+			g31 = matl%variables(100+8*n_layer-1)
+			theta = matl%variables(100+8*n_layer)
+			
+			alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
+			
+	!--------------------------------------------------------------------
       
       ! Shear correction factor
       k_correction = 5.0D0/6.0D0
       
+	!--------------------------------------------------------------------
+      
+      alpha = alpha_over_mu * 0.5D0 * ee / ( 1.0D0+pp )
+      
+	!--------------------------------------------------------------------
+	
+!		write(*,*) ee,pp,ee2,g12,g23,g31,theta,alpha_over_mu,n_layer
+     
+		D(:,:) = 0.0D0
+		D_hat(:,:) = 0.0D0
+		D_temp(:,:) = 0.0D0
+		T(:,:) = 0.0D0
+		
+		pp2 = pp * ee2 / ee
+		
+		D(1,1) = ee / (1.0D0 - pp * pp2)
+		D(1,2) = pp2 * ee / (1.0D0- pp * pp2)
+		D(2,1) = pp2 * ee / (1.0D0- pp * pp2)
+		D(2,2) = ee2 / (1.0D0 - pp * pp2)
+		D(3,3) = g12
+		D(4,4) = g23
+		D(5,5) = g31
+		
+		T(1,1) = cos(theta) * cos(theta)
+		T(1,2) = sin(theta) * sin(theta)
+		T(2,1) = sin(theta) * sin(theta)
+		T(2,2) = cos(theta) * cos(theta)
+		T(3,3) = cos(theta) * cos(theta) - sin(theta) * sin(theta)
+		T(1,3) = sin(theta) * cos(theta)
+		T(2,3) = -sin(theta) * cos(theta)
+		T(3,1) = -2.0D0 * sin(theta) * cos(theta)
+		T(3,2) =  2.0D0 * sin(theta) * cos(theta)
+		T(4,4) = cos(theta)
+		T(4,5) = sin(theta)
+		T(5,4) = -sin(theta)
+		T(5,5) = cos(theta)
+		
+	!--------------------- D_temp = [D]*[T]
+		
+		D_temp(1,1) = D(1,1)*T(1,1)+D(1,2)*T(2,1)
+		D_temp(1,2) = D(1,1)*T(1,2)+D(1,2)*T(2,2)
+		D_temp(2,1) = D(2,1)*T(1,1)+D(2,2)*T(2,1)
+		D_temp(2,2) = D(2,1)*T(1,2)+D(2,2)*T(2,2)
+		D_temp(3,1) = D(3,3)*T(3,1)
+		D_temp(3,2) = D(3,3)*T(3,2)
+		D_temp(1,3) = D(1,1)*T(1,3)+D(1,2)*T(2,3)
+		D_temp(2,3) = D(2,1)*T(1,3)+D(2,2)*T(2,3)
+		D_temp(3,3) = D(3,3)*T(3,3)
+		D_temp(4,4) = D(4,4)*T(4,4)
+		D_temp(4,5) = D(4,4)*T(4,5)
+		D_temp(5,4) = D(5,5)*T(5,4)
+		D_temp(5,5) = D(5,5)*T(5,5)
+	
+	!--------------------- D_hat = [trans_T]*[D_temp]
+		
+		D_hat(1,1) = T(1,1)*D_temp(1,1)+T(1,2)*D_temp(2,1)+T(3,1)*D_temp(3,1)
+		D_hat(1,2) = T(1,1)*D_temp(1,2)+T(1,2)*D_temp(2,2)+T(3,1)*D_temp(3,2)
+		D_hat(2,1) = T(2,1)*D_temp(1,1)+T(2,2)*D_temp(2,1)+T(3,2)*D_temp(3,1)
+		D_hat(2,2) = T(2,1)*D_temp(1,2)+T(2,2)*D_temp(2,2)+T(3,2)*D_temp(3,2)
+		D_hat(3,1) = T(1,3)*D_temp(1,1)+T(2,3)*D_temp(2,1)+T(3,3)*D_temp(3,1)
+		D_hat(3,2) = T(1,3)*D_temp(1,2)+T(2,3)*D_temp(2,2)+T(3,3)*D_temp(3,2)
+		D_hat(1,3) = T(1,1)*D_temp(1,3)+T(1,2)*D_temp(2,3)+T(3,1)*D_temp(3,3)
+		D_hat(2,3) = T(2,1)*D_temp(1,3)+T(2,2)*D_temp(2,3)+T(3,2)*D_temp(3,3)
+		D_hat(3,3) = T(1,3)*D_temp(1,3)+T(2,3)*D_temp(2,3)+T(3,3)*D_temp(3,3)
+		D_hat(4,4) = T(4,4)*D_temp(4,4)+T(5,4)*D_temp(5,4)
+		D_hat(4,5) = T(4,4)*D_temp(4,5)+T(5,4)*D_temp(5,5)
+		D_hat(5,4) = T(4,5)*D_temp(4,4)+T(5,5)*D_temp(5,4)
+		D_hat(5,5) = T(4,5)*D_temp(4,5)+T(5,5)*D_temp(5,5)
+		 
+	!--------------------------------------------------------------------
+    
+		! Constitutive tensor
+       c_hat(:, :, :, :) = 0.0D0
+	    !write(*,*) 'Elastic linear.f90 make c_hat'
+         
+	!-------D_hat to c_hat
+
+	  index_i(1) = 1
+      index_i(2) = 2
+      index_i(3) = 1
+      index_i(4) = 2
+      index_i(5) = 3
+      
+      index_j(1) = 1
+      index_j(2) = 2
+      index_j(3) = 2
+      index_j(4) = 3
+      index_j(5) = 1
+      
+      index_k(1) = 1
+      index_k(2) = 2
+      index_k(3) = 1
+      index_k(4) = 2
+      index_k(5) = 3
+       
+      index_l(1) = 1
+      index_l(2) = 2
+      index_l(3) = 2
+      index_l(4) = 3
+      index_l(5) = 1
+      
 !--------------------------------------------------------------------
       
-      alpha = alpha_over_mu*mu
-      
-!--------------------------------------------------------------------
-      
-      ! Constitutive tensor
-      c_hat(:, :, :, :) = 0.0D0
-      
-      SELECT CASE( sectType )
-      CASE( Shell )
+		DO js = 1, 5
+			DO is = 1, 5
+
+			ii = index_i(is)
+			ij = index_j(is)
+			ik = index_k(js)
+			il = index_l(js)
+
+			c_hat(ii, ij, ik, il) = D_hat(is, js)
+
+			END DO
+		END DO
        
-       !--------------------------------------------------------
-       
-       c_hat(1, 1, 1, 1) = lambda1
-       c_hat(1, 1, 2, 2) = lambda2
-       c_hat(2, 2, 1, 1) = lambda2
-       c_hat(2, 2, 2, 2) = lambda1
-       c_hat(1, 2, 1, 2) = mu
-       c_hat(1, 2, 2, 1) = mu
-       c_hat(2, 1, 1, 2) = mu
-       c_hat(2, 1, 2, 1) = mu
-       c_hat(1, 3, 1, 3) = k_correction*mu
-       c_hat(1, 3, 3, 1) = k_correction*mu
-       c_hat(2, 3, 2, 3) = k_correction*mu
-       c_hat(2, 3, 3, 2) = k_correction*mu
-       c_hat(3, 1, 3, 1) = k_correction*mu
-       c_hat(3, 1, 1, 3) = k_correction*mu
-       c_hat(3, 2, 3, 2) = k_correction*mu
-       c_hat(3, 2, 2, 3) = k_correction*mu
-       
-       !--------------------------------------------------------
-       
+!--------------------------------------------------------
+			
+		ELSE
+			write(*,*) 'shell matl type isnot collect'
+			stop
+		ENDIF
+	
+	SELECT CASE( sectType )
+    CASE( Shell )
+	   
        e_hat_dot_cg(1, 1)                  &
        = e1_hat(1)*cg1(1)+e1_hat(2)*cg1(2) &
         +e1_hat(3)*cg1(3)                  
