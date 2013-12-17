@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2007/06/29                                        *
+ *     Last Update : 2013/12/18                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by Kazuya Goto (AdvanceSoft)                     *
+ *            Written by Kazuya Goto (PExProCS)                        *
  *                                                                     *
  *     Contact address :  IIS, The University of Tokyo RSS21 project   *
  *                                                                     *
@@ -19,16 +19,16 @@
 #ifndef HECMW_SET_INT_INCLUDED
 #define HECMW_SET_INT_INCLUDED
 
-struct hecmw_set_int {
-  int n_val;
-  int max_val;
+struct hecmw_varray_int;
 
-  int *vals;
+struct hecmw_set_int {
+  struct hecmw_varray_int *vals;
 
   int checked;
   int sorted;
 
-  int iter;
+  int in_iter;
+  size_t iter;
 };
 
 
@@ -37,11 +37,13 @@ extern int HECMW_set_int_init(struct hecmw_set_int *set);
 extern void HECMW_set_int_finalize(struct hecmw_set_int *set);
 
 
-extern int HECMW_set_int_nval(const struct hecmw_set_int *set);
+extern size_t HECMW_set_int_nval(struct hecmw_set_int *set);
+
+extern int HECMW_set_int_is_empty(const struct hecmw_set_int *set);
 
 extern int HECMW_set_int_add(struct hecmw_set_int *set, int value);
 
-extern int HECMW_set_int_check_dup(struct hecmw_set_int *set);
+extern size_t HECMW_set_int_check_dup(struct hecmw_set_int *set);
 
 extern int HECMW_set_int_del(struct hecmw_set_int *set, int value);
 
