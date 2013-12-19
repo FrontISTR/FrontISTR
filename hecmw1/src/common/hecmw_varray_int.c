@@ -1,3 +1,21 @@
+/*=====================================================================*
+ *                                                                     *
+ *   Software Name : HEC-MW Library for PC-cluster                     *
+ *         Version : 2.5                                               *
+ *                                                                     *
+ *     Last Update : 2013/12/18                                        *
+ *        Category : I/O and Utility                                   *
+ *                                                                     *
+ *            Written by Kazuya Goto (PExProCS)                        *
+ *                                                                     *
+ *     Contact address :  IIS, The University of Tokyo RSS21 project   *
+ *                                                                     *
+ *     "Structural Analysis System for General-purpose Coupling        *
+ *      Simulations Using High End Computing Middleware (HEC-MW)"      *
+ *                                                                     *
+ *=====================================================================*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,14 +55,14 @@ void HECMW_varray_int_finalize(struct hecmw_varray_int *varray)
 }
 
 
-int HECMW_varray_int_nval(const struct hecmw_varray_int *varray)
+size_t HECMW_varray_int_nval(const struct hecmw_varray_int *varray)
 {
   HECMW_assert(varray);
 
   return varray->n_val;
 }
 
-static int varray_resize(struct hecmw_varray_int *varray, int new_max_val)
+static int varray_resize(struct hecmw_varray_int *varray, size_t new_max_val)
 {
   int *new_vals;
 
@@ -65,7 +83,7 @@ static int varray_resize(struct hecmw_varray_int *varray, int new_max_val)
 
   new_vals = (int *) HECMW_realloc(varray->vals, sizeof(int) * new_max_val);
   if (new_vals == NULL) {
-  	return HECMW_ERROR;
+    return HECMW_ERROR;
   }
 
   varray->vals = new_vals;
@@ -76,7 +94,7 @@ static int varray_resize(struct hecmw_varray_int *varray, int new_max_val)
 
 static int varray_grow(struct hecmw_varray_int *varray)
 {
-  int new_max_val;
+  size_t new_max_val;
 
   HECMW_assert(varray);
 
@@ -102,7 +120,7 @@ int HECMW_varray_int_append(struct hecmw_varray_int *varray, int value)
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_get(const struct hecmw_varray_int *varray, int index)
+int HECMW_varray_int_get(const struct hecmw_varray_int *varray, size_t index)
 {
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index < varray->n_val);
@@ -111,9 +129,9 @@ int HECMW_varray_int_get(const struct hecmw_varray_int *varray, int index)
 }
 
 int HECMW_varray_int_cat(struct hecmw_varray_int *varray,
-			 const struct hecmw_varray_int *varray2)
+                         const struct hecmw_varray_int *varray2)
 {
-  int i;
+  size_t i;
 
   HECMW_assert(varray);
   HECMW_assert(varray2);
@@ -141,16 +159,24 @@ static int int_cmp(const void *v1, const void *v2)
   return 0;
 }
 
-int HECMW_varray_int_sort(struct hecmw_varray_int *varray)
+void HECMW_varray_int_sort(struct hecmw_varray_int *varray)
 {
   HECMW_assert(varray);
   qsort(varray->vals, varray->n_val, sizeof(int), int_cmp);
+}
+
+int HECMW_varray_int_search(struct hecmw_varray_int *varray, int value, size_t *index)
+{
+  int *p;
+  p = bsearch(&value, varray->vals, varray->n_val, sizeof(int), int_cmp);
+  if (p == NULL) return HECMW_ERROR;
+  *index = p - varray->vals;
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_uniq(struct hecmw_varray_int *varray)
+size_t HECMW_varray_int_uniq(struct hecmw_varray_int *varray)
 {
-  int i, n_dup = 0;
+  size_t i, n_dup = 0;
 
   HECMW_assert(varray);
 
@@ -166,12 +192,13 @@ int HECMW_varray_int_uniq(struct hecmw_varray_int *varray)
 
   varray->n_val -= n_dup;
 
-  /* varray_resize(varray, varray->n_val); */ /* reduce memory usage */
+  if (varray->n_val * 2 < varray->max_val)
+    varray_resize(varray, varray->n_val); /* reduce memory usage */
 
   return n_dup;
 }
 
-int HECMW_varray_int_resize(struct hecmw_varray_int *varray, int len)
+int HECMW_varray_int_resize(struct hecmw_varray_int *varray, size_t len)
 {
   HECMW_assert(varray);
 
@@ -196,9 +223,9 @@ const int *HECMW_varray_int_get_cv(const struct hecmw_varray_int *varray)
 }
 
 int HECMW_varray_int_copy(const struct hecmw_varray_int *varray,
-			  struct hecmw_varray_int *varray2)
+                          struct hecmw_varray_int *varray2)
 {
-  int i;
+  size_t i;
 
   HECMW_assert(varray);
 
@@ -223,19 +250,17 @@ int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
   if (HECMW_varray_int_copy(varray, &tmp_array) != HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
-  if (HECMW_varray_int_sort(&tmp_array) != HECMW_SUCCESS) {
-    return HECMW_ERROR;
-  }
+  HECMW_varray_int_sort(&tmp_array);
 
   if (HECMW_varray_int_uniq(&tmp_array) != 0) {
     struct hecmw_bit_array ba;
-    int i, n_dup = 0;
+    size_t i, n_dup = 0;
 
     HECMW_bit_array_init(&ba, tmp_array.n_val);
     for (i = 0; i < varray->n_val; i++) {
       int *key = varray->vals + i;
       int *res = bsearch(key, tmp_array.vals, tmp_array.n_val, sizeof(int), int_cmp);
-      int idx;
+      size_t idx;
 
       HECMW_assert(res != NULL);
 
@@ -258,9 +283,9 @@ int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
 }
 
 int HECMW_varray_int_assign(struct hecmw_varray_int *varray,
-                            int begin, int end, int val)
+                            size_t begin, size_t end, int val)
 {
-  int i;
+  size_t i;
 
   HECMW_assert(varray);
   HECMW_assert(0 <= begin);
@@ -273,9 +298,9 @@ int HECMW_varray_int_assign(struct hecmw_varray_int *varray,
 }
 
 int HECMW_varray_int_insert(struct hecmw_varray_int *varray,
-                            int index, int val)
+                            size_t index, int val)
 {
-  int i;
+  size_t i;
 
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index <= varray->n_val);
@@ -284,12 +309,33 @@ int HECMW_varray_int_insert(struct hecmw_varray_int *varray,
     if (varray_grow(varray) != HECMW_SUCCESS)
       return HECMW_ERROR;
 
-  for (i = varray->n_val; i > index; i--) {
-    varray->vals[i] = varray->vals[i-1];
-  }
+  /* for (i = varray->n_val; i > index; i--) { */
+  /*   varray->vals[i] = varray->vals[i-1]; */
+  /* } */
+  memmove(varray->vals + index + 1, varray->vals + index,
+          sizeof(int) * (varray->n_val - index));
 
   varray->vals[index] = val;
   varray->n_val++;
+
+  return HECMW_SUCCESS;
+}
+
+int HECMW_varray_int_delete(struct hecmw_varray_int *varray,
+                            size_t index)
+{
+  size_t i;
+
+  HECMW_assert(varray);
+  HECMW_assert(0 <= index && index <= varray->n_val);
+
+  /* for (i = index+1; i < varray->n_val; i++) { */
+  /*   varray->vals[i-1] = varray->vals[i]; */
+  /* } */
+  memmove(varray->vals + index, varray->vals + index + 1,
+          sizeof(int) * (varray->n_val - index - 1));
+
+  varray->n_val--;
 
   return HECMW_SUCCESS;
 }

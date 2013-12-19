@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2007/12/03                                        *
+ *     Last Update : 2013/12/18                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by Kazuya Goto (AdvanceSoft)                     *
+ *            Written by Kazuya Goto (PExProCS)                        *
  *                                                                     *
  *     Contact address :  IIS, The University of Tokyo RSS21 project   *
  *                                                                     *
@@ -24,10 +24,10 @@
 #include "hecmw_bit_array.h"
 
 
-static const int nbit_ulong = 8 * sizeof(unsigned long);
+static const size_t nbit_ulong = 8 * sizeof(unsigned long);
 
 
-int HECMW_bit_array_init(struct hecmw_bit_array *ba, int len)
+int HECMW_bit_array_init(struct hecmw_bit_array *ba, size_t len)
 {
   size_t size;
 
@@ -56,14 +56,14 @@ void HECMW_bit_array_finalize(struct hecmw_bit_array *ba)
 }
 
 
-int HECMW_bit_array_len(struct hecmw_bit_array *ba)
+size_t HECMW_bit_array_len(struct hecmw_bit_array *ba)
 {
   HECMW_assert(ba);
 
   return ba->len;
 }
 
-void HECMW_bit_array_set(struct hecmw_bit_array *ba, int index)
+void HECMW_bit_array_set(struct hecmw_bit_array *ba, size_t index)
 {
   HECMW_assert(ba);
   HECMW_assert(0 <= index && index < ba->len);
@@ -71,7 +71,7 @@ void HECMW_bit_array_set(struct hecmw_bit_array *ba, int index)
   ba->vals[index / nbit_ulong] |= 1UL << (index % nbit_ulong);
 }
 
-int HECMW_bit_array_get(struct hecmw_bit_array *ba, int index)
+int HECMW_bit_array_get(struct hecmw_bit_array *ba, size_t index)
 {
   HECMW_assert(ba);
   HECMW_assert(0 <= index && index < ba->len);
@@ -85,7 +85,7 @@ int HECMW_bit_array_get(struct hecmw_bit_array *ba, int index)
 void HECMW_bit_array_set_all(struct hecmw_bit_array *ba)
 {
   unsigned long ptn = 0;
-  int i, nval;
+  size_t i, nval;
 
   HECMW_assert(ba);
 
@@ -98,7 +98,7 @@ void HECMW_bit_array_set_all(struct hecmw_bit_array *ba)
     ba->vals[i] = ptn;
 }
 
-void HECMW_bit_array_unset(struct hecmw_bit_array *ba, int index)
+void HECMW_bit_array_unset(struct hecmw_bit_array *ba, size_t index)
 {
   HECMW_assert(ba);
   HECMW_assert(0 <= index && index < ba->len);

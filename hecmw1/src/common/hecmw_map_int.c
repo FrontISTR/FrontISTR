@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2007/06/29                                        *
+ *     Last Update : 2013/12/18                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by Kazuya Goto (AdvanceSoft)                     *
+ *            Written by Kazuya Goto (PExProCS)                        *
  *                                                                     *
  *     Contact address :  IIS, The University of Tokyo RSS21 project   *
  *                                                                     *
@@ -44,7 +44,8 @@ int HECMW_map_int_init(struct hecmw_map_int *map, void (*free_fnc)(void *))
 
   map->mark = NULL;
 
-  map->iter = -1;
+  map->in_iter = 0;
+  map->iter = 0;
 
   map->free_fnc = free_fnc;
 
@@ -61,7 +62,7 @@ void HECMW_map_int_finalize(struct hecmw_map_int *map)
   }
 
   if (map->free_fnc != NULL) {
-  	int i;
+    size_t i;
 
     for (i = 0; i < map->n_val; i++)
       map->free_fnc(map->vals[i].val);
@@ -79,14 +80,14 @@ void HECMW_map_int_finalize(struct hecmw_map_int *map)
 }
 
 
-int HECMW_map_int_nval(const struct hecmw_map_int *map)
+size_t HECMW_map_int_nval(const struct hecmw_map_int *map)
 {
   HECMW_assert(map);
 
   return map->n_val;
 }
 
-static int map_resize(struct hecmw_map_int *map, int new_max_val)
+static int map_resize(struct hecmw_map_int *map, size_t new_max_val)
 {
   HECMW_assert(map);
   HECMW_assert(map->n_val <= new_max_val);
@@ -94,9 +95,9 @@ static int map_resize(struct hecmw_map_int *map, int new_max_val)
   if (map->max_val == new_max_val) return HECMW_SUCCESS;
 
   if (map->mark) {
-  	HECMW_bit_array_finalize(map->mark);
-  	HECMW_free(map->mark);
-  	map->mark = NULL;
+    HECMW_bit_array_finalize(map->mark);
+    HECMW_free(map->mark);
+    map->mark = NULL;
   }
 
   if (new_max_val == 0) {
@@ -107,8 +108,8 @@ static int map_resize(struct hecmw_map_int *map, int new_max_val)
     free(map->pairs);
     map->pairs = NULL;
   } else {
-  	struct hecmw_map_int_value *new_vals;
-  	struct hecmw_map_int_pair *new_pairs;
+    struct hecmw_map_int_value *new_vals;
+    struct hecmw_map_int_pair *new_pairs;
 
     new_vals = (struct hecmw_map_int_value *)
       HECMW_realloc(map->vals, sizeof(struct hecmw_map_int_value) * new_max_val);
@@ -127,7 +128,7 @@ static int map_resize(struct hecmw_map_int *map, int new_max_val)
 
 static int map_grow(struct hecmw_map_int *map)
 {
-  int new_max_val;
+  size_t new_max_val;
 
   HECMW_assert(map);
 
@@ -180,9 +181,9 @@ static int pair_cmp(const void *v1, const void *v2)
   return 0;
 }
 
-int HECMW_map_int_check_dup(struct hecmw_map_int *map)
+size_t HECMW_map_int_check_dup(struct hecmw_map_int *map)
 {
-  int i, n_dup = 0, n = 1;
+  size_t i, n_dup = 0, n = 1;
 
   HECMW_assert(map);
 
@@ -220,9 +221,9 @@ int HECMW_map_int_check_dup(struct hecmw_map_int *map)
   return n_dup;
 }
 
-static int map_search(const struct hecmw_map_int *map, int key, int *index)
+static int map_search(const struct hecmw_map_int *map, int key, size_t *index)
 {
-  int left, right, center;
+  size_t left, right, center;
   int ckey;
 
   HECMW_assert(map && index);
@@ -251,31 +252,30 @@ static int map_search(const struct hecmw_map_int *map, int key, int *index)
   return HECMW_ERROR;
 }
 
-int HECMW_map_int_key2local(const struct hecmw_map_int *map, int key)
+int HECMW_map_int_key2local(const struct hecmw_map_int *map, int key, size_t *local)
 {
-  int index;
+  size_t index;
 
   HECMW_assert(map);
   HECMW_assert(map->checked);
 
-  if (map_search(map, key, &index) != HECMW_SUCCESS)
-    return -10000; /* big negative number */
+  if (map_search(map, key, local) != HECMW_SUCCESS)
+    return HECMW_ERROR;
 
-  HECMW_assert(0 <= index && index < map->n_val);
-  HECMW_assert(map->vals[index].key == key);
+  HECMW_assert(0 <= *local && *local < map->n_val);
+  HECMW_assert(map->vals[*local].key == key);
 
-  return index;
+  return HECMW_SUCCESS;
 }
 
 void *HECMW_map_int_get(const struct hecmw_map_int *map, int key)
 {
-  int local;
+  size_t local;
 
   HECMW_assert(map);
   HECMW_assert(map->checked);
 
-  local = HECMW_map_int_key2local(map, key);
-  if (local < 0)
+  if (HECMW_map_int_key2local(map, key, &local) != HECMW_SUCCESS)
     return NULL;
 
   return map->vals[local].val;
@@ -287,6 +287,7 @@ void HECMW_map_int_iter_init(struct hecmw_map_int *map)
   HECMW_assert(map);
   HECMW_assert(map->checked);
 
+  map->in_iter = 1;
   map->iter = 0;
   return;
 }
@@ -294,11 +295,13 @@ void HECMW_map_int_iter_init(struct hecmw_map_int *map)
 int HECMW_map_int_iter_next(struct hecmw_map_int *map, int *key, void **value)
 {
   HECMW_assert(map && key);
-  HECMW_assert(0 <= map->iter && map->iter <= map->n_val); 
+  HECMW_assert(map->in_iter);
+  HECMW_assert(map->iter <= map->n_val);
 
   if (map->iter == map->n_val) {
-  	map->iter = -1;
-  	return 0;
+    map->in_iter = 0;
+    map->iter = 0;
+    return 0;
   }
 
   *key = map->vals[map->iter].key;
@@ -332,13 +335,12 @@ int HECMW_map_int_mark_init(struct hecmw_map_int *map)
 
 int HECMW_map_int_mark(struct hecmw_map_int *map, int key)
 {
-  int local;
+  size_t local;
 
   HECMW_assert(map);
   HECMW_assert(map->mark);
 
-  local = HECMW_map_int_key2local(map, key);
-  if (local < 0)
+  if (HECMW_map_int_key2local(map, key, &local) != HECMW_SUCCESS)
     return HECMW_ERROR;
 
   HECMW_bit_array_set(map->mark, local);
@@ -352,7 +354,7 @@ int HECMW_map_int_iter_next_unmarked(struct hecmw_map_int *map, int *key, void *
   HECMW_assert(0 <= map->iter && map->iter <= map->n_val);
   HECMW_assert(map->mark);
 
-  while (map->iter < map->n_val && HECMW_bit_array_get(map->mark, map->iter)) 
+  while (map->iter < map->n_val && HECMW_bit_array_get(map->mark, map->iter))
     map->iter++;
 
   return HECMW_map_int_iter_next(map, key, value);
@@ -360,7 +362,8 @@ int HECMW_map_int_iter_next_unmarked(struct hecmw_map_int *map, int *key, void *
 
 static void rebuild_pairs(struct hecmw_map_int *map)
 {
-  int i, sorted = 1;
+  size_t i;
+  int sorted = 1;
 
   HECMW_assert(map);
 
@@ -378,7 +381,7 @@ static void rebuild_pairs(struct hecmw_map_int *map)
 
 int HECMW_map_int_del_unmarked(struct hecmw_map_int *map)
 {
-  int i, n_del = 0;
+  size_t i, n_del = 0;
 
   HECMW_assert(map);
   HECMW_assert(map->mark);

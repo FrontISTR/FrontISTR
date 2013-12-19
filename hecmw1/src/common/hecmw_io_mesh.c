@@ -100,10 +100,11 @@ set_warn(int msgno, const char *fmt, ...)
 static int
 get_gid2lid_node(int gid)
 {
-	int clocal;
+	size_t clocal;
+	int ret;
 	HECMW_assert(_node);
-	clocal = HECMW_map_int_key2local(_node, gid);
-	HECMW_assert(clocal >= 0);
+	ret = HECMW_map_int_key2local(_node, gid, &clocal);
+	HECMW_assert(ret == HECMW_SUCCESS);
 	return clocal + 1;
 }
 
@@ -111,10 +112,11 @@ get_gid2lid_node(int gid)
 static int
 get_gid2lid_elem(int gid)
 {
-	int clocal;
+	size_t clocal;
+	int ret;
 	HECMW_assert(_elem);
-	clocal = HECMW_map_int_key2local(_elem, gid);
-	HECMW_assert(clocal >= 0);
+	ret = HECMW_map_int_key2local(_elem, gid, &clocal);
+	HECMW_assert(ret == HECMW_SUCCESS);
 	return clocal + 1;
 }
 
@@ -1083,7 +1085,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		}
 	}
 
-	if(HECMW_set_int_nval(p->elem) == 0) {
+	if(HECMW_set_int_is_empty(p->elem)) {
 		/* new group && ignored all */
 		HECMW_assert(nelem == 0);
 		HECMW_set_int_finalize(p->elem);
@@ -1303,7 +1305,7 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		}
 	}
 
-	if(HECMW_set_int_nval(p->node) == 0) {
+	if(HECMW_set_int_is_empty(p->node)) {
 		/* new group && ignored all */
 		HECMW_set_int_finalize(p->node);
 		HECMW_free(p->node);
@@ -1330,7 +1332,7 @@ HECMW_io_remove_node_in_ngrp(int node)
 	q = NULL;
 	for(p=_ngrp; p; p=next) {
 		HECMW_set_int_del(p->node, node);
-		if(HECMW_set_int_nval(p->node) == 0) {
+		if(HECMW_set_int_is_empty(p->node)) {
 			/* no node in this group */
 			if(q == NULL) {
 				_ngrp = p->next;
@@ -1419,7 +1421,7 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		}
 	}
 
-	if(HECMW_set_int_nval(p->item) == 0) {
+	if(HECMW_set_int_is_empty(p->item)) {
 		/* new group && ignored all */
 		HECMW_set_int_finalize(p->item);
 		HECMW_free(p->item);

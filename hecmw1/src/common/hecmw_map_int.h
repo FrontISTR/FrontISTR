@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2007/06/29                                        *
+ *     Last Update : 2013/12/18                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by Kazuya Goto (AdvanceSoft)                     *
+ *            Written by Kazuya Goto (PExProCS)                        *
  *                                                                     *
  *     Contact address :  IIS, The University of Tokyo RSS21 project   *
  *                                                                     *
@@ -19,7 +19,7 @@
 #ifndef HECMW_MAP_INT_INCLUDED
 #define HECMW_MAP_INT_INCLUDED
 
-#include "hecmw_bit_array.h"
+struct hecmw_bit_array;
 
 struct hecmw_map_int_value {
   int key;
@@ -32,8 +32,8 @@ struct hecmw_map_int_pair {
 };
 
 struct hecmw_map_int {
-  int n_val;
-  int max_val;
+  size_t n_val;
+  size_t max_val;
 
   struct hecmw_map_int_value *vals;
   struct hecmw_map_int_pair *pairs;
@@ -43,7 +43,8 @@ struct hecmw_map_int {
 
   struct hecmw_bit_array *mark;
 
-  int iter;
+  int in_iter;
+  size_t iter;
 
   void (*free_fnc)(void *);
 };
@@ -54,13 +55,13 @@ extern int HECMW_map_int_init(struct hecmw_map_int *map, void (*free_fnc)(void *
 extern void HECMW_map_int_finalize(struct hecmw_map_int *map);
 
 
-extern int HECMW_map_int_nval(const struct hecmw_map_int *map);
+extern size_t HECMW_map_int_nval(const struct hecmw_map_int *map);
 
 extern int HECMW_map_int_add(struct hecmw_map_int *map, int key, void *value);
 
-extern int HECMW_map_int_check_dup(struct hecmw_map_int *map);
+extern size_t HECMW_map_int_check_dup(struct hecmw_map_int *map);
 
-extern int HECMW_map_int_key2local(const struct hecmw_map_int *map, int key);
+extern int HECMW_map_int_key2local(const struct hecmw_map_int *map, int key, size_t *local);
 
 extern void *HECMW_map_int_get(const struct hecmw_map_int *map, int key);
 
