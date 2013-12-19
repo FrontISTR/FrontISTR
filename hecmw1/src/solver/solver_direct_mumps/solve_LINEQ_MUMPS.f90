@@ -13,7 +13,7 @@
 !======================================================================!
 !> This module provides linear equation solver interface for MUMPS
 module m_solve_LINEQ_MUMPS
-  use m_fstr
+  use hecmw_util
   use m_sparse_matrix
   use m_sparse_matrix_hec
   use m_MUMPS_wrapper
@@ -33,7 +33,11 @@ contains
     integer(kind=kint) :: spmat_type
     integer(kind=kint) :: spmat_symtype
     integer(kind=kint) :: mumps_job
-    integer(kind=kint) :: istat
+    integer(kind=kint) :: istat,myrank
+    real(kind=kreal) :: t1,t2,t3
+
+    t1=hecmw_wtime()
+    myrank=hecmw_comm_get_rank()
 
     if (INITIALIZED .and. hecMAT%Iarray(98) .eq. 1) then
        mumps_job=-2
@@ -91,6 +95,9 @@ contains
        if (myrank==0) write(*,*) ' [MUMPS]: Factorization completed.'
        hecMAT%Iarray(97) = 0
     endif
+
+    t2=hecmw_wtime()
+
     ! SOLUTION
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
     mumps_job=3
@@ -101,6 +108,12 @@ contains
     endif
     call sparse_matrix_hec_get_rhs(spMAT, hecMAT)
     if (myrank==0) write(*,*) ' [MUMPS]: Solution completed.'
+
+    t3=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0) then
+      write(*,*) 'setup time : ',t2-t1
+      write(*,*) 'solve time : ',t3-t2
+    endif
 
     !call sparse_matrix_finalize(spMAT)
   end subroutine solve_LINEQ_MUMPS

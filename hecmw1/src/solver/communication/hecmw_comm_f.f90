@@ -90,6 +90,17 @@ contains
      &     rbuf, 1, MPI_INTEGER, root, comm, ierr )
       end subroutine hecmw_gather_int_1
 
+      subroutine hecmw_allgather_int_1(sval, rbuf, comm)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: sval !send buffer
+      integer(kind=kint) :: rbuf(*) !receive buffer
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: ierr
+      CALL MPI_allgather( sval, 1, MPI_INTEGER, &
+     &     rbuf, 1, MPI_INTEGER, comm, ierr )
+      end subroutine hecmw_allgather_int_1
+
       subroutine hecmw_scatterv_real(sbuf, scs, disp, &
      &     rbuf, rc, root, comm)
       use hecmw_util

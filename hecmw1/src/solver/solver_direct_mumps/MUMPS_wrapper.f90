@@ -13,7 +13,8 @@
 !======================================================================!
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_MUMPS_wrapper
-  use m_fstr
+  use hecmw_util
+  use m_hecmw_comm_f
   use m_sparse_matrix
   include 'dmumps_struc.h'
 
@@ -21,7 +22,6 @@ module m_MUMPS_wrapper
   public :: mumps_wrapper
 
   type (dmumps_struc), save :: mumps_par
-  real(kreal),public  ::  rhs_b,rhs_x
 
 contains
 
@@ -30,7 +30,9 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
     integer(kind=kint), intent(out) :: istat
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr,myrank
+
+    myrank=hecmw_comm_get_rank()
 
     if (spMAT%type /= SPARSE_MATRIX_TYPE_COO) then
        write(*,*) 'ERROR: MUMPS require COO type sparse matrix'
@@ -61,20 +63,6 @@ contains
             call hecmw_abort(hecmw_comm_get_comm())
           endif
           call sparse_matrix_gather_rhs(spMAT, mumps_par%RHS)
-          if(paraContactFlag) then
-            if(myrank == 0) then
-              mumps_par%RHS(:) = mumps_par%RHS(:) + spMAT%rhs_con_sum(:)
-!              deallocate(spMAT%rhs_con_sum,stat=ierr)
-              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
-            endif
-            deallocate(spMAT%rhs_con_sum,stat=ierr)
-            call hecmw_bcast_R1_comm (rhs_b, 0, mumps_par%COMM)
-!            call MPI_BCAST(rhs_b,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
-          else
-            if(myrank == 0) then
-              rhs_b = dot_product(mumps_par%RHS,mumps_par%RHS)
-            endif
-          endif
        endif
     endif
 
@@ -121,13 +109,10 @@ contains
        ! iterative refinement
        mumps_par%ICNTL(10)=3
        mumps_par%CNTL(2)=1.0e-8
+       ! Out-Of-Core: 0:IN-CORE only, 1:OOC
+       mumps_par%ICNTL(22)=0
     endif
     if (job==3 .or. job==5 .or. job==6) then
-       if(myrank == 0) then
-         rhs_x = dot_product(mumps_par%RHS,mumps_par%RHS)
-       endif
-       call hecmw_bcast_R1_comm (rhs_x, 0, mumps_par%COMM)
-!       call MPI_BCAST(rhs_x,1,MPI_DOUBLE_PRECISION,0,mumps_par%COMM,ierr)
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        deallocate(mumps_par%RHS)
     endif

@@ -429,6 +429,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   integer(kint)   ::  nndof,npdof
   real(kreal),allocatable :: tmp_conB(:)
   integer   ::  istat,i0
+  real(kreal) ::  q_residual,x_residual
 
 ! sum of n_node among all subdomains (to be used to calc res)
   n_node_global = hecMESH%nn_internal
@@ -541,10 +542,13 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 !----- SOLVE [Kt]{du}={R}
 !   ----  For Parallel Contact with Multi-Partition Domains
         if(paraContactFlag.and.present(conMAT)) then
+          q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
           call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,1.0D0,conMAT)
         else
+          q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
           call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT)
         endif
+        x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 ! ----- update external nodal displacement increments
         if(paraContactFlag.and.present(conMAT)) then
           call paraContact_update_3_R(hecMESH,hecMAT%X)

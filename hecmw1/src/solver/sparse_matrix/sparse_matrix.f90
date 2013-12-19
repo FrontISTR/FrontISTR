@@ -13,7 +13,8 @@
 !======================================================================!
 !> This module provides DOF based sparse matrix data structure (CSR and COO)
 module m_sparse_matrix
-  use m_fstr
+  use hecmw_util
+  use m_hecmw_comm_f
   implicit none
 
   private
@@ -56,9 +57,6 @@ module m_sparse_matrix
      integer(kind=kint), pointer :: conv_ext(:) => null()
      integer(kind=kint) :: timelog
      logical :: is_initialized = .false.
-!
-     real(kreal),pointer    ::  rhs_con(:) => null()
-     real(kreal),pointer    ::  rhs_con_sum(:) => null()
   end type sparse_matrix
 
 contains
@@ -111,8 +109,9 @@ contains
     type(sparse_matrix), intent(in) :: spMAT
     integer(kind=kint),save :: num_call
     character(len=128) :: fname
-    integer(kind=kint) i
-    write(fname,'(A,I0,A,I0)') 'fstr-matrix-',num_call,'.coo.',myrank
+    integer(kind=kint) :: i,myrank
+    myrank=hecmw_comm_get_rank()
+    write(fname,'(A,I0,A,I0)') 'sparse-matrix-',num_call,'.coo.',myrank
     num_call = num_call + 1
     write(*,*) 'Dumping sparse matrix to ', fname
     open(91,file=fname)
@@ -149,7 +148,7 @@ contains
     type (sparse_matrix), intent(in) :: spMAT
     real(kind=kreal), intent(out) :: rhs_all(:)
     integer(kind=kint) :: ierr,i
-    if (nprocs == 1) then
+    if (hecmw_comm_get_size() == 1) then
        do i=1,spMAT%N_loc
           rhs_all(i) = spMAT%rhs(i)
        enddo
@@ -164,7 +163,7 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     real(kind=kreal), intent(in) :: rhs_all(:)
     integer(kind=kint) :: ierr,i
-    if (nprocs == 1) then
+    if (hecmw_comm_get_size() == 1) then
        do i=1,spMAT%N_loc
           spMAT%rhs(i) = rhs_all(i)
        enddo
@@ -189,7 +188,7 @@ contains
     integer(kind=kint), intent(in) :: N_loc
     integer(kind=kint) :: ierr
     spMAT%N_loc = N_loc
-    if (nprocs == 1) then
+    if (hecmw_comm_get_size() == 1) then
        spMAT%N = spMAT%N_loc
     else
        call HECMW_ALLREDUCE_INT_1(spMAT%N_loc, spMAT%N, HECMW_SUM, &
@@ -199,7 +198,9 @@ contains
 
   subroutine sparse_matrix_set_offsets(spMAT)
     type (sparse_matrix), intent(inout) :: spMAT
-    integer(kind=kint) :: i,ierr
+    integer(kind=kint) :: i,ierr,nprocs,myrank
+    nprocs=hecmw_comm_get_size()
+    myrank=hecmw_comm_get_rank()
     ! OFFSET
     !if (myrank == 0) then
     if (associated(spMAT%N_COUNTS)) deallocate(spMAT%N_COUNTS)
@@ -211,24 +212,14 @@ contains
     endif
     !endif
     if (nprocs > 1) then
-       call HECMW_GATHER_INT_1(spMAT%N_loc, &
-            spMAT%N_COUNTS, &
-            0, hecmw_comm_get_comm())
+       call HECMW_ALLGATHER_INT_1(spMAT%N_loc, &
+            spMAT%N_COUNTS, hecmw_comm_get_comm())
     endif
-    if (myrank == 0) then
-       spMAT%DISPLS(1)=0
-       do i=1,nprocs-1
-          spMAT%DISPLS(i+1)=spMAT%DISPLS(i)+spMAT%N_COUNTS(i)
-       enddo
-       spMAT%OFFSET = spMAT%DISPLS(1)
-    endif
-    call hecmw_bcast_I_comm (spMAT%DISPLS, nprocs, 0, hecmw_comm_get_comm())
-!    call MPI_BCAST(spMAT%DISPLS,nprocs,MPI_INTEGER,0,hecmw_comm_get_comm(),ierr)
-    if (nprocs > 1) then
-       call HECMW_SCATTER_INT_1(spMAT%DISPLS, &
-            spMAT%OFFSET, &
-            0, hecmw_comm_get_comm())
-    endif
+    spMAT%DISPLS(1)=0
+    do i=1,nprocs-1
+      spMAT%DISPLS(i+1)=spMAT%DISPLS(i)+spMAT%N_COUNTS(i)
+    enddo
+    spMAT%OFFSET = spMAT%DISPLS(myrank+1)
   end subroutine sparse_matrix_set_offsets
 
   subroutine sparse_matrix_allocate_arrays(spMAT, NZ)

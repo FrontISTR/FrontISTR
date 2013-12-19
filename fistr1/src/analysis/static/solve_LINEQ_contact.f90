@@ -14,34 +14,33 @@
 !======================================================================!
 !======================================================================!
 !
-!> \brief This module provides functions to solve sparse system of 
+!> \brief This module provides functions to solve sparse system of
 !> \linear equitions in the case of contact analysis using standard
-!> \Lagrange multiplier algorithm   
+!> \Lagrange multiplier algorithm
 !>
 !>  \author     Z. Sun(ASTOM)
-!>  \date       2010/11   
+!>  \date       2010/11
 !>  \version    0.00
 !!
 !======================================================================!
 
-module m_solve_LINEQ_contact                                 
+module m_solve_LINEQ_contact
 
-   use m_fstr                                                  
-   use m_solve_LINEQ_mkl                             
-   use m_solve_LINEQ_direct_serial_lag                    
+   use m_fstr
+   use m_solve_LINEQ_mkl
+   use m_solve_LINEQ_direct_serial_lag
    use m_solve_LINEQ_MUMPS_contact
    use m_fstr_mat_resid_contact
-   
-  implicit none   
-  
+
+  implicit none
+
   private
   public :: solve_LINEQ_contact_init
   public :: solve_LINEQ_contact
-  real(kreal),public  ::  q_residual,x_residual
 
   contains
-    
-!> \brief This subroutine    
+
+!> \brief This subroutine
     subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
@@ -60,7 +59,7 @@ module m_solve_LINEQ_contact
 
 !> \brief This subroutine
     subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf,conMAT)
-  
+
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
@@ -73,11 +72,12 @@ module m_solve_LINEQ_contact
       factor = 1.0d0
       if( present(rf) )factor = rf
       if(paraContactFlag.and.present(conMAT)) then
+        stop "MPC not supported with parallel contact analysis"
       else
         call hecmw_mat_ass_equation( hecMESH, hecMAT )
       endif
 
-      if( hecMAT%Iarray(99)==3 )then                   
+      if( hecMAT%Iarray(99)==3 )then
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
@@ -85,15 +85,11 @@ module m_solve_LINEQ_contact
 ! ----  For Parallel Contact with Multi-Partition Domains
         if(paraContactFlag.and.present(conMAT)) then
           call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,conMAT)
-          q_residual = rhs_force
-          x_residual = rhs_disp
         else
           call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
-          q_residual = rhs_force
-          x_residual = rhs_disp
         endif
       endif
-     
+
       if(paraContactFlag.and.present(conMAT)) then
       else
       resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
@@ -105,10 +101,9 @@ module m_solve_LINEQ_contact
         endif
       endif
       endif
-      
+
       hecMAT%X=factor*hecMAT%X
 
-    end subroutine solve_LINEQ_contact  
-    
-    
+    end subroutine solve_LINEQ_contact
+
 end module m_solve_LINEQ_contact

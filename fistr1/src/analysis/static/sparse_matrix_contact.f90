@@ -51,7 +51,7 @@ contains
        NU=hecMAT%indexU(NN)
        NZ=NN*(ndof2+ndof)/2+NU*ndof2 &
             +fstrMAT%numU_lagrange*ndof
-       
+
 !!$#ifdef NEED_DIAG
 !!$       NZ=NZ+fstrMAT%num_lagrange
 !!$#endif
@@ -193,7 +193,7 @@ contains
        call hecmw_abort(hecmw_comm_get_comm())
     endif
   end subroutine sparse_matrix_contact_set_prof
-  
+
   subroutine sparse_matrix_para_contact_set_prof(spMAT, hecMAT, fstrMAT)
     type(sparse_matrix), intent(inout) :: spMAT
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -301,7 +301,7 @@ contains
               m=m+1
             enddo
           enddo
-          
+
           ! Diag
           !offset_d=ndof2*(i-1)+ndof*(idof-1)
           if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
@@ -312,7 +312,7 @@ contains
             !spMAT%A(m)=hecMAT%D(offset_d+jdof)
             m=m+1
           enddo
-!     
+!
           ! Upper
           ls=hecMAT%indexU(i-1)+1
           le=hecMAT%indexU(i)
@@ -321,7 +321,7 @@ contains
             if (j <= hecMAT%N) then
               j0=spMAT%OFFSET+ndof*(j-1)
             else
-              j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof   
+              j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
             endif
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
             !offset_u=ndof2*(l-1)+ndof*(idof-1)
@@ -333,14 +333,14 @@ contains
               m=m+1
             enddo
           enddo
-!     
+!
           ! Upper COL Lagrange
           if (fstrMAT%num_lagrange > 0) then
             j0=spMAT%OFFSET+ndof*hecMAT%N
             ls=fstrMAT%indexU_lagrange(i-1)+1
             le=fstrMAT%indexU_lagrange(i)
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) then
-            
+
             else
               do l=ls,le
                 j=fstrMAT%itemU_lagrange(l)
@@ -367,9 +367,9 @@ contains
           if (j <= hecMAT%N) then
             j0=spMAT%OFFSET+ndof*(j-1)
           else
-            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof   
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
           endif
-          if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle            
+          if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
 !          j0=spMAT%OFFSET+ndof*(j-1)
           do jdof=1,ndof
             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
@@ -514,7 +514,7 @@ contains
          stop "ERROR: sparse_matrix_contact_set_a"
     if (m-1 /= spMAT%NZ) stop "ERROR: sparse_matrix_contact_set_a"
   end subroutine sparse_matrix_contact_set_vals
-  
+
   subroutine sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
     type(sparse_matrix), intent(inout) :: spMAT
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -638,7 +638,7 @@ contains
               m=m+1
             enddo
           enddo
-         
+
           ! Diag
           offset_d=ndof2*(i-1)+ndof*(idof-1)
           if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
@@ -682,9 +682,9 @@ contains
             ls=fstrMAT%indexU_lagrange(i-1)+1
             le=fstrMAT%indexU_lagrange(i)
             if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) then
-!             Do nothing           
+!             Do nothing
             else
-              do l=ls,le 
+              do l=ls,le
                 if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
                      stop "ERROR: sparse_matrix_contact_set_a"
                 if (spMAT%JCN(m)/=j0+fstrMAT%itemU_lagrange(l)) &
@@ -711,7 +711,7 @@ contains
           if (j <= hecMAT%N) then
             j0=spMAT%OFFSET+ndof*(j-1)
           else
-            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof             
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
           endif
           if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
           do jdof=1,ndof
@@ -761,6 +761,7 @@ contains
       enddo
     endif
   end subroutine sparse_matrix_contact_set_rhs
+
   subroutine sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
@@ -768,23 +769,11 @@ contains
     type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     type (hecmwST_matrix), intent(in) :: conMAT
     integer :: nndof,npndof,ierr,ndof,i,i0,j
-
-    allocate(spMAT%rhs(spMAT%N_loc), stat=ierr)
-    if (ierr /= 0) then
-      write(*,*) " Allocation error, spMAT%rhs"
-      call hecmw_abort(hecmw_comm_get_comm())
-    endif
-    nndof=hecMAT%N*hecMAT%ndof
-    npndof=hecMAT%NP*hecMAT%ndof
-    
-    spMAT%rhs(1:nndof) = hecMAT%b(1:nndof) + conMAT%b(1:nndof)
-    if (fstrMAT%num_lagrange > 0) then
-      spMAT%rhs(nndof+1:spMAT%N_loc) = conMAT%b(npndof+1:npndof+fstrMAT%num_lagrange)
-    endif
+    real(kind=kreal), allocatable :: rhs_con(:), rhs_con_sum(:)
 
 !   assemble contact components of external nodes only
-    allocate(spMAT%rhs_con(spMAT%N),stat=ierr)
-    spMAT%rhs_con(:) = 0.0D0
+    allocate(rhs_con(spMAT%N),stat=ierr)
+    rhs_con(:) = 0.0D0
     ndof = hecMAT%ndof
     do i= hecMAT%N+1,hecMAT%NP
       i0=spMAT%conv_ext(ndof*(i-hecMAT%N))-ndof
@@ -801,20 +790,31 @@ contains
         endif
         do j=1,ndof
           if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
-            spMAT%rhs_con(i0+j) = conMAT%b((i-1)*ndof+j)
+            rhs_con(i0+j) = conMAT%b((i-1)*ndof+j)
           endif
         enddo
-        
       endif
-      
     enddo
-!    if(myrank == 0) then
-      allocate(spMAT%rhs_con_sum(spMAT%N),stat=ierr)
-      spMAT%rhs_con_sum(:) = 0.0D0
-!    endif
-    call hecmw_allreduce_DP(spMAT%rhs_con,spMAT%rhs_con_sum,spMAT%N,hecmw_sum,hecmw_comm_get_comm())
-!    call MPI_REDUCE(spMAT%rhs_con,spMAT%rhs_con_sum,spMAT%N,MPI_DOUBLE_PRECISION,MPI_SUM,0,hecmw_comm_get_comm(),ierr)
-    deallocate(spMAT%rhs_con,stat=ierr)     
+    allocate(rhs_con_sum(spMAT%N))
+    call hecmw_allreduce_DP(rhs_con, rhs_con_sum, spMAT%N, hecmw_sum, hecmw_comm_get_comm())
+    deallocate(rhs_con)
+
+    allocate(spMAT%rhs(spMAT%N_loc), stat=ierr)
+    if (ierr /= 0) then
+      write(*,*) " Allocation error, spMAT%rhs"
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
+    nndof=hecMAT%N*hecMAT%ndof
+    npndof=hecMAT%NP*hecMAT%ndof
+    do i=1,nndof
+      spMAT%rhs(i) = rhs_con_sum(spMAT%OFFSET+i) + hecMAT%b(i) + conMAT%b(i)
+    end do
+    deallocate(rhs_con_sum)
+    if (fstrMAT%num_lagrange > 0) then
+      do i=1,fstrMAT%num_lagrange
+        spMAT%rhs(nndof+i) = conMAT%b(npndof+i)
+      end do
+    endif
   end subroutine sparse_matrix_para_contact_set_rhs
 
   subroutine sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)

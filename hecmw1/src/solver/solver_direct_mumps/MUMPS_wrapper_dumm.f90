@@ -13,7 +13,7 @@
 !======================================================================!
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_MUMPS_wrapper
-  use m_fstr
+  use hecmw_util
   use m_sparse_matrix
 
   private
