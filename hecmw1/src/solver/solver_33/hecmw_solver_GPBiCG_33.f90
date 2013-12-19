@@ -351,20 +351,37 @@
 !C
 !C-- compute. {u},{z}
 
-      do j= 1, N
-        WW(3*j-2,U)= QSI* WW(3*j-2,W2) +                                &
-     &               ETA*(WW(3*j-2,T0) - WW(3*j-2,R) + BETA*WW(3*j-2,U))
-        WW(3*j-2,Z)= QSI* WW(3*j-2, R) +                                &
-     &               ETA* WW(3*j-2, Z) -              ALPHA*WW(3*j-2,U)
-        WW(3*j-1,U)= QSI* WW(3*j-1,W2) +                                &
-     &               ETA*(WW(3*j-1,T0) - WW(3*j-1,R) + BETA*WW(3*j-1,U))
-        WW(3*j-1,Z)= QSI* WW(3*j-1, R) +                                &
-     &               ETA* WW(3*j-1, Z) -              ALPHA*WW(3*j-1,U)
-        WW(3*j  ,U)= QSI* WW(3*j  ,W2) +                                &
-     &               ETA*(WW(3*j  ,T0) - WW(3*j  ,R) + BETA*WW(3*j  ,U))
-        WW(3*j  ,Z)= QSI* WW(3*j  , R) +                                &
-     &               ETA* WW(3*j  , Z) -              ALPHA*WW(3*j  ,U)
-      enddo
+      if (iter.gt.1) then
+        do j= 1, N
+          WW(3*j-2,U)= QSI* WW(3*j-2,W2) +                                &
+     &                 ETA*(WW(3*j-2,T0) - WW(3*j-2,R) + BETA*WW(3*j-2,U))
+          WW(3*j-2,Z)= QSI* WW(3*j-2, R) +                                &
+     &                 ETA* WW(3*j-2, Z) -              ALPHA*WW(3*j-2,U)
+          WW(3*j-1,U)= QSI* WW(3*j-1,W2) +                                &
+     &                 ETA*(WW(3*j-1,T0) - WW(3*j-1,R) + BETA*WW(3*j-1,U))
+          WW(3*j-1,Z)= QSI* WW(3*j-1, R) +                                &
+     &                 ETA* WW(3*j-1, Z) -              ALPHA*WW(3*j-1,U)
+          WW(3*j  ,U)= QSI* WW(3*j  ,W2) +                                &
+     &                 ETA*(WW(3*j  ,T0) - WW(3*j  ,R) + BETA*WW(3*j  ,U))
+          WW(3*j  ,Z)= QSI* WW(3*j  , R) +                                &
+     &                 ETA* WW(3*j  , Z) -              ALPHA*WW(3*j  ,U)
+        enddo
+      else
+        do j= 1, N
+          WW(3*j-2,U)= QSI* WW(3*j-2,W2) +                                &
+     &                 ETA*(WW(3*j-2,T0) - WW(3*j-2,R))
+          WW(3*j-2,Z)= QSI* WW(3*j-2, R) +                                &
+     &                 ETA* WW(3*j-2, Z) -              ALPHA*WW(3*j-2,U)
+          WW(3*j-1,U)= QSI* WW(3*j-1,W2) +                                &
+     &                 ETA*(WW(3*j-1,T0) - WW(3*j-1,R))
+          WW(3*j-1,Z)= QSI* WW(3*j-1, R) +                                &
+     &                 ETA* WW(3*j-1, Z) -              ALPHA*WW(3*j-1,U)
+          WW(3*j  ,U)= QSI* WW(3*j  ,W2) +                                &
+     &                 ETA*(WW(3*j  ,T0) - WW(3*j  ,R))
+          WW(3*j  ,Z)= QSI* WW(3*j  , R) +                                &
+     &                 ETA* WW(3*j  , Z) -              ALPHA*WW(3*j  ,U)
+        enddo
+      endif
 !C===
 
 !C
@@ -574,6 +591,12 @@
         WW(jSR+1,indexA)= WW(jSR+1,indexC)
         WW(jSR+2,indexA)= WW(jSR+2,indexC)
       enddo
+      do j= 1+N, NP
+        jSR= 3*j-2
+        WW(jSR  ,indexA)= 0.d0
+        WW(jSR+1,indexA)= 0.d0
+        WW(jSR+2,indexA)= 0.d0
+      enddo
 
       do j= 1, NP
         jSR= 3*j-2
@@ -583,12 +606,6 @@
       enddo
 
       do iterPRE= 1, iterPREmax
-        do j= 1+N, NP
-          jSR= 3*j-2
-          WW(jSR  ,indexA)= 0.d0
-          WW(jSR+1,indexA)= 0.d0
-          WW(jSR+2,indexA)= 0.d0
-        enddo
 
 !C
 !C-- FORWARD
@@ -667,22 +684,22 @@
 !C
 !C-- additive Schwartz
 
+      do j= 1, N
+        jSR=  3*j- 2
+        WW(jSR  ,indexB)= WW(jSR  ,indexB) + WW(jSR  ,indexA)
+        WW(jSR+1,indexB)= WW(jSR+1,indexB) + WW(jSR+1,indexA)
+        WW(jSR+2,indexB)= WW(jSR+2,indexB) + WW(jSR+2,indexA)
+      enddo
+
+      if (iterPRE.eq.iterPREmax) exit
+
       S_TIME= HECMW_WTIME()
         call HECMW_SOLVE_SEND_RECV_33                                   &
      &     ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,          &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexA) ,           &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexB) ,           &
      &       SOLVER_COMM,  my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
-
-      do j= 1, NP
-        jSR=  3*j- 2
-        WW(jSR  ,indexB)= WW(jSR  ,indexB) + WW(jSR  ,indexA)         
-        WW(jSR+1,indexB)= WW(jSR+1,indexB) + WW(jSR+1,indexA)         
-        WW(jSR+2,indexB)= WW(jSR+2,indexB) + WW(jSR+2,indexA)         
-      enddo
-
-      if (iterPRE.eq.iterPREmax) goto 760
 
       do j= 1, N
         jSR= 3*j-2
@@ -724,9 +741,6 @@
         WW(jSR+1, indexA)= WVAL2
         WW(jSR+2, indexA)= WVAL3
       enddo
- 
- 760  continue
-
 
       enddo
       endif
