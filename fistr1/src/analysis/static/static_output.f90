@@ -22,9 +22,9 @@
 !!
 !======================================================================!
 module m_static_output
-  implicit none
+	implicit none
 
-  contains
+	contains
 
 !> Output result
 !----------------------------------------------------------------------*
@@ -48,6 +48,7 @@ module m_static_output
 
     nullify( tnstrain )
     nullify( testrain )
+	
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
        if( ndof==3 ) then
           allocate( tnstrain(hecMESH%n_node*6) )
@@ -57,7 +58,7 @@ module m_static_output
           allocate( testrain(hecMESH%n_elem*3) )
        endif
     endif
-
+	
     if( ndof==3 ) then
           call fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
     else if( ndof==2 ) then
@@ -93,6 +94,7 @@ module m_static_output
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
+
           call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, tnstrain, testrain )
           call fstr2hecmw_mesh_conv( hecMESH )
           call hecmw_visualize_init
@@ -120,6 +122,7 @@ module m_static_output
 
     if( associated(tnstrain) ) deallocate( tnstrain )
     if( associated(testrain) ) deallocate( testrain )
+
   end subroutine fstr_static_Output
 
 !> Summarizer of output data which prints out max and min output values
@@ -167,7 +170,7 @@ module m_static_output
 !C*** Show Strain
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 14
+      if( ndof==6 ) mdof = 12
 !C @node
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)

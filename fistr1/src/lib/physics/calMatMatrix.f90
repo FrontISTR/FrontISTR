@@ -21,52 +21,52 @@
 
 module m_MatMatrix
 
-  use mMaterial
-  use mMechGauss
-  use m_ElasticLinear
-  use mHyperElastic
-  use m_ElastoPlastic
-  use mViscoElastic
-  use mCreep
-  use mUElastic
-  use mUmat
+	use mMaterial
+	use mMechGauss
+	use m_ElasticLinear
+	use mHyperElastic
+	use m_ElastoPlastic
+	use mViscoElastic
+	use mCreep
+	use mUElastic
+	use mUmat
 
-  implicit none
-  INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
+	implicit none
+	INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
 
-  contains
+	contains
 
 !> Fetch the nlgeom flag of the material
-    integer function getNlgeomFlag( gauss )
-       type( tGaussStatus ), intent(in) :: gauss      !> status of qudrature point
-       getNlgeomFlag = gauss%pMaterial%nlgeom_flag
-    end function
+	integer function getNlgeomFlag( gauss )
+	type( tGaussStatus ), intent(in) :: gauss      !> status of qudrature point
+	getNlgeomFlag = gauss%pMaterial%nlgeom_flag
+	end function
 
 !> Calculate constituive matrix
     subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature )
-      type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
-      INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
-      REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
-      REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
-      REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
-      REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
- 
-      integer :: i  
-      real(kind=kreal)            :: cijkl(3,3,3,3)
-      TYPE( tMaterial ), pointer  :: matl
-      matl=>gauss%pMaterial
+		type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
+		INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
+		REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
+		REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
+		REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
+		REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
 
-      if( matl%mtype==USERELASTIC ) then
-        call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
-      elseif( isViscoelastic(matl%mtype) ) then
-        if( present(temperature) ) then
-          call calViscoelasticMatrix( matl, sectTYPE, dt, matrix, temperature )
-        else
-          call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
-        endif
-      elseif( isElastic(matl%mtype) ) then
-        i = getElasticType(gauss%pMaterial%mtype)
-        if( i==0 ) then
+		integer :: i  
+		real(kind=kreal)            :: cijkl(3,3,3,3)
+		TYPE( tMaterial ), pointer  :: matl
+		matl=>gauss%pMaterial
+
+		if( matl%mtype==USERELASTIC ) then
+			call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
+		elseif( isViscoelastic(matl%mtype) ) then
+		if( present(temperature) ) then
+			call calViscoelasticMatrix( matl, sectTYPE, dt, matrix, temperature )
+		else
+			call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
+		endif
+		elseif( isElastic(matl%mtype) ) then
+			i = getElasticType(gauss%pMaterial%mtype)
+			if( i==0 ) then
           if( present(temperature) ) then
             call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
           else
@@ -237,11 +237,11 @@ end subroutine mat_c2d
       SUBROUTINE MatlMatrix_Shell                        &
                  (gauss, sectType, D,                    &
                   e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-                  alpha)                                 
+                  alpha, n_layer)                                 
 !####################################################################
       
       TYPE(tGaussStatus), INTENT(IN)  :: gauss
-      INTEGER, INTENT(IN)             :: sectType
+      INTEGER, INTENT(IN)             :: sectType, n_layer
       REAL(KIND = kreal), INTENT(OUT) :: D(:, :)
       REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3)
       REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)
@@ -259,18 +259,14 @@ end subroutine mat_c2d
 !--------------------------------------------------------------------
       
       IF( isElastic(matl%mtype) ) THEN
-       
        CALL LinearElastic_Shell                     &
             (matl, sectType, c,                     &
              e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-             alpha)                                 
-       
+             alpha, n_layer)                                 
+
        CALL mat_c2d_Shell(c, D, sectType)
-       
       ELSE
-       
        STOP "Material type not supported!"
-       
       END IF
       
 !--------------------------------------------------------------------

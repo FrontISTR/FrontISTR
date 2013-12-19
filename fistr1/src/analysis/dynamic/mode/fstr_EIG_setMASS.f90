@@ -43,8 +43,8 @@ contains
       integer(kind=kint) ix,jx,ll(4),ielm
       integer(kind=kint) pind(20),istart
       integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF
-      integer(kind=kint) ierror,kk,iax,jk
-      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
+      integer(kind=kint) ierror,kk,iax,jk,n_totallayer_ls,shell_matltype
+      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu,shell_variables(200)
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
       real(kind=kreal) :: beam_radius,                          &
@@ -52,7 +52,7 @@ contains
                           beam_angle4, beam_angle5, beam_angle6 
       real(kind=kreal) xx1(20),yy1(20),zz1(20),Area
       real(kind=kreal) x(20),  y(20),  z(20),  AA,Volume,val
-      real(kind=kreal) smax,chkmass
+      real(kind=kreal) smax,chkmass,alpha
       real(kind=kreal),POINTER :: ss(:)
 !C
 !*Allocate work array
@@ -92,10 +92,9 @@ contains
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           iax = hecMESH%section%sect_opt(isect)
-          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alfa,thick,alpha_over_mu,&
-                             beam_radius,beam_angle1,beam_angle2,beam_angle3, &
-                             beam_angle4,beam_angle5,beam_angle6)             
-          
+          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu,n_totallayer_ls,shell_matltype,shell_variables, &
+                            beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
+                            beam_angle4,beam_angle5,beam_angle6)  
           if( rho<=0.d0 ) then
             print *, "WARNING: Density of element",icel,"not defined!"
             WRITE(IMSG,*) "WARNING: Density of element",icel,"not defined!"
@@ -136,6 +135,10 @@ contains
           elseif( ic_type.EQ.741 ) then 
             call face4( xx,yy,zz,AA )
             val = AA/4.0*thick*rho
+          elseif( ic_type.EQ.781 ) then 
+            CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+          elseif( ic_type.EQ.761 ) then 
+            CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ( ic_type.EQ.611 ) .or. ( ic_type.EQ.641 ) ) then
             AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
                        +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &

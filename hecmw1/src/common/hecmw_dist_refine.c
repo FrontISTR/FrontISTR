@@ -3,10 +3,10 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2009/02/16                                        *
+ *     Last Update : 2013/12/13                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by GOTO, Kazuya (AdvanceSoft)                    *
+ *            Written by GOTO, Kazuya (PExProCS)                       *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *
@@ -1960,6 +1960,162 @@ rebuild_comm_tables( const struct hecmwST_local_mesh *mesh, struct hecmwST_local
 
 
 static int
+rebuild_ID_external( struct hecmwST_local_mesh *ref_mesh )
+{
+	int len_tot;
+	int *sendbuf, *recvbuf, *srbuf;
+	int i, j, irank, js, je, len, nid, cnt, tag, nsend, rank, lid;
+	int *item_p, *sendbuf_p, *recvbuf_p, *srbuf_p;
+	HECMW_Request *requests;
+	HECMW_Status *statuses;
+	HECMW_Comm comm;
+
+	if( ref_mesh->n_neighbor_pe == 0 ) return HECMW_SUCCESS;
+
+	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding external IDs...\n", ref_mesh->my_rank);
+
+	comm = HECMW_comm_get_comm();
+
+	requests = (HECMW_Request *) HECMW_malloc( sizeof(HECMW_Request) * ref_mesh->n_neighbor_pe);
+	if( requests == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	statuses = (HECMW_Status *) HECMW_malloc( sizeof(HECMW_Status) * ref_mesh->n_neighbor_pe);
+	if( statuses == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+
+	/* node_ID (for external nodes) */
+
+	/* send local IDs of export nodes */
+	len_tot = ref_mesh->export_index[ref_mesh->n_neighbor_pe];
+	sendbuf = (int *) HECMW_malloc( sizeof(int) * len_tot );
+	if( sendbuf == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for( i=0; i < ref_mesh->n_neighbor_pe; i++ ) {
+		irank = ref_mesh->neighbor_pe[i];
+		js = ref_mesh->export_index[i];
+		je = ref_mesh->export_index[i+1];
+		len = je - js;
+		item_p = ref_mesh->export_item + js;
+		sendbuf_p = sendbuf + js;
+		for( j = 0; j < len; j++ ) {
+			nid = item_p[j] - 1;
+			lid = ref_mesh->node_ID[2*nid];
+			HECMW_assert( 0 < lid );
+			HECMW_assert( lid <= ref_mesh->nn_internal );
+			sendbuf_p[j] = lid;
+		}
+		/* isend local id of export nodes */
+		tag = 0;
+		HECMW_Isend(sendbuf_p, len, HECMW_INT, irank, tag,
+			    comm, requests+i);
+	}
+
+	/* recv local IDs of import nodes */
+	len_tot = ref_mesh->import_index[ref_mesh->n_neighbor_pe];
+	recvbuf = (int *) HECMW_malloc( sizeof(int) * len_tot );
+	if( recvbuf == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for( i=0; i < ref_mesh->n_neighbor_pe; i++ ) {
+		irank = ref_mesh->neighbor_pe[i];
+		js = ref_mesh->import_index[i];
+		je = ref_mesh->import_index[i+1];
+		len = je - js;
+		item_p = ref_mesh->import_item + js;
+		recvbuf_p = recvbuf + js;
+		/* recv local id of import nodes */
+		tag = 0;
+		HECMW_Recv(recvbuf_p, len, HECMW_INT, irank, tag,
+			   comm, statuses+i);
+		/* set node_ID[2*j] */
+		for( j=0; j < len; j++ ) {
+			nid = item_p[j] - 1;
+			lid = recvbuf_p[j];
+			HECMW_assert( 0 < lid );
+			ref_mesh->node_ID[2*nid] = lid;
+		}
+	}
+
+	HECMW_Waitall(ref_mesh->n_neighbor_pe, requests, statuses);
+	HECMW_free(sendbuf);
+	HECMW_free(recvbuf);
+
+	/* elem_ID (for external elements) */
+
+	len_tot = ref_mesh->shared_index[ref_mesh->n_neighbor_pe];
+	srbuf = (int *) HECMW_malloc( sizeof(int) * len_tot );
+	if( srbuf == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	nsend = 0;
+	for( i=0; i < ref_mesh->n_neighbor_pe; i++ ) {
+		irank = ref_mesh->neighbor_pe[i];
+		js = ref_mesh->shared_index[i];
+		je = ref_mesh->shared_index[i+1];
+		len = je - js;
+		srbuf_p = srbuf + js;
+		item_p = ref_mesh->shared_item + js;
+		if( irank < ref_mesh->my_rank ) continue;
+		for( j=0; j < len; j++ ) {
+			nid = item_p[j] - 1;
+			rank = ref_mesh->elem_ID[2*nid+1];
+			lid = ref_mesh->elem_ID[2*nid];
+			if( rank == ref_mesh->my_rank && lid > 0 ) {
+				HECMW_assert( lid <= ref_mesh->ne_internal );
+				srbuf_p[j] = lid;
+			} else {
+				srbuf_p[j] = -1;
+			}
+		}
+		/* isend list of local_ID of those elems */
+		tag = 1;
+		HECMW_Isend( srbuf_p, len, HECMW_INT, irank, tag,
+			     comm, requests+nsend );
+		nsend++;
+	}
+	for( i=0; i < ref_mesh->n_neighbor_pe; i++ ) {
+		irank = ref_mesh->neighbor_pe[i];
+		js = ref_mesh->shared_index[i];
+		je = ref_mesh->shared_index[i+1];
+		len = je - js;
+		srbuf_p = srbuf + js;
+		item_p = ref_mesh->shared_item + js;
+		if( ref_mesh->my_rank < irank ) continue;
+		/* recv list of local_ID of those elems */
+		tag = 1;
+		HECMW_Recv( srbuf_p, len, HECMW_INT, irank, tag,
+			    comm, statuses );
+		/* set elem_ID[2*j] */
+		for( j=0; j < len; j++ ) {
+			lid = srbuf_p[j];
+			if( lid < 0 ) continue;
+			nid = item_p[j] - 1;
+			rank = ref_mesh->elem_ID[2*nid+1];
+			HECMW_assert( rank == irank || rank == -irank-1 );
+			if( rank < 0 ) continue;
+			ref_mesh->elem_ID[2*nid] = lid;
+		}
+	}
+	HECMW_Waitall( nsend, requests, statuses );
+	HECMW_free(srbuf);
+
+	HECMW_free(requests);
+	HECMW_free(statuses);
+
+	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding external IDs.\n", ref_mesh->my_rank);
+	return HECMW_SUCCESS;
+}
+
+
+static int
 rebuild_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding info...\n", mesh->my_rank);
@@ -1967,6 +2123,7 @@ rebuild_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *
 	if( rebuild_elem_info( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( rebuild_node_info( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( rebuild_comm_tables( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( rebuild_ID_external( ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding info.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
@@ -2960,7 +3117,37 @@ reorder_elems( struct hecmwST_local_mesh *mesh, int *old2new, int *new2old )
 		HECMW_free( mesh->section_ID );
 		mesh->section_ID = new_section_ID;
 	}
-	/* TODO: renumber elem_mat_ID_index, elem_mat_ID_item */
+	/* elem_mat_ID_index, elem_mat_ID_item */
+	{
+		int *new_emID_index, *new_emID_item;
+		new_emID_index = (int *) HECMW_malloc( sizeof(int) * (mesh->n_elem_gross + 1) );
+		if( new_emID_index == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+		new_emID_item = (int *) HECMW_malloc( sizeof(int) * mesh->elem_mat_ID_index[mesh->n_elem_gross] );
+		if( new_emID_item == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+		new_emID_index[0] = 0;
+		for( i=0; i < mesh->n_elem_gross; i++ ) {
+			int old, js_old, je_old, len, js_new, j;
+			old = new2old[i];
+			js_old = mesh->elem_mat_ID_index[old];
+			je_old = mesh->elem_mat_ID_index[old+1];
+			len = je_old - js_old;
+			js_new = new_emID_index[i];
+			new_emID_index[i+1] = js_new + len;
+			for( j=0; j < len; j++ ) {
+				new_emID_item[js_new+j] = mesh->elem_mat_ID_item[js_old+j];
+			}
+		}
+		HECMW_free( mesh->elem_mat_ID_index );
+		HECMW_free( mesh->elem_mat_ID_item );
+		mesh->elem_mat_ID_index = new_emID_index;
+		mesh->elem_mat_ID_item = new_emID_item;
+	}
 
 	/*
 	 * Update using old2new

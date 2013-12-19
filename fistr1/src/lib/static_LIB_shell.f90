@@ -59,17 +59,17 @@
       
 !####################################################################
       SUBROUTINE STF_Shell_MITC                                           &
-                 (etype, nn, ndof, ecoord, gausses, stiff, thick, nddisp) 
+                 (etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, nddisp) 
 !####################################################################
       
       USE mMechGauss
       USE gauss_integration
       USE m_MatMatrix
-      
-!--------------------------------------------------------------------
+
+!-------------------------------------------------------------------- 
       
       INTEGER(KIND = kint), INTENT(IN) :: etype
-      INTEGER(KIND = kint), INTENT(IN) :: nn
+      INTEGER(KIND = kint), INTENT(IN) :: nn, mixflag
       INTEGER(KIND = kint), INTENT(IN) :: ndof
       REAL(KIND = kreal), INTENT(IN)   :: ecoord(3, nn)
       TYPE(tGaussStatus), INTENT(IN)   :: gausses(:)
@@ -77,11 +77,11 @@
       REAL(KIND = kreal), INTENT(IN)   :: thick
       
       REAL(KIND = kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn)
-      
+	  
 !--------------------------------------------------------------------
       
-      INTEGER :: flag
-      INTEGER :: i, j
+      INTEGER :: flag, flag_dof, shellmatl
+      INTEGER :: i, j, m
       INTEGER :: lx, ly
       INTEGER :: fetype
       INTEGER :: ny
@@ -92,6 +92,7 @@
       INTEGER :: isize, jsize
       INTEGER :: jsize1, jsize2, jsize3, &
                  jsize4, jsize5, jsize6  
+      INTEGER :: n_layer,n_total_layer, sstable(24)
       
       REAL(KIND = kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
       REAL(KIND = kreal) :: tmpstiff(ndof*nn, ndof*nn)
@@ -115,6 +116,7 @@
       REAL(KIND = kreal) :: xxi_di(6, 3), eeta_di(6, 3)
       REAL(KIND = kreal) :: h(nn, 3)
       REAL(KIND = kreal) :: v1(3, nn), v2(3, nn), v3(3, nn)
+      REAL(KIND = kreal) :: v1_i(3), v2_i(3), v3_i(3)
       REAL(KIND = kreal) :: v1_abs, v2_abs, v3_abs
       REAL(KIND = kreal) :: a_over_2_v3(3, nn)
       REAL(KIND = kreal) :: u_rot(3, nn)
@@ -136,7 +138,10 @@
                             Cv31(ndof*nn), Cv32(ndof*nn)  
       REAL(KIND = kreal) :: Cv_theta(ndof*nn), Cv_w(ndof*nn)
       REAL(KIND = kreal) :: Cv(ndof*nn)
-      
+      REAL(KIND = kreal) :: sigma_layer, thick_layer 
+
+		sstable = 0
+		flag_dof = 0
 !--------------------------------------------------------------------
       
       ! MITC4
@@ -463,7 +468,11 @@
       END DO
       
 !--------------------------------------------------------------------
-      
+!		MODIFIED to LAMINATED SHELL ANALYSIS
+!--------------------------------------------------------------------
+
+   n_total_layer =  int(gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
+   DO n_layer=1,n_total_layer
       DO ly = 1, ny
        
        !--------------------------------------------------------
@@ -640,8 +649,28 @@
        
        !--------------------------------------------------------
        
-       zeta_ly = xg(ny, ly)
-       w_ly    = wgt(ny, ly)
+        IF ( n_total_layer.ge. 2 ) THEN
+		     shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+	        if (shellmatl == 0)then
+			   sigma_layer = 0.0D0
+		       DO m = 1, n_layer
+			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*n_layer) / thick
+		       END DO
+			   zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
+	        elseif (shellmatl == 1)then
+			   sigma_layer = 0.0D0
+		       DO m = 1, n_layer
+			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick
+		       END DO
+               zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))			   
+	        else
+			   write(*,*)"ERROR : shellmatl isnot correct"; stop
+            endif
+        ELSE
+			zeta_ly = xg(ny, ly)
+        ENDIF
+	   
+		w_ly    = wgt(ny, ly)
        
        !--------------------------------------------------------
        
@@ -659,6 +688,24 @@
         CALL getShapeFunc(fetype, naturalcoord, shapefunc)
         
         CALL getShapeDeriv(fetype, naturalcoord, shapederiv)
+        
+        !--------------------------------------------------
+        
+        DO i = 1, 3
+          
+         v1_i(i) = 0.0D0
+         v2_i(i) = 0.0D0
+         v3_i(i) = 0.0D0
+        
+         DO na = 1, nn
+          
+          v1_i(i) = v1_i(i)+shapefunc(na)*v1(i, na)
+          v2_i(i) = v2_i(i)+shapefunc(na)*v2(i, na)
+          v3_i(i) = v3_i(i)+shapefunc(na)*v3(i, na)
+          
+         END DO
+         
+        END DO
         
         !--------------------------------------------------
         
@@ -779,11 +826,11 @@
         e2_hat(3) = e2_hat(3)/e2_hat_abs
         
         !--------------------------------------------------
-        
+    !    write(*,*)  'Matlmatrix_layer', n_layer
         CALL MatlMatrix_Shell                        &
              (gausses(lx), Shell, D,                 &
               e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-              alpha)                                 
+              alpha, n_layer)                                 
         
         !--------------------------------------------------
         
@@ -1009,13 +1056,22 @@
         
         !--------------------------------------------------
         
-        FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-         
-         tmpstiff(isize, jsize)                               &
-         = tmpstiff(isize, jsize)                             &
-          +w_w_w_det*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
-         
-        END FORALL
+          shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+	        if (shellmatl == 0)then
+			    FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+				   tmpstiff(isize, jsize)                               &
+				   = tmpstiff(isize, jsize)                             &
+				   +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
+		       END FORALL
+		    elseif (shellmatl == 1)then
+			    FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+				   tmpstiff(isize, jsize)                               &
+				   = tmpstiff(isize, jsize)                             &
+				   +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
+	           END FORALL
+		    else
+			   write(*,*)"ERROR : shellmatl isnot correct"; stop
+            endif
         
         !--------------------------------------------------
         
@@ -1093,43 +1149,43 @@
         ! { C_{ij} } vector
         DO jsize = 1, ndof*nn
          
-         Cv12(jsize) = ( g1(1)*B1(2, jsize)   &
-                        +g2(1)*B2(2, jsize)   &
-                        +g3(1)*B3(2, jsize) ) &
-                      -( g1(1)*B1(2, jsize)   &
-                        +g2(1)*B2(2, jsize)   &
-                        +g3(1)*B3(2, jsize) ) 
-         Cv13(jsize) = ( g1(1)*B1(3, jsize)   &
-                        +g2(1)*B2(3, jsize)   &
-                        +g3(1)*B3(3, jsize) ) &
-                      -( g1(1)*B1(3, jsize)   &
-                        +g2(1)*B2(3, jsize)   &
-                        +g3(1)*B3(3, jsize) ) 
-         Cv21(jsize) = ( g1(2)*B1(1, jsize)   &
-                        +g2(2)*B2(1, jsize)   &
-                        +g3(2)*B3(1, jsize) ) &
-                      -( g1(2)*B1(1, jsize)   &
-                        +g2(2)*B2(1, jsize)   &
-                        +g3(2)*B3(1, jsize) ) 
-         Cv23(jsize) = ( g1(2)*B1(3, jsize)   &
-                        +g2(2)*B2(3, jsize)   &
-                        +g3(2)*B3(3, jsize) ) &
-                      -( g1(2)*B1(3, jsize)   &
-                        +g2(2)*B2(3, jsize)   &
-                        +g3(2)*B3(3, jsize) ) 
-         Cv31(jsize) = ( g1(3)*B1(1, jsize)   &
-                        +g2(3)*B2(1, jsize)   &
-                        +g3(3)*B3(1, jsize) ) &
-                      -( g1(3)*B1(1, jsize)   &
-                        +g2(3)*B2(1, jsize)   &
-                        +g3(3)*B3(1, jsize) ) 
-         Cv32(jsize) = ( g1(3)*B1(2, jsize)   &
-                        +g2(3)*B2(2, jsize)   &
-                        +g3(3)*B3(2, jsize) ) &
-                      -( g1(3)*B1(2, jsize)   &
-                        +g2(3)*B2(2, jsize)   &
-                        +g3(3)*B3(2, jsize) ) 
-         
+         Cv12(jsize) = ( cg1(1)*B1(2, jsize)   &
+                        +cg2(1)*B2(2, jsize)   &
+                        +cg3(1)*B3(2, jsize) ) &
+                      -( cg1(2)*B1(1, jsize)   &
+                        +cg2(2)*B2(1, jsize)   &
+                        +cg3(2)*B3(1, jsize) ) 
+         Cv13(jsize) = ( cg1(1)*B1(3, jsize)   &
+                        +cg2(1)*B2(3, jsize)   &
+                        +cg3(1)*B3(3, jsize) ) &
+                      -( cg1(3)*B1(1, jsize)   &
+                        +cg2(3)*B2(1, jsize)   &
+                        +cg3(3)*B3(1, jsize) ) 
+         Cv21(jsize) = ( cg1(2)*B1(1, jsize)   &
+                        +cg2(2)*B2(1, jsize)   &
+                        +cg3(2)*B3(1, jsize) ) &
+                      -( cg1(1)*B1(2, jsize)   &
+                        +cg2(1)*B2(2, jsize)   &
+                        +cg3(1)*B3(2, jsize) ) 
+         Cv23(jsize) = ( cg1(2)*B1(3, jsize)   &
+                        +cg2(2)*B2(3, jsize)   &
+                        +cg3(2)*B3(3, jsize) ) &
+                      -( cg1(3)*B1(2, jsize)   &
+                        +cg2(3)*B2(2, jsize)   &
+                        +cg3(3)*B3(2, jsize) ) 
+         Cv31(jsize) = ( cg1(3)*B1(1, jsize)   &
+                        +cg2(3)*B2(1, jsize)   &
+                        +cg3(3)*B3(1, jsize) ) &
+                      -( cg1(1)*B1(3, jsize)   &
+                        +cg2(1)*B2(3, jsize)   &
+                        +cg3(1)*B3(3, jsize) ) 
+         Cv32(jsize) = ( cg1(3)*B1(2, jsize)   &
+                        +cg2(3)*B2(2, jsize)   &
+                        +cg3(3)*B3(2, jsize) ) &
+                      -( cg1(2)*B1(3, jsize)   &
+                        +cg2(2)*B2(3, jsize)   &
+                        +cg3(2)*B3(3, jsize) ) 
+						
         END DO
         
         !--------------------------------------------------
@@ -1142,12 +1198,12 @@
           jsize = ndof*(nb-1)+j
           
           Cv_w(jsize)                       &
-          = v1(1, nb)*Cv12(jsize)*v2(2, nb) &
-           +v1(1, nb)*Cv13(jsize)*v2(3, nb) &
-           +v1(2, nb)*Cv21(jsize)*v2(1, nb) &
-           +v1(2, nb)*Cv23(jsize)*v2(3, nb) &
-           +v1(3, nb)*Cv31(jsize)*v2(1, nb) &
-           +v1(3, nb)*Cv32(jsize)*v2(2, nb) 
+          = v1_i(1)*Cv12(jsize)*v2_i(2) &
+           +v1_i(1)*Cv13(jsize)*v2_i(3) &
+           +v1_i(2)*Cv21(jsize)*v2_i(1) &
+           +v1_i(2)*Cv23(jsize)*v2_i(3) &
+           +v1_i(3)*Cv31(jsize)*v2_i(1) &
+           +v1_i(3)*Cv32(jsize)*v2_i(2) 
           
          END DO
          
@@ -1166,9 +1222,9 @@
          Cv_theta(jsize1) = 0.0D0
          Cv_theta(jsize2) = 0.0D0
          Cv_theta(jsize3) = 0.0D0
-         Cv_theta(jsize4) = v3(1, nb)*shapefunc(nb)
-         Cv_theta(jsize5) = v3(2, nb)*shapefunc(nb)
-         Cv_theta(jsize6) = v3(3, nb)*shapefunc(nb)
+         Cv_theta(jsize4) = v3_i(1)*shapefunc(nb)
+         Cv_theta(jsize5) = v3_i(2)*shapefunc(nb)
+         Cv_theta(jsize6) = v3_i(3)*shapefunc(nb)
          
         END DO
         
@@ -1182,17 +1238,30 @@
         !--------------------------------------------------
         
         ! [ K L ] matrix
-        DO jsize = 1, ndof*nn
-         
-         DO isize = 1, ndof*nn
+		  shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+	        if (shellmatl == 0)then
+			   DO jsize = 1, ndof*nn
+              DO isize = 1, ndof*nn
           
           tmpstiff(isize, jsize)                &
           = tmpstiff(isize, jsize)              &
-           +w_w_w_det*alpha*Cv(isize)*Cv(jsize) 
+           +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*alpha*Cv(isize)*Cv(jsize) 
           
-         END DO
-         
-        END DO
+              END DO
+              END DO
+	        elseif (shellmatl == 1)then
+			   DO jsize = 1, ndof*nn
+			   DO isize = 1, ndof*nn
+			  
+			  tmpstiff(isize, jsize)                &
+			  = tmpstiff(isize, jsize)              &
+			   +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*alpha*Cv(isize)*Cv(jsize) 
+			  
+			   END DO
+			   END DO
+	        else
+			   write(*,*)"ERROR : shellmatl isnot correct"; stop
+            endif
         
         !--------------------------------------------------
         
@@ -1205,9 +1274,84 @@
       !--------------------------------------------------------------
       
       stiff(1:nn*ndof, 1:nn*ndof) = tmpstiff(1:nn*ndof, 1:nn*ndof)
-      
+
 !--------------------------------------------------------------------
-      
+		END DO     !< LAMINATED SHELL ANALYSIS
+		
+!		write(*,"(24E25.16)") stiff
+		
+!******************** Shell-Solid mixed analysis ********************  
+!		mixglaf = 0 < natural shell (6 dof)
+!		mixglaf = 1 < mixed 361 (3*2 dof)*8 nod
+!		mixglaf = 2 < mixed 351 (3*2 dof)*6 nod
+       if( mixflag == 1 )then
+	   
+!       write(*,*) 'convert for shell-solid mixed analysis'
+		sstable(1) = 1
+		sstable(2) = 2
+		sstable(3) = 3
+		sstable(4) = 7
+		sstable(5) = 8
+		sstable(6) = 9
+		sstable(7) = 13
+		sstable(8) = 14
+		sstable(9) = 15
+		sstable(10)= 19
+		sstable(11)= 20
+		sstable(12)= 21
+		sstable(13)= 4
+		sstable(14)= 5
+		sstable(15)= 6
+		sstable(16)= 10
+		sstable(17)= 11
+		sstable(18)= 12
+		sstable(19)= 16
+		sstable(20)= 17
+		sstable(21)= 18
+		sstable(22)= 22
+		sstable(23)= 23
+		sstable(24)= 24
+		
+		tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
+		
+       DO i = 1, nn*ndof
+       DO j = 1, nn*ndof   
+			stiff(i,j) = tmpstiff(sstable(i),sstable(j))
+       ENDDO
+       ENDDO
+	   
+	   elseif( mixflag == 2 )then
+	   
+       write(*,*) 'convert for shell-solid mixed analysis 351'
+		sstable(1) = 1
+		sstable(2) = 2
+		sstable(3) = 3
+		sstable(4) = 7
+		sstable(5) = 8
+		sstable(6) = 9
+		sstable(7) = 13
+		sstable(8) = 14
+		sstable(9) = 15
+		sstable(10)= 4
+		sstable(11)= 5
+		sstable(12)= 6
+		sstable(13)= 10
+		sstable(14)= 11
+		sstable(15)= 12
+		sstable(16)= 16
+		sstable(17)= 17
+		sstable(18)= 18
+		
+		tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
+		
+       DO i = 1, nn*ndof
+       DO j = 1, nn*ndof   
+			stiff(i,j) = tmpstiff(sstable(i),sstable(j))
+       ENDDO
+       ENDDO
+	   
+	   endif
+	   
       RETURN
       
 !####################################################################
@@ -1218,7 +1362,7 @@
 !####################################################################
       SUBROUTINE ElementStress_Shell_MITC                  &
                  (etype, nn, ndof, ecoord, gausses, edisp, &
-                  strain, stress, thick, zeta)             
+                  strain, stress, thick, zeta, n_layer, n_total_layer)             
 !####################################################################
       
       USE mMechGauss
@@ -1240,7 +1384,7 @@
       
 !--------------------------------------------------------------------
       
-      INTEGER :: i, j
+      INTEGER :: i, j, m
       INTEGER :: lx
       INTEGER :: fetype
       INTEGER :: ntying
@@ -1249,7 +1393,8 @@
       INTEGER :: na, nb
       INTEGER :: isize, jsize
       INTEGER :: jsize1, jsize2, jsize3, &
-                 jsize4, jsize5, jsize6  
+                 jsize4, jsize5, jsize6
+      INTEGER :: n_layer, n_total_layer, shellmatl
       
       REAL(KIND = kreal) :: D(5, 5)
       REAL(KIND = kreal) :: elem(3, nn)
@@ -1291,8 +1436,11 @@
                             e31_di_2(6, 3)                  
       REAL(KIND = kreal) :: E(3, 3), Ev(5)
       REAL(KIND = kreal) :: S(3, 3), Sv(5)
+      REAL(KIND = kreal) :: sigma_layer
       
 !--------------------------------------------------------------------
+
+      ! for lamina stress 
       
       ! MITC4
       IF( etype .EQ. fe_mitc4_shell ) THEN
@@ -1301,7 +1449,7 @@
        
        ntying = 1
        npoints_tying(1)= 4
-       
+
       ! MITC9
       ELSE IF( etype .EQ. fe_mitc9_shell ) THEN
        
@@ -1325,7 +1473,7 @@
 !--------------------------------------------------------------------
       
       elem(:, :) = ecoord(:, :)
-      
+	  
 !--------------------------------------------------------------------
       
       DO na = 1, nn
@@ -1335,7 +1483,7 @@
        theta(3, na) = edisp(6, na)
        
       END DO
-      
+	  
 !-------------------------------------------------------------------
       
       ! xi-coordinate at a node in a local element
@@ -1616,6 +1764,12 @@
       END DO
            
 !--------------------------------------------------------------------
+!				Modified stress in laminated shell
+!--------------------------------------------------------------------
+		
+!		write(*,*) 'Stress_n_total_layer',n_total_layer
+		   
+!--------------------------------------------------------------------
       
       ! MITC4
       IF( etype .EQ. fe_mitc4_shell ) THEN 
@@ -1695,7 +1849,7 @@
          END DO
          
         END DO
-        
+
         !---------------------------------------------
         
         DO i = 1, 3
@@ -1759,8 +1913,27 @@
       
       !--------------------------------------------------------
       
-      zeta_ly = zeta
-      
+	  	IF ( n_total_layer.ge. 2 ) THEN
+			shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+			if (shellmatl == 0)then
+				sigma_layer = 0.0D0
+				DO m = 1, n_layer
+					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*n_layer) / thick
+				END DO
+				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-zeta)
+			elseif (shellmatl == 1)then
+				sigma_layer = 0.0D0
+				DO m = 1, n_layer
+					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick
+				END DO
+				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-zeta)			   
+			else
+				write(*,*)"ERROR : shellmatl isnot correct"; stop
+			endif
+		ELSE
+			zeta_ly = zeta
+		ENDIF
+
       !--------------------------------------------------------
       
       DO lx = 1, nn
@@ -1821,9 +1994,8 @@
          g3(i) = g3(i)+dudzeta_rot(i, na) 
         
         END DO
-        
        END DO
-       
+
        !--------------------------------------------------
         
        ! Jacobian
@@ -1831,8 +2003,13 @@
             +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
             +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) ) 
        
+		if(det == 0.0d0) then
+			write(*,*)"ERROR:LIB Shell in l2009 Not Jacobian"
+			stop
+		endif
+		
        det_inv = 1.0D0/det
-       
+
        !--------------------------------------------------
        
        ! Contravariant basis vector
@@ -1854,7 +2031,7 @@
                 *( g1(3)*g2(1)-g1(1)*g2(3) ) 
        cg3(3) = det_inv                      &
                 *( g1(1)*g2(2)-g1(2)*g2(1) ) 
-       
+
        !--------------------------------------------------
        
        g3_abs = DSQRT( g3(1)*g3(1)   &
@@ -2079,14 +2256,14 @@
        E(1, 3) = 0.5D0*Ev(5)
        
        !--------------------------------------------------
-       
+    !   write(*,*) 'Stress_n_layer', n_layer
        CALL MatlMatrix_Shell                        &
             (gausses(lx), Shell, D,                 &
              e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-             alpha)                                 
+             alpha, n_layer)                                 
        
        !--------------------------------------------------
-       
+
        Sv = MATMUL( D, Ev )
        
        ! Infinitesimal stress tensor
@@ -2100,7 +2277,7 @@
        S(3, 2) = Sv(4)
        S(3, 1) = Sv(5)
        S(1, 3) = Sv(5)
-	  
+
        !------------------------------------------------
        
        stress(lx,1)                  &
@@ -2212,11 +2389,10 @@
            +E(2, 3)*cg2(3)*cg3(1)   &
            +E(3, 1)*cg3(3)*cg1(1)   &
            +E(3, 2)*cg3(3)*cg2(1) ) 
-       
+		   
        !--------------------------------------------------
-       
-      END DO
       
+      END DO
 !--------------------------------------------------------------------
       
       RETURN
@@ -2887,7 +3063,6 @@
 !####################################################################
       END SUBROUTINE DL_Shell
 !####################################################################
-      
       
 !####################################################################
       END MODULE m_static_LIB_shell
