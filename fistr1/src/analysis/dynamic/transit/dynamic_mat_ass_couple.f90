@@ -86,7 +86,7 @@ contains
              if( icall == 1 ) then
                 if( j<=0 ) then
                            write(IDBG,'(a,i0,a)') "dynamic_mat_ass_couple: traction for node ", &
-                                &   node(i), " on coupling surface not found"
+                                &   hecMESH%global_node_ID(node(i)), " on coupling surface not found"
 ! ============ added by K. Tagami ============== for debug ==== 2010/03/02
 !                           write(IDBG,*) "local : ", node(i), " Global :", node_global, " not found"
 ! ==============================================================
@@ -94,7 +94,7 @@ contains
                    cycle
                 else
                    write(IDBG,'(a,i0,a)') "dynamic_mat_ass_couple: traction for node ", &
-                        & node(i), " on coupling surface OK"
+                        & hecMESH%global_node_ID(node(i)), " on coupling surface OK"
 ! ============ added by K. Tagami ============== for debug ==== 2010/03/02
 !                           write(IDBG,*) "local : ", node(i), " Global :", node_global, " OK"
 ! ==============================================================
@@ -145,7 +145,7 @@ contains
           end do
        end do
     end do
-    
+    call hecmw_barrier(hecMESH)
     if( ierr == 1 ) then
        write(*,*) "#Error : in FSTR_MAT_ASS_COUPLE"
        call hecmw_abort( hecmw_comm_get_comm())

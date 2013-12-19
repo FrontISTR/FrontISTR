@@ -80,7 +80,7 @@ contains
   
   subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG,  &
                                             fstrDYNAMIC, fstrRESULT, fstrPARAM, &
-                                            fstrCPL, fstrFREQ, fstrMAT, my_rank_monit_1, restart_step_num)
+                                            fstrCPL, fstrFREQ, fstrMAT, restart_step_num)
 !C
 !C-- global variable
 !C
@@ -94,7 +94,6 @@ contains
     type( fstr_couple         ) :: fstrCPL
     type( fstr_freqanalysis   ) :: fstrFREQ
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT 
-    integer( kind=kint       ) :: my_rank_monit_1
     integer( kind=kint       ) :: restart_step_num
 
 !C
@@ -907,7 +906,7 @@ contains
     raym       = fstrDYNAMIC%ray_m
     rayk       = fstrDYNAMIC%ray_k
     idnode     = fstrDYNAMIC%nout_monit
-    vistype    = fstrDYNAMIC%node_monit_1
+    vistype    = fstrDYNAMIC%ngrp_monit
     ioutl(1:3) = fstrDYNAMIC%iout_list(1:3)
     return  
   end subroutine 

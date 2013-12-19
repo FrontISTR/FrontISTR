@@ -42,7 +42,7 @@ contains
 
   subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
 
     implicit none
 !C
@@ -66,7 +66,6 @@ contains
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
     integer(kind=kint) :: iiii5, iexit
-    integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
     integer(kind=kint) :: kkk0, kkk1
 
@@ -76,6 +75,8 @@ contains
 
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
+
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
 
 !C*-------- solver control -----------*
@@ -145,7 +146,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0
@@ -157,7 +158,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i                                                  
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta                      
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 	
        if(hecMESH%my_rank==0) then
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr   
@@ -212,6 +213,17 @@ contains
            if( fstrPARAM%fg_couple_first /= 0 ) then
              bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
              if( bsize > 1.0 ) bsize = 1.0
+             do kkk0 = 1, fstrCPL%coupled_node_n
+               kkk1 = 3 * kkk0
+               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+               fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+               fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+             enddo
+           endif
+           if( fstrPARAM%fg_couple_window > 0 ) then
+             j = i - restrt_step_num + 1
+             kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+             bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
              do kkk0 = 1, fstrCPL%coupled_node_n
                kkk1 = 3 * kkk0
                fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
@@ -393,7 +405,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -412,7 +424,7 @@ contains
 !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.  
  subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &  
                                                        ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                                       ,fstrCPL,fstrMAT,my_rank_monit_1,restrt_step_num,infoCTChange  &
+                                                       ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange  &
                                                        ,conMAT )
   
     use mContact                                                                                                                   
@@ -444,7 +456,6 @@ contains
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
-    integer(kind=kint) :: my_rank_monit_1    
     
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
@@ -538,7 +549,7 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)    
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 	
 	fstrDYNAMIC%VEC3(:) =0.d0  
@@ -572,7 +583,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step             
 
        fstrDYNAMIC%i_step = i                                                  
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta                      
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 	
        if(hecMESH%my_rank==0) then
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr   
@@ -818,7 +829,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 

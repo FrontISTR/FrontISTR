@@ -185,6 +185,7 @@ public
                 integer( kind=kint ) :: fg_couple          !< (default:0)
                 integer( kind=kint ) :: fg_couple_type     !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
+                integer( kind=kint ) :: fg_couple_window   !< (default:0)
                 
                 ! for restart control                       
                 integer( kind=kint ) :: restart_out_type   !< output type of restart file  
@@ -445,7 +446,7 @@ public
 
                 ! OUTPUT CONTROL
                 integer(kind=kint) :: nout           ! output interval of result
-                integer(kind=kint) :: node_monit_1   ! node of monitoring result
+                integer(kind=kint) :: ngrp_monit     ! node of monitoring result
                 integer(kind=kint) :: nout_monit     ! output interval of result monitoring
                 integer(kind=kint) :: i_step         ! step number
                 integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output       
@@ -470,10 +471,12 @@ public
                 real(kind=kreal), pointer :: VEC2  (:)
                 real(kind=kreal), pointer :: VEC3  (:)
 				
-                integer(kind=kint) :: dynamic_IW4        =   74
-                integer(kind=kint) :: dynamic_IW5        =   75
-                integer(kind=kint) :: dynamic_IW6        =   76
-                integer(kind=kint) :: dynamic_IW7        =   77            
+                integer(kind=kint) :: dynamic_IW4        =   204
+                integer(kind=kint) :: dynamic_IW5        =   205
+                integer(kind=kint) :: dynamic_IW6        =   206
+                integer(kind=kint) :: dynamic_IW7        =   207
+                integer(kind=kint) :: dynamic_IW8        =   208
+                integer(kind=kint) :: dynamic_IW9        =   209
 
         end type fstr_dynamic
 !C ---------------------------------------------------------------------------- 
@@ -862,6 +865,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%fg_couple      = 0
         fstrPARAM%fg_couple_type = 0
         fstrPARAM%fg_couple_first= 0
+        fstrPARAM%fg_couple_window= 0
 
         ! index table for global node ID sorting
 

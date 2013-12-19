@@ -40,7 +40,7 @@ contains
 !C================================================================C
   subroutine fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, my_rank_monit_1, restrt_step_num )
+                                      ,fstrCPL, restrt_step_num )
 
     implicit none
 !C
@@ -64,7 +64,6 @@ contains
     integer(kind=kint) :: kkk0, kkk1
     integer(kind=kint) :: ierror, idummy
     integer(kind=kint) :: iiii5, iexit
-    integer(kind=kint) :: my_rank_monit_1
     integer(kind=kint) :: revocap_flag
     real(kind=kreal),pointer :: prevB(:)
 
@@ -74,6 +73,8 @@ contains
 
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step(1)
+
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
@@ -146,7 +147,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
     end if
 !!
@@ -156,7 +157,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
        fstrDYNAMIC%i_step = i
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta        
+       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
 !C-- {vec3}=[KL]{U(t)}, second part of right hand of Eq.(1.1.22)
 
@@ -207,6 +208,17 @@ contains
           if( fstrPARAM%fg_couple_first /= 0 ) then
             bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
             if( bsize > 1.0 ) bsize = 1.0
+            do kkk0 = 1, fstrCPL%coupled_node_n
+              kkk1 = 3 * kkk0
+              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+            enddo
+          endif
+          if( fstrPARAM%fg_couple_window > 0 ) then
+            j = i - restrt_step_num + 1
+            kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+            bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
             do kkk0 = 1, fstrCPL%coupled_node_n
               kkk1 = 3 * kkk0
               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
@@ -381,7 +393,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
     enddo
 

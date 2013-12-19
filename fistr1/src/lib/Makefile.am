@@ -170,6 +170,8 @@ build-with-mumps:
 	@cd contact   && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR_WITH_MUMPS
 
+build-with-rcap: @build_target_mumps@
+
 BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 BUILD_CURR_WITH_MUMPS: $(TARGET) F90TARGET_MUMPS install-module

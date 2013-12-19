@@ -311,10 +311,11 @@ function fstr_ctrl_get_ECHO( ctrl, echo )
 end function fstr_ctrl_get_ECHO
 
 !> Read in !COUPLE                
-function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, surf_id, surf_id_len )
+function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, fg_window, surf_id, surf_id_len )
         integer(kind=kint) :: ctrl                           !< readed data
         integer(kind=kint) :: fg_type                        !< if type
         integer(kind=kint) :: fg_first                       !< if first
+        integer(kind=kint) :: fg_window                      !< if window
         character(len=HECMW_NAME_LEN),target  :: surf_id(:)  !< surface id
         character(len=HECMW_NAME_LEN),pointer :: surf_id_p   !< surface id
         integer(kind=kint) :: surf_id_len
@@ -326,7 +327,8 @@ function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, surf_id, surf_id_len )
 
         fstr_ctrl_get_COUPLE = -1
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', '1,2,3,4,5,6 ', 0, 'I', fg_type )/= 0) return
-        fstr_ctrl_get_COUPLE = fstr_ctrl_get_param_ex( ctrl, 'ISTEP ', '# ', 0, 'I', fg_first )
+        if( fstr_ctrl_get_param_ex( ctrl, 'ISTEP ', '# ', 0, 'I', fg_first )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'WINDOW ', '# ', 0, 'I', fg_window )/= 0) return
 
         surf_id_p => surf_id(1)
         fstr_ctrl_get_COUPLE = &

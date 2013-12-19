@@ -635,15 +635,16 @@ module m_dynamic_output
 !C================================================================C
 !C-- subroutine dynamic_output_monit
 !C================================================================C
-  subroutine dynamic_output_monit( hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, my_rank_monit_1 )
+  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     use m_fstr
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( fstr_param          ) :: fstrPARAM
     type ( fstr_dynamic        ) :: fstrDYNAMIC
     type ( lczparam            ) :: myEIG
-    integer(kind=kint) :: my_rank_monit_1
+    type ( fstr_solid          ) :: fstrSOLID
 
-    integer(kind=kint) :: idx, ii, jj, ierr
+    integer(kind=kint) :: idx, ii, jj, ierr, ncmp
+    integer(kind=kint) :: num_monit, ig, iS, iE, ik, iunitS, iunit
     logical :: yes
 
     if( mod(fstrDYNAMIC%i_step,fstrDYNAMIC%nout_monit)/=0 ) return
@@ -654,28 +655,64 @@ module m_dynamic_output
       idx = 1
     endif
 
-    if( hecMESH%my_rank==my_rank_monit_1 ) then
-      jj = fstrPARAM%global_local_id(1,fstrDYNAMIC%node_monit_1)
-      ii = fstrPARAM%global_local_id(2,fstrDYNAMIC%node_monit_1)
+    num_monit = 0
+    ig = fstrDYNAMIC%ngrp_monit
+    iS = hecMESH%node_group%grp_index(ig-1)+1
+    iE = hecMESH%node_group%grp_index(ig)
+    do ik=iS,iE
+      ii = hecMESH%node_group%grp_item(ik)
+      if (ii > hecMESH%nn_internal) cycle
+      num_monit = num_monit+1
+      jj = hecMESH%global_node_id(ii)
+      iunitS = 10*(num_monit-1)
+
 !C-- displacement
       if( fstrDYNAMIC%iout_list(1)==1 ) then
-        write( fstrDYNAMIC%dynamic_IW4, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW4
+        write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
                fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
                fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
         end if
 !C-- velocity
       if( fstrDYNAMIC%iout_list(2)==1 ) then
-        write( fstrDYNAMIC%dynamic_IW5, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW5
+        write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
                fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
                fstrDYNAMIC%VEL( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
         end if
 !C-- acceleration
       if( fstrDYNAMIC%iout_list(3)==1 ) then
-        write( fstrDYNAMIC%dynamic_IW6, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW6
+        write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
                fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
                fstrDYNAMIC%ACC( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
         end if
-    endif
+
+!C-- strain
+      if( fstrDYNAMIC%iout_list(5) > 0 ) then
+        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+          ncmp = 6
+        else
+          ncmp = 14
+        endif
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW8
+        write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)') &
+               fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
+               fstrSOLID%STRAIN( ncmp*(ii-1)+1 : ncmp*ii )
+      end if
+!C-- stress
+      if( fstrDYNAMIC%iout_list(6) > 0 ) then
+        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+          ncmp = 7
+        else
+          ncmp = 14
+        endif
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW9
+        write( iunit, '(i10,1pe13.4e3,i10,1p7e13.4e3)') &
+               fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
+               fstrSOLID%STRESS( ncmp*(ii-1)+1 : ncmp*ii )
+      end if
+    enddo
 
     if( hecMESH%my_rank==0 ) then
       if( any(fstrDYNAMIC%iout_list(1:3)==1) ) then
