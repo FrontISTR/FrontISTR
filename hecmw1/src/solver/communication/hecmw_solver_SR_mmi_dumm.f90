@@ -43,9 +43,9 @@
       integer(kind=kint ), pointer :: NOD_IMPORT  (:)
       integer(kind=kint ), pointer :: STACK_EXPORT(:)
       integer(kind=kint ), pointer :: NOD_EXPORT  (:)
-      integer(kind=kint ), dimension(m*N), intent(inout):: WS
-      integer(kind=kint ), dimension(m*N), intent(inout):: WR
-      integer(kind=kint ), dimension(m*N), intent(inout):: X
+      integer(kind=kint ), dimension(:  ), intent(inout):: WS
+      integer(kind=kint ), dimension(:  ), intent(inout):: WR
+      integer(kind=kint ), dimension(:  ), intent(inout):: X
       integer(kind=kint )                , intent(in)   ::SOLVER_COMM
       integer(kind=kint )                , intent(in)   :: my_rank
 

@@ -82,6 +82,7 @@
       real   (kind=kreal) :: TOL
       integer(kind=kint ) :: i,j,k,isU,ieU,isL,ieL,iterPRE,indexA,indexB,indexC
       integer(kind=kint ) :: jSR,jSB,ik,kSR,kSB
+      integer(kind=kint ) :: ns, nr
       real   (kind=kreal) :: S_TIME,S1_TIME,E_TIME,E1_TIME
       real   (kind=kreal) :: BNRM20,BNRM2,X1,X2,X3
       real   (kind=kreal) :: RHO,RHO0,RHO1,BETA,ALPHA,DNRM20,DNRM2,RHO10
@@ -93,9 +94,12 @@
 !C-- INIT.
       ERROR= 0
 
+      ns = STACK_EXPORT(NEIBPETOT)
+      nr = STACK_IMPORT(NEIBPETOT)
+
       allocate (WW(3*NP,14))
-      allocate (WS(3*NP))
-      allocate (WR(3*NP))
+      allocate (WS(3*ns))
+      allocate (WR(3*nr))
 
       WW= 0.d0
 
@@ -534,7 +538,7 @@
       S_TIME= HECMW_WTIME()
       call HECMW_SOLVE_SEND_RECV_33                                     &
      &   ( NP,  NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexA),              &
+     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexA),              &
      &     SOLVER_COMM,my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
@@ -702,7 +706,7 @@
       S_TIME= HECMW_WTIME()
         call HECMW_SOLVE_SEND_RECV_33                                   &
      &     ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,          &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexB) ,           &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexB) ,           &
      &       SOLVER_COMM,  my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME

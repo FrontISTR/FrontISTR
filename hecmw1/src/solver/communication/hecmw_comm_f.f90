@@ -480,14 +480,15 @@ contains
       use  hecmw_solver_SR_11
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       real(kind=kreal), dimension(n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(n), WR(n))
+      allocate (WS(ns), WR(nr))
       call hecmw_solve_SEND_RECV_11                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -509,14 +510,15 @@ contains
       use  hecmw_solver_SR_22
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       real(kind=kreal), dimension(2*n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(2*n), WR(2*n))
+      allocate (WS(2*ns), WR(2*nr))
       call hecmw_solve_SEND_RECV_22                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -538,14 +540,15 @@ contains
       use  hecmw_solver_SR_33
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       real(kind=kreal), dimension(3*n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(3*n), WR(3*n))
+      allocate (WS(3*ns), WR(3*nr))
       call hecmw_solve_SEND_RECV_33                                     &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -567,14 +570,15 @@ contains
       use  hecmw_solver_SR_mm
 
       implicit none
-      integer(kind=kint):: n, m
+      integer(kind=kint):: n, m, ns, nr
       real(kind=kreal), dimension(m*n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(m*n), WR(m*n))
+      allocate (WS(m*ns), WR(m*nr))
       call hecmw_solve_SEND_RECV_mm                                     &
      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -596,14 +600,15 @@ contains
       use  hecmw_solver_SR_11i
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       integer(kind=kint), dimension(n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(n), WR(n))
+      allocate (WS(ns), WR(nr))
       call hecmw_solve_SEND_RECV_11i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -625,14 +630,15 @@ contains
       use  hecmw_solver_SR_22i
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       integer(kind=kint), dimension(2*n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(2*n), WR(2*n))
+      allocate (WS(2*ns), WR(2*nr))
       call hecmw_solve_SEND_RECV_22i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -654,14 +660,15 @@ contains
       use  hecmw_solver_SR_33i
 
       implicit none
-      integer(kind=kint):: n
+      integer(kind=kint):: n, ns, nr
       integer(kind=kint), dimension(3*n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(3*n), WR(3*n))
+      allocate (WS(3*ns), WR(3*nr))
       call hecmw_solve_SEND_RECV_33i                                    &
      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
      &     hecMESH%import_index, hecMESH%import_item,                   &
@@ -683,14 +690,15 @@ contains
       use  hecmw_solver_SR_mmi
 
       implicit none
-      integer(kind=kint):: n, m
+      integer(kind=kint):: n, m, ns, nr
       integer(kind=kint), dimension(m*n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
-      n = hecMESH%n_node
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
-      allocate (WS(m*n), WR(m*n))
+      allocate (WS(m*ns), WR(m*nr))
       call hecmw_solve_SEND_RECV_mmi                                    &
      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
      &     hecMESH%import_index, hecMESH%import_item,                   &

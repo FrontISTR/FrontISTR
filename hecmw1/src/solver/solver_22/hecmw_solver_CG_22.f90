@@ -79,6 +79,7 @@
 
       ! local variables
       integer(kind=kint )::i,j,k,isU,ieU,isL,ieL,iterPRE,indexA,indexB,indexC
+      integer(kind=kint )::ns,nr
       real   (kind=kreal)::S_TIME,S1_TIME,E_TIME,E1_TIME,START_TIME,END_TIME
       real   (kind=kreal)::BNRM20,BNRM2,X1,X2
       real   (kind=kreal)::RHO,RHO0,RHO1,BETA,C10,C1,ALPHA,DNRM20,DNRM2
@@ -95,8 +96,11 @@
       COMMtime= 0.d0
       COMPtime= 0.d0
 
+      ns = STACK_EXPORT(NEIBPETOT)
+      nr = STACK_IMPORT(NEIBPETOT)
+
       allocate (WW(2*NP,4))
-      allocate (WS(2*NP), WR(2*NP))
+      allocate (WS(2*ns), WR(2*nr))
 
       MAXIT  = ITER
        TOL   = RESID
@@ -255,7 +259,7 @@
 
         call hecmw_solve_SEND_RECV_22                                   &
      &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexB) ,           &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexB) ,           &
      &       SOLVER_COMM, my_rank)
 
         do j= 1, N
@@ -359,7 +363,7 @@
       START_TIME= HECMW_WTIME()
       call hecmw_solve_SEND_RECV_22                                     &
      &   ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,             &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,P) , SOLVER_COMM,     &
+     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,P) , SOLVER_COMM,     &
      &     my_rank)
       END_TIME= HECMW_WTIME()
       COMMtime = COMMtime + END_TIME - START_TIME

@@ -78,6 +78,7 @@
  
       integer(kind=kint ) :: NRK,i,k,kk,j,jj,jSR,jSB,INFO,ik,iSR,isL,ieL,isU,ieU,kSB
       integer(kind=kint ) :: indexA,indexB,indexC,kSR,IROW,iterPRE
+      integer(kind=kint ) :: ns, nr
       real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
       real   (kind=kreal) :: LDH,LDW,BNRM20,BNRM2,DNRM2,DNRM20,RNORM
       real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL0,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
@@ -89,10 +90,13 @@
       ERROR= 0
       NRK= NREST + 7
 
+      ns = STACK_EXPORT(NEIBPETOT)
+      nr = STACK_IMPORT(NEIBPETOT)
+
       allocate (H (NRK,NRK))
       allocate (WW(3*NP,NRK))
-      allocate (WS(3*NP))
-      allocate (WR(3*NP))
+      allocate (WS(3*ns))
+      allocate (WR(3*nr))
       allocate (SS(NRK))
 
       COMMtime= 0.d0
@@ -224,7 +228,7 @@
       S_TIME= HECMW_WTIME()
       call HECMW_SOLVE_SEND_RECV_33                                     &
      &   ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT,NOD_EXPORT,WS,WR,WW(1,indexB), SOLVER_COMM,     &
+     &     STACK_EXPORT,NOD_EXPORT,WS,WR,WW(:,indexB), SOLVER_COMM,     &
      &     my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
@@ -605,7 +609,7 @@
       S_TIME= HECMW_WTIME()
       call HECMW_SOLVE_SEND_RECV_33                                     &
      &   ( NP,  NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexA),              &
+     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexA),              &
      &     SOLVER_COMM,my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
@@ -774,7 +778,7 @@
       S_TIME= HECMW_WTIME()
         call HECMW_SOLVE_SEND_RECV_33                                   &
      &     ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,          &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,indexB) ,           &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexB) ,           &
      &       SOLVER_COMM,  my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME

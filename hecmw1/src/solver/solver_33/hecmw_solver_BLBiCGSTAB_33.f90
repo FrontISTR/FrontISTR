@@ -81,6 +81,7 @@
       integer(kind=kint ):: R, RT, P, PT, S, ST, T, V, MAXIT
       real   (kind=kreal):: TOL
       integer(kind=kint )::ip,i,j,k,isU,ieU,isL,ieL
+      integer(kind=kint ):: ns, nr
       real   (kind=kreal)::S_TIME,E_TIME,START_TIME,END_TIME,SETupTIME
       real   (kind=kreal)::BNRM20,BNRM2,X1,X2,X3,C20,C2
       real   (kind=kreal)::D11,D22,D33, ALUtmp(3,3)
@@ -94,8 +95,11 @@
 !C | INIT. |
 !C +-------+
 !C===
+      ns = STACK_EXPORT(NEIBPETOT)
+      nr = STACK_IMPORT(NEIBPETOT)
+
       allocate (WW(3*NP,8))
-      allocate (WS(3*NP), WR(3*NP))
+      allocate (WS(3*ns), WR(3*nr))
       allocate (ALU(9*NP))
 
       WW   = 0.d0
@@ -134,15 +138,15 @@
 
         call hecmw_solve_SEND_RECV_33                                   &
      &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,1),                 &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,1),                 &
      &       SOLVER_COMM,my_rank )
         call hecmw_solve_SEND_RECV_33                                   &
      &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,2),                 &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,2),                 &
      &       SOLVER_COMM,my_rank )
         call hecmw_solve_SEND_RECV_33                                   &
      &     ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,           &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,3),                 &
+     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,3),                 &
      &       SOLVER_COMM,my_rank )
 
         do i= N+1, NP
@@ -513,7 +517,7 @@
       S_TIME= HECMW_WTIME()
       call HECMW_SOLVE_SEND_RECV_33                                     &
      &   ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,             &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,PT) , SOLVER_COMM,    &
+     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,PT) , SOLVER_COMM,    &
      &     my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
@@ -764,7 +768,7 @@
       S_TIME= HECMW_WTIME()
       call HECMW_SOLVE_SEND_RECV_33                                     &
      &   ( NP, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,             &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(1,ST) , SOLVER_COMM,    &
+     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,ST) , SOLVER_COMM,    &
      &     my_rank)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
