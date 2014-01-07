@@ -485,6 +485,8 @@ contains
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
@@ -514,6 +516,8 @@ contains
       real(kind=kreal), dimension(2*n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
 
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
@@ -545,6 +549,8 @@ contains
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
@@ -574,6 +580,8 @@ contains
       real(kind=kreal), dimension(m*n) :: VAL
       real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
 
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
@@ -605,6 +613,8 @@ contains
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
@@ -634,6 +644,8 @@ contains
       integer(kind=kint), dimension(2*n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
 
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
@@ -665,6 +677,8 @@ contains
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
 
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
@@ -694,6 +708,8 @@ contains
       integer(kind=kint), dimension(m*n) :: VAL
       integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
 
       ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
       nr = hecMESH%import_index(hecMESH%n_neighbor_pe)

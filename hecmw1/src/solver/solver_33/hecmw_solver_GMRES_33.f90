@@ -90,8 +90,13 @@
       ERROR= 0
       NRK= NREST + 7
 
-      ns = STACK_EXPORT(NEIBPETOT)
-      nr = STACK_IMPORT(NEIBPETOT)
+      if( NEIBPETOT > 0 ) then
+        ns = STACK_EXPORT(NEIBPETOT)
+        nr = STACK_IMPORT(NEIBPETOT)
+      else
+        ns = 0
+        nr = 0
+      end if
 
       allocate (H (NRK,NRK))
       allocate (WW(3*NP,NRK))

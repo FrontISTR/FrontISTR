@@ -94,8 +94,13 @@
 !C-- INIT.
       ERROR= 0
 
-      ns = STACK_EXPORT(NEIBPETOT)
-      nr = STACK_IMPORT(NEIBPETOT)
+      if( NEIBPETOT > 0 ) then
+        ns = STACK_EXPORT(NEIBPETOT)
+        nr = STACK_IMPORT(NEIBPETOT)
+      else
+        ns = 0
+        nr = 0
+      end if
 
       allocate (WW(3*NP,14))
       allocate (WS(3*ns))
