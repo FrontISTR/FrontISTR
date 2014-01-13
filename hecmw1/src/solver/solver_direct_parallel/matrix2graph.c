@@ -1,8 +1,12 @@
+#include "matrix2graph.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 #include "separator.h"
 
-void matrix2graph(int num_of_row, int num_of_col, int num_of_nzero, int *irow, int *jcol, GraphType *graph)
+void matrix2graph(int num_of_row, int num_of_col, int num_of_nzero, int *irow, int *jcol, graph_type *graph)
 {
-	int i,j,k;
+	int i;
 	int *count, tmp_nodeid;
 
 	graph->xadj=(int *)calloc(num_of_col+1, sizeof(int));

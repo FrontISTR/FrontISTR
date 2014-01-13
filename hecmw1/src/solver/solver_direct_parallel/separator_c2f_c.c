@@ -1,12 +1,13 @@
+#include <stdio.h>
 #include "separator.h"
 extern Separator_result *separator;
 
 
 void get_part_result(int *num_graph1, int *igraph1, int *num_graph2, int *igraph2, int *num_separator, int *iseparator)
 {
-	int i;
-        FILE *fp;
-   char string1[4], filename[128];
+   int i;
+   /* FILE *fp; */
+   /* char string1[4], filename[128]; */
    /* change to fortran style */
    for(i=0;i<separator->num_of_lgraph;i++)
            separator->lgraph[i]+=1;
