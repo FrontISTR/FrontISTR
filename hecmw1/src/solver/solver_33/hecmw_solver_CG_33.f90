@@ -34,6 +34,7 @@
       use hecmw_matrix_misc
       use hecmw_solver_misc
       use hecmw_solver_misc_33
+      use jad_type
 
       implicit none
 
@@ -124,6 +125,16 @@
         X = 0.d0
       endif
 
+      JAD_ON_F = .TRUE.
+      IF (JAD_ON_F) THEN
+        ALLOCATE(WP1(hecMAT%NP), WP2(hecMAT%NP), WP3(hecMAT%NP))
+        ALLOCATE(AJAD((hecMAT%NPL+hecMAT%NPU)*9))
+        ALLOCATE(JAJAD(hecMAT%NPL+hecMAT%NPU))
+        ALLOCATE(JADORD(hecMAT%NP))
+        ALLOCATE(IAJAD(hecMAT%NP+1))
+        CALL REPACK(hecMAT%N, hecMAT, MJAD, AJAD, JAJAD, IAJAD, JADORD)
+      ENDIF
+!C
 !C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then
         if (TIMElog.eq.1) then
@@ -276,6 +287,14 @@
       Tsol = E1_TIME - S1_TIME
 
       deallocate (WW)
+
+      IF (JAD_ON_F) THEN
+        DEALLOCATE(AJAD)
+        DEALLOCATE(JAJAD)
+        DEALLOCATE(JADORD)
+        DEALLOCATE(IAJAD)
+        DEALLOCATE(WP1,WP2,WP3)
+      ENDIF
 
       end subroutine hecmw_solve_CG_33
       end module     hecmw_solver_CG_33
