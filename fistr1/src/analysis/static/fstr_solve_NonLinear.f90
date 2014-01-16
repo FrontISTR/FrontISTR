@@ -132,7 +132,6 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
       res = fstr_get_residual( hecMAT%B, hecMESH )
 
 ! ----- Gather global residual
-      call hecmw_allREDUCE_R1(hecMESH,res,hecmw_sum)
       res = sqrt(res)/n_node_global
       if( iter==1 ) res0=res
       if( res0==0.d0 ) then
@@ -320,7 +319,6 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         res = fstr_get_residual( hecMAT%B, hecMESH )
 
 ! ----- Gather global residual
-        call hecmw_allREDUCE_R1(hecMESH,res,hecmw_sum)
         res = sqrt(res)/n_node_global
         if( iter==1 ) res0=res
         if( res0==0.d0 ) then
