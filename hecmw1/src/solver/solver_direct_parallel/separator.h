@@ -18,14 +18,6 @@
 !=====================================================================*/
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include  <memory.h>
-#include "metis.h"
-#include "mpi.h"
-
 #define NUM_CONTROL_PARAS 9
 /*
 typedef struct _tmp_grp_inf {

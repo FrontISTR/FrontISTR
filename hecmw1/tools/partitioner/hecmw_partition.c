@@ -2898,21 +2898,30 @@ error:
 static int
 pmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy, int *part )
 {
+    int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
     int *vwgt=NULL;              /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
+    int nparts=n_domain;         /* number of sub-domains */
+
+#  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+    int ncon=1;                  /* number of balancing constraints */
+    int *vsize=NULL;
+    real_t *tpwgts=NULL;
+    real_t *ubvec=NULL;
+    int *options=NULL;
+
+    METIS_PartGraphRecursive( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
+                              &nparts, tpwgts, ubvec, options, &edgecut, part );
+#  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
-    int nparts=n_domain;         /* number of sub-domains */
     int options[5]={0,0,0,0,0};  /* options for pMETIS */
-#endif
-    int edgecut=0;               /* number of edge-cut */
 
-#ifdef HECMW_PART_WITH_METIS
-    /* pMETIS */
     METIS_PartGraphRecursive( &n, xadj, adjncy, vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#  endif
 #endif
 
     return edgecut;
@@ -2922,20 +2931,30 @@ pmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
 static int
 kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy, int *part )
 {
+    int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
     int *vwgt=NULL;              /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
+    int nparts=n_domain;         /* number of sub-domains */
+
+#  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+    int ncon=1;                  /* number of balancing constraints */
+    int *vsize=NULL;
+    real_t *tpwgts=NULL;
+    real_t *ubvec=NULL;
+    int *options=NULL;
+
+    METIS_PartGraphKway( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
+                         &nparts, tpwgts, ubvec, options, &edgecut, part );
+#  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
-    int nparts=n_domain;         /* number of sub-domains */
     int options[5]={0,0,0,0,0};  /* options for kMETIS */
-#endif
-    int edgecut=0;               /* number of edge-cut */
 
-#ifdef HECMW_PART_WITH_METIS
     METIS_PartGraphKway( &n, xadj, adjncy, vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#  endif
 #endif
 
     return edgecut;
@@ -2945,23 +2964,33 @@ kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
 static int
 pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
 {
+    int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
     /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
+    int nparts=n_domain;         /* number of sub-domains */
+
+#  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+    int ncon=1;                  /* number of balancing constraints */
+    int *vsize=NULL;
+    real_t *tpwgts=NULL;
+    real_t *ubvec=NULL;
+    int *options=NULL;
+
+    METIS_PartGraphRecursive( &n, &ncon, (int *) xadj, (int *) adjncy,
+                              (int *) vwgt, vsize, adjwgt,
+                              &nparts, tpwgts, ubvec, options, &edgecut, part );
+#  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
-    int nparts=n_domain;         /* number of sub-domains */
     int options[5]={0,0,0,0,0};  /* options for pMETIS */
-#endif
-    int edgecut=0;               /* number of edge-cut */
 
-#ifdef HECMW_PART_WITH_METIS
     if (vwgt != NULL) wgtflag = 2;
 
-    /* pMETIS */
     METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#  endif
 #endif
 
     return edgecut;
@@ -2971,22 +3000,33 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 static int
 kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
 {
+    int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
     /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
+    int nparts=n_domain;         /* number of sub-domains */
+
+#  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+    int ncon=1;                  /* number of balancing constraints */
+    int *vsize=NULL;
+    real_t *tpwgts=NULL;
+    real_t *ubvec=NULL;
+    int *options=NULL;
+
+    METIS_PartGraphKway( &n, &ncon, (int *) xadj, (int *) adjncy,
+                         (int *) vwgt, vsize, adjwgt,
+                         &nparts, tpwgts, ubvec, options, &edgecut, part );
+#  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
-    int nparts=n_domain;         /* number of sub-domains */
     int options[5]={0,0,0,0,0};  /* options for kMETIS */
-#endif
-    int edgecut=0;               /* number of edge-cut */
 
-#ifdef HECMW_PART_WITH_METIS
     if (vwgt != NULL) wgtflag = 2;
 
     METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
+#  endif
 #endif
 
     return edgecut;

@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "separator.h"
 void separator_memory_exit(char *var) 
 {
