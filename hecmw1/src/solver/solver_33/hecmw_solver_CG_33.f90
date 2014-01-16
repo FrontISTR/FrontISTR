@@ -125,7 +125,7 @@
         X = 0.d0
       endif
 
-      JAD_ON_F = .TRUE.
+      IF (hecmw_mat_get_usejad(hecMAT).ne.0) JAD_ON_F = .TRUE.
       IF (JAD_ON_F) THEN
         ALLOCATE(WP1(hecMAT%NP), WP2(hecMAT%NP), WP3(hecMAT%NP))
         ALLOCATE(AJAD((hecMAT%NPL+hecMAT%NPU)*9))

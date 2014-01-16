@@ -42,6 +42,7 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
+    call hecmw_mat_set_usejad( hecMAT, 0 )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
@@ -217,6 +218,18 @@ module hecmw_matrix_misc
     integer(kind=kint) :: dump_exit
     hecMAT%Iarray(32) = dump_exit
   end subroutine hecmw_mat_set_dump_exit
+
+  function hecmw_mat_get_usejad( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_usejad
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_usejad = hecMAT%Iarray(33)
+  end function hecmw_mat_get_usejad
+
+  subroutine hecmw_mat_set_usejad( hecMAT, usejad )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: usejad
+    hecMAT%Iarray(33) = usejad
+  end subroutine hecmw_mat_set_usejad
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid
