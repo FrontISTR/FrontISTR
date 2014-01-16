@@ -132,10 +132,11 @@ end function fstr_ctrl_get_CLOAD
 !> Read in !DLOAD       
 !* ----------------------------------------------------------------------------------------------- *!
 
-function fstr_ctrl_get_DLOAD( ctrl, amp, element_id, element_id_len, load_type, params )
+function fstr_ctrl_get_DLOAD( ctrl, amp, follow, element_id, element_id_len, load_type, params )
         implicit none
         integer(kind=kint) :: ctrl
         character(len=HECMW_NAME_LEN) :: amp
+        integer(kind=kint) :: follow
         character(len=HECMW_NAME_LEN),target :: element_id(:)
         integer(kind=kint) :: element_id_len
         integer(kind=kint),pointer :: load_type(:)
@@ -153,6 +154,9 @@ function fstr_ctrl_get_DLOAD( ctrl, amp, element_id, element_id_len, load_type, 
 
         fstr_ctrl_get_DLOAD = -1
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return 
+        follow = follow+1
+        if( fstr_ctrl_get_param_ex( ctrl, 'FOLLOW ','NO,YES ', 0, 'P', follow ) /= 0) return
+        follow = follow-1
 
         write(s1,*)  element_id_len
         write(s2,*)  HECMW_NAME_LEN

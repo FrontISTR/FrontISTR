@@ -250,6 +250,7 @@ public
 
                 !!DLOAD
                 integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distrubuted external load
+                integer(kind=kint) :: DLOAD_follow
                 integer(kind=kint), pointer :: DLOAD_ngrp_GRPID     (:) =>null()
                 integer(kind=kint), pointer :: DLOAD_ngrp_ID        (:)
                 integer(kind=kint), pointer :: DLOAD_ngrp_LID       (:)

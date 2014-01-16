@@ -128,6 +128,8 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )  
 
 ! ----- Set residual
+      if (fstrSOLID%DLOAD_follow /= 0) &
+           call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
       call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step ) 
       res = fstr_get_residual( hecMAT%B, hecMESH )
 
@@ -311,7 +313,8 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,tincr,iter )
 
 ! ----- Set residual
-        call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )   
+        if (fstrSOLID%DLOAD_follow /= 0) &
+             call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
         call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step )       
         if( fstr_is_contact_active() ) then                                     
           call fstr_update_contact0( hecMESH, fstrSOLID, hecMAT%B ) 

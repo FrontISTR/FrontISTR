@@ -739,6 +739,7 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%BOUNDARY_ngrp_tot = 0
         fstrSOLID%CLOAD_ngrp_tot    = 0
         fstrSOLID%DLOAD_ngrp_tot    = 0
+        fstrSOLID%DLOAD_follow      = 1
         fstrSOLID%TEMP_ngrp_tot     = 0
         fstrSOLID%SPRING_ngrp_tot   = 0
         fstrSOLID%TEMP_irres        = 0
@@ -1752,6 +1753,7 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         integer(kind=kint) :: rcode
         character(HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: amp_id
+        integer(kind=kint) :: follow
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
         real(kind=kreal),pointer :: new_params(:,:)
         logical,pointer :: fg_surface(:)
@@ -1780,12 +1782,14 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         allocate( fg_surface(n))
         new_params = 0
         amp = ' '
+        follow = P%SOLID%DLOAD_follow
         lid_ptr => P%SOLID%DLOAD_ngrp_LID(old_size+1:)
-        rcode = fstr_ctrl_get_DLOAD( ctrl, amp,         &
+        rcode = fstr_ctrl_get_DLOAD( ctrl, amp, follow, &
                         grp_id_name, HECMW_NAME_LEN,    &
                         lid_ptr, new_params )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
         call amp_name_to_id( P%MESH, '!DLOAD', amp, amp_id ) 
+        P%SOLID%DLOAD_follow = follow
         do i=1,n
                 P%SOLID%DLOAD_ngrp_amp(old_size+i) = amp_id
                 do j=0, 6
