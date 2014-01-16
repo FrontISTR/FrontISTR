@@ -313,7 +313,7 @@ int CNFData::ReadRecNext( char type, void* value )
 		}
 		break;
 	case 'B':
-		if(sscanf( token, "%d", (unsigned char*)value) != 1){
+		if(sscanf( token, "%hhd", (unsigned char*)value) != 1){
 			throw CNFError(NFE_INVALID_TOKEN, line, rec_column);
 		}
 		break;
@@ -599,7 +599,7 @@ void CNFData::WriteSummary( FILE* fp )
 	fprintf(fp, "%8s  %8s\n", "BlockID", "num" );
 	fprintf(fp, "====================\n");
 	#define GENRATE_CODE( x ) \
-		if((DB_##x).size() > 0 ) fprintf(fp, "%8d  %8d\n", (x), (DB_##x).size());
+		if((DB_##x).size() > 0 ) fprintf(fp, "%8d  %8lu\n", (x), (DB_##x).size());
 
 	GENRATE_CODE( 402 )
 	GENRATE_CODE( 403 )

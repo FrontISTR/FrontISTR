@@ -72,7 +72,7 @@ int merge_vol_iso(int iso_type, Cell *cell,
 				if ((*CS_polys_tail)->nextpolygon == NULL) {
 					if (((*CS_polys_tail)->nextpolygon =
 						alloc_polygons(POLYGON_PACK)) == NULL) {
-						fscanf(stderr, "Cannot allocate memory.\n");
+						fprintf(stderr, "Cannot allocate memory.\n");
 						return 0;
 					}
 				}

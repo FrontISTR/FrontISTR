@@ -1547,7 +1547,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 			HECMW_vis_print_exit
 			("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 		fprintf (stderr, "Start writing binary output for AVS UCD format\n");
-		sprintf (keyword, "%s", "AVS UCD");
+		snprintf (keyword, 7, "AVS UCD");
 		version = 1.0;
 #ifdef CONVERSE_ORDER
 		SWAP_FLOAT (version);
