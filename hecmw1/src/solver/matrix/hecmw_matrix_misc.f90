@@ -73,6 +73,21 @@ module hecmw_matrix_misc
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
 
+  subroutine hecmw_mat_finalize( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    if (associated(hecMAT%D)) deallocate(hecMAT%D)
+    if (associated(hecMAT%B)) deallocate(hecMAT%B)
+    if (associated(hecMAT%X)) deallocate(hecMAT%X)
+    if (associated(hecMAT%AL)) deallocate(hecMAT%AL)
+    if (associated(hecMAT%AU)) deallocate(hecMAT%AU)
+    if (associated(hecMAT%indexL)) deallocate(hecMAT%indexL)
+    if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
+    if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
+    if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
+    if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
+    call hecmw_cmat_finalize( hecMAT%cmat )
+  end subroutine hecmw_mat_finalize
+
   subroutine hecmw_mat_set_iter( hecMAT, iter )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iter

@@ -133,7 +133,7 @@ contains
     ! free matrices
     call hecmw_localmat_free(BTtmat)
     call hecmw_localmat_free(BTmat)
-    call free_hecmat(hecTKT)
+    call hecmw_mat_finalize(hecTKT)
     deallocate(iw2, iwS)
     write(0,*) 'INFO: solve_eliminate end', hecmw_wtime()-t1
   end subroutine solve_eliminate
@@ -380,21 +380,6 @@ contains
     call hecmw_localmat_blocking(Ttmat, ndof, BTtmat)
     call hecmw_localmat_free(Ttmat)
   end subroutine make_BTtmat
-
-  subroutine free_hecmat(hecMAT)
-    implicit none
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    if (associated(hecMAT%D)) deallocate(hecMAT%D)
-    if (associated(hecMAT%B)) deallocate(hecMAT%B)
-    if (associated(hecMAT%X)) deallocate(hecMAT%X)
-    if (associated(hecMAT%AL)) deallocate(hecMAT%AL)
-    if (associated(hecMAT%AU)) deallocate(hecMAT%AU)
-    if (associated(hecMAT%indexL)) deallocate(hecMAT%indexL)
-    if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
-    if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
-    if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
-    if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
-  end subroutine free_hecmat
 
   subroutine make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, num_lagrange, Bnew)
     implicit none
@@ -723,7 +708,7 @@ contains
       hecMAT%X(i) = hecMATLag%X(i)
     enddo
 
-    call free_hecmat(hecMATLag)
+    call hecmw_mat_finalize(hecMATLag)
 
     write(0,*) 'INFO: solve_no_eliminate end', hecmw_wtime()-t1
   end subroutine solve_no_eliminate

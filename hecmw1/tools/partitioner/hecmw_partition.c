@@ -16,7 +16,7 @@
  *                                                                     *
  *=====================================================================*/
 
-#define INAGAKI_PARTITIONER
+/* #define INAGAKI_PARTITIONER */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +60,9 @@
 
 
 #define MARK     32
+
+
+#define SLAVE    64
 
 
 #define MY_DOMAIN       1
@@ -4199,6 +4202,21 @@ mask_elem_by_domain_mod( char *elem_flag, int current_domain )
 
 #endif /* INAGAKI_PARTITIONER */
 
+static int
+mask_slave_node( const struct hecmwST_local_mesh *global_mesh,
+                 char *node_flag )
+{
+    int i;
+
+    for( i=0; i<global_mesh->mpc->n_mpc; i++ ) {
+        int j0, node;
+        j0 = global_mesh->mpc->mpc_index[i];
+        node = global_mesh->mpc->mpc_item[j0];
+        MASK_BIT( node_flag[node - 1], SLAVE );
+    }
+    return RTC_NORMAL;
+}
+
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef INAGAKI_PARTITIONER
@@ -4287,6 +4305,39 @@ mask_boundary_node_mod( const struct hecmwST_local_mesh *global_mesh, char *node
 #endif /* INAGAKI_PARTITIONER */
 
 static int
+mask_boundary_elem_with_slave( const struct hecmwST_local_mesh *global_mesh,
+                               const char *node_flag, char *elem_flag,
+                               int *added )
+{
+    int node, evalsum;
+    int i, j;
+
+    *added = 0;
+
+    for( i=0; i<global_mesh->n_elem; i++ ) {
+        if( EVAL_BIT( elem_flag[i], BOUNDARY ) ) continue;
+
+        evalsum = 0;
+        for( j=global_mesh->elem_node_index[i]; j<global_mesh->elem_node_index[i+1]; j++ ) {
+            node = global_mesh->elem_node_item[j];
+            if( EVAL_BIT( node_flag[node-1], BOUNDARY ) &&
+                EVAL_BIT( node_flag[node-1], SLAVE ) ) {
+                evalsum++;
+            }
+        }
+
+        if( evalsum ) {
+            MASK_BIT( elem_flag[i], OVERLAP );
+            MASK_BIT( elem_flag[i], BOUNDARY );
+            (*added)++;
+        }
+    }
+
+    return RTC_NORMAL;
+}
+
+
+static int
 mask_additional_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
                               const char *node_flag, char *elem_flag )
 {
@@ -4340,6 +4391,9 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
 #endif
     if( rtc != RTC_NORMAL )  goto error;
 
+    rtc = mask_slave_node( global_mesh, node_flag );
+    if( rtc != RTC_NORMAL )  goto error;
+
 #ifndef INAGAKI_PARTITIONER
     rtc = mask_overlap_elem( global_mesh, node_flag, elem_flag );
 #else
@@ -4353,6 +4407,22 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
     rtc = mask_boundary_node_mod( global_mesh, node_flag, elem_flag, current_domain );
 #endif
     if( rtc != RTC_NORMAL )  goto error;
+
+    for( i=1; /* i<=1000 */; i++) {
+        int added = 0;
+        rtc = mask_boundary_elem_with_slave( global_mesh, node_flag, elem_flag, &added );
+        if( rtc != RTC_NORMAL )  goto error;
+
+        if( added == 0 ) {
+            break;
+        } else if( i >= 1000 ) {
+            HECMW_log( HECMW_LOG_ERROR, "too many calls of mask_boundary_elem_with_slave" );
+            goto error;
+        }
+
+        rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
+        if( rtc != RTC_NORMAL )  goto error;
+    }
 
     for( i=1; i<global_mesh->hecmw_flag_partdepth; i++ ) {
         rtc = mask_additional_overlap_elem( global_mesh, node_flag, elem_flag );
@@ -8221,7 +8291,15 @@ const_n_mpc( const struct hecmwST_local_mesh *global_mesh,
     for( counter=0, i=0; i<mpc_global->n_mpc; i++ ) {
         diff = mpc_global->mpc_index[i+1]-mpc_global->mpc_index[i];
 
-        for( evalsum=0, j=mpc_global->mpc_index[i]; j<mpc_global->mpc_index[i+1]; j++ ) {
+        evalsum = 0;
+
+        /* slave node */
+        j = mpc_global->mpc_index[i];
+        node = mpc_global->mpc_item[j];
+        if( node_global2local[node-1] >  0 )  evalsum++;
+
+        /* master nodes */
+        for( j=mpc_global->mpc_index[i]+1; j<mpc_global->mpc_index[i+1]; j++ ) {
             node = mpc_global->mpc_item[j];
             if( node_global2local[node-1] >  0  &&
                 node_global2local[node-1] <= local_mesh->nn_internal )  evalsum++;
