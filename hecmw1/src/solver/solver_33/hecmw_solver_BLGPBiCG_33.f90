@@ -1365,6 +1365,11 @@
 !C===
       allocate (Dlu0(9*NP))
       Dlu0= D
+      do i=1,NP
+        Dlu0(9*k-8)=Dlu0(9*k-8)*SIGMA_DIAG
+        Dlu0(9*k-4)=Dlu0(9*k-4)*SIGMA_DIAG
+        Dlu0(9*k  )=Dlu0(9*k  )*SIGMA_DIAG
+      enddo
 
       do i= 2, NP
         IW1= 0
@@ -1923,6 +1928,11 @@
 !C===
       allocate (Dlu0(9*NP))
       Dlu0= D
+      do i=1,NP
+        Dlu0(9*k-8)=Dlu0(9*k-8)*SIGMA_DIAG
+        Dlu0(9*k-4)=Dlu0(9*k-4)*SIGMA_DIAG
+        Dlu0(9*k  )=Dlu0(9*k  )*SIGMA_DIAG
+      enddo
 
       do i= 2, NP
         IW1= 0

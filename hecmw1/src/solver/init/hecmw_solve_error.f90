@@ -24,7 +24,8 @@ contains
       implicit REAL*8 (A-H,O-Z)       
       type (hecmwST_local_mesh) :: hecMESH
 
-      if (hecMESH%zero.eq.1) then
+      if ( hecMESH%zero.eq.1 .and. &
+           (IFLAG.eq.1001 .or. IFLAG.eq.2001) ) then
         write (*,'(/a )')                                               &
      &           '###############################################'
         write (*,'( a )')                                               &
@@ -35,8 +36,8 @@ contains
 
       if (IFLAG.eq.1001) then
         if (hecMESH%zero.eq.1) then
-          write (*,'(a )')'  #### HEC-MW-SOLVER-E-1001'
-          write (*,'(a/)')'    inconsistent solver/preconditioning'
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-E-1001'
+          write (*,'( a/)')'    inconsistent solver/preconditioning'
         endif
 !        call MPI_ABORT (hecMESH%MPI_COMM, ierr)
         call hecmw_abort( hecmw_comm_get_comm())
@@ -44,8 +45,8 @@ contains
 
       if (IFLAG.eq.2001) then
         if (hecMESH%zero.eq.1) then
-          write (*,'(a )')'  #### HEC-MW-SOLVER-E-2001: '
-          write (*,'(a/)')'    ZERO component in diagonal block'
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-E-2001: '
+          write (*,'( a/)')'    ZERO component in diagonal block'
         endif
 !        call MPI_ABORT (hecMESH%MPI_COMM, ierr)
         call hecmw_abort( hecmw_comm_get_comm())
@@ -53,19 +54,19 @@ contains
 
       if (IFLAG.eq.2002) then
         if (hecMESH%zero.eq.1) then
-          write (*,'(a )')'  #### HEC-MW-SOLVER-W-2002: '
-          write (*,'(a/)')'    ZERO RHS norm'
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-W-2002: '
+          write (*,'( a/)')'    ZERO RHS norm'
         endif
       endif
 
       if (IFLAG.eq.3001) then
         if (hecMESH%zero.eq.1) then
-          write (*,'(a )')'  #### HEC-MW-SOLVER-W-3001: '
-          write (*,'(a/)')'    not converged within ceratin iterations'
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3001: '
+          write (*,'( a/)')'    not converged within ceratin iterations'
         endif
       endif
 
-      stop " PROGRAM STOP:"
+      !stop " PROGRAM STOP:"
 
       end subroutine hecmw_solve_error
 

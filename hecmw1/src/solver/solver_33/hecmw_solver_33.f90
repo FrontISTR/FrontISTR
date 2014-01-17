@@ -85,8 +85,14 @@
         THRESH= hecMAT%Rarray(4)
         FILTER= hecMAT%Rarray(5)
 
-        if (iterPREmax.lt.1) iterPREmax= 1
+        if (iterPREmax.lt.0) iterPREmax= 0
         if (iterPREmax.gt.4) iterPREmax= 4
+
+        if (SIGMA_DIAG.lt.1.d0) SIGMA_DIAG= 1.d0
+        if (SIGMA_DIAG.gt.2.d0) SIGMA_DIAG= 2.d0
+
+        if (SIGMA.lt.0.d0) SIGMA= 0.d0
+        if (SIGMA.gt.1.d0) SIGMA= 1.d0
 
 !C===
 !C +-------------+
@@ -124,7 +130,7 @@
         enddo
 
         call hecmw_allreduce_I (hecMESH, IFLAG, 1, hecmw_sum)
-        if (IFLAG(1).ne.0) then
+        if (IFLAG(1).ne.0 .and. (PRECOND.le.10 .and. iterPREmax.gt.0)) then
           ERROR= 2001
           call hecmw_solve_error (hecMESH, ERROR)
         endif
@@ -189,10 +195,10 @@
         if (     associated(hecMAT%ALU).and.PRECOND.lt.10) NSET= -1
 
         S1_time= HECMW_WTIME()
-        if (NSET.eq.0 .and. PRECOND.lt.10) then
+        if (NSET.eq.0 .and. PRECOND.lt.10 .and. iterPREmax.gt.0) then
           allocate (hecMAT%ALU(9*hecMAT%N))
         endif
-        if (NSET.le.0 .and. PRECOND.lt.10) then
+        if (NSET.le.0 .and. PRECOND.lt.10 .and. iterPREmax.gt.0) then
           hecMAT%ALU  = 0.d0
 
           do ii= 1, hecMAT%N
@@ -369,8 +375,6 @@
           if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-IC-CG  (2)'
         endif
 
-        SIGMA     = 1.d0
-        SIGMA_DIAG= 1.d0
         call hecmw_solve_BLCG_33                                        &
      &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
      &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
@@ -399,8 +403,6 @@
      &                       '### 3x3 B-IlU-BiCGSTAB (2)'
         endif
 
-        SIGMA     = 1.d0
-        SIGMA_DIAG= 1.d0
         call hecmw_solve_BLBiCGSTAB_33                                  &
      &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
      &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
@@ -426,8 +428,6 @@
           if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (2)'
         endif
 
-        SIGMA     = 1.d0
-        SIGMA_DIAG= 1.d0
         call hecmw_solve_BLGPBiCG_33                                    &
      &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
      &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
