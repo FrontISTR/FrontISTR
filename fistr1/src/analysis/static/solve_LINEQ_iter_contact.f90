@@ -45,82 +45,105 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    integer :: ndof, method_org
+    integer :: method_org
+    logical :: fg_eliminate
+
+    ! set if use eliminate version or not
+    fg_eliminate = .false.
+
+    if (fstrMAT%num_lagrange == 0) then
+      write(0,*) 'INFO: no contact'
+      ! use CG because the matrix is symmetric
+      method_org = hecmw_mat_get_method(hecMAT)
+      call hecmw_mat_set_method(hecMAT, 1)
+      ! solve
+      call hecmw_solve_33(hecMESH, hecMAT)
+      ! restore solver setting
+      call hecmw_mat_set_method(hecMAT, method_org)
+    else
+      write(0,*) 'INFO: with contact'
+      if (fg_eliminate) then
+        call solve_eliminate(hecMESH, hecMAT, fstrMAT)
+      else
+        call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
+      endif
+    endif
+  end subroutine solve_LINEQ_iter_contact
+
+  subroutine solve_eliminate(hecMESH,hecMAT,fstrMAT)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix    ), intent(inout) :: hecMAT
+    type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer :: ndof
     integer, allocatable :: iw2(:), iwS(:)
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
     type(T_matrix) :: Tmat, Ttmat
     type(T_matrix) :: BTmat, BTtmat, BTtKT
     type(hecmwST_matrix) :: hecTKT
 
-    if (fstrMAT%num_lagrange == 0) then
+    ndof=hecMAT%NDOF
+    allocate(iw2(hecMAT%N*ndof))
+    allocate(iwS(fstrMAT%num_lagrange), wSL(fstrMAT%num_lagrange), &
+         wSU(fstrMAT%num_lagrange))
 
-      ! use CG because the matrix is symmetric
-      method_org = hecmw_mat_get_method(hecMAT)
-      call hecmw_mat_set_method(hecMAT, 1)
+    ! choose slave DOFs to be eliminated with Lag. DOFs
+    call choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL)
+    call make_wSU(fstrMAT, hecMAT%N, ndof, iw2, wSU)
+    write(0,*) 'INFO: Slave DOFs successfully chosen'
 
-      ! solve
-      call hecmw_solve_33(hecMESH, hecMAT)
+    ! make transformation matrix and its transpose
+    call make_Tmat(hecMAT, fstrMAT, iw2, wSL, Tmat)
+    !call write_Tmat(Tmat, 0)
+    call make_Ttmat(hecMAT, fstrMAT, iw2, iwS, wSU, Ttmat)
+    !call write_Tmat(Ttmat, 0)
+    write(0,*) 'INFO: Making Tmat and Ttmat done'
 
-      ! restore solver setting
-      call hecmw_mat_set_method(hecMAT, method_org)
+    ! make 3x3-block version of Tmat
+    call blocking_Tmat(Tmat, ndof, BTmat)
+    !call write_Tmat(BTmat, 0)
+    call free_Tmat(Tmat)
+    call blocking_Tmat(Ttmat, ndof, BTtmat)
+    !call write_Tmat(BTtmat, 0)
+    call free_Tmat(Ttmat)
+    write(0,*) 'INFO: Blocking Tmat and Ttmat done'
 
-    else
+    ! perform three matrices multiplication for elimination
+    call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
+    !call write_Tmat(BTtKT, 0)
+    write(0,*) 'INFO: trimatmul done'
 
-      ndof=hecMAT%NDOF
-      allocate(iw2(hecMAT%N*ndof))
-      allocate(iwS(fstrMAT%num_lagrange), wSL(fstrMAT%num_lagrange), &
-           wSU(fstrMAT%num_lagrange))
+    ! place 1s where the DOF is eliminated
+    call place_one_on_diag(BTtKT, iwS, fstrMAT%num_lagrange)
 
-      call choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL)
-      call make_wSU(fstrMAT, hecMAT%N, ndof, iw2, wSU)
-      write(*,*) 'INFO: Slave DOFs successfully chosen'
+    ! make new HECMW matrix
+    !call replace_hecmat(hecMAT, BTtKT)
+    call make_new_hecmat(hecMAT, BTtKT, hecTKT)
+    call free_Tmat(BTtKT)
 
-      call make_Tmat(hecMAT, fstrMAT, iw2, wSL, Tmat)
-      !call write_Tmat(Tmat)
-      call make_Ttmat(hecMAT, fstrMAT, iw2, iwS, wSU, Ttmat)
-      !call write_Tmat(Ttmat)
-      write(*,*) 'INFO: Making Tmat and Ttmat done'
+    ! make new RHS
+    call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
+         fstrMAT%num_lagrange, hecTKT%B)
 
-      call blocking_Tmat(Tmat, ndof, BTmat)
-      !call write_Tmat(BTmat)
-      call free_Tmat(Tmat)
+    ! use CG when the matrix is symmetric
+    if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
-      call blocking_Tmat(Ttmat, ndof, BTtmat)
-      !call write_Tmat(BTtmat)
-      call free_Tmat(Ttmat)
-      write(*,*) 'INFO: Blocking Tmat and Ttmat done'
+    ! solve
+    call hecmw_solve_33(hecMESH, hecTKT)
 
-      call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
-      !call write_Tmat(BTtKT)
-      write(*,*) 'INFO: trimatmul done'
+    ! calc u_s
+    call matvec_tmat(BTmat, hecTKT%X, hecMAT%X)
+    call subst_Blag(hecMAT, iwS, wSL, fstrMAT%num_lagrange)
 
-      call place_one_on_diag(BTtKT, iwS, fstrMAT%num_lagrange)
+    ! calc lambda
+    call comp_lag(hecMAT, iwS, wSU, fstrMAT%num_lagrange)
 
-      !call replace_hecmat(hecMAT, BTtKT)
-      call make_new_hecmat(hecMAT, BTtKT, hecTKT)
-      call free_Tmat(BTtKT)
-
-      call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
-           fstrMAT%num_lagrange, hecTKT%B)
-
-      ! use CG when the matrix is symmetric
-      if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
-
-      ! solve
-      call hecmw_solve_33(hecMESH, hecTKT)
-
-      ! calc u_s
-      call matvec_tmat(BTmat, hecTKT%X, hecMAT%X)
-      call subst_Blag(hecMAT, iwS, wSL, fstrMAT%num_lagrange)
-      ! calc lambda
-      call comp_lag(hecMAT, iwS, wSU, fstrMAT%num_lagrange)
-
-      call free_Tmat(BTtmat)
-      call free_Tmat(BTmat)
-      call free_hecmat(hecTKT)
-      deallocate(iw2, iwS)
-    endif
-  end subroutine solve_LINEQ_iter_contact
+    ! free matrices
+    call free_Tmat(BTtmat)
+    call free_Tmat(BTmat)
+    call free_hecmat(hecTKT)
+    deallocate(iw2, iwS)
+  end subroutine solve_eliminate
 
   subroutine choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL)
     implicit none
@@ -166,9 +189,9 @@ contains
         enddo
       enddo
     enddo
-!!$    write(*,*) 'iw1L, iw1U:'
+!!$    write(0,*) 'iw1L, iw1U:'
 !!$    do i=1,hecMAT%N*ndof
-!!$      if (iw1L(i) > 0 .or. iw1U(i) > 0) write(*,*) i, iw1L(i), iw1U(i)
+!!$      if (iw1L(i) > 0 .or. iw1U(i) > 0) write(0,*) i, iw1L(i), iw1U(i)
 !!$    enddo
 
     ! Choose dofs that
@@ -194,12 +217,12 @@ contains
       iw2(imax)=i
       iwS(i)=imax; wSL(i)=-1.d0/vmax
     enddo
-!!$    write(*,*) 'iw2:'
+!!$    write(0,*) 'iw2:'
 !!$    do i=1,hecMAT%N*ndof
-!!$      if (iw2(i) > 0) write(*,*) i, iw2(i), iw1L(i), iw1U(i)
+!!$      if (iw2(i) > 0) write(0,*) i, iw2(i), iw1L(i), iw1U(i)
 !!$    enddo
-!!$    write(*,*) 'iwS:'
-!!$    write(*,*) iwS(:)
+!!$    write(0,*) 'iwS:'
+!!$    write(0,*) iwS(:)
 
     deallocate(iw1L, iw1U)
   end subroutine choose_slaves
@@ -228,29 +251,30 @@ contains
         endif
       enddo
     enddo
-    !write(*,*) wSU
+    !write(0,*) wSU
   end subroutine make_wSU
 
-  subroutine write_Tmat(Tmat)
+  subroutine write_Tmat(Tmat,iunit)
     implicit none
     type (T_matrix), intent(in) :: Tmat
+    integer(kind=kint), intent(in) :: iunit
     integer(kind=kint) :: n, ndof, ndof2, i, js, je, j, jj
 
     n=Tmat%n
     ndof=Tmat%ndof
     ndof2=ndof*ndof
 
-    write(*,*) 'i, j, A'
+    write(iunit,*) 'i, j, A'
     do i=1,n
       js=Tmat%index(i-1)+1
       je=Tmat%index(i)
       do j=js,je
         jj=Tmat%item(j)
         if (ndof==1) then
-          write(*,*) i, jj, Tmat%A(j)
+          write(iunit,*) i, jj, Tmat%A(j)
         else
-          write(*,*) i, jj
-          write(*,*) Tmat%A((j-1)*ndof2+1:j*ndof2)
+          write(iunit,*) i, jj
+          write(iunit,*) Tmat%A((j-1)*ndof2+1:j*ndof2)
         endif
       enddo
     enddo
@@ -284,7 +308,7 @@ contains
       Tmat%index(i)=Tmat%index(i-1)+nnz
     enddo
     if (Tmat%nnz /= Tmat%index(Tmat%n)) then
-      write(*,*) Tmat%nnz, Tmat%index(Tmat%n)
+      write(0,*) Tmat%nnz, Tmat%index(Tmat%n)
       stop 'ERROR: Tmat%nnz wrong'
     endif
     ! item and A
@@ -311,7 +335,7 @@ contains
         l=l+1
       endif
       if (l /= Tmat%index(i)+1) then
-        write(*,*) l, Tmat%index(i)+1
+        write(0,*) l, Tmat%index(i)+1
         stop 'ERROR: Tmat%index wrong'
       endif
     enddo
@@ -347,7 +371,7 @@ contains
       enddo
     enddo
     if (Ttmat%nnz /= Ttmat%index(Ttmat%n)) then
-      write(*,*) Ttmat%nnz, Ttmat%index(Ttmat%n)
+      write(0,*) Ttmat%nnz, Ttmat%index(Ttmat%n)
       stop 'ERROR: Ttmat%nnz wrong'
     endif
     ! item and A
@@ -373,7 +397,7 @@ contains
           ! no element
         endif
         if (l /= Ttmat%index(idx)+1) then
-          write(*,*) l, Ttmat%index(idx)+1
+          write(0,*) l, Ttmat%index(idx)+1
           stop 'ERROR: Ttmat%index wrong'
         endif
       enddo
@@ -390,7 +414,7 @@ contains
     ndof2=ndof*ndof
 
     if (mod(Tmat%n, ndof) /= 0) then
-      write(*,*) Tmat%n, ndof
+      write(0,*) Tmat%n, ndof
       stop 'ERROR: blocking_Tmat failed'
     endif
     BTmat%n=Tmat%n/ndof
@@ -520,7 +544,7 @@ contains
             enddo
             icnt=icnt+1
             iw(icnt)=ll
-            !if (i==1) write(*,*) 'l', icnt, jj, kk, ll
+            !if (i==1) write(0,*) 'l', icnt, jj, kk, ll
           enddo ll1
         enddo
         ! diagonal
@@ -533,7 +557,7 @@ contains
           enddo
           icnt=icnt+1
           iw(icnt)=ll
-          !if (i==1) write(*,*) 'd', icnt, jj, kk, ll
+          !if (i==1) write(0,*) 'd', icnt, jj, kk, ll
         enddo ll2
         ! upper
         ks=hecMAT%indexU(jj-1)+1
@@ -549,15 +573,15 @@ contains
             enddo
             icnt=icnt+1
             iw(icnt)=ll
-            !if (i==1) write(*,*) 'u', icnt, jj, kk, ll
+            !if (i==1) write(0,*) 'u', icnt, jj, kk, ll
           enddo ll3
         enddo
       enddo
       if (icnt == 0) icnt=1
-      !if (i==1) write(*,*) iw(1:icnt)
+      !if (i==1) write(0,*) iw(1:icnt)
       BTtKT%index(i)=BTtKT%index(i-1)+icnt
     enddo
-    !write(*,*) BTtKT%index(1:n)-BTtKT%index(0:n-1)
+    !write(0,*) BTtKT%index(1:n)-BTtKT%index(0:n-1)
 
     BTtKT%nnz=BTtKT%index(n)
     allocate(BTtKT%item(BTtKT%nnz))
@@ -594,7 +618,7 @@ contains
               icnt=icnt+1
               mm=me+1
               BTtKT%item(mm)=ll
-              !if (i==1) write(*,*) 'l', mm, jj, kk, ll
+              !if (i==1) write(0,*) 'l', mm, jj, kk, ll
             endif
             TtKTp=>BTtKT%A((mm-1)*ndof2+1:mm*ndof2)
             call blk_trimatmul_add(ndof, Ttp, Kp, Tp, TtKTp)
@@ -616,7 +640,7 @@ contains
             icnt=icnt+1
             mm=me+1
             BTtKT%item(mm)=ll
-            !if (i==1) write(*,*) 'd', mm, jj, kk, ll
+            !if (i==1) write(0,*) 'd', mm, jj, kk, ll
           endif
           TtKTp=>BTtKT%A((mm-1)*ndof2+1:mm*ndof2)
           call blk_trimatmul_add(ndof, Ttp, Kp, Tp, TtKTp)
@@ -641,7 +665,7 @@ contains
               icnt=icnt+1
               mm=me+1
               BTtKT%item(mm)=ll
-              !if (i==1) write(*,*) 'u', mm, jj, kk, ll
+              !if (i==1) write(0,*) 'u', mm, jj, kk, ll
             endif
             TtKTp=>BTtKT%A((mm-1)*ndof2+1:mm*ndof2)
             call blk_trimatmul_add(ndof, Ttp, Kp, Tp, TtKTp)
@@ -650,8 +674,8 @@ contains
       enddo
       if (icnt == 0) icnt=1
       ! error check!
-      !write(*,*) BTtKT%item(ms:ms-1+icnt)
-      !write(*,*) BTtKT%index(i)-BTtKT%index(i-1), icnt
+      !write(0,*) BTtKT%item(ms:ms-1+icnt)
+      !write(0,*) BTtKT%index(i)-BTtKT%index(i-1), icnt
       if (ms-1+icnt /= BTtKT%index(i)) stop 'ERROR: trimatmul'
     enddo
 
@@ -717,7 +741,7 @@ contains
       do j=js,je
         jj=BTtKT%item(j)
         if (jj==i) then
-          !write(*,*) ilag, i, idof
+          !write(0,*) ilag, i, idof
           BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=1.d0
           cycle outer
         endif
@@ -877,7 +901,7 @@ contains
 !!$    do i=1,n*ndof
 !!$      vnorm=vnorm+V(i)**2
 !!$    enddo
-!!$    write(*,*) 'vnorm:', sqrt(vnorm)
+!!$    write(0,*) 'vnorm:', sqrt(vnorm)
 
     do i=1,n
       TVp=>TV((i-1)*ndof+1:i*ndof)
@@ -916,7 +940,7 @@ contains
 
     !B2=-Bs^-1*Blag
     Bnew=0.d0
-    !write(*,*) hecMAT%B(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
+    !write(0,*) hecMAT%B(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
     do i=1,num_lagrange
       Bnew(iwS(i))=wSL(i)*hecMAT%B(hecMAT%NP*ndof+i)
     enddo
@@ -996,5 +1020,233 @@ contains
       xlag(ilag)=-wSU(ilag)*xlag(ilag)
     enddo
   end subroutine comp_lag
+
+  subroutine solve_no_eliminate(hecMESH,hecMAT,fstrMAT)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix    ), intent(inout) :: hecMAT
+    type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer :: ndof, ndof2, nb_lag, ndofextra
+    integer :: i, ls, le, l, j, jb_lag, ib_lag, idof, jdof, ilag, k, ks, ke
+    integer, allocatable :: iwUr(:), iwUc(:), iwLr(:), iwLc(:)
+    type(hecmwST_matrix) :: hecMATLag
+
+    write(0,*) 'INFO: solve_no_eliminate'
+
+    ndof = hecMAT%NDOF
+    ndof2 = ndof*ndof
+    nb_lag = (fstrMAT%num_lagrange + 2)/3
+    hecMATLag%NDOF = ndof
+    hecMATLag%N = hecMAT%N + nb_lag
+    hecMATLag%NP = hecMATLag%N
+    !write(0,*) 'DEBUG: hecMAT: NDOF,N,NP=',hecMAT%NDOF,hecMAT%N,hecMAT%NP
+    !write(0,*) 'DEBUG: hecMATLag: NDOF,N,NP=',hecMATLag%NDOF,hecMATLag%N,hecMATLag%NP
+
+    ndofextra = hecMATLag%N*ndof - hecMAT%N*ndof - fstrMAT%num_lagrange
+    write(0,*) 'DEBUG: num_lagrange,nb_lag,ndofextra=',fstrMAT%num_lagrange,nb_lag,ndofextra
+
+    ! Upper: count num of blocks
+    allocate(iwUr(hecMAT%N))
+    allocate(iwUc(nb_lag))
+    iwUr = 0
+    do i = 1, hecMAT%N
+      iwUc = 0
+      ls=fstrMAT%indexU_lagrange(i-1)+1
+      le=fstrMAT%indexU_lagrange(i)
+      do l=ls,le
+        j=fstrMAT%itemU_lagrange(l)
+        jb_lag = (j+2)/3
+        iwUc(jb_lag) = 1
+      enddo
+      do j=1,nb_lag
+        if (iwUc(j) > 0) iwUr(i) = iwUr(i) + 1
+      enddo
+      !if (iwUr(i) > 0) write(0,*) 'DEBUG: iwUr(',i,')=',iwUr(i)
+    enddo
+
+    ! Lower: count num of blocks
+    allocate(iwLr(nb_lag))
+    allocate(iwLc(hecMAT%N))
+    iwLr = 0
+    do ib_lag = 1, nb_lag
+      iwLc = 0
+      i = hecMAT%N + ib_lag
+      do idof = 1, ndof
+        ilag = (ib_lag-1)*ndof + idof
+        if (ilag  > fstrMAT%num_lagrange) exit
+        ls=fstrMAT%indexL_lagrange(ilag-1)+1
+        le=fstrMAT%indexL_lagrange(ilag)
+        do l=ls,le
+          j=fstrMAT%itemL_lagrange(l)
+          iwLc(j) = 1
+        enddo
+      enddo
+      do j=1,hecMAT%N
+        if (iwLc(j) > 0) iwLr(ib_lag) = iwLr(ib_lag) + 1
+      enddo
+      !if (iwLr(ib_lag) > 0) write(0,*) 'DEBUG: iwLr(',ib_lag,')=',iwLr(ib_lag)
+    enddo
+
+    ! Upper: indexU
+    allocate(hecMATLag%indexU(0:hecMATLag%N))
+    hecMATLag%indexU(0) = 0
+    do i = 1, hecMAT%N
+      hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
+           (hecMAT%indexU(i) - hecMAT%indexU(i-1)) + iwUr(i)
+    enddo
+    do i = hecMAT%N+1, hecMATLag%N
+      hecMATLag%indexU(i) = hecMATLag%indexU(i-1)
+    enddo
+    hecMATLag%NPU = hecMATLag%indexU(hecMATLag%N)
+    !write(0,*) 'DEBUG: hecMATLag%NPU=',hecMATLag%NPU
+
+    ! Lower: indexL
+    allocate(hecMATLag%indexL(0:hecMATLag%N))
+    do i = 0, hecMAT%N
+      hecMATLag%indexL(i) = hecMAT%indexL(i)
+    enddo
+    do i = hecMAT%N+1, hecMATLag%N
+      hecMATLag%indexL(i) = hecMATLag%indexL(i-1) + iwLr(i-hecMAT%N)
+    enddo
+    hecMATLag%NPL = hecMATLag%indexL(hecMATLag%N)
+    !write(0,*) 'DEBUG: hecMATLag%NPL=',hecMATLag%NPL
+
+    ! Upper: itemU and AU
+    allocate(hecMATLag%itemU(hecMATLag%NPU))
+    allocate(hecMATLag%AU(hecMATLag%NPU*ndof2))
+    do i = 1, hecMAT%N
+      k = hecMATLag%indexU(i-1)+1
+      ! copy from hecMAT
+      ls = hecMAT%indexU(i-1)+1
+      le = hecMAT%indexU(i)
+      do l=ls,le
+        hecMATLag%itemU(k) = hecMAT%itemU(l)
+        hecMATLag%AU((k-1)*ndof2+1:k*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
+        k = k + 1
+      enddo
+      ! Lag. itemU
+      iwUc = 0
+      ls=fstrMAT%indexU_lagrange(i-1)+1
+      le=fstrMAT%indexU_lagrange(i)
+      do l=ls,le
+        j=fstrMAT%itemU_lagrange(l)
+        jb_lag = (j+2)/3
+        iwUc(jb_lag) = 1
+      enddo
+      do j=1,nb_lag
+        if (iwUc(j) > 0) then
+          hecMATLag%itemU(k) = hecMAT%N + j
+          k = k + 1
+        endif
+      enddo
+      if (k /= hecMATLag%indexU(i)+1) stop 'ERROR k indexU'
+      ! Lag. AU
+      ls=fstrMAT%indexU_lagrange(i-1)+1
+      le=fstrMAT%indexU_lagrange(i)
+      do l=ls,le
+        j=fstrMAT%itemU_lagrange(l)
+        jb_lag = (j+2)/3
+        jdof = j - (jb_lag - 1)*ndof
+        ks=hecMATLag%indexU(i-1)+1
+        ke=hecMATLag%indexU(i)
+        do k = ks,ke
+          if (hecMATLag%itemU(k) < hecMAT%N + jb_lag) cycle
+          if (hecMATLag%itemU(k) > hecMAT%N + jb_lag) cycle
+          !if (hecMATLag%itemU(k) /= hecMAT%N + jb_lag) stop 'ERROR itemU jb_lag'
+          do idof = 1, ndof
+            hecMATLag%AU((k-1)*ndof2+(idof-1)*ndof+jdof) = &
+                 fstrMAT%AU_lagrange((l-1)*ndof+idof)
+          enddo
+        enddo
+      enddo
+    enddo
+
+    ! Lower: itemL and AL
+    allocate(hecMATLag%itemL(hecMATLag%NPL))
+    allocate(hecMATLag%AL(hecMATLag%NPL*ndof2))
+    do i = 1, hecMAT%NPL
+      hecMATLag%itemL(i) = hecMAT%itemL(i)
+    enddo
+    do i = 1, hecMAT%NPL*ndof2
+      hecMATLag%AL(i) = hecMAT%AL(i)
+    enddo
+    ! Lag. itemL
+    k = hecMAT%NPL + 1
+    do ib_lag = 1, nb_lag
+      iwLc = 0
+      i = hecMAT%N + ib_lag
+      do idof = 1, ndof
+        ilag = (ib_lag-1)*ndof + idof
+        if (ilag  > fstrMAT%num_lagrange) exit
+        ls=fstrMAT%indexL_lagrange(ilag-1)+1
+        le=fstrMAT%indexL_lagrange(ilag)
+        do l=ls,le
+          j=fstrMAT%itemL_lagrange(l)
+          iwLc(j) = 1
+        enddo
+      enddo
+      do j=1,hecMAT%N
+        if (iwLc(j) > 0) then
+          hecMATLag%itemL(k) = j
+          k = k + 1
+        endif
+      enddo
+      if (k /= hecMATLag%indexL(hecMAT%N + ib_lag)+1) then
+        stop 'ERROR k indexL'
+      endif
+      ! Lag. AL
+      do idof = 1, ndof
+        ilag = (ib_lag-1)*ndof + idof
+        if (ilag  > fstrMAT%num_lagrange) exit
+        ls=fstrMAT%indexL_lagrange(ilag-1)+1
+        le=fstrMAT%indexL_lagrange(ilag)
+        do l=ls,le
+          j=fstrMAT%itemL_lagrange(l)
+          ks=hecMATLag%indexL(i-1)+1
+          ke=hecMATLag%indexL(i)
+          do k = ks, ke
+            if (hecMATLag%itemL(k) < j) cycle
+            if (hecMATLag%itemL(k) > j) cycle
+            !if (hecMATLag%itemL(k) /= j) stop 'ERROR itemL j'
+            do jdof = 1, ndof
+              hecMATLag%AL((k-1)*ndof2+(idof-1)*ndof+jdof) = &
+                   fstrMAT%AL_lagrange((l-1)*ndof+jdof)
+            enddo
+          enddo
+        enddo
+      enddo
+    enddo
+
+    allocate(hecMATLag%D(hecMATLag%N*ndof2))
+    hecMATLag%D = 0.d0
+    do i = 1, hecMAT%N*ndof2
+      hecMATLag%D(i) = hecMAT%D(i)
+    enddo
+    do idof = ndof - ndofextra + 1, ndof
+      hecMATLag%D((hecMATLag%N-1)*ndof2 + (idof-1)*ndof + idof) = 1.0
+    enddo
+
+    allocate(hecMATLag%B(hecMATLag%N*ndof))
+    allocate(hecMATLag%X(hecMATLag%N*ndof))
+    hecMATLag%B = 0.d0
+    hecMATLag%X = 0.d0
+
+    do i = 1, hecMAT%N*ndof+fstrMAT%num_lagrange
+      hecMATLag%B(i) = hecMAT%B(i)
+    enddo
+
+    hecMATLag%Iarray=hecMAT%Iarray
+    hecMATLag%Rarray=hecMAT%Rarray
+
+    call hecmw_solve_33(hecMESH, hecMATLag)
+
+    do i = 1, hecMAT%N*ndof+fstrMAT%num_lagrange
+      hecMAT%X(i) = hecMATLag%X(i)
+    enddo
+
+    call free_hecmat(hecMATLag)
+
+    write(0,*) 'INFO: solve_no_eliminate end'
+  end subroutine solve_no_eliminate
 
 end module m_solve_LINEQ_iter_contact
