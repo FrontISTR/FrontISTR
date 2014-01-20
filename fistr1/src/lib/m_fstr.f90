@@ -697,6 +697,7 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Iarray(4) =    0    ! = nset
         hecMAT%Iarray(5) =    0    ! = iterpremax
         hecMAT%Iarray(6) =   10    ! = nrest
+        hecMAT%Iarray(7) =    0    ! = scaling
         hecMAT%Iarray(21)=  kNO    ! = iterlog
         hecMAT%Iarray(22)=  kNO    ! = timelog
         hecMAT%Iarray(31)=    0    ! = dumptype

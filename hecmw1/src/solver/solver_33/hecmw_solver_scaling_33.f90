@@ -1,6 +1,7 @@
 module hecmw_solver_scaling_33
   use hecmw_util
   use m_hecmw_comm_f
+  use hecmw_matrix_misc
   implicit none
 
   private
@@ -22,6 +23,8 @@ contains
     integer(kind=kint) :: i, k, ip1, ip2, ip3, iq1, iq2, iq3
     integer(kind=kint) :: isL, ieL, isU, ieU, inod
     real(kind=kreal) :: START_TIME, END_TIME
+
+    if (hecmw_mat_get_scaling(hecMAT).eq.0) return
 
     N = hecMAT%N
     NP = hecMAT%NP
@@ -117,6 +120,8 @@ contains
     integer(kind=kint), pointer :: INL(:), IAL(:), INU(:), IAU(:)
     integer(kind=kint) :: i, k, ip1, ip2, ip3, iq1, iq2, iq3
     integer(kind=kint) :: isL, ieL, isU, ieU, inod
+
+    if (hecmw_mat_get_scaling(hecMAT).eq.0) return
 
     N = hecMAT%N
     NP = hecMAT%NP

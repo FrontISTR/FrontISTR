@@ -132,6 +132,20 @@ module hecmw_matrix_misc
     hecmw_mat_get_nrest = hecMAT%Iarray(6)
   end function hecmw_mat_get_nrest
 
+  subroutine hecmw_mat_set_scaling( hecMAT, scaling )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: scaling
+
+    hecMAT%Iarray(7) = scaling
+  end subroutine hecmw_mat_set_scaling
+
+  function hecmw_mat_get_scaling( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_scaling
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_scaling = hecMAT%Iarray(7)
+  end function hecmw_mat_get_scaling
+
   subroutine hecmw_mat_set_penalized( hecMAT, penalized )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: penalized
