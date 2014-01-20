@@ -304,7 +304,7 @@ module hecmw_solver_misc_33
       else if (PRECOND.eq.3) then
         call hecmw_precond_DIAG_33_clear()
       else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-        call hecmw_precond_BILU_33_clear(hecMAT)
+        call hecmw_precond_BILU_33_clear()
       endif
 
       end subroutine hecmw_precond_33_clear

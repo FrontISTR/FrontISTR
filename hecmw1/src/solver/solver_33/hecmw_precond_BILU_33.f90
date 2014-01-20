@@ -56,7 +56,7 @@ contains
     integer(kind=kint ), pointer :: IAL(:)
     integer(kind=kint ), pointer :: IAU(:)
 
-    real   (kind=kreal):: D11,D22,D33, ALUtmp(3,3)
+    real   (kind=kreal):: ALUtmp(3,3)
     integer(kind=kint ):: ip
 
     N = hecMAT%N
@@ -74,15 +74,9 @@ contains
     SIGMA = hecmw_mat_get_sigma(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
-    if (PRECOND.eq.10) then
-      AUlu0 => AU
-      ALlu0 => AL
-      Dlu0 => D
-      inumFI1L => INL
-      FI1L => IAL
-      inumFI1U => INU
-      FI1U => IAU
-    end if
+    if (PRECOND.eq.10) call FORM_ILU0_33 &
+         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+         &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_33 &
          &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
          &    SIGMA, SIGMA_DIAG)
@@ -92,44 +86,21 @@ contains
 
     allocate(ALU(9*NP))
 
-    if (PRECOND.eq.10) then
-      do ip= 1, N
-        D11= D(9*ip-8) * SIGMA_DIAG
-        D22= D(9*ip-4) * SIGMA_DIAG
-        D33= D(9*ip  ) * SIGMA_DIAG
-        call ILU1a33 (ALUtmp,                                    &
-   &                  D11      , D(9*ip-7), D(9*ip-6),                &
-   &                  D(9*ip-5), D22      , D(9*ip-3),                &
-   &                  D(9*ip-2), D(9*ip-1), D33)
-        ALU(9*ip-8)= ALUtmp(1,1)
-        ALU(9*ip-7)= ALUtmp(1,2)
-        ALU(9*ip-6)= ALUtmp(1,3)
-        ALU(9*ip-5)= ALUtmp(2,1)
-        ALU(9*ip-4)= ALUtmp(2,2)
-        ALU(9*ip-3)= ALUtmp(2,3)
-        ALU(9*ip-2)= ALUtmp(3,1)
-        ALU(9*ip-1)= ALUtmp(3,2)
-        ALU(9*ip  )= ALUtmp(3,3)
-      enddo
-    endif
-
-    if (PRECOND.eq.11.or.PRECOND.eq.12) then
-      do ip= 1, N
-        call ILU1a33 (ALUtmp,                                    &
-   &                  Dlu0(9*ip-8), Dlu0(9*ip-7), Dlu0(9*ip-6),       &
-   &                  Dlu0(9*ip-5), Dlu0(9*ip-4), Dlu0(9*ip-3),       &
-   &                  Dlu0(9*ip-2), Dlu0(9*ip-1), Dlu0(9*ip  ))
-        ALU(9*ip-8)= ALUtmp(1,1)
-        ALU(9*ip-7)= ALUtmp(1,2)
-        ALU(9*ip-6)= ALUtmp(1,3)
-        ALU(9*ip-5)= ALUtmp(2,1)
-        ALU(9*ip-4)= ALUtmp(2,2)
-        ALU(9*ip-3)= ALUtmp(2,3)
-        ALU(9*ip-2)= ALUtmp(3,1)
-        ALU(9*ip-1)= ALUtmp(3,2)
-        ALU(9*ip  )= ALUtmp(3,3)
-      enddo
-    endif
+    do ip= 1, N
+      call ILU1a33 (ALUtmp,                                    &
+     &              Dlu0(9*ip-8), Dlu0(9*ip-7), Dlu0(9*ip-6),  &
+     &              Dlu0(9*ip-5), Dlu0(9*ip-4), Dlu0(9*ip-3),  &
+     &              Dlu0(9*ip-2), Dlu0(9*ip-1), Dlu0(9*ip  ))
+      ALU(9*ip-8)= ALUtmp(1,1)
+      ALU(9*ip-7)= ALUtmp(1,2)
+      ALU(9*ip-6)= ALUtmp(1,3)
+      ALU(9*ip-5)= ALUtmp(2,1)
+      ALU(9*ip-4)= ALUtmp(2,2)
+      ALU(9*ip-3)= ALUtmp(2,3)
+      ALU(9*ip-2)= ALUtmp(3,1)
+      ALU(9*ip-1)= ALUtmp(3,2)
+      ALU(9*ip  )= ALUtmp(3,3)
+    enddo
   end subroutine hecmw_precond_BILU_33_setup
 
   subroutine hecmw_precond_BILU_33_apply(N, WW)
@@ -175,7 +146,7 @@ contains
 
     do i= N, 1, -1
       isU= inumFI1U(i-1) + 1
-      ieU= inumFI1U(i) 
+      ieU= inumFI1U(i)
       SW1= 0.d0
       SW2= 0.d0
       SW3= 0.d0
@@ -202,21 +173,16 @@ contains
     enddo
   end subroutine hecmw_precond_BILU_33_apply
 
-  subroutine hecmw_precond_BILU_33_clear(hecMAT)
+  subroutine hecmw_precond_BILU_33_clear()
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint) :: PRECOND
-    PRECOND = hecmw_mat_get_precond(hecMAT)
-    if (PRECOND.eq.11.or.PRECOND.eq.12) then
-      if (associated(ALU)) deallocate(ALU)
-      if (associated(AUlu0)) deallocate(AUlu0)
-      if (associated(ALlu0)) deallocate(ALlu0)
-      if (associated(Dlu0)) deallocate(Dlu0)
-      if (associated(inumFI1L)) deallocate(inumFI1L)
-      if (associated(FI1L)) deallocate(FI1L)
-      if (associated(inumFI1U)) deallocate(inumFI1U)
-      if (associated(FI1U)) deallocate(FI1U)
-    end if
+    if (associated(ALU)) deallocate(ALU)
+    if (associated(AUlu0)) deallocate(AUlu0)
+    if (associated(ALlu0)) deallocate(ALlu0)
+    if (associated(Dlu0)) deallocate(Dlu0)
+    if (associated(inumFI1L)) deallocate(inumFI1L)
+    if (associated(FI1L)) deallocate(FI1L)
+    if (associated(inumFI1U)) deallocate(inumFI1U)
+    if (associated(FI1U)) deallocate(FI1U)
     nullify(ALU)
     nullify(AUlu0)
     nullify(ALlu0)
@@ -226,6 +192,165 @@ contains
     nullify(inumFI1U)
     nullify(FI1U)
   end subroutine hecmw_precond_BILU_33_clear
+
+  !C
+  !C***
+  !C*** FORM_ILU1_33
+  !C***
+  !C
+  !C    form ILU(1) matrix
+  !C
+  subroutine FORM_ILU0_33                                   &
+       &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+       &    SIGMA, SIGMA_DIAG)
+    implicit none
+    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+
+    real(kind=kreal), dimension(9*NPL), intent(in):: AL
+    real(kind=kreal), dimension(9*NPU), intent(in):: AU
+    real(kind=kreal), dimension(9*NP ), intent(in):: D
+
+    integer(kind=kint ), dimension(0:NP) ,intent(in) :: INU, INL
+    integer(kind=kint ), dimension(  NPL),intent(in) :: IAL
+    integer(kind=kint ), dimension(  NPU),intent(in) :: IAU
+
+    integer(kind=kint), dimension(:), allocatable :: IW1, IW2
+    real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
+    real (kind=kreal)  :: D11,D12,D13,D21,D22,D23,D31,D32,D33
+    integer(kind=kint) :: i,jj,jj1,ij0,kk,kk1
+    integer(kind=kint) :: j,k
+    allocate (IW1(NP) , IW2(NP))
+    allocate(Dlu0(9*NP), ALlu0(9*NPL), AUlu0(9*NPU))
+    allocate(inumFI1L(0:NP), inumFI1U(0:NP), FI1L(NPL), FI1U(NPU))
+
+    do i=1,9*NP
+      Dlu0(i) = D(i)
+    end do
+    do i=1,9*NPL
+      ALlu0(i) = AL(i)
+    end do
+    do i=1,9*NPU
+      AUlu0(i) = AU(i)
+    end do
+    do i=0,NP
+      inumFI1L(i) = INL(i)
+      inumFI1U(i) = INU(i)
+    end do
+    do i=1,NPL
+      FI1L(i) = IAL(i)
+    end do
+    do i=1,NPU
+      FI1U(i) = IAU(i)
+    end do
+
+    !C
+    !C +----------------------+
+    !C | ILU(0) factorization |
+    !C +----------------------+
+    !C===
+    do i=1,NP
+      Dlu0(9*i-8)=Dlu0(9*i-8)*SIGMA_DIAG
+      Dlu0(9*i-4)=Dlu0(9*i-4)*SIGMA_DIAG
+      Dlu0(9*i  )=Dlu0(9*i  )*SIGMA_DIAG
+    enddo
+
+    do i= 2, NP
+      IW1= 0
+      IW2= 0
+
+      do k= inumFI1L(i-1)+1, inumFI1L(i)
+        IW1(FI1L(k))= k
+      enddo
+
+      do k= inumFI1U(i-1)+1, inumFI1U(i)
+        IW2(FI1U(k))= k
+      enddo
+
+      do kk= INL(i-1)+1, INL(i)
+        k= IAL(kk)
+        D11= Dlu0(9*k-8)
+        D12= Dlu0(9*k-7)
+        D13= Dlu0(9*k-6)
+        D21= Dlu0(9*k-5)
+        D22= Dlu0(9*k-4)
+        D23= Dlu0(9*k-3)
+        D31= Dlu0(9*k-2)
+        D32= Dlu0(9*k-1)
+        D33= Dlu0(9*k  )
+
+        call ILU1a33 (DkINV, D11,D12,D13,D21,D22,D23,D31,D32,D33)
+
+        Aik(1,1)= ALlu0(9*kk-8)
+        Aik(1,2)= ALlu0(9*kk-7)
+        Aik(1,3)= ALlu0(9*kk-6)
+        Aik(2,1)= ALlu0(9*kk-5)
+        Aik(2,2)= ALlu0(9*kk-4)
+        Aik(2,3)= ALlu0(9*kk-3)
+        Aik(3,1)= ALlu0(9*kk-2)
+        Aik(3,2)= ALlu0(9*kk-1)
+        Aik(3,3)= ALlu0(9*kk  )
+
+        do jj= INU(k-1)+1, INU(k)
+          j= IAU(jj)
+          if (IW1(j).eq.0.and.IW2(j).eq.0) cycle
+
+          Akj(1,1)= AUlu0(9*jj-8)
+          Akj(1,2)= AUlu0(9*jj-7)
+          Akj(1,3)= AUlu0(9*jj-6)
+          Akj(2,1)= AUlu0(9*jj-5)
+          Akj(2,2)= AUlu0(9*jj-4)
+          Akj(2,3)= AUlu0(9*jj-3)
+          Akj(3,1)= AUlu0(9*jj-2)
+          Akj(3,2)= AUlu0(9*jj-1)
+          Akj(3,3)= AUlu0(9*jj  )
+
+          call ILU1b33 (RHS_Aij, DkINV, Aik, Akj)
+
+          if (j.eq.i) then
+            Dlu0(9*i-8)= Dlu0(9*i-8) - RHS_Aij(1,1)
+            Dlu0(9*i-7)= Dlu0(9*i-7) - RHS_Aij(1,2)
+            Dlu0(9*i-6)= Dlu0(9*i-6) - RHS_Aij(1,3)
+            Dlu0(9*i-5)= Dlu0(9*i-5) - RHS_Aij(2,1)
+            Dlu0(9*i-4)= Dlu0(9*i-4) - RHS_Aij(2,2)
+            Dlu0(9*i-3)= Dlu0(9*i-3) - RHS_Aij(2,3)
+            Dlu0(9*i-2)= Dlu0(9*i-2) - RHS_Aij(3,1)
+            Dlu0(9*i-1)= Dlu0(9*i-1) - RHS_Aij(3,2)
+            Dlu0(9*i  )= Dlu0(9*i  ) - RHS_Aij(3,3)
+          endif
+
+          if (j.lt.i) then
+            ij0= IW1(j)
+            ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
+            ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
+            ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
+            ALlu0(9*ij0-5)= ALlu0(9*ij0-5) - RHS_Aij(2,1)
+            ALlu0(9*ij0-4)= ALlu0(9*ij0-4) - RHS_Aij(2,2)
+            ALlu0(9*ij0-3)= ALlu0(9*ij0-3) - RHS_Aij(2,3)
+            ALlu0(9*ij0-2)= ALlu0(9*ij0-2) - RHS_Aij(3,1)
+            ALlu0(9*ij0-1)= ALlu0(9*ij0-1) - RHS_Aij(3,2)
+            ALlu0(9*ij0  )= ALlu0(9*ij0  ) - RHS_Aij(3,3)
+          endif
+
+          if (j.gt.i) then
+            ij0= IW2(j)
+            AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
+            AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
+            AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
+            AUlu0(9*ij0-5)= AUlu0(9*ij0-5) - RHS_Aij(2,1)
+            AUlu0(9*ij0-4)= AUlu0(9*ij0-4) - RHS_Aij(2,2)
+            AUlu0(9*ij0-3)= AUlu0(9*ij0-3) - RHS_Aij(2,3)
+            AUlu0(9*ij0-2)= AUlu0(9*ij0-2) - RHS_Aij(3,1)
+            AUlu0(9*ij0-1)= AUlu0(9*ij0-1) - RHS_Aij(3,2)
+            AUlu0(9*ij0  )= AUlu0(9*ij0  ) - RHS_Aij(3,3)
+          endif
+
+        enddo
+      enddo
+    enddo
+
+    deallocate (IW1, IW2)
+  end subroutine FORM_ILU0_33
 
   !C
   !C***
@@ -466,9 +591,9 @@ contains
     allocate (Dlu0(9*NP))
     Dlu0= D
     do i=1,NP
-      Dlu0(9*k-8)=Dlu0(9*k-8)*SIGMA_DIAG
-      Dlu0(9*k-4)=Dlu0(9*k-4)*SIGMA_DIAG
-      Dlu0(9*k  )=Dlu0(9*k  )*SIGMA_DIAG
+      Dlu0(9*i-8)=Dlu0(9*i-8)*SIGMA_DIAG
+      Dlu0(9*i-4)=Dlu0(9*i-4)*SIGMA_DIAG
+      Dlu0(9*i  )=Dlu0(9*i  )*SIGMA_DIAG
     enddo
 
     do i= 2, NP
@@ -1042,9 +1167,9 @@ contains
     allocate (Dlu0(9*NP))
     Dlu0= D
     do i=1,NP
-      Dlu0(9*k-8)=Dlu0(9*k-8)*SIGMA_DIAG
-      Dlu0(9*k-4)=Dlu0(9*k-4)*SIGMA_DIAG
-      Dlu0(9*k  )=Dlu0(9*k  )*SIGMA_DIAG
+      Dlu0(9*i-8)=Dlu0(9*i-8)*SIGMA_DIAG
+      Dlu0(9*i-4)=Dlu0(9*i-4)*SIGMA_DIAG
+      Dlu0(9*i  )=Dlu0(9*i  )*SIGMA_DIAG
     enddo
 
     do i= 2, NP
