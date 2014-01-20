@@ -29,9 +29,6 @@
         use hecmw_solver_BiCGSTAB_33
         use hecmw_solver_GMRES_33
         use hecmw_solver_GPBiCG_33
-        use hecmw_solver_BLCG_33
-        use hecmw_solver_BLBiCGSTAB_33
-        use hecmw_solver_BLGPBiCG_33
         use m_hecmw_solve_error
         use m_hecmw_comm_f
         use hecmw_matrix_ass
@@ -43,11 +40,9 @@
         type (hecmwST_local_mesh) :: hecMESH
 
         integer(kind=kint) :: ERROR
-        real(kind=kreal), dimension(3,3) :: ALU
-        real(kind=kreal), dimension(3)   :: PW
 
         integer(kind=kint) :: ITER, METHOD, PRECOND, NSET
-        integer(kind=kint) :: iterPREmax, ii, i, j, k
+        integer(kind=kint) :: iterPREmax, i
 
         real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER
 
@@ -56,8 +51,8 @@
         real(kind=kreal),    dimension(1) :: RHS
         integer (kind=kint), dimension(1) :: IFLAG
 
-        integer(kind=kint) :: NREST,NPLU,iS0,iS,inum,k0
-        real(kind=kreal)   :: SIGMA,S1_time,E1_time,TIME_sol
+        integer(kind=kint) :: NREST
+        real(kind=kreal)   :: SIGMA,TIME_sol
 
 !C===
 !C +------------+
@@ -148,126 +143,17 @@
         endif
 
         IFLAG(1)= 1
-        if (METHOD.eq.1) then
-          if (PRECOND.eq. 1) IFLAG(1)= 0
-          if (PRECOND.eq. 2) IFLAG(1)= 0
-          if (PRECOND.eq. 3) IFLAG(1)= 0
-          if (PRECOND.eq.10) IFLAG(1)= 0
-          if (PRECOND.eq.11) IFLAG(1)= 0
-          if (PRECOND.eq.12) IFLAG(1)= 0
-        endif
-
-        if (METHOD.eq.2) then
-          if (PRECOND.eq. 1) IFLAG(1)= 0
-          if (PRECOND.eq. 2) IFLAG(1)= 0
-          if (PRECOND.eq. 3) IFLAG(1)= 0
-          if (PRECOND.eq.10) IFLAG(1)= 0
-          if (PRECOND.eq.11) IFLAG(1)= 0
-          if (PRECOND.eq.12) IFLAG(1)= 0
-        endif
-
-        if (METHOD.eq.3) then
-          if (PRECOND.eq. 1) IFLAG(1)= 0
-          if (PRECOND.eq. 2) IFLAG(1)= 0
-          if (PRECOND.eq. 3) IFLAG(1)= 0
-        endif
-
-        if (METHOD.eq.4) then
-          if (PRECOND.eq. 1) IFLAG(1)= 0
-          if (PRECOND.eq. 2) IFLAG(1)= 0
-          if (PRECOND.eq. 3) IFLAG(1)= 0
-          if (PRECOND.eq.10) IFLAG(1)= 0
-          if (PRECOND.eq.11) IFLAG(1)= 0
-          if (PRECOND.eq.12) IFLAG(1)= 0
-        endif
+        if (PRECOND.eq. 1) IFLAG(1)= 0
+        if (PRECOND.eq. 2) IFLAG(1)= 0
+        if (PRECOND.eq. 3) IFLAG(1)= 0
+        if (PRECOND.eq.10) IFLAG(1)= 0
+        if (PRECOND.eq.11) IFLAG(1)= 0
+        if (PRECOND.eq.12) IFLAG(1)= 0
 
         if (IFLAG(1).ne.0) then
           ERROR= 1001
           call hecmw_solve_error (hecMESH, ERROR)
         endif
-
-!C===
-!C +-----------+
-!C | BLOCK LUs |
-!C +-----------+
-!C===
-        if (.not.associated(hecMAT%ALU).and.PRECOND.lt.10) NSET=  0
-        if (     associated(hecMAT%ALU).and.PRECOND.lt.10) NSET= -1
-
-        S1_time= HECMW_WTIME()
-        if (NSET.eq.0 .and. PRECOND.lt.10 .and. iterPREmax.gt.0) then
-          allocate (hecMAT%ALU(9*hecMAT%N))
-        endif
-        if (NSET.le.0 .and. PRECOND.lt.10 .and. iterPREmax.gt.0) then
-          hecMAT%ALU  = 0.d0
-
-          do ii= 1, hecMAT%N
-            hecMAT%ALU(9*ii-8) = hecMAT%D(9*ii-8)
-            hecMAT%ALU(9*ii-7) = hecMAT%D(9*ii-7)
-            hecMAT%ALU(9*ii-6) = hecMAT%D(9*ii-6)
-            hecMAT%ALU(9*ii-5) = hecMAT%D(9*ii-5)
-            hecMAT%ALU(9*ii-4) = hecMAT%D(9*ii-4)
-            hecMAT%ALU(9*ii-3) = hecMAT%D(9*ii-3)
-            hecMAT%ALU(9*ii-2) = hecMAT%D(9*ii-2)
-            hecMAT%ALU(9*ii-1) = hecMAT%D(9*ii-1)
-            hecMAT%ALU(9*ii  ) = hecMAT%D(9*ii  )
-          enddo
-
-          if (hecMAT%cmat%n_val.gt.0) then
-            do k= 1, hecMAT%cmat%n_val
-              if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-              ii = hecMAT%cmat%pair(k)%i
-              hecMAT%ALU(9*ii-8) = hecMAT%ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
-              hecMAT%ALU(9*ii-7) = hecMAT%ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
-              hecMAT%ALU(9*ii-6) = hecMAT%ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
-              hecMAT%ALU(9*ii-5) = hecMAT%ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
-              hecMAT%ALU(9*ii-4) = hecMAT%ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
-              hecMAT%ALU(9*ii-3) = hecMAT%ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
-              hecMAT%ALU(9*ii-2) = hecMAT%ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
-              hecMAT%ALU(9*ii-1) = hecMAT%ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
-              hecMAT%ALU(9*ii  ) = hecMAT%ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
-            enddo
-
-            call hecmw_cmat_LU( hecMAT )
-
-          endif
-
-          do ii= 1, hecMAT%N
-            ALU(1,1)= hecMAT%ALU(9*ii-8)
-            ALU(1,2)= hecMAT%ALU(9*ii-7)
-            ALU(1,3)= hecMAT%ALU(9*ii-6)
-            ALU(2,1)= hecMAT%ALU(9*ii-5)
-            ALU(2,2)= hecMAT%ALU(9*ii-4)
-            ALU(2,3)= hecMAT%ALU(9*ii-3)
-            ALU(3,1)= hecMAT%ALU(9*ii-2)
-            ALU(3,2)= hecMAT%ALU(9*ii-1)
-            ALU(3,3)= hecMAT%ALU(9*ii  )
-            do k= 1, 3
-              ALU(k,k)= 1.d0/ALU(k,k)
-              do i= k+1, 3
-                ALU(i,k)= ALU(i,k) * ALU(k,k)
-                do j= k+1, 3
-                  PW(j)= ALU(i,j) - ALU(i,k)*ALU(k,j)
-                enddo
-                do j= k+1, 3
-                  ALU(i,j)= PW(j)
-                enddo
-              enddo
-            enddo
-            hecMAT%ALU(9*ii-8)= ALU(1,1)
-            hecMAT%ALU(9*ii-7)= ALU(1,2)
-            hecMAT%ALU(9*ii-6)= ALU(1,3)
-            hecMAT%ALU(9*ii-5)= ALU(2,1)
-            hecMAT%ALU(9*ii-4)= ALU(2,2)
-            hecMAT%ALU(9*ii-3)= ALU(2,3)
-            hecMAT%ALU(9*ii-2)= ALU(3,1)
-            hecMAT%ALU(9*ii-1)= ALU(3,2)
-            hecMAT%ALU(9*ii  )= ALU(3,3)
-          enddo
-        endif
-
-        E1_time= HECMW_WTIME()
-        TIME_setup= TIME_setup + E1_time - S1_time
 
 !C===
 !C +------------------+
@@ -277,30 +163,41 @@
 
 !C
 !C-- CG
-      if (METHOD.eq.1 .and. PRECOND.lt.10) then
+      if (METHOD.eq.1) then
         if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.1) write (*,'(a,i3)') '### 3x3 B-IC-CG  (0)',  &
-     &                                          iterPREmax
-          if (PRECOND.eq.2) write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',  &
-     &                                          iterPREmax
-          if (PRECOND.eq.3) write (*,'(a,i3)') '### 3x3 B-scale-CG  ',  &
-     &                                          iterPREmax
+          if (PRECOND.eq.1) &
+               write (*,'(a,i3)') '### 3x3 B-IC-CG(0)',iterPREmax
+          if (PRECOND.eq.2) &
+               write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',iterPREmax
+          if (PRECOND.eq.3) &
+               write (*,'(a,i3)') '### 3x3 B-scale-CG  ',iterPREmax
+          if (PRECOND.eq.10) &
+               write (*,'(a,i3)') '### 3x3 B-IC-CG(0)',iterPREmax
+          if (PRECOND.eq.11) &
+               write (*,'(a,i3)') '### 3x3 B-IC-CG(1)',iterPREmax
+          if (PRECOND.eq.12) &
+               write (*,'(a,i3)') '### 3x3 B-IC-CG(2)',iterPREmax
         endif
-
         call hecmw_solve_CG_33( hecMESH,  hecMAT, ITER, RESID, ERROR,   &
      &                          TIME_setup, TIME_sol, TIME_comm )
       endif
 
 !C
 !C-- BiCGSTAB
-      if (METHOD.eq.2 .and. PRECOND.lt.10) then
+      if (METHOD.eq.2) then
         if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.1) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-ILU-BiCGSTAB (0)', iterPREmax
-          if (PRECOND.eq.2) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-SSOR-BiCGSTAB(0)', iterPREmax
-          if (PRECOND.eq.3) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-scale-BiCGSTAB  ', iterPREmax
+          if (PRECOND.eq.1) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-BiCGSTAB(0)',iterPREmax
+          if (PRECOND.eq.2) &
+               write (*,'(a,i3)') '### 3x3 B-SSOR-BiCGSTAB(0)',iterPREmax
+          if (PRECOND.eq.3) &
+               write (*,'(a,i3)') '### 3x3 B-scale-BiCGSTAB  ',iterPREmax
+          if (PRECOND.eq.10) &
+               write (*,'(a,i3)') '### 3x3 B-IlU-BiCGSTAB(0)',iterPREmax
+          if (PRECOND.eq.11) &
+               write (*,'(a,i3)') '### 3x3 B-IlU-BiCGSTAB(1)',iterPREmax
+          if (PRECOND.eq.12) &
+               write (*,'(a,i3)') '### 3x3 B-IlU-BiCGSTAB(2)',iterPREmax
         endif
 
         call hecmw_solve_BiCGSTAB_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
@@ -309,136 +206,52 @@
 
 !C
 !C-- GMRES
-      if (METHOD.eq.3 .and. PRECOND.lt.10) then
+      if (METHOD.eq.3) then
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
         if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.1) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-ILU-GMRES (0)', iterPREmax
-          if (PRECOND.eq.2) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-SSOR-GMRES(0)', iterPREmax
-          if (PRECOND.eq.3) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-scale-GMRES  ', iterPREmax
+          if (PRECOND.eq.1) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(0)',iterPREmax
+          if (PRECOND.eq.2) &
+               write (*,'(a,i3)') '### 3x3 B-SSOR-GMRES(0)',iterPREmax
+          if (PRECOND.eq.3) &
+               write (*,'(a,i3)') '### 3x3 B-scale-GMRES  ',iterPREmax
+          if (PRECOND.eq.10) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(0)',iterPREmax
+          if (PRECOND.eq.11) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(1)',iterPREmax
+          if (PRECOND.eq.12) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(2)',iterPREmax
         endif
 
-        call hecmw_solve_GMRES_33                                       &
-     &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
-     &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
-     &                 hecMAT%AU, hecMAT%indexU, hecMAT%itemU,          &
-     &       hecMAT%B, hecMAT%X,  hecMAT%ALU, RESID, ITER,              &
-     &       ERROR,    hecMESH%my_rank,                                 &
-     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 &
-     &       hecMESH%export_index, hecMESH%export_item,                 &
-     &       hecMESH%MPI_COMM, PRECOND, iterPREmax, NREST,              &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
+        call hecmw_solve_GMRES_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
+     &                             TIME_setup, TIME_sol, TIME_comm )
       endif
 
 !C
 !C-- GPBiCG
-      if (METHOD.eq.4 .and. PRECOND.lt.10) then
+      if (METHOD.eq.4) then
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
         if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.1) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-ILU-GPBiCG   (0)', iterPREmax
-          if (PRECOND.eq.2) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-SSOR-GPBiCG  (0)', iterPREmax
-          if (PRECOND.eq.3) write (*,'(a,i3)')                          &
-     &                   '### 3x3 B-scale-GPBiCG    ', iterPREmax
+          if (PRECOND.eq.1) &
+               write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(0)',iterPREmax
+          if (PRECOND.eq.2) &
+               write (*,'(a,i3)') '### 3x3 B-SSOR-GPBiCG(0)',iterPREmax
+          if (PRECOND.eq.3) &
+               write (*,'(a,i3)') '### 3x3 B-scale-GPBiCG  ',iterPREmax
+          if (PRECOND.eq.10) &
+               write (*,'(a)') '### 3x3 B-ILU-GPBiCG(0)',iterPREmax
+          if (PRECOND.eq.11) &
+               write (*,'(a)') '### 3x3 B-ILU-GPBiCG(1)',iterPREmax
+          if (PRECOND.eq.12) &
+               write (*,'(a)') '### 3x3 B-ILU-GPBiCG(2)',iterPREmax
         endif
 
-        call hecmw_solve_GPBiCG_33                                      &
-     &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
-     &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
-     &                 hecMAT%AU, hecMAT%indexU, hecMAT%itemU,          &
-     &       hecMAT%B, hecMAT%X,  hecMAT%ALU, RESID, ITER,              &
-     &       ERROR,    hecMESH%my_rank,                                 &
-     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 &
-     &       hecMESH%export_index, hecMESH%export_item,                 &
-     &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
-      endif
-
-!C
-!C-- CG-1/2
-      if (METHOD.eq.1 .and. (PRECOND.ge.10.and.PRECOND.le.20)) then
-        ! imposing MPC by penalty
-        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.10) write (*,'(a)') '### 3x3 B-IC-CG  (0)'
-          if (PRECOND.eq.11) write (*,'(a)') '### 3x3 B-IC-CG  (1)'
-          if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-IC-CG  (2)'
-        endif
-
-        call hecmw_solve_BLCG_33                                        &
-     &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
-     &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
-     &                 hecMAT%AU, hecMAT%indexU, hecMAT%itemU,          &
-     &       hecMAT%B, hecMAT%X,  RESID, SIGMA, SIGMA_DIAG,             &
-     &       ITER, ERROR,  hecMESH%my_rank,                             &
-     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 &
-     &       hecMESH%export_index, hecMESH%export_item,                 &
-     &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
-      endif
-
-!C
-!C-- BiCGSTAB-1/2
-      if (METHOD.eq.2 .and. (PRECOND.ge.10.and.PRECOND.le.20)) then
-        ! imposing MPC by penalty
-        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.10) write (*,'(a)')                            &
-     &                       '### 3x3 B-IlU-BiCGSTAB (0)'
-          if (PRECOND.eq.11) write (*,'(a)')                            &
-     &                       '### 3x3 B-IlU-BiCGSTAB (1)'
-          if (PRECOND.eq.12) write (*,'(a)')                            &
-     &                       '### 3x3 B-IlU-BiCGSTAB (2)'
-        endif
-
-        call hecmw_solve_BLBiCGSTAB_33                                  &
-     &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
-     &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
-     &                 hecMAT%AU, hecMAT%indexU, hecMAT%itemU,          &
-     &       hecMAT%B, hecMAT%X,  RESID, SIGMA, SIGMA_DIAG,             &
-     &       ITER, ERROR,  hecMESH%my_rank,                             &
-     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 &
-     &       hecMESH%export_index, hecMESH%export_item,                 &
-     &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
-      endif
-
-!C
-!C-- GPBiCG-1/2
-      if (METHOD.eq.4 .and. (PRECOND.ge.10.and.PRECOND.le.20)) then
-        ! imposing MPC by penalty
-        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-          if (PRECOND.eq.10) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (0)'
-          if (PRECOND.eq.11) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (1)'
-          if (PRECOND.eq.12) write (*,'(a)') '### 3x3 B-ILU-GPBiCG (2)'
-        endif
-
-        call hecmw_solve_BLGPBiCG_33                                    &
-     &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
-     &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
-     &                 hecMAT%AU, hecMAT%indexU, hecMAT%itemU,          &
-     &       hecMAT%B, hecMAT%X,  RESID, SIGMA, SIGMA_DIAG,             &
-     &       ITER, ERROR,  hecMESH%my_rank,                             &
-     &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 &
-     &       hecMESH%export_index, hecMESH%export_item,                 &
-     &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
+        call hecmw_solve_GPBiCG_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
+     &                              TIME_setup, TIME_sol, TIME_comm )
       endif
 
       if (RESID.gt.hecMAT%Rarray(1)) then
@@ -453,10 +266,6 @@
         write (*,'(a, 1pe16.6 )') '    solver time      : ', TIME_sol
         write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
         write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
-      endif
-
-      if (hecMAT%cmat%n_val.gt.0) then
-        call hecmw_cmat_LU_free( hecMAT )
       endif
 
       end subroutine hecmw_solve_33

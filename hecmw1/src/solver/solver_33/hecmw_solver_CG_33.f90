@@ -34,6 +34,7 @@
       use hecmw_matrix_misc
       use hecmw_solver_misc
       use hecmw_solver_misc_33
+      use hecmw_solver_scaling_33
       use jad_type
 
       implicit none
@@ -43,6 +44,7 @@
       integer(kind=kint ), intent(inout):: ITER, ERROR
       real   (kind=kreal), intent(inout):: RESID, Tset, Tsol, Tcomm
 
+      integer(kind=kint ) :: N, NP, NDOF, NNDOF
       integer(kind=kint ) :: my_rank
       integer(kind=kint ) :: ITERlog, TIMElog
       real(kind=kreal), pointer :: B(:), X(:)
@@ -74,6 +76,10 @@
 !C | INIT. |
 !C +-------+
 !C===
+      N = hecMAT%N
+      NP = hecMAT%NP
+      NDOF = hecMAT%NDOF
+      NNDOF = N * NDOF
       my_rank = hecMESH%my_rank
       X => hecMAT%X
       B => hecMAT%B
@@ -88,10 +94,21 @@
 
       ERROR = 0
 
-      allocate (WW(3 * hecMAT%NP, 4))
+      allocate (WW(NDOF*NP, 4))
       WW = 0.d0
 
       call hecmw_mpc_scale(hecMESH)
+
+!C
+!C-- SCALING
+      call hecmw_solver_scaling_fw_33(hecMESH, hecMAT, Tcomm)
+
+!C===
+!C +----------------------+
+!C | SETUP PRECONDITIONER |
+!C +----------------------+
+!C===
+      call hecmw_precond_33_setup(hecMAT)
 
 !C===
 !C +----------------------------------------------+
@@ -101,7 +118,7 @@
 
 !C-- {bt}= [T']({b} - [A]{xg})
       if (totalmpc.eq.0) then
-        do i = 1, hecMAT%N * 3
+        do i = 1, NNDOF
           WW(i,BT) = B(i)
         enddo
        else
@@ -109,7 +126,7 @@
       endif
 
 !C-- compute ||{bt}||
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -135,7 +152,7 @@
       endif
 
 !C-- {r} = {bt} - {tatx}
-      do i = 1, hecMAT%N * 3
+      do i = 1, NNDOF
         WW(i,R) = WW(i,BT) - WW(i,TATX)
       enddo
 
@@ -161,7 +178,7 @@
 !C | {RHO}= {r}{z} |
 !C +---------------+
 !C===
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,Z), RHO, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,Z), RHO, Tcomm)
 
 !C===
 !C +-----------------------------+
@@ -170,12 +187,12 @@
 !C +-----------------------------+
 !C===
       if ( ITER.eq.1 ) then
-        do i = 1, hecMAT%N * 3
+        do i = 1, NNDOF
           WW(i,P) = WW(i,Z)
         enddo
        else
          BETA = RHO / RHO1
-         do i = 1, hecMAT%N * 3
+         do i = 1, NNDOF
            WW(i,P) = WW(i,Z) + BETA*WW(i,P)
          enddo
       endif
@@ -196,7 +213,7 @@
 !C | ALPHA= RHO / {p}{q} |
 !C +---------------------+
 !C===
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,P), WW(:,Q), C1, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,P), WW(:,Q), C1, Tcomm)
 
       ALPHA= RHO / C1
 
@@ -206,12 +223,12 @@
 !C | {r}= {r} - ALPHA*{q} |
 !C +----------------------+
 !C===
-      do i = 1, hecMAT%N * 3
+      do i = 1, NNDOF
          X(i)  = X(i)    + ALPHA * WW(i,P)
         WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
 
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,R), DNRM2, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
       RESID= dsqrt(DNRM2/BNRM2)
 
@@ -231,6 +248,8 @@
       if (totalmpc.ne.0) then
         call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
       endif
+
+      call hecmw_solver_scaling_bk_33(hecMAT)
 !C
 !C-- INTERFACE data EXCHANGE
 !C
@@ -243,6 +262,7 @@
       Tsol = E1_TIME - S1_TIME
 
       deallocate (WW)
+      call hecmw_precond_33_clear(hecMAT)
 
       IF (JAD_ON_F) THEN
         DEALLOCATE(AJAD)

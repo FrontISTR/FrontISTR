@@ -17,7 +17,7 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: X(:), Y(:)
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jS, jE, in
@@ -26,7 +26,7 @@ module hecmw_solver_misc_33
       START_TIME= HECMW_WTIME()
       call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
       END_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + END_TIME - START_TIME
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 !C
 !C    JAD_ON_F TRUE
 !C
@@ -107,11 +107,13 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: X(:), B(:), R(:)
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       integer(kind=kint) :: i
+      real(kind=kreal) :: Tcomm = 0.d0
 
-      call hecmw_matvec_33 (hecMESH, hecMAT, X, R, COMMtime)
+      call hecmw_matvec_33 (hecMESH, hecMAT, X, R, Tcomm)
+      if (present(COMMtime)) COMMtime = COMMtime + Tcomm
       do i = 1, hecMAT%N * 3
         R(i) = B(i) - R(i)
       enddo
@@ -131,17 +133,20 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: hecmw_rel_resid_L2_33
       type ( hecmwST_local_mesh ), intent(in) :: hecMESH
       type ( hecmwST_matrix     ), intent(in) :: hecMAT
-      real(kind=kreal) :: COMMtime
+      real(kind=kreal), optional :: COMMtime
 
       real(kind=kreal), allocatable :: r(:)
       real(kind=kreal) :: bnorm2, rnorm2
+      real(kind=kreal) :: Tcomm=0.d0
 
       allocate(r(hecMAT%NDOF*hecMAT%NP))
 
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, COMMtime)
-      call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, COMMtime)
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, COMMtime)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+      call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
       hecmw_rel_resid_L2_33 = sqrt(rnorm2 / bnorm2)
+
+      if (present(COMMtime)) COMMtime = COMMtime + Tcomm
 
       deallocate(r)
       end function hecmw_rel_resid_L2_33
@@ -244,13 +249,77 @@ module hecmw_solver_misc_33
 
 !C
 !C***
+!C*** hecmw_precond_33_setup
+!C***
+!C
+      subroutine hecmw_precond_33_setup(hecMAT)
+      use hecmw_util
+      use hecmw_matrix_misc
+      use hecmw_precond_BILU_33
+      use hecmw_precond_DIAG_33
+      use hecmw_precond_SSOR_33
+      implicit none
+      type (hecmwST_matrix), intent(inout) :: hecMAT
+
+      integer(kind=kint ) :: PRECOND, iterPREmax
+
+      iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
+      if (iterPREmax.le.0) return
+
+      PRECOND = hecmw_mat_get_precond( hecMAT )
+
+      if (PRECOND.le.2) then
+        call hecmw_precond_SSOR_33_setup(hecMAT)
+      else if (PRECOND.eq.3) then
+        call hecmw_precond_DIAG_33_setup(hecMAT)
+      else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+        call hecmw_precond_BILU_33_setup(hecMAT)
+      endif
+
+      end subroutine hecmw_precond_33_setup
+
+!C
+!C***
+!C*** hecmw_precond_33_clear
+!C***
+!C
+      subroutine hecmw_precond_33_clear(hecMAT)
+      use hecmw_util
+      use hecmw_matrix_misc
+      use hecmw_precond_BILU_33
+      use hecmw_precond_DIAG_33
+      use hecmw_precond_SSOR_33
+      implicit none
+      type (hecmwST_matrix), intent(inout) :: hecMAT
+
+      integer(kind=kint ) :: PRECOND, iterPREmax
+
+      iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
+      if (iterPREmax.le.0) return
+
+      PRECOND = hecmw_mat_get_precond( hecMAT )
+
+      if (PRECOND.le.2) then
+        call hecmw_precond_SSOR_33_clear(hecMAT)
+      else if (PRECOND.eq.3) then
+        call hecmw_precond_DIAG_33_clear()
+      else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+        call hecmw_precond_BILU_33_clear(hecMAT)
+      endif
+
+      end subroutine hecmw_precond_33_clear
+
+!C
+!C***
 !C*** hecmw_precond_33
 !C***
 !C
       subroutine hecmw_precond_33(hecMESH, hecMAT, R, Z, ZP, COMMtime)
       use hecmw_util
       use hecmw_matrix_misc
-
+      use hecmw_precond_BILU_33
+      use hecmw_precond_DIAG_33
+      use hecmw_precond_SSOR_33
       implicit none
       real(kind=kreal) :: R(:), Z(:), ZP(:)
       type (hecmwST_local_mesh) :: hecMESH
@@ -258,9 +327,7 @@ module hecmw_solver_misc_33
       real(kind=kreal) :: COMMtime
 
       integer(kind=kint ) :: PRECOND, iterPREmax
-      integer(kind=kint ) :: i, j, k, iterPRE, isL, ieL, isU, ieU
-      real   (kind=kreal) ::X1,X2,X3
-      real   (kind=kreal) ::SW1,SW2,SW3
+      integer(kind=kint ) :: i, iterPRE
 
       PRECOND = hecmw_mat_get_precond( hecMAT )
       iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
@@ -278,10 +345,6 @@ module hecmw_solver_misc_33
 !C +----------------+
 !C===
 
-!C
-!C== Block SSOR
-      if (PRECOND.le.2) then
-
       do i= 1, hecMAT%N * 3
         ZP(i)= R(i)
       enddo
@@ -295,95 +358,13 @@ module hecmw_solver_misc_33
 
       do iterPRE= 1, iterPREmax
 
-!C-- FORWARD
-
-        do i= 1, hecMAT%N
-          SW1= ZP(3*i-2)
-          SW2= ZP(3*i-1)
-          SW3= ZP(3*i  )
-          isL= hecMAT%indexL(i-1)+1
-          ieL= hecMAT%indexL(i)
-          do j= isL, ieL
-              k= hecMAT%itemL(j)
-             X1= ZP(3*k-2)
-             X2= ZP(3*k-1)
-             X3= ZP(3*k  )
-            SW1= SW1 - hecMAT%AL(9*j-8)*X1 - hecMAT%AL(9*j-7)*X2 - hecMAT%AL(9*j-6)*X3
-            SW2= SW2 - hecMAT%AL(9*j-5)*X1 - hecMAT%AL(9*j-4)*X2 - hecMAT%AL(9*j-3)*X3
-            SW3= SW3 - hecMAT%AL(9*j-2)*X1 - hecMAT%AL(9*j-1)*X2 - hecMAT%AL(9*j  )*X3
-          enddo
-
-          if (hecMAT%cmat%n_val.ne.0) then
-            isL= hecMAT%indexCL(i-1)+1
-            ieL= hecMAT%indexCL(i)
-            do j= isL, ieL
-                k= hecMAT%itemCL(j)
-               X1= ZP(3*k-2)
-               X2= ZP(3*k-1)
-               X3= ZP(3*k  )
-              SW1= SW1 - hecMAT%CAL(9*j-8)*X1 - hecMAT%CAL(9*j-7)*X2 - hecMAT%CAL(9*j-6)*X3
-              SW2= SW2 - hecMAT%CAL(9*j-5)*X1 - hecMAT%CAL(9*j-4)*X2 - hecMAT%CAL(9*j-3)*X3
-              SW3= SW3 - hecMAT%CAL(9*j-2)*X1 - hecMAT%CAL(9*j-1)*X2 - hecMAT%CAL(9*j  )*X3
-            enddo
-          endif
-
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - hecMAT%ALU(9*i-5)*X1
-          X3= X3 - hecMAT%ALU(9*i-2)*X1 - hecMAT%ALU(9*i-1)*X2
-          X3= hecMAT%ALU(9*i  )*  X3
-          X2= hecMAT%ALU(9*i-4)*( X2 - hecMAT%ALU(9*i-3)*X3 )
-          X1= hecMAT%ALU(9*i-8)*( X1 - hecMAT%ALU(9*i-6)*X3 - hecMAT%ALU(9*i-7)*X2)
-          ZP(3*i-2)= X1
-          ZP(3*i-1)= X2
-          ZP(3*i  )= X3
-        enddo
-
-!C-- BACKWARD
-
-        do i= hecMAT%N, 1, -1
-          isU= hecMAT%indexU(i-1) + 1
-          ieU= hecMAT%indexU(i)
-          SW1= 0.d0
-          SW2= 0.d0
-          SW3= 0.d0
-          do j= ieU, isU, -1
-              k= hecMAT%itemU(j)
-             X1= ZP(3*k-2)
-             X2= ZP(3*k-1)
-             X3= ZP(3*k  )
-            SW1= SW1 + hecMAT%AU(9*j-8)*X1 + hecMAT%AU(9*j-7)*X2 + hecMAT%AU(9*j-6)*X3
-            SW2= SW2 + hecMAT%AU(9*j-5)*X1 + hecMAT%AU(9*j-4)*X2 + hecMAT%AU(9*j-3)*X3
-            SW3= SW3 + hecMAT%AU(9*j-2)*X1 + hecMAT%AU(9*j-1)*X2 + hecMAT%AU(9*j  )*X3
-          enddo
-
-          if (hecMAT%cmat%n_val.gt.0) then
-            isU= hecMAT%indexCU(i-1) + 1
-            ieU= hecMAT%indexCU(i)
-            do j= ieU, isU, -1
-                k= hecMAT%itemCU(j)
-               X1= ZP(3*k-2)
-               X2= ZP(3*k-1)
-               X3= ZP(3*k  )
-              SW1= SW1 + hecMAT%CAU(9*j-8)*X1 + hecMAT%CAU(9*j-7)*X2 + hecMAT%CAU(9*j-6)*X3
-              SW2= SW2 + hecMAT%CAU(9*j-5)*X1 + hecMAT%CAU(9*j-4)*X2 + hecMAT%CAU(9*j-3)*X3
-              SW3= SW3 + hecMAT%CAU(9*j-2)*X1 + hecMAT%CAU(9*j-1)*X2 + hecMAT%CAU(9*j  )*X3
-            enddo
-          endif
-
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - hecMAT%ALU(9*i-5)*X1
-          X3= X3 - hecMAT%ALU(9*i-2)*X1 - hecMAT%ALU(9*i-1)*X2
-          X3= hecMAT%ALU(9*i  )*  X3
-          X2= hecMAT%ALU(9*i-4)*( X2 - hecMAT%ALU(9*i-3)*X3 )
-          X1= hecMAT%ALU(9*i-8)*( X1 - hecMAT%ALU(9*i-6)*X3 - hecMAT%ALU(9*i-7)*X2)
-          ZP(3*i-2)=  ZP(3*i-2) - X1
-          ZP(3*i-1)=  ZP(3*i-1) - X2
-          ZP(3*i  )=  ZP(3*i  ) - X3
-        enddo
+        if (PRECOND.le.2) then
+          call hecmw_precond_SSOR_33_apply(hecMAT%N, ZP)
+        else if (PRECOND.eq.3) then
+          call hecmw_precond_DIAG_33_apply(hecMAT%N, ZP)
+        else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+          call hecmw_precond_BILU_33_apply(hecMAT%N, ZP)
+        endif
 !C
 !C-- additive Schwartz
 !C
@@ -398,25 +379,6 @@ module hecmw_solver_misc_33
         call hecmw_matresid_33 (hecMESH, hecMAT, Z, R, ZP, COMMtime)
 
       enddo
-      endif
-
-!C
-!C== Block SCALING
-      if (PRECOND.eq.3) then
-      do i= 1, hecMAT%N
-        X1= R(3*i-2)
-        X2= R(3*i-1)
-        X3= R(3*i  )
-        X2= X2 - hecMAT%ALU(9*i-5)*X1
-        X3= X3 - hecMAT%ALU(9*i-2)*X1 - hecMAT%ALU(9*i-1)*X2
-        X3= hecMAT%ALU(9*i  )*  X3
-        X2= hecMAT%ALU(9*i-4)*( X2 - hecMAT%ALU(9*i-3)*X3 )
-        X1= hecMAT%ALU(9*i-8)*( X1 - hecMAT%ALU(9*i-6)*X3 - hecMAT%ALU(9*i-7)*X2)
-        Z(3*i-2)= X1
-        Z(3*i-1)= X2
-        Z(3*i  )= X3
-      enddo
-      endif
 
       end subroutine hecmw_precond_33
 
@@ -517,6 +479,7 @@ module hecmw_solver_misc_33
       enddo
 
       end subroutine hecmw_tback_x_33
+
 
       subroutine REPACK(N, hecMAT, MJAD,  AJAD, JAJAD, IAJAD, JADORD)
       use hecmw_util

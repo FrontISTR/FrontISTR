@@ -24,84 +24,79 @@
 !C
 !C*** hecmw_solve_GMRES_33
 !C
-      subroutine hecmw_solve_GMRES_33                                   &
-     &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU,               &
-     &    B, X, ALU, RESID, ITER, ERROR, my_rank,                       &
-     &    NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,                  &
-     &                       STACK_EXPORT, NOD_EXPORT,                  &
-     &                       SOLVER_COMM , PRECOND, iterPREmax, NREST,  &
-     &    Tset, Tsol, Tcomm, ITERlog)     
-
+      subroutine hecmw_solve_GMRES_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
+     &                                    Tset, Tsol, Tcomm )
       use hecmw_util
       use m_hecmw_solve_error
       use m_hecmw_comm_f
-      use hecmw_solver_SR_33
+      use hecmw_matrix_misc
+      use hecmw_solver_misc
+      use hecmw_solver_misc_33
+      use hecmw_solver_scaling_33
 
       implicit none
 
-      integer(kind=kint ), intent(in):: N, NP, NPU, NPL, my_rank
-      integer(kind=kint ), intent(in):: NEIBPETOT
-      integer(kind=kint ), intent(in):: SOLVER_COMM
-      integer(kind=kint ), intent(in):: PRECOND, ITERlog
-
+      type(hecmwST_local_mesh) :: hecMESH
+      type(hecmwST_matrix) :: hecMAT
       integer(kind=kint ), intent(inout):: ITER, ERROR
       real   (kind=kreal), intent(inout):: RESID, Tset, Tsol, Tcomm
 
-      real(kind=kreal), dimension(3*NP) , intent(inout):: B, X
-      real(kind=kreal), dimension(9*NPL), intent(inout):: AL
-      real(kind=kreal), dimension(9*NPU), intent(inout):: AU
-      real(kind=kreal), dimension(9*N  ), intent(inout):: ALU
-      real(kind=kreal), dimension(9*NP ), intent(inout):: D
+      integer(kind=kint ) :: N, NP, NDOF, NNDOF
+      integer(kind=kint ) :: my_rank
+      integer(kind=kint ) :: ITERlog, TIMElog
+      real(kind=kreal), pointer :: B(:), X(:)
 
-      integer(kind=kint ), dimension(0:NP) ,intent(in) :: INU, INL
-      integer(kind=kint ), dimension(  NPL),intent(in) :: IAL
-      integer(kind=kint ), dimension(  NPU),intent(in) :: IAU
-
-      integer(kind=kint ), pointer :: NEIBPE(:)
-      integer(kind=kint ), pointer :: STACK_IMPORT(:), NOD_IMPORT(:)
-      integer(kind=kint ), pointer :: STACK_EXPORT(:), NOD_EXPORT(:)
-
-      real(kind=kreal), dimension(:),    allocatable :: WS, WR
       real(kind=kreal), dimension(:,:),  allocatable :: WW
 
-      integer(kind=kint ) :: MAXIT, iterPREmax, NREST
+      integer(kind=kint ) :: MAXIT, NREST
 
       real   (kind=kreal) :: TOL
 
       real   (kind=kreal), dimension(:),   allocatable :: SS
       real   (kind=kreal), dimension(:,:), allocatable :: H
 
-      integer(kind=kint ) :: AV, CS, SN, R, S, V, W, Y, ZP, ZQ
+      integer(kind=kint ) :: CS, SN
 
       real   (kind=kreal)   ZERO, ONE
       parameter ( ZERO = 0.0D+0, ONE = 1.0D+0 )
- 
-      integer(kind=kint ) :: NRK,i,k,kk,j,jj,jSR,jSB,INFO,ik,iSR,isL,ieL,isU,ieU,kSB
-      integer(kind=kint ) :: indexA,indexB,indexC,kSR,IROW,iterPRE
-      integer(kind=kint ) :: ns, nr
+
+      integer(kind=kint ) :: NRK,i,k,kk,jj,INFO,ik
+      integer(kind=kint ) :: IROW
       real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
-      real   (kind=kreal) :: LDH,LDW,BNRM20,BNRM2,DNRM2,DNRM20,RNORM
-      real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL0,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
-      real   (kind=kreal) :: X1,X2,X3,WVAL1,WVAL2,WVAL3,SW1,SW2,SW3
+      real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
+      real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
+
+      integer(kind=kint), parameter :: R  = 1
+      integer(kind=kint), parameter :: ZP = R + 1
+      integer(kind=kint), parameter :: ZQ = R + 2
+      integer(kind=kint), parameter :: S  = R + 3
+      integer(kind=kint), parameter :: W  = S + 1
+      integer(kind=kint), parameter :: Y  = W
+      integer(kind=kint), parameter :: AV = Y  + 1
+      integer(kind=kint), parameter :: V  = AV + 1
 
       S_TIME= HECMW_WTIME()
 !C
 !C-- INIT.
+      N = hecMAT%N
+      NP = hecMAT%NP
+      NDOF = hecMAT%NDOF
+      NNDOF = N * NDOF
+      my_rank = hecMESH%my_rank
+      X => hecMAT%X
+      B => hecMAT%B
+
+      ITERlog = hecmw_mat_get_iterlog( hecMAT )
+      TIMElog = hecmw_mat_get_timelog( hecMAT )
+      MAXIT  = hecmw_mat_get_iter( hecMAT )
+       TOL   = hecmw_mat_get_resid( hecMAT )
+      NREST  = hecmw_mat_get_nrest( hecMAT )
+
       ERROR= 0
       NRK= NREST + 7
 
-      if( NEIBPETOT > 0 ) then
-        ns = STACK_EXPORT(NEIBPETOT)
-        nr = STACK_IMPORT(NEIBPETOT)
-      else
-        ns = 0
-        nr = 0
-      end if
-
       allocate (H (NRK,NRK))
-      allocate (WW(3*NP,NRK))
-      allocate (WS(3*ns))
-      allocate (WR(3*nr))
+      allocate (WW(NDOF*NP,NRK))
       allocate (SS(NRK))
 
       COMMtime= 0.d0
@@ -110,22 +105,21 @@
       LDH= NREST + 2
       LDW= N
 
-      MAXIT = ITER
-      TOL   = RESID
-
-      R  = 1
-      ZP = R + 1
-      ZQ = R + 2
-      S  = R + 3
-      W  = S + 1
-      Y  = W
-      AV = Y  + 1
-      V  = AV + 1
-
 !C
 !C-- Store the Givens parameters in matrix H.
       CS= NREST + 1
       SN= CS    + 1
+
+!C
+!C-- SCALING
+      call hecmw_solver_scaling_fw_33(hecMESH, hecMAT, Tcomm)
+
+!C===
+!C +----------------------+
+!C | SETUP PRECONDITIONER |
+!C +----------------------+
+!C===
+      call hecmw_precond_33_setup(hecMAT)
 
 !C
 !C
@@ -133,20 +127,10 @@
 !C | {r}= {b} - [A]{x0} |
 !C +--------------------+
 !C===
-      indexB= R
-      call hecmw_solve_init_resid_33 (indexB)
+      call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 !C===
 
-      BNRM20= 0.d0
-      do ik= 1, N
-        iSR= 3*ik-2
-        BNRM20= BNRM20 + B(iSR  )**2 + B(iSR+1)**2 + B(iSR+2)**2 
-      enddo
-
-      call HECMW_allREDUCE_DP1 (BNRM20, BNRM2, HECMW_SUM, SOLVER_COMM )
-!C      call MPI_allREDUCE (BNRM20, BNRM2, 1, MPI_DOUBLE_PRECISION,       &
-!C     &                    MPI_SUM, SOLVER_COMM, ierr)
-
+      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -157,10 +141,11 @@
       E_TIME= HECMW_WTIME()
       Tset= Tset + E_TIME - S_TIME
 !C===
-      
+
       S1_TIME= HECMW_WTIME()
       ITER= 0
-   10 continue
+
+      OUTER: do
 
 !C
 !C************************************************ GMRES Iteration
@@ -171,26 +156,12 @@
 !C | {v1}= {r}/|r| |
 !C +---------------+
 !C===
-        DNRM20= ZERO
-        do ik= 1, N
-          iSR= 3*ik-2
-          DNRM20= DNRM20 + WW(iSR  ,R)**2 + WW(iSR+1,R)**2 +            &
-     &                     WW(iSR+2,R)**2
-        enddo
-      S_TIME= HECMW_WTIME()
-      call HECMW_allREDUCE_DP1 (DNRM20, DNRM2, HECMW_SUM, SOLVER_COMM )
-!C        call MPI_allREDUCE (DNRM20, DNRM2, 1, MPI_DOUBLE_PRECISION,     &
-!C     &                      MPI_SUM, SOLVER_COMM, ierr)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
         RNORM= dsqrt(DNRM2)
         coef= ONE/RNORM
-        do ik= 1, N
-          iSR= 3*ik-2
-          WW(iSR  ,V)= WW(iSR  ,R) * coef
-          WW(iSR+1,V)= WW(iSR+1,R) * coef
-          WW(iSR+2,V)= WW(iSR+2,R) * coef
+        do ik= 1, NNDOF
+          WW(ik,V)= WW(ik,R) * coef
         enddo
 !C===
 
@@ -199,21 +170,14 @@
 !C | {s}= |r|{e1} |
 !C +--------------+
 !C===
-        iSR= 3*1-2
-        WW(iSR  ,S) = RNORM         
-        WW(iSR+1,S) = ZERO
-        WW(iSR+2,S) = ZERO
-        do k = 2, N
-          kSR= 3*k-2
-          WW(kSR  ,S) = ZERO
-          WW(kSR+1,S) = ZERO
-          WW(kSR+2,S) = ZERO
+        WW(1 ,S) = RNORM
+        do k = 2, NNDOF
+          WW(k,S) = ZERO
         enddo
 !C===
 
 !C************************************************ GMRES(m) restart
-   30   continue
-        I   = I    + 1
+        do I = 1, NREST
         ITER= ITER + 1
 
 !C
@@ -221,20 +185,12 @@
 !C | {w}= [A][Minv]{v} |
 !C +-------------------+
 !C===
-      indexA= ZP
-      indexB= ZQ
-      indexC= V + I - 1
-      call hecmw_solve_precond_33 (indexA, indexB, indexC)
+      call hecmw_precond_33(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-      indexA= ZQ
-      indexB= W
-      call hecmw_solve_matvec_33  (indexA, indexB)
+      call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
 
       S_TIME= HECMW_WTIME()
-      call HECMW_SOLVE_SEND_RECV_33                                     &
-     &   ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT,NOD_EXPORT,WS,WR,WW(:,indexB), SOLVER_COMM,     &
-     &     my_rank)
+      call hecmw_update_3_R (hecMESH, WW(:,W), hecMAT%NP)
       E_TIME= HECMW_WTIME()
       COMMtime = COMMtime + E_TIME - S_TIME
 !C===
@@ -247,49 +203,20 @@
 !C   using the Gram-Schmidt process on V and W.
 !C===
       do K= 1, I
-        VAL0= 0.d0
-        do ik= 1, N
-          iSR= 3*ik - 2
-          VAL0= VAL0 + WW(iSR  ,W)*WW(iSR  ,V+K-1)                      &
-     &               + WW(iSR+1,W)*WW(iSR+1,V+K-1)                      &
-     &               + WW(iSR+2,W)*WW(iSR+2,V+K-1)                    
-        enddo
-      S_TIME= HECMW_WTIME()
-      call HECMW_allREDUCE_DP1 (VAL0, VAL, HECMW_SUM, SOLVER_COMM )
-!C        call MPI_allREDUCE (VAL0, VAL, 1, MPI_DOUBLE_PRECISION,         &
-!C     &                      MPI_SUM, SOLVER_COMM, ierr)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
-      
-        do ik= 1, N
-          iSR= 3*ik - 2
-          WW(iSR  ,W)= WW(iSR  ,W) - VAL * WW(iSR  ,V+K-1)
-          WW(iSR+1,W)= WW(iSR+1,W) - VAL * WW(iSR+1,V+K-1)
-          WW(iSR+2,W)= WW(iSR+2,W) - VAL * WW(iSR+2,V+K-1)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,V+K-1), VAL, Tcomm)
+
+        do ik= 1, NNDOF
+          WW(ik,W)= WW(ik,W) - VAL * WW(ik,V+K-1)
         enddo
         H(K,I)= VAL
       enddo
-        
-      VAL0= 0.d0
-      do ik= 1, N
-        iSR= 3*ik - 2
-        VAL0= VAL0 + WW(iSR  ,W)**2 + WW(iSR+1,W)**2 + WW(iSR+2,W)**2  
-      enddo
 
-      S_TIME= HECMW_WTIME()
-      call HECMW_allREDUCE_DP1 (VAL0, VAL, HECMW_SUM, SOLVER_COMM )
-!C      call MPI_allREDUCE (VAL0, VAL, 1, MPI_DOUBLE_PRECISION,           &
-!C     &                    MPI_SUM, SOLVER_COMM, ierr)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,W), VAL, Tcomm)
 
       H(I+1,I)= dsqrt(VAL)
       coef= ONE / H(I+1,I)
-      do ik= 1, N
-        iSR= 3*ik - 2
-        WW(iSR  ,V+I+1-1)= WW(iSR  ,W) * coef
-        WW(iSR+1,V+I+1-1)= WW(iSR+1,W) * coef
-        WW(iSR+2,V+I+1-1)= WW(iSR+2,W) * coef
+      do ik= 1, NNDOF
+        WW(ik,V+I+1-1)= WW(ik,W) * coef
       enddo
 !C===
 
@@ -301,14 +228,14 @@
 
 !C
 !C-- Plane Rotation
-      do k = 1, I-1 
+      do k = 1, I-1
         VCS= H(k,CS)
         VSN= H(k,SN)
         DTEMP   = VCS*H(k  ,I) + VSN*H(k+1,I)
         H(k+1,I)= VCS*H(k+1,I) - VSN*H(k  ,I)
         H(k  ,I)= DTEMP
       enddo
-      
+
 !C
 !C-- Construct Givens Plane Rotation
       AA = H(I  ,I)
@@ -316,7 +243,7 @@
       R0= BB
       if (dabs(AA).gt.dabs(BB)) R0= AA
       SCALE= dabs(AA) + dabs(BB)
-        
+
       if (SCALE.ne.0.d0) then
         RR= SCALE * dsqrt((AA/SCALE)**2+(BB/SCALE)**2)
         RR= dsign(1.d0,R0)*RR
@@ -327,7 +254,7 @@
         H(I,SN)= 0.d0
         RR     = 0.d0
       endif
-     
+
 !C
 !C-- Plane Rotation
       VCS= H(I,CS)
@@ -361,40 +288,31 @@
          enddo
 
 !C-- {x}= {x} + {y}{V}
-         do kk= 1, N
-           kSR= 3*kk-2
-           WW(kSR  , AV)= 0.d0
-           WW(kSR+1, AV)= 0.d0
-           WW(kSR+2, AV)= 0.d0
+         do kk= 1, NNDOF
+           WW(kk, AV)= 0.d0
          enddo
 
          jj= IROW
          do jj= 1, IROW
-         do kk= 1, N
-           kSR= 3*kk-2
-           WW(kSR  ,AV)= WW(kSR  ,AV) + WW(jj,Y)*WW(kSR  ,V+jj-1)
-           WW(kSR+1,AV)= WW(kSR+1,AV) + WW(jj,Y)*WW(kSR+1,V+jj-1)
-           WW(kSR+2,AV)= WW(kSR+2,AV) + WW(jj,Y)*WW(kSR+2,V+jj-1)
+         do kk= 1, NNDOF
+           WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
          enddo
          enddo
 
-         indexA= ZP
-         indexB= ZQ
-         indexC= AV
-         call hecmw_solve_precond_33 (indexA, indexB, indexC)
+         call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-         do kk= 1, N
-           kSR= 3*kk-2
-           X(kSR  )= X(kSR  ) + WW(kSR  ,ZQ)
-           X(kSR+1)= X(kSR+1) + WW(kSR+1,ZQ)
-           X(kSR+2)= X(kSR+2) + WW(kSR+2,ZQ)
+         do kk= 1, NNDOF
+           X(kk)= X(kk) + WW(kk,ZQ)
          enddo
-              
-         goto 70                     
-      endif                                                         
-           
-      if ( ITER.gt.MAXIT ) goto 60
-      if ( I   .lt.NREST ) goto 30
+
+         exit OUTER
+      endif
+
+      if ( ITER.gt.MAXIT ) then
+        ERROR = -300
+        exit OUTER
+      end if
+      end do
 !C===
 
 !C
@@ -418,444 +336,93 @@
       enddo
 
 !C-- {x}= {x} + {y}{V}
-      do kk= 1, N
-        kSR= 3*kk-2
-        WW(kSR  , AV)= 0.d0
-        WW(kSR+1, AV)= 0.d0
-        WW(kSR+2, AV)= 0.d0
+      do kk= 1, NNDOF
+        WW(kk, AV)= 0.d0
       enddo
 
       jj= IROW
       do jj= 1, IROW
-      do kk= 1, N
-        kSR= 3*kk-2
-        WW(kSR  ,AV)= WW(kSR  ,AV) + WW(jj,Y)*WW(kSR  ,V+jj-1)
-        WW(kSR+1,AV)= WW(kSR+1,AV) + WW(jj,Y)*WW(kSR+1,V+jj-1)
-        WW(kSR+2,AV)= WW(kSR+2,AV) + WW(jj,Y)*WW(kSR+2,V+jj-1)
+      do kk= 1, NNDOF
+        WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
       enddo
       enddo
 
-      indexA= ZP
-      indexB= ZQ
-      indexC= AV
-      call hecmw_solve_precond_33 (indexA, indexB, indexC)
+      call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-      do kk= 1, N
-        kSR= 3*kk-2
-        X(kSR  )= X(kSR  ) + WW(kSR  ,ZQ)
-        X(kSR+1)= X(kSR+1) + WW(kSR+1,ZQ)
-        X(kSR+2)= X(kSR+2) + WW(kSR+2,ZQ)
+      do kk= 1, NNDOF
+        X(kk)= X(kk) + WW(kk,ZQ)
       enddo
 
 !C
 !C-- Compute residual vector R, find norm, then check for tolerance.        
-      indexB= R
-      call hecmw_solve_init_resid_33 (indexB)
+      call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
-      DNRM20= ZERO
-      do ik= 1, N
-        kSR= 3*ik - 2
-        DNRM20= DNRM20 + WW(kSR  ,R)**2 + WW(kSR+1,R)**2 +              &
-     &                   WW(kSR+2,R)**2
-      enddo
-
-      S_TIME= HECMW_WTIME()
-      call HECMW_allREDUCE_DP1 (DNRM20, DNRM2, HECMW_SUM, SOLVER_COMM )
-!C      call MPI_allREDUCE  (DNRM20, DNRM2, 1, MPI_DOUBLE_PRECISION,      &
-!C     &                     MPI_SUM, SOLVER_COMM, ierr)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
       WW(I+1,S)= dsqrt(DNRM2/BNRM2)
       RESID    = WW( I+1,S )
 
-!        if ( RESID.le.TOL )   goto 70
-      if ( ITER .gt.MAXIT ) goto 60
+!        if ( RESID.le.TOL )   exit OUTER
+      if ( ITER .gt.MAXIT ) then
+        ERROR = -300
+        exit OUTER
+      end if
 !C
 !C-- RESTART
-      goto 10
+      end do OUTER
 
 !C
 !C-- iteration FAILED
 
-   60 continue
-      ERROR= -300
-      INFO = ITER
+      if (ERROR == -300) then
+        INFO = ITER
 
-!C-- [H]{y}= {s_tld}
-      do ik= 1, I
-        SS(ik)= WW(ik,S)
-      enddo
-      IROW= I
-      WW(IROW,Y)= SS(IROW) / H(IROW,IROW)
-
-      do kk= IROW-1, 1, -1
-        do jj= IROW, kk+1, -1
-          SS(kk)= SS(kk) - H(kk,jj)*WW(jj,Y)
+        !C-- [H]{y}= {s_tld}
+        do ik= 1, I
+          SS(ik)= WW(ik,S)
         enddo
-        WW(kk,Y)= SS(kk) / H(kk,kk)
-      enddo
+        IROW= I
+        WW(IROW,Y)= SS(IROW) / H(IROW,IROW)
 
-!C-- {x}= {x} + {y}{V}
-      do kk= 1, N
-        kSR= 3*kk-2
-        WW(kSR  , AV)= 0.d0
-        WW(kSR+1, AV)= 0.d0
-        WW(kSR+2, AV)= 0.d0
-      enddo
+        do kk= IROW-1, 1, -1
+          do jj= IROW, kk+1, -1
+            SS(kk)= SS(kk) - H(kk,jj)*WW(jj,Y)
+          enddo
+          WW(kk,Y)= SS(kk) / H(kk,kk)
+        enddo
 
-      jj= IROW
-      do jj= 1, IROW
-      do kk= 1, N
-        kSR= 3*kk-2
-        WW(kSR  ,AV)= WW(kSR  ,AV) + WW(jj,Y)*WW(kSR  ,V+jj-1)
-        WW(kSR+1,AV)= WW(kSR+1,AV) + WW(jj,Y)*WW(kSR+1,V+jj-1)
-        WW(kSR+2,AV)= WW(kSR+2,AV) + WW(jj,Y)*WW(kSR+2,V+jj-1)
-      enddo
-      enddo
+        !C-- {x}= {x} + {y}{V}
+        do kk= 1, NNDOF
+          WW(kk, AV)= 0.d0
+        enddo
 
-      indexA= ZP
-      indexB= ZQ
-      indexC= AV
-      call hecmw_solve_precond_33 (indexA, indexB, indexC)
+        jj= IROW
+        do jj= 1, IROW
+          do kk= 1, NNDOF
+            WW(kk,AV)= WW(kk  ,AV) + WW(jj,Y)*WW(kk  ,V+jj-1)
+          enddo
+        enddo
 
-      do kk= 1, N
-        kSR= 3*kk-2
-        X(kSR  )= X(kSR  ) + WW(kSR  ,ZQ)
-        X(kSR+1)= X(kSR+1) + WW(kSR+1,ZQ)
-        X(kSR+2)= X(kSR+2) + WW(kSR+2,ZQ)
-      enddo
+        call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-   70 continue
-      E1_TIME= HECMW_WTIME()
-      COMPtime= E1_TIME - S1_TIME
+        do kk= 1, NNDOF
+          X(kk)= X(kk) + WW(kk,ZQ)
+        enddo
+      end if
 
-      Tsol = COMPtime
-      Tcomm= COMMtime
-
+      call hecmw_solver_scaling_bk_33(hecMAT)
 !C
 !C-- INTERFACE data EXCHANGE
-      call HECMW_SOLVE_SEND_RECV_33                                     &
-     &   ( NP,  NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, X , SOLVER_COMM,my_rank)
+      S_TIME = HECMW_WTIME()
+      call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
+      E_TIME = HECMW_WTIME()
+      Tcomm = Tcomm + E_TIME - S_TIME
 
-      deallocate (H, WW, WR, WS, SS)
+      E1_TIME= HECMW_WTIME()
+      Tsol = E1_TIME - S1_TIME
 
-      contains
-
-!C
-!C***
-!C*** hecmw_solve_init_resid_33
-!C***
-!C
-
-      subroutine hecmw_solve_init_resid_33 (indexB)
-      use hecmw_util
-      implicit REAL*8 (A-H,O-Z)      
-      integer(kind=kint) :: indexB
-
-      S_TIME= HECMW_WTIME()
-      call HECMW_SOLVE_SEND_RECV_33                                     &
-     &   ( NP,  NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, X , SOLVER_COMM,my_rank)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
-
-      do j= 1, N
-          jSR= 3*j-2
-          jSB= 9*j-8
-           X1= X(jSR  )
-           X2= X(jSR+1)
-           X3= X(jSR+2)
-        WVAL1= B(jSR  ) - D(jSB  )*X1 - D(jSB+1)*X2 - D(jSB+2)*X3
-        WVAL2= B(jSR+1) - D(jSB+3)*X1 - D(jSB+4)*X2 - D(jSB+5)*X3
-        WVAL3= B(jSR+2) - D(jSB+6)*X1 - D(jSB+7)*X2 - D(jSB+8)*X3
-        do k= INL(j-1)+1, INL(j)
-             ik= IAL(k)
-            kSR= 3*ik- 2
-            kSB= 9* k- 8
-             X1= X(kSR  )
-             X2= X(kSR+1)
-             X3= X(kSR+2)
-          WVAL1= WVAL1 - AL(kSB  )*X1 - AL(kSB+1)*X2 - AL(kSB+2)*X3
-          WVAL2= WVAL2 - AL(kSB+3)*X1 - AL(kSB+4)*X2 - AL(kSB+5)*X3
-          WVAL3= WVAL3 - AL(kSB+6)*X1 - AL(kSB+7)*X2 - AL(kSB+8)*X3
-        enddo
-
-        do k= INU(j-1)+1, INU(j)
-           ik= IAU(k)
-            kSR= 3*ik-2
-            kSB= 9* k-8
-             X1= X(kSR  )
-             X2= X(kSR+1)
-             X3= X(kSR+2)
-          WVAL1= WVAL1 - AU(kSB  )*X1 - AU(kSB+1)*X2 - AU(kSB+2)*X3
-          WVAL2= WVAL2 - AU(kSB+3)*X1 - AU(kSB+4)*X2 - AU(kSB+5)*X3
-          WVAL3= WVAL3 - AU(kSB+6)*X1 - AU(kSB+7)*X2 - AU(kSB+8)*X3
-        enddo
-
-        WW(jSR  ,indexB)= WVAL1
-        WW(jSR+1,indexB)= WVAL2
-        WW(jSR+2,indexB)= WVAL3
-      enddo
-
-      end subroutine hecmw_solve_init_resid_33
-
-!C
-!C***
-!C*** hecmw_solve_matvec_33
-!C***
-!C
-      subroutine hecmw_solve_matvec_33 (indexA, indexB)
-      use hecmw_util
-      implicit REAL*8 (A-H,O-Z)      
-      integer(kind=kint) :: indexA, indexB
-
-      S_TIME= HECMW_WTIME()
-      call HECMW_SOLVE_SEND_RECV_33                                     &
-     &   ( NP,  NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,            &
-     &     STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexA),              &
-     &     SOLVER_COMM,my_rank)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
-
-      do j= 1, N
-        jSR= 3*j-2
-        jSB= 9*j-8
-           X1= WW(jSR  ,indexA)
-           X2= WW(jSR+1,indexA)
-           X3= WW(jSR+2,indexA)
-        WVAL1= D(jSB  )*X1 + D(jSB+1)*X2 + D(jSB+2)*X3
-        WVAL2= D(jSB+3)*X1 + D(jSB+4)*X2 + D(jSB+5)*X3
-        WVAL3= D(jSB+6)*X1 + D(jSB+7)*X2 + D(jSB+8)*X3
-        do k= INL(j-1)+1, INL(j)
-           ik= IAL(k)
-          kSR= 3*ik-2
-          kSB= 9* k-8
-          X1= WW(kSR  ,indexA)
-          X2= WW(kSR+1,indexA)
-          X3= WW(kSR+2,indexA)
-          WVAL1= WVAL1 + AL(kSB  )*X1 + AL(kSB+1)*X2 + AL(kSB+2)*X3
-          WVAL2= WVAL2 + AL(kSB+3)*X1 + AL(kSB+4)*X2 + AL(kSB+5)*X3
-          WVAL3= WVAL3 + AL(kSB+6)*X1 + AL(kSB+7)*X2 + AL(kSB+8)*X3
-        enddo
-        do k= INU(j-1)+1, INU(j)
-           ik= IAU(k)
-          kSR= 3*ik-2
-          kSB= 9* k-8
-          X1= WW(kSR  ,indexA)
-          X2= WW(kSR+1,indexA)
-          X3= WW(kSR+2,indexA)
-          WVAL1= WVAL1 + AU(kSB  )*X1 + AU(kSB+1)*X2 + AU(kSB+2)*X3
-          WVAL2= WVAL2 + AU(kSB+3)*X1 + AU(kSB+4)*X2 + AU(kSB+5)*X3
-          WVAL3= WVAL3 + AU(kSB+6)*X1 + AU(kSB+7)*X2 + AU(kSB+8)*X3
-        enddo
-
-        WW(jSR  ,indexB)= WVAL1
-        WW(jSR+1,indexB)= WVAL2
-        WW(jSR+2,indexB)= WVAL3
-      enddo
-
-      end subroutine hecmw_solve_matvec_33
-
-!C
-!C***
-!C*** hecmw_solve_precond_33
-!C***
-!C
-      subroutine hecmw_solve_precond_33 (indexA, indexB, indexC)
-      use hecmw_util
-      implicit REAL*8 (A-H,O-Z)      
-      integer(kind=kint) :: indexA, indexB, indexC
-
-      if (PRECOND.eq.1.or.PRECOND.eq.2) then
-!C
-!C== Block SSOR
-
-      do j= 1, N
-        jSR= 3*j-2
-        WW(jSR  ,indexA)= WW(jSR  ,indexC)
-        WW(jSR+1,indexA)= WW(jSR+1,indexC)
-        WW(jSR+2,indexA)= WW(jSR+2,indexC)
-      enddo
-      do j= 1+N, NP
-        jSR= 3*j-2
-        WW(jSR  ,indexA)= 0.d0
-        WW(jSR+1,indexA)= 0.d0
-        WW(jSR+2,indexA)= 0.d0
-      enddo
-
-      do j= 1, NP
-        jSR= 3*j-2
-        WW(jSR  ,indexB )= 0.d0
-        WW(jSR+1,indexB )= 0.d0
-        WW(jSR+2,indexB )= 0.d0
-      enddo
-
-      do iterPRE= 1, iterPREmax
-
-!C
-!C-- FORWARD
-        do j= 1, N
-          jSR= 3*j-2
-          jSB= 9*j-8
-          SW1= WW(jSR  ,indexA)
-          SW2= WW(jSR+1,indexA)
-          SW3= WW(jSR+2,indexA)
-          isL= INL(j-1)+1
-          ieL= INL(j)
-          do k= isL, ieL
-             ik= IAL(k)
-            kSR= 3*ik-2
-            kSB= 9* k-8
-             X1= WW(kSR  ,indexA)
-             X2= WW(kSR+1,indexA)
-             X3= WW(kSR+2,indexA)
-            SW1= SW1 - AL(kSB  )*X1 - AL(kSB+1)*X2 - AL(kSB+2)*X3 
-            SW2= SW2 - AL(kSB+3)*X1 - AL(kSB+4)*X2 - AL(kSB+5)*X3 
-            SW3= SW3 - AL(kSB+6)*X1 - AL(kSB+7)*X2 - AL(kSB+8)*X3 
-          enddo
-
-          X1= SW1
-          X2= SW2
-          X3= SW3
-
-          X2= X2 - ALU(jSB+3)*X1
-          X3= X3 - ALU(jSB+6)*X1 - ALU(jSB+7)*X2
-          X3= ALU(jSB+8)*  X3
-          X2= ALU(jSB+4)*( X2 - ALU(jSB+5)*X3 )
-          X1= ALU(jSB  )*( X1 - ALU(jSB+2)*X3 - ALU(jSB+1)*X2)
-
-          WW(jSR  ,indexA)= X1
-          WW(jSR+1,indexA)= X2
-          WW(jSR+2,indexA)= X3
-        enddo
-
-!C
-!C-- BACKWARD
-
-        do j= N, 1, -1
-          jSR= 3*j-2
-          jSB= 9*j-8
-
-          isU= INU(j-1) + 1
-          ieU= INU(j) 
-          SW1= 0.d0
-          SW2= 0.d0
-          SW3= 0.d0
-          do k= isU, ieU
-             ik= IAU(k)
-            kSR= 3*ik-2
-            kSB= 9* k-8
-             X1= WW(kSR  ,indexA)
-             X2= WW(kSR+1,indexA)
-             X3= WW(kSR+2,indexA)
-            SW1= SW1 + AU(kSB  )*X1 + AU(kSB+1)*X2 + AU(kSB+2)*X3
-            SW2= SW2 + AU(kSB+3)*X1 + AU(kSB+4)*X2 + AU(kSB+5)*X3
-            SW3= SW3 + AU(kSB+6)*X1 + AU(kSB+7)*X2 + AU(kSB+8)*X3
-          enddo
-
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(jSB+3)*X1
-          X3= X3 - ALU(jSB+6)*X1 - ALU(jSB+7)*X2
-          X3= ALU(jSB+8)*  X3
-          X2= ALU(jSB+4)*( X2 - ALU(jSB+5)*X3 )
-          X1= ALU(jSB  )*( X1 - ALU(jSB+2)*X3 - ALU(jSB+1)*X2)
-          WW(jSR  ,indexA)=  WW(jSR  ,indexA) - X1
-          WW(jSR+1,indexA)=  WW(jSR+1,indexA) - X2
-          WW(jSR+2,indexA)=  WW(jSR+2,indexA) - X3
-        enddo
-
-!C
-!C-- additive Schwartz
-
-      do j= 1, N
-        jSR=  3*j- 2
-        WW(jSR  ,indexB)= WW(jSR  ,indexB) + WW(jSR  ,indexA)
-        WW(jSR+1,indexB)= WW(jSR+1,indexB) + WW(jSR+1,indexA)
-        WW(jSR+2,indexB)= WW(jSR+2,indexB) + WW(jSR+2,indexA)
-      enddo
-
-      if (iterPRE.eq.iterPREmax) exit
-
-      S_TIME= HECMW_WTIME()
-        call HECMW_SOLVE_SEND_RECV_33                                   &
-     &     ( NP , NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT,          &
-     &       STACK_EXPORT, NOD_EXPORT, WS, WR, WW(:,indexB) ,           &
-     &       SOLVER_COMM,  my_rank)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
-
-      do j= 1, N
-        jSR= 3*j-2
-        jSB= 9*j-8
-           X1= WW(jSR  ,indexB)
-           X2= WW(jSR+1,indexB)
-           X3= WW(jSR+2,indexB)
-        WVAL1= WW(jSR  ,indexC)                                         &
-     &           - D(jSB  )*X1 - D(jSB+1)*X2 - D(jSB+2)*X3           
-        WVAL2= WW(jSR+1,indexC)                                         &
-     &           - D(jSB+3)*X1 - D(jSB+4)*X2 - D(jSB+5)*X3           
-        WVAL3= WW(jSR+2,indexC)                                         &
-     &           - D(jSB+6)*X1 - D(jSB+7)*X2 - D(jSB+8)*X3           
-        do k= INL(j-1)+1, INL(j)
-          ik = IAL(k)
-          kSR= 3*ik-2
-          kSB= 9* k-8
-           X1= WW(kSR  ,indexB)
-           X2= WW(kSR+1,indexB)
-           X3= WW(kSR+2,indexB)
-          WVAL1= WVAL1 - AL(kSB  )*X1 - AL(kSB+1)*X2 - AL(kSB+2)*X3 
-          WVAL2= WVAL2 - AL(kSB+3)*X1 - AL(kSB+4)*X2 - AL(kSB+5)*X3 
-          WVAL3= WVAL3 - AL(kSB+6)*X1 - AL(kSB+7)*X2 - AL(kSB+8)*X3 
-        enddo
-
-        do k= INU(j-1)+1, INU(j)
-          ik = IAU(k)
-          kSR= 3*ik-2
-          kSB= 9* k-8
-           X1= WW(kSR  ,indexB)
-           X2= WW(kSR+1,indexB)
-           X3= WW(kSR+2,indexB)
-          WVAL1= WVAL1 - AU(kSB  )*X1 - AU(kSB+1)*X2 - AU(kSB+2)*X3
-          WVAL2= WVAL2 - AU(kSB+3)*X1 - AU(kSB+4)*X2 - AU(kSB+5)*X3
-          WVAL3= WVAL3 - AU(kSB+6)*X1 - AU(kSB+7)*X2 - AU(kSB+8)*X3
-        enddo
-        
-        WW(jSR  , indexA)= WVAL1
-        WW(jSR+1, indexA)= WVAL2
-        WW(jSR+2, indexA)= WVAL3
-      enddo
-
-      enddo
-      endif
-
-      if (PRECOND.eq.3) then
-!C
-!C== Block SCALING
-
-      do j= 1, N
-        jSR= 3*j-2
-        jSB= 9*j-8
-
-        X1= WW(jSR  ,indexC)
-        X2= WW(jSR+1,indexC)
-        X3= WW(jSR+2,indexC)
-
-        X2= X2 - ALU(jSB+3)*X1
-        X3= X3 - ALU(jSB+6)*X1 - ALU(jSB+7)*X2
-        X3= ALU(jSB+8)*  X3
-        X2= ALU(jSB+4)*( X2 - ALU(jSB+5)*X3 )
-        X1= ALU(jSB  )*( X1 - ALU(jSB+2)*X3 - ALU(jSB+1)*X2)
-        WW(jSR  ,indexB)= X1
-        WW(jSR+1,indexB)= X2
-        WW(jSR+2,indexB)= X3
-      enddo
-      endif
-
-      end subroutine hecmw_solve_precond_33
+      deallocate (H, WW, SS)
+      call hecmw_precond_33_clear(hecMAT)
 
       end subroutine  hecmw_solve_GMRES_33
       end module     hecmw_solver_GMRES_33
