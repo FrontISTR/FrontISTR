@@ -13,6 +13,7 @@ module hecmw_solver_misc_33
       use hecmw_matrix_contact
       use hecmw_matrix_misc
       use jad_type
+      !$ use omp_lib
 
       implicit none
       real(kind=kreal) :: X(:), Y(:)
@@ -24,60 +25,126 @@ module hecmw_solver_misc_33
       integer(kind=kint) :: i, j, jS, jE, in
       real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
 
+      ! added for turning >>>
+      integer, parameter :: numOfBlockPerThread = 100
+      logical, save :: isFirst = .true.
+      integer, save :: numOfThread = 1
+      integer, save, allocatable :: startPos(:), endPos(:)
+      integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
+      integer(kind=kint) :: threadNum, blockNum, numOfBlock, numOfElement, elementCount, blockIndex
+      real(kind=kreal) :: numOfElementPerBlock
+      ! <<< added for turning
+
+      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+        call JAD_MATVEC(hecMESH, hecMAT, X, Y, COMMtime)
+      ELSE
+
+      ! added for turning >>>
+      if (isFirst .eqv. .true.) then
+        !$ numOfThread = omp_get_max_threads()
+        numOfBlock = numOfThread * numOfBlockPerThread
+        allocate (startPos(0 : numOfBlock - 1), endPos(0 : numOfBlock - 1))
+        numOfElement = hecMAT%N + hecMAT%indexL(hecMAT%N) + hecMAT%indexU(hecMAT%N)
+        numOfElementPerBlock = dble(numOfElement) / numOfBlock
+        blockNum = 0
+        elementCount = 0
+        startPos(blockNum) = 1
+        do i= 1, hecMAT%N
+          elementCount = elementCount + 1
+          elementCount = elementCount + (hecMAT%indexL(i) - hecMAT%indexL(i-1))
+          elementCount = elementCount + (hecMAT%indexU(i) - hecMAT%indexU(i-1))
+          if (elementCount > (blockNum + 1) * numOfElementPerBlock) then
+            endPos(blockNum) = i
+            write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), startPos(blockNum), endPos(blockNum)
+            blockNum = blockNum + 1
+            startPos(blockNum) = i + 1
+            if (blockNum == (numOfBlock - 1)) exit
+          endif
+        enddo
+        endPos(blockNum) = hecMAT%N
+        write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), startPos(blockNum), endPos(blockNum)
+
+        ! calculate sector cache size
+        sectorCacheSize1 = int((dble(hecMAT%NP) * 3 * kreal / (4096 * 128)) + 0.999)
+        if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
+        sectorCacheSize0 = 12 - sectorCacheSize1
+        write(*,*) 'X size =', hecMAT%N * 3 * kreal, '[byte]  ', &
+                   'sectorCache0 =', sectorCacheSize0, '[way]  ', &
+                   'sectorCache1 =', sectorCacheSize1, '[way]'
+
+        isFirst = .false.
+      endif
+      ! <<< added for turning
+
       START_TIME= HECMW_WTIME()
       call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
-!C
-!C    JAD_ON_F TRUE
-!C
-      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call JAD_MATVEC(hecMAT, X, Y)
-      ELSE
 
-      do i= 1, hecMAT%N
-        X1= X(3*i-2)
-        X2= X(3*i-1)
-        X3= X(3*i  )
-        YV1= hecMAT%D(9*i-8)*X1 + hecMAT%D(9*i-7)*X2                    &
-     &                          + hecMAT%D(9*i-6)*X3
-        YV2= hecMAT%D(9*i-5)*X1 + hecMAT%D(9*i-4)*X2                    &
-     &                          + hecMAT%D(9*i-3)*X3
-        YV3= hecMAT%D(9*i-2)*X1 + hecMAT%D(9*i-1)*X2                    &
-     &                          + hecMAT%D(9*i  )*X3
+!call fapp_start("loopInMatvec33", 1, 0)
+!call start_collection("loopInMatvec33")
 
-        jS= hecMAT%indexL(i-1) + 1
-        jE= hecMAT%indexL(i  )
-        do j= jS, jE
-          in  = hecMAT%itemL(j)
-          X1= X(3*in-2)
-          X2= X(3*in-1)
-          X3= X(3*in  )
-          YV1= YV1 + hecMAT%AL(9*j-8)*X1 + hecMAT%AL(9*j-7)*X2          &
-     &                                   + hecMAT%AL(9*j-6)*X3
-          YV2= YV2 + hecMAT%AL(9*j-5)*X1 + hecMAT%AL(9*j-4)*X2          &
-     &                                   + hecMAT%AL(9*j-3)*X3
-          YV3= YV3 + hecMAT%AL(9*j-2)*X1 + hecMAT%AL(9*j-1)*X2          &
-     &                                   + hecMAT%AL(9*j  )*X3
+!xx!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+!xx!OCL CACHE_SUBSECTOR_ASSIGN(X)
+
+!$OMP PARALLEL DEFAULT(NONE) &
+!$OMP   PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+!$OMP   SHARED(hecMAT,X,Y,startPos,endPos,numOfThread)
+      threadNum = 0
+      !$ threadNum = omp_get_thread_num()
+      do blockNum = 0 , numOfBlockPerThread - 1
+        blockIndex = blockNum * numOfThread  + threadNum
+        do i = startPos(blockIndex), endPos(blockIndex)
+          X1= X(3*i-2)
+          X2= X(3*i-1)
+          X3= X(3*i  )
+          YV1= hecMAT%D(9*i-8)*X1 + hecMAT%D(9*i-7)*X2                    &
+       &                          + hecMAT%D(9*i-6)*X3
+          YV2= hecMAT%D(9*i-5)*X1 + hecMAT%D(9*i-4)*X2                    &
+       &                          + hecMAT%D(9*i-3)*X3
+          YV3= hecMAT%D(9*i-2)*X1 + hecMAT%D(9*i-1)*X2                    &
+       &                          + hecMAT%D(9*i  )*X3
+
+          jS= hecMAT%indexL(i-1) + 1
+          jE= hecMAT%indexL(i  )
+          do j= jS, jE
+            in  = hecMAT%itemL(j)
+            X1= X(3*in-2)
+            X2= X(3*in-1)
+            X3= X(3*in  )
+            YV1= YV1 + hecMAT%AL(9*j-8)*X1 + hecMAT%AL(9*j-7)*X2          &
+       &                                   + hecMAT%AL(9*j-6)*X3
+            YV2= YV2 + hecMAT%AL(9*j-5)*X1 + hecMAT%AL(9*j-4)*X2          &
+       &                                   + hecMAT%AL(9*j-3)*X3
+            YV3= YV3 + hecMAT%AL(9*j-2)*X1 + hecMAT%AL(9*j-1)*X2          &
+       &                                   + hecMAT%AL(9*j  )*X3
+          enddo
+          jS= hecMAT%indexU(i-1) + 1
+          jE= hecMAT%indexU(i  )
+          do j= jS, jE
+            in  = hecMAT%itemU(j)
+            X1= X(3*in-2)
+            X2= X(3*in-1)
+            X3= X(3*in  )
+            YV1= YV1 + hecMAT%AU(9*j-8)*X1 + hecMAT%AU(9*j-7)*X2          &
+       &                                   + hecMAT%AU(9*j-6)*X3
+            YV2= YV2 + hecMAT%AU(9*j-5)*X1 + hecMAT%AU(9*j-4)*X2          &
+       &                                   + hecMAT%AU(9*j-3)*X3
+            YV3= YV3 + hecMAT%AU(9*j-2)*X1 + hecMAT%AU(9*j-1)*X2          &
+       &                                   + hecMAT%AU(9*j  )*X3
+          enddo
+          Y(3*i-2)= YV1
+          Y(3*i-1)= YV2
+          Y(3*i  )= YV3
         enddo
-        jS= hecMAT%indexU(i-1) + 1
-        jE= hecMAT%indexU(i  )
-        do j= jS, jE
-          in  = hecMAT%itemU(j)
-          X1= X(3*in-2)
-          X2= X(3*in-1)
-          X3= X(3*in  )
-          YV1= YV1 + hecMAT%AU(9*j-8)*X1 + hecMAT%AU(9*j-7)*X2          &
-     &                                   + hecMAT%AU(9*j-6)*X3
-          YV2= YV2 + hecMAT%AU(9*j-5)*X1 + hecMAT%AU(9*j-4)*X2          &
-     &                                   + hecMAT%AU(9*j-3)*X3
-          YV3= YV3 + hecMAT%AU(9*j-2)*X1 + hecMAT%AU(9*j-1)*X2          &
-     &                                   + hecMAT%AU(9*j  )*X3
-        enddo
-        Y(3*i-2)= YV1
-        Y(3*i-1)= YV2
-        Y(3*i  )= YV3
       enddo
+!$OMP END PARALLEL
+
+!xx!OCL END_CACHE_SUBSECTOR
+!xx!OCL END_CACHE_SECTOR_SIZE
+
+!call stop_collection("loopInMatvec33")
+!call fapp_stop("loopInMatvec33", 1, 0)
 
       ENDIF
 

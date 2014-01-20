@@ -1,5 +1,6 @@
       module JAD_TYPE
       use hecmw_util
+      use m_hecmw_comm_f
       implicit none
 
       private
@@ -38,12 +39,21 @@
       DEALLOCATE(WP1,WP2,WP3)
       end subroutine JAD_FINALIZE
 
-      subroutine JAD_MATVEC(hecMAT, X, Y)
+      subroutine JAD_MATVEC(hecMESH, hecMAT, X, Y, COMMtime)
+      type(hecmwST_local_mesh), intent(in) :: hecMESH
       type(hecmwST_matrix), intent(in) :: hecMAT
       real(kind=kreal), intent(in) :: X(:)
       real(kind=kreal), intent(out) :: Y(:)
+      real(kind=kreal), intent(inout) :: COMMtime
+      real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i
       real(kind=kreal) :: X1, X2, X3
+
+      START_TIME= HECMW_WTIME()
+      call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
+      END_TIME= HECMW_WTIME()
+      COMMtime = COMMtime + END_TIME - START_TIME
+
       do i= 1, hecMAT%N
         X1= X(3*i-2)
         X2= X(3*i-1)
