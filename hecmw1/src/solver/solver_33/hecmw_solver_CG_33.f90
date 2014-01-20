@@ -134,14 +134,8 @@
         X = 0.d0
       endif
 
-      IF (hecmw_mat_get_usejad(hecMAT).ne.0) JAD_ON_F = .TRUE.
-      IF (JAD_ON_F) THEN
-        ALLOCATE(WP1(hecMAT%NP), WP2(hecMAT%NP), WP3(hecMAT%NP))
-        ALLOCATE(AJAD((hecMAT%NPL+hecMAT%NPU)*9))
-        ALLOCATE(JAJAD(hecMAT%NPL+hecMAT%NPU))
-        ALLOCATE(JADORD(hecMAT%NP))
-        ALLOCATE(IAJAD(hecMAT%NP+1))
-        CALL REPACK(hecMAT%N, hecMAT, MJAD, AJAD, JAJAD, IAJAD, JADORD)
+      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+        call JAD_INIT(hecMAT)
       ENDIF
 !C
 !C-- {tatx} = [T'] [A] [T]{x}
@@ -264,12 +258,8 @@
       deallocate (WW)
       call hecmw_precond_33_clear(hecMAT)
 
-      IF (JAD_ON_F) THEN
-        DEALLOCATE(AJAD)
-        DEALLOCATE(JAJAD)
-        DEALLOCATE(JADORD)
-        DEALLOCATE(IAJAD)
-        DEALLOCATE(WP1,WP2,WP3)
+      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+        call JAD_FINALIZE()
       ENDIF
 
       end subroutine hecmw_solve_CG_33
