@@ -105,19 +105,11 @@
           WW(i,BT) = B(i)
         enddo
        else
-        if (TIMElog.eq.1) then
         call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
-        else
-        call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK))
-        endif
       endif
 
 !C-- compute ||{bt}||
-      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
-      else
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,BT), WW(:,BT), BNRM2)
-      endif
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -137,17 +129,9 @@
 !C
 !C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then
-        if (TIMElog.eq.1) then
         call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
-        else
-        call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX))
-        endif
        else
-        if (TIMElog.eq.1) then
         call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
-        else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK))
-        endif
       endif
 
 !C-- {r} = {bt} - {tatx}
@@ -170,22 +154,14 @@
 !C | {z}= [Minv]{r} |
 !C +----------------+
 !C===
-      if (TIMElog.eq.1) then
       call hecmw_precond_33(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
-      else
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK))
-      endif
 
 !C===
 !C +---------------+
 !C | {RHO}= {r}{z} |
 !C +---------------+
 !C===
-      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,Z), RHO, Tcomm)
-      else
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,Z), RHO)
-      endif
 
 !C===
 !C +-----------------------------+
@@ -210,17 +186,9 @@
 !C +---------------------+
 !C===
       if (totalmpc.eq.0) then
-        if (TIMElog.eq.1) then
         call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
-        else
-        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q))
-        endif
        else
-        if (TIMElog.eq.1) then
         call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK), Tcomm)
-        else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK))
-        endif
       endif
 
 !C===
@@ -228,11 +196,7 @@
 !C | ALPHA= RHO / {p}{q} |
 !C +---------------------+
 !C===
-      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,P), WW(:,Q), C1, Tcomm)
-      else
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,P), WW(:,Q), C1)
-      endif
 
       ALPHA= RHO / C1
 
@@ -247,11 +211,7 @@
         WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
 
-      if (TIMElog.eq.1) then
       call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,R), DNRM2, Tcomm)
-      else
-      call hecmw_InnerProduct_R(hecMESH, 3, WW(:,R), WW(:,R), DNRM2)
-      endif
 
       RESID= dsqrt(DNRM2/BNRM2)
 
@@ -269,11 +229,7 @@
 !C************************************************* Conjugate Gradient Iteration end
 !C
       if (totalmpc.ne.0) then
-        if (TIMElog.eq.1) then
         call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
-        else
-        call hecmw_tback_x_33(hecMESH, X, WW(:,WK))
-        endif
       endif
 !C
 !C-- INTERFACE data EXCHANGE
