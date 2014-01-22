@@ -29,6 +29,7 @@ module hecmw_precond_DIAG_33
   public:: hecmw_precond_DIAG_33_apply
   public:: hecmw_precond_DIAG_33_clear
 
+  integer(kind=kint) :: N
   real(kind=kreal), pointer :: ALU(:) => null()
 
 contains
@@ -37,7 +38,7 @@ contains
     use hecmw_matrix_misc
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint ) :: N, NP
+    integer(kind=kint ) :: NP
     real   (kind=kreal) :: SIGMA_DIAG
     real(kind=kreal), pointer:: D(:)
 
@@ -118,10 +119,9 @@ contains
 
   end subroutine hecmw_precond_DIAG_33_setup
 
-  subroutine hecmw_precond_DIAG_33_apply(N, WW)
+  subroutine hecmw_precond_DIAG_33_apply(WW)
     implicit none
-    integer(kind=kint) :: N
-    real(kind=kreal) :: WW(:)
+    real(kind=kreal), intent(inout) :: WW(:)
     integer(kind=kint) :: i
     real(kind=kreal) :: X1, X2, X3
 

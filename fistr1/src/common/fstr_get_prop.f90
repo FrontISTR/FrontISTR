@@ -179,7 +179,7 @@ contains
         ee = shell_variables(1)
         pp = shell_variables(2)
       else
-        write(IMSG,*) '###Error : shell properties isnt collect (isotropic)'
+        write(IMSG,*) '###Error : shell properties not correct (isotropic)'
         stop
       endif
     elseif(shell_matltype == 1)then
@@ -200,11 +200,11 @@ contains
         ee = shell_variables(1)
         pp = shell_variables(2)
       else
-        write(IMSG,*) '###Error : shell properties isnt collect(orthotropic)'
+        write(IMSG,*) '###Error : shell properties not correct(orthotropic)'
         stop
       endif
     else
-      write(IMSG,*) '###Error : shell_matltype isnt collect'
+      write(IMSG,*) '###Error : shell_matltype not correct'
       stop
     endif
 

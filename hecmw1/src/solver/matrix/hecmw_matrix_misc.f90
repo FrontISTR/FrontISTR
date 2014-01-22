@@ -43,6 +43,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
+    call hecmw_mat_set_ncolor_in( hecMAT, 100 )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
@@ -244,6 +245,18 @@ module hecmw_matrix_misc
     integer(kind=kint) :: usejad
     hecMAT%Iarray(33) = usejad
   end subroutine hecmw_mat_set_usejad
+
+  function hecmw_mat_get_ncolor_in( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_ncolor_in
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_ncolor_in = hecMAT%Iarray(34)
+  end function hecmw_mat_get_ncolor_in
+
+  subroutine hecmw_mat_set_ncolor_in( hecMAT, ncolor_in )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: ncolor_in
+    hecMAT%Iarray(34) = ncolor_in
+  end subroutine hecmw_mat_set_ncolor_in
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid

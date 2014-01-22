@@ -30,6 +30,7 @@ module hecmw_precond_BILU_33
   public:: hecmw_precond_BILU_33_apply
   public:: hecmw_precond_BILU_33_clear
 
+  integer(kind=kint) :: N
   real(kind=kreal), pointer :: ALU(:) => null()
   real(kind=kreal), pointer :: AUlu0(:) => null()
   real(kind=kreal), pointer :: ALlu0(:) => null()
@@ -44,7 +45,7 @@ contains
   subroutine hecmw_precond_BILU_33_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint ) :: N, NP, NPU, NPL
+    integer(kind=kint ) :: NP, NPU, NPL
     integer(kind=kint ) :: PRECOND
     real   (kind=kreal) :: SIGMA, SIGMA_DIAG
 
@@ -103,10 +104,9 @@ contains
     enddo
   end subroutine hecmw_precond_BILU_33_setup
 
-  subroutine hecmw_precond_BILU_33_apply(N, WW)
+  subroutine hecmw_precond_BILU_33_apply(WW)
     implicit none
-    integer(kind=kint) :: N
-    real(kind=kreal) :: WW(:)
+    real(kind=kreal), intent(inout) :: WW(:)
     integer(kind=kint) :: i, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
     !C

@@ -232,7 +232,7 @@ contains
     type(hecmwST_matrix) :: hecMAT
     integer, parameter :: iDump = 201
     character(len=64) :: fname
-    integer :: i, j, i0, idof, jdof, ii, jj
+    integer :: i, j, jj
     integer :: idx, idxL0, idxD0, idxU0
     integer :: n, np, ndof, ndof2, nnz, nnz1
     character(len=64), parameter :: lineFormat = "(e20.12e3)"
@@ -309,7 +309,7 @@ contains
     integer, parameter :: iDump = 201
     character(len=64) :: fname
     integer :: i
-    integer :: n, np, ndof, ndof2, nnz
+    integer :: n, np, ndof, ndof2
     character(len=64), parameter :: lineFormat = "(e20.12e3)"
     integer :: stat
     if( hecmw_mat_get_dump(hecMAT) == HECMW_MAT_DUMP_TYPE_NONE) return
@@ -339,7 +339,7 @@ contains
     integer, parameter :: iDump = 201
     character(len=64) :: fname
     integer :: i
-    integer :: n, np, ndof, ndof2, nnz
+    integer :: n, np, ndof, ndof2
     character(len=64), parameter :: lineFormat = "(e20.12e3)"
     integer :: stat
     if( hecmw_mat_get_dump(hecMAT) == HECMW_MAT_DUMP_TYPE_NONE) return

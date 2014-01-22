@@ -16,14 +16,19 @@ module hecmw_solver_misc_33
       !$ use omp_lib
 
       implicit none
-      real(kind=kreal) :: X(:), Y(:)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal), optional :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      type (hecmwST_matrix), intent(in), target :: hecMAT
+      real(kind=kreal), intent(in) :: X(:)
+      real(kind=kreal), intent(out) :: Y(:)
+      real(kind=kreal), intent(inout), optional :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jS, jE, in
       real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
+
+      integer(kind=kint) :: N, NP
+      integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
+      real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
       ! added for turning >>>
       integer, parameter :: numOfBlockPerThread = 100
@@ -31,7 +36,8 @@ module hecmw_solver_misc_33
       integer, save :: numOfThread = 1
       integer, save, allocatable :: startPos(:), endPos(:)
       integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
-      integer(kind=kint) :: threadNum, blockNum, numOfBlock, numOfElement, elementCount, blockIndex
+      integer(kind=kint) :: threadNum, blockNum, numOfBlock
+      integer(kind=kint) :: numOfElement, elementCount, blockIndex
       real(kind=kreal) :: numOfElementPerBlock
       ! <<< added for turning
 
@@ -39,36 +45,48 @@ module hecmw_solver_misc_33
         call JAD_MATVEC(hecMESH, hecMAT, X, Y, COMMtime)
       ELSE
 
+      N = hecMAT%N
+      NP = hecMAT%NP
+      indexL => hecMAT%indexL
+      indexU => hecMAT%indexU
+      itemL => hecMAT%itemL
+      itemU => hecMAT%itemU
+      AL => hecMAT%AL
+      AU => hecMAT%AU
+      D => hecMAT%D
+
       ! added for turning >>>
       if (isFirst .eqv. .true.) then
         !$ numOfThread = omp_get_max_threads()
         numOfBlock = numOfThread * numOfBlockPerThread
         allocate (startPos(0 : numOfBlock - 1), endPos(0 : numOfBlock - 1))
-        numOfElement = hecMAT%N + hecMAT%indexL(hecMAT%N) + hecMAT%indexU(hecMAT%N)
+        numOfElement = N + indexL(N) + indexU(N)
         numOfElementPerBlock = dble(numOfElement) / numOfBlock
         blockNum = 0
         elementCount = 0
         startPos(blockNum) = 1
-        do i= 1, hecMAT%N
+        do i= 1, N
           elementCount = elementCount + 1
-          elementCount = elementCount + (hecMAT%indexL(i) - hecMAT%indexL(i-1))
-          elementCount = elementCount + (hecMAT%indexU(i) - hecMAT%indexU(i-1))
+          elementCount = elementCount + (indexL(i) - indexL(i-1))
+          elementCount = elementCount + (indexU(i) - indexU(i-1))
           if (elementCount > (blockNum + 1) * numOfElementPerBlock) then
             endPos(blockNum) = i
-            write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), startPos(blockNum), endPos(blockNum)
+            write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
+                 startPos(blockNum), endPos(blockNum)
             blockNum = blockNum + 1
             startPos(blockNum) = i + 1
             if (blockNum == (numOfBlock - 1)) exit
           endif
         enddo
-        endPos(blockNum) = hecMAT%N
-        write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), startPos(blockNum), endPos(blockNum)
+        endPos(blockNum) = N
+        write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
+             startPos(blockNum), endPos(blockNum)
 
         ! calculate sector cache size
-        sectorCacheSize1 = int((dble(hecMAT%NP) * 3 * kreal / (4096 * 128)) + 0.999)
+        sectorCacheSize1 = int((dble(NP) * 3 * kreal / (4096 * 128)) + 0.999)
         if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
         sectorCacheSize0 = 12 - sectorCacheSize1
-        write(*,*) 'X size =', hecMAT%N * 3 * kreal, '[byte]  ', &
+        write(*,*) 'X size =', N * 3 * kreal, '[byte]  ', &
                    'sectorCache0 =', sectorCacheSize0, '[way]  ', &
                    'sectorCache1 =', sectorCacheSize1, '[way]'
 
@@ -77,7 +95,7 @@ module hecmw_solver_misc_33
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
-      call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
+      call hecmw_update_3_R (hecMESH, X, NP)
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -88,8 +106,8 @@ module hecmw_solver_misc_33
 !xx!OCL CACHE_SUBSECTOR_ASSIGN(X)
 
 !$OMP PARALLEL DEFAULT(NONE) &
-!$OMP   PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP   SHARED(hecMAT,X,Y,startPos,endPos,numOfThread)
+!$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -98,40 +116,31 @@ module hecmw_solver_misc_33
           X1= X(3*i-2)
           X2= X(3*i-1)
           X3= X(3*i  )
-          YV1= hecMAT%D(9*i-8)*X1 + hecMAT%D(9*i-7)*X2                    &
-       &                          + hecMAT%D(9*i-6)*X3
-          YV2= hecMAT%D(9*i-5)*X1 + hecMAT%D(9*i-4)*X2                    &
-       &                          + hecMAT%D(9*i-3)*X3
-          YV3= hecMAT%D(9*i-2)*X1 + hecMAT%D(9*i-1)*X2                    &
-       &                          + hecMAT%D(9*i  )*X3
+          YV1= D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
+          YV2= D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
+          YV3= D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
 
-          jS= hecMAT%indexL(i-1) + 1
-          jE= hecMAT%indexL(i  )
+          jS= indexL(i-1) + 1
+          jE= indexL(i  )
           do j= jS, jE
-            in  = hecMAT%itemL(j)
+            in  = itemL(j)
             X1= X(3*in-2)
             X2= X(3*in-1)
             X3= X(3*in  )
-            YV1= YV1 + hecMAT%AL(9*j-8)*X1 + hecMAT%AL(9*j-7)*X2          &
-       &                                   + hecMAT%AL(9*j-6)*X3
-            YV2= YV2 + hecMAT%AL(9*j-5)*X1 + hecMAT%AL(9*j-4)*X2          &
-       &                                   + hecMAT%AL(9*j-3)*X3
-            YV3= YV3 + hecMAT%AL(9*j-2)*X1 + hecMAT%AL(9*j-1)*X2          &
-       &                                   + hecMAT%AL(9*j  )*X3
+            YV1= YV1 + AL(9*j-8)*X1 + AL(9*j-7)*X2 + AL(9*j-6)*X3
+            YV2= YV2 + AL(9*j-5)*X1 + AL(9*j-4)*X2 + AL(9*j-3)*X3
+            YV3= YV3 + AL(9*j-2)*X1 + AL(9*j-1)*X2 + AL(9*j  )*X3
           enddo
-          jS= hecMAT%indexU(i-1) + 1
-          jE= hecMAT%indexU(i  )
+          jS= indexU(i-1) + 1
+          jE= indexU(i  )
           do j= jS, jE
-            in  = hecMAT%itemU(j)
+            in  = itemU(j)
             X1= X(3*in-2)
             X2= X(3*in-1)
             X3= X(3*in  )
-            YV1= YV1 + hecMAT%AU(9*j-8)*X1 + hecMAT%AU(9*j-7)*X2          &
-       &                                   + hecMAT%AU(9*j-6)*X3
-            YV2= YV2 + hecMAT%AU(9*j-5)*X1 + hecMAT%AU(9*j-4)*X2          &
-       &                                   + hecMAT%AU(9*j-3)*X3
-            YV3= YV3 + hecMAT%AU(9*j-2)*X1 + hecMAT%AU(9*j-1)*X2          &
-       &                                   + hecMAT%AU(9*j  )*X3
+            YV1= YV1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+            YV2= YV2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+            YV3= YV3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
           enddo
           Y(3*i-2)= YV1
           Y(3*i-1)= YV2
@@ -148,7 +157,7 @@ module hecmw_solver_misc_33
 
       ENDIF
 
-      call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, hecMAT%NP * hecMAT%NDOF )
+      call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * hecMAT%NDOF )
 
       end subroutine hecmw_matvec_33
 
@@ -159,12 +168,12 @@ module hecmw_solver_misc_33
 !C
       subroutine hecmw_matresid_33 (hecMESH, hecMAT, X, B, R, COMMtime)
       use hecmw_util
-
       implicit none
-      real(kind=kreal) :: X(:), B(:), R(:)
-      type (hecmwST_matrix)     :: hecMAT
-      type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal), optional :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      type (hecmwST_matrix), intent(in)     :: hecMAT
+      real(kind=kreal), intent(in) :: X(:), B(:)
+      real(kind=kreal), intent(out) :: R(:)
+      real(kind=kreal), intent(inout), optional :: COMMtime
 
       integer(kind=kint) :: i
       real(kind=kreal) :: Tcomm = 0.d0
@@ -185,12 +194,11 @@ module hecmw_solver_misc_33
       function hecmw_rel_resid_L2_33 (hecMESH, hecMAT, COMMtime)
       use hecmw_util
       use hecmw_solver_misc
-
       implicit none
       real(kind=kreal) :: hecmw_rel_resid_L2_33
       type ( hecmwST_local_mesh ), intent(in) :: hecMESH
       type ( hecmwST_matrix     ), intent(in) :: hecMAT
-      real(kind=kreal), optional :: COMMtime
+      real(kind=kreal), intent(inout), optional :: COMMtime
 
       real(kind=kreal), allocatable :: r(:)
       real(kind=kreal) :: bnorm2, rnorm2
@@ -198,7 +206,8 @@ module hecmw_solver_misc_33
 
       allocate(r(hecMAT%NDOF*hecMAT%NP))
 
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
+           hecMAT%B, hecMAT%B, bnorm2, Tcomm)
       call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
       call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
       hecmw_rel_resid_L2_33 = sqrt(rnorm2 / bnorm2)
@@ -216,11 +225,11 @@ module hecmw_solver_misc_33
       subroutine hecmw_Tvec_33 (hecMESH, X, Y, COMMtime)
       use hecmw_util
       use m_hecmw_comm_f
-
       implicit none
-      real(kind=kreal) :: X(:), Y(:)
-      type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      real(kind=kreal), intent(in) :: X(:)
+      real(kind=kreal), intent(out) :: Y(:)
+      real(kind=kreal), intent(inout) :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jj, k, kk
@@ -254,11 +263,11 @@ module hecmw_solver_misc_33
       subroutine hecmw_Ttvec_33 (hecMESH, X, Y, COMMtime)
       use hecmw_util
       use m_hecmw_comm_f
-
       implicit none
-      real(kind=kreal) :: X(:), Y(:)
-      type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      real(kind=kreal), intent(in) :: X(:)
+      real(kind=kreal), intent(out) :: Y(:)
+      real(kind=kreal), intent(inout) :: COMMtime
 
       real(kind=kreal) :: START_TIME, END_TIME
       integer(kind=kint) :: i, j, jj, k, kk
@@ -291,15 +300,15 @@ module hecmw_solver_misc_33
 !C
       subroutine hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, COMMtime)
       use hecmw_util
-
       implicit none
-      real(kind=kreal) :: X(:), Y(:), W(:)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      type (hecmwST_matrix), intent(in)     :: hecMAT
+      real(kind=kreal), intent(in) :: X(:)
+      real(kind=kreal), intent(out) :: Y(:), W(:)
+      real(kind=kreal), intent(inout) :: COMMtime
 
       call hecmw_Tvec_33(hecMESH, X, Y, COMMtime)
-      call hecmw_matvec_33 (hecMESH, hecMAT, Y, W, COMMtime)
+      call hecmw_matvec_33(hecMESH, hecMAT, Y, W, COMMtime)
       call hecmw_Ttvec_33(hecMESH, W, Y, COMMtime)
 
       end subroutine hecmw_TtmatTvec_33
@@ -378,19 +387,25 @@ module hecmw_solver_misc_33
       use hecmw_precond_DIAG_33
       use hecmw_precond_SSOR_33
       implicit none
-      real(kind=kreal) :: R(:), Z(:), ZP(:)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      type (hecmwST_matrix), intent(in)     :: hecMAT
+      real(kind=kreal), intent(in) :: R(:)
+      real(kind=kreal), intent(out) :: Z(:), ZP(:)
+      real(kind=kreal), intent(inout) :: COMMtime
 
+      integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
       integer(kind=kint ) :: PRECOND, iterPREmax
       integer(kind=kint ) :: i, iterPRE
 
+      N = hecMAT%N
+      NP = hecMAT%NP
+      NNDOF = N * 3
+      NPNDOF = NP * 3
       PRECOND = hecmw_mat_get_precond( hecMAT )
       iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
 
       if (iterPREmax.le.0) then
-        do i= 1, hecMAT%N * 3
+        do i= 1, NNDOF
           Z(i)= R(i)
         enddo
         return
@@ -402,30 +417,30 @@ module hecmw_solver_misc_33
 !C +----------------+
 !C===
 
-      do i= 1, hecMAT%N * 3
+      do i= 1, NNDOF
         ZP(i)= R(i)
       enddo
-      do i= 1+ hecMAT%N * 3, hecMAT%NP * 3
+      do i= NNDOF+1, NPNDOF
         ZP(i) = 0.d0
       enddo
 
-      do i= 1, hecMAT%NP * 3
+      do i= 1, NPNDOF
         Z(i)= 0.d0
       enddo
 
       do iterPRE= 1, iterPREmax
 
         if (PRECOND.le.2) then
-          call hecmw_precond_SSOR_33_apply(hecMAT%N, ZP)
+          call hecmw_precond_SSOR_33_apply(ZP)
         else if (PRECOND.eq.3) then
-          call hecmw_precond_DIAG_33_apply(hecMAT%N, ZP)
+          call hecmw_precond_DIAG_33_apply(ZP)
         else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-          call hecmw_precond_BILU_33_apply(hecMAT%N, ZP)
+          call hecmw_precond_BILU_33_apply(ZP)
         endif
 !C
 !C-- additive Schwartz
 !C
-        do i= 1, hecMAT%N * 3
+        do i= 1, NNDOF
           Z(i)= Z(i) + ZP(i)
         enddo
 
@@ -446,9 +461,8 @@ module hecmw_solver_misc_33
 !C
       subroutine hecmw_mpc_scale(hecMESH)
       use hecmw_util
-
       implicit none
-      type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_local_mesh), intent(inout) :: hecMESH
       integer(kind=kint) :: i, j, k
       real(kind=kreal) :: WVAL
 
@@ -471,13 +485,13 @@ module hecmw_solver_misc_33
 !C
       subroutine hecmw_trans_b_33(hecMESH, hecMAT, B, BT, W, COMMtime)
       use hecmw_util
-
       implicit none
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix)     :: hecMAT
-      real(kind=kreal) :: B(:), W(:)
-      real(kind=kreal), target :: BT(:)
-      real(kind=kreal) :: COMMtime
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      type (hecmwST_matrix), intent(in)     :: hecMAT
+      real(kind=kreal), intent(in) :: B(:)
+      real(kind=kreal), intent(out), target :: BT(:)
+      real(kind=kreal), intent(out) :: W(:)
+      real(kind=kreal), intent(inout) :: COMMtime
 
       real(kind=kreal), pointer :: XG(:)
       integer(kind=kint) :: i, k, kk
@@ -512,10 +526,10 @@ module hecmw_solver_misc_33
 !C
       subroutine hecmw_tback_x_33(hecMESH, X, W, COMMtime)
       use hecmw_util
-
       implicit none
-      type (hecmwST_local_mesh) :: hecMESH
-      real(kind=kreal) :: X(:), W(:)
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      real(kind=kreal), intent(inout) :: X(:)
+      real(kind=kreal), intent(out) :: W(:)
       real(kind=kreal) :: COMMtime
 
       integer(kind=kint) :: i, k, kk

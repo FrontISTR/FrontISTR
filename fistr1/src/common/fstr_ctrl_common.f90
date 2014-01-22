@@ -63,7 +63,7 @@ end function fstr_ctrl_get_SOLUTION
 !> Read in !SOLVER
 function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, nier, &
                                 iterpremax, nrest, scaling, &
-                                dumptype, dumpexit, usejad, &
+                                dumptype, dumpexit, usejad, ncolor_in, &
                                 resid, singma_diag, sigma, thresh, filter )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: method
@@ -78,6 +78,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         integer(kind=kint) :: dumptype
         integer(kind=kint) :: dumpexit
         integer(kind=kint) :: usejad
+        integer(kind=kint) :: ncolor_in
         real(kind=kreal) :: resid
         real(kind=kreal) :: singma_diag
         real(kind=kreal) :: sigma
@@ -130,7 +131,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         !* data --------------------------------------------------------------------------------------- *!
 
         ! JP-4
-        if( fstr_ctrl_get_data_ex( ctrl, 1,   'iii ', nier, iterpremax, nrest   )/= 0) return
+        if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiii ', nier, iterpremax, nrest, ncolor_in )/= 0) return
         if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
         if( precond == 21 ) then

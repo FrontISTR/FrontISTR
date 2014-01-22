@@ -62,7 +62,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(fstr_dynamic),target :: fstrDYNAMIC
         type(fstr_couple),target  :: fstrCPL
         type(fstr_freqanalysis), target :: fstrFREQ
-		
+
         integer(kind=kint) :: ctrl
         type(fstr_param_pack) :: P
 
@@ -93,8 +93,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
         integer(kind=kint) :: c_output, islog
-		integer(kind=kint) :: k
-		
+        integer(kind=kint) :: k
+
         write( logfileNAME, '(i5,''.log'')' ) myrank
 
         ! packaging
@@ -106,7 +106,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         P%DYN    => fstrDYNAMIC
         P%CPL    => fstrCPL
         P%FREQ   => fstrFREQ
-		
+
         fstrPARAM%contact_algo = kcaALagrange
 
         c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0;
@@ -290,11 +290,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               cid = hecMESH%section%sect_mat_ID_item(i)
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
-              if( fstrPARAM%solution_type == kstNLSTATIC .or. fstrPARAM%solution_type==6 ) & 
+              if( fstrPARAM%solution_type == kstNLSTATIC &
+                   .or. fstrPARAM%solution_type==6 ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
-              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,alpha_over_mu,n_totallayer_ls,shell_matltype,shell_variables, &
+              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,&
+                            alpha_over_mu,n_totallayer_ls,&
+                            shell_matltype,shell_variables, &
                             beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
-                            beam_angle4,beam_angle5,beam_angle6)  
+                            beam_angle4,beam_angle5,beam_angle6)
               fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
               fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
               fstrSOLID%materials(cid)%variables(M_POISSON)=pp
@@ -310,41 +313,41 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
               fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
               fstrSOLID%materials(cid)%mtype = ELASTIC
-			  !<**********  Laminated shell  **********
-			 		fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER)=n_totallayer_ls*1.0D0		
-					fstrSOLID%materials(cid)%variables(M_SHELL_MATLTYPE)=shell_matltype*1.0D0
+              !<**********  Laminated shell  **********
+              fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER)=n_totallayer_ls*1.0D0
+              fstrSOLID%materials(cid)%variables(M_SHELL_MATLTYPE)=shell_matltype*1.0D0
               if (shell_matltype == 0)then
-				do k=1,n_totallayer_ls
-					fstrSOLID%materials(cid)%variables(100+3*k-2)=shell_variables(3*k-2)		!<ee
-					fstrSOLID%materials(cid)%variables(100+3*k-1)=shell_variables(3*k-1)		!<pp
-					fstrSOLID%materials(cid)%variables(100+3*k  )=shell_variables(3*k  )		!<thickness
-				end do
+                do k=1,n_totallayer_ls
+                  fstrSOLID%materials(cid)%variables(100+3*k-2)=shell_variables(3*k-2)		!<ee
+                  fstrSOLID%materials(cid)%variables(100+3*k-1)=shell_variables(3*k-1)		!<pp
+                  fstrSOLID%materials(cid)%variables(100+3*k  )=shell_variables(3*k  )		!<thickness
+                end do
               elseif (shell_matltype == 1)then
-				do k=1,n_totallayer_ls
-					fstrSOLID%materials(cid)%variables(100+8*k-7)=shell_variables(8*k-7)		!<ee
-					fstrSOLID%materials(cid)%variables(100+8*k-6)=shell_variables(8*k-6)		!<pp
-					fstrSOLID%materials(cid)%variables(100+8*k-5)=shell_variables(8*k-5)		!<thickness
-					fstrSOLID%materials(cid)%variables(100+8*k-4)=shell_variables(8*k-4)		!<ee2
-					fstrSOLID%materials(cid)%variables(100+8*k-3)=shell_variables(8*k-3)		!<g12
-					fstrSOLID%materials(cid)%variables(100+8*k-2)=shell_variables(8*k-2)		!<g23
-					fstrSOLID%materials(cid)%variables(100+8*k-1)=shell_variables(8*k-1)		!<g31
-					fstrSOLID%materials(cid)%variables(100+8*k  )=(shell_variables(8*k )/180.0d0)*datan(1.0d0)*4d0		!<theta
-				enddo
+                do k=1,n_totallayer_ls
+                  fstrSOLID%materials(cid)%variables(100+8*k-7)=shell_variables(8*k-7)		!<ee
+                  fstrSOLID%materials(cid)%variables(100+8*k-6)=shell_variables(8*k-6)		!<pp
+                  fstrSOLID%materials(cid)%variables(100+8*k-5)=shell_variables(8*k-5)		!<thickness
+                  fstrSOLID%materials(cid)%variables(100+8*k-4)=shell_variables(8*k-4)		!<ee2
+                  fstrSOLID%materials(cid)%variables(100+8*k-3)=shell_variables(8*k-3)		!<g12
+                  fstrSOLID%materials(cid)%variables(100+8*k-2)=shell_variables(8*k-2)		!<g23
+                  fstrSOLID%materials(cid)%variables(100+8*k-1)=shell_variables(8*k-1)		!<g31
+                  fstrSOLID%materials(cid)%variables(100+8*k  )=(shell_variables(8*k )/180.0d0)*datan(1.0d0)*4d0		!<theta
+                enddo
               else
-					WRITE(IMSG,*),'###Error : shell matltype isnt collect'
-					stop
+                WRITE(IMSG,*),'###Warning : shell matltype not correct'
+                !stop
               endif
-			  !>**********  Laminated shell  **********
+              !>**********  Laminated shell  **********
            enddo
-		endif
+         endif
 
-		allocate( fstrSOLID%output_ctrl( 4 ) )
-		call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
-		fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
-		fstrSOLID%output_ctrl( 1 )%filenum = ILOG
-		call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
-		call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
-		call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
+         allocate( fstrSOLID%output_ctrl( 4 ) )
+         call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
+         fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
+         fstrSOLID%output_ctrl( 1 )%filenum = ILOG
+         call fstr_init_outctrl(fstrSOLID%output_ctrl(2))
+         call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
+         call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
 
 ! ----- 
         rcode = fstr_ctrl_rewind( ctrl )
@@ -355,10 +358,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_contact  = 0
         c_localcoord = 0
         c_section = 0
-        fstrHEAT%WL_tot = 0	
+        fstrHEAT%WL_tot = 0
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
-		  
+
           if( header_name == '!ORIENTATION' ) then
                         c_localcoord = c_localcoord + 1
                         if( fstr_setup_ORIENTATION( ctrl, hecMESH, c_localcoord, g_LocalCoordSys(c_localcoord) )/=0 ) then
@@ -1307,6 +1310,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   dumptype   => svIarray(31)
      !   dumpexit   => svIarray(32)
      !   usejad     => svIarray(33)
+     !   ncolor_in  => svIarray(34)
 
      !   resid      => svRarray(1)
      !   sigma_diag => svRarray(2)
@@ -1317,7 +1321,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
         rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
                         svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), &
                         svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
-                        svIarray(31), svIarray(32), svIarray(33), &
+                        svIarray(31), svIarray(32), svIarray(33), svIarray(34), &
                         svRarray(1), svRarray(2), svRarray(3),                &
                         svRarray(4), svRarray(5) )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
