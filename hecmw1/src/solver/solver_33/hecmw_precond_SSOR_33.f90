@@ -138,6 +138,9 @@ contains
            indexL, indexU, itemL, itemU, AL, AU, D)
       !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
+      ! call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
+      ! call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
+
       if (NContact.gt.0) then
         NPCL = hecMAT%indexCL(NP)
         NPCU = hecMAT%indexCU(NP)
@@ -152,7 +155,11 @@ contains
              hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
              indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
         deallocate(CD)
+
+        ! call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
+        ! call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
       end if
+
     end if
 
     allocate(ALU(9*NP))
@@ -165,7 +172,7 @@ contains
     if (NContact.gt.0) then
       do k= 1, hecMAT%cmat%n_val
         if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-        ii = hecMAT%cmat%pair(k)%i
+        ii = perm( hecMAT%cmat%pair(k)%i )
         ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
         ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
         ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
@@ -215,12 +222,11 @@ contains
 
   end subroutine hecmw_precond_SSOR_33_setup
 
-  subroutine hecmw_precond_SSOR_33_apply(WW)
+  subroutine hecmw_precond_SSOR_33_apply(ZP)
     implicit none
-    real(kind=kreal), intent(inout), target :: WW(:)
-    integer(kind=kint) :: ic, i, j, isL, ieL, isU, ieU, k
+    real(kind=kreal), intent(inout) :: ZP(:)
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
-    real(kind=kreal), pointer :: ZP(:)
 
     ! added for turning >>>
     logical, save :: isFirst = .true.
@@ -246,10 +252,10 @@ contains
       blockIndexToColorIndex = -1
       blockIndexToColorIndex(0) = 0
       my_rank = hecmw_comm_get_rank()
-      write(9000+my_rank,*) &
-           '# numOfElementPerBlock =', numOfElementPerBlock
-      write(9000+my_rank,*) &
-           '# ic, blockIndex, colorIndex, elementCount'
+      ! write(9000+my_rank,*) &
+      !      '# numOfElementPerBlock =', numOfElementPerBlock
+      ! write(9000+my_rank,*) &
+      !      '# ic, blockIndex, colorIndex, elementCount'
       do ic = 1, NColor
         elementCount = 0
         ii = 1
@@ -262,8 +268,8 @@ contains
             ii = ii + 1
             blockIndex = blockIndex + 1
             blockIndexToColorIndex(blockIndex) = i
-            write(9000+my_rank,*) ic, blockIndex, &
-                 blockIndexToColorIndex(blockIndex), elementCount
+            ! write(9000+my_rank,*) ic, blockIndex, &
+            !      blockIndexToColorIndex(blockIndex), elementCount
           endif
         enddo
         icToBlockIndex(ic) = blockIndex
@@ -282,23 +288,16 @@ contains
     endif
     ! <<< added for turning
 
-    if (numOfThread > 1) then
-      allocate(ZP(N*3))
-      call hecmw_matrix_reorder_vector(N, 3, perm, WW, ZP)
-    else
-      ZP => WW
-    end if
-
 !call start_collection("loopInPrecond33")
 
 !xx!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
 !xx!OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
 !$omp parallel default(none) &
-!$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,&
+!$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
 !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
 !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-!$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,isL,ieL,isU,ieU,j,k,blockIndex)
+!$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
     !C-- FORWARD
     do ic=1,NColor
@@ -307,13 +306,14 @@ contains
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
              blockIndexToColorIndex(blockIndex)
           ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
-          SW1= ZP(3*i-2)
-          SW2= ZP(3*i-1)
-          SW3= ZP(3*i  )
+          iold = perm(i)
+          SW1= ZP(3*iold-2)
+          SW2= ZP(3*iold-1)
+          SW3= ZP(3*iold  )
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
-            k= itemL(j)
+            k= perm(itemL(j))
             X1= ZP(3*k-2)
             X2= ZP(3*k-1)
             X3= ZP(3*k  )
@@ -326,7 +326,7 @@ contains
             isL= indexCL(i-1)+1
             ieL= indexCL(i)
             do j= isL, ieL
-              k= itemCL(j)
+              k= perm(itemCL(j))
               X1= ZP(3*k-2)
               X2= ZP(3*k-1)
               X3= ZP(3*k  )
@@ -344,9 +344,9 @@ contains
           X3= ALU(9*i  )*  X3
           X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
           X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
-          ZP(3*i-2)= X1
-          ZP(3*i-1)= X2
-          ZP(3*i  )= X3
+          ZP(3*iold-2)= X1
+          ZP(3*iold-1)= X2
+          ZP(3*iold  )= X3
         enddo ! i
       enddo ! blockIndex
 !$omp end do
@@ -368,7 +368,7 @@ contains
           isU= indexU(i-1) + 1
           ieU= indexU(i)
           do j= ieU, isU, -1
-            k= itemU(j)
+            k= perm(itemU(j))
             X1= ZP(3*k-2)
             X2= ZP(3*k-1)
             X3= ZP(3*k  )
@@ -381,7 +381,7 @@ contains
             isU= indexCU(i-1) + 1
             ieU= indexCU(i)
             do j= ieU, isU, -1
-              k= itemCU(j)
+              k= perm(itemCU(j))
               X1= ZP(3*k-2)
               X2= ZP(3*k-1)
               X3= ZP(3*k  )
@@ -399,9 +399,10 @@ contains
           X3= ALU(9*i  )*  X3
           X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
           X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
-          ZP(3*i-2)=  ZP(3*i-2) - X1
-          ZP(3*i-1)=  ZP(3*i-1) - X2
-          ZP(3*i  )=  ZP(3*i  ) - X3
+          iold = perm(i)
+          ZP(3*iold-2)=  ZP(3*iold-2) - X1
+          ZP(3*iold-1)=  ZP(3*iold-1) - X2
+          ZP(3*iold  )=  ZP(3*iold  ) - X3
         enddo ! i
       enddo ! blockIndex
 !$omp end do
@@ -413,10 +414,6 @@ contains
 
 !call stop_collection("loopInPrecond33")
 
-    if (numOfThread > 1) then
-      call hecmw_matrix_reorder_back_vector(N, 3, perm, ZP, WW)
-      deallocate(ZP)
-    end if
   end subroutine hecmw_precond_SSOR_33_apply
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)

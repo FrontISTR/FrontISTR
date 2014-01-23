@@ -33,6 +33,7 @@
         use m_hecmw_comm_f
         use hecmw_matrix_ass
         use hecmw_matrix_contact
+        use hecmw_solver_misc_33
 
         implicit none
 
@@ -48,6 +49,7 @@
 
         integer(kind=kint) :: ITERlog, TIMElog
         real(kind=kreal) :: TIME_setup, TIME_comm, TIME_soltot, TR
+        real(kind=kreal) :: time_Ax, time_precond
         real(kind=kreal),    dimension(1) :: RHS
         integer (kind=kint), dimension(1) :: IFLAG
 
@@ -155,6 +157,9 @@
           call hecmw_solve_error (hecMESH, ERROR)
         endif
 
+        call hecmw_matvec_33_clear_timer()
+        call hecmw_precond_33_clear_timer()
+
 !C===
 !C +------------------+
 !C | ITERATIVE solver |
@@ -258,6 +263,9 @@
         call hecmw_solve_error (hecMESH, 3001)
       endif
 
+      time_Ax = hecmw_matvec_33_get_timer()
+      time_precond = hecmw_precond_33_get_timer()
+
       if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
         write (*,'(/a)')          '### summary of linear solver'
@@ -265,6 +273,8 @@
         write (*,'(a, 1pe16.6 )') '    set-up time      : ', TIME_setup
         write (*,'(a, 1pe16.6 )') '    solver time      : ', TIME_sol
         write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
+        write (*,'(a, 1pe16.6 )') '    solver/matvec    : ', time_Ax
+        write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
         write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
       endif
 

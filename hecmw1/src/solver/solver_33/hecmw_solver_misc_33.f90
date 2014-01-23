@@ -1,4 +1,28 @@
 module hecmw_solver_misc_33
+      use hecmw_util
+      implicit none
+
+      private
+
+      public :: hecmw_matvec_33
+      public :: hecmw_matresid_33
+      public :: hecmw_rel_resid_L2_33
+      public :: hecmw_Tvec_33
+      public :: hecmw_Ttvec_33
+      public :: hecmw_TtmatTvec_33
+      public :: hecmw_precond_33_setup
+      public :: hecmw_precond_33_clear
+      public :: hecmw_precond_33
+      public :: hecmw_mpc_scale
+      public :: hecmw_trans_b_33
+      public :: hecmw_tback_x_33
+      public :: hecmw_matvec_33_clear_timer
+      public :: hecmw_matvec_33_get_timer
+      public :: hecmw_precond_33_clear_timer
+      public :: hecmw_precond_33_get_timer
+
+      real(kind=kreal) :: time_Ax = 0.d0
+      real(kind=kreal) :: time_precond = 0.d0
 
       contains
 
@@ -22,7 +46,7 @@ module hecmw_solver_misc_33
       real(kind=kreal), intent(out) :: Y(:)
       real(kind=kreal), intent(inout), optional :: COMMtime
 
-      real(kind=kreal) :: START_TIME, END_TIME
+      real(kind=kreal) :: START_TIME, END_TIME, Tcomm
       integer(kind=kint) :: i, j, jS, jE, in
       real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
 
@@ -42,7 +66,12 @@ module hecmw_solver_misc_33
       ! <<< added for turning
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call JAD_MATVEC(hecMESH, hecMAT, X, Y, COMMtime)
+        Tcomm = 0.d0
+        START_TIME = hecmw_Wtime()
+        call JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
+        END_TIME = hecmw_Wtime()
+        time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
+        if (present(COMMtime)) COMMtime = COMMtime + Tcomm
       ELSE
 
       N = hecMAT%N
@@ -99,6 +128,8 @@ module hecmw_solver_misc_33
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
+      START_TIME = hecmw_Wtime()
+
 !call fapp_start("loopInMatvec33", 1, 0)
 !call start_collection("loopInMatvec33")
 
@@ -154,6 +185,9 @@ module hecmw_solver_misc_33
 
 !call stop_collection("loopInMatvec33")
 !call fapp_stop("loopInMatvec33", 1, 0)
+
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME
 
       ENDIF
 
@@ -396,6 +430,7 @@ module hecmw_solver_misc_33
       integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
       integer(kind=kint ) :: PRECOND, iterPREmax
       integer(kind=kint ) :: i, iterPRE
+      real(kind=kreal) :: START_TIME, END_TIME
 
       N = hecMAT%N
       NP = hecMAT%NP
@@ -430,6 +465,8 @@ module hecmw_solver_misc_33
 
       do iterPRE= 1, iterPREmax
 
+        START_TIME = hecmw_Wtime()
+
         if (PRECOND.le.2) then
           call hecmw_precond_SSOR_33_apply(ZP)
         else if (PRECOND.eq.3) then
@@ -437,6 +474,9 @@ module hecmw_solver_misc_33
         else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
           call hecmw_precond_BILU_33_apply(ZP)
         endif
+
+        END_TIME = hecmw_Wtime()
+        time_precond = time_precond + END_TIME - START_TIME
 !C
 !C-- additive Schwartz
 !C
@@ -550,5 +590,27 @@ module hecmw_solver_misc_33
       enddo
 
       end subroutine hecmw_tback_x_33
+
+      subroutine hecmw_matvec_33_clear_timer
+      implicit none
+      time_Ax = 0.d0
+      end subroutine hecmw_matvec_33_clear_timer
+
+      function hecmw_matvec_33_get_timer
+      implicit none
+      real(kind=kreal) :: hecmw_matvec_33_get_timer
+      hecmw_matvec_33_get_timer = time_Ax
+      end function hecmw_matvec_33_get_timer
+
+      subroutine hecmw_precond_33_clear_timer
+      implicit none
+      time_precond = 0.d0
+      end subroutine hecmw_precond_33_clear_timer
+
+      function hecmw_precond_33_get_timer
+      implicit none
+      real(kind=kreal) :: hecmw_precond_33_get_timer
+      hecmw_precond_33_get_timer = time_precond
+      end function hecmw_precond_33_get_timer
 
 end module hecmw_solver_misc_33

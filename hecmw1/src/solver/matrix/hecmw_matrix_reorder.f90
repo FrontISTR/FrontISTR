@@ -7,6 +7,7 @@ module hecmw_matrix_reorder
   public :: hecmw_matrix_reorder_values
   public :: hecmw_matrix_reorder_vector
   public :: hecmw_matrix_reorder_back_vector
+  public :: hecmw_matrix_reorder_renum_item
 
 contains
 
@@ -122,6 +123,19 @@ contains
       end do
     end do
   end subroutine hecmw_matrix_reorder_back_vector
+
+  subroutine hecmw_matrix_reorder_renum_item(N, perm, indexXp, itemXp)
+    implicit none
+    integer(kind=kint), intent(in) :: N
+    integer(kind=kint), intent(in) :: perm(:)
+    integer(kind=kint), intent(in) :: indexXp(:)
+    integer(kind=kint), intent(inout) :: itemXp(:)
+    integer(kind=kint) :: NPX, i
+    NPX = indexXp(N)
+    do i=1,NPX
+      itemXp(i) = perm( itemXp(i) )
+    end do
+  end subroutine hecmw_matrix_reorder_renum_item
 
   subroutine reorder_diag(N, NDOF, perm, D, Dp)
     implicit none
