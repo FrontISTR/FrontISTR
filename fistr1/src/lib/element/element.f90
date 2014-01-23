@@ -138,11 +138,11 @@ module elementInfo
         getNumberOfNodes = 2
       case (fe_line3n, fe_beam3n)
         getNumberOfNodes = 3
-      case (fe_tri3n, fe_mitc3_shell )
+      case (fe_tri3n, fe_mitc3_shell, fe_mitc3_shell361 )
         getNumberOfNodes = 3
       case ( fe_tri6n, fe_tri6nc, fe_tri6n_shell )
         getNumberOfNodes = 6
-      case ( fe_quad4n, fe_mitc4_shell )
+      case ( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361  )
         getNumberOfnodes = 4
       case ( fe_quad8n, fe_mitc8_shell)
         getNumberOfNodes = 8
@@ -152,11 +152,11 @@ module elementInfo
         getNumberOfNodes = 4
       case ( fe_tet10n, fe_tet10nc )
         getNumberOfNodes = 10
-      case ( fe_prism6n, fe_mitc3_shell361 )
+      case ( fe_prism6n )
         getNumberOfNodes = 6
       case ( fe_prism15n )
         getNumberOfNodes = 15
-      case ( fe_hex8n, fe_mitc4_shell361  )
+      case ( fe_hex8n )
         getNumberOfNodes = 8
       case ( fe_hex20n )
         getNumberOfNodes = 20
@@ -173,15 +173,15 @@ module elementInfo
       select case (etype)
       case (fe_line2n, fe_line3n)
         getNumberOfSubface = 2
-      case (fe_tri3n, fe_mitc3_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell  )
+      case (fe_tri3n, fe_mitc3_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell, fe_mitc3_shell361  )
         getNumberOfSubface = 3
-      case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell, fe_mitc9_shell )
+      case ( fe_quad4n, fe_mitc4_shell, fe_quad8n, fe_mitc8_shell, fe_mitc9_shell, fe_mitc4_shell361  )
         getNumberOfSubface = 4
       case ( fe_tet4n, fe_tet10n, fe_tet10nc, fe_beam341 )
         getNumberOfSubface = 4
-      case ( fe_prism6n, fe_prism15n, fe_mitc3_shell361 )
+      case ( fe_prism6n, fe_prism15n )
         getNumberOfSubface = 5
-      case ( fe_hex8n, fe_hex20n, fe_mitc4_shell361 )
+      case ( fe_hex8n, fe_hex20n)
         getNumberOfSubface = 8
       case default
         getNumberOfSubface = -1
@@ -424,17 +424,17 @@ module elementInfo
         NumOfQuadPoints = 4
       case (fe_line3n )
         NumOfQuadPoints = 2
-      case ( fe_quad4n, fe_mitc4_shell )
+      case ( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361 )
         NumOfQuadPoints = 4
       case ( fe_quad8n, fe_mitc9_shell )
         NumOfQuadPoints = 9
-      case ( fe_hex8n, fe_mitc4_shell361 )
+      case ( fe_hex8n )
         NumOfQuadPoints = 8
       case ( fe_hex20n, fe_mitc8_shell )
         NumOfQuadPoints = 27
-      case ( fe_prism6n, fe_mitc3_shell361 )
+      case ( fe_prism6n )
         NumOfQuadPoints = 2
-      case ( fe_mitc3_shell )
+      case ( fe_mitc3_shell, fe_mitc3_shell361 )
         NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
         NumOfQuadPoints = 9

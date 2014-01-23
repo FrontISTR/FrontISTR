@@ -654,13 +654,13 @@
 	        if (shellmatl == 0)then
 			   sigma_layer = 0.0D0
 		       DO m = 1, n_layer
-			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*n_layer) / thick
+			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
 		       END DO
 			   zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
 	        elseif (shellmatl == 1)then
 			   sigma_layer = 0.0D0
 		       DO m = 1, n_layer
-			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick
+			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
 		       END DO
                zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))			   
 	        else
@@ -671,7 +671,7 @@
         ENDIF
 	   
 		w_ly    = wgt(ny, ly)
-       
+
        !--------------------------------------------------------
        
        DO lx = 1, NumOfQuadPoints(fetype)
@@ -826,7 +826,7 @@
         e2_hat(3) = e2_hat(3)/e2_hat_abs
         
         !--------------------------------------------------
-    !    write(*,*)  'Matlmatrix_layer', n_layer
+    !    write(*,*)  'Matlmatrix_layer', n_layer !下のgaussが非常によくわからない
         CALL MatlMatrix_Shell                        &
              (gausses(lx), Shell, D,                 &
               e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
@@ -1321,8 +1321,7 @@
        ENDDO
 	   
 	   elseif( mixflag == 2 )then
-	   
-       write(*,*) 'convert for shell-solid mixed analysis 351'
+!		write(*,*) 'convert for shell-solid mixed analysis 351'
 		sstable(1) = 1
 		sstable(2) = 2
 		sstable(3) = 3
@@ -1918,13 +1917,13 @@
 			if (shellmatl == 0)then
 				sigma_layer = 0.0D0
 				DO m = 1, n_layer
-					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*n_layer) / thick
+					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
 				END DO
 				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-zeta)
 			elseif (shellmatl == 1)then
 				sigma_layer = 0.0D0
 				DO m = 1, n_layer
-					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick
+					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
 				END DO
 				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-zeta)			   
 			else

@@ -680,7 +680,7 @@ module m_static_make_result
 			iS = hecMESH%elem_type_index(itype-1) + 1
 			iE = hecMESH%elem_type_index(itype  )
 			ic_type = hecMESH%elem_type_item(itype)
-			if(ic_type == 761 .or. ic_type == 781)then
+			if(ic_type == 781)then
 				do icel = iS, iE
 					jS = hecMESH%elem_node_index(icel-1)
 					do j = 1, 4
@@ -695,6 +695,26 @@ module m_static_make_result
 						unode781(6*nodLOCAL(j+4)-5) = fstrSOLID%unode(3*nodLOCAL(j  )-2)
 						unode781(6*nodLOCAL(j+4)-4) = fstrSOLID%unode(3*nodLOCAL(j  )-1)
 						unode781(6*nodLOCAL(j+4)-3) = fstrSOLID%unode(3*nodLOCAL(j  )  )
+						unode781(6*nodLOCAL(j  )-5) = fstrSOLID%unode(3*nodLOCAL(j  )-2)
+						unode781(6*nodLOCAL(j  )-4) = fstrSOLID%unode(3*nodLOCAL(j  )-1)
+						unode781(6*nodLOCAL(j  )-3) = fstrSOLID%unode(3*nodLOCAL(j  )  )
+					enddo
+				enddo
+			elseif(ic_type == 761)then
+				do icel = iS, iE
+					jS = hecMESH%elem_node_index(icel-1)
+					do j = 1, 3
+						nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+						nodLOCAL(j+3) = hecMESH%elem_node_item(jS+j+3)
+						unode781(6*nodLOCAL(j+3)-2) = fstrSOLID%unode(3*nodLOCAL(j+3)-2)
+						unode781(6*nodLOCAL(j+3)-1) = fstrSOLID%unode(3*nodLOCAL(j+3)-1)
+						unode781(6*nodLOCAL(j+3)  ) = fstrSOLID%unode(3*nodLOCAL(j+3)  )
+						unode781(6*nodLOCAL(j  )-2) = fstrSOLID%unode(3*nodLOCAL(j+3)-2)
+						unode781(6*nodLOCAL(j  )-1) = fstrSOLID%unode(3*nodLOCAL(j+3)-1)
+						unode781(6*nodLOCAL(j  )  ) = fstrSOLID%unode(3*nodLOCAL(j+3)  )
+						unode781(6*nodLOCAL(j+3)-5) = fstrSOLID%unode(3*nodLOCAL(j  )-2)
+						unode781(6*nodLOCAL(j+3)-4) = fstrSOLID%unode(3*nodLOCAL(j  )-1)
+						unode781(6*nodLOCAL(j+3)-3) = fstrSOLID%unode(3*nodLOCAL(j  )  )
 						unode781(6*nodLOCAL(j  )-5) = fstrSOLID%unode(3*nodLOCAL(j  )-2)
 						unode781(6*nodLOCAL(j  )-4) = fstrSOLID%unode(3*nodLOCAL(j  )-1)
 						unode781(6*nodLOCAL(j  )-3) = fstrSOLID%unode(3*nodLOCAL(j  )  )
