@@ -89,9 +89,13 @@ contains
 
     if (nthreads == 1) then
       NColor = 1
-      allocate(COLORindex(0:1))
+      allocate(COLORindex(0:1), perm(NP), iperm(NP))
       COLORindex(0) = 0
       COLORindex(1) = N
+      do i=1,NP
+        perm(i) = i
+        iperm(i) = i
+      end do
 
       AU => hecMAT%AU
       AL => hecMAT%AL
@@ -422,6 +426,9 @@ contains
     integer(kind=kint ) :: nthreads = 1
     !$ nthreads = omp_get_max_threads()
     if (associated(ALU)) deallocate(ALU)
+    if (associated(COLORindex)) deallocate(COLORindex)
+    if (associated(perm)) deallocate(perm)
+    if (associated(iperm)) deallocate(iperm)
     if (nthreads > 1) then
       if (associated(AL)) deallocate(AL)
       if (associated(AU)) deallocate(AU)
@@ -440,6 +447,9 @@ contains
       end if
     end if
     nullify(ALU)
+    nullify(COLORindex)
+    nullify(perm)
+    nullify(iperm)
     nullify(AU)
     nullify(AL)
     nullify(D)

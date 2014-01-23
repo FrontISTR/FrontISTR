@@ -66,17 +66,18 @@ contains
     integer(kind=kint), intent(out) :: lv_index(0:)
     integer(kind=kint), intent(out) :: lv_item(:)
     integer(kind=kint), allocatable :: iwk(:)
-    integer(kind=kint) :: level, cnt, j, jnode, k, knode
+    integer(kind=kint) :: level, cntall, cnt, j, jnode, k, knode
     allocate(iwk(N))
     iwk = 0
     lv_index(0) = 0
     ! first level
     iwk(nstart) = 1
-    cnt = 1
+    cntall = 1
     lv_item(1) = nstart
     lv_index(1) = 1
     ! other levels
     do level=2,N
+      cnt = 0
       ! all nodes in previous level
       PRLV: do j = lv_index(level-2)+1, lv_index(level-1)
         jnode = lv_item(j)
@@ -86,8 +87,9 @@ contains
           if (iwk(knode) == 0) then
             iwk(knode) = level
             cnt = cnt + 1
-            lv_item(cnt) = knode
-            if (cnt == N) exit PRLV
+            cntall = cntall + 1
+            lv_item(cntall) = knode
+            if (cntall == N) exit PRLV
           end if
         end do
         do k = indexU(jnode-1)+1, indexU(jnode)
@@ -96,13 +98,18 @@ contains
           if (iwk(knode) == 0) then
             iwk(knode) = level
             cnt = cnt + 1
-            lv_item(cnt) = knode
-            if (cnt == N) exit PRLV
+            cntall = cntall + 1
+            lv_item(cntall) = knode
+            if (cntall == N) exit PRLV
           end if
         end do
       end do PRLV
-      lv_index(level) = cnt
-      if (cnt == N) then
+      if (cnt == 0) then
+        write(*,*) 'ERROR: CM ordering failed. Please run on single thread.'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      lv_index(level) = cntall
+      if (cntall == N) then
         nlevel = level
         exit
       end if
