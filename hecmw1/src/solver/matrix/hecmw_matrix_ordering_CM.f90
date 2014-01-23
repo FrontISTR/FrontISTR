@@ -15,7 +15,7 @@ contains
     integer(kind=kint), intent(in) :: indexL(0:), indexU(0:)
     integer(kind=kint), intent(in) :: itemL(:), itemU(:)
     integer(kind=kint), intent(out) :: perm(:), iperm(:)
-    integer(kind=kint), parameter :: NMINMAX = 50
+    integer(kind=kint), parameter :: NMINMAX = 5
     integer(kind=kint) :: i, nmin
     integer(kind=kint) :: mins(NMINMAX)
     integer(kind=kint), allocatable :: nlevel(:)
@@ -107,7 +107,7 @@ contains
         exit
       end if
     end do
-    write(*,*) 'DEBUG:: ordering_CM_inner: nstart, nlevel = ', nstart, nlevel
+    !write(*,*) 'DEBUG:: ordering_CM_inner: nstart, nlevel = ', nstart, nlevel
   end subroutine ordering_CM_inner
 
   subroutine find_minimum_degrees(N, indexL, indexU, itemU, nminmax, nmin, mins)
@@ -135,7 +135,7 @@ contains
         if (nmin <= nminmax) mins(nmin) = i
       end if
     end do
-    write(*,*) 'DEBUG:: find_minimum_degrees: nmin, deg = ', nmin, degmin
+    !write(*,*) 'DEBUG:: find_minimum_degrees: nmin, deg = ', nmin, degmin
     if (nmin > nminmax) nmin = nminmax
   end subroutine find_minimum_degrees
 

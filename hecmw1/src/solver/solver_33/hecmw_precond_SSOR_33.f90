@@ -70,10 +70,10 @@ contains
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
-    real   (kind=kreal) :: t0
+    !real   (kind=kreal) :: t0
 
-    t0 = hecmw_Wtime()
-    write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+    !t0 = hecmw_Wtime()
+    !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
 
     !$ nthreads = omp_get_max_threads()
 
@@ -112,14 +112,14 @@ contains
       allocate(COLORindex(0:NP), perm_tmp(NP), perm(NP), iperm(NP))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
            hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-      write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
            hecMAT%indexU, hecMAT%itemU, perm_tmp, &
            NCOLOR_IN, NColor, COLORindex, perm, iperm)
-      write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
-      call write_debug_info
+      !call write_debug_info
 
       NPL = hecMAT%NPL
       NPU = hecMAT%NPU
@@ -127,7 +127,7 @@ contains
       call hecmw_matrix_reorder_profile(N, perm, iperm, &
            hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
            indexL, indexU, itemL, itemU)
-      write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
       call check_ordering
 
@@ -136,7 +136,7 @@ contains
            hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
            hecMAT%AL, hecMAT%AU, hecMAT%D, &
            indexL, indexU, itemL, itemU, AL, AU, D)
-      write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
       if (NContact.gt.0) then
         NPCL = hecMAT%indexCL(NP)
@@ -211,7 +211,7 @@ contains
       ALU(9*ii  )= ALUtmp(3,3)
     enddo
 
-    write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
+    !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_SSOR_33_setup
 
@@ -274,9 +274,9 @@ contains
       sectorCacheSize1 = int((dble(N) * 3 * kreal / (4096 * 128)) + 0.999)
       if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
       sectorCacheSize0 = 12 - sectorCacheSize1
-      write(*,*) 'ZP size =', N * 3 * kreal, '[byte]  ', &
-           'sectorCache0 =', sectorCacheSize0, '[way]  ', &
-           'sectorCache1 =', sectorCacheSize1, '[way]'
+      ! write(*,*) 'ZP size =', N * 3 * kreal, '[byte]  ', &
+      !      'sectorCache0 =', sectorCacheSize0, '[way]  ', &
+      !      'sectorCache1 =', sectorCacheSize1, '[way]'
 
       isFirst = .false.
     endif

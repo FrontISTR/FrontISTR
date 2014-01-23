@@ -71,24 +71,24 @@ module hecmw_solver_misc_33
           elementCount = elementCount + (indexU(i) - indexU(i-1))
           if (elementCount > (blockNum + 1) * numOfElementPerBlock) then
             endPos(blockNum) = i
-            write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
-                 startPos(blockNum), endPos(blockNum)
+            ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
+            !      startPos(blockNum), endPos(blockNum)
             blockNum = blockNum + 1
             startPos(blockNum) = i + 1
             if (blockNum == (numOfBlock - 1)) exit
           endif
         enddo
         endPos(blockNum) = N
-        write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
-             startPos(blockNum), endPos(blockNum)
+        ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
+        !      startPos(blockNum), endPos(blockNum)
 
         ! calculate sector cache size
         sectorCacheSize1 = int((dble(NP) * 3 * kreal / (4096 * 128)) + 0.999)
         if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
         sectorCacheSize0 = 12 - sectorCacheSize1
-        write(*,*) 'X size =', N * 3 * kreal, '[byte]  ', &
-                   'sectorCache0 =', sectorCacheSize0, '[way]  ', &
-                   'sectorCache1 =', sectorCacheSize1, '[way]'
+        ! write(*,*) 'X size =', N * 3 * kreal, '[byte]  ', &
+        !            'sectorCache0 =', sectorCacheSize0, '[way]  ', &
+        !            'sectorCache1 =', sectorCacheSize1, '[way]'
 
         isFirst = .false.
       endif
