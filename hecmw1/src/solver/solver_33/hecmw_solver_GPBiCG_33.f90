@@ -31,8 +31,9 @@
       use m_hecmw_comm_f
       use hecmw_matrix_misc
       use hecmw_solver_misc
-      use hecmw_solver_misc_33
+      use hecmw_solver_las_33
       use hecmw_solver_scaling_33
+      use hecmw_precond_33
 
       implicit none
 
@@ -148,7 +149,7 @@
         WW(j,WK)=  WW(j,R)
       enddo
 
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,WK), WW(:,R), WW(:,ZQ), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,WK), WW(:,R), WW(:,ZQ), Tcomm)
 !C===
 
 !C
@@ -204,14 +205,14 @@
 
 !C
 !C-- calc. {t_tld} and {t0} by [M] inversion
-!C         {W2}   = [Minv]{p_tld} 
+!C         {W2}   = [Minv]{p_tld}
 !C
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,T), WW(:,TT), WW(:,ZQ), Tcomm)
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,T0), WW(:,W2), WW(:,ZQ), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,T), WW(:,TT), WW(:,ZQ), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,T0), WW(:,W2), WW(:,ZQ), Tcomm)
       do i= 1, NNDOF
         WW(i,T0)= WW(i,W2)
       enddo
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,PT), WW(:,W2), WW(:,ZQ), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,PT), WW(:,W2), WW(:,ZQ), Tcomm)
 
 !C===
 

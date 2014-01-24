@@ -75,11 +75,12 @@ OBJS =
 
 OBJSF = \
 	jadm.@f90objfilepostfix@ \
+	hecmw_solver_las_33.@f90objfilepostfix@ \
+	hecmw_solver_scaling_33.@f90objfilepostfix@ \
 	hecmw_precond_BILU_33.@f90objfilepostfix@ \
 	hecmw_precond_DIAG_33.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_33.@f90objfilepostfix@ \
-	hecmw_solver_scaling_33.@f90objfilepostfix@ \
-	hecmw_solver_misc_33.@f90objfilepostfix@ \
+	hecmw_precond_33.@f90objfilepostfix@ \
 	hecmw_solver_CG_33.@f90objfilepostfix@ \
 	hecmw_solver_BiCGSTAB_33.@f90objfilepostfix@ \
 	hecmw_solver_GMRES_33.@f90objfilepostfix@ \

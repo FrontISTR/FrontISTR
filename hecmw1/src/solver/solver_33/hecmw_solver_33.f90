@@ -33,7 +33,8 @@
         use m_hecmw_comm_f
         use hecmw_matrix_ass
         use hecmw_matrix_contact
-        use hecmw_solver_misc_33
+        use hecmw_solver_las_33
+        use hecmw_precond_33
 
         implicit none
 

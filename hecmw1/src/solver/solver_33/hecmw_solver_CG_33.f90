@@ -33,8 +33,9 @@
       use m_hecmw_comm_f
       use hecmw_matrix_misc
       use hecmw_solver_misc
-      use hecmw_solver_misc_33
+      use hecmw_solver_las_33
       use hecmw_solver_scaling_33
+      use hecmw_precond_33
       use jad_type
 
       implicit none
@@ -165,7 +166,7 @@
 !C | {z}= [Minv]{r} |
 !C +----------------+
 !C===
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
 
 !C===
 !C +---------------+

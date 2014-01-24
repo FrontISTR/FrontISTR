@@ -33,8 +33,9 @@
       use m_hecmw_comm_f
       use hecmw_matrix_misc
       use hecmw_solver_misc
-      use hecmw_solver_misc_33
+      use hecmw_solver_las_33
       use hecmw_solver_scaling_33
+      use hecmw_precond_33
 
       implicit none
 
@@ -190,7 +191,7 @@
 !C | {p_tld}= [Minv]{p} |
 !C +--------------------+
 !C===
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:, P), WW(:, PT), WW(:, WK), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:, P), WW(:, PT), WW(:, WK), Tcomm)
 
 !C===
 !C +-------------------------+
@@ -220,7 +221,7 @@
 !C | {s_tld}= [Minv]{s} |
 !C +--------------------+
 !C===
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:, S), WW(:, ST), WW(:, WK), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:, S), WW(:, ST), WW(:, WK), Tcomm)
 
 !C===
 !C +-------------------------+

@@ -31,8 +31,9 @@
       use m_hecmw_comm_f
       use hecmw_matrix_misc
       use hecmw_solver_misc
-      use hecmw_solver_misc_33
+      use hecmw_solver_las_33
       use hecmw_solver_scaling_33
+      use hecmw_precond_33
 
       implicit none
 
@@ -185,7 +186,7 @@
 !C | {w}= [A][Minv]{v} |
 !C +-------------------+
 !C===
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
 
       call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
 
@@ -299,7 +300,7 @@
          enddo
          enddo
 
-         call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+         call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
          do kk= 1, NNDOF
            X(kk)= X(kk) + WW(kk,ZQ)
@@ -347,7 +348,7 @@
       enddo
       enddo
 
-      call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+      call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
       do kk= 1, NNDOF
         X(kk)= X(kk) + WW(kk,ZQ)
@@ -403,7 +404,7 @@
           enddo
         enddo
 
-        call hecmw_precond_33(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+        call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
         do kk= 1, NNDOF
           X(kk)= X(kk) + WW(kk,ZQ)

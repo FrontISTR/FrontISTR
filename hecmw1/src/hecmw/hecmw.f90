@@ -15,6 +15,10 @@ use hecmw_matrix_misc
 use hecmw_matrix_dump
 use hecmw_msg
 use hecmw_msgno
+use hecmw_precond_33
+use hecmw_precond_BILU_33
+use hecmw_precond_DIAG_33
+use hecmw_precond_SSOR_33
 use hecmw_restart
 use hecmw_result
 !use hecmw_solve_sai_make_33
@@ -22,10 +26,7 @@ use hecmw_solver_11
 use hecmw_solver_22
 use hecmw_solver_33
 use hecmw_solver_bicgstab_33
-!use hecmw_solver_blbicgstab_33
 use hecmw_solver_blcg_22
-!use hecmw_solver_blcg_33
-!use hecmw_solver_blgpbicg_33
 use hecmw_solver_cg_11
 use hecmw_solver_cg_22
 use hecmw_solver_cg_33
@@ -34,9 +35,9 @@ use hecmw_solver_direct_parallel
 use hecmw_solver_gmres_33
 use hecmw_solver_gpbicg_33
 use hecmw_solver_misc
-use hecmw_solver_misc_11
-use hecmw_solver_misc_22
-use hecmw_solver_misc_33
+use hecmw_solver_las_11
+use hecmw_solver_las_22
+use hecmw_solver_las_33
 !use hecmw_solver_sai_bicgstab_33
 !use hecmw_solver_sai_gmres_33
 !use hecmw_solver_sai_gpbicg_33
