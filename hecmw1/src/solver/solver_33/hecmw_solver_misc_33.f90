@@ -217,8 +217,9 @@ module hecmw_solver_misc_33
       real(kind=kreal), intent(inout), optional :: COMMtime
 
       integer(kind=kint) :: i
-      real(kind=kreal) :: Tcomm = 0.d0
+      real(kind=kreal) :: Tcomm
 
+      Tcomm = 0.d0
       call hecmw_matvec_33 (hecMESH, hecMAT, X, R, Tcomm)
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm
       do i = 1, hecMAT%N * 3
@@ -243,10 +244,11 @@ module hecmw_solver_misc_33
 
       real(kind=kreal), allocatable :: r(:)
       real(kind=kreal) :: bnorm2, rnorm2
-      real(kind=kreal) :: Tcomm=0.d0
+      real(kind=kreal) :: Tcomm
 
       allocate(r(hecMAT%NDOF*hecMAT%NP))
 
+      Tcomm = 0.d0
       call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
            hecMAT%B, hecMAT%B, bnorm2, Tcomm)
       call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
