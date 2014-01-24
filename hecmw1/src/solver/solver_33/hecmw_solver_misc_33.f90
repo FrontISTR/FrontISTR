@@ -55,14 +55,14 @@ module hecmw_solver_misc_33
       real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
       ! added for turning >>>
-      integer, save :: numOfBlockPerThread = 128
+      integer, parameter :: numOfBlockPerThread = 100
       logical, save :: isFirst = .true.
       integer, save :: numOfThread = 1
       integer, save, allocatable :: startPos(:), endPos(:)
       integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
       integer(kind=kint) :: threadNum, blockNum, numOfBlock
       integer(kind=kint) :: numOfElement, elementCount, blockIndex
-      real(kind=kreal) :: numOfElementPerBlock, numOfElementPerRow
+      real(kind=kreal) :: numOfElementPerBlock
       ! <<< added for turning
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
@@ -87,17 +87,10 @@ module hecmw_solver_misc_33
       ! added for turning >>>
       if (isFirst .eqv. .true.) then
         !$ numOfThread = omp_get_max_threads()
-        numOfElement = N + indexL(N) + indexU(N)
-        numOfElementPerRow = dble(numOfElement) / N
-        ! adjust numOfBlockPerThread (mainly for small data)
-        do
-          numOfBlock = numOfThread * numOfBlockPerThread
-          numOfElementPerBlock = dble(numOfElement) / numOfBlock
-          if (numOfElementPerBlock >= numOfElementPerRow * 10 &
-               .or. numOfBlockPerThread == 1) exit
-          numOfBlockPerThread = numOfBlockPerThread / 2
-        end do
+        numOfBlock = numOfThread * numOfBlockPerThread
         allocate (startPos(0 : numOfBlock - 1), endPos(0 : numOfBlock - 1))
+        numOfElement = N + indexL(N) + indexU(N)
+        numOfElementPerBlock = dble(numOfElement) / numOfBlock
         blockNum = 0
         elementCount = 0
         startPos(blockNum) = 1
@@ -115,13 +108,15 @@ module hecmw_solver_misc_33
           endif
         enddo
         endPos(blockNum) = N
+        ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
+        !      startPos(blockNum), endPos(blockNum)
         ! for irregular data
         do i= blockNum+1, numOfBlock-1
           startPos(i) = N
-          endPos(i) = N
+          endPos(i) = N-1
+          ! write(9000+hecMESH%my_rank,*) mod(i, numOfThread), &
+          !      startPos(i), endPos(i)
         end do
-        ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
-        !      startPos(blockNum), endPos(blockNum)
 
         ! calculate sector cache size
         sectorCacheSize1 = int((dble(NP) * 3 * kreal / (4096 * 128)) + 0.999)
@@ -150,8 +145,7 @@ module hecmw_solver_misc_33
 
 !$OMP PARALLEL DEFAULT(NONE) &
 !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,&
-!$OMP&       numOfBlockPerThread)
+!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
