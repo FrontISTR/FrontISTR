@@ -462,7 +462,7 @@ contains
   !C*** hecmw_matvec_33_get_timer
   !C***
   !C
-  function hecmw_matvec_33_get_timer
+  function hecmw_matvec_33_get_timer()
     implicit none
     real(kind=kreal) :: hecmw_matvec_33_get_timer
     hecmw_matvec_33_get_timer = time_Ax

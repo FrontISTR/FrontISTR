@@ -178,7 +178,7 @@ contains
   !C*** hecmw_precond_33_get_timer
   !C***
   !C
-  function hecmw_precond_33_get_timer
+  function hecmw_precond_33_get_timer()
     implicit none
     real(kind=kreal) :: hecmw_precond_33_get_timer
     hecmw_precond_33_get_timer = time_precond
