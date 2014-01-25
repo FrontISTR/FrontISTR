@@ -3,10 +3,11 @@
 !   Software Name : HEC-MW Library for PC-cluster                      !
 !         Version : 2.5                                                !
 !                                                                      !
-!     Last Update : 2006/06/01                                         !
+!     Last Update : 2014/01/25                                         !
 !        Category : Linear Solver                                      !
 !                                                                      !
 !            Written by Kengo Nakajima (Univ. of Tokyo)                !
+!                       Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
 !     Contact address :  IIS,The University of Tokyo RSS21 project     !
 !                                                                      !
@@ -36,7 +37,7 @@
       use hecmw_solver_las_33
       use hecmw_solver_scaling_33
       use hecmw_precond_33
-      use jad_type
+      use hecmw_jad_type
 
       implicit none
 
@@ -104,6 +105,10 @@
 !C-- SCALING
       call hecmw_solver_scaling_fw_33(hecMESH, hecMAT, Tcomm)
 
+      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+        call hecmw_JAD_INIT(hecMAT)
+      ENDIF
+
 !C===
 !C +----------------------+
 !C | SETUP PRECONDITIONER |
@@ -135,9 +140,6 @@
         X = 0.d0
       endif
 
-      IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call JAD_INIT(hecMAT)
-      ENDIF
 !C
 !C-- {tatx} = [T'] [A] [T]{x}
       if (totalmpc.eq.0) then
@@ -260,7 +262,7 @@
       call hecmw_precond_33_clear(hecMAT)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call JAD_FINALIZE()
+        call hecmw_JAD_FINALIZE()
       ENDIF
 
       end subroutine hecmw_solve_CG_33

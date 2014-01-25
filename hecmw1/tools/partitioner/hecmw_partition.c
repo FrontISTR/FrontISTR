@@ -3,10 +3,11 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.5                                               *
  *                                                                     *
- *     Last Update : 2006/06/01                                        *
+ *     Last Update : 2014/01/25                                        *
  *        Category : HEC-MW Utility                                    *
  *                                                                     *
  *            Written by Shin'ichi Ezure (RIST)                        *
+ *                       Kazuya Goto (PExProCS LLC)                    *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *

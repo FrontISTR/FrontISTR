@@ -1,32 +1,35 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.4                                   !
+!   Software Name : HEC-MW Library for PC-cluster                      !
+!         Version : 2.5                                                !
 !                                                                      !
-!      Module Name : lib                                               !
+!     Last Update : 2014/01/25                                         !
+!        Category : Linear Solver                                      !
 !                                                                      !
-!            Written by K. Goto (VINAS)                                !
+!            Written by Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
+!     Contact address :  IIS,The University of Tokyo RSS21 project     !
 !                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
+!     "Structural Analysis System for General-purpose Coupling         !
+!      Simulations Using High End Computing Middleware (HEC-MW)"       !
 !                                                                      !
 !======================================================================!
 !> This module provides wrapper for parallel sparse direct solver MUMPS
-module m_MUMPS_wrapper
+module m_hecmw_MUMPS_wrapper
   use hecmw_util
   use m_sparse_matrix
 
   private
-  public :: mumps_wrapper
+  public :: hecmw_mumps_wrapper
 
 contains
 
-  subroutine mumps_wrapper(spMAT, job, istat)
+  subroutine hecmw_mumps_wrapper(spMAT, job, istat)
     implicit none
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
     integer(kind=kint), intent(out) :: istat
     stop "MUMPS not available"
-  end subroutine mumps_wrapper
+  end subroutine hecmw_mumps_wrapper
 
-end module m_MUMPS_wrapper
+end module m_hecmw_MUMPS_wrapper

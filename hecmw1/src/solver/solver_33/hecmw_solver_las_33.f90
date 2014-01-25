@@ -1,3 +1,19 @@
+!======================================================================!
+!                                                                      !
+!   Software Name : HEC-MW Library for PC-cluster                      !
+!         Version : 2.5                                                !
+!                                                                      !
+!     Last Update : 2014/01/25                                         !
+!        Category : Linear Solver                                      !
+!                                                                      !
+!            Written by Kazuya Goto (PExProCS LLC)                     !
+!                                                                      !
+!     Contact address :  IIS,The University of Tokyo RSS21 project     !
+!                                                                      !
+!     "Structural Analysis System for General-purpose Coupling         !
+!      Simulations Using High End Computing Middleware (HEC-MW)"       !
+!                                                                      !
+!======================================================================!
 module hecmw_solver_las_33
   use hecmw_util
   implicit none
@@ -30,7 +46,7 @@ contains
     use m_hecmw_comm_f
     use hecmw_matrix_contact
     use hecmw_matrix_misc
-    use jad_type
+    use hecmw_jad_type
     !$ use omp_lib
 
     implicit none
@@ -62,7 +78,7 @@ contains
     IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
       Tcomm = 0.d0
       START_TIME = hecmw_Wtime()
-      call JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
+      call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm

@@ -1,3 +1,21 @@
+!======================================================================!
+!                                                                      !
+!   Software Name : HEC-MW Library for PC-cluster                      !
+!         Version : 2.5                                                !
+!                                                                      !
+!     Last Update : 2014/01/25                                         !
+!        Category : Linear Solver                                      !
+!                                                                      !
+!            Written by Kengo Nakajima (Univ. of Tokyo)                !
+!                       Kazuya Goto (PExProCS LLC)                     !
+!                                                                      !
+!     Contact address :  IIS,The University of Tokyo RSS21 project     !
+!                                                                      !
+!     "Structural Analysis System for General-purpose Coupling         !
+!      Simulations Using High End Computing Middleware (HEC-MW)"       !
+!                                                                      !
+!======================================================================!
+
 module hecmw_solver_las_11
 
   private

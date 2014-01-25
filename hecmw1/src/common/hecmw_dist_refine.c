@@ -6,7 +6,7 @@
  *     Last Update : 2013/12/13                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
- *            Written by GOTO, Kazuya (PExProCS)                       *
+ *            Written by GOTO, Kazuya (PExProCS LLC)                   *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *

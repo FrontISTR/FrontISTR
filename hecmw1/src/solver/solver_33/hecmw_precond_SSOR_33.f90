@@ -3,10 +3,11 @@
 !   Software Name : HEC-MW Library for PC-cluster                      !
 !         Version : 2.5                                                !
 !                                                                      !
-!     Last Update : 2006/06/01                                         !
+!     Last Update : 2014/01/25                                         !
 !        Category : Linear Solver                                      !
 !                                                                      !
 !            Written by Kengo Nakajima (Univ. of Tokyo)                !
+!                       Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
 !     Contact address :  IIS,The University of Tokyo RSS21 project     !
 !                                                                      !
@@ -35,21 +36,21 @@ module hecmw_precond_SSOR_33
   public:: hecmw_precond_SSOR_33_clear
 
   integer(kind=kint) :: N
-  real(kind=kreal), pointer :: ALU(:) => null()
-  real(kind=kreal), pointer :: AU(:) => null()
-  real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: D(:) => null()
+  real(kind=kreal), pointer :: AL(:) => null()
+  real(kind=kreal), pointer :: AU(:) => null()
   integer(kind=kint), pointer :: indexL(:) => null()
-  integer(kind=kint), pointer :: itemL(:) => null()
   integer(kind=kint), pointer :: indexU(:) => null()
+  integer(kind=kint), pointer :: itemL(:) => null()
   integer(kind=kint), pointer :: itemU(:) => null()
+  real(kind=kreal), pointer :: ALU(:) => null()
 
   integer(kind=kint) :: NContact = 0
-  real(kind=kreal), pointer :: CAU(:) => null()
   real(kind=kreal), pointer :: CAL(:) => null()
+  real(kind=kreal), pointer :: CAU(:) => null()
   integer(kind=kint), pointer :: indexCL(:) => null()
-  integer(kind=kint), pointer :: itemCL(:) => null()
   integer(kind=kint), pointer :: indexCU(:) => null()
+  integer(kind=kint), pointer :: itemCL(:) => null()
   integer(kind=kint), pointer :: itemCU(:) => null()
 
   integer(kind=kint) :: NColor
@@ -62,7 +63,7 @@ contains
   subroutine hecmw_precond_SSOR_33_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint ) :: NP, NPL, NPU, NPCL, NPCU
+    integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
@@ -78,7 +79,7 @@ contains
     !$ nthreads = omp_get_max_threads()
 
     N = hecMAT%N
-    NP = hecMAT%NP
+    ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
     NContact = hecMAT%cmat%n_val
@@ -89,31 +90,31 @@ contains
 
     if (nthreads == 1) then
       NColor = 1
-      allocate(COLORindex(0:1), perm(NP), iperm(NP))
+      allocate(COLORindex(0:1), perm(N), iperm(N))
       COLORindex(0) = 0
       COLORindex(1) = N
-      do i=1,NP
+      do i=1,N
         perm(i) = i
         iperm(i) = i
       end do
 
-      AU => hecMAT%AU
+      D => hecMAT%D
       AL => hecMAT%AL
-      D  => hecMAT%D
+      AU => hecMAT%AU
       indexL => hecMAT%indexL
-      itemL  => hecMAT%itemL
       indexU => hecMAT%indexU
-      itemU  => hecMAT%itemU
+      itemL => hecMAT%itemL
+      itemU => hecMAT%itemU
       if (NContact.gt.0) then
         CAL => hecMAT%CAL
         CAU => hecMAT%CAU
         indexCL => hecMAT%indexCL
-        itemCL => hecMAT%itemCL
         indexCU => hecMAT%indexCU
+        itemCL => hecMAT%itemCL
         itemCU => hecMAT%itemCU
       end if
     else
-      allocate(COLORindex(0:NP), perm_tmp(NP), perm(NP), iperm(NP))
+      allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
            hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
       !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
@@ -125,9 +126,9 @@ contains
 
       !call write_debug_info
 
-      NPL = hecMAT%NPL
-      NPU = hecMAT%NPU
-      allocate(indexL(0:NP), indexU(0:NP), itemL(NPL), itemU(NPU))
+      NPL = hecMAT%indexL(N)
+      NPU = hecMAT%indexU(N)
+      allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
       call hecmw_matrix_reorder_profile(N, perm, iperm, &
            hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
            indexL, indexU, itemL, itemU)
@@ -135,7 +136,7 @@ contains
 
       call check_ordering
 
-      allocate(D(9*NP), AL(9*NPL), AU(9*NPU))
+      allocate(D(9*N), AL(9*NPL), AU(9*NPU))
       call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
            hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
            hecMAT%AL, hecMAT%AU, hecMAT%D, &
@@ -146,14 +147,14 @@ contains
       call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
       if (NContact.gt.0) then
-        NPCL = hecMAT%indexCL(NP)
-        NPCU = hecMAT%indexCU(NP)
-        allocate(indexCL(0:NP), indexCU(0:NP), itemCL(NPCL), itemCU(NPCU))
+        NPCL = hecMAT%indexCL(N)
+        NPCU = hecMAT%indexCU(N)
+        allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
         call hecmw_matrix_reorder_profile(N, perm, iperm, &
              hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
              indexCL, indexCU, itemCL, itemCU)
 
-        allocate(CD(9*NP), CAL(9*NPCL), CAU(9*NPCU))
+        allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
         call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
              hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
              hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
@@ -166,7 +167,7 @@ contains
 
     end if
 
-    allocate(ALU(9*NP))
+    allocate(ALU(9*N))
     ALU  = 0.d0
 
     do ii= 1, 9*N
@@ -429,44 +430,44 @@ contains
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: nthreads = 1
     !$ nthreads = omp_get_max_threads()
-    if (associated(ALU)) deallocate(ALU)
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
+    if (associated(ALU)) deallocate(ALU)
     if (nthreads > 1) then
+      if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)
       if (associated(AU)) deallocate(AU)
-      if (associated(D)) deallocate(D)
       if (associated(indexL)) deallocate(indexL)
-      if (associated(itemL)) deallocate(itemL)
       if (associated(indexU)) deallocate(indexU)
+      if (associated(itemL)) deallocate(itemL)
       if (associated(itemU)) deallocate(itemU)
       if (NContact.ne.0) then
         if (associated(CAL)) deallocate(CAL)
         if (associated(CAU)) deallocate(CAU)
         if (associated(indexCL)) deallocate(indexCL)
-        if (associated(itemCL)) deallocate(itemCL)
         if (associated(indexCU)) deallocate(indexCU)
+        if (associated(itemCL)) deallocate(itemCL)
         if (associated(itemCU)) deallocate(itemCU)
       end if
     end if
-    nullify(ALU)
     nullify(COLORindex)
     nullify(perm)
     nullify(iperm)
-    nullify(AU)
-    nullify(AL)
+    nullify(ALU)
     nullify(D)
+    nullify(AL)
+    nullify(AU)
     nullify(indexL)
-    nullify(itemL)
     nullify(indexU)
+    nullify(itemL)
     nullify(itemU)
     if (NContact.ne.0) then
-      nullify(CAU)
       nullify(CAL)
+      nullify(CAU)
       nullify(indexCL)
-      nullify(itemCL)
       nullify(indexCU)
+      nullify(itemCL)
       nullify(itemCU)
       call hecmw_cmat_LU_free( hecMAT )
     endif

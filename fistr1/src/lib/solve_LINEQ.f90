@@ -6,6 +6,7 @@
 !                                                                      !
 !            Written by Yasuji Fukahori (Univ. of Tokyo)               !
 !                       Giri Prabhakar (RIST)                          !
+!                       Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -31,7 +32,7 @@ module m_solve_LINEQ
       USE hecmw_solver_33
       USE hecmw_solver_direct
       USE hecmw_solver_direct_parallel
-      USE m_solve_LINEQ_MUMPS
+      USE hecmw_solver_direct_MUMPS
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
       INTEGER(kind=kint) imsg, i, myrank
@@ -74,7 +75,7 @@ module m_solve_LINEQ
         call hecmw_mat_dump(hecMAT, hecMESH)
 
         if (hecMAT%Iarray(2) .eq. 104) then
-          call solve_LINEQ_MUMPS(hecMESH, hecMAT)
+          call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
         else
           IF(hecMESH%PETOT.GT.1) THEN
             CALL hecmw_solve_direct_parallel(hecMESH,hecMAT,imsg)

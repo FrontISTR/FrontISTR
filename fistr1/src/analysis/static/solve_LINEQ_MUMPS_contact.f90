@@ -4,7 +4,7 @@
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
-!            Written by K. Goto (VINAS)                                !
+!            Written by K. Goto (PExProCS LLC)                         !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -18,7 +18,7 @@ module m_solve_LINEQ_MUMPS_contact
   use m_sparse_matrix
   use m_sparse_matrix_contact
   use fstr_matrix_con_contact
-  use m_MUMPS_wrapper
+  use m_hecmw_MUMPS_wrapper
 
   private
   public :: solve_LINEQ_MUMPS_contact_init
@@ -42,7 +42,7 @@ contains
 
     if (INITIALIZED) then
        mumps_job=-2
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -60,7 +60,7 @@ contains
     spmat_type = SPARSE_MATRIX_TYPE_COO
     call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
     mumps_job=-1
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -69,7 +69,7 @@ contains
     ! ANALYSIS
     call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
     mumps_job=1
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -99,7 +99,7 @@ contains
       call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
     endif
     mumps_job=5
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop

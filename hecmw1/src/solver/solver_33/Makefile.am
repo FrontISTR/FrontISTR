@@ -74,7 +74,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	jadm.@f90objfilepostfix@ \
+	hecmw_jadm.@f90objfilepostfix@ \
 	hecmw_solver_las_33.@f90objfilepostfix@ \
 	hecmw_solver_scaling_33.@f90objfilepostfix@ \
 	hecmw_precond_BILU_33.@f90objfilepostfix@ \

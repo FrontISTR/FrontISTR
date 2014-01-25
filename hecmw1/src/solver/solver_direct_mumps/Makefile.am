@@ -82,7 +82,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 #-----------------------------------------------------------------------------#
 OBJS =
 
-OBJSF = solve_LINEQ_MUMPS.@f90objfilepostfix@
+OBJSF = hecmw_solver_direct_MUMPS.@f90objfilepostfix@
 
 OBJSF_MUMPS = MUMPS_wrapper.@f90objfilepostfix@
 

@@ -3,10 +3,11 @@
 !   Software Name : HEC-MW Library for PC-cluster                      !
 !         Version : 2.5                                                !
 !                                                                      !
-!     Last Update : 2006/06/01                                         !
+!     Last Update : 2014/01/25                                         !
 !        Category : Linear Solver                                      !
 !                                                                      !
 !            Written by Kengo Nakajima (Univ. of Tokyo)                !
+!                       Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
 !     Contact address :  IIS,The University of Tokyo RSS21 project     !
 !                                                                      !
@@ -31,14 +32,14 @@ module hecmw_precond_BILU_33
   public:: hecmw_precond_BILU_33_clear
 
   integer(kind=kint) :: N
-  real(kind=kreal), pointer :: ALU(:) => null()
-  real(kind=kreal), pointer :: AUlu0(:) => null()
-  real(kind=kreal), pointer :: ALlu0(:) => null()
   real(kind=kreal), pointer :: Dlu0(:) => null()
+  real(kind=kreal), pointer :: ALlu0(:) => null()
+  real(kind=kreal), pointer :: AUlu0(:) => null()
   integer(kind=kint), pointer :: inumFI1L(:) => null()
-  integer(kind=kint), pointer :: FI1L(:) => null()
   integer(kind=kint), pointer :: inumFI1U(:) => null()
+  integer(kind=kint), pointer :: FI1L(:) => null()
   integer(kind=kint), pointer :: FI1U(:) => null()
+  real(kind=kreal), pointer :: ALU(:) => null()
 
 contains
 
@@ -49,11 +50,11 @@ contains
     integer(kind=kint ) :: PRECOND
     real   (kind=kreal) :: SIGMA, SIGMA_DIAG
 
+    real(kind=kreal), pointer :: D(:)
     real(kind=kreal), pointer :: AL(:)
     real(kind=kreal), pointer :: AU(:)
-    real(kind=kreal), pointer :: D(:)
 
-    integer(kind=kint ), pointer :: INU(:), INL(:)
+    integer(kind=kint ), pointer :: INL(:), INU(:)
     integer(kind=kint ), pointer :: IAL(:)
     integer(kind=kint ), pointer :: IAU(:)
 
@@ -68,8 +69,8 @@ contains
     AL => hecMAT%AL
     AU => hecMAT%AU
     INL => hecMAT%indexL
-    IAL => hecMAT%itemL
     INU => hecMAT%indexU
+    IAL => hecMAT%itemL
     IAU => hecMAT%itemU
     PRECOND = hecmw_mat_get_precond(hecMAT)
     SIGMA = hecmw_mat_get_sigma(hecMAT)
@@ -175,22 +176,22 @@ contains
 
   subroutine hecmw_precond_BILU_33_clear()
     implicit none
-    if (associated(ALU)) deallocate(ALU)
-    if (associated(AUlu0)) deallocate(AUlu0)
-    if (associated(ALlu0)) deallocate(ALlu0)
     if (associated(Dlu0)) deallocate(Dlu0)
+    if (associated(ALlu0)) deallocate(ALlu0)
+    if (associated(AUlu0)) deallocate(AUlu0)
     if (associated(inumFI1L)) deallocate(inumFI1L)
-    if (associated(FI1L)) deallocate(FI1L)
     if (associated(inumFI1U)) deallocate(inumFI1U)
+    if (associated(FI1L)) deallocate(FI1L)
     if (associated(FI1U)) deallocate(FI1U)
-    nullify(ALU)
-    nullify(AUlu0)
-    nullify(ALlu0)
+    if (associated(ALU)) deallocate(ALU)
     nullify(Dlu0)
+    nullify(ALlu0)
+    nullify(AUlu0)
     nullify(inumFI1L)
-    nullify(FI1L)
     nullify(inumFI1U)
+    nullify(FI1L)
     nullify(FI1U)
+    nullify(ALU)
   end subroutine hecmw_precond_BILU_33_clear
 
   !C

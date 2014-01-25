@@ -1,32 +1,35 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.4                                   !
+!   Software Name : HEC-MW Library for PC-cluster                      !
+!         Version : 2.5                                                !
 !                                                                      !
-!      Module Name : lib                                               !
+!     Last Update : 2014/01/25                                         !
+!        Category : Linear Solver                                      !
 !                                                                      !
-!            Written by K. Goto (VINAS)                                !
+!            Written by Kazuya Goto (PExProCS LLC)                     !
 !                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
+!     Contact address :  IIS,The University of Tokyo RSS21 project     !
 !                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
+!     "Structural Analysis System for General-purpose Coupling         !
+!      Simulations Using High End Computing Middleware (HEC-MW)"       !
 !                                                                      !
 !======================================================================!
 !> This module provides linear equation solver interface for MUMPS
-module m_solve_LINEQ_MUMPS
+module hecmw_solver_direct_MUMPS
   use hecmw_util
   use m_sparse_matrix
   use m_sparse_matrix_hec
-  use m_MUMPS_wrapper
+  use m_hecmw_MUMPS_wrapper
 
   private
-  public :: solve_LINEQ_MUMPS
+  public :: hecmw_solve_direct_MUMPS
 
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
 
 contains
 
-  subroutine solve_LINEQ_MUMPS(hecMESH,hecMAT)
+  subroutine hecmw_solve_direct_MUMPS(hecMESH,hecMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
@@ -41,7 +44,7 @@ contains
 
     if (INITIALIZED .and. hecMAT%Iarray(98) .eq. 1) then
        mumps_job=-2
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -55,7 +58,7 @@ contains
        spmat_symtype = SPARSE_MATRIX_SYMTYPE_SPD
        call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
        mumps_job = -1
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -73,7 +76,7 @@ contains
        call sparse_matrix_hec_set_vals(spMAT, hecMAT)
        !call sparse_matrix_dump(spMAT)
        mumps_job=4
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -87,7 +90,7 @@ contains
        call sparse_matrix_hec_set_vals(spMAT, hecMAT)
        !call sparse_matrix_dump(spMAT)
        mumps_job=2
-       call mumps_wrapper(spMAT, mumps_job, istat)
+       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
        if (istat < 0) then
          write(*,*) 'ERROR: MUMPS returned with error', istat
          stop
@@ -101,7 +104,7 @@ contains
     ! SOLUTION
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
     mumps_job=3
-    call mumps_wrapper(spMAT, mumps_job, istat)
+    call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
       stop
@@ -116,6 +119,6 @@ contains
     endif
 
     !call sparse_matrix_finalize(spMAT)
-  end subroutine solve_LINEQ_MUMPS
+  end subroutine hecmw_solve_direct_MUMPS
 
-end module m_solve_LINEQ_MUMPS
+end module hecmw_solver_direct_MUMPS

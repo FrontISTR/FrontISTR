@@ -4,7 +4,7 @@
 !                                                                      !
 !      Module Name : lib                                               !
 !                                                                      !
-!            Written by K. Goto (VINAS)                                !
+!            Written by K. Goto (PExProCS LLC)                         !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
