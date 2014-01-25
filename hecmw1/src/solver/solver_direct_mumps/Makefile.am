@@ -84,9 +84,9 @@ OBJS =
 
 OBJSF = hecmw_solver_direct_MUMPS.@f90objfilepostfix@
 
-OBJSF_MUMPS = MUMPS_wrapper.@f90objfilepostfix@
+OBJSF_MUMPS = hecmw_MUMPS_wrapper.@f90objfilepostfix@
 
-OBJSF_MUMPS_DUMM = MUMPS_wrapper_dumm.@f90objfilepostfix@
+OBJSF_MUMPS_DUMM = hecmw_MUMPS_wrapper_dumm.@f90objfilepostfix@
 
 HEADERS =
 
