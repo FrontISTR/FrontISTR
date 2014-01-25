@@ -39,6 +39,7 @@ module m_solve_LINEQ
       real(kind=kreal) :: resid
       type (hecmwST_matrix    ) :: hecTKT
       integer(kind=kint) :: totalmpc, n_mpc_org
+      real(kind=kreal) :: Tcomm
 !C
       SELECT CASE(hecMAT%Iarray(99))
 !C
@@ -64,7 +65,7 @@ module m_solve_LINEQ
             call hecmw_mpc_scale(hecMESH)
             call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
             write(0,*) "DEBUG: MPC: trimatmul done"
-            call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, hecTKT%X)
+            call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, hecTKT%X, Tcomm)
             write(0,*) "DEBUG: MPC: make new RHS done"
 
             n_mpc_org = hecMESH%mpc%n_mpc
@@ -73,7 +74,7 @@ module m_solve_LINEQ
             hecMESH%mpc%n_mpc=n_mpc_org
             write(0,*) "DEBUG: MPC: solve done"
 
-            call hecmw_tback_x_33(hecMESH, hecTKT%X, hecMAT%X)
+            call hecmw_tback_x_33(hecMESH, hecTKT%X, hecMAT%X, Tcomm)
             hecMAT%X(:)=hecTKT%X(:)
             write(0,*) "DEBUG: MPC: recover solution done"
             call hecmw_mat_finalize(hecTKT)
