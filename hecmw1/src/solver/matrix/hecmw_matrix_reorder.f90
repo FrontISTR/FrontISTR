@@ -128,7 +128,7 @@ contains
     implicit none
     integer(kind=kint), intent(in) :: N
     integer(kind=kint), intent(in) :: perm(:)
-    integer(kind=kint), intent(in) :: indexXp(:)
+    integer(kind=kint), intent(in) :: indexXp(0:)
     integer(kind=kint), intent(inout) :: itemXp(:)
     integer(kind=kint) :: NPX, i
     NPX = indexXp(N)

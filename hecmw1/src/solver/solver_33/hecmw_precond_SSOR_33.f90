@@ -142,8 +142,8 @@ contains
            indexL, indexU, itemL, itemU, AL, AU, D)
       !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
-      ! call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
-      ! call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
+      call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
+      call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
       if (NContact.gt.0) then
         NPCL = hecMAT%indexCL(NP)
@@ -160,8 +160,8 @@ contains
              indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
         deallocate(CD)
 
-        ! call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
-        ! call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
+        call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
+        call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
       end if
 
     end if
@@ -317,7 +317,8 @@ contains
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
-            k= perm(itemL(j))
+            !k= perm(itemL(j))
+            k= itemL(j)
             X1= ZP(3*k-2)
             X2= ZP(3*k-1)
             X3= ZP(3*k  )
@@ -330,7 +331,8 @@ contains
             isL= indexCL(i-1)+1
             ieL= indexCL(i)
             do j= isL, ieL
-              k= perm(itemCL(j))
+              !k= perm(itemCL(j))
+              k= itemCL(j)
               X1= ZP(3*k-2)
               X2= ZP(3*k-1)
               X3= ZP(3*k  )
@@ -372,7 +374,8 @@ contains
           isU= indexU(i-1) + 1
           ieU= indexU(i)
           do j= ieU, isU, -1
-            k= perm(itemU(j))
+            !k= perm(itemU(j))
+            k= itemU(j)
             X1= ZP(3*k-2)
             X2= ZP(3*k-1)
             X3= ZP(3*k  )
@@ -385,7 +388,8 @@ contains
             isU= indexCU(i-1) + 1
             ieU= indexCU(i)
             do j= ieU, isU, -1
-              k= perm(itemCU(j))
+              !k= perm(itemCU(j))
+              k= itemCU(j)
               X1= ZP(3*k-2)
               X2= ZP(3*k-1)
               X3= ZP(3*k  )
