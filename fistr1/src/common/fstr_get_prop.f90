@@ -33,6 +33,7 @@ contains
     TYPE (hecmwST_local_mesh) :: hecMESH
 
     n_totallayer_ls = 1
+    shell_matltype = -1
 
     !*EHM June 24 04
     !Get thickness

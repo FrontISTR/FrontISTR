@@ -333,9 +333,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                   fstrSOLID%materials(cid)%variables(100+8*k-1)=shell_variables(8*k-1)		!<g31
                   fstrSOLID%materials(cid)%variables(100+8*k  )=(shell_variables(8*k )/180.0d0)*datan(1.0d0)*4d0		!<theta
                 enddo
-              else
-                WRITE(IMSG,*),'###Warning : shell matltype not correct'
-                !stop
               endif
               !>**********  Laminated shell  **********
            enddo
