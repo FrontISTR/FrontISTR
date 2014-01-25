@@ -37,9 +37,6 @@ module m_solve_LINEQ
       type (hecmwST_matrix    ) :: hecMAT
       INTEGER(kind=kint) imsg, i, myrank
       real(kind=kreal) :: resid
-      type (hecmwST_matrix    ) :: hecTKT
-      integer(kind=kint) :: totalmpc, n_mpc_org
-      real(kind=kreal) :: Tcomm
 !C
       SELECT CASE(hecMAT%Iarray(99))
 !C
@@ -57,30 +54,7 @@ module m_solve_LINEQ
           CALL hecmw_solve_22(hecMESH,hecMAT)
         CASE(3)
 !          WRITE(*,*) "Calling 3x3 Iterative Solver..."
-          !CALL hecmw_solve_33(hecMESH,hecMAT)
-          totalmpc = hecMESH%mpc%n_mpc
-          call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-          if (totalmpc > 0) then
-            write(0,*) "DEBUG: MPC: eliminating slave DOF"
-            call hecmw_mpc_scale(hecMESH)
-            call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
-            write(0,*) "DEBUG: MPC: trimatmul done"
-            call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, hecTKT%X, Tcomm)
-            write(0,*) "DEBUG: MPC: make new RHS done"
-
-            n_mpc_org = hecMESH%mpc%n_mpc
-            hecMESH%mpc%n_mpc=0
-            call hecmw_solve_33(hecMESH,hecTKT)
-            hecMESH%mpc%n_mpc=n_mpc_org
-            write(0,*) "DEBUG: MPC: solve done"
-
-            call hecmw_tback_x_33(hecMESH, hecTKT%X, hecMAT%X, Tcomm)
-            hecMAT%X(:)=hecTKT%X(:)
-            write(0,*) "DEBUG: MPC: recover solution done"
-            call hecmw_mat_finalize(hecTKT)
-          else
-            call hecmw_solve_33(hecMESH,hecMAT)
-          endif
+          CALL hecmw_solve_33(hecMESH,hecMAT)
         CASE(4:)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
