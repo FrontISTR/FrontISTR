@@ -122,8 +122,16 @@ contains
         end do
       end do PRLV
       if (cnt == 0) then
-        write(*,*) 'ERROR: CM ordering failed. Please run on single thread.'
-        call hecmw_abort(hecmw_comm_get_comm())
+        !write(*,*) 'DEBUG: choose any uncolored node..'
+        do knode = 1, N
+          if (iwk(knode) == 0) then
+            iwk(knode) = level
+            cnt = cnt + 1
+            cntall = cntall + 1
+            lv_item(cntall) = knode
+            exit
+          end if
+        end do
       endif
       lv_index(level) = cntall
       if (cntall == N) then
@@ -150,6 +158,8 @@ contains
       do j = indexU(i-1)+1, indexU(i)
         if (itemU(j) <= N) deg = deg + 1
       end do
+      ! skip unconnected nodes
+      if (deg == 0) cycle
       if (deg < degmin) then
         degmin = deg
         nmin = 1
