@@ -57,12 +57,9 @@
       integer(kind=kint), parameter ::  Z= 2
       integer(kind=kint), parameter ::  Q= 2
       integer(kind=kint), parameter ::  P= 3
-      integer(kind=kint), parameter :: BT= 1
-      integer(kind=kint), parameter ::TATX=2
       integer(kind=kint), parameter :: WK= 4
 
       integer(kind=kint ) :: MAXIT
-      integer(kind=kint ) :: totalmpc
 
 ! local variables
       real   (kind=kreal) :: TOL
@@ -91,15 +88,10 @@
       MAXIT  = hecmw_mat_get_iter( hecMAT )
       TOL   = hecmw_mat_get_resid( hecMAT )
 
-      totalmpc = hecMESH%mpc%n_mpc
-      call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-
       ERROR = 0
 
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
-
-      call hecmw_mpc_scale(hecMESH)
 
 !C
 !C-- SCALING
@@ -117,41 +109,20 @@
       call hecmw_precond_33_setup(hecMAT)
 
 !C===
-!C +----------------------------------------------+
-!C | {r0}= [T']({b} - [A]{xg}) - [T'][A][T]{xini} |
-!C +----------------------------------------------+
+!C +---------------------+
+!C | {r0}= {b} - [A]{x0} |
+!C +---------------------+
 !C===
+      call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
-!C-- {bt}= [T']({b} - [A]{xg})
-      if (totalmpc.eq.0) then
-        do i = 1, NNDOF
-          WW(i,BT) = B(i)
-        enddo
-       else
-        call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
-      endif
-
-!C-- compute ||{bt}||
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+!C-- compute ||{b}||
+      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
         RESID = 0.d0
         X = 0.d0
       endif
-
-!C
-!C-- {tatx} = [T'] [A] [T]{x}
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
-      endif
-
-!C-- {r} = {bt} - {tatx}
-      do i = 1, NNDOF
-        WW(i,R) = WW(i,BT) - WW(i,TATX)
-      enddo
 
       E_TIME = HECMW_WTIME()
       Tset = Tset + E_TIME - S_TIME
@@ -195,15 +166,11 @@
       endif
 
 !C===
-!C +---------------------+
-!C | {q}= [T'][A][T] {p} |
-!C +---------------------+
+!C +--------------+
+!C | {q}= [A] {p} |
+!C +--------------+
 !C===
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK), Tcomm)
-      endif
+      call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
 
 !C===
 !C +---------------------+
@@ -242,10 +209,6 @@
 !C
 !C************************************************* Conjugate Gradient Iteration end
 !C
-      if (totalmpc.ne.0) then
-        call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
-      endif
-
       call hecmw_solver_scaling_bk_33(hecMAT)
 !C
 !C-- INTERFACE data EXCHANGE

@@ -54,7 +54,6 @@
       real(kind=kreal), dimension(2) :: CG
 
       integer(kind=kint ) :: MAXIT
-      integer(kind=kint ) :: totalmpc
 
 ! local variables
       real   (kind=kreal):: TOL
@@ -72,8 +71,6 @@
       integer(kind=kint), parameter :: ST= 1
       integer(kind=kint), parameter :: T = 6
       integer(kind=kint), parameter :: V = 7
-      integer(kind=kint), parameter :: BT= 3
-      integer(kind=kint), parameter ::TATX= 4
       integer(kind=kint), parameter :: WK= 8
 
       S_time= HECMW_WTIME()
@@ -96,10 +93,6 @@
       MAXIT  = hecmw_mat_get_iter( hecMAT )
        TOL   = hecmw_mat_get_resid( hecMAT )
 
-      totalmpc = hecMESH%mpc%n_mpc
-      call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-      call hecmw_mpc_scale(hecMESH)
-
       ERROR = 0
 
       allocate (WW(NDOF*NP, 8))
@@ -117,41 +110,20 @@
       call hecmw_precond_33_setup(hecMAT)
 
 !C===
-!C +----------------------------------------------+
-!C | {r0}= [T']({b} - [A]{xg}) - [T'][A][T]{xini} |
-!C +----------------------------------------------+
+!C +---------------------+
+!C | {r0}= {b} - [A]{x0} |
+!C +---------------------+
 !C===
+      call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
-!C-- {bt}= [T']({b} - [A]{xg})
-      if (totalmpc.eq.0) then
-        do i = 1, NNDOF
-          WW(i,BT) = B(i)
-        enddo
-       else
-        call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
-      endif
-
-!C-- compute ||{bt}||
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+!C-- compute ||{b}||
+      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
         RESID = 0.d0
         X = 0.d0
       endif
-
-!C-- {tatx} = [T'] [A] [T]{x}
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
-      endif
-
-!C-- {r} = {bt} - {tatx}
-      do i = 1, NNDOF
-        WW(i,R) = WW(i,BT) - WW(i,TATX)
-        WW(i,RT) = WW(i,R)
-      enddo
 
       E_time = HECMW_WTIME()
       Tset = Tset + E_time - S_time
@@ -196,14 +168,10 @@
 
 !C===
 !C +-------------------------+
-!C | {v}= [T'][A][T] {p_tld} |
+!C | {v}= [A] {p_tld} |
 !C +-------------------------+
 !C===
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,PT), WW(:,V), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,PT), WW(:,V), WW(:,WK), Tcomm)
-      endif
+      call hecmw_matvec_33(hecMESH, hecMAT, WW(:,PT), WW(:,V), Tcomm)
 
 !C
 !C-- calc. ALPHA
@@ -226,14 +194,10 @@
 
 !C===
 !C +-------------------------+
-!C | {t}= [T'][A][T] {s_tld} |
+!C | {t}= [A] {s_tld} |
 !C +-------------------------+
 !C===
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ST), WW(:,T), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,ST), WW(:,T), WW(:,WK), Tcomm)
-      endif
+      call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ST), WW(:,T), Tcomm)
 
 !C===
 !C +----------------------------+
@@ -272,10 +236,6 @@
 !C
 !C*************************************************************** iterative procedures end
 !C
-
-      if (totalmpc.ne.0) then
-        call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
-      endif
 
       call hecmw_solver_scaling_bk_33(hecMAT)
 !C

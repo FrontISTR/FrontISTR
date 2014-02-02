@@ -62,7 +62,7 @@ contains
     real(kind=kreal)   :: SIGMA,TIME_sol
 
     type (hecmwST_matrix), pointer :: hecTKT
-    integer(kind=kint) :: totalmpc, n_mpc_org
+    integer(kind=kint) :: totalmpc
 
     !C===
     !C +------------+
@@ -183,9 +183,6 @@ contains
       write(0,*) "DEBUG: MPC: trimatmul done"
       call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, hecTKT%X, TIME_comm)
       write(0,*) "DEBUG: MPC: make new RHS done"
-
-      n_mpc_org = hecMESH%mpc%n_mpc
-      hecMESH%mpc%n_mpc=0
     else
       hecTKT => hecMAT
     endif
@@ -297,9 +294,7 @@ contains
     !C +--------------+
     !C===
     if (totalmpc > 0) then
-      hecMESH%mpc%n_mpc=n_mpc_org
       write(0,*) "DEBUG: MPC: solve done"
-
       call hecmw_tback_x_33(hecMESH, hecTKT%X, hecMAT%X, TIME_comm)
       hecMAT%X(:)=hecTKT%X(:)
       write(0,*) "DEBUG: MPC: recover solution done"
