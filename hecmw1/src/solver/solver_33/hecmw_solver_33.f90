@@ -38,6 +38,7 @@ contains
     use hecmw_precond_33
     use hecmw_local_matrix
     use hecmw_matrix_misc
+    use hecmw_matrix_dump
 
     implicit none
 
@@ -189,6 +190,8 @@ contains
       hecTKT => hecMAT
     endif
 
+    call hecmw_mat_dump(hecTKT, hecMESH)
+
     !C===
     !C +------------------+
     !C | ITERATIVE solver |
@@ -285,6 +288,8 @@ contains
     if (RESID.gt.hecTKT%Rarray(1)) then
       call hecmw_solve_error (hecMESH, 3001)
     endif
+
+    call hecmw_mat_dump_solution(hecTKT)
 
     !C===
     !C +--------------+

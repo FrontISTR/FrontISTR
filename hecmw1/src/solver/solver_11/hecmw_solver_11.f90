@@ -31,6 +31,7 @@
         use m_hecmw_solve_error
         use m_hecmw_comm_f
         use hecmw_matrix_ass
+        use hecmw_matrix_dump
 
         implicit REAL*8 (A-H,O-Z)
 
@@ -180,6 +181,8 @@
 
 !C===
 
+        call hecmw_mat_dump(hecMAT, hecMESH)
+
 !C
 !C +------------------+
 !C | ITERATIVE solver |
@@ -206,6 +209,8 @@
       if (RESID.gt.hecMAT%Rarray(1)) then
         call hecmw_solve_error (hecMESH, 3001)
       endif
+
+      call hecmw_mat_dump_solution(hecMAT)
 
       if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0

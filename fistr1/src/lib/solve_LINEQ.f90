@@ -43,8 +43,6 @@ module m_solve_LINEQ
 !* Call Iterative Solver
       CASE (1)
 !C
-        call hecmw_mat_dump(hecMAT, hecMESH)
-
         SELECT CASE(hecMESH%n_dof)
         CASE(1)
 !          WRITE(*,*) "Calling 1x1 Iterative Solver..."
@@ -60,8 +58,6 @@ module m_solve_LINEQ
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
           call hecmw_abort( hecmw_comm_get_comm())
         END SELECT
-
-        call hecmw_mat_dump_solution(hecMAT)
 !C
 !* Call Direct Solver
       CASE(2:)
