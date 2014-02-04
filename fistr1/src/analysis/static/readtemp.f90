@@ -15,7 +15,7 @@ MODULE mReadTemp
 
       call hecmw_nullify_result_data( result )
       name_ID = 'fstrTEMP'
-      call hecmw_result_read_by_name(name_ID, nstep, tstep, result)
+      call hecmw_result_read_by_name(hecMESH, name_ID, nstep, tstep, result)
 
       if (result%nn_component /= 1 .or. result%nn_dof(1) /= 1) then
         write(*,*) ' Read temperature result failed; not heat analysis result'

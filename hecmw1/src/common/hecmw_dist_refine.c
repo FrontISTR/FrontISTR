@@ -2116,6 +2116,123 @@ rebuild_ID_external( struct hecmwST_local_mesh *ref_mesh )
 
 
 static int
+rebuild_refine_origin( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
+{
+	const struct hecmwST_refine_origin *reforg;
+	struct hecmwST_refine_origin *ref_reforg;
+	struct hecmw_varray_int ro_item;
+	const int *ro_item_v;
+	int n_refine, offset, cnt, cnt2, i, j;
+
+	reforg = mesh->refine_origin;
+	n_refine = mesh->n_refine + 1;
+
+	ref_reforg = (struct hecmwST_refine_origin *) HECMW_malloc( sizeof(struct hecmwST_refine_origin) );
+	if( ref_reforg == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+
+	ref_reforg->index = (int *) HECMW_malloc( sizeof(int) * (n_refine + 1) );
+	if( ref_reforg->index == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	ref_reforg->index[0] = 0;
+	for( i=1; i < n_refine; i++ ) {
+		ref_reforg->index[i] = reforg->index[i];
+	}
+	ref_reforg->index[n_refine] = ref_reforg->index[n_refine - 1] + ref_mesh->n_node;
+
+	ref_reforg->item_index = (int *) HECMW_malloc( sizeof(int) * (ref_reforg->index[n_refine] + 1) );
+	if( ref_reforg->index == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+
+	/* copy original-node infomation up to previous refinement */
+	ref_reforg->item_index[0] = 0;
+	for( i = 1; i <= ref_reforg->index[n_refine-1]; i++ ) {
+		ref_reforg->item_index[i] = reforg->item_index[i];
+	}
+	offset = ref_reforg->index[n_refine-1];
+	cnt = ref_reforg->item_index[ offset ];
+	/* fprintf(stderr, "offset=%d, cnt=%d\n", offset, cnt); */
+
+	/* get original nodes of newly generated nodes at current refinement */
+	HECMW_varray_int_init( &ro_item );
+	for( i = 0; i < ref_mesh->n_node; i++ ) {
+		int iold;
+		iold = ref_mesh->node_new2old ? ref_mesh->node_new2old[i] : i;
+		if (iold < mesh->n_node_gross) {
+			int org;
+			org = mesh->node_old2new ? mesh->node_old2new[iold]+1 : iold+1;
+			HECMW_varray_int_append( &ro_item, org );
+			cnt++;
+		} else {
+			int original[HECMW_MAX_NODE_MAX];
+			int orig_type_rcap = rcapGetOriginal( iold+1, original );
+			int nn;
+			HECMW_assert( orig_type_rcap != RCAP_UNKNOWNTYPE );
+			nn = get_rcap_elem_max_node( orig_type_rcap );
+			for( j=0; j < nn; j++ ) {
+				int org = original[j];
+				if( mesh->node_old2new ) org = mesh->node_old2new[org-1]+1;
+				HECMW_varray_int_append( &ro_item, org );
+			}
+			cnt += nn;
+		}
+		ref_reforg->item_index[offset+i+1] = cnt;
+	}
+
+	ref_reforg->item_item = (int *) HECMW_malloc( sizeof(int) * cnt );
+	if( ref_reforg->item_item == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+
+	/* copy original nodes generated until previous refinements */
+	cnt = ref_reforg->item_index[ ref_reforg->index[n_refine-1] ];
+	for( i=0; i < cnt; i++ ) {
+		ref_reforg->item_item[i] = reforg->item_item[i];
+	}
+	/* copy original nodes generated at current refinement */
+	cnt2 = HECMW_varray_int_nval( &ro_item );
+	ro_item_v = HECMW_varray_int_get_cv( &ro_item );
+	for( i=0; i < cnt2; i++ ) {
+		ref_reforg->item_item[cnt+i] = ro_item_v[i];
+	}
+	HECMW_varray_int_finalize( &ro_item );
+#if 0
+	fprintf(stderr, "refine_origin->index:\n");
+	for( i=0; i <= n_refine; i++ ) {
+		fprintf(stderr, " %d", ref_reforg->index[i]);
+		if( i % 10 == 9 ) fprintf(stderr, "\n");
+	}
+	if( i % 10 != 0 ) fprintf(stderr, "\n");
+	fprintf(stderr, "refine_origin->item_index:\n");
+	for( i=0; i <= ref_reforg->index[n_refine]; i++) {
+		fprintf(stderr, " %d", ref_reforg->item_index[i]);
+		if( i % 10 == 9 ) fprintf(stderr, "\n");
+	}
+	if( i % 10 != 0 ) fprintf(stderr, "\n");
+	fprintf(stderr, "refine_origin->item_item:\n");
+	for( i=0; i < ref_reforg->item_index[ref_reforg->index[n_refine]]; i++ ) {
+		fprintf(stderr, " %d", ref_reforg->item_item[i]);
+		if( i % 10 == 9 ) fprintf(stderr, "\n");
+	}
+	if( i % 10 != 0 ) fprintf(stderr, "\n");
+#endif
+	ref_mesh->refine_origin = ref_reforg;
+	return HECMW_SUCCESS;
+}
+
+static int
+renumber_nodes_generate_tables( struct hecmwST_local_mesh *mesh );
+static int
+renumber_elements_generate_tables( struct hecmwST_local_mesh *mesh );
+
+static int
 rebuild_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh )
 {
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding info...\n", mesh->my_rank);
@@ -2124,6 +2241,11 @@ rebuild_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *
 	if( rebuild_node_info( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( rebuild_comm_tables( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( rebuild_ID_external( ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
+	if( renumber_nodes_generate_tables( ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( renumber_elements_generate_tables( ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
+
+	if( rebuild_refine_origin( mesh, ref_mesh ) != HECMW_SUCCESS ) return HECMW_ERROR;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding info.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
@@ -2726,6 +2848,8 @@ renumber_nodes_generate_tables( struct hecmwST_local_mesh *mesh )
 	int count_in, count_ex, count_pex;
 	int *old2new, *new2old;
 
+	if( mesh->n_node_gross == mesh->nn_internal ) return HECMW_SUCCESS;
+
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started generating renumbering tables...\n", mesh->my_rank);
 
 	old2new = (int *) HECMW_malloc( sizeof(int) * mesh->n_node_gross );
@@ -2931,9 +3055,6 @@ renumber_nodes( struct hecmwST_local_mesh *mesh )
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering nodes...\n", mesh->my_rank);
 
-	if( renumber_nodes_generate_tables( mesh ) != HECMW_SUCCESS ) {
-		return HECMW_ERROR;
-	}
 	if( reorder_nodes( mesh, mesh->node_old2new, mesh->node_new2old ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
@@ -2972,6 +3093,8 @@ renumber_elements_generate_tables( struct hecmwST_local_mesh *mesh )
 	int i;
 	int count_rel, count_pex;
 	int *old2new, *new2old;
+
+	if( mesh->n_node_gross == mesh->nn_internal ) return HECMW_SUCCESS;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started generating renumbering tables...\n", mesh->my_rank);
 
@@ -3186,9 +3309,6 @@ renumber_elements( struct hecmwST_local_mesh *mesh )
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering elements...\n", mesh->my_rank);
 
-	if( renumber_elements_generate_tables( mesh ) != HECMW_SUCCESS ) {
-		return HECMW_ERROR;
-	}
 	if( reorder_elems( mesh, mesh->elem_old2new, mesh->elem_new2old ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}

@@ -2294,6 +2294,51 @@ set_contact_pair_master_grp_id(void *dst)
 }
 
 
+static int
+set_refine_origin_index(void *dst)
+{
+	void *src;
+	int size;
+	struct hecmwST_refine_origin *reforg = mesh->refine_origin;
+
+	src = reforg->index;
+	size = sizeof(*reforg->index) * (mesh->n_refine + 1);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_refine_origin_item_index(void *dst)
+{
+	void *src;
+	int size;
+	struct hecmwST_refine_origin *reforg = mesh->refine_origin;
+
+	src = reforg->item_index;
+	size = sizeof(*reforg->item_index) * (reforg->index[mesh->n_refine] + 1);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_refine_origin_item_item(void *dst)
+{
+	void *src;
+	int size;
+	struct hecmwST_refine_origin *reforg = mesh->refine_origin;
+
+	src = reforg->item_item;
+	size = sizeof(*reforg->item_item) * (reforg->item_index[reforg->index[mesh->n_refine]]);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
 /*---------------------------------------------------------------------------*/
 
 static int
@@ -2745,6 +2790,9 @@ static struct func_table {
 	{"hecmwST_contact_pair","type",              set_contact_pair_type,   NULL},
 	{"hecmwST_contact_pair","slave_grp_id",      set_contact_pair_slave_grp_id,NULL},
 	{"hecmwST_contact_pair","master_grp_id",     set_contact_pair_master_grp_id,NULL},
+	{"hecmwST_refine_origin","index",            set_refine_origin_index, NULL},
+	{"hecmwST_refine_origin","item_index",       set_refine_origin_item_index,NULL},
+	{"hecmwST_refine_origin","item_item",        set_refine_origin_item_item,NULL},
 };
 
 static const int NFUNC = sizeof(functions) / sizeof(functions[0]);

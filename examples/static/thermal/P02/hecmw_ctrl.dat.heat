@@ -1,0 +1,17 @@
+##
+## HEC-MW control file for FrontSTR
+## Auto created by fstr_srun.sh
+## 2014年 2月 4日 火曜日 19:25:31 JST
+##
+!MESH, NAME=part_in, TYPE=HECMW-ENTIRE
+../MA361.msh
+!MESH, NAME=part_out, TYPE=HECMW-DIST
+MA361.dist
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST
+MA361.dist
+!CONTROL,NAME=fstrCNT
+../A.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+MA361.res
+!RESULT,NAME=vis_out,IO=OUT
+MA361.vis

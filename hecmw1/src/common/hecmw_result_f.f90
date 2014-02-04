@@ -200,10 +200,13 @@ module hecmw_result
 !C Read result data from file
 !C=============================================================================
 
-    subroutine hecmw_result_read_by_name(name_ID, n_step, i_step, result)
+    subroutine hecmw_result_read_by_name(hecMESH, name_ID, n_step, i_step, result)
+        type(hecmwST_local_mesh) :: hecMESH
         integer(kind=kint) :: n_node, n_elem, n_step, i_step, ierr
         character(len=HECMW_NAME_LEN) :: name_ID
         type(hecmwST_result_data) :: result
+        real(kind=kreal), pointer :: tmp_val(:)
+        integer(kind=kint) :: iref, i, j, k, is, ie, js, je, i0, jj, j0, nn_comp_tot, nn, n_node_ref
 
         call hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
@@ -213,6 +216,43 @@ module hecmw_result
 
         call hecmw_result_read_finalize_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
+
+        if(n_node < hecMESH%n_node) then
+          !write(0,*) 'DEBUG: result needs to be refined'
+          nn_comp_tot = 0
+          do i = 1, result%nn_component
+            nn_comp_tot = nn_comp_tot + result%nn_dof(i)
+          enddo
+          do iref = 1, hecMESH%n_refine
+            is = hecMESH%refine_origin%index(iref-1)
+            ie = hecMESH%refine_origin%index(iref)
+            n_node_ref = ie - is
+            !write(0,*) 'is, ie, n_node_ref', is, ie, n_node_ref
+            if(n_node >= n_node_ref) cycle
+            !write(0,*) 'DEBUG: start refining result; step=',iref
+            allocate(tmp_val(n_node_ref * nn_comp_tot))
+            tmp_val = 0.d0
+            do i = 1, n_node_ref
+              js = hecMESH%refine_origin%item_index(is+i-1)
+              je = hecMESH%refine_origin%item_index(is+i)
+              nn = je - js
+              !write(0,*) 'js, je, nn', js, je, nn
+              i0 = (i-1)*nn_comp_tot
+              do j = js+1, je
+                jj = hecMESH%refine_origin%item_item(j)
+                j0 = (jj-1)*nn_comp_tot
+                !write(0,*) i,j,jj
+                do k = 1, nn_comp_tot
+                  tmp_val(i0+k) = tmp_val(i0+k) + result%node_val_item(j0+k) / nn
+                enddo
+              enddo
+            enddo
+            deallocate(result%node_val_item)
+            result%node_val_item => tmp_val
+            !write(0,*) 'DEBUG: end refining result; step=',iref
+          enddo
+          !write(0,*) 'DEBUG: refining result done'
+        endif
     end subroutine hecmw_result_read_by_name
 
 

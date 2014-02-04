@@ -561,8 +561,8 @@ module hecmw_dist_copy_c2f_f
 
     subroutine get_refine(mesh, ierr)
         integer(kind=kint) :: ierr,is_allocated
-        type(hecmwST_local_mesh) :: mesh
-
+        type(hecmwST_local_mesh), target :: mesh
+        type(hecmwST_refine_origin), pointer :: reforg
 
         sname = 'hecmwST_local_mesh'
 
@@ -604,6 +604,26 @@ module hecmw_dist_copy_c2f_f
                 call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%elem_new2old, ierr)
                 if(ierr /= 0) return
             endif
+        endif
+
+        if(mesh%n_refine > 0) then
+            sname = 'hecmwST_refine_origin'
+            reforg => mesh%refine_origin
+
+            vname = 'index'
+            allocate(reforg%index(0:mesh%n_refine))
+            call hecmw_dist_copy_c2f_set_if(sname, vname, reforg%index, ierr)
+            if(ierr /= 0) return
+
+            vname = 'item_index'
+            allocate(reforg%item_index(0:reforg%index(mesh%n_refine)))
+            call hecmw_dist_copy_c2f_set_if(sname, vname, reforg%item_index, ierr)
+            if(ierr /= 0) return
+
+            vname = 'item_item'
+            allocate(reforg%item_item(reforg%item_index(reforg%index(mesh%n_refine))))
+            call hecmw_dist_copy_c2f_set_if(sname, vname, reforg%item_item, ierr)
+            if(ierr /= 0) return
         endif
     end subroutine get_refine
 

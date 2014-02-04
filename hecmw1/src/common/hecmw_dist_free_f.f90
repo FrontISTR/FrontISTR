@@ -38,6 +38,8 @@ module hecmw_dist_free_f
         call free_ngrp(mesh%node_group)
         call free_egrp(mesh%elem_group)
         call free_sgrp(mesh%surf_group)
+        call free_cpair(mesh%contact_pair)
+        call free_reforg(mesh%refine_origin)
     end subroutine hecmw_dist_free
 
 
@@ -200,6 +202,23 @@ module hecmw_dist_free_f
         if(associated(grp%bc_grp_index)) deallocate(grp%bc_grp_index)
         if(associated(grp%bc_grp_val)) deallocate(grp%bc_grp_val)
     end subroutine free_sgrp
+
+    subroutine free_cpair(cpair)
+        type(hecmwST_contact_pair) :: cpair
+
+        if(associated(cpair%name)) deallocate(cpair%name)
+        if(associated(cpair%type)) deallocate(cpair%type)
+        if(associated(cpair%slave_grp_id)) deallocate(cpair%slave_grp_id)
+        if(associated(cpair%master_grp_id)) deallocate(cpair%master_grp_id)
+    end subroutine free_cpair
+
+    subroutine free_reforg(reforg)
+        type(hecmwST_refine_origin) :: reforg
+
+        if(associated(reforg%index)) deallocate(reforg%index)
+        if(associated(reforg%item_index)) deallocate(reforg%item_index)
+        if(associated(reforg%item_item)) deallocate(reforg%item_item)
+    end subroutine free_reforg
 
 end module hecmw_dist_free_f
 

@@ -152,6 +152,13 @@ struct hecmwST_contact_pair {
 };
 
 
+struct hecmwST_refine_origin {
+    int *index;
+    int *item_index;
+    int *item_item;
+};
+
+
 struct hecmwST_local_mesh {
     int hecmw_flag_adapt;
     int hecmw_flag_initcon;
@@ -259,6 +266,7 @@ struct hecmwST_local_mesh {
     struct hecmwST_elem_grp *elem_group;
     struct hecmwST_surf_grp *surf_group;
     struct hecmwST_contact_pair *contact_pair;
+    struct hecmwST_refine_origin *refine_origin;
 };
 
 #endif

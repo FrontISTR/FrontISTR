@@ -161,7 +161,7 @@ contains
     !call read_eigen_vector(ilogin, startmode, endmode, ndof, numnode, freqData%eigVector)
     close(ilogin)
     
-    call read_eigen_vector_res(startmode, endmode, ndof, numnode, freqData%eigVector)
+    call read_eigen_vector_res(hecMESH, startmode, endmode, ndof, numnode, freqData%eigVector)
     
     call extract_surf2node(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
@@ -384,8 +384,9 @@ contains
          
   end subroutine
   
-  subroutine read_eigen_vector_res(startmode, endmode, numdof, numnode, eigenvector)
+  subroutine read_eigen_vector_res(hecMESH, startmode, endmode, numdof, numnode, eigenvector)
   !---- args
+    type( hecmwST_local_mesh ),     intent(in) :: hecMESH
     integer(kind=kint),       intent(in) :: startmode
     integer(kind=kint),       intent(in) :: endmode
     integer(kind=kint),       intent(in) :: numdof
@@ -402,7 +403,7 @@ contains
     nmode = (endmode-startmode)+1
     do imode=startmode, endmode
       call nullify_result_data(eigenres)
-      call hecmw_result_read_by_name(name, nmode, imode, eigenres)
+      call hecmw_result_read_by_name(hecMESH, name, nmode, imode, eigenres)
       
       nallcomp = 0
       do ind=1,eigenres%nn_component

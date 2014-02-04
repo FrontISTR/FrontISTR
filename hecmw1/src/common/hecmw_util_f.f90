@@ -220,6 +220,18 @@
 !C===
 
 !C
+!C +----------------+
+!C | REFINE Origin. |
+!C +----------------+
+!C===
+        type hecmwST_refine_origin
+          integer(kind=kint),pointer :: index(:)
+          integer(kind=kint),pointer :: item_index(:)
+          integer(kind=kint),pointer :: item_item(:)
+        end type hecmwST_refine_origin
+!C===
+
+!C
 !C +------------------+
 !C | LOCAL MESH info. |
 !C +------------------+
@@ -367,6 +379,7 @@
           type (hecmwST_elem_grp)  :: elem_group
           type (hecmwST_surf_grp)  :: surf_group
           type (hecmwST_contact_pair):: contact_pair
+          type (hecmwST_refine_origin):: refine_origin
 
         end type hecmwST_local_mesh
 
@@ -685,6 +698,13 @@
         nullify( P%master_grp_id )
         end subroutine hecmw_nullify_contact_pair
 
+        subroutine hecmw_nullify_refine_origin( P )
+        type( hecmwST_refine_origin ) :: P
+        nullify( P%index )
+        nullify( P%item_index )
+        nullify( P%item_item )
+        end subroutine hecmw_nullify_refine_origin
+
         subroutine hecmw_nullify_mesh( P )
         type( hecmwST_local_mesh ) :: P
         nullify( P%files )
@@ -767,6 +787,7 @@
         call hecmw_nullify_elem_grp( P%elem_group )
         call hecmw_nullify_surf_grp( P%surf_group )
         call hecmw_nullify_contact_pair( P%contact_pair )
+        call hecmw_nullify_refine_origin( P%refine_origin )
 
         end subroutine hecmw_nullify_mesh
 

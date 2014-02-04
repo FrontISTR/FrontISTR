@@ -1,0 +1,69 @@
+!!
+!! Control File for FSTR solver
+!!
+!MATERIAL, NAME=M1, ITEM=3
+!ELASTIC, DEPENDENCIES=1
+ 202000., 0.3,  25.
+ 198000., 0.3, 100.
+ 195000., 0.3, 150.
+ 192000., 0.3, 200.
+ 189000., 0.3, 250.
+ 185000., 0.3, 300.
+ 179000., 0.3, 350.
+ 171000., 0.3, 400.
+ 162000., 0.3, 450.
+ 151000., 0.3, 500.
+ 137000., 0.3, 550.
+!EXPANSION_COEFF, DEPENDENCIES=1
+ 11.5e-6,  20.
+ 11.8e-6,  50.
+ 11.9e-6,  75.
+ 12.1e-6, 100.
+ 12.3e-6, 125.
+ 12.4e-6, 150.
+ 12.6e-6, 175.
+ 12.7e-6, 200.
+ 12.9e-6, 225.
+ 13.0e-6, 250.
+ 13.2e-6, 275.
+ 13.3e-6, 300.
+ 13.4e-6, 325.
+ 13.6e-6, 350.
+ 13.7e-6, 375.
+ 13.8e-6, 400.
+ 14.0e-6, 425.
+ 14.1e-6, 450.
+ 14.2e-6, 475.
+ 14.4e-6, 500.
+ 14.5e-6, 525.
+ 14.6e-6, 550.
+ 14.7e-6, 575.
+ 14.8e-6, 600.
+ 14.9e-6, 625.
+ 15.0e-6, 650.
+ 15.1e-6, 675.
+ 15.1e-6, 700.
+ 15.2e-6, 725.
+ 15.3e-6, 750.
+ 15.3e-6, 775.
+ 15.4e-6, 800.
+ 15.5e-6, 825.
+!BOUNDARY
+  FIX, 1, 3,   0.0
+#!CLOAD
+#  CL1,    3,  -1.0
+!TEMPERATURE, READRESULT=1, SSTEP=1
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=1,PRECOND=2,ITERLOG=NO,TIMELOG=YES
+  10000, 2
+ 1.0e-8, 1.0, 0.0
+!WRITE,RESULT
+!WRITE,VISUAL
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+#!output_type = COMPLETE_REORDER_AVS
+!output_type = SEPARATE_COMPLETE_AVS
+!END

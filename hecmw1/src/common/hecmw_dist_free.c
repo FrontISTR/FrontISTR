@@ -167,6 +167,19 @@ free_contact_pair(struct hecmwST_contact_pair *cpair)
 }
 
 
+static void
+free_refine_origin(struct hecmwST_refine_origin *reforg)
+{
+	int i;
+
+	if(reforg == NULL) return;
+
+	HECMW_free(reforg->index);
+	HECMW_free(reforg->item_index);
+	HECMW_free(reforg->item_item);
+}
+
+
 void
 HECMW_dist_clean(struct hecmwST_local_mesh *mesh)
 {
@@ -236,6 +249,7 @@ HECMW_dist_clean(struct hecmwST_local_mesh *mesh)
 	free_egrp(mesh->elem_group);
 	free_sgrp(mesh->surf_group);
 	free_contact_pair(mesh->contact_pair);
+	free_refine_origin(mesh->refine_origin);
 
 	HECMW_dist_init(mesh);
 }
@@ -256,6 +270,7 @@ HECMW_dist_free(struct hecmwST_local_mesh *mesh)
 	HECMW_free(mesh->elem_group);
 	HECMW_free(mesh->surf_group);
 	HECMW_free(mesh->contact_pair);
+	HECMW_free(mesh->refine_origin);
 
 	HECMW_free(mesh);
 }

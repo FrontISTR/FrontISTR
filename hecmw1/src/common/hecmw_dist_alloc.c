@@ -182,11 +182,12 @@ init_struct_refine( struct hecmwST_local_mesh *mesh )
 {
   HECMW_assert( mesh );
 
-  mesh->n_adapt      = 0;
+  mesh->n_refine     = 0;
   mesh->node_old2new = NULL;
   mesh->node_new2old = NULL;
   mesh->elem_old2new = NULL;
   mesh->elem_new2old = NULL;
+  mesh->refine_origin = NULL;
 
   return 0;
 }
