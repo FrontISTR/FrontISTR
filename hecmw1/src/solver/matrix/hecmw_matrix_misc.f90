@@ -62,7 +62,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
-    call hecmw_mat_set_ncolor_in( hecMAT, 100 )
+    call hecmw_mat_set_ncolor_in( hecMAT, 10 )
 
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
