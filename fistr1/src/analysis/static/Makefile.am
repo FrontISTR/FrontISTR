@@ -101,6 +101,7 @@ OBJSF = \
         set_arrays_DirectSolver.@f90objfilepostfix@ \
         solve_LINEQ_mkl.@f90objfilepostfix@ \
         solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
+        solve_LINEQ_iter_contact.@f90objfilepostfix@ \
         solve_LINEQ_contact.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
