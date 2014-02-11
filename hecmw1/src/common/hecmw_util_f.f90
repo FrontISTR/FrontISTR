@@ -839,6 +839,7 @@
         !nullify( P%IW )
         !nullify( P%IVECT )
         !nullify( P%ICHK )
+        call hecmw_nullify_matrix_contact( P%cmat )
         end subroutine hecmw_nullify_matrix
 		
         subroutine hecmw_print_matrix( fname, P )
