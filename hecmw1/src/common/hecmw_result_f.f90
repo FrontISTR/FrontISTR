@@ -33,6 +33,7 @@ module hecmw_result
     public :: hecmw_result_read_by_name
     private :: put_node_component
     private :: put_elem_component
+    private :: refine_result
     private :: get_node_component
     private :: get_elem_component
 
@@ -206,7 +207,6 @@ module hecmw_result
         character(len=HECMW_NAME_LEN) :: name_ID
         type(hecmwST_result_data) :: result
         real(kind=kreal), pointer :: tmp_val(:)
-        integer(kind=kint) :: iref, i, j, k, is, ie, js, je, i0, jj, j0, nn_comp_tot, nn, n_node_ref
 
         call hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
@@ -217,7 +217,26 @@ module hecmw_result
         call hecmw_result_read_finalize_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        if(n_node < hecMESH%n_node) then
+        call refine_result(hecMESH, n_node, result, ierr)
+        if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
+    end subroutine hecmw_result_read_by_name
+
+
+    subroutine refine_result(hecMESH, n_node, result, ierr)
+        type(hecmwST_local_mesh), intent(in) :: hecMESH
+        integer(kind=kint), intent(in) :: n_node
+        type(hecmwST_result_data), intent(inout) :: result
+        integer(kind=kint), intent(out) :: ierr
+        real(kind=kreal), pointer :: tmp_val(:)
+        integer(kind=kint) :: iref, i, j, k, is, ie, js, je, i0
+        integer(kind=kint) :: jj, j0, nn_comp_tot, nn, n_node_ref
+        ierr = 0
+        if(n_node == hecMESH%n_node) return
+        if(n_node > hecMESH%n_node) then
+          write(*,*) 'ERROR: result needs to be coarsened; not implemented yet'
+          ierr = 1
+          return
+        else
           !write(0,*) 'DEBUG: result needs to be refined'
           nn_comp_tot = 0
           do i = 1, result%nn_component
@@ -227,7 +246,6 @@ module hecmw_result
             is = hecMESH%refine_origin%index(iref-1)
             ie = hecMESH%refine_origin%index(iref)
             n_node_ref = ie - is
-            !write(0,*) 'is, ie, n_node_ref', is, ie, n_node_ref
             if(n_node >= n_node_ref) cycle
             !write(0,*) 'DEBUG: start refining result; step=',iref
             allocate(tmp_val(n_node_ref * nn_comp_tot))
@@ -236,12 +254,10 @@ module hecmw_result
               js = hecMESH%refine_origin%item_index(is+i-1)
               je = hecMESH%refine_origin%item_index(is+i)
               nn = je - js
-              !write(0,*) 'js, je, nn', js, je, nn
               i0 = (i-1)*nn_comp_tot
               do j = js+1, je
                 jj = hecMESH%refine_origin%item_item(j)
                 j0 = (jj-1)*nn_comp_tot
-                !write(0,*) i,j,jj
                 do k = 1, nn_comp_tot
                   tmp_val(i0+k) = tmp_val(i0+k) + result%node_val_item(j0+k) / nn
                 enddo
@@ -253,7 +269,7 @@ module hecmw_result
           enddo
           !write(0,*) 'DEBUG: refining result done'
         endif
-    end subroutine hecmw_result_read_by_name
+    end subroutine refine_result
 
 
     subroutine hecmw_result_copy_c2f(result, n_node, n_elem, ierr)
