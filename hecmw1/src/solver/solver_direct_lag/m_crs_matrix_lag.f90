@@ -260,7 +260,7 @@ end subroutine irjctocrs
   100 continue
       if(idbg.ne.0) then
          write(20,*) 'c%ia '
-         write(20,60) (c%ia(i),i=1,c%nrows+1) ; call flush(20)
+         write(20,60) (c%ia(i),i=1,c%nrows+1) ! ; call flush(20)
          write(20,*) 'c%ja '
          write(20,60) (c%ja(i),i=1,c%ja(c%nrows+1))
       end if

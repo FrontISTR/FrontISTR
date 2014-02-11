@@ -46,7 +46,7 @@ character(*) mes
 call ptime(curt)
 if (lout) then
   write(iunit,'(a, 1f15.5, 3x, a)') '#elap ',curt - epocht, mes
-  call flush(iunit)
+  ! call flush(iunit)
 end if
 return
 end subroutine elapout
