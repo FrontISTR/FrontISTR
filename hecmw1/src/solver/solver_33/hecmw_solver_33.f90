@@ -177,6 +177,7 @@ contains
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
     if (totalmpc > 0) then
       allocate(hecTKT)
+      call hecmw_mat_init(hecTKT)
       write(0,*) "DEBUG: MPC: eliminating slave DOF"
       call hecmw_mpc_scale(hecMESH)
       call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)

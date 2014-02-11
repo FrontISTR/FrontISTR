@@ -11,7 +11,7 @@ module hecmw_local_matrix
   public :: hecmw_trimatmul_TtKT_mpc
 
   type hecmwST_local_matrix
-    integer :: n, nnz, ndof
+    integer :: nr, nc, nnz, ndof
     integer(kind=kint), pointer :: index(:)
     integer(kind=kint), pointer :: item(:)
     real(kind=kreal), pointer :: A(:)
@@ -23,14 +23,14 @@ contains
     implicit none
     type (hecmwST_local_matrix), intent(in) :: Tmat
     integer(kind=kint), intent(in) :: iunit
-    integer(kind=kint) :: n, ndof, ndof2, i, js, je, j, jj
+    integer(kind=kint) :: nr, ndof, ndof2, i, js, je, j, jj
 
-    n=Tmat%n
+    nr=Tmat%nr
     ndof=Tmat%ndof
     ndof2=ndof*ndof
 
     write(iunit,*) 'i, j, A'
-    do i=1,n
+    do i=1,nr
       js=Tmat%index(i-1)+1
       je=Tmat%index(i)
       do j=js,je
@@ -54,18 +54,19 @@ contains
     integer :: ndof2, i, icnt, idof, idx, ls, le, l, j, jb, k, lb0, jdof, ks, ke
     ndof2=ndof*ndof
 
-    if (mod(Tmat%n, ndof) /= 0) then
-      write(0,*) Tmat%n, ndof
+    if (mod(Tmat%nr, ndof) /= 0 .or. mod(Tmat%nc, ndof) /= 0) then
+      write(0,*) Tmat%nr, Tmat%nc, ndof
       stop 'ERROR: blocking_Tmat failed'
     endif
-    BTmat%n=Tmat%n/ndof
+    BTmat%nr=Tmat%nr/ndof
+    BTmat%nc=Tmat%nc/ndof
     BTmat%ndof=ndof
 
-    allocate(iw(BTmat%n))
-    allocate(BTmat%index(0:BTmat%n))
+    allocate(iw(BTmat%nc))
+    allocate(BTmat%index(0:BTmat%nr))
 
     BTmat%index(0)=0
-    do i=1,BTmat%n
+    do i=1,BTmat%nr
       icnt=0
       do idof=1,ndof
         idx=(i-1)*ndof+idof
@@ -84,12 +85,12 @@ contains
       BTmat%index(i)=BTmat%index(i-1)+icnt
     enddo
 
-    BTmat%nnz=BTmat%index(BTmat%n)
+    BTmat%nnz=BTmat%index(BTmat%nr)
     allocate(BTmat%item(BTmat%nnz))
     allocate(BTmat%A(BTmat%nnz*ndof2))
     BTmat%A=0.d0
 
-    do i=1,BTmat%n
+    do i=1,BTmat%nr
       icnt=0
       do idof=1,ndof
         idx=(i-1)*ndof+idof
@@ -139,12 +140,14 @@ contains
     deallocate(Tmat%index)
     deallocate(Tmat%item)
     deallocate(Tmat%A)
-    Tmat%n=0
+    Tmat%nr=0
+    Tmat%nc=0
     Tmat%nnz=0
     Tmat%ndof=0
   end subroutine hecmw_localmat_free
 
-  subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, num_lagrange, hecTKT)
+  subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, &
+       iwS, num_lagrange, hecTKT)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
@@ -173,23 +176,25 @@ contains
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
     type (hecmwST_local_matrix), intent(out) :: BTtKT
-    integer :: n, ndof, ndof2, i, icnt, js, je, j, jj, ks, ke, k, kk
+    integer :: nr, nc, ndof, ndof2, i, icnt, js, je, j, jj, ks, ke, k, kk
     integer :: ls, le, l, ll, m, ms, me, mm
     integer, allocatable :: iw(:)
     real(kind=kreal), pointer :: Ttp(:), Kp(:), Tp(:), TtKTp(:)
 
-    n=hecMAT%NP
-    ndof=hecMAT%NDOF
+    nr=BTtmat%nr
+    nc=BTmat%nc
+    ndof=BTtmat%ndof
     ndof2=ndof*ndof
 
-    BTtKT%n=n
+    BTtKT%nr=nr
+    BTtKT%nc=nc
     BTtKT%ndof=ndof
-    allocate(BTtKT%index(0:BTtKT%n))
+    allocate(BTtKT%index(0:nr))
 
-    allocate(iw(n))
+    allocate(iw(nc))
 
     BTtKT%index(0)=0
-    do i=1,n
+    do i=1,nr
       icnt=0
       js=BTtmat%index(i-1)+1
       je=BTtmat%index(i)
@@ -248,13 +253,13 @@ contains
     enddo
     !write(0,*) BTtKT%index(1:n)-BTtKT%index(0:n-1)
 
-    BTtKT%nnz=BTtKT%index(n)
+    BTtKT%nnz=BTtKT%index(nr)
     allocate(BTtKT%item(BTtKT%nnz))
     allocate(BTtKT%A(BTtKT%nnz*ndof2))
     BTtKT%item=0
     BTtKT%A=0.d0
 
-    do i=1,n
+    do i=1,nr
       icnt=0
       ms=BTtKT%index(i-1)+1
       !me=BTtKT%index(i)
@@ -395,9 +400,8 @@ contains
     type (hecmwST_local_matrix), intent(inout) :: BTtKT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: n, ndof, ndof2, ilag, i, idof, js, je, j, jj
+    integer(kind=kint) :: ndof, ndof2, ilag, i, idof, js, je, j, jj
 
-    n=BTtKT%n
     ndof=BTtKT%ndof
     ndof2=ndof*ndof
 
@@ -421,10 +425,11 @@ contains
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_matrix), intent(in) :: BTtKT
-    integer :: n, ndof, ndof2, i, nl, nu, js, je, j, jj
+    integer :: nr, nc, ndof, ndof2, i, nl, nu, js, je, j, jj
     integer :: ksl, ksu, k, idof, idx
 
-    n=hecMAT%NP
+    nr=BTtKT%nr
+    nc=BTtKT%nc
     ndof=hecMAT%NDOF
     ndof2=ndof*ndof
 
@@ -439,7 +444,7 @@ contains
     ! count NPL, NPU
     hecMAT%indexL(0)=0
     hecMAT%indexU(0)=0
-    do i=1,n
+    do i=1,nr
       nl=0
       nu=0
       js=BTtKT%index(i-1)+1
@@ -457,8 +462,12 @@ contains
       hecMAT%indexL(i)=hecMAT%indexL(i-1)+nl
       hecMAT%indexU(i)=hecMAT%indexU(i-1)+nu
     enddo
-    hecMAT%NPL=hecMAT%indexL(n)
-    hecMAT%NPU=hecMAT%indexU(n)
+    do i=nr+1,nc
+      hecMAT%indexL(i)=hecMAT%indexL(i-1)
+      hecMAT%indexU(i)=hecMAT%indexU(i-1)
+    enddo
+    hecMAT%NPL=hecMAT%indexL(nc)
+    hecMAT%NPU=hecMAT%indexU(nc)
 
     ! allocate new hecMAT
     allocate(hecMAT%itemL(hecMAT%NPL), hecMAT%itemU(hecMAT%NPU))
@@ -470,7 +479,7 @@ contains
     hecMAT%AU=0.d0
 
     ! copy from BTtKT to hecMAT
-    do i=1,n
+    do i=1,nr
       nl=0
       nu=0
       js=BTtKT%index(i-1)+1
@@ -499,11 +508,11 @@ contains
 
     do i=1,hecMAT%NPL
       if (hecMAT%itemL(i) <= 0) stop 'ERROR: negative itemL'
-      if (hecMAT%itemL(i) > n) stop 'ERROR: too big itemL'
+      if (hecMAT%itemL(i) > nc) stop 'ERROR: too big itemL'
     enddo
     do i=1,hecMAT%NPU
       if (hecMAT%itemU(i) <= 0) stop 'ERROR: negative itemU'
-      if (hecMAT%itemU(i) > n) stop 'ERROR: too big itemU'
+      if (hecMAT%itemU(i) > nc) stop 'ERROR: too big itemU'
     enddo
   end subroutine replace_hecmat
 
@@ -512,22 +521,27 @@ contains
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_matrix), intent(in) :: BTtKT
     type(hecmwST_matrix), intent(out) :: hecTKT
-    integer(kind=kint) :: n, ndof, ndof2
+    integer(kind=kint) :: nr, nc, ndof, ndof2
 
-    n=hecMAT%NP
-    ndof=hecMAT%NDOF
+    nr=BTtKT%nr
+    nc=BTtKT%nc
+    ndof=BTtKT%ndof
     ndof2=ndof*ndof
 
-    hecTKT%N   =hecMAT%N
-    hecTKT%NP  =hecMAT%NP
-    hecTKT%NDOF=hecMAT%NDOF
+    if (nr > nc) then
+      stop 'ERROR: nr > nc'
+    endif
 
-    allocate(hecTKT%D(n*ndof2))
-    allocate(hecTKT%B(n*ndof))
-    allocate(hecTKT%X(n*ndof))
+    hecTKT%N   =nr
+    hecTKT%NP  =nc
+    hecTKT%NDOF=ndof
 
-    allocate(hecTKT%indexL(0:n))
-    allocate(hecTKT%indexU(0:n))
+    allocate(hecTKT%D(nc*ndof2))
+    allocate(hecTKT%B(nc*ndof))
+    allocate(hecTKT%X(nc*ndof))
+
+    allocate(hecTKT%indexL(0:nc))
+    allocate(hecTKT%indexU(0:nc))
 
     hecTKT%Iarray=hecMAT%Iarray
     hecTKT%Rarray=hecMAT%Rarray
@@ -541,22 +555,22 @@ contains
     real(kind=kreal), intent(in), target :: V(:)
     real(kind=kreal), intent(out), target :: TV(:)
     real(kind=kreal), pointer :: TVp(:), Tp(:), Vp(:)
-    integer :: n, ndof, ndof2, i, js, je, j, jj, k, kl0, l
+    integer :: nr, ndof, ndof2, i, js, je, j, jj, k, kl0, l
 !!$    real(kind=kreal) :: vnorm
 
-    n=BTmat%n
+    nr=BTmat%nr
     ndof=BTmat%ndof
     ndof2=ndof*ndof
 
     TV=0.d0
 
 !!$    vnorm=0.d0
-!!$    do i=1,n*ndof
+!!$    do i=1,nr*ndof
 !!$      vnorm=vnorm+V(i)**2
 !!$    enddo
 !!$    write(0,*) 'vnorm:', sqrt(vnorm)
 
-    do i=1,n
+    do i=1,nr
       TVp=>TV((i-1)*ndof+1:i*ndof)
       js=BTmat%index(i-1)+1
       je=BTmat%index(i)
@@ -612,17 +626,18 @@ contains
     integer(kind=kint) :: i,j,k,js,jj,kk
     n_mpc=hecMESH%mpc%n_mpc
     ndof=hecMESH%n_dof
-    Tmat%n=hecMESH%n_node*ndof
+    Tmat%nr=hecMESH%n_node*ndof
+    Tmat%nc=Tmat%nr
     if (n_mpc > 0) then
-      Tmat%nnz=Tmat%n+hecMESH%mpc%mpc_index(n_mpc)-2*n_mpc
+      Tmat%nnz=Tmat%nr+hecMESH%mpc%mpc_index(n_mpc)-2*n_mpc
     else
-      Tmat%nnz=Tmat%n
+      Tmat%nnz=Tmat%nr
     endif
     Tmat%ndof=1
-    allocate(Tmat%index(0:Tmat%n))
+    allocate(Tmat%index(0:Tmat%nr))
     allocate(Tmat%item(Tmat%nnz), Tmat%A(Tmat%nnz))
     ! count nonzero in each row
-    Tmat%index(1:Tmat%n)=1
+    Tmat%index(1:Tmat%nr)=1
     do i=1,n_mpc
       k=hecMESH%mpc%mpc_index(i-1)+1
       kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
@@ -630,11 +645,11 @@ contains
     enddo
     ! index
     Tmat%index(0)=0
-    do i=1,Tmat%n
+    do i=1,Tmat%nr
       Tmat%index(i)=Tmat%index(i-1)+Tmat%index(i)
     enddo
     ! diag
-    do i=1,Tmat%n
+    do i=1,Tmat%nr
       js=Tmat%index(i-1)+1
       Tmat%item(js)=i
       Tmat%A(js)=1.d0
@@ -667,17 +682,18 @@ contains
     integer(kind=kint), allocatable :: iw(:)
     n_mpc=hecMESH%mpc%n_mpc
     ndof=hecMESH%n_dof
-    Ttmat%n=hecMESH%n_node*ndof
+    Ttmat%nr=hecMESH%n_node*ndof
+    Ttmat%nc=Ttmat%nr
     if (n_mpc > 0) then
-      Ttmat%nnz=Ttmat%n+hecMESH%mpc%mpc_index(n_mpc)-2*n_mpc
+      Ttmat%nnz=Ttmat%nr+hecMESH%mpc%mpc_index(n_mpc)-2*n_mpc
     else
-      Ttmat%nnz=Ttmat%n
+      Ttmat%nnz=Ttmat%nr
     endif
     Ttmat%ndof=1
-    allocate(Ttmat%index(0:Ttmat%n))
+    allocate(Ttmat%index(0:Ttmat%nr))
     allocate(Ttmat%item(Ttmat%nnz), Ttmat%A(Ttmat%nnz))
     ! count nonzero in each row
-    Ttmat%index(1:Ttmat%n)=1
+    Ttmat%index(1:Ttmat%nr)=1
     do i=1,n_mpc
       k=hecMESH%mpc%mpc_index(i-1)+1
       kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
@@ -689,11 +705,11 @@ contains
     enddo
     ! index
     Ttmat%index(0)=0
-    do i=1,Ttmat%n
+    do i=1,Ttmat%nr
       Ttmat%index(i)=Ttmat%index(i-1)+Ttmat%index(i)
     enddo
     ! diag
-    do i=1,Ttmat%n
+    do i=1,Ttmat%nr
       js=Ttmat%index(i-1)+1
       je=Ttmat%index(i)
       if (js <= je) then
@@ -702,7 +718,7 @@ contains
       endif
     enddo
     ! others
-    allocate(iw(Ttmat%n))
+    allocate(iw(Ttmat%nr))
     iw(:)=1
     do i=1,n_mpc
       k=hecMESH%mpc%mpc_index(i-1)+1
