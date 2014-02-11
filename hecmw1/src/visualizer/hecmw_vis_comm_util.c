@@ -20,7 +20,7 @@
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_malloc.h"
 
-int HECMW_ANY_TAG;
+int HECMW_ANY_TAG = -1;
 
 
 void whole_copy_array(int *recv_num, int *global_recv_num, int mynode, int pesize, HECMW_Comm repart_comm)
