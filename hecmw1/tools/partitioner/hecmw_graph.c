@@ -37,7 +37,7 @@
 /** Clear graph.
  */
 static void clear(
-    struct hecmw_graph *graph ///< [inout] graph
+    struct hecmw_graph *graph /**< [inout] graph */
     );
 
 /** Find edge.
@@ -46,10 +46,10 @@ static void clear(
  * @retval HECMW_ERROR   edge not found
  */
 static int find_edge(
-    const struct hecmw_graph *graph, ///< [in] graph
-    int vert1,                       ///< [in] starting vertex id
-    int vert2,                       ///< [in] end vertex id
-    int *idx                         ///< [out] edge id (set only when found)
+    const struct hecmw_graph *graph, /**< [in] graph */
+    int vert1,                       /**< [in] starting vertex id */
+    int vert2,                       /**< [in] end vertex id */
+    int *idx                         /**< [out] edge id (set only when found) */
     );
 
 /** Add edge (one-way only); do nothing when already exists.
@@ -58,9 +58,9 @@ static int find_edge(
  * @retval HECMW_ERROR   failed to add edge
  */
 static int add_edge_one_way(
-    struct hecmw_graph *graph, ///< [inout] graph
-    int vert1,                 ///< [in] starting vertex id
-    int vert2                  ///< [in] end vertex id
+    struct hecmw_graph *graph, /**< [inout] graph */
+    int vert1,                 /**< [in] starting vertex id */
+    int vert2                  /**< [in] end vertex id */
     );
 
 /**********************************
@@ -214,7 +214,6 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
 /***********************************
  * Definition of private functions *
  ***********************************/
-// private member functions
 
 void clear(struct hecmw_graph *graph)
 {
@@ -257,14 +256,14 @@ int add_edge_one_way(struct hecmw_graph *graph,
     if (find_edge(graph, vert1, vert2, &idx)) {
         return HECMW_SUCCESS;
     }
-    // insert vert2 into m_edge_item
-    // place to insert: m_edge_inidex[vert1 + 1]
+    /* insert vert2 into m_edge_item */
+    /* place to insert: m_edge_inidex[vert1 + 1] */
     retval = HECMW_varray_int_insert(graph->m_edge_item, edge_index[vert1 + 1], vert2);
     if (retval != HECMW_SUCCESS) {
         return HECMW_ERROR;
     }
 
-    // increment m_edge_index[vert1 + 1 .. n_num_vertex]
+    /* increment m_edge_index[vert1 + 1 .. n_num_vertex] */
     for (i = vert1 + 1; i <= graph->m_num_vertex; i++) {
         edge_index[i] += 1;
     }
