@@ -41,7 +41,7 @@ int Table352[] = { 1,2,3,4,5,6,  7,8,9,  10,11,12,  13,14,15 };*/
 /*======================================================================*/
 
 
-void hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
+void c_hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
 	int i, j;
 	int start_no;
@@ -91,7 +91,7 @@ void hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[]
 /*======================================================================*/
 
 
-void fstr2hecmw_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
+void c_fstr2hecmw_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
 	int i, j;
 	int start_no;
@@ -133,7 +133,7 @@ void fstr2hecmw_connect_conv( int n_elem, int elem_type[], int elem_node_index[]
 }
 
 
-void fstr2hecmw_elem_conv( int type, int node[] )
+void c_fstr2hecmw_elem_conv( int type, int node[] )
 {
 	int j;
 	int table_n;
@@ -170,55 +170,65 @@ void fstr2hecmw_elem_conv( int type, int node[] )
 /********************************************************************************************************/
 /* Fortran Interface */
 
+void hecmw2fstr_connect_conv( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
+{
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+}
+
 void hecmw2fstr_connect_conv_( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void hecmw2fstr_connect_conv__( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void HECMW2FSTR_CONNECT_CONV( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void HECMW2FSTR_CONNECT_CONV_( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void HECMW2FSTR_CONNECT_CONV__( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_hecmw2fstr_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 /*---------------------------------------------------------------------------------------------------------*/
 
 
+void fstr2hecmw_connect_conv( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
+{
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+}
+
 void fstr2hecmw_connect_conv_( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void fstr2hecmw_connect_conv__( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void FSTR2HECMW_CONNECT_CONV( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void FSTR2HECMW_CONNECT_CONV_( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }
 
 void FSTR2HECMW_CONNECT_CONV__( int* n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] )
 {
-	fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
+	c_fstr2hecmw_connect_conv( *n_elem, elem_type, elem_node_index, elem_node_item );
 }

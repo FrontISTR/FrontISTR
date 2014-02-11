@@ -83,7 +83,7 @@ extern fstr_ctrl_data* ctrl_list[ ctrl_list_size ];
  * @param buff buffer for copied message
  */
 
-void fstr_ctrl_get_err_msg(char* buff);
+void c_fstr_ctrl_get_err_msg(char* buff);
 
 
 /* ================================================================================= */
@@ -93,7 +93,7 @@ void fstr_ctrl_get_err_msg(char* buff);
  * @return fstr_ctrl_data* pointer or NULL
  */
 
-fstr_ctrl_data* fstr_ctrl_open( const char* filename );
+fstr_ctrl_data* c_fstr_ctrl_open( const char* filename );
 
 
 /* ================================================================================= */
@@ -103,7 +103,7 @@ fstr_ctrl_data* fstr_ctrl_open( const char* filename );
  * @return record number without comment and blank lines
  */
 
-int fstr_ctrl_get_rec_number( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_get_rec_number( fstr_ctrl_data* ctrl );
 
 /* ================================================================================= */
 /**
@@ -114,7 +114,7 @@ int fstr_ctrl_get_rec_number( fstr_ctrl_data* ctrl );
  * @return record number without comment and blank lines
  */
 
-int fstr_ctrl_get_line( fstr_ctrl_data* ctrl, int rec_no, char* buff );
+int c_fstr_ctrl_get_line( fstr_ctrl_data* ctrl, int rec_no, char* buff );
 
 /* ================================================================================= */
 /**
@@ -125,7 +125,7 @@ int fstr_ctrl_get_line( fstr_ctrl_data* ctrl, int rec_no, char* buff );
  * @return 1:success, 0:fail ( REMARK! )
  */
 
-int fstr_ctrl_seek_header( fstr_ctrl_data* ctrl, const char* header_name );
+int c_fstr_ctrl_seek_header( fstr_ctrl_data* ctrl, const char* header_name );
 
 /* ================================================================================= */
 /**
@@ -134,7 +134,7 @@ int fstr_ctrl_seek_header( fstr_ctrl_data* ctrl, const char* header_name );
  * @return 1:success, 0:fail ( REMARK! )
  */
 
-int fstr_ctrl_seek_next_header( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_seek_next_header( fstr_ctrl_data* ctrl );
 
 /* ================================================================================= */
 /**
@@ -144,7 +144,7 @@ int fstr_ctrl_seek_next_header( fstr_ctrl_data* ctrl );
  * @return 0:success, -1:fail
  */
 
-int fstr_ctrl_get_current_header_name( fstr_ctrl_data* ctrl, char* header_name );
+int c_fstr_ctrl_get_current_header_name( fstr_ctrl_data* ctrl, char* header_name );
 
 
 /* ================================================================================= */
@@ -154,7 +154,7 @@ int fstr_ctrl_get_current_header_name( fstr_ctrl_data* ctrl, char* header_name )
  * @return line number or 0:not header seeking, -1:error
 */
 
-int fstr_ctrl_get_current_header_line_no( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_get_current_header_line_no( fstr_ctrl_data* ctrl );
 
 /* ================================================================================= */
 /**
@@ -163,7 +163,7 @@ int fstr_ctrl_get_current_header_line_no( fstr_ctrl_data* ctrl );
  * @return line number or 0:not header seeking, -1:error
 */
 
-int fstr_ctrl_get_current_header_pos( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_get_current_header_pos( fstr_ctrl_data* ctrl );
 
 /* ================================================================================= */
 /**
@@ -181,7 +181,7 @@ int fstr_ctrl_get_current_header_pos( fstr_ctrl_data* ctrl );
  */
 
 
-int fstr_ctrl_get_param( fstr_ctrl_data* ctrl, const char* param_name, const char* value_list, char type, void* val );
+int c_fstr_ctrl_get_param( fstr_ctrl_data* ctrl, const char* param_name, const char* value_list, char type, void* val );
 
 
 /* ================================================================================= */
@@ -200,7 +200,7 @@ int fstr_ctrl_get_param( fstr_ctrl_data* ctrl, const char* param_name, const cha
  *         4:value range error
  */
 
-int fstr_ctrl_get_param_ex( fstr_ctrl_data* ctrl,
+int c_fstr_ctrl_get_param_ex( fstr_ctrl_data* ctrl,
 	const char* param_name, const char* value_list, int necessity, char type, void* val );
 
 /* ================================================================================= */
@@ -210,17 +210,17 @@ int fstr_ctrl_get_param_ex( fstr_ctrl_data* ctrl,
  * @return Data line number or -1 (Error)
  */
 
-int fstr_ctrl_get_data_line_n( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_get_data_line_n( fstr_ctrl_data* ctrl );
 
 /* ================================================================================= */
 /* JP-0 */
 
-int fstr_ctrl_copy_data_line( fstr_ctrl_data* ctrl, int line_no, char* data_line );
+int c_fstr_ctrl_copy_data_line( fstr_ctrl_data* ctrl, int line_no, char* data_line );
 
 /* ================================================================================= */
 /* JP-1 */
 
-int fstr_ctrl_get_data_n_in_line( fstr_ctrl_data* ctrl, int line_no, const char* delim );
+int c_fstr_ctrl_get_data_n_in_line( fstr_ctrl_data* ctrl, int line_no, const char* delim );
 
 
 /* ================================================================================= */
@@ -229,20 +229,20 @@ int fstr_ctrl_get_data_n_in_line( fstr_ctrl_data* ctrl, int line_no, const char*
  * @return Position of error, 0: no error, or, -1 : non converting error
  */
 
-int fstr_ctrl_get_data_error_pos(void);
+int c_fstr_ctrl_get_data_error_pos(void);
 
-int fstr_ctrl_get_data_error_line(void);
+int c_fstr_ctrl_get_data_error_line(void);
 
 /* ================================================================================= */
 /* JP-2 */
 
-int fstr_ctrl_get_data( fstr_ctrl_data* ctrl, int line_no, const char* format, ... );
-int fstr_ctrl_get_data_v( fstr_ctrl_data* ctrl, int line_no, const char* format, va_list va );
-int fstr_ctrl_get_data_ex( fstr_ctrl_data* ctrl, int line_no, const char* format, ... );
+int c_fstr_ctrl_get_data( fstr_ctrl_data* ctrl, int line_no, const char* format, ... );
+int c_fstr_ctrl_get_data_v( fstr_ctrl_data* ctrl, int line_no, const char* format, va_list va );
+int c_fstr_ctrl_get_data_ex( fstr_ctrl_data* ctrl, int line_no, const char* format, ... );
 
-int fstr_ctrl_get_data_array( fstr_ctrl_data* ctrl, const char* format, ... );
-int fstr_ctrl_get_data_array_v( fstr_ctrl_data* ctrl, const char* format, va_list va );
-int fstr_ctrl_get_data_array_ex( fstr_ctrl_data* ctrl, const char* format, ... );
+int c_fstr_ctrl_get_data_array( fstr_ctrl_data* ctrl, const char* format, ... );
+int c_fstr_ctrl_get_data_array_v( fstr_ctrl_data* ctrl, const char* format, va_list va );
+int c_fstr_ctrl_get_data_array_ex( fstr_ctrl_data* ctrl, const char* format, ... );
 
 
 /* ================================================================================= */
@@ -252,7 +252,7 @@ int fstr_ctrl_get_data_array_ex( fstr_ctrl_data* ctrl, const char* format, ... )
  * @return 0:success, -1:fail
  */
 
-int fstr_ctrl_close( fstr_ctrl_data* ctrl );
+int c_fstr_ctrl_close( fstr_ctrl_data* ctrl );
 
 
 #endif

@@ -26,6 +26,6 @@
 #ifndef fstr_sort_indexH
 #define fstr_sort_indexH
 
-void fstr_sort_index( int* index_data, int n);
+void c_fstr_sort_index( int* index_data, int n);
 
 #endif

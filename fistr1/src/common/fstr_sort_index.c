@@ -34,7 +34,7 @@ static int my_comp( const void* a, const void* b)
 }
 
 
-void fstr_sort_index( int* index_data, int n)
+void c_fstr_sort_index( int* index_data, int n)
 {
 	qsort( index_data, n, sizeof(int)*2, my_comp);
 }
@@ -43,28 +43,33 @@ void fstr_sort_index( int* index_data, int n)
 
 /*----------- Fortran Interface ---------------*/
 
+void fstr_sort_index( int* index_data, int* n)
+{
+	c_fstr_sort_index( index_data, *n);
+}
+
 void fstr_sort_index_( int* index_data, int* n)
 {
-	fstr_sort_index( index_data, *n);
+	c_fstr_sort_index( index_data, *n);
 }
 
 void fstr_sort_index__( int* index_data, int* n)
 {
-	fstr_sort_index( index_data, *n);
+	c_fstr_sort_index( index_data, *n);
 }
 
 void FSTR_SORT_INDEX( int* index_data, int* n)
 {
-	fstr_sort_index( index_data, *n);
+	c_fstr_sort_index( index_data, *n);
 }
 
 void FSTR_SORT_INDEX_( int* index_data, int* n)
 {
-	fstr_sort_index( index_data, *n);
+	c_fstr_sort_index( index_data, *n);
 }
 
 void FSTR_SORT_INDEX__( int* index_data, int* n)
 {
-	fstr_sort_index( index_data, *n);
+	c_fstr_sort_index( index_data, *n);
 }
 
