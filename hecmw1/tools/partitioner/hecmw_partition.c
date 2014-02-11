@@ -16,6 +16,7 @@
  *                                                                     *
  *=====================================================================*/
 
+#define INAGAKI_PARTITIONER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,10 +98,14 @@
 #define CLEAR_BIT( map, bit ) ((map) |= (bit)) ; ((map) ^= (bit))
 
 
+#ifdef INAGAKI_PARTITIONER
+
 #define CLEAR_IEB( map ) ((map) |= (7)) ; ((map) ^= (7))
 
 
 #define CLEAR_MM( map ) ((map) |= (48)) ; ((map) ^= (48))
+
+#endif /* INAGAKI_PARTITIONER */
 
 
 #define DSWAP( a, aa ) atemp=(a);(a)=(aa);(aa)=atemp;
@@ -137,6 +142,9 @@ struct link_list {
 
     struct link_unit *last;
 };
+
+
+#ifdef INAGAKI_PARTITIONER
 
 /*===== internal/boundary node/element list of each domain =======*/
 static int *n_int_nlist = NULL;
@@ -673,6 +681,8 @@ spdup_freelist( const struct hecmwST_local_mesh *global_mesh )
     HECMW_free( egrp_item );
     return 0;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 /*================================================================================================*/
 
@@ -3622,43 +3632,26 @@ set_node_belong_domain_eb( struct hecmwST_local_mesh *global_mesh )
 static int
 set_local_node_id( struct hecmwST_local_mesh *global_mesh )
 {
-    int counter, sum;
-    int i, j;
+    int *counter;
+    int j, domain;
 
-    for( sum=0, i=0; i<global_mesh->n_subdomain; i++ ) {
-        for( counter=0, j=0; j<global_mesh->n_node; j++ ) {
-            if( global_mesh->node_ID[2*j+1] == i ) {
-                global_mesh->node_ID[2*j] = ++counter;
-                sum++;
-            }
-        }
+    counter = (int *)HECMW_calloc(global_mesh->n_subdomain, sizeof(int));
+    if( counter == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
     }
-    HECMW_assert( sum == global_mesh->n_node );
 
-    return RTC_NORMAL;
-}
-
-/*K. Inagaki */
-static int
-set_local_node_id_mod( struct hecmwST_local_mesh *global_mesh )
-{
-    int counter[global_mesh->n_subdomain];
-    int sum;
-    int i, j, domain;
-
-    for( i=0; i<global_mesh->n_subdomain; i++ ){
-        counter[i] = 0;
-    }
-    
-    for( sum=0, j=0; j<global_mesh->n_node; j++ ){
+    for( j=0; j<global_mesh->n_node; j++ ){
         domain = global_mesh->node_ID[2*j+1];
         global_mesh->node_ID[2*j] = ++counter[domain];
-        sum++;
     }
 
-    HECMW_assert( sum == global_mesh->n_node );
+    HECMW_free( counter );
 
     return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
@@ -3700,8 +3693,7 @@ wnumbering_node( struct hecmwST_local_mesh *global_mesh,
     }
 
 
-/*    rtc = set_local_node_id( global_mesh ); */
-    rtc = set_local_node_id_mod( global_mesh );
+    rtc = set_local_node_id( global_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
     return RTC_NORMAL;
@@ -3854,43 +3846,26 @@ error:
 static int
 set_local_elem_id( struct hecmwST_local_mesh *global_mesh )
 {
-    int counter, sum;
-    int i, j;
+    int *counter;
+    int j, domain;
 
-    for( sum=0, i=0; i<global_mesh->n_subdomain; i++ ) {
-        for( counter=0, j=0; j<global_mesh->n_elem; j++ ) {
-            if( global_mesh->elem_ID[2*j+1] == i ) {
-                global_mesh->elem_ID[2*j] = ++counter;
-                sum++;
-            }
-        }
+    counter = (int *)HECMW_calloc( global_mesh->n_subdomain, sizeof(int) );
+    if( counter == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
     }
-    HECMW_assert( sum == global_mesh->n_elem );
 
-    return RTC_NORMAL;
-}
-
-/*K. Inagaki */
-static int
-set_local_elem_id_mod( struct hecmwST_local_mesh *global_mesh )
-{
-    int counter[global_mesh->n_subdomain];
-    int sum;
-    int i, j, domain;
-    
-    for( i=0; i<global_mesh->n_subdomain; i++ ){
-        counter[i] = 0;
-    }
-    
-    for( sum=0, j=0; j<global_mesh->n_elem; j++ ){
+    for( j=0; j<global_mesh->n_elem; j++ ){
         domain = global_mesh->elem_ID[2*j+1];
         global_mesh->elem_ID[2*j] = ++counter[domain];
-        sum++;
     }
 
-    HECMW_assert( sum == global_mesh->n_elem );
+    HECMW_free( counter );
 
     return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
@@ -3934,8 +3909,7 @@ wnumbering_elem( struct hecmwST_local_mesh *global_mesh,
     }
 
 
-/*    rtc = set_local_elem_id( global_mesh ); */
-    rtc = set_local_elem_id_mod( global_mesh );
+    rtc = set_local_elem_id( global_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
     return RTC_NORMAL;
@@ -4003,6 +3977,8 @@ error:
 
 ==================================================================================================*/
 
+#ifndef INAGAKI_PARTITIONER
+
 static int
 mask_node_by_domain( const struct hecmwST_local_mesh *global_mesh,
                      char *node_flag, int current_domain )
@@ -4018,9 +3994,11 @@ mask_node_by_domain( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-mask_node_by_domain_mod( const struct hecmwST_local_mesh *global_mesh, char *node_flag, int current_domain )
+mask_node_by_domain( const struct hecmwST_local_mesh *global_mesh, char *node_flag, int current_domain )
 {
     int i, node;
 
@@ -4031,6 +4009,9 @@ mask_node_by_domain_mod( const struct hecmwST_local_mesh *global_mesh, char *nod
 
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
+
 
 static int
 mask_elem_by_domain( const struct hecmwST_local_mesh *global_mesh,
@@ -4047,6 +4028,8 @@ mask_elem_by_domain( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 mask_elem_by_domain_mod( char *elem_flag, int current_domain )
@@ -4061,8 +4044,11 @@ mask_elem_by_domain_mod( char *elem_flag, int current_domain )
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 mask_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
@@ -4088,9 +4074,11 @@ mask_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-mask_overlap_elem_mod( char *elem_flag, int domain )
+mask_overlap_elem( char *elem_flag, int domain )
 {
     int i, elem;
     
@@ -4102,6 +4090,8 @@ mask_overlap_elem_mod( char *elem_flag, int domain )
 
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -4124,6 +4114,8 @@ mask_boundary_node( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 mask_boundary_node_mod( const struct hecmwST_local_mesh *global_mesh, char *node_flag, char *elem_flag, int domain )
@@ -4138,6 +4130,8 @@ mask_boundary_node_mod( const struct hecmwST_local_mesh *global_mesh, char *node
     
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 static int
 mask_additional_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
@@ -4170,7 +4164,7 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
     int rtc;
     int i;
 
-    /*
+#ifndef INAGAKI_PARTITIONER
     for( i=0; i<global_mesh->n_node; i++ ){
         CLEAR_BIT( node_flag[i], INTERNAL );
         CLEAR_BIT( node_flag[i], EXTERNAL );
@@ -4181,22 +4175,30 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
         CLEAR_BIT( elem_flag[i], EXTERNAL );
         CLEAR_BIT( elem_flag[i], BOUNDARY );
     }
-    */
-    
-/*    rtc = mask_node_by_domain( global_mesh, node_flag, current_domain ); */
-    rtc = mask_node_by_domain_mod( global_mesh, node_flag, current_domain );
+#endif
+
+    rtc = mask_node_by_domain( global_mesh, node_flag, current_domain );
     if( rtc != RTC_NORMAL )  goto error;
 
-/*    rtc = mask_elem_by_domain( global_mesh, elem_flag, current_domain ); */
+#ifndef INAGAKI_PARTITIONER
+    rtc = mask_elem_by_domain( global_mesh, elem_flag, current_domain );
+#else
     rtc = mask_elem_by_domain_mod( elem_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
-/*    rtc = mask_overlap_elem( global_mesh, node_flag, elem_flag ); */
-    rtc = mask_overlap_elem_mod( elem_flag, current_domain );
+#ifndef INAGAKI_PARTITIONER
+    rtc = mask_overlap_elem( global_mesh, node_flag, elem_flag );
+#else
+    rtc = mask_overlap_elem( elem_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
-/*    rtc = mask_boundary_node( global_mesh, node_flag, elem_flag ); */
+#ifndef INAGAKI_PARTITIONER
+    rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
+#else
     rtc = mask_boundary_node_mod( global_mesh, node_flag, elem_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     for( i=1; i<global_mesh->hecmw_flag_partdepth; i++ ) {
@@ -4380,6 +4382,8 @@ error:
 
 /*------------------------------------------------------------------------------------------------*/
 
+#ifndef INAGAKI_PARTITIONER
+
 static int
 mask_neighbor_domain_nb( const struct hecmwST_local_mesh *global_mesh,
                          const char *node_flag, char *domain_flag )
@@ -4395,9 +4399,11 @@ mask_neighbor_domain_nb( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-mask_neighbor_domain_nb_mod( const struct hecmwST_local_mesh *global_mesh,
+mask_neighbor_domain_nb( const struct hecmwST_local_mesh *global_mesh,
                          const char *node_flag, char *domain_flag, int domain )
 {
     int i, node;
@@ -4410,6 +4416,7 @@ mask_neighbor_domain_nb_mod( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
 
 static int
 mask_neighbor_domain_eb( const struct hecmwST_local_mesh *global_mesh,
@@ -4490,8 +4497,11 @@ create_neighbor_info( const struct hecmwST_local_mesh *global_mesh,
         rtc = mask_mesh_status_nb( global_mesh, node_flag, elem_flag, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-/*        rtc = mask_neighbor_domain_nb( global_mesh, node_flag, domain_flag ); */
-        rtc = mask_neighbor_domain_nb_mod( global_mesh, node_flag, domain_flag, current_domain );
+#ifndef INAGAKI_PARTITIONER
+        rtc = mask_neighbor_domain_nb( global_mesh, node_flag, domain_flag );
+#else
+        rtc = mask_neighbor_domain_nb( global_mesh, node_flag, domain_flag, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
         break;
@@ -4568,6 +4578,8 @@ mask_comm_node( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 mask_comm_node_mod( const struct hecmwST_local_mesh *global_mesh,
@@ -4585,6 +4597,7 @@ mask_comm_node_mod( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -4603,6 +4616,8 @@ mask_comm_elem( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 mask_comm_elem_mod( const struct hecmwST_local_mesh *global_mesh,
@@ -4620,6 +4635,9 @@ mask_comm_elem_mod( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 count_masked_comm_node( const struct hecmwST_local_mesh *global_mesh,
@@ -4635,9 +4653,11 @@ count_masked_comm_node( const struct hecmwST_local_mesh *global_mesh,
     return counter;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-count_masked_comm_node_mod( const struct hecmwST_local_mesh *global_mesh,
+count_masked_comm_node( const struct hecmwST_local_mesh *global_mesh,
                         const char *node_flag, int domain )
 {
     int counter;
@@ -4650,6 +4670,8 @@ count_masked_comm_node_mod( const struct hecmwST_local_mesh *global_mesh,
 
     return counter;
 }
+
+#endif
 
 static int
 count_masked_comm_elem( const struct hecmwST_local_mesh *global_mesh,
@@ -4680,6 +4702,8 @@ count_masked_shared_node( const struct hecmwST_local_mesh *global_mesh, const ch
 }
 
 
+#ifndef INAGAKI_PARTITIONER
+
 static int
 count_masked_shared_elem( const struct hecmwST_local_mesh *global_mesh, const char *elem_flag )
 {
@@ -4693,9 +4717,11 @@ count_masked_shared_elem( const struct hecmwST_local_mesh *global_mesh, const ch
     return counter;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-count_masked_shared_elem_mod( const struct hecmwST_local_mesh *global_mesh,
+count_masked_shared_elem( const struct hecmwST_local_mesh *global_mesh,
                                      const char *elem_flag, int domain )
 {
     int counter;
@@ -4709,6 +4735,10 @@ count_masked_shared_elem_mod( const struct hecmwST_local_mesh *global_mesh,
     return counter;
 }
 
+#endif
+
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 create_comm_node_pre( const struct hecmwST_local_mesh *global_mesh,
@@ -4726,9 +4756,11 @@ create_comm_node_pre( const struct hecmwST_local_mesh *global_mesh,
     return counter;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-create_comm_node_pre_mod( const struct hecmwST_local_mesh *global_mesh,
+create_comm_node_pre( const struct hecmwST_local_mesh *global_mesh,
                       const char *node_flag, int **comm_node, int neighbor_idx, int domain )
 {
     int counter;
@@ -4743,6 +4775,9 @@ create_comm_node_pre_mod( const struct hecmwST_local_mesh *global_mesh,
 
     return counter;
 }
+
+#endif
+
 
 static int
 create_comm_elem_pre( const struct hecmwST_local_mesh *global_mesh,
@@ -4778,6 +4813,8 @@ create_shared_node_pre( const struct hecmwST_local_mesh *global_mesh,
 }
 
 
+#ifndef INAGAKI_PARTITIONER
+
 static int
 create_shared_elem_pre( const struct hecmwST_local_mesh *global_mesh,
                         const char *elem_flag, int **shared_elem, int neighbor_idx )
@@ -4794,9 +4831,11 @@ create_shared_elem_pre( const struct hecmwST_local_mesh *global_mesh,
     return counter;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-create_shared_elem_pre_mod( const struct hecmwST_local_mesh *global_mesh,
+create_shared_elem_pre( const struct hecmwST_local_mesh *global_mesh,
                         const char *elem_flag, int **shared_elem, int neighbor_idx, int neighbor_domain )
 {
     int counter;
@@ -4827,6 +4866,7 @@ create_shared_elem_pre_mod( const struct hecmwST_local_mesh *global_mesh,
     return counter;
 }
 
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -4857,8 +4897,7 @@ create_import_info_nb( const struct hecmwST_local_mesh *global_mesh,
     int n_import_node, rtc;
 
 
-/*    n_import_node = count_masked_comm_node( global_mesh, node_flag, neighbor_domain ); */
-    n_import_node = count_masked_comm_node_mod( global_mesh, node_flag, neighbor_domain );
+    n_import_node = count_masked_comm_node( global_mesh, node_flag, neighbor_domain );
     HECMW_assert( n_import_node >= 0 );
 
 
@@ -4871,10 +4910,7 @@ create_import_info_nb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    /*K. Inagaki */
-/*    rtc = create_comm_node_pre( global_mesh, */
-/*                                node_flag, import_node, neighbor_idx, neighbor_domain ); */
-    rtc = create_comm_node_pre_mod( global_mesh,
+    rtc = create_comm_node_pre( global_mesh,
                                 node_flag, import_node, neighbor_idx, neighbor_domain );
     HECMW_assert( rtc == n_import_node );
 
@@ -4894,8 +4930,7 @@ create_export_info_nb( const struct hecmwST_local_mesh *global_mesh,
     int n_export_node, rtc;
 
 
-/*    n_export_node = count_masked_comm_node( global_mesh, node_flag, current_domain ); */
-    n_export_node = count_masked_comm_node_mod( global_mesh, node_flag, current_domain );
+    n_export_node = count_masked_comm_node( global_mesh, node_flag, current_domain );
     HECMW_assert( n_export_node >= 0 );
 
 
@@ -4908,9 +4943,7 @@ create_export_info_nb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    /*K Inagaki */
-/*    rtc = create_comm_node_pre( global_mesh, node_flag, export_node, neighbor_idx, current_domain ); */
-    rtc = create_comm_node_pre_mod( global_mesh, node_flag, export_node, neighbor_idx, current_domain );
+    rtc = create_comm_node_pre( global_mesh, node_flag, export_node, neighbor_idx, current_domain );
     HECMW_assert( rtc == n_export_node );
 
     return RTC_NORMAL;
@@ -4928,9 +4961,11 @@ create_shared_info_nb( const struct hecmwST_local_mesh *global_mesh,
 {
     int n_shared_elem, rtc;
 
-
-/*    n_shared_elem = count_masked_shared_elem( global_mesh, elem_flag ); */
-    n_shared_elem = count_masked_shared_elem_mod( global_mesh, elem_flag, neighbor_domain);
+#ifndef INAGAKI_PARTITIONER
+    n_shared_elem = count_masked_shared_elem( global_mesh, elem_flag );
+#else
+    n_shared_elem = count_masked_shared_elem( global_mesh, elem_flag, neighbor_domain);
+#endif
     HECMW_assert( n_shared_elem >= 0 );
 
 
@@ -4943,8 +4978,11 @@ create_shared_info_nb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-/*    rtc = create_shared_elem_pre( global_mesh, elem_flag, shared_elem, neighbor_idx ); */
-    rtc = create_shared_elem_pre_mod( global_mesh, elem_flag, shared_elem, neighbor_idx, neighbor_domain );
+#ifndef INAGAKI_PARTITIONER
+    rtc = create_shared_elem_pre( global_mesh, elem_flag, shared_elem, neighbor_idx );
+#else
+    rtc = create_shared_elem_pre( global_mesh, elem_flag, shared_elem, neighbor_idx, neighbor_domain );
+#endif
     HECMW_assert( rtc == n_shared_elem );
 
     return RTC_NORMAL;
@@ -4958,10 +4996,15 @@ static int
 create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
                      struct hecmwST_local_mesh *local_mesh,
                      char *node_flag, char *elem_flag,
-                     char *node_flag_neighbor, char *elem_flag_neighbor, int current_domain )
+#ifdef INAGAKI_PARTITIONER
+                     char *node_flag_neighbor, char *elem_flag_neighbor,
+#endif
+                     int current_domain )
 {
-/*    char *node_flag_neighbor = NULL; */
-/*    char *elem_flag_neighbor = NULL; */
+#ifndef INAGAKI_PARTITIONER
+    char *node_flag_neighbor = NULL;
+    char *elem_flag_neighbor = NULL;
+#endif
     int **import_node = NULL;
     int **export_node = NULL;
     int **shared_elem = NULL;
@@ -5021,19 +5064,53 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
+#ifndef INAGAKI_PARTITIONER
+    node_flag_neighbor = (char *)HECMW_malloc( sizeof(char)*global_mesh->n_node );
+    if( node_flag_neighbor == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+    elem_flag_neighbor = (char *)HECMW_malloc( sizeof(char)*global_mesh->n_elem );
+    if( elem_flag_neighbor == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+#endif
+
     for( i=0; i<local_mesh->n_neighbor_pe; i++ ) {
         neighbor_domain = local_mesh->neighbor_pe[i];
+
+#ifndef INAGAKI_PARTITIONER
+        for( j=0; j<global_mesh->n_node; j++ ) {
+            CLEAR_BIT( node_flag[j], MASK );
+            CLEAR_BIT( node_flag[j], MARK );
+        }
+        for( j=0; j<global_mesh->n_elem; j++ ) {
+            CLEAR_BIT( elem_flag[j], MASK );
+            CLEAR_BIT( elem_flag[j], MARK );
+        }
+
+        memset( node_flag_neighbor, 0, sizeof(char)*global_mesh->n_node );
+        memset( elem_flag_neighbor, 0, sizeof(char)*global_mesh->n_elem );
+#endif
+
 
         rtc = mask_mesh_status_nb( global_mesh,
                                    node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-/*        rtc = mask_comm_node( global_mesh, node_flag, node_flag_neighbor ); */
+#ifndef INAGAKI_PARTITIONER
+        rtc = mask_comm_node( global_mesh, node_flag, node_flag_neighbor );
+#else
         rtc = mask_comm_node_mod( global_mesh, node_flag, node_flag_neighbor, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
-/*        rtc = mask_comm_elem( global_mesh, elem_flag, elem_flag_neighbor ); */
+#ifndef INAGAKI_PARTITIONER
+        rtc = mask_comm_elem( global_mesh, elem_flag, elem_flag_neighbor );
+#else
         rtc = mask_comm_elem_mod( global_mesh, elem_flag, elem_flag_neighbor, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
         rtc = create_import_info_nb( global_mesh, local_mesh, node_flag,
@@ -5049,13 +5126,21 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
         rtc = create_shared_info_nb( global_mesh, local_mesh, elem_flag,
                                      shared_elem, i, neighbor_domain );
         if( rtc != RTC_NORMAL )  goto error;
-        
+
+#ifdef INAGAKI_PARTITIONER
         /*K. Inagaki */
         spdup_clear_IEB( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
         spdup_clear_MMbnd( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
         spdup_clear_MMbnd( node_flag, elem_flag, current_domain );
-        
+#endif
     }
+
+#ifndef INAGAKI_PARTITIONER
+    HECMW_free( node_flag_neighbor );
+    HECMW_free( elem_flag_neighbor );
+    node_flag_neighbor = NULL;
+    elem_flag_neighbor = NULL;
+#endif
 
     size = sizeof(int) * local_mesh->import_index[local_mesh->n_neighbor_pe];
     local_mesh->import_item = (int *)HECMW_malloc( size );
@@ -5257,10 +5342,15 @@ static int
 create_comm_info_eb( const struct hecmwST_local_mesh *global_mesh,
                      struct hecmwST_local_mesh *local_mesh,
                      char *node_flag, char *elem_flag,
-                     char *node_flag_neighbor, char *elem_flag_neighbor, int current_domain )
+#ifdef INAGAKI_PARTITIONER
+                     char *node_flag_neighbor, char *elem_flag_neighbor,
+#endif
+                     int current_domain )
 {
-/*    char *node_flag_neighbor = NULL; */
-/*    char *elem_flag_neighbor = NULL; */
+#ifndef INAGAKI_PARTITIONER
+    char *node_flag_neighbor = NULL;
+    char *elem_flag_neighbor = NULL;
+#endif
     int **import_elem = NULL;
     int **export_elem = NULL;
     int **shared_node = NULL;
@@ -5321,7 +5411,7 @@ create_comm_info_eb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    /*
+#ifndef INAGAKI_PARTITIONER
     node_flag_neighbor = (char *)HECMW_malloc( sizeof(char)*global_mesh->n_node );
     if( node_flag_neighbor == NULL ) {
         HECMW_set_error( errno, "" );
@@ -5332,7 +5422,7 @@ create_comm_info_eb( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-    */
+#endif
 
     /* create communication table */
     for( i=0; i<local_mesh->n_neighbor_pe; i++ ) {
@@ -5377,12 +5467,12 @@ create_comm_info_eb( const struct hecmwST_local_mesh *global_mesh,
         if( rtc != RTC_NORMAL )  goto error;
     }
 
-    /*
+#ifndef INAGAKI_PARTITIONER
     HECMW_free( node_flag_neighbor );
     HECMW_free( elem_flag_neighbor );
     node_flag_neighbor = NULL;
     elem_flag_neighbor = NULL;
-    */
+#endif
 
     /* create import element information */
     size = sizeof(int) * local_mesh->import_index[local_mesh->n_neighbor_pe];
@@ -5487,7 +5577,10 @@ static int
 create_comm_info( const struct hecmwST_local_mesh *global_mesh,
                   struct hecmwST_local_mesh *local_mesh,
                   char *node_flag, char *elem_flag,
-                  char *node_flag_neighbor, char *elem_flag_neighbor, int current_domain )
+#ifdef INAGAKI_PARTITIONER
+                  char *node_flag_neighbor, char *elem_flag_neighbor,
+#endif
+                  int current_domain )
 {
     int rtc;
 
@@ -5503,14 +5596,20 @@ create_comm_info( const struct hecmwST_local_mesh *global_mesh,
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
         rtc = create_comm_info_nb( global_mesh, local_mesh, node_flag, elem_flag,
-                                   node_flag_neighbor, elem_flag_neighbor, current_domain );
+#ifdef INAGAKI_PARTITIONER
+                                   node_flag_neighbor, elem_flag_neighbor,
+#endif
+                                   current_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
         break;
 
     case HECMW_FLAG_PARTTYPE_ELEMBASED:  /* for element-based partitioning */
         rtc = create_comm_info_eb( global_mesh, local_mesh, node_flag, elem_flag,
-                                   node_flag_neighbor, elem_flag_neighbor, current_domain );
+#ifdef INAGAKI_PARTITIONER
+                                   node_flag_neighbor, elem_flag_neighbor,
+#endif
+                                   current_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
         break;
@@ -5537,6 +5636,8 @@ error:
 
 ==================================================================================================*/
 
+#ifndef INAGAKI_PARTITIONER
+
 static int
 set_node_global2local_internal( const struct hecmwST_local_mesh *global_mesh,
                                 struct hecmwST_local_mesh *local_mesh,
@@ -5561,9 +5662,11 @@ set_node_global2local_internal( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-set_node_global2local_internal_mod( const struct hecmwST_local_mesh *global_mesh,
+set_node_global2local_internal( const struct hecmwST_local_mesh *global_mesh,
                                 struct hecmwST_local_mesh *local_mesh,
                                 int *node_global2local, const char *node_flag,
                                 int domain)
@@ -5586,6 +5689,10 @@ set_node_global2local_internal_mod( const struct hecmwST_local_mesh *global_mesh
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 set_node_global2local_external( const struct hecmwST_local_mesh *global_mesh,
@@ -5614,9 +5721,11 @@ set_node_global2local_external( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-set_node_global2local_external_mod( const struct hecmwST_local_mesh *global_mesh,
+set_node_global2local_external( const struct hecmwST_local_mesh *global_mesh,
                                 struct hecmwST_local_mesh *local_mesh,
                                 int *node_global2local, const char *node_flag,
                                 int domain)
@@ -5641,6 +5750,8 @@ set_node_global2local_external_mod( const struct hecmwST_local_mesh *global_mesh
 
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -5734,8 +5845,12 @@ error:
 static int
 set_node_global2local( const struct hecmwST_local_mesh *global_mesh,
                        struct hecmwST_local_mesh *local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                       int *node_global2local, const char *node_flag)
+#else
                        int *node_global2local, const char *node_flag,
                        int current_domain)
+#endif
 {
     int rtc;
 
@@ -5747,17 +5862,21 @@ set_node_global2local( const struct hecmwST_local_mesh *global_mesh,
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
 
-/*        rtc = set_node_global2local_internal( global_mesh, local_mesh, */
-/*                                              node_global2local, node_flag ); */
-        rtc = set_node_global2local_internal_mod( global_mesh, local_mesh,
+        rtc = set_node_global2local_internal( global_mesh, local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                                              node_global2local, node_flag );
+#else
                                               node_global2local, node_flag, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
 
-/*        rtc = set_node_global2local_external( global_mesh, local_mesh, */
-/*                                              node_global2local, node_flag ); */
-        rtc = set_node_global2local_external_mod( global_mesh, local_mesh,
+        rtc = set_node_global2local_external( global_mesh, local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                                              node_global2local, node_flag );
+#else
                                               node_global2local, node_flag, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
 
@@ -5790,6 +5909,9 @@ set_node_global2local( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+
+#ifdef INAGAKI_PARTITIONER
 
 /*K. Inagaki */
 static int
@@ -5833,6 +5955,9 @@ error:
     return RTC_ERROR;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
 /*------------------------------------------------------------------------------------------------*/
 
 static int
@@ -5859,6 +5984,8 @@ set_node_local2global( const struct hecmwST_local_mesh *global_mesh,
 
     return RTC_NORMAL;
 }
+
+#ifdef INAGAKI_PARTITIONER
 
 /*K. Inagaki */
 static int
@@ -5899,6 +6026,9 @@ set_node_local2global_mod( const struct hecmwST_local_mesh *global_mesh,
 
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
+
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -5942,8 +6072,11 @@ set_elem_global2local_external( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( global_mesh->n_elem );
 
     for( counter=local_mesh->ne_internal, i=0; i<global_mesh->n_elem; i++ ) {
-/*        if( EVAL_BIT( elem_flag[i], EXTERNAL ) && EVAL_BIT( elem_flag[i], BOUNDARY ) ) {  */ /*Inagaki */
+#ifndef INAGAKI_PARTITIONER
+        if( EVAL_BIT( elem_flag[i], EXTERNAL ) && EVAL_BIT( elem_flag[i], BOUNDARY ) ) {
+#else
         if( !EVAL_BIT( elem_flag[i], INTERNAL ) && EVAL_BIT( elem_flag[i], BOUNDARY ) ) {
+#endif
             elem_global2local[i] = ++counter;
         }
     }
@@ -5955,6 +6088,8 @@ set_elem_global2local_external( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 set_elem_global2local_all( const struct hecmwST_local_mesh *global_mesh,
@@ -5983,9 +6118,11 @@ set_elem_global2local_all( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-set_elem_global2local_all_mod( const struct hecmwST_local_mesh *global_mesh,
+set_elem_global2local_all( const struct hecmwST_local_mesh *global_mesh,
                            struct hecmwST_local_mesh *local_mesh,
                            int *elem_global2local, const char *elem_flag, int domain )
 {
@@ -6025,6 +6162,9 @@ set_elem_global2local_all_mod( const struct hecmwST_local_mesh *global_mesh,
     return RTC_NORMAL;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
 static int
 const_ne_internal( const struct hecmwST_local_mesh *global_mesh,
                    struct hecmwST_local_mesh *local_mesh, const char *elem_flag )
@@ -6041,6 +6181,9 @@ const_ne_internal( const struct hecmwST_local_mesh *global_mesh,
 
     return RTC_NORMAL;
 }
+
+
+#ifndef INAGAKI_PARTITIONER
 
 static int
 const_elem_internal_list( const struct hecmwST_local_mesh *global_mesh,
@@ -6081,9 +6224,11 @@ error:
     return RTC_ERROR;
 }
 
+#else
+
 /*K. Inagaki */
 static int
-const_elem_internal_list_mod( const struct hecmwST_local_mesh *global_mesh,
+const_elem_internal_list( const struct hecmwST_local_mesh *global_mesh,
                           struct hecmwST_local_mesh *local_mesh,
                           int *elem_global2local, const char *elem_flag, int domain )
 {
@@ -6120,10 +6265,17 @@ error:
     return RTC_ERROR;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
 static int
 set_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
                        struct hecmwST_local_mesh *local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                       int *elem_global2local, const char *elem_flag )
+#else
                        int *elem_global2local, const char *elem_flag, int current_domain )
+#endif
 {
     int rtc;
 
@@ -6135,18 +6287,27 @@ set_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
 
-/*        rtc = const_ne_internal( global_mesh, local_mesh, elem_flag ); */
-/*        if( rtc != RTC_NORMAL )  goto error; */
+#ifndef INAGAKI_PARTITIONER
+        rtc = const_ne_internal( global_mesh, local_mesh, elem_flag );
+        if( rtc != RTC_NORMAL )  goto error;
+#else
         local_mesh->ne_internal = n_int_elist[current_domain];
+#endif
 
 
-/*        rtc = set_elem_global2local_all( global_mesh, local_mesh, elem_global2local, elem_flag ); */
-        rtc = set_elem_global2local_all_mod( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
+#ifndef INAGAKI_PARTITIONER
+        rtc = set_elem_global2local_all( global_mesh, local_mesh, elem_global2local, elem_flag );
+#else
+        rtc = set_elem_global2local_all( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
 
-/*        rtc = const_elem_internal_list( global_mesh, local_mesh, elem_global2local, elem_flag ); */
-        rtc = const_elem_internal_list_mod( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
+#ifndef INAGAKI_PARTITIONER
+        rtc = const_elem_internal_list( global_mesh, local_mesh, elem_global2local, elem_flag );
+#else
+        rtc = const_elem_internal_list( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
         break;
@@ -6177,6 +6338,9 @@ set_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+
+#ifdef INAGAKI_PARTITIONER
 
 static int
 clear_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
@@ -6224,6 +6388,9 @@ error:
     return RTC_ERROR;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
 /*------------------------------------------------------------------------------------------------*/
 
 static int
@@ -6250,6 +6417,8 @@ set_elem_local2global( const struct hecmwST_local_mesh *global_mesh,
 
     return RTC_NORMAL;
 }
+
+#ifdef INAGAKI_PARTITIONER
 
 /*K. Inagaki */
 static int
@@ -6290,6 +6459,9 @@ set_elem_local2global_mod( const struct hecmwST_local_mesh *global_mesh,
 
     return RTC_NORMAL;
 }
+
+#endif /* INAGAKI_PARTITIONER */
+
 
 /*================================================================================================*/
 
@@ -6498,6 +6670,8 @@ error:
     return RTC_ERROR;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 const_node_dof_index_mod( const struct hecmwST_local_mesh *global_mesh,
                       struct hecmwST_local_mesh *local_mesh, const char *node_flag, int domain )
@@ -6530,7 +6704,7 @@ error:
     return RTC_ERROR;
 }
 
-
+#endif /* INAGAKI_PARTITIONER */
 
 static int
 const_node_dof_item( const struct hecmwST_local_mesh *global_mesh,
@@ -6707,7 +6881,11 @@ error:
 static int
 const_node_info( const struct hecmwST_local_mesh *global_mesh,
                  struct hecmwST_local_mesh *local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                 const int *node_local2global, const char *node_flag )
+#else
                  const int *node_local2global, const char *node_flag, int current_domain )
+#endif
 {
     int rtc;
 
@@ -6722,6 +6900,9 @@ const_node_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_n_dof_grp( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_node_dof_index( global_mesh, local_mesh, node_flag );
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
         rtc = const_node_dof_index_mod( global_mesh, local_mesh,
@@ -6734,6 +6915,7 @@ const_node_info( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_node_dof_item( global_mesh, local_mesh );
@@ -6835,6 +7017,8 @@ error:
     return RTC_ERROR;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 const_elem_type_index_mod( const struct hecmwST_local_mesh *global_mesh,
@@ -6885,6 +7069,9 @@ const_elem_type_index_mod( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+#endif /* INAGAKI_PARTITIONER */
+
 
 static int
 const_elem_type_item( const struct hecmwST_local_mesh *global_mesh,
@@ -7143,7 +7330,11 @@ error:
 static int
 const_elem_info( const struct hecmwST_local_mesh *global_mesh,
                  struct hecmwST_local_mesh *local_mesh, const int *node_global2local,
+#ifndef INAGAKI_PARTITIONER
+                 const int *elem_global2local, const int *elem_local2global )
+#else
                  const int *elem_global2local, const int *elem_local2global, int current_domain )
+#endif
 {
     int rtc;
 
@@ -7159,19 +7350,22 @@ const_elem_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_elem_type( global_mesh, local_mesh, elem_local2global );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_elem_type_index( global_mesh, local_mesh, elem_global2local );
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
         rtc = const_elem_type_index_mod( global_mesh, local_mesh,
                                         elem_global2local, current_domain );
-/*        const_elem_type_index( global_mesh, local_mesh, elem_global2local ); */
         break;
     case HECMW_FLAG_PARTTYPE_ELEMBASED:
-        const_elem_type_index( global_mesh, local_mesh, elem_global2local );
+        rtc = const_elem_type_index( global_mesh, local_mesh, elem_global2local );
         break;
     default:
         HECMW_set_error( errno, "" );
         goto error;
     }
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_elem_type_item( global_mesh, local_mesh );
@@ -8351,6 +8545,8 @@ error:
     return RTC_ERROR;
 }
 
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 const_node_grp_index_mod( const struct hecmwST_local_mesh *global_mesh,
@@ -8400,6 +8596,8 @@ const_node_grp_index_mod( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -8459,6 +8657,8 @@ const_node_grp_item( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+#ifdef INAGAKI_PARTITIONER
 
 /*K. Inagaki */
 static int
@@ -8539,10 +8739,16 @@ error:
     return RTC_ERROR;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
 
 static int
 const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
+#ifndef INAGAKI_PARTITIONER
+                     struct hecmwST_local_mesh *local_mesh, const int *node_global2local )
+#else
                      struct hecmwST_local_mesh *local_mesh, const int *node_global2local,  int current_domain )
+#endif
 {
     int *n_eqn_item = NULL;
     int eqn_block_idx;
@@ -8573,15 +8779,20 @@ const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_node_grp_name( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_node_grp_index( global_mesh, local_mesh,
+                                node_global2local, n_eqn_item, eqn_block_idx );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = const_node_grp_item( global_mesh, local_mesh,
+                               node_global2local, n_eqn_item, eqn_block_idx );
+    if( rtc != RTC_NORMAL )  goto error;
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
         rtc = const_node_grp_index_mod( global_mesh, local_mesh, node_global2local,
                                         n_eqn_item, eqn_block_idx, current_domain );
-/*        rtc = const_node_grp_index( global_mesh, local_mesh, */
-/*                                node_global2local, n_eqn_item, eqn_block_idx ); */
         if( rtc != RTC_NORMAL )  goto error;
-/*        rtc = const_node_grp_item( global_mesh, local_mesh, */
-/*                                   node_global2local, n_eqn_item, eqn_block_idx ); */
         rtc = const_node_grp_item_mod( global_mesh, local_mesh, node_global2local,
                                        n_eqn_item, eqn_block_idx, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
@@ -8600,6 +8811,7 @@ const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+#endif
 
     HECMW_free( n_eqn_item );
 
@@ -8663,6 +8875,9 @@ error:
     return RTC_ERROR;
 }
 
+
+#ifdef INAGAKI_PARTITIONER
+
 /*K. Inagaki */
 static int
 const_elem_grp_index_mod( const struct hecmwST_local_mesh *global_mesh,
@@ -8695,6 +8910,8 @@ const_elem_grp_index_mod( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+#endif /* INAGAKI_PARTITIONER */
 
 
 static int
@@ -8730,6 +8947,9 @@ const_elem_grp_item( const struct hecmwST_local_mesh *global_mesh,
 error:
     return RTC_ERROR;
 }
+
+
+#ifdef INAGAKI_PARTITIONER
 
 /*K. Inagaki */
 static int
@@ -8786,9 +9006,16 @@ error:
     return RTC_ERROR;
 }
 
+#endif /* INAGAKI_PARTITIONER */
+
+
 static int
 const_elem_grp_info( const struct hecmwST_local_mesh *global_mesh,
+#ifndef INAGAKI_PARTITIONER
+                     struct hecmwST_local_mesh *local_mesh, const int *elem_global2local )
+#else
                      struct hecmwST_local_mesh *local_mesh, const int *elem_global2local, int current_domain )
+#endif
 {
     int rtc;
 
@@ -8809,13 +9036,18 @@ const_elem_grp_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_elem_grp_name( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_elem_grp_index( global_mesh, local_mesh, elem_global2local );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = const_elem_grp_item( global_mesh, local_mesh, elem_global2local );
+    if( rtc != RTC_NORMAL )  goto error;
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
-/*        rtc = const_elem_grp_index( global_mesh, local_mesh, elem_global2local ); */
         rtc = const_elem_grp_index_mod( global_mesh, local_mesh,
                                         elem_global2local, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
-/*        rtc = const_elem_grp_item( global_mesh, local_mesh, elem_global2local ); */
         rtc = const_elem_grp_item_mod( global_mesh, local_mesh,
                                        elem_global2local, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
@@ -8832,7 +9064,7 @@ const_elem_grp_info( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-
+#endif
 
     return RTC_NORMAL;
 
@@ -9106,29 +9338,34 @@ static int
 const_local_data( const struct hecmwST_local_mesh *global_mesh,
                   struct hecmwST_local_mesh *local_mesh,
                   const struct hecmw_part_cont_data *cont_data,
+#ifndef INAGAKI_PARTITIONER
+                  const char *node_flag, const char *elem_flag, int current_domain )
+#else
                   const char *node_flag, const char *elem_flag,
                   int *node_global2local, int *elem_global2local, int current_domain )
-/*
-const_local_data( const struct hecmwST_local_mesh *global_mesh,
-                  struct hecmwST_local_mesh *local_mesh,
-                  const struct hecmw_part_cont_data *cont_data,
-                  const char *node_flag, const char *elem_flag, int current_domain )*/
+#endif
 {
-/*    int *node_global2local = NULL; */
-/*    int *elem_global2local = NULL; */
+#ifndef INAGAKI_PARTITIONER
+    int *node_global2local = NULL;
+    int *elem_global2local = NULL;
+#endif
     int *node_local2global = NULL;
     int *elem_local2global = NULL;
     int rtc, i;
 
-    /*
+#ifndef INAGAKI_PARTITIONER
     node_global2local = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( node_global2local == NULL ) {
         HECMW_set_error( errno, "" );
         goto error;
     }
-    */
+#endif
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = set_node_global2local( global_mesh, local_mesh, node_global2local, node_flag );
+#else
     rtc = set_node_global2local( global_mesh, local_mesh, node_global2local, node_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
 
@@ -9138,6 +9375,9 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = set_node_local2global( global_mesh, local_mesh, node_global2local, node_local2global);
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
         rtc = set_node_local2global_mod( global_mesh, local_mesh,
@@ -9150,17 +9390,22 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
-    /*
+#ifndef INAGAKI_PARTITIONER
     elem_global2local = (int *)HECMW_calloc( global_mesh->n_elem, sizeof(int) );
     if( elem_global2local == NULL ) {
         HECMW_set_error( errno, "" );
         goto error;
     }
-    */
+#endif
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = set_elem_global2local( global_mesh, local_mesh, elem_global2local, elem_flag );
+#else
     rtc = set_elem_global2local( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     elem_local2global = (int *)HECMW_calloc( local_mesh->n_elem, sizeof(int) );
@@ -9169,9 +9414,11 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = set_elem_local2global( global_mesh, local_mesh, elem_global2local, elem_local2global );
+#else
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:
-/*        rtc = set_elem_local2global( global_mesh, local_mesh, elem_global2local, elem_local2global ); */
         rtc = set_elem_local2global_mod( global_mesh, local_mesh,
                                          elem_global2local, elem_local2global, current_domain );
         break;
@@ -9182,16 +9429,25 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_global_info( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_node_info( global_mesh, local_mesh, node_local2global, node_flag );
+#else
     rtc = const_node_info( global_mesh, local_mesh, node_local2global, node_flag, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_elem_info( global_mesh, local_mesh,
+#ifndef INAGAKI_PARTITIONER
+                           node_global2local, elem_global2local, elem_local2global );
+#else
                            node_global2local, elem_global2local, elem_local2global, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_comm_info( global_mesh, local_mesh,
@@ -9213,10 +9469,18 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_amp_info( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_node_grp_info( global_mesh, local_mesh, node_global2local );
+#else
     rtc = const_node_grp_info( global_mesh, local_mesh, node_global2local, current_domain );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifndef INAGAKI_PARTITIONER
+    rtc = const_elem_grp_info( global_mesh, local_mesh, elem_global2local );
+#else
     rtc = const_elem_grp_info( global_mesh, local_mesh, elem_global2local, current_domain  );
+#endif
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_surf_grp_info( global_mesh, local_mesh, elem_global2local );
@@ -9225,19 +9489,23 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_contact_pair_info( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
-    
+#ifndef INAGAKI_PARTITIONER
+    HECMW_free( node_global2local );
+    HECMW_free( elem_global2local );
+#else
     rtc = clear_node_global2local( global_mesh, local_mesh, node_global2local, current_domain );
     rtc = clear_elem_global2local( global_mesh, local_mesh, elem_global2local, current_domain );
-/*    HECMW_free( node_global2local ); */
-/*    HECMW_free( elem_global2local ); */
+#endif
     HECMW_free( node_local2global );
     HECMW_free( elem_local2global );
 
     return RTC_NORMAL;
 
 error:
-/*    HECMW_free( node_global2local ); */
-/*    HECMW_free( elem_global2local ); */
+#ifndef INAGAKI_PARTITIONER
+    HECMW_free( node_global2local );
+    HECMW_free( elem_global2local );
+#endif
     HECMW_free( node_local2global );
     HECMW_free( elem_local2global );
     clean_struct_local_mesh( local_mesh );
@@ -9502,10 +9770,12 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     struct hecmw_ctrl_meshfiles *ofheader = NULL;
     char *node_flag = NULL;
     char *elem_flag = NULL;
+#ifdef INAGAKI_PARTITIONER
     char *node_flag_neighbor = NULL;
     char *elem_flag_neighbor = NULL;
     int *node_global2local = NULL;
     int *elem_global2local = NULL;
+#endif
     char ofname[HECMW_FILENAME_LEN+1];
     int *num_elem, *num_node, *num_ielem, *num_inode;
     int *sum_elem, *sum_node, *sum_ielem, *sum_inode;
@@ -9588,8 +9858,10 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     rtc = wnumbering( global_mesh, cont_data );
     if( rtc != RTC_NORMAL )  goto error;
 
+#ifdef INAGAKI_PARTITIONER
     /*K. Inagaki */
     spdup_makelist_main( global_mesh );
+#endif
 
     node_flag = (char *)HECMW_calloc( global_mesh->n_node, sizeof(char) );
     if( node_flag == NULL ) {
@@ -9601,7 +9873,8 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-    
+
+#ifdef INAGAKI_PARTITIONER
     /*K. Inagaki */
     node_global2local = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( node_global2local == NULL ) {
@@ -9624,7 +9897,8 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
     memset( node_flag_neighbor, 0, sizeof(char)*global_mesh->n_node );
-    memset( elem_flag_neighbor, 0, sizeof(char)*global_mesh->n_elem );    
+    memset( elem_flag_neighbor, 0, sizeof(char)*global_mesh->n_elem );
+#endif
 
     local_mesh = HECMW_dist_alloc( );
     if( local_mesh == NULL )  goto error;
@@ -9645,23 +9919,34 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         if( rtc != RTC_NORMAL )  goto error;
 
         if( global_mesh->n_subdomain > 1 ) {
+#ifndef INAGAKI_PARTITIONER
+            rtc = create_comm_info( global_mesh, local_mesh, node_flag, elem_flag, current_domain );
+#else
             rtc = create_comm_info( global_mesh, local_mesh, node_flag, elem_flag,
                                     node_flag_neighbor, elem_flag_neighbor, current_domain );
+#endif
             if( rtc != RTC_NORMAL )  goto error;
         }
 
+#ifndef INAGAKI_PARTITIONER
+        rtc = const_local_data( global_mesh, local_mesh, cont_data,
+                                node_flag, elem_flag, current_domain );
+#else
         rtc = const_local_data( global_mesh, local_mesh, cont_data, node_flag, elem_flag,
                                 node_global2local, elem_global2local, current_domain );
+#endif
         if( rtc != RTC_NORMAL )  goto error;
 
         num_elem[i] = local_mesh->n_elem;
         num_node[i] = local_mesh->n_node;
         num_ielem[i] = local_mesh->ne_internal;
         num_inode[i] = local_mesh->nn_internal;
+#ifdef INAGAKI_PARTITIONER
         sum_elem[i] = local_mesh->n_elem;
         sum_node[i] = local_mesh->n_node;
         sum_ielem[i] = local_mesh->ne_internal;
         sum_inode[i] = local_mesh->nn_internal;
+#endif
 
         ofheader = HECMW_ctrl_get_meshfiles_header_sub( "part_out", global_mesh->n_subdomain, current_domain );
         if( ofheader == NULL ) {
@@ -9682,9 +9967,11 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
 
         HECMW_ctrl_free_meshfiles( ofheader );
         ofheader = NULL;
-        
+
+#ifdef INAGAKI_PARTITIONER
         /*K. Inagaki */
         spdup_clear_IEB( node_flag, elem_flag, current_domain );
+#endif
     }
 
     rtc = HECMW_Allreduce( num_elem, sum_elem, global_mesh->n_subdomain,
@@ -9734,12 +10021,15 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     HECMW_free( sum_node );
     HECMW_free( sum_ielem );
     HECMW_free( sum_inode );
+
+#ifdef INAGAKI_PARTITIONER
     /*K. Inagaki */
     spdup_freelist( global_mesh );
     HECMW_free( node_global2local );
     HECMW_free( elem_global2local );
     HECMW_free( node_flag_neighbor );
     HECMW_free( elem_flag_neighbor );
+#endif
 
     return global_mesh;
 
