@@ -18,22 +18,22 @@ LIBDIR         = $(PREFIX)/lib
 INCLUDEDIR     = $(PREFIX)/include
 
 # Metis
-METISDIR       = $(HOME)/Metis-4.0
+METISDIR       = $(HOME)/Metis-4.0.3
 METISLIBDIR    = $(METISDIR)
 METISINCDIR    = $(METISDIR)/Lib
 
 # ParMetis
-PARMETISDIR    = $(HOME)/ParMetis-3.1
+PARMETISDIR    = $(HOME)/ParMetis-3.2.0
 PARMETISLIBDIR = $(PARMETISDIR)
 PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 
 # Refiner
-REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.0
+REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.03
 REFINERINCDIR  = $(REFINERDIR)/Refiner
 REFINERLIBDIR  = $(REFINERDIR)/lib/x86_64-linux
 
 # Coupler
-REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-1.6.2
+REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-2.0
 REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
 
@@ -57,8 +57,9 @@ CPPOPTFLAGS    = -O3
 # Fortran compiler settings
 F90            = mpif90
 F90FLAGS       =
-F90LDFLAGS     = -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64
+F90LDFLAGS     = -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 F90OPTFLAGS    = -O2
+F90LINKER      = mpif90
 
 MAKE           = make
 AR             = ar ruv

@@ -18,22 +18,22 @@ LIBDIR         = $(PREFIX)/lib
 INCLUDEDIR     = $(PREFIX)/include
 
 # Metis
-METISDIR       = $(HOME)/Metis-4.0
+METISDIR       = $(HOME)/Metis-4.0.3
 METISLIBDIR    = $(METISDIR)
 METISINCDIR    = $(METISDIR)/Lib
 
 # ParMetis
-PARMETISDIR    = $(HOME)/ParMetis-3.1
+PARMETISDIR    = $(HOME)/ParMetis-3.2.0
 PARMETISLIBDIR = $(PARMETISDIR)
 PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 
 # Refiner
-REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.0
+REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.03
 REFINERINCDIR  = $(REFINERDIR)/Refiner
 REFINERLIBDIR  = $(REFINERDIR)/lib/sx_64-linux
 
 # Coupler
-REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-1.6.2
+REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-2.0
 REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
 REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
 
@@ -59,6 +59,7 @@ F90            = sxmpif90
 F90FLAGS       =
 F90LDFLAGS     =
 F90OPTFLAGS    =
+F90LINKER      = sxmpif90
 
 MAKE           = make
 AR             = sxar ruv

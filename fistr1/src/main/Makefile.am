@@ -82,6 +82,7 @@ HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
 ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(METIS_F90LDFLAGS) $(PARMETIS_F90LDFLAGS) $(REVOCAP_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
+F90LINKER               = @f90linker@
 
 AR                      = @ar@
 CP                      = @cp@
@@ -125,13 +126,13 @@ HEADERS =
 all: @build_target_paracon@
 
 build-default: $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
-	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
+	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
 	$(OBJSF) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
 build-with-paracon: $(OBJSFP) $(HECMWLIBDIR) $(FSTRLIBDIR)
-	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
+	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
 	$(OBJSFP) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
