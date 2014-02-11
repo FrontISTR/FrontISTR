@@ -162,10 +162,11 @@ static int **egrp_item = NULL;
 
 
 /*===== speed up (K. Inagaki )=======*/
+static int
 spdup_clear_MMbnd( char *node_flag, char *elem_flag, int current_domain )
 {
     int i, node, elem;
-    
+
     for( i=0; i<n_bnd_nlist[2*current_domain+1]; i++){
         node = bnd_nlist[current_domain][i];
         CLEAR_MM( node_flag[node-1] );
@@ -174,14 +175,14 @@ spdup_clear_MMbnd( char *node_flag, char *elem_flag, int current_domain )
         elem = bnd_elist[current_domain][i];
         CLEAR_MM( elem_flag[elem-1] );
     }
-    return 0;
+    return RTC_NORMAL;
 }
 
 static int
 spdup_clear_IEB( char *node_flag, char *elem_flag, int current_domain )
 {
     int i, node, elem;
-    
+
     for( i=0; i<n_int_nlist[current_domain]; i++){
         node = int_nlist[current_domain][i];
         CLEAR_IEB( node_flag[node-1] );
@@ -198,8 +199,8 @@ spdup_clear_IEB( char *node_flag, char *elem_flag, int current_domain )
         elem = bnd_elist[current_domain][i];
         CLEAR_IEB( elem_flag[elem-1] );
     }
-    
-    return 0;
+
+    return RTC_NORMAL;
 }
 
 static int
@@ -208,27 +209,59 @@ spdup_init_list( const struct hecmwST_local_mesh *global_mesh )
     int i, j, k;
     int js, je;
     int node, n_domain, domain[20], flag;
-    
-    /*init lists for count (calloc) !error handling should be added. */
+
+    /*init lists for count (calloc) */
     n_int_nlist = (int *)HECMW_calloc( global_mesh->n_subdomain, sizeof(int) );
+    if( n_int_nlist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     n_bnd_nlist = (int *)HECMW_calloc( 2*global_mesh->n_subdomain, sizeof(int) );
+    if( n_bnd_nlist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     n_int_elist = (int *)HECMW_calloc( global_mesh->n_subdomain, sizeof(int) );
+    if( n_int_elist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     n_bnd_elist = (int *)HECMW_calloc( 2*global_mesh->n_subdomain, sizeof(int) );
+    if( n_bnd_elist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     int_nlist = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( int_nlist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     bnd_nlist = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( bnd_nlist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     int_elist = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( int_elist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     bnd_elist = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
-    
+    if( bnd_elist == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
     /* count internal node */
     for( i=0; i<global_mesh->n_node; i++ ) {
         n_int_nlist[global_mesh->node_ID[2*i+1]]++;
     }
-    
+
     /*count internal elem */
     for( i=0; i<global_mesh->n_elem; i++ ) {
         n_int_elist[global_mesh->elem_ID[2*i+1]]++;
     }
-    
+
     /*count boundary node and elem */
     for( i=0; i<global_mesh->n_elem; i++ ) {
         js = global_mesh->elem_node_index[i];
@@ -249,7 +282,7 @@ spdup_init_list( const struct hecmwST_local_mesh *global_mesh )
                 n_domain++;
             }
         }
-        
+
         if(n_domain > 1){
             for( j=0; j<n_domain; j++ ) {
                 n_bnd_elist[domain[j]]++;
@@ -257,17 +290,35 @@ spdup_init_list( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     /*allocate node/element list of each domain */
-    /*error handling should be added. */
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
         int_nlist[i] = (int *)HECMW_calloc( n_int_nlist[i] , sizeof(int) );
+        if( int_nlist[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         bnd_nlist[i] = (int *)HECMW_calloc( n_bnd_nlist[i] , sizeof(int) );
+        if( bnd_nlist[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         int_elist[i] = (int *)HECMW_calloc( n_int_elist[i] , sizeof(int) );
+        if( int_elist[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         bnd_elist[i] = (int *)HECMW_calloc( n_bnd_elist[i] , sizeof(int) );
+        if( bnd_elist[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
     }
-    
-    return 0;
+
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int int_cmp(const void *v1, const void *v2)
@@ -287,7 +338,7 @@ get_boundary_nodelist( const struct hecmwST_local_mesh *global_mesh ,int domain 
 {
     int i, j, k;
     int ks, ke, node, elem, counter;
-        
+
     for(counter=0, j=0; j<n_bnd_elist[2*domain+1]; j++){
         elem = bnd_elist[domain][j];
         ks = global_mesh->elem_node_index[elem-1];
@@ -298,9 +349,9 @@ get_boundary_nodelist( const struct hecmwST_local_mesh *global_mesh ,int domain 
             counter++;
         }
     }
-    
+
     qsort(bnd_nlist[domain], counter, sizeof(int), int_cmp);
-    
+
     i=1;
     for(j=1; j<counter; j++){
         if(bnd_nlist[domain][j-1] != bnd_nlist[domain][j]){
@@ -308,10 +359,10 @@ get_boundary_nodelist( const struct hecmwST_local_mesh *global_mesh ,int domain 
             i++;
         }
     }
-    
+
     n_bnd_nlist[2*domain+1] = i;
 
-    return 0;
+    return RTC_NORMAL;
 }
 
 static int
@@ -321,11 +372,15 @@ sort_and_resize_bndlist( const struct hecmwST_local_mesh *global_mesh ,int domai
     int *work = NULL;
     int bnd_and_int, bnd_not_int;
     int n_nlist, n_elist;
-    
+
     /*boundary node list */
     n_nlist = n_bnd_nlist[2*domain+1];
     work = (int *)HECMW_malloc( n_nlist * sizeof(int) );
-    
+    if( work == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
     /*sort */
     bnd_and_int = 0;
     bnd_not_int = 0;
@@ -346,19 +401,27 @@ sort_and_resize_bndlist( const struct hecmwST_local_mesh *global_mesh ,int domai
     n_bnd_nlist[2*domain] = bnd_and_int;
     n_bnd_nlist[2*domain+1] = bnd_and_int+bnd_not_int;
     HECMW_assert( n_nlist == n_bnd_nlist[2*domain+1] );
-    
+
     /*resize */
     HECMW_free( bnd_nlist[domain] );
     bnd_nlist[domain] = (int *)HECMW_calloc( n_nlist , sizeof(int) );
+    if( bnd_nlist[domain] == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for(i=0; i<n_nlist; i++){
         bnd_nlist[domain][i] = work[i];
     }
     HECMW_free( work );
-    
+
     /*boundary element list */
     n_elist = n_bnd_elist[2*domain+1];
     work = (int *)HECMW_malloc( n_elist * sizeof(int) );
-    
+    if( work == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
     /*sort */
     bnd_and_int = 0;
     bnd_not_int = 0;
@@ -383,8 +446,11 @@ sort_and_resize_bndlist( const struct hecmwST_local_mesh *global_mesh ,int domai
     }
     HECMW_free( work );
     HECMW_assert( n_elist == n_bnd_elist[2*domain+1] );
-    
-    return 0;
+
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
@@ -394,7 +460,8 @@ spdup_make_list( const struct hecmwST_local_mesh *global_mesh )
     int js, je, ks, ke;
     int node, elem, n_domain, domain[20], flag;
     int current_domain;
-    
+    int rtc;
+
     /*clear counters */
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         n_int_nlist[i] = 0;
@@ -404,21 +471,21 @@ spdup_make_list( const struct hecmwST_local_mesh *global_mesh )
         n_bnd_elist[2*i] = 0;
         n_bnd_elist[2*i+1] = 0;
     }
-    
+
     /* internal nodelist for each domain */
     for( i=0; i<global_mesh->n_node; i++ ) {
         current_domain = global_mesh->node_ID[2*i+1];
         int_nlist[current_domain][n_int_nlist[current_domain]] = i+1;
         n_int_nlist[current_domain]++;
     }
-    
+
     /* internal elemlist for each domain */
     for( i=0; i<global_mesh->n_elem; i++ ) {
         current_domain = global_mesh->elem_ID[2*i+1];
         int_elist[current_domain][n_int_elist[current_domain]] = i+1;
         n_int_elist[current_domain]++;
     }
-    
+
     /* boundary elemlist for each domain */
     for( i=0; i<global_mesh->n_elem; i++ ) {
         js = global_mesh->elem_node_index[i];
@@ -439,7 +506,7 @@ spdup_make_list( const struct hecmwST_local_mesh *global_mesh )
                 n_domain++;
             }
         }
-        
+
         if(n_domain > 1){
             for( j=0; j<n_domain; j++ ) {
                 bnd_elist[domain[j]][n_bnd_elist[2*domain[j]+1]] = i+1;
@@ -447,17 +514,22 @@ spdup_make_list( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     /* boundary nodelist for each domain */
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
-        get_boundary_nodelist( global_mesh , i );
+        rtc = get_boundary_nodelist( global_mesh , i );
+        if( rtc != RTC_NORMAL )  goto error;
     }
 
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
-        sort_and_resize_bndlist( global_mesh , i);
+        rtc = sort_and_resize_bndlist( global_mesh , i);
+        if( rtc != RTC_NORMAL )  goto error;
     }
-    
-    return 0;
+
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
@@ -469,9 +541,13 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
     int **domain = NULL;
     int current_domain;
     int counter[global_mesh->n_subdomain];
-    
+
     /*make list of node to domain(both internal and boundary) */
     n_domain = (int *)HECMW_calloc( global_mesh->n_node , sizeof(int) );
+    if( n_domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     /*count outer node(boundary and not internal) */
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         n_bnd = n_bnd_nlist[2*i];
@@ -484,8 +560,16 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
     }
     /*make list */
     domain = (int **)HECMW_malloc( global_mesh->n_node * sizeof(int *) );
+    if( domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_node; i++ ) {
         domain[i] = (int *)HECMW_malloc( (n_domain[i]+1) * sizeof(int) ); /*+1 means internal node */
+        if( domain[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         domain[i][0] = global_mesh->node_ID[2*i+1];
         n_domain[i] = 1;
     }
@@ -499,11 +583,19 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
             n_domain[node-1]++;
         }
     }
-    
+
     /*make ngroup index list */
     ngrp_idx = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( ngrp_idx == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         ngrp_idx[i] = (int *)HECMW_calloc( (node_group_global->n_grp + 1) , sizeof(int) );
+        if( ngrp_idx[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
     }
     for( i=0; i<node_group_global->n_grp; i++ ) {/*skip group "ALL" */
         for( j=0; j<global_mesh->n_subdomain; j++){
@@ -520,11 +612,19 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     /*make ngroup item list */
     ngrp_item = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( ngrp_item == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         ngrp_item[i] = (int *)HECMW_malloc( ngrp_idx[i][node_group_global->n_grp] * sizeof(int) );
+        if( ngrp_item[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         counter[i] = 0;
     }
     for( i=0; i<node_group_global->n_grp; i++ ) {/*skip group "ALL" */
@@ -540,13 +640,16 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
         HECMW_free( domain[i] );
     }
     HECMW_free( n_domain );
     HECMW_free( domain );
-    return 0;
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
@@ -558,9 +661,13 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
     int **domain = NULL;
     int current_domain;
     int counter[global_mesh->n_subdomain];
-    
+
     /*make list of elem to domain(both internal and boundary) */
     n_domain = (int *)HECMW_calloc( global_mesh->n_elem , sizeof(int) );
+    if( n_domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     /*count outer elem(boundary and not internal) */
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         n_bnd = n_bnd_elist[2*i];
@@ -573,8 +680,16 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
     }
     /*make list */
     domain = (int **)HECMW_malloc( global_mesh->n_elem * sizeof(int *) );
+    if( domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_elem; i++ ) {
         domain[i] = (int *)HECMW_malloc( (n_domain[i]+1) * sizeof(int) ); /*+1 means internal elem */
+        if( domain[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         domain[i][0] = global_mesh->elem_ID[2*i+1];
         n_domain[i] = 1;
     }
@@ -588,11 +703,19 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
             n_domain[elem-1]++;
         }
     }
-    
+
     /*make egroup index list */
     egrp_idx = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( egrp_idx == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         egrp_idx[i] = (int *)HECMW_calloc( (elem_group_global->n_grp + 1) , sizeof(int) );
+        if( egrp_idx[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
     }
     for( i=0; i<elem_group_global->n_grp; i++ ) {/*skip group "ALL" */
         for( j=0; j<global_mesh->n_subdomain; j++){
@@ -609,11 +732,19 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     /*make egroup item list */
     egrp_item = (int **)HECMW_malloc( global_mesh->n_subdomain * sizeof(int *) );
+    if( egrp_item == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for( i=0; i<global_mesh->n_subdomain; i++ ) {
         egrp_item[i] = (int *)HECMW_malloc( egrp_idx[i][elem_group_global->n_grp] * sizeof(int) );
+        if( egrp_item[i] == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
         counter[i] = 0;
     }
     for( i=0; i<elem_group_global->n_grp; i++ ) {/*skip group "ALL" */
@@ -629,36 +760,51 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
             }
         }
     }
-    
+
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
         HECMW_free( domain[i] );
     }
     HECMW_free( n_domain );
     HECMW_free( domain );
-    return 0;
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
 static int
 spdup_makelist_main( const struct hecmwST_local_mesh *global_mesh )
 {
-    
-    spdup_init_list( global_mesh );
-    spdup_make_list( global_mesh );
-    spdup_make_node_grouplist( global_mesh );
-    spdup_make_element_grouplist( global_mesh );
-    return 0;
+    int rtc;
+
+    rtc = spdup_init_list( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = spdup_make_list( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = spdup_make_node_grouplist( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = spdup_make_element_grouplist( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    return RTC_NORMAL;
+
+error:
+    return RTC_ERROR;
 }
 
-static int
+static void
 spdup_freelist( const struct hecmwST_local_mesh *global_mesh )
 {
     int i;
-    
+
     HECMW_free( n_int_nlist );
     HECMW_free( n_bnd_nlist );
     HECMW_free( n_int_elist );
     HECMW_free( n_bnd_elist );
-    
+
 
     for(i=0; i<global_mesh->n_subdomain; i++ ) {
         HECMW_free( int_nlist[i] );
@@ -670,7 +816,7 @@ spdup_freelist( const struct hecmwST_local_mesh *global_mesh )
         HECMW_free( egrp_idx[i] );
         HECMW_free( egrp_item[i] );
     }
-    
+
     HECMW_free( int_nlist );
     HECMW_free( bnd_nlist );
     HECMW_free( int_elist );
@@ -679,7 +825,6 @@ spdup_freelist( const struct hecmwST_local_mesh *global_mesh )
     HECMW_free( ngrp_item );
     HECMW_free( egrp_idx );
     HECMW_free( egrp_item );
-    return 0;
 }
 
 #endif /* INAGAKI_PARTITIONER */
@@ -1582,7 +1727,7 @@ free_struct_result_data( struct hecmwST_result_data *result_data )
         for( i=0; i<result_data->nn_component; i++ ) {
             HECMW_free( result_data->node_label[i] );
         }
-	    HECMW_free( result_data->node_label );
+        HECMW_free( result_data->node_label );
     }
     if( result_data->elem_label ) {
         for( i=0; i<result_data->ne_component; i++ ) {
@@ -3302,6 +3447,10 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     /* aggregate contact pair if requested */
     cp = global_mesh->contact_pair;
     mark = (int *) HECMW_malloc( global_mesh->n_node * sizeof(int) );
+    if( mark == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
     for (i = 0; i < global_mesh->n_node; i++) {
         mark[i] = -1;
     }
@@ -3385,6 +3534,8 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     HECMW_graph_finalize(&graph2);
     HECMW_free( node_graph_index );
     HECMW_free( node_graph_item );
+    HECMW_free( mark );
+    HECMW_free( node_weight2 );
     HECMW_free( belong_domain );
 
     return n_edgecut;
@@ -3392,6 +3543,8 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
 error:
     HECMW_free( node_graph_index );
     HECMW_free( node_graph_item );
+    HECMW_free( mark );
+    HECMW_free( node_weight2 );
     HECMW_free( belong_domain );
 
     return -1;
@@ -4081,7 +4234,7 @@ static int
 mask_overlap_elem( char *elem_flag, int domain )
 {
     int i, elem;
-    
+
     for( i=0; i<n_bnd_elist[2*domain+1]; i++ ) {
         elem = bnd_elist[domain][i];
         MASK_BIT( elem_flag[elem-1], OVERLAP );
@@ -4127,7 +4280,7 @@ mask_boundary_node_mod( const struct hecmwST_local_mesh *global_mesh, char *node
         MASK_BIT( node_flag[node-1], OVERLAP );
         MASK_BIT( node_flag[node-1], BOUNDARY );
     }
-    
+
     return RTC_NORMAL;
 }
 
@@ -4726,7 +4879,7 @@ count_masked_shared_elem( const struct hecmwST_local_mesh *global_mesh,
 {
     int counter;
     int i, elem;
-    
+
     for( counter=0, i=0; i<n_bnd_elist[2*domain+1]; i++ ){
         elem = bnd_elist[domain][i];
         if( EVAL_BIT( elem_flag[elem-1], MASK ) )  counter++;
@@ -4840,11 +4993,11 @@ create_shared_elem_pre( const struct hecmwST_local_mesh *global_mesh,
 {
     int counter;
     int i, idx1, idx2, elem1, elem2, n_bnd, n_out, maxe;
-    
+
     n_bnd = n_bnd_elist[2*neighbor_domain];
     n_out = n_bnd_elist[2*neighbor_domain+1]-n_bnd_elist[2*neighbor_domain];
     maxe = global_mesh->n_elem+1;
-    
+
     elem1 = (n_bnd == 0) ? maxe : bnd_elist[neighbor_domain][0];
     elem2 = (n_out == 0) ? maxe : bnd_elist[neighbor_domain][n_bnd];
     for( counter=0, idx1=0, idx2=0, i=0; i<n_bnd+n_out; i++ ) {
@@ -5129,9 +5282,14 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
 
 #ifdef INAGAKI_PARTITIONER
         /*K. Inagaki */
-        spdup_clear_IEB( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
-        spdup_clear_MMbnd( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
-        spdup_clear_MMbnd( node_flag, elem_flag, current_domain );
+        rtc = spdup_clear_IEB( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
+        if( rtc != RTC_NORMAL )  goto error;
+
+        rtc = spdup_clear_MMbnd( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
+        if( rtc != RTC_NORMAL )  goto error;
+
+        rtc = spdup_clear_MMbnd( node_flag, elem_flag, current_domain );
+        if( rtc != RTC_NORMAL )  goto error;
 #endif
     }
 
@@ -6139,7 +6297,7 @@ set_elem_global2local_all( const struct hecmwST_local_mesh *global_mesh,
     n_bnd = n_bnd_elist[2*domain];
     n_out = n_bnd_elist[2*domain+1]-n_bnd_elist[2*domain];
     maxe = global_mesh->n_elem+1;
-    
+
     elem1 = (n_int == 0) ? maxe : int_elist[domain][0];
     elem2 = (n_out == 0) ? maxe : bnd_elist[domain][n_bnd];
     for( counter=0, idx1=0, idx2=0, i=0; i<n_int+n_out; i++ ) {
@@ -6153,7 +6311,7 @@ set_elem_global2local_all( const struct hecmwST_local_mesh *global_mesh,
             elem2 = (idx2 == n_out) ? maxe : bnd_elist[domain][idx2+n_bnd];
         }
     }
-    
+
     local_mesh->n_elem = counter;
     local_mesh->n_elem_gross = counter;
 
@@ -6251,7 +6409,7 @@ const_elem_internal_list( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-    
+
     for( counter=0, i=0; i<n_int_elist[domain]; i++ ) {
         elem = int_elist[domain][i];
         local_mesh->elem_internal_list[counter++] = elem_global2local[elem-1];
@@ -6439,7 +6597,7 @@ set_elem_local2global_mod( const struct hecmwST_local_mesh *global_mesh,
     n_bnd = n_bnd_elist[2*domain];
     n_out = n_bnd_elist[2*domain+1]-n_bnd_elist[2*domain];
     maxe = global_mesh->n_elem+1;
-    
+
     elem1 = (n_int == 0) ? maxe : int_elist[domain][0];
     elem2 = (n_out == 0) ? maxe : bnd_elist[domain][n_bnd];
     for( counter=0, idx1=0, idx2=0, i=0; i<n_int+n_out; i++ ) {
@@ -6687,7 +6845,7 @@ const_node_dof_index_mod( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-    
+
     for( counter=0, i=0; i<global_mesh->n_dof_grp; i++ ) {
         for( j=0; j<n_int_nlist[domain]; j++ ) {
             node = int_nlist[domain][j];
@@ -8797,7 +8955,7 @@ const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
                                        n_eqn_item, eqn_block_idx, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
         break;
-        
+
     case HECMW_FLAG_PARTTYPE_ELEMBASED:  /* for element-based partitioning */
         rtc = const_node_grp_index( global_mesh, local_mesh,
                                 node_global2local, n_eqn_item, eqn_block_idx );
@@ -8806,7 +8964,7 @@ const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
                                    node_global2local, n_eqn_item, eqn_block_idx );
         if( rtc != RTC_NORMAL )  goto error;
         break;
-        
+
     default:
         HECMW_set_error( errno, "" );
         goto error;
@@ -8894,7 +9052,7 @@ const_elem_grp_index_mod( const struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
-    
+
     for( counter=0, i=0; i<elem_group_global->n_grp; i++ ) {
         if( elem_group_global->grp_index[i+1] - elem_group_global->grp_index[i] == global_mesh->n_elem ){
             counter += n_int_elist[domain];
@@ -9052,14 +9210,14 @@ const_elem_grp_info( const struct hecmwST_local_mesh *global_mesh,
                                        elem_global2local, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
         break;
-        
+
     case HECMW_FLAG_PARTTYPE_ELEMBASED:  /* for element-based partitioning */
         rtc = const_elem_grp_index( global_mesh, local_mesh, elem_global2local );
         if( rtc != RTC_NORMAL )  goto error;
         rtc = const_elem_grp_item( global_mesh, local_mesh, elem_global2local );
         if( rtc != RTC_NORMAL )  goto error;
         break;
-        
+
     default:
         HECMW_set_error( errno, "" );
         goto error;
@@ -9860,7 +10018,8 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
 
 #ifdef INAGAKI_PARTITIONER
     /*K. Inagaki */
-    spdup_makelist_main( global_mesh );
+    rtc = spdup_makelist_main( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
 #endif
 
     node_flag = (char *)HECMW_calloc( global_mesh->n_node, sizeof(char) );
