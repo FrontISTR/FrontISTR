@@ -58,6 +58,8 @@ module hecmw_precond_SSOR_33
   integer(kind=kint), pointer :: perm(:) => null()
   integer(kind=kint), pointer :: iperm(:) => null()
 
+  logical, save :: isFirst = .true.
+
 contains
 
   subroutine hecmw_precond_SSOR_33_setup(hecMAT)
@@ -223,6 +225,8 @@ contains
       ALU(9*ii  )= ALUtmp(3,3)
     enddo
 
+    isFirst = .true.
+
     !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_SSOR_33_setup
@@ -234,7 +238,6 @@ contains
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
 
     ! added for turning >>>
-    logical, save :: isFirst = .true.
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
     integer(kind=kint), save :: numOfThread = 1, numOfBlock
     integer(kind=kint), save, allocatable :: icToBlockIndex(:)
@@ -247,6 +250,8 @@ contains
     if (isFirst .eqv. .true.) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
+      if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
+      if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
       allocate (icToBlockIndex(0:NColor), &
            blockIndexToColorIndex(0:numOfBlock + NColor))
       numOfElement = N + indexL(N) + indexU(N)

@@ -42,6 +42,8 @@ module hecmw_matrix_misc
   subroutine hecmw_mat_init( hecMAT )
     type(hecmwST_matrix) :: hecMAT
 
+    call hecmw_nullify_matrix( hecMAT )
+
     hecMAT%Iarray = 0
     hecMAT%Rarray = 0.d0
 
@@ -61,6 +63,8 @@ module hecmw_matrix_misc
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
     call hecmw_mat_set_ncolor_in( hecMAT, 100 )
+
+    call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
