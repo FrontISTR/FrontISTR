@@ -46,6 +46,7 @@ double HECMW_Wtick(void)
 /* interface for fortran */
 
 
+double hecmw_wtime_fi(void) { return HECMW_Wtime(); }
 double hecmw_wtime_fi_(void) { return HECMW_Wtime(); }
 double hecmw_wtime_fi__(void) { return HECMW_Wtime(); }
 double HECMW_WTIME_FI(void) { return HECMW_Wtime(); }
@@ -53,6 +54,7 @@ double HECMW_WTIME_FI_(void) { return HECMW_Wtime(); }
 double HECMW_WTIME_FI__(void) { return HECMW_Wtime(); }
 
 
+double hecmw_wtick_fi(void) { return HECMW_Wtick(); }
 double hecmw_wtick_fi_(void) { return HECMW_Wtick(); }
 double hecmw_wtick_fi__(void) { return HECMW_Wtick(); }
 double HECMW_WTICK_FI(void) { return HECMW_Wtick(); }

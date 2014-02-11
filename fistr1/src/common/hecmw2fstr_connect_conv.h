@@ -21,7 +21,7 @@
 /*                                                                      */
 /*======================================================================*/
 
-void hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] );
+void c_hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] );
 
 /*======================================================================*/
 /*                                                                      */
@@ -30,5 +30,5 @@ void hecmw2fstr_connect_conv( int n_elem, int elem_type[], int elem_node_index[]
 /*                                                                      */
 /*======================================================================*/
 
-void fstr2hecmw_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] );
-void fstr2hecmw_elem_conv( int elem_type, int node[] );
+void c_fstr2hecmw_connect_conv( int n_elem, int elem_type[], int elem_node_index[], int elem_node_item[] );
+void c_fstr2hecmw_elem_conv( int elem_type, int node[] );

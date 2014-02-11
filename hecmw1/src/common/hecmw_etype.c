@@ -886,38 +886,47 @@ HECMW_is_etype_33struct(int etype)
 
 /* interface for fortran -- added by Kazuya Goto (AdvanceSoft) */
 
+int hecmw_get_max_node_if(int *etype) { return HECMW_get_max_node(*etype); }
 int hecmw_get_max_node_if_(int *etype) { return HECMW_get_max_node(*etype); }
 int hecmw_get_max_node_if__(int *etype) { return HECMW_get_max_node(*etype); }
 int HECMW_GET_MAX_NODE_IF(int *etype) { return HECMW_get_max_node(*etype); }
 
+int hecmw_is_etype_rod_if(int *etype) { return HECMW_is_etype_rod(*etype); }
 int hecmw_is_etype_rod_if_(int *etype) { return HECMW_is_etype_rod(*etype); }
 int hecmw_is_etype_rod_if__(int *etype) { return HECMW_is_etype_rod(*etype); }
 int HECMW_IS_ETYPE_ROD_IF(int *etype) { return HECMW_is_etype_rod(*etype); }
 
+int hecmw_is_etype_surface_if(int *etype) { return HECMW_is_etype_surface(*etype); }
 int hecmw_is_etype_surface_if_(int *etype) { return HECMW_is_etype_surface(*etype); }
 int hecmw_is_etype_surface_if__(int *etype) { return HECMW_is_etype_surface(*etype); }
 int HECMW_IS_ETYPE_SURFACE_IF(int *etype) { return HECMW_is_etype_surface(*etype); }
 
+int hecmw_is_etype_solid_if(int *etype) { return HECMW_is_etype_solid(*etype); }
 int hecmw_is_etype_solid_if_(int *etype) { return HECMW_is_etype_solid(*etype); }
 int hecmw_is_etype_solid_if__(int *etype) { return HECMW_is_etype_solid(*etype); }
 int HECMW_IS_ETYPE_SOLID_IF(int *etype) { return HECMW_is_etype_solid(*etype); }
 
+int hecmw_is_etype_interface_if(int *etype) { return HECMW_is_etype_interface(*etype); }
 int hecmw_is_etype_interface_if_(int *etype) { return HECMW_is_etype_interface(*etype); }
 int hecmw_is_etype_interface_if__(int *etype) { return HECMW_is_etype_interface(*etype); }
 int HECMW_IS_ETYPE_INTERFACE_IF(int *etype) { return HECMW_is_etype_interface(*etype); }
 
+int hecmw_is_etype_beam_if(int *etype) { return HECMW_is_etype_beam(*etype); }
 int hecmw_is_etype_beam_if_(int *etype) { return HECMW_is_etype_beam(*etype); }
 int hecmw_is_etype_beam_if__(int *etype) { return HECMW_is_etype_beam(*etype); }
 int HECMW_IS_ETYPE_BEAM_IF(int *etype) { return HECMW_is_etype_beam(*etype); }
 
+int hecmw_is_etype_shell_if(int *etype) { return HECMW_is_etype_shell(*etype); }
 int hecmw_is_etype_shell_if_(int *etype) { return HECMW_is_etype_shell(*etype); }
 int hecmw_is_etype_shell_if__(int *etype) { return HECMW_is_etype_shell(*etype); }
 int HECMW_IS_ETYPE_SHELL_IF(int *etype) { return HECMW_is_etype_shell(*etype); }
 
+int hecmw_is_etype_link_if(int *etype) { return HECMW_is_etype_link(*etype); }
 int hecmw_is_etype_link_if_(int *etype) { return HECMW_is_etype_link(*etype); }
 int hecmw_is_etype_link_if__(int *etype) { return HECMW_is_etype_link(*etype); }
 int HECMW_IS_ETYPE_LINK_IF(int *etype) { return HECMW_is_etype_link(*etype); }
 
+int hecmw_is_etype_33struct_if(int *etype) { return HECMW_is_etype_33struct(*etype); }
 int hecmw_is_etype_33struct_if_(int *etype) { return HECMW_is_etype_33struct(*etype); }
 int hecmw_is_etype_33struct_if__(int *etype) { return HECMW_is_etype_33struct(*etype); }
 int HECMW_IS_ETYPE_33STRUCT_IF(int *etype) { return HECMW_is_etype_33struct(*etype); }
