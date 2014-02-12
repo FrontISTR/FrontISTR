@@ -695,7 +695,7 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Iarray(2) =    1    ! = method
         hecMAT%Iarray(3) =    1    ! = precond
         hecMAT%Iarray(4) =    0    ! = nset
-        hecMAT%Iarray(5) =    0    ! = iterpremax
+        hecMAT%Iarray(5) =    1    ! = iterpremax
         hecMAT%Iarray(6) =   10    ! = nrest
         hecMAT%Iarray(7) =    0    ! = scaling
         hecMAT%Iarray(21)=  kNO    ! = iterlog

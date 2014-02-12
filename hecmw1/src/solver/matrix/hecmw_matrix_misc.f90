@@ -48,7 +48,18 @@ module hecmw_matrix_misc
     hecMAT%Rarray = 0.d0
 
     call hecmw_mat_set_iter( hecMAT, 100 )
+    call hecmw_mat_set_method( hecMAT, 1 )
+    call hecmw_mat_set_precond( hecMAT, 1 )
+    call hecmw_mat_set_nset( hecMAT, 0 )
+    call hecmw_mat_set_iterpremax( hecMAT, 1 )
     call hecmw_mat_set_nrest( hecMAT, 10 )
+    call hecmw_mat_set_scaling( hecMAT, 0 )
+    call hecmw_mat_set_iterlog( hecMAT, 0 )
+    call hecmw_mat_set_timelog( hecMAT, 0 )
+    call hecmw_mat_set_dump( hecMAT, 0 )
+    call hecmw_mat_set_dump_exit( hecMAT, 0 )
+    call hecmw_mat_set_usejad( hecMAT, 0 )
+    call hecmw_mat_set_ncolor_in( hecMAT, 10 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
     call hecmw_mat_set_sigma_diag( hecMAT, 1.d0 )
@@ -58,11 +69,6 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
-
-    call hecmw_mat_set_dump( hecMAT, 0 )
-    call hecmw_mat_set_dump_exit( hecMAT, 0 )
-    call hecmw_mat_set_usejad( hecMAT, 0 )
-    call hecmw_mat_set_ncolor_in( hecMAT, 10 )
 
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
