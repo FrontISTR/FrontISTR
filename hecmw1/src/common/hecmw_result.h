@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.5                                               *
+ *         Version : 2.6                                               *
  *                                                                     *
  *     Last Update : 2006/06/01                                        *
  *        Category : I/O and Utility                                   *

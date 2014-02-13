@@ -1,7 +1,7 @@
 !======================================================================!
 !                                                                      !
 !   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.5                                                !
+!         Version : 2.6                                                !
 !                                                                      !
 !     Last Update : 2007/08/06                                         !
 !        Category : Matrix Operation                                   !
