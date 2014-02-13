@@ -176,9 +176,11 @@ $(TARGET): $(OBJS)
 
 $(F90TARGET): $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
+	F90="$(F90) $(F90FLAGS)" F90TARGET="$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
 
 F90TARGET_MUMPS: $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
 	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
+	F90="$(F90) $(F90FLAGS)" F90TARGET="$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
 
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
@@ -199,5 +201,6 @@ clean:
 	@cd physics    && $(MAKE) clean
 	@cd contact    && $(MAKE) clean
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
+	${RM} test_flush.log
 
 distclean: clean
