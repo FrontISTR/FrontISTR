@@ -165,7 +165,10 @@ module m_fstr_ass_load
           else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.     &
                    ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
             call DL_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,ltype,params,vect(1:nn*ndof),nsize)
-!
+          else if ( ic_type==641 ) then
+            ihead = hecMESH%section%sect_R_index(isect-1) 
+            call DL_Beam_641(ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), rho, ltype, params, &
+                             hecMESH%section%sect_R_item(ihead+1:), vect(1:nn*ndof), nsize) 
           else if( ( ic_type==741 ) .or. ( ic_type==743 ) .or. ( ic_type==731 ) ) then
             call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize)
           endif

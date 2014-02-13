@@ -144,7 +144,7 @@ contains
                        +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
                        +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
             a = hecMESH%section%sect_R_item(ihead+4)
-            val = 0.25D0*AA*a*rho
+            val = 0.5D0*AA*a*rho
           endif
 !C
           do j = 1,nn
@@ -158,6 +158,28 @@ contains
               myEIG%mass(js+4) = myEIG%mass(js+4) + val*thick**2/12.0
               myEIG%mass(js+5) = myEIG%mass(js+5) + val*thick**2/12.0
               myEIG%mass(js+6) = myEIG%mass(js+6) + val*thick**2/12.0
+            else if( ic_type.eq.761 ) then
+              IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR. ( j .EQ. 3 ) ) THEN
+               myEIG%mass(js+1) = myEIG%mass(js+1) + val
+               myEIG%mass(js+2) = myEIG%mass(js+2) + val
+               myEIG%mass(js+3) = myEIG%mass(js+3) + val
+              ELSE IF( ( j .EQ. 4 ) .OR. ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) ) THEN
+               myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
+               myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
+               myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+              END IF
+            else if( ic_type.eq.781 ) then
+              IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR.   &
+                  ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN 
+               myEIG%mass(js+1) = myEIG%mass(js+1) + val
+               myEIG%mass(js+2) = myEIG%mass(js+2) + val
+               myEIG%mass(js+3) = myEIG%mass(js+3) + val
+              ELSE IF( ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) .OR.   &
+                       ( j .EQ. 7 ) .OR. ( j .EQ. 8 ) ) THEN 
+               myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
+               myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
+               myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+              END IF
             elseif( ic_type.EQ.611 ) then
               myEIG%mass(js+1) = myEIG%mass(js+1) + val
               myEIG%mass(js+2) = myEIG%mass(js+2) + val

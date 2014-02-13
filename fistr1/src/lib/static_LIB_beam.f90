@@ -169,7 +169,7 @@ contains
    END SUBROUTINE
    
    
-      ! (Gaku Hashimoto, The University of Tokyo, 2013/09/13) <
+      ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
       !> Calculate stiff matrix of BEAM elements
 !####################################################################
       SUBROUTINE STF_Beam_641                                         &
@@ -192,6 +192,7 @@ contains
       
       REAL(KIND = kreal) :: refv(3)
       REAL(KIND = kreal) :: trans(3, 3), transt(3, 3)
+      REAL(kind = kreal) :: ec(3, 2)
       REAL(KIND = kreal) :: tempc
       REAL(KIND = kreal) :: ina1(1), outa1(2)
       REAL(KIND = kreal) :: ee, pp
@@ -207,7 +208,14 @@ contains
       refv(2) = section(2)
       refv(3) = section(3)
       
-      CALL framtr(refv, ecoord, le, trans)
+      ec(1, 1) = ecoord(1, 1)
+      ec(2, 1) = ecoord(2, 1)
+      ec(3, 1) = ecoord(3, 1)
+      ec(1, 2) = ecoord(1, 2)
+      ec(2, 2) = ecoord(2, 2)
+      ec(3, 2) = ecoord(3, 2)
+      
+      CALL framtr(refv, ec, le, trans)
       
       transt= TRANSPOSE( trans )
       
@@ -374,10 +382,134 @@ contains
 !####################################################################
       END SUBROUTINE STF_Beam_641
 !####################################################################
-      ! > (Gaku Hashimoto, The University of Tokyo, 2013/09/13)
+      ! > (Gaku Hashimoto, The University of Tokyo, 2014/02/06)
       
       
-      ! (Gaku Hashimoto, The University of Tokyo, 2013/09/13) <
+      ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) < 
+!####################################################################
+      SUBROUTINE DL_Beam_641(etype, nn, xx, yy, zz, rho, ltype, params, &
+                             section, vect, nsize)                      
+!####################################################################
+!**
+!**  SET DLOAD
+!** 
+!   BX   LTYPE=1  :BODY FORCE IN X-DIRECTION
+!   BY   LTYPE=2  :BODY FORCE IN Y-DIRECTION
+!   BZ   LTYPE=3  :BODY FORCE IN Z-DIRECTION
+!   GRAV LTYPE=4  :GRAVITY FORCE
+!   CENT LTYPE=5  :CENTRIFUGAL LOAD
+!   P1   LTYPE=10 :TRACTION IN NORMAL-DIRECTION FOR FACE-1
+!   P2   LTYPE=20 :TRACTION IN NORMAL-DIRECTION FOR FACE-2
+!   P3   LTYPE=30 :TRACTION IN NORMAL-DIRECTION FOR FACE-3
+!   P4   LTYPE=40 :TRACTION IN NORMAL-DIRECTION FOR FACE-4
+!   P5   LTYPE=50 :TRACTION IN NORMAL-DIRECTION FOR FACE-5
+!   P6   LTYPE=60 :TRACTION IN NORMAL-DIRECTION FOR FACE-6
+! I/F VARIABLES
+      INTEGER(KIND = kint), INTENT(IN)  :: etype, nn
+      REAL(KIND = kreal), INTENT(IN)    :: xx(:), yy(:), zz(:)
+      REAL(KIND = kreal), INTENT(IN)    :: params(0:6)
+      REAL(KIND = kreal), INTENT(IN)    :: section(:)
+      REAL(KIND = kreal), INTENT(INOUT) :: vect(:)
+      REAL(KIND = kreal) :: rho
+      INTEGER(KIND = kint) :: ltype, nsize
+! LOCAL VARIABLES
+      INTEGER(KIND = kint) :: ndof
+      PARAMETER(ndof = 3)
+      REAL(KIND = kreal) :: h(nn)
+      REAL(KIND = kreal) :: xj(3, 3), det, wg
+      INTEGER(KIND = kint) :: ivol, isuf
+      INTEGER(KIND = kint) :: nod(nn)
+      INTEGER(KIND = kint) :: ig2, lx, i ,surtype, nsur
+      REAL(KIND = kreal) :: vx, vy, vz, xcod, ycod, zcod
+      REAL(KIND = kreal) :: ax, ay, az, rx, ry, rz, hx, hy, hz, val
+      REAL(KIND = kreal) :: phx, phy, phz
+      REAL(KIND = kreal) :: coefx, coefy, coefz
+      REAL(KIND = kreal) :: normal(3), localcoord(3), elecoord(3, nn), deriv(nn, 3)
+      REAL(KIND = kreal) :: a, aa
+      
+!--------------------------------------------------------------------
+      
+      val = params(0)
+      
+      !--------------------------------------------------------------
+      
+      ivol = 0
+      isuf = 0
+      
+      IF( ltype .LT. 10 ) THEN
+       
+       ivol = 1
+       
+      ELSE IF( ltype .GE. 10 ) THEN
+       
+       isuf = 1
+       
+       CALL getSubFace(etype, ltype/10, surtype, nod)
+       
+       nsur = getNumberOfNodes(surtype)
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      nsize = nn*ndof
+      
+!--------------------------------------------------------------------
+      
+      vect(1:nsize) = 0.0D0
+      
+      !--------------------------------------------------------------
+      
+      ! Volume force
+      
+      IF( ivol .EQ. 1 ) THEN
+       
+       IF( ltype .EQ. 4 ) THEN
+        
+        AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
+                   +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
+                   +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
+        
+        a = section(4)
+        
+        vx = params(1)
+        vy = params(2)
+        vz = params(3)
+        vx = vx/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        vy = vy/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        vz = vz/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        
+        DO i = 1, 2
+         
+         vect(3*i-2) = val*rho*a*0.5D0*AA*vx
+         vect(3*i-1) = val*rho*a*0.5D0*AA*vy
+         vect(3*i  ) = val*rho*a*0.5D0*AA*vz
+         
+        END DO
+        
+        DO i = 3, 4
+         
+         vect(3*i-2) = 0.0D0
+         vect(3*i-1) = 0.0D0
+         vect(3*i  ) = 0.0D0
+         
+        END DO
+        
+       END IF
+       
+      END IF
+      
+!--------------------------------------------------------------------
+      
+      RETURN
+      
+!####################################################################
+      END SUBROUTINE DL_Beam_641
+!####################################################################
+      ! > (Gaku Hashimoto, The University of Tokyo, 2014/02/06)
+      
+      
+      ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
 !####################################################################
       SUBROUTINE TLOAD_Beam_641                        &
                  (etype, nn, ndof, xx, yy, zz, tt, t0, &
@@ -405,6 +537,7 @@ contains
       
       REAL(KIND = kreal) :: tempc, temp0
       REAL(KIND = kreal) :: ecoord(3, nn)
+      REAL(KIND = kreal) :: ec(3, 2)
       REAL(KIND = kreal) :: ina1(1), outa1(2)
       REAL(KIND = kreal) :: ina2(1), outa2(1)
       REAL(KIND = kreal) :: alp, alp0
@@ -473,7 +606,14 @@ contains
       refv(2) = section(2)
       refv(3) = section(3)
       
-      CALL framtr(refv, ecoord, le, trans)
+      ec(1, 1) = ecoord(1, 1)
+      ec(2, 1) = ecoord(2, 1)
+      ec(3, 1) = ecoord(3, 1)
+      ec(1, 2) = ecoord(1, 2)
+      ec(2, 2) = ecoord(2, 2)
+      ec(3, 2) = ecoord(3, 2)
+      
+      CALL framtr(refv, ec, le, trans)
       
       transt= TRANSPOSE( trans )
       
@@ -518,7 +658,7 @@ contains
       ! > (Gaku Hashimoto, The University of Tokyo, 2013/09/13)
       
       
-      ! (Gaku Hashimoto, The University of Tokyo, 2013/09/13) <
+      ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
 !####################################################################
       SUBROUTINE NodalStress_Beam_641                         &
                  (etype, nn, ecoord, gausses, section, edisp, &
@@ -555,13 +695,13 @@ contains
       REAL(KIND = kreal) :: le, l2, l3
       REAL(KIND = kreal) :: trans(3, 3), transT(3, 3)
       REAL(KIND = kreal) :: edisp_hat(3, nn)
-      
-      REAL(KIND = kreal)   :: t(3, 3), t_hat(3, 3)
-      REAL(KIND = kreal)   :: t_hat_tmp(3, 3)
-      REAL(KIND = kreal)   :: e(3, 3), e_hat(3, 3)
-      REAL(KIND = kreal)   :: e_hat_tmp(3, 3)
-      REAL(KIND = kreal)   :: x1_hat, x2_hat, x3_hat
-      REAL(KIND = kreal)   :: pi
+      REAL(KIND = kreal) :: ec(3, 2)
+      REAL(KIND = kreal) :: t(3, 3), t_hat(3, 3)
+      REAL(KIND = kreal) :: t_hat_tmp(3, 3)
+      REAL(KIND = kreal) :: e(3, 3), e_hat(3, 3)
+      REAL(KIND = kreal) :: e_hat_tmp(3, 3)
+      REAL(KIND = kreal) :: x1_hat, x2_hat, x3_hat
+      REAL(KIND = kreal) :: pi
       
       LOGICAL :: ierr
       
@@ -640,7 +780,14 @@ contains
       refv(2) = section(2)
       refv(3) = section(3)
       
-      CALL framtr(refv, ecoord, le, trans)
+      ec(1, 1) = ecoord(1, 1)
+      ec(2, 1) = ecoord(2, 1)
+      ec(3, 1) = ecoord(3, 1)
+      ec(1, 2) = ecoord(1, 2)
+      ec(2, 2) = ecoord(2, 2)
+      ec(3, 2) = ecoord(3, 2)
+      
+      CALL framtr(refv, ec, le, trans)
       
       transt= TRANSPOSE( trans )
       
