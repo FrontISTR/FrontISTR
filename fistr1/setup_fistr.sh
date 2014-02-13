@@ -260,6 +260,13 @@ if [ ${WITHPARACON} -eq 1 ]; then
 	BUILDTARGET_PARACON="build-with-paracon"
 fi
 
+#
+# F90 linker
+#
+if [ "${F90LINKER}" = "" ]; then
+	F90LINKER=${F90}
+fi
+
 #------------------------------------------------------------------------------#
 #
 # create Makefile
