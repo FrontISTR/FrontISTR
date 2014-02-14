@@ -24,7 +24,17 @@
 module m_fstr_Residual
   use hecmw
   implicit none
-  
+
+  public :: fstr_Update_NDForce
+  public :: fstr_Update_NDForce_SPC
+  public :: fstr_get_residual
+  public :: fstr_get_norm_contact
+  public :: fstr_get_norm_para_contact
+  public :: fstr_get_x_norm_contact
+
+  private :: fstr_Update_NDForce_spring
+  private :: fstr_Update_NDForce_MPC
+
   contains
 
 !C---------------------------------------------------------------------*
@@ -47,10 +57,8 @@ module m_fstr_Residual
       type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
       type (hecmwST_matrix),intent(inout),optional  :: conMAT
 !    Local variables
-      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof,idx,num
-      integer(kind=kint) :: grpid  
-      real(kind=kreal) :: rhs, lambda, factor, fval, fact
-
+      integer(kind=kint) ndof,idof,num
+      real(kind=kreal) :: factor
 
       factor = fstrSOLID%factor(2)
 
@@ -58,8 +66,49 @@ module m_fstr_Residual
       do idof=1, hecMESH%n_node*  hecMESH%n_dof 
         hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
       end do
-	  ndof = hecMAT%NDOF
+      ndof = hecMAT%NDOF
 
+      call fstr_Update_NDForce_spring( cstep, factor, hecMESH, fstrSOLID, sub_step, hecMAT%B )
+
+!    Consider Uload
+      call uResidual( cstep, factor, hecMAT%B )
+
+!    Consider EQUATION condition
+      call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+
+!    Consider SPC condition
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
+      if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, conMAT%B )
+
+!
+      if( ndof==3 ) then
+        if(paraContactFlag) then
+          call paraContact_update_3_R(hecMESH,hecMAT%B)
+        else
+          call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
+        endif
+      else if( ndof==2 ) then
+        call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
+      else if( ndof==6 ) then
+        call hecmw_update_m_R(hecMESH,hecMAT%B,hecMESH%n_node,6)
+      endif
+
+      end subroutine fstr_Update_NDForce
+
+      subroutine fstr_Update_NDForce_spring( cstep, factor, hecMESH, fstrSOLID, sub_step, B )
+      use m_fstr
+      integer(kind=kint), intent(in)       :: cstep      !< current step
+      real(kind=kreal), intent(in)         :: factor     !< factor
+      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+      type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
+      integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
+      real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
+!    Local variables
+      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num
+      integer(kind=kint) :: grpid  
+      real(kind=kreal) :: fval, fact
+
+      ndof = hecMESH%n_dof
       do ig0= 1, fstrSOLID%SPRING_ngrp_tot
         grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -76,14 +125,20 @@ module m_fstr_Residual
         do ik= iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           idx = ndof * (in - 1) + ityp
-          hecMAT%B(idx) = hecMAT%B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) )
+          B(idx) = B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) )
         enddo
       enddo
+      end subroutine fstr_Update_NDForce_spring
 
-!    Consider Uload
-      call uResidual( cstep, factor, hecMAT%B )
+      subroutine fstr_Update_NDForce_MPC( hecMESH, B )
+      use m_fstr
+      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+      real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
+!    Local variables
+      integer(kind=kint) ndof,ig0,iS0,iE0,ik,in,idof
+      real(kind=kreal) :: rhs, lambda
 
-!    Consider EQUATION condition
+      ndof = hecMESH%n_dof
       do ig0=1,hecMESH%mpc%n_mpc
         iS0= hecMESH%mpc%mpc_index(ig0-1)+1
         iE0= hecMESH%mpc%mpc_index(ig0)
@@ -91,18 +146,29 @@ module m_fstr_Residual
         in = hecMESH%mpc%mpc_item(iS0)
         idof = hecMESH%mpc%mpc_dof(iS0)
         rhs = hecMESH%mpc%mpc_val(iS0)
-        lambda = hecMAT%B(ndof*(in-1)+idof)/rhs
+        lambda = B(ndof*(in-1)+idof)/rhs
         ! update nodal residual
         do ik= iS0, iE0
           in = hecMESH%mpc%mpc_item(ik)
           idof = hecMESH%mpc%mpc_dof(ik)
           rhs = hecMESH%mpc%mpc_val(ik)
-          hecMAT%B(ndof*(in-1)+idof) = hecMAT%B(ndof*(in-1)+idof) &
-              - rhs*lambda 
+          B(ndof*(in-1)+idof) = B(ndof*(in-1)+idof) - rhs*lambda
         enddo
       enddo
-     
-!    Consider SPC condition
+      end subroutine fstr_Update_NDForce_MPC
+
+      subroutine fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, B )
+      use m_fstr
+      integer(kind=kint), intent(in)       :: cstep      !< current step
+      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+      type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
+      real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
+!    Local variables
+      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof
+      integer(kind=kint) :: grpid  
+      real(kind=kreal) :: rhs
+
+      ndof = hecMESH%n_dof
       do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
         grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
         if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -116,27 +182,12 @@ module m_fstr_Residual
           idof1 = ityp/10
           idof2 = ityp - idof1*10
           do idof=idof1,idof2
-            hecMAT%B( ndof*(in-1) + idof ) = 0.d0
-            if(present(conMAT)) conMAT%B( ndof*(in-1) + idof ) = 0.0D0
+            B( ndof*(in-1) + idof ) = 0.d0
           enddo
         enddo
       enddo
- 
-!    	  
-      if( ndof==3 ) then
-        if(paraContactFlag) then
-          call paraContact_update_3_R(hecMESH,hecMAT%B)
-        else
-          call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
-        endif
-      else if( ndof==2 ) then
-        call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
-      else if( ndof==6 ) then
-        call hecmw_update_m_R(hecMESH,hecMAT%B,hecMESH%n_node,6)
-      endif
+      end subroutine fstr_Update_NDForce_SPC
 
-      end subroutine fstr_Update_NDForce
-	  
 !> Calculate magnitude of a real vector
       real(kind=kreal) function fstr_get_residual( force, hecMESH )
       use m_fstr

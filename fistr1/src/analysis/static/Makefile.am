@@ -79,28 +79,28 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-        static_echo.@f90objfilepostfix@ \
-        readtemp.@f90objfilepostfix@ \
         fstr_Restart.@f90objfilepostfix@ \
-        fstr_ass_load.@f90objfilepostfix@ \
-        fstr_StiffMatrix.@f90objfilepostfix@ \
-        fstr_mat_con_contact.@f90objfilepostfix@ \
-        fstr_AddContactStiff.@f90objfilepostfix@ \
-        fstr_Update.@f90objfilepostfix@ \
-        fstr_AddBC.@f90objfilepostfix@ \
-        sparse_matrix_contact.@f90objfilepostfix@ \
-        solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
-        fstr_Residual.@f90objfilepostfix@ \
         fstr_NodalStress.@f90objfilepostfix@ \
+        fstr_StiffMatrix.@f90objfilepostfix@ \
+        fstr_Update.@f90objfilepostfix@ \
+        readtemp.@f90objfilepostfix@ \
+        static_echo.@f90objfilepostfix@ \
         static_make_result.@f90objfilepostfix@ \
-        static_mat_ass_main.@f90objfilepostfix@ \
-        static_mat_ass.@f90objfilepostfix@ \
+        fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
+        static_mat_ass_main.@f90objfilepostfix@ \
+        fstr_mat_con_contact.@f90objfilepostfix@ \
+        fstr_Residual.@f90objfilepostfix@ \
+        fstr_AddContactStiff.@f90objfilepostfix@ \
+        fstr_AddBC.@f90objfilepostfix@ \
+        static_mat_ass.@f90objfilepostfix@ \
         fstr_solve_LINEAR.@f90objfilepostfix@ \
         fstr_mat_resid_contact.@f90objfilepostfix@ \
+        sparse_matrix_contact.@f90objfilepostfix@ \
+        solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
         set_arrays_DirectSolver.@f90objfilepostfix@ \
-        solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
         solve_LINEQ_mkl.@f90objfilepostfix@ \
+        solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
         solve_LINEQ_contact.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
