@@ -21,7 +21,7 @@
  7.85e-6
 ### Solver Setting
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
- 10000, 2
+ 10000, 1
  1.0e-08, 1.0, 0.0
 ## Post Control
 !VISUAL, method=PSR

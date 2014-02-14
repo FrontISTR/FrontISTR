@@ -9,7 +9,7 @@
 !BOUNDARY
 _PickedSet4, 1, 3, 0.0
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=YES
- 10000, 2
+ 10000, 1
  1.0e-8, 1.0, 0.0
 !VISUAL, method=PSR
 !surface_num=1

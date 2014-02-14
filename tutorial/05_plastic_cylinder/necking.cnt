@@ -34,7 +34,7 @@
  ISTRESS, ON
 ### Solver Setting
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=YES
- 2000, 2
+ 2000, 1
  1.0e-8, 1.0, 0.0
 ## Post Control
 !VISUAL, method=PSR

@@ -18,8 +18,8 @@
 ### Material
 # define in mesh file
 ### Solver Setting
-!SOLVER,METHOD=CG,PRECOND=3,ITERLOG=YES,TIMELOG=YES
- 100, 2
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 100, 1
  1.0e-8, 1.0, 0.0
 ## Post Control
 !VISUAL, method=PSR

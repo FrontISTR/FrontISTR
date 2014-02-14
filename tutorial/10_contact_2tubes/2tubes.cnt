@@ -28,7 +28,7 @@
 !ELASTIC
  2.1e+5, 0.3
 ### Solver Setting
-!SOLVER,METHOD=DIRECTmkl
+!SOLVER,METHOD=MUMPS
 ## Post Control
 !VISUAL, method=PSR
 !surface_num=1

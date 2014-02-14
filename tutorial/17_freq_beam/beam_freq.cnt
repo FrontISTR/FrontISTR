@@ -21,7 +21,7 @@ _PickedSet5, 2, 1.
 !FLOAD, LOAD CASE=2
 _PickedSet6, 2, 1.
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=YES
- 10000, 2
+ 10000, 1
  1.0e-8, 1.0, 0.0
 !VISUAL, method=PSR
 !surface_num = 1
