@@ -179,7 +179,7 @@ contains
     if (NContact.gt.0) then
       do k= 1, hecMAT%cmat%n_val
         if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-        ii = perm( hecMAT%cmat%pair(k)%i )
+        ii = iperm( hecMAT%cmat%pair(k)%i )
         ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
         ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
         ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
