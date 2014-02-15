@@ -36,6 +36,7 @@ HECMW_LDFLAGS          = @hecmw_ldflags@
 HECMW_LDFLAGS2         = @hecmw_ldflags2@
 ALL_LDFLAGS            = $(HECMW_LDFLAGS) $(HECMW_LDFLAGS2) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS               = @optflags@
+CLINKER                = @clinker@
 
 CPP                    = @cpp@
 CPPFLAGS               = @cppflags@
@@ -102,7 +103,7 @@ all: @build_target@
 @build_target@: $(TARGET)
 
 $(TARGET): $(OBJS) $(HECMWLIBDIR)/*.* $(HECMWLIBDIR2)/*.*
-	$(CC) $(ALL_CFLAGS) $(OPTFLAGS) \
+	$(CLINKER) $(ALL_CFLAGS) $(OPTFLAGS) \
 	-o $@ $(OBJS) $(ALL_LDFLAGS)
 	$(CP) $(TARGET) $(HECMWBINDIR)/.
 

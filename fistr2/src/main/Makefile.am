@@ -64,6 +64,7 @@ HECMW_F90LDFLAGS2       = @hecmw_f90ldflags2@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
 ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(HECMW_F90LDFLAGS2) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
+F90LINKER               = @f90linker@
 
 AR                      = @ar@
 CP                      = @cp@
@@ -103,13 +104,13 @@ HEADERS =
 all: @build_target@
 
 build-default: $(OBJSF) $(HECMWLIBDIR) $(HECMWLIBDIR2) $(FSTRLIBDIR)
-	$(F90) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
+	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
 	$(OBJSF) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
 build-with-rcap: $(OBJSF) $(HECMWLIBDIR) $(HECMWLIBDIR2) $(FSTRLIBDIR)
-	$(F90)  $(REVOCAP_F90FLAGS) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
+	$(F90LINKER)  $(REVOCAP_F90FLAGS) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
 	$(OBJSF) $(REVOCAP_F90LDFLAGS) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.

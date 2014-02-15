@@ -45,7 +45,7 @@ MUMPSLIBDIR    = $(MUMPSDIR)/lib
 # C compiler settings
 CC             = mpicc
 CFLAGS         =
-LDFLAGS        = -lm
+LDFLAGS        = -lm -lstdc++
 OPTFLAGS       = -O3
 CLINKER        = mpicc
 
@@ -58,7 +58,7 @@ CPPOPTFLAGS    = -O3
 # Fortran compiler settings
 F90            = mpif90
 F90FLAGS       =
-F90LDFLAGS     =
+F90LDFLAGS     = -lstdc++
 F90OPTFLAGS    = -O2
 F90LINKER      = mpif90
 

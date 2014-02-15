@@ -43,6 +43,7 @@ ALL_LDFLAGS            = $(PARTITIONER_LDFLAGS) $(METIS_LDFLAGS) $(HECMW_LDFLAGS
 OPTFLAGS               = @optflags@
 PARTITIONER_OPTFLAGS   = @partitioner_optflags@
 ALL_OPTFLAGS           = $(OPTFLAGS) $(PARTITIONER_OPTFLAGS)
+CLINKER                = @clinker@
 
 F90                    = @f90@
 F90FLAGS               = @f90flags@
@@ -106,7 +107,7 @@ all: @build_target@
 @build_target@: $(TARGET)
 
 $(TARGET): $(OBJS) $(HECMWLIBDIR)/*.*
-	$(CC) $(ALL_CFLAGS) $(ALL_OPTFLAGS) \
+	$(CLINKER) $(ALL_CFLAGS) $(ALL_OPTFLAGS) \
 	-o $@ $(OBJS) $(ALL_LDFLAGS)
 	$(CP) $(TARGET) $(HECMWBINDIR)/.
 

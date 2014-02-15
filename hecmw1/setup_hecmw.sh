@@ -359,6 +359,13 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 		MUMPS_F90FLAGS=""
 		MUMPS_F90LDFLAGS=""
 	fi
+
+	#
+	# C linker
+	#
+	if [ "${CLINKER}" = "" ]; then
+		CLINKER="${CC}"
+	fi
 fi
 
 #------------------------------------------------------------------------------#
@@ -380,6 +387,7 @@ do
 		-e "s!@cflags@!${CFLAGS}!" \
 		-e "s!@ldflags@!${LDFLAGS}!" \
 		-e "s!@optflags@!${OPTFLAGS}!" \
+		-e "s!@clinker@!${CLINKER}!" \
 		-e "s!@cpp@!${CPP}!" \
 		-e "s!@cppflags@!${CPPFLAGS}!" \
 		-e "s!@cppldflags@!${CPPLDFLAGS}!" \

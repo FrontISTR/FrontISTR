@@ -47,6 +47,7 @@ CC             = mpicc
 CFLAGS         =
 LDFLAGS        = -lm
 OPTFLAGS       = -O3
+CLINKER        = mpicc
 
 # C++ compiler settings
 CPP            = mpic++

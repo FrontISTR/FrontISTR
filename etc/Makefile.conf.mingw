@@ -47,6 +47,7 @@ CC             = gcc
 CFLAGS         = -D_WINDOWS
 LDFLAGS        = -lm -static
 OPTFLAGS       = -O3
+CLINKER        = gcc
 
 # C++ compiler settings
 CPP            = g++

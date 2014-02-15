@@ -47,6 +47,7 @@ CC             = sxmpicc
 CFLAGS         =
 LDFLAGS        = -lm
 OPTFLAGS       =
+CLINKER        = sxmpicc
 
 # C++ compiler settings
 CPP            = sxmpic++

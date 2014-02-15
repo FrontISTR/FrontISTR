@@ -181,6 +181,13 @@ if [ ${WITHREFINER} -eq 1 ]; then
 	HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} ${REFINER_LDFLAGS}"
 fi
 
+#
+# F90 linker
+#
+if [ "${F90LINKER}" = "" ]; then
+	F90LINKER="${F90}"
+fi
+
 #------------------------------------------------------------------------------#
 #
 # create Makefile
@@ -216,6 +223,7 @@ do
 		-e "s!@f90flags@!${F90FLAGS}!" \
 		-e "s!@f90ldflags@!${F90LDFLAGS}!" \
 		-e "s!@f90optflags@!${F90OPTFLAGS}!" \
+		-e "s!@f90linker@!${F90LINKER}!" \
 		-e "s!@make@!${MAKE}!" \
 		-e "s!@ar@!${AR}!" \
 		-e "s!@cp@!${CP}!" \

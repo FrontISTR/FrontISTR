@@ -5,10 +5,10 @@
 ##################################################
 
 # MPI
-MPIDIR         = $(HOME)/mpich2-install
-MPIBINDIR      = $(MPIDIR)/bin
-MPILIBDIR      = $(MPIDIR)/lib
-MPIINCDIR      = $(MPIDIR)/include
+MPIDIR         =
+MPIBINDIR      =
+MPILIBDIR      =
+MPIINCDIR      =
 MPILIBS        =
 
 # for install option only
@@ -30,7 +30,7 @@ PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
 # Refiner
 REFINERDIR     = $(HOME)/REVOCAP_Refiner-1.1.03
 REFINERINCDIR  = $(REFINERDIR)/Refiner
-REFINERLIBDIR  = $(REFINERDIR)/lib/x86_64-linux
+REFINERLIBDIR  = $(REFINERDIR)/lib/sx_64-linux
 
 # Coupler
 REVOCAPDIR     = $(HOME)/REVOCAP_Coupler-2.0
@@ -43,27 +43,27 @@ MUMPSINCDIR    = $(MUMPSDIR)/include
 MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
-CC             = mpicc
+CC             = sxmpicc
 CFLAGS         =
-LDFLAGS        = -lm
-OPTFLAGS       = -O3
-CLINKER        = mpicc
+LDFLAGS        = -lm -lstdc++
+OPTFLAGS       =
+CLINKER        = sxmpicc
 
 # C++ compiler settings
-CPP            = mpic++
+CPP            = sxmpic++
 CPPFLAGS       =
 CPPLDFLAGS     =
-CPPOPTFLAGS    = -O3
+CPPOPTFLAGS    =
 
 # Fortran compiler settings
-F90            = mpif90
+F90            = sxmpif90
 F90FLAGS       =
-F90LDFLAGS     =
-F90OPTFLAGS    = -O2
-F90LINKER      = mpif90
+F90LDFLAGS     = -lstdc++
+F90OPTFLAGS    =
+F90LINKER      = sxmpif90
 
 MAKE           = make
-AR             = ar ruv
+AR             = sxar ruv
 CP             = cp -f
 RM             = rm -f
 MKDIR          = mkdir -p

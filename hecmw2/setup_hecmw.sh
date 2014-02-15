@@ -253,6 +253,13 @@ fi
 		HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} ${REFINER_LDFLAGS}"
 	fi
 
+	#
+	# C linker
+	#
+	if [ "${CLINKER}" = "" ]; then
+		CLINKER="${CC}"
+	fi
+
 #------------------------------------------------------------------------------#
 ###
 ### Create MAKEFILES
@@ -272,6 +279,7 @@ do
 		-e "s!@cflags@!${CFLAGS}!" \
 		-e "s!@ldflags@!${LDFLAGS}!" \
 		-e "s!@optflags@!${OPTFLAGS}!" \
+		-e "s!@clinker@!${CLINKER}!" \
 		-e "s!@cpp@!${CPP}!" \
 		-e "s!@cppflags@!${CPPFLAGS}!" \
 		-e "s!@cppldflags@!${CPPLDFLAGS}!" \

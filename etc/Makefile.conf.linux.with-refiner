@@ -5,10 +5,10 @@
 ##################################################
 
 # MPI
-MPIDIR         = $(HOME)/mpich2-install
-MPIBINDIR      = $(MPIDIR)/bin
-MPILIBDIR      = $(MPIDIR)/lib
-MPIINCDIR      = $(MPIDIR)/include
+MPIDIR         =
+MPIBINDIR      =
+MPILIBDIR      =
+MPIINCDIR      =
 MPILIBS        =
 
 # for install option only
@@ -45,20 +45,20 @@ MUMPSLIBDIR    = $(MUMPSDIR)/lib
 # C compiler settings
 CC             = mpicc
 CFLAGS         =
-LDFLAGS        = -lm
+LDFLAGS        = -lm -lstdc++
 OPTFLAGS       = -O3
 CLINKER        = mpicc
 
 # C++ compiler settings
 CPP            = mpic++
-CPPFLAGS       =
+CPPFLAGS       = -DMPICH_IGNORE_CXX_SEEK
 CPPLDFLAGS     =
 CPPOPTFLAGS    = -O3
 
 # Fortran compiler settings
 F90            = mpif90
 F90FLAGS       =
-F90LDFLAGS     =
+F90LDFLAGS     = -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lstdc++
 F90OPTFLAGS    = -O2
 F90LINKER      = mpif90
 
