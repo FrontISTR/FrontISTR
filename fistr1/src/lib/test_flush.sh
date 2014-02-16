@@ -10,30 +10,36 @@
 #  statement or empty statement, and add the object to target fortran
 #  library.
 #
-#  Following environment variables has to be pre-defined.
+#  Following environment variables has to be pre-defined
+#  (if not defined, default value in () is used).
 #
-#  F90       : fortran compiler command
-#  F90TARGET : fortran library
-#  AR        : archive command for building static library
-#  RM        : remove command
+#  F90       : fortran compiler command ("mpif90")
+#  F90FLAGS  : fortran compiler options ("")
+#  F90TARGET : fortran library ("../../lib/libffistr.a")
+#  AR        : archive command for building static library ("ar ruv")
+#  RM        : remove command ("rm -f")
 #
 logfile=test_flush.log
 
 if [ "${F90}" = "" ]; then
-    echo F90 not defined
-    exit 1
+    echo "WARNING: F90 not defined" >> $logfile
+    F90="mpif90"
+fi
+if [ "${F90FLAGS}" = "" ]; then
+    echo "WARNING: F90FLAGS not defined" >> $logfile
+    F90FLAGS=""
 fi
 if [ "${F90TARGET}" = "" ]; then
-    echo F90TARGET not defined
-    exit 1
+    echo "WARNING: F90TARGET not defined" >> $logfile
+    F90TARGET="../../lib/libffistr.a"
 fi
 if [ "${AR}" = "" ]; then
-    echo AR not defined
-    exit 1
+    echo "WARNING: AR not defined" >> $logfile
+    AR="ar ruv"
 fi
 if [ "${RM}" = "" ]; then
-    echo RM not defined
-    exit 1
+    echo "WARNING: RM not defined" >> $logfile
+    RM="rm -f"
 fi
 
 ${RM} ${logfile}
@@ -51,12 +57,12 @@ test_f90_flush() {
     ${RM} $1
     run_command ${F90} -o $1 $1.f90
     if [ -f $1 ]; then
-        run_command ./$1
-        out=`./$1`
+        # run_command ./$1
+        # out=`./$1`
         ${RM} $1
-        if [ "${out}" = "test_flush" ]; then
-            return 0
-        fi
+        # if [ "${out}" = "test_flush" ]; then
+        return 0
+        # fi
     fi
     return 1
 }
