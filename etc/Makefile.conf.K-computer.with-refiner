@@ -44,22 +44,22 @@ MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
 # C compiler settings
 CC             = mpifccpx
-CFLAGS         = -Kfast
+CFLAGS         =
 LDFLAGS        = -lm
-OPTFLAGS       = -O3
+OPTFLAGS       = -Kfast
 CLINKER        = mpiFCCpx
 
 # C++ compiler settings
 CPP            = mpiFCCpx
-CPPFLAGS       = -Kfast -DMPICH_IGNORE_CXX_SEEK
+CPPFLAGS       = -DMPICH_IGNORE_CXX_SEEK
 CPPLDFLAGS     =
-CPPOPTFLAGS    = -O3
+CPPOPTFLAGS    = -Kfast
 
 # Fortran compiler settings
 F90            = mpifrtpx
-F90FLAGS       = -Kfast,openmp
+F90FLAGS       = -Kopenmp
 F90LDFLAGS     = -SCALAPACK -SSL2BLAMP
-F90OPTFLAGS    =
+F90OPTFLAGS    = -Kfast,ocl
 F90LINKER      = mpiFCCpx --linkfortran
 
 MAKE           = make

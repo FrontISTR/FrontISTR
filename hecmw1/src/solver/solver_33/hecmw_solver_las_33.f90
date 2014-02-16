@@ -47,6 +47,7 @@ contains
     use hecmw_matrix_contact
     use hecmw_matrix_misc
     use hecmw_jad_type
+    use hecmw_tuning_fx
     !$ use omp_lib
 
     implicit none
@@ -128,13 +129,8 @@ contains
           !      startPos(i), endPos(i)
         end do
 
-        ! calculate sector cache size
-        sectorCacheSize1 = int((dble(NP) * 3 * kreal / (4096 * 128)) + 0.999)
-        if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
-        sectorCacheSize0 = 12 - sectorCacheSize1
-        ! write(*,*) 'X size =', N * 3 * kreal, '[byte]  ', &
-        !            'sectorCache0 =', sectorCacheSize0, '[way]  ', &
-        !            'sectorCache1 =', sectorCacheSize1, '[way]'
+        call hecmw_tuning_fx_calc_sector_cache(NP, 3, &
+             sectorCacheSize0, sectorCacheSize1)
 
         isFirst = .false.
       endif
@@ -150,12 +146,12 @@ contains
       !call fapp_start("loopInMatvec33", 1, 0)
       !call start_collection("loopInMatvec33")
 
-      !xx!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-      !xx!OCL CACHE_SUBSECTOR_ASSIGN(X)
+!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+!OCL CACHE_SUBSECTOR_ASSIGN(X)
 
-      !$OMP PARALLEL DEFAULT(NONE) &
-      !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-      !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
+!$OMP PARALLEL DEFAULT(NONE) &
+!$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -195,10 +191,10 @@ contains
           Y(3*i  )= YV3
         enddo
       enddo
-      !$OMP END PARALLEL
+!$OMP END PARALLEL
 
-      !xx!OCL END_CACHE_SUBSECTOR
-      !xx!OCL END_CACHE_SECTOR_SIZE
+!OCL END_CACHE_SUBSECTOR
+!OCL END_CACHE_SECTOR_SIZE
 
       !call stop_collection("loopInMatvec33")
       !call fapp_stop("loopInMatvec33", 1, 0)

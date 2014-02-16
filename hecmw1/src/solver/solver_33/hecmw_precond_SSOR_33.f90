@@ -232,6 +232,7 @@ contains
   end subroutine hecmw_precond_SSOR_33_setup
 
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use hecmw_tuning_fx
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
@@ -286,22 +287,17 @@ contains
       enddo
       numOfBlock = blockIndex
 
-      ! calculate sector cache size
-      sectorCacheSize1 = int((dble(N) * 3 * kreal / (4096 * 128)) + 0.999)
-      if (sectorCacheSize1 > 6 ) sectorCacheSize1 = 6
-      sectorCacheSize0 = 12 - sectorCacheSize1
-      ! write(*,*) 'ZP size =', N * 3 * kreal, '[byte]  ', &
-      !      'sectorCache0 =', sectorCacheSize0, '[way]  ', &
-      !      'sectorCache1 =', sectorCacheSize1, '[way]'
+      call hecmw_tuning_fx_calc_sector_cache( N, 3, &
+           sectorCacheSize0, sectorCacheSize1 )
 
       isFirst = .false.
     endif
     ! <<< added for turning
 
-!call start_collection("loopInPrecond33")
+    !call start_collection("loopInPrecond33")
 
-!xx!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-!xx!OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+!OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
 !$omp parallel default(none) &
 !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
@@ -423,10 +419,10 @@ contains
     enddo ! ic
 !$omp end parallel
 
-!xx!OCL END_CACHE_SUBSECTOR
-!xx!OCL END_CACHE_SECTOR_SIZE
+!OCL END_CACHE_SUBSECTOR
+!OCL END_CACHE_SECTOR_SIZE
 
-!call stop_collection("loopInPrecond33")
+    !call stop_collection("loopInPrecond33")
 
   end subroutine hecmw_precond_SSOR_33_apply
 
