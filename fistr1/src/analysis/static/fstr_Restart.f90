@@ -155,9 +155,9 @@ module m_fstr_Restart
 
       end subroutine fstr_write_restart
 
-!> Read in restart file for dynamic analysis
+!> Read in restart file for nonlinear dynamic analysis
 !----------------------------------------------------------------------*
-      subroutine fstr_read_restart_dyna(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
+      subroutine fstr_read_restart_dyna_nl(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
 !----------------------------------------------------------------------*
       integer, intent(out)                  :: cstep       !< current step
       integer, intent(out), optional        :: contactNode !< number of contact nodes
@@ -222,11 +222,11 @@ module m_fstr_Restart
 
       call hecmw_restart_close()
 
-      end subroutine fstr_read_restart_dyna
+      end subroutine fstr_read_restart_dyna_nl
 
-!> write out restart file for dynamic analysis
+!> write out restart file for nonlinear dynamic analysis
 !----------------------------------------------------------------------*
-      subroutine fstr_write_restart_dyna(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
+      subroutine fstr_write_restart_dyna_nl(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
 !----------------------------------------------------------------------*
       integer, intent(in)                   :: cstep      !< current step
       integer, intent(in), optional         :: contactNode!< number of contact nodes
@@ -298,6 +298,53 @@ module m_fstr_Restart
 
       call hecmw_restart_write()
 
-      end subroutine fstr_write_restart_dyna
+      end subroutine fstr_write_restart_dyna_nl
+
+!> read in restart file for linear dynamic analysis
+!----------------------------------------------------------------------*
+      subroutine fstr_read_restart_dyna_linear(cstep,fstrDYNAMIC)
+!----------------------------------------------------------------------*
+      implicit none
+      integer, intent(out)                  :: cstep       !< current step
+      type ( fstr_dynamic), intent(inout)   :: fstrDYNAMIC
+
+      integer :: restrt_step(1)
+
+      call hecmw_restart_open()
+      call hecmw_restart_read_int(restrt_step)
+      cstep = restrt_step(1)
+      if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
+        call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
+        call hecmw_restart_read_real(fstrDYNAMIC%VEL (:,1))
+        call hecmw_restart_read_real(fstrDYNAMIC%ACC (:,1))
+      else
+        call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
+        call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,3))
+      endif
+      call hecmw_restart_close()
+      end subroutine fstr_read_restart_dyna_linear
+
+!> write out restart file for linear dynamic analysis
+!----------------------------------------------------------------------*
+      subroutine fstr_write_restart_dyna_linear(cstep,fstrDYNAMIC)
+!----------------------------------------------------------------------*
+      implicit none
+      integer, intent(in)                   :: cstep      !< current step
+      type ( fstr_dynamic), intent(in)      :: fstrDYNAMIC
+
+      integer :: restrt_step(1)
+
+      restrt_step(1) = cstep
+      call hecmw_restart_add_int(restrt_step,size(restrt_step))
+      if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
+        call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
+        call hecmw_restart_add_real(fstrDYNAMIC%VEL (:,1),size(fstrDYNAMIC%VEL (:,1)))
+        call hecmw_restart_add_real(fstrDYNAMIC%ACC (:,1),size(fstrDYNAMIC%ACC (:,1)))
+      else
+        call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
+        call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,3),size(fstrDYNAMIC%DISP(:,3)))
+      endif
+      call hecmw_restart_write()
+      end subroutine fstr_write_restart_dyna_linear
 
 end module m_fstr_restart

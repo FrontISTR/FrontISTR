@@ -398,7 +398,7 @@ contains
 !---  Restart info
       if( fstrDYNAMIC%restart_nout > 0 .and. &
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-        call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
+        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
       end if
 
 !C-- output new displacement, velocity and accelaration
@@ -821,7 +821,7 @@ contains
 !---  Restart info
       if( fstrDYNAMIC%restart_nout > 0 .and. &
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-        call fstr_write_restart_dyna(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
                                      infoCTChange%contactNode_current)
       end if
 

@@ -172,18 +172,13 @@ contains
       endif
 
       if(fstrDYNAMIC%nlflag==0) then
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          call fstr_read_restart_dyna_linear(restrt_step_num,fstrDYNAMIC)
+          restrt_step_num = restrt_step_num + 1
+          fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
+          hecMAT%Iarray(98) = 1
+        endif
         if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
-             if(fstrDYNAMIC%restart_nout < 0 ) then
-               call hecmw_restart_open()
-               call hecmw_restart_read_int(restrt_step)
-               restrt_step_num = restrt_step(1) + 1
-               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
-               call hecmw_restart_read_real(fstrDYNAMIC%VEL (:,1))
-               call hecmw_restart_read_real(fstrDYNAMIC%ACC (:,1))
-               call hecmw_restart_close()
-               fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-               hecMAT%Iarray(98) = 1
-             endif
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                  call fstr_solve_dynamic_implicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
@@ -198,16 +193,6 @@ contains
              end if
 
         else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
-             if(fstrDYNAMIC%restart_nout < 0 ) then
-               call hecmw_restart_open()
-               call hecmw_restart_read_int(restrt_step)
-               restrt_step_num = restrt_step(1) + 1
-               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
-               call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,3))
-               call hecmw_restart_close()
-               fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-               hecMAT%Iarray(98) = 1
-             endif
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
                 call fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
@@ -225,9 +210,9 @@ contains
       else
         if(fstrDYNAMIC%restart_nout < 0 ) then
           if( .not. associated( fstrSOLID%contacts ) ) then
-            call fstr_read_restart_dyna(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
+            call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
           else                                                
-            call fstr_read_restart_dyna(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+            call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
                                         infoCTChange%contactNode_previous)
           endif
           restrt_step_num = restrt_step_num + 1

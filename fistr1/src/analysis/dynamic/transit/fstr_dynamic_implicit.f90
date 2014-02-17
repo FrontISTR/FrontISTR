@@ -27,6 +27,7 @@ use m_dynamic_mat_ass_bc_vl
 use m_dynamic_mat_ass_load
 use m_static_mat_ass_main
 use fstr_matrix_con_contact
+use m_fstr_restart
 
 !-------- for couple -------
 use m_dynamic_mat_ass_couple
@@ -452,12 +453,7 @@ contains
 !!! restart  !!!
     if( fstrDYNAMIC%restart_nout > 0 .and. &
         (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-      restrt_step(1) = i
-      call hecmw_restart_add_int(restrt_step,size(restrt_step))
-      call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
-      call hecmw_restart_add_real(fstrDYNAMIC%VEL (:,1),size(fstrDYNAMIC%VEL (:,1)))
-      call hecmw_restart_add_real(fstrDYNAMIC%ACC (:,1),size(fstrDYNAMIC%ACC (:,1)))
-      call hecmw_restart_write()
+      call fstr_write_restart_dyna_linear(i,fstrDYNAMIC)
     end if
 
 !C-- output new displacement, velocity and accelaration
