@@ -79,6 +79,12 @@ alloc_struct(void)
 		return -1;
 	}
 
+	mesh->contact_pair = HECMW_malloc(sizeof(*mesh->contact_pair));
+	if(mesh->contact_pair == NULL) {
+		HECMW_set_error(errno, "");
+		return -1;
+	}
+
 	return 0;
 }
 
