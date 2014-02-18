@@ -24,6 +24,9 @@ contains
     !! rlag = blag  - Llag x
     ndof=hecMAT%NDOF
     npndof=hecMAT%NP*ndof
+    do i=1,npndof
+      r(i)=0.d0
+    enddo
     ! r = b - K x
     call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
     if (fstrMAT%num_lagrange > 0) then
@@ -58,8 +61,8 @@ contains
             ll=l0+k
             sum=sum+fstrMAT%AL_lagrange(loc)*hecMAT%X(ll)
           enddo
-          rlag(i)=hecMAT%B(npndof+i)-sum
         enddo
+        rlag(i)=hecMAT%B(npndof+i)-sum
       enddo
     end if
   end subroutine fstr_get_residual_contact
