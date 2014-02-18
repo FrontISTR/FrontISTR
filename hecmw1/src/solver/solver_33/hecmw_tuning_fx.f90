@@ -23,11 +23,11 @@ module hecmw_tuning_fx
   public :: hecmw_tuning_fx_calc_sector_cache
 
   !!
-  !! Please set maxSectorCacheSize to
+  !! Please set TotalSectorCacheSize to
   !!  (on K-computer) : 12
   !!  (on FX10)       : 24
   !!
-  integer, parameter :: maxSectorCacheSize = 12
+  integer, parameter :: TotalSectorCacheSize = 12
 
 contains
 
@@ -38,10 +38,10 @@ contains
     integer(kind=kint), intent(out) :: sectorCacheSize0, sectorCacheSize1
     ! calculate sector cache size
     sectorCacheSize1 = int((dble(N) * NDOF * kreal / (4096 * 128)) + 0.999)
-    if (sectorCacheSize1 > maxSectorCacheSize / 2 ) &
-         sectorCacheSize1 = maxSectorCacheSize / 2
-    sectorCacheSize0 = maxSectorCacheSize - sectorCacheSize1
-    ! write(*,*) 'Vector size =', N * 3 * kreal, '[byte]  ', &
+    if (sectorCacheSize1 > TotalSectorCacheSize / 2 ) &
+         sectorCacheSize1 = TotalSectorCacheSize / 2
+    sectorCacheSize0 = TotalSectorCacheSize - sectorCacheSize1
+    ! write(*,*) 'Vector size =', N * NDOF * kreal, '[byte]  ', &
     !            'sectorCache0 =', sectorCacheSize0, '[way]  ', &
     !            'sectorCache1 =', sectorCacheSize1, '[way]'
   end subroutine hecmw_tuning_fx_calc_sector_cache
