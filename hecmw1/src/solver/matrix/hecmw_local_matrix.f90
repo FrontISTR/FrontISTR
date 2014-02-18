@@ -158,13 +158,13 @@ contains
 
     ! perform three matrices multiplication for elimination
     call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
-    !write(0,*) 'DEBUG: BTtKT(MPC)'
-    !call hecmw_localmat_write(BTtKT, 0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
+    !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
     ! place 1s where the DOF is eliminated
     call place_one_on_diag(BTtKT, iwS, num_lagrange)
-    !write(0,*) 'DEBUG: BTtKT(MPC)'
-    !call hecmw_localmat_write(BTtKT, 0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
+    !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
     ! make new HECMW matrix
     call make_new_hecmat(hecMAT, BTtKT, hecTKT)
@@ -528,12 +528,18 @@ contains
     ndof=BTtKT%ndof
     ndof2=ndof*ndof
 
-    if (nr > nc) then
+    !write(0,*) 'DEBUG: nr, nc =',nr,nc
+
+    if (nr == nc) then      ! MPC
+      if (nr /= hecMAT%NP) stop 'ERROR: nr or nc incorrect'
+      hecTKT%N =hecMAT%N
+      hecTKT%NP=hecMAT%NP
+    else if (nr < nc) then  ! Contact
+      hecTKT%N =nr
+      hecTKT%NP=nc
+    else
       stop 'ERROR: nr > nc'
     endif
-
-    hecTKT%N   =nr
-    hecTKT%NP  =nc
     hecTKT%NDOF=ndof
 
     allocate(hecTKT%D(nc*ndof2))
@@ -606,11 +612,11 @@ contains
       iwS(i)=kk
     enddo
     call make_BTmat_mpc(hecMESH, BTmat)
-    !write(0,*) 'DEBUG: BTmat(MPC)'
-    !call hecmw_localmat_write(BTmat,0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTmat(MPC)'
+    !call hecmw_localmat_write(BTmat,700+hecmw_comm_get_rank())
     call make_BTtmat_mpc(hecMESH, BTtmat)
-    !write(0,*) 'DEBUG: BTtmat(MPC)'
-    !call hecmw_localmat_write(BTtmat,0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
+    !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
     call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
@@ -666,8 +672,8 @@ contains
         js=js+1
       enddo
     enddo
-    !write(0,*) 'DEBUG: Tmat(MPC)'
-    !call hecmw_localmat_write(Tmat,0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: Tmat(MPC)'
+    !call hecmw_localmat_write(Tmat,700+hecmw_comm_get_rank())
     call hecmw_localmat_blocking(Tmat, ndof, BTmat)
     call hecmw_localmat_free(Tmat)
   end subroutine make_BTmat_mpc
@@ -732,8 +738,8 @@ contains
       enddo
     enddo
     deallocate(iw)
-    !write(0,*) 'DEBUG: Ttmat(MPC)'
-    !call hecmw_localmat_write(Ttmat,0)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: Ttmat(MPC)'
+    !call hecmw_localmat_write(Ttmat,700+hecmw_comm_get_rank())
     call hecmw_localmat_blocking(Ttmat, ndof, BTtmat)
     call hecmw_localmat_free(Ttmat)
   end subroutine make_BTtmat_mpc
