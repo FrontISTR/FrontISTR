@@ -142,7 +142,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,      &
         relres = dabs(res1-res)/res0
       endif
       if( hecMESH%my_rank==0 ) then
-        write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res,relres
+        write(*,'(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
         write(ISTA,'(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
       endif
 
@@ -330,7 +330,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           relres = dabs(res1-res)/res0
         endif
         if( hecMESH%my_rank==0 ) then
-          write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res,relres
+          write(*,'(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
           write(ISTA,'(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
         endif
 
@@ -560,9 +560,9 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
         resX = sqrt(resX)/n_node_global
         if( hecMESH%my_rank==0 ) then
-          write(*,'(a,i3,a,e15.7)') ' - ResiualX    (',iter,') =',resX
-          write(*,'(a,i3,a,e15.7)') ' - ResiualX+LAG(',iter,') =',sqrt(x_residual)/n_node_global
-          write(*,'(a,i3,a,e15.7)') ' - ResiualQ    (',iter,') =',sqrt(q_residual)/n_node_global
+          write(*,'(a,i3,a,e15.7)') ' - ResidualX    (',iter,') =',resX
+          write(*,'(a,i3,a,e15.7)') ' - ResidualX+LAG(',iter,') =',sqrt(x_residual)/n_node_global
+          write(*,'(a,i3,a,e15.7)') ' - ResidualQ    (',iter,') =',sqrt(q_residual)/n_node_global
         endif
 !   ----- update the small displacement and the displacement for 1step 
         do i=1,hecMESH%n_node*ndof
@@ -608,7 +608,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           relres = dabs(res1-res)/res0
         endif
         if( hecMESH%my_rank==0 ) then
-          write(*,'(a,i3,a,2e15.7)') ' - Resiual(',iter,') =',res,relres
+          write(*,'(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
           write(ISTA,'(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
         endif
 
