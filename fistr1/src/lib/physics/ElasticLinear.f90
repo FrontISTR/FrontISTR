@@ -179,8 +179,8 @@ module m_ElasticLinear
 
          call transformation(bij, tm) 
 
-         dmat = matmul( (tm), dmat)
-	     dmat = matmul( dmat, transpose(tm) )
+         dmat = matmul( transpose(tm), dmat)
+         dmat = matmul( dmat, (tm) )
 
    END SUBROUTINE
    
