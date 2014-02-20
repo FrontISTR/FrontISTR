@@ -68,7 +68,11 @@ contains
       if (fg_eliminate) then
         call solve_eliminate(hecMESH, hecMAT, fstrMAT)
       else
-        call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
+        if (fstrMAT%num_lagrange > 0) then
+          call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
+        else
+          call hecmw_solve_33(hecMESH, hecMAT)
+        endif
       endif
     endif
 
@@ -1068,7 +1072,8 @@ contains
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     integer :: ndof, ndof2, nb_lag, ndofextra
-    integer :: i, ls, le, l, j, jb_lag, ib_lag, idof, jdof, ilag, k, ks, ke
+    integer :: i, ls, le, l, j, jb_lag, ib_lag, idof, jdof, ilag, k
+    integer :: idx, idx_lag_s, idx_lag_e, ll
     integer, allocatable :: iwUr(:), iwUc(:), iwLr(:), iwLc(:)
     type(hecmwST_matrix) :: hecMATLag
     real(kind=kreal) :: t1
@@ -1083,7 +1088,7 @@ contains
     nb_lag = (fstrMAT%num_lagrange + 2)/3
     hecMATLag%NDOF = ndof
     hecMATLag%N = hecMAT%N + nb_lag
-    hecMATLag%NP = hecMATLag%N
+    hecMATLag%NP = hecMAT%NP + nb_lag
     !write(0,*) 'DEBUG: hecMAT: NDOF,N,NP=',hecMAT%NDOF,hecMAT%N,hecMAT%NP
     !write(0,*) 'DEBUG: hecMATLag: NDOF,N,NP=',hecMATLag%NDOF,hecMATLag%N,hecMATLag%NP
 
@@ -1133,41 +1138,46 @@ contains
     enddo
 
     ! Upper: indexU
-    allocate(hecMATLag%indexU(0:hecMATLag%N))
+    allocate(hecMATLag%indexU(0:hecMATLag%NP))
     hecMATLag%indexU(0) = 0
     do i = 1, hecMAT%N
       hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
            (hecMAT%indexU(i) - hecMAT%indexU(i-1)) + iwUr(i)
     enddo
-    do i = hecMAT%N+1, hecMATLag%N
+    do i = hecMAT%N+1, hecMATLag%NP
       hecMATLag%indexU(i) = hecMATLag%indexU(i-1)
     enddo
-    hecMATLag%NPU = hecMATLag%indexU(hecMATLag%N)
+    hecMATLag%NPU = hecMATLag%indexU(hecMATLag%NP)
     !write(0,*) 'DEBUG: hecMATLag%NPU=',hecMATLag%NPU
 
     ! Lower: indexL
-    allocate(hecMATLag%indexL(0:hecMATLag%N))
+    allocate(hecMATLag%indexL(0:hecMATLag%NP))
     do i = 0, hecMAT%N
       hecMATLag%indexL(i) = hecMAT%indexL(i)
     enddo
     do i = hecMAT%N+1, hecMATLag%N
       hecMATLag%indexL(i) = hecMATLag%indexL(i-1) + iwLr(i-hecMAT%N)
     enddo
-    hecMATLag%NPL = hecMATLag%indexL(hecMATLag%N)
+    do i = hecMATLag%N+1, hecMATLag%NP
+      hecMATLag%indexL(i) = hecMATLag%indexL(i-1)
+    enddo
+    hecMATLag%NPL = hecMATLag%indexL(hecMATLag%NP)
     !write(0,*) 'DEBUG: hecMATLag%NPL=',hecMATLag%NPL
 
     ! Upper: itemU and AU
     allocate(hecMATLag%itemU(hecMATLag%NPU))
     allocate(hecMATLag%AU(hecMATLag%NPU*ndof2))
     do i = 1, hecMAT%N
-      k = hecMATLag%indexU(i-1)+1
-      ! copy from hecMAT
+      idx = hecMATLag%indexU(i-1)+1
+      ! copy from hecMAT; internal
       ls = hecMAT%indexU(i-1)+1
       le = hecMAT%indexU(i)
       do l=ls,le
-        hecMATLag%itemU(k) = hecMAT%itemU(l)
-        hecMATLag%AU((k-1)*ndof2+1:k*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
-        k = k + 1
+        ll = hecMAT%itemU(l)
+        if (ll > hecMAT%N) cycle  ! skip external
+        hecMATLag%itemU(idx) = ll
+        hecMATLag%AU((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
+        idx = idx + 1
       enddo
       ! Lag. itemU
       iwUc = 0
@@ -1178,13 +1188,14 @@ contains
         jb_lag = (j+2)/3
         iwUc(jb_lag) = 1
       enddo
+      idx_lag_s = idx
       do j=1,nb_lag
         if (iwUc(j) > 0) then
-          hecMATLag%itemU(k) = hecMAT%N + j
-          k = k + 1
+          hecMATLag%itemU(idx) = hecMAT%N + j
+          idx = idx + 1
         endif
       enddo
-      if (k /= hecMATLag%indexU(i)+1) stop 'ERROR k indexU'
+      idx_lag_e = idx - 1
       ! Lag. AU
       ls=fstrMAT%indexU_lagrange(i-1)+1
       le=fstrMAT%indexU_lagrange(i)
@@ -1192,9 +1203,7 @@ contains
         j=fstrMAT%itemU_lagrange(l)
         jb_lag = (j+2)/3
         jdof = j - (jb_lag - 1)*ndof
-        ks=hecMATLag%indexU(i-1)+1
-        ke=hecMATLag%indexU(i)
-        do k = ks,ke
+        do k = idx_lag_s, idx_lag_e
           if (hecMATLag%itemU(k) < hecMAT%N + jb_lag) cycle
           if (hecMATLag%itemU(k) > hecMAT%N + jb_lag) cycle
           !if (hecMATLag%itemU(k) /= hecMAT%N + jb_lag) stop 'ERROR itemU jb_lag'
@@ -1204,19 +1213,30 @@ contains
           enddo
         enddo
       enddo
+      ! copy from hecMAT; externl
+      ls = hecMAT%indexU(i-1)+1
+      le = hecMAT%indexU(i)
+      do l=ls,le
+        ll = hecMAT%itemU(l)
+        if (ll <= hecMAT%N) cycle  ! skip internal
+        hecMATLag%itemU(idx) = ll + nb_lag
+        hecMATLag%AU((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
+        idx = idx + 1
+      enddo
+      if (idx /= hecMATLag%indexU(i)+1) stop 'ERROR idx indexU'
     enddo
 
     ! Lower: itemL and AL
     allocate(hecMATLag%itemL(hecMATLag%NPL))
     allocate(hecMATLag%AL(hecMATLag%NPL*ndof2))
-    do i = 1, hecMAT%NPL
+    do i = 1, hecMAT%indexL(hecMAT%N)
       hecMATLag%itemL(i) = hecMAT%itemL(i)
     enddo
-    do i = 1, hecMAT%NPL*ndof2
+    do i = 1, hecMAT%indexL(hecMAT%N)*ndof2
       hecMATLag%AL(i) = hecMAT%AL(i)
     enddo
     ! Lag. itemL
-    k = hecMAT%NPL + 1
+    idx = hecMAT%indexL(hecMAT%N) + 1
     do ib_lag = 1, nb_lag
       iwLc = 0
       i = hecMAT%N + ib_lag
@@ -1230,14 +1250,16 @@ contains
           iwLc(j) = 1
         enddo
       enddo
+      idx_lag_s = idx
       do j=1,hecMAT%N
         if (iwLc(j) > 0) then
-          hecMATLag%itemL(k) = j
-          k = k + 1
+          hecMATLag%itemL(idx) = j
+          idx = idx + 1
         endif
       enddo
-      if (k /= hecMATLag%indexL(hecMAT%N + ib_lag)+1) then
-        stop 'ERROR k indexL'
+      idx_lag_e = idx - 1
+      if (idx /= hecMATLag%indexL(hecMAT%N + ib_lag)+1) then
+        stop 'ERROR idx indexL'
       endif
       ! Lag. AL
       do idof = 1, ndof
@@ -1247,9 +1269,7 @@ contains
         le=fstrMAT%indexL_lagrange(ilag)
         do l=ls,le
           j=fstrMAT%itemL_lagrange(l)
-          ks=hecMATLag%indexL(i-1)+1
-          ke=hecMATLag%indexL(i)
-          do k = ks, ke
+          do k = idx_lag_s, idx_lag_e
             if (hecMATLag%itemL(k) < j) cycle
             if (hecMATLag%itemL(k) > j) cycle
             !if (hecMATLag%itemL(k) /= j) stop 'ERROR itemL j'
@@ -1264,22 +1284,31 @@ contains
 
     deallocate(iwUr, iwUc, iwLr, iwLc)
 
-    allocate(hecMATLag%D(hecMATLag%N*ndof2))
+    allocate(hecMATLag%D(hecMATLag%NP*ndof2))
     hecMATLag%D = 0.d0
     do i = 1, hecMAT%N*ndof2
       hecMATLag%D(i) = hecMAT%D(i)
     enddo
     do idof = ndof - ndofextra + 1, ndof
-      hecMATLag%D((hecMATLag%N-1)*ndof2 + (idof-1)*ndof + idof) = 1.0
+      hecMATLag%D((hecMATLag%N-1)*ndof2 + (idof-1)*ndof + idof) = 1.d0
+    enddo
+    do i = hecMAT%N*ndof2, hecMAT%NP*ndof2
+      hecMATLag%D(i + nb_lag) = hecMAT%D(i)
     enddo
 
-    allocate(hecMATLag%B(hecMATLag%N*ndof))
-    allocate(hecMATLag%X(hecMATLag%N*ndof))
+    allocate(hecMATLag%B(hecMATLag%NP*ndof))
+    allocate(hecMATLag%X(hecMATLag%NP*ndof))
     hecMATLag%B = 0.d0
     hecMATLag%X = 0.d0
 
-    do i = 1, hecMAT%N*ndof+fstrMAT%num_lagrange
+    do i = 1, hecMAT%N*ndof
       hecMATLag%B(i) = hecMAT%B(i)
+    enddo
+    do i = 1, fstrMAT%num_lagrange
+      hecMATLag%B(hecMAT%N*ndof + i) = hecMAT%B(hecMAT%NP*ndof + i)
+    enddo
+    do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
+      hecMATlag%B(i + nb_lag) = hecMAT%B(i)
     enddo
 
     hecMATLag%Iarray=hecMAT%Iarray
@@ -1287,10 +1316,25 @@ contains
 
     write(0,*) 'DEBUG: made hecMATLag', hecmw_wtime()-t1
 
+    do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
+      hecMESH%import_item(i) = hecMESH%import_item(i) + nb_lag
+    enddo
+
     call hecmw_solve_33(hecMESH, hecMATLag)
 
-    do i = 1, hecMAT%N*ndof+fstrMAT%num_lagrange
+    do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
+      hecMESH%import_item(i) = hecMESH%import_item(i) - nb_lag
+    enddo
+
+    hecMAT%X = 0.d0
+    do i = 1, hecMAT%N*ndof
       hecMAT%X(i) = hecMATLag%X(i)
+    enddo
+    do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
+      hecMAT%X(i) = hecMATLag%X(i + nb_lag)
+    enddo
+    do i = 1, fstrMAT%num_lagrange
+      hecMAT%X(hecMAT%NP*ndof + i) = hecMATLag%X(hecMAT%N*ndof + i)
     enddo
 
     call hecmw_mat_finalize(hecMATLag)
