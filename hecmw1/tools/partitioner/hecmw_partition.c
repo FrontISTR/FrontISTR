@@ -4787,7 +4787,7 @@ mask_comm_node( const struct hecmwST_local_mesh *global_mesh,
     int i;
 
     for( i=0; i<global_mesh->n_node; i++ ) {
-        if( EVAL_BIT( node_flag_current[i], SLAVE ) ) continue;
+        /* if( EVAL_BIT( node_flag_current[i], SLAVE ) ) continue; */
         if( EVAL_BIT( node_flag_current[i], BOUNDARY ) &&
             EVAL_BIT( node_flag_neighbor[i], BOUNDARY ) ) {
             MASK_BIT( node_flag_current[i], MASK );
