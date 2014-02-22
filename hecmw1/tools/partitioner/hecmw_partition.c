@@ -4408,20 +4408,15 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
 #endif
     if( rtc != RTC_NORMAL )  goto error;
 
-    for( i=1; /* i<=1000 */; i++) {
+    {
         int added = 0;
         rtc = mask_boundary_elem_with_slave( global_mesh, node_flag, elem_flag, &added );
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( added == 0 ) {
-            break;
-        } else if( i >= 1000 ) {
-            HECMW_log( HECMW_LOG_ERROR, "too many calls of mask_boundary_elem_with_slave" );
-            goto error;
+        if( added > 0 ) {
+            rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
+            if( rtc != RTC_NORMAL )  goto error;
         }
-
-        rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
-        if( rtc != RTC_NORMAL )  goto error;
     }
 
     for( i=1; i<global_mesh->hecmw_flag_partdepth; i++ ) {
@@ -8294,22 +8289,12 @@ const_n_mpc( const struct hecmwST_local_mesh *global_mesh,
 
         evalsum = 0;
 
-        /* slave node */
-        j = mpc_global->mpc_index[i];
-        node = mpc_global->mpc_item[j];
-        if( node_global2local[node-1] >  0 )  evalsum++;
-
-        /* master nodes */
-        for( j=mpc_global->mpc_index[i]+1; j<mpc_global->mpc_index[i+1]; j++ ) {
+        for( j=mpc_global->mpc_index[i]; j<mpc_global->mpc_index[i+1]; j++ ) {
             node = mpc_global->mpc_item[j];
-            if( node_global2local[node-1] >  0  &&
-                node_global2local[node-1] <= local_mesh->nn_internal )  evalsum++;
+            if( node_global2local[node-1] > 0) evalsum++;
         }
 
-        if( evalsum ) {
-            /* commented out by K.Goto; begin */
-            /* HECMW_assert( diff == evalsum ); */
-            /* commented out by K.Goto; end */
+        if( evalsum == diff) {
             MASK_BIT( mpc_flag[i], MASK );
             counter++;
         }
@@ -8317,9 +8302,6 @@ const_n_mpc( const struct hecmwST_local_mesh *global_mesh,
     mpc_local->n_mpc = counter;
 
     return RTC_NORMAL;
-
-/* error:                2007/12/27 S.Ito */
-/*     return RTC_ERROR; 2007/12/27 S.Ito */
 }
 
 
