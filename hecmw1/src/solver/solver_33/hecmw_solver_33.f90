@@ -55,6 +55,7 @@ contains
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal) :: TIME_setup, TIME_comm, TIME_soltot, TR
     real(kind=kreal) :: time_Ax, time_precond
+    real(kind=kreal) :: S_TIME, E_TIME, TIME_mpc_pre, TIME_mpc_post
     real(kind=kreal),    dimension(1) :: RHS
     integer (kind=kint), dimension(1) :: IFLAG
 
@@ -62,7 +63,8 @@ contains
     real(kind=kreal)   :: SIGMA,TIME_sol
 
     type (hecmwST_matrix), pointer :: hecTKT
-    integer(kind=kint) :: totalmpc
+    integer(kind=kint) :: totalmpc, MPC_METHOD
+    real(kind=kreal), allocatable :: Btmp(:)
 
     !C===
     !C +------------+
@@ -173,20 +175,46 @@ contains
     !C | MPC Preproc |
     !C +-------------+
     !C===
+    S_TIME= HECMW_WTIME()
+
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
     if (totalmpc > 0) then
-      allocate(hecTKT)
-      call hecmw_mat_init(hecTKT)
-      write(0,*) "DEBUG: MPC: eliminating slave DOF"
       call hecmw_mpc_scale(hecMESH)
-      call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
-      write(0,*) "DEBUG: MPC: trimatmul done"
-      call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, hecTKT%X, TIME_comm)
-      write(0,*) "DEBUG: MPC: make new RHS done"
+
+      MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+      if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
+
+      if (MPC_METHOD == 1) then  ! penalty
+        write(0,*) "DEBUG: MPC Method: Penalty"
+        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
+        hecTKT => hecMAT
+      else if (MPC_METHOD == 2) then  ! MPCCG
+        write(0,*) "DEBUG: MPC Method: MPC-CG"
+        call hecmw_matvec_33_set_mpcmatvec_flg (.true.)
+        allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
+        do i=1,hecMAT%NP * hecMAT%NDOF
+          Btmp(i) = hecMAT%B(i)
+        enddo
+        call hecmw_trans_b_33(hecMESH, hecMAT, Btmp, hecMAT%B, TIME_comm)
+        hecTKT => hecMAT
+      else if (MPC_METHOD == 3) then  ! elimination
+        write(0,*) "DEBUG: MPC Method: Elimination"
+        allocate(hecTKT)
+        call hecmw_mat_init(hecTKT)
+        !write(0,*) "DEBUG: MPC: eliminating slave DOF"
+        call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
+        !write(0,*) "DEBUG: MPC: trimatmul done"
+        call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, TIME_comm)
+        !write(0,*) "DEBUG: MPC: make new RHS done"
+      endif
     else
       hecTKT => hecMAT
     endif
+
+    E_TIME= HECMW_WTIME()
+    TIME_mpc_pre = E_TIME - S_TIME
 
     call hecmw_mat_dump(hecTKT, hecMESH)
 
@@ -294,14 +322,29 @@ contains
     !C | MPC Postproc |
     !C +--------------+
     !C===
+    S_TIME= HECMW_WTIME()
+
     if (totalmpc > 0) then
-      write(0,*) "DEBUG: MPC: solve done"
-      call hecmw_tback_x_33(hecMESH, hecTKT%X, hecMAT%X, TIME_comm)
-      hecMAT%X(:)=hecTKT%X(:)
-      write(0,*) "DEBUG: MPC: recover solution done"
-      call hecmw_mat_finalize(hecTKT)
-      deallocate(hecTKT)
+      if (MPC_METHOD == 1) then  ! penalty
+        ! do nothing
+      else if (MPC_METHOD == 2) then  ! MPCCG
+        call hecmw_tback_x_33(hecMESH, hecTKT%X, TIME_comm)
+        do i=1,hecMAT%NP * hecMAT%NDOF
+          hecMAT%B(i) = Btmp(i)
+        enddo
+        deallocate(Btmp)
+      else if (MPC_METHOD == 3) then  ! elimination
+        !write(0,*) "DEBUG: MPC: solve done"
+        call hecmw_tback_x_33(hecMESH, hecTKT%X, TIME_comm)
+        hecMAT%X(:)=hecTKT%X(:)
+        !write(0,*) "DEBUG: MPC: recover solution done"
+        call hecmw_mat_finalize(hecTKT)
+        deallocate(hecTKT)
+      endif
     endif
+
+    E_TIME= HECMW_WTIME()
+    TIME_mpc_post = E_TIME - S_TIME
 
     time_Ax = hecmw_matvec_33_get_timer()
     time_precond = hecmw_precond_33_get_timer()
@@ -315,6 +358,9 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
       write (*,'(a, 1pe16.6 )') '    solver/matvec    : ', time_Ax
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
+      write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
+      write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post
+      write (*,'(a, 1pe16.6 )') '    1 iteration      : ', TIME_sol / ITER
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 

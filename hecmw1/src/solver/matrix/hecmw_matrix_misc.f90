@@ -69,6 +69,9 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
+    call hecmw_mat_set_mpc_method( hecMAT, 3 )
+
+    call hecmw_mat_set_solver_type( hecMAT, 1 )
 
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
@@ -217,6 +220,20 @@ module hecmw_matrix_misc
     hecmw_mat_get_penalized_b = hecMAT%Iarray(12)
   end function hecmw_mat_get_penalized_b
 
+  subroutine hecmw_mat_set_mpc_method( hecMAT, mpc_method )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: mpc_method
+
+    hecMAT%Iarray(13) = mpc_method
+  end subroutine hecmw_mat_set_mpc_method
+
+  function hecmw_mat_get_mpc_method( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_mpc_method
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_mpc_method = hecMAT%Iarray(13)
+  end function hecmw_mat_get_mpc_method
+
   subroutine hecmw_mat_set_iterlog( hecMAT, iterlog )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterlog
@@ -299,6 +316,18 @@ module hecmw_matrix_misc
     integer(kind=kint) :: ncolor_in
     hecMAT%Iarray(34) = ncolor_in
   end subroutine hecmw_mat_set_ncolor_in
+
+  function hecmw_mat_get_solver_type( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_solver_type
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_solver_type = hecMAT%Iarray(99)
+  end function hecmw_mat_get_solver_type
+
+  subroutine hecmw_mat_set_solver_type( hecMAT, solver_type )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: solver_type
+    hecMAT%Iarray(99) = solver_type
+  end subroutine hecmw_mat_set_solver_type
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid

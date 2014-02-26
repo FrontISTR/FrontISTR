@@ -20,6 +20,7 @@ module hecmw_solver_las_33
 
   private
 
+  public :: hecmw_matvec_33_set_mpcmatvec_flg
   public :: hecmw_matvec_33
   public :: hecmw_matresid_33
   public :: hecmw_rel_resid_L2_33
@@ -33,8 +34,20 @@ module hecmw_solver_las_33
   public :: hecmw_matvec_33_get_timer
 
   real(kind=kreal) :: time_Ax = 0.d0
+  logical :: mpcmatvec_flg = .false.
 
 contains
+
+  !C
+  !C***
+  !C*** hecmw_matvec_33_set_mpcmatvec_flg
+  !C***
+  !C
+  subroutine hecmw_matvec_33_set_mpcmatvec_flg (flg)
+    implicit none
+    logical, intent(in) :: flg
+    mpcmatvec_flg = flg
+  end subroutine hecmw_matvec_33_set_mpcmatvec_flg
 
   !C
   !C***
@@ -42,6 +55,36 @@ contains
   !C***
   !C
   subroutine hecmw_matvec_33 (hecMESH, hecMAT, X, Y, COMMtime)
+    use hecmw_util
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    real(kind=kreal) :: Tcomm
+    real(kind=kreal), allocatable :: WK(:)
+
+    Tcomm = 0.d0
+
+    if (mpcmatvec_flg) then
+      allocate(WK(hecMAT%NP * hecMAT%NDOF))
+      call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, Y, WK, Tcomm)
+      deallocate(WK)
+    else
+      call hecmw_matvec_33_inner(hecMESH, hecMAT, X, Y, Tcomm)
+    endif
+
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+  end subroutine hecmw_matvec_33
+
+  !C
+  !C***
+  !C*** hecmw_matvec_33_inner ( private subroutine )
+  !C***
+  !C
+  subroutine hecmw_matvec_33_inner (hecMESH, hecMAT, X, Y, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
     use hecmw_matrix_contact
@@ -208,7 +251,7 @@ contains
       call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * hecMAT%NDOF )
     end if
 
-  end subroutine hecmw_matvec_33
+  end subroutine hecmw_matvec_33_inner
 
   !C
   !C***
@@ -359,7 +402,7 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     call hecmw_Tvec_33(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_33(hecMESH, hecMAT, Y, W, COMMtime)
+    call hecmw_matvec_33_inner(hecMESH, hecMAT, Y, W, COMMtime)
     call hecmw_Ttvec_33(hecMESH, W, Y, COMMtime)
 
   end subroutine hecmw_TtmatTvec_33
@@ -393,18 +436,20 @@ contains
   !C*** hecmw_trans_b_33
   !C***
   !C
-  subroutine hecmw_trans_b_33(hecMESH, hecMAT, B, BT, W, COMMtime)
+  subroutine hecmw_trans_b_33(hecMESH, hecMAT, B, BT, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: B(:)
     real(kind=kreal), intent(out), target :: BT(:)
-    real(kind=kreal), intent(out) :: W(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
+    real(kind=kreal), allocatable :: W(:)
     real(kind=kreal), pointer :: XG(:)
     integer(kind=kint) :: i, k, kk
+
+    allocate(W(hecMESH%n_node * 3))
 
     !C===
     !C +---------------------------+
@@ -427,6 +472,7 @@ contains
     !C-- {bt} = [T'] {w}
     call hecmw_Ttvec_33(hecMESH, W, BT, COMMtime)
 
+    deallocate(W)
   end subroutine hecmw_trans_b_33
 
   !C
@@ -434,15 +480,17 @@ contains
   !C*** hecmw_tback_x_33
   !C***
   !C
-  subroutine hecmw_tback_x_33(hecMESH, X, W, COMMtime)
+  subroutine hecmw_tback_x_33(hecMESH, X, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(inout) :: X(:)
-    real(kind=kreal), intent(out) :: W(:)
     real(kind=kreal) :: COMMtime
 
+    real(kind=kreal), allocatable :: W(:)
     integer(kind=kint) :: i, k, kk
+
+    allocate(W(hecMESH%n_node * 3))
 
     !C-- {tx} = [T]{x}
     call hecmw_Tvec_33(hecMESH, X, W, COMMtime)
@@ -459,6 +507,7 @@ contains
       X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
     enddo
 
+    deallocate(W)
   end subroutine hecmw_tback_x_33
 
   !C
