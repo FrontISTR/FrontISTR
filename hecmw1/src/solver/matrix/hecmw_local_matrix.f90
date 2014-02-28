@@ -521,7 +521,7 @@ contains
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_matrix), intent(in) :: BTtKT
     type(hecmwST_matrix), intent(out) :: hecTKT
-    integer(kind=kint) :: nr, nc, ndof, ndof2
+    integer(kind=kint) :: nr, nc, ndof, ndof2, i
 
     nr=BTtKT%nr
     nc=BTtKT%nc
@@ -553,6 +553,10 @@ contains
     hecTKT%Rarray=hecMAT%Rarray
 
     call replace_hecmat(hecTKT, BTtKT)
+
+    do i=1,nc*ndof
+      hecTKT%X(i)=hecMAT%X(i)
+    enddo
   end subroutine make_new_hecmat
 
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)
