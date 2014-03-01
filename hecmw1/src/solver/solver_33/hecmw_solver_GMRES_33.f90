@@ -77,6 +77,7 @@
       integer(kind=kint), parameter :: AV = Y  + 1
       integer(kind=kint), parameter :: V  = AV + 1
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 !C
 !C-- INIT.
@@ -140,6 +141,7 @@
         X = 0.d0
       endif
 
+      call hecmw_barrier(hecMESH)
       E_TIME= HECMW_WTIME()
       Tset= Tset + E_TIME - S_TIME
 !C===
@@ -420,11 +422,12 @@
       E_TIME = HECMW_WTIME()
       Tcomm = Tcomm + E_TIME - S_TIME
 
-      E1_TIME= HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (H, WW, SS)
       call hecmw_precond_33_clear(hecMAT)
+
+      call hecmw_barrier(hecMESH)
+      E1_TIME= HECMW_WTIME()
+      Tsol = E1_TIME - S1_TIME
 
       end subroutine  hecmw_solve_GMRES_33
       end module     hecmw_solver_GMRES_33

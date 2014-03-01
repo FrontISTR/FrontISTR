@@ -175,10 +175,10 @@ contains
     !C | MPC Preproc |
     !C +-------------+
     !C===
-    S_TIME= HECMW_WTIME()
-
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    S_TIME= HECMW_WTIME()
 
     if (totalmpc > 0) then
       call hecmw_mpc_scale(hecMESH)
@@ -213,6 +213,7 @@ contains
       hecTKT => hecMAT
     endif
 
+    call hecmw_barrier(hecMESH)
     E_TIME= HECMW_WTIME()
     TIME_mpc_pre = E_TIME - S_TIME
 
@@ -322,6 +323,7 @@ contains
     !C | MPC Postproc |
     !C +--------------+
     !C===
+    call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
 
     if (totalmpc > 0) then
@@ -343,6 +345,7 @@ contains
       endif
     endif
 
+    call hecmw_barrier(hecMESH)
     E_TIME= HECMW_WTIME()
     TIME_mpc_post = E_TIME - S_TIME
 
@@ -358,9 +361,9 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
       write (*,'(a, 1pe16.6 )') '    solver/matvec    : ', time_Ax
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
+      write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
       write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
       write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post
-      write (*,'(a, 1pe16.6 )') '    1 iteration      : ', TIME_sol / ITER
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 

@@ -79,6 +79,7 @@
       integer(kind=kint), parameter ::W2=13
       integer(kind=kint), parameter ::ZQ=14
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 !C
 !C-- INIT.
@@ -132,6 +133,7 @@
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,RT), WW(:,R), RHO, Tcomm)
 
+      call hecmw_barrier(hecMESH)
       E_TIME= HECMW_WTIME()
       Tset= Tset + E_TIME - S_TIME
 !C===
@@ -319,11 +321,12 @@
       E_TIME = HECMW_WTIME()
       Tcomm = Tcomm + E_TIME - S_TIME
 
-      E1_TIME= HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (WW)
       call hecmw_precond_33_clear(hecMAT)
+
+      call hecmw_barrier(hecMESH)
+      E1_TIME= HECMW_WTIME()
+      Tsol = E1_TIME - S1_TIME
 
       end subroutine  hecmw_solve_GPBiCG_33
       end module     hecmw_solver_GPBiCG_33

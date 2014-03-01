@@ -73,6 +73,7 @@
       integer(kind=kint), parameter :: V = 7
       integer(kind=kint), parameter :: WK= 8
 
+      call hecmw_barrier(hecMESH)
       S_time= HECMW_WTIME()
 
 !C===
@@ -125,6 +126,7 @@
         X = 0.d0
       endif
 
+      call hecmw_barrier(hecMESH)
       E_time = HECMW_WTIME()
       Tset = Tset + E_time - S_time
 
@@ -246,11 +248,12 @@
       END_TIME = HECMW_WTIME()
       Tcomm = Tcomm + END_TIME - START_TIME
 
-      E1_time = HECMW_WTIME()
-      Tsol = E1_time - S1_time
-
       deallocate (WW)
       call hecmw_precond_33_clear(hecMAT)
+
+      call hecmw_barrier(hecMESH)
+      E1_time = HECMW_WTIME()
+      Tsol = E1_time - S1_time
 
       end subroutine hecmw_solve_BiCGSTAB_33
       end module     hecmw_solver_BiCGSTAB_33

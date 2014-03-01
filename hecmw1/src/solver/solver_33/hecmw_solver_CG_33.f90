@@ -68,6 +68,7 @@
       real   (kind=kreal)::BNRM2
       real   (kind=kreal)::RHO,RHO1,BETA,C1,ALPHA,DNRM2
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 
 !C===
@@ -124,6 +125,7 @@
         X = 0.d0
       endif
 
+      call hecmw_barrier(hecMESH)
       E_TIME = HECMW_WTIME()
       Tset = Tset + E_TIME - S_TIME
 
@@ -218,15 +220,16 @@
       END_TIME = HECMW_WTIME()
       Tcomm = Tcomm + END_TIME - START_TIME
 
-      E1_TIME = HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (WW)
       call hecmw_precond_33_clear(hecMAT)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
         call hecmw_JAD_FINALIZE()
       ENDIF
+
+      call hecmw_barrier(hecMESH)
+      E1_TIME = HECMW_WTIME()
+      Tsol = E1_TIME - S1_TIME
 
       end subroutine hecmw_solve_CG_33
       end module     hecmw_solver_CG_33
