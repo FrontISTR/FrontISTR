@@ -67,6 +67,7 @@
       real   (kind=kreal)::S_TIME,S1_TIME,E_TIME,E1_TIME, START_TIME, END_TIME
       real   (kind=kreal)::BNRM2
       real   (kind=kreal)::RHO,RHO1,BETA,C1,ALPHA,DNRM2
+      real   (kind=kreal)::t_max,t_min,t_avg,t_sd
 
       call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
@@ -127,7 +128,16 @@
 
       call hecmw_barrier(hecMESH)
       E_TIME = HECMW_WTIME()
-      Tset = Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = Tset + t_max
 
       Tcomm = 0.d0
       S1_TIME = HECMW_WTIME()

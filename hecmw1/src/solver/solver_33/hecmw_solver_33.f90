@@ -39,6 +39,7 @@ contains
     use hecmw_local_matrix
     use hecmw_matrix_misc
     use hecmw_matrix_dump
+    use hecmw_solver_misc
 
     implicit none
 
@@ -65,6 +66,7 @@ contains
     type (hecmwST_matrix), pointer :: hecTKT
     integer(kind=kint) :: totalmpc, MPC_METHOD
     real(kind=kreal), allocatable :: Btmp(:)
+    real(kind=kreal)::t_max,t_min,t_avg,t_sd
 
     !C===
     !C +------------+
@@ -213,9 +215,17 @@ contains
       hecTKT => hecMAT
     endif
 
-    call hecmw_barrier(hecMESH)
     E_TIME= HECMW_WTIME()
-    TIME_mpc_pre = E_TIME - S_TIME
+    call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+         t_max, t_min, t_avg, t_sd)
+    if (hecMESH%my_rank.eq.0) then
+      write(*,*) 'Time MPC pre'
+      write(*,*) '  Max     :',t_max
+      write(*,*) '  Min     :',t_min
+      write(*,*) '  Avg     :',t_avg
+      write(*,*) '  Std Dev :',t_sd
+    endif
+    TIME_mpc_pre = t_max
 
     call hecmw_mat_dump(hecTKT, hecMESH)
 
