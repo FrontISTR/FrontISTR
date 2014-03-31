@@ -26,9 +26,10 @@ module m_heat_solve_TRAN
       use m_heat_mat_ass_boundary
       use m_heat_init
       use m_hecmw2fstr_mesh_conv
+      use m_solve_lineq
 
       implicit none
-      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,max_step,tstep,interval
+      integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,max_step,tstep,interval,bup_n_dof
       real(kind=kreal)   CTIME,ST,DTIME,EETIME,DELMAX,DELMIN,TT,BETA,VAL,CHK,tmpmax,dltmp,tmpmax_myrank
 
       type (hecmwST_local_mesh ) :: hecMESH
@@ -146,23 +147,15 @@ module m_heat_solve_TRAN
           call heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,TT,ST, DTIME )
               write(IDBG,*) 'mat_ass_boundary: OK'
               call flush(IDBG)
-			  
 !C
-!C-- SOLVER -----
-
-          if( hecMAT%Iarray(99).eq. 1 ) then
-            call hecmw_solve_11 ( hecMESH,hecMAT )
-            write(IDBG,*) 'hecmw_solve_11: OK'
-            call flush(IDBG)
-          else
-            hecMAT%Iarray(97) = 1   !Need numerical factorization
-            call hecmw_solve_direct ( hecMESH,hecMAT,IMSG )
-             do i=1,hecMAT%NP
-                 hecMAT%X(i) = hecMAT%B(i)
-             end do
-            write(IDBG,*) 'hecmw_solve_direct: OK'
-            call flush(IDBG)
-          endif
+!C-- SOLVER
+          hecMAT%Iarray(97) = 1   !Need numerical factorization
+          bup_n_dof = hecMESH%n_dof
+          hecMESH%n_dof = 1
+          CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+          hecMESH%n_dof=bup_n_dof
+          write(IDBG,*) 'solve_LINEQ: OK'
+          call flush(IDBG)
 !C
 !C-- UPDATE -----
 

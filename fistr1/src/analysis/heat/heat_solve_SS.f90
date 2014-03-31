@@ -23,6 +23,7 @@ module m_heat_solve_SS
       use m_heat_mat_ass_boundary
       use m_heat_init
       use m_hecmw2fstr_mesh_conv
+      use m_solve_lineq
 
       implicit none
       integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,bup_n_dof
@@ -60,16 +61,16 @@ module m_heat_solve_SS
         call hecmw_barrier(hecMESH)
         call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )  
              write(IDBG,*) 'mat_ass_conductivity: OK'
-             do i = 1, hecMESH%nn_internal
-               write(IDBG,*) i, hecMAT%D(i)
-             enddo
+             ! do i = 1, hecMESH%nn_internal
+             !   write(IDBG,*) i, hecMAT%D(i)
+             ! enddo
         call flush(IDBG)
 
         call heat_mat_ass_boundary( hecMESH, hecMAT, fstrHEAT, STIME, ETIME, 0.d0 )
              write(IDBG,*) 'mat_ass_boundary: OK'
-             do i = 1, hecMESH%nn_internal
-               write(IDBG,*) i, hecMAT%D(i)
-             enddo
+             ! do i = 1, hecMESH%nn_internal
+             !   write(IDBG,*) i, hecMAT%D(i)
+             ! enddo
              call flush(IDBG)
 
         call hecmw_barrier(hecMESH)
@@ -77,24 +78,12 @@ module m_heat_solve_SS
 !C
 !C-- SOLVER
         hecMAT%Iarray(97) = 1   !Need numerical factorization
-     
-        if( hecMAT%Iarray(99).eq.1 ) then
-          call hecmw_solve_11 ( hecMESH, hecMAT )
-             write(IDBG,*) 'solve_11: OK'
-             call flush(IDBG)
-        else
-             bup_n_dof = hecMESH%n_dof
-             hecMESH%n_dof = 1 
-             call hecmw_solve_direct(hecMESH,hecMAT,IMSG)
-!!           hecMAT%X = hecMAT%B -- leading stack overflow (intel9)
-             do i=1,hecMAT%NP*hecMESH%n_dof
-                 hecMAT%X(i) = hecMAT%B(i)
-             end do
-             write(IDBG,*) 'solve_direct: OK'
-             call flush(IDBG)
-             hecMESH%n_dof=bup_n_dof
-        endif
-        call hecmw_barrier(hecMESH)
+        bup_n_dof = hecMESH%n_dof
+        hecMESH%n_dof = 1
+        CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+        hecMESH%n_dof=bup_n_dof
+        write(IDBG,*) 'solve_LINEQ: OK'
+        call flush(IDBG)
 !C
 !C-- UPDATE
 
