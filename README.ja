@@ -2,13 +2,13 @@
 
   README of FrontISTR on HEC-MW (日本語版)
 
-  2013.03.26  Version 4.2
+  2014.03.31  Version 4.3
 
   東京大学生産技術研究所
 　革新的シミュレーション研究センター
 
   お問い合わせ先
-    e-mail:  software@ciss.iis.u-tokyo.ac.jp
+    e-mail:  fstr_seminar@multi.k.u-tokyo.ac.jp
 
 ================================================================================
 
@@ -33,10 +33,10 @@
                               : FrontISTR インストールマニュアル
   doc/FrontISTR_tutorial_guide.pdf
                               : FrontISTR チュートリアルガイド
-  doc/FrontISTR_user_manual_Ver34.pdf
-                              : FrontISTR Ver.3.4 ユーザーマニュアル
-  doc/FrontISTR_user_manual_Ver42.pdf
-                              : FrontISTR Ver.4.2 ユーザーマニュアル
+  doc/FrontISTR_user_manual_Ver35.pdf
+                              : FrontISTR Ver.3.5 ユーザーマニュアル
+  doc/FrontISTR_user_manual_Ver43.pdf
+                              : FrontISTR Ver.4.3 ユーザーマニュアル
 
   tutorial/                   : チュートリアルデータ
 
@@ -44,13 +44,13 @@
 
   fistr/                      : 起動プログラム
 
-  fistr1/                     : FrontISTR Ver.3.4
+  fistr1/                     : FrontISTR Ver.3.5
 
-  fistr2/                     : FrontISTR Ver.4.2
+  fistr2/                     : FrontISTR Ver.4.3
 
-  hecmw1/                     : HEC-MW Ver.2.5
+  hecmw1/                     : HEC-MW Ver.2.6
 
-  hecmw2/                     : HEC-MW Ver.4.2
+  hecmw2/                     : HEC-MW Ver.4.3
 
   etc/                        : 各種環境設定ファイル
 
