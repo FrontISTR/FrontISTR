@@ -3196,7 +3196,8 @@ static int
 contact_agg_mark_node_group(int *mark,
                 struct hecmwST_local_mesh *global_mesh,
                 int gid,
-                int agg_id)
+                int agg_id,
+                int *agg_dup)
 {
     struct hecmwST_node_grp *ngrp = global_mesh->node_group;
     int istart, iend, i;
@@ -3210,10 +3211,14 @@ contact_agg_mark_node_group(int *mark,
         HECMW_assert( 0 <= nid && nid < global_mesh->n_node );
         if (0 <= mark[nid] && mark[nid] < agg_id) {
             /* the node is included in some other contact pair */
-            fprintf(stderr,
-                    "ERROR: node included in multiple node groups in different contact pairs,\n"
-                    "       which is not supported by CONTACT=AGGREGATE\n");
-            HECMW_abort( HECMW_comm_get_comm() );
+            if (*agg_dup == -1) {
+                *agg_dup = mark[nid];
+            } else if (mark[nid] != *agg_dup) {
+                fprintf(stderr,
+                        "ERROR: node included in multiple node groups in different contact pairs,\n"
+                        "       which is not supported by CONTACT=AGGREGATE\n");
+                HECMW_abort( HECMW_comm_get_comm() );
+            }
         }
         mark[nid] = agg_id;
     }
@@ -3372,7 +3377,8 @@ static int
 contact_agg_mark_surf_group(int *mark,
                 struct hecmwST_local_mesh *global_mesh,
                 int gid,
-                int agg_id)
+                int agg_id,
+                int *agg_dup)
 {
     struct hecmwST_surf_grp *sgrp = global_mesh->surf_group;
     int istart, iend, i, j;
@@ -3400,10 +3406,14 @@ contact_agg_mark_surf_group(int *mark,
             HECMW_assert( 0 <= nid && nid < global_mesh->n_node );
             if (0 <= mark[nid] && mark[nid] < agg_id) {
                 /* the node is included in some other contact pair */
-                fprintf(stderr,
-                        "ERROR: node included in multiple surface groups in different contact pairs,\n"
-                        "       which is not supported by CONTACT=AGGREGATE\n");
-                HECMW_abort( HECMW_comm_get_comm() );
+                if (*agg_dup == -1) {
+                    *agg_dup = mark[nid];
+                } else if (mark[nid] != *agg_dup) {
+                    fprintf(stderr,
+                            "ERROR: node included in multiple surface groups in different contact pairs,\n"
+                            "       which is not supported by CONTACT=AGGREGATE\n");
+                    HECMW_abort( HECMW_comm_get_comm() );
+                }
             }
             mark[nid] = agg_id;
         }
@@ -3424,7 +3434,7 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     int i;
     struct hecmwST_contact_pair *cp;
     int *mark;
-    int agg_id, gid;
+    int agg_id, agg_dup, gid;
     int n_node2;
     const int *node_graph_index2;
     const int *node_graph_item2;
@@ -3460,21 +3470,31 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     agg_id = 0;
     /* mark contact pairs */
     for (i = 0; i < cp->n_pair; i++) {
+        agg_dup = -1;
         /* slave */
         if (cp->type[i] == HECMW_CONTACT_TYPE_NODE_SURF) {
             gid = cp->slave_grp_id[i];
-            rtc = contact_agg_mark_node_group(mark, global_mesh, gid, agg_id);
+            rtc = contact_agg_mark_node_group(mark, global_mesh, gid, agg_id, &agg_dup);
             if( rtc != RTC_NORMAL )  goto error;
         } else { /* HECMW_CONTACT_TYPE_SURF_SURF */
             gid = cp->slave_grp_id[i];
-            rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id);
+            rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id, &agg_dup);
             if( rtc != RTC_NORMAL )  goto error;
         }
         /* master */
         gid = cp->master_grp_id[i];
-        rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id);
+        rtc = contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id, &agg_dup);
         if( rtc != RTC_NORMAL )  goto error;
-        agg_id++;
+
+        if (agg_dup >= 0) {
+            for (i = 0; i < global_mesh->n_node; i++) {
+                if (mark[i] == agg_id) {
+                    mark[i] = agg_dup;
+                }
+            }
+        } else {
+            agg_id++;
+        }
     }
     /* mark other nodes */
     for (i = 0; i < global_mesh->n_node; i++) {
