@@ -1298,8 +1298,8 @@ contains
     do idof = ndof - ndofextra + 1, ndof
       hecMATLag%D((hecMATLag%N-1)*ndof2 + (idof-1)*ndof + idof) = 1.d0
     enddo
-    do i = hecMAT%N*ndof2, hecMAT%NP*ndof2
-      hecMATLag%D(i + nb_lag) = hecMAT%D(i)
+    do i = hecMAT%N*ndof2+1, hecMAT%NP*ndof2
+      hecMATLag%D(i + nb_lag*ndof2) = hecMAT%D(i)
     enddo
 
     allocate(hecMATLag%B(hecMATLag%NP*ndof))
@@ -1314,7 +1314,7 @@ contains
       hecMATLag%B(hecMAT%N*ndof + i) = hecMAT%B(hecMAT%NP*ndof + i)
     enddo
     do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
-      hecMATlag%B(i + nb_lag) = hecMAT%B(i)
+      hecMATlag%B(i + nb_lag*ndof) = hecMAT%B(i)
     enddo
 
     hecMATLag%Iarray=hecMAT%Iarray
@@ -1337,7 +1337,7 @@ contains
       hecMAT%X(i) = hecMATLag%X(i)
     enddo
     do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
-      hecMAT%X(i) = hecMATLag%X(i + nb_lag)
+      hecMAT%X(i) = hecMATLag%X(i + nb_lag*ndof)
     enddo
     do i = 1, fstrMAT%num_lagrange
       hecMAT%X(hecMAT%NP*ndof + i) = hecMATLag%X(hecMAT%N*ndof + i)
