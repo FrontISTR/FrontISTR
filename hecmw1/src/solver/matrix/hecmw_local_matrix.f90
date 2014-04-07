@@ -554,7 +554,7 @@ contains
 
     call replace_hecmat(hecTKT, BTtKT)
 
-    do i=1,nc*ndof
+    do i=1,nr*ndof
       hecTKT%X(i)=hecMAT%X(i)
     enddo
   end subroutine make_new_hecmat

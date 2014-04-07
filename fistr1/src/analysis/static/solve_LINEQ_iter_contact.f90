@@ -55,7 +55,7 @@ contains
     call hecmw_allreduce_I1(hecMESH, num_lagrange_global, hecmw_sum)
 
     if (num_lagrange_global == 0) then
-      write(0,*) 'DEBUG: no contact'
+      write(0,*) myrank, 'DEBUG: no contact'
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)
       call hecmw_mat_set_method(hecMAT, 1)
@@ -64,7 +64,7 @@ contains
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
     else
-      write(0,*) 'DEBUG: with contact'
+      write(0,*) myrank, 'DEBUG: with contact'
       if (fg_eliminate) then
         call solve_eliminate(hecMESH, hecMAT, fstrMAT)
       else
@@ -101,7 +101,7 @@ contains
     real(kind=kreal) :: t1
 
     t1 = hecmw_wtime()
-    write(0,*) 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
 
     ndof=hecMAT%NDOF
     allocate(iw2(hecMAT%N*ndof))
@@ -110,20 +110,20 @@ contains
 
     ! choose slave DOFs to be eliminated with Lag. DOFs
     call choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL, wSU)
-    write(0,*) 'DEBUG: Slave DOFs successfully chosen', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: Slave DOFs successfully chosen', hecmw_wtime()-t1
 
     ! make transformation matrix and its transpose
     call make_BTmat(hecMAT, fstrMAT, iw2, wSL, BTmat)
     !call hecmw_localmat_write(BTmat, 0)
     call make_BTtmat(hecMAT, fstrMAT, iw2, iwS, wSU, BTtmat)
     !call hecmw_localmat_write(BTtmat, 0)
-    write(0,*) 'DEBUG: Making BTmat and BTtmat done', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: Making BTmat and BTtmat done', hecmw_wtime()-t1
 
     if (hecMESH%n_neighbor_pe > 0) then
       ! update communication table
       allocate(hecMESHtmp, BT_all)
       call update_comm_table(hecMESH, BTmat, hecMESHtmp, BT_all)
-      write(0,*) 'DEBUG: Updating communication table done', hecmw_wtime()-t1
+      write(0,*) myrank, 'DEBUG: Updating communication table done', hecmw_wtime()-t1
       call hecmw_localmat_free(BTmat)
     else
       ! in serial computation
@@ -134,28 +134,28 @@ contains
     ! calc trimatmul in hecmwST_matrix data structure
     call hecmw_mat_init(hecTKT)
     call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange, hecTKT)
-    write(0,*) 'DEBUG: calculated hecTKT', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: calculated hecTKT', hecmw_wtime()-t1
 
     ! make new RHS
     call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
          fstrMAT%num_lagrange, hecTKT%B)
-    write(0,*) 'DEBUG: calculated RHS', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: calculated RHS', hecmw_wtime()-t1
 
     ! use CG when the matrix is symmetric
     if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
     call hecmw_solve_33(hecMESHtmp, hecTKT)
-    write(0,*) 'DEBUG: solver finished', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
 
     ! calc u_s
     call hecmw_localmat_mulvec(BT_all, hecTKT%X, hecMAT%X) !!!<== maybe, BT_all should be BTmat ???
     call subst_Blag(hecMAT, iwS, wSL, fstrMAT%num_lagrange)
-    write(0,*) 'DEBUG: calculated disp', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: calculated disp', hecmw_wtime()-t1
 
     ! calc lambda
     call comp_lag(hecMAT, iwS, wSU, fstrMAT%num_lagrange)
-    write(0,*) 'DEBUG: calculated lag', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: calculated lag', hecmw_wtime()-t1
 
     ! free matrices
     call hecmw_localmat_free(BT_all)
@@ -166,7 +166,7 @@ contains
       deallocate(hecMESHtmp, BT_all)
     end if
     deallocate(iw2, iwS)
-    write(0,*) 'DEBUG: solve_eliminate end', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: solve_eliminate end', hecmw_wtime()-t1
   end subroutine solve_eliminate
 
   subroutine choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL, wSU)
@@ -546,7 +546,8 @@ contains
     integer(kind=kint), pointer :: org_import(:), cur_import(:)
     integer(kind=kint) :: tag
     type (hecmwST_local_matrix) :: BT_imp
-    integer(kind=kint) :: nnz_imp, nnz
+    integer(kind=kint) :: nnz
+    integer(kind=kint),allocatable :: nnz_imp(:)
     integer(kind=kint), allocatable :: index_imp(:), item_imp(:)
     real(kind=kreal), allocatable :: val_imp(:)
     integer(kind=kint), allocatable :: requests(:)
@@ -669,25 +670,30 @@ contains
     BT_imp%nnz = 0
     allocate(BT_imp%index(0:hecMESH%import_index(hecMESH%n_neighbor_pe)))
     BT_imp%index(0) = 0
+    allocate(nnz_imp(hecMESH%n_neighbor_pe))
     do idom = 1,hecMESH%n_neighbor_pe
       irank = hecMESH%neighbor_pe(idom)
       tag = 1003
       call MPI_RECV(recvbuf, 2, MPI_INTEGER, irank, tag, &
            hecMESH%MPI_COMM, statuses(:,1), ierror)
       nr_imp = recvbuf(1)
-      nnz_imp = recvbuf(2)
+      nnz_imp(idom) = recvbuf(2)
       idx_0 = hecMESH%import_index(idom-1)
       idx_n = hecMESH%import_index(idom)
       if (nr_imp /= idx_n - idx_0) &
            stop 'ERROR: num of rows of BT_imp incorrect' !!! ASSERTION
       BT_imp%nr = BT_imp%nr + nr_imp
-      BT_imp%nnz = BT_imp%nnz + nnz_imp
+      BT_imp%nnz = BT_imp%nnz + nnz_imp(idom)
       allocate(index_imp(0:nr_imp))
       tag = 1004
       call MPI_RECV(index_imp(0), nr_imp+1, MPI_INTEGER, irank, tag, &
            hecMESH%MPI_COMM, statuses(:,1), ierror)
-      if (index_imp(nr_imp) /= nnz_imp) &
-           stop 'ERROR: num of nonzero of BT_imp incorrect' !!! ASSERTION
+      if (index_imp(nr_imp) /= nnz_imp(idom)) then !!! ASSERTION
+        write(0,*) myrank, 'ERROR: num of nonzero of BT_imp incorrect'
+        write(0,*) myrank, 'nr_imp, index_imp(nr_imp), nnz_imp', &
+             nr_imp, index_imp(nr_imp), nnz_imp(idom)
+        stop
+      endif
       do j = 1, nr_imp
         jj = hecMESH%import_item(idx_0+j) - hecMESH%nn_internal
         BT_imp%index(jj) = index_imp(j) - index_imp(j-1)
@@ -719,14 +725,13 @@ contains
       irank = hecMESH%neighbor_pe(idom)
       idx_0 = hecMESH%import_index(idom-1)
       idx_n = hecMESH%import_index(idom)
-      nnz_imp = BT_imp%index(idx_n) - BT_imp%index(idx_0)
-      allocate(item_imp(nnz_imp))
+      allocate(item_imp(nnz_imp(idom)))
       tag = 1005
-      call MPI_Recv(item_imp, nnz_imp, MPI_INTEGER, &
+      call MPI_Recv(item_imp, nnz_imp(idom), MPI_INTEGER, &
            irank, tag, hecMESH%MPI_COMM, statuses(:,1), ierror)
-      allocate(val_imp(nnz_imp * ndof2))
+      allocate(val_imp(nnz_imp(idom) * ndof2))
       tag = 1006
-      call MPI_Recv(val_imp, nnz_imp * ndof2, MPI_DOUBLE_PRECISION, &
+      call MPI_Recv(val_imp, nnz_imp(idom) * ndof2, MPI_DOUBLE_PRECISION, &
            irank, tag, hecMESH%MPI_COMM, statuses(:,1), ierror)
 
       ! convert column id of item_imp() to local id refering cur_import(:)
@@ -751,6 +756,7 @@ contains
       end do
       deallocate(item_imp, val_imp)
     end do
+    deallocate(nnz_imp)
     write(0,*) myrank, 'DEBUG: recv BT_imp (item and val) done'
     call MPI_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses, ierror)
 
@@ -844,7 +850,7 @@ contains
         jrow = hecMESH%export_item(j + idx_0)
         n = BTmat%index(jrow) - BTmat%index(jrow-1)
         BT_exp(i)%nnz = BT_exp(i)%nnz + n
-        BT_exp(i)%index(j) = BTmat%index(j-1) + n
+        BT_exp(i)%index(j) = BT_exp(i)%index(j-1) + n
       end do
       allocate(BT_exp(i)%item(BT_exp(i)%nnz))
       allocate(BT_exp(i)%A(BT_exp(i)%nnz * ndof2))
@@ -1079,7 +1085,7 @@ contains
     real(kind=kreal) :: t1
 
     t1 = hecmw_wtime()
-    write(0,*) 'DEBUG: solve_no_eliminate, start', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: solve_no_eliminate, start', hecmw_wtime()-t1
 
     call hecmw_mat_init(hecMATLag)
 
@@ -1093,7 +1099,7 @@ contains
     !write(0,*) 'DEBUG: hecMATLag: NDOF,N,NP=',hecMATLag%NDOF,hecMATLag%N,hecMATLag%NP
 
     ndofextra = hecMATLag%N*ndof - hecMAT%N*ndof - fstrMAT%num_lagrange
-    write(0,*) 'DEBUG: num_lagrange,nb_lag,ndofextra=',fstrMAT%num_lagrange,nb_lag,ndofextra
+    write(0,*) myrank, 'DEBUG: num_lagrange,nb_lag,ndofextra=',fstrMAT%num_lagrange,nb_lag,ndofextra
 
     ! Upper: count num of blocks
     allocate(iwUr(hecMAT%N))
@@ -1314,7 +1320,7 @@ contains
     hecMATLag%Iarray=hecMAT%Iarray
     hecMATLag%Rarray=hecMAT%Rarray
 
-    write(0,*) 'DEBUG: made hecMATLag', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: made hecMATLag', hecmw_wtime()-t1
 
     do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
       hecMESH%import_item(i) = hecMESH%import_item(i) + nb_lag
@@ -1339,7 +1345,7 @@ contains
 
     call hecmw_mat_finalize(hecMATLag)
 
-    write(0,*) 'DEBUG: solve_no_eliminate end', hecmw_wtime()-t1
+    write(0,*) myrank, 'DEBUG: solve_no_eliminate end', hecmw_wtime()-t1
   end subroutine solve_no_eliminate
 
 end module m_solve_LINEQ_iter_contact
