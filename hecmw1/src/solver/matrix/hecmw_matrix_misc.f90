@@ -60,6 +60,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
+    call hecmw_mat_set_estcond( hecMAT, 0 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
     call hecmw_mat_set_sigma_diag( hecMAT, 1.d0 )
@@ -233,6 +234,18 @@ module hecmw_matrix_misc
 
     hecmw_mat_get_mpc_method = hecMAT%Iarray(13)
   end function hecmw_mat_get_mpc_method
+
+  function hecmw_mat_get_estcond( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_estcond
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_estcond = hecMAT%Iarray(14)
+  end function hecmw_mat_get_estcond
+
+  subroutine hecmw_mat_set_estcond( hecMAT, estcond )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: estcond
+    hecMAT%Iarray(14) = estcond
+  end subroutine hecmw_mat_set_estcond
 
   subroutine hecmw_mat_set_iterlog( hecMAT, iterlog )
     type(hecmwST_matrix) :: hecMAT

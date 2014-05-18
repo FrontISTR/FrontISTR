@@ -21,6 +21,10 @@
 !C***
 !
       module hecmw_solver_GMRES_33
+
+      public :: hecmw_solve_GMRES_33
+      private :: estimate_cond_num
+
       contains
 !C
 !C*** hecmw_solve_GMRES_33
@@ -67,6 +71,7 @@
       real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
       real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
       real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
+      integer(kind=kint ) :: ESTCOND
 
       integer(kind=kint), parameter :: R  = 1
       integer(kind=kint), parameter :: ZP = R + 1
@@ -94,6 +99,9 @@
       MAXIT  = hecmw_mat_get_iter( hecMAT )
        TOL   = hecmw_mat_get_resid( hecMAT )
       NREST  = hecmw_mat_get_nrest( hecMAT )
+      ESTCOND = hecmw_mat_get_estcond( hecMAT )
+
+      if (NREST >= NDOF*NP-1) NREST = NDOF*NP-2
 
       ERROR= 0
       NRK= NREST + 7
@@ -276,6 +284,10 @@
       if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
      &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
+      if (ESTCOND /= 0) then
+        call estimate_cond_num(I, H)
+      endif
+
       if ( RESID.le.TOL ) then
 !C-- [H]{y}= {s_tld}
          do ik= 1, I
@@ -430,4 +442,95 @@
       Tsol = E1_TIME - S1_TIME
 
       end subroutine  hecmw_solve_GMRES_33
+
+      subroutine estimate_cond_num(I, H)
+      use hecmw_util
+      implicit none
+      integer(kind=kint), intent(in) :: I
+      real(kind=kreal), intent(in) :: H(:,:)
+      ! character(len=1) :: JOBU, JOBVT
+      character(len=1) :: JOBZ
+      integer(kind=kint) :: N, LDH, LDZ=1, LWORK, INFO
+      real(kind=kreal), allocatable :: WR(:), WORK(:), H1(:,:)
+      integer(kind=kint), allocatable :: IWORK(:)
+      real(kind=kreal) :: Z(1,1)
+      integer(kind=kint) :: j, k
+
+      ! copy H
+      N=I
+      allocate(H1(N+1,N))
+      do j = 1, N
+        do k = 1, j+1
+          H1(k,j) = H(k,j)
+        enddo
+        do k = j+2, N
+          H1(k,j) = 0.d0
+        enddo
+      enddo
+      LDH=N+1
+      allocate(WR(N))
+
+
+      ! !!
+      ! !! dgesvd version
+      ! !!
+
+      ! ! arguments for calling dgesvd
+      ! JOBU='N'
+      ! JOBVT='N'
+      ! ! estimate optimal LWORK
+      ! allocate(WORK(1))
+      ! LWORK=-1
+      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
+      ! if (INFO /= 0) then
+      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
+      !   return
+      ! endif
+      ! ! calculate singular values
+      ! LWORK=WORK(1)
+      ! deallocate(WORK)
+      ! allocate(WORK(LWORK))
+      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
+      ! if (INFO /= 0) then
+      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
+      !   return
+      ! endif
+      ! deallocate(WORK)
+
+
+      !!
+      !! dgesdd version (faster but need more workspace than dgesvd)
+      !!
+
+      ! arguments for calling dgesdd
+      JOBZ='N'
+      allocate(IWORK(8*N))
+      ! estimate optimal LWORK
+      allocate(WORK(1))
+      LWORK=-1
+      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
+        return
+      endif
+      ! calculate singular values
+      LWORK=WORK(1)
+      deallocate(WORK)
+      allocate(WORK(LWORK))
+      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
+        return
+      endif
+      deallocate(WORK)
+      deallocate(IWORK)
+
+
+      write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
+           WR(N), WR(1), WR(1)/WR(N)
+
+      deallocate(WR)
+      deallocate(H1)
+      end subroutine estimate_cond_num
+
       end module     hecmw_solver_GMRES_33
