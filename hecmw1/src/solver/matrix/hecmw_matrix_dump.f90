@@ -105,7 +105,7 @@ contains
         ! Lower
         do j = hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
           j0 = (hecMAT%itemL(j)-1)*ndof
-          idxL0 = j0*ndof + (idof-1)*ndof
+          idxL0 = (j-1)*ndof2 + (idof-1)*ndof
           do jdof = 1, ndof
             jj = j0 + jdof
             idxL = idxL0 + jdof
@@ -122,7 +122,7 @@ contains
         ! Upper
         do j = hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
           j0 = (hecMAT%itemU(j)-1)*ndof
-          idxU0 = j0*ndof + (idof-1)*ndof
+          idxU0 = (j-1)*ndof2 + (idof-1)*ndof
           do jdof = 1, ndof
             jj = j0 + jdof
             idxU = idxU0 + jdof
@@ -214,7 +214,7 @@ contains
         ! Lower
         do j = hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
           j0 = (hecMAT%itemL(j)-1)*ndof
-          idxL0 = j0*ndof + (idof-1)*ndof
+          idxL0 = (j-1)*ndof2 + (idof-1)*ndof
           do jdof = 1, ndof
             jj = j0 + jdof
             idxL = idxL0+jdof
@@ -231,7 +231,7 @@ contains
         ! Upper
         do j = hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
           j0 = (hecMAT%itemU(j)-1)*ndof
-          idxU0 = j0*ndof + (idof-1)*ndof
+          idxU0 = (j-1)*ndof2 + (idof-1)*ndof
           do jdof = 1, ndof
             jj = j0 + jdof
             idxU = idxU0 + jdof

@@ -262,13 +262,6 @@ module hecmw_matrix_misc
     hecmw_mat_get_timelog = hecMAT%Iarray(22)
   end function hecmw_mat_get_timelog
 
-  subroutine hecmw_mat_set_resid( hecMAT, resid )
-    type(hecmwST_matrix) :: hecMAT
-    real(kind=kreal) :: resid
-
-    hecMAT%Rarray(1) = resid
-  end subroutine hecmw_mat_set_resid
-
   function hecmw_mat_get_dump( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_dump
     type(hecmwST_matrix) :: hecMAT
@@ -328,6 +321,13 @@ module hecmw_matrix_misc
     integer(kind=kint) :: solver_type
     hecMAT%Iarray(99) = solver_type
   end subroutine hecmw_mat_set_solver_type
+
+  subroutine hecmw_mat_set_resid( hecMAT, resid )
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: resid
+
+    hecMAT%Rarray(1) = resid
+  end subroutine hecmw_mat_set_resid
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid

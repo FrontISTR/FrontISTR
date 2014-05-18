@@ -124,10 +124,9 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
                 end if
         end if
 
-        if( dumptype <= 4 ) then
-          dumptype = dmpt - 1
-        else
-          dumptype = dmpt - 5
+        dumptype = dmpt - 1
+        if( dumptype >= 4 ) then
+          dumptype = dumptype - 4
         end if
 
         !* data --------------------------------------------------------------------------------------- *!
