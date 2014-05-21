@@ -117,6 +117,11 @@
 !C===
       call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
+!C-- set arbitrary {r_tld}
+      do i=1, NNDOF
+        WW(i,RT) = WW(i,R)
+      enddo
+
 !C-- compute ||{b}||
       call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
