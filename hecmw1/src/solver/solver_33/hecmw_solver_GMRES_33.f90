@@ -169,6 +169,7 @@
 !C +---------------+
 !C===
         call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        if (DNRM2 == 0.d0) exit ! converged
 
         RNORM= dsqrt(DNRM2)
         coef= ONE/RNORM
