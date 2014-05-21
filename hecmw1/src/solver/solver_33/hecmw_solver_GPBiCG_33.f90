@@ -308,7 +308,7 @@
 !C#####
 
       if (RESID.le.TOL   ) exit
-      if ( ITER.eq.MAXIT ) ERROR= -300
+      if ( ITER.eq.MAXIT ) ERROR= HECMW_SOLVER_ERROR_NOCONV_MAXIT
 !C===
       enddo
 

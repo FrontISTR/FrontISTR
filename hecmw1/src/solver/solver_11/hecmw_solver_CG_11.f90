@@ -393,7 +393,7 @@
  1000   format (i5, 1pe16.6)
 
         if ( RESID.le.TOL   ) exit
-        if ( ITER .eq.MAXIT ) ERROR= -100
+        if ( ITER .eq.MAXIT ) ERROR= HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
         RHO1 = RHO
 

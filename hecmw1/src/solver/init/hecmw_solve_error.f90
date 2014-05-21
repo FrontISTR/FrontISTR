@@ -16,16 +16,26 @@
 !======================================================================!
 
 module m_hecmw_solve_error
+      use hecmw_util
+
+      integer(kind=kint), parameter :: &
+           HECMW_SOLVER_ERROR_INCONS_PC = 1001, &
+           HECMW_SOLVER_ERROR_ZERO_DIAG = 2001, &
+           HECMW_SOLVER_ERROR_ZERO_RHS = 2002, &
+           HECMW_SOLVER_ERROR_NOCONV_MAXIT = 3001, &
+           HECMW_SOLVER_ERROR_DIVERGE_MAT = 3002, &
+           HECMW_SOLVER_ERROR_DIVERGE_PC = 3003
 
 contains
 
       subroutine hecmw_solve_error (hecMESH, IFLAG)
       use hecmw_util
-      implicit REAL*8 (A-H,O-Z)       
+      implicit none
       type (hecmwST_local_mesh) :: hecMESH
+      integer(kind=kint) :: IFLAG
 
       if ( hecMESH%zero.eq.1 .and. &
-           (IFLAG.eq.1001 .or. IFLAG.eq.2001) ) then
+           (IFLAG.eq.HECMW_SOLVER_ERROR_INCONS_PC .or. IFLAG.eq.HECMW_SOLVER_ERROR_ZERO_DIAG) ) then
         write (*,'(/a )')                                               &
      &           '###############################################'
         write (*,'( a )')                                               &
@@ -34,7 +44,7 @@ contains
      &           '###############################################'
       endif
 
-      if (IFLAG.eq.1001) then
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_INCONS_PC) then
         if (hecMESH%zero.eq.1) then
           write (*,'(/a )')'  #### HEC-MW-SOLVER-E-1001'
           write (*,'( a/)')'    inconsistent solver/preconditioning'
@@ -43,7 +53,7 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       endif
 
-      if (IFLAG.eq.2001) then
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_ZERO_DIAG) then
         if (hecMESH%zero.eq.1) then
           write (*,'(/a )')'  #### HEC-MW-SOLVER-E-2001: '
           write (*,'( a/)')'    ZERO component in diagonal block'
@@ -52,17 +62,31 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       endif
 
-      if (IFLAG.eq.2002) then
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_ZERO_RHS) then
         if (hecMESH%zero.eq.1) then
           write (*,'(/a )')'  #### HEC-MW-SOLVER-W-2002: '
           write (*,'( a/)')'    ZERO RHS norm'
         endif
       endif
 
-      if (IFLAG.eq.3001) then
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
         if (hecMESH%zero.eq.1) then
           write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3001: '
           write (*,'( a/)')'    not converged within ceratin iterations'
+        endif
+      endif
+
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) then
+        if (hecMESH%zero.eq.1) then
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3002: '
+          write (*,'( a/)')'    diverged due to indefinite or negative definite matrix'
+        endif
+      endif
+
+      if (IFLAG.eq.HECMW_SOLVER_ERROR_DIVERGE_PC) then
+        if (hecMESH%zero.eq.1) then
+          write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3003: '
+          write (*,'( a/)')'    diverged due to indefinite preconditioner'
         endif
       endif
 

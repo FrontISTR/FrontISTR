@@ -125,7 +125,7 @@ contains
     call hecmw_allreduce_R (hecMESH, RHS, 1, hecmw_sum)
 
     if (RHS(1).eq.0.d0) then
-      ERROR= 2002
+      ERROR= HECMW_SOLVER_ERROR_ZERO_RHS
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
@@ -140,7 +140,7 @@ contains
 
     call hecmw_allreduce_I (hecMESH, IFLAG, 1, hecmw_sum)
     if (IFLAG(1).ne.0 .and. (PRECOND.le.10 .and. iterPREmax.gt.0)) then
-      ERROR= 2001
+      ERROR= HECMW_SOLVER_ERROR_ZERO_DIAG
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
@@ -152,7 +152,7 @@ contains
 
     call hecmw_allreduce_I (hecMESH, IFLAG, 1, hecmw_sum)
     if (IFLAG(1).ne.0) then
-      ERROR= 1001
+      ERROR= HECMW_SOLVER_ERROR_INCONS_PC
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
@@ -165,7 +165,7 @@ contains
     if (PRECOND.eq.12) IFLAG(1)= 0
 
     if (IFLAG(1).ne.0) then
-      ERROR= 1001
+      ERROR= HECMW_SOLVER_ERROR_INCONS_PC
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
@@ -322,8 +322,8 @@ contains
            &                              TIME_setup, TIME_sol, TIME_comm )
     endif
 
-    if (RESID.gt.hecTKT%Rarray(1)) then
-      call hecmw_solve_error (hecMESH, 3001)
+    if (ERROR.ne.0) then
+      call hecmw_solve_error (hecMESH, ERROR)
     endif
 
     call hecmw_mat_dump_solution(hecTKT)

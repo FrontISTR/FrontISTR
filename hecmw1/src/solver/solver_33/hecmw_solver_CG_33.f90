@@ -170,6 +170,15 @@
 !C +---------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,Z), RHO, Tcomm)
+      ! if RHO is NaN or Inf then no converge
+      if (RHO == 0.d0) then
+        ! converged due to RHO==0
+        exit
+      elseif (iter > 1 .and. RHO*RHO1 <= 0) then
+        ! diverged due to indefinite preconditioner
+        ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
+        exit
+      endif
 
 !C===
 !C +-----------------------------+
@@ -201,6 +210,12 @@
 !C +---------------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,P), WW(:,Q), C1, Tcomm)
+      ! if C1 is NaN or Inf, no converge
+      if (C1 <= 0) then
+        ! diverged due to indefinite or negative definite matrix
+        ERROR = HECMW_SOLVER_ERROR_DIVERGE_MAT
+        exit
+      endif
 
       ALPHA= RHO / C1
 
@@ -235,7 +250,7 @@
       endif
 
       if ( RESID.le.TOL   ) exit
-      if ( ITER .eq.MAXIT ) ERROR = -300
+      if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO
 

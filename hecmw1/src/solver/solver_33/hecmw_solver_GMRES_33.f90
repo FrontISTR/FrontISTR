@@ -325,7 +325,7 @@
       endif
 
       if ( ITER.gt.MAXIT ) then
-        ERROR = -300
+        ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
       end if
       end do
@@ -380,7 +380,7 @@
 
 !        if ( RESID.le.TOL )   exit OUTER
       if ( ITER .gt.MAXIT ) then
-        ERROR = -300
+        ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
       end if
 !C
@@ -390,7 +390,7 @@
 !C
 !C-- iteration FAILED
 
-      if (ERROR == -300) then
+      if (ERROR == HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
         INFO = ITER
 
         !C-- [H]{y}= {s_tld}
