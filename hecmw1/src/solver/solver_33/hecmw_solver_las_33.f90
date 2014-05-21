@@ -139,7 +139,14 @@ contains
       D => hecMAT%D
 
       ! added for turning >>>
-      if (isFirst .eqv. .true.) then
+      if (.not. isFirst) then
+        numOfBlock = numOfThread * numOfBlockPerThread
+        if (endPos(numOfBlock-1) .ne. N-1) then
+          deallocate(startPos, endPos)
+          isFirst = .true.
+        endif
+      endif
+      if (isFirst) then
         !$ numOfThread = omp_get_max_threads()
         numOfBlock = numOfThread * numOfBlockPerThread
         allocate (startPos(0 : numOfBlock - 1), endPos(0 : numOfBlock - 1))
