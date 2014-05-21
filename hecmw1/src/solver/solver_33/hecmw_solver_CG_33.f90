@@ -111,7 +111,7 @@
         call hecmw_JAD_INIT(hecMAT)
       ENDIF
 
-      if (ESTCOND /= 0) then
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
         allocate(D(MAXIT),E(MAXIT-1))
       endif
 !C===
@@ -223,9 +223,15 @@
       if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
 !C#####
 
-      if (ESTCOND /= 0) then
-        call estimate_cond_num(ITER, ALPHA, BETA, ALPHA1, D, E)
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        if (ITER == 1) then
+          D(1) = 1.d0 / ALPHA
+        else
+          D(ITER) = 1.d0 / ALPHA + BETA / ALPHA1
+          E(ITER-1) = sqrt(BETA) / ALPHA1
+        endif
         ALPHA1 = ALPHA
+        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(ITER, D, E)
       endif
 
       if ( RESID.le.TOL   ) exit
@@ -253,7 +259,8 @@
         call hecmw_JAD_FINALIZE()
       ENDIF
 
-      if (ESTCOND /= 0) then
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        call estimate_cond_num(ITER, D, E)
         deallocate(D, E)
       endif
 
@@ -263,12 +270,11 @@
 
       end subroutine hecmw_solve_CG_33
 
-      subroutine estimate_cond_num(ITER, ALPHA, BETA, ALPHA1, D, E)
+      subroutine estimate_cond_num(ITER, D, E)
       use hecmw_util
       implicit none
       integer(kind=kint), intent(in) :: ITER
-      real(kind=kreal), intent(in) :: ALPHA, BETA, ALPHA1
-      real(kind=kreal), intent(inout) :: D(:), E(:)
+      real(kind=kreal), intent(in) :: D(:), E(:)
       character(len=1) :: JOBZ, RANGE
       ! character(len=1) :: COMPZ
       real(kind=kreal) :: VL, VU, ABSTOL, Z(1,1)
@@ -279,12 +285,7 @@
       real(kind=kreal), allocatable :: D1(:), E1(:)
       integer(kind=kint) :: i
 
-      if (ITER == 1) then
-        D(1) = 1.d0 / ALPHA
-      else
-        D(ITER) = 1.d0 / ALPHA + BETA / ALPHA1
-        E(ITER-1) = sqrt(BETA) / ALPHA1
-      endif
+      if (ITER <= 1) return
 
       ! copy D, E
       allocate(D1(ITER),E1(ITER))

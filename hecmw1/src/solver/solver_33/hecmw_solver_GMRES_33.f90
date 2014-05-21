@@ -284,8 +284,8 @@
       if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
      &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
-      if (ESTCOND /= 0) then
-        call estimate_cond_num(I, H)
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(I, H)
       endif
 
       if ( RESID.le.TOL ) then
@@ -427,6 +427,10 @@
       end if
 
       call hecmw_solver_scaling_bk_33(hecMAT)
+
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        call estimate_cond_num(I, H)
+      endif
 !C
 !C-- INTERFACE data EXCHANGE
       S_TIME = HECMW_WTIME()
@@ -455,6 +459,8 @@
       integer(kind=kint), allocatable :: IWORK(:)
       real(kind=kreal) :: Z(1,1)
       integer(kind=kint) :: j, k
+
+      if (I == 0) return
 
       ! copy H
       N=I
