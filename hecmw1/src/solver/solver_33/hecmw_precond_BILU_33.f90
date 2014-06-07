@@ -1447,6 +1447,10 @@ contains
     ALU(3,3)= D33
 
     do k= 1, 3
+      if (ALU(k,k) == 0.d0) then
+        !write(*,*) ALU(1:3,1:3)
+        stop 'ERROR: Divide by zero in ILU setup'
+      endif
       ALU(k,k)= 1.d0/ALU(k,k)
       do i= k+1, 3
         ALU(i,k)= ALU(i,k) * ALU(k,k)

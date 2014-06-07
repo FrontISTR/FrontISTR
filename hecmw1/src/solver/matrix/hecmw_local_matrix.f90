@@ -9,6 +9,7 @@ module hecmw_local_matrix
   public :: hecmw_localmat_mulvec
   public :: hecmw_trimatmul_TtKT
   public :: hecmw_trimatmul_TtKT_mpc
+  public :: hecmw_localmat_transpose
 
   type hecmwST_local_matrix
     integer :: nr, nc, nnz, ndof
@@ -530,16 +531,11 @@ contains
 
     !write(0,*) 'DEBUG: nr, nc =',nr,nc
 
-    if (nr == nc) then      ! MPC
-      if (nr /= hecMAT%NP) stop 'ERROR: nr or nc incorrect'
-      hecTKT%N =hecMAT%N
-      hecTKT%NP=hecMAT%NP
-    else if (nr < nc) then  ! Contact
-      hecTKT%N =nr
-      hecTKT%NP=nc
-    else
-      stop 'ERROR: nr > nc'
+    if (nr /= nc) then
+      stop 'ERROR: nr /= nc'
     endif
+    hecTKT%N =hecMAT%N
+    hecTKT%NP=nr
     hecTKT%NDOF=ndof
 
     allocate(hecTKT%D(nc*ndof2))
@@ -618,12 +614,19 @@ contains
     call make_BTmat_mpc(hecMESH, BTmat)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTmat(MPC)'
     !call hecmw_localmat_write(BTmat,700+hecmw_comm_get_rank())
-    call make_BTtmat_mpc(hecMESH, BTtmat)
+    ! call make_BTtmat_mpc(hecMESH, BTtmat)
+    call hecmw_localmat_transpose(BTmat, BTtmat)
+    ! if (hecmw_localmat_equal(BTtmat, BTtmat2) == 0) then
+    !   write(0,*) 'ERROR: BTtmat2 is incorrect!!!'
+    ! else
+    !   write(0,*) 'DEBUG: BTtmat2 is correct'
+    ! endif
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
     call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
+    ! call hecmw_localmat_free(BTtmat2)
     deallocate(iwS)
   end subroutine hecmw_trimatmul_TtKT_mpc
 
@@ -747,5 +750,74 @@ contains
     call hecmw_localmat_blocking(Ttmat, ndof, BTtmat)
     call hecmw_localmat_free(Ttmat)
   end subroutine make_BTtmat_mpc
+
+  subroutine hecmw_localmat_transpose(Tmat, Ttmat)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat
+    type (hecmwST_local_matrix), intent(out) :: Ttmat
+    integer(kind=kint), allocatable :: iw(:)
+    integer(kind=kint) :: i, j, jj, ndof, ndof2, k, idof, jdof
+    allocate(iw(Tmat%nc))
+    iw = 0
+    do i = 1, Tmat%nr
+      do j = Tmat%index(i-1)+1, Tmat%index(i)
+        jj = Tmat%item(j)
+        iw(jj) = iw(jj) + 1
+      enddo
+    enddo
+    Ttmat%nr = Tmat%nc
+    Ttmat%nc = Tmat%nr
+    Ttmat%nnz = Tmat%nnz
+    Ttmat%ndof = Tmat%ndof
+    ndof = Tmat%ndof
+    ndof2 = ndof * ndof
+    allocate(Ttmat%index(0:Ttmat%nr))
+    allocate(Ttmat%item(Ttmat%nnz))
+    allocate(Ttmat%A(Ttmat%nnz*ndof2))
+    Ttmat%index(0) = 0
+    do i = 1, Ttmat%nr
+      Ttmat%index(i) = Ttmat%index(i-1) + iw(i)
+      iw(i) = Ttmat%index(i-1) + 1
+    enddo
+    do i = 1, Tmat%nr
+      do j = Tmat%index(i-1)+1, Tmat%index(i)
+        jj = Tmat%item(j)
+        k = iw(jj)
+        Ttmat%item( k ) = i
+        do idof = 1, ndof
+          do jdof = 1, ndof
+            Ttmat%A((k-1)*ndof2+(idof-1)*ndof+jdof) = &
+                 Tmat%A((j-1)*ndof2+(jdof-1)*ndof+idof)
+          enddo
+        enddo
+        iw(jj) = k + 1
+      enddo
+    enddo
+  end subroutine hecmw_localmat_transpose
+
+  function hecmw_localmat_equal(Tmat1, Tmat2)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat1, Tmat2
+    integer(kind=kint) :: hecmw_localmat_equal
+    integer(kind=kint) :: i, j, k0, k, ndof, ndof2
+    hecmw_localmat_equal = 0
+    if (Tmat1%nr /= Tmat2%nr) return
+    if (Tmat1%nc /= Tmat2%nc) return
+    if (Tmat1%nnz /= Tmat2%nnz) return
+    if (Tmat1%ndof /= Tmat2%ndof) return
+    ndof = Tmat1%ndof
+    ndof2 = ndof * ndof
+    do i = 1, Tmat1%nr
+      if (Tmat1%index(i) /= Tmat2%index(i)) return
+      do j = Tmat1%index(i-1)+1, Tmat1%index(i)
+        if (Tmat1%item(j) /= Tmat2%item(j)) return
+        k0 = (j-1)*ndof2
+        do k = 1, ndof2
+          if (Tmat1%A(k0+k) /= Tmat2%A(k0+k)) return
+        enddo
+      enddo
+    enddo
+    hecmw_localmat_equal = 1
+  end function hecmw_localmat_equal
 
 end module hecmw_local_matrix

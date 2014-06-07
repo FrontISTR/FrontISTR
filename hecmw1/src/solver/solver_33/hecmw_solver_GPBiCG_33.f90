@@ -55,6 +55,7 @@
 
       real(kind=kreal), dimension(5) :: CG
       real(kind=kreal), dimension(2) :: EQ
+      real(kind=kreal), dimension(2) :: RR
 
       integer(kind=kint ) :: MAXIT
       real   (kind=kreal) :: TOL
@@ -235,7 +236,7 @@
 !C===
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,Y ), CG(1))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,T ), CG(2))
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(NDOF))
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(3))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,Y ), CG(4))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,TT), CG(5))
       S_TIME= HECMW_WTIME()
@@ -289,9 +290,14 @@
         WW(j,T0)= WW(j,T)
       enddo
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,RT), COEF1, Tcomm)
-
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,R), WW(:,R), RR(1))
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,R), WW(:,RT), RR(2))
+      S_TIME= HECMW_WTIME()
+      call hecmw_allreduce_R(hecMESH, RR, 2, HECMW_SUM)
+      E_TIME= HECMW_WTIME()
+      Tcomm =  Tcomm + E_TIME - S_TIME
+      DNRM2 = RR(1)
+      COEF1 = RR(2)
 
       BETA = ALPHA*COEF1 / (QSI*RHO)
       do j= 1, NNDOF

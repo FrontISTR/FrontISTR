@@ -139,7 +139,7 @@ contains
     enddo
 
     call hecmw_allreduce_I (hecMESH, IFLAG, 1, hecmw_sum)
-    if (IFLAG(1).ne.0 .and. (PRECOND.le.10 .and. iterPREmax.gt.0)) then
+    if (IFLAG(1).ne.0 .and. (PRECOND.lt.10 .and. iterPREmax.gt.0)) then
       ERROR= HECMW_SOLVER_ERROR_ZERO_DIAG
       call hecmw_solve_error (hecMESH, ERROR)
     endif
@@ -371,6 +371,7 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
       write (*,'(a, 1pe16.6 )') '    solver/matvec    : ', time_Ax
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
+      if (ITER > 0) &
       write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
       write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
       write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post

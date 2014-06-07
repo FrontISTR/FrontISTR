@@ -225,6 +225,7 @@
       enddo
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,W), VAL, Tcomm)
+      if (VAL == 0.d0) exit ! converged
 
       H(I+1,I)= dsqrt(VAL)
       coef= ONE / H(I+1,I)
@@ -379,7 +380,7 @@
       WW(I+1,S)= dsqrt(DNRM2/BNRM2)
       RESID    = WW( I+1,S )
 
-!        if ( RESID.le.TOL )   exit OUTER
+      if ( RESID.le.TOL )   exit OUTER
       if ( ITER .gt.MAXIT ) then
         ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
