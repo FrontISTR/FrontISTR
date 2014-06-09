@@ -329,6 +329,11 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 		if(.not. (hecmw_is_etype_solid(ic_type) .or. ic_type == 781 .or. ic_type == 761 .or. ic_type == 641 )) cycle
 		nn = hecmw_get_max_node( ic_type )
 !C element loop
+!$omp parallel default(none), &
+!$omp&  private(icel,js,j,nodLOCAL,xx,yy,zz,tt,tt0,ecoord,edisp,isect,ihead,thick,mixflag,stiff,iflag,coords), &
+!$omp&  shared(iS,iE,hecMESH,temp,ref_temp,fstrSOLID,id_spc,force), &
+!$omp&  firstprivate(nn,ic_type)
+!$omp do
 		do icel = iS, iE
 			jS = hecMESH%elem_node_index(icel-1)
 			do j = 1, nn
@@ -379,8 +384,11 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 					force(1:nn*3) = MATMUL( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
 					DO j = 1, nn
 						IF( id_spc( nodLOCAL(j) ) == 1 ) THEN
+!$omp atomic
 							fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 )+force(3*j-2)
+!$omp atomic
 							fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 )+force(3*j-1)
+!$omp atomic
 							fstrSOLID%QFORCE( 3*nodLOCAL(j)   ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)   )+force(3*j  )
 						END IF
 					END DO
@@ -415,13 +423,18 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 				force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
 				do j = 1, nn
 					if( id_spc( nodLOCAL(j) ) == 1 ) then
+!$omp atomic
 					fstrSOLID%QFORCE(3*nodLOCAL(j)-2) = fstrSOLID%QFORCE(3*nodLOCAL(j)-2) + force(3*j-2)
+!$omp atomic
 					fstrSOLID%QFORCE(3*nodLOCAL(j)-1) = fstrSOLID%QFORCE(3*nodLOCAL(j)-1) + force(3*j-1)
+!$omp atomic
 					fstrSOLID%QFORCE(3*nodLOCAL(j)  ) = fstrSOLID%QFORCE(3*nodLOCAL(j)  ) + force(3*j  )
 					endif
 				enddo
 			endif
 		enddo
+!$omp end do
+!$omp end parallel
 	enddo
 
 	call hecmw_update_3_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )

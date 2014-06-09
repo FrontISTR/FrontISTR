@@ -57,6 +57,9 @@ module m_static_mat_ass_main
 !C** Set number of nodes
 			nn = hecmw_get_max_node(ic_type)
 !C element loop
+!$omp parallel default(none),private(icel,iiS,j,nodLOCAL,xx,yy,zz,stiffness), &
+!$omp&         shared(iS,iE,hecMESH,nn,ndof,ic_type,fstrSOLID,hecMAT)
+!$omp do
 			do icel= iS, iE
 !C** node ID
 				iiS= hecMESH%elem_node_index(icel-1)
@@ -73,6 +76,8 @@ module m_static_mat_ass_main
 !== CONSTRUCT the GLOBAL MATRIX STARTED
 				call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)
 			enddo	
+!$omp end do
+!$omp end parallel
 		enddo       
 
 !* for EQUATION
