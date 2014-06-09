@@ -196,10 +196,10 @@ contains
 
   !C
   !C***
-  !C*** FORM_ILU1_33
+  !C*** FORM_ILU0_33
   !C***
   !C
-  !C    form ILU(1) matrix
+  !C    form ILU(0) matrix
   !C
   subroutine FORM_ILU0_33                                   &
        &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
