@@ -90,6 +90,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
     if( nn>20 ) stop "Elemental nodes>20!"
 
 ! element loop
+!$omp parallel default(none), &
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,tt0,ttn,tt,ddu,du,total_disp,cdsys_ID,coords,thick,qf,isect,ihead,iter,tincr), &
+!$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR,strainEnergy)
+!$omp do
     do icel= iS, iE
 !
 ! ----- nodal coordinate
@@ -179,6 +183,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )
         do j= 1, nn
           do i = 1, ndof
+!$omp atomic
             fstrSOLID%QFORCE(ndof*(nodLOCAL(j)-1)+i)                          &
                = fstrSOLID%QFORCE(ndof*(nodLOCAL(j)-1)+i)+qf(ndof*(j-1)+i)
           enddo
@@ -188,6 +193,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         if(present(strainEnergy))then
           do j= 1, nn
             do i=1, ndof
+!$omp atomic
               strainEnergy=strainEnergy+0.5d0*(fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)&
                                               +qf(ndof*(j-1)+i))*ddu(i,j)
               fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)=qf(ndof*(j-1)+i)
@@ -196,6 +202,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         endif
 
     enddo      ! icel
+!$omp end do
+!$omp end parallel
   enddo        ! itype
 
 
