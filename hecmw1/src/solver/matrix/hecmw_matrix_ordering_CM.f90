@@ -41,10 +41,15 @@ contains
     call find_minimum_degrees(N, indexL, indexU, itemU, NMINMAX, nmin, mins)
     allocate(nlevel(nmin), lv_index(0:N,nmin), lv_item(N,nmin))
     ! perform CM ordering starting from each minimum degree node
+!$omp parallel default(none),private(i), &
+!$omp&  shared(nmin,N,indexL,itemL,indexU,itemU,mins,nlevel,lv_index,lv_item)
+!$omp do
     do i=1,nmin
       call ordering_CM_inner(N, indexL, itemL, indexU, itemU, mins(i), &
            nlevel(i), lv_index(:,i), lv_item(:,i))
     end do
+!$omp end do
+!$omp end parallel
     ! choose CM ordering with maximum nlevel
     nlevel_max = nlevel(1)
     max_id = 1

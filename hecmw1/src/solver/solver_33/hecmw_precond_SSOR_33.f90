@@ -192,6 +192,8 @@ contains
       enddo
     endif
 
+!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+!$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(9*ii-7)
@@ -224,6 +226,8 @@ contains
       ALU(9*ii-1)= ALUtmp(3,2)
       ALU(9*ii  )= ALUtmp(3,3)
     enddo
+!$omp end do
+!$omp end parallel
 
     isFirst = .true.
 

@@ -280,10 +280,13 @@ contains
     Tcomm = 0.d0
     call hecmw_matvec_33 (hecMESH, hecMAT, X, R, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+!$omp parallel default(none),private(i),shared(hecMAT,R,B)
+!$omp do
     do i = 1, hecMAT%N * 3
       R(i) = B(i) - R(i)
     enddo
-
+!$omp end do
+!$omp end parallel
   end subroutine hecmw_matresid_33
 
   !C
@@ -340,10 +343,14 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+!$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
+!$omp do
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+!$omp end do
 
+!$omp do
     do i= 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
@@ -353,6 +360,8 @@ contains
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
     enddo
+!$omp end do
+!$omp end parallel
 
   end subroutine hecmw_Tvec_33
 
@@ -378,10 +387,14 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+!$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
+!$omp do
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+!$omp end do
 
+!$omp do
     do i= 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
@@ -391,6 +404,8 @@ contains
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo
+!$omp end do
+!$omp end parallel
 
   end subroutine hecmw_Ttvec_33
 
@@ -426,6 +441,8 @@ contains
     integer(kind=kint) :: i, j, k
     real(kind=kreal) :: WVAL
 
+!$omp parallel default(none),private(i,j,k,WVAL),shared(hecMESH)
+!$omp do
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1)+1
       WVAL = 1.d0 / hecMESH%mpc%mpc_val(k)
@@ -435,6 +452,8 @@ contains
       enddo
       hecMESH%mpc%mpc_const(i) = hecMESH%mpc%mpc_const(i) * WVAL
     enddo
+!$omp end do
+!$omp end parallel
 
   end subroutine hecmw_mpc_scale
 
@@ -466,12 +485,16 @@ contains
     XG => BT
     XG = 0.d0
 
+!$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG)
+!$omp do
     !C-- Generate {xg} from mpc_const
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
       XG(kk) = hecMESH%mpc%mpc_const(i)
     enddo
+!$omp end do
+!$omp end parallel
 
     !C-- {w} = {b} - [A]{xg}
     call hecmw_matresid_33 (hecMESH, hecMAT, XG, B, W, COMMtime)
@@ -504,15 +527,21 @@ contains
 
     !C-- {x} = {tx} + {xg}
 
+!$omp parallel default(none),private(i,k,kk),shared(hecMESH,X,W)
+!$omp do
     do i= 1, hecMESH%nn_internal * 3
       X(i)= W(i)
     enddo
+!$omp end do
 
+!$omp do
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
       X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
     enddo
+!$omp end do
+!$omp end parallel
 
     deallocate(W)
   end subroutine hecmw_tback_x_33

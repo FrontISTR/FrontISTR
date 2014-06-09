@@ -107,8 +107,8 @@ contains
           iw(icnt)=jb
         enddo lcol2
       enddo
-      if (icnt /= BTmat%index(i)-BTmat%index(i-1)) stop 'ERROR: blocking Tmat'
-      ! call qsort(iw, 1, icnt)
+      ! if (icnt /= BTmat%index(i)-BTmat%index(i-1)) stop 'ERROR: blocking Tmat'
+      ! ! call qsort(iw, 1, icnt)
       lb0=BTmat%index(i-1)
       do k=1,icnt
         BTmat%item(lb0+k)=iw(k)
@@ -181,6 +181,7 @@ contains
     integer :: ls, le, l, ll, m, ms, me, mm
     integer, allocatable :: iw(:)
     real(kind=kreal), pointer :: Ttp(:), Kp(:), Tp(:), TtKTp(:)
+    ! real(kind=kreal) :: tsym_s, tsym_e, tnum_s, tnum_e
 
     nr=BTtmat%nr
     nc=BTmat%nc
@@ -192,9 +193,13 @@ contains
     BTtKT%ndof=ndof
     allocate(BTtKT%index(0:nr))
 
-    allocate(iw(nc))
+    ! tsym_s = hecmw_wtime()
 
-    BTtKT%index(0)=0
+!$omp parallel default(none), &
+!$omp&         private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m), &
+!$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT)
+    allocate(iw(nc))
+!$omp do
     do i=1,nr
       icnt=0
       js=BTtmat%index(i-1)+1
@@ -250,7 +255,18 @@ contains
       enddo
       if (icnt == 0) icnt=1
       !if (i==1) write(0,*) iw(1:icnt)
-      BTtKT%index(i)=BTtKT%index(i-1)+icnt
+      BTtKT%index(i)=icnt
+    enddo
+!$omp end do
+    deallocate(iw)
+!$omp end parallel
+
+    ! tsym_e = hecmw_wtime()
+    ! write(0,*) 'tsym:',tsym_e-tsym_s
+
+    BTtKT%index(0)=0
+    do i=1,nr
+      BTtKT%index(i)=BTtKT%index(i-1)+BTtKT%index(i)
     enddo
     !write(0,*) BTtKT%index(1:n)-BTtKT%index(0:n-1)
 
@@ -260,6 +276,13 @@ contains
     BTtKT%item=0
     BTtKT%A=0.d0
 
+    ! tnum_s = hecmw_wtime()
+
+!$omp parallel default(none), &
+!$omp&         private(i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m, &
+!$omp&                 ms,me,mm,Ttp,Kp,Tp,TtKTp), &
+!$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT,ndof,ndof2)
+!$omp do
     do i=1,nr
       icnt=0
       ms=BTtKT%index(i-1)+1
@@ -352,7 +375,11 @@ contains
       !write(0,*) BTtKT%index(i)-BTtKT%index(i-1), icnt
       if (ms-1+icnt /= BTtKT%index(i)) stop 'ERROR: trimatmul'
     enddo
+!$omp end do
+!$omp end parallel
 
+    ! tnum_e = hecmw_wtime()
+    ! write(0,*) 'tnum:',tnum_e-tnum_s
   end subroutine trimatmul_TtKT
 
   subroutine blk_trimatmul_add(ndof, A, B, C, ABC)
@@ -443,8 +470,9 @@ contains
     hecMAT%indexU=0
 
     ! count NPL, NPU
-    hecMAT%indexL(0)=0
-    hecMAT%indexU(0)=0
+!$omp parallel default(none),private(i,nl,nu,js,je,j,jj), &
+!$omp&         shared(nr,BTtKT,hecMAT)
+!$omp do
     do i=1,nr
       nl=0
       nu=0
@@ -460,12 +488,17 @@ contains
           ! diagonal
         endif
       enddo
-      hecMAT%indexL(i)=hecMAT%indexL(i-1)+nl
-      hecMAT%indexU(i)=hecMAT%indexU(i-1)+nu
+      hecMAT%indexL(i)=nl
+      hecMAT%indexU(i)=nu
     enddo
-    do i=nr+1,nc
-      hecMAT%indexL(i)=hecMAT%indexL(i-1)
-      hecMAT%indexU(i)=hecMAT%indexU(i-1)
+!$omp end do
+!$omp end parallel
+
+    hecMAT%indexL(0)=0
+    hecMAT%indexU(0)=0
+    do i=1,nc
+      hecMAT%indexL(i)=hecMAT%indexL(i-1)+hecMAT%indexL(i)
+      hecMAT%indexU(i)=hecMAT%indexU(i-1)+hecMAT%indexU(i)
     enddo
     hecMAT%NPL=hecMAT%indexL(nc)
     hecMAT%NPU=hecMAT%indexU(nc)
@@ -480,6 +513,9 @@ contains
     hecMAT%AU=0.d0
 
     ! copy from BTtKT to hecMAT
+!$omp parallel default(none),private(i,nl,nu,js,je,ksl,ksu,j,jj,k), &
+!$omp&  shared(nr,BTtKT,hecMAT,ndof2)
+!$omp do
     do i=1,nr
       nl=0
       nu=0
@@ -503,18 +539,20 @@ contains
           hecMAT%D((i-1)*ndof2+1:i*ndof2)=BTtKT%A((j-1)*ndof2+1:j*ndof2)
         endif
       enddo
-      if (ksl+nl /= hecMAT%indexL(i)+1) stop 'ERROR: indexL'
-      if (ksu+nu /= hecMAT%indexU(i)+1) stop 'ERROR: indexU'
+      ! if (ksl+nl /= hecMAT%indexL(i)+1) stop 'ERROR: indexL'
+      ! if (ksu+nu /= hecMAT%indexU(i)+1) stop 'ERROR: indexU'
     enddo
+!$omp end do
+!$omp end parallel
 
-    do i=1,hecMAT%NPL
-      if (hecMAT%itemL(i) <= 0) stop 'ERROR: negative itemL'
-      if (hecMAT%itemL(i) > nc) stop 'ERROR: too big itemL'
-    enddo
-    do i=1,hecMAT%NPU
-      if (hecMAT%itemU(i) <= 0) stop 'ERROR: negative itemU'
-      if (hecMAT%itemU(i) > nc) stop 'ERROR: too big itemU'
-    enddo
+    ! do i=1,hecMAT%NPL
+    !   if (hecMAT%itemL(i) <= 0) stop 'ERROR: negative itemL'
+    !   if (hecMAT%itemL(i) > nc) stop 'ERROR: too big itemL'
+    ! enddo
+    ! do i=1,hecMAT%NPU
+    !   if (hecMAT%itemU(i) <= 0) stop 'ERROR: negative itemU'
+    !   if (hecMAT%itemU(i) > nc) stop 'ERROR: too big itemU'
+    ! enddo
   end subroutine replace_hecmat
 
   subroutine make_new_hecmat(hecMAT, BTtKT, hecTKT)
@@ -576,6 +614,9 @@ contains
 !!$    enddo
 !!$    write(0,*) 'vnorm:', sqrt(vnorm)
 
+!$omp parallel default(none),private(i,TVp,js,je,j,jj,Tp,Vp,k,kl0,l), &
+!$omp&  shared(nr,TV,ndof,BTmat,ndof2,V)
+!$omp do
     do i=1,nr
       TVp=>TV((i-1)*ndof+1:i*ndof)
       js=BTmat%index(i-1)+1
@@ -592,6 +633,8 @@ contains
         enddo
       enddo
     enddo
+!$omp end do
+!$omp end parallel
   end subroutine hecmw_localmat_mulvec
 
   subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)

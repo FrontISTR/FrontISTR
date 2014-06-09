@@ -114,6 +114,9 @@ contains
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Xp(:)
     integer(kind=kint) :: inew, iold, j0new, j0old, j
+!$omp parallel default(none),private(inew,iold,j0new,j0old,j), &
+!$omp   shared(N,perm,NDOF,Xp,X)
+!$omp do
     do inew=1,N
       iold = perm(inew)
       j0new = (inew-1)*NDOF
@@ -122,6 +125,8 @@ contains
         Xp(j0new + j) = X(j0old + j)
       end do
     end do
+!$omp end do
+!$omp end parallel
   end subroutine hecmw_matrix_reorder_vector
 
   subroutine hecmw_matrix_reorder_back_vector(N, NDOF, perm, Xp, X)
@@ -131,6 +136,9 @@ contains
     real(kind=kreal), intent(in) :: Xp(:)
     real(kind=kreal), intent(out) :: X(:)
     integer(kind=kint) :: inew, iold, j0new, j0old, j
+!$omp parallel default(none),private(inew,iold,j0new,j0old,j), &
+!$omp&  shared(N,perm,NDOF,X,Xp)
+!$omp do
     do inew=1,N
       iold = perm(inew)
       j0new = (inew-1)*NDOF
@@ -139,6 +147,8 @@ contains
         X(j0old + j) = Xp(j0new + j)
       end do
     end do
+!$omp end do
+!$omp end parallel
   end subroutine hecmw_matrix_reorder_back_vector
 
   subroutine hecmw_matrix_reorder_renum_item(N, perm, indexXp, itemXp)
@@ -149,9 +159,13 @@ contains
     integer(kind=kint), intent(inout) :: itemXp(:)
     integer(kind=kint) :: NPX, i
     NPX = indexXp(N)
+!$omp parallel default(none),private(i),shared(NPX,itemXp,perm)
+!$omp do
     do i=1,NPX
       itemXp(i) = perm( itemXp(i) )
     end do
+!$omp end do
+!$omp end parallel
   end subroutine hecmw_matrix_reorder_renum_item
 
   subroutine reorder_diag(N, NDOF, perm, D, Dp)
@@ -182,6 +196,9 @@ contains
     integer(kind=kint) :: NDOF2, inew, iold, j0new, j0old, j
     NDOF2 = NDOF*NDOF
     ! diagonal
+!$omp parallel default(none),private(iold,inew,j0old,j0new,j), &
+!$omp&         shared(N,iperm,NDOF2,Dp,D)
+!$omp do
     do iold=1,N
       inew = iperm(iold)
       j0old = (iold-1)*NDOF2
@@ -190,6 +207,8 @@ contains
         Dp(j0new + j) = D(j0old + j)
       end do
     end do
+!$omp end do
+!$omp end parallel
   end subroutine reorder_diag2
 
   subroutine reorder_off_diag(N, NDOF, perm, &
@@ -262,6 +281,10 @@ contains
     integer(kind=kint) :: jold, kold, knew, jnew, l0old, l0new, l
     NDOF2 = NDOF*NDOF
     ! new L
+!$omp parallel default(none), &
+!$omp   private(iold,inew,jsnewL,jenewL,jsnewU,jenewU,jold,kold,knew,jnew,l0old,l0new,l), &
+!$omp   shared(N,iperm,indexLp,indexUp,indexX,itemX,itemLp,NDOF2,ALp,AX,itemUp,AUp)
+!$omp do
     do iold=1,N
       inew = iperm(iold)
       jsnewL = indexLp(inew-1)+1
@@ -297,6 +320,8 @@ contains
         end if
       end do
     end do
+!$omp end do
+!$omp end parallel
   end subroutine reorder_off_diag2
 
   recursive subroutine sort_int_array(array, istart, iend)
