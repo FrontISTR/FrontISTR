@@ -227,6 +227,9 @@ contains
     endif
     TIME_mpc_pre = t_max
 
+    ! exchange diagonal elements of overlap region
+    !call hecmw_mat_diag_sr_33(hecMESH, hecMAT)
+
     call hecmw_mat_dump(hecTKT, hecMESH)
 
     !C===

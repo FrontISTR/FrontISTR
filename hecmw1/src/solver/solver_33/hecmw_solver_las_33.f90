@@ -32,6 +32,7 @@ module hecmw_solver_las_33
   public :: hecmw_tback_x_33
   public :: hecmw_matvec_33_clear_timer
   public :: hecmw_matvec_33_get_timer
+  public :: hecmw_mat_diag_sr_33
 
   real(kind=kreal) :: time_Ax = 0.d0
   logical :: mpcmatvec_flg = .false.
@@ -566,5 +567,42 @@ contains
     real(kind=kreal) :: hecmw_matvec_33_get_timer
     hecmw_matvec_33_get_timer = time_Ax
   end function hecmw_matvec_33_get_timer
+
+  !C
+  !C***
+  !C*** hecmw_mat_diag_sr_33
+  !C***
+  !C
+  subroutine hecmw_mat_diag_sr_33(hecMESH, hecMAT, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(inout), target :: hecMAT
+    real(kind=kreal), intent(inout), optional :: COMMtime
+    real(kind=kreal), allocatable :: W(:,:)
+    real(kind=kreal), pointer :: D(:)
+    integer(kind=kint) :: ip
+    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    allocate(W(3*hecMAT%NP,3))
+    D => hecMAT%D
+    do ip= 1, hecMAT%N
+      W(3*ip-2,1)= D(9*ip-8); W(3*ip-2,2)= D(9*ip-7); W(3*ip-2,3)= D(9*ip-6)
+      W(3*ip-1,1)= D(9*ip-5); W(3*ip-1,2)= D(9*ip-4); W(3*ip-1,3)= D(9*ip-3)
+      W(3*ip  ,1)= D(9*ip-2); W(3*ip  ,2)= D(9*ip-1); W(3*ip  ,3)= D(9*ip  )
+    enddo
+    START_TIME= HECMW_WTIME()
+    call hecmw_update_3_R (hecMESH, W(:,1), hecMAT%NP)
+    call hecmw_update_3_R (hecMESH, W(:,2), hecMAT%NP)
+    call hecmw_update_3_R (hecMESH, W(:,3), hecMAT%NP)
+    END_TIME= HECMW_WTIME()
+    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+    do ip= hecMAT%N+1, hecMAT%NP
+      D(9*ip-8)= W(3*ip-2,1); D(9*ip-7)= W(3*ip-2,2); D(9*ip-6)= W(3*ip-2,3)
+      D(9*ip-5)= W(3*ip-1,1); D(9*ip-4)= W(3*ip-1,2); D(9*ip-3)= W(3*ip-1,3)
+      D(9*ip-2)= W(3*ip  ,1); D(9*ip-1)= W(3*ip  ,2); D(9*ip  )= W(3*ip  ,3)
+    enddo
+    deallocate(W)
+  end subroutine hecmw_mat_diag_sr_33
 
 end module hecmw_solver_las_33
