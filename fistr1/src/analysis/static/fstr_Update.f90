@@ -91,8 +91,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
 ! element loop
 !$omp parallel default(none), &
-!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,tt0,ttn,tt,ddu,du,total_disp,cdsys_ID,coords,thick,qf,isect,ihead,iter,tincr), &
-!$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR,strainEnergy)
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,tt0,ttn,tt,ddu,du,total_disp, &
+!$omp&          cdsys_ID,coords,thick,qf,isect,ihead), &
+!$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
+!$omp&         strainEnergy,iter,tincr)
 !$omp do
     do icel= iS, iE
 !

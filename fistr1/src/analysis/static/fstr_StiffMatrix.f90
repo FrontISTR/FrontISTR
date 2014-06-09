@@ -65,8 +65,8 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
 ! ----- element loop
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,tt,cdsys_ID,coords, &
-!$omp&          material,thick,stiffness,isect,ihead,tincr), &
-!$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT)
+!$omp&          material,thick,stiffness,isect,ihead), &
+!$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,tincr)
 !$omp do
     do icel= iS, iE
 
