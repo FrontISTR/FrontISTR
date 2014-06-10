@@ -9759,8 +9759,8 @@ error:
 ==================================================================================================*/
 
 static int
-print_ucd_entire_set_node_data( struct hecmwST_local_mesh *global_mesh,
-                                struct hecmwST_result_data *result_data, char *node_flag )
+print_ucd_entire_set_node_data( const struct hecmwST_local_mesh *global_mesh,
+                                struct hecmwST_result_data *result_data, const char *node_flag )
 {
     int size;
     int nn_item;
@@ -9837,8 +9837,8 @@ error:
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static int
-print_ucd_entire_set_elem_data( struct hecmwST_local_mesh *global_mesh,
-                                struct hecmwST_result_data *result_data, char *elem_flag )
+print_ucd_entire_set_elem_data( const struct hecmwST_local_mesh *global_mesh,
+                                struct hecmwST_result_data *result_data, const char *elem_flag )
 {
     int size;
     int ne_item;
@@ -9915,7 +9915,8 @@ error:
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static int
-print_ucd_entire( struct hecmwST_local_mesh *global_mesh, char *node_flag, char *elem_flag, char *ofname )
+print_ucd_entire( const struct hecmwST_local_mesh *global_mesh,
+                  const char *node_flag, const char *elem_flag, const char *ofname )
 {
     struct hecmwST_result_data *result_data;
 
@@ -10021,6 +10022,9 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     int current_domain, nrank, iS, iE;
     int rtc;
     int i;
+#ifndef INAGAKI_PARTITIONER
+    int error_in_ompsection = 0;
+#endif
 
     if( global_mesh == NULL ) {
         HECMW_set_error( HECMW_PART_E_INV_ARG, "\'global_mesh\' is NULL" );
@@ -10103,15 +10107,25 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     if( rtc != RTC_NORMAL )  goto error;
 #endif
 
+#ifndef INAGAKI_PARTITIONER
+# pragma omp parallel default(none), \
+    private(node_flag,elem_flag,local_mesh,nrank,iS,iE,i,current_domain,rtc,ofheader,ofname), \
+    shared(global_mesh,cont_data,num_elem,num_node,num_ielem,num_inode,error_in_ompsection)
+    {
+    error_in_ompsection = 0;
+#endif
+
     node_flag = (char *)HECMW_calloc( global_mesh->n_node, sizeof(char) );
     if( node_flag == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
     elem_flag = (char *)HECMW_calloc( global_mesh->n_elem, sizeof(char) );
     if( elem_flag == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
 
 #ifdef INAGAKI_PARTITIONER
@@ -10119,44 +10133,63 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     node_global2local = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( node_global2local == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
     elem_global2local = (int *)HECMW_calloc( global_mesh->n_elem, sizeof(int) );
     if( elem_global2local == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
     node_flag_neighbor = (char *)HECMW_malloc( sizeof(char)*global_mesh->n_node );
     if( node_flag_neighbor == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
     elem_flag_neighbor = (char *)HECMW_malloc( sizeof(char)*global_mesh->n_elem );
     if( elem_flag_neighbor == NULL ) {
         HECMW_set_error( errno, "" );
-        goto error;
+        error_in_ompsection = 1;
+        goto error_omp;
     }
     memset( node_flag_neighbor, 0, sizeof(char)*global_mesh->n_node );
     memset( elem_flag_neighbor, 0, sizeof(char)*global_mesh->n_elem );
 #endif
 
     local_mesh = HECMW_dist_alloc( );
-    if( local_mesh == NULL )  goto error;
+    if( local_mesh == NULL ) {
+        error_in_ompsection = 1;
+        goto error_omp;
+    }
 
     nrank = global_mesh->n_subdomain / HECMW_comm_get_size();
     iS = HECMW_comm_get_rank() * nrank;
     iE = iS + nrank;
     if( HECMW_comm_get_rank() == HECMW_comm_get_size()-1 ) iE = global_mesh->n_subdomain;
 
+#ifndef INAGAKI_PARTITIONER
+# pragma omp for reduction(+:error_in_ompsection)
+#endif
     for( i=iS; i<iE; i++ ) {
+        if (error_in_ompsection) continue;
+
         current_domain = i;
 
         if( !HECMW_PART_SILENT_MODE ) {
+#ifdef _OPENMP
+            HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...(%d)", current_domain, omp_get_thread_num() );
+#else
             HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...", current_domain );
+#endif
         }
 
         rtc = create_neighbor_info( global_mesh, local_mesh, node_flag, elem_flag, current_domain );
-        if( rtc != RTC_NORMAL )  goto error;
+        if( rtc != RTC_NORMAL ) {
+            error_in_ompsection = 1;
+            continue;
+        }
 
         if( global_mesh->n_subdomain > 1 ) {
 #ifndef INAGAKI_PARTITIONER
@@ -10165,7 +10198,10 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
             rtc = create_comm_info( global_mesh, local_mesh, node_flag, elem_flag,
                                     node_flag_neighbor, elem_flag_neighbor, current_domain );
 #endif
-            if( rtc != RTC_NORMAL )  goto error;
+            if( rtc != RTC_NORMAL ) {
+                error_in_ompsection = 1;
+                continue;
+            }
         }
 
 #ifndef INAGAKI_PARTITIONER
@@ -10175,7 +10211,10 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         rtc = const_local_data( global_mesh, local_mesh, cont_data, node_flag, elem_flag,
                                 node_global2local, elem_global2local, current_domain );
 #endif
-        if( rtc != RTC_NORMAL )  goto error;
+        if( rtc != RTC_NORMAL ) {
+            error_in_ompsection = 1;
+            continue;
+        }
 
         num_elem[i] = local_mesh->n_elem;
         num_node[i] = local_mesh->n_node;
@@ -10191,11 +10230,13 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         ofheader = HECMW_ctrl_get_meshfiles_header_sub( "part_out", global_mesh->n_subdomain, current_domain );
         if( ofheader == NULL ) {
             HECMW_log( HECMW_LOG_ERROR, "not set output file header" );
-            goto error;
+            error_in_ompsection = 1;
+            continue;
         }
         if( ofheader->n_mesh == 0 ) {
             HECMW_log( HECMW_LOG_ERROR, "output file name is not set" );
-            goto error;
+            error_in_ompsection = 1;
+            continue;
         }
 
         get_dist_file_name( ofheader->meshfiles[0].filename, current_domain, ofname );
@@ -10213,6 +10254,26 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         spdup_clear_IEB( node_flag, elem_flag, current_domain );
 #endif
     }
+#ifndef INAGAKI_PARTITIONER
+    if (error_in_ompsection) goto error_omp;
+
+# pragma omp single
+#endif
+    if( cont_data->is_print_ucd == 1 ) {
+        if( global_mesh->my_rank == 0 ) {
+            print_ucd_entire( global_mesh, node_flag, elem_flag, cont_data->ucd_file_name );
+        }
+    }
+
+error_omp:
+    HECMW_dist_free( local_mesh );
+    HECMW_free( node_flag );
+    HECMW_free( elem_flag );
+
+#ifndef INAGAKI_PARTITIONER
+    } /* omp end parallel */
+    if (error_in_ompsection) goto error;
+#endif
 
     rtc = HECMW_Allreduce( num_elem, sum_elem, global_mesh->n_subdomain,
                            HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
@@ -10226,12 +10287,6 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     rtc = HECMW_Allreduce( num_inode, sum_inode, global_mesh->n_subdomain,
                            HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
     if( rtc != 0 )  goto error;
-
-    if( cont_data->is_print_ucd == 1 ) {
-        if( global_mesh->my_rank == 0 ) {
-            print_ucd_entire( global_mesh, node_flag, elem_flag, cont_data->ucd_file_name );
-        }
-    }
 
     if( global_mesh->my_rank == 0 ) {
         for( i=0; i<global_mesh->n_subdomain; i++ ) {
@@ -10249,10 +10304,6 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     }
     HECMW_part_finalize_log( );
 
-    HECMW_dist_free( local_mesh );
-
-    HECMW_free( node_flag );
-    HECMW_free( elem_flag );
     HECMW_free( num_elem );
     HECMW_free( num_node );
     HECMW_free( num_ielem );
