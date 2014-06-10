@@ -3071,15 +3071,19 @@ pmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
     real_t *ubvec=NULL;
     int *options=NULL;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphRecursive( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
                               &nparts, tpwgts, ubvec, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
     int options[5]={0,0,0,0,0};  /* options for pMETIS */
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphRecursive( &n, xadj, adjncy, vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  endif
 #endif
 
@@ -3104,15 +3108,19 @@ kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
     real_t *ubvec=NULL;
     int *options=NULL;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphKway( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
                          &nparts, tpwgts, ubvec, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
     int options[5]={0,0,0,0,0};  /* options for kMETIS */
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphKway( &n, xadj, adjncy, vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  endif
 #endif
 
@@ -3137,9 +3145,11 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
     real_t *ubvec=NULL;
     int *options=NULL;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphRecursive( &n, &ncon, (int *) xadj, (int *) adjncy,
                               (int *) vwgt, vsize, adjwgt,
                               &nparts, tpwgts, ubvec, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
@@ -3147,8 +3157,10 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 
     if (vwgt != NULL) wgtflag = 2;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  endif
 #endif
 
@@ -3173,9 +3185,11 @@ kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
     real_t *ubvec=NULL;
     int *options=NULL;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphKway( &n, &ncon, (int *) xadj, (int *) adjncy,
                          (int *) vwgt, vsize, adjwgt,
                          &nparts, tpwgts, ubvec, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
@@ -3183,8 +3197,10 @@ kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 
     if (vwgt != NULL) wgtflag = 2;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
     METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
 #  endif
 #endif
 
@@ -10170,7 +10186,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     if( HECMW_comm_get_rank() == HECMW_comm_get_size()-1 ) iE = global_mesh->n_subdomain;
 
 #ifndef INAGAKI_PARTITIONER
-# pragma omp for reduction(+:error_in_ompsection)
+# pragma omp for schedule(static,1), reduction(+:error_in_ompsection)
 #endif
     for( i=iS; i<iE; i++ ) {
         if (error_in_ompsection) continue;
