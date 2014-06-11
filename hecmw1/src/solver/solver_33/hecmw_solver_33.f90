@@ -68,40 +68,40 @@ contains
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal)::t_max,t_min,t_avg,t_sd
 
+    integer(kind=kint) :: auto_sigma_diag
+
     !C===
     !C +------------+
     !C | PARAMETERs |
     !C +------------+
     !C===
-    ITER      = hecMAT%Iarray(1)
-    METHOD    = hecMAT%Iarray(2)
-    PRECOND   = hecMAT%Iarray(3)
-    NSET      = hecMAT%Iarray(4)
-    iterPREmax= hecMAT%Iarray(5)
-    NREST     = hecMAT%Iarray(6)
+    ITER      = hecmw_mat_get_iter(hecMAT)
+    METHOD    = hecmw_mat_get_method(hecMAT)
+    PRECOND   = hecmw_mat_get_precond(hecMAT)
+    NSET      = hecmw_mat_get_nset(hecMAT)
+    iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
+    NREST     = hecmw_mat_get_nrest(hecMAT)
 
-    ITERlog= hecMAT%Iarray(21)
-    TIMElog= hecMAT%Iarray(22)
+    ITERlog= hecmw_mat_get_iterlog(hecMAT)
+    TIMElog= hecmw_mat_get_timelog(hecMAT)
 
     TIME_setup  = 0.d0
     TIME_comm   = 0.d0
     TIME_soltot = 0.d0
 
-    RESID     = hecMAT%Rarray(1)
-    SIGMA_DIAG= hecMAT%Rarray(2)
-    SIGMA     = hecMAT%Rarray(3)
+    RESID     = hecmw_mat_get_resid(hecMAT)
+    SIGMA_DIAG= hecmw_mat_get_sigma_diag(hecMAT)
+    SIGMA     = hecmw_mat_get_sigma(hecMAT)
 
-    THRESH= hecMAT%Rarray(4)
-    FILTER= hecMAT%Rarray(5)
+    THRESH= hecmw_mat_get_thresh(hecMAT)
+    FILTER= hecmw_mat_get_filter(hecMAT)
 
-    if (iterPREmax.lt.0) iterPREmax= 0
-    if (iterPREmax.gt.4) iterPREmax= 4
-
-    if (SIGMA_DIAG.lt.1.d0) SIGMA_DIAG= 1.d0
-    if (SIGMA_DIAG.gt.2.d0) SIGMA_DIAG= 2.d0
-
-    if (SIGMA.lt.0.d0) SIGMA= 0.d0
-    if (SIGMA.gt.1.d0) SIGMA= 1.d0
+    if (SIGMA_DIAG.lt.0.d0) then
+      auto_sigma_diag= 1
+      SIGMA_DIAG= 1.d0
+    else
+      auto_sigma_diag= 0
+    endif
 
     !C===
     !C +-------------+
@@ -218,7 +218,7 @@ contains
     E_TIME= HECMW_WTIME()
     call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
          t_max, t_min, t_avg, t_sd)
-    if (hecMESH%my_rank.eq.0) then
+    if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
       write(*,*) 'Time MPC pre'
       write(*,*) '  Max     :',t_max
       write(*,*) '  Min     :',t_min
@@ -228,7 +228,7 @@ contains
     TIME_mpc_pre = t_max
 
     ! exchange diagonal elements of overlap region
-    !call hecmw_mat_diag_sr_33(hecMESH, hecMAT)
+    !call hecmw_mat_diag_sr_33(hecMESH, hecTKT)
 
     call hecmw_mat_dump(hecTKT, hecMESH)
 
@@ -237,6 +237,10 @@ contains
     !C | ITERATIVE solver |
     !C +------------------+
     !C===
+
+    do
+
+    if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, SIGMA_DIAG)
 
     !C
     !C-- CG
@@ -325,6 +329,19 @@ contains
            &                              TIME_setup, TIME_sol, TIME_comm )
     endif
 
+    if (ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .and. &
+         PRECOND.ge.10 .and. PRECOND.lt.20 .and. &
+         auto_sigma_diag.eq.1 .and. &
+         SIGMA_DIAG.lt.2.d0) then
+      SIGMA_DIAG = SIGMA_DIAG + 0.1
+      if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
+    else
+      if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
+      exit
+    endif
+
+    enddo
+
     if (ERROR.ne.0) then
       call hecmw_solve_error (hecMESH, ERROR)
     endif
@@ -351,7 +368,9 @@ contains
       else if (MPC_METHOD == 3) then  ! elimination
         !write(0,*) "DEBUG: MPC: solve done"
         call hecmw_tback_x_33(hecMESH, hecTKT%X, TIME_comm)
-        hecMAT%X(:)=hecTKT%X(:)
+        do i=1,hecMAT%NP * hecMAT%NDOF
+          hecMAT%X(i)=hecTKT%X(i)
+        enddo
         !write(0,*) "DEBUG: MPC: recover solution done"
         call hecmw_mat_finalize(hecTKT)
         deallocate(hecTKT)

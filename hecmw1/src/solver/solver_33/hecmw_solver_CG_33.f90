@@ -137,11 +137,10 @@
         X = 0.d0
       endif
 
-      call hecmw_barrier(hecMESH)
       E_TIME = HECMW_WTIME()
       call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
            t_max, t_min, t_avg, t_sd)
-      if (hecMESH%my_rank.eq.0) then
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
         write(*,*) 'Time solver setup'
         write(*,*) '  Max     :',t_max
         write(*,*) '  Min     :',t_min
@@ -151,6 +150,7 @@
       Tset = Tset + t_max
 
       Tcomm = 0.d0
+      call hecmw_barrier(hecMESH)
       S1_TIME = HECMW_WTIME()
 !C
 !C************************************************* Conjugate Gradient Iteration start

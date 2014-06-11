@@ -152,7 +152,7 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterpremax
 
-        if (iterpremax.lt.1) iterpremax= 1
+        if (iterpremax.lt.0) iterpremax= 0
         if (iterpremax.gt.4) iterpremax= 4
 
     hecMAT%Iarray(5) = iterpremax
@@ -353,7 +353,15 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: sigma_diag
 
-    hecMAT%Rarray(2) = sigma_diag
+    if( sigma_diag < 0.d0 ) then
+      hecMAT%Rarray(2) = -1.d0
+    elseif( sigma_diag < 1.d0 ) then
+      hecMAT%Rarray(2) = 1.d0
+    elseif( sigma_diag > 2.d0 ) then
+      hecMAT%Rarray(2) = 2.d0
+    else
+      hecMAT%Rarray(2) = sigma_diag
+    endif
   end subroutine hecmw_mat_set_sigma_diag
 
   function hecmw_mat_get_sigma_diag( hecMAT )
@@ -367,7 +375,13 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: sigma
 
-    hecMAT%Rarray(3) = sigma
+    if (sigma < 0.d0) then
+      hecMAT%Rarray(3) = 0.d0
+    elseif (sigma > 1.d0) then
+      hecMAT%Rarray(3) = 1.d0
+    else
+      hecMAT%Rarray(3) = sigma
+    endif
   end subroutine hecmw_mat_set_sigma
 
   function hecmw_mat_get_sigma( hecMAT )

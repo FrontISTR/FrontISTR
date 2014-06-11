@@ -62,6 +62,7 @@
       real   (kind=kreal)::BNRM2,C2
       real   (kind=kreal)::RHO,RHO1,BETA,ALPHA,DNRM2
       real   (kind=kreal)::OMEGA
+      real   (kind=kreal)::t_max,t_min,t_avg,t_sd
 
       integer(kind=kint), parameter :: R = 1
       integer(kind=kint), parameter :: RT= 2
@@ -131,11 +132,20 @@
         X = 0.d0
       endif
 
-      call hecmw_barrier(hecMESH)
       E_time = HECMW_WTIME()
-      Tset = Tset + E_time - S_time
+      call hecmw_time_statistics(hecMESH, E_time - S_time, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = Tset + t_max
 
       Tcomm = 0.d0
+      call hecmw_barrier(hecMESH)
       S1_time = HECMW_WTIME()
 !C
 !C*************************************************************** iterative procedures start

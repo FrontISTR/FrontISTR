@@ -72,6 +72,7 @@
       real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
       real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
       integer(kind=kint ) :: ESTCOND
+      real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
 
       integer(kind=kint), parameter :: R  = 1
       integer(kind=kint), parameter :: ZP = R + 1
@@ -149,11 +150,20 @@
         X = 0.d0
       endif
 
-      call hecmw_barrier(hecMESH)
       E_TIME= HECMW_WTIME()
-      Tset= Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = Tset + t_max
 !C===
 
+      call hecmw_barrier(hecMESH)
       S1_TIME= HECMW_WTIME()
       ITER= 0
 

@@ -64,6 +64,7 @@
       real   (kind=kreal) :: BNRM2
       real   (kind=kreal) :: RHO,RHO1,BETA,ALPHA,DNRM2
       real   (kind=kreal) :: QSI,ETA,COEF1
+      real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
 
       integer(kind=kint), parameter :: R= 1
       integer(kind=kint), parameter ::RT= 2
@@ -134,14 +135,23 @@
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,RT), WW(:,R), RHO, Tcomm)
 
-      call hecmw_barrier(hecMESH)
       E_TIME= HECMW_WTIME()
-      Tset= Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = Tset + t_max
 !C===
 
 !C
 !C*************************************************************** ITERATIVE PROC.
 !C
+      call hecmw_barrier(hecMESH)
       S1_TIME= HECMW_WTIME()
       do iter= 1, MAXIT
 !C
