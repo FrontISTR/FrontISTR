@@ -211,11 +211,6 @@
       call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
 
       call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
-
-      S_TIME= HECMW_WTIME()
-      call hecmw_update_3_R (hecMESH, WW(:,W), hecMAT%NP)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
 !C===
 
 !C
