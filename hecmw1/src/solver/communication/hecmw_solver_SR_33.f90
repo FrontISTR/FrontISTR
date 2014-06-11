@@ -41,8 +41,7 @@
       end type async_buf
 
       integer(kind=kint), parameter :: MAX_NREQ = 8
-      type(async_buf) :: abuf(MAX_NREQ)
-      integer(kind=kint) :: nreq = 0
+      type(async_buf), save :: abuf(MAX_NREQ)
 
       contains
 !C
@@ -182,8 +181,10 @@
 !C-- Find empty abuf
       ireq = 0
       do i = 1, MAX_NREQ
-        if (abuf(i)%NEIBPETOT /= 0) cycle
-        ireq = i
+        if (abuf(i)%NEIBPETOT == 0) then
+          ireq = i
+          exit
+        endif
       enddo
       if (ireq == 0) then
         stop 'Error: hecmw_solve_isend_irecv_33: exceeded maximum num of requests'
