@@ -108,6 +108,7 @@ contains
     integer(kind=kint) :: N, NP
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
+    integer(kind=kint) :: ireq
 
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
@@ -188,7 +189,7 @@ contains
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
-      call hecmw_update_3_R (hecMESH, X, NP)
+      call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -202,7 +203,7 @@ contains
 
 !$OMP PARALLEL DEFAULT(NONE) &
 !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
+!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -230,6 +231,7 @@ contains
           jE= indexU(i  )
           do j= jS, jE
             in  = itemU(j)
+            if (in > N) cycle
             X1= X(3*in-2)
             X2= X(3*in-1)
             X3= X(3*in  )
@@ -249,6 +251,37 @@ contains
 
       !call stop_collection("loopInMatvec33")
       !call fapp_stop("loopInMatvec33", 1, 0)
+
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME
+
+      START_TIME= HECMW_WTIME()
+      call hecmw_update_3_R_wait (hecMESH, ireq)
+      END_TIME= HECMW_WTIME()
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+
+      START_TIME = hecmw_Wtime()
+
+      do i = 1, N
+        YV1= 0.d0
+        YV2= 0.d0
+        YV3= 0.d0
+        jS= indexU(i-1) + 1
+        jE= indexU(i  )
+        do j= jS, jE
+          in  = itemU(j)
+          if (in <= N) cycle
+          X1= X(3*in-2)
+          X2= X(3*in-1)
+          X3= X(3*in  )
+          YV1= YV1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+          YV2= YV2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+          YV3= YV3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+        enddo
+        Y(3*i-2)= Y(3*i-2)+YV1
+        Y(3*i-1)= Y(3*i-1)+YV2
+        Y(3*i  )= Y(3*i  )+YV3
+      enddo
 
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME

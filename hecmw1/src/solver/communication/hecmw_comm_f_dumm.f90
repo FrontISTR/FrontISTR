@@ -377,6 +377,37 @@ contains
 
 !C
 !C***
+!C*** hecmw_update_3_R_async
+!C***
+!C
+!C    3-DOF, REAL
+!C
+      subroutine hecmw_update_3_R_async (hecMESH, VAL, n, ireq)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: n, ireq
+      real(kind=kreal), dimension(3*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
+
+      end subroutine hecmw_update_3_R_async
+
+!C
+!C***
+!C*** hecmw_update_3_R_wait
+!C***
+!C
+!C    3-DOF, REAL
+!C
+      subroutine hecmw_update_3_R_wait (hecMESH, ireq)
+      use hecmw_util
+      implicit none
+      integer(kind=kint):: ireq
+      type (hecmwST_local_mesh) :: hecMESH
+
+      end subroutine hecmw_update_3_R_wait
+
+!C
+!C***
 !C*** hecmw_update_m_R
 !C***
 !C
