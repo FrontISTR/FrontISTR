@@ -10186,7 +10186,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     if( HECMW_comm_get_rank() == HECMW_comm_get_size()-1 ) iE = global_mesh->n_subdomain;
 
 #ifndef INAGAKI_PARTITIONER
-# pragma omp for schedule(static,1), reduction(+:error_in_ompsection)
+# pragma omp for schedule(dynamic,1), reduction(+:error_in_ompsection)
 #endif
     for( i=iS; i<iE; i++ ) {
         if (error_in_ompsection) continue;
