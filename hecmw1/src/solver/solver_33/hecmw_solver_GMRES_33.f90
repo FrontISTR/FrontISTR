@@ -160,7 +160,7 @@
         write(*,*) '  Avg     :',t_avg
         write(*,*) '  Std Dev :',t_sd
       endif
-      Tset = Tset + t_max
+      Tset = t_max
 !C===
 
       call hecmw_barrier(hecMESH)
@@ -448,9 +448,17 @@
       deallocate (H, WW, SS)
       call hecmw_precond_33_clear(hecMAT)
 
-      call hecmw_barrier(hecMESH)
       E1_TIME= HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
+      call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver iterations'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tsol = t_max
 
       end subroutine  hecmw_solve_GMRES_33
 

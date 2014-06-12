@@ -54,14 +54,14 @@ contains
     real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER
 
     integer(kind=kint) :: ITERlog, TIMElog
-    real(kind=kreal) :: TIME_setup, TIME_comm, TIME_soltot, TR
-    real(kind=kreal) :: time_Ax, time_precond
+    real(kind=kreal) :: TIME_setup, TIME_comm, TIME_sol, TR
+    real(kind=kreal) :: time_Ax, time_precond, time_dumm
     real(kind=kreal) :: S_TIME, E_TIME, TIME_mpc_pre, TIME_mpc_post
     real(kind=kreal),    dimension(1) :: RHS
     integer (kind=kint), dimension(1) :: IFLAG
 
     integer(kind=kint) :: NREST
-    real(kind=kreal)   :: SIGMA,TIME_sol
+    real(kind=kreal)   :: SIGMA
 
     type (hecmwST_matrix), pointer :: hecTKT
     integer(kind=kint) :: totalmpc, MPC_METHOD
@@ -87,7 +87,7 @@ contains
 
     TIME_setup  = 0.d0
     TIME_comm   = 0.d0
-    TIME_soltot = 0.d0
+    TIME_sol    = 0.d0
 
     RESID     = hecmw_mat_get_resid(hecMAT)
     SIGMA_DIAG= hecmw_mat_get_sigma_diag(hecMAT)
@@ -169,9 +169,6 @@ contains
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
-    call hecmw_matvec_33_clear_timer()
-    call hecmw_precond_33_clear_timer()
-
     !C===
     !C +-------------+
     !C | MPC Preproc |
@@ -199,7 +196,7 @@ contains
         do i=1,hecMAT%NP * hecMAT%NDOF
           Btmp(i) = hecMAT%B(i)
         enddo
-        call hecmw_trans_b_33(hecMESH, hecMAT, Btmp, hecMAT%B, TIME_comm)
+        call hecmw_trans_b_33(hecMESH, hecMAT, Btmp, hecMAT%B, time_dumm)
         hecTKT => hecMAT
       else if (MPC_METHOD == 3) then  ! elimination
         write(0,*) "DEBUG: MPC Method: Elimination"
@@ -208,7 +205,7 @@ contains
         !write(0,*) "DEBUG: MPC: eliminating slave DOF"
         call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
         !write(0,*) "DEBUG: MPC: trimatmul done"
-        call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, TIME_comm)
+        call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, time_dumm)
         !write(0,*) "DEBUG: MPC: make new RHS done"
       endif
     else
@@ -242,13 +239,14 @@ contains
 
     if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, SIGMA_DIAG)
 
+    call hecmw_matvec_33_clear_timer()
+    call hecmw_precond_33_clear_timer()
+
     !C
     !C-- CG
     if (METHOD.eq.1) then
       if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-        if (PRECOND.eq.1) &
-             write (*,'(a,i3)') '### 3x3 B-IC-CG(0)',iterPREmax
-        if (PRECOND.eq.2) &
+        if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',iterPREmax
         if (PRECOND.eq.3) &
              write (*,'(a,i3)') '### 3x3 B-scale-CG  ',iterPREmax
@@ -267,9 +265,7 @@ contains
     !C-- BiCGSTAB
     if (METHOD.eq.2) then
       if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-        if (PRECOND.eq.1) &
-             write (*,'(a,i3)') '### 3x3 B-ILU-BiCGSTAB(0)',iterPREmax
-        if (PRECOND.eq.2) &
+        if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-BiCGSTAB(0)',iterPREmax
         if (PRECOND.eq.3) &
              write (*,'(a,i3)') '### 3x3 B-scale-BiCGSTAB  ',iterPREmax
@@ -289,9 +285,7 @@ contains
     !C-- GMRES
     if (METHOD.eq.3) then
       if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-        if (PRECOND.eq.1) &
-             write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(0)',iterPREmax
-        if (PRECOND.eq.2) &
+        if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-GMRES(0)',iterPREmax
         if (PRECOND.eq.3) &
              write (*,'(a,i3)') '### 3x3 B-scale-GMRES  ',iterPREmax
@@ -311,26 +305,25 @@ contains
     !C-- GPBiCG
     if (METHOD.eq.4) then
       if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
-        if (PRECOND.eq.1) &
-             write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(0)',iterPREmax
-        if (PRECOND.eq.2) &
+        if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-GPBiCG(0)',iterPREmax
         if (PRECOND.eq.3) &
              write (*,'(a,i3)') '### 3x3 B-scale-GPBiCG  ',iterPREmax
         if (PRECOND.eq.10) &
-             write (*,'(a)') '### 3x3 B-ILU-GPBiCG(0)',iterPREmax
+             write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(0)',iterPREmax
         if (PRECOND.eq.11) &
-             write (*,'(a)') '### 3x3 B-ILU-GPBiCG(1)',iterPREmax
+             write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(1)',iterPREmax
         if (PRECOND.eq.12) &
-             write (*,'(a)') '### 3x3 B-ILU-GPBiCG(2)',iterPREmax
+             write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(2)',iterPREmax
       endif
 
       call hecmw_solve_GPBiCG_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
            &                              TIME_setup, TIME_sol, TIME_comm )
     endif
 
-    if (ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .and. &
-         PRECOND.ge.10 .and. PRECOND.lt.20 .and. &
+    if ((ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .or. &
+         ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) .and. &
+         (PRECOND.ge.10 .and. PRECOND.lt.20) .and. &
          auto_sigma_diag.eq.1 .and. &
          SIGMA_DIAG.lt.2.d0) then
       SIGMA_DIAG = SIGMA_DIAG + 0.1
@@ -360,14 +353,14 @@ contains
       if (MPC_METHOD == 1) then  ! penalty
         ! do nothing
       else if (MPC_METHOD == 2) then  ! MPCCG
-        call hecmw_tback_x_33(hecMESH, hecTKT%X, TIME_comm)
+        call hecmw_tback_x_33(hecMESH, hecTKT%X, time_dumm)
         do i=1,hecMAT%NP * hecMAT%NDOF
           hecMAT%B(i) = Btmp(i)
         enddo
         deallocate(Btmp)
       else if (MPC_METHOD == 3) then  ! elimination
         !write(0,*) "DEBUG: MPC: solve done"
-        call hecmw_tback_x_33(hecMESH, hecTKT%X, TIME_comm)
+        call hecmw_tback_x_33(hecMESH, hecTKT%X, time_dumm)
         do i=1,hecMAT%NP * hecMAT%NDOF
           hecMAT%X(i)=hecTKT%X(i)
         enddo
