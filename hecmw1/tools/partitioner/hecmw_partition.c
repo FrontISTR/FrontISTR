@@ -43,6 +43,9 @@
 #  include "metis.h"
 #endif
 
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 
 #define INTERNAL  1
 
@@ -163,6 +166,9 @@ static int **ngrp_item = NULL;
 static int **egrp_idx = NULL;
 static int **egrp_item = NULL;
 
+#pragma omp threadprivate(n_int_nlist,n_bnd_nlist,n_int_elist,n_bnd_elist, \
+                          int_nlist,bnd_nlist,int_elist,bnd_elist,      \
+                          ngrp_idx,ngrp_item,egrp_idx,egrp_item)
 
 /*===== speed up (K. Inagaki )=======*/
 static int
@@ -3071,19 +3077,19 @@ pmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
     real_t *ubvec=NULL;
     int *options=NULL;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering pmetis(v5)...\n" );
     METIS_PartGraphRecursive( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
                               &nparts, tpwgts, ubvec, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from pmetis(v5)\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
     int options[5]={0,0,0,0,0};  /* options for pMETIS */
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n" );
     METIS_PartGraphRecursive( &n, xadj, adjncy, vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n" );
 #  endif
 #endif
 
@@ -3108,19 +3114,19 @@ kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
     real_t *ubvec=NULL;
     int *options=NULL;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering kmetis(v5)...\n" );
     METIS_PartGraphKway( &n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
                          &nparts, tpwgts, ubvec, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from kmetis(v5)\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
     int options[5]={0,0,0,0,0};  /* options for kMETIS */
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n" );
     METIS_PartGraphKway( &n, xadj, adjncy, vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n" );
 #  endif
 #endif
 
@@ -3145,11 +3151,11 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
     real_t *ubvec=NULL;
     int *options=NULL;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering pmetis(v5)...\n" );
     METIS_PartGraphRecursive( &n, &ncon, (int *) xadj, (int *) adjncy,
                               (int *) vwgt, vsize, adjwgt,
                               &nparts, tpwgts, ubvec, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from pmetis(v5)\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
@@ -3157,10 +3163,10 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 
     if (vwgt != NULL) wgtflag = 2;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n" );
     METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                               &wgtflag, &numflag, &nparts, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n" );
 #  endif
 #endif
 
@@ -3185,11 +3191,11 @@ kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
     real_t *ubvec=NULL;
     int *options=NULL;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering kmetis(v5)...\n" );
     METIS_PartGraphKway( &n, &ncon, (int *) xadj, (int *) adjncy,
                          (int *) vwgt, vsize, adjwgt,
                          &nparts, tpwgts, ubvec, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from kmetis(v5)\n" );
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
@@ -3197,10 +3203,10 @@ kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 
     if (vwgt != NULL) wgtflag = 2;
 
-    HECMW_log( HECMW_LOG_DEBUG, "Entering metis...\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n" );
     METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
                          &wgtflag, &numflag, &nparts, options, &edgecut, part );
-    HECMW_log( HECMW_LOG_DEBUG, "Returned from metis.\n" );
+    HECMW_log( HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n" );
 #  endif
 #endif
 
@@ -3470,8 +3476,15 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of node graph...\n");
+
     rtc = create_node_graph( global_mesh, edge_data, node_graph_index, node_graph_item );
     if( rtc != RTC_NORMAL )  goto error;
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
+
+
+    HECMW_log( HECMW_LOG_DEBUG, "Starting aggregation of contact pairs...\n");
 
     /* aggregate contact pair if requested */
     cp = global_mesh->contact_pair;
@@ -3539,6 +3552,9 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     for (i = 0; i < global_mesh->n_node; i++) {
         node_weight2[mark[i]] += 1;
     }
+
+    HECMW_log( HECMW_LOG_DEBUG, "Aggregation of contact pairs done\n");
+
 
     belong_domain = (int *)HECMW_calloc( n_node2, sizeof(int) );
     if( belong_domain == NULL ) {
@@ -3614,8 +3630,12 @@ metis_partition_nb_default( struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of node graph...\n");
+
     rtc = create_node_graph( global_mesh, edge_data, node_graph_index, node_graph_item );
     if( rtc != RTC_NORMAL )  goto error;
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
     belong_domain = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( belong_domain == NULL ) {
@@ -3742,8 +3762,12 @@ set_node_belong_domain_nb( struct hecmwST_local_mesh *global_mesh,
         edge_data->edge_node_item = NULL;
     }
 
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of mesh edge info...\n");
+
     rtc = HECMW_mesh_edge_info( global_mesh, edge_data );
     if( rtc != 0 )  goto error;
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of mesh edge info done\n");
 
 
     switch( cont_data->method ) {
@@ -3979,8 +4003,12 @@ set_elem_belong_domain_eb( struct hecmwST_local_mesh *global_mesh,
         elem_data->edge_node_item = NULL;
     }
 
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of elem graph...\n");
+
     elem_graph_item = create_elem_graph( global_mesh, elem_graph_index );
     if( elem_graph_item == NULL )  goto error;
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of elem graph done\n");
 
     rtc = count_edge_for_eb( global_mesh, elem_data, elem_graph_index, elem_graph_item );
     if( rtc != RTC_NORMAL )  goto error;
@@ -4120,9 +4148,7 @@ wnumbering( struct hecmwST_local_mesh *global_mesh, const struct hecmw_part_cont
     HECMW_assert( cont_data );
 
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Starting double numbering..." );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Starting double numbering..." );
 
 
     switch( global_mesh->hecmw_flag_parttype ) {
@@ -4151,9 +4177,7 @@ wnumbering( struct hecmwST_local_mesh *global_mesh, const struct hecmw_part_cont
     }
 
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Double numbering done" );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Double numbering done" );
 
     return RTC_NORMAL;
 
@@ -4732,9 +4756,7 @@ create_neighbor_info( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( node_flag );
     HECMW_assert( elem_flag );
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Starting creation of neighboring domain information..." );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of neighboring domain information..." );
 
     local_mesh->n_neighbor_pe = 0;
     local_mesh->neighbor_pe   = NULL;
@@ -4799,9 +4821,7 @@ create_neighbor_info( const struct hecmwST_local_mesh *global_mesh,
 
     HECMW_free( domain_flag );
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Creation of neighboring domain information done" );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of neighboring domain information done" );
 
     return RTC_NORMAL;
 
@@ -5849,9 +5869,7 @@ create_comm_info( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( node_flag );
     HECMW_assert( elem_flag );
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Starting creation of interface table..." );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of interface table..." );
 
     switch( global_mesh->hecmw_flag_parttype ) {
     case HECMW_FLAG_PARTTYPE_NODEBASED:  /* for node-based partitioning */
@@ -5879,9 +5897,7 @@ create_comm_info( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Creation of interface table done" );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of interface table done" );
 
     return RTC_NORMAL;
 
@@ -9608,6 +9624,8 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
     int *elem_local2global = NULL;
     int rtc, i;
 
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of local mesh data...\n");
+
 #ifndef INAGAKI_PARTITIONER
     node_global2local = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
     if( node_global2local == NULL ) {
@@ -9753,6 +9771,8 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
 #endif
     HECMW_free( node_local2global );
     HECMW_free( elem_local2global );
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of local mesh data done\n");
 
     return RTC_NORMAL;
 
@@ -9976,9 +9996,7 @@ static int
 init_partition( struct hecmwST_local_mesh *global_mesh,
                 struct hecmw_part_cont_data *cont_data )
 {
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Starting initialization for partitioner..." );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Starting initialization for partitioner..." );
 
     /* global_mesh->n_subdomain */
     global_mesh->n_subdomain = cont_data->n_domain;
@@ -10001,9 +10019,7 @@ init_partition( struct hecmwST_local_mesh *global_mesh,
     /* global_mesh->hecmw_flag_partdepth */
     global_mesh->hecmw_flag_partdepth = cont_data->depth;
 
-    if( HECMW_PART_VERBOSE_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Initialization for partitioner done" );
-    }
+    HECMW_log( HECMW_LOG_DEBUG, "Initialization for partitioner done" );
 
     return RTC_NORMAL;
 
@@ -10038,7 +10054,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     int current_domain, nrank, iS, iE;
     int rtc;
     int i;
-#ifndef INAGAKI_PARTITIONER
+#ifdef _OPENMP
     int error_in_ompsection = 0;
 #endif
 
@@ -10117,18 +10133,26 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     rtc = wnumbering( global_mesh, cont_data );
     if( rtc != RTC_NORMAL )  goto error;
 
-#ifdef INAGAKI_PARTITIONER
-    /*K. Inagaki */
-    rtc = spdup_makelist_main( global_mesh );
-    if( rtc != RTC_NORMAL )  goto error;
-#endif
-
+#ifdef _OPENMP
 #ifndef INAGAKI_PARTITIONER
 # pragma omp parallel default(none), \
     private(node_flag,elem_flag,local_mesh,nrank,iS,iE,i,current_domain,rtc,ofheader,ofname), \
     shared(global_mesh,cont_data,num_elem,num_node,num_ielem,num_inode,error_in_ompsection)
     {
+#else
+# pragma omp parallel default(none), \
+    private(node_flag,elem_flag,local_mesh,nrank,iS,iE,i,current_domain,rtc,ofheader,ofname), \
+    private(node_global2local,elem_global2local,node_flag_neighbor,elem_flag_neighbor), \
+    shared(global_mesh,cont_data,num_elem,num_node,num_ielem,num_inode,error_in_ompsection)
+    {
+#endif
     error_in_ompsection = 0;
+#endif /* _OPENMP */
+
+#ifdef INAGAKI_PARTITIONER
+    /*K. Inagaki */
+    rtc = spdup_makelist_main( global_mesh );
+    if( rtc != RTC_NORMAL )  goto error_omp;
 #endif
 
     node_flag = (char *)HECMW_calloc( global_mesh->n_node, sizeof(char) );
@@ -10185,7 +10209,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
     iE = iS + nrank;
     if( HECMW_comm_get_rank() == HECMW_comm_get_size()-1 ) iE = global_mesh->n_subdomain;
 
-#ifndef INAGAKI_PARTITIONER
+#ifdef _OPENMP
 # pragma omp for schedule(dynamic,1), reduction(+:error_in_ompsection)
 #endif
     for( i=iS; i<iE; i++ ) {
@@ -10193,13 +10217,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
 
         current_domain = i;
 
-        if( !HECMW_PART_SILENT_MODE ) {
-#ifdef _OPENMP
-            HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...(%d)", current_domain, omp_get_thread_num() );
-#else
-            HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...", current_domain );
-#endif
-        }
+        HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...", current_domain );
 
         rtc = create_neighbor_info( global_mesh, local_mesh, node_flag, elem_flag, current_domain );
         if( rtc != RTC_NORMAL ) {
@@ -10236,12 +10254,6 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         num_node[i] = local_mesh->n_node;
         num_ielem[i] = local_mesh->ne_internal;
         num_inode[i] = local_mesh->nn_internal;
-#ifdef INAGAKI_PARTITIONER
-        sum_elem[i] = local_mesh->n_elem;
-        sum_node[i] = local_mesh->n_node;
-        sum_ielem[i] = local_mesh->ne_internal;
-        sum_inode[i] = local_mesh->nn_internal;
-#endif
 
         ofheader = HECMW_ctrl_get_meshfiles_header_sub( "part_out", global_mesh->n_subdomain, current_domain );
         if( ofheader == NULL ) {
@@ -10258,7 +10270,11 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         get_dist_file_name( ofheader->meshfiles[0].filename, current_domain, ofname );
         HECMW_assert( ofname != NULL );
 
+        HECMW_log( HECMW_LOG_DEBUG, "Starting writing local mesh for domain #%d...", current_domain );
+
         HECMW_put_dist_mesh( local_mesh, ofname );
+
+        HECMW_log( HECMW_LOG_DEBUG, "Writing local mesh for domain #%d done", current_domain );
 
         clean_struct_local_mesh( local_mesh );
 
@@ -10270,7 +10286,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         spdup_clear_IEB( node_flag, elem_flag, current_domain );
 #endif
     }
-#ifndef INAGAKI_PARTITIONER
+#ifdef _OPENMP
     if (error_in_ompsection) goto error_omp;
 
 # pragma omp single
@@ -10285,8 +10301,16 @@ error_omp:
     HECMW_dist_free( local_mesh );
     HECMW_free( node_flag );
     HECMW_free( elem_flag );
+#ifdef INAGAKI_PARTITIONER
+    /*K. Inagaki */
+    spdup_freelist( global_mesh );
+    HECMW_free( node_global2local );
+    HECMW_free( elem_global2local );
+    HECMW_free( node_flag_neighbor );
+    HECMW_free( elem_flag_neighbor );
+#endif
 
-#ifndef INAGAKI_PARTITIONER
+#ifdef _OPENMP
     } /* omp end parallel */
     if (error_in_ompsection) goto error;
 #endif
@@ -10329,15 +10353,6 @@ error_omp:
     HECMW_free( sum_ielem );
     HECMW_free( sum_inode );
 
-#ifdef INAGAKI_PARTITIONER
-    /*K. Inagaki */
-    spdup_freelist( global_mesh );
-    HECMW_free( node_global2local );
-    HECMW_free( elem_global2local );
-    HECMW_free( node_flag_neighbor );
-    HECMW_free( elem_flag_neighbor );
-#endif
-
     return global_mesh;
 
 error:
@@ -10367,9 +10382,7 @@ HECMW_partition( struct hecmwST_local_mesh *global_mesh )
     struct hecmwST_local_mesh *local_mesh;
     struct hecmw_part_cont_data *cont_data;
 
-    if( !HECMW_PART_SILENT_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Starting domain decomposition...\n" );
-    }
+    HECMW_log( HECMW_LOG_INFO, "Starting domain decomposition...\n" );
 
     if( global_mesh == NULL ) {
         HECMW_set_error( HECMW_PART_E_INV_ARG, "\'global_mesh\' is NULL" );
@@ -10384,9 +10397,7 @@ HECMW_partition( struct hecmwST_local_mesh *global_mesh )
 
     HECMW_part_free_control( cont_data );
 
-    if( !HECMW_PART_SILENT_MODE ) {
-        HECMW_log( HECMW_LOG_INFO, "Domain decomposition done\n" );
-    }
+    HECMW_log( HECMW_LOG_INFO, "Domain decomposition done\n" );
 
     return local_mesh;
 

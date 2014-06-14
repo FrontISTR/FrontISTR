@@ -26,6 +26,10 @@
 #include "hecmw_util.h"
 #include "hecmw_log.h"
 
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
+
 
 #define HECMW_LINE_MAX 1023
 
@@ -189,6 +193,32 @@ output_log(int loglv, const char *fmt, va_list ap, FILE *fp)
 	}
 	strcpy(buf, p);
 
+#ifndef HECMW_SERIAL
+	{
+		/* rank and num_procs */
+		int num_procs = HECMW_comm_get_size();
+		int my_rank = HECMW_comm_get_rank();
+		if (num_procs > 1) {
+			len = strlen(buf);
+			HECMW_snprintf(buf+len, sizeof(buf)-len, " PE[%d/%d]",
+				       my_rank, num_procs);
+		}
+	}
+#endif
+
+#ifdef _OPENMP
+	{
+		/* thread ID and num_threads */
+		int thread_num = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
+		if (num_threads > 1) {
+			len = strlen(buf);
+			HECMW_snprintf(buf+len, sizeof(buf)-len, " TH(%d/%d)",
+				       thread_num, num_threads);
+		}
+	}
+#endif
+
 	/* log level */
 	for(i=0; i < sizeof(hecmw_loglv_table)/sizeof(hecmw_loglv_table[0]); i++) {
 		if(hecmw_loglv_table[i].loglv == loglv) {
@@ -199,24 +229,24 @@ output_log(int loglv, const char *fmt, va_list ap, FILE *fp)
 	len = strlen(buf);
 	HECMW_snprintf(buf+len, sizeof(buf)-len, " %s: ", p);
 
-	/* output header */
-	fprintf(fp, "%s", buf);
 
-	if(fmt == NULL) {
-		fprintf(fp, "\n");
-		return;
-	}
-
-	HECMW_vsnprintf(buf, sizeof(buf), fmt, ap);		/* message body */
-
-	/* output body */
-	fputs(buf, fp);
-
-	/* add '\n' if needed */
+	/* message body */
 	len = strlen(buf);
-	if((len > 0 && buf[len-1] != '\n') || len == 0) {
-		fprintf(fp, "\n");
+	if(fmt == NULL) {
+		HECMW_snprintf(buf+len, sizeof(buf)-len, "\n");
+
+	} else {
+		HECMW_vsnprintf(buf+len, sizeof(buf)-len, fmt, ap);	/* message body */
+
+		/* add '\n' if needed */
+		len = strlen(buf);
+		if((len > 0 && buf[len-1] != '\n') || len == 0) {
+			HECMW_snprintf(buf+len, sizeof(buf)-len, "\n");
+		}
 	}
+
+	/* output */
+	fputs(buf, fp);
 
 	fflush(fp);
 }
