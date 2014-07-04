@@ -6,7 +6,7 @@ FSTRLIB_TARGETFILE       = libfistr.a
 FSTRLIB_F90TARGETFILE    = libffistr.a
 FSTRLIBS                 = -lffistr -lfistr
 
-HECMWLIBS                = -lfhecmw -lhecmw
+HECMWLIBS                = -lfhecmw -lhecmw -lfhecmw
 
 F90MODULEPOSTFIX         = mod
 COBJFILEPOSTFIX          = o

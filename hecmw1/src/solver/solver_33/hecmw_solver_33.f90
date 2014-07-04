@@ -163,6 +163,7 @@ contains
     if (PRECOND.eq.10) IFLAG(1)= 0
     if (PRECOND.eq.11) IFLAG(1)= 0
     if (PRECOND.eq.12) IFLAG(1)= 0
+    if (PRECOND.eq. 5) IFLAG(1)= 0
 
     if (IFLAG(1).ne.0) then
       ERROR= HECMW_SOLVER_ERROR_INCONS_PC
@@ -256,6 +257,8 @@ contains
              write (*,'(a,i3)') '### 3x3 B-IC-CG(1)',iterPREmax
         if (PRECOND.eq.12) &
              write (*,'(a,i3)') '### 3x3 B-IC-CG(2)',iterPREmax
+        if (PRECOND.eq.5) &
+             write (*,'(a,i3)') '### 3x3 ML-CG  ',iterPREmax
       endif
       call hecmw_solve_CG_33( hecMESH,  hecTKT, ITER, RESID, ERROR,   &
            &                          TIME_setup, TIME_sol, TIME_comm )

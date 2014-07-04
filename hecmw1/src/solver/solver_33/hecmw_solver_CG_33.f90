@@ -119,7 +119,7 @@
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_33_setup(hecMAT)
+      call hecmw_precond_33_setup(hecMAT, hecMESH)
 
 !C===
 !C +---------------------+
@@ -274,7 +274,7 @@
         call hecmw_JAD_FINALIZE()
       ENDIF
 
-      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+      if (ESTCOND /= 0 .and. ERROR == 0 .and. hecMESH%my_rank == 0) then
         call estimate_cond_num(ITER, D, E)
         deallocate(D, E)
       endif
