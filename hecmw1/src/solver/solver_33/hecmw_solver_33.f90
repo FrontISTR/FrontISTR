@@ -278,6 +278,8 @@ contains
              write (*,'(a,i3)') '### 3x3 B-IlU-BiCGSTAB(1)',iterPREmax
         if (PRECOND.eq.12) &
              write (*,'(a,i3)') '### 3x3 B-IlU-BiCGSTAB(2)',iterPREmax
+        if (PRECOND.eq.5) &
+             write (*,'(a,i3)') '### 3x3 ML-BiCGSTAB  ',iterPREmax
       endif
 
       call hecmw_solve_BiCGSTAB_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
@@ -298,6 +300,8 @@ contains
              write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(1)',iterPREmax
         if (PRECOND.eq.12) &
              write (*,'(a,i3)') '### 3x3 B-ILU-GMRES(2)',iterPREmax
+        if (PRECOND.eq.5) &
+             write (*,'(a,i3)') '### 3x3 ML-GMRES  ',iterPREmax
       endif
 
       call hecmw_solve_GMRES_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
@@ -318,6 +322,8 @@ contains
              write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(1)',iterPREmax
         if (PRECOND.eq.12) &
              write (*,'(a,i3)') '### 3x3 B-ILU-GPBiCG(2)',iterPREmax
+        if (PRECOND.eq.5) &
+             write (*,'(a,i3)') '### 3x3 ML-GPBiCG  ',iterPREmax
       endif
 
       call hecmw_solve_GPBiCG_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &

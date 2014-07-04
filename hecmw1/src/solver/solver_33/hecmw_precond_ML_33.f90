@@ -33,15 +33,16 @@ module hecmw_precond_ML_33
 
 contains
 
-  subroutine hecmw_precond_ML_33_setup(hecMAT, hecMESH)
+  subroutine hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
     use hecmw_matrix_misc
     use hecmw_mat_id
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: sym
     integer(kind=kint) :: ierr
     call hecmw_mat_id_set(hecMAT, hecMESH, id)
-    call hecmw_ML_wrapper_setup(id, ierr)
+    call hecmw_ML_wrapper_setup(id, sym, ierr)
   end subroutine hecmw_precond_ML_33_setup
 
   subroutine hecmw_precond_ML_33_apply(WW)

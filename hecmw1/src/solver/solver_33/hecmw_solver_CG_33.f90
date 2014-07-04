@@ -119,7 +119,7 @@
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_33_setup(hecMAT, hecMESH)
+      call hecmw_precond_33_setup(hecMAT, hecMESH, 1)
 
 !C===
 !C +---------------------+

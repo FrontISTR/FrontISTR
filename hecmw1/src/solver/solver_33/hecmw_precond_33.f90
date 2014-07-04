@@ -35,7 +35,7 @@ contains
   !C*** hecmw_precond_33_setup
   !C***
   !C
-  subroutine hecmw_precond_33_setup(hecMAT, hecMESH)
+  subroutine hecmw_precond_33_setup(hecMAT, hecMESH, sym)
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_33
@@ -45,6 +45,7 @@ contains
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: sym
 
     integer(kind=kint ) :: PRECOND, iterPREmax
 
@@ -60,7 +61,7 @@ contains
     else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
       call hecmw_precond_BILU_33_setup(hecMAT)
     else if (PRECOND.eq.5) then
-      call hecmw_precond_ML_33_setup(hecMAT, hecMESH)
+      call hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
     endif
 
   end subroutine hecmw_precond_33_setup

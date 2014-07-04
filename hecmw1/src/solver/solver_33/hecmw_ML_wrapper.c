@@ -63,7 +63,7 @@ struct ml_info {
 static struct ml_info mlinfo[MAX_MI];
 
 
-void hecmw_ML_wrapper_setup(int *id, int *ierr)
+void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 {
 	int N_grids, N_levels;
 	int nlocal, nlocal_allcolumns;
@@ -89,7 +89,7 @@ void hecmw_ML_wrapper_setup(int *id, int *ierr)
 			      nlocal_allcolumns);
 	ML_Set_Amatrix_Matvec(ml_object, 0, hecmw_ML_matvec);
 
-	ML_Set_Symmetrize(ml_object, ML_YES);
+	if (*sym) ML_Set_Symmetrize(ml_object, ML_YES);
 
 	/* Aggregate */
 	ML_Aggregate_Create(&agg_object);
@@ -129,7 +129,7 @@ void hecmw_ML_wrapper_setup(int *id, int *ierr)
 	/* ML_Aggregate_Set_Threshold(agg_object, threshold); */
 	/* ML_Aggregate_Set_DampingFactor(agg_object, dampingfactor); */
 
-	ML_Set_SpectralNormScheme_Calc(ml_object); /* default is PowerMethod */
+	if (*sym) ML_Set_SpectralNormScheme_Calc(ml_object); /* default is PowerMethod */
 	/* ML_Set_SpectralNorm_Iterations(); */ /* ddfault is ten */
 
 	/* repartitioning */
@@ -220,7 +220,7 @@ void hecmw_ML_wrapper_clear(int *id, int *ierr)
 
 #else /* WITH_ML */
 
-void hecmw_ML_wrapper_setup(int *id, int *ierr)
+void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 {
 	fprintf(stderr, "ERROR: ML not enabled\n");
 	*ierr = HECMW_ERROR;
@@ -239,9 +239,9 @@ void hecmw_ML_wrapper_clear(int *id, int *ierr)
 #endif /* WITH_ML */
 /* Fortran interface */
 
-void hecmw_ml_wrapper_setup_(int *id, int *ierr) { hecmw_ML_wrapper_setup(id, ierr); }
-void hecmw_ml_wrapper_setup__(int *id, int *ierr) { hecmw_ML_wrapper_setup(id, ierr); }
-void HECMW_ML_WRAPPER_SETUP(int *id, int *ierr) { hecmw_ML_wrapper_setup(id, ierr); }
+void hecmw_ml_wrapper_setup_(int *id, int *sym, int *ierr) { hecmw_ML_wrapper_setup(id, sym, ierr); }
+void hecmw_ml_wrapper_setup__(int *id, int *sym, int *ierr) { hecmw_ML_wrapper_setup(id, sym, ierr); }
+void HECMW_ML_WRAPPER_SETUP(int *id, int *sym, int *ierr) { hecmw_ML_wrapper_setup(id, sym, ierr); }
 
 void hecmw_ml_wrapper_apply_(int *id, double rhs[], int *ierr) { hecmw_ML_wrapper_apply(id, rhs, ierr); }
 void hecmw_ml_wrapper_apply__(int *id, double rhs[], int *ierr) { hecmw_ML_wrapper_apply(id, rhs, ierr); }
