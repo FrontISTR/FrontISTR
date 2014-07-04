@@ -225,7 +225,7 @@ void hecmw_ML_wrapper_setup(int *id, int *ierr)
 	fprintf(stderr, "ERROR: ML not enabled\n");
 	*ierr = HECMW_ERROR;
 }
-void hecmw_ML_wrapper_apply(ind *id, double rhs[], int *ierr)
+void hecmw_ML_wrapper_apply(int *id, double rhs[], int *ierr)
 {
 	fprintf(stderr, "ERROR: ML not enabled\n");
 	*ierr = HECMW_ERROR;
