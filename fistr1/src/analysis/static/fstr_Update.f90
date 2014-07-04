@@ -64,6 +64,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer            :: ig0,  ig, ik, in, ierror, isect, ihead, cdsys_ID
 
   real(kind=kreal), optional :: strainEnergy
+  real(kind=kreal) :: tmp
 
   ndof = hecMAT%NDOF
   fstrSOLID%QFORCE=0.0d0
@@ -92,7 +93,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 ! element loop
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,tt0,ttn,tt,ddu,du,total_disp, &
-!$omp&          cdsys_ID,coords,thick,qf,isect,ihead), &
+!$omp&          cdsys_ID,coords,thick,qf,isect,ihead,tmp), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
 !$omp&         strainEnergy,iter,tincr)
 !$omp do
@@ -195,9 +196,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         if(present(strainEnergy))then
           do j= 1, nn
             do i=1, ndof
+              tmp=0.5d0*(fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)&
+                   +qf(ndof*(j-1)+i))*ddu(i,j)
 !$omp atomic
-              strainEnergy=strainEnergy+0.5d0*(fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)&
-                                              +qf(ndof*(j-1)+i))*ddu(i,j)
+              strainEnergy=strainEnergy+tmp
               fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)=qf(ndof*(j-1)+i)
             enddo
           enddo
