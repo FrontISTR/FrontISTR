@@ -268,7 +268,7 @@
       Tcomm = Tcomm + END_TIME - START_TIME
 
       deallocate (WW)
-      call hecmw_precond_33_clear(hecMAT)
+      !call hecmw_precond_33_clear(hecMAT)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
         call hecmw_JAD_FINALIZE()

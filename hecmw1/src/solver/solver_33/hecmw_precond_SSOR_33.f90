@@ -60,11 +60,13 @@ module hecmw_precond_SSOR_33
 
   logical, save :: isFirst = .true.
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_SSOR_33_setup(hecMAT)
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
@@ -77,6 +79,16 @@ contains
 
     !t0 = hecmw_Wtime()
     !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+        call hecmw_precond_SSOR_33_clear(hecMAT)
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_SSOR_33_clear(hecMAT) ! TEMPORARY
+      else
+        return
+      endif
+    endif
 
     !$ nthreads = omp_get_max_threads()
 
@@ -230,6 +242,10 @@ contains
 !$omp end parallel
 
     isFirst = .true.
+
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
 
     !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
@@ -477,6 +493,7 @@ contains
       call hecmw_cmat_LU_free( hecMAT )
     endif
     NContact = 0
+    INITIALIZED = .false.
   end subroutine hecmw_precond_SSOR_33_clear
 
   subroutine write_debug_info

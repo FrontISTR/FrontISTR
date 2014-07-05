@@ -40,11 +40,13 @@ module hecmw_precond_BILU_33
   integer(kind=kint), pointer :: FI1L(:) => null()
   integer(kind=kint), pointer :: FI1U(:) => null()
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_BILU_33_setup(hecMAT)
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NP, NPU, NPL
     integer(kind=kint ) :: PRECOND
     real   (kind=kreal) :: SIGMA, SIGMA_DIAG
@@ -56,6 +58,16 @@ contains
     integer(kind=kint ), pointer :: INL(:), INU(:)
     integer(kind=kint ), pointer :: IAL(:)
     integer(kind=kint ), pointer :: IAU(:)
+
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+        call hecmw_precond_BILU_33_clear()
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_BILU_33_clear() ! TEMPORARY
+      else
+        return
+      endif
+    endif
 
     N = hecMAT%N
     NP = hecMAT%NP
@@ -81,6 +93,10 @@ contains
     if (PRECOND.eq.12) call FORM_ILU2_33 &
          &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
          &    SIGMA, SIGMA_DIAG)
+
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
 
   end subroutine hecmw_precond_BILU_33_setup
 
@@ -169,6 +185,7 @@ contains
     nullify(inumFI1U)
     nullify(FI1L)
     nullify(FI1U)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_BILU_33_clear
 
   !C

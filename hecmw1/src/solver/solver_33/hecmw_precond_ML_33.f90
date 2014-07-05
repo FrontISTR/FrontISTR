@@ -31,18 +31,32 @@ module hecmw_precond_ML_33
 
   integer(kind=kint) :: id
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
     use hecmw_matrix_misc
     use hecmw_mat_id
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: sym
     integer(kind=kint) :: ierr
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+        call hecmw_precond_ML_33_clear()
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_ML_33_clear()
+      else
+        return
+      endif
+    endif
     call hecmw_mat_id_set(hecMAT, hecMESH, id)
     call hecmw_ML_wrapper_setup(id, sym, ierr)
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
   end subroutine hecmw_precond_ML_33_setup
 
   subroutine hecmw_precond_ML_33_apply(WW)
@@ -58,6 +72,7 @@ contains
     integer(kind=kint) :: ierr
     call hecmw_ML_wrapper_clear(id, ierr)
     call hecmw_mat_id_clear(id)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_ML_33_clear
 
 end module     hecmw_precond_ML_33

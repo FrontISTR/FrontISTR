@@ -264,7 +264,7 @@
       Tcomm = Tcomm + END_TIME - START_TIME
 
       deallocate (WW)
-      call hecmw_precond_33_clear(hecMAT)
+      !call hecmw_precond_33_clear(hecMAT)
 
       E1_time = HECMW_WTIME()
       call hecmw_time_statistics(hecMESH, E1_time - S1_time, &
