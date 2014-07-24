@@ -50,8 +50,7 @@ contains
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) return
-    else
-      allocate(ALU(9*NP))
+      call hecmw_precond_DIAG_33_clear()
     endif
 
     N = hecMAT%N
@@ -59,6 +58,7 @@ contains
     D => hecMAT%D
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
+    allocate(ALU(9*NP))
     ALU = 0.d0
 
     do ii= 1, N
