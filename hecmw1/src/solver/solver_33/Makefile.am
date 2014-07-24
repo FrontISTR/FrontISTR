@@ -19,16 +19,25 @@ REFINERINCDIR     = @refinerincdir@
 REFINERLIBDIR     = @refinerlibdir@
 REFINERLIBS       = @refinerlibs@
 
+MLDIR             = @mldir@
+MLLIBDIR          = @mllibdir@
+MLINCDIR          = @mlincdir@
+MLLIBS            = @mllibs@
+ML_CFLAGS         = @ml_cflags@
+ML_LDFLAGS        = @ml_ldflags@
+ML_F90FLAGS       = @ml_f90flags@
+ML_F90LDFLAGS     = @ml_f90ldflags@
+
 CC                = @cc@
 CFLAGS            = @cflags@
 BASE_CFLAGS       = @base_cflags@
 MPI_CFLAGS        = @mpi_cflags@
 HECMW_CFLAGS      = @hecmw_cflags@
-ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(ML_CFLAGS) $(CFLAGS)
 LDFLAGS           = @ldflags@
 MPI_LDFLAGS       = @mpi_ldflags@
 HECMW_LDFLAGS     = @hecmw_ldflags@
-ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(ML_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS          = @optflags@
 
 F90               = @f90@
@@ -36,11 +45,11 @@ F90FLAGS          = @f90flags@
 BASE_F90FLAGS     = @base_f90flags@
 MPI_F90FLAGS      = @mpi_f90flags@
 HECMW_F90FLAGS    = @hecmw_f90flags@
-ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
+ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(ML_F90FLAGS) $(F90FLAGS)
 F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
-ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(ML_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@

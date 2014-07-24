@@ -11,6 +11,7 @@ WITHRCAP=0
 WITHREFINER=0
 WITHMKL=0
 WITHMUMPS=0
+WITHML=0
 WITHPARACON=0
 
 BUILDTARGET="build-default"
@@ -76,6 +77,8 @@ do
 		WITHMKL=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
+	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
+		WITHML=1
 	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
 		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
@@ -94,6 +97,7 @@ do
 			--with-refiner          link refiner
 			--with-mkl              link mkl
 			--with-mumps            link mumps
+			--with-ml               link ml
 			--with-paracon          compile parallel contact
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
@@ -112,6 +116,7 @@ do
 			--with-refiner          link refiner
 			--with-mkl              link mkl
 			--with-mumps            link mumps
+			--with-ml               link ml
 			--with-paracon          compile parallel contact
 			-h, --help              show help(this message)
 		EOF
@@ -254,6 +259,14 @@ else
 fi
 
 #
+# with ml
+#
+if [ ${WITHML} -ne 1 ]; then
+	ML_LDFLAGS=""
+	ML_F90LDFLAGS=""
+fi
+
+#
 # with paracon
 #
 if [ ${WITHPARACON} -eq 1 ]; then
@@ -363,6 +376,11 @@ do
 		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
 		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
 		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
+		-e "s!@mldir@!${MLDIR}!" \
+		-e "s!@mllibdir@!${MLLIBDIR}!" \
+		-e "s!@mllibs@!${MLLIBS}!" \
+		-e "s!@ml_ldflags@!${ML_LDFLAGS}!" \
+		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \

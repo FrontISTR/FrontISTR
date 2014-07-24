@@ -3,7 +3,7 @@
 #include <errno.h>
 #include "hecmw_util.h"
 
-#ifdef WITH_ML
+#ifdef HECMW_WITH_ML
 
 #include "ml_include.h"
 
@@ -138,7 +138,7 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 	/* ML_Repartition_Set_MinPerProc(ml_object, 512); */ /* default: 512 */
 	/* ML_Repartition_Set_PutOnSingleProc(ml_object, i); */
 	/* ML_Repartition_Set_StartLevel(ml_object, 1); */ /* default: 1 */
-	/* ML_Repartition_Set_Partitioner(ml_object, ML_USEZOLTAN); */ /* default: Zoltan */
+	/* ML_Repartition_Set_Partitioner(ml_object, ML_USEPARMETIS); */ /* default: ML_USEZOLTAN */
 	/* ML_Aggregate_Set_Dimensions(agg_object, 3); */
 
 	/* Generate MultiGrid */
@@ -172,6 +172,10 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 		/* 			       ML_BOTH, 3, ML_DEFAULT); */
 		ML_Gen_Smoother_Cheby(ml_object, coarsest_level,
 				      ML_BOTH, 20.0, 2);
+		/* ML_Gen_Smoother_Amesos(ml_object, coarsest_level, */
+		/* 		       ML_AMESOS_KLU, 1, 0.0); */
+		/* ML_Gen_Smoother_Amesos(ml_object, coarsest_level, */
+		/* 		       ML_AMESOS_MUMPS, 1, 0.0); */
 	}
 
 	/* Solver */
