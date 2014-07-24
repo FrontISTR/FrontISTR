@@ -4398,6 +4398,40 @@ mask_boundary_elem_with_slave( const struct hecmwST_local_mesh *global_mesh,
 
 
 static int
+mask_boundary_link_elem_with_slave( const struct hecmwST_local_mesh *global_mesh,
+                                    const char *node_flag, char *elem_flag,
+                                    int *added )
+{
+    int node, evalsum;
+    int i, j;
+
+    *added = 0;
+
+    for( i=0; i<global_mesh->n_elem; i++ ) {
+        if( EVAL_BIT( elem_flag[i], BOUNDARY ) ) continue;
+        if( ! HECMW_is_etype_link( global_mesh->elem_type[i] ) ) continue;
+
+        evalsum = 0;
+        for( j=global_mesh->elem_node_index[i]; j<global_mesh->elem_node_index[i+1]; j++ ) {
+            node = global_mesh->elem_node_item[j];
+            if( EVAL_BIT( node_flag[node-1], BOUNDARY ) &&
+                EVAL_BIT( node_flag[node-1], SLAVE ) ) {
+                evalsum++;
+            }
+        }
+
+        if( evalsum ) {
+            MASK_BIT( elem_flag[i], OVERLAP );
+            MASK_BIT( elem_flag[i], BOUNDARY );
+            (*added)++;
+        }
+    }
+
+    return RTC_NORMAL;
+}
+
+
+static int
 mask_additional_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
                               const char *node_flag, char *elem_flag )
 {
@@ -4471,6 +4505,15 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
     {
         int added = 0;
         rtc = mask_boundary_elem_with_slave( global_mesh, node_flag, elem_flag, &added );
+        if( rtc != RTC_NORMAL )  goto error;
+
+        if( added > 0 ) {
+            rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
+            if( rtc != RTC_NORMAL )  goto error;
+        }
+
+        added = 0;
+        rtc = mask_boundary_link_elem_with_slave( global_mesh, node_flag, elem_flag, &added );
         if( rtc != RTC_NORMAL )  goto error;
 
         if( added > 0 ) {
