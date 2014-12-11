@@ -276,14 +276,16 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
                         elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
                                 if( tincr>0.d0 ) then
                                         do i = 1, ngauss
-                                                fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
+                                                fstrSOLID%elements(icel)%gausses(i)%ttime = &
+                                                     fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
                                                 call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
                                         enddo
                                 endif
                         elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
                                 if( tincr > 0.d0 ) then 
                                         do i = 1, ngauss
-                                                fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
+                                                fstrSOLID%elements(icel)%gausses(i)%ttime = &
+                                                     fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
                                                 call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
                                         enddo
                                 endif
@@ -388,7 +390,8 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                 ihead = hecMESH%section%sect_R_index(isect-1)
                                 thick = hecMESH%section%sect_R_item(ihead+1)
                                 nn = 4; ic_type = 741; mixflag = 1
-                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, stiff, thick, mixflag)
+                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
+                                     stiff, thick, mixflag)
                                 ic_type = 781; nn = 8
                                 CYCLE
                         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
@@ -396,13 +399,15 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                 ihead = hecMESH%section%sect_R_index(isect-1)
                                 thick = hecMESH%section%sect_R_item(ihead+1)
                                 nn = 3; ic_type = 731; mixflag = 2
-                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, stiff, thick, mixflag)
+                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
+                                     stiff, thick, mixflag)
                                 ic_type = 761; nn = 6
                                 CYCLE
                         else if( ic_type == 641 ) THEN
                                 isect = hecMESH%section_ID(icel)
                                 ihead = hecMESH%section%sect_R_index(isect-1)
-                                CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiff )
+                                CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
+                                     hecMESH%section%sect_R_item(ihead+1:), stiff )
                                 iflag = 0
                                 DO j = 1, nn
                                         IF( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
@@ -411,14 +416,18 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                         IF( ic_type == 641 ) THEN
                                                 isect = hecMESH%section_ID(icel)
                                                 ihead = hecMESH%section%sect_R_index(isect-1)
-                                                CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiff )
+                                                CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
+                                                     hecMESH%section%sect_R_item(ihead+1:), stiff )
                                         END IF
                                         force(1:nn*3) = MATMUL( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
                                         DO j = 1, nn
                                                 IF( id_spc( nodLOCAL(j) ) == 1 ) THEN
-                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 )+force(3*j-2)
-                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 )+force(3*j-1)
-                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)   ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)   )+force(3*j  )
+                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 ) = &
+                                                             fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 )+force(3*j-2)
+                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 ) = &
+                                                             fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 )+force(3*j-1)
+                                                        fstrSOLID%QFORCE( 3*nodLOCAL(j)   ) = &
+                                                             fstrSOLID%QFORCE( 3*nodLOCAL(j)   )+force(3*j  )
                                                 END IF
                                         END DO
                                 ENDIF
@@ -451,11 +460,11 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                         if( iflag == 1 ) then
                                 if( ic_type == 361 ) then
                                    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-                                     call STF_C3D8Bbar                                                                              &
-                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 ) 
+                                     call STF_C3D8Bbar                                                                             &
+                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 )
                                    else
-                                     call STF_C3D8IC                                                                         &
-                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords ) 
+                                     call STF_C3D8IC                                                                        &
+                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords )
                                    endif
                                 else if( ic_type == 301 ) then
                                         isect = hecMESH%section_ID(icel)
@@ -463,8 +472,8 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                         thick = hecMESH%section%sect_R_item(ihead+1)
                                         call STF_C1( ic_type, nn, ecoord, thick, fstrSOLID%elements(icel)%gausses, stiff )
                                 else
-                                        call STF_C3                                                                                    &
-                                             ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 ) 
+                                        call STF_C3                                                                                &
+                                             (ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0)
                                 endif
                                 force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
                                 do j = 1, nn

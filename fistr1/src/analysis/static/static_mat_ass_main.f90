@@ -178,7 +178,7 @@ MODULE m_static_mat_ass_main
         else if( ic_type == 641 ) then
             isect= hecMESH%section_ID(icel)
             ihead = hecMESH%section%sect_R_index(isect-1)
-            CALL STF_Beam_641( ic_type, nn, ecoord,gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiffness(1:nn*ndof,1:nn*ndof) )
+            CALL STF_Beam_641(ic_type, nn, ecoord,gausses(:), hecMESH%section%sect_R_item(ihead+1:), stiffness(1:nn*ndof,1:nn*ndof))
             
         else
             write(*,*) '###ERROR### : Element type not supported for linear static analysis'
