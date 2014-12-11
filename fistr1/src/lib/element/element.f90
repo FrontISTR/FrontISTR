@@ -85,6 +85,7 @@ module elementInfo
     integer, parameter :: fe_tri6nc   = 2322
     integer, parameter :: fe_quad4n   = 241
     integer, parameter :: fe_quad8n   = 242
+    integer, parameter :: fe_truss    = 301
     integer, parameter :: fe_tet4n    = 341
     integer, parameter :: fe_tet10n   = 342
     integer, parameter :: fe_tet10nc  = 3422
@@ -416,7 +417,7 @@ module elementInfo
   integer function NumOfQuadPoints( fetype )
       integer, intent(in) :: fetype         !< element type
       select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341 )
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341, fe_truss )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
