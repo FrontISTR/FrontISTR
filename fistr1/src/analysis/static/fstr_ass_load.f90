@@ -65,28 +65,28 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
-
+      
       ndof = hecMAT%NDOF
-
+      
 ! -------------------------------------------------------------------
 !  CLOAD
 ! -------------------------------------------------------------------
-      fstrSOLID%GL(:)=0.d0
-      do ig0= 1, fstrSOLID%CLOAD_ngrp_tot
+      fstrSOLID%GL(:) = 0.0d0
+      do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
         if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         endif
-        ig= fstrSOLID%CLOAD_ngrp_ID(ig0)
-        ityp= fstrSOLID%CLOAD_ngrp_DOF(ig0)
-        fval= fstrSOLID%CLOAD_ngrp_val(ig0)
-        iS0= hecMESH%node_group%grp_index(ig-1) + 1
-        iE0= hecMESH%node_group%grp_index(ig  )
-        do ik= iS0, iE0
-          in   = hecMESH%node_group%grp_item(ik)
-          fstrSOLID%GL(ndof*(in-1)+ityp)=fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
+        ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
+        ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
+        fval = fstrSOLID%CLOAD_ngrp_val(ig0)
+        iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+        iE0 = hecMESH%node_group%grp_index(ig  )
+        do ik = iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          fstrSOLID%GL(ndof*(in-1)+ityp) = fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
         enddo
       enddo
 !
@@ -94,83 +94,100 @@ module m_fstr_ass_load
 ! -------------------------------------------------------------------
 !  DLOAD
 ! -------------------------------------------------------------------
-      do ig0= 1, fstrSOLID%DLOAD_ngrp_tot
+      do ig0 = 1, fstrSOLID%DLOAD_ngrp_tot
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
         if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         endif
-        ig= fstrSOLID%DLOAD_ngrp_ID(ig0)
-        ltype= fstrSOLID%DLOAD_ngrp_LID(ig0)
-        do i=0,6
+        ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
+        ltype = fstrSOLID%DLOAD_ngrp_LID(ig0)
+        do i = 0, 6
           params(i)= fstrSOLID%DLOAD_ngrp_params(i,ig0)
         enddo
 ! ----- START & END
         fg_surf = (ltype == 100)
         if( fg_surf ) then                  ! surface group
-          iS0= hecMESH%surf_group%grp_index(ig-1) + 1
-          iE0= hecMESH%surf_group%grp_index(ig  )
+          iS0 = hecMESH%surf_group%grp_index(ig-1) + 1
+          iE0 = hecMESH%surf_group%grp_index(ig  )
         else                                ! element group
-          iS0= hecMESH%elem_group%grp_index(ig-1) + 1
-          iE0= hecMESH%elem_group%grp_index(ig  )
+          iS0 = hecMESH%elem_group%grp_index(ig-1) + 1
+          iE0 = hecMESH%elem_group%grp_index(ig  )
         endif
-        do ik= iS0, iE0
+        do ik = iS0, iE0
           if( fg_surf ) then                ! surface group
-            ltype  = hecMESH%surf_group%grp_item(2*ik)*10
-            icel   = hecMESH%surf_group%grp_item(2*ik-1)
-            ic_type= hecMESH%elem_type(icel)
+            ltype   = hecMESH%surf_group%grp_item(2*ik)*10
+            icel    = hecMESH%surf_group%grp_item(2*ik-1)
+            ic_type = hecMESH%elem_type(icel)
           else                              ! element group
-            icel   = hecMESH%elem_group%grp_item(ik)
-            ic_type= hecMESH%elem_type(icel)
+            icel    = hecMESH%elem_group%grp_item(ik)
+            ic_type = hecMESH%elem_type(icel)
           endif
-          if (hecmw_is_etype_link(ic_type)) cycle
+          if( hecmw_is_etype_link(ic_type) ) cycle
          ! if( ic_type==3422 ) ic_type=342
           nn = hecmw_get_max_node(ic_type)
 ! ----- node ID
-          iS= hecMESH%elem_node_index(icel-1)
-          do j=1,nn
-            nodLOCAL(j)= hecMESH%elem_node_item (iS+j)
+          iS = hecMESH%elem_node_index(icel-1)
+          if( fstrSOLID%DLOAD_follow == 0 ) then
+            do j = 1, nn
+              nodLOCAL(j) = hecMESH%elem_node_item (iS+j)
 ! ----- nodal coordinate
-            xx(j)=hecMESH%node(3*nodLOCAL(j)-2)
-            yy(j)=hecMESH%node(3*nodLOCAL(j)-1)
-            zz(j)=hecMESH%node(3*nodLOCAL(j)  )
+              xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )
+              yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
+              zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
 ! ----- create iwk array ***
-            do i=1,ndof
-              iwk(ndof*(j-1)+i)=ndof*(nodLOCAL(j)-1)+i
+              do i = 1, ndof
+                iwk( ndof*(j-1)+i ) = ndof*( nodLOCAL(j)-1 )+i
+              enddo
             enddo
-          enddo
+          else
+            do j = 1, nn
+              nodLOCAL(j) = hecMESH%elem_node_item (iS+j)
+! ----- nodal coordinate
+              xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )+fstrSOLID%unode( 3*nodLOCAL(j)-2 )+fstrSOLID%dunode( 3*nodLOCAL(j)-2 )
+              yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )+fstrSOLID%unode( 3*nodLOCAL(j)-1 )+fstrSOLID%dunode( 3*nodLOCAL(j)-1 )
+              zz(j) = hecMESH%node( 3*nodLOCAL(j)   )+fstrSOLID%unode( 3*nodLOCAL(j)   )+fstrSOLID%dunode( 3*nodLOCAL(j)   )
+! ----- create iwk array ***
+              do i = 1, ndof
+                iwk( ndof*(j-1)+i ) = ndof*( nodLOCAL(j)-1 )+i
+              enddo
+            enddo
+          end if
 ! ----- section  ID
-          isect= hecMESH%section_ID(icel)
+          isect = hecMESH%section_ID(icel)
 ! ----- Get Properties
           material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
           rho = material%variables(M_DENSITY)
           call fstr_get_thickness(hecMESH,isect,thick)
 ! ----- Section Data
-          if (ndof==2) then
+          if( ndof == 2 ) then
             id=hecMESH%section%sect_opt(isect)
-            if( id==0 ) then
-              iset=1
-            else if( id==1 ) then
-              iset=0
-            else if( id==2) then
-              iset=2
+            if( id == 0 ) then
+              iset = 1
+            else if( id == 1 ) then
+              iset = 0
+            else if( id == 2) then
+              iset = 2
             endif
             pa1=1.d0
           endif
 ! ----- Create local stiffness
-          if (ic_type==241 .or.ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322 ) then
+          if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
             call DL_C2(ic_type,nn,xx(1:nn),yy(1:nn),rho,pa1,ltype,params,vect(1:nn*ndof),nsize,iset)
-
-          else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.     &
-                   ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+            
+          else if ( ic_type == 341 .or. ic_type == 351 .or. ic_type == 361 .or.   &
+                    ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then 
             call DL_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,ltype,params,vect(1:nn*ndof),nsize)
-          else if ( ic_type==641 ) then
+            
+          else if ( ic_type == 641 ) then
             ihead = hecMESH%section%sect_R_index(isect-1) 
             call DL_Beam_641(ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), rho, ltype, params, &
                              hecMESH%section%sect_R_item(ihead+1:), vect(1:nn*ndof), nsize) 
-          else if( ( ic_type==741 ) .or. ( ic_type==743 ) .or. ( ic_type==731 ) ) then
+            
+          else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
             call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize)
+            
           endif
 ! ----- Add vector
           do j=1,nsize
@@ -185,13 +202,13 @@ module m_fstr_ass_load
 !C
 !C Update for fstrSOLID%GL
 !C
-      if( hecMESH%n_dof==3 ) then
+      if( hecMESH%n_dof == 3 ) then
         if(paraContactFlag) then
           call paraContact_update_3_R (hecMESH,fstrSOLID%GL)
         else
           call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
         endif
-      else if( hecMESH%n_dof==2 ) then
+      else if( hecMESH%n_dof == 2 ) then
         call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       endif
 
@@ -208,38 +225,41 @@ module m_fstr_ass_load
 !C Set Temperature
 !C
       if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-        do ig0= 1, fstrSOLID%TEMP_ngrp_tot
+        do ig0 = 1, fstrSOLID%TEMP_ngrp_tot
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
           factor = fstrSOLID%factor(2)
           if( cstep > 1 ) then
             if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
           endif
-          ig= fstrSOLID%TEMP_ngrp_ID(ig0)
-          fval=fstrSOLID%TEMP_ngrp_val(ig0)
-          iS0= hecMESH%node_group%grp_index(ig-1) + 1
-          iE0= hecMESH%node_group%grp_index(ig  )
-          do ik= iS0, iE0
+          ig = fstrSOLID%TEMP_ngrp_ID(ig0)
+          fval =fstrSOLID%TEMP_ngrp_val(ig0)
+          iS0 = hecMESH%node_group%grp_index(ig-1)+1
+          iE0 = hecMESH%node_group%grp_index(ig  )
+          do ik = iS0, iE0
             in   = hecMESH%node_group%grp_item(ik)
             pa1 = fstrSOLID%temp_bak( in )
             fstrSOLID%temperature( in ) = pa1+(fval-pa1)*factor
           enddo
         enddo
-
+        
         if( fstrSOLID%TEMP_irres > 0 ) then
           call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, fstrSOLID%temperature)
         endif
-
+        
 ! ----- element TYPE loop.
-        do itype= 1, hecMESH%n_elem_type
-          iS= hecMESH%elem_type_index(itype-1) + 1
-          iE= hecMESH%elem_type_index(itype  )
-          ic_type= hecMESH%elem_type_item(itype)
-          if (hecmw_is_etype_link(ic_type)) cycle
+        do itype = 1, hecMESH%n_elem_type
+          
+          iS = hecMESH%elem_type_index(itype-1)+1
+          iE = hecMESH%elem_type_index(itype  )
+          ic_type = hecMESH%elem_type_item(itype)
+          if( hecmw_is_etype_link(ic_type) ) cycle
 ! ----- Set number of nodes
           nn = hecmw_get_max_node(ic_type)
+          
 ! ----- element loop
-          do icel= iS, iE
+          do icel = iS, iE
+            
 ! ----- node ID
             iS= hecMESH%elem_node_index(icel-1)
             do j=1,nn
@@ -260,21 +280,22 @@ module m_fstr_ass_load
                 iwk(ndof*(j-1)+i)=ndof*(nodLOCAL(j)-1)+i
               enddo
             enddo
+            
 ! ----- section  Data
             isect= hecMESH%section_ID(icel)
-            cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
-            call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
-			
-            if (ndof==2) then
+            cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+            call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
+            
+            if( ndof == 2 ) then
               id=hecMESH%section%sect_opt(isect)
               if( id==0 ) then
-                iset=1
-              else if( id==1 ) then
-                iset=0
-              else if( id==2 ) then
-                iset=2
+                iset = 1
+              else if( id == 1 ) then
+                iset = 0
+              else if( id == 2 ) then
+                iset = 2
               endif
-              pa1=1.d0
+              pa1 = 1.0d0
             endif
             
             IF( ic_type == 641 ) THEN
@@ -285,7 +306,7 @@ module m_fstr_ass_load
              CALL TLOAD_Beam_641( ic_type, nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
                                   fstrSOLID%elements(icel)%gausses, hecMESH%section%sect_R_item(ihead+1:), &
                                   vect(1:nn*ndof) )                                                        
-                 
+             
              DO j = 1, ndof*nn
               hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j) 
              END DO
@@ -293,20 +314,22 @@ module m_fstr_ass_load
             END IF
             
 ! ----- Create local stiffness
-            if (ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 ) then
-              call TLOAD_C2(ic_type,nn,xx(1:nn),yy(1:nn),tt(1:nn),tt0(1:nn),  &
-			         fstrSOLID%elements(icel)%gausses,pa1,iset,vect(1:nn*2) )
-
-            else if ( ic_type==361 .and. fstrPR%solution_type==kstNLSTATIC ) then
-              call TLOAD_C3D8Bbar(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
-                            fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof),coords )
-
-            else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or. &
-                     ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
-              call TLOAD_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),tt(1:nn),tt0(1:nn), &
-                            fstrSOLID%elements(icel)%gausses,vect(1:nn*ndof),coords )
-
-            else if ( ic_type.eq.741 .or. ic_type.eq.743 .or. ic_type.eq.731 ) then
+            if(ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 ) then
+              call TLOAD_C2( ic_type, nn, xx(1:nn), yy(1:nn), tt(1:nn), tt0(1:nn),      &
+                             fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) ) 
+              
+            else if( ic_type == 361 ) then
+              call TLOAD_C3D8Bbar                                                          &
+                   ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords ) 
+              
+            else if( ic_type == 341 .or. ic_type == 351 .or.                       &
+                     ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then 
+              call TLOAD_C3                                                                &
+                   ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords ) 
+              
+            else if( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
               if( myrank == 0 ) then
                 WRITE(IMSG,*) '*------------------------', &
                                '-------------------*'
@@ -316,24 +339,27 @@ module m_fstr_ass_load
                                '-------------------*'
                 call hecmw_abort( hecmw_comm_get_comm())
               endif
+              
             endif
+            
 ! ----- Add vector
-            do j=1,ndof*nn
-          !     fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
-               hecMAT%B(iwk(j)) = hecMAT%B(iwk(j))+ vect(j)
+            do j = 1, ndof*nn
+               ! fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
+               hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j)
             enddo
+            
           enddo
         enddo
       endif
-
-      if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo==kcaALagrange ) then
-        do i=1,size(fstrSOLID%contacts)
+      
+      if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaALagrange ) then
+        do i = 1, size(fstrSOLID%contacts)
           call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
         enddo
       endif
-
+      
     end subroutine fstr_ass_load
-	
+    
     subroutine fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       use m_fstr
       use m_static_lib

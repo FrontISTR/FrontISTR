@@ -13,6 +13,8 @@ install-header:
 	@cd solver_11     && $(MAKE) @build_target@
 	@cd solver_22     && $(MAKE) @build_target@
 	@cd solver_33     && $(MAKE) @build_target@
+	@cd solver_44     && $(MAKE) @build_target@
+	@cd solver_66     && $(MAKE) @build_target@
 	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
@@ -26,6 +28,8 @@ clean:
 	@cd solver_11     && $(MAKE) clean
 	@cd solver_22     && $(MAKE) clean
 	@cd solver_33     && $(MAKE) clean
+	@cd solver_44     && $(MAKE) clean
+	@cd solver_66     && $(MAKE) clean
 	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
@@ -39,6 +43,8 @@ distclean:
 	@cd solver_11     && $(MAKE) distclean
 	@cd solver_22     && $(MAKE) distclean
 	@cd solver_33     && $(MAKE) distclean
+	@cd solver_44     && $(MAKE) distclean
+	@cd solver_66     && $(MAKE) distclean
 	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
@@ -52,6 +58,8 @@ maintainer-clean:
 	@cd solver_11     && $(MAKE) maintainer-clean
 	@cd solver_22     && $(MAKE) maintainer-clean
 	@cd solver_33     && $(MAKE) maintainer-clean
+	@cd solver_44     && $(MAKE) maintainer-clean
+	@cd solver_66     && $(MAKE) maintainer-clean
 	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
@@ -65,6 +73,8 @@ install:
 	@cd solver_11     && $(MAKE) install
 	@cd solver_22     && $(MAKE) install
 	@cd solver_33     && $(MAKE) install
+	@cd solver_44     && $(MAKE) install
+	@cd solver_66     && $(MAKE) install
 	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install

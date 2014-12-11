@@ -3,10 +3,11 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.6                                               *
  *                                                                     *
- *     Last Update : 2006/06/01                                        *
+ *     Last Update : 2014/11/14                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
  *            Written by Shin'ichi Ezure (RIST)                        *
+ *                       Tatsuhiro Shono (The University of Tokyo)     *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *
@@ -27,8 +28,8 @@
 /*
  *   element types in HEC-MW
  */
-#define HECMW_ETYPE_MAX  3422
-
+#define HECMW_ETYPE_MAX  3614
+// =====
 #define HECMW_ETYPE_ROD1 111
 #define HECMW_ETYPE_ROD2 112
 #define HECMW_ETYPE_TRI1 231
@@ -38,11 +39,15 @@
 #define HECMW_ETYPE_QUA2 242
 #define HECMW_ETYPE_ROD31 301
 #define HECMW_ETYPE_TET1 341
+#define HECMW_ETYPE_TET1_4 3414
+// =====
 #define HECMW_ETYPE_TET2 342
 #define HECMW_ETYPE_TET22 3422
 #define HECMW_ETYPE_PRI1 351
 #define HECMW_ETYPE_PRI2 352
 #define HECMW_ETYPE_HEX1 361
+#define HECMW_ETYPE_HEX1_4 3614
+// =====
 #define HECMW_ETYPE_HEX2 362
 #define HECMW_ETYPE_PYR1 371
 #define HECMW_ETYPE_PYR2 372
@@ -104,7 +109,8 @@
 /*
  *   element types in GeoFEM
  */
-#define HECMW_GEOFEM_ETYPE_MAX  722
+#define HECMW_GEOFEM_ETYPE_MAX  3314
+// =====
 
 #define HECMW_GEOFEM_ETYPE_ROD1 111
 #define HECMW_GEOFEM_ETYPE_ROD2 112
@@ -113,10 +119,14 @@
 #define HECMW_GEOFEM_ETYPE_QUA1 221
 #define HECMW_GEOFEM_ETYPE_QUA2 222
 #define HECMW_GEOFEM_ETYPE_TET1 311
+#define HECMW_GEOFEM_ETYPE_TET1_4 3114
+// =====
 #define HECMW_GEOFEM_ETYPE_TET2 312
 #define HECMW_GEOFEM_ETYPE_PRI1 321
 #define HECMW_GEOFEM_ETYPE_PRI2 322
 #define HECMW_GEOFEM_ETYPE_HEX1 331
+#define HECMW_GEOFEM_ETYPE_HEX1_4 3314
+// =====
 #define HECMW_GEOFEM_ETYPE_HEX2 332
 #define HECMW_GEOFEM_ETYPE_MST1 411
 #define HECMW_GEOFEM_ETYPE_MST2 412
@@ -137,7 +147,7 @@
 /*
  *   element types in mesh utility
  */
-#define HECMW_MESH_ETYPE_MAX  71
+#define HECMW_MESH_ETYPE_MAX  73
 
 #define HECMW_MESH_ETYPE_PNT  0
 #define HECMW_MESH_ETYPE_ROD1 1
@@ -211,6 +221,9 @@
 #define HECMW_MESH_ETYPE_TRI22 65
 #define HECMW_MESH_ETYPE_TET22 66
 #define HECMW_MESH_ETYPE_ROD31 67
+#define HECMW_MESH_ETYPE_TET1_4 72
+#define HECMW_MESH_ETYPE_HEX1_4 73
+// =====
 
 /*
  *   UCD labels
@@ -223,10 +236,14 @@
 #define HECMW_UCD_LABEL_QUA1 "quad"
 #define HECMW_UCD_LABEL_QUA2 "quad2"
 #define HECMW_UCD_LABEL_TET1 "tet"
+#define HECMW_UCD_LABEL_TET1_4 "tet"
+// =====
 #define HECMW_UCD_LABEL_TET2 "tet2"
 #define HECMW_UCD_LABEL_PRI1 "prism"
 #define HECMW_UCD_LABEL_PRI2 "prism2"
 #define HECMW_UCD_LABEL_HEX1 "hex"
+#define HECMW_UCD_LABEL_HEX1_4 "hex"
+// =====
 #define HECMW_UCD_LABEL_HEX2 "hex2"
 #define HECMW_UCD_LABEL_PYR1 "pyr"
 #define HECMW_UCD_LABEL_PYR2 "pyr2"
@@ -289,19 +306,23 @@
  */
 #define HECMW_MAX_NODE_MAX  20
 
-#define HECMW_MAX_NODE_PNT   1
-#define HECMW_MAX_NODE_ROD1  2
-#define HECMW_MAX_NODE_ROD2  3
-#define HECMW_MAX_NODE_TRI1  3
-#define HECMW_MAX_NODE_TRI2  6
-#define HECMW_MAX_NODE_QUA1  4
-#define HECMW_MAX_NODE_QUA2  8
-#define HECMW_MAX_NODE_ROD31 2
-#define HECMW_MAX_NODE_TET1  4
-#define HECMW_MAX_NODE_TET2 10
-#define HECMW_MAX_NODE_PRI1  6
-#define HECMW_MAX_NODE_PRI2 15
-#define HECMW_MAX_NODE_HEX1  8
+#define HECMW_MAX_NODE_PNT    1
+#define HECMW_MAX_NODE_ROD1   2
+#define HECMW_MAX_NODE_ROD2   3
+#define HECMW_MAX_NODE_TRI1   3
+#define HECMW_MAX_NODE_TRI2   6
+#define HECMW_MAX_NODE_QUA1   4
+#define HECMW_MAX_NODE_QUA2   8
+#define HECMW_MAX_NODE_ROD31  2
+#define HECMW_MAX_NODE_TET1   4
+#define HECMW_MAX_NODE_TET1_4 4
+// =====
+#define HECMW_MAX_NODE_TET2  10
+#define HECMW_MAX_NODE_PRI1   6
+#define HECMW_MAX_NODE_PRI2  15
+#define HECMW_MAX_NODE_HEX1   8
+#define HECMW_MAX_NODE_HEX1_4 8
+// =====
 #define HECMW_MAX_NODE_HEX2 20
 #define HECMW_MAX_NODE_PYR1  5
 #define HECMW_MAX_NODE_PYR2 13
@@ -365,18 +386,22 @@
  */
 #define HECMW_MAX_EDGE_MAX  24
 
-#define HECMW_MAX_EDGE_PNT   0
-#define HECMW_MAX_EDGE_ROD1  1
-#define HECMW_MAX_EDGE_ROD2  2
-#define HECMW_MAX_EDGE_TRI1  3
-#define HECMW_MAX_EDGE_TRI2  6
-#define HECMW_MAX_EDGE_QUA1  4
-#define HECMW_MAX_EDGE_QUA2  8
-#define HECMW_MAX_EDGE_TET1  6
-#define HECMW_MAX_EDGE_TET2 12
-#define HECMW_MAX_EDGE_PRI1  9
-#define HECMW_MAX_EDGE_PRI2 18
-#define HECMW_MAX_EDGE_HEX1 12
+#define HECMW_MAX_EDGE_PNT    0
+#define HECMW_MAX_EDGE_ROD1   1
+#define HECMW_MAX_EDGE_ROD2   2
+#define HECMW_MAX_EDGE_TRI1   3
+#define HECMW_MAX_EDGE_TRI2   6
+#define HECMW_MAX_EDGE_QUA1   4
+#define HECMW_MAX_EDGE_QUA2   8
+#define HECMW_MAX_EDGE_TET1   6
+#define HECMW_MAX_EDGE_TET1_4 6
+// =====
+#define HECMW_MAX_EDGE_TET2   12
+#define HECMW_MAX_EDGE_PRI1    9
+#define HECMW_MAX_EDGE_PRI2   18
+#define HECMW_MAX_EDGE_HEX1   12
+#define HECMW_MAX_EDGE_HEX1_4 12
+// =====
 #define HECMW_MAX_EDGE_HEX2 24
 #define HECMW_MAX_EDGE_PYR1  8
 #define HECMW_MAX_EDGE_PYR2 16
@@ -439,18 +464,22 @@
  */
 #define HECMW_MAX_SURF_MAX   6
 
-#define HECMW_MAX_SURF_PNT   0
-#define HECMW_MAX_SURF_ROD1  0
-#define HECMW_MAX_SURF_ROD2  0
-#define HECMW_MAX_SURF_TRI1  3
-#define HECMW_MAX_SURF_TRI2  3
-#define HECMW_MAX_SURF_QUA1  4
-#define HECMW_MAX_SURF_QUA2  4
-#define HECMW_MAX_SURF_TET1  4
-#define HECMW_MAX_SURF_TET2  4
-#define HECMW_MAX_SURF_PRI1  5
-#define HECMW_MAX_SURF_PRI2  5
-#define HECMW_MAX_SURF_HEX1  6
+#define HECMW_MAX_SURF_PNT    0
+#define HECMW_MAX_SURF_ROD1   0
+#define HECMW_MAX_SURF_ROD2   0
+#define HECMW_MAX_SURF_TRI1   3
+#define HECMW_MAX_SURF_TRI2   3
+#define HECMW_MAX_SURF_QUA1   4
+#define HECMW_MAX_SURF_QUA2   4
+#define HECMW_MAX_SURF_TET1   4
+#define HECMW_MAX_SURF_TET1_4 4
+// =====
+#define HECMW_MAX_SURF_TET2   4
+#define HECMW_MAX_SURF_PRI1   5
+#define HECMW_MAX_SURF_PRI2   5
+#define HECMW_MAX_SURF_HEX1   6
+#define HECMW_MAX_SURF_HEX1_4 6
+// =====
 #define HECMW_MAX_SURF_HEX2  6
 #define HECMW_MAX_SURF_PYR1  5
 #define HECMW_MAX_SURF_PYR2  5
@@ -513,18 +542,22 @@
  */
 #define HECMW_MAX_TSUF_MAX   4
 
-#define HECMW_MAX_TSUF_PNT   0
-#define HECMW_MAX_TSUF_ROD1  0
-#define HECMW_MAX_TSUF_ROD2  0
-#define HECMW_MAX_TSUF_TRI1  0
-#define HECMW_MAX_TSUF_TRI2  0
-#define HECMW_MAX_TSUF_QUA1  0
-#define HECMW_MAX_TSUF_QUA2  0
-#define HECMW_MAX_TSUF_TET1  4
-#define HECMW_MAX_TSUF_TET2  4
-#define HECMW_MAX_TSUF_PRI1  2
-#define HECMW_MAX_TSUF_PRI2  2
-#define HECMW_MAX_TSUF_HEX1  0
+#define HECMW_MAX_TSUF_PNT    0
+#define HECMW_MAX_TSUF_ROD1   0
+#define HECMW_MAX_TSUF_ROD2   0
+#define HECMW_MAX_TSUF_TRI1   0
+#define HECMW_MAX_TSUF_TRI2   0
+#define HECMW_MAX_TSUF_QUA1   0
+#define HECMW_MAX_TSUF_QUA2   0
+#define HECMW_MAX_TSUF_TET1   4
+#define HECMW_MAX_TSUF_TET1_4 4
+// =====
+#define HECMW_MAX_TSUF_TET2   4
+#define HECMW_MAX_TSUF_PRI1   2
+#define HECMW_MAX_TSUF_PRI2   2
+#define HECMW_MAX_TSUF_HEX1   0
+#define HECMW_MAX_TSUF_HEX1_4 0
+// =====
 #define HECMW_MAX_TSUF_HEX2  0
 #define HECMW_MAX_TSUF_PYR1  4
 #define HECMW_MAX_TSUF_PYR2  4
@@ -587,18 +620,22 @@
  */
 #define HECMW_MAX_QSUF_MAX   6
 
-#define HECMW_MAX_QSUF_PNT   0
-#define HECMW_MAX_QSUF_ROD1  0
-#define HECMW_MAX_QSUF_ROD2  0
-#define HECMW_MAX_QSUF_TRI1  0
-#define HECMW_MAX_QSUF_TRI2  0
-#define HECMW_MAX_QSUF_QUA1  0
-#define HECMW_MAX_QSUF_QUA2  0
-#define HECMW_MAX_QSUF_TET1  0
-#define HECMW_MAX_QSUF_TET2  0
-#define HECMW_MAX_QSUF_PRI1  3
-#define HECMW_MAX_QSUF_PRI2  3
-#define HECMW_MAX_QSUF_HEX1  6
+#define HECMW_MAX_QSUF_PNT    0
+#define HECMW_MAX_QSUF_ROD1   0
+#define HECMW_MAX_QSUF_ROD2   0
+#define HECMW_MAX_QSUF_TRI1   0
+#define HECMW_MAX_QSUF_TRI2   0
+#define HECMW_MAX_QSUF_QUA1   0
+#define HECMW_MAX_QSUF_QUA2   0
+#define HECMW_MAX_QSUF_TET1   0
+#define HECMW_MAX_QSUF_TET1_4 0
+// =====
+#define HECMW_MAX_QSUF_TET2   0
+#define HECMW_MAX_QSUF_PRI1   3
+#define HECMW_MAX_QSUF_PRI2   3
+#define HECMW_MAX_QSUF_HEX1   6
+#define HECMW_MAX_QSUF_HEX1_4 6
+// =====
 #define HECMW_MAX_QSUF_HEX2  6
 #define HECMW_MAX_QSUF_PYR1  1
 #define HECMW_MAX_QSUF_PYR2  1
@@ -665,6 +702,9 @@
 
 #define HECMW_MESH_DOF_TWO   2
 #define HECMW_MESH_DOF_THREE 3
+#define HECMW_MESH_DOF_FOUR  4
 #define HECMW_MESH_DOF_SIX   6
 
 #endif
+
+

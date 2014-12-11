@@ -566,6 +566,70 @@ contains
 
 !C
 !C***
+!C*** hecmw_update_4_R
+!C***
+!C
+!C    4-DOF, REAL
+!C
+      subroutine hecmw_update_4_R (hecMESH, VAL, n)
+      use hecmw_util
+      use hecmw_solver_SR_44
+
+      implicit none
+      integer(kind=kint):: n, ns, nr
+      real(kind=kreal), dimension(4*n) :: VAL
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
+
+      allocate (WS(4*ns), WR(4*nr))
+      call hecmw_solve_SEND_RECV_44                                     &
+     &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+     &     hecMESH%import_index, hecMESH%import_item,                   &
+     &     hecMESH%export_index, hecMESH%export_item,                   &
+     &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
+      deallocate (WS, WR)
+
+      end subroutine hecmw_update_4_R
+
+!C
+!C***
+!C*** hecmw_update_6_R
+!C***
+!C
+!C    6-DOF, REAL
+!C
+      subroutine hecmw_update_6_R (hecMESH, VAL, n)
+      use hecmw_util
+      use hecmw_solver_SR_66
+
+      implicit none
+      integer(kind=kint):: n, ns, nr
+      real(kind=kreal), dimension(6*n) :: VAL
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
+
+      allocate (WS(6*ns), WR(6*nr))
+      call hecmw_solve_SEND_RECV_66                                     &
+     &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+     &     hecMESH%import_index, hecMESH%import_item,                   &
+     &     hecMESH%export_index, hecMESH%export_item,                   &
+     &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
+      deallocate (WS, WR)
+
+      end subroutine hecmw_update_6_R
+
+!C
+!C***
 !C*** hecmw_update_m_R
 !C***
 !C
@@ -691,6 +755,70 @@ contains
       deallocate (WS, WR)
 
       end subroutine hecmw_update_3_I
+
+!C
+!C***
+!C*** hecmw_update_4_I
+!C***
+!C
+!C    4-DOF, INTEGER
+!C
+      subroutine hecmw_update_4_I (hecMESH, VAL, n)
+      use hecmw_util
+      use  hecmw_solver_SR_44i
+
+      implicit none
+      integer(kind=kint):: n, ns, nr
+      integer(kind=kint), dimension(4*n) :: VAL
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
+
+      allocate (WS(4*ns), WR(4*nr))
+      call hecmw_solve_SEND_RECV_44i                                    &
+     &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+     &     hecMESH%import_index, hecMESH%import_item,                   &
+     &     hecMESH%export_index, hecMESH%export_item,                   &
+     &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
+      deallocate (WS, WR)
+
+      end subroutine hecmw_update_4_I
+
+!C
+!C***
+!C*** hecmw_update_6_I
+!C***
+!C
+!C    6-DOF, INTEGER
+!C
+      subroutine hecmw_update_6_I (hecMESH, VAL, n)
+      use hecmw_util
+      use  hecmw_solver_SR_66i
+
+      implicit none
+      integer(kind=kint):: n, ns, nr
+      integer(kind=kint), dimension(6*n) :: VAL
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
+      nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
+
+      allocate (WS(6*ns), WR(6*nr))
+      call hecmw_solve_SEND_RECV_66i                                    &
+     &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+     &     hecMESH%import_index, hecMESH%import_item,                   &
+     &     hecMESH%export_index, hecMESH%export_item,                   &
+     &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
+      deallocate (WS, WR)
+
+      end subroutine hecmw_update_6_I
 
 !C
 !C***

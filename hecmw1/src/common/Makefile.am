@@ -85,6 +85,7 @@ MSGSRC = \
 	hecmw_msg_table.c
 
 OBJS = \
+	hecmw_hash.@cobjfilepostfix@ \
 	hecmw_init.@cobjfilepostfix@ \
 	hecmw_finalize.@cobjfilepostfix@ \
 	hecmw_comm.@cobjfilepostfix@ \
@@ -156,6 +157,7 @@ OBJF_UTIL = hecmw_util_f.@f90objfilepostfix@
 OBJF_UTIL_DUMM = hecmw_util_f_dumm.@f90objfilepostfix@
 
 HEADERS = \
+	hecmw_hash.h\
 	hecmw_struct.h \
 	hecmw_util.h \
 	hecmw_comm.h \

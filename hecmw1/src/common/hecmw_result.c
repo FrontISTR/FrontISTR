@@ -63,7 +63,7 @@ static int
 is_valid_label(char *label)
 {
 #define ALLOW_CHAR_FIRST "_"	/* and alphabet */
-#define ALLOW_CHAR "_-"			/* and alphabet, digit */
+#define ALLOW_CHAR "_-+"			/* and alphabet, digit */
 	int c;
 	char *p,*q;
 

@@ -7,6 +7,7 @@
 !            Written by Yasuji Fukahori (Univ. of Tokyo)               !
 !                       Giri Prabhakar (RIST)                          !
 !                       Kazuya Goto (PExProCS LLC)                     !
+!                       Naoki Morita (Univ. of Tokyo)                  !
 !                                                                      !
 !      Contact address :  IIS,The University of Tokyo, CISS            !
 !                                                                      !
@@ -30,6 +31,8 @@ module m_solve_LINEQ
       USE hecmw_solver_11
       USE hecmw_solver_22
       USE hecmw_solver_33
+      USE hecmw_solver_44
+      USE hecmw_solver_66
       USE hecmw_solver_direct
       USE hecmw_solver_direct_parallel
       USE hecmw_solver_direct_MUMPS
@@ -55,10 +58,20 @@ module m_solve_LINEQ
         CASE(3)
 !          WRITE(*,*) "Calling 3x3 Iterative Solver..."
           CALL hecmw_solve_33(hecMESH,hecMAT)
-        CASE(4:)
+        CASE(4)
+!          WRITE(*,*) "Calling 4x4 Iterative Solver..."
+          CALL hecmw_solve_44(hecMESH,hecMAT)
+        CASE(5)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-          call hecmw_abort( hecmw_comm_get_comm())
+          call hecmw_abort( hecmw_comm_get_comm() )
+        CASE(6)
+!          WRITE(*,*) "Calling 6x6 Iterative Solver..."
+          CALL hecmw_solve_66(hecMESH,hecMAT)
+        CASE(7:)
+          !CALL hecmw_solve_mm(hecMESH,hecMAT)
+!          WRITE(*,*) "FATAL: Solve_mm not yet available..."
+          call hecmw_abort( hecmw_comm_get_comm() )
         END SELECT
 
         call hecmw_mat_dump_solution(hecMAT)

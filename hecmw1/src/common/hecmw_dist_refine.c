@@ -3,10 +3,11 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.6                                               *
  *                                                                     *
- *     Last Update : 2013/12/13                                        *
+ *     Last Update : 2014/11/14                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
  *            Written by GOTO, Kazuya (PExProCS LLC)                   *
+ *                       Tatsuhiro Shono (The University of Tokyo)     *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *
@@ -64,10 +65,14 @@ get_enode_h2r( int etype, int *ierror )
 	case HECMW_ETYPE_QUA1:
 	case HECMW_ETYPE_QUA2:
 	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET1_4:
+// ==========
 	case HECMW_ETYPE_TET2:
 	case HECMW_ETYPE_PRI1:
 	case HECMW_ETYPE_PRI2:
 	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX1_4:
+// ==========
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
 	case HECMW_ETYPE_BEM3:
@@ -117,10 +122,14 @@ get_enode_r2h( int etype, int *ierror )
 	case HECMW_ETYPE_QUA1:
 	case HECMW_ETYPE_QUA2:
 	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET1_4:
+// ==========
 	case HECMW_ETYPE_TET2:
 	case HECMW_ETYPE_PRI1:
 	case HECMW_ETYPE_PRI2:
 	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX1_4:
+// ==========
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
 	case HECMW_ETYPE_BEM3:
@@ -244,6 +253,8 @@ get_sid_h2r( int etype, int *ierror )
 		sid_h2r = sid_qua_h2r;
 		break;
 	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET1_4:
+// ==========
 	case HECMW_ETYPE_TET2:
 		sid_h2r = sid_tet_h2r;
 		break;
@@ -252,6 +263,8 @@ get_sid_h2r( int etype, int *ierror )
 		sid_h2r = sid_pri_h2r;
 		break;
 	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX1_4:
+// ==========
 	case HECMW_ETYPE_HEX2:
 		sid_h2r = sid_hex_h2r;
 		break;
@@ -307,6 +320,8 @@ get_sid_r2h( int etype, int *ierror )
 		sid_r2h = sid_qua_r2h;
 		break;
 	case HECMW_ETYPE_TET1:
+	case HECMW_ETYPE_TET1_4:
+// ==========
 	case HECMW_ETYPE_TET2:
 		sid_r2h = sid_tet_r2h;
 		break;
@@ -315,6 +330,8 @@ get_sid_r2h( int etype, int *ierror )
 		sid_r2h = sid_pri_r2h;
 		break;
 	case HECMW_ETYPE_HEX1:
+	case HECMW_ETYPE_HEX1_4:
+// ==========
 	case HECMW_ETYPE_HEX2:
 		sid_r2h = sid_hex_r2h;
 		break;
@@ -560,12 +577,16 @@ elem_type_hecmw2rcap(int etype)
 	case HECMW_ETYPE_QUA2: return RCAP_QUAD2;
 	case HECMW_ETYPE_ROD31:return RCAP_SEGMENT;
 	case HECMW_ETYPE_TET1: return RCAP_TETRAHEDRON;
+	case HECMW_ETYPE_TET1_4: return RCAP_TETRAHEDRON;
+// ==========
 	case HECMW_ETYPE_TET2: return RCAP_TETRAHEDRON2;
 	case HECMW_ETYPE_PRI1: return RCAP_WEDGE;
 	case HECMW_ETYPE_PRI2: return RCAP_WEDGE2;
 	case HECMW_ETYPE_PYR1: return RCAP_PYRAMID;
 	case HECMW_ETYPE_PYR2: return RCAP_PYRAMID2;
 	case HECMW_ETYPE_HEX1: return RCAP_HEXAHEDRON;
+	case HECMW_ETYPE_HEX1_4: return RCAP_HEXAHEDRON;
+// ==========
 	case HECMW_ETYPE_HEX2: return RCAP_HEXAHEDRON2;
 	case HECMW_ETYPE_BEM1: return RCAP_SEGMENT;
 	case HECMW_ETYPE_BEM2: return RCAP_SEGMENT2;

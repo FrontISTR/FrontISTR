@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.5                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -129,7 +129,6 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         end if
 
         !* data --------------------------------------------------------------------------------------- *!
-
         ! JP-4
         if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiii ', nier, iterpremax, nrest, ncolor_in )/= 0) return
         if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
@@ -267,28 +266,43 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
 integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
         integer(kind=kint), intent(in)           :: ctrl
         type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
-		
-        integer(kind=kint)            :: j, sect_id
-        character(len=HECMW_NAME_LEN) :: sect_orien 
+
+        integer(kind=kint)            :: j, k, sect_id, ori_id
+        integer(kind=kint),SAVE       :: chash = 1
+        character(len=HECMW_NAME_LEN) :: sect_orien
 
         fstr_ctrl_get_SECTION = -1
-		
+
         if( .not. associated(g_LocalCoordSys) ) return
 
-        if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return   
+        if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
         if( sect_id > hecMESH%section%n_sect ) return
         hecMESH%section%sect_orien_ID(sect_id) = -1
         if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  1, 'S', sect_orien )/= 0) return
-		
-        do j=1, size(g_LocalCoordSys)
-                 if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
-                    hecMESH%section%sect_orien_ID(sect_id) = j
-                    exit
-                 endif
+        
+        k = size(g_LocalCoordSys)
+        
+        if(chash < k)then
+        if( sect_orien == g_LocalCoordSys(chash)%sys_name ) then
+          hecMESH%section%sect_orien_ID(sect_id) = chash
+          chash = chash + 1
+          fstr_ctrl_get_SECTION = 0
+          return
+        endif
+        endif
+        
+        do j=1, k
+          if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
+            hecMESH%section%sect_orien_ID(sect_id) = j
+            chash = j + 1
+            exit
+          endif
         enddo
+        
         if( hecMESH%section%sect_orien_ID(sect_id) == -1 ) return
-		
+
         fstr_ctrl_get_SECTION = 0
+
 end function fstr_ctrl_get_SECTION
 
 

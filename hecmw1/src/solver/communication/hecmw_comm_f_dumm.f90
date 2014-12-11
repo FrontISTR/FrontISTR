@@ -374,7 +374,37 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_update_3_R
+      
+!C
+!C***
+!C*** hecmw_update_4_R
+!C***
+!C
+!C    4-DOF, REAL
+!C
+      subroutine hecmw_update_4_R (hecMESH, VAL, n)
+      use hecmw_util
+      integer(kind=kint):: n
+      real(kind=kreal), dimension(4*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
 
+      end subroutine hecmw_update_4_R
+      
+!C
+!C***
+!C*** hecmw_update_6_R
+!C***
+!C
+!C    6-DOF, REAL
+!C
+      subroutine hecmw_update_6_R (hecMESH, VAL, n)
+      use hecmw_util
+      integer(kind=kint):: n
+      real(kind=kreal), dimension(6*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
+
+      end subroutine hecmw_update_6_R
+      
 !C
 !C***
 !C*** hecmw_update_m_R
@@ -434,6 +464,36 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_update_3_I
+
+!C
+!C***
+!C*** hecmw_update_4_I
+!C***
+!C
+!C    4-DOF, INTEGER
+!C
+      subroutine hecmw_update_4_I (hecMESH, VAL, n)
+      use hecmw_util
+      integer(kind=kint):: n
+      integer(kind=kint), dimension(4*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
+
+      end subroutine hecmw_update_4_I
+
+!C
+!C***
+!C*** hecmw_update_6_I
+!C***
+!C
+!C    6-DOF, INTEGER
+!C
+      subroutine hecmw_update_6_I (hecMESH, VAL, n)
+      use hecmw_util
+      integer(kind=kint):: n
+      integer(kind=kint), dimension(6*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
+
+      end subroutine hecmw_update_6_I
 
 !C
 !C***

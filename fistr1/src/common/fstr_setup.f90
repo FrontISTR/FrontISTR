@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.5                                   !
+! Software Name : FrontISTR Ver. 3.4                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !
@@ -1683,11 +1683,13 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         old_size = P%SOLID%CLOAD_ngrp_tot
         new_size = old_size + n
         P%SOLID%CLOAD_ngrp_tot = new_size
+        ! Keiji Suemitsu (20140624) <
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_GRPID, old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_ID,  old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_DOF, old_size, new_size )
         call fstr_expand_real_array    ( P%SOLID%CLOAD_ngrp_val, old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_amp, old_size, new_size )
+        ! > Keiji Suemitsu (20140624)
 
         allocate( grp_id_name(n))
         amp = ' '
@@ -1773,11 +1775,13 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         old_size = P%SOLID%DLOAD_ngrp_tot
         new_size = old_size + n
         P%SOLID%DLOAD_ngrp_tot = new_size
+        ! Keiji Suemitsu (20140624) <
         call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_GRPID, old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_ID,  old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_LID, old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_amp, old_size, new_size )
         call fstr_expand_dload_array ( P%SOLID%DLOAD_ngrp_params, old_size, new_size )
+        ! > Keiji Suemitsu (20140624)
 
         allocate( grp_id_name(n))
         allocate( new_params(0:6,n))
@@ -2025,10 +2029,11 @@ subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
         call amp_name_to_id( P%MESH, '!FIXTEMP', amp, amp_id ) 
-
+        
         m = 0
         do i = 1, n
-                rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
+                !rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
+                rtc = get_sorted_local_member_index( P%MESH, P%PARAM, 'node', grp_id_name(i), local_id )
                 if( rtc > 0 ) then
                         m = m + 1
                 else if( rtc < 0 ) then
@@ -2054,7 +2059,8 @@ subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
         member => P%HEAT%T_FIX_node(head:)
         id = head
         do i = 1, n
-                rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
+                !rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
+                rtc = get_sorted_local_member_index( P%MESH, P%PARAM, 'node', grp_id_name(i), local_id )
                 if( rtc > 0 ) then
                         member(1) = local_id
                         member_n = 1

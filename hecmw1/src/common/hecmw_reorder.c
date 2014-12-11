@@ -3,11 +3,12 @@
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.6                                               *
  *                                                                     *
- *     Last Update : 2006/06/01                                        *
+ *     Last Update : 2014/11/14                                        *
  *        Category : I/O and Utility                                   *
  *                                                                     *
  *            Written by Kazuaki Sakane (RIST)                         *
  *                       Shin'ichi Ezure (RIST)                        *
+ *                       Tatsuhiro Shono (The University of Tokyo)     *
  *                                                                     *
  *     Contact address :  IIS,The University of Tokyo RSS21 project    *
  *                                                                     *
@@ -34,7 +35,10 @@
 #define BIT_DOF_TWO   1
 #define BIT_DOF_THREE 2
 #define BIT_DOF_SIX   4
-#define BIT_DOF_ALL   (BIT_DOF_TWO|BIT_DOF_THREE|BIT_DOF_SIX)
+#define BIT_DOF_FOUR  8
+// ==========
+#define BIT_DOF_ALL   (BIT_DOF_TWO|BIT_DOF_THREE|BIT_DOF_SIX|BIT_DOF_FOUR)
+// ==========
 
 #define HECMW_COMMON_EQUATION_BLOCK_NAME "EQUATION_BLOCK"
 #define MY_RANK       1
@@ -888,7 +892,11 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
     case HECMW_ETYPE_ROD31:
       n_dof = BIT_DOF_THREE;
       break;
-
+    case HECMW_ETYPE_TET1_4:
+    case HECMW_ETYPE_HEX1_4:
+      n_dof = BIT_DOF_FOUR;
+      break;
+// ===========
       /* master-slave type element */
     case HECMW_ETYPE_MST1:
     case HECMW_ETYPE_MST2:
@@ -999,7 +1007,21 @@ reorder_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag,
       CLEAR_BIT( node_flag[i], BIT_DOF_ALL );
     }
   }
+  
+  /* four DOF */
+  for( i=0; i<local_mesh->n_node; i++ ) {
+    if( EVAL_BIT( node_flag[i], BIT_DOF_FOUR ) ) {
+      node_old2new[i]       = counter+1;
+      node_new2old[counter] = i+1;
+      counter++;
 
+      (n_dof_tot[HECMW_MESH_DOF_FOUR])++;
+      MASK_BIT( *dof_flag, BIT_DOF_FOUR );
+      CLEAR_BIT( node_flag[i], BIT_DOF_ALL );
+    }
+  }
+// ==========
+  
   /* three DOF */
   for( i=0; i<local_mesh->n_node; i++ ) {
     if( EVAL_BIT( node_flag[i], BIT_DOF_THREE ) ) {
@@ -1048,6 +1070,8 @@ mask_eqn_block( struct hecmwST_local_mesh *local_mesh,
       if( EVAL_BIT( node_flag[j], BIT_DOF_TWO ) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_TWO );
       if( EVAL_BIT( node_flag[j], BIT_DOF_THREE ) ) MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_THREE );
       if( EVAL_BIT( node_flag[j], BIT_DOF_SIX ) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_SIX );
+      if( EVAL_BIT( node_flag[j], BIT_DOF_FOUR) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_FOUR );
+// ==========
     }
     js = grp->grp_item[i];
   }
@@ -1085,6 +1109,25 @@ reorder_node_dof_4mpc_inner( struct hecmwST_local_mesh *local_mesh,
     }
     js = grp->grp_item[idx+i];
   }
+  
+  /* four DOF */
+  for( js=0, i=0; i<n_eqn_block; i++ ) {
+    if( EVAL_BIT( block_flag[i], BIT_DOF_FOUR ) ) {
+      block_old2new[i] = blocks++;
+
+      for( j=js; j<grp->grp_item[idx+i]; j++ ) {
+        node_old2new[j]       = counter+1;
+        node_new2old[counter] = j+1;
+        counter++;
+
+        (n_dof_tot[HECMW_MESH_DOF_FOUR])++;
+      }
+      MASK_BIT( *dof_flag, BIT_DOF_FOUR );
+      CLEAR_BIT( block_flag[i], BIT_DOF_ALL );
+    }
+    js = grp->grp_item[idx+i];
+  }
+// ==========
 
   /* three DOF */
   for( js=0, i=0; i<n_eqn_block; i++ ) {
@@ -1198,6 +1241,12 @@ count_n_dof_grp( struct hecmwST_local_mesh *local_mesh, char *dof_flag )
     local_mesh->n_dof = HECMW_MESH_DOF_THREE;
   }
 
+  /* four DOF */
+  if( EVAL_BIT( *dof_flag, BIT_DOF_FOUR ) ) {
+    (local_mesh->n_dof_grp)++;
+    local_mesh->n_dof = HECMW_MESH_DOF_FOUR;
+  }
+
   /* six DOF */
   if( EVAL_BIT( *dof_flag, BIT_DOF_SIX ) ) {
     (local_mesh->n_dof_grp)++;
@@ -1240,6 +1289,13 @@ create_node_dof_item( struct hecmwST_local_mesh *local_mesh, char *dof_flag, int
   if( EVAL_BIT( *dof_flag, BIT_DOF_SIX ) ) {
     local_mesh->node_dof_index[counter+1] = local_mesh->node_dof_index[counter] + n_dof_tot[HECMW_MESH_DOF_SIX];
     local_mesh->node_dof_item[counter]    = HECMW_MESH_DOF_SIX;
+    counter++;
+  }
+
+  /* four DOF */
+  if( EVAL_BIT( *dof_flag, BIT_DOF_FOUR ) ) {
+    local_mesh->node_dof_index[counter+1] = local_mesh->node_dof_index[counter] + n_dof_tot[HECMW_MESH_DOF_FOUR];
+    local_mesh->node_dof_item[counter]    = HECMW_MESH_DOF_FOUR;
     counter++;
   }
 

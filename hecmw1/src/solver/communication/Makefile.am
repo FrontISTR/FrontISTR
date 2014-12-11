@@ -86,6 +86,10 @@ OBJSF_SR = \
 	hecmw_solver_SR_22i.@f90objfilepostfix@ \
 	hecmw_solver_SR_33.@f90objfilepostfix@ \
 	hecmw_solver_SR_33i.@f90objfilepostfix@ \
+	hecmw_solver_SR_44.@f90objfilepostfix@ \
+	hecmw_solver_SR_44i.@f90objfilepostfix@ \
+	hecmw_solver_SR_66.@f90objfilepostfix@ \
+	hecmw_solver_SR_66i.@f90objfilepostfix@ \
 	hecmw_solver_SR_mm.@f90objfilepostfix@ \
 	hecmw_solver_SR_mmi.@f90objfilepostfix@
 
@@ -96,6 +100,10 @@ OBJSF_SR_DUMM = \
 	hecmw_solver_SR_22i_dumm.@f90objfilepostfix@ \
 	hecmw_solver_SR_33_dumm.@f90objfilepostfix@ \
 	hecmw_solver_SR_33i_dumm.@f90objfilepostfix@ \
+	hecmw_solver_SR_44_dumm.@f90objfilepostfix@ \
+	hecmw_solver_SR_44i_dumm.@f90objfilepostfix@ \
+	hecmw_solver_SR_66_dumm.@f90objfilepostfix@ \
+	hecmw_solver_SR_66i_dumm.@f90objfilepostfix@ \
 	hecmw_solver_SR_mm_dumm.@f90objfilepostfix@ \
 	hecmw_solver_SR_mmi_dumm.@f90objfilepostfix@
 

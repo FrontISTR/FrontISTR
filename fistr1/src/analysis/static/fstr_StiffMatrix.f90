@@ -79,10 +79,11 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
            tt(j)=fstrSOLID%temperature( nodLOCAL(j) )
       enddo
-	  
-      cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
-      if( cdsys_ID>0 ) call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
-
+      
+      isect = hecMESH%section_ID(icel)
+      cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+      if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
+      
       material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
       thick = material%variables(M_THICK)
       if(  getSpaceDimension( ic_type )==2 ) thick =1.d0
@@ -90,32 +91,35 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
                      stiffness(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &
                      u(1:2,1:nn) )
-					 
+                                         
       else if ( ic_type==301 ) then
         isect= hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
         call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
             stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
-
+        
       else if ( ic_type==361 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call STF_C3D8Bbar( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn), tt(1:nn) )
+          call STF_C3D8Bbar                                                                        &
+               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
+                 stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn), tt(1:nn) ) 
         else
-          call STF_C3D8Bbar( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn) )
+          call STF_C3D8Bbar                                                               &
+               ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
+                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) ) 
         endif
-
-
-      else if (ic_type==341 .or. ic_type==351 .or. ic_type==361 .or.                    &
-               ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+        
+      else if (ic_type==341 .or. ic_type==351 .or.                     &
+               ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then 
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-          call STF_C3( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn), tt(1:nn) )
+          call STF_C3                                                                              &
+               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
+                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3,1:nn), tt(1:nn) ) 
         else
-          call STF_C3( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-                     stiffness(1:nn*ndof,1:nn*ndof), tincr, coords, u(1:3,1:nn) )
+          call STF_C3                                                                     &
+               ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
+                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) ) 
         endif
 
 

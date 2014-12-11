@@ -141,7 +141,7 @@ contains
           do i = 1, nnode+1
             do j = 1, i
               do k = 1, 3
-                do l = 1, k
+                do l = 1, 3
                   stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) - tPenalty*nTm((i-1)*3+k)*nTm((j-1)*3+l)
                   if( k==l ) then
                     if(i==1 .and. j==1)then
@@ -152,7 +152,7 @@ contains
                       stiffness((i-1)*3+k,(j-1)*3+l) = stiffness((i-1)*3+k,(j-1)*3+l) + tPenalty*shapefunc(i-1)*shapefunc(j-1)
                     endif
                   endif
-                  if(i==j .and. k==l) cycle
+                  if(i==j) cycle
                   stiffness((j-1)*3+l,(i-1)*3+k) = stiffness((i-1)*3+k,(j-1)*3+l)
                 enddo
               enddo

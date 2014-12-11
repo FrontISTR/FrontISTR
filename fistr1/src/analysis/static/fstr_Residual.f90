@@ -197,8 +197,18 @@ module m_fstr_Residual
       ndof = hecMESH%n_dof
       call hecmw_innerProduct_R(hecMESH,ndof,force,force,fstr_get_residual)
       end function
-      
-!> Calculate square norm      
+
+!> Calculate magnitude of a real vector
+      real(kind=kreal) function fstr_get_energy( force, displacement, hecMESH )
+      use m_fstr
+      real(kind=kreal), intent(in)         :: force(:), displacement(:)
+      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+      integer :: ndof
+      ndof = hecMESH%n_dof
+      call hecmw_innerProduct_R(hecMESH,ndof,force,displacement,fstr_get_energy)
+      end function
+
+!> Calculate square norm
       real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,fstrMAT)
       use m_fstr
       use fstr_matrix_con_contact

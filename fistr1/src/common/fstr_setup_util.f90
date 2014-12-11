@@ -421,7 +421,7 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
                 get_local_member_index = -1
                 return
         end if
-
+        
         if( type_name == 'node' ) then
                 fg = 1
                 n  =  hecMESH%n_node
@@ -433,7 +433,7 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
         else
                 STOP 'assert in get_local_member_index: unknown type_name'
         end if
-
+        
         do i = 1, n
                 if( no == global_item(i)) then
                         local_id = i
@@ -441,10 +441,85 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
                         return
                 end if
         end do
+        local_id = 0
         get_local_member_index = 0
         return
 end function get_local_member_index
 
+!-----------------------------------------------------------------------------!
+! 
+
+function get_sorted_local_member_index( hecMESH, hecPARAM, type_name, name, local_id )
+        implicit none
+        integer(kind=kint) :: get_sorted_local_member_index
+        type (hecmwST_local_mesh),target :: hecMESH
+        type(fstr_param), target         :: hecPARAM
+        character(len=*) :: type_name
+        character(len=*) :: name
+        integer(kind=kint) :: local_id, idx
+
+        integer(kind=kint) :: i, n, stat, no, fg
+        integer(kind=kint),pointer :: item(:)
+
+        if( .not. fstr_str2index(name, no) ) then
+                get_sorted_local_member_index = -1
+                return
+        end if
+        
+        if( type_name == 'node' ) then
+                fg = 1
+                n  =  hecMESH%nn_internal
+!                item => hecMESH%global_node_ID
+!        else if( type_name == 'element' ) then
+!                fg = 2
+!                n  =  hecMESH%n_elem
+!                item => hecMESH%global_elem_ID
+        else
+                STOP 'assert in get_sorted_local_member_index: unknown type_name'
+        end if
+        
+        call bsearch_int_array(hecPARAM%global_local_ID(1,:), 1, n, no, idx)
+        if(idx > 0)then
+          get_sorted_local_member_index = hecPARAM%global_local_ID(2,idx)
+          local_id = get_sorted_local_member_index
+          return
+        endif
+        
+        get_sorted_local_member_index = 0
+        return
+end function get_sorted_local_member_index
+!-----------------------------------------------------------------------------!
+
+!-----------------------------------------------------------------------------!
+!~/FrontISTR/hecmw1/src/solver/matrix/hecmw_matrix_reorder.f90
+subroutine bsearch_int_array(array, istart, iend, val, idx)
+  implicit none
+  integer(kind=kint), intent(in) :: array(:)
+  integer(kind=kint), intent(in) :: istart, iend
+  integer(kind=kint), intent(in) :: val
+  integer(kind=kint), intent(out) :: idx
+  integer(kind=kint) :: center, left, right, pivot
+  left = istart
+  right = iend
+  do
+    if (left > right) then
+      idx = -1
+      exit
+    end if
+    center = (left + right) / 2
+    pivot = array(center)
+    if (val < pivot) then
+      right = center - 1
+      cycle
+    else if (pivot < val) then
+      left = center + 1
+      cycle
+    else ! if (pivot == val) then
+      idx = center
+      exit
+    end if
+  end do
+end subroutine bsearch_int_array
 !-----------------------------------------------------------------------------!
 
 subroutine node_grp_name_to_id( hecMESH, header_name, n, grp_id_name, grp_ID )
@@ -715,6 +790,7 @@ subroutine dload_grp_name_to_id_ex( hecMESH, n, grp_id_name, fg_surface, grp_ID 
         implicit none
         type (hecmwST_local_mesh),target :: hecMESH
         integer(kind=kint) :: n
+        integer(kind=kint),save :: casha, cashb
         character(HECMW_NAME_LEN) :: grp_id_name(:)
         logical :: fg_surface(:)
         integer(kind=kint) :: grp_ID(:)
@@ -730,9 +806,17 @@ subroutine dload_grp_name_to_id_ex( hecMESH, n, grp_id_name, fg_surface, grp_ID 
         do i = 1, n
             if( fg_surface(i) ) then
                 grp_ID(i) = -1
+                if(casha < hecMESH%surf_group%n_grp)then
+                    if(fstr_streqr(hecMESH%surf_group%grp_name(casha), grp_id_name(i))) then
+                        grp_ID(i) = casha
+                        casha = casha + 1
+                        exit
+                    end if
+                endif
                 do id = 1, hecMESH%surf_group%n_grp
                     if(fstr_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
                         grp_ID(i) = id
+                        casha = id + 1
                         exit
                     end if
                 end do
@@ -748,9 +832,17 @@ subroutine dload_grp_name_to_id_ex( hecMESH, n, grp_id_name, fg_surface, grp_ID 
                     grp_ID(i) = hecMESH%elem_group%n_grp + no_count
                 else
                     grp_ID(i) = -1
+                    if(cashb < hecMESH%surf_group%n_grp)then
+                        if(fstr_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
+                            grp_ID(i) = cashb
+                            cashb = cashb + 1
+                            exit
+                        end if
+                    endif
                     do id = 1, hecMESH%elem_group%n_grp
                         if(fstr_streqr(hecMESH%elem_group%grp_name(id), grp_id_name(i))) then
                             grp_ID(i) = id
+                            cashb = cashb + 1
                             exit
                         end if
                     end do

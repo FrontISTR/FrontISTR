@@ -292,8 +292,8 @@ contains
             if( ID_area == hecMESH%my_rank ) then
               do j = 1, nn
                 do k = 1, 6
-                  fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+14*(n_layer-1)+k+6) = &
-                       fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+14*(n_layer-1)+k+6) + strain(j,k)/nn
+                  fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k+6) = &
+                       fstrSOLID%ESTRAIN(12*n_total_layer*(icel-1)+12*(n_layer-1)+k+6) + strain(j,k)/nn
                   fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) = &
                        fstrSOLID%ESTRESS((14*n_total_layer+6)*(icel-1)+14*(n_layer-1)+k+6) + stress(j,k)/nn
                 enddo
@@ -406,7 +406,6 @@ contains
     enddo
 
     if(  ic_type == 781 )then
-      write(*,*) "Nodal stress shell 781"
       do i = 1, hecMESH%n_node
         if( nnumber(i) == 0 ) cycle
         do n_layer=1,n_total_layer
@@ -448,8 +447,8 @@ contains
           if( tnumber(i) /= 0 ) then
             fstrSOLID%STRAIN(6*i-5:6*i) = trstrain(i,1:6)/tnumber(i)
             fstrSOLID%STRESS(7*i-6:7*i-1) = trstress(i,1:6)/tnumber(i)
+            cycle
           endif
-          cycle
         endif
         if( nnumber(i) == 0 ) cycle
         if( truss == 1 ) then
@@ -1092,7 +1091,6 @@ contains
     deallocate( ndstrain_plus, ndstrain_minus )
     deallocate( ndstress_plus, ndstress_minus )
     deallocate( nnumber )
-    write(*,*) "fstr Nodal Setress Sucsess"
 
   end subroutine fstr_NodalStress6D
 
