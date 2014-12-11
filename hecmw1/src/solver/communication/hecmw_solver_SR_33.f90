@@ -74,6 +74,13 @@
 
       ! local valiables
       integer(kind=kint ) :: neib,istart,inum,k,ii,ierr
+
+      integer(kind=kint ), allocatable :: neib_flag(:)
+      integer(kind=kint ) :: ncnt
+
+      allocate(neib_flag(NEIBPETOT))
+      neib_flag = 0
+
 !C
 !C-- INIT.
       allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
@@ -83,9 +90,13 @@
        
 !C
 !C-- SEND
+      ncnt = 0
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
+        if (inum == 0) cycle
+        neib_flag(neib) = 1
+        ncnt = ncnt + 1
         do k= istart+1, istart+inum
                ii   = 3*NOD_EXPORT(k)
            WS(3*k-2)= X(ii-2)
@@ -94,21 +105,25 @@
         enddo
 
         call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(ncnt), ierr)
       enddo
 
 !C
 !C-- RECEIVE
+      ncnt = 0
       do neib= 1, NEIBPETOT
+        if (neib_flag(neib) == 0) cycle
+        ncnt = ncnt + 1
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
         call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(ncnt), ierr)
       enddo
 
-      call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
+      call MPI_WAITALL (ncnt, req2, sta2, ierr)
    
       do neib= 1, NEIBPETOT
+        if (neib_flag(neib) == 0) cycle
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
       do k= istart+1, istart+inum
@@ -119,8 +134,10 @@
       enddo
       enddo
 
-      call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
+      call MPI_WAITALL (ncnt, req1, sta1, ierr)
       deallocate (sta1, sta2, req1, req2)
+
+      deallocate(neib_flag)
 
       end subroutine hecmw_solve_send_recv_33
 
