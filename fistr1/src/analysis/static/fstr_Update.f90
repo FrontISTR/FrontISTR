@@ -145,7 +145,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
               isect= hecMESH%section_ID(icel)
               ihead = hecMESH%section%sect_R_index(isect-1)
               thick = hecMESH%section%sect_R_item(ihead+1)
-              call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), ddu(1:3,1:nn), &
+              call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
                               qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )                    
               
             else if( ic_type == 361 ) then
@@ -446,7 +446,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                 isect = hecMESH%section_ID(icel)
                                 ihead = hecMESH%section%sect_R_index(isect-1)
                                 thick = hecMESH%section%sect_R_item(ihead+1)
-                                call UpdateST_C1( ic_type, nn, xx, yy, zz, thick, edisp, fstrSOLID%elements(icel)%gausses )
+                                call UpdateST_C1( ic_type, nn, xx, yy, zz, tt, tt0, thick, edisp, fstrSOLID%elements(icel)%gausses )
                         else
                                 call UpdateST_C3                                            &
                                      ( ic_type, nn, xx, yy, zz, tt, tt0, edisp,             &

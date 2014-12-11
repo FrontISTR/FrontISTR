@@ -195,10 +195,10 @@ contains
       write(ilog, *) freq, "[Hz] : ", val
       disp(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
       
-      call calcVelVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
+      call calcVelVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
       vel(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
     
-      call calcAccVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
+      call calcAccVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
       acc(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
       
       if(IRESULT==1) then
@@ -846,9 +846,10 @@ contains
     return
   end subroutine
   
-  subroutine calcVelVector(freqData, bjRe, bjIm, velRe, velIm)
+  subroutine calcVelVector(freqData, omega, bjRe, bjIm, velRe, velIm)
   !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
+    real(kind=kreal),              intent(in) :: omega
     real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
     real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
     real(kind=kreal),           intent(inout) :: velRe(:)    !intend (numNodeDOF)
@@ -861,14 +862,15 @@ contains
     velIm(:) = 0.0D0
     
     do imode=1, freqData%numMode
-      velRe(:) = velRe(:) - freqData%eigOmega(imode) * bjIm(imode) * freqData%eigVector(:,imode)
-      velIm(:) = velIm(:) + freqData%eigOmega(imode) * bjRe(imode) * freqData%eigVector(:,imode)
+      velRe(:) = velRe(:) - omega * bjIm(imode) * freqData%eigVector(:,imode)
+      velIm(:) = velIm(:) + omega * bjRe(imode) * freqData%eigVector(:,imode)
     end do
   end subroutine
   
-  subroutine calcAccVector(freqData, bjRe, bjIm, accRe, accIm)
+  subroutine calcAccVector(freqData, omega, bjRe, bjIm, accRe, accIm)
   !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
+    real(kind=kreal),             intent(in) :: omega
     real(kind=kreal),             intent(in) :: bjRe(:)       !intend (numMode)
     real(kind=kreal),             intent(in) :: bjIm(:)       !intend (numMode)
     real(kind=kreal),          intent(inout) :: accRe(:)      !intend (numNodeDOF)
@@ -881,8 +883,8 @@ contains
     accIm(:) = 0.0D0
     
     do imode=1, freqData%numMode
-      accRe(:) = accRe(:) - freqData%eigOmega(imode)**2 * bjRe(imode) * freqData%eigVector(:,imode)
-      accIm(:) = accIm(:) - freqData%eigOmega(imode)**2 * bjIm(imode) * freqData%eigVector(:,imode)
+      accRe(:) = accRe(:) - omega**2 * bjRe(imode) * freqData%eigVector(:,imode)
+      accIm(:) = accIm(:) - omega**2 * bjIm(imode) * freqData%eigVector(:,imode)
     end do
   
   end subroutine 
