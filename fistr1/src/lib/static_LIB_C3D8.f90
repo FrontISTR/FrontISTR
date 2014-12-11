@@ -4,8 +4,9 @@
 !> in Eight-node hexagonal element
 !>
 
-!>  \author     Xi YUAN (AdavanceSoft)
+!>  \author     Xi YUAN (AdavanceSoft), K. Inagaki(Univ. of Tokyo)
 !>  \date       2010/04/01
+!>  \date       2014/10/31 K. Inagaki modified Total Lagrange method
 !>  \version    0.00
 !                                                                      !
 !======================================================================!
@@ -116,18 +117,15 @@ module m_static_LIB_C3D8
         gdispderiv(1:ndof,1:ndof) = matmul( u(1:ndof,1:nn), gderiv(1:nn,1:ndof) )
         B1(1:6,1:NN*NDOF)=0.d0
         do j=1,nn
-          B4=(Bbar(J,1)-gderiv(J,1))/3.d0
-          B6=(Bbar(J,2)-gderiv(J,2))/3.d0
-          B8=(Bbar(J,3)-gderiv(J,3))/3.d0
-          B1(1,3*J-2)=gdispderiv(1,1)*(gderiv(J,1)+B4)
-          B1(1,3*J-1)=gdispderiv(2,1)*(gderiv(J,1)+B6)
-          B1(1,3*J  )=gdispderiv(3,1)*(gderiv(J,1)+B8)
-          B1(2,3*J-2)=gdispderiv(1,2)*(gderiv(J,2)+B4)
-          B1(2,3*J-1)=gdispderiv(2,2)*(gderiv(J,2)+B6)
-          B1(2,3*J  )=gdispderiv(3,2)*(gderiv(J,2)+B8)
-          B1(3,3*J-2)=gdispderiv(1,3)*(gderiv(J,3)+B4)
-          B1(3,3*J-1)=gdispderiv(2,3)*(gderiv(J,3)+B6)
-          B1(3,3*J  )=gdispderiv(3,3)*(gderiv(J,3)+B8)
+          B1(1,3*J-2)=gdispderiv(1,1)*gderiv(J,1)
+          B1(1,3*J-1)=gdispderiv(2,1)*gderiv(J,1)
+          B1(1,3*J  )=gdispderiv(3,1)*gderiv(J,1)
+          B1(2,3*J-2)=gdispderiv(1,2)*gderiv(J,2)
+          B1(2,3*J-1)=gdispderiv(2,2)*gderiv(J,2)
+          B1(2,3*J  )=gdispderiv(3,2)*gderiv(J,2)
+          B1(3,3*J-2)=gdispderiv(1,3)*gderiv(J,3)
+          B1(3,3*J-1)=gdispderiv(2,3)*gderiv(J,3)
+          B1(3,3*J  )=gdispderiv(3,3)*gderiv(J,3)
           B1(4,3*J-2)=gdispderiv(1,2)*gderiv(J,1)+gdispderiv(1,1)*gderiv(J,2)
           B1(4,3*J-1)=gdispderiv(2,2)*gderiv(J,1)+gdispderiv(2,1)*gderiv(J,2)
           B1(4,3*J  )=gdispderiv(3,2)*gderiv(J,1)+gdispderiv(3,1)*gderiv(J,2)
@@ -265,9 +263,9 @@ module m_static_LIB_C3D8
  
 	  gdispderiv(1:ndof,1:ndof) = matmul( totaldisp(1:ndof,1:nn), gderiv(1:nn,1:ndof) )
 	  dvol = vol0-(gdispderiv(1,1)+gdispderiv(2,2)+gdispderiv(3,3))/3.d0
-	  gdispderiv(1,1) = gdispderiv(1,1)+dvol
-      gdispderiv(2,2) = gdispderiv(2,2)+dvol
-      gdispderiv(3,3) = gdispderiv(3,3)+dvol
+	  !gdispderiv(1,1) = gdispderiv(1,1)+dvol
+      !gdispderiv(2,2) = gdispderiv(2,2)+dvol
+      !gdispderiv(3,3) = gdispderiv(3,3)+dvol
 !
 ! ========================================================
 !     UPDATE STRAIN and STRESS
@@ -319,9 +317,9 @@ module m_static_LIB_C3D8
       endif
 
 !       Small strain
-        dstrain(1) = gdispderiv(1,1) 
-        dstrain(2) = gdispderiv(2,2) 
-        dstrain(3) = gdispderiv(3,3)
+        dstrain(1) = gdispderiv(1,1)+dvol 
+        dstrain(2) = gdispderiv(2,2)+dvol
+        dstrain(3) = gdispderiv(3,3)+dvol
         dstrain(4) = ( gdispderiv(1,2)+gdispderiv(2,1) )
         dstrain(5) = ( gdispderiv(2,3)+gdispderiv(3,2) )
         dstrain(6) = ( gdispderiv(3,1)+gdispderiv(1,3) )
@@ -452,18 +450,15 @@ module m_static_LIB_C3D8
       else if( flag==TOTALLAG ) then
         B1(1:6,1:NN*NDOF)=0.d0
         do j=1,nn
-          B4=(Bbar(J,1)-gderiv(J,1))/3.d0
-          B6=(Bbar(J,2)-gderiv(J,2))/3.d0
-          B8=(Bbar(J,3)-gderiv(J,3))/3.d0
-          B1(1,3*J-2)=gdispderiv(1,1)*(gderiv(J,1)+B4)
-          B1(1,3*J-1)=gdispderiv(2,1)*(gderiv(J,1)+B6)
-          B1(1,3*J  )=gdispderiv(3,1)*(gderiv(J,1)+B8)
-          B1(2,3*J-2)=gdispderiv(1,2)*(gderiv(J,2)+B4)
-          B1(2,3*J-1)=gdispderiv(2,2)*(gderiv(J,2)+B6)
-          B1(2,3*J  )=gdispderiv(3,2)*(gderiv(J,2)+B8)
-          B1(3,3*J-2)=gdispderiv(1,3)*(gderiv(J,3)+B4)
-          B1(3,3*J-1)=gdispderiv(2,3)*(gderiv(J,3)+B6)
-          B1(3,3*J  )=gdispderiv(3,3)*(gderiv(J,3)+B8)
+          B1(1,3*J-2)=gdispderiv(1,1)*gderiv(J,1)
+          B1(1,3*J-1)=gdispderiv(2,1)*gderiv(J,1)
+          B1(1,3*J  )=gdispderiv(3,1)*gderiv(J,1)
+          B1(2,3*J-2)=gdispderiv(1,2)*gderiv(J,2)
+          B1(2,3*J-1)=gdispderiv(2,2)*gderiv(J,2)
+          B1(2,3*J  )=gdispderiv(3,2)*gderiv(J,2)
+          B1(3,3*J-2)=gdispderiv(1,3)*gderiv(J,3)
+          B1(3,3*J-1)=gdispderiv(2,3)*gderiv(J,3)
+          B1(3,3*J  )=gdispderiv(3,3)*gderiv(J,3)
           B1(4,3*J-2) = gdispderiv(1,2)*gderiv(J,1)+gdispderiv(1,1)*gderiv(J,2)
           B1(4,3*J-1) = gdispderiv(2,2)*gderiv(J,1)+gdispderiv(2,1)*gderiv(J,2)
           B1(4,3*J  ) = gdispderiv(3,2)*gderiv(J,1)+gdispderiv(3,1)*gderiv(J,2)
