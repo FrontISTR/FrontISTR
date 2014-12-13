@@ -33,7 +33,7 @@ const char* CFSTRDB_DFlux::LoadTypeName( int type )
 {
 	const char* pn[] = {
 		"S0", "S1", "S2", "S3", "S4", "S5", "S6",
-		"BF", 
+		"BF",
 		"unknown",
 	};
 
@@ -68,7 +68,7 @@ void CFSTRDB_DFlux::Write( CHECData* hecd )
 {
 	if( ItemList.size() == 0 ) return;
 	if( amp[0] == 0 ) {
-		hecd->WriteHeader( "!DFLUX" );	
+		hecd->WriteHeader( "!DFLUX" );
 	} else {
 		hecd->WriteHeader( "!DFLUX", "S", "AMP", amp );
 	}
@@ -76,7 +76,7 @@ void CFSTRDB_DFlux::Write( CHECData* hecd )
 	vector<CItem>::iterator iter;
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SSF", iter->egrp, LoadTypeName( iter->type ), iter->value);
-	}	
+	}
 }
 
 
@@ -100,7 +100,7 @@ bool CFSTRDB_DFlux::Read( CHECData* hecd, char* header_line )
 			if( strcmp( LoadTypeName(type), s )==0) break;
 		}
 		if( type == TypeNumber()) return false;
-		item.type = type; 
+		item.type = type;
 		ItemList.push_back( item );
 	}
 	return true;

@@ -16,7 +16,7 @@
 !======================================================================!
 
 !C
-!C*** 
+!C***
 !C*** module hecmw_solver_SR_33
 !C***
 !C
@@ -70,7 +70,7 @@
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
-      integer(kind=kint ), dimension(:  ), allocatable :: req2  
+      integer(kind=kint ), dimension(:  ), allocatable :: req2
 
       ! local valiables
       integer(kind=kint ) :: neib,istart,inum,k,ii,ierr
@@ -87,7 +87,7 @@
       allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
       allocate (req1(NEIBPETOT))
       allocate (req2(NEIBPETOT))
-       
+
 !C
 !C-- SEND
       ncnt = 0
@@ -121,7 +121,7 @@
       enddo
 
       call MPI_WAITALL (ncnt, req2, sta2, ierr)
-   
+
       do neib= 1, NEIBPETOT
         if (neib_flag(neib) == 0) cycle
         istart= STACK_IMPORT(neib-1)

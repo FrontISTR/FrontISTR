@@ -45,25 +45,25 @@
 /*================================================================================================*/
 
 struct link_list {
-	int id;						
-	double weight;				
-	struct link_list *next;		
+	int id;
+	double weight;
+	struct link_list *next;
 };
 
 
 
 struct hecmw_couple_vertex {
-	double x;	
-	double y;	
-	double z;	
+	double x;
+	double y;
+	double z;
 };
 
 
 
 struct hecmw_couple_vector {
-	double x;	
-	double y;	
-	double z;	
+	double x;
+	double y;
+	double z;
 };
 
 

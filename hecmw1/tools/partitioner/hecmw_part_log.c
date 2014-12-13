@@ -307,7 +307,7 @@ HECMW_part_set_log_n_node( int domain, int _n_node )
 
     n_node[domain] = _n_node;
 
-    return 0;  
+    return 0;
 }
 
 
@@ -335,7 +335,7 @@ HECMW_part_set_log_n_elem( int domain, int _n_elem )
 
     n_elem[domain] = _n_elem;
 
-    return 0;  
+    return 0;
 }
 
 
@@ -367,7 +367,7 @@ HECMW_part_set_log_nn_internal( int domain, int _nn_internal )
 
     nn_internal[domain] = _nn_internal;
 
-    return 0;  
+    return 0;
 }
 
 
@@ -400,7 +400,7 @@ HECMW_part_set_log_ne_internal( int domain, int _ne_internal )
 
     ne_internal[domain] = _ne_internal;
 
-    return 0;  
+    return 0;
 }
 
 /*================================================================================================*/

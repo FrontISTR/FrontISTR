@@ -30,7 +30,7 @@ contains
       use hecmw
       use gauss_integration
       use lczparm
- 
+
       IMPLICIT NONE
 !C* I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
@@ -46,7 +46,7 @@ contains
       REAL(kind=kreal) XJ11,XJ21,XJ12,XJ22,DET,RR,WG,DUM
       REAL(kind=kreal) XJI11,XJI21,XJI12,XJI22
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
-      INTEGER(kind=kint) ind1, ind2 
+      INTEGER(kind=kint) ind1, ind2
       REAL(kind=kreal) totdiag, totmass
       TYPE(lczparam) :: myEIG
 
@@ -59,7 +59,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-!C*THICKNESS 
+!C*THICKNESS
       THICK=PARAM1
 !C*FOR AX-SYM. ANALYSIS
       IF(ISET.EQ.2) THEN
@@ -186,7 +186,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-!C*THICKNESS 
+!C*THICKNESS
       THICK=PARAM1
 !C*FOR AX-SYM. ANALYSIS
       IF(ISET.EQ.2) THEN

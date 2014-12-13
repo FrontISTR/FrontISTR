@@ -52,7 +52,7 @@ module hecmw_restart
 
     subroutine hecmw_restart_write_by_name(name_ID)
         integer(kind=kint) :: ierr
-        character(len=HECMW_NAME_LEN) :: name_ID 
+        character(len=HECMW_NAME_LEN) :: name_ID
 
         call hecmw_restart_write_by_name_if(name_ID, ierr)
         if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
@@ -88,19 +88,19 @@ module hecmw_restart
 
 
     subroutine hecmw_restart_read_int(dst)
-        integer(kind=kint) :: ierr  
+        integer(kind=kint) :: ierr
         integer(kind=kint),dimension(:) :: dst
 
-        call hecmw_restart_read_int_if(dst, ierr) 
+        call hecmw_restart_read_int_if(dst, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_restart_read_int
 
 
     subroutine hecmw_restart_read_real(dst)
-        integer(kind=kint) :: ierr  
+        integer(kind=kint) :: ierr
         real(kind=kreal),dimension(:) :: dst
 
-        call hecmw_restart_read_real_if(dst, ierr) 
+        call hecmw_restart_read_real_if(dst, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_restart_read_real
 

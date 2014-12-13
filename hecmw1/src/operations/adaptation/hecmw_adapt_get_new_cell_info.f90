@@ -23,7 +23,7 @@
 !C    get new CELL info.
 !C
       subroutine hecmw_adapt_GET_NEW_CELL_INFO (hecMESH)
-        
+
       use hecmw_util
       implicit REAL*8 (A-H,O-Z)
 
@@ -35,7 +35,7 @@
         icou= 0
         neib0= hecMESH%neighbor_pe(neib)
         do icel= 1, hecMESH%n_elem
-          ic1= hecMESH%elem_ID(2*icel)        
+          ic1= hecMESH%elem_ID(2*icel)
           if (ic1.eq.neib0 .and. hecMESH%adapt_type(icel).ne.0) then
             iS= hecMESH%adapt_children_index(icel-1) + 1
             iE= hecMESH%adapt_children_index(icel)
@@ -54,8 +54,8 @@
 
         icou= 0
         do icel= 1, hecMESH%n_elem
-          ic1= hecMESH%elem_ID(2*icel)        
-          ic2= hecMESH%when_i_was_refined_elem(icel)        
+          ic1= hecMESH%elem_ID(2*icel)
+          ic2= hecMESH%when_i_was_refined_elem(icel)
           if (ic1.eq.neib0 .and. ic2.eq.hecMESH%n_adapt) then
             icou= icou + 1
             hecMESH%elem_ID(2*icel-1)= IW1(icou)

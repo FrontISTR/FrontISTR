@@ -127,7 +127,7 @@ contains
       integer(kind=kint) :: req
       return
       end subroutine hecmw_isend_int
-      
+
       subroutine hecmw_isend_r(sbuf, sc, dest, tag, comm, req)
       use hecmw_util
       implicit none
@@ -139,7 +139,7 @@ contains
       integer(kind=kint) :: req
       return
       end subroutine hecmw_isend_r
-	  
+
       subroutine hecmw_irecv_int(rbuf, rc, source, &
      &     tag, comm, req)
       use hecmw_util
@@ -152,7 +152,7 @@ contains
       integer(kind=kint) :: req
       integer(kind=kint) :: ierr
       end subroutine hecmw_irecv_int
-      
+
       subroutine hecmw_irecv_r(rbuf, rc, source, &
      &     tag, comm, req)
       use hecmw_util
@@ -255,7 +255,7 @@ contains
       real(kind=kreal), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_R
-      
+
       subroutine hecmw_bcast_R_comm (VAL, n, nbase, comm)
       use hecmw_util
       integer(kind=kint):: n, nbase
@@ -269,7 +269,7 @@ contains
       real(kind=kreal) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_R1
-      
+
       subroutine hecmw_bcast_R1_comm (VAL, nbase, comm)
       use hecmw_util
       integer(kind=kint):: nbase
@@ -288,7 +288,7 @@ contains
       integer(kind=kint), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
       end subroutine hecmw_bcast_I
-      
+
       subroutine hecmw_bcast_I_comm (VAL, n, nbase, comm)
       use hecmw_util
       integer(kind=kint):: n, nbase
@@ -321,7 +321,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_bcast_C
-      
+
       subroutine hecmw_bcast_C_comm (VAL, n, nn, nbase, comm)
       use hecmw_util
       integer(kind=kint):: n, nn, nbase
@@ -374,7 +374,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_update_3_R
-      
+
 !C
 !C***
 !C*** hecmw_update_4_R
@@ -389,7 +389,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_update_4_R
-      
+
 !C
 !C***
 !C*** hecmw_update_6_R
@@ -404,7 +404,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
 
       end subroutine hecmw_update_6_R
-      
+
 !C
 !C***
 !C*** hecmw_update_3_R_async

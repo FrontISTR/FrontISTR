@@ -57,7 +57,7 @@ contains
       REAL(kind=kreal) DRDX,DRDY,DRDZ
       REAL(kind=kreal) DSDX,DSDY,DSDZ
       REAL(kind=kreal) DTDX,DTDY,DTDZ
-!**FOR CORRECTION 
+!**FOR CORRECTION
       REAL(kind=kreal) C(6,9),DC(6,9),CC(9,9),V(9,24),CCV(9,24)
 !*EHM CONSISTENT MASS MATRIX 17Apr04
       REAL(kind=kreal) totdiag, totmass
@@ -74,7 +74,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LX=1,NG
         RI=XG(NG,LX)
         DO LY=1,NG
@@ -124,7 +124,7 @@ contains
             HT(6)= .125*RP*SM
             HT(7)= .125*RP*SP
             HT(8)= .125*RM*SP
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -171,7 +171,7 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN 
+!               IF(myEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,ndof).EQ.MOD(j2,ndof)) THEN
 !                 SS(NUM)=SS(NUM)+H(ind2)*H(ind1)*WG*RHO
 !!*EHM CONSISTENT MASS MATRIX 22 Apr 2004: Uncomment for debug
@@ -186,9 +186,9 @@ contains
                  totmass=totmass+H(ind1)*H(ind2)*WG*RHO
                 ENDIF
 !               ENDIF
-                IF(MOD(J2,NDOF).EQ.0) ind2 = ind2 + 1 
+                IF(MOD(J2,NDOF).EQ.0) ind2 = ind2 + 1
               ENDDO
-                IF(MOD(J,NDOF).EQ.0) ind1 = ind1 + 1 
+                IF(MOD(J,NDOF).EQ.0) ind1 = ind1 + 1
             ENDDO
 
 !*EHM CONSISTENT MASS MATRIX 15 Apr 2004
@@ -248,7 +248,7 @@ contains
       INTEGER(kind=kint) ind1, ind2
       TYPE(lczparam) :: myEIG
 
-      totdiag = 0.0 
+      totdiag = 0.0
       totmass = 0.0
 ! ZERO CLEAR MATRIX S()
       DO I=1,ISIZE
@@ -300,7 +300,7 @@ contains
             HZ(4)= X1*0.5
             HZ(5)= X2*0.5
             HZ(6)= X3*0.5
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -416,7 +416,7 @@ contains
       ENDDO
       totdiag = 0.
       totmass = 0.
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO L3=1,NG
         XL3=XG(NG,L3)
         X3 =(XL3+1.0)*0.5
@@ -439,21 +439,21 @@ contains
             HL1(3)= 0.0
             HL1(4)= 0.0
 !  FOR L2-COORDINATE
-            HL2(1)= 0.0 
-            HL2(2)= 1.0 
+            HL2(1)= 0.0
+            HL2(2)= 1.0
             HL2(3)= 0.0
             HL2(4)= 0.0
 !  FOR L3-COORDINATE
             HL3(1)= 0.0
             HL3(2)= 0.0
-            HL3(3)= 1.0 
+            HL3(3)= 1.0
             HL3(4)= 0.0
 !  FOR L4-COORDINATE
             HL4(1)= 0.0
             HL4(2)= 0.0
-            HL4(3)= 0.0 
+            HL4(3)= 0.0
             HL4(4)= 1.0
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0

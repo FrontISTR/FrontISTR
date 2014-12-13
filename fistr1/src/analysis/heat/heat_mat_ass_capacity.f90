@@ -36,7 +36,7 @@ module m_heat_mat_ass_capacity
 
 
 !C +-------------------------------+
-!C | ELEMENT-by-ELEMENT ASSEMBLING | 
+!C | ELEMENT-by-ELEMENT ASSEMBLING |
 !C | according to ELEMENT TYPE     |
 !C +-------------------------------+
 
@@ -44,7 +44,7 @@ module m_heat_mat_ass_capacity
         iS= hecMESH%elem_type_index(itype-1) + 1
         iE= hecMESH%elem_type_index(itype  )
         ic_type= hecMESH%elem_type_item(itype)
-   
+
         do icel = iS, iE
           isect = hecMESH%section_ID(icel)
           IMAT = hecMESH%section%sect_mat_ID_item(isect)
@@ -58,7 +58,7 @@ module m_heat_mat_ass_capacity
             ZZ(i) = hecMESH%node ( 3*nodLOCAL(i)   )
             TT(i) = fstrHEAT%TEMP0(   nodLOCAL(i)   )
           enddo
-          do i = 1, nn 
+          do i = 1, nn
             S0(i) = 0.0
           enddo
 
@@ -81,7 +81,7 @@ module m_heat_mat_ass_capacity
           elseif( ic_type.eq.232 ) then
             is = hecMesh%section%sect_R_index(isect)
             THICK = hecMESH%section%sect_R_item(is)
-            call heat_CAPACITY_232 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        &       
+            call heat_CAPACITY_232 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
@@ -97,43 +97,43 @@ module m_heat_mat_ass_capacity
           elseif( ic_type.eq.242 ) then
             is = hecMesh%section%sect_R_index(isect)
             THICK = hecMESH%section%sect_R_item(is)
-            call heat_CAPACITY_242 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        & 
+            call heat_CAPACITY_242 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.341 ) then
-            call heat_CAPACITY_341 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_341 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.342 ) then
-            call heat_CAPACITY_342 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_342 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.351 ) then
-            call heat_CAPACITY_351 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_351 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.352 ) then
-            call heat_CAPACITY_352 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_352 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.361 ) then
-            call heat_CAPACITY_361 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_361 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           elseif( ic_type.eq.362 ) then
-            call heat_CAPACITY_362 ( nn,XX,YY,ZZ,TT,IMAT,S0                              & 
+            call heat_CAPACITY_362 ( nn,XX,YY,ZZ,TT,IMAT,S0                              &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
@@ -141,7 +141,7 @@ module m_heat_mat_ass_capacity
           elseif( ic_type.eq.731 ) then
             is = hecMesh%section%sect_R_index(isect)
             THICK = hecMESH%section%sect_R_item(is)
-            call heat_CAPACITY_731 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        & 
+            call heat_CAPACITY_731 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
@@ -149,17 +149,17 @@ module m_heat_mat_ass_capacity
           elseif( ic_type.eq.741 ) then
             is = hecMESH%section%sect_R_index(isect)
             THICK = hecMESH%section%sect_R_item(is)
-            call heat_CAPACITY_741 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        & 
+            call heat_CAPACITY_741 ( nn,XX,YY,ZZ,TT,IMAT,THICK,S0                        &
                           ,fstrHEAT%CPtab(IMAT)     ,fstrHEAT%CPtemp(IMAT,:)          &
                           ,fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:)      &
                           ,fstrHEAT%RHOtab(IMAT)    ,fstrHEAT%RHOtemp(IMAT,:)         &
                           ,fstrHEAT%RHOfuncA(IMAT,:),fstrHEAT%RHOfuncB(IMAT,:) )
           endif
 !C
-          do ip = 1, nn 
+          do ip = 1, nn
             inod = nodLOCAL(ip)
             hecMAT%D(inod) = hecMAT%D(inod) + S0(ip) / DTIME
-            hecMAT%B(inod) = hecMAT%B(inod) + S0(ip) * TT(ip) / DTIME  
+            hecMAT%B(inod) = hecMAT%B(inod) + S0(ip) * TT(ip) / DTIME
           enddo
 !C
         enddo

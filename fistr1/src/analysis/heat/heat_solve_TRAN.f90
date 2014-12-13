@@ -163,7 +163,7 @@ module m_heat_solve_TRAN
             fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
             fstrHEAT%TEMP (i)= hecMAT%X(i)
           enddo
-		  
+
 !C
 !C-- GLOBAL RESIDUAL -----
 

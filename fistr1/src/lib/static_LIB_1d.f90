@@ -46,20 +46,20 @@ module m_static_LIB_1d
     logical :: ierr
     REAL(kind=kreal) ina(1), outa(1), direc(3), direc0(3), coeff, strain
     integer(kind=kint) :: i,j
-    
+
     ! we suppose the same material type in the element
     if( present(u) ) then
       elem(:,:) = ecoord(:,:) + u(:,:)
     else
       elem(:,:) = ecoord(:,:)
     endif
-	
+
     direc = elem(:,2)-elem(:,1)
     llen = dsqrt( dot_product(direc, direc) )
     direc = direc/llen
     direc0 = ecoord(:,2)-ecoord(:,1)
     llen0 = dsqrt( dot_product(direc0, direc0) )
-	
+
     if( present(temperature) ) then
       ina(1) = 0.5d0*(temperature(1)+temperature(2))
       call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr, ina )
@@ -96,9 +96,9 @@ module m_static_LIB_1d
     integer(kind=kint), INTENT(IN)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   INTENT(IN)     :: area            !< section area
-    real(kind=kreal),   INTENT(IN)     :: u(3,nn)         !< \param [in] nodal dislplacements 
+    real(kind=kreal),   INTENT(IN)     :: u(3,nn)         !< \param [in] nodal dislplacements
     real(kind=kreal),   INTENT(IN)     :: du(3,nn)       !< \param [in] nodal displacement ( solutions of solver )
-    real(kind=kreal),   INTENT(OUT)    :: qf(nn*3)        !< \param [out] Internal Force    
+    real(kind=kreal),   INTENT(OUT)    :: qf(nn*3)        !< \param [out] Internal Force
     type(tGaussStatus), INTENT(INOUT)  :: gausses(:)      !< \param [out] status of qudrature points
     REAL(kind=kreal),   INTENT(IN), optional :: TT(nn)    !< current temperature
     REAL(kind=kreal),   INTENT(IN), optional :: T0(nn)    !< reference temperature
@@ -120,42 +120,42 @@ module m_static_LIB_1d
     direc = direc/llen
     direc0 = ecoord(:,2)-ecoord(:,1)
     llen0 = dsqrt( dot_product(direc0, direc0) )
-	
+
     epsth = 0.d0
     if( present(tt) .and. present(t0) ) then
       ttc = 0.5d0*(TT(1)+TT(2))
       tt0 = 0.5d0*(T0(1)+T0(2))
-         
+
       ina(1) = ttc
       call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr, ina )
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)
 	  young = outa(1)
-	  
+
       call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
       alp = outa(1)
-	  
+
       ina(1) = tt0
       call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
       alp0 = outa(1)
-		  
+
       epsth=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
     else
       call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr )
       if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)
 	  young = outa(1)
     endif
-	
+
     gausses(1)%strain(1) = dlog(llen/llen0)
     gausses(1)%stress(1) = young*(gausses(1)%strain(1)-epsth)
-	
+
     qf(1) = gausses(1)%stress(1)*area*llen0/llen
     qf(1:3) = -qf(1)*direc
     qf(4:6) = -qf(1:3)
 
   end subroutine UPDATE_C1
-  
+
  !
 !> Update strain and stress inside element
 !---------------------------------------------------------------------*
@@ -194,23 +194,23 @@ module m_static_LIB_1d
     epsth = 0.d0
     ttc = 0.5d0*(TT(1)+TT(2))
     tt0 = 0.5d0*(T0(1)+T0(2))
-         
+
     ina(1) = ttc
     call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr, ina )
     if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)
     young = outa(1)
-	  
+
     call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
     if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
     alp = outa(1)
-	  
+
     ina(1) = tt0
     call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
     if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
     alp0 = outa(1)
-  
+
     epsth=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
-	
+
     gausses(1)%strain(1) = (llen-llen0)/llen0
     gausses(1)%stress(1) = young*(gausses(1)%strain(1)-epsth)
 
@@ -255,11 +255,11 @@ module m_static_LIB_1d
    stress(:) = gausses(1)%stress(1:6)
 
    END SUBROUTINE
-   
+
 
 !----------------------------------------------------------------------*
    SUBROUTINE DL_C1(etype, nn, xx, yy, zz, rho, thick, ltype, params, &
-                             vect, nsize)                     
+                             vect, nsize)
 !----------------------------------------------------------------------*
 !**  SET DLOAD
 !   GRAV LTYPE=4  :GRAVITY FORCE
@@ -278,7 +278,7 @@ module m_static_LIB_1d
 !--------------------------------------------------------------------
       val = params(0)
       !--------------------------------------------------------------
-      
+
       ivol = 0
       isuf = 0
       IF( ltype .LT. 10 ) THEN
@@ -286,19 +286,19 @@ module m_static_LIB_1d
       ELSE IF( ltype .GE. 10 ) THEN
        isuf = 1
       END IF
-      
+
 !--------------------------------------------------------------------
       nsize = nn*ndof
 !--------------------------------------------------------------------
       vect(1:nsize) = 0.0D0
-      
+
       ! Volume force
       IF( ivol .EQ. 1 ) THEN
        IF( ltype .EQ. 4 ) THEN
         AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
                    +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
-                   +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
-        
+                   +( zz(2)-zz(1) )*( zz(2)-zz(1) ) )
+
         a = thick
         vx = params(1)
         vy = params(2)
@@ -306,20 +306,20 @@ module m_static_LIB_1d
         vx = vx/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
         vy = vy/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
         vz = vz/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
-        
+
         DO i = 1, 2
          vect(3*i-2) = val*rho*a*0.5D0*AA*vx
          vect(3*i-1) = val*rho*a*0.5D0*AA*vy
          vect(3*i  ) = val*rho*a*0.5D0*AA*vz
         END DO
-        
+
        END IF
       END IF
 !--------------------------------------------------------------------
-      
+
       RETURN
    END SUBROUTINE
-   
+
 !
 !
 !----------------------------------------------------------------------*
@@ -328,9 +328,9 @@ module m_static_LIB_1d
 !
    use hecmw_matrix_misc
    type (hecmwST_matrix)     :: hecMAT
-   type (hecmwST_local_mesh) :: hecMESH  
+   type (hecmwST_local_mesh) :: hecMESH
    integer(kind=kint) :: itype, iS, iE, ic_type, icel, jS, j, n
-   
+
    do itype = 1, hecMESH%n_elem_type
     ic_type = hecMESH%elem_type_item(itype)
     if(ic_type == 301)then
@@ -358,7 +358,7 @@ module m_static_LIB_1d
    enddo
 
    END SUBROUTINE
-   
+
 !
 !
 !----------------------------------------------------------------------*
@@ -366,11 +366,11 @@ module m_static_LIB_1d
 !----------------------------------------------------------------------*
 !
    use hecmw_matrix_misc
-   type (hecmwST_matrix)     :: hecMAT 
-   type (hecmwST_local_mesh) :: hecMESH  
+   type (hecmwST_matrix)     :: hecMAT
+   type (hecmwST_local_mesh) :: hecMESH
    integer :: n, nn, iS, iE, i, j, in
    integer :: flagl, flagu, flagb, a
-              
+
     if(nn == 1)then
       a = 0
       iS = hecMAT%IndexL(n-1)+1
@@ -440,8 +440,8 @@ module m_static_LIB_1d
         !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:3"
       endif
     endif
-          
+
    END SUBROUTINE
 
-   
+
 end module m_static_LIB_1d

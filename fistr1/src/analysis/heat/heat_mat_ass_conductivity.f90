@@ -12,7 +12,7 @@
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
 !======================================================================!
-!> \brief This module provides a subroutine to assemble heat conductance 
+!> \brief This module provides a subroutine to assemble heat conductance
 !! attribution
 module m_heat_mat_ass_conductivity
    contains

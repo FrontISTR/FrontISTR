@@ -75,7 +75,7 @@ bool CFSTRDB_Step::Read( CHECData* hecd, char* header_line )
 
 	return true;
 }
-	
+
 
 
 

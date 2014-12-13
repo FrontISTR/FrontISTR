@@ -22,7 +22,7 @@
 !>  \date       2010/12/26
 !>  \version    0.00
 !>  \author     Z. Sun(ASTOM)
-!>  \date       2011/11   
+!>  \date       2011/11
 !>  \version    0.00
 !!
 !======================================================================!
@@ -89,7 +89,7 @@ module m_fstr_Restart
         if(restrt_step(2)==fstrSOLID%step_ctrl(cstep)%num_substep) then
           cstep = cstep + 1
           substep = 1
-        endif 
+        endif
       endif
 
       end subroutine fstr_read_restart

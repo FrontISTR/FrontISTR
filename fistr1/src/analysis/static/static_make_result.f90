@@ -37,19 +37,19 @@ module m_static_make_result
 
 		integer(kind=kint) :: n_layer, n_total_layer, bb, aa, mixedflag, cid
 		character(len=4) :: char_n_layer
-	  
+
 		ndof = hecMESH%n_dof
 		mm = hecMESH%n_node
 		if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
 		if( ndof==2 ) mdof = 3
 		if( ndof==3 ) mdof = 6
 		if( ndof==6 ) mdof = 24
-	  
+
 		bb = 0
 		n_total_layer = 1
 		mixedflag = 0
 		aa = 0
-	  
+
 		do it=1,hecMESH%section%n_sect
 			cid = hecMESH%section%sect_mat_ID_item(it)
 			aa =  int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
@@ -69,9 +69,9 @@ module m_static_make_result
 			if (mixedflag == 1)then
 				mdof = 24
 			endif
-		enddo	  
+		enddo
 		nn = mm * mdof
-		allocate( work(nn) )	
+		allocate( work(nn) )
 
 		! --- INITIALIZE
 		header = '*fstrresult'
@@ -81,7 +81,7 @@ module m_static_make_result
 		if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
       id = 1
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-      if (mixedflag == 1) then      
+      if (mixedflag == 1) then
         allocate( unode781(3*mm) )
         allocate( rnode781(3*mm) )
         unode781 = 0.0d0
@@ -89,15 +89,15 @@ module m_static_make_result
         label = 'DISPLACEMENT'
         call reorder_node781(fstrSOLID, hecMESH, unode781, rnode781, mixedflag)
         call hecmw_result_add( id, nitem, label, unode781 )
-        
+
         if (fstrSOLID%output_ctrl(3)%outinfo%on(18)) then
           label = 'ROTATION'
           call hecmw_result_add( id, nitem, label, rnode781 )
         endif
-        
+
         deallocate( unode781 )
         deallocate( rnode781 )
-      elseif(  mixedflag == 2) then      
+      elseif(  mixedflag == 2) then
         allocate( unode781(1) )
         allocate( rnode781(1) )
         unode781 = 0.0d0
@@ -151,9 +151,9 @@ module m_static_make_result
         endif
       endif
 ! --- STRESS @node
-      if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then 
+      if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
         id = 1
-        if( (ndof==6 .or. mixedflag==1 ) ) then 
+        if( (ndof==6 .or. mixedflag==1 ) ) then
           nitem = 6
           label = 'NodalSTRESS_Layer'//trim(char_n_layer)//'+'
           do i = 1, hecMESH%n_node
@@ -216,7 +216,7 @@ module m_static_make_result
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          
+
           label = 'ElementalSTRAIN_Layer'//trim(char_n_layer)//'-'
           do i = 1, hecMESH%n_elem
             do j = 1, 6
@@ -262,7 +262,7 @@ module m_static_make_result
       endif
   ! --- MISES @element
       if( fstrSOLID%output_ctrl(3)%outinfo%on(8)) then
-      
+
         id = 2
 
         if( (ndof==6 .or. mixedflag==1 ) ) then
@@ -293,7 +293,7 @@ module m_static_make_result
             enddo
           enddo
           call hecmw_result_add( id, nitem, label, work )
-          
+
         else if( fstrSOLID%output_ctrl(3)%outinfo%on(8) ) then
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
           label = 'ElementalMISES'
@@ -302,7 +302,7 @@ module m_static_make_result
           enddo
           call hecmw_result_add( id, nitem, label, work )
         endif
-        
+
       endif
     enddo
 
@@ -424,10 +424,10 @@ module m_static_make_result
 		character(len=4) :: char_n_layer
 		real(kind=kreal), allocatable   ::unode781(:),rnode781(:)
 
-	  
+
 		integer(kind=kint) :: n_layer, n_total_layer, mixedflag, aa, com_total_layer, it, shell33_coeff
 		integer(kind=kint) :: i, j, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
-	  
+
 		com_total_layer = 0
 		n_total_layer = 1
 		mixedflag = 0
@@ -437,13 +437,13 @@ module m_static_make_result
 
 		mm = hecMESH%n_node
 		if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
-		
+
 		ndof = hecMESH%n_dof
 		if( ndof==2 ) mdof = 3
 		if( ndof==3 ) mdof = 6
 		if( ndof==6 ) mdof = 12
 		if( ndof==6 ) shell33_coeff = 2
-	  
+
 		do it = 1, hecMESH%material%n_mat
 			com_total_layer =  int(fstrSOLID%materials(it)%variables(M_TOTAL_LAYER))
 			if (com_total_layer >= n_total_layer)then
@@ -465,7 +465,7 @@ module m_static_make_result
 			endif
 		enddo
 		n_layer = 1
-		
+
 		call hecmw_nullify_result_data( fstrRESULT )
 		ncomp = 0
 		nitem = 0
@@ -488,7 +488,7 @@ module m_static_make_result
           nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(2), ndof )
         endif
 ! --- STRAIN @node
-! --- shell has + and -, shell33_coeff=2 
+! --- shell has + and -, shell33_coeff=2
 		DO n_layer = 1,n_total_layer
 		if( fstrSOLID%output_ctrl(4)%outinfo%on(3) ) then
       if( ndof==6 ) then
@@ -496,7 +496,7 @@ module m_static_make_result
         nitem = nitem + mdof
       else
         ncomp = ncomp + shell33_coeff*1
-        nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )  
+        nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
       endif
     endif
 ! --- STRESS @node
@@ -509,7 +509,7 @@ module m_static_make_result
         nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
       endif
     endif
-		
+
 ! --- MISES @node
     if( fstrSOLID%output_ctrl(4)%outinfo%on(5) ) then
       if( ndof==6 ) then
@@ -531,7 +531,7 @@ module m_static_make_result
       if (mixedflag == 1)then
         ndof = 3
       endif
-		
+
       fstrRESULT%nn_component = ncomp
       fstrRESULT%ne_component = ecomp
       allocate( fstrRESULT%nn_dof(ncomp) )
@@ -550,9 +550,9 @@ module m_static_make_result
 			if (mixedflag == 1) then
         allocate( unode781(3*mm) )
         allocate( rnode781(3*mm) )
-        unode781 = 0.0d0		
-        rnode781 = 0.0d0		
-        
+        unode781 = 0.0d0
+        rnode781 = 0.0d0
+
         call reorder_node781(fstrSOLID, hecMESH, unode781, rnode781, mixedflag)
         ncomp = ncomp + 1
         fstrRESULT%nn_dof(ncomp) = 3
@@ -564,7 +564,7 @@ module m_static_make_result
           enddo
         enddo
         iitem = iitem + 3
-        
+
         if (fstrSOLID%output_ctrl(4)%outinfo%on(18)) then
           ncomp = ncomp + 1
           fstrRESULT%nn_dof(ncomp) = 3
@@ -581,11 +581,11 @@ module m_static_make_result
         deallocate( rnode781 )
 
       elseif(mixedflag == 2) then
-     
+
         allocate( unode781(1) )
         allocate( rnode781(1) )
-        unode781 = 0.0d0		
-        rnode781 = 0.0d0		
+        unode781 = 0.0d0
+        rnode781 = 0.0d0
         call reorder_node781(fstrSOLID, hecMESH, unode781, rnode781, mixedflag)
         ncomp = ncomp + 1
         fstrRESULT%nn_dof(ncomp) = 3
@@ -598,9 +598,9 @@ module m_static_make_result
         iitem = iitem + 3
         deallocate( unode781 )
         deallocate( rnode781 )
-     
+
      else
-     
+
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
@@ -653,7 +653,7 @@ module m_static_make_result
             enddo
           enddo
           iitem = iitem + nn
-          
+
         else
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
           ncomp = ncomp + 1
@@ -667,11 +667,11 @@ module m_static_make_result
           iitem = iitem + nn
         endif
       endif
-      
-      
+
+
 ! --- STRESS @node
       if(fstrSOLID%output_ctrl(4)%outinfo%on(4)) then
-      
+
         if(ndof==6 .or. mixedflag==1 ) then
           nn = 6
           ncomp = ncomp + 1
@@ -683,7 +683,7 @@ module m_static_make_result
             enddo
           enddo
           iitem = iitem + nn
-          
+
           ncomp = ncomp + 1
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'NodalSTRESS_Layer'//trim(char_n_layer)//'-'
@@ -693,7 +693,7 @@ module m_static_make_result
             enddo
           enddo
           iitem = iitem + nn
-          
+
         else
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
@@ -709,7 +709,7 @@ module m_static_make_result
       endif
 ! --- MISES @node
       if(fstrSOLID%output_ctrl(4)%outinfo%on(5)) then
-      
+
         if( (ndof==6 .or. mixedflag==1 ) ) then
           ncomp = ncomp + 1
           nn = 1
@@ -719,7 +719,7 @@ module m_static_make_result
             fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+13)
           enddo
           iitem = iitem + nn
-          
+
           ncomp = ncomp + 1
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'NodalMISES_Layer'//trim(char_n_layer)//'-'
@@ -727,7 +727,7 @@ module m_static_make_result
             fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%STRESS(14*n_total_layer*(i-1)+14*(n_layer-1)+14)
           enddo
           iitem = iitem + nn
-          
+
         else
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )
@@ -738,7 +738,7 @@ module m_static_make_result
           enddo
           iitem = iitem + nn
         endif
-      
+
       endif
 		ENDDO
 ! --- THERMAL STRAIN @node
@@ -756,8 +756,8 @@ module m_static_make_result
         endif
 
       end subroutine fstr_make_static_result
-	  
-	  
+
+
 ! --- Reorder unode for mixed solid-shell analysis	----------
 	subroutine reorder_node781(fstrSOLID, hecMESH, unode781,rnode781, mixedflag)
 		use m_fstr
@@ -769,7 +769,7 @@ module m_static_make_result
 		integer(kind=kint) :: mm, n1, n2
 		real(kind=kreal), allocatable   :: unode781(:)
 		real(kind=kreal), allocatable   :: rnode781(:)
-	  
+
 	if(mixedflag == 1)then
 
 		do itype = 1, hecMESH%n_elem_type
@@ -789,7 +789,7 @@ module m_static_make_result
 						unode781(3*n2-2) = fstrSOLID%unode(3*n1-2)
 						unode781(3*n2-1) = fstrSOLID%unode(3*n1-1)
 						unode781(3*n2  ) = fstrSOLID%unode(3*n1  )
-            
+
 						rnode781(3*n1-2) = fstrSOLID%unode(3*n2-2)
 						rnode781(3*n1-1) = fstrSOLID%unode(3*n2-1)
 						rnode781(3*n1  ) = fstrSOLID%unode(3*n2  )
@@ -811,7 +811,7 @@ module m_static_make_result
 						unode781(3*n2-2) = fstrSOLID%unode(3*n1-2)
 						unode781(3*n2-1) = fstrSOLID%unode(3*n1-1)
 						unode781(3*n2  ) = fstrSOLID%unode(3*n1  )
-            
+
 						rnode781(3*n1-2) = fstrSOLID%unode(3*n2-2)
 						rnode781(3*n1-1) = fstrSOLID%unode(3*n2-1)
 						rnode781(3*n1  ) = fstrSOLID%unode(3*n2  )
@@ -833,7 +833,7 @@ module m_static_make_result
 						unode781(3*n2-2) = fstrSOLID%unode(3*n1-2)
 						unode781(3*n2-1) = fstrSOLID%unode(3*n1-1)
 						unode781(3*n2  ) = fstrSOLID%unode(3*n1  )
-            
+
 						rnode781(3*n1-2) = fstrSOLID%unode(3*n2-2)
 						rnode781(3*n1-1) = fstrSOLID%unode(3*n2-1)
 						rnode781(3*n1  ) = fstrSOLID%unode(3*n2  )
@@ -876,7 +876,7 @@ module m_static_make_result
 			endif
 		enddo
 	endif
-		
+
 	end subroutine reorder_node781
 
 end module m_static_make_result

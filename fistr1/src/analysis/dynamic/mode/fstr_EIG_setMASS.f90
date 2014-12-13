@@ -49,7 +49,7 @@ contains
       real(kind=kreal) :: a
       real(kind=kreal) :: beam_radius,                          &
                           beam_angle1, beam_angle2, beam_angle3,&
-                          beam_angle4, beam_angle5, beam_angle6 
+                          beam_angle4, beam_angle5, beam_angle6
       real(kind=kreal) xx1(20),yy1(20),zz1(20),Area
       real(kind=kreal) x(20),  y(20),  z(20),  AA,Volume,val
       real(kind=kreal) smax,chkmass,alpha
@@ -94,7 +94,7 @@ contains
           iax = hecMESH%section%sect_opt(isect)
           CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu,n_totallayer_ls,shell_matltype,shell_variables, &
                             beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
-                            beam_angle4,beam_angle5,beam_angle6)  
+                            beam_angle4,beam_angle5,beam_angle6)
           if( rho<=0.d0 ) then
             print *, "WARNING: Density of element",icel,"not defined!"
             WRITE(IMSG,*) "WARNING: Density of element",icel,"not defined!"
@@ -109,40 +109,40 @@ contains
 !C
 !C Area/volume calculations
 !C
-          if    ( ic_type.EQ.231 ) then 
+          if    ( ic_type.EQ.231 ) then
             CALL mass_c2d3 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
-          elseif( ic_type.EQ.232 ) then 
+          elseif( ic_type.EQ.232 ) then
             CALL mass_c2d6 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
-          elseif( ic_type.EQ.241 ) then 
+          elseif( ic_type.EQ.241 ) then
             CALL mass_c2d4 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
-          elseif( ic_type.EQ.242 ) then 
+          elseif( ic_type.EQ.242 ) then
             CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
-          elseif( ic_type.EQ.341 ) then 
+          elseif( ic_type.EQ.341 ) then
             CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.342 ) then 
+          elseif( ic_type.EQ.342 ) then
             CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.351 ) then 
+          elseif( ic_type.EQ.351 ) then
             CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.352 ) then 
+          elseif( ic_type.EQ.352 ) then
             CALL MASS_C3D15( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.361 ) then 
+          elseif( ic_type.EQ.361 ) then
             CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.362 ) then 
+          elseif( ic_type.EQ.362 ) then
             CALL mass_c3d20( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.731 ) then 
+          elseif( ic_type.EQ.731 ) then
             call face3( xx,yy,zz,AA )
             val = AA/3.0*thick*rho
-          elseif( ic_type.EQ.741 ) then 
+          elseif( ic_type.EQ.741 ) then
             call face4( xx,yy,zz,AA )
             val = AA/4.0*thick*rho
-          elseif( ic_type.EQ.781 ) then 
+          elseif( ic_type.EQ.781 ) then
             CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.761 ) then 
+          elseif( ic_type.EQ.761 ) then
             CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ( ic_type.EQ.611 ) .or. ( ic_type.EQ.641 ) ) then
             AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
                        +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
-                       +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
+                       +( zz(2)-zz(1) )*( zz(2)-zz(1) ) )
             a = hecMESH%section%sect_R_item(ihead+4)
             val = 0.5D0*AA*a*rho
           endif
@@ -170,12 +170,12 @@ contains
               END IF
             else if( ic_type.eq.781 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR.   &
-                  ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN 
+                  ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN
                myEIG%mass(js+1) = myEIG%mass(js+1) + val
                myEIG%mass(js+2) = myEIG%mass(js+2) + val
                myEIG%mass(js+3) = myEIG%mass(js+3) + val
               ELSE IF( ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) .OR.   &
-                       ( j .EQ. 7 ) .OR. ( j .EQ. 8 ) ) THEN 
+                       ( j .EQ. 7 ) .OR. ( j .EQ. 8 ) ) THEN
                myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
                myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
                myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
@@ -242,7 +242,7 @@ contains
 !C
       RETURN
       END subroutine setMASS
-	  
+
 !C*--------------------------------------------------------------------*
 !>  CALCULATION SURFACE AREA FOR 3 POINTS
       SUBROUTINE FACE3(XX,YY,ZZ,AA)
@@ -296,7 +296,7 @@ contains
           HS(2)= .25*RM
           HS(3)=-.25*RM
           HS(4)=-.25*RP
-!C*JACOBI MATRIX 
+!C*JACOBI MATRIX
           XR=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
           XS=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
           YR=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)

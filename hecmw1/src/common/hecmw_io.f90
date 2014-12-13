@@ -27,27 +27,27 @@ module hecmw_io
 
     public :: hecmw_get_mesh
     public :: hecmw_put_mesh
-    
+
     contains
 
 !C====================================================================
 !C Get HEC-MW dist mesh from file
 !C====================================================================
 
-    subroutine hecmw_get_mesh(name_ID, mesh) 
-        integer(kind=kint) :: ierr  
+    subroutine hecmw_get_mesh(name_ID, mesh)
+        integer(kind=kint) :: ierr
         character(len=HECMW_NAME_LEN) :: name_ID
         type(hecmwST_local_mesh) :: mesh
 
         call hecmw_nullify_mesh(mesh)
 
-        call hecmw_get_mesh_init_if(name_ID,ierr) 
+        call hecmw_get_mesh_init_if(name_ID,ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_dist_copy_c2f(mesh, ierr) 
+        call hecmw_dist_copy_c2f(mesh, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_get_mesh_finalize_if(ierr) 
+        call hecmw_get_mesh_finalize_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
     end subroutine hecmw_get_mesh
@@ -57,21 +57,21 @@ module hecmw_io
 !C Put HEC-MW dist mesh to file
 !C====================================================================
 
-    subroutine hecmw_put_mesh(name, mesh) 
-        integer(kind=kint) :: ierr  
+    subroutine hecmw_put_mesh(name, mesh)
+        integer(kind=kint) :: ierr
         character(len=HECMW_NAME_LEN) :: name
         type(hecmwST_local_mesh) :: mesh
 
-        call hecmw_put_mesh_init_if(ierr) 
+        call hecmw_put_mesh_init_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_dist_copy_f2c(mesh, ierr) 
+        call hecmw_dist_copy_f2c(mesh, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_put_mesh_if(name, ierr) 
+        call hecmw_put_mesh_if(name, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
-        call hecmw_put_mesh_finalize_if(ierr) 
+        call hecmw_put_mesh_finalize_if(ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
     end subroutine hecmw_put_mesh
 

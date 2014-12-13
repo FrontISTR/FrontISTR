@@ -64,7 +64,7 @@ module m_dynamic_output
         call fstr_Update2D( hecMESH, fstrSOLID )
       else if( ndof==6) then
         call fstr_Update6D( hecMESH, fstrSOLID )
-      endif 
+      endif
     endif
 
     nullify( tnstrain )
@@ -160,7 +160,7 @@ module m_dynamic_output
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
-          do k = 1, ndof 
+          do k = 1, ndof
             Umax(k) = fstrDYNAMIC%DISP(ndof*(i-1)+k,idx)
             Umin(k) = fstrDYNAMIC%DISP(ndof*(i-1)+k,idx)
             IUmax(k)= j
@@ -175,7 +175,7 @@ module m_dynamic_output
             IAmin(k)= j
           enddo
         else
-          do k = 1, ndof 
+          do k = 1, ndof
             if( fstrDYNAMIC%DISP(ndof*(i-1)+k,idx) > Umax(k) ) then
               Umax(k) = fstrDYNAMIC%DISP(ndof*(i-1)+k,idx)
               IUmax(k)= j
@@ -211,7 +211,7 @@ module m_dynamic_output
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
-          do k = 1, mdof 
+          do k = 1, mdof
             Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             IEmax(k)= j
@@ -236,7 +236,7 @@ module m_dynamic_output
         if( ID_area==hecMESH%my_rank ) then
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
-            do k = 1, mdof 
+            do k = 1, mdof
               EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
               EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
               IEEmax(k)= j
@@ -722,7 +722,7 @@ module m_dynamic_output
           if( ierr/=0 ) then
             write(*,*) 'stop due to file opening error <dyna_enrgy.txt>'
             call hecmw_abort( hecmw_comm_get_comm() )
-          endif 
+          endif
           write( fstrDYNAMIC%dynamic_IW7, * ) &
                  ' time step', '     time    ', '  kinetic energy', '   strain energy', '   total energy'
         endif
@@ -737,9 +737,9 @@ module m_dynamic_output
         write( fstrDYNAMIC%dynamic_IW7, '(i10,1pe13.4e3,1p3e16.4e3)' ) &
                fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, &
                fstrDYNAMIC%kineticEnergy, fstrDYNAMIC%strainEnergy, fstrDYNAMIC%totalEnergy
-      endif 
+      endif
       if( fstrDYNAMIC%i_step==fstrDYNAMIC%n_step ) close(fstrDYNAMIC%dynamic_IW7)
-    endif                              
+    endif
   end subroutine dynamic_output_monit
 
 !C================================================================C

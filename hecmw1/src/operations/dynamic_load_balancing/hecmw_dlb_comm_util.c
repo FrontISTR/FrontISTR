@@ -142,8 +142,8 @@ void whole_copy_array(int *recv_num, int *global_recv_num, int mynode, int pesiz
 
 
 
-int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *stack_export, 
-		     HECMW_Comm repart_comm, int my_rank)                                      
+int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *stack_export,
+		     HECMW_Comm repart_comm, int my_rank)
 {
 
 	  HECMW_Status	*sta1, *sta2;
@@ -156,16 +156,16 @@ int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *s
 
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat2");
     if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	    HECMW_vis_memory_exit("HECMW_STATUS: req1");
     if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	   HECMW_vis_memory_exit("HECMW_STATUS: req2");
     nflag = 1;
   }
@@ -184,11 +184,11 @@ int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *s
   free(sta2);
   free(req1);
   free(req2);
-       
+
    return;
 }
 
-int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECMW_Comm repart_comm, int my_rank)                                    
+int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECMW_Comm repart_comm, int my_rank)
 {
   HECMW_Status stat;
   int tmp_int;
@@ -208,16 +208,16 @@ int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECM
 
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*(pesize-1), sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat2");
     if ((req1 = (HECMW_Request *)calloc(pesize-1, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	    HECMW_vis_memory_exit("HECMW_STATUS: req1");
     if ((req2 = (HECMW_Request *)calloc(pesize-1, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	   HECMW_vis_memory_exit("HECMW_STATUS: req2");
     nflag = 1;
   }
@@ -240,7 +240,7 @@ int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECM
 
 	  }
   }
-		  
+
 
   HECMW_Barrier(repart_comm);
 
@@ -262,18 +262,18 @@ int  stack_whole_send_recv(int pesize, int *stack_export,int *stack_import, HECM
 				}
 			}
 			stack_import[0]=0;
-			for(j=1;j<pesize+1;j++) 
+			for(j=1;j<pesize+1;j++)
 				stack_import[j]=stack_import[j]+stack_import[j-1];
 		}
 	}
 
    HECMW_Barrier(repart_comm);
-       
+
    return;
 }
 
 
-int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int *nod_import,int *stack_export, int *nod_export, 
+int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int *nod_import,int *stack_export, int *nod_export,
 		     int *x,  HECMW_Comm repart_comm, int my_rank)
 {
   /* Important:: node ID in nod_import and nod_export are all starting from 1  */
@@ -289,20 +289,20 @@ int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int 
 
   ws=(int *)calloc(n, sizeof(int));
   wr=(int *)calloc(n, sizeof(int));
-  if((ws==NULL) || (wr==NULL)) 
+  if((ws==NULL) || (wr==NULL))
 	  HECMW_vis_memory_exit("send_recv: ws, wr");
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("HECMW_STATUS: stat2");
     if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	    HECMW_vis_memory_exit("HECMW_STATUS: req1");
     if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	   HECMW_vis_memory_exit("HECMW_STATUS: req2");
     nflag = 1;
   }
@@ -312,7 +312,7 @@ int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int 
     else istart = 0;
 */
     inum   = stack_export[neib+1] - stack_export[neib];
-    
+
     for (k = stack_export[neib]; k < stack_export[neib] + inum; k++) {
       ws[k] = x[nod_export[k]-1];
     }
@@ -368,20 +368,20 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, 
 
   ws=(double *)calloc(n, sizeof(double));
   wr=(double *)calloc(n, sizeof(double));
-  if((ws==NULL) || (wr==NULL)) 
+  if((ws==NULL) || (wr==NULL))
 	  HECMW_vis_memory_exit("send_recv: ws, wr");
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*neibpetot, sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta12");
     if ((req1 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	 HECMW_vis_memory_exit("send_recv: req1");
     if ((req2 = (HECMW_Request *)calloc(neibpetot, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req2");
     nflag = 1;
   }
@@ -391,7 +391,7 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, 
     else istart = 0;
 */
     inum   = stack_export[neib+1] - stack_export[neib];
-    
+
     for (k = stack_export[neib]; k < stack_export[neib] + inum; k++) {
       ws[k] = x[nod_export[k]-1];
     }
@@ -446,8 +446,8 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, 
 
 
 void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *nod_import,
-		     int *stack_export, int *nod_export, 
-		     int *x, int *y, 
+		     int *stack_export, int *nod_export,
+		     int *x, int *y,
 		     HECMW_Comm repart_comm, int my_rank)
 {
   /* Important:: node ID in nod_import and nod_export are all starting from 0  */
@@ -464,7 +464,7 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 
   ws=(int *)calloc(n1, sizeof(int));
   wr=(int *)calloc(n2, sizeof(int));
-  if((ws==NULL) || (wr==NULL)) 
+  if((ws==NULL) || (wr==NULL))
 	  HECMW_vis_memory_exit("ws, wr");
   if (nflag == 0) {
 /*    sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
@@ -479,10 +479,10 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
     }
 	*/
     if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	   HECMW_vis_memory_exit("send_recv: req1");
     if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req2");
     nflag = 1;
   }
@@ -493,7 +493,7 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 */
 	  if(neib!=my_rank) {
          inum   = stack_export[neib+1] - stack_export[neib];
-    
+
           for (k = stack_export[neib]; k < stack_export[neib] + inum; k++) {
               ws[k] = x[nod_export[k]];
 		  }
@@ -521,7 +521,7 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 */
     inum = stack_import[neib+1] - stack_import[neib];
 	if(neib!=my_rank) {
-    for (k = stack_import[neib]; k < stack_import[neib]+inum; k++) 
+    for (k = stack_import[neib]; k < stack_import[neib]+inum; k++)
       y[nod_import[k]] = wr[k];
     }
 	else {
@@ -534,10 +534,10 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
   HECMW_Barrier(repart_comm);
   /*
   HECMW_Waitall(neibpetot, req1, sta1);
-  
+
   free(sta1);
   free(sta2);
-*/  
+*/
   free(req1);
   free(req2);
   free(ws);
@@ -546,9 +546,9 @@ void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *no
 }
 
 
-void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, 
-		     int *x, int *y, 
+void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export,
+		     int *x, int *y,
 		     HECMW_Comm repart_comm, int my_rank)
 {
   /* Important:: node ID in nod_import and nod_export are all starting from 0  */
@@ -564,17 +564,17 @@ void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta2");
-	
+
     if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req1");
     if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req2");
     nflag = 1;
   }
@@ -610,19 +610,19 @@ void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
     inum = stack_import[my_rank+1] - stack_import[my_rank];
 		for(k=0;k<inum;k++)
 			y[stack_import[my_rank]+k]=x[stack_export[my_rank]+k];
- 
+
   HECMW_Waitall(pesize, req1, sta1);
-  
+
   free(sta1);
   free(sta2);
-  
+
   free(req1);
   free(req2);
   return;
 }
 
-void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, double *x, double *y, 
+void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export, double *x, double *y,
 		     HECMW_Comm repart_comm, int my_rank)
 {
   /* Important:: node ID in nod_import and nod_export are all starting from 0  */
@@ -637,17 +637,17 @@ void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 
   if (nflag == 0) {
     sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
-    if (sta1 == NULL) 
+    if (sta1 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta1");
     sta2 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE*pesize, sizeof(HECMW_Status));
-    if (sta2 == NULL) 
+    if (sta2 == NULL)
 		HECMW_vis_memory_exit("send_recv: sta2");
-	
+
     if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req1");
     if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req2");
     nflag = 1;
   }
@@ -685,20 +685,20 @@ void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
     inum = stack_import[my_rank+1] - stack_import[my_rank];
 		for(k=0;k<inum;k++)
 			y[stack_import[my_rank]+k]=x[stack_export[my_rank]+k];
- 
+
   HECMW_Waitall(pesize, req1, sta1);
-  
+
   free(sta1);
   free(sta2);
-  
+
   free(req1);
   free(req2);
   return;
 }
 
-void int3_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, 
-		     int *x, int *y, 
+void int3_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export,
+		     int *x, int *y,
 		     HECMW_Comm repart_comm, int my_rank)
 {
   /* Important:: node ID in nod_import and nod_export are all starting from 0  */
@@ -735,14 +735,14 @@ void int3_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
 	}
 
    HECMW_Barrier(repart_comm);
- 
- 
+
+
   return;
 }
 
 void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *nod_import,
-		     int *stack_export, int *nod_export, 
-		     double *x, double *y, 
+		     int *stack_export, int *nod_export,
+		     double *x, double *y,
 		     HECMW_Comm repart_comm, int my_rank)
 {
 /*  HECMW_Status	*sta1, *sta2;
@@ -757,7 +757,7 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
 
   ws=(double *)calloc(n1, sizeof(int));
   wr=(double *)calloc(n2, sizeof(int));
-  if((ws==NULL) || (wr==NULL)) 
+  if((ws==NULL) || (wr==NULL))
 	  HECMW_vis_memory_exit("send_recv: ws,wr");
   if (nflag == 0) {
 /*    sta1 = (HECMW_Status *)calloc(HECMW_STATUS_SIZE, sizeof(HECMW_Status));
@@ -772,10 +772,10 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
     }
 	*/
     if ((req1 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req1");
     if ((req2 = (HECMW_Request *)calloc(pesize, sizeof(HECMW_Request)))
-	== NULL) 
+	== NULL)
 	HECMW_vis_memory_exit("send_recv: req2");
     nflag = 1;
   }
@@ -786,7 +786,7 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
 */
 	  if(neib!=my_rank) {
          inum   = stack_export[neib+1] - stack_export[neib];
-    
+
           for (k = stack_export[neib]; k < stack_export[neib] + inum; k++) {
               ws[k] = x[nod_export[k]-1];
 		  }
@@ -802,7 +802,7 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
 
     inum = stack_import[neib+1] - stack_import[neib];
 	if(neib!=my_rank) {
-    for (k = stack_import[neib]; k < stack_import[neib]+inum; k++) 
+    for (k = stack_import[neib]; k < stack_import[neib]+inum; k++)
       y[k] = wr[k];
     }
 	else {
@@ -816,10 +816,10 @@ void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int 
   HECMW_Barrier(repart_comm);
   /*
   HECMW_Waitall(neibpetot, req1, sta1);
-  
+
   free(sta1);
   free(sta2);
-*/  
+*/
   free(req1);
   free(req2);
   free(ws);

@@ -959,7 +959,7 @@ HECMW_dbg_n_mat_( struct hecmwST_local_mesh *local_mesh, char *file, int line )
 /*----------------------------------------------------------------------------*/
 /*  material information                                                      */
 /*  < material->n_mat, material->n_mat_item, material->n_mat_subitem,         */
-/*    material->n_mat_table, material->mat_name, material->mat_item_index,    */                                  
+/*    material->n_mat_table, material->mat_name, material->mat_item_index,    */
 /*    material->mat_subitem_index, material->mat_table_index,                 */
 /*    material->mat_val, material->mat_temp >                                 */
 /*----------------------------------------------------------------------------*/
@@ -1019,7 +1019,7 @@ HECMW_dbg_material_( struct hecmwST_local_mesh *local_mesh, char *file, int line
                  file, line, i,
                  local_mesh->material->mat_table_index[i],
                  local_mesh->material->mat_table_index[i+1] );
-  
+
       for( j=local_mesh->material->mat_table_index[i]; j<local_mesh->material->mat_table_index[i+1]; j++ ) {
         HECMW_log( HECMW_LOG_DEBUG, "%s:%d: j = %d, material->mat_val[j] = %E: material->mat_temp[j] = %E",
                    file, line, j,

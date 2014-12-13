@@ -34,7 +34,7 @@ use hecmw
     integer(kind=kint)                :: start_mode
     integer(kind=kint)                :: end_mode
   end type
-  
+
   type fstr_freqanalysis_data
     integer(kind=kint)        :: numMode
     integer(kind=kint)        :: numNodeDOF
@@ -42,16 +42,16 @@ use hecmw
     real(kind=kreal), pointer :: eigVector(:,:) => NULL()
     real(kind=kreal)           :: rayAlpha, rayBeta
   end type
-  
+
   integer, parameter :: kFLOADTYPE_NODE = 1
   integer, parameter :: kFLOADTYPE_SURF = 2
-  
+
   integer, parameter :: kFLOADCASE_RE = 1
   integer, parameter :: kFLOADCASE_IM = 2
 contains
 
 !C
-!C-- initialize fstr_freqanalysis structure  
+!C-- initialize fstr_freqanalysis structure
 !C
   subroutine fstr_nullify_fstr_freqanalysis( f )
   !---- args
@@ -64,6 +64,6 @@ contains
     nullify( f%FLOAD_ngrp_DOF )
     nullify( f%FLOAD_ngrp_valre )
     nullify( f%FLOAD_ngrp_valim )
-    
+
   end subroutine
 end module

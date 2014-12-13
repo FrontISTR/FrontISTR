@@ -54,7 +54,7 @@ contains
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange  
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange
       type ( fstr_couple         ) :: fstrCPL         !for COUPLE
 
 !C
@@ -84,7 +84,7 @@ contains
       if (hecMAT%Iarray(99) .eq. 2) then
         ds = .true.
       end if
-	  
+
       call cpu_time( time_1 )
 
 !--

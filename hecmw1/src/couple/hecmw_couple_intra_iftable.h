@@ -27,12 +27,12 @@
 
 
 struct hecmw_couple_intra_iftable {
-	int n_neighbor_pe;	
-	int *neighbor_pe;	
-	int *import_index;	
-	int *import_item;	
-	int *export_index;	
-	int *export_item;	
+	int n_neighbor_pe;
+	int *neighbor_pe;
+	int *import_index;
+	int *import_item;
+	int *export_index;
+	int *export_item;
 };
 
 

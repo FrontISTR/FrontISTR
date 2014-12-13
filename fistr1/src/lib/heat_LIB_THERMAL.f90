@@ -100,7 +100,7 @@ contains
             CALL heat_GET_CONDUCTIVITY &
      &                   ( CTEMP, IMAT, CC, ntab, temp, funcA, funcB )
 !
-            SS(1) =  CC(1) * ASECT * AL 
+            SS(1) =  CC(1) * ASECT * AL
             SS(2) = -SS(1)
             SS(3) = -SS(1)
             SS(4) =  SS(1)
@@ -113,7 +113,7 @@ contains
 !C*--------------------------------------------------------------------*
 !C*
 !C*CALCULATION 2D 3 NODE CONDUCTANCE ELEMENT
-!C* 
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -175,7 +175,7 @@ contains
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
           CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)  
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !C*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
           WGY=CC(2)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -200,7 +200,7 @@ contains
 !C*--------------------------------------------------------------------*
 !C*
 !C*CALCULATION 2D 4 NODE CONDUCTANCE ELEMENT
-!C* 
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -257,7 +257,7 @@ contains
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
           CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)  
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
           WGY=CC(2)*WGT(LX)*WGT(LY)*DET*THICK
@@ -282,7 +282,7 @@ contains
 !*---------------------------------------------------------------------*
 !*
 !* CALCULATION 3D 4 NODE CONDUCTANCE ELEMENT
-!* 
+!*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -293,7 +293,7 @@ contains
 !*      DATA XG/-1.0,1.0/
       DATA WGT/1.0D0,1.0D0/
 !
-!* LOOP FOR INTEGRATION POINTS	
+!* LOOP FOR INTEGRATION POINTS
       DO 20 L3=1,2
       XL3=XG(L3)
         X3 =(XL3+1.0)*0.5
@@ -315,17 +315,17 @@ contains
             HR(3)=0.0
             HR(4)=-1.0
 !  FOR L2-COORDINATE
-            HS(1)=0.0 
-            HS(2)=1.0 
+            HS(1)=0.0
+            HS(2)=1.0
             HS(3)=0.0
             HS(4)=-1.0
 !  FOR ZETA-COORDINATE
             HT(1)=0.0
             HT(2)=0.0
-            HT(3)=1.0 
+            HT(3)=1.0
             HT(4)=-1.0
 
-!JACOBI MATRIX 
+!JACOBI MATRIX
             XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
             XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
             XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4)
@@ -380,7 +380,7 @@ contains
               BY(J)=XJI21*HR(J)+XJI22*HS(J)+XJI23*HT(J)
               BZ(J)=XJI31*HR(J)+XJI32*HS(J)+XJI33*HT(J)
    60       CONTINUE
-!    
+!
             SS( 1)=SS( 1)+BX(1)*BX(1)*WGX &
      &                   +BY(1)*BY(1)*WGY &
      &                   +BZ(1)*BZ(1)*WGZ
@@ -437,8 +437,8 @@ contains
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
       DIMENSION XG(2),WGT(2),XG1(3),XG2(3),WGT1(3) &
      &         ,H(6),HR(6),HS(6),HT(6) &
-     &         ,BX(6),BY(6),BZ(6),CC(3) 
-                  
+     &         ,BX(6),BY(6),BZ(6),CC(3)
+
       dimension temp(*),funcA(*),funcB(*)
 
       DATA XG   /-0.5773502691896D0,0.5773502691896D0/
@@ -447,7 +447,7 @@ contains
       DATA XG2  /0.1666666667D0,0.66666666667D0,0.16666666667D0/
       DATA WGT1 /0.1666666667D0,0.16666666667D0,0.16666666667D0/
 
- 
+
 !*INTEGRATION FOR Z-COORDINATE
       DO 200 LZ=1,2
         ZI = XG(LZ)
@@ -464,18 +464,18 @@ contains
           H(4) = X1*(1.0+ZI)*0.5
           H(5) = X2*(1.0+ZI)*0.5
           H(6) = (1.0-X1-X2)*(1.0+ZI)*0.5
- 
+
 !*DERIVATIVE OF INTERPOLATION FUNCTION
 !*FOR L1-COORDINATE
           HR(1) = (1.0-ZI)*0.5
           HR(2) = 0.0
           HR(3) =-(1.0-ZI)*0.5
           HR(4) = (1.0+ZI)*0.5
-          HR(5) = 0.0 
+          HR(5) = 0.0
           HR(6) =-(1.0+ZI)*0.5
 !*FOR L2-COORDINATE
-          HS(1) =  0.0 
-          HS(2) =  (1.0-ZI)*0.5 
+          HS(1) =  0.0
+          HS(2) =  (1.0-ZI)*0.5
           HS(3) = -(1.0-ZI)*0.5
           HS(4) = 0.0
           HS(5) =  (1.0+ZI)*0.5
@@ -487,8 +487,8 @@ contains
           HT(4) =  0.5*X1
           HT(5) =  0.5*X2
           HT(6) =  0.5*(1.0-X1-X2)
- 
-!*JACOBI MATRIX 
+
+!*JACOBI MATRIX
           XJ11 = HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4) &
      &          +HR(5)*XX(5)+HR(6)*XX(6)
           XJ21 = HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4) &
@@ -509,7 +509,7 @@ contains
      &          +HS(5)*ZZ(5)+HS(6)*ZZ(6)
           XJ33 = HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
      &          +HT(5)*ZZ(5)+HT(6)*ZZ(6)
-   
+
 !*DETERMINANT OF JACOBIAN
             DET = XJ11*XJ22*XJ33 &
                  +XJ12*XJ23*XJ31 &
@@ -517,14 +517,14 @@ contains
                  -XJ13*XJ22*XJ31 &
                  -XJ12*XJ21*XJ33 &
                  -XJ11*XJ23*XJ32
- 
+
 !*CONDUCTIVITY AT CURRENT TEMPERATURE
             CTEMP=0.0
             DO 50 I=1,6
               CTEMP = CTEMP+H(I)*TT(I)
    50       CONTINUE
             CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)  
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 
 !* WEIGT VALUE AT GAUSSIAN POINT
             WGX = CC(1)*WGT1(L12)*WGT(LZ)*DET
@@ -563,7 +563,7 @@ contains
      &                      + BZ(1)*BZ(4)*WGZ
             SS( 5) = SS( 5) + BX(1)*BX(5)*WGX &
      &                      + BY(1)*BY(5)*WGY &
-     &                      + BZ(1)*BZ(5)*WGZ 
+     &                      + BZ(1)*BZ(5)*WGZ
             SS( 6) = SS( 6) + BX(1)*BX(6)*WGX &
      &                      + BY(1)*BY(6)*WGY &
      &                      + BZ(1)*BZ(6)*WGZ
@@ -611,11 +611,11 @@ contains
      &                      + BZ(5)*BZ(6)*WGZ
             SS(36) = SS(36) + BX(6)*BX(6)*WGX &
      &                      + BY(6)*BY(6)*WGY &
-     &                      + BZ(6)*BZ(6)*WGZ 
- 
+     &                      + BZ(6)*BZ(6)*WGZ
+
   100   CONTINUE
   200 CONTINUE
- 
+
       SS( 7) = SS( 2)
       SS(13) = SS( 3)
       SS(14) = SS( 9)
@@ -657,7 +657,7 @@ contains
           SI=XG(LY)
           DO 40 LZ=1,2
             TI=XG(LZ)
-!            
+!
             RP=1.0+RI
             SP=1.0+SI
             TP=1.0+TI
@@ -704,7 +704,7 @@ contains
             HT(7)= .125*RP*SP
             HT(8)= .125*RM*SP
 !
-!*JACOBI MATRIX 
+!*JACOBI MATRIX
             XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4) &
      &          +HR(5)*XX(5)+HR(6)*XX(6)+HR(7)*XX(7)+HR(8)*XX(8)
             XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4) &
@@ -717,7 +717,7 @@ contains
             XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4) &
      &          +HS(5)*YY(5)+HS(6)*YY(6)+HS(7)*YY(7)+HS(8)*YY(8)
             XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4) &
-     &          +HT(5)*YY(5)+HT(6)*YY(6)+HT(7)*YY(7)+HT(8)*YY(8) 
+     &          +HT(5)*YY(5)+HT(6)*YY(6)+HT(7)*YY(7)+HT(8)*YY(8)
 !
             XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4) &
      &          +HR(5)*ZZ(5)+HR(6)*ZZ(6)+HR(7)*ZZ(7)+HR(8)*ZZ(8)
@@ -725,9 +725,9 @@ contains
      &          +HS(5)*ZZ(5)+HS(6)*ZZ(6)+HS(7)*ZZ(7)+HS(8)*ZZ(8)
             XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
      &          +HT(5)*ZZ(5)+HT(6)*ZZ(6)+HT(7)*ZZ(7)+HT(8)*ZZ(8)
-!  
+!
 !*DETERMINANT OF JACOBIAN
-! 
+!
             DET=XJ11*XJ22*XJ33 &
                +XJ12*XJ23*XJ31 &
                +XJ13*XJ21*XJ32 &
@@ -762,7 +762,7 @@ contains
               CTEMP=CTEMP+H(I)*TT(I)
    20       CONTINUE
             CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB) 
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !
 !* WEIGT VALUE AT GAUSSIAN POINT
             WGX=-CC(1)*WGT(LX)*WGT(LY)*WGT(LZ)*DET
@@ -778,11 +778,11 @@ contains
             SS( 3)=SS( 3)+BX(1)*BX(3)*WGX &
      &                   +BY(1)*BY(3)*WGY &
      &                   +BZ(1)*BZ(3)*WGZ
-            SS( 4)=SS( 4)+BX(1)*BX(4)*WGX & 
+            SS( 4)=SS( 4)+BX(1)*BX(4)*WGX &
      &                   +BY(1)*BY(4)*WGY &
      &                   +BZ(1)*BZ(4)*WGZ
             SS( 5)=SS( 5)+BX(1)*BX(5)*WGX &
-     &                   +BY(1)*BY(5)*WGY & 
+     &                   +BY(1)*BY(5)*WGY &
      &                   +BZ(1)*BZ(5)*WGZ
             SS( 6)=SS( 6)+BX(1)*BX(6)*WGX &
      &                   +BY(1)*BY(6)*WGY &
@@ -797,12 +797,12 @@ contains
      &                   +BY(2)*BY(2)*WGY &
      &                   +BZ(2)*BZ(2)*WGZ
             SS(11)=SS(11)+BX(2)*BX(3)*WGX &
-     &                   +BY(2)*BY(3)*WGY & 
+     &                   +BY(2)*BY(3)*WGY &
      &                   +BZ(2)*BZ(3)*WGZ
             SS(12)=SS(12)+BX(2)*BX(4)*WGX &
      &                   +BY(2)*BY(4)*WGY &
-     &                   +BZ(2)*BZ(4)*WGZ 
-            SS(13)=SS(13)+BX(2)*BX(5)*WGX & 
+     &                   +BZ(2)*BZ(4)*WGZ
+            SS(13)=SS(13)+BX(2)*BX(5)*WGX &
      &                   +BY(2)*BY(5)*WGY &
      &                   +BZ(2)*BZ(5)*WGZ
             SS(14)=SS(14)+BX(2)*BX(6)*WGX &
@@ -877,7 +877,7 @@ contains
             SS(64)=SS(64)+BX(8)*BX(8)*WGX &
      &                   +BY(8)*BY(8)*WGY &
      &                   +BZ(8)*BZ(8)*WGZ
-! 
+!
    40       CONTINUE
    50     CONTINUE
    60   CONTINUE
@@ -917,7 +917,7 @@ contains
       SUBROUTINE heat_THERMAL_531 ( NN,XXX,YYY,ZZZ,TEMP,TZERO &
      &                                   ,THICK,HH,RR1,RR2,SS )
 !*---------------------------------------------------------------------*
-!* 
+!*
 !* CALCULATION 3D 6 NODE INTERFACE ELEMENT
 !*
       use hecmw
@@ -932,14 +932,14 @@ contains
       SUBROUTINE heat_THERMAL_541 ( NN,XXX,YYY,ZZZ,TEMP,TZERO &
      &                                   ,THICK,HH,RR1,RR2,SS )
 !*---------------------------------------------------------------------*
-!* 
+!*
 !* CALCULATION 3D 8 NODE INTERFACE ELEMENT
 !*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XXX(NN),YYY(NN),ZZZ(NN),TEMP(NN),SS(NN*NN)
       DIMENSION XX(4),YY(4),ZZ(4)
- 
+
       XX(1)=XXX(1)
       XX(2)=XXX(2)
       XX(3)=XXX(3)
@@ -953,7 +953,7 @@ contains
       ZZ(3)=ZZZ(3)
       ZZ(4)=ZZZ(4)
       CALL heat_get_area ( XX,YY,ZZ,SA )
- 
+
       XX(1)=XXX(5)
       XX(2)=XXX(6)
       XX(3)=XXX(7)
@@ -988,7 +988,7 @@ contains
      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR1
       HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 ) &
      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR1
- 
+
       HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 ) &
      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR2
       HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 ) &
@@ -999,7 +999,7 @@ contains
      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR2
 
       HHH = HH / THICK
-         
+
       SS( 1) = ( HHH + HA1 ) * SA * 0.25
       SS(10) = ( HHH + HA2 ) * SA * 0.25
       SS(19) = ( HHH + HA3 ) * SA * 0.25
@@ -1025,7 +1025,7 @@ contains
       SS(14) = SS(42)
       SS(23) = SS(51)
       SS(32) = SS(60)
- 
+
 !C    1                              ( 1- 1)    2  3  4  5  6  7  8
 !C    2  3                          9   (10- 3)   11 12 13 14 15 16
 !C    4  5  6                      17 18   (19- 6)   20 21 22 23 24
@@ -1033,14 +1033,14 @@ contains
 !C   11 12 13 14 15       --->     33 34 35 36   (37-15)   38 39 40
 !C   16 17 18 19 20 21             41 42 43 44 45   (46-21)   47 48
 !C   22 23 24 25 26 27 28          49 50 51 52 53 54   (55-28)   56
-!C   29 30 31 32 33 34 35 36       57 58 59 60 61 62 63   (64-36) 
+!C   29 30 31 32 33 34 35 36       57 58 59 60 61 62 63   (64-36)
 
       RETURN
       END SUBROUTINE heat_THERMAL_541
 !*---------------------------------------------------------------------*
       SUBROUTINE heat_get_area ( XX,YY,ZZ,AA )
 !*---------------------------------------------------------------------*
-!* 
+!*
 !*  CALCULATION SURFACE AREA FOR 4 POINTS
 !*
       use hecmw
@@ -1079,7 +1079,7 @@ contains
           HS(3)=-.25*RM
           HS(4)=-.25*RP
 
-!*JACOBI MATRIX 
+!*JACOBI MATRIX
           XR=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
           XS=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
           YR=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)
@@ -1119,7 +1119,7 @@ contains
       DATA WGT/1.0D0,1.0D0/
 !
 !* SET COORDINATES
-! 
+!
       DO I = 1, NN
         COD(1,I) = XX(I)
         COD(2,I) = YY(I)
@@ -1158,7 +1158,7 @@ contains
 
 !
 !*   LOOP FOR GAUSS INTEGRATION POINT
-! 
+!
       DO 140 IG3 = 1, 2
         TI = XG(IG3)
 
@@ -1167,7 +1167,7 @@ contains
 
           DO 120 IG1 = 1, 2
             RI = XG(IG1)
- 
+
             RP = 1.0 + RI
             SP = 1.0 + SI
             RM = 1.0 - RI
@@ -1206,20 +1206,20 @@ contains
 
             ENDDO
 
-!*JACOBI MATRIX 
+!*JACOBI MATRIX
 !
             XJ11 = G1(1)
-            XJ12 = G1(2)  
-            XJ13 = G1(3)  
+            XJ12 = G1(2)
+            XJ13 = G1(3)
             XJ21 = G2(1)
-            XJ22 = G2(2)  
-            XJ23 = G2(3)  
+            XJ22 = G2(2)
+            XJ23 = G2(3)
             XJ31 = G3(1)
-            XJ32 = G3(2)  
-            XJ33 = G3(3)  
+            XJ32 = G3(2)
+            XJ33 = G3(3)
 !
 !*DETERMINANT OF JACOBIAN
-! 
+!
             DET = XJ11*XJ22*XJ33 &
                 + XJ12*XJ23*XJ31 &
                 + XJ13*XJ21*XJ32 &
@@ -1332,7 +1332,7 @@ contains
                 CTEMP = CTEMP + H(I)*TT(I)
               ENDDO
               CALL heat_GET_CONDUCTIVITY &
-     &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB ) 
+     &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
 !
 !* SET INTEGRATION WEIGHT
 !
@@ -1404,7 +1404,7 @@ contains
 
 !
 !* SET COORDINATES
-! 
+!
       DO I = 1, NN
         COD(1,I) = XX(I)
         COD(2,I) = YY(I)
@@ -1470,7 +1470,7 @@ contains
 
 !
 !*   LOOP FOR GAUSS INTEGRATION POINT
-! 
+!
       DO 140 IG3 = 1, 2
         TI = XG(IG3)
 
@@ -1479,7 +1479,7 @@ contains
 
           DO 120 IG1 = 1, 2
             RI = XG(IG1)
- 
+
             RP = 1.0 + RI
             SP = 1.0 + SI
             RM = 1.0 - RI
@@ -1517,20 +1517,20 @@ contains
             ENDDO
 
 !
-!*JACOBI MATRIX 
+!*JACOBI MATRIX
 !
             XJ11 = G1(1)
-            XJ12 = G1(2)  
-            XJ13 = G1(3)  
+            XJ12 = G1(2)
+            XJ13 = G1(3)
             XJ21 = G2(1)
-            XJ22 = G2(2)  
-            XJ23 = G2(3)  
+            XJ22 = G2(2)
+            XJ23 = G2(3)
             XJ31 = G3(1)
-            XJ32 = G3(2)  
-            XJ33 = G3(3)  
+            XJ32 = G3(2)
+            XJ33 = G3(3)
 !
 !*DETERMINANT OF JACOBIAN
-! 
+!
             DET = XJ11*XJ22*XJ33 &
                 + XJ12*XJ23*XJ31 &
                 + XJ13*XJ21*XJ32 &
@@ -1643,7 +1643,7 @@ contains
                 CTEMP = CTEMP + H(I)*TT(I)
               ENDDO
               CALL heat_GET_CONDUCTIVITY &
-     &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )  
+     &                   ( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
 !
 !* SET INTEGRATION WEIGHT
 !
@@ -1690,7 +1690,7 @@ contains
 !C*--------------------------------------------------------------------*
 !C*
 !C*CALCULATION 2D 6 NODE CONDUCTANCE ELEMENT
-!C* 
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -1769,7 +1769,7 @@ contains
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
           CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB) 
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !C*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
           WGY=CC(2)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -1794,7 +1794,7 @@ contains
 !C*--------------------------------------------------------------------*
 !C*
 !C*CALCULATION 2D 8 NODE CONDUCTANCE ELEMENT
-!C* 
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -1868,7 +1868,7 @@ contains
             CTEMP=CTEMP+H(I)*TT(I)
    30     CONTINUE
           CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)  
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !*WEIGT VALUE AT GAUSSIAN POINT
           WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
           WGY=CC(2)*WGT(LX)*WGT(LY)*DET*THICK
@@ -1893,7 +1893,7 @@ contains
 !C*--------------------------------------------------------------------*
 !C*
 !C* CALCULATION 3D 10 NODE CONDUCTANCE ELEMENT
-!C* 
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
@@ -1909,7 +1909,7 @@ contains
       WGT(2) = 0.8888888888
       WGT(3) = 0.5555555555
 !C
-!C* LOOP FOR INTEGRATION POINTS	
+!C* LOOP FOR INTEGRATION POINTS
       DO 300 L3=1,3
         XL3=XG(L3)
         X3 =(XL3+1.0)*0.5
@@ -2056,7 +2056,7 @@ contains
      &                       +BZ(I)*BZ(J)*WGZ
    70         CONTINUE
    80       CONTINUE
-!C    
+!C
   100     CONTINUE
   200   CONTINUE
   300 CONTINUE
@@ -2074,7 +2074,7 @@ contains
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
       DIMENSION H(15),HL1(15),HL2(15),HL3(15),HZ(15) &
-     &         ,BX(15),BY(15),BZ(15),CC(3) 
+     &         ,BX(15),BY(15),BZ(15),CC(3)
       dimension temp(*),funcA(*),funcB(*)
       REAL(kind=kreal) XG(3),WGT(3)
 !C
@@ -2176,8 +2176,8 @@ contains
             HZ(13)=-2.0*X1*ZI
             HZ(14)=-2.0*X2*ZI
             HZ(15)=-2.0*X3*ZI
-!C 
-!C*JACOBI MATRIX 
+!C
+!C*JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -2206,7 +2206,7 @@ contains
                  -XJ13*XJ22*XJ31 &
                  -XJ12*XJ21*XJ33 &
                  -XJ11*XJ23*XJ32
-!C 
+!C
 !C* CONDUCTIVITY AT CURRENT TEMPERATURE
             CTEMP=0.0
             DO 50 I=1,NN
@@ -2253,7 +2253,7 @@ contains
   100     CONTINUE
   200   CONTINUE
   300 CONTINUE
-!C 
+!C
       RETURN
       END SUBROUTINE heat_THERMAL_352
 !C*--------------------------------------------------------------------*
@@ -2432,7 +2432,7 @@ contains
               CTEMP=CTEMP+H(I)*TT(I)
    20       CONTINUE
             CALL heat_GET_CONDUCTIVITY &
-     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB) 
+     &                   (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 !C
 !C* WEIGT VALUE AT GAUSSIAN POINT
             WGX=-CC(1)*WGT(LX)*WGT(LY)*WGT(LZ)*DET

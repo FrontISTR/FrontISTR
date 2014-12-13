@@ -51,7 +51,7 @@ void CFSTRDB_CLoad::Write( CHECData* hecd )
 	vector<CItem>::iterator iter;
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SIF", iter->ngrp, iter->dof_id, iter->value );
-	}	
+	}
 }
 
 

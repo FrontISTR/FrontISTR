@@ -21,11 +21,11 @@ extern struct hecmwST_local_mesh *mesh;
 extern struct hecmwST_result_data *data;
 extern struct hecmwST_local_mesh *new_mesh;
 extern struct hecmwST_result_data *new_data;
-extern int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *stack_export, 
-								 HECMW_Comm repart_comm, int my_rank); 
-extern int  stack_whole_send_recv(int pesize, int *stack_import,  int *stack_export, HECMW_Comm repart_comm, int my_rank);                                    
-              
-extern int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int *nod_import,int *stack_export, int *nod_export, 
+extern int  stack_part_send_recv(int neibpetot, int *neibpe, int *stack_import,  int *stack_export,
+								 HECMW_Comm repart_comm, int my_rank);
+extern int  stack_whole_send_recv(int pesize, int *stack_import,  int *stack_export, HECMW_Comm repart_comm, int my_rank);
+
+extern int int_part_send_recv(int n, int neibpetot, int *neibpe,int *stack_import, int *nod_import,int *stack_export, int *nod_export,
 		     int *x,  HECMW_Comm repart_comm, int my_rank);
 extern int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import, int *nod_import,
 		     int *stack_export, int *nod_export, double *x, HECMW_Comm repart_comm, int my_rank);
@@ -34,16 +34,16 @@ extern void int_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
 extern void double_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, int *nod_import,
 		     int *stack_export, int *nod_export, double *x, double *y, HECMW_Comm repart_comm, int my_rank);
 
-extern void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, 
-		     int *x, int *y, 
+extern void int2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export,
+		     int *x, int *y,
 		     HECMW_Comm repart_comm, int my_rank);
-extern void int3_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, 
-		     int *x, int *y, 
+extern void int3_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export,
+		     int *x, int *y,
 		     HECMW_Comm repart_comm, int my_rank);
-extern void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import, 
-		     int *stack_export, double *x, double *y, 
+extern void double2_whole_send_recv(int n1, int n2, int pesize,  int *stack_import,
+		     int *stack_export, double *x, double *y,
 		     HECMW_Comm repart_comm, int my_rank);
 extern void whole_copy_array(int *recv_elem_num, int *global_recv_elem_num, int mynode, int pesize, HECMW_Comm repart_comm);
 
@@ -107,7 +107,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<mesh->ne_internal;i++)
 		fprintf(test_fp, "%d  %d\n", mesh->elem_internal_list[i], mesh->adapt_type[mesh->elem_internal_list[i]]);
 	fprintf(test_fp, "%d  %d\n", mesh->n_node, mesh->nn_internal);
-	
+
 	fprintf(test_fp, "%d \n", mesh->n_neighbor_pe);
 	for(i=0;i<mesh->n_neighbor_pe;i++)
 		fprintf(test_fp, "%d  ", mesh->neighbor_pe[i]);
@@ -126,25 +126,25 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 */
 /*
         fprintf(test_fp, "in PE %d n_elem=%d ne_internal=%d\n", mynode, mesh->n_elem, mesh->ne_internal);
-        for(i=0;i<mesh->n_elem;i++) 
+        for(i=0;i<mesh->n_elem;i++)
           fprintf(test_fp, "i=%d %d  %d  %d  %d %d %d\n", i, mesh->elem_ID[i*2], mesh->elem_ID[i*2+1], mesh->adapt_parent[i*2], mesh->adapt_parent[i*2+1], mesh->adapt_type[i], mesh->elem_node_index[i]);
 	fclose(test_fp);
 */
 #ifdef test
     sprintf(test_file, "test5.%d", mynode);
 	test_fp2=fopen(test_file, "w");
-	if(test_fp==NULL) 
+	if(test_fp==NULL)
 		HECMW_dlb_print_exit("Cannot open test_file\n");
-#endif	
-	
+#endif
+
 /* 1: first update new partition to include import nodes */
 
 	  new_part=(int *)calloc(mesh->n_node, sizeof(int));
-	  if(new_part==NULL) 
+	  if(new_part==NULL)
 	   	HECMW_dlb_memory_exit("new_part");
 	  for(i=0;i<mesh->nn_internal;i++)
 		new_part[i]=result->part[i];
-      int_part_send_recv(mesh->n_node, mesh->n_neighbor_pe, mesh->neighbor_pe, 
+      int_part_send_recv(mesh->n_node, mesh->n_neighbor_pe, mesh->neighbor_pe,
 		   mesh->import_index, mesh->import_item,
 		   mesh->export_index, mesh->export_item,
 		   new_part, mesh->HECMW_COMM, mynode);
@@ -166,7 +166,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	  }
 /*	  fprintf(test_fp, "ne_internal====%d\n", mesh->ne_internal);
 	for(i=0;i<mesh->n_elem;i++)
-		fprintf(test_fp, "%d   %d  %d   %d\n", i, inter_elem[i], mesh->elem_ID[i*2], mesh->elem_ID[i*2+1]);  
+		fprintf(test_fp, "%d   %d  %d   %d\n", i, inter_elem[i], mesh->elem_ID[i*2], mesh->elem_ID[i*2+1]);
 	fclose(test_fp);
 */
 	   for(i=0;i<mesh->n_elem;i++)
@@ -208,7 +208,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 				       send_elem_num[result->part[mesh->elem_node_item[j]-1]+1]++;
 					   if(result->part[mesh->elem_node_item[j]-1]<init_flag)
 						   init_flag=result->part[mesh->elem_node_item[j]-1];
-				   }                      
+				   }
 			  }
 			  send_inter_num[init_flag+1]++;
 		}
@@ -225,15 +225,15 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		send_inter_num[i]=send_inter_num[i-1]+send_inter_num[i];
 	}
 /*
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		fprintf(stderr, "PE %d: send %d is %d\n", mynode, i, send_elem_num[i]);
-  */  
+  */
     HECMW_Barrier(mesh->HECMW_COMM);
-	
+
 	stack_whole_send_recv(pesize, send_elem_num, recv_elem_num, mesh->HECMW_COMM, mynode);
 	stack_whole_send_recv(pesize, send_inter_num, recv_inter_num, mesh->HECMW_COMM, mynode);
 /*
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		fprintf(stderr, "PE %d: recv %d is %d\n", mynode, i, recv_elem_num[i]);
 */
 
@@ -252,7 +252,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
     count_num=(int *)calloc(pesize, sizeof(int));
 	send_inter=(int *)calloc(send_elem_num[pesize], sizeof(int));
 
-	if((send_elem==NULL) || (count_elem==NULL)) 
+	if((send_elem==NULL) || (count_elem==NULL))
 		HECMW_dlb_memory_exit("send_elem and count_elem");
 	for(i=0;i<pesize;i++) {
 		count_elem[i]=0;
@@ -306,7 +306,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		send_parent_num[j+1]=0;
 		for(k=send_elem_num[j];k<send_elem_num[j+1];k++) {
 			id_elem=send_elem[k];
-			while((mesh->adapt_parent[id_elem*2]>0) && (mesh->adapt_parent[id_elem*2+1]==mynode) && 
+			while((mesh->adapt_parent[id_elem*2]>0) && (mesh->adapt_parent[id_elem*2+1]==mynode) &&
 				(flag_elem_hit[mesh->adapt_parent[id_elem*2]-1]==0)) {
 				flag_elem_hit[mesh->adapt_parent[id_elem*2]-1]=1;
 				send_parent_num[j+1]++;
@@ -322,7 +322,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	recv_parent_num=(int *)calloc(pesize+1, sizeof(int));
 	if(recv_parent_num==NULL)
 		HECMW_dlb_memory_exit("recv_parent_num");
-    stack_whole_send_recv(pesize, send_parent_num, recv_parent_num,  mesh->HECMW_COMM, mynode);  
+    stack_whole_send_recv(pesize, send_parent_num, recv_parent_num,  mesh->HECMW_COMM, mynode);
 	global_recv_parent_num=(int *)calloc(pesize*(pesize+1), sizeof(int));
 	if(global_recv_parent_num==NULL)
 		HECMW_dlb_memory_exit("global_recv_parent_num");
@@ -332,7 +332,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	send_parent_inter=(int *)calloc(send_parent_num[pesize], sizeof(int));
 	count_parent=(int *)calloc(pesize, sizeof(int));
 
-	if((send_parent==NULL) || (count_parent==NULL)) 
+	if((send_parent==NULL) || (count_parent==NULL))
 		HECMW_dlb_memory_exit("send_parent and count_parent");
 	/* to keep each parent just occur once in all PEs */
 	for(i=0;i<mesh->n_elem;i++)
@@ -348,19 +348,19 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		/*		send_parent_inter[send_parent_num[j]+count_parent[j]]=j*t_elem+global_recv_inter_num[j*(pesize+1)+pesize]+global_recv_parent_num[j*(pesize+1)+
 					mynode]+count_parent[j];
 					*/
-					
+
 				count_parent[j]++;
 
 				new_elem[inter_elem[mesh->adapt_parent[id_elem*2]-1]]=j*t_elem+global_recv_inter_num[j*(pesize+1)+pesize]+
 					global_recv_parent_num[j*(pesize+1)+mynode]+count_parent[j]-1;
-			
+
 				id_elem=inter_elem[mesh->adapt_parent[id_elem*2]-1];
 			}
 		}
 	}
 	for(i=0;i<send_parent_num[pesize];i++) {
 		send_parent_inter[i]=new_elem[send_parent[i]];
-		if(send_parent_inter[i]<0) 
+		if(send_parent_inter[i]<0)
 			HECMW_dlb_print_exit("There is something wrong with send_parent_inter");
 	}
 	/* ------------------- start sending parent information ----------------*/
@@ -376,13 +376,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		HECMW_dlb_memory_exit("send_adapt_parent");
 	}
 
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		send_tmp_num[i]=0;
 
 	for(i=0;i<send_elem_num[pesize];i++) {
 		if(mesh->adapt_parent[send_elem[i]*2+1]<0)
             send_adapt_parent[i]=-1;
-		else if(mesh->adapt_parent[send_elem[i]*2+1]!=mynode) 
+		else if(mesh->adapt_parent[send_elem[i]*2+1]!=mynode)
 			send_tmp_num[mesh->adapt_parent[send_elem[i]*2+1]+1]++;
 		else if(new_elem[inter_elem[mesh->adapt_parent[send_elem[i]*2]-1]]!=-1)
 			send_adapt_parent[i]=new_elem[inter_elem[mesh->adapt_parent[send_elem[i]*2]-1]];
@@ -403,7 +403,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		count_num[i]=0;
 	if(send_tmp_num[pesize]>0) {
 	send_tmp=(int *)calloc(send_tmp_num[pesize], sizeof(int));
-	if(send_tmp==NULL) 
+	if(send_tmp==NULL)
 		HECMW_dlb_memory_exit("send_tmp");
 	}
 	if(recv_tmp_num[pesize]>0) {
@@ -423,17 +423,17 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	}
 
 	if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num, 
+	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num,
 		send_tmp_num, send_tmp, recv_tmp, mesh->HECMW_COMM, mynode);
 	HECMW_Barrier(mesh->HECMW_COMM);
     for(i=0;i<recv_tmp_num[pesize];i++) {
-		if(new_elem[recv_tmp[i]]==-1) 
+		if(new_elem[recv_tmp[i]]==-1)
 			HECMW_dlb_print_exit("There is something wrong in parent inf");
 		else
 			recv_tmp[i]=new_elem[recv_tmp[i]];
 	}
     if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num, 
+	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num,
 		 recv_tmp, send_tmp, mesh->HECMW_COMM, mynode);
 
 	for(i=0;i<pesize;i++)
@@ -462,7 +462,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	tmp_int_recv=(int *)calloc(recv_elem_num[pesize], sizeof(int));
 	if(tmp_int_recv==NULL)
 		HECMW_dlb_memory_exit("tmp_int_recv");
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, send_adapt_parent, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	}
 /* new mesh whole inf. copy  */
@@ -491,7 +491,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
     new_mesh->n_elem=recv_elem_num[pesize]+recv_parent_num[pesize];
 	new_mesh->n_elem_type=mesh->n_elem_type;
 	new_mesh->n_elem_mat_ID=mesh->n_elem_mat_ID;
-	if(new_mesh->n_elem<=0) 
+	if(new_mesh->n_elem<=0)
 		HECMW_dlb_print_exit("Error: New mesh: n_elem==0");
     new_mesh->adapt_parent=(int *)calloc(new_mesh->n_elem*2, sizeof(int));
 	if(new_mesh->adapt_parent==NULL)
@@ -509,7 +509,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		new_mesh->adapt_parent[i*2+1]=tmp_int_recv[i] / t_elem;
 		}
 	}
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, send_adapt_ptype, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->adapt_parent_type[i]=tmp_int_recv[i];
@@ -528,13 +528,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		HECMW_dlb_memory_exit("send_adapt_parent");
 	}
 
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		send_tmp_num[i]=0;
 
 	for(i=0;i<send_parent_num[pesize];i++) {
 		if(mesh->adapt_parent[send_parent[i]*2+1]<0)
             send_adapt_parent[i]=-1;
-		else if(mesh->adapt_parent[send_parent[i]*2+1]!=mynode) 
+		else if(mesh->adapt_parent[send_parent[i]*2+1]!=mynode)
 			send_tmp_num[mesh->adapt_parent[send_parent[i]*2+1]+1]++;
 		else if(new_elem[inter_elem[mesh->adapt_parent[send_parent[i]*2]-1]]!=-1)
 			send_adapt_parent[i]=new_elem[inter_elem[mesh->adapt_parent[send_parent[i]*2]-1]];
@@ -544,14 +544,14 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=1;i<pesize+1;i++) {
 		send_tmp_num[i]=send_tmp_num[i-1]+send_tmp_num[i];
 	}
-	
+
 	stack_whole_send_recv(pesize, send_tmp_num, recv_tmp_num, mesh->HECMW_COMM, mynode);
 
     for(i=0;i<pesize;i++)
 		count_num[i]=0;
 	if(send_tmp_num[pesize]>0) {
 	send_tmp=(int *)calloc(send_tmp_num[pesize], sizeof(int));
-	if(send_tmp==NULL) 
+	if(send_tmp==NULL)
 		HECMW_dlb_memory_exit("send_tmp, recv_tmp");
 	}
 	if(recv_tmp_num[pesize]>0) {
@@ -570,16 +570,16 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 	if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num, 
+	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num,
 		send_tmp_num, send_tmp, recv_tmp, mesh->HECMW_COMM, mynode);
     for(i=0;i<recv_tmp_num[pesize];i++) {
-		if(new_elem[recv_tmp[i]]==-1) 
+		if(new_elem[recv_tmp[i]]==-1)
 			HECMW_dlb_print_exit("There is something wrong in parent inf");
 		else
 			recv_tmp[i]=new_elem[recv_tmp[i]];
 	}
     if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num, 
+	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num,
 		 recv_tmp, send_tmp, mesh->HECMW_COMM, mynode);
 
 	for(i=0;i<pesize;i++)
@@ -608,9 +608,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	tmp2_int_recv=(int *)calloc(recv_parent_num[pesize], sizeof(int));
 	if(tmp2_int_recv==NULL)
 		HECMW_dlb_memory_exit("tmp2_int_recv");
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, send_adapt_parent, tmp2_int_recv, mesh->HECMW_COMM, mynode);
-	
+
 	for(i=0;i<recv_parent_num[pesize];i++) {
 		if(tmp2_int_recv[i]==-1) {
 		new_mesh->adapt_parent[(i+recv_elem_num[pesize])*2]=0;
@@ -622,7 +622,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		new_mesh->adapt_parent[(i+recv_elem_num[pesize])*2+1]=tmp2_int_recv[i] / t_elem;
 		}
 	}
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, send_adapt_ptype, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->adapt_parent_type[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
@@ -641,22 +641,22 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 /* ------------- start migration child information ------------------  */
    send_adapt_child_num=(int *)calloc(pesize+1, sizeof(int));
-   for(j=0;j<pesize+1;j++) 
+   for(j=0;j<pesize+1;j++)
 	   send_adapt_child_num[j]=0;
    for(j=0;j<pesize;j++) {
-	   for(i=send_elem_num[j];i<send_elem_num[j+1];i++) 
+	   for(i=send_elem_num[j];i<send_elem_num[j+1];i++)
 		   send_adapt_child_num[j+1]+=mesh->adapt_children_index[send_elem[i]+1]-mesh->adapt_children_index[send_elem[i]];
    }
 	for(i=1;i<pesize+1;i++) {
 		send_adapt_child_num[i]=send_adapt_child_num[i-1]+send_adapt_child_num[i];
 	}
-	   
+
 	send_adapt_child=(int *)calloc(send_adapt_child_num[pesize], sizeof(int));
 	send_index_child=(int *)calloc(send_elem_num[pesize], sizeof(int));
-	if((send_adapt_child==NULL) || (send_index_child==NULL)) 
+	if((send_adapt_child==NULL) || (send_index_child==NULL))
 		HECMW_dlb_memory_exit("send_adapt_child, send_index_child");
 
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		send_tmp_num[i]=0;
     tmp_int=-1;
 	for(i=0;i<send_elem_num[pesize];i++) {
@@ -664,7 +664,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 			tmp_int++;
 			if(mesh->adapt_children_item[j*2+1]<0)
                send_adapt_child[tmp_int]=-1;
-		    else if(mesh->adapt_children_item[j*2+1]!=mynode) 
+		    else if(mesh->adapt_children_item[j*2+1]!=mynode)
 		    	send_tmp_num[mesh->adapt_children_item[j*2+1]+1]++;
 			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1)
 		    	send_adapt_child[tmp_int]=new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]];
@@ -685,7 +685,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		count_num[i]=0;
 	if(send_tmp_num[pesize]>0) {
 	send_tmp=(int *)calloc(send_tmp_num[pesize], sizeof(int));
-	if(send_tmp==NULL) 
+	if(send_tmp==NULL)
 		HECMW_dlb_memory_exit("send_tmp");
 	}
 	if(recv_tmp_num[pesize]>0) {
@@ -707,16 +707,16 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 	if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num, 
+	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num,
 		send_tmp_num, send_tmp, recv_tmp, mesh->HECMW_COMM, mynode);
     for(i=0;i<recv_tmp_num[pesize];i++) {
-		if(new_elem[recv_tmp[i]]==-1) 
+		if(new_elem[recv_tmp[i]]==-1)
 			HECMW_dlb_print_exit("There is something wrong in children inf");
 		else
 			recv_tmp[i]=new_elem[recv_tmp[i]];
 	}
     if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num, 
+	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num,
 		 recv_tmp, send_tmp, mesh->HECMW_COMM, mynode);
 
 	for(i=0;i<pesize;i++)
@@ -734,7 +734,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 					+count_num[mesh->adapt_children_item[j*2+1]]];
 			count_num[mesh->adapt_children_item[j*2+1]]++;
 			}
-			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1) 
+			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1)
 		    	send_adapt_child[tmp_int]=new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]];
 			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]==-1) {
 			fprintf(stderr, "There is something wrong with child information\n");
@@ -753,19 +753,19 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	recv_adapt_child=(int *)calloc(recv_adapt_child_num[pesize], sizeof(int));
 	if(recv_adapt_child==NULL)
 		HECMW_dlb_memory_exit("recv_adapt_child");
-	int2_whole_send_recv(send_adapt_child_num[pesize], recv_adapt_child_num[pesize], pesize, recv_adapt_child_num, 
+	int2_whole_send_recv(send_adapt_child_num[pesize], recv_adapt_child_num[pesize], pesize, recv_adapt_child_num,
 		send_adapt_child_num, send_adapt_child, recv_adapt_child, mesh->HECMW_COMM, mynode);
 
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, send_index_child, tmp_int_recv, mesh->HECMW_COMM, mynode);
 
 /*--------first find child number in send_parent --------------- */
 
    send2_adapt_child_num=(int *)calloc(pesize+1, sizeof(int));
-   for(j=0;j<pesize+1;j++) 
+   for(j=0;j<pesize+1;j++)
 	   send2_adapt_child_num[j]=0;
    for(j=0;j<pesize;j++) {
-	   for(i=send_parent_num[j];i<send_parent_num[j+1];i++) 
+	   for(i=send_parent_num[j];i<send_parent_num[j+1];i++)
 		   send2_adapt_child_num[j+1]+=mesh->adapt_children_index[send_parent[i]+1]-mesh->adapt_children_index[send_parent[i]];
    }
 	for(i=1;i<pesize+1;i++) {
@@ -785,7 +785,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 /*
 	new_l_child=recv_adapt_child_num[pesize]+recv2_adapt_child_num[pesize];
 	*/
-	
+
 	for(i=0;i<recv_adapt_child_num[pesize];i++) {
 		if(recv_adapt_child[i]==-1) {
 		new_mesh->adapt_children_item[i*2]=0;
@@ -811,10 +811,10 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	send_adapt_child=(int *)calloc(send2_adapt_child_num[pesize], sizeof(int));
 	send_index_child=(int *)calloc(send_parent_num[pesize], sizeof(int));
-	if((send_adapt_child==NULL) || (send_index_child==NULL)) 
+	if((send_adapt_child==NULL) || (send_index_child==NULL))
 		HECMW_dlb_memory_exit("send_adapt_child, send_index_child");
 
-	for(i=0;i<pesize+1;i++) 
+	for(i=0;i<pesize+1;i++)
 		send_tmp_num[i]=0;
     tmp_int=-1;
 	for(i=0;i<send_parent_num[pesize];i++) {
@@ -822,13 +822,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 			tmp_int++;
 			if(mesh->adapt_children_item[j*2+1]<0)
                send_adapt_child[tmp_int]=-1;
-		    else if(mesh->adapt_children_item[j*2+1]!=mynode) 
+		    else if(mesh->adapt_children_item[j*2+1]!=mynode)
 		    	send_tmp_num[mesh->adapt_children_item[j*2+1]+1]++;
 			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1)
 		    	send_adapt_child[tmp_int]=new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]];
 			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]==-1) {
 			    fprintf(stderr, "There is something wrong with child information\n");
-		    	fprintf(stderr, "in PE %d i=%d, send_parent[i]=%d child is %d PE=%d\n", mynode, i, send_parent[i], 
+		    	fprintf(stderr, "in PE %d i=%d, send_parent[i]=%d child is %d PE=%d\n", mynode, i, send_parent[i],
 					mesh->adapt_children_item[j*2]-1,mesh->adapt_children_item[j*2+1]);
 		    	HECMW_dlb_print_exit("Error in finding children inf");
 			}
@@ -843,7 +843,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		count_num[i]=0;
 	if(send_tmp_num[pesize]>0) {
 	send_tmp=(int *)calloc(send_tmp_num[pesize], sizeof(int));
-	if(send_tmp==NULL) 
+	if(send_tmp==NULL)
 		HECMW_dlb_memory_exit("send_tmp");
 	}
 	if(recv_tmp_num[pesize]>0) {
@@ -865,16 +865,16 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 	if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num, 
+	int2_whole_send_recv(send_tmp_num[pesize], recv_tmp_num[pesize], pesize, recv_tmp_num,
 		send_tmp_num, send_tmp, recv_tmp, mesh->HECMW_COMM, mynode);
     for(i=0;i<recv_tmp_num[pesize];i++) {
-		if(new_elem[recv_tmp[i]]==-1) 
+		if(new_elem[recv_tmp[i]]==-1)
 			HECMW_dlb_print_exit("There is something wrong in parents' children inf");
 		else
 			recv_tmp[i]=new_elem[recv_tmp[i]];
 	}
     if(send_tmp_num[pesize]>0)
-	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num, 
+	int2_whole_send_recv(recv_tmp_num[pesize], send_tmp_num[pesize], pesize, send_tmp_num, recv_tmp_num,
 		 recv_tmp, send_tmp, mesh->HECMW_COMM, mynode);
 
 	for(i=0;i<pesize;i++)
@@ -892,7 +892,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 					+count_num[mesh->adapt_children_item[j*2+1]]];
 			count_num[mesh->adapt_children_item[j*2+1]]++;
 			}
-			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1) 
+			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]!=-1)
 		    	send_adapt_child[tmp_int]=new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]];
 			else if(new_elem[inter_elem[mesh->adapt_children_item[j*2]-1]]==-1) {
 			fprintf(stderr, "There is something wrong with child information\n");
@@ -906,13 +906,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	recv_adapt_child=(int *)calloc(recv2_adapt_child_num[pesize], sizeof(int));
 	if(recv_adapt_child==NULL)
 		HECMW_dlb_memory_exit("recv_adapt_child");
-	int2_whole_send_recv(send2_adapt_child_num[pesize], recv2_adapt_child_num[pesize], pesize, recv2_adapt_child_num, 
+	int2_whole_send_recv(send2_adapt_child_num[pesize], recv2_adapt_child_num[pesize], pesize, recv2_adapt_child_num,
 		send2_adapt_child_num, send_adapt_child, recv_adapt_child, mesh->HECMW_COMM, mynode);
 
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, send_index_child, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 
-	
+
 	for(i=0;i<recv2_adapt_child_num[pesize];i++) {
 		if(recv_adapt_child[i]==-1) {
 		new_mesh->adapt_children_item[(i+recv_adapt_child_num[pesize])*2]=0;
@@ -947,7 +947,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	   if(new_mesh->elem_ID==NULL)
 		  HECMW_dlb_memory_exit("new_mesh: elem_id");
 	}
-	    
+
 	tmp_int_send=(int *)calloc(send_elem_num[pesize]+1, sizeof(int));
 
 	if(tmp_int_send==NULL)
@@ -960,7 +960,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	if(tmp_int_recv==NULL)
 		HECMW_dlb_memory_exit("tmp_int_recv");
 
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	if(recv_elem_num[pesize]>0) {
     	for(i=0;i<recv_elem_num[pesize];i++) {
@@ -974,7 +974,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=send_parent_inter[i];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++) {
 		new_mesh->elem_ID[(i+recv_elem_num[pesize])*2]=(tmp2_int_recv[i] % t_elem) +1;
@@ -1026,7 +1026,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 			tmp_int++;
 		}
 	}
-		
+
 
 
 
@@ -1040,13 +1040,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->elem_type[send_elem[i]];
 	}
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->elem_type[i]=tmp_int_recv[i];
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->elem_type[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->elem_type[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
@@ -1062,13 +1062,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->section_ID[send_elem[i]];
 	}
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->section_ID[i]=tmp_int_recv[i];
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->section_ID[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->section_ID[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
@@ -1089,7 +1089,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_send_d[i]=mesh->elem_mat_int_val[send_elem[i]];
 	}
-	double2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	double2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_send_d, tmp_recv_d, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->elem_mat_int_val[i]=tmp_recv_d[i];
@@ -1099,10 +1099,10 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	tmp2_recv_d=(double *)calloc(recv_parent_num[pesize]+1, sizeof(double));
 	if(tmp2_send_d==NULL)
 		HECMW_dlb_memory_exit("tmp2_send_d");
-	
+
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_send_d[i]=mesh->elem_mat_int_val[send_parent[i]];
-	double2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	double2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_send_d, tmp2_recv_d, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->elem_mat_int_val[i+recv_elem_num[pesize]]=tmp2_recv_d[i];
@@ -1126,8 +1126,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 
-		
-			
+
+
 
 
 	if(mynode==0)
@@ -1142,14 +1142,14 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->adapt_level[send_elem[i]];
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->adapt_level[i]=tmp_int_recv[i];
 
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->adapt_level[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->adapt_level[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
@@ -1162,14 +1162,14 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->adapt_type[send_elem[i]];
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->adapt_type[i]=tmp_int_recv[i];
 
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->adapt_type[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->adapt_type[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
@@ -1184,21 +1184,21 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->when_i_was_refined_elem[send_elem[i]];
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->when_i_was_refined_elem[i]=tmp_int_recv[i];
 
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->when_i_was_refined_elem[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->when_i_was_refined_elem[i+recv_elem_num[pesize]]=tmp2_int_recv[i];
 	if(mynode==0)
       fprintf(stderr, "Finish sending when_i_was_refined_elem\n");
 
-	
+
 
 	/*  ------- send elem_index --------  */
     if(new_mesh->n_elem>0) {
@@ -1208,16 +1208,16 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	}
     for(i=0;i<send_elem_num[pesize];i++)
 		tmp_int_send[i]=mesh->elem_node_index[send_elem[i]+1]-mesh->elem_node_index[send_elem[i]];
-	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
-		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode); 
+	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
+		send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	for(i=0;i<send_parent_num[pesize];i++)
 		tmp2_int_send[i]=mesh->elem_node_index[send_parent[i]+1]-mesh->elem_node_index[send_parent[i]];
-	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 
 	if(new_mesh->n_elem>0) {
 	    new_mesh->elem_node_index[0]=0;
-    	for(i=0;i<recv_elem_num[pesize];i++) 
+    	for(i=0;i<recv_elem_num[pesize];i++)
 		new_mesh->elem_node_index[i+1]=new_mesh->elem_node_index[i]+tmp_int_recv[i];
 	for(i=0;i<recv_parent_num[pesize];i++)
 		new_mesh->elem_node_index[recv_elem_num[pesize]+1+i]=tmp2_int_recv[i]+new_mesh->elem_node_index[recv_elem_num[pesize]+i];
@@ -1230,7 +1230,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	send_ptr_parent_num=(int *)calloc(pesize+1, sizeof(int));
     recv_ptr_num=(int *)calloc(pesize+1, sizeof(int));
 	recv_ptr_parent_num=(int *)calloc(pesize+1, sizeof(int));
-	if((send_ptr_num==NULL) || (send_ptr_parent_num==NULL) || (recv_ptr_num==NULL) || (recv_ptr_parent_num==NULL)) 
+	if((send_ptr_num==NULL) || (send_ptr_parent_num==NULL) || (recv_ptr_num==NULL) || (recv_ptr_parent_num==NULL))
 		HECMW_dlb_memory_exit("send_recv_ptr_num, send_recv_parent_ptr_num");
 	for(i=0;i<pesize+1;i++) {
 		send_ptr_num[i]=0;
@@ -1248,7 +1248,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	}
 	for(i=1;i<pesize+1;i++)
 		send_ptr_parent_num[i]=send_ptr_parent_num[i-1]+send_ptr_parent_num[i];
-	
+
 	stack_whole_send_recv(pesize, send_ptr_num, recv_ptr_num, mesh->HECMW_COMM, mynode);
     stack_whole_send_recv(pesize, send_ptr_parent_num, recv_ptr_parent_num, mesh->HECMW_COMM, mynode);
 
@@ -1290,11 +1290,11 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 
 
-	if(new_mesh->elem_group->n_grp>0) {	
+	if(new_mesh->elem_group->n_grp>0) {
 		tmp_grp=(Tmp_grp_inf *)calloc(new_mesh->elem_group->n_grp, sizeof(Tmp_grp_inf));
 		if(tmp_grp==NULL)
 			HECMW_dlb_memory_exit("tmp_grp");
-/*			
+/*
 		tmp_int_send=(int *)calloc(send_elem_num[pesize]+1, sizeof(int));
 		if(tmp_int_send==NULL)
 		    HECMW_dlb_memory_exit("tmp_int_send ");
@@ -1320,19 +1320,19 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
     			for(i=0;i<mesh->n_elem;i++)
 	    			tmp_elem_grp[i]=0;
 	    		if((mesh->elem_group->grp_index[m+1]-mesh->elem_group->grp_index[m])>0) {
-     				for(i=mesh->elem_group->grp_index[m]; i<mesh->elem_group->grp_index[m+1];i++) 
+     				for(i=mesh->elem_group->grp_index[m]; i<mesh->elem_group->grp_index[m+1];i++)
     					tmp_elem_grp[mesh->elem_group->grp_item[i]-1]=1;
 				}
             if(send_elem_num[pesize]>0) {
 	           for(i=0;i<send_elem_num[pesize];i++)
 		           tmp_int_send[i]=tmp_elem_grp[send_elem[i]];
-        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		          send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 			}
             if(send_parent_num[pesize]>0) {
 	           for(i=0;i<send_parent_num[pesize];i++)
 		           tmp2_int_send[i]=tmp_elem_grp[send_parent[i]];
-        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		          send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 			}
 			num_grp_item=0;
@@ -1392,12 +1392,12 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 				free(tmp_grp[m].item);
 		}
 		free(tmp_grp);
-	if(mynode==0) 
+	if(mynode==0)
 		fprintf(stderr, "Finish generating new elem_grp inf.\n");
 	}
 
 
-	if(new_mesh->surf_group->n_grp>0) {	
+	if(new_mesh->surf_group->n_grp>0) {
 		tmp_grp=(Tmp_grp_inf *)calloc(new_mesh->surf_group->n_grp, sizeof(Tmp_grp_inf));
 		if(tmp_grp==NULL)
 			HECMW_dlb_memory_exit("tmp_grp");
@@ -1425,7 +1425,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
     			for(i=0;i<mesh->n_elem;i++)
 	    			tmp_surf_grp[i]=-1;
 	    		if((mesh->surf_group->grp_index[m+1]-mesh->surf_group->grp_index[m])>0) {
-					for(i=mesh->surf_group->grp_index[m]; i<mesh->surf_group->grp_index[m+1];i++) { 
+					for(i=mesh->surf_group->grp_index[m]; i<mesh->surf_group->grp_index[m+1];i++) {
     					tmp_elem_grp[mesh->surf_group->grp_item[i*2]-1]=1;
     					tmp_surf_grp[mesh->surf_group->grp_item[i*2]-1]=mesh->surf_group->grp_item[i*2+1];
 					}
@@ -1434,21 +1434,21 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
             if(send_elem_num[pesize]>0) {
 	           for(i=0;i<send_elem_num[pesize];i++)
 		           tmp_int_send[i]=tmp_elem_grp[send_elem[i]];
-        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		          send_elem_num, tmp_int_send, tmp_int_recv, mesh->HECMW_COMM, mynode);
 	           for(i=0;i<send_elem_num[pesize];i++)
 		           tmp_int_send[i]=tmp_surf_grp[send_elem[i]];
-        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num, 
+        	int2_whole_send_recv(send_elem_num[pesize], recv_elem_num[pesize], pesize, recv_elem_num,
 		          send_elem_num, tmp_int_send, tmp_surf_id, mesh->HECMW_COMM, mynode);
 			}
             if(send_parent_num[pesize]>0) {
 	           for(i=0;i<send_parent_num[pesize];i++)
 		           tmp2_int_send[i]=tmp_elem_grp[send_parent[i]];
-        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		          send_parent_num, tmp2_int_send, tmp2_int_recv, mesh->HECMW_COMM, mynode);
 	           for(i=0;i<send_parent_num[pesize];i++)
 		           tmp2_int_send[i]=tmp_surf_grp[send_parent[i]];
-        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num, 
+        	int2_whole_send_recv(send_parent_num[pesize], recv_parent_num[pesize], pesize, recv_parent_num,
 		          send_parent_num, tmp2_int_send, tmp2_surf_id, mesh->HECMW_COMM, mynode);
 			}
 			num_grp_item=0;
@@ -1515,7 +1515,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 				free(tmp_grp[m].item);
 		}
 		free(tmp_grp);
-	if(mynode==0) 
+	if(mynode==0)
 		fprintf(stderr, "Finish generating new surf_grp inf.\n");
 	}
 
@@ -1523,7 +1523,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 
     if(tmp_int_send!=NULL)
-	free(tmp_int_send);  
+	free(tmp_int_send);
     if(tmp2_int_send!=NULL)
 	free(tmp2_int_send);
 
@@ -1533,7 +1533,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	recv2_index_int=0;
 	for(i=0;i<recv_parent_num[pesize];i++)
 		recv2_index_int+=tmp2_int_recv[i];
-*/		
+*/
     if(tmp_int_recv!=NULL)
 	free(tmp_int_recv);
     if(tmp2_int_recv!=NULL)
@@ -1556,7 +1556,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 
-	int2_whole_send_recv(send_ptr_num[pesize], recv_ptr_num[pesize], pesize, recv_ptr_num, 
+	int2_whole_send_recv(send_ptr_num[pesize], recv_ptr_num[pesize], pesize, recv_ptr_num,
 		send_ptr_num, tmp_int_send, tmp_int_nodeid, mesh->HECMW_COMM, mynode);
 	tmp2_int_send=(int *)calloc(send_ptr_parent_num[pesize], sizeof(int));
 	tmp2_int_nodeid=(int *)calloc(recv_ptr_parent_num[pesize], sizeof(int));
@@ -1572,7 +1572,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		}
 	}
 
-	int2_whole_send_recv(send_ptr_parent_num[pesize], recv_ptr_parent_num[pesize], pesize, recv_ptr_parent_num, 
+	int2_whole_send_recv(send_ptr_parent_num[pesize], recv_ptr_parent_num[pesize], pesize, recv_ptr_parent_num,
 		send_ptr_parent_num, tmp2_int_send, tmp2_int_nodeid, mesh->HECMW_COMM, mynode);
 	free(tmp_int_send);
 	free(tmp2_int_send);
@@ -1591,12 +1591,12 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<pesize+1;i++) {
 		send_node_num[i]=0;
 	}
-    for(i=0;i<mesh->nn_internal;i++) { 
+    for(i=0;i<mesh->nn_internal;i++) {
 		send_node_num[result->part[i]+1]++;
 	}
-	for(i=1;i<pesize+1;i++) 
+	for(i=1;i<pesize+1;i++)
 		send_node_num[i]=send_node_num[i-1]+send_node_num[i];
-	for(i=0;i<pesize;i++) 
+	for(i=0;i<pesize;i++)
 		count_node[i]=0;
     for(i=0;i<mesh->nn_internal;i++) {
 		send_node[send_node_num[result->part[i]]+count_node[result->part[i]]]=i;
@@ -1610,7 +1610,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	recv_node=(int *)calloc(recv_node_num[pesize]+1, sizeof(int));
 	if(recv_node==NULL)
 		HECMW_dlb_memory_exit("recv_elem");
-	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num, 
+	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num,
 		send_node_num, tmp_node, recv_node, mesh->HECMW_COMM, mynode);
     global_index=(int *)calloc(result->t_node, sizeof(int));
     global_index_hit=(int *)calloc(result->t_node, sizeof(int));
@@ -1634,7 +1634,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	*/
     	if(mynode==0) {
      		tmp_recv=(int *)calloc(result->t_node, sizeof(int));
-    		if(tmp_recv==NULL) 
+    		if(tmp_recv==NULL)
      			HECMW_dlb_memory_exit("tmp_recv");
     		for(i=1;i<pesize;i++) {
     			HECMW_Recv(tmp_recv, result->t_node, HECMW_INT, i, HECMW_ANY_TAG, mesh->HECMW_COMM, &stat);
@@ -1768,9 +1768,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 
    	  new_mesh->elem_internal_list=(int *)calloc(new_mesh->ne_internal, sizeof(int));
-	  if(new_mesh->elem_internal_list==NULL) 
+	  if(new_mesh->elem_internal_list==NULL)
 		  HECMW_dlb_memory_exit("new_mesh: elem_internal_list");
-    	for(i=0;i<new_mesh->ne_internal;i++) 
+    	for(i=0;i<new_mesh->ne_internal;i++)
 	    	new_mesh->elem_internal_list[i]=0;
     	new_mesh->ne_internal=0;
 /*	for(i=0;i<recv_elem_num[pesize];i++) {
@@ -1787,7 +1787,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 			}
 		}
 		*/
-		
+
 	for(i=0;i<new_mesh->n_elem;i++) {
 		if(new_mesh->elem_ID[i*2+1]==mynode) {
 				new_mesh->elem_internal_list[new_mesh->ne_internal]=i+1;
@@ -1828,9 +1828,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
     for(i=0;i<import_index[vis_pesize];i++)
 		fprintf(test_fp, "%d  %d\n", tmp_send[i], new_smesh->node_ID[(new_smesh->nn_internal+i)*2+1]);
 	fclose(test_fp);
-*/	
+*/
 
-	int2_whole_send_recv(import_index[pesize], export_index[pesize], pesize, export_index, 
+	int2_whole_send_recv(import_index[pesize], export_index[pesize], pesize, export_index,
 		import_index, tmp_send, export_node, mesh->HECMW_COMM, mynode);
 
 /*	for(i=0;i<pesize+1;i++)
@@ -1843,7 +1843,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	 tmp_int=0;
      for(i=1;i<pesize+1;i++) {
-	   if((export_index[i]-export_index[i-1])>0) 
+	   if((export_index[i]-export_index[i-1])>0)
 		   tmp_int++;
 	 }
      export_n_neighbor_pe=tmp_int;
@@ -1900,7 +1900,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 
 /*
-	} 
+	}
 	 *//* end of if(mynode in VIS_COMM) */
 
 /* ----------------sending node information --------------------- */
@@ -1911,7 +1911,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	   HECMW_dlb_memory_exit("new_mesh: node");
 	 }
 
-    
+
 
 	tmp_node_d=(double *)calloc(send_node_num[pesize]+1, sizeof(double));
 	recv_node_d=(double *)calloc(recv_node_num[pesize]+1, sizeof(double));
@@ -1924,28 +1924,28 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		   recv_node_d[i]=0.0;
 	    for(i=0;i<send_node_num[pesize];i++)
 		   tmp_node_d[i]=mesh->node[send_node[i]*3+j];
-	    double2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num, 
+	    double2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num,
 		  send_node_num, tmp_node_d, recv_node_d, mesh->HECMW_COMM, mynode);
      	for(i=0;i<export_index[pesize];i++)
      	   tmp2_node_d[i]=recv_node_d[export_node[i]-1];
-	
-        double2_whole_send_recv(export_index[pesize], import_index[pesize], pesize, 
+
+        double2_whole_send_recv(export_index[pesize], import_index[pesize], pesize,
 		      import_index, export_index, tmp2_node_d, recv2_node_d, mesh->HECMW_COMM, mynode);
         for(i=0;i<new_mesh->nn_internal;i++)
      	    new_mesh->node[i*3+j]=recv_node_d[i];
      	for(i=0;i<import_index[pesize];i++)
 	        new_mesh->node[(i+new_mesh->nn_internal)*3+j]=recv2_node_d[i];
 		}
-		
 
-/*	
+
+/*
 	fprintf(stderr, "n_node=%d nn_internal=%d recv_node_num=%d import_index_num=%d\n", new_mesh->n_node, new_mesh->nn_internal,
 		recv_node_num[pesize], new_mesh->import_index[new_mesh->n_neighbor_pe]);
 */
 /*
 	global_comm_table->send_node_num=send_node_num;
 	global_comm_table->recv_node_num=recv_node_num;
-	
+
 	global_comm_table->send_node=send_node;
 	if(mynode>=mesh_pesize) {
 	global_comm_table->import_index=import_index;
@@ -1996,19 +1996,19 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_node_num[pesize];i++)
 		tmp_node_d[i]=data->node_val_item[send_node[i]*tn_component+j];
 
-	double2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num, 
+	double2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num,
 		send_node_num, tmp_node_d, recv_node_d, mesh->HECMW_COMM, mynode);
 	for(i=0;i<export_index[pesize];i++)
 		tmp2_node_d[i]=recv_node_d[export_node[i]-1];
-	
-    double2_whole_send_recv(export_index[pesize], import_index[pesize], pesize, 
-		   import_index, export_index, tmp2_node_d, 
+
+    double2_whole_send_recv(export_index[pesize], import_index[pesize], pesize,
+		   import_index, export_index, tmp2_node_d,
 		   recv2_node_d, mesh->HECMW_COMM, mynode);
 	for(i=0;i<new_mesh->nn_internal;i++)
 		new_data->node_val_item[i*tn_component+j]=recv_node_d[i];
 	for(i=0;i<import_index[pesize];i++)
 		new_data->node_val_item[(i+new_mesh->nn_internal)*tn_component+j]=recv2_node_d[i];
-		   
+
 
 	}
 	}
@@ -2032,20 +2032,20 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_node_num[pesize];i++)
 		tmp_node_i[i]=mesh->when_i_was_refined_node[send_node[i]];
 
-	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num, 
+	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num,
 		send_node_num, tmp_node_i, recv_node_i,  mesh->HECMW_COMM, mynode);
 	for(i=0;i<export_index[pesize];i++)
 		tmp2_node_i[i]=recv_node_i[export_node[i]-1];
-	
-    int2_whole_send_recv(export_index[pesize], import_index[pesize], pesize, 
-		   import_index, export_index, tmp2_node_i, 
+
+    int2_whole_send_recv(export_index[pesize], import_index[pesize], pesize,
+		   import_index, export_index, tmp2_node_i,
 		   recv2_node_i,  mesh->HECMW_COMM, mynode);
 	for(i=0;i<new_mesh->nn_internal;i++)
 		new_mesh->when_i_was_refined_node[i]=recv_node_i[i];
 	for(i=0;i<import_index[pesize];i++)
 		new_mesh->when_i_was_refined_node[i+new_mesh->nn_internal]=recv2_node_i[i];
 
-	if(new_mesh->node_group->n_grp>0) {	
+	if(new_mesh->node_group->n_grp>0) {
 		tmp_grp=(Tmp_grp_inf *)calloc(new_mesh->node_group->n_grp, sizeof(Tmp_grp_inf));
 		if(tmp_grp==NULL)
 			HECMW_dlb_memory_exit("tmp_grp");
@@ -2071,13 +2071,13 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(i=0;i<send_node_num[pesize];i++)
 		tmp_node_i[i]=tmp_elem_grp[send_node[i]];
 
-	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num, 
+	int2_whole_send_recv(send_node_num[pesize], recv_node_num[pesize], pesize, recv_node_num,
 		send_node_num, tmp_node_i, recv_node_i,  mesh->HECMW_COMM, mynode);
 	for(i=0;i<export_index[pesize];i++)
 		tmp2_node_i[i]=recv_node_i[export_node[i]-1];
-	
-    int2_whole_send_recv(export_index[pesize], import_index[pesize], pesize, 
-		   import_index, export_index, tmp2_node_i, 
+
+    int2_whole_send_recv(export_index[pesize], import_index[pesize], pesize,
+		   import_index, export_index, tmp2_node_i,
 		   recv2_node_i,  mesh->HECMW_COMM, mynode);
 	num_grp_item=0;
 	for(i=0;i<new_mesh->nn_internal;i++) {
@@ -2136,7 +2136,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 				free(tmp_grp[m].item);
 		}
 		free(tmp_grp);
-	if(mynode==0) 
+	if(mynode==0)
 		fprintf(stderr, "Finish generating new node_grp inf.\n");
 	}
 
@@ -2150,7 +2150,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 
 	nvtxs=new_mesh->nn_internal;
     new_vtxdist=(int *)calloc(pesize+1, sizeof(int));
-	
+
 	if(mynode==0) {
 		new_vtxdist[0]=0;
 		new_vtxdist[1]=nvtxs;
@@ -2190,8 +2190,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		if(new_data->node_val_item==NULL)
 			HECMW_dlb_memory_exit("new_data: node_val_item");
 	}
-  */ 
-	
+  */
+
     if(new_mesh->n_elem_type>1) {
 	new2old=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new2old==NULL)
@@ -2218,7 +2218,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	for(j=1;j<new_mesh->n_elem_type+1;j++)
 		new_mesh->elem_type_index[j]+=new_mesh->elem_type_index[j-1];
 /*
-	fprintf(stderr, "new_mesh: elem_type_index= %d %d %d\n", new_mesh->elem_type_index[0], new_mesh->elem_type_index[1], 
+	fprintf(stderr, "new_mesh: elem_type_index= %d %d %d\n", new_mesh->elem_type_index[0], new_mesh->elem_type_index[1],
 		new_mesh->elem_type_index[2]);
 */
 	count_elem_index=(int *)calloc(new_mesh->n_elem_type, sizeof(int));
@@ -2239,21 +2239,21 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		new_tmp[i]=new_mesh->elem_type[new2old[i]];
 	free(new_mesh->elem_type);
 	new_mesh->elem_type=new_tmp;
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		new_tmp[i]=new_mesh->section_ID[new2old[i]];
 	free(new_mesh->section_ID);
 	new_mesh->section_ID=new_tmp;
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		new_tmp[i]=new_mesh->elem_mat_ID_item[new2old[i]];
 	free(new_mesh->elem_mat_ID_item);
 	new_mesh->elem_mat_ID_item=new_tmp;
@@ -2265,14 +2265,14 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		fprintf(test_fp, "%d %d\n", i, new_mesh->elem_node_index[i+1]-new_mesh->elem_node_index[i]);
 	fclose(test_fp);
 */
-	
+
 	new_tmp2=(int *)calloc(new_mesh->n_elem+1, sizeof(int));
 	for(i=0;i<new_mesh->n_elem+1;i++)
 		new_tmp2[i]=new_mesh->elem_node_index[i];
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		new_tmp[i]=new_mesh->elem_node_index[new2old[i]+1]-new_mesh->elem_node_index[new2old[i]];
     for(i=1;i<new_mesh->n_elem+1;i++)
     	new_mesh->elem_node_index[i]=new_mesh->elem_node_index[i-1]+new_tmp[i-1];
@@ -2312,7 +2312,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	old2new=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(old2new==NULL)
 		HECMW_dlb_memory_exit("old2new");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		old2new[new2old[i]]=i;
 	new_mesh->ne_internal=0;
 	for(i=0;i<new_mesh->n_elem;i++) {
@@ -2335,7 +2335,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		HECMW_dlb_memory_exit("new_mesh: shared_index");
 	for(i=0;i<new_mesh->n_neighbor_pe+1;i++)
 		new_mesh->shared_index[i]=0;
-   
+
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
@@ -2384,7 +2384,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	new_tmp=(int *)calloc(new_mesh->n_elem, sizeof(int));
 	if(new_tmp==NULL)
 		HECMW_dlb_memory_exit("new_tmp");
-	for(i=0;i<new_mesh->n_elem;i++) 
+	for(i=0;i<new_mesh->n_elem;i++)
 		new_tmp[i]=new_mesh->adapt_children_index[new2old[i]+1]-new_mesh->adapt_children_index[new2old[i]];
     for(i=1;i<new_mesh->n_elem+1;i++)
     	new_mesh->adapt_children_index[i]=new_mesh->adapt_children_index[i-1]+new_tmp[i-1];
@@ -2453,7 +2453,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 	new_mesh->material->mat_item_index=(int *)calloc(new_mesh->material->n_mat+1, sizeof(int));
 	new_mesh->material->mat_subitem_index=(int *)calloc(new_mesh->material->n_mat_item+1, sizeof(int));
 	new_mesh->material->mat_table_index=(int *)calloc(new_mesh->material->n_mat_subitem+1, sizeof(int));
-	if((new_mesh->material->mat_item_index==NULL) || (new_mesh->material->mat_subitem_index==NULL) || 
+	if((new_mesh->material->mat_item_index==NULL) || (new_mesh->material->mat_subitem_index==NULL) ||
 		(new_mesh->material->mat_table_index==NULL))
 		HECMW_dlb_memory_exit("new_mesh: material");
 	for(i=0;i<new_mesh->material->n_mat+1;i++)
@@ -2462,9 +2462,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 		new_mesh->material->mat_subitem_index[i]=mesh->material->mat_subitem_index[i];
 	for(i=0;i<new_mesh->material->n_mat_subitem+1;i++)
 		new_mesh->material->mat_table_index[i]=mesh->material->mat_table_index[i];
-	new_mesh->material->mat_val=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem], 
+	new_mesh->material->mat_val=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem],
 		sizeof(double));
-	new_mesh->material->mat_temp=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem], 
+	new_mesh->material->mat_temp=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem],
 		sizeof(double));
 	if((new_mesh->material->mat_val==NULL) || (new_mesh->material->mat_temp==NULL))
 		HECMW_dlb_memory_exit("new_mesh: material");
@@ -2504,8 +2504,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 			new_mesh->amp->amp_index=(int *)calloc(mesh->amp->n_amp+1, sizeof(int));
 			new_mesh->amp->amp_val=(double *)calloc(mesh->amp->amp_index[mesh->amp->n_amp], sizeof(double));
 			new_mesh->amp->amp_table=(double *)calloc(mesh->amp->amp_index[mesh->amp->n_amp], sizeof(double));
-			if((new_mesh->amp->amp_type_definition==NULL) || (new_mesh->amp->amp_type_time==NULL) || 
-				(new_mesh->amp->amp_type_value==NULL) || (new_mesh->amp->amp_index==NULL) || 
+			if((new_mesh->amp->amp_type_definition==NULL) || (new_mesh->amp->amp_type_time==NULL) ||
+				(new_mesh->amp->amp_type_value==NULL) || (new_mesh->amp->amp_index==NULL) ||
 				(new_mesh->amp->amp_val==NULL) || (new_mesh->amp->amp_table==NULL))
 				HECMW_dlb_memory_exit("new_mesh: amp");
 			for(i=0;i<mesh->amp->n_amp;i++) {
@@ -2513,7 +2513,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxd
 				new_mesh->amp->amp_type_time[i]=mesh->amp->amp_type_time[i];
 				new_mesh->amp->amp_type_value[i]=mesh->amp->amp_type_value[i];
 			}
-			for(i=0;i<mesh->amp->n_amp+1;i++) 
+			for(i=0;i<mesh->amp->n_amp+1;i++)
 				new_mesh->amp->amp_index[i]=mesh->amp->amp_index[i];
 			for(i=0;i<mesh->amp->amp_index[mesh->amp->n_amp];i++) {
 				new_mesh->amp->amp_val[i]=mesh->amp->amp_val[i];
@@ -2559,7 +2559,7 @@ else {
 	new_mesh->elem_type_index[1]=new_mesh->n_elem;
 
 /*
-	fprintf(stderr, "new_mesh: elem_type_index= %d %d %d\n", new_mesh->elem_type_index[0], new_mesh->elem_type_index[1], 
+	fprintf(stderr, "new_mesh: elem_type_index= %d %d %d\n", new_mesh->elem_type_index[0], new_mesh->elem_type_index[1],
 		new_mesh->elem_type_index[2]);
 */
 
@@ -2581,7 +2581,7 @@ else {
 		HECMW_dlb_memory_exit("new_mesh: shared_index");
 	for(i=0;i<new_mesh->n_neighbor_pe+1;i++)
 		new_mesh->shared_index[i]=0;
-   
+
     if(mesh->section!=NULL) {
     new_mesh->section=(struct hecmwST_section *)calloc(1, sizeof(struct hecmwST_section));
 	if(new_mesh->section==NULL)
@@ -2627,7 +2627,7 @@ else {
 	new_mesh->material->mat_item_index=(int *)calloc(new_mesh->material->n_mat+1, sizeof(int));
 	new_mesh->material->mat_subitem_index=(int *)calloc(new_mesh->material->n_mat_item+1, sizeof(int));
 	new_mesh->material->mat_table_index=(int *)calloc(new_mesh->material->n_mat_subitem+1, sizeof(int));
-	if((new_mesh->material->mat_item_index==NULL) || (new_mesh->material->mat_subitem_index==NULL) || 
+	if((new_mesh->material->mat_item_index==NULL) || (new_mesh->material->mat_subitem_index==NULL) ||
 		(new_mesh->material->mat_table_index==NULL))
 		HECMW_dlb_memory_exit("new_mesh: material");
 	for(i=0;i<new_mesh->material->n_mat+1;i++)
@@ -2636,9 +2636,9 @@ else {
 		new_mesh->material->mat_subitem_index[i]=mesh->material->mat_subitem_index[i];
 	for(i=0;i<new_mesh->material->n_mat_subitem+1;i++)
 		new_mesh->material->mat_table_index[i]=mesh->material->mat_table_index[i];
-	new_mesh->material->mat_val=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem], 
+	new_mesh->material->mat_val=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem],
 		sizeof(double));
-	new_mesh->material->mat_temp=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem], 
+	new_mesh->material->mat_temp=(double *)calloc(new_mesh->material->mat_table_index[new_mesh->material->n_mat_subitem],
 		sizeof(double));
 	if((new_mesh->material->mat_val==NULL) || (new_mesh->material->mat_temp==NULL))
 		HECMW_dlb_memory_exit("new_mesh: material");
@@ -2678,8 +2678,8 @@ else {
 			new_mesh->amp->amp_index=(int *)calloc(mesh->amp->n_amp+1, sizeof(int));
 			new_mesh->amp->amp_val=(double *)calloc(mesh->amp->amp_index[mesh->amp->n_amp], sizeof(double));
 			new_mesh->amp->amp_table=(double *)calloc(mesh->amp->amp_index[mesh->amp->n_amp], sizeof(double));
-			if((new_mesh->amp->amp_type_definition==NULL) || (new_mesh->amp->amp_type_time==NULL) || 
-				(new_mesh->amp->amp_type_value==NULL) || (new_mesh->amp->amp_index==NULL) || 
+			if((new_mesh->amp->amp_type_definition==NULL) || (new_mesh->amp->amp_type_time==NULL) ||
+				(new_mesh->amp->amp_type_value==NULL) || (new_mesh->amp->amp_index==NULL) ||
 				(new_mesh->amp->amp_val==NULL) || (new_mesh->amp->amp_table==NULL))
 				HECMW_dlb_memory_exit("new_mesh: amp");
 			for(i=0;i<mesh->amp->n_amp;i++) {
@@ -2687,7 +2687,7 @@ else {
 				new_mesh->amp->amp_type_time[i]=mesh->amp->amp_type_time[i];
 				new_mesh->amp->amp_type_value[i]=mesh->amp->amp_type_value[i];
 			}
-			for(i=0;i<mesh->amp->n_amp+1;i++) 
+			for(i=0;i<mesh->amp->n_amp+1;i++)
 				new_mesh->amp->amp_index[i]=mesh->amp->amp_index[i];
 			for(i=0;i<mesh->amp->amp_index[mesh->amp->n_amp];i++) {
 				new_mesh->amp->amp_val[i]=mesh->amp->amp_val[i];
@@ -2712,8 +2712,8 @@ else {
 
 
 
-			
-		
+
+
 
 
 

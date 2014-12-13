@@ -38,7 +38,7 @@ void CNFDB_405::Read( CNFData* nfd )
 
 	// #1
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIII", 
+		nfd->ReadRecord( buff, "IIIII",
 			&ID,
 			&define_sys,
 			&type,
@@ -59,7 +59,7 @@ void CNFDB_405::Read( CNFData* nfd )
 void CNFDB_405::WriteData( class CNFData* nfd, FILE* fp )
 {
 	// #1
-		nfd->WriteData( fp, "IIIIIn", 
+		nfd->WriteData( fp, "IIIIIn",
 			ID,
 			define_sys,
 			type,

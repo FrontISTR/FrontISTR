@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 3 node 
-!!  trianglar element (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 3 node
+!!  trianglar element (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/05/12
@@ -42,7 +42,7 @@ module shape_tri3n
       func(2,2) = 1.d0
       func(3,2) = -1.d0
     end subroutine
-    
+
     subroutine Shape2ndDeriv_tri3n(func)
       real(kind=kreal) :: func(3,2,2)
       func(:,:,:) = 0.d0
@@ -53,15 +53,15 @@ module shape_tri3n
 !####################################################################
       SUBROUTINE NodalNaturalCoord_tri3n(nncoord)
 !####################################################################
-      
+
       IMPLICIT NONE
-      
+
 !--------------------------------------------------------------------
-      
+
       REAL(KIND = kreal), INTENT(OUT) :: nncoord(3, 2)
-      
+
 !--------------------------------------------------------------------
-      
+
       ! xi-coordinate at a node in a local element
       nncoord(1, 1) =  1.0D0
       nncoord(2, 1) =  0.0D0
@@ -70,11 +70,11 @@ module shape_tri3n
       nncoord(1, 2) =  0.0D0
       nncoord(2, 2) =  1.0D0
       nncoord(3, 2) =  0.0D0
-      
+
 !--------------------------------------------------------------------
-      
+
       RETURN
-      
+
 !####################################################################
       END SUBROUTINE NodalNaturalCoord_tri3n
 !####################################################################

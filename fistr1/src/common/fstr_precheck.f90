@@ -104,7 +104,7 @@ module m_fstr_precheck
             xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
             yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
             zz(j) = hecMESH%node(3*nodLOCAL(j)  )
-          enddo  
+          enddo
 !C
           if    ( ic_type.eq.111 ) then
             isect = hecMESH%section_ID(ie)
@@ -135,7 +135,7 @@ module m_fstr_precheck
           endif
           nelem = nelem + 1
           tvol = tvol + vol
-          if( vol.gt.tvmax ) tvmax = vol 
+          if( vol.gt.tvmax ) tvmax = vol
           if( vol.lt.tvmin ) tvmin = vol
           if( almax.gt.tlmax ) tlmax = almax
           if( almin.lt.tlmin ) tlmin = almin
@@ -143,8 +143,8 @@ module m_fstr_precheck
           if( asp.gt.aspmax ) aspmax = asp
           if( asp.gt.50 ) then
             write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-            write(ILOG,*) '      Maximum length =',almax                
-            write(ILOG,*) '      Minimum length =',almin                
+            write(ILOG,*) '      Maximum length =',almax
+            write(ILOG,*) '      Minimum length =',almin
           endif
         enddo
 !C
@@ -170,7 +170,7 @@ module m_fstr_precheck
             nodLOCAL(j) = hecMESH%elem_node_item (jS+j)
             xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
             yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-          enddo  
+          enddo
 !C
           isect = hecMESH%section_ID(ie)
           mid = hecMESH%section%sect_mat_ID_item(isect)
@@ -181,7 +181,7 @@ module m_fstr_precheck
             vol = AA*al
             if( al.gt.tlmax ) tlmax = al
             if( al.lt.tlmin ) tlmin = al
-            aspmax = 1.0 
+            aspmax = 1.0
           elseif( ic_type.eq.231 ) then
             call PRE_231 ( xx,yy,AA,vol,almax,almin )
           elseif( ic_type.eq.241 ) then
@@ -199,7 +199,7 @@ module m_fstr_precheck
           endif
           nelem = nelem + 1
           tvol = tvol + vol
-          if( vol.gt.tvmax ) tvmax = vol 
+          if( vol.gt.tvmax ) tvmax = vol
           if( vol.lt.tvmin ) tvmin = vol
           if( almax.gt.tlmax ) tlmax = almax
           if( almin.lt.tlmin ) tlmin = almin
@@ -207,8 +207,8 @@ module m_fstr_precheck
           if( asp.gt.aspmax ) aspmax = asp
           if( asp.gt.50 ) then
             write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-            write(ILOG,*) '      Maximum length =',almax                
-            write(ILOG,*) '      Minimum length =',almin                
+            write(ILOG,*) '      Maximum length =',almax
+            write(ILOG,*) '      Minimum length =',almin
           endif
         enddo
 !C
@@ -235,7 +235,7 @@ module m_fstr_precheck
             xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
             yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
             zz(j) = hecMESH%node(3*nodLOCAL(j)  )
-          enddo  
+          enddo
 !C
           isect = hecMESH%section_ID(ie)
           mid = hecMESH%section%sect_mat_ID_item(isect)
@@ -248,7 +248,7 @@ module m_fstr_precheck
             vol = AA*al
             if( al.gt.tlmax ) tlmax = al
             if( al.lt.tlmin ) tlmin = al
-            aspmax = 1.0 
+            aspmax = 1.0
           elseif( ic_type.eq.731 ) then
             call PRE_731 ( xx,yy,zz,AA,vol,almax,almin )
           elseif( ic_type.eq.741 ) then
@@ -260,7 +260,7 @@ module m_fstr_precheck
           endif
           nelem = nelem + 1
           tvol = tvol + vol
-          if( vol.gt.tvmax ) tvmax = vol 
+          if( vol.gt.tvmax ) tvmax = vol
           if( vol.lt.tvmin ) tvmin = vol
           if( almax.gt.tlmax ) tlmax = almax
           if( almin.lt.tlmin ) tlmin = almin
@@ -268,21 +268,21 @@ module m_fstr_precheck
           if( asp.gt.aspmax ) aspmax = asp
           if( asp.gt.50 ) then
             write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-            write(ILOG,*) '      Maximum length =',almax                
-            write(ILOG,*) '      Minimum length =',almin                
+            write(ILOG,*) '      Maximum length =',almax
+            write(ILOG,*) '      Minimum length =',almin
           endif
         enddo
       endif
 !C
-      avvol = tvol / nelem 
-      write(ILOG,*) '###  Sub Summary  ###'                
+      avvol = tvol / nelem
+      write(ILOG,*) '###  Sub Summary  ###'
       write(ILOG,*) ' Total Volumes in this region        = ',tvol
       write(ILOG,*) ' Average Volume of elements          = ',avvol
       write(ILOG,*) ' Maximum Volume of elements          = ',tvmax
       write(ILOG,*) ' Minimum Volume of elements          = ',tvmin
       write(ILOG,*) ' Maximum length of element edges     = ',tlmax
       write(ILOG,*) ' Minimum length of element edges     = ',tlmin
-         
+
       write(ILOG,*) ' Maximum aspect ratio in this region = ',aspmax
       TOTsum(1) = tvol
       call hecmw_allREDUCE_R(hecMESH,TOTsum,1,hecmw_sum)

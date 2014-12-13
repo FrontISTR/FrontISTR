@@ -57,7 +57,7 @@ output_result_node(FILE *fp)
 		}
 	}
 
-	/* node_label */  
+	/* node_label */
 	for(p=node_list; p; p=p->next) {
 		rc = fprintf(fp, "%s\n", p->label);
 		if(rc < 0) {
@@ -66,7 +66,7 @@ output_result_node(FILE *fp)
 		}
 	}
 
-	/* node_val_item */  
+	/* node_val_item */
 	nn_comp = count_nn_comp();
 	if(nn_comp == 0) return 0;
 	data = HECMW_malloc(sizeof(*data) * nn_comp);
@@ -130,7 +130,7 @@ output_result_elem(FILE *fp)
 		}
 	}
 
-	/* elem_label */  
+	/* elem_label */
 	for(p=elem_list; p; p=p->next) {
 		rc = fprintf(fp, "%s\n", p->label);
 		if(rc < 0) {
@@ -139,7 +139,7 @@ output_result_elem(FILE *fp)
 		}
 	}
 
-	/* elem_val_item */  
+	/* elem_val_item */
 	ne_comp = count_ne_comp();
 	if(ne_comp == 0) return 0;
 	data = HECMW_malloc(sizeof(*data) * ne_comp);
@@ -272,7 +272,7 @@ output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *fp)
 		}
 	}
 
-	/* node_label */  
+	/* node_label */
 	for(i=0; i < result->nn_component; i++) {
 		rc = fprintf(fp, "%s\n", result->node_label[i]);
 		if(rc < 0) {
@@ -281,7 +281,7 @@ output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *fp)
 		}
 	}
 
-	/* node_val_item */  
+	/* node_val_item */
 	if(result->nn_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_node; i++) {
@@ -334,7 +334,7 @@ output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 		}
 	}
 
-	/* elem_label */  
+	/* elem_label */
 	for(i=0; i < result->ne_component; i++) {
 		rc = fprintf(fp, "%s\n", result->elem_label[i]);
 		if(rc < 0) {
@@ -343,7 +343,7 @@ output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 		}
 	}
 
-	/* elem_val_item */  
+	/* elem_val_item */
 	if(result->ne_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_elem; i++) {

@@ -41,7 +41,7 @@ double HECMW_Wtick(void)
 #else
 	return 1e-3;
 #endif
-}	
+}
 
 /* interface for fortran */
 

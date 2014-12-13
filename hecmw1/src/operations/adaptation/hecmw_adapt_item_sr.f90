@@ -44,7 +44,7 @@
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta1
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta2
       integer(kind=kint ), dimension(:  ), save, allocatable :: req1
-      integer(kind=kint ), dimension(:  ), save, allocatable :: req2  
+      integer(kind=kint ), dimension(:  ), save, allocatable :: req2
 
       integer(kind=kint ), save :: NFLAG
       data NFLAG/0/
@@ -58,7 +58,7 @@
         allocate (req2(NEIBPETOT))
         NFLAG= 1
       endif
-       
+
 !C
 !C-- SEND
       do neib= 1, NEIBPETOT
@@ -88,7 +88,7 @@
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
-   
+
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
@@ -104,6 +104,6 @@
 
       end subroutine hecmw_adapt_ITEM_SEND_RECV
       end module     hecmw_adapt_ITEM_SR
-      
+
 
 

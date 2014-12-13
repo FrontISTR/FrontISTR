@@ -95,7 +95,7 @@ int HECMW_dlb_get_int_item(char *para, char *buf, int *start_location)
 		*start_location=i;
 		return(value);
 }
-       
+
 
 double HECMW_dlb_get_double_item(char *para, char *buf, int *start_location)
 {
@@ -125,7 +125,7 @@ double HECMW_dlb_get_double_item(char *para, char *buf, int *start_location)
 		*start_location=i;
 		return(value);
 }
-       
+
 int HECMW_dlb_get_keyword_item(char *buf, char *para) {
 	int i,j;
 	int flag;
@@ -155,7 +155,7 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
     i=0;
 	while(buf[i]==' ')
 		i++;
-	if(buf[i]!='!') 
+	if(buf[i]!='!')
 		HECMW_dlb_print_exit("ERROR: HEC-MW-DLB-E0002: The control parameter format error: should start from !");
 	i=i+1;  j=0;
 	while((buf[i]!=' ') && (buf[i]!=',') && (buf[i]!='\n')) {
@@ -200,7 +200,7 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
 	while((buf[i]==',') || (buf[i]==' '))
 		  i++;
 	while(buf[i]!='\n') {
-         j=0; 
+         j=0;
     	while((buf[i]!=' ') && (buf[i]!=',') && (buf[i]!='=') && (buf[i]!='\n')) {
 	    	para[j]=buf[i];
     		i++;
@@ -212,7 +212,7 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
 			if((strncmp(para, "ADAPT", 5)==0) || (strncmp(para, "adapt", 5)==0))
 	           strncpy(ctl_para->adaptive_repartition,"on", 2);
 		}
-				
+
 
 	  	  while((buf[i]==',') || (buf[i]==' '))
 		  i++;
@@ -233,15 +233,15 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
    char     para[128], para1[128];
    int      hit;
    int      surface_num;
-   int      len_str; 
+   int      len_str;
    int     location, visual_method;
    int flag, flag_surface;
    int    cont_flag;
 
    FILE     *fp;
-   
+
    fp=fopen(contfile, "r");
-   if(fp==NULL) 
+   if(fp==NULL)
 	   HECMW_dlb_print_exit("Cannot find the control input file");
    for(i=0;i<NUM_CONTROL_PARAS;i++) {
 	   parameters[i]=(char *)calloc(128, sizeof(char));
@@ -283,10 +283,10 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 	  if(fgets(buf, MAX_LINE_LEN, fp) != NULL) {
         if ((HECMW_dlb_is_blank_line(buf)==0) && (HECMW_dlb_is_comment_line(buf)==0)) break;
 	  }
-	  else 
+	  else
 		  cont_flag=0;
   }
-  
+
   hit=0;
   if(cont_flag==1)
   cont_flag=HECMW_dlb_get_keyword_repart(buf,ctl_para);
@@ -308,7 +308,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 			  break;
 		  }
 	  }
-/*	 fprintf(stderr, "para=%s hit=%d\n", para, hit); 
+/*	 fprintf(stderr, "para=%s hit=%d\n", para, hit);
 */
          if((hit>=0) && (hit<NUM_CONTROL_PARAS)) {
          switch (hit) {
@@ -322,7 +322,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 	  case 2:
 		  ctl_para->balance_rate=(float *)calloc(ctl_para->num_criteria, sizeof(float));
 		  for(i=0;i<ctl_para->num_criteria;i++) {
-		  
+
 		  ctl_para->balance_rate[i]=(float)HECMW_dlb_get_double_item(para, buf, &location);
 		  }
 		  break;
@@ -360,7 +360,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 	        if(fgets(buf, MAX_LINE_LEN, fp) != NULL) {
                 if ((HECMW_dlb_is_blank_line(buf)==0) && (HECMW_dlb_is_comment_line(buf)==0)) break;
 			}
-			else 
+			else
 		       cont_flag=0;
 		 }
 		if(cont_flag==0)
@@ -370,7 +370,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 /*		  if(stat_para[0]==0) {
 			  strncpy(ctl_para->adaptive_repartition, "off", 3);
 		  }
-		  
+
 		  if((strncmp(ctl_para->adaptive_repartition, "on", 2)!=0) && (strncmp(ctl_para->adaptive_repartition, "off", 3)!=0)){
 			  fprintf(stderr, "adaptive_repartition should be on or off\n");
 			  fprintf(stderr, "Please re-input again\n");
@@ -380,7 +380,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
           if(stat_para[1]==0) {
 			  ctl_para->num_criteria=1;
 		  }
-		  
+
 		  if(ctl_para->num_criteria<=0) {
 			  fprintf(stderr, "#### HEC-MW-DLB-E1001: num_of_criteria should be greater than 0\n");
 			  fprintf(stderr, "Please re-input a correct one\n");
@@ -435,12 +435,12 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_par
 void hecmw_dlb_set_default_control(Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS], int pesize)
 {
 	int i;
-			  
+
 	strncpy(ctl_para->adaptive_repartition,"on", 3);
 	ctl_para->num_criteria=1;
-		  
+
 	ctl_para->balance_rate=(float *)calloc(1, sizeof(float));
-	ctl_para->balance_rate[0]=1.02;		
+	ctl_para->balance_rate[0]=1.02;
 	ctl_para->num_repartition=pesize;
 	ctl_para->itr_rate=10000.0;
     ctl_para->wgtflag=0;

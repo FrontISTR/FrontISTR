@@ -177,11 +177,11 @@ subroutine dump_fstr_heat( h )
         write(*,*) 'ATERIALtot ', h%MATERIALtot
         if( h%MATERIALtot /= 0 ) then
         write(*,*) 'RHO ', h%RHO
-        write(*,*) 'RHOtemp ', h%RHOtemp  
+        write(*,*) 'RHOtemp ', h%RHOtemp
         write(*,*) 'CP ',h%CP
-        write(*,*) 'CPtemp ', h%CPtemp  
+        write(*,*) 'CPtemp ', h%CPtemp
         write(*,*) 'COND ', h%COND
-        write(*,*) 'CONDtemp ',h%CONDtemp  
+        write(*,*) 'CONDtemp ',h%CONDtemp
         write(*,*)
         write(*,*) 'RHOtab ', h%RHOtab
         write(*,*) 'CPtab ', h%CPtab
@@ -199,7 +199,7 @@ subroutine dump_fstr_heat( h )
         write(*,*) 'AMPLITUDEtot ',h%AMPLITUDEtot
         if( h%AMPLITUDEtot /=0 ) then
         write(*,*) 'AMPL ',h%AMPL
-        write(*,*) 'AMPLtime ',h%AMPLtime  
+        write(*,*) 'AMPLtime ',h%AMPLtime
         write(*,*) 'AMPLtab ', h%AMPLtab
         write(*,*) 'AMPLfuncA ', h%AMPLfuncA
         write(*,*) 'AMPLfuncB ', h%AMPLfuncB

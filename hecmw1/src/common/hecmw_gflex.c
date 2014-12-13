@@ -1643,7 +1643,7 @@ HECMW_gflex_readsize(void)
 int
 HECMW_gflex_set_input(FILE *fp)
 {
-	static int first = 1;	
+	static int first = 1;
 	if(fp == NULL) return -1;
 	if(first) {
 		yyin = fp;

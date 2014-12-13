@@ -557,7 +557,7 @@ part_get_control( struct hecmw_part_cont_data *cont_data )
     /* initialize lex */
     stat = HECMW_partlex_set_input( fp );
     if( stat ) {
-        return -1; 
+        return -1;
     }
 
     /* get control data */

@@ -44,7 +44,7 @@ contains
 !                       Description                                    !
 !======================================================================!
 !>This subroutine has been adapted from the eispack routine tql2, which is
-!!a translation of the algol procedure tql2, num. math. 11, 293-306(1968) 
+!!a translation of the algol procedure tql2, num. math. 11, 293-306(1968)
 !!by bowdler, martin, reinsch and wilkinson.
 !!Handbook for auto. cop., vol.ii-linear algebra, 227-240(1971).
 !!This subroutine finds the eigenvalues and eigenvectors

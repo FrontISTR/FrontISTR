@@ -31,20 +31,20 @@ module m_heat_init
 !C===
       namax = 0
       do i = 1, hecMESH%amp%n_amp
-        nn = hecMESH%amp%amp_index(i) - hecMESH%amp%amp_index(i-1)  
+        nn = hecMESH%amp%amp_index(i) - hecMESH%amp%amp_index(i-1)
         namax = max(nn,namax)
       enddo
 
       fstrHEAT%AMPLITUDEtot= hecMESH%amp%n_amp
- 
-      allocate (fstrHEAT%AMPLtab (fstrHEAT%AMPLITUDEtot) )             
+
+      allocate (fstrHEAT%AMPLtab (fstrHEAT%AMPLITUDEtot) )
       allocate (fstrHEAT%AMPL    (fstrHEAT%AMPLITUDEtot,namax),                &
                 fstrHEAT%AMPLtime(fstrHEAT%AMPLITUDEtot,namax) )
 
       fstrHEAT%AMPLtab  = 0
       fstrHEAT%AMPL     = 0.d0
       fstrHEAT%AMPLtime = 0.d0
-        
+
       do i = 1, fstrHEAT%AMPLITUDEtot
         iS = hecMESH%amp%amp_index(i-1) + 1
         iE = hecMESH%amp%amp_index(i)
@@ -68,11 +68,11 @@ module m_heat_init
 !C===
       allocate ( fstrHEAT%AMPLfuncA( fstrHEAT%AMPLITUDEtot,namax+1 ) )
       allocate ( fstrHEAT%AMPLfuncB( fstrHEAT%AMPLITUDEtot,namax+1 ) )
-      
+
       fstrHEAT%AMPLfuncA  = 0.d0
       fstrHEAT%AMPLfuncB  = 0.d0
 !C
-!C-- 
+!C--
       do i = 1, fstrHEAT%AMPLITUDEtot
 
         fstrHEAT%AMPLfuncA(i,1) = 0.d0
@@ -90,11 +90,11 @@ module m_heat_init
           fstrHEAT%AMPLfuncA(i,k) =  (y2-y1)/(x2-x1)
           fstrHEAT%AMPLfuncB(i,k) = -(y2-y1)/(x2-x1)*x1 + y1
 
-        enddo  
+        enddo
 
-        fstrHEAT%AMPLfuncA(i,nn+1) = 0.d0                   
-        fstrHEAT%AMPLfuncB(i,nn+1) = fstrHEAT%AMPL(i,nn)          
-  
+        fstrHEAT%AMPLfuncA(i,nn+1) = 0.d0
+        fstrHEAT%AMPLfuncB(i,nn+1) = fstrHEAT%AMPL(i,nn)
+
       enddo
 
 !C===
@@ -126,21 +126,21 @@ module m_heat_init
       do im = 1, hecMESH%material%n_mat
         do jm = 1, 3
           icou = icou + 1
-            nn = hecMESH%material%mat_TABLE_index(icou) - hecMESH%material%mat_TABLE_index(icou-1)  
+            nn = hecMESH%material%mat_TABLE_index(icou) - hecMESH%material%mat_TABLE_index(icou-1)
             if( jm.eq.1 ) m1max = max(nn,m1max)
             if( jm.eq.2 ) m2max = max(nn,m2max)
             if( jm.eq.3 ) m3max = max(nn,m3max)
         enddo
       enddo
- 
-      allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot),                       &     
-                fstrHEAT%CPtab   (fstrHEAT%MATERIALtot),                       &      
+
+      allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot),                       &
+                fstrHEAT%CPtab   (fstrHEAT%MATERIALtot),                       &
                 fstrHEAT%CONDtab (fstrHEAT%MATERIALtot))
-      allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max),                 &    
+      allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max),                 &
                 fstrHEAT%RHOtemp (fstrHEAT%MATERIALtot,m1max))
-      allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max),                 &  
+      allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max),                 &
                 fstrHEAT%CPtemp  (fstrHEAT%MATERIALtot,m2max))
-      allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max),                 &    
+      allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max),                 &
                 fstrHEAT%CONDtemp(fstrHEAT%MATERIALtot,m3max))
 
       fstrHEAT%RHO  = 0.d0
@@ -153,7 +153,7 @@ module m_heat_init
       fstrHEAT%RHOtab   = 0
       fstrHEAT%CPtab    = 0
       fstrHEAT%CONDtab  = 0
-        
+
       ic = 0
       do im = 1, fstrHEAT%MATERIALtot
         do jm = 1, 3
@@ -196,7 +196,7 @@ module m_heat_init
                ,fstrHEAT%CPfuncB  (fstrHEAT%MATERIALtot, m2max+1))
       allocate (fstrHEAT%CONDfuncA(fstrHEAT%MATERIALtot, m3max+1)              &
                ,fstrHEAT%CONDfuncB(fstrHEAT%MATERIALtot, m3max+1))
-      
+
       fstrHEAT%RHOfuncA  = 0.d0
       fstrHEAT%RHOfuncB  = 0.d0
       fstrHEAT%CPfuncA   = 0.d0
@@ -204,7 +204,7 @@ module m_heat_init
       fstrHEAT%CONDfuncA = 0.d0
       fstrHEAT%CONDfuncB = 0.d0
 !C
-!C--RHO 
+!C--RHO
       do im = 1, fstrHEAT%MATERIALtot
         fstrHEAT%RHOfuncB(im,1) = fstrHEAT%RHO(im,1)
         do k = 2, fstrHEAT%RHOtab(im)
@@ -212,7 +212,7 @@ module m_heat_init
           aa= fstrHEAT%RHOtemp(im,k) - fstrHEAT%RHOtemp(im,k-1)
           fstrHEAT%RHOfuncA(im,k) =   bb/aa
           fstrHEAT%RHOfuncB(im,k) = -(bb/aa)*fstrHEAT%RHOtemp(im,k-1) + fstrHEAT%RHO(im,k-1)
-        enddo  
+        enddo
         fstrHEAT%RHOfuncB(im,fstrHEAT%RHOtab(im)+1) = fstrHEAT%RHO(im,fstrHEAT%RHOtab(im))
       enddo
 !C
@@ -223,8 +223,8 @@ module m_heat_init
           bb= fstrHEAT%CP    (im,k) - fstrHEAT%CP    (im,k-1)
           aa= fstrHEAT%CPtemp(im,k) - fstrHEAT%CPtemp(im,k-1)
           fstrHEAT%CPfuncA(im,k) =   bb/aa
-          fstrHEAT%CPfuncB(im,k) = -(bb/aa)*fstrHEAT%CPtemp(im,k-1) + fstrHEAT%CP(im,k-1) 
-        enddo  
+          fstrHEAT%CPfuncB(im,k) = -(bb/aa)*fstrHEAT%CPtemp(im,k-1) + fstrHEAT%CP(im,k-1)
+        enddo
         fstrHEAT%CPfuncB(im,fstrHEAT%CPtab(im)+1) =  fstrHEAT%CP(im,fstrHEAT%CPtab(im))
       enddo
 !C
@@ -236,7 +236,7 @@ module m_heat_init
           aa = fstrHEAT%CONDtemp(im,k) - fstrHEAT%CONDtemp(im,k-1)
           fstrHEAT%CONDfuncA(im,k) =   bb/aa
           fstrHEAT%CONDfuncB(im,k) = -(bb/aa)*fstrHEAT%CONDtemp(im,k-1) + fstrHEAT%COND(im,k-1)
-        enddo  
+        enddo
         fstrHEAT%CONDfuncB(im,fstrHEAT%CONDtab(im)+1) = fstrHEAT%COND(im,fstrHEAT%CONDtab(im))
       enddo
 !C===

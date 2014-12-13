@@ -40,7 +40,7 @@ void CNFDB_403::Read( CNFData* nfd )
 	// #1
 		nfd->ReadLineEx( buff );
 		if( nfd->version >= 4.4 ) {
-			nfd->ReadRecord( buff, "IIIIIBBBBBBFFFI", 
+			nfd->ReadRecord( buff, "IIIIIBBBBBBFFFI",
 				&ID,
 				&define_sys,
 				&output_sys,
@@ -58,7 +58,7 @@ void CNFDB_403::Read( CNFData* nfd )
 				&node_type
 			);
 		} else {
-			nfd->ReadRecord( buff, "IIIIIBBBBBBFFF", 
+			nfd->ReadRecord( buff, "IIIIIBBBBBBFFF",
 				&ID,
 				&define_sys,
 				&output_sys,
@@ -82,7 +82,7 @@ void CNFDB_403::WriteData( class CNFData* nfd, FILE* fp )
 {
 	// #1
 		if( nfd->version >= 4.4 ) {
-			nfd->WriteData( fp, "IIIIIBBBBBBFFFIn", 
+			nfd->WriteData( fp, "IIIIIBBBBBBFFFIn",
 				ID,
 				define_sys,
 				output_sys,
@@ -100,7 +100,7 @@ void CNFDB_403::WriteData( class CNFData* nfd, FILE* fp )
 				node_type
 			);
 		} else {
-			nfd->WriteData( fp, "IIIIIBBBBBBFFFn", 
+			nfd->WriteData( fp, "IIIIIBBBBBBFFFn",
 				ID,
 				define_sys,
 				output_sys,

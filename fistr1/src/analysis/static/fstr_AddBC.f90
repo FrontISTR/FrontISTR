@@ -95,7 +95,7 @@ module m_fstr_AddBC
           enddo
         enddo
       enddo
-      
+
 !
 !   ------ Truss element Diagonal Modification
       call truss_diag_modify(hecMAT,hecMESH)
@@ -108,7 +108,7 @@ module m_fstr_AddBC
           RHS = fstrSOLID%mpc_const(ig0)*factor
           hecMESH%mpc%mpc_const(ig0) = RHS
       enddo
-      
+
       end subroutine fstr_AddBC
 
 end module m_fstr_AddBC

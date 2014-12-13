@@ -49,7 +49,7 @@ void CFSTRDB_Boundary::Write( CHECData* hecd )
 	vector<CItem>::iterator iter;
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SIIF", iter->ngrp, iter->dof_ids, iter->dof_ide, iter->value );
-	}	
+	}
 }
 
 

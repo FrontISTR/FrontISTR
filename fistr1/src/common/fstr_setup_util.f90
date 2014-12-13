@@ -421,7 +421,7 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
                 get_local_member_index = -1
                 return
         end if
-        
+
         if( type_name == 'node' ) then
                 fg = 1
                 n  =  hecMESH%n_node
@@ -433,7 +433,7 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
         else
                 STOP 'assert in get_local_member_index: unknown type_name'
         end if
-        
+
         do i = 1, n
                 if( no == global_item(i)) then
                         local_id = i
@@ -447,7 +447,7 @@ function get_local_member_index( hecMESH, type_name, name, local_id )
 end function get_local_member_index
 
 !-----------------------------------------------------------------------------!
-! 
+!
 
 function get_sorted_local_member_index( hecMESH, hecPARAM, type_name, name, local_id )
         implicit none
@@ -465,7 +465,7 @@ function get_sorted_local_member_index( hecMESH, hecPARAM, type_name, name, loca
                 get_sorted_local_member_index = -1
                 return
         end if
-        
+
         if( type_name == 'node' ) then
                 fg = 1
                 n  =  hecMESH%nn_internal
@@ -477,14 +477,14 @@ function get_sorted_local_member_index( hecMESH, hecPARAM, type_name, name, loca
         else
                 STOP 'assert in get_sorted_local_member_index: unknown type_name'
         end if
-        
+
         call bsearch_int_array(hecPARAM%global_local_ID(1,:), 1, n, no, idx)
         if(idx > 0)then
           get_sorted_local_member_index = hecPARAM%global_local_ID(2,idx)
           local_id = get_sorted_local_member_index
           return
         endif
-        
+
         get_sorted_local_member_index = 0
         return
 end function get_sorted_local_member_index
@@ -682,7 +682,7 @@ end subroutine node_grp_name_to_id_ex
                                       end if
                              end do
                      end if
-                        
+
                      !not fouund => exit
                      if( grp_ID(i) == -1 ) then
                              write(msg,*) '### Error: ', header_name,' : Node group "',grp_id_name(i),'" does not exist.'
@@ -696,7 +696,7 @@ end subroutine node_grp_name_to_id_ex
      end if
 
      deallocate( no_list )
-    
+
 end subroutine
 
 
@@ -1142,7 +1142,7 @@ subroutine fstr_delete_index_array( array, old_size, nindex )
         if( old_size < nindex ) then
                 return
         end if
-        
+
         if( old_size == nindex ) then
             deallocate( array )
             return
@@ -1173,7 +1173,7 @@ subroutine fstr_delete_integer_array( array, old_size, nitem )
         if( old_size < nitem ) then
                 return
         end if
-        
+
         if( old_size == nitem ) then
             deallocate( array )
             return
@@ -1204,7 +1204,7 @@ subroutine fstr_delete_real_array( array, old_size, nitem )
         if( old_size < nitem ) then
                 return
         end if
-        
+
         if( old_size == nitem ) then
             deallocate( array )
             return

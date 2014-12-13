@@ -44,7 +44,7 @@
         hecMESH%adapt_edge_home(ie)= min(ip1,ip2)
 
         if ((ip1.eq.hecMESH%my_rank.and.ip2.eq.hecMESH%my_rank).or.     &
-     &      (ip1.eq.hecMESH%my_rank.and.ip1.lt.ip2            ).or.     &     
+     &      (ip1.eq.hecMESH%my_rank.and.ip1.lt.ip2            ).or.     &
      &      (ip2.eq.hecMESH%my_rank.and.ip2.lt.ip1    )) then
                  icou = icou + 1
           hecMESH%adapt_act_edge(icou)= ie

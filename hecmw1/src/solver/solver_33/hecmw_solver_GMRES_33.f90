@@ -16,7 +16,7 @@
 !                                                                      !
 !======================================================================!
 
-!C*** 
+!C***
 !C*** module hecmw_solver_GMRES_33
 !C***
 !
@@ -377,7 +377,7 @@
       enddo
 
 !C
-!C-- Compute residual vector R, find norm, then check for tolerance.        
+!C-- Compute residual vector R, find norm, then check for tolerance.
       call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)

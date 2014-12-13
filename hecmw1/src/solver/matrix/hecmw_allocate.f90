@@ -26,7 +26,7 @@ contains
       type (hecmwST_matrix):: hecMAT, mat
       integer:: nBlock
       integer:: ierr
-   
+
       allocate( mat%AL( nBlock*hecMAT%NPL ), STAT=ierr )
       if ( ierr /= 0 ) then
          write(0,*) 'Allocation error: Not enough memory for matrix!'
@@ -56,7 +56,7 @@ contains
       integer(kind=kint), pointer:: vector(:)
       integer(kind=kint):: size
       integer(kind=kint):: ierr
-   
+
       allocate( vector( size ), STAT=ierr )
       if ( ierr /= 0 ) then
          write(0,*) 'Allocation error: Not enough memory for integer array!'
@@ -73,7 +73,7 @@ contains
       real(kind=kreal), pointer:: vector(:)
       integer(kind=kint):: size
       integer(kind=kint):: ierr
-   
+
       allocate( vector( size ), STAT=ierr )
       if ( ierr /= 0 ) then
          write(0,*) 'Allocation error: Not enough memory for real array!'

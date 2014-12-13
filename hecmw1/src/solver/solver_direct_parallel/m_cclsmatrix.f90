@@ -185,7 +185,7 @@ integer ndeg, nndeg, i, idx, jcol, iofset
 ndeg=c%ndeg
 nndeg=ndeg*ndeg
 v=0
-jcol = (k+ndeg-1) / ndeg     ! column number in sparse matrix 
+jcol = (k+ndeg-1) / ndeg     ! column number in sparse matrix
 iofset = mod(k+ndeg-1, ndeg) ! offset in val. 0offset
 
 do i=c%ia(jcol),c%ia(jcol+1)-1
@@ -197,7 +197,7 @@ end do
 return
 end subroutine m_cclsmatrix_getvec
 
-subroutine m_cclsmatrix_errtrp(mes) 
+subroutine m_cclsmatrix_errtrp(mes)
 character(*) mes
 write(*,*)  'Error in m_cclsmatrix: ', mes
 stop

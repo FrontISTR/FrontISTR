@@ -811,7 +811,7 @@ int c_fstr_ctrl_get_data_v( fstr_ctrl_data* ctrl, int line_no, const char* forma
 	if( data_line[0] == '!' ){
 		for( ; counter<len; counter++ ) {
 			if( isupper(format_c[counter])){
-				return counter+1; 
+				return counter+1;
 			}
 		}
 		return 0;
@@ -914,7 +914,7 @@ int c_fstr_ctrl_get_data_array_v( fstr_ctrl_data* ctrl, const char* format, va_l
 		default:
 			assert(0);
 		}
-		
+
 		p++;
 		i++;
 	}
@@ -1830,7 +1830,7 @@ char* gettoken( const char* line )
 		if( *p == 0 || *p == '\n' || *p == '\r'  || *p == ',' ) {
 			if( *p == 0 ){
 				is_null = 1;
-			} 
+			}
 			*p = 0;
 			/* remove space in head */
 			while( *h == ' ' ) h++;

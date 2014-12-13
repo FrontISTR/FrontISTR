@@ -176,7 +176,7 @@ do i= 1, nrows
     j= indices(l)
     if ((j .ge. ilag_sta) .and. (i .lt. ilag_sta) ) then
       kk = kk + 1
-      lagtmp%irow(kk) = i 
+      lagtmp%irow(kk) = i
       lagtmp%jcol(kk) = j - ilag_sta +1
       lagtmp%val(1,kk)=values(l)
     end if
@@ -254,7 +254,7 @@ type(child_matrix), pointer :: dm(:)       !divided matrices
 
 real(kind=kreal), allocatable :: bd(:,:) ! for right hand side value
 
-! internal use 
+! internal use
 real(kind=kreal), allocatable :: b(:,:)
 real(kind=kreal), allocatable :: oldb(:,:)
 real(kind=kreal), allocatable :: b_a(:)
@@ -303,7 +303,7 @@ ierr=0
   !
   ! STEP1X: LDU decompose of givem A0
   !
-  ! STEP11: build up matrix. 
+  ! STEP11: build up matrix.
   ! A is given a0
   ! C is lagrange region
   ! D is kept as dsln (off-diagonal), diag (diagonal).
@@ -318,7 +318,7 @@ ierr=0
 
   ! set matrix for LDU decomposition
 
-  
+
 ! A matrix
   cm%a%ndeg  = a0%ndeg
   cm%a%neqns = a0%neqns
@@ -393,7 +393,7 @@ ierr=0
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-! STEP2X: Solve Ax=b0 
+! STEP2X: Solve Ax=b0
 !
 
 ! forward substitution for A region
@@ -407,7 +407,7 @@ do i=1,a0%neqns+lag%nrows
   b(1,i)=b_in(i) !for ndeg=1
 end do
 
-! for verify 
+! for verify
 allocate(oldb(ndeg,a0%neqns+lag%nrows), stat=ierr)
 if(ierr .ne. 0) then
   call errtrp('stop due to allocation error.')
@@ -459,9 +459,9 @@ end if
 wk_d=0
 
 do i=dsi%nstop,dsi%neqns
-  ks=dsi%xlnzr(i)                                          
-  ke=dsi%xlnzr(i+1)-1                                      
-  if(ke.lt.ks) then ! logic inverted 
+  ks=dsi%xlnzr(i)
+  ke=dsi%xlnzr(i+1)-1
+  if(ke.lt.ks) then ! logic inverted
     cycle
   end if
   wk_d(i)=wk_d(i)-spdot2(wk,dsi%zln(1,:),dsi%colno,ks,ke)
@@ -475,9 +475,9 @@ end do
 !
 ! STEP22 forward substitution for D region. and get Y
 !
-! b1, b2... are sended to child processes. 
-! bd is substituted to D in locally, and results from child processes 
-! (C1-Y1 substitute, C2-Y2 substitute...) are receive from child processes. 
+! b1, b2... are sended to child processes.
+! bd is substituted to D in locally, and results from child processes
+! (C1-Y1 substitute, C2-Y2 substitute...) are receive from child processes.
 ! these value also add for Yd
 
 ! update b_lag
@@ -505,10 +505,10 @@ end do
 
 ! D region is already solved
 do i=1,neqns_lag
-  wk(neqns_a + i)=b_lag(i) 
+  wk(neqns_a + i)=b_lag(i)
 end do
 
-do i=dsi%neqns,1,-1   
+do i=dsi%neqns,1,-1
   ks=dsi%xlnzr(i)
   ke=dsi%xlnzr(i+1)-1
   if(ke.lt.ks) then
@@ -559,7 +559,7 @@ deallocate(dsi%diag)
 deallocate(dsi%zln)
 !deallocate(dsi%dsln) ! not allocated
 
-return 
+return
 end subroutine sp_direct_parent
 
 
@@ -578,12 +578,12 @@ end subroutine errtrp
 !----------------------------------------------------------------------
 !
 !     matini initializes storage for sparse matrix solver.
-!     this routine is used for both symmetric matrices 
+!     this routine is used for both symmetric matrices
 !     and must be called once at the beginning
 !
 !    (i)
 !        neqns     number of unknowns
-!        nttbr     number of non0s, pattern of non-zero elements are 
+!        nttbr     number of non0s, pattern of non-zero elements are
 !                  given like following.
 !                  nonz(A)={(i,j);i=irow(l),j=jcol(l); 1<= l <= nttbr}
 !        irow
@@ -864,7 +864,7 @@ real(kind=kreal), intent(inout) :: diag_lag(:,:)
       else if(dsi%ndeg.eq.3) then
          write(idbg,*) 'ndeg=1 only'
          stop
-      else if(dsi%ndeg.eq.6) then 
+      else if(dsi%ndeg.eq.6) then
          write(idbg,*) 'ndeg=1 only'
          stop
       else
@@ -947,7 +947,7 @@ real(kind=kreal), intent(inout) :: diag_lag(:,:)
 !      call MPI_SEND(diag(1,nstop),  neqns_c,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
 
 do i=1, neqns_c
-  diag_lag(1,i) = diag(1,nstop+i-1) ! lagrange region 
+  diag_lag(1,i) = diag(1,nstop+i-1) ! lagrange region
 end do
 
       return
@@ -971,10 +971,10 @@ integer(kind=kint) :: ndegl
 if (ndeg .eq. 1) then
   call sum3(neqns, dsln(1,:), diag(1,:))
 else if (ndeg .eq. 3) then
-         write(idbg,*) 'ndeg=1 only' 
+         write(idbg,*) 'ndeg=1 only'
          stop
-else 
-         write(idbg,*) 'ndeg=1 only' 
+else
+         write(idbg,*) 'ndeg=1 only'
          stop
 end if
 
@@ -997,10 +997,10 @@ integer(kind=kint), intent(in)    :: neqns, ndeg
 if (ndeg .eq. 1) then
   call nusol1_parent(dsln(1,:), diag(1,:), b(1,:), neqns)
 else if (ndeg .eq. 3) then
-         write(idbg,*) 'ndeg=1 only' 
+         write(idbg,*) 'ndeg=1 only'
          stop
 else
-         write(idbg,*) 'ndeg=1 only' 
+         write(idbg,*) 'ndeg=1 only'
          stop
 end if
 
@@ -1483,7 +1483,7 @@ end subroutine nusol1_parent
          endif
   260 continue
       if(l.eq.1) goto 500
-       
+
 !
 !  anc(l-1) is the eligible node
 !
@@ -1749,10 +1749,10 @@ end subroutine nusol1_parent
 
       implicit none
 
-! Count total number of non-zero elements 
+! Count total number of non-zero elements
 ! which include fill-in.
 ! A and C region of given sparse matrix will consider.
-! D region will not consider because of D is treat as 
+! D region will not consider because of D is treat as
 ! dens matrix.
 !
       integer(kind=kint), intent(in)  :: parent(:),xleaf(:),leaf(:)
@@ -2229,7 +2229,7 @@ end subroutine lduDecomposeC
 !
 !      this routine sets an non-zero entry  of the matrix.
 !      (symmetric version)
-!      
+!
 !      (i)
 !          isw      =0    set the value
 !                   =1    add the value
@@ -2292,10 +2292,10 @@ end subroutine lduDecomposeC
       if(ndeg.le.2) then
          call addr0(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,dsi%ndeg,ir)
       elseif(ndeg.eq.3) then
-         write(idbg,*) 'ndeg=1 only' 
+         write(idbg,*) 'ndeg=1 only'
          stop
       else
-         write(idbg,*) 'ndeg=1 only' 
+         write(idbg,*) 'ndeg=1 only'
          stop
       endif
  1000 continue
@@ -2395,9 +2395,9 @@ end subroutine lduDecomposeC
         call errtrp('stop due to allocation error.')
       end if
 
-      do i=1,neqns 
-        temp(i)=0 
-      end do 
+      do i=1,neqns
+        temp(i)=0
+      end do
 
          ks=xlnzr(ic)
          ke=xlnzr(ic+1)

@@ -49,7 +49,7 @@ void CNFDB_404::Read( CNFData* nfd )
 	// #1
 		nfd->ReadLineEx( buff );
 		if( nfd->version >= 8.0 ) {
-			nfd->ReadRecord( buff, "IIIIIIIBIIIII", 
+			nfd->ReadRecord( buff, "IIIIIIIBIIIII",
 				&ID,
 				&color,
 				&propID,
@@ -65,7 +65,7 @@ void CNFDB_404::Read( CNFData* nfd )
 				&formulation2
 			);
 		} else if( nfd->version >= 6.0 ) {
-			nfd->ReadRecord( buff, "IIIIIIIBIIII", 
+			nfd->ReadRecord( buff, "IIIIIIIBIIII",
 				&ID,
 				&color,
 				&propID,
@@ -80,7 +80,7 @@ void CNFDB_404::Read( CNFData* nfd )
 				&contactsegment[1]
 			);
 		} else if( nfd->version >= 5.0 ) {
-			nfd->ReadRecord( buff, "IIIIIIIBI", 
+			nfd->ReadRecord( buff, "IIIIIIIBI",
 				&ID,
 				&color,
 				&propID,
@@ -92,7 +92,7 @@ void CNFDB_404::Read( CNFData* nfd )
 				&geomID
 			);
 		} else {
-			nfd->ReadRecord( buff, "IIIIIIIB", 
+			nfd->ReadRecord( buff, "IIIIIIIB",
 				&ID,
 				&color,
 				&propID,
@@ -105,12 +105,12 @@ void CNFDB_404::Read( CNFData* nfd )
 		}
 	// #2
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIIIIII",
 			&node[0], &node[1], &node[2], &node[3], &node[4],
 			&node[5], &node[6], &node[7], &node[8], &node[9] );
 	// #3
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIIIIII",
 			&node[10], &node[11], &node[12], &node[13], &node[14],
 			&node[15], &node[16], &node[17], &node[18], &node[19] );
 	// #4
@@ -125,13 +125,13 @@ void CNFDB_404::Read( CNFData* nfd )
 	// #7
 		nfd->ReadLineEx( buff );
 		if( nfd->version < 4.4 ) {
-			nfd->ReadRecord( buff, "BBBBBBBBBBBB", 
+			nfd->ReadRecord( buff, "BBBBBBBBBBBB",
 				&release1[0], &release1[1], &release1[2],
 				&release1[3], &release1[4], &release1[5],
 				&release2[0], &release2[1], &release2[2],
 				&release2[3], &release2[4], &release2[5] );
 		} else {
-			nfd->ReadRecord( buff, "BBBBBBBBBBBBIIII", 
+			nfd->ReadRecord( buff, "BBBBBBBBBBBBIIII",
 				&release1[0], &release1[1], &release1[2],
 				&release1[3], &release1[4], &release1[5],
 				&release2[0], &release2[1], &release2[2],
@@ -186,7 +186,7 @@ CNFDB_404::cref_node_list* CNFDB_404::make_ref_node_list( CNFData* nfd )
 		}
 		if( id == -1 ) break;
 
-		nfd->ReadRecord( buff, "IIFIIIIII", 
+		nfd->ReadRecord( buff, "IIFIIIIII",
 			&ref.NodeID,
 			&ref.faceID,
 			&ref.weight,
@@ -207,7 +207,7 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 
 	// #1
 		if( nfd->version >= 8.0 ) {
-			nfd->WriteData( fp, "IIIIIIBIIIIIn", 
+			nfd->WriteData( fp, "IIIIIIBIIIIIn",
 				ID,
 				color,
 				propID,
@@ -222,7 +222,7 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 				formulation2
 			);
 		} else if( nfd->version >= 6.0 ) {
-			nfd->WriteData( fp, "IIIIIIBIIIIn", 
+			nfd->WriteData( fp, "IIIIIIBIIIIn",
 				ID,
 				color,
 				propID,
@@ -236,7 +236,7 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 				contactsegment[1]
 			);
 		} else if( nfd->version >= 5.0 ) {
-			nfd->WriteData( fp, "IIIIIIBIn", 
+			nfd->WriteData( fp, "IIIIIIBIn",
 				ID,
 				color,
 				propID,
@@ -247,7 +247,7 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 				geomID
 			);
 		} else {
-			nfd->WriteData( fp, "IIIIIIBn", 
+			nfd->WriteData( fp, "IIIIIIBn",
 				ID,
 				color,
 				propID,
@@ -258,11 +258,11 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 			);
 		}
 	// #2
-		nfd->WriteData( fp, "IIIIIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIIIIn",
 			node[0], node[1], node[2], node[3], node[4],
 			node[5], node[6], node[7], node[8], node[9] );
 	// #3
-		nfd->WriteData( fp, "IIIIIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIIIIn",
 			node[10], node[11], node[12], node[13], node[14],
 			node[15], node[16], node[17], node[18], node[19] );
 	// #4
@@ -273,13 +273,13 @@ void CNFDB_404::WriteData( class CNFData* nfd, FILE* fp )
 		nfd->WriteData( fp, "FFFn", offset2[0], offset2[1], offset2[2]);
 	// #7
 		if( nfd->version < 4.4 ) {
-			nfd->WriteData( fp, "BBBBBBBBBBBBn", 
+			nfd->WriteData( fp, "BBBBBBBBBBBBn",
 				release1[0], release1[1], release1[2],
 				release1[3], release1[4], release1[5],
 				release2[0], release2[1], release2[2],
 				release2[3], release2[4], release2[5] );
 		} else {
-			nfd->WriteData( fp, "BBBBBBBBBBBBIIIIn", 
+			nfd->WriteData( fp, "BBBBBBBBBBBBIIIIn",
 				release1[0], release1[1], release1[2],
 				release1[3], release1[4], release1[5],
 				release2[0], release2[1], release2[2],
@@ -301,7 +301,7 @@ void CNFDB_404::write_ref_node_list( CNFData* nfd, FILE* fp, CNFDB_404::cref_nod
 {
 	std::vector<cref_node>::iterator iter;
 	for(iter = list->ref_node.begin(); iter != list->ref_node.end(); iter ++) {
-		nfd->WriteData( fp, "IIFIIIIIIn", 
+		nfd->WriteData( fp, "IIFIIIIIIn",
 			iter->NodeID,
 			iter->faceID,
 			iter->weight,
@@ -309,7 +309,7 @@ void CNFDB_404::write_ref_node_list( CNFData* nfd, FILE* fp, CNFDB_404::cref_nod
 			iter->dof[4], iter->dof[5], iter->dof[6]
 		);
 	}
-	nfd->WriteData( fp, "In", -1 ); 
+	nfd->WriteData( fp, "In", -1 );
 }
 
 

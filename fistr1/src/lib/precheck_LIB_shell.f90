@@ -25,7 +25,7 @@ module m_precheck_LIB_shell
 !----------------------------------------------------------------------*
 !**
 !**  Precheck for 3nodes SHELL
-!** 
+!**
       use hecmw
       use gauss_integration
       IMPLICIT NONE
@@ -55,14 +55,14 @@ module m_precheck_LIB_shell
       a3 = SQRT( (xx(1)-xx(3))**2+(yy(1)-yy(3))**2+(zz(1)-zz(3))**2 )
       almax = DMAX1( a1,a2,a3 )
       almin = DMIN1( a1,a2,a3 )
-      
-   end subroutine PRE_731 
+
+   end subroutine PRE_731
 !----------------------------------------------------------------------*
    subroutine PRE_741( XX,YY,ZZ,thick,vol,almax,almin )
 !----------------------------------------------------------------------*
 !**
 !**  Precheck for 3nodes SHELL
-!** 
+!**
       use hecmw
       use gauss_integration
       IMPLICIT NONE

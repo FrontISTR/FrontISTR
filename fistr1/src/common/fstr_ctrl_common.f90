@@ -17,14 +17,14 @@
 module fstr_ctrl_common
 use m_fstr
 use hecmw
-use mContact                                                            
+use mContact
 
 implicit none
 
 include 'fstr_ctrl_util_f.inc'
 
      private :: pc_strupr
-	 
+
 contains
 
 subroutine pc_strupr( s )
@@ -91,7 +91,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         character(72) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS '
         character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
-        integer(kind=kint) :: number_number = 5    
+        integer(kind=kint) :: number_number = 5
         integer(kind=kint) :: indirect_number = 4
         integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd
 
@@ -151,7 +151,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
 end function fstr_ctrl_get_SOLVER
 
 
-!> Read in !STEP                                                                            
+!> Read in !STEP
 function fstr_ctrl_get_STEP( ctrl, amp, iproc )
         integer(kind=kint) :: ctrl
         character(len=HECMW_NAME_LEN) :: amp
@@ -183,7 +183,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss, data_fmt1
         character(len=HECMW_NAME_LEN) :: amp
-        character(len=HECMW_NAME_LEN) :: header_name 
+        character(len=HECMW_NAME_LEN) :: header_name
         integer(kind=kint) :: bcid
         integer(kind=kint) :: i, n, sn, ierr
         integer(kind=kint) :: bc_n, load_n, contact_n
@@ -206,7 +206,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         amp = ""
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         if( len( trim(amp) )>0 ) then
-          call amp_name_to_id( hecMESH, '!STEP', amp, steps%amp_id ) 
+          call amp_name_to_id( hecMESH, '!STEP', amp, steps%amp_id )
         endif
 
         n = fstr_ctrl_get_data_line_n( ctrl )
@@ -215,7 +215,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         endif
 
         if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt1, ss, f1, f2, f3  )/= 0) return
-        read( ss, * , iostat=ierr ) fn		
+        read( ss, * , iostat=ierr ) fn
         sn=1
         if( ierr==0 ) then
           steps%initdt = fn
@@ -234,7 +234,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
             bc_n = bc_n + 1
           else if( trim(header_name) == 'LOAD' ) then
             load_n = load_n +1
-          else if( trim(header_name) == 'CONTACT' ) then       
+          else if( trim(header_name) == 'CONTACT' ) then
             contact_n = contact_n+1
           else if( trim(header_name) == 'TEMPERATURE' ) then
          !   steps%Temperature = .true.
@@ -256,7 +256,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
           else if( trim(header_name) == 'LOAD' ) then
             load_n = load_n +1
             steps%Load(load_n) = bcid
-          else if( trim(header_name) == 'CONTACT' ) then    
+          else if( trim(header_name) == 'CONTACT' ) then
             contact_n = contact_n+1
             steps%Contact(contact_n) = bcid
           endif
@@ -264,8 +264,8 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
 
         fstr_ctrl_get_ISTEP = .true.
     end function fstr_ctrl_get_ISTEP
-	
-!> Read in !SECTION                                                                            
+
+!> Read in !SECTION
 integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
         integer(kind=kint), intent(in)           :: ctrl
         type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
@@ -282,9 +282,9 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
         if( sect_id > hecMESH%section%n_sect ) return
         hecMESH%section%sect_orien_ID(sect_id) = -1
         if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  1, 'S', sect_orien )/= 0) return
-        
+
         k = size(g_LocalCoordSys)
-        
+
         if(chash < k)then
         if( sect_orien == g_LocalCoordSys(chash)%sys_name ) then
           hecMESH%section%sect_orien_ID(sect_id) = chash
@@ -293,7 +293,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
           return
         endif
         endif
-        
+
         do j=1, k
           if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
             hecMESH%section%sect_orien_ID(sect_id) = j
@@ -301,7 +301,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
             exit
           endif
         enddo
-        
+
         if( hecMESH%section%sect_orien_ID(sect_id) == -1 ) return
 
         fstr_ctrl_get_SECTION = 0
@@ -309,7 +309,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
 end function fstr_ctrl_get_SECTION
 
 
-!> Read in !WRITE                    
+!> Read in !WRITE
 function fstr_ctrl_get_WRITE( ctrl, res, visual, femap )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: res
@@ -328,7 +328,7 @@ function fstr_ctrl_get_WRITE( ctrl, res, visual, femap )
 
 end function fstr_ctrl_get_WRITE
 
-!> Read in !ECHO                                                                                   
+!> Read in !ECHO
 function fstr_ctrl_get_ECHO( ctrl, echo )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: echo
@@ -340,7 +340,7 @@ function fstr_ctrl_get_ECHO( ctrl, echo )
 
 end function fstr_ctrl_get_ECHO
 
-!> Read in !COUPLE                
+!> Read in !COUPLE
 function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, fg_window, surf_id, surf_id_len )
         integer(kind=kint) :: ctrl                           !< readed data
         integer(kind=kint) :: fg_type                        !< if type
@@ -352,7 +352,7 @@ function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, fg_window, surf_id, surf
         integer(kind=kint) :: fstr_ctrl_get_COUPLE
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss
-        write(ss,*)  surf_id_len 
+        write(ss,*)  surf_id_len
         write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),' '
 
         fstr_ctrl_get_COUPLE = -1
@@ -366,7 +366,7 @@ function fstr_ctrl_get_COUPLE( ctrl, fg_type, fg_first, fg_window, surf_id, surf
 
 end function fstr_ctrl_get_COUPLE
 
-!> Read in !MPC                                              
+!> Read in !MPC
 function fstr_ctrl_get_MPC( ctrl, penalty )
         integer(kind=kint), intent(in) :: ctrl      !< readed data
         real(kind=kreal), intent(out)  :: penalty   !< penalty
@@ -441,25 +441,25 @@ logical function fstr_ctrl_get_outitem( ctrl, hecMESH, outinfo )
 
 end function fstr_ctrl_get_outitem
 
-!> Read in !CONTACT                                                           
-function fstr_ctrl_get_CONTACTALGO( ctrl, algo )           
+!> Read in !CONTACT
+function fstr_ctrl_get_CONTACTALGO( ctrl, algo )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: algo
-        integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO    
+        integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
         integer(kind=kint) :: rcode
         character(len=80) :: s
         algo = kcaSLagrange
         s = 'SLAGRANGE,ALAGRANGE '
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )   
-        fstr_ctrl_get_CONTACTALGO = rcode                                  
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
+        fstr_ctrl_get_CONTACTALGO = rcode
 end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo )    
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo )
       integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
       integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
-      integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm                    
+      integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm
       type(tContact), intent(out)       :: contact(n)    !< contact definition
       real(kind=kreal), intent(out)      :: np             !< penalty along contact nomral
       real(kind=kreal), intent(out)      :: tp             !< penalty along contact tangent
@@ -469,18 +469,18 @@ end function fstr_ctrl_get_CONTACTALGO
       integer           :: rcode, ipt
       character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID'
       character(len=HECMW_NAME_LEN) :: data_fmt,ss
-      character(len=HECMW_NAME_LEN) :: cp_name(n)      
-      real(kind=kreal)  :: fcoeff(n),tPenalty(n) 
-      
-      tPenalty = 1.0d6                                            
+      character(len=HECMW_NAME_LEN) :: cp_name(n)
+      real(kind=kreal)  :: fcoeff(n),tPenalty(n)
+
+      tPenalty = 1.0d6
 
       write(ss,*)  HECMW_NAME_LEN
-      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr'                      
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr'
 
-      fstr_ctrl_get_CONTACT = .false.                               
+      fstr_ctrl_get_CONTACT = .false.
       contact(1)%ctype = 1   ! pure slave-master contact; default value
       contact(1)%algtype = CONTACTSSLID ! small sliding contact; default value
-      rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )         
+      rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
       if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
       if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '#', 1, 'I', contact(1)%group )/=0) return
       do rcode=2,n
@@ -492,17 +492,17 @@ end function fstr_ctrl_get_CONTACTALGO
       do rcode=1,n
         contact(rcode)%pair_name = cp_name(rcode)
         contact(rcode)%fcoeff = fcoeff(rcode)
-        contact(rcode)%tPenalty = tPenalty(rcode)        
+        contact(rcode)%tPenalty = tPenalty(rcode)
       enddo
-      
+
       np = 0.d0;  tp=0.d0
       ntol = 0.d0;  ttol=0.d0
       if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
       if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '#', 0, 'R', tp ) /= 0 ) return
       if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
       if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '#', 0, 'R', ttol ) /= 0 ) return
-      fstr_ctrl_get_CONTACT = .true.                                          
-  end function fstr_ctrl_get_CONTACT                                                
+      fstr_ctrl_get_CONTACT = .true.
+  end function fstr_ctrl_get_CONTACT
 
 
 end module fstr_ctrl_common

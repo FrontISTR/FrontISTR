@@ -17,8 +17,8 @@
 
 #include "hecmw_repart.h"
 /*
-extern void write_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node); 
-extern void write2_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node); 
+extern void write_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node);
+extern void write2_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node);
 */
 
 extern struct hecmwST_local_mesh *mesh;
@@ -28,25 +28,25 @@ extern struct hecmwST_result_data *new_data;
 
 extern void mesh_migration(int mynode, int pesize, Result_part *result, int *vtxdist);
 extern void mesh_migration_adapt(int mynode, int pesize, Result_part *result, int *vtxdist);
-extern void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data); 
+extern void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data);
 extern void write_one_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data,
-							HECMW_Comm VIS_COMM, int mynode, int pesize); 
-extern void HECMW_put_result_from_structure(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, 
+							HECMW_Comm VIS_COMM, int mynode, int pesize);
+extern void HECMW_put_result_from_structure(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data,
 											char *resultfile_dist);
 
 
 /*
-extern void mesh_migration(int pesize, int mynode, struct local_mesh *mesh, struct node_elem_data *node, struct local_mesh *new_mesh, 
-					struct node_elem_data *new_node,  Result_part *result, 
+extern void mesh_migration(int pesize, int mynode, struct local_mesh *mesh, struct node_elem_data *node, struct local_mesh *new_mesh,
+					struct node_elem_data *new_node,  Result_part *result,
 					int *vtxdist, int *new_vtxdist, int *global_new2old, HECMW_Comm repart_comm);
-extern void grp_migration(int pesize, int mynode, int t_node, struct local_mesh *new_mesh, struct local_mesh *mesh, struct grp_data *grp, 
-				   struct grp_data *new_grp, int *vtxdist,int *new_vtxdist, 
+extern void grp_migration(int pesize, int mynode, int t_node, struct local_mesh *new_mesh, struct local_mesh *mesh, struct grp_data *grp,
+				   struct grp_data *new_grp, int *vtxdist,int *new_vtxdist,
 				   int *global_new2old, HECMW_Comm repart_comm);
 
 
 
-void redistribute_mesh(struct local_mesh *mesh, struct grp_data *grp, GraphType *graph, 
-				Result_part *result, struct local_mesh *new_mesh, struct grp_data *new_grp, struct node_elem_data *new_node, 
+void redistribute_mesh(struct local_mesh *mesh, struct grp_data *grp, GraphType *graph,
+				Result_part *result, struct local_mesh *new_mesh, struct grp_data *new_grp, struct node_elem_data *new_node,
 				 HECMW_Comm VIS_COMM)
 				 */
 
@@ -76,15 +76,15 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 	int  tn_component, ne_internal, tmp_count;
 	char *resultfile, buf2[HECMW_FILENAME_LEN], resultfile_dist[HECMW_FILENAME_LEN];
 
-	if(mynode==0) 
+	if(mynode==0)
 		fprintf(stderr, "Start migration for generating new mesh among PEs \n");
 /*    update_ne_internal(mynode, mesh);
 	fp_orig=fopen(orig_filename, "r");
-	for(i=0;i<mesh->n_elem;i++) 
+	for(i=0;i<mesh->n_elem;i++)
 		fprintf(fp_orig, "n_elem=%d  ne_internal=%d\n", i+1, mesh->ne_internal_list[i]);
 	fclose(fp_orig);
 	*/
-/*	 
+/*
 
 	write2_mesh_display(orig_filename, mesh, node);
 
@@ -117,7 +117,7 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 
 	   /*   free(node->data);
    free(node->n_free);
-	
+
 	grp_migration(pesize, mynode, result->t_node, new_mesh, mesh, grp, new_grp,  graph->vtxdist, new_vtxdist, global_new2old,
 		repart_comm);
 
@@ -125,10 +125,10 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
    free(new_vtxdist);
    */
 /*   sprintf(orig_file, "orig_mesh.%d.inp", mynode);
-   write_dist_mesh_display(orig_file, mesh, data); 
+   write_dist_mesh_display(orig_file, mesh, data);
 
    sprintf(test_file, "bala_mesh.%d.inp", mynode);
-   write_dist_mesh_display(test_file, new_mesh, new_data); 
+   write_dist_mesh_display(test_file, new_mesh, new_data);
 */
 /*  sprintf(test_file, "test_result.%d", mynode);
 
@@ -161,7 +161,7 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 				fprintf(fp, " prism ");
 			for(j=new_mesh->elem_node_index[tmp_int];j<new_mesh->elem_node_index[tmp_int+1];j++)
 				fprintf(fp, "%d ", new_mesh->elem_node_item[j]);
-			fprintf(fp,"\n");		
+			fprintf(fp,"\n");
 		}
   }
   fprintf(fp, "%d   ", new_data->nn_component);
@@ -193,7 +193,7 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
   fprintf(fp, "=====export nodes ====\n");
   for(i=0;i<new_mesh->export_index[new_mesh->n_neighbor_pe];i++)
 	  fprintf(fp, "%d\n", new_mesh->export_item[i]);
-  
+
   fclose(fp);
   */
 
@@ -201,8 +201,6 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 
 	return;
 	}
-	
-	
 
 
 
@@ -217,7 +215,6 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 
 
 
-		   
 
 
 
@@ -225,7 +222,10 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode, int pe
 
 
 
-		
+
+
+
+
 
 
 

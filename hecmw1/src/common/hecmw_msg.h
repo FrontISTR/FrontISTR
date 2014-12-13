@@ -24,9 +24,9 @@
 
 
 struct hecmw_msgent {
-	int msgno;			
-	char *msgno_str;	
-	char *msg;			
+	int msgno;
+	char *msgno_str;
+	char *msg;
 };
 
 

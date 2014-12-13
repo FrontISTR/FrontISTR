@@ -584,7 +584,7 @@ HECMW_Comm_group( HECMW_Comm comm, HECMW_Group *group )
     if( rtc != MPI_SUCCESS ) {
         HECMW_set_error( HECMW_ALL_E1003, "MPI_Comm_group" );
         goto error;
-    } 
+    }
 
     return 0;
 
@@ -778,7 +778,7 @@ extern void
 hecmw_comm_init_if_(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	hecmw_comm_init_if(comm, size, rank, group);
-}	
+}
 
 
 
@@ -786,7 +786,7 @@ extern void
 hecmw_comm_init_if__(HECMW_Fint *comm, int *size, int *rank, HECMW_Fint *group)
 {
 	hecmw_comm_init_if(comm, size, rank, group);
-}	
+}
 
 
 extern void

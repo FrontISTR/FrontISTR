@@ -44,7 +44,7 @@ include 'fstr_ctrl_util_f.inc'
          type(tSurfElement), pointer   :: master(:)=>null()       !< master surface (element )
          integer, pointer              :: slave(:)=>null()        !< slave surface (node)
          real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
-         real(kind=kreal)              :: tPenalty                !< tangential penalty    
+         real(kind=kreal)              :: tPenalty                !< tangential penalty
 
          ! following algorithm
          ! -1: not initialized
@@ -53,27 +53,27 @@ include 'fstr_ctrl_util_f.inc'
          ! 3: SSLID-Small sliding contact( no position but with contact state change)
          ! 4: FSLID-Finite sliding contact (both changes in contact state and poisition possible)
          integer                       :: algtype                 !< algorithm flag
-		 
+
          logical                       :: mpced                   !< if turns into mpc condition
          logical                       :: symmetric               !< if symmetrizalized in friction calculation
 
          ! following contact state
          type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
        end type tContact
-       
-       type fstr_info_contactChange                                         
+
+       type fstr_info_contactChange
          integer(kind=kint) :: contact2free           !< counter: contact to free state change
-         integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change     
-         integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change      
-         integer(kind=kint) :: free2contact           !< counter: free to contact state change  
+         integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change
+         integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change
+         integer(kind=kint) :: free2contact           !< counter: free to contact state change
          integer(kind=kint) :: contactNode_previous   !< previous number of nodes in contact
-         integer(kind=kint) :: contactNode_current    !< current number of nodes in contact       
-       end type fstr_info_contactChange                                     
+         integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
+       end type fstr_info_contactChange
 
 contains
 
 
-  
+
   !> If contact to mpc condiitions
   logical function is_MPC_available( contact )
        type(tContact), intent(in)        :: contact   !< contact definition
@@ -124,25 +124,25 @@ contains
       logical  :: isfind
 
       fstr_contact_check = .false.
-	  
+
 	! if contact pair exist?
       isfind = .false.
       do i=1,hecMESH%contact_pair%n_pair
         if( hecMESH%contact_pair%name(i) == contact%pair_name ) then
-          contact%ctype = hecMESH%contact_pair%type(i) 
-          contact%surf_id1 = hecMESH%contact_pair%slave_grp_id(i) 
-          contact%surf_id2 = hecMESH%contact_pair%master_grp_id(i) 
+          contact%ctype = hecMESH%contact_pair%type(i)
+          contact%surf_id1 = hecMESH%contact_pair%slave_grp_id(i)
+          contact%surf_id2 = hecMESH%contact_pair%master_grp_id(i)
           isfind = .true.
         endif
       enddo
-      if( .not. isfind ) return;  
+      if( .not. isfind ) return;
       if( contact%fcoeff<=0.d0 ) contact%fcoeff=0.d0
       if( contact%ctype/=1 .and. contact%ctype/=2 ) return
       if( contact%group<=0 ) return
 
       fstr_contact_check = .true.
   end function
-  
+
   !>  Initializer of tContactState
   logical function fstr_contact_init( contact, hecMESH,myrank )
       type(tContact), intent(inout)     :: contact  !< contact definition
@@ -160,7 +160,7 @@ contains
       ie= hecMESH%surf_group%grp_index(cgrp  )
 !#ifdef PARA_CONTACT
       if(present(myrank)) then
-      
+
       count = 0
       do i=is,ie
         ic   = hecMESH%surf_group%grp_item(2*i-1)
@@ -170,7 +170,7 @@ contains
       allocate( contact%master(count) )
       count = 0
       do i=is,ie
-        ic   = hecMESH%surf_group%grp_item(2*i-1)       
+        ic   = hecMESH%surf_group%grp_item(2*i-1)
         if(hecMESH%elem_ID(ic*2) /= myrank) cycle
         count = count + 1
         nsurf = hecMESH%surf_group%grp_item(2*i)
@@ -182,7 +182,7 @@ contains
           contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
-      
+
       else
 !#else
       allocate( contact%master(ie-is+1) )
@@ -197,7 +197,7 @@ contains
           contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
-      
+
       endif
 !#endif
 
@@ -240,9 +240,9 @@ contains
           contact%slave(ii) = hecMESH%node_group%grp_item(i)
           contact%states(ii)%state = -1
           contact%states(ii)%multiplier(:) = 0.d0
-          contact%states(ii)%tangentForce(:) = 0.d0            
-          contact%states(ii)%tangentForce_trial(:) = 0.d0      
-          contact%states(ii)%tangentForce_final(:) = 0.d0         
+          contact%states(ii)%tangentForce(:) = 0.d0
+          contact%states(ii)%tangentForce_trial(:) = 0.d0
+          contact%states(ii)%tangentForce_final(:) = 0.d0
         enddo
 !    endif
 
@@ -251,14 +251,14 @@ contains
       do i=1,nslave
         call contact_state_init( contact%states(i) )
       enddo
-	  
+
     ! neighborhood of surface group
       call find_surface_neighbor( contact%master )
 
       contact%symmetric = .true.
       fstr_contact_init = .true.
   end function
-  
+
   !> Reset contact state all to free
   subroutine clear_contact_state( contact )
       type(tContact), intent(inout) :: contact    !< contact definition
@@ -283,19 +283,19 @@ contains
   !> This subroutine update contact states, which include
   !!-# Free to contact ot contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
-  subroutine scan_contact_state( flag_ctAlgo, contact, currpos, ndforce, infoCTChange, &          
+  subroutine scan_contact_state( flag_ctAlgo, contact, currpos, ndforce, infoCTChange, &
                                   nodeID, elemID, active, mu, B )
-      character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag    
+      character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
       type( tContact ), intent(inout)                  :: contact      !< contact info
-      type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info                                          
-      real(kind=kreal), intent(in)                     :: currpos(:)    !< current coordinate of each nodes      
+      type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+      real(kind=kreal), intent(in)                     :: currpos(:)    !< current coordinate of each nodes
       real(kind=kreal), intent(in)                     :: ndforce(:)    !< nodal force
       integer(kind=kint), intent(in)                  :: nodeID(:)     !< global nodal ID, just for print out
       integer(kind=kint), intent(in)                  :: elemID(:)     !< global elemental ID, just for print out
       logical, intent(out)                            :: active        !< if any in contact
       real(kind=kreal), intent(in)                     :: mu            !< penalty
       real(kind=kreal), optional                       :: B(:)          !< nodal force residual
-	  
+
       real(kind=kreal)    :: clearance
       integer(kind=kint)  :: slave, id, etype
       integer(kind=kint)  :: nn, i, j, iSS
@@ -310,33 +310,33 @@ contains
       real(kreal) :: width = 4.0D0,x0(3)
 !#endif
       allocate(indexMaster(nMasterMax))
-          
+
       active = .false.
-      clearance = 1.d-6                                                  
-      if( contact%algtype<=2 ) return    
+      clearance = 1.d-6
+      if( contact%algtype<=2 ) return
       do i= 1, size(contact%slave)
         slave = contact%slave(i)
         if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
           slforce(1:3)=ndforce(3*slave-2:3*slave)
-          id = contact%states(i)%surface                     
-          nlforce = contact%states(i)%multiplier(1)                                                          
+          id = contact%states(i)%surface
+          nlforce = contact%states(i)%multiplier(1)
 
-          if( nlforce < -1.0d-8 ) then                                                            
-            contact%states(i)%state = CONTACTFREE                                                        
-            contact%states(i)%multiplier(:) = 0.d0 
-            if( flag_ctAlgo=='SLagrange' ) then                                             
-              contact%states(i)%tangentForce(:) =0.d0                      
-              contact%states(i)%tangentForce_trial(:) =0.d0                
-              contact%states(i)%tangentForce_final(:) =0.d0 
-            endif                                                                                      
-            infoCTChange%contact2free = infoCTChange%contact2free + 1                                   
+          if( nlforce < -1.0d-8 ) then
+            contact%states(i)%state = CONTACTFREE
+            contact%states(i)%multiplier(:) = 0.d0
+            if( flag_ctAlgo=='SLagrange' ) then
+              contact%states(i)%tangentForce(:) =0.d0
+              contact%states(i)%tangentForce_trial(:) =0.d0
+              contact%states(i)%tangentForce_final(:) =0.d0
+            endif
+            infoCTChange%contact2free = infoCTChange%contact2free + 1
             write(*,'(A,i5,A,i5,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
-                        elemID(contact%master(id)%eid), " with tensile force ", nlforce            
+                        elemID(contact%master(id)%eid), " with tensile force ", nlforce
             cycle
           endif
           active = .true.
-          if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) cycle   ! small slide problem         
-          call track_contact_position( flag_ctAlgo, i, contact, currpos, mu, infoCTChange, nodeID, elemID, B )    
+          if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) cycle   ! small slide problem
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
 
         else if( contact%states(i)%state==CONTACTFREE ) then
           coord(:) = currpos(3*slave-2:3*slave)
@@ -344,7 +344,7 @@ contains
           nMaster = 0
 !#endif
           do id= 1, size(contact%master)
-          
+
 !#ifdef CONTACT_FILTER
             nn = size( contact%master(id)%nodes )
             do j=1,nn
@@ -370,7 +370,7 @@ contains
               endif
               indexMaster(nMaster) = id
             endif
-          enddo 
+          enddo
 
           if(nMaster == 0) cycle
 !          do id= 1, size(contact%master)
@@ -388,8 +388,8 @@ contains
             contact%states(i)%surface = id
             contact%states(i)%multiplier(:) = 0.d0
             iSS = isInsideElement( etype, contact%states(i)%lpos, clearance )
-            if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )   
-            infoCTChange%free2contact = infoCTChange%free2contact + 1                                                       
+            if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
+            infoCTChange%free2contact = infoCTChange%free2contact + 1
             active = .true.
             write(*,'(A,i5,A,i5,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
                         elemID(contact%master(id)%eid),       &
@@ -399,7 +399,7 @@ contains
           enddo
         endif
       enddo
-             
+
       deallocate(indexMaster)
   end subroutine scan_contact_state
 
@@ -440,34 +440,34 @@ contains
         cnt = cnt+1
       endif
     enddo
-    normal = normal/cnt                                        !!-??? 
+    normal = normal/cnt                                        !!-???
     normal = normal/ dsqrt( dot_product( normal, normal ) )
   end subroutine
-  
+
   !> This subroutine tracks down next contact position after a finite slide
-  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, mu, infoCTChange, nodeID, elemID, B )    
-      character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag                              
+  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
+      character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
       integer, intent(in)                             :: nslave       !< slave node
       type( tContact ), intent(inout)                  :: contact      !< contact info
-      type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info                                        
+      type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
       real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
       real(kind=kreal), intent(in)                     :: mu           !< penalty
       integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
       integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
       real(kind=kreal), intent(inout)                  :: B(:)         !< nodal force residual
-	  
-      real(kind=kreal)    :: distclr, clearance             
-      integer(kind=kint) :: slave, sid0, sid, etype 
+
+      real(kind=kreal)    :: distclr, clearance
+      integer(kind=kint) :: slave, sid0, sid, etype
       integer(kind=kint) :: nn, i, j, iSS
       real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
       logical            :: isin
       real(kind=kreal)    :: opos(2), odirec(3)
 
-      distclr = 1.0d0          !1.d-1                                                  
+      distclr = 1.0d0          !1.d-1
       clearance = 1.d-6
-	          
+
       slave = contact%slave(nslave)
-      coord(:) = currpos(3*slave-2:3*slave)  
+      coord(:) = currpos(3*slave-2:3*slave)
 	  !> checking the contact element of last step
       sid0 = contact%states(nslave)%surface
       opos = contact%states(nslave)%lpos
@@ -478,9 +478,9 @@ contains
          iSS = contact%master(sid0)%nodes(j)
          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       enddo
-      call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &       
-            contact%states(nslave)%lpos, clearance ) 
-      if( .not. isin ) then                                                            
+      call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
+            contact%states(nslave)%lpos, clearance )
+      if( .not. isin ) then
         do i=1, contact%master(sid0)%n_neighbor
           sid = contact%master(sid0)%neighbor(i)
           etype = contact%master(sid)%etype
@@ -492,14 +492,14 @@ contains
           call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
           if( isin ) then
             contact%states(nslave)%surface = sid
-            exit 
+            exit
           endif
         enddo
       endif
-      
-      if( .not. isin ) then   ! such case is considered to rarely or never occur 
+
+      if( .not. isin ) then   ! such case is considered to rarely or never occur
         do sid= 1, size(contact%master)
-          if( sid==sid0 ) cycle                          
+          if( sid==sid0 ) cycle
           if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           etype = contact%master(sid)%etype
           nn = size( contact%master(sid)%nodes )
@@ -507,45 +507,45 @@ contains
             iSS = contact%master(sid)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr ) 
+          call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
           endif
         enddo
-      endif   
-      
-      if( isin ) then                                                                     
+      endif
+
+      if( isin ) then
         if( contact%states(nslave)%surface==sid0 ) then
-	      if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  &    
-	      infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1   
+	      if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  &
+	      infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         else
           write(*,'(A,i5,A,i5,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
                         elemID(contact%master(sid)%eid), " with distance ",      &
-                        contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:) 
-          infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1                                                                                                    
-          if( flag_ctAlgo=='ALagrange' )  &                                                         
-          call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B ) 
-        endif 
-        if( flag_ctAlgo=='SLagrange' )  &                                                           
-	    contact%states(nslave)%tangentForce(1:3) = contact%states(nslave)%tangentForce_final(1:3)   
-	    iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )      
+                        contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
+          infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
+          if( flag_ctAlgo=='ALagrange' )  &
+          call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
+        endif
+        if( flag_ctAlgo=='SLagrange' )  &
+	    contact%states(nslave)%tangentForce(1:3) = contact%states(nslave)%tangentForce_final(1:3)
+	    iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )
         if( iSS>0 ) &
-        call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) ) 
+        call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
       else if( .not. isin ) then
         write(*,'(A,i5,A)') "Node",nodeID(slave)," move out of contact"
         infoCTChange%contact2free = infoCTChange%contact2free+1
-        contact%states(nslave)%state = CONTACTFREE 
+        contact%states(nslave)%state = CONTACTFREE
         contact%states(nslave)%multiplier(:) = 0.d0
-        if( flag_ctAlgo=='SLagrange' ) then                                                   
-          contact%states(nslave)%tangentForce(:) =0.d0                      
-          contact%states(nslave)%tangentForce_trial(:) =0.d0                
-          contact%states(nslave)%tangentForce_final(:) =0.d0  
-        endif                  
+        if( flag_ctAlgo=='SLagrange' ) then
+          contact%states(nslave)%tangentForce(:) =0.d0
+          contact%states(nslave)%tangentForce_trial(:) =0.d0
+          contact%states(nslave)%tangentForce_final(:) =0.d0
+        endif
       endif
-	  
+
   end subroutine track_contact_position
-  
+
   !>\brief This subroutine update contact force in case that contacting element
   !> is changed
   subroutine reset_contact_force( contact, currpos, lslave, omaster, opos, odirec, B )
@@ -586,13 +586,13 @@ contains
                               metric, dispmat )
           fric(1:2) = contact%states(lslave)%multiplier(2:3)
           f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
-          B(3*slave-2:3*slave) = B(3*slave-2:3*slave)+f3(1:3)	
+          B(3*slave-2:3*slave) = B(3*slave-2:3*slave)+f3(1:3)
           do j=1,nn
             iSS = contact%master(omaster)%nodes(j)
             B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+f3(3*j+1:3*j+3)
           enddo
         endif
-	  
+
 	  ! reset contact force in new contacting element
         master = contact%states(lslave)%surface
         nn = size( contact%master(master)%nodes )
@@ -613,7 +613,7 @@ contains
                               metric, dispmat )
           fric(1:2) = contact%states(lslave)%multiplier(2:3)
           f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
-          B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
+          B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
           do j=1,nn
             iSS = contact%master(master)%nodes(j)
             B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
@@ -621,14 +621,14 @@ contains
         endif
 
   end subroutine reset_contact_force
-    
-  !>\brief This subroutine update contact condition as follows: 
+
+  !>\brief This subroutine update contact condition as follows:
   !!-# Contact force from multipler and disp increment
   !!-# Update nodal force residual
   subroutine calcu_contact_force0( contact, coord, disp, ddisp, fcoeff, mu,     &
                                          mut, B )
       type( tContact ), intent(inout)   :: contact        !< contact info
-      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate 
+      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate
       real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
       real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
       real(kind=kreal), intent(in)      :: fcoeff         !< frictional coeff
@@ -648,7 +648,7 @@ contains
         slave = contact%slave(i)
         edisp(1:3) = ddisp(3*slave-2:3*slave)
         master = contact%states(i)%surface
-		
+
         nn = size( contact%master(master)%nodes )
         etype = contact%master(master)%etype
         do j=1,nn
@@ -658,7 +658,7 @@ contains
             elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
         enddo
         call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
-		
+
         ! normal component
         elemg = 0.d0
         do j=1,nn
@@ -674,7 +674,7 @@ contains
           B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+nrlforce*        &
                                       shapefunc(j)*contact%states(i)%direction
         enddo
-	
+
         if( fcoeff==0.d0 ) cycle
 		! tangent component
         call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
@@ -685,47 +685,47 @@ contains
         fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
         f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
 
-        if(  contact%states(i)%state==CONTACTSLIP ) then 
+        if(  contact%states(i)%state==CONTACTSLIP ) then
           dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
           f3(:) = f3(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
         endif
-        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
+        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
         do j=1,nn
           iSS = contact%master(master)%nodes(j)
           B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
         enddo
       enddo
   end subroutine calcu_contact_force0
-  
-     
+
+
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
   subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, mu, mut,   &
-                                        gnt, ctchanged )            
+                                        gnt, ctchanged )
       type( tContact ), intent(inout)   :: contact        !< contact info
-      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate 
+      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate
       real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
       real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
       real(kind=kreal), intent(in)      :: fcoeff         !< frictional coeff
       real(kind=kreal), intent(in)      :: mu, mut        !< penalty
       real(kind=kreal), intent(out)     :: gnt(2)         !< convergency information
-      logical, intent(inout)            :: ctchanged       !< if contact state changes       
+      logical, intent(inout)            :: ctchanged       !< if contact state changes
 
       integer(kind=kint)  :: slave,  etype, master
       integer(kind=kint)  :: nn, i, j, iSS, cnt
-      real(kind=kreal)    :: elemdisp(3,l_max_elem_node), tangent(3,2) 
+      real(kind=kreal)    :: elemdisp(3,l_max_elem_node), tangent(3,2)
       real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
       real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
       real(kind=kreal)    :: lgnt(2), fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
- 
+
       cnt =0; lgnt(:)=0.d0
       do i= 1, size(contact%slave)
         if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
         slave = contact%slave(i)
         edisp(1:3) = ddisp(3*slave-2:3*slave)
         master = contact%states(i)%surface
-		
+
         nn = size( contact%master(master)%nodes )
         etype = contact%master(master)%etype
         do j=1,nn
@@ -735,7 +735,7 @@ contains
             elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
         enddo
         call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
-		
+
         ! normal component
         elemg = 0.d0
         do j=1,nn
@@ -748,7 +748,7 @@ contains
         contact%states(i)%distance = contact%states(i)%distance - dgn
         cnt = cnt+1
         lgnt(1) = lgnt(1)- contact%states(i)%wkdist
-		
+
         if( fcoeff==0.d0 ) cycle
 		! tangent component
         call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
@@ -762,16 +762,16 @@ contains
 		if( contact%states(i)%multiplier(1)>0.d0 ) then
         if(  dgn > fcoeff*contact%states(i)%multiplier(1) ) then
           if( contact%states(i)%state==CONTACTSTICK ) then
-		     ctchanged= .true.  
-	         print *, "Node", slave, "to slip state",dgn, fcoeff*contact%states(i)%multiplier(1)  
+		     ctchanged= .true.
+	         print *, "Node", slave, "to slip state",dgn, fcoeff*contact%states(i)%multiplier(1)
           endif
           contact%states(i)%state = CONTACTSLIP
           fric(:) = fric(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
         else
           if( contact%states(i)%state==CONTACTSLIP ) then
-             ctchanged= .true.       
+             ctchanged= .true.
              print *, "Node", slave, "to stick state",dgn, fcoeff*contact%states(i)%multiplier(1)
-          endif			 
+          endif
           contact%states(i)%state = CONTACTSTICK
         endif
 		endif
@@ -782,11 +782,11 @@ contains
       if(cnt>0) lgnt(:) = lgnt(:)/cnt
       gnt = gnt + lgnt
    end subroutine update_contact_multiplier
-   
+
   !>\brief This subroutine assemble contact force into contacing nodes
   subroutine ass_contact_force( contact, coord, disp, B )
       type( tContact ), intent(in)      :: contact        !< contact info
-      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate 
+      real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate
       real(kind=kreal), intent(in)      :: disp(:)        !< disp till current now
       real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
 
@@ -802,11 +802,11 @@ contains
         if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
         slave = contact%slave(i)
         master = contact%states(i)%surface
-		
+
         nn = size( contact%master(master)%nodes )
         etype = contact%master(master)%etype
         call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
-		
+
         ! normal component
         nrlforce = contact%states(i)%multiplier(1)
         B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce*contact%states(i)%direction
@@ -816,7 +816,7 @@ contains
           B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+nrlforce*        &
                                       shapefunc(j)*contact%states(i)%direction
         enddo
-	
+
         if( fcoeff==0.d0 ) cycle
 		! tangent component
         do j=1,nn
@@ -825,10 +825,10 @@ contains
         enddo
         call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
                               metric, dispmat )
-							  
-        fric(1:2) = contact%states(i)%multiplier(2:3) 
+
+        fric(1:2) = contact%states(i)%multiplier(2:3)
         f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
-        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)	
+        B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
         do j=1,nn
           iSS = contact%master(master)%nodes(j)
           B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
@@ -836,7 +836,7 @@ contains
       enddo
 
   end subroutine ass_contact_force
-  
+
 subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
   real(kreal),intent(in)      ::  x(:,:)  ! Multi-Points' coordinate in space
   real(kreal),intent(in)      ::  x0(3)
@@ -858,5 +858,5 @@ subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
       enddo
     enddo
 end subroutine getMinMaxBoxIDPassedByMultiPoint
-   
+
 end module mContactDef

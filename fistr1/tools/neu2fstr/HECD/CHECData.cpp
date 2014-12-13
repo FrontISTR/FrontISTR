@@ -79,7 +79,7 @@ bool CHECData::Save( const char* file_name )
 
 	fclose(fp);
 	fp = 0;
-	return true;	
+	return true;
 }
 
 
@@ -329,10 +329,10 @@ bool CHECData::AddLoad( const char* file_name )
 		}
 		DB.push_back(block);
 	}
-	
+
 	fclose(fp);
 	fp = 0;
-	return true;	
+	return true;
 }
 
 

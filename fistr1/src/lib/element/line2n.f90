@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 2 node 
-!!     line element   (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 2 node
+!!     line element   (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/27
@@ -36,7 +36,7 @@ module shape_line2n
       func(1,1) = -0.5d0
       func(2,1) = 0.5d0
     end subroutine
-    
+
     subroutine Shape2ndDeriv_line2n(func)
       real(kind=kreal) :: func(2,1,1)
       func(:,:,:) = 0.d0

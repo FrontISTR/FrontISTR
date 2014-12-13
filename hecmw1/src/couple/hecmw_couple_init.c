@@ -45,9 +45,9 @@
 
 
 struct couple_info {
-	char *boundary_id;						
-	struct hecmw_couple_info *couple_info;	
-	struct couple_info *next;				
+	char *boundary_id;
+	struct hecmw_couple_info *couple_info;
+	struct couple_info *next;
 } couple_list = {
 	NULL,	/* boundary_id	*/
 	NULL,	/* couple_info	*/

@@ -22,30 +22,30 @@
 !
 !======================================================================!
 module mHyperElastic
-	
+
   use mMaterial
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
-	
+
   contains
 
   !> This subroutine calculates derivative of the invariant with respect to Cauchy-Green tensor
   subroutine cderiv( matl, sectType, ctn, itn,               &
               inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain    )
-    type( tMaterial ), intent(in) :: matl                  !< material rpoperties            
+    type( tMaterial ), intent(in) :: matl                  !< material rpoperties
     integer, intent(in)           :: sectType              !< not used currently
     real(kind=kreal), intent(out) :: inv1b                 !< invariants
     real(kind=kreal), intent(out) :: inv2b                 !< invariants
     real(kind=kreal), intent(out) :: inv3b                 !< invariants
     real(kind=kreal), intent(out) :: dibdc(3,3,3)          !< derivative of the invariant with respect to c(i,j)
     real(kind=kreal), intent(out) :: d2ibdc2(3,3,3,3,3)    !< derivative of the invariant with respect to c(i,j)
-    real(kind=kreal), intent(in)  :: strain(6)             !< Cauchy-Lagrange strain tensor 
+    real(kind=kreal), intent(in)  :: strain(6)             !< Cauchy-Lagrange strain tensor
     real(kind=kreal), intent(out) :: ctn(3,3)              !< right Cauchy-Green deformation tensor
 	real(kind=kreal), intent(out) :: itn(3,3)              !< identity tensor
 
 
     integer :: i, j, k, l, m, n
-    
+
     real(kind=kreal) :: inv1, inv2, inv3, inv33
     real(kind=kreal) :: delta(3,3)
     real(kind=kreal) :: didc(3,3,3), ctninv(3,3)
@@ -64,7 +64,7 @@ module mHyperElastic
     ctn(1,2)=strain(4);   ctn(2,1)=ctn(1,2)
     ctn(2,3)=strain(5);   ctn(3,2)=ctn(2,3)
     ctn(3,1)=strain(6);   ctn(1,3)=ctn(3,1)
-	
+
     itn(:,:) = delta(:,:)
 
 ! ----- calculate the invariant of C
@@ -114,7 +114,7 @@ module mHyperElastic
      enddo
     enddo
 
-! ----- derivatives for the reduced invariants 
+! ----- derivatives for the reduced invariants
     inv1b = inv1*inv33
     inv2b = inv2*inv33*inv33
     inv3b = dsqrt(inv3)
@@ -149,16 +149,16 @@ module mHyperElastic
     enddo
 
   end subroutine cderiv
-  
+
 !-------------------------------------------------------------------------------
 !> This subroutine provides elastic tangent coefficient for Arruda-Boyce hyperelastic material
 !
 !-------------------------------------------------------------------------------
   subroutine calElasticArrudaBoyce( matl, sectType, cijkl, strain )
-    type( tMaterial ), intent(in) :: matl             !< material rpoperties 
+    type( tMaterial ), intent(in) :: matl             !< material rpoperties
     integer, intent(in)           :: sectType         !< not used currently
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
-    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor  
+    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
 
     integer :: i, j, k, l
     real(kind=kreal) :: ctn(3,3), itn(3,3)
@@ -189,7 +189,7 @@ module mHyperElastic
     cijkl(:,:,:,:) = 4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticArrudaBoyce
-  
+
 !-------------------------------------------------------------------------------
 !> This subroutine provides to update stress and strain for Arrude-Royce material
   subroutine calUpdateElasticArrudaBoyce( matl, sectType, dstrain, dstress )
@@ -233,15 +233,15 @@ module mHyperElastic
     dstress(6) = PKstress(1,3) + PKstress(3,1)
 
   end subroutine calUpdateElasticArrudaBoyce
-  
+
 !-------------------------------------------------------------------------------
 !> This subroutine provides elastic tangent coefficient for Mooney-Rivlin hyperelastic material
 !-------------------------------------------------------------------------------
   subroutine calElasticMooneyRivlin( matl, sectType, cijkl, strain )
-    type( tMaterial ), intent(in) :: matl             !< material rpoperties 
+    type( tMaterial ), intent(in) :: matl             !< material rpoperties
     integer, intent(in)           :: sectType         !< not used curr
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
-    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor 
+    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
 
     integer :: i, j, k, l, m, n, jj
     real(kind=kreal) :: ctn(3,3), itn(3,3)
@@ -249,7 +249,7 @@ module mHyperElastic
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3), coef
-	
+
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
@@ -264,7 +264,7 @@ module mHyperElastic
         cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticMooneyRivlin
-  
+
 !-------------------------------------------------------------------------------
 !> This subroutine provides to update stress and strain for Mooney-Rivlin material
 !-------------------------------------------------------------------------------
@@ -303,5 +303,5 @@ module mHyperElastic
     stress(6)=2.d0*dudc(1,3)
 
   end subroutine calUpdateElasticMooneyRivlin
-      
+
 end module

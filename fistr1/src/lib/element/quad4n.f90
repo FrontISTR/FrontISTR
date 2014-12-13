@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 4 node 
-!!   qudrilateral element (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 4 node
+!!   qudrilateral element (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/05/08
@@ -47,7 +47,7 @@ MODULE shape_quad4n
       func(3,2) =  0.25d0*(1.d0+lcoord(1))
       func(4,2) =  0.25d0*(1.d0-lcoord(1))
     end subroutine
-    
+
     subroutine Shape2ndDeriv_quad4n(func)
       real(kind=kreal) :: func(4,2,2)
       func(:,1,1) = 0.d0
@@ -68,15 +68,15 @@ MODULE shape_quad4n
 !####################################################################
       SUBROUTINE NodalNaturalCoord_quad4n(nncoord)
 !####################################################################
-      
+
       IMPLICIT NONE
-      
+
 !--------------------------------------------------------------------
-      
+
       REAL(KIND = kreal), INTENT(OUT) :: nncoord(4, 2)
-      
+
 !--------------------------------------------------------------------
-      
+
       ! xi-coordinate at a node in a local element
       nncoord(1, 1) = -1.0D0
       nncoord(2, 1) =  1.0D0
@@ -87,11 +87,11 @@ MODULE shape_quad4n
       nncoord(2, 2) = -1.0D0
       nncoord(3, 2) =  1.0D0
       nncoord(4, 2) =  1.0D0
-      
+
 !--------------------------------------------------------------------
-      
+
       RETURN
-      
+
 !####################################################################
       END SUBROUTINE NodalNaturalCoord_quad4n
 !####################################################################

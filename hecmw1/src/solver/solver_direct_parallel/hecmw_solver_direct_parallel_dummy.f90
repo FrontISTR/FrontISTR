@@ -25,7 +25,7 @@ contains
 subroutine hecmw_solve_direct_parallel(hecMESH, hecMAT, ii)
 type (hecmwST_local_mesh) :: hecMESH
 type (hecmwST_matrix    ) :: hecMAT
-integer(kind=kint)        :: ii 
+integer(kind=kint)        :: ii
 write(*,*)'hecmw_solver_direct_parallel_dummy'!DEBUG
 return
 end subroutine hecmw_solve_direct_parallel

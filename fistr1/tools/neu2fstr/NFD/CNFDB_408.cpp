@@ -42,12 +42,12 @@ void CNFDB_408::Read( CNFData* nfd )
 	// #1
 		nfd->ReadLineEx( buff );
 		if( nfd->version >= 5.0 ) {
-			nfd->ReadRecord( buff, "IIB", 
+			nfd->ReadRecord( buff, "IIB",
 				&ID,
 				&need_eval,
 				&prev_enum );
 		} else {
-			nfd->ReadRecord( buff, "II", 
+			nfd->ReadRecord( buff, "II",
 				&ID,
 				&need_eval );
 		}
@@ -56,13 +56,13 @@ void CNFDB_408::Read( CNFData* nfd )
 		nfd->ReadStr( buff, title, sizeof(title));
 	// #3
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "III", 
+		nfd->ReadRecord( buff, "III",
 			&layer[0],
 			&layer[1],
 			&layer_method );
 	// #4
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIFF", 
+		nfd->ReadRecord( buff, "IIIIFF",
 			&coclip_on,
 			&coclip_dof,
 			&coclip_meth,
@@ -71,7 +71,7 @@ void CNFDB_408::Read( CNFData* nfd )
 			&coclip_max );
 	// #5
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "II", 
+		nfd->ReadRecord( buff, "II",
 			&plclip_meth,
 			&plclip_in );
 	// #--------------------------------
@@ -79,18 +79,18 @@ void CNFDB_408::Read( CNFData* nfd )
 		for( i=0; i<6; i++){
 			// ##1
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "II", 
+			nfd->ReadRecord( buff, "II",
 				&plclip_set[i].plclip_on,
 				&plclip_set[i].plclip_neg );
 			// ##2
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "FFF", 
+			nfd->ReadRecord( buff, "FFF",
 				&plclip_set[i].plclip_base[0],
 				&plclip_set[i].plclip_base[1],
 				&plclip_set[i].plclip_base[2] );
 			// ##3
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "FFF", 
+			nfd->ReadRecord( buff, "FFF",
 				&plclip_set[i].plclip_norm[0],
 				&plclip_set[i].plclip_norm[1],
 				&plclip_set[i].plclip_norm[2] );
@@ -169,24 +169,24 @@ void CNFDB_408::WriteData( class CNFData* nfd, FILE* fp )
 
 	// #1
 		if( nfd->version >= 5.0 ) {
-			nfd->WriteData( fp, "IIBn", 
+			nfd->WriteData( fp, "IIBn",
 				ID,
 				need_eval,
 				prev_enum );
 		} else {
-			nfd->WriteData( fp, "IIn", 
+			nfd->WriteData( fp, "IIn",
 				ID,
 				need_eval );
 		}
 	// #2
 		nfd->WriteStr( fp, title );
 	// #3
-		nfd->WriteData( fp, "IIIn", 
+		nfd->WriteData( fp, "IIIn",
 			layer[0],
 			layer[1],
 			layer_method );
 	// #4
-		nfd->WriteData( fp, "IIIIFFn", 
+		nfd->WriteData( fp, "IIIIFFn",
 			coclip_on,
 			coclip_dof,
 			coclip_meth,
@@ -194,23 +194,23 @@ void CNFDB_408::WriteData( class CNFData* nfd, FILE* fp )
 			coclip_min,
 			coclip_max );
 	// #5
-		nfd->WriteData( fp, "IIn", 
+		nfd->WriteData( fp, "IIn",
 			plclip_meth,
 			plclip_in );
 	// #--------------------------------
 
 		for( i=0; i<6; i++){
 			// ##1
-			nfd->WriteData( fp, "IIn", 
+			nfd->WriteData( fp, "IIn",
 				plclip_set[i].plclip_on,
 				plclip_set[i].plclip_neg );
 			// ##2
-			nfd->WriteData( fp, "FFFn", 
+			nfd->WriteData( fp, "FFFn",
 				plclip_set[i].plclip_base[0],
 				plclip_set[i].plclip_base[1],
 				plclip_set[i].plclip_base[2] );
 			// ##3
-			nfd->WriteData( fp, "FFFn", 
+			nfd->WriteData( fp, "FFFn",
 				plclip_set[i].plclip_norm[0],
 				plclip_set[i].plclip_norm[1],
 				plclip_set[i].plclip_norm[2] );

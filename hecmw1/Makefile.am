@@ -12,7 +12,7 @@ MKDIR      = @mkdir@
 
 all: @all_build_target@
 
-@build_target@: 
+@build_target@:
 
 create-include-dir:
 	if [ ! -d include ]; then \

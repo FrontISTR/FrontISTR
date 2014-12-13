@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 3 nodes 
-!!     line element   (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 3 nodes
+!!     line element   (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/27

@@ -46,7 +46,7 @@
             NPAR= icel_par
 
         if (hecMESH%elem_ID(2*icel_par).eq.hecMESH%my_rank) then
-          inc= 1          
+          inc= 1
          else
           inc= 0
         endif
@@ -186,12 +186,12 @@
         hecMESH%elem_node_index(icel)= hecMESH%elem_node_index(icel-1) + 6
 
         iS= hecMESH%elem_node_index(icel-1)
-        hecMESH%elem_node_item(iS+1)= in1        
-        hecMESH%elem_node_item(iS+2)= in2        
-        hecMESH%elem_node_item(iS+3)= in3        
-        hecMESH%elem_node_item(iS+4)= in4        
-        hecMESH%elem_node_item(iS+5)= in5        
-        hecMESH%elem_node_item(iS+6)= in6        
+        hecMESH%elem_node_item(iS+1)= in1
+        hecMESH%elem_node_item(iS+2)= in2
+        hecMESH%elem_node_item(iS+3)= in3
+        hecMESH%elem_node_item(iS+4)= in4
+        hecMESH%elem_node_item(iS+5)= in5
+        hecMESH%elem_node_item(iS+6)= in6
 
         hecMESH%adapt_parent(2*icel-1)= hecMESH%elem_ID(2*NPAR-1)
         hecMESH%adapt_parent(2*icel  )= hecMESH%elem_ID(2*NPAR  )

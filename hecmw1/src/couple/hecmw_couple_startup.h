@@ -23,11 +23,11 @@
 
 
 struct hecmw_couple_value {
-	int n;			
-	int item_type;	
-	int n_dof;		
-	int *item;		
-	double *value;	
+	int n;
+	int item_type;
+	int n_dof;
+	int *item;
+	double *value;
 };
 
 

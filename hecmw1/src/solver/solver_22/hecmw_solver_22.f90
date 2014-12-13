@@ -18,11 +18,11 @@
       module hecmw_solver_22
       contains
 !
-!C*** 
+!C***
 !C*** hecmw_solver_22
 !C***
 !
-        subroutine hecmw_solve_22 (hecMESH, hecMAT) 
+        subroutine hecmw_solve_22 (hecMESH, hecMAT)
 
         use hecmw_util
         use hecmw_solver_CG_22
@@ -217,10 +217,10 @@
      &       hecMAT%B, hecMAT%X,  hecMAT%ALU, RESID, ITER,              &
      &       ERROR,    hecMESH%my_rank,                                 &
      &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 & 
-     &       hecMESH%export_index, hecMESH%export_item,                 & 
+     &       hecMESH%import_index, hecMESH%import_item,                 &
+     &       hecMESH%export_index, hecMESH%export_item,                 &
      &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog) 
+     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
       endif
 
       if (METHOD.eq.1 .and. PRECOND.ge.10) then
@@ -242,10 +242,10 @@
      &       hecMAT%B, hecMAT%X,  RESID, SIGMA, SIGMA_DIAG,             &
      &       ITER, ERROR,  hecMESH%my_rank,                             &
      &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
-     &       hecMESH%import_index, hecMESH%import_item,                 & 
-     &       hecMESH%export_index, hecMESH%export_item,                 & 
+     &       hecMESH%import_index, hecMESH%import_item,                 &
+     &       hecMESH%export_index, hecMESH%export_item,                 &
      &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog) 
+     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
       endif
 
       !hecMAT%ITERactual = ITER

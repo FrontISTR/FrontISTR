@@ -59,7 +59,7 @@ module m_heat_solve_SS
 !C-- MATRIX ASSEMBLING
 
         call hecmw_barrier(hecMESH)
-        call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )  
+        call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )
              write(IDBG,*) 'mat_ass_conductivity: OK'
              ! do i = 1, hecMESH%nn_internal
              !   write(IDBG,*) i, hecMAT%D(i)
@@ -95,7 +95,7 @@ module m_heat_solve_SS
           fstrHEAT%TEMP (i)= hecMAT%X(i)
         enddo
 
-        VAL= 0.d0 
+        VAL= 0.d0
         do i= 1, hecMESH%nn_internal
           VAL= VAL + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
         enddo
@@ -103,9 +103,9 @@ module m_heat_solve_SS
         call hecmw_allREDUCE_R1 ( hecMESH, VAL, hecmw_sum )
 
         CHK = dsqrt(VAL)
-        if( hecMESH%my_rank.eq.0 ) then 
-          !write(*,'(i8,1p2e16.6,i10)')    iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual 
-          !write(IMSG,'(i8,1p2e16.6,i10)') iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual 
+        if( hecMESH%my_rank.eq.0 ) then
+          !write(*,'(i8,1p2e16.6,i10)')    iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
+          !write(IMSG,'(i8,1p2e16.6,i10)') iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
           write(*,'(i8,1p1e16.6)')    iterALL,CHK
           write(IMSG,'(i8,1p1e16.6)') iterALL,CHK
           call flush(IMSG)
@@ -113,9 +113,9 @@ module m_heat_solve_SS
 
         if( CHK.lt.EPS ) then
           if( hecMESH%my_rank.eq.0 ) then
-            write(*,*) 
+            write(*,*)
             write(*,*) ' !!! CONVERGENCE ACHIEVED '
-            write(IMSG,*) 
+            write(IMSG,*)
             write(IMSG,*) ' !!! CONVERGENCE ACHIEVED '
             INCR = 0
             !write(ISTA,'(3i8,1pE15.7,i8)') ISTEP,INCR,iterALL-1,CHK,hecMAT%ITERactual
@@ -126,9 +126,9 @@ module m_heat_solve_SS
 
         if ( iterALL.ge.ITM ) then
           if( hecMESH%my_rank.eq.0 ) then
-            write(*,*) 
+            write(*,*)
             write(*,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
-            write(IMSG,*) 
+            write(IMSG,*)
             write(IMSG,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
           endif
           call hecmw_abort( hecmw_comm_get_comm() )

@@ -16,7 +16,7 @@
 !======================================================================!
 
 !
-!C*** 
+!C***
 !C*** hecmw_solve_init
 !C***
 !
@@ -25,15 +25,15 @@ module m_hecmw_solve_init
 
 contains
 
-      subroutine hecmw_solve_init (hecMAT) 
+      subroutine hecmw_solve_init (hecMAT)
       use hecmw_util
       implicit REAL*8 (A-H,O-Z)
       type (hecmwST_matrix)     :: hecMAT
-      
+
       hecMAT%Iarray= 0
       hecMAT%Rarray= 0.d0
 
-      hecMAT%Iarray(1)= 100 
+      hecMAT%Iarray(1)= 100
       hecMAT%Iarray(6)=  10
 
       hecMAT%Rarray(1)= 1.d-8

@@ -24,7 +24,7 @@
 !C    edge-based communication table
 !C
       subroutine hecmw_adapt_edge_comm_table (hecMESH)
-      
+
       use  hecmw_util
       use  hecmw_adapt_STACK_SR
       use  hecmw_adapt_ITEM_SR
@@ -34,7 +34,7 @@
       integer(kind=kint ), pointer :: wSI(:), wSE(:)
       integer(kind=kint ), pointer :: wiIa(:), wiEa(:), wiIb(:), wiEb(:)
       integer(kind=kint ), dimension(:), allocatable :: IW1, IW2
-    
+
       type (hecmwST_local_mesh) :: hecMESH
 
 !C
@@ -90,7 +90,7 @@
       nnn= 0
       do ie= 1, hecMESH%n_adapt_edge
         if (hecMESH%adapt_edge_home(ie).eq.hecMESH%my_rank) nnn= nnn + 1
-      enddo        
+      enddo
       hecMESH%n_adapt_edge_global= hecMESH%n_adapt_act_edge
 
       call hecmw_allreduce_I (hecMESH, hecMESH%n_adapt_edge_global, 1, hecmw_sum)
@@ -175,7 +175,7 @@
       IW1 = 0
       IW2 = 0
       stime0= MPI_WTIME ()
-      call hecmw_adapt_ITEM_SEND_RECV                                   &      
+      call hecmw_adapt_ITEM_SEND_RECV                                   &
      &    (LEN, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,             &
      &     wSI, wiIa, wSE, wiEa, IW1, IW2,                              &
      &     hecMESH%MPI_COMM, hecMESH%my_rank, 4)
@@ -215,7 +215,7 @@
       IW2 = 0
 
       stime0= MPI_WTIME ()
-      call hecmw_adapt_ITEM_SEND_RECV                                   &      
+      call hecmw_adapt_ITEM_SEND_RECV                                   &
      &    (LEN, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,             &
      &     wSE, wiEb, wSI, wiIb, IW1, IW2,                              &
      &     hecMESH%MPI_COMM, hecMESH%my_rank, 1)

@@ -57,7 +57,7 @@ contains
           SI=XG(LY)
           DO LZ=1,2
             TI=XG(LZ)
-!C            
+!C
             RP=1.0+RI
             SP=1.0+SI
             TP=1.0+TI
@@ -104,7 +104,7 @@ contains
             HT(7)= .125*RP*SP
             HT(8)= .125*RM*SP
 !C
-!C*JACOBI MATRIX 
+!C*JACOBI MATRIX
             XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4) &
      &          +HR(5)*XX(5)+HR(6)*XX(6)+HR(7)*XX(7)+HR(8)*XX(8)
             XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4) &
@@ -125,9 +125,9 @@ contains
      &          +HS(5)*ZZ(5)+HS(6)*ZZ(6)+HS(7)*ZZ(7)+HS(8)*ZZ(8)
             XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
      &          +HT(5)*ZZ(5)+HT(6)*ZZ(6)+HT(7)*ZZ(7)+HT(8)*ZZ(8)
-!C  
+!C
 !C*DETERMINANT OF JACOBIAN
-!C 
+!C
             DET=XJ11*XJ22*XJ33 &
      &         +XJ12*XJ23*XJ31 &
      &         +XJ13*XJ21*XJ32 &

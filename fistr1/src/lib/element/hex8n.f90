@@ -14,7 +14,7 @@
 !======================================================================!
 !                                                                      !
 !> \brief  This module contains functions for interpolation in 8 node
-!!      hexahedral element  (Langrange  interpolation) 
+!!      hexahedral element  (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/15

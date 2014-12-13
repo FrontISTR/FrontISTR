@@ -83,14 +83,14 @@
           hecMESH%adapt_children_index(   icel)=  8 * icel
 
           iS= 16*(icel-1)
-          hecMESH%adapt_children_item (iS+ 2)= -1 
-          hecMESH%adapt_children_item (iS+ 4)= -1 
-          hecMESH%adapt_children_item (iS+ 6)= -1 
-          hecMESH%adapt_children_item (iS+ 8)= -1 
-          hecMESH%adapt_children_item (iS+10)= -1 
-          hecMESH%adapt_children_item (iS+12)= -1 
-          hecMESH%adapt_children_item (iS+14)= -1 
-          hecMESH%adapt_children_item (iS+16)= -1 
+          hecMESH%adapt_children_item (iS+ 2)= -1
+          hecMESH%adapt_children_item (iS+ 4)= -1
+          hecMESH%adapt_children_item (iS+ 6)= -1
+          hecMESH%adapt_children_item (iS+ 8)= -1
+          hecMESH%adapt_children_item (iS+10)= -1
+          hecMESH%adapt_children_item (iS+12)= -1
+          hecMESH%adapt_children_item (iS+14)= -1
+          hecMESH%adapt_children_item (iS+16)= -1
         enddo
       endif
 !C===
@@ -100,7 +100,7 @@
 !C | RE-ALLOCATE: node |
 !C +-------------------+
 !C===
- 
+
 !C
 !C-- COORDINATEs
       allocate (WORKaR(3*hecMESH%n_node))
@@ -270,7 +270,7 @@
       enddo
       deallocate (WORKaI)
 !C===
-      
+
       if (hecMESH%hecmw_flag_adapt.eq.1) then
 !C
 !C +--------------------+
@@ -282,7 +282,7 @@
 !C-- when_i_was
       allocate (WORKaI(hecMESH%n_elem))
       do i= 1, hecMESH%n_elem
-        WORKaI(i)= hecMESH%when_i_was_refined_elem(i) 
+        WORKaI(i)= hecMESH%when_i_was_refined_elem(i)
       enddo
 
       deallocate (hecMESH%when_i_was_refined_elem)
@@ -295,7 +295,7 @@
 
       allocate (WORKaI(hecMESH%n_node))
       do i= 1, hecMESH%n_node
-        WORKaI(i)= hecMESH%when_i_was_refined_node(i) 
+        WORKaI(i)= hecMESH%when_i_was_refined_node(i)
       enddo
 
       deallocate (hecMESH%when_i_was_refined_node)
@@ -318,8 +318,8 @@
         WORKaI(4*i  )= hecMESH%adapt_level      (  i)
       enddo
 
-      deallocate (hecMESH%adapt_parent, hecMESH%adapt_parent_type) 
-      deallocate (hecMESH%adapt_type  , hecMESH%adapt_level      ) 
+      deallocate (hecMESH%adapt_parent, hecMESH%adapt_parent_type)
+      deallocate (hecMESH%adapt_type  , hecMESH%adapt_level      )
 
         allocate (hecMESH%adapt_parent     (2*hecMESH%ne_array))
         allocate (hecMESH%adapt_parent_type(  hecMESH%ne_array))
@@ -335,15 +335,15 @@
         hecMESH%adapt_parent     (2*i  )= WORKaI(5*i-3)
         hecMESH%adapt_parent_type(  i  )= WORKaI(5*i-2)
         hecMESH%adapt_type       (  i  )= WORKaI(5*i-1)
-        hecMESH%adapt_level      (  i  )= WORKaI(5*i  )       
+        hecMESH%adapt_level      (  i  )= WORKaI(5*i  )
       enddo
       deallocate (WORKaI)
-     
+
 !C
 !C-- adapt_children_index
       allocate (WORKaI(hecMESH%n_elem))
       do i= 1, hecMESH%n_elem
-        WORKaI(i)= hecMESH%adapt_children_index(i) 
+        WORKaI(i)= hecMESH%adapt_children_index(i)
       enddo
 
       deallocate (hecMESH%adapt_children_index)
@@ -359,8 +359,8 @@
       nnn= hecMESH%adapt_children_index(hecMESH%n_elem)
       allocate (WORKaI(2*nnn))
       do i= 1, nnn
-        WORKaI(2*i-1)= hecMESH%adapt_children_item(2*i-1) 
-        WORKaI(2*i  )= hecMESH%adapt_children_item(2*i  ) 
+        WORKaI(2*i-1)= hecMESH%adapt_children_item(2*i-1)
+        WORKaI(2*i  )= hecMESH%adapt_children_item(2*i  )
       enddo
 
       deallocate (hecMESH%adapt_children_item)
@@ -371,7 +371,7 @@
         hecMESH%adapt_children_item(2*i  )= WORKaI(2*i  )
       enddo
       deallocate (WORKaI)
-     
+
       endif
 
       hecMESH%hecmw_flag_adapt= 1
@@ -479,7 +479,7 @@
           call hecmw_adapt_EDGE_INFO (hecMESH, in2,in3, iedge, 0)
           call hecmw_adapt_EDGE_INFO (hecMESH, in3,in4, iedge, 0)
           call hecmw_adapt_EDGE_INFO (hecMESH, in4,in2, iedge, 0)
-        endif        
+        endif
 
 !C
 !C-- 3D : prisms
@@ -501,7 +501,7 @@
           call hecmw_adapt_EDGE_INFO (hecMESH, in1,in4, iedge, 0)
           call hecmw_adapt_EDGE_INFO (hecMESH, in2,in5, iedge, 0)
           call hecmw_adapt_EDGE_INFO (hecMESH, in3,in6, iedge, 0)
-        endif        
+        endif
 
         if (hecMESH%n_adapt_edge.ge.NE-6 .and. icel.lt.hecMESH%n_elem) then
           iii= hecMESH%n_elem/icel + 1

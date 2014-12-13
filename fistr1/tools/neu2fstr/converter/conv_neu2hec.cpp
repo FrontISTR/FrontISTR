@@ -185,7 +185,7 @@ static int line_elem_type( CNFDB_404* e )
 {
 	bool fg = ( e->topology == CNFDB_404::top_Line2 );
 
-	switch( e->type ){ // material property 
+	switch( e->type ){ // material property
 	case NEU_ELEM_PROP_ROD:
 	case NEU_ELEM_PROP_LINK:
 		if( fg ) return 111;

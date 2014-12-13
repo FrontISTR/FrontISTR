@@ -34,7 +34,7 @@
 #include "hecmw_conn_conv.h"
 #include "hecmw_io_nastran.h"
 
-/* def.h */ 
+/* def.h */
 
 
 /* JP-1 */
@@ -365,7 +365,7 @@ static int nastran_file_close(void);			/* JP-125 */
 /* JP-126 */
 static int read_nastran( const char* filename );
 
-/* list_creator.c */ 
+/* list_creator.c */
 
 /* JP-127 */
 
@@ -476,7 +476,7 @@ static int list_operation_##type ( t_list_##type *list, int (*foo)( type )) {\
 	return 0;\
 }
 
-/* utils.c */ 
+/* utils.c */
 
 /* JP-129 */
 
@@ -591,7 +591,7 @@ static
 void skip_to_begin_bulk( FILE* fp, int* line_no)
 {
 	char line[ IFF_SIZE ];
-	
+
 	while( fgets( line, IFF_SIZE, fp) ){
 		(*line_no)++;
 		if(strncmp( line, "BEGIN BULK", sizeof("BEGIN BULK")-1) == 0)
@@ -706,7 +706,7 @@ static int is_CTRIAX6_egrp_name( char* name, int* mid )
 }
 
 
-/* field_format_judge.c */ 
+/* field_format_judge.c */
 
 /* JP-148 */
 
@@ -765,7 +765,7 @@ field_format_t field_format_judge( char* line )
 	return 	fft_small_field_format;
 }
 
-/* iff.c */ 
+/* iff.c */
 
 /* JP-153 */
 
@@ -1117,7 +1117,7 @@ int iff_field_to_double( char* field, double default_val, double* val )
 
 	if(*endptr != 0){
 		/* JP-186 */
-		
+
 		p = field;
 		bp = buf;
 		while(*p){
@@ -1242,7 +1242,7 @@ void iff_dump_csv( char* iff )
 
 
 
-/* iff_conv.c */ 
+/* iff_conv.c */
 
 /* JP-193 */
 
@@ -1392,7 +1392,7 @@ static void large_to_iff_format( char* line1, char* line2, char* iff)
 /* ------------------------------------------------------------------------------------------------ */
 /* JP-206 */
 
-static 
+static
 char* get_fixed_token( char* src, char* token, int field_size )
 {
 	int j;
@@ -1412,11 +1412,11 @@ char* get_fixed_token( char* src, char* token, int field_size )
 	}
 	*token_p = 0;
 
-	return token;	
+	return token;
 }
 
 
-/* iff_node.c */ 
+/* iff_node.c */
 
 /* JP-207 */
 
@@ -1461,7 +1461,7 @@ static void iff_node_set( iff_node_t* node, char* iff, int line_no)
 }
 
 
-/* read_iff.c */ 
+/* read_iff.c */
 
 /* JP-212 */
 /* JP-213 */
@@ -1478,7 +1478,7 @@ int read_iff( FILE* fp, char* iff, int* line_no )
 {
 	char line1[ IFF_SIZE ];
 	char line2[ IFF_SIZE ];
-	
+
 	char* fg = fgets( line1, IFF_SIZE-1, fp);
 	if(!fg)
 		return read_iff_eof;
@@ -1511,7 +1511,7 @@ int read_iff( FILE* fp, char* iff, int* line_no )
 	return read_iff_success;
 }
 
-/* bulk.c */ 
+/* bulk.c */
 
 /* JP-221 */
 
@@ -1588,7 +1588,7 @@ static void iff_bulk_move_append( iff_bulk_t* dest, iff_bulk_t* src )
 		dest->iff_node_last->next = src->iff_node_root;
 	else
 		dest->iff_node_root = src->iff_node_root;
-	
+
 	dest->iff_node_last = src->iff_node_last;
 
 	src->iff_node_root = NULL;
@@ -1823,7 +1823,7 @@ static int iff_bulk_get_param_list( iff_bulk_t* bulk, const char* format, int* r
 					sprintf( param_name, "%s%d", param_name_p, i+1 );
 				else
 					strcpy( param_name, param_name_p);
-				set_error_of_blank_field( grid_filename, 
+				set_error_of_blank_field( grid_filename,
 					line_no,  field_no, iff_bulk_get_name(bulk), param_name );
 				return -1;
 			}
@@ -2028,7 +2028,7 @@ static iff_node_t* iff_bulk_search_continuous_line( iff_bulk_t* bulk, char* line
 	/* JP-264 */
 
 	char *p;
-	
+
 	iff_node_t* node = bulk->iff_node_root;
 
 	if( node && iff_is_continuous_line( node->iff)){
@@ -2057,7 +2057,7 @@ static void iff_bulk_dump( iff_bulk_t* bulk)
 
 }
 
-/* bulk_parse_head.c */ 
+/* bulk_parse_head.c */
 
 /* JP-266 */
 
@@ -2214,7 +2214,7 @@ int iff_bulk_parse( iff_bulk_t* bulk )
 	}
 }
 
-/* bulk_parse.c */ 
+/* bulk_parse.c */
 
 
 /*---------------------------------------------------------------*/
@@ -2306,7 +2306,7 @@ static int pshell_mid2_list_get_mid2_by_pid( int pid, int* mid2 )
 /* JP-272 */
 /* JP-273 */
 
-	
+
 static int check_order_of_elem( int result[], int G_start_pos, int G_number, int G_ness )
 {
 	int i;
@@ -2363,7 +2363,7 @@ struct hecmw_io_material * create_mat_struct(const char* name, int item_n, int s
 		matitem[i].item = i+1;
 		matitem[i].nval = sub_n[i];
 
-		cms_malloc( matsubitem, sizeof(*matsubitem) ); 
+		cms_malloc( matsubitem, sizeof(*matsubitem) );
 		cms_malloc( matsubitem->val, sizeof(*(matsubitem->val)) * sub_n[i] );
 
 		for(j=0; j<sub_n[i]; j++){
@@ -2958,7 +2958,7 @@ static int iff_bulk_parse_CTRIA3( iff_bulk_t* bulk )
 
 	T[0] = T[1] = T[2] = 0.0;
 
-	iff_bulk_get_param_list( bulk, format, result, 
+	iff_bulk_get_param_list( bulk, format, result,
 				&EID, "EID", &PID, "PID", G, "G", &THETA_MCID, "THETA/MCID", &ZOFFS, "ZOFFS", T, "T" );
 
 	/* JP-365 */
@@ -3006,7 +3006,7 @@ static int iff_bulk_parse_CTRIA6( iff_bulk_t* bulk )
 
 	T[0] = T[1] = T[2] = 0.0;
 
-	iff_bulk_get_param_list( bulk, format, result, 
+	iff_bulk_get_param_list( bulk, format, result,
 				&EID, "EID", &PID, "PID", G, "G", &THETA_MCID, "THETA/MCID", &ZOFFS, "ZOFFS", T, "T" );
 
 	/* JP-373 */
@@ -3058,7 +3058,7 @@ static int iff_bulk_parse_CQUAD4( iff_bulk_t* bulk )
 
 	T[0] = T[1] = T[2] = T[3] = 0.0;
 
-	iff_bulk_get_param_list( bulk, format, result, 
+	iff_bulk_get_param_list( bulk, format, result,
 				&EID, "EID", &PID, "PID", G, "G", &THETA_MCID, "THETA/MCID", &ZOFFS, "ZOFFS", T, "T" );
 
 	/* JP-381 */
@@ -3108,7 +3108,7 @@ static int iff_bulk_parse_CQUAD8( iff_bulk_t* bulk )
 
 	T[0] = T[1] = T[2] = T[3] = 0.0;
 
-	iff_bulk_get_param_list( bulk, format, result, 
+	iff_bulk_get_param_list( bulk, format, result,
 				&EID, "EID", &PID, "PID", G, "G", T, "T", &THETA_MCID, "THETA/MCID", &ZOFFS, "ZOFFS" );
 
 	/* JP-389 */
@@ -3429,7 +3429,7 @@ static int iff_bulk_parse_INCLUDE( iff_bulk_t* bulk )
 
 
 
-/* bulk_list.c */ 
+/* bulk_list.c */
 
 /* JP-426 */
 
@@ -3444,7 +3444,7 @@ static void iff_bulk_list_init( iff_bulk_list_t* bulk_list)
 	bulk_list->bulk_root = NULL;
 	bulk_list->bulk_number = 0;
 }
-	
+
 /* JP-428 */
 
 static void iff_bulk_list_clear( iff_bulk_list_t* bulk_list)
@@ -3481,7 +3481,7 @@ static void iff_bulk_list_regist( iff_bulk_list_t* bulk_list, iff_bulk_t* bulk)
 	} else {
 		bulk->next_bulk = bulk_list->bulk_root;
 		bulk_list->bulk_root = bulk;
-	}	
+	}
 	bulk_list->bulk_number++;
 }
 
@@ -3606,7 +3606,7 @@ static void iff_bulk_list_dump( iff_bulk_list_t * bulk_list )
 	}
 }
 
-/* iff_operation.c */ 
+/* iff_operation.c */
 
 /* JP-442 */
 
@@ -3660,7 +3660,7 @@ int iff_operation( iff_bulk_list_t* bulk_list, char* iff, int line_no)
 	return 0;
 }
 
-/* f_open_close.c */ 
+/* f_open_close.c */
 
 /* JP-444 */
 
@@ -3841,7 +3841,7 @@ static int nastran_file_close()
 
 
 
-/* read_nastran.c */ 
+/* read_nastran.c */
 
 /* JP-464 */
 /* JP-465 */
@@ -3854,7 +3854,7 @@ static int nastran_file_close()
 static
 int read_nastran( const char* filename )
 {
-	/* JP-468 */ 
+	/* JP-468 */
 
 	int end_fg;
 	int read_fg;
@@ -3927,7 +3927,7 @@ int read_nastran( const char* filename )
 
 	return 0;
 }
-/* read_file.c */ 
+/* read_file.c */
 
 /* JP-471 */
 
@@ -3941,7 +3941,7 @@ int HECMW_read_nastran_mesh(const char *filename)
 
 	HECMW_log(HECMW_LOG_DEBUG, "Start to read NASTRAN mesh");
 
-	if(filename == NULL) { 
+	if(filename == NULL) {
 		HECMW_set_error(HECMW_IO_E0001, "Not specified filename for NASTRAN mesh input routine");
 		return -1;
 	}
@@ -3956,7 +3956,7 @@ int HECMW_read_nastran_mesh(const char *filename)
 	HECMW_io_set_gridfile(grid_filename);
 
 	---------------------------------------- */
-	
+
 	nastran_file_init();
 	section_list_init();
 
@@ -3966,7 +3966,7 @@ int HECMW_read_nastran_mesh(const char *filename)
 	if( section_list_finalize()) return -1;
 
 	HECMW_io_set_gridfile((char*)filename);
-	
+
 	return 0;
 }
 

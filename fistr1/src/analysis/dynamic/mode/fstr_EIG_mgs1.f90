@@ -17,7 +17,7 @@ module m_fstr_EIG_mgs1
 contains
 
 !=======================================================================
-!c 
+!c
       subroutine mgs1(b,a,amass,m,ishf,irank,hecMESH,Gntotal)
 !c
 !c     modified Gram-Schimdt
@@ -41,7 +41,7 @@ contains
 !c
             t=0.
          do 3 i=1,m
-            q(i)=a(i) 
+            q(i)=a(i)
             p(i) = b(i)
  3    continue
 
@@ -56,7 +56,7 @@ contains
       CALL hecmw_allreduce_R1(hecMESH,pp,hecmw_sum)
          y = 0.0D0
          do i = 1,Gntotal
-          y = y+p(i)*qw(i) 
+          y = y+p(i)*qw(i)
          end do
       CALL hecmw_allreduce_R1(hecMESH,y,hecmw_sum)
             z=0.
@@ -82,7 +82,7 @@ contains
         if( associated(p) )  DEALLOCATE(p)
         if( associated(qw) ) DEALLOCATE(qw)
       return
-      end subroutine mgs1 
+      end subroutine mgs1
 
 end module m_fstr_EIG_mgs1
 

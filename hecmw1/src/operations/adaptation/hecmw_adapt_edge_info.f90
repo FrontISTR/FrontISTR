@@ -18,14 +18,14 @@
 !C
 !C***
 !C*** hecmw_adapt_EDGE_INFO
-!C***      
+!C***
 
       subroutine hecmw_adapt_EDGE_INFO (hecMESH, nod1, nod2, iedge, NFLAG)
       use  hecmw_util
 
       integer(kind=4), save :: INITflag, nbuckets
       integer(kind=4), dimension(:), allocatable, save :: ieaddrs
-      
+
       data INITflag/0/
       type      (hecmwST_local_mesh) :: hecMESH
 
@@ -36,7 +36,7 @@
         nbuckets= 2*max(hecMESH%n_elem,hecMESH%n_node)
         allocate (ieaddrs(-nbuckets:+nbuckets))
         ieaddrs=   0
-      endif      
+      endif
 
 !C
 !C    NFALG= 0 : CREATE NEW EDGEs
@@ -51,7 +51,7 @@
       endif
 
       iedge= 0
-       
+
       nn1 = mod(nod1, nbuckets) * mod(nod2, nbuckets)
       iarg= mod( nn1, nbuckets)
 

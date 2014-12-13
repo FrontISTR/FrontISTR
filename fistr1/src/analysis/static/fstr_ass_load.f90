@@ -16,7 +16,7 @@
 !
 !> \brief  This module provides functions to take into acount external load
 !!
-!>  \author                date                  version 
+!>  \author                date                  version
 !>  X.Yuan(Advancesoft)    2009/08/26        original
 !>  X.Yuan                 2013/03/18        consider anisotropic expansion
 !
@@ -65,9 +65,9 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
-      
+
       ndof = hecMAT%NDOF
-      
+
 ! -------------------------------------------------------------------
 !  CLOAD
 ! -------------------------------------------------------------------
@@ -179,16 +179,16 @@ module m_fstr_ass_load
 
           elseif( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
             call DL_C2(ic_type,nn,xx(1:nn),yy(1:nn),rho,pa1,ltype,params,vect(1:nn*ndof),nsize,iset)
-            
+
           else if ( ic_type == 341 .or. ic_type == 351 .or. ic_type == 361 .or.   &
-                    ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then 
+                    ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
             call DL_C3(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,ltype,params,vect(1:nn*ndof),nsize)
-            
+
           else if ( ic_type == 641 ) then
-            ihead = hecMESH%section%sect_R_index(isect-1) 
+            ihead = hecMESH%section%sect_R_index(isect-1)
             call DL_Beam_641(ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), rho, ltype, params, &
-                             hecMESH%section%sect_R_item(ihead+1:), vect(1:nn*ndof), nsize) 
-            
+                             hecMESH%section%sect_R_item(ihead+1:), vect(1:nn*ndof), nsize)
+
           else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
             call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, fstrSOLID%elements(icel)%gausses)
 
@@ -196,10 +196,10 @@ module m_fstr_ass_load
             call DL_Shell_33(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, &
                  fstrSOLID%elements(icel)%gausses)
 
-          else 
+          else
             nsize = 0
             write(*,*)"### WARNING: DLOAD",ic_type
-            
+
           endif
 ! ----- Add vector
           do j=1,nsize
@@ -254,24 +254,24 @@ module m_fstr_ass_load
             fstrSOLID%temperature( in ) = pa1+(fval-pa1)*factor
           enddo
         enddo
-        
+
         if( fstrSOLID%TEMP_irres > 0 ) then
           call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, fstrSOLID%temperature)
         endif
-        
+
 ! ----- element TYPE loop.
         do itype = 1, hecMESH%n_elem_type
-          
+
           iS = hecMESH%elem_type_index(itype-1)+1
           iE = hecMESH%elem_type_index(itype  )
           ic_type = hecMESH%elem_type_item(itype)
           if( hecmw_is_etype_link(ic_type) ) cycle
 ! ----- Set number of nodes
           nn = hecmw_get_max_node(ic_type)
-          
+
 ! ----- element loop
           do icel = iS, iE
-            
+
 ! ----- node ID
             iS= hecMESH%elem_node_index(icel-1)
             do j=1,nn
@@ -285,19 +285,19 @@ module m_fstr_ass_load
                 yy(j)=hecMESH%node(3*nodLOCAL(j)-1)+fstrSOLID%unode(ndof*nodLOCAL(j)-1)
                 zz(j)=hecMESH%node(3*nodLOCAL(j)  )+fstrSOLID%unode(ndof*nodLOCAL(j))
               endif
-              tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) ) 
-              tt(j) = fstrSOLID%temperature( nodLOCAL(j) ) 
+              tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
+              tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
 ! ----- create iwk array ***
               do i=1,ndof
                 iwk(ndof*(j-1)+i)=ndof*(nodLOCAL(j)-1)+i
               enddo
             enddo
-            
+
 ! ----- section  Data
             isect= hecMESH%section_ID(icel)
             cdsys_ID = hecMESH%section%sect_orien_ID(isect)
             call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
-            
+
             if( ndof == 2 ) then
               id=hecMESH%section%sect_opt(isect)
               if( id==0 ) then
@@ -309,38 +309,38 @@ module m_fstr_ass_load
               endif
               pa1 = 1.0d0
             endif
-            
+
             IF( ic_type == 641 ) THEN
-             
+
              isect= hecMESH%section_ID(icel)
              ihead = hecMESH%section%sect_R_index(isect-1)
-             
+
              CALL TLOAD_Beam_641( ic_type, nn, ndof, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),    &
                                   fstrSOLID%elements(icel)%gausses, hecMESH%section%sect_R_item(ihead+1:), &
-                                  vect(1:nn*ndof) )                                                        
-             
+                                  vect(1:nn*ndof) )
+
              DO j = 1, ndof*nn
-              hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j) 
+              hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j)
              END DO
              CYCLE
             END IF
-            
+
 ! ----- Create local stiffness
             if(ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 ) then
               call TLOAD_C2( ic_type, nn, xx(1:nn), yy(1:nn), tt(1:nn), tt0(1:nn),      &
-                             fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) ) 
-              
+                             fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) )
+
             else if( ic_type == 361 ) then
               call TLOAD_C3D8Bbar                                                          &
                    ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
-                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords ) 
-              
+                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+
             else if( ic_type == 341 .or. ic_type == 351 .or.                       &
-                     ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then 
+                     ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
               call TLOAD_C3                                                                &
                    ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
-                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords ) 
-              
+                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+
             else if( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
               if( myrank == 0 ) then
                 WRITE(IMSG,*) '*------------------------', &
@@ -351,27 +351,27 @@ module m_fstr_ass_load
                                '-------------------*'
                 call hecmw_abort( hecmw_comm_get_comm())
               endif
-              
+
             endif
-            
+
 ! ----- Add vector
             do j = 1, ndof*nn
                ! fstrSOLID%GL( iwk(j) )=fstrSOLID%GL( iwk(j) )+vect(j)
                hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j)
             enddo
-            
+
           enddo
         enddo
       endif
-      
+
       if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaALagrange ) then
         do i = 1, size(fstrSOLID%contacts)
           call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
         enddo
       endif
-      
+
     end subroutine fstr_ass_load
-    
+
     subroutine fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       use m_fstr
       use m_static_lib

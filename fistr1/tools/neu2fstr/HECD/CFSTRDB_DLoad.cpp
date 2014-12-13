@@ -99,7 +99,7 @@ void CFSTRDB_DLoad::Write( CHECData* hecd )
 			hecd->AddDataLineItems( "F", iter->param[i] );
 		}
 		hecd->WriteDataLine();
-	}	
+	}
 }
 
 
@@ -130,7 +130,7 @@ bool CFSTRDB_DLoad::Read( CHECData* hecd, char* header_line )
 			if( strcmp( LoadTypeName(type), s )==0) break;
 		}
 		if( type == TypeNumber()) return false;
-		item.type = type; 
+		item.type = type;
 		ItemList.push_back( item );
 	}
 	return true;

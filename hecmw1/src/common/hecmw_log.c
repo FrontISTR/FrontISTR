@@ -38,8 +38,8 @@
 
 
 static struct loglv_ent {
-	int loglv;	
-	char *str;	
+	int loglv;
+	char *str;
 } hecmw_loglv_table[] = {
 	{HECMW_LOG_ERROR,"Error"},{HECMW_LOG_WARN, "Warning"},
 	{HECMW_LOG_INFO, "Info" },{HECMW_LOG_DEBUG,"Debug"},
@@ -47,10 +47,10 @@ static struct loglv_ent {
 
 
 struct log_ent {
-	FILE *fp;	
-	char file[HECMW_FILENAME_LEN+1];	
-	int lv;		
-	int opt;	
+	FILE *fp;
+	char file[HECMW_FILENAME_LEN+1];
+	int lv;
+	int opt;
 };
 
 
@@ -156,7 +156,7 @@ HECMW_openlog(const char *logfile, int loglv, int options)
 int
 HECMW_closelog(int id)
 {
-	struct log_ent *p; 
+	struct log_ent *p;
 
 	if(id <= 0 || id > HECMW_LOG_MAX) {
 		HECMW_set_error(HECMW_UTIL_E9013, "No such log file");
@@ -313,7 +313,7 @@ HECMW_log_set_enable(int from, int to, int true_or_false)
 }
 
 
- 
+
 
 
 void

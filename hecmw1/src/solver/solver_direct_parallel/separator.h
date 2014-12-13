@@ -37,10 +37,10 @@ typedef struct _separation_result {
 
 typedef struct _control_para_struct {
 	char    adaptive_repartition[4];
-	int     num_criteria;        
+	int     num_criteria;
 	float   *balance_rate;
-	int     num_repartition;  
-    float   itr_rate; 
+	int     num_repartition;
+    float   itr_rate;
 	int     wgtflag;
          /*  0----- no weights (vwgt and adjwgt are both NULL
 		      1 ---- Weights on the edges only (vwgt is NULL)
@@ -50,7 +50,7 @@ typedef struct _control_para_struct {
     char     vwgt_filename[128];
     char     adjwgt_filename[128];
     float    *machine_wgt;
-    char     output_filename[128]; 
+    char     output_filename[128];
 } Control_para;
 
 typedef struct _result_partition_struct {

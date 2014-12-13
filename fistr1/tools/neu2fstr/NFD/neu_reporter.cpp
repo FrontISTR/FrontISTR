@@ -294,7 +294,7 @@ void regist_commands()
 		ccmd_rec rec( str_##x, help_##x, x );\
 		cmd_list.insert(rec);\
 	}
-			
+
 	GENERATE_CODE( cmd_help )
 	GENERATE_CODE( cmd_quit )
 	GENERATE_CODE( cmd_save )

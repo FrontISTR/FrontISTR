@@ -45,14 +45,14 @@ contains
 !>  \date       2009/08/31
 !>  \version    0.00
 
-      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)    
+      subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)
 !======================================================================!
       type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
       type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
       type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
       type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                
-      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange                                            
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+      type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
       type (hecmwST_matrix    ),optional     :: conMAT
 
       integer(kind=kint) :: ndof, nn
@@ -61,14 +61,14 @@ contains
       integer(kind=kint) :: sub_step
       real(kind=kreal) :: tt, factor
       real(kind=kreal) :: time_1, time_2
-      logical          :: ctchanged                             
+      logical          :: ctchanged
       integer(kind=kint) :: restart_step_num, restart_substep_num
 
       hecMAT%NDOF = hecMESH%n_dof
 
       ndof = hecMAT%NDOF
       nn = ndof*ndof
-	  
+
       if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
         do j=1, hecMESH%n_node
           fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(j)
@@ -86,27 +86,27 @@ contains
       step_count = 0 !**
       infoCTChange%contactNode_previous = 0
       if(fstrSOLID%restart_nout <0 ) then
-        if( .not. associated( fstrSOLID%contacts ) ) then   
-          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM)            
-        else                                                
-          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM, & 
-                                 infoCTChange%contactNode_previous)     
+        if( .not. associated( fstrSOLID%contacts ) ) then
+          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM)
+        else
+          call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM, &
+                                 infoCTChange%contactNode_previous)
         endif
         hecMAT%Iarray(98) = 1
       endif
 
       fstrSOLID%FACTOR    =0.0
-                 
+
       do tot_step=restart_step_num, fstrSOLID%nstep_tot
         if(hecMESH%my_rank==0) write(*,*) ''
         if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
-		
+
         if( fstrSOLID%TEMP_ngrp_tot>0 ) then
            do j=1, hecMESH%n_node
              fstrSOLID%temp_bak(j) = fstrSOLID%temperature(j)
            end do
         endif
-        
+
 ! -------------------------------------------------------------------------
 !      STEP LOOP
 ! -------------------------------------------------------------------------
@@ -125,45 +125,45 @@ contains
             end if
             exit
           end if
-		  	  
+
           if(hecMESH%my_rank==0) write(*,*) ' substep=',sub_step,fstrSOLID%FACTOR
           step_count = step_count+1
           call cpu_time(time_1)
-		  
+
           call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
 !       analysis algorithm ( Newton-Rapshon Method )
-          if( .not. associated( fstrSOLID%contacts ) ) then        
-            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &           
-                              restart_step_num, sub_step  )   
+          if( .not. associated( fstrSOLID%contacts ) ) then
+            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+                              restart_step_num, sub_step  )
           else
             if( fstrPARAM%contact_algo == kcaSLagrange ) then
 !     ----  For Parallel Contact with Multi-Partition Domains
               if(paraContactFlag.and.present(conMAT)) then
-                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
-                                    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )               
+                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+                                    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
               else
-                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &            
-                                    restart_step_num, restart_substep_num, sub_step, infoCTChange )                   
+                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+                                    restart_step_num, restart_substep_num, sub_step, infoCTChange )
               endif
-            else if( fstrPARAM%contact_algo == kcaALagrange ) then                              
-              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &     
-                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )                                  
-            endif                                                                                
-          endif   
+            else if( fstrPARAM%contact_algo == kcaALagrange ) then
+              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
+                                  restart_step_num, restart_substep_num, sub_step, infoCTChange )
+            endif
+          endif
 
           if( fstrSOLID%TEMP_irres==0 ) then
             if(fstrSOLID%restart_nout<0) then
               fstrSOLID%restart_nout = - fstrSOLID%restart_nout
             end if
             if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-              if( .not. associated( fstrSOLID%contacts ) ) then                              
-                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)      
-              else                                                                                                                          
-                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &    
-                                      infoCTChange%contactNode_current)                  
-              endif    
-            end if  
+              if( .not. associated( fstrSOLID%contacts ) ) then
+                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)
+              else
+                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &
+                                      infoCTChange%contactNode_current)
+              endif
+            end if
 
 ! ----- Result output (include visualize output)
             call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
@@ -174,21 +174,21 @@ contains
             write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1
           end if
 
-        enddo    !--- end of substep  loop 
+        enddo    !--- end of substep  loop
 
 	    restart_substep_num = 1
 
       enddo      !--- end of tot_step loop
 !
 !  message
-! 
+!
       IF(myrank == 0)THEN
         WRITE(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
         WRITE(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
       ENDIF
 
       end subroutine FSTR_SOLVE_NLGEOM
-	  
+
 
 !C================================================================C
 !> \brief This subroutine decide the loading increment considering

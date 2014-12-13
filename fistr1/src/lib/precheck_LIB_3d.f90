@@ -45,7 +45,7 @@ module m_precheck_LIB_3d
       REAL(kind=kreal) a1,a2,a3,a4,a5,a6
 !C
       vol = 0.0
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO L3=1,NG
         XL3=XG(NG,L3)
         X3 =(XL3+1.0)*0.5
@@ -68,21 +68,21 @@ module m_precheck_LIB_3d
             HL1(3)= 0.0
             HL1(4)= 0.0
 ! FOR L2-COORDINATE
-            HL2(1)= 0.0 
-            HL2(2)= 1.0 
+            HL2(1)= 0.0
+            HL2(2)= 1.0
             HL2(3)= 0.0
             HL2(4)= 0.0
 ! FOR L3-COORDINATE
             HL3(1)= 0.0
             HL3(2)= 0.0
-            HL3(3)= 1.0 
+            HL3(3)= 1.0
             HL3(4)= 0.0
 ! FOR L4-COORDINATE
             HL4(1)= 0.0
             HL4(2)= 0.0
-            HL4(3)= 0.0 
+            HL4(3)= 0.0
             HL4(4)= 1.0
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -199,7 +199,7 @@ module m_precheck_LIB_3d
             HZ(4)= X1*0.5
             HZ(5)= X2*0.5
             HZ(6)= X3*0.5
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -230,7 +230,7 @@ module m_precheck_LIB_3d
 ! WEIGHT VALUE AT GAUSSIAN POINT
             WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,LZ)*DET*(1.0-X2)*0.25
             DO I = 1, NN
-              vol = vol + H(I)*WG 
+              vol = vol + H(I)*WG
             ENDDO
           ENDDO
         ENDDO
@@ -247,7 +247,7 @@ module m_precheck_LIB_3d
       a9 = SQRT( (xx(6)-xx(3))**2+(yy(6)-yy(3))**2+(zz(6)-zz(3))**2 )
       almax = DMAX1( a1,a2,a3,a4,a5,a6,a7,a8,a9 )
       almin = DMIN1( a1,a2,a3,a4,a5,a6,a7,a8,a9 )
-      
+
    end subroutine PRE_351
 !----------------------------------------------------------------------*
    subroutine PRE_361( XX,YY,ZZ,vol,almax,almin )
@@ -271,7 +271,7 @@ module m_precheck_LIB_3d
       REAL(kind=kreal) a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12
 !C
       vol = 0.0
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LX=1,NG
         RI=XG(NG,LX)
         DO LY=1,NG
@@ -321,7 +321,7 @@ module m_precheck_LIB_3d
             HT(6)= .125*RP*SM
             HT(7)= .125*RP*SP
             HT(8)= .125*RM*SP
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -383,7 +383,7 @@ module m_precheck_LIB_3d
 ! CALCULATION 3D 10-NODE SOLID ELEMENT
 !
       use hecmw
-      use gauss_integration 
+      use gauss_integration
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -434,7 +434,7 @@ module m_precheck_LIB_3d
             HL1(9)= 0.0
             HL1(10)= 0.0
 ! FOR L2-COORDINATE
-            HL2(1)= 0.0 
+            HL2(1)= 0.0
             HL2(2)= 4.0*X2-1.0
             HL2(3)= 0.0
             HL2(4)= 0.0
@@ -458,7 +458,7 @@ module m_precheck_LIB_3d
 ! FOR L4-COORDINATE
             HL4(1)= 0.0
             HL4(2)= 0.0
-            HL4(3)= 0.0 
+            HL4(3)= 0.0
             HL4(4)= 4.0*X4-1.0
             HL4(5)= 0.0
             HL4(6)= 0.0
@@ -466,7 +466,7 @@ module m_precheck_LIB_3d
             HL4(8)= 4.0*X1
             HL4(9)= 4.0*X2
             HL4(10)= 4.0*X3
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -532,7 +532,7 @@ module m_precheck_LIB_3d
 ! CALCULATION 3D 15-NODE SOLID ELEMENT
 !
       use hecmw
-      use gauss_integration 
+      use gauss_integration
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),vol,tline,almax,almin
@@ -547,7 +547,7 @@ module m_precheck_LIB_3d
       REAL(kind=kreal) a1,a2,AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9
 !C
       vol = 0.0
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LZ=1,NG
         ZI=XG(NG,LZ)
         DO L2=1,NG
@@ -638,7 +638,7 @@ module m_precheck_LIB_3d
             HZ(13)=-2.0*X1*ZI
             HZ(14)=-2.0*X2*ZI
             HZ(15)=-2.0*X3*ZI
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -707,7 +707,7 @@ module m_precheck_LIB_3d
 
       almax = DMAX1( AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9 )
       almin = DMIN1( AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9 )
-      
+
    end subroutine PRE_352
 !----------------------------------------------------------------------*
    subroutine PRE_362( XX,YY,ZZ,vol,almax,almin )
@@ -716,7 +716,7 @@ module m_precheck_LIB_3d
 ! CALCULATION 3D 20-NODE SOLID ELEMENT
 !
       use hecmw
-      use gauss_integration 
+      use gauss_integration
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -731,7 +731,7 @@ module m_precheck_LIB_3d
       REAL(kind=kreal)  a1,a2,AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9,AL10,AL11,AL12
 !C
       vol = 0.0
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LX=1,NG
         RI=XG(NG,LX)
         DO LY=1,NG
@@ -829,7 +829,7 @@ module m_precheck_LIB_3d
             HT(18)=-0.5*RP*SM*TI
             HT(19)=-0.5*RP*SP*TI
             HT(20)=-0.5*RM*SP*TI
-! JACOBI MATRIX 
+! JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -865,7 +865,7 @@ module m_precheck_LIB_3d
           ENDDO
         ENDDO
       ENDDO
-      
+
       a1 = SQRT( (xx(9)-xx(1))**2+(yy(9)-yy(1))**2+(zz(9)-zz(1))**2 )
       a2 = SQRT( (xx(2)-xx(9))**2+(yy(2)-yy(9))**2+(zz(2)-zz(9))**2 )
       AL1 = a1 + a2
@@ -878,7 +878,7 @@ module m_precheck_LIB_3d
       a1 = SQRT( (xx(12)-xx(4))**2+(yy(12)-yy(4))**2+(zz(12)-zz(4))**2 )
       a2 = SQRT( (xx(1)-xx(12))**2+(yy(1)-yy(12))**2+(zz(1)-zz(12))**2 )
       AL4 = a1 + a2
-      
+
       a1 = SQRT( (xx(13)-xx(5))**2+(yy(13)-yy(5))**2+(zz(13)-zz(5))**2 )
       a2 = SQRT( (xx(6)-xx(13))**2+(yy(6)-yy(13))**2+(zz(6)-zz(13))**2 )
       AL5 = a1 + a2
@@ -891,7 +891,7 @@ module m_precheck_LIB_3d
       a1 = SQRT( (xx(16)-xx(8))**2+(yy(16)-yy(8))**2+(zz(16)-zz(8))**2 )
       a2 = SQRT( (xx(5)-xx(16))**2+(yy(5)-yy(16))**2+(zz(5)-zz(16))**2 )
       AL8 = a1 + a2
-      
+
       a1 = SQRT( (xx(17)-xx(1))**2+(yy(17)-yy(1))**2+(zz(17)-zz(1))**2 )
       a2 = SQRT( (xx(5)-xx(17))**2+(yy(5)-yy(17))**2+(zz(5)-zz(17))**2 )
       AL9 = a1 + a2

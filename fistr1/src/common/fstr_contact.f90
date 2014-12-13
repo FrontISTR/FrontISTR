@@ -27,26 +27,26 @@ implicit none
   private :: l_contact2mpc, l_tied2mpc
   integer, save :: n_contact_mpc
   logical, private :: active
-  
+
   real(kind=kreal), save :: mu=1.d10  !< penalty, default value
-  real(kind=kreal), save :: mut=1.d6  !< penalty along tangent direction  
+  real(kind=kreal), save :: mut=1.d6  !< penalty along tangent direction
   real(kind=kreal), save :: cdotp=1.d3  !< mu=cdotp*maxval
-  
+
   real(kind=kreal), save :: cgn=1.d-5 !< convergent condition of penetration
   real(kind=kreal), save :: cgt=1.d-3 !< convergent condition of relative tangent disp
-  
+
   real(kind=kreal), save :: gnt(2)    !< 1:current avarage penetration;
                                       !< 2:current relative tangent displacement
   real(kind=kreal), save :: bakgnt(2) !< 1:current avarage penetration;
                                       !< 2:current relative tangent displacement!
-                                       
+
 contains
 
   !> Write out the contact definition read from mesh file
   subroutine print_contatct_pair( file, pair )
        integer, intent(in)                      :: file
        type( hecmwST_contact_pair ), intent(in) :: pair
-       
+
        integer :: i
        write(file,*) "Number of contact pair", pair%n_pair
        do i=1,pair%n_pair
@@ -54,40 +54,40 @@ contains
                        ,pair%master_grp_id(i)
        enddo
   end subroutine
-  
+
   subroutine fstr_set_contact_penalty( maxv )
        real(kind=kreal), intent(in) :: maxv
        mu = cdotp * maxv
        if( gnt(1)<1.d-3 ) mu=cdotp*10.d0* maxv
        bakgnt = 0.d0
   end subroutine
- 
+
   logical function fstr_is_contact_active()
        fstr_is_contact_active = active
   end function
-  
+
   subroutine fstr_set_contact_active( a )
        logical, intent(in) :: a
        active = a
   end subroutine
-  
+
   logical function fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
-      integer(kind=kint), intent(in)  :: ctAlgo                    !< contact analysis algorithm 
-      type (fstr_info_contactChange), intent(in) :: infoCTChange   !< fstr_contactChange      
+      integer(kind=kint), intent(in)  :: ctAlgo                    !< contact analysis algorithm
+      type (fstr_info_contactChange), intent(in) :: infoCTChange   !< fstr_contactChange
       type (hecmwST_local_mesh), intent(in) :: hecMESH
       integer(kind=kint) :: is_conv
       fstr_is_contact_conv = .false.
-      if( ctAlgo== kcaSLagrange ) then                                              
+      if( ctAlgo== kcaSLagrange ) then
         if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
             infoCTChange%contact2difflpos+infoCTChange%free2contact == 0 ) &
-            fstr_is_contact_conv = .true.    
-      elseif( ctAlgo==kcaALagrange ) then                                                              
+            fstr_is_contact_conv = .true.
+      elseif( ctAlgo==kcaALagrange ) then
         if( gnt(1)<cgn .and. gnt(2)<cgt ) fstr_is_contact_conv = .true.
         write(*,'(a,2e15.7)') "--Relative displacement in contact surface",gnt
     !  if( dabs( bakgnt(1)-gnt(1) )<cgn*1.d-2 .and.    &
     !      dabs( bakgnt(2)-gnt(2) )<cgn ) fstr_is_contact_conv = .true.
-        bakgnt = gnt   
-      endif                                                                        
+        bakgnt = gnt
+      endif
       is_conv = 0
       if (fstr_is_contact_conv) is_conv = 1
       call hecmw_allreduce_I1(hecMESH, is_conv, HECMW_MIN)
@@ -96,15 +96,15 @@ contains
       else
         fstr_is_contact_conv = .true.
       endif
-  end function                                                  
-  
-  logical function fstr_is_matrixStructure_changed(infoCTChange)             
-      type (fstr_info_contactChange)   :: infoCTChange  !< fstr_contactChange      
+  end function
+
+  logical function fstr_is_matrixStructure_changed(infoCTChange)
+      type (fstr_info_contactChange)   :: infoCTChange  !< fstr_contactChange
       fstr_is_matrixStructure_changed = .false.
       if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
-      fstr_is_matrixStructure_changed = .true.        
-  end function                                                  
-  
+      fstr_is_matrixStructure_changed = .true.
+  end function
+
   !> Contact state to equation conditions
   subroutine l_contact2mpc( contact, mpcs, nmpc )
        use fstr_ctrl_modifier
@@ -201,14 +201,14 @@ contains
         endif
       enddo
   end subroutine
-  
+
   !> Delete mpcs derived from contact conditions
   subroutine fstr_del_contactmpc( mpcs )
       use fstr_ctrl_modifier
       type( hecmwST_mpc ), intent(inout) :: mpcs       !<  mpcs to be modified
       call fstr_delete_mpc( n_contact_mpc, mpcs )
   end subroutine
-  
+
   !> Print out mpc conditions
   subroutine fstr_write_mpc( file, mpcs )
       integer, intent(in)  :: file                  !<  file number
@@ -226,67 +226,67 @@ contains
         write(file,'(30f7.2)') (mpcs%mpc_val(j),j=n0,n1),mpcs%mpc_const(i)
       enddo
   end subroutine
-  
-   !> Scanning contact state 
-  subroutine fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )      
+
+   !> Scanning contact state
+  subroutine fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
       integer, intent(in)                    :: cstep      !< current step number
-      integer, intent(in)                    :: ctAlgo     !< contact analysis algorithm   
+      integer, intent(in)                    :: ctAlgo     !< contact analysis algorithm
       type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
       type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
-      type(fstr_info_contactChange), intent(inout):: infoCTChange   !<                                   
-!      logical, intent(inout)                 :: changed     !< if contact state changed           
+      type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
+!      logical, intent(inout)                 :: changed     !< if contact state changed
       real(kind=kreal), optional             :: B(:)        !< nodal force residual
-      character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag                  
-      integer :: i, grpid                                                                                                 
+      character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
+      integer :: i, grpid
       logical :: iactive
-      
-      if( ctAlgo == kcaSLAGRANGE ) then                    
+
+      if( ctAlgo == kcaSLAGRANGE ) then
         flag_ctAlgo = 'SLagrange'
       elseif( ctAlgo == kcaALAGRANGE ) then
-        flag_ctAlgo = 'ALagrange'    
-      endif                                                
-      
+        flag_ctAlgo = 'ALagrange'
+      endif
+
 	! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
-    !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:) 
-      do i = 1, size(hecMESH%node)                                             
-        fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i) 
+    !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
+      do i = 1, size(hecMESH%node)
+        fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
       enddo
       active = .false.
-      
-      infoCTChange%contact2free = 0   
-      infoCTChange%contact2neighbor = 0  
-      infoCTChange%contact2diffLpos = 0 
+
+      infoCTChange%contact2free = 0
+      infoCTChange%contact2neighbor = 0
+      infoCTChange%contact2diffLpos = 0
       infoCTChange%free2contact = 0
-      infoCTChange%contactNode_current = 0        
-                       
+      infoCTChange%contactNode_current = 0
+
       do i=1,size(fstrSOLID%contacts)
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
           call clear_contact_state(fstrSOLID%contacts(i));  cycle
         endif
         if( present(B) ) then
-          call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &    
-                                   infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )    
+          call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
+                                   infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
         else
-          call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &      
+          call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
                                    infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
         endif
         if( .not. active ) active = iactive
       enddo
-         
-      infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free   
-      infoCTChange%contactNode_previous = infoCTChange%contactNode_current
-          
-  end subroutine
-  
 
-  
+      infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
+      infoCTChange%contactNode_previous = infoCTChange%contactNode_current
+
+  end subroutine
+
+
+
    !> Update lagrangian multiplier
   subroutine fstr_update_contact0( hecMESH, fstrSOLID, B )
       type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
       type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
       real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
-	  
+
       integer :: i
       do i=1, size(fstrSOLID%contacts)
      !   if( contacts(i)%mpced ) cycle
@@ -294,25 +294,25 @@ contains
             , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, B )
       enddo
   end subroutine
-  
- 
+
+
   !> Update lagrangian multiplier
-  subroutine fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchanged )     
+  subroutine fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchanged )
       type( hecmwST_local_mesh ), intent(in) :: hecMESH
       type(fstr_solid), intent(inout)        :: fstrSOLID
-      logical, intent(out)                   :: ctchanged                        
-	  
+      logical, intent(out)                   :: ctchanged
+
       integer :: i, nc
-      gnt = 0.d0;  ctchanged = .false.                        
+      gnt = 0.d0;  ctchanged = .false.
       nc = size(fstrSOLID%contacts)
       do i=1, nc
      !   if( contacts(i)%mpced ) cycle
         call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
-            , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )        
+            , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
       enddo
       if( nc>0 ) gnt = gnt/nc
   end subroutine
-  
+
   !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
   subroutine fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
       use fstr_ctrl_modifier
@@ -320,7 +320,7 @@ contains
       type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< type mesh
       type (hecmwST_matrix), intent(inout)     :: hecMAT    !< type matrix
       type(fstr_solid), intent(inout)          :: fstrSOLID !< type fstr_solid
-	  
+
       integer, parameter :: NDOF=3
 
       integer :: i, j, k, m, nnode, nd, etype
@@ -331,9 +331,9 @@ contains
    !   if( n_contact_mpc>0 ) call fstr_delete_mpc( n_contact_mpc, hecMESH%mpc )
    !   call fstr_contact2mpc( fstrSOLID%contacts, hecMESH%mpc )
 	  ! temp. need modification
-   !   do i=1,size(fstrSOLID%contacts) 
+   !   do i=1,size(fstrSOLID%contacts)
 !	    fstrSOLID%contacts(i)%mpced = .true.
- !     enddo	 
+ !     enddo
  !    call fstr_write_mpc( 6, hecMESH%mpc )
  !print *,"Contact to mpc ok!",n_contact_mpc,"equations generated"
       factor = fstrSOLID%FACTOR(2)
@@ -357,7 +357,7 @@ contains
           call hecmw_mat_ass_contact( hecMAT,nnode+1,ndLocal,stiff )
 
           if( iter>1 ) cycle
-        !  if( fstrSOLID%contacts(i)%states(j)%multiplier(1)/=0.d0 ) cycle  
+        !  if( fstrSOLID%contacts(i)%states(j)%multiplier(1)/=0.d0 ) cycle
           ! In case of new contact nodes, add enforced disp constraint
           fstrSOLID%contacts(i)%states(j)%wkdist = fstrSOLID%contacts(i)%states(j)%distance
           nrlforce = -mu*fstrSOLID%contacts(i)%states(j)%distance
@@ -373,5 +373,5 @@ contains
       enddo
 
   end subroutine
-  
+
 end module mContact

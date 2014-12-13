@@ -34,8 +34,8 @@ module m_heat_LIB_RADIATE
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 231 RADIATE 
-!** 
+!**  SET 231 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -91,15 +91,15 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_231
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_232( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 232 RADIATE 
-!** 
+!**  SET 232 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -167,15 +167,15 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_232
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_241( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 241 RADIATE 
-!** 
+!**  SET 241 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -188,7 +188,7 @@ module m_heat_LIB_RADIATE
       REAL(kind=kreal)   XG(2),WGT(2),H(2),HR(2)
       DATA WGT/1.0,1.0/
       DATA XG/-0.5773502691896, 0.5773502691896/
-! 
+!
       IF(LTYPE.EQ.1) THEN
         NOD(1)=1
         NOD(2)=2
@@ -235,15 +235,15 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_241
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_242( NN,XX,YY,ZZ,THICK,TEMP,LTYPE                   &
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 242 RADIATE 
-!** 
+!**  SET 242 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -316,15 +316,15 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_242
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_341( NN,XX,YY,ZZ,TEMP,LTYPE                         &
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 341 RADIATE 
-!** 
+!**  SET 341 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -358,7 +358,7 @@ module m_heat_LIB_RADIATE
       BX = XX( NOD(3) ) - XX( NOD(1) )
       BY = YY( NOD(3) ) - YY( NOD(1) )
       BZ = ZZ( NOD(3) ) - ZZ( NOD(1) )
-      AA = DSQRT( (AY*BZ-AZ*BY )**2+ (AZ*BX-AX*BZ )**2+(AX*BY-AY*BX )**2 )/6.0   
+      AA = DSQRT( (AY*BZ-AZ*BY )**2+ (AZ*BX-AX*BZ )**2+(AX*BY-AY*BX )**2 )/6.0
 !
       TT  = ( TEMP(NOD(1)) + TEMP(NOD(2)) + TEMP(NOD(3)) ) / 3.0
       T1  =  TT   - TZERO
@@ -374,15 +374,15 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_341
 !----------------------------------------------------------------------*
-   SUBROUTINE heat_RADIATE_342( NN,XX,YY,ZZ,TEMP,LTYPE                         & 
+   SUBROUTINE heat_RADIATE_342( NN,XX,YY,ZZ,TEMP,LTYPE                         &
                                      ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
 !----------------------------------------------------------------------*
 !**
-!**  SET 342 RADIATE 
-!** 
+!**  SET 342 RADIATE
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -531,7 +531,7 @@ module m_heat_LIB_RADIATE
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_RADIATE_342
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_351( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -539,7 +539,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 351 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -595,7 +595,7 @@ module m_heat_LIB_RADIATE
         BX = XX( NOD(3) ) - XX( NOD(1) )
         BY = YY( NOD(3) ) - YY( NOD(1) )
         BZ = ZZ( NOD(3) ) - ZZ( NOD(1) )
-        AA = DSQRT((AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2)/6.0   
+        AA = DSQRT((AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2)/6.0
 !
         TT  = ( TEMP(NOD(1)) + TEMP(NOD(2)) + TEMP(NOD(3)) ) / 3.0
         T1  =  TT   - TZERO
@@ -613,7 +613,7 @@ module m_heat_LIB_RADIATE
         IC = 0
         DO IP = 1, 4
           TERM2(IP) = 0.0
-          DO JP = 1, 4 
+          DO JP = 1, 4
             IC = IC + 1
             TERM1(IC) = 0.0
             DO IG2=1,2
@@ -664,7 +664,7 @@ module m_heat_LIB_RADIATE
         ENDDO
       ENDIF
       RETURN
-      
+
    end subroutine heat_RADIATE_351
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_352( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -672,7 +672,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 352 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -846,7 +846,7 @@ module m_heat_LIB_RADIATE
         IC = 0
         DO IP = 1, 8
           TERM2(IP) = 0.0
-          DO JP = 1, 8 
+          DO JP = 1, 8
             IC = IC + 1
             TERM1(IC) = 0.0
             DO IG2=1,3
@@ -887,7 +887,7 @@ module m_heat_LIB_RADIATE
                 G2X=0.0
                 G2Y=0.0
                 G2Z=0.0
-                DO I = 1,8 
+                DO I = 1,8
                   G1X=G1X+HR(I)*XX(NOD(I))
                   G1Y=G1Y+HR(I)*YY(NOD(I))
                   G1Z=G1Z+HR(I)*ZZ(NOD(I))
@@ -913,9 +913,9 @@ module m_heat_LIB_RADIATE
             ENDDO
           ENDDO
         ENDDO
-      ENDIF     
+      ENDIF
       RETURN
-      
+
    end subroutine heat_RADIATE_352
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_361( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -923,7 +923,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 361 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -979,7 +979,7 @@ module m_heat_LIB_RADIATE
         IC = 0
         DO IP = 1, 4
           TERM2(IP) = 0.0
-          DO JP = 1, 4 
+          DO JP = 1, 4
             IC = IC + 1
             TERM1(IC) = 0.0
             DO IG2=1,2
@@ -1029,7 +1029,7 @@ module m_heat_LIB_RADIATE
           ENDDO
         ENDDO
       RETURN
-      
+
    end subroutine heat_RADIATE_361
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_362( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -1037,7 +1037,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 362 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
 !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
 !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
@@ -1121,7 +1121,7 @@ module m_heat_LIB_RADIATE
         IC = 0
         DO IP = 1, 8
           TERM2(IP) = 0.0
-          DO JP = 1, 8 
+          DO JP = 1, 8
             IC = IC + 1
             TERM1(IC) = 0.0
             DO IG2=1,3
@@ -1162,7 +1162,7 @@ module m_heat_LIB_RADIATE
                 G2X=0.0
                 G2Y=0.0
                 G2Z=0.0
-                DO I = 1,8 
+                DO I = 1,8
                   G1X=G1X+HR(I)*XX(NOD(I))
                   G1Y=G1Y+HR(I)*YY(NOD(I))
                   G1Z=G1Z+HR(I)*ZZ(NOD(I))
@@ -1189,7 +1189,7 @@ module m_heat_LIB_RADIATE
           ENDDO
         ENDDO
       RETURN
-      
+
    end subroutine heat_RADIATE_362
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_731( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -1197,7 +1197,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 731 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : SURFACE  RADIATE
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -1210,7 +1210,7 @@ module m_heat_LIB_RADIATE
         BX = XX(3) - XX(1)
         BY = YY(3) - YY(1)
         BZ = ZZ(3) - ZZ(1)
-        AA=DSQRT((AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2)/6.0    
+        AA=DSQRT((AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2)/6.0
 !
         TT  = ( TEMP(1) + TEMP(2) + TEMP(3) ) / 3.0
         T1  =  TT   - TZERO
@@ -1227,7 +1227,7 @@ module m_heat_LIB_RADIATE
         ENDDO
 !
       RETURN
-      
+
    end subroutine heat_RADIATE_731
 !----------------------------------------------------------------------*
    SUBROUTINE heat_RADIATE_741( NN,XX,YY,ZZ,TEMP,LTYPE                         &
@@ -1235,7 +1235,7 @@ module m_heat_LIB_RADIATE
 !----------------------------------------------------------------------*
 !**
 !**  SET 741 RADIATE
-!** 
+!**
 !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
@@ -1306,6 +1306,6 @@ module m_heat_LIB_RADIATE
           ENDDO
         ENDDO
       RETURN
-      
+
    end subroutine heat_RADIATE_741
 end module m_heat_LIB_RADIATE

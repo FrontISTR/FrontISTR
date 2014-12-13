@@ -18,7 +18,7 @@
 !======================================================================!
 
 !C
-!C*** 
+!C***
 !C*** module hecmw_precond_DIAG_66
 !C***
 !C
@@ -120,28 +120,28 @@ contains
       ALUtmp(1,4)= ALU(36*ii-32)
       ALUtmp(1,5)= ALU(36*ii-31)
       ALUtmp(1,6)= ALU(36*ii-30)
-      
+
       ALUtmp(2,1)= ALU(36*ii-29)
       ALUtmp(2,2)= ALU(36*ii-28) * SIGMA_DIAG
       ALUtmp(2,3)= ALU(36*ii-27)
       ALUtmp(2,4)= ALU(36*ii-26)
       ALUtmp(2,5)= ALU(36*ii-25)
       ALUtmp(2,6)= ALU(36*ii-24)
-      
+
       ALUtmp(3,1)= ALU(36*ii-23)
       ALUtmp(3,2)= ALU(36*ii-22)
       ALUtmp(3,3)= ALU(36*ii-21) * SIGMA_DIAG
       ALUtmp(3,4)= ALU(36*ii-20)
       ALUtmp(3,5)= ALU(36*ii-19)
       ALUtmp(3,6)= ALU(36*ii-18)
-      
+
       ALUtmp(4,1)= ALU(36*ii-17)
       ALUtmp(4,2)= ALU(36*ii-16)
       ALUtmp(4,3)= ALU(36*ii-15)
       ALUtmp(4,4)= ALU(36*ii-14) * SIGMA_DIAG
       ALUtmp(4,5)= ALU(36*ii-13)
       ALUtmp(4,6)= ALU(36*ii-12)
-      
+
       ALUtmp(5,1)= ALU(36*ii-11)
       ALUtmp(5,2)= ALU(36*ii-10)
       ALUtmp(5,3)= ALU(36*ii-9 )
@@ -155,7 +155,7 @@ contains
       ALUtmp(6,4)= ALU(36*ii-2 )
       ALUtmp(6,5)= ALU(36*ii-1 )
       ALUtmp(6,6)= ALU(36*ii   ) * SIGMA_DIAG
-      
+
       do k= 1, 6
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
         do i= k+1, 6
@@ -168,7 +168,7 @@ contains
           enddo
         enddo
       enddo
-      
+
       ALU(36*ii-35)= ALUtmp(1,1)
       ALU(36*ii-34)= ALUtmp(1,2)
       ALU(36*ii-33)= ALUtmp(1,3)

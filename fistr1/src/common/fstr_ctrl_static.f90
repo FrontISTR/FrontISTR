@@ -37,7 +37,7 @@ subroutine pc_strupr( s )
 end subroutine pc_strupr
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !STATIC      
+!> Read in !STATIC
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_STATIC( ctrl, &
@@ -73,7 +73,7 @@ function fstr_ctrl_get_STATIC( ctrl, &
 end function fstr_ctrl_get_STATIC
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !BOUNDARY            
+!> Read in !BOUNDARY
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_BOUNDARY( ctrl, amp, node_id, node_id_len, dof_ids, dof_ide, value )
@@ -102,7 +102,7 @@ end function fstr_ctrl_get_BOUNDARY
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !CLOAD       
+!> Read in !CLOAD
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_CLOAD( ctrl, amp, node_id, node_id_len, dof_id, value )
@@ -129,7 +129,7 @@ function fstr_ctrl_get_CLOAD( ctrl, amp, node_id, node_id_len, dof_id, value )
 end function fstr_ctrl_get_CLOAD
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !DLOAD       
+!> Read in !DLOAD
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_DLOAD( ctrl, amp, follow, element_id, element_id_len, load_type, params )
@@ -153,7 +153,7 @@ function fstr_ctrl_get_DLOAD( ctrl, amp, follow, element_id, element_id_len, loa
         integer(kind=kint) :: lid
 
         fstr_ctrl_get_DLOAD = -1
-        if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return 
+        if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         follow = follow+1
         if( fstr_ctrl_get_param_ex( ctrl, 'FOLLOW ','NO,YES ', 0, 'P', follow ) /= 0) return
         follow = follow-1
@@ -218,7 +218,7 @@ end function fstr_ctrl_get_DLOAD
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !REFTEMP        
+!> Read in !REFTEMP
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_REFTEMP( ctrl, value )
@@ -233,7 +233,7 @@ function fstr_ctrl_get_REFTEMP( ctrl, value )
 end function fstr_ctrl_get_REFTEMP
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !TEMPERATURE        
+!> Read in !TEMPERATURE
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_TEMPERATURE( ctrl, irres, tstep, tintl, node_id, node_id_len, value )
@@ -270,7 +270,7 @@ end function fstr_ctrl_get_TEMPERATURE
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !SPRING       
+!> Read in !SPRING
 !* ----------------------------------------------------------------------------------------------- *!
 
 function fstr_ctrl_get_SPRING( ctrl, amp, node_id, node_id_len, dof_id, value )
@@ -302,14 +302,14 @@ end function fstr_ctrl_get_SPRING
 integer function fstr_ctrl_get_USERLOAD( ctrl )
         use mULoad
         integer(kind=kint), intent(in)    :: ctrl
-		
+
         character(len=256) :: fname
 
         fstr_ctrl_get_USERLOAD = -1
         if( fstr_ctrl_get_param_ex( ctrl, 'FILE  ', '# ',           0,   'S',   fname )/=0 ) return
         if( fname=="" ) STOP "You must define a file name before read in user-defined material"
         if( ureadload(fname)/=0 ) return
-		
+
         fstr_ctrl_get_USERMATERIAL = 0
 end function fstr_ctrl_get_USERLOAD
 

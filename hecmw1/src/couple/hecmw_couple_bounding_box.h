@@ -26,20 +26,20 @@
 
 
 struct hecmw_couple_box {
-	double min_x;	
-	double min_y;	
-	double min_z;	
-	double max_x;	
-	double max_y;	
-	double max_z;	
+	double min_x;
+	double min_y;
+	double min_z;
+	double max_x;
+	double max_y;
+	double max_z;
 };
 
 
 struct hecmw_couple_bounding_box {
-	double tolerance;					
-	double coef;						
-	struct hecmw_couple_box *just;		
-	struct hecmw_couple_box *enlarged;	
+	double tolerance;
+	double coef;
+	struct hecmw_couple_box *just;
+	struct hecmw_couple_box *enlarged;
 };
 
 

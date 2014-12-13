@@ -11,7 +11,7 @@
  *      Simulations Using High End Computing Middleware (HEC-MW)"      *
  *                                                                     *
  *=====================================================================*/
- 
+
 #include <stdlib.h>
 #include <string.h>
 #include "hecmw_io_struct.h"

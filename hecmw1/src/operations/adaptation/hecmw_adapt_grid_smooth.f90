@@ -41,7 +41,7 @@
       NEWtet   = 0
       NEWprism = 0
       allocate (NFLAG_INFO(hecMESH%PETOT))
-      
+
       NITERADAP_MAX= 10000
 
    90 continue
@@ -99,10 +99,10 @@
         if (NDIVSUM .eq. 1) goto 95
 !C
 !C== 2 edges
-        if (NDIVSUM .eq. 2) then                                        
+        if (NDIVSUM .eq. 2) then
           if ( ( (NDIV(1).eq.1) .and. (NDIV(6).eq.1) ) .or.             &
      &         ( (NDIV(2).eq.1) .and. (NDIV(5).eq.1) ) .or.             &
-     &         ( (NDIV(3).eq.1) .and. (NDIV(4).eq.1) ) ) then           
+     &         ( (NDIV(3).eq.1) .and. (NDIV(4).eq.1) ) ) then
             hecMESH%adapt_iemb(ie1)= 1
             hecMESH%adapt_iemb(ie2)= 1
             hecMESH%adapt_iemb(ie3)= 1
@@ -247,7 +247,7 @@
 
 !C
 !C== check the type of PARENT cell
-   95   continue   
+   95   continue
 
         NTYP= hecMESH%adapt_parent_type(icel)
         if (NTYP.ne.0 .and. NTYP.ne.11 .and.                            &
@@ -277,7 +277,7 @@
 
       if (hecMESH%my_rank.eq.0)                                                 &
      &    write (*,'("  PRISM iteration=", 2i8)') NITERADAP, NEWprism
- 
+
 !C
 !C-- ADJUST normal-to-surface direction
       N1= hecMESH%adapt_import_edge_index(hecMESH%n_neighbor_pe)
@@ -351,9 +351,9 @@
      &     ( hecMESH%n_adapt_edge,                                      &
      &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
      &       hecMESH%adapt_import_edge_index,                           &
-     &       hecMESH%adapt_import_edge_item ,                           & 
+     &       hecMESH%adapt_import_edge_item ,                           &
      &       hecMESH%adapt_export_edge_index,                           &
-     &       hecMESH%adapt_export_edge_item ,                           & 
+     &       hecMESH%adapt_export_edge_item ,                           &
      &       WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,              &
      &       hecMESH%my_rank, 1, m)
 
@@ -363,9 +363,9 @@
      &     ( hecMESH%n_adapt_edge,                                      &
      &       hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                &
      &       hecMESH%adapt_import_edge_index,                           &
-     &       hecMESH%adapt_import_edge_item ,                           & 
+     &       hecMESH%adapt_import_edge_item ,                           &
      &       hecMESH%adapt_export_edge_index,                           &
-     &       hecMESH%adapt_export_edge_item ,                           & 
+     &       hecMESH%adapt_export_edge_item ,                           &
      &       WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,              &
      &       hecMESH%my_rank, 1, m)
 
@@ -448,7 +448,7 @@
         endif
 !C
 !C-- check the type of PARENT cell
-   105  continue   
+   105  continue
 
         NTYP= hecMESH%adapt_parent_type(icel)
         if (NTYP.ne.0 .and. NTYP.ne.4 .and.                             &
@@ -481,7 +481,7 @@
         do i= 1, hecMESH%PETOT
           icou= icou + NFLAG_INFO(i)
         enddo
-        if (icou.ne.0) NF0= 1        
+        if (icou.ne.0) NF0= 1
       endif
 
       call MPI_BCAST  (NF0, 1, MPI_INTEGER, 0, hecMESH%MPI_COMM, ierr)

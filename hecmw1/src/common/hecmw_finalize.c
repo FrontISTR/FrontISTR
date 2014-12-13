@@ -20,10 +20,10 @@
 #include "hecmw_finalize.h"
 #include "hecmw_util.h"
 
-int 
+int
 HECMW_finalize(void)
 {
-	HECMW_log(HECMW_LOG_DEBUG, "Finalizing..."); 
+	HECMW_log(HECMW_LOG_DEBUG, "Finalizing...");
 
 	HECMW_ctrl_finalize();
 

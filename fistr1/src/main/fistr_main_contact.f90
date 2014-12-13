@@ -35,7 +35,7 @@ use m_fstr_precheck
 use m_fstr_rcap_io
 use fstr_solver_dynamic
 use fstr_debug_dump
-use fstr_matrix_con_contact                                     
+use fstr_matrix_con_contact
 use m_fstr_freqdata
 
 
@@ -46,7 +46,7 @@ use m_fstr_freqdata
         type (hecmwST_matrix )                 :: conMAT
 !#endif
         type (fstr_solid )                     :: fstrSOLID
-        type (fstrST_matrix_contact_lagrange)  :: fstrMAT               
+        type (fstrST_matrix_contact_lagrange)  :: fstrMAT
         type (fstr_heat )                      :: fstrHEAT
         type (lczparam)                        :: fstrEIG
         type (fstr_dynamic )                   :: fstrDYNAMIC
@@ -73,7 +73,7 @@ use m_fstr_freqdata
         call hecmw_mesh_is_entire( is_entire )
         if( is_entire == 1 ) then
           paraContactFlag = .true.
-          if(nprocs == 1) then    
+          if(nprocs == 1) then
             call hecmw_get_mesh( name_ID , hecMESH )
             hecMESH%nn_middle = hecMESH%n_node
           else
@@ -93,8 +93,8 @@ use m_fstr_freqdata
         if(myrank == 0) then
           print *,'paraContactFlag',paraContactFlag
         endif
-        
-        
+
+
         call hecmw2fstr_mesh_conv( hecMESH )
 
         call fstr_init
@@ -168,7 +168,7 @@ subroutine fstr_init
         call hecmw_nullify_matrix( conMAT )
 !#endif
         call fstr_init_file
-		
+
 		! ----  default setting of global params ---
 
         DT = 1
@@ -188,20 +188,20 @@ subroutine fstr_init
         IWRES    => fstrPR%fg_iwres
         NRRES    => fstrPR%nrres
         NPRINT   => fstrPR%nprint
-	
+
         call hecmw_mat_con(hecMESH, hecMAT)
 
         ! ------- initial value setting -------------
 
         call fstr_mat_init  ( hecMAT   )
         call fstr_param_init( fstrPR, hecMESH )
-		
-		
+
+
         call fstr_solid_init( hecMESH, fstrSOLID )
         call fstr_eigen_init( fstrEIG )
         call fstr_heat_init ( fstrHEAT  )
         call fstr_dynamic_init( fstrDYNAMIC  )
-		
+
         call fstr_init_condition
         hecMAT%NDOF = hecMESH%n_dof
         if( kstHEAT == fstrPR%solution_type ) then
@@ -210,7 +210,7 @@ subroutine fstr_init
           hecMAT%NDOF = 1
         endif
         call hecMAT_init( hecMAT )
-        
+
 end subroutine fstr_init
 
 !------------------------------------------------------------------------------
@@ -296,14 +296,14 @@ subroutine fstr_init_file
         if( stat /= 0 ) then
                 call fstr_setup_util_err_stop( '### Cannot open debug file :'//dbgfileNAME )
         endif
-        
+
 end subroutine fstr_init_file
 
 !------------------------------------------------------------------------------
 !> Read in control file and do all preparation
 subroutine fstr_init_condition
         implicit none
-        character(len=HECMW_FILENAME_LEN) :: cntfileNAME 
+        character(len=HECMW_FILENAME_LEN) :: cntfileNAME
 
         ! get fstr control & setup paramters -----------
 
@@ -349,7 +349,7 @@ subroutine fstr_linear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*) ' ***   STAGE Linear static analysis   **'
         end if
-        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )   
+        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_linear_static_analysis
@@ -473,7 +473,7 @@ subroutine fstr_static_eigen_analysis
                 write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
                 write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
         end if
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )  
+        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
         teachiter = .TRUE.
         if(myrank == 0) THEN
                 write(IMSG,*)
@@ -508,7 +508,7 @@ subroutine fstr_finalize
                 close(IMSG)
 
         end if
-        
+
         call fstr_solid_finalize( fstrSOLID )
         call hecMAT_finalize( hecMAT )
 

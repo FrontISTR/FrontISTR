@@ -23,7 +23,7 @@
 module m_out
   use hecmw
   implicit none
-  
+
   integer, parameter, private :: MAXOUT = 20
   integer, parameter, private :: MAXNAMELEN = 16
   character(len=20), parameter, private :: OUTFILENAME = "ifstr.out"
@@ -49,7 +49,7 @@ module m_out
     integer                       :: freqency       !< output frenqency
     type( output_info )           :: outinfo        !< info of output
   end type t_output_ctrl
-  
+
 contains
 
 ! ----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ subroutine initOutInfo( outinfo )
   outinfo%keyWord(1)  = "DISP"
   outinfo%vtype(1)    = -2
   outinfo%on(1)       = .true.
-  
+
   outinfo%keyWord(2)  = "REACTION"
   outinfo%vtype(2)    = -2
 
@@ -116,7 +116,7 @@ subroutine initOutInfo( outinfo )
 
   outinfo%keyWord(17) = "TEMP"
   outinfo%vtype(17)   = -1
-  
+
   outinfo%keyWord(18) = "ROT"
   outinfo%vtype(18)   = -2
 
@@ -155,7 +155,7 @@ integer function n_comp_valtype( vtype, ndim )
     n_comp_valtype = ndim*(ndim+1)/2
   else if( vtype==-4 ) then
     n_comp_valtype = ndim*ndim
-  else 
+  else
     n_comp_valtype = 0
   endif
 end function n_comp_valtype

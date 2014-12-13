@@ -18,38 +18,38 @@ module m_heat_LIB_CAPACITY
    contains
 !***********************************************************************
 !  CAPACITY_111 ( NN,XX,YY,ZZ,TT,IMAT,ASECT,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_231 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_241 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_341 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_351 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_361 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_341 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_351 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_361 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_731 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_741 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_232 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !  CAPACITY_242 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS
-!                                       ,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_342 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_352 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
-!  CAPACITY_362 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1 
-!                                       ,ntab2,temp2,funcA2,funcB2 ) 
+!                                       ,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_342 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_352 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
+!  CAPACITY_362 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab1,temp1,funcA1,funcB1
+!                                       ,ntab2,temp2,funcA2,funcB2 )
 !***********************************************************************
 !> Build up the heat capacity matrix of line element 111
    SUBROUTINE heat_CAPACITY_111 ( NN,XX,YY,ZZ,TT,IMAT,ASECT,SS                 &
@@ -61,16 +61,16 @@ module m_heat_LIB_CAPACITY
       DIMENSION SPE(3),DEN(3)
       dimension temp1(ntab1),funcA1(ntab1+1),funcB1(ntab1+1)
       dimension temp2(ntab2),funcA2(ntab2+1),funcB2(ntab2+1)
-! 
+!
         DX = XX(2) - XX(1)
         DY = YY(2) - YY(1)
         DZ = ZZ(2) - ZZ(1)
-        AL = DSQRT( DX*DX + DY*DY + DZ*DZ ) 
+        AL = DSQRT( DX*DX + DY*DY + DZ*DZ )
         VV = ASECT * AL
 
         TEMP = ( TT(1) + TT(2) ) * 0.5d0
-        CALL heat_GET_CP     (TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1) 
-        CALL heat_GET_DENSITY(TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2) 
+        CALL heat_GET_CP     (TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1)
+        CALL heat_GET_DENSITY(TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2)
 
         SS(1) = VV*SPE(1)*DEN(1)*0.5
         SS(2) = SS(1)
@@ -78,15 +78,15 @@ module m_heat_LIB_CAPACITY
         write(*,*) VV,SPE(1),DEN(1),SS(1)
 !
       RETURN
-      
+
    end subroutine heat_CAPACITY_111
-   
+
 !> Build up the heat capacity matrix of element 231
    SUBROUTINE heat_CAPACITY_231 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS                 &
      &                                     ,ntab1,temp1,funcA1,funcB1          &
      &                                     ,ntab2,temp2,funcA2,funcB2 )
 !C*--------------------------------------------------------------------*
-!C* 
+!C*
 !C* HEAT CAPACITY FOR 231
 !C*
       use hecmw
@@ -156,14 +156,14 @@ module m_heat_LIB_CAPACITY
       RETURN
 !C
    end subroutine heat_CAPACITY_231
- 
+
 !> Build up the heat capacity matrix of element 241
 !C*--------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_241 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS                 &
      &                                     ,ntab1,temp1,funcA1,funcB1          &
      &                                     ,ntab2,temp2,funcA2,funcB2 )
 !C*--------------------------------------------------------------------*
-!C* 
+!C*
 !C* HEAT CAPACITY FOR 241
 !C*
       use hecmw
@@ -224,11 +224,11 @@ module m_heat_LIB_CAPACITY
    40     CONTINUE
   100   CONTINUE
   200 CONTINUE
-        
+
       RETURN
 
    end subroutine heat_CAPACITY_241
-   
+
 !> Build up the heat capacity matrix of element 341
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_341 ( NN,XX,YY,ZZ,TT,IMAT,SS                       &
@@ -236,7 +236,7 @@ module m_heat_LIB_CAPACITY
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
 !*
-! 
+!
 ! HEAT CAPACITY FOR 341
 !
       use hecmw
@@ -314,8 +314,8 @@ module m_heat_LIB_CAPACITY
             TEMP=0.0
             DO I=1,NN
               TEMP = TT(I)
-              CALL heat_GET_CP     ( TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1 ) 
-              CALL heat_GET_DENSITY( TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2 ) 
+              CALL heat_GET_CP     ( TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1 )
+              CALL heat_GET_DENSITY( TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2 )
             ENDDO
             WG=WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X2-X3)*(1.0-X3)*0.125
             DO I=1,NN
@@ -327,16 +327,16 @@ module m_heat_LIB_CAPACITY
       enddo
 !
       RETURN
-!        
+!
    end subroutine heat_CAPACITY_341
-   
+
 !> Build up the heat capacity matrix of element 351
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_351 ( NN,XX,YY,ZZ,TT,IMAT,S0                       &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
-! 
+!
 ! HEAT CAPACITY FOR 351
 !
       use hecmw
@@ -430,18 +430,18 @@ module m_heat_LIB_CAPACITY
 !
   100   CONTINUE
   200 CONTINUE
-! 
+!
    RETURN
-      
+
    end subroutine heat_CAPACITY_351
-   
+
 !> Build up the heat capacity matrix of element 361
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_361 ( NN,XX,YY,ZZ,TT,IMAT,S0                       &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
-! 
+!
 ! HEAT CAPACITY FOR 361
 !
       use hecmw
@@ -452,7 +452,7 @@ module m_heat_LIB_CAPACITY
       dimension SPE(3), DEN(3)
       dimension temp1(ntab1),funcA1(ntab1+1),funcB1(ntab1+1)
       dimension temp2(ntab2),funcA2(ntab2+1),funcB2(ntab2+1)
-! 
+!
 ! SET GAUUUSIAN INTEGRATION PARAMETER
 !
       XG(1) =-0.5773502691896258
@@ -509,7 +509,7 @@ module m_heat_LIB_CAPACITY
              HT(6)= .125*RP*SM
              HT(7)= .125*RP*SP
              HT(8)= .125*RM*SP
-!JACOBI MATRIX 
+!JACOBI MATRIX
             XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)               &
                 +HR(5)*XX(5)+HR(6)*XX(6)+HR(7)*XX(7)+HR(8)*XX(8)
             XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)               &
@@ -542,22 +542,22 @@ module m_heat_LIB_CAPACITY
             DO I=1, NN
               TEMP =TEMP+TT(I)*H(I)
             ENDDO
-            CALL heat_GET_CP     (TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1) 
-            CALL heat_GET_DENSITY(TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2) 
+            CALL heat_GET_CP     (TEMP,IMAT,SPE,ntab1,temp1,funcA1,funcB1)
+            CALL heat_GET_DENSITY(TEMP,IMAT,DEN,ntab2,temp2,funcA2,funcB2)
             WG=WGT(LX)*WGT(LY)*WGT(LZ)*DET
             DO I=1, NN
               S0(I)=S0(I)+WG*SPE(1)*DEN(1)*H(I)
             ENDDO
-! 
+!
           enddo
         enddo
       enddo
 !
       RETURN
-      
+
    end subroutine heat_CAPACITY_361
-   
-   
+
+
 !> Build up the heat capacity matrix of element 731
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_731 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS                 &
@@ -591,14 +591,14 @@ module m_heat_LIB_CAPACITY
       RETURN
 !C
    end subroutine heat_CAPACITY_731
-   
+
 !> Build up the heat capacity matrix of element 741
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_741 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS                 &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
-! 
+!
 ! HEAT CAPACITY FOR 741
 !
       use hecmw
@@ -660,21 +660,21 @@ module m_heat_LIB_CAPACITY
           DO I=1, NN
             SS(I)=SS(I)+WG*SPE(1)*DEN(1)*H(I)
           ENDDO
-!C          
+!C
    20   CONTINUE
    30 CONTINUE
 !C
       RETURN
-!C      
+!C
    end subroutine heat_CAPACITY_741
-   
+
 !> Build up the heat capacity matrix of element 232
 !C*--------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_232 ( NN,XX,YY,ZZ,TT,IMAT,THICK,S0                 &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !C*--------------------------------------------------------------------*
-!C* 
+!C*
 !C* HEAT CAPACITY FOR 232
 !C*
       use hecmw
@@ -784,14 +784,14 @@ module m_heat_LIB_CAPACITY
       RETURN
 !C
    end subroutine heat_CAPACITY_232
-   
+
 !> Build up the heat capacity matrix of element 242
 !C*--------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_242 ( NN,XX,YY,ZZ,TT,IMAT,THICK,S0                 &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !C*--------------------------------------------------------------------*
-!C* 
+!C*
 !C* HEAT CAPACITY FOR 242
 !C*
       use hecmw
@@ -896,7 +896,7 @@ module m_heat_LIB_CAPACITY
       RETURN
 !C
    end subroutine heat_CAPACITY_242
-   
+
 !> Build up the heat capacity matrix of element 342
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_342 ( NN,XX,YY,ZZ,TT,IMAT,S0                       &
@@ -904,7 +904,7 @@ module m_heat_LIB_CAPACITY
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
 !*
-! 
+!
 ! HEAT CAPACITY FOR 342
 !
       use hecmw
@@ -1062,14 +1062,14 @@ module m_heat_LIB_CAPACITY
     RETURN
 !C
    end subroutine heat_CAPACITY_342
-   
+
 !> Build up the heat capacity matrix of element 352
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_352 ( NN,XX,YY,ZZ,TT,IMAT,S0                       &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
-! 
+!
 ! HEAT CAPACITY FOR 352
 !
       use hecmw
@@ -1249,14 +1249,14 @@ module m_heat_LIB_CAPACITY
     RETURN
 !C
    end subroutine heat_CAPACITY_352
-   
+
 !> Build up the heat capacity matrix of element 362
 !*---------------------------------------------------------------------*
    SUBROUTINE heat_CAPACITY_362 ( NN,XX,YY,ZZ,TT,IMAT,S0                       &
                                            ,ntab1,temp1,funcA1,funcB1          &
                                            ,ntab2,temp2,funcA2,funcB2 )
 !*---------------------------------------------------------------------*
-! 
+!
 ! HEAT CAPACITY FOR 362
 !
       use hecmw
@@ -1499,7 +1499,7 @@ module m_heat_LIB_CAPACITY
       DENS(2)= DENS(1)
       DENS(3)= DENS(1)
       return
-      
+
    end subroutine heat_GET_DENSITY
 end module m_heat_LIB_CAPACITY
 

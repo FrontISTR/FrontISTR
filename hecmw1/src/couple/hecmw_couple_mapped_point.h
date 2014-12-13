@@ -26,11 +26,11 @@
 
 
 struct hecmw_couple_mapped_point {
-	int n;			
-	int type;		
-	int *item;		
-	int *id;		
-	double *coord;	
+	int n;
+	int type;
+	int *item;
+	int *id;
+	double *coord;
 };
 
 extern struct hecmw_couple_mapped_point *

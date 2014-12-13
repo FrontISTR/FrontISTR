@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 8 node 
-!!   quadrilateral element (Serendipity  interpolation) 
+!> \brief  This module contains functions for interpolation in 8 node
+!!   quadrilateral element (Serendipity  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/05/08
@@ -68,7 +68,7 @@ MODULE shape_quad8n
       func(7,2)= 0.5d0*(1.d0-lcoord(1)*lcoord(1))
       func(8,2)=-lcoord(2)*(1.d0-lcoord(1))
     end subroutine
-    
+
     subroutine Shape2ndDeriv_quad8n(lcoord,func)
       real(kind=kreal), intent(in) :: lcoord(2)
       real(kind=kreal) :: func(8,2,2)
@@ -80,7 +80,7 @@ MODULE shape_quad8n
       func(6,1,1) = 0.d0
       func(7,1,1) =-lcoord(2)-1.d0
       func(8,1,1) = 0.d0
-      
+
       func(1,1,2) = 0.25d0-0.5d0*(lcoord(1)+lcoord(2))
       func(2,1,2) =-0.25d0-0.5d0*(lcoord(1)-lcoord(2))
       func(3,1,2) = 0.25d0+0.5d0*(lcoord(1)+lcoord(2))
@@ -98,7 +98,7 @@ MODULE shape_quad8n
       func(6,2,1) =-lcoord(2)
       func(7,2,1) =-lcoord(1)
       func(8,2,1) = lcoord(2)
-      
+
       func(1,2,2) = 0.5d0*(1.d0-lcoord(1))
       func(2,2,2) = 0.5d0*(1.d0+lcoord(1))
       func(3,2,2) = 0.5d0*(1.d0+lcoord(1))

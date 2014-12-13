@@ -42,9 +42,9 @@
 
 
 struct link_list {
-	int id;						
-	double weight;				
-	struct link_list *next;		
+	int id;
+	double weight;
+	struct link_list *next;
 };
 
 

@@ -43,7 +43,7 @@ void CNFDB_601::Read( CNFData* nfd )
 
 	// #1
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIII",
 			&ID,
 			&format,
 			&color,
@@ -59,7 +59,7 @@ void CNFDB_601::Read( CNFData* nfd )
 		nfd->ReadRecord( buff, "I", &Bcount);
 	// #4
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIIIIII",
 			&bval[0], &bval[1], &bval[2], &bval[3], &bval[4],
 			&bval[5], &bval[6], &bval[7], &bval[8], &bval[9] );
 	// #5
@@ -67,17 +67,17 @@ void CNFDB_601::Read( CNFData* nfd )
 		nfd->ReadRecord( buff, "I", &Icount);
 	// #6
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIIIIII",
 			&ival[0], &ival[1], &ival[2], &ival[3], &ival[4],
 			&ival[5], &ival[6], &ival[7], &ival[8], &ival[9] );
 	// #7
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIIIII", 
+		nfd->ReadRecord( buff, "IIIIIIIIII",
 			&ival[10], &ival[11], &ival[12], &ival[13], &ival[14],
 			&ival[15], &ival[16], &ival[17], &ival[18], &ival[19] );
 	// #8
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIII", 
+		nfd->ReadRecord( buff, "IIIII",
 			&ival[20], &ival[21], &ival[22], &ival[23], &ival[24] );
 	// #9
 		nfd->ReadLineEx( buff );
@@ -86,7 +86,7 @@ void CNFDB_601::Read( CNFData* nfd )
 		for(i=0; i<20; i++) {
 			int j = i * 10;
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "FFFFFFFFFF", 
+			nfd->ReadRecord( buff, "FFFFFFFFFF",
 				&mval[j  ], &mval[j+1], &mval[j+2], &mval[j+3], &mval[j+4],
 				&mval[j+5], &mval[j+6], &mval[j+7], &mval[j+8], &mval[j+9] );
 		}
@@ -97,7 +97,7 @@ void CNFDB_601::Read( CNFData* nfd )
 		for(i=0; i<5; i++) {
 			int j = i * 10;
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "IIIIIIIIII", 
+			nfd->ReadRecord( buff, "IIIIIIIIII",
 				&fval[j  ], &fval[j+1], &fval[j+2], &fval[j+3], &fval[j+4],
 				&fval[j+5], &fval[j+6], &fval[j+7], &fval[j+8], &fval[j+9] );
 		}
@@ -109,7 +109,7 @@ void CNFDB_601::Read( CNFData* nfd )
 		for(i=0; i<rec_n; i++) {
 			int j = i * 10;
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "IIIIIIIIII", 
+			nfd->ReadRecord( buff, "IIIIIIIIII",
 				&tval[j  ], &tval[j+1], &tval[j+2], &tval[j+3], &tval[j+4],
 				&tval[j+5], &tval[j+6], &tval[j+7], &tval[j+8], &tval[j+9] );
 		}
@@ -146,7 +146,7 @@ void CNFDB_601::WriteData( CNFData* nfd, FILE* fp )
 	int i;
 
 	// #1
-		nfd->WriteData( fp, "IIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIn",
 			ID,
 			format,
 			color,
@@ -159,28 +159,28 @@ void CNFDB_601::WriteData( CNFData* nfd, FILE* fp )
 	// #3
 		nfd->WriteData( fp, "In", Bcount);
 	// #4
-		nfd->WriteData( fp, "IIIIIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIIIIn",
 			bval[0], bval[1], bval[2], bval[3], bval[4],
 			bval[5], bval[6], bval[7], bval[8], bval[9] );
 	// #5
 		nfd->WriteData( fp, "In", Icount);
 	// #6
-		nfd->WriteData( fp, "IIIIIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIIIIn",
 			ival[0], ival[1], ival[2], ival[3], ival[4],
 			ival[5], ival[6], ival[7], ival[8], ival[9] );
 	// #7
-		nfd->WriteData( fp, "IIIIIIIIIIn", 
+		nfd->WriteData( fp, "IIIIIIIIIIn",
 			ival[10], ival[11], ival[12], ival[13], ival[14],
 			ival[15], ival[16], ival[17], ival[18], ival[19] );
 	// #8
-		nfd->WriteData( fp, "IIIIIn", 
+		nfd->WriteData( fp, "IIIIIn",
 			ival[20], ival[21], ival[22], ival[23], ival[24] );
 	// #9
 		nfd->WriteData( fp, "In", Mcount);
 	// #10-29
 		for(i=0; i<20; i++) {
 			int j = i * 10;
-			nfd->WriteData( fp, "FFFFFFFFFFn", 
+			nfd->WriteData( fp, "FFFFFFFFFFn",
 				mval[j  ], mval[j+1], mval[j+2], mval[j+3], mval[j+4],
 				mval[j+5], mval[j+6], mval[j+7], mval[j+8], mval[j+9] );
 		}
@@ -189,7 +189,7 @@ void CNFDB_601::WriteData( CNFData* nfd, FILE* fp )
 	// #31-35
 		for(i=0; i<5; i++) {
 			int j = i * 10;
-			nfd->WriteData( fp, "IIIIIIIIIIn", 
+			nfd->WriteData( fp, "IIIIIIIIIIn",
 				fval[j  ], fval[j+1], fval[j+2], fval[j+3], fval[j+4],
 				fval[j+5], fval[j+6], fval[j+7], fval[j+8], fval[j+9] );
 		}
@@ -199,7 +199,7 @@ void CNFDB_601::WriteData( CNFData* nfd, FILE* fp )
 		int rec_n = Tcount / 10;
 		for(i=0; i<rec_n; i++) {
 			int j = i * 10;
-			nfd->WriteData( fp, "IIIIIIIIIIn", 
+			nfd->WriteData( fp, "IIIIIIIIIIn",
 				tval[j  ], tval[j+1], tval[j+2], tval[j+3], tval[j+4],
 				tval[j+5], tval[j+6], tval[j+7], tval[j+8], tval[j+9] );
 		}

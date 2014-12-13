@@ -1339,7 +1339,7 @@ case 24:
 YY_RULE_SETUP
 #line 80 "../src/common/hecmw_ablex.l"
 {
-				BEGIN HEADER; 
+				BEGIN HEADER;
 				set_flag_header(1);
 				return HECMW_ABLEX_H_HEADING;
 			}
@@ -2839,7 +2839,7 @@ HECMW_ablex_next_token_skip(int skip_token)
 int
 HECMW_ablex_set_input(FILE *fp)
 {
-	static int first = 1;	
+	static int first = 1;
 	if(fp == NULL) return -1;
 	if(first) {
 		yyin = fp;

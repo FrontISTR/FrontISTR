@@ -84,7 +84,7 @@ void CFSTRDB_Radiate::Write( CHECData* hecd )
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SSFF",
 			iter->egrp, LoadTypeName( iter->type ), iter->value, iter->sink );
-	}	
+	}
 }
 
 
@@ -110,7 +110,7 @@ bool CFSTRDB_Radiate::Read( CHECData* hecd, char* header_line )
 			if( strcmp( LoadTypeName(type), s )==0) break;
 		}
 		if( type == TypeNumber()) return false;
-		item.type = type; 
+		item.type = type;
 		ItemList.push_back( item );
 	}
 	return true;

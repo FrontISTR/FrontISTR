@@ -87,7 +87,7 @@ bool IsFSTRDataBlockName( const char* name )
 		toupper( &name[1], s );
 	else
 		toupper( name, s );
-	
+
 	#define GENERATE_CODE( x ) \
 		else if( strcmp( #x , name )==0 ){\
 			return true;\

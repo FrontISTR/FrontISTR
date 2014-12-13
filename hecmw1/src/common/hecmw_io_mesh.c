@@ -16,7 +16,7 @@
  *                                                                     *
  *=====================================================================*/
 
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -1056,7 +1056,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		if(strcmp(p->name, name) == 0) break;
 		q = p;
 	}**/
-  
+
 	p = (struct hecmw_io_egrp *)hecmw_hash_p_get(hash_eg, name);
 	if(p == NULL) {
 		p = HECMW_malloc(sizeof(struct hecmw_io_egrp));
@@ -1075,7 +1075,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 			return -1;
 		}
 		p->next = NULL;
-    
+
 		if(cp != NULL) {
 			cp->next = p;
 		} else {
@@ -1083,7 +1083,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		}
 		cp = p;
 	}
-  
+
 	for(i=0; i < nelem; i++) {
 		if (HECMW_set_int_add(p->elem, elem[i])) {
 			set_err(errno, "");
@@ -1099,12 +1099,12 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		HECMW_free(p);
 		return 0;
 	}
-  
+
 	if(hecmw_hash_p_put(hash_eg, name, (void *)p) == 0) {
 		printf("HECMW HASH TABEL PUT ERROR\n");
 		return -1;
 	}
-  
+
 	/* if(cp != NULL) { */
 	/* 	cp->next = p; */
 	/* } else if (strcmp(cp->name, name) != 0) { */
@@ -1225,7 +1225,7 @@ HECMW_io_get_ngrp(const char *name)
 	/* 	if(strcmp(p->name, name) == 0) break; */
 	/* } */
 	/* return p; */
-  
+
   return (struct hecmw_io_ngrp *)hecmw_hash_p_get(hash_ng, name);
 }
 
@@ -1294,7 +1294,7 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 	}
 
 	p = (struct hecmw_io_ngrp *)hecmw_hash_p_get(hash_ng, name);
-  
+
 	/* if(prev_ngrp != NULL && strcmp(prev_ngrp->name, name) == 0) { */
 	/* 	p = prev_ngrp; */
 	/* } else { */
@@ -1315,7 +1315,7 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 			return -1;
 		}
 		p->next = NULL;
-    
+
 		if(prev_ngrp == NULL) {
 			_ngrp = p;
 		} else {
@@ -1338,12 +1338,12 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		HECMW_free(p);
 		return 0;
 	}
-  
+
 	if(hecmw_hash_p_put(hash_ng, name, (void *)p) == 0) {
 		printf("HECMW HASH TABEL PUT ERROR\n");
 		return -1;
 	}
-  
+
 	/* if(prev_ngrp == NULL) { */
 	/* 	_ngrp = p; */
 	/* } else if(strcmp(prev_ngrp->name, name) != 0) { */
@@ -1449,7 +1449,7 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 			return -1;
 		}
 		p->next = NULL;
-    
+
 		if(prev_sgrp == NULL) {
 			_sgrp = p;
 		} else {
@@ -1477,7 +1477,7 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		printf("HECMW HASH TABEL PUT ERROR\n");
 		return -1;
 	}
-  
+
 	/* if(prev_sgrp == NULL) { */
 	/* 	_sgrp = p; */
 	/* } else if(strcmp(prev_sgrp->name, name) != 0) { */
@@ -4143,14 +4143,14 @@ HECMW_hash_init(void)
 	extern hecmw_hash_p *hash_ng;
 	extern hecmw_hash_p *hash_eg;
 	extern hecmw_hash_p *hash_sg;
-  
+
 	hash_ng = hecmw_hash_p_new(1);
 	if (hash_ng == NULL) return 1;
 	hash_eg = hecmw_hash_p_new(2);
 	if (hash_eg == NULL) return 1;
 	hash_sg = hecmw_hash_p_new(3);
 	if (hash_sg == NULL) return 1;
-  
+
 	return 0;
 }
 
@@ -4160,7 +4160,7 @@ HECMW_hash_finalize(void)
 	extern hecmw_hash_p *hash_ng;
 	extern hecmw_hash_p *hash_eg;
 	extern hecmw_hash_p *hash_sg;
-  
+
 	hecmw_hash_p_delete(hash_ng);
 	hecmw_hash_p_delete(hash_eg);
 	hecmw_hash_p_delete(hash_sg);
@@ -4173,7 +4173,7 @@ HECMW_io_init(void)
 {
 	HECMW_log(HECMW_LOG_DEBUG, "Initializing IO process...");
 
-  
+
 	if(HECMW_hash_init()) {
     printf("ERROE:HECMW_HASHTABLE INIT \n");
 		return -1;

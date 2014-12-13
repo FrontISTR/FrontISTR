@@ -25,20 +25,20 @@
 
 
 struct hecmw_couple_ctrl_unit_ids {
-	int n_unit;		
-	char **ids;		
+	int n_unit;
+	char **ids;
 };
 
 
 struct hecmw_couple_ctrl_couple_ids {
-	int n_couple;	
-	char **ids;		
+	int n_couple;
+	char **ids;
 };
 
 
 struct hecmw_couple_ctrl_boundary_ids {
-	int n_boundary;	
-	char **ids;		
+	int n_boundary;
+	char **ids;
 };
 
 

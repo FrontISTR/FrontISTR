@@ -35,7 +35,7 @@ inline void create_egrp_name_for_sec( int id, char* name )	{ sprintf( name, "SEC
 
 inline int hec_face_no( int hec_etype, int neu_face, int& fg_front)
 {
-	fg_front = 1; 
+	fg_front = 1;
 	switch( hec_etype ){
 	case 231: case 232: case 241: case 242:
 		return (neu_face - 2);

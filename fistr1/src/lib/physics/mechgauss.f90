@@ -52,7 +52,7 @@ MODULE mMechGauss
         type tElement
             integer                     :: etype                 !< element's type
             integer                     :: iset                  !< plane strain, stress etc
-            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces    
+            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
             type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
         end type
 
@@ -94,7 +94,7 @@ MODULE mMechGauss
       gauss%plstrain = 0.d0
     endif
   end subroutine fstr_init_gauss
-  
+
   !> Finializer
   subroutine fstr_finalize_gauss( gauss )
      type( tGaussStatus ), intent(inout) :: gauss
@@ -105,4 +105,4 @@ MODULE mMechGauss
 END MODULE
 
 
-  
+

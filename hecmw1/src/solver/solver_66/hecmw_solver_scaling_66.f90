@@ -78,43 +78,43 @@ contains
       ip3= 6*i-3
       ip4= 6*i-2
       ip5= 6*i-1
-      ip6= 6*i 
-      
+      ip6= 6*i
+
       D(36*i-35)= D(36*i-35)*SCALE(ip1)*SCALE(ip1)
       D(36*i-34)= D(36*i-34)*SCALE(ip1)*SCALE(ip2)
       D(36*i-33)= D(36*i-33)*SCALE(ip1)*SCALE(ip3)
       D(36*i-32)= D(36*i-32)*SCALE(ip1)*SCALE(ip4)
       D(36*i-31)= D(36*i-31)*SCALE(ip1)*SCALE(ip5)
       D(36*i-30)= D(36*i-30)*SCALE(ip1)*SCALE(ip6)
-      
+
       D(36*i-29)= D(36*i-29)*SCALE(ip2)*SCALE(ip1)
       D(36*i-28)= D(36*i-28)*SCALE(ip2)*SCALE(ip2)
       D(36*i-27)= D(36*i-27)*SCALE(ip2)*SCALE(ip3)
       D(36*i-26)= D(36*i-26)*SCALE(ip2)*SCALE(ip4)
       D(36*i-25)= D(36*i-25)*SCALE(ip2)*SCALE(ip5)
       D(36*i-24)= D(36*i-24)*SCALE(ip2)*SCALE(ip6)
-      
+
       D(36*i-23)= D(36*i-23)*SCALE(ip3)*SCALE(ip1)
       D(36*i-22)= D(36*i-22)*SCALE(ip3)*SCALE(ip2)
       D(36*i-21)= D(36*i-21)*SCALE(ip3)*SCALE(ip3)
       D(36*i-20)= D(36*i-20)*SCALE(ip3)*SCALE(ip4)
       D(36*i-19)= D(36*i-19)*SCALE(ip3)*SCALE(ip5)
       D(36*i-18)= D(36*i-18)*SCALE(ip3)*SCALE(ip6)
-      
+
       D(36*i-17)= D(36*i-17)*SCALE(ip4)*SCALE(ip1)
       D(36*i-16)= D(36*i-16)*SCALE(ip4)*SCALE(ip2)
       D(36*i-15)= D(36*i-15)*SCALE(ip4)*SCALE(ip3)
       D(36*i-14)= D(36*i-14)*SCALE(ip4)*SCALE(ip4)
       D(36*i-13)= D(36*i-13)*SCALE(ip4)*SCALE(ip5)
       D(36*i-12)= D(36*i-12)*SCALE(ip4)*SCALE(ip6)
-      
+
       D(36*i-11)= D(36*i-11)*SCALE(ip5)*SCALE(ip1)
       D(36*i-10)= D(36*i-10)*SCALE(ip5)*SCALE(ip2)
       D(36*i-9 )= D(36*i-9 )*SCALE(ip5)*SCALE(ip3)
       D(36*i-8 )= D(36*i-8 )*SCALE(ip5)*SCALE(ip4)
       D(36*i-7 )= D(36*i-7 )*SCALE(ip5)*SCALE(ip5)
       D(36*i-6 )= D(36*i-6 )*SCALE(ip5)*SCALE(ip6)
-      
+
       D(36*i-5 )= D(36*i-5 )*SCALE(ip6)*SCALE(ip1)
       D(36*i-4 )= D(36*i-4 )*SCALE(ip6)*SCALE(ip2)
       D(36*i-3 )= D(36*i-3 )*SCALE(ip6)*SCALE(ip3)
@@ -132,43 +132,43 @@ contains
         iq3= 6*inod - 3
         iq4= 6*inod - 2
         iq5= 6*inod - 1
-        iq6= 6*inod 
-          
+        iq6= 6*inod
+
         AL(36*k-35)= AL(36*k-35)*SCALE(ip1)*SCALE(iq1)
         AL(36*k-34)= AL(36*k-34)*SCALE(ip1)*SCALE(iq2)
         AL(36*k-33)= AL(36*k-33)*SCALE(ip1)*SCALE(iq3)
         AL(36*k-32)= AL(36*k-32)*SCALE(ip1)*SCALE(iq4)
         AL(36*k-31)= AL(36*k-31)*SCALE(ip1)*SCALE(iq5)
         AL(36*k-30)= AL(36*k-30)*SCALE(ip1)*SCALE(iq6)
-       
+
         AL(36*k-29)= AL(36*k-29)*SCALE(ip2)*SCALE(iq1)
         AL(36*k-28)= AL(36*k-28)*SCALE(ip2)*SCALE(iq2)
         AL(36*k-27)= AL(36*k-27)*SCALE(ip2)*SCALE(iq3)
         AL(36*k-26)= AL(36*k-26)*SCALE(ip2)*SCALE(iq4)
         AL(36*k-25)= AL(36*k-25)*SCALE(ip2)*SCALE(iq5)
         AL(36*k-24)= AL(36*k-24)*SCALE(ip2)*SCALE(iq6)
-        
+
         AL(36*k-23)= AL(36*k-23)*SCALE(ip3)*SCALE(iq1)
         AL(36*k-22)= AL(36*k-22)*SCALE(ip3)*SCALE(iq2)
         AL(36*k-21)= AL(36*k-21)*SCALE(ip3)*SCALE(iq3)
         AL(36*k-20)= AL(36*k-20)*SCALE(ip3)*SCALE(iq4)
         AL(36*k-19)= AL(36*k-19)*SCALE(ip3)*SCALE(iq5)
         AL(36*k-18)= AL(36*k-18)*SCALE(ip3)*SCALE(iq6)
-        
+
         AL(36*k-17)= AL(36*k-17)*SCALE(ip4)*SCALE(iq1)
         AL(36*k-16)= AL(36*k-16)*SCALE(ip4)*SCALE(iq2)
         AL(36*k-15)= AL(36*k-15)*SCALE(ip4)*SCALE(iq3)
         AL(36*k-14)= AL(36*k-14)*SCALE(ip4)*SCALE(iq4)
         AL(36*k-13)= AL(36*k-13)*SCALE(ip4)*SCALE(iq5)
         AL(36*k-12)= AL(36*k-12)*SCALE(ip4)*SCALE(iq6)
-        
+
         AL(36*k-11)= AL(36*k-11)*SCALE(ip5)*SCALE(iq1)
         AL(36*k-10)= AL(36*k-10)*SCALE(ip5)*SCALE(iq2)
         AL(36*k-9 )= AL(36*k-9 )*SCALE(ip5)*SCALE(iq3)
         AL(36*k-8 )= AL(36*k-8 )*SCALE(ip5)*SCALE(iq4)
         AL(36*k-7 )= AL(36*k-7 )*SCALE(ip5)*SCALE(iq5)
         AL(36*k-6 )= AL(36*k-6 )*SCALE(ip5)*SCALE(iq6)
-        
+
         AL(36*k-5 )= AL(36*k-5 )*SCALE(ip6)*SCALE(iq1)
         AL(36*k-4 )= AL(36*k-4 )*SCALE(ip6)*SCALE(iq2)
         AL(36*k-3 )= AL(36*k-3 )*SCALE(ip6)*SCALE(iq3)
@@ -187,7 +187,7 @@ contains
         iq3= 6*inod - 3
         iq4= 6*inod - 2
         iq5= 6*inod - 1
-        iq6= 6*inod 
+        iq6= 6*inod
 
         AU(36*k-35)= AU(36*k-35)*SCALE(ip1)*SCALE(iq1)
         AU(36*k-34)= AU(36*k-34)*SCALE(ip1)*SCALE(iq2)
@@ -195,35 +195,35 @@ contains
         AU(36*k-32)= AU(36*k-32)*SCALE(ip1)*SCALE(iq4)
         AU(36*k-31)= AU(36*k-31)*SCALE(ip1)*SCALE(iq5)
         AU(36*k-30)= AU(36*k-30)*SCALE(ip1)*SCALE(iq6)
-       
+
         AU(36*k-29)= AU(36*k-29)*SCALE(ip2)*SCALE(iq1)
         AU(36*k-28)= AU(36*k-28)*SCALE(ip2)*SCALE(iq2)
         AU(36*k-27)= AU(36*k-27)*SCALE(ip2)*SCALE(iq3)
         AU(36*k-26)= AU(36*k-26)*SCALE(ip2)*SCALE(iq4)
         AU(36*k-25)= AU(36*k-25)*SCALE(ip2)*SCALE(iq5)
         AU(36*k-24)= AU(36*k-24)*SCALE(ip2)*SCALE(iq6)
-        
+
         AU(36*k-23)= AU(36*k-23)*SCALE(ip3)*SCALE(iq1)
         AU(36*k-22)= AU(36*k-22)*SCALE(ip3)*SCALE(iq2)
         AU(36*k-21)= AU(36*k-21)*SCALE(ip3)*SCALE(iq3)
         AU(36*k-20)= AU(36*k-20)*SCALE(ip3)*SCALE(iq4)
         AU(36*k-19)= AU(36*k-19)*SCALE(ip3)*SCALE(iq5)
         AU(36*k-18)= AU(36*k-18)*SCALE(ip3)*SCALE(iq6)
-        
+
         AU(36*k-17)= AU(36*k-17)*SCALE(ip4)*SCALE(iq1)
         AU(36*k-16)= AU(36*k-16)*SCALE(ip4)*SCALE(iq2)
         AU(36*k-15)= AU(36*k-15)*SCALE(ip4)*SCALE(iq3)
         AU(36*k-14)= AU(36*k-14)*SCALE(ip4)*SCALE(iq4)
         AU(36*k-13)= AU(36*k-13)*SCALE(ip4)*SCALE(iq5)
         AU(36*k-12)= AU(36*k-12)*SCALE(ip4)*SCALE(iq6)
-        
+
         AU(36*k-11)= AU(36*k-11)*SCALE(ip5)*SCALE(iq1)
         AU(36*k-10)= AU(36*k-10)*SCALE(ip5)*SCALE(iq2)
         AU(36*k-9 )= AU(36*k-9 )*SCALE(ip5)*SCALE(iq3)
         AU(36*k-8 )= AU(36*k-8 )*SCALE(ip5)*SCALE(iq4)
         AU(36*k-7 )= AU(36*k-7 )*SCALE(ip5)*SCALE(iq5)
         AU(36*k-6 )= AU(36*k-6 )*SCALE(ip5)*SCALE(iq6)
-       
+
         AU(36*k-5 )= AU(36*k-5 )*SCALE(ip6)*SCALE(iq1)
         AU(36*k-4 )= AU(36*k-4 )*SCALE(ip6)*SCALE(iq2)
         AU(36*k-3 )= AU(36*k-3 )*SCALE(ip6)*SCALE(iq3)
@@ -277,7 +277,7 @@ contains
       X(6*i-2)= X(6*i-2) * SCALE(6*i-2)
       X(6*i-1)= X(6*i-1) * SCALE(6*i-1)
       X(6*i  )= X(6*i  ) * SCALE(6*i  )
-      
+
       B(6*i-5)= B(6*i-5) / SCALE(6*i-5)
       B(6*i-4)= B(6*i-4) / SCALE(6*i-4)
       B(6*i-3)= B(6*i-3) / SCALE(6*i-3)
@@ -293,42 +293,42 @@ contains
       ip4= 6*i-2
       ip5= 6*i-1
       ip6= 6*i
-      
+
       D(36*i-35)= D(36*i-35)/(SCALE(ip1)*SCALE(ip1))
       D(36*i-34)= D(36*i-34)/(SCALE(ip1)*SCALE(ip2))
       D(36*i-33)= D(36*i-33)/(SCALE(ip1)*SCALE(ip3))
       D(36*i-32)= D(36*i-32)/(SCALE(ip1)*SCALE(ip4))
       D(36*i-31)= D(36*i-31)/(SCALE(ip1)*SCALE(ip5))
       D(36*i-30)= D(36*i-30)/(SCALE(ip1)*SCALE(ip6))
-      
+
       D(36*i-29)= D(36*i-29)/(SCALE(ip2)*SCALE(ip1))
       D(36*i-28)= D(36*i-28)/(SCALE(ip2)*SCALE(ip2))
       D(36*i-27)= D(36*i-27)/(SCALE(ip2)*SCALE(ip3))
       D(36*i-26)= D(36*i-26)/(SCALE(ip2)*SCALE(ip4))
       D(36*i-25)= D(36*i-25)/(SCALE(ip2)*SCALE(ip5))
       D(36*i-24)= D(36*i-24)/(SCALE(ip2)*SCALE(ip6))
-      
+
       D(36*i-23)= D(36*i-23)/(SCALE(ip3)*SCALE(ip1))
       D(36*i-22)= D(36*i-22)/(SCALE(ip3)*SCALE(ip2))
       D(36*i-21)= D(36*i-21)/(SCALE(ip3)*SCALE(ip3))
       D(36*i-20)= D(36*i-20)/(SCALE(ip3)*SCALE(ip4))
       D(36*i-19)= D(36*i-19)/(SCALE(ip3)*SCALE(ip5))
       D(36*i-18)= D(36*i-18)/(SCALE(ip3)*SCALE(ip6))
-      
+
       D(36*i-17)= D(36*i-17)/(SCALE(ip4)*SCALE(ip1))
       D(36*i-16)= D(36*i-16)/(SCALE(ip4)*SCALE(ip2))
       D(36*i-15)= D(36*i-15)/(SCALE(ip4)*SCALE(ip3))
       D(36*i-14)= D(36*i-14)/(SCALE(ip4)*SCALE(ip4))
       D(36*i-13)= D(36*i-13)/(SCALE(ip4)*SCALE(ip5))
       D(36*i-12)= D(36*i-12)/(SCALE(ip4)*SCALE(ip6))
-      
+
       D(36*i-11)= D(36*i-11)/(SCALE(ip5)*SCALE(ip1))
       D(36*i-10)= D(36*i-10)/(SCALE(ip5)*SCALE(ip2))
       D(36*i-9 )= D(36*i-9 )/(SCALE(ip5)*SCALE(ip3))
       D(36*i-8 )= D(36*i-8 )/(SCALE(ip5)*SCALE(ip4))
       D(36*i-7 )= D(36*i-7 )/(SCALE(ip5)*SCALE(ip5))
       D(36*i-6 )= D(36*i-6 )/(SCALE(ip5)*SCALE(ip6))
-      
+
       D(36*i-5 )= D(36*i-5 )/(SCALE(ip6)*SCALE(ip1))
       D(36*i-4 )= D(36*i-4 )/(SCALE(ip6)*SCALE(ip2))
       D(36*i-3 )= D(36*i-3 )/(SCALE(ip6)*SCALE(ip3))
@@ -347,42 +347,42 @@ contains
         iq4= 6*inod - 2
         iq5= 6*inod - 1
         iq6= 6*inod
- 
+
         AL(36*k-35)= AL(36*k-35)/(SCALE(ip1)*SCALE(iq1))
         AL(36*k-34)= AL(36*k-34)/(SCALE(ip1)*SCALE(iq2))
         AL(36*k-33)= AL(36*k-33)/(SCALE(ip1)*SCALE(iq3))
         AL(36*k-32)= AL(36*k-32)/(SCALE(ip1)*SCALE(iq4))
         AL(36*k-31)= AL(36*k-31)/(SCALE(ip1)*SCALE(iq5))
         AL(36*k-30)= AL(36*k-30)/(SCALE(ip1)*SCALE(iq6))
-       
+
         AL(36*k-29)= AL(36*k-29)/(SCALE(ip2)*SCALE(iq1))
         AL(36*k-28)= AL(36*k-28)/(SCALE(ip2)*SCALE(iq2))
         AL(36*k-27)= AL(36*k-27)/(SCALE(ip2)*SCALE(iq3))
         AL(36*k-26)= AL(36*k-26)/(SCALE(ip2)*SCALE(iq4))
         AL(36*k-25)= AL(36*k-25)/(SCALE(ip2)*SCALE(iq5))
         AL(36*k-24)= AL(36*k-24)/(SCALE(ip2)*SCALE(iq6))
-        
+
         AL(36*k-23)= AL(36*k-23)/(SCALE(ip3)*SCALE(iq1))
         AL(36*k-22)= AL(36*k-22)/(SCALE(ip3)*SCALE(iq2))
         AL(36*k-21)= AL(36*k-21)/(SCALE(ip3)*SCALE(iq3))
         AL(36*k-20)= AL(36*k-20)/(SCALE(ip3)*SCALE(iq4))
         AL(36*k-19)= AL(36*k-19)/(SCALE(ip3)*SCALE(iq5))
         AL(36*k-18)= AL(36*k-18)/(SCALE(ip3)*SCALE(iq6))
-        
+
         AL(36*k-17)= AL(36*k-17)/(SCALE(ip4)*SCALE(iq1))
         AL(36*k-16)= AL(36*k-16)/(SCALE(ip4)*SCALE(iq2))
         AL(36*k-15)= AL(36*k-15)/(SCALE(ip4)*SCALE(iq3))
         AL(36*k-14)= AL(36*k-14)/(SCALE(ip4)*SCALE(iq4))
         AL(36*k-13)= AL(36*k-13)/(SCALE(ip4)*SCALE(iq5))
         AL(36*k-12)= AL(36*k-12)/(SCALE(ip4)*SCALE(iq6))
-        
+
         AL(36*k-11)= AL(36*k-11)/(SCALE(ip5)*SCALE(iq1))
         AL(36*k-10)= AL(36*k-10)/(SCALE(ip5)*SCALE(iq2))
         AL(36*k-9 )= AL(36*k-9 )/(SCALE(ip5)*SCALE(iq3))
         AL(36*k-8 )= AL(36*k-8 )/(SCALE(ip5)*SCALE(iq4))
         AL(36*k-7 )= AL(36*k-7 )/(SCALE(ip5)*SCALE(iq5))
         AL(36*k-6 )= AL(36*k-6 )/(SCALE(ip5)*SCALE(iq6))
-        
+
         AL(36*k-5 )= AL(36*k-5 )/(SCALE(ip6)*SCALE(iq1))
         AL(36*k-4 )= AL(36*k-4 )/(SCALE(ip6)*SCALE(iq2))
         AL(36*k-3 )= AL(36*k-3 )/(SCALE(ip6)*SCALE(iq3))
@@ -402,42 +402,42 @@ contains
         iq4= 6*inod - 2
         iq5= 6*inod - 1
         iq6= 6*inod
-        
+
         AU(36*k-35)= AU(36*k-35)/(SCALE(ip1)*SCALE(iq1))
         AU(36*k-34)= AU(36*k-34)/(SCALE(ip1)*SCALE(iq2))
         AU(36*k-33)= AU(36*k-33)/(SCALE(ip1)*SCALE(iq3))
         AU(36*k-32)= AU(36*k-32)/(SCALE(ip1)*SCALE(iq4))
         AU(36*k-31)= AU(36*k-31)/(SCALE(ip1)*SCALE(iq5))
         AU(36*k-30)= AU(36*k-30)/(SCALE(ip1)*SCALE(iq6))
-       
+
         AU(36*k-29)= AU(36*k-29)/(SCALE(ip2)*SCALE(iq1))
         AU(36*k-28)= AU(36*k-28)/(SCALE(ip2)*SCALE(iq2))
         AU(36*k-27)= AU(36*k-27)/(SCALE(ip2)*SCALE(iq3))
         AU(36*k-26)= AU(36*k-26)/(SCALE(ip2)*SCALE(iq4))
         AU(36*k-25)= AU(36*k-25)/(SCALE(ip2)*SCALE(iq5))
         AU(36*k-24)= AU(36*k-24)/(SCALE(ip2)*SCALE(iq6))
-        
+
         AU(36*k-23)= AU(36*k-23)/(SCALE(ip3)*SCALE(iq1))
         AU(36*k-22)= AU(36*k-22)/(SCALE(ip3)*SCALE(iq2))
         AU(36*k-21)= AU(36*k-21)/(SCALE(ip3)*SCALE(iq3))
         AU(36*k-20)= AU(36*k-20)/(SCALE(ip3)*SCALE(iq4))
         AU(36*k-19)= AU(36*k-19)/(SCALE(ip3)*SCALE(iq5))
         AU(36*k-18)= AU(36*k-18)/(SCALE(ip3)*SCALE(iq6))
-        
+
         AU(36*k-17)= AU(36*k-17)/(SCALE(ip4)*SCALE(iq1))
         AU(36*k-16)= AU(36*k-16)/(SCALE(ip4)*SCALE(iq2))
         AU(36*k-15)= AU(36*k-15)/(SCALE(ip4)*SCALE(iq3))
         AU(36*k-14)= AU(36*k-14)/(SCALE(ip4)*SCALE(iq4))
         AU(36*k-13)= AU(36*k-13)/(SCALE(ip4)*SCALE(iq5))
         AU(36*k-12)= AU(36*k-12)/(SCALE(ip4)*SCALE(iq6))
-        
+
         AU(36*k-11)= AU(36*k-11)/(SCALE(ip5)*SCALE(iq1))
         AU(36*k-10)= AU(36*k-10)/(SCALE(ip5)*SCALE(iq2))
         AU(36*k-9 )= AU(36*k-9 )/(SCALE(ip5)*SCALE(iq3))
         AU(36*k-8 )= AU(36*k-8 )/(SCALE(ip5)*SCALE(iq4))
         AU(36*k-7 )= AU(36*k-7 )/(SCALE(ip5)*SCALE(iq5))
         AU(36*k-6 )= AU(36*k-6 )/(SCALE(ip5)*SCALE(iq6))
-       
+
         AU(36*k-5 )= AU(36*k-5 )/(SCALE(ip6)*SCALE(iq1))
         AU(36*k-4 )= AU(36*k-4 )/(SCALE(ip6)*SCALE(iq2))
         AU(36*k-3 )= AU(36*k-3 )/(SCALE(ip6)*SCALE(iq3))

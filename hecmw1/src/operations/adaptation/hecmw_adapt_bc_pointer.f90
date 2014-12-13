@@ -19,7 +19,7 @@
 !C***
 !C*** hecmw_adapt_bc_pointer
 !C***
-!C     
+!C
 !C    creates NEW BOUNDARY POINTERs
 !C
       subroutine hecmw_adapt_bc_pointer (hecMESH)
@@ -63,7 +63,7 @@
           nod2= hecMESH%adapt_edge_node(2*ie  )
 
           if (IW1(nod1).eq.1  .and. IW1(nod2).eq.1 .and.                &
-     &        hecMESH%adapt_iemb(ie ).ne.0) then          
+     &        hecMESH%adapt_iemb(ie ).ne.0) then
             nod3          = hecMESH%adapt_IWK(ie)
             icou          = icou + 1
             icou0         = icou0 + 1
@@ -95,7 +95,7 @@
 !      write (*,'(a, i5, 2i8)') '    node group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2)
-!C=== 
+!C===
       endif
       endif
 
@@ -126,7 +126,7 @@
           IW1 (icel    )= 1
           IUPD(icou0,ig)= icel
         enddo
-        
+
         do icel= 1, hecMESH%n_elem
           if (hecMESH%adapt_type(icel).ne.0.and.IW1(icel).eq.1) then
             iS= hecMESH%adapt_children_index(icel-1) + 1
@@ -171,7 +171,7 @@
 !      write (*,'(a, i5, 2i8)') '    elem group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2)
-!C=== 
+!C===
       endif
       endif
 
@@ -267,13 +267,13 @@
           endif
 
         enddo
-        
+
         do ie= 1, hecMESH%n_adapt_edge
           nod1= hecMESH%adapt_edge_node(2*ie-1)
           nod2= hecMESH%adapt_edge_node(2*ie  )
 
           if (IW3(nod1).eq.1  .and. IW3(nod2).eq.1 .and.                &
-     &        hecMESH%adapt_iemb(ie).ne.0) then          
+     &        hecMESH%adapt_iemb(ie).ne.0) then
             nod3     = hecMESH%adapt_IWK(ie)
             IW3(nod3)= 1
           endif
@@ -424,7 +424,7 @@
 !      write (*,'(a, i5, 2i8)') '    surf group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2, IW3)
-!C=== 
+!C===
       endif
       endif
 

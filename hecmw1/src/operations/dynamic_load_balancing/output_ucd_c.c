@@ -20,7 +20,7 @@
 
 
 
-void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data) 
+void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data)
 {
 	int i,j,k;
 	FILE *fp;
@@ -58,7 +58,7 @@ void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh,
 				fprintf(fp, " prism ");
 			for(j=new_mesh->elem_node_index[tmp_int];j<new_mesh->elem_node_index[tmp_int+1];j++)
 				fprintf(fp, "%d ", new_mesh->elem_node_item[j]);
-			fprintf(fp,"\n");		
+			fprintf(fp,"\n");
 		}
   }
   fprintf(fp, "%d   ", new_data->nn_component);
@@ -79,7 +79,7 @@ void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh,
 
 /*
 void write_one_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, struct hecmwST_result_data *new_data,
-							MPI_Comm VIS_COMM, int mynode, int pesize) 
+							MPI_Comm VIS_COMM, int mynode, int pesize)
 {
 	int i,j,k;
 	FILE *fp;
@@ -177,7 +177,7 @@ void write_one_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh, 
 				fprintf(fp, " prism ");
 			for(j=new_mesh->elem_node_index[tmp_int];j<new_mesh->elem_node_index[tmp_int+1];j++)
 				fprintf(fp, "%d ", new_mesh->elem_node_item[j]);
-			fprintf(fp,"\n");		
+			fprintf(fp,"\n");
 		}
   }
   fprintf(fp, "%d   ", new_data->nn_component);

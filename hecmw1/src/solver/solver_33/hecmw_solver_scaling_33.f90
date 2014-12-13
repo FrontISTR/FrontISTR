@@ -70,7 +70,7 @@ contains
     do i= 1, NP
       ip1= 3*i-2
       ip2= 3*i-1
-      ip3= 3*i 
+      ip3= 3*i
       D(9*i-8)= D(9*i-8)*SCALE(ip1)*SCALE(ip1)
       D(9*i-7)= D(9*i-7)*SCALE(ip1)*SCALE(ip2)
       D(9*i-6)= D(9*i-6)*SCALE(ip1)*SCALE(ip3)
@@ -88,7 +88,7 @@ contains
         inod= IAL(k)
         iq1= 3*inod - 2
         iq2= 3*inod - 1
-        iq3= 3*inod 
+        iq3= 3*inod
         AL(9*k-8)= AL(9*k-8)*SCALE(ip1)*SCALE(iq1)
         AL(9*k-7)= AL(9*k-7)*SCALE(ip1)*SCALE(iq2)
         AL(9*k-6)= AL(9*k-6)*SCALE(ip1)*SCALE(iq3)
@@ -107,7 +107,7 @@ contains
         inod= IAU(k)
         iq1= 3*inod - 2
         iq2= 3*inod - 1
-        iq3= 3*inod 
+        iq3= 3*inod
         AU(9*k-8)= AU(9*k-8)*SCALE(ip1)*SCALE(iq1)
         AU(9*k-7)= AU(9*k-7)*SCALE(ip1)*SCALE(iq2)
         AU(9*k-6)= AU(9*k-6)*SCALE(ip1)*SCALE(iq3)

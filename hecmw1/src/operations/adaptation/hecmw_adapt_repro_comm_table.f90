@@ -74,7 +74,7 @@
       allocate (wiE(wSE(hecMESH%n_neighbor_pe)))
       wiI = 0
       wiE = 0
-      
+
       do in= 1, hecMESH%n_adapt_node_cur
         is= hecMESH%adapt_NEWtoOLD_node(in)
         ih= hecMESH%node_ID(2*is)
@@ -85,14 +85,14 @@
         endif
       enddo
       deallocate (IW1)
-      
+
       N= hecMESH%n_adapt_node_cur
       LEN= max(wSI(hecMESH%n_neighbor_pe),wSE(hecMESH%n_neighbor_pe),N)
       allocate (IW1(LEN), IW2(LEN))
       IW1 = 0
       IW2 = 0
 
-      call hecmw_adapt_ITEM_SEND_RECV                                   &      
+      call hecmw_adapt_ITEM_SEND_RECV                                   &
      &    (LEN, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,             &
      &     wSI, wiI, wSE, wiE, IW1, IW2,                                &
      &     hecMESH%MPI_COMM, hecMESH%my_rank, 1)

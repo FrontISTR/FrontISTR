@@ -8,7 +8,7 @@ CAUTION)
 	and your MPI supports only double under score functions,
 	then compile "mpi_wrapper.c" and link it's object to "libhecmw.a".
 
-	An example of the above case is 
+	An example of the above case is
 
 	MPI      : MPICH2 for Microsoft Windows
 	complier : gFortran (gcc) version 4.1.0

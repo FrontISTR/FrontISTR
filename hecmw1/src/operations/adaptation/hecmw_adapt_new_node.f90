@@ -128,9 +128,9 @@
      &   ( hecMESH%n_adapt_edge,                                        &
      &     hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_mid_edge, hecMESH%MPI_COMM,            &
      &     hecMESH%my_rank, 1, m)
       deallocate (WS, WR)

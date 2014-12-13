@@ -31,9 +31,9 @@ contains
 !> Master subroutine for dynamic analysis
 !C================================================================C
   subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,myEIG   &
-                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &      
+                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL,fstrFREQ, fstrMAT  &
-                                      ,conMAT )                  
+                                      ,conMAT )
       use m_fstr_setup
       implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
@@ -45,7 +45,7 @@ contains
       type ( fstr_dynamic        ) :: fstrDYNAMIC
       type ( fstr_couple         ) :: fstrCPL         !for COUPLE
       type ( fstr_freqanalysis   ) :: fstrFREQ
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange                                 
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
       type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
       type ( hecmwST_matrix      ),optional :: conMAT
       integer(kind=kint) :: i,j,num_monit,ig,iS,iE,ik,in,ing,iunitS,iunit,ierror
@@ -159,7 +159,7 @@ contains
 	  fstrDYNAMIC%totalEnergy=0.d0
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
-! ---- restart 
+! ---- restart
 
       restrt_step_num = 1
       fstrDYNAMIC%i_step = 0
@@ -211,7 +211,7 @@ contains
         if(fstrDYNAMIC%restart_nout < 0 ) then
           if( .not. associated( fstrSOLID%contacts ) ) then
             call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
-          else                                                
+          else
             call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
                                         infoCTChange%contactNode_previous)
           endif
@@ -237,7 +237,7 @@ contains
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange )
                  endif
-               endif                                                                                                              
+               endif
              else if(fstrDYNAMIC%idx_resp == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
                     write(imsg,*) 'stop: steady-state harmonic response analysis is not yet available !'

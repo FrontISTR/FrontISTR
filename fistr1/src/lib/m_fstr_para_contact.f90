@@ -20,13 +20,13 @@ module m_fstr_para_contact
   use m_Metis403API
   use m_MakrosePartMesh
   implicit none
-  
+
   integer,parameter   ::  PARTITION_DEFAULT   = 0
   integer,parameter   ::  PARTITION_PMETIS    = 1
   integer,parameter   ::  PARTITION_KMETIS    = 2
   integer,parameter   ::  PARTITION_MCPMETIS  = 11
   integer,parameter   ::  PARTITION_MCKMETIS  = 21
-  
+
   integer(kint),save              ::  npe_import = 0
   integer(kint),allocatable,save  ::  import_pe(:)
   integer(kint),allocatable,save  ::  import_index(:)
@@ -35,7 +35,7 @@ module m_fstr_para_contact
   integer(kint),allocatable,save  ::  export_pe(:)
   integer(kint),allocatable,save  ::  export_index(:)
   integer(kint),allocatable,save  ::  export_item(:)
-  
+
 contains
 
 subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
@@ -86,7 +86,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
         endif
       enddo
       deallocate(help,stat=istat)
-133   continue      
+133   continue
 !
 !      if(myrank == 0) print *,'Part Method',partMethod
       select case(partMethod)
@@ -103,7 +103,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
                         (nvtxs,   ncon,   xadj,   adjncy,     &
                          vwgt,    adjwgt, wgtflag,numflag,    &
                          nparts,  options,objval, part)
-            actualPartMethod = 'MCPMETIS'        
+            actualPartMethod = 'MCPMETIS'
           endif
         else
           if(ncon < 2) then
@@ -118,28 +118,28 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
             ierr = METIS_mCPartGraphKway                      &
                         (nvtxs,   ncon,   xadj,   adjncy,     &
                          vwgt,    adjwgt, wgtflag,numflag,    &
-                         nparts,  ubvec,  options,objval, part) 
-            actualPartMethod = 'MCKMETIS'     
-          endif  
+                         nparts,  ubvec,  options,objval, part)
+            actualPartMethod = 'MCKMETIS'
+          endif
         endif
       case(PARTITION_PMETIS)
           ierr = METIS_PartGraphRecursive                   &
                       (nvtxs,   xadj,   adjncy,             &
                        vwgt,    adjwgt, wgtflag,numflag,    &
                        nparts,  options,objval, part)
-          actualPartMethod = 'PMETIS'    
+          actualPartMethod = 'PMETIS'
       case(PARTITION_KMETIS)
           ierr = METIS_PartGraphKway                        &
                       (nvtxs,   xadj,   adjncy,             &
                        vwgt,    adjwgt, wgtflag,numflag,    &
-                       nparts,  options,objval, part) 
+                       nparts,  options,objval, part)
           actualPartMethod = 'KMETIS'
       case(PARTITION_MCPMETIS)
           ierr = METIS_mCPartGraphRecursive                 &
                       (nvtxs,   ncon,   xadj,   adjncy,     &
                        vwgt,    adjwgt, wgtflag,numflag,    &
                        nparts,  options,objval, part)
-          actualPartMethod = 'MCPMETIS'    
+          actualPartMethod = 'MCPMETIS'
       case(PARTITION_MCKMETIS)
           if(ncon <= 1) stop
           allocate(ubvec(ncon),stat=istat)
@@ -147,8 +147,8 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
           ierr = METIS_mCPartGraphKway                      &
                       (nvtxs,   ncon,   xadj,   adjncy,     &
                        vwgt,    adjwgt, wgtflag,numflag,    &
-                       nparts,  ubvec,  options,objval, part) 
-          actualPartMethod = 'MCKMETIS'  
+                       nparts,  ubvec,  options,objval, part)
+          actualPartMethod = 'MCKMETIS'
       case default
         stop 'Error: Undefined partition method!'
       end select
@@ -166,7 +166,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !      call MPI_BCAST(part,hecMESH_G%n_node,MPI_INTEGER,0,hecMESH_G%MPI_COMM,istat)
     endif
     call hecmw_BARRIER(hecMESH_G)
-    
+
 !#ifdef OUTPUT_PARTITION
 !    if(myrank == 0) then
 !      do i=1,mak%ne
@@ -198,7 +198,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !    print *,myrank,'mak',mak%nn,mak%ne,nparts,partID
     call Mak_GetLocalMesh_NodeBase1_FrontISTR(mak,nparts,part,partID,mak_loc,indexNodeG2L,indexElmtG2L)
 
-    
+
 !    call rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
     call paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
     call hecmw_BARRIER(hecMESH_G)
@@ -215,10 +215,10 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !
     call hecmw_BARRIER(hecMESH_G)
 !    stop
-     
+
     if(associated(indexNodeG2L)) deallocate(indexNodeG2L,stat=istat)
     if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)
-        
+
 !   deallocation pointers and pointer-related structures
     if(associated(xadj)) deallocate(xadj,stat=istat)
     if(associated(adjncy)) deallocate(adjncy,stat=istat)
@@ -344,7 +344,7 @@ subroutine paraContact_MarkMasterNode(hecMESH,help)
         enddo
       enddo
     enddo
-    
+
 end subroutine paraContact_MarkMasterNode
 
 subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMESH_L,  &
@@ -374,7 +374,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     hecMESH_L%header                = hecMESH_G%header
     hecMESH_L%hecmw_flag_adapt      = hecMESH_G%hecmw_flag_adapt
     hecMESH_L%hecmw_flag_initcon    = hecMESH_G%hecmw_flag_initcon
-    
+
     hecMESH_L%hecmw_flag_parttype   = hecMESH_G%hecmw_flag_parttype
     hecMESH_L%hecmw_flag_partdepth  = hecMESH_G%hecmw_flag_partdepth
     hecMESH_L%hecmw_flag_version    = hecMESH_G%hecmw_flag_version
@@ -457,12 +457,12 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
         hecMESH_L%node_internal_list(n) = i
       endif
     enddo
-    
+
 !    write(myrank+30,*)hecMESH_L%nn_internal,hecMESH_L%n_node
 !    do i=1,hecMESH_L%n_node
 !      write(myrank+30,*)i,hecMESH_L%node((i-1)*3+1:i*3)
 !    enddo
-!    do i=1,hecMESH_L%n_node 
+!    do i=1,hecMESH_L%n_node
 !      if(i > hecMESH_L%nn_internal) then
 !        write(myrank+30,*)hecMESH_L%node_ID((i-1)*2+1:i*2), i
 !      else
@@ -470,7 +470,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 !      endif
 !    enddo
 !    write(myrank+30,'(10I6)')hecMESH_L%global_node_ID(:)
-    
+
 !-- Node group data
     maxNum = 0
     do i=1,hecMESH_G%node_group%n_grp
@@ -488,8 +488,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     enddo
     call paraContact_getHecmwLocalNodeGroup(hecMESH_G%node_group,hecMESH_L%node_group,indexNodeG2L_Hanging,maxNum)
     deallocate(indexNodeG2L_Hanging,stat=istat)
-    
-!-- Element data 
+
+!-- Element data
     hecMESH_L%n_elem                = mak_loc%ne
     hecMESH_L%n_elem_gross          = hecMESH_L%n_elem  !hecMESH_G%n_elem_gross      ! ?
     hecMESH_L%ne_internal           = mak_loc%ne_i
@@ -541,14 +541,14 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
          hecMESH_L%elem_ID((i-1)*2+1) = indexElmtG2L(mak_loc%egid(i),pid)
 !         hecMESH_L%elem_internal_list(n) = i
        endif
-       
+
     enddo next_elem
     hecMESH_L%ne_internal = n
     allocate(hecMESH_L%elem_internal_list(hecMESH_L%ne_internal),stat=istat)
     hecMESH_L%elem_internal_list(1:n) = temp(1:n)
     deallocate(temp,stat=istat)
 !    print *,'my_rank',partID-1, hecMESH_L%ne_internal,hecMESH_L%n_elem,hecMESH_L%nn_internal,hecMESH_L%n_node
-        
+
     allocate(hecMESH_L%section_ID(hecMESH_L%n_elem),stat=istat)
     do i=1,hecMESH_L%n_elem
       hecMESH_L%section_ID(i) = hecMESH_G%section_ID(mak_loc%egid(i))
@@ -565,7 +565,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 !    write(myrank+30,'(10I6)')hecMESH_L%global_elem_ID(:)
 
 !-- PE data
-    hecMESH_L%PETOT = hecMESH_G%PETOT 
+    hecMESH_L%PETOT = hecMESH_G%PETOT
     if(partID == 1) then
       hecMESH_L%zero = 1
     else
@@ -631,7 +631,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     count = 0
     do i=1,size(help)
 !      if(help(i) /= 0) then
-!        hecMESH_L%n_neighbor_pe = hecMESH_L%n_neighbor_pe + 1        
+!        hecMESH_L%n_neighbor_pe = hecMESH_L%n_neighbor_pe + 1
 !        hecMESH_L%import_index(hecMESH_L%n_neighbor_pe) = hecMESH_L%import_index(hecMESH_L%n_neighbor_pe-1) + help(i)
 !      endif
       if(i == partID) then
@@ -641,7 +641,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
       hecMESH_L%import_index(i-count) = hecMESH_L%import_index(i-count-1) + help(i)
     enddo
 !    print *,myrank,'item',hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)
-    allocate(hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)),stat=istat)   
+    allocate(hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)),stat=istat)
 !    hecMESH_L%n_neighbor_pe = 0
     count = 0
     do i=1,size(help)
@@ -669,7 +669,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     helpCountNode(:) = 0
     allocate(markPE(hecMESH_L%PETOT),stat=istat)
     allocate(exportSlavePE(hecMESH_L%PETOT),stat=istat)
-    
+
     do i=1,hecMESH_L%n_node
       if(hecMESH_L%node_ID(i*2) /= partID - 1) cycle
       markPE(:) = 0
@@ -702,7 +702,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
         enddo
       enddo
     enddo
-    
+
     do i=1,hecMESH_L%n_node
       if(hecMESH_L%node_ID(i*2) /= partID - 1) cycle
       markPE(:) = 0
@@ -800,7 +800,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 !      print *,myrank,'shared_index',hecMESH_L%shared_index(i)
 !      print *,myrank,'shared_item',hecMESH_L%shared_item(hecMESH_L%shared_index(i-1)+1:hecMESH_L%shared_index(i))
     enddo
-    
+
 !    write(myrank+30,*)'PE'
 !    write(myrank+30,*)hecMESH_L%n_neighbor_pe
 !    write(myrank+30,*)hecMESH_L%neighbor_pe(:)
@@ -816,7 +816,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 
 !-- Material data
     call paraContact_copyHecmwMaterial(hecMESH_G%material,hecMESH_L%material)
-    
+
 !-- Section data
     call paraContact_copyHecmwSection(hecMESH_G%section,hecMESH_L%section)
 
@@ -850,7 +850,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     enddo
     call paraContact_getHecmwLocalElementGroup(hecMESH_G%elem_group,hecMESH_L%elem_group,indexElmtG2L(:,partID),maxNum)
     if(associated(indexHangingNode)) deallocate(indexHangingNode,stat=istat)
-    
+
 end subroutine paraContact_GetLocalMesh_all_new
 
 subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
@@ -876,7 +876,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
     hecMESH_L%header                = hecMESH_G%header
     hecMESH_L%hecmw_flag_adapt      = hecMESH_G%hecmw_flag_adapt
     hecMESH_L%hecmw_flag_initcon    = hecMESH_G%hecmw_flag_initcon
-    
+
     hecMESH_L%hecmw_flag_parttype   = hecMESH_G%hecmw_flag_parttype
     hecMESH_L%hecmw_flag_partdepth  = hecMESH_G%hecmw_flag_partdepth
     hecMESH_L%hecmw_flag_version    = hecMESH_G%hecmw_flag_version
@@ -888,7 +888,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
 !    hecMESH_L%n_dof                 = hecMESH_G%n_dof
 !    hecMESH_L%n_dof_grp             = hecMESH_G%n_dof_grp
 !    hecMESH_L%n_dof_tot             = hecMESH_G%n_dof_tot       !?
-    
+
 !-- Surface group data
     maxNum = 0
     do i=1,hecMESH_G%surf_group%n_grp
@@ -899,7 +899,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
 
 !-- Contact pair data
       call paraContact_copyHecmwContactPair(hecMESH_G%contact_pair,hecMESH_L%contact_pair)
-      
+
 !-- Node data
     hecMESH_L%n_node                = mak_loc%nn
     hecMESH_L%n_node_gross          = hecMESH_L%n_node !hecMESH_G%n_node_gross    !?
@@ -936,7 +936,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
         hecMESH_L%node_internal_list(n) = i
       endif
     enddo
-    
+
 !    write(myrank+40,*)hecMESH_L%nn_internal,hecMESH_L%n_node
 !    do i=1,hecMESH_L%n_node
 !      write(myrank+40,*)i,hecMESH_L%node((i-1)*3+1:i*3)
@@ -952,8 +952,8 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
       maxNum = max(maxNum,hecMESH_G%node_group%grp_index(i)- hecMESH_G%node_group%grp_index(i-1))
     enddo
     call paraContact_getHecmwLocalNodeGroup(hecMESH_G%node_group,hecMESH_L%node_group,indexNodeG2L(:,partID),maxNum)
-    
-!-- Element data 
+
+!-- Element data
     hecMESH_L%n_elem                = mak_loc%ne
     hecMESH_L%n_elem_gross          = hecMESH_L%n_elem  !hecMESH_G%n_elem_gross      ! ?
     hecMESH_L%ne_internal           = mak_loc%ne_i
@@ -1020,19 +1020,19 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
          hecMESH_L%elem_ID((i-1)*2+1) = indexElmtG2L(mak_loc%egid(i),pid)
 !         hecMESH_L%elem_internal_list(n) = i
        endif
-       
+
     enddo next_elem
     hecMESH_L%ne_internal = n
     allocate(hecMESH_L%elem_internal_list(hecMESH_L%ne_internal),stat=istat)
     hecMESH_L%elem_internal_list(1:n) = temp(1:n)
     deallocate(temp,stat=istat)
 !    print *,'my_rank',partID-1, hecMESH_L%ne_internal,hecMESH_L%n_elem,hecMESH_L%nn_internal,hecMESH_L%n_node
-        
+
     allocate(hecMESH_L%section_ID(hecMESH_L%n_elem),stat=istat)
     do i=1,hecMESH_L%n_elem
       hecMESH_L%section_ID(i) = hecMESH_G%section_ID(mak_loc%egid(i))
     enddo
-    
+
 !    write(myrank+40,*)'elements'
 !    write(myrank+40,*)hecMESH_L%ne_internal,hecMESH_L%n_elem
 !    do i=1,hecMESH_L%n_elem
@@ -1044,7 +1044,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
 !    write(myrank+40,'(10I6)')hecMESH_L%global_elem_ID(:)
 
 !-- PE data
-    hecMESH_L%PETOT = hecMESH_G%PETOT 
+    hecMESH_L%PETOT = hecMESH_G%PETOT
     if(partID == 1) then
       hecMESH_L%zero = 1
     else
@@ -1088,7 +1088,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
         hecMESH_L%import_index(hecMESH_L%n_neighbor_pe) = hecMESH_L%import_index(hecMESH_L%n_neighbor_pe-1) + help(i)
       endif
     enddo
-    allocate(hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)),stat=istat)   
+    allocate(hecMESH_L%import_item(hecMESH_L%import_index(hecMESH_L%n_neighbor_pe)),stat=istat)
     hecMESH_L%n_neighbor_pe = 0
     do i=1,size(help)
       if(help(i) /= 0) then
@@ -1109,7 +1109,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
     allocate(helpCountNode(hecMESH_L%n_neighbor_pe),stat=istat)
     helpCountNode(:) = 0
     allocate(markPE(hecMESH_L%PETOT),stat=istat)
-    
+
     do i=1,hecMESH_L%n_node
       if(hecMESH_L%node_ID(i*2) /= partID - 1) cycle
       markPE(:) = 0
@@ -1184,7 +1184,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
     do i=1,hecMESH_L%n_neighbor_pe
       hecMESH_L%shared_item(hecMESH_L%shared_index(i-1)+1:hecMESH_L%shared_index(i)) = helpelem(1:helpCountElem(i),i)
     enddo
-    
+
 !    write(myrank+40,*)'PE'
 !    write(myrank+40,*)hecMESH_L%n_neighbor_pe
 !    write(myrank+40,*)hecMESH_L%neighbor_pe(:)
@@ -1200,7 +1200,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
 
 !-- Material data
     call paraContact_copyHecmwMaterial(hecMESH_G%material,hecMESH_L%material)
-    
+
 !-- Section data
     call paraContact_copyHecmwSection(hecMESH_G%section,hecMESH_L%section)
 
@@ -1208,7 +1208,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
 
 !-- Amplitude data
     call paraContact_copyHecmwAmplitude(hecMESH_G%amp,hecMESH_L%amp)
-    
+
 
 !-- Node group data
 !    maxNum = 0
@@ -1223,7 +1223,7 @@ subroutine rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNo
       maxNum = max(maxNum,hecMESH_G%elem_group%grp_index(i)- hecMESH_G%elem_group%grp_index(i-1))
     enddo
     call paraContact_getHecmwLocalElementGroup(hecMESH_G%elem_group,hecMESH_L%elem_group,indexElmtG2L(:,partID),maxNum)
-    
+
 !-- Surface group data
 !    maxNum = 0
 !    do i=1,hecMESH_G%surf_group%n_grp
@@ -1325,11 +1325,11 @@ function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportS
       enddo
       if(.not.yes) cycle
       do j=hecMESH_G%surf_group%grp_index(surf_grp_ID-1)+1,hecMESH_G%surf_group%grp_index(surf_grp_ID)
-      
+
         ic   = hecMESH_G%surf_group%grp_item(2*j-1)
         nsurf = hecMESH_G%surf_group%grp_item(2*j)
         ic_type = hecMESH_G%elem_type(ic)
-        call getSubFace( ic_type, nsurf, outtype, node_index )  
+        call getSubFace( ic_type, nsurf, outtype, node_index )
         nn=getNumberOfNodes( outtype )
         iss = hecMESH_G%elem_node_index(ic-1)
 !       Master surface nodes only
@@ -1339,9 +1339,9 @@ function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportS
             exportSlavePE(part(nodeID)) = 1
           endif
         enddo
-      enddo     
+      enddo
     enddo
-    
+
 end function paraContact_isContactSlaveNode
 
 subroutine paraContact_copyHecmwMaterial(matIn,matOut)
@@ -1382,7 +1382,7 @@ subroutine paraContact_copyHecmwSection(sectIn,sectOut)
     sectOut%sect_type(:) = sectIn%sect_type(:)
     allocate(sectOut%sect_opt(sectOut%n_sect),stat=istat)
     sectOut%sect_opt(:) = sectIn%sect_opt(:)
-    
+
     allocate(sectOut%sect_mat_ID_index(0:sectOut%n_sect),stat=istat)
     sectOut%sect_mat_ID_index(:) = sectIn%sect_mat_ID_index(:)
     allocate(sectOut%sect_mat_ID_item(sectOut%sect_mat_ID_index(sectOut%n_sect)),stat=istat)
@@ -1475,11 +1475,11 @@ subroutine paraContact_getHecmwLocalNodeGroup(ngrpIn,ngrpOut,indexNodeG2L,maxNod
           count = count + 1
           ngrpOut%grp_item(count) = nodeIndex(j,i)
         enddo
-      enddo      
+      enddo
     endif
     deallocate(nodeCounter,stat=istat)
     deallocate(nodeIndex,stat=istat)
-    
+
     ngrpOut%n_bc = ngrpIn%n_bc
     if(ngrpOut%n_bc == 0) return
     print *,'node_group%bc_... are not implemented!'
@@ -1525,11 +1525,11 @@ subroutine paraContact_getHecmwLocalElementGroup(egrpIn,egrpOut,indexElmtG2L,max
           count = count + 1
           egrpOut%grp_item(count) = nodeIndex(j,i)
         enddo
-      enddo      
+      enddo
     endif
     deallocate(nodeCounter,stat=istat)
     deallocate(nodeIndex,stat=istat)
-    
+
     egrpOut%n_bc = egrpIn%n_bc
     if(egrpOut%n_bc == 0) return
     print *,'elem_group%bc_... are not implemented!'
@@ -1590,12 +1590,12 @@ subroutine paraContact_getHecmwLocalSurfaceGroup(egrpIn,egrpOut,indexElmtG2L,max
           egrpOut%grp_item(2*count-1) = nodeIndex(j,i)
           egrpOut%grp_item(2*count  ) = surfIndex(j,i)
         enddo
-      enddo      
+      enddo
     endif
     deallocate(nodeCounter,stat=istat)
     deallocate(nodeIndex,stat=istat)
     deallocate(surfIndex,stat=istat)
-    
+
     egrpOut%n_bc = egrpIn%n_bc
     if(egrpOut%n_bc == 0) return
     print *,'elem_group%bc_... are not implemented!'
@@ -1630,28 +1630,28 @@ subroutine copyClearMatrix(hecMAT,conMAT)
     conMAT%N = hecMAT%N
     conMAT%NP = hecMAT%NP
     conMAT%ndof = hecMAT%ndof
-    allocate(conMAT%AL(size(hecMAT%AL)), stat=ierr) 
+    allocate(conMAT%AL(size(hecMAT%AL)), stat=ierr)
         if ( ierr /= 0 ) stop " Allocation error, conMAT%AL "
-        conMAT%AL = 0.0D0  
+        conMAT%AL = 0.0D0
 
-    allocate(conMAT%AU(size(hecMAT%AU)), stat=ierr) 
+    allocate(conMAT%AU(size(hecMAT%AU)), stat=ierr)
         if ( ierr /= 0 ) stop " Allocation error, conMAT%AU "
-        conMAT%AU = 0.0D0   
-    
-    allocate(conMAT%B(size(hecMAT%B)), stat=ierr)      
-        conMAT%B = 0.0D0                                                              
-    
-    allocate(conMAT%X(size(hecMAT%X)), stat=ierr)    
+        conMAT%AU = 0.0D0
+
+    allocate(conMAT%B(size(hecMAT%B)), stat=ierr)
+        conMAT%B = 0.0D0
+
+    allocate(conMAT%X(size(hecMAT%X)), stat=ierr)
         conMAT%X = 0.0D0
 
-    allocate(conMAT%D(size(hecMAT%D)), stat=ierr)    
+    allocate(conMAT%D(size(hecMAT%D)), stat=ierr)
         conMAT%D = 0.0D0
 end subroutine copyClearMatrix
 
 ! ----------------------------------------------------------------------------
         subroutine hecMAT_clear( hecMAT )
 ! ----------------------------------------------------------------------------
-!  Purpose: clear hecMAT matrix 
+!  Purpose: clear hecMAT matrix
 !           Dec.2, 2009  YUAN Xi
 !  Notes: 1. Should be a function of middleware !
 !  This subroutine should completely rewritten next year
@@ -1678,7 +1678,7 @@ subroutine paraContact_CreateExportImport(hecMESH)
     allocate(expMap(nprocs),stat=istat)
     expMap(:) = 0
     allocate(help(0:nprocs-1),stat=istat)
-    
+
     help(:) = 0
     npe_import = 0
     do i=hecMESH%nn_internal+1,hecMESH%n_node
@@ -1691,7 +1691,7 @@ subroutine paraContact_CreateExportImport(hecMESH)
     allocate(import_pe(npe_import),stat=istat)
     allocate(import_index(0:npe_import),stat=istat)
     allocate(import_item(hecMESH%n_node - hecMESH%nn_internal),stat=istat)
-    
+
     import_index(0) = 0
     count = 0
     do i=0,nprocs-1
@@ -1744,18 +1744,18 @@ subroutine paraContact_CreateExportImport(hecMESH)
 !      print *,myrank,'ext_idx',export_index(:)
     endif
     call hecmw_BARRIER(hecMESH)
-!    
+!
     allocate(req_s(npe_import),stat=istat)
     if(npe_export > 0) allocate(req_r(npe_export),stat=istat)
     allocate(sta_s(hecmw_status_size,npe_import),stat=istat)
     if(npe_export > 0) allocate(sta_r(hecmw_status_size,npe_export),stat=istat)
-    
+
     do i=1,npe_import
       inum = import_index(i) - import_index(i-1)
       call hecmw_isend_int(import_item(import_index(i-1)+1),inum,import_pe(i),0,hecMESH%MPI_COMM,req_s(i))
 !      call MPI_ISEND(import_item(import_index(i-1)+1),inum,MPI_INTEGER,import_pe(i),0,hecMESH%MPI_COMM,req_s(i),ierr)
     enddo
-    
+
     if(npe_export > 0) then
       do i=1,npe_export
         inum = export_index(i) - export_index(i-1)
@@ -1767,8 +1767,8 @@ subroutine paraContact_CreateExportImport(hecMESH)
     endif
     call hecmw_waitall(npe_import,req_s,sta_s)
 !    call MPI_WAITALL(npe_import,req_s,sta_s,ierr)
-    
-    call hecmw_BARRIER(hecMESH) 
+
+    call hecmw_BARRIER(hecMESH)
 !
     help(:) = 0
     do i=hecMESH%nn_internal+1,hecMESH%n_node
@@ -1803,7 +1803,7 @@ subroutine paraContact_CreateExportImport(hecMESH)
 !        write(myrank+40,'(10I10)')export_item(export_index(i-1)+1:export_index(i))
 !      enddo
 !    endif
-!    
+!
     call hecmw_BARRIER(hecMESH)
     if(allocated(help)) deallocate(help,stat=istat)
     if(allocated(expMap)) deallocate(expMap,stat=istat)
@@ -1812,13 +1812,13 @@ subroutine paraContact_CreateExportImport(hecMESH)
     if(allocated(sta_s)) deallocate(sta_s,stat=istat)
     if(allocated(sta_r)) deallocate(sta_r,stat=istat)
 end subroutine paraContact_CreateExportImport
-! 
+!
 subroutine paraContact_Update_3_R(hecMESH,val)
   type (hecmwST_local_mesh),intent(in)  ::  hecMESH
   real(kreal),intent(inout)             ::  val(3*hecMESH%n_node)
 !
   integer(kint)   ::   n,istat
-  real(kreal),allocatable ::  WS(:), WR(:) 
+  real(kreal),allocatable ::  WS(:), WR(:)
 !
     n = hecMESH%n_node
     allocate(WS(3*n),stat=istat)
@@ -1843,7 +1843,7 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
   integer(kint), dimension(:,:), allocatable :: sta1
   integer(kint), dimension(:,:), allocatable :: sta2
   integer(kint), dimension(:  ), allocatable :: req1
-  integer(kint), dimension(:  ), allocatable :: req2  
+  integer(kint), dimension(:  ), allocatable :: req2
 !
 !C
 !C-- INIT.
@@ -1851,7 +1851,7 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
     allocate (sta2(hecmw_status_size,npe_import),stat=ierr)
     if(npe_export > 0) allocate (req1(npe_export),stat=ierr)
     allocate (req2(npe_import),stat=ierr)
-       
+
 !C
 !C-- SEND
     do neib= 1, npe_export
@@ -1881,7 +1881,7 @@ subroutine paraContact_send_recv_33(n,WS,WR,X,SOLVER_COMM,my_rank)
 
     call hecmw_waitall(npe_import, req2, sta2)
 !    call MPI_WAITALL (npe_import, req2, sta2, ierr)
-   
+
     do neib= 1, npe_import
       istart= import_index(neib-1)
       inum  = import_index(neib  ) - istart
@@ -1950,5 +1950,5 @@ function foundToken(string,token) result(yes)
       return
     enddo next_char
 end function foundToken
-      
+
 end module m_fstr_para_contact

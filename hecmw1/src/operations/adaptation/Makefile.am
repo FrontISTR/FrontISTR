@@ -97,7 +97,7 @@ OBJSF = \
 	hecmw_adapt_new_mesh.@f90objfilepostfix@ \
 	hecmw_adapt_repro_comm_table.@f90objfilepostfix@ \
 	hecmw_adapt_init.@f90objfilepostfix@ \
-	hecmw_adapt_proc.@f90objfilepostfix@ 
+	hecmw_adapt_proc.@f90objfilepostfix@
 
 HEADERS =
 

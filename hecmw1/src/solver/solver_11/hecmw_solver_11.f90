@@ -16,7 +16,7 @@
 !======================================================================!
 
 !
-!C*** 
+!C***
 !C*** module hecmw_solver_11
 !C***
 !
@@ -24,7 +24,7 @@
       module hecmw_solver_11
       contains
 
-        subroutine hecmw_solve_11 (hecMESH, hecMAT) 
+        subroutine hecmw_solve_11 (hecMESH, hecMAT)
 
         use hecmw_util
         use hecmw_solver_CG_11
@@ -165,10 +165,10 @@
               do k= isL, ieL
                 SS= 0.d0
                 id= hecMAT%itemL(k)
-           
+
                 isU= hecMAT%indexU(id-1) + 1
                 ieU= hecMAT%indexU(id)
- 
+
                 do kk= isU, ieU
                   SS= SS + hecMAT%AU(kk) * SIGMA
                 enddo
@@ -201,7 +201,7 @@
      &       hecMESH%import_index, hecMESH%import_item,                 &
      &       hecMESH%export_index, hecMESH%export_item,                 &
      &       hecMESH%MPI_COMM, PRECOND, iterPREmax,                     &
-     &       TIME_setup, TIME_sol, TIME_comm, ITERlog) 
+     &       TIME_setup, TIME_sol, TIME_comm, ITERlog)
 
       !hecMAT%ITERactual = ITER
       !hecMAT%RESIDactual= RESID

@@ -49,9 +49,9 @@ integer, parameter :: CONTACTFSLID = 4
         real(kind=kreal)    :: direction(3)  !< contact direction
         real(kind=kreal)    :: multiplier(3) !< Lagrangian multiplier or contact force
 		                                     !< 1: normal 2:tangent component
-	    real(kind=kreal)    :: tangentForce(3)                       !< friction force       
-	    real(kind=kreal)    :: tangentForce_trial(3)                 !< trial friction force  
-	    real(kind=kreal)    :: tangentForce_final(3)                 !< final friction force     	
+	    real(kind=kreal)    :: tangentForce(3)                       !< friction force
+	    real(kind=kreal)    :: tangentForce_trial(3)                 !< trial friction force
+	    real(kind=kreal)    :: tangentForce_final(3)                 !< final friction force
       end type
 
 contains
@@ -62,10 +62,10 @@ contains
     cstate%state=-1
     cstate%surface=-1
   end subroutine
- 
-  !> Print out contact state 
+
+  !> Print out contact state
   subroutine print_contact_state(fnum, cstate)
-    integer, intent(in)             :: fnum        !< file number 
+    integer, intent(in)             :: fnum        !< file number
     type(tContactState), intent(in) :: cstate      !< contact state
     write(fnum, *) "--Contact state=",cstate%state
     write(fnum, *) cstate%surface, cstate%distance
@@ -74,7 +74,7 @@ contains
     write(fnum, *) cstate%multiplier
   end subroutine
 
-  !> Transfer contact condition int mpc bundary conditions  
+  !> Transfer contact condition int mpc bundary conditions
   subroutine contact2mpcval( cstate, etype, nnode, mpcval )
     type(tContactState), intent(in) :: cstate              !< contact state
     integer, intent(in)             :: etype               !< type of contacting surface
@@ -93,7 +93,7 @@ contains
     enddo
     mpcval( 3*nnode+4 )=cstate%distance
   end subroutine
-  
+
   !> This subroutine calculate contact stiff matrix and contact force
   subroutine contact2stiff( flag, cstate, etype, nnode, ele, mu, mut,  &
                          fcoeff, symm, stiff, force )
@@ -127,13 +127,13 @@ contains
       stiff(i,j) = mu* N(i)*N(j)
     end forall
     force(1:nnode*3+3) = N(:)
-	
+
     if( fcoeff/=0.d0 .or. flag==CONTACTFSLID ) &
       call DispIncreMatrix( cstate%lpos, etype, nnode, ele, tangent, metric, dispmat )
 
     ! frictional component
     if( fcoeff/=0.d0 ) then
-      forall(i=1:nnode*3+3, j=1:nnode*3+3) 
+      forall(i=1:nnode*3+3, j=1:nnode*3+3)
         dum11(i,j) = mut*dispmat(1,i)*dispmat(1,j)
         dum12(i,j) = mut*dispmat(1,i)*dispmat(2,j)
         dum21(i,j) = mut*dispmat(2,i)*dispmat(1,j)
@@ -171,7 +171,7 @@ contains
     integer, intent(in)           :: etype         !< surface element type
     real(kind=kreal), intent(in)  :: ele(:,:)      !< elemental coordinates
     real(kind=kreal), intent(out) :: tensor(2,2)   !< metric tensor
-    
+
     integer          :: nn
     real(kind=kreal) :: tangent(3,2)
     nn= getNumberOfNodes(etype)
@@ -181,7 +181,7 @@ contains
     tensor(2,1)= dot_product( tangent(:,2), tangent(:,1) )
     tensor(2,2)= dot_product( tangent(:,2), tangent(:,2) )
   end subroutine
-  
+
   !> This subroutine calculate the relation between global disp and displacement
   !> along natural coordinate of master surface supposing penetration is small
   subroutine DispIncreMatrix( pos, etype, nnode, ele, tangent, tensor, matrix )
@@ -192,7 +192,7 @@ contains
     real(kind=kreal), intent(out) :: tangent(3,2)  !< tangent basis
     real(kind=kreal), intent(out) :: tensor(2,2)   !< metric tensor
     real(kind=kreal), intent(out) :: matrix(2,nnode*3+3) !< relation between local and global disp increment
-    
+
     integer          :: i,j
     real(kind=kreal) :: det, inverse(2,2)
     real(kind=kreal) :: shapefunc(nnode), t1(nnode*3+3), t2(nnode*3+3)
@@ -207,7 +207,7 @@ contains
   !  inverse(1,2) = -tensor(1,2)/det
    ! inverse(2,1) = -tensor(2,1)/det
   !  inverse(2,2) = tensor(1,1)/det
-	
+
     call getShapeFunc( etype, pos(:), shapefunc )
     forall( j=1:3 )
       t1( j ) = tangent(j,1)
@@ -223,7 +223,7 @@ contains
     tangent(:,1) = tangent(:,1)/dsqrt(dot_product(tangent(:,1),tangent(:,1)))
     tangent(:,2) = tangent(:,2)/dsqrt(dot_product(tangent(:,2),tangent(:,2)))
   end subroutine
-  
+
   !> This subroutine find the projection of a slave point onto master surface
   subroutine project_Point2Element(xyz,etype,nn,elemt,cstate,isin,distclr,ctpos,localclr)
      real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
@@ -244,11 +244,11 @@ contains
      real(kind=kreal)  ::  dist_last,dist_now, dxyz(3)  ! dist between the point and its projection
      real(kind=kreal)  ::  tangent(3,2)                 ! base vectors in tangent space
      real(kind=kreal)  ::  dF(2),d2F(2,2),normal(3)
-     real(kind=kreal),parameter :: eps = 1.0D-8        
+     real(kind=kreal),parameter :: eps = 1.0D-8
      real(kind=kreal)  ::  clr, tol, factor
 
      initstate = cstate%state
-     clr = 1.d-4                                      
+     clr = 1.d-4
      if( present( localclr ) ) clr=localclr
      if( present( ctpos ) ) then
        r(:)= ctpos
@@ -282,7 +282,7 @@ contains
        inverse(1,2) = -d2F(1,2) / determ
        inverse(2,1) = -d2F(2,1) / determ
        dr=matmul(inverse,dF)
-	   
+
        tol=dot_product(dr,dr)
        if( dsqrt(tol)> 3.d0 ) then   ! too far away
           r= -100.d0; exit
@@ -310,22 +310,22 @@ contains
        normal(:) = SurfaceNormal( etype, nn, r, elemt )
        normal(:) = normal(:)/dsqrt( dot_product(normal, normal) )
        do count = 1,3
-         if( dabs(normal(count))<1.D-10 ) normal(count) =0.d0                                      
-         if( dabs(1.d0-dabs(normal(count)))<1.D-10 ) normal(count) =sign(1.d0, normal(count))      
+         if( dabs(normal(count))<1.D-10 ) normal(count) =0.d0
+         if( dabs(1.d0-dabs(normal(count)))<1.D-10 ) normal(count) =sign(1.d0, normal(count))
        enddo
        cstate%distance = dot_product( dxyz, normal )
 
-       if( cstate%distance < distclr .and. cstate%distance > -5.0d-01 ) isin = .true.        
+       if( cstate%distance < distclr .and. cstate%distance > -5.0d-01 ) isin = .true.
 
-       if( isin ) then   
+       if( isin ) then
          if( initstate== CONTACTFREE ) then
             cstate%state = CONTACTSTICK
-         else		
-            cstate%state = initstate    
+         else
+            cstate%state = initstate
          endif
          cstate%gpos(:)=xyz_out(:)
          cstate%lpos(:)=r(:)
-         cstate%direction(:) = normal(:) 
+         cstate%direction(:) = normal(:)
          cstate%wkdist = cstate%distance
        endif
      endif

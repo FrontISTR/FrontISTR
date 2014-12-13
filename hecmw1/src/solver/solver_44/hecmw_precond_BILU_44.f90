@@ -18,7 +18,7 @@
 !======================================================================!
 
 !C
-!C*** 
+!C***
 !C*** module hecmw_precond_BILU_44
 !C***
 !C
@@ -550,7 +550,7 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
     !C +-------------------------------------------------+
@@ -861,7 +861,7 @@ contains
     integer(kind=kint) :: j,k,iSL,iSU
 
     !C
-    !C +------------------+  
+    !C +------------------+
     !C | find fill-in (1) |
     !C +------------------+
     !C===
@@ -953,10 +953,10 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
-    !C +------------------+  
+    !C +------------------+
     !C | find fill-in (2) |
     !C +------------------+
     !C===
@@ -1113,7 +1113,7 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
     !C +-------------------------------------------------+
@@ -1452,14 +1452,14 @@ contains
 
     deallocate (IW1, IW2)
     deallocate (iconFI1L, iconFI1U)
-    !C===      
+    !C===
   end subroutine FORM_ILU2_44
 
 
   !C
   !C***
   !C*** fill_in_S44_SORT
-  !C*** 
+  !C***
   !C
   subroutine fill_in_S44_SORT (STEM, INUM, N, NP)
     use hecmw_util
@@ -1470,7 +1470,7 @@ contains
     integer(kind=kint), dimension(:), allocatable :: ISTACK
     integer(kind=kint) :: M,NSTACK,jstack,l,ir,ip,i,j,k,ss,ii,temp,it
 
-    allocate (ISTACK(-NP:+NP)) 
+    allocate (ISTACK(-NP:+NP))
 
     M     = 100
     NSTACK= NP
@@ -1601,7 +1601,7 @@ contains
     goto 1
 
   end subroutine fill_in_S44_SORT
-  
+
   !C
   !C***
   !C*** ILU1a44

@@ -27,11 +27,11 @@
 
 
 struct malloc_info {
-	void *ptr;		
-	size_t size;	
-	char *file;		
-	int line;		
-	struct malloc_info *next;	
+	void *ptr;
+	size_t size;
+	char *file;
+	int line;
+	struct malloc_info *next;
 };
 
 
@@ -48,7 +48,7 @@ static int auto_check = 1;
 
 
 
-static int 
+static int
 add_info(void *ptr, size_t size, char *file, int line)
 {
 	static struct malloc_info *info;
@@ -73,7 +73,7 @@ add_info(void *ptr, size_t size, char *file, int line)
 
 
 
-static int 
+static int
 del_info(void *ptr)
 {
 	struct malloc_info *p,*q;
@@ -96,7 +96,7 @@ del_info(void *ptr)
 
 
 
-static int 
+static int
 change_info(void *ptrold, void *ptrnew, size_t sizenew, char *file, int line)
 {
 	struct malloc_info *p;
@@ -124,7 +124,7 @@ HECMW_list_meminfo(FILE *fp)
 	int n;
 	struct malloc_info *p;
 
-	if(fp == NULL) fp = stdout; 
+	if(fp == NULL) fp = stdout;
 
 	n = 0;
 	for(p=mainfo; p; p=p->next) {
@@ -203,10 +203,10 @@ HECMW_free_(void *ptr, char *file, int line)
 
 
 void *
-HECMW_malloc_(size_t size, char *file, int line) 
+HECMW_malloc_(size_t size, char *file, int line)
 {
 	void *ptr = NULL;
-	
+
 	ptr = malloc(size);
 	if(ptr == NULL) goto error;
 	if(add_info(ptr, size, file, line)) goto error;
@@ -221,10 +221,10 @@ error:
 
 
 void *
-HECMW_calloc_(size_t nmemb, size_t size, char *file, int line) 
+HECMW_calloc_(size_t nmemb, size_t size, char *file, int line)
 {
 	void *ptr = NULL;
-	
+
 	ptr = calloc(nmemb, size);
 	if(ptr == NULL) goto error;
 	if(add_info(ptr, nmemb * size, file, line)) goto error;
@@ -239,7 +239,7 @@ error:
 
 
 void *
-HECMW_realloc_(void *ptr, size_t size, char *file, int line) 
+HECMW_realloc_(void *ptr, size_t size, char *file, int line)
 {
 	void *ptrnew;
 

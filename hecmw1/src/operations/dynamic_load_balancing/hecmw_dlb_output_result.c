@@ -18,13 +18,13 @@
 #include "hecmw_repart.h"
 
 void HECMW_put_result_from_structure(struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *resultfile_dist)
-{ 
+{
 	FILE *fp;
 	int  i,j,k;
 	int  tn_component, tmp_count;
-	
 
-	if((fp=fopen(resultfile_dist,"w"))== NULL) 
+
+	if((fp=fopen(resultfile_dist,"w"))== NULL)
 	  HECMW_dlb_print_exit("ERROR: HEC-MW-VIS-E0011: Cannot open output file");
     fprintf(fp, "Dynamic_load_balancing_result\n");
 	fprintf(fp, "%d %d\n", mesh->n_node, mesh->n_elem);

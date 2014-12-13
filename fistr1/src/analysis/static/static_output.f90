@@ -48,7 +48,7 @@ module m_static_output
 
     nullify( tnstrain )
     nullify( testrain )
-	
+
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
        if( ndof==3 ) then
           allocate( tnstrain(hecMESH%n_node*6) )
@@ -58,7 +58,7 @@ module m_static_output
           allocate( testrain(hecMESH%n_elem*3) )
        endif
     endif
-	
+
     if( ndof==3 ) then
           call fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
     else if( ndof==2 ) then
@@ -148,14 +148,14 @@ module m_static_output
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
-          do k = 1, ndof 
+          do k = 1, ndof
             Umax(k) = fstrSOLID%unode(ndof*(i-1)+k)
             Umin(k) = fstrSOLID%unode(ndof*(i-1)+k)
             IUmax(k)= j
             IUmin(k)= j
           enddo
         else
-          do k = 1, ndof 
+          do k = 1, ndof
             if( fstrSOLID%unode(ndof*(i-1)+k) > Umax(k) ) then
               Umax(k) = fstrSOLID%unode(ndof*(i-1)+k)
               IUmax(k)= j
@@ -175,7 +175,7 @@ module m_static_output
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
-          do k = 1, mdof 
+          do k = 1, mdof
             Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             IEmax(k)= j
@@ -200,7 +200,7 @@ module m_static_output
         if( ID_area==hecMESH%my_rank ) then
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
-            do k = 1, mdof 
+            do k = 1, mdof
               EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
               EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
               IEEmax(k)= j

@@ -630,7 +630,7 @@
         type( hecmwST_mpc ), intent(inout) :: mpc
         integer(kind=kint), intent(in)    :: n_mpc
         integer(kind=kint), intent(in)    :: n_item
-        
+
         mpc%n_mpc = n_mpc
         allocate( mpc%mpc_index(0:n_mpc) )
         allocate( mpc%mpc_item(n_item) )
@@ -639,7 +639,7 @@
         end subroutine
 
         subroutine hecmw_finalize_mpc( P )
-        type( hecmwST_mpc ) :: P                 
+        type( hecmwST_mpc ) :: P
         if( associated(P%mpc_index) ) deallocate( P%mpc_index )
         if( associated(P%mpc_item) )  deallocate( P%mpc_item )
         if( associated(P%mpc_dof) )   deallocate( P%mpc_dof )
@@ -864,11 +864,11 @@
         !nullify( P%ICHK )
         call hecmw_nullify_matrix_contact( P%cmat )
         end subroutine hecmw_nullify_matrix
-		
+
         subroutine hecmw_print_matrix( fname, P )
         character(len=*), intent(in)       :: fname
         type( hecmwST_matrix ), intent(in) :: P
-		
+
         integer :: i, nf, nBlock
         nf = 777
         nBlock = P%NDOF * P%NDOF
@@ -900,24 +900,24 @@
         do i=1,P%NDOF * P%NP
           write( nf, * ) P%B(i)
         enddo
-		
+
 		!--- cmat
         write( nf, * ) P%cmat%n_val, P%cmat%max_val, P%cmat%max_row,  &
-                       P%cmat%max_col, P%cmat%checked, P%cmat%sorted	
+                       P%cmat%max_col, P%cmat%checked, P%cmat%sorted
         do i=1,P%cmat%n_val
           write( nf, * ) P%cmat%pair(i)%i,P%cmat%pair(i)%j
           write( nf, * ) P%cmat%pair(i)%val(1,1), P%cmat%pair(i)%val(1,2), P%cmat%pair(i)%val(1,3)
           write( nf, * ) P%cmat%pair(i)%val(2,1), P%cmat%pair(i)%val(2,2), P%cmat%pair(i)%val(2,3)
           write( nf, * ) P%cmat%pair(i)%val(3,1), P%cmat%pair(i)%val(3,2), P%cmat%pair(i)%val(3,3)
         enddo
-		
+
         close( nf )
-        end subroutine		
-		
+        end subroutine
+
         subroutine hecmw_read_matrix( fname, P )
         character(len=*), intent(in)        :: fname
         type( hecmwST_matrix ), intent(out) :: P
-		
+
         integer :: i, nf, nBlock, istat
         nf = 777
         open( unit=nf, file=fname, status='old', iostat= istat)
@@ -927,7 +927,7 @@
         endif
         read( nf, * ) P%N,P%NP,P%NPL,P%NPU,P%NDOF
 		nBlock = P%NDOF * P%NDOF
-		
+
         !----It is supposing of array are not allocated yet
         allocate( P%indexL(0:P%NP), P%indexU(0:P%NP) )
         allocate( P%itemL(P%NPL), P%itemU(P%NPU) )
@@ -960,10 +960,10 @@
         do i=1,P%NDOF * P%NP
           read( nf, * ) P%B(i)
         enddo
-		
+
 		!--- cmat
         read( nf, * ) P%cmat%n_val, P%cmat%max_val, P%cmat%max_row,  &
-                       P%cmat%max_col, P%cmat%checked, P%cmat%sorted	
+                       P%cmat%max_col, P%cmat%checked, P%cmat%sorted
         allocate( P%cmat%pair( p%cmat%n_val ) )
         do i=1,P%cmat%n_val
           read( nf, * ) P%cmat%pair(i)%i,P%cmat%pair(i)%j
@@ -971,8 +971,8 @@
           read( nf, * ) P%cmat%pair(i)%val(2,1), P%cmat%pair(i)%val(2,2), P%cmat%pair(i)%val(2,3)
           read( nf, * ) P%cmat%pair(i)%val(3,1), P%cmat%pair(i)%val(3,2), P%cmat%pair(i)%val(3,3)
         enddo
-		
+
         close( nf )
-        end subroutine		
+        end subroutine
 
       end module hecmw_util

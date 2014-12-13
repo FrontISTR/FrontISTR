@@ -74,7 +74,7 @@ module hecmw_matrix_contact
     type(hecmwST_matrix_contact) :: cmat
     integer(kind=kint) :: newlen
     type(hecmwST_index_value_pair), pointer :: temp(:)
-	
+
     integer(kind=kint) :: i
 
     if( newlen <= cmat%max_val ) return
@@ -225,7 +225,7 @@ module hecmw_matrix_contact
       enddo
     enddo
   end subroutine hecmw_cmat_multvec_add
-  
+
   !< Assmble prescribed disp boundary condition into cmat
   subroutine hecmw_cmat_ass_bc(hecMAT, inode, idof, RHS )
       type (hecmwST_matrix) :: hecMAT
@@ -233,14 +233,14 @@ module hecmw_matrix_contact
       real(kind=kreal)      :: RHS
       integer(kind=kint) :: nval, i, cnode
       integer(kind=kint), parameter :: NDOF=3
-	  
+
 	!  NDOF = hecMAT%NDOF
       if( NDOF < idof ) return
-	  
+
       !-- modify rhs
       if( RHS /= 0.d0 ) then
         do nval=1,hecMAT%cmat%n_val
-          if( hecMAT%cmat%pair(nval)%j /= inode ) cycle  
+          if( hecMAT%cmat%pair(nval)%j /= inode ) cycle
           cnode = hecMAT%cmat%pair(nval)%i
           if( cnode == inode ) then
             do i=1,NDOF
@@ -254,39 +254,39 @@ module hecmw_matrix_contact
                       - hecMAT%cmat%pair(nval)%val(i,idof)*RHS
             enddo
           endif
-        enddo 
+        enddo
       endif
 
-      !-- clear cmat	  
+      !-- clear cmat
       do nval=1,hecMAT%cmat%n_val
-        if( hecMAT%cmat%pair(nval)%i /= inode ) cycle 
+        if( hecMAT%cmat%pair(nval)%i /= inode ) cycle
 
         hecMAT%cmat%pair(nval)%val(idof,:)=0.d0
-      enddo    
-	  
+      enddo
+
       do nval=1,hecMAT%cmat%n_val
-        if( hecMAT%cmat%pair(nval)%j /= inode ) cycle  
+        if( hecMAT%cmat%pair(nval)%j /= inode ) cycle
 
         hecMAT%cmat%pair(nval)%val(:,idof)=0.d0
-      enddo 
-	  
+      enddo
+
    end subroutine hecmw_cmat_ass_bc
-   
+
    !< number of new pair introduced by cmat ( symm only )
    integer function hecmw_cmat_n_newpair(hecMAT, symm )
       type(hecmwST_matrix), intent(in) :: hecMAT
       integer, intent(in)              :: symm
       integer(kind=kint) :: nval, ind, jnd, k, m, mnd
       logical :: isfind
-	  
-        hecmw_cmat_n_newpair = 0	  
+
+        hecmw_cmat_n_newpair = 0
         do nval=1,hecMAT%cmat%n_val
           ind = hecMAT%cmat%pair(nval)%i
-          jnd = hecMAT%cmat%pair(nval)%j 
-		  
+          jnd = hecMAT%cmat%pair(nval)%j
+
           if( (symm==1) .and. (ind<jnd) ) cycle
           if( ind==jnd ) cycle
-          isfind = .false.		
+          isfind = .false.
           do k=1,hecMAT%NP
             if( ind/=k .and. jnd/=k ) cycle
 		    do m= hecMAT%indexL(k-1)+1, hecMAT%indexL(k)

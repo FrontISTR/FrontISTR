@@ -23,10 +23,10 @@
 !======================================================================!
 module m_utilities
   implicit none
-  
+
   integer, parameter, private :: kreal = kind(0.0d0)
   real(kind=kreal), parameter, private :: PI=3.14159265358979
-  
+
   contains
 
   !> Record used memeory
@@ -36,15 +36,15 @@ module m_utilities
       var = var + dimn*syze*bite
   END SUBROUTINE memget
 
-	  
+
   !> Insert an integer at end of a file name
-  subroutine append_int2name( n, fname, n1 )      
+  subroutine append_int2name( n, fname, n1 )
       integer, intent(in)             :: n
-      integer, intent(in), optional  ::  n1      
-      character(len=*), intent(inout) :: fname  
+      integer, intent(in), optional  ::  n1
+      character(len=*), intent(inout) :: fname
       integer            :: npos, nlen
       character(len=128) :: tmpname, tmp
-	  
+
       npos = scan( fname, '.')
       nlen = len_trim( fname )
       if( nlen>128 ) stop "String too long(>128) in append_int2name"
@@ -56,17 +56,17 @@ module m_utilities
         write( tmp, '(i6,a)') n,tmpname(npos:nlen)
         fname = tmpname(1:npos-1) // adjustl(tmp)
       endif
-      if(present(n1).and.n1/=0)then                    
-        write(tmp,'(i8)')n1 
-        fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)          
-      endif                                  
+      if(present(n1).and.n1/=0)then
+        write(tmp,'(i8)')n1
+        fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)
+      endif
   end subroutine
-  
+
   !> Insert an integer into a integer array
   subroutine insert_int2array( iin, carray )
-      integer, intent(in) :: iin  
+      integer, intent(in) :: iin
       integer, pointer :: carray(:)
-	  
+
       integer :: i, oldsize
       integer, pointer :: dumarray(:) => null()
       if( .not. associated(carray) ) then
@@ -87,16 +87,16 @@ module m_utilities
       endif
       if( associated(dumarray) ) deallocate( dumarray )
   end subroutine
-   
+
   !> Given symmetric 3x3 matrix M, compute the eigenvalues
   SUBROUTINE tensor_eigen3( tensor, eigval, eigproj )
     REAL(kind=kreal), INTENT(IN)  :: tensor(6)          !< tensor
     REAL(kind=kreal), INTENT(OUT) :: eigval(3)     !< eigenvalues
     REAL(kind=kreal), INTENT(OUT) :: eigproj(3,3)  !< eigenprojectss
-	
+
     INTEGER  :: i
     REAL(kind=kreal) :: I1,I2,I3,R,sita,Q, X(3,3), XX(3,3), II(3,3)
-	
+
     II(:,:)=0.d0
     II(1,1)=1.d0;  II(2,2)=1.d0;  II(3,3)=1.d0
     X(1,1)=tensor(1); X(2,2)=tensor(2); X(3,3)=tensor(3)
@@ -113,13 +113,13 @@ module m_utilities
     R=(-2.d0*I1*I1*I1+9.d0*I1*I2-27.d0*I3)/54.d0
     Q=(I1*I1-3.d0*I2)/9.d0
     sita = acos(R/dsqrt(Q*Q*Q))
- 
+
     eigval(1) = -2.d0*Q*cos(sita/3.d0)+I1/3.d0
     eigval(2) = -2.d0*Q*cos((sita+2.d0*PI)/3.d0)+I1/3.d0
     eigval(3) = -2.d0*Q*cos((sita-2.d0*PI)/3.d0)+I1/3.d0
 
   END SUBROUTINE
-  
+
   !> Compute eigenvalue and eigenvetor for symmetric 3*3 tensor using
   !> Jacobi iteration adapted from numerical recpies
   SUBROUTINE eigen3 (tensor, eigval, princ)
@@ -130,7 +130,7 @@ module m_utilities
     INTEGER, PARAMETER :: msweep = 50
     INTEGER :: i,j, is, ip, iq, ir
     real(kind=kreal) :: fsum, od, theta, t, c, s, tau, g, h, hd, btens(3,3)
-	
+
 	btens(1,1)=tensor(1); btens(2,2)=tensor(2); btens(3,3)=tensor(3)
     btens(1,2)=tensor(4); btens(2,1)=btens(1,2)
     btens(2,3)=tensor(5); btens(3,2)=btens(2,3)
@@ -217,17 +217,17 @@ module m_utilities
 !
       STOP       ' Jacobi iteration unable to converge'
   END SUBROUTINE eigen3
-  
+
   !> Compute determinant for symmetric 3*3 matrix
   real(kind=kreal) function Determinant( mat )
     real(kind=kreal) :: mat(6)     !< tensor
     real(kind=kreal) :: xj(3,3)
-	
+
 	xj(1,1)=mat(1); xj(2,2)=mat(2); xj(3,3)=mat(3)
     xj(1,2)=mat(4); xj(2,1)=xj(1,2)
     xj(2,3)=mat(5); xj(3,2)=xj(2,3)
     xj(3,1)=mat(6); xj(1,3)=xj(3,1)
-	
+
     Determinant=XJ(1,1)*XJ(2,2)*XJ(3,3)               &
            +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
            +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
@@ -235,7 +235,7 @@ module m_utilities
            -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
            -XJ(1,1)*XJ(3,2)*XJ(2,3)
   end function
-  
+
   subroutine fstr_chk_alloc( imsg, sub_name, ierr )
         use hecmw
         character(*) :: sub_name
@@ -248,12 +248,12 @@ module m_utilities
                 call hecmw_abort( hecmw_comm_get_comm( ) )
         endif
   end subroutine
-  
+
   !> calculate inverse of matrix a
   SUBROUTINE calInverse(NN, A)
       INTEGER, INTENT(IN)             :: NN
       REAL(kind=kreal), intent(inout) :: A(NN,NN)
-	  
+
       INTEGER          :: I, J,K,IW,LR,IP(NN)
       REAL(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
       DATA EPS/1.0E-35/
@@ -304,7 +304,7 @@ module m_utilities
         ENDDO
         A(K,K)=1.d0/PIVOT
       ENDDO
-	  
+
       DO I=1,NN
         K=IP(I)
         IF (K.NE.I) THEN
@@ -318,9 +318,9 @@ module m_utilities
           ENDDO
         ENDIF
       ENDDO
-    
+
    end subroutine calInverse
-   
+
    subroutine cross_product(v1,v2,vn)
     real(kind=kreal),intent(in)	::	v1(3),v2(3)
     real(kind=kreal),intent(out)	::	vn(3)
@@ -329,8 +329,8 @@ module m_utilities
     vn(2) = v1(3)*v2(1) - v1(1)*v2(3)
     vn(3) = v1(1)*v2(2) - v1(2)*v2(1)
   end subroutine cross_product
-  
-  subroutine transformation(jacob, tm) 
+
+  subroutine transformation(jacob, tm)
   real(kind=kreal),intent(in)	::	jacob(3,3)   !< Jacobian
   real(kind=kreal),intent(out)	::	tm(6,6)      !< transform matrix
 
@@ -364,5 +364,5 @@ module m_utilities
     tm(6,6) = jacob(3,3)*jacob(1,1) + jacob(3,1)*jacob(1,3)
 
   end subroutine transformation
-		
-end module 
+
+end module

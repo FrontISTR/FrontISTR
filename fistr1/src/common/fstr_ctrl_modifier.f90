@@ -46,7 +46,7 @@ contains
     call fstr_expand_integer_array( mpcs%mpc_dof, old_size, new_size )
     call fstr_expand_real_array( mpcs%mpc_val, old_size, new_size )
 
-    mpcs%mpc_index(mpcs%n_mpc) = mpcs%mpc_index(mpcs%n_mpc-1)+np    
+    mpcs%mpc_index(mpcs%n_mpc) = mpcs%mpc_index(mpcs%n_mpc-1)+np
     mpcs%mpc_const(mpcs%n_mpc) = values(np+1)
     do i=1,np
       mpcs%mpc_item(old_size+i) = nodes(i)
@@ -67,7 +67,7 @@ contains
     call fstr_delete_real_array( mpcs%mpc_val, old_size, nitem )
     call fstr_delete_integer_array( mpcs%mpc_dof, old_size, nitem )
     call fstr_delete_integer_array( mpcs%mpc_item, old_size, nitem )
-    
+
     call fstr_delete_real_array( mpcs%mpc_const, n_mpc, np )
     call fstr_delete_index_array( mpcs%mpc_index, n_mpc, np )
     mpcs%n_mpc = n_mpc-np

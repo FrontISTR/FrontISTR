@@ -72,13 +72,13 @@ contains
       subroutine GETAMAT3(AMAT,NUMNP,NDOF)
       use m_fstr
       implicit none
-      integer(kind=kint) :: NUMNP,NDOF,ntotal,i,j,k 
+      integer(kind=kint) :: NUMNP,NDOF,ntotal,i,j,k
       integer(kind=kint) :: iiS,iiE,kk,kki,kkj
       real(kind=kreal) :: AMAT(NUMNP*NDOF,NUMNP*NDOF)
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
 
-       
+
 
       ntotal = NUMNP*NDOF
 !C

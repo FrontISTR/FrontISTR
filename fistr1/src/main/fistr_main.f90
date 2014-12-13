@@ -134,7 +134,7 @@ subroutine fstr_init
 !        call fstr_nullify_fstr_mpc_rigid( fstrMPCRIGID )
 
         call fstr_init_file
-		
+
 		! ----  default setting of global params ---
         DT = 1
         ETIME = 1
@@ -257,14 +257,14 @@ subroutine fstr_init_file
         if( stat /= 0 ) then
                 call fstr_setup_util_err_stop( '### Cannot open debug file :'//dbgfileNAME )
         endif
-        
+
 end subroutine fstr_init_file
 
 !------------------------------------------------------------------------------
 !> Read in control file and do all preparation
 subroutine fstr_init_condition
         implicit none
-        character(len=HECMW_FILENAME_LEN) :: cntfileNAME 
+        character(len=HECMW_FILENAME_LEN) :: cntfileNAME
 
         ! get fstr control & setup paramters -----------
         name_ID='fstrCNT'
@@ -419,7 +419,7 @@ subroutine fstr_static_eigen_analysis
                 write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
                 write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
         end if
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )  
+        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
         teachiter = .TRUE.
         if(myrank == 0) THEN
                 write(IMSG,*)
@@ -454,7 +454,7 @@ subroutine fstr_finalize
                 close(IMSG)
 
         end if
-        
+
         call fstr_solid_finalize( fstrSOLID )
         call hecMAT_finalize( hecMAT )
 

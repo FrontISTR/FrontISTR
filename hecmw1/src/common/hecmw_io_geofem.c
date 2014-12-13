@@ -73,7 +73,7 @@ set_err_token(int token, int msgno, const char *fmt, ...)
 	} else {
 		msg_no = msgno;
 	}
-	va_start(ap, fmt); 
+	va_start(ap, fmt);
 	do_logging(HECMW_LOG_ERROR, msg_no, 1, fmt, ap);
 	va_end(ap);
 }
@@ -83,11 +83,11 @@ set_err_token(int token, int msgno, const char *fmt, ...)
  * read functions
  */
 
-static int 
+static int
 read_pe(void)
 {
 	int token,n_neighbor_pe;
-	
+
 	/* PE-ID */
 	token = HECMW_gflex_next_token_skip(HECMW_GFLEX_NL);
 	if(token != HECMW_GFLEX_INT) {
@@ -260,7 +260,7 @@ read_elem(void)
 			return -1;
 		}
 	}
-	
+
 	/* eGlobalID, connectivity */
 	for(i=0; i < nelem; i++) {
 		int id,hecmw_type;
@@ -708,7 +708,7 @@ parse(void)
 	if(read_egrp()) return -1;
 	if(read_sgrp()) return -1;
 
-	return 0; 
+	return 0;
 }
 
 
@@ -722,7 +722,7 @@ HECMW_read_geofem_mesh(const char *filename)
 
 	HECMW_log(HECMW_LOG_DEBUG, "Start to read GeoFEM mesh");
 
-	if(filename == NULL) { 
+	if(filename == NULL) {
 		HECMW_set_error(HECMW_IO_E0001, "Not specified filename for GeoFEM mesh input routine");
 		return -1;
 	}

@@ -47,7 +47,7 @@
 int
 HECMW_get_path_separator(void)
 {
-	return PATH_SEPARATOR;	
+	return PATH_SEPARATOR;
 }
 
 

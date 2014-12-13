@@ -51,7 +51,7 @@ void find_new_v4(int new_v4[12])
 	new_v4[3*3]=0; new_v4[3*3+1]=1;  new_v4[3*3+2]=2;
 	return;
 }
-		
+
 
 
 void add8_adj_link(Adj_find *adj_link, int id_elem,  struct hecmwST_local_mesh *mesh, int new_v8[24])
@@ -62,7 +62,7 @@ void add8_adj_link(Adj_find *adj_link, int id_elem,  struct hecmwST_local_mesh *
 	int  ncon;
 
     ncon=mesh->elem_node_index[id_elem+1]-mesh->elem_node_index[id_elem];
-	if(ncon!=8) 
+	if(ncon!=8)
 		HECMW_dlb_print_exit("The type of element is conflict with its index: data error\n");
     for(j=mesh->elem_node_index[id_elem];j<mesh->elem_node_index[id_elem+1];j++) {
 		id_node=mesh->elem_node_item[j]-1;
@@ -106,11 +106,11 @@ void add6_adj_link(Adj_find *adj_link, int id_elem,  struct hecmwST_local_mesh *
 	int  ncon;
 
     ncon=mesh->elem_node_index[id_elem+1]-mesh->elem_node_index[id_elem];
-	if(ncon!=6) 
+	if(ncon!=6)
 		HECMW_dlb_print_exit("The type of element is conflict with its index: data error\n");
     for(j=mesh->elem_node_index[id_elem];j<mesh->elem_node_index[id_elem+1];j++) {
 		id_node=mesh->elem_node_item[j]-1;
-		if((id_node>=mesh->n_node) || (id_node<0)) 
+		if((id_node>=mesh->n_node) || (id_node<0))
 			HECMW_dlb_print_exit("There is something wrong in index_elem\n");
 		if(id_node<mesh->nn_internal) {
 			for(k=0;k<3;k++) {
@@ -150,11 +150,11 @@ void add4_adj_link(Adj_find *adj_link, int id_elem,  struct hecmwST_local_mesh *
 	int  ncon;
 
     ncon=mesh->elem_node_index[id_elem+1]-mesh->elem_node_index[id_elem];
-	if(ncon!=4) 
+	if(ncon!=4)
 		HECMW_dlb_print_exit("The type of element is conflict with its index: data error\n");
     for(j=mesh->elem_node_index[id_elem];j<mesh->elem_node_index[id_elem+1];j++) {
 		id_node=mesh->elem_node_item[j]-1;
-		if((id_node>=mesh->n_node) || (id_node<0)) 
+		if((id_node>=mesh->n_node) || (id_node<0))
 			HECMW_dlb_print_exit("There is something wrong in index_elem\n");
 		if(id_node<mesh->nn_internal) {
 			for(k=0;k<3;k++) {
@@ -170,7 +170,7 @@ void add4_adj_link(Adj_find *adj_link, int id_elem,  struct hecmwST_local_mesh *
 				}
 				if(flag_hit==0) { /* adding the vertex new_v */
 					p1=(Adj_find *)malloc(sizeof(Adj_find));
-					if(p1==NULL) 
+					if(p1==NULL)
 						HECMW_dlb_memory_exit("Adj_find: p1");
 					p2=adj_link[id_node].next_vertex;
 					adj_link[id_node].vertex_num++;
@@ -199,10 +199,10 @@ void adj_link_free(Adj_find *adj_link, int num)
 	free(adj_link);
 	return;
 }
-		
 
 
-void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS], 
+
+void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS],
 				Result_part *result, HECMW_Comm repart_comm)
 {
 	int i,j,k,m;
@@ -211,7 +211,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 	Adj_find *p1, *p2;
 	int new_v8[3*8], new_v4[3*4], new_v6[3*6];
   int nvtxs  = 0, nedges = 0, global_num_node=0;
-  
+
   int readew = -1, readvw = -1, dummy, edge;
   int *vtxdist, *xadj, *adjncy, *vwgts, *adjwgts;
   int wgtflag, numflag, ncon, nparts, edgecut, options[4];
@@ -236,7 +236,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
     fprintf(stderr, "wgtflag=%d \n", ctl_para->wgtflag);
     fprintf(stderr, "ncon=%d\n", ctl_para->num_repartition);
 */
-	if(mynode==0) 
+	if(mynode==0)
 		fprintf(stderr, "Start transform original mesh data into graph structure of ParMetis\n");
 
 	if(pesize>1)
@@ -245,11 +245,11 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 		global_num_node=mesh->nn_internal;
 /*
 	fprintf(stderr, "the global node number is %d\n", global_num_node);
-*/  
+*/
   result->t_node=global_num_node;
-	nvtxs=mesh->nn_internal;	
+	nvtxs=mesh->nn_internal;
 	graph->vtxdist=(int *)calloc((pesize+1),sizeof(int));
-	if(graph->vtxdist==NULL) 
+	if(graph->vtxdist==NULL)
 		HECMW_dlb_memory_exit("graph->vtxdist");
 	if(mynode==0) {
 		graph->vtxdist[0]=0;
@@ -273,10 +273,10 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 			fprintf(stderr, "vtxdist=%d ", graph->vtxdist[i]);
 		fprintf(stderr, "\n");
 	}
-*/	
+*/
 
 	adj_link=(Adj_find *)calloc(mesh->nn_internal, sizeof(Adj_find));
-    if(adj_link==NULL) 
+    if(adj_link==NULL)
 		HECMW_dlb_memory_exit("adj_link");
     for(i=0;i<mesh->nn_internal;i++)
 		adj_link[i].vertex_num=0;
@@ -300,11 +300,11 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 		}
 
 	}
-	for(i=0;i<mesh->nn_internal;i++) 
+	for(i=0;i<mesh->nn_internal;i++)
 		nedges+=adj_link[i].vertex_num;
 	graph->xadj=(int *)calloc(nvtxs+1, sizeof(int));
 	graph->adjncy=(int *)calloc(nedges, sizeof(int));
-	if((graph->xadj==NULL) || (graph->adjncy==NULL)) 
+	if((graph->xadj==NULL) || (graph->adjncy==NULL))
 		HECMW_dlb_memory_exit("graph: xadj and adjncy");
 	m=0;
 	graph->xadj[0]=0;
@@ -355,7 +355,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 	}
 	for(i=0;i<nvtxs;i++)
 		graph->vwgt[i]=1;
-*/	
+*/
 /*	tpwgts=(float *)calloc(pesize, sizeof(float));
 	if(tpwgts==NULL) {
 		fprintf(stderr, "There is no enough memory for tpwgts\n");
@@ -364,9 +364,9 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 	}
     for(i=0;i<pesize;i++)
 		tpwgts[i]=ctl_para;
-		
+
 	ubvec=(float *)calloc(ncon, sizeof(float));
-	if(ubvec==NULL) 
+	if(ubvec==NULL)
 		HECMW_dlb_memory_exit("ubvec");
 	for(i=0;i<ncon;i++)
 		ubvec[i]=1.05;
@@ -377,7 +377,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
         options[3]=1;
 	edgecut=0;
 	result->part=(int *)calloc(nvtxs, sizeof(int));
-	if(result->part==NULL) 
+	if(result->part==NULL)
 		HECMW_dlb_memory_exit("result: part");
 
 /*	xyz=(float *)calloc(mesh->n_internal*3, sizeof(float));
@@ -467,7 +467,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
     ParMETIS_V3_AdaptiveRepart(graph->vtxdist, graph->xadj, graph->adjncy, NULL, NULL, NULL, &(ctl_para->wgtflag),
         &numflag, &(ctl_para->num_criteria), &(ctl_para->num_repartition), ctl_para->machine_wgt, ctl_para->balance_rate,
 		&(ctl_para->itr_rate),  options, &edgecut, result->part, &repart_comm);
-	
+
 
 	else if((stat_para[6]!=0) && (stat_para[7]==0)){
 		vwgts=(int *)calloc(mesh->nn_internal, sizeof(int));
@@ -540,16 +540,14 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 /*    for(i=0;i<mesh->n_internal;i++) {
 		fprintf(fp_test, "%d \n", result->part[i]);
 	}
-	
+
 	fclose(fp_test);
-*/	
+*/
 	free(graph->xadj);
 	free(graph->adjncy);
 
 	return;
 	}
-	
-	
 
 
 
@@ -564,7 +562,6 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 
 
 
-		   
 
 
 
@@ -572,7 +569,10 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para 
 
 
 
-		
+
+
+
+
 
 
 

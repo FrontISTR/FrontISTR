@@ -40,25 +40,25 @@
 /*================================================================================================*/
 
 struct link_list_i {
-	int rank;						
-	struct link_list_i *next;		
+	int rank;
+	struct link_list_i *next;
 };
 
 
 
 struct link_list_s {
-	char name[HECMW_NAME_LEN+1];	
-	struct link_list_s *next;		
+	char name[HECMW_NAME_LEN+1];
+	struct link_list_s *next;
 };
 
 
 
 static struct unit_info_by_ctrl {
-	char unit_id[HECMW_NAME_LEN+1];		
-	int n_proc;							
-	int is_specified_ranks;				
-	struct link_list_i ranks;			
-	struct unit_info_by_ctrl *next;		
+	char unit_id[HECMW_NAME_LEN+1];
+	int n_proc;
+	int is_specified_ranks;
+	struct link_list_i ranks;
+	struct unit_info_by_ctrl *next;
 } unit_info_root = {
 	"",					/* unit_id				*/
 	0,					/* n_proc				*/
@@ -73,11 +73,11 @@ static struct unit_info_by_ctrl {
 
 
 static struct couple_info_by_ctrl {
-	char couple_id[HECMW_NAME_LEN+1];	
-	char unit1_id[HECMW_NAME_LEN+1];	
-	char unit2_id[HECMW_NAME_LEN+1];	
-	int couple_type;					
-	struct couple_info_by_ctrl *next;	
+	char couple_id[HECMW_NAME_LEN+1];
+	char unit1_id[HECMW_NAME_LEN+1];
+	char unit2_id[HECMW_NAME_LEN+1];
+	int couple_type;
+	struct couple_info_by_ctrl *next;
 } couple_info_root = {
 	"",							/* couple_id	*/
 	"",							/* unit1_id		*/
@@ -89,25 +89,25 @@ static struct couple_info_by_ctrl {
 
 
 struct group_info_by_ctrl {
-	int n_grp;						
-	int geom_type;					
-	int data_type;					
-	struct link_list_s grp_name;	
+	int n_grp;
+	int geom_type;
+	int data_type;
+	struct link_list_s grp_name;
 };
 
 
 
 static struct boundary_info_by_ctrl {
-	char boundary_id[HECMW_NAME_LEN+1];		
-	char couple_id[HECMW_NAME_LEN+1];		
-	int interpolation;						
-	int direction;							
-	double tolerance;						
-	double bbcoef;							
-	double bgcoef;							
-	struct group_info_by_ctrl unit1_grp;	
-	struct group_info_by_ctrl unit2_grp;	
-	struct boundary_info_by_ctrl *next;		
+	char boundary_id[HECMW_NAME_LEN+1];
+	char couple_id[HECMW_NAME_LEN+1];
+	int interpolation;
+	int direction;
+	double tolerance;
+	double bbcoef;
+	double bgcoef;
+	struct group_info_by_ctrl unit1_grp;
+	struct group_info_by_ctrl unit2_grp;
+	struct boundary_info_by_ctrl *next;
 } boundary_info_root = {
 	"",								/* boundary_id				*/
 	"",								/* couple_id				*/

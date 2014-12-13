@@ -430,7 +430,7 @@ module hecmw_matrix_ass
 
       enddo
       !*End off - diagonal blocks
-	  
+
       call hecmw_cmat_ass_bc(hecMAT, inode, idof, RHS)
 
    end subroutine hecmw_mat_ass_bc
@@ -468,5 +468,5 @@ module hecmw_matrix_ass
       call hecmw_cmat_pack(hecMAT%cmat)
 
    end subroutine hecmw_mat_ass_contact
-   
+
 end module hecmw_matrix_ass

@@ -78,7 +78,7 @@ HECMW_is_syserr(int msgno)
 
 
 void
-hecmw_strmsg_if(int *msgno, char *dst, int dstlen) 
+hecmw_strmsg_if(int *msgno, char *dst, int dstlen)
 {
 	const char *p;
 
@@ -92,7 +92,7 @@ hecmw_strmsg_if(int *msgno, char *dst, int dstlen)
 
 
 void
-hecmw_strmsg_if_(int *msgno, char *dst, int dstlen) 
+hecmw_strmsg_if_(int *msgno, char *dst, int dstlen)
 {
 	hecmw_strmsg_if(msgno, dst, dstlen);
 }
@@ -100,7 +100,7 @@ hecmw_strmsg_if_(int *msgno, char *dst, int dstlen)
 
 
 void
-hecmw_strmsg_if__(int *msgno, char *dst, int dstlen) 
+hecmw_strmsg_if__(int *msgno, char *dst, int dstlen)
 {
 	hecmw_strmsg_if(msgno, dst, dstlen);
 }
@@ -108,7 +108,7 @@ hecmw_strmsg_if__(int *msgno, char *dst, int dstlen)
 
 
 void
-HECMW_STRMSG_IF(int *msgno, char *dst, int dstlen) 
+HECMW_STRMSG_IF(int *msgno, char *dst, int dstlen)
 {
 	hecmw_strmsg_if(msgno, dst, dstlen);
 }

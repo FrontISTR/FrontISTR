@@ -35,7 +35,7 @@ static FILE *restart_fp;
 
 
 static void
-clear(void) 
+clear(void)
 {
 	struct restart_list *p,*q;
 
@@ -116,7 +116,7 @@ HECMW_restart_read(void *addr)
 	int rc;
 	size_t size;
 	void *data;
-	
+
 	if(restart_fp == NULL) {
 		HECMW_set_error(HECMW_UTIL_E0103, "");
 		return NULL;
@@ -159,8 +159,8 @@ HECMW_restart_add(void *data, size_t size)
 		HECMW_set_error(errno, "");
 		return -1;
 	}
-	
-	rst->data = data; 
+
+	rst->data = data;
 	rst->size = size;
 	rst->next = NULL;
 
@@ -310,25 +310,25 @@ HECMW_RESTART_OPEN_BY_NAME_IF(char *name_ID, int *err, int len)
 
 
 void
-hecmw_restart_open_if(int *err) 
+hecmw_restart_open_if(int *err)
 {
 	hecmw_restart_open_by_name_if(NULL, err, 0);
 }
 
 void
-hecmw_restart_open_if_(int *err) 
+hecmw_restart_open_if_(int *err)
 {
 	hecmw_restart_open_if(err);
 }
 
 void
-hecmw_restart_open_if__(int *err) 
+hecmw_restart_open_if__(int *err)
 {
 	hecmw_restart_open_if(err);
 }
 
 void
-HECMW_RESTART_OPEN_IF(int *err) 
+HECMW_RESTART_OPEN_IF(int *err)
 {
 	hecmw_restart_open_if(err);
 }

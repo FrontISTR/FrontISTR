@@ -29,5 +29,5 @@ MODULE mReadTemp
 
       write(IDBG,*) ' Read temperature from result file : OK'
     end subroutine read_temperature_result
-	
+
 END MODULE

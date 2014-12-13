@@ -197,7 +197,7 @@ get_set_func(char *struct_name, char *var_name)
   int i;
 
   for(i=0; i < NFUNC; i++) {
-    if(strcmp(functions[i].struct_name, struct_name) == 0 
+    if(strcmp(functions[i].struct_name, struct_name) == 0
     && strcmp(functions[i].var_name, var_name) == 0) {
       return functions[i].set_func;
     }

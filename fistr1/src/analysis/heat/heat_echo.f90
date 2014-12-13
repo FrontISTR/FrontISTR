@@ -36,7 +36,7 @@ module m_heat_echo
 
 
 !C +-------------------------------+
-!C | GLOBAL PARAMETERS             | 
+!C | GLOBAL PARAMETERS             |
 !C +-------------------------------+
 
         write(ILOG,*) 'global parameters  ***********'
@@ -61,7 +61,7 @@ module m_heat_echo
         write(ILOG,*) 'EPS    ',EPS
 
 !C +-------------------------------+
-!C | fstrPARAM                     | 
+!C | fstrPARAM                     |
 !C +-------------------------------+
 
         write(ILOG,*) 'fstrPARAM  ********************'
@@ -96,7 +96,7 @@ module m_heat_echo
         if( associated( P%global_local_ID)) write(ILOG,*) 'global_local_ID ', p%global_local_ID
 
 !C +-------------------------------+
-!C | NODE                          | 
+!C | NODE                          |
 !C +-------------------------------+
 
       write(ILOG,*)
@@ -113,7 +113,7 @@ module m_heat_echo
 
 
 !C +-------------------------------+
-!C | ELEMENT                       | 
+!C | ELEMENT                       |
 !C +-------------------------------+
 
       call fstr2hecmw_mesh_conv( hecMESH )
@@ -125,7 +125,7 @@ module m_heat_echo
         iE= hecMESH%elem_type_index(itype  )
         ic_type= hecMESH%elem_type_item(itype)
 
-!C** Set number of nodes          
+!C** Set number of nodes
         nn = hecmw_get_max_node(ic_type)
 !C element loop
         do icel= iS, iE
@@ -149,15 +149,15 @@ module m_heat_echo
       enddo
       call hecmw2fstr_mesh_conv(hecMESH)
 !C +-------------------------------+
-!C | Material                      | 
+!C | Material                      |
 !C +-------------------------------+
-        
+
       write(ILOG,*)
       write(ILOG,*) '### Material'
 
       ic = 0
       do im = 1, hecMESH%material%n_mat
-        write(ILOG,*) 
+        write(ILOG,*)
         write(ILOG,*) '  Material No. =', im
         do jm = 1, 3
           ic = ic  + 1
@@ -172,26 +172,26 @@ module m_heat_echo
             kc = kc + 1
             val  = hecMESH%material%mat_VAL (km)
             temp = hecMESH%material%mat_TEMP(km)
-            if (jm.eq.1) aa = fstrHEAT%RHOfuncA(im,kc) 
-            if (jm.eq.1) bb = fstrHEAT%RHOfuncB(im,kc) 
-            if (jm.eq.2) aa = fstrHEAT%CPfuncA(im,kc) 
-            if (jm.eq.2) bb = fstrHEAT%CPfuncB(im,kc) 
-            if (jm.eq.3) aa = fstrHEAT%CONDfuncA(im,kc) 
-            if (jm.eq.3) bb = fstrHEAT%CONDfuncB(im,kc) 
+            if (jm.eq.1) aa = fstrHEAT%RHOfuncA(im,kc)
+            if (jm.eq.1) bb = fstrHEAT%RHOfuncB(im,kc)
+            if (jm.eq.2) aa = fstrHEAT%CPfuncA(im,kc)
+            if (jm.eq.2) bb = fstrHEAT%CPfuncB(im,kc)
+            if (jm.eq.3) aa = fstrHEAT%CONDfuncA(im,kc)
+            if (jm.eq.3) bb = fstrHEAT%CONDfuncB(im,kc)
             write(ILOG,'(1p4e13.4)') val,temp,aa,bb
           enddo
-          if (jm.eq.1) aa = fstrHEAT%RHOfuncA(im,kc+1) 
-          if (jm.eq.1) bb = fstrHEAT%RHOfuncB(im,kc+1) 
-          if (jm.eq.2) aa = fstrHEAT%CPfuncA(im,kc+1) 
-          if (jm.eq.2) bb = fstrHEAT%CPfuncB(im,kc+1) 
-          if (jm.eq.3) aa = fstrHEAT%CONDfuncA(im,kc+1) 
-          if (jm.eq.3) bb = fstrHEAT%CONDfuncB(im,kc+1) 
+          if (jm.eq.1) aa = fstrHEAT%RHOfuncA(im,kc+1)
+          if (jm.eq.1) bb = fstrHEAT%RHOfuncB(im,kc+1)
+          if (jm.eq.2) aa = fstrHEAT%CPfuncA(im,kc+1)
+          if (jm.eq.2) bb = fstrHEAT%CPfuncB(im,kc+1)
+          if (jm.eq.3) aa = fstrHEAT%CONDfuncA(im,kc+1)
+          if (jm.eq.3) bb = fstrHEAT%CONDfuncB(im,kc+1)
           write(ILOG,'(26x,1p2e13.4)') aa,bb
         enddo
       enddo
 
 !C +-------------------------------+
-!C | NODE GROUP                    | 
+!C | NODE GROUP                    |
 !C +-------------------------------+
 
       write(ILOG,*)
@@ -209,7 +209,7 @@ module m_heat_echo
       enddo
 
 !C +-------------------------------+
-!C | ELEMEN GROUP                  | 
+!C | ELEMEN GROUP                  |
 !C +-------------------------------+
 
       write(ILOG,*)
@@ -227,7 +227,7 @@ module m_heat_echo
       enddo
 
 !C +-------------------------------+
-!C | BOUNDARY                      | 
+!C | BOUNDARY                      |
 !C +-------------------------------+
 
       write(ILOG,*)
@@ -238,7 +238,7 @@ module m_heat_echo
       do i = 1, fstrHEAT%T_FIX_tot
         inod = hecMESH%global_node_ID( fstrHEAT%T_FIX_node(i) )
         write(ILOG,'(2i10,i5,1PE15.7)') i, inod, fstrHEAT%T_FIX_ampl(i)        &
-                                             , fstrHEAT%T_FIX_val (i)   
+                                             , fstrHEAT%T_FIX_val (i)
       enddo
 
       write(ILOG,*) '  Q_NOD_tot :', fstrHEAT%Q_NOD_tot
@@ -246,7 +246,7 @@ module m_heat_echo
       do i = 1, fstrHEAT%Q_NOD_tot
         in = hecMESH%global_node_ID( fstrHEAT%Q_NOD_node(i) )
         write(ILOG,'(2i10,i5,1PE15.7)') i, inod, fstrHEAT%Q_NOD_ampl(i)        &
-                                             , fstrHEAT%Q_NOD_val (i)   
+                                             , fstrHEAT%Q_NOD_val (i)
       enddo
 
       write(ILOG,*) '  Q_VOL_tot :', fstrHEAT%Q_VOL_tot
@@ -254,7 +254,7 @@ module m_heat_echo
       do i = 1, fstrHEAT%Q_VOL_tot
         ie = hecMESH%global_elem_ID( fstrHEAT%Q_VOL_elem(i) )
         write(ILOG,'(2i10,i5,1PE15.7)') i, ie, fstrHEAT%Q_VOL_ampl(i)          &
-                                             , fstrHEAT%Q_VOL_val (i)   
+                                             , fstrHEAT%Q_VOL_val (i)
       enddo
 
       write(ILOG,*) '  Q_SUF_tot :', fstrHEAT%Q_SUF_tot
@@ -262,15 +262,15 @@ module m_heat_echo
       do i = 1, fstrHEAT%Q_SUF_tot
         ie = hecMESH%global_elem_ID( fstrHEAT%Q_SUF_elem(i) )
         write(ILOG,'(2i10,2i5,1PE15.7)') i, ie, fstrHEAT%Q_SUF_surf(i)         &
-                       , fstrHEAT%Q_SUF_ampl(i), fstrHEAT%Q_SUF_val (i)        
-                                             
+                       , fstrHEAT%Q_SUF_ampl(i), fstrHEAT%Q_SUF_val (i)
+
       enddo
 
       write(ILOG,*) '  H_SUF_tot :', fstrHEAT%H_SUF_tot
       write(ILOG,*) '      No./ EID/ SID/ H_amp/ T_amp/ HH/ Sink/ '
       do i = 1, fstrHEAT%H_SUF_tot
         ie = hecMESH%global_elem_ID( fstrHEAT%H_SUF_elem(i) )
-        write(ILOG,'(2i10,3i5,1P2E15.7)') i, ie, fstrHEAT%H_SUF_surf(i)        & 
+        write(ILOG,'(2i10,3i5,1P2E15.7)') i, ie, fstrHEAT%H_SUF_surf(i)        &
                     , fstrHEAT%H_SUF_ampl(i,1), fstrHEAT%H_SUF_ampl(i,2)       &
                     , fstrHEAT%H_SUF_val (i,1), fstrHEAT%H_SUF_val (i,2)
       enddo
@@ -281,11 +281,11 @@ module m_heat_echo
         ie = hecMESH%global_elem_ID( fstrHEAT%R_SUF_elem(i) )
         write(ILOG,'(2i10,3i5,1P2E15.7)') i, ie, fstrHEAT%R_SUF_surf(i)        &
                     , fstrHEAT%R_SUF_ampl(i,1), fstrHEAT%R_SUF_ampl(i,2)       &
-                    , fstrHEAT%R_SUF_val (i,1), fstrHEAT%R_SUF_val (i,2)       
+                    , fstrHEAT%R_SUF_val (i,1), fstrHEAT%R_SUF_val (i,2)
       enddo
 
 !C +-------------------------------+
-!C | Amplitude                     | 
+!C | Amplitude                     |
 !C +-------------------------------+
 
       write(ILOG,*)
@@ -295,7 +295,7 @@ module m_heat_echo
       do i = 1, fstrHEAT%AMPLITUDEtot
         nn = fstrHEAT%AMPLtab(i)
         write(ILOG,'(2i5,a,a10)') i, nn,' : name=', hecMESH%amp%amp_name(i)
-                                       
+
         do j = 1, nn
           time = fstrHEAT%AMPLtime(i,j)
           val  = fstrHEAT%AMPL    (i,j)

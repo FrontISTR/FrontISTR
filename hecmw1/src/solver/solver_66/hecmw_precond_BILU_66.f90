@@ -18,7 +18,7 @@
 !======================================================================!
 
 !C
-!C*** 
+!C***
 !C*** module hecmw_precond_BILU_66
 !C***
 !C
@@ -395,7 +395,7 @@ contains
         call ILU1a66 (DkINV,D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
   & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
   & D61,D62,D63,D64,D65,D66)
-        
+
         Aik(1,1)= ALlu0(36*kk-35)
         Aik(1,2)= ALlu0(36*kk-34)
         Aik(1,3)= ALlu0(36*kk-33)
@@ -738,7 +738,7 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
     !C +-------------------------------------------------+
@@ -1218,7 +1218,7 @@ contains
     integer(kind=kint) :: j,k,iSL,iSU
 
     !C
-    !C +------------------+  
+    !C +------------------+
     !C | find fill-in (1) |
     !C +------------------+
     !C===
@@ -1310,10 +1310,10 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
-    !C +------------------+  
+    !C +------------------+
     !C | find fill-in (2) |
     !C +------------------+
     !C===
@@ -1470,7 +1470,7 @@ contains
         enddo
       enddo
     enddo
-    !C=== 
+    !C===
 
     !C
     !C +-------------------------------------------------+
@@ -1766,7 +1766,7 @@ contains
         call ILU1a66 (DkINV,D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
   & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
   & D61,D62,D63,D64,D65,D66)
-  
+
         Aik(1,1)= ALlu0(36*kk-35)
         Aik(1,2)= ALlu0(36*kk-34)
         Aik(1,3)= ALlu0(36*kk-33)
@@ -1973,14 +1973,14 @@ contains
 
     deallocate (IW1, IW2)
     deallocate (iconFI1L, iconFI1U)
-    !C===      
+    !C===
   end subroutine FORM_ILU2_66
 
 
   !C
   !C***
   !C*** fill_in_S66_SORT
-  !C*** 
+  !C***
   !C
   subroutine fill_in_S66_SORT (STEM, INUM, N, NP)
     use hecmw_util
@@ -1991,7 +1991,7 @@ contains
     integer(kind=kint), dimension(:), allocatable :: ISTACK
     integer(kind=kint) :: M,NSTACK,jstack,l,ir,ip,i,j,k,ss,ii,temp,it
 
-    allocate (ISTACK(-NP:+NP)) 
+    allocate (ISTACK(-NP:+NP))
 
     M     = 100
     NSTACK= NP
@@ -2122,7 +2122,7 @@ contains
     goto 1
 
   end subroutine fill_in_S66_SORT
-  
+
   !C
   !C***
   !C*** ILU1a66
@@ -2297,7 +2297,7 @@ contains
     RHS_Aij(4,3)=  Aik(4,1)*X1 +Aik(4,2)*X2 +Aik(4,3)*X3 +Aik(4,4)*X4 +Aik(4,5)*X5 +Aik(4,6)*X6
     RHS_Aij(5,3)=  Aik(5,1)*X1 +Aik(5,2)*X2 +Aik(5,3)*X3 +Aik(5,4)*X4 +Aik(5,5)*X5 +Aik(5,6)*X6
     RHS_Aij(6,3)=  Aik(6,1)*X1 +Aik(6,2)*X2 +Aik(6,3)*X3 +Aik(6,4)*X4 +Aik(6,5)*X5 +Aik(6,6)*X6
-    
+
     !C
     !C-- 4th Col.
     X1= Akj(1,4)
@@ -2326,7 +2326,7 @@ contains
     RHS_Aij(4,4)=  Aik(4,1)*X1 +Aik(4,2)*X2 +Aik(4,3)*X3 +Aik(4,4)*X4 +Aik(4,5)*X5 +Aik(4,6)*X6
     RHS_Aij(5,4)=  Aik(5,1)*X1 +Aik(5,2)*X2 +Aik(5,3)*X3 +Aik(5,4)*X4 +Aik(5,5)*X5 +Aik(5,6)*X6
     RHS_Aij(6,4)=  Aik(6,1)*X1 +Aik(6,2)*X2 +Aik(6,3)*X3 +Aik(6,4)*X4 +Aik(6,5)*X5 +Aik(6,6)*X6
-   
+
     !C
     !C-- 5th Col.
     X1= Akj(1,5)
@@ -2355,7 +2355,7 @@ contains
     RHS_Aij(4,5)=  Aik(4,1)*X1 +Aik(4,2)*X2 +Aik(4,3)*X3 +Aik(4,4)*X4 +Aik(4,5)*X5 +Aik(4,6)*X6
     RHS_Aij(5,5)=  Aik(5,1)*X1 +Aik(5,2)*X2 +Aik(5,3)*X3 +Aik(5,4)*X4 +Aik(5,5)*X5 +Aik(5,6)*X6
     RHS_Aij(6,5)=  Aik(6,1)*X1 +Aik(6,2)*X2 +Aik(6,3)*X3 +Aik(6,4)*X4 +Aik(6,5)*X5 +Aik(6,6)*X6
-    
+
     !C
     !C-- 6th Col.
     X1= Akj(1,6)

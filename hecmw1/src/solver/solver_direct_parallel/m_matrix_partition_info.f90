@@ -44,7 +44,7 @@ type matrix_partition_node
   integer(kind=kint) :: idm   ! corresponding divided matrix no. root and tree node have 0. leaf node have 1..2^n
 
   integer(kind=kint) :: neqns_a, nttbr_a ! size and number of non-zero element in a0.
-  integer(kind=kint) :: neqns_d ! size of D. 
+  integer(kind=kint) :: neqns_d ! size of D.
   integer(kind=kint), pointer :: irow(:), jcol(:)
   integer(kind=kint), pointer :: idx_g_a(:), idx_g_d(:) ! global indices of each point
 end type
@@ -352,7 +352,7 @@ type(child_matrix), pointer :: dmc
 integer(kind=kint) :: ndeg, ipass, ipos, itmp
 integer(kind=kint) :: i,j,k,l,m,n, ii, jj
 
-! set neqns for each divided matrix 
+! set neqns for each divided matrix
 ndeg = a0%ndeg
 do i=1,size(dm)
   dm(i)%a%neqns = 0
@@ -384,7 +384,7 @@ do ipass=1,2
   do l=1,a0%nttbr
     i=a0%irow(l)
     j=a0%jcol(l)
-  
+
     if (part_g(i) .eq. part_g(j)) then ! same matrix
       if ((part_g(i) .eq. 0) .or. (part_g(j) .eq. 0)) then       ! D
         if (iperm_g(i) .eq. iperm_g(j)) then                     ! diag in D
@@ -395,24 +395,24 @@ do ipass=1,2
               ipos=ipos+1
             end do
           end do
-  
+
         else if (iperm_g(i) .gt. iperm_g(j)) then                ! dsln in D
-  
+
           !count index in dsln for specified i,j.
           ii = iperm_g(i)
           jj = iperm_g(j)
-  
+
           k = (ii-1)*(ii-2)/2 + jj
-  
+
           dsln(:,k)=a0%val(:,l)
-  
+
         else                                                     ! dsln in D with inverse
           !count index in dsln for specified i,j.
           jj = iperm_g(i)
           ii = iperm_g(j)
-  
+
           k = (ii-1)*(ii-2)/2 + jj
-  
+
           do m=1,ndeg
             do n=1,ndeg
               dsln((m-1)*ndeg+n,k)=a0%val(m+(n-1)*ndeg,l)
@@ -431,7 +431,7 @@ do ipass=1,2
       end if
       cycle
     end if
-  
+
     if (part_g(i) .eq. 0) then !C run right in ndm part_g(j)
       dmc=>dm(part_g(j))
       dmc%c%nttbr = dmc%c%nttbr + 1
@@ -442,7 +442,7 @@ do ipass=1,2
       end if
       cycle
     end if
-  
+
     if (part_g(j) .eq. 0) then !C run down in ndm part_g(i). Invert val
       dmc=>dm(part_g(i))
       dmc%c%nttbr = dmc%c%nttbr + 1
@@ -457,10 +457,10 @@ do ipass=1,2
       end if
       cycle
     end if
-  
+
     stop !never come here
   end do
-  
+
   if (ipass .eq. 1) then
     do i=1,size(dm)
       allocate(dm(i)%a%irow(dm(i)%a%nttbr))

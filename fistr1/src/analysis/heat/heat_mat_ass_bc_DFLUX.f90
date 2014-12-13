@@ -12,11 +12,11 @@
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
 !======================================================================!
-!> \brief This module provides a subroutine for setting distributed 
+!> \brief This module provides a subroutine for setting distributed
 !!  heat flux boundary conditions
 module m_heat_mat_ass_bc_DFLUX
    use m_fstr
-   
+
    implicit none
    contains
 !C
@@ -37,9 +37,9 @@ module m_heat_mat_ass_bc_DFLUX
       real(kind=kreal) vect(20), ss(2000)
       integer(kind=kint) ig0, ig, iS0, iE0, nodLocal(20)
       real(kind=kreal), allocatable :: Bbak(:)
-	  
+
 !C
-        do k = 1, fstrHEAT%Q_SUF_tot 
+        do k = 1, fstrHEAT%Q_SUF_tot
 
           icel    = fstrHEAT%Q_SUF_elem(k)
           ic_type = hecMESH%elem_type(icel)
@@ -51,15 +51,15 @@ module m_heat_mat_ass_bc_DFLUX
           val     = fstrHEAT%Q_SUF_val (k) * QQ
 !C**
           nn = hecmw_get_max_node(ic_type)
-!C** 
+!C**
           iS = hecMESH%elem_node_index(icel-1)
           do j = 1, nn
             nodLOCAL(j) = hecMESH%elem_node_item(iS+j)
             xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )
             yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
             zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
-          enddo  
-!C**		
+          enddo
+!C**
           if    ( ic_type.eq.111 ) then
             is = hecMesh%section%sect_R_index(isect)
             asect = hecMESH%section%sect_R_item(is)
@@ -116,14 +116,14 @@ module m_heat_mat_ass_bc_DFLUX
           endif
 
           do j = 1, nn
-            hecMAT%B( nodLOCAL(j) ) = hecMAT%B( nodLOCAL(j) ) - vect(j) 
+            hecMAT%B( nodLOCAL(j) ) = hecMAT%B( nodLOCAL(j) ) - vect(j)
           enddo
         enddo
 
      if( fstrHEAT%WL_tot>0 ) then
 	   allocate( Bbak(size(hecMAT%B)) )
-       
-       do ig0 = 1, fstrHEAT%WL_tot 
+
+       do ig0 = 1, fstrHEAT%WL_tot
          ig = fstrHEAT%weldline(ig0)%egrpid
          iS0= hecMESH%elem_group%grp_index(ig-1) + 1
          iE0= hecMESH%elem_group%grp_index(ig  )
@@ -141,15 +141,15 @@ module m_heat_mat_ass_bc_DFLUX
              xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )
              yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
              zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
-           enddo  
-	
+           enddo
+
            if( .not. isWeldActive(nn, xx,yy,zz, fstrHEAT%weldline(ig0), ctime-0.5d0*dtime) ) cycle
 
-           vol = vol + VOLUME_C3(ic_type,NN,XX,YY,ZZ)   
+           vol = vol + VOLUME_C3(ic_type,NN,XX,YY,ZZ)
            val = fstrHEAT%weldline(ig0)%I * fstrHEAT%weldline(ig0)%U *   &
               fstrHEAT%weldline(ig0)%coe
            write(IDBG,*), "Element", hecMESH%global_elem_id(icel),"with dflux", val, vol
-		
+
            if( ic_type.eq.341 ) then
              call heat_DFLUX_341(nn,xx,yy,zz,isuf,val,vect)
 
@@ -164,7 +164,7 @@ module m_heat_mat_ass_bc_DFLUX
 
            elseif( ic_type.eq.361 ) then
              call heat_DFLUX_361(nn,xx,yy,zz,isuf,val,vect)
-			
+
            elseif( ic_type.eq.362 ) then
              call heat_DFLUX_362(nn,xx,yy,zz,isuf,val,vect)
 
@@ -175,32 +175,32 @@ module m_heat_mat_ass_bc_DFLUX
              call hecmw_abort(hecmw_comm_get_comm())
 
            endif
-		  
+
            do j = 1, nn
-             Bbak( nodLOCAL(j) ) = Bbak( nodLOCAL(j) ) - vect(j) 
+             Bbak( nodLOCAL(j) ) = Bbak( nodLOCAL(j) ) - vect(j)
            enddo
          enddo
-		 
+
          if( vol>0 ) then
            Bbak = Bbak/vol
            hecMAT%B = hecMAT%B + Bbak
          endif
        enddo
-        
-       deallocate(Bbak) 
+
+       deallocate(Bbak)
      endif
 
-   end subroutine heat_mat_ass_bc_DFLUX 
-   
+   end subroutine heat_mat_ass_bc_DFLUX
+
    logical function isWeldActive(nn, xx,yy,zz, weldline, ctime)
       integer, intent(in)          ::  nn
       real(kind=kreal), intent(in) :: xx(:),yy(:),zz(:)
       type(tWeldLine), intent(in)  :: weldline
       real(kind=kreal), intent(in) :: ctime
-	  
+
       integer :: i
       real(kind=kreal) :: cpos, wpos, tend
-	  
+
       isWeldActive = .false.
       tend = weldline%tstart+ (weldline%n2-weldline%n1)/weldline%v
       if( ctime<weldline%tstart .or. ctime>tend ) return

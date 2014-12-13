@@ -95,7 +95,7 @@
 
         if (SIGMA.lt.0.d0) SIGMA= 0.d0
         if (SIGMA.gt.1.d0) SIGMA= 1.d0
-        
+
 !C===
 !C +-------------+
 !C | ERROR CHECK |
@@ -213,6 +213,6 @@
         write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
         write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
       endif
-      
+
       end subroutine hecmw_solve_66
       end module hecmw_solver_66

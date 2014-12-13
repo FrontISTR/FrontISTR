@@ -50,7 +50,7 @@ void CHECDB_Node::Write( CHECData* hecd )
 	set<CNodeItem>::iterator iter;
 	for(iter = NodeList.begin(); iter != NodeList.end(); iter++){
 		hecd->WriteData( "IFFF", iter->ID, iter->x, iter->y, iter->z );
-	}	
+	}
 }
 
 

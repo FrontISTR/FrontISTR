@@ -54,8 +54,8 @@ contains
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
       type ( fstr_dynamic        ) :: fstrDYNAMIC
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange  
-      type ( fstr_couple         ) :: fstrCPL         !for COUPLE      
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange
+      type ( fstr_couple         ) :: fstrCPL         !for COUPLE
 
 !C
 !C-- local variable
@@ -104,7 +104,7 @@ contains
 
     a1 = 1.d0/fstrDYNAMIC%t_delta**2
     a2 = 1.d0/(2.d0*fstrDYNAMIC%t_delta)
-	
+
     call setMASS(IDBG,hecMESH,hecMAT,myEIG)
 
     do j = 1 ,ndof*nnod
@@ -117,7 +117,7 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
         endif
     end do
-	
+
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
@@ -131,7 +131,7 @@ contains
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
-	
+
 
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
@@ -141,7 +141,7 @@ contains
 !C-- mechanical boundary condition
 
         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-        do j=1, hecMESH%n_node*  hecMESH%n_dof 
+        do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
         end do
 
@@ -193,11 +193,11 @@ contains
 !C
 !C-- geometrical boundary condition
 
-        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
-        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
-        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT) 
+        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
 
-! Finish the calculation 
+! Finish the calculation
         do j = 1 ,ndof*nnod
           hecMAT%X(j) = hecMAT%B(j) / fstrDYNAMIC%VEC1(j)
           if(dabs(hecMAT%X(j)) > 1.0d+5) then
@@ -292,11 +292,11 @@ contains
 
         fstrDYNAMIC%DISP(j,3) = fstrDYNAMIC%DISP(j,1)
         fstrDYNAMIC%DISP(j,1) = hecMAT%X(j)
-		
+
         fstrSOLID%unode(j)  = fstrDYNAMIC%DISP(j,3)
         hecMAT%X(j) = fstrDYNAMIC%DISP(j,1)-fstrDYNAMIC%DISP(j,3)
       end do
-	
+
 ! ----- update strain, stress, and internal force
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1 )
 
@@ -308,9 +308,9 @@ contains
 !C-- output new displacement, velocity and accelaration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
-	  
+
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
-	  
+
     enddo
 
     if( fstrPARAM%fg_couple == 1) then

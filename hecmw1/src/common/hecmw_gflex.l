@@ -14,7 +14,7 @@ static long len = 0;
 
 %}
 
-%option nounput 
+%option nounput
 
 comment_line	^(!|#).*\r?\n
 comment		(!|#).*
@@ -101,7 +101,7 @@ HECMW_gflex_readsize(void)
 int
 HECMW_gflex_set_input(FILE *fp)
 {
-	static int first = 1;	
+	static int first = 1;
 	if(fp == NULL) return -1;
 	if(first) {
 		yyin = fp;

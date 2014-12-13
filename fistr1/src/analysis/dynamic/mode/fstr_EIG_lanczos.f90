@@ -81,7 +81,7 @@ contains
       ENDIF
 !C
       IDISP(0) = 0
-      DO I = 1,NPROCS-1 
+      DO I = 1,NPROCS-1
         IDISP(I) = IDISP(I-1)+ISHF(I-1)
       ENDDO
 !C
@@ -159,7 +159,7 @@ contains
 !> Sort eigenvalues
 !C======================================================================
 !C---------------------------------------------------------------------*
-      SUBROUTINE EVSORT(EIG,NEW,NEIG) 
+      SUBROUTINE EVSORT(EIG,NEW,NEIG)
 !C---------------------------------------------------------------------*
 !C*
 !C* REORDER EIGEN VALUE
@@ -200,7 +200,7 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C* DISPLAY RESULTS OF EIGEN VALUE ANALYSIS
-!C*                         
+!C*
       use m_fstr
       use lczparm
       use lczeigen
@@ -214,7 +214,7 @@ contains
 !*For parallel part reduction
       INTEGER(kind=kint) nglobal,istt,ied, GID,gmyrank,groot
       INTEGER(kind=kint) groupcount, GROUP, XDIFF, hecGROUP, IOUT
-      INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:) 
+      INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)
       REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
 !C*-------- solver control -----------*
@@ -296,10 +296,10 @@ contains
 !C      CALL MPI_comm_group ( hecMESH%MPI_COMM,hecGROUP,ierror )
 !C      CALL MPI_group_incl ( hecGROUP,groupcount,gmem,GROUP,ierror )
 !C      CALL MPI_comm_create( hecMESH%MPI_COMM,GROUP,XDIFF,ierror )
-!C 
-      PI = 4.0*ATAN(1.0) 
 !C
-!C*EIGEN VALUE SORTING 
+      PI = 4.0*ATAN(1.0)
+!C
+!C*EIGEN VALUE SORTING
       CALL EVSORT(EVAL,NEW,LTRIAL)
       IF(myrank==0) THEN
         WRITE(IOUT,*) ''
@@ -341,7 +341,7 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C* PRODUCT OF VECTOR {X} ,{Y}: {Z}={X}T{Y}
-!C*                         
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
 !C
@@ -362,7 +362,7 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C* PRODUCT OF VECTOR {X} ,{Y}: {Z}={X}T{Y}
-!C*                         
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
 !C
@@ -377,14 +377,14 @@ contains
 !C=====================================================================!
 !C                      Description                                    !
 !C=====================================================================!
-!> Copy vector 
+!> Copy vector
 !C======================================================================
 !C---------------------------------------------------------------------*
       SUBROUTINE DUPL(X,Y,NN)
 !C---------------------------------------------------------------------*
 !C*
 !C* DUPLICATE VECTORS {Y} INTO {X}: {X} = {Y}
-!C*                         
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
       DIMENSION X(NN),Y(NN)
@@ -403,7 +403,7 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C* SCALAR SHIFT {X} BY A*{Y}: {X} := {X} - A*{Y}
-!C*                           
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
       DIMENSION X(NN),Y(NN)
@@ -422,7 +422,7 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C*  MATRIX PRODUCT [Y]=[A][X]
-!C*                         
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
       DIMENSION Y(MM,NN),A(MM),X(MM,NN)
@@ -443,10 +443,10 @@ contains
 !C---------------------------------------------------------------------*
 !C*
 !C* DUPLICATE VECTORS {Y} INTO {X}: {X} = {Y}
-!C*                         
+!C*
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION X(NN), Y(NN), U(NN), V(NN) 
+      DIMENSION X(NN), Y(NN), U(NN), V(NN)
         DO 20 J=1,NN
           X(J) = U(J)/A
           Y(J) = V(J)/A

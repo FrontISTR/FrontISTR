@@ -79,7 +79,7 @@ void SetFixtemp( CNFData& neu, CHECData& hec )
 			CHECDB_Element::CElemItem* e = hec.GetElemItem( siter->ID );
 			if(!e) {
 				printf("##Warning : Not exist element %d (FIXTEMP)\n", (int)siter->ID );
-				continue; 
+				continue;
 			}
 			for(int i=0; i<e->node_n; i++ ){
 				ntlist.insert( cntemp( e->node[i], siter->temp ));
@@ -158,7 +158,7 @@ void SetDFlux( CNFData& neu, CHECData& hec )
 		vector<CNFDB_507::cstructural_load_rec>::iterator siter;
 		for( siter = p->structural_load_list.begin();
 		     siter != p->structural_load_list.end(); siter++) {
-			if( siter->loadtype != FEA_load_eHeatFlux 
+			if( siter->loadtype != FEA_load_eHeatFlux
 			   && siter->loadtype != FEA_load_eHeatGen ) continue;
  			int eid = siter->loadID;
 			int surf_no = siter->dof_face[0];

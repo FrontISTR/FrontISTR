@@ -21,7 +21,7 @@ static int flag_header;
 static void set_flag_header(int flag);
 %}
 
-%option nounput 
+%option nounput
 
 comment		^(\*\*).*\r?\n
 ws			[ \t]+
@@ -78,7 +78,7 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 ^"*"EQUATION	{ set_flag_header(1); return HECMW_ABLEX_H_EQUATION; }
 "*"EQUATION	{ return flag_header ? HECMW_ABLEX_H_EQUATION : ' '; }
 ^"*"HEADING	{
-				BEGIN HEADER; 
+				BEGIN HEADER;
 				set_flag_header(1);
 				return HECMW_ABLEX_H_HEADING;
 			}
@@ -268,7 +268,7 @@ HECMW_ablex_next_token_skip(int skip_token)
 int
 HECMW_ablex_set_input(FILE *fp)
 {
-	static int first = 1;	
+	static int first = 1;
 	if(fp == NULL) return -1;
 	if(first) {
 		yyin = fp;

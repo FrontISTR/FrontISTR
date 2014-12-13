@@ -13,7 +13,7 @@
 !======================================================================!
 !======================================================================!
 !>  \brief   This subroutine read in used-defined material properties
-!>  tangent 
+!>  tangent
 !!
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2010/01/12
@@ -29,10 +29,10 @@ subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, D  )
      INTEGER, INTENT(IN)           :: istat     !< plastic state
      REAL(KIND=kreal), INTENT(IN)  :: fstat(:)  !< plastic strain, back stress
      REAL(KIND=kreal), INTENT(OUT) :: D(:,:)    !< strain-stress relation
-	
+
 end subroutine
 
-!> This subroutine does backward-Euler return calculation   
+!> This subroutine does backward-Euler return calculation
 subroutine uBackwardEuler( matl, stress, istat, fstat )
       use hecmw
       implicit none

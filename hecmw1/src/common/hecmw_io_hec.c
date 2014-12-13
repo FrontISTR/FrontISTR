@@ -3334,7 +3334,7 @@ read_section_beam(union hecmw_io_section_item *sect_item)
 		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vx");
 		return -1;
 	}
-	
+
 	/* vy */
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
@@ -3350,7 +3350,7 @@ read_section_beam(union hecmw_io_section_item *sect_item)
 		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vy");
 		return -1;
 	}
-	
+
 	/* vz */
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
@@ -3379,14 +3379,14 @@ read_section_beam(union hecmw_io_section_item *sect_item)
 		set_err(HECMW_IO_HEC_E1707, "");
 		return -1;
 	}
-	
+
 	/* ',' */
 	token = HECMW_heclex_next_token();
 	if(token != ',') {
 		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after vz");
 		return -1;
 	}
-	
+
 	/* Iyy */
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
@@ -3406,7 +3406,7 @@ read_section_beam(union hecmw_io_section_item *sect_item)
 		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after Iyy");
 		return -1;
 	}
-	
+
 	/* Izz */
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
@@ -3426,7 +3426,7 @@ read_section_beam(union hecmw_io_section_item *sect_item)
 		set_err_token(token, HECMW_IO_HEC_E1700, "',' required after Izz");
 		return -1;
 	}
-	
+
 	/* Jx */
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_DOUBLE || token == HECMW_HECLEX_INT) {
@@ -3706,7 +3706,7 @@ read_section(void)
 			HECMW_assert(type == HECMW_SECT_TYPE_BEAM);
 
 			if(read_section_beam(&sect_item)) return -1;
-			state = ST_DATA_LINE_REGIST; 
+			state = ST_DATA_LINE_REGIST;
 		} else if(state == ST_DATA_LINE_INTERFACE) {
 			HECMW_assert(flag_egrp);
 			HECMW_assert(flag_type);

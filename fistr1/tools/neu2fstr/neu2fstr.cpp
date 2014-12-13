@@ -324,14 +324,14 @@ int main( int argc, char** argv )
 	if( !fstrdata.SaveMesh( mesh_name, comment )) {
 		fprintf( stderr, "Cannot save mesh data\n");
 		return -1;
-	}	
+	}
 
 	cout << "saving FrontSTR control file..." << endl;
 	create_comment( comment, false );
 	if( !fstrdata.SaveCtrl( ctrl_name, comment )) {
 		fprintf( stderr, "Cannot save control data\n");
 		return -1;
-	}	
+	}
 
 	if( fg_hecmw_ctrl ){
 		cout << "creating hecmw_ctrl.dat file..." << endl;

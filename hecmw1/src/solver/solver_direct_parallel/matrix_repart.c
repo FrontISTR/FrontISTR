@@ -43,7 +43,7 @@ void bi_part_directive(int *neqns, int *nttbr, int *irow, int *jcol, int *num_gr
 
 
   graph=(graph_type *)malloc(sizeof(graph_type));
-  if(graph==NULL) 
+  if(graph==NULL)
      separator_memory_exit("graph");
 
   fprintf(stderr, "Start transforming matrix to graph\n");

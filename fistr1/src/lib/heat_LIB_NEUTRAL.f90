@@ -72,7 +72,7 @@ contains
         enddo
 
         rdum( 0) = 0.d0
-        rdum( 1) = 0.d0 
+        rdum( 1) = 0.d0
         rdum( 2) = CD
         rdum( 3) = CD
         rdum( 4) = CD
@@ -116,7 +116,7 @@ contains
 
       enddo
       write(INEU,'(a)') '   -1'
- 
+
       return
       end subroutine heat_put_neutral_601
 
@@ -215,7 +215,7 @@ contains
       enddo
 
       write(INEU,'(a)') '   -1'
- 
+
       return
       end subroutine heat_put_neutral_402
 
@@ -236,7 +236,7 @@ contains
       write(INEU,*) '  403'
 
       do i = 1, hecMESH%n_node
-        
+
         inod = hecMESH%global_node_ID(i)
           xx = hecMESH%node( 3*i-2 )
           yy = hecMESH%node( 3*i-1 )
@@ -268,8 +268,8 @@ contains
 
       write(INEU,'(a)') '   -1'
       write(INEU,*) '  404'
-       
-      do i = 1, hecMESH%n_elem 
+
+      do i = 1, hecMESH%n_elem
 
         ielm = hecMESH%global_elem_ID(i)
         icol = 124
@@ -278,7 +278,7 @@ contains
 
         is = hecMESH%elem_node_index(i-1) + 1
         ie = hecMESH%elem_node_index(i)
-       
+
         k = 0
         do j = is, ie
           k = k + 1
@@ -286,7 +286,7 @@ contains
           nn(k) = hecMESH%global_node_ID(jj)
         enddo
 
-        nna = 0  ;  nnb = 0  
+        nna = 0  ;  nnb = 0
         ietyp = hecMESH%elem_type(i)
         if( ietyp == 231 ) then
           istyp = 25
@@ -422,18 +422,18 @@ contains
           nnb( 9) = nn(15)
           nnb(10) = nn(16)
         endif
-          
+
         write(INEU,'(5(i8,'',''),a)') &
-     &          ielm,icol,isid,istyp,itopo,'1,0,0,0,0,0,0,0,' 
-        write(INEU,'(10(i8,'',''))') (nna(j),j=1,10) 
-        write(INEU,'(10(i8,'',''))') (nnb(j),j=1,10) 
-        write(INEU,*) '0,0,0,' 
-        write(INEU,*) '0,0,0,' 
-        write(INEU,*) '0,0,0,' 
-        write(INEU,*) '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,' 
-        
+     &          ielm,icol,isid,istyp,itopo,'1,0,0,0,0,0,0,0,'
+        write(INEU,'(10(i8,'',''))') (nna(j),j=1,10)
+        write(INEU,'(10(i8,'',''))') (nnb(j),j=1,10)
+        write(INEU,*) '0,0,0,'
+        write(INEU,*) '0,0,0,'
+        write(INEU,*) '0,0,0,'
+        write(INEU,*) '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,'
+
       enddo
- 
+
       write(INEU,'(a)') '   -1'
 
       return
@@ -441,7 +441,7 @@ contains
 
 !----------------------------------------------------------------------
 !C
-      subroutine heat_put_neutral_409( INEU ) 
+      subroutine heat_put_neutral_409( INEU )
 
 !C
 !C==put View : BLOCK NO. = 409 )
@@ -654,15 +654,15 @@ contains
 
       tmin = 1.0e9
       tmax =-1.0e9
-      
+
 !C
 
-      do i = 1, hecMESH%n_node 
+      do i = 1, hecMESH%n_node
 
         tt = hecHEAT%TEMP(i)
         if( tt > tmax ) tmax = tt
         if( tt < tmin ) tmin = tt
-  
+
       enddo
 
       absmax = DABS(tmax)
@@ -671,7 +671,7 @@ contains
 
       write(INEU,'(a)') '   -1'
       write(INEU,*) '  451'
- 
+
       write(INEU,*) '1,1,1,'
       write(INEU,*) 'Temperature'
       write(INEU,'(3(e15.7,'',''))') tmin, tmax, absmax
@@ -680,7 +680,7 @@ contains
       write(INEU,*) '0,0,6,7,'
       write(INEU,*) '0,0,1,'
 
-      do i = 1, hecMESH%n_node 
+      do i = 1, hecMESH%n_node
         inod = hecMESH%global_node_ID(i)
         tt = hecHEAT%TEMP(i)
         write(INEU,'(i8,'','',E15.7,'','')') inod,tt

@@ -51,50 +51,50 @@
 
 
 struct boundary_node_info {
-	
+
 	int n_node;
-	
+
 	double *coord;
 };
 
 
 struct map_info {
-	
+
 	int n;
-	
+
 	int *id;
-	
+
 	int *n_positive;
-	
+
 	double *dot_product;
-	
+
 	double *distance;
 };
 
 
 struct link_list {
-	int item;				
-	struct link_list *next;	
+	int item;
+	struct link_list *next;
 };
 
 
 struct import_info {
-	int n;					
-	struct link_list *list;	
+	int n;
+	struct link_list *list;
 };
 
 
 struct map_info_to_bgcell {
-	int *index;		
-	int *id;		
+	int *index;
+	int *id;
 };
 
 
 struct mapping_info {
-	int n;			
-	int *index;		
-	int *pe;		
-	int *id;		
+	int n;
+	int *index;
+	int *pe;
+	int *id;
 };
 
 

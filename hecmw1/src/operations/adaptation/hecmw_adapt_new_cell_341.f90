@@ -46,7 +46,7 @@
             NPAR= icel_par
 
         if (hecMESH%elem_ID(2*icel_par).eq.hecMESH%my_rank) then
-          inc= 1          
+          inc= 1
          else
           inc= 0
         endif
@@ -101,14 +101,14 @@
         hecMESH%adapt_children_item(2*iS7)= -1
         hecMESH%adapt_children_item(2*iS8)= -1
 
-        hecMESH%adapt_children_item(2*iS1-1)= 0     
-        hecMESH%adapt_children_item(2*iS2-1)= 0     
-        hecMESH%adapt_children_item(2*iS3-1)= 0     
-        hecMESH%adapt_children_item(2*iS4-1)= 0     
-        hecMESH%adapt_children_item(2*iS5-1)= 0     
-        hecMESH%adapt_children_item(2*iS6-1)= 0     
-        hecMESH%adapt_children_item(2*iS7-1)= 0     
-        hecMESH%adapt_children_item(2*iS8-1)= 0     
+        hecMESH%adapt_children_item(2*iS1-1)= 0
+        hecMESH%adapt_children_item(2*iS2-1)= 0
+        hecMESH%adapt_children_item(2*iS3-1)= 0
+        hecMESH%adapt_children_item(2*iS4-1)= 0
+        hecMESH%adapt_children_item(2*iS5-1)= 0
+        hecMESH%adapt_children_item(2*iS6-1)= 0
+        hecMESH%adapt_children_item(2*iS7-1)= 0
+        hecMESH%adapt_children_item(2*iS8-1)= 0
 
 !C
 !C== embedding TYPE
@@ -281,10 +281,10 @@
         hecMESH%elem_node_index(icel)= hecMESH%elem_node_index(icel-1) + 4
 
         iS= hecMESH%elem_node_index(icel-1)
-        hecMESH%elem_node_item(iS+1)= in1        
-        hecMESH%elem_node_item(iS+2)= in2        
-        hecMESH%elem_node_item(iS+3)= in3        
-        hecMESH%elem_node_item(iS+4)= in4        
+        hecMESH%elem_node_item(iS+1)= in1
+        hecMESH%elem_node_item(iS+2)= in2
+        hecMESH%elem_node_item(iS+3)= in3
+        hecMESH%elem_node_item(iS+4)= in4
 
         hecMESH%adapt_parent(2*icel-1)= hecMESH%elem_ID(2*NPAR-1)
         hecMESH%adapt_parent(2*icel  )= hecMESH%elem_ID(2*NPAR  )

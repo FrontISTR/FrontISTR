@@ -73,12 +73,12 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
         integer(kind=kint) :: version, resul, visual, femap, n_shell_layer, shell_matltype, mixedflag
-        integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror                     
+        integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
         real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu, shell_variables(200)
         real(kind=kreal) :: beam_radius,                          &
                             beam_angle1, beam_angle2, beam_angle3,&
-                            beam_angle4, beam_angle5, beam_angle6 
+                            beam_angle4, beam_angle5, beam_angle6
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
         character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
@@ -142,7 +142,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!ISTEP' ) then
                         c_istep = c_istep + 1
                 else if( header_name == '!STEP' ) then
-                        if( version==0 ) then 
+                        if( version==0 ) then
                            c_step = c_step + 1
                            call fstr_setup_STEP( ctrl, c_step, P )
                         else
@@ -275,9 +275,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
         end do
 
-! ----- 
+! -----
         if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
-        if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )	
+        if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
 
@@ -347,7 +347,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
          call fstr_init_outctrl(fstrSOLID%output_ctrl(3))
          call fstr_init_outctrl(fstrSOLID%output_ctrl(4))
 
-! ----- 
+! -----
         rcode = fstr_ctrl_rewind( ctrl )
 
         c_istep    = 0
@@ -369,10 +369,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             endif
 
           ! ----- CONTACT condtion setting
-          elseif( header_name == '!CONTACT' ) then                          
+          elseif( header_name == '!CONTACT' ) then
             n = fstr_ctrl_get_data_line_n( ctrl )
-            if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &    
-              ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then                                    
+            if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
+              ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then
               write(*,*) '### Error: Fail in read in contact condition : ', c_contact
               write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
               STOP
@@ -416,7 +416,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
             endif
-			
+
           else if( header_name == '!WELD_LINE'  ) then
             fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
             if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
@@ -424,7 +424,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
                 stop
             endif
-			
+
           else if( header_name == '!SECTION'  ) then
             c_section = c_section+1
             if( fstr_ctrl_get_SECTION( ctrl, hecMESH )/=0 ) then
@@ -499,8 +499,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           else if( header_name == '!TRS' ) then
             if( cid >0 ) then
               if( fstrSOLID%materials(cid)%mtype/=VISCOELASTIC ) then
-                 write(*,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! ' 
-                 write(ILOG,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! ' 
+                 write(*,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! '
+                 write(ILOG,*) '### WARNING: TRS can only be defined for viscoelastic material! It is ignored! '
               else
                  if( fstr_ctrl_get_TRS( ctrl, fstrSOLID%materials(cid)%mtype, fstrSOLID%materials(cid)%variables)/=0 ) then
                    write(*,*) '### Error: Fail in read in TRS definition : ' , cid
@@ -606,7 +606,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             endif
           else if( header_name == '!ULOAD' ) then
             if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
-              write(*,*) '### Error: Fail in read in ULOAD definition : ' 
+              write(*,*) '### Error: Fail in read in ULOAD definition : '
               write(ILOG,*) '### Error: Fail in read in ULOAD definition : '
               stop
             endif
@@ -625,7 +625,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           enddo
         endif
 
-        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then 
+        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
           allocate ( fstrSOLID%temperature( hecMESH%n_node )      ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, TEMPERATURE>'
@@ -662,7 +662,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
            endif
-			  
+
            print *, "Step control not defined! Using default step=1"
            fstrSOLID%nstep_tot = 1
            allocate( fstrSOLID%step_ctrl(1) )
@@ -703,10 +703,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
           p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
         endif
-        
+
         n_shell_layer = 1
         mixedflag = 0
-        
+
         do i=1,hecMESH%section%n_sect
            cid = hecMESH%section%sect_mat_ID_item(i)
            n  = int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
@@ -720,7 +720,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             mixedflag = 1
           endif
         enddo
-        
+
         call fstr_setup_post( ctrl, P, n_shell_layer, mixedflag)
         rcode = fstr_ctrl_close( ctrl )
 
@@ -825,7 +825,7 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
           fstrSOLID%mpc_const(:) = hecMESH%mpc%mpc_const(:)
         endif
 
-        ! initialize for linear static problems 
+        ! initialize for linear static problems
         fstrSOLID%FACTOR(2)=1.d0
         fstrSOLID%FACTOR(1)=0.d0
 end subroutine fstr_solid_alloc
@@ -838,7 +838,7 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_solid)                :: fstrSOLID
 
-        integer :: i, j, ng, isect, ndof, id, nn            
+        integer :: i, j, ng, isect, ndof, id, nn
 
         if( hecMESH%n_elem <=0 ) then
              stop "no element defined!"
@@ -849,8 +849,8 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
           if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
           if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
           ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
-          if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )      
-          
+          if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
+
           isect= hecMESH%section_ID(i)
           ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
           if (ndof == 2) then              ! why do this???
@@ -872,11 +872,11 @@ subroutine fstr_element_init( hecMESH, fstrSOLID )
              fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
              call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
           enddo
-          
-          nn = hecmw_get_max_node(hecMESH%elem_type(i))           
-          allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))   
-          fstrSOLID%elements(i)%equiForces = 0.0d0                 
-        enddo  
+
+          nn = hecmw_get_max_node(hecMESH%elem_type(i))
+          allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
+          fstrSOLID%elements(i)%equiForces = 0.0d0
+        enddo
 end subroutine
 
 !> Finalizer of fstr_solid
@@ -887,17 +887,17 @@ subroutine fstr_solid_finalize( fstrSOLID )
           deallocate( fstrSOLID%materials )
         if( .not. associated(fstrSOLID%elements ) ) return
         do i=1,size(fstrSOLID%elements)
-          if( associated(fstrSOLID%elements(i)%gausses) ) then           
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
             do j=1,size(fstrSOLID%elements(i)%gausses)
               call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
             enddo
             deallocate( fstrSOLID%elements(i)%gausses )
-          endif                                                              
-          if(associated(fstrSOLID%elements(i)%equiForces) ) then            
-            deallocate(fstrSOLID%elements(i)%equiForces)    
-          endif                                                               
-        enddo                                   
-          
+          endif
+          if(associated(fstrSOLID%elements(i)%equiForces) ) then
+            deallocate(fstrSOLID%elements(i)%equiForces)
+          endif
+        enddo
+
         deallocate( fstrSOLID%elements )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
@@ -915,7 +915,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
            enddo
            deallocate(fstrSOLID%output_ctrl)
         endif
-        
+
         if( associated(fstrSOLID%GL) ) then
             deallocate(fstrSOLID%GL               ,STAT=ierror)
             if( ierror /= 0 ) then
@@ -1025,7 +1025,7 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
         fstrDYNAMIC%t_start  = 0.0
-        fstrDYNAMIC%t_curr = 0.0d0             
+        fstrDYNAMIC%t_curr = 0.0d0
         fstrDYNAMIC%t_end    = 1.0
         fstrDYNAMIC%t_delta  = 1.0
         fstrDYNAMIC%ganma    = 0.5
@@ -1043,8 +1043,8 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%iout_list(3) = 0
         fstrDYNAMIC%iout_list(4) = 0
         fstrDYNAMIC%iout_list(5) = 0
-        fstrDYNAMIC%iout_list(6) = 0 
-		
+        fstrDYNAMIC%iout_list(6) = 0
+
 end subroutine fstr_dynamic_init
 
 
@@ -1053,9 +1053,9 @@ subroutine fstr_dynamic_alloc( hecMESH, fstrDYNAMIC )
         use m_fstr
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_dynamic) :: fstrDYNAMIC
-		
+
         integer :: ierror, ndof,nnod
-        
+
         ndof=hecMESH%n_dof
         nnod=hecMESH%n_node
         if(fstrDYNAMIC%idx_eqa == 11) then
@@ -1103,8 +1103,8 @@ subroutine fstr_dynamic_alloc( hecMESH, fstrDYNAMIC )
               call hecmw_abort( hecmw_comm_get_comm())
             end if
         endif
-        
-        
+
+
         allocate( fstrDYNAMIC%VEC1(ndof*nnod)    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <fstr_solve_LINEAR_DYNAMIC, VEC1>'
@@ -1132,7 +1132,7 @@ end subroutine fstr_dynamic_alloc
 !> Finalizer of fstr_solid
  subroutine fstr_dynamic_finalize( fstrDYNAMIC )
         type(fstr_dynamic) :: fstrDYNAMIC
-		
+
         integer :: ierror
         if( associated(fstrDYNAMIC%DISP) )	    &
         deallocate( fstrDYNAMIC%DISP    ,STAT=ierror )
@@ -1176,15 +1176,15 @@ end subroutine fstr_dynamic_alloc
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        
-end subroutine		
+
+end subroutine
 
 
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
 
  subroutine fstr_setup_post( ctrl, P, n_shell_layer, mixedflag)
-        implicit none                      
+        implicit none
         integer(kind=kint) :: ctrl, n_shell_layer, mixedflag
         type(fstr_param_pack) :: P
 
@@ -1326,16 +1326,16 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
                         svRarray(4), svRarray(5) )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        if( svIarray(2) <= 100 ) then                      
+        if( svIarray(2) <= 100 ) then
                 svIarray(99) = 1  ! indirect method
         else
-                svIarray(99) = svIarray(2)-99 !2  ! direct method          
+                svIarray(99) = svIarray(2)-99 !2  ! direct method
         end if
 
 end subroutine fstr_setup_SOLVER
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !ORIENTATION       
+!> Read in !ORIENTATION
 !* ----------------------------------------------------------------------------------------------- *!
 
 integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
@@ -1357,7 +1357,7 @@ integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
 		nid = 1
         coordsys%sys_type = 10
 
-        nid = 1	
+        nid = 1
         data_fmt = 'COORDINATES,NODES '
         if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', data_fmt, 0, 'P', nid )/=0 ) return
         dtype = nid-1
@@ -1367,7 +1367,7 @@ integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
         coordsys%sys_name = grp_id_name(1)
         call fstr_strupr( coordsys%sys_name )
 
-        if( dtype==0 ) then		
+        if( dtype==0 ) then
           data_fmt = "RRRRRRrrr "
           xyzc(:) = 0.d0
           if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, xyza(1), xyza(2),  &
@@ -1390,7 +1390,7 @@ integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
             coordsys%CoordSys(1,:) = xyza
             coordsys%CoordSys(2,:) = xyzb
           endif
-		
+
         else
           coordsys%node_ID(3) = 0   ! global origin
           data_fmt = "IIi "
@@ -1551,14 +1551,14 @@ subroutine fstr_setup_STATIC( ctrl, counter, P )
         type(fstr_param_pack) :: P
         integer(kind=kint) :: rcode
 
-        integer :: nout, nout_monit,node_monit_1 ,elem_monit_1 ,intg_monit_1  
-        integer :: ipt, idx_elpl, iout_list(6) 
+        integer :: nout, nout_monit,node_monit_1 ,elem_monit_1 ,intg_monit_1
+        integer :: ipt, idx_elpl, iout_list(6)
         real(kind=kreal) :: sig_y0, h_dash
 
         if( counter > 1 ) then
-                write(*,*) 
+                write(*,*)
         endif
-		
+
         ipt = 0
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITE,NLGEOM ', 0, 'P', ipt  )/=0 )  &
            return
@@ -1573,7 +1573,7 @@ subroutine fstr_setup_STATIC( ctrl, counter, P )
                         elem_monit_1, intg_monit_1 )
 
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        
+
 end subroutine fstr_setup_STATIC
 
 
@@ -1628,7 +1628,7 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
     amp = ' '
     val_ptr => P%SOLID%BOUNDARY_ngrp_val(old_size+1:)
     val_ptr = 0
-    rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr) 
+    rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
@@ -1702,7 +1702,7 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!CLOAD', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!CLOAD', amp, amp_id )
         do i=1,n
                 P%SOLID%CLOAD_ngrp_amp(old_size+i) = amp_id
         end do
@@ -1797,7 +1797,7 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN,    &
                         lid_ptr, new_params )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        call amp_name_to_id( P%MESH, '!DLOAD', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!DLOAD', amp, amp_id )
         P%SOLID%DLOAD_follow = follow
         do i=1,n
                 P%SOLID%DLOAD_ngrp_amp(old_size+i) = amp_id
@@ -1910,7 +1910,7 @@ subroutine fstr_setup_SPRING( ctrl, counter, P )
         rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id )
         do i=1,n
                 P%SOLID%SPRING_ngrp_amp(old_size+i) = amp_id
         end do
@@ -2031,8 +2031,8 @@ subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, value )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!FIXTEMP', amp, amp_id ) 
-        
+        call amp_name_to_id( P%MESH, '!FIXTEMP', amp, amp_id )
+
         m = 0
         do i = 1, n
                 !rtc = get_local_member_index( P%MESH, 'node', grp_id_name(i), local_id )
@@ -2118,7 +2118,7 @@ subroutine fstr_setup_CFLUX( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, value )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!CFLUX', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!CFLUX', amp, amp_id )
 
         m = 0
 
@@ -2205,7 +2205,7 @@ subroutine fstr_setup_DFLUX( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, load_type, value )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!DFLUX', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!DFLUX', amp, amp_id )
 
         m = 0
         do i = 1, n
@@ -2292,7 +2292,7 @@ subroutine fstr_setup_SFLUX( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, value )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!SFLUX', amp, amp_id ) 
+        call amp_name_to_id( P%MESH, '!SFLUX', amp, amp_id )
 
         m = 0
         do i = 1, n
@@ -2374,8 +2374,8 @@ subroutine fstr_setup_FILM( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!FILM', amp1, amp_id1 ) 
-        call amp_name_to_id( P%MESH, '!FILM', amp2, amp_id2 ) 
+        call amp_name_to_id( P%MESH, '!FILM', amp1, amp_id1 )
+        call amp_name_to_id( P%MESH, '!FILM', amp2, amp_id2 )
 
         m = 0
         do i = 1, n
@@ -2469,8 +2469,8 @@ subroutine fstr_setup_SFILM( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, value, shink )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!SFILM', amp1, amp_id1 ) 
-        call amp_name_to_id( P%MESH, '!SFILM', amp2, amp_id2 ) 
+        call amp_name_to_id( P%MESH, '!SFILM', amp1, amp_id1 )
+        call amp_name_to_id( P%MESH, '!SFILM', amp2, amp_id2 )
 
         m = 0
         do i = 1, n
@@ -2555,8 +2555,8 @@ subroutine fstr_setup_RADIATE( ctrl, counter, P )
                         grp_id_name, HECMW_NAME_LEN, load_type, value, shink )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!RADIATE', amp1, amp_id1 ) 
-        call amp_name_to_id( P%MESH, '!RADIATE', amp2, amp_id2 ) 
+        call amp_name_to_id( P%MESH, '!RADIATE', amp1, amp_id1 )
+        call amp_name_to_id( P%MESH, '!RADIATE', amp2, amp_id2 )
 
         m = 0
         do i = 1, n
@@ -2649,8 +2649,8 @@ subroutine fstr_setup_SRADIATE( ctrl, counter, P )
         rcode = fstr_ctrl_get_SRADIATE( ctrl, amp1, amp2, grp_id_name, HECMW_NAME_LEN, value, shink )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-        call amp_name_to_id( P%MESH, '!SRADIATE', amp1, amp_id1 ) 
-        call amp_name_to_id( P%MESH, '!SRADIATE', amp2, amp_id2 ) 
+        call amp_name_to_id( P%MESH, '!SRADIATE', amp1, amp_id1 )
+        call amp_name_to_id( P%MESH, '!SRADIATE', amp2, amp_id2 )
 
         m = 0
         do i = 1, n
@@ -2779,7 +2779,7 @@ subroutine fstr_setup_VELOCITY( ctrl, counter, P )
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
-        integer(kind=kint) :: vType                     
+        integer(kind=kint) :: vType
         character(HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: amp_id
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2787,7 +2787,7 @@ subroutine fstr_setup_VELOCITY( ctrl, counter, P )
         integer(kind=kint),pointer :: dof_ide (:)
         real(kind=kreal),pointer :: val_ptr(:)
         integer(kind=kint) :: i, j, n, old_size, new_size
-                
+
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) return
         old_size = P%SOLID%VELOCITY_ngrp_tot
@@ -2810,9 +2810,9 @@ subroutine fstr_setup_VELOCITY( ctrl, counter, P )
                 grp_id_name, HECMW_NAME_LEN,  &
                 dof_ids, dof_ide, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        P%SOLID%VELOCITY_type = vType 
-        if( vType == kbcInitial ) P%DYN%VarInitialize = .true.                      
-        call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id ) 
+        P%SOLID%VELOCITY_type = vType
+        if( vType == kbcInitial ) P%DYN%VarInitialize = .true.
+        call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id )
         call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
                 n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
 
@@ -2845,7 +2845,7 @@ subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
-        integer(kind=kint) :: aType                             
+        integer(kind=kint) :: aType
         character(HECMW_NAME_LEN) :: amp
         integer(kind=kint) :: amp_id
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2854,7 +2854,7 @@ subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
         real(kind=kreal),pointer :: val_ptr(:)
         integer(kind=kint) :: i, j, n, old_size, new_size
 
-                
+
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) return
         old_size = P%SOLID%ACCELERATION_ngrp_tot
@@ -2878,8 +2878,8 @@ subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
                 dof_ids, dof_ide,  val_ptr)
         if( rcode /= 0 ) call fstr_ctrl_err_stop
         P%SOLID%ACCELERATION_type = aType
-        if( aType == kbcInitial )P%DYN%VarInitialize = .true.                    
-        call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id ) 
+        if( aType == kbcInitial )P%DYN%VarInitialize = .true.
+        call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id )
         call node_grp_name_to_id_ex( P%MESH, '!ACCELERATION', &
                 n, grp_id_name, P%SOLID%ACCELERATION_ngrp_ID(old_size+1:))
 
@@ -2968,22 +2968,22 @@ subroutine fstr_setup_solid_nastran( ctrl, hecMESH, fstrSOLID )
 end subroutine fstr_setup_solid_nastran
 
 !-----------------------------------------------------------------------------!
-!> Read in !CONTACT                                                           !    
+!> Read in !CONTACT                                                           !
 !-----------------------------------------------------------------------------!
 
-subroutine fstr_setup_CONTACTALGO( ctrl, P )                                                                    
+subroutine fstr_setup_CONTACTALGO( ctrl, P )
         implicit none
         integer(kind=kint) :: ctrl
 !        integer(kind=kint) :: counter
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
-       
 
-        rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo )       
+
+        rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-end subroutine fstr_setup_CONTACTALGO                                       
+end subroutine fstr_setup_CONTACTALGO
 
 
 end module m_fstr_setup

@@ -24,7 +24,7 @@
 !  4) Describe new subroutine to set values of the parameter           !
 !     in fstr_setup.f90                                                !
 !  5) If initial values are necessary, set the value                   !
-!     in subroutine fstr_setup_init in fstr_setup.f90                  ! 
+!     in subroutine fstr_setup_init in fstr_setup.f90                  !
 !                                                                      !
 !======================================================================!
 !> This module defined coomon data and basic structures for analysis
@@ -35,7 +35,7 @@ use m_common_struct
 use m_step
 use m_out
 use mMechGauss
-use mContactDef                                                 
+use mContactDef
 
 implicit none
 
@@ -64,22 +64,22 @@ public
         integer(kind=kint),parameter :: ksmGMRES    =   3
         integer(kind=kint),parameter :: ksmGPBiCG   =   4
         integer(kind=kint),parameter :: ksmDIRECT   = 101
-        
-        ! contact analysis algorithm                                           
+
+        ! contact analysis algorithm
         integer(kind=kint),parameter :: kcaSLagrange = 1
-        integer(kind=kint),parameter :: kcaALagrange = 2 
+        integer(kind=kint),parameter :: kcaALagrange = 2
 
         ! boundary condition file type (bcf)
         integer(kind=kint),parameter :: kbcfFSTR    =   0  ! BC described in fstr control file (default)
         integer(kind=kint),parameter :: kbcfNASTRAN =   1  ! nastran file
-        
-        !
-        integer(kind=kint),parameter :: kbcInitial    =  1        
-        integer(kind=kint),parameter :: kbcTransit    =  2               
 
-        ! restart type                                                 
-        integer(kind=kint),parameter :: restart_outLast = 1            
-        integer(kind=kint),parameter :: restart_outAll  = 2             
+        !
+        integer(kind=kint),parameter :: kbcInitial    =  1
+        integer(kind=kint),parameter :: kbcTransit    =  2
+
+        ! restart type
+        integer(kind=kint),parameter :: restart_outLast = 1
+        integer(kind=kint),parameter :: restart_outAll  = 2
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -104,9 +104,9 @@ public
         integer(kind=kint),parameter :: IDBG=52 ! debug
         integer(kind=kint),parameter :: IFVS=53 ! visual.ini file
         integer(kind=kint),parameter :: INEU=54 ! neutral file (heat)
-		
+
         integer(kind=kint),parameter :: IRESOUT=100 ! ~110, keeping for result output file
-		
+
 !C
 !C-- SOLVER CONTROL
 !C
@@ -179,19 +179,19 @@ public
                 ! index table for global node ID sorting
                 integer(kind=kint) :: n_node        !< hecMESH%n_node
                 integer(kind=kint) :: nn_internal   !< hecMESH%nn_internal
-                integer(kind=kint),pointer :: global_local_ID(:,:)  !> (2:nn_internal) (1,:):global, (2,:):local 
+                integer(kind=kint),pointer :: global_local_ID(:,:)  !> (2:nn_internal) (1,:):global, (2,:):local
 
                 ! for couple analysis
                 integer( kind=kint ) :: fg_couple          !< (default:0)
                 integer( kind=kint ) :: fg_couple_type     !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
                 integer( kind=kint ) :: fg_couple_window   !< (default:0)
-                
-                ! for restart control                       
-                integer( kind=kint ) :: restart_out_type   !< output type of restart file  
-                
+
+                ! for restart control
+                integer( kind=kint ) :: restart_out_type   !< output type of restart file
+
                 ! for contact analysis
-                integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)  
+                integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
 !
         end type fstr_param
 !
@@ -216,29 +216,29 @@ public
                 !!BOUNDARY
                 integer(kind=kint) :: BOUNDARY_ngrp_tot                    !< Following boundary conditions
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)  =>null()   
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()   
-!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)    =>null()   
-                integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()   
-                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)   =>null()   
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)  =>null()
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
+!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)    =>null()
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
+                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)   =>null()
 
                 !!VELOCITY
-                integer(kind=kint) :: VELOCITY_type                
+                integer(kind=kint) :: VELOCITY_type
                 integer(kind=kint) :: VELOCITY_ngrp_tot                    !< Following velocity boundary condition
                 integer(kind=kint), pointer :: VELOCITY_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()   
-                integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()   
-                integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()   
-                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)   =>null()   
+                integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()
+                integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()
+                integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()
+                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)   =>null()
 
                 !!ACCELERATION
-                integer(kind=kint) :: ACCELERATION_type              
+                integer(kind=kint) :: ACCELERATION_type
                 integer(kind=kint) :: ACCELERATION_ngrp_tot                !< Following accelerate boundary condition
                 integer(kind=kint), pointer :: ACCELERATION_ngrp_GRPID  (:)  =>null()
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()   
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)  =>null()                   
-                integer(kind=kint), pointer :: ACCELERATION_ngrp_amp    (:)  =>null()   
-                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)   =>null()   
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)  =>null()
+                integer(kind=kint), pointer :: ACCELERATION_ngrp_amp    (:)  =>null()
+                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)   =>null()
 
                 !!CLOAD
                 integer(kind=kint) :: CLOAD_ngrp_tot                       !< Following concetrated external load
@@ -256,7 +256,7 @@ public
                 integer(kind=kint), pointer :: DLOAD_ngrp_LID       (:)
                 integer(kind=kint), pointer :: DLOAD_ngrp_amp       (:)
                 real(kind=kreal), pointer   :: DLOAD_ngrp_params    (:,:)
-                
+
                 !!TEMPERATURE
                 integer(kind=kint) :: TEMP_ngrp_tot                        !< Following tempearture conditions
                 integer(kind=kint) :: TEMP_irres
@@ -265,7 +265,7 @@ public
                 integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
                 integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
                 real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
-                
+
                 !!SPRING
                 integer(kind=kint) :: SPRING_ngrp_tot                      !< Following spring boundary conditions
                 integer(kind=kint), pointer :: SPRING_ngrp_GRPID    (:) =>null()
@@ -273,7 +273,7 @@ public
                 integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:)
                 integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
                 real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
-				
+
 				! for couple analysis
                 integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
                 integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
@@ -288,7 +288,7 @@ public
                 integer(kind=kint) :: restart_nout  !< output interval of restart file
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
-                integer(kind=kint) :: restart_nin   !< input number of restart file        
+                integer(kind=kint) :: restart_nin   !< input number of restart file
 
 
                 real(kind=kreal)           :: FACTOR      (2)     !< factor of incrementation
@@ -300,12 +300,12 @@ public
                 real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
                 real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp icrement
                 real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
-                real(kind=kreal), pointer :: temp_bak(:)=> null()       
+                real(kind=kreal), pointer :: temp_bak(:)=> null()
                 real(kind=kreal), pointer :: last_temp(:)=> null()
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
-                type( tContact ), pointer :: contacts(:)   =>null()  !< contact information     
+                type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
 !
@@ -327,9 +327,9 @@ public
 
                 ! MATERIAL
                 integer :: MATERIALtot
-                real(kind=kreal), pointer :: RHO(:,:), RHOtemp (:,:) 
-                real(kind=kreal), pointer :: CP(:,:),  CPtemp (:,:) 
-                real(kind=kreal), pointer :: COND(:,:),CONDtemp (:,:) 
+                real(kind=kreal), pointer :: RHO(:,:), RHOtemp (:,:)
+                real(kind=kreal), pointer :: CP(:,:),  CPtemp (:,:)
+                real(kind=kreal), pointer :: COND(:,:),CONDtemp (:,:)
 
                 integer, pointer :: RHOtab(:), CPtab(:), CONDtab(:)
 
@@ -339,7 +339,7 @@ public
 
                 ! AMPLITUDE
                 integer :: AMPLITUDEtot
-                real(kind=kreal), pointer :: AMPL(:,:), AMPLtime (:,:) 
+                real(kind=kreal), pointer :: AMPL(:,:), AMPLtime (:,:)
                 integer, pointer :: AMPLtab(:)
                 real(kind=kreal), pointer :: AMPLfuncA(:,:),  AMPLfuncB(:,:)
 
@@ -399,14 +399,14 @@ public
                 integer, pointer          :: H_SUF_ampl(:,:)
                 integer, pointer          :: H_SUF_surf(:)
                 real(kind=kreal), pointer :: H_SUF_val(:,:)
-				
-                integer  :: WL_tot				
+
+                integer  :: WL_tot
                 type(tWeldLine), pointer :: weldline(:) => null()
 
         end type fstr_heat
 
 
-!C ---------------------------------------------------------------------------- 
+!C ----------------------------------------------------------------------------
 !C
 !> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
 !C
@@ -422,13 +422,13 @@ public
                 ! TIME CONTROL
                 integer(kind=kint) :: n_step        ! total step number of analysis
                 real(kind=kreal)   :: t_start       ! start time of analysis
-                real(kind=kreal)   :: t_curr        ! current time of analysis      
+                real(kind=kreal)   :: t_curr        ! current time of analysis
                 real(kind=kreal)   :: t_end         ! end time of analysis
                 real(kind=kreal)   :: t_delta       ! time increment
                 integer(kind=kint) :: restart_nout  ! output interval of restart file
                                                     ! (if  .gt.0) restart file write
                                                     ! (if  .lt.0) restart file read and write
-                integer(kind=kint) :: restart_nin  !input number of restart file    
+                integer(kind=kint) :: restart_nin  !input number of restart file
 
                 ! Newmark-beta parameter
                 real(kind=kreal)   :: ganma         ! Newmark-beta parameter ganma
@@ -450,28 +450,28 @@ public
                 integer(kind=kint) :: ngrp_monit     ! node of monitoring result
                 integer(kind=kint) :: nout_monit     ! output interval of result monitoring
                 integer(kind=kint) :: i_step         ! step number
-                integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output       
+                integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
                                                      ! iout_list(1): displacement
                                                      ! iout_list(2): velocity
                                                      ! iout_list(3): acceleration
                                                      ! iout_list(4): reaction force
                                                      ! iout_list(5): strain
                                                      ! iout_list(6): stress
-            
+
                 ! VALUE
                 real(kind=kreal), pointer :: DISP  (:,:)     !> Displacement, U(t+dt), U(t), U(t-dt)
                 real(kind=kreal), pointer :: VEL   (:,:)     !> Velocity
                 real(kind=kreal), pointer :: ACC   (:,:)     !> Acceleration
-                
-                real(kind=kreal) :: kineticEnergy           
-                real(kind=kreal) :: strainEnergy                      
-                real(kind=kreal) :: totalEnergy               
+
+                real(kind=kreal) :: kineticEnergy
+                real(kind=kreal) :: strainEnergy
+                real(kind=kreal) :: totalEnergy
 
                 ! temporary quantity
                 real(kind=kreal), pointer :: VEC1  (:)
                 real(kind=kreal), pointer :: VEC2  (:)
                 real(kind=kreal), pointer :: VEC3  (:)
-				
+
                 integer(kind=kint) :: dynamic_IW4        =   204
                 integer(kind=kint) :: dynamic_IW5        =   205
                 integer(kind=kint) :: dynamic_IW6        =   206
@@ -480,7 +480,7 @@ public
                 integer(kind=kint) :: dynamic_IW9        =   209
 
         end type fstr_dynamic
-!C ---------------------------------------------------------------------------- 
+!C ----------------------------------------------------------------------------
 !C
 !> Data for coupling analysis
 !C
@@ -499,18 +499,18 @@ public
         integer( kind=kint ),pointer :: index(:)   ! size:total node num.
         !  -1:not relation, >1:index of coupled_node
     end type fstr_couple
-	
-!C ---------------------------------------------------------------------------- 
+
+!C ----------------------------------------------------------------------------
 !C
 !> Data for weld line
 !C
     type tWeldLine
-        integer              :: egrpid		
-        real( kind=kreal )   :: I          
-        real( kind=kreal )   :: U         
-        real( kind=kreal )   :: coe      
-        real( kind=kreal )   :: v        
-        integer              :: xyz     
+        integer              :: egrpid
+        real( kind=kreal )   :: I
+        real( kind=kreal )   :: U
+        real( kind=kreal )   :: coe
+        real( kind=kreal )   :: v
+        integer              :: xyz
         real(kind=kreal)     :: n1, n2
         real(kind=kreal)     :: distol
         real(kind=kreal)     :: tstart
@@ -610,11 +610,11 @@ contains
         nullify( H%STEP_DELMIN )
         nullify( H%STEP_DELMAX )
         nullify( H%RHO )
-        nullify( H%RHOtemp  ) 
+        nullify( H%RHOtemp  )
         nullify( H%CP )
-        nullify( H%CPtemp  ) 
+        nullify( H%CPtemp  )
         nullify( H%COND )
-        nullify( H%CONDtemp  ) 
+        nullify( H%CONDtemp  )
         nullify( H%RHOtab )
         nullify( H%CPtab )
         nullify( H%CONDtab )
@@ -625,7 +625,7 @@ contains
         nullify( H%CONDfuncA  )
         nullify( H%CONDfuncB )
         nullify( H%AMPL )
-        nullify( H%AMPLtime  ) 
+        nullify( H%AMPLtime  )
         nullify( H%AMPLtab )
         nullify( H%AMPLfuncA )
         nullify( H%AMPLfuncB )
@@ -685,7 +685,7 @@ contains
         nullify( C%velo )
         nullify( C%index )
         end subroutine fstr_nullify_fstr_couple
-		
+
 !> Initializer of structure hecmwST_matrix
 subroutine fstr_mat_init( hecMAT )
         implicit none
@@ -721,7 +721,7 @@ end subroutine fstr_mat_init
 !C ----------------------------------------------------------------------------
         subroutine hecMAT_init( hecMAT )
 ! ----------------------------------------------------------------------------
-!  Purpose: Memeory allocation 
+!  Purpose: Memeory allocation
 !           July.6, 2009  YUAN Xi
 !  Notes: 1. Should be a function of middleware !
 !         2. Not available for mixed-dof problems
@@ -779,7 +779,7 @@ end subroutine fstr_mat_init
 ! ----------------------------------------------------------------------------
         subroutine hecMAT_finalize( hecMAT )
 ! ----------------------------------------------------------------------------
-!  Purpose: Memeory allocation 
+!  Purpose: Memeory allocation
 !           July.6, 2009  YUAN Xi
 !  Notes: 1. Should be a function of middleware !
 !         2. Not available for mixed-dof problems
@@ -829,7 +829,7 @@ end subroutine fstr_mat_init
               call hecmw_abort( hecmw_comm_get_comm())
             end if
         endif
-        if( associated(hecMAT%ALU) ) then 
+        if( associated(hecMAT%ALU) ) then
             deallocate(hecMAT%ALU                 ,STAT=ierror)
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error'
@@ -839,7 +839,7 @@ end subroutine fstr_mat_init
         endif
         call hecmw_cmat_finalize(hecmAT%cmat)
         end subroutine hecMAT_finalize
-		
+
 !> Initializer of structure fstr_param
 subroutine fstr_param_init( fstrPARAM, hecMESH )
         implicit none
@@ -885,7 +885,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         call fstr_sort_index( fstrPARAM%global_local_ID, hecMESH%nn_internal )
 
 end subroutine fstr_param_init
-		
+
 
         logical function fstr_isBoundaryActive( fstrSOLID, nbc, cstep )
           type(fstr_solid)    :: fstrSOLID
@@ -906,8 +906,8 @@ end subroutine fstr_param_init
           if( cstep>fstrSOLID%nstep_tot ) return
           fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
         end function
-        
-        logical function fstr_isContactActive( fstrSOLID, nbc, cstep )            
+
+        logical function fstr_isContactActive( fstrSOLID, nbc, cstep )
           type(fstr_solid)     :: fstrSOLID !< type fstr_solid
           integer, intent(in) :: nbc       !< group id of boundary condition
           integer, intent(in) :: cstep     !< current step number
@@ -916,17 +916,17 @@ end subroutine fstr_param_init
           if( cstep>fstrSOLID%nstep_tot ) return
           fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
         end function
-		
-		!< This subroutine fetch coords defined by local coordinate system	
+
+		!< This subroutine fetch coords defined by local coordinate system
         subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
            integer, intent(in)             :: cdsys_ID      !< id of local coordinate
            type (hecmwST_local_mesh)       :: hecMESH       !< mesh information
            type (fstr_solid),intent(inout) :: fstrSOLID     !< fstr_solid
            real(kind=kreal), intent(out)   :: coords(3,3)
-		   
+
            integer :: ik
 
-           coords =0.d0		   
+           coords =0.d0
            if( cdsys_ID>0 ) then
                  if( isCoordNeeds(g_LocalCoordSys(cdsys_ID)) ) then
                     coords=g_LocalCoordSys(cdsys_ID)%CoordSys

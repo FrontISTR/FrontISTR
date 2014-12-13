@@ -22,12 +22,12 @@ extern struct hecmwST_result_data *data;
 extern struct hecmwST_local_mesh *new_mesh;
 extern struct hecmwST_result_data *new_data;
 
-extern void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS], 
+extern void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph, Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS],
 					   Result_part *result, HECMW_Comm repart_comm);
-extern void redistribute_mesh(GraphType *graph, 
+extern void redistribute_mesh(GraphType *graph,
 				Result_part *result, int mynode, int pesize);
-/*extern void write_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node); 
-extern void write3_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node); 
+/*extern void write_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node);
+extern void write3_mesh_display(char *outfile, struct local_mesh *mesh, struct node_elem_data *node);
 */
 extern void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS], int pesize);
 extern void hecmw_dlb_set_default_control(Control_para *ctl_para, int stat_para[NUM_CONTROL_PARAS], int pesize);
@@ -68,7 +68,7 @@ void hecmw_dynamic_load_balancing_()
       t1=HECMW_Wtime();
       fprintf(stderr, "Start graph repartition now ...\n");
       }
-  
+
     ctl_para=(Control_para *)malloc(sizeof(Control_para));
 	if(ctl_para==NULL)
 		  HECMW_dlb_memory_exit("ctl_para");
@@ -76,22 +76,22 @@ void hecmw_dynamic_load_balancing_()
     if(flag_control==0)
 	   hecmw_dlb_set_default_control(ctl_para,stat_para, pesize);
     else {
-    contfile=HECMW_ctrl_get_control_file("dlb-ctrl", buf, HECMW_FILENAME_LEN); 
+    contfile=HECMW_ctrl_get_control_file("dlb-ctrl", buf, HECMW_FILENAME_LEN);
    if(contfile!=NULL)
        hecmw_dlb_read_control(contfile, ctl_para, stat_para, pesize);
-    }  
-  
-   
+    }
+
+
 
   graph=(GraphType *)malloc(sizeof(GraphType));
-  if(graph==NULL) 
+  if(graph==NULL)
      HECMW_dlb_memory_exit("graph");
 /*  global_index=(struct Global_inf *)malloc(sizeof(struct Global_inf));
 */
   result=(Result_part *)malloc(sizeof(Result_part));
-  if(result==NULL) 
+  if(result==NULL)
 	  HECMW_dlb_memory_exit("result");
-  
+
 
   mesh2graph(mesh, graph,  ctl_para, stat_para,result, mesh->HECMW_COMM);
   if(mynode==0)
@@ -113,7 +113,7 @@ void hecmw_dynamic_load_balancing_()
 	  fprintf(stderr, "The time for repartition is %lf\n", t2-t1);
 	  fprintf(stderr, "Start migration...\n");
   }
- 
+
 
 
   HECMW_Barrier(mesh->HECMW_COMM);

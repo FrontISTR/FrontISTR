@@ -19,7 +19,7 @@ use hecmw
 include 'fstr_ctrl_util_f.inc'
 
      private :: pc_strupr
-	 
+
 contains
 
     subroutine pc_strupr( s )
@@ -40,7 +40,7 @@ contains
 
 
 
-!> Read in !HEAT                                                                      
+!> Read in !HEAT
     function fstr_ctrl_get_HEAT( ctrl, dt, etime, dtmin, deltmx, itmax, eps )
         implicit none
         integer(kind=kint) :: ctrl
@@ -62,7 +62,7 @@ contains
         fstr_ctrl_get_HEAT = 0
     end function fstr_ctrl_get_HEAT
 
-!> Read in !FIXTEMP 
+!> Read in !FIXTEMP
     function fstr_ctrl_get_FIXTEMP( ctrl, amp, node_grp_name, node_grp_name_len, value )
         implicit none
         integer(kind=kint) :: ctrl
@@ -89,7 +89,7 @@ contains
     end function fstr_ctrl_get_FIXTEMP
 
 
-!> Read in !CFLUX (heat)            
+!> Read in !CFLUX (heat)
     function fstr_ctrl_get_CFLUX( ctrl, amp, node_grp_name, node_grp_name_len, value )
         implicit none
         integer(kind=kint) :: ctrl
@@ -115,7 +115,7 @@ contains
 
     end function fstr_ctrl_get_CFLUX
 
-!> Read in !DFLUX (heat)                                               
+!> Read in !DFLUX (heat)
     function fstr_ctrl_get_DFLUX( ctrl, amp, elem_grp_name, elem_grp_name_len, load_type, value )
         implicit none
         integer(kind=kint) :: ctrl
@@ -181,7 +181,7 @@ contains
     end function fstr_ctrl_get_DFLUX
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !SFLUX (heat)        
+!> Read in !SFLUX (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_SFLUX( ctrl, amp, surface_grp_name, surface_grp_name_len, value )
@@ -210,7 +210,7 @@ contains
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !FILM (heat)        
+!> Read in !FILM (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_FILM( ctrl, amp1, amp2, elem_grp_name, elem_grp_name_len, load_type, value, sink)
@@ -281,7 +281,7 @@ contains
     end function fstr_ctrl_get_FILM
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !SFILM  (heat)     
+!> Read in !SFILM  (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_SFILM( ctrl, amp1, amp2, surface_grp_name, surface_grp_name_len, value, sink)
@@ -313,7 +313,7 @@ contains
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !RADIATE (heat)  
+!> Read in !RADIATE (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_RADIATE( ctrl, amp1, amp2, elem_grp_name, elem_grp_name_len, load_type, value, sink)
@@ -384,7 +384,7 @@ contains
 
 
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !SRADIATE  (heat)          
+!> Read in !SRADIATE  (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_SRADIATE( ctrl, amp1, amp2, surface_grp_name, surface_grp_name_len, value, sink)
@@ -415,9 +415,9 @@ contains
         fstr_ctrl_get_SRADIATE = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name_p, value, sink )
 
     end function fstr_ctrl_get_SRADIATE
-	
+
 !* ----------------------------------------------------------------------------------------------- *!
-!> Read in !WELD_LINE  (heat)          
+!> Read in !WELD_LINE  (heat)
 !* ----------------------------------------------------------------------------------------------- *!
 
     function fstr_ctrl_get_WELDLINE( ctrl, hecMESH, grp_name_len, weldline )
@@ -434,7 +434,7 @@ contains
         integer :: grp_id(1)
 
         fstr_ctrl_get_WELDLINE = -1
-        if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRRR ',   weldline%I, weldline%U, weldline%coe, weldline%v )/=0 ) return	
+        if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRRR ',   weldline%I, weldline%U, weldline%coe, weldline%v )/=0 ) return
         write(s1,*) grp_name_len
         write(data_fmt,'(a,a,a)') 'S', trim(adjustl(s1)), 'IRRRR  '
         if( fstr_ctrl_get_data_ex( ctrl, 2, data_fmt,  grp_id_name, weldline%xyz, weldline%n1, &

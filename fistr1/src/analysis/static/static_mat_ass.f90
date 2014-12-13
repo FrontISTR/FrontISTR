@@ -28,7 +28,7 @@ module m_static_mat_ass
       use m_static_mat_ass_main
       use m_fstr_ass_load
       use m_fstr_AddBC
-      use fstr_matrix_con_contact                           
+      use fstr_matrix_con_contact
 
       implicit none
       integer(kind=kint) :: IFLAG, numnp, ndof, i
@@ -38,8 +38,8 @@ module m_static_mat_ass
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)         :: fstrSOLID
-      type (fstr_param       )  :: fstrPARAM          
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT                                                  
+      type (fstr_param       )  :: fstrPARAM
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT
 !* LCZ
       type(lczparam) :: myEIG
 
@@ -74,7 +74,7 @@ module m_static_mat_ass
       ELSE IF(myEIG%eqset==1) THEN
         IF(myrank == 0) THEN
           WRITE(IMSG,*) '*-------------------------------------------*'
-          WRITE(IMSG,*) 'NOTE: Loads ignored for eigenvalue analysis.' 
+          WRITE(IMSG,*) 'NOTE: Loads ignored for eigenvalue analysis.'
           WRITE(IMSG,*) '*-------------------------------------------*'
         ENDIF
 

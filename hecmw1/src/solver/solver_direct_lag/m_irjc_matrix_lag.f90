@@ -30,7 +30,7 @@ type irjc_square_matrix
   integer(kind=kint) :: nttbr
 
   ! degree of freedom of each element
-  integer(kind=kint) :: ndeg 
+  integer(kind=kint) :: ndeg
   integer, pointer :: irow(:), jcol(:) ! irow(nttbr_t), jcol(nttbr_t) location of i'th element
   real(kind=kreal), pointer :: val(:,:) ! val(ndeg*ndeg, nttbr_t) concrete value of nonzero elements. small matrix is expanded as ndeg*ndeg.
 end type irjc_square_matrix
@@ -46,7 +46,7 @@ type irjc_mn_matrix !m*n matrix
   integer(kind=kint) :: nttbr
 
   ! degree of freedom of each element
-  integer(kind=kint) :: ndeg 
+  integer(kind=kint) :: ndeg
   integer(kind=kint), pointer :: irow(:), jcol(:) ! irow(nttbr_t), jcol(nttbr_t) location of i'th element
   real(kind=kreal), pointer :: val(:,:) ! val(ndeg*ndeg, nttbr_t) concrete value of nonzero elements. small matrix is expanded as ndeg*ndeg.
 end type irjc_mn_matrix

@@ -538,7 +538,7 @@ ucd_print( const struct hecmwST_local_mesh *mesh,
       }
       fprintf( fp, "\n" );
     }
-  }  
+  }
 
   if( result->ne_component > 0 ) {
     fprintf( fp, "%d", result->ne_component );
@@ -558,10 +558,10 @@ ucd_print( const struct hecmwST_local_mesh *mesh,
       }
       fprintf( fp, "\n" );
     }
-  }  
+  }
 
   fclose(fp);
-  
+
   return 0;
 }
 

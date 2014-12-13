@@ -22,9 +22,9 @@
 
 
 struct hecmw_coord {
-	double x;	
-	double y;	
-	double z;	
+	double x;
+	double y;
+	double z;
 };
 
 

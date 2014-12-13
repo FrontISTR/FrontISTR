@@ -27,19 +27,19 @@
 
 
 struct hecmw_couple_boundary_item {
-	int n;		
-	int *item;	
+	int n;
+	int *item;
 };
 
 
 struct hecmw_couple_boundary {
-	int geom_type;								
-	int data_type;								
-	struct hecmw_couple_boundary_item *node;	
-	struct hecmw_couple_boundary_item *elem;	
-	struct hecmw_couple_boundary_item *surf;	
-	int *elem_node_index;						
-	int *elem_node_item;						
+	int geom_type;
+	int data_type;
+	struct hecmw_couple_boundary_item *node;
+	struct hecmw_couple_boundary_item *elem;
+	struct hecmw_couple_boundary_item *surf;
+	int *elem_node_index;
+	int *elem_node_item;
 };
 
 

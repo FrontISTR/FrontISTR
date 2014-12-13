@@ -45,7 +45,7 @@ logical :: m_pds_isready_dc = .false.            ! set true after d is updated c
 
 ! for leafsolve
 integer, parameter :: m_pds_lenv=80000000     ! allocate v as size of lenv in leaf process.
-real(8), pointer   :: m_pds_v(:) ! Communication vector for serial direct solver. 
+real(8), pointer   :: m_pds_v(:) ! Communication vector for serial direct solver.
 logical :: m_pds_isready_v = .false.          ! set true after v is setted correctly via nufct0().
 
 ! process position informations on MPI processes binary tree. !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -157,7 +157,7 @@ real(8) :: t50s, t50e
 real(8) :: t60s, t60e
 
 !test
-integer, allocatable, dimension(:),   target :: part 
+integer, allocatable, dimension(:),   target :: part
 real(8), allocatable, dimension(:,:), target :: d
 integer :: neqns1, neqns2, neqnsd, nd
 real(8), allocatable, dimension(:) :: oldb
@@ -230,7 +230,7 @@ nd = neqnsd*ndeg
 
 allocate(d(nd,nd))
 d=0
-call divmat(a0, part, iperm, neqns1, neqns2, neqnsd, ndeg, a1, a2, c1, c2, d) 
+call divmat(a0, part, iperm, neqns1, neqns2, neqnsd, ndeg, a1, a2, c1, c2, d)
 call ptime(t20e)!ELAP
 call elapout('sp_direct_root: end divide matrix')
 
@@ -371,7 +371,7 @@ call elapout('sp_direct_root: end')
 !    write(20,'(a,1f15.5)') 'STEP05: Solve Ax=b:                        ', t50e  - t50s
 !  write(20,'(a)')          '# End profile data######################################'
 
-return 
+return
 end subroutine sp_direct_root
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -424,7 +424,7 @@ real(8) :: t50s, t50e
 real(8) :: t60s, t60e
 
 !test
-integer, allocatable, dimension(:),   target :: part 
+integer, allocatable, dimension(:),   target :: part
 real(8), allocatable, dimension(:,:), target :: d
 integer :: neqns1, neqns2, neqnsd, nd
 
@@ -469,7 +469,7 @@ nd = neqnsd*ndeg
 
 allocate(d(nd,nd))
 d=0
-call divmat(a0, part, iperm, neqns1, neqns2, neqnsd, ndeg, a1, a2, c1, c2, d) 
+call divmat(a0, part, iperm, neqns1, neqns2, neqnsd, ndeg, a1, a2, c1, c2, d)
 call elapout('sp_direct_trunk: end divide matrix')
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -578,7 +578,7 @@ call elapout('sp_direct_trunk: begin recsolve()')
 call recsolve()
 call elapout('sp_direct_trunk: end recsolve()')
 
-return 
+return
 
 end subroutine sp_direct_trunk
 
@@ -766,7 +766,7 @@ subroutine trunksolve(b)
 ! Using LDU decomposed D' on module m_pds, solve D'x_d= bd' myself.
 ! Calc v1=C1 x_d, v2=C2 x_d.
 ! Send v1, v2 to child process and receive result of A1 w1 = v1.
-! Calc x1=-w1+xab1, x2=-w2+xab2. 
+! Calc x1=-w1+xab1, x2=-w2+xab2.
 ! Reorder x1, x2, xd and return it as result
 use m_cclsmatrix
 implicit none
@@ -776,7 +776,7 @@ include 'mpif.h'
 real(8), dimension(:), intent(inout) :: b
 
 ! internal
-real(8), allocatable, dimension(:) :: b1, x1, v1, w1, xab1, vtmp1 
+real(8), allocatable, dimension(:) :: b1, x1, v1, w1, xab1, vtmp1
 real(8), allocatable, dimension(:) :: b2, x2, v2, w2, xab2, vtmp2
 real(8), allocatable, dimension(:) :: bd, xd
 type (ccls_matrix) :: c1, c2
@@ -892,7 +892,7 @@ call MPI_RECV(w2, ndeg*neqns2, MPI_REAL8, IP2, 1,MPI_COMM_WORLD, istatus, ierr)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-! Calc x1=-w1+xab1, x2=-w2+xab2. 
+! Calc x1=-w1+xab1, x2=-w2+xab2.
 !
 
 x1 = -w1 + xab1
@@ -943,7 +943,7 @@ include 'mpif.h'
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-type (ccls_matrix) :: pc                     ! parent C 
+type (ccls_matrix) :: pc                     ! parent C
 real(8), allocatable, dimension(:,:) :: pd   ! parent D' for update
 integer :: npd                               ! size of parent dens D'
 
@@ -1042,9 +1042,9 @@ end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine mkpart(neqns, nttbr, ndeg, irow, jcol, neqns1, neqns2, neqnsd, part, iperm)
-! Make partitioning information for given matrix 
+! Make partitioning information for given matrix
 ! which specified by neqns, nttbr, ndeg, irow, jcol.
-! 
+!
 ! number of partitioned array a1, a2, d (neqns1, neqns2, neqnsd) and
 ! partition information array part, iperm will return.
 
@@ -1107,7 +1107,7 @@ use m_cclsmatrix
 
 implicit none
 
-! Divide given matrix a0 to a1 and a2 
+! Divide given matrix a0 to a1 and a2
 ! accortind to partitioning informatin array "part" and "iperm" which set by mkpart()
 ! this subroutine set following valuables.
 !
@@ -1273,7 +1273,7 @@ do ipass=1,2
 
 !    call cclsallocation(c1)
 !    call cclsallocation(c2)
-  
+
     call stiajac(c1,jstat1,irpt1,irowno1)
     call stiajac(c2,jstat2,irpt2,irowno2)
     deallocate(jstat1,irpt1,irowno1)

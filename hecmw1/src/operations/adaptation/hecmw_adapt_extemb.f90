@@ -144,9 +144,9 @@
       call hecmw_adapt_INT_SEND_RECV_REV                                &
      &   ( hecMESH%n_adapt_edge, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
 
@@ -155,9 +155,9 @@
       call hecmw_adapt_INT_SEND_RECV                                    &
      &   ( hecMESH%n_adapt_edge, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
 
@@ -267,15 +267,15 @@
 
 !C
 !C-- exchange IEMB
-      WS= 0 
+      WS= 0
       WR= 0
       call hecmw_adapt_INT_SEND_RECV_REV                                &
      &   ( hecMESH%n_adapt_edge,                                        &
      &     hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
 
@@ -285,9 +285,9 @@
      &   ( hecMESH%n_adapt_edge,                                        &
      &     hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
 
@@ -302,7 +302,7 @@
       enddo
 
       deallocate (WS, WR)
-!C=== 
+!C===
 
 !C
 !C-- LOOP OVER ALL EDGEs

@@ -69,7 +69,7 @@ void CFSTRDB_SFilm::Write( CHECData* hecd )
 	vector<CItem>::iterator iter;
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SFF", iter->sgrp, iter->value, iter->sink);
-	}	
+	}
 }
 
 

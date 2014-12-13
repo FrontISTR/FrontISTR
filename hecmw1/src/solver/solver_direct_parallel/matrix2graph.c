@@ -19,7 +19,7 @@ void matrix2graph(int num_of_row, int num_of_col, int num_of_nzero, int *irow, i
 		graph->xadj[jcol[i]]++;
 			}
 	}
-	for(i=0;i<num_of_col;i++) 
+	for(i=0;i<num_of_col;i++)
 		graph->xadj[i+1]+=graph->xadj[i];
 	graph->adjncy=(int *)calloc(graph->xadj[num_of_col],sizeof(int));
 	if(graph->adjncy==NULL)
@@ -42,7 +42,7 @@ void matrix2graph(int num_of_row, int num_of_col, int num_of_nzero, int *irow, i
 	free(count);
 	graph->nvtxs=num_of_col;
 	graph->nedges=graph->xadj[num_of_col];
-	graph->ncon=0; 
+	graph->ncon=0;
 
 	return;
 }

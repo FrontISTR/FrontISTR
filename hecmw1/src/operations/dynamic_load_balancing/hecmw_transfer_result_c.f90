@@ -17,12 +17,12 @@
 
 subroutine hecmw_dist_result_copy_f2c(adapRES)
       use   hecmw_util
-      use   hecmw_result 
+      use   hecmw_result
       use   hecmw_io
       use   hecmw_dist_copy_f2c_f
       type (hecmwST_result_data):: adapRES
-   
-	  
+
+
 
   if(adapRES%nn_component .gt.0) then
      call  hecmw_set_result_node(adapRES%nn_component,adapRES%nn_dof,adapRES%node_label, &
@@ -36,4 +36,4 @@ subroutine hecmw_dist_result_copy_f2c(adapRES)
   endif
 
 end subroutine  hecmw_dist_result_copy_f2c
-  
+

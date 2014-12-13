@@ -17,13 +17,13 @@
 
 subroutine hecmw_dist_result_copy_c2f(hecMESHnew, adapRES)
       use   hecmw_util
-      use   hecmw_result 
+      use   hecmw_result
       use   hecmw_io
       use   hecmw_dist_copy_f2c_f
       type (hecmwST_local_mesh) :: hecMESHnew
       type (hecmwST_result_data):: adapRES
-   
-	  
+
+
 
   if(adapRES%nn_component .gt.0) then
       do i=1, adapRES%nn_component
@@ -41,4 +41,4 @@ subroutine hecmw_dist_result_copy_c2f(hecMESHnew, adapRES)
   endif
 
 end subroutine  hecmw_dist_result_copy_c2f
-  
+

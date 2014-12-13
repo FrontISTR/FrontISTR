@@ -27,7 +27,7 @@ contains
        TYPE (hecmwST_local_mesh) :: hecMESH
        TYPE (hecmwST_matrix)     :: hecMAT
        TYPE (lczparam)           :: myEIG
-       
+
 
 
 !*Initialize
@@ -74,7 +74,7 @@ contains
        tinit = .FALSE.
        RETURN
       ENDIF
-      
+
       IF(myrank .EQ. 0) THEN
        IF(teachiter) THEN
 !*------------------------------- Solver timing Results --------------------------------*
@@ -108,11 +108,11 @@ contains
        WRITE(IMSG,*) '*----------------------------------------------*'
        ENDIF
 !*--------------------------------------------------------------------------------------*
-      ENDIF 
+      ENDIF
 
       IF(tenditer) THEN
-       WRITE(IMSG,*) 
-       WRITE(IMSG,*) 
+       WRITE(IMSG,*)
+       WRITE(IMSG,*)
        WRITE(IMSG,*) '*-----------------------------------------------*'
        WRITE(IMSG,*) '*               TIMING SUMMARY                  *'
        WRITE(IMSG,*) '*-----------------------------------------------*'
@@ -147,7 +147,7 @@ contains
        WRITE(IMSG,*) '+=-=- LANCZOS LOOP AVERAGE TIME INFO. -=-+'
        IF (hecMAT%Iarray(99).EQ.2) THEN
          WRITE(IMSG,*) '== For direct solver factorization time is excluded' &
-     & //' from Lanczos loop time ==' 
+     & //' from Lanczos loop time =='
        ENDIF
        WRITE(IMSG,'(''CPU TIME TOTAL (SEC)='',F10.2)') tlczavt/LTRIAL
        WRITE(IMSG,'(''CPU TIME USER   (SEC)='',F10.2)') tlczavu/LTRIAL
@@ -168,4 +168,4 @@ contains
       END subroutine
 
 end module m_time_log
- 
+

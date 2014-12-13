@@ -66,7 +66,7 @@ HECMW_strcpy_f2c_r(const char *fstr, int flen, char *buf, int bufsize)
 	if(fstr == NULL) return NULL;
 	if(flen <= 0) return NULL;
 	if(buf == NULL) return NULL;
-	if(bufsize <= 0) return NULL; 
+	if(bufsize <= 0) return NULL;
 
 	len = 0;
 	for(i=flen-1; i >= 0; i--) {
@@ -87,7 +87,7 @@ HECMW_strcpy_f2c_r(const char *fstr, int flen, char *buf, int bufsize)
 	return buf;
 }
 
-int 
+int
 HECMW_strcpy_c2f(const char *cstr, char *fstr, int flen)
 {
 	int clen;

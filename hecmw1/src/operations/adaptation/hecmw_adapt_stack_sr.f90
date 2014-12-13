@@ -40,7 +40,7 @@
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta1
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta2
       integer(kind=kint ), dimension(:  ), save, allocatable :: req1
-      integer(kind=kint ), dimension(:  ), save, allocatable :: req2  
+      integer(kind=kint ), dimension(:  ), save, allocatable :: req2
 
       integer(kind=kint ), save :: NFLAG
       data NFLAG/0/
@@ -54,7 +54,7 @@
         allocate (req2(NEIBPETOT))
         NFLAG= 1
       endif
-       
+
 !C
 !C-- SEND
       do neib= 1, NEIBPETOT

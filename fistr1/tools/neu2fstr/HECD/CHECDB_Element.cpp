@@ -235,7 +235,7 @@ void CHECDB_Element::Write( CHECData* hecd )
 			hecd->AddDataLineItems( "I", iter->node[i] );
 		}
 		hecd->WriteDataLine();
-	}	
+	}
 }
 
 

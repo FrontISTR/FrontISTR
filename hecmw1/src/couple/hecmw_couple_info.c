@@ -35,11 +35,11 @@
 #include "hecmw_couple_control.h"
 #include "hecmw_couple_info.h"
 
- 
+
 static struct intracomm_info {
-	char unit_id[HECMW_NAME_LEN+1];		
-	struct hecmw_couple_comm *comm;		
-	struct intracomm_info *next;		
+	char unit_id[HECMW_NAME_LEN+1];
+	struct hecmw_couple_comm *comm;
+	struct intracomm_info *next;
 } intracomm_root = {
 	"",		/* unit_id	*/
 	NULL,	/* comm		*/
@@ -48,33 +48,33 @@ static struct intracomm_info {
 
 
 static struct intercomm_info {
-	char couple_id[HECMW_NAME_LEN+1];	
-	char unit1_id[HECMW_NAME_LEN+1];	
-	char unit2_id[HECMW_NAME_LEN+1];	
-	struct hecmw_couple_comm *comm;		
-	struct intercomm_info *next;		
+	char couple_id[HECMW_NAME_LEN+1];
+	char unit1_id[HECMW_NAME_LEN+1];
+	char unit2_id[HECMW_NAME_LEN+1];
+	struct hecmw_couple_comm *comm;
+	struct intercomm_info *next;
 } intercomm_root = {
 	"",		/* couple_id	*/
 	"",		/* unit1_id		*/
 	"",		/* unit2_id		*/
-	NULL,	/* comm			*/	
+	NULL,	/* comm			*/
 	NULL,	/* next			*/
 };
 
 
 static struct couple_info {
-	char boundary_id[HECMW_NAME_LEN+1];		
-	char couple_id[HECMW_NAME_LEN+1];		
-	char unit1_id[HECMW_NAME_LEN+1];		
-	char unit2_id[HECMW_NAME_LEN+1];		
-	int couple_type;						
-	int direction;							
-	double tolerance;						
-	double bbcoef;							
-	double bgcoef;							
-	struct hecmw_couple_group *unit1_grp;	
-	struct hecmw_couple_group *unit2_grp;	
-	struct couple_info *next;				
+	char boundary_id[HECMW_NAME_LEN+1];
+	char couple_id[HECMW_NAME_LEN+1];
+	char unit1_id[HECMW_NAME_LEN+1];
+	char unit2_id[HECMW_NAME_LEN+1];
+	int couple_type;
+	int direction;
+	double tolerance;
+	double bbcoef;
+	double bgcoef;
+	struct hecmw_couple_group *unit1_grp;
+	struct hecmw_couple_group *unit2_grp;
+	struct couple_info *next;
 } couple_root = {
 	"",								/* boundary_id		*/
 	"",								/* couple_id		*/

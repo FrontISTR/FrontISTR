@@ -30,14 +30,14 @@
 
 
 struct hecmw_couple_inter_iftable {
-	int n_neighbor_pe_import;	
-	int *neighbor_pe_import;    
-	int *import_index;			
-	int *import_item;			
-	int n_neighbor_pe_export;	
-	int *neighbor_pe_export;	
-	int *export_index;			
-	int *export_item;			
+	int n_neighbor_pe_import;
+	int *neighbor_pe_import;
+	int *import_index;
+	int *import_item;
+	int n_neighbor_pe_export;
+	int *neighbor_pe_export;
+	int *export_index;
+	int *export_item;
 };
 
 extern void

@@ -30,7 +30,7 @@ contains
       use m_fstr
       use m_fstr_StiffMatrix
       use m_fstr_AddBC
-      use fstr_matrix_con_contact   
+      use fstr_matrix_con_contact
       use hecmw_util
 !C*-------- Modules for Lanczos method --------------*
       use lczparm
@@ -109,8 +109,8 @@ contains
 !C*------------ Assemble stiffness matrix ----------*
       if( fstrPARAM%solution_type==6 ) then
         fstrSOLID%dunode = 0.d0
-        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )    
-        call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)  
+        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
+        call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
       else
         call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
       endif
@@ -343,7 +343,7 @@ contains
 !C* ///  ^rj = -rj - qj-1*btaj  ///
         CALL SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),ntotal)
 
-!C* ///  alfj = qj^T[M][^rj] = pj^T[^rj]  /// 
+!C* ///  alfj = qj^T[M][^rj] = pj^T[^rj]  ///
         CALL VECPRO1(AALF,LVECP,EM,Gntotal)
         ALF(ITER)=AALF
         if (.not. ds) then !In case of Direct Solver prevent MPI
@@ -455,7 +455,7 @@ contains
             prechk1 = SQRT(prechk1)
           ELSE
             prechk1 = 1.
-          ENDIF 
+          ENDIF
 
           CCHK1 = (BTA(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
           IF(cchk .LT. ABS(cchk1)) THEN
@@ -497,7 +497,7 @@ contains
       k = nget
       IF(k .GT. ltrial) k = ltrial
       DO kk = 1,k
-        kiter = NEW(kk) 
+        kiter = NEW(kk)
         DO jiter = 1,ltrial
           DO iiter =1,ntotal
             ewk(iiter,kk) = ewk(iiter,kk) &

@@ -25,41 +25,41 @@
 !                                                                    !
 !======================================================================!
 MODULE m_static_LIB_3dIC
-   
+
    USE hecmw, only : kint, kreal
    USE m_utilities
    USE elementInfo
-   
+
    IMPLICIT NONE
-   
+
    CONTAINS
-   
+
 !>  CALCULATION STIFF Matrix for C3D8IC ELEMENT
 !----------------------------------------------------------------------*
    SUBROUTINE STF_C3D8IC                                            &
               (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               nddisp, ehdisp)                                      
+               nddisp, ehdisp)
 !----------------------------------------------------------------------*
-    
+
     USE mMechGauss
     USE m_MatMatrix
     USE m_common_struct
     USE m_static_LIB_3d, ONLY: GEOMAT_C3
-    
+
 !---------------------------------------------------------------------
-    
+
     INTEGER(kind=kint), INTENT(IN)  :: etype                !< element type, not used here
     INTEGER(kind=kint), INTENT(IN)  :: nn                   !< number of elements nodes
     REAL(kind=kreal), INTENT(IN)    :: ecoord(3, nn)        !< nodal coord of curr element
     TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)           !< Info of qudrature points
     REAL(kind=kreal), INTENT(OUT)   :: stiff(:, :)          !< stiffness matrix
-    INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID             
+    INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)         !< variables to define matreial coordinate system
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn) !< nodal displacemwent
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: ehdisp(3, 3)  !< enhanced disp of bending mode
-    
+
 !---------------------------------------------------------------------
-    
+
     INTEGER(kind=kint) :: flag
     INTEGER(kind=kint), PARAMETER :: ndof = 3
     REAL(kind=kreal) :: D(6, 6), B(6, ndof*(nn+3)), DB(6, ndof*(nn+3))
@@ -74,21 +74,21 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal) :: B1(6, ndof*(nn+3))
     REAL(kind=kreal) :: Smat(9, 9)
     REAL(kind=kreal) :: BN(9, ndof*(nn+3)), SBN(9, ndof*(nn+3))
-    
+
 !---------------------------------------------------------------------
-    
+
     fetype = fe_hex8n
     IF( PRESENT(nddisp) .AND. PRESENT(ehdisp) ) THEN
       unode(:, 1:nn)      = nddisp(:, :)
       unode(:, nn+1:nn+3) = ehdisp(:, :)
     END IF
-    
+
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
     IF( .NOT. PRESENT(nddisp) ) flag = INFINITE    ! enforce to infinite deformation analysis
     elem(:, :) = ecoord(:, :)
     IF( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+unode(:, 1:nn)
-    
+
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
     CALL getJacobian(fetype, nn, naturalcoord, elem, det, jacobian, inverse)
@@ -99,12 +99,12 @@ MODULE m_static_LIB_3dIC
     tmpstiff(:, :) = 0.0D0
     B1(1:6, 1:(nn+3)*ndof) = 0.0D0
     BN(1:9, 1:(nn+3)*ndof) = 0.0D0
-    
+
     DO LX = 1, NumOfQuadPoints(fetype)
-      
+
       CALL getQuadPoint(fetype, LX, naturalCoord)
       CALL getGlobalDeriv( fetype, nn, naturalcoord, elem, det, gderiv(1:nn, 1:3) )
-      
+
       IF( cdsys_ID > 0 ) THEN
         CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         IF( serr == -1 ) STOP "Fail to setup local coordinate"
@@ -113,12 +113,12 @@ MODULE m_static_LIB_3dIC
         END IF
       END IF
       CALL MatlMatrix( gausses(LX), D3, D, 1.0D0, coordsys )
-      
+
       IF( flag == UPDATELAG ) then
         CALL GEOMAT_C3( gausses(LX)%stress, mat )
         D(:, :) = D(:, :)-mat
       ENDIF
-      
+
       ! -- Derivative of shape function of imcompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
@@ -127,7 +127,7 @@ MODULE m_static_LIB_3dIC
       gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse(1, :)/det
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
-      
+
       wg = getWeight(fetype, LX)*det
       B(1:6, 1:(nn+3)*ndof)=0.0D0
       DO j = 1, nn+3
@@ -141,13 +141,13 @@ MODULE m_static_LIB_3dIC
         B(6, 3*j-2) = gderiv(j, 3)
         B(6, 3*j  ) = gderiv(j, 1)
       END DO
-      
+
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
       IF( flag == TOTALLAG ) THEN
         ! ---dudx(i,j) ==> gdispderiv(i,j)
         gdispderiv(1:ndof,1:ndof) = MATMUL( unode(1:ndof, 1:nn+3), gderiv(1:nn+3, 1:ndof) )
         DO j = 1, nn+3
-          
+
           B1(1, 3*j-2) = gdispderiv(1, 1)*gderiv(j, 1)
           B1(1, 3*j-1) = gdispderiv(2, 1)*gderiv(j, 1)
           B1(1, 3*j  ) = gdispderiv(3, 1)*gderiv(j, 1)
@@ -166,21 +166,21 @@ MODULE m_static_LIB_3dIC
           B1(6, 3*j-2) = gdispderiv(1, 3)*gderiv(j, 1)+gdispderiv(1, 1)*gderiv(j, 3)
           B1(6, 3*j-1) = gdispderiv(2, 3)*gderiv(j, 1)+gdispderiv(2, 1)*gderiv(j, 3)
           B1(6, 3*j  ) = gdispderiv(3, 3)*gderiv(j, 1)+gdispderiv(3, 1)*gderiv(j, 3)
-          
+
         END DO
         ! ---BL = BL0 + BL1
         DO j = 1, (nn+3)*ndof
           B(:, j) = B(:, j)+B1(:, j)
         END DO
-        
+
       END IF
-      
+
       DB(1:6, 1:(nn+3)*ndof) = MATMUL( D, B(1:6, 1:(nn+3)*ndof) )
       FORALL( i=1:(nn+3)*ndof, j=1:(nn+3)*ndof )
         tmpstiff(i, j) = tmpstiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
       END FORALL
     END DO
-    
+
     ! calculate the stress matrix ( TOTAL LAGRANGE METHOD )
     IF( flag == TOTALLAG .OR. flag == UPDATELAG ) THEN
       stress(1:6) = gausses(LX)%stress
@@ -212,30 +212,30 @@ MODULE m_static_LIB_3dIC
         tmpstiff(i, j) = tmpstiff(i, j)+DOT_PRODUCT( BN(:, i), SBN(:, j) )*wg
       END FORALL
     END IF
-    
+
     ! -----Condense tmpstiff to stiff
     xj(1:9, 1:9)= tmpstiff(nn*ndof+1:(nn+3)*ndof, nn*ndof+1:(nn+3)*ndof)
     CALL calInverse(9, xj)
     tmpk = MATMUL( tmpstiff( 1:nn*ndof, nn*ndof+1:(nn+3)*ndof ), xj )
     stiff(1:nn*ndof, 1:nn*ndof) = tmpstiff(1:nn*ndof, 1:nn*ndof)-MATMUL( tmpk, tmpstiff(nn*ndof+1:(nn+3)*ndof, 1:nn*ndof)  )
-    
+
    END SUBROUTINE STF_C3D8IC
-   
-   
+
+
 !>  Update Strain stress of this element
 !----------------------------------------------------------------------*
    SUBROUTINE UpdateST_C3D8IC                        &
               (etype, nn, xx, yy, zz, tt, t0, edisp, &
-               gausses, cdsys_ID, coords)            
+               gausses, cdsys_ID, coords)
 !----------------------------------------------------------------------*
-    
+
     USE m_fstr
     USE mMechGauss
     USE m_MatMatrix
     USE m_common_struct
-    
+
 !---------------------------------------------------------------------
-    
+
     INTEGER(kind=kint), PARAMETER     :: ndof=3
     INTEGER(kind=kint), INTENT(IN)    :: etype                   !< element type, not used here
     INTEGER(kind=kint), INTENT(IN)    :: nn                      !< number of element nodes
@@ -243,11 +243,11 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal), INTENT(IN)      :: tt(nn), t0(nn)          !< current and ref temprature
     REAL(kind=kreal), INTENT(IN)      :: edisp(nn*ndof)          !< nodal displacement
     TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)              !< info about qudrature points
-    INTEGER(kind=kint), INTENT(IN)    :: cdsys_ID                
+    INTEGER(kind=kint), INTENT(IN)    :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT)   :: coords(3, 3)            !< variables to define matreial coordinate system
-    
+
 !---------------------------------------------------------------------
-    
+
     REAL(kind=kreal) :: ALP, ALP0
     REAL(kind=kreal) :: D(6, 6), B(6, ndof*(nn+3)), DB(6, ndof*(nn+3))
     REAL(kind=kreal) :: det, wg, ecoord(3, nn)
@@ -259,16 +259,16 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal) :: tmpforce(9), cdisp((nn+3)*3)
     REAL(kind=kreal) :: TEMPC, TEMP0, THERMAL_EPS, tm(6, 6), outa(1), ina(1)
     LOGICAL :: ierr, matlaniso
-    
+
 !---------------------------------------------------------------------
-    
+
     matlaniso = .FALSE.
     IF( cdsys_ID > 0 ) THEN   ! cannot define aniso exapansion when no local coord defined
       ina = TT(1)
       CALL fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       IF( .NOT. ierr ) matlaniso = .true.
     END IF
-    
+
     fetype = fe_hex8n
     ecoord(1, :) = XX(:)
     ecoord(2, :) = YY(:)
@@ -283,12 +283,12 @@ MODULE m_static_LIB_3dIC
     !    [   Kad   Kaa ]
     stiff(:, :) = 0.0D0
     B(1:6, 1:(nn+3)*ndof) = 0.0D0
-    
+
     DO IC = 1, NumOfQuadPoints(fetype)
-      
+
       CALL getQuadPoint(fetype, IC, naturalCoord)
       CALL getGlobalDeriv( fetype, nn, naturalcoord, ecoord, det, gderiv(1:nn, 1:3) )
-      
+
       IF( cdsys_ID > 0 ) THEN
         CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         IF( serr == -1 ) STOP "Fail to setup local coordinate"
@@ -297,7 +297,7 @@ MODULE m_static_LIB_3dIC
         END IF
       END IF
       CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys )
-      
+
       ! -- Derivative of shape function of imcompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
@@ -306,7 +306,7 @@ MODULE m_static_LIB_3dIC
       gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse(1, :)/det
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
-      
+
       wg = getWeight(fetype, IC)*det
       DO j = 1, nn+3
         B(1, 3*j-2) = gderiv(j, 1)
@@ -319,11 +319,11 @@ MODULE m_static_LIB_3dIC
         B(6, 3*j-2) = gderiv(j, 3)
         B(6, 3*j  ) = gderiv(j, 1)
       END DO
-      
+
       DB(1:6, 1:(nn+3)*ndof) = MATMUL( D, B(1:6, 1:(nn+3)*ndof) )
       stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                     &
       = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                   &
-       +MATMUL( TRANSPOSE(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg 
+       +MATMUL( TRANSPOSE(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg
     END DO
     xj(1:9,1:9)= stiff(nn*ndof+1:(nn+3)*ndof, nn*ndof+1:(nn+3)*ndof)
     CALL calInverse(9, xj)
@@ -332,10 +332,10 @@ MODULE m_static_LIB_3dIC
     cdisp(1:nn*3) = edisp(:)
     ! ---  -[Kaa]-1 * [Kda] * edisp
     cdisp(nn*3+1:(nn+3)*3) = -MATMUL( xj(:, :), tmpforce(:) )
-    
+
     ! ---- Now strain and stress calculation
     DO IC = 1, NumOfQuadPoints(etype)
-      
+
       CALL getQuadPoint( etype, IC, naturalCoord(:) )
       CALL getShapeFunc( etype, naturalcoord, H(1:nn) )
       CALL getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv(1:nn,1:3) )
@@ -347,7 +347,7 @@ MODULE m_static_LIB_3dIC
       gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse(1, :)/det
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
-      
+
       IF( matlaniso ) THEN
         CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys, serr )
         IF( serr == -1 ) STOP "Fail to setup local coordinate"
@@ -355,7 +355,7 @@ MODULE m_static_LIB_3dIC
           WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
         END IF
       END IF
-      
+
       B(1:6, 1:(nn+3)*ndof) = 0.0D0
       DO j = 1, nn+3
         B(1, 3*j-2) = gderiv(j, 1)
@@ -368,10 +368,10 @@ MODULE m_static_LIB_3dIC
         B(6, 3*j-2) = gderiv(j, 3)
         B(6, 3*j  ) = gderiv(j, 1)
       END DO
-      
+
       TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
       TEMP0 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
-      
+
       IF( cdsys_ID > 0 ) THEN
         CALL set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys(:,:), serr)
         IF( serr == -1 ) STOP "Fail to setup local coordinate"
@@ -380,7 +380,7 @@ MODULE m_static_LIB_3dIC
         END IF
       END IF
       CALL MatlMatrix( gausses(IC), D3, D, 0.0D0, coordsys, TEMPC )
-      
+
       ina(1) = TEMPC
       IF( matlaniso ) THEN
         CALL fetch_TableData( MC_ORTHOEXP, gausses(IC)%pMaterial%dict, alpo(:), ierr, ina )
@@ -399,7 +399,7 @@ MODULE m_static_LIB_3dIC
         IF( ierr ) outa(1) = gausses(IC)%pMaterial%variables(M_EXAPNSION)
         alp0 = outa(1)
       END IF
-      
+
       !**
       !** THERMAL strain
       !**
@@ -409,7 +409,7 @@ MODULE m_static_LIB_3dIC
         END DO
         EPSTH(4:6) = 0.0D0
         CALL transformation(coordsys, tm)
-        EPSTH(:) = MATMUL( EPSTH(:), tm  ) ! to global coord  
+        EPSTH(:) = MATMUL( EPSTH(:), tm  ) ! to global coord
         EPSTH(4:6) = EPSTH(4:6)*2.0D0
       ELSE
         THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
@@ -434,10 +434,10 @@ MODULE m_static_LIB_3dIC
       !**
       gausses(IC)%strain(1:6) = EPSA(1:6)
       gausses(IC)%stress(1:6) = SGM(1:6)
-      
+
     END DO
-    
+
    END SUBROUTINE UpdateST_C3D8IC
-   
-   
+
+
 END MODULE m_static_LIB_3dIC

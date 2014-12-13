@@ -38,8 +38,8 @@
 
 
 struct link_list {
-	int item;					
-	struct link_list *next;		
+	int item;
+	struct link_list *next;
 };
 
 
@@ -674,7 +674,7 @@ HECMW_couple_set_boundary_info(const char *boundary_id, int unit_specifier,
 		boundary->data_type = group->data_type;
 		if(check_elem_group_name(mesh, group)) goto error;
 		if(set_boundary_elem_by_elem(mesh, group, boundary)) goto error;
-		if(set_boundary_node_by_elem(mesh, boundary)) goto error; 
+		if(set_boundary_node_by_elem(mesh, boundary)) goto error;
 		*/
 
 	} else if(group->geom_type == HECMW_COUPLE_SURFACE_GROUP) {		/* Surface Group	*/

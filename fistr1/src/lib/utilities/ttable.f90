@@ -25,7 +25,7 @@
 module m_table
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
-  
+
 !
 ! The length of the keys
 !
@@ -46,17 +46,17 @@ module m_table
 ! The "null" value for these data
 !
   type(tTable), parameter :: DICT_NULL = tTable( 0,0,0, 0,null() )
-  
+
   INTERFACE ASSIGNMENT(=)
     MODULE PROCEDURE TableCopy
   END INTERFACE
-  
+
   INTERFACE OPERATOR(==)
     MODULE PROCEDURE TableCompare
   END INTERFACE
-  
+
   contains
-  
+
     subroutine init_table( table, ndp, col, row, tbval )
       type( tTable ), intent(inout)   :: table
       integer, intent(in)             :: ndp, col, row
@@ -73,7 +73,7 @@ module m_table
         table%tbval(i,j) = tbval(i,j)
       enddo
       enddo
- 	  
+
       do i=1,ndp
         table%tbindex(i) =1
 		tbindexval(1) = table%tbval(table%tbcol-i+1, 1)
@@ -86,7 +86,7 @@ module m_table
 	!	  print *, 1, i, table%tbindex(i), tbindexval(table%tbindex(i))
         enddo
       enddo
-      
+
 	  j=1
       do i=1,ndp
         j=j*table%tbindex(i)
@@ -94,12 +94,12 @@ module m_table
       if( j/= row) stop "Error in table defnition!"
     !  print *, j,row, table%tbindex(1:ndp); pause
     end subroutine
-	
+
     subroutine finalize_table( table )
       type( tTable ), intent(inout) :: table
       if( associated( table%tbval ) ) deallocate( table%tbval )
     end subroutine
-	  
+
     subroutine print_table( table, fname )
       type( tTable ), intent(in) :: table
       integer, intent(in)        :: fname
@@ -109,7 +109,7 @@ module m_table
         write(fname,*) i,(table%tbval(j,i),j=1,table%tbcol)
       enddo
     end subroutine
-	
+
 	logical function TableCompare( lhs, rhs )
       TYPE(tTable), INTENT(IN) :: lhs
       TYPE(tTable), INTENT(IN) :: rhs
@@ -128,12 +128,12 @@ module m_table
       enddo
       TableCompare = .true.
     END function
-	
+
 	SUBROUTINE TableCopy( lhs, rhs )
       TYPE(tTable), INTENT(OUT) :: lhs
       TYPE(tTable), INTENT(IN)  :: rhs
       integer :: i,j
-      
+
       lhs%ndepends = rhs%ndepends
       lhs%tbcol = rhs%tbcol
       lhs%tbrow = rhs%tbrow
@@ -160,7 +160,7 @@ module Table_DICTS
     use m_Table, DICT_DATA => tTable
     implicit none
 	integer, parameter, private :: kreal = kind(0.0d0)
-	
+
 	private :: GetTableGrad, GetTableData
 
     include "dictionary.f90"
@@ -179,10 +179,10 @@ module Table_DICTS
       if( .not. associated(dicval) ) then
         ierr=.true.;  return
       endif
-      
+
     end subroutine
-	
-	
+
+
 	!> fetch a data table row
     integer function fetch_TableRow( key, dict )
       character(len=*), intent(in)   :: key     !< parameter key
@@ -192,19 +192,19 @@ module Table_DICTS
       dicval => dict_get_key( dict, key )
       fetch_TableRow = -1
       if( .not. associated(dicval) ) return
-      fetch_TableRow = dicval%tbrow	
+      fetch_TableRow = dicval%tbrow
      ! call finalize_table( dicval )
     end function
-	
+
 	!> fetch a data by interpolation (This subroutine is specified for calculating
-	!! temperature dependent hardening coefficient)	 
+	!! temperature dependent hardening coefficient)
     subroutine fetch_TableGrad( key, a, dict, outa, ierr )
       character(len=*), intent(in)   :: key     !< parameter key
       real(kind=kreal), intent(in)   :: a(:)    !< automatic variables
       type(DICT_STRUCT), pointer     :: dict    !< data table
       real(kind=kreal), intent(out)  :: outa    !< gradient
       logical, intent(out)           :: ierr
-	  
+
       type(DICT_DATA), pointer       :: dicval
       integer          :: i, j, na, dd, crow, cindex
       integer          :: cindex1(MAXINDEX), cindex2(MAXINDEX)
@@ -213,9 +213,9 @@ module Table_DICTS
       if( .not. associated(dicval) ) then
         ierr=.true.;  return
       endif
-	  
+
       cindex = 1;  crow=1
-      dd = dicval%tbrow	
+      dd = dicval%tbrow
 	  na = 1
       if( size(a) > dicval%ndepends ) then   ! in case no dependent definition
         na = size(a) - dicval%ndepends+1
@@ -223,10 +223,10 @@ module Table_DICTS
 
       call GetTableGrad( a(na:), cindex, dicval, dd, crow, outa )
      ! call finalize_table( dicval )
-      
+
     end subroutine
-	
-	!> fetch a grad value by interpolation  
+
+	!> fetch a grad value by interpolation
     recursive subroutine GetTableGrad( a, cindex, table, dd, crow, outa )
       real(kind=kreal), intent(in)   :: a(:)
       integer, intent(inout)         :: cindex
@@ -248,7 +248,7 @@ module Table_DICTS
            outa = 0.d0
         else
           do i=crow, crow+dd-2
-            if( a(cindex)>=table%tbval(2, i) .and. a(cindex)<table%tbval(2, i+1) ) then 
+            if( a(cindex)>=table%tbval(2, i) .and. a(cindex)<table%tbval(2, i+1) ) then
               outa = (table%tbval(1, i+1)-table%tbval(1, i))/(table%tbval(2, i+1)-table%tbval(2, i))
               exit
             endif
@@ -258,25 +258,25 @@ module Table_DICTS
         if( a(cindex)<=table%tbval(ccol, crow) ) then
               cindex = cindex+1
               dd = ddd
-              call GetTableGrad( a, cindex, table, dd, crow, outa )	
+              call GetTableGrad( a, cindex, table, dd, crow, outa )
         elseif( a(cindex)>=table%tbval(ccol, crow+dd-1) ) then
               crow = crow+dd-ddd
               cindex = cindex+1
               dd = ddd
-              call GetTableGrad( a, cindex, table, dd, crow, outa )	
+              call GetTableGrad( a, cindex, table, dd, crow, outa )
         else
           do i=crow, crow+dd-2, ddd
             if( a(cindex)==table%tbval(ccol, i) ) then
               crow = i
               cindex = cindex+1
               dd = ddd
-              call GetTableGrad( a, cindex, table, dd, crow, outa )	
-              exit	
+              call GetTableGrad( a, cindex, table, dd, crow, outa )
+              exit
             elseif( a(cindex)==table%tbval(ccol, i+ddd) ) then
               crow = i+ddd
               cindex = cindex+1
               dd = ddd
-              call GetTableGrad( a, cindex, table, dd, crow, outa )	
+              call GetTableGrad( a, cindex, table, dd, crow, outa )
               exit
             elseif( a(cindex)>table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+ddd) ) then
 		      crow=i
@@ -284,7 +284,7 @@ module Table_DICTS
               dd = ddd
               call GetTableGrad( a, cindex, table, dd, crow, val1 )
               crow = i+ddd
-              call GetTableGrad( a, cindex, table, dd, crow, val2 )	
+              call GetTableGrad( a, cindex, table, dd, crow, val2 )
               lambda = (a(cindex-1)-table%tbval(ccol, i))/(table%tbval(ccol, crow)-table%tbval(ccol, i))
               outa = (1.d0-lambda)*val1+ lambda* val2
               exit
@@ -292,41 +292,41 @@ module Table_DICTS
           enddo
         endif
       endif
-      
+
     end subroutine
-	
+
 	!> fetch a data by interpolation (This subroutine is specified for calculating
-	!! temperature dependent hardening coefficient)	 
+	!! temperature dependent hardening coefficient)
     subroutine fetch_TableData( key, dict, outa, ierr, a )
       character(len=*), intent(in)   :: key     !< parameter key
       type(DICT_STRUCT), pointer     :: dict    !< data table
       real(kind=kreal), intent(out)  :: outa(:) !< output data
       logical, intent(out)           :: ierr    !< erro message
       real(kind=kreal), intent(in), optional   :: a(:)    !< automatic variables
-	  
+
       type(DICT_DATA), pointer       :: dicval
       integer          :: nval, na, dd, crow, cindex
-	  
+
       dicval => dict_get_key( dict, key )
       ierr = .false.
       if( .not. associated(dicval) ) then
         ierr=.true.;  return
       endif
 	!  call print_table( dicval, 6 )
-	  
+
       nval = dicval%tbcol-dicval%ndepends
       if( nval /= size(outa) ) then
         ierr=.true.;  return
       endif
-      if( dicval%tbrow==1 ) then      
+      if( dicval%tbrow==1 ) then
          outa(:) =dicval%tbval(1:nval, 1); return
-      endif	 
+      endif
       if( .not. present(a) ) then
          outa(:) =dicval%tbval(1:nval, 1); return
       endif
-	  
+
       cindex = 1;  crow=1
-      dd = dicval%tbrow	
+      dd = dicval%tbrow
 	  na = 1
       if( size(a) > dicval%ndepends ) then   ! in case no dependent definition
         na = size(a) - dicval%ndepends+1
@@ -337,17 +337,17 @@ module Table_DICTS
     !  endif
       call GetTableData( a(na:), cindex, dicval, dd, crow, outa )
     !  call finalize_table( dicval )
-      
+
     end subroutine
-	
-	!> fetch a data value by interpolation  
+
+	!> fetch a data value by interpolation
     recursive subroutine GetTableData( a, cindex, table, dd, crow, outa )
       real(kind=kreal), intent(in)   :: a(:)
       integer, intent(inout)         :: cindex
       type(DICT_DATA)                :: table
       integer, intent(inout)         :: dd, crow
       real(kind=kreal), intent(out)  :: outa(:)
-	  
+
       integer          :: i, j, na, nn, ccol, ddd, nval
       real(kind=kreal) :: cval, lambda, val1(MAXINDEX), val2(MAXINDEX)
       logical          :: isok
@@ -363,9 +363,9 @@ module Table_DICTS
            outa(:) = table%tbval(1:ccol-1, crow+dd-1)
         else
           do i=crow, crow+dd-2
-            if( a(cindex)>=table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+1) ) then 
+            if( a(cindex)>=table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+1) ) then
               lambda = (a(cindex)-table%tbval(ccol, i))/(table%tbval(ccol, i+1)-table%tbval(ccol, i))
-              outa(:) = (1.d0-lambda)*table%tbval(1:ccol-1, i)+ lambda* table%tbval(1:ccol-1, i+1) 
+              outa(:) = (1.d0-lambda)*table%tbval(1:ccol-1, i)+ lambda* table%tbval(1:ccol-1, i+1)
               exit
             endif
           enddo
@@ -374,25 +374,25 @@ module Table_DICTS
         if( a(cindex)<=table%tbval(ccol, crow) ) then
             cindex = cindex+1
             dd = ddd
-            call GetTableData( a, cindex, table, dd, crow, outa )	
+            call GetTableData( a, cindex, table, dd, crow, outa )
         elseif( a(cindex)>=table%tbval(ccol, crow+dd-1) ) then
             crow = crow+dd-ddd
             cindex = cindex+1
             dd = ddd
-            call GetTableData( a, cindex, table, dd, crow, outa )	
+            call GetTableData( a, cindex, table, dd, crow, outa )
         else
           do i=crow, crow+dd-2, ddd
             if( a(cindex)==table%tbval(ccol, i) ) then
               crow = i
               cindex = cindex+1
               dd = ddd
-              call GetTableData( a, cindex, table, dd, crow, outa )	
-              exit	
+              call GetTableData( a, cindex, table, dd, crow, outa )
+              exit
             elseif( a(cindex)==table%tbval(ccol, i+ddd) ) then
               crow = i+ddd
               cindex = cindex+1
               dd = ddd
-              call GetTableData( a, cindex, table, dd, crow, outa )	
+              call GetTableData( a, cindex, table, dd, crow, outa )
               exit
             elseif( a(cindex)>table%tbval(ccol, i) .and. a(cindex)<table%tbval(ccol, i+ddd) ) then
 		      crow=i
@@ -400,7 +400,7 @@ module Table_DICTS
               dd = ddd
               call GetTableData( a, cindex, table, dd, crow, val1(1:nval) )
               crow = i+ddd
-              call GetTableData( a, cindex, table, dd, crow, val2(1:nval) )	
+              call GetTableData( a, cindex, table, dd, crow, val2(1:nval) )
               lambda = (a(cindex-1)-table%tbval(ccol, i))/(table%tbval(ccol, crow)-table%tbval(ccol, i))
               outa(:) = (1.d0-lambda)*val1(1:nval)+ lambda* val2(1:nval)
               exit
@@ -408,15 +408,15 @@ module Table_DICTS
           enddo
         endif
       endif
-      
+
     end subroutine
 
 
-	!> Print our the contents of a dictionary	
+	!> Print our the contents of a dictionary
     subroutine print_TableData( dict, fname )
       type(DICT_STRUCT), pointer     :: dict
       integer, intent(in)            :: fname
-	  
+
       type(DICT_DATA)             :: dicval
       type(LINKED_LIST), pointer  :: current
       integer :: i
@@ -426,14 +426,14 @@ module Table_DICTS
            do while ( associated(current) )
              if( trim(current%data%key) /= 'INIT' ) then
                write( fname, * ) trim(current%data%key)
-               call print_table( current%data%value, fname )  
+               call print_table( current%data%value, fname )
              endif
              current => current%next
            enddo
         endif
       enddo
     end subroutine
-	
+
 end module Table_DICTS
 
-  		
+

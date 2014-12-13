@@ -11,7 +11,7 @@
  *      Simulations Using High End Computing Middleware (HEC-MW)"      *
  *                                                                     *
  *=====================================================================*/
- 
+
 #include "hecmw_hash.h"
 #include "hecmw_io_struct.h"
 
@@ -94,7 +94,7 @@ hecmw_hash_p *hecmw_hash_p_new(unsigned int index)
     bin->list = NULL;
     bin++;
   }
-  
+
   return hash;
 }
 
@@ -124,7 +124,7 @@ void *hecmw_hash_p_get(const hecmw_hash_p *hash, const char *key)
 {
   unsigned int index;
   List *list;
-  
+
   if (hash == NULL) return NULL;
   if (key == NULL) return NULL;
 
@@ -162,7 +162,7 @@ int hecmw_hash_p_put(hecmw_hash_p *hash, const char *key, void *value)
   if (hash  == NULL) return 0;
   if (key   == NULL) return 0;
   if (value == NULL) return 0;
-  
+
   stat = 0.8 * hash->n;
   if ( hash->num_put >= stat) {
     if (hecmw_hash_p_resize(hash) == 1) {
@@ -175,14 +175,14 @@ int hecmw_hash_p_put(hecmw_hash_p *hash, const char *key, void *value)
 
   bin = &(hash->bin[index]);
   list = get_list(bin, key);
-  
+
   if (list != NULL) {
     return 1;
   }
-  
+
   new_key = (char *)malloc((key_len+1)*sizeof(char));
   if (new_key == NULL) return 0;
-  
+
   n = bin->n;
   if (n == 0) {
     tmp_list = (List *)malloc(sizeof(List));
@@ -199,7 +199,7 @@ int hecmw_hash_p_put(hecmw_hash_p *hash, const char *key, void *value)
     }
     bin->list = tmp_list;
   }
-  
+
   list = &(bin->list[n]);
   list->key = new_key;
   strcpy(list->key, key);
@@ -207,7 +207,7 @@ int hecmw_hash_p_put(hecmw_hash_p *hash, const char *key, void *value)
   list->hashkey = hashkey;
   bin->n++;
   hash->num_put++;
-  
+
   return 1;
 }
 
@@ -217,7 +217,7 @@ int hecmw_hash_p_resize(hecmw_hash_p *hash)
   unsigned int newsize, index;
   Bin *newbin, *bin, *tmp_bin;
   List *newlist, *list, *tmp_list;
-  
+
   j = 0;
   for (i=0; i<22; i++) {
     if (hash->n == hecmw_hashsize_template[i]) {
@@ -243,12 +243,12 @@ int hecmw_hash_p_resize(hecmw_hash_p *hash)
   }
 
   bin = hash->bin;
-  for (i=0; i < hash->n; i++) { 
+  for (i=0; i < hash->n; i++) {
     list = bin->list;
     for (j=0; j<bin->n; j++) {
       index = list->hashkey % newsize;
       tmp_bin = &(newbin[index]);
-      
+
       n = tmp_bin->n;
       if (n == 0) {
         newlist = (List *)malloc(sizeof(List));
@@ -259,7 +259,7 @@ int hecmw_hash_p_resize(hecmw_hash_p *hash)
         if (newlist == NULL) return 1;
         tmp_bin->list = newlist;
       }
-      
+
       tmp_list = &(tmp_bin->list[n]);
       tmp_list->key = list->key;
       tmp_list->value = list->value;
@@ -270,7 +270,7 @@ int hecmw_hash_p_resize(hecmw_hash_p *hash)
     free(bin->list);
     bin++;
   }
-  
+
   free(hash->bin);
   hash->bin = newbin;
   hash->n = newsize;

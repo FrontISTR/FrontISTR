@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 6 node 
-!!  trianglar element (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 6 node
+!!  trianglar element (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/05/12
@@ -58,9 +58,9 @@ module shape_tri6n
       func(4,2)=-4.d0*xi
       func(5,2)=4.d0*xi
       func(6,2)=4.d0*(st-et)
-      
+
     end subroutine
-    
+
     subroutine Shape2ndDeriv_tri6n(func)
       real(kind=kreal) :: func(6,2,2)
       func(1,1,1) = 4.d0;  func(1,1,2) = 4.d0

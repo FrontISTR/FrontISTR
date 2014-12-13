@@ -38,7 +38,7 @@ subroutine pc_strupr( s )
 end subroutine pc_strupr
 
 
-!> Read in !EIGEN (struct)                                                                          
+!> Read in !EIGEN (struct)
 function fstr_ctrl_get_EIGEN( ctrl, nget, lcztol, lczmax)
         implicit none
         integer(kind=kint) :: ctrl

@@ -23,20 +23,20 @@
 module m_step
    use hecmw
    implicit none
-   
+
    include 'fstr_ctrl_util_f.inc'
-   
+
    integer, parameter :: stepStatic = 1
    integer, parameter :: stepVisco  = 2
 
-   !> Step control such as active boundary condition, convergent condition etc.   
+   !> Step control such as active boundary condition, convergent condition etc.
    type step_info
       integer             :: solution           !< solution type; 1: static;  2:visco
       character( len=80 ) :: CONTROL            !< control type, such as arclength etc
       character( len=80 ) :: ConvControl        !< Judgement of convergency, such as nodal force residual
                                                 !< disp increment, energy
       real(kind=kreal)    :: converg            !< value of convergent judgement
-      
+
       integer :: num_substep                    !< substeps user given
       integer :: max_iter                       !< max number of iteration
       integer :: amp_id                         !< id of amplitude definition
@@ -48,7 +48,7 @@ module m_step
    end type
 
    contains
-   
+
      !> Initializer
      subroutine init_stepInfo( stepinfo )
         type( step_info ), intent(out) :: stepinfo !< step info
@@ -69,7 +69,7 @@ module m_step
         if( .not. associated( stepinfo%Boundary ) ) return
         if( any( stepinfo%Boundary== bnd ) ) isBoundaryActive = .true.
      end function
-	 
+
      !> Is external load in this step active
      logical function isLoadActive( bnd, stepinfo )
         integer, intent(in)           :: bnd      !< group number of boundary condition
@@ -78,7 +78,7 @@ module m_step
         if( .not. associated( stepinfo%Load ) ) return
         if( any( stepinfo%Load == bnd ) ) isLoadActive = .true.
      end function
-	 
+
      !> Is contact condition in this step active
      logical function isContactActive( bnd, stepinfo )
         integer, intent(in)           :: bnd      !< group number of boundary condition
@@ -87,7 +87,7 @@ module m_step
         if( .not. associated( stepinfo%Contact ) ) return
         if( any( stepinfo%Contact== bnd ) ) isContactActive = .true.
      end function
-	 
+
     !> Finalizer
     subroutine free_stepInfo( step )
         type(step_info), intent(inout) :: step  !< step info
@@ -95,7 +95,7 @@ module m_step
         if( associated( step%Load ) )     deallocate( step%Load )
         if( associated( step%Contact ) )  deallocate( step%Contact )
     end subroutine
-	
+
     !> Print out step control
     subroutine fstr_print_steps( nfile, steps )
         integer, intent(in)         :: nfile     !< file number
@@ -104,7 +104,7 @@ module m_step
         nstep = size(steps)
 
         write( nfile, * ) "-----Information of steps:",nstep
-        
+
         do i=1,nstep
           write( nfile, * ) "  -----Step:",i
           write(nfile,*) steps(i)%solution, steps(i)%elapsetime, steps(i)%converg, &

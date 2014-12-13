@@ -13,7 +13,7 @@
 !======================================================================!
 !> \brief  This module manage surface elements in 3D
 !!
-!>  It provides basic definition of surface elements (trianglar and quadrilateral) 
+!>  It provides basic definition of surface elements (trianglar and quadrilateral)
 !!  and functions for fetch its neighborhood information
 
 !>  \author     Xi YUAN (AdavanceSoft)
@@ -35,10 +35,10 @@ integer, parameter       :: l_max_elem_node = 100
       integer              :: n_neighbor           !< size of neighber(:)
       integer, pointer     :: neighbor(:)=>null()  !< index(global) of neighborhood tSurfElement
     end type
-    
+
 contains
 
-  !> Initializer  
+  !> Initializer
   subroutine initialize_surf( eid, etype, nsurf, surf )
     use elementInfo
     integer, intent(in)               :: eid
@@ -47,7 +47,7 @@ contains
     type(tSurfElement), intent(inout) :: surf
     integer :: n, outtype, nodes(100)
     surf%eid = eid
-    call getSubFace( etype, nsurf, outtype, nodes )  
+    call getSubFace( etype, nsurf, outtype, nodes )
     surf%etype = outtype
     n=getNumberOfNodes( outtype )
     allocate( surf%nodes(n) )
@@ -74,7 +74,7 @@ contains
     if( associated( surf%neighbor ) )   &
       write(file,*) ( surf%neighbor(i),i=1,surf%n_neighbor )
   end subroutine
-  
+
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf )
     use m_utilities
@@ -117,7 +117,7 @@ contains
 
             endif
           enddo
-        enddo		
+        enddo
       enddo
     enddo
   end subroutine
@@ -184,5 +184,5 @@ contains
     next_position = surf%neighbor( next_position )
 
   end function next_position
-  
+
 end module

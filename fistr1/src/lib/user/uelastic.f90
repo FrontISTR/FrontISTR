@@ -12,7 +12,7 @@
 !                                                                      !
 !======================================================================!
 !======================================================================!
-!>  \brief   This module provides interface for elastic or hyperelastic 
+!>  \brief   This module provides interface for elastic or hyperelastic
 !>  calculation
 !!
 !>  \author     Xi YUAN (AdavanceSoft)
@@ -31,8 +31,8 @@ subroutine uElasticMatrix( matl, strain, D )
     real(kind=kreal), intent(in)  :: matl(:)   !< material properties
     real(kind=kreal), intent(in)  :: strain(6) !< Green-Lagrangen strain
     real(kind=kreal), intent(out) :: D(6,6)    !< constitutive matrix
-   
-! following examples of linear elasticicty  
+
+! following examples of linear elasticicty
     real(kind=kreal) :: EE, PP
 
     D(:,:)=0.d0
@@ -53,14 +53,14 @@ subroutine uElasticMatrix( matl, strain, D )
     D(6,6)=EE/(1.0+PP)*0.5
 end subroutine
 
-!> This subroutine calculate updated strain and stress   
+!> This subroutine calculate updated strain and stress
 subroutine uElasticUpdate( matl, strain, stress )
     use hecmw
     real(kind=kreal), intent(in)  :: matl(:)   !< material properties
 	real(kind=kreal), intent(in)  :: strain(6) !< strain
     real(kind=kreal), intent(out) :: stress(6) !< stress
-	
-! following examples of linear elasticicty   
+
+! following examples of linear elasticicty
     real(kind=kreal) :: D(6,6)
 	call uElasticMatrix( matl(:), strain, D )
 	stress = matmul( D, strain )

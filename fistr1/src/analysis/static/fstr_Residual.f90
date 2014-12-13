@@ -40,11 +40,11 @@ module m_fstr_Residual
 !C---------------------------------------------------------------------*
       subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID, sub_step,conMAT)
 !C---------------------------------------------------------------------*
-!> In this subroutine, nodal force arose from prescribed displacement constarints 
-!> are cleared and nodal force residual is calculated. 
+!> In this subroutine, nodal force arose from prescribed displacement constarints
+!> are cleared and nodal force residual is calculated.
 !> Those constraints considered here includes:
 !!-#  nodal displacement
-!!-#  equation (or mpc) 
+!!-#  equation (or mpc)
       use m_fstr
       use mULoad
 !#ifdef PARA_CONTACT
@@ -63,7 +63,7 @@ module m_fstr_Residual
       factor = fstrSOLID%factor(2)
 
 !    Set residual load
-      do idof=1, hecMESH%n_node*  hecMESH%n_dof 
+      do idof=1, hecMESH%n_node*  hecMESH%n_dof
         hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
       end do
       ndof = hecMAT%NDOF
@@ -105,7 +105,7 @@ module m_fstr_Residual
       real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
 !    Local variables
       integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num
-      integer(kind=kint) :: grpid  
+      integer(kind=kint) :: grpid
       real(kind=kreal) :: fval, fact
 
       ndof = hecMESH%n_dof
@@ -165,7 +165,7 @@ module m_fstr_Residual
       real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
 !    Local variables
       integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof
-      integer(kind=kint) :: grpid  
+      integer(kind=kint) :: grpid
       real(kind=kreal) :: rhs
 
       ndof = hecMESH%n_dof
@@ -214,9 +214,9 @@ module m_fstr_Residual
       use fstr_matrix_con_contact
       type (hecmwST_local_mesh),            intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),                intent(in) :: hecMAT
-      type (fstr_solid),                    intent(in) :: fstrSOLID 
-      type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT 
-      character(len=13)                                :: flag   
+      type (fstr_solid),                    intent(in) :: fstrSOLID
+      type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
+      character(len=13)                                :: flag
       real (kind=kreal) :: tmp1,tmp2,bi
       integer :: i,i0,ndof
        if( flag=='residualForce' )then

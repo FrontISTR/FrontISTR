@@ -16,8 +16,8 @@
 
 !======================================================================!
 !                                                                      !
-!> \brief HECMW to FSTR Mesh Data Converter.                              
-!! Convering Conectivity of Element Type 232, 342 and 352             
+!> \brief HECMW to FSTR Mesh Data Converter.
+!! Convering Conectivity of Element Type 232, 342 and 352
 !                                                                      !
 !======================================================================!
 

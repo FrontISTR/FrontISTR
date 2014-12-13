@@ -67,8 +67,8 @@ module m_ElastoPlastic
      if( kinematic ) devia = devia-back
      J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
           dot_product( devia(4:6), devia(4:6) )
- 
-     D(:,:) = De(:,:) 
+
+     D(:,:) = De(:,:)
      if( istat == 0 ) return   ! elastic state
 
      !derivative of J2
@@ -80,7 +80,7 @@ module m_ElastoPlastic
      else
        harden = calHardenCoeff( matl, extval(1) )
      endif
-	
+
      SELECT CASE (yType)
      CASE (0)       ! Mises or. Isotropic
        a(1:6) = dsqrt(3.d0) * dj2
@@ -145,7 +145,7 @@ module m_ElastoPlastic
      REAL(KIND=kreal) :: back(6)
      kinematic = isKinematicHarden( matl%mtype )
      if( kinematic ) back(1:6) = extval(1:6)
-	 
+
      ytype = getYieldFunction( matl%mtype )
      J1 = (stress(1)+stress(2)+stress(3))
      devia(1:3) = stress(1:3)-J1/3.d0
@@ -171,14 +171,14 @@ module m_ElastoPlastic
        eqvs = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
              +J1*sin(fai)/3.d0
      CASE (2)      ! Drucker-Prager
-       eqvs = dsqrt(J2) 
+       eqvs = dsqrt(J2)
      CASE DEFAULT
        eqvs = -1.d0
      END SELECT
 
      cal_equivalent_stress = eqvs
    END FUNCTION
-   
+
    !> This subrouitne calculate equivalent stress
    REAL(KIND=kreal) FUNCTION cal_mises_strain( strain )
      REAL(kind=kreal), INTENT(IN)  :: strain(6)        !< strain
@@ -186,7 +186,7 @@ module m_ElastoPlastic
 	 cal_mises_strain = cal_mises_strain+ dot_product( strain(4:6), strain(4:6) )
 	 cal_mises_strain = dsqrt( cal_mises_strain/3.d0 )
    END FUNCTION
-      
+
    !> This function calcualtes hardening coefficient
    REAL(KIND=kreal) FUNCTION calHardenCoeff( matl, pstrain, temp )
      TYPE( tMaterial ), INTENT(IN)          :: matl    !< material property
@@ -196,7 +196,7 @@ module m_ElastoPlastic
      INTEGER :: i, nc, htype
      logical :: ierr
      REAL(KIND=kreal) :: s0, s1,s2, ef, ina(2)
-	 
+
      calHardenCoeff = -1.d0
      htype = getHardenType( matl%mtype )
      SELECT CASE (htype)
@@ -238,7 +238,7 @@ module m_ElastoPlastic
    REAL(KIND=kreal) FUNCTION calKinematicHarden( matl, pstrain )
      TYPE( tMaterial ), INTENT(IN) :: matl    !< material property
      REAL(KIND=kreal), INTENT(IN)  :: pstrain !< plastic strain
-	 
+
      INTEGER :: htype
      htype = getHardenType( matl%mtype )
      SELECT CASE (htype)
@@ -248,12 +248,12 @@ module m_ElastoPlastic
        calKinematicHarden = 0.d0
      END SELECT
    END FUNCTION
-   
+
    !> This function calcualtes state of kinematic hardening
    REAL(KIND=kreal) FUNCTION calCurrKinematic( matl, pstrain )
      TYPE( tMaterial ), INTENT(IN) :: matl    !< material property
      REAL(KIND=kreal), INTENT(IN)  :: pstrain !< plastic strain
-	 
+
      INTEGER :: htype
      htype = getHardenType( matl%mtype )
      SELECT CASE (htype)
@@ -263,7 +263,7 @@ module m_ElastoPlastic
        calCurrKinematic = 0.d0
      END SELECT
    END FUNCTION
-   
+
    !> This function calcualtes current yield stress
    REAL(KIND=kreal) FUNCTION calCurrYield( matl, pstrain, temp )
      TYPE( tMaterial ), INTENT(IN) :: matl    !< material property
@@ -307,8 +307,8 @@ module m_ElastoPlastic
        calCurrYield = matl%variables(M_PLCONST1)
      END SELECT
    END FUNCTION
-   
-   !> This function calcualtes yield state 
+
+   !> This function calcualtes yield state
    REAL(KIND=kreal) FUNCTION calYieldFunc( matl, stress, extval, temp )
      TYPE( tMaterial ), INTENT(IN) :: matl        !< material property
      REAL(KIND=kreal), INTENT(IN)  :: stress(6)   !< stress
@@ -319,17 +319,17 @@ module m_ElastoPlastic
      logical :: kinematic
      REAL(kind=kreal) :: eqvs, sita, eta, fai, J1,J2,J3, f, devia(6)
      REAL(KIND=kreal) :: pstrain, back(6)
-	 
+
      kinematic = isKinematicHarden( matl%mtype )
      if( kinematic ) back(1:6) = extval(1:6)
-	 
+
      pstrain = extval(1)
      ytype = getYieldFunction( matl%mtype )
      J1 = (stress(1)+stress(2)+stress(3))
      devia(1:3) = stress(1:3)-J1/3.d0
      devia(4:6) = stress(4:6)
      if( kinematic ) devia = devia-back
-	 
+
      J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
           dot_product( devia(4:6), devia(4:6) )
      if( present(temp) ) then
@@ -358,11 +358,11 @@ module m_ElastoPlastic
        eta = matl%variables(M_PLCONST3)
        f = dsqrt(J2) + eta*J1 - eqvs*matl%variables(M_PLCONST4)
      END SELECT
-	 
+
      calYieldFunc = f
    END FUNCTION
 
-   !> This subroutine does backward-Euler return calculation   
+   !> This subroutine does backward-Euler return calculation
    subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp )
       use m_utilities, only : eigen3
       type( tMaterial ), intent(in)    :: matl        !< material properties
@@ -390,7 +390,7 @@ module m_ElastoPlastic
        call uBackwardEuler( matl, stress, istat, fstat )
        return
       endif
-	  
+
       pstrain = plstrain
       fstat_bak = plstrain
       if( present(temp) ) then
@@ -405,22 +405,22 @@ module m_ElastoPlastic
           istat =0
           return
       endif
-      istat = 1           ! yielded	 
+      istat = 1           ! yielded
       KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
-	  
+
       kinematic = isKinematicHarden( matl%mtype )
       if( kinematic ) then
         back(1:6) = fstat(1:6)
         betan = calCurrKinematic( matl, pstrain )
       endif
-	  
+
       J1 = (stress(1)+stress(2)+stress(3))/3.d0
       devia(1:3) = stress(1:3)-J1
       devia(4:6) = stress(4:6)
       if( kinematic ) devia = devia-back
       yd = cal_equivalent_stress(matl, stress, fstat)
 
-      if( present(temp) ) then	  
+      if( present(temp) ) then
         ina(1) = temp
         CALL fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
       else
@@ -436,7 +436,7 @@ module m_ElastoPlastic
       G = youngs/ ( 2.d0*(1.d0+poisson) )
       K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
       dlambda = 0.d0
-	  
+
       if( yType==0 ) then    ! Mises or. Isotropic
         do i=1,MAXITER
           if( present(temp) ) then
@@ -475,7 +475,7 @@ module m_ElastoPlastic
         stress(:)= stress(:)+back(:)
       elseif(yType==1) then    ! Mohr-Coulomb
         fai = matl%variables(M_PLCONST3)
-		
+
      !   do j=1,MAXITER
         J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
           dot_product( devia(4:6), devia(4:6) )
@@ -491,7 +491,7 @@ module m_ElastoPlastic
         do mm=1,6
           if( dabs(stress(mm))<1.d-10 ) stress(mm)=0.d0
         enddo
-        call eigen3( stress, prnstre, prnprj )  
+        call eigen3( stress, prnstre, prnprj )
         trialprn = prnstre
         maxp = MAXLOC( prnstre )
         minp = MINLOC( prnstre )
@@ -565,7 +565,7 @@ module m_ElastoPlastic
           f = yd-G*dlambda+fai*(J1-K*fai*dlambda)- dum*f
           if( dabs(f)<tol*tol ) exit
         enddo
-        pstrain = pstrain+dum*dlambda 
+        pstrain = pstrain+dum*dlambda
         devia(:) = (1.d0-G*dlambda/yd)*devia(:)
         J1 = J1-K*fai*dlambda
         stress(1:3) = devia(1:3)+J1
@@ -575,11 +575,11 @@ module m_ElastoPlastic
       fstat(1) = pstrain
    end subroutine BackwardEuler
 
-   !> Clear elatoplastic state 
+   !> Clear elatoplastic state
    subroutine updateEPState( gauss )
       use mMechGauss
       type(tGaussStatus), intent(inout) :: gauss  ! status of curr gauss point
       gauss%plstrain= gauss%fstatus(1)
    end subroutine
-		 
+
 end module m_ElastoPlastic

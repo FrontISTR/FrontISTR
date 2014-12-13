@@ -55,20 +55,20 @@ contains
 
       jj1 = jj1 + 2
         if( fstrDYNAMIC%idx_eqa == 1 ) then
-          t_t = fstrDYNAMIC%t_curr                       
-		  
+          t_t = fstrDYNAMIC%t_curr
+
         else if( fstrDYNAMIC%idx_eqa == 11 ) then
           select case (flag_u)
           case (0)
-            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta         
+            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
           case (10)
-            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta            
+            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
           case (1)
-            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta            
+            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
           case (2)
-            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta            
+            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
           case (3)
-            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta            
+            t_t = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
           end select
         end if
 

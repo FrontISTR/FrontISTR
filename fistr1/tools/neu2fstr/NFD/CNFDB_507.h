@@ -34,7 +34,7 @@ class CNFDB_507 : public CNFDataBlock {
 public:
 	CNFDB_507();
 	virtual ~CNFDB_507() {}
-	
+
 	virtual void Read( CNFData* nfd );
 	virtual void WriteData( class CNFData* nfd, FILE* fp );
 
@@ -68,7 +68,7 @@ public:
 		cstructural_load_rec( const cstructural_load_rec& r);
 		cstructural_load_rec& operator=( const cstructural_load_rec& r);
 		void copy_from( const cstructural_load_rec& r );
-	};	
+	};
 	// -----------------------------
 	class cgeometric_load_rec {
 	public:
@@ -120,7 +120,7 @@ public:
 		cgeometric_load_rec( const cgeometric_load_rec& r);
 		cgeometric_load_rec& operator=( const cgeometric_load_rec& r);
 		void copy_from( const cgeometric_load_rec& r);
-	};	
+	};
 	// -----------------------------
 	class ctemp_load_rec {
 	public:

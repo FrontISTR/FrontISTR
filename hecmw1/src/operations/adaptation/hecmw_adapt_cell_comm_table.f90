@@ -23,7 +23,7 @@
 !C    cell-based communication table
 !C
       subroutine hecmw_adapt_cell_comm_table (hecMESH)
-      
+
       use  hecmw_util
       use  hecmw_adapt_STACK_SR
       use  hecmw_adapt_ITEM_SR
@@ -95,7 +95,7 @@
       IW2 = 0
 
       stime0= MPI_WTIME ()
-      call hecmw_adapt_ITEM_SEND_RECV                                   &      
+      call hecmw_adapt_ITEM_SEND_RECV                                   &
      &    (LEN, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,             &
      &     wSI, wiI, wSE, wiE, IW1, IW2,                                &
      &     hecMESH%MPI_COMM, hecMESH%my_rank, 1)

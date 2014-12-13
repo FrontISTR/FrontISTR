@@ -14,7 +14,7 @@
 !======================================================================!
 !                                                                      !
 !> \brief  This module contains functions for interpolation in 20 node
-!!      hexahedral element  (Serendipity  interpolation) 
+!!      hexahedral element  (Serendipity  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/15

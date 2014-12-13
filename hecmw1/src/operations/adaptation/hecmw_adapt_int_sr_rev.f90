@@ -46,7 +46,7 @@
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta1
       integer(kind=kint ), dimension(:,:), save, allocatable :: sta2
       integer(kind=kint ), dimension(:  ), save, allocatable :: req1
-      integer(kind=kint ), dimension(:  ), save, allocatable :: req2  
+      integer(kind=kint ), dimension(:  ), save, allocatable :: req2
       integer(kind=kint ), save :: NFLAG
       data NFLAG/0/
 
@@ -59,17 +59,17 @@
         allocate (req2(NEIBPETOT))
         NFLAG= 1
       endif
-       
+
 !C
 !C-- SEND
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
-        
+
         do k= istart+1, istart+inum
           ii= NB*NOD_EXPORT(k) - NB
           ik= NB*k             - NB
-          do j= 1, NB         
+          do j= 1, NB
             WS(ik+j)= X(ii+j)
           enddo
         enddo
@@ -87,14 +87,14 @@
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
-   
+
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
         do k= istart+1, istart+inum
           ii= NB*NOD_IMPORT(k) - NB
           ik= NB*k             - NB
-          do j= 1, NB         
+          do j= 1, NB
             if (X(ii+j).eq.0 .and. WR(ik+j).ne.0) X(ii+j)= WR(ik+j)
           enddo
         enddo

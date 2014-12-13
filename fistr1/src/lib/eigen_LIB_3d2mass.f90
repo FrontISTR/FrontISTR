@@ -38,7 +38,7 @@ contains
 ! CALCULATION 3D 20-NODE SOLID ELEMENT
 !
       use hecmw
-      USE gauss_integration 
+      USE gauss_integration
       USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
@@ -65,7 +65,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LX=1,NG
         RI=XG(NG,LX)
         DO LY=1,NG
@@ -163,7 +163,7 @@ contains
             HT(18)=-0.5*RP*SM*TI
             HT(19)=-0.5*RP*SP*TI
             HT(20)=-0.5*RM*SP*TI
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -248,7 +248,7 @@ contains
 ! CALCULATION 3D 15-NODE SOLID ELEMENT
 !
       use hecmw
-      USE gauss_integration 
+      USE gauss_integration
       USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
@@ -275,7 +275,7 @@ contains
       DO I=1,ISIZE
         SS(I)=0.0
       ENDDO
-! LOOP FOR INTEGRATION POINTS      
+! LOOP FOR INTEGRATION POINTS
       DO LZ=1,NG
         ZI=XG(NG,LZ)
         DO L2=1,NG
@@ -366,7 +366,7 @@ contains
             HZ(13)=-2.0*X1*ZI
             HZ(14)=-2.0*X2*ZI
             HZ(15)=-2.0*X3*ZI
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -451,7 +451,7 @@ contains
 ! CALCULATION 3D 10-NODE SOLID ELEMENT
 !
       use hecmw
-      USE gauss_integration 
+      USE gauss_integration
       USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
@@ -514,7 +514,7 @@ contains
             HL1(9)= 0.0
             HL1(10)= 0.0
 !  FOR L2-COORDINATE
-            HL2(1)= 0.0 
+            HL2(1)= 0.0
             HL2(2)= 4.0*X2-1.0
             HL2(3)= 0.0
             HL2(4)= 0.0
@@ -538,7 +538,7 @@ contains
 !  FOR L4-COORDINATE
             HL4(1)= 0.0
             HL4(2)= 0.0
-            HL4(3)= 0.0 
+            HL4(3)= 0.0
             HL4(4)= 4.0*X4-1.0
             HL4(5)= 0.0
             HL4(6)= 0.0
@@ -546,7 +546,7 @@ contains
             HL4(8)= 4.0*X1
             HL4(9)= 4.0*X2
             HL4(10)= 4.0*X3
-!  JACOBI MATRIX 
+!  JACOBI MATRIX
             XJ11=0.0
             XJ21=0.0
             XJ31=0.0
@@ -585,7 +585,7 @@ contains
             XJI13=DUM*( XJ12*XJ23-XJ13*XJ22)
             XJI23=DUM*(-XJ11*XJ23+XJ13*XJ21)
             XJI33=DUM*( XJ11*XJ22-XJ12*XJ21)
-!  
+!
             DET=-DET
 !  WEIGHT VALUE AT GAUSSIAN POINT
             WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125

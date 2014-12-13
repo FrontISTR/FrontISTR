@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="x-euc-jp-unicode"?>
 
-<msg-table msgno_base="10000"> 
+<msg-table msgno_base="10000">
 	<include src="../src/common/msg_util.xml"/>
 	<include src="../src/common/msg_io.xml"/>
 	<include src="../src/common/msg_io_hec.xml"/>

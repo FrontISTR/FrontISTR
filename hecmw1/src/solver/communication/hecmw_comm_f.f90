@@ -157,7 +157,7 @@ contains
       call MPI_ISEND(sbuf, sc, MPI_INTEGER, &
      &     dest, tag, comm, req, ierr)
       end subroutine hecmw_isend_int
-      
+
       subroutine hecmw_isend_r(sbuf, sc, dest, &
      &     tag, comm, req)
       use hecmw_util
@@ -187,7 +187,7 @@ contains
       call MPI_IRECV(rbuf, rc, MPI_INTEGER, &
      &     source, tag, comm, req, ierr)
       end subroutine hecmw_irecv_int
-      
+
       subroutine hecmw_irecv_r(rbuf, rc, source, &
      &     tag, comm, req)
       use hecmw_util
@@ -364,7 +364,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
       call MPI_BCAST (VAL, n, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
       end subroutine hecmw_bcast_R
-      
+
       subroutine hecmw_bcast_R_comm (VAL, n, nbase, comm)
       use hecmw_util
       implicit none
@@ -385,7 +385,7 @@ contains
       call MPI_BCAST (VAL, 1, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
       end subroutine hecmw_bcast_R1
-      
+
       subroutine hecmw_bcast_R1_comm (s, nbase, comm)
       use hecmw_util
       implicit none
@@ -410,7 +410,7 @@ contains
       type (hecmwST_local_mesh) :: hecMESH
       call MPI_BCAST (VAL, n, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
       end subroutine hecmw_bcast_I
-      
+
       subroutine hecmw_bcast_I_comm (VAL, n, nbase, comm)
       use hecmw_util
       implicit none
@@ -430,7 +430,7 @@ contains
       call MPI_BCAST (VAL, 1, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
       end subroutine hecmw_bcast_I1
-      
+
       subroutine hecmw_bcast_I1_comm (s, nbase, comm)
       use hecmw_util
       implicit none
@@ -456,7 +456,7 @@ contains
       call MPI_BCAST (VAL, n*nn, MPI_CHARACTER, nbase, hecMESH%MPI_COMM,&
      &                                                 ierr)
       end subroutine hecmw_bcast_C
-      
+
       subroutine hecmw_bcast_C_comm (VAL, n, nn, nbase, comm)
       use hecmw_util
       implicit none

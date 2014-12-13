@@ -73,7 +73,7 @@ contains
       ip1= 4*i-3
       ip2= 4*i-2
       ip3= 4*i-1
-      ip4= 4*i 
+      ip4= 4*i
       D(16*i-15)= D(16*i-15)*SCALE(ip1)*SCALE(ip1)
       D(16*i-14)= D(16*i-14)*SCALE(ip1)*SCALE(ip2)
       D(16*i-13)= D(16*i-13)*SCALE(ip1)*SCALE(ip3)
@@ -98,8 +98,8 @@ contains
         inod= IAL(k)
         iq1= 4*inod - 3
         iq2= 4*inod - 2
-        iq3= 4*inod - 1 
-        iq4= 4*inod 
+        iq3= 4*inod - 1
+        iq4= 4*inod
         AL(16*k-15)= AL(16*k-15)*SCALE(ip1)*SCALE(iq1)
         AL(16*k-14)= AL(16*k-14)*SCALE(ip1)*SCALE(iq2)
         AL(16*k-13)= AL(16*k-13)*SCALE(ip1)*SCALE(iq3)
@@ -126,7 +126,7 @@ contains
         iq1= 4*inod - 3
         iq2= 4*inod - 2
         iq3= 4*inod - 1
-        iq4= 4*inod 
+        iq4= 4*inod
         AU(16*k-15)= AU(16*k-15)*SCALE(ip1)*SCALE(iq1)
         AU(16*k-14)= AU(16*k-14)*SCALE(ip1)*SCALE(iq2)
         AU(16*k-13)= AU(16*k-13)*SCALE(ip1)*SCALE(iq3)

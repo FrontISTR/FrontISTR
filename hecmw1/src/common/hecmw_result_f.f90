@@ -86,7 +86,7 @@ module hecmw_result
 
     subroutine hecmw_result_add(node_or_elem, n_dof, label, data)
         integer(kind=kint) :: node_or_elem, n_dof, ierr
-        character(len=HECMW_NAME_LEN) :: label 
+        character(len=HECMW_NAME_LEN) :: label
         real(kind=kreal) :: data(:)
 
         call hecmw_result_add_if(node_or_elem, n_dof, label, data, ierr)
@@ -138,7 +138,7 @@ module hecmw_result
 
     subroutine  hecmw_result_copy_f2c( result_data, ierr )
         type(hecmwST_result_data), intent(in)    :: result_data
-        integer(kind=kint),        intent(inout) :: ierr 
+        integer(kind=kint),        intent(inout) :: ierr
 
         call  put_node_component( result_data, ierr )
         if( ierr /= 0 )  return
@@ -285,7 +285,7 @@ module hecmw_result
 
 
     subroutine get_node_component(result, n_node, ierr)
-        integer(kind=kint) :: n_node, ierr  
+        integer(kind=kint) :: n_node, ierr
         type(hecmwST_result_data) :: result
 
         sname = 'hecmwST_result_data'
@@ -314,7 +314,7 @@ module hecmw_result
 
 
     subroutine get_elem_component(result, n_elem, ierr)
-        integer(kind=kint) :: n_elem, ierr  
+        integer(kind=kint) :: n_elem, ierr
         type(hecmwST_result_data) :: result
 
         sname = 'hecmwST_result_data'

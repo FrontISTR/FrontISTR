@@ -29,7 +29,7 @@
 
 
 #define COL_INT 10
-#define COL_DOUBLE 5 
+#define COL_DOUBLE 5
 #define LINEBUF_SIZE 1023
 
 struct result_list {
@@ -45,8 +45,8 @@ static int nelem;
 static char head[HECMW_HEADER_LEN+1];
 static char line_buf[LINEBUF_SIZE+1];
 
-static struct result_list *node_list; 
-static struct result_list *elem_list; 
+static struct result_list *node_list;
+static struct result_list *elem_list;
 
 static int *node_global_ID = NULL;
 static int *elem_global_ID = NULL;
@@ -99,7 +99,7 @@ is_valid_label(char *label)
 
 
 static void
-clear() 
+clear()
 {
 	struct result_list *p,*q;
 
@@ -204,7 +204,7 @@ add_to_node_list(struct result_list *result)
 {
 	struct result_list *p,*q;
 
-	q = NULL;	
+	q = NULL;
 	for(p=node_list; p; p=(q=p)->next);
 
 	if(q == NULL) {
@@ -221,7 +221,7 @@ add_to_elem_list(struct result_list *result)
 {
 	struct result_list *p,*q;
 
-	q = NULL;	
+	q = NULL;
 	for(p=elem_list; p; p=(q=p)->next);
 
 	if(q == NULL) {
@@ -244,7 +244,7 @@ make_result_list(int n_dof, char *label, double *ptr)
 		HECMW_set_error(errno, "");
 		goto error;
 	}
-	
+
 	new_label = HECMW_strdup(label);
 	if(new_label == NULL) {
 		HECMW_set_error(errno, "");
@@ -252,7 +252,7 @@ make_result_list(int n_dof, char *label, double *ptr)
 	}
 
 	result->label = new_label;
-	result->ptr = ptr; 
+	result->ptr = ptr;
 	result->n_dof = n_dof;
 	result->next = NULL;
 

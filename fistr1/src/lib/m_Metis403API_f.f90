@@ -15,7 +15,7 @@
 !> \brief This module contains subroutines of fortran interface to Metis 4.0.3
 
 module m_Metis403API
-  use, intrinsic  ::  iso_c_binding   !, only : C_int, C_double, C_float, 
+  use, intrinsic  ::  iso_c_binding   !, only : C_int, C_double, C_float,
   implicit none
 !  integer,parameter ::  kint  = kind(10000000000000)
 !  integer,parameter	::  kreal = kind(1.1111111111D0)
@@ -39,7 +39,7 @@ module m_Metis403API
   integer,parameter ::  METIS_TYPE_PartGraphRecursive   = 1
   integer,parameter ::  METIS_TYPE_mCPartGraphRecursive = 2
   integer,parameter ::  METIS_TYPE_WPartGraphRecursive  = 3
-  
+
   integer,parameter ::  METIS_TYPE_PartGraphKway        = 1
   integer,parameter ::  METIS_TYPE_PartGraphVKway       = 2
   integer,parameter ::  METIS_TYPE_mCPartGraphKway      = 3
@@ -163,7 +163,7 @@ module m_Metis403API
       integer(idx_t),intent(out)  ::  edgecut
       type(c_ptr),value           ::  part
     end function METIS_WPartGraphKway_f
-    
+
     function METIS_WPartGraphVKway_f                    &
                   (nvtxs,   xadj,   adjncy,             &
                     vwgt,   adjwgt, wgtflag,  numflag,  &
@@ -182,7 +182,7 @@ module m_Metis403API
     end function METIS_WPartGraphVKway_f
 
 !<  Mesh partitioning routines
-!!  Because Metis 4.0.3 does not support mixed element type, 
+!!  Because Metis 4.0.3 does not support mixed element type,
 !!  its APIs are not so much useful and the API interfaces are not provided.
 !!  Users should provide, by themselves, graph data of mixed element-type mesh and use
 !!  graph partition APIs directly
@@ -239,11 +239,11 @@ module m_Metis403API
       type(c_ptr),value           ::  xadj,adjncy
       integer(idx_t),intent(in)   ::  optype
       integer(idx_t),intent(out)  ::  nbytes
-    end function METIS_EstimateMemory_f    
+    end function METIS_EstimateMemory_f
 
   end interface
-  
-  
+
+
 !<  Extension functions of Metis 5.0.2
 !!  & Data structures for fortran codes
   type METIS4
@@ -281,7 +281,7 @@ module m_Metis403API
     integer(idx_t)            ::  num = 0
     integer(idx_t),pointer    ::  idx(:)=>NULL()
   end type
-  
+
   interface freeConnect
     module procedure    freeConnect1
     module procedure    freeConnectM
@@ -340,7 +340,7 @@ subroutine MetisF_Free(mts)
 !    if(allocated(mts%adjwgt))  deallocate(mts%adjwgt,stat=istat)
 !    if(allocated(mts%tpwgts))  deallocate(mts%tpwgts,stat=istat)
 !    if(allocated(mts%ubvec))   deallocate(mts%ubvec,stat=istat)
-    
+
     if(associated(mts%options)) deallocate(mts%options,stat=istat)
     if(associated(mts%part))    deallocate(mts%part,stat=istat)
 !
@@ -354,7 +354,7 @@ subroutine MetisF_Free(mts)
 !
     if(associated(mts%svptr))       deallocate(mts%svptr,stat=istat)
     if(associated(mts%svind))       deallocate(mts%svind,stat=istat)
-    if(associated(mts%idxOld2New))  deallocate(mts%idxOld2New,stat=istat)    
+    if(associated(mts%idxOld2New))  deallocate(mts%idxOld2New,stat=istat)
 end subroutine MetisF_Free
 
 !<  Fortran Interface to Metis 4.0.3
@@ -412,7 +412,7 @@ function METIS_PartGraphRecursive                   &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_PartGraphRecursive_f                       &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
@@ -473,7 +473,7 @@ function METIS_PartGraphKway                        &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_PartGraphKway_f                            &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
@@ -534,7 +534,7 @@ function METIS_PartGraphVKway                       &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_PartGraphVKway_f                           &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  vsize_ptr,  wgtflag,    numflag,  &
@@ -595,7 +595,7 @@ function METIS_mCPartGraphRecursive                 &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_mCPartGraphRecursive_f                       &
               (nvtxs,     ncon,       xadj_ptr,   adjncy_ptr, &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,    &
@@ -664,7 +664,7 @@ function METIS_mCPartGraphKway                      &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_mCPartGraphKway_f                            &
               (nvtxs,     ncon,       xadj_ptr,   adjncy_ptr, &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,    &
@@ -733,7 +733,7 @@ function METIS_WPartGraphRecursive                  &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_WPartGraphRecursive_f                      &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
@@ -802,7 +802,7 @@ function METIS_WPartGraphKway                       &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_WPartGraphKway_f                           &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
@@ -871,7 +871,7 @@ function METIS_WPartGraphVKway                      &
     else
       part_ptr  = c_null_ptr
     endif
-    
+
     ierr = METIS_WPartGraphVKway_f                          &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &

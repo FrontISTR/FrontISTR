@@ -87,7 +87,7 @@ OBJSF = \
 	hecmw_dlb_comm_util.@cobjfilepostfix@ \
 	output_ucd_c.@cobjfilepostfix@ \
 	hecmw_dlb_mem_util.@cobjfilepostfix@ \
-	hecmw_dlb_output_result.@cobjfilepostfix@ 
+	hecmw_dlb_output_result.@cobjfilepostfix@
 
 HEADERS = \
 	hecmw_repart.h \

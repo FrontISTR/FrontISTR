@@ -253,7 +253,7 @@
 !C
 !C-- 7. SECTION
       hecMESHnew%section%n_sect= hecMESH%section%n_sect
-     
+
       allocate (hecMESHnew%section%sect_type(hecMESHnew%section%n_sect))
       allocate (hecMESHnew%section%sect_opt (hecMESHnew%section%n_sect))
       hecMESHnew%section%sect_type= hecMESH%section%sect_type
@@ -310,7 +310,7 @@
         hecMESHnew%mpc%mpc_dof  = hecMESH%mpc%mpc_dof
         hecMESHnew%mpc%mpc_val  = hecMESH%mpc%mpc_val
       endif
- 
+
       hecMESHnew%amp%n_amp= 0
       if (hecMESH%amp%n_amp.ne.0) then
         nnn= hecMESH%amp%amp_index(hecMESH%amp%n_amp)
@@ -394,5 +394,5 @@
       endif
 
       end subroutine hecmw_adapt_new_mesh
-    
+
 

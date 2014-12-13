@@ -105,7 +105,7 @@ module elementInfo
     integer, parameter :: fe_mitc4_shell  = 741
     integer, parameter :: fe_mitc8_shell  = 742
     integer, parameter :: fe_mitc9_shell  = 743
-	
+
 	integer, parameter :: fe_mitc3_shell361  = 761
     integer, parameter :: fe_mitc4_shell361  = 781
 
@@ -166,7 +166,7 @@ module elementInfo
         ! error message
       end select
   end function
-  
+
   !> Obtain number of sub-surface
   integer(kind=kind(2)) function getNumberOfSubface( etype )
       integer, intent(in) :: etype    !< element type
@@ -450,7 +450,7 @@ module elementInfo
       end select
   end function
 
-  !> Fetch the coordinate of gauss point 
+  !> Fetch the coordinate of gauss point
   subroutine getQuadPoint( fetype, np, pos )
       use Quadrature
       integer, intent(in)           :: fetype    !< element type
@@ -495,8 +495,8 @@ module elementInfo
         stop "element type not defined-qp"
       end select
   end subroutine
-  
-  !> Fetch the weight value in given gauss point 
+
+  !> Fetch the weight value in given gauss point
   REAL(kind=kreal) FUNCTION getWeight( fetype, np )
       USE Quadrature
       integer, intent(in)           :: fetype       !< element type
@@ -535,7 +535,7 @@ module elementInfo
         ! error message
       end select
   END FUNCTION
-  
+
   !************************************
   !    Following shape function information
   !************************************
@@ -582,7 +582,7 @@ module elementInfo
         stop "Element type not defined-sde"
       end select
   end subroutine
-  
+
   !> Calculate the 2nd derivative of shape function in natural coodinate system
   subroutine getShape2ndDeriv( fetype, localcoord, shapederiv )
       integer, intent(in)           :: fetype             !< elemental type
@@ -607,7 +607,7 @@ module elementInfo
         stop "Cannot calculate second derivatives of shape function"
       end select
   end subroutine
-  
+
   !> Calculate the shape function in natural coodinate system
   subroutine getShapeFunc( fetype, localcoord, func )
       integer, intent(in)           :: fetype            !< input element type
@@ -663,39 +663,39 @@ module elementInfo
 !####################################################################
       SUBROUTINE getNodalNaturalCoord(fetype, nncoord)
 !####################################################################
-      
+
       INTEGER, INTENT(IN)             :: fetype
       REAL(KIND = kreal), INTENT(OUT) :: nncoord(:, :)
-      
+
 !--------------------------------------------------------------------
-      
+
       SELECT CASE( fetype )
       CASE( fe_tri3n, fe_mitc3_shell, fe_mitc3_shell361 )
-       
+
        !error check
        CALL NodalNaturalCoord_tri3n( nncoord(1:3, 1:2) )
-       
+
       CASE( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361 )
-       
+
        !error check
        CALL NodalNaturalCoord_quad4n( nncoord(1:4, 1:2) )
-       
+
       CASE( fe_mitc9_shell )
-       
+
        !error check
        CALL NodalNaturalCoord_quad9n( nncoord(1:9, 1:2) )
-       
+
       CASE DEFAULT
-       
+
        ! error message
        STOP "Element type not defined-sde"
-       
+
       END SELECT
-      
+
 !--------------------------------------------------------------------
-      
+
       RETURN
-      
+
 !####################################################################
       END SUBROUTINE getNodalNaturalCoord
 !####################################################################
@@ -716,7 +716,7 @@ module elementInfo
 
       nspace = getSpaceDimension( fetype )
       CALL getShapeDeriv( fetype, localCoord(:), deriv(1:nn,:) )
-	  
+
       if( nspace==2 ) then
         XJ(1:2,1:2)=MATMUL( elecoord(1:2,1:nn), deriv(1:nn,1:2) )
         DET=XJ(1,1)*XJ(2,2)-XJ(2,1)*XJ(1,2)
@@ -752,7 +752,7 @@ module elementInfo
 
       gderiv(1:nn,1:nspace)=matmul( deriv(1:nn,1:nspace), XJI(1:nspace,1:nspace) )
   end subroutine
-  
+
   !> Calculate shape derivative in global coordinate system
   real(kind=kreal) function getDetermiant( fetype, nn, localcoord, elecoord )
       integer, intent(in)           :: fetype          !< element type
@@ -780,7 +780,7 @@ module elementInfo
       endif
 
   end function
-  
+
   !> calculate Jacobian matrix, its determinant and inverse
   subroutine getJacobian( fetype, nn, localcoord, elecoord, det, jacobian, inverse )
       integer, intent(in)           :: fetype          !< element type
@@ -830,7 +830,7 @@ module elementInfo
         inverse(3,3)=DUM*( jacobian(1,1)*jacobian(2,2)-jacobian(2,1)*jacobian(1,2) )
       endif
   end subroutine
-  
+
   !> Calculate  normal of 3d-surface
   function SurfaceNormal( fetype, nn, localcoord, elecoord ) result( normal )
       integer, intent(in)           :: fetype            !< type of surface element
@@ -865,7 +865,7 @@ module elementInfo
       normal(3) = gderiv(1,1)*gderiv(2,2) - gderiv(2,1)*gderiv(1,2)
  !  normal = normal/dsqrt(dot_product(normal, normal))
   end function
-  
+
   !> Calculate normal of 2d-edge
   function EdgeNormal( fetype, nn, localcoord, elecoord ) result( normal )
       integer, intent(in)           :: fetype            !< type of surface element
@@ -893,7 +893,7 @@ module elementInfo
       normal(2) = gderiv(1,1)
  !  normal = normal/dsqrt(dot_product(normal, normal))
   end function
-  
+
   !> Calculate base vector of tangent space of 3d surface
   subroutine TangentBase( fetype, nn, localcoord, elecoord, tangent )
       integer, intent(in)           :: fetype            !< type of surface element
@@ -927,7 +927,7 @@ module elementInfo
 
       tangent = matmul( elecoord, deriv )
   end subroutine TangentBase
-  
+
   !> Calculate curvature tensor at a point along 3d surface
   subroutine Curvature( fetype, nn, localcoord, elecoord, l2ndderiv, normal, curv )
       integer, intent(in)           :: fetype            !< type of surface element
@@ -972,7 +972,7 @@ module elementInfo
         curv(2,2) = dot_product( l2ndderiv(:,2,2), normal(:) )
       endif
   end subroutine Curvature
-  
+
   !> Return natural coordinate of the center of surface element
   subroutine getElementCenter( fetype, localcoord )
       integer, intent(in)           :: fetype            !< type of surface element
@@ -988,7 +988,7 @@ module elementInfo
         localcoord(:) = 0.d0
       end select
   end subroutine getElementCenter
-  
+
   !> if a point is inside a surface element
   !> -1: No; 0: Yes; >0: Node's (vertex) number
   integer function isInsideElement( fetype, localcoord, clearance )
@@ -1039,7 +1039,7 @@ module elementInfo
         endif
       end select
   end function isInsideElement
-  
+
   !> Get the natural coord of a vertex node
   subroutine getVertexCoord( fetype, cnode, localcoord )
       integer, intent(in)            :: fetype          !< type of surface element
@@ -1074,7 +1074,7 @@ module elementInfo
            endif
       end select
   end subroutine
-  
+
   !> This subroutine extrapolate a point value into elemental nodes
   subroutine extrapolateValue( lpos, fetype, nnode, pvalue, ndvalue )
       real(kind=kreal), intent(in)  :: lpos(:)        !< poisition of value given
@@ -1082,7 +1082,7 @@ module elementInfo
       integer, intent(in)           :: nnode          !< number of element node
       real(kind=kreal), intent(in)  :: pvalue(:)      !< value to be extropolated
       real(kind=kreal), intent(out) :: ndvalue(:,:)   !< equivalent nodal value
-      
+
       integer         :: i
       real(kind=kreal) :: shapefunc(nnode)
       call getShapeFunc( fetype, lpos, shapefunc )
@@ -1090,7 +1090,7 @@ module elementInfo
         ndvalue(i,:) = shapefunc(i)*pvalue(:)
       enddo
   end subroutine
-  
+
   !> This subroutine interapolate element nodes value into a point value
   subroutine interapolateValue( lpos, fetype, nnode, pvalue, ndvalue )
       real(kind=kreal), intent(in)  :: lpos(:)        !< poisition of value given
@@ -1098,7 +1098,7 @@ module elementInfo
       integer, intent(in)           :: nnode          !< number of element node
       real(kind=kreal), intent(out) :: pvalue(:)      !< value to be extropolated
       real(kind=kreal), intent(in)  :: ndvalue(:,:)   !< equivalent nodal value
-      
+
       integer         :: i
       real(kind=kreal) :: shapefunc(nnode)
       call getShapeFunc( fetype, lpos, shapefunc )
@@ -1160,7 +1160,7 @@ module elementInfo
       case default
         stop "Element type not defined"
         ! error message
-      end select  
+      end select
   END SUBROUTINE
 
 

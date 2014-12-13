@@ -12,7 +12,7 @@
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
 !======================================================================!
-!> \brief This module provides a subroutine for setting concerntrated heat 
+!> \brief This module provides a subroutine for setting concerntrated heat
 !! flux boundary conditions
 module m_heat_mat_ass_bc_CFLUX
    contains
@@ -22,7 +22,7 @@ module m_heat_mat_ass_bc_CFLUX
 !C***
 !C
    subroutine heat_mat_ass_bc_CFLUX( hecMAT, fstrHEAT, CTIME )
-                                  
+
       use m_fstr
       use m_heat_get_amplitude
 

@@ -18,7 +18,7 @@
 !======================================================================!
 
 !C
-!C*** 
+!C***
 !C*** module hecmw_precond_DIAG_44
 !C***
 !C
@@ -79,22 +79,22 @@ contains
       ALUtmp(1,2)= ALU(16*ii-14)
       ALUtmp(1,3)= ALU(16*ii-13)
       ALUtmp(1,4)= ALU(16*ii-12)
-      
+
       ALUtmp(2,1)= ALU(16*ii-11)
       ALUtmp(2,2)= ALU(16*ii-10) * SIGMA_DIAG
       ALUtmp(2,3)= ALU(16*ii- 9)
       ALUtmp(2,4)= ALU(16*ii- 8)
-      
+
       ALUtmp(3,1)= ALU(16*ii- 7)
       ALUtmp(3,2)= ALU(16*ii- 6)
       ALUtmp(3,3)= ALU(16*ii- 5) * SIGMA_DIAG
       ALUtmp(3,4)= ALU(16*ii- 4)
-      
+
       ALUtmp(4,1)= ALU(16*ii- 3)
       ALUtmp(4,2)= ALU(16*ii- 2)
       ALUtmp(4,3)= ALU(16*ii- 1)
       ALUtmp(4,4)= ALU(16*ii   ) * SIGMA_DIAG
-      
+
       do k= 1, 4
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
         do i= k+1, 4
@@ -107,7 +107,7 @@ contains
           enddo
         enddo
       enddo
-      
+
       ALU(16*ii-15)= ALUtmp(1,1)
       ALU(16*ii-14)= ALUtmp(1,2)
       ALU(16*ii-13)= ALUtmp(1,3)

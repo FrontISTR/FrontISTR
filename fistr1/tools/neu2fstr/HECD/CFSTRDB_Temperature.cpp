@@ -52,7 +52,7 @@ void CFSTRDB_Temperature::Write( CHECData* hecd )
 	vector<CItem>::iterator iter;
 	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
 		hecd->WriteData( "SF", iter->ngrp, iter->value );
-	}	
+	}
 }
 
 

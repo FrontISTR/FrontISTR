@@ -10,7 +10,7 @@ do
 	cnt="${i}.cnt"
 	echo ${neu2fstr} ${1} ${analysis} ${neu} ${msh} ${cnt}
 	${neu2fstr} ${1} ${analysis} ${neu} ${msh} ${cnt}
-done 
+done
 
 
 for i in ${model_shell}
@@ -20,5 +20,5 @@ do
 	cnt="${i}.cnt"
 	echo ${neu2fstr} -d ${analysis} ${neu} ${msh} ${cnt}
 	${neu2fstr} -d ${analysis} ${neu} ${msh} ${cnt}
-done 
+done
 

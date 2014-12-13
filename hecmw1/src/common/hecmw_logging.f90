@@ -41,7 +41,7 @@ module hecmw_logging
 
         call hecmw_setloglv_if(loglv)
     end subroutine hecmw_setloglv
-    
+
 
     subroutine hecmw_log_set_enable(from, to, true_or_false )
         integer(kind=kint) :: from, to, true_or_false

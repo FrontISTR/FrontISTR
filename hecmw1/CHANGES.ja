@@ -23,7 +23,7 @@
 2004-06-21  HPC-MW Group  <hpcmw@tokyo.rist.or.jp>
 
 	【Version 1.00】
-	本バージョンでは，Adaptive Mesh Refinement (AMR) と Dynamic Load Balancing 
+	本バージョンでは，Adaptive Mesh Refinement (AMR) と Dynamic Load Balancing
     (DLB) の機能が新たに利用可能になりました．また，既存の機能についても，機能の
     追加やバグフィックス等が行なわれています．
 

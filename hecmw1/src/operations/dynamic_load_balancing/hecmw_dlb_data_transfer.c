@@ -318,7 +318,7 @@ void hecmw_dlb_c2f_finalize_()
 	dist_dlb_free_section(new_mesh->section);
     free(new_mesh->section);
 	}
-	
+
 
 	if(new_mesh->material!=NULL) {
 	dist_dlb_free_material(new_mesh->material);
@@ -369,11 +369,11 @@ void test_mesh_()
 	for(i=0;i<mesh->export_index[mesh->n_neighbor_pe];i++)
 		fprintf(test_fp, "%d\n", mesh->export_item[i]);
     fclose(test_fp);
-	
+
 	fprintf(stderr, "mesh: n_node=%d\n", mesh->n_node);
 	fprintf(stderr, "mesh: n_adapt=%d\n", mesh->n_adapt);
 	*/
-	
+
 	return;
 }
 
@@ -395,7 +395,7 @@ void set_label_name(int n_component, char *label_name_f, char **label_name)
       j = 0;
     for (i=0; i<n_component; i++) {
       str_tmp[0] = '\0';
-      while (label_name_f[j] == ' ') 
+      while (label_name_f[j] == ' ')
 	    j++;
       k = 0;
       while (label_name_f[j] != ' ') {
@@ -490,7 +490,7 @@ void hecmw_set_mesh_node_(int *n_node, int *n_internal,  double *node,  int *nod
    return;
 }
 
-void hecmw_set_mesh_element_(int *n_elem,  int *ne_internal, int *elem_type, 
+void hecmw_set_mesh_element_(int *n_elem,  int *ne_internal, int *elem_type,
                               int *index_elem,    int *ptr_elem,  int *elem_id,  int *ne_internal_list)
 {
 	v.mesh->n_elem = *n_elem;
@@ -515,9 +515,9 @@ void hecmw_set_mesh_pe_inf_(int *n_neighbor_pe,  int *neighbor_pe, int *import_i
 	return;
 }
 
-void hecmw_set_mesh_adaptation_(int *CoarseGridLevels, int *HOWmanyADAPTATIONs, 
-                           int *wheniwasrefined_node, int *wheniwasrefined_elem, 
-                           int *adaptation_parent_type, int *adaptation_type, 
+void hecmw_set_mesh_adaptation_(int *CoarseGridLevels, int *HOWmanyADAPTATIONs,
+                           int *wheniwasrefined_node, int *wheniwasrefined_elem,
+                           int *adaptation_parent_type, int *adaptation_type,
 						   int *adaptation_level, int *adaptation_parent,
                            int *adaptation_children, int *index_children)
 {
@@ -542,7 +542,7 @@ void set_grp_name(int n_group, char *grp_name_f, char **grp_name)
       j = 0;
     for (i=0; i<n_group; i++) {
       str_tmp[0] = '\0';
-      while (grp_name_f[j] == ' ') 
+      while (grp_name_f[j] == ' ')
 	    j++;
       k = 0;
       while (grp_name_f[j] != ' ') {
@@ -557,10 +557,10 @@ void set_grp_name(int n_group, char *grp_name_f, char **grp_name)
 	return;
 }
 
-void hecmw_set_grp_info_node_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node) 
+void hecmw_set_grp_info_node_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node)
 {
     int i, j;
-	
+
 	v.grp=(struct grp_data *)malloc(sizeof(struct grp_data));
 	v.grp->node_grp.n_enum_grp=*n_grp;
 	v.grp->node_grp.enum_grp_index=grp_index;
@@ -572,10 +572,10 @@ void hecmw_set_grp_info_node_(int *n_grp,int *grp_index, char *grp_name_f, int *
 	return;
 }
 
-void hecmw_set_grp_info_elem_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node) 
+void hecmw_set_grp_info_elem_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node)
 {
     int i, j;
-	
+
 	v.grp->elem_grp.n_enum_grp=*n_grp;
 	v.grp->elem_grp.enum_grp_index=grp_index;
 	v.grp->elem_grp.enum_grp_name=(char **)calloc(*n_grp, sizeof(char *));
@@ -586,10 +586,10 @@ void hecmw_set_grp_info_elem_(int *n_grp,int *grp_index, char *grp_name_f, int *
 	return;
 }
 
-void hecmw_set_grp_info_surf_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node) 
+void hecmw_set_grp_info_surf_(int *n_grp,int *grp_index, char *grp_name_f, int *grp_node)
 {
     int i, j;
-	
+
 	v.grp->n_surf_grp=*n_grp;
 	v.grp->surf_grp_index=grp_index;
 	v.grp->surf_grp_name=(char **)calloc(*n_grp, sizeof(char *));
@@ -601,7 +601,7 @@ void hecmw_set_grp_info_surf_(int *n_grp,int *grp_index, char *grp_name_f, int *
 }
 
 
-void hecmw_set_data_(int *ivar, int *i_free, double *U, double *P, double *VISCT, double *VISCL) 
+void hecmw_set_data_(int *ivar, int *i_free, double *U, double *P, double *VISCT, double *VISCL)
 {
 	int i,j,k;
 	double u1, v1, w1;
@@ -613,7 +613,7 @@ void hecmw_set_data_(int *ivar, int *i_free, double *U, double *P, double *VISCT
 	for(i=0;i<*ivar;i++)
 		v.node->n_free[i]=i_free[i];
 	v.node->t_component=0;
-	for(i=0;i<v.node->n_component;i++) 
+	for(i=0;i<v.node->n_component;i++)
 		v.node->t_component+=v.node->n_free[i];
 	v.node->data=(double *)calloc(v.node->t_component*v.mesh->n_node,sizeof(double));
 	if(v.node->data==NULL) {
@@ -633,13 +633,13 @@ void hecmw_set_data_(int *ivar, int *i_free, double *U, double *P, double *VISCT
 		v.node->data[6*v.mesh->n_node+i]=VISCT[i];
 	for(i=0;i<v.mesh->n_node;i++)
 		v.node->data[7*v.mesh->n_node+i]=VISCL[i];
-    
-			
+
+
 	return;
 }
 
-void hecmw_num_c2f90_(int *n_node, int *n_internal,int *n_elem, int *ne_internal, int *n_neighbor_pe, int *l_child, 
-					  int *l_ptr_elem, int *ivar) 
+void hecmw_num_c2f90_(int *n_node, int *n_internal,int *n_elem, int *ne_internal, int *n_neighbor_pe, int *l_child,
+					  int *l_ptr_elem, int *ivar)
 {
 	*n_node=new_mesh->n_node;
 	*n_internal=new_mesh->n_internal;
@@ -652,21 +652,21 @@ void hecmw_num_c2f90_(int *n_node, int *n_internal,int *n_elem, int *ne_internal
 	return;
 }
 
-void hecmw_mesh_node_c2f90_(double *node, int *node_id) 
+void hecmw_mesh_node_c2f90_(double *node, int *node_id)
 {
 	int i,j;
 	for(i=0;i<new_mesh->n_node*3;i++)
 	   node[i]=new_mesh->node[i];
-	for(i=0;i<new_mesh->n_node*2;i++) 
+	for(i=0;i<new_mesh->n_node*2;i++)
 	   node_id[i]=new_mesh->node_id[i];
 	free(new_mesh->node);
 	free(new_mesh->node_id);
-	
-	
+
+
 	return;
 }
 
-void hecmw_mesh_elem_c2f90_(int *elem_type, int *index_elem, int *ptr_elem,int *elem_id, int *ne_internal_list) 
+void hecmw_mesh_elem_c2f90_(int *elem_type, int *index_elem, int *ptr_elem,int *elem_id, int *ne_internal_list)
 {
 	int i,j;
 
@@ -676,7 +676,7 @@ void hecmw_mesh_elem_c2f90_(int *elem_type, int *index_elem, int *ptr_elem,int *
 		index_elem[i]=new_mesh->index_elem[i];
 	for(i=0;i<new_mesh->index_elem[new_mesh->n_elem];i++)
 		ptr_elem[i]=new_mesh->ptr_elem[i];
-	for(i=0;i<new_mesh->n_elem*2;i++) 
+	for(i=0;i<new_mesh->n_elem*2;i++)
 		elem_id[i]=new_mesh->elem_id[i];
 	for(i=0;i<new_mesh->n_elem;i++)
 		ne_internal_list[i]=new_mesh->ne_internal_list[i];
@@ -719,8 +719,8 @@ void hecmw_mesh_pe_c2f90_(int *import_node, int *export_node)
 }
 
 
-void hecmw_mesh_adapt_c2f90_(int *WhenIwasRefined_node, int *WhenIwasRefined_elem,int *adaptation_parent_type, 
-        int *adaptation_type, int *adaptation_level, int *adaptation_parent, int *adaptation_children, int *index_children) 
+void hecmw_mesh_adapt_c2f90_(int *WhenIwasRefined_node, int *WhenIwasRefined_elem,int *adaptation_parent_type,
+        int *adaptation_type, int *adaptation_level, int *adaptation_parent, int *adaptation_children, int *index_children)
 {
 	int i,j;
 
@@ -765,13 +765,13 @@ void hecmw_data_c2f90_(double *U, double *P, double *VISCT, double *VISCL)
 	free(new_node->data);
 	free(new_node->n_free);
 
-	
-	
+
+
 	return;
 }
 
 
-void  hecmw_grp_index_node_c2f90_(int *enum_grp_index) 
+void  hecmw_grp_index_node_c2f90_(int *enum_grp_index)
 {
 	int i;
 	for(i=0;i<new_grp->node_grp.n_enum_grp+1;i++)
@@ -784,11 +784,11 @@ void hecmw_grp_node_node_c2f90_(int *enum_grp_node)
 	int i;
 	for(i=0;i<new_grp->node_grp.enum_grp_index[new_grp->node_grp.n_enum_grp];i++)
 		enum_grp_node[i]=new_grp->node_grp.enum_grp_node[i];
-	
+
 
 	return;
 }
 
 */
 
-		
+

@@ -22,14 +22,14 @@ module hecmw_dist_print_f
     contains
 
     subroutine hecmw_dist_print(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         call hecmw_dist_print_etc(mesh)
-        write(*,*) 
+        write(*,*)
         call hecmw_dist_print_node(mesh)
-        write(*,*) 
+        write(*,*)
         call hecmw_dist_print_elem(mesh)
-        write(*,*) 
+        write(*,*)
         call hecmw_dist_print_pe(mesh)
         write(*,*)
         call hecmw_dist_print_adapt(mesh)
@@ -51,7 +51,7 @@ module hecmw_dist_print_f
 
 
     subroutine hecmw_dist_print_etc(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         write(*,*) 'FLAGS:'
         write(*,*) 'hecmw_flag_adapt:'
@@ -63,15 +63,15 @@ module hecmw_dist_print_f
         write(*,*) 'hecmw_flag_version:'
         write(*,*) mesh%hecmw_flag_version
         write(*,*) 'END of FLAGS'
-        write(*,*) 
+        write(*,*)
         write(*,*) 'HEADER:'
         write(*,*) trim(mesh%header)
         write(*,*) 'END of HEADER'
-        write(*,*) 
+        write(*,*)
         write(*,*) 'GRIDFILE:'
         write(*,*) trim(mesh%gridfile)
         write(*,*) 'END of GRIDFILE'
-        write(*,*) 
+        write(*,*)
         write(*,*) 'FILES:'
         write(*,*) 'mesh%hecmw_n_file:'
         write(*,*) mesh%hecmw_n_file
@@ -79,7 +79,7 @@ module hecmw_dist_print_f
             write(*,*) mesh%files
         endif
         write(*,*) 'END of FILES'
-        write(*,*) 
+        write(*,*)
         write(*,*) 'ZERO:'
         write(*,*) mesh%zero_temp
         write(*,*) 'END of ZERO'
@@ -87,7 +87,7 @@ module hecmw_dist_print_f
 
 
     subroutine hecmw_dist_print_node(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         write(*,*) 'NODE:'
         write(*,*) 'n_node:'
@@ -113,11 +113,11 @@ module hecmw_dist_print_f
         write(*,*) 'node_dof_index:'
         if(associated(mesh%node_dof_index)) then
             write(*,*) mesh%node_dof_index
-        endif 
+        endif
         write(*,*) 'node_dof_item:'
         if(associated(mesh%node_dof_item)) then
             write(*,*) mesh%node_dof_item
-        endif 
+        endif
         write(*,*) 'node_val_index:'
         if(associated(mesh%node_val_index)) then
             write(*,*) mesh%node_val_index
@@ -139,7 +139,7 @@ module hecmw_dist_print_f
 
 
     subroutine hecmw_dist_print_elem(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         write(*,*) 'ELEMENT:'
         write(*,*) 'n_elem:'
@@ -195,7 +195,7 @@ module hecmw_dist_print_f
 
 
     subroutine hecmw_dist_print_pe(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         write(*,*) 'PE:'
         write(*,*) 'zero:'
@@ -247,7 +247,7 @@ module hecmw_dist_print_f
 
 
     subroutine hecmw_dist_print_adapt(mesh)
-        type(hecmwST_local_mesh) :: mesh 
+        type(hecmwST_local_mesh) :: mesh
 
         write(*,*) 'ADAPTATION:'
         write(*,*) 'coarse_grid_level:'
@@ -345,27 +345,27 @@ module hecmw_dist_print_f
         write(*,*) 'mat_name'
         if(associated(mat%mat_name)) then
             write(*,*) mat%mat_name
-        endif 
+        endif
         write(*,*) 'mat_item_index'
         if(associated(mat%mat_item_index)) then
             write(*,*) mat%mat_item_index
-        endif 
+        endif
         write(*,*) 'mat_subitem_index'
         if(associated(mat%mat_subitem_index)) then
             write(*,*) mat%mat_subitem_index
-        endif 
+        endif
         write(*,*) 'mat_table_index'
         if(associated(mat%mat_table_index)) then
             write(*,*) mat%mat_table_index
-        endif 
+        endif
         write(*,*) 'mat_val'
         if(associated(mat%mat_val)) then
             write(*,*) mat%mat_val
-        endif 
+        endif
         write(*,*) 'mat_temp'
         if(associated(mat%mat_temp)) then
             write(*,*) mat%mat_temp
-        endif 
+        endif
         write(*,*) 'END of MATERIAL'
     end subroutine hecmw_dist_print_mat
 
@@ -427,7 +427,7 @@ module hecmw_dist_print_f
             write(*,*) amp%amp_table
         endif
         write(*,*) 'END of AMPLITUDE'
-    end subroutine hecmw_dist_print_amp 
+    end subroutine hecmw_dist_print_amp
 
 
     subroutine hecmw_dist_print_ngrp(grp)

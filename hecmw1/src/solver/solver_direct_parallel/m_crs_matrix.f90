@@ -313,7 +313,7 @@ integer(kind=kint) :: ndeg, nndeg, i, idx, jcol, iofset
 ndeg=c%ndeg
 nndeg=ndeg*ndeg
 v=0
-jcol = (k+ndeg-1) / ndeg     ! row number in sparse matrix 
+jcol = (k+ndeg-1) / ndeg     ! row number in sparse matrix
 iofset = mod(k+ndeg-1, ndeg) ! offset in val. 0offset
 
 do i=c%ia(jcol),c%ia(jcol+1)-1
@@ -327,7 +327,7 @@ end subroutine crs_matrix_getvec
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine errtrp(mes) 
+subroutine errtrp(mes)
 character(*) mes
 write(*,*)  'Error in m_crs_matrix: ', mes
 stop

@@ -12,7 +12,7 @@
 !      "Structural Analysis for Large Scale Assembly"                  !
 !                                                                      !
 !======================================================================!
-!> \brief This module contains subroutines of fortran dummy interface to Metis 4.0.3 
+!> \brief This module contains subroutines of fortran dummy interface to Metis 4.0.3
 
 module m_Metis403API
   implicit none
@@ -36,13 +36,13 @@ module m_Metis403API
   integer,parameter ::  METIS_TYPE_PartGraphRecursive   = 1
   integer,parameter ::  METIS_TYPE_mCPartGraphRecursive = 2
   integer,parameter ::  METIS_TYPE_WPartGraphRecursive  = 3
-  
+
   integer,parameter ::  METIS_TYPE_PartGraphKway        = 1
   integer,parameter ::  METIS_TYPE_PartGraphVKway       = 2
   integer,parameter ::  METIS_TYPE_mCPartGraphKway      = 3
   integer,parameter ::  METIS_TYPE_WPartGraphKway       = 4
   integer,parameter ::  METIS_TYPE_WPartGraphVKway      = 5
-  
+
 !<  Extension functions of Metis 5.0.2
 !!  & Data structures for fortran codes
   type METIS4
@@ -80,7 +80,7 @@ module m_Metis403API
     integer(idx_t)            ::  num = 0
     integer(idx_t),pointer    ::  idx(:)=>NULL()
   end type
-  
+
   interface freeConnect
     module procedure    freeConnect1
     module procedure    freeConnectM
@@ -134,7 +134,7 @@ subroutine MetisF_Free(mts)
     if(associated(mts%adjwgt))  deallocate(mts%adjwgt,stat=istat)
     if(associated(mts%tpwgts))  deallocate(mts%tpwgts,stat=istat)
     if(associated(mts%ubvec))   deallocate(mts%ubvec,stat=istat)
-    
+
     if(associated(mts%options)) deallocate(mts%options,stat=istat)
     if(associated(mts%part))    deallocate(mts%part,stat=istat)
 !
@@ -143,7 +143,7 @@ subroutine MetisF_Free(mts)
 !
     if(associated(mts%svptr))       deallocate(mts%svptr,stat=istat)
     if(associated(mts%svind))       deallocate(mts%svind,stat=istat)
-    if(associated(mts%idxOld2New))  deallocate(mts%idxOld2New,stat=istat)    
+    if(associated(mts%idxOld2New))  deallocate(mts%idxOld2New,stat=istat)
 end subroutine MetisF_Free
 
 !<  Fortran Interface to Metis 4.0.3

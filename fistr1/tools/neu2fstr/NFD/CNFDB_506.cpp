@@ -71,7 +71,7 @@ void CNFDB_506::read_const_item( CNFData* nfd, std::vector<cconst_item>& list )
 	list.clear();
 	while(1) {
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIBBBBBBB", 
+		nfd->ReadRecord( buff, "IIIBBBBBBB",
 			&item.ID,
 			&item.color,
 			&item.layer,
@@ -168,7 +168,7 @@ void CNFDB_506::write_const_item( CNFData* nfd, FILE* fp, std::vector<CNFDB_506:
 {
 	vector<cconst_item>::iterator iter;
 	for(iter = list.begin(); iter != list.end(); iter++ ){
-		nfd->WriteData( fp, "IIIBBBBBBBn", 
+		nfd->WriteData( fp, "IIIBBBBBBBn",
 			iter->ID,
 			iter->color,
 			iter->layer,

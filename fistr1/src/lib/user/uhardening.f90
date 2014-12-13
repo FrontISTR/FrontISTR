@@ -13,7 +13,7 @@
 !======================================================================!
 !======================================================================!
 !>  \brief   This function provides user interface to define hardening
-!>  tangent 
+!>  tangent
 !!
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2010/01/12
@@ -27,8 +27,8 @@ function uhardening( matl, pstrain )
     real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
     real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
 	real(kind=kreal) :: uhardening
-	
-    uhardening = 0.d0	
+
+    uhardening = 0.d0
 end function
 
 !> This subroutine calculate kinematic hardening tangent
@@ -38,7 +38,7 @@ function ukhardening( matl, pstrain )
     real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
     real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
 	real(kind=kreal) :: ukhardening
-	
+
     ukhardening = 0.d0
 end function
 
@@ -49,6 +49,6 @@ function uCurrYield( matl, pstrain )
     real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
     real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
 	real(kind=kreal) :: uCurrYield
-	
-    uCurrYield = 0.d0	
+
+    uCurrYield = 0.d0
 end function

@@ -177,7 +177,7 @@ contains
       call hecmw_matresid_66 (hecMESH, hecMAT, Z, R, ZP, COMMtime)
 
     enddo
-	
+
   end subroutine hecmw_precond_66_apply
 
   !C

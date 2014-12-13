@@ -13,8 +13,8 @@
 !======================================================================!
 !======================================================================!
 !                                                                      !
-!> \brief  This module contains functions for interpolation in 10 node 
-!!    tetrahedron element (Langrange  interpolation) 
+!> \brief  This module contains functions for interpolation in 10 node
+!!    tetrahedron element (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/15
@@ -42,7 +42,7 @@ module shape_tet10n
       shp(9)=4.d0*xi*ze
       shp(10)=4.d0*et*ze
     end subroutine
-                     
+
     subroutine ShapeDeriv_tet10n(volcoord,shp)
       real(kind=kreal), intent(in) :: volcoord(3)
       real(kind=kreal) :: shp(10,3)

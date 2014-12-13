@@ -94,7 +94,7 @@
 !     and is also available for performance tests
 !
 !     to solve Ax=b for x, nozero pattern and values must be give.
-!     
+!
 !   arrays
 !     jcol     column entrys
 !     irow     row entrys
@@ -127,7 +127,7 @@
 
 !*EHM HECMW June 7 2004
 
-      i98 = hecMAT%Iarray(98) 
+      i98 = hecMAT%Iarray(98)
       IF(hecMAT%Iarray(98).EQ.1) THEN
 !* Interface to symbolic factorization
        CALL setij(hecMESH,hecMAT)
@@ -141,7 +141,7 @@
       t3 = t2
 
 
-      i97 = hecMAT%Iarray(97) 
+      i97 = hecMAT%Iarray(97)
       IF(hecMAT%Iarray(97).EQ.1) THEN
 !* Interface to numeric factorization
        CALL nuform(hecMESH,hecMAT,ir)
@@ -214,12 +214,12 @@
 !======================================================================!
       subroutine addr0(isw,i,j,aij,invp,xlnzr,colno,diag,zln, &
                       dsln,nstop,ndeg2,ndeg2l,ir)
- 
- 
+
+
       implicit double precision(a-h,o-z)
       integer invp(*),xlnzr(*),colno(*)
       double precision zln(ndeg2,*),diag(ndeg2l,*),dsln(ndeg2,*), aij(ndeg2)
- 
+
       data idbg/0/
       ir=0
       ii=invp(i)
@@ -871,7 +871,7 @@
 
       SUBROUTINE setij(hecMESH,hecMAT)
 
-      USE hecmw_util 
+      USE hecmw_util
 !     USE sp_direct_solver
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
@@ -926,7 +926,7 @@
 
       SUBROUTINE nuform(hecMESH,hecMAT,ir)
 
-      USE hecmw_util 
+      USE hecmw_util
 !     USE sp_direct_solver
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
@@ -937,7 +937,7 @@
       NDOF  = hecMESH%n_dof
       ntotal = NUMNP*NDOF
 
-     
+
 !*NUFACT variables
       neqns = NUMNP
       ndeg = NDOF
@@ -1625,12 +1625,12 @@
 !c----------------------------------------------------------------------
 !c
 !c     matini initializes storage for sparse matrix solver.
-!c     this routine is used for both symmetric and asymmetric matrices 
+!c     this routine is used for both symmetric and asymmetric matrices
 !c     and must be called once at the beginning
 !c
 !c    (i)
 !c        neqns     number of unknowns
-!c        nttbr     number of non0s, pattern of non-zero elements are 
+!c        nttbr     number of non0s, pattern of non-zero elements are
 !c                  given like following.
 !c                  nonz(A)={(i,j);i=irow(l),j=jcol(l); 1<= l <= nttbr}
 !c        irow
@@ -1647,13 +1647,13 @@
 !c
 !c        contents of iv
 !c               pointers 1 &zpiv(1)  2 &iperm(1)  3 &invp(1)
-!c                        4 &parent(1)5 &nch(1)    6 &xlnzr(1) 
+!c                        4 &parent(1)5 &nch(1)    6 &xlnzr(1)
 !c                        7 &colno(1) 8 &diag(1)   9 &zln(1)
 !c                       10 &dsln(1)
 !c
 !c               scalars 21 len(colno)  22 nstop     23 stage
 !c                       24 neqns       25 len(iv) 26 len(dsln)
-!c                       27 total 
+!c                       27 total
 !c
 !c        stage   10  after initialization
 !c                20  building up matrix
@@ -1920,7 +1920,7 @@
 !      iv(6)=left
 !      iv(7)=iv(6)+neqns1
 !      maxl=lxleaf-iv(7)
- 
+
       maxl=lxleaf-(left+neqns1)
       ALLOCATE(xlnzr(neqns+1),STAT=ierror)
       IF(ierror/=0) STOP "ALLOCATION ERROR, xlnzr: SUB. matini.f"
@@ -1975,7 +1975,7 @@
 
 !rmiv
 !      iv(23)=10
-      stage = 10      
+      stage = 10
       ialoc = 5*neqns+lncol+1
  1000 continue
 
@@ -2378,7 +2378,7 @@
       nch(l)=nch(l)-1
       nch(1)=-1
       do 100 ic=2,nstop-1
-         call sxum(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx,ndeg, ndegl,zz,t) 
+         call sxum(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx,ndeg, ndegl,zz,t)
   100 continue
 !c
 !c phase II
@@ -2413,23 +2413,23 @@
 !======================================================================!
 !                                                                      !
 !======================================================================!
-      !subroutine nusol0(b,iv,ir) 
-      subroutine nusol0(r_h_s,ir) 
+      !subroutine nusol0(b,iv,ir)
+      subroutine nusol0(r_h_s,ir)
 !c
 !c
 !     USE sp_direct_solver
       use hecmw_util
-      implicit double precision(a-h,o-z) 
+      implicit double precision(a-h,o-z)
       dimension r_h_s(*)
       ! dimention wk(ndeg*neqns) -> leading stack overflow
       double precision,pointer :: wk(:)
       INTEGER ir
-      !dimension b(*),iv(*) 
-!c 
-!c---------------------------------------------------------------------- 
-!c 
-!c     this performs forward elimination and backward substitution 
-!c 
+      !dimension b(*),iv(*)
+!c
+!c----------------------------------------------------------------------
+!c
+!c     this performs forward elimination and backward substitution
+!c
 !c     (i/o)
 !c           r_h_s        on entry     right hand side vector
 !c                    on exit      solution vector
@@ -3314,7 +3314,7 @@
          endif
   260 continue
       if(l.eq.1) goto 500
-       
+
 !c
 !c  anc(l-1) is the eligible node
 !c
@@ -4089,7 +4089,7 @@
             t(17)=t(17)+zz(2)*zln(6,k)+zz(8)*zln(12,k) &
                        +zz(14)*zln(18,k)+zz(20)*zln(24,k) &
                        +zz(26)*zln(30,k)+zz(32)*zln(36,k)
-            t(18)=t(18)+zz(3)*zln(6,k)+zz(9)*zln(12,k) & 
+            t(18)=t(18)+zz(3)*zln(6,k)+zz(9)*zln(12,k) &
                        +zz(15)*zln(18,k)+zz(21)*zln(24,k) &
                        +zz(27)*zln(30,k)+zz(33)*zln(36,k)
             t(19)=t(19)+zz(4)*zln(6,k)+zz(10)*zln(12,k) &
@@ -4305,7 +4305,7 @@
 !
 !      this routine sets an non-zero entry  of the matrix.
 !      (symmetric version)
-!      
+!
 !      (i)
 !          isw      =0    set the value
 !                   =1    add the value
@@ -4353,7 +4353,7 @@
       if(stage.ne.20) then
 !
 ! for diagonal
-! 
+!
           diag = 0.
 !         call clear(neqns*ndeg2,diag)
 !

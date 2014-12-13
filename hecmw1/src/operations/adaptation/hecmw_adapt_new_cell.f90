@@ -69,7 +69,7 @@
       hecMESH%n_elem          = hecMESH%n_adapt_elem_cur
       hecMESH%n_adapt_elem_341= hecMESH%n_adapt_elem_341_cur
       hecMESH%n_adapt_elem_351= hecMESH%n_adapt_elem_351_cur
-      
+
 !C
 !C-- OLD/NEW global CELL #
 
@@ -344,7 +344,7 @@
         if (ityp.eq.341) then
           icou_341= icou_341 + 1
           IW3(icou_341)= icel
-        endif        
+        endif
       enddo
 
        do icel= 1, hecMESH%n_elem
@@ -352,7 +352,7 @@
         if (ityp.eq.351) then
           icou_351= icou_351 + 1
           IW3(icou_341+icou_351)= icel
-        endif        
+        endif
       enddo
 
       do ic0= 1, hecMESH%n_elem
@@ -362,7 +362,7 @@
       enddo
 
       hecMESH%elem_type_index(1)= icou_341
-      hecMESH%elem_type_index(2)= icou_341 + icou_351 
+      hecMESH%elem_type_index(2)= icou_341 + icou_351
 
       deallocate (IW2, IW3)
 !C===

@@ -53,7 +53,7 @@ bool CFSTRData::SaveMesh( const char* file_name, const char* comment )
 	WriteHeader( "!END" );
 	fclose(fp);
 	fp = 0;
-	return true;	
+	return true;
 }
 
 
@@ -83,7 +83,7 @@ bool CFSTRData::SaveCtrl( const char* file_name, const char* comment )
 	WriteHeader( "!END" );
 	fclose(fp);
 	fp = 0;
-	return true;	
+	return true;
 }
 
 

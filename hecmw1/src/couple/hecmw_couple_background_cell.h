@@ -27,14 +27,14 @@
 
 
 struct hecmw_couple_background_cell {
-	int n;			
-	double coef;	
-	int nx;			
-	int ny;			
-	int nz;			
-	double dx;		
-	double dy;		
-	double dz;		
+	int n;
+	double coef;
+	int nx;
+	int ny;
+	int nz;
+	double dx;
+	double dy;
+	double dz;
 };
 
 extern void

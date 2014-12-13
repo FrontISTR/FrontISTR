@@ -150,7 +150,7 @@ void CNFDB_507::read_structural_load( CNFData* nfd, std::vector<cstructural_load
 	while(1) {
 		// ##1
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIB", 
+		nfd->ReadRecord( buff, "IIIIIIB",
 			&rec.loadID,
 			&rec.loadtype,
 			&rec.color,
@@ -161,15 +161,15 @@ void CNFDB_507::read_structural_load( CNFData* nfd, std::vector<cstructural_load
 		if( rec.loadID == -1 ) break;
 		// ##2
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "III", 
+		nfd->ReadRecord( buff, "III",
 			&rec.dof_face[0], &rec.dof_face[1], &rec.dof_face[2] );
 		// ##3
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFFFF", 
+		nfd->ReadRecord( buff, "FFFFF",
 			&rec.value[0], &rec.value[1], &rec.value[2], &rec.value[3], &rec.value[4] );
 		// ##4
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIII", 
+		nfd->ReadRecord( buff, "IIIII",
 			&rec.functions[0], &rec.functions[1], &rec.functions[2], &rec.functions[3], &rec.functions[4] );
 		// ##5
 		nfd->ReadLineEx( buff );
@@ -181,11 +181,11 @@ void CNFDB_507::read_structural_load( CNFData* nfd, std::vector<cstructural_load
 			&rec.add1_id[1]);
 		// ##6
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "III", 
+		nfd->ReadRecord( buff, "III",
 			&rec.dir_func[0], &rec.dir_func[1], &rec.dir_func[2] );
 		// ##7
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFF", 
+		nfd->ReadRecord( buff, "FFF",
 			&rec.direction[0], &rec.direction[1], &rec.direction[2] );
 		// ----------------------------------------------------------
 		list.push_back( rec );
@@ -202,7 +202,7 @@ void CNFDB_507::read_geometric_load( CNFData* nfd, std::vector<cgeometric_load_r
 	while(1) {
 		// ##1
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIIIIB", 
+		nfd->ReadRecord( buff, "IIIIIIB",
 			&rec.loadID,
 			&rec.loadtype,
 			&rec.color,
@@ -213,15 +213,15 @@ void CNFDB_507::read_geometric_load( CNFData* nfd, std::vector<cgeometric_load_r
 		if( rec.loadID == -1 ) break;
 		// ##2
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "III", 
+		nfd->ReadRecord( buff, "III",
 			&rec.dof_face[0], &rec.dof_face[1], &rec.dof_face[2] );
 		// ##3
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFFFF", 
+		nfd->ReadRecord( buff, "FFFFF",
 			&rec.value[0], &rec.value[1], &rec.value[2], &rec.value[3], &rec.value[4] );
 		// ##4
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIII", 
+		nfd->ReadRecord( buff, "IIIII",
 			&rec.functions[0], &rec.functions[1], &rec.functions[2], &rec.functions[3], &rec.functions[4] );
 		// ##5
 		nfd->ReadLineEx( buff );
@@ -233,28 +233,28 @@ void CNFDB_507::read_geometric_load( CNFData* nfd, std::vector<cgeometric_load_r
 			&rec.addl_id[1] );
 		// ##6
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "III", 
+		nfd->ReadRecord( buff, "III",
 			&rec.dir_func[0], &rec.dir_func[1], &rec.dir_func[2] );
 		// ##7
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFF", 
+		nfd->ReadRecord( buff, "FFF",
 			&rec.direction[0], &rec.direction[1], &rec.direction[2] );
 		// ##8
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "II", 
+		nfd->ReadRecord( buff, "II",
 			&rec.dir_mode,
 			&rec.dir_id );
 		// ##9
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFF", 
+		nfd->ReadRecord( buff, "FFF",
 			&rec.dir_base[0], &rec.dir_base[1], &rec.dir_base[2] );
 		// ##10
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFF", 
+		nfd->ReadRecord( buff, "FFF",
 			&rec.dir_vector[0], &rec.dir_vector[1], &rec.dir_vector[2] );
 		// ##11
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "II", 
+		nfd->ReadRecord( buff, "II",
 			&rec.var_mode,
 			&rec.var_funcID );
 		// ##12
@@ -266,16 +266,16 @@ void CNFDB_507::read_geometric_load( CNFData* nfd, std::vector<cgeometric_load_r
 		// ##14-17
 		for(i=0; i<4; i++){
 			nfd->ReadLineEx( buff );
-			nfd->ReadRecord( buff, "FFF", 
+			nfd->ReadRecord( buff, "FFF",
 				&rec.var_locate[i][0], &rec.var_locate[i][1], &rec.var_locate[i][2] );
 		}
 		// ##18
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "FFFF", 
+		nfd->ReadRecord( buff, "FFFF",
 			&rec.var_value[0], &rec.var_value[1], &rec.var_value[2], &rec.var_value[3] );
 		// ##19
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "BB", 
+		nfd->ReadRecord( buff, "BB",
 			&rec.adjust_midside,
 			&rec.is_expanded2 );
 		//-------------------------------------------------------------------
@@ -293,7 +293,7 @@ void CNFDB_507::read_temp_load( CNFData* nfd, std::vector<ctemp_load_rec>& list 
 	while(1) {
 		// ##1
 		nfd->ReadLineEx( buff );
-		nfd->ReadRecord( buff, "IIIFFIB", 
+		nfd->ReadRecord( buff, "IIIFFIB",
 			&rec.ID,
 			&rec.color,
 			&rec.layer,
@@ -519,7 +519,7 @@ void CNFDB_507::write_structural_load( class CNFData* nfd, FILE* fp, std::vector
 	vector<cstructural_load_rec>::iterator iter;
 	for(iter = list.begin(); iter != list.end(); iter ++ ){
 		// ##1
-		nfd->WriteData( fp, "IIIIIIBn", 
+		nfd->WriteData( fp, "IIIIIIBn",
 			iter->loadID,
 			iter->loadtype,
 			iter->color,
@@ -528,13 +528,13 @@ void CNFDB_507::write_structural_load( class CNFData* nfd, FILE* fp, std::vector
 			iter->subtype,
 			iter->is_expanded );
 		// ##2
-		nfd->WriteData( fp, "IIIn", 
+		nfd->WriteData( fp, "IIIn",
 			iter->dof_face[0], iter->dof_face[1], iter->dof_face[2] );
 		// ##3
-		nfd->WriteData( fp, "FFFFFn", 
+		nfd->WriteData( fp, "FFFFFn",
 			iter->value[0], iter->value[1], iter->value[2], iter->value[3], iter->value[4] );
 		// ##4
-		nfd->WriteData( fp, "IIIIIn", 
+		nfd->WriteData( fp, "IIIIIn",
 			iter->functions[0], iter->functions[1], iter->functions[2], iter->functions[3], iter->functions[4] );
 		// ##5
 		nfd->WriteData( fp, "BBBIIn",
@@ -544,10 +544,10 @@ void CNFDB_507::write_structural_load( class CNFData* nfd, FILE* fp, std::vector
 			iter->add1_id[0],
 			iter->add1_id[1]);
 		// ##6
-		nfd->WriteData( fp, "IIIn", 
+		nfd->WriteData( fp, "IIIn",
 			iter->dir_func[0], iter->dir_func[1], iter->dir_func[2] );
 		// ##7
-		nfd->WriteData( fp, "FFFn", 
+		nfd->WriteData( fp, "FFFn",
 			iter->direction[0], iter->direction[1], iter->direction[2] );
 	}
 	nfd->WriteData( fp, "IIIIIIBn", -1,-1,-1,-1,-1,-1,0);
@@ -560,7 +560,7 @@ void CNFDB_507::write_geometric_load( class CNFData* nfd, FILE* fp, std::vector<
 	vector<cgeometric_load_rec>::iterator iter;
 	for(iter = list.begin(); iter != list.end(); iter ++ ){
 		// ##1
-		nfd->WriteData( fp, "IIIIIIBn", 
+		nfd->WriteData( fp, "IIIIIIBn",
 			iter->loadID,
 			iter->loadtype,
 			iter->color,
@@ -569,13 +569,13 @@ void CNFDB_507::write_geometric_load( class CNFData* nfd, FILE* fp, std::vector<
 			iter->subtype,
 			iter->is_expanded );
 		// ##2
-		nfd->WriteData( fp, "IIIn", 
+		nfd->WriteData( fp, "IIIn",
 			iter->dof_face[0], iter->dof_face[1], iter->dof_face[2] );
 		// ##3
-		nfd->WriteData( fp, "FFFFFn", 
+		nfd->WriteData( fp, "FFFFFn",
 			iter->value[0], iter->value[1], iter->value[2], iter->value[3], iter->value[4] );
 		// ##4
-		nfd->WriteData( fp, "IIIIIn", 
+		nfd->WriteData( fp, "IIIIIn",
 			iter->functions[0], iter->functions[1], iter->functions[2], iter->functions[3], iter->functions[4] );
 		// ##5
 		nfd->WriteData( fp, "BBBIIn",
@@ -585,23 +585,23 @@ void CNFDB_507::write_geometric_load( class CNFData* nfd, FILE* fp, std::vector<
 			iter->addl_id[0],
 			iter->addl_id[1] );
 		// ##6
-		nfd->WriteData( fp, "IIIn", 
+		nfd->WriteData( fp, "IIIn",
 			iter->dir_func[0], iter->dir_func[1], iter->dir_func[2] );
 		// ##7
-		nfd->WriteData( fp, "FFFn", 
+		nfd->WriteData( fp, "FFFn",
 			iter->direction[0], iter->direction[1], iter->direction[2] );
 		// ##8
-		nfd->WriteData( fp, "IIn", 
+		nfd->WriteData( fp, "IIn",
 			iter->dir_mode,
 			iter->dir_id );
 		// ##9
-		nfd->WriteData( fp, "FFFn", 
+		nfd->WriteData( fp, "FFFn",
 			iter->dir_base[0], iter->dir_base[1], iter->dir_base[2] );
 		// ##10
-		nfd->WriteData( fp, "FFFn", 
+		nfd->WriteData( fp, "FFFn",
 			iter->dir_vector[0], iter->dir_vector[1], iter->dir_vector[2] );
 		// ##11
-		nfd->WriteData( fp, "IIn", 
+		nfd->WriteData( fp, "IIn",
 			iter->var_mode,
 			iter->var_funcID );
 		// ##12
@@ -610,14 +610,14 @@ void CNFDB_507::write_geometric_load( class CNFData* nfd, FILE* fp, std::vector<
 		nfd->WriteStr( fp, iter->var_equation );
 		// ##14-17
 		for(int i=0; i<4; i++){
-			nfd->WriteData( fp, "FFFn", 
+			nfd->WriteData( fp, "FFFn",
 				iter->var_locate[i][0], iter->var_locate[i][1], iter->var_locate[i][2] );
 		}
 		// ##18
-		nfd->WriteData( fp, "FFFFn", 
+		nfd->WriteData( fp, "FFFFn",
 			iter->var_value[0], iter->var_value[1], iter->var_value[2], iter->var_value[3] );
 		// ##19
-		nfd->WriteData( fp, "BBn", 
+		nfd->WriteData( fp, "BBn",
 			iter->adjust_midside,
 			iter->is_expanded2 );
 	}
@@ -630,7 +630,7 @@ void CNFDB_507::write_temp_load( class CNFData* nfd, FILE* fp, std::vector<ctemp
 	vector<ctemp_load_rec>::iterator iter;
 	for(iter = list.begin(); iter != list.end(); iter ++ ){
 		// ##1
-		nfd->WriteData( fp, "IIIFFIBn", 
+		nfd->WriteData( fp, "IIIFFIBn",
 			iter->ID,
 			iter->color,
 			iter->layer,

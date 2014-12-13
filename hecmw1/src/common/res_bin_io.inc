@@ -107,7 +107,7 @@ bin_output_result_node(FILE *fp)
 		n++;
 	}
 
-	/* node_label */  
+	/* node_label */
 	for(p=node_list; p; p=p->next) {
 		rc = hecmw_write_bin(fp, "S", p->label);
 		if(rc < 0) {
@@ -116,7 +116,7 @@ bin_output_result_node(FILE *fp)
 		}
 	}
 
-	/* node_val_item */  
+	/* node_val_item */
 	nn_comp = count_nn_comp();
 	if(nn_comp == 0) return 0;
 	data = HECMW_malloc(sizeof(*data) * nn_comp);
@@ -168,7 +168,7 @@ bin_output_result_elem(FILE *fp)
 		n++;
 	}
 
-	/* elem_label */  
+	/* elem_label */
 	for(p=elem_list; p; p=p->next) {
 		rc = hecmw_write_bin(fp, "S", p->label);
 		if(rc < 0) {
@@ -177,7 +177,7 @@ bin_output_result_elem(FILE *fp)
 		}
 	}
 
-	/* elem_val_item */  
+	/* elem_val_item */
 	ne_comp = count_ne_comp();
 	if(ne_comp == 0) return 0;
 	data = HECMW_malloc(sizeof(*data) * ne_comp);
@@ -298,7 +298,7 @@ bin_output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *
 		n++;
 	}
 
-	/* node_label */  
+	/* node_label */
 	for(i=0; i < result->nn_component; i++) {
 		rc = hecmw_write_bin(fp, "S", result->node_label[i]);
 		if(rc < 0) {
@@ -307,7 +307,7 @@ bin_output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *
 		}
 	}
 
-	/* node_val_item */  
+	/* node_val_item */
 	if(result->nn_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_node; i++) {
@@ -348,7 +348,7 @@ bin_output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *
 		n++;
 	}
 
-	/* elem_label */  
+	/* elem_label */
 	for(i=0; i < result->ne_component; i++) {
 		rc = hecmw_write_bin(fp, "S", result->elem_label[i]);
 		if(rc < 0) {
@@ -357,7 +357,7 @@ bin_output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *
 		}
 	}
 
-	/* elem_val_item */  
+	/* elem_val_item */
 	if(result->ne_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_elem; i++) {
@@ -508,7 +508,7 @@ bin_input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 				m++;
 			}
 		}
-		
+
 	}
 
 	return 0;
@@ -587,7 +587,7 @@ bin_input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 				m++;
 			}
 		}
-		
+
 	}
 
 	return 0;

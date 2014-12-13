@@ -15,7 +15,7 @@ module lczparm
 use hecmw
 implicit none
 public
-     
+
       integer(kind=kint),parameter :: LENG = 256
       integer(kind=kint),parameter :: lvecq_size = 1000
 

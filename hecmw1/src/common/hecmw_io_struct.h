@@ -160,7 +160,7 @@ struct hecmw_io_section {
 			double thickness;
 			int integpoints;
 		} shell;
-		
+
         struct hecmw_io_section_beam {
 			double vxyz[3];
 			double area;

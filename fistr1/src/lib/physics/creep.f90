@@ -24,12 +24,12 @@ module mCreep
 
   use mMaterial
   use m_ElasticLinear
-  
+
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
 
   contains
-  
+
     !> This subroutine calculates stiffness for elastically isotropic
     !>     materials with isotropic creep
     subroutine iso_creep(matl, sectType, stress, strain, extval,plstrain,            &
@@ -71,7 +71,7 @@ module mCreep
         e=outa(1)
         un=outa(2)
       endif
-	  
+
 !      Norton
       if( matl%mtype==NORTON ) then         ! those with no yield surface
         if( present( temp ) ) then
@@ -127,9 +127,9 @@ module mCreep
       do i=4,6
         stiffness(i,i) = stiffness(i,i) - c4/2.d0
       enddo
-  
+
    end subroutine
-   
+
    !> This subroutine calculates stresses and creep status for an elastically isotropic
    !>     material with isotropic creep
    subroutine update_iso_creep(matl, sectType, strain, stress, extval,plstrain,                &
@@ -150,7 +150,7 @@ module mCreep
       real(kind=kreal) :: xxn, aa
 
       real(kind=kreal) :: c3,e,un,G,dg,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
-	   
+
       if( dtime==0.d0 ) return
 !
 !     elastic constants
@@ -167,7 +167,7 @@ module mCreep
         e=outa(1)
         un=outa(2)
       endif
-	  
+
 !      Norton
       if( matl%mtype==NORTON ) then         ! those with no yield surface
         if( present( temp ) ) then
@@ -211,25 +211,25 @@ module mCreep
           if((ddg<dg*1.d-6).or.(ddg<1.d-12)) exit
         endif
       enddo
-	  
+
       stri(:) = stri(:)-3.d0*G*dg*stri(:)/dstri
       stress(1:3) = stri(1:3)-p
       stress(4:6) = stri(4:6)
-		
+
 !
 !     state variables
 !
       plstrain= dg
       extval(1)=eqvs
- 
+
    end subroutine
-   
-   !> Update viscoplastic state 
+
+   !> Update viscoplastic state
    subroutine updateViscoState( gauss )
       use mMechGauss
       type(tGaussStatus), intent(inout) :: gauss  ! status of curr gauss point
 
       gauss%fstatus(2) = gauss%fstatus(2)+gauss%plstrain
    end subroutine
-   
+
 end module

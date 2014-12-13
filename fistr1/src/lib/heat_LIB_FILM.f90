@@ -34,7 +34,7 @@ module m_heat_LIB_FILM
 !----------------------------------------------------------------------*
 !**
 !**  SET 231 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -61,7 +61,7 @@ module m_heat_LIB_FILM
       IC = 0
       DO IP = 1, 2
         TERM2(IP) = 0.0
-        DO JP = 1, 2 
+        DO JP = 1, 2
           IC = IC + 1
           TERM1(IC) = 0.0
 !** INTEGRATION OVER SURFACE
@@ -79,22 +79,22 @@ module m_heat_LIB_FILM
             ENDDO
             XSUM = DSQRT( GX*GX+GY*GY )*THICK
             TERM1(IC) = TERM1(IC) - XSUM*WGT(LX)*H(IP)*H(JP)*HH
-            IF( IP.EQ.JP )  then 
+            IF( IP.EQ.JP )  then
               TERM2(IP) = TERM2(IP) - XSUM*WGT(LX)*H(JP)*HH*SINK
             endif
           ENDDO
-        ENDDO 
-      ENDDO 
-!     
+        ENDDO
+      ENDDO
+!
       RETURN
-      
+
    end subroutine heat_FILM_231
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_232(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 232 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -131,7 +131,7 @@ module m_heat_LIB_FILM
       IC = 0
       DO IP = 1, 3
         TERM2(IP) = 0.0
-        DO JP = 1, 3 
+        DO JP = 1, 3
           IC = IC + 1
           TERM1(IC) = 0.0
 !** INTEGRATION OVER SURFACE
@@ -151,22 +151,22 @@ module m_heat_LIB_FILM
             ENDDO
             XSUM = DSQRT( GX*GX+GY*GY )*THICK
             TERM1(IC) = TERM1(IC) - XSUM*WGT(LX)*H(IP)*H(JP)*HH
-            IF( IP.EQ.JP ) then 
+            IF( IP.EQ.JP ) then
               TERM2(IP) = TERM2(IP) - XSUM*WGT(LX)*H(JP)*HH*SINK
             endif
           ENDDO
-        ENDDO 
-      ENDDO 
-     
+        ENDDO
+      ENDDO
+
       RETURN
-      
+
    end subroutine heat_FILM_232
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_241(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 241 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -197,7 +197,7 @@ module m_heat_LIB_FILM
       IC = 0
       DO IP = 1, 2
         TERM2(IP) = 0.0
-        DO JP = 1, 2 
+        DO JP = 1, 2
           IC = IC + 1
           TERM1(IC) = 0.0
 !** INTEGRATION OVER SURFACE
@@ -215,22 +215,22 @@ module m_heat_LIB_FILM
             ENDDO
             XSUM = DSQRT( GX*GX+GY*GY )*THICK
             TERM1(IC) = TERM1(IC) - XSUM*WGT(LX)*H(IP)*H(JP)*HH
-            IF( IP.EQ.JP ) then 
+            IF( IP.EQ.JP ) then
               TERM2(IP) = TERM2(IP) - XSUM*WGT(LX)*H(JP)*HH*SINK
             endif
           ENDDO
-        ENDDO 
-      ENDDO 
-     
+        ENDDO
+      ENDDO
+
       RETURN
-      
+
    end subroutine heat_FILM_241
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_242(NN,XX,YY,ZZ,THICK,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 242 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -272,7 +272,7 @@ module m_heat_LIB_FILM
       IC = 0
       DO IP = 1, 3
         TERM2(IP) = 0.0
-        DO JP = 1, 3 
+        DO JP = 1, 3
           IC = IC + 1
           TERM1(IC) = 0.0
 !** INTEGRATION OVER SURFACE
@@ -292,22 +292,22 @@ module m_heat_LIB_FILM
             ENDDO
             XSUM = DSQRT( GX*GX+GY*GY )*THICK
             TERM1(IC) = TERM1(IC) - XSUM*WGT(LX)*H(IP)*H(JP)*HH
-            IF( IP.EQ.JP ) then 
+            IF( IP.EQ.JP ) then
               TERM2(IP) = TERM2(IP) - XSUM*WGT(LX)*H(JP)*HH*SINK
             endif
           ENDDO
-        ENDDO 
-      ENDDO 
-     
+        ENDDO
+      ENDDO
+
       RETURN
-     
+
    end subroutine heat_FILM_242
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_341(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 341 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -317,7 +317,7 @@ module m_heat_LIB_FILM
 ! I/F VARIABLES
       INTEGER(kind=kint) NOD(MM)
       REAL(kind=kreal) XX(NN),YY(NN),ZZ(NN),TERM1(MM*MM),TERM2(MM)
-      
+
 !
       IF     ( LTYPE.EQ.1 ) THEN
         NOD(1) = 1
@@ -344,11 +344,11 @@ module m_heat_LIB_FILM
       BY = YY( NOD(3) ) - YY( NOD(1) )
       BZ = ZZ( NOD(3) ) - ZZ( NOD(1) )
 !
-      AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0   
+      AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0
 !
       IC = 0
       DO IP = 1, 3
-        TERM2(IP) = - AA*HH*SINK 
+        TERM2(IP) = - AA*HH*SINK
         DO JP = 1, 3
           IC = IC + 1
           TERM1(IC) = - AA*HH/3.0
@@ -356,14 +356,14 @@ module m_heat_LIB_FILM
       ENDDO
 !
       RETURN
-      
+
    end subroutine heat_FILM_341
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_342(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 342 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -507,14 +507,14 @@ module m_heat_LIB_FILM
       enddo
 !
       RETURN
-      
+
    end subroutine heat_FILM_342
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_351(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 351 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -625,11 +625,11 @@ module m_heat_LIB_FILM
         BX = XX( NOD(3) ) - XX( NOD(1) )
         BY = YY( NOD(3) ) - YY( NOD(1) )
         BZ = ZZ( NOD(3) ) - ZZ( NOD(1) )
-        AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0   
+        AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0
 !
         IC = 0
         DO IP = 1, 3
-          TERM2(IP) = - AA*HH*SINK 
+          TERM2(IP) = - AA*HH*SINK
           DO JP = 1, 3
             IC = IC + 1
             TERM1(IC) = - AA*HH/3.0
@@ -639,14 +639,14 @@ module m_heat_LIB_FILM
       ENDIF
 
       RETURN
-      
+
    end subroutine heat_FILM_351
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_352(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 352 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -719,11 +719,11 @@ module m_heat_LIB_FILM
         ISUF = 2
       ENDIF
 !
-      IF( ISUF.EQ.2 ) THEN 
+      IF( ISUF.EQ.2 ) THEN
         IC = 0
-        DO IP = 1,8 
+        DO IP = 1,8
           TERM2(IP) = 0.0
-          DO JP = 1,8 
+          DO JP = 1,8
             IC = IC + 1
             TERM1(IC) = 0.0
             DO  IG2=1,3
@@ -764,7 +764,7 @@ module m_heat_LIB_FILM
                 G2X=0.0
                 G2Y=0.0
                 G2Z=0.0
-                DO I = 1,8 
+                DO I = 1,8
                   G1X=G1X+HR(I)*XX(NOD(I))
                   G1Y=G1Y+HR(I)*YY(NOD(I))
                   G1Z=G1Z+HR(I)*ZZ(NOD(I))
@@ -878,14 +878,14 @@ module m_heat_LIB_FILM
       ENDIF
 !
       RETURN
-      
+
    end subroutine heat_FILM_352
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_361(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 361 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -990,14 +990,14 @@ module m_heat_LIB_FILM
       ENDDO
 
       RETURN
-      
+
    end subroutine heat_FILM_361
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_362(NN,XX,YY,ZZ,LTYPE,HH,SINK,MM,TERM1,TERM2,NOD)
 !----------------------------------------------------------------------*
 !**
 !**  SET 362 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
 !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
 !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
@@ -1077,11 +1077,11 @@ module m_heat_LIB_FILM
         NOD(7) = 12
         NOD(8) = 20
       ENDIF
- 
+
         IC = 0
-        DO IP = 1,8 
+        DO IP = 1,8
           TERM2(IP) = 0.0
-          DO JP = 1,8 
+          DO JP = 1,8
             IC = IC + 1
             TERM1(IC) = 0.0
 !
@@ -1126,7 +1126,7 @@ module m_heat_LIB_FILM
                 G2Y=0.0
                 G2Z=0.0
 
-                DO I = 1,8 
+                DO I = 1,8
                   G1X=G1X+HR(I)*XX(NOD(I))
                   G1Y=G1Y+HR(I)*YY(NOD(I))
                   G1Z=G1Z+HR(I)*ZZ(NOD(I))
@@ -1151,15 +1151,15 @@ module m_heat_LIB_FILM
         ENDDO
 
       RETURN
-      
+
    end subroutine heat_FILM_362
 !----------------------------------------------------------------------*
       SUBROUTINE heat_FILM_731( NN,XX,YY,ZZ,HH,SINK,TERM1,TERM2 )
 !----------------------------------------------------------------------*
 !**
 !**  SET 731 FILM
-!** 
-!   F1   LTYPE=1  : SURFACE FILM 
+!**
+!   F1   LTYPE=1  : SURFACE FILM
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
 ! I/F VARIABLES
@@ -1171,26 +1171,26 @@ module m_heat_LIB_FILM
         BX = XX(3) - XX(1)
         BY = YY(3) - YY(1)
         BZ = ZZ(3) - ZZ(1)
-        AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0    
+        AA = DSQRT( (AY*BZ-AZ*BY)**2+(AZ*BX-AX*BZ)**2+(AX*BY-AY*BX)**2 )/6.0
 !
         IC = 0
         DO IP = 1, NN
-          TERM2(IP) = - AA*HH*SINK 
-          DO JP = 1, NN 
+          TERM2(IP) = - AA*HH*SINK
+          DO JP = 1, NN
             IC = IC + 1
             TERM1(IC) = - AA*HH/3.0
           ENDDO
         ENDDO
 
       RETURN
-      
+
    end subroutine heat_FILM_731
 !----------------------------------------------------------------------*
    SUBROUTINE heat_FILM_741( NN,XX,YY,ZZ,HH,SINK,TERM1,TERM2 )
 !----------------------------------------------------------------------*
 !**
 !**  SET 741 FILM
-!** 
+!**
 !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
@@ -1260,6 +1260,6 @@ module m_heat_LIB_FILM
         ENDDO
 
       RETURN
-      
+
    end subroutine heat_FILM_741
 end module m_heat_LIB_FILM

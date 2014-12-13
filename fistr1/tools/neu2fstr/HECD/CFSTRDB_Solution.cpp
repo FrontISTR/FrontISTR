@@ -66,7 +66,7 @@ bool CFSTRDB_Solution::Read( CHECData* hecd, char* header_line )
 	int rcode[5];
 	char s[256];
 	char type_s[256];
-	
+
 	if(! hecd->ParseHeader( header_line, rcode, "S", "TYPE", s)) return false;
 
 	cleanup_token( s, type_s );

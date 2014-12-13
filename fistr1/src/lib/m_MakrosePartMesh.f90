@@ -25,7 +25,7 @@ module m_MakrosePartMesh
 !    module procedure Mak_GetLocalMesh_NodeBase1_1
 !    module procedure Mak_GetLocalMesh_NodeBase1_all
 !  end interface
-  
+
 contains
 
 !< Node-based partition
@@ -35,7 +35,7 @@ subroutine Mak_GetNeighborIndex_NodeBase(mak,nparts,part,partID,nbIndex)
   integer(kint),intent(in)          ::  nparts  ! Number of partitions
   integer(kint),intent(in)          ::  part(:) ! Nodal partition IDs (part(mak%nn))
   integer(kint),intent(in)          ::  partID
-  integer(kint),pointer             ::  nbIndex(:)  
+  integer(kint),pointer             ::  nbIndex(:)
 !
   integer(kint)   ::  i,j,k,n,istat,nodeID
   integer(kint),allocatable   ::  help(:),idx(:)
@@ -79,7 +79,7 @@ subroutine Mak_GetNeighborIndex_NodeBase(mak,nparts,part,partID,nbIndex)
         n = n + 1
         nbIndex(n) = i
       endif
-    enddo    
+    enddo
 end subroutine Mak_GetNeighborIndex_NodeBase
 
 subroutine Mak_GetLocalMeshMapping_NodeBase(mak,nparts,part,  &
@@ -174,9 +174,9 @@ subroutine Mak_GetLocalMeshMapping_NodeBase(mak,nparts,part,  &
             indexElmtG2L(i,part(nodeID2)) = ei_loc(part(nodeID2)) + ex_loc(part(nodeID2))
           endif
         enddo
-      enddo      
+      enddo
     enddo
-    deallocate(helpNode,helpElmt,help,stat=istat) 
+    deallocate(helpNode,helpElmt,help,stat=istat)
 end subroutine Mak_GetLocalMeshMapping_NodeBase
 
 subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder(mak,nparts,part,  &
@@ -257,7 +257,7 @@ subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder(mak,nparts,part,  &
       enddo
     enddo
 
-!   External elements     
+!   External elements
     do i=1,mak%ne
       n = 0; help(:) = 0
       do j=mak%eptr(i),mak%eptr(i+1)-1
@@ -287,7 +287,7 @@ subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder(mak,nparts,part,  &
           indexElmtG2L(i,j) = ei_loc(j) + ex_loc(j)
         endif
       enddo
-      
+
 !      do j=mak%eptr(i),mak%eptr(i+1)-1
 !        nodeID1 = mak%eind(j)
 !        do k=mak%eptr(i),mak%eptr(i+1)-1
@@ -314,9 +314,9 @@ subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder(mak,nparts,part,  &
 !            indexElmtG2L(i,part(nodeID2)) = ei_loc(part(nodeID2)) + ex_loc(part(nodeID2))
 !          endif
 !        enddo
-!      enddo      
+!      enddo
     enddo
-    deallocate(helpNode,helpElmt,help,stat=istat) 
+    deallocate(helpNode,helpElmt,help,stat=istat)
 end subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder
 
 subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder_FrontISTR(mak,nparts,part,  &
@@ -430,7 +430,7 @@ subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder_FrontISTR(mak,nparts,part,  
         enddo
       endif
     enddo
-    deallocate(helpNode,helpElmt,help,stat=istat) 
+    deallocate(helpNode,helpElmt,help,stat=istat)
 end subroutine Mak_GetLocalMeshMapping_NodeBase_InOrder_FrontISTR
 
 subroutine Mak_GetLocalMesh_NodeBase1(mak,nparts,part,partID,mak_loc,indexNodeG2L_me,indexElmtG2L_me)
@@ -452,7 +452,7 @@ subroutine Mak_GetLocalMesh_NodeBase1(mak,nparts,part,partID,mak_loc,indexNodeG2
 !   Initiate local mesh data
 !#ifdef VIA_ELMT_TYPE
     call Mak_ResetIndexElmtG2L_Type(mak,indexElmtG2L(:,partID))
-!#endif    
+!#endif
     call Mak_SetLocalMesh(mak,ni_loc(partID),nx_loc(partID),ei_loc(partID),ex_loc(partID),  &
                           indexNodeG2L(:,partID),indexElmtG2L(:,partID),partID,mak_loc)
 !   Get index global to local of current partID
@@ -470,7 +470,7 @@ subroutine Mak_GetLocalMesh_NodeBase1(mak,nparts,part,partID,mak_loc,indexNodeG2
     if(associated(ei_loc)) deallocate(ei_loc,stat=istat)
     if(associated(ex_loc)) deallocate(ex_loc,stat=istat)
     if(associated(indexNodeG2L)) deallocate(indexNodeG2L,stat=istat)
-    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)    
+    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)
 end subroutine Mak_GetLocalMesh_NodeBase1
 
 subroutine Mak_GetLocalMesh_NodeBase1_all(mak,nparts,part,partID,mak_loc,indexNodeG2L_me,indexElmtG2L_me)
@@ -513,7 +513,7 @@ subroutine Mak_GetLocalMesh_NodeBase1_all(mak,nparts,part,partID,mak_loc,indexNo
     if(associated(ei_loc)) deallocate(ei_loc,stat=istat)
     if(associated(ex_loc)) deallocate(ex_loc,stat=istat)
     if(associated(indexNodeG2L)) deallocate(indexNodeG2L,stat=istat)
-    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)    
+    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)
 end subroutine Mak_GetLocalMesh_NodeBase1_all
 
 subroutine Mak_GetLocalMesh_NodeBase1_FrontISTR(mak,nparts,part,partID,mak_loc,indexNodeG2L_me,indexElmtG2L_me)
@@ -558,7 +558,7 @@ subroutine Mak_GetLocalMesh_NodeBase1_FrontISTR(mak,nparts,part,partID,mak_loc,i
     if(associated(ei_loc)) deallocate(ei_loc,stat=istat)
     if(associated(ex_loc)) deallocate(ex_loc,stat=istat)
 !    if(associated(indexNodeG2L)) deallocate(indexNodeG2L,stat=istat)
-!    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)    
+!    if(associated(indexElmtG2L)) deallocate(indexElmtG2L,stat=istat)
 end subroutine Mak_GetLocalMesh_NodeBase1_FrontISTR
 
 subroutine Mak_GetLocalMesh_NodeBaseAll(mak,nparts,part,mak_loc)
@@ -645,7 +645,7 @@ subroutine Mak_ResetIndexElmtG2L_Type(mak,indexElmtG2L)
     deallocate(indexElmtG2L_tmp,stat=istat)
     deallocate(indexType,stat=istat)
     deallocate(counter,stat=istat)
-    deallocate(ptr,stat=istat)   
+    deallocate(ptr,stat=istat)
 end subroutine Mak_ResetIndexElmtG2L_Type
 
 subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak_loc)
@@ -704,7 +704,7 @@ subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak
         endif
         mak_loc%eind(n) = indexNodeG2L(mak%eind(j))
       enddo
-    enddo    
+    enddo
 end subroutine Mak_SetLocalMesh
 
 !< Element-based partition
@@ -713,7 +713,7 @@ subroutine Mak_GetNeighborIndex_ElementBase(mak,nparts,part,partID,nbIndex)
   integer(kint),intent(in)          ::  nparts  ! Number of partitions
   integer(kint),intent(in)          ::  part(:) ! Nodal partition IDs (part(mak%nn))
   integer(kint),intent(in)          ::  partID
-  integer(kint),pointer             ::  nbIndex(:)  
+  integer(kint),pointer             ::  nbIndex(:)
 !
   integer(kint)   ::  i,j,k,n,istat,elmtID
   integer(kint),allocatable   ::  help(:),idx(:)
@@ -760,7 +760,7 @@ subroutine Mak_GetNeighborIndex_ElementBase(mak,nparts,part,partID,nbIndex)
         n = n + 1
         nbIndex(n) = i
       endif
-    enddo    
+    enddo
 end subroutine Mak_GetNeighborIndex_ElementBase
 
 subroutine Mak_GetLocalMeshMapping_ElementBase(mak,nparts,part,  &
@@ -770,7 +770,7 @@ subroutine Mak_GetLocalMeshMapping_ElementBase(mak,nparts,part,  &
   integer(kint),intent(in)          ::  part(:) ! Nodal partition IDs (part(mak%ne))
   integer(kint),pointer             ::  ni_loc(:) ! Number of internal nodes in each part
   integer(kint),pointer             ::  nx_loc(:) ! Number of nodes on partition interface in each part
-  integer(kint),pointer             ::  ei_loc(:) ! Number of elements whose nodes are internal 
+  integer(kint),pointer             ::  ei_loc(:) ! Number of elements whose nodes are internal
   integer(kint),pointer             ::  ex_loc(:) ! Number of elements on partition interface
   integer(kint),pointer             ::  indexNodeG2L(:,:)
   integer(kint),pointer             ::  indexElmtG2L(:,:)
@@ -884,9 +884,9 @@ subroutine Mak_GetLocalMeshMapping_ElementBase(mak,nparts,part,  &
             indexElmtG2L(i,part(nodeID2)) = ei_loc(part(nodeID2)) + ex_loc(part(nodeID2))
           endif
         enddo
-      enddo      
+      enddo
     enddo
-    deallocate(helpNode,helpElmt,help,stat=istat) 
+    deallocate(helpNode,helpElmt,help,stat=istat)
 end subroutine Mak_GetLocalMeshMapping_ElementBase
 
 end module m_MakrosePartMesh

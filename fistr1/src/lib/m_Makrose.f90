@@ -28,7 +28,7 @@ module m_Makrose
   integer,parameter     ::  MAKROSE_TRI3  = 30
   integer,parameter     ::  MAKROSE_TRI6  = 32
   integer,parameter     ::  MAKROSE_TRI9  = 33
-  integer,parameter     ::  MAKROSE_TRI10 = 37 
+  integer,parameter     ::  MAKROSE_TRI10 = 37
   integer,parameter     ::  MAKROSE_QUAD4 = 40
   integer,parameter     ::  MAKROSE_QUAD8 = 42
   integer,parameter     ::  MAKROSE_QUAD12= 43
@@ -46,7 +46,7 @@ module m_Makrose
 !
   integer,parameter     ::  MAKROSE_PYRD5 = 90
   integer,parameter     ::  MAKROSE_PYRD13= 92
-! 
+!
   integer               ::  MAKROSE_NODE_NUM(99)
   data MAKROSE_NODE_NUM / 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,   &
                           0, 0, 0, 0, 0, 0, 0, 0, 0, 2,   &
@@ -111,7 +111,7 @@ module m_Makrose
     integer(kint),pointer   ::  nptr(:)=>null()   ! Number of elements that share a node
     integer(kint),pointer   ::  nind(:)=>null()   ! Element index sharing a node
   end type
-  
+
 !  interface size
 !    module procedure sizeNonzero
 !  end interface
@@ -127,7 +127,7 @@ function sizeNonzero(iarray) result(n)
       if(iarray(i) == 0) exit
     enddo
     n = i - 1
-end function sizeNonzero    
+end function sizeNonzero
 
 function Mak_GetMeshNodeToNode(mtype,idx) result(nidx)
   integer,intent(in)  ::  mtype
@@ -189,7 +189,7 @@ function Mak_GetMeshNodeToNode(mtype,idx) result(nidx)
       stop
     end select
 end function Mak_GetMeshNodeToNode
-    
+
 subroutine Mak_Init(mak,ndim,nn,ne)
   type(MAKROSE_STRUCT),intent(inout)  ::  mak
   integer(kint),intent(in),optional   ::  ndim
@@ -224,7 +224,7 @@ subroutine Mak_Init(mak,ndim,nn,ne)
       allocate(mak%etyp(ne),stat=istat)
       allocate(mak%egrp(ne),stat=istat)
       allocate(mak%emat(ne),stat=istat)
-    endif     
+    endif
 end subroutine Mak_Init
 
 subroutine Mak_ReadFile_tmp(mak,filename)
@@ -435,9 +435,9 @@ subroutine Mak_WriteFile_box(mak,xc,dx,ds_x,filename)
       enddo
     enddo
     enddo
-    
+
     close(unit)
-    
+
 !   Read element data
     filename_tmp = head(1:nn)//'.efe'
     open(unit,file=filename_tmp,status='unknown')
@@ -584,7 +584,7 @@ subroutine Mak_MeshToDual(mak,nCommon,xadj,adjncy)
   integer(kint)   ::  i,j,k,l,n,istat,elmtID,nodeID,ne,nne
   integer(kint),allocatable   ::  help(:),counter(:)
 !
-    
+
     if(.not.(associated(mak%nptr).and.associated(mak%nind))) then
       call Mak_GetElementOnNode(mak)
     endif
@@ -641,7 +641,7 @@ subroutine Mak_MeshToDual(mak,nCommon,xadj,adjncy)
           elmtID = mak%nind(k)
           if(elmtID == i) cycle
           if(help(elmtID) /= 0) cycle
-          help(elmtID) = 1        
+          help(elmtID) = 1
           if(counter(elmtID) >= nCommon) then
             nne = nne + 1
             adjncy(ne+nne) = elmtID
@@ -652,7 +652,7 @@ subroutine Mak_MeshToDual(mak,nCommon,xadj,adjncy)
       xadj(i+1) = xadj(i) + nne
     enddo
     deallocate(help,counter,stat=istat)
-end subroutine Mak_MeshToDual        
+end subroutine Mak_MeshToDual
 
 function Mak_GetElementCommonNodeNumber(mak,e1,e2) result(n)
   type(MAKROSE_STRUCT),intent(in) ::  mak
@@ -682,7 +682,7 @@ function Mak_GetElementCommonNodeNumber(mak,e1,e2) result(n)
     enddo
     deallocate(help,stat=istat)
 end function Mak_GetElementCommonNodeNumber
-        
+
 subroutine Mak_GetElementInBox(mak,boxCenter,dxyz,n,svind,flagNode)
   type(MAKROSE_STRUCT),intent(in) ::  mak
   real(kreal),intent(in)          ::  boxCenter(:)
@@ -754,7 +754,7 @@ subroutine Mak_GetElementInBox(mak,boxCenter,dxyz,n,svind,flagNode)
       enddo
       deallocate(help,stat=istat)
       n = count
-    endif   
+    endif
     deallocate(idx,x0,dx,minID,maxID,pcID,stat=istat)
 end subroutine Mak_GetElementInBox
 
@@ -829,7 +829,7 @@ subroutine Mak_GetElementInBoxEndPoint(mak,boxCenter,dxyz,n,svind,flagNode)
       enddo
       deallocate(help,stat=istat)
       n = count
-    endif   
+    endif
     deallocate(idx,x0,dx,minID,maxID,pcID,stat=istat)
 end subroutine Mak_GetElementInBoxEndPoint
 

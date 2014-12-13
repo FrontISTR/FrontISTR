@@ -16,7 +16,7 @@
  *                                                                     *
  *=====================================================================*/
 
- 
+
 
 #ifndef HECMW_UTIL_INCLUDED
 #define HECMW_UTIL_INCLUDED
@@ -47,7 +47,7 @@
 #ifdef HECMW_SERIAL
 #define HECMW_assert(cond) assert(cond)
 #else
-#define HECMW_assert(cond) HECMW_assert_((cond) ? 1:0, #cond,__FILE__,__LINE__) 
+#define HECMW_assert(cond) HECMW_assert_((cond) ? 1:0, #cond,__FILE__,__LINE__)
 #endif
 #else
 #define HECMW_DEBUG(args) ((void)0)
@@ -80,13 +80,13 @@ extern char *HECMW_toupper(char *s);
 
 extern char *HECMW_tolower(char *s);
 
- 
+
 extern void HECMW_print_error(void);
 
- 
+
 extern void HECMW_print_msg(int loglv, int msgno, const char *fmt, ...);
 
- 
+
 extern void HECMW_print_vmsg(int loglv, int msgno, const char *fmt, va_list ap);
 
 

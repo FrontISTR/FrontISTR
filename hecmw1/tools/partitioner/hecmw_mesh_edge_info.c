@@ -1267,26 +1267,26 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         goto error;
     }
 
-    
+
     rtc = HECMW_mesh_hsort_edge_init( local_mesh->n_node, local_mesh->n_elem );
     if( rtc != 0 )  goto error;
 
-    
+
     for( i=0; i<local_mesh->n_elem_type; i++ ) {
         is = local_mesh->elem_type_index[i];
         ie = local_mesh->elem_type_index[i+1];
 
         switch( local_mesh->elem_type_item[i] ) {
-            
+
         case HECMW_ETYPE_ROD1:  /* line ( 1st order ) */
         case HECMW_ETYPE_ROD31:
             if( edge_info_rod1( local_mesh, is, ie ) )  goto error;
             break;
         case HECMW_ETYPE_ROD2:  /* line ( 2nd order ) */
-            if( edge_info_rod2( local_mesh, is, ie ) )  goto error;  
+            if( edge_info_rod2( local_mesh, is, ie ) )  goto error;
             break;
 
-            
+
         case HECMW_ETYPE_TRI1:  /* triangle ( 1st order ) */
             if( edge_info_tri1( local_mesh, is, ie ) )  goto error;
             break;
@@ -1300,7 +1300,7 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             if( edge_info_qua2( local_mesh, is, ie ) )  goto error;
             break;
 
-            
+
         case HECMW_ETYPE_TET1:  /* tetrahedron ( 1st order ) */
             if( edge_info_tet1( local_mesh, is, ie ) )  goto error;
             break;
@@ -1326,7 +1326,7 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             if( edge_info_hex2( local_mesh, is, ie ) )  goto error;
             break;
 
-            
+
         case HECMW_ETYPE_MST1:  /* triangluar master-slave type ( 1st order ) */
             if( edge_info_mst1( local_mesh, is, ie ) )  goto error;
             break;
@@ -1352,7 +1352,7 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             if( edge_info_jtq2( local_mesh, is, ie ) )  goto error;
             break;
 
-            
+
         case HECMW_ETYPE_BEM1:  /* beam ( 1st order ) */
             if( edge_info_bem1( local_mesh, is, ie ) )  goto error;
             break;
@@ -1363,7 +1363,7 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             if( edge_info_bem3( local_mesh, is, ie ) )  goto error;
             break;
 
-            
+
         case HECMW_ETYPE_SHT1:  /* triangluar shell ( 1st order ) */
             if( edge_info_sht1( local_mesh, is, ie ) )  goto error;
             break;
@@ -1428,14 +1428,14 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         }
     }
 
-    
+
     edge_data->n_edge = HECMW_mesh_hsort_edge_get_n( );
     if( edge_data->n_edge < 0 )  goto error;
 
     edge_data->edge_node_item = HECMW_mesh_hsort_edge_get_v( );
     if( edge_data->edge_node_item == NULL )  goto error;
 
-    
+
     HECMW_mesh_hsort_edge_final( );
 
     return 0;

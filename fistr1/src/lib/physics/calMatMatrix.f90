@@ -14,7 +14,7 @@
 !======================================================================!
 !>  \brief   This module manages calculation relates with materials
 !!
-!>  \author                date                  version 
+!>  \author                date                  version
 !>  X.Yuan(Advancesoft)    2010/01/12        original
 !>  X.Yuan                 2013/03/18        consider anisotropic & temp dependent
 !======================================================================!
@@ -51,7 +51,7 @@ module m_MatMatrix
 		REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
 		REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
 
-		integer :: i  
+		integer :: i
 		real(kind=kreal)            :: cijkl(3,3,3,3)
 		TYPE( tMaterial ), pointer  :: matl
 		matl=>gauss%pMaterial
@@ -80,10 +80,10 @@ module m_MatMatrix
           endif
         else
           print *, "Elasticity type", matl%mtype, "not supported"
-          stop 
+          stop
         endif
 
-      elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then 
+      elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then
         call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain  )
         call mat_c2d( cijkl, matrix, sectType )
       elseif( matl%mtype==ARRUDABOYCE )  then
@@ -113,7 +113,7 @@ module m_MatMatrix
       else
         stop "Material type not supported!"
       endif
-      
+
     end subroutine
 
 !
@@ -131,7 +131,7 @@ module m_MatMatrix
           call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress )
       elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
           call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
-      elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined 
+      elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
           call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
       elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
           if( .not. present(dt) ) stop "error in viscoelastic update!"
@@ -147,9 +147,9 @@ module m_MatMatrix
           else
             call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime )
           endif
-      elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined 
+      elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
           call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
-             strain, stress, gauss%fstatus, dt, gauss%ttime )      
+             strain, stress, gauss%fstatus, dt, gauss%ttime )
       end if
 
     end subroutine StressUpdate
@@ -237,120 +237,120 @@ end subroutine mat_c2d
       SUBROUTINE MatlMatrix_Shell                        &
                  (gauss, sectType, D,                    &
                   e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-                  alpha, n_layer)                                 
+                  alpha, n_layer)
 !####################################################################
-      
+
       TYPE(tGaussStatus), INTENT(IN)  :: gauss
       INTEGER, INTENT(IN)             :: sectType, n_layer
       REAL(KIND = kreal), INTENT(OUT) :: D(:, :)
       REAL(KIND = kreal), INTENT(IN)  :: e1_hat(3), e2_hat(3), e3_hat(3)
       REAL(KIND = kreal), INTENT(IN)  :: cg1(3), cg2(3), cg3(3)
       REAL(KIND = kreal), INTENT(OUT) :: alpha
-      
+
 !--------------------------------------------------------------------
-      
+
       REAL(KIND = kreal)       :: c(3, 3, 3, 3)
       TYPE(tMaterial), POINTER :: matl
-      
+
 !--------------------------------------------------------------------
-      
+
       matl => gauss%pMaterial
-      
+
 !--------------------------------------------------------------------
-      
+
       IF( isElastic(matl%mtype) ) THEN
        CALL LinearElastic_Shell                     &
             (matl, sectType, c,                     &
              e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
-             alpha, n_layer)                                 
+             alpha, n_layer)
 
        CALL mat_c2d_Shell(c, D, sectType)
       ELSE
        STOP "Material type not supported!"
       END IF
-      
+
 !--------------------------------------------------------------------
-      
+
       RETURN
-      
+
 !####################################################################
       END SUBROUTINE MatlMatrix_Shell
 !####################################################################
       ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
-      
-      
+
+
       ! (Gaku Hashimoto, The University of Tokyo, 2012/11/15) <
 !####################################################################
       SUBROUTINE mat_c2d_Shell(c, D, itype)
 !####################################################################
-      
+
       REAL(KIND = kreal), INTENT(IN)  :: c(:, :, :, :)
       REAL(KIND = kreal), INTENT(OUT) :: D(:, :)
       INTEGER, INTENT(IN)             :: itype
-      
+
 !--------------------------------------------------------------------
-      
+
       INTEGER :: index_i(5), index_j(5), &
-                 index_k(5), index_l(5)  
+                 index_k(5), index_l(5)
       INTEGER :: i, j, k, l
       INTEGER :: is, js
-      
+
 !--------------------------------------------------------------------
-      
+
       index_i(1) = 1
       index_i(2) = 2
       index_i(3) = 1
       index_i(4) = 2
       index_i(5) = 3
-      
+
       index_j(1) = 1
       index_j(2) = 2
       index_j(3) = 2
       index_j(4) = 3
       index_j(5) = 1
-      
+
       index_k(1) = 1
       index_k(2) = 2
       index_k(3) = 1
       index_k(4) = 2
       index_k(5) = 3
-       
+
       index_l(1) = 1
       index_l(2) = 2
       index_l(3) = 2
       index_l(4) = 3
       index_l(5) = 1
-      
+
 !--------------------------------------------------------------------
-      
+
       D(:, :) = 0.0D0
-      
+
 !--------------------------------------------------------------------
-      
+
       SELECT CASE( itype )
       CASE( Shell )
-       
+
        DO js = 1, 5
-        
+
         DO is = 1, 5
-         
+
          i = index_i(is)
          j = index_j(is)
          k = index_k(js)
          l = index_l(js)
-         
+
          D(is, js) = c(i, j, k, l)
-         
+
         END DO
-        
+
        END DO
-       
+
       END SELECT
-      
+
 !--------------------------------------------------------------------
-      
+
       RETURN
-      
+
 !####################################################################
       END SUBROUTINE mat_c2d_Shell
 !####################################################################

@@ -20,8 +20,8 @@ MODULE mMaterial
   IMPLICIT NONE
 
   INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
-  
-  
+
+
   ! Following algorithm type
       INTEGER, PARAMETER :: INFINITE = 0
       INTEGER, PARAMETER :: TOTALLAG  = 1
@@ -32,17 +32,17 @@ MODULE mMaterial
   !                1: mechanical deformation analysis
   !                2: heat conduct analysis
   !                ......
-  !   Second digit: 
+  !   Second digit:
   !     Mechanical analysis
-  !     1: Elastic    
-  !     2: Elastoplastic    
+  !     1: Elastic
+  !     2: Elastoplastic
   !     3: Hyperelastic
   !     4: Viscoelastic
   !     5: Viscoplastic
   !     Heat conductiovity
   !     ......
   !   Third digit:
-  !     For elastic or elastoplastic deformation, elastic 
+  !     For elastic or elastoplastic deformation, elastic
   !       0: isotropic                      ie. 110000
   !       1: with transever anisotropity        111000
   !     For hyperelastic deformation
@@ -50,7 +50,7 @@ MODULE mMaterial
   !       1: Mooney-Rivlin                      131000
   !       2: Arruda-Boyce                       132000
   !   Fourth digit
-  !     For elastoplastic problem,yield function 
+  !     For elastoplastic problem,yield function
   !       0: isotropic (Mises)
   !       1: Mohr-Coulomb
   !       2: Drucker-Prager
@@ -58,7 +58,7 @@ MODULE mMaterial
   !     For elastoplastic deformation, hardening law
   !       0: Linear hardening           i.e.  120000
   !       1: Multilinear hardening            120010
-  !       2: Swift                            
+  !       2: Swift
   !       3: Ramberg-Osgood
   !       4: linear kinematic
   !       5: combined (linear kinematic + linear isotropic)
@@ -67,13 +67,13 @@ MODULE mMaterial
   !       0: Norton                     i.e.  150000
   !       1: Striab                           150001
       INTEGER, PARAMETER :: USERMATERIAL          = 100000
-  
+
       INTEGER, PARAMETER :: ELASTIC               = 110000
       INTEGER, PARAMETER :: MN_ORTHOELASTIC       = 111000
       INTEGER, PARAMETER :: USERELASTIC           = 112000
-	  
+
       INTEGER, PARAMETER :: EPLASTIC              = 120000
-	  
+
       INTEGER, PARAMETER :: NEOHOOKE              = 130000
       INTEGER, PARAMETER :: MOONEYRIVLIN          = 131000
       INTEGER, PARAMETER :: ARRUDABOYCE           = 132000
@@ -81,7 +81,7 @@ MODULE mMaterial
 
       INTEGER, PARAMETER :: VISCOELASTIC          = 140000
       INTEGER, PARAMETER :: NORTON                = 150000
-	  
+
   ! Following section type
       INTEGER, PARAMETER :: D3            = -1
       INTEGER, PARAMETER :: PlaneStress   = 1
@@ -105,7 +105,7 @@ MODULE mMaterial
       INTEGER, PARAMETER :: M_KINEHARD = 10
 
       INTEGER, PARAMETER :: M_EXAPNSION = 20
-      
+
       INTEGER, PARAMETER :: M_ALPHA_OVER_MU = 21
 
       INTEGER, PARAMETER :: M_BEAM_RADIUS = 22
@@ -115,17 +115,17 @@ MODULE mMaterial
       INTEGER, PARAMETER :: M_BEAM_ANGLE4 = 26
       INTEGER, PARAMETER :: M_BEAM_ANGLE5 = 27
       INTEGER, PARAMETER :: M_BEAM_ANGLE6 = 28
-      
+
       ! 80~100, hardening parameter
-	  
+
 	!<********** Laminated Shell material properties  **********
-!		INTEGER, PARAMETER :: SHELL material properties = 101~220 
+!		INTEGER, PARAMETER :: SHELL material properties = 101~220
 
 	!********** Use for i_variables **********
 		INTEGER, PARAMETER :: M_SHELL_SOLID = 298
 		INTEGER, PARAMETER :: M_TOTAL_LAYER = 299
 		INTEGER, PARAMETER :: M_SHELL_MATLTYPE = 300
-		
+
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -156,7 +156,7 @@ MODULE mMaterial
   SUBROUTINE initMaterial( material )
     TYPE( tMaterial ), INTENT(INOUT) :: material
     material%mtype = -1                  ! not defined yet
-    material%nfstatus = 0                ! Default: no status 
+    material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITE     ! Default: INFINITE ANALYSIS
     material%variables = 0.d0            ! not defined yet
 
@@ -190,7 +190,7 @@ MODULE mMaterial
     INTEGER, INTENT(IN)  :: n
     INTEGER, INTENT(IN)  :: m
     REAL(KIND=kreal), INTENT(IN) :: v
-    
+
     IF( n>SIZE(materials) .OR. m>100 ) RETURN
     materials(n)%variables(m) = v
   END SUBROUTINE
@@ -285,7 +285,7 @@ MODULE mMaterial
     if( itype/=2 ) return  ! not elstoplastic problem
     getYieldFunction = fetchDigit( 4, mtype )
   end function
-  
+
 !> Get type of hardening
   integer function getHardenType( mtype )
     INTEGER, INTENT(IN) :: mtype
@@ -324,7 +324,7 @@ MODULE mMaterial
     itype = fetchDigit( 2, mtype )
     if( itype==2 ) isElastoplastic = .true.
   end function
-  
+
 !> If it is an viscoelastic material?
   logical function isViscoelastic( mtype )
     INTEGER, INTENT(IN) :: mtype
@@ -344,4 +344,4 @@ MODULE mMaterial
 END MODULE
 
 
-  
+

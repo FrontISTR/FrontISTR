@@ -27,7 +27,7 @@ contains
 function fstr_ctrl_get_nval( ctrl, iType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) :: iType 
+        integer(kind=kint) :: iType
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN),target :: node_id(:)
         character(len=HECMW_NAME_LEN),pointer :: node_id_p
@@ -36,16 +36,16 @@ function fstr_ctrl_get_nval( ctrl, iType, amp, node_id, node_id_len, dof_ids, do
         integer(kind=kint),pointer :: dof_ide (:)
         real(kind=kreal),pointer :: value(:)
         integer(kind=kint) :: fstr_ctrl_get_nval
-        integer(kind=kint) :: rcode     
+        integer(kind=kint) :: rcode
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss
         write(ss,*)  node_id_len
         write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'IIr '
 
-        iType=2                   
-        ss='INITIAL,TRANSIT'      
+        iType=2
+        ss='INITIAL,TRANSIT'
         fstr_ctrl_get_nval = -1
-        rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )   
+        rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )
 
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         node_id_p => node_id(1)
@@ -54,11 +54,11 @@ function fstr_ctrl_get_nval( ctrl, iType, amp, node_id, node_id_len, dof_ids, do
 
 end function fstr_ctrl_get_nval
 
-!> Read in !VELOCITY                                                                                      
+!> Read in !VELOCITY
 function fstr_ctrl_get_VELOCITY( ctrl, vType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) vType   
+        integer(kind=kint) vType
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN) :: node_id(:)
         integer(kind=kint) :: node_id_len
@@ -72,11 +72,11 @@ function fstr_ctrl_get_VELOCITY( ctrl, vType, amp, node_id, node_id_len, dof_ids
 
 end function fstr_ctrl_get_VELOCITY
 
-!> Read in !ACCELERATION                                                               
+!> Read in !ACCELERATION
 function fstr_ctrl_get_ACCELERATION( ctrl, aType, amp, node_id, node_id_len, dof_ids, dof_ide, value )
         implicit none
         integer(kind=kint) :: ctrl
-        integer(kind=kint) :: aType     
+        integer(kind=kint) :: aType
         character(len=HECMW_NAME_LEN) :: amp
         character(len=HECMW_NAME_LEN) :: node_id(:)
         integer(kind=kint) :: node_id_len
@@ -90,7 +90,7 @@ function fstr_ctrl_get_ACCELERATION( ctrl, aType, amp, node_id, node_id_len, dof
 
 end function fstr_ctrl_get_ACCELERATION
 
-!> Read in !DYNAMIC                                            
+!> Read in !DYNAMIC
 function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
                 idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
                 ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
@@ -127,7 +127,7 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         integer(kind=kint) :: node_id_len
         integer(kind=kint) :: nout_monit
         integer(kind=kint) :: iout_list(6)
-		
+
         integer(kind=kint) :: rcode
         character(len=80) :: s
         character(len=HECMW_NAME_LEN) :: data_fmt,ss
@@ -135,13 +135,13 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         integer(kind=kint) :: fstr_ctrl_get_DYNAMIC
 
         fstr_ctrl_get_DYNAMIC = -1
-        
+
 
         s = 'LINEAR,NONLINEAR '
         nlflag=1
         rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', nlflag )
         nlflag=nlflag-1
-		
+
         if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   ganma, beta )/=0 ) return

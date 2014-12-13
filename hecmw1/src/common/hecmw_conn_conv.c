@@ -24,8 +24,8 @@
 
 
 struct conn_conv {
-	int hecmw_etype;						
-	int connectivity[HECMW_MAX_NODE_MAX];	
+	int hecmw_etype;
+	int connectivity[HECMW_MAX_NODE_MAX];
 };
 
 
@@ -52,7 +52,7 @@ struct conn_order {
 
 
 
-static int 
+static int
 conn_comp(const void *c1, const void *c2)
 {
 	int co1 = ((struct conn_order *)c1)->hecmw_order;

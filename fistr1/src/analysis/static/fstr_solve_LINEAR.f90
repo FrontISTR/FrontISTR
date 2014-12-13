@@ -90,7 +90,7 @@ module m_fstr_solve_LINEAR
       else if( hecMESH%n_dof==6) THEN
         call hecmw_update_m_R ( hecMESH, fstrSOLID%unode, hecMAT%NP, hecMESH%n_dof )
         call fstr_Update6D ( hecMESH, fstrSOLID )
-      endif 
+      endif
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)

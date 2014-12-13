@@ -23,7 +23,7 @@ private :: node_on_surface
 
 integer(kind=kint), private :: icall = 0
 contains
-  
+
   subroutine DYNAMIC_MAT_ASS_COUPLE( hecMESH, hecMAT, fstrSOLID, fstrCPL )
     use m_fstr
     implicit none
@@ -43,7 +43,7 @@ contains
 ! ================== modified by K. Tagami ============= 2010/02/25 ====
 !!!!      real(kind=kreal) :: xx(4), yy(4), zz(4)
     integer :: MaxNumNodesOnSurf
-    Parameter( MaxNumNodesOnSurf = 8 ) 
+    Parameter( MaxNumNodesOnSurf = 8 )
     real(kind=kreal) :: xx( MaxNumNodesOnSurf )
     real(kind=kreal) :: yy( MaxNumNodesOnSurf )
     real(kind=kreal) :: zz( MaxNumNodesOnSurf )
@@ -51,7 +51,7 @@ contains
 
     real(kind=kreal) :: area, wg
     integer( kind=kint ) :: ierr
-    
+
 ! ============= added by K. Tagami =========for debug ====== 2010/03/02 ====
     integer( kind=kint ) :: node_global
 ! ==========================================================
@@ -151,7 +151,7 @@ contains
        call hecmw_abort( hecmw_comm_get_comm())
     endif
   end subroutine DYNAMIC_MAT_ASS_COUPLE
-  
+
 !==============================================================================
 ! CALC AREA
 !==============================================================================
@@ -233,7 +233,7 @@ function area_of_squre ( XX,YY,ZZ )
       REAL(kind=kreal) area, XG(2),WGT(2)
       DATA WGT/1.0,1.0/
       DATA XG/-0.5773502691896, 0.5773502691896/
-	  
+
       area = 0.0
 ! INTEGRATION OVER SURFACE
         DO IG2=1,NG
@@ -297,7 +297,7 @@ function area_of_squre ( XX,YY,ZZ )
           ENDDO
         ENDDO
       area_of_squre = area;
-end function area_of_squre 
+end function area_of_squre
 
 !==============================================================================
 ! GET NODES ON SURFACE

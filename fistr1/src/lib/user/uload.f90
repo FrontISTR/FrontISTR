@@ -13,7 +13,7 @@
 !======================================================================!
 !======================================================================!
 !>  \brief   This subroutine read in used-defined loading
-!>  tangent 
+!>  tangent
 !!
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2010/01/30
@@ -32,7 +32,7 @@ implicit none
       integer, pointer :: dof(:)=>null()       !< dof to be loaded
 	  ! == add futher defintiions here ==
    end type
-   
+
    type(tULoad), pointer, save :: uloads(:)=>null()
 
 contains
@@ -48,7 +48,7 @@ contains
      integer, INTENT(IN)             :: cstep      !< current step number
      REAL(KIND=kreal), INTENT(IN)    :: factor     !< loading factor of current step
      REAL(KIND=kreal), INTENT(INOUT) :: exForce(:) !< external force
-	
+
    end subroutine
 
 !> This subroutine take consider of user-defined external loading
@@ -56,7 +56,7 @@ contains
      integer, INTENT(IN)             :: cstep        !< current step number
      REAL(KIND=kreal), INTENT(IN)    :: factor       !< loading factor of current step
      REAL(KIND=kreal), INTENT(INOUT) :: residual(:)  !< residual
-	
+
    end subroutine
 
 end module

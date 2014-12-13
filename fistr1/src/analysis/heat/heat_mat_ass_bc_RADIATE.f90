@@ -22,7 +22,7 @@ module m_heat_mat_ass_bc_RADIATE
 !C***
 !C
    subroutine heat_mat_ass_bc_RADIATE( hecMESH, hecMAT, fstrHEAT, CTIME )
-                                
+
       use m_fstr
       use m_heat_get_amplitude
       use m_heat_LIB_RADIATE
@@ -41,7 +41,7 @@ module m_heat_mat_ass_bc_RADIATE
 
       TZERO = hecMESH%zero_temp
 !C
-      do k = 1, fstrHEAT%R_SUF_tot 
+      do k = 1, fstrHEAT%R_SUF_tot
         icel    = fstrHEAT%R_SUF_elem(k)
         isuf    = fstrHEAT%R_SUF_surf(k)
         iam1    = fstrHEAT%R_SUF_ampl(k,1)
@@ -54,7 +54,7 @@ module m_heat_mat_ass_bc_RADIATE
         isect   = hecMESH%section_ID(icel)
 !C**
         nn = hecmw_get_max_node(ic_type)
-!C** 
+!C**
         iS = hecMESH%elem_node_index(icel-1)
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item(iS+j)
@@ -62,8 +62,8 @@ module m_heat_mat_ass_bc_RADIATE
           yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
           zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
           tt(j) = fstrHEAT%TEMP( nodLOCAL(j) )
-        enddo  
-!C**		
+        enddo
+!C**
         if    ( ic_type.eq.231 ) then
           is = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(is)
@@ -126,24 +126,24 @@ module m_heat_mat_ass_bc_RADIATE
             ic = ic + 1
             if( jnod.gt.inod ) then
               isU = hecMAT%indexU(inod-1) + 1
-              ieU = hecMAT%indexU(inod) 
+              ieU = hecMAT%indexU(inod)
               do ik = isU, ieU
-                if( hecMAT%itemU(ik).eq.jnod ) hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic) 
+                if( hecMAT%itemU(ik).eq.jnod ) hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic)
               enddo
             elseif( jnod.lt.inod ) then
               isL = hecMAT%indexL(inod-1) + 1
-              ieL = hecMAT%indexL(inod) 
+              ieL = hecMAT%indexL(inod)
               do ik = isL, ieL
-                if( hecMAT%itemL(ik).eq.jnod ) hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic) 
+                if( hecMAT%itemL(ik).eq.jnod ) hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic)
               enddo
             else
-              hecMAT%D(inod) = hecMAT%D(inod) - term1(ic) 
-              hecMAT%B(jnod) = hecMAT%B(jnod) - term2(jp) 
+              hecMAT%D(inod) = hecMAT%D(inod) - term1(ic)
+              hecMAT%B(jnod) = hecMAT%B(jnod) - term2(jp)
             endif
           enddo
         enddo
 !C
       enddo
 
-   end subroutine heat_mat_ass_bc_RADIATE 
+   end subroutine heat_mat_ass_bc_RADIATE
 end module m_heat_mat_ass_bc_RADIATE

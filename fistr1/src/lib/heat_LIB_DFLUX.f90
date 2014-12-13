@@ -35,7 +35,7 @@ module m_heat_LIB_DFLUX
 !C*--------------------------------------------------------------------*
 !C***
 !C***  SET 111 DFLUX
-!C*** 
+!C***
 !C*   LTYPE=0  : BODY FLUX
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -62,7 +62,7 @@ module m_heat_LIB_DFLUX
 !
       VECT(1)= -VAL*VV/2.0d0
       VECT(2)= -VAL*VV/2.0d0
-!      
+!
       RETURN
 
    end subroutine heat_DFLUX_111
@@ -71,7 +71,7 @@ module m_heat_LIB_DFLUX
 !C*--------------------------------------------------------------------*
 !C***
 !C***  SET 231 DFLUX
-!C*** 
+!C***
 !C*   LTYPE=0  : BODY FLUX
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -144,7 +144,7 @@ module m_heat_LIB_DFLUX
         V3Z= V1X*V2Y-V1Y*V2X
 
         AA=0.5*DSQRT( V3X*v3X + V3Y*V3Y + V3Z*V3Z )
-        VV=AA*THICK 
+        VV=AA*THICK
         VECT(1)= -VAL*VV/3.0
         VECT(2)= -VAL*VV/3.0
         VECT(3)= -VAL*VV/3.0
@@ -158,7 +158,7 @@ module m_heat_LIB_DFLUX
 !C*--------------------------------------------------------------------*
 !C***
 !C***  SET 232 DFLUX
-!C*** 
+!C***
 !C*   LTYPE=0  : BODY FLUX
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -285,14 +285,14 @@ module m_heat_LIB_DFLUX
         ENDDO
       ENDIF
       RETURN
-      
+
    end subroutine heat_DFLUX_232
 !C*--------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_241(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
 !C*--------------------------------------------------------------------*
 !C***
 !C***  SET 241 DFLUX
-!C*** 
+!C***
 !C*   LTYPE=0  : BODY FLUX
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -392,14 +392,14 @@ module m_heat_LIB_DFLUX
         ENDDO
       ENDIF
       RETURN
-      
+
    end subroutine heat_DFLUX_241
 !C*--------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_242(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
 !C*--------------------------------------------------------------------*
 !C***
 !C***  SET 242 DFLUX
-!C*** 
+!C***
 !C*   LTYPE=0  : BODY FLUX
       use hecmw
       IMPLICIT REAL(kind=kreal)(A-H,O-Z)
@@ -521,14 +521,14 @@ module m_heat_LIB_DFLUX
         ENDDO
       ENDIF
       RETURN
-      
+
    end subroutine heat_DFLUX_242
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_341(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 341 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -561,9 +561,9 @@ module m_heat_LIB_DFLUX
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF(LTYPE.EQ.1) THEN
           NOD(1)=1
@@ -628,7 +628,7 @@ module m_heat_LIB_DFLUX
               HR(4)=-1.0
 !  FOR L2-COORDINATE
               HS(1)= 0.0
-              HS(2)= 1.0 
+              HS(2)= 1.0
               HS(3)= 0.0
               HS(4)=-1.0
 !  FOR ZETA-COORDINATE
@@ -655,23 +655,23 @@ module m_heat_LIB_DFLUX
                  -XJ11*XJ23*XJ32
 !
               DO I = 1, NN
-                VECT(I) = VECT(I) + VAL*H(I)*DET*(1.0-X3)*(1.0-X2-X3)*0.125 
+                VECT(I) = VECT(I) + VAL*H(I)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
               ENDDO
-  
+
             enddo
           enddo
         enddo
       ENDIF
 !
       RETURN
-      
+
    end subroutine heat_DFLUX_341
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_342(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 342 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -710,9 +710,9 @@ module m_heat_LIB_DFLUX
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF(LTYPE.EQ.1) THEN
           NOD(1)=1
@@ -933,7 +933,7 @@ module m_heat_LIB_DFLUX
                  -XJ11*XJ23*XJ32
               DET=-DET
               WG=DET*WGT(L1)*WGT(L2)*WGT(L3)*(1.-X3)*(1.0-X2-X3)*0.125
-              DO I = 1, NN 
+              DO I = 1, NN
                  VECT(I) = VECT(I) - VAL*WG*H(I)
               ENDDO
 !
@@ -943,14 +943,14 @@ module m_heat_LIB_DFLUX
       ENDIF
 !
       RETURN
-      
+
    end subroutine heat_DFLUX_342
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_351(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 351 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -978,9 +978,9 @@ module m_heat_LIB_DFLUX
 ! SELCTION OF LOAD TYPE
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF( LTYPE.EQ.1 ) THEN
           NOD(1) = 1
@@ -1018,7 +1018,7 @@ module m_heat_LIB_DFLUX
       IF( ISUF.EQ.1 ) THEN
         DO IG2=1,2
           SI=XG(IG2)
-          DO IG1=1,2 
+          DO IG1=1,2
             RI=XG(IG1)
 !
             H(1)=0.25*(1.0-RI)*(1.0-SI)
@@ -1099,10 +1099,10 @@ module m_heat_LIB_DFLUX
             HR(2)= 0.0
             HR(3)=-(1.0-ZI)*0.5
             HR(4)= (1.0+ZI)*0.5
-            HR(5)= 0.0 
+            HR(5)= 0.0
             HR(6)=-(1.0+ZI)*0.5
-            HS(1)=  0.0 
-            HS(2)=  (1.0-ZI)*0.5 
+            HS(1)=  0.0
+            HS(2)=  (1.0-ZI)*0.5
             HS(3)= -(1.0-ZI)*0.5
             HS(4)= 0.0
             HS(5)=  (1.0+ZI)*0.5
@@ -1149,14 +1149,14 @@ module m_heat_LIB_DFLUX
       ENDIF
 !
       RETURN
-      
+
    end subroutine heat_DFLUX_351
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_352(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 352 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -1186,9 +1186,9 @@ module m_heat_LIB_DFLUX
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF( LTYPE.EQ.1 ) THEN
           NOD(1) = 1
@@ -1222,7 +1222,7 @@ module m_heat_LIB_DFLUX
           NOD(4) = 2
           NOD(5) = 11
           NOD(6) = 15
-          NOD(7) = 8 
+          NOD(7) = 8
           NOD(8) = 14
         ELSE IF( LTYPE.EQ.5 ) THEN
           NOD(1) = 6
@@ -1235,7 +1235,7 @@ module m_heat_LIB_DFLUX
           NOD(8) = 15
         ENDIF
       ENDIF
-      DO I=1,NN 
+      DO I=1,NN
         VECT(I)=0.0
       ENDDO
 !
@@ -1478,14 +1478,14 @@ module m_heat_LIB_DFLUX
         ENDDO
       ENDIF
       RETURN
-      
+
    end subroutine heat_DFLUX_352
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_361(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 361 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -1521,9 +1521,9 @@ module m_heat_LIB_DFLUX
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF( LTYPE.EQ.1 ) THEN
           NOD(1) = 1
@@ -1701,14 +1701,14 @@ module m_heat_LIB_DFLUX
       ENDIF
 !*
       RETURN
-      
+
    end subroutine heat_DFLUX_361
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_362(NN,XX,YY,ZZ,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET 362 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :FLUX IN NORMAL-DIRECTION FOR FACE-1
 !   S2   LTYPE=2  :FLUX IN NORMAL-DIRECTION FOR FACE-2
@@ -1749,9 +1749,9 @@ module m_heat_LIB_DFLUX
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         IVOL=1
-      ELSE 
+      ELSE
         ISUF=1
         IF( LTYPE.EQ.1 ) THEN
           NOD(1) = 1
@@ -2014,14 +2014,14 @@ module m_heat_LIB_DFLUX
       ENDIF
 !*
       RETURN
-      
+
    end subroutine heat_DFLUX_362
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_731(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET S3 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  :BODY FLUX
 !   S1   LTYPE=1  :SURFACE FLUX
       use hecmw
@@ -2030,7 +2030,7 @@ module m_heat_LIB_DFLUX
       INTEGER(kind=kint) NN, LTYPE
       REAL(kind=kreal) XX(NN),YY(NN),ZZ(NN),VAL,VECT(NN)
 !
-      IF( LTYPE.EQ.0 ) THEN 
+      IF( LTYPE.EQ.0 ) THEN
         THICK = THICK
       ELSEIF( LTYPE.EQ.1 ) THEN
         THICK = 1.0d0
@@ -2055,16 +2055,16 @@ module m_heat_LIB_DFLUX
       VECT(1)= -VAL*AA*THICK/3.0
       VECT(2)= -VAL*AA*THICK/3.0
       VECT(3)= -VAL*AA*THICK/3.0
-!      
+!
       RETURN
-      
+
    end subroutine heat_DFLUX_731
 !----------------------------------------------------------------------*
    SUBROUTINE heat_DFLUX_741(NN,XX,YY,ZZ,THICK,LTYPE,VAL,VECT)
 !----------------------------------------------------------------------*
 !**
 !**  SET S4 DFLUX
-!** 
+!**
 !   BF   LTYPE=0  : BODY FLUX
 !   S1   LTYPE=1  : SURFACE FLUX
       use hecmw
@@ -2090,7 +2090,7 @@ module m_heat_LIB_DFLUX
       ELSE
         THICK = 0.0d0
       ENDIF
-!      
+!
       DO I=1,NN
         VECT(I)=0.0
       ENDDO
@@ -2139,6 +2139,6 @@ module m_heat_LIB_DFLUX
         enddo
       enddo
       RETURN
-      
+
    end subroutine heat_DFLUX_741
 end module m_heat_LIB_DFLUX

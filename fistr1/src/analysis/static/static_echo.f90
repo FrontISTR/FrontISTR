@@ -36,7 +36,7 @@ module m_static_echo
       integer(kind=kint):: nids(20)
 !C====
 !C +-------------------------------+
-!C | NODE                          | 
+!C | NODE                          |
 !C +-------------------------------+
 !C===
 !C** nodal coordinate
@@ -51,7 +51,7 @@ module m_static_echo
       enddo
 !C
 !C +-------------------------------+
-!C | ELEMENT                       | 
+!C | ELEMENT                       |
 !C +-------------------------------+
 !C===
       call fstr2hecmw_mesh_conv( hecMESH )
@@ -60,7 +60,7 @@ module m_static_echo
         iS= hecMESH%elem_type_index(itype-1) + 1
         iE= hecMESH%elem_type_index(itype  )
         ic_type= hecMESH%elem_type_item(itype)
-!C** Set number of nodes		
+!C** Set number of nodes
         nn = hecmw_get_max_node(ic_type)
 !C** element loop
         do icel= iS, iE
@@ -81,7 +81,7 @@ module m_static_echo
       enddo
       call hecmw2fstr_mesh_conv( hecMESH )
 !C +-------------------------------+
-!C | NODE GROUP                    | 
+!C | NODE GROUP                    |
 !C +-------------------------------+
       write(ILOG,*) '### Ngroup'
       do ig1= 1, hecMESH%node_group%n_grp
@@ -95,7 +95,7 @@ module m_static_echo
         enddo
       enddo
 !C +-------------------------------+
-!C | ELEMEN GROUP                  | 
+!C | ELEMEN GROUP                  |
 !C +-------------------------------+
       write(ILOG,*) '### Egroup'
       do ig1= 1, hecMESH%elem_group%n_grp

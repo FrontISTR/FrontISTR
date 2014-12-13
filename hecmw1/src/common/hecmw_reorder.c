@@ -932,7 +932,7 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
     case HECMW_ETYPE_BEM3:
       n_dof = BIT_DOF_THREE;
       break;
-	  
+
       /* link element for MPC */
     case HECMW_ETYPE_LN11:
     case HECMW_ETYPE_LN12:
@@ -1005,7 +1005,7 @@ reorder_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag,
       CLEAR_BIT( node_flag[i], BIT_DOF_ALL );
     }
   }
-  
+
   /* four DOF */
   for( i=0; i<local_mesh->n_node; i++ ) {
     if( EVAL_BIT( node_flag[i], BIT_DOF_FOUR ) ) {
@@ -1018,7 +1018,7 @@ reorder_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag,
       CLEAR_BIT( node_flag[i], BIT_DOF_ALL );
     }
   }
-  
+
   /* three DOF */
   for( i=0; i<local_mesh->n_node; i++ ) {
     if( EVAL_BIT( node_flag[i], BIT_DOF_THREE ) ) {
@@ -1105,7 +1105,7 @@ reorder_node_dof_4mpc_inner( struct hecmwST_local_mesh *local_mesh,
     }
     js = grp->grp_item[idx+i];
   }
-  
+
   /* four DOF */
   for( js=0, i=0; i<n_eqn_block; i++ ) {
     if( EVAL_BIT( block_flag[i], BIT_DOF_FOUR ) ) {

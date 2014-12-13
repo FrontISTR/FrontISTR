@@ -202,7 +202,7 @@ contains
 !C
 !C-- time step loop
 !C
-    a1 = .5d0/fstrDYNAMIC%beta - 1.d0                              
+    a1 = .5d0/fstrDYNAMIC%beta - 1.d0
     a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta**2)
     b1 = ( .5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta

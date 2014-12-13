@@ -163,7 +163,7 @@ module m_static_LIB_2d
 !----------------------------------------------------------------------*
 !**
 !**  Deal with DLOAD conditions
-!** 
+!**
 !   BX   LTYPE=1  :BODY FORCE IN X-DIRECTION
 !   BY   LTYPE=2  :BODY FORCE IN Y-DIRECTION
 !   GRAV LTYPE=4  :GRAVITY FORCE
@@ -205,7 +205,7 @@ module m_static_LIB_2d
 !
       IVOL=0
       ISUF=0
-      IF( LTYPE.LT.10 ) THEN 
+      IF( LTYPE.LT.10 ) THEN
         IVOL=1
         IF( LTYPE.EQ.5 ) THEN
           AX=PARAMS(1)
@@ -213,7 +213,7 @@ module m_static_LIB_2d
           RX=PARAMS(4)
           RY=PARAMS(5)
         ENDIF
-      ELSE IF( LTYPE.GE.10 ) THEN 
+      ELSE IF( LTYPE.GE.10 ) THEN
         ISUF=1
         CALL getSubFace( ETYPE, LTYPE/10, SURTYPE, NOD )
         NSUR = getNumberOfNodes( SURTYPE )
@@ -307,11 +307,11 @@ module m_static_LIB_2d
           DO I=1,NN
             VECT(2*I-1)=PLX(I)
             VECT(2*I  )=PLY(I)
-          ENDDO  
+          ENDDO
         END IF
       ENDIF
     end subroutine DL_C2
-   
+
 !----------------------------------------------------------------------*
    SUBROUTINE TLOAD_C2(ETYPE,NN,XX,YY,TT,T0,gausses,PARAM1,ISET,VECT)
 !----------------------------------------------------------------------*
@@ -354,7 +354,7 @@ module m_static_LIB_2d
 	  ALP = gausses(1)%pMaterial%variables(M_EXAPNSION)
       pp = gausses(1)%pMaterial%variables(M_POISSON)
 !* LOOP OVER ALL INTEGRATION POINTS
-      DO LX=1,NumOfQuadPoints( ETYPE )    
+      DO LX=1,NumOfQuadPoints( ETYPE )
           CALL getQuadPoint( ETYPE, LX, localcoord )
           CALL getShapeFunc( ETYPE, localcoord, H(1:NN) )
           CALL getShapeDeriv( ETYPE, localcoord, deriv(:,:) )
@@ -439,7 +439,7 @@ module m_static_LIB_2d
     real(kind=kreal),   INTENT(IN)     :: u(2,nn)
     real(kind=kreal),   INTENT(IN)     :: ddu(2,nn)
     real(kind=kreal),   INTENT(OUT)    :: qf(:)
-    
+
 
     integer(kind=kint), parameter :: ndof=2
     real(kind=kreal)   :: D(4,4), B(4,ndof*nn), B1(4,ndof*nn)
@@ -490,10 +490,10 @@ module m_static_LIB_2d
         B(4,2*J-1)=H(J)/RR
         B(4,2*J  )=0.d0
       ENDDO
-	  
+
       gausses(LX)%strain(1:4) = matmul( B(:,:), totaldisp )
 	  gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4) )
-	  
+
 !
 !    ----- calculate the Internal Force
       qf(1:nn*ndof) = qf(1:nn*ndof) +                                     &
@@ -630,7 +630,7 @@ end subroutine UPDATE_C2
        ENDDO
 
    end subroutine UpdateST_C2
-   
+
 !----------------------------------------------------------------------*
    SUBROUTINE NodalStress_C2(ETYPE,NN,gausses,ndstrain,ndstress)
 !----------------------------------------------------------------------*
@@ -646,7 +646,7 @@ end subroutine UPDATE_C2
 
    INTEGER          :: i,ic
    REAL(kind=kreal) :: TEMP(8)
-   
+
    TEMP(:)=0.d0
    IC = NumOfQuadPoints(etype)
    DO i=1,IC
@@ -660,7 +660,7 @@ end subroutine UPDATE_C2
    END FORALL
 
    END SUBROUTINE
-   
+
 !----------------------------------------------------------------------*
    SUBROUTINE ElementStress_C2(ETYPE,gausses,strain,stress)
 !----------------------------------------------------------------------*

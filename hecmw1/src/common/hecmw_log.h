@@ -15,7 +15,7 @@
  *                                                                     *
  *=====================================================================*/
 
- 
+
 
 #ifndef HECMW_LOG_INCLUDED
 #define HECMW_LOG_INCLUDED

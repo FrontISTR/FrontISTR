@@ -14,7 +14,7 @@
 !!======================================================================!
 !                                                                      !
 !> \brief  This module contains functions for interpolation in 15 node
-!!    prism element  (Langrange  interpolation) 
+!!    prism element  (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/27

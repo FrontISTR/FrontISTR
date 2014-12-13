@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="x-euc-jp-unicode"?>
 
-<msg-table> 
+<msg-table>
 	<table prefix="HECMW-IO-HEC">
 		<define type="error" name="E0001">
 			<message>Failed to open ENTIRE mesh file</message>

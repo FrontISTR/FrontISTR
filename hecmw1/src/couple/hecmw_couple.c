@@ -45,10 +45,10 @@
 
 
 struct hecmw_couple_values {
-	int item_type;						
-	struct hecmw_couple_value *node;	
-	struct hecmw_couple_value *elem;	
-	struct hecmw_couple_value *surf;	
+	int item_type;
+	struct hecmw_couple_value *node;
+	struct hecmw_couple_value *elem;
+	struct hecmw_couple_value *surf;
 };
 
 

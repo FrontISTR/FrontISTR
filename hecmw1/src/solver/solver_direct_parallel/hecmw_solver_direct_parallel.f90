@@ -31,7 +31,7 @@ public hecmw_solve_direct_parallel ! only entry point of Parallel Direct Solver 
 
 ! internal type definition !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-type procinfo ! process informations on MPI 
+type procinfo ! process informations on MPI
   integer(kind=kint) :: myid
   integer(kind=kint) :: imp      ! mother  process id
   logical :: isparent ! true if this process is parent
@@ -166,7 +166,7 @@ type(child_matrix), pointer, save :: dm(:)       !divided matrices
 
 real(kind=kreal), allocatable :: bd(:,:) ! for right hand side value
 
-! internal use 
+! internal use
 real(kind=kreal), allocatable :: oldb(:,:)
 logical, save :: nusol_ready = .false.
 integer(kind=kint), save :: ndeg, nndeg, ndegt
@@ -206,7 +206,7 @@ if (.not. nusol_ready) then
   ! STEP1X: Parallel LDU decompose of givem A0
   !
   ! STEP11: divide given large matrix A into a1 and a2 ... extend to 2^n division.
-  ! C is added to bottom of A1, A2. 
+  ! C is added to bottom of A1, A2.
   ! D is kept as dsln (off-diagonal), diag (diagonal).
 
   call elapout('sp_direct_parent: enter matrix partition') !elap
@@ -335,7 +335,7 @@ end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-! STEP2X: Solve Ax=b0 
+! STEP2X: Solve Ax=b0
 !
 ! STEP21: divide right hand side b0 and send it to child in charge.
 !
@@ -382,9 +382,9 @@ call elapout('sp_direct_parent:  end send b') !elap
 !
 ! STEP22 forward substitution for D region. and get Y
 !
-! b1, b2... are sended to child processes. 
-! bd is substituted to D in locally, and results from child processes 
-! (C1-Y1 substitute, C2-Y2 substitute...) are receive from child processes. 
+! b1, b2... are sended to child processes.
+! bd is substituted to D in locally, and results from child processes
+! (C1-Y1 substitute, C2-Y2 substitute...) are receive from child processes.
 ! these value also add for Yd
 call elapout('sp_direct_parent:  begin receive bd') !elap
 allocate(bdbuf(ndeg,neqns_d), stat=ierr)
@@ -454,7 +454,7 @@ end do
 
 call elapout('sp_direct_parent: end solve Ax=b') !elap
 deallocate(b, bd, bdbuf, oldb)
-return 
+return
 end subroutine sp_direct_parent
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -465,7 +465,7 @@ implicit none
 
 type (hecmwST_local_mesh), intent(in)  :: hecMESH
 type (hecmwST_matrix    ), intent(in)  :: hecMAT
-type (irjc_square_matrix), intent(out) :: a0 
+type (irjc_square_matrix), intent(out) :: a0
 
 integer(kind=kint) :: i,j,k,l,ierr,numnp,ndof,kk,ntotal
 integer(kind=kint) :: iiS,iiE,kki,kkj,ndof2
@@ -714,7 +714,7 @@ do
 end do
 m_pds_procinfo%ndiv = ndiv
 
-if (npe .ne. 2**ndiv + 1) then 
+if (npe .ne. 2**ndiv + 1) then
   write(ilog,*) 'Error: please use 2**n+1 (3,5,9,17...) processes for parallel direct solver.'
   write(6,*)    'Error: please use 2**n+1 (3,5,9,17...) processes for parallel direct solver.'
   call hecmw_abort( hecmw_comm_get_comm())
@@ -755,12 +755,12 @@ end subroutine errtrp
 !----------------------------------------------------------------------
 !
 !     matini initializes storage for sparse matrix solver.
-!     this routine is used for both symmetric matrices 
+!     this routine is used for both symmetric matrices
 !     and must be called once at the beginning
 !
 !    (i)
 !        neqns     number of unknowns
-!        nttbr     number of non0s, pattern of non-zero elements are 
+!        nttbr     number of non0s, pattern of non-zero elements are
 !                  given like following.
 !                  nonz(A)={(i,j);i=irow(l),j=jcol(l); 1<= l <= nttbr}
 !        irow
@@ -1139,9 +1139,9 @@ include 'mpif.h'
 
 
 ! For parallel calculation, factorization for A and C region
-! will be done. 
-! 
-! Creation for D region also done. 
+! will be done.
+!
+! Creation for D region also done.
 !
 ! Factorization for D region is omitted.
 
@@ -1225,9 +1225,9 @@ include 'mpif.h'
 
 !
 ! For parallel calculation, factorization for A and C region
-! will be done. 
-! 
-! Creation for D region also done. 
+! will be done.
+!
+! Creation for D region also done.
 !
 ! Factorization for D region is omitted.
 !
@@ -1312,9 +1312,9 @@ call elapout('nufct3_child: begin phase III update D region') !elap
 !
 !
 !! For parallel calculation, factorization for A and C region
-!! will be done. 
-!! 
-!! Creation for D region also done. 
+!! will be done.
+!!
+!! Creation for D region also done.
 !!
 !! Factorization for D region is omitted.
 !!
@@ -1374,9 +1374,9 @@ include 'mpif.h'
 
 !
 ! For parallel calculation, factorization for A and C region
-! will be done. 
-! 
-! Creation for D region also done. 
+! will be done.
+!
+! Creation for D region also done.
 !
 ! Factorization for D region is omitted.
 !
@@ -1420,12 +1420,12 @@ end subroutine nufctx_child
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine nusol0_child(b,dsi,ir) 
+      subroutine nusol0_child(b,dsi,ir)
 
-!---------------------------------------------------------------------- 
-! 
-!     this performs forward elimination and backward substitution 
-! 
+!----------------------------------------------------------------------
+!
+!     this performs forward elimination and backward substitution
+!
 !     (i/o)
 !           b        on entry     right hand side vector
 !                    on exit      solution vector
@@ -1514,8 +1514,8 @@ end subroutine nufctx_child
       wk_d=0
 
       do 101 i=nstop,neqns
-        ks=xlnzr(i)                                          
-        ke=xlnzr(i+1)-1                                      
+        ks=xlnzr(i)
+        ke=xlnzr(i+1)-1
         if(ke.lt.ks) goto 111
           wk_d(i)=wk_d(i)-spdot2(wk,zln(1,:),colno,ks,ke)
   111   continue
@@ -1555,8 +1555,8 @@ end subroutine nufctx_child
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine nusol2_child(xlnzr, colno, zln, diag, iperm, b, neqns, nstop)
-! perform forward substitution for sparse matrix, 
-! send bd to parent and receive xd from parent, 
+! perform forward substitution for sparse matrix,
+! send bd to parent and receive xd from parent,
 ! backword substitution using xd ad send final result x to parent.
 
 use m_elap
@@ -1590,8 +1590,8 @@ end do
 ! STEP22: forward substitution for A
 call elapout('nusol2_child: begin forward substitution for A') !elap
 do i=1, neqns_a
-  ks=xlnzr(i)                                          
-  ke=xlnzr(i+1)-1                                      
+  ks=xlnzr(i)
+  ke=xlnzr(i+1)-1
   if(ke.ge.ks) then
     call s2pdot(wk(:,i),wk,zln,colno,ks,ke)
   end if
@@ -1606,10 +1606,10 @@ end if
 wk_d=0
 
 do i=nstop,neqns
-  ks=xlnzr(i)                                          
-  ke=xlnzr(i+1)-1                                      
+  ks=xlnzr(i)
+  ke=xlnzr(i+1)-1
   if(ke.ge.ks) then
-    call s2pdot(wk_d(:,i),wk,zln,colno,ks,ke)              
+    call s2pdot(wk_d(:,i),wk,zln,colno,ks,ke)
   end if
 end do
 
@@ -1660,8 +1660,8 @@ end subroutine nusol2_child
 
       subroutine nusol3_child(xlnzr,colno,zln,diag,iperm,b,neqns, nstop)
 
-! perform forward substitution for sparse matrix, 
-! send bd to parent and receive xd from parent, 
+! perform forward substitution for sparse matrix,
+! send bd to parent and receive xd from parent,
 ! backword substitution using xd ad send final result x to parent.
 
       use m_elap
@@ -1701,12 +1701,12 @@ end subroutine nusol2_child
       call elapout('nusol3_child: begin forward substitution for A') !elap
 
       do 100 i=1, neqns_a
-        ks=xlnzr(i)                                          
-        ke=xlnzr(i+1)-1                                      
-        if(ke.lt.ks) goto 110                                
+        ks=xlnzr(i)
+        ke=xlnzr(i+1)-1
+        if(ke.lt.ks) goto 110
           call s3pdot(wk(:,i),wk,zln,colno,ks,ke)
-  110   continue                                             
-  100 continue             
+  110   continue
+  100 continue
 
 
 ! STEP23: forward substitution for C and send it (yi) to parent
@@ -1718,12 +1718,12 @@ end subroutine nusol2_child
       wk_d=0
 
       do 101 i=nstop,neqns
-        ks=xlnzr(i)                                          
-        ke=xlnzr(i+1)-1                                      
+        ks=xlnzr(i)
+        ke=xlnzr(i+1)-1
         if(ke.lt.ks) goto 111
-          call s3pdot(wk_d(:,i),wk,zln,colno,ks,ke)              
-  111   continue                                             
-  101 continue             
+          call s3pdot(wk_d(:,i),wk,zln,colno,ks,ke)
+  111   continue
+  101 continue
 
       call elapout('nusol3_child: wait to send wk_d') !elap
       imp = m_pds_procinfo%imp
@@ -1906,7 +1906,7 @@ if (ndeg .eq. 1) then
   call sum3(neqns, dsln(1,:), diag(1,:))
 else if (ndeg .eq. 3) then
   call s3um3(neqns, dsln, diag)
-else 
+else
   ndegl = (ndeg+1)*ndeg/2
   call sxum3(neqns, dsln, diag, ndeg, ndegl)
 end if
@@ -2722,7 +2722,7 @@ end subroutine nusolx_parent
          endif
   260 continue
       if(l.eq.1) goto 500
-       
+
 !
 !  anc(l-1) is the eligible node
 !
@@ -2988,10 +2988,10 @@ end subroutine nusolx_parent
 
       implicit none
 
-! Count total number of non-zero elements 
+! Count total number of non-zero elements
 ! which include fill-in.
 ! A and C region of given sparse matrix will consider.
-! D region will not consider because of D is treat as 
+! D region will not consider because of D is treat as
 ! dens matrix.
 !
       integer(kind=kint), intent(in)  :: parent(:),xleaf(:),leaf(:)
@@ -3468,7 +3468,7 @@ end subroutine lduDecomposeC
 !
 !      this routine sets an non-zero entry  of the matrix.
 !      (symmetric version)
-!      
+!
 !      (i)
 !          isw      =0    set the value
 !                   =1    add the value
@@ -4117,7 +4117,7 @@ end subroutine lduDecomposeC
             dsln(:,loc)=dsln(:,loc)-t(:)
             loc=loc+1
   110    continue
-         call v3prod(dsln(:,indx(i):indx(i)+i-2), diag,temp,i-1) 
+         call v3prod(dsln(:,indx(i):indx(i)+i-2), diag,temp,i-1)
          call d3dotl(t,temp,dsln(:,indx(i):indx(i)+i-2),i-1)
 !$dir max_trips(6)
 !        do 112 l=1,6

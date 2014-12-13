@@ -132,7 +132,7 @@ contains
       use m_fstr
       use hecmw_util
       implicit none
-      integer(kind=kint) ::  NUMNP,NDOF,ntotal,i,j,k 
+      integer(kind=kint) ::  NUMNP,NDOF,ntotal,i,j,k
       integer(kind=kint) ::  iiS,iiE,kk,kki,kkj,ierror
       real(kind=kreal) ::  XX(NUMNP*NDOF)
       REAL(kind=kreal), POINTER, DIMENSION(:) :: yy   !(NUMNP*NDOF)
@@ -244,7 +244,7 @@ contains
        DO i = NDOF-1,0,-1
         X(NDOF-i)= XX(NDOF*j-i)
        END DO
- 
+
        kki = NDOF*NDOF
        kkj = NDOF*NDOF-1
        DO i = NDOF-1,0,-1

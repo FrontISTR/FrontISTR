@@ -103,7 +103,7 @@ sub end_element {
 		$table = 0;
 	} elsif($element eq 'define') {
 		$define = 0;
-		my $msgno; 
+		my $msgno;
 		if($prefix) {
 			$msgno = $prefix . "-" . $name;
 		} else {
@@ -117,7 +117,7 @@ sub end_element {
 		$message = 0;
 	} elsif($element eq 'description') {
 		$description = 0;
-		my $msgno; 
+		my $msgno;
 		if($prefix) {
 			$msgno = $prefix . "-" . $name;
 		} else {
@@ -172,7 +172,7 @@ END_OF_MSGFILE_HEADER
 
 print MSGNOFILE <<END_OF_MSGNOFILE_HEADER;
 
-#ifndef HECMW_MSGNO_INCLUDED 
+#ifndef HECMW_MSGNO_INCLUDED
 #define HECMW_MSGNO_INCLUDED
 
 #define HECMW_MSGNO_BASE $msgno_base

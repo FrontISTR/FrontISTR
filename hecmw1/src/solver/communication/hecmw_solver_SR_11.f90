@@ -15,7 +15,7 @@
 !                                                                      !
 !======================================================================!
 
-!C*** 
+!C***
 !C*** module hecmw_solver_SR_11
 !C***
 !
@@ -50,7 +50,7 @@
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
-      integer(kind=kint ), dimension(:  ), allocatable :: req2  
+      integer(kind=kint ), dimension(:  ), allocatable :: req2
 
       integer(kind=kint ), save :: NFLAG
       data NFLAG/0/
@@ -64,14 +64,14 @@
       allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
       allocate (req1(NEIBPETOT))
       allocate (req2(NEIBPETOT))
-       
+
 !C
 !C-- SEND
-      
+
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
-        
+
         do k= istart+1, istart+inum
            WS(k)= X(NOD_EXPORT(k))
         enddo
@@ -82,7 +82,7 @@
 
 !C
 !C-- RECEIVE
-      
+
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
@@ -92,7 +92,7 @@
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
-   
+
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart

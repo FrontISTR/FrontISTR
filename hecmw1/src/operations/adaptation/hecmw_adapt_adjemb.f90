@@ -22,7 +22,7 @@
 !C
 !C    adjust cell EMBEDDING LEVEL around each NODE
 !C
-!C    BASIC RULE : 
+!C    BASIC RULE :
 !C      keep MAX. difference of embedding level of
 !C      neighboring cells around each node NOT MORE THAN 2
 !C
@@ -89,9 +89,9 @@
 
         NDIVSUM= NDIV(1)+NDIV(2)+NDIV(3)+NDIV(4)+NDIV(5)+NDIV(6)
 
-        if (NDIVSUM.eq.0)                   NLEV_ADD= 0        
-        if (NDIVSUM.eq.1 .or. NDIVSUM.eq.3) NLEV_ADD= 1        
-        if (NDIVSUM.eq.6)                   NLEV_ADD= 2        
+        if (NDIVSUM.eq.0)                   NLEV_ADD= 0
+        if (NDIVSUM.eq.1 .or. NDIVSUM.eq.3) NLEV_ADD= 1
+        if (NDIVSUM.eq.6)                   NLEV_ADD= 2
 
         NL= hecMESH%adapt_level(icel) + NLEV_ADD
 
@@ -102,10 +102,10 @@
         m3= ADAPT_nodLEVmax(n3)
         m4= ADAPT_nodLEVmax(n4)
 
-        ADAPT_nodLEVmax(n1)= max (NL, m1)        
-        ADAPT_nodLEVmax(n2)= max (NL, m2)        
-        ADAPT_nodLEVmax(n3)= max (NL, m3)        
-        ADAPT_nodLEVmax(n4)= max (NL, m4)        
+        ADAPT_nodLEVmax(n1)= max (NL, m1)
+        ADAPT_nodLEVmax(n2)= max (NL, m2)
+        ADAPT_nodLEVmax(n3)= max (NL, m3)
+        ADAPT_nodLEVmax(n4)= max (NL, m4)
 
       enddo
 
@@ -144,9 +144,9 @@
 
         NDIVSUM= NDIV(1)+NDIV(2)+NDIV(3)+NDIV(4)+NDIV(5)+NDIV(6)
 
-        if (NDIVSUM.eq.0) NLEV_ADD= 0        
-        if (NDIVSUM.eq.2) NLEV_ADD= 1        
-        if (NDIVSUM.eq.6) NLEV_ADD= 2        
+        if (NDIVSUM.eq.0) NLEV_ADD= 0
+        if (NDIVSUM.eq.2) NLEV_ADD= 1
+        if (NDIVSUM.eq.6) NLEV_ADD= 2
 
         NL= hecMESH%adapt_level(icel) + NLEV_ADD
 
@@ -159,12 +159,12 @@
         m5= ADAPT_nodLEVmax(n5)
         m6= ADAPT_nodLEVmax(n6)
 
-        ADAPT_nodLEVmax(n1)= max (NL, m1)        
-        ADAPT_nodLEVmax(n2)= max (NL, m2)        
-        ADAPT_nodLEVmax(n3)= max (NL, m3)        
-        ADAPT_nodLEVmax(n4)= max (NL, m4)        
-        ADAPT_nodLEVmax(n5)= max (NL, m5)        
-        ADAPT_nodLEVmax(n6)= max (NL, m6)        
+        ADAPT_nodLEVmax(n1)= max (NL, m1)
+        ADAPT_nodLEVmax(n2)= max (NL, m2)
+        ADAPT_nodLEVmax(n3)= max (NL, m3)
+        ADAPT_nodLEVmax(n4)= max (NL, m4)
+        ADAPT_nodLEVmax(n5)= max (NL, m5)
+        ADAPT_nodLEVmax(n6)= max (NL, m6)
 
       enddo
 !C===
@@ -290,9 +290,9 @@
      &   ( hecMESH%n_adapt_edge,                                        &
      &     hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
 
@@ -302,9 +302,9 @@
      &   ( hecMESH%n_adapt_edge,                                        &
      &     hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,                  &
      &     hecMESH%adapt_import_edge_index,                             &
-     &     hecMESH%adapt_import_edge_item ,                             & 
+     &     hecMESH%adapt_import_edge_item ,                             &
      &     hecMESH%adapt_export_edge_index,                             &
-     &     hecMESH%adapt_export_edge_item ,                             & 
+     &     hecMESH%adapt_export_edge_item ,                             &
      &     WS, WR, hecMESH%adapt_iemb, hecMESH%MPI_COMM,                &
      &     hecMESH%my_rank, 1, m)
       deallocate (WS, WR)

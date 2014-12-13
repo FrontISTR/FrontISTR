@@ -33,7 +33,7 @@ class CNFDB_601 : public CNFDataBlock {
 public:
 	CNFDB_601();
 	virtual ~CNFDB_601() {}
-	
+
 	virtual void Read( class CNFData* nfd );
 	virtual void WriteData( class CNFData* nfd, FILE* fp );
 

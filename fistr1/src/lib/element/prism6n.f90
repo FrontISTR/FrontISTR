@@ -14,7 +14,7 @@
 !!======================================================================!
 !                                                                      !
 !> \brief  This module contains functions for interpolation in 6 node
-!!    prism element  (Langrange  interpolation) 
+!!    prism element  (Langrange  interpolation)
 !                                                                      !
 !>  \author     Xi YUAN (AdavanceSoft)
 !>  \date       2009/04/27
@@ -28,7 +28,7 @@ module shape_prism6n
     subroutine ShapeFunc_prism6n(ncoord,func)
       use shape_tri3n
       real(kind=kreal), intent(in)  :: ncoord(3)
-      real(kind=kreal) :: func(6)  
+      real(kind=kreal) :: func(6)
       real(kind=kreal) :: xi, et, a, ze
       xi=ncoord(1); et=ncoord(2); ze=ncoord(3)
       a=1.d0-xi-et
