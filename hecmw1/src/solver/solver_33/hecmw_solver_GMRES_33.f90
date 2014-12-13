@@ -23,7 +23,6 @@
       module hecmw_solver_GMRES_33
 
       public :: hecmw_solve_GMRES_33
-      private :: estimate_cond_num
 
       contains
 !C
@@ -39,6 +38,7 @@
       use hecmw_solver_las_33
       use hecmw_solver_scaling_33
       use hecmw_precond_33
+      use hecmw_estimate_condition
 
       implicit none
 
@@ -292,7 +292,7 @@
      &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
       if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
-        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(I, H)
+        if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_GMRES(I, H)
       endif
 
       if ( RESID.le.TOL ) then
@@ -436,7 +436,7 @@
       call hecmw_solver_scaling_bk_33(hecMAT)
 
       if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
-        call estimate_cond_num(I, H)
+        call hecmw_estimate_condition_GMRES(I, H)
       endif
 !C
 !C-- INTERFACE data EXCHANGE
@@ -461,97 +461,5 @@
       Tsol = t_max
 
       end subroutine  hecmw_solve_GMRES_33
-
-      subroutine estimate_cond_num(I, H)
-      use hecmw_util
-      implicit none
-      integer(kind=kint), intent(in) :: I
-      real(kind=kreal), intent(in) :: H(:,:)
-      ! character(len=1) :: JOBU, JOBVT
-      character(len=1) :: JOBZ
-      integer(kind=kint) :: N, LDH, LDZ=1, LWORK, INFO
-      real(kind=kreal), allocatable :: WR(:), WORK(:), H1(:,:)
-      integer(kind=kint), allocatable :: IWORK(:)
-      real(kind=kreal) :: Z(1,1)
-      integer(kind=kint) :: j, k
-
-      if (I == 0) return
-
-      ! copy H
-      N=I
-      allocate(H1(N+1,N))
-      do j = 1, N
-        do k = 1, j+1
-          H1(k,j) = H(k,j)
-        enddo
-        do k = j+2, N
-          H1(k,j) = 0.d0
-        enddo
-      enddo
-      LDH=N+1
-      allocate(WR(N))
-
-
-      ! !!
-      ! !! dgesvd version
-      ! !!
-
-      ! ! arguments for calling dgesvd
-      ! JOBU='N'
-      ! JOBVT='N'
-      ! ! estimate optimal LWORK
-      ! allocate(WORK(1))
-      ! LWORK=-1
-      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
-      ! if (INFO /= 0) then
-      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
-      !   return
-      ! endif
-      ! ! calculate singular values
-      ! LWORK=WORK(1)
-      ! deallocate(WORK)
-      ! allocate(WORK(LWORK))
-      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
-      ! if (INFO /= 0) then
-      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
-      !   return
-      ! endif
-      ! deallocate(WORK)
-
-
-      !!
-      !! dgesdd version (faster but need more workspace than dgesvd)
-      !!
-
-      ! arguments for calling dgesdd
-      JOBZ='N'
-      allocate(IWORK(8*N))
-      ! estimate optimal LWORK
-      allocate(WORK(1))
-      LWORK=-1
-      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
-      if (INFO /= 0) then
-        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
-        return
-      endif
-      ! calculate singular values
-      LWORK=WORK(1)
-      deallocate(WORK)
-      allocate(WORK(LWORK))
-      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
-      if (INFO /= 0) then
-        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
-        return
-      endif
-      deallocate(WORK)
-      deallocate(IWORK)
-
-
-      write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-           WR(N), WR(1), WR(1)/WR(N)
-
-      deallocate(WR)
-      deallocate(H1)
-      end subroutine estimate_cond_num
 
       end module     hecmw_solver_GMRES_33

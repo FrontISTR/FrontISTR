@@ -101,6 +101,10 @@ OBJSF = \
 	hecmw_solver_GPBiCG_33.@f90objfilepostfix@ \
 	hecmw_solver_33.@f90objfilepostfix@
 
+OBJSF_LAPACK = hecmw_estimate_condition.@f90objfilepostfix@
+
+OBJSF_LAPACK_DUMM = hecmw_estimate_condition_dumm.@f90objfilepostfix@
+
 HEADERS =
 
 #-----------------------------------------------------------------------------#
@@ -110,13 +114,20 @@ build-default: $(TARGET) $(F90TARGET) install-module
 
 build-serial: $(TARGET) $(F90TARGET) install-module
 
+build-with-lapack: $(TARGET) F90TARGET_LAPACK install-module
+
+build-serial-with-lapack: $(TARGET) F90TARGET_LAPACK install-module
+
 build-without-f: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
+$(F90TARGET): $(OBJSF_LAPACK_DUMM) $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF_LAPACK_DUMM) $(OBJSF)
+
+F90TARGET_LAPACK: $(OBJSF_LAPACK) $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJSF_LAPACK) $(OBJSF)
 
 $(OBJS): $(HEADERS)
 

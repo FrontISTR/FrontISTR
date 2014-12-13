@@ -19,6 +19,7 @@ WITHREFINER=0
 WITHPARACON=0
 WITHMUMPS=0
 WITHML=0
+WITHLAPACK=0
 
 #
 # Targets
@@ -34,6 +35,7 @@ TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
 BUILDTARGET_MUMPS="build-default"
+BUILDTARGET_LAPACK="build-default"
 
 #
 # Files
@@ -124,6 +126,8 @@ do
 		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
+	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
+		WITHLAPACK=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 		GATHERMAKEFILES=0
@@ -158,6 +162,7 @@ do
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
 			--with-ml               compile with ML
+			--with-lapack           compile with LAPACK
 			--only-message          only create error message files
 			--only-lex              only perform lexical analyzer
 			--remove-makefiles      remove all MAKEFILEs
@@ -177,6 +182,7 @@ do
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
 			--with-ml               compile with ML
+			--with-lapack           compile with LAPACK
 			-h, --help              show help (this message)
 		EOF
 		exit 1
@@ -378,6 +384,13 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	fi
 
 	#
+	# with LAPACK
+	#
+	if [ ${WITHLAPACK} -eq 1 ]; then
+		BUILDTARGET_LAPACK="build-with-lapack"
+	fi
+
+	#
 	# C linker
 	#
 	if [ "${CLINKER}" = "" ]; then
@@ -493,6 +506,7 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
+		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
 

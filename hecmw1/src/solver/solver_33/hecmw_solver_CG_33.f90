@@ -24,7 +24,6 @@
       module hecmw_solver_CG_33
 
       public :: hecmw_solve_CG_33
-      private :: estimate_cond_num
 
       contains
 !C
@@ -42,6 +41,7 @@
       use hecmw_solver_scaling_33
       use hecmw_precond_33
       use hecmw_jad_type
+      use hecmw_estimate_condition
 
       implicit none
 
@@ -246,7 +246,7 @@
           E(ITER-1) = sqrt(BETA) / ALPHA1
         endif
         ALPHA1 = ALPHA
-        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(ITER, D, E)
+        if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_CG(ITER, D, E)
       endif
 
       if ( RESID.le.TOL   ) exit
@@ -275,7 +275,7 @@
       ENDIF
 
       if (ESTCOND /= 0 .and. ERROR == 0 .and. hecMESH%my_rank == 0) then
-        call estimate_cond_num(ITER, D, E)
+        call hecmw_estimate_condition_CG(ITER, D, E)
         deallocate(D, E)
       endif
 
@@ -293,88 +293,4 @@
 
       end subroutine hecmw_solve_CG_33
 
-      subroutine estimate_cond_num(ITER, D, E)
-      use hecmw_util
-      implicit none
-      integer(kind=kint), intent(in) :: ITER
-      real(kind=kreal), intent(in) :: D(:), E(:)
-      character(len=1) :: JOBZ, RANGE
-      ! character(len=1) :: COMPZ
-      real(kind=kreal) :: VL, VU, ABSTOL, Z(1,1)
-      integer(kind=kint) :: N, IL, IU, M, LDZ=1, ISUPPZ(1)
-      integer(kind=kint) :: LWORK, LIWORK, INFO
-      real(kind=kreal), allocatable :: W(:), WORK(:)
-      integer(kind=kint), allocatable :: IWORK(:)
-      real(kind=kreal), allocatable :: D1(:), E1(:)
-      integer(kind=kint) :: i
-
-      if (ITER <= 1) return
-
-      ! copy D, E
-      allocate(D1(ITER),E1(ITER))
-      do i=1,ITER-1
-        D1(i) = D(i)
-        E1(i) = E(i)
-      enddo
-      D1(ITER) = D(ITER)
-
-
-      !!
-      !! dstegr version (faster than dsteqr)
-      !!
-
-      ! prepare arguments for calling dstegr
-      JOBZ='N'
-      RANGE='A'
-      N=ITER
-      allocate(W(ITER))
-      ! estimate optimal LWORK and LIWORK
-      LWORK=-1
-      LIWORK=-1
-      allocate(WORK(1),IWORK(1))
-      call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
-           M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
-      if (INFO /= 0) then
-        write(*,*) 'ERROR: dstegr returned with INFO=',INFO
-        return
-      endif
-      ! calculate eigenvalues
-      LWORK=WORK(1)
-      LIWORK=IWORK(1)
-      deallocate(WORK,IWORK)
-      allocate(WORK(LWORK),IWORK(LIWORK))
-      call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
-           M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
-      if (INFO /= 0) then
-        write(*,*) 'ERROR: dstegr returned with INFO=',INFO
-        return
-      endif
-      write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-           W(1),W(N),W(N)/W(1)
-      deallocate(WORK,IWORK)
-      deallocate(W)
-
-
-      ! !!
-      ! !! dsteqr version
-      ! !!
-
-      ! ! prepare arguments for calling dsteqr
-      ! COMPZ='N'
-      ! N=ITER
-      ! allocate(WORK(1))
-      ! ! calculate eigenvalues
-      ! call dsteqr(COMPZ,N,D1,E1,Z,LDZ,WORK,INFO)
-      ! if (INFO /= 0) then
-      !   write(*,*) 'ERROR: dsteqr returned with INFO=',INFO
-      !   return
-      ! endif
-      ! write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-      !      D1(1),D1(N),D1(N)/D1(1)
-      ! deallocate(WORK)
-
-
-      deallocate(D1,E1)
-
-      end subroutine estimate_cond_num
       end module     hecmw_solver_CG_33
