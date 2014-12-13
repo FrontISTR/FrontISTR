@@ -18,6 +18,7 @@ SERIAL=1
 WITHREFINER=0
 WITHPARACON=0
 WITHMUMPS=0
+WITHML=0
 
 #
 # Targets
@@ -121,6 +122,8 @@ do
 		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
+	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
+		WITHML=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 		GATHERMAKEFILES=0
@@ -154,6 +157,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-ml               compile with ML
 			--only-message          only create error message files
 			--only-lex              only perform lexical analyzer
 			--remove-makefiles      remove all MAKEFILEs
@@ -172,6 +176,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-ml               compile with ML
 			-h, --help              show help (this message)
 		EOF
 		exit 1
@@ -363,6 +368,16 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	fi
 
 	#
+	# with ML
+	#
+	if [ ${WITHML} -ne 1 ]; then
+		ML_CFLAGS=""
+		ML_LDFLAGS=""
+		ML_F90FLAGS=""
+		ML_F90LDFLAGS=""
+	fi
+
+	#
 	# C linker
 	#
 	if [ "${CLINKER}" = "" ]; then
@@ -467,6 +482,14 @@ do
 		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
 		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
 		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
+		-e "s!@mldir@!${MLDIR}!" \
+		-e "s!@mllibdir@!${MLLIBDIR}!" \
+		-e "s!@mlincdir@!${MLINCDIR}!" \
+		-e "s!@mllibs@!${MLLIBS}!" \
+		-e "s!@ml_cflags@!${ML_CFLAGS}!" \
+		-e "s!@ml_ldflags@!${ML_LDFLAGS}!" \
+		-e "s!@ml_f90flags@!${ML_F90FLAGS}!" \
+		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \

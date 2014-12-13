@@ -566,6 +566,51 @@ contains
 
 !C
 !C***
+!C*** hecmw_update_3_R_async
+!C***
+!C
+!C    3-DOF, REAL
+!C
+      subroutine hecmw_update_3_R_async (hecMESH, VAL, n, ireq)
+      use hecmw_util
+      use  hecmw_solver_SR_33
+      implicit none
+      integer(kind=kint):: n, ireq
+      real(kind=kreal), dimension(3*n) :: VAL
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      call hecmw_solve_ISEND_IRECV_33                                   &
+     &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+     &     hecMESH%import_index, hecMESH%import_item,                   &
+     &     hecMESH%export_index, hecMESH%export_item,                   &
+     &     VAL , hecMESH%MPI_COMM, hecMESH%my_rank, ireq)
+
+      end subroutine hecmw_update_3_R_async
+
+!C
+!C***
+!C*** hecmw_update_3_R_wait
+!C***
+!C
+!C    3-DOF, REAL
+!C
+      subroutine hecmw_update_3_R_wait (hecMESH, ireq)
+      use hecmw_util
+      use  hecmw_solver_SR_33
+      implicit none
+      integer(kind=kint):: ireq
+      type (hecmwST_local_mesh) :: hecMESH
+
+      if( hecMESH%n_neighbor_pe == 0 ) return
+
+      call hecmw_solve_ISEND_IRECV_33_WAIT( ireq )
+
+      end subroutine hecmw_update_3_R_wait
+
+!C
+!C***
 !C*** hecmw_update_4_R
 !C***
 !C

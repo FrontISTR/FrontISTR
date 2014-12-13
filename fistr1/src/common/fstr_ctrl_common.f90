@@ -63,7 +63,7 @@ end function fstr_ctrl_get_SOLUTION
 !> Read in !SOLVER
 function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, nier, &
                                 iterpremax, nrest, scaling, &
-                                dumptype, dumpexit, usejad, ncolor_in, &
+                                dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, &
                                 resid, singma_diag, sigma, thresh, filter )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: method
@@ -79,6 +79,8 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         integer(kind=kint) :: dumpexit
         integer(kind=kint) :: usejad
         integer(kind=kint) :: ncolor_in
+        integer(kind=kint) :: mpc_method
+        integer(kind=kint) :: estcond
         real(kind=kreal) :: resid
         real(kind=kreal) :: singma_diag
         real(kind=kreal) :: sigma
@@ -105,7 +107,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
 
         ! JP-0
         if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ',   mlist,              1,   'P',   method  ) /= 0) return
-        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,10,11,12,21 ',0,   'I',   precond ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,5,10,11,12,21,30,31,32 ',0,   'I',   precond ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES ',           0,   'P',   time ) /= 0) return
@@ -113,6 +115,8 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
         ! JP-1
         if( method > number_number ) then  ! JP-2
                 method = method - number_number
@@ -122,10 +126,9 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
                 end if
         end if
 
-        if( dumptype <= 4 ) then
-          dumptype = dmpt - 1
-        else
-          dumptype = dmpt - 5
+        dumptype = dmpt - 1
+        if( dumptype >= 4 ) then
+          dumptype = dumptype - 4
         end if
 
         !* data --------------------------------------------------------------------------------------- *!

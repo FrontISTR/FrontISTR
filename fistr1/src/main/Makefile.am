@@ -42,6 +42,12 @@ MUMPS_LDFLAGS           = @mumps_ldflags@
 MUMPS_F90FLAGS          = @mumps_f90flags@
 MUMPS_F90LDFLAGS        = @mumps_f90ldflags@
 
+MLDIR                   = @mldir@
+MLLIBDIR                = @mllibdir@
+MLLIBS                  = @mllibs@
+ML_LDFLAGS              = @ml_ldflags@
+ML_F90LDFLAGS           = @ml_f90ldflags@
+
 REVOCAPDIR              = @revocapdir@
 REVOCAPINCDIR           = @revocapincdir@
 REVOCAPLIBDIR           = @revocaplibdir@
@@ -63,7 +69,7 @@ LDFLAGS                 = @ldflags@
 MPI_LDFLAGS             = @mpi_ldflags@
 HECMW_LDFLAGS           = @hecmw_ldflags@
 FSTR_LDFLAGS            = @fstr_ldflags@
-ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(MUMPS_LDFLAGS) $(METIS_LDFLAGS) $(PARMETIS_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(ML_LDFLAGS) $(MUMPS_LDFLAGS) $(METIS_LDFLAGS) $(PARMETIS_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS                = @optflags@
 
 REVOCAP_F90FLAGS        = @revocap_f90flags@
@@ -80,7 +86,7 @@ F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(METIS_F90LDFLAGS) $(PARMETIS_F90LDFLAGS) $(REVOCAP_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(ML_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(METIS_F90LDFLAGS) $(PARMETIS_F90LDFLAGS) $(REVOCAP_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS             = @f90optflags@
 F90LINKER               = @f90linker@
 

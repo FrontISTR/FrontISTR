@@ -704,6 +704,8 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Iarray(32)=    0    ! = dumpexit
         hecMAT%Iarray(33)=    0    ! = usejad
         hecMAT%Iarray(34)=   10    ! = ncolor_in
+        hecMAT%Iarray(13)=    3    ! = mpc_method
+        hecMAT%Iarray(14)=    0    ! = estcond
 
         hecMAT%Rarray(1) =  1.0e-8 ! = resid
         hecMAT%Rarray(2) =  1.0    ! = sigma_diag

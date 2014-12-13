@@ -60,6 +60,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
+    call hecmw_mat_set_estcond( hecMAT, 0 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
     call hecmw_mat_set_sigma_diag( hecMAT, 1.d0 )
@@ -69,9 +70,27 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
+    call hecmw_mat_set_mpc_method( hecMAT, 3 )
+
+    call hecmw_mat_set_solver_type( hecMAT, 1 )
 
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
+
+  subroutine hecmw_mat_finalize( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    if (associated(hecMAT%D)) deallocate(hecMAT%D)
+    if (associated(hecMAT%B)) deallocate(hecMAT%B)
+    if (associated(hecMAT%X)) deallocate(hecMAT%X)
+    if (associated(hecMAT%AL)) deallocate(hecMAT%AL)
+    if (associated(hecMAT%AU)) deallocate(hecMAT%AU)
+    if (associated(hecMAT%indexL)) deallocate(hecMAT%indexL)
+    if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
+    if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
+    if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
+    if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
+    call hecmw_cmat_finalize( hecMAT%cmat )
+  end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
     type(hecmwST_matrix) :: hecMAT
@@ -133,7 +152,7 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterpremax
 
-        if (iterpremax.lt.1) iterpremax= 1
+        if (iterpremax.lt.0) iterpremax= 0
         if (iterpremax.gt.4) iterpremax= 4
 
     hecMAT%Iarray(5) = iterpremax
@@ -202,6 +221,32 @@ module hecmw_matrix_misc
     hecmw_mat_get_penalized_b = hecMAT%Iarray(12)
   end function hecmw_mat_get_penalized_b
 
+  subroutine hecmw_mat_set_mpc_method( hecMAT, mpc_method )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: mpc_method
+
+    hecMAT%Iarray(13) = mpc_method
+  end subroutine hecmw_mat_set_mpc_method
+
+  function hecmw_mat_get_mpc_method( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_mpc_method
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_mpc_method = hecMAT%Iarray(13)
+  end function hecmw_mat_get_mpc_method
+
+  function hecmw_mat_get_estcond( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_estcond
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_estcond = hecMAT%Iarray(14)
+  end function hecmw_mat_get_estcond
+
+  subroutine hecmw_mat_set_estcond( hecMAT, estcond )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: estcond
+    hecMAT%Iarray(14) = estcond
+  end subroutine hecmw_mat_set_estcond
+
   subroutine hecmw_mat_set_iterlog( hecMAT, iterlog )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterlog
@@ -229,13 +274,6 @@ module hecmw_matrix_misc
 
     hecmw_mat_get_timelog = hecMAT%Iarray(22)
   end function hecmw_mat_get_timelog
-
-  subroutine hecmw_mat_set_resid( hecMAT, resid )
-    type(hecmwST_matrix) :: hecMAT
-    real(kind=kreal) :: resid
-
-    hecMAT%Rarray(1) = resid
-  end subroutine hecmw_mat_set_resid
 
   function hecmw_mat_get_dump( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_dump
@@ -285,6 +323,25 @@ module hecmw_matrix_misc
     hecMAT%Iarray(34) = ncolor_in
   end subroutine hecmw_mat_set_ncolor_in
 
+  function hecmw_mat_get_solver_type( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_solver_type
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_solver_type = hecMAT%Iarray(99)
+  end function hecmw_mat_get_solver_type
+
+  subroutine hecmw_mat_set_solver_type( hecMAT, solver_type )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: solver_type
+    hecMAT%Iarray(99) = solver_type
+  end subroutine hecmw_mat_set_solver_type
+
+  subroutine hecmw_mat_set_resid( hecMAT, resid )
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: resid
+
+    hecMAT%Rarray(1) = resid
+  end subroutine hecmw_mat_set_resid
+
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid
     type(hecmwST_matrix) :: hecMAT
@@ -296,7 +353,15 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: sigma_diag
 
-    hecMAT%Rarray(2) = sigma_diag
+    if( sigma_diag < 0.d0 ) then
+      hecMAT%Rarray(2) = -1.d0
+    elseif( sigma_diag < 1.d0 ) then
+      hecMAT%Rarray(2) = 1.d0
+    elseif( sigma_diag > 2.d0 ) then
+      hecMAT%Rarray(2) = 2.d0
+    else
+      hecMAT%Rarray(2) = sigma_diag
+    endif
   end subroutine hecmw_mat_set_sigma_diag
 
   function hecmw_mat_get_sigma_diag( hecMAT )
@@ -310,7 +375,13 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: sigma
 
-    hecMAT%Rarray(3) = sigma
+    if (sigma < 0.d0) then
+      hecMAT%Rarray(3) = 0.d0
+    elseif (sigma > 1.d0) then
+      hecMAT%Rarray(3) = 1.d0
+    else
+      hecMAT%Rarray(3) = sigma
+    endif
   end subroutine hecmw_mat_set_sigma
 
   function hecmw_mat_get_sigma( hecMAT )

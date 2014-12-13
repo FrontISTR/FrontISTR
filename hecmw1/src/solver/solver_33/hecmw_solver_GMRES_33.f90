@@ -21,6 +21,10 @@
 !C***
 !
       module hecmw_solver_GMRES_33
+
+      public :: hecmw_solve_GMRES_33
+      private :: estimate_cond_num
+
       contains
 !C
 !C*** hecmw_solve_GMRES_33
@@ -67,6 +71,8 @@
       real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
       real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
       real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
+      integer(kind=kint ) :: ESTCOND
+      real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
 
       integer(kind=kint), parameter :: R  = 1
       integer(kind=kint), parameter :: ZP = R + 1
@@ -77,6 +83,7 @@
       integer(kind=kint), parameter :: AV = Y  + 1
       integer(kind=kint), parameter :: V  = AV + 1
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 !C
 !C-- INIT.
@@ -93,6 +100,9 @@
       MAXIT  = hecmw_mat_get_iter( hecMAT )
        TOL   = hecmw_mat_get_resid( hecMAT )
       NREST  = hecmw_mat_get_nrest( hecMAT )
+      ESTCOND = hecmw_mat_get_estcond( hecMAT )
+
+      if (NREST >= NDOF*NP-1) NREST = NDOF*NP-2
 
       ERROR= 0
       NRK= NREST + 7
@@ -121,7 +131,7 @@
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_33_setup(hecMAT)
+      call hecmw_precond_33_setup(hecMAT, hecMESH, 0)
 
 !C
 !C
@@ -141,9 +151,19 @@
       endif
 
       E_TIME= HECMW_WTIME()
-      Tset= Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = t_max
 !C===
 
+      call hecmw_barrier(hecMESH)
       S1_TIME= HECMW_WTIME()
       ITER= 0
 
@@ -159,6 +179,7 @@
 !C +---------------+
 !C===
         call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        if (DNRM2 == 0.d0) exit ! converged
 
         RNORM= dsqrt(DNRM2)
         coef= ONE/RNORM
@@ -190,11 +211,6 @@
       call hecmw_precond_33_apply(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
 
       call hecmw_matvec_33(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
-
-      S_TIME= HECMW_WTIME()
-      call hecmw_update_3_R (hecMESH, WW(:,W), hecMAT%NP)
-      E_TIME= HECMW_WTIME()
-      COMMtime = COMMtime + E_TIME - S_TIME
 !C===
 
 !C
@@ -214,6 +230,7 @@
       enddo
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,W), VAL, Tcomm)
+      if (VAL == 0.d0) exit ! converged
 
       H(I+1,I)= dsqrt(VAL)
       coef= ONE / H(I+1,I)
@@ -274,6 +291,10 @@
       if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
      &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(I, H)
+      endif
+
       if ( RESID.le.TOL ) then
 !C-- [H]{y}= {s_tld}
          do ik= 1, I
@@ -311,7 +332,7 @@
       endif
 
       if ( ITER.gt.MAXIT ) then
-        ERROR = -300
+        ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
       end if
       end do
@@ -364,9 +385,9 @@
       WW(I+1,S)= dsqrt(DNRM2/BNRM2)
       RESID    = WW( I+1,S )
 
-!        if ( RESID.le.TOL )   exit OUTER
+      if ( RESID.le.TOL )   exit OUTER
       if ( ITER .gt.MAXIT ) then
-        ERROR = -300
+        ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
       end if
 !C
@@ -376,7 +397,7 @@
 !C
 !C-- iteration FAILED
 
-      if (ERROR == -300) then
+      if (ERROR == HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
         INFO = ITER
 
         !C-- [H]{y}= {s_tld}
@@ -413,6 +434,10 @@
       end if
 
       call hecmw_solver_scaling_bk_33(hecMAT)
+
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        call estimate_cond_num(I, H)
+      endif
 !C
 !C-- INTERFACE data EXCHANGE
       S_TIME = HECMW_WTIME()
@@ -420,11 +445,113 @@
       E_TIME = HECMW_WTIME()
       Tcomm = Tcomm + E_TIME - S_TIME
 
-      E1_TIME= HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (H, WW, SS)
-      call hecmw_precond_33_clear(hecMAT)
+      !call hecmw_precond_33_clear(hecMAT)
+
+      E1_TIME= HECMW_WTIME()
+      call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver iterations'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tsol = t_max
 
       end subroutine  hecmw_solve_GMRES_33
+
+      subroutine estimate_cond_num(I, H)
+      use hecmw_util
+      implicit none
+      integer(kind=kint), intent(in) :: I
+      real(kind=kreal), intent(in) :: H(:,:)
+      ! character(len=1) :: JOBU, JOBVT
+      character(len=1) :: JOBZ
+      integer(kind=kint) :: N, LDH, LDZ=1, LWORK, INFO
+      real(kind=kreal), allocatable :: WR(:), WORK(:), H1(:,:)
+      integer(kind=kint), allocatable :: IWORK(:)
+      real(kind=kreal) :: Z(1,1)
+      integer(kind=kint) :: j, k
+
+      if (I == 0) return
+
+      ! copy H
+      N=I
+      allocate(H1(N+1,N))
+      do j = 1, N
+        do k = 1, j+1
+          H1(k,j) = H(k,j)
+        enddo
+        do k = j+2, N
+          H1(k,j) = 0.d0
+        enddo
+      enddo
+      LDH=N+1
+      allocate(WR(N))
+
+
+      ! !!
+      ! !! dgesvd version
+      ! !!
+
+      ! ! arguments for calling dgesvd
+      ! JOBU='N'
+      ! JOBVT='N'
+      ! ! estimate optimal LWORK
+      ! allocate(WORK(1))
+      ! LWORK=-1
+      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
+      ! if (INFO /= 0) then
+      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
+      !   return
+      ! endif
+      ! ! calculate singular values
+      ! LWORK=WORK(1)
+      ! deallocate(WORK)
+      ! allocate(WORK(LWORK))
+      ! call dgesvd(JOBU,JOBVT,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,INFO)
+      ! if (INFO /= 0) then
+      !   write(*,*) 'ERROR: dgesvd returned with INFO=',INFO
+      !   return
+      ! endif
+      ! deallocate(WORK)
+
+
+      !!
+      !! dgesdd version (faster but need more workspace than dgesvd)
+      !!
+
+      ! arguments for calling dgesdd
+      JOBZ='N'
+      allocate(IWORK(8*N))
+      ! estimate optimal LWORK
+      allocate(WORK(1))
+      LWORK=-1
+      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
+        return
+      endif
+      ! calculate singular values
+      LWORK=WORK(1)
+      deallocate(WORK)
+      allocate(WORK(LWORK))
+      call dgesdd(JOBZ,N,N,H1,LDH,WR,Z,LDZ,Z,LDZ,WORK,LWORK,IWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dgesdd returned with INFO=',INFO
+        return
+      endif
+      deallocate(WORK)
+      deallocate(IWORK)
+
+
+      write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
+           WR(N), WR(1), WR(1)/WR(N)
+
+      deallocate(WR)
+      deallocate(H1)
+      end subroutine estimate_cond_num
+
       end module     hecmw_solver_GMRES_33

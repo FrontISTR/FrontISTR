@@ -87,4 +87,44 @@ module hecmw_solver_misc
 
       end subroutine hecmw_innerProduct_R_nocomm
 
+!C
+!C***
+!C*** hecmw_time_statistics
+!C***
+!C
+      subroutine hecmw_time_statistics (hecMESH, time, &
+           t_max, t_min, t_avg, t_sd)
+      use hecmw_util
+      use m_hecmw_comm_f
+
+      implicit none
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      real(kind=kreal), intent(in) :: time
+      real(kind=kreal), intent(out) :: t_max
+      real(kind=kreal), intent(out), optional :: t_min, t_avg, t_sd
+      real(kind=kreal) :: t2_avg
+      integer(kind=kint) :: nprocs
+
+      nprocs = hecmw_comm_get_size()
+
+      t_max = time
+      call hecmw_allreduce_R1(hecMESH, t_max, hecmw_max)
+
+      if (.not. present(t_min)) return
+      t_min = time
+      call hecmw_allreduce_R1(hecMESH, t_min, hecmw_min)
+
+      if (.not. present(t_avg)) return
+      t_avg = time
+      call hecmw_allreduce_R1(hecMESH, t_avg, hecmw_sum)
+      t_avg = t_avg / nprocs
+
+      if (.not. present(t_sd)) return
+      t2_avg = time*time
+      call hecmw_allreduce_R1(hecMESH, t2_avg, hecmw_sum)
+      t2_avg = t2_avg / nprocs
+
+      t_sd = dsqrt(t2_avg - t_avg*t_avg)
+      end subroutine hecmw_time_statistics
+
 end module hecmw_solver_misc

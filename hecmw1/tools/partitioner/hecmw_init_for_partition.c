@@ -40,6 +40,7 @@ print_usage( void )
     fprintf( stderr, "Usage: hecmw_part [-f file]\n" );
     fprintf( stderr, "\n" );
     fprintf( stderr, "  -f  specify control file name\n" );
+    fprintf( stderr, "  -v  print verbose messages\n" );
     fprintf( stderr, "  -h  print usage\n" );
 }
 
@@ -50,17 +51,13 @@ HECMW_init_for_partition( int argc, char **argv )
     int counter;
     char control_file_name[HECMW_FILENAME_LEN+1];
 
-    
-    if( argc == 1 ) {
-        strcpy( control_file_name, DEFAULT_CONTROL_FILE_NAME );
-        if( HECMW_part_set_ctrl_file_name( control_file_name ) )  goto error;
 
-    
-    } else {
+    strcpy( control_file_name, DEFAULT_CONTROL_FILE_NAME );
+
+    if( argc > 1 ) {
         counter=1;
         while( counter < argc ) {
 
-            
             if( !strcmp( argv[counter], "-f" ) ) {
                 counter++;
                 if( counter >= argc ) {
@@ -73,16 +70,20 @@ HECMW_init_for_partition( int argc, char **argv )
                     goto error;
                 }
                 strcpy( control_file_name, argv[counter] );
-                if( HECMW_part_set_ctrl_file_name( control_file_name ) )  goto error;
                 counter++;
 
-            
+            } else if( !strcmp( argv[counter], "-v" ) ) {
+                counter++;
+                HECMW_setloglv( HECMW_LOG_DEBUG );
+
             } else {
                 print_usage( );
                 goto error;
             }
         }
     }
+
+    if( HECMW_part_set_ctrl_file_name( control_file_name ) )  goto error;
 
     return 0;
 

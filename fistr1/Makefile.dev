@@ -6,7 +6,7 @@ FSTRLIB_TARGETFILE       = libfistr.a
 FSTRLIB_F90TARGETFILE    = libffistr.a
 FSTRLIBS                 = -lffistr -lfistr
 
-HECMWLIBS                = -lfhecmw -lhecmw
+HECMWLIBS                = -lfhecmw -lhecmw -lfhecmw
 
 F90MODULEPOSTFIX         = mod
 COBJFILEPOSTFIX          = o
@@ -59,6 +59,10 @@ MUMPS_CFLAGS             = -I$(MUMPSINCDIR)
 MUMPS_LDFLAGS            = -L$(MUMPSLIBDIR) $(MUMPSLIBS)
 MUMPS_F90FLAGS           = -I$(MUMPSINCDIR)
 MUMPS_F90LDFLAGS         = -L$(MUMPSLIBDIR) $(MUMPSLIBS)
+
+MLLIBS                   = -lml -lzoltan
+ML_LDFLAGS               = -L$(MLLIBDIR) $(MLLIBS)
+ML_F90LDFLAGS            = -L$(MLLIBDIR) $(MLLIBS)
 
 REVOCAPLIBS              = -lrcapf
 REVOCAP_F90FLAGS         = -I$(REVOCAPINCDIR)

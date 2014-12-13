@@ -33,18 +33,25 @@ module hecmw_precond_DIAG_33
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: ALU(:) => null()
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_DIAG_33_setup(hecMAT)
     use hecmw_matrix_misc
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NP
     real   (kind=kreal) :: SIGMA_DIAG
     real(kind=kreal), pointer:: D(:)
 
     real   (kind=kreal):: ALUtmp(3,3), PW(3)
     integer(kind=kint ):: ii, i, j, k
+
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) return
+      call hecmw_precond_DIAG_33_clear()
+    endif
 
     N = hecMAT%N
     NP = hecMAT%NP
@@ -85,6 +92,8 @@ contains
 
     endif
 
+!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+!$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(9*ii-7)
@@ -117,6 +126,12 @@ contains
       ALU(9*ii-1)= ALUtmp(3,2)
       ALU(9*ii  )= ALUtmp(3,3)
     enddo
+!$omp end do
+!$omp end parallel
+
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
 
   end subroutine hecmw_precond_DIAG_33_setup
 
@@ -128,6 +143,9 @@ contains
 
 !C
 !C== Block SCALING
+
+!$omp parallel default(none),private(i,X1,X2,X3),shared(N,WW,ALU)
+!$omp do
     do i= 1, N
       X1= WW(3*i-2)
       X2= WW(3*i-1)
@@ -141,6 +159,8 @@ contains
       WW(3*i-1)= X2
       WW(3*i  )= X3
     enddo
+!$omp end do
+!$omp end parallel
 
   end subroutine hecmw_precond_DIAG_33_apply
 
@@ -148,6 +168,7 @@ contains
     implicit none
     if (associated(ALU)) deallocate(ALU)
     nullify(ALU)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_DIAG_33_clear
 
 end module     hecmw_precond_DIAG_33

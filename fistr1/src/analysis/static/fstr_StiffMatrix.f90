@@ -63,6 +63,11 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
     nn = hecmw_get_max_node(ic_type)
 
 ! ----- element loop
+!$omp parallel default(none), &
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,tt,cdsys_ID,coords, &
+!$omp&          material,thick,stiffness,isect,ihead), &
+!$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,tincr)
+!$omp do
     do icel= iS, iE
 
 ! ----- nodal coordinate & displacement
@@ -140,6 +145,8 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
       call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)
 
     enddo      ! icel
+!$omp end do
+!$omp end parallel
   enddo        ! itype
 
 end subroutine fstr_StiffMatrix

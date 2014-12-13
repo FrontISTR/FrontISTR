@@ -22,6 +22,10 @@
 !C***
 !C
       module hecmw_solver_CG_33
+
+      public :: hecmw_solve_CG_33
+      private :: estimate_cond_num
+
       contains
 !C
 !C*** CG_33
@@ -57,12 +61,9 @@
       integer(kind=kint), parameter ::  Z= 2
       integer(kind=kint), parameter ::  Q= 2
       integer(kind=kint), parameter ::  P= 3
-      integer(kind=kint), parameter :: BT= 1
-      integer(kind=kint), parameter ::TATX=2
       integer(kind=kint), parameter :: WK= 4
 
       integer(kind=kint ) :: MAXIT
-      integer(kind=kint ) :: totalmpc
 
 ! local variables
       real   (kind=kreal) :: TOL
@@ -70,7 +71,12 @@
       real   (kind=kreal)::S_TIME,S1_TIME,E_TIME,E1_TIME, START_TIME, END_TIME
       real   (kind=kreal)::BNRM2
       real   (kind=kreal)::RHO,RHO1,BETA,C1,ALPHA,DNRM2
+      real   (kind=kreal)::t_max,t_min,t_avg,t_sd
+      integer(kind=kint) ::ESTCOND
+      real   (kind=kreal), allocatable::D(:),E(:)
+      real   (kind=kreal)::ALPHA1
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 
 !C===
@@ -90,16 +96,12 @@
       TIMElog = hecmw_mat_get_timelog( hecMAT )
       MAXIT  = hecmw_mat_get_iter( hecMAT )
       TOL   = hecmw_mat_get_resid( hecMAT )
-
-      totalmpc = hecMESH%mpc%n_mpc
-      call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+      ESTCOND = hecmw_mat_get_estcond( hecMAT )
 
       ERROR = 0
 
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
-
-      call hecmw_mpc_scale(hecMESH)
 
 !C
 !C-- SCALING
@@ -109,30 +111,25 @@
         call hecmw_JAD_INIT(hecMAT)
       ENDIF
 
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        allocate(D(MAXIT),E(MAXIT-1))
+      endif
 !C===
 !C +----------------------+
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_33_setup(hecMAT)
+      call hecmw_precond_33_setup(hecMAT, hecMESH, 1)
 
 !C===
-!C +----------------------------------------------+
-!C | {r0}= [T']({b} - [A]{xg}) - [T'][A][T]{xini} |
-!C +----------------------------------------------+
+!C +---------------------+
+!C | {r0}= {b} - [A]{x0} |
+!C +---------------------+
 !C===
+      call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
-!C-- {bt}= [T']({b} - [A]{xg})
-      if (totalmpc.eq.0) then
-        do i = 1, NNDOF
-          WW(i,BT) = B(i)
-        enddo
-       else
-        call hecmw_trans_b_33(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
-      endif
-
-!C-- compute ||{bt}||
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+!C-- compute ||{b}||
+      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -140,23 +137,20 @@
         X = 0.d0
       endif
 
-!C
-!C-- {tatx} = [T'] [A] [T]{x}
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
-      endif
-
-!C-- {r} = {bt} - {tatx}
-      do i = 1, NNDOF
-        WW(i,R) = WW(i,BT) - WW(i,TATX)
-      enddo
-
       E_TIME = HECMW_WTIME()
-      Tset = Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = t_max
 
       Tcomm = 0.d0
+      call hecmw_barrier(hecMESH)
       S1_TIME = HECMW_WTIME()
 !C
 !C************************************************* Conjugate Gradient Iteration start
@@ -176,6 +170,15 @@
 !C +---------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,Z), RHO, Tcomm)
+      ! if RHO is NaN or Inf then no converge
+      if (RHO == 0.d0) then
+        ! converged due to RHO==0
+        exit
+      elseif (iter > 1 .and. RHO*RHO1 <= 0) then
+        ! diverged due to indefinite preconditioner
+        ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
+        exit
+      endif
 
 !C===
 !C +-----------------------------+
@@ -195,15 +198,11 @@
       endif
 
 !C===
-!C +---------------------+
-!C | {q}= [T'][A][T] {p} |
-!C +---------------------+
+!C +--------------+
+!C | {q}= [A] {p} |
+!C +--------------+
 !C===
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
-       else
-        call hecmw_TtmatTvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK), Tcomm)
-      endif
+      call hecmw_matvec_33(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
 
 !C===
 !C +---------------------+
@@ -211,6 +210,12 @@
 !C +---------------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,P), WW(:,Q), C1, Tcomm)
+      ! if C1 is NaN or Inf, no converge
+      if (C1 <= 0) then
+        ! diverged due to indefinite or negative definite matrix
+        ERROR = HECMW_SOLVER_ERROR_DIVERGE_MAT
+        exit
+      endif
 
       ALPHA= RHO / C1
 
@@ -233,8 +238,19 @@
       if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
 !C#####
 
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        if (ITER == 1) then
+          D(1) = 1.d0 / ALPHA
+        else
+          D(ITER) = 1.d0 / ALPHA + BETA / ALPHA1
+          E(ITER-1) = sqrt(BETA) / ALPHA1
+        endif
+        ALPHA1 = ALPHA
+        if (mod(ITER,ESTCOND) == 0) call estimate_cond_num(ITER, D, E)
+      endif
+
       if ( RESID.le.TOL   ) exit
-      if ( ITER .eq.MAXIT ) ERROR = -300
+      if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO
 
@@ -242,10 +258,6 @@
 !C
 !C************************************************* Conjugate Gradient Iteration end
 !C
-      if (totalmpc.ne.0) then
-        call hecmw_tback_x_33(hecMESH, X, WW(:,WK), Tcomm)
-      endif
-
       call hecmw_solver_scaling_bk_33(hecMAT)
 !C
 !C-- INTERFACE data EXCHANGE
@@ -255,15 +267,114 @@
       END_TIME = HECMW_WTIME()
       Tcomm = Tcomm + END_TIME - START_TIME
 
-      E1_TIME = HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (WW)
-      call hecmw_precond_33_clear(hecMAT)
+      !call hecmw_precond_33_clear(hecMAT)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
         call hecmw_JAD_FINALIZE()
       ENDIF
 
+      if (ESTCOND /= 0 .and. ERROR == 0 .and. hecMESH%my_rank == 0) then
+        call estimate_cond_num(ITER, D, E)
+        deallocate(D, E)
+      endif
+
+      E1_TIME = HECMW_WTIME()
+      call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver iterations'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tsol = t_max
+
       end subroutine hecmw_solve_CG_33
+
+      subroutine estimate_cond_num(ITER, D, E)
+      use hecmw_util
+      implicit none
+      integer(kind=kint), intent(in) :: ITER
+      real(kind=kreal), intent(in) :: D(:), E(:)
+      character(len=1) :: JOBZ, RANGE
+      ! character(len=1) :: COMPZ
+      real(kind=kreal) :: VL, VU, ABSTOL, Z(1,1)
+      integer(kind=kint) :: N, IL, IU, M, LDZ=1, ISUPPZ(1)
+      integer(kind=kint) :: LWORK, LIWORK, INFO
+      real(kind=kreal), allocatable :: W(:), WORK(:)
+      integer(kind=kint), allocatable :: IWORK(:)
+      real(kind=kreal), allocatable :: D1(:), E1(:)
+      integer(kind=kint) :: i
+
+      if (ITER <= 1) return
+
+      ! copy D, E
+      allocate(D1(ITER),E1(ITER))
+      do i=1,ITER-1
+        D1(i) = D(i)
+        E1(i) = E(i)
+      enddo
+      D1(ITER) = D(ITER)
+
+
+      !!
+      !! dstegr version (faster than dsteqr)
+      !!
+
+      ! prepare arguments for calling dstegr
+      JOBZ='N'
+      RANGE='A'
+      N=ITER
+      allocate(W(ITER))
+      ! estimate optimal LWORK and LIWORK
+      LWORK=-1
+      LIWORK=-1
+      allocate(WORK(1),IWORK(1))
+      call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
+           M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dstegr returned with INFO=',INFO
+        return
+      endif
+      ! calculate eigenvalues
+      LWORK=WORK(1)
+      LIWORK=IWORK(1)
+      deallocate(WORK,IWORK)
+      allocate(WORK(LWORK),IWORK(LIWORK))
+      call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
+           M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
+      if (INFO /= 0) then
+        write(*,*) 'ERROR: dstegr returned with INFO=',INFO
+        return
+      endif
+      write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
+           W(1),W(N),W(N)/W(1)
+      deallocate(WORK,IWORK)
+      deallocate(W)
+
+
+      ! !!
+      ! !! dsteqr version
+      ! !!
+
+      ! ! prepare arguments for calling dsteqr
+      ! COMPZ='N'
+      ! N=ITER
+      ! allocate(WORK(1))
+      ! ! calculate eigenvalues
+      ! call dsteqr(COMPZ,N,D1,E1,Z,LDZ,WORK,INFO)
+      ! if (INFO /= 0) then
+      !   write(*,*) 'ERROR: dsteqr returned with INFO=',INFO
+      !   return
+      ! endif
+      ! write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
+      !      D1(1),D1(N),D1(N)/D1(1)
+      ! deallocate(WORK)
+
+
+      deallocate(D1,E1)
+
+      end subroutine estimate_cond_num
       end module     hecmw_solver_CG_33

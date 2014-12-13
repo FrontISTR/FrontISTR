@@ -55,6 +55,7 @@
 
       real(kind=kreal), dimension(5) :: CG
       real(kind=kreal), dimension(2) :: EQ
+      real(kind=kreal), dimension(2) :: RR
 
       integer(kind=kint ) :: MAXIT
       real   (kind=kreal) :: TOL
@@ -63,6 +64,7 @@
       real   (kind=kreal) :: BNRM2
       real   (kind=kreal) :: RHO,RHO1,BETA,ALPHA,DNRM2
       real   (kind=kreal) :: QSI,ETA,COEF1
+      real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
 
       integer(kind=kint), parameter :: R= 1
       integer(kind=kint), parameter ::RT= 2
@@ -79,6 +81,7 @@
       integer(kind=kint), parameter ::W2=13
       integer(kind=kint), parameter ::ZQ=14
 
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 !C
 !C-- INIT.
@@ -109,7 +112,7 @@
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_33_setup(hecMAT)
+      call hecmw_precond_33_setup(hecMAT, hecMESH, 0)
 
 !C
 !C +----------------------+
@@ -133,12 +136,22 @@
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,RT), WW(:,R), RHO, Tcomm)
 
       E_TIME= HECMW_WTIME()
-      Tset= Tset + E_TIME - S_TIME
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver setup'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tset = t_max
 !C===
 
 !C
 !C*************************************************************** ITERATIVE PROC.
 !C
+      call hecmw_barrier(hecMESH)
       S1_TIME= HECMW_WTIME()
       do iter= 1, MAXIT
 !C
@@ -233,7 +246,7 @@
 !C===
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,Y ), CG(1))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,T ), CG(2))
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(NDOF))
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(3))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,Y ), CG(4))
       call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,TT), CG(5))
       S_TIME= HECMW_WTIME()
@@ -287,9 +300,14 @@
         WW(j,T0)= WW(j,T)
       enddo
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,RT), COEF1, Tcomm)
-
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,R), WW(:,R), RR(1))
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,R), WW(:,RT), RR(2))
+      S_TIME= HECMW_WTIME()
+      call hecmw_allreduce_R(hecMESH, RR, 2, HECMW_SUM)
+      E_TIME= HECMW_WTIME()
+      Tcomm =  Tcomm + E_TIME - S_TIME
+      DNRM2 = RR(1)
+      COEF1 = RR(2)
 
       BETA = ALPHA*COEF1 / (QSI*RHO)
       do j= 1, NNDOF
@@ -306,7 +324,7 @@
 !C#####
 
       if (RESID.le.TOL   ) exit
-      if ( ITER.eq.MAXIT ) ERROR= -300
+      if ( ITER.eq.MAXIT ) ERROR= HECMW_SOLVER_ERROR_NOCONV_MAXIT
 !C===
       enddo
 
@@ -319,11 +337,20 @@
       E_TIME = HECMW_WTIME()
       Tcomm = Tcomm + E_TIME - S_TIME
 
-      E1_TIME= HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (WW)
-      call hecmw_precond_33_clear(hecMAT)
+      !call hecmw_precond_33_clear(hecMAT)
+
+      E1_TIME= HECMW_WTIME()
+      call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+        write(*,*) 'Time solver iterations'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      Tsol = t_max
 
       end subroutine  hecmw_solve_GPBiCG_33
       end module     hecmw_solver_GPBiCG_33

@@ -106,6 +106,7 @@ module hecmw_matrix_ass
         do idof = 1, NDOF
           do jdof = 1, NDOF
             idx = idx_base + jdof
+!$omp atomic
             hecMAT%AU(idx) = hecMAT%AU(idx) + a(idof, jdof)
           enddo
           idx_base = idx_base + NDOF
@@ -126,6 +127,7 @@ module hecmw_matrix_ass
         do idof = 1, NDOF
           do jdof = 1, NDOF
             idx = idx_base + jdof
+!$omp atomic
             hecMAT%AL(idx) = hecMAT%AL(idx) + a(idof, jdof)
           enddo
           idx_base = idx_base + NDOF
@@ -136,6 +138,7 @@ module hecmw_matrix_ass
         do idof = 1, NDOF
           do jdof = 1, NDOF
             idx = idx_base + jdof
+!$omp atomic
             hecMAT%D(idx) = hecMAT%D(idx) + a(idof, jdof)
           enddo
           idx_base = idx_base + NDOF
@@ -231,6 +234,7 @@ module hecmw_matrix_ass
 
           if( hecmw_mat_get_penalized_b(hecMAT) == 0) then
             ci = hecMESH%mpc%mpc_const(impc)
+!$omp atomic
             hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
           endif
         enddo
@@ -263,6 +267,7 @@ module hecmw_matrix_ass
         endif
 
         idx = NDOF**2 * (k-1) + NDOF * (idof-1) + jdof
+!$omp atomic
         hecMAT%AU(idx) = hecMAT%AU(idx) + val
 
       else if (inod > jnod) then
@@ -278,10 +283,12 @@ module hecmw_matrix_ass
         endif
 
         idx = NDOF**2 * (k-1) + NDOF * (idof-1) + jdof
+!$omp atomic
         hecMAT%AL(idx) = hecMAT%AL(idx) + val
 
       else
         idx = NDOF**2 * (inod - 1) + NDOF * (idof - 1) + jdof
+!$omp atomic
         hecMAT%D(idx) = hecMAT%D(idx) + val
       endif
 
@@ -311,9 +318,11 @@ module hecmw_matrix_ass
 
       DO i = NDOF-1,0,-1
         IF( i .NE. NDOF-idof ) THEN
+!$omp atomic
           hecMAT%B(NDOF*inode-i) = hecMAT%B(NDOF*inode-i)        &
                                  - hecMAT%D(ndof2*inode-ii)*RHS
           if(present(conMAT)) then
+!$omp atomic
             conMAT%B(NDOF*inode-i) = conMAT%B(NDOF*inode-i)        &
                                    - conMAT%D(ndof2*inode-ii)*RHS
           endif
@@ -364,10 +373,12 @@ module hecmw_matrix_ass
           if (hecMAT%itemU(ik) .eq. inode) then
             iii = ndof2 - idof
             DO i = NDOF-1,0,-1
+!$omp atomic
               hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
                                   - hecMAT%AU(ndof2*ik-iii)*RHS
               hecMAT%AU(ndof2*ik-iii)= 0.d0
               if(present(conMAT)) then
+!$omp atomic
                 conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
                                     - conMAT%AU(ndof2*ik-iii)*RHS
                 conMAT%AU(ndof2*ik-iii)= 0.d0
@@ -401,10 +412,12 @@ module hecmw_matrix_ass
             iii  = ndof2 - idof
 
             DO i = NDOF-1, 0, -1
+!$omp atomic
               hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
                                   - hecMAT%AL(ndof2*ik-iii)*RHS
               hecMAT%AL(ndof2*ik-iii) = 0.d0
               if(present(conMAT)) then
+!$omp atomic
                 conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
                                     - conMAT%AL(ndof2*ik-iii)*RHS
                 conMAT%AL(ndof2*ik-iii) = 0.d0

@@ -30,6 +30,7 @@ module m_solve_LINEQ_contact
    use m_solve_LINEQ_mkl
    use m_solve_LINEQ_direct_serial_lag
    use m_solve_LINEQ_MUMPS_contact
+   use m_solve_LINEQ_iter_contact
    use m_fstr_mat_resid_contact
 
   implicit none
@@ -47,7 +48,9 @@ module m_solve_LINEQ_contact
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
       logical :: is_sym
 
-      if( hecMAT%Iarray(99)==3 )then
+      if( hecMAT%Iarray(99)==1 )then
+        call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+      else if( hecMAT%Iarray(99)==3 )then
         call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
@@ -68,6 +71,7 @@ module m_solve_LINEQ_contact
 
       real(kind=kreal)                         :: factor
       real(kind=kreal) :: resid
+      real(kind=kreal) :: t1, t2
 
       factor = 1.0d0
       if( present(rf) )factor = rf
@@ -77,7 +81,11 @@ module m_solve_LINEQ_contact
         call hecmw_mat_ass_equation( hecMESH, hecMAT )
       endif
 
-      if( hecMAT%Iarray(99)==3 )then
+      t1 = hecmw_wtime()
+
+      if( hecMAT%Iarray(99)==1 )then
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
+      elseif( hecMAT%Iarray(99)==3 )then
         call solve_LINEQ_mkl(hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
@@ -88,6 +96,11 @@ module m_solve_LINEQ_contact
         else
           call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
         endif
+      endif
+
+      t2 = hecmw_wtime()
+      if (hecmw_mat_get_timelog(hecMAT) .eq. 1) then
+        write(*,*) ' solve time :', t2 - t1
       endif
 
       if(paraContactFlag.and.present(conMAT)) then
