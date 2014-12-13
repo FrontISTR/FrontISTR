@@ -364,6 +364,7 @@
           integer(kind=kint),pointer :: node_new2old(:)
           integer(kind=kint),pointer :: elem_old2new(:)
           integer(kind=kint),pointer :: elem_new2old(:)
+          integer(kind=kint),pointer :: n_node_refine_hist(:)
 
 !C
 !C-- ETC.

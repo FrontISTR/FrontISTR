@@ -82,5 +82,9 @@ HECMW_is_etype_link(int etype);
 extern int
 HECMW_is_etype_33struct(int etype);
 
+
+extern int
+HECMW_is_etype_truss(int etype);
+
 #endif
 

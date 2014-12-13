@@ -152,7 +152,7 @@ contains
 !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
 !$OMP PARALLEL DEFAULT(NONE) &
-!$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+!$OMP&PRIVATE(i,X1,X2,X3,X4,X5,X6,YV1,YV2,YV3,YV4,YV5,YV6,jS,jE,j,in,threadNum,blockNum,blockIndex) &
 !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()

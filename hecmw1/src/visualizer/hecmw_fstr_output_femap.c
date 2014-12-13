@@ -1110,6 +1110,37 @@ avs_write_node_data(FILE *outfp, int n_node, int *global_node_ID, int tn_compone
 	}
 }
 
+int
+modify_element_information(const struct hecmwST_local_mesh *mesh)
+{
+  int i, j, n, refine, max_elem;
+  int *size;
+
+  max_elem = 0;
+  refine = mesh->n_refine;
+  if (refine <= 0) return 0;
+
+  size = mesh->n_node_refine_hist;
+
+  for(n=0; n<refine; n++) {
+    int nn = *size;
+    for(i=0; i<nn; i++) {
+      if(max_elem < mesh->node_ID[2*i]){
+        max_elem = mesh->node_ID[2*i];
+      }
+    }
+
+    for(i=0; i<nn; i++) {
+      if( mesh->node_ID[2*i] < 0){
+        mesh->node_ID[2*i] = max_elem - mesh->node_ID[2*i];
+      }
+    }
+    size++;
+  }
+
+  return 0;
+}
+
 static void
 avs_output (struct hecmwST_local_mesh *mesh,
 		struct hecmwST_result_data *data, char *outfile,
@@ -1217,6 +1248,13 @@ avs_output (struct hecmwST_local_mesh *mesh,
 			}
 		}
 	}
+
+	/* modify element information due to refininer*
+	if (mynode == 0) {
+		if( modify_element_information(mesh) != 0){
+			printf("###ERROR: modify element information due to refininer \n");
+		}
+	}*/
 
 	/* write element connectivity */
 	if (mynode != 0)

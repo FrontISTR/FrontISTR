@@ -698,6 +698,7 @@ extern char
   case HECMW_ETYPE_TRI22: return HECMW_UCD_LABEL_TRI2;  
   case HECMW_ETYPE_QUA1:  return HECMW_UCD_LABEL_QUA1;  
   case HECMW_ETYPE_QUA2:  return HECMW_UCD_LABEL_QUA2;  
+  case HECMW_ETYPE_ROD31: return HECMW_UCD_LABEL_ROD31; 
   case HECMW_ETYPE_TET1:  return HECMW_UCD_LABEL_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_UCD_LABEL_TET1_4; 
 // ==========
@@ -925,6 +926,15 @@ HECMW_is_etype_33struct(int etype)
 	return 0;
 }
 
+extern int
+HECMW_is_etype_truss(int etype)
+{
+	switch( etype ) {
+	case 301:	return 1;
+	}
+	return 0;
+}
+
 /* interface for fortran -- added by Kazuya Goto (AdvanceSoft) */
 
 int hecmw_get_max_node_if(int *etype) { return HECMW_get_max_node(*etype); }
@@ -971,3 +981,8 @@ int hecmw_is_etype_33struct_if(int *etype) { return HECMW_is_etype_33struct(*ety
 int hecmw_is_etype_33struct_if_(int *etype) { return HECMW_is_etype_33struct(*etype); }
 int hecmw_is_etype_33struct_if__(int *etype) { return HECMW_is_etype_33struct(*etype); }
 int HECMW_IS_ETYPE_33STRUCT_IF(int *etype) { return HECMW_is_etype_33struct(*etype); }
+
+int hecmw_is_etype_truss_if(int *etype) { return HECMW_is_etype_truss(*etype); }
+int hecmw_is_etype_truss_if_(int *etype) { return HECMW_is_etype_truss(*etype); }
+int hecmw_is_etype_truss_if__(int *etype) { return HECMW_is_etype_truss(*etype); }
+int HECMW_IS_ETYPE_TRUSS_IF(int *etype) { return HECMW_is_etype_truss(*etype); }

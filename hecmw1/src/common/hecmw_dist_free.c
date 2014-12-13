@@ -240,6 +240,7 @@ HECMW_dist_clean(struct hecmwST_local_mesh *mesh)
 	HECMW_free(mesh->node_new2old);
 	HECMW_free(mesh->elem_old2new);
 	HECMW_free(mesh->elem_new2old);
+	HECMW_free(mesh->n_node_refine_hist);
 
 	free_section(mesh->section);
 	free_material(mesh->material);

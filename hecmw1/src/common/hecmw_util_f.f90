@@ -367,6 +367,7 @@
           integer(kind=kint),pointer :: node_new2old(:)
           integer(kind=kint),pointer :: elem_old2new(:)
           integer(kind=kint),pointer :: elem_new2old(:)
+          integer(kind=kint),pointer :: n_node_refine_hist(:)
 
 !C
 !C-- ETC.
@@ -778,6 +779,7 @@
         nullify( P%node_new2old )
         nullify( P%elem_old2new )
         nullify( P%elem_new2old )
+        nullify( P%n_node_refine_hist )
 
         call hecmw_nullify_section( P%section )
         call hecmw_nullify_material( P%material )

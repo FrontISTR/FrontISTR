@@ -38,6 +38,7 @@
 #include "hecmw_partition.h"
 #include "hecmw_ucd_print.h"
 #include "hecmw_graph.h"
+#include "hecmw_common_define.h"
 
 #ifdef HECMW_PART_WITH_METIS
 #  include "metis.h"
@@ -9789,6 +9790,27 @@ print_ucd_entire_set_elem_data( struct hecmwST_local_mesh *global_mesh,
         }
     }
     strcpy( result_data->elem_label[0], "partitioning_image" );
+
+    /* modify element information*/
+    for( i=0; i<global_mesh->n_elem; i++ ) {
+      switch( global_mesh->elem_type[i] ) {
+        case HECMW_ETYPE_SHT6:
+          global_mesh->elem_type[i] = HECMW_ETYPE_SHT1;
+          break;
+
+        case HECMW_ETYPE_SHQ8:
+          global_mesh->elem_type[i] = HECMW_ETYPE_SHQ1;
+          break;
+
+        case HECMW_ETYPE_BEM3:
+          global_mesh->elem_type[i] = HECMW_ETYPE_ROD1;
+          break;
+
+        case HECMW_ETYPE_ROD31:
+          global_mesh->elem_type[i] = HECMW_ETYPE_ROD1;
+          break;
+      }
+    }
 
     for( ne_item=0, i=0; i<result_data->ne_component; i++ ) {
         ne_item += result_data->ne_dof[i];

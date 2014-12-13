@@ -37,6 +37,7 @@ module m_fstr_AddBC
       use fstr_matrix_con_contact
       use m_addContactStiffness
       use mContact
+      use m_static_LIB_1d
       integer, intent(in)                  :: cstep     !< current step
       integer, intent(in)                  :: substep   !< current substep
       type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -94,6 +95,11 @@ module m_fstr_AddBC
           enddo
         enddo
       enddo
+      
+!
+!   ------ Truss element Diagonal Modification
+      call truss_diag_modify(hecMAT,hecMESH)
+
 !
 !   ------ Equation boundary conditions
       do ig0=1,fstrSOLID%n_fix_mpc
@@ -102,7 +108,7 @@ module m_fstr_AddBC
           RHS = fstrSOLID%mpc_const(ig0)*factor
           hecMESH%mpc%mpc_const(ig0) = RHS
       enddo
-
+      
       end subroutine fstr_AddBC
 
 end module m_fstr_AddBC

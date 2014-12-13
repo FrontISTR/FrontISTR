@@ -235,6 +235,7 @@
 #define HECMW_UCD_LABEL_TRI2 "tri2"
 #define HECMW_UCD_LABEL_QUA1 "quad"
 #define HECMW_UCD_LABEL_QUA2 "quad2"
+#define HECMW_UCD_LABEL_ROD31 "line"
 #define HECMW_UCD_LABEL_TET1 "tet"
 #define HECMW_UCD_LABEL_TET1_4 "tet"
 // =====

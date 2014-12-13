@@ -173,7 +173,11 @@ module m_fstr_ass_load
             pa1=1.d0
           endif
 ! ----- Create local stiffness
-          if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
+          if (ic_type==301)then
+            ihead = hecMESH%section%sect_R_index(isect-1)
+            call DL_C1(ic_type,nn,xx(1:nn),yy(1:nn),zz(1:nn),rho,thick,ltype,params,vect(1:nn*ndof),nsize)
+
+          elseif( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
             call DL_C2(ic_type,nn,xx(1:nn),yy(1:nn),rho,pa1,ltype,params,vect(1:nn*ndof),nsize,iset)
             
           else if ( ic_type == 341 .or. ic_type == 351 .or. ic_type == 361 .or.   &
@@ -186,7 +190,14 @@ module m_fstr_ass_load
                              hecMESH%section%sect_R_item(ihead+1:), vect(1:nn*ndof), nsize) 
             
           else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-            call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize)
+            call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, fstrSOLID%elements(icel)%gausses)
+
+          else if( ( ic_type==761 ) .or. ( ic_type==781 ) ) then
+            call DL_Shell_33(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, fstrSOLID%elements(icel)%gausses)
+
+          else 
+            nsize = 0
+            write(*,*)"### WARNING: DLOAD",ic_type
             
           endif
 ! ----- Add vector

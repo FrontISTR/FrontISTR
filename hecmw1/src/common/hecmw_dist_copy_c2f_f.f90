@@ -605,7 +605,17 @@ module hecmw_dist_copy_c2f_f
                 if(ierr /= 0) return
             endif
         endif
-
+        
+        if(mesh%n_refine > 0) then
+            vname = 'n_node_refine_hist'
+            call hecmw_dist_copy_c2f_isalloc_if(sname, vname, is_allocated, ierr)
+            if(is_allocated == 1) then
+                allocate(mesh%n_node_refine_hist(mesh%n_refine))
+                call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%n_node_refine_hist, ierr)
+                if(ierr /= 0) return
+            endif
+        endif
+        
         if(mesh%n_refine > 0) then
             sname = 'hecmwST_refine_origin'
             reforg => mesh%refine_origin

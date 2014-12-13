@@ -649,28 +649,28 @@
        
        !--------------------------------------------------------
        
-        IF ( n_total_layer.ge. 2 ) THEN
-		     shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-	        if (shellmatl == 0)then
-			   sigma_layer = 0.0D0
-		       DO m = 1, n_layer
-			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
-		       END DO
-			   zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
-	        elseif (shellmatl == 1)then
-			   sigma_layer = 0.0D0
-		       DO m = 1, n_layer
-			      sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
-		       END DO
-               zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))			   
-	        else
-			   write(*,*)"ERROR : shellmatl isnot correct"; stop
-            endif
+        IF ( n_total_layer .ge. 2 ) THEN
+          shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+          if (shellmatl == 0)then
+            sigma_layer = 0.0D0
+            DO m = 1, n_layer
+              sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
+            END DO
+            zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
+          elseif (shellmatl == 1)then
+            sigma_layer = 0.0D0
+            DO m = 1, n_layer
+              sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
+            END DO
+            zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))			   
+          else
+            write(*,*)"ERROR : shellmatl isnot correct"; stop
+          endif
         ELSE
-			zeta_ly = xg(ny, ly)
+          zeta_ly = xg(ny, ly)
         ENDIF
 	   
-		w_ly    = wgt(ny, ly)
+        w_ly    = wgt(ny, ly)
 
        !--------------------------------------------------------
        
@@ -826,7 +826,7 @@
         e2_hat(3) = e2_hat(3)/e2_hat_abs
         
         !--------------------------------------------------
-    !    write(*,*)  'Matlmatrix_layer', n_layer !下のgaussが非常によくわからない
+        
         CALL MatlMatrix_Shell                        &
              (gausses(lx), Shell, D,                 &
               e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, &
@@ -1056,22 +1056,29 @@
         
         !--------------------------------------------------
         
-          shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-	        if (shellmatl == 0)then
-			    FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-				   tmpstiff(isize, jsize)                               &
-				   = tmpstiff(isize, jsize)                             &
-				   +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
-		       END FORALL
-		    elseif (shellmatl == 1)then
-			    FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-				   tmpstiff(isize, jsize)                               &
-				   = tmpstiff(isize, jsize)                             &
-				   +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
-	           END FORALL
-		    else
-			   write(*,*)"ERROR : shellmatl isnot correct"; stop
-            endif
+        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+        if (shellmatl == 0)then
+          if ( n_total_layer .ge. 2 ) THEN
+            FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+              tmpstiff(isize, jsize)                               &
+              = tmpstiff(isize, jsize)                             &
+              +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
+            END FORALL
+          else
+            FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+              tmpstiff(isize, jsize)                               &
+              = tmpstiff(isize, jsize) +w_w_w_det *DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
+            END FORALL
+          endif
+        elseif (shellmatl == 1)then
+          FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+            tmpstiff(isize, jsize)                               &
+            = tmpstiff(isize, jsize)                             &
+            +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) ) 
+          END FORALL
+        else
+          write(*,*)"ERROR : shellmatl isnot correct"; stop
+        endif
         
         !--------------------------------------------------
         
@@ -1185,7 +1192,7 @@
                       -( cg1(2)*B1(3, jsize)   &
                         +cg2(2)*B2(3, jsize)   &
                         +cg3(2)*B3(3, jsize) ) 
-						
+              
         END DO
         
         !--------------------------------------------------
@@ -1238,9 +1245,10 @@
         !--------------------------------------------------
         
         ! [ K L ] matrix
-		  shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-	        if (shellmatl == 0)then
-			   DO jsize = 1, ndof*nn
+        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+        if (shellmatl == 0)then
+          if ( n_total_layer .ge. 2 ) then
+            DO jsize = 1, ndof*nn
               DO isize = 1, ndof*nn
           
           tmpstiff(isize, jsize)                &
@@ -1248,20 +1256,33 @@
            +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*alpha*Cv(isize)*Cv(jsize) 
           
               END DO
+            END DO
+          else
+          
+            DO jsize = 1, ndof*nn
+              DO isize = 1, ndof*nn
+          
+          tmpstiff(isize, jsize)                &
+          = tmpstiff(isize, jsize)              &
+           +w_w_w_det*alpha*Cv(isize)*Cv(jsize) 
+          
               END DO
-	        elseif (shellmatl == 1)then
-			   DO jsize = 1, ndof*nn
-			   DO isize = 1, ndof*nn
-			  
-			  tmpstiff(isize, jsize)                &
-			  = tmpstiff(isize, jsize)              &
-			   +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*alpha*Cv(isize)*Cv(jsize) 
-			  
-			   END DO
-			   END DO
-	        else
-			   write(*,*)"ERROR : shellmatl isnot correct"; stop
-            endif
+            END DO
+          
+          endif
+        elseif (shellmatl == 1)then
+          DO jsize = 1, ndof*nn
+          DO isize = 1, ndof*nn
+        
+        tmpstiff(isize, jsize)                &
+        = tmpstiff(isize, jsize)              &
+         +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*alpha*Cv(isize)*Cv(jsize) 
+        
+          END DO
+          END DO
+        else
+          write(*,*)"ERROR : shellmatl isnot correct"; stop
+        endif
         
         !--------------------------------------------------
         
@@ -1276,81 +1297,81 @@
       stiff(1:nn*ndof, 1:nn*ndof) = tmpstiff(1:nn*ndof, 1:nn*ndof)
 
 !--------------------------------------------------------------------
-		END DO     !< LAMINATED SHELL ANALYSIS
-		
-!		write(*,"(24E25.16)") stiff
-		
+    END DO     !< LAMINATED SHELL ANALYSIS
+
+!   write(*,"(24E25.16)") stiff
+
 !******************** Shell-Solid mixed analysis ********************  
 !		mixglaf = 0 < natural shell (6 dof)
 !		mixglaf = 1 < mixed 361 (3*2 dof)*8 nod
 !		mixglaf = 2 < mixed 351 (3*2 dof)*6 nod
        if( mixflag == 1 )then
-	   
+
 !       write(*,*) 'convert for shell-solid mixed analysis'
-		sstable(1) = 1
-		sstable(2) = 2
-		sstable(3) = 3
-		sstable(4) = 7
-		sstable(5) = 8
-		sstable(6) = 9
-		sstable(7) = 13
-		sstable(8) = 14
-		sstable(9) = 15
-		sstable(10)= 19
-		sstable(11)= 20
-		sstable(12)= 21
-		sstable(13)= 4
-		sstable(14)= 5
-		sstable(15)= 6
-		sstable(16)= 10
-		sstable(17)= 11
-		sstable(18)= 12
-		sstable(19)= 16
-		sstable(20)= 17
-		sstable(21)= 18
-		sstable(22)= 22
-		sstable(23)= 23
-		sstable(24)= 24
-		
-		tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
-		
+        sstable(1) = 1
+        sstable(2) = 2
+        sstable(3) = 3
+        sstable(4) = 7
+        sstable(5) = 8
+        sstable(6) = 9
+        sstable(7) = 13
+        sstable(8) = 14
+        sstable(9) = 15
+        sstable(10)= 19
+        sstable(11)= 20
+        sstable(12)= 21
+        sstable(13)= 4
+        sstable(14)= 5
+        sstable(15)= 6
+        sstable(16)= 10
+        sstable(17)= 11
+        sstable(18)= 12
+        sstable(19)= 16
+        sstable(20)= 17
+        sstable(21)= 18
+        sstable(22)= 22
+        sstable(23)= 23
+        sstable(24)= 24
+
+        tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
+
        DO i = 1, nn*ndof
        DO j = 1, nn*ndof   
-			stiff(i,j) = tmpstiff(sstable(i),sstable(j))
+        stiff(i,j) = tmpstiff(sstable(i),sstable(j))
        ENDDO
        ENDDO
-	   
-	   elseif( mixflag == 2 )then
-!		write(*,*) 'convert for shell-solid mixed analysis 351'
-		sstable(1) = 1
-		sstable(2) = 2
-		sstable(3) = 3
-		sstable(4) = 7
-		sstable(5) = 8
-		sstable(6) = 9
-		sstable(7) = 13
-		sstable(8) = 14
-		sstable(9) = 15
-		sstable(10)= 4
-		sstable(11)= 5
-		sstable(12)= 6
-		sstable(13)= 10
-		sstable(14)= 11
-		sstable(15)= 12
-		sstable(16)= 16
-		sstable(17)= 17
-		sstable(18)= 18
-		
-		tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
-		
+
+    elseif( mixflag == 2 )then
+    !		write(*,*) 'convert for shell-solid mixed analysis 351'
+        sstable(1) = 1
+        sstable(2) = 2
+        sstable(3) = 3
+        sstable(4) = 7
+        sstable(5) = 8
+        sstable(6) = 9
+        sstable(7) = 13
+        sstable(8) = 14
+        sstable(9) = 15
+        sstable(10)= 4
+        sstable(11)= 5
+        sstable(12)= 6
+        sstable(13)= 10
+        sstable(14)= 11
+        sstable(15)= 12
+        sstable(16)= 16
+        sstable(17)= 17
+        sstable(18)= 18
+        
+        tmpstiff(1:nn*ndof, 1:nn*ndof) = stiff(1:nn*ndof, 1:nn*ndof)
+        
        DO i = 1, nn*ndof
        DO j = 1, nn*ndof   
-			stiff(i,j) = tmpstiff(sstable(i),sstable(j))
+        stiff(i,j) = tmpstiff(sstable(i),sstable(j))
        ENDDO
        ENDDO
-	   
-	   endif
-	   
+     
+     endif
+     
       RETURN
       
 !####################################################################
@@ -1912,26 +1933,26 @@
       
       !--------------------------------------------------------
       
-	  	IF ( n_total_layer.ge. 2 ) THEN
-			shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-			if (shellmatl == 0)then
-				sigma_layer = 0.0D0
-				DO m = 1, n_layer
-					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
-				END DO
-				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-zeta)
-			elseif (shellmatl == 1)then
-				sigma_layer = 0.0D0
-				DO m = 1, n_layer
-					sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
-				END DO
-				zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-zeta)			   
-			else
-				write(*,*)"ERROR : shellmatl isnot correct"; stop
-			endif
-		ELSE
-			zeta_ly = zeta
-		ENDIF
+      IF ( n_total_layer.ge. 2 ) THEN
+        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+        if (shellmatl == 0)then
+          sigma_layer = 0.0D0
+          DO m = 1, n_layer
+            sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
+          END DO
+          zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-zeta)
+        elseif (shellmatl == 1)then
+          sigma_layer = 0.0D0
+          DO m = 1, n_layer
+            sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
+          END DO
+          zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-zeta)			   
+        else
+        write(*,*)"ERROR : shellmatl isnot correct"; stop
+        endif
+      ELSE
+        zeta_ly = zeta
+      ENDIF
 
       !--------------------------------------------------------
       
@@ -2002,11 +2023,11 @@
             +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
             +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) ) 
        
-		if(det == 0.0d0) then
-			write(*,*)"ERROR:LIB Shell in l2009 Not Jacobian"
-			stop
-		endif
-		
+      if(det == 0.0d0) then
+        write(*,*)"ERROR:LIB Shell in l2009 Not Jacobian"
+        stop
+      endif
+      
        det_inv = 1.0D0/det
 
        !--------------------------------------------------
@@ -2404,7 +2425,7 @@
 !####################################################################
       SUBROUTINE DL_Shell                                  &
                  (etype, nn, ndof, xx, yy, zz, rho, thick, &
-                  ltype, params, vect, nsize)              
+                  ltype, params, vect, nsize, gausses)              
 !####################################################################
       
       USE hecmw
@@ -2412,6 +2433,7 @@
       USE mMechGauss
       USE gauss_integration
       
+      TYPE(tGaussStatus), INTENT(IN)   :: gausses(:)
 !--------------------------------------------------------------------
       
       INTEGER(KIND = kint), INTENT(IN) :: etype
@@ -2430,12 +2452,13 @@
       INTEGER :: lx, ly
       INTEGER :: fetype
       INTEGER :: ny
-      INTEGER :: i
+      INTEGER :: i, m
       INTEGER :: na, nb
       INTEGER :: isize
       INTEGER :: jsize1, jsize2, jsize3, &
                  jsize4, jsize5, jsize6  
       INTEGER :: ltype
+      INTEGER :: n_total_layer, n_layer, shellmatl
       
       REAL(KIND = kreal) :: elem(3, nn)
       REAL(KIND = kreal) :: val
@@ -2469,6 +2492,7 @@
       REAL(KIND = kreal) :: phx, phy, phz
       REAL(KIND = kreal) :: coefx, coefy, coefz
       REAL(KIND = kreal) :: x, y, z
+      REAL(KIND = kreal) :: sigma_layer
       
 !--------------------------------------------------------------------
       
@@ -2498,23 +2522,23 @@
       ! MITC4
       IF( etype .EQ. fe_mitc4_shell ) THEN
        
-       fetype = fe_mitc4_shell
+        fetype = fe_mitc4_shell
        
-       ny = 2
+        ny = 2
        
       ! MITC9
       ELSE IF( etype .EQ. fe_mitc9_shell ) THEN
        
-       fetype = fe_mitc9_shell
+        fetype = fe_mitc9_shell
        
-       ny = 3
+        ny = 3
        
       ! MITC3
       ELSE IF( etype .EQ. fe_mitc3_shell ) THEN
        
-       fetype = fe_mitc3_shell
+        fetype = fe_mitc3_shell
        
-       ny = 2
+        ny = 2
        
       END IF
       
@@ -2522,9 +2546,9 @@
       
       DO na = 1, nn
        
-       elem(1, na) = xx(na)
-       elem(2, na) = yy(na)
-       elem(3, na) = zz(na)
+        elem(1, na) = xx(na)
+        elem(2, na) = yy(na)
+        elem(3, na) = zz(na)
        
       END DO
       
@@ -2539,7 +2563,7 @@
       ! Local load vector
       DO isize = 1, ndof*nn
        
-       vect(isize) = 0.0D0
+        vect(isize) = 0.0D0
        
       END DO
       
@@ -2557,14 +2581,14 @@
       ! Covariant basis vector
       DO i = 1, 3
        
-       g1(i) = 0.0D0
+        g1(i) = 0.0D0
        
-       DO na = 1, nn
+        DO na = 1, nn
         
-        g1(i) = g1(i)+shapederiv(na, 1) &
+          g1(i) = g1(i)+shapederiv(na, 1) &
                       *elem(i, na)      
         
-       END DO
+        END DO
        
       END DO
       
@@ -2576,111 +2600,111 @@
       
       DO nb = 1, nn
        
-       !--------------------------------------------------------
+        !--------------------------------------------------------
        
-       naturalcoord(1) = nncoord(nb, 1)
-       naturalcoord(2) = nncoord(nb, 2)
+        naturalcoord(1) = nncoord(nb, 1)
+        naturalcoord(2) = nncoord(nb, 2)
        
-       CALL getShapeDeriv(fetype, naturalcoord, shapederiv)
+        CALL getShapeDeriv(fetype, naturalcoord, shapederiv)
        
        !--------------------------------------------------------
        
        ! Covariant basis vector
-       DO i = 1, 3
+        DO i = 1, 3
         
-        g1(i) = 0.0D0
-        g2(i) = 0.0D0
+          g1(i) = 0.0D0
+          g2(i) = 0.0D0
         
-        DO na = 1, nn
+          DO na = 1, nn
          
-         g1(i) = g1(i)+shapederiv(na, 1) &
+            g1(i) = g1(i)+shapederiv(na, 1) &
                        *elem(i, na)      
-         g2(i) = g2(i)+shapederiv(na, 2) &
+            g2(i) = g2(i)+shapederiv(na, 2) &
                        *elem(i, na)      
          
+          END DO
+        
         END DO
-        
-       END DO
        
        !--------------------------------------------------------
        
-       det_cg3(1) = g1(2)*g2(3)-g1(3)*g2(2)
-       det_cg3(2) = g1(3)*g2(1)-g1(1)*g2(3)
-       det_cg3(3) = g1(1)*g2(2)-g1(2)*g2(1)
+        det_cg3(1) = g1(2)*g2(3)-g1(3)*g2(2)
+        det_cg3(2) = g1(3)*g2(1)-g1(1)*g2(3)
+        det_cg3(3) = g1(1)*g2(2)-g1(2)*g2(1)
        
-       det_cg3_abs = DSQRT( det_cg3(1)*det_cg3(1)   &
+        det_cg3_abs = DSQRT( det_cg3(1)*det_cg3(1)   &
                            +det_cg3(2)*det_cg3(2)   &
                            +det_cg3(3)*det_cg3(3) ) 
        
-       v3(1, nb) = det_cg3(1)/det_cg3_abs
-       v3(2, nb) = det_cg3(2)/det_cg3_abs
-       v3(3, nb) = det_cg3(3)/det_cg3_abs
+        v3(1, nb) = det_cg3(1)/det_cg3_abs
+        v3(2, nb) = det_cg3(2)/det_cg3_abs
+        v3(3, nb) = det_cg3(3)/det_cg3_abs
        
-       !--------------------------------------------------------
+        !--------------------------------------------------------
        
-       v2(1, nb) = v3(2, nb)*e_0(3)-v3(3, nb)*e_0(2)
-       v2(2, nb) = v3(3, nb)*e_0(1)-v3(1, nb)*e_0(3)
-       v2(3, nb) = v3(1, nb)*e_0(2)-v3(2, nb)*e_0(1)
+        v2(1, nb) = v3(2, nb)*e_0(3)-v3(3, nb)*e_0(2)
+        v2(2, nb) = v3(3, nb)*e_0(1)-v3(1, nb)*e_0(3)
+        v2(3, nb) = v3(1, nb)*e_0(2)-v3(2, nb)*e_0(1)
        
-       v2_abs = DSQRT( v2(1, nb)*v2(1, nb)   &
+        v2_abs = DSQRT( v2(1, nb)*v2(1, nb)   &
                       +v2(2, nb)*v2(2, nb)   &
                       +v2(3, nb)*v2(3, nb) ) 
        
-       IF( v2_abs .GT. 1.0D-15 ) THEN
+        IF( v2_abs .GT. 1.0D-15 ) THEN
         
-        v2(1, nb) = v2(1, nb)/v2_abs
-        v2(2, nb) = v2(2, nb)/v2_abs
-        v2(3, nb) = v2(3, nb)/v2_abs
+          v2(1, nb) = v2(1, nb)/v2_abs
+          v2(2, nb) = v2(2, nb)/v2_abs
+          v2(3, nb) = v2(3, nb)/v2_abs
         
-        v1(1, nb) = v2(2, nb)*v3(3, nb) &
+          v1(1, nb) = v2(2, nb)*v3(3, nb) &
                    -v2(3, nb)*v3(2, nb) 
-        v1(2, nb) = v2(3, nb)*v3(1, nb) &
+          v1(2, nb) = v2(3, nb)*v3(1, nb) &
                    -v2(1, nb)*v3(3, nb) 
-        v1(3, nb) = v2(1, nb)*v3(2, nb) &
+          v1(3, nb) = v2(1, nb)*v3(2, nb) &
                    -v2(2, nb)*v3(1, nb) 
         
-        v1_abs = DSQRT( v1(1, nb)*v1(1, nb)   &
+          v1_abs = DSQRT( v1(1, nb)*v1(1, nb)   &
                        +v1(2, nb)*v1(2, nb)   &
                        +v1(3, nb)*v1(3, nb) ) 
         
-        v1(1, nb) = v1(1, nb)/v1_abs
-        v1(2, nb) = v1(2, nb)/v1_abs
-        v1(3, nb) = v1(3, nb)/v1_abs
+          v1(1, nb) = v1(1, nb)/v1_abs
+          v1(2, nb) = v1(2, nb)/v1_abs
+          v1(3, nb) = v1(3, nb)/v1_abs
         
-       ELSE
+        ELSE
         
-        v1(1, nb) =  0.0D0
-        v1(2, nb) =  0.0D0
-        v1(3, nb) = -1.0D0
+          v1(1, nb) =  0.0D0
+          v1(2, nb) =  0.0D0
+          v1(3, nb) = -1.0D0
+          
+          v2(1, nb) = 0.0D0
+          v2(2, nb) = 1.0D0
+          v2(3, nb) = 0.0D0
         
-        v2(1, nb) = 0.0D0
-        v2(2, nb) = 1.0D0
-        v2(3, nb) = 0.0D0
-        
-       END IF
+        END IF
        
        !--------------------------------------------------------
        
-       v3(1, nb) = v1(2, nb)*v2(3, nb) &
+        v3(1, nb) = v1(2, nb)*v2(3, nb) &
                   -v1(3, nb)*v2(2, nb) 
-       v3(2, nb) = v1(3, nb)*v2(1, nb) &
+        v3(2, nb) = v1(3, nb)*v2(1, nb) &
                   -v1(1, nb)*v2(3, nb) 
-       v3(3, nb) = v1(1, nb)*v2(2, nb) &
+        v3(3, nb) = v1(1, nb)*v2(2, nb) &
                   -v1(2, nb)*v2(1, nb) 
        
-       v3_abs = DSQRT( v3(1, nb)*v3(1, nb)   &
+        v3_abs = DSQRT( v3(1, nb)*v3(1, nb)   &
                       +v3(2, nb)*v3(2, nb)   &
                       +v3(3, nb)*v3(3, nb) ) 
        
-       v3(1, nb) = v3(1, nb)/v3_abs
-       v3(2, nb) = v3(2, nb)/v3_abs
-       v3(3, nb) = v3(3, nb)/v3_abs
+        v3(1, nb) = v3(1, nb)/v3_abs
+        v3(2, nb) = v3(2, nb)/v3_abs
+        v3(3, nb) = v3(3, nb)/v3_abs
        
        !--------------------------------------------------------
        
-       a_over_2_v3(1, nb) = 0.5D0*thick*v3(1, nb)
-       a_over_2_v3(2, nb) = 0.5D0*thick*v3(2, nb)
-       a_over_2_v3(3, nb) = 0.5D0*thick*v3(3, nb)
+        a_over_2_v3(1, nb) = 0.5D0*thick*v3(1, nb)
+        a_over_2_v3(2, nb) = 0.5D0*thick*v3(2, nb)
+        a_over_2_v3(3, nb) = 0.5D0*thick*v3(3, nb)
        
        !--------------------------------------------------------
        
@@ -2695,11 +2719,11 @@
       
       IF( ltype .LT. 10 ) THEN
        
-       ivol = 1
+        ivol = 1
        
       ELSE IF( ltype .GE. 10 ) THEN
        
-       isurf = 1
+        isurf = 1
        
       END IF
       
@@ -2852,209 +2876,235 @@
       !** Volume load
       IF( ivol .EQ. 1 ) THEN
        
-       !--------------------------------------------------------
+        !--------------------------------------------------------
+        n_total_layer =  int(gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
+        DO n_layer=1,n_total_layer
+          DO ly = 1, ny
+        
+            !--------------------------------------------------
+          
+          
+            IF ( n_total_layer .ge. 2 ) THEN
+              shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
+              if (shellmatl == 0)then
+                sigma_layer = 0.0D0
+                DO m = 1, n_layer
+                  sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
+                END DO
+                zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
+              elseif (shellmatl == 1)then
+                sigma_layer = 0.0D0
+                DO m = 1, n_layer
+                  sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
+                END DO
+                zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))			   
+              else
+                write(*,*)"ERROR : shellmatl isnot correct"; stop
+              endif
+            ELSE
+              zeta_ly = xg(ny, ly)
+            ENDIF
+            
+            !zeta_ly = xg(ny, ly)
+            w_ly    = wgt(ny, ly)
+          
+            !--------------------------------------------------
+          
+            DO lx = 1, NumOfQuadPoints(fetype)
+           
+              !--------------------------------------------
+           
+              CALL getQuadPoint(fetype, lx, naturalcoord)
+           
+              xi_lx  = naturalcoord(1)
+              eta_lx = naturalcoord(2)
+            
+              w_w_lx = getWeight(fetype, lx)
+            
+              CALL getShapeFunc(fetype, naturalcoord, shapefunc)
+           
+              CALL getShapeDeriv(fetype, naturalcoord, shapederiv)
+           
+              !--------------------------------------------
+           
+              DO na = 1, nn
+              
+                DO i = 1, 3
+             
+                  u_rot(i, na)                      &
+                    = shapefunc(na)                   &
+                    *( zeta_ly*a_over_2_v3(i, na) ) 
+
+                  dudxi_rot(i, na)                  &
+                    = shapederiv(na, 1)               &
+                    *( zeta_ly*a_over_2_v3(i, na) ) 
+                  dudeta_rot(i, na)                 &
+                    = shapederiv(na, 2)               &
+                    *( zeta_ly*a_over_2_v3(i, na) ) 
+                  dudzeta_rot(i, na)                &
+                    = shapefunc(na)                   &
+                    *( a_over_2_v3(i, na) )         
+                   
+                END DO
+            
+              END DO
+           
+              !--------------------------------------------
+           
+              ! Covariant basis vector
+              DO i = 1, 3
+            
+                g1(i) = 0.0D0
+                g2(i) = 0.0D0
+                g3(i) = 0.0D0
+                
+                DO na = 1, nn
+                 
+                  g1(i) = g1(i)+shapederiv(na, 1)  &
+                               *elem(i, na)       &
+                              +dudxi_rot(i, na)   
+                  g2(i) = g2(i)+shapederiv(na, 2)  &
+                               *elem(i, na)       &
+                              +dudeta_rot(i, na)  
+                  g3(i) = g3(i)+dudzeta_rot(i, na) 
+                 
+                END DO
+              
+              END DO
+           
+              !--------------------------------------------
+           
+              ! Jacobian
+              det = g1(1)*( g2(2)*g3(3)-g2(3)*g3(2) ) &
+                +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
+                +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) ) 
+           
+              !--------------------------------------------
+           
+              ! [ N ] matrix
+              DO nb = 1, nn
+            
+                jsize1 = ndof*(nb-1)+1
+                jsize2 = ndof*(nb-1)+2
+                jsize3 = ndof*(nb-1)+3
+                jsize4 = ndof*(nb-1)+4
+                jsize5 = ndof*(nb-1)+5
+                jsize6 = ndof*(nb-1)+6
+                
+                N(1, jsize1) =  shapefunc(nb)
+                N(2, jsize1) =  0.0D0
+                N(3, jsize1) =  0.0D0
+                N(1, jsize2) =  0.0D0
+                N(2, jsize2) =  shapefunc(nb)
+                N(3, jsize2) =  0.0D0
+                N(1, jsize3) =  0.0D0
+                N(2, jsize3) =  0.0D0
+                N(3, jsize3) =  shapefunc(nb)
+                N(1, jsize4) =  0.0D0
+                N(2, jsize4) = -u_rot(3, nb)
+                N(3, jsize4) =  u_rot(2, nb)
+                N(1, jsize5) =  u_rot(3, nb)
+                N(2, jsize5) =  0.0D0
+                N(3, jsize5) = -u_rot(1, nb)
+                N(1, jsize6) = -u_rot(2, nb)
+                N(2, jsize6) =  u_rot(1, nb)
+                N(3, jsize6) =  0.0D0
+            
+              ENDDO
+           
+              !--------------------------------------------
+            
+              w_w_w_det = w_w_lx*w_ly*det
+           
+              !--------------------------------------------
+           
+              IF( ltype .EQ. 1 ) THEN
+              
+                DO isize = 1, ndof*nn
+               
+                  vect(isize) = vect(isize)+w_w_w_det*N(1, isize)*val
+               
+                END DO
+              
+              ELSE IF( ltype .EQ. 2 ) THEN
+              
+                DO isize = 1, ndof*nn
+               
+                  vect(isize) = vect(isize)+w_w_w_det*N(2, isize)*val
+               
+                END DO
+              
+              ELSE IF( ltype .EQ. 3 ) THEN
+               
+                DO isize = 1, ndof*nn
+               
+                  vect(isize) = vect(isize)+w_w_w_det*N(3, isize)*val
+               
+                END DO
+              
+              ELSE IF( ltype .EQ. 4 ) THEN
+              
+                DO isize = 1, ndof*nn
+               
+                  vect(isize) = vect(isize)+w_w_w_det*rho*ax*N(1, isize)*val
+                  vect(isize) = vect(isize)+w_w_w_det*rho*ay*N(2, isize)*val
+                  vect(isize) = vect(isize)+w_w_w_det*rho*az*N(3, isize)*val
+               
+                END DO
+              
+              ELSE IF( ltype .EQ. 5 ) THEN
+              
+                x = 0.0D0
+                y = 0.0D0
+                z = 0.0D0
+              
+                DO nb = 1, nn
+               
+                  x = x+shapefunc(nb)*elem(1, nb)
+                  y = y+shapefunc(nb)*elem(2, nb)
+                  z = z+shapefunc(nb)*elem(3, nb)
+               
+                END DO
+              
+                hx = ax+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*rx
+                hy = ay+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*ry
+                hz = az+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*rz
+              
+                phx = x-hx
+                phy = y-hy
+                phz = z-hz
+              
+                coefx = phx*val*rho*val
+                coefy = phy*val*rho*val
+                coefz = phz*val*rho*val
+              
+                DO isize = 1, ndof*nn
+               
+                  vect(isize)                       &
+                  = vect(isize)                     &
+                  +w_w_w_det*( N(1, isize)*coefx   &
+                              +N(2, isize)*coefy   &
+                              +N(3, isize)*coefz ) 
+               
+                END DO
+              
+              END IF
+           
+            !--------------------------------------------
+           
+            END DO
+        
+          !----------------------------------------------
+        
+          END DO
        
-       DO ly = 1, ny
+          !----------------------------------------------
         
-        !--------------------------------------------------
-        
-        zeta_ly = xg(ny, ly)
-        w_ly    = wgt(ny, ly)
-        
-        !--------------------------------------------------
-        
-        DO lx = 1, NumOfQuadPoints(fetype)
-         
-         !--------------------------------------------
-         
-         CALL getQuadPoint(fetype, lx, naturalcoord)
-         
-         xi_lx  = naturalcoord(1)
-         eta_lx = naturalcoord(2)
-         
-         w_w_lx = getWeight(fetype, lx)
-         
-         CALL getShapeFunc(fetype, naturalcoord, shapefunc)
-         
-         CALL getShapeDeriv(fetype, naturalcoord, shapederiv)
-         
-         !--------------------------------------------
-         
-         DO na = 1, nn
-          
-          DO i = 1, 3
-           
-           u_rot(i, na)                      &
-           = shapefunc(na)                   &
-             *( zeta_ly*a_over_2_v3(i, na) ) 
-           
-           dudxi_rot(i, na)                  &
-           = shapederiv(na, 1)               &
-             *( zeta_ly*a_over_2_v3(i, na) ) 
-           dudeta_rot(i, na)                 &
-           = shapederiv(na, 2)               &
-             *( zeta_ly*a_over_2_v3(i, na) ) 
-           dudzeta_rot(i, na)                &
-           = shapefunc(na)                   &
-             *( a_over_2_v3(i, na) )         
-           
-          END DO
-          
-         END DO
-         
-         !--------------------------------------------
-         
-         ! Covariant basis vector
-         DO i = 1, 3
-          
-          g1(i) = 0.0D0
-          g2(i) = 0.0D0
-          g3(i) = 0.0D0
-          
-          DO na = 1, nn
-           
-           g1(i) = g1(i)+shapederiv(na, 1)  &
-                         *elem(i, na)       &
-                        +dudxi_rot(i, na)   
-           g2(i) = g2(i)+shapederiv(na, 2)  &
-                         *elem(i, na)       &
-                        +dudeta_rot(i, na)  
-           g3(i) = g3(i)+dudzeta_rot(i, na) 
-           
-          END DO
-          
-         END DO
-         
-         !--------------------------------------------
-         
-         ! Jacobian
-         det = g1(1)*( g2(2)*g3(3)-g2(3)*g3(2) ) &
-              +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
-              +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) ) 
-         
-         !--------------------------------------------
-         
-         ! [ N ] matrix
-         DO nb = 1, nn
-          
-          jsize1 = ndof*(nb-1)+1
-          jsize2 = ndof*(nb-1)+2
-          jsize3 = ndof*(nb-1)+3
-          jsize4 = ndof*(nb-1)+4
-          jsize5 = ndof*(nb-1)+5
-          jsize6 = ndof*(nb-1)+6
-          
-          N(1, jsize1) =  shapefunc(nb)
-          N(2, jsize1) =  0.0D0
-          N(3, jsize1) =  0.0D0
-          N(1, jsize2) =  0.0D0
-          N(2, jsize2) =  shapefunc(nb)
-          N(3, jsize2) =  0.0D0
-          N(1, jsize3) =  0.0D0
-          N(2, jsize3) =  0.0D0
-          N(3, jsize3) =  shapefunc(nb)
-          N(1, jsize4) =  0.0D0
-          N(2, jsize4) = -u_rot(3, nb)
-          N(3, jsize4) =  u_rot(2, nb)
-          N(1, jsize5) =  u_rot(3, nb)
-          N(2, jsize5) =  0.0D0
-          N(3, jsize5) = -u_rot(1, nb)
-          N(1, jsize6) = -u_rot(2, nb)
-          N(2, jsize6) =  u_rot(1, nb)
-          N(3, jsize6) =  0.0D0
-          
-         ENDDO
-         
-         !--------------------------------------------
-         
-         w_w_w_det = w_w_lx*w_ly*det
-         
-         !--------------------------------------------
-         
-         IF( ltype .EQ. 1 ) THEN
-          
-          DO isize = 1, ndof*nn
-           
-           vect(isize) = vect(isize)+w_w_w_det*N(1, isize)*val
-           
-          END DO
-          
-         ELSE IF( ltype .EQ. 2 ) THEN
-          
-          DO isize = 1, ndof*nn
-           
-           vect(isize) = vect(isize)+w_w_w_det*N(2, isize)*val
-           
-          END DO
-          
-         ELSE IF( ltype .EQ. 3 ) THEN
-           
-          DO isize = 1, ndof*nn
-           
-           vect(isize) = vect(isize)+w_w_w_det*N(3, isize)*val
-           
-          END DO
-          
-         ELSE IF( ltype .EQ. 4 ) THEN
-          
-          DO isize = 1, ndof*nn
-           
-           vect(isize) = vect(isize)+w_w_w_det*rho*ax*N(1, isize)*val
-           vect(isize) = vect(isize)+w_w_w_det*rho*ay*N(2, isize)*val
-           vect(isize) = vect(isize)+w_w_w_det*rho*az*N(3, isize)*val
-           
-          END DO
-          
-         ELSE IF( ltype .EQ. 5 ) THEN
-          
-          x = 0.0D0
-          y = 0.0D0
-          z = 0.0D0
-          
-          DO nb = 1, nn
-           
-           x = x+shapefunc(nb)*elem(1, nb)
-           y = y+shapefunc(nb)*elem(2, nb)
-           z = z+shapefunc(nb)*elem(3, nb)
-           
-          END DO
-          
-          hx = ax+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*rx
-          hy = ay+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*ry
-          hz = az+( (x-ax)*rx+(y-ay)*ry+(z-az)*rz )/( rx**2+ry**2+rz**2 )*rz
-          
-          phx = x-hx
-          phy = y-hy
-          phz = z-hz
-          
-          coefx = phx*val*rho*val
-          coefy = phy*val*rho*val
-          coefz = phz*val*rho*val
-          
-          DO isize = 1, ndof*nn
-           
-           vect(isize)                       &
-           = vect(isize)                     &
-            +w_w_w_det*( N(1, isize)*coefx   &
-                        +N(2, isize)*coefy   &
-                        +N(3, isize)*coefz ) 
-           
-          END DO
-          
-         END IF
-         
-         !--------------------------------------------
-         
         END DO
         
-        !--------------------------------------------------
-        
-       END DO
-       
-       !--------------------------------------------------------
+!--------------------------------------------------------
        
       END IF
-      
 !--------------------------------------------------------------------
       
       RETURN
@@ -3062,6 +3112,110 @@
 !####################################################################
       END SUBROUTINE DL_Shell
 !####################################################################
+      
+   
+!####################################################################
+      SUBROUTINE DL_Shell_33                               &
+                 (ic_type, nn, ndof, xx, yy, zz, rho, thick, &
+                  ltype, params, vect, nsize, gausses)              
+!####################################################################
+      
+      USE hecmw
+      USE m_utilities
+      USE mMechGauss
+      USE gauss_integration
+      
+      TYPE(tGaussStatus) :: gausses(:)
+!--------------------------------------------------------------------
+      
+      INTEGER(KIND = kint) :: ic_type
+      INTEGER(KIND = kint) :: nn
+      INTEGER(KIND = kint) :: ndof
+      REAL(KIND = kreal) :: xx(*), yy(*), zz(*)
+      REAL(KIND = kreal) :: rho
+      REAL(KIND = kreal) :: thick
+      REAL(KIND = kreal) :: params(*)
+      REAL(KIND = kreal) :: vect(*)
+      INTEGER(KIND = kint) :: nsize
+      INTEGER :: ltype, i, j
+      REAL(KIND = kreal) :: tmp(24)
+!--------------------------------------------------------------------
+      
+      if(ic_type == 761)then
+        ic_type = 731
+        nn = 3
+        ndof = 6
+        call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
+        ic_type = 761
+        nn = 6
+        ndof = 3
+        
+        tmp = 0.0
+        do i=1,18
+          tmp(i) = vect(i)
+        enddo 
+        
+        vect( 1) = tmp(1)
+        vect( 2) = tmp(2)
+        vect( 3) = tmp(3)
+        vect( 4) = tmp(7)
+        vect( 5) = tmp(8)
+        vect( 6) = tmp(9)
+        vect( 7) = tmp(13)
+        vect( 8) = tmp(14)
+        vect( 9) = tmp(15)
+        vect(10) = tmp(4)
+        vect(11) = tmp(5)
+        vect(12) = tmp(6)
+        vect(13) = tmp(10)
+        vect(14) = tmp(11)
+        vect(15) = tmp(12)
+        vect(16) = tmp(16)
+        vect(17) = tmp(17)
+        vect(18) = tmp(18)
+        
+      elseif(ic_type == 781)then
+        ic_type = 741
+        nn = 4
+        ndof = 6
+        call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
+        ic_type = 781
+        nn = 8
+        ndof = 3
+        
+        tmp = 0.0
+        do i=1,24
+          tmp(i) = vect(i)
+        enddo 
+        
+        vect( 1) = tmp(1)
+        vect( 2) = tmp(2)
+        vect( 3) = tmp(3)
+        vect( 4) = tmp(7)
+        vect( 5) = tmp(8)
+        vect( 6) = tmp(9)
+        vect( 7) = tmp(13)
+        vect( 8) = tmp(14)
+        vect( 9) = tmp(15)
+        vect(10) = tmp(19)
+        vect(11) = tmp(20)
+        vect(12) = tmp(21)
+        vect(13) = tmp(4)
+        vect(14) = tmp(5)
+        vect(15) = tmp(6)
+        vect(16) = tmp(10)
+        vect(17) = tmp(11)
+        vect(18) = tmp(12)
+        vect(19) = tmp(16)
+        vect(20) = tmp(17)
+        vect(21) = tmp(18)
+        vect(22) = tmp(22)
+        vect(23) = tmp(23)
+        vect(24) = tmp(24)
+        
+      endif
+            
+      END SUBROUTINE DL_Shell_33
       
 !####################################################################
       END MODULE m_static_LIB_shell

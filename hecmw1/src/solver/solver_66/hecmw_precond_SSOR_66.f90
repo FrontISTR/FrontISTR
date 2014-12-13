@@ -366,7 +366,7 @@ contains
 !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
 !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
 !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-!$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+!$omp&private(SW1,SW2,SW3,SW4,SW5,SW6,X1,X2,X3,X4,X5,X6,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
     !C-- FORWARD
     do ic=1,NColor

@@ -257,6 +257,7 @@ struct hecmwST_local_mesh {
     int *node_new2old;
     int *elem_old2new;
     int *elem_new2old;
+    int *n_node_refine_hist;
 
     struct hecmwST_section *section;
     struct hecmwST_material *material;

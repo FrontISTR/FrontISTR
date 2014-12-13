@@ -56,10 +56,11 @@ get_enode_h2r( int etype, int *ierror )
 	*ierror = 0;
 
 	if( HECMW_is_etype_link( etype ) ) return NULL;
+	if( HECMW_is_etype_truss( etype ) ) return NULL;
 
 	switch( etype ) {
 	case HECMW_ETYPE_ROD1:
-	case HECMW_ETYPE_ROD31:
+	//case HECMW_ETYPE_ROD31:
 	case HECMW_ETYPE_TRI1:
 	case HECMW_ETYPE_TRI2:
 	case HECMW_ETYPE_QUA1:
@@ -113,6 +114,7 @@ get_enode_r2h( int etype, int *ierror )
 	*ierror = 0;
 
 	if( HECMW_is_etype_link( etype ) ) return NULL;
+	if( HECMW_is_etype_truss( etype ) ) return NULL;
 
 	switch( etype ) {
 	case HECMW_ETYPE_ROD1:
@@ -419,8 +421,10 @@ get_elem_ndiv( int etype, int *ierror )
 {
 	int ndiv;
 	*ierror = 0;
-	if( HECMW_is_etype_rod( etype ) ||
-	    HECMW_is_etype_beam( etype ) ) {
+	if( HECMW_is_etype_truss( etype ) ){
+		ndiv = NDIV_OTHER;
+	} else if( HECMW_is_etype_rod( etype ) ||
+		   HECMW_is_etype_beam( etype ) ) {
 		ndiv = NDIV_SEG;
 	} else if( HECMW_is_etype_surface( etype ) ||
 		   HECMW_is_etype_shell( etype ) ) {
@@ -662,7 +666,7 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
 		n_elem = iend - istart;
-		if( HECMW_is_etype_link( etype ) ) {
+		if( HECMW_is_etype_link( etype ) || HECMW_is_etype_truss( etype ) ) {
 			n_elem_ref = n_elem;
 		} else {
 			int is33 = HECMW_is_etype_33struct( etype );
@@ -706,17 +710,20 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 	elem_node_item_ref = ref_mesh->elem_node_item;
 	n_elem_ref_tot = 0;
 	for( i=0; i < mesh->n_elem_type; i++ ) {
-		int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn;
+		int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn, jstart;
 		int *elem_node_item;
 		etype = mesh->elem_type_item[i];
 		istart = mesh->elem_type_index[i];
 		iend = mesh->elem_type_index[i+1];
 		n_elem = iend - istart;
 		nn = HECMW_get_max_node( etype );
-		if( HECMW_is_etype_link( etype ) ) {
+		if( HECMW_is_etype_link( etype ) || HECMW_is_etype_truss( etype ) ) {
 			n_elem_ref = n_elem;
 			for( j=0; j < n_elem * nn; j++ ) {
-				elem_node_item_ref[j] = elem_node_item[j];
+				//elem_node_item_ref[j] = elem_node_item[j];
+				jstart = mesh->elem_node_index[istart];
+				//printf("aa %d %d\n",jstart,j);
+				elem_node_item_ref[j] = mesh->elem_node_item[jstart+j];
 			}
 		} else {
 			int is33 = HECMW_is_etype_33struct( etype );
@@ -1191,7 +1198,6 @@ call_refiner( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_me
 	if( refine_surf_group_info( mesh, ref_mesh ) != HECMW_SUCCESS ) {
 		return HECMW_ERROR;
 	}
-
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished calling refiner.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
 }
@@ -2290,6 +2296,7 @@ copy_global_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 	ref_mesh->hecmw_flag_version   = mesh->hecmw_flag_version;
 	strcpy(ref_mesh->gridfile, mesh->gridfile);
 	ref_mesh->hecmw_n_file         = mesh->hecmw_n_file;
+	ref_mesh->n_node_refine_hist   = mesh->n_node_refine_hist;
 
 	/* files */
 	if( mesh->hecmw_n_file > 0 ) {
@@ -2682,6 +2689,7 @@ copy_mpc_info( const struct hecmwST_mpc *mpc, struct hecmwST_mpc *ref_mpc )
 		ref_mpc->mpc_item  = NULL;
 		ref_mpc->mpc_dof   = NULL;
 		ref_mpc->mpc_val   = NULL;
+		ref_mpc->mpc_const = NULL;
 		ref_mpc->mpc_index = HECMW_malloc(sizeof(int));
 		if(ref_mpc->mpc_index == NULL) {
 			HECMW_set_error(errno, "");
@@ -2731,6 +2739,16 @@ copy_mpc_info( const struct hecmwST_mpc *mpc, struct hecmwST_mpc *ref_mpc )
 	}
 	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
 		ref_mpc->mpc_val[i] = mpc->mpc_val[i];
+	}
+
+	/* mpc_const */
+	ref_mpc->mpc_const = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
+	if( ref_mpc->mpc_const == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+		ref_mpc->mpc_const[i] = mpc->mpc_const[i];
 	}
 
 	return HECMW_SUCCESS;
@@ -3408,6 +3426,7 @@ HECMW_dist_refine(struct hecmwST_local_mesh **mesh,
 
 	for( i=0; i < refine; i++ )
 	{
+		int *temp;
 		struct hecmwST_local_mesh *ref_mesh = HECMW_dist_alloc();
 		if( ref_mesh == NULL ) {
 			error_flag = HECMW_ERROR;
@@ -3425,6 +3444,18 @@ HECMW_dist_refine(struct hecmwST_local_mesh **mesh,
 			error_flag = HECMW_ERROR;
 			break;
 		}
+
+		if(i == 0) {
+			temp = (int *)malloc(sizeof(int));
+			*temp = ref_mesh->n_node_gross;
+			ref_mesh->n_node_refine_hist = temp;
+		} else {
+			temp = (int *)realloc((*mesh)->n_node_refine_hist, (i+1)*sizeof(int));
+			(*mesh)->n_node_refine_hist = NULL;
+			ref_mesh->n_node_refine_hist = temp;
+			*(temp+i) = ref_mesh->n_node_gross;
+		}
+
 		HECMW_dist_free( *mesh );
 		*mesh = ref_mesh;
 	}

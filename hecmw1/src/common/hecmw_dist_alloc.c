@@ -187,6 +187,7 @@ init_struct_refine( struct hecmwST_local_mesh *mesh )
   mesh->node_new2old = NULL;
   mesh->elem_old2new = NULL;
   mesh->elem_new2old = NULL;
+  mesh->n_node_refine_hist = NULL;
   mesh->refine_origin = NULL;
 
   return 0;

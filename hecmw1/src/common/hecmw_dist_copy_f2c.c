@@ -1084,6 +1084,23 @@ set_elem_new2old(void *src)
 
 
 static int
+set_n_node_refine_hist(void *src)
+{
+	int size;
+
+	if(mesh->n_elem_gross <= 0) return 0;
+	size = sizeof(*mesh->n_node_refine_hist)*mesh->n_refine;
+	mesh->n_node_refine_hist = HECMW_malloc(size);
+	if(mesh->n_node_refine_hist == NULL) {
+		HECMW_set_error(errno, "");
+		return -1;
+	}
+	memcpy(mesh->n_node_refine_hist, src, size);
+	return 0;
+}
+
+
+static int
 set_n_sect(void *src)
 {
 	mesh->section->n_sect = *((int *)src);
@@ -2290,6 +2307,7 @@ static struct func_table {
 	{"hecmwST_local_mesh","node_new2old",        set_node_new2old        },
 	{"hecmwST_local_mesh","elem_old2new",        set_elem_old2new        },
 	{"hecmwST_local_mesh","elem_new2old",        set_elem_new2old        },
+	{"hecmwST_local_mesh","n_node_refine_hist",  set_n_node_refine_hist  },
 
 	{"hecmwST_section","n_sect",                 set_n_sect              },
 	{"hecmwST_section","sect_type",              set_sect_type           },

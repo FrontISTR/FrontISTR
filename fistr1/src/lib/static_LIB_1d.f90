@@ -69,7 +69,7 @@ module m_static_LIB_1d
     if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)
     coeff = outa(1)*area*llen0/(llen*llen)
     strain = gausses(1)%strain(1)
-    
+
     stiff(:,:) = 0.d0
     do i=1,3
       stiff(i,i) = coeff*strain
@@ -77,7 +77,7 @@ module m_static_LIB_1d
         stiff(i,j) = stiff(i,j) + coeff*(1.d0-2.d0*strain)*direc(i)*direc(j)
       enddo
     enddo
-    
+
     stiff(4:6,1:3) = -stiff(1:3,1:3)
     stiff(1:3,4:6) = transpose(stiff(4:6,1:3))
     stiff(4:6,4:6) = stiff(1:3,1:3)
@@ -180,12 +180,12 @@ module m_static_LIB_1d
     real(kind=kreal)   :: young
     real(kind=kreal)   :: ttc, tt0, alp, alp0, epsth
 
-	ecoord(1,:) = XX(:)
-	ecoord(2,:) = YY(:)
-	ecoord(3,:) = ZZ(:)
-	elem(:,1) = ecoord(:,1) + edisp(1:3)
-	elem(:,2) = ecoord(:,2) + edisp(4:6)
-	
+    ecoord(1,:) = XX(:)
+    ecoord(2,:) = YY(:)
+    ecoord(3,:) = ZZ(:)
+    elem(:,1) = ecoord(:,1) + edisp(1:3)
+    elem(:,2) = ecoord(:,2) + edisp(4:6)
+
     direc = elem(:,2)-elem(:,1)
     llen = dsqrt( dot_product(direc, direc) )
     direc0 = ecoord(:,2)-ecoord(:,1)
@@ -255,5 +255,193 @@ module m_static_LIB_1d
    stress(:) = gausses(1)%stress(1:6)
 
    END SUBROUTINE
+   
+
+!----------------------------------------------------------------------*
+   SUBROUTINE DL_C1(etype, nn, xx, yy, zz, rho, thick, ltype, params, &
+                             vect, nsize)                     
+!----------------------------------------------------------------------*
+!**  SET DLOAD
+!   GRAV LTYPE=4  :GRAVITY FORCE
+! I/F VARIABLES
+      INTEGER(KIND = kint), INTENT(IN)  :: etype, nn
+      REAL(KIND = kreal), INTENT(IN)    :: xx(:), yy(:), zz(:)
+      REAL(KIND = kreal), INTENT(IN)    :: params(0:6)
+      REAL(KIND = kreal), INTENT(INOUT) :: vect(:)
+      REAL(KIND = kreal) :: rho, thick
+      INTEGER(KIND = kint) :: ltype, nsize, surtype
+! LOCAL VARIABLES
+      INTEGER(KIND = kint) :: ndof = 3
+      INTEGER(KIND = kint) :: ivol, isuf, nsur, i
+      INTEGER(KIND = kint) :: nod(nn)
+      REAL(KIND = kreal) :: vx, vy, vz, val, a, AA
+!--------------------------------------------------------------------
+      val = params(0)
+      !--------------------------------------------------------------
+      
+      ivol = 0
+      isuf = 0
+      IF( ltype .LT. 10 ) THEN
+       ivol = 1
+      ELSE IF( ltype .GE. 10 ) THEN
+       isuf = 1
+      END IF
+      
+!--------------------------------------------------------------------
+      nsize = nn*ndof
+!--------------------------------------------------------------------
+      vect(1:nsize) = 0.0D0
+      
+      ! Volume force
+      IF( ivol .EQ. 1 ) THEN
+       IF( ltype .EQ. 4 ) THEN
+        AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
+                   +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
+                   +( zz(2)-zz(1) )*( zz(2)-zz(1) ) ) 
+        
+        a = thick
+        vx = params(1)
+        vy = params(2)
+        vz = params(3)
+        vx = vx/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        vy = vy/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        vz = vz/DSQRT( params(1)**2+params(2)**2+params(3)**2 )
+        
+        DO i = 1, 2
+         vect(3*i-2) = val*rho*a*0.5D0*AA*vx
+         vect(3*i-1) = val*rho*a*0.5D0*AA*vy
+         vect(3*i  ) = val*rho*a*0.5D0*AA*vz
+        END DO
+        
+       END IF
+      END IF
+!--------------------------------------------------------------------
+      
+      RETURN
+   END SUBROUTINE
+   
+!
+!
+!----------------------------------------------------------------------*
+   SUBROUTINE truss_diag_modify(hecMAT,hecMESH)
+!----------------------------------------------------------------------*
+!
+   use hecmw_matrix_misc
+   type (hecmwST_matrix)     :: hecMAT
+   type (hecmwST_local_mesh) :: hecMESH  
+   integer(kind=kint) :: itype, iS, iE, ic_type, icel, jS, j, n
+   
+   do itype = 1, hecMESH%n_elem_type
+    ic_type = hecMESH%elem_type_item(itype)
+    if(ic_type == 301)then
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      do icel = iS, iE
+        jS = hecMESH%elem_node_index(icel-1)
+        do j=1,2
+          n = hecMESH%elem_node_item(jS+j)
+          if( hecMAT%D(9*n-8) == 0.0d0)then
+            hecMAT%D(9*n-8) = 1.0d0
+            !call search_diag_modify(n,1,hecMAT,hecMESH)
+          endif
+          if( hecMAT%D(9*n-4) == 0.0d0)then
+            hecMAT%D(9*n-4) = 1.0d0
+            !call search_diag_modify(n,2,hecMAT,hecMESH)
+          endif
+          if( hecMAT%D(9*n  ) == 0.0d0)then
+            hecMAT%D(9*n  ) = 1.0d0
+            !call search_diag_modify(n,3,hecMAT,hecMESH)
+          endif
+        enddo
+      enddo
+    endif
+   enddo
+
+   END SUBROUTINE
+   
+!
+!
+!----------------------------------------------------------------------*
+   SUBROUTINE search_diag_modify(n,nn,hecMAT,hecMESH)
+!----------------------------------------------------------------------*
+!
+   use hecmw_matrix_misc
+   type (hecmwST_matrix)     :: hecMAT 
+   type (hecmwST_local_mesh) :: hecMESH  
+   integer :: n, nn, iS, iE, i, j, in
+   integer :: flagl, flagu, flagb, a
+              
+    if(nn == 1)then
+      a = 0
+      iS = hecMAT%IndexL(n-1)+1
+      iE = hecMAT%IndexL(n  )
+      do i=iS,iE
+        if(hecMAT%AL(9*i-8) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i-7) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i-6) /= 0.0d0) a = 1
+      enddo
+      iS = hecMAT%IndexU(n-1)+1
+      iE = hecMAT%IndexU(n  )
+      do i=iS,iE
+        if(hecMAT%AU(9*i-8) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i-7) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i-6) /= 0.0d0) a = 1
+      enddo
+      if(hecMAT%D(9*n-7) /= 0.0d0) a = 1
+      if(hecMAT%D(9*n-6) /= 0.0d0) a = 1
+      if(a == 0)then
+       hecMAT%D(9*n-8) = 1.0d0
+       !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:1"
+      endif
+    endif
+    if(nn == 2)then
+      a = 0
+      iS = hecMAT%IndexL(n-1)+1
+      iE = hecMAT%IndexL(n  )
+      do i=iS,iE
+        if(hecMAT%AL(9*i-5) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i-4) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i-3) /= 0.0d0) a = 1
+      enddo
+      iS = hecMAT%IndexU(n-1)+1
+      iE = hecMAT%IndexU(n  )
+      do i=iS,iE
+        if(hecMAT%AU(9*i-5) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i-4) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i-3) /= 0.0d0) a = 1
+      enddo
+      if(hecMAT%D(9*n-5) /= 0.0d0) a = 1
+      if(hecMAT%D(9*n-3) /= 0.0d0) a = 1
+      if(a == 0)then
+        hecMAT%D(9*n-4) = 1.0d0
+        !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:2"
+      endif
+    endif
+    if(nn == 3)then
+      a = 0
+      iS = hecMAT%IndexL(n-1)+1
+      iE = hecMAT%IndexL(n  )
+      do i=iS,iE
+        if(hecMAT%AL(9*i-2) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i-1) /= 0.0d0) a = 1
+        if(hecMAT%AL(9*i  ) /= 0.0d0) a = 1
+      enddo
+      iS = hecMAT%IndexU(n-1)+1
+      iE = hecMAT%IndexU(n  )
+      do i=iS,iE
+        if(hecMAT%AU(9*i-2) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i-1) /= 0.0d0) a = 1
+        if(hecMAT%AU(9*i  ) /= 0.0d0) a = 1
+      enddo
+      if(hecMAT%D(9*n-2) /= 0.0d0) a = 1
+      if(hecMAT%D(9*n-1) /= 0.0d0) a = 1
+      if(a == 0)then
+        hecMAT%D(9*n  ) = 1.0d0
+        !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:3"
+      endif
+    endif
+          
+   END SUBROUTINE
+
    
 end module m_static_LIB_1d
