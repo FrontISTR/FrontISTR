@@ -37,6 +37,7 @@
         use hecmw_matrix_contact
         use hecmw_solver_las_44
         use hecmw_precond_44
+        use hecmw_matrix_dump
 
         implicit none
 
@@ -162,6 +163,8 @@
           call hecmw_solve_error (hecMESH, ERROR)
         endif
 
+        call hecmw_mat_dump(hecMAT, hecMESH)
+
         call hecmw_matvec_44_clear_timer()
         call hecmw_precond_44_clear_timer()
 
@@ -268,6 +271,8 @@
         call hecmw_solve_error (hecMESH, 3001)
         write (*,'(a)') '### hecmw_solve_error'
       endif
+
+      call hecmw_mat_dump_solution(hecMAT)
 
       time_Ax = hecmw_matvec_44_get_timer()
       time_precond = hecmw_precond_44_get_timer()

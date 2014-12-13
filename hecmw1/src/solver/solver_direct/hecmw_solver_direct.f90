@@ -106,6 +106,8 @@
 !     Modified G. Prabhakar, RIST, June 7 2004
 !----------------------------------------------------------------------
       USE hecmw_util
+      use hecmw_matrix_ass
+      use hecmw_matrix_dump
 !     USE sp_direct_solver
       implicit double precision(a-h, o-z)
       type (hecmwST_local_mesh) :: hecMESH
@@ -121,6 +123,8 @@
       iseed=1
       ir = 0
 
+      call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      call hecmw_mat_dump(hecMAT, hecMESH)
 
       !WRITE(IFMSG,*) "Interface to ADS from HECMW..."
       call ptime(t1)
@@ -204,6 +208,7 @@
          STOP
       endif
 
+      call hecmw_mat_dump_solution(hecMAT)
 
  100  RETURN
 

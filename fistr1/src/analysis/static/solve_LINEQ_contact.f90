@@ -75,20 +75,15 @@ module m_solve_LINEQ_contact
 
       factor = 1.0d0
       if( present(rf) )factor = rf
-      if(paraContactFlag.and.present(conMAT)) then
-        stop "MPC not supported with parallel contact analysis"
-      else
-        call hecmw_mat_ass_equation( hecMESH, hecMAT )
-      endif
 
       t1 = hecmw_wtime()
 
       if( hecMAT%Iarray(99)==1 )then
         call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==3 )then
-        call solve_LINEQ_mkl(hecMAT,fstrMAT)
+        call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==4 )then
-        call solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
+        call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==5 ) then
 ! ----  For Parallel Contact with Multi-Partition Domains
         if(paraContactFlag.and.present(conMAT)) then

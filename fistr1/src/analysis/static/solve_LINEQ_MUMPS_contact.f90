@@ -88,6 +88,9 @@ contains
     integer(kind=kint) :: mumps_job
     integer(kind=kint) :: istat
 
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_dump(hecMAT, hecMESH)
+
     ! FACTORIZATION and SOLUTION
 !  ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
@@ -106,6 +109,8 @@ contains
     endif
     call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
     if (myrank==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
+
+    call hecmw_mat_dump_solution(hecMAT)
 
     !call sparse_matrix_finalize(spMAT)
   end subroutine solve_LINEQ_MUMPS_contact

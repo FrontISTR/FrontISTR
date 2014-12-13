@@ -19,8 +19,9 @@ contains
   end subroutine solve_LINEQ_serial_lag_hecmw_init
 
 
-  subroutine solve_LINEQ_serial_lag_hecmw(hecMAT,fstrMAT)
+  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
 
+    type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
     integer (kind=4)                         :: ntdf, ilag_sta
@@ -28,6 +29,9 @@ contains
     integer (kind=4)                         :: ierr, nprocs, myrank
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
+
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_dump(hecMAT, hecMESH)
 
     call set_values_directsolver(hecMAT,fstrMAT)
 
@@ -44,6 +48,8 @@ contains
     hecMAT%X = b
 
     deallocate(b)
+
+    call hecmw_mat_dump_solution(hecMAT)
 
   end subroutine solve_LINEQ_serial_lag_hecmw
 

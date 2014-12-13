@@ -22,6 +22,8 @@ use m_irjc_matrix
 use m_matrix_partition_info
 use m_elap
 use hecmw_util
+use hecmw_matrix_ass
+use hecmw_matrix_dump
 
 ! access control !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -94,6 +96,9 @@ integer(kind=kint) :: ierr
 
 ! start !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+call hecmw_mat_ass_equation( hecMESH, hecMAT )
+call hecmw_mat_dump(hecMAT, hecMESH)
+
 imsg=ii ! set message file
 
 ! set timelog
@@ -129,6 +134,8 @@ else
 end if
 
 call MPI_BCAST(hecMAT%b, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
+
+call hecmw_mat_dump_solution(hecMAT)
 
 return
 end subroutine hecmw_solve_direct_parallel

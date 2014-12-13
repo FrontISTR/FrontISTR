@@ -110,14 +110,18 @@ module m_solve_LINEQ_mkl
 
 !> \brief This subroutine executes phase 22 and phase 33 of the MKL solver
 !> \(see Intel(R) MKL Reference Manual)
-    subroutine solve_LINEQ_mkl(hecMAT,fstrMAT)
+    subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT)
 
+      type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
       integer(kind=kint)                       :: ntdf           !< total degree of freedom
       integer(kind=kint)                       :: idum, ierr
       real(kind=kreal)                          :: ddum
       real(kind=kreal), allocatable            :: x(:)           !< solution vector
+
+      call hecmw_mat_ass_equation(hecMESH, hecMAT)
+      call hecmw_mat_dump(hecMAT, hecMESH)
 
       call initialize_solver_mkl(hecMAT,fstrMAT)
       call set_values_directsolver(hecMAT,fstrMAT)
@@ -149,6 +153,8 @@ module m_solve_LINEQ_mkl
         hecMAT%X = x
 
         deallocate(x)
+
+      call hecmw_mat_dump_solution(hecMAT)
 
     end subroutine solve_LINEQ_mkl
 

@@ -20,6 +20,8 @@ module hecmw_solver_direct_MUMPS
   use m_sparse_matrix
   use m_sparse_matrix_hec
   use m_hecmw_MUMPS_wrapper
+  use hecmw_matrix_ass
+  use hecmw_matrix_dump
 
   private
   public :: hecmw_solve_direct_MUMPS
@@ -38,6 +40,9 @@ contains
     integer(kind=kint) :: mumps_job
     integer(kind=kint) :: istat,myrank
     real(kind=kreal) :: t1,t2,t3
+
+    call hecmw_mat_ass_equation( hecMESH, hecMAT )
+    call hecmw_mat_dump(hecMAT, hecMESH)
 
     t1=hecmw_wtime()
     myrank=hecmw_comm_get_rank()
@@ -117,6 +122,8 @@ contains
       write(*,*) 'setup time : ',t2-t1
       write(*,*) 'solve time : ',t3-t2
     endif
+
+    call hecmw_mat_dump_solution(hecMAT)
 
     !call sparse_matrix_finalize(spMAT)
   end subroutine hecmw_solve_direct_MUMPS

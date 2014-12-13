@@ -34,6 +34,7 @@
         use hecmw_matrix_contact
         use hecmw_solver_las_66
         use hecmw_precond_66
+        use hecmw_matrix_dump
 
         implicit none
 
@@ -165,6 +166,8 @@
           call hecmw_solve_error (hecMESH, ERROR)
         endif
 
+        call hecmw_mat_dump(hecMAT, hecMESH)
+
         call hecmw_matvec_66_clear_timer()
         call hecmw_precond_66_clear_timer()
 
@@ -198,6 +201,8 @@
       if (RESID.gt.hecMAT%Rarray(1)) then
         call hecmw_solve_error (hecMESH, 3001)
       endif
+
+      call hecmw_mat_dump_solution(hecMAT)
 
       time_Ax = hecmw_matvec_66_get_timer()
       time_precond = hecmw_precond_66_get_timer()

@@ -181,6 +181,9 @@
 
 !C===
 
+        ! imposing MPC by penalty
+        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
+
         call hecmw_mat_dump(hecMAT, hecMESH)
 
 !C
@@ -188,9 +191,6 @@
 !C | ITERATIVE solver |
 !C +------------------+
 !C===
-        ! imposing MPC by penalty
-        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-
         call hecmw_solve_CG_11                                          &
      &     ( hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU,               &
      &       hecMAT%D, hecMAT%AL, hecMAT%indexL, hecMAT%itemL,          &
