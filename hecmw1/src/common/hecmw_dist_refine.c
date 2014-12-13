@@ -60,20 +60,18 @@ get_enode_h2r( int etype, int *ierror )
 
 	switch( etype ) {
 	case HECMW_ETYPE_ROD1:
-	//case HECMW_ETYPE_ROD31:
+	/* case HECMW_ETYPE_ROD31: */
 	case HECMW_ETYPE_TRI1:
 	case HECMW_ETYPE_TRI2:
 	case HECMW_ETYPE_QUA1:
 	case HECMW_ETYPE_QUA2:
 	case HECMW_ETYPE_TET1:
 	case HECMW_ETYPE_TET1_4:
-// ==========
 	case HECMW_ETYPE_TET2:
 	case HECMW_ETYPE_PRI1:
 	case HECMW_ETYPE_PRI2:
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX1_4:
-// ==========
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
 	case HECMW_ETYPE_BEM3:
@@ -125,13 +123,11 @@ get_enode_r2h( int etype, int *ierror )
 	case HECMW_ETYPE_QUA2:
 	case HECMW_ETYPE_TET1:
 	case HECMW_ETYPE_TET1_4:
-// ==========
 	case HECMW_ETYPE_TET2:
 	case HECMW_ETYPE_PRI1:
 	case HECMW_ETYPE_PRI2:
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX1_4:
-// ==========
 	case HECMW_ETYPE_HEX2:
 	case HECMW_ETYPE_BEM1:
 	case HECMW_ETYPE_BEM3:
@@ -256,7 +252,6 @@ get_sid_h2r( int etype, int *ierror )
 		break;
 	case HECMW_ETYPE_TET1:
 	case HECMW_ETYPE_TET1_4:
-// ==========
 	case HECMW_ETYPE_TET2:
 		sid_h2r = sid_tet_h2r;
 		break;
@@ -266,7 +261,6 @@ get_sid_h2r( int etype, int *ierror )
 		break;
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX1_4:
-// ==========
 	case HECMW_ETYPE_HEX2:
 		sid_h2r = sid_hex_h2r;
 		break;
@@ -323,7 +317,6 @@ get_sid_r2h( int etype, int *ierror )
 		break;
 	case HECMW_ETYPE_TET1:
 	case HECMW_ETYPE_TET1_4:
-// ==========
 	case HECMW_ETYPE_TET2:
 		sid_r2h = sid_tet_r2h;
 		break;
@@ -333,7 +326,6 @@ get_sid_r2h( int etype, int *ierror )
 		break;
 	case HECMW_ETYPE_HEX1:
 	case HECMW_ETYPE_HEX1_4:
-// ==========
 	case HECMW_ETYPE_HEX2:
 		sid_r2h = sid_hex_r2h;
 		break;
@@ -582,7 +574,6 @@ elem_type_hecmw2rcap(int etype)
 	case HECMW_ETYPE_ROD31:return RCAP_SEGMENT;
 	case HECMW_ETYPE_TET1: return RCAP_TETRAHEDRON;
 	case HECMW_ETYPE_TET1_4: return RCAP_TETRAHEDRON;
-// ==========
 	case HECMW_ETYPE_TET2: return RCAP_TETRAHEDRON2;
 	case HECMW_ETYPE_PRI1: return RCAP_WEDGE;
 	case HECMW_ETYPE_PRI2: return RCAP_WEDGE2;
@@ -590,7 +581,6 @@ elem_type_hecmw2rcap(int etype)
 	case HECMW_ETYPE_PYR2: return RCAP_PYRAMID2;
 	case HECMW_ETYPE_HEX1: return RCAP_HEXAHEDRON;
 	case HECMW_ETYPE_HEX1_4: return RCAP_HEXAHEDRON;
-// ==========
 	case HECMW_ETYPE_HEX2: return RCAP_HEXAHEDRON2;
 	case HECMW_ETYPE_BEM1: return RCAP_SEGMENT;
 	case HECMW_ETYPE_BEM2: return RCAP_SEGMENT2;
@@ -720,9 +710,9 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		if( HECMW_is_etype_link( etype ) || HECMW_is_etype_truss( etype ) ) {
 			n_elem_ref = n_elem;
 			for( j=0; j < n_elem * nn; j++ ) {
-				//elem_node_item_ref[j] = elem_node_item[j];
+				/* elem_node_item_ref[j] = elem_node_item[j]; */
 				jstart = mesh->elem_node_index[istart];
-				//printf("aa %d %d\n",jstart,j);
+				/* printf("aa %d %d\n",jstart,j); */
 				elem_node_item_ref[j] = mesh->elem_node_item[jstart+j];
 			}
 		} else {

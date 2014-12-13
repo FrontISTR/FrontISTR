@@ -36,9 +36,7 @@
 #define BIT_DOF_THREE 2
 #define BIT_DOF_SIX   4
 #define BIT_DOF_FOUR  8
-// ==========
 #define BIT_DOF_ALL   (BIT_DOF_TWO|BIT_DOF_THREE|BIT_DOF_SIX|BIT_DOF_FOUR)
-// ==========
 
 #define HECMW_COMMON_EQUATION_BLOCK_NAME "EQUATION_BLOCK"
 #define MY_RANK       1
@@ -896,7 +894,7 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
     case HECMW_ETYPE_HEX1_4:
       n_dof = BIT_DOF_FOUR;
       break;
-// ===========
+
       /* master-slave type element */
     case HECMW_ETYPE_MST1:
     case HECMW_ETYPE_MST2:
@@ -1020,7 +1018,6 @@ reorder_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag,
       CLEAR_BIT( node_flag[i], BIT_DOF_ALL );
     }
   }
-// ==========
   
   /* three DOF */
   for( i=0; i<local_mesh->n_node; i++ ) {
@@ -1071,7 +1068,6 @@ mask_eqn_block( struct hecmwST_local_mesh *local_mesh,
       if( EVAL_BIT( node_flag[j], BIT_DOF_THREE ) ) MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_THREE );
       if( EVAL_BIT( node_flag[j], BIT_DOF_SIX ) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_SIX );
       if( EVAL_BIT( node_flag[j], BIT_DOF_FOUR) )   MASK_BIT( block_flag[i-grp->grp_index[eqn_block_idx]], BIT_DOF_FOUR );
-// ==========
     }
     js = grp->grp_item[i];
   }
@@ -1127,7 +1123,6 @@ reorder_node_dof_4mpc_inner( struct hecmwST_local_mesh *local_mesh,
     }
     js = grp->grp_item[idx+i];
   }
-// ==========
 
   /* three DOF */
   for( js=0, i=0; i<n_eqn_block; i++ ) {

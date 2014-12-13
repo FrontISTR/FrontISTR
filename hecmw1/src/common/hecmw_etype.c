@@ -40,14 +40,12 @@ HECMW_get_etype_UTIL2HECMW( int etype )
   case HECMW_MESH_ETYPE_ROD31:  return HECMW_ETYPE_ROD31; 
   case HECMW_MESH_ETYPE_TET1:  return HECMW_ETYPE_TET1;  
   case HECMW_MESH_ETYPE_TET1_4:  return HECMW_ETYPE_TET1_4; 
-// ==========
   case HECMW_MESH_ETYPE_TET2:  return HECMW_ETYPE_TET2; 
   case HECMW_MESH_ETYPE_TET22:  return HECMW_ETYPE_TET22; 
   case HECMW_MESH_ETYPE_PRI1:  return HECMW_ETYPE_PRI1;  
   case HECMW_MESH_ETYPE_PRI2:  return HECMW_ETYPE_PRI2;  
   case HECMW_MESH_ETYPE_HEX1:  return HECMW_ETYPE_HEX1;  
   case HECMW_MESH_ETYPE_HEX1_4:  return HECMW_ETYPE_HEX1_4; 
-// ==========
   case HECMW_MESH_ETYPE_HEX2:  return HECMW_ETYPE_HEX2;  
   case HECMW_MESH_ETYPE_PYR1:  return HECMW_ETYPE_PYR1;  
   case HECMW_MESH_ETYPE_PYR2:  return HECMW_ETYPE_PYR2;  
@@ -130,14 +128,12 @@ HECMW_get_etype_HECMW2UTIL( int etype )
   case HECMW_ETYPE_ROD31: return HECMW_MESH_ETYPE_ROD31; 
   case HECMW_ETYPE_TET1:  return HECMW_MESH_ETYPE_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MESH_ETYPE_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MESH_ETYPE_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MESH_ETYPE_TET22; 
   case HECMW_ETYPE_PRI1:  return HECMW_MESH_ETYPE_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MESH_ETYPE_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MESH_ETYPE_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MESH_ETYPE_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MESH_ETYPE_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MESH_ETYPE_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MESH_ETYPE_PYR2;  
@@ -218,13 +214,11 @@ HECMW_get_etype_GeoFEM2HECMW( int etype )
   case HECMW_GEOFEM_ETYPE_QUA2:  return HECMW_ETYPE_QUA2;  
   case HECMW_GEOFEM_ETYPE_TET1:  return HECMW_ETYPE_TET1;  
   case HECMW_GEOFEM_ETYPE_TET1_4:  return HECMW_ETYPE_TET1_4; 
-// ==========
   case HECMW_GEOFEM_ETYPE_TET2:  return HECMW_ETYPE_TET2;  
   case HECMW_GEOFEM_ETYPE_PRI1:  return HECMW_ETYPE_PRI1;  
   case HECMW_GEOFEM_ETYPE_PRI2:  return HECMW_ETYPE_PRI2;  
   case HECMW_GEOFEM_ETYPE_HEX1:  return HECMW_ETYPE_HEX1;  
   case HECMW_GEOFEM_ETYPE_HEX1_4:  return HECMW_ETYPE_HEX1_4; 
-// ==========
   case HECMW_GEOFEM_ETYPE_HEX2:  return HECMW_ETYPE_HEX2;  
   case HECMW_GEOFEM_ETYPE_MST1:  return HECMW_ETYPE_MST1;  
   case HECMW_GEOFEM_ETYPE_MST2:  return HECMW_ETYPE_MST2;  
@@ -265,14 +259,12 @@ HECMW_get_max_node( int etype )
   case HECMW_ETYPE_ROD31: return HECMW_MAX_NODE_ROD31; 
   case HECMW_ETYPE_TET1:  return HECMW_MAX_NODE_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MAX_NODE_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MAX_NODE_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MAX_NODE_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_MAX_NODE_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MAX_NODE_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MAX_NODE_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MAX_NODE_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MAX_NODE_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MAX_NODE_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MAX_NODE_PYR2;  
@@ -353,14 +345,12 @@ HECMW_get_max_edge( int etype )
   case HECMW_ETYPE_QUA2:  return HECMW_MAX_EDGE_QUA2;  
   case HECMW_ETYPE_TET1:  return HECMW_MAX_EDGE_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MAX_EDGE_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MAX_EDGE_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MAX_EDGE_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_MAX_EDGE_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MAX_EDGE_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MAX_EDGE_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MAX_EDGE_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MAX_EDGE_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MAX_EDGE_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MAX_EDGE_PYR2;  
@@ -440,14 +430,12 @@ HECMW_get_max_surf( int etype )
   case HECMW_ETYPE_QUA2:  return HECMW_MAX_SURF_QUA2;  
   case HECMW_ETYPE_TET1:  return HECMW_MAX_SURF_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MAX_SURF_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MAX_SURF_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MAX_SURF_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_MAX_SURF_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MAX_SURF_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MAX_SURF_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MAX_SURF_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MAX_SURF_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MAX_SURF_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MAX_SURF_PYR2;  
@@ -527,13 +515,11 @@ HECMW_get_max_tsuf( int etype )
   case HECMW_ETYPE_QUA2:  return HECMW_MAX_TSUF_QUA2;  
   case HECMW_ETYPE_TET1:  return HECMW_MAX_TSUF_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MAX_TSUF_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MAX_TSUF_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_MAX_TSUF_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MAX_TSUF_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MAX_TSUF_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MAX_TSUF_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MAX_TSUF_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MAX_TSUF_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MAX_TSUF_PYR2;  
@@ -613,14 +599,12 @@ HECMW_get_max_qsuf( int etype )
   case HECMW_ETYPE_QUA2:  return HECMW_MAX_QSUF_QUA2;  
   case HECMW_ETYPE_TET1:  return HECMW_MAX_QSUF_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_MAX_QSUF_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_MAX_QSUF_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_MAX_QSUF_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_MAX_QSUF_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_MAX_QSUF_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_MAX_QSUF_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_MAX_QSUF_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_MAX_QSUF_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_MAX_QSUF_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_MAX_QSUF_PYR2;  
@@ -701,14 +685,12 @@ extern char
   case HECMW_ETYPE_ROD31: return HECMW_UCD_LABEL_ROD31; 
   case HECMW_ETYPE_TET1:  return HECMW_UCD_LABEL_TET1;  
   case HECMW_ETYPE_TET1_4:  return HECMW_UCD_LABEL_TET1_4; 
-// ==========
   case HECMW_ETYPE_TET2:  return HECMW_UCD_LABEL_TET2;  
   case HECMW_ETYPE_TET22: return HECMW_UCD_LABEL_TET2;  
   case HECMW_ETYPE_PRI1:  return HECMW_UCD_LABEL_PRI1;  
   case HECMW_ETYPE_PRI2:  return HECMW_UCD_LABEL_PRI2;  
   case HECMW_ETYPE_HEX1:  return HECMW_UCD_LABEL_HEX1;  
   case HECMW_ETYPE_HEX1_4:  return HECMW_UCD_LABEL_HEX1_4; 
-// ==========
   case HECMW_ETYPE_HEX2:  return HECMW_UCD_LABEL_HEX2;  
   case HECMW_ETYPE_PYR1:  return HECMW_UCD_LABEL_PYR1;  
   case HECMW_ETYPE_PYR2:  return HECMW_UCD_LABEL_PYR2;  
@@ -808,15 +790,13 @@ HECMW_is_etype_solid(int etype)
   case 301:
   case 341:				/* fall through */
   case 342:				/* fall through */
-  case 3414:			/* fall through */
-// ==========
+  case 3414:				/* fall through */
   case 3422:
   case 351:				/* fall through */
   case 352:				/* fall through */
   case 361:				/* fall through */
   case 362:				/* fall through */
-  case 3614:			/* fall through */
-// ==========
+  case 3614:				/* fall through */
   case 371:				/* fall through */
   case 372:	return 1;
   }

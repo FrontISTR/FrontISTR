@@ -1037,7 +1037,7 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 	int i;
 	static struct hecmw_io_egrp *cp=NULL;
 	struct hecmw_io_egrp *p;
-  extern hecmw_hash_p *hash_eg;
+	extern hecmw_hash_p *hash_eg;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_egrp(): name");
@@ -1052,13 +1052,13 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		return -1;
 	}
 
-/**  for(p=_egrp; p; p=p->next) {
+	/**  for(p=_egrp; p; p=p->next) {
 		if(strcmp(p->name, name) == 0) break;
-    q = p;
+		q = p;
 	}**/
   
-  p = (struct hecmw_io_egrp *)hecmw_hash_p_get(hash_eg, name);
-  if(p == NULL) {
+	p = (struct hecmw_io_egrp *)hecmw_hash_p_get(hash_eg, name);
+	if(p == NULL) {
 		p = HECMW_malloc(sizeof(struct hecmw_io_egrp));
 		if(p == NULL) {
 			set_err(errno, "");
@@ -1076,13 +1076,13 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		}
 		p->next = NULL;
     
-    if(cp != NULL) {
-      cp->next = p;
-    } else {
-      _egrp = p;
-    }
-    cp = p;
-  }
+		if(cp != NULL) {
+			cp->next = p;
+		} else {
+			_egrp = p;
+		}
+		cp = p;
+	}
   
 	for(i=0; i < nelem; i++) {
 		if (HECMW_set_int_add(p->elem, elem[i])) {
@@ -1100,17 +1100,17 @@ HECMW_io_add_egrp(const char *name, int nelem, int *elem)
 		return 0;
 	}
   
-  if(hecmw_hash_p_put(hash_eg, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
-    return -1;
-  }
+	if(hecmw_hash_p_put(hash_eg, name, (void *)p) == 0) {
+		printf("HECMW HASH TABEL PUT ERROR\n");
+		return -1;
+	}
   
-//  if(cp != NULL) {
-//    cp->next = p;
-//  } else if (strcmp(cp->name, name) != 0) {
-//    _egrp = p;
-//  }
-//  cp = p;
+	/* if(cp != NULL) { */
+	/* 	cp->next = p; */
+	/* } else if (strcmp(cp->name, name) != 0) { */
+	/* 	_egrp = p; */
+	/* } */
+	/* cp = p; */
 
 	return nelem;
 }
@@ -1213,18 +1213,18 @@ HECMW_io_remove_node(int id)
 struct hecmw_io_ngrp *
 HECMW_io_get_ngrp(const char *name)
 {
-//	struct hecmw_io_ngrp *p;
-  extern hecmw_hash_p *hash_ng;
+	/* struct hecmw_io_ngrp *p; */
+	extern hecmw_hash_p *hash_ng;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_get_ngrp(): name");
 		return NULL;
 	}
 
-//	for(p=_ngrp; p; p=p->next) {
-//		if(strcmp(p->name, name) == 0) break;
-//	}
-//	return p;
+	/* for(p=_ngrp; p; p=p->next) { */
+	/* 	if(strcmp(p->name, name) == 0) break; */
+	/* } */
+	/* return p; */
   
   return (struct hecmw_io_ngrp *)hecmw_hash_p_get(hash_ng, name);
 }
@@ -1278,7 +1278,7 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 	int i;
 	static struct hecmw_io_ngrp *prev_ngrp = NULL;
 	struct hecmw_io_ngrp *p;
-  extern hecmw_hash_p *hash_ng;
+	extern hecmw_hash_p *hash_ng;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_ngrp(): name");
@@ -1293,12 +1293,12 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		return -1;
 	}
 
-  p = (struct hecmw_io_ngrp *)hecmw_hash_p_get(hash_ng, name);
+	p = (struct hecmw_io_ngrp *)hecmw_hash_p_get(hash_ng, name);
   
-//	if(prev_ngrp != NULL && strcmp(prev_ngrp->name, name) == 0) {
-//		p = prev_ngrp;
-//	} else {
-  if(p == NULL) {
+	/* if(prev_ngrp != NULL && strcmp(prev_ngrp->name, name) == 0) { */
+	/* 	p = prev_ngrp; */
+	/* } else { */
+	if(p == NULL) {
 		p = HECMW_malloc(sizeof(*p));
 		if(p == NULL) {
 			set_err(errno, "");
@@ -1316,12 +1316,12 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		}
 		p->next = NULL;
     
-    if(prev_ngrp == NULL) {
-      _ngrp = p;
-    } else {
-      prev_ngrp->next = p;
-    }
-    prev_ngrp = p;
+		if(prev_ngrp == NULL) {
+			_ngrp = p;
+		} else {
+			prev_ngrp->next = p;
+		}
+		prev_ngrp = p;
 	}
 
 	for(i=0; i < nnode; i++) {
@@ -1339,17 +1339,17 @@ HECMW_io_add_ngrp(const char *name, int nnode, int *node)
 		return 0;
 	}
   
-  if(hecmw_hash_p_put(hash_ng, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
-    return -1;
-  }
+	if(hecmw_hash_p_put(hash_ng, name, (void *)p) == 0) {
+		printf("HECMW HASH TABEL PUT ERROR\n");
+		return -1;
+	}
   
-//	if(prev_ngrp == NULL) {
-//		_ngrp = p;
-//	} else if(strcmp(prev_ngrp->name, name) != 0) {
-//		prev_ngrp->next = p;
-//	}
-//	prev_ngrp = p;
+	/* if(prev_ngrp == NULL) { */
+	/* 	_ngrp = p; */
+	/* } else if(strcmp(prev_ngrp->name, name) != 0) { */
+	/* 	prev_ngrp->next = p; */
+	/* } */
+	/* prev_ngrp = p; */
 
 	return nnode;
 }
@@ -1386,20 +1386,20 @@ HECMW_io_remove_node_in_ngrp(int node)
 static struct hecmw_io_sgrp *
 HECMW_io_get_sgrp(const char *name)
 {
-//	struct hecmw_io_sgrp *p;  
-  extern hecmw_hash_p *hash_sg;
+	/* struct hecmw_io_sgrp *p;   */
+	extern hecmw_hash_p *hash_sg;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_get_sgrp(): name");
 		return NULL;
 	}
 
-//	for(p=_sgrp; p; p=p->next) {
-//		if(strcmp(p->name, name) == 0) break;
-//	}
-//	return p;
+	/* for(p=_sgrp; p; p=p->next) { */
+	/* 	if(strcmp(p->name, name) == 0) break; */
+	/* } */
+	/* return p; */
 
-  return (struct hecmw_io_sgrp *)hecmw_hash_p_get(hash_sg, name);
+	return (struct hecmw_io_sgrp *)hecmw_hash_p_get(hash_sg, name);
 }
 
 
@@ -1409,7 +1409,7 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 	int i;
 	static struct hecmw_io_sgrp *prev_sgrp = NULL;
 	struct hecmw_io_sgrp *p;
-  extern hecmw_hash_p *hash_sg;
+	extern hecmw_hash_p *hash_sg;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_add_sgrp(): name");
@@ -1428,11 +1428,11 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		return -1;
 	}
 
-  p = (struct hecmw_io_sgrp *)hecmw_hash_p_get(hash_sg, name);
-  if(p == NULL) {
-//	if(prev_sgrp != NULL && strcmp(prev_sgrp->name, name) == 0) {
-//		p = prev_sgrp;
-//	} else {
+	p = (struct hecmw_io_sgrp *)hecmw_hash_p_get(hash_sg, name);
+	if(p == NULL) {
+	/* if(prev_sgrp != NULL && strcmp(prev_sgrp->name, name) == 0) { */
+	/* 	p = prev_sgrp; */
+	/* } else { */
 		p = HECMW_malloc(sizeof(*p));
 		if(p == NULL) {
 			set_err(errno, "");
@@ -1450,12 +1450,12 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		}
 		p->next = NULL;
     
-    if(prev_sgrp == NULL) {
-      _sgrp = p;
-    } else {
-      prev_sgrp->next = p;
-    }
-    prev_sgrp = p;
+		if(prev_sgrp == NULL) {
+			_sgrp = p;
+		} else {
+			prev_sgrp->next = p;
+		}
+		prev_sgrp = p;
 	}
 
 	for(i=0; i < n_item; i++) {
@@ -1473,17 +1473,17 @@ HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf)
 		return 0;
 	}
 
-  if(hecmw_hash_p_put(hash_sg, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
-    return -1;
-  }
+	if(hecmw_hash_p_put(hash_sg, name, (void *)p) == 0) {
+		printf("HECMW HASH TABEL PUT ERROR\n");
+		return -1;
+	}
   
-//	if(prev_sgrp == NULL) {
-//		_sgrp = p;
-//	} else if(strcmp(prev_sgrp->name, name) != 0) {
-//		prev_sgrp->next = p;
-//	}
-//	prev_sgrp = p;
+	/* if(prev_sgrp == NULL) { */
+	/* 	_sgrp = p; */
+	/* } else if(strcmp(prev_sgrp->name, name) != 0) { */
+	/* 	prev_sgrp->next = p; */
+	/* } */
+	/* prev_sgrp = p; */
 
 	return n_item;
 }
@@ -2864,7 +2864,7 @@ setup_sect(struct hecmwST_local_mesh *mesh)
 			sect->sect_R_item[ridx+1] = p->sect.beam.vxyz[1];
 			sect->sect_R_item[ridx+2] = p->sect.beam.vxyz[2];
 			sect->sect_R_item[ridx+3] = p->sect.beam.area;
-            sect->sect_R_item[ridx+4] = p->sect.beam.Iyy;
+			sect->sect_R_item[ridx+4] = p->sect.beam.Iyy;
 			sect->sect_R_item[ridx+5] = p->sect.beam.Izz;
 			sect->sect_R_item[ridx+6] = p->sect.beam.Jx;
 		} else if(p->type == HECMW_SECT_TYPE_INTERFACE) {
@@ -4140,32 +4140,32 @@ HECMW_io_get_version(void)
 int
 HECMW_hash_init(void)
 {
-  extern hecmw_hash_p *hash_ng;
-  extern hecmw_hash_p *hash_eg;
-  extern hecmw_hash_p *hash_sg;
+	extern hecmw_hash_p *hash_ng;
+	extern hecmw_hash_p *hash_eg;
+	extern hecmw_hash_p *hash_sg;
   
-  hash_ng = hecmw_hash_p_new(1);
-  if (hash_ng == NULL) return 1;
-  hash_eg = hecmw_hash_p_new(2);
-  if (hash_eg == NULL) return 1;
-  hash_sg = hecmw_hash_p_new(3);
-  if (hash_sg == NULL) return 1;
+	hash_ng = hecmw_hash_p_new(1);
+	if (hash_ng == NULL) return 1;
+	hash_eg = hecmw_hash_p_new(2);
+	if (hash_eg == NULL) return 1;
+	hash_sg = hecmw_hash_p_new(3);
+	if (hash_sg == NULL) return 1;
   
-  return 0;
+	return 0;
 }
 
 int
 HECMW_hash_finalize(void)
 {
-  extern hecmw_hash_p *hash_ng;
-  extern hecmw_hash_p *hash_eg;
-  extern hecmw_hash_p *hash_sg;
+	extern hecmw_hash_p *hash_ng;
+	extern hecmw_hash_p *hash_eg;
+	extern hecmw_hash_p *hash_sg;
   
-  hecmw_hash_p_delete(hash_ng);
-  hecmw_hash_p_delete(hash_eg);
-  hecmw_hash_p_delete(hash_sg);
+	hecmw_hash_p_delete(hash_ng);
+	hecmw_hash_p_delete(hash_eg);
+	hecmw_hash_p_delete(hash_sg);
 
-  return 0;
+	return 0;
 }
 
 int

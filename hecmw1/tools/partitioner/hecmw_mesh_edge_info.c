@@ -1359,7 +1359,7 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_BEM2:  /* beam ( 2nd order ) */
             if( edge_info_bem2( local_mesh, is, ie ) )  goto error;
             break;
-		 case HECMW_ETYPE_BEM3:  /* beam ( Mixed beam 341) */
+        case HECMW_ETYPE_BEM3:  /* beam ( Mixed beam 341) */
             if( edge_info_bem3( local_mesh, is, ie ) )  goto error;
             break;
 
@@ -1376,10 +1376,10 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_SHQ2:  /* quadrilateral shell ( 2nd order ) */
             if( edge_info_shq2( local_mesh, is, ie ) )  goto error;
             break;
-		case HECMW_ETYPE_SHT6:  /* triangluar shell ( Mixed solid ) */
+        case HECMW_ETYPE_SHT6:  /* triangluar shell ( Mixed solid ) */
             if( edge_info_sht6( local_mesh, is, ie ) )  goto error;
             break;
-		case HECMW_ETYPE_SHQ8:  /* quadrilateral shell ( Mixed solid ) */
+        case HECMW_ETYPE_SHQ8:  /* quadrilateral shell ( Mixed solid ) */
             if( edge_info_shq8( local_mesh, is, ie ) )  goto error;
             break;
 
