@@ -133,16 +133,20 @@
       endif
 
       E_time = HECMW_WTIME()
-      call hecmw_time_statistics(hecMESH, E_time - S_time, &
-           t_max, t_min, t_avg, t_sd)
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
-        write(*,*) 'Time solver setup'
-        write(*,*) '  Max     :',t_max
-        write(*,*) '  Min     :',t_min
-        write(*,*) '  Avg     :',t_avg
-        write(*,*) '  Std Dev :',t_sd
+      if (TIMElog.eq.2) then
+        call hecmw_time_statistics(hecMESH, E_time - S_time, &
+             t_max, t_min, t_avg, t_sd)
+        if (hecMESH%my_rank.eq.0) then
+          write(*,*) 'Time solver setup'
+          write(*,*) '  Max     :',t_max
+          write(*,*) '  Min     :',t_min
+          write(*,*) '  Avg     :',t_avg
+          write(*,*) '  Std Dev :',t_sd
+        endif
+        Tset = t_max
+      else
+        Tset = E_time - S_time
       endif
-      Tset = t_max
 
       Tcomm = 0.d0
       call hecmw_barrier(hecMESH)
@@ -267,16 +271,20 @@
       !call hecmw_precond_33_clear(hecMAT)
 
       E1_time = HECMW_WTIME()
-      call hecmw_time_statistics(hecMESH, E1_time - S1_time, &
-           t_max, t_min, t_avg, t_sd)
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
-        write(*,*) 'Time solver iterations'
-        write(*,*) '  Max     :',t_max
-        write(*,*) '  Min     :',t_min
-        write(*,*) '  Avg     :',t_avg
-        write(*,*) '  Std Dev :',t_sd
+      if (TIMElog.eq.2) then
+        call hecmw_time_statistics(hecMESH, E1_time - S1_time, &
+             t_max, t_min, t_avg, t_sd)
+        if (hecMESH%my_rank.eq.0) then
+          write(*,*) 'Time solver iterations'
+          write(*,*) '  Max     :',t_max
+          write(*,*) '  Min     :',t_min
+          write(*,*) '  Avg     :',t_avg
+          write(*,*) '  Std Dev :',t_sd
+        endif
+        Tsol = t_max
+      else
+        Tsol = E1_time - S1_time
       endif
-      Tsol = t_max
 
       end subroutine hecmw_solve_BiCGSTAB_33
       end module     hecmw_solver_BiCGSTAB_33

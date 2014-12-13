@@ -214,16 +214,20 @@ contains
     endif
 
     E_TIME= HECMW_WTIME()
-    call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
-         t_max, t_min, t_avg, t_sd)
-    if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
-      write(*,*) 'Time MPC pre'
-      write(*,*) '  Max     :',t_max
-      write(*,*) '  Min     :',t_min
-      write(*,*) '  Avg     :',t_avg
-      write(*,*) '  Std Dev :',t_sd
+    if (TIMElog.eq.2) then
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+           t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0) then
+        write(*,*) 'Time MPC pre'
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      TIME_mpc_pre = t_max
+    else
+      TIME_mpc_pre = E_TIME - S_TIME
     endif
-    TIME_mpc_pre = t_max
 
     ! exchange diagonal elements of overlap region
     !call hecmw_mat_diag_sr_33(hecMESH, hecTKT)
@@ -246,7 +250,7 @@ contains
     !C
     !C-- CG
     if (METHOD.eq.1) then
-      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
         if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-CG(0)',iterPREmax
         if (PRECOND.eq.3) &
@@ -267,7 +271,7 @@ contains
     !C
     !C-- BiCGSTAB
     if (METHOD.eq.2) then
-      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
         if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-BiCGSTAB(0)',iterPREmax
         if (PRECOND.eq.3) &
@@ -289,7 +293,7 @@ contains
     !C
     !C-- GMRES
     if (METHOD.eq.3) then
-      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
         if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-GMRES(0)',iterPREmax
         if (PRECOND.eq.3) &
@@ -311,7 +315,7 @@ contains
     !C
     !C-- GPBiCG
     if (METHOD.eq.4) then
-      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+      if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
         if (PRECOND.le.2) &
              write (*,'(a,i3)') '### 3x3 B-SSOR-GPBiCG(0)',iterPREmax
         if (PRECOND.eq.3) &
@@ -386,7 +390,7 @@ contains
     time_Ax = hecmw_matvec_33_get_timer()
     time_precond = hecmw_precond_33_get_timer()
 
-    if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+    if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
       TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
       write (*,'(/a)')          '### summary of linear solver'
       write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID

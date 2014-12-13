@@ -212,7 +212,7 @@
 
       call hecmw_mat_dump_solution(hecMAT)
 
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
         write (*,'(/a)')          '### summary of linear solver'
         write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID

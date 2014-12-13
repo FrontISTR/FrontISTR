@@ -97,7 +97,7 @@ integer(kind=kint) :: ierr
 imsg=ii ! set message file
 
 ! set timelog
-if (hecMAT%Iarray(22) .eq. 1) then ! = timelog = kYES (kYES is defined in m_fstr
+if (hecMAT%Iarray(22) .ge. 1) then ! = timelog = kYES (kYES is defined in m_fstr
   lelap = .true.
 end if
 

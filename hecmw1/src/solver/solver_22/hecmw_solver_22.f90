@@ -204,7 +204,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
           if (PRECOND.eq.1) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
           if (PRECOND.eq.2) write (*,'(a)') '### 2x2 B-SSOR-CG(0)'
           if (PRECOND.eq.3) write (*,'(a)') '### 2x2 B-scale-CG  '
@@ -227,7 +227,7 @@
         ! imposing MPC by penalty
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
           if (PRECOND.eq.10) write (*,'(a)') '### 2x2 B-IC-CG  (0)'
           if (PRECOND.eq.11) write (*,'(a)') '### 2x2 B-IC-CG  (1)'
           if (PRECOND.eq.12) write (*,'(a)') '### 2x2 B-IC-CG  (2)'
@@ -257,7 +257,7 @@
 
       call hecmw_mat_dump_solution(hecMAT)
 
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
         write (*,'(/a)')          '### summary of linear solver'
         write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID

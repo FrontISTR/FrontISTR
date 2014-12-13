@@ -174,7 +174,7 @@
 !C
 !C-- CG
       if (METHOD.eq.1) then
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
           if (PRECOND.eq.1) &
                write (*,'(a,i3)') '### 4x4 B-IC-CG(0)',iterPREmax
           if (PRECOND.eq.2) &
@@ -195,7 +195,7 @@
 !C
 !C-- BiCGSTAB
       if (METHOD.eq.2) then
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
           if (PRECOND.eq.1) &
                write (*,'(a,i3)') '### 4x4 B-ILU-BiCGSTAB(0)',iterPREmax
           if (PRECOND.eq.2) &
@@ -220,7 +220,7 @@
 !        ! imposing MPC by penalty
 !        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 !
-!        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+!        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
 !          if (PRECOND.eq.1) &
 !               write (*,'(a,i3)') '### 4x4 B-ILU-GMRES(0)',iterPREmax
 !          if (PRECOND.eq.2) &
@@ -245,7 +245,7 @@
 !        ! imposing MPC by penalty
 !        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
 !
-!        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+!        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
 !          if (PRECOND.eq.1) &
 !               write (*,'(a,i3)') '### 4x4 B-ILU-GPBiCG(0)',iterPREmax
 !          if (PRECOND.eq.2) &
@@ -273,7 +273,7 @@
       time_precond = hecmw_precond_44_get_timer()
       write (*,'(a)') '### hecmw_precond_44_get_timer'
 
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
         write (*,'(/a)')          '### summary of linear solver'
         write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID

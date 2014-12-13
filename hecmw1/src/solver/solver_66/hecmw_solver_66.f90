@@ -177,7 +177,7 @@
 !C
 !C-- CG
       if (METHOD.eq.1) then
-        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.eq.1)) then
+        if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
           if (PRECOND.eq.1) &
                write (*,'(a,i3)') '### 6x6 B-IC-CG(0)',iterPREmax
           if (PRECOND.eq.2) &
@@ -202,7 +202,7 @@
       time_Ax = hecmw_matvec_66_get_timer()
       time_precond = hecmw_precond_66_get_timer()
 
-      if (hecMESH%my_rank.eq.0 .and. TIMElog.eq.1) then
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
         TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
         write (*,'(/a)')          '### summary of linear solver'
         write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID
