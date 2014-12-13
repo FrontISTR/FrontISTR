@@ -94,7 +94,7 @@ module m_solve_LINEQ_contact
       endif
 
       t2 = hecmw_wtime()
-      if (hecmw_mat_get_timelog(hecMAT) .eq. 1) then
+      if (hecmw_mat_get_timelog(hecMAT) .ge. 1) then
         write(*,*) ' solve time :', t2 - t1
       endif
 
