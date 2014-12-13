@@ -193,7 +193,8 @@ module m_fstr_ass_load
             call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, fstrSOLID%elements(icel)%gausses)
 
           else if( ( ic_type==761 ) .or. ( ic_type==781 ) ) then
-            call DL_Shell_33(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, fstrSOLID%elements(icel)%gausses)
+            call DL_Shell_33(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, &
+                 fstrSOLID%elements(icel)%gausses)
 
           else 
             nsize = 0
