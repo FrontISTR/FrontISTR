@@ -66,9 +66,6 @@
 #define MARK     32
 
 
-#define SLAVE    64
-
-
 #define MY_DOMAIN       1
 
 
@@ -4261,15 +4258,31 @@ mask_elem_by_domain_mod( char *elem_flag, int current_domain )
 
 static int
 mask_slave_node( const struct hecmwST_local_mesh *global_mesh,
-                 char *node_flag )
+                 char *node_flag, int current_domain )
 {
     int i;
 
     for( i=0; i<global_mesh->mpc->n_mpc; i++ ) {
-        int j0, node;
+        int j0, je, slave, master, j, evalsum;
         j0 = global_mesh->mpc->mpc_index[i];
-        node = global_mesh->mpc->mpc_item[j0];
-        MASK_BIT( node_flag[node - 1], SLAVE );
+        je = global_mesh->mpc->mpc_index[i+1];
+        slave = global_mesh->mpc->mpc_item[j0];
+
+        /* mask all slave nodes */
+        MASK_BIT( node_flag[slave - 1], MASK );
+
+        /* mark slave nodes that have mpc-link across the boundary */
+        evalsum = 0;
+        for( j=j0+1; j<je; j++ ) {
+            master = global_mesh->mpc->mpc_item[j];
+            if( EVAL_BIT( node_flag[slave - 1], INTERNAL ) ^  /* exclusive or */
+                EVAL_BIT( node_flag[master - 1], INTERNAL ) ) {
+                evalsum++;
+            }
+        }
+        if( evalsum ) {
+            MASK_BIT( node_flag[slave - 1], MARK );
+        }
     }
     return RTC_NORMAL;
 }
@@ -4373,12 +4386,15 @@ mask_boundary_elem_with_slave( const struct hecmwST_local_mesh *global_mesh,
 
     for( i=0; i<global_mesh->n_elem; i++ ) {
         if( EVAL_BIT( elem_flag[i], BOUNDARY ) ) continue;
+        if( HECMW_is_etype_link( global_mesh->elem_type[i] ) ) continue; /* skip link elements */
 
         evalsum = 0;
         for( j=global_mesh->elem_node_index[i]; j<global_mesh->elem_node_index[i+1]; j++ ) {
             node = global_mesh->elem_node_item[j];
+            /* check if the node is on boundary and a slave having mpc-link across the boundary */
             if( EVAL_BIT( node_flag[node-1], BOUNDARY ) &&
-                EVAL_BIT( node_flag[node-1], SLAVE ) ) {
+                EVAL_BIT( node_flag[node-1], MASK ) &&
+                EVAL_BIT( node_flag[node-1], MARK ) ) {
                 evalsum++;
             }
         }
@@ -4406,13 +4422,14 @@ mask_boundary_link_elem_with_slave( const struct hecmwST_local_mesh *global_mesh
 
     for( i=0; i<global_mesh->n_elem; i++ ) {
         if( EVAL_BIT( elem_flag[i], BOUNDARY ) ) continue;
-        if( ! HECMW_is_etype_link( global_mesh->elem_type[i] ) ) continue;
+        if( ! HECMW_is_etype_link( global_mesh->elem_type[i] ) ) continue; /* check only link elements */
 
         evalsum = 0;
         for( j=global_mesh->elem_node_index[i]; j<global_mesh->elem_node_index[i+1]; j++ ) {
             node = global_mesh->elem_node_item[j];
+            /* check if the node is on boundary and a slave */
             if( EVAL_BIT( node_flag[node-1], BOUNDARY ) &&
-                EVAL_BIT( node_flag[node-1], SLAVE ) ) {
+                EVAL_BIT( node_flag[node-1], MASK ) ) {
                 evalsum++;
             }
         }
@@ -4482,11 +4499,6 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
 #endif
     if( rtc != RTC_NORMAL )  goto error;
 
-    if( global_mesh->mpc->n_mpc > 0 ) {
-        rtc = mask_slave_node( global_mesh, node_flag );
-        if( rtc != RTC_NORMAL )  goto error;
-    }
-
 #ifndef INAGAKI_PARTITIONER
     rtc = mask_overlap_elem( global_mesh, node_flag, elem_flag );
 #else
@@ -4503,6 +4515,10 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
 
     if( global_mesh->mpc->n_mpc > 0 ) {
         int added = 0;
+
+        rtc = mask_slave_node( global_mesh, node_flag, current_domain );
+        if( rtc != RTC_NORMAL )  goto error;
+
         rtc = mask_boundary_elem_with_slave( global_mesh, node_flag, elem_flag, &added );
         if( rtc != RTC_NORMAL )  goto error;
 
@@ -4519,6 +4535,12 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
             rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
             if( rtc != RTC_NORMAL )  goto error;
         }
+
+        for( i=0; i<global_mesh->n_node; i++ ){
+            CLEAR_BIT( node_flag[i], MASK );
+            CLEAR_BIT( node_flag[i], MARK );
+        }
+
     }
 
     for( i=1; i<global_mesh->hecmw_flag_partdepth; i++ ) {
@@ -4888,7 +4910,6 @@ mask_comm_node( const struct hecmwST_local_mesh *global_mesh,
     int i;
 
     for( i=0; i<global_mesh->n_node; i++ ) {
-        /* if( EVAL_BIT( node_flag_current[i], SLAVE ) ) continue; */
         if( EVAL_BIT( node_flag_current[i], BOUNDARY ) &&
             EVAL_BIT( node_flag_neighbor[i], BOUNDARY ) ) {
             MASK_BIT( node_flag_current[i], MASK );
