@@ -1,3 +1,17 @@
+!======================================================================!
+!                                                                      !
+!   Software Name : HEC-MW Library for PC-cluster                      !
+!         Version : 2.6                                                !
+!                                                                      !
+!     Last Update : 2014/07/04                                         !
+!        Category : Linear Solver                                      !
+!                                                                      !
+!            Written by Kazuya Goto (PExProCS LLC)                     !
+!                                                                      !
+!     Contact address :  FrontISTR Forum,The University of Tokyo       !
+!                                                                      !
+!======================================================================!
+
   subroutine hecmw_ML_getrow(id, n_requested_rows, requested_rows, &
        allocated_space, cols, values, row_lengths, ierr)
     use hecmw_util

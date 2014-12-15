@@ -3,7 +3,7 @@
 !   Software Name : HEC-MW Library for PC-cluster                      !
 !         Version : 2.6                                                !
 !                                                                      !
-!     Last Update : 2014/01/25                                         !
+!     Last Update : 2014/12/14                                         !
 !        Category : Linear Solver                                      !
 !                                                                      !
 !            Written by Kengo Nakajima (Univ. of Tokyo)                !
