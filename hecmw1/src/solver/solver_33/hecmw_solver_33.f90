@@ -234,6 +234,8 @@ contains
 
     call hecmw_mat_dump(hecTKT, hecMESH)
 
+    call hecmw_matvec_33_set_async(hecTKT)
+
     !C===
     !C +------------------+
     !C | ITERATIVE solver |
@@ -353,6 +355,8 @@ contains
     endif
 
     call hecmw_mat_dump_solution(hecTKT)
+
+    call hecmw_matvec_33_unset_async
 
     !C===
     !C +--------------+
