@@ -187,11 +187,11 @@ contains
       if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
 
       if (MPC_METHOD == 1) then  ! penalty
-        write(0,*) "DEBUG: MPC Method: Penalty"
+        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Penalty"
         call hecmw_mat_ass_equation ( hecMESH, hecMAT )
         hecTKT => hecMAT
       else if (MPC_METHOD == 2) then  ! MPCCG
-        write(0,*) "DEBUG: MPC Method: MPC-CG"
+        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: MPC-CG"
         call hecmw_matvec_33_set_mpcmatvec_flg (.true.)
         allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
         do i=1,hecMAT%NP * hecMAT%NDOF
@@ -200,14 +200,11 @@ contains
         call hecmw_trans_b_33(hecMESH, hecMAT, Btmp, hecMAT%B, time_dumm)
         hecTKT => hecMAT
       else if (MPC_METHOD == 3) then  ! elimination
-        write(0,*) "DEBUG: MPC Method: Elimination"
+        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
         allocate(hecTKT)
         call hecmw_mat_init(hecTKT)
-        !write(0,*) "DEBUG: MPC: eliminating slave DOF"
         call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
-        !write(0,*) "DEBUG: MPC: trimatmul done"
         call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, time_dumm)
-        !write(0,*) "DEBUG: MPC: make new RHS done"
       endif
     else
       hecTKT => hecMAT
@@ -376,12 +373,10 @@ contains
         enddo
         deallocate(Btmp)
       else if (MPC_METHOD == 3) then  ! elimination
-        !write(0,*) "DEBUG: MPC: solve done"
         call hecmw_tback_x_33(hecMESH, hecTKT%X, time_dumm)
         do i=1,hecMAT%NP * hecMAT%NDOF
           hecMAT%X(i)=hecTKT%X(i)
         enddo
-        !write(0,*) "DEBUG: MPC: recover solution done"
         call hecmw_mat_finalize(hecTKT)
         deallocate(hecTKT)
       endif
@@ -405,8 +400,10 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
       if (ITER > 0) &
       write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
-      write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
-      write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post
+      if (totalmpc > 0) then
+        write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
+        write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post
+      endif
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 
