@@ -270,7 +270,7 @@ contains
 
 !$OMP PARALLEL DEFAULT(NONE) &
 !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N)
+!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1

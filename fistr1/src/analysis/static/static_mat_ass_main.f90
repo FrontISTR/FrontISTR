@@ -63,7 +63,7 @@ MODULE m_static_mat_ass_main
 !C** Set number of nodes
             nn = hecmw_get_max_node(ic_type)
 !C element loop
-!$omp parallel default(none),private(icel,iiS,j,nodLOCAL,xx,yy,zz,stiffness), &
+!$omp parallel default(none),private(icel,iiS,j,nodLOCAL,xx,yy,zz,stiffness,cdsys_ID,coords,isect), &
 !$omp&         shared(iS,iE,hecMESH,nn,ndof,ic_type,fstrSOLID,hecMAT)
 !$omp do
             do icel= iS, iE
