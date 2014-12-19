@@ -186,6 +186,34 @@ contains
       integer(kind=kint) :: stats(HECMW_STATUS_SIZE,*)
       return
       end subroutine hecmw_waitall
+
+      subroutine hecmw_recv_int(rbuf, rc, source, &
+     &     tag, comm, stat)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
+      integer(kind=kint) :: ierr
+      return
+      end subroutine hecmw_recv_int
+
+      subroutine hecmw_recv_r(rbuf, rc, source, &
+     &     tag, comm, stat)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rc
+      double precision, dimension(rc) :: rbuf
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
+      integer(kind=kint) :: ierr
+      return
+      end subroutine hecmw_recv_r
 !C
 !C***
 !C*** hecmw_allREDUCE

@@ -562,7 +562,7 @@ contains
     call extract_BT_exp(BTmat, hecMESH, BT_exp)
 
     !!! UPDATE COMMUNICATION TABLE for Parallel Computation
-    allocate(statuses(MPI_STATUS_SIZE,2*hecMESH%n_neighbor_pe))
+    allocate(statuses(HECMW_STATUS_SIZE,2*hecMESH%n_neighbor_pe))
     allocate(requests(2*hecMESH%n_neighbor_pe))
 
     allocate(old_export_item(hecMESH%export_index(hecMESH%n_neighbor_pe)))
@@ -607,13 +607,13 @@ contains
       sendbuf(1) = n_oldexp
       sendbuf(2) = n_newexp
       tag = 1001
-      call MPI_ISEND(sendbuf, 2, MPI_INTEGER, irank, tag, &
-           hecMESH%MPI_COMM, requests(idom), ierror)
+      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
+           hecMESH%MPI_COMM, requests(idom))
       if (n_oldexp > 0) then
         n_send = n_send + 1
         tag = 1002
-        call MPI_ISEND(old_export, n_oldexp, MPI_INTEGER, irank, tag, &
-             hecMESH%MPI_COMM, requests(hecMESH%n_neighbor_pe+n_send), ierror)
+        call HECMW_ISEND_INT(old_export, n_oldexp, irank, tag, &
+             hecMESH%MPI_COMM, requests(hecMESH%n_neighbor_pe+n_send))
       end if
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend n_oldexp, n_newexp, old_export done'
@@ -621,15 +621,15 @@ contains
       irank = hecMESH%neighbor_pe(idom)
       ! receive current import info from neighbor pe
       tag = 1001
-      call MPI_RECV(recvbuf, 2, MPI_INTEGER, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1), ierror)
+      call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
+           hecMESH%MPI_COMM, statuses(:,1))
       n_oldimp = recvbuf(1)
       n_newimp = recvbuf(2)
       if (n_oldimp > 0) then
         allocate(old_import(n_oldimp))
         tag = 1002
-        call MPI_RECV(old_import, n_oldimp, MPI_INTEGER, irank, tag, &
-             hecMESH%MPI_COMM, statuses(:,1), ierror)
+        call HECMW_RECV_INT(old_import, n_oldimp, irank, tag, &
+             hecMESH%MPI_COMM, statuses(:,1))
       end if
       !
       idx_0 = hecMESH%import_index(idom-1)
@@ -651,7 +651,7 @@ contains
       !cur_import => hecMESHtmp%import_item(hecMESHtmp%import_index(idom-1)+1:hecMESHtmp%import_index(idom))
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: recv n_oldimp, n_newimp, old_import done'
-    call MPI_Waitall(hecMESH%n_neighbor_pe + n_send, requests, statuses, ierror)
+    call HECMW_Waitall(hecMESH%n_neighbor_pe + n_send, requests, statuses)
     deallocate(old_export_item)
 
     !!! Send BT_exp & Recv BT_imp; nnz and index
@@ -660,11 +660,11 @@ contains
       sendbuf(1) = BT_exp(idom)%nr
       sendbuf(2) = BT_exp(idom)%nnz
       tag = 1003
-      call MPI_ISEND(sendbuf, 2, MPI_INTEGER, irank, tag, &
-           hecMESH%MPI_COMM, requests(2*idom-1), ierror)
+      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
+           hecMESH%MPI_COMM, requests(2*idom-1))
       tag = 1004
-      call MPI_ISEND(BT_exp(idom)%index(0), BT_exp(idom)%nr+1, MPI_INTEGER, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom), ierror)
+      call HECMW_ISEND_INT(BT_exp(idom)%index(0:BT_exp(idom)%nr), BT_exp(idom)%nr+1, &
+           irank, tag, hecMESH%MPI_COMM, requests(2*idom))
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend BT_exp (nnz and index) done'
     BT_imp%nr = 0
@@ -676,8 +676,8 @@ contains
     do idom = 1,hecMESH%n_neighbor_pe
       irank = hecMESH%neighbor_pe(idom)
       tag = 1003
-      call MPI_RECV(recvbuf, 2, MPI_INTEGER, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1), ierror)
+      call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
+           hecMESH%MPI_COMM, statuses(:,1))
       nr_imp = recvbuf(1)
       nnz_imp(idom) = recvbuf(2)
       idx_0 = hecMESH%import_index(idom-1)
@@ -688,8 +688,8 @@ contains
       BT_imp%nnz = BT_imp%nnz + nnz_imp(idom)
       allocate(index_imp(0:nr_imp))
       tag = 1004
-      call MPI_RECV(index_imp(0), nr_imp+1, MPI_INTEGER, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1), ierror)
+      call HECMW_RECV_INT(index_imp(0), nr_imp+1, irank, tag, &
+           hecMESH%MPI_COMM, statuses(:,1))
       if (index_imp(nr_imp) /= nnz_imp(idom)) then !!! ASSERTION
         if (DEBUG > 0) write(0,*) myrank, 'ERROR: num of nonzero of BT_imp incorrect'
         if (DEBUG > 0) write(0,*) myrank, 'nr_imp, index_imp(nr_imp), nnz_imp', &
@@ -710,17 +710,17 @@ contains
          stop 'ERROR: total num of nonzero of BT_imp incorrect' !!! ASSERTION
     ndof2 = BTmat%ndof ** 2
     allocate(BT_imp%item(BT_imp%nnz),BT_imp%A(BT_imp%nnz * ndof2))
-    call MPI_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses, ierror)
+    call HECMW_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses)
 
     !!! Send BT_exp & Recv BT_imp; item and val
     do idom = 1,hecMESH%n_neighbor_pe
       irank = hecMESH%neighbor_pe(idom)
       tag = 1005
-      call MPI_Isend(BT_exp(idom)%item, BT_exp(idom)%nnz, MPI_INTEGER, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom-1), ierror)
+      call HECMW_Isend_INT(BT_exp(idom)%item, BT_exp(idom)%nnz, &
+           irank, tag, hecMESH%MPI_COMM, requests(2*idom-1))
       tag = 1006
-      call MPI_Isend(BT_exp(idom)%A, BT_exp(idom)%nnz * ndof2, MPI_DOUBLE_PRECISION, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom), ierror)
+      call HECMW_Isend_R(BT_exp(idom)%A, BT_exp(idom)%nnz * ndof2, &
+           irank, tag, hecMESH%MPI_COMM, requests(2*idom))
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend BT_exp (item and val) done'
     do idom = 1,hecMESH%n_neighbor_pe
@@ -729,12 +729,12 @@ contains
       idx_n = hecMESH%import_index(idom)
       allocate(item_imp(nnz_imp(idom)))
       tag = 1005
-      call MPI_Recv(item_imp, nnz_imp(idom), MPI_INTEGER, &
-           irank, tag, hecMESH%MPI_COMM, statuses(:,1), ierror)
+      call HECMW_Recv_INT(item_imp, nnz_imp(idom), &
+           irank, tag, hecMESH%MPI_COMM, statuses(:,1))
       allocate(val_imp(nnz_imp(idom) * ndof2))
       tag = 1006
-      call MPI_Recv(val_imp, nnz_imp(idom) * ndof2, MPI_DOUBLE_PRECISION, &
-           irank, tag, hecMESH%MPI_COMM, statuses(:,1), ierror)
+      call HECMW_Recv_R(val_imp, nnz_imp(idom) * ndof2, &
+           irank, tag, hecMESH%MPI_COMM, statuses(:,1))
 
       ! convert column id of item_imp() to local id refering cur_import(:)
       idx_0_tmp = hecMESHtmp%import_index(idom-1)
@@ -760,7 +760,7 @@ contains
     end do
     deallocate(nnz_imp)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: recv BT_imp (item and val) done'
-    call MPI_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses, ierror)
+    call HECMW_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses)
 
     deallocate(statuses)
     deallocate(requests)

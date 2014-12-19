@@ -212,6 +212,36 @@ contains
       integer(kind=kint) :: ierr
       call MPI_WAITALL(cnt, reqs, stats, ierr)
       end subroutine hecmw_waitall
+
+      subroutine hecmw_recv_int(rbuf, rc, source, &
+     &     tag, comm, stat)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rbuf(*)
+      integer(kind=kint) :: rc
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: stat(MPI_STATUS_SIZE)
+      integer(kind=kint) :: ierr
+      call MPI_RECV(rbuf, rc, MPI_INTEGER, &
+     &     source, tag, comm, stat, ierr)
+      end subroutine hecmw_recv_int
+
+      subroutine hecmw_recv_r(rbuf, rc, source, &
+     &     tag, comm, stat)
+      use hecmw_util
+      implicit none
+      integer(kind=kint) :: rc
+      double precision, dimension(rc) :: rbuf
+      integer(kind=kint) :: source
+      integer(kind=kint) :: tag
+      integer(kind=kint) :: comm
+      integer(kind=kint) :: stat(MPI_STATUS_SIZE)
+      integer(kind=kint) :: ierr
+      call MPI_RECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
+     &     source, tag, comm, stat, ierr)
+      end subroutine hecmw_recv_r
 !C
 !C***
 !C*** hecmw_allREDUCE
