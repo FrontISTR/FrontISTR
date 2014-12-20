@@ -25,7 +25,7 @@ module m_utilities
   implicit none
 
   integer, parameter, private :: kreal = kind(0.0d0)
-  real(kind=kreal), parameter, private :: PI=3.14159265358979
+  real(kind=kreal), parameter, private :: PI=3.14159265358979d0
 
   contains
 

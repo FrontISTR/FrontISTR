@@ -100,8 +100,8 @@ contains
       EA = E*A/le
       twoE = 2.d0*E/le
       fourE = 4.d0*E/le
-      twelveE = 12*E/L3
-      sixE = 6*E/L2
+      twelveE = 12.d0*E/L3
+      sixE = 6.d0*E/L2
 
        stiff = 0.d0
        stiff(1,1) = EA;

@@ -39,8 +39,8 @@ subroutine uElasticMatrix( matl, strain, D )
 
     EE = matl(1)
     PP = matl(2)
-    D(1,1)=EE*(1.0-PP)/(1.0-2.0*PP)/(1.0+PP)
-    D(1,2)=EE*PP/(1.0-2.0*PP)/(1.0+PP)
+    D(1,1)=EE*(1.d0-PP)/(1.d0-2.d0*PP)/(1.d0+PP)
+    D(1,2)=EE*PP/(1.d0-2.d0*PP)/(1.d0+PP)
     D(1,3)=D(1,2)
     D(2,1)=D(1,2)
     D(2,2)=D(1,1)
@@ -48,9 +48,9 @@ subroutine uElasticMatrix( matl, strain, D )
     D(3,1)=D(1,3)
     D(3,2)=D(2,3)
     D(3,3)=D(1,1)
-    D(4,4)=EE/(1.0+PP)*0.5
-    D(5,5)=EE/(1.0+PP)*0.5
-    D(6,6)=EE/(1.0+PP)*0.5
+    D(4,4)=EE/(1.d0+PP)*0.5d0
+    D(5,5)=EE/(1.d0+PP)*0.5d0
+    D(6,6)=EE/(1.d0+PP)*0.5d0
 end subroutine
 
 !> This subroutine calculate updated strain and stress

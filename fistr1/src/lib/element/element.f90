@@ -1065,7 +1065,7 @@ module elementInfo
            elseif( cnode==2 ) then
              localcoord(1) =1.d0
              localcoord(2) =-1.d0
-           elseif( cnode==2 ) then
+           elseif( cnode==3 ) then
              localcoord(1) =1.d0
              localcoord(2) =1.d0
            else

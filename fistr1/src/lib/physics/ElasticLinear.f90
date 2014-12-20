@@ -59,8 +59,8 @@ module m_ElasticLinear
 
      SELECT CASE (sectType)
      CASE (D3)
-       D(1,1)=EE*(1.0-PP)/(1.0-2.0*PP)/(1.0+PP)
-       D(1,2)=EE*PP/(1.0-2.0*PP)/(1.0+PP)
+       D(1,1)=EE*(1.d0-PP)/(1.d0-2.d0*PP)/(1.d0+PP)
+       D(1,2)=EE*PP/(1.d0-2.d0*PP)/(1.d0+PP)
        D(1,3)=D(1,2)
        D(2,1)=D(1,2)
        D(2,2)=D(1,1)
@@ -68,51 +68,51 @@ module m_ElasticLinear
        D(3,1)=D(1,3)
        D(3,2)=D(2,3)
        D(3,3)=D(1,1)
-       D(4,4)=EE/(1.0+PP)*0.5
-       D(5,5)=EE/(1.0+PP)*0.5
-       D(6,6)=EE/(1.0+PP)*0.5
+       D(4,4)=EE/(1.d0+PP)*0.5d0
+       D(5,5)=EE/(1.d0+PP)*0.5d0
+       D(6,6)=EE/(1.d0+PP)*0.5d0
      CASE (PlaneStress)
-       COEF1=EE/(1.0-PP*PP)
-       COEF2=0.5*(1.0-PP)
+       COEF1=EE/(1.d0-PP*PP)
+       COEF2=0.5d0*(1.d0-PP)
        D(1,1)=COEF1
        D(1,2)=COEF1*PP
-       D(1,3)=0.0
+       D(1,3)=0.d0
        D(2,1)=D(1,2)
        D(2,2)=D(1,1)
-       D(2,3)=0.0
-       D(3,1)=0.0
-       D(3,2)=0.0
+       D(2,3)=0.d0
+       D(3,1)=0.d0
+       D(3,2)=0.d0
        D(3,3)=COEF1*COEF2
      CASE (Planestrain)
-       COEF1=EE/((1.0+PP)*(1.0-2.0*PP))
-       COEF2=EE/(2.0*(1.0+PP))
-       D(1,1)=COEF1*(1.0-PP)
+       COEF1=EE/((1.d0+PP)*(1.d0-2.d0*PP))
+       COEF2=EE/(2.d0*(1.d0+PP))
+       D(1,1)=COEF1*(1.d0-PP)
        D(1,2)=COEF1*PP
-       D(1,3)=0.0
+       D(1,3)=0.d0
        D(2,1)=D(1,2)
        D(2,2)=D(1,1)
-       D(2,3)=0.0
-       D(3,1)=0.0
-       D(3,2)=0.0
+       D(2,3)=0.d0
+       D(3,1)=0.d0
+       D(3,2)=0.d0
        D(3,3)=COEF2
      CASE (AxisSymetric)
-       COEF1=EE*(1.0-PP)/((1.0+PP)*(1.0-2.0*PP))
-       COEF2=(1.0-2.0*PP)/(2.0*(1.0-PP))
+       COEF1=EE*(1.d0-PP)/((1.d0+PP)*(1.d0-2.d0*PP))
+       COEF2=(1.d0-2.d0*PP)/(2.d0*(1.d0-PP))
        D(1,1)=COEF1
-       D(1,2)=COEF1*PP/(1.0-PP)
-       D(1,3)=0.0
+       D(1,2)=COEF1*PP/(1.d0-PP)
+       D(1,3)=0.d0
        D(1,4)=D(1,2)
        D(2,1)=D(1,2)
        D(2,2)=D(1,1)
-       D(2,3)=0.0
+       D(2,3)=0.d0
        D(2,4)=D(1,2)
-       D(3,1)=0.0
-       D(3,2)=0.0
+       D(3,1)=0.d0
+       D(3,2)=0.d0
        D(3,3)=COEF1*COEF2
-       D(3,4)=0.0
+       D(3,4)=0.d0
        D(4,1)=D(1,4)
        D(4,2)=D(2,4)
-       D(4,3)=0.0
+       D(4,3)=0.d0
        D(4,4)=D(1,1)
      CASE DEFAULT
        STOP "Section type not defined"
