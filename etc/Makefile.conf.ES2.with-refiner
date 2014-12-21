@@ -42,6 +42,11 @@ MUMPSDIR       = $(HOME)/MUMPS_4.10.0
 MUMPSINCDIR    = $(MUMPSDIR)/include
 MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
+# ML
+MLDIR          = $(HOME)/trilinos/11.8.1/ml
+MLINCDIR       = $(MLDIR)/include
+MLLIBDIR       = $(MLDIR)/lib
+
 # C compiler settings
 CC             = sxmpicc
 CFLAGS         =
