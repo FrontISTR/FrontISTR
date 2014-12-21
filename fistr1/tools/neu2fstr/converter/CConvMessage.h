@@ -14,7 +14,7 @@
  *      Simulations Using Hight End Computing Middleware (HEC-MW)"     *
  *                                                                     *
  *=====================================================================*/
-/* CConvMessage class Ver.1.0 */
+/* CConvMessage class Ver. 3.6 */
 
 #ifndef CConvMessageH
 #define CConvMessageH

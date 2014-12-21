@@ -16,7 +16,7 @@
  *=====================================================================*/
 
 /*
-	CNFDataBlock Ver.1.0
+	CNFDataBlock Ver. 3.6
 */
 
 #ifndef CNFDataBlockH

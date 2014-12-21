@@ -16,7 +16,7 @@
  *=====================================================================*/
 
 /*
-	CFSTRData Ver.1.0
+	CFSTRData Ver. 3.6
 	----------------------------------------
 	[method for loading mesh and control file]
 	1) Clear()

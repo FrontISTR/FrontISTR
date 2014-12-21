@@ -1,4 +1,17 @@
-!> This module provides linear equation solver interface of MUMPS for
+!======================================================================!
+!                                                                      !
+! Software Name : FrontISTR Ver. 3.6                                   !
+!                                                                      !
+!      Module Name : lib                                               !
+!                                                                      !
+!            Written by K. Goto (PExProCS LLC)                         !
+!                                                                      !
+!      Contact address :  IIS,The University of Tokyo, CISS            !
+!                                                                      !
+!      "Structural Analysis for Large Scale Assembly"                  !
+!                                                                      !
+!======================================================================!
+!> This module provides interface of iteratie linear equation solver for
 !! contact problems using Lagrange multiplier.
 module m_solve_LINEQ_iter_contact
   use m_fstr

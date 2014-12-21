@@ -16,7 +16,7 @@
  *=====================================================================*/
 
 /*
-	CHECDataBlock Ver.1.0
+	CHECDataBlock Ver. 3.6
 */
 
 #ifndef CHECDataBlockH

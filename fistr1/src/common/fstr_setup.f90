@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.4                                   !
+! Software Name : FrontISTR Ver. 3.6                                   !
 !                                                                      !
 !      Module Name : I/O and Utility                                   !
 !                                                                      !

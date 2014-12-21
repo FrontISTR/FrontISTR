@@ -16,7 +16,7 @@
  *=====================================================================*/
 
 /*
-	CNFDB_404 Ver.1.0
+	CNFDB_404 Ver. 3.6
 */
 
 #ifndef CNFDB_404H
@@ -103,12 +103,12 @@ public:
 		nf_int layer;
 		nf_int orientID;
 		nf_bool matl_orflag;
-		// Ver.5.0 ========================
+		// Ver. 3.6 ========================
 		nf_int geomID;
-		// Ver.6.0 ========================
+		// Ver. 3.6 ========================
 		nf_int formulation;
 		nf_int contactsegment[2];
-		// Ver.8.0 ========================
+		// Ver. 3.6 ========================
 		nf_int formulation2;
 	// #2,3
 		nf_int node[20];
@@ -122,9 +122,9 @@ public:
 		nf_bool release1[6];
 	// #8
 		nf_bool release2[6];
-		// Ver.4.4 ========================
+		// Ver. 3.6 ========================
 		nf_int list[4];
-	// Ver.4.5 ========================
+	// Ver. 3.6 ========================
 	// every node record, if topology == top_MultiList or top_RigidList(Rigid?)
 		std::vector<cref_node_list*> ref_node_set;
 

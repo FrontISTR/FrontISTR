@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.5                                   !
+! Software Name : FrontISTR Ver. 3.6                                   !
 !                                                                      !
 !      Module Name : common                                            !
 !                                                                      !
