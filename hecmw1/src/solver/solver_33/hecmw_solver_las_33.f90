@@ -39,9 +39,9 @@ module hecmw_solver_las_33
   real(kind=kreal), save :: time_Ax = 0.d0
   logical, save :: mpcmatvec_flg = .false.
 
-  ! for communication hiding in matvec
-  integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
-  real(kind=kreal), save, allocatable :: A_o(:)
+  ! ! for communication hiding in matvec
+  ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
+  ! real(kind=kreal), save, allocatable :: A_o(:)
   logical, save :: async_matvec_flg = .false.
 
 contains
@@ -96,36 +96,36 @@ contains
     use hecmw_util
     implicit none
     type (hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint) :: i, j, jS, jE, idx, in
+    ! integer(kind=kint) :: i, j, jS, jE, idx, in
 
-    allocate(index_o(0:hecMAT%N))
-    index_o(0) = 0
-    do i = 1, hecMAT%N
-      jS= hecMAT%indexU(i-1) + 1
-      jE= hecMAT%indexU(i  )
-      idx = index_o(i-1)
-      do j= jS, jE
-        in  = hecMAT%itemU(j)
-        if (in <= hecMAT%N) cycle
-        idx = idx + 1
-      enddo
-      index_o(i) = idx
-    enddo
-    allocate(item_o(idx))
-    allocate(A_o(idx*9))
-    do i = 1, hecMAT%N
-      jS= hecMAT%indexU(i-1) + 1
-      jE= hecMAT%indexU(i  )
-      idx = index_o(i-1)
-      do j= jS, jE
-        in  = hecMAT%itemU(j)
-        if (in <= hecMAT%N) cycle
-        idx = idx + 1
-        item_o(idx) = hecMAT%itemU(j) - hecMAT%N
-        A_o(9*idx-8:9*idx) = hecMAT%AU(9*j-8:9*j)
-      enddo
-    enddo
-    async_matvec_flg = .true.
+    ! allocate(index_o(0:hecMAT%N))
+    ! index_o(0) = 0
+    ! do i = 1, hecMAT%N
+    !   jS= hecMAT%indexU(i-1) + 1
+    !   jE= hecMAT%indexU(i  )
+    !   idx = index_o(i-1)
+    !   do j= jS, jE
+    !     in  = hecMAT%itemU(j)
+    !     if (in <= hecMAT%N) cycle
+    !     idx = idx + 1
+    !   enddo
+    !   index_o(i) = idx
+    ! enddo
+    ! allocate(item_o(idx))
+    ! allocate(A_o(idx*9))
+    ! do i = 1, hecMAT%N
+    !   jS= hecMAT%indexU(i-1) + 1
+    !   jE= hecMAT%indexU(i  )
+    !   idx = index_o(i-1)
+    !   do j= jS, jE
+    !     in  = hecMAT%itemU(j)
+    !     if (in <= hecMAT%N) cycle
+    !     idx = idx + 1
+    !     item_o(idx) = hecMAT%itemU(j) - hecMAT%N
+    !     A_o(9*idx-8:9*idx) = hecMAT%AU(9*j-8:9*j)
+    !   enddo
+    ! enddo
+    ! async_matvec_flg = .true.
   end subroutine hecmw_matvec_33_set_async
 
   !C
@@ -135,10 +135,10 @@ contains
   !C
   subroutine hecmw_matvec_33_unset_async
     implicit none
-    if (allocated(index_o)) deallocate(index_o)
-    if (allocated(item_o)) deallocate(item_o)
-    if (allocated(A_o)) deallocate(A_o)
-    async_matvec_flg = .false.
+    ! if (allocated(index_o)) deallocate(index_o)
+    ! if (allocated(item_o)) deallocate(item_o)
+    ! if (allocated(A_o)) deallocate(A_o)
+    ! async_matvec_flg = .false.
   end subroutine hecmw_matvec_33_unset_async
 
   !C
@@ -252,11 +252,11 @@ contains
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
-      if (async_matvec_flg) then
-        call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
-      else
-        call hecmw_update_3_R (hecMESH, X, NP)
-      endif
+      ! if (async_matvec_flg) then
+      !   call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
+      ! else
+      call hecmw_update_3_R (hecMESH, X, NP)
+      ! endif
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -298,7 +298,7 @@ contains
           jE= indexU(i  )
           do j= jS, jE
             in  = itemU(j)
-            if (async_matvec_flg .and. in > N) cycle
+            ! if (async_matvec_flg .and. in > N) cycle
             X1= X(3*in-2)
             X2= X(3*in-1)
             X3= X(3*in  )
@@ -322,38 +322,38 @@ contains
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
 
-      if (async_matvec_flg) then
-        START_TIME= HECMW_WTIME()
-        call hecmw_update_3_R_wait (hecMESH, ireq)
-        END_TIME= HECMW_WTIME()
-        if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+      ! if (async_matvec_flg) then
+      !   START_TIME= HECMW_WTIME()
+      !   call hecmw_update_3_R_wait (hecMESH, ireq)
+      !   END_TIME= HECMW_WTIME()
+      !   if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
-        START_TIME = hecmw_Wtime()
+      !   START_TIME = hecmw_Wtime()
 
-        do i = 1, N
-          jS= index_o(i-1) + 1
-          jE= index_o(i  )
-          if (jS > jE) cycle
-          YV1= 0.d0
-          YV2= 0.d0
-          YV3= 0.d0
-          do j=jS, jE
-            in = item_o(j)
-            X1= X(3*(N+in)-2)
-            X2= X(3*(N+in)-1)
-            X3= X(3*(N+in)  )
-            YV1= YV1 + A_o(9*j-8)*X1 + A_o(9*j-7)*X2 + A_o(9*j-6)*X3
-            YV2= YV2 + A_o(9*j-5)*X1 + A_o(9*j-4)*X2 + A_o(9*j-3)*X3
-            YV3= YV3 + A_o(9*j-2)*X1 + A_o(9*j-1)*X2 + A_o(9*j  )*X3
-          enddo
-          Y(3*i-2)= Y(3*i-2)+YV1
-          Y(3*i-1)= Y(3*i-1)+YV2
-          Y(3*i  )= Y(3*i  )+YV3
-        enddo
+      !   do i = 1, N
+      !     jS= index_o(i-1) + 1
+      !     jE= index_o(i  )
+      !     if (jS > jE) cycle
+      !     YV1= 0.d0
+      !     YV2= 0.d0
+      !     YV3= 0.d0
+      !     do j=jS, jE
+      !       in = item_o(j)
+      !       X1= X(3*(N+in)-2)
+      !       X2= X(3*(N+in)-1)
+      !       X3= X(3*(N+in)  )
+      !       YV1= YV1 + A_o(9*j-8)*X1 + A_o(9*j-7)*X2 + A_o(9*j-6)*X3
+      !       YV2= YV2 + A_o(9*j-5)*X1 + A_o(9*j-4)*X2 + A_o(9*j-3)*X3
+      !       YV3= YV3 + A_o(9*j-2)*X1 + A_o(9*j-1)*X2 + A_o(9*j  )*X3
+      !     enddo
+      !     Y(3*i-2)= Y(3*i-2)+YV1
+      !     Y(3*i-1)= Y(3*i-1)+YV2
+      !     Y(3*i  )= Y(3*i  )+YV3
+      !   enddo
 
-        END_TIME = hecmw_Wtime()
-        time_Ax = time_Ax + END_TIME - START_TIME
-      endif
+      !   END_TIME = hecmw_Wtime()
+      !   time_Ax = time_Ax + END_TIME - START_TIME
+      ! endif
 
     ENDIF
 
