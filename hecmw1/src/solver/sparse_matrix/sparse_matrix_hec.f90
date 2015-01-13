@@ -166,8 +166,9 @@ contains
        do idof=1,ndof
           i0=spMAT%OFFSET+ndof*(i-1)
           ii=i0+idof
-          if (spMAT%type == SPARSE_MATRIX_TYPE_CSR .and. spMAT%IRN(ii-spMAT%OFFSET)/=m) &
-               stop "ERROR: sparse_matrix_set_a"
+          if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
+            if (spMAT%IRN(ii-spMAT%OFFSET)/=m) stop "ERROR: sparse_matrix_set_a"
+          endif
           ! Lower
           if (.not. sparse_matrix_is_sym(spMAT)) then
              ls=hecMAT%indexL(i-1)+1
@@ -181,8 +182,9 @@ contains
                 !endif
                 offset_l=ndof2*(l-1)+ndof*(idof-1)
                 do jdof=1,ndof
-                   if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
-                        stop "ERROR: sparse_matrix_set_a"
+                   if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+                     if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a"
+                   endif
                    if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a"
                    spMAT%A(m)=hecMAT%AL(offset_l+jdof)
                    m=m+1
@@ -193,8 +195,9 @@ contains
           offset_d=ndof2*(i-1)+ndof*(idof-1)
           if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
           do jdof=jdofs,ndof
-             if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
-                  stop "ERROR: sparse_matrix_set_a"
+             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+               if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a"
+             endif
              if (spMAT%JCN(m)/=i0+jdof) stop "ERROR: sparse_matrix_set_a"
              spMAT%A(m)=hecMAT%D(offset_d+jdof)
              m=m+1
@@ -212,8 +215,9 @@ contains
              endif
              offset_u=ndof2*(l-1)+ndof*(idof-1)
              do jdof=1,ndof
-                if (spMAT%type==SPARSE_MATRIX_TYPE_COO .and. spMAT%IRN(m)/=ii) &
-                     stop "ERROR: sparse_matrix_set_a"
+                if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+                  if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a"
+                endif
                 if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a"
                 spMAT%A(m)=hecMAT%AU(offset_u+jdof)
                 m=m+1
@@ -221,8 +225,9 @@ contains
           enddo
        enddo
     enddo
-    if (spMAT%type == SPARSE_MATRIX_TYPE_CSR .and. spMAT%IRN(ii+1-spMAT%OFFSET)/=m) &
-         stop "ERROR: sparse_matrix_set_a"
+    if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
+      if (spMAT%IRN(ii+1-spMAT%OFFSET)/=m) stop "ERROR: sparse_matrix_set_a"
+    endif
     if (m-1 /= spMAT%NZ) stop "ERROR: sparse_matrix_set_a"
   end subroutine sparse_matrix_hec_set_vals
 
