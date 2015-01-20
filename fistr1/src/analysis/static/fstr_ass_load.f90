@@ -145,9 +145,18 @@ module m_fstr_ass_load
             do j = 1, nn
               nodLOCAL(j) = hecMESH%elem_node_item (iS+j)
 ! ----- nodal coordinate
-              xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )+fstrSOLID%unode( 3*nodLOCAL(j)-2 )+fstrSOLID%dunode( 3*nodLOCAL(j)-2 )
-              yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )+fstrSOLID%unode( 3*nodLOCAL(j)-1 )+fstrSOLID%dunode( 3*nodLOCAL(j)-1 )
-              zz(j) = hecMESH%node( 3*nodLOCAL(j)   )+fstrSOLID%unode( 3*nodLOCAL(j)   )+fstrSOLID%dunode( 3*nodLOCAL(j)   )
+              if (ndof==2) then
+                xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )+fstrSOLID%unode( 2*nodLOCAL(j)-1 )+fstrSOLID%dunode( 2*nodLOCAL(j)-1 )
+                yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )+fstrSOLID%unode( 2*nodLOCAL(j)   )+fstrSOLID%dunode( 2*nodLOCAL(j)   )
+              else if (ndof==3) then
+                xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )+fstrSOLID%unode( 3*nodLOCAL(j)-2 )+fstrSOLID%dunode( 3*nodLOCAL(j)-2 )
+                yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )+fstrSOLID%unode( 3*nodLOCAL(j)-1 )+fstrSOLID%dunode( 3*nodLOCAL(j)-1 )
+                zz(j) = hecMESH%node( 3*nodLOCAL(j)   )+fstrSOLID%unode( 3*nodLOCAL(j)   )+fstrSOLID%dunode( 3*nodLOCAL(j)   )
+              else if (ndof==6) then
+                xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )+fstrSOLID%unode( 6*nodLOCAL(j)-5 )+fstrSOLID%dunode( 6*nodLOCAL(j)-5 )
+                yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )+fstrSOLID%unode( 6*nodLOCAL(j)-4 )+fstrSOLID%dunode( 6*nodLOCAL(j)-4 )
+                zz(j) = hecMESH%node( 3*nodLOCAL(j)   )+fstrSOLID%unode( 6*nodLOCAL(j)-3 )+fstrSOLID%dunode( 6*nodLOCAL(j)-3 )
+              endif
 ! ----- create iwk array ***
               do i = 1, ndof
                 iwk( ndof*(j-1)+i ) = ndof*( nodLOCAL(j)-1 )+i
