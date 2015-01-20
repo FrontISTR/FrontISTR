@@ -28,7 +28,7 @@
    STRESS
 !RESTART, FREQENCY=-2, NAME=restart.dat
 !SOLVER, METHOD = CG, PRECOND = 1, ITERLOG = NO, TIMELOG = NO
-  10000,       2
+  10000,       1, 10, 10
  1.0E-12,     1.0,     0.0
 !WRITE,VISUAL
 !VISUAL,metod=PSR

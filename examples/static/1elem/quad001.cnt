@@ -40,7 +40,7 @@
    STRAIN
    STRESS
 !SOLVER, METHOD = CG, PRECOND = 1, ITERLOG = NO, TIMELOG = NO
-  10000,       2
+  10000,       1
  1.0E-12,     1.0,     0.0
 !WRITE,VISUAL
 !VISUAL,metod=PSR
