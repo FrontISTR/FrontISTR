@@ -4,7 +4,7 @@
 # ----------------------------
 # FrontSTR Test for Examples
 
-PATH=../../../bin:$PATH
+PATH=../../../fistr1/bin:$PATH
 fstr=fistr1
 launcher=../../../fistr1/tools/launcher/fstr_srun.sh
 
