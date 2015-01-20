@@ -136,18 +136,18 @@ OBJSF2 = \
         eigen_LIB.@f90objfilepostfix@ \
         heat_LIB.@f90objfilepostfix@
 
-OBJSF_MUMPS = \
+OBJSF_PARACON = \
         m_Metis403API_f.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
-OBJSF_MUMPS_DUMM = \
+OBJSF_PARACON_DUMM = \
         m_Metis403API_f_dumm.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 HEADERS =
 
 #------------------------------------------------------------------------------#
-all: @build_target_mumps@
+all: @build_target_paracon@
 
 build-default:
 	@cd utilities && $(MAKE) @build_target@
@@ -157,29 +157,29 @@ build-default:
 	@cd contact   && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
-build-with-mumps:
+build-with-paracon:
 	@cd utilities && $(MAKE) @build_target@
 	@cd user      && $(MAKE) @build_target@
 	@cd element   && $(MAKE) @build_target@
 	@cd physics   && $(MAKE) @build_target@
 	@cd contact   && $(MAKE) @build_target@
-	$(MAKE) BUILD_CURR_WITH_MUMPS
+	$(MAKE) BUILD_CURR_WITH_PARACON
 
-build-with-rcap: @build_target_mumps@
+build-with-rcap: @build_target_paracon@
 
 BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
-BUILD_CURR_WITH_MUMPS: $(TARGET) F90TARGET_MUMPS install-module
+BUILD_CURR_WITH_PARACON: $(TARGET) F90TARGET_PARACON install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
-	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) $(OBJSF_MUMPS_DUMM) $(OBJSF2)
+$(F90TARGET): $(OBJSF) $(OBJSF_PARACON_DUMM) $(OBJSF2)
+	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) $(OBJSF_PARACON_DUMM) $(OBJSF2)
 	F90="$(F90)" F90FLAGS="$(F90FLAGS)" F90TARGET="$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
 
-F90TARGET_MUMPS: $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
-	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_MUMPS) $(OBJSF2)
+F90TARGET_PARACON: $(OBJSF) $(OBJSF_PARACON) $(OBJSF2)
+	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_PARACON) $(OBJSF2)
 	F90="$(F90)" F90FLAGS="$(F90FLAGS)" F90TARGET="$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
 
 install-header:
