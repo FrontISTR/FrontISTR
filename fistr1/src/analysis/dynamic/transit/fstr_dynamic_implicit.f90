@@ -181,6 +181,8 @@ contains
     do j = 1 ,hecMAT%NPL
       MAT0%itemL(j)  = hecMAT%itemL(j)
     end do
+    MAT0%Iarray(:) = hecMAT%Iarray(:)
+    MAT0%Rarray(:) = hecMAT%Rarray(:)
 
 !C-- matrix [M]
 !C-- lumped mass matrix
