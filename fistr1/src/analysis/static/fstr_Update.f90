@@ -70,6 +70,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         ndof = hecMAT%NDOF
         fstrSOLID%QFORCE=0.0d0
 
+        tt0 = 0.d0
+        ttn = 0.d0
+        tt = 0.d0
+
 ! --------------------------------------------------------------------
 !      updated
 !         1. stress and strain  : ep^(k) = ep^(k-1)+dep^(k)
@@ -96,10 +100,11 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
 ! element loop
 !$omp parallel default(none), &
-!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,tt0,ttn,tt,ddu,du,total_disp, &
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
 !$omp&          cdsys_ID,coords,thick,qf,isect,ihead,tmp), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
-!$omp&         strainEnergy,iter,tincr)
+!$omp&         strainEnergy,iter,tincr), &
+!$omp&  firstprivate(tt0,ttn,tt)
 !$omp do
           do icel = iS, iE
 
@@ -328,6 +333,9 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
         integer(kind=kint), allocatable :: id_spc(:)
         real(kind=kreal) :: a
         integer(kind=kint) :: cdsys_ID
+
+        tt = 0.d0
+        tt0 = 0.d0
 !C
 !C set temperature
 !C
@@ -368,9 +376,9 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                 nn = hecmw_get_max_node( ic_type )
 !C element loop
 !$omp parallel default(none), &
-!$omp&  private(icel,js,j,nodLOCAL,xx,yy,zz,tt,tt0,ecoord,edisp,isect,cdsys_ID,ihead,thick,mixflag,stiff,iflag,coords), &
+!$omp&  private(icel,js,j,nodLOCAL,xx,yy,zz,ecoord,edisp,isect,cdsys_ID,ihead,thick,mixflag,stiff,iflag,coords), &
 !$omp&  shared(iS,iE,hecMESH,temp,ref_temp,fstrSOLID,id_spc,force), &
-!$omp&  firstprivate(nn,ic_type)
+!$omp&  firstprivate(nn,ic_type,tt,tt0)
 !$omp do
                 do icel = iS, iE
                         jS = hecMESH%elem_node_index(icel-1)
