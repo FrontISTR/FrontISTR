@@ -2689,6 +2689,9 @@ copy_mpc_info( const struct hecmwST_mpc *mpc, struct hecmwST_mpc *ref_mpc )
 		return HECMW_SUCCESS;
 	}
 
+	HECMW_log(HECMW_LOG_ERROR, "refinement of MPC information is not supported\n");
+	return HECMW_ERROR;
+#if 0
 	HECMW_log(HECMW_LOG_WARN, "MPC information is not refined\n");
 
 	/* mpc_index */
@@ -2742,6 +2745,7 @@ copy_mpc_info( const struct hecmwST_mpc *mpc, struct hecmwST_mpc *ref_mpc )
 	}
 
 	return HECMW_SUCCESS;
+#endif
 }
 
 
