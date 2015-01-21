@@ -293,11 +293,11 @@ contains
           CALL solve_LINEQ(hecMESH,hecMAT,imsg)
         end if
 
-! ----- update the strain, stress, and internal force
-        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy )
         do j=1,hecMESH%n_node*ndof
           fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
         enddo
+! ----- update the strain, stress, and internal force
+        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
 
       enddo
 
@@ -743,7 +743,7 @@ contains
           do j=1,hecMESH%n_node*ndof
             fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
           enddo
-          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy )
+          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
 
 
 ! ----- update the Lagrange multipliers
