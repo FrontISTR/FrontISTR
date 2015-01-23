@@ -2223,7 +2223,7 @@ HECMW_ctrl_get_restart_file_by_io(int io)
 
 	p = get_restart_entry_by_io(io);
 	if(p == NULL) {
-		HECMW_set_error(HECMW_UTIL_E0025, "");
+		HECMW_set_error(HECMW_UTIL_E0045, "");
 		return NULL;
 	}
 
