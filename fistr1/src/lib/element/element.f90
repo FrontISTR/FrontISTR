@@ -720,7 +720,7 @@ module elementInfo
       if( nspace==2 ) then
         XJ(1:2,1:2)=MATMUL( elecoord(1:2,1:nn), deriv(1:nn,1:2) )
         DET=XJ(1,1)*XJ(2,2)-XJ(2,1)*XJ(1,2)
-        if( det==0.d0 ) stop "Math error in GetGlobalDeriv! Determinaut==0.0"
+        if( det==0.d0 ) stop "Math error in GetGlobalDeriv! Determinant==0.0"
         DUM=1.d0/DET
         XJI(1,1)= XJ(2,2)*DUM
         XJI(1,2)=-XJ(1,2)*DUM
@@ -736,7 +736,7 @@ module elementInfo
            -XJ(3,1)*XJ(2,2)*XJ(1,3)                                             &
            -XJ(2,1)*XJ(1,2)*XJ(3,3)                                             &
            -XJ(1,1)*XJ(3,2)*XJ(2,3)
-        if( det==0.d0 ) stop "Math error in GetGlobalDeriv! Determinaut==0.0"
+        if( det==0.d0 ) stop "Math error in GetGlobalDeriv! Determinant==0.0"
 ! INVERSION OF JACOBIAN
         DUM=1.d0/DET
         XJI(1,1)=DUM*( XJ(2,2)*XJ(3,3)-XJ(3,2)*XJ(2,3) )
@@ -800,7 +800,7 @@ module elementInfo
       if( nspace==2 ) then
         jacobian(1:2,1:2)=MATMUL( elecoord(1:2,1:NN), deriv(1:NN,1:2) )
         det=jacobian(1,1)*jacobian(2,2)-jacobian(2,1)*jacobian(1,2)
-        if( det==0.d0 ) stop "Math error in getJacobain! Determinaut==0.0"
+        if( det==0.d0 ) stop "Math error in getJacobain! Determinant==0.0"
         dum=1.0/det
         inverse(1,1)= jacobian(2,2)*dum
         inverse(1,2)=-jacobian(1,2)*dum
@@ -816,7 +816,7 @@ module elementInfo
            -jacobian(3,1)*jacobian(2,2)*jacobian(1,3)                                         &
            -jacobian(2,1)*jacobian(1,2)*jacobian(3,3)                                         &
            -jacobian(1,1)*jacobian(3,2)*jacobian(2,3)
-        if( det==0.d0 ) stop "Math error in getJacobain! Determinaut==0.0"
+        if( det==0.d0 ) stop "Math error in getJacobain! Determinant==0.0"
 ! INVERSION OF JACOBIAN
         dum=1.d0/det
         inverse(1,1)=DUM*( jacobian(2,2)*jacobian(3,3)-jacobian(3,2)*jacobian(2,3) )
