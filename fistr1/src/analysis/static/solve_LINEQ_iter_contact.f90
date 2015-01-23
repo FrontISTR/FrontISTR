@@ -35,6 +35,8 @@ contains
     logical, intent(in) :: is_sym
 
     if (INITIALIZED) then
+       hecMAT%Iarray(98) = 1
+       hecMAT%Iarray(97) = 1
        INITIALIZED = .false.
     endif
 
@@ -55,6 +57,8 @@ contains
     integer :: method_org, precond_org
     logical :: fg_eliminate
     integer(kind=kint) :: num_lagrange_global
+
+    hecMAT%Iarray(97) = 1
 
     ! set if use eliminate version or not
     precond_org = hecmw_mat_get_precond(hecMAT)
@@ -177,6 +181,7 @@ contains
     call hecmw_localmat_free(BTtmat)
     call hecmw_mat_finalize(hecTKT)
     if (hecMESH%n_neighbor_pe > 0) then
+      hecMESHtmp%node => null()
       call hecmw_dist_free(hecMESHtmp)
       deallocate(hecMESHtmp, BT_all)
     end if
@@ -843,6 +848,7 @@ contains
       stop 'ERROR: MPC not supported with contact'
     endif
     dst%mpc%n_mpc = 0
+    dst%node => src%node
   end subroutine copy_mesh
 
   subroutine extract_BT_exp(BTmat, hecMESH, BT_exp)

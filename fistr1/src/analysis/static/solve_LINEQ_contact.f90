@@ -95,7 +95,7 @@ module m_solve_LINEQ_contact
 
       t2 = hecmw_wtime()
       if (hecmw_mat_get_timelog(hecMAT) .ge. 1) then
-        write(*,*) ' solve time :', t2 - t1
+        if (myrank==0) write(*,*) ' solve time :', t2 - t1
       endif
 
       if(paraContactFlag.and.present(conMAT)) then

@@ -602,7 +602,8 @@ contains
 
     call replace_hecmat(hecTKT, BTtKT)
 
-    do i=1,nr*ndof
+    ! copy internal part only
+    do i=1,hecMAT%N*ndof
       hecTKT%X(i)=hecMAT%X(i)
     enddo
   end subroutine make_new_hecmat
