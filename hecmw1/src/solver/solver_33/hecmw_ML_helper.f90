@@ -146,3 +146,16 @@
     enddo
     ierr = 0
   end subroutine hecmw_ML_get_coord
+
+  subroutine hecmw_ML_get_loglevel(id, level)
+    use hecmw_util
+    use hecmw_matrix_misc
+    use hecmw_mat_id
+    implicit none
+    integer(kind=kint), intent(in) :: id
+    integer(kind=kint), intent(out) :: level
+    type(hecmwST_matrix), pointer :: hecMAT
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    call hecmw_mat_id_get(id, hecMAT, hecMESH)
+    level = hecmw_mat_get_timelog(hecMAT)
+  end subroutine hecmw_ML_get_loglevel

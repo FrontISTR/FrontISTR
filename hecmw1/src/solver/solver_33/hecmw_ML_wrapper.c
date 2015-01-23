@@ -79,6 +79,7 @@ static struct ml_info mlinfo[MAX_MI];
 
 void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 {
+	int loglevel;
 	int N_grids, N_levels;
 	int nlocal, nlocal_allcolumns;
 	ML *ml_object;
@@ -90,7 +91,8 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 		return;
 	}
 
-	ML_Set_PrintLevel(15);
+	hecmw_ml_get_loglevel_(id, &loglevel);
+	ML_Set_PrintLevel(loglevel);
 
 	/* ML object */
 	N_grids = 4;
