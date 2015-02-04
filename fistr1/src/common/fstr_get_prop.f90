@@ -174,6 +174,16 @@ contains
       shell_variables(2) = hecMESH%material%mat_val(mpos+2)
       shell_variables(3) = thick
       write(IMSG,*) '###Warning : Old format of shell properties'
+    elseif( n_subitem == 3) then
+      n_totallayer_ls = 1
+      shell_matltype = 0
+      ee = hecMESH%material%mat_val(mpos+1)
+      pp = hecMESH%material%mat_val(mpos+2)
+      alpha_over_mu=hecMESH%material%mat_val(mpos+3)
+      shell_variables(1) = hecMESH%material%mat_val(mpos+1)
+      shell_variables(2) = hecMESH%material%mat_val(mpos+2)
+      shell_variables(3) = thick
+      write(IMSG,*) '###Warning : Old format of shell properties'
     elseif( n_subitem >= 4) then
       shell_matltype = int(hecMESH%material%mat_val(mpos+1))
       if (shell_matltype == 0) then
