@@ -163,7 +163,7 @@ contains
     TYPE (hecmwST_local_mesh) :: hecMESH
 
     if( n_subitem .lt. 1 ) then
-      write(ISTA,*) '###Error 2'
+      write(IMSG,*) '###Error 2'
       stop
     elseif( n_subitem == 2) then
       n_totallayer_ls = 1
@@ -183,7 +183,7 @@ contains
       shell_variables(1) = hecMESH%material%mat_val(mpos+1)
       shell_variables(2) = hecMESH%material%mat_val(mpos+2)
       shell_variables(3) = thick
-      write(ISTA,*) '###Warning : Old format of shell properties'
+      write(IMSG,*) '###Warning : Old format of shell properties'
     elseif( n_subitem >= 4) then
       shell_matltype = int(hecMESH%material%mat_val(mpos+1))
       if (shell_matltype == 0) then
@@ -200,7 +200,7 @@ contains
           ee = shell_variables(1)
           pp = shell_variables(2)
         else
-          write(ISTA,*) '###Error : shell properties not correct (isotropic)'
+          write(IMSG,*) '###Error : shell properties not correct (isotropic)'
           stop
         endif
       elseif(shell_matltype == 1)then
@@ -222,11 +222,11 @@ contains
           ee = shell_variables(1)
           pp = shell_variables(2)
         else
-          write(ISTA,*) '###Error : shell properties not correct(orthotropic)'
+          write(IMSG,*) '###Error : shell properties not correct(orthotropic)'
           stop
         endif
       else
-        write(ISTA,*) '###Error : shell_matltype not correct'
+        write(IMSG,*) '###Error : shell_matltype not correct'
         stop
       endif
     endif

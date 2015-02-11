@@ -1183,9 +1183,9 @@ end subroutine
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
 
- subroutine fstr_setup_post( ctrl, P, n_shell_layer, mixedflag)
+ subroutine fstr_setup_post( ctrl, P, ntot_lyr, mixedflag)
         implicit none
-        integer(kind=kint) :: ctrl, n_shell_layer, mixedflag
+        integer(kind=kint) :: ctrl, ntot_lyr, mixedflag
         type(fstr_param_pack) :: P
 
                                            ! JP-6
@@ -1196,15 +1196,19 @@ end subroutine
          .or. P%PARAM%solution_type == 6 ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 ) then
-                        allocate ( P%SOLID%STRAIN  (12*n_shell_layer*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (14*n_shell_layer*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (12*n_shell_layer*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  ((14*n_shell_layer+6)*P%MESH%n_elem))
+                        allocate ( P%SOLID%STRAIN  (12*ntot_lyr*P%MESH%n_node))
+                        allocate ( P%SOLID%STRESS  (14*ntot_lyr*P%MESH%n_node))
+                        allocate ( P%SOLID%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
+                        allocate ( P%SOLID%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
+                        !allocate ( P%SOLID%ESECTSTRESS (6*ntot_lyr*P%MESH%n_elem))
+                        !P%SOLID%ESECTSTRESS = 0.d0
                 elseif( mixedflag == 1) then
-                        allocate ( P%SOLID%STRAIN  (12*n_shell_layer*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (14*n_shell_layer*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (12*n_shell_layer*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  ((14*n_shell_layer+6)*P%MESH%n_elem))
+                        allocate ( P%SOLID%STRAIN  (12*ntot_lyr*P%MESH%n_node))
+                        allocate ( P%SOLID%STRESS  (14*ntot_lyr*P%MESH%n_node))
+                        allocate ( P%SOLID%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
+                        allocate ( P%SOLID%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
+                        !allocate ( P%SOLID%ESECTSTRESS (6*ntot_lyr*P%MESH%n_elem))
+                        !P%SOLID%ESECTSTRESS = 0.d0
                 else
                         allocate ( P%SOLID%STRAIN  (6*P%MESH%n_node))
                         allocate ( P%SOLID%STRESS  (7*P%MESH%n_node))

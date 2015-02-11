@@ -274,7 +274,7 @@ public
                 integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
                 real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
 
-				! for couple analysis
+                ! for couple analysis
                 integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
                 integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
 
@@ -283,6 +283,7 @@ public
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
                 real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
+                !real(kind=kreal), pointer :: ESECTSTRESS(:)   !< elemental sectional force
 
                 ! ANALYSIS CONTROL for NLGEOM
                 integer(kind=kint) :: restart_nout  !< output interval of restart file
@@ -582,6 +583,7 @@ contains
         nullify( S%STRAIN )
         nullify( S%ESTRESS )
         nullify( S%ESTRAIN )
+!        nullify( S%ESECTSTRESS )
         nullify( S%GL          )
 !        nullify( S%TOTAL_DISP  )
         nullify( S%QFORCE      )

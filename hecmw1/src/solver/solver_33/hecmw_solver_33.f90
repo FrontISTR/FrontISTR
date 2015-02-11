@@ -51,7 +51,7 @@ contains
     integer(kind=kint) :: ITER, METHOD, PRECOND, NSET
     integer(kind=kint) :: iterPREmax, i
 
-    real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER
+    real(kind=kreal) :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
 
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal) :: TIME_setup, TIME_comm, TIME_sol, TR
@@ -349,6 +349,14 @@ contains
 
     if (ERROR.ne.0) then
       call hecmw_solve_error (hecMESH, ERROR)
+    endif
+
+    resid2=hecmw_rel_resid_L2_33(hecMESH,hecTKT)
+    if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
+      write(*,"(a,1pe12.5)")'### Relative residual =', resid2
+      ! if( resid2 >= 1.0d-8) then
+      !   write(*,"(a)")'### Relative residual exceeded 1.0d-8---Iterative Solver### '
+      ! endif
     endif
 
     call hecmw_mat_dump_solution(hecTKT)

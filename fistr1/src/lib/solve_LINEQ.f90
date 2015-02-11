@@ -106,16 +106,16 @@ module m_solve_LINEQ
         END SELECT
         myrank=hecmw_comm_get_rank()
         if (myrank==0) then
-          write(*,*) ' relative residual =', resid
+          write(*,"(a,1pe12.5)")'### Relative residual =', resid
           if( resid >= 1.0d-8) then
-            write(*,*) ' ###Relative residual exceeded 1.0d-8---Direct Solver### '
+            write(*,"(a)")'### Relative residual exceeded 1.0d-8---Direct Solver### '
 !            stop
           endif
         endif
 !C
       END SELECT
 !C
-       RETURN
+      RETURN
 
    end subroutine solve_LINEQ
 

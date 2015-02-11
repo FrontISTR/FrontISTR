@@ -1786,11 +1786,6 @@
 !--------------------------------------------------------------------
 !				Modified stress in laminated shell
 !--------------------------------------------------------------------
-
-!		write(*,*) 'Stress_n_total_layer',n_total_layer
-
-!--------------------------------------------------------------------
-
       ! MITC4
       IF( etype .EQ. fe_mitc4_shell ) THEN
 
@@ -3142,13 +3137,13 @@
 !--------------------------------------------------------------------
 
       if(ic_type == 761)then
-        ic_type = 731
-        nn = 3
-        ndof = 6
-        call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
-        ic_type = 761
-        nn = 6
-        ndof = 3
+        !ic_type = 731
+        !nn = 3
+        !ndof = 6
+        call DL_Shell(731, 3, 6, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
+        !ic_type = 761
+        !nn = 6
+        !ndof = 3
 
         tmp = 0.0
         do i=1,18
@@ -3175,13 +3170,13 @@
         vect(18) = tmp(18)
 
       elseif(ic_type == 781)then
-        ic_type = 741
-        nn = 4
-        ndof = 6
-        call DL_Shell(ic_type, nn, ndof, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
-        ic_type = 781
-        nn = 8
-        ndof = 3
+        !ic_type = 741
+        !nn = 4
+        !ndof = 6
+        call DL_Shell(741, 4, 6, xx, yy, zz, rho, thick, ltype, params, vect, nsize, gausses)
+        !ic_type = 781
+        !nn = 8
+        !ndof = 3
 
         tmp = 0.0
         do i=1,24

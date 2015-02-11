@@ -143,18 +143,20 @@ MODULE m_static_mat_ass_main
             isect= hecMESH%section_ID(icel)
             ihead = hecMESH%section%sect_R_index(isect-1)
             thick = hecMESH%section%sect_R_item(ihead+1)
-            nn = 4; ndof = 6; ic_type = 741; mixflag = 1
-            CALL STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:4), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
-            ic_type = 781; nn = 8; ndof = 3
+            !nn = 4; ndof = 6; ic_type = 741
+            mixflag = 1
+            CALL STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:4), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
+            !ic_type = 781; nn = 8; ndof = 3
             return
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
             isect= hecMESH%section_ID(icel)
             ihead = hecMESH%section%sect_R_index(isect-1)
             thick = hecMESH%section%sect_R_item(ihead+1)
-            nn = 3; ndof = 6; ic_type = 731; mixflag = 2
-            CALL STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:3), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
-            ic_type = 761; nn = 6; ndof = 3
+            !nn = 3; ndof = 6; ic_type = 731;
+            mixflag = 2
+            CALL STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:3), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
+            !ic_type = 761; nn = 6; ndof = 3
             return
 
         else if( ic_type == 361 ) then
