@@ -29,3 +29,6 @@ fistr1/include
 fistr1/tools/neu2fstr/include
 hecmw1/bin
 hecmw1/include
+examples/*/ex?/hecmw_ctrl.dat
+examples/static/1elem/hecmw_ctrl.dat
+examples/static/thermal/hecmw_ctrl.dat
