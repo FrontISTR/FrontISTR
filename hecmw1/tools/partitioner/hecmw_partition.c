@@ -2627,7 +2627,7 @@ create_node_graph_link_list( const struct hecmwST_local_mesh *global_mesh,
                              struct link_list **graph )
 {
     int node1, node2;
-    int i;
+    long long int i;
 
     for( i=0; i<edge_data->n_edge; i++ ) {
         node1 = edge_data->edge_node_item[2*i];
@@ -3744,7 +3744,7 @@ set_node_belong_domain_nb( struct hecmwST_local_mesh *global_mesh,
     struct hecmw_part_edge_data *edge_data = NULL;
     int n_edgecut;
     int rtc;
-    int i;
+    long long int i;
 
 
     edge_data = (struct hecmw_part_edge_data *)HECMW_malloc( sizeof(struct hecmw_part_edge_data) );
@@ -3942,6 +3942,7 @@ count_edge_for_eb( const struct hecmwST_local_mesh *global_mesh,
                    int *elem_graph_index, int *elem_graph_item )
 {
     int rtc;
+    long long int eid;
     int i, j;
 
     rtc = HECMW_mesh_hsort_edge_init( global_mesh->n_node, global_mesh->n_elem );
@@ -3949,8 +3950,8 @@ count_edge_for_eb( const struct hecmwST_local_mesh *global_mesh,
 
     for( i=0; i<global_mesh->n_elem; i++ ) {
         for( j=elem_graph_index[i]; j<elem_graph_index[i+1]; j++ ) {
-            rtc = HECMW_mesh_hsort_edge( i+1, elem_graph_item[j]+1 );
-            if( rtc < 0 )  goto error;
+            eid = HECMW_mesh_hsort_edge( i+1, elem_graph_item[j]+1 );
+            if( eid < 0 )  goto error;
         }
     }
 
@@ -3980,7 +3981,7 @@ set_elem_belong_domain_eb( struct hecmwST_local_mesh *global_mesh,
     int *elem_graph_item = NULL;
     struct hecmw_part_edge_data *elem_data = NULL;
     int rtc;
-    int i;
+    long long int i;
 
 
     elem_graph_index = (int *)HECMW_calloc( global_mesh->n_elem+1, sizeof(int) );
@@ -6319,9 +6320,6 @@ clear_node_global2local( const struct hecmwST_local_mesh *global_mesh,
     }
 
     return RTC_NORMAL;
-
-error:
-    return RTC_ERROR;
 }
 
 #endif /* INAGAKI_PARTITIONER */
@@ -6739,9 +6737,6 @@ clear_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
     }
 
     return RTC_NORMAL;
-
-error:
-    return RTC_ERROR;
 }
 
 #endif /* INAGAKI_PARTITIONER */

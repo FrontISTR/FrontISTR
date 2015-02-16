@@ -26,11 +26,11 @@ extern int
 HECMW_mesh_hsort_edge_realloc( void );
 extern void
 HECMW_mesh_hsort_edge_final( void );
-extern int
+extern long long int
 HECMW_mesh_hsort_edge_get_n( void );
 extern int
 *HECMW_mesh_hsort_edge_get_v( void );
-extern int
+extern long long int
 HECMW_mesh_hsort_edge( int node1, int node2 );
 
 /* triangular surface */

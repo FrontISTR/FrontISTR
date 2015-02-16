@@ -23,7 +23,7 @@
 
 struct hecmw_part_edge_data {
 
-    int n_edge;
+    long long int n_edge;
 
     int *edge_node_item;
 };

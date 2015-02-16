@@ -29,7 +29,7 @@ HECMW_part_set_log_part_method( int _part_method );
 extern int
 HECMW_part_set_log_part_depth( int _depth );
 extern int
-HECMW_part_set_log_n_edgecut( int _n_edge, int _n_edgecut );
+HECMW_part_set_log_n_edgecut( long long int _n_edge, int _n_edgecut );
 extern int
 HECMW_part_set_log_n_node_g( int _n_node_g );
 extern int

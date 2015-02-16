@@ -103,5 +103,5 @@ void HECMW_bit_array_unset(struct hecmw_bit_array *ba, size_t index)
   HECMW_assert(ba);
   HECMW_assert(0 <= index && index < ba->len);
 
-  ba->vals[index / nbit_ulong] &= ~(1 << (index % nbit_ulong));
+  ba->vals[index / nbit_ulong] &= ~(1UL << (index % nbit_ulong));
 }

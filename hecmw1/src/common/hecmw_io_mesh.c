@@ -127,14 +127,26 @@ get_gid2lid_elem(int gid)
 static int
 make_surf_key(int elem_id, int surf_id)
 {
-	return elem_id*10 + surf_id - 1;
+	/* return elem_id*10 + surf_id - 1; */
+	if(surf_id < 4 ){
+		return elem_id*3 + surf_id - 1;
+	}else{
+		return -(elem_id*3 + surf_id - 4);
+	}
 }
 
 static void
 decode_surf_key(int key, int *elem_id, int *surf_id)
 {
-	*elem_id = key/10;
-	*surf_id = key%10 + 1;
+	/* *elem_id = key/10; */
+	/* *surf_id = key%10 + 1; */
+	if(key >0){
+		*elem_id = key/3;
+		*surf_id = key%3 + 1;
+	}else{
+		*elem_id = (-key)/3;
+		*surf_id = (-key)%3 + 4;
+	}
 }
 
 
@@ -2048,7 +2060,8 @@ setup_elem(struct hecmwST_local_mesh *mesh)
 static int
 setup_ngrp(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,nngrp,nnode,size;
+	int i,j,nngrp,nnode;
+	size_t size;
 	struct hecmwST_node_grp *ngrp;
 	struct hecmw_io_ngrp *p;
 
@@ -2142,7 +2155,8 @@ setup_ngrp(struct hecmwST_local_mesh *mesh)
 static int
 setup_egrp(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,negrp,nelem,size;
+	int i,j,negrp,nelem;
+	size_t size;
 	struct hecmwST_elem_grp *egrp;
 	struct hecmw_io_egrp *p;
 
@@ -2237,7 +2251,8 @@ setup_egrp(struct hecmwST_local_mesh *mesh)
 static int
 setup_sgrp(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,nsgrp,nelem,size;
+	int i,j,nsgrp,nelem;
+	size_t size;
 	struct hecmwST_surf_grp *sgrp;
 	struct hecmw_io_sgrp *p;
 

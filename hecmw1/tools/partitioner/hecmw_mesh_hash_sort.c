@@ -48,7 +48,7 @@ struct hecmw_mesh_hash_link {
 };
 
 
-static int n_edge = 0;
+static long long int n_edge = 0;
 
 
 static int *__edge_node = NULL;
@@ -57,10 +57,10 @@ static int *__edge_node = NULL;
 static struct hecmw_mesh_hash_link **e_hash_tbl = NULL;
 
 
-static unsigned long int e_hash_size;
+static size_t e_hash_size;
 
 
-static unsigned long int e_buf_size;
+static size_t e_buf_size;
 
 
 static int n_tsuf = 0;
@@ -72,10 +72,10 @@ static int *__tsuf_node = NULL;
 static struct hecmw_mesh_hash_link **t_hash_tbl = NULL;
 
 
-static unsigned long int t_hash_size;
+static size_t t_hash_size;
 
 
-static unsigned long int t_buf_size;
+static size_t t_buf_size;
 
 
 static int n_qsuf = 0;
@@ -87,10 +87,10 @@ static int *__qsuf_node = NULL;
 static struct hecmw_mesh_hash_link **q_hash_tbl = NULL;
 
 
-static unsigned long int q_hash_size;
+static size_t q_hash_size;
 
 
-static unsigned long int q_buf_size;
+static size_t q_buf_size;
 
 
 struct hecmw_edge_node {
@@ -348,9 +348,9 @@ error:
 extern int
 HECMW_mesh_hsort_edge_realloc( void )
 {
-    unsigned long int new_buf_size;
+    size_t new_buf_size;
 
-    new_buf_size = (unsigned long int)( e_buf_size * EDGE_INC_FACTOR );
+    new_buf_size = (size_t)( e_buf_size * EDGE_INC_FACTOR );
 
     edge_node->node1 = (int *)HECMW_realloc( edge_node->node1, sizeof(int)*new_buf_size );
     if( edge_node->node1 == NULL ) {
@@ -377,9 +377,9 @@ error:
 extern int
 HECMW_mesh_hsort_tsuf_realloc( void )
 {
-    unsigned long int new_buf_size;
+    size_t new_buf_size;
 
-    new_buf_size = (unsigned long int)( t_buf_size * TSUF_INC_FACTOR );
+    new_buf_size = (size_t)( t_buf_size * TSUF_INC_FACTOR );
 
     tsuf_node->node1 = (int *)HECMW_realloc( tsuf_node->node1, sizeof(int)*new_buf_size );
     if( tsuf_node->node1 == NULL ) {
@@ -411,9 +411,9 @@ error:
 extern int
 HECMW_mesh_hsort_qsuf_realloc( void )
 {
-    unsigned long int new_buf_size;
+    size_t new_buf_size;
 
-    new_buf_size = (unsigned long int)( q_buf_size * QSUF_INC_FACTOR );
+    new_buf_size = (size_t)( q_buf_size * QSUF_INC_FACTOR );
 
     qsuf_node->node1 = (int *)HECMW_realloc( qsuf_node->node1, sizeof(int)*new_buf_size );
     if( qsuf_node->node1 == NULL ) {
@@ -448,7 +448,7 @@ error:
 
 /*================================================================================================*/
 
-extern int
+extern long long int
 HECMW_mesh_hsort_edge_get_n( void )
 {
     return n_edge;
@@ -473,7 +473,7 @@ HECMW_mesh_hsort_qsuf_get_n( void )
 extern int
 *HECMW_mesh_hsort_edge_get_v( void )
 {
-    int i;
+    long long int i;
 
     __edge_node = (int *)HECMW_malloc( sizeof(int)*n_edge*2 );
     if( __edge_node == NULL ) {
@@ -736,20 +736,20 @@ reorder_node_qsuf( int m1, int m2, int m3, int m4,
 
 /*================================================================================================*/
 
-extern int
+extern long long int
 HECMW_mesh_hsort_edge( int node1, int node2 )
 {
     int n1, n2, m1, m2;
-    int eid;
+    long long int eid;
     int idx;
-    unsigned long int ndot;
+    size_t ndot;
     struct hecmw_mesh_hash_link *p;
 
 
     reorder_node_edge( node1, node2, &n1, &n2 );
 
 
-    ndot = ((unsigned long int)n1 % e_hash_size) * ((unsigned long int)n2 % e_hash_size);
+    ndot = ((size_t)n1 % e_hash_size) * ((size_t)n2 % e_hash_size);
     idx = ndot % e_hash_size;
 
     for( p=e_hash_tbl[idx]; p; p=p->next ) {
@@ -796,15 +796,15 @@ HECMW_mesh_hsort_tsuf( int node1, int node2, int node3 )
     int n1, n2, n3, m1, m2, m3;
     int tid;
     int idx;
-    unsigned long int ndot1, ndot;
+    size_t ndot1, ndot;
     struct hecmw_mesh_hash_link *p;
 
 
     reorder_node_tsuf( node1, node2, node3, &n1, &n2, &n3 );
 
 
-    ndot1 = ((unsigned long int)n1 % t_hash_size) * ((unsigned long int)n2 % t_hash_size);
-    ndot  = ((unsigned long int)n3 % t_hash_size) * (ndot1 % t_hash_size);
+    ndot1 = ((size_t)n1 % t_hash_size) * ((size_t)n2 % t_hash_size);
+    ndot  = ((size_t)n3 % t_hash_size) * (ndot1 % t_hash_size);
     idx   = ndot % t_hash_size;
 
     for( p=t_hash_tbl[idx]; p; p=p->next ) {
@@ -854,7 +854,7 @@ HECMW_mesh_hsort_qsuf( int node1, int node2, int node3, int node4 )
     int n1, n2, n3, n4, m1, m2, m3, m4;
     int qid;
     int idx;
-    unsigned long int ndot1, ndot2, ndot;
+    size_t ndot1, ndot2, ndot;
     struct hecmw_mesh_hash_link *p;
 
 

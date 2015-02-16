@@ -34,7 +34,7 @@ static int
 edge_info_rod1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[2], node_index;
-    int edge[1];
+    long long int edge[1];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -58,7 +58,7 @@ static int
 edge_info_rod2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[3], node_index;
-    int edge[2];
+    long long int edge[2];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -84,7 +84,7 @@ static int
 edge_info_tri1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[3], node_index;
-    int edge[3];
+    long long int edge[3];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -112,7 +112,7 @@ static int
 edge_info_tri2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[6], node_index;
-    int edge[6];
+    long long int edge[6];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -146,7 +146,7 @@ static int
 edge_info_qua1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[4], node_index;
-    int edge[4];
+    long long int edge[4];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -176,7 +176,7 @@ static int
 edge_info_qua2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[8], node_index;
-    int edge[8];
+    long long int edge[8];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -214,7 +214,7 @@ static int
 edge_info_tet1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[4], node_index;
-    int edge[6];
+    long long int edge[6];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -248,7 +248,7 @@ static int
 edge_info_tet2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[10], node_index;
-    int edge[12];
+    long long int edge[12];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -294,7 +294,7 @@ static int
 edge_info_pyr1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[5], node_index;
-    int edge[8];
+    long long int edge[8];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -332,7 +332,7 @@ static int
 edge_info_pyr2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[13], node_index;
-    int edge[16];
+    long long int edge[16];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -386,7 +386,7 @@ static int
 edge_info_pri1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[6], node_index;
-    int edge[9];
+    long long int edge[9];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -426,7 +426,7 @@ static int
 edge_info_pri2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[15], node_index;
-    int edge[18];
+    long long int edge[18];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -484,7 +484,7 @@ static int
 edge_info_hex1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[8], node_index;
-    int edge[12];
+    long long int edge[12];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -530,7 +530,7 @@ static int
 edge_info_hex2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[20], node_index;
-    int edge[24];
+    long long int edge[24];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -600,7 +600,7 @@ static int
 edge_info_mst1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[4], node_index;
-    int edge[6];
+    long long int edge[6];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -634,7 +634,7 @@ static int
 edge_info_mst2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[7], node_index;
-    int edge[9];
+    long long int edge[9];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -674,7 +674,7 @@ static int
 edge_info_msq1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[5], node_index;
-    int edge[8];
+    long long int edge[8];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -712,7 +712,7 @@ static int
 edge_info_msq2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[9], node_index;
-    int edge[12];
+    long long int edge[12];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -758,7 +758,7 @@ static int
 edge_info_jtt1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[6], node_index;
-    int edge[9];
+    long long int edge[9];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -798,7 +798,7 @@ static int
 edge_info_jtt2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[12], node_index;
-    int edge[15];
+    long long int edge[15];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -850,7 +850,7 @@ static int
 edge_info_jtq1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[8], node_index;
-    int edge[12];
+    long long int edge[12];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -896,7 +896,7 @@ static int
 edge_info_jtq2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[16], node_index;
-    int edge[20];
+    long long int edge[20];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -958,7 +958,7 @@ static int
 edge_info_bem1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[2], node_index;
-    int edge[1];
+    long long int edge[1];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -982,7 +982,7 @@ static int
 edge_info_bem2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[3], node_index;
-    int edge[2];
+    long long int edge[2];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1007,7 +1007,7 @@ static int
 edge_info_bem3( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[4], node_index;
-    int edge[6];
+    long long int edge[6];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1042,7 +1042,7 @@ static int
 edge_info_sht1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[3], node_index;
-    int edge[3];
+    long long int edge[3];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1070,7 +1070,7 @@ static int
 edge_info_sht2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[6], node_index;
-    int edge[6];
+    long long int edge[6];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1104,7 +1104,7 @@ static int
 edge_info_shq1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[4], node_index;
-    int edge[4];
+    long long int edge[4];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1134,7 +1134,7 @@ static int
 edge_info_shq2( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[8], node_index;
-    int edge[8];
+    long long int edge[8];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1170,8 +1170,8 @@ error:
 static int
 edge_info_sht6( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
-     int node[6], node_index;
-    int edge[9];
+    int node[6], node_index;
+    long long int edge[9];
     int i, j;
 
     for( i=is; i<ie; i++ ) {
@@ -1210,7 +1210,7 @@ static int
 edge_info_shq8( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
 {
     int node[8], node_index;
-    int edge[12];
+    long long int edge[12];
     int i, j;
 
     for( i=is; i<ie; i++ ) {

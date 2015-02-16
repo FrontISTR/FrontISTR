@@ -55,7 +55,7 @@ static int n_domain = 0;
 static int depth = 0;
 
 
-static int n_edge = 0;
+static long long int n_edge = 0;
 
 
 static int n_edgecut = 0;
@@ -221,7 +221,7 @@ HECMW_part_set_log_part_depth( int _depth )
 
 
 extern int
-HECMW_part_set_log_n_edgecut( int _n_edge, int _n_edgecut )
+HECMW_part_set_log_n_edgecut( long long int _n_edge, int _n_edgecut )
 {
     if( is_init == 0 ) {
         HECMW_set_error( HECMW_PART_E_LOG_INIT_NOT_YET, "" );
@@ -234,7 +234,7 @@ HECMW_part_set_log_n_edgecut( int _n_edge, int _n_edgecut )
     }
 
     if( _n_edge < 1 ) {
-        HECMW_set_error( HECMW_PART_E_NEDGECUTA_LOWER, "%d", _n_edge );
+        HECMW_set_error( HECMW_PART_E_NEDGECUTA_LOWER, "%lld", _n_edge );
         return -1;
     }
 
@@ -433,7 +433,7 @@ HECMW_part_print_log( void )
     if( n_domain == 1 ) {
         fprintf( fp, "number of edgecut     : ----- / -----\n" );
     } else {
-        fprintf( fp, "number of edgecut     : %d / %d\n", n_edgecut, n_edge );
+        fprintf( fp, "number of edgecut     : %d / %lld\n", n_edgecut, n_edge );
     }
 
     fprintf( fp, "\n" );
