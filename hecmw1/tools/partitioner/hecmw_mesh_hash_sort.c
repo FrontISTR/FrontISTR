@@ -137,8 +137,8 @@ static struct hecmw_qsuf_node *qsuf_node = NULL;
 extern int
 HECMW_mesh_hsort_edge_init( int n_node, int n_elem )
 {
-    int size;
-    int i;
+    size_t size;
+    long long int i;
 
     if( n_node <= 0 ) {
         HECMW_set_error( HECMW_PART_E_INV_ARG, "n_node=%d", n_node );
@@ -201,8 +201,8 @@ error:
 extern int
 HECMW_mesh_hsort_tsuf_init( int n_node, int n_elem )
 {
-    int size;
-    int i;
+    size_t size;
+    long long int i;
 
     if( n_node <= 0 ) {
         HECMW_set_error( HECMW_PART_E_INV_ARG, "n_node=%d", n_node );
@@ -271,8 +271,8 @@ error:
 extern int
 HECMW_mesh_hsort_qsuf_init( int n_node, int n_elem )
 {
-    int size;
-    int i;
+    size_t size;
+    long long int i;
 
     if( n_node <= 0 ) {
         HECMW_set_error( HECMW_PART_E_INV_ARG, "n_node=%d", n_node );
@@ -558,7 +558,7 @@ extern void
 HECMW_mesh_hsort_edge_final( void )
 {
     if( e_hash_tbl ) {
-        int i;
+        long long int i;
         struct hecmw_mesh_hash_link *p, *q;
         for( i=0; i<e_hash_size; i++ ) {
             if( e_hash_tbl[i] ) {
@@ -586,7 +586,7 @@ extern void
 HECMW_mesh_hsort_tsuf_final( void )
 {
     if( t_hash_tbl ) {
-        int i;
+        long long int i;
         struct hecmw_mesh_hash_link *p, *q;
         for( i=0; i<t_hash_size; i++ ) {
             if( t_hash_tbl[i] ) {
@@ -615,7 +615,7 @@ extern void
 HECMW_mesh_hsort_qsuf_final( void )
 {
     struct hecmw_mesh_hash_link *p, *q;
-    int i;
+    long long int i;
 
     if( q_hash_tbl ) {
         for( i=0; i<q_hash_size; i++ ) {
@@ -795,7 +795,7 @@ HECMW_mesh_hsort_tsuf( int node1, int node2, int node3 )
 {
     int n1, n2, n3, m1, m2, m3;
     int tid;
-    int idx;
+    long long int idx;
     size_t ndot1, ndot;
     struct hecmw_mesh_hash_link *p;
 
@@ -853,7 +853,7 @@ HECMW_mesh_hsort_qsuf( int node1, int node2, int node3, int node4 )
 {
     int n1, n2, n3, n4, m1, m2, m3, m4;
     int qid;
-    int idx;
+    long long int idx;
     size_t ndot1, ndot2, ndot;
     struct hecmw_mesh_hash_link *p;
 
