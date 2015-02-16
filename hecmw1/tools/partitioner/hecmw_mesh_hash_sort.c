@@ -749,7 +749,7 @@ HECMW_mesh_hsort_edge( int node1, int node2 )
     reorder_node_edge( node1, node2, &n1, &n2 );
 
 
-    ndot = ((size_t)n1 % e_hash_size) * ((size_t)n2 % e_hash_size);
+    ndot = ((size_t)n1 % e_hash_size) + ((size_t)n2 % e_hash_size);
     idx = ndot % e_hash_size;
 
     for( p=e_hash_tbl[idx]; p; p=p->next ) {
