@@ -194,8 +194,22 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
     int start, end;
     int retval;
 
-    clear(graph);
-    HECMW_graph_setNumVertex(graph, num_part);
+    struct hecmw_varray_int *lists;
+    size_t n_edge;
+    int *edge_index;
+    int *edge_item;
+
+    lists = (struct hecmw_varray_int *)
+            malloc(sizeof(struct hecmw_varray_int) * num_part);
+    if (lists == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+    }
+    for (i = 0; i < num_part; i++) {
+        retval = HECMW_varray_int_init(lists + i);
+        if (retval != HECMW_SUCCESS) goto error;
+    }
+
     for (i = 0; i < HECMW_graph_getNumVertex(refgraph); i++) {
         i_part = parttab[i];
         start = ref_edge_index[i];
@@ -204,11 +218,49 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
             jj = ref_edge_item[j];
             j_part = parttab[jj];
             if (i_part == j_part) continue;
-            retval = HECMW_graph_addEdge(graph, i_part, j_part);
-            if (retval != HECMW_SUCCESS) return HECMW_ERROR;
+            retval = HECMW_varray_int_append(lists + i_part, j_part);
+            if (retval != HECMW_SUCCESS) goto error;
+            retval = HECMW_varray_int_append(lists + j_part, i_part);
+            if (retval != HECMW_SUCCESS) goto error;
         }
     }
+
+    clear(graph);
+    HECMW_graph_setNumVertex(graph, num_part);
+    edge_index = HECMW_varray_int_get_v(graph->m_edge_index);
+
+    edge_index[0] = 0;
+    for (i = 0; i < num_part; i++) {
+        HECMW_varray_int_sort(lists + i);
+        HECMW_varray_int_uniq(lists + i);
+        n_edge = HECMW_varray_int_nval(lists + i);
+        edge_index[i+1] = edge_index[i] + n_edge;
+    }
+    graph->m_num_edge = edge_index[num_part];
+    HECMW_varray_int_resize(graph->m_edge_item, graph->m_num_edge);
+    edge_item = HECMW_varray_int_get_v(graph->m_edge_item);
+    for (i = 0; i < num_part; i++) {
+        start = edge_index[i];
+        n_edge = HECMW_varray_int_nval(lists + i);
+        for (j = 0; j < n_edge; j++) {
+            edge_item[start+j] = HECMW_varray_int_get(lists + i, j);
+        }
+    }
+
+    for (i = 0; i < num_part; i++) {
+        HECMW_varray_int_finalize(lists + i);
+    }
+    HECMW_free(lists);
     return HECMW_SUCCESS;
+
+error:
+    if (lists) {
+        for (i = 0; i < num_part; i++) {
+            HECMW_varray_int_finalize(lists + i);
+        }
+        HECMW_free(lists);
+    }
+    return HECMW_ERROR;
 }
 
 /***********************************
