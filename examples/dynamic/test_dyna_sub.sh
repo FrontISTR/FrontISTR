@@ -115,7 +115,7 @@ run () {
 	displog=${1}.disp.txt
 	fg_shell=${2}
 	rm 0.log
-	rm dyna_disp_p1.txt
+	rm dyna_*.txt
 	${launcher} -f ${fstr} -l ${log} ${mesh} ${cnt} ${res} ${vis}
 	if [ -e "0.log" ]; then
 		if [ "${fg_shell}" = "true" ]; then
