@@ -302,9 +302,9 @@ module hecmw_matrix_ass
    subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS, conMAT)
       type (hecmwST_matrix)     :: hecMAT
       integer(kind=kint) :: inode, idof
-      real(kind=kreal) :: RHS
+      real(kind=kreal) :: RHS, val
       type (hecmwST_matrix),optional     :: conMAT
-      integer(kind=kint) :: NDOF, in, i, ii, iii, ndof2, k, iS, iE, iiS, iiE, ik
+      integer(kind=kint) :: NDOF, in, i, ii, iii, ndof2, k, iS, iE, iiS, iiE, ik, idx
 
       NDOF = hecMAT%NDOF
       if( NDOF < idof ) return
@@ -318,13 +318,14 @@ module hecmw_matrix_ass
 
       DO i = NDOF-1,0,-1
         IF( i .NE. NDOF-idof ) THEN
+          idx = NDOF*inode-i
+          val = hecMAT%D(ndof2*inode-ii)*RHS
 !$omp atomic
-          hecMAT%B(NDOF*inode-i) = hecMAT%B(NDOF*inode-i)        &
-                                 - hecMAT%D(ndof2*inode-ii)*RHS
+          hecMAT%B(idx) = hecMAT%B(idx) - val
           if(present(conMAT)) then
+            val = conMAT%D(ndof2*inode-ii)*RHS
 !$omp atomic
-            conMAT%B(NDOF*inode-i) = conMAT%B(NDOF*inode-i)        &
-                                   - conMAT%D(ndof2*inode-ii)*RHS
+            conMAT%B(idx) = conMAT%B(idx) - val
           endif
         ENDIF
         ii = ii - NDOF
@@ -373,14 +374,15 @@ module hecmw_matrix_ass
           if (hecMAT%itemU(ik) .eq. inode) then
             iii = ndof2 - idof
             DO i = NDOF-1,0,-1
+              idx = NDOF*in-i
+              val = hecMAT%AU(ndof2*ik-iii)*RHS
 !$omp atomic
-              hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
-                                  - hecMAT%AU(ndof2*ik-iii)*RHS
+              hecMAT%B(idx) = hecMAT%B(idx) - val
               hecMAT%AU(ndof2*ik-iii)= 0.d0
               if(present(conMAT)) then
+                val = conMAT%AU(ndof2*ik-iii)*RHS
 !$omp atomic
-                conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
-                                    - conMAT%AU(ndof2*ik-iii)*RHS
+                conMAT%B(idx) = conMAT%B(idx) - val
                 conMAT%AU(ndof2*ik-iii)= 0.d0
               endif
               iii = iii - NDOF
@@ -412,14 +414,15 @@ module hecmw_matrix_ass
             iii  = ndof2 - idof
 
             DO i = NDOF-1, 0, -1
+              idx = NDOF*in-i
+              val = hecMAT%AL(ndof2*ik-iii)*RHS
 !$omp atomic
-              hecMAT%B(NDOF*in-i) = hecMAT%B(NDOF*in-i)      &
-                                  - hecMAT%AL(ndof2*ik-iii)*RHS
+              hecMAT%B(idx) = hecMAT%B(idx) - val
               hecMAT%AL(ndof2*ik-iii) = 0.d0
               if(present(conMAT)) then
+                val = conMAT%AL(ndof2*ik-iii)*RHS
 !$omp atomic
-                conMAT%B(NDOF*in-i) = conMAT%B(NDOF*in-i)      &
-                                    - conMAT%AL(ndof2*ik-iii)*RHS
+                conMAT%B(idx) = conMAT%B(idx) - val
                 conMAT%AL(ndof2*ik-iii) = 0.d0
               endif
               iii = iii - NDOF
