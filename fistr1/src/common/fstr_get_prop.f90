@@ -95,12 +95,7 @@ contains
         if ( n_subitem.ge.2 ) then
           pp=hecMESH%material%mat_val(mpos+2)
         endif
-        alpha_over_mu=1.0D-3
-        if ( n_subitem.ge.3 ) then
-          alpha_over_mu=hecMESH%material%mat_val(mpos+3)
-        endif
         if ( n_subitem.ge.9 ) then
-          alpha_over_mu = 0.0D0
           beam_radius = hecMESH%material%mat_val(mpos+3)
           beam_angle1 = hecMESH%material%mat_val(mpos+4)
           beam_angle2 = hecMESH%material%mat_val(mpos+5)
@@ -127,7 +122,6 @@ contains
       if ( n_subitem.ge.1 ) then
         rho=hecMESH%material%mat_val(mpos+1)
       endif
-      alpha_over_mu=1.0D-3
       if ( n_subitem.ge.2 ) then
         alpha_over_mu=hecMESH%material%mat_val(mpos+2)
       endif
@@ -173,7 +167,7 @@ contains
       shell_variables(1) = hecMESH%material%mat_val(mpos+1)
       shell_variables(2) = hecMESH%material%mat_val(mpos+2)
       shell_variables(3) = thick
-      write(IMSG,*) '###Warning : Old format of shell properties'
+      write(ISTA,*) '###Warning : Old format of shell properties'
     elseif( n_subitem == 3) then
       n_totallayer_ls = 1
       shell_matltype = 0
