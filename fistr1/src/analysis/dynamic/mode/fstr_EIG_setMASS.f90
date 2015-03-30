@@ -68,11 +68,11 @@ contains
       numn  = hecMAT%N
       NDOF  = hecMESH%n_dof
 !C
-      myEIG%mass = 0.
+      myEIG%mass = 0.0d0
 !C
 !C**FOR ALL FINITE ELEMENTS
       head   = 0
-      smax   = 0.0
+      smax   = 0.0d0
 !C
       do itype = 1, hecMESH%n_elem_type
         iS = hecMESH%elem_type_index(itype-1) + 1
@@ -131,20 +131,30 @@ contains
             CALL mass_c3d20( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ic_type.EQ.731 ) then
             call face3( xx,yy,zz,AA )
-            val = AA/3.0*thick*rho
+            val = AA/3.0d0*thick*rho
           elseif( ic_type.EQ.741 ) then
             call face4( xx,yy,zz,AA )
-            val = AA/4.0*thick*rho
-          elseif( ic_type.EQ.781 ) then
-            CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            val = AA/4.0d0*thick*rho
           elseif( ic_type.EQ.761 ) then
-            CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            call face3( xx,yy,zz,AA )
+            val = AA/3.0d0*thick*rho
+          elseif( ic_type.EQ.781 ) then
+            call face4( xx,yy,zz,AA )
+            val = AA/4.0d0*thick*rho
           elseif( ( ic_type.EQ.611 ) .or. ( ic_type.EQ.641 ) ) then
             AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
                        +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
                        +( zz(2)-zz(1) )*( zz(2)-zz(1) ) )
             a = hecMESH%section%sect_R_item(ihead+4)
             val = 0.5D0*AA*a*rho
+          elseif(ic_type.EQ.301) then
+            AA = DSQRT( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
+                       +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
+                       +( zz(2)-zz(1) )*( zz(2)-zz(1) ) )
+            a = hecMESH%section%sect_R_item(ihead+1)
+            val = 0.5D0*AA*a*rho
+          else
+            write(*,*)"ERROR:setMASS"
           endif
 !C
           do j = 1,nn
@@ -187,9 +197,9 @@ contains
               !myEIG%mass(js+4) = myEIG%mass(js+4) + val*beam_area/12.0
               !myEIG%mass(js+5) = myEIG%mass(js+5) + val*beam_area/12.0
               !myEIG%mass(js+6) = myEIG%mass(js+6) + val*beam_area/12.0
-              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0
-              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0
-              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0
+              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0d0
+              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0d0
+              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0d0
             elseif( ic_type.EQ.641 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) ) THEN
                myEIG%mass(js+1) = myEIG%mass(js+1)+val
@@ -203,6 +213,10 @@ contains
                myEIG%mass(js+2) = myEIG%mass(js+2)+0.0D0
                myEIG%mass(js+3) = myEIG%mass(js+3)+0.0D0
               END IF
+            elseif( ic_type.EQ.301 ) then
+               myEIG%mass(js+1) = myEIG%mass(js+1)+val
+               myEIG%mass(js+2) = myEIG%mass(js+2)+val
+               myEIG%mass(js+3) = myEIG%mass(js+3)+val
             else
               jj = NDOF*( j-1 )
               do k = 1, NDOF

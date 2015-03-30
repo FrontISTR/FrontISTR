@@ -322,7 +322,7 @@ contains
             IF(EEE.LT.0.0) EEE=0.0
             WWW=DSQRT(EEE)
             FFF=WWW*0.5/PI
-            WRITE(IOUT,'(I5,5E15.6)') kcount,EEE,WWW,FFF
+            WRITE(IOUT,'(I5,1P5E15.6)') kcount,EEE,WWW,FFF
             if( kcount.EQ.NGET ) go to 41
           endif
    40   CONTINUE
