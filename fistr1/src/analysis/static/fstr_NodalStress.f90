@@ -382,7 +382,7 @@ contains
         if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
       enddo
       !C** average over nodes (truss + shell33)
-      if( truss == 1 ) then
+      if( truss == 1  .or. truss == 2 ) then
         do i = 1, hecMESH%nn_internal
           if( nnumber(i) == 0 ) cycle
           fstrSOLID%STRAIN(12*i-11:12*i-6) = fstrSOLID%STRAIN(12*i-11:12*i-6) + trstrain(i,1:6) / nnumber(i)
@@ -409,7 +409,7 @@ contains
         if( associated(tnstrain) ) tnstrain(6*i-5:6*i) = tnstrain(6*i-5:6*i) / nnumber(i)
       enddo
       !C** average over nodes (truss)
-      if( truss == 1 ) then
+      if( truss == 1 .or. truss == 2 ) then
         do i = 1, hecMESH%nn_internal
           if( nnumber(i) == 0 ) cycle
           fstrSOLID%STRAIN(6*i-5:6*i)   = fstrSOLID%STRAIN(6*i-5:6*i)   + trstrain(i,1:6) / nnumber(i)
@@ -431,7 +431,7 @@ contains
     endif
 
     deallocate( nnumber )
-    if( truss == 1 ) then
+    if( truss == 1 .or. truss == 2 ) then
       deallocate( trstrain, trstress )
       deallocate( tnumber )
     endif
