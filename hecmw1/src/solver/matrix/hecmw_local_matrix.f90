@@ -583,11 +583,11 @@ contains
 
     !write(0,*) 'DEBUG: nr, nc =',nr,nc
 
-    if (nr /= nc) then
-      stop 'ERROR: nr /= nc'
-    endif
+    ! if (nr /= nc) then
+    !   stop 'ERROR: nr /= nc'
+    ! endif
     hecTKT%N =hecMAT%N
-    hecTKT%NP=nr
+    hecTKT%NP=nc
     hecTKT%NDOF=ndof
 
     allocate(hecTKT%D(nc*ndof2))
