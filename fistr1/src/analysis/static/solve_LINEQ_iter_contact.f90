@@ -133,9 +133,7 @@ contains
     ! make transformation matrix and its transpose
     call make_BTmat(hecMAT, fstrMAT, iw2, wSL, BTmat)
     !call hecmw_localmat_write(BTmat, 0)
-    ! call make_BTtmat(hecMAT, fstrMAT, iw2, iwS, wSU, BTtmat)
-    !call hecmw_localmat_write(BTtmat, 0)
-    if (DEBUG > 0) write(0,*) myrank, 'DEBUG: Making BTmat and BTtmat done', hecmw_wtime()-t1
+    if (DEBUG > 0) write(0,*) myrank, 'DEBUG: Making BTmat done', hecmw_wtime()-t1
 
     if (hecMESH%n_neighbor_pe > 0) then
       ! update communication table
@@ -148,7 +146,11 @@ contains
       hecMESHtmp => hecMESH
       BT_all => BTmat
     end if
-    call hecmw_localmat_transpose(BT_all, BTtmat)
+
+    ! call hecmw_localmat_transpose(BT_all, BTtmat)
+    call make_BTtmat(hecMAT, fstrMAT, iw2, iwS, wSU, BTtmat)
+    !call hecmw_localmat_write(BTtmat, 0)
+    if (DEBUG > 0) write(0,*) myrank, 'DEBUG: Making BTtmat done', hecmw_wtime()-t1
 
     ! calc trimatmul in hecmwST_matrix data structure
     call hecmw_mat_init(hecTKT)
