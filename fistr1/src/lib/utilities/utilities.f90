@@ -365,4 +365,84 @@ module m_utilities
 
   end subroutine transformation
 
+  subroutine get_principal(tensor,princ)
+    implicit none
+    real(kind=kreal) :: tensor(1:6)
+    real(kind=kreal) :: princ(1:3)
+    real(kind=kreal) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
+    real(kind=kreal) :: p,q,ks1,ks2,ks3,a,b,c,d
+    complex(kind=kreal):: x1,x2,x3
+    real(kind=kreal):: t1,t2,t3,tt
+    
+    s11 = tensor(1)
+    s22 = tensor(2)
+    s33 = tensor(3)
+    s12 = tensor(4)
+    s23 = tensor(5)
+    s13 = tensor(6)
+
+    !応力テンソルの１～３次不変量
+    j1 = s11 + s22 + s33
+    j2 = -s11*s22 - s22*s33 - s33*s11 + s12**2 + s23**2 + s13**2
+    j3 = s11*s22*s33 + 2*s12*s23*s13 - s11*s23**2 - s22*s13**2 - s33*s12**2
+    !Cardanoの方法
+    ! x^3+ ax^2   + bx  +c =0
+    ! s^3 - J1*s^2 -J2s -J3 =0
+    !より
+    ! (ks) = x + (b/3a)とおけば
+    ! (ks)^3 + 3p(ks) + q = 0 とかける．
+    !ただし，p = (3ac-b^2)/(9a^2), q = (2b^3 -9abc +27a^2d)/27a^3である．
+    call cardona(-j1, -j2, -j3, x1, x2, x3)   
+    t1= real(x1)
+    t2= real(x2)
+    t3= real(x3)
+    if (t1<t2)  then
+      tt=t1
+      t1=t2
+      t2=tt
+    end if
+    if (t1<t3)  then
+      tt=t1
+      t1=t3
+      t3=tt
+    end if
+    if (t2<t3)  then
+      tt=t2
+      t2=t3
+      t3=tt
+    end if
+    princ(1)=t1
+    princ(2)=t2
+    princ(3)=t3
+    
+
+  end subroutine get_principal
+  
+  subroutine cardona(a,b,c,x1,x2,x3)
+    real(kind=kreal):: a,b,c
+    real(kind=kreal):: p,q,d
+    complex(kind=kreal):: w
+    complex(kind=kreal):: u,v,y
+    complex(kind=kreal):: x1,x2,x3
+    w = (-1.0d0 + sqrt(cmplx(-3.0d0)))/2.0d0
+    p = -a**2/9.0d0 + b/3.0d0
+    q = 2.0d0/2.7d1*a**3 - a*b/3.0d0 + c
+    d = q**2 + 4.0d0*p**3
+
+    u = ((-cmplx(q) + sqrt(cmplx(d)))/2.0d0)**(1.0d0/3.0d0)
+
+    if(u.ne.0.0d0) then
+      v = -cmplx(p)/u
+      x1 = u + v -cmplx(a)/3.0d0
+      x2 = u*w + v*w**2 -cmplx(a)/3.0d0
+      x3 = u*w**2 + v*w -cmplx(a)/3.0d0
+    else
+      y = (-cmplx(q))**(1.0d0/3.0d0)
+      x1 = y -cmplx(a)/3.0d0
+      x2 = y*w -cmplx(a)/3.0d0
+      x3 = y*w**2 -cmplx(a)/3.0d0
+    end if
+    
+  end subroutine cardona
+
 end module
