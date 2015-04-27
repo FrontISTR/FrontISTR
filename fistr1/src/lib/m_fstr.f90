@@ -204,6 +204,30 @@ public
 !C
 !> Data for STATIC ANSLYSIS  (fstrSOLID)
 !C
+        type fstr_solid_physic_val
+								! If using shell, substitute average value for this structure. and Substitute Plus and Minus for SHELL_PLUS and SHELL_MINUS 
+								! If using laminated shell, substitute average whole laminated elements value for this structure. and Substitute whole average plus and minus for SHELL_PLUS and SHELL_MINUS 
+								! And substitute each laminated shell's value for layer(1,2,3,4,)
+								
+                real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
+                real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
+                real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
+                real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
+                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+
+                real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
+                real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
+                real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
+                real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
+                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+
+
+                type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
+                type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
+                type(fstr_solid_physic_val), pointer :: MINUS    !< for SHELL MINUS
+                
+        end type fstr_solid_physic_val
+
         type fstr_solid
 
                 integer(kind=kint) :: file_type  ! kbcfFSTR or kbcfNASTRAN
@@ -281,10 +305,23 @@ public
                 ! VALUE
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
+                real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
+                real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
+                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+
                 real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
-                !real(kind=kreal), pointer :: ESECTSTRESS(:)   !< elemental sectional force
+                real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
+                real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
+                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+                
+                type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
 
+                type(fstr_solid_physic_val), pointer       :: SHELL=>null()     !< for shell physical value stracture
+                type(fstr_solid_physic_val), pointer       :: BEAM=>null()     !<for beam physical value stracture
+                
+				
+				
                 ! ANALYSIS CONTROL for NLGEOM
                 integer(kind=kint) :: restart_nout  !< output interval of restart file
                                                      !< (if  .gt.0) restart file write

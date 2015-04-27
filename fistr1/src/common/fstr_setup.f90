@@ -1196,25 +1196,37 @@ end subroutine
          .or. P%PARAM%solution_type == 6 ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 ) then
-                        allocate ( P%SOLID%STRAIN  (12*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (14*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
-                        !allocate ( P%SOLID%ESECTSTRESS (6*ntot_lyr*P%MESH%n_elem))
-                        !P%SOLID%ESECTSTRESS = 0.d0
+                !       P%SOLID%output_ctrl(3)%outinfo%vtype(20)      これで場合分け
+                        allocate ( P%SOLID%SHELL )
+                        allocate ( P%SOLID%SHELL%STRAIN  (12*ntot_lyr*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%STRESS  (14*ntot_lyr*P%MESH%n_node))
+!                        allocate ( P%SOLID%SHELL%ESTRAIN  (6*ntot_lyr*P%MESH%n_elem)) こうしたい．
+!                        allocate ( P%SOLID%SHELL%ESTRESS  (6*ntot_lyr*P%MESH%n_elem))
+!                        allocate ( P%SOLID%SHELL%EMISES  (ntot_lyr*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
+                        P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
+                        P%SOLID%STRESS => P%SOLID%SHELL%STRESS
+                        P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
+                        P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
                 elseif( mixedflag == 1) then
                         allocate ( P%SOLID%STRAIN  (12*ntot_lyr*P%MESH%n_node))
                         allocate ( P%SOLID%STRESS  (14*ntot_lyr*P%MESH%n_node))
                         allocate ( P%SOLID%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
                         allocate ( P%SOLID%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
-                        !allocate ( P%SOLID%ESECTSTRESS (6*ntot_lyr*P%MESH%n_elem))
-                        !P%SOLID%ESECTSTRESS = 0.d0
                 else
-                        allocate ( P%SOLID%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (7*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (7*P%MESH%n_elem))
+                        allocate ( P%SOLID%SOLID )
+                        allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SOLID%STRESS  (7*P%MESH%n_node))
+                        allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SOLID%ESTRESS  (7*P%MESH%n_elem))
+                        P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
+                        P%SOLID%STRESS => P%SOLID%SOLID%STRESS
+                        P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
+                        P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
                 end if
+
+                
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
                 P%SOLID%ESTRAIN = 0.d0
