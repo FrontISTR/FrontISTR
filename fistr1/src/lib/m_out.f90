@@ -24,7 +24,7 @@ module m_out
   use hecmw
   implicit none
 
-  integer, parameter, private :: MAXOUT = 20
+  integer, parameter, private :: MAXOUT = 256
   integer, parameter, private :: MAXNAMELEN = 16
   character(len=20), parameter, private :: OUTFILENAME = "ifstr.out"
 
@@ -59,7 +59,7 @@ subroutine initOutInfo( outinfo )
   outinfo%grp_id_name = "ALL"
   outinfo%grp_id      = -1
   outinfo%on(:)       = .false.
-  outinfo%num_items   = 18
+  outinfo%num_items   = 22
 
   outinfo%keyWord(1)  = "DISP"
   outinfo%vtype(1)    = -2
@@ -120,6 +120,16 @@ subroutine initOutInfo( outinfo )
   outinfo%keyWord(18) = "ROT"
   outinfo%vtype(18)   = -2
 
+  outinfo%keyWord(19) = "PRINC_STRESS"
+  outinfo%vtype(19)   = -2
+
+  outinfo%keyWord(20) = "PRINC_ESTRESS"
+  outinfo%vtype(20)   = -2
+  outinfo%keyWord(21) = "PRINC_STRAIN"
+  outinfo%vtype(21)   = -2
+  outinfo%keyWord(22) = "PRINC_ESTRAIN"
+  outinfo%vtype(22)   = -2
+	
 end subroutine initOutInfo
 
 
