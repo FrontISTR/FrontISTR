@@ -120,12 +120,12 @@ subroutine initOutInfo( outinfo )
   outinfo%keyWord(18) = "ROT"
   outinfo%vtype(18)   = -2
 
-  outinfo%keyWord(19) = "PRINC_STRESS"
+  outinfo%keyWord(19) = "PRINC_NSTRESS"
   outinfo%vtype(19)   = -2
 
   outinfo%keyWord(20) = "PRINC_ESTRESS"
   outinfo%vtype(20)   = -2
-  outinfo%keyWord(21) = "PRINC_STRAIN"
+  outinfo%keyWord(21) = "PRINC_NSTRAIN"
   outinfo%vtype(21)   = -2
   outinfo%keyWord(22) = "PRINC_ESTRAIN"
   outinfo%vtype(22)   = -2

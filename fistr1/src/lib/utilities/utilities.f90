@@ -414,7 +414,6 @@ module m_utilities
     princ(1)=t1
     princ(2)=t2
     princ(3)=t3
-    
 
   end subroutine get_principal
   
@@ -424,23 +423,23 @@ module m_utilities
     complex(kind=kreal):: w
     complex(kind=kreal):: u,v,y
     complex(kind=kreal):: x1,x2,x3
-    w = (-1.0d0 + sqrt(cmplx(-3.0d0)))/2.0d0
+    w = (-1.0d0 + sqrt(dcmplx(-3.0d0)))/2.0d0
     p = -a**2/9.0d0 + b/3.0d0
     q = 2.0d0/2.7d1*a**3 - a*b/3.0d0 + c
     d = q**2 + 4.0d0*p**3
 
-    u = ((-cmplx(q) + sqrt(cmplx(d)))/2.0d0)**(1.0d0/3.0d0)
+    u = ((-dcmplx(q) + sqrt(dcmplx(d)))/2.0d0)**(1.0d0/3.0d0)
 
     if(u.ne.0.0d0) then
-      v = -cmplx(p)/u
-      x1 = u + v -cmplx(a)/3.0d0
-      x2 = u*w + v*w**2 -cmplx(a)/3.0d0
-      x3 = u*w**2 + v*w -cmplx(a)/3.0d0
+      v = -dcmplx(p)/u
+      x1 = u + v -dcmplx(a)/3.0d0
+      x2 = u*w + v*w**2 -dcmplx(a)/3.0d0
+      x3 = u*w**2 + v*w -dcmplx(a)/3.0d0
     else
-      y = (-cmplx(q))**(1.0d0/3.0d0)
-      x1 = y -cmplx(a)/3.0d0
-      x2 = y*w -cmplx(a)/3.0d0
-      x3 = y*w**2 -cmplx(a)/3.0d0
+      y = (-dcmplx(q))**(1.0d0/3.0d0)
+      x1 = y -dcmplx(a)/3.0d0
+      x2 = y*w -dcmplx(a)/3.0d0
+      x3 = y*w**2 -dcmplx(a)/3.0d0
     end if
     
   end subroutine cardona

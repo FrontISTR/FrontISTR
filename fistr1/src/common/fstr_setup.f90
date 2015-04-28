@@ -1218,12 +1218,20 @@ end subroutine
                         allocate ( P%SOLID%SOLID )
                         allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
                         allocate ( P%SOLID%SOLID%STRESS  (7*P%MESH%n_node))
+                        allocate ( P%SOLID%SOLID%MISES  (P%MESH%n_node))
                         allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
                         allocate ( P%SOLID%SOLID%ESTRESS  (7*P%MESH%n_elem))
+                        allocate ( P%SOLID%SOLID%EMISES  (P%MESH%n_node))
+
+												
                         P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
                         P%SOLID%STRESS => P%SOLID%SOLID%STRESS
+                        P%SOLID%MISES => P%SOLID%SOLID%MISES
                         P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
                         P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
+
+                        P%SOLID%EMISES => P%SOLID%SOLID%EMISES
+
                 end if
 
                 
