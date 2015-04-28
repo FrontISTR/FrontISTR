@@ -56,6 +56,7 @@ contains
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     integer :: method_org, precond_org
     logical :: fg_eliminate
+    logical :: fg_amg
     integer(kind=kint) :: num_lagrange_global
 
     hecMAT%Iarray(97) = 1
@@ -67,6 +68,7 @@ contains
       call hecmw_mat_set_precond(hecMAT, precond_org - 20)
     else
       fg_eliminate = .true.
+      if (precond_org == 5) fg_amg = .true.
     endif
 
     num_lagrange_global = fstrMAT%num_lagrange
@@ -77,10 +79,13 @@ contains
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)
       call hecmw_mat_set_method(hecMAT, 1)
+      ! avoid ML when no contact
+      if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
       call hecmw_solve_33(hecMESH, hecMAT)
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
+      if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
     else
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: with contact'
       if (fg_eliminate) then
