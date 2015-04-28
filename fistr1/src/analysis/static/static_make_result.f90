@@ -284,22 +284,6 @@ module m_static_make_result
         endif
       endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	  ! --- STRAIN @element
       if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
         id = 2
@@ -707,8 +691,6 @@ module m_static_make_result
         nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )
       endif
     endif
-
-
 	
     ENDDO
 ! --- THERMAL STRAIN @node
@@ -1011,13 +993,6 @@ module m_static_make_result
           iitem = iitem + nn
         endif
       endif
-
-
-
-
-
-
-
 
 
   ENDDO
