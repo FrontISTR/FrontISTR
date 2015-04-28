@@ -263,7 +263,7 @@
       if ( RESID.le.TOL   ) then
 !C----- recompute R to make sure it is really converged
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
-        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
         RESID= dsqrt(DNRM2/BNRM2)
         if ( RESID.le.TOL ) exit
       endif
