@@ -460,22 +460,24 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     real(kind=kreal), intent(out) :: Bnew(:)
     real(kind=kreal), allocatable :: Btmp(:)
-    integer(kind=kint) :: n, ndof, i
+    integer(kind=kint) :: npndof, nndof, i
 
-    n=hecMAT%NP
-    ndof=hecMAT%NDOF
+    npndof=hecMAT%NP*hecMAT%NDOF
+    nndof=hecMAT%N*hecMAT%NDOF
 
-    allocate(Btmp(n*ndof))
+    allocate(Btmp(npndof))
 
     !B2=-Bs^-1*Blag
     Bnew=0.d0
     !write(0,*) hecMAT%B(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
     do i=1,num_lagrange
-      Bnew(iwS(i))=wSL(i)*hecMAT%B(hecMAT%NP*ndof+i)
+      Bnew(iwS(i))=wSL(i)*hecMAT%B(npndof+i)
     enddo
     !Btmp=B+K*B2
     call hecmw_matvec_33(hecMESH, hecMAT, Bnew, Btmp)
-    Btmp=hecMAT%B+Btmp
+    do i=1,nndof
+      Btmp(i)=hecMAT%B(i)+Btmp(i)
+    enddo
     !B2=BTtmat*Btmp
     call hecmw_localmat_mulvec(BTtmat, Btmp, Bnew)
 
