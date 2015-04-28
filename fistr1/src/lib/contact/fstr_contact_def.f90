@@ -330,7 +330,7 @@ contains
               contact%states(i)%tangentForce_final(:) =0.d0
             endif
             infoCTChange%contact2free = infoCTChange%contact2free + 1
-            write(*,'(A,i5,A,i5,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
+            write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
                         elemID(contact%master(id)%eid), " with tensile force ", nlforce
             cycle
           endif
@@ -391,7 +391,7 @@ contains
             if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
             infoCTChange%free2contact = infoCTChange%free2contact + 1
             active = .true.
-            write(*,'(A,i5,A,i5,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
+            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
                         elemID(contact%master(id)%eid),       &
                        " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
                        " along direction ", contact%states(i)%direction
@@ -520,7 +520,7 @@ contains
 	      if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  &
 	      infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         else
-          write(*,'(A,i5,A,i5,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
+          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
                         elemID(contact%master(sid)%eid), " with distance ",      &
                         contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
           infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
@@ -533,7 +533,7 @@ contains
         if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
       else if( .not. isin ) then
-        write(*,'(A,i5,A)') "Node",nodeID(slave)," move out of contact"
+        write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
         infoCTChange%contact2free = infoCTChange%contact2free+1
         contact%states(nslave)%state = CONTACTFREE
         contact%states(nslave)%multiplier(:) = 0.d0
