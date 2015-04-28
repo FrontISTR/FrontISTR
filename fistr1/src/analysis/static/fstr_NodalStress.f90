@@ -420,12 +420,12 @@ contains
 
 !C** calculate von MISES stress
     if( flag33 == 1 ) then
-      do i = 1, hecMESH%n_node
+      do i = 1, hecMESH%nn_internal
         fstrSOLID%STRESS(14*i-1) = get_mises(fstrSOLID%STRESS(14*i-13:14*i-8))
         fstrSOLID%STRESS(14*i  ) = get_mises(fstrSOLID%STRESS(14*i-7 :14*i-2))
       enddo
     else
-      do i = 1, hecMESH%n_node
+      do i = 1, hecMESH%nn_internal
         fstrSOLID%STRESS(7*i) = get_mises(fstrSOLID%STRESS(7*i-6:7*i-1))
       enddo
     endif
