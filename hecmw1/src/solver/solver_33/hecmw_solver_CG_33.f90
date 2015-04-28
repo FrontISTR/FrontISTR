@@ -75,6 +75,7 @@
       integer(kind=kint) ::ESTCOND
       real   (kind=kreal), allocatable::D(:),E(:)
       real   (kind=kreal)::ALPHA1
+      integer(kind=kint) :: n_indef_precond
 
       call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
@@ -99,6 +100,7 @@
       ESTCOND = hecmw_mat_get_estcond( hecMAT )
 
       ERROR = 0
+      n_indef_precond = 0
 
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
@@ -179,9 +181,12 @@
         ! converged due to RHO==0
         exit
       elseif (iter > 1 .and. RHO*RHO1 <= 0) then
-        ! diverged due to indefinite preconditioner
-        ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
-        exit
+        n_indef_precond = n_indef_precond + 1
+        if (n_indef_precond >= 3) then
+          ! diverged due to indefinite preconditioner
+          ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
+          exit
+        endif
       endif
 
 !C===
