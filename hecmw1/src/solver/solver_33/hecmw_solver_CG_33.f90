@@ -231,8 +231,16 @@
 !C===
       do i = 1, NNDOF
          X(i)  = X(i)    + ALPHA * WW(i,P)
-        WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
+
+      if (mod(ITER,50) == 0) then
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+      else
+        do i = 1, NNDOF
+          WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        enddo
+      endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
@@ -253,7 +261,13 @@
         if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_CG(ITER, D, E)
       endif
 
-      if ( RESID.le.TOL   ) exit
+      if ( RESID.le.TOL   ) then
+!C----- recompute R to make sure it is really converged
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        RESID= dsqrt(DNRM2/BNRM2)
+        if ( RESID.le.TOL ) exit
+      endif
       if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO
