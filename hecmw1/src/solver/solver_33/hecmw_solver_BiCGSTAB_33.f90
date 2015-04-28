@@ -225,8 +225,12 @@
 !C | OMEGA= ({t}{s}) / ({t}{t}) |
 !C +----------------------------+
 !C===
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,T), WW(:,S), CG(1), Tcomm)
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,T), WW(:,T), CG(2), Tcomm)
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,T), WW(:,S), CG(1))
+      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,T), WW(:,T), CG(2))
+      S_TIME= HECMW_WTIME()
+      call hecmw_allreduce_R(hecMESH, CG, 2, HECMW_SUM)
+      E_TIME= HECMW_WTIME()
+      Tcomm = Tcomm + E_TIME - S_TIME
 
       OMEGA = CG(1) / CG(2)
 
@@ -237,10 +241,18 @@
 !C===
       do i = 1, NNDOF
         X (i) = X(i) + ALPHA * WW(i,PT) + OMEGA * WW(i,ST)
-        WW(i,R) = WW(i,S) - OMEGA * WW(i,T)
       enddo
+!C
+!C--- recompute R sometimes
+      if ( mod(ITER,100)==0 ) then
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+      else
+        do i = 1, NNDOF
+          WW(i,R) = WW(i,S) - OMEGA * WW(i,T)
+        enddo
+      endif
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,S), WW(:,S), DNRM2, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
       RESID= dsqrt(DNRM2/BNRM2)
 
@@ -248,7 +260,13 @@
       if (my_rank.eq.0.and.ITERlog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
 !C#####
 
-      if ( RESID.le.TOL   ) exit
+      if ( RESID.le.TOL   ) then
+!C----- recompute R to make sure it is really converged
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2)
+        RESID= dsqrt(DNRM2/BNRM2)
+        if ( RESID.le.TOL ) exit
+      endif
       if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO
