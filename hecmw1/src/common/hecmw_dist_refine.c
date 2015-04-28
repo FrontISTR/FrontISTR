@@ -2850,6 +2850,60 @@ copy_amp_info( const struct hecmwST_amplitude *amp, struct hecmwST_amplitude *re
 }
 
 static int
+copy_contact_pair( const struct hecmwST_contact_pair *cp, struct hecmwST_contact_pair *ref_cp )
+{
+	int i;
+
+	ref_cp->n_pair = cp->n_pair;
+
+	/* name */
+	ref_cp->name = (char **) HECMW_malloc( sizeof(char *) * cp->n_pair );
+	if( ref_cp->name == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for ( i = 0; i < cp->n_pair; i++ ) {
+		ref_cp->name[i] = HECMW_strdup(cp->name[i]);
+		if( ref_cp->name[i] == NULL ) {
+			HECMW_set_error(errno, "");
+			return HECMW_ERROR;
+		}
+	}
+
+	/* type */
+	ref_cp->type = (int *) HECMW_malloc( sizeof(int) * cp->n_pair );
+	if( ref_cp->type == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for ( i = 0; i < cp->n_pair; i++ ) {
+		ref_cp->type[i] = cp->type[i];
+	}
+
+	/* slave_grp_id */
+	ref_cp->slave_grp_id = (int *) HECMW_malloc( sizeof(int) * cp->n_pair );
+	if( ref_cp->slave_grp_id == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for ( i = 0; i < cp->n_pair; i++ ) {
+		ref_cp->slave_grp_id[i] = cp->slave_grp_id[i];
+	}
+
+	/* master_grp_id */
+	ref_cp->master_grp_id = (int *) HECMW_malloc( sizeof(int) * cp->n_pair );
+	if( ref_cp->master_grp_id == NULL ) {
+		HECMW_set_error(errno, "");
+		return HECMW_ERROR;
+	}
+	for ( i = 0; i < cp->n_pair; i++ ) {
+		ref_cp->master_grp_id[i] = cp->master_grp_id[i];
+	}
+
+	return HECMW_SUCCESS;
+}
+
+static int
 copy_unchanging_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_mesh)
 {
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started copying unchanging info...\n", mesh->my_rank);
@@ -2863,6 +2917,7 @@ copy_unchanging_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_loca
 	if( copy_material_info( mesh->material, ref_mesh->material ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( copy_mpc_info( mesh->mpc, ref_mesh->mpc ) != HECMW_SUCCESS ) return HECMW_ERROR;
 	if( copy_amp_info( mesh->amp, ref_mesh->amp ) != HECMW_SUCCESS ) return HECMW_ERROR;
+	if( copy_contact_pair( mesh->contact_pair, ref_mesh->contact_pair ) != HECMW_SUCCESS ) return HECMW_ERROR;
 
 	HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished copying unchanging info.\n", mesh->my_rank);
 	return HECMW_SUCCESS;
