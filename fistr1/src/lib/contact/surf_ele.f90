@@ -93,13 +93,13 @@ contains
 !$omp parallel do default(none),private(i,ii,nd1,j,jj,nd2,oldsize,newsize,dumarray,k), &
 !$omp&shared(nsurf,surf)
     do i=1,nsurf
-      do ii=1, size(surf(i)%nodes)
-        nd1 = surf(i)%nodes(ii)
-        do j=1,nsurf
-          if( i==j ) cycle
-          if( associated(surf(i)%neighbor) ) then
-            if ( any( surf(i)%neighbor==j ) ) cycle
-          endif
+      JLOOP: do j=1,nsurf
+        if( i==j ) cycle
+        if( associated(surf(i)%neighbor) ) then
+          if ( any( surf(i)%neighbor==j ) ) cycle
+        endif
+        do ii=1, size(surf(i)%nodes)
+          nd1 = surf(i)%nodes(ii)
           do jj=1, size(surf(j)%nodes)
             nd2 = surf(j)%nodes(jj)
             if( nd1==nd2 ) then
@@ -124,10 +124,11 @@ contains
                 surf(i)%neighbor(surf(i)%n_neighbor) = j
               endif
 
+              cycle JLOOP
             endif
           enddo
         enddo
-      enddo
+      enddo JLOOP
     enddo
 !$omp end parallel do
 
