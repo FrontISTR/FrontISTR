@@ -20,7 +20,7 @@
 !======================================================================!
 
 module m_MatMatrix
-
+  use hecmw_util
 	use mMaterial
 	use mMechGauss
 	use m_ElasticLinear
@@ -32,7 +32,6 @@ module m_MatMatrix
 	use mUmat
 
 	implicit none
-	INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
 
 	contains
 

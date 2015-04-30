@@ -22,10 +22,9 @@
 !
 !======================================================================!
 module mHyperElastic
-
+  use hecmw_util
   use mMaterial
   implicit none
-  integer, parameter, private :: kreal = kind(0.0d0)
 
   contains
 

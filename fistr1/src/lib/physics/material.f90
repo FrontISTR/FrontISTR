@@ -15,12 +15,10 @@
 
 !> This module summarizes all infomation of material properties
 MODULE mMaterial
+  USE hecmw_util
   USE m_table
   USE Table_DICTS
   IMPLICIT NONE
-
-  INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
-
 
   ! Following algorithm type
       INTEGER, PARAMETER :: INFINITE = 0
@@ -116,15 +114,11 @@ MODULE mMaterial
       INTEGER, PARAMETER :: M_BEAM_ANGLE5 = 27
       INTEGER, PARAMETER :: M_BEAM_ANGLE6 = 28
 
-      ! 80~100, hardening parameter
 
-	!<********** Laminated Shell material properties  **********
-!		INTEGER, PARAMETER :: SHELL material properties = 101~220
-
-	!********** Use for i_variables **********
-		INTEGER, PARAMETER :: M_SHELL_SOLID = 298
-		INTEGER, PARAMETER :: M_TOTAL_LAYER = 299
-		INTEGER, PARAMETER :: M_SHELL_MATLTYPE = 300
+      !********** Use for i_variables **********
+      INTEGER, PARAMETER :: M_SHELL_SOLID = 298
+      INTEGER, PARAMETER :: M_TOTAL_LAYER = 299
+      INTEGER, PARAMETER :: M_SHELL_MATLTYPE = 300
 
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
@@ -142,6 +136,7 @@ MODULE mMaterial
     integer                    :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(300)    !< material properties
+    integer(kind=kint)         :: ivariables(10)    !< material properties fot integer
     integer                    :: cdsys_ID          !< ID of material coordinate system
     integer                    :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
@@ -157,10 +152,11 @@ MODULE mMaterial
     TYPE( tMaterial ), INTENT(INOUT) :: material
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
-    material%nlgeom_flag = INFINITE     ! Default: INFINITE ANALYSIS
-    material%variables = 0.d0            ! not defined yet
+    material%nlgeom_flag = INFINITE      ! Default: INFINITE ANALYSIS
+    material%variables =  0.d0           ! not defined yet
+    material%ivariables = 0              ! not defined yet
 
-	call dict_create( material%dict, 'INIT', DICT_NULL )
+    call dict_create( material%dict, 'INIT', DICT_NULL )
   END SUBROUTINE
 
 !> Initializer
