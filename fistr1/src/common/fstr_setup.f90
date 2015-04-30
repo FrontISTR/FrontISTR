@@ -72,10 +72,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         external fstr_ctrl_get_c_h_name
         integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
-        integer(kind=kint) :: version, resul, visual, femap, n_shell_layer, shell_matltype, mixedflag
+        integer(kind=kint) :: version, resul, visual, femap, n_totlyr, shell_ortho, mixedflag
         integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
-        real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu, shell_variables(200)
+        real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
         real(kind=kreal) :: beam_radius,                          &
                             beam_angle1, beam_angle2, beam_angle3,&
                             beam_angle4, beam_angle5, beam_angle6
@@ -294,48 +294,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               if( fstrPARAM%solution_type == kstNLSTATIC &
                    .or. fstrPARAM%solution_type==6 ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
-              call fstr_get_prop(hecMESH,i,ee,pp,rho,alpha,thick,&
-                            alpha_over_mu,n_shell_layer,&
-                            shell_matltype,shell_variables, &
+              call fstr_get_prop(hecMESH,fstrSOLID,cid,i,ee,pp,rho,alpha,thick,&
+                            alpha_over_mu,n_totlyr,shell_ortho, &
                             beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
                             beam_angle4,beam_angle5,beam_angle6)
-              fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-              fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
-              fstrSOLID%materials(cid)%variables(M_POISSON)=pp
-              fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-              fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
-              fstrSOLID%materials(cid)%variables(M_THICK)=thick
-              fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
-              fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
-              fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
-              fstrSOLID%materials(cid)%mtype = ELASTIC
-              !<**********  Laminated shell  **********
-              fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER)=n_shell_layer*1.0D0
-              fstrSOLID%materials(cid)%variables(M_SHELL_MATLTYPE)=shell_matltype*1.0D0
-              if (shell_matltype == 0)then
-                do k=1,n_shell_layer
-                  fstrSOLID%materials(cid)%variables(100+3*k-2)= shell_variables(3*k-2)    !<ee
-                  fstrSOLID%materials(cid)%variables(100+3*k-1)= shell_variables(3*k-1)    !<pp
-                  fstrSOLID%materials(cid)%variables(100+3*k  )= shell_variables(3*k  )    !<thickness
-                end do
-              elseif (shell_matltype == 1)then
-                do k=1,n_shell_layer
-                  fstrSOLID%materials(cid)%variables(100+8*k-7)= shell_variables(8*k-7)    !<ee
-                  fstrSOLID%materials(cid)%variables(100+8*k-6)= shell_variables(8*k-6)    !<pp
-                  fstrSOLID%materials(cid)%variables(100+8*k-5)= shell_variables(8*k-5)    !<thickness
-                  fstrSOLID%materials(cid)%variables(100+8*k-4)= shell_variables(8*k-4)    !<ee2
-                  fstrSOLID%materials(cid)%variables(100+8*k-3)= shell_variables(8*k-3)    !<g12
-                  fstrSOLID%materials(cid)%variables(100+8*k-2)= shell_variables(8*k-2)    !<g23
-                  fstrSOLID%materials(cid)%variables(100+8*k-1)= shell_variables(8*k-1)    !<g31
-                  fstrSOLID%materials(cid)%variables(100+8*k  )=(shell_variables(8*k  )/180.0d0)*dpi   !<theta
-                enddo
-              endif
-              !>**********  Laminated shell  **********
            enddo
          endif
 
@@ -704,14 +666,14 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
         endif
 
-        n_shell_layer = 1
+        n_totlyr = 1
         mixedflag = 0
 
         do i=1,hecMESH%section%n_sect
            cid = hecMESH%section%sect_mat_ID_item(i)
            n  = int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
-          if (n > n_shell_layer)then
-            n_shell_layer = n
+          if (n > n_totlyr)then
+            n_totlyr = n
           endif
         enddo
         do i=1,hecMESH%n_elem_type
@@ -721,7 +683,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           endif
         enddo
 
-        call fstr_setup_post( ctrl, P, n_shell_layer, mixedflag)
+        call fstr_setup_post( ctrl, P, n_totlyr, mixedflag)
         rcode = fstr_ctrl_close( ctrl )
 
 end subroutine fstr_setup

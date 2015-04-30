@@ -114,12 +114,6 @@ MODULE mMaterial
       INTEGER, PARAMETER :: M_BEAM_ANGLE5 = 27
       INTEGER, PARAMETER :: M_BEAM_ANGLE6 = 28
 
-
-      !********** Use for i_variables **********
-      INTEGER, PARAMETER :: M_SHELL_SOLID = 298
-      INTEGER, PARAMETER :: M_TOTAL_LAYER = 299
-      INTEGER, PARAMETER :: M_SHELL_MATLTYPE = 300
-
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -129,19 +123,32 @@ MODULE mMaterial
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
 
+  TYPE tshellmat
+    integer                    :: ortho
+    real(kind=kreal)           :: ee
+    real(kind=kreal)           :: pp
+    real(kind=kreal)           :: ee2
+    real(kind=kreal)           :: g12
+    real(kind=kreal)           :: g23
+    real(kind=kreal)           :: g31
+    real(kind=kreal)           :: thick
+    real(kind=kreal)           :: angle
+  END TYPE tshellmat
+
   !> Stucture to management all material relates data
   TYPE tMaterial
     integer                    :: nlgeom_flag       !< type of constitutive relation
     integer                    :: mtype             !< material type
     integer                    :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
-    real(kind=kreal)           :: variables(300)    !< material properties
-    integer(kind=kint)         :: ivariables(10)    !< material properties fot integer
+    real(kind=kreal)           :: variables(100)    !< material properties
+    type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
+    integer                    :: totallyr          !< total layer of element
     integer                    :: cdsys_ID          !< ID of material coordinate system
     integer                    :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
-  END TYPE
+  END TYPE tMaterial
 
   TYPE(tMaterial), ALLOCATABLE :: materials(:)
 
@@ -154,7 +161,7 @@ MODULE mMaterial
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITE      ! Default: INFINITE ANALYSIS
     material%variables =  0.d0           ! not defined yet
-    material%ivariables = 0              ! not defined yet
+    material%totallyr =  0               ! not defined yet
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
   END SUBROUTINE
