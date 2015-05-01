@@ -365,4 +365,147 @@ module m_utilities
 
   end subroutine transformation
 
+  SUBROUTINE get_principal (tensor, eigval, princmatrix)
+	
+    implicit none
+    integer i,j
+    real(kind=8) :: tensor(1:6)
+    real(kind=8) :: eigval(3)
+    real(kind=8) :: princmatrix(3,3)
+    real(kind=8) :: princnormal(3,3)
+    real(kind=8) :: tempv(3)
+    real(kind=8) :: temps
+  
+		call eigen3(tensor,eigval,princnormal)
+	  
+    if (eigval(1)<eigval(2)) then
+      temps=eigval(1)
+      eigval(1)=eigval(2)
+      eigval(2)=temps
+      tempv(:)=princnormal(:,1)
+      princnormal(:,1)=princnormal(:,2)
+      princnormal(:,2)=tempv(:)
+    end if
+    if (eigval(1)<eigval(3)) then
+      temps=eigval(1)
+      eigval(1)=eigval(3)
+      eigval(3)=temps
+      tempv(:)=princnormal(:,1)
+      princnormal(:,1)=princnormal(:,3)
+      princnormal(:,3)=tempv(:)
+    end if
+    if (eigval(2)<eigval(3)) then
+      temps=eigval(2)
+      eigval(2)=eigval(3)
+      eigval(3)=temps
+      tempv(:)=princnormal(:,2)
+      princnormal(:,2)=princnormal(:,3)
+      princnormal(:,3)=tempv(:)
+    end if
+		
+    do j=1,3
+      do i=1,3
+        princmatrix(i,j) = princnormal(i,j) * eigval(j)
+      end do
+    end do
+  
+  end subroutine get_principal
+  
+  SUBROUTINE eigen3d (tensor, eigval, princ)
+    implicit none
+
+    real(kind=8) :: tensor(6)     !< tensor
+    real(kind=8) :: eigval(3)     !< vector containing the eigvalches
+    real(kind=8) :: princ(3,3)   !< matrix containing the three principal column vectors
+
+    real(kind=8) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
+    real(kind=8) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
+    complex(kind=8):: x1,x2,x3
+    real(kind=8):: rtemp
+    real(kind=8) :: mat(3,4)   
+		integer :: i
+    s11 = tensor(1)
+    s22 = tensor(2)
+    s33 = tensor(3)
+    s12 = tensor(4)
+    s23 = tensor(5)
+    s13 = tensor(6)
+
+    !応力テンソルの１～３次不変量
+    j1 = s11 + s22 + s33
+    j2 = -s11*s22 - s22*s33 - s33*s11 + s12**2 + s23**2 + s13**2
+    j3 = s11*s22*s33 + 2*s12*s23*s13 - s11*s23**2 - s22*s13**2 - s33*s12**2
+    !Cardanoの方法
+    ! x^3+ ax^2   + bx  +c =0
+    ! s^3 - J1*s^2 -J2s -J3 =0
+    !より
+    call cardano(-j1, -j2, -j3, x1, x2, x3)   
+    eigval(1)= real(x1)
+    eigval(2)= real(x2)
+    eigval(3)= real(x3)
+    if (eigval(1)<eigval(2)) then
+      rtemp=eigval(1)
+      eigval(1)=eigval(2)
+      eigval(2)=rtemp
+    end if
+    if (eigval(1)<eigval(3)) then
+      rtemp=eigval(1)
+      eigval(1)=eigval(3)
+      eigval(3)=rtemp
+    end if
+    if (eigval(2)<eigval(3)) then
+      rtemp=eigval(2)
+      eigval(2)=eigval(3)
+      eigval(3)=rtemp
+    end if
+
+		do i=1,3
+      if (eigval(i)/(eigval(1)+eigval(2)+eigval(3)) < 1.0d-10 )then
+        eigval(i) = 0.0d0
+        princ(i,:) = 0.0d0
+        exit
+      end if
+      ml = ( s23*s13 - s12*(s33-eigval(i)) ) / ( -s23**2 + (s22-eigval(i))*(s33-eigval(i)) )
+     	nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) ) 
+      if (abs(ml) >= huge(ml)) then
+       ml=0.0d0
+      end if
+      if (abs(nl) >= huge(nl)) then
+       nl=0.0d0
+      end if      
+			princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
+			princ(i,2) = ml * princ(i,1)
+			princ(i,3) = nl * princ(i,1)
+		end do
+
+		write(*,*)
+  end subroutine eigen3d
+  
+  subroutine cardano(a,b,c,x1,x2,x3)
+    real(kind=8):: a,b,c
+    real(kind=8):: p,q,d
+    complex(kind=8):: w
+    complex(kind=8):: u,v,y
+    complex(kind=8):: x1,x2,x3
+    w = (-1.0d0 + sqrt(dcmplx(-3.0d0)))/2.0d0
+    p = -a**2/9.0d0 + b/3.0d0
+    q = 2.0d0/2.7d1*a**3 - a*b/3.0d0 + c
+    d = q**2 + 4.0d0*p**3
+
+    u = ((-dcmplx(q) + sqrt(dcmplx(d)))/2.0d0)**(1.0d0/3.0d0)
+
+    if(u.ne.0.0d0) then
+      v = -dcmplx(p)/u
+      x1 = u + v -dcmplx(a)/3.0d0
+      x2 = u*w + v*w**2 -dcmplx(a)/3.0d0
+      x3 = u*w**2 + v*w -dcmplx(a)/3.0d0
+    else
+      y = (-dcmplx(q))**(1.0d0/3.0d0)
+      x1 = y -dcmplx(a)/3.0d0
+      x2 = y*w -dcmplx(a)/3.0d0
+      x3 = y*w**2 -dcmplx(a)/3.0d0
+    end if
+    
+  end subroutine cardano
+
 end module

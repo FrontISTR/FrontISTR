@@ -871,7 +871,7 @@ int c_fstr_ctrl_get_data_v( fstr_ctrl_data* ctrl, int line_no, const char* forma
 
 int c_fstr_ctrl_get_data_array_v( fstr_ctrl_data* ctrl, const char* format, va_list va )
 {
-	#define MAX_DATA_ARRAY_NUMBER 20
+	#define MAX_DATA_ARRAY_NUMBER 256
 
 	int line_n;
 	int i,j;

@@ -338,7 +338,8 @@ contains
         enddo
 
 !--- calculate elemental stress and strain
-        if( ID_area == hecMESH%my_rank ) then
+!-- HECMWの仕様では内点外点含めてResファイルに出力するためnn_internalからn_nodeに変更．それにともないこのIF文をコメントアウト
+!        if( ID_area == hecMESH%my_rank ) then
           if( ic_type == 301 ) then
             call ElementStress_C1( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
           elseif( .not. (ic_type == 641 .or. ic_type == 781 .or. ic_type == 761 )) then
@@ -366,14 +367,14 @@ contains
             fstrSOLID%ESTRESS(7*icel) = get_mises(fstrSOLID%ESTRESS(7*icel-6:7*icel-1))
             !if( associated(testrain) ) testrain(6*icel-5:6*icel) = tstrain
           endif
-        endif
+!        endif
       enddo
       deallocate( func, inv_func )
     enddo
 
     if( flag33 == 1 ) then
 !C** average over nodes (normal + shell33)
-      do i = 1, hecMESH%nn_internal
+      do i = 1, hecMESH%n_node
         if( nnumber(i) == 0 ) cycle
         fstrSOLID%STRAIN(12*i-11:12*i-6) = ndstrain(6*i-5:6*i)   / nnumber(i)
         fstrSOLID%STRAIN(12*i-5 :12*i  ) = ndstrain(6*i-5:6*i)   / nnumber(i) !< copy
@@ -383,7 +384,7 @@ contains
       enddo
       !C** average over nodes (truss + shell33)
       if( truss == 1  .or. truss == 2 ) then
-        do i = 1, hecMESH%nn_internal
+        do i = 1, hecMESH%n_node
           if( nnumber(i) == 0 ) cycle
           fstrSOLID%STRAIN(12*i-11:12*i-6) = fstrSOLID%STRAIN(12*i-11:12*i-6) + trstrain(i,1:6) / nnumber(i)
           fstrSOLID%STRAIN(12*i-5 :12*i  ) = fstrSOLID%STRAIN(12*i-5 :12*i  ) + trstrain(i,1:6) / nnumber(i) !< copy
@@ -392,7 +393,7 @@ contains
         enddo
       endif
       !C** average over nodes (shell33)
-      do i = 1, hecMESH%nn_internal
+      do i = 1, hecMESH%n_node
         if( nnumber(i) == 0 ) cycle
         fstrSOLID%STRAIN(12*i-11:12*i-6) = fstrSOLID%STRAIN(12*i-11:12*i-6) + ndstrain_plus(i,1:6)  / nnumber(i)
         fstrSOLID%STRAIN(12*i-5 :12*i  ) = fstrSOLID%STRAIN(12*i-5 :12*i  ) + ndstrain_minus(i,1:6) / nnumber(i)
@@ -402,7 +403,7 @@ contains
 
     else
 !C** average over nodes (normal)
-      do i = 1, hecMESH%nn_internal
+      do i = 1, hecMESH%n_node
         if( nnumber(i) == 0 ) cycle
         fstrSOLID%STRAIN(6*i-5:6*i)   = ndstrain(6*i-5:6*i)   / nnumber(i)
         fstrSOLID%STRESS(7*i-6:7*i-1) = ndstress(7*i-6:7*i-1) / nnumber(i)
@@ -410,7 +411,7 @@ contains
       enddo
       !C** average over nodes (truss)
       if( truss == 1 .or. truss == 2 ) then
-        do i = 1, hecMESH%nn_internal
+        do i = 1, hecMESH%n_node
           if( nnumber(i) == 0 ) cycle
           fstrSOLID%STRAIN(6*i-5:6*i)   = fstrSOLID%STRAIN(6*i-5:6*i)   + trstrain(i,1:6) / nnumber(i)
           fstrSOLID%STRESS(7*i-6:7*i-1) = fstrSOLID%STRESS(7*i-6:7*i-1) + trstress(i,1:6) / nnumber(i)
