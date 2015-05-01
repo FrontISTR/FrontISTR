@@ -414,19 +414,19 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                 isect= hecMESH%section_ID(icel)
                                 ihead = hecMESH%section%sect_R_index(isect-1)
                                 thick = hecMESH%section%sect_R_item(ihead+1)
-                                nn = 4; ic_type = 741; mixflag = 1
-                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
-                                     stiff, thick, mixflag)
-                                ic_type = 781; nn = 8
+                                !nn = 4; ic_type = 741; mixflag = 1
+                                call STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
+                                     stiff, thick, 1)
+                                !ic_type = 781; nn = 8
                                 CYCLE
                         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
                                 isect= hecMESH%section_ID(icel)
                                 ihead = hecMESH%section%sect_R_index(isect-1)
                                 thick = hecMESH%section%sect_R_item(ihead+1)
-                                nn = 3; ic_type = 731; mixflag = 2
-                                call STF_Shell_MITC(ic_type, nn, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
-                                     stiff, thick, mixflag)
-                                ic_type = 761; nn = 6
+                                !nn = 3; ic_type = 731; mixflag = 2
+                                call STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, &
+                                     stiff, thick, 2)
+                                !ic_type = 761; nn = 6
                                 CYCLE
                         else if( ic_type == 641 ) THEN
                                 isect = hecMESH%section_ID(icel)

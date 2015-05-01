@@ -29,9 +29,9 @@
 
 !> This modules defines a structure to record history dependent parameter in static analysis
 MODULE mMechGauss
+  use hecmw_util
   use mMaterial
   IMPLICIT NONE
-  INTEGER, PARAMETER, PRIVATE :: kreal = kind(0.0d0)
 
 ! ----------------------------------------------------------------------------
         !> All data should be recorded in every quadrature points

@@ -21,12 +21,11 @@
 !
 !======================================================================!
 module mCreep
-
+  use hecmw_util
   use mMaterial
   use m_ElasticLinear
 
   implicit none
-  integer, parameter, private :: kreal = kind(0.0d0)
 
   contains
 
