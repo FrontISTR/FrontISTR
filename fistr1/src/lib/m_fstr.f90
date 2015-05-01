@@ -211,15 +211,22 @@ public
 								
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
+                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+
                 real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
                 real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+                real(kind=kreal), pointer :: PSTRESS_VECT(:)   !< nodal principal stress vector
+                real(kind=kreal), pointer :: PSTRAIN_VECT(:)   !< nodal principal strain vector
 
                 real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
+                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+
                 real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
                 real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+                real(kind=kreal), pointer :: EPSTRESS_VECT(:)   !< elemental principal stress vector
+                real(kind=kreal), pointer :: EPSTRAIN_VECT(:)   !< elemental principal strain vector
+				
 
 
                 type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
@@ -305,15 +312,21 @@ public
                 ! VALUE
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
+                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+
                 real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
                 real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+                real(kind=kreal), pointer :: PSTRESS_VECT(:,:)   !< nodal principal stress vector
+                real(kind=kreal), pointer :: PSTRAIN_VECT(:,:)   !< nodal principal strain vector
 
                 real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
+                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+
                 real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
                 real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-                real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+                real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
+                real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
                 
                 type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
 

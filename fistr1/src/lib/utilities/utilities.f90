@@ -365,15 +365,65 @@ module m_utilities
 
   end subroutine transformation
 
-  subroutine get_principal(tensor,princ)
+  SUBROUTINE get_principal (tensor, eigval, princmatrix)
+	
     implicit none
-    real(kind=kreal) :: tensor(1:6)
-    real(kind=kreal) :: princ(1:3)
-    real(kind=kreal) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
-    real(kind=kreal) :: p,q,ks1,ks2,ks3,a,b,c,d
-    complex(kind=kreal):: x1,x2,x3
-    real(kind=kreal):: t1,t2,t3,tt
-    
+    integer i,j
+    real(kind=8) :: tensor(1:6)
+    real(kind=8) :: eigval(3)
+    real(kind=8) :: princmatrix(3,3)
+    real(kind=8) :: princnormal(3,3)
+    real(kind=8) :: tempv(3)
+    real(kind=8) :: temps
+  
+		call eigen3(tensor,eigval,princnormal)
+	  
+    if (eigval(1)<eigval(2)) then
+      temps=eigval(1)
+      eigval(1)=eigval(2)
+      eigval(2)=temps
+      tempv(:)=princnormal(:,1)
+      princnormal(:,1)=princnormal(:,2)
+      princnormal(:,2)=tempv(:)
+    end if
+    if (eigval(1)<eigval(3)) then
+      temps=eigval(1)
+      eigval(1)=eigval(3)
+      eigval(3)=temps
+      tempv(:)=princnormal(:,1)
+      princnormal(:,1)=princnormal(:,3)
+      princnormal(:,3)=tempv(:)
+    end if
+    if (eigval(2)<eigval(3)) then
+      temps=eigval(2)
+      eigval(2)=eigval(3)
+      eigval(3)=temps
+      tempv(:)=princnormal(:,2)
+      princnormal(:,2)=princnormal(:,3)
+      princnormal(:,3)=tempv(:)
+    end if
+		
+    do j=1,3
+      do i=1,3
+        princmatrix(i,j) = princnormal(i,j) * eigval(j)
+      end do
+    end do
+  
+  end subroutine get_principal
+  
+  SUBROUTINE eigen3d (tensor, eigval, princ)
+    implicit none
+
+    real(kind=8) :: tensor(6)     !< tensor
+    real(kind=8) :: eigval(3)     !< vector containing the eigvalches
+    real(kind=8) :: princ(3,3)   !< matrix containing the three principal column vectors
+
+    real(kind=8) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
+    real(kind=8) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
+    complex(kind=8):: x1,x2,x3
+    real(kind=8):: rtemp
+    real(kind=8) :: mat(3,4)   
+		integer :: i
     s11 = tensor(1)
     s22 = tensor(2)
     s33 = tensor(3)
@@ -389,40 +439,54 @@ module m_utilities
     ! x^3+ ax^2   + bx  +c =0
     ! s^3 - J1*s^2 -J2s -J3 =0
     !より
-    ! (ks) = x + (b/3a)とおけば
-    ! (ks)^3 + 3p(ks) + q = 0 とかける．
-    !ただし，p = (3ac-b^2)/(9a^2), q = (2b^3 -9abc +27a^2d)/27a^3である．
-    call cardona(-j1, -j2, -j3, x1, x2, x3)   
-    t1= real(x1)
-    t2= real(x2)
-    t3= real(x3)
-    if (t1<t2)  then
-      tt=t1
-      t1=t2
-      t2=tt
+    call cardano(-j1, -j2, -j3, x1, x2, x3)   
+    eigval(1)= real(x1)
+    eigval(2)= real(x2)
+    eigval(3)= real(x3)
+    if (eigval(1)<eigval(2)) then
+      rtemp=eigval(1)
+      eigval(1)=eigval(2)
+      eigval(2)=rtemp
     end if
-    if (t1<t3)  then
-      tt=t1
-      t1=t3
-      t3=tt
+    if (eigval(1)<eigval(3)) then
+      rtemp=eigval(1)
+      eigval(1)=eigval(3)
+      eigval(3)=rtemp
     end if
-    if (t2<t3)  then
-      tt=t2
-      t2=t3
-      t3=tt
+    if (eigval(2)<eigval(3)) then
+      rtemp=eigval(2)
+      eigval(2)=eigval(3)
+      eigval(3)=rtemp
     end if
-    princ(1)=t1
-    princ(2)=t2
-    princ(3)=t3
 
-  end subroutine get_principal
+		do i=1,3
+      if (eigval(i)/(eigval(1)+eigval(2)+eigval(3)) < 1.0d-10 )then
+        eigval(i) = 0.0d0
+        princ(i,:) = 0.0d0
+        exit
+      end if
+      ml = ( s23*s13 - s12*(s33-eigval(i)) ) / ( -s23**2 + (s22-eigval(i))*(s33-eigval(i)) )
+     	nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) ) 
+      if (abs(ml) >= huge(ml)) then
+       ml=0.0d0
+      end if
+      if (abs(nl) >= huge(nl)) then
+       nl=0.0d0
+      end if      
+			princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
+			princ(i,2) = ml * princ(i,1)
+			princ(i,3) = nl * princ(i,1)
+		end do
+
+		write(*,*)
+  end subroutine eigen3d
   
-  subroutine cardona(a,b,c,x1,x2,x3)
-    real(kind=kreal):: a,b,c
-    real(kind=kreal):: p,q,d
-    complex(kind=kreal):: w
-    complex(kind=kreal):: u,v,y
-    complex(kind=kreal):: x1,x2,x3
+  subroutine cardano(a,b,c,x1,x2,x3)
+    real(kind=8):: a,b,c
+    real(kind=8):: p,q,d
+    complex(kind=8):: w
+    complex(kind=8):: u,v,y
+    complex(kind=8):: x1,x2,x3
     w = (-1.0d0 + sqrt(dcmplx(-3.0d0)))/2.0d0
     p = -a**2/9.0d0 + b/3.0d0
     q = 2.0d0/2.7d1*a**3 - a*b/3.0d0 + c
@@ -442,6 +506,6 @@ module m_utilities
       x3 = y*w**2 -dcmplx(a)/3.0d0
     end if
     
-  end subroutine cardona
+  end subroutine cardano
 
 end module

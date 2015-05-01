@@ -59,7 +59,7 @@ subroutine initOutInfo( outinfo )
   outinfo%grp_id_name = "ALL"
   outinfo%grp_id      = -1
   outinfo%on(:)       = .false.
-  outinfo%num_items   = 22
+  outinfo%num_items   = 26
 
   outinfo%keyWord(1)  = "DISP"
   outinfo%vtype(1)    = -2
@@ -129,7 +129,17 @@ subroutine initOutInfo( outinfo )
   outinfo%vtype(21)   = -2
   outinfo%keyWord(22) = "PRINC_ESTRAIN"
   outinfo%vtype(22)   = -2
-	
+
+  outinfo%keyWord(23) = "PRINCV_NSTRESS"
+  outinfo%vtype(23)   = -2
+  outinfo%keyWord(24) = "PRINCV_ESTRESS"
+  outinfo%vtype(24)   = -2
+  outinfo%keyWord(25) = "PRINCV_NSTRAIN"
+  outinfo%vtype(25)   = -2
+  outinfo%keyWord(26) = "PRINCV_ESTRAIN"
+  outinfo%vtype(26)   = -2
+
+  
 end subroutine initOutInfo
 
 
