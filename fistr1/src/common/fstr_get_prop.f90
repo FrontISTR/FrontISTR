@@ -21,17 +21,19 @@ contains
   !C*** GET_PROP for FSTR solver
   !C***
   !C
-  SUBROUTINE fstr_get_prop(hecMESH,fstrSOLID,cid,isect,ee,pp,rho,alpha,thick,alpha_over_mu,  &
-       n_totlyr,shell_ortho,  &
+  SUBROUTINE fstr_get_prop(hecMESH,shell_var,isect,ee,pp,rho,alpha,thick,n_totlyr,alpha_over_mu,  &
        beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
        beam_angle4,beam_angle5,beam_angle6)
     use m_fstr
+    use mMaterial
 
     implicit none
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    type(fstr_solid)   :: fstrSOLID
-    integer(kind=kint) :: cid
+    type (hecmwST_local_mesh) :: hecMESH
+    type (tshellmat), pointer :: shell_var(:)
+    integer(kind=kint) :: n_item, n_subitem, ihead, isect, mid, mpos
     integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
+    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
+    real(kind=kreal) :: beam_radius,beam_angle1,beam_angle2,beam_angle3,beam_angle4,beam_angle5,beam_angle6
 
     n_totlyr = 1
     shell_ortho = -1
@@ -80,10 +82,9 @@ contains
       mpos=hecMESH%material%mat_subITEM_index(ihead)
       !C Get SUBITEM of Meterial
       alpha_over_mu=1.0D-3
-      n_subitem_ls = n_subitem
       !<<********************   shell analysis   ********************
       if (section_type == 2)then
-        CALL fstr_get_prop_shell(hecMESH,fstrSOLID,cid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+        CALL fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
              n_totlyr,shell_ortho,mpos)
       else
         if( n_subitem .lt. 1 ) then
@@ -145,33 +146,17 @@ contains
       endif
     endif
 
-    fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-    fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
-    fstrSOLID%materials(cid)%variables(M_POISSON)=pp
-    fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-    fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
-    fstrSOLID%materials(cid)%variables(M_THICK)=thick
-    fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
-    fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
-    fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
-    fstrSOLID%materials(cid)%mtype = ELASTIC
-
   end subroutine fstr_get_prop
 
   !-----Modifed by N.Morita GSFS, Univ. of Tokyo ------------------------------------------------------
-  Subroutine fstr_get_prop_shell(hecMESH,fstrSOLID,cid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+  Subroutine fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
        n_totlyr,shell_ortho,mpos)
     use m_fstr
     implicit none
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    type(fstr_solid)   :: fstrSOLID
+    type (hecmwST_local_mesh) :: hecMESH
+    type (tshellmat),pointer :: shell_var(:)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
-    integer(kind=kint) :: cid, count, i, flag
+    integer(kind=kint) :: mid, count, i, flag
     integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
     integer(kind=kint) :: n_subitem, mpos
 
@@ -184,11 +169,11 @@ contains
       ee = hecMESH%material%mat_val(mpos+1)
       pp = hecMESH%material%mat_val(mpos+2)
 
-      allocate(fstrSOLID%materials(cid)%shell_var(1))
-      fstrSOLID%materials(cid)%shell_var(1)%ortho = 0
-      fstrSOLID%materials(cid)%shell_var(1)%ee = ee
-      fstrSOLID%materials(cid)%shell_var(1)%pp = pp
-      fstrSOLID%materials(cid)%shell_var(1)%thick = thick
+      allocate(shell_var(1))
+      shell_var(1)%ortho = 0
+      shell_var(1)%ee = ee
+      shell_var(1)%pp = pp
+      shell_var(1)%thick = thick
 
     elseif( n_subitem == 3) then
       n_totlyr = 1
@@ -197,11 +182,11 @@ contains
       pp = hecMESH%material%mat_val(mpos+2)
       thick=hecMESH%material%mat_val(mpos+3)
 
-      allocate(fstrSOLID%materials(cid)%shell_var(1))
-      fstrSOLID%materials(cid)%shell_var(1)%ortho = 0
-      fstrSOLID%materials(cid)%shell_var(1)%ee = ee
-      fstrSOLID%materials(cid)%shell_var(1)%pp = pp
-      fstrSOLID%materials(cid)%shell_var(1)%thick = thick
+      allocate(shell_var(1))
+      shell_var(1)%ortho = 0
+      shell_var(1)%ee = ee
+      shell_var(1)%pp = pp
+      shell_var(1)%thick = thick
 
       write(ISTA,*) '###NOTICE : shell thickness is updated'
 
@@ -212,39 +197,39 @@ contains
         if(flag==0)then
           n_totlyr=n_totlyr+1
           i=i+3
-        elseif(flag=1)then
+        elseif(flag==1)then
           n_totlyr=n_totlyr+1
           i=i+8
         endif
+        if(i >= n_subitem)exit
       enddo
-      allocate(fstrSOLID%materials(cid)%shell_var(n_totlyr))
-      count=0
+      allocate(shell_var(n_totlyr))
+      count=1
       do i=1,n_subitem
         !search material
         flag=hecMESH%material%mat_val(mpos+i)
         if(flag==0)then
-          fstrSOLID%materials(cid)%shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
-          fstrSOLID%materials(cid)%shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
-          fstrSOLID%materials(cid)%shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
-          fstrSOLID%materials(cid)%shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+3)
+          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
+          shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+3)
           i=i+3
-        elseif(flag=1)then
-          fstrSOLID%materials(cid)%shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
-          fstrSOLID%materials(cid)%shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
-          fstrSOLID%materials(cid)%shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
-          fstrSOLID%materials(cid)%shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+3)
-          fstrSOLID%materials(cid)%shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+4)
-          fstrSOLID%materials(cid)%shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+5)
-          fstrSOLID%materials(cid)%shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+6)
-          fstrSOLID%materials(cid)%shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+7)
-          fstrSOLID%materials(cid)%shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+8)
+        elseif(flag==1)then
+          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
+          shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+3)
+          shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+4)
+          shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+5)
+          shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+6)
+          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+7)
+          shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+8)
           i=i+8
         endif
+        if(i >= n_subitem)exit
         count=count+1
       enddo
     endif
-
-    fstrSOLID%materials(cid)%totallyr=n_totlyr
     
   end subroutine fstr_get_prop_shell
 end module m_static_get_prop

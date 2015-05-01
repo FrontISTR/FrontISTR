@@ -40,7 +40,7 @@ module m_static_make_result
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), allocatable   :: work(:), unode781(:),rnode781(:)
 
-    integer(kind=kint) :: n_lyr, ntot_lyr, bb, aa, mixedflag, cid
+    integer(kind=kint) :: n_lyr, ntot_lyr, bb, tmp, mixedflag, cid
     character(len=4) :: char_n_lyr
 
     ndof = hecMESH%n_dof
@@ -53,22 +53,22 @@ module m_static_make_result
     bb = 0
     ntot_lyr = 1
     mixedflag = 0
-    aa = 0
+    tmp = 0
 
     do it=1,hecMESH%section%n_sect
       cid = hecMESH%section%sect_mat_ID_item(it)
-      aa =  int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
-      if (aa > ntot_lyr)then
-        ntot_lyr = aa
+      tmp = fstrSOLID%materials(cid)%totallyr
+      if (tmp > ntot_lyr)then
+        ntot_lyr = tmp
       endif
     enddo
     do it=1,hecMESH%n_elem_type
-      aa =  hecMESH%elem_type_item(it)
-      if (aa == 641)then
+      tmp =  hecMESH%elem_type_item(it)
+      if (tmp == 641)then
         if (mixedflag == 0) then
           mixedflag = 2
         endif
-      elseif (aa == 781 .or. aa == 761)then
+      elseif (tmp == 781 .or. tmp == 761)then
         mixedflag = 1
       endif
       if (mixedflag == 1)then
@@ -431,13 +431,13 @@ module m_static_make_result
     real(kind=kreal), allocatable   ::unode781(:),rnode781(:)
 
 
-    integer(kind=kint) :: n_lyr, ntot_lyr, mixedflag, aa, com_total_layer, it, shell33_coeff
+    integer(kind=kint) :: n_lyr, ntot_lyr, mixedflag, tmp, it, shell33_coeff
     integer(kind=kint) :: i, j, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
 
-    com_total_layer = 0
+    tmp = 0
     ntot_lyr = 1
     mixedflag = 0
-    aa = 0
+    j = 0
     shell33_coeff=1;
 
     mm = hecMESH%n_node
@@ -450,18 +450,18 @@ module m_static_make_result
     if( ndof==6 ) shell33_coeff = 2
 
     do it = 1, hecMESH%material%n_mat
-      com_total_layer =  int(fstrSOLID%materials(it)%variables(M_TOTAL_LAYER))
-      if (com_total_layer >= ntot_lyr)then
-        ntot_lyr = com_total_layer
+      tmp = fstrSOLID%materials(it)%totallyr
+      if (tmp >= ntot_lyr)then
+        ntot_lyr = tmp
       endif
     enddo
     do it=1,hecMESH%n_elem_type
-      aa =  hecMESH%elem_type_item(it)
-      if (aa == 641)then
+      j =  hecMESH%elem_type_item(it)
+      if (j == 641)then
         if (mixedflag == 0) then
           mixedflag = 2
         endif
-      elseif (aa == 781 .or. aa == 761)then
+      elseif (j == 781 .or. j == 761)then
         mixedflag = 1
         shell33_coeff=2
       endif

@@ -21,9 +21,9 @@ MODULE mMaterial
   IMPLICIT NONE
 
   ! Following algorithm type
-      INTEGER, PARAMETER :: INFINITE = 0
-      INTEGER, PARAMETER :: TOTALLAG  = 1
-      INTEGER, PARAMETER :: UPDATELAG = 2
+      INTEGER(kind=kint), PARAMETER :: INFINITE = 0
+      INTEGER(kind=kint), PARAMETER :: TOTALLAG  = 1
+      INTEGER(kind=kint), PARAMETER :: UPDATELAG = 2
 
   ! Following material types. All material type number consists with integer of six digits.
   !   First digit: Indicates physical type
@@ -64,55 +64,55 @@ MODULE mMaterial
   !     For visco-elastoplastic deformation, visco law
   !       0: Norton                     i.e.  150000
   !       1: Striab                           150001
-      INTEGER, PARAMETER :: USERMATERIAL          = 100000
+      INTEGER(kind=kint), PARAMETER :: USERMATERIAL          = 100000
 
-      INTEGER, PARAMETER :: ELASTIC               = 110000
-      INTEGER, PARAMETER :: MN_ORTHOELASTIC       = 111000
-      INTEGER, PARAMETER :: USERELASTIC           = 112000
+      INTEGER(kind=kint), PARAMETER :: ELASTIC               = 110000
+      INTEGER(kind=kint), PARAMETER :: MN_ORTHOELASTIC       = 111000
+      INTEGER(kind=kint), PARAMETER :: USERELASTIC           = 112000
 
-      INTEGER, PARAMETER :: EPLASTIC              = 120000
+      INTEGER(kind=kint), PARAMETER :: EPLASTIC              = 120000
 
-      INTEGER, PARAMETER :: NEOHOOKE              = 130000
-      INTEGER, PARAMETER :: MOONEYRIVLIN          = 131000
-      INTEGER, PARAMETER :: ARRUDABOYCE           = 132000
-      INTEGER, PARAMETER :: USERHYPERELASTIC      = 133000
+      INTEGER(kind=kint), PARAMETER :: NEOHOOKE              = 130000
+      INTEGER(kind=kint), PARAMETER :: MOONEYRIVLIN          = 131000
+      INTEGER(kind=kint), PARAMETER :: ARRUDABOYCE           = 132000
+      INTEGER(kind=kint), PARAMETER :: USERHYPERELASTIC      = 133000
 
-      INTEGER, PARAMETER :: VISCOELASTIC          = 140000
-      INTEGER, PARAMETER :: NORTON                = 150000
+      INTEGER(kind=kint), PARAMETER :: VISCOELASTIC          = 140000
+      INTEGER(kind=kint), PARAMETER :: NORTON                = 150000
 
   ! Following section type
-      INTEGER, PARAMETER :: D3            = -1
-      INTEGER, PARAMETER :: PlaneStress   = 1
-      INTEGER, PARAMETER :: PlaneStrain   = 0
-      INTEGER, PARAMETER :: AxisSymetric  = 2
-      INTEGER, PARAMETER :: Shell         = 3
+      INTEGER(kind=kint), PARAMETER :: D3            = -1
+      INTEGER(kind=kint), PARAMETER :: PlaneStress   = 1
+      INTEGER(kind=kint), PARAMETER :: PlaneStrain   = 0
+      INTEGER(kind=kint), PARAMETER :: AxisSymetric  = 2
+      INTEGER(kind=kint), PARAMETER :: Shell         = 3
 
   ! Material constants are saved in an array of size 100 and their physical meaning
   ! are conrresponds to their position in the array
-      INTEGER, PARAMETER :: M_YOUNGS  = 1
-      INTEGER, PARAMETER :: M_POISSON = 2
-      INTEGER, PARAMETER :: M_DENSITY = 3
-      INTEGER, PARAMETER :: M_THICK   = 4
+      INTEGER(kind=kint), PARAMETER :: M_YOUNGS  = 1
+      INTEGER(kind=kint), PARAMETER :: M_POISSON = 2
+      INTEGER(kind=kint), PARAMETER :: M_DENSITY = 3
+      INTEGER(kind=kint), PARAMETER :: M_THICK   = 4
 
       ! following plastic constitutive parameter
-      INTEGER, PARAMETER :: M_PLCONST1 = 5
-      INTEGER, PARAMETER :: M_PLCONST2 = 6
-      INTEGER, PARAMETER :: M_PLCONST3 = 7
-      INTEGER, PARAMETER :: M_PLCONST4 = 8
-      INTEGER, PARAMETER :: M_PLCONST5 = 9
-      INTEGER, PARAMETER :: M_KINEHARD = 10
+      INTEGER(kind=kint), PARAMETER :: M_PLCONST1 = 5
+      INTEGER(kind=kint), PARAMETER :: M_PLCONST2 = 6
+      INTEGER(kind=kint), PARAMETER :: M_PLCONST3 = 7
+      INTEGER(kind=kint), PARAMETER :: M_PLCONST4 = 8
+      INTEGER(kind=kint), PARAMETER :: M_PLCONST5 = 9
+      INTEGER(kind=kint), PARAMETER :: M_KINEHARD = 10
 
-      INTEGER, PARAMETER :: M_EXAPNSION = 20
+      INTEGER(kind=kint), PARAMETER :: M_EXAPNSION = 20
 
-      INTEGER, PARAMETER :: M_ALPHA_OVER_MU = 21
+      INTEGER(kind=kint), PARAMETER :: M_ALPHA_OVER_MU = 21
 
-      INTEGER, PARAMETER :: M_BEAM_RADIUS = 22
-      INTEGER, PARAMETER :: M_BEAM_ANGLE1 = 23
-      INTEGER, PARAMETER :: M_BEAM_ANGLE2 = 24
-      INTEGER, PARAMETER :: M_BEAM_ANGLE3 = 25
-      INTEGER, PARAMETER :: M_BEAM_ANGLE4 = 26
-      INTEGER, PARAMETER :: M_BEAM_ANGLE5 = 27
-      INTEGER, PARAMETER :: M_BEAM_ANGLE6 = 28
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_RADIUS = 22
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE1 = 23
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE2 = 24
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE3 = 25
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE4 = 26
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE5 = 27
+      INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE6 = 28
 
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
@@ -124,7 +124,7 @@ MODULE mMaterial
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
 
   TYPE tshellmat
-    integer                    :: ortho
+    integer(kind=kint)         :: ortho
     real(kind=kreal)           :: ee
     real(kind=kreal)           :: pp
     real(kind=kreal)           :: ee2
@@ -133,19 +133,22 @@ MODULE mMaterial
     real(kind=kreal)           :: g31
     real(kind=kreal)           :: thick
     real(kind=kreal)           :: angle
+    real(kind=kreal)           :: rho
+    real(kind=kreal)           :: alpha_over_mu
   END TYPE tshellmat
 
   !> Stucture to management all material relates data
   TYPE tMaterial
-    integer                    :: nlgeom_flag       !< type of constitutive relation
-    integer                    :: mtype             !< material type
-    integer                    :: nfstatus          !< number of status variables
+    integer(kind=kint)         :: nlgeom_flag       !< type of constitutive relation
+    integer(kind=kint)         :: mtype             !< material type
+    integer(kind=kint)         :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(100)    !< material properties
     type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
-    integer                    :: totallyr          !< total layer of element
-    integer                    :: cdsys_ID          !< ID of material coordinate system
-    integer                    :: n_table           !< size of table
+    integer(kind=kint)         :: totallyr          !< total layer of element
+    real(kind=kreal)           :: totthick          !< total thickness of element
+    integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
+    integer(kind=kint)         :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
   END TYPE tMaterial

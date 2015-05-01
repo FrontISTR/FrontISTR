@@ -81,6 +81,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                             beam_angle4, beam_angle5, beam_angle6
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
+        type(tshellmat),pointer :: shmat(:)
         character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
 
         ! counters
@@ -294,10 +295,29 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               if( fstrPARAM%solution_type == kstNLSTATIC &
                    .or. fstrPARAM%solution_type==6 ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
-              call fstr_get_prop(hecMESH,fstrSOLID,cid,i,ee,pp,rho,alpha,thick,&
-                            alpha_over_mu,n_totlyr,shell_ortho, &
+              nullify(shmat)
+              call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
+                            n_totlyr,alpha_over_mu, &
                             beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
                             beam_angle4,beam_angle5,beam_angle6)
+                fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
+                fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
+                fstrSOLID%materials(cid)%variables(M_POISSON)=pp
+                fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
+                fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
+                fstrSOLID%materials(cid)%variables(M_THICK)=thick
+                fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
+                fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
+                fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
+                fstrSOLID%materials(cid)%mtype = ELASTIC
+                fstrSOLID%materials(cid)%totallyr = n_totlyr
+                fstrSOLID%materials(cid)%totthick = thick
+                fstrSOLID%materials(cid)%shell_var => shmat
            enddo
          endif
 
@@ -671,7 +691,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
         do i=1,hecMESH%section%n_sect
            cid = hecMESH%section%sect_mat_ID_item(i)
-           n  = int(fstrSOLID%materials(cid)%variables(M_TOTAL_LAYER))
+           n  = fstrSOLID%materials(cid)%totallyr
           if (n > n_totlyr)then
             n_totlyr = n
           endif

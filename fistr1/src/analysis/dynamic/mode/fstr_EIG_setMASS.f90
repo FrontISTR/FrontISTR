@@ -29,12 +29,14 @@ contains
 !C*******************************************
       use hecmw_util
       use m_fstr
+      use mMaterial
       !use m_fstr_lib
       !use lczparm
       implicit none
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
       type(lczparam)            :: myEIG
+      type(tshellmat),pointer   :: shell_var(:)
 !C
       integer(kind=kint) nodLOCAL(20),itype,ic_type,icel,isect
       integer(kind=kint) IOUT
@@ -43,8 +45,8 @@ contains
       integer(kind=kint) ix,jx,ll(4),ielm
       integer(kind=kint) pind(20),istart
       integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF
-      integer(kind=kint) ierror,kk,iax,jk,n_totallayer_ls,shell_matltype
-      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu,shell_variables(200)
+      integer(kind=kint) ierror,kk,iax,jk,n_totlyr,shell_matltype
+      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
       real(kind=kreal) :: beam_radius,                          &
@@ -92,7 +94,8 @@ contains
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           iax = hecMESH%section%sect_opt(isect)
-          CALL fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu,n_totallayer_ls,shell_matltype,shell_variables, &
+          nullify(shell_var)
+          CALL fstr_get_prop(hecMESH,shell_var,isect,ee,pp,rho,alpha,thick,n_totlyr,alpha_over_mu, &
                             beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
                             beam_angle4,beam_angle5,beam_angle6)
           if( rho<=0.d0 ) then

@@ -221,19 +221,14 @@ module m_ElasticLinear
 
 !--------------------------------------------------------------------
 
-		matl_type = int(matl%variables(M_SHELL_MATLTYPE))
+		matl_type = matl%shell_var(n_layer)%ortho
 		IF(matl_type == 0)THEN
 			IF( ierr ) THEN
-				total_layer = int(matl%variables(M_TOTAL_LAYER))
-				IF( total_layer .ge. 2) THEN
-				ee = matl%variables(100+3*n_layer-2)
-				pp = matl%variables(100+3*n_layer-1)
+
+				ee = matl%shell_var(n_layer)%ee
+				pp = matl%shell_var(n_layer)%pp
 				alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
-				ELSE
-				ee = matl%variables(M_YOUNGS)
-				pp = matl%variables(M_POISSON)
-				alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
-				END IF
+
 			ELSE
 
 				ee = outa(1)
@@ -286,16 +281,15 @@ module m_ElasticLinear
 !--------------------------------------------------------
 
 		ELSEIF(matl_type == 1)THEN
-!			write(*,*) 'TOTAL_LAYER', matl%variables(M_TOTAL_LAYER)
-			total_layer = int(matl%variables(M_TOTAL_LAYER))
+			total_layer = matl%totallyr
 
-			ee = matl%variables(100+8*n_layer-7)
-			pp = matl%variables(100+8*n_layer-6)
-			ee2 = matl%variables(100+8*n_layer-4)
-			g12 = matl%variables(100+8*n_layer-3)
-			g23 = matl%variables(100+8*n_layer-2)
-			g31 = matl%variables(100+8*n_layer-1)
-			theta = matl%variables(100+8*n_layer)
+			ee = matl%shell_var(n_layer)%ee
+			pp = matl%shell_var(n_layer)%pp
+			ee2 = matl%shell_var(n_layer)%ee2
+			g12 = matl%shell_var(n_layer)%g12
+			g23 = matl%shell_var(n_layer)%g23
+			g31 = matl%shell_var(n_layer)%g31
+			theta = matl%shell_var(n_layer)%angle
 
 			alpha_over_mu = matl%variables(M_ALPHA_OVER_MU)
 
