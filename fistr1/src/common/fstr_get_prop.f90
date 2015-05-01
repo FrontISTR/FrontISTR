@@ -21,19 +21,22 @@ contains
   !C*** GET_PROP for FSTR solver
   !C***
   !C
-  SUBROUTINE fstr_get_prop(hecMESH,isect,ee,pp,rho,alpha,thick,alpha_over_mu,  &
-       n_totallayer_ls,shell_matltype,shell_variables,  &
+  SUBROUTINE fstr_get_prop(hecMESH,shell_var,isect,ee,pp,rho,alpha,thick,n_totlyr,alpha_over_mu,  &
        beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
        beam_angle4,beam_angle5,beam_angle6)
     use m_fstr
+    use mMaterial
 
-    IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-    real(kind=kreal) :: shell_variables(200)
-    integer(kind=kint) :: shell_matltype, n_ls, n_mod, n_totallayer_ls, section_type
-    TYPE (hecmwST_local_mesh) :: hecMESH
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (tshellmat), pointer :: shell_var(:)
+    integer(kind=kint) :: n_item, n_subitem, ihead, isect, mid, mpos
+    integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
+    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
+    real(kind=kreal) :: beam_radius,beam_angle1,beam_angle2,beam_angle3,beam_angle4,beam_angle5,beam_angle6
 
-    n_totallayer_ls = 1
-    shell_matltype = -1
+    n_totlyr = 1
+    shell_ortho = -1
 
     !*EHM June 24 04
     !Get thickness
@@ -79,11 +82,10 @@ contains
       mpos=hecMESH%material%mat_subITEM_index(ihead)
       !C Get SUBITEM of Meterial
       alpha_over_mu=1.0D-3
-      n_subitem_ls = n_subitem
       !<<********************   shell analysis   ********************
       if (section_type == 2)then
-        CALL fstr_get_prop_shell(hecMESH,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
-             n_totallayer_ls,shell_matltype,shell_variables,mpos)
+        CALL fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+             n_totlyr,shell_ortho,mpos)
       else
         if( n_subitem .lt. 1 ) then
           write(IMSG,*) '###Error 2'
@@ -144,85 +146,90 @@ contains
       endif
     endif
 
-  end subroutine FSTR_GET_PROP
+  end subroutine fstr_get_prop
 
   !-----Modifed by N.Morita GSFS, Univ. of Tokyo ------------------------------------------------------
-  Subroutine FSTR_GET_PROP_SHELL(hecMESH,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
-       n_totallayer_ls,shell_matltype,shell_variables,mpos)
+  Subroutine fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
+       n_totlyr,shell_ortho,mpos)
     use m_fstr
     implicit none
-    real(kind=kreal) :: shell_variables(200), ee, pp, rho, alpha, thick, alpha_over_mu
-    integer(kind=kint) :: shell_matltype, n_ls, n_mod, n_totallayer_ls, section_type
+    type (hecmwST_local_mesh) :: hecMESH
+    type (tshellmat),pointer :: shell_var(:)
+    real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
+    integer(kind=kint) :: mid, count, i, flag
+    integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
     integer(kind=kint) :: n_subitem, mpos
-    TYPE (hecmwST_local_mesh) :: hecMESH
 
     if( n_subitem .lt. 1 ) then
       write(ISTA,*) '###Error 2'
       stop
     elseif( n_subitem == 2) then
-      n_totallayer_ls = 1
-      shell_matltype = 0
+      n_totlyr = 1
+      shell_ortho = 0
       ee = hecMESH%material%mat_val(mpos+1)
       pp = hecMESH%material%mat_val(mpos+2)
-      shell_variables(1) = hecMESH%material%mat_val(mpos+1)
-      shell_variables(2) = hecMESH%material%mat_val(mpos+2)
-      shell_variables(3) = thick
-      write(ISTA,*) '###Warning : Old format of shell properties'
+
+      allocate(shell_var(1))
+      shell_var(1)%ortho = 0
+      shell_var(1)%ee = ee
+      shell_var(1)%pp = pp
+      shell_var(1)%thick = thick
+
     elseif( n_subitem == 3) then
-      n_totallayer_ls = 1
-      shell_matltype = 0
+      n_totlyr = 1
+      shell_ortho = 0
       ee = hecMESH%material%mat_val(mpos+1)
       pp = hecMESH%material%mat_val(mpos+2)
-      alpha_over_mu=hecMESH%material%mat_val(mpos+3)
-      shell_variables(1) = hecMESH%material%mat_val(mpos+1)
-      shell_variables(2) = hecMESH%material%mat_val(mpos+2)
-      shell_variables(3) = thick
-      write(ISTA,*) '###Warning : Old format of shell properties'
+      thick=hecMESH%material%mat_val(mpos+3)
+
+      allocate(shell_var(1))
+      shell_var(1)%ortho = 0
+      shell_var(1)%ee = ee
+      shell_var(1)%pp = pp
+      shell_var(1)%thick = thick
+
+      write(ISTA,*) '###NOTICE : shell thickness is updated'
+
     elseif( n_subitem >= 4) then
-      shell_matltype = int(hecMESH%material%mat_val(mpos+1))
-      if (shell_matltype == 0) then
-        n_mod = mod(n_subitem-1,3)
-        if (n_mod.eq.0) then
-          n_totallayer_ls = (n_subitem-1)/3
-          thick = 0.0D0
-          DO n_ls=1,n_totallayer_ls
-            shell_variables(3*n_ls-2) = hecMESH%material%mat_val(mpos+3*(n_ls-1)+2)
-            shell_variables(3*n_ls-1) = hecMESH%material%mat_val(mpos+3*(n_ls-1)+3)
-            shell_variables(3*n_ls  ) = hecMESH%material%mat_val(mpos+3*(n_ls-1)+4)
-            thick = thick + hecMESH%material%mat_val(mpos+3*(n_ls-1)+4)
-          END DO
-          ee = shell_variables(1)
-          pp = shell_variables(2)
-        else
-          write(ISTA,*) '###Error : shell properties not correct (isotropic)'
-          stop
+      n_totlyr=0
+      do i=1,n_subitem
+        flag=hecMESH%material%mat_val(mpos+i)
+        if(flag==0)then
+          n_totlyr=n_totlyr+1
+          i=i+3
+        elseif(flag==1)then
+          n_totlyr=n_totlyr+1
+          i=i+8
         endif
-      elseif(shell_matltype == 1)then
-        n_mod = mod(n_subitem-1,8)
-        if (n_mod.eq.0) then
-          n_totallayer_ls = (n_subitem-1)/8
-          thick = 0.0D0
-          DO n_ls=1,n_totallayer_ls
-            shell_variables(8*n_ls-7) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+2)
-            shell_variables(8*n_ls-6) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+3)
-            shell_variables(8*n_ls-5) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+4)
-            shell_variables(8*n_ls-4) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+5)
-            shell_variables(8*n_ls-3) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+6)
-            shell_variables(8*n_ls-2) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+7)
-            shell_variables(8*n_ls-1) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+8)
-            shell_variables(8*n_ls  ) = hecMESH%material%mat_val(mpos+8*(n_ls-1)+9)
-            thick = thick + shell_variables(8*n_ls-5)
-          END DO
-          ee = shell_variables(1)
-          pp = shell_variables(2)
-        else
-          write(ISTA,*) '###Error : shell properties not correct(orthotropic)'
-          stop
+        if(i >= n_subitem)exit
+      enddo
+      allocate(shell_var(n_totlyr))
+      count=1
+      do i=1,n_subitem
+        !search material
+        flag=hecMESH%material%mat_val(mpos+i)
+        if(flag==0)then
+          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
+          shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+3)
+          i=i+3
+        elseif(flag==1)then
+          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
+          shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+3)
+          shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+4)
+          shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+5)
+          shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+6)
+          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+7)
+          shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+8)
+          i=i+8
         endif
-      else
-        write(ISTA,*) '###Error : shell_matltype not correct'
-        stop
-      endif
+        if(i >= n_subitem)exit
+        count=count+1
+      enddo
     endif
-  end subroutine FSTR_GET_PROP_SHELL
+    
+  end subroutine fstr_get_prop_shell
 end module m_static_get_prop

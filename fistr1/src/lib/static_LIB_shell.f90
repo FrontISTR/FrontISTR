@@ -92,7 +92,7 @@
       INTEGER :: isize, jsize
       INTEGER :: jsize1, jsize2, jsize3, &
                  jsize4, jsize5, jsize6
-      INTEGER :: n_layer,n_total_layer, sstable(24)
+      INTEGER :: n_layer,n_totlyr, sstable(24)
 
       REAL(KIND = kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
       REAL(KIND = kreal) :: tmpstiff(ndof*nn, ndof*nn)
@@ -138,10 +138,10 @@
                             Cv31(ndof*nn), Cv32(ndof*nn)
       REAL(KIND = kreal) :: Cv_theta(ndof*nn), Cv_w(ndof*nn)
       REAL(KIND = kreal) :: Cv(ndof*nn)
-      REAL(KIND = kreal) :: sigma_layer, thick_layer
+      REAL(KIND = kreal) :: sumlyr, thick_layer
 
-		sstable = 0
-		flag_dof = 0
+      sstable = 0
+      flag_dof = 0
 !--------------------------------------------------------------------
 
       ! MITC4
@@ -468,11 +468,11 @@
       END DO
 
 !--------------------------------------------------------------------
-!		MODIFIED to LAMINATED SHELL ANALYSIS
+!     MODIFIED to LAMINATED SHELL ANALYSIS
 !--------------------------------------------------------------------
 
-   n_total_layer =  int(gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
-   DO n_layer=1,n_total_layer
+   n_totlyr =  gausses(1)%pMaterial%totallyr
+   DO n_layer=1,n_totlyr
       DO ly = 1, ny
 
        !--------------------------------------------------------
@@ -649,26 +649,11 @@
 
        !--------------------------------------------------------
 
-        IF ( n_total_layer .ge. 2 ) THEN
-          shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-          if (shellmatl == 0)then
-            sigma_layer = 0.0D0
-            DO m = 1, n_layer
-              sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
-            END DO
-            zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
-          elseif (shellmatl == 1)then
-            sigma_layer = 0.0D0
-            DO m = 1, n_layer
-              sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
-            END DO
-            zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))
-          else
-            write(*,*)"ERROR : shellmatl isnot correct"; stop
-          endif
-        ELSE
-          zeta_ly = xg(ny, ly)
-        ENDIF
+        sumlyr = 0.0d0
+        do m = 1, n_layer
+          sumlyr = sumlyr +2 *gausses(1)%pMaterial%shell_var(m)%thick / thick
+        enddo
+        zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%thick / thick *(1-xg(ny, ly))
 
         w_ly    = wgt(ny, ly)
 
@@ -1056,29 +1041,11 @@
 
         !--------------------------------------------------
 
-        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-        if (shellmatl == 0)then
-          if ( n_total_layer .ge. 2 ) THEN
-            FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-              tmpstiff(isize, jsize)                               &
-              = tmpstiff(isize, jsize)                             &
-              +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) )
-            END FORALL
-          else
-            FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-              tmpstiff(isize, jsize)                               &
-              = tmpstiff(isize, jsize) +w_w_w_det *DOT_PRODUCT( B(:, isize), DB(:, jsize) )
-            END FORALL
-          endif
-        elseif (shellmatl == 1)then
-          FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
-            tmpstiff(isize, jsize)                               &
-            = tmpstiff(isize, jsize)                             &
-            +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) )
-          END FORALL
-        else
-          write(*,*)"ERROR : shellmatl isnot correct"; stop
-        endif
+        FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
+          tmpstiff(isize, jsize)                               &
+          = tmpstiff(isize, jsize)                             &
+          +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%thick/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) )
+        END FORALL
 
         !--------------------------------------------------
 
@@ -1245,44 +1212,16 @@
         !--------------------------------------------------
 
         ! [ K L ] matrix
-        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-        if (shellmatl == 0)then
-          if ( n_total_layer .ge. 2 ) then
-            DO jsize = 1, ndof*nn
-              DO isize = 1, ndof*nn
-
-          tmpstiff(isize, jsize)                &
-          = tmpstiff(isize, jsize)              &
-           +w_w_w_det*gausses(1)%pMaterial%variables(100+3*n_layer)/thick*alpha*Cv(isize)*Cv(jsize)
-
-              END DO
-            END DO
-          else
-
-            DO jsize = 1, ndof*nn
-              DO isize = 1, ndof*nn
-
-          tmpstiff(isize, jsize)                &
-          = tmpstiff(isize, jsize)              &
-           +w_w_w_det*alpha*Cv(isize)*Cv(jsize)
-
-              END DO
-            END DO
-
-          endif
-        elseif (shellmatl == 1)then
-          DO jsize = 1, ndof*nn
+        DO jsize = 1, ndof*nn
           DO isize = 1, ndof*nn
 
-        tmpstiff(isize, jsize)                &
-        = tmpstiff(isize, jsize)              &
-         +w_w_w_det*gausses(1)%pMaterial%variables(100+8*n_layer-5)/thick*alpha*Cv(isize)*Cv(jsize)
+          tmpstiff(isize, jsize)                &
+          = tmpstiff(isize, jsize)              &
+           +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%thick/thick*alpha*Cv(isize)*Cv(jsize)
 
           END DO
-          END DO
-        else
-          write(*,*)"ERROR : shellmatl isnot correct"; stop
-        endif
+        END DO
+
 
         !--------------------------------------------------
 
@@ -1382,7 +1321,7 @@
 !####################################################################
       SUBROUTINE ElementStress_Shell_MITC                  &
                  (etype, nn, ndof, ecoord, gausses, edisp, &
-                  strain, stress, thick, zeta, n_layer, n_total_layer)
+                  strain, stress, thick, zeta, n_layer, n_totlyr)
 !####################################################################
 
       USE mMechGauss
@@ -1414,7 +1353,7 @@
       INTEGER :: isize, jsize
       INTEGER :: jsize1, jsize2, jsize3, &
                  jsize4, jsize5, jsize6
-      INTEGER :: n_layer, n_total_layer, shellmatl
+      INTEGER :: n_layer, n_totlyr, shellmatl
 
       REAL(KIND = kreal) :: D(5, 5)
       REAL(KIND = kreal) :: elem(3, nn)
@@ -1456,7 +1395,7 @@
                             e31_di_2(6, 3)
       REAL(KIND = kreal) :: E(3, 3), Ev(5)
       REAL(KIND = kreal) :: S(3, 3), Sv(5)
-      REAL(KIND = kreal) :: sigma_layer
+      REAL(KIND = kreal) :: sumlyr
 
 !--------------------------------------------------------------------
 
@@ -1784,7 +1723,7 @@
       END DO
 
 !--------------------------------------------------------------------
-!				Modified stress in laminated shell
+!     Modified stress in laminated shell
 !--------------------------------------------------------------------
       ! MITC4
       IF( etype .EQ. fe_mitc4_shell ) THEN
@@ -1928,26 +1867,11 @@
 
       !--------------------------------------------------------
 
-      IF ( n_total_layer.ge. 2 ) THEN
-        shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-        if (shellmatl == 0)then
-          sigma_layer = 0.0D0
-          DO m = 1, n_layer
-            sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
-          END DO
-          zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-zeta)
-        elseif (shellmatl == 1)then
-          sigma_layer = 0.0D0
-          DO m = 1, n_layer
-            sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
-          END DO
-          zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-zeta)
-        else
-        write(*,*)"ERROR : shellmatl isnot correct"; stop
-        endif
-      ELSE
-        zeta_ly = zeta
-      ENDIF
+      sumlyr = 0.0D0
+      DO m = 1, n_layer
+        sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%thick / thick
+      END DO
+      zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%thick / thick * (1-zeta)
 
       !--------------------------------------------------------
 
@@ -2453,7 +2377,7 @@
       INTEGER :: jsize1, jsize2, jsize3, &
                  jsize4, jsize5, jsize6
       INTEGER :: ltype
-      INTEGER :: n_total_layer, n_layer, shellmatl
+      INTEGER :: n_totlyr, n_layer, shellmatl
 
       REAL(KIND = kreal) :: elem(3, nn)
       REAL(KIND = kreal) :: val
@@ -2487,7 +2411,7 @@
       REAL(KIND = kreal) :: phx, phy, phz
       REAL(KIND = kreal) :: coefx, coefy, coefz
       REAL(KIND = kreal) :: x, y, z
-      REAL(KIND = kreal) :: sigma_layer
+      REAL(KIND = kreal) :: sumlyr
 
 !--------------------------------------------------------------------
 
@@ -2872,33 +2796,18 @@
       IF( ivol .EQ. 1 ) THEN
 
         !--------------------------------------------------------
-        n_total_layer =  int(gausses(1)%pMaterial%variables(M_TOTAL_LAYER))
-        DO n_layer=1,n_total_layer
+        n_totlyr =  gausses(1)%pMaterial%totallyr
+        DO n_layer=1,n_totlyr
           DO ly = 1, ny
 
             !--------------------------------------------------
 
 
-            IF ( n_total_layer .ge. 2 ) THEN
-              shellmatl = int(gausses(1)%pMaterial%variables(M_SHELL_MATLTYPE))
-              if (shellmatl == 0)then
-                sigma_layer = 0.0D0
-                DO m = 1, n_layer
-                  sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+3*m) / thick
-                END DO
-                zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+3*n_layer) / thick * (1-xg(ny, ly))
-              elseif (shellmatl == 1)then
-                sigma_layer = 0.0D0
-                DO m = 1, n_layer
-                  sigma_layer = sigma_layer + 2 * gausses(1)%pMaterial%variables(100+8*m-5) / thick
-                END DO
-                zeta_ly = -1 + sigma_layer - gausses(1)%pMaterial%variables(100+8*n_layer-5) / thick * (1-xg(ny, ly))
-              else
-                write(*,*)"ERROR : shellmatl isnot correct"; stop
-              endif
-            ELSE
-              zeta_ly = xg(ny, ly)
-            ENDIF
+            sumlyr = 0.0D0
+            DO m = 1, n_layer
+              sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%thick / thick
+            END DO
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%thick / thick * (1-xg(ny, ly))
 
             !zeta_ly = xg(ny, ly)
             w_ly    = wgt(ny, ly)
