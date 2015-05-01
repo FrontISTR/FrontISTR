@@ -305,15 +305,21 @@ contains
 !
 !#ifdef CONTACT_FILTER
       !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
-      integer, allocatable :: indexMaster(:),itmp(:)
+      integer, pointer :: indexMaster(:),itmp(:)
       integer   ::  nMaster=0,minID(3),maxID(3),idm,nMasterMax=100
       real(kreal) :: width = 4.0D0,x0(3)
 !#endif
-      allocate(indexMaster(nMasterMax))
 
       active = .false.
       clearance = 1.d-6
       if( contact%algtype<=2 ) return
+!$omp parallel do &
+!$omp& default(none) &
+!$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
+!$omp& firstprivate(nMasterMax) &
+!$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,mu,nodeID,elemID,B,width,clearance) &
+!$omp& reduction(.or.:active) &
+!$omp& schedule(dynamic,1)
       do i= 1, size(contact%slave)
         slave = contact%slave(i)
         if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
@@ -329,6 +335,7 @@ contains
               contact%states(i)%tangentForce_trial(:) =0.d0
               contact%states(i)%tangentForce_final(:) =0.d0
             endif
+!$omp atomic
             infoCTChange%contact2free = infoCTChange%contact2free + 1
             write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
                         elemID(contact%master(id)%eid), " with tensile force ", nlforce
@@ -340,6 +347,7 @@ contains
 
         else if( contact%states(i)%state==CONTACTFREE ) then
           coord(:) = currpos(3*slave-2:3*slave)
+          allocate(indexMaster(nMasterMax))
 !#ifdef CONTACT_FILTER
           nMaster = 0
 !#endif
@@ -359,11 +367,9 @@ contains
               nMaster = nMaster + 1
               if(nMaster > size(indexMaster)) then
                 !stop 'Error: Too many master faces are possibly in contact!'
-                allocate(itmp(nMasterMax))
-                itmp(:) = indexMaster(:)
-                deallocate(indexMaster)
+                itmp => indexMaster
                 allocate(indexMaster(nMasterMax*2))
-                indexMaster(1:nMastermax) = itmp(1:nMasterMax)
+                indexMaster(1:nMasterMax) = itmp(1:nMasterMax)
                 deallocate(itmp)
                 nMasterMax = nMasterMax*2
                 write(*,*) 'Info: increased nMasterMax to ', nMasterMax
@@ -389,6 +395,7 @@ contains
             contact%states(i)%multiplier(:) = 0.d0
             iSS = isInsideElement( etype, contact%states(i)%lpos, clearance )
             if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
+!$omp atomic
             infoCTChange%free2contact = infoCTChange%free2contact + 1
             active = .true.
             write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
@@ -397,10 +404,11 @@ contains
                        " along direction ", contact%states(i)%direction
             exit
           enddo
+          deallocate(indexMaster)
         endif
       enddo
+!$omp end parallel do
 
-      deallocate(indexMaster)
   end subroutine scan_contact_state
 
   !> Calculate averaged nodal normal
@@ -517,12 +525,15 @@ contains
 
       if( isin ) then
         if( contact%states(nslave)%surface==sid0 ) then
-	      if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  &
-	      infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
+          if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  then
+!$omp atomic
+            infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
+          endif
         else
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
                         elemID(contact%master(sid)%eid), " with distance ",      &
                         contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
+!$omp atomic
           infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
           if( flag_ctAlgo=='ALagrange' )  &
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
@@ -534,6 +545,7 @@ contains
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
       else if( .not. isin ) then
         write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
+!$omp atomic
         infoCTChange%contact2free = infoCTChange%contact2free+1
         contact%states(nslave)%state = CONTACTFREE
         contact%states(nslave)%multiplier(:) = 0.d0
@@ -564,6 +576,7 @@ contains
       real(kind=kreal)    :: dum, dxi(2), shapefunc(l_max_surface_node)
       real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
       real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
+      integer(kind=kint)  :: i, idx0
 
       slave = contact%slave(lslave)
       fcoeff = contact%fcoeff
@@ -575,7 +588,12 @@ contains
         call getShapeFunc( etype, opos(:), shapefunc )
         do j=1,nn
           iSS = contact%master(omaster)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-nrlforce*shapefunc(j)*odirec
+          ! B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-nrlforce*shapefunc(j)*odirec
+          idx0 = 3*(iSS-1)
+          do i=1,3
+!$omp atomic
+            B(idx0+i) = B(idx0+i)-nrlforce*shapefunc(j)*odirec(i)
+          enddo
         enddo
         if( fcoeff/=0.d0 ) then
           do j=1,nn
@@ -589,7 +607,12 @@ contains
           B(3*slave-2:3*slave) = B(3*slave-2:3*slave)+f3(1:3)
           do j=1,nn
             iSS = contact%master(omaster)%nodes(j)
-            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+f3(3*j+1:3*j+3)
+            ! B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+f3(3*j+1:3*j+3)
+            idx0 = 3*(iSS-1)
+            do i=1,3
+!$omp atomic
+              B(idx0+i) = B(idx0+i)+f3(3*j+i)
+            enddo
           enddo
         endif
 
@@ -601,8 +624,14 @@ contains
         B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce*contact%states(lslave)%direction
         do j=1,nn
           iSS = contact%master(master)%nodes(j)
-          B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+nrlforce*        &
-                     shapefunc(j)*contact%states(lslave)%direction
+          ! B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+nrlforce*        &
+          !            shapefunc(j)*contact%states(lslave)%direction
+          idx0 = 3*(iSS-1)
+          do i=1,3
+!$omp atomic
+            B(idx0+i) = B(idx0+i)+nrlforce*        &
+                 shapefunc(j)*contact%states(lslave)%direction(i)
+          enddo
         enddo
         if( fcoeff/=0.d0 ) then
           do j=1,nn
@@ -616,7 +645,12 @@ contains
           B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
           do j=1,nn
             iSS = contact%master(master)%nodes(j)
-            B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
+            ! B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
+            idx0 = 3*(iSS-1)
+            do i=1,3
+!$omp atomic
+              B(idx0+i) = B(idx0+i)-f3(3*j+i)
+            enddo
           enddo
         endif
 
