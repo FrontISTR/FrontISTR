@@ -27,12 +27,15 @@ integer, parameter, private :: kreal = kind(0.0d0)
 integer, parameter       :: l_max_surface_node =20
 integer, parameter       :: l_max_elem_node = 100
 
+integer, parameter       :: N_NEIGHBOR_MAX_INIT = 8
+
     !> Structure to define surface group
     type tSurfElement
       integer              :: eid                  !< elemental index(global)
       integer              :: etype                !< type of surface element
       integer, pointer     :: nodes(:)=>null()     !< nodes index(global)
-      integer              :: n_neighbor           !< size of neighber(:)
+      integer              :: n_neighbor           !< number of neighborhood tSurfElement
+      integer              :: n_neighbor_max       !< maximum size of neighber(:)
       integer, pointer     :: neighbor(:)=>null()  !< index(global) of neighborhood tSurfElement
     end type
 
@@ -54,6 +57,7 @@ contains
     surf%nodes(1:n)=nodes(1:n)
     n=getNumberOfSubface( outtype )
     surf%n_neighbor = 0
+    surf%n_neighbor_max = 0
   end subroutine
 
   !> Memeory management subroutine
@@ -78,48 +82,56 @@ contains
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf )
     use m_utilities
+    use hecmw_util
     type(tSurfElement), intent(inout) :: surf(:)
     integer :: i, j, ii,jj, nd1, nd2, nsurf
-    integer :: k, oldsize
+    integer :: k, oldsize, newsize
     integer, pointer :: dumarray(:) => NULL()
 
     nsurf = size(surf)
+
+!$omp parallel do default(none),private(i,ii,nd1,j,jj,nd2,oldsize,newsize,dumarray,k), &
+!$omp&shared(nsurf,surf)
     do i=1,nsurf
-      do ii=1, size(surf(i)%nodes)
-        nd1 = surf(i)%nodes(ii)
-        do j=1,nsurf
-          if( i==j ) cycle
-          if( associated(surf(i)%neighbor) ) then
-            if ( any( surf(i)%neighbor==j ) ) cycle
-          endif
+      JLOOP: do j=1,nsurf
+        if( i==j ) cycle
+        if( associated(surf(i)%neighbor) ) then
+          if ( any( surf(i)%neighbor==j ) ) cycle
+        endif
+        do ii=1, size(surf(i)%nodes)
+          nd1 = surf(i)%nodes(ii)
           do jj=1, size(surf(j)%nodes)
             nd2 = surf(j)%nodes(jj)
             if( nd1==nd2 ) then
               surf(i)%n_neighbor = surf(i)%n_neighbor+1
 
-      if( .not. associated(surf(i)%neighbor) ) then
-        allocate( surf(i)%neighbor(1) )
-        surf(i)%neighbor(1) = j
-      else
-        oldsize = size( surf(i)%neighbor )
-        allocate( dumarray(oldsize) )
-        do k=1,oldsize
-          dumarray(k) = surf(i)%neighbor(k)
-        enddo
-        deallocate( surf(i)%neighbor )
-        allocate( surf(i)%neighbor(oldsize+1) )
-        do k=1,oldsize
-          surf(i)%neighbor(k) = dumarray(k)
-        enddo
-        surf(i)%neighbor(oldsize+1) = j
-      endif
-      if( associated(dumarray) ) deallocate( dumarray )
+              if( .not. associated(surf(i)%neighbor) ) then
+                allocate( surf(i)%neighbor(N_NEIGHBOR_MAX_INIT) )
+                surf(i)%n_neighbor_max = N_NEIGHBOR_MAX_INIT
+                surf(i)%neighbor(1) = j
+              else if( surf(i)%n_neighbor > surf(i)%n_neighbor_max ) then
+                oldsize = surf(i)%n_neighbor_max
+                newsize = oldsize * 2
+                dumarray => surf(i)%neighbor
+                allocate( surf(i)%neighbor(newsize) )
+                surf(i)%n_neighbor_max = newsize
+                do k=1,oldsize
+                  surf(i)%neighbor(k) = dumarray(k)
+                enddo
+                surf(i)%neighbor(oldsize+1) = j
+                deallocate( dumarray )
+              else
+                surf(i)%neighbor(surf(i)%n_neighbor) = j
+              endif
 
+              cycle JLOOP
             endif
           enddo
         enddo
-      enddo
+      enddo JLOOP
     enddo
+!$omp end parallel do
+
   end subroutine
 
   !> Tracing next contact position

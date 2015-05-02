@@ -11,21 +11,21 @@ output_result_header(FILE *fp)
 	/* header */
 	rc = fprintf(fp, "%s\n", head);
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "head");
 		return -1;
 	}
 
 	/* n_node, n_elem */
 	rc = fprintf(fp, "%d %d\n", nnode, nelem);
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "nnode,nelem");
 		return -1;
 	}
 
 	/* nn_component, ne_component */
 	rc = fprintf(fp, "%d %d\n", count_nn_comp(), count_ne_comp());
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "nn_comp,ne_comp");
 		return -1;
 	}
 
@@ -44,7 +44,7 @@ output_result_node(FILE *fp)
 	for(p=node_list; p; p=p->next) {
 		rc = fprintf(fp, "%d%c", p->n_dof, (n+1)%COL_INT ? ' ' : '\n');
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
 			return -1;
 		}
 		n++;
@@ -61,7 +61,7 @@ output_result_node(FILE *fp)
 	for(p=node_list; p; p=p->next) {
 		rc = fprintf(fp, "%s\n", p->label);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_label");
 			return -1;
 		}
 	}
@@ -79,9 +79,9 @@ output_result_node(FILE *fp)
 		data[i++] = p;
 	}
 	for(i=0; i < nnode; i++) {
-        rc = fprintf(fp, "%d \n", node_global_ID[i]);
+		rc = fprintf(fp, "%d \n", node_global_ID[i]);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_global_ID");
 			return -1;
 		}
 		n = 0;
@@ -89,6 +89,10 @@ output_result_node(FILE *fp)
 			p = data[j];
 			for(k=0; k < p->n_dof; k++) {
 				rc = fprintf(fp, "%.16E%c", p->ptr[i*p->n_dof+k], (n+1)%COL_DOUBLE ? ' ' : '\n');
+				if(rc < 0) {
+					HECMW_set_error(HECMW_UTIL_E0205, "node_val_item");
+					return -1;
+				}
 				n++;
 			}
 		}
@@ -117,7 +121,7 @@ output_result_elem(FILE *fp)
 	for(p=elem_list; p; p=p->next) {
 		rc = fprintf(fp, "%d%c", p->n_dof, (n+1)%COL_INT ? ' ' : '\n');
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
 			return -1;
 		}
 		n++;
@@ -134,7 +138,7 @@ output_result_elem(FILE *fp)
 	for(p=elem_list; p; p=p->next) {
 		rc = fprintf(fp, "%s\n", p->label);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_label");
 			return -1;
 		}
 	}
@@ -152,9 +156,9 @@ output_result_elem(FILE *fp)
 		data[i++] = p;
 	}
 	for(i=0; i < nelem; i++) {
-        rc = fprintf(fp, "%d\n", elem_global_ID[i]);
+		rc = fprintf(fp, "%d\n", elem_global_ID[i]);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_global_ID");
 			return -1;
 		}
 		n = 0;
@@ -162,6 +166,10 @@ output_result_elem(FILE *fp)
 			p = data[j];
 			for(k=0; k < p->n_dof; k++) {
 				rc = fprintf(fp, "%.16E%c", p->ptr[i*p->n_dof+k], (n+1)%COL_DOUBLE ? ' ' : '\n');
+				if(rc < 0) {
+					HECMW_set_error(HECMW_UTIL_E0205, "elem_val_item");
+					return -1;
+				}
 				n++;
 			}
 		}
@@ -227,21 +235,21 @@ output_result_header_ST(struct hecmwST_result_data *result, char *header,
 	/* header */
 	rc = fprintf(fp, "%s\n", header);
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "header");
 		return -1;
 	}
 
 	/* n_node, n_elem */
 	rc = fprintf(fp, "%d %d\n", n_node, n_elem);
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "n_node,n_elem");
 		return -1;
 	}
 
 	/* nn_component, ne_component */
 	rc = fprintf(fp, "%d %d\n", result->nn_component, result->ne_component);
 	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "nn_comp,ne_comp");
 		return -1;
 	}
 
@@ -259,7 +267,7 @@ output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *fp)
 	for(i=0; i < result->nn_component; i++) {
 		rc = fprintf(fp, "%d%c", result->nn_dof[i], (n+1)%COL_INT ? ' ' : '\n');
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
 			return -1;
 		}
 		n++;
@@ -267,7 +275,7 @@ output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *fp)
 	if(n % COL_INT) {
 		rc = fprintf(fp, "\n");
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_label");
 			return -1;
 		}
 	}
@@ -285,15 +293,19 @@ output_result_node_ST(struct hecmwST_result_data *result, int n_node, FILE *fp)
 	if(result->nn_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_node; i++) {
-        rc = fprintf(fp, "%d \n", node_global_ID[i]);
+		rc = fprintf(fp, "%d \n", node_global_ID[i]);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_global_ID");
 			return -1;
 		}
 		n = 0;
 		for(j=0; j < result->nn_component; j++) {
 			for(k=0; k < result->nn_dof[j]; k++) {
 				rc = fprintf(fp, "%.16E%c", result->node_val_item[m], (n+1)%COL_DOUBLE ? ' ' : '\n');
+				if(rc < 0) {
+					HECMW_set_error(HECMW_UTIL_E0205, "node_val_item");
+					return -1;
+				}
 				n++;
 				m++;
 			}
@@ -321,7 +333,7 @@ output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 	for(i=0; i < result->ne_component; i++) {
 		rc = fprintf(fp, "%d%c", result->ne_dof[i], (n+1)%COL_INT ? ' ' : '\n');
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
 			return -1;
 		}
 		n++;
@@ -338,7 +350,7 @@ output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 	for(i=0; i < result->ne_component; i++) {
 		rc = fprintf(fp, "%s\n", result->elem_label[i]);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_label");
 			return -1;
 		}
 	}
@@ -347,15 +359,19 @@ output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 	if(result->ne_component == 0) return 0;
 	m = 0;
 	for(i=0; i < n_elem; i++) {
-        rc = fprintf(fp, "%d\n", elem_global_ID[i]);
+		rc = fprintf(fp, "%d\n", elem_global_ID[i]);
 		if(rc < 0) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_global_ID");
 			return -1;
 		}
 		n = 0;
 		for(j=0; j < result->ne_component; j++) {
 			for(k=0; k < result->ne_dof[j]; k++) {
 				rc = fprintf(fp, "%.16E%c", result->elem_val_item[m], (n+1)%COL_DOUBLE ? ' ' : '\n');
+				if(rc < 0) {
+					HECMW_set_error(HECMW_UTIL_E0205, "elem_val_item");
+					return -1;
+				}
 				n++;
 				m++;
 			}
@@ -401,7 +417,7 @@ static int
 get_line(char *buf, int bufsize, FILE *fp)
 {
 	if(fgets(buf, bufsize, fp) == NULL) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "get_line");
 		return -1;
 	}
 	return strlen(line_buf);
@@ -424,7 +440,7 @@ input_result_header(struct hecmwST_result_data *result,
 		return -1;
 	}
 	if(sscanf(line_buf, "%d%d", n_node, n_elem) != 2) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "n_node,n_elem");
 		return -1;
 	}
 
@@ -433,7 +449,7 @@ input_result_header(struct hecmwST_result_data *result,
 		return -1;
 	}
 	if(sscanf(line_buf, "%d%d", &result->nn_component, &result->ne_component) != 2) {
-		HECMW_set_error(HECMW_UTIL_E0205, "");
+		HECMW_set_error(HECMW_UTIL_E0205, "nn_comp,ne_comp");
 		return -1;
 	}
 
@@ -481,7 +497,7 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
 			return -1;
 		}
 		n += result->nn_dof[i];
@@ -506,7 +522,7 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_label");
 			return -1;
 		}
 		result->node_label[i] = HECMW_strdup(label);
@@ -555,7 +571,7 @@ input_result_node(struct hecmwST_result_data *result, int n_node, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "node_val_item");
 			return -1;
 		}
 		i++;
@@ -606,7 +622,7 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
 			return -1;
 		}
 		n += result->ne_dof[i];
@@ -631,7 +647,7 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_label");
 			return -1;
 		}
 		result->elem_label[i] = HECMW_strdup(label);
@@ -681,7 +697,7 @@ input_result_elem(struct hecmwST_result_data *result, int n_elem, FILE *fp)
 			return -1;
 		}
 		if(rc != 1) {
-			HECMW_set_error(HECMW_UTIL_E0205, "");
+			HECMW_set_error(HECMW_UTIL_E0205, "elem_val_item");
 			return -1;
 		}
 		i++;

@@ -78,6 +78,8 @@ contains
 
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
+    real(kind=kreal), pointer :: coord(:)
+
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
@@ -96,6 +98,9 @@ contains
     nnod=hecMESH%n_node
     ndof=hecMAT%NDOF
     nn=ndof*ndof
+
+    allocate(coord(hecMESH%n_node*ndof))
+
 !!
 !!-- initial value
 !!
@@ -290,7 +295,9 @@ contains
         if( iexit .eq. 1 ) then
           hecMAT%X = 0.0
         else
+          call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+          call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         end if
 
         do j=1,hecMESH%n_node*ndof
@@ -418,6 +425,7 @@ contains
         write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
     end if
 
+    deallocate(coord)
   end subroutine fstr_solve_dynamic_nlimplicit
 
 !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
@@ -478,6 +486,7 @@ contains
     integer(kint)   ::  nndof,npdof
     real(kreal),allocatable :: tmp_conB(:)
     integer   ::  istat
+    real(kind=kreal), pointer :: coord(:)
 
 ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -496,6 +505,9 @@ contains
     nnod=hecMESH%n_node
     ndof=hecMAT%NDOF
     nn=ndof*ndof
+
+    allocate(coord(hecMESH%n_node*ndof))
+
 !!
 !!-- initial value
 !!
@@ -729,11 +741,13 @@ contains
 !          call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
 
 !   ----  For Parallel Contact with Multi-Partition Domains
+          call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           if(paraContactFlag.and.present(conMAT)) then
             call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,1.0D0,conMAT)
           else
             call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
           endif
+          call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
 ! ----- update external nodal displacement increments
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
@@ -842,6 +856,7 @@ contains
         write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
     end if
 
+    deallocate(coord)
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
 
 end module fstr_dynamic_nlimplicit

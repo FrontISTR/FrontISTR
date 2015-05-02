@@ -35,10 +35,11 @@ contains
     logical, intent(in) :: is_sym
 
     if (INITIALIZED) then
-       hecMAT%Iarray(98) = 1
-       hecMAT%Iarray(97) = 1
        INITIALIZED = .false.
     endif
+
+    hecMAT%Iarray(98) = 1
+    hecMAT%Iarray(97) = 1
 
     if (is_sym) then
       SymType = 1
@@ -56,6 +57,7 @@ contains
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     integer :: method_org, precond_org
     logical :: fg_eliminate
+    logical :: fg_amg
     integer(kind=kint) :: num_lagrange_global
 
     hecMAT%Iarray(97) = 1
@@ -67,6 +69,7 @@ contains
       call hecmw_mat_set_precond(hecMAT, precond_org - 20)
     else
       fg_eliminate = .true.
+      if (precond_org == 5) fg_amg = .true.
     endif
 
     num_lagrange_global = fstrMAT%num_lagrange
@@ -77,10 +80,13 @@ contains
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)
       call hecmw_mat_set_method(hecMAT, 1)
+      ! avoid ML when no contact
+      if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
       call hecmw_solve_33(hecMESH, hecMAT)
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
+      if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
     else
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: with contact'
       if (fg_eliminate) then
@@ -168,6 +174,9 @@ contains
     ! solve
     call hecmw_solve_33(hecMESHtmp, hecTKT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
+
+    hecMAT%Iarray=hecTKT%Iarray
+    hecMAT%Rarray=hecTKT%Rarray
 
     ! calc u_s
     call hecmw_localmat_mulvec(BT_all, hecTKT%X, hecMAT%X) !!!<== maybe, BT_all should be BTmat ???
@@ -460,22 +469,24 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     real(kind=kreal), intent(out) :: Bnew(:)
     real(kind=kreal), allocatable :: Btmp(:)
-    integer(kind=kint) :: n, ndof, i
+    integer(kind=kint) :: npndof, nndof, i
 
-    n=hecMAT%NP
-    ndof=hecMAT%NDOF
+    npndof=hecMAT%NP*hecMAT%NDOF
+    nndof=hecMAT%N*hecMAT%NDOF
 
-    allocate(Btmp(n*ndof))
+    allocate(Btmp(npndof))
 
     !B2=-Bs^-1*Blag
     Bnew=0.d0
     !write(0,*) hecMAT%B(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
     do i=1,num_lagrange
-      Bnew(iwS(i))=wSL(i)*hecMAT%B(hecMAT%NP*ndof+i)
+      Bnew(iwS(i))=wSL(i)*hecMAT%B(npndof+i)
     enddo
     !Btmp=B+K*B2
     call hecmw_matvec_33(hecMESH, hecMAT, Bnew, Btmp)
-    Btmp=hecMAT%B+Btmp
+    do i=1,nndof
+      Btmp(i)=hecMAT%B(i)+Btmp(i)
+    enddo
     !B2=BTtmat*Btmp
     call hecmw_localmat_mulvec(BTtmat, Btmp, Bnew)
 
@@ -1391,6 +1402,9 @@ contains
     endif
 
     call hecmw_solve_33(hecMESH, hecMATLag)
+
+    hecMAT%Iarray=hecMATLag%Iarray
+    hecMAT%Rarray=hecMATLag%Rarray
 
     if (hecMESH%n_neighbor_pe > 0) then
       do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)

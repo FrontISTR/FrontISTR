@@ -75,6 +75,9 @@
       integer(kind=kint) ::ESTCOND
       real   (kind=kreal), allocatable::D(:),E(:)
       real   (kind=kreal)::ALPHA1
+      integer(kind=kint) :: n_indef_precond
+
+      integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 50
 
       call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
@@ -99,6 +102,7 @@
       ESTCOND = hecmw_mat_get_estcond( hecMAT )
 
       ERROR = 0
+      n_indef_precond = 0
 
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
@@ -179,9 +183,12 @@
         ! converged due to RHO==0
         exit
       elseif (iter > 1 .and. RHO*RHO1 <= 0) then
-        ! diverged due to indefinite preconditioner
-        ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
-        exit
+        n_indef_precond = n_indef_precond + 1
+        if (n_indef_precond >= 3) then
+          ! diverged due to indefinite preconditioner
+          ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
+          exit
+        endif
       endif
 
 !C===
@@ -231,8 +238,16 @@
 !C===
       do i = 1, NNDOF
          X(i)  = X(i)    + ALPHA * WW(i,P)
-        WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
+
+      if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+      else
+        do i = 1, NNDOF
+          WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        enddo
+      endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
@@ -253,7 +268,14 @@
         if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_CG(ITER, D, E)
       endif
 
-      if ( RESID.le.TOL   ) exit
+      if ( RESID.le.TOL   ) then
+        if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
+!C----- recompute R to make sure it is really converged
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        RESID= dsqrt(DNRM2/BNRM2)
+        if ( RESID.le.TOL ) exit
+      endif
       if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO

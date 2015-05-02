@@ -127,6 +127,8 @@ contains
     if (RHS(1).eq.0.d0) then
       ERROR= HECMW_SOLVER_ERROR_ZERO_RHS
       call hecmw_solve_error (hecMESH, ERROR)
+      hecMAT%X(:)=0.d0
+      return
     endif
 
     !C
