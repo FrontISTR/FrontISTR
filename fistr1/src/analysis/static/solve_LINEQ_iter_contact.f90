@@ -35,10 +35,11 @@ contains
     logical, intent(in) :: is_sym
 
     if (INITIALIZED) then
-       hecMAT%Iarray(98) = 1
-       hecMAT%Iarray(97) = 1
        INITIALIZED = .false.
     endif
+
+    hecMAT%Iarray(98) = 1
+    hecMAT%Iarray(97) = 1
 
     if (is_sym) then
       SymType = 1
@@ -173,6 +174,9 @@ contains
     ! solve
     call hecmw_solve_33(hecMESHtmp, hecTKT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
+
+    hecMAT%Iarray=hecTKT%Iarray
+    hecMAT%Rarray=hecTKT%Rarray
 
     ! calc u_s
     call hecmw_localmat_mulvec(BT_all, hecTKT%X, hecMAT%X) !!!<== maybe, BT_all should be BTmat ???
@@ -1398,6 +1402,9 @@ contains
     endif
 
     call hecmw_solve_33(hecMESH, hecMATLag)
+
+    hecMAT%Iarray=hecMATLag%Iarray
+    hecMAT%Rarray=hecMATLag%Rarray
 
     if (hecMESH%n_neighbor_pe > 0) then
       do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
