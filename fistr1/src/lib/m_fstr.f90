@@ -997,7 +997,29 @@ end subroutine fstr_param_init
         end subroutine
 
 
+        subroutine fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
+          implicit none
+          type(hecmwST_local_mesh), intent(inout) :: hecMESH
+          type (fstr_solid), intent(in) :: fstrSOLID
+          real(kind=kreal), pointer :: coord(:)
+          integer(kind=kint) :: i
+          do i = 1, hecMESH%n_node*hecMESH%n_dof
+            coord(i) = hecMESH%node(i)
+            hecMESH%node(i) = coord(i)+fstrSOLID%unode(i)+fstrSOLID%dunode(i)
+          enddo
+        end subroutine fstr_set_current_config_to_mesh
+
+
+        subroutine fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          implicit none
+          type(hecmwST_local_mesh), intent(inout) :: hecMESH
+          type (fstr_solid), intent(in) :: fstrSOLID
+          real(kind=kreal), pointer :: coord(:)
+          integer(kind=kint) :: i
+          do i = 1, hecMESH%n_node*hecMESH%n_dof
+            hecMESH%node(i) = coord(i)
+          enddo
+        end subroutine fstr_recover_initial_config_to_mesh
+
+
 end module m_fstr
-
-
-

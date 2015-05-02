@@ -64,6 +64,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
   integer(kind=kint) :: restrt_step_num
   logical            :: convg
   integer(kind=kint) :: n_node_global
+  real(kind=kreal), pointer :: coord(:)
 
   ! sum of n_node among all subdomains (to be used to calc res)
   n_node_global = hecMESH%nn_internal
@@ -71,6 +72,8 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
   hecMAT%NDOF = hecMESH%n_dof
   ndof = hecMAT%NDOF
+
+  allocate(coord(hecMESH%n_node*ndof))
 
   tincr = fstrSOLID%step_ctrl(cstep)%initdt
   if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
@@ -118,7 +121,9 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       if( iter >= 1 ) then
         hecMAT%Iarray(97) = 1   !Need numerical factorization
       end if
+      call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+      call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
       if( hecMESH%n_dof == 3 ) then
         call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
@@ -204,6 +209,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
   enddo
 
+  deallocate(coord)
 end subroutine fstr_Newton
 
 
@@ -231,6 +237,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   integer(kind=kint) :: restart_step_num,  restart_substep_num
   logical            :: convg, ctchange
   integer(kind=kint) :: n_node_global
+  real(kind=kreal), pointer :: coord(:)
 
   ! sum of n_node among all subdomains (to be used to calc res)
   n_node_global = hecMESH%nn_internal
@@ -240,6 +247,8 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   hecMAT%NDOF = hecMESH%n_dof
   ndof = hecMAT%NDOF
+
+  allocate(coord(hecMESH%n_node*ndof))
 
   tincr = fstrSOLID%step_ctrl(cstep)%initdt
   if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
@@ -312,7 +321,9 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         if( iter >= 1 ) then
           hecMAT%Iarray(97) = 1   !Need numerical factorization
         end if
+        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         if( hecMESH%n_dof == 3 ) then
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
@@ -429,6 +440,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   enddo
 
+  deallocate(coord)
 end subroutine fstr_Newton_contactALag
 
 
@@ -464,6 +476,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   real(kreal), allocatable :: tmp_conB(:)
   integer            :: istat, i0
   real(kreal)        :: q_residual,x_residual
+  real(kind=kreal), pointer :: coord(:)
 
   ! sum of n_node among all subdomains (to be used to calc res)
   n_node_global = hecMESH%nn_internal
@@ -479,6 +492,8 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   hecMAT%NDOF = hecMESH%n_dof
   ndof = hecMAT%NDOF
+
+  allocate(coord(hecMESH%n_node*ndof))
 
   tincr = fstrSOLID%step_ctrl(cstep)%initdt
   if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
@@ -584,6 +599,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
+        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
           call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT, 1.0D0, conMAT)
@@ -591,6 +607,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
           call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT)
         endif
+        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 
@@ -743,6 +760,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   enddo
 
+  deallocate(coord)
 end subroutine fstr_Newton_contactSLag
 
 
