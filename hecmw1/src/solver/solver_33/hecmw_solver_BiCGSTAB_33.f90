@@ -74,6 +74,8 @@
       integer(kind=kint), parameter :: V = 7
       integer(kind=kint), parameter :: WK= 8
 
+      integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 100
+
       call hecmw_barrier(hecMESH)
       S_time= HECMW_WTIME()
 
@@ -244,7 +246,7 @@
       enddo
 !C
 !C--- recompute R sometimes
-      if ( mod(ITER,100)==0 ) then
+      if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
       else
         do i = 1, NNDOF
@@ -261,6 +263,7 @@
 !C#####
 
       if ( RESID.le.TOL   ) then
+        if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
 !C----- recompute R to make sure it is really converged
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
         call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)

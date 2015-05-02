@@ -77,6 +77,8 @@
       real   (kind=kreal)::ALPHA1
       integer(kind=kint) :: n_indef_precond
 
+      integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 50
+
       call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
 
@@ -239,7 +241,7 @@
         ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
 
-      if (mod(ITER,50) == 0) then
+      if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
       else
         do i = 1, NNDOF
@@ -267,6 +269,7 @@
       endif
 
       if ( RESID.le.TOL   ) then
+        if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
 !C----- recompute R to make sure it is really converged
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
         call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
