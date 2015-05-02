@@ -200,7 +200,7 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
     int *edge_item;
 
     lists = (struct hecmw_varray_int *)
-            malloc(sizeof(struct hecmw_varray_int) * num_part);
+            HECMW_malloc(sizeof(struct hecmw_varray_int) * num_part);
     if (lists == NULL) {
         HECMW_set_error(errno, "");
         return HECMW_ERROR;

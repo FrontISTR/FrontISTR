@@ -1685,7 +1685,7 @@ HECMW_io_add_contact(const char *name, int type, const char *slave_grp, const ch
 		return NULL;
 	}
 
-	p = (struct hecmw_io_contact *) malloc(sizeof(*p));
+	p = (struct hecmw_io_contact *) HECMW_malloc(sizeof(*p));
 	if(p == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_contact(): contact");
 		return NULL;

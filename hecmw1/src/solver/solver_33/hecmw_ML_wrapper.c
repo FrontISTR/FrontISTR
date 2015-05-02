@@ -124,7 +124,7 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 		hecmw_ml_get_rbm_(id, null_vect, ierr);
 		if (*ierr != HECMW_SUCCESS) return;
 		ML_Aggregate_Set_NullSpace(agg_object, num_PDE_eqns, null_dim, null_vect, leng);
-		free(null_vect);
+		HECMW_free(null_vect);
 	}
 	/* ML_Aggregate_Set_MaxCoarseSize(agg_object,1); */ /* default is 32 */
 
@@ -218,7 +218,7 @@ void hecmw_ML_wrapper_apply(int *id, double rhs[], int *ierr)
 	for (i = 0; i < nlocal; i++) {
 		rhs[i] = sol[i];
 	}
-	free(sol);
+	HECMW_free(sol);
 }
 
 void hecmw_ML_wrapper_clear(int *id, int *ierr)
