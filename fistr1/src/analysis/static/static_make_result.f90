@@ -1400,7 +1400,7 @@ module m_static_make_result
     if (id == 1) then
      ! allocate(fstrSOLID%PSTRAIN)
 		 !NODEです。	
-		 IF (ALLOCATED(fstrSOLID%PSTRESS)) then 
+		 IF (ASSOCIATED(fstrSOLID%PSTRESS)) then 
 			RETURN
 		 ENDIF
 			if( (ndof==6 .or. mixedflag==1 ) ) then
@@ -1435,7 +1435,7 @@ module m_static_make_result
 				end do
 			end if
     else
-		 IF (ALLOCATED(fstrSOLID%EPSTRESS)) then 
+		 IF (ASSOCIATED(fstrSOLID%EPSTRESS)) then 
 			RETURN
 		 ENDIF
 			if( (ndof==6 .or. mixedflag==1 ) ) then
@@ -1487,7 +1487,7 @@ module m_static_make_result
     if (id == 1) then
      ! allocate(fstrSOLID%PSTRAIN)
 		 !NODEです。	
-			IF (ALLOCATED(fstrSOLID%PSTRAIN)) then 
+			IF (ASSOCIATED(fstrSOLID%PSTRAIN)) then 
 				RETURN
 			ENDIF
 			if( (ndof==6 .or. mixedflag==1 ) ) then
@@ -1521,7 +1521,7 @@ module m_static_make_result
 				end do
 			end if	 
     else
-		 IF (ALLOCATED(fstrSOLID%EPSTRAIN)) then 
+		 IF (ASSOCIATED(fstrSOLID%EPSTRAIN)) then 
 			RETURN
 		 ENDIF
         if( (ndof==6 .or. mixedflag==1 ) ) then
