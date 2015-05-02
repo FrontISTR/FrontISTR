@@ -147,6 +147,64 @@
     ierr = 0
   end subroutine hecmw_ML_get_coord
 
+  subroutine hecmw_ML_get_rbm(id, rbm, ierr)
+    use hecmw_util
+    use hecmw_mat_id
+    implicit none
+    integer(kind=kint), intent(in) :: id
+    real(kind=kreal), intent(out) :: rbm(*)
+    integer(kind=kint), intent(out) :: ierr
+    type(hecmwST_matrix), pointer :: hecMAT
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    integer(kind=kint) :: Ndof, vec_leng, node, offset
+    real(kind=kreal) :: x, y, z
+    call hecmw_mat_id_get(id, hecMAT, hecMESH)
+    Ndof = 3
+    vec_leng = hecMESH%nn_internal * Ndof
+    do node = 1, hecMESH%nn_internal
+      x = hecMESH%node(3*node-2)
+      y = hecMESH%node(3*node-1)
+      z = hecMESH%node(3*node  )
+
+      ! translation x
+      offset = (node-1)*Ndof
+      rbm(offset+1)=1.d0
+      rbm(offset+2)=0.d0
+      rbm(offset+3)=0.d0
+
+      ! translation y
+      offset = offset + vec_leng
+      rbm(offset+1)=0.d0
+      rbm(offset+2)=1.d0
+      rbm(offset+3)=0.d0
+
+      ! translation z
+      offset = offset + vec_leng
+      rbm(offset+1)=0.d0
+      rbm(offset+2)=0.d0
+      rbm(offset+3)=1.d0
+
+      ! rotation x
+      offset = offset + vec_leng
+      rbm(offset+1)=0.d0
+      rbm(offset+2)= -z
+      rbm(offset+3)=  y
+
+      ! rotation y
+      offset = offset + vec_leng
+      rbm(offset+1)=  z
+      rbm(offset+2)=0.d0
+      rbm(offset+3)= -x
+
+      ! rotation z
+      offset = offset + vec_leng
+      rbm(offset+1)= -y
+      rbm(offset+2)=  x
+      rbm(offset+3)=0.d0
+    enddo
+    ierr = 0
+  end subroutine hecmw_ML_get_rbm
+
   subroutine hecmw_ML_get_loglevel(id, level)
     use hecmw_util
     use hecmw_matrix_misc

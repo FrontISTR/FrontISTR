@@ -114,22 +114,15 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *ierr)
 	{
 		int num_PDE_eqns = Ndof;
 		int null_dim = 6;
-		double *x, *y, *z, *null_vect;
+		double *null_vect;
 		int leng = nlocal;
-		int Nnodes = nlocal / Ndof;
-		int NscalarDof = 0;
-		x = (double *) HECMW_malloc(sizeof(double) * Nnodes);
-		y = (double *) HECMW_malloc(sizeof(double) * Nnodes);
-		z = (double *) HECMW_malloc(sizeof(double) * Nnodes);
 		null_vect = (double *) HECMW_malloc(sizeof(double) * null_dim * leng);
-		if (!x || !y || !z || !null_vect) {
+		if (!null_vect) {
 			HECMW_set_error(errno, "");
 			abort();
 		}
-		hecmw_ml_get_coord_(id, x, y, z, ierr);
+		hecmw_ml_get_rbm_(id, null_vect, ierr);
 		if (*ierr != HECMW_SUCCESS) return;
-		ML_Coord2RBM(Nnodes, x, y, z, null_vect, Ndof, NscalarDof);
-		free(x); free(y); free(z);
 		ML_Aggregate_Set_NullSpace(agg_object, num_PDE_eqns, null_dim, null_vect, leng);
 		free(null_vect);
 	}
