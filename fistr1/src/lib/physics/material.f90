@@ -134,7 +134,9 @@ MODULE mMaterial
     real(kind=kreal)           :: thick
     real(kind=kreal)           :: angle
     real(kind=kreal)           :: rho
+    real(kind=kreal)           :: aplha
     real(kind=kreal)           :: alpha_over_mu
+    real(kind=kreal)           :: weight
   END TYPE tshellmat
 
   !> Stucture to management all material relates data

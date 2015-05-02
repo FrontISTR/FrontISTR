@@ -57,6 +57,7 @@ public
         integer(kind=kint),parameter :: kstHEAT      =   3
         integer(kind=kint),parameter :: kstDYNAMIC   =   4
         integer(kind=kint),parameter :: kstNLSTATIC  =   5
+        integer(kind=kint),parameter :: kstSTATICEIGEN = 6
 
         ! solver method (sm)    !CAUTION : (<=100):indirect, (>100):direct
         integer(kind=kint),parameter :: ksmCG       =   1
@@ -205,18 +206,18 @@ public
 !> Data for STATIC ANSLYSIS  (fstrSOLID)
 !C
         type fstr_solid_physic_val
-								! If using shell, substitute average value for this structure. and Substitute Plus and Minus for SHELL_PLUS and SHELL_MINUS 
-								! If using laminated shell, substitute average whole laminated elements value for this structure. and Substitute whole average plus and minus for SHELL_PLUS and SHELL_MINUS 
-								! And substitute each laminated shell's value for layer(1,2,3,4,)
-								
+                ! If using shell, substitute average value for this structure. and Substitute Plus and Minus for SHELL_PLUS and SHELL_MINUS 
+                ! If using laminated shell, substitute average whole laminated elements value for this structure. and Substitute whole average plus and minus for SHELL_PLUS and SHELL_MINUS 
+                ! And substitute each laminated shell's value for layer(1,2,3,4,)
+                
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
                 real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
 
                 real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
                 real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-                real(kind=kreal), pointer :: PSTRESS_VECT(:)   !< nodal principal stress vector
-                real(kind=kreal), pointer :: PSTRAIN_VECT(:)   !< nodal principal strain vector
+                real(kind=kreal), pointer :: PSTRESS_VECT(:,:)   !< nodal principal stress vector
+                real(kind=kreal), pointer :: PSTRAIN_VECT(:,:)   !< nodal principal strain vector
 
                 real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
                 real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
@@ -224,10 +225,8 @@ public
 
                 real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
                 real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-                real(kind=kreal), pointer :: EPSTRESS_VECT(:)   !< elemental principal stress vector
-                real(kind=kreal), pointer :: EPSTRAIN_VECT(:)   !< elemental principal strain vector
-				
-
+                real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
+                real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
 
                 type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
                 type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
@@ -251,7 +250,7 @@ public
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
 !               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)    =>null()
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
-                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)   =>null()
+                real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
 
                 !!VELOCITY
                 integer(kind=kint) :: VELOCITY_type
@@ -260,7 +259,7 @@ public
                 integer(kind=kint), pointer :: VELOCITY_ngrp_ID     (:)  =>null()
                 integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()
                 integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()
-                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)   =>null()
+                real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)  =>null()
 
                 !!ACCELERATION
                 integer(kind=kint) :: ACCELERATION_type
@@ -269,7 +268,7 @@ public
                 integer(kind=kint), pointer :: ACCELERATION_ngrp_ID     (:)  =>null()
                 integer(kind=kint), pointer :: ACCELERATION_ngrp_type   (:)  =>null()
                 integer(kind=kint), pointer :: ACCELERATION_ngrp_amp    (:)  =>null()
-                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)   =>null()
+                real(kind=kreal), pointer   :: ACCELERATION_ngrp_val    (:)  =>null()
 
                 !!CLOAD
                 integer(kind=kint) :: CLOAD_ngrp_tot                       !< Following concetrated external load
@@ -327,22 +326,23 @@ public
                 real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
                 real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
                 real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
-                
-                type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
 
+                real(kind=kreal), pointer :: TNSTRAIN(:)   !< thermal nodal strain
+                real(kind=kreal), pointer :: TESTRAIN(:)   !< thermal elemental strain
+
+                type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
                 type(fstr_solid_physic_val), pointer       :: SHELL=>null()     !< for shell physical value stracture
-                type(fstr_solid_physic_val), pointer       :: BEAM=>null()     !<for beam physical value stracture
+                type(fstr_solid_physic_val), pointer       :: BEAM =>null()     !<for beam physical value stracture
                 
-				
-				
                 ! ANALYSIS CONTROL for NLGEOM
-                integer(kind=kint) :: restart_nout  !< output interval of restart file
+                integer(kind=kint) :: restart_nout   !< output interval of restart file
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
-                integer(kind=kint) :: restart_nin   !< input number of restart file
+                integer(kind=kint) :: restart_nin    !< input number of restart 
 
+                integer(kind=kint) :: max_lyr        !< maximun num of layer
 
-                real(kind=kreal)           :: FACTOR      (2)     !< factor of incrementation
+                real(kind=kreal)           :: FACTOR     (2)     !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
@@ -351,8 +351,8 @@ public
                 real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
                 real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp icrement
                 real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
-                real(kind=kreal), pointer :: temp_bak(:)=> null()
-                real(kind=kreal), pointer :: last_temp(:)=> null()
+                real(kind=kreal), pointer :: temp_bak(:)   => null()
+                real(kind=kreal), pointer :: last_temp(:)  => null()
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
                 type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
@@ -631,9 +631,12 @@ contains
         nullify( S%SPRING_ngrp_val )
         nullify( S%STRESS )
         nullify( S%STRAIN )
+        nullify( S%MISES )
         nullify( S%ESTRESS )
         nullify( S%ESTRAIN )
-!        nullify( S%ESECTSTRESS )
+        nullify( S%EMISES )
+
+        !        nullify( S%ESECTSTRESS )
         nullify( S%GL          )
 !        nullify( S%TOTAL_DISP  )
         nullify( S%QFORCE      )
@@ -969,7 +972,7 @@ end subroutine fstr_param_init
           fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
         end function
 
-		!< This subroutine fetch coords defined by local coordinate system
+    !< This subroutine fetch coords defined by local coordinate system
         subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
            integer, intent(in)             :: cdsys_ID      !< id of local coordinate
            type (hecmwST_local_mesh)       :: hecMESH       !< mesh information

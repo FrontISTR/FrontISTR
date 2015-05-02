@@ -21,7 +21,7 @@ module m_dynamic_make_result
 !C***
 !>  OUTPUT result file for dynamic analysis
 !C***
-      subroutine fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, tnstrain, testrain )
+      subroutine fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep )
       use m_fstr
       use m_out
       use m_static_lib
@@ -35,6 +35,9 @@ module m_dynamic_make_result
       character(len=HECMW_NAME_LEN)   :: label, s, nameID
       integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, idx, ngauss
       real(kind=kreal), allocatable   :: work(:)
+      
+      tnstrain => fstrSOLID%TNSTRAIN
+      testrain => fstrSOLID%TESTRAIN
 
       if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
         idx = 2
@@ -341,7 +344,7 @@ module m_dynamic_make_result
 !C***
 !>  MAKE RESULT for dynamic analysis (WITHOUT ELEMENTAL RESULTS)
 !C***
-      subroutine fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT, tnstrain, testrain )
+      subroutine fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
       use m_fstr
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)         :: fstrSOLID
@@ -350,6 +353,9 @@ module m_dynamic_make_result
       real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
       integer(kind=kint) :: i, j, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, idx
+
+      tnstrain => fstrSOLID%TNSTRAIN
+      testrain => fstrSOLID%TESTRAIN
 
       if( fstrDYNAMIC%idx_eqa==1 .and. fstrDYNAMIC%i_step>0 ) then
         idx = 2

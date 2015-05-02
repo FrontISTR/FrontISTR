@@ -42,27 +42,23 @@ module m_static_output
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
     ndof = hecMESH%n_dof
-
-    nullify( tnstrain )
-    nullify( testrain )
-
+    
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
        if( ndof==3 ) then
-          allocate( tnstrain(hecMESH%n_node*6) )
-          allocate( testrain(hecMESH%n_elem*6) )
+          allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
+          allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
        else if( ndof==2 ) then
-          allocate( tnstrain(hecMESH%n_node*3) )
-          allocate( testrain(hecMESH%n_elem*3) )
+          allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
+          allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
        endif
     endif
 
     if( ndof==3 ) then
-          call fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
+          call fstr_NodalStress3D( hecMESH, fstrSOLID )
     else if( ndof==2 ) then
-          call fstr_NodalStress2D( hecMESH, fstrSOLID, tnstrain, testrain )
+          call fstr_NodalStress2D( hecMESH, fstrSOLID )
     else if( ndof==6 ) then
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
@@ -79,23 +75,21 @@ module m_static_output
     if( flag==6 ) then
       if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 1 )
+          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 1 )
       endif
-      if( associated(tnstrain) ) deallocate( tnstrain )
-      if( associated(testrain) ) deallocate( testrain )
       return
     endif
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 0 )
+          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
 
-          call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, tnstrain, testrain )
+          call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
           call fstr2hecmw_mesh_conv( hecMESH )
           call hecmw_visualize_init
           call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
@@ -119,9 +113,6 @@ module m_static_output
         write(fnum,'(2i10,1p6e15.7)') istep,gid,(fstrSOLID%unode(ndof*(iE-1)+j),j=1,ndof)
       enddo
     endif
-
-    if( associated(tnstrain) ) deallocate( tnstrain )
-    if( associated(testrain) ) deallocate( testrain )
 
   end subroutine fstr_static_Output
 
