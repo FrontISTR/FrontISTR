@@ -1184,43 +1184,60 @@ end subroutine
          .or. P%PARAM%solution_type == kstDYNAMIC &
          .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
                 ! Memory Allocation for Result Vectors ------------
-                if( P%MESH%is_33shell == 1 .or. P%MESH%is_33beam == 1 ) then
-                        allocate ( P%SOLID%SHELL )
-                        allocate ( P%SOLID%SHELL%STRAIN  (12*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%STRESS  (12*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%MISES  (2*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%ESTRESS  (12*ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%EMISES  (2*ntot_lyr*P%MESH%n_elem))
-                        P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
-                        P%SOLID%STRESS => P%SOLID%SHELL%STRESS
-                        P%SOLID%MISES => P%SOLID%SHELL%MISES
-                        P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
-                        P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
-                        P%SOLID%EMISES => P%SOLID%SHELL%EMISES
+                if( P%MESH%n_dof == 6 .or. P%MESH%is_33shell == 1 ) then
+                    allocate ( P%SOLID%SHELL )
+                    allocate ( P%SOLID%SHELL%STRAIN  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%STRESS  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%MISES   (  P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%ESTRAIN (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%ESTRESS (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%EMISES  (  P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%LAYER(ntot_lyr) )
+                    do i=1,ntot_lyr
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRAIN  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRESS  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%MISES   (  P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRAIN (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRESS (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%EMISES  (  P%MESH%n_elem))
+
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRAIN  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRESS  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%MISES   (  P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRAIN (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRESS (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%EMISES  (  P%MESH%n_elem))
+                    enddo
+                    P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
+                    P%SOLID%STRESS => P%SOLID%SHELL%STRESS
+                    P%SOLID%MISES  => P%SOLID%SHELL%MISES
+                    P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
+                    P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
+                    P%SOLID%EMISES  => P%SOLID%SHELL%EMISES
                 else
                     allocate ( P%SOLID%SOLID )
                     allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
                     allocate ( P%SOLID%SOLID%STRESS  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%MISES  (P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%MISES   (P%MESH%n_node))
                     allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
                     allocate ( P%SOLID%SOLID%ESTRESS  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%EMISES  (P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_node))
                     P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
                     P%SOLID%STRESS => P%SOLID%SOLID%STRESS
-                    P%SOLID%MISES => P%SOLID%SOLID%MISES
+                    P%SOLID%MISES  => P%SOLID%SOLID%MISES
                     P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
                     P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
-                    P%SOLID%EMISES => P%SOLID%SOLID%EMISES
+                    P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
                 end if
-
                 
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
-                P%SOLID%MISES = 0.d0
+                P%SOLID%MISES  = 0.d0
                 P%SOLID%ESTRAIN = 0.d0
                 P%SOLID%ESTRESS = 0.d0
-                P%SOLID%EMISES = 0.d0
+                P%SOLID%EMISES  = 0.d0
         end if
 
         P%EIGEN%iluetol = svRarray(1) ! solver tolerance
