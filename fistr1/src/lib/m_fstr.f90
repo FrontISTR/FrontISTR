@@ -311,7 +311,7 @@ public
                 ! VALUE
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
-                real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+                real(kind=kreal), pointer :: MISES(:)     !< nodal MISES
 
                 real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
                 real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain

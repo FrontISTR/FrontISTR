@@ -36,35 +36,29 @@ module m_static_make_result
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     integer(kind=kint)        :: maxstep, istep, flag
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
-
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
-    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
-    real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
-
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
-    character(len=4) :: char_n_lyr
-    character(len=4) :: cnum
+    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+    real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
+    character(len=6), allocatable   :: clyr(:)
 
     tnstrain => fstrSOLID%TNSTRAIN
     testrain => fstrSOLID%TESTRAIN
 
     ndof = hecMESH%n_dof
-    mm = hecMESH%n_node
+    mm   = hecMESH%n_node
     if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
     if( ndof==2 ) mdof = 3
     if( ndof==3 ) mdof = 6
-    if( ndof==6 ) mdof = 24
+    if( ndof==6 ) mdof = 12
 
     ntot_lyr   = fstrSOLID%max_lyr
     is_33shell = hecMESH%is_33shell
     is_33beam  = hecMESH%is_33beam
-    if (is_33shell == 1)then
-      mdof = 24
-    endif
 
-    nn = mm * mdof * 2
+    nn = mm * mdof
     allocate( work(nn) )
 
     ! --- INITIALIZE
@@ -75,7 +69,7 @@ module m_static_make_result
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
       id = 1
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-      allocate( unode(3*mm) )
+      allocate( unode(ndof*mm) )
       unode = 0.0d0
       unode(:) = fstrSOLID%unode(:)
       label = 'DISPLACEMENT'
@@ -95,7 +89,7 @@ module m_static_make_result
         id = 1
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
         label = 'ROTATION'
-        allocate( rnode(3*mm) )
+        allocate( rnode(ndof*mm) )
         rnode = 0.0d0
         call reorder_rot_shell(fstrSOLID, hecMESH, rnode)
         call hecmw_result_add( id, nitem, label, rnode )
@@ -112,139 +106,28 @@ module m_static_make_result
     endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! --- STRAIN @node
-    if (fstrSOLID%output_ctrl(3)%outinfo%on(3)) then
-      id = 1
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(3), ndof )
-      label = 'NodalSTRAIN'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%STRAIN )
+
+    if(is_33shell == 1)then
+      call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
+    else
+      call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
     endif
 
-    ! --- STRESS @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
-      id = 1
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(4), ndof )
-      label = 'NodalSTRESS'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%STRESS )
+    !laminated shell
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(27) ) then
+      allocate(clyr(2*ntot_lyr))
+      do i=1,ntot_lyr
+        write(cnum,"(i0)")i
+        clyr(2*i-1)="_L"//trim(cnum)//"+"
+        clyr(2*i  )="_L"//trim(cnum)//"-"
+      enddo
+      do i=1,ntot_lyr
+        call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%PLUS,  clyr(2*i-1) )
+        call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%MINUS, clyr(2*i  ) )
+      enddo
+      deallocate(clyr)
     endif
 
-    ! --- MISES @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(5) ) then
-      id = 1
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(5), ndof )
-      label = 'NodalMISES'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%MISES )
-    endif
-    
-    ! --- NODAL PRINC STRESS
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(19) ) then
-      id = 1
-      call make_principal_stress_value(fstrSOLID, hecMESH, id, ndof)
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(19), ndof )
-      label = 'NodalPrincipalSTRESS'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%PSTRESS )
-    endif
-
-    ! --- NODAL PRINC STRAIN
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(21) ) then
-      id = 1
-      call make_principal_strain_value(fstrSOLID, hecMESH, id,ndof)
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(21), ndof )
-      label = 'NodalPrincipalSTRAIN'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%PSTRAIN )
-    endif
-
-    ! --- NODAL PRINC STRESS VECTOR
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(23) ) then
-      id = 1
-      call make_principal_stress_value(fstrSOLID, hecMESH, id, ndof)
-      do k=1,3
-        write(cnum,'(i0)')k
-        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(23), ndof )
-        label = 'NodalPrincipalSTRESSVector'//'_'//trim(cnum)
-        call hecmw_result_add( id, nitem, label, fstrSOLID%PSTRESS_VECT(:,k) )
-      end do
-    endif
-
-    ! --- NODAL PRINC STRAIN VECTOR
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(25) ) then
-      id = 1
-      call make_principal_strain_value(fstrSOLID, hecMESH, id, ndof)
-      do k=1,3
-        write(cnum, '(i0)') k
-        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(25), ndof )
-        label = 'NodalPrincipalSTRAINVector'//'_'//trim(cnum)
-        call hecmw_result_add( id, nitem, label, fstrSOLID%PSTRAIN_VECT(:,k) )
-      end do
-    endif
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! --- STRAIN @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
-      id = 2
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(6), ndof )
-      label = 'ElementalSTRAIN'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%ESTRAIN )
-    endif
-
-    ! --- STRESS @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(7) ) then
-      id = 2
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
-      label = 'ElementalSTRESS'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%ESTRESS )
-    endif
-
-    ! --- MISES @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(8)) then
-      id = 2
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
-      label = 'ElementalMISES'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%EMISES )
-    endif
-
-    ! --- Principal_STRESS @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(20) ) then
-      id = 2
-      call make_principal_stress_value(fstrSOLID, hecMESH, id, ndof)
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(20), ndof )
-      label = 'ElementalPrincipalSTRESS'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%EPSTRESS )
-    endif
-
-    ! --- Principal_STRAIN @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(22) ) then
-      id = 2
-      call make_principal_strain_value(fstrSOLID, hecMESH, id, ndof)
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(22), ndof )
-      label = 'ElementalPrincipalSTRAIN'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%EPSTRAIN )
-    endif
-    
-    ! --- ELEM PRINC STRESS VECTOR
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(24) ) then
-      id = 2
-      call make_principal_stress_value(fstrSOLID, hecMESH, id, ndof)
-      do k=1,3
-        write(cnum, '(i0)')k
-        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(24), ndof )
-        label = 'ElementalPrincipalSTRESSVector'//'_'//trim(cnum)
-        call hecmw_result_add( id, nitem, label, fstrSOLID%EPSTRESS_VECT(:,k) )
-      end do
-    endif
-
-    !ELEM PRINC STRAIN VECTOR
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(26) ) then
-      id = 2
-      call make_principal_strain_value(fstrSOLID, hecMESH, id, ndof)
-      do k=1,3
-        write(cnum, '(i0)') k
-        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(26), ndof )
-        label = 'ElementalPrincipalSTRAINVector'//'_'//trim(cnum)
-        call hecmw_result_add( id, nitem, label, fstrSOLID%EPSTRAIN_VECT(:,k) )
-      end do
-    endif
-  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! --- STRAIN @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
@@ -359,6 +242,163 @@ module m_static_make_result
     deallocate( work )
   end subroutine fstr_write_static_result
 
+  subroutine fstr_write_static_result_main( hecMESH, fstrSOLID, RES, clyr )
+    use m_fstr
+    use m_out
+    use m_static_lib
+    use mMaterial
+    use hecmw_util
+    
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid)         :: fstrSOLID
+    type (fstr_solid_physic_val) :: RES
+    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: n_lyr, cid
+
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
+    character(len=6)                :: clyr
+    character(len=4)                :: cnum
+    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+
+    ndof = hecMESH%n_dof
+
+    ! --- STRAIN @node
+    if (fstrSOLID%output_ctrl(3)%outinfo%on(3)) then
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(3), ndof )
+      label = 'NodalSTRAIN'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%STRAIN )
+    endif
+
+    ! --- STRESS @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(4), ndof )
+      label = 'NodalSTRESS'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%STRESS )
+    endif
+
+    ! --- MISES @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(5) ) then
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(5), ndof )
+      label = 'NodalMISES'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%MISES )
+    endif
+    
+    ! --- NODAL PRINC STRESS
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(19) ) then
+      id = 1
+      call make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(19), ndof )
+      label = 'NodalPrincipalSTRESS'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%PSTRESS )
+    endif
+
+    ! --- NODAL PRINC STRAIN
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(21) ) then
+      id = 1
+      call make_principal_strain_value(fstrSOLID, hecMESH, RES, id, ndof)
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(21), ndof )
+      label = 'NodalPrincipalSTRAIN'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%PSTRAIN )
+    endif
+
+    ! --- NODAL PRINC STRESS VECTOR
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(23) ) then
+      id = 1
+      call make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
+      do k=1,3
+        write(cnum,'(i0)')k
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(23), ndof )
+        label = 'NodalPrincipalSTRESSVector'//trim(cnum)//trim(clyr)
+        call hecmw_result_add( id, nitem, label, RES%PSTRESS_VECT(:,k) )
+      end do
+    endif
+
+    ! --- NODAL PRINC STRAIN VECTOR
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(25) ) then
+      id = 1
+      call make_principal_strain_value(fstrSOLID, hecMESH, RES, id, ndof)
+      do k=1,3
+        write(cnum,'(i0)')k
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(25), ndof )
+        label = 'NodalPrincipalSTRAINVector'//trim(cnum)//trim(clyr)
+        call hecmw_result_add( id, nitem, label, RES%PSTRAIN_VECT(:,k) )
+      end do
+    endif
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! --- STRAIN @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(6), ndof )
+      label = 'ElementalSTRAIN'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%ESTRAIN )
+    endif
+
+    ! --- STRESS @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(7) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
+      label = 'ElementalSTRESS'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%ESTRESS )
+    endif
+
+    ! --- MISES @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(8)) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
+      label = 'ElementalMISES'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%EMISES )
+    endif
+
+    ! --- Principal_STRESS @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(20) ) then
+      id = 2
+      call make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(20), ndof )
+      label = 'ElementalPrincipalSTRESS'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%EPSTRESS )
+    endif
+
+    ! --- Principal_STRAIN @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(22) ) then
+      id = 2
+      call make_principal_strain_value(fstrSOLID, hecMESH, RES, id, ndof)
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(22), ndof )
+      label = 'ElementalPrincipalSTRAIN'//trim(clyr)
+      call hecmw_result_add( id, nitem, label, RES%EPSTRAIN )
+    endif
+    
+    ! --- ELEM PRINC STRESS VECTOR
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(24) ) then
+      id = 2
+      call make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
+      do k=1,3
+        write(cnum,'(i0)')k
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(24), ndof )
+        label = 'ElementalPrincipalSTRESSVector'//trim(cnum)//trim(clyr)
+        call hecmw_result_add( id, nitem, label, RES%EPSTRESS_VECT(:,k) )
+      end do
+    endif
+
+    !ELEM PRINC STRAIN VECTOR
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(26) ) then
+      id = 2
+      call make_principal_strain_value(fstrSOLID, hecMESH, RES, id, ndof)
+      do k=1,3
+        write(cnum,'(i0)')k
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(26), ndof )
+        label = 'ElementalPrincipalSTRAINVector'//trim(cnum)//trim(clyr)
+        call hecmw_result_add( id, nitem, label, RES%EPSTRAIN_VECT(:,k) )
+      end do
+    endif
+
+  end subroutine fstr_write_static_result_main
+
 !C***
 !>  MAKE RESULT for static analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
 !C***
@@ -370,13 +410,12 @@ module m_static_make_result
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
-    character(len=4) :: char_n_lyr
-    character(len=4) :: cnum
-    real(kind=kreal), allocatable   ::unode(:)
-
-    integer(kind=kint) :: n_lyr, ntot_lyr, it, shell33_coeff, is_33shell, is_33beam
+    integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
     integer(kind=kint) :: i, j, k, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
+    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+    real(kind=kreal), allocatable   ::unode(:)
+    character(len=4) :: cnum
+    character(len=6), allocatable   :: clyr(:)
 
     tnstrain => fstrSOLID%TNSTRAIN
     testrain => fstrSOLID%TESTRAIN
@@ -393,8 +432,10 @@ module m_static_make_result
     if( ndof==3 ) mdof = 6
     if( ndof==6 ) mdof = 12
 
-    if (is_33shell == 1)then
-      mdof = 12
+    if(is_33shell == 1 .and. fstrSOLID%output_ctrl(4)%outinfo%on(27) )then
+      coef33 = 1 + 2*ntot_lyr
+    else
+      coef33 = 1
     endif
 
     call hecmw_nullify_result_data( fstrRESULT )
@@ -420,78 +461,40 @@ module m_static_make_result
           nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(2), ndof )
         endif
 ! --- STRAIN @node
-! --- shell has + and -, shell33_coeff=2
-    DO n_lyr = 1,ntot_lyr
         if( fstrSOLID%output_ctrl(4)%outinfo%on(3) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2
-            nitem = nitem + mdof
-          else
-            ncomp = ncomp + shell33_coeff*1
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
-          endif
+          ncomp = ncomp + 1*coef33
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )*coef33
         endif
 ! --- STRESS @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(4) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2
-            nitem = nitem + mdof
-          else
-            ncomp = ncomp + shell33_coeff*1
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
-          endif
+          ncomp = ncomp + 1*coef33
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )*coef33
         endif
 ! --- MISES @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(5) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2
-            nitem = nitem + mdof
-          else
-            ncomp = ncomp + shell33_coeff*1
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )
-          endif
+          ncomp = ncomp + 1*coef33
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )*coef33
         endif
 ! --- Principal Stress @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2
-            nitem = nitem + mdof
-          else
-            ncomp = ncomp + shell33_coeff*1
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(19), ndof )
-          endif
+          ncomp = ncomp + 1*coef33
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(19), ndof )*coef33
         endif
 ! --- Principal Strain @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(21) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2
-            nitem = nitem + mdof
-          else
-            ncomp = ncomp + shell33_coeff*1
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )
-          endif
+          ncomp = ncomp + 1*coef33
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )*coef33
         endif
 ! --- Principal Stress Vector @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(23) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2*3
-            nitem = nitem + 3*3
-          else
-            ncomp = ncomp + shell33_coeff*1*3
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(23), ndof )*3
-          endif
+          ncomp = ncomp + 3*coef33
+          nitem = nitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(23), ndof )*coef33
         endif
 ! --- Principal Strain Vector @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(25) ) then
-          if( ndof==6 ) then
-            ncomp = ncomp + 2*3
-            nitem = nitem + 3*3
-          else
-            ncomp = ncomp + shell33_coeff*1*3
-            nitem = nitem + shell33_coeff*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(25), ndof )*3
-          endif
+          ncomp = ncomp + 3*coef33
+          nitem = nitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(25), ndof )*coef33
         endif
-    ENDDO
 ! --- THERMAL STRAIN @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(12) .and. associated(tnstrain) ) then
           ncomp = ncomp + 1
@@ -503,7 +506,7 @@ module m_static_make_result
         fstrRESULT%ne_component = ecomp
         allocate( fstrRESULT%nn_dof(ncomp) )
         allocate( fstrRESULT%node_label(ncomp) )
-        allocate( fstrRESULT%node_val_item(shell33_coeff*nitem*hecMESH%n_node) )
+        allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
         allocate( fstrRESULT%ne_dof(ecomp) )
         allocate( fstrRESULT%elem_label(ecomp) )
         allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
@@ -518,11 +521,38 @@ module m_static_make_result
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
+          allocate( unode(ndof*mm) )
+          unode = 0.0d0
+          unode(:) = fstrSOLID%unode(:)
+          if(is_33beam == 1)then
+            call reorder_node_beam(fstrSOLID, hecMESH, unode)
+          endif
+          if(is_33shell == 1)then
+            call reorder_node_shell(fstrSOLID, hecMESH, unode)
+          endif
           do i = 1, hecMESH%n_node
             do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%unode(nn*(i-1)+j)
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
             enddo
           enddo
+          deallocate( unode )
+          iitem = iitem + nn
+        endif
+! --- ROTATION
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(18) .and. is_33shell == 1 ) then
+          ncomp = ncomp + 1
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'ROTATION'
+          allocate( unode(ndof*mm) )
+          unode = 0.0d0
+          call reorder_rot_shell(fstrSOLID, hecMESH, unode)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+            enddo
+          enddo
+          deallocate( unode )
           iitem = iitem + nn
         endif
 ! --- REACTION FORCE
@@ -538,115 +568,31 @@ module m_static_make_result
           enddo
           iitem = iitem + nn
         endif
-! --- STRAIN @node
-
-    DO n_lyr = 1,ntot_lyr
-      write(char_n_lyr, '(i0)') n_lyr
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(3)) then
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'NodalSTRAIN'
-          do i = 1, hecMESH%n_node
-            do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRAIN(nn*(i-1)+j)
-            enddo
-          enddo
-          iitem = iitem + nn
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(is_33shell == 1)then
+          call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+          & fstrSOLID%SHELL, nitem, iitem, ncomp, 1, "      " )
+        else
+          call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+          & fstrSOLID%SOLID, nitem, iitem, ncomp, 1, "      " )
         endif
 
-! --- STRESS @node
-        if(fstrSOLID%output_ctrl(4)%outinfo%on(4)) then
-          ncomp = ncomp + 1
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'NodalSTRESS'
-          do i = 1, hecMESH%n_node
-            do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS((nn)*(i-1)+j)
-            enddo
+        !laminated shell
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(27) .and. is_33shell == 1 ) then
+          allocate(clyr(2*ntot_lyr))
+          do i=1,ntot_lyr
+            write(cnum,"(i0)")i
+            clyr(2*i-1)="_L"//trim(cnum)//"+"
+            clyr(2*i  )="_L"//trim(cnum)//"-"
           enddo
-          iitem = iitem + nn
-        endif
-
-! --- MISES @node
-        if(fstrSOLID%output_ctrl(4)%outinfo%on(5)) then
-          ncomp = ncomp + 1
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'NodalMISES'
-          do i = 1, hecMESH%n_node
-            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%MISES(i)
+          do i=1,ntot_lyr
+            call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+            & fstrSOLID%SHELL%LAYER(i)%PLUS,  nitem, iitem, ncomp, i+1, clyr(2*i-1) )
+            call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+            & fstrSOLID%SHELL%LAYER(i)%MINUS, nitem, iitem, ncomp, i+1, clyr(2*i  ) )
           enddo
-          iitem = iitem + nn
+          deallocate(clyr)
         endif
-
-! --- Princ STRESS @node
-        if(fstrSOLID%output_ctrl(4)%outinfo%on(19)) then
-          call make_principal_stress_value(fstrSOLID, hecMESH, 1, ndof)
-          ncomp = ncomp + 1
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(19), ndof )
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRESS'
-          do i = 1, hecMESH%n_node
-            do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%PSTRESS((nn)*(i-1)+j)
-            enddo
-          enddo
-          iitem = iitem + nn
-        endif
-
-! --- Princ STRESS Vector @node
-        if(fstrSOLID%output_ctrl(4)%outinfo%on(23)) then
-          call make_principal_stress_value(fstrSOLID, hecMESH, 1, ndof)
-          do k=1,3
-            write(cnum, '(i0)') k
-            ncomp = ncomp + 1
-            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(23), ndof )
-            fstrRESULT%nn_dof(ncomp) = nn
-            fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRESSVector'//'_'//trim(cnum)
-            do i = 1, hecMESH%n_node
-              do j = 1, nn
-                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%PSTRESS_VECT((nn)*(i-1)+j,k)
-              enddo
-            enddo
-            iitem = iitem + nn
-          end do
-        endif
-
-! --- Princ STRAIN @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(21)) then
-          call make_principal_strain_value(fstrSOLID, hecMESH, 1, ndof)
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRAIN'
-          do i = 1, hecMESH%n_node
-            do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%PSTRAIN(nn*(i-1)+j)
-            enddo
-          enddo
-          iitem = iitem + nn
-        endif
-    
-! --- Princ STRAIN Vector @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(25)) then
-          call make_principal_strain_value(fstrSOLID, hecMESH, 1, ndof)
-          do k=1,3
-            write(cnum, '(i0)') k
-            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(25), ndof )
-            ncomp = ncomp + 1
-            fstrRESULT%nn_dof(ncomp) = nn
-            fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRAINVector'//'_'//trim(cnum)
-            do i = 1, hecMESH%n_node
-              do j = 1, nn
-                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%PSTRAIN_VECT(nn*(i-1)+j,k)
-              enddo
-            enddo
-            iitem = iitem + nn
-          enddo
-        endif
-  ENDDO
 
 ! --- THERMAL STRAIN @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(12) .and. associated(tnstrain) ) then
@@ -663,6 +609,137 @@ module m_static_make_result
         endif
 
     end subroutine fstr_make_static_result
+
+  subroutine fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, iitem, ncomp, nlyr, clyr )
+    use m_fstr
+    use m_out
+    use m_static_lib
+    use mMaterial
+    use hecmw_util
+    
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid)         :: fstrSOLID
+    type (hecmwST_result_data):: fstrRESULT
+    type (fstr_solid_physic_val) :: RES
+    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: n_lyr, cid
+
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
+    character(len=6)                :: clyr
+    character(len=4)                :: cnum
+    integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    integer(kind=kint) :: iitem, ncomp, nlyr
+
+    ndof = hecMESH%n_dof
+
+! --- STRAIN @node
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(3)) then
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
+          ncomp = ncomp + 1
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'NodalSTRAIN'//trim(clyr)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%STRAIN(nn*(i-1)+j)
+            enddo
+          enddo
+          iitem = iitem + nn
+        endif
+! --- STRESS @node
+        if(fstrSOLID%output_ctrl(4)%outinfo%on(4)) then
+          ncomp = ncomp + 1
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'NodalSTRESS'//trim(clyr)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%STRESS((nn)*(i-1)+j)
+            enddo
+          enddo
+          iitem = iitem + nn
+        endif
+
+! --- MISES @node
+        if(fstrSOLID%output_ctrl(4)%outinfo%on(5)) then
+          ncomp = ncomp + 1
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'NodalMISES'//trim(clyr)
+          do i = 1, hecMESH%n_node
+            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = RES%MISES(i)
+          enddo
+          iitem = iitem + nn
+        endif
+
+! --- Princ STRESS @node
+        if(fstrSOLID%output_ctrl(4)%outinfo%on(19)) then
+          call make_principal_stress_value(fstrSOLID, hecMESH, RES, 1, ndof)
+          ncomp = ncomp + 1
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(19), ndof )
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRESS'//trim(clyr)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%PSTRESS((nn)*(i-1)+j)
+            enddo
+          enddo
+          iitem = iitem + nn
+        endif
+
+! --- Princ STRESS Vector @node
+        if(fstrSOLID%output_ctrl(4)%outinfo%on(23)) then
+          call make_principal_stress_value(fstrSOLID, hecMESH, RES, 1, ndof)
+          do k=1,3
+            write(cnum, '(i0)') k
+            ncomp = ncomp + 1
+            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(23), ndof )
+            fstrRESULT%nn_dof(ncomp) = nn
+            fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRESSVector'//trim(cnum)//trim(clyr)
+            do i = 1, hecMESH%n_node
+              do j = 1, nn
+                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%PSTRESS_VECT((nn)*(i-1)+j,k)
+              enddo
+            enddo
+            iitem = iitem + nn
+          end do
+        endif
+
+! --- Princ STRAIN @node
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(21)) then
+          call make_principal_strain_value(fstrSOLID, hecMESH, RES, 1, ndof)
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )
+          ncomp = ncomp + 1
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRAIN'//trim(clyr)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%PSTRAIN(nn*(i-1)+j)
+            enddo
+          enddo
+          iitem = iitem + nn
+        endif
+    
+! --- Princ STRAIN Vector @node
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(25)) then
+          call make_principal_strain_value(fstrSOLID, hecMESH, RES, 1, ndof)
+          do k=1,3
+            write(cnum, '(i0)') k
+            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(25), ndof )
+            ncomp = ncomp + 1
+            fstrRESULT%nn_dof(ncomp) = nn
+            fstrRESULT%node_label(ncomp) = 'NodalPrincipalSTRAINVector'//trim(cnum)//trim(clyr)
+            do i = 1, hecMESH%n_node
+              do j = 1, nn
+                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = RES%PSTRAIN_VECT(nn*(i-1)+j,k)
+              enddo
+            enddo
+            iitem = iitem + nn
+          enddo
+        endif
+
+  end subroutine fstr_make_static_result_main
 
   subroutine reorder_node_shell(fstrSOLID, hecMESH, unode)
     use m_fstr
@@ -789,7 +866,7 @@ module m_static_make_result
 
   end subroutine reorder_node_beam
 
-  subroutine make_principal_stress_value(fstrSOLID, hecMESH, id, ndof)
+  subroutine make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
     use hecmw_util
     use m_fstr
     use m_out
@@ -797,42 +874,40 @@ module m_static_make_result
     
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid_physic_val) :: RES
     integer(kind=kint) :: ntot_lyr, mixedflag, ndof
     real(kind=kreal)   :: wmat(3,3)
     
     if (id == 1) then
-      IF (ASSOCIATED(fstrSOLID%PSTRESS)) then 
-        RETURN
-      ENDIF
+      if ( .not. associated(RES%PSTRESS) ) then
+        allocate(RES%PSTRESS( 3*hecMESH%n_node ))
+        allocate(RES%PSTRESS_VECT( 3*hecMESH%n_node ,3))
+      endif
 
-      allocate(fstrSOLID%PSTRESS( 3*hecMESH%n_node ))
-      allocate(fstrSOLID%PSTRESS_VECT( 3*hecMESH%n_node ,3))
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(19), ndof )
-
       do i = 1, hecMESH%n_node
-          call get_principal( fstrSOLID%STRESS(6*(i-1)+1:6*(i-1)+6), &
-          & fstrSOLID%PSTRESS(3*(i-1)+1:3*(i-1)+3), wmat)
-          fstrSOLID%PSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(:,1:3)
+          call get_principal( RES%STRESS(6*(i-1)+1:6*(i-1)+6), &
+          & RES%PSTRESS(3*(i-1)+1:3*(i-1)+3), wmat)
+          RES%PSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(1:3,1:3)
       end do
 
-    else
-      IF (ASSOCIATED(fstrSOLID%EPSTRESS)) then 
-        RETURN
-      ENDIF
+    elseif(id == 2)then
+      if ( .not. associated(RES%EPSTRESS)) then
+        allocate(RES%EPSTRESS( 3*hecMESH%n_elem ))
+        allocate(RES%EPSTRESS_VECT( 3*hecMESH%n_elem,3 ))
+      endif
 
-      allocate(fstrSOLID%EPSTRESS( 3*hecMESH%n_elem ))
-      allocate(fstrSOLID%EPSTRESS_VECT( 3*hecMESH%n_elem,3 ))
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(21), ndof )
       do i = 1, hecMESH%n_elem
-          call get_principal( fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6), &
-          & fstrSOLID%EPSTRESS(3*(i-1)+1:3*(i-1)+3), wmat)
-          fstrSOLID%EPSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(:,1:3)
+          call get_principal( RES%ESTRESS(6*(i-1)+1:6*(i-1)+6), &
+          & RES%EPSTRESS(3*(i-1)+1:3*(i-1)+3), wmat)
+          RES%EPSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(1:3,1:3)
       end do
     end if
     
   end subroutine make_principal_stress_value
 
-  subroutine make_principal_strain_value(fstrSOLID, hecMESH, id, ndof)
+  subroutine make_principal_strain_value(fstrSOLID, hecMESH, RES, id, ndof)
     use hecmw_util
     use hecmw_util
     use m_fstr
@@ -841,31 +916,33 @@ module m_static_make_result
 
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid_physic_val) :: RES
     integer(kind=kint) :: ntot_lyr, mixedflag, ndof
     real(kind=kreal)   :: wmat(3,3)
     if (id == 1) then
-      IF (ASSOCIATED(fstrSOLID%PSTRAIN)) then 
-        RETURN
-      ENDIF
-      allocate(fstrSOLID%PSTRAIN( 3*hecMESH%n_node ))
-      allocate(fstrSOLID%PSTRAIN_VECT( 3*hecMESH%n_node ,3))
+      if ( .not. associated(RES%PSTRAIN)) then
+        allocate(RES%PSTRAIN( 3*hecMESH%n_node ))
+        allocate(RES%PSTRAIN_VECT( 3*hecMESH%n_node ,3))
+      endif
+
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(20), ndof )
       do i = 1, hecMESH%n_node
-        call get_principal( fstrSOLID%STRAIN(6*(i-1)+1:6*(i-1)+6), &
-        & fstrSOLID%PSTRAIN(3*(i-1)+1:3*(i-1)+3), wmat)
-        fstrSOLID%PSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(:,1:3)
+        call get_principal( RES%STRAIN(6*(i-1)+1:6*(i-1)+6), &
+        & RES%PSTRAIN(3*(i-1)+1:3*(i-1)+3), wmat)
+        RES%PSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(1:3,1:3)
       end do
 
-      IF (ASSOCIATED(fstrSOLID%EPSTRAIN)) then 
-        RETURN
-      ENDIF
-      allocate(fstrSOLID%EPSTRAIN( 3*hecMESH%n_elem ))
-      allocate(fstrSOLID%EPSTRAIN_VECT( 3*hecMESH%n_elem ,3))
+    elseif(id == 2)then
+      if ( .not. associated(RES%EPSTRAIN)) then
+        allocate(RES%EPSTRAIN( 3*hecMESH%n_elem ))
+        allocate(RES%EPSTRAIN_VECT( 3*hecMESH%n_elem ,3))
+      endif
+
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(22), ndof )
       do i = 1, hecMESH%n_elem
-        call get_principal( fstrSOLID%ESTRAIN(6*(i-1)+1:6*(i-1)+6), &
-        & fstrSOLID%EPSTRAIN(3*(i-1)+1:3*(i-1)+3), wmat)
-        fstrSOLID%EPSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(:,1:3)
+        call get_principal( RES%ESTRAIN(6*(i-1)+1:6*(i-1)+6), &
+        & RES%EPSTRAIN(3*(i-1)+1:3*(i-1)+3), wmat)
+        RES%EPSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3) = wmat(1:3,1:3)
       enddo
     end if
   end subroutine make_principal_strain_value

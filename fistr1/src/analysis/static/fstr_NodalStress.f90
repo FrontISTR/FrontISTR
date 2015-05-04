@@ -252,13 +252,13 @@ contains
       do nlyr = 1, ntot_lyr
         do i = 1, hecMESH%n_node
           fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  = &
-          & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
+        & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
           fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  = &
-          & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
+        & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
           fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRAIN(6*(i-1)+1:6*(i-1)+6) = &
-          & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRAIN(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
+        & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRAIN(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
           fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6) = &
-          & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
+        & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
         enddo
       enddo
     endif
@@ -323,21 +323,14 @@ contains
       weight = fstrSOLID%elements(icel)%gausses(1)%pMaterial%shell_var(nlyr)%weight
       do j = 1, nn
         i = nodLOCAL(j)
-        m = nodLOCAL(j+nn)
         do k = 1, 6
           strain(j,k) = strain(j,k) &
           & + weight*(0.5d0*layer%PLUS%STRAIN(6*(i-1)+k) + 0.5d0*layer%MINUS%STRAIN(6*(i-1)+k))
           stress(j,k) = stress(j,k) &
           & + weight*(0.5d0*layer%PLUS%STRESS(6*(i-1)+k) + 0.5d0*layer%MINUS%STRESS(6*(i-1)+k))
-          strain(j,k) = strain(j,k) &
-          & + weight*(0.5d0*layer%PLUS%STRAIN(6*(m-1)+k) + 0.5d0*layer%MINUS%STRAIN(6*(m-1)+k))
-          stress(j,k) = stress(j,k) &
-          & + weight*(0.5d0*layer%PLUS%STRESS(6*(m-1)+k) + 0.5d0*layer%MINUS%STRESS(6*(m-1)+k))
         enddo
         estrain(j) = estrain(j) &
         & + weight*(0.5d0*layer%PLUS%ESTRAIN(6*(icel-1)+j) + 0.5d0*layer%MINUS%ESTRAIN(6*(icel-1)+j))
-        estress(j) = estress(j) &
-        & + weight*(0.5d0*layer%PLUS%ESTRESS(6*(icel-1)+j) + 0.5d0*layer%MINUS%ESTRESS(6*(icel-1)+j))
       enddo
     enddo
   end subroutine fstr_getavg_shell
