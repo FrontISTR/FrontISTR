@@ -644,7 +644,7 @@ spdup_make_node_grouplist( const struct hecmwST_local_mesh *global_mesh )
         }
     }
 
-    for(i=0; i<global_mesh->n_subdomain; i++ ) {
+    for(i=0; i<global_mesh->n_node; i++ ) {
         HECMW_free( domain[i] );
     }
     HECMW_free( n_domain );
@@ -764,7 +764,7 @@ spdup_make_element_grouplist( const struct hecmwST_local_mesh *global_mesh )
         }
     }
 
-    for(i=0; i<global_mesh->n_subdomain; i++ ) {
+    for(i=0; i<global_mesh->n_elem; i++ ) {
         HECMW_free( domain[i] );
     }
     HECMW_free( n_domain );

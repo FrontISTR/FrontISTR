@@ -29,7 +29,7 @@ module hecmw_precond_ML_33
   public:: hecmw_precond_ML_33_apply
   public:: hecmw_precond_ML_33_clear
 
-  integer(kind=kint) :: id
+  integer(kind=kint), save :: id
 
   logical, save :: INITIALIZED = .false.
 
@@ -53,6 +53,9 @@ contains
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
         if (n_recycle < MAX_RECYCLE_SETUP) then
           n_recycle = n_recycle + 1
+          call hecmw_mat_id_clear(id)
+          call hecmw_mat_id_set(hecMAT, hecMESH, id)
+          hecMAT%Iarray(97) = 0
           return
         else
           call hecmw_precond_ML_33_clear()
