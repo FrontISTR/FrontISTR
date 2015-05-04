@@ -18,6 +18,9 @@ module m_static_make_result
 
   public:: fstr_write_static_result
   public:: fstr_make_static_result
+  public:: fstr_reorder_node_shell
+  public:: fstr_reorder_rot_shell
+  public:: fstr_reorder_node_beam
   
   
   contains
@@ -74,10 +77,10 @@ module m_static_make_result
       unode(:) = fstrSOLID%unode(:)
       label = 'DISPLACEMENT'
       if(is_33beam == 1)then
-        call reorder_node_beam(fstrSOLID, hecMESH, unode)
+        call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
       endif
       if(is_33shell == 1)then
-        call reorder_node_shell(fstrSOLID, hecMESH, unode)
+        call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
       endif
       call hecmw_result_add( id, nitem, label, unode )
       deallocate( unode )
@@ -91,7 +94,7 @@ module m_static_make_result
         label = 'ROTATION'
         allocate( rnode(ndof*mm) )
         rnode = 0.0d0
-        call reorder_rot_shell(fstrSOLID, hecMESH, rnode)
+        call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
         call hecmw_result_add( id, nitem, label, rnode )
         deallocate( rnode )
       end if
@@ -525,10 +528,10 @@ module m_static_make_result
           unode = 0.0d0
           unode(:) = fstrSOLID%unode(:)
           if(is_33beam == 1)then
-            call reorder_node_beam(fstrSOLID, hecMESH, unode)
+            call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
           endif
           if(is_33shell == 1)then
-            call reorder_node_shell(fstrSOLID, hecMESH, unode)
+            call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
           endif
           do i = 1, hecMESH%n_node
             do j = 1, nn
@@ -546,7 +549,7 @@ module m_static_make_result
           fstrRESULT%node_label(ncomp) = 'ROTATION'
           allocate( unode(ndof*mm) )
           unode = 0.0d0
-          call reorder_rot_shell(fstrSOLID, hecMESH, unode)
+          call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
           do i = 1, hecMESH%n_node
             do j = 1, nn
               fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
@@ -741,7 +744,7 @@ module m_static_make_result
 
   end subroutine fstr_make_static_result_main
 
-  subroutine reorder_node_shell(fstrSOLID, hecMESH, unode)
+  subroutine fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
     use m_fstr
     use m_out
     use m_static_lib
@@ -782,9 +785,9 @@ module m_static_make_result
       endif
     enddo
 
-  end subroutine reorder_node_shell
+  end subroutine fstr_reorder_node_shell
 
-  subroutine reorder_rot_shell(fstrSOLID, hecMESH, unode)
+  subroutine fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
     use m_fstr
     use m_out
     use m_static_lib
@@ -832,9 +835,9 @@ module m_static_make_result
       endif
     enddo
 
-  end subroutine reorder_rot_shell
+  end subroutine fstr_reorder_rot_shell
 
-  subroutine reorder_node_beam(fstrSOLID, hecMESH, unode)
+  subroutine fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
     use m_fstr
     use m_out
     use m_static_lib
@@ -864,7 +867,7 @@ module m_static_make_result
       endif
     enddo
 
-  end subroutine reorder_node_beam
+  end subroutine fstr_reorder_node_beam
 
   subroutine make_principal_stress_value(fstrSOLID, hecMESH, RES, id, ndof)
     use hecmw_util

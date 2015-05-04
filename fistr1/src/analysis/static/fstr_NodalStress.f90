@@ -41,8 +41,6 @@ contains
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
     real(kind=kreal)   :: ecoord(3, 20), edisp(60), tt(20), t0(20)
-
-    real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, ps, smises
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
 
 !C** Shell33 variables

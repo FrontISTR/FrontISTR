@@ -15,7 +15,6 @@
 !> This module provide a function to prepare output of dynamic analysis
 module m_dynamic_make_result
   implicit none
-
   contains
 
 !C***
@@ -25,6 +24,7 @@ module m_dynamic_make_result
       use m_fstr
       use m_out
       use m_static_lib
+      use m_static_make_result
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)         :: fstrSOLID
       type (fstr_dynamic)       :: fstrDYNAMIC
@@ -34,7 +34,8 @@ module m_dynamic_make_result
       character(len=HECMW_HEADER_LEN) :: header
       character(len=HECMW_NAME_LEN)   :: label, s, nameID
       integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, idx, ngauss
-      real(kind=kreal), allocatable   :: work(:)
+      integer(kind=kint) :: n_lyr, ntot_lyr, is_33shell, is_33beam
+      real(kind=kreal), allocatable   :: work(:), unode(:)
       
       tnstrain => fstrSOLID%TNSTRAIN
       testrain => fstrSOLID%TESTRAIN
@@ -51,6 +52,11 @@ module m_dynamic_make_result
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
       if( ndof==6 ) mdof = 6
+
+      ntot_lyr   = fstrSOLID%max_lyr
+      is_33shell = hecMESH%is_33shell
+      is_33beam  = hecMESH%is_33beam
+
       nn = nn * mdof
       allocate( work(nn) )
 
@@ -61,37 +67,32 @@ module m_dynamic_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+          allocate( unode(ndof*nn) )
+          unode = 0.0d0
+          unode(:) = fstrDYNAMIC%DISP(:,idx)
           label = 'DISPLACEMENT'
-          do i = 1, hecMESH%n_node
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrDYNAMIC%DISP(nitem*(i-1)+j,idx)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          if(is_33beam == 1)then
+            call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+          endif
+          if(is_33shell == 1)then
+            call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+          endif
+          call hecmw_result_add( id, nitem, label, unode )
+          deallocate( unode )
         endif
 ! --- VELOCITY
         if( fstrSOLID%output_ctrl(3)%outinfo%on(15) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(15), ndof )
           label = 'VELOCITY'
-          do i = 1, hecMESH%n_node
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrDYNAMIC%VEL(nitem*(i-1)+j,idx)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrDYNAMIC%VEL(:,idx) )
         endif
 ! --- ACCELERATION
         if( fstrSOLID%output_ctrl(3)%outinfo%on(16) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(16), ndof )
           label = 'ACCELERATION'
-          do i = 1, hecMESH%n_node
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrDYNAMIC%ACC(nitem*(i-1)+j,idx)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrDYNAMIC%ACC(:,idx) )
         endif
 ! --- REACTION FORCE
         if( fstrSOLID%output_ctrl(3)%outinfo%on(2) ) then
@@ -101,156 +102,46 @@ module m_dynamic_make_result
           call hecmw_result_add( id, nitem, label, fstrSOLID%QFORCE )
         endif
 ! --- STRAIN @node
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(3) .and. ndof==6 ) then
-          id = 1
-          nitem = 6
-          label = 'NodalSTRAINplus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%STRAIN(14*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalSTRAINminus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%STRAIN(14*(i-1)+6+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(3) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(3) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(3), ndof )
           label = 'NodalSTRAIN'
           call hecmw_result_add( id, nitem, label, fstrSOLID%STRAIN )
         endif
 ! --- STRESS @node
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(4) .and. ndof==6 ) then
-          id = 1
-          nitem = 6
-          label = 'NodalSTRESSplus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%STRESS(14*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalSTRESSminus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%STRESS(14*(i-1)+6+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(4), ndof )
           label = 'NodalSTRESS'
-          do i = 1, hecMESH%n_node
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%STRESS((nitem+1)*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrSOLID%STRESS )
         endif
 ! --- MISES @node
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(5) .and. ndof==6 ) then
-          id = 1
-          nitem = 1
-          label = 'NodalMISESplus'
-          do i = 1, hecMESH%n_node
-            work(i) = fstrSOLID%STRESS(14*i-1)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'NodalMISESminus'
-          do i = 1, hecMESH%n_node
-            work(i) = fstrSOLID%STRESS(14*i)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(5) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(5) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(5), ndof )
           label = 'NodalMISES'
-          do i = 1, hecMESH%n_node
-            work(i) = fstrSOLID%STRESS((mdof+1)*i)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrSOLID%MISES )
         endif
 ! --- STRAIN @element
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(6) .and. ndof==6 ) then
-          id = 2
-          nitem = 6
-          label = 'ElementalSTRAINplus'
-          do i = 1, hecMESH%n_elem
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%ESTRAIN(14*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalSTRAINminus'
-          do i = 1, hecMESH%n_elem
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%ESTRAIN(14*(i-1)+6+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
           id = 2
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(6), ndof )
           label = 'ElementalSTRAIN'
           call hecmw_result_add( id, nitem, label, fstrSOLID%ESTRAIN )
         endif
 ! --- STRESS @element
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(7) .and. ndof==6 ) then
-          id = 2
-          nitem = 6
-          label = 'ElementalSTRESSplus'
-          do i = 1, hecMESH%n_elem
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%ESTRESS(14*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalSTRESSminus'
-          do i = 1, hecMESH%n_elem
-            do j = 1, 6
-              work(6*(i-1)+j) = fstrSOLID%ESTRESS(14*(i-1)+6+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(7) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(7) ) then
           id = 2
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
           label = 'ElementalSTRESS'
-          do i = 1, hecMESH%n_elem
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%ESTRESS((nitem+1)*(i-1)+j)
-            enddo
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrSOLID%ESTRESS )
         endif
 ! --- MISES @element
-        if( fstrSOLID%output_ctrl(3)%outinfo%on(8) .and. ndof==6 ) then
-          id = 2
-          nitem = 1
-          label = 'ElementalMISESplus'
-          do i = 1, hecMESH%n_elem
-            work(i) = fstrSOLID%ESTRESS(14*i-1)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-          label = 'ElementalMISESminus'
-          do i = 1, hecMESH%n_elem
-            work(i) = fstrSOLID%ESTRESS(14*i)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
-        else if( fstrSOLID%output_ctrl(3)%outinfo%on(8) ) then
+        if( fstrSOLID%output_ctrl(3)%outinfo%on(8) ) then
           id = 2
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
           label = 'ElementalMISES'
-          do i = 1, hecMESH%n_elem
-            work(i) = fstrSOLID%ESTRESS((mdof+1)*i)
-          enddo
-          call hecmw_result_add( id, nitem, label, work )
+          call hecmw_result_add( id, nitem, label, fstrSOLID%EMISES )
         endif
 ! --- STRAIN @gauss
         if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
@@ -490,26 +381,7 @@ module m_dynamic_make_result
           iitem = iitem + nn
         endif
 ! --- STRAIN @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(3) .and. ndof==6 ) then
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'NodalSTRAINplus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRAIN(14*(i-1)+j)
-            enddo
-          enddo
-          iitem = iitem + 6
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'NodalSTRAINminus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRAIN(14*(i-1)+6+j)
-            enddo
-          enddo
-          iitem = iitem + 6
-        else if( fstrSOLID%output_ctrl(4)%outinfo%on(3) ) then
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(3) ) then
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(3), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
@@ -522,26 +394,7 @@ module m_dynamic_make_result
           iitem = iitem + nn
         endif
 ! --- STRESS @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(4) .and. ndof==6 ) then
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'NodalSTRESSplus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(14*(i-1)+j)
-            enddo
-          enddo
-          iitem = iitem + 6
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 6
-          fstrRESULT%node_label(ncomp) = 'NodalSTRESSminus'
-          do i = 1, hecMESH%n_node
-            do j = 1, 6
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(14*(i-1)+6+j)
-            enddo
-          enddo
-          iitem = iitem + 6
-        else if( fstrSOLID%output_ctrl(4)%outinfo%on(4) ) then
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(4) ) then
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(4), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
@@ -554,28 +407,13 @@ module m_dynamic_make_result
           iitem = iitem + nn
         endif
 ! --- MISES @node
-        if( fstrSOLID%output_ctrl(4)%outinfo%on(5) .and. ndof==6 ) then
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 1
-          fstrRESULT%node_label(ncomp) = 'NodalMISESplus'
-          do i = 1, hecMESH%n_node
-            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%STRESS(14*i-1)
-          enddo
-          iitem = iitem + 1
-          ncomp = ncomp + 1
-          fstrRESULT%nn_dof(ncomp) = 1
-          fstrRESULT%node_label(ncomp) = 'NodalMISESminus'
-          do i = 1, hecMESH%n_node
-            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%STRESS(14*i)
-          enddo
-          iitem = iitem + 1
-        else if( fstrSOLID%output_ctrl(4)%outinfo%on(5) ) then
+        if( fstrSOLID%output_ctrl(4)%outinfo%on(5) ) then
           ncomp = ncomp + 1
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(5), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'NodalMISES'
           do i = 1, hecMESH%n_node
-            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%STRESS((mdof+1)*i)
+            fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%MISES(i)
           enddo
           iitem = iitem + nn
         endif
