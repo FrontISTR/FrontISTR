@@ -3204,6 +3204,7 @@ setup_contact(struct hecmwST_local_mesh *mesh)
 
 	cpair->n_pair = 0;
 	cpair->type = NULL;
+	cpair->name = NULL;
 	cpair->slave_grp_id = NULL;
 	cpair->master_grp_id = NULL;
 
