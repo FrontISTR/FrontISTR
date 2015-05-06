@@ -296,7 +296,7 @@ contains
         layer%STRESS(6*(i-1)+k)   = layer%STRESS(6*(i-1)+k)  + stress(j,k)
         layer%STRESS(6*(m-1)+k)   = layer%STRESS(6*(m-1)+k)  + stress(j,k)
         layer%ESTRAIN(6*(icel-1)+k)  = layer%ESTRAIN(6*(icel-1)+k) + strain(j,k)/nn
-        layer%ESTRAIN(6*(icel-1)+k)  = layer%ESTRAIN(6*(icel-1)+k) + strain(j,k)/nn
+        layer%ESTRESS(6*(icel-1)+k)  = layer%ESTRESS(6*(icel-1)+k) + stress(j,k)/nn
       enddo
     enddo
   end subroutine fstr_Stress_add_shelllyr
@@ -774,6 +774,7 @@ contains
     real(kind=kreal)   :: thick, thick_layer
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
     integer(kind=kint), allocatable :: nnumber(:)
+    type(fstr_solid_physic_val), pointer :: layer => null()
 
     fstrSOLID%ESTRAIN = 0.0d0
     fstrSOLID%ESTRESS = 0.0d0
@@ -817,12 +818,31 @@ contains
           do nlyr=1,ntot_lyr
             call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
-            call fstr_Stress_add_shelllyr(nn,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:nn,1:6),ndstress(1:nn,1:6),1)
+            do j = 1, nn
+              i = nodLOCAL(j)
+                layer => fstrSOLID%SHELL%LAYER(nlyr)%PLUS
+              do k = 1, 6
+                layer%STRAIN(6*(i-1)+k)   = layer%STRAIN(6*(i-1)+k)  + ndstrain(j,k)
+                layer%STRESS(6*(i-1)+k)   = layer%STRESS(6*(i-1)+k)  + ndstress(j,k)
+                layer%ESTRAIN(6*(icel-1)+k)  = layer%ESTRAIN(6*(icel-1)+k) + ndstrain(j,k)/nn
+                layer%ESTRESS(6*(icel-1)+k)  = layer%ESTRESS(6*(icel-1)+k) + ndstress(j,k)/nn
+              enddo
+            enddo
             !minus section
             call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
-            call fstr_Stress_add_shelllyr(nn,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:nn,1:6),ndstress(1:nn,1:6),-1)
+            do j = 1, nn
+              i = nodLOCAL(j)
+                layer => fstrSOLID%SHELL%LAYER(nlyr)%MINUS
+              do k = 1, 6
+                layer%STRAIN(6*(i-1)+k)   = layer%STRAIN(6*(i-1)+k)  + ndstrain(j,k)
+                layer%STRESS(6*(i-1)+k)   = layer%STRESS(6*(i-1)+k)  + ndstress(j,k)
+                layer%ESTRAIN(6*(icel-1)+k)  = layer%ESTRAIN(6*(icel-1)+k) + ndstrain(j,k)/nn
+                layer%ESTRESS(6*(icel-1)+k)  = layer%ESTRESS(6*(icel-1)+k) + ndstress(j,k)/nn
+              enddo
+            enddo
           enddo
+          call fstr_getavg_shell(nn,fstrSOLID,icel,nodLOCAL,ndstrain(1:nn,1:6),ndstress(1:nn,1:6),estrain,estress)
         endif
 
         !if( ID_area == hecMESH%my_rank ) then

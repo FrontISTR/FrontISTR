@@ -203,7 +203,7 @@ module m_dynamic_output
 !C*** Show Strain
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 14
+      if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)
@@ -256,7 +256,7 @@ module m_dynamic_output
 !C*** Show Stress
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 12
+      if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
         j = hecMESH%global_node_ID(i)

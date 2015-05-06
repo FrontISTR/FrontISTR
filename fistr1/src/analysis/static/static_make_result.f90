@@ -55,7 +55,7 @@ module m_static_make_result
     if( hecMESH%n_elem > hecMESH%n_node ) mm = hecMESH%n_elem
     if( ndof==2 ) mdof = 3
     if( ndof==3 ) mdof = 6
-    if( ndof==6 ) mdof = 12
+    if( ndof==6 ) mdof = 6
 
     ntot_lyr   = fstrSOLID%max_lyr
     is_33shell = fstrSOLID%is_33shell
@@ -111,7 +111,7 @@ module m_static_make_result
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if(is_33shell == 1)then
+    if(is_33shell == 1 .or. ndof == 6)then
       call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
     else
       call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
@@ -434,7 +434,7 @@ module m_static_make_result
     ndof = hecMESH%n_dof
     if( ndof==2 ) mdof = 3
     if( ndof==3 ) mdof = 6
-    if( ndof==6 ) mdof = 12
+    if( ndof==6 ) mdof = 6
 
     if(is_33shell == 1 .and. fstrSOLID%output_ctrl(4)%outinfo%on(27) )then
       coef33 = 1 + 2*ntot_lyr
@@ -573,7 +573,7 @@ module m_static_make_result
           iitem = iitem + nn
         endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if(is_33shell == 1)then
+        if(is_33shell == 1 .or. ndof == 6)then
           call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
           & fstrSOLID%SHELL, nitem, iitem, ncomp, 1, "      " )
         else
