@@ -54,8 +54,8 @@ module m_dynamic_make_result
       if( ndof==6 ) mdof = 6
 
       ntot_lyr   = fstrSOLID%max_lyr
-      is_33shell = hecMESH%is_33shell
-      is_33beam  = hecMESH%is_33beam
+      is_33shell = fstrSOLID%is_33shell
+      is_33beam  = fstrSOLID%is_33beam
 
       nn = nn * mdof
       allocate( work(nn) )

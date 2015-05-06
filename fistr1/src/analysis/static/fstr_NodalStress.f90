@@ -64,8 +64,8 @@ contains
 
 !C**  setting
     ntot_lyr = fstrSOLID%max_lyr
-    flag33   = hecMESH%is_33shell
-    truss    = hecMESH%is_33beam
+    flag33   = fstrSOLID%is_33shell
+    truss    = fstrSOLID%is_33beam
 
 !C +-------------------------------+
 !C | according to ELEMENT TYPE     |

@@ -341,6 +341,9 @@ public
                 integer(kind=kint) :: restart_nin    !< input number of restart 
 
                 integer(kind=kint) :: max_lyr        !< maximun num of layer
+                integer(kind=kint)         :: is_33shell
+                integer(kind=kint)         :: is_33beam
+                integer(kind=kint)         :: is_heat
 
                 real(kind=kreal)           :: FACTOR     (2)     !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt

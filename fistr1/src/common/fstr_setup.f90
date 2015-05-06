@@ -687,8 +687,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         n_totlyr = 1
-        P%MESH%is_33shell = 0
-        P%MESH%is_33beam  = 0
+        P%SOLID%is_33shell = 0
+        P%SOLID%is_33beam  = 0
 
         do i=1,hecMESH%section%n_sect
            cid = hecMESH%section%sect_mat_ID_item(i)
@@ -702,9 +702,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         do i=1,hecMESH%n_elem_type
           n =  hecMESH%elem_type_item(i)
           if (n == 781 .or. n == 761)then
-            P%MESH%is_33shell = 1
+            P%SOLID%is_33shell = 1
           elseif (n == 641 .or. n == 301)then
-            P%MESH%is_33beam  = 1
+            P%SOLID%is_33beam  = 1
           endif
         enddo
 
@@ -750,10 +750,8 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
         integer :: ndof, ntotal, ierror, ic_type
 
         ndof=hecMESH%n_dof
-        ic_type= hecMESH%elem_type_item(1)
-        if( ic_type==741 .or. ic_type==743 .or. ic_type==731 ) ndof=6
-
         ntotal=ndof*hecMESH%n_node
+
         allocate ( fstrSOLID%GL( ntotal )          ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL>'
@@ -1184,7 +1182,7 @@ end subroutine
          .or. P%PARAM%solution_type == kstDYNAMIC &
          .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
                 ! Memory Allocation for Result Vectors ------------
-                if( P%MESH%n_dof == 6 .or. P%MESH%is_33shell == 1 ) then
+                if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
                     allocate ( P%SOLID%SHELL )
                     allocate ( P%SOLID%SHELL%STRAIN  (6*P%MESH%n_node))
                     allocate ( P%SOLID%SHELL%STRESS  (6*P%MESH%n_node))
@@ -1223,7 +1221,7 @@ end subroutine
                     allocate ( P%SOLID%SOLID%MISES   (P%MESH%n_node))
                     allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
                     allocate ( P%SOLID%SOLID%ESTRESS  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_elem))
                     P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
                     P%SOLID%STRESS => P%SOLID%SOLID%STRESS
                     P%SOLID%MISES  => P%SOLID%SOLID%MISES

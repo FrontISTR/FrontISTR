@@ -52,16 +52,17 @@ module m_static_make_result
 
     ndof = hecMESH%n_dof
     mm   = hecMESH%n_node
-    if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
+    if( hecMESH%n_elem > hecMESH%n_node ) mm = hecMESH%n_elem
     if( ndof==2 ) mdof = 3
     if( ndof==3 ) mdof = 6
     if( ndof==6 ) mdof = 12
 
     ntot_lyr   = fstrSOLID%max_lyr
-    is_33shell = hecMESH%is_33shell
-    is_33beam  = hecMESH%is_33beam
+    is_33shell = fstrSOLID%is_33shell
+    is_33beam  = fstrSOLID%is_33beam
 
     nn = mm * mdof
+    
     allocate( work(nn) )
 
     ! --- INITIALIZE
@@ -72,9 +73,9 @@ module m_static_make_result
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
       id = 1
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-      allocate( unode(ndof*mm) )
+      allocate( unode(hecMESH%n_node*ndof) )
       unode = 0.0d0
-      unode(:) = fstrSOLID%unode(:)
+      unode = fstrSOLID%unode
       label = 'DISPLACEMENT'
       if(is_33beam == 1)then
         call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
@@ -92,7 +93,7 @@ module m_static_make_result
         id = 1
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
         label = 'ROTATION'
-        allocate( rnode(ndof*mm) )
+        allocate( rnode(hecMESH%n_node*ndof) )
         rnode = 0.0d0
         call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
         call hecmw_result_add( id, nitem, label, rnode )
@@ -424,8 +425,8 @@ module m_static_make_result
     testrain => fstrSOLID%TESTRAIN
 
     ntot_lyr   = fstrSOLID%max_lyr
-    is_33shell = hecMESH%is_33shell
-    is_33beam  = hecMESH%is_33beam
+    is_33shell = fstrSOLID%is_33shell
+    is_33beam  = fstrSOLID%is_33beam
 
     mm = hecMESH%n_node
     if( hecMESH%n_elem>hecMESH%n_node ) mm = hecMESH%n_elem
@@ -524,7 +525,7 @@ module m_static_make_result
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
-          allocate( unode(ndof*mm) )
+          allocate( unode(ndof*hecMESH%n_node) )
           unode = 0.0d0
           unode(:) = fstrSOLID%unode(:)
           if(is_33beam == 1)then
@@ -547,7 +548,7 @@ module m_static_make_result
           nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
           fstrRESULT%nn_dof(ncomp) = nn
           fstrRESULT%node_label(ncomp) = 'ROTATION'
-          allocate( unode(ndof*mm) )
+          allocate( unode(ndof*hecMESH%n_node) )
           unode = 0.0d0
           call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
           do i = 1, hecMESH%n_node
