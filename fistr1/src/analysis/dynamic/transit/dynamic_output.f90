@@ -155,6 +155,7 @@ module m_dynamic_output
 
 !C*** Show Displacement
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, ndof
@@ -206,6 +207,7 @@ module m_dynamic_output
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
@@ -259,6 +261,7 @@ module m_dynamic_output
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
@@ -393,7 +396,7 @@ module m_dynamic_output
           write(ILOG,1019) '//S12',ESmax(3),ESmin(3)
           write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==3 ) then
+      else if( ndof==3 .or. ndof==6 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
@@ -485,7 +488,7 @@ module m_dynamic_output
           write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
           write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==6 ) then
+      else if( 1 == 0 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009)'//U1    ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009)'//U2    ',Umax(2),IUmax(2),Umin(2),IUmin(2)

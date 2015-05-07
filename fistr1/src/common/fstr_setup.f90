@@ -282,6 +282,18 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
 
+        P%SOLID%is_33shell = 0
+        P%SOLID%is_33beam  = 0
+
+        do i=1,hecMESH%n_elem_type
+          n =  hecMESH%elem_type_item(i)
+          if (n == 781 .or. n == 761)then
+            P%SOLID%is_33shell = 1
+          elseif (n == 641)then
+            P%SOLID%is_33beam  = 1
+          endif
+        enddo
+
         n = c_material
         if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
         if( n==0 ) stop "material property not defined!"
@@ -298,7 +310,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               nullify(shmat)
               call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
                             n_totlyr,alpha_over_mu, &
-                            beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
+                            beam_radius,beam_angle1,beam_angle2,beam_angle3, &
                             beam_angle4,beam_angle5,beam_angle6)
                 fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
                 fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
@@ -316,7 +328,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
                 fstrSOLID%materials(cid)%mtype = ELASTIC
                 fstrSOLID%materials(cid)%totallyr = n_totlyr
-                fstrSOLID%materials(cid)%totthick = thick
                 fstrSOLID%materials(cid)%shell_var => shmat
            enddo
          endif
@@ -686,27 +697,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
         endif
 
-        n_totlyr = 1
-        P%SOLID%is_33shell = 0
-        P%SOLID%is_33beam  = 0
-
-        do i=1,hecMESH%section%n_sect
-           cid = hecMESH%section%sect_mat_ID_item(i)
-           n  = fstrSOLID%materials(cid)%totallyr
-          if (n > n_totlyr)then
-            n_totlyr = n
-          endif
-        enddo
-        P%SOLID%max_lyr = n_totlyr
-
-        do i=1,hecMESH%n_elem_type
-          n =  hecMESH%elem_type_item(i)
-          if (n == 781 .or. n == 761)then
-            P%SOLID%is_33shell = 1
-          elseif (n == 641 .or. n == 301)then
-            P%SOLID%is_33beam  = 1
-          endif
-        enddo
+         n_totlyr = 1
+         do i=1,hecMESH%section%n_sect
+            cid = hecMESH%section%sect_mat_ID_item(i)
+            n  = fstrSOLID%materials(cid)%totallyr
+           if (n > n_totlyr)then
+             n_totlyr = n
+           endif
+         enddo
+         P%SOLID%max_lyr = n_totlyr
 
         call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )

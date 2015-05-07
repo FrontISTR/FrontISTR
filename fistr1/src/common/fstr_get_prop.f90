@@ -175,7 +175,6 @@ contains
     shell_var(1)%ortho = 0
     shell_var(1)%ee = ee
     shell_var(1)%pp = pp
-    shell_var(1)%thick = thick
     shell_var(1)%weight= 1.0d0
 
   elseif( n_subitem == 3) then
@@ -189,7 +188,6 @@ contains
     shell_var(1)%ortho = 0
     shell_var(1)%ee = ee
     shell_var(1)%pp = pp
-    shell_var(1)%thick = thick
     shell_var(1)%weight= 1.0d0
 
     write(IMSG,*) '###NOTICE : shell thickness is updated'
@@ -223,8 +221,7 @@ contains
       shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
       shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
       shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
-      shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+3)
-      shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+3)/thick
+      shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+3)
       i=i+4
     elseif(flag==1)then
       shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
@@ -235,8 +232,7 @@ contains
       shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+5)
       shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+6)
       shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+7)
-      shell_var(count)%thick = hecMESH%material%mat_val(mpos+i+8)
-      shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+8)/thick
+      shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+8)
       i=i+9
     else
       write(IMSG,*) '###Error: Shell property invalid'
@@ -249,6 +245,9 @@ contains
     tmp = 0.0d0
     do i=1,n_totlyr
       tmp = tmp + shell_var(i)%weight
+    enddo
+    do i=1,n_totlyr
+      shell_var(i)%weight = shell_var(i)%weight / tmp
     enddo
     if(tmp == 1.0d0)then
       write(IMSG,"(a)")"### NOTICCE: Total thickness is not equal to the sum of laminated layers' thickness"

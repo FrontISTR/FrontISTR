@@ -651,9 +651,9 @@
 
         sumlyr = 0.0d0
         do m = 1, n_layer
-          sumlyr = sumlyr +2 *gausses(1)%pMaterial%shell_var(m)%thick / thick
+          sumlyr = sumlyr +2 *gausses(1)%pMaterial%shell_var(m)%weight
         enddo
-        zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%thick / thick *(1-xg(ny, ly))
+        zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
 
         w_ly    = wgt(ny, ly)
 
@@ -1044,7 +1044,7 @@
         FORALL( isize=1:ndof*nn, jsize=1:ndof*nn )
           tmpstiff(isize, jsize)                               &
           = tmpstiff(isize, jsize)                             &
-          +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%thick/thick*DOT_PRODUCT( B(:, isize), DB(:, jsize) )
+          +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight*DOT_PRODUCT( B(:, isize), DB(:, jsize) )
         END FORALL
 
         !--------------------------------------------------
@@ -1217,7 +1217,7 @@
 
           tmpstiff(isize, jsize)                &
           = tmpstiff(isize, jsize)              &
-           +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%thick/thick*alpha*Cv(isize)*Cv(jsize)
+           +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight*alpha*Cv(isize)*Cv(jsize)
 
           END DO
         END DO
@@ -1869,9 +1869,9 @@
 
       sumlyr = 0.0D0
       DO m = 1, n_layer
-        sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%thick / thick
+        sumlyr = sumlyr +2*gausses(1)%pMaterial%shell_var(m)%weight
       END DO
-      zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%thick / thick * (1-zeta)
+      zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-zeta)
 
       !--------------------------------------------------------
 
@@ -2805,9 +2805,9 @@
 
             sumlyr = 0.0D0
             DO m = 1, n_layer
-              sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%thick / thick
+              sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%weight
             END DO
-            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%thick / thick * (1-xg(ny, ly))
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
 
             !zeta_ly = xg(ny, ly)
             w_ly    = wgt(ny, ly)

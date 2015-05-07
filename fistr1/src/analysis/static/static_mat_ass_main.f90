@@ -97,7 +97,7 @@ MODULE m_static_mat_ass_main
 
 
 !> Calculate stiff matrix of current element
-    SUBROUTINE FSTR_LOCAL_STF_CREATE                                          &
+    SUBROUTINE fstr_local_stf_create                                          &
                (hecMESH, ndof, ic_type, icel, xx, yy, zz, gausses,            &
                 iset, stiffness, cdsys_ID, coords, TEMP_ngrp_tot, TEMP_irres)
 
@@ -117,7 +117,6 @@ MODULE m_static_mat_ass_main
         !** Local variables
         REAL(kind=kreal) :: ee, pp, thick, ecoord(3, 20)
         TYPE( tMaterial ), POINTER :: material
-        REAL(kind=kreal) :: local_stf(1830)
         INTEGER(kind=kint) :: nn, isect, ihead, mixflag
 
         nn = hecmw_get_max_node(ic_type)
@@ -147,7 +146,6 @@ MODULE m_static_mat_ass_main
             mixflag = 1
             CALL STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:4), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
             !ic_type = 781; nn = 8; ndof = 3
-            return
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
             isect= hecMESH%section_ID(icel)
@@ -157,7 +155,6 @@ MODULE m_static_mat_ass_main
             mixflag = 2
             CALL STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:3), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), thick, mixflag)
             !ic_type = 761; nn = 6; ndof = 3
-            return
 
         else if( ic_type == 361 ) then
             if( TEMP_ngrp_tot > 0 .or. TEMP_irres > 0 ) then
