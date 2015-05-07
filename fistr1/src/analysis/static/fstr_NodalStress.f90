@@ -170,7 +170,7 @@ contains
               call fstr_Stress_add_shelllyr(4,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:4,1:6),ndstress(1:4,1:6),1)
               !minus section
               call ElementStress_Shell_MITC( 741, 4, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                 & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+                 & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick,-1.0d0, nlyr, ntot_lyr)
               call fstr_Stress_add_shelllyr(4,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:4,1:6),ndstress(1:4,1:6),-1)
             enddo
             call fstr_getavg_shell(4,fstrSOLID,icel,nodLOCAL,ndstrain(1:4,1:6),ndstress(1:4,1:6),estrain,estress)
@@ -191,7 +191,7 @@ contains
               call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),1)
               !minus section
               call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                 & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+                 & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr, ntot_lyr)
               call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),-1)
             enddo
             call fstr_getavg_shell(3,fstrSOLID,icel,nodLOCAL,ndstrain(1:3,1:6),ndstress(1:3,1:6),estrain,estress)
@@ -636,15 +636,13 @@ contains
       fstrSOLID%STRAIN(6*(i-1)+3) = fstrSOLID%STRAIN(6*(i-1)+4)
       fstrSOLID%STRAIN(6*(i-1)+4) = 0.0d0
       fstrSOLID%STRESS(6*(i-1)+3) = fstrSOLID%STRESS(6*(i-1)+4)
-      fstrSOLID%STRESS(6*(i-1)+4) = fstrSOLID%STRESS(6*i)
-      fstrSOLID%MISES(i) = 0.0d0
+      fstrSOLID%STRESS(6*(i-1)+4) = fstrSOLID%MISES(i)
     enddo
     do i = 1, hecMESH%n_elem
       fstrSOLID%ESTRAIN(6*(i-1)+3) = fstrSOLID%ESTRAIN(6*(i-1)+4)
       fstrSOLID%ESTRAIN(6*(i-1)+4) = 0.0d0
       fstrSOLID%ESTRESS(6*(i-1)+3) = fstrSOLID%ESTRESS(6*(i-1)+4)
-      fstrSOLID%ESTRESS(6*(i-1)+4) = fstrSOLID%ESTRESS(6*i)
-      fstrSOLID%EMISES(i) = 0.0d0
+      fstrSOLID%ESTRESS(6*(i-1)+4) = fstrSOLID%EMISES(i)
     enddo
 
     deallocate( nnumber )
@@ -830,7 +828,7 @@ contains
             enddo
             !minus section
             call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-               & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+               & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr)
             do j = 1, nn
               i = nodLOCAL(j)
                 layer => fstrSOLID%SHELL%LAYER(nlyr)%MINUS

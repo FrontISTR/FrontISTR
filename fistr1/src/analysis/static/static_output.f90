@@ -169,19 +169,19 @@ module m_static_output
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
-            Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+            Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
             IEmax(k)= j
             IEmin(k)= j
           enddo
         else
           do k = 1, mdof
-            if( fstrSOLID%STRAIN(mdof*(i-1)+k) > Emax(k) ) then
-              Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            if( fstrSOLID%STRAIN(6*(i-1)+k) > Emax(k) ) then
+              Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
               IEmax(k)= j
             endif
-            if( fstrSOLID%STRAIN(mdof*(i-1)+k) < Emin(k) ) then
-              Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            if( fstrSOLID%STRAIN(6*(i-1)+k) < Emin(k) ) then
+              Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
               IEmin(k)= j
             endif
           enddo
@@ -194,19 +194,19 @@ module m_static_output
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
-              EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
+              EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
               IEEmax(k)= j
               IEEmin(k)= j
             enddo
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) > EEmax(k) ) then
-                EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(6*(i-1)+k) > EEmax(k) ) then
+                EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
                 IEEmax(k)= j
               endif
-              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) < EEmin(k) ) then
-                EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(6*(i-1)+k) < EEmin(k) ) then
+                EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
                 IEEmin(k)= j
               endif
             enddo
@@ -222,8 +222,8 @@ module m_static_output
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
-            Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
+            Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
             ISmax(k)= j
             ISmin(k)= j
           enddo
@@ -233,12 +233,12 @@ module m_static_output
           IMmin(1)= j
         else
           do k = 1, mdof
-            if( fstrSOLID%STRESS(mdof*(i-1)+k) > Smax(k) ) then
-              Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            if( fstrSOLID%STRESS(6*(i-1)+k) > Smax(k) ) then
+              Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
               ISmax(k)= j
             endif
-            if( fstrSOLID%STRESS(mdof*(i-1)+k) < Smin(k) ) then
-              Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            if( fstrSOLID%STRESS(6*(i-1)+k) < Smin(k) ) then
+              Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
               ISmin(k)= j
             endif
           enddo
@@ -259,8 +259,8 @@ module m_static_output
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
-              ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+              ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
               IESmax(k)= j
               IESmin(k)= j
             enddo
@@ -270,12 +270,12 @@ module m_static_output
             IEMmin(1)= j
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) > ESmax(k) ) then
-                ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRESS(6*(i-1)+k) > ESmax(k) ) then
+                ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
                 IESmax(k)= j
               endif
-              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) < ESmin(k) ) then
-                ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRESS(6*(i-1)+k) < ESmin(k) ) then
+                ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
                 IESmin(k)= j
               endif
             enddo
