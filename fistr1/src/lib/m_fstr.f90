@@ -240,7 +240,7 @@ public
                 integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinite
 !
                 integer(kind=kint) :: nstep_tot
-                type(step_info), pointer       :: step_ctrl(:)=>null()     !< step information
+                type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information
                 type(t_output_ctrl),  pointer  :: output_ctrl(:)=>null()   !< output  information
 
                 !!BOUNDARY
@@ -248,7 +248,7 @@ public
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_GRPID  (:)  =>null()
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_ID     (:)  =>null()
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
-!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)    =>null()
+!               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)  =>null()
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
                 real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
 
@@ -341,11 +341,12 @@ public
                 integer(kind=kint) :: restart_nin    !< input number of restart 
 
                 integer(kind=kint) :: max_lyr        !< maximun num of layer
-                integer(kind=kint)         :: is_33shell
-                integer(kind=kint)         :: is_33beam
-                integer(kind=kint)         :: is_heat
+                integer(kind=kint) :: is_33shell
+                integer(kind=kint) :: is_33beam
+                integer(kind=kint) :: is_heat
+                integer(kind=kint), pointer :: is_rot(:)
 
-                real(kind=kreal)           :: FACTOR     (2)     !< factor of incrementation
+                real(kind=kreal)          :: FACTOR     (2)      !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
@@ -358,7 +359,7 @@ public
                 real(kind=kreal), pointer :: last_temp(:)  => null()
 
                 type( tElement ), pointer :: elements(:)   =>null()  !< elements information
-                type( tMaterial ), pointer :: materials(:) =>null()  !< material properties
+                type( tMaterial ),pointer :: materials(:)  =>null()  !< material properties
                 type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const

@@ -139,6 +139,7 @@ module m_static_output
 
 !C*** Show Displacement
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, ndof
@@ -166,6 +167,7 @@ module m_static_output
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
@@ -219,6 +221,7 @@ module m_static_output
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
@@ -290,7 +293,7 @@ module m_static_output
           endif
         endif
       enddo
-
+!C*** Show 2DOF
       if( ndof==2 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
@@ -310,7 +313,7 @@ module m_static_output
         write(ILOG,1009) '//S22',ESmax(2),IESmax(2),ESmin(2),IESmin(2)
         write(ILOG,1009) '//S12',ESmax(3),IESmax(3),ESmin(3),IESmin(3)
         write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
-!C*** Show Summary
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax,2,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin,2,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Emax,3,hecmw_max)
@@ -341,7 +344,8 @@ module m_static_output
           write(ILOG,1019) '//S12',ESmax(3),ESmin(3)
           write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==3 ) then
+!C*** Show 3DOF
+      else if( ndof==3 .or. ndof==6 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
@@ -373,7 +377,7 @@ module m_static_output
         write(ILOG,1009) '//S23',ESmax(5),IESmax(5),ESmin(5),IESmin(5)
         write(ILOG,1009) '//S13',ESmax(6),IESmax(6),ESmin(6),IESmin(6)
         write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
-!C*** Show Summary
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Emax,6,hecmw_max)
@@ -417,7 +421,8 @@ module m_static_output
           write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
           write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==6 ) then
+!C*** Show 6DOF
+      else if( 1 == 0 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009)'//U1    ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009)'//U2    ',Umax(2),IUmax(2),Umin(2),IUmin(2)
@@ -478,7 +483,7 @@ module m_static_output
         write(ILOG,1009)'//S31(-)',ESmax(12),IESmax(12),ESmin(12),IESmin(12)
         write(ILOG,1009)'//SMS(+)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
         write(ILOG,1009)'//SMS(-)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
-!C*** Show Summary
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax, 6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin, 6,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Emax,12,hecmw_max)

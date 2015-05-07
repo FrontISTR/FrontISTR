@@ -34,9 +34,10 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+    integer(kind=kint), pointer :: is_rot(:)
 !C** local variables
     integer(kind=kint)   :: itype, icel, ic, iS, iE, jS, i, j, k, m, ic_type, nn, ni, ID_area
-    integer(kind = kint) :: nodlocal(20), ntemp
+    integer(kind=kint)   :: nodlocal(20), ntemp
     integer(kind=kint), allocatable :: nnumber(:)
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
@@ -55,10 +56,13 @@ contains
     fstrSOLID%EMISES  = 0.0d0
 
     allocate( nnumber(hecMESH%n_node) )
+    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
+    fstrSOLID%is_rot = 0
 
     tnstrain => fstrSOLID%tnstrain
     testrain => fstrSOLID%testrain
+    is_rot   => fstrSOLID%is_rot
 
     if( associated(tnstrain) ) tnstrain = 0.0d0
 
@@ -130,8 +134,7 @@ contains
         estress  = 0.0d0
         ndstrain = 0.0d0
         ndstress = 0.0d0
-!--- HECMWの仕様では内点外点含めてResファイルに出力するためnn_internalからn_nodeに変更．それにともないこのIF文をコメントアウト
-!       if( ID_area == hecMESH%my_rank ) then
+        !if( ID_area == hecMESH%my_rank ) then
 
 !--- calculate nodal and elemental value
           if( ic_type == 641 ) then !<3*3 beam section
@@ -158,6 +161,7 @@ contains
             do j = 1, 4
               nodLOCAL(j  ) = hecMESH%elem_node_item(jS+j  )
               nodLOCAL(j+4) = hecMESH%elem_node_item(jS+j+4)
+              is_rot(nodLOCAL(j+4)) = 1
               ecoord(1:3,j  ) = hecMESH%node(3*nodLOCAL(j  )-2:3*nodLOCAL(j  ))
               ecoord(1:3,j+4) = hecMESH%node(3*nodLOCAL(j+4)-2:3*nodLOCAL(j+4))
               edisp(6*j-5:6*j-3) = fstrSOLID%unode(3*nodLOCAL(j  )-2:3*nodLOCAL(j  ))
@@ -179,6 +183,7 @@ contains
             do j = 1, 3
               nodLOCAL(j  ) = hecMESH%elem_node_item(jS+j  )
               nodLOCAL(j+3) = hecMESH%elem_node_item(jS+j+3)
+              is_rot(nodLOCAL(j+3)) = 1
               ecoord(1:3,j  ) = hecMESH%node(3*nodLOCAL(j  )-2:3*nodLOCAL(j  ))
               ecoord(1:3,j+3) = hecMESH%node(3*nodLOCAL(j+3)-2:3*nodLOCAL(j+3))
               edisp(6*j-5:6*j-3) = fstrSOLID%unode(3*nodLOCAL(j  )-2:3*nodLOCAL(j  ))
@@ -231,7 +236,7 @@ contains
           fstrSOLID%ESTRAIN(6*(icel-1)+1:6*(icel-1)+6) = fstrSOLID%ESTRAIN(6*(icel-1)+1:6*(icel-1)+6) + estrain(1:6)
           fstrSOLID%ESTRESS(6*(icel-1)+1:6*(icel-1)+6) = fstrSOLID%ESTRESS(6*(icel-1)+1:6*(icel-1)+6) + estress(1:6)
 
-!       endif
+        !endif
       enddo !<element loop
       deallocate( func, inv_func )
     enddo !<element type loop
@@ -249,6 +254,7 @@ contains
     if( flag33 == 1 )then
       do nlyr = 1, ntot_lyr
         do i = 1, hecMESH%n_node
+          if( nnumber(i) == 0 ) cycle
           fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  = &
         & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
           fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  = &
@@ -329,6 +335,8 @@ contains
         enddo
         estrain(j) = estrain(j) &
         & + weight*(0.5d0*layer%PLUS%ESTRAIN(6*(icel-1)+j) + 0.5d0*layer%MINUS%ESTRAIN(6*(icel-1)+j))
+        estress(j) = estress(j) &
+        & + weight*(0.5d0*layer%PLUS%ESTRESS(6*(icel-1)+j) + 0.5d0*layer%MINUS%ESTRESS(6*(icel-1)+j))
       enddo
     enddo
   end subroutine fstr_getavg_shell
@@ -521,7 +529,9 @@ contains
     fstrSOLID%STRAIN = 0.0d0
     fstrSOLID%STRESS = 0.0d0
     allocate( nnumber(hecMESH%n_node) )
+    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
+    fstrSOLID%is_rot = 0
 
     !C +-------------------------------+
     !C | according to ELEMENT TYPE     |
@@ -779,8 +789,10 @@ contains
 
     n_totlyr = fstrSOLID%max_lyr
 
-    allocate ( nnumber(hecMESH%n_node) )
+    allocate( nnumber(hecMESH%n_node) )
+    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
+    fstrSOLID%is_rot = 0
 
     !C +-------------------------------+
     !C | according to ELEMENT TYPE     |
