@@ -72,7 +72,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         external fstr_ctrl_get_c_h_name
         integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
-        integer(kind=kint) :: version, resul, visual, femap, n_totlyr, shell_ortho, mixedflag
+        integer(kind=kint) :: version, resul, visual, femap, n_totlyr
         integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror
         character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
         real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
@@ -282,6 +282,18 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
 
+        P%SOLID%is_33shell = 0
+        P%SOLID%is_33beam  = 0
+
+        do i=1,hecMESH%n_elem_type
+          n =  hecMESH%elem_type_item(i)
+          if (n == 781 .or. n == 761)then
+            P%SOLID%is_33shell = 1
+          elseif (n == 641)then
+            P%SOLID%is_33beam  = 1
+          endif
+        enddo
+
         n = c_material
         if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
         if( n==0 ) stop "material property not defined!"
@@ -293,12 +305,12 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
               if( fstrPARAM%solution_type == kstNLSTATIC &
-                   .or. fstrPARAM%solution_type==6 ) &
+                   .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
               nullify(shmat)
               call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
                             n_totlyr,alpha_over_mu, &
-                            beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
+                            beam_radius,beam_angle1,beam_angle2,beam_angle3, &
                             beam_angle4,beam_angle5,beam_angle6)
                 fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
                 fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
@@ -316,7 +328,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
                 fstrSOLID%materials(cid)%mtype = ELASTIC
                 fstrSOLID%materials(cid)%totallyr = n_totlyr
-                fstrSOLID%materials(cid)%totthick = thick
                 fstrSOLID%materials(cid)%shell_var => shmat
            enddo
          endif
@@ -563,7 +574,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
                stop
             endif
-			if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+            if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
                c_output=2
                do i=1,hecMESH%node_group%n_grp
                  if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
@@ -578,7 +589,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
               stop
             endif
-			if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
+            if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
                c_output=2
                do i=1,hecMESH%node_group%n_grp
                  if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name == hecMESH%node_group%grp_name(i) ) then
@@ -678,7 +689,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
         if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
            p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
-           p%PARAM%solution_type==6 )            &
+           p%PARAM%solution_type==kstSTATICEIGEN )            &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
 
         if( p%PARAM%solution_type == kstHEAT) then
@@ -686,24 +697,17 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
           p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
         endif
 
-        n_totlyr = 1
-        mixedflag = 0
+         n_totlyr = 1
+         do i=1,hecMESH%section%n_sect
+            cid = hecMESH%section%sect_mat_ID_item(i)
+            n  = fstrSOLID%materials(cid)%totallyr
+           if (n > n_totlyr)then
+             n_totlyr = n
+           endif
+         enddo
+         P%SOLID%max_lyr = n_totlyr
 
-        do i=1,hecMESH%section%n_sect
-           cid = hecMESH%section%sect_mat_ID_item(i)
-           n  = fstrSOLID%materials(cid)%totallyr
-          if (n > n_totlyr)then
-            n_totlyr = n
-          endif
-        enddo
-        do i=1,hecMESH%n_elem_type
-          n =  hecMESH%elem_type_item(i)
-          if (n == 781 .or. n == 761)then
-            mixedflag = 1
-          endif
-        enddo
-
-        call fstr_setup_post( ctrl, P, n_totlyr, mixedflag)
+        call fstr_setup_post( ctrl, P )
         rcode = fstr_ctrl_close( ctrl )
 
 end subroutine fstr_setup
@@ -745,10 +749,8 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
         integer :: ndof, ntotal, ierror, ic_type
 
         ndof=hecMESH%n_dof
-        ic_type= hecMESH%elem_type_item(1)
-        if( ic_type==741 .or. ic_type==743 .or. ic_type==731 ) ndof=6
-
         ntotal=ndof*hecMESH%n_node
+
         allocate ( fstrSOLID%GL( ntotal )          ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL>'
@@ -1116,42 +1118,42 @@ end subroutine fstr_dynamic_alloc
         type(fstr_dynamic) :: fstrDYNAMIC
 
         integer :: ierror
-        if( associated(fstrDYNAMIC%DISP) )	    &
+        if( associated(fstrDYNAMIC%DISP) )        &
         deallocate( fstrDYNAMIC%DISP    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, DISP>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        if( associated(fstrDYNAMIC%VEL) )	    &
+        if( associated(fstrDYNAMIC%VEL) )        &
         deallocate( fstrDYNAMIC%VEL     ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, VEL>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        if( associated(fstrDYNAMIC%ACC) )	    &
+        if( associated(fstrDYNAMIC%ACC) )        &
         deallocate( fstrDYNAMIC%ACC     ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, ACC>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        if( associated(fstrDYNAMIC%VEC1) )	    &
+        if( associated(fstrDYNAMIC%VEC1) )        &
         deallocate( fstrDYNAMIC%VEC1    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, VEC1>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        if( associated(fstrDYNAMIC%VEC2) )	    &
+        if( associated(fstrDYNAMIC%VEC2) )        &
         deallocate( fstrDYNAMIC%VEC2    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, VEC2>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
-        if( associated(fstrDYNAMIC%VEC3) )	    &
+        if( associated(fstrDYNAMIC%VEC3) )        &
         deallocate( fstrDYNAMIC%VEC3    ,STAT=ierror )
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, VEC3>'
@@ -1165,62 +1167,74 @@ end subroutine
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
 
- subroutine fstr_setup_post( ctrl, P, ntot_lyr, mixedflag)
+ subroutine fstr_setup_post( ctrl, P )
         implicit none
-        integer(kind=kint) :: ctrl, ntot_lyr, mixedflag
+        integer(kind=kint) :: ctrl, ntot_lyr, i
         type(fstr_param_pack) :: P
 
-                                           ! JP-6
+        ! JP-6
+        ntot_lyr = P%SOLID%max_lyr
+
         if( P%PARAM%solution_type == kstSTATIC &
          .or. P%PARAM%solution_type == kstNLSTATIC  &
          .or. P%PARAM%solution_type == kstEIGEN  &
          .or. P%PARAM%solution_type == kstDYNAMIC &
-         .or. P%PARAM%solution_type == 6 ) then
+         .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
                 ! Memory Allocation for Result Vectors ------------
-                if( P%MESH%n_dof == 6 ) then
-                !       P%SOLID%output_ctrl(3)%outinfo%vtype(20)      これで場合分け
-                        allocate ( P%SOLID%SHELL )
-                        allocate ( P%SOLID%SHELL%STRAIN  (12*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%STRESS  (14*ntot_lyr*P%MESH%n_node))
-!                        allocate ( P%SOLID%SHELL%ESTRAIN  (6*ntot_lyr*P%MESH%n_elem)) こうしたい．
-!                        allocate ( P%SOLID%SHELL%ESTRESS  (6*ntot_lyr*P%MESH%n_elem))
-!                        allocate ( P%SOLID%SHELL%EMISES  (ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
-                        P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
-                        P%SOLID%STRESS => P%SOLID%SHELL%STRESS
-                        P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
-                        P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
-                elseif( mixedflag == 1) then
-                        allocate ( P%SOLID%STRAIN  (12*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%STRESS  (14*ntot_lyr*P%MESH%n_node))
-                        allocate ( P%SOLID%ESTRAIN  (12*ntot_lyr*P%MESH%n_elem))
-                        allocate ( P%SOLID%ESTRESS  (14*ntot_lyr*P%MESH%n_elem))
+                if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
+                    allocate ( P%SOLID%SHELL )
+                    allocate ( P%SOLID%SHELL%STRAIN  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%STRESS  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%MISES   (  P%MESH%n_node))
+                    allocate ( P%SOLID%SHELL%ESTRAIN (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%ESTRESS (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%EMISES  (  P%MESH%n_elem))
+                    allocate ( P%SOLID%SHELL%LAYER(ntot_lyr) )
+                    do i=1,ntot_lyr
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRAIN  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRESS  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%MISES   (  P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRAIN (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRESS (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%EMISES  (  P%MESH%n_elem))
+
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRAIN  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRESS  (6*P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%MISES   (  P%MESH%n_node))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRAIN (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRESS (6*P%MESH%n_elem))
+                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%EMISES  (  P%MESH%n_elem))
+                    enddo
+                    P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
+                    P%SOLID%STRESS => P%SOLID%SHELL%STRESS
+                    P%SOLID%MISES  => P%SOLID%SHELL%MISES
+                    P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
+                    P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
+                    P%SOLID%EMISES  => P%SOLID%SHELL%EMISES
                 else
-                        allocate ( P%SOLID%SOLID )
-                        allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SOLID%STRESS  (7*P%MESH%n_node))
-                        allocate ( P%SOLID%SOLID%MISES  (P%MESH%n_node))
-                        allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SOLID%ESTRESS  (7*P%MESH%n_elem))
-                        allocate ( P%SOLID%SOLID%EMISES  (P%MESH%n_node))
-
-												
-                        P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
-                        P%SOLID%STRESS => P%SOLID%SOLID%STRESS
-                        P%SOLID%MISES => P%SOLID%SOLID%MISES
-                        P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
-                        P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
-
-                        P%SOLID%EMISES => P%SOLID%SOLID%EMISES
-
+                    allocate ( P%SOLID%SOLID )
+                    allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%STRESS  (6*P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%MISES   (P%MESH%n_node))
+                    allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SOLID%ESTRESS  (6*P%MESH%n_elem))
+                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_elem))
+                    P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
+                    P%SOLID%STRESS => P%SOLID%SOLID%STRESS
+                    P%SOLID%MISES  => P%SOLID%SOLID%MISES
+                    P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
+                    P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
+                    P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
                 end if
-
                 
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
+                P%SOLID%MISES  = 0.d0
                 P%SOLID%ESTRAIN = 0.d0
                 P%SOLID%ESTRESS = 0.d0
+                P%SOLID%EMISES  = 0.d0
         end if
 
         P%EIGEN%iluetol = svRarray(1) ! solver tolerance
@@ -1360,7 +1374,7 @@ integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
 
         fstr_setup_ORIENTATION = -1
 
-		nid = 1
+        nid = 1
         coordsys%sys_type = 10
 
         nid = 1

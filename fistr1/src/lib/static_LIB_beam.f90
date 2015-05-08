@@ -21,7 +21,7 @@
 module m_static_LIB_beam
 
 use hecmw
-USE mMechGauss
+use mMechGauss
 use m_utilities
 use elementinfo
 
@@ -961,5 +961,26 @@ contains
       END SUBROUTINE NodalStress_Beam_641
 !####################################################################
       ! > (Gaku Hashimoto, The University of Tokyo, 2013/09/13)
+
+!####################################################################
+      SUBROUTINE ElementalStress_Beam_641                         &
+                 ( gausses, estrain, estress )
+!####################################################################
+      USE m_fstr
+      USE mMechGauss
+      implicit none
+
+!--------------------------------------------------------------------
+
+      TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)
+      REAL(KIND = kreal), INTENT(OUT)   :: estrain(6)
+      REAL(KIND = kreal), INTENT(OUT)   :: estress(6)
+
+!--------------------------------------------------------------------
+
+      estrain(1:6) = gausses(1)%strain(1:6)
+      estress(1:6) = gausses(1)%stress(1:6)
+
+      END SUBROUTINE ElementalStress_Beam_641
 
 end module

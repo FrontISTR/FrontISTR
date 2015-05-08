@@ -295,7 +295,9 @@
           real(kind=kreal),pointer   :: elem_mat_int_val(:)
           integer(kind=kint),pointer :: elem_val_index(:)
           real(kind=kreal),pointer   :: elem_val_item(:)
-
+          !integer(kind=kint)         :: is_33shell
+          !integer(kind=kint)         :: is_33beam
+          !integer(kind=kint)         :: is_heat
 !C
 !C-- COMMUNICATION
 !C

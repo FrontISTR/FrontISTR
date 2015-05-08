@@ -22,9 +22,9 @@
 !!
 !======================================================================!
 module m_static_output
-	implicit none
+  implicit none
 
-	contains
+  contains
 
 !> Output result
 !----------------------------------------------------------------------*
@@ -42,27 +42,23 @@ module m_static_output
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
     ndof = hecMESH%n_dof
-
-    nullify( tnstrain )
-    nullify( testrain )
-
+    
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
        if( ndof==3 ) then
-          allocate( tnstrain(hecMESH%n_node*6) )
-          allocate( testrain(hecMESH%n_elem*6) )
+          allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
+          allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
        else if( ndof==2 ) then
-          allocate( tnstrain(hecMESH%n_node*3) )
-          allocate( testrain(hecMESH%n_elem*3) )
+          allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
+          allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
        endif
     endif
 
     if( ndof==3 ) then
-          call fstr_NodalStress3D( hecMESH, fstrSOLID, tnstrain, testrain )
+          call fstr_NodalStress3D( hecMESH, fstrSOLID )
     else if( ndof==2 ) then
-          call fstr_NodalStress2D( hecMESH, fstrSOLID, tnstrain, testrain )
+          call fstr_NodalStress2D( hecMESH, fstrSOLID )
     else if( ndof==6 ) then
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
@@ -76,26 +72,24 @@ module m_static_output
           end do
     endif
 
-    if( flag==6 ) then
+    if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 1 )
+          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 1 )
       endif
-      if( associated(tnstrain) ) deallocate( tnstrain )
-      if( associated(testrain) ) deallocate( testrain )
       return
     endif
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, tnstrain, testrain, 0 )
+          call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
 
-          call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, tnstrain, testrain )
+          call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
           call fstr2hecmw_mesh_conv( hecMESH )
           call hecmw_visualize_init
           call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
@@ -120,9 +114,6 @@ module m_static_output
       enddo
     endif
 
-    if( associated(tnstrain) ) deallocate( tnstrain )
-    if( associated(testrain) ) deallocate( testrain )
-
   end subroutine fstr_static_Output
 
 !> Summarizer of output data which prints out max and min output values
@@ -135,7 +126,9 @@ module m_static_output
       type (fstr_solid), intent(in)         :: fstrSOLID
 
       real(kind=kreal)   :: Umax(6), Umin(6), Emax(14), Emin(14), Smax(14), Smin(14)
+      real(kind=kreal)   :: Mmax(1), Mmin(1), EMmax(1), EMmin(1)
       integer(kind=kint) :: IUmax(6), IUmin(6), IEmax(14), IEmin(14), ISmax(14), ISmin(14)
+      integer(kind=kint) :: IMmax(1), IMmin(1), IEMmax(1), IEMmin(1)
       real(kind=kreal)   :: EEmax(14), EEmin(14), ESmax(14), ESmin(14)
       integer(kind=kint) :: IEEmax(14), IEEmin(14), IESmax(14), IESmin(14)
       integer(kind=kint) :: i, j, k, ndof, mdof, ID_area
@@ -146,6 +139,7 @@ module m_static_output
 
 !C*** Show Displacement
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, ndof
@@ -170,25 +164,26 @@ module m_static_output
 !C*** Show Strain
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 12
+      if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
-            Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+            Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
             IEmax(k)= j
             IEmin(k)= j
           enddo
         else
           do k = 1, mdof
-            if( fstrSOLID%STRAIN(mdof*(i-1)+k) > Emax(k) ) then
-              Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            if( fstrSOLID%STRAIN(6*(i-1)+k) > Emax(k) ) then
+              Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
               IEmax(k)= j
             endif
-            if( fstrSOLID%STRAIN(mdof*(i-1)+k) < Emin(k) ) then
-              Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            if( fstrSOLID%STRAIN(6*(i-1)+k) < Emin(k) ) then
+              Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
               IEmin(k)= j
             endif
           enddo
@@ -201,19 +196,19 @@ module m_static_output
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
-              EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
+              EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
               IEEmax(k)= j
               IEEmin(k)= j
             enddo
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) > EEmax(k) ) then
-                EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(6*(i-1)+k) > EEmax(k) ) then
+                EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
                 IEEmax(k)= j
               endif
-              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) < EEmin(k) ) then
-                EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(6*(i-1)+k) < EEmin(k) ) then
+                EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
                 IEEmin(k)= j
               endif
             enddo
@@ -221,30 +216,43 @@ module m_static_output
         endif
       enddo
 !C*** Show Stress
-      if( ndof==2 ) mdof = 4
-      if( ndof==3 ) mdof = 7
-      if( ndof==6 ) mdof = 14
+      if( ndof==2 ) mdof = 3
+      if( ndof==3 ) mdof = 6
+      if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
+        if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
-            Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
+            Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
             ISmax(k)= j
             ISmin(k)= j
           enddo
+          Mmax(1) = fstrSOLID%MISES(1)
+          Mmin(1) = fstrSOLID%MISES(1)
+          IMmax(1)= j
+          IMmin(1)= j
         else
           do k = 1, mdof
-            if( fstrSOLID%STRESS(mdof*(i-1)+k) > Smax(k) ) then
-              Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            if( fstrSOLID%STRESS(6*(i-1)+k) > Smax(k) ) then
+              Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
               ISmax(k)= j
             endif
-            if( fstrSOLID%STRESS(mdof*(i-1)+k) < Smin(k) ) then
-              Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            if( fstrSOLID%STRESS(6*(i-1)+k) < Smin(k) ) then
+              Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
               ISmin(k)= j
             endif
           enddo
+          if( fstrSOLID%MISES(i) > Mmax(1) ) then
+            Mmax(1) = fstrSOLID%MISES(i)
+            IMmax(1)= j
+          endif
+          if( fstrSOLID%MISES(i) < Mmin(1) ) then
+            Mmin(1) = fstrSOLID%MISES(i)
+            IMmin(1)= j
+          endif
         endif
       enddo
 !C @element
@@ -254,26 +262,38 @@ module m_static_output
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
-              ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+              ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
               IESmax(k)= j
               IESmin(k)= j
             enddo
+            EMmax(1) = fstrSOLID%EMISES(1)
+            EMmin(1) = fstrSOLID%EMISES(1)
+            IEMmax(1)= j
+            IEMmin(1)= j
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) > ESmax(k) ) then
-                ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRESS(6*(i-1)+k) > ESmax(k) ) then
+                ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
                 IESmax(k)= j
               endif
-              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) < ESmin(k) ) then
-                ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              if( fstrSOLID%ESTRESS(6*(i-1)+k) < ESmin(k) ) then
+                ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
                 IESmin(k)= j
               endif
             enddo
+            if( fstrSOLID%EMISES(i) > EMmax(1) ) then
+              EMmax(1) = fstrSOLID%EMISES(i)
+              IEMmax(1)= j
+            endif
+            if( fstrSOLID%EMISES(i) < EMmin(1) ) then
+              EMmin(1) = fstrSOLID%EMISES(i)
+              IEMmin(1)= j
+            endif
           endif
         endif
       enddo
-
+!C*** Show 2DOF
       if( ndof==2 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
@@ -284,7 +304,7 @@ module m_static_output
         write(ILOG,1009) '//S11',Smax(1),ISmax(1),Smin(1),ISmin(1)
         write(ILOG,1009) '//S22',Smax(2),ISmax(2),Smin(2),ISmin(2)
         write(ILOG,1009) '//S12',Smax(3),ISmax(3),Smin(3),ISmin(3)
-        write(ILOG,1009) '//SMS',Smax(4),ISmax(4),Smin(4),ISmin(4)
+        write(ILOG,1009) '//SMS',Mmax(1),IMmax(1),Mmin(1),IMmin(1)
         write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//E11',EEmax(1),IEEmax(1),EEmin(1),IEEmin(1)
         write(ILOG,1009) '//E22',EEmax(2),IEEmax(2),EEmin(2),IEEmin(2)
@@ -292,18 +312,18 @@ module m_static_output
         write(ILOG,1009) '//S11',ESmax(1),IESmax(1),ESmin(1),IESmin(1)
         write(ILOG,1009) '//S22',ESmax(2),IESmax(2),ESmin(2),IESmin(2)
         write(ILOG,1009) '//S12',ESmax(3),IESmax(3),ESmin(3),IESmin(3)
-        write(ILOG,1009) '//SMS',ESmax(4),IESmax(4),ESmin(4),IESmin(4)
-!C*** Show Summary
+        write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax,2,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin,2,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Emax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Emin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,4,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,4,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Smax,3,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Smin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,EEmax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,EEmin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,4,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,4,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,ESmax,3,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,ESmin,3,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
@@ -314,7 +334,7 @@ module m_static_output
           write(ILOG,1019) '//S11',Smax(1),Smin(1)
           write(ILOG,1019) '//S22',Smax(2),Smin(2)
           write(ILOG,1019) '//S12',Smax(3),Smin(3)
-          write(ILOG,1019) '//SMS',Smax(4),Smin(4)
+          write(ILOG,1019) '//SMS',Mmax(1),Mmin(1)
           write(ILOG,*) '##### @Element :Max/Min####'
           write(ILOG,1019) '//E11',EEmax(1),EEmin(1)
           write(ILOG,1019) '//E22',EEmax(2),EEmin(2)
@@ -322,9 +342,10 @@ module m_static_output
           write(ILOG,1019) '//S11',ESmax(1),ESmin(1)
           write(ILOG,1019) '//S22',ESmax(2),ESmin(2)
           write(ILOG,1019) '//S12',ESmax(3),ESmin(3)
-          write(ILOG,1019) '//SMS',ESmax(4),ESmin(4)
+          write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==3 ) then
+!C*** Show 3DOF
+      else if( ndof==3 .or. ndof==6 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
@@ -341,7 +362,7 @@ module m_static_output
         write(ILOG,1009) '//S12',Smax(4),ISmax(4),Smin(4),ISmin(4)
         write(ILOG,1009) '//S23',Smax(5),ISmax(5),Smin(5),ISmin(5)
         write(ILOG,1009) '//S13',Smax(6),ISmax(6),Smin(6),ISmin(6)
-        write(ILOG,1009) '//SMS',Smax(7),ISmax(7),Smin(7),ISmin(7)
+        write(ILOG,1009) '//SMS',Mmax(1),IMmax(1),Mmin(1),IMmin(1)
         write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//E11',EEmax(1),IEEmax(1),EEmin(1),IEEmin(1)
         write(ILOG,1009) '//E22',EEmax(2),IEEmax(2),EEmin(2),IEEmin(2)
@@ -355,18 +376,18 @@ module m_static_output
         write(ILOG,1009) '//S12',ESmax(4),IESmax(4),ESmin(4),IESmin(4)
         write(ILOG,1009) '//S23',ESmax(5),IESmax(5),ESmin(5),IESmin(5)
         write(ILOG,1009) '//S13',ESmax(6),IESmax(6),ESmin(6),IESmin(6)
-        write(ILOG,1009) '//SMS',ESmax(7),IESmax(7),ESmin(7),IESmin(7)
-!C*** Show Summary
+        write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Emax,6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Emin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,7,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,7,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Smax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Smin,6,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,EEmax,6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,EEmin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,7,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,7,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,ESmax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,ESmin,6,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
@@ -384,7 +405,7 @@ module m_static_output
           write(ILOG,1019) '//S12',Smax(4),Smin(4)
           write(ILOG,1019) '//S23',Smax(5),Smin(5)
           write(ILOG,1019) '//S13',Smax(6),Smin(6)
-          write(ILOG,1019) '//SMS',Smax(7),Smin(7)
+          write(ILOG,1019) '//SMS',Mmax(1),Mmin(1)
           write(ILOG,*) '##### @Element :Max/Min####'
           write(ILOG,1019) '//E11',EEmax(1),EEmin(1)
           write(ILOG,1019) '//E22',EEmax(2),EEmin(2)
@@ -398,9 +419,10 @@ module m_static_output
           write(ILOG,1019) '//S12',ESmax(4),ESmin(4)
           write(ILOG,1019) '//S23',ESmax(5),ESmin(5)
           write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
-          write(ILOG,1019) '//SMS',ESmax(7),ESmin(7)
+          write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==6 ) then
+!C*** Show 6DOF
+      else if( 1 == 0 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009)'//U1    ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009)'//U2    ',Umax(2),IUmax(2),Umin(2),IUmin(2)
@@ -432,8 +454,8 @@ module m_static_output
         write(ILOG,1009)'//S12(-)',Smax(10),ISmax(10),Smin(10),ISmin(10)
         write(ILOG,1009)'//S23(-)',Smax(11),ISmax(11),Smin(11),ISmin(11)
         write(ILOG,1009)'//S31(-)',Smax(12),ISmax(12),Smin(12),ISmin(12)
-        write(ILOG,1009)'//SMS(+)',Smax(13),ISmax(13),Smin(13),ISmin(13)
-        write(ILOG,1009)'//SMS(-)',Smax(14),ISmax(14),Smin(14),ISmin(14)
+        write(ILOG,1009)'//SMS(+)',Mmax( 1),IMmax( 1),Mmin( 1),IMmin( 1)
+        write(ILOG,1009)'//SMS(-)',Mmax( 1),IMmax( 1),Mmin( 1),IMmin( 1)
         write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
         write(ILOG,1009)'//E11(+)',EEmax( 1),IEEmax( 1),EEmin( 1),IEEmin( 1)
         write(ILOG,1009)'//E22(+)',EEmax( 2),IEEmax( 2),EEmin( 2),IEEmin( 2)
@@ -459,19 +481,19 @@ module m_static_output
         write(ILOG,1009)'//S12(-)',ESmax(10),IESmax(10),ESmin(10),IESmin(10)
         write(ILOG,1009)'//S23(-)',ESmax(11),IESmax(11),ESmin(11),IESmin(11)
         write(ILOG,1009)'//S31(-)',ESmax(12),IESmax(12),ESmin(12),IESmin(12)
-        write(ILOG,1009)'//SMS(+)',ESmax(13),IESmax(13),ESmin(13),IESmin(13)
-        write(ILOG,1009)'//SMS(-)',ESmax(14),IESmax(14),ESmin(14),IESmin(14)
-!C*** Show Summary
+        write(ILOG,1009)'//SMS(+)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
+        write(ILOG,1009)'//SMS(-)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
+        !C*** Show Summary
         call hecmw_allREDUCE_R(hecMESH,Umax, 6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Umin, 6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,14,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,14,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,14,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,14,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,14,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,14,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,14,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,14,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Emax,12,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Emin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Smax,12,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Smin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,EEmax,12,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,EEmin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,ESmax,12,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,ESmin,12,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1    ',Umax(1),Umin(1)
@@ -504,8 +526,8 @@ module m_static_output
           write(ILOG,1019) '//S12(-)',Smax(10),Smin(10)
           write(ILOG,1019) '//S23(-)',Smax(11),Smin(11)
           write(ILOG,1019) '//S31(-)',Smax(12),Smin(12)
-          write(ILOG,1019) '//SMS(+)',Smax(13),Smin(13)
-          write(ILOG,1019) '//SMS(-)',Smax(14),Smin(14)
+          write(ILOG,1019) '//SMS(+)',Mmax( 1),Mmin( 1)
+          write(ILOG,1019) '//SMS(-)',Mmax( 1),Mmin( 1)
           write(ILOG,*) '##### @Element :Max/Min####'
           write(ILOG,1019) '//E11(+)',EEmax( 1),EEmin( 1)
           write(ILOG,1019) '//E22(+)',EEmax( 2),EEmin( 2)
@@ -531,8 +553,8 @@ module m_static_output
           write(ILOG,1019) '//S12(-)',ESmax(10),ESmin(10)
           write(ILOG,1019) '//S23(-)',ESmax(11),ESmin(11)
           write(ILOG,1019) '//S31(-)',ESmax(12),ESmin(12)
-          write(ILOG,1019) '//SMS(+)',ESmax(13),ESmin(13)
-          write(ILOG,1019) '//SMS(-)',ESmax(14),ESmin(14)
+          write(ILOG,1019) '//SMS(+)',EMmax( 1),EMmin( 1)
+          write(ILOG,1019) '//SMS(-)',EMmax( 1),EMmin( 1)
         endif
       endif
 

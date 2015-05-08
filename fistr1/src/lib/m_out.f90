@@ -59,7 +59,7 @@ subroutine initOutInfo( outinfo )
   outinfo%grp_id_name = "ALL"
   outinfo%grp_id      = -1
   outinfo%on(:)       = .false.
-  outinfo%num_items   = 26
+  outinfo%num_items   = 28
 
   outinfo%keyWord(1)  = "DISP"
   outinfo%vtype(1)    = -2
@@ -90,8 +90,8 @@ subroutine initOutInfo( outinfo )
   outinfo%vtype(8)    = -1
   outinfo%on(8)       = .true.
 
-  outinfo%keyWord(9) = "ISTRAIN"
-  outinfo%vtype(9)   = -3
+  outinfo%keyWord(9)  = "ISTRAIN"
+  outinfo%vtype(9)    = -3
 
   outinfo%keyWord(10) = "ISTRESS"
   outinfo%vtype(10)   = -3
@@ -125,21 +125,31 @@ subroutine initOutInfo( outinfo )
 
   outinfo%keyWord(20) = "PRINC_ESTRESS"
   outinfo%vtype(20)   = -2
+
   outinfo%keyWord(21) = "PRINC_NSTRAIN"
   outinfo%vtype(21)   = -2
+
   outinfo%keyWord(22) = "PRINC_ESTRAIN"
   outinfo%vtype(22)   = -2
 
   outinfo%keyWord(23) = "PRINCV_NSTRESS"
   outinfo%vtype(23)   = -2
+
   outinfo%keyWord(24) = "PRINCV_ESTRESS"
   outinfo%vtype(24)   = -2
+
   outinfo%keyWord(25) = "PRINCV_NSTRAIN"
   outinfo%vtype(25)   = -2
+
   outinfo%keyWord(26) = "PRINCV_ESTRAIN"
   outinfo%vtype(26)   = -2
 
-  
+  outinfo%keyWord(27) = "SHELL_LAYER"
+  outinfo%vtype(27)   = -2
+
+  outinfo%keyWord(28) = "SHELL_SURFACE"
+  outinfo%vtype(28)   = -2
+
 end subroutine initOutInfo
 
 
@@ -173,6 +183,7 @@ integer function n_comp_valtype( vtype, ndim )
     n_comp_valtype = ndim
   else if( vtype==-3 ) then
     n_comp_valtype = ndim*(ndim+1)/2
+    if(ndim == 6)n_comp_valtype=6
   else if( vtype==-4 ) then
     n_comp_valtype = ndim*ndim
   else

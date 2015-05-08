@@ -150,6 +150,13 @@ run_shell () {
 	done
 }
 
+run_shell33 () {
+	cnt=${cnt_shell33}
+	for i in ${model_shell33}
+	do
+		run ${i} true
+	done
+}
 
 list_up () {
 	echo "2d model   : ${model_2d}"
@@ -158,6 +165,8 @@ list_up () {
 	echo "3d ctrl    : ${cnt_3d}"
 	echo "shell model: ${model_shell}"
 	echo "shell ctrl : ${cnt_shell}"
+	echo "shell33 model: ${model_shell33}"
+	echo "shell33 ctrl : ${cnt_shell33}"
 }
 
 
@@ -169,6 +178,7 @@ help () {
 	echo "  2d     : 2 dimentional model"
 	echo "  3d     : 3 dimentional model"
 	echo "  shell  : shell model"
+	echo "  shell33: shell33 model"
 	echo "  all or no options : all model" 
 }
 
@@ -181,6 +191,7 @@ if [ $# -lt 1 -o "${1}" = "all" ]; then
 	run_2d
 	run_3d
 	run_shell
+	run_shell33
 	exit
 fi
 
@@ -195,6 +206,7 @@ do
 	elif [ "${i}" = "2d"    ]; then run_2d
 	elif [ "${i}" = "3d"    ]; then run_3d
 	elif [ "${i}" = "shell" ]; then run_shell
+	elif [ "${i}" = "shell33" ]; then run_shell33
 	else
 		echo "## Error in ${0}: unknown parameter ${i}"
 		echo "   show help with -h"

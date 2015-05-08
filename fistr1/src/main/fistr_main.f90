@@ -89,7 +89,7 @@ use m_fstr_freqdata
                 call fstr_heat_analysis
         case ( kstDYNAMIC )
                 call fstr_linear_dynamic_analysis
-        case ( 6 )
+        case ( kstSTATICEIGEN )
                 call fstr_static_eigen_analysis
         end select
 

@@ -131,10 +131,11 @@ MODULE mMaterial
     real(kind=kreal)           :: g12
     real(kind=kreal)           :: g23
     real(kind=kreal)           :: g31
-    real(kind=kreal)           :: thick
     real(kind=kreal)           :: angle
     real(kind=kreal)           :: rho
+    real(kind=kreal)           :: aplha
     real(kind=kreal)           :: alpha_over_mu
+    real(kind=kreal)           :: weight
   END TYPE tshellmat
 
   !> Stucture to management all material relates data
@@ -146,7 +147,6 @@ MODULE mMaterial
     real(kind=kreal)           :: variables(100)    !< material properties
     type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
     integer(kind=kint)         :: totallyr          !< total layer of element
-    real(kind=kreal)           :: totthick          !< total thickness of element
     integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
     integer(kind=kint)         :: n_table           !< size of table
     REAL(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
