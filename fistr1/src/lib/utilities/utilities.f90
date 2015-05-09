@@ -369,12 +369,12 @@ module m_utilities
 	
     implicit none
     integer i,j
-    real(kind=8) :: tensor(1:6)
-    real(kind=8) :: eigval(3)
-    real(kind=8) :: princmatrix(3,3)
-    real(kind=8) :: princnormal(3,3)
-    real(kind=8) :: tempv(3)
-    real(kind=8) :: temps
+    real(kind=kreal) :: tensor(1:6)
+    real(kind=kreal) :: eigval(3)
+    real(kind=kreal) :: princmatrix(3,3)
+    real(kind=kreal) :: princnormal(3,3)
+    real(kind=kreal) :: tempv(3)
+    real(kind=kreal) :: temps
   
 		call eigen3(tensor,eigval,princnormal)
 	  
@@ -414,15 +414,15 @@ module m_utilities
   SUBROUTINE eigen3d (tensor, eigval, princ)
     implicit none
 
-    real(kind=8) :: tensor(6)     !< tensor
-    real(kind=8) :: eigval(3)     !< vector containing the eigvalches
-    real(kind=8) :: princ(3,3)   !< matrix containing the three principal column vectors
+    real(kind=kreal) :: tensor(6)     !< tensor
+    real(kind=kreal) :: eigval(3)     !< vector containing the eigvalches
+    real(kind=kreal) :: princ(3,3)   !< matrix containing the three principal column vectors
 
-    real(kind=8) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
-    real(kind=8) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
-    complex(kind=8):: x1,x2,x3
-    real(kind=8):: rtemp
-    real(kind=8) :: mat(3,4)   
+    real(kind=kreal) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
+    real(kind=kreal) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
+    complex(kind=kreal):: x1,x2,x3
+    real(kind=kreal):: rtemp
+    real(kind=kreal) :: mat(3,4)   
 		integer :: i
     s11 = tensor(1)
     s22 = tensor(2)
@@ -482,11 +482,11 @@ module m_utilities
   end subroutine eigen3d
   
   subroutine cardano(a,b,c,x1,x2,x3)
-    real(kind=8):: a,b,c
-    real(kind=8):: p,q,d
-    complex(kind=8):: w
-    complex(kind=8):: u,v,y
-    complex(kind=8):: x1,x2,x3
+    real(kind=kreal):: a,b,c
+    real(kind=kreal):: p,q,d
+    complex(kind=kreal):: w
+    complex(kind=kreal):: u,v,y
+    complex(kind=kreal):: x1,x2,x3
     w = (-1.0d0 + sqrt(dcmplx(-3.0d0)))/2.0d0
     p = -a**2/9.0d0 + b/3.0d0
     q = 2.0d0/2.7d1*a**3 - a*b/3.0d0 + c
