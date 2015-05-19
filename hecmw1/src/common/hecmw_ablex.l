@@ -101,12 +101,12 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 ^"*"SYSTEM	{ set_flag_header(1); return HECMW_ABLEX_H_SYSTEM; }
 "*"SYSTEM	{ return flag_header ? HECMW_ABLEX_H_SYSTEM : ' '; }
 
-^"*"FILE" "?FORMAT	{ set_flag_header(1); return HECMW_ABLEX_H_SPECIFIC_HEAT; }
-"*"FILE" "?FORMAT		{ return flag_header ? HECMW_ABLEX_H_SPECIFIC_HEAT : ' '; }
-^"*"NODE" "?FILE	{ set_flag_header(1); return HECMW_ABLEX_H_SPECIFIC_HEAT; }
-"*"NODE" "?FILE		{ return flag_header ? HECMW_ABLEX_H_SPECIFIC_HEAT : ' '; }
-^"*"EL" "?FILE	{ set_flag_header(1); return HECMW_ABLEX_H_SPECIFIC_HEAT; }
-"*"EL" "?FILE		{ return flag_header ? HECMW_ABLEX_H_SPECIFIC_HEAT : ' '; }
+^"*"FILE" "?FORMAT	{ set_flag_header(1); return HECMW_ABLEX_H_FILE_FORMAT; }
+"*"FILE" "?FORMAT		{ return flag_header ? HECMW_ABLEX_H_FILE_FORMAT : ' '; }
+^"*"NODE" "?FILE	{ set_flag_header(1); return HECMW_ABLEX_H_NODE_FILE; }
+"*"NODE" "?FILE		{ return flag_header ? HECMW_ABLEX_H_NODE_FILE : ' '; }
+^"*"EL" "?FILE	{ set_flag_header(1); return HECMW_ABLEX_H_EL_FILE; }
+"*"EL" "?FILE		{ return flag_header ? HECMW_ABLEX_H_EL_FILE : ' '; }
 
 ABSOLUTE	{ set_flag_header(0); return HECMW_ABLEX_K_ABSOLUTE; }
 ANISOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ANISOTROPIC; }
