@@ -69,6 +69,7 @@ F90LINKER      = sxmpif90
 
 MAKE           = make
 AR             = sxar ruv
+MV             = mv -f
 CP             = cp -f
 RM             = rm -f
 MKDIR          = mkdir -p
