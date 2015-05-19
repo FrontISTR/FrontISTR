@@ -5,6 +5,9 @@
 *.log
 *.inp
 *.bmp
+*.lst
+*.bak
+*.BAK
 lib/**/*
 *.neu
 dyna_*.txt

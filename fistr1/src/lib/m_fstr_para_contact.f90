@@ -265,10 +265,12 @@ subroutine paraContact_GetFSTR2Makrose(hecMESH,mak)
       mak%egrp(i) = hecMESH%section_ID(i)
       mak%emat(i) = hecMESH%elem_mat_ID_item(i)
       select case(hecMESH%elem_type(i))
-      case(361)
-        mak%etyp(i) = MAKROSE_HEXA8
+      case(341)
+        mak%etyp(i) = MAKROSE_TET4
       case(351)
         mak%etyp(i) = MAKROSE_PRI6
+      case(361)
+        mak%etyp(i) = MAKROSE_HEXA8
       case default
         print *,'Element type ID ',hecMESH%elem_type(i),' is not yet implemented for RTRI applications!'
         stop
@@ -310,6 +312,8 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
     allocate(itemtype(ntype),stat=istat)
     do i=1,ntype
       select case(mak%etyp(ptrtype(i)))
+      case(MAKROSE_TET4)
+        itemtype(i) = 341
       case(MAKROSE_PRI6)
         itemtype(i) = 351
       case(MAKROSE_HEXA8)
