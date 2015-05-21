@@ -1,3 +1,4 @@
+
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
@@ -48,9 +49,11 @@ enum {
 	HECMW_ABLEX_H_SOLID_SECTION,
 	HECMW_ABLEX_H_SPECIFIC_HEAT,
 	HECMW_ABLEX_H_SYSTEM,
-	HECMW_ABLEX_H_FILE_FORMAT,
-	HECMW_ABLEX_H_NODE_FILE,
-	HECMW_ABLEX_H_EL_FILE,
+	
+	HECMW_ABLEX_H_BOUNDARY,
+	HECMW_ABLEX_H_CLOAD,
+	HECMW_ABLEX_H_DLOAD,
+	HECMW_ABLEX_H_TIE,
 
 	HECMW_ABLEX_K_ABSOLUTE = 3000,
 	HECMW_ABLEX_K_ANISOTROPIC,
