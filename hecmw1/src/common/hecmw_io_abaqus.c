@@ -4011,6 +4011,7 @@ read_system(void)
 }
 #endif
 
+/*----------------------------------------------------------------------------*/
 static int
 read_boundary_keyword(void)
 {
@@ -4171,6 +4172,7 @@ read_boudary(void)
 	return 0;
 }
 
+/*----------------------------------------------------------------------------*/
 static int
 read_cload_keyword(void)
 {
@@ -4246,6 +4248,9 @@ read_cload(void)
 	return 0;
 }
 
+
+
+/*----------------------------------------------------------------------------*/
 static int
 read_dload_keyword(void)
 {
@@ -4276,7 +4281,7 @@ read_dload(void)
 	int token,state;
 	int flag_dload = 0;	/* flag for DLOAD */
 	static int ndload = 0;
-	char nset[HECMW_NAME_LEN+1] = "";
+	char elset[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
 		ST_KEYWORD_LINE,
@@ -4293,15 +4298,15 @@ read_dload(void)
 		} else if(state == ST_KEYWORD_LINE_PARAM) {
 			;
 		} else if(state == ST_DATA_LINE) {
-			int n,*node;
+			int n,*elem;
 
 			HECMW_assert(flag_dload);
-			if(read_boundary_data(&n, &node)) return -1;
+			if(read_boundary_data(&n, &elem)) return -1;
 
 			/* add node to group */
-			sprintf(nset,"DLOAD%d",ndload);
-			if(HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
-			HECMW_free(node);
+			sprintf(elset,"DLOAD%d",ndload);
+			if(HECMW_io_add_egrp(elset, n, elem) < 0) return -1;
+			HECMW_free(elem);
 
 			/* check next state */
 			token = HECMW_ablex_next_token();
