@@ -950,7 +950,7 @@ read_elset_keyword(void)
 
 
 static int
-read_elset_param_elset(char *elset)
+read_elset_param_elset(char *elset, int *isAll)
 {
 	int token;
 	char *p;
@@ -977,8 +977,9 @@ read_elset_param_elset(char *elset)
 		return -1;
 	}
 	if(strcmp(elset, "ALL") == 0) {
+		*isAll = 1;
 		set_err(HECMW_IO_E0003, "Reserved name: %s", elset);
-		return -1;
+		//return -1;
 	}
 	return 0;
 }
@@ -1159,6 +1160,7 @@ read_elset(void)
 	int token,state;
 	int flag_elset = 0;		/* flag for ELSET */
 	int flag_generate = 0;	/* flag for GENERATE */
+	int isAll = 0;
 	char elset[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
@@ -1177,7 +1179,7 @@ read_elset(void)
 			token = HECMW_ablex_next_token();
 			if(token == HECMW_ABLEX_K_ELSET) {
 				/* must */
-				if(read_elset_param_elset(elset)) return -1;
+				if(read_elset_param_elset(elset,&isAll)) return -1;
 				flag_elset = 1;
 			} else if(token == HECMW_ABLEX_K_GENERATE) {
 				/* oprtional */
@@ -2645,7 +2647,7 @@ read_nset_keyword(void)
 
 
 static int
-read_nset_param_nset(char *nset)
+read_nset_param_nset(char *nset, int *isAll)
 {
 	int token;
 	char *p;
@@ -2677,6 +2679,27 @@ read_nset_param_nset(char *nset)
 	}
 	if(strcmp(nset, "ALL") == 0) {
 		set_err(HECMW_IO_E0003, "Reserved name: %s", nset);
+		strcpy(nset, "ABAQUS_NSET_ALL");
+		*isAll = 1;
+		//return -1;
+	}
+	return 0;
+}
+
+static int
+read_nset_param_instance()
+{
+	int token;
+	char *p;
+
+	token = HECMW_ablex_next_token();
+	if(token != '=') {
+		set_err_token(token, HECMW_IO_ABAQUS_E1500, "'=' required after INSTANCE");
+		return -1;
+	}
+	token = HECMW_ablex_next_token();
+	if(token != HECMW_ABLEX_NAME) {
+		set_err_token(token, HECMW_IO_ABAQUS_E1500, "NSET must begin with a letter");
 		return -1;
 	}
 	return 0;
@@ -2864,6 +2887,7 @@ read_nset(void)
 	int flag_nset = 0;		/* flag for NSET */
 	int flag_generate = 0;	/* flag for GENERATE */
 	int flag_unsorted = 0;	/* flag for UNSORTED */
+	int isAll = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
@@ -2882,7 +2906,7 @@ read_nset(void)
 			token = HECMW_ablex_next_token();
 			if(token == HECMW_ABLEX_K_NSET) {
 				/* must */
-				if(read_nset_param_nset(nset)) return -1;
+				if(read_nset_param_nset(nset, &isAll)) return -1;
 				flag_nset = 1;
 			} else if(token == HECMW_ABLEX_K_GENERATE) {
 				/* oprtional */
@@ -2891,6 +2915,8 @@ read_nset(void)
 				/* oprtional */
 				log_warn(HECMW_IO_ABAQUS_W0097, "UNSORTED is not suppotred. Ignored.");
 				flag_unsorted = 0;	/* always ignore in this version */
+			} else if(token == HECMW_ABLEX_K_INSTANCE) {
+				read_nset_param_instance();
 			} else {
 				set_err_token(token, HECMW_IO_ABAQUS_E1500, "Unknown parameter");
 				return -1;
@@ -3000,7 +3026,7 @@ read_node_param_system(int *system)
 
 
 static int
-read_node_param_nset(char *nset)
+read_node_param_nset(char *nset, int *isAll)
 {
 	char *p;
 	int token;
@@ -3028,7 +3054,9 @@ read_node_param_nset(char *nset)
 	}
 	if(strcmp(nset, "ALL") == 0) {
 		set_err(HECMW_IO_E0003, "Reserved name: %s", nset);
-		return -1;
+		strcpy(nset, "ABAQUS_ESET_ALL");
+		*isAll = 1;
+		//return -1;
 	}
 	return 0;
 }
@@ -3170,6 +3198,7 @@ read_node(void)
 	int flag_system = 0;	/* flag for SYSTEM */
 	int flag_nset = 0;		/* flag for NSET */
 	int flag_input = 0;		/* flag for INPUT */
+	int isAll = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
@@ -3198,8 +3227,10 @@ read_node(void)
 				flag_system = 1;
 			} else if(token == HECMW_ABLEX_K_NSET) {
 				/* optional */
-				if(read_node_param_nset(nset)) return -1;
-				flag_nset = 1;
+				if(read_node_param_nset(nset, &isAll)) return -1;
+				if(isAll == 0){
+					flag_nset = 1;
+				}
 			} else if(token == HECMW_ABLEX_K_INPUT) {
 				/* optional */
 				if(read_input(HECMW_IO_ABAQUS_E1600)) return -1;
@@ -3576,6 +3607,35 @@ read_solidsect_param_material(char *material)
 	return 0;
 }
 
+static int
+read_solidsect_param_orientation(char *orientation)
+{
+	int token;
+	char *p;
+
+	token = HECMW_ablex_next_token();
+	if(token != '=') {
+		set_err_token(token, HECMW_IO_ABAQUS_E2100, "'=' reuqired after ORIENTATION");
+		return -1;
+	}
+	token = HECMW_ablex_next_token();
+	if(token != HECMW_ABLEX_NAME) {
+		set_err_token(token, HECMW_IO_ABAQUS_E2100, "ORIENTATION must begin with a letter");
+		return -1;
+	}
+	p = HECMW_ablex_get_text();
+	if(strlen(p) > HECMW_NAME_LEN) {
+		set_err(HECMW_IO_E0001, "");
+		return -1;
+	}
+	strcpy(orientation, p);
+	HECMW_toupper(orientation);
+	if(HECMW_io_is_reserved_name(orientation)) {
+		set_err(HECMW_IO_E0003, "");
+		return -1;
+	}
+	return 0;
+}
 
 static int
 read_solidsect_data(double *thickness)
@@ -3621,6 +3681,7 @@ read_solid_section(void)
 	int flag_composite = 0;	/* flag for COMPOSITE */
 	char elset[HECMW_NAME_LEN+1] = "";
 	char material[HECMW_NAME_LEN+1] = "ALL";
+	char orientation[HECMW_NAME_LEN+1] = "";
 	enum {
 		ST_FINISHED,
 		ST_KEYWORD_LINE,
@@ -3647,6 +3708,8 @@ read_solid_section(void)
 				}
 				if(read_solidsect_param_material(material)) return -1;
 				flag_material = 1;
+			} else if(token == HECMW_ABLEX_K_ORIENTATION) {
+				if(read_solidsect_param_orientation(orientation)) return -1;
 			} else {
 				set_err_token(token, HECMW_IO_ABAQUS_E2100, "Unknown parameter");
 				return -1;
@@ -4050,7 +4113,7 @@ read_boundary_data(int *nnode, int **node_array)
 		struct hecmw_io_id *id;
 
 		token = HECMW_ablex_next_token();
-		if(n != 0 && token == HECMW_ABLEX_NL) break;
+		if(token == HECMW_ABLEX_NL) break;
 
 		id = HECMW_malloc(sizeof(*id));
 		if(id == NULL) {
@@ -4060,8 +4123,7 @@ read_boundary_data(int *nnode, int **node_array)
 
 		/* nodX */
 		if(token != HECMW_ABLEX_INT && token != HECMW_ABLEX_DOUBLE && token != ',') {
-			set_err_token(token, HECMW_IO_ABAQUS_E1500, "Error input");
-			goto error;
+			isFirst=1;
 		}
 
 		if(token == ',') {
@@ -4125,6 +4187,7 @@ read_boudary(void)
 {
 	int token,state;
 	int flag_boundary = 0;	/* flag for CLOAD */
+	int isboundary = 0;
 	static int nbound = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
@@ -4143,19 +4206,24 @@ read_boudary(void)
 		} else if(state == ST_KEYWORD_LINE_PARAM) {
 			;
 		} else if(state == ST_DATA_LINE) {
-			int n,*node;
+			int n=0;
+			int *node;
 
 			HECMW_assert(flag_boundary);
 			if(read_boundary_data(&n, &node)) return -1;
 
-			/* add node to group */
-			sprintf(nset,"BND%d",nbound);
-			if(HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
-			HECMW_free(node);
+			if(n != 0) {
+				isboundary = 1;
+
+				/* add node to group */
+				sprintf(nset,"BND%d",nbound);
+				if(HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
+				HECMW_free(node);
+			}
 
 			/* check next state */
 			token = HECMW_ablex_next_token();
-			if(token != HECMW_ABLEX_INT) {
+			if(token != HECMW_ABLEX_INT && token != HECMW_ABLEX_NAME) {
 				state = ST_FINISHED;
 			} else {
 				state = ST_DATA_LINE;
@@ -4166,8 +4234,10 @@ read_boudary(void)
 		}
 	}
 
-	fprintf(stderr, "NSET=BND%d is automatically generated\n", nbound);
-	nbound++;
+	if(isboundary != 0) {
+		fprintf(stderr, "NSET=BND%d is automatically generated\n", nbound);
+		nbound++;
+	}
 
 	return 0;
 }
