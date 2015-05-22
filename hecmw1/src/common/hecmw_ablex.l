@@ -65,12 +65,20 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 
 ^"*"AMPLITUDE	{ set_flag_header(1); return HECMW_ABLEX_H_AMPLITUDE; }
 "*"AMPLITUDE	{ return flag_header ? HECMW_ABLEX_H_AMPLITUDE : ' '; }
+^"*"BOUNDARY	{ set_flag_header(1); return HECMW_ABLEX_H_BOUNDARY; }
+"*"BOUNDARY		{ return flag_header ? HECMW_ABLEX_H_BOUNDARY : ' '; }
 ^"*"CONDUCTIVITY	{ set_flag_header(1); return HECMW_ABLEX_H_CONDUCTIVITY; }
 "*"CONDUCTIVITY		{ return flag_header ? HECMW_ABLEX_H_CONDUCTIVITY : ' '; }
+^"*"CLOAD	{ set_flag_header(1); return HECMW_ABLEX_H_CLOAD; }
+"*"CLOAD		{ return flag_header ? HECMW_ABLEX_H_CLOAD : ' '; }
+^"*"DLOAD	{ set_flag_header(1); return HECMW_ABLEX_H_DLOAD; }
+"*"DLOAD		{ return flag_header ? HECMW_ABLEX_H_DLOAD : ' '; }
 ^"*"DENSITY	{ set_flag_header(1); return HECMW_ABLEX_H_DENSITY; }
 "*"DENSITY	{ return flag_header ? HECMW_ABLEX_H_DENSITY : ' '; }
 ^"*"ELASTIC	{ set_flag_header(1); return HECMW_ABLEX_H_ELASTIC; }
 "*"ELASTIC	{ return flag_header ? HECMW_ABLEX_H_ELASTIC : ' '; }
+^"*"EXPANSION	{ set_flag_header(1); return HECMW_ABLEX_H_EXPANSION; }
+"*"EXPANSION	{ return flag_header ? HECMW_ABLEX_H_EXPANSION : ' '; }
 ^"*"ELEMENT	{ set_flag_header(1); return HECMW_ABLEX_H_ELEMENT; }
 "*"ELEMENT	{ return flag_header ? HECMW_ABLEX_H_ELEMENT : ' '; }
 ^"*"ELSET	{ set_flag_header(1); return HECMW_ABLEX_H_ELSET; }
@@ -100,6 +108,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"SPECIFIC" "?HEAT		{ return flag_header ? HECMW_ABLEX_H_SPECIFIC_HEAT : ' '; }
 ^"*"SYSTEM	{ set_flag_header(1); return HECMW_ABLEX_H_SYSTEM; }
 "*"SYSTEM	{ return flag_header ? HECMW_ABLEX_H_SYSTEM : ' '; }
+^"*"TIE	{ set_flag_header(1); return HECMW_ABLEX_H_TIE; }
+"*"TIE		{ return flag_header ? HECMW_ABLEX_H_TIE : ' '; }
 
 ABSOLUTE	{ set_flag_header(0); return HECMW_ABLEX_K_ABSOLUTE; }
 ANISOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ANISOTROPIC; }
@@ -109,11 +119,13 @@ ENGINEERING" "?CONSTANTS	{ set_flag_header(0); return HECMW_ABLEX_K_ENGINEERING_
 GENERATE	{ set_flag_header(0); return HECMW_ABLEX_K_GENERATE; }
 INPUT		{ set_flag_header(0); return HECMW_ABLEX_K_INPUT; }
 ISOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ISOTROPIC; }
+INSTANCE	{ set_flag_header(0); return HECMW_ABLEX_K_INSTANCE; }
 LAMINA		{ set_flag_header(0); return HECMW_ABLEX_K_LAMINA; }
 MATERIAL	{ set_flag_header(0); return HECMW_ABLEX_K_MATERIAL; }
 NAME		{ set_flag_header(0); return HECMW_ABLEX_K_NAME; }
 NSET		{ set_flag_header(0); return HECMW_ABLEX_K_NSET; }
 ORTHOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ORTHOTROPIC; }
+ORIENTATION	{ set_flag_header(0); return HECMW_ABLEX_K_ORIENTATION; }
 RELATIVE	{ set_flag_header(0); return HECMW_ABLEX_K_RELATIVE; }
 STEP" "?TIME	{ set_flag_header(0); return HECMW_ABLEX_K_STEP_TIME; }
 SYSTEM		{ set_flag_header(0); return HECMW_ABLEX_K_SYSTEM; }
@@ -129,6 +141,7 @@ B32		{ set_flag_header(0); return HECMW_ABLEX_E_B32; }
 C3D4	{ set_flag_header(0); return HECMW_ABLEX_E_C3D4; }
 C3D6	{ set_flag_header(0); return HECMW_ABLEX_E_C3D6; }
 C3D8	{ set_flag_header(0); return HECMW_ABLEX_E_C3D8; }
+C3D8R	{ set_flag_header(0); return HECMW_ABLEX_E_C3D8; }
 C3D8I	{ set_flag_header(0); return HECMW_ABLEX_E_C3D8I; }
 C3D10	{ set_flag_header(0); return HECMW_ABLEX_E_C3D10; }
 C3D15	{ set_flag_header(0); return HECMW_ABLEX_E_C3D15; }
@@ -176,6 +189,9 @@ DS4		{ set_flag_header(0); return HECMW_ABLEX_E_DS4; }
 DS8		{ set_flag_header(0); return HECMW_ABLEX_E_DS8; }
 INTER4	{ set_flag_header(0); return HECMW_ABLEX_E_INTER4; }
 INTER8	{ set_flag_header(0); return HECMW_ABLEX_E_INTER8; }
+S3		{ set_flag_header(0); return HECMW_ABLEX_E_S3R; }
+S4		{ set_flag_header(0); return HECMW_ABLEX_E_S4R; }
+S8		{ set_flag_header(0); return HECMW_ABLEX_E_S8R; }
 S3R		{ set_flag_header(0); return HECMW_ABLEX_E_S3R; }
 S4R		{ set_flag_header(0); return HECMW_ABLEX_E_S4R; }
 S8R		{ set_flag_header(0); return HECMW_ABLEX_E_S8R; }

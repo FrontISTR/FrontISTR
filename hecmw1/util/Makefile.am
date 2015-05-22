@@ -1,4 +1,5 @@
 CP               = @cp@
+MV               = @mv@
 RM               = @rm@
 
 #-----------------------------------------------------------------------------#
@@ -30,10 +31,10 @@ all: setup-msg setup-lex
 
 setup-msg:
 	$(MSGSETUP) $(MSGDEFMASTER)
-	for i in $(MSGSRC); do $(CP) $$i $(SRCCOMMONDIR)/.; done
+	for i in $(MSGSRC); do $(MV) $$i $(SRCCOMMONDIR)/.; done
 
 setup-lex: $(LEXSRC)
-	for i in $(LEXSRCCOMMON); do $(CP) $$i $(SRCCOMMONDIR)/.; done
+	for i in $(LEXSRCCOMMON); do $(MV) $$i $(SRCCOMMONDIR)/.; done
 
 hecmw_ctrllex.c: $(SRCCOMMONDIR)/hecmw_ctrllex.l
 	$(LEX) -t -PHECMW_ctrl $(SRCCOMMONDIR)/hecmw_ctrllex.l > $@

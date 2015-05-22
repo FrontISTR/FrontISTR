@@ -430,6 +430,7 @@ do
 		-e "s!@ar@!${AR}!" \
 		-e "s!@cp@!${CP}!" \
 		-e "s!@rm@!${RM}!" \
+		-e "s!@mv@!${MV}!" \
 		-e "s!@ranlib@!${RANLIB}!" \
 		-e "s!@mkdir@!${MKDIR}!" \
 		-e "s!@lex@!${LEX}!" \

@@ -358,7 +358,7 @@ struct hecmw_msgent hecmw_msg_table[] = {
 	{HECMW_UTIL_E0202,"HECMW-UTIL-E0202","Failed to close result file"},
 	{HECMW_UTIL_E0203,"HECMW-UTIL-E0203","Result file has not opened yet"},
 	{HECMW_UTIL_E0204,"HECMW-UTIL-E0204","Unexpected EOF found in result file"},
-	{HECMW_UTIL_E0205,"HECMW-UTIL-E0205","IO error occured while reading or writing result file"},
+	{HECMW_UTIL_E0205,"HECMW-UTIL-E0205","IO error occured while reading result file"},
 	{HECMW_UTIL_E0206,"HECMW-UTIL-E0206","Invalid flag for result data(must be 1:node or 2:elem)"},
 	{HECMW_UTIL_E0207,"HECMW-UTIL-E0207","Invalid label for result data"},
 	{HECMW_UTIL_E9001,"HECMW-UTIL-E9001","HEC-MW memory check: No such allocated memory"},

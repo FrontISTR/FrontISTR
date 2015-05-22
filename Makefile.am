@@ -7,6 +7,7 @@ MAKE       = @make@
 AR         = @ar@
 CP         = @cp@
 RM         = @rm@
+MV         = @mv@
 RANLIB     = @ranlib@
 MKDIR      = @mkdir@
 

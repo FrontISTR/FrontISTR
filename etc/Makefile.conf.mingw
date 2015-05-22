@@ -69,6 +69,7 @@ F90LINKER      = gfortran
 
 MAKE           = make
 AR             = ar ruv
+MV             = mv -f
 CP             = cp -f
 RM             = rm -f
 MKDIR          = mkdir -p
