@@ -266,6 +266,7 @@ struct hecmw_msgent hecmw_msg_table[] = {
 	{HECMW_IO_W1017,"HECMW-IO-W1017","INITIAL CONDITION: Node group not found, ignored"},
 	{HECMW_IO_W1019,"HECMW-IO-W1019","EQUATION: Node not found, ignored"},
 	{HECMW_IO_W1020,"HECMW-IO-W1020","EQUATION: Node grourp not found, ignored"},
+	{HECMW_IO_W1021,"HECMW-IO-W1021","GROUP: ALL is reserved word, ignored"},
 	{HECMW_PART_E0001,"HECMW-PART-E0001","No such file or directory"},
 	{HECMW_PART_E0002,"HECMW-PART-E0002","File close error"},
 	{HECMW_PART_E0003,"HECMW-PART-E0003","Too long file name"},

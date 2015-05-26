@@ -521,7 +521,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  stop
                endif
             endif
-          else if( header_name == '!EXPANSION_COEFF' ) then
+          else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION') then
             if( cid >0 ) then
                if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
                                              fstrSOLID%materials(cid)%dict)/=0 )  then
