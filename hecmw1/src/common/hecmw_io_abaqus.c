@@ -978,7 +978,7 @@ read_elset_param_elset(char *elset, int *isAll)
 	}
 	if(strcmp(elset, "ALL") == 0) {
 		*isAll = 1;
-		set_err(HECMW_IO_E0003, "Reserved name: %s", elset);
+		HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
 		//return -1;
 	}
 	return 0;
@@ -1324,8 +1324,9 @@ read_element_param_elset(char *elset)
 		return -1;
 	}
 	if(strcmp(elset, "ALL") == 0) {
-		set_err(HECMW_IO_E0003, "Reserved name: %s", elset);
-		return -1;
+		HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
+		strcpy(elset, "ABAQUS_ESET_ALL");
+		//return -1;
 	}
 	return 0;
 }
@@ -2678,7 +2679,7 @@ read_nset_param_nset(char *nset, int *isAll)
 		return -1;
 	}
 	if(strcmp(nset, "ALL") == 0) {
-		set_err(HECMW_IO_E0003, "Reserved name: %s", nset);
+		HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
 		strcpy(nset, "ABAQUS_NSET_ALL");
 		*isAll = 1;
 		//return -1;
@@ -3053,7 +3054,7 @@ read_node_param_nset(char *nset, int *isAll)
 		return -1;
 	}
 	if(strcmp(nset, "ALL") == 0) {
-		set_err(HECMW_IO_E0003, "Reserved name: %s", nset);
+		HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
 		strcpy(nset, "ABAQUS_ESET_ALL");
 		*isAll = 1;
 		//return -1;
@@ -4102,11 +4103,12 @@ read_boundary_keyword(void)
 static int
 read_boundary_data(int *nnode, int **node_array)
 {
-	int i,n,isFirst,*node,token;
+	int i,n,isFirst,isOut,*node,token;
 	struct hecmw_io_id *head,*prev,*p,*q;
 
 	n = 0;
 	isFirst = 0;
+	isOut = 0;
 	head = NULL;
 	node = NULL;
 	while(1) {
@@ -4124,6 +4126,17 @@ read_boundary_data(int *nnode, int **node_array)
 		/* nodX */
 		if(token != HECMW_ABLEX_INT && token != HECMW_ABLEX_DOUBLE && token != ',') {
 			isFirst=1;
+		}
+
+		if(token == HECMW_ABLEX_NAME && isOut == 0) {
+			isOut = 1;
+			char *p = HECMW_ablex_get_text();
+			fprintf(stderr, "%s", p);
+		}
+		if(token == HECMW_ABLEX_INT && isOut == 1) {
+			isOut = 1;
+			int ii = HECMW_ablex_get_number();
+			fprintf(stderr, ", %d", ii);
 		}
 
 		if(token == ',') {
@@ -4172,6 +4185,11 @@ read_boundary_data(int *nnode, int **node_array)
 
 	*nnode = n;
 	*node_array = node;
+
+	if(isOut = 1) {
+		fprintf(stderr, "\n");
+	}
+
 	return 0;
 error:
 	for(p=head; p; p=q) {

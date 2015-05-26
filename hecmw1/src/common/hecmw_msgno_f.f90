@@ -264,6 +264,7 @@ module hecmw_msgno
     integer(kind=kint),parameter :: HECMW_IO_W1017 = 10261
     integer(kind=kint),parameter :: HECMW_IO_W1019 = 10262
     integer(kind=kint),parameter :: HECMW_IO_W1020 = 10263
+    integer(kind=kint),parameter :: HECMW_IO_W1021 = 10362
     integer(kind=kint),parameter :: HECMW_PART_E0001 = 10264
     integer(kind=kint),parameter :: HECMW_PART_E0002 = 10265
     integer(kind=kint),parameter :: HECMW_PART_E0003 = 10266
@@ -362,6 +363,6 @@ module hecmw_msgno
     integer(kind=kint),parameter :: HECMW_UTIL_E9001 = 10359
     integer(kind=kint),parameter :: HECMW_UTIL_E9011 = 10360
     integer(kind=kint),parameter :: HECMW_UTIL_E9012 = 10361
-    integer(kind=kint),parameter :: HECMW_UTIL_E9013 = 10362
+    integer(kind=kint),parameter :: HECMW_UTIL_E9013 = 10363
 
 end module hecmw_msgno
