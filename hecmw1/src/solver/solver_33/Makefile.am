@@ -91,6 +91,8 @@ OBJSF = \
 	hecmw_precond_BILU_33.@f90objfilepostfix@ \
 	hecmw_precond_DIAG_33.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_33.@f90objfilepostfix@ \
+	hecmw_precond_SAINV_33.@f90objfilepostfix@ \
+	hecmw_precond_RIF_33.@f90objfilepostfix@ \
 	hecmw_mat_id.@f90objfilepostfix@ \
 	hecmw_ML_helper.@f90objfilepostfix@ \
 	hecmw_precond_ML_33.@f90objfilepostfix@ \

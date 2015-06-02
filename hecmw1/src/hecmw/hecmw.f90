@@ -20,6 +20,8 @@ use hecmw_precond_33
 use hecmw_precond_BILU_33
 use hecmw_precond_DIAG_33
 use hecmw_precond_SSOR_33
+use hecmw_precond_SAINV_33
+use hecmw_precond_RIF_33
 use hecmw_restart
 use hecmw_result
 !use hecmw_solve_sai_make_33
