@@ -96,15 +96,15 @@ module m_fstr_precheck
       ntdof2 = (hecMESH%n_node*hecMESH%n_dof)**2
       write(ILOG,"(a,i12)") 'Num of elem:',hecMESH%n_elem
       do itype = 1, hecMESH%n_elem_type
-        jS = hecMESH%elem_type_index(itype-1) + 1
+        jS = hecMESH%elem_type_index(itype-1)
         jE = hecMESH%elem_type_index(itype  )
         ic_type = hecMESH%elem_type_item(itype)
         write(ILOG,"(a,i4,a,i12)") 'Num of ',ic_type,':',jE-jS
       enddo
-      nonzero = hecMAT%NP + hecMAT%NPU + hecMAT%NPL
+      nonzero = ndof2*(hecMAT%NP + hecMAT%NPU + hecMAT%NPL)
       write(ILOG,"(a,i12)") 'Num of NZ  :',nonzero
       write(ILOG,"(a,i12)") 'Num of DOF2:',ntdof2
-      write(ILOG,"(a,1pe12.5,a)") 'Sparsity   :',100.0d0*dble(ndof2*nonzero)/dble(ntdof2),"[%]"
+      write(ILOG,"(a,1pe12.5,a)") 'Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
 
 !C
 !C Output sparsity pattern
