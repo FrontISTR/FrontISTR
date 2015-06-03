@@ -19,8 +19,10 @@ module m_fstr_precheck
    subroutine fstr_get_thickness(hecMESH,mid,thick)
       use hecmw
       use m_fstr
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
+      IMPLICIT none
       TYPE (hecmwST_local_mesh) :: hecMESH
+      integer(kind=kint) :: mid, ihead
+      real(kind=kreal)   :: thick
 
       ihead = hecMESH%section%sect_R_index(mid-1)
       thick = hecMESH%section%sect_R_item(ihead+1)
@@ -34,42 +36,45 @@ module m_fstr_precheck
 !C*** Pre Check for FSTR solver
 !C***
 !C
-   subroutine fstr_precheck ( hecMESH )
-
+   subroutine fstr_precheck ( hecMESH, hecMAT )
       use m_fstr
-
-      IMPLICIT DOUBLE PRECISION(a-h,o-z)
-
+      implicit none
       type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix )    :: hecMAT
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)
         WRITE(IMSG,*) ' ****   STAGE PreCheck  **'
       ENDIF
 
-      call fstr_precheck_elem ( hecMESH )
+      call fstr_precheck_elem ( hecMESH, hecMAT )
       write(IDBG,*) 'fstr_precheck_elem: OK'
 
    end subroutine fstr_precheck
 !C
 !C
-   subroutine fstr_precheck_elem ( hecMESH )
-
+   subroutine fstr_precheck_elem ( hecMESH, hecMAT )
       use m_fstr
       use m_precheck_LIB_2d
       use m_precheck_LIB_3d
       use m_precheck_LIB_shell
 
-      implicit REAL(kind=kreal) (A-H,O-Z)
+      implicit none
 
       type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid)         :: fstrSOLID
 
 !** Local variables
-      real(kind=kreal) xx(20),yy(20),zz(20)
-      integer(kind=kint) nodLOCAL(20),NTOTsum(1)
-      real(kind=kreal) TOTsum(1),TOTmax(3),TOTmin(2)
+      integer(kind=kint) :: nelem, mid, j, isect, nline, tline, icel, iiS
+      integer(kind=kint) :: ndof2
+      integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, iS, iE, itype
+      integer(kind=kint) :: nodLOCAL(20),NTOTsum(1)
+      integer(kind=8)    :: ntdof2,nonzero
+      real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
+      real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
+      real(kind=kreal)   :: xx(20),yy(20),zz(20)
+      real(kind=kreal)   :: TOTsum(1),TOTmax(3),TOTmin(2)
 !C
 !C INIT
 !C
@@ -80,6 +85,34 @@ module m_fstr_precheck
       tlmax  = 0.0
       tlmin  = 1.0e+20
       aspmax = 0.0
+
+!C
+!C Mesh Summary
+!C
+      write(ILOG,"(a)") '###  Mesh Summary  ###'
+      write(ILOG,"(a,i12)") 'Num of node:',hecMESH%n_node
+      write(ILOG,"(a,i12)") 'Num of DOF :',hecMESH%n_node*hecMESH%n_dof
+      ndof2  = hecMESH%n_dof**2
+      ntdof2 = (hecMESH%n_node*hecMESH%n_dof)**2
+      write(ILOG,"(a,i12)") 'Num of elem:',hecMESH%n_elem
+      do itype = 1, hecMESH%n_elem_type
+        jS = hecMESH%elem_type_index(itype-1) + 1
+        jE = hecMESH%elem_type_index(itype  )
+        ic_type = hecMESH%elem_type_item(itype)
+        write(ILOG,"(a,i4,a,i12)") 'Num of ',ic_type,':',jE-jS
+      enddo
+      nonzero = hecMAT%NP + hecMAT%NPU + hecMAT%NPL
+      write(ILOG,"(a,i12)") 'Num of NZ  :',nonzero
+      write(ILOG,"(a,i12)") 'Num of DOF2:',ntdof2
+      write(ILOG,"(a,1pe12.5,a)") 'Sparsity   :',100.0d0*dble(ndof2*nonzero)/dble(ntdof2),"[%]"
+
+!C
+!C Output sparsity pattern
+!C
+      if(1==0)then
+        call hecmw_nonzero_profile(hecMESH, hecMAT)
+      endif
+
 !C
 !C 3D
 !C
@@ -92,13 +125,16 @@ module m_fstr_precheck
 !C
           ic_type = hecMESH%elem_type(ie)
 !C
-          if (.not. (hecmw_is_etype_rod(ic_type) .or. hecmw_is_etype_solid(ic_type))) then
+          if (.not. (hecmw_is_etype_rod(ic_type) .or. hecmw_is_etype_solid(ic_type) &
+            & .or. HECMW_is_etype_beam(ic_type) .or. HECMW_is_etype_shell(ic_type))) then
             write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
             cycle
           endif
           nn = hecmw_get_max_node(ic_type)
 !C
           jS = hecMESH%elem_node_index(ie-1)
+          jE = hecMESH%elem_node_index(ie)
+
           do j = 1, nn
             nodLOCAL(j) = hecMESH%elem_node_item (jS+j)
             xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
@@ -128,6 +164,12 @@ module m_fstr_precheck
             call PRE_352 ( xx,yy,zz,vol,almax,almin )
           elseif( ic_type.eq.362 ) then
             call PRE_362 ( xx,yy,zz,vol,almax,almin )
+          elseif( ic_type.eq.641 ) then
+            vol = 1.0d-12
+          elseif( ic_type.eq.761 ) then
+            vol = 1.0d-12
+          elseif( ic_type.eq.781 ) then
+            vol = 1.0d-12
           endif
 !C
           if( vol.le.0.0 ) then
@@ -314,5 +356,85 @@ module m_fstr_precheck
         write(*,*)    ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
       endif
 !C
-   end subroutine fstr_precheck_elem
+  end subroutine fstr_precheck_elem
+
+  subroutine hecmw_nonzero_profile(hecMESH, hecMAT)
+    use hecmw_util
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (hecmwST_matrix)     :: hecMAT
+    
+    integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
+    real(kind=kreal) :: rnum, dens, cond
+
+    fio = 72
+
+    !ftype = 2: eps
+    !ftype = 4: png
+    ftype = 2
+    
+    n = hecMAT%N
+    ndof = 3*n
+    nnz = 9*n + 9*2*hecMAT%indexL(n)
+    dens = 100*dble(nnz)/dble(9*n*n)
+    rnum = (7.21d0+0.01*dlog10(dble(hecMAT%N)))*10.0d0/dble(hecMAT%N)
+    cond = 1.0d0
+    !rnum = (7.25d0)*10.0d0/dble(hecMAT%N)
+    
+    open(fio,file='nonzero.dat',status='replace')
+      write(fio,"(a,f12.5,i)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
+      do i= 1, n
+        jS= hecMAT%indexL(i-1) + 1
+        jE= hecMAT%indexL(i  )
+        write(fio,"(i,a,i)")i,"    ",i
+        do j= jS, jE
+          in = hecMAT%itemL(j)
+          write(fio,"(i,a,i)")i,"    ",in
+          write(fio,"(i,a,i)")in,"    ",i
+        enddo
+      enddo
+    close(fio)
+    
+    open(fio,file='nonzero.plt',status='replace')
+      if(ftype == 4)then
+        write(fio,"(a)")'set terminal png'
+      else
+        write(fio,"(a)")'set terminal postscript eps enhanced color solid "TimesNewRomanPSMT" 20'
+      endif
+      write(fio,"(a)")'unset key'
+      write(fio,"(a)")'unset xtics'
+      write(fio,"(a)")'unset ytics'
+      write(fio,"(a)")'set size ratio 1.0'
+      write(fio,"(a)")'set border lw 1.0'
+      write(fio,"(a,i0,a)")'set xrange[0.5:',n,'.5]'
+      write(fio,"(a,i0,a)")'set yrange[0.5:',n,'.5] reverse '
+      if(ftype == 4)then
+        write(fio,"(a)")'set out "image.png"'
+      else
+        write(fio,"(a)")'set out "image.eps"'
+        
+        write(fio,"(a)"     )'set label 1 "Name" at graph 1.1,0.9'
+        write(fio,"(a)")'set label 2 "N" at graph 1.1,0.85'
+        write(fio,"(a)")'set label 3 "Non-Zero Elem." at graph 1.1,0.8'
+        write(fio,"(a)")'set label 4 "Density [%]" at graph 1.1,0.75'
+        write(fio,"(a)")'set label 9 "Condition Num." at graph 1.1,0.7'
+        
+        write(fio,"(a)"     )'set label 5 ":  matrix" at graph 1.4,0.9'
+        write(fio,"(a,i0,a)")'set label 6 ":  ',ndof,'" at graph 1.4,0.85'
+        write(fio,"(a,i0,a)")'set label 7 ":  ',nnz,'" at graph 1.4,0.8'
+        write(fio,"(a,1pe9.2,a)")'set label 8 ": ',dens,'" at graph 1.4,0.75'
+        write(fio,"(a,1pe9.2,a)")'set label 10 ": ',cond,'" at graph 1.4,0.7'
+      endif
+      
+      write(fio,"(a,f12.5,a)")'plot "nonzero.dat" pointtype 5 pointsize ',rnum,' linecolor rgb "#F96566"'
+    close(fio)
+    
+    write(*,*)'gnuplot -persist "nonzero.plt"'
+    !call system('gnuplot -persist "nonzero.plt"')
+    
+    !open(fio,file='nonzero.dat',status='old')
+    !close(fio,status="delete")
+    !open(fio,file='nonzero.plt',status='old')
+    !close(fio,status="delete")
+  end subroutine hecmw_nonzero_profile
 end module m_fstr_precheck
