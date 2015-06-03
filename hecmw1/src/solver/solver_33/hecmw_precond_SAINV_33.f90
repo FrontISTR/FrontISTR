@@ -10,7 +10,7 @@ module hecmw_precond_SAINV_33
   public:: hecmw_precond_33_SAINV_apply
   public:: hecmw_precond_33_SAINV_clear
   
-  integer(4),parameter :: krealp = 8
+  integer(4),parameter :: krealp = 4
   
   integer(kind=kint) :: NPFIU, NPFIL
   integer(kind=kint) :: N
@@ -72,7 +72,7 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    Write(*,"(a,F20.10)")"### SAINV FILTER   :",FILTER
+    Write(*,"(a,F15.8,a,i5)")"### SAINV FILTER   :",FILTER,", Kreal :",krealp
     
     call hecmw_sainv_33(hecMAT)
 
@@ -81,7 +81,7 @@ contains
     SAINVU  = 0.0d0
     
     call hecmw_sainv_make_u_33(hecMAT)
-    call hecmw_sainv_lu_33()
+   ! call hecmw_sainv_lu_33()
 
   end subroutine hecmw_precond_33_SAINV_setup
 
@@ -91,9 +91,6 @@ contains
     real(kind=kreal) :: X1, X2, X3
     
     do i=1, N
-      SAINVD(9*i-5) = SAINVD(9*i-7)
-      SAINVD(9*i-2) = SAINVD(9*i-6)
-      SAINVD(9*i-1) = SAINVD(9*i-3)
       SAINVD(9*i-5) = SAINVD(9*i-5)*SAINVD(9*i-4)
       SAINVD(9*i-2) = SAINVD(9*i-2)*SAINVD(9*i  )
       SAINVD(9*i-1) = SAINVD(9*i-1)*SAINVD(9*i  )
@@ -155,9 +152,9 @@ contains
         X2= R(3*i-1)
         X3= R(3*i  )
 
-        T(3*i-2)= SAINVD(9*i-8)*X1 + SW1
-        T(3*i-1)= SAINVD(9*i-5)*X1 + SAINVD(9*i-4)*X2 + SW2
-        T(3*i  )= SAINVD(9*i-2)*X1 + SAINVD(9*i-1)*X2 + SAINVD(9*i  )*X3 + SW3
+        T(3*i-2)= (X1 + SW1)*SAINVD(9*i-8)
+        T(3*i-1)= (X2 + SAINVD(9*i-7)*X1 + SW2)*SAINVD(9*i-4)
+        T(3*i  )= (X3 + SAINVD(9*i-6)*X1 + SAINVD(9*i-3)*X2 + SW3)*SAINVD(9*i  )
       enddo
 !$OMP END DO
 !$OMP DO
@@ -620,6 +617,9 @@ contains
       SAINVD(9*i-8) = 1.0d0/SAINVD(9*i-8)
       SAINVD(9*i-4) = 1.0d0/SAINVD(9*i-4)
       SAINVD(9*i  ) = 1.0d0/SAINVD(9*i  )
+      SAINVD(9*i-5) = SAINVD(9*i-7)
+      SAINVD(9*i-2) = SAINVD(9*i-6)
+      SAINVD(9*i-1) = SAINVD(9*i-3)
     enddo
     
   end subroutine hecmw_sainv_33

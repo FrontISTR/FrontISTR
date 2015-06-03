@@ -76,8 +76,8 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    Write(*,"(a,F12.5)")"### RIF FILTER   :",FILTER
-    
+    Write(*,"(a,F15.8,a,i5)")"### RIF FILTER   :",FILTER,", Kreal :",krealp
+
     call hecmw_rif_33(hecMAT)
     
     !RIF itteration
