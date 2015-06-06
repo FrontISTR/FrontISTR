@@ -42,6 +42,8 @@ contains
     use hecmw_precond_DIAG_33
     use hecmw_precond_SSOR_33
     use hecmw_precond_ML_33
+    use hecmw_precond_SAINV_33
+    use hecmw_precond_RIF_33
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -62,6 +64,10 @@ contains
       call hecmw_precond_BILU_33_setup(hecMAT)
     else if (PRECOND.eq.5) then
       call hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
+    else if (PRECOND.eq.20) then
+      call hecmw_precond_33_SAINV_setup(hecMAT)
+    else if (PRECOND.eq.21) then
+      call hecmw_precond_RIF_33_setup(hecMAT)
     endif
 
   end subroutine hecmw_precond_33_setup
@@ -78,6 +84,8 @@ contains
     use hecmw_precond_DIAG_33
     use hecmw_precond_SSOR_33
     use hecmw_precond_ML_33
+    use hecmw_precond_SAINV_33
+    use hecmw_precond_RIF_33
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
@@ -96,6 +104,10 @@ contains
       call hecmw_precond_BILU_33_clear()
     else if (PRECOND.eq.5) then
       call hecmw_precond_ML_33_clear()
+    else if (PRECOND.eq.20) then
+      call hecmw_precond_33_SAINV_clear()
+    else if (PRECOND.eq.21) then
+      call hecmw_precond_RIF_33_clear()
     endif
 
   end subroutine hecmw_precond_33_clear
@@ -112,6 +124,8 @@ contains
     use hecmw_precond_DIAG_33
     use hecmw_precond_SSOR_33
     use hecmw_precond_ML_33
+    use hecmw_precond_SAINV_33
+    use hecmw_precond_RIF_33
     use hecmw_solver_las_33
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -168,6 +182,10 @@ contains
         call hecmw_precond_BILU_33_apply(ZP)
       else if (PRECOND.eq.5) then
         call hecmw_precond_ML_33_apply(ZP)
+      else if (PRECOND.eq.20) then
+        call hecmw_precond_33_SAINV_apply(R,ZP)
+      else if (PRECOND.eq.21) then
+        call hecmw_precond_RIF_33_apply(ZP)
       endif
 
       END_TIME = hecmw_Wtime()

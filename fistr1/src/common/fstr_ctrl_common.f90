@@ -107,7 +107,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
 
         ! JP-0
         if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ',   mlist,              1,   'P',   method  ) /= 0) return
-        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,5,10,11,12,21,30,31,32 ',0,   'I',   precond ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,5,10,11,12,20,21',0,   'I',   precond ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES,VERBOSE ',   0,   'P',   time ) /= 0) return
@@ -136,7 +136,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiii ', nier, iterpremax, nrest, ncolor_in )/= 0) return
         if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
-        if( precond == 21 ) then
+        if( precond == 20 .or. precond == 21) then
                 if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ', thresh, filter)/= 0) return
         end if
 
