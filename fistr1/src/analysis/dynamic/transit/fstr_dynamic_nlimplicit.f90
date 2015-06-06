@@ -292,9 +292,8 @@ contains
 !C
 !C-- linear solver [A]{X} = {B}
 !C
-        if( iexit .eq. 1 ) then
-          hecMAT%X = 0.0
-        else
+        hecMAT%X = 0.0d0
+        if( iexit .ne. 1 ) then
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           CALL solve_LINEQ(hecMESH,hecMAT,imsg)
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -738,9 +737,8 @@ contains
           if( iter>1 .and. res>res1 )rf=0.5d0*rf
           res1=res
 
-!          call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
-
 !   ----  For Parallel Contact with Multi-Partition Domains
+          hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           if(paraContactFlag.and.present(conMAT)) then
             call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,1.0D0,conMAT)

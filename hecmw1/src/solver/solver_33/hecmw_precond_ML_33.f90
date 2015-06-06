@@ -34,7 +34,7 @@ module hecmw_precond_ML_33
   logical, save :: INITIALIZED = .false.
 
   ! reuse setup-info up to MAX_RECYCLE_SETUP times
-  integer, parameter :: MAX_RECYCLE_SETUP = 3
+  integer, parameter :: MAX_RECYCLE_SETUP = 20
 
 contains
 
