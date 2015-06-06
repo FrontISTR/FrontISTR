@@ -78,7 +78,7 @@ use m_fstr_freqdata
 
         select case( fstrPR%solution_type )
         case ( kstPRECHECK )
-                call fstr_precheck( hecMESH )
+                call fstr_precheck( hecMESH, hecMAT )
         case ( kstSTATIC )
                 call fstr_linear_static_analysis
         case ( kstNLSTATIC )
