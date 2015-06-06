@@ -10,7 +10,7 @@ module hecmw_precond_SAINV_33
   public:: hecmw_precond_33_SAINV_apply
   public:: hecmw_precond_33_SAINV_clear
   
-  integer(4),parameter :: krealp = 4
+  integer(4),parameter :: krealp = 8
   
   integer(kind=kint) :: NPFIU, NPFIL
   integer(kind=kint) :: N
@@ -60,7 +60,6 @@ contains
     itemL => hecMAT%itemL
     itemU => hecMAT%itemU
 
-    !if (PRECOND.eq.30) call FORM_ILU0_SAINV_33(hecMAT)
     if (PRECOND.eq.20) call FORM_ILU1_SAINV_33(hecMAT)
     
     allocate (SAINVD(9*hecMAT%NP))
@@ -72,16 +71,14 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    Write(*,"(a,F15.8,a,i5)")"### SAINV FILTER   :",FILTER,", Kreal :",krealp
+    Write(*,"(a,F15.8)")"### SAINV FILTER   :",FILTER
     
     call hecmw_sainv_33(hecMAT)
 
-    !RIF itteration
     allocate (SAINVU(9*NPFIU))
     SAINVU  = 0.0d0
     
     call hecmw_sainv_make_u_33(hecMAT)
-   ! call hecmw_sainv_lu_33()
 
   end subroutine hecmw_precond_33_SAINV_setup
 
@@ -230,7 +227,7 @@ contains
       zz(3*in  )= SAINVL(9*J-6)
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
@@ -365,7 +362,7 @@ contains
     zz(3*itr-1)= SAINVD(9*itr-4)
     zz(3*itr  )= SAINVD(9*itr-1)
     
-    zz(3*itr-1)= 1.0d0 !* SIGMA_DIAG
+    zz(3*itr-1)= 1.0d0
     
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
@@ -376,7 +373,7 @@ contains
       zz(3*in  )= SAINVL(9*J-3)
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
@@ -404,9 +401,7 @@ contains
     enddo
     
     !{d}={v^t}{z_j}
-    
     dtemp(1) = SAINVD(9*itr-8)
-    !dtemp(2) = SAINVD(9*itr-4)
 
     do i=itr,N
       SAINVD(9*i-8) = vv(3*i-2)
@@ -438,7 +433,6 @@ contains
     enddo
     
     !Update Z
-    
     dd3=SAINVD(9*itr  )
     if(dabs(dd3) > FILTER)then
       SAINVD(9*itr-6)= SAINVD(9*itr-6) - dd3*zz(3*itr-2)
@@ -501,7 +495,7 @@ contains
     zz(3*itr-1)= SAINVD(9*itr-3)
     zz(3*itr  )= SAINVD(9*itr  )
     
-    zz(3*itr  )= 1.0d0! * SIGMA_DIAG
+    zz(3*itr  )= 1.0d0
     
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
@@ -512,7 +506,7 @@ contains
       zz(3*in  )= SAINVL(9*J  )
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
@@ -540,7 +534,6 @@ contains
     enddo
     
     !{d}={v^t}{z_j}
-    
     dtemp(1) = SAINVD(9*itr-8)
     dtemp(2) = SAINVD(9*itr-4)
 
@@ -574,7 +567,6 @@ contains
     enddo
     
     !Update Z
-    
     do i= itr +1,N
       jS= inumFI1L(i-1) + 1
       jE= inumFI1L(i  )

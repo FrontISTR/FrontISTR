@@ -62,7 +62,6 @@ contains
     itemL => hecMAT%itemL
     itemU => hecMAT%itemU
     
-    !if (PRECOND.eq.30) call FORM_ILU0_RIF_33(hecMAT)
     if (PRECOND.eq.21) call FORM_ILU1_RIF_33(hecMAT)
     
     allocate (SAINVD(9*hecMAT%NP))
@@ -76,11 +75,10 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    Write(*,"(a,F15.8,a,i5)")"### RIF FILTER   :",FILTER,", Kreal :",krealp
+    Write(*,"(a,F15.8)")"### RIF FILTER   :",FILTER
 
     call hecmw_rif_33(hecMAT)
     
-    !RIF itteration
     allocate (RIFL(9*NPFIU))
     RIFL  = 0.0d0
     
@@ -187,7 +185,7 @@ contains
     zz(3*itr-1)= SAINVD(9*itr-5)
     zz(3*itr  )= SAINVD(9*itr-2)
     
-    zz(3*itr-2)= 1.0d0! * SIGMA_DIAG
+    zz(3*itr-2)= 1.0d0
     
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
@@ -198,7 +196,7 @@ contains
       zz(3*in  )= SAINVL(9*J-6)
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
@@ -226,10 +224,6 @@ contains
     enddo
     
     !{d}={v^t}{z_j}
-    
-    !dtemp(1) = SAINVD(9*itr-8)
-    !dtemp(2) = SAINVD(9*itr-4)
-
     do i= itr,NP
       SAINVD(9*i-8) = vv(3*i-2)
       SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -345,7 +339,7 @@ contains
     zz(3*itr-1)= SAINVD(9*itr-4)
     zz(3*itr  )= SAINVD(9*itr-1)
     
-    zz(3*itr-1)= 1.0d0 !* SIGMA_DIAG
+    zz(3*itr-1)= 1.0d0
     
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
@@ -356,7 +350,7 @@ contains
       zz(3*in  )= SAINVL(9*J-3)
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
@@ -384,9 +378,7 @@ contains
     enddo
     
     !{d}={v^t}{z_j}
-    
     dtemp(1) = SAINVD(9*itr-8)
-    !dtemp(2) = SAINVD(9*itr-4)
 
     do i=itr,NP
       SAINVD(9*i-8) = vv(3*i-2)
@@ -492,7 +484,7 @@ contains
     zz(3*itr-1)= SAINVD(9*itr-3)
     zz(3*itr  )= SAINVD(9*itr  )
     
-    zz(3*itr  )= 1.0d0! * SIGMA_DIAG
+    zz(3*itr  )= 1.0d0
     
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
@@ -503,7 +495,7 @@ contains
       zz(3*in  )= SAINVL(9*J  )
     enddo
     
-    do i= 1, itr !(AL部分がある)
+    do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
       X3= zz(3*i  )
