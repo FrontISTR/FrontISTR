@@ -5842,6 +5842,7 @@ error:
 
 
 /*K. Inagaki */
+static int
 const_node_dof_index_mod( const struct hecmwST_local_mesh *global_mesh,
                       struct hecmwST_local_mesh *local_mesh, const char *node_flag, int domain )
 {
