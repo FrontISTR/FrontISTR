@@ -17,8 +17,13 @@
 
 module m_fstr_para_contact
   use m_fstr
-  use m_Metis403API
   use m_MakrosePartMesh
+!#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+!  use m_Metis510API
+!#else
+  use m_Metis403API
+!#endif
+
   implicit none
 
   integer,parameter   ::  PARTITION_DEFAULT   = 0
@@ -90,6 +95,9 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !
 !      if(myrank == 0) print *,'Part Method',partMethod
       select case(partMethod)
+!#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+
+!#else
       case(PARTITION_DEFAULT)
         if(nparts < 8) then
           if(ncon < 2) then
@@ -149,6 +157,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
                        vwgt,    adjwgt, wgtflag,numflag,    &
                        nparts,  ubvec,  options,objval, part)
           actualPartMethod = 'MCKMETIS'
+!#endif
       case default
         stop 'Error: Undefined partition method!'
       end select

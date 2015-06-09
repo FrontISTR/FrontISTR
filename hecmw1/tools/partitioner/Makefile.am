@@ -31,7 +31,6 @@ CFLAGS                 = @cflags@
 BASE_CFLAGS            = @base_cflags@
 MPI_CFLAGS             = @mpi_cflags@
 HECMW_CFLAGS           = @hecmw_cflags@
-METIS_CFLAGS           = @metis_cflags@
 PARTITIONER_CFLAGS     = @partitioner_cflags@
 ALL_CFLAGS             = $(PARTITIONER_CFLAGS) $(METIS_CFLAGS) $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS                = @ldflags@

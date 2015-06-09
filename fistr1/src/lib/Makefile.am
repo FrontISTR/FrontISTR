@@ -61,7 +61,7 @@ BASE_F90FLAGS           = @base_f90flags@
 MPI_F90FLAGS            = @mpi_f90flags@
 HECMW_F90FLAGS          = @hecmw_f90flags@
 FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS) $(MUMPS_F90FLAGS)
+ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS) $(MUMPS_F90FLAGS) $(METIS_F90FLAGS)
 F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
@@ -105,7 +105,7 @@ OBJSF = \
         m_Makrose.@f90objfilepostfix@ \
         m_MakrosePartMesh.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
-		m_common_struct.@f90objfilepostfix@ \
+        m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
         m_fstr_freqdata.@f90objfilepostfix@ \
         GaussM.@f90objfilepostfix@ \
@@ -114,7 +114,7 @@ OBJSF = \
         static_LIB_3d.@f90objfilepostfix@ \
         static_LIB_C3D8.@f90objfilepostfix@ \
         static_LIB_3dIC.@f90objfilepostfix@ \
-		static_LIB_beam.@f90objfilepostfix@ \
+        static_LIB_beam.@f90objfilepostfix@ \
         static_LIB_shell.@f90objfilepostfix@ \
         heat_LIB_CAPACITY.@f90objfilepostfix@ \
         heat_LIB_DFLUX.@f90objfilepostfix@ \
@@ -138,6 +138,7 @@ OBJSF2 = \
 
 OBJSF_PARACON = \
         m_Metis403API_f.@f90objfilepostfix@ \
+        m_Metis510API_f.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 OBJSF_PARACON_DUMM = \
