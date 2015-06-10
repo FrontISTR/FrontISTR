@@ -106,7 +106,7 @@ use m_fstr_freqdata
         ! =============== ANALYSIS =====================
 
         select case( fstrPR%solution_type )
-        case ( kstPRECHECK )
+        case ( kstPRECHECK .or. kstNZPROF )
                 call fstr_precheck( hecMESH, hecMAT )
         case ( kstSTATIC )
                 call fstr_linear_static_analysis
