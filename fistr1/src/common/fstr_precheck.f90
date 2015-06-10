@@ -438,8 +438,9 @@ module m_fstr_precheck
     close(fio)
     
     write(*,*)''
-    write(*,*)'  gnuplot -persist "nonzero.plt"'
-    write(*,*)''
+    write(*,*)' ### Command recommendation'
+    write(*,*)' gnuplot -persist "nonzero.plt"'
+
     !call system('gnuplot -persist "nonzero.plt"')
     
     !open(fio,file='nonzero.dat',status='old')
