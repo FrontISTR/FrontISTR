@@ -246,12 +246,13 @@ contains
         ii = (i-1)*NDOF + 1
         chkmass = chkmass + myEIG%mass(ii)
       end do
+      myEIG%totalmass = chkmass
 !C
       CALL hecmw_allreduce_R1(hecMESH,chkmass,hecmw_sum)
       IF(myrank.EQ.0) THEN
-        WRITE(IMSG,*) '+===================+'
-        WRITE(IMSG,*) 'Total mass: ',chkmass
-        WRITE(IMSG,*) '+===================+'
+        WRITE(IMSG,"(a)") '+===================+'
+        WRITE(IMSG,"(a,1pe12.5)") 'Total mass: ',chkmass
+        WRITE(IMSG,"(a)") '+===================+'
       ENDIF
 !C
 !C*Deallocate work array
