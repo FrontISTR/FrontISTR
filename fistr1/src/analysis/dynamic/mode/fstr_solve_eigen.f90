@@ -67,7 +67,7 @@ contains
       integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
       integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
       integer(kind=kint) :: kk, jjiter, ppc
-      real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, r1, r2, r3, gm1, gm2, gm3
+      real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
       integer(kind=kint) IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
       integer(kind=kint), allocatable :: isnode33(:)
@@ -557,17 +557,21 @@ contains
       ENDIF
 
       DO JITER=1,NGET
-        prechk1 = 0.0
-        prechk2 = 0.0
+        !prechk1 = 0.0
 !C        CALL VECPRO1(prechk1,ewk(1:,JITER:),ewk(1:,JITER:),Gntotal)
-        do iii = 1, Gntotal
-          prechk1 = prechk1 + ewk(iii,JITER)*ewk(iii,JITER)
-        enddo
+        !do iii = 1, Gntotal
+        !    prechk1 = prechk1 + mass(iii)*ewk(iii,JITER)*ewk(iii,JITER)
+        !enddo
+        prechk1 = maxval(ewk(:,JITER))
         if (.not. ds) then !In case of Direct Solver prevent MPI
           CALL hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
         end if
         !prechk1 = sqrt(prechk1)
-        !if(prechk1.NE.0.0D0) ewk(:,JITER) = ewk(:,JITER)/prechk1
+        if(prechk1.NE.0.0D0)then
+          do i = 1, Gntotal
+            ewk(i,JITER) = ewk(i,JITER)/prechk1
+          enddo
+        endif
       END DO
 
 !C***** compute effective mass and participation factor
@@ -577,10 +581,10 @@ contains
       myEIG%partfactor = 0.0d0
 
       DO i=1,NGET
-        r1 = 0.0
-        r2 = 0.0
-        r3 = 0.0
-        gm1= 0.0
+        r1 = 0.0d0
+        r2 = 0.0d0
+        r3 = 0.0d0
+        gm = 0.0d0
         do j = 1, numn
           !if(isnode33(j)==0)then
             in1 = 3*j-2
@@ -589,7 +593,7 @@ contains
             r1 = r1 + mass(in1)*ewk(in1,i)
             r2 = r2 + mass(in2)*ewk(in2,i)
             r3 = r3 + mass(in3)*ewk(in3,i)
-            gm1= gm1+ mass(in1)*ewk(in1,i)*ewk(in1,i) &
+            gm = gm + mass(in1)*ewk(in1,i)*ewk(in1,i) &
             & + mass(in2)*ewk(in2,i)*ewk(in2,i) &
             & + mass(in3)*ewk(in3,i)*ewk(in3,i)
           !endif
@@ -597,21 +601,15 @@ contains
         CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
         CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
         CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
-        CALL hecmw_allreduce_R1(hecMESH,gm1,hecmw_sum)
-        myEIG%partfactor(3*i-2) = r1/gm1
-        myEIG%partfactor(3*i-1) = r2/gm1
-        myEIG%partfactor(3*i  ) = r3/gm1
-        myEIG%effmass(3*i-2) = r1*r1/gm1
-        myEIG%effmass(3*i-1) = r2*r2/gm1
-        myEIG%effmass(3*i  ) = r3*r3/gm1
+        CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+        myEIG%partfactor(3*i-2) = r1/gm
+        myEIG%partfactor(3*i-1) = r2/gm
+        myEIG%partfactor(3*i  ) = r3/gm
+        myEIG%effmass(3*i-2) = r1*r1/gm
+        myEIG%effmass(3*i-1) = r2*r2/gm
+        myEIG%effmass(3*i  ) = r3*r3/gm
       END DO
 
-      DO JITER=1,NGET
-        prechk1 = sqrt(prechk1)
-        if(prechk1.NE.0.0D0)then
-          ewk(:,JITER) = ewk(:,JITER)/prechk1
-        endif
-      END DO
 
 !*------------------
 !*Eigensolver output
