@@ -327,12 +327,18 @@ contains
         WRITE(*,"(a,i8)")"### NUMBER OF ITERATIONS = ",LTRIAL
         WRITE(*,"(a,1pe12.4)")"### TOTAL MASS = ",myEIG%totalmass
         WRITE(*,"(a)")""
-        WRITE(*,"(3a)")"                  ANGLE      FREQUENCY  ",&
+        WRITE(*,"(3a)")"       PERIOD     FREQUENCY  ",&
         "PARTICIPATION FACTOR             EFFECTIVE MASS"
-        WRITE(*,"(3a)")"  NO.  EIGENVALUE FREQUENCY  (HZ)       ",&
+        WRITE(*,"(3a)")"  NO.  [Sec]      [HZ]       ",&
         "X          Y          Z          X          Y          Z"
-        WRITE(*,"(3a)")"  ---  ---------  ---------  ---------  ",&
+        WRITE(*,"(3a)")"  ---  ---------  ---------  ",&
         "---------  ---------  ---------  ---------  ---------  ---------"
+
+        if(LTRIAL < NGET)then
+          j = LTRIAL
+        else 
+          j = NGET
+        endif
 
         kcount = 0
         DO 40 i=1,LTRIAL
@@ -343,15 +349,15 @@ contains
             IF(EEE.LT.0.0) EEE=0.0
             WWW=DSQRT(EEE)
             FFF=WWW*0.5/PI
-            PFX=1
-            PFY=1
-            PFZ=1
-            EMX=1
-            EMY=1
-            EMZ=1
+            PFX=myEIG%partfactor(3*i-2)
+            PFY=myEIG%partfactor(3*i-1)
+            PFZ=myEIG%partfactor(3*i  )
+            EMX=myEIG%effmass(3*i-2)
+            EMY=myEIG%effmass(3*i-1)
+            EMZ=myEIG%effmass(3*i  )
             WRITE(IOUT,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
-            WRITE(*   ,'(I5,1P9E11.3)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
-            if( kcount.EQ.NGET ) go to 41
+            WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            if( kcount.EQ.j ) go to 41
           endif
    40   CONTINUE
    41   continue
