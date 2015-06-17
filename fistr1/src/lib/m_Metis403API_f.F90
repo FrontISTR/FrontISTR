@@ -15,7 +15,7 @@
 !> \brief This module contains subroutines of fortran interface to Metis 4.0.3
 
 module m_Metis403API
-  use, intrinsic  ::  iso_c_binding   !, only : C_int, C_double, C_float,
+  use, intrinsic  ::  iso_c_binding   !, only : C_int, C_double, C_float
   implicit none
 !  integer,parameter ::  kint  = kind(10000000000000)
 !  integer,parameter	::  kreal = kind(1.1111111111D0)
@@ -46,6 +46,7 @@ module m_Metis403API
   integer,parameter ::  METIS_TYPE_WPartGraphKway       = 4
   integer,parameter ::  METIS_TYPE_WPartGraphVKway      = 5
 
+#if(HECMW_METIS_VER == 4)
 !< Interface definition for calling c functions in Metis 4.0.3
   interface
 !<  Graph partitioning routines
@@ -1158,4 +1159,5 @@ subroutine MetisF_PartGraphKway_Type(mts)
     endif
 end subroutine MetisF_PartGraphKway_Type
 
+#endif
 end module m_Metis403API

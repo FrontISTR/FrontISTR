@@ -21,6 +21,7 @@ INCLUDEDIR     = $(PREFIX)/include
 METISDIR       = $(HOME)/Metis-4.0.3
 METISLIBDIR    = $(METISDIR)
 METISINCDIR    = $(METISDIR)/Lib
+HECMW_METIS_VER= 4
 
 # ParMetis
 PARMETISDIR    = $(HOME)/ParMetis-3.2.0
@@ -65,6 +66,7 @@ F90            = mpifrtpx
 F90FLAGS       = -Kopenmp
 F90LDFLAGS     = -SCALAPACK -SSL2BLAMP
 F90OPTFLAGS    = -Kfast,ocl
+F90FPP         = -fpp
 F90LINKER      = mpiFCCpx --linkfortran
 
 MAKE           = make

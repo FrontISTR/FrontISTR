@@ -112,6 +112,7 @@ contains
 !C
 !C Area/volume calculations
 !C
+          ss = 0.0d0
           if    ( ic_type.EQ.231 ) then
             CALL mass_c2d3 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
           elseif( ic_type.EQ.232 ) then
@@ -168,18 +169,24 @@ contains
               myEIG%mass(js+1) = myEIG%mass(js+1) + val
               myEIG%mass(js+2) = myEIG%mass(js+2) + val
               myEIG%mass(js+3) = myEIG%mass(js+3) + val
-              myEIG%mass(js+4) = myEIG%mass(js+4) + val*thick**2/12.0
-              myEIG%mass(js+5) = myEIG%mass(js+5) + val*thick**2/12.0
-              myEIG%mass(js+6) = myEIG%mass(js+6) + val*thick**2/12.0
+              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0d0
+              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0d0
+              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0d0
+              !myEIG%mass(js+4) = myEIG%mass(js+4) + val*thick**2/12.0
+              !myEIG%mass(js+5) = myEIG%mass(js+5) + val*thick**2/12.0
+              !myEIG%mass(js+6) = myEIG%mass(js+6) + val*thick**2/12.0
             else if( ic_type.eq.761 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR. ( j .EQ. 3 ) ) THEN
                myEIG%mass(js+1) = myEIG%mass(js+1) + val
                myEIG%mass(js+2) = myEIG%mass(js+2) + val
                myEIG%mass(js+3) = myEIG%mass(js+3) + val
               ELSE IF( ( j .EQ. 4 ) .OR. ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
-               myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
-               myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+               myEIG%mass(js+1) = myEIG%mass(js+1) + 0.0d0
+               myEIG%mass(js+2) = myEIG%mass(js+2) + 0.0d0
+               myEIG%mass(js+3) = myEIG%mass(js+3) + 0.0d0
+               !myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
+               !myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
+               !myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
               END IF
             else if( ic_type.eq.781 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR.   &
@@ -189,9 +196,12 @@ contains
                myEIG%mass(js+3) = myEIG%mass(js+3) + val
               ELSE IF( ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) .OR.   &
                        ( j .EQ. 7 ) .OR. ( j .EQ. 8 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
-               myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
-               myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+               myEIG%mass(js+1) = myEIG%mass(js+1) + 0.0d0
+               myEIG%mass(js+2) = myEIG%mass(js+2) + 0.0d0
+               myEIG%mass(js+3) = myEIG%mass(js+3) + 0.0d0
+               !myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
+               !myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
+               !myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
               END IF
             elseif( ic_type.EQ.611 ) then
               myEIG%mass(js+1) = myEIG%mass(js+1) + val
@@ -246,12 +256,13 @@ contains
         ii = (i-1)*NDOF + 1
         chkmass = chkmass + myEIG%mass(ii)
       end do
+      myEIG%totalmass = chkmass
 !C
       CALL hecmw_allreduce_R1(hecMESH,chkmass,hecmw_sum)
       IF(myrank.EQ.0) THEN
-        WRITE(IMSG,*) '+===================+'
-        WRITE(IMSG,*) 'Total mass: ',chkmass
-        WRITE(IMSG,*) '+===================+'
+        WRITE(IMSG,"(a)") '+===================+'
+        WRITE(IMSG,"(a,1pe12.5)") 'Total mass: ',chkmass
+        WRITE(IMSG,"(a)") '+===================+'
       ENDIF
 !C
 !C*Deallocate work array

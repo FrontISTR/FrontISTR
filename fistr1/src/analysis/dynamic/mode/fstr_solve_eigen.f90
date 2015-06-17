@@ -48,7 +48,7 @@ contains
       use m_static_make_result
       use m_hecmw2fstr_mesh_conv
 
-      implicit REAL(kind=kreal) (A-H,O-Z)
+      implicit none
 
       type (hecmwST_local_mesh ) :: hecMESH
       type (hecmwST_matrix     ) :: hecMAT
@@ -64,7 +64,14 @@ contains
 !C*-------- Parameters for Lanczos method -----------*
       type (lczparam) :: myEIG
 
-      integer(kind=kint) IOUT,IREOR,eITMAX
+      integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
+      integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
+      integer(kind=kint) :: kk, jjiter, ppc
+      real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+
+      integer(kind=kint) IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
+      integer(kind=kint), allocatable :: isnode33(:)
+      real(kind=kreal), allocatable   :: gmass(:)
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
@@ -118,6 +125,26 @@ contains
       if( myrank == 0 ) then
          write(IMSG,*) 'fstr_mat_ass: OK'
       endif
+
+!C*----------- Check node33 -----*
+      allocate(isnode33(numnp))
+      isnode33 = 0
+
+      do itype = 1, hecMESH%n_elem_type
+        iS = hecMESH%elem_type_index(itype-1) + 1
+        iE = hecMESH%elem_type_index(itype  )
+        ic_type = hecMESH%elem_type_item(itype)
+        if(hecmw_is_etype_33struct(ic_type))then
+          nn = HECMW_get_max_node(ic_type)/2
+          do icel = iS, iE
+            jS = hecMESH%elem_node_index(icel-1)
+            do j = 1, nn
+              ii = hecMESH%elem_node_item(jS+j+nn)
+              isnode33(ii)=1
+            enddo
+          enddo
+        endif
+      enddo
 
 !C*----------- Alloc eigenvalue related arrays -----*
       allocate( EFILT( ntotal) )
@@ -301,8 +328,7 @@ contains
         do i=1,ntotal
           hecMAT%B(i) = EM(i)
         enddo
-        hecMAT%X = 0.
-
+        hecMAT%X = 0.0d0
 
 !C*---------- Call solver (direct/iterative)
         CALL solve_LINEQ( hecMESH,hecMAT,IMSG )
@@ -531,17 +557,59 @@ contains
       ENDIF
 
       DO JITER=1,NGET
-        prechk1 = 0.0
+        !prechk1 = 0.0
 !C        CALL VECPRO1(prechk1,ewk(1:,JITER:),ewk(1:,JITER:),Gntotal)
-        do iii = 1, Gntotal
-          prechk1 = prechk1 + ewk(iii,JITER)*ewk(iii,JITER)
-        enddo
+        !do iii = 1, Gntotal
+        !    prechk1 = prechk1 + mass(iii)*ewk(iii,JITER)*ewk(iii,JITER)
+        !enddo
+        prechk1 = maxval(ewk(:,JITER))
         if (.not. ds) then !In case of Direct Solver prevent MPI
           CALL hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
         end if
-        prechk1 = sqrt(prechk1)
-        if(prechk1.NE.0.0D0) ewk(:,JITER) = ewk(:,JITER)/prechk1
+        !prechk1 = sqrt(prechk1)
+        if(prechk1.NE.0.0D0)then
+          do i = 1, Gntotal
+            ewk(i,JITER) = ewk(i,JITER)/prechk1
+          enddo
+        endif
       END DO
+
+!C***** compute effective mass and participation factor
+      allocate(myEIG%effmass(3*NGET))
+      allocate(myEIG%partfactor(3*NGET))
+      myEIG%effmass    = 0.0d0
+      myEIG%partfactor = 0.0d0
+
+      DO i=1,NGET
+        r1 = 0.0d0
+        r2 = 0.0d0
+        r3 = 0.0d0
+        gm = 0.0d0
+        do j = 1, numn
+          !if(isnode33(j)==0)then
+            in1 = 3*j-2
+            in2 = 3*j-1
+            in3 = 3*j
+            r1 = r1 + mass(in1)*ewk(in1,i)
+            r2 = r2 + mass(in2)*ewk(in2,i)
+            r3 = r3 + mass(in3)*ewk(in3,i)
+            gm = gm + mass(in1)*ewk(in1,i)*ewk(in1,i) &
+            & + mass(in2)*ewk(in2,i)*ewk(in2,i) &
+            & + mass(in3)*ewk(in3,i)*ewk(in3,i)
+          !endif
+        enddo
+        CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+        CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+        CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
+        CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+        myEIG%partfactor(3*i-2) = r1/gm
+        myEIG%partfactor(3*i-1) = r2/gm
+        myEIG%partfactor(3*i  ) = r3/gm
+        myEIG%effmass(3*i-2) = r1*r1/gm
+        myEIG%effmass(3*i-1) = r2*r2/gm
+        myEIG%effmass(3*i  ) = r3*r3/gm
+      END DO
+
 
 !*------------------
 !*Eigensolver output

@@ -59,6 +59,8 @@
 
 #define HECMW_PARTLEX_V_PMETIS        3014
 
+#define HECMW_PARTLEX_V_ND            3015
+
 #define HECMW_PARTLEX_V_DEFAULT       3052
 
 #define HECMW_PARTLEX_V_AGGREGATE     3053

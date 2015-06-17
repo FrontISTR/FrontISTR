@@ -4093,10 +4093,10 @@ read_boundary_keyword(void)
 		set_err_token(token, HECMW_IO_ABAQUS_E1700, "',' is not required after *BOUDARY SECTION");
 		return -1;
 	}
-	if(isFirst == 0) {
+	/*if(isFirst == 0) {*/
 		fprintf(stderr, "Recommended that following auto-generated cards are added in !BOUNDARY section of *.cnt file \n");
 		isFirst =1;
-	}
+	/*}*/
 	return 0;
 }
 
@@ -4128,7 +4128,7 @@ read_boundary_data(int *nnode, int **node_array)
 			isFirst=1;
 		}
 
-		if(token == HECMW_ABLEX_NAME && isOut == 0) {
+		if(token == HECMW_ABLEX_NAME) {
 			isOut = 1;
 			char *p = HECMW_ablex_get_text();
 			fprintf(stderr, "%s", p);
@@ -4137,6 +4137,11 @@ read_boundary_data(int *nnode, int **node_array)
 			isOut = 1;
 			int ii = HECMW_ablex_get_number();
 			fprintf(stderr, ", %d", ii);
+		}
+		if(token == HECMW_ABLEX_DOUBLE && isOut == 1) {
+			isOut = 1;
+			double a = HECMW_ablex_get_number();
+			fprintf(stderr, ", %f", a);
 		}
 
 		if(token == ',') {
@@ -4186,8 +4191,9 @@ read_boundary_data(int *nnode, int **node_array)
 	*nnode = n;
 	*node_array = node;
 
-	if(isOut = 1) {
+	if(isOut == 1) {
 		fprintf(stderr, "\n");
+    isOut = 0;
 	}
 
 	return 0;
@@ -4204,8 +4210,8 @@ static int
 read_boudary(void)
 {
 	int token,state;
-	int flag_boundary = 0;	/* flag for CLOAD */
-	int isboundary = 0;
+	int flag_boundary = 0;	/* flag for BOUNDARY */
+	int isBoundary = 0;
 	static int nbound = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
@@ -4231,7 +4237,7 @@ read_boudary(void)
 			if(read_boundary_data(&n, &node)) return -1;
 
 			if(n != 0) {
-				isboundary = 1;
+				isBoundary = 1;
 
 				/* add node to group */
 				sprintf(nset,"BND%d",nbound);
@@ -4252,7 +4258,7 @@ read_boudary(void)
 		}
 	}
 
-	if(isboundary != 0) {
+	if(isBoundary != 0) {
 		fprintf(stderr, "NSET=BND%d is automatically generated\n", nbound);
 		nbound++;
 	}
@@ -4278,10 +4284,10 @@ read_cload_keyword(void)
 		set_err_token(token, HECMW_IO_ABAQUS_E1700, "',' is not required after *CLOAD SECTION");
 		return -1;
 	}
-	if(isFirst == 0) {
+	/*if(isFirst == 0) {*/
 		fprintf(stderr, "Recommended that following auto-generated cards are added in !CLOAD section of *.cnt file \n");
 		isFirst =1;
-	}
+	/*}*/
 	return 0;
 }
 
@@ -4290,6 +4296,7 @@ read_cload(void)
 {
 	int token,state;
 	int flag_cload = 0;	/* flag for CLOAD */
+	int isCload = 0;
 	static int ncload = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
@@ -4314,9 +4321,13 @@ read_cload(void)
 			if(read_boundary_data(&n, &node)) return -1;
 
 			/* add node to group */
-			sprintf(nset,"CLOAD%d",ncload);
-			if(HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
-			HECMW_free(node);
+			if(n != 0) {
+				isCload = 1;
+
+				sprintf(nset,"CLOAD%d",ncload);
+				if(HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
+				HECMW_free(node);
+			}
 
 			/* check next state */
 			token = HECMW_ablex_next_token();
@@ -4330,8 +4341,11 @@ read_cload(void)
 			HECMW_assert(0);
 		}
 	}
+
+	if(isCload != 0) {
 		fprintf(stderr, "NSET=CLOAD%d  is automatically generated\n", ncload);
 		ncload++;
+	}
 
 	return 0;
 }
@@ -4356,10 +4370,10 @@ read_dload_keyword(void)
 		set_err_token(token, HECMW_IO_ABAQUS_E1700, "',' is not required after *DLOAD SECTION");
 		return -1;
 	}
-	if(isFirst == 0) {
+	/*if(isFirst == 0) {*/
 		fprintf(stderr, "Recommended that following auto-generated cards are added in !DLOAD section of *.cnt file \n");
 		isFirst =1;
-	}
+	/*}*/
 	return 0;
 }
 
@@ -4368,6 +4382,7 @@ read_dload(void)
 {
 	int token,state;
 	int flag_dload = 0;	/* flag for DLOAD */
+	int isDload = 0;
 	static int ndload = 0;
 	char elset[HECMW_NAME_LEN+1] = "";
 	enum {
@@ -4391,10 +4406,13 @@ read_dload(void)
 			HECMW_assert(flag_dload);
 			if(read_boundary_data(&n, &elem)) return -1;
 
-			/* add node to group */
-			sprintf(elset,"DLOAD%d",ndload);
-			if(HECMW_io_add_egrp(elset, n, elem) < 0) return -1;
-			HECMW_free(elem);
+			if(n != 0) {
+				isDload = 1;
+				/* add node to group */
+				sprintf(elset,"DLOAD%d",ndload);
+				if(HECMW_io_add_egrp(elset, n, elem) < 0) return -1;
+				HECMW_free(elem);
+			}
 
 			/* check next state */
 			token = HECMW_ablex_next_token();
@@ -4408,8 +4426,11 @@ read_dload(void)
 			HECMW_assert(0);
 		}
 	}
+
+	if(isDload != 0) {
 		fprintf(stderr, "NSET=DLOAD%d is automatically generated\n",ndload);
 		ndload++;
+	}
 
 	return 0;
 }

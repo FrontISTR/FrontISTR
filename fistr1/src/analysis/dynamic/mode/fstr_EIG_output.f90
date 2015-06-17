@@ -46,7 +46,7 @@ contains
         ds = .true.
       end if
 
-      CALL EGLIST(hecMESH,hecMAT,IOUT)
+      CALL EGLIST(hecMESH,hecMAT,myEIG,IOUT)
       IF(myrank.EQ.0) THEN
         WRITE(IMSG,*) ''
         WRITE(IMSG,*) '*----------------------------------------------*'
