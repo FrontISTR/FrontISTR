@@ -23,6 +23,7 @@ METIS_CFLAGS            = @metis_cflags@
 METIS_LDFLAGS           = @metis_ldflags@
 METIS_F90FLAGS          = @metis_f90flags@
 METIS_F90LDFLAGS        = @metis_f90ldflags@
+HECMW_METIS_VER         = -DHECMW_METIS_VER=@hecmw_metis_ver@
 
 MUMPSDIR                = @mumpsdir@
 MUMPSLIBDIR             = @mumpslibdir@
@@ -67,7 +68,8 @@ MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
 ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(MUMPS_F90LDFLAGS)
-F90FPP                  = @f90fpp@
+#F90FPP                  = @f90fpp@
+F90FPP = -Mpreprocess
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@
@@ -86,13 +88,16 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 
 #------------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $(ALL_CFLAGS) $(OPTFLAGS) $< -o $@
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $(ALL_F90FLAGS) $(HECMW_METIS_VER) $(F90FPP) $(F90OPTFLAGS) $< -o $@
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
