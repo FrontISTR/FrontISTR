@@ -36,11 +36,12 @@ module m_fstr_precheck
 !C*** Pre Check for FSTR solver
 !C***
 !C
-   subroutine fstr_precheck ( hecMESH, hecMAT )
+   subroutine fstr_precheck ( hecMESH, hecMAT, soltype )
       use m_fstr
       implicit none
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix )    :: hecMAT
+      integer(kind=kint)        :: soltype
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)
@@ -49,6 +50,13 @@ module m_fstr_precheck
 
       call fstr_precheck_elem ( hecMESH, hecMAT )
       write(IDBG,*) 'fstr_precheck_elem: OK'
+
+!C
+!C Output sparsity pattern
+!C
+      if( soltype == kstNZPROF )then
+        call hecmw_nonzero_profile(hecMESH, hecMAT)
+      endif
 
    end subroutine fstr_precheck
 !C
@@ -112,13 +120,6 @@ module m_fstr_precheck
       write(*   ,"(a,i12)") '  Num of DOF2:',ntdof2
       write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
       write(*   ,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
-
-!C
-!C Output sparsity pattern
-!C
-      if(1==0)then
-        call hecmw_nonzero_profile(hecMESH, hecMAT)
-      endif
 
 !C
 !C 3D
@@ -437,8 +438,9 @@ module m_fstr_precheck
     close(fio)
     
     write(*,*)''
-    write(*,*)'  gnuplot -persist "nonzero.plt"'
-    write(*,*)''
+    write(*,*)' ### Command recommendation'
+    write(*,*)' gnuplot -persist "nonzero.plt"'
+
     !call system('gnuplot -persist "nonzero.plt"')
     
     !open(fio,file='nonzero.dat',status='old')
