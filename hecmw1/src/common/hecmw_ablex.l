@@ -110,6 +110,10 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"SYSTEM	{ return flag_header ? HECMW_ABLEX_H_SYSTEM : ' '; }
 ^"*"TIE	{ set_flag_header(1); return HECMW_ABLEX_H_TIE; }
 "*"TIE		{ return flag_header ? HECMW_ABLEX_H_TIE : ' '; }
+^"*"TRS	{ set_flag_header(1); return HECMW_ABLEX_H_TRS; }
+"*"TRS		{ return flag_header ? HECMW_ABLEX_H_TRS : ' '; }
+^"*"VISCOELASTIC	{ set_flag_header(1); return HECMW_ABLEX_H_VISCOELASTIC; }
+"*"VISCOELASTIC		{ return flag_header ? HECMW_ABLEX_H_VISCOELASTIC : ' '; }
 
 ABSOLUTE	{ set_flag_header(0); return HECMW_ABLEX_K_ABSOLUTE; }
 ANISOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ANISOTROPIC; }
@@ -120,8 +124,10 @@ GENERATE	{ set_flag_header(0); return HECMW_ABLEX_K_GENERATE; }
 INPUT		{ set_flag_header(0); return HECMW_ABLEX_K_INPUT; }
 ISOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ISOTROPIC; }
 INSTANCE	{ set_flag_header(0); return HECMW_ABLEX_K_INSTANCE; }
+INSTANTANEOUS	{ set_flag_header(0); return HECMW_ABLEX_K_INSTANTANEOUS; }
 LAMINA		{ set_flag_header(0); return HECMW_ABLEX_K_LAMINA; }
 MATERIAL	{ set_flag_header(0); return HECMW_ABLEX_K_MATERIAL; }
+MODULI	{ set_flag_header(0); return HECMW_ABLEX_K_MODULI; }
 NAME		{ set_flag_header(0); return HECMW_ABLEX_K_NAME; }
 NSET		{ set_flag_header(0); return HECMW_ABLEX_K_NSET; }
 ORTHOTROPIC	{ set_flag_header(0); return HECMW_ABLEX_K_ORTHOTROPIC; }
@@ -135,6 +141,8 @@ TIME		{ set_flag_header(0); return HECMW_ABLEX_K_TIME; }
 TYPE		{ set_flag_header(0); return HECMW_ABLEX_K_TYPE; }
 UNSORTED	{ set_flag_header(0); return HECMW_ABLEX_K_UNSORTED; }
 VALUE		{ set_flag_header(0); return HECMW_ABLEX_K_VALUE; }
+ZERO		{ set_flag_header(0); return HECMW_ABLEX_K_ZERO; }
+PRONY		{ set_flag_header(0); return HECMW_ABLEX_K_PRONY; }
 
 B31		{ set_flag_header(0); return HECMW_ABLEX_E_B31; }
 B32		{ set_flag_header(0); return HECMW_ABLEX_E_B32; }
