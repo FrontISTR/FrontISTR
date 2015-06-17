@@ -196,7 +196,7 @@ contains
 !> Output eigenvalues and vectors
 !C======================================================================
 !C---------------------------------------------------------------------*
-      SUBROUTINE EGLIST( hecMESH,hecMAT,IOUT )
+      SUBROUTINE EGLIST( hecMESH,hecMAT,myEIG,IOUT )
 !C---------------------------------------------------------------------*
 !C*
 !C* DISPLAY RESULTS OF EIGEN VALUE ANALYSIS
@@ -206,17 +206,20 @@ contains
       use lczeigen
       use hecmw_util
 !C
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
+      implicit none
 !C
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
+      type (lczparam) :: myEIG
 !C
 !*For parallel part reduction
-      INTEGER(kind=kint) nglobal,istt,ied, GID,gmyrank,groot
-      INTEGER(kind=kint) groupcount, GROUP, XDIFF, hecGROUP, IOUT
+      INTEGER(kind=kint) :: i, j, ii
+      INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot
+      INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, IOUT
       INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)
       REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
+      REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
 
@@ -302,17 +305,41 @@ contains
 !C*EIGEN VALUE SORTING
       CALL EVSORT(EVAL,NEW,LTRIAL)
       IF(myrank==0) THEN
-        WRITE(IOUT,*) ''
-        WRITE(IOUT,'(''********************************'')')
-        WRITE(IOUT,'(''*RESULT OF EIGEN VALUE ANALYSIS*'')')
-        WRITE(IOUT,'(''********************************'')')
-        WRITE(IOUT,'('' '')')
-        WRITE(IOUT,*) 'NUMBER OF ITERATIONS =',LTRIAL
-        WRITE(IOUT,'('' '')')
-        WRITE(IOUT,'(''   NO.   EIGENVALUE    ANGL.FREQUENCY'',&
-     &                 '' FREQUENCY(HZ)'')')
-        WRITE(IOUT,'(''   ---   ----------    --------------'',&
-     &                 '' -------------'')')
+        WRITE(IOUT,*)""
+        WRITE(IOUT,"(a)")"********************************"
+        WRITE(IOUT,"(a)")"*RESULT OF EIGEN VALUE ANALYSIS*"
+        WRITE(IOUT,"(a)")"********************************"
+        WRITE(IOUT,"(a)")""
+        WRITE(IOUT,"(a,i8)")"NUMBER OF ITERATIONS = ",LTRIAL
+        WRITE(IOUT,"(a,1pe12.4)")"TOTAL MASS = ",myEIG%totalmass
+        WRITE(IOUT,"(a)")""
+        WRITE(IOUT,"(3a)")"                   ANGLE       FREQUENCY   ",&
+        "PARTICIPATION FACTOR                EFFECTIVE MASS"
+        WRITE(IOUT,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
+        "X           Y           Z           X           Y           Z"
+        WRITE(IOUT,"(3a)")"  ---  ----------  ----------  ----------  ",&
+        "----------  ----------  ----------  ----------  ----------  ----------"
+        WRITE(*,*)""
+        WRITE(*,"(a)")"#----------------------------------#"
+        WRITE(*,"(a)")"#  RESULT OF EIGEN VALUE ANALYSIS  #"
+        WRITE(*,"(a)")"#----------------------------------#"
+        WRITE(*,"(a)")""
+        WRITE(*,"(a,i8)")"### NUMBER OF ITERATIONS = ",LTRIAL
+        WRITE(*,"(a,1pe12.4)")"### TOTAL MASS = ",myEIG%totalmass
+        WRITE(*,"(a)")""
+        WRITE(*,"(3a)")"       PERIOD     FREQUENCY  ",&
+        "PARTICIPATION FACTOR             EFFECTIVE MASS"
+        WRITE(*,"(3a)")"  NO.  [Sec]      [HZ]       ",&
+        "X          Y          Z          X          Y          Z"
+        WRITE(*,"(3a)")"  ---  ---------  ---------  ",&
+        "---------  ---------  ---------  ---------  ---------  ---------"
+
+        if(LTRIAL < NGET)then
+          j = LTRIAL
+        else 
+          j = NGET
+        endif
+
         kcount = 0
         DO 40 i=1,LTRIAL
           II=NEW(I)
@@ -322,12 +349,20 @@ contains
             IF(EEE.LT.0.0) EEE=0.0
             WWW=DSQRT(EEE)
             FFF=WWW*0.5/PI
-            WRITE(IOUT,'(I5,1P5E15.6)') kcount,EEE,WWW,FFF
-            if( kcount.EQ.NGET ) go to 41
+            PFX=myEIG%partfactor(3*i-2)
+            PFY=myEIG%partfactor(3*i-1)
+            PFZ=myEIG%partfactor(3*i  )
+            EMX=myEIG%effmass(3*i-2)
+            EMY=myEIG%effmass(3*i-1)
+            EMZ=myEIG%effmass(3*i  )
+            WRITE(IOUT,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            if( kcount.EQ.j ) go to 41
           endif
    40   CONTINUE
    41   continue
         WRITE(IOUT,*)
+        WRITE(*,*)""
       ENDIF
       RETURN
       END SUBROUTINE EGLIST

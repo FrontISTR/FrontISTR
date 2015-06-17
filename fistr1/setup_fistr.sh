@@ -200,6 +200,7 @@ if [ ${WITHMETIS} -eq 0 ]; then
 	METIS_LDFLAGS=""
 	METIS_F90FLAGS=""
 	METIS_F90LDFLAGS=""
+	HECMW_METIS_VER=""
 fi
 
 #
@@ -314,6 +315,7 @@ do
 		-e "s!@f90@!${F90}!" \
 		-e "s!@f90flags@!${F90FLAGS}!" \
 		-e "s!@f90ldflags@!${F90LDFLAGS}!" \
+		-e "s!@f90fpp@!${F90FPP}!" \
 		-e "s!@f90optflags@!${F90OPTFLAGS}!" \
 		-e "s!@f90linker@!${F90LINKER}!" \
 		-e "s!@make@!${MAKE}!" \
@@ -360,6 +362,7 @@ do
 		-e "s!@metis_ldflags@!${METIS_LDFLAGS}!" \
 		-e "s!@metis_f90flags@!${METIS_F90FLAGS}!" \
 		-e "s!@metis_f90ldflags@!${METIS_F90LDFLAGS}!" \
+		-e "s!@hecmw_metis_ver@!${HECMW_METIS_VER}!" \
 		-e "s!@parmetisdir@!${PARMETISDIR}!" \
 		-e "s!@parmetislibdir@!${PARMETISLIBDIR}!" \
 		-e "s!@parmetisincdir@!${PARMETISINCDIR}!" \

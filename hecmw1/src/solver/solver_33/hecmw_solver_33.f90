@@ -162,10 +162,12 @@ contains
     if (PRECOND.eq. 1) IFLAG(1)= 0
     if (PRECOND.eq. 2) IFLAG(1)= 0
     if (PRECOND.eq. 3) IFLAG(1)= 0
+    if (PRECOND.eq. 5) IFLAG(1)= 0
     if (PRECOND.eq.10) IFLAG(1)= 0
     if (PRECOND.eq.11) IFLAG(1)= 0
     if (PRECOND.eq.12) IFLAG(1)= 0
-    if (PRECOND.eq. 5) IFLAG(1)= 0
+    if (PRECOND.eq.20) IFLAG(1)= 0
+    if (PRECOND.eq.21) IFLAG(1)= 0
 
     if (IFLAG(1).ne.0) then
       ERROR= HECMW_SOLVER_ERROR_INCONS_PC

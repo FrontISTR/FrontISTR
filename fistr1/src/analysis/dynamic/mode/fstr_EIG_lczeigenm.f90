@@ -56,7 +56,7 @@
       LOGICAL CONV                             !< Convergence flag
 
       INTEGER(KIND=KINT) :: ITLIMIT,NEIG,NGET,ITER,IERROR,LTRIAL
-      REAL(KIND=KREAL) :: PRECHK1,CCHK0,CCHK1,CCHK,CERR
+      REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
 
 !*------------------- Extra variables for FSTR ---------------------------*
       INTEGER (KIND=kint) numnp,NDOF,ntotal,iv
