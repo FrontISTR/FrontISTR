@@ -2337,6 +2337,27 @@ read_elastic_param_type(int *type)
 	return 0;
 }
 
+static int
+read_elastic_param_moduli(int *moduli)
+{
+	int token;
+
+	token = HECMW_ablex_next_token();
+	if(token != '=') {
+		set_err_token(token, HECMW_IO_ABAQUS_E2300, "'=' required after TYPE");
+		return -1;
+	}
+	token = HECMW_ablex_next_token();
+	switch(token) {
+		case HECMW_ABLEX_K_INSTANTANEOUS:	break;
+		default:
+			set_err_token(token, HECMW_IO_ABAQUS_E2300, "Invalid TYPE");
+			return -1;
+	}
+	*moduli = token;
+
+	return 0;
+}
 
 static int
 read_elastic_data(int type, int dependencies, struct hecmw_io_matitem **matitem)
@@ -2371,8 +2392,10 @@ read_elastic(void)
 	int token,state;
 	int flag_dependencies = 0;	/* flag for DEPENDENCIES */
 	int flag_type = 0;			/* flag for TYPE */
+	int flag_moduli = 0;			/* flag for MODULI */
 	int dependencies = 0;
 	int type = HECMW_ABLEX_K_ISOTROPIC;
+	int moduli = 0;
 	enum {
 		ST_FINISHED,
 		ST_KEYWORD_LINE,
@@ -2399,6 +2422,9 @@ read_elastic(void)
 			} else if(token == HECMW_ABLEX_K_TYPE) {
 				if(read_elastic_param_type(&type)) return -1;
 				flag_type = 1;
+			} else if(token == HECMW_ABLEX_K_MODULI) {
+				if(read_elastic_param_moduli(&moduli)) return -1;
+				flag_moduli = 1;
 			} else {
 				set_err_token(token, HECMW_IO_ABAQUS_E2300, "Unknown parameter");
 				return -1;
