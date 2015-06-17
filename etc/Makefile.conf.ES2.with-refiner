@@ -65,6 +65,7 @@ F90            = sxmpif90
 F90FLAGS       =
 F90LDFLAGS     = -lstdc++
 F90OPTFLAGS    =
+F90FPP         = -fpp
 F90LINKER      = sxmpif90
 
 MAKE           = make

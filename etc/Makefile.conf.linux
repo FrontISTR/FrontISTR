@@ -65,6 +65,7 @@ F90            = mpif90
 F90FLAGS       =
 F90LDFLAGS     = -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 F90OPTFLAGS    = -O2
+F90FPP         = -fpp
 F90LINKER      = mpif90
 
 MAKE           = make

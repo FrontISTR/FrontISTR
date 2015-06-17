@@ -65,6 +65,7 @@ F90            = mpifrtpx
 F90FLAGS       = -Kopenmp
 F90LDFLAGS     = -SCALAPACK -SSL2BLAMP
 F90OPTFLAGS    = -Kfast,ocl
+F90FPP         = -fpp
 F90LINKER      = mpiFCCpx --linkfortran
 
 MAKE           = make

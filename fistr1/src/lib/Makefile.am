@@ -67,6 +67,7 @@ MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
 ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(MUMPS_F90LDFLAGS)
+F90FPP                  = @f90fpp@
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@

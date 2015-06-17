@@ -314,6 +314,7 @@ do
 		-e "s!@f90@!${F90}!" \
 		-e "s!@f90flags@!${F90FLAGS}!" \
 		-e "s!@f90ldflags@!${F90LDFLAGS}!" \
+		-e "s!@f90fpp@!${F90FPP}!" \
 		-e "s!@f90optflags@!${F90OPTFLAGS}!" \
 		-e "s!@f90linker@!${F90LINKER}!" \
 		-e "s!@make@!${MAKE}!" \

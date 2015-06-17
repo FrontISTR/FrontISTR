@@ -65,6 +65,7 @@ F90            = gfortran
 F90FLAGS       =
 F90LDFLAGS     = -static -lstdc++
 F90OPTFLAGS    = -O2
+F90FPP         = -fpp
 F90LINKER      = gfortran
 
 MAKE           = make
