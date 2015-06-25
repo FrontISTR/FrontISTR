@@ -96,7 +96,11 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !      if(myrank == 0) print *,'Part Method',partMethod
       select case(partMethod)
 #if(HECMW_METIS_VER == 5)
-
+            ierr = METIS_PartGraphRecursive                   &
+                        (nvtxs,   xadj,   adjncy,             &
+                         vwgt,    adjwgt, wgtflag,numflag,    &
+                         nparts,  options,objval, part)
+            actualPartMethod = 'PMETIS'
 #elif(HECMW_METIS_VER == 4)
       case(PARTITION_DEFAULT)
         if(nparts < 8) then
