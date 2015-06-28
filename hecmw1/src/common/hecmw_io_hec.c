@@ -1596,7 +1596,6 @@ read_equation_data_line2(int neq, double cnst)
 		}
 		mpcitem[1].node = HECMW_heclex_get_number();
 		strcpy(mpcitem[1].ngrp, "");
-		mpcitem[1].dof = 1;
 		mpcitem[1].a   = 1.0;
 
 		/* ',' */
@@ -1612,17 +1611,18 @@ read_equation_data_line2(int neq, double cnst)
 		}
 		mpcitem[2].node = HECMW_heclex_get_number();
 		strcpy(mpcitem[2].ngrp, "");
-		mpcitem[2].dof = 1;
 		mpcitem[2].a   = -1.0;
 
 		/* add 1 */
+		mpcitem[1].dof = 1;
+		mpcitem[2].dof = 1;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		/* add 2 */
-		mpcitem[2].dof = 2;
+		mpcitem[1].dof = 2;
 		mpcitem[2].dof = 2;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		/* add 3 */
-		mpcitem[2].dof = 3;
+		mpcitem[1].dof = 3;
 		mpcitem[2].dof = 3;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		HECMW_free(mpcitem);
