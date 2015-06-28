@@ -1418,10 +1418,18 @@ read_equation_data_line1(int *neq, double *cnst)
 
 	/* NEQ */
 	token = HECMW_heclex_next_token();
-	if(token != HECMW_HECLEX_INT) {
+	if(token != HECMW_HECLEX_INT && token != HECMW_HECLEX_NAME) {
 		set_err_token(token, HECMW_IO_HEC_E0700, "required NEQ");
 		return -1;
 	}
+
+	if(token == HECMW_HECLEX_K_BEAM){
+		*neq = 2;
+		*cnst = 0.0;
+		HECMW_heclex_unput_token();
+		return 0;
+	}
+
 	*neq = HECMW_heclex_get_number();
 	if(*neq < 2) {
 		set_err(HECMW_IO_HEC_E0701, "");
@@ -1460,6 +1468,7 @@ read_equation_data_line2(int neq, double cnst)
 	int i,token;
 	int is_node = 0;
 	int is_ngrp = 0;
+	int is_beam = 0;
 	const int NITEM = 7;
 	struct hecmw_io_mpcitem *mpcitem;
 
@@ -1469,58 +1478,108 @@ read_equation_data_line2(int neq, double cnst)
 		return -1;
 	}
 
-	for(i=0; i < neq; i++) {
-		token = HECMW_heclex_next_token();
-		if(i != 0 && token == HECMW_HECLEX_NL) break;
+	token = HECMW_heclex_next_token();
+	if(token == HECMW_HECLEX_K_BEAM) {
+		is_beam = 1;
+	}
+	HECMW_heclex_unput_token();
 
-		/* nod */
-		if(token == HECMW_HECLEX_INT) {
-			if(is_ngrp) {
-				set_err(HECMW_IO_HEC_E0702, "");
+	if(is_beam == 0){
+		for(i=0; i < neq; i++) {
+			token = HECMW_heclex_next_token();
+			if(i != 0 && token == HECMW_HECLEX_NL) break;
+
+			/* nod */
+			if(token == HECMW_HECLEX_INT) {
+				if(is_ngrp) {
+					set_err(HECMW_IO_HEC_E0702, "");
+					return -1;
+				}
+				mpcitem[i].node = HECMW_heclex_get_number();
+				strcpy(mpcitem[i].ngrp, "");
+				is_node = 1;
+			} else if(token == HECMW_HECLEX_NAME) {
+				char *p = HECMW_heclex_get_text();
+				if(is_node) {
+					set_err(HECMW_IO_HEC_E0702, "");
+					return -1;
+				}
+				if(strlen(p) > HECMW_NAME_LEN) {
+					set_err(HECMW_IO_E0001, "");
+					return -1;
+				}
+				strcpy(mpcitem[i].ngrp, p);
+				HECMW_toupper(mpcitem[i].ngrp);
+				if(HECMW_io_is_reserved_name(mpcitem[i].ngrp)) {
+					set_err(HECMW_IO_E0003, "");
+					return -1;
+				}
+				mpcitem[i].node = -1;
+				is_ngrp = 1;
+			} else {
+				set_err_token(token, HECMW_IO_HEC_E0700, "Node ID or NGRP required");
 				return -1;
 			}
-			mpcitem[i].node = HECMW_heclex_get_number();
-			strcpy(mpcitem[i].ngrp, "");
-			is_node = 1;
-		} else if(token == HECMW_HECLEX_NAME) {
-			char *p = HECMW_heclex_get_text();
-			if(is_node) {
-				set_err(HECMW_IO_HEC_E0702, "");
+
+			/* ',' */
+			token = HECMW_heclex_next_token();
+			if(token != ',') {
+				set_err_token(token, HECMW_IO_HEC_E0700, "',' required after node");
 				return -1;
 			}
-			if(strlen(p) > HECMW_NAME_LEN) {
-				set_err(HECMW_IO_E0001, "");
+
+			/* DOF */
+			token = HECMW_heclex_next_token();
+			if(token != HECMW_HECLEX_INT) {
+				set_err(HECMW_IO_HEC_E0703, "");
 				return -1;
 			}
-			strcpy(mpcitem[i].ngrp, p);
-			HECMW_toupper(mpcitem[i].ngrp);
-			if(HECMW_io_is_reserved_name(mpcitem[i].ngrp)) {
-				set_err(HECMW_IO_E0003, "");
+			mpcitem[i].dof = HECMW_heclex_get_number();
+			if(HECMW_io_check_mpc_dof(mpcitem[i].dof)) {
+				set_err(HECMW_IO_HEC_E0703, "");
 				return -1;
 			}
-			mpcitem[i].node = -1;
-			is_ngrp = 1;
-		} else {
-			set_err_token(token, HECMW_IO_HEC_E0700, "Node ID or NGRP required");
-			return -1;
+
+			/* ',' */
+			token = HECMW_heclex_next_token();
+			if(token != ',') {
+				set_err_token(token, HECMW_IO_HEC_E0700, "',' required after DOF");
+				return -1;
+			}
+
+			/* A */
+			token = HECMW_heclex_next_token();
+			if(token != HECMW_HECLEX_DOUBLE && token != HECMW_HECLEX_INT) {
+				set_err_token(token, HECMW_IO_HEC_E0700, "A(coefficient) required ");
+				return -1;
+			}
+			mpcitem[i].a = HECMW_heclex_get_number();
+
+			/* ',' or NL */
+			token = HECMW_heclex_next_token();
+			if(token != ',' && token != HECMW_HECLEX_NL) {
+				set_err_token(token, HECMW_IO_HEC_E0700, "',' or NL required after coefficient");
+				return -1;
+			}
+			if(token == ',' && i == NITEM-1) {
+				token = HECMW_heclex_next_token();
+				if(token != HECMW_HECLEX_NL) {
+					set_err_token(token, HECMW_IO_HEC_E0700, "NL required");
+					return -1;
+				}
+				continue;
+			}
+			if(token == HECMW_HECLEX_NL) continue;
 		}
 
-		/* ',' */
-		token = HECMW_heclex_next_token();
-		if(token != ',') {
-			set_err_token(token, HECMW_IO_HEC_E0700, "',' required after node");
-			return -1;
-		}
+		/* add */
+		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		HECMW_free(mpcitem);
 
-		/* DOF */
+	/* beam */
+	} else if(is_beam == 1){
 		token = HECMW_heclex_next_token();
-		if(token != HECMW_HECLEX_INT) {
-			set_err(HECMW_IO_HEC_E0703, "");
-			return -1;
-		}
-		mpcitem[i].dof = HECMW_heclex_get_number();
-		if(HECMW_io_check_mpc_dof(mpcitem[i].dof)) {
-			set_err(HECMW_IO_HEC_E0703, "");
+		if(token != HECMW_HECLEX_K_BEAM) {
 			return -1;
 		}
 
@@ -1531,34 +1590,43 @@ read_equation_data_line2(int neq, double cnst)
 			return -1;
 		}
 
-		/* A */
 		token = HECMW_heclex_next_token();
-		if(token != HECMW_HECLEX_DOUBLE && token != HECMW_HECLEX_INT) {
-			set_err_token(token, HECMW_IO_HEC_E0700, "A(coefficient) required ");
+		if(token != HECMW_HECLEX_INT) {
 			return -1;
 		}
-		mpcitem[i].a = HECMW_heclex_get_number();
+		mpcitem[1].node = HECMW_heclex_get_number();
+		strcpy(mpcitem[1].ngrp, "");
+		mpcitem[1].dof = 1;
+		mpcitem[1].a   = 1.0;
 
-		/* ',' or NL */
+		/* ',' */
 		token = HECMW_heclex_next_token();
-		if(token != ',' && token != HECMW_HECLEX_NL) {
-			set_err_token(token, HECMW_IO_HEC_E0700, "',' or NL required after coefficient");
+		if(token != ',') {
+			set_err_token(token, HECMW_IO_HEC_E0700, "',' required after DOF");
 			return -1;
 		}
-		if(token == ',' && i == NITEM-1) {
-			token = HECMW_heclex_next_token();
-			if(token != HECMW_HECLEX_NL) {
-				set_err_token(token, HECMW_IO_HEC_E0700, "NL required");
-				return -1;
-			}
-			continue;
+
+		token = HECMW_heclex_next_token();
+		if(token != HECMW_HECLEX_INT) {
+			return -1;
 		}
-		if(token == HECMW_HECLEX_NL) continue;
+		mpcitem[2].node = HECMW_heclex_get_number();
+		strcpy(mpcitem[2].ngrp, "");
+		mpcitem[2].dof = 1;
+		mpcitem[2].a   = -1.0;
+
+		/* add 1 */
+		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		/* add 2 */
+		mpcitem[2].dof = 2;
+		mpcitem[2].dof = 2;
+		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		/* add 3 */
+		mpcitem[2].dof = 3;
+		mpcitem[2].dof = 3;
+		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		HECMW_free(mpcitem);
 	}
-
-	/* add */
-	if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
-	HECMW_free(mpcitem);
 
 	return 0;
 }
