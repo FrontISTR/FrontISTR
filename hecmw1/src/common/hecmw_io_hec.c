@@ -1418,12 +1418,13 @@ read_equation_data_line1(int *neq, double *cnst)
 
 	/* NEQ */
 	token = HECMW_heclex_next_token();
+
 	if(token != HECMW_HECLEX_INT && token != HECMW_HECLEX_NAME) {
 		set_err_token(token, HECMW_IO_HEC_E0700, "required NEQ");
 		return -1;
 	}
 
-	if(token == HECMW_HECLEX_K_BEAM){
+	if(token == HECMW_HECLEX_NAME){
 		*neq = 2;
 		*cnst = 0.0;
 		HECMW_heclex_unput_token();
@@ -1470,6 +1471,7 @@ read_equation_data_line2(int neq, double cnst)
 	int is_ngrp = 0;
 	int is_beam = 0;
 	const int NITEM = 7;
+	char *p;
 	struct hecmw_io_mpcitem *mpcitem;
 
 	mpcitem = HECMW_malloc(sizeof(*mpcitem)*neq);
@@ -1479,8 +1481,11 @@ read_equation_data_line2(int neq, double cnst)
 	}
 
 	token = HECMW_heclex_next_token();
-	if(token == HECMW_HECLEX_K_BEAM) {
-		is_beam = 1;
+	if(token == HECMW_HECLEX_NAME) {
+		p = HECMW_heclex_get_text();
+		if(strcmp(p, "beam") == 0 || strcmp(p, "BEAM") == 0){
+			is_beam = 1;
+		}
 	}
 	HECMW_heclex_unput_token();
 
@@ -1579,9 +1584,21 @@ read_equation_data_line2(int neq, double cnst)
 	/* beam */
 	} else if(is_beam == 1){
 		token = HECMW_heclex_next_token();
-		if(token != HECMW_HECLEX_K_BEAM) {
+
+		/* ',' */
+		token = HECMW_heclex_next_token();
+		if(token != ',') {
+			set_err_token(token, HECMW_IO_HEC_E0700, "',' required after DOF");
 			return -1;
 		}
+
+		token = HECMW_heclex_next_token();
+		if(token != HECMW_HECLEX_INT) {
+			return -1;
+		}
+		mpcitem[0].node = HECMW_heclex_get_number();
+		strcpy(mpcitem[0].ngrp, "");
+		mpcitem[0].a   = 1.0;
 
 		/* ',' */
 		token = HECMW_heclex_next_token();
@@ -1596,36 +1613,26 @@ read_equation_data_line2(int neq, double cnst)
 		}
 		mpcitem[1].node = HECMW_heclex_get_number();
 		strcpy(mpcitem[1].ngrp, "");
-		mpcitem[1].a   = 1.0;
-
-		/* ',' */
-		token = HECMW_heclex_next_token();
-		if(token != ',') {
-			set_err_token(token, HECMW_IO_HEC_E0700, "',' required after DOF");
-			return -1;
-		}
-
-		token = HECMW_heclex_next_token();
-		if(token != HECMW_HECLEX_INT) {
-			return -1;
-		}
-		mpcitem[2].node = HECMW_heclex_get_number();
-		strcpy(mpcitem[2].ngrp, "");
-		mpcitem[2].a   = -1.0;
+		mpcitem[1].a   = -1.0;
 
 		/* add 1 */
+		mpcitem[0].dof = 1;
 		mpcitem[1].dof = 1;
-		mpcitem[2].dof = 1;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		/* add 2 */
+		mpcitem[0].dof = 2;
 		mpcitem[1].dof = 2;
-		mpcitem[2].dof = 2;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		/* add 3 */
+		mpcitem[0].dof = 3;
 		mpcitem[1].dof = 3;
-		mpcitem[2].dof = 3;
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		HECMW_free(mpcitem);
+
+		token = HECMW_heclex_next_token();
+		if(token != HECMW_HECLEX_NL) {
+			return -1;
+		}
 	}
 
 	return 0;
@@ -1639,6 +1646,7 @@ read_equation(void)
 	int neq = -1;
 	double cnst;
 	int flag_input = 0;			/* flag for INPUT */
+	char *p;
 	enum {
 		ST_FINISHED,
 		ST_HEADER_LINE,
@@ -1694,6 +1702,13 @@ read_equation(void)
 			token = HECMW_heclex_next_token();
 			if(token == HECMW_HECLEX_INT) {
 				state = ST_DATA_LINE1;
+			} else if(token == HECMW_HECLEX_NAME) {
+				p = HECMW_heclex_get_text();
+				if(strcmp(p, "beam") == 0 || strcmp(p, "BEAM") == 0){
+					state = ST_DATA_LINE1;
+				} else {
+					state = ST_FINISHED;
+				}
 			} else {
 				state = ST_FINISHED;
 			}
