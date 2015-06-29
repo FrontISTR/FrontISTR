@@ -53,6 +53,7 @@ HECMW_get_etype_UTIL2HECMW( int etype )
   case HECMW_MESH_ETYPE_MST2:  return HECMW_ETYPE_MST2;
   case HECMW_MESH_ETYPE_MSQ1:  return HECMW_ETYPE_MSQ1;
   case HECMW_MESH_ETYPE_MSQ2:  return HECMW_ETYPE_MSQ2;
+  case HECMW_MESH_ETYPE_JTB1:  return HECMW_ETYPE_JTB1;
   case HECMW_MESH_ETYPE_JTT1:  return HECMW_ETYPE_JTT1;
   case HECMW_MESH_ETYPE_JTT2:  return HECMW_ETYPE_JTT2;
   case HECMW_MESH_ETYPE_JTQ1:  return HECMW_ETYPE_JTQ1;
@@ -141,6 +142,7 @@ HECMW_get_etype_HECMW2UTIL( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MESH_ETYPE_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MESH_ETYPE_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MESH_ETYPE_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MESH_ETYPE_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MESH_ETYPE_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MESH_ETYPE_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MESH_ETYPE_JTQ1;
@@ -224,6 +226,7 @@ HECMW_get_etype_GeoFEM2HECMW( int etype )
   case HECMW_GEOFEM_ETYPE_MST2:  return HECMW_ETYPE_MST2;
   case HECMW_GEOFEM_ETYPE_MSQ1:  return HECMW_ETYPE_MSQ1;
   case HECMW_GEOFEM_ETYPE_MSQ2:  return HECMW_ETYPE_MSQ2;
+  case HECMW_GEOFEM_ETYPE_JTB1:  return HECMW_ETYPE_JTB1;
   case HECMW_GEOFEM_ETYPE_JTT1:  return HECMW_ETYPE_JTT1;
   case HECMW_GEOFEM_ETYPE_JTT2:  return HECMW_ETYPE_JTT2;
   case HECMW_GEOFEM_ETYPE_JTQ1:  return HECMW_ETYPE_JTQ1;
@@ -272,6 +275,7 @@ HECMW_get_max_node( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MAX_NODE_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MAX_NODE_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MAX_NODE_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MAX_NODE_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MAX_NODE_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MAX_NODE_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MAX_NODE_JTQ1;
@@ -358,6 +362,7 @@ HECMW_get_max_edge( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MAX_EDGE_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MAX_EDGE_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MAX_EDGE_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MAX_EDGE_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MAX_EDGE_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MAX_EDGE_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MAX_EDGE_JTQ1;
@@ -443,6 +448,7 @@ HECMW_get_max_surf( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MAX_SURF_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MAX_SURF_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MAX_SURF_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MAX_SURF_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MAX_SURF_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MAX_SURF_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MAX_SURF_JTQ1;
@@ -527,6 +533,7 @@ HECMW_get_max_tsuf( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MAX_TSUF_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MAX_TSUF_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MAX_TSUF_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MAX_TSUF_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MAX_TSUF_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MAX_TSUF_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MAX_TSUF_JTQ1;
@@ -612,6 +619,7 @@ HECMW_get_max_qsuf( int etype )
   case HECMW_ETYPE_MST2:  return HECMW_MAX_QSUF_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_MAX_QSUF_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_MAX_QSUF_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_MAX_QSUF_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_MAX_QSUF_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_MAX_QSUF_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_MAX_QSUF_JTQ1;
@@ -698,6 +706,7 @@ extern char
   case HECMW_ETYPE_MST2:  return HECMW_UCD_LABEL_MST2;
   case HECMW_ETYPE_MSQ1:  return HECMW_UCD_LABEL_MSQ1;
   case HECMW_ETYPE_MSQ2:  return HECMW_UCD_LABEL_MSQ2;
+  case HECMW_ETYPE_JTB1:  return HECMW_UCD_LABEL_JTB1;
   case HECMW_ETYPE_JTT1:  return HECMW_UCD_LABEL_JTT1;
   case HECMW_ETYPE_JTT2:  return HECMW_UCD_LABEL_JTT2;
   case HECMW_ETYPE_JTQ1:  return HECMW_UCD_LABEL_JTQ1;
@@ -814,6 +823,7 @@ HECMW_is_etype_interface(int etype)
   case 432:				/* fall through */
   case 441:				/* fall through */
   case 442:				/* fall through */
+  case 501:       /* fall through */
   case 531:				/* fall through */
   case 532:				/* fall through */
   case 541:				/* fall through */
