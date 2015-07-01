@@ -1709,7 +1709,7 @@ read_equation(void)
 				state = ST_DATA_LINE1;
 			} else if(token == HECMW_HECLEX_NAME) {
 				p = HECMW_heclex_get_text();
-				if(strcmp(p, "beam") == 0 || strcmp(p, "BEAM") == 0){
+				if(strcmp(p, "link") == 0 || strcmp(p, "LINK") == 0){
 					state = ST_DATA_LINE1;
 				} else {
 					state = ST_FINISHED;
