@@ -1415,6 +1415,7 @@ static int
 read_equation_data_line1(int *neq, double *cnst)
 {
 	int token;
+	char *p;
 
 	/* NEQ */
 	token = HECMW_heclex_next_token();
@@ -1425,8 +1426,11 @@ read_equation_data_line1(int *neq, double *cnst)
 	}
 
 	if(token == HECMW_HECLEX_NAME){
-		*neq = 2;
-		*cnst = 0.0;
+		p = HECMW_heclex_get_text();
+		if(strcmp(p, "link") == 0 || strcmp(p, "LINK") == 0){
+			*neq = 2;
+			*cnst = 0.0;
+		}
 		HECMW_heclex_unput_token();
 		return 0;
 	}
@@ -1469,6 +1473,7 @@ read_equation_data_line2(int neq, double cnst)
 	int i,token;
 	int is_node = 0;
 	int is_ngrp = 0;
+	int is_link = 0;
 	int is_beam = 0;
 	const int NITEM = 7;
 	char *p;
@@ -1483,13 +1488,13 @@ read_equation_data_line2(int neq, double cnst)
 	token = HECMW_heclex_next_token();
 	if(token == HECMW_HECLEX_NAME) {
 		p = HECMW_heclex_get_text();
-		if(strcmp(p, "beam") == 0 || strcmp(p, "BEAM") == 0){
-			is_beam = 1;
+		if(strcmp(p, "link") == 0 || strcmp(p, "LINK") == 0){
+			is_link = 1;
 		}
 	}
 	HECMW_heclex_unput_token();
 
-	if(is_beam == 0){
+	if(is_link == 0){
 		for(i=0; i < neq; i++) {
 			token = HECMW_heclex_next_token();
 			if(i != 0 && token == HECMW_HECLEX_NL) break;
@@ -1581,8 +1586,8 @@ read_equation_data_line2(int neq, double cnst)
 		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
 		HECMW_free(mpcitem);
 
-	/* beam */
-	} else if(is_beam == 1){
+	/* link */
+	} else if(is_link == 1){
 		token = HECMW_heclex_next_token();
 
 		/* ',' */
@@ -1704,7 +1709,7 @@ read_equation(void)
 				state = ST_DATA_LINE1;
 			} else if(token == HECMW_HECLEX_NAME) {
 				p = HECMW_heclex_get_text();
-				if(strcmp(p, "beam") == 0 || strcmp(p, "BEAM") == 0){
+				if(strcmp(p, "link") == 0 || strcmp(p, "LINK") == 0){
 					state = ST_DATA_LINE1;
 				} else {
 					state = ST_FINISHED;
