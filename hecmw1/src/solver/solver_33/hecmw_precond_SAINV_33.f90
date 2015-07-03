@@ -3,22 +3,23 @@ module hecmw_precond_SAINV_33
   use m_hecmw_comm_f
   use hecmw_matrix_contact
   use hecmw_matrix_misc
-  
+  !$ use omp_lib
+
   private
 
   public:: hecmw_precond_33_SAINV_setup
   public:: hecmw_precond_33_SAINV_apply
   public:: hecmw_precond_33_SAINV_clear
-  
+
   integer(4),parameter :: krealp = 8
-  
+
   integer(kind=kint) :: NPFIU, NPFIL
   integer(kind=kint) :: N
   integer(kind=kint), pointer :: inumFI1L(:) => null()
   integer(kind=kint), pointer :: inumFI1U(:) => null()
   integer(kind=kint), pointer :: FI1L(:) => null()
   integer(kind=kint), pointer :: FI1U(:) => null()
-  
+
   integer(kind=kint), pointer :: indexL(:) => null()
   integer(kind=kint), pointer :: indexU(:) => null()
   integer(kind=kint), pointer :: itemL(:)  => null()
@@ -42,16 +43,16 @@ contains
   subroutine hecmw_precond_33_SAINV_setup(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
-    
+
     integer(kind=kint ) :: NPU, NPL, NP
     integer(kind=kint ) :: rcm
     integer(kind=kint ) :: ierror, PRECOND
 
     real(kind=krealp) :: FILTER
-    
+
     N = hecMAT%N
     PRECOND = hecmw_mat_get_precond(hecMAT)
-    
+
     D => hecMAT%D
     AU=> hecMAT%AU
     AL=> hecMAT%AL
@@ -61,7 +62,7 @@ contains
     itemU => hecMAT%itemU
 
     if (PRECOND.eq.20) call FORM_ILU1_SAINV_33(hecMAT)
-    
+
     allocate (SAINVD(9*hecMAT%NP))
     allocate (SAINVL(9*NPFIU))
     allocate (T(3*hecMAT%NP))
@@ -72,12 +73,12 @@ contains
     FILTER= hecMAT%Rarray(5)
 
     Write(*,"(a,F15.8)")"### SAINV FILTER   :",FILTER
-    
+
     call hecmw_sainv_33(hecMAT)
 
     allocate (SAINVU(9*NPFIU))
     SAINVU  = 0.0d0
-    
+
     call hecmw_sainv_make_u_33(hecMAT)
 
   end subroutine hecmw_precond_33_SAINV_setup
@@ -86,13 +87,13 @@ contains
     implicit none
     integer(kind=kint) :: i,j,js,je,in
     real(kind=kreal) :: X1, X2, X3
-    
+
     do i=1, N
       SAINVD(9*i-5) = SAINVD(9*i-5)*SAINVD(9*i-4)
       SAINVD(9*i-2) = SAINVD(9*i-2)*SAINVD(9*i  )
       SAINVD(9*i-1) = SAINVD(9*i-1)*SAINVD(9*i  )
     enddo
-      
+
     do i=1, N
       js = inumFI1L(i-1)+1
       je = inumFI1L(i)
@@ -112,11 +113,10 @@ contains
         SAINVL(9*j  ) = SAINVL(9*j  )*X3
       enddo
     enddo
-    
+
   end subroutine hecmw_sainv_lu_33
-  
+
   subroutine hecmw_precond_33_SAINV_apply(R, ZP)
-    !$ use omp_lib
     implicit none
     real(kind=kreal), intent(inout)  :: ZP(:)
     real(kind=kreal), intent(in)  :: R(:)
@@ -132,7 +132,7 @@ contains
         SW1= 0.0d0
         SW2= 0.0d0
         SW3= 0.0d0
-        
+
         isL= inumFI1L(i-1)+1
         ieL= inumFI1L(i)
         do j= isL, ieL
@@ -155,12 +155,12 @@ contains
       enddo
 !$OMP END DO
 !$OMP DO
-      !C-- BACKWARD 
+      !C-- BACKWARD
       do i= 1, N
         SW1= 0.0d0
         SW2= 0.0d0
         SW3= 0.0d0
-        
+
         isU= inumFI1U(i-1) + 1
         ieU= inumFI1U(i)
         do j= isU, ieU
@@ -176,8 +176,8 @@ contains
         X1= T(3*i-2)
         X2= T(3*i-1)
         X3= T(3*i  )
-        
-        ZP(3*i-2)= X1 + SW1 + SAINVD(9*i-7)*X2 + SAINVD(9*i-6)*X3 
+
+        ZP(3*i-2)= X1 + SW1 + SAINVD(9*i-7)*X2 + SAINVD(9*i-6)*X3
         ZP(3*i-1)= X2 + SW2 + SAINVD(9*i-3)*X3
         ZP(3*i  )= X3 + SW3
       enddo
@@ -185,7 +185,7 @@ contains
 !$OMP END PARALLEL
 
   end subroutine hecmw_precond_33_SAINV_apply
-  
+
 
 !C***
 !C*** hecmw_rif_33
@@ -193,31 +193,31 @@ contains
     subroutine hecmw_sainv_33(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    
+
     integer(kind=kint) :: i, j, jS, jE, in, itr, iitr, ind(9), PRECOND
     real(kind=krealp) :: YV1, YV2, YV3, X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
     real(kind=krealp) :: FILTER, SIGMA_DIAG
     real(kind=krealp), allocatable :: zz(:), vv(:)
-    
+
     FILTER= hecMAT%Rarray(5)
-    
+
     allocate (vv(3*hecMAT%NP))
     allocate (zz(3*hecMAT%NP))
     dO itr=1,N
-    
+
     !------------------------------ iitr = 1 ----------------------------------------
-    
+
     zz(:) = 0.0d0
     vv(:) = 0.0d0
-    
+
     !{v}=[A]{zi}
 
     zz(3*itr-2)= SAINVD(9*itr-8)
     zz(3*itr-1)= SAINVD(9*itr-5)
     zz(3*itr  )= SAINVD(9*itr-2)
-    
+
     zz(3*itr-2)= 1.0d0! * SIGMA_DIAG
-    
+
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
     do j= jS, jE
@@ -226,7 +226,7 @@ contains
       zz(3*in-1)= SAINVL(9*j-7)
       zz(3*in  )= SAINVL(9*J-6)
     enddo
-    
+
     do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
@@ -234,16 +234,16 @@ contains
       vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
       vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
       vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
-      
+
       jS= indexL(i-1) + 1
       jE= indexL(i  )
       do j=jS,jE
-        in = itemL(j) 
+        in = itemL(j)
         vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X1 + AL(9*j-5)*X2 + AL(9*j-2)*X3
         vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X1 + AL(9*j-4)*X2 + AL(9*j-1)*X3
         vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X1 + AL(9*j-3)*X2 + AL(9*j  )*X3
       enddo
-      
+
       jS= indexU(i-1) + 1
       jE= indexU(i  )
       do j= jS, jE
@@ -253,12 +253,17 @@ contains
         vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X1 + AU(9*j-3)*X2 + AU(9*j  )*X3
       enddo
     enddo
-    
+
     !{d}={v^t}{z_j}
-    
+
     !dtemp(1) = SAINVD(9*itr-8)
     !dtemp(2) = SAINVD(9*itr-4)
 
+!$OMP PARALLEL DEFAULT(NONE) &
+!$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!$OMP&FIRSTPRIVATE(vv) &
+!$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+!$OMP DO
     do i=itr,N
       SAINVD(9*i-8) = vv(3*i-2)
       SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -275,21 +280,23 @@ contains
         SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
       enddo
     enddo
-    
+!$OMP END DO
+!$OMP END PARALLEL
+
     !Update D
     dd = 1.0d0/SAINVD(9*itr-8)
-    
+
     SAINVD(9*itr-4) =SAINVD(9*itr-4)*dd
     SAINVD(9*itr  ) =SAINVD(9*itr  )*dd
-    
+
     do i =itr+1,N
       SAINVD(9*i-8) = SAINVD(9*i-8)*dd
       SAINVD(9*i-4) = SAINVD(9*i-4)*dd
       SAINVD(9*i  ) = SAINVD(9*i  )*dd
     enddo
-    
+
     !Update Z
-    
+
     dd2=SAINVD(9*itr-4)
     if(dabs(dd2) > FILTER)then
       SAINVD(9*itr-7)= SAINVD(9*itr-7) - dd2*zz(3*itr-2)
@@ -302,7 +309,7 @@ contains
         SAINVL(9*j-3) = SAINVL(9*j-3)-dd2*zz(3*in  )
       enddo
     endif
-    
+
     dd3=SAINVD(9*itr  )
     if(dabs(dd3) > FILTER)then
       SAINVD(9*itr-6)= SAINVD(9*itr-6) - dd3*zz(3*itr-2)
@@ -315,7 +322,7 @@ contains
         SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
       enddo
     endif
-    
+
     do i= itr +1,N
       jS= inumFI1L(i-1) + 1
       jE= inumFI1L(i  )
@@ -350,20 +357,20 @@ contains
         enddo
       endif
     enddo
-    
+
     !------------------------------ iitr = 1 ----------------------------------------
-    
+
     zz(:) = 0.0d0
     vv(:) = 0.0d0
-    
+
     !{v}=[A]{zi}
 
     zz(3*itr-2)= SAINVD(9*itr-7)
     zz(3*itr-1)= SAINVD(9*itr-4)
     zz(3*itr  )= SAINVD(9*itr-1)
-    
+
     zz(3*itr-1)= 1.0d0
-    
+
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
     do j= jS, jE
@@ -372,7 +379,7 @@ contains
       zz(3*in-1)= SAINVL(9*j-4)
       zz(3*in  )= SAINVL(9*J-3)
     enddo
-    
+
     do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
@@ -380,16 +387,16 @@ contains
       vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
       vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
       vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
-      
+
       jS= indexL(i-1) + 1
       jE= indexL(i  )
       do j=jS,jE
-        in = itemL(j) 
+        in = itemL(j)
         vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X1 + AL(9*j-5)*X2 + AL(9*j-2)*X3
         vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X1 + AL(9*j-4)*X2 + AL(9*j-1)*X3
         vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X1 + AL(9*j-3)*X2 + AL(9*j  )*X3
       enddo
-      
+
       jS= indexU(i-1) + 1
       jE= indexU(i  )
       do j= jS, jE
@@ -399,10 +406,15 @@ contains
         vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X1 + AU(9*j-3)*X2 + AU(9*j  )*X3
       enddo
     enddo
-    
+
     !{d}={v^t}{z_j}
     dtemp(1) = SAINVD(9*itr-8)
 
+!$OMP PARALLEL DEFAULT(NONE) &
+!$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!$OMP&FIRSTPRIVATE(vv) &
+!$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+!$OMP DO
     do i=itr,N
       SAINVD(9*i-8) = vv(3*i-2)
       SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -419,25 +431,27 @@ contains
         SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
       enddo
     enddo
-    
+!$OMP END DO
+!$OMP END PARALLEL
+
     !Update D
     dd = 1.0d0/SAINVD(9*itr-4)
-    
+
     SAINVD(9*itr-8) = dtemp(1)
     SAINVD(9*itr  ) =SAINVD(9*itr  )*dd
-    
+
     do i =itr+1,N
       SAINVD(9*i-8) = SAINVD(9*i-8)*dd
       SAINVD(9*i-4) = SAINVD(9*i-4)*dd
       SAINVD(9*i  ) = SAINVD(9*i  )*dd
     enddo
-    
+
     !Update Z
     dd3=SAINVD(9*itr  )
     if(dabs(dd3) > FILTER)then
       SAINVD(9*itr-6)= SAINVD(9*itr-6) - dd3*zz(3*itr-2)
       SAINVD(9*itr-3)= SAINVD(9*itr-3) - dd3*zz(3*itr-1)
-      
+
       jS= inumFI1L(itr-1) + 1
       jE= inumFI1L(itr  )
       do j= jS, jE
@@ -447,7 +461,7 @@ contains
         SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
       enddo
     endif
-    
+
     do i= itr +1,N
       jS= inumFI1L(i-1) + 1
       jE= inumFI1L(i  )
@@ -482,21 +496,21 @@ contains
         enddo
       endif
     enddo
-    
+
 
     !------------------------------ iitr = 1 ----------------------------------------
-    
+
     zz(:) = 0.0d0
     vv(:) = 0.0d0
-    
+
     !{v}=[A]{zi}
 
     zz(3*itr-2)= SAINVD(9*itr-6)
     zz(3*itr-1)= SAINVD(9*itr-3)
     zz(3*itr  )= SAINVD(9*itr  )
-    
+
     zz(3*itr  )= 1.0d0
-    
+
     jS= inumFI1L(itr-1) + 1
     jE= inumFI1L(itr  )
     do j= jS, jE
@@ -505,7 +519,7 @@ contains
       zz(3*in-1)= SAINVL(9*j-1)
       zz(3*in  )= SAINVL(9*J  )
     enddo
-    
+
     do i= 1, itr
       X1= zz(3*i-2)
       X2= zz(3*i-1)
@@ -513,16 +527,16 @@ contains
       vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
       vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
       vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
-      
+
       jS= indexL(i-1) + 1
       jE= indexL(i  )
       do j=jS,jE
-        in = itemL(j) 
+        in = itemL(j)
         vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X1 + AL(9*j-5)*X2 + AL(9*j-2)*X3
         vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X1 + AL(9*j-4)*X2 + AL(9*j-1)*X3
         vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X1 + AL(9*j-3)*X2 + AL(9*j  )*X3
       enddo
-      
+
       jS= indexU(i-1) + 1
       jE= indexU(i  )
       do j= jS, jE
@@ -532,11 +546,16 @@ contains
         vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X1 + AU(9*j-3)*X2 + AU(9*j  )*X3
       enddo
     enddo
-    
+
     !{d}={v^t}{z_j}
     dtemp(1) = SAINVD(9*itr-8)
     dtemp(2) = SAINVD(9*itr-4)
 
+!$OMP PARALLEL DEFAULT(NONE) &
+!$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!$OMP&FIRSTPRIVATE(vv) &
+!$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+!$OMP DO
     do i=itr,N
       SAINVD(9*i-8) = vv(3*i-2)
       SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -553,19 +572,21 @@ contains
         SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
       enddo
     enddo
-    
+!$OMP END DO
+!$OMP END PARALLEL
+
     !Update D
     dd = 1.0d0/SAINVD(9*itr  )
-    
-    SAINVD(9*itr-8) = dtemp(1) 
+
+    SAINVD(9*itr-8) = dtemp(1)
     SAINVD(9*itr-4) = dtemp(2)
-    
+
     do i =itr+1,N
       SAINVD(9*i-8) = SAINVD(9*i-8)*dd
       SAINVD(9*i-4) = SAINVD(9*i-4)*dd
       SAINVD(9*i  ) = SAINVD(9*i  )*dd
     enddo
-    
+
     !Update Z
     do i= itr +1,N
       jS= inumFI1L(i-1) + 1
@@ -604,7 +625,7 @@ contains
     enddo
     deallocate(vv)
     deallocate(zz)
-    
+
     do i =1,N
       SAINVD(9*i-8) = 1.0d0/SAINVD(9*i-8)
       SAINVD(9*i-4) = 1.0d0/SAINVD(9*i-4)
@@ -613,15 +634,15 @@ contains
       SAINVD(9*i-2) = SAINVD(9*i-6)
       SAINVD(9*i-1) = SAINVD(9*i-3)
     enddo
-    
+
   end subroutine hecmw_sainv_33
-  
+
   subroutine hecmw_sainv_make_u_33(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
     integer(kind=kint) i,j,k,kk,n,m,o
     integer(kind=kint) is,ie,js,je
-    
+
     n = 1
     do i= 1, hecMAT%NP
       is=inumFI1U(i-1) + 1
@@ -649,32 +670,32 @@ contains
       enddo flag1
     enddo
   end subroutine hecmw_sainv_make_u_33
-  
+
 !C***
 !C*** FORM_ILU1_33
 !C*** form ILU(1) matrix
   subroutine FORM_ILU0_SAINV_33(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
-    
+
     allocate (inumFI1L(0:hecMAT%NP), inumFI1U(0:hecMAT%NP))
     allocate (FI1L (hecMAT%NPL), FI1U (hecMAT%NPU))
-    
+
     inumFI1L = 0
     inumFI1U = 0
     FI1L = 0
     FI1U = 0
-    
+
     inumFI1L = hecMAT%indexL
     inumFI1U = hecMAT%indexU
     FI1L = hecMAT%itemL
     FI1U = hecMAT%itemU
-    
+
     NPFIU = hecMAT%NPU
     NPFIL = hecMAT%NPL
-    
+
   end subroutine FORM_ILU0_SAINV_33
-  
+
 !C***
 !C*** FORM_ILU1_33
 !C*** form ILU(1) matrix
@@ -743,7 +764,7 @@ contains
 
   NPFIU = hecMAT%NPU+NPUf1
   NPFIL = hecMAT%NPL+NPLf1
-  
+
     FI1L= 0
     FI1U= 0
 
@@ -790,7 +811,7 @@ contains
         enddo
       enddo
     enddo
-  
+
     iSL  = 0
     iSU  = 0
     do i= 1, hecMAT%NP
@@ -857,11 +878,11 @@ contains
     deallocate (IWsL, IWsU)
     !C===
   end subroutine FORM_ILU1_SAINV_33
-  
+
  !C
   !C***
   !C*** fill_in_S33_SORT
-  !C*** 
+  !C***
   !C
   subroutine SAINV_SORT_33(STEM, INUM, N, NP)
     use hecmw_util
@@ -872,7 +893,7 @@ contains
     integer(kind=kint), dimension(:), allocatable :: ISTACK
     integer(kind=kint) :: M,NSTACK,jstack,l,ir,ip,i,j,k,ss,ii,temp,it
 
-    allocate (ISTACK(-NP:+NP)) 
+    allocate (ISTACK(-NP:+NP))
 
     M     = 100
     NSTACK= NP
@@ -1003,7 +1024,7 @@ contains
     goto 1
 
   end subroutine SAINV_SORT_33
-  
+
   subroutine hecmw_precond_33_SAINV_clear()
     implicit none
 
@@ -1025,6 +1046,6 @@ contains
     nullify(indexU)
     nullify(itemL)
     nullify(itemU)
-    
+
   end subroutine hecmw_precond_33_SAINV_clear
 end module hecmw_precond_SAINV_33
