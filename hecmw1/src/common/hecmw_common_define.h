@@ -684,6 +684,12 @@
 #define HECMW_MAX_QSUF_LN65  0
 #define HECMW_MAX_QSUF_LN66  0
 
+#define HECMW_CLASS_LINE  1
+#define HECMW_CLASS_SURF  2
+#define HECMW_CLASS_SOLID 3
+#define HECMW_CLASS_JOINT 4
+#define HECMW_CLASS_LINK  5
+
 /*
  *   DOFs
  */
