@@ -1249,12 +1249,12 @@ avs_output (struct hecmwST_local_mesh *mesh,
 		}
 	}
 
-	/* modify element information due to refininer*
+	/* modify element information due to refininer */
 	if (mynode == 0) {
 		if( modify_element_information(mesh) != 0){
 			printf("###ERROR: modify element information due to refininer \n");
 		}
-	}*/
+	}
 
 	/* write element connectivity */
 	if (mynode != 0)
