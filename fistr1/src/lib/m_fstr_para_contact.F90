@@ -41,6 +41,11 @@ module m_fstr_para_contact
   integer(kint),allocatable,save  ::  export_index(:)
   integer(kint),allocatable,save  ::  export_item(:)
 
+#if(HECMW_METIS_VER != 4 && HECMW_METIS_VER != 5)
+  integer,parameter   ::   idx_t  = 4
+  integer,parameter   ::   real_t = 8
+#endif
+
 contains
 
 subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
