@@ -1048,9 +1048,9 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 			}
 		}
 
-		fprintf (outfp, "%8d 0 %s  ",
+		fprintf (outfp, "%8d %d %s  ",
 				flag_global_ID ? global_elem_ID[i] : eid + eid_offset,
-				HECMW_get_ucd_label(etype));
+				HECMW_get_etype_class(etype),HECMW_get_ucd_label(etype));
 
 		ii = avs_elem_node_order(etype);
 		for (j = 0; j < node_num; j++)
@@ -1249,12 +1249,12 @@ avs_output (struct hecmwST_local_mesh *mesh,
 		}
 	}
 
-	/* modify element information due to refininer*
+	/* modify element information due to refininer */
 	if (mynode == 0) {
 		if( modify_element_information(mesh) != 0){
 			printf("###ERROR: modify element information due to refininer \n");
 		}
-	}*/
+	}
 
 	/* write element connectivity */
 	if (mynode != 0)

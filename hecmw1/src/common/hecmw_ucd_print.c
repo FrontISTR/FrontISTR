@@ -384,6 +384,16 @@ ucd_print( const struct hecmwST_local_mesh *mesh,
         }
         break;
 
+      case HECMW_ETYPE_JTB1:
+        fprintf( fp, "%d %d %s", i+1, 0, HECMW_get_ucd_label(HECMW_ETYPE_JTB1) );
+        node_index = mesh->elem_node_index[i];
+        for( j=0; j<HECMW_MAX_NODE_JTB1; j++ ) {
+          if( conv_index_ucd2hec_rod1[j] >= 0 ) {
+            fprintf( fp, " %d", mesh->elem_node_item[node_index+conv_index_ucd2hec_rod1[j]] );
+          }
+        }
+        break;
+
       case HECMW_ETYPE_JTT1:
         fprintf( fp, "%d %d %s", i+1, 0, HECMW_get_ucd_label(HECMW_ETYPE_JTT1) );
         node_index = mesh->elem_node_index[i];

@@ -753,6 +753,30 @@ error:
     return -1;
 }
 
+static int
+edge_info_jtb1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )
+{
+    int node[2], node_index;
+    long long int edge[1];
+    int i, j;
+
+    for( i=is; i<ie; i++ ) {
+        node_index = local_mesh->elem_node_index[i];
+        for( j=0; j<2; j++ ) {
+            node[j] = local_mesh->elem_node_item[node_index+j];
+        }
+
+        edge[0] = HECMW_mesh_hsort_edge( node[0], node[1] );
+        if( edge[0] < 0 )  goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
+}
+
+
 
 static int
 edge_info_jtt1( struct hecmwST_local_mesh *local_mesh, const int is, const int ie )

@@ -27,8 +27,6 @@ use elementinfo
 
 implicit none
 
-INTEGER, PARAMETER, private :: ndof=6
-
 contains
 
   !< This subroutine build up coordinate frame for beam elements

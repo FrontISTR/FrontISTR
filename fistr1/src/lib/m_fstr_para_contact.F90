@@ -41,6 +41,11 @@ module m_fstr_para_contact
   integer(kint),allocatable,save  ::  export_index(:)
   integer(kint),allocatable,save  ::  export_item(:)
 
+#if(HECMW_METIS_VER != 4 && HECMW_METIS_VER != 5)
+  integer,parameter   ::   idx_t  = 4
+  integer,parameter   ::   real_t = 8
+#endif
+
 contains
 
 subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
@@ -94,7 +99,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 133   continue
 !
 !      if(myrank == 0) print *,'Part Method',partMethod
-      select case(partMethod)
+
 #if(HECMW_METIS_VER == 5)
             ierr = METIS_PartGraphRecursive                   &
                         (nvtxs,   xadj,   adjncy,             &
@@ -102,6 +107,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
                          nparts,  options,objval, part)
             actualPartMethod = 'PMETIS'
 #elif(HECMW_METIS_VER == 4)
+      select case(partMethod)
       case(PARTITION_DEFAULT)
         if(nparts < 8) then
           if(ncon < 2) then
@@ -161,10 +167,10 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
                        vwgt,    adjwgt, wgtflag,numflag,    &
                        nparts,  ubvec,  options,objval, part)
           actualPartMethod = 'MCKMETIS'
-#endif
       case default
         stop 'Error: Undefined partition method!'
       end select
+#endif
 !
 !      call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
       print *,myrank,'Metis Over'
