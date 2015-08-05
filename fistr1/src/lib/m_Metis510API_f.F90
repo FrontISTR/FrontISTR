@@ -58,7 +58,7 @@ module m_Metis510API
       import
       integer(idx_t)              ::  ierr
       integer(idx_t),intent(in)   ::  nvtxs,ncon,nparts
-      integer(idx_t),intent(in)   ::  wgtflag,numflag,vsize
+      integer(idx_t),intent(in)   ::  vsize
       real(real_t),intent(in)     ::  tpwgt,ubvec
       type(c_ptr),value           ::  xadj,adjncy
       type(c_ptr),value           ::  vwgt,adjwgt
@@ -74,7 +74,7 @@ module m_Metis510API
       import
       integer(idx_t)              ::  ierr
       integer(idx_t),intent(in)   ::  nvtxs,ncon,nparts
-      integer(idx_t),intent(in)   ::  wgtflag,numflag,vsize
+      integer(idx_t),intent(in)   ::  vsize
       real(real_t),intent(in)     ::  tpwgt,ubvec
       type(c_ptr),value           ::  xadj,adjncy
       type(c_ptr),value           ::  vwgt,adjwgt
@@ -223,9 +223,10 @@ function METIS_PartGraphRecursive                   &
                 vwgt,   adjwgt, wgtflag,  numflag,  &
                nparts,  options,edgecut,  part) result(ierr)
   integer(idx_t)                    ::  ierr
-  integer(idx_t),intent(in)         ::  nvtxs,nparts,ncon
-  integer(idx_t),intent(in)         ::  wgtflag,numflag,vsize
-  real(real_t),intent(in)           ::  tpwgt,ubvec
+  integer(idx_t),intent(in)         ::  nvtxs,nparts
+  integer(idx_t),intent(in)         ::  wgtflag,numflag
+  integer(idx_t)              ::  vsize,ncon
+  real(real_t)                ::  tpwgt,ubvec
 !  integer(idx_t),intent(in),target  ::  xadj(:),adjncy(:)
 !  integer(idx_t),intent(in),target  ::  vwgt(:),adjwgt(:)
 !  integer(idx_t),intent(in),target  ::  options(:)
@@ -240,7 +241,7 @@ function METIS_PartGraphRecursive                   &
 !
   type(c_ptr)   ::  xadj_ptr,adjncy_ptr
   type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
-  type(c_ptr)   ::  options_ptr
+  type(c_ptr)   ::  options_ptr,objval_ptr
   type(c_ptr)   ::  part_ptr
 !
     if(associated(xadj)) then
@@ -267,6 +268,11 @@ function METIS_PartGraphRecursive                   &
       options_ptr  = c_loc(options(1))
     else
       options_ptr  = c_null_ptr
+    endif
+    if(associated(objval)) then
+      objval_ptr  = c_loc(objval(1))
+    else
+      objval_ptr  = c_null_ptr
     endif
     if(associated(part)) then
       part_ptr  = c_loc(part(1))
@@ -275,9 +281,9 @@ function METIS_PartGraphRecursive                   &
     endif
 
     ierr = METIS_PartGraphRecursive_f                      &
-                  (nvtxs,   ncon,   xadj,    adjncy,       &
-                   vwgt,    vsize,  adjwgt,  nparts,       &
-                   tpwgt,   ubvec,  options, objval,  part)
+               (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr,  &
+                vwgt_ptr, vsize, adjwgt_ptr,  nparts,      &
+                tpwgt,    ubvec, options_ptr, objval_ptr,  part_ptr)
 end function METIS_PartGraphRecursive
 
 function METIS_PartGraphKway                        &
@@ -285,9 +291,10 @@ function METIS_PartGraphKway                        &
                 vwgt,   adjwgt, wgtflag,  numflag,  &
                nparts,  options,edgecut,  part) result(ierr)
   integer(idx_t)                    ::  ierr
-  integer(idx_t),intent(in)         ::  nvtxs,nparts,ncon
-  integer(idx_t),intent(in)         ::  wgtflag,numflag,vsize
-  real(real_t),intent(in)           ::  tpwgt,ubvec
+  integer(idx_t),intent(in)         ::  nvtxs,nparts
+  integer(idx_t),intent(in)         ::  wgtflag,numflag
+  integer(idx_t)              ::  vsize, ncon
+  real(real_t)                ::  tpwgt, ubvec
 !  integer(idx_t),intent(in),target  ::  xadj(:),adjncy(:)
 !  integer(idx_t),intent(in),target  ::  vwgt(:),adjwgt(:)
 !  integer(idx_t),intent(in),target  ::  options(:)
@@ -302,7 +309,7 @@ function METIS_PartGraphKway                        &
 !
   type(c_ptr)   ::  xadj_ptr,adjncy_ptr
   type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
-  type(c_ptr)   ::  options_ptr
+  type(c_ptr)   ::  options_ptr,objval_ptr
   type(c_ptr)   ::  part_ptr
 !
     if(associated(xadj)) then
@@ -330,6 +337,11 @@ function METIS_PartGraphKway                        &
     else
       options_ptr  = c_null_ptr
     endif
+    if(associated(objval)) then
+      objval_ptr  = c_loc(objval(1))
+    else
+      objval_ptr  = c_null_ptr
+    endif
     if(associated(part)) then
       part_ptr  = c_loc(part(1))
     else
@@ -337,9 +349,9 @@ function METIS_PartGraphKway                        &
     endif
 
     ierr = METIS_PartGraphKway_f                            &
-                   (nvtxs,   ncon,   xadj,    adjncy,       &
-                    vwgt,    vsize,  adjwgt,  nparts,       &
-                    tpwgt,   ubvec,  options, objval,  part)
+                 (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr, &
+                  vwgt_ptr, vsize, adjwgt_ptr,  nparts,     &
+                  tpwgt,    ubvec, options_ptr, objval_ptr, part_ptr)
 end function METIS_PartGraphKway
 
 function METIS_NodeND                             &
@@ -358,7 +370,7 @@ function METIS_NodeND                             &
   integer(idx_t),pointer            ::  iperm(:)
 !
   type(c_ptr)   ::  xadj_ptr,adjncy_ptr
-  type(c_ptr)   ::  options_ptr
+  type(c_ptr)   ::  options_ptr,vwgt_ptr
   type(c_ptr)   ::  perm_ptr
   type(c_ptr)   ::  iperm_ptr
 !
@@ -371,6 +383,11 @@ function METIS_NodeND                             &
       adjncy_ptr  = c_loc(adjncy(1))
     else
       adjncy_ptr  = c_null_ptr
+    endif
+    if(associated(vwgt)) then
+      vwgt_ptr  = c_loc(vwgt(1))
+    else
+      vwgt_ptr  = c_null_ptr
     endif
     if(associated(options)) then
       options_ptr  = c_loc(options(1))
@@ -388,7 +405,7 @@ function METIS_NodeND                             &
       iperm_ptr  = c_null_ptr
     endif
 !
-    ierr = METIS_NodeND_f(nvtxs,xadj_ptr,adjncy_ptr,vwgt,   &
+    ierr = METIS_NodeND_f(nvtxs,xadj_ptr,adjncy_ptr,vwgt_ptr,&
                           options_ptr,perm_ptr,iperm_ptr)
 end function METIS_NodeND
 
