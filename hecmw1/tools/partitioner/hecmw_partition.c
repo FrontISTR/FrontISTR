@@ -9086,9 +9086,7 @@ error_omp:
     }
 
     if( global_mesh->my_rank == 0 ) {
-        printf("global_mesh->n_subdomain %d\n",global_mesh->n_subdomain);
         for( i=0; i<global_mesh->n_subdomain; i++ ) {
-            printf("sum_elem %d\n",sum_elem[i]);
             rtc = HECMW_part_set_log_n_elem( i, sum_elem[i] );
             if( rtc != 0 )  goto error;
             rtc = HECMW_part_set_log_n_node( i, sum_node[i] );
