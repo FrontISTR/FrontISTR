@@ -9063,18 +9063,27 @@ error_omp:
     if (error_in_ompsection) goto error;
 #endif
 
-    rtc = HECMW_Allreduce( num_elem, sum_elem, global_mesh->n_subdomain,
-                           HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
-    if( rtc != 0 )  goto error;
-    rtc = HECMW_Allreduce( num_node, sum_node, global_mesh->n_subdomain,
-                           HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
-    if( rtc != 0 )  goto error;
-    rtc = HECMW_Allreduce( num_ielem, sum_ielem, global_mesh->n_subdomain,
-                           HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
-    if( rtc != 0 )  goto error;
-    rtc = HECMW_Allreduce( num_inode, sum_inode, global_mesh->n_subdomain,
-                           HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
-    if( rtc != 0 )  goto error;
+    if( HECMW_comm_get_size() > 1 ){
+        rtc = HECMW_Allreduce( num_elem, sum_elem, global_mesh->n_subdomain,
+                               HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
+        if( rtc != 0 )  goto error;
+        rtc = HECMW_Allreduce( num_node, sum_node, global_mesh->n_subdomain,
+                               HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
+        if( rtc != 0 )  goto error;
+        rtc = HECMW_Allreduce( num_ielem, sum_ielem, global_mesh->n_subdomain,
+                               HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
+        if( rtc != 0 )  goto error;
+        rtc = HECMW_Allreduce( num_inode, sum_inode, global_mesh->n_subdomain,
+                               HECMW_INT, HECMW_SUM, HECMW_comm_get_comm() );
+        if( rtc != 0 )  goto error;
+    }else{
+        for( i=0; i<global_mesh->n_subdomain; i++ ){
+            sum_elem[i] = num_elem[i];
+            sum_node[i] = num_node[i];
+            sum_ielem[i] = num_ielem[i];
+            sum_inode[i] = num_inode[i];
+        }
+    }
 
     if( global_mesh->my_rank == 0 ) {
         for( i=0; i<global_mesh->n_subdomain; i++ ) {
