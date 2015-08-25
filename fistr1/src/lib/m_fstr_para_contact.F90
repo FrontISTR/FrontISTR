@@ -284,6 +284,8 @@ subroutine paraContact_GetFSTR2Makrose(hecMESH,mak)
       mak%egrp(i) = hecMESH%section_ID(i)
       mak%emat(i) = hecMESH%elem_mat_ID_item(i)
       select case(hecMESH%elem_type(i))
+      case(301)
+        mak%etyp(i) = MAKROSE_LINE
       case(341)
         mak%etyp(i) = MAKROSE_TET4
       case(351)
@@ -317,9 +319,8 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
       if(etype /= mak%etyp(i)) then
           ntype = ntype + 1
           etype = mak%etyp(i)
-      else
-        counter(ntype) = counter(ntype) + 1
       endif
+      counter(ntype) = counter(ntype) + 1
     enddo
     if(associated(ptrtype)) deallocate(ptrtype,stat=istat)
     allocate(ptrtype(0:ntype),stat=istat)
@@ -331,6 +332,8 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
     allocate(itemtype(ntype),stat=istat)
     do i=1,ntype
       select case(mak%etyp(ptrtype(i)))
+      case(MAKROSE_LINE)
+        itemtype(i) = 301
       case(MAKROSE_TET4)
         itemtype(i) = 341
       case(MAKROSE_PRI6)
