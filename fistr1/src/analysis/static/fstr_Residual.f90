@@ -32,13 +32,12 @@ module m_fstr_Residual
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
 
-  private :: fstr_Update_NDForce_spring
   private :: fstr_Update_NDForce_MPC
 
   contains
 
 !C---------------------------------------------------------------------*
-      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID, sub_step,conMAT)
+      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT)
 !C---------------------------------------------------------------------*
 !> In this subroutine, nodal force arose from prescribed displacement constarints
 !> are cleared and nodal force residual is calculated.
@@ -47,11 +46,11 @@ module m_fstr_Residual
 !!-#  equation (or mpc)
       use m_fstr
       use mULoad
+      use m_fstr_spring
 !#ifdef PARA_CONTACT
       use m_fstr_para_contact
 !#endif
       integer(kind=kint), intent(in)       :: cstep      !< current step
-      integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
       type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
@@ -68,7 +67,7 @@ module m_fstr_Residual
       end do
       ndof = hecMAT%NDOF
 
-      call fstr_Update_NDForce_spring( cstep, factor, hecMESH, fstrSOLID, sub_step, hecMAT%B )
+      call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
 !    Consider Uload
       call uResidual( cstep, factor, hecMAT%B )
@@ -94,41 +93,6 @@ module m_fstr_Residual
       endif
 
       end subroutine fstr_Update_NDForce
-
-      subroutine fstr_Update_NDForce_spring( cstep, factor, hecMESH, fstrSOLID, sub_step, B )
-      use m_fstr
-      integer(kind=kint), intent(in)       :: cstep      !< current step
-      real(kind=kreal), intent(in)         :: factor     !< factor
-      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
-      type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
-      integer(kind=kint), intent(in)       :: sub_step   !< current sub_step
-      real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
-!    Local variables
-      integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num
-      integer(kind=kint) :: grpid
-      real(kind=kreal) :: fval, fact
-
-      ndof = hecMESH%n_dof
-      do ig0= 1, fstrSOLID%SPRING_ngrp_tot
-        grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
-        if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-        ig= fstrSOLID%SPRING_ngrp_ID(ig0)
-        ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
-        fval= fstrSOLID%SPRING_ngrp_val(ig0)
-        if( fval < 0.d0 ) then
-          num = fstrSOLID%step_ctrl(cstep)%num_substep
-          fact = DFLOAT( num - sub_step ) / DFLOAT( num )
-          fval = fval * fact
-        endif
-        iS0= hecMESH%node_group%grp_index(ig-1) + 1
-        iE0= hecMESH%node_group%grp_index(ig  )
-        do ik= iS0, iE0
-          in = hecMESH%node_group%grp_item(ik)
-          idx = ndof * (in - 1) + ityp
-          B(idx) = B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) )
-        enddo
-      enddo
-      end subroutine fstr_Update_NDForce_spring
 
       subroutine fstr_Update_NDForce_MPC( hecMESH, B )
       use m_fstr

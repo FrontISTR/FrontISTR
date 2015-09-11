@@ -79,6 +79,7 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
+        fstr_Spring.@f90objfilepostfix@ \
         fstr_Restart.@f90objfilepostfix@ \
         fstr_NodalStress.@f90objfilepostfix@ \
         fstr_StiffMatrix.@f90objfilepostfix@ \
