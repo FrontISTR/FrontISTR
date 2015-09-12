@@ -41,6 +41,7 @@ module m_fstr_ass_load
       use mMechGauss
       use mReadTemp
       use mULoad
+      use m_fstr_spring
 !#ifdef PARA_CONTACT
       use m_fstr_para_contact
 !#endif
@@ -372,6 +373,9 @@ module m_fstr_ass_load
           enddo
         enddo
       endif
+      
+! ----- Spring force
+      call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
       if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaALagrange ) then
         do i = 1, size(fstrSOLID%contacts)
@@ -380,41 +384,5 @@ module m_fstr_ass_load
       endif
 
     end subroutine fstr_ass_load
-
-    subroutine fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-      use m_fstr
-      use m_static_lib
-      integer, intent(in)                  :: cstep       !< current step
-      integer, intent(in)                  :: sub_step    !< current sub_step
-      type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
-      type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
-      type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
-      type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
-
-      integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num
-      real(kind=kreal) :: fval, fact
-
-      ndof = hecMAT%NDOF
-      do ig0= 1, fstrSOLID%SPRING_ngrp_tot
-        grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
-        if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-        ig= fstrSOLID%SPRING_ngrp_ID(ig0)
-        ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
-        fval= fstrSOLID%SPRING_ngrp_val(ig0)
-        if( fval < 0.d0 ) then
-          num = fstrSOLID%step_ctrl(cstep)%num_substep
-          fact = DFLOAT( num - sub_step ) / DFLOAT( num )
-          fval = - fval * fact
-        endif
-        iS0= hecMESH%node_group%grp_index(ig-1) + 1
-        iE0= hecMESH%node_group%grp_index(ig  )
-        do ik= iS0, iE0
-          in = hecMESH%node_group%grp_item(ik)
-          idx = ndof**2 * (in - 1) + ndof * (ityp - 1) + ityp
-          hecMAT%D(idx) = hecMAT%D(idx) + fval
-        enddo
-      enddo
-
-   end subroutine fstr_AddSPRING
 
 end module m_fstr_ass_load
