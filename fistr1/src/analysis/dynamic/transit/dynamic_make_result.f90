@@ -36,7 +36,7 @@ module m_dynamic_make_result
       integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, idx, ngauss
       integer(kind=kint) :: n_lyr, ntot_lyr, is_33shell, is_33beam
       real(kind=kreal), allocatable   :: work(:), unode(:)
-      
+
       tnstrain => fstrSOLID%TNSTRAIN
       testrain => fstrSOLID%TESTRAIN
 
@@ -401,7 +401,7 @@ module m_dynamic_make_result
           fstrRESULT%node_label(ncomp) = 'NodalSTRESS'
           do i = 1, hecMESH%n_node
             do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS((nn+1)*(i-1)+j)
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(nn*(i-1)+j)
             enddo
           enddo
           iitem = iitem + nn
