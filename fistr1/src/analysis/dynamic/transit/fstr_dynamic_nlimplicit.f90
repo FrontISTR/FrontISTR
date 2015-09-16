@@ -209,35 +209,38 @@ contains
          call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
          do j=1, hecMESH%n_node*  hecMESH%n_dof
            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-		     + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+         + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
          end do
 
 !C ********************************************************************************
 !C for couple analysis
-         if( fstrPARAM%fg_couple == 1) then
-           if( fstrPARAM%fg_couple_first /= 0 ) then
-             bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
-             if( bsize > 1.0 ) bsize = 1.0
-             do kkk0 = 1, fstrCPL%coupled_node_n
-               kkk1 = 3 * kkk0
-               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-               fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-               fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-             enddo
-           endif
-           if( fstrPARAM%fg_couple_window > 0 ) then
-             j = i - restrt_step_num + 1
-             kk = fstrDYNAMIC%n_step - restrt_step_num + 1
-             bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
-             do kkk0 = 1, fstrCPL%coupled_node_n
-               kkk1 = 3 * kkk0
-               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-               fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-               fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-             enddo
-           endif
-           call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-         endif
+         !if( fstrPARAM%fg_couple == 1) then
+         !  if( fstrPARAM%fg_couple_first /= 0 ) then
+         !    bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
+         !    if( bsize > 1.0 ) bsize = 1.0
+         !    do kkk0 = 1, fstrCPL%coupled_node_n
+         !      kkk1 = 3 * kkk0
+         !      fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+         !      fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+         !      fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+         !    enddo
+         !  endif
+         !  if( fstrPARAM%fg_couple_window > 0 ) then
+         !    j = i - restrt_step_num + 1
+         !    kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+         !    bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
+         !    do kkk0 = 1, fstrCPL%coupled_node_n
+         !      kkk1 = 3 * kkk0
+         !      fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+         !      fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+         !      fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+         !    enddo
+         !  endif
+         !  call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+         !endif
+
+         call DYNAMIC_MAT_ASS_COUPLE_INPUT(hecMESH, hecMAT, fstrSOLID)
+
 !C ********************************************************************************
 
          do j = 1 ,nn*hecMAT%NP
@@ -320,65 +323,66 @@ contains
 
 !C *****************************************************
 !C for couple analysis
-      if( fstrPARAM%fg_couple == 1 ) then
-        if( fstrPARAM%fg_couple_type>1 ) then
-          do j=1, fstrCPL%coupled_node_n
-            if( fstrCPL%dof == 3 ) then
-              kkk0 = j*3
-              kkk1 = fstrCPL%coupled_node(j)*3
+      !if( fstrPARAM%fg_couple == 1 ) then
+      !  if( fstrPARAM%fg_couple_type>1 ) then
+      !    do j=1, fstrCPL%coupled_node_n
+      !      if( fstrCPL%dof == 3 ) then
+      !        kkk0 = j*3
+      !        kkk1 = fstrCPL%coupled_node(j)*3
 
-              fstrCPL%disp (kkk0-2) = fstrSOLID%unode(kkk1-2) + fstrSOLID%dunode(kkk1-2)
-              fstrCPL%disp (kkk0-1) = fstrSOLID%unode(kkk1-1) + fstrSOLID%dunode(kkk1-1)
-              fstrCPL%disp (kkk0  ) = fstrSOLID%unode(kkk1  ) + fstrSOLID%dunode(kkk1  )
+      !        fstrCPL%disp (kkk0-2) = fstrSOLID%unode(kkk1-2) + fstrSOLID%dunode(kkk1-2)
+      !        fstrCPL%disp (kkk0-1) = fstrSOLID%unode(kkk1-1) + fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%disp (kkk0  ) = fstrSOLID%unode(kkk1  ) + fstrSOLID%dunode(kkk1  )
 
-              fstrCPL%velo (kkk0-2) = -b1*fstrDYNAMIC%ACC(kkk1-2,1) - b2*fstrDYNAMIC%VEL(kkk1-2,1) + &
-                                       b3*fstrSOLID%dunode(kkk1-2)
-              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
-                                       b3*fstrSOLID%dunode(kkk1-1)
-              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
-                                       b3*fstrSOLID%dunode(kkk1)
-              fstrCPL%accel(kkk0-2) = -a1*fstrDYNAMIC%ACC(kkk1-2,1) - a2*fstrDYNAMIC%VEL(kkk1-2,1) + &
-                                       a3*fstrSOLID%dunode(kkk1-2)
-              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
-                                       a3*fstrSOLID%dunode(kkk1-1)
-              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
-                                       a3*fstrSOLID%dunode(kkk1)
-            else
-              kkk0 = j*2
-              kkk1 = fstrCPL%coupled_node(j)*2
+      !        fstrCPL%velo (kkk0-2) = -b1*fstrDYNAMIC%ACC(kkk1-2,1) - b2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+      !                                 b3*fstrSOLID%dunode(kkk1-2)
+      !        fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+      !                                 b3*fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+      !                                 b3*fstrSOLID%dunode(kkk1)
+      !        fstrCPL%accel(kkk0-2) = -a1*fstrDYNAMIC%ACC(kkk1-2,1) - a2*fstrDYNAMIC%VEL(kkk1-2,1) + &
+      !                                 a3*fstrSOLID%dunode(kkk1-2)
+      !        fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+      !                                 a3*fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+      !                                 a3*fstrSOLID%dunode(kkk1)
+      !      else
+      !        kkk0 = j*2
+      !        kkk1 = fstrCPL%coupled_node(j)*2
 
-              fstrCPL%disp (kkk0-1) = fstrSOLID%unode(kkk1-1) + fstrSOLID%dunode(kkk1-1)
-              fstrCPL%disp (kkk0  ) = fstrSOLID%unode(kkk1  ) + fstrSOLID%dunode(kkk1  )
+      !        fstrCPL%disp (kkk0-1) = fstrSOLID%unode(kkk1-1) + fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%disp (kkk0  ) = fstrSOLID%unode(kkk1  ) + fstrSOLID%dunode(kkk1  )
 
-              fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
-                                       b3*fstrSOLID%dunode(kkk1-1)
-              fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
-                                       b3*fstrSOLID%dunode(kkk1)
-              fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
-                                       a3*fstrSOLID%dunode(kkk1-1)
-              fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
-                                       a3*fstrSOLID%dunode(kkk1)
-            endif
-          end do
-          call fstr_rcap_send( fstrCPL )
-        endif
+      !        fstrCPL%velo (kkk0-1) = -b1*fstrDYNAMIC%ACC(kkk1-1,1) - b2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+      !                                 b3*fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%velo (kkk0  ) = -b1*fstrDYNAMIC%ACC(kkk1,1) - b2*fstrDYNAMIC%VEL(kkk1,1) + &
+      !                                 b3*fstrSOLID%dunode(kkk1)
+      !        fstrCPL%accel(kkk0-1) = -a1*fstrDYNAMIC%ACC(kkk1-1,1) - a2*fstrDYNAMIC%VEL(kkk1-1,1) + &
+      !                                 a3*fstrSOLID%dunode(kkk1-1)
+      !        fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
+      !                                 a3*fstrSOLID%dunode(kkk1)
+      !      endif
+      !    end do
+      !    call fstr_rcap_send( fstrCPL )
+      !  endif
 
-        select case ( fstrPARAM%fg_couple_type )
-          case (4)
-            call fstr_rcap_get( fstrCPL )
-          case (5)
-            call fstr_get_convergence( revocap_flag )
-            if( revocap_flag==0 ) cycle
-          case (6)
-            call fstr_get_convergence( revocap_flag )
-            if( revocap_flag==0 ) then
-              call fstr_rcap_get( fstrCPL )
-              cycle
-            else
-              if( i /= fstrDYNAMIC%n_step ) call fstr_rcap_get( fstrCPL )
-            endif
-        end select
-      endif
+      !  select case ( fstrPARAM%fg_couple_type )
+      !    case (4)
+      !      call fstr_rcap_get( fstrCPL )
+      !    case (5)
+      !      call fstr_get_convergence( revocap_flag )
+      !      if( revocap_flag==0 ) cycle
+      !    case (6)
+      !      call fstr_get_convergence( revocap_flag )
+      !      if( revocap_flag==0 ) then
+      !        call fstr_rcap_get( fstrCPL )
+      !        cycle
+      !      else
+      !        if( i /= fstrDYNAMIC%n_step ) call fstr_rcap_get( fstrCPL )
+      !      endif
+      !  end select
+      !endif
+      
       exit
      enddo
 !C *****************************************************

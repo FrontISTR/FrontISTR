@@ -152,6 +152,243 @@ contains
     endif
   end subroutine DYNAMIC_MAT_ASS_COUPLE
 
+  subroutine fstr_get_trac(inpX,inpY,inpVx,inpVy,inpP,idx,idy,cx,cy,cz,normal,trac)
+      use elementInfo
+      implicit none
+
+      integer(kind = kint) :: i, j, k, idx, idy
+      integer(kind = kint) :: inpX(:), inpY(:)
+      real(kind = kreal)   :: trac(3), normal(3)
+      real(kind = kreal)   :: cx, cy, cz, p
+      real(kind = kreal)   :: x1, x2, y1, y2
+      real(kind = kreal)   :: ix1, ix2, iy1, iy2
+      real(kind = kreal)   :: p11, p12, p21, p22
+      real(kind = kreal)   :: x, r, theta
+      real(kind = kreal)   :: xx, yy, weight(4), coord(2)
+      real(kind = kreal)   :: inpVx(:,:), inpVy(:,:), inpP(:,:)
+
+      x = cx
+      r = dsqrt(cy*cy + cz*cz)
+      theta = datan(cy/cz)
+
+      do i=1,idx-1
+        if(inpX(i) <= x &
+          .and. x < inpX(i+1))then
+          x1  = inpX(i)
+          x2  = inpX(i+1)
+          ix1 = i
+          ix2 = i+1
+        endif
+      enddo
+
+      do i=1,idy-1
+        if(inpY(i) <= r &
+          .and. r < inpY(i+1))then
+          y1  = inpY(i)
+          y2  = inpY(i+1)
+          iy1 = i
+          iy2 = i+1
+        endif
+      enddo
+
+      coord(1) = (x-x1)/(x2-x1)
+      coord(2) = (r-y1)/(y2-y1)
+      call ShapeFunc_quad4n(coord,weight)
+
+      p = inpP(ix1,iy1)*weight(1) &
+        + inpP(ix2,iy1)*weight(2) &
+        + inpP(ix2,iy2)*weight(3) &
+        + inpP(ix1,iy2)*weight(4)
+
+      trac(1) = p*normal(1)
+      trac(2) = p*normal(2)
+      trac(3) = p*normal(3)
+
+  end subroutine
+
+    subroutine DYNAMIC_MAT_ASS_COUPLE_INPUT(hecMESH, hecMAT, fstrSOLID)
+      USE elementInfo
+      IMPLICIT NONE
+
+!--------------------------------------------------------------------
+
+      TYPE(hecmwST_local_mesh) :: hecMESH
+      TYPE(hecmwST_matrix)     :: hecMAT
+      TYPE(fstr_solid)         :: fstrSOLID
+
+!--------------------------------------------------------------------
+
+      INTEGER(KIND = kint) :: n_nodes
+      INTEGER(KIND = kint) :: NumOfSurface
+      INTEGER(KIND = kint) :: i, j, k, idx, idy
+      INTEGER(KIND = kint) :: nid, eid, fid, etype
+      INTEGER(KIND = kint) :: node(27)
+      INTEGER(KIND = kint) :: node_n
+      INTEGER(KIND = kint), allocatable :: table_element(:)
+      INTEGER(KIND = kint), allocatable :: table_face(:)
+      INTEGER(KIND = kint), allocatable :: inpX(:), inpY(:)
+      INTEGER(KIND = kint) :: naa, fetype, nn
+      INTEGER(KIND = kint) :: TotalTimeStep, TimeStep
+      INTEGER(KIND = kint) :: TimeStep_Period
+      INTEGER(KIND = kint) :: number
+
+      REAL(KIND = kreal) :: trac(3), normal(3)  ! traction on surface
+      REAL(KIND = kreal) :: px, py, pz
+      REAL(KIND = kreal) :: vx, vy, vz
+      REAL(KIND = kreal) :: cx, cy, cz
+      REAL(KIND = kreal) :: xx(9), yy(9), zz(9)
+      REAL(KIND = kreal) :: coord(3,4), local(2)
+      REAL(KIND = kreal) :: area, wg
+      REAL(KIND = kreal) :: TimeData
+      REAL(KIND = kreal), allocatable :: inpVx(:,:), inpVy(:,:), inpP(:,:)
+
+      CHARACTER(1)  :: ch
+      CHARACTER(72) :: filename
+      CHARACTER(72) :: dataname(2)
+      CHARACTER(72) :: header(2)
+      CHARACTER(72) :: testcase
+
+!--------------------------------------------------------------------
+      ! input data
+      filename = "fluent.dat"
+
+      open(9, file=filename, status="old")
+        read(9,*)idx,idy
+        read(9,*)ch
+
+        allocate(inpX(idx))
+        allocate(inpY(idy))
+        allocate(inpVx(idx,idy))
+        allocate(inpVy(idx,idy))
+        allocate(inpP (idx,idy))
+        inpX = 0
+        inpY = 0
+        inpVx= 0.0d0
+        inpVy= 0.0d0
+        inpP = 0.0d0
+
+        do i=1,idx
+          do j=1,idy
+            read(9,*)inpX(i),inpY(j),inpVx(i,j),inpVy(i,j),inpP(i,j)
+          enddo
+        enddo
+      close(9)
+
+
+      filename = "surface.dat"
+
+      open(9, file=filename, status="old")
+        read(9,*)NumOfSurface
+
+        allocate( table_element(NumOfSurface) )
+        allocate( table_face(NumOfSurface   ) )
+        table_element = 0
+        table_face = 0
+
+        do i=1,NumOfSurface
+            read(9,*)table_element(i),table_face(i)
+        enddo
+      close(9)
+
+!--------------------------------------------------------------------
+      !allocate( table_element(NumOfSurface) )
+      !allocate( table_face(NumOfSurface   ) )
+      !call fstr_get_surface(hecMESH,fstrSOLID,NumOfSurface,table_element,table_face)
+
+      local(1) = 0.5d0
+      local(2) = 0.5d0
+
+      DO j = 1, NumOfSurface
+
+        fid = table_face(j)
+        eid = table_element(j)
+
+        call node_on_surface(hecMESH, etype, eid, fid, node, node_n)
+
+        !--------------------------------------------------------
+        DO naa =1, node_n
+          nid = node(naa)
+          xx(naa) = hecMESH%node( 3*(nid-1)+1 )
+          yy(naa) = hecMESH%node( 3*(nid-1)+2 )
+          zz(naa) = hecMESH%node( 3*(nid-1)+3 )
+          coord(1,naa) = xx(naa)
+          coord(2,naa) = yy(naa)
+          coord(3,naa) = zz(naa)
+        END DO
+
+        fetype = 741
+        nn     = 4
+        normal = SurfaceNormal(fetype,nn,local,coord)
+
+        !--------------------------------------------------------
+        ! traction on surface
+
+        px = 0.0D0
+        py = 0.0D0
+        pz = 0.0D0
+
+        DO naa = 1, node_n
+          cx = xx(naa)
+          cy = yy(naa)
+          cz = zz(naa)
+
+          call fstr_get_trac(inpX,inpY,inpVx,inpVy,inpP,idx,idy,cx,cy,cz,normal,trac)
+
+          px = px + trac(1)
+          py = py + trac(2)
+          pz = pz + trac(3)
+        END DO
+
+        ! Average in an element
+        px = px/node_n
+        py = py/node_n
+        pz = pz/node_n
+
+        !--------------------------------------------------------
+        if( node_n == 3 ) THEN
+          area = area_of_triangle(xx, yy, zz)
+        elseif( node_n == 4 ) then
+          area = area_of_squre(xx, yy, zz)
+        elseif( node_n == 6 ) then
+          area = area_of_triangle2(xx, yy, zz)
+        else
+          WRITE(*, *) "#Error : in FSTR_MAT_ASS_COUPLE "
+          CALL hecmw_abort( hecmw_comm_get_comm() )
+        endif
+
+        !--------------------------------------------------------
+        ! force on vertex
+        wg = area/node_n
+
+        vx = px*wg
+        vy = py*wg
+        vz = pz*wg
+
+        !--------------------------------------------------------
+        ! add in B
+        DO naa = 1, node_n
+          nid = node(naa)
+          hecMAT%B( 3*(nid-1)+1 ) = hecMAT%B( 3*(nid-1)+1 ) + vx
+          hecMAT%B( 3*(nid-1)+2 ) = hecMAT%B( 3*(nid-1)+2 ) + vy
+          hecMAT%B( 3*(nid-1)+3 ) = hecMAT%B( 3*(nid-1)+3 ) + vz
+        END DO
+
+      END DO
+
+!--------------------------------------------------------------------
+      deallocate( table_element )
+      deallocate( table_face )
+      deallocate( inpX )
+      deallocate( inpY )
+      deallocate( inpVx )
+      deallocate( inpVy )
+      deallocate( inpP )
+
+!--------------------------------------------------------------------
+      RETURN
+
+      END SUBROUTINE DYNAMIC_MAT_ASS_COUPLE_INPUT
+
 !==============================================================================
 ! CALC AREA
 !==============================================================================
