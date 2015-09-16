@@ -167,6 +167,22 @@ contains
       real(kind = kreal)   :: xx, yy, weight(4), coord(2)
       real(kind = kreal)   :: inpVx(:,:), inpVy(:,:), inpP(:,:)
 
+      real(kind = kreal)   :: vel(3, 4)        ! velocity on lattice point at global coordinates
+      real(kind = kreal)   :: deriv(4, 2)      ! shape derivative at cyrindrical coordinates
+      real(kind = kreal)   :: XJI(2, 3)        ! Jaccobian which transform cyrindrical coord to global coord
+                                               ! attention to \round N / \round \theta is 0
+      real(kind = kreal)   :: det              ! determinant of Jaccobian
+      real(kind = kreal)   :: gderiv(4, 3)     ! shape derivative at gloval coordinates
+      real(kind = kreal)   :: gvelderiv(3, 3)  ! velocity gradient at global coordinates
+      real(kind = kreal)   :: D(3, 3)          ! deformation rate tensor
+      real(kind = kreal)   :: bulk             ! bulk rate 
+      real(kind = kreal)   :: sigma(3, 3)      ! Cauchy stress tensor
+      real(kind = kreal)   :: visc             ! coefficient of viscosity of air
+      real(kind = kreal)   :: lambda           ! second coefficient of viscosity of air
+
+      visc = 0.001822d0
+      lambda = 0.0d0     ! assuming imcompressible flow
+
       x = cx
       r = dsqrt(cy*cy + cz*cz)
       theta = datan(cy/cz)
@@ -199,23 +215,74 @@ contains
 
       !write(*,"(a,4i8,a,f10.3)")"idx",ix1,ix2,iy1,iy2,"x",x
 
+      !calculate shape derivative at global coordinate
+      
+
+      !make element velocity
+      vel(1,1) = inpVx(ix1,iy1)
+      vel(1,2) = inpVx(ix2,iy1)
+      vel(1,3) = inpVx(ix2,iy2)
+      vel(1,4) = inpVx(ix1,iy2)
+      vel(2,1) = inpVy(ix1,iy1) * dcos(theta)
+      vel(2,2) = inpVy(ix2,iy1) * dcos(theta)
+      vel(2,3) = inpVy(ix2,iy2) * dcos(theta)
+      vel(2,4) = inpVy(ix1,iy2) * dcos(theta)
+      vel(3,1) = inpVy(ix1,iy1) * dsin(theta)
+      vel(3,2) = inpVy(ix2,iy1) * dsin(theta)
+      vel(3,3) = inpVy(ix2,iy2) * dsin(theta)
+      vel(3,4) = inpVy(ix1,iy2) * dsin(theta)
+
       ! calculate local coordinate
       coord(1) = 2.0d0 * (x-x1)/(x2-x1) - 1.0d0
       coord(2) = 2.0d0 * (r-y1)/(y2-y1) - 1.0d0
 
-      ! calculate shape function at local coordinate
-      call ShapeFunc_quad4n(coord,weight)
+      ! calculate shape function and its derivative at local coordinates
+      call ShapeFunc_quad4n(coord, weight)
+      call ShapeDeriv_quad4n(coord, deriv)
+
+      ! calculate shape function at global coordinates
+      XJI = 0.0d0 
+      XJI(1,1) = 1.0d0
+      XJI(2,2) = dcos(theta)
+      XJI(2,3) = dsin(theta)
+      det = 1.0d0 / (r * r)
+      gderiv(1:4, 1:3) = matmul( deriv(1:4,1:2), XJI(1:2,1:3) )
+
+      ! calculate deformation rate tensor
+      gvelderiv(1:3, 1:3) = MATMUL( vel(1:3, 1:4), gderiv(1:4, 1:3) )
 
       ! calculate pressure
+      ! assuming p is interpolated by hat function in (x,r) space
       p = inpP(ix1,iy1)*weight(1) &
         + inpP(ix2,iy1)*weight(2) &
         + inpP(ix2,iy2)*weight(3) &
         + inpP(ix1,iy2)*weight(4)
 
+      ! calculate deformation rate tensor
+      D = 0.0d0 
+      D(1,1) = gvelderiv(1,1)
+      D(2,2) = gvelderiv(2,2)
+      D(3,3) = gvelderiv(3,3)
+      D(1,2) = 0.5d0 * (gvelderiv(2,1) + gvelderiv(1,2))
+      D(1,3) = 0.5d0 * (gvelderiv(2,3) + gvelderiv(3,2))
+      D(2,3) = 0.5d0 * (gvelderiv(1,3) + gvelderiv(3,1))
+      D(2,1) = D(1,2)
+      D(3,1) = D(1,3)
+      D(3,2) = D(2,3)
+
+      ! calculate bulk rate
+      bulk = D(1,1) + D(2,2) + D(3,3)
+               
+      ! calculate stress tensor
+      sigma(1:3,1:3) = 2.0d0 * visc * D(1:3, 1:3)
+      sigma(1,1) = sigma(1,1) -p + lambda * bulk
+      sigma(2,2) = sigma(2,2) -p + lambda * bulk
+      sigma(3,3) = sigma(3,3) -p + lambda * bulk
+
       ! calculate traction
-      trac(1) = p*normal(1)
-      trac(2) = p*normal(2)
-      trac(3) = p*normal(3)
+      trac(1) = - dot_product(normal(:), sigma(:,1))
+      trac(2) = - dot_product(normal(:), sigma(:,2))
+      trac(3) = - dot_product(normal(:), sigma(:,3))
 
   end subroutine
 
@@ -342,18 +409,19 @@ contains
         py = 0.0D0
         pz = 0.0D0
 
+        ! loop for Gauss point
         DO naa = 1, node_n
+          ! update node coordinate
           cx = xx(naa)
           cy = yy(naa)
           cz = zz(naa)
 
           call fstr_get_trac(inpX,inpY,inpVx,inpVy,inpP,idx,idy,cx,cy,cz,normal,trac)
 
-          px = px + trac(1)
-          py = py + trac(2)
-          pz = pz + trac(3)
+          px = px+trac(1)
+          py = py+trac(2)
+          pz = pz+trac(3)
         END DO
-
         ! Average in an element
         px = px/node_n
         py = py/node_n
