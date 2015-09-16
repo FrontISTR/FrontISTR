@@ -200,8 +200,8 @@ contains
       !write(*,"(a,4i8,a,f10.3)")"idx",ix1,ix2,iy1,iy2,"x",x
 
       ! calculate local coordinate
-      coord(1) = (x-x1)/(x2-x1)
-      coord(2) = (r-y1)/(y2-y1)
+      coord(1) = 2.0d0 * (x-x1)/(x2-x1) - 1.0d0
+      coord(2) = 2.0d0 * (r-y1)/(y2-y1) - 1.0d0
 
       ! calculate shape function at local coordinate
       call ShapeFunc_quad4n(coord,weight)
