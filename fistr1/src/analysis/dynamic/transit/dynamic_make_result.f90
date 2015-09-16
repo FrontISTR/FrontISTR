@@ -67,7 +67,7 @@ module m_dynamic_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-          allocate( unode(ndof*nn) )
+          allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
           unode = 0.0d0
           unode(:) = fstrDYNAMIC%DISP(:,idx)
           label = 'DISPLACEMENT'
