@@ -36,7 +36,7 @@ module m_dynamic_make_result
       integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, idx, ngauss
       integer(kind=kint) :: n_lyr, ntot_lyr, is_33shell, is_33beam
       real(kind=kreal), allocatable   :: work(:), unode(:)
-      
+
       tnstrain => fstrSOLID%TNSTRAIN
       testrain => fstrSOLID%TESTRAIN
 
@@ -67,7 +67,7 @@ module m_dynamic_make_result
         if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
           id = 1
           nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-          allocate( unode(ndof*nn) )
+          allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
           unode = 0.0d0
           unode(:) = fstrDYNAMIC%DISP(:,idx)
           label = 'DISPLACEMENT'
@@ -401,7 +401,7 @@ module m_dynamic_make_result
           fstrRESULT%node_label(ncomp) = 'NodalSTRESS'
           do i = 1, hecMESH%n_node
             do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS((nn+1)*(i-1)+j)
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%STRESS(nn*(i-1)+j)
             enddo
           enddo
           iitem = iitem + nn

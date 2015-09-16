@@ -144,7 +144,7 @@ MODULE mMaterial
     integer(kind=kint)         :: mtype             !< material type
     integer(kind=kint)         :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
-    real(kind=kreal)           :: variables(100)    !< material properties
+    real(kind=kreal)           :: variables(200)    !< material properties
     type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
     integer(kind=kint)         :: totallyr          !< total layer of element
     integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
