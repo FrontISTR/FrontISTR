@@ -171,6 +171,7 @@ contains
       r = dsqrt(cy*cy + cz*cz)
       theta = datan(cy/cz)
 
+      !specify x position
       do i=1,idx-1
         if(inpX(i) <= x &
           .and. x < inpX(i+1))then
@@ -184,6 +185,7 @@ contains
         ix2 = 0
       enddo
 
+      !specify y position
       do i=1,idy-1
         if(inpY(i) <= r &
           .and. r < inpY(i+1))then
@@ -197,15 +199,20 @@ contains
 
       !write(*,"(a,4i8,a,f10.3)")"idx",ix1,ix2,iy1,iy2,"x",x
 
+      ! calculate local coordinate
       coord(1) = (x-x1)/(x2-x1)
       coord(2) = (r-y1)/(y2-y1)
+
+      ! calculate shape function at local coordinate
       call ShapeFunc_quad4n(coord,weight)
 
+      ! calculate pressure
       p = inpP(ix1,iy1)*weight(1) &
         + inpP(ix2,iy1)*weight(2) &
         + inpP(ix2,iy2)*weight(3) &
         + inpP(ix1,iy2)*weight(4)
 
+      ! calculate traction
       trac(1) = p*normal(1)
       trac(2) = p*normal(2)
       trac(3) = p*normal(3)
