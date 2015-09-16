@@ -180,6 +180,8 @@ contains
           ix2 = i+1
           exit
         endif
+        ix1 = 0
+        ix2 = 0
       enddo
 
       do i=1,idy-1
@@ -192,6 +194,8 @@ contains
           exit
         endif
       enddo
+
+      !write(*,"(a,4i8,a,f10.3)")"idx",ix1,ix2,iy1,iy2,"x",x
 
       coord(1) = (x-x1)/(x2-x1)
       coord(2) = (r-y1)/(y2-y1)
@@ -210,6 +214,7 @@ contains
 
     subroutine DYNAMIC_MAT_ASS_COUPLE_INPUT(hecMESH, hecMAT, fstrSOLID)
       USE elementInfo
+      USE fstr_setup_util
       IMPLICIT NONE
 
 !--------------------------------------------------------------------
@@ -222,7 +227,7 @@ contains
 
       INTEGER(KIND = kint) :: n_nodes
       INTEGER(KIND = kint) :: NumOfSurface
-      INTEGER(KIND = kint) :: i, j, k, idx, idy
+      INTEGER(KIND = kint) :: i, j, k, idx, idy, ierr
       INTEGER(KIND = kint) :: nid, eid, fid, etype
       INTEGER(KIND = kint) :: node(27)
       INTEGER(KIND = kint) :: node_n
@@ -303,7 +308,8 @@ contains
       DO j = 1, NumOfSurface
 
         fid = table_face(j)
-        eid = table_element(j)
+        i   = table_element(j)
+        call bsearch_int_array(hecMESH%global_elem_ID(:), 1, hecMESH%n_elem, i, eid)
 
         call node_on_surface(hecMESH, etype, eid, fid, node, node_n)
 
