@@ -188,6 +188,7 @@ public
                 integer( kind=kint ) :: fg_couple_type     !< (default:0)
                 integer( kind=kint ) :: fg_couple_first    !< (default:0)
                 integer( kind=kint ) :: fg_couple_window   !< (default:0)
+                integer( kind=kint ) :: fg_couple_input    !< (default:0)
 
                 ! for restart control
                 integer( kind=kint ) :: restart_out_type   !< output type of restart file
@@ -932,6 +933,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%fg_couple_type = 0
         fstrPARAM%fg_couple_first= 0
         fstrPARAM%fg_couple_window= 0
+        fstrPARAM%fg_couple_input= 0
 
         ! index table for global node ID sorting
 

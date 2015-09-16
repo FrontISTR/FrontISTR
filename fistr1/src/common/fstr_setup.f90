@@ -260,6 +260,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!COUPLE' ) then
                         c_couple = c_couple + 1
                         call fstr_setup_COUPLE( ctrl, c_couple, P )
+
+                else if( header_name == '!COUPLE_INPUT' ) then
+                        P%PARAM%fg_couple_input = 1
                 !--------------- for mpc -------------------------
 
                 else if( header_name == '!MPC' ) then

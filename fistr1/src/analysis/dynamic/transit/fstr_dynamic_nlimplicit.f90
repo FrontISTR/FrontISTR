@@ -239,7 +239,9 @@ contains
          !  call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
          !endif
 
-         call DYNAMIC_MAT_ASS_COUPLE_INPUT(hecMESH, hecMAT, fstrSOLID)
+         if( fstrPARAM%fg_couple_input == 1) then
+           call DYNAMIC_MAT_ASS_COUPLE_INPUT(hecMESH, hecMAT, fstrSOLID)
+         endif
 
 !C ********************************************************************************
 

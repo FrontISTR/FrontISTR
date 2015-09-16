@@ -157,11 +157,11 @@ contains
       implicit none
 
       integer(kind = kint) :: i, j, k, idx, idy
-      integer(kind = kint) :: inpX(:), inpY(:)
+      integer(kind = kint) :: ix1, ix2, iy1, iy2
+      real(kind = kreal)   :: inpX(:), inpY(:)
       real(kind = kreal)   :: trac(3), normal(3)
       real(kind = kreal)   :: cx, cy, cz, p
       real(kind = kreal)   :: x1, x2, y1, y2
-      real(kind = kreal)   :: ix1, ix2, iy1, iy2
       real(kind = kreal)   :: p11, p12, p21, p22
       real(kind = kreal)   :: x, r, theta
       real(kind = kreal)   :: xx, yy, weight(4), coord(2)
@@ -178,6 +178,7 @@ contains
           x2  = inpX(i+1)
           ix1 = i
           ix2 = i+1
+          exit
         endif
       enddo
 
@@ -188,6 +189,7 @@ contains
           y2  = inpY(i+1)
           iy1 = i
           iy2 = i+1
+          exit
         endif
       enddo
 
@@ -226,7 +228,6 @@ contains
       INTEGER(KIND = kint) :: node_n
       INTEGER(KIND = kint), allocatable :: table_element(:)
       INTEGER(KIND = kint), allocatable :: table_face(:)
-      INTEGER(KIND = kint), allocatable :: inpX(:), inpY(:)
       INTEGER(KIND = kint) :: naa, fetype, nn
       INTEGER(KIND = kint) :: TotalTimeStep, TimeStep
       INTEGER(KIND = kint) :: TimeStep_Period
@@ -240,6 +241,7 @@ contains
       REAL(KIND = kreal) :: coord(3,4), local(2)
       REAL(KIND = kreal) :: area, wg
       REAL(KIND = kreal) :: TimeData
+      REAL(KIND = kreal), allocatable :: inpX(:), inpY(:)
       REAL(KIND = kreal), allocatable :: inpVx(:,:), inpVy(:,:), inpP(:,:)
 
       CHARACTER(1)  :: ch
@@ -261,8 +263,8 @@ contains
         allocate(inpVx(idx,idy))
         allocate(inpVy(idx,idy))
         allocate(inpP (idx,idy))
-        inpX = 0
-        inpY = 0
+        inpX = 0.0d0
+        inpY = 0.0d0
         inpVx= 0.0d0
         inpVy= 0.0d0
         inpP = 0.0d0
