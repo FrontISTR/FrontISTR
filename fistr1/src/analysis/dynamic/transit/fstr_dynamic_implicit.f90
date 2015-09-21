@@ -188,7 +188,7 @@ contains
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas .eq. 1) then
 
-                call setMASS(IDBG,hecMESH,hecMAT,myEIG)
+                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas .eq. 2) then

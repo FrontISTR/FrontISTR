@@ -283,7 +283,7 @@ contains
       BTA        = 0.0
 
 !C*-------------- Create Mass Matrix -----------------------------------*
-      call setMASS(IDBG,hecMESH,hecMAT,myEIG)
+      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
       do i=1,ntotal
         mass(i) = myEIG%mass(i)
       enddo

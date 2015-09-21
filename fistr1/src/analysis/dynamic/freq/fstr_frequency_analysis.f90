@@ -716,7 +716,7 @@ contains
        write(IMSG,*) 'fstr_mat_ass: OK'
     endif
 
-    call setMASS(IDBG, hecMESH, hecMAT, myEIG)
+    call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, myEIG)
 
   end subroutine
 

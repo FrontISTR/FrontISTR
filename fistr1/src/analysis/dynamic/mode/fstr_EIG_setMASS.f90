@@ -22,7 +22,7 @@ contains
 
 !C---------------------------------------------------------------------*
 !> Set up lumped mass matrix
-      subroutine setMASS(IOUT,hecMESH,hecMAT,myEIG)
+      subroutine setMASS(IOUT,fstrSOLID,hecMESH,hecMAT,myEIG)
 !C---------------------------------------------------------------------*
 !C*******************************************
 !C* SET MASS MATRIX (Lumped mass)
@@ -33,10 +33,11 @@ contains
       !use m_fstr_lib
       !use lczparm
       implicit none
-      type (hecmwST_matrix)     :: hecMAT
-      type (hecmwST_local_mesh) :: hecMESH
-      type(lczparam)            :: myEIG
-      type(tshellmat),pointer   :: shell_var(:)
+      type(hecmwST_matrix)     :: hecMAT
+      type(hecmwST_local_mesh) :: hecMESH
+      type(fstr_solid)         :: fstrSOLID
+      type(lczparam)           :: myEIG
+      type(tshellmat),pointer  :: shell_var(:)
 !C
       integer(kind=kint) nodLOCAL(20),itype,ic_type,icel,isect
       integer(kind=kint) IOUT
@@ -44,7 +45,7 @@ contains
       integer(kind=kint) j1,j2,j3,j4
       integer(kind=kint) ix,jx,ll(4),ielm
       integer(kind=kint) pind(20),istart
-      integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF
+      integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF,cid
       integer(kind=kint) ierror,kk,iax,jk,n_totlyr,shell_matltype
       real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
       integer(kind=kint) :: ihead
@@ -93,11 +94,14 @@ contains
 !C
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
-          iax = hecMESH%section%sect_opt(isect)
-          nullify(shell_var)
-          CALL fstr_get_prop(hecMESH,shell_var,isect,ee,pp,rho,alpha,thick,n_totlyr,alpha_over_mu, &
-                            beam_radius,beam_angle1,beam_angle2,beam_angle3,   &
-                            beam_angle4,beam_angle5,beam_angle6)
+          iax   = hecMESH%section%sect_opt(isect)
+          cid   = hecMESH%section%sect_mat_ID_item(isect)
+
+          ee    = fstrSOLID%materials(cid)%variables(M_YOUNGS)
+          pp    = fstrSOLID%materials(cid)%variables(M_POISSON)
+          rho   = fstrSOLID%materials(cid)%variables(M_DENSITY)
+          thick = fstrSOLID%materials(cid)%variables(M_THICK)
+
           if( rho<=0.d0 ) then
             print *, "WARNING: Density of element",icel,"not defined!"
             WRITE(IMSG,*) "WARNING: Density of element",icel,"not defined!"
