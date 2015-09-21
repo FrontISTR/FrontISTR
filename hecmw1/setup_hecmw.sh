@@ -18,6 +18,7 @@ SERIAL=1
 WITHREFINER=0
 WITHPARACON=0
 WITHMUMPS=0
+WITHPARADISO=0
 WITHML=0
 WITHLAPACK=0
 
@@ -63,38 +64,39 @@ UTILDIRS="\
 	util"
 
 LIBSRCDIRS="\
-    src \
-    src/common \
-    src/operations \
-    src/operations/adaptation \
-    src/operations/dynamic_load_balancing \
-    src/operations/jacobian \
-    src/couple \
-    src/solver \
-    src/solver/matrix \
-    src/solver/solver_11 \
-    src/solver/solver_22 \
-    src/solver/solver_33 \
-    src/solver/solver_44 \
-    src/solver/solver_66 \
-    src/solver/solver_direct \
-    src/solver/solver_direct_parallel \
-    src/solver/solver_direct_lag \
-    src/solver/sparse_matrix \
-    src/solver/solver_direct_mumps \
-    src/solver/communication \
-    src/solver/init \
-    src/visualizer \
-    src/hecmw \
+	src \
+	src/common \
+	src/operations \
+	src/operations/adaptation \
+	src/operations/dynamic_load_balancing \
+	src/operations/jacobian \
+	src/couple \
+	src/solver \
+	src/solver/matrix \
+	src/solver/solver_11 \
+	src/solver/solver_22 \
+	src/solver/solver_33 \
+	src/solver/solver_44 \
+	src/solver/solver_66 \
+	src/solver/solver_direct \
+	src/solver/solver_direct_parallel \
+	src/solver/solver_direct_lag \
+	src/solver/sparse_matrix \
+	src/solver/solver_direct_mumps \
+	src/solver/solver_direct_paradiso \
+	src/solver/communication \
+	src/solver/init \
+	src/visualizer \
+	src/hecmw \
 	src/etc"
 
 TOOLSDIRS="\
-    tools \
-    tools/partitioner \
-    tools/visualizer \
-    tools/hec2rcap \
-    tools/result_type_converter \
-    tools/result_file_merger"
+	tools \
+	tools/partitioner \
+	tools/visualizer \
+	tools/hec2rcap \
+	tools/result_type_converter \
+	tools/result_file_merger"
 
 BUILDDIRS="${UTILDIRS} ${LIBSRCDIRS} ${TOOLSDIRS} ."
 
@@ -124,6 +126,8 @@ do
 		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
+	elif [ "\"$i\"" = "\"-with-paradiso\"" -o "\"$i\"" = "\"--with-paradiso\"" ]; then
+		WITHPARADISO=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
@@ -374,6 +378,18 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	fi
 
 	#
+	# with PARADISO
+	#
+	if [ ${WITHPARADISO} -eq 1 ]; then
+		BUILDTARGET_PARADISO="build-with-paradiso"
+	else
+		PARADISO_CFLAGS=""
+		PARADISO_LDFLAGS=""
+		PARADISO_F90FLAGS=""
+		PARADISO_F90LDFLAGS=""
+	fi
+
+	#
 	# with ML
 	#
 	if [ ${WITHML} -ne 1 ]; then
@@ -496,6 +512,14 @@ do
 		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
 		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
 		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
+		-e "s!@paradisodir@!${PARADISODIR}!" \
+		-e "s!@paradisolibdir@!${PARADISOLIBDIR}!" \
+		-e "s!@paradisoincdir@!${PARADISOINCDIR}!" \
+		-e "s!@paradisolibs@!${PARADISOLIBS}!" \
+		-e "s!@paradiso_cflags@!${PARADISO_CFLAGS}!" \
+		-e "s!@paradiso_ldflags@!${PARADISO_LDFLAGS}!" \
+		-e "s!@paradiso_f90flags@!${PARADISO_F90FLAGS}!" \
+		-e "s!@paradiso_f90ldflags@!${PARADISO_F90LDFLAGS}!" \
 		-e "s!@mldir@!${MLDIR}!" \
 		-e "s!@mllibdir@!${MLLIBDIR}!" \
 		-e "s!@mlincdir@!${MLINCDIR}!" \
@@ -507,6 +531,7 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
+		-e "s!@build_target_paradiso@!${BUILDTARGET_PARADISO}!" \
 		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done

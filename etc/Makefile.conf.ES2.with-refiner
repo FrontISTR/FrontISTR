@@ -43,6 +43,11 @@ MUMPSDIR       = $(HOME)/MUMPS_4.10.0
 MUMPSINCDIR    = $(MUMPSDIR)/include
 MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
+# PARADISO
+PARADISODIR    = $(HOME)/
+PARADISOINCDIR = $(PARADISODIR)/include
+PARADISOLIBDIR = $(PARADISODIR)/lib
+
 # ML
 MLDIR          = $(HOME)/trilinos/11.8.1/ml
 MLINCDIR       = $(MLDIR)/include
