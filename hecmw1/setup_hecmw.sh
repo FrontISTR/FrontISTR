@@ -36,6 +36,7 @@ TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
 BUILDTARGET_MUMPS="build-default"
+BUILDTARGET_PARADISO="build-default"
 BUILDTARGET_LAPACK="build-default"
 
 #
@@ -165,6 +166,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-paradiso            compile with PARADISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			--only-message          only create error message files
@@ -185,6 +187,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-paradiso            compile with PARADISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			-h, --help              show help (this message)

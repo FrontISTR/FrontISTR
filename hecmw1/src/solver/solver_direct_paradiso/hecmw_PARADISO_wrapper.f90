@@ -49,11 +49,10 @@
 
   contains
 
-  subroutine hecmw_mumps_wrapper(hecMESH, hecMAT, ii)
+  subroutine hecmw_mumps_wrapper(hecMESH, hecMAT)
   type (hecmwST_local_mesh), intent(in) :: hecMESH
   type (hecmwST_matrix    ), intent(inout) :: hecMAT
-  integer(kind=kint) :: ii
-
+  
   integer(kind=kint) :: spmat_type
   integer(kind=kint) :: spmat_symtype
   integer(kind=kint) :: istat,myrank

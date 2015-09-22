@@ -24,13 +24,12 @@ module hecmw_solver_direct_PARADISO
 
 contains
 
-  subroutine hecmw_solve_direct_PARADISO(hecMESH,hecMAT,ii)
+  subroutine hecmw_solve_direct_PARADISO(hecMESH,hecMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    integer(kind=kint) :: ii
 
-    call hecmw_mumps_wrapper(hecMESH, hecMAT, ii)
+    call hecmw_paradiso_wrapper(hecMESH, hecMAT)
 
   end subroutine hecmw_solve_direct_PARADISO
 

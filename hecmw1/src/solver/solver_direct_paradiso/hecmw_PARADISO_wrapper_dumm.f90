@@ -24,11 +24,10 @@ module m_hecmw_PARADISO_wrapper
 
 contains
 
-  subroutine hecmw_mumps_wrapper(hecMESH, hecMAT, ii)
+  subroutine hecmw_paradiso_wrapper(hecMESH, hecMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    integer(kind=kint) :: ii
 
     stop "PARADISO not available"
   end subroutine hecmw_paradiso_wrapper
