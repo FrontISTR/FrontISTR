@@ -17,7 +17,7 @@
 !======================================================================!
   include 'mkl_cluster_sparse_solver.f90'
 
-  module hecmw_mumps_wrapper
+  module m_hecmw_PARADISO_wrapper
   use hecmw_util
   use m_sparse_matrix
   use m_sparse_matrix_hec
@@ -27,7 +27,7 @@
   implicit none
 
   private                            ! default
-  public hecmw_mumps_wrapper ! only entry point of Parallel Direct Solver is public
+  public hecmw_paradiso_wrapper ! only entry point of Parallel Direct Solver is public
 
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
@@ -49,7 +49,7 @@
 
   contains
 
-  subroutine hecmw_mumps_wrapper(hecMESH, hecMAT)
+  subroutine hecmw_paradiso_wrapper(hecMESH, hecMAT)
   type (hecmwST_local_mesh), intent(in) :: hecMESH
   type (hecmwST_matrix    ), intent(inout) :: hecMAT
   
@@ -175,7 +175,7 @@
   endif
 
   call hecmw_mat_dump_solution(hecMAT)
-  end subroutine hecmw_mumps_wrapper
+  end subroutine hecmw_paradiso_wrapper
 
   subroutine hecmw_MKL_wrapper(spMAT, job, istat)
   type (sparse_matrix), intent(inout) :: spMAT
@@ -340,4 +340,4 @@
   end subroutine myinssort
   
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  end module hecmw_mumps_wrapper
+  end module m_hecmw_PARADISO_wrapper
