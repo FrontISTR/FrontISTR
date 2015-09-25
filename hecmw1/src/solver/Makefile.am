@@ -10,7 +10,7 @@ install-header:
 	@cd init          && $(MAKE) @build_target@
 	@cd sparse_matrix && $(MAKE) @build_target@
 	@cd solver_direct_mumps && $(MAKE) @build_target_mumps@
-	@cd solver_direct_paradiso && $(MAKE) @build_target_paradiso@
+	@cd solver_direct_clustermkl && $(MAKE) @build_target_mkl@
 	@cd solver_11     && $(MAKE) @build_target@
 	@cd solver_22     && $(MAKE) @build_target@
 	@cd solver_33     && $(MAKE) @build_target_lapack@
@@ -26,7 +26,7 @@ clean:
 	@cd init          && $(MAKE) clean
 	@cd sparse_matrix && $(MAKE) clean
 	@cd solver_direct_mumps && $(MAKE) clean
-	@cd solver_direct_paradiso && $(MAKE) clean
+	@cd solver_direct_clustermkl && $(MAKE) clean
 	@cd solver_11     && $(MAKE) clean
 	@cd solver_22     && $(MAKE) clean
 	@cd solver_33     && $(MAKE) clean
@@ -42,7 +42,7 @@ distclean:
 	@cd init          && $(MAKE) distclean
 	@cd sparse_matrix && $(MAKE) distclean
 	@cd solver_direct_mumps && $(MAKE) distclean
-	@cd solver_direct_paradiso && $(MAKE) distclean
+	@cd solver_direct_clustermkl && $(MAKE) distclean
 	@cd solver_11     && $(MAKE) distclean
 	@cd solver_22     && $(MAKE) distclean
 	@cd solver_33     && $(MAKE) distclean
@@ -58,7 +58,7 @@ maintainer-clean:
 	@cd init          && $(MAKE) maintainer-clean
 	@cd sparse_matrix && $(MAKE) maintainer_clean
 	@cd solver_direct_mumps && $(MAKE) maintainer_clean
-	@cd solver_direct_paradiso && $(MAKE) maintainer_clean
+	@cd solver_direct_clustermkl && $(MAKE) maintainer_clean
 	@cd solver_11     && $(MAKE) maintainer-clean
 	@cd solver_22     && $(MAKE) maintainer-clean
 	@cd solver_33     && $(MAKE) maintainer-clean
@@ -74,7 +74,7 @@ install:
 	@cd init          && $(MAKE) install
 	@cd sparse_matrix && $(MAKE) install
 	@cd solver_direct_mumps && $(MAKE) install
-	@cd solver_direct_paradiso && $(MAKE) install
+	@cd solver_direct_clustermkl && $(MAKE) install
 	@cd solver_11     && $(MAKE) install
 	@cd solver_22     && $(MAKE) install
 	@cd solver_33     && $(MAKE) install

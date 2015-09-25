@@ -19,25 +19,25 @@ REFINERINCDIR     = @refinerincdir@
 REFINERLIBDIR     = @refinerlibdir@
 REFINERLIBS       = @refinerlibs@
 
-PARADISODIR         = @paradisodir@
-PARADISOLIBDIR      = @paradisolibdir@
-PARADISOINCDIR      = @paradisoincdir@
-PARADISOLIBS        = @paradisolibs@
-PARADISO_CFLAGS     = @paradiso_cflags@
-PARADISO_LDFLAGS    = @paradiso_ldflags@
-PARADISO_F90FLAGS   = @paradiso_f90flags@
-PARADISO_F90LDFLAGS = @paradiso_f90ldflags@
+MKLDIR            = @mkldir@
+MKLLIBDIR         = @mkllibdir@
+MKLINCDIR         = @mklincdir@
+MKLLIBS           = @mkllibs@
+MKL_CFLAGS        = @mkl_cflags@
+MKL_LDFLAGS       = @mkl_ldflags@
+MKL_F90FLAGS      = @mkl_f90flags@
+MKL_F90LDFLAGS    = @mkl_f90ldflags@
 
 CC                = @cc@
 CFLAGS            = @cflags@
 BASE_CFLAGS       = @base_cflags@
 MPI_CFLAGS        = @mpi_cflags@
 HECMW_CFLAGS      = @hecmw_cflags@
-ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(PARADISO_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MKL_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS           = @ldflags@
 MPI_LDFLAGS       = @mpi_ldflags@
 HECMW_LDFLAGS     = @hecmw_ldflags@
-ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(PARADISO_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(MKL_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS          = @optflags@
 
 F90               = @f90@
@@ -45,11 +45,11 @@ F90FLAGS          = @f90flags@
 BASE_F90FLAGS     = @base_f90flags@
 MPI_F90FLAGS      = @mpi_f90flags@
 HECMW_F90FLAGS    = @hecmw_f90flags@
-ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(PARADISO_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
+ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(MKL_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
 F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
-ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(PARADISO_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MKL_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -82,35 +82,35 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 #-----------------------------------------------------------------------------#
 OBJS =
 
-OBJSF = hecmw_solver_direct_PARADISO.@f90objfilepostfix@
+OBJSF = hecmw_solver_direct_ClusterMKL.@f90objfilepostfix@
 
-OBJSF_PARADISO = hecmw_PARADISO_wrapper.@f90objfilepostfix@
+OBJSF_MKL = hecmw_ClusterMKL_wrapper.@f90objfilepostfix@
 
-OBJSF_PARADISO_DUMM = hecmw_PARADISO_wrapper_dumm.@f90objfilepostfix@
+OBJSF_MKL_DUMM = hecmw_ClusterMKL_wrapper_dumm.@f90objfilepostfix@
 
 HEADERS =
 
 #-----------------------------------------------------------------------------#
-all: @build_target_paradiso@
+all: @build_target_mkl@
 
 build-default: $(TARGET) $(F90TARGET) install-module
 
 build-serial: $(TARGET) $(F90TARGET) install-module
 
-build-with-paradiso: $(TARGET) F90TARGET_PARADISO install-module
+build-with-mkl: $(TARGET) F90TARGET_MKL install-module
 
-build-serial-with-paradiso: $(TARGET) F90TARGET_PARADISO install-module
+build-serial-with-mkl: $(TARGET) install-module
 
 build-without-f: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF_PARADISO_DUMM) $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF_PARADISO_DUMM) $(OBJSF)
+$(F90TARGET): $(OBJSF_MKL_DUMM) $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF_MKL_DUMM) $(OBJSF)
 
-F90TARGET_PARADISO: $(OBJSF_PARADISO) $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJSF_PARADISO) $(OBJSF)
+F90TARGET_MKL: $(OBJSF_MKL) $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJSF_MKL) $(OBJSF)
 
 $(OBJS): $(HEADERS)
 

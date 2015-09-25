@@ -18,7 +18,7 @@ SERIAL=1
 WITHREFINER=0
 WITHPARACON=0
 WITHMUMPS=0
-WITHPARADISO=0
+WITHMKL=0
 WITHML=0
 WITHLAPACK=0
 
@@ -36,7 +36,7 @@ TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
 BUILDTARGET_MUMPS="build-default"
-BUILDTARGET_PARADISO="build-default"
+BUILDTARGET_MKL="build-default"
 BUILDTARGET_LAPACK="build-default"
 
 #
@@ -84,7 +84,7 @@ LIBSRCDIRS="\
 	src/solver/solver_direct_lag \
 	src/solver/sparse_matrix \
 	src/solver/solver_direct_mumps \
-	src/solver/solver_direct_paradiso \
+	src/solver/solver_direct_clustermkl \
 	src/solver/communication \
 	src/solver/init \
 	src/visualizer \
@@ -127,8 +127,10 @@ do
 		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
-	elif [ "\"$i\"" = "\"-with-paradiso\"" -o "\"$i\"" = "\"--with-paradiso\"" ]; then
-		WITHPARADISO=1
+	elif [ "\"$i\"" = "\"-with-mkl\"" -o "\"$i\"" = "\"--with-mkl\"" ]; then
+		if [ ${SERIAL} -eq 0 ]; then
+			WITHMKL=1
+		fi
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
@@ -166,7 +168,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
-			--with-paradiso            compile with PARADISO
+			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			--only-message          only create error message files
@@ -187,7 +189,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
-			--with-paradiso            compile with PARADISO
+			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			-h, --help              show help (this message)
@@ -381,15 +383,15 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	fi
 
 	#
-	# with PARADISO
+	# with MKL PARDISO
 	#
-	if [ ${WITHPARADISO} -eq 1 ]; then
-		BUILDTARGET_PARADISO="build-with-paradiso"
+	if [ ${WITHMKL} -eq 1 ]; then
+		BUILDTARGET_MKL="build-with-mkl"
 	else
-		PARADISO_CFLAGS=""
-		PARADISO_LDFLAGS=""
-		PARADISO_F90FLAGS=""
-		PARADISO_F90LDFLAGS=""
+		MKL_CFLAGS=""
+		MKL_LDFLAGS=""
+		MKL_F90FLAGS=""
+		MKL_F90LDFLAGS=""
 	fi
 
 	#
@@ -515,14 +517,14 @@ do
 		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
 		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
 		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
-		-e "s!@paradisodir@!${PARADISODIR}!" \
-		-e "s!@paradisolibdir@!${PARADISOLIBDIR}!" \
-		-e "s!@paradisoincdir@!${PARADISOINCDIR}!" \
-		-e "s!@paradisolibs@!${PARADISOLIBS}!" \
-		-e "s!@paradiso_cflags@!${PARADISO_CFLAGS}!" \
-		-e "s!@paradiso_ldflags@!${PARADISO_LDFLAGS}!" \
-		-e "s!@paradiso_f90flags@!${PARADISO_F90FLAGS}!" \
-		-e "s!@paradiso_f90ldflags@!${PARADISO_F90LDFLAGS}!" \
+		-e "s!@mkldir@!${MKLDIR}!" \
+		-e "s!@mkllibdir@!${MKLLIBDIR}!" \
+		-e "s!@mklincdir@!${MKLINCDIR}!" \
+		-e "s!@mkllibs@!${MKLLIBS}!" \
+		-e "s!@mkl_cflags@!${MKL_CFLAGS}!" \
+		-e "s!@mkl_ldflags@!${MKL_LDFLAGS}!" \
+		-e "s!@mkl_f90flags@!${MKL_F90FLAGS}!" \
+		-e "s!@mkl_f90ldflags@!${MKL_F90LDFLAGS}!" \
 		-e "s!@mldir@!${MLDIR}!" \
 		-e "s!@mllibdir@!${MLLIBDIR}!" \
 		-e "s!@mlincdir@!${MLINCDIR}!" \
@@ -534,7 +536,7 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
-		-e "s!@build_target_paradiso@!${BUILDTARGET_PARADISO}!" \
+		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
