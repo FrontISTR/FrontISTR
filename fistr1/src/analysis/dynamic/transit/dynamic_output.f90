@@ -717,7 +717,7 @@ module m_dynamic_output
         if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
           ncmp = 6
         else
-          ncmp = 14
+          ncmp = 12
         endif
         iunit = iunitS + fstrDYNAMIC%dynamic_IW8
         write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)') &
@@ -727,9 +727,9 @@ module m_dynamic_output
 !C-- stress
       if( fstrDYNAMIC%iout_list(6) > 0 ) then
         if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
-          ncmp = 7
+          ncmp = 6
         else
-          ncmp = 14
+          ncmp = 12
         endif
         iunit = iunitS + fstrDYNAMIC%dynamic_IW9
         write( iunit, '(i10,1pe13.4e3,i10,1p7e13.4e3)') &
