@@ -74,7 +74,6 @@ contains
 !C
       if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
         call hecmw_ctrl_is_subdir( flag, limit )
-        write(*,*)"flag",flag
         if( flag == 0)then
           header = ""
         else
