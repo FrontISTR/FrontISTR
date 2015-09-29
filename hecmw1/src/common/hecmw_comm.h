@@ -28,6 +28,8 @@ extern int
 HECMW_Comm_size( HECMW_Comm comm, int *size );
 extern int
 HECMW_Comm_dup( HECMW_Comm comm, HECMW_Comm *new_comm );
+extern int
+HECMW_Comm_free( HECMW_Comm *comm);
 
 
 extern int

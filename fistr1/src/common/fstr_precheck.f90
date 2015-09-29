@@ -371,7 +371,7 @@ module m_fstr_precheck
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix)     :: hecMAT
-    
+
     integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
     real(kind=kreal) :: rnum, dens, cond
 
@@ -380,7 +380,7 @@ module m_fstr_precheck
     !ftype = 2: eps
     !ftype = 4: png
     ftype = 2
-    
+
     n = hecMAT%N
     ndof = 3*n
     nnz = 9*n + 9*2*hecMAT%indexL(n)
@@ -388,21 +388,21 @@ module m_fstr_precheck
     rnum = (7.21d0+0.01*dlog10(dble(hecMAT%N)))*10.0d0/dble(hecMAT%N)
     cond = 1.0d0
     !rnum = (7.25d0)*10.0d0/dble(hecMAT%N)
-    
+
     open(fio,file='nonzero.dat',status='replace')
-      write(fio,"(a,f12.5,i)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
+      write(fio,"(a,f12.5,i0)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
       do i= 1, n
         jS= hecMAT%indexL(i-1) + 1
         jE= hecMAT%indexL(i  )
-        write(fio,"(i,a,i)")i,"    ",i
+        write(fio,"(i0,a,i0)")i,"    ",i
         do j= jS, jE
           in = hecMAT%itemL(j)
-          write(fio,"(i,a,i)")i,"    ",in
-          write(fio,"(i,a,i)")in,"    ",i
+          write(fio,"(i0,a,i0)")i,"    ",in
+          write(fio,"(i0,a,i0)")in,"    ",i
         enddo
       enddo
     close(fio)
-    
+
     open(fio,file='nonzero.plt',status='replace')
       if(ftype == 4)then
         write(fio,"(a)")'set terminal png'
@@ -420,29 +420,29 @@ module m_fstr_precheck
         write(fio,"(a)")'set out "image.png"'
       else
         write(fio,"(a)")'set out "image.eps"'
-        
+
         write(fio,"(a)"     )'set label 1 "Name" at graph 1.1,0.9'
         write(fio,"(a)")'set label 2 "N" at graph 1.1,0.85'
         write(fio,"(a)")'set label 3 "Non-Zero Elem." at graph 1.1,0.8'
         write(fio,"(a)")'set label 4 "Density [%]" at graph 1.1,0.75'
         write(fio,"(a)")'set label 9 "Condition Num." at graph 1.1,0.7'
-        
+
         write(fio,"(a)"     )'set label 5 ":  matrix" at graph 1.4,0.9'
         write(fio,"(a,i0,a)")'set label 6 ":  ',ndof,'" at graph 1.4,0.85'
         write(fio,"(a,i0,a)")'set label 7 ":  ',nnz,'" at graph 1.4,0.8'
         write(fio,"(a,1pe9.2,a)")'set label 8 ": ',dens,'" at graph 1.4,0.75'
         write(fio,"(a,1pe9.2,a)")'set label 10 ": ',cond,'" at graph 1.4,0.7'
       endif
-      
+
       write(fio,"(a,f12.5,a)")'plot "nonzero.dat" pointtype 5 pointsize ',rnum,' linecolor rgb "#F96566"'
     close(fio)
-    
+
     write(*,*)''
     write(*,*)' ### Command recommendation'
     write(*,*)' gnuplot -persist "nonzero.plt"'
 
     !call system('gnuplot -persist "nonzero.plt"')
-    
+
     !open(fio,file='nonzero.dat',status='old')
     !close(fio,status="delete")
     !open(fio,file='nonzero.plt',status='old')

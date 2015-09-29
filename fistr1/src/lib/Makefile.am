@@ -68,8 +68,7 @@ MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
 ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(MUMPS_F90LDFLAGS)
-#F90FPP                  = @f90fpp@
-F90FPP = -Mpreprocess
+F90FPP                  = @f90fpp@
 F90OPTFLAGS             = @f90optflags@
 
 AR                      = @ar@
@@ -149,6 +148,7 @@ OBJSF_PARACON = \
 
 OBJSF_PARACON_DUMM = \
         m_Metis403API_f_dumm.@f90objfilepostfix@ \
+        m_Metis510API_f_dumm.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 HEADERS =

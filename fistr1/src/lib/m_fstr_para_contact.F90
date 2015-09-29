@@ -41,6 +41,11 @@ module m_fstr_para_contact
   integer(kint),allocatable,save  ::  export_index(:)
   integer(kint),allocatable,save  ::  export_item(:)
 
+#if(HECMW_METIS_VER != 4 && HECMW_METIS_VER != 5)
+  integer,parameter   ::   idx_t  = 4
+  integer,parameter   ::   real_t = 8
+#endif
+
 contains
 
 subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
@@ -94,10 +99,15 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 133   continue
 !
 !      if(myrank == 0) print *,'Part Method',partMethod
-      select case(partMethod)
-#if(HECMW_METIS_VER == 5)
 
+#if(HECMW_METIS_VER == 5)
+            ierr = METIS_PartGraphRecursive                   &
+                        (nvtxs,   xadj,   adjncy,             &
+                         vwgt,    adjwgt, wgtflag,numflag,    &
+                         nparts,  options,objval, part)
+            actualPartMethod = 'PMETIS'
 #elif(HECMW_METIS_VER == 4)
+      select case(partMethod)
       case(PARTITION_DEFAULT)
         if(nparts < 8) then
           if(ncon < 2) then
@@ -157,10 +167,10 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
                        vwgt,    adjwgt, wgtflag,numflag,    &
                        nparts,  ubvec,  options,objval, part)
           actualPartMethod = 'MCKMETIS'
-#endif
       case default
         stop 'Error: Undefined partition method!'
       end select
+#endif
 !
 !      call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
       print *,myrank,'Metis Over'
@@ -274,6 +284,8 @@ subroutine paraContact_GetFSTR2Makrose(hecMESH,mak)
       mak%egrp(i) = hecMESH%section_ID(i)
       mak%emat(i) = hecMESH%elem_mat_ID_item(i)
       select case(hecMESH%elem_type(i))
+      case(301)
+        mak%etyp(i) = MAKROSE_LINE
       case(341)
         mak%etyp(i) = MAKROSE_TET4
       case(351)
@@ -307,9 +319,8 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
       if(etype /= mak%etyp(i)) then
           ntype = ntype + 1
           etype = mak%etyp(i)
-      else
-        counter(ntype) = counter(ntype) + 1
       endif
+      counter(ntype) = counter(ntype) + 1
     enddo
     if(associated(ptrtype)) deallocate(ptrtype,stat=istat)
     allocate(ptrtype(0:ntype),stat=istat)
@@ -321,6 +332,8 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
     allocate(itemtype(ntype),stat=istat)
     do i=1,ntype
       select case(mak%etyp(ptrtype(i)))
+      case(MAKROSE_LINE)
+        itemtype(i) = 301
       case(MAKROSE_TET4)
         itemtype(i) = 341
       case(MAKROSE_PRI6)

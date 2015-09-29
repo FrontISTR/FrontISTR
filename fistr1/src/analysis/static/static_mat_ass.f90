@@ -26,6 +26,7 @@ module m_static_mat_ass
       USE lczparm
       use m_static_lib
       use m_static_mat_ass_main
+      use m_fstr_spring
       use m_fstr_ass_load
       use m_fstr_AddBC
       use fstr_matrix_con_contact
@@ -64,7 +65,7 @@ module m_static_mat_ass
 
       fstrSOLID%factor(1)=0.d0; fstrSOLID%factor(2)=1.d0
       call fstr_mat_ass_main (hecMESH, hecMAT, fstrSOLID)
-      call fstr_AddSPRING(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       write(IDBG,*) 'fstr_mat_ass_main: OK'
 
       IF(myEIG%eqset==0) THEN

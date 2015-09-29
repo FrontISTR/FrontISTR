@@ -101,7 +101,26 @@ error:
 #endif
 }
 
+int
+HECMW_Comm_free( HECMW_Comm *comm )
+{
+#ifndef HECMW_SERIAL
+    int rtc;
 
+    rtc = MPI_Comm_free(comm);
+    if( rtc != MPI_SUCCESS ) {
+        HECMW_set_error( HECMW_ALL_E1003, "MPI_Comm_free" );
+        goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
+#else
+        return 0;
+#endif
+}
 
 /*-----------------------------------------------------------------------------*/
 
@@ -411,7 +430,21 @@ HECMW_Allreduce( void *sendbuf, void *recvbuf, int count,
 error:
     return -1;
 #else
-	return 0;
+	if( datatype == HECMW_INT ) {
+        memcpy(recvbuf, sendbuf, sizeof(int)*count);
+	} else if( datatype == HECMW_DOUBLE ) {
+        memcpy(recvbuf, sendbuf, sizeof(double)*count);
+	} else if( datatype == HECMW_CHAR ) {
+        memcpy(recvbuf, sendbuf, sizeof(char)*count);
+	} else {
+        HECMW_set_error( HECMW_ALL_E1003, "Invalid data type is found" );
+        goto error;
+    }
+
+    return 0;
+
+error:
+    return -1;
 #endif
 }
 

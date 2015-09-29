@@ -31,6 +31,7 @@ use m_fstr_para_contact
 use m_static_lib
 use m_static_output
 
+use m_fstr_spring
 use m_fstr_StiffMatrix
 use m_fstr_Update
 use m_fstr_ass_load
@@ -109,7 +110,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       stepcnt = stepcnt+1
 
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
-      call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
       ! ----- Set Boundary condition
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
@@ -143,7 +144,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       if( fstrSOLID%DLOAD_follow /= 0 )                                  &
        call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
-      call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, sub_step)
+      call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
       res = fstr_get_residual(hecMAT%B, hecMESH)
 
       ! ----- Gather global residual
@@ -298,7 +299,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         stepcnt = stepcnt+1
 
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
-        call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         ! ----- Contact
         if( fstr_is_contact_active() .and. stepcnt==1 )  then
@@ -346,7 +347,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         if( fstrSOLID%DLOAD_follow /= 0 )                                 &
          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, sub_step)
+        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
         if( fstr_is_contact_active() ) then
           call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
@@ -568,7 +569,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         stepcnt = stepcnt+1
 
         call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, tincr)
-        call fstr_AddSPRING(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if( paraContactFlag .and. present(conMAT) ) then
           call hecMAT_clear( conMAT )
@@ -640,9 +641,9 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         ! ----- Set residual
         if(paraContactFlag.and.present(conMAT)) then
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step,conMAT )
+          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
         else
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,sub_step )
+          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
         endif
 
         if( fstr_is_contact_active() )  then
