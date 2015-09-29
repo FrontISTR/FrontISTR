@@ -512,7 +512,6 @@ module hecmw_matrix_misc
   subroutine hecmw_mat_recycle_precond_setting( hecMAT )
     type (hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: nrecycle, maxrecycle
-    write(0,*) 'Iarray(97, 98): ',hecMAT%Iarray(97),hecMAT%Iarray(98)
     if (hecMAT%Iarray(98) >= 1) then
       hecMAT%Iarray(97)=1
       call hecmw_mat_reset_nrecycle_precond(hecMAT)
@@ -522,7 +521,6 @@ module hecmw_matrix_misc
     elseif (hecMAT%Iarray(97) == 1) then
       nrecycle = hecmw_mat_get_nrecycle_precond(hecMAT)
       maxrecycle = hecmw_mat_get_maxrecycle_precond(hecMAT)
-      write(0,*) '  nrecycle, maxrecycle: ', nrecycle, maxrecycle
       if ( nrecycle < maxrecycle ) then
         hecMAT%Iarray(97) = 0
         call hecmw_mat_incr_nrecycle_precond(hecMAT)
