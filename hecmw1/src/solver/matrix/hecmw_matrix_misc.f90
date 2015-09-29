@@ -61,6 +61,7 @@ module hecmw_matrix_misc
     call hecmw_mat_set_usejad( hecMAT, 0 )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
     call hecmw_mat_set_estcond( hecMAT, 0 )
+    call hecmw_mat_set_maxrecycle_precond( hecMAT, 3 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
     call hecmw_mat_set_sigma_diag( hecMAT, 1.d0 )
@@ -72,6 +73,9 @@ module hecmw_matrix_misc
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
     call hecmw_mat_set_mpc_method( hecMAT, 3 )
 
+    call hecmw_mat_reset_nrecycle_precond( hecMAT )
+    call hecmw_mat_set_flag_numfact( hecMAT, 1 )
+    call hecmw_mat_set_flag_symbfact( hecMAT, 1 )
     call hecmw_mat_set_solver_type( hecMAT, 1 )
 
     call hecmw_cmat_init( hecMAT%cmat )
@@ -323,6 +327,64 @@ module hecmw_matrix_misc
     hecMAT%Iarray(34) = ncolor_in
   end subroutine hecmw_mat_set_ncolor_in
 
+  function hecmw_mat_get_maxrecycle_precond( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_maxrecycle_precond
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_maxrecycle_precond = hecMAT%Iarray(35)
+  end function hecmw_mat_get_maxrecycle_precond
+
+  subroutine hecmw_mat_set_maxrecycle_precond( hecMAT, maxrecycle_precond )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: maxrecycle_precond
+    if (maxrecycle_precond > 100) maxrecycle_precond = 100
+    hecMAT%Iarray(35) = maxrecycle_precond
+  end subroutine hecmw_mat_set_maxrecycle_precond
+
+  function hecmw_mat_get_nrecycle_precond( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_nrecycle_precond
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_nrecycle_precond = hecMAT%Iarray(96)
+  end function hecmw_mat_get_nrecycle_precond
+
+  subroutine hecmw_mat_reset_nrecycle_precond( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    hecMAT%Iarray(96) = 0
+  end subroutine hecmw_mat_reset_nrecycle_precond
+
+  subroutine hecmw_mat_incr_nrecycle_precond( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    hecMAT%Iarray(96) = hecMAT%Iarray(96) + 1
+  end subroutine hecmw_mat_incr_nrecycle_precond
+
+  function hecmw_mat_get_flag_numfact( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_flag_numfact
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_flag_numfact = hecMAT%Iarray(97)
+  end function hecmw_mat_get_flag_numfact
+
+  subroutine hecmw_mat_set_flag_numfact( hecMAT, flag_numfact )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: flag_numfact
+    hecMAT%Iarray(97) = flag_numfact
+  end subroutine hecmw_mat_set_flag_numfact
+
+  function hecmw_mat_get_flag_symbfact( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_flag_symbfact
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_flag_symbfact = hecMAT%Iarray(98)
+  end function hecmw_mat_get_flag_symbfact
+
+  subroutine hecmw_mat_set_flag_symbfact( hecMAT, flag_symbfact )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: flag_symbfact
+    hecMAT%Iarray(98) = flag_symbfact
+  end subroutine hecmw_mat_set_flag_symbfact
+
+  subroutine hecmw_mat_clear_flag_symbfact( hecMAT )
+    type(hecmwST_matrix) :: hecMAT
+    hecMAT%Iarray(98) = 0
+  end subroutine hecmw_mat_clear_flag_symbfact
+
   function hecmw_mat_get_solver_type( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_solver_type
     type(hecmwST_matrix) :: hecMAT
@@ -446,5 +508,28 @@ module hecmw_matrix_misc
     enddo
     call hecmw_allREDUCE_R1(hecMESH, hecmw_mat_diag_max, hecmw_max)
   end function hecmw_mat_diag_max
+
+  subroutine hecmw_mat_recycle_precond_setting( hecMAT )
+    type (hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: nrecycle, maxrecycle
+    write(0,*) 'Iarray(97, 98): ',hecMAT%Iarray(97),hecMAT%Iarray(98)
+    if (hecMAT%Iarray(98) >= 1) then
+      hecMAT%Iarray(97)=1
+      call hecmw_mat_reset_nrecycle_precond(hecMAT)
+    elseif (hecMAT%Iarray(97) > 1) then
+      call hecmw_mat_reset_nrecycle_precond(hecMAT)
+      hecMAT%Iarray(97) = 1
+    elseif (hecMAT%Iarray(97) == 1) then
+      nrecycle = hecmw_mat_get_nrecycle_precond(hecMAT)
+      maxrecycle = hecmw_mat_get_maxrecycle_precond(hecMAT)
+      write(0,*) '  nrecycle, maxrecycle: ', nrecycle, maxrecycle
+      if ( nrecycle < maxrecycle ) then
+        hecMAT%Iarray(97) = 0
+        call hecmw_mat_incr_nrecycle_precond(hecMAT)
+      else
+        call hecmw_mat_reset_nrecycle_precond(hecMAT)
+      endif
+    endif
+  end subroutine hecmw_mat_recycle_precond_setting
 
 end module hecmw_matrix_misc

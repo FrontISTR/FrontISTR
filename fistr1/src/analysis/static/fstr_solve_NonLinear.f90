@@ -116,9 +116,12 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
 
       !----- SOLVE [Kt]{du}={R}
-      ! if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-      if( iter == 1 ) hecMAT%Iarray(98) = 1
-      hecMAT%Iarray(97) = 1   !Need numerical factorization
+      if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
+      if( iter == 1 ) then
+        hecMAT%Iarray(97) = 2   !Force numerical factorization
+      else
+        hecMAT%Iarray(97) = 1   !Need numerical factorization
+      endif
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
@@ -315,7 +318,11 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         !----- SOLVE [Kt]{du}={R}
         if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-        hecMAT%Iarray(97) = 1   !Need numerical factorization
+        if( iter == 1 ) then
+          hecMAT%Iarray(97) = 2   !Force numerical factorization
+        else
+          hecMAT%Iarray(97) = 1   !Need numerical factorization
+        endif
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         CALL solve_LINEQ(hecMESH,hecMAT,imsg)

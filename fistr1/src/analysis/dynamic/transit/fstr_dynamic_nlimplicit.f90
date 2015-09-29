@@ -294,6 +294,11 @@ contains
 !C
         hecMAT%X = 0.0d0
         if( iexit .ne. 1 ) then
+          if( iter == 1 ) then
+            hecMAT%Iarray(97) = 2   !Force numerical factorization
+          else
+            hecMAT%Iarray(97) = 1   !Need numerical factorization
+          endif
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           CALL solve_LINEQ(hecMESH,hecMAT,imsg)
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)

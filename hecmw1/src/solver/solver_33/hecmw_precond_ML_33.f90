@@ -33,9 +33,6 @@ module hecmw_precond_ML_33
 
   logical, save :: INITIALIZED = .false.
 
-  ! reuse setup-info up to MAX_RECYCLE_SETUP times
-  integer, parameter :: MAX_RECYCLE_SETUP = 20
-
 contains
 
   subroutine hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
@@ -48,19 +45,13 @@ contains
     integer(kind=kint) :: ierr
     integer(kind=kint), save :: n_recycle = 0
     if (INITIALIZED) then
-      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+      if (hecMAT%Iarray(98) == 1) then      ! need symbolic and numerical setup
         call hecmw_precond_ML_33_clear()
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
-        if (n_recycle < MAX_RECYCLE_SETUP) then
-          n_recycle = n_recycle + 1
-          call hecmw_mat_id_clear(id)
-          call hecmw_mat_id_set(hecMAT, hecMESH, id)
-          hecMAT%Iarray(97) = 0
-          return
-        else
-          call hecmw_precond_ML_33_clear()
-        endif
-      else
+        call hecmw_precond_ML_33_clear()
+      else                                  ! no need to setup or skip setup
+        call hecmw_mat_id_clear(id)
+        call hecmw_mat_id_set(hecMAT, hecMESH, id)
         return
       endif
     endif

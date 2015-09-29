@@ -766,6 +766,7 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Iarray(34)=   10    ! = ncolor_in
         hecMAT%Iarray(13)=    3    ! = mpc_method
         hecMAT%Iarray(14)=    0    ! = estcond
+        hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
 
         hecMAT%Rarray(1) =  1.0e-8 ! = resid
         hecMAT%Rarray(2) =  1.0    ! = sigma_diag
@@ -774,6 +775,9 @@ subroutine fstr_mat_init( hecMAT )
         hecMAT%Rarray(5) =  0.1    ! = filter
         hecMAT%Rarray(11)=  1.0e+4 ! = penalty
 
+        hecMAT%Iarray(96) =   0    ! nrecycle_precond
+        hecMAT%Iarray(97) = kYES   ! flag_numfact
+        hecMAT%Iarray(98) = kYES   ! flag_symbfact
         hecMAT%Iarray(99) = kYES   ! indirect method
 
 end subroutine fstr_mat_init
