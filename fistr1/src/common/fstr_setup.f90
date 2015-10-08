@@ -94,6 +94,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
+        integer(kind=kint) :: c_elemopt
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -121,6 +122,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_mpc      = 0; c_weldline = 0
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
+        c_elemopt  = 0;
 
         ctrl = fstr_ctrl_open( cntl_filename)
         if( ctrl < 0 ) then
@@ -350,6 +352,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_localcoord = 0
         c_section = 0
         fstrHEAT%WL_tot = 0
+        c_elemopt = 0
+        fstrSOLID%elemopt361 = 0
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -425,6 +429,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
                 stop
             endif
+
+          else if( header_name == '!ELEMOPT'  ) then
+            c_elemopt = c_elemopt+1
+            if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
+                write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
+                write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+                stop
+            endif
+
 
 !== following material proerties ==
           else if( header_name == '!MATERIAL' ) then
@@ -690,6 +703,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
              n = n + 1
              fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
            enddo
+        endif
+
+        if( fstrSOLID%elemopt361==0 ) then
+          if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+            write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
+            fstrSOLID%elemopt361 = 1
+          endif
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
