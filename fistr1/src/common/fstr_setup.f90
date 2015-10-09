@@ -1325,6 +1325,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   scaling    => svIarray(7)
      !   iterlog    => svIarray(21)
      !   timelog    => svIarray(22)
+     !   steplog    => svIarray(23)
      !   dumptype   => svIarray(31)
      !   dumpexit   => svIarray(32)
      !   usejad     => svIarray(33)
@@ -1339,7 +1340,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   filter     => svRarray(5)
 
         rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
-                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), &
+                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
                         svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
                         svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), &
                         svRarray(1), svRarray(2), svRarray(3),                &
