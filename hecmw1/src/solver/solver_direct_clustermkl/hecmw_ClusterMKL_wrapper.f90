@@ -209,8 +209,8 @@
   iparm(8) = 2 ! numbers of iterative refinement steps
   iparm(10) = 13 ! perturbe the pivot elements with 1E-13
   iparm(11) = 0 ! use nonsymmetric permutation and scaling MPS
-  iparm(13) = 1 ! maximum weighted matching algorithm is switched-off
-  iparm(27) = 1 ! check matrix(temp)
+  iparm(13) = 0 ! maximum weighted matching algorithm is switched-off
+  iparm(27) = 0 ! check matrix(temp)
   iparm(40) = 2 ! Input: distributed matrix/rhs/solution format
   error = 0  ! initialize error flag
   msglvl = 0 ! print statistical information

@@ -128,9 +128,7 @@ do
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-with-mkl\"" -o "\"$i\"" = "\"--with-mkl\"" ]; then
-		if [ ${SERIAL} -eq 0 ]; then
-			WITHMKL=1
-		fi
+		WITHMKL=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
@@ -385,7 +383,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with MKL PARDISO
 	#
-	if [ ${WITHMKL} -eq 1 ]; then
+	if [ ${WITHMKL} -eq 1 && ${SERIAL} -eq 0 ]; then
 		BUILDTARGET_MKL="build-with-mkl"
 	else
 		MKL_CFLAGS=""
