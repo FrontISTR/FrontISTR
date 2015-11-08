@@ -86,6 +86,22 @@ module m_dynamic_output
 
     maxstep = fstrDYNAMIC%n_step
 
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
+          fnum = fstrSOLID%output_ctrl(1)%filenum
+          call fstr_dynamic_post( fnum, hecMESH, fstrSOLID, fstrDYNAMIC )
+    endif
+
+    if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
+        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
+      iS = fstrSOLID%output_ctrl(2)%outinfo%grp_id
+      fnum = fstrSOLID%output_ctrl(2)%filenum
+      do i = hecMESH%node_group%grp_index(iS-1)+1, hecMESH%node_group%grp_index(iS)
+        iE = hecMESH%node_group%grp_item(i)
+        gid = hecMESH%global_node_ID(iE)
+        write(fnum,'(2i10,1p6e15.7)') istep,gid,(fstrSOLID%unode(ndof*(iE-1)+j),j=1,ndof)
+      enddo
+    endif
+
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
           call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep )
@@ -101,22 +117,6 @@ module m_dynamic_output
           call hecmw_visualize_finalize
           call hecmw2fstr_mesh_conv( hecMESH )
           call hecmw_result_free( fstrRESULT )
-    endif
-
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
-          fnum = fstrSOLID%output_ctrl(1)%filenum
-          call fstr_dynamic_post( fnum, hecMESH, fstrSOLID, fstrDYNAMIC )
-    endif
-
-    if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
-      iS = fstrSOLID%output_ctrl(2)%outinfo%grp_id
-      fnum = fstrSOLID%output_ctrl(2)%filenum
-      do i = hecMESH%node_group%grp_index(iS-1)+1, hecMESH%node_group%grp_index(iS)
-        iE = hecMESH%node_group%grp_item(i)
-        gid = hecMESH%global_node_ID(iE)
-        write(fnum,'(2i10,1p6e15.7)') istep,gid,(fstrSOLID%unode(ndof*(iE-1)+j),j=1,ndof)
-      enddo
     endif
 
   end subroutine fstr_dynamic_Output

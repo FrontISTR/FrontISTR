@@ -145,10 +145,10 @@ subroutine initOutInfo( outinfo )
   outinfo%vtype(26)   = -2
 
   outinfo%keyWord(27) = "SHELL_LAYER"
-  outinfo%vtype(27)   = -2
+  outinfo%vtype(27)   = -1
 
   outinfo%keyWord(28) = "SHELL_SURFACE"
-  outinfo%vtype(28)   = -2
+  outinfo%vtype(28)   = -1
 
 end subroutine initOutInfo
 
