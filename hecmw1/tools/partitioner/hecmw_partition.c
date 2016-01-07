@@ -8853,6 +8853,50 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         if( rtc != RTC_NORMAL )  goto error;
     }
 
+    if (global_mesh->n_subdomain == 1) {
+        current_domain = 0;
+
+        if( global_mesh->my_rank == 0 ) {
+            HECMW_log( HECMW_LOG_INFO, "Creating local mesh for domain #%d ...", current_domain );
+
+            ofheader = HECMW_ctrl_get_meshfiles_header_sub( "part_out", global_mesh->n_subdomain, current_domain );
+            if( ofheader == NULL ) {
+                HECMW_log( HECMW_LOG_ERROR, "not set output file header" );
+                error_in_ompsection = 1;
+                goto error;
+            }
+            if( ofheader->n_mesh == 0 ) {
+                HECMW_log( HECMW_LOG_ERROR, "output file name is not set" );
+                error_in_ompsection = 1;
+                goto error;
+            }
+
+            get_dist_file_name( ofheader->meshfiles[0].filename, current_domain, ofname );
+            HECMW_assert( ofname != NULL );
+
+            HECMW_log( HECMW_LOG_DEBUG, "Starting writing local mesh for domain #%d...", current_domain );
+
+            HECMW_put_dist_mesh( global_mesh, ofname );
+
+            HECMW_log( HECMW_LOG_DEBUG, "Writing local mesh for domain #%d done", current_domain );
+
+            rtc = HECMW_part_set_log_n_elem( 0, global_mesh->n_elem );
+            if( rtc != 0 )  goto error;
+            rtc = HECMW_part_set_log_n_node( 0, global_mesh->n_node );
+            if( rtc != 0 )  goto error;
+            rtc = HECMW_part_set_log_ne_internal( 0, global_mesh->ne_internal );
+            if( rtc != 0 )  goto error;
+            rtc = HECMW_part_set_log_nn_internal( 0, global_mesh->nn_internal );
+            if( rtc != 0 )  goto error;
+
+            rtc = HECMW_part_print_log( );
+            if( rtc )  goto error;
+        }
+        HECMW_part_finalize_log( );
+
+        return global_mesh;
+    }
+
     num_elem = (int *)HECMW_calloc( global_mesh->n_subdomain, sizeof(int) );
     if( num_elem == NULL ) {
         HECMW_set_error( errno, "" );
