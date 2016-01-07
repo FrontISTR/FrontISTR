@@ -184,7 +184,7 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     ! <<< added for turning
 
-    IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+    IF (hecmw_JAD_IS_INITIALIZED().ne.0) THEN
       Tcomm = 0.d0
       START_TIME = hecmw_Wtime()
       call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
