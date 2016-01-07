@@ -42,18 +42,24 @@ module m_MatMatrix
 	end function
 
 !> Calculate constituive matrix
-    subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature )
+    subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature, isEp )
 		type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
 		INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
 		REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
 		REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
 		REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
 		REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
+    INTEGER(KIND=kint), INTENT(IN), optional :: isEp
 
 		integer :: i
+    integer :: flag = 0
 		real(kind=kreal)            :: cijkl(3,3,3,3)
 		TYPE( tMaterial ), pointer  :: matl
 		matl=>gauss%pMaterial
+
+    if( present(isEp) )then
+      if( isEp == 1 )flag = 1
+    endif
 
 		if( matl%mtype==USERELASTIC ) then
 			call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
@@ -63,8 +69,13 @@ module m_MatMatrix
 		else
 			call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
 		endif
-		elseif( isElastic(matl%mtype) ) then
-			i = getElasticType(gauss%pMaterial%mtype)
+    elseif( isElastic(matl%mtype) .or. flag==1 ) then
+      if(flag==1)then
+        i = getElasticType(ELASTIC)
+      else
+        i = getElasticType(gauss%pMaterial%mtype)
+      endif
+      
 			if( i==0 ) then
           if( present(temperature) ) then
             call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
