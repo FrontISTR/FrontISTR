@@ -488,9 +488,9 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 				fprintf(outfp, "data, unit_unknown\n");
 			}
 			else {
-				fprintf(outfp, "2 3 1\n");
-				fprintf(outfp, "disp, unit_unknown\n");
+				fprintf(outfp, "2 1 3\n");
 				fprintf(outfp, "data, unit_unknown\n");
+				fprintf(outfp, "disp, unit_unknown\n");
 			}
 		}
 		if(sf[1].output_type==4) {
@@ -730,8 +730,8 @@ void HECMW_vis_combine(struct surface_module *sf, struct hecmwST_local_mesh *mes
 							if(sf[ii+1].deform_display_on==0)
 								fprintf(outfp, "%d %e\n",i+s_vertex+1, color);
 							else if(sf[ii+1].deform_display_on==1)
-								fprintf(outfp, "%d %e %e %e %e\n",i+s_vertex+1, result[ii].disp[i*3], result[ii].disp[i*3+1],
-										result[ii].disp[i*3+2], color);
+								fprintf(outfp, "%d %e %e %e %e\n",i+s_vertex+1, color, result[ii].disp[i*3], result[ii].disp[i*3+1],
+										result[ii].disp[i*3+2]);
 
 						}
 						else if(sf[ii+1].output_type==4) {
