@@ -21,54 +21,54 @@
 
 module m_MatMatrix
   use hecmw_util
-	use mMaterial
-	use mMechGauss
-	use m_ElasticLinear
-	use mHyperElastic
-	use m_ElastoPlastic
-	use mViscoElastic
-	use mCreep
-	use mUElastic
-	use mUmat
+  use mMaterial
+  use mMechGauss
+  use m_ElasticLinear
+  use mHyperElastic
+  use m_ElastoPlastic
+  use mViscoElastic
+  use mCreep
+  use mUElastic
+  use mUmat
 
-	implicit none
+  implicit none
 
-	contains
+  contains
 
 !> Fetch the nlgeom flag of the material
-	integer function getNlgeomFlag( gauss )
-	type( tGaussStatus ), intent(in) :: gauss      !> status of qudrature point
-	getNlgeomFlag = gauss%pMaterial%nlgeom_flag
-	end function
+  integer function getNlgeomFlag( gauss )
+  type( tGaussStatus ), intent(in) :: gauss      !> status of qudrature point
+  getNlgeomFlag = gauss%pMaterial%nlgeom_flag
+  end function
 
 !> Calculate constituive matrix
-    subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature, isEp )
-		type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
-		INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
-		REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
-		REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
-		REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
-		REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
+  subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature, isEp )
+    type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
+    INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
+    REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
+    REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
+    REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
+    REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
     INTEGER(KIND=kint), INTENT(IN), optional :: isEp
 
-		integer :: i
+    integer :: i
     integer :: flag = 0
-		real(kind=kreal)            :: cijkl(3,3,3,3)
-		TYPE( tMaterial ), pointer  :: matl
-		matl=>gauss%pMaterial
+    real(kind=kreal)            :: cijkl(3,3,3,3)
+    TYPE( tMaterial ), pointer  :: matl
+    matl=>gauss%pMaterial
 
     if( present(isEp) )then
       if( isEp == 1 )flag = 1
     endif
 
-		if( matl%mtype==USERELASTIC ) then
-			call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
-		elseif( isViscoelastic(matl%mtype) ) then
-		if( present(temperature) ) then
-			call calViscoelasticMatrix( matl, sectTYPE, dt, matrix, temperature )
-		else
-			call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
-		endif
+    if( matl%mtype==USERELASTIC ) then
+      call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
+    elseif( isViscoelastic(matl%mtype) ) then
+      if( present(temperature) ) then
+        call calViscoelasticMatrix( matl, sectTYPE, dt, matrix, temperature )
+      else
+        call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
+      endif
     elseif( isElastic(matl%mtype) .or. flag==1 ) then
       if(flag==1)then
         i = getElasticType(ELASTIC)
@@ -76,53 +76,53 @@ module m_MatMatrix
         i = getElasticType(gauss%pMaterial%mtype)
       endif
       
-			if( i==0 ) then
-          if( present(temperature) ) then
-            call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
-          else
-            call calElasticMatrix( matl, sectTYPE, matrix )
-          endif
-        elseif(  i==1 ) then
-          if( present(temperature) ) then
-            call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
-          else
-            call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix )
-          endif
+      if( i==0 ) then
+        if( present(temperature) ) then
+          call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
         else
-          print *, "Elasticity type", matl%mtype, "not supported"
-          stop
+          call calElasticMatrix( matl, sectTYPE, matrix )
         endif
-
-      elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then
-        call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain  )
-        call mat_c2d( cijkl, matrix, sectType )
-      elseif( matl%mtype==ARRUDABOYCE )  then
-        call calElasticArrudaBoyce( matl, sectType, cijkl, gauss%strain )
-        call mat_c2d( cijkl, matrix, sectType )
-      elseif( matl%mtype==USERHYPERELASTIC )  then
-        call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
-      elseif( isElastoplastic(matl%mtype) )  then
-        if( present( temperature ) ) then
-          call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-	           gauss%istatus(1), gauss%fstatus, matrix, temperature  )
+      elseif(  i==1 ) then
+        if( present(temperature) ) then
+          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
         else
-          call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-	         gauss%istatus(1), gauss%fstatus, matrix  )
-        endif
-      elseif( matl%mtype==USERMATERIAL ) then
-        call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
-            gauss%stress, gauss%fstatus, matrix, dt, gauss%ttime )
-      elseif( matl%mtype==NORTON ) then
-        if( present( temperature ) ) then
-          call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-		       gauss%plstrain, dt, gauss%ttime, matrix, temperature  )
-        else
-           call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-		       gauss%plstrain, dt, gauss%ttime, matrix  )
+          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix )
         endif
       else
-        stop "Material type not supported!"
+        print *, "Elasticity type", matl%mtype, "not supported"
+        stop
       endif
+
+    elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then
+      call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain  )
+      call mat_c2d( cijkl, matrix, sectType )
+    elseif( matl%mtype==ARRUDABOYCE )  then
+      call calElasticArrudaBoyce( matl, sectType, cijkl, gauss%strain )
+      call mat_c2d( cijkl, matrix, sectType )
+    elseif( matl%mtype==USERHYPERELASTIC )  then
+      call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
+    elseif( isElastoplastic(matl%mtype) )  then
+      if( present( temperature ) ) then
+        call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
+           gauss%istatus(1), gauss%fstatus, matrix, temperature  )
+      else
+        call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
+         gauss%istatus(1), gauss%fstatus, matrix  )
+      endif
+    elseif( matl%mtype==USERMATERIAL ) then
+      call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
+          gauss%stress, gauss%fstatus, matrix, dt, gauss%ttime )
+    elseif( matl%mtype==NORTON ) then
+      if( present( temperature ) ) then
+        call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
+         gauss%plstrain, dt, gauss%ttime, matrix, temperature  )
+      else
+         call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
+         gauss%plstrain, dt, gauss%ttime, matrix  )
+      endif
+    else
+      stop "Material type not supported!"
+    endif
 
     end subroutine
 
@@ -162,10 +162,10 @@ module m_MatMatrix
              strain, stress, gauss%fstatus, dt, gauss%ttime )
       end if
 
-    end subroutine StressUpdate
+  end subroutine StressUpdate
 
 !> Transfer rank 4 constituive matrix to rank 2 form
-subroutine mat_c2d( cijkl, dij, itype )
+  subroutine mat_c2d( cijkl, dij, itype )
   real(kind=kreal),   intent(in)  :: cijkl(3,3,3,3)
   real(kind=kreal),   intent(out) :: dij(6,6)
   integer,            intent(in)  :: itype
