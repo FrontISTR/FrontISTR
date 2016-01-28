@@ -53,7 +53,7 @@ contains
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         use mMaterial
-        character(len=HECMW_FILENAME_LEN) :: cntl_filename
+        character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
@@ -63,7 +63,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(fstr_couple),target  :: fstrCPL
         type(fstr_freqanalysis), target :: fstrFREQ
 
-        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: ctrl, ctrl_list(20), ictrl
         type(fstr_param_pack) :: P
 
         integer, parameter :: MAXOUTFILE = 10
@@ -122,7 +122,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
 
-        ctrl = fstr_ctrl_open( cntl_filename)
+        ctrl_list = 0
+        ictrl = 1
+        ctrl  = fstr_ctrl_open( cntl_filename )
         if( ctrl < 0 ) then
                 write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
                 write(ILOG,*) '### Error: Cannot open FSTR control file : ', cntl_filename
@@ -246,8 +248,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!ACCELERATION' ) then
                         c_acceleration = c_acceleration + 1
                         call fstr_setup_ACCELERATION( ctrl, c_eigen, P )
-
-                !--------------- for dynamic -------------------------
                 else if( header_name == '!FLOAD' ) then
                         c_fload = c_fload + 1
                         call fstr_setup_FLOAD( ctrl , c_fload, P )
@@ -260,11 +260,27 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!COUPLE' ) then
                         c_couple = c_couple + 1
                         call fstr_setup_COUPLE( ctrl, c_couple, P )
+
                 !--------------- for mpc -------------------------
 
                 else if( header_name == '!MPC' ) then
                         c_mpc = c_mpc + 1
                         call fstr_setup_MPC( ctrl, c_mpc, P )
+
+                !--------------------- for input -------------------------
+
+                else if( header_name == '!INCLUDE' ) then
+                        ctrl_list(ictrl) = ctrl
+                        input_filename   = ""
+                        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+                        ctrl   = fstr_ctrl_open( input_filename )
+                        if( ctrl < 0 ) then
+                            write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            STOP
+                        end if
+                        ictrl = ictrl + 1
+                        cycle
 
                 !--------------------- END -------------------------
 
@@ -273,7 +289,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 end if
 
                 ! next
-                if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
+                if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
+                    if( ictrl == 1 )then
+                        exit
+                    else
+                        ierror= fstr_ctrl_close( ctrl )
+                        ictrl = ictrl - 1
+                        ctrl  = ctrl_list(ictrl)
+                        if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+                    endif
+                endif
         end do
 
 ! -----
