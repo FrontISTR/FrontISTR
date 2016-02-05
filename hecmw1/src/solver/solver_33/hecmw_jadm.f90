@@ -26,6 +26,7 @@ module hecmw_JAD_TYPE
 
   public :: hecmw_JAD_INIT
   public :: hecmw_JAD_FINALIZE
+  public :: hecmw_JAD_IS_INITIALIZED
   public :: hecmw_JAD_MATVEC
 
   !C---------------------- AU&AL
@@ -35,6 +36,7 @@ module hecmw_JAD_TYPE
   integer(kind=kint), allocatable    :: IAJAD(:)
   integer(kind=kint) :: MJAD
   real(kind=kreal), allocatable  :: WP1(:), WP2(:), WP3(:)
+  integer(kind=kint) :: INITIALIZED = 0
 
 contains
 
@@ -46,6 +48,7 @@ contains
     ALLOCATE(JADORD(hecMAT%NP))
     ALLOCATE(IAJAD(hecMAT%NP+1))
     CALL REPACK(hecMAT%N, hecMAT, MJAD, AJAD, JAJAD, IAJAD, JADORD)
+    INITIALIZED = 1
   end subroutine hecmw_JAD_INIT
 
   subroutine hecmw_JAD_FINALIZE()
@@ -54,7 +57,13 @@ contains
     DEALLOCATE(JADORD)
     DEALLOCATE(IAJAD)
     DEALLOCATE(WP1,WP2,WP3)
+    INITIALIZED = 0
   end subroutine hecmw_JAD_FINALIZE
+
+  function hecmw_JAD_IS_INITIALIZED()
+    integer(kind=kint) :: hecmw_JAD_IS_INITIALIZED
+    hecmw_JAD_IS_INITIALIZED = INITIALIZED
+  end function hecmw_JAD_IS_INITIALIZED
 
   subroutine hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, COMMtime)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
