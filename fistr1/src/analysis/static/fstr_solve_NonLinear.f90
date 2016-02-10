@@ -59,11 +59,10 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
   type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
   integer(kind=kint) :: ndof
-  integer(kind=kint) :: i, iter, itemp, ttemp, tintl
-  integer(kind=kint) :: al_step, stepcnt
-  real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr
+  integer(kind=kint) :: i, iter
+  integer(kind=kint) :: stepcnt
+  real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
   integer(kind=kint) :: restrt_step_num
-  logical            :: convg
   integer(kind=kint) :: n_node_global
   real(kind=kreal), pointer :: coord(:)
 
@@ -84,21 +83,6 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
   hecMAT%X = 0.0d0
 
   stepcnt = 0
-  ttemp = 1
-  tintl = 1
-  if( fstrSOLID%TEMP_irres > 1 ) then
-    ttemp = fstrSOLID%TEMP_irres
-    tintl = fstrSOLID%TEMP_interval
-  endif
-
-  do itemp = fstrSOLID%TEMP_tstep, ttemp, tintl
-
-    if( fstrSOLID%TEMP_irres > 0 ) then
-      if( hecMESH%my_rank == 0 ) then
-        write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-        write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-      endif
-    endif
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -194,22 +178,6 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
-    if( fstrSOLID%TEMP_irres > 0 ) then
-          if( fstrSOLID%restart_nout < 0 ) then
-            fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-          end if
-          if( mod(itemp,fstrSOLID%restart_nout) == 0 .or. ( fstrSOLID%TEMP_irres > 1 .and. itemp == ttemp ) ) then
-            call fstr_write_restart(cstep, 1, itemp, hecMESH, fstrSOLID, fstrPARAM)
-          end if
-
-          ! ----- Result output (include visualize output)
-          call fstr_static_Output(cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type)
-    endif
-
-    if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+tintl
-
-  enddo
-
   deallocate(coord)
 end subroutine fstr_Newton
 
@@ -232,10 +200,10 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   integer(kind=kint) :: ndof
   integer(kind=kint) :: ctAlgo
-  integer(kind=kint) :: i, iter, itemp, ttemp
+  integer(kind=kint) :: i, iter
   integer(kind=kint) :: al_step, n_al_step, stepcnt
-  real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr
-  integer(kind=kint) :: restart_step_num,  restart_substep_num
+  real(kind=kreal)   :: tt0, tt, res, res0, res1, maxv, relres, tincr
+  integer(kind=kint) :: restart_step_num, restart_substep_num
   logical            :: convg, ctchange
   integer(kind=kint) :: n_node_global
   real(kind=kreal), pointer :: coord(:)
@@ -265,18 +233,6 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   hecMAT%X = 0.0d0
 
   stepcnt = 0
-  ttemp = 1
-
-  if( fstrSOLID%TEMP_irres > 1 ) ttemp = fstrSOLID%TEMP_irres
-
-  do itemp = fstrSOLID%TEMP_tstep, ttemp
-
-    if( fstrSOLID%TEMP_irres > 0 ) then
-      if( hecMESH%my_rank == 0 ) then
-        write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-        write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-      endif
-    endif
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -425,22 +381,6 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
-    if( fstrSOLID%TEMP_irres > 0 ) then
-          if(fstrSOLID%restart_nout<0) then
-            fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-          end if
-          if( mod(itemp,fstrSOLID%restart_nout) == 0 ) then
-            call fstr_write_restart(cstep, 1, itemp, hecMESH, fstrSOLID, fstrPARAM, infoCTChange%contactNode_current)
-          end if
-
-          ! ----- Result output (include visualize output)
-          call fstr_static_Output(cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type)
-    endif
-
-    if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1
-
-  enddo
-
   deallocate(coord)
 end subroutine fstr_Newton_contactALag
 
@@ -466,16 +406,14 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
   integer(kind=kint) :: ndof
   integer(kind=kint) :: ctAlgo
-  integer(kind=kint) :: i, iter, itemp, ttemp, max_iter_contact
+  integer(kind=kint) :: i, iter, max_iter_contact
   integer(kind=kint) :: stepcnt, count_step
-  real(kind=kreal)   :: tt0,tt, res, res0, res1, maxv, relres, tincr, resX, ierr
+  real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr, resX
   integer(kind=kint) :: restart_step_num, restart_substep_num
   logical            :: is_mat_symmetric
   integer(kind=kint) :: n_node_global
   integer(kind=kint) :: contact_changed_global
-  integer(kint)      ::  nndof,npdof
-  real(kreal), allocatable :: tmp_conB(:)
-  integer            :: istat, i0
+  integer(kint)      :: nndof
   real(kreal)        :: q_residual,x_residual
   real(kind=kreal), pointer :: coord(:)
 
@@ -526,18 +464,6 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
   endif
 
   stepcnt = 0
-  ttemp = 1
-
-  if( fstrSOLID%TEMP_irres>1 ) ttemp = fstrSOLID%TEMP_irres
-
-  do itemp = fstrSOLID%TEMP_tstep, ttemp
-
-    if( fstrSOLID%TEMP_irres>0 ) then
-      if( hecMESH%my_rank==0 ) then
-        write(*, *) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-        write(ISTA, *) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-      endif
-    endif
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -745,21 +671,6 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
     if( hecMESH%my_rank == 0) then
       write(ISTA,'("### Converged in contact iteration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
-
-    if( fstrSOLID%TEMP_irres > 0 ) then
-        if(fstrSOLID%restart_nout < 0) then
-          fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-        end if
-        if( mod(itemp,fstrSOLID%restart_nout) == 0 ) then
-          call fstr_write_restart(cstep,1,itemp,hecMESH,fstrSOLID,fstrPARAM,infoCTChange%contactNode_current)
-        end if
-        ! ----- Result output (include visualize output)
-        call fstr_static_Output( cstep, itemp, hecMESH, fstrSOLID, fstrPR%solution_type )
-    endif
-
-    if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+1
-
-  enddo
 
   deallocate(coord)
 end subroutine fstr_Newton_contactSLag

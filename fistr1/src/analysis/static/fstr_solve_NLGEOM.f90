@@ -59,6 +59,7 @@ contains
 
       integer(kind=kint) :: j, tot_step, step_count
       integer(kind=kint) :: sub_step
+      integer(kind=kint) :: itemp, ttemp, tintl
       real(kind=kreal) :: tt, factor
       real(kind=kreal) :: time_1, time_2
       logical          :: ctchanged
@@ -132,6 +133,22 @@ contains
 
           call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
+        ttemp = 1
+        tintl = 1
+        if( fstrSOLID%TEMP_irres > 1 ) then
+          ttemp = fstrSOLID%TEMP_irres
+          tintl = fstrSOLID%TEMP_interval
+        endif
+
+        do itemp = fstrSOLID%TEMP_tstep, ttemp, tintl
+          
+          if( fstrSOLID%TEMP_irres > 0 ) then
+            if( hecMESH%my_rank == 0 ) then
+              write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
+              write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
+            endif
+          endif
+          
 !       analysis algorithm ( Newton-Rapshon Method )
           if( .not. associated( fstrSOLID%contacts ) ) then
             call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
@@ -169,11 +186,27 @@ contains
             call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
           endif
 
+          if( fstrSOLID%TEMP_irres > 0 ) then
+                if( fstrSOLID%restart_nout < 0 ) then
+                  fstrSOLID%restart_nout = - fstrSOLID%restart_nout
+                end if
+                if( mod(itemp,fstrSOLID%restart_nout) == 0 .or. ( fstrSOLID%TEMP_irres > 1 .and. itemp == ttemp ) ) then
+                  call fstr_write_restart(tot_step, 1, itemp, hecMESH, fstrSOLID, fstrPARAM)
+                end if
+
+                ! ----- Result output (include visualize output)
+                call fstr_static_Output(tot_step, itemp, hecMESH, fstrSOLID, fstrPR%solution_type)
+          endif
+
+          if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+tintl
+
+        enddo   !--- end of itemp loop
+          
           call cpu_time(time_2)
           if( hecMESH%my_rank==0) then
             write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1
           end if
-
+          
         enddo    !--- end of substep  loop
 
 	    restart_substep_num = 1
