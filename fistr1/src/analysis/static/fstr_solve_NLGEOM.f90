@@ -57,11 +57,10 @@ module m_fstr_solve_NLGEOM
     integer(kind=kint) :: ndof, nn
 
     integer(kind=kint) :: j, tot_step, step_count
-    integer(kind=kint) :: sub_step
-    integer(kind=kint) :: itemp, ttemp, tintl
-    real(kind=kreal) :: tt, factor
-    real(kind=kreal) :: time_1, time_2
-    logical          :: ctchanged
+    integer(kind=kint) :: sub_step, ss_end
+    real(kind=kreal)   :: factor
+    real(kind=kreal)   :: time_1, time_2
+    logical            :: ctchanged
     integer(kind=kint) :: restart_step_num, restart_substep_num
 
     hecMAT%NDOF = hecMESH%n_dof
@@ -110,14 +109,23 @@ module m_fstr_solve_NLGEOM
       ! -------------------------------------------------------------------------
       !      STEP LOOP
       ! -------------------------------------------------------------------------
-      do sub_step = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
+      ss_end = fstrSOLID%step_ctrl(tot_step)%num_substep
+      if( fstrSOLID%TEMP_irres > 0 ) then
+        ss_end = (fstrSOLID%TEMP_irres-fstrSOLID%TEMP_tstep)/fstrSOLID%TEMP_interval + 1
+        fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep + step_count*fstrSOLID%TEMP_interval
+      endif
+      do sub_step = restart_substep_num, ss_end
 
         ! ----- time history of factor
-        tt = sub_step*fstrSOLID%step_ctrl(tot_step)%initdt          !**
-        call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step-1,factor)
-        fstrSOLID%FACTOR(1) = factor
-        call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step, factor)
-        fstrSOLID%FACTOR(2) = factor
+        if( fstrSOLID%TEMP_irres > 0 ) then
+          fstrSOLID%FACTOR(1) = 0.d0
+          fstrSOLID%FACTOR(2) = 1.d0
+        else if( fstrSOLID%TEMP_irres > 0 ) then
+          call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step-1,factor)
+          fstrSOLID%FACTOR(1) = factor
+          call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step, factor)
+          fstrSOLID%FACTOR(2) = factor
+        endif
 
         if( dabs(fstrSOLID%FACTOR(2)-fstrSOLID%FACTOR(1))<1.0e-20 ) then
           if( hecMESH%my_rank==0) then
@@ -127,79 +135,54 @@ module m_fstr_solve_NLGEOM
         end if
 
         if(hecMESH%my_rank==0) write(*,*) ' substep=',sub_step,fstrSOLID%FACTOR
+        if( fstrSOLID%TEMP_irres > 0 ) then
+          if( hecMESH%my_rank == 0 ) then
+            write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
+            write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
+          endif
+        endif
+        
         step_count = step_count+1
         call cpu_time(time_1)
 
         call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
-        ttemp = 1
-        tintl = 1
-        if( fstrSOLID%TEMP_irres > 1 ) then
-          ttemp = fstrSOLID%TEMP_irres
-          tintl = fstrSOLID%TEMP_interval
-        endif
-
-        do itemp = fstrSOLID%TEMP_tstep, ttemp, tintl
-          
-          if( fstrSOLID%TEMP_irres > 0 ) then
-            if( hecMESH%my_rank == 0 ) then
-              write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-              write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-            endif
-          endif
-
-          !       analysis algorithm ( Newton-Rapshon Method )
-          if( .not. associated( fstrSOLID%contacts ) ) then
-            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
-              restart_step_num, sub_step  )
-          else
-            if( fstrPARAM%contact_algo == kcaSLagrange ) then
-              !     ----  For Parallel Contact with Multi-Partition Domains
-              if(paraContactFlag.and.present(conMAT)) then
-                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                  restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
-              else
-                call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                  restart_step_num, restart_substep_num, sub_step, infoCTChange )
-              endif
-            else if( fstrPARAM%contact_algo == kcaALagrange ) then
-              call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
+        !       analysis algorithm ( Newton-Rapshon Method )
+        if( .not. associated( fstrSOLID%contacts ) ) then
+          call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+            restart_step_num, sub_step  )
+        else
+          if( fstrPARAM%contact_algo == kcaSLagrange ) then
+            !     ----  For Parallel Contact with Multi-Partition Domains
+            if(paraContactFlag.and.present(conMAT)) then
+              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+                restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
+            else
+              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
                 restart_step_num, restart_substep_num, sub_step, infoCTChange )
             endif
+          else if( fstrPARAM%contact_algo == kcaALagrange ) then
+            call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
+              restart_step_num, restart_substep_num, sub_step, infoCTChange )
           endif
+        endif
 
-          if( fstrSOLID%TEMP_irres==0 ) then
-            if(fstrSOLID%restart_nout<0) then
-              fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-            end if
-            if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-              if( .not. associated( fstrSOLID%contacts ) ) then
-                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)
-              else
-                call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &
-                  infoCTChange%contactNode_current)
-              endif
-            end if
-
-            ! ----- Result output (include visualize output)
-            call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
+        ! ----- Restart
+        if( fstrSOLID%restart_nout < 0 ) then
+          fstrSOLID%restart_nout = - fstrSOLID%restart_nout
+        end if
+        if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
+          if( .not. associated( fstrSOLID%contacts ) ) then
+            call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)
+          else
+            call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &
+              infoCTChange%contactNode_current)
           endif
+        end if
+        ! ----- Result output (include visualize output)
+        call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
 
-          if( fstrSOLID%TEMP_irres > 0 ) then
-            if( fstrSOLID%restart_nout < 0 ) then
-              fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-            end if
-            if( mod(itemp,fstrSOLID%restart_nout) == 0 .or. ( fstrSOLID%TEMP_irres > 1 .and. itemp == ttemp ) ) then
-              call fstr_write_restart(tot_step, 1, itemp, hecMESH, fstrSOLID, fstrPARAM)
-            end if
-
-            ! ----- Result output (include visualize output)
-            call fstr_static_Output(tot_step, itemp, hecMESH, fstrSOLID, fstrPR%solution_type)
-          endif
-
-          if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep+tintl
-
-        enddo   !--- end of itemp loop
+        if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep + fstrSOLID%TEMP_interval
 
         call cpu_time(time_2)
         if( hecMESH%my_rank==0) then
@@ -209,7 +192,7 @@ module m_fstr_solve_NLGEOM
       enddo    !--- end of substep  loop
 
       restart_substep_num = 1
-
+      if( fstrSOLID%TEMP_irres > 0 ) exit
     enddo      !--- end of tot_step loop
     !
     !  message
