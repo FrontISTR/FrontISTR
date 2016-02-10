@@ -26,63 +26,63 @@
 !======================================================================!
 module m_fstr_NonLinearMethod
 
-use m_fstr
-use m_fstr_para_contact
-use m_static_lib
-use m_static_output
+  use m_fstr
+  use m_fstr_para_contact
+  use m_static_lib
+  use m_static_output
 
-use m_fstr_spring
-use m_fstr_StiffMatrix
-use m_fstr_Update
-use m_fstr_ass_load
-use m_fstr_AddBC
-use m_fstr_Residual
-use m_fstr_Restart
-use fstr_matrix_con_contact
+  use m_fstr_spring
+  use m_fstr_StiffMatrix
+  use m_fstr_Update
+  use m_fstr_ass_load
+  use m_fstr_AddBC
+  use m_fstr_Residual
+  use m_fstr_Restart
+  use fstr_matrix_con_contact
 
-implicit none
+  implicit none
 
-contains
+  contains
 
 
-!> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
-!> method
-subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-                        restrt_step_num, sub_step )
+  !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
+  !> method
+  subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
+    restrt_step_num, sub_step )
 
-  integer, intent(in)                   :: cstep     !< current loading step
-  type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-  type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-  type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-  integer, intent(in)                   :: sub_step  !< substep number of current loading step
-  type (fstr_param)                     :: fstrPARAM !< type fstr_param
-  type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
-  integer(kind=kint) :: ndof
-  integer(kind=kint) :: i, iter
-  integer(kind=kint) :: stepcnt
-  real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
-  integer(kind=kint) :: restrt_step_num
-  integer(kind=kint) :: n_node_global
-  real(kind=kreal), pointer :: coord(:)
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: i, iter
+    integer(kind=kint) :: stepcnt
+    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
+    integer(kind=kint) :: restrt_step_num
+    integer(kind=kint) :: n_node_global
+    real(kind=kreal), pointer :: coord(:)
 
-  ! sum of n_node among all subdomains (to be used to calc res)
-  n_node_global = hecMESH%nn_internal
-  call hecmw_allreduce_I1(hecMESH, n_node_global, HECMW_SUM)
+    ! sum of n_node among all subdomains (to be used to calc res)
+    n_node_global = hecMESH%nn_internal
+    call hecmw_allreduce_I1(hecMESH, n_node_global, HECMW_SUM)
 
-  hecMAT%NDOF = hecMESH%n_dof
-  ndof = hecMAT%NDOF
+    hecMAT%NDOF = hecMESH%n_dof
+    ndof = hecMAT%NDOF
 
-  allocate(coord(hecMESH%n_node*ndof))
+    allocate(coord(hecMESH%n_node*ndof))
 
-  tincr = fstrSOLID%step_ctrl(cstep)%initdt
-  if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
+    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
-  call cpu_time(tt0)
+    call cpu_time(tt0)
 
-  hecMAT%X = 0.0d0
+    hecMAT%X = 0.0d0
 
-  stepcnt = 0
+    stepcnt = 0
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -128,7 +128,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 )                                  &
-       call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+        call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
       res = fstr_get_residual(hecMAT%B, hecMESH)
@@ -148,7 +148,7 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
       ! ----- check convergence
       if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+        relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
       res1 = res
 
     enddo
@@ -156,12 +156,12 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
     ! -----  not convergence
     if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
-       if( hecMESH%my_rank == 0 ) then
-         write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-         write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-         write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-       end if
-       stop
+      if( hecMESH%my_rank == 0 ) then
+        write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+      end if
+      stop
     end if
 
     ! ----- update the total displacement
@@ -178,61 +178,61 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
-  deallocate(coord)
-end subroutine fstr_Newton
+    deallocate(coord)
+  end subroutine fstr_Newton
 
 
-!> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
-!> method combined with Nested iteration of augmentation calculation as suggested
-!> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
-subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
-                                    restart_step_num, restart_substep_num, sub_step, infoCTChange )
+  !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
+  !> method combined with Nested iteration of augmentation calculation as suggested
+  !> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
+  subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
+    restart_step_num, restart_substep_num, sub_step, infoCTChange )
   use mContact
 
-  integer, intent(in)                   :: cstep     !< current loading step
-  type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-  type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-  type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-  integer, intent(in)                   :: sub_step  !< substep number of current loading step
-  type (fstr_param)                     :: fstrPARAM !< type fstr_param
-  type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
-  type (fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
+    type (fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
 
-  integer(kind=kint) :: ndof
-  integer(kind=kint) :: ctAlgo
-  integer(kind=kint) :: i, iter
-  integer(kind=kint) :: al_step, n_al_step, stepcnt
-  real(kind=kreal)   :: tt0, tt, res, res0, res1, maxv, relres, tincr
-  integer(kind=kint) :: restart_step_num, restart_substep_num
-  logical            :: convg, ctchange
-  integer(kind=kint) :: n_node_global
-  real(kind=kreal), pointer :: coord(:)
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: ctAlgo
+    integer(kind=kint) :: i, iter
+    integer(kind=kint) :: al_step, n_al_step, stepcnt
+    real(kind=kreal)   :: tt0, tt, res, res0, res1, maxv, relres, tincr
+    integer(kind=kint) :: restart_step_num, restart_substep_num
+    logical            :: convg, ctchange
+    integer(kind=kint) :: n_node_global
+    real(kind=kreal), pointer :: coord(:)
 
-  ! sum of n_node among all subdomains (to be used to calc res)
-  n_node_global = hecMESH%nn_internal
-  call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
+    ! sum of n_node among all subdomains (to be used to calc res)
+    n_node_global = hecMESH%nn_internal
+    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
-  ctAlgo = fstrPARAM%contact_algo
+    ctAlgo = fstrPARAM%contact_algo
 
-  hecMAT%NDOF = hecMESH%n_dof
-  ndof = hecMAT%NDOF
+    hecMAT%NDOF = hecMESH%n_dof
+    ndof = hecMAT%NDOF
 
-  allocate(coord(hecMESH%n_node*ndof))
+    allocate(coord(hecMESH%n_node*ndof))
 
-  tincr = fstrSOLID%step_ctrl(cstep)%initdt
-  if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
+    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
-  call cpu_time(tt0)
+    call cpu_time(tt0)
 
-  if( cstep == restart_step_num .and. sub_step == restart_substep_num ) then
-    if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-    call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
-    if(hecMESH%my_rank==0) write(*,*)
-  endif
+    if( cstep == restart_step_num .and. sub_step == restart_substep_num ) then
+      if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
+      call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      if(hecMESH%my_rank==0) write(*,*)
+    endif
 
-  hecMAT%X = 0.0d0
+    hecMAT%X = 0.0d0
 
-  stepcnt = 0
+    stepcnt = 0
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -306,7 +306,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 )                                 &
-         call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -332,7 +332,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-            relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+          relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         res1 = res
 
       enddo
@@ -340,12 +340,12 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
       ! -----  not convergence
       if( iter>fstrSOLID%step_ctrl(cstep)%max_iter ) then
-         if( hecMESH%my_rank==0) then
-           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-           write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-         end if
-         stop
+        if( hecMESH%my_rank==0) then
+          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        stop
       end if
 
       ! ----- deal with contact boundary
@@ -355,7 +355,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
         call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
         if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
-         ctchange = .true.
+          ctchange = .true.
       endif
       if( fstr_is_contact_active() ) then
         gnt(2)=gnt(2)/iter
@@ -381,89 +381,89 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
-  deallocate(coord)
-end subroutine fstr_Newton_contactALag
+    deallocate(coord)
+  end subroutine fstr_Newton_contactALag
 
 
-!> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson method.
-!> Standard Lagrange multiplier algorithm for contact analysis is incoluded in this subroutine.
-subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,                  &
-                                    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
+  !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson method.
+  !> Standard Lagrange multiplier algorithm for contact analysis is incoluded in this subroutine.
+  subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,                  &
+    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
 
-  use mContact
-  use m_addContactStiffness
-  use m_solve_LINEQ_contact
+    use mContact
+    use m_addContactStiffness
+    use m_solve_LINEQ_contact
 
-  integer, intent(in)                    :: cstep        !< current loading step
-  type (hecmwST_local_mesh)              :: hecMESH      !< hecmw mesh
-  type (hecmwST_matrix)                  :: hecMAT       !< hecmw matrix
-  type (fstr_solid)                      :: fstrSOLID    !< fstr_solid
-  integer, intent(in)                    :: sub_step     !< substep number of current loading step
-  type (fstr_param)                      :: fstrPARAM    !< type fstr_param
-  type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
-  type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-  type (hecmwST_matrix), optional        :: conMAT
+    integer, intent(in)                    :: cstep        !< current loading step
+    type (hecmwST_local_mesh)              :: hecMESH      !< hecmw mesh
+    type (hecmwST_matrix)                  :: hecMAT       !< hecmw matrix
+    type (fstr_solid)                      :: fstrSOLID    !< fstr_solid
+    integer, intent(in)                    :: sub_step     !< substep number of current loading step
+    type (fstr_param)                      :: fstrPARAM    !< type fstr_param
+    type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
+    type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix), optional        :: conMAT
 
-  integer(kind=kint) :: ndof
-  integer(kind=kint) :: ctAlgo
-  integer(kind=kint) :: i, iter, max_iter_contact
-  integer(kind=kint) :: stepcnt, count_step
-  real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr, resX
-  integer(kind=kint) :: restart_step_num, restart_substep_num
-  logical            :: is_mat_symmetric
-  integer(kind=kint) :: n_node_global
-  integer(kind=kint) :: contact_changed_global
-  integer(kint)      :: nndof
-  real(kreal)        :: q_residual,x_residual
-  real(kind=kreal), pointer :: coord(:)
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: ctAlgo
+    integer(kind=kint) :: i, iter, max_iter_contact
+    integer(kind=kint) :: stepcnt, count_step
+    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr, resX
+    integer(kind=kint) :: restart_step_num, restart_substep_num
+    logical            :: is_mat_symmetric
+    integer(kind=kint) :: n_node_global
+    integer(kind=kint) :: contact_changed_global
+    integer(kint)      :: nndof
+    real(kreal)        :: q_residual,x_residual
+    real(kind=kreal), pointer :: coord(:)
 
-  ! sum of n_node among all subdomains (to be used to calc res)
-  n_node_global = hecMESH%nn_internal
-  call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
+    ! sum of n_node among all subdomains (to be used to calc res)
+    n_node_global = hecMESH%nn_internal
+    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
-  if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH) ) then
-    write(*, *) ' This type of direct solver is not yet available in such case ! '
-    write(*, *) ' Please use intel MKL direct solver !'
-    call  hecmw_abort( hecmw_comm_get_comm() )
-  endif
-
-  ctAlgo = fstrPARAM%contact_algo
-
-  hecMAT%NDOF = hecMESH%n_dof
-  ndof = hecMAT%NDOF
-
-  allocate(coord(hecMESH%n_node*ndof))
-
-  tincr = fstrSOLID%step_ctrl(cstep)%initdt
-  if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
-
-  call cpu_time(tt0)
-
-  fstrSOLID%dunode(:)  = 0.0d0
-
-  if( cstep==restart_step_num.and.sub_step==restart_substep_num  ) then
-    call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
-    if(paraContactFlag.and.present(conMAT)) then
-      call copyClearMatrix(hecMAT,conMAT)
-    endif
-    if ( fstr_is_contact_active() ) then
-      ! ----  For Parallel Contact with Multi-Partition Domains
-      if(paraContactFlag.and.present(conMAT)) then
-        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-      else
-        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-      endif
-    elseif( hecMAT%Iarray(99)==4 ) then
+    if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH) ) then
       write(*, *) ' This type of direct solver is not yet available in such case ! '
-      write(*, *) ' Please change the solver type to intel MKL direct solver !'
-      call hecmw_abort(hecmw_comm_get_comm())
+      write(*, *) ' Please use intel MKL direct solver !'
+      call  hecmw_abort( hecmw_comm_get_comm() )
     endif
-    is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
-    call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
-  endif
 
-  stepcnt = 0
+    ctAlgo = fstrPARAM%contact_algo
+
+    hecMAT%NDOF = hecMESH%n_dof
+    ndof = hecMAT%NDOF
+
+    allocate(coord(hecMESH%n_node*ndof))
+
+    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
+
+    call cpu_time(tt0)
+
+    fstrSOLID%dunode(:)  = 0.0d0
+
+    if( cstep==restart_step_num.and.sub_step==restart_substep_num  ) then
+      call fstr_save_originalMatrixStructure(hecMAT)
+      call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      if(paraContactFlag.and.present(conMAT)) then
+        call copyClearMatrix(hecMAT,conMAT)
+      endif
+      if ( fstr_is_contact_active() ) then
+        ! ----  For Parallel Contact with Multi-Partition Domains
+        if(paraContactFlag.and.present(conMAT)) then
+          call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+        else
+          call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
+        endif
+      elseif( hecMAT%Iarray(99)==4 ) then
+        write(*, *) ' This type of direct solver is not yet available in such case ! '
+        write(*, *) ' Please change the solver type to intel MKL direct solver !'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
+      call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
+    endif
+
+    stepcnt = 0
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -605,20 +605,20 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-            relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-         res1 = res
+          relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+        res1 = res
 
       enddo
       ! ----- end of inner loop
 
       ! -----  not convergence
       if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
-         if( hecMESH%my_rank == 0) then
-           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-           write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-         end if
-         stop
+        if( hecMESH%my_rank == 0) then
+          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        stop
       end if
 
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
@@ -672,8 +672,8 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
       write(ISTA,'("### Converged in contact iteration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
-  deallocate(coord)
-end subroutine fstr_Newton_contactSLag
+    deallocate(coord)
+  end subroutine fstr_Newton_contactSLag
 
 
 end module m_fstr_NonLinearMethod
