@@ -48,8 +48,8 @@ contains
       type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
       type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
       type ( hecmwST_matrix      ),optional :: conMAT
-      integer(kind=kint) :: i,j,num_monit,ig,iS,iE,ik,in,ing,iunitS,iunit,ierror
-      character(len=HECMW_FILENAME_LEN) :: fname
+      integer(kind=kint) :: i,j,num_monit,ig,iS,iE,ik,in,ing,iunitS,iunit,ierror,flag,limit
+      character(len=HECMW_FILENAME_LEN) :: fname, header
       integer(kind=kint) :: restrt_step_num
       integer(kind=kint) :: restrt_step(1)
 
@@ -73,77 +73,84 @@ contains
 !C-- file open for local use
 !C
       if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
-      num_monit = 0
-      ig = fstrDYNAMIC%ngrp_monit
-      iS = hecMESH%node_group%grp_index(ig-1)+1
-      iE = hecMESH%node_group%grp_index(ig)
-      do ik=iS,iE
-        in = hecMESH%node_group%grp_item(ik)
-        if (in > hecMESH%nn_internal) cycle
-        num_monit = num_monit+1
-        ing = hecMESH%global_node_id(in)
-        iunitS = 10*(num_monit-1)
-
-        iunit = iunitS + fstrDYNAMIC%dynamic_IW4
-        write(fname,'(a,i0,a)') 'dyna_disp_',ing,'.txt'
-        if(fstrDYNAMIC%restart_nout < 0 ) then
-          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+        call hecmw_ctrl_is_subdir( flag, limit )
+        if( flag == 0)then
+          header = ""
         else
-          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          header = adjustl("MONITOR/")
+          call hecmw_ctrl_make_subdir( adjustl("MONITOR/test.txt"), limit )
         endif
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error',trim(fname)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+        num_monit = 0
+        ig = fstrDYNAMIC%ngrp_monit
+        iS = hecMESH%node_group%grp_index(ig-1)+1
+        iE = hecMESH%node_group%grp_index(ig)
+        do ik=iS,iE
+          in = hecMESH%node_group%grp_item(ik)
+          if (in > hecMESH%nn_internal) cycle
+          num_monit = num_monit+1
+          ing = hecMESH%global_node_id(in)
+          iunitS = 10*(num_monit-1)
 
-        iunit = iunitS + fstrDYNAMIC%dynamic_IW5
-        write(fname,'(a,i0,a)') 'dyna_velo_',ing,'.txt'
-        if(fstrDYNAMIC%restart_nout < 0 ) then
-          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
-        else
-          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
-        endif
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error',trim(fname)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+          iunit = iunitS + fstrDYNAMIC%dynamic_IW4
+          write(fname,'(a,i0,a)') trim(header)//'dyna_disp_',ing,'.txt'
+          if(fstrDYNAMIC%restart_nout < 0 ) then
+            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+          else
+            OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          endif
+          if( ierror /= 0 ) then
+            write(*,*) 'stop due to file opening error:',trim(fname)
+            call hecmw_abort( hecmw_comm_get_comm())
+          end if
 
-        iunit = iunitS + fstrDYNAMIC%dynamic_IW6
-        write(fname,'(a,i0,a)') 'dyna_acce_',ing,'.txt'
-        if(fstrDYNAMIC%restart_nout < 0 ) then
-          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
-        else
-          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
-        endif
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error',trim(fname)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+          iunit = iunitS + fstrDYNAMIC%dynamic_IW5
+          write(fname,'(a,i0,a)') trim(header)//'dyna_velo_',ing,'.txt'
+          if(fstrDYNAMIC%restart_nout < 0 ) then
+            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+          else
+            OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          endif
+          if( ierror /= 0 ) then
+            write(*,*) 'stop due to file opening error',trim(fname)
+            call hecmw_abort( hecmw_comm_get_comm())
+          end if
 
-        iunit = iunitS + fstrDYNAMIC%dynamic_IW8
-        write(fname,'(a,i0,a)') 'dyna_strain_',ing,'.txt'
-        if(fstrDYNAMIC%restart_nout < 0 ) then
-          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
-        else
-          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
-        endif
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error',trim(fname)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+          iunit = iunitS + fstrDYNAMIC%dynamic_IW6
+          write(fname,'(a,i0,a)') trim(header)//'dyna_acce_',ing,'.txt'
+          if(fstrDYNAMIC%restart_nout < 0 ) then
+            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+          else
+            OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          endif
+          if( ierror /= 0 ) then
+            write(*,*) 'stop due to file opening error',trim(fname)
+            call hecmw_abort( hecmw_comm_get_comm())
+          end if
 
-        iunit = iunitS + fstrDYNAMIC%dynamic_IW9
-        write(fname,'(a,i0,a)') 'dyna_stress_',ing,'.txt'
-        if(fstrDYNAMIC%restart_nout < 0 ) then
-          OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
-        else
-          OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
-        endif
-        if( ierror /= 0 ) then
-          write(*,*) 'stop due to file opening error',trim(fname)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
-      enddo
+          iunit = iunitS + fstrDYNAMIC%dynamic_IW8
+          write(fname,'(a,i0,a)') trim(header)//'dyna_strain_',ing,'.txt'
+          if(fstrDYNAMIC%restart_nout < 0 ) then
+            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+          else
+            OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          endif
+          if( ierror /= 0 ) then
+            write(*,*) 'stop due to file opening error',trim(fname)
+            call hecmw_abort( hecmw_comm_get_comm())
+          end if
+
+          iunit = iunitS + fstrDYNAMIC%dynamic_IW9
+          write(fname,'(a,i0,a)') trim(header)//'dyna_stress_',ing,'.txt'
+          if(fstrDYNAMIC%restart_nout < 0 ) then
+            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+          else
+            OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
+          endif
+          if( ierror /= 0 ) then
+            write(*,*) 'stop due to file opening error',trim(fname)
+            call hecmw_abort( hecmw_comm_get_comm())
+          end if
+        enddo
       endif
 
 !C

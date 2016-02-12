@@ -121,7 +121,7 @@ contains
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas == 1) then
 
-                call setMASS(IDBG,hecMESH,hecMAT,myEIG)
+                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas == 2) then
@@ -531,7 +531,7 @@ contains
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas == 1) then
 
-                call setMASS(IDBG,hecMESH,hecMAT,myEIG)
+                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas == 2) then

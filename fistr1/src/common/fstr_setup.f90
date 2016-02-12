@@ -434,12 +434,17 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
                 stop
             endif
-            cid = c_material
+            cid = 0
             do i=1,hecMESH%material%n_mat
-              if( trim(hecMESH%material%mat_name(i)) == trim(mName) ) then
+              if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
                 cid = i; exit
               endif
             enddo
+            if(cid == 0)then
+                write(*,*) '### Error: Fail in read in material definition : ' , c_material
+                write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+                stop
+            endif
             fstrSOLID%materials(cid)%name = mName
             if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
           else if( header_name == '!ELASTIC' ) then
@@ -521,7 +526,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  stop
                endif
             endif
-          else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION') then
+          else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
+                   header_name == '!EXPANSION') then
             if( cid >0 ) then
                if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
                                              fstrSOLID%materials(cid)%dict)/=0 )  then
@@ -1325,6 +1331,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   scaling    => svIarray(7)
      !   iterlog    => svIarray(21)
      !   timelog    => svIarray(22)
+     !   steplog    => svIarray(23)
      !   dumptype   => svIarray(31)
      !   dumpexit   => svIarray(32)
      !   usejad     => svIarray(33)
@@ -1339,7 +1346,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   filter     => svRarray(5)
 
         rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
-                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), &
+                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
                         svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
                         svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), &
                         svRarray(1), svRarray(2), svRarray(3),                &

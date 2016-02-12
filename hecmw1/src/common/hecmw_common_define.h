@@ -690,6 +690,14 @@
 #define HECMW_CLASS_JOINT 4
 #define HECMW_CLASS_LINK  5
 
+#define HECMW_SHAPE_LINE  1
+#define HECMW_SHAPE_TRI   2
+#define HECMW_SHAPE_QUAD  3
+#define HECMW_SHAPE_TETRA 4
+#define HECMW_SHAPE_PYRAM 5
+#define HECMW_SHAPE_PRISM 6
+#define HECMW_SHAPE_HEXA  7
+
 /*
  *   DOFs
  */

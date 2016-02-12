@@ -292,7 +292,7 @@ contains
     !Find eigenvalue header.
     do
       read(logfile, '(A80)', ERR=119) line
-      if(trim(adjustl(line)) == "NO.   EIGENVALUE    ANGL.FREQUENCY FREQUENCY(HZ)") then
+      if(trim(adjustl(line)) == "NO.  EIGENVALUE  FREQUENCY   (HZ)        X           Y           Z           X") then
         endflag = 1
         exit
       end if
@@ -303,7 +303,7 @@ contains
       read(logfile, '(A80)') line
     end do
     do im=1, (endmode-startmode+1)
-      read(logfile, '(i5,3e15.6)', ERR=119) id, eigenvalue(im), anglfreq(im), freq
+      read(logfile, '(i5,3e12.4,a)', ERR=119) id, eigenvalue(im), anglfreq(im), freq, line
     end do
     return
 
@@ -716,7 +716,7 @@ contains
        write(IMSG,*) 'fstr_mat_ass: OK'
     endif
 
-    call setMASS(IDBG, hecMESH, hecMAT, myEIG)
+    call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, myEIG)
 
   end subroutine
 

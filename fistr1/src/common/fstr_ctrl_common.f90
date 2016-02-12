@@ -61,7 +61,7 @@ end function fstr_ctrl_get_SOLUTION
 
 
 !> Read in !SOLVER
-function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, nier, &
+function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
                                 iterpremax, nrest, scaling, &
                                 dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, &
                                 resid, singma_diag, sigma, thresh, filter )
@@ -71,6 +71,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         integer(kind=kint) :: nset
         integer(kind=kint) :: iterlog
         integer(kind=kint) :: timelog
+        integer(kind=kint) :: steplog
         integer(kind=kint) :: nier
         integer(kind=kint) :: iterpremax
         integer(kind=kint) :: nrest
@@ -93,12 +94,13 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
 
         integer(kind=kint) :: number_number = 5
         integer(kind=kint) :: indirect_number = 4
-        integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd
+        integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
 
         fstr_ctrl_get_SOLVER = -1
 
         iter = iterlog+1
         time = timelog+1
+        step = steplog+1
         sclg = scaling+1
         dmpt = dumptype+1
         dmpx = dumpexit+1
@@ -111,6 +113,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
         if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES,VERBOSE ',   0,   'P',   time ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'STEPLOG ', 'NO,YES ',           0,   'P',   step ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'SCALING ', 'NO,YES ',           0,   'P',   sclg ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
@@ -142,6 +145,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, ni
 
         iterlog = iter -1
         timelog = time -1
+        steplog = step -1
         scaling = sclg -1
         dumpexit = dmpx -1
         usejad = usjd -1

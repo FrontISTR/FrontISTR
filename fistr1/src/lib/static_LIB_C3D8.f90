@@ -242,6 +242,7 @@ MODULE m_static_LIB_C3D8
     REAL(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
     REAL(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
     INTEGER(kind=kint) :: i, j, k, LX, mtype, serr
+    integer(kind=kint) :: isEp
     REAL(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
     REAL(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3), tm(6, 6)
     REAL(kind=kreal) :: dstrain(6), dstress(6), dumstress(3, 3), dum(3, 3)
@@ -302,9 +303,12 @@ MODULE m_static_LIB_C3D8
       !     UPDATE STRAIN and STRESS
       ! ========================================================
 
-      IF( isElastoplastic( gausses(LX)%pMaterial%mtype ) &
-          .OR. gausses(LX)%pMaterial%mtype == NORTON )   &
-       gausses(LX)%pMaterial%mtype = ELASTIC
+      if( isElastoplastic(mtype) .OR. mtype == NORTON )then
+        isEp = 1
+      else
+        isEp = 0
+      endif
+      !gausses(LX)%pMaterial%mtype = ELASTIC
 
       EPSTH = 0.0D0
       IF( PRESENT(tt) .AND. PRESENT(t0) ) THEN
@@ -312,7 +316,7 @@ MODULE m_static_LIB_C3D8
         ttc = DOT_PRODUCT(TT, spfunc)
         tt0 = DOT_PRODUCT(T0, spfunc)
         ttn = DOT_PRODUCT(TN, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc, isEp )
 
         ina(1) = ttc
         IF( matlaniso ) THEN
@@ -345,7 +349,7 @@ MODULE m_static_LIB_C3D8
 
       ELSE
 
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, isEp=isEp )
 
       END IF
 
@@ -391,7 +395,7 @@ MODULE m_static_LIB_C3D8
         ELSE IF( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0  ) THEN
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%stress(1:6) = MATMUL( D(1:6, 1:6), dstrain(1:6) )
-          gausses(LX)%pMaterial%mtype = mtype
+          !gausses(LX)%pMaterial%mtype = mtype
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
             CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
           ELSE
@@ -431,7 +435,7 @@ MODULE m_static_LIB_C3D8
         IF( mtype == USERMATERIAL ) THEN
           CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
         ELSEIF( mtype == NORTON ) THEN
-          gausses(LX)%pMaterial%mtype = mtype
+          !gausses(LX)%pMaterial%mtype = mtype
           IF( tincr /= 0.0D0 .AND. any(gausses(LX)%stress /= 0.0D0) ) THEN
             IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
               CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr, ttc, ttn )
@@ -444,7 +448,7 @@ MODULE m_static_LIB_C3D8
       END IF
 
       IF( isElastoplastic(mtype) ) THEN
-        gausses(LX)%pMaterial%mtype = mtype
+        !gausses(LX)%pMaterial%mtype = mtype
         IF( PRESENT(tt) ) THEN
           CALL BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
                               gausses(LX)%istatus(1), gausses(LX)%fstatus, ttc )

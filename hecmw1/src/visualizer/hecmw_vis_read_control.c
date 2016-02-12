@@ -825,6 +825,20 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf, PVR
 											sf[k].output_type=9;
 										else if(strncmp(para1, "SEPARATE_COMPLETE_AVS", 21)==0)
 											sf[k].output_type=10;
+										else if(strncmp(para1, "BIN_COMPLETE_REORDER_AVS", 24)==0)
+											sf[k].output_type=11;
+										else if(strncmp(para1, "BIN_SEPARATE_COMPLETE_AVS", 25)==0)
+											sf[k].output_type=12;
+										else if(strncmp(para1, "COMP_COMPLETE_REORDER_AVS", 25)==0)
+											sf[k].output_type=13;
+										else if(strncmp(para1, "COMP_SEPARATE_COMPLETE_AVS", 26)==0)
+											sf[k].output_type=14;
+										else if(strncmp(para1, "VTK", 3)==0)
+											sf[k].output_type=15;
+										else if(strncmp(para1, "BIN_VTK", 7)==0)
+											sf[k].output_type=16;
+										else if(strncmp(para1, "COMP_VTK", 8)==0)
+											sf[k].output_type=17;
 										else {
 											fprintf(stderr, "ERROR: HEC-MW-VIS-E1001: output_type is not correct\n");
 											HECMW_vis_print_exit("AVS or BMP or VIS_FEMAP_NEUTRAL or FSTR_FEMAP_NEUTRAL");
