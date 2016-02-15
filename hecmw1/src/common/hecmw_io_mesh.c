@@ -1781,7 +1781,8 @@ setup_zero(struct hecmwST_local_mesh *mesh)
 static int
 setup_init(struct hecmwST_local_mesh *mesh)
 {
-	int i,size,n;
+	int i,n;
+	size_t size;
 	struct hecmw_io_initial *p;
 
 	HECMW_assert(mesh);
@@ -1844,7 +1845,8 @@ setup_init(struct hecmwST_local_mesh *mesh)
 static int
 setup_node(struct hecmwST_local_mesh *mesh)
 {
-	int i, size, id;
+	int i, id;
+	size_t size;
 	struct hecmw_io_node *p;
 
 	HECMW_assert(mesh);
@@ -1928,7 +1930,8 @@ setup_node(struct hecmwST_local_mesh *mesh)
 static int
 setup_elem(struct hecmwST_local_mesh *mesh)
 {
-	int i, j, n, size, ncon, id;
+	int i, j, n, id;
+	size_t size, ncon;
 	struct hecmw_io_element *p;
 
 	HECMW_assert(mesh);
@@ -2346,7 +2349,8 @@ setup_sgrp(struct hecmwST_local_mesh *mesh)
 static int
 setup_mpc(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,size,nmpc,nneq,start;
+	int i,j,nmpc,nneq,start;
+	size_t size;
 	struct hecmwST_mpc *mpc;
 	struct hecmw_io_mpc *p;
 
@@ -2463,7 +2467,8 @@ error:
 static int
 setup_amp(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,size,namp,nitem,start;
+	int i,j,namp,nitem,start;
+	size_t size;
 	struct hecmwST_amplitude *amp;
 	struct hecmw_io_amplitude *p;
 
@@ -2717,7 +2722,8 @@ setup_sect_set_sectid(struct hecmwST_local_mesh *mesh,
 static int
 setup_sect(struct hecmwST_local_mesh *mesh)
 {
-	int i,size,nsect,nint,nreal,nmat;
+	int i,nsect,nint,nreal,nmat;
+	size_t size;
 	struct hecmwST_section *sect;
 	struct hecmw_io_section *p;
 
@@ -2948,7 +2954,8 @@ setup_mpc_reorder(struct hecmwST_local_mesh *mesh)
 static int
 setup_mat(struct hecmwST_local_mesh *mesh)
 {
-	int i,j,k,l,size,nmat,nmatitem,nmatsubitem,nmattable;
+	int i,j,k,l,nmat,nmatitem,nmatsubitem,nmattable;
+	size_t size;
 	struct hecmwST_material *mat;
 	struct hecmw_io_material *p;
 
@@ -3153,7 +3160,7 @@ setup_elem_mat(struct hecmwST_local_mesh *mesh)
 
 	mesh->n_elem_mat_ID = nmat;
 	if(mesh->n_elem_mat_ID > 0) {
-		int size;
+		size_t size;
 		size = sizeof(*mesh->elem_mat_ID_index) * (mesh->n_elem + 1);
 		mesh->elem_mat_ID_index = HECMW_malloc(size);
 		if(mesh->elem_mat_ID_index == NULL) {
@@ -3190,7 +3197,8 @@ setup_elem_mat(struct hecmwST_local_mesh *mesh)
 static int
 setup_contact(struct hecmwST_local_mesh *mesh)
 {
-	int i,size,npair,slave_gid,master_gid;
+	int i,npair,slave_gid,master_gid;
+	size_t size;
 	struct hecmwST_contact_pair *cpair;
 	struct hecmw_io_contact *p;
 
