@@ -4106,7 +4106,7 @@ static int
 read_boundary_keyword(void)
 {
 	int token;
-	static int isFirst = 0;
+	/* static int isFirst = 0; */
 
 	/* *BOUNDARY */
 	token = HECMW_ablex_next_token();
@@ -4119,22 +4119,23 @@ read_boundary_keyword(void)
 		set_err_token(token, HECMW_IO_ABAQUS_E1700, "',' is not required after *BOUDARY SECTION");
 		return -1;
 	}
-	/*if(isFirst == 0) {*/
-		fprintf(stderr, "Recommended that following auto-generated cards are added in !BOUNDARY section of *.cnt file \n");
-		isFirst =1;
-	/*}*/
+	/* if(isFirst == 0) { */
+		fprintf(stderr, "Auto-generated cards should be added in !BOUNDARY section of *.cnt file \n");
+	/*	isFirst =1; */
+	/*} */
 	return 0;
 }
 
 static int
 read_boundary_data(int *nnode, int **node_array)
 {
-	int i,n,isFirst,isOut,*node,token;
+	int i,n,*node,token;
+	int isFirst,isSuggest,isNode;
 	struct hecmw_io_id *head,*prev,*p,*q;
 
 	n = 0;
-	isFirst = 0;
-	isOut = 0;
+	isNode = 0;
+	isSuggest = 0;
 	head = NULL;
 	node = NULL;
 	while(1) {
@@ -4149,23 +4150,21 @@ read_boundary_data(int *nnode, int **node_array)
 			goto error;
 		}
 
-		/* nodX */
+		/* node or NGRP */
 		if(token != HECMW_ABLEX_INT && token != HECMW_ABLEX_DOUBLE && token != ',') {
-			isFirst=1;
+			isNode = 1;
 		}
 
 		if(token == HECMW_ABLEX_NAME) {
-			isOut = 1;
-			char *p = HECMW_ablex_get_text();
-			fprintf(stderr, "%s", p);
+			isSuggest = 1;
+			char *c = HECMW_ablex_get_text();
+			fprintf(stderr, "%s", c);
 		}
-		if(token == HECMW_ABLEX_INT && isOut == 1) {
-			isOut = 1;
-			int ii = HECMW_ablex_get_number();
-			fprintf(stderr, ", %d", ii);
+		if(token == HECMW_ABLEX_INT && isSuggest == 1) {
+			int i = HECMW_ablex_get_number();
+			fprintf(stderr, ", %d", i);
 		}
-		if(token == HECMW_ABLEX_DOUBLE && isOut == 1) {
-			isOut = 1;
+		if(token == HECMW_ABLEX_DOUBLE && isSuggest == 1) {
 			double a = HECMW_ablex_get_number();
 			fprintf(stderr, ", %f", a);
 		}
@@ -4177,7 +4176,7 @@ read_boundary_data(int *nnode, int **node_array)
 			id->id = HECMW_ablex_get_number();
 		}
 
-		if(isFirst==0) {
+		if(isNode == 0) {
 			id->next = NULL;
 			if(head == NULL) {
 				head = id;
@@ -4186,7 +4185,10 @@ read_boundary_data(int *nnode, int **node_array)
 			}
 			prev = id;
 			n++;
-			isFirst = 1;
+			isNode  = 1;
+
+			HECMW_assert(head);
+			HECMW_assert(n > 0);
 		}
 
 		/* ',' or NL */
@@ -4197,9 +4199,6 @@ read_boundary_data(int *nnode, int **node_array)
 		}
 		if(token == HECMW_ABLEX_NL) break;
 	}
-
-	HECMW_assert(head);
-	HECMW_assert(n > 0);
 
 	node = HECMW_malloc(sizeof(*node)*n);
 	if(node == NULL) {
@@ -4213,13 +4212,14 @@ read_boundary_data(int *nnode, int **node_array)
 		HECMW_free(p);
 	}
 	head = NULL;
+	isNode = 0;
 
 	*nnode = n;
 	*node_array = node;
 
-	if(isOut == 1) {
+	if(isSuggest == 1) {
 		fprintf(stderr, "\n");
-    isOut = 0;
+		isSuggest = 0;
 	}
 
 	return 0;
@@ -4235,9 +4235,9 @@ error:
 static int
 read_boudary(void)
 {
-	int token,state;
+	int token, state;
 	int flag_boundary = 0;	/* flag for BOUNDARY */
-	int isBoundary = 0;
+	int isNodeInput = 0;
 	static int nbound = 0;
 	char nset[HECMW_NAME_LEN+1] = "";
 	enum {
@@ -4262,8 +4262,8 @@ read_boudary(void)
 			HECMW_assert(flag_boundary);
 			if(read_boundary_data(&n, &node)) return -1;
 
-			if(n != 0) {
-				isBoundary = 1;
+			if(n > 0) {
+				isNodeInput = 1;
 
 				/* add node to group */
 				sprintf(nset,"BND%d",nbound);
@@ -4284,8 +4284,8 @@ read_boudary(void)
 		}
 	}
 
-	if(isBoundary != 0) {
-		fprintf(stderr, "NSET=BND%d is automatically generated\n", nbound);
+	if(isNodeInput == 1) {
+		fprintf(stderr, "NGRP=BND%d\n", nbound);
 		nbound++;
 	}
 
@@ -4311,7 +4311,7 @@ read_cload_keyword(void)
 		return -1;
 	}
 	/*if(isFirst == 0) {*/
-		fprintf(stderr, "Recommended that following auto-generated cards are added in !CLOAD section of *.cnt file \n");
+		fprintf(stderr, "Auto-generated cards should be added in !CLOAD section of *.cnt file \n");
 		isFirst =1;
 	/*}*/
 	return 0;
@@ -4369,7 +4369,7 @@ read_cload(void)
 	}
 
 	if(isCload != 0) {
-		fprintf(stderr, "NSET=CLOAD%d  is automatically generated\n", ncload);
+		fprintf(stderr, "NGRP=CLOAD%d\n", ncload);
 		ncload++;
 	}
 
@@ -4397,7 +4397,7 @@ read_dload_keyword(void)
 		return -1;
 	}
 	/*if(isFirst == 0) {*/
-		fprintf(stderr, "Recommended that following auto-generated cards are added in !DLOAD section of *.cnt file \n");
+		fprintf(stderr, "Auto-generated cards should be added in !DLOAD section of *.cnt file \n");
 		isFirst =1;
 	/*}*/
 	return 0;
@@ -4454,7 +4454,7 @@ read_dload(void)
 	}
 
 	if(isDload != 0) {
-		fprintf(stderr, "NSET=DLOAD%d is automatically generated\n",ndload);
+		fprintf(stderr, "NGRP=DLOAD%d is automatically generated\n",ndload);
 		ndload++;
 	}
 
