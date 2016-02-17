@@ -38,7 +38,7 @@ MODULE m_static_LIB_3dIC
 !----------------------------------------------------------------------*
    SUBROUTINE STF_C3D8IC                                            &
               (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               nddisp, ehdisp)
+               tincr, nddisp, ehdisp, temperature)
 !----------------------------------------------------------------------*
 
     USE mMechGauss
@@ -55,8 +55,10 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal), INTENT(OUT)   :: stiff(:, :)          !< stiffness matrix
     INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)         !< variables to define matreial coordinate system
+    REAL(kind=kreal), INTENT(IN)    :: tincr                !< time increment
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn) !< nodal displacemwent
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: ehdisp(3, 3)  !< enhanced disp of bending mode
+    REAL(kind=kreal), INTENT(IN), OPTIONAL :: temperature(nn) !< temperature
 
 !---------------------------------------------------------------------
 
@@ -74,6 +76,7 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal) :: B1(6, ndof*(nn+3))
     REAL(kind=kreal) :: Smat(9, 9)
     REAL(kind=kreal) :: BN(9, ndof*(nn+3)), SBN(9, ndof*(nn+3))
+    REAL(kind=kreal) :: spfunc(nn), temp
 
 !---------------------------------------------------------------------
 
@@ -112,7 +115,14 @@ MODULE m_static_LIB_3dIC
           WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
         END IF
       END IF
-      CALL MatlMatrix( gausses(LX), D3, D, 1.0D0, coordsys )
+
+      IF( PRESENT(temperature) ) THEN
+        CALL getShapeFunc( etype, naturalcoord, spfunc )
+        temp = DOT_PRODUCT( temperature, spfunc )
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, temp )
+      ELSE
+        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+      END IF
 
       IF( flag == UPDATELAG ) then
         CALL GEOMAT_C3( gausses(LX)%stress, mat )
@@ -296,7 +306,10 @@ MODULE m_static_LIB_3dIC
           WRITE(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
         END IF
       END IF
-      CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys )
+
+      CALL getShapeFunc( fetype, naturalcoord, H(1:nn) )
+      TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
+      CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys, TEMPC )
 
       ! -- Derivative of shape function of imcompatible mode --
       !     [ -2*a   0,   0   ]
@@ -438,6 +451,176 @@ MODULE m_static_LIB_3dIC
     END DO
 
    END SUBROUTINE UpdateST_C3D8IC
+
+
+!>  This subroutine calculatess thermal loading
+!----------------------------------------------------------------------*
+   SUBROUTINE TLOAD_C3D8IC                      &
+              (etype, nn, xx, yy, zz, tt, t0,   &
+               gausses, VECT, cdsys_ID, coords)
+!----------------------------------------------------------------------*
+
+    USE m_fstr
+    USE mMechGauss
+    USE m_MatMatrix
+    USE m_common_struct
+
+!---------------------------------------------------------------------
+
+    INTEGER(kind=kint), PARAMETER     :: ndof=3
+    INTEGER(kind=kint), INTENT(IN)    :: etype                   !< element type, not used here
+    INTEGER(kind=kint), INTENT(IN)    :: nn                      !< number of element nodes
+    REAL(kind=kreal), INTENT(IN)      :: xx(nn), yy(nn), zz(nn)  !< nodes coordinate of element
+    REAL(kind=kreal), INTENT(IN)      :: tt(nn), t0(nn)          !< current and ref temprature
+    TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)              !< info about qudrature points
+    REAL(kind=kreal), INTENT(OUT)     :: VECT(nn*ndof)           !< load vector
+    INTEGER(kind=kint), INTENT(IN)    :: cdsys_ID
+    REAL(kind=kreal), INTENT(INOUT)   :: coords(3, 3)            !< variables to define matreial coordinate system
+
+!---------------------------------------------------------------------
+
+    REAL(kind=kreal) :: ALP, ALP0
+    REAL(kind=kreal) :: D(6, 6), B(6, ndof*(nn+3)), DB(6, ndof*(nn+3))
+    REAL(kind=kreal) :: det, wg, ecoord(3, nn)
+    INTEGER(kind=kint) :: j, IC, serr, fetype
+    REAL(kind=kreal) :: EPSTH(6), SGM(6), H(nn), alpo(3), alpo0(3), coordsys(3, 3), xj(9, 9)
+    REAL(kind=kreal) :: naturalcoord(3), gderiv(nn+3, 3)
+    REAL(kind=kreal) :: jacobian(3, 3),inverse(3, 3)
+    REAL(kind=kreal) :: stiff((nn+3)*3, (nn+3)*3)
+    REAL(kind=kreal) :: tmpvect((nn+3)*3)
+    REAL(kind=kreal) :: tmpforce(nn*ndof), icdisp(9)
+    REAL(kind=kreal) :: TEMPC, TEMP0, THERMAL_EPS, tm(6, 6), outa(1), ina(1)
+    LOGICAL :: ierr, matlaniso
+
+!---------------------------------------------------------------------
+
+    matlaniso = .FALSE.
+    IF( cdsys_ID > 0 ) THEN   ! cannot define aniso exapansion when no local coord defined
+      ina = TT(1)
+      CALL fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+      IF( .NOT. ierr ) matlaniso = .true.
+    END IF
+
+    fetype = fe_hex8n
+    ecoord(1, :) = XX(:)
+    ecoord(2, :) = YY(:)
+    ecoord(3, :) = ZZ(:)
+    ! ---- Calculate enhanced displacement at first
+    ! --- Inverse of Jacobian at elemental center
+    naturalcoord(:) = 0.0D0
+    CALL getJacobian(fetype, nn, naturalcoord, ecoord, det, jacobian, inverse)
+    inverse(:, :) = inverse(:, :)*det
+    ! ---- We now calculate stiff matrix include imcompatible mode
+    !    [   Kdd   Kda ]
+    !    [   Kad   Kaa ]
+    stiff(:, :) = 0.0D0
+    B(1:6, 1:(nn+3)*ndof) = 0.0D0
+    tmpvect(1:(nn+3)*ndof) = 0.0D0
+
+    DO IC = 1, NumOfQuadPoints(fetype)
+
+      CALL getQuadPoint(fetype, IC, naturalCoord)
+      CALL getGlobalDeriv( fetype, nn, naturalcoord, ecoord, det, gderiv(1:nn, 1:3) )
+
+      IF( cdsys_ID > 0 ) THEN
+        CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
+        IF( serr == -1 ) STOP "Fail to setup local coordinate"
+        IF( serr == -2 ) THEN
+          WRITE(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        END IF
+      END IF
+
+      CALL getShapeFunc( fetype, naturalcoord, H(1:nn) )
+      TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
+      TEMP0 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
+      CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys, TEMPC )
+
+      ! -- Derivative of shape function of imcompatible mode --
+      !     [ -2*a   0,   0   ]
+      !     [   0,  -2*b, 0   ]
+      !     [   0,   0,  -2*c ]
+      ! we don't call getShapeDeriv but use above value directly for computation efficiency
+      gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse(1, :)/det
+      gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
+      gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
+
+      wg = getWeight(fetype, IC)*det
+      DO j = 1, nn+3
+        B(1, 3*j-2) = gderiv(j, 1)
+        B(2, 3*j-1) = gderiv(j, 2)
+        B(3, 3*j  ) = gderiv(j, 3)
+        B(4, 3*j-2) = gderiv(j, 2)
+        B(4, 3*j-1) = gderiv(j, 1)
+        B(5, 3*j-1) = gderiv(j, 3)
+        B(5, 3*j  ) = gderiv(j, 2)
+        B(6, 3*j-2) = gderiv(j, 3)
+        B(6, 3*j  ) = gderiv(j, 1)
+      END DO
+
+      DB(1:6, 1:(nn+3)*ndof) = MATMUL( D, B(1:6, 1:(nn+3)*ndof) )
+      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                     &
+      = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                   &
+       +MATMUL( TRANSPOSE(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg
+
+      ina(1) = TEMPC
+      IF( matlaniso ) THEN
+        CALL fetch_TableData( MC_ORTHOEXP, gausses(IC)%pMaterial%dict, alpo(:), ierr, ina )
+        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
+      ELSE
+        CALL fetch_TableData( MC_THEMOEXP, gausses(IC)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(IC)%pMaterial%variables(M_EXAPNSION)
+        alp = outa(1)
+      END IF
+      ina(1) = TEMP0
+      IF( matlaniso  ) THEN
+        CALL fetch_TableData( MC_ORTHOEXP, gausses(IC)%pMaterial%dict, alpo0(:), ierr, ina )
+        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
+      ELSE
+        CALL fetch_TableData( MC_THEMOEXP, gausses(IC)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(IC)%pMaterial%variables(M_EXAPNSION)
+        alp0 = outa(1)
+      END IF
+
+      !**
+      !** THERMAL strain
+      !**
+      IF( matlaniso ) THEN
+        DO j = 1, 3
+          EPSTH(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
+        END DO
+        EPSTH(4:6) = 0.0D0
+        CALL transformation(coordsys, tm)
+        EPSTH(:) = MATMUL( EPSTH(:), tm  ) ! to global coord
+        EPSTH(4:6) = EPSTH(4:6)*2.0D0
+      ELSE
+        THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
+        EPSTH(1:3) = THERMAL_EPS
+        EPSTH(4:6) = 0.0D0
+      END IF
+
+      !**
+      !** SET SGM  {s}=[D]{e}
+      !**
+      SGM(:) = MATMUL( D(:, :), EPSTH(:) )
+
+      !**
+      !** CALCULATE LOAD {F}=[B]T{e}
+      !**
+      TMPVECT(1:(nn+3)*ndof) = TMPVECT(1:(nn+3)*ndof)+MATMUL( SGM(1:6), B(1:6, 1:(nn+3)*ndof) )*wg
+
+    END DO
+
+    ! --- condense tmpvect to vect
+    xj(1:9,1:9)= stiff(nn*ndof+1:(nn+3)*ndof, nn*ndof+1:(nn+3)*ndof)
+    CALL calInverse(9, xj)
+    ! ---  [Kaa]-1 * fa
+    icdisp(1:9) = MATMUL( xj(:, :), tmpvect(nn*ndof+1:(nn+3)*ndof) )
+    ! ---  [Kda] * [Kaa]-1 * fa
+    tmpforce(1:nn*ndof) = MATMUL( stiff(1:nn*ndof, nn*3+1:(nn+3)*ndof), icdisp(1:9) )
+    ! ---  fd - [Kda] * [Kaa]-1 * fa
+    vect(1:nn*ndof) = tmpvect(1:nn*ndof) - tmpforce(1:nn*ndof)
+
+   END SUBROUTINE TLOAD_C3D8IC
 
 
 END MODULE m_static_LIB_3dIC
