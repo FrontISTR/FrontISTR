@@ -105,6 +105,10 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
             stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
       else if ( ic_type==361 ) then
+        if( fstrSOLID%elemopt361 /= 1 ) then
+          write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3D8Bbar                                                                        &
                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &

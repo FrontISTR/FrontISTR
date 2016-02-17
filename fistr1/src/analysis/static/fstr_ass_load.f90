@@ -341,9 +341,25 @@ module m_fstr_ass_load
                              fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) )
 
             else if( ic_type == 361 ) then
-              call TLOAD_C3D8Bbar                                                          &
-                   ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
-                     fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+              if( fstrPR%solution_type == kstSTATIC ) then
+                if( fstrSOLID%elemopt361 == 1 ) then
+                  call TLOAD_C3D8Bbar                                                          &
+                       ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                         fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+                else
+                  call TLOAD_C3D8IC                                                            &
+                       ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                         fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+                endif
+              else
+                if( fstrSOLID%elemopt361 /= 1 ) then
+                  write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
+                  call hecmw_abort( hecmw_comm_get_comm())
+                endif
+                call TLOAD_C3D8Bbar                                                          &
+                     ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                       fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+              endif
 
             else if( ic_type == 341 .or. ic_type == 351 .or.                       &
                      ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then

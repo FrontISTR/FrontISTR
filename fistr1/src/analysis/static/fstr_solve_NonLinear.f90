@@ -81,8 +81,6 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
   call cpu_time(tt0)
 
-  hecMAT%X = 0.0d0
-
   stepcnt = 0
   ttemp = 1
   tintl = 1
@@ -119,9 +117,12 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-      if( iter >= 1 ) then
+      if( iter == 1 ) then
+        hecMAT%Iarray(97) = 2   !Force numerical factorization
+      else
         hecMAT%Iarray(97) = 1   !Need numerical factorization
-      end if
+      endif
+      hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -262,8 +263,6 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
     if(hecMESH%my_rank==0) write(*,*)
   endif
 
-  hecMAT%X = 0.0d0
-
   stepcnt = 0
   ttemp = 1
 
@@ -319,9 +318,12 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         !----- SOLVE [Kt]{du}={R}
         if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-        if( iter >= 1 ) then
+        if( iter == 1 ) then
+          hecMAT%Iarray(97) = 2   !Force numerical factorization
+        else
           hecMAT%Iarray(97) = 1   !Need numerical factorization
-        end if
+        endif
+        hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         CALL solve_LINEQ(hecMESH,hecMAT,imsg)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -600,6 +602,7 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
 
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
+        hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
