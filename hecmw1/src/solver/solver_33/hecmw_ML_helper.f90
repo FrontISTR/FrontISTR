@@ -150,6 +150,7 @@
   subroutine hecmw_ML_get_rbm(id, rbm, ierr)
     use hecmw_util
     use hecmw_mat_id
+    use hecmw_etype
     implicit none
     integer(kind=kint), intent(in) :: id
     real(kind=kreal), intent(out) :: rbm(*)
@@ -158,50 +159,120 @@
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer(kind=kint) :: Ndof, vec_leng, node, offset
     real(kind=kreal) :: x, y, z
+
+    integer(kind=kint), allocatable :: mark(:)
+    integer(kind=kint) :: itype, ic_type, nn, iS, iE, icel, iiS, j, nod
+
     call hecmw_mat_id_get(id, hecMAT, hecMESH)
+
+    ! Mark nodes for rotational DOF
+    allocate(mark(hecMESH%n_node))
+    mark = 0
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if (hecmw_is_etype_33struct(ic_type)) then
+        nn = hecmw_get_max_node(ic_type)
+        iS = hecMESH%elem_type_index(itype-1)+1
+        iE = hecMESH%elem_type_index(itype  )
+        do icel = iS, iE
+          iiS = hecMESH%elem_node_index(icel-1)
+          ! mark latter halves of the nodes
+          do j = nn/2+1, nn
+            nod = hecMESH%elem_node_item(iiS+j)
+            mark(nod) = 1
+          enddo
+        enddo
+      endif
+    enddo
+
     Ndof = 3
     vec_leng = hecMESH%nn_internal * Ndof
     do node = 1, hecMESH%nn_internal
-      x = hecMESH%node(3*node-2)
-      y = hecMESH%node(3*node-1)
-      z = hecMESH%node(3*node  )
 
-      ! translation x
-      offset = (node-1)*Ndof
-      rbm(offset+1)=1.d0
-      rbm(offset+2)=0.d0
-      rbm(offset+3)=0.d0
+      if (mark(node) == 0) then
+        !!! translational DOF
 
-      ! translation y
-      offset = offset + vec_leng
-      rbm(offset+1)=0.d0
-      rbm(offset+2)=1.d0
-      rbm(offset+3)=0.d0
+        x = hecMESH%node(3*node-2)
+        y = hecMESH%node(3*node-1)
+        z = hecMESH%node(3*node  )
 
-      ! translation z
-      offset = offset + vec_leng
-      rbm(offset+1)=0.d0
-      rbm(offset+2)=0.d0
-      rbm(offset+3)=1.d0
+        ! translation x
+        offset = (node-1)*Ndof
+        rbm(offset+1)=1.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=0.d0
 
-      ! rotation x
-      offset = offset + vec_leng
-      rbm(offset+1)=0.d0
-      rbm(offset+2)= -z
-      rbm(offset+3)=  y
+        ! translation y
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=1.d0
+        rbm(offset+3)=0.d0
 
-      ! rotation y
-      offset = offset + vec_leng
-      rbm(offset+1)=  z
-      rbm(offset+2)=0.d0
-      rbm(offset+3)= -x
+        ! translation z
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=1.d0
 
-      ! rotation z
-      offset = offset + vec_leng
-      rbm(offset+1)= -y
-      rbm(offset+2)=  x
-      rbm(offset+3)=0.d0
+        ! rotation x
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)= -z
+        rbm(offset+3)=  y
+
+        ! rotation y
+        offset = offset + vec_leng
+        rbm(offset+1)=  z
+        rbm(offset+2)=0.d0
+        rbm(offset+3)= -x
+
+        ! rotation z
+        offset = offset + vec_leng
+        rbm(offset+1)= -y
+        rbm(offset+2)=  x
+        rbm(offset+3)=0.d0
+
+      else
+        !!! rotational DOF
+
+        ! translation x
+        offset = (node-1)*Ndof
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=0.d0
+
+        ! translation y
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=0.d0
+
+        ! translation z
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=0.d0
+
+        ! rotation x
+        offset = offset + vec_leng
+        rbm(offset+1)=1.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=0.d0
+
+        ! rotation y
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=1.d0
+        rbm(offset+3)=0.d0
+
+        ! rotation z
+        offset = offset + vec_leng
+        rbm(offset+1)=0.d0
+        rbm(offset+2)=0.d0
+        rbm(offset+3)=1.d0
+      endif
     enddo
+    deallocate(mark)
     ierr = 0
   end subroutine hecmw_ML_get_rbm
 

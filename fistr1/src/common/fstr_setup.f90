@@ -53,7 +53,7 @@ contains
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         use mMaterial
-        character(len=HECMW_FILENAME_LEN) :: cntl_filename
+        character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
@@ -63,7 +63,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(fstr_couple),target  :: fstrCPL
         type(fstr_freqanalysis), target :: fstrFREQ
 
-        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: ctrl, ctrl_list(20), ictrl
         type(fstr_param_pack) :: P
 
         integer, parameter :: MAXOUTFILE = 10
@@ -94,6 +94,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
+        integer(kind=kint) :: c_elemopt
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -121,8 +122,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_mpc      = 0; c_weldline = 0
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
+        c_elemopt  = 0;
 
-        ctrl = fstr_ctrl_open( cntl_filename)
+        ctrl_list = 0
+        ictrl = 1
+        ctrl  = fstr_ctrl_open( cntl_filename )
         if( ctrl < 0 ) then
                 write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
                 write(ILOG,*) '### Error: Cannot open FSTR control file : ', cntl_filename
@@ -246,8 +250,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!ACCELERATION' ) then
                         c_acceleration = c_acceleration + 1
                         call fstr_setup_ACCELERATION( ctrl, c_eigen, P )
-
-                !--------------- for dynamic -------------------------
                 else if( header_name == '!FLOAD' ) then
                         c_fload = c_fload + 1
                         call fstr_setup_FLOAD( ctrl , c_fload, P )
@@ -260,11 +262,27 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!COUPLE' ) then
                         c_couple = c_couple + 1
                         call fstr_setup_COUPLE( ctrl, c_couple, P )
+
                 !--------------- for mpc -------------------------
 
                 else if( header_name == '!MPC' ) then
                         c_mpc = c_mpc + 1
                         call fstr_setup_MPC( ctrl, c_mpc, P )
+
+                !--------------------- for input -------------------------
+
+                else if( header_name == '!INCLUDE' ) then
+                        ctrl_list(ictrl) = ctrl
+                        input_filename   = ""
+                        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+                        ctrl   = fstr_ctrl_open( input_filename )
+                        if( ctrl < 0 ) then
+                            write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            STOP
+                        end if
+                        ictrl = ictrl + 1
+                        cycle
 
                 !--------------------- END -------------------------
 
@@ -273,7 +291,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 end if
 
                 ! next
-                if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
+                if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
+                    if( ictrl == 1 )then
+                        exit
+                    else
+                        ierror= fstr_ctrl_close( ctrl )
+                        ictrl = ictrl - 1
+                        ctrl  = ctrl_list(ictrl)
+                        if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+                    endif
+                endif
         end do
 
 ! -----
@@ -350,6 +377,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_localcoord = 0
         c_section = 0
         fstrHEAT%WL_tot = 0
+        c_elemopt = 0
+        fstrSOLID%elemopt361 = 0
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -426,6 +455,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 stop
             endif
 
+          else if( header_name == '!ELEMOPT'  ) then
+            c_elemopt = c_elemopt+1
+            if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
+                write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
+                write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+                stop
+            endif
+
+
 !== following material proerties ==
           else if( header_name == '!MATERIAL' ) then
             c_material = c_material+1
@@ -434,12 +472,17 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
                 stop
             endif
-            cid = c_material
+            cid = 0
             do i=1,hecMESH%material%n_mat
-              if( trim(hecMESH%material%mat_name(i)) == trim(mName) ) then
+              if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
                 cid = i; exit
               endif
             enddo
+            if(cid == 0)then
+                write(*,*) '### Error: Fail in read in material definition : ' , c_material
+                write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
+                stop
+            endif
             fstrSOLID%materials(cid)%name = mName
             if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
           else if( header_name == '!ELASTIC' ) then
@@ -521,7 +564,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  stop
                endif
             endif
-          else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION') then
+          else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
+                   header_name == '!EXPANSION') then
             if( cid >0 ) then
                if( fstr_ctrl_get_EXPANSION_COEFF( ctrl, fstrSOLID%materials(cid)%variables, &
                                              fstrSOLID%materials(cid)%dict)/=0 )  then
@@ -684,6 +728,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
              n = n + 1
              fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
            enddo
+        endif
+
+        if( fstrSOLID%elemopt361==0 ) then
+          if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+            write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
+            fstrSOLID%elemopt361 = 1
+          endif
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
@@ -1325,6 +1376,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   scaling    => svIarray(7)
      !   iterlog    => svIarray(21)
      !   timelog    => svIarray(22)
+     !   steplog    => svIarray(23)
      !   dumptype   => svIarray(31)
      !   dumpexit   => svIarray(32)
      !   usejad     => svIarray(33)
@@ -1339,7 +1391,7 @@ subroutine fstr_setup_SOLVER( ctrl, counter, P )
      !   filter     => svRarray(5)
 
         rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
-                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), &
+                        svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
                         svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
                         svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), &
                         svRarray(1), svRarray(2), svRarray(3),                &

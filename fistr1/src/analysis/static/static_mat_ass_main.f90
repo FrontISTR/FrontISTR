@@ -80,9 +80,9 @@ MODULE m_static_mat_ass_main
                 isect = hecMESH%section_ID(icel)
                 cdsys_ID = hecMESH%section%sect_orien_ID(isect)
                 if( cdsys_ID > 0 ) call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
-                call fstr_local_stf_create                                                                                       &
-                     (hecMESH, ndof, ic_type, icel, xx, yy, zz, fstrSOLID%elements(icel)%gausses,                                &
-                      fstrSOLID%elements(icel)%iset, stiffness, cdsys_ID, coords, fstrSOLID%TEMP_ngrp_tot, fstrSOLID%TEMP_irres)
+                call fstr_local_stf_create                                                              &
+                     (hecMESH, ndof, ic_type, icel, xx, yy, zz, fstrSOLID%elements(icel)%gausses,       &
+                      fstrSOLID%elements(icel)%iset, stiffness, cdsys_ID, coords, fstrSOLID%elemopt361)
 !== CONSTRUCT the GLOBAL MATRIX STARTED
                 call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)
             enddo
@@ -97,9 +97,9 @@ MODULE m_static_mat_ass_main
 
 
 !> Calculate stiff matrix of current element
-    SUBROUTINE fstr_local_stf_create                                          &
-               (hecMESH, ndof, ic_type, icel, xx, yy, zz, gausses,            &
-                iset, stiffness, cdsys_ID, coords, TEMP_ngrp_tot, TEMP_irres)
+    SUBROUTINE fstr_local_stf_create                                &
+               (hecMESH, ndof, ic_type, icel, xx, yy, zz, gausses,  &
+                iset, stiffness, cdsys_ID, coords, elemopt361)
 
         USE m_fstr
         USE m_static_lib
@@ -112,7 +112,7 @@ MODULE m_static_mat_ass_main
         REAL(kind=kreal) :: stiffness(:, :)
         INTEGER(kind=kint) :: cdsys_ID
         REAL(kind=kreal) :: coords(3, 3)
-        INTEGER(kind=kint) :: TEMP_ngrp_tot, TEMP_irres
+        INTEGER(kind=kint) :: elemopt361
 
         !** Local variables
         REAL(kind=kreal) :: ee, pp, thick, ecoord(3, 20)
@@ -157,10 +157,10 @@ MODULE m_static_mat_ass_main
             !ic_type = 761; nn = 6; ndof = 3
 
         else if( ic_type == 361 ) then
-            if( TEMP_ngrp_tot > 0 .or. TEMP_irres > 0 ) then
+            if( elemopt361 == 1 ) then
              CALL STF_C3D8Bbar( ic_type, nn, ecoord(:, 1:nn), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, 1.0D0 )
             else
-             CALL STF_C3D8IC( ic_type, nn, ecoord(:, 1:nn), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords )
+             CALL STF_C3D8IC( ic_type, nn, ecoord(:, 1:nn), gausses(:), stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, 1.0D0 )
             endif
 
         else if( ic_type == 341 .or. ic_type == 351 .or.                       &

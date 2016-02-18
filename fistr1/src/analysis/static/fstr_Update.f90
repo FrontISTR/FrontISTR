@@ -163,7 +163,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
             else if( ic_type == 361 ) then
 
               if( fstrPR%solution_type == kstSTATIC ) then
-                if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+                if( fstrSOLID%elemopt361 == 1 ) then
                   call UpdateST_C3D8Bbar                                                                      &
                        ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
                          ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
@@ -173,6 +173,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                          ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
                 endif
               else
+                if( fstrSOLID%elemopt361 /= 1 ) then
+                  write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
+                  call hecmw_abort(hecmw_comm_get_comm())
+                endif
                 if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
                   call UPDATE_C3D8Bbar                                                                                     &
                        ( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,                &
@@ -461,7 +465,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                                 ENDIF
                                 CYCLE
                         else if( ic_type == 361 ) then
-                          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+                          if( fstrSOLID%elemopt361 == 1 ) then
                             call UpdateST_C3D8Bbar                                      &
                                  ( ic_type, nn, xx, yy, zz, tt, tt0, edisp,             &
                                    fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
@@ -487,12 +491,12 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
                         enddo
                         if( iflag == 1 ) then
                                 if( ic_type == 361 ) then
-                                   if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+                                   if( fstrSOLID%elemopt361 == 1 ) then
                                      call STF_C3D8Bbar                                                                             &
                                           ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 )
                                    else
                                      call STF_C3D8IC                                                                        &
-                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords )
+                                          ( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 )
                                    endif
                                 else if( ic_type == 301 ) then
                                         isect = hecMESH%section_ID(icel)
