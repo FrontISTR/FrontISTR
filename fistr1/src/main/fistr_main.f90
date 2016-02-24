@@ -279,7 +279,9 @@ subroutine fstr_init_condition
         hecMAT%Rarray(:) = svRarray(:)
         hecMAT%Iarray(:) = svIarray(:)
 
-        write(*,*) 'fstr_setup: OK'; call flush(6)
+        if( myrank == 0) write(*,*) 'fstr_setup: OK'
+        write(ILOG,*) 'fstr_setup: OK'
+        call flush(6)
 
         ! Timing and memory monitor initializations
          minit = .TRUE.
