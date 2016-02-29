@@ -120,7 +120,7 @@ module m_fstr_solve_NLGEOM
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
-        else if( fstrSOLID%TEMP_irres > 0 ) then
+        else
           call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step-1,factor)
           fstrSOLID%FACTOR(1) = factor
           call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step, factor)
