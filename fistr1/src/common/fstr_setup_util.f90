@@ -790,7 +790,7 @@ subroutine dload_grp_name_to_id_ex( hecMESH, n, grp_id_name, fg_surface, grp_ID 
         implicit none
         type (hecmwST_local_mesh),target :: hecMESH
         integer(kind=kint) :: n
-        integer(kind=kint),save :: casha=1, cashb=1
+        integer(kind=kint),save :: casha = 1, cashb = 1
         character(HECMW_NAME_LEN) :: grp_id_name(:)
         logical :: fg_surface(:)
         integer(kind=kint) :: grp_ID(:)

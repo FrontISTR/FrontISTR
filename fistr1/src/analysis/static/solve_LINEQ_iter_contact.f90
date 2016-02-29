@@ -63,6 +63,7 @@ contains
     hecMAT%Iarray(97) = 1
 
     ! set if use eliminate version or not
+    fg_amg = .false.
     precond_org = hecmw_mat_get_precond(hecMAT)
     if (precond_org >= 30) then
       fg_eliminate = .false.
