@@ -168,7 +168,7 @@ contains
     type (hecmwST_matrix), intent(in) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    type (hecmwST_matrix), intent(out) :: hecTKT
+    type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTtKT
 
     ! perform three matrices multiplication for elimination
@@ -573,7 +573,7 @@ contains
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_matrix), intent(in) :: BTtKT
-    type(hecmwST_matrix), intent(out) :: hecTKT
+    type(hecmwST_matrix), intent(inout) :: hecTKT
     integer(kind=kint) :: nr, nc, ndof, ndof2, i
 
     nr=BTtKT%nr
@@ -656,7 +656,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_matrix), intent(out) :: hecTKT
+    type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTmat, BTtmat
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: n_mpc, ndof
