@@ -55,7 +55,7 @@ run_command() {
 
 test_f90_flush() {
     ${RM} $1
-    run_command ${F90} -o $1 $1.f90
+    run_command ${F90} ${F90FLAGS} -o $1 $1.f90
     if [ -f $1 ]; then
         # run_command ./$1
         # out=`./$1`
@@ -104,7 +104,7 @@ subroutine flush(n)
 end subroutine flush
 EOF
     run_command cat flush_stat.f90
-    run_command ${F90} -c flush_stat.f90
+    run_command ${F90} ${F90FLAGS} -c flush_stat.f90
     run_command ${AR} ${F90TARGET} flush_stat.o
     ${RM} flush_stat.*
 else
@@ -115,7 +115,7 @@ subroutine flush(n)
 end subroutine flush
 EOF
     run_command cat flush_empty.f90
-    run_command ${F90} -c flush_empty.f90
+    run_command ${F90} ${F90FLAGS} -c flush_empty.f90
     run_command ${AR} ${F90TARGET} flush_empty.o
     ${RM} flush_empty.*
 fi
