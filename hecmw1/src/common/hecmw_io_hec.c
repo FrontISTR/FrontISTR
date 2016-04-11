@@ -190,6 +190,26 @@ read_amp_param_name(char *name)
 
 
 static int
+read_amp_param_type(int *type)
+{
+	int token;
+
+	token = HECMW_heclex_next_token();
+	if(token != '=') {
+		set_err_token(token, HECMW_IO_HEC_E0100, "'=' required after TYPE");
+		return -1;
+	}
+	token = HECMW_heclex_next_token();
+	if(token != HECMW_HECLEX_K_ABAQUS) {
+		set_err_token(token, HECMW_IO_HEC_E0100, "Invalid TYPE");
+		return -1;
+	}
+	*type = HECMW_HECLEX_K_ABAQUS;
+	return 0;
+}
+
+
+static int
 read_amp_param_definition(int *definition)
 {
 	int token;
@@ -253,14 +273,14 @@ read_amp_param_value(int *value)
 
 
 static int
-read_amp_data(char *name, int definition, int time, int value)
+read_amp_data(char *name, int type, int definition, int time, int value)
 {
 	int i,token;
 	const int NITEM = 4;
 
 	i=0;
 	while(1) {
-		double val, t;
+		double val, t, tmp;
 
 		token = HECMW_heclex_next_token();
 		if(i != 0 && token == HECMW_HECLEX_NL) break;
@@ -285,6 +305,13 @@ read_amp_data(char *name, int definition, int time, int value)
 			return -1;
 		}
 		t = HECMW_heclex_get_number();
+
+		/* type ABAQUS*/
+		if(type == 1){
+			tmp = val;
+			val = t;
+			t   = tmp;
+		}
 
 		/* add */
 		if(HECMW_io_add_amp( name, definition, time, value, val, t) == NULL) {
@@ -317,10 +344,12 @@ static int
 read_amplitude(void)
 {
 	int token,state;
+	int type;
 	int definition = HECMW_AMP_TYPEDEF_TABULAR;
 	int time = HECMW_AMP_TYPETIME_STEP;
 	int value = HECMW_AMP_TYPEVAL_RELATIVE;
 	int flag_name = 0;			/* flag for NAME */
+	int flag_type = 0;			/* flag for TYPE */
 	int flag_definition = 0;	/* flag for DEFINITION */
 	int flag_time = 0;			/* flag for TIME */
 	int flag_value = 0;			/* flag for VALUE */
@@ -346,6 +375,10 @@ read_amplitude(void)
 				/* must */
 				if(read_amp_param_name(name)) return -1;
 				flag_name = 1;
+			} else if(token == HECMW_HECLEX_K_TYPE) {
+				/* optional */
+				if(read_amp_param_type(&type)) return -1;
+				flag_type = 1;
 			} else if(token == HECMW_HECLEX_K_DEFINITION) {
 				/* optional */
 				if(read_amp_param_definition(&definition)) return -1;
@@ -391,7 +424,7 @@ read_amplitude(void)
 			state = ST_DATA_LINE;
 		} else if(state == ST_DATA_LINE) {
 			HECMW_assert(flag_name);
-			if(read_amp_data(name, definition, time, value)) return -1;
+			if(read_amp_data(name, type, definition, time, value)) return -1;
 
 			/* check next state */
 			token = HECMW_heclex_next_token();
