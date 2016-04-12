@@ -307,7 +307,7 @@ read_amp_data(char *name, int type, int definition, int time, int value)
 		t = HECMW_heclex_get_number();
 
 		/* type ABAQUS*/
-		if(type == 1){
+		if(type == HECMW_HECLEX_K_ABAQUS){
 			tmp = val;
 			val = t;
 			t   = tmp;
