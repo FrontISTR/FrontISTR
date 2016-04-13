@@ -22,70 +22,70 @@
 !
 !======================================================================!
 module m_utilities
+  use hecmw
   implicit none
 
-  integer, parameter, private :: kreal = kind(0.0d0)
   real(kind=kreal), parameter, private :: PI=3.14159265358979d0
 
   contains
 
   !> Record used memeory
   SUBROUTINE memget(var,dimn,syze)
-      INTEGER :: var,dimn,syze,bite
-      PARAMETER(bite=1)
-      var = var + dimn*syze*bite
+    INTEGER :: var,dimn,syze,bite
+    PARAMETER(bite=1)
+    var = var + dimn*syze*bite
   END SUBROUTINE memget
 
 
   !> Insert an integer at end of a file name
   subroutine append_int2name( n, fname, n1 )
-      integer, intent(in)             :: n
-      integer, intent(in), optional  ::  n1
-      character(len=*), intent(inout) :: fname
-      integer            :: npos, nlen
-      character(len=128) :: tmpname, tmp
+    integer, intent(in)             :: n
+    integer, intent(in), optional  ::  n1
+    character(len=*), intent(inout) :: fname
+    integer            :: npos, nlen
+    character(len=128) :: tmpname, tmp
 
-      npos = scan( fname, '.')
-      nlen = len_trim( fname )
-      if( nlen>128 ) stop "String too long(>128) in append_int2name"
-      if( n>100000 ) stop "Integer too big>100000 in append_int2name"
-      tmpname = fname
-      if( npos==0 ) then
-        write( fname, '(a,i6)') fname(1:nlen),n
-      else
-        write( tmp, '(i6,a)') n,tmpname(npos:nlen)
-        fname = tmpname(1:npos-1) // adjustl(tmp)
-      endif
-      if(present(n1).and.n1/=0)then
-        write(tmp,'(i8)')n1
-        fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)
-      endif
+    npos = scan( fname, '.')
+    nlen = len_trim( fname )
+    if( nlen>128 ) stop "String too long(>128) in append_int2name"
+    if( n>100000 ) stop "Integer too big>100000 in append_int2name"
+    tmpname = fname
+    if( npos==0 ) then
+      write( fname, '(a,i6)') fname(1:nlen),n
+    else
+      write( tmp, '(i6,a)') n,tmpname(npos:nlen)
+      fname = tmpname(1:npos-1) // adjustl(tmp)
+    endif
+    if(present(n1).and.n1/=0)then
+      write(tmp,'(i8)')n1
+      fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)
+    endif
   end subroutine
 
   !> Insert an integer into a integer array
   subroutine insert_int2array( iin, carray )
-      integer, intent(in) :: iin
-      integer, pointer :: carray(:)
+    integer, intent(in) :: iin
+    integer, pointer :: carray(:)
 
-      integer :: i, oldsize
-      integer, pointer :: dumarray(:) => null()
-      if( .not. associated(carray) ) then
-        allocate( carray(1) )
-        carray(1) = iin
-      else
-        oldsize = size( carray )
-        allocate( dumarray(oldsize) )
-        do i=1,oldsize
-          dumarray(i) = carray(i)
-        enddo
-        deallocate( carray )
-        allocate( carray(oldsize+1) )
-        do i=1,oldsize
-          carray(i) = dumarray(i)
-        enddo
-        carray(oldsize+1) = iin
-      endif
-      if( associated(dumarray) ) deallocate( dumarray )
+    integer :: i, oldsize
+    integer, pointer :: dumarray(:) => null()
+    if( .not. associated(carray) ) then
+      allocate( carray(1) )
+      carray(1) = iin
+    else
+      oldsize = size( carray )
+      allocate( dumarray(oldsize) )
+      do i=1,oldsize
+        dumarray(i) = carray(i)
+      enddo
+      deallocate( carray )
+      allocate( carray(oldsize+1) )
+      do i=1,oldsize
+        carray(i) = dumarray(i)
+      enddo
+      carray(oldsize+1) = iin
+    endif
+    if( associated(dumarray) ) deallocate( dumarray )
   end subroutine
 
   !> Given symmetric 3x3 matrix M, compute the eigenvalues
@@ -131,7 +131,7 @@ module m_utilities
     INTEGER :: i,j, is, ip, iq, ir
     real(kind=kreal) :: fsum, od, theta, t, c, s, tau, g, h, hd, btens(3,3)
 
-	btens(1,1)=tensor(1); btens(2,2)=tensor(2); btens(3,3)=tensor(3)
+    btens(1,1)=tensor(1); btens(2,2)=tensor(2); btens(3,3)=tensor(3)
     btens(1,2)=tensor(4); btens(2,1)=btens(1,2)
     btens(2,3)=tensor(5); btens(3,2)=btens(2,3)
     btens(3,1)=tensor(6); btens(1,3)=btens(3,1)
@@ -223,7 +223,7 @@ module m_utilities
     real(kind=kreal) :: mat(6)     !< tensor
     real(kind=kreal) :: xj(3,3)
 
-	xj(1,1)=mat(1); xj(2,2)=mat(2); xj(3,3)=mat(3)
+    xj(1,1)=mat(1); xj(2,2)=mat(2); xj(3,3)=mat(3)
     xj(1,2)=mat(4); xj(2,1)=xj(1,2)
     xj(2,3)=mat(5); xj(3,2)=xj(2,3)
     xj(3,1)=mat(6); xj(1,3)=xj(3,1)
@@ -234,96 +234,96 @@ module m_utilities
            -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
            -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
            -XJ(1,1)*XJ(3,2)*XJ(2,3)
-  end function
+  end function Determinant
 
   subroutine fstr_chk_alloc( imsg, sub_name, ierr )
-        use hecmw
-        character(*) :: sub_name
-        integer(kind=kint) :: imsg
-        integer(kind=kint) :: ierr
+    use hecmw
+    character(*) :: sub_name
+    integer(kind=kint) :: imsg
+    integer(kind=kint) :: ierr
 
-        if( ierr /= 0 ) then
-                write(imsg,*) 'Memory overflow at ', sub_name
-                write(*,*) 'Memory overflow at ', sub_name
-                call hecmw_abort( hecmw_comm_get_comm( ) )
-        endif
-  end subroutine
+    if( ierr /= 0 ) then
+      write(imsg,*) 'Memory overflow at ', sub_name
+      write(*,*) 'Memory overflow at ', sub_name
+      call hecmw_abort( hecmw_comm_get_comm( ) )
+    endif
+  end subroutine fstr_chk_alloc
 
   !> calculate inverse of matrix a
   SUBROUTINE calInverse(NN, A)
-      INTEGER, INTENT(IN)             :: NN
-      REAL(kind=kreal), intent(inout) :: A(NN,NN)
+    INTEGER, INTENT(IN)             :: NN
+    REAL(kind=kreal), intent(inout) :: A(NN,NN)
 
-      INTEGER          :: I, J,K,IW,LR,IP(NN)
-      REAL(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
-      DATA EPS/1.0E-35/
-      DET=1.d0
-      DO I=1,NN
-        IP(I)=I
-      ENDDO
-      DO K=1,NN
-        WMAX=0.d0
-        DO I=K,NN
-          W=DABS(A(I,K))
-          IF (W.GT.WMAX) THEN
-            WMAX=W
-            LR=I
-          ENDIF
-        ENDDO
-        PIVOT=A(LR,K)
-        API=ABS(PIVOT)
-        IF(API.LE.EPS) THEN
-          WRITE(*,'(''PIVOT ERROR AT'',I5)') K
-          STOP
-        END IF
-        DET=DET*PIVOT
-        IF (LR.NE.K) THEN
-          DET=-DET
-          IW=IP(K)
-          IP(K)=IP(LR)
-          IP(LR)=IW
-          DO J=1,NN
-            W=A(K,J)
-            A(K,J)=A(LR,J)
-            A(LR,J)=W
-          ENDDO
-        ENDIF
-        DO I=1,NN
-          A(K,I)=A(K,I)/PIVOT
-        ENDDO
-        DO I=1,NN
-          IF (I.NE.K) THEN
-            W=A(I,K)
-            IF (W.NE.0.) THEN
-              DO J=1,NN
-                IF (J.NE.K) A(I,J)=A(I,J)-W*A(K,J)
-              ENDDO
-              A(I,K)=-W/PIVOT
-            ENDIF
-          ENDIF
-        ENDDO
-        A(K,K)=1.d0/PIVOT
-      ENDDO
-
-      DO I=1,NN
-        K=IP(I)
-        IF (K.NE.I) THEN
-          IW=IP(K)
-          IP(K)=IP(I)
-          IP(I)=IW
-          DO J=1,NN
-            W=A(J,I)
-            A(J,I)=A(J,K)
-            A(J,K)=W
-          ENDDO
+    INTEGER          :: I, J,K,IW,LR,IP(NN)
+    REAL(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
+    DATA EPS/1.0E-35/
+    DET=1.d0
+    DO I=1,NN
+      IP(I)=I
+    ENDDO
+    DO K=1,NN
+      WMAX=0.d0
+      DO I=K,NN
+        W=DABS(A(I,K))
+        IF (W.GT.WMAX) THEN
+          WMAX=W
+          LR=I
         ENDIF
       ENDDO
+      PIVOT=A(LR,K)
+      API=ABS(PIVOT)
+      IF(API.LE.EPS) THEN
+        WRITE(*,'(''PIVOT ERROR AT'',I5)') K
+        STOP
+      END IF
+      DET=DET*PIVOT
+      IF (LR.NE.K) THEN
+        DET=-DET
+        IW=IP(K)
+        IP(K)=IP(LR)
+        IP(LR)=IW
+        DO J=1,NN
+          W=A(K,J)
+          A(K,J)=A(LR,J)
+          A(LR,J)=W
+        ENDDO
+      ENDIF
+      DO I=1,NN
+        A(K,I)=A(K,I)/PIVOT
+      ENDDO
+      DO I=1,NN
+        IF (I.NE.K) THEN
+          W=A(I,K)
+          IF (W.NE.0.) THEN
+            DO J=1,NN
+              IF (J.NE.K) A(I,J)=A(I,J)-W*A(K,J)
+            ENDDO
+            A(I,K)=-W/PIVOT
+          ENDIF
+        ENDIF
+      ENDDO
+      A(K,K)=1.d0/PIVOT
+    ENDDO
 
-   end subroutine calInverse
+    DO I=1,NN
+      K=IP(I)
+      IF (K.NE.I) THEN
+        IW=IP(K)
+        IP(K)=IP(I)
+        IP(I)=IW
+        DO J=1,NN
+          W=A(J,I)
+          A(J,I)=A(J,K)
+          A(J,K)=W
+        ENDDO
+      ENDIF
+    ENDDO
 
-   subroutine cross_product(v1,v2,vn)
-    real(kind=kreal),intent(in)	::	v1(3),v2(3)
-    real(kind=kreal),intent(out)	::	vn(3)
+  end subroutine calInverse
+
+  subroutine cross_product(v1,v2,vn)
+    real(kind=kreal),intent(in)  ::  v1(3),v2(3)
+    real(kind=kreal),intent(out)  ::  vn(3)
 
     vn(1) = v1(2)*v2(3) - v1(3)*v2(2)
     vn(2) = v1(3)*v2(1) - v1(1)*v2(3)
@@ -331,14 +331,14 @@ module m_utilities
   end subroutine cross_product
 
   subroutine transformation(jacob, tm)
-  real(kind=kreal),intent(in)	::	jacob(3,3)   !< Jacobian
-  real(kind=kreal),intent(out)	::	tm(6,6)      !< transform matrix
+  real(kind=kreal),intent(in)  ::  jacob(3,3)   !< Jacobian
+  real(kind=kreal),intent(out)  ::  tm(6,6)      !< transform matrix
 
-  integer		::	i,j,k,m,nDim,nTensorDim
+  integer    ::  i,j,k,m,nDim,nTensorDim
 
     do i=1,3
       do j=1,3
-	    tm(i,j)= jacob(i,j)*jacob(i,j)
+        tm(i,j)= jacob(i,j)*jacob(i,j)
       enddo
       tm(i,4) = jacob(i,1)*jacob(i,2)
       tm(i,5) = jacob(i,2)*jacob(i,3)
@@ -366,7 +366,7 @@ module m_utilities
   end subroutine transformation
 
   SUBROUTINE get_principal (tensor, eigval, princmatrix)
-	
+  
     implicit none
     integer i,j
     real(kind=kreal) :: tensor(1:6)
@@ -376,8 +376,8 @@ module m_utilities
     real(kind=kreal) :: tempv(3)
     real(kind=kreal) :: temps
   
-		call eigen3(tensor,eigval,princnormal)
-	  
+    call eigen3(tensor,eigval,princnormal)
+    
     if (eigval(1)<eigval(2)) then
       temps=eigval(1)
       eigval(1)=eigval(2)
@@ -402,7 +402,7 @@ module m_utilities
       princnormal(:,2)=princnormal(:,3)
       princnormal(:,3)=tempv(:)
     end if
-		
+    
     do j=1,3
       do i=1,3
         princmatrix(i,j) = princnormal(i,j) * eigval(j)
@@ -423,7 +423,7 @@ module m_utilities
     complex(kind=kreal):: x1,x2,x3
     real(kind=kreal):: rtemp
     real(kind=kreal) :: mat(3,4)   
-		integer :: i
+    integer :: i
     s11 = tensor(1)
     s22 = tensor(2)
     s33 = tensor(3)
@@ -459,26 +459,26 @@ module m_utilities
       eigval(3)=rtemp
     end if
 
-		do i=1,3
+    do i=1,3
       if (eigval(i)/(eigval(1)+eigval(2)+eigval(3)) < 1.0d-10 )then
         eigval(i) = 0.0d0
         princ(i,:) = 0.0d0
         exit
       end if
       ml = ( s23*s13 - s12*(s33-eigval(i)) ) / ( -s23**2 + (s22-eigval(i))*(s33-eigval(i)) )
-     	nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) ) 
+       nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) ) 
       if (abs(ml) >= huge(ml)) then
        ml=0.0d0
       end if
       if (abs(nl) >= huge(nl)) then
        nl=0.0d0
       end if      
-			princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
-			princ(i,2) = ml * princ(i,1)
-			princ(i,3) = nl * princ(i,1)
-		end do
+      princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
+      princ(i,2) = ml * princ(i,1)
+      princ(i,3) = nl * princ(i,1)
+    end do
 
-		write(*,*)
+    write(*,*)
   end subroutine eigen3d
   
   subroutine cardano(a,b,c,x1,x2,x3)

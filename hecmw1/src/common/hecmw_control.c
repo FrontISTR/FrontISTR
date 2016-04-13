@@ -2006,7 +2006,9 @@ make_meshfiles_struct(int n_mesh, struct mesh_entry **mesh, int n_rank, int i_ra
 				irank = myrank / nlimit;
 				sprintf(prefix, "TRUNK%d", irank);
 				fname = make_filename("MESH", NULL, prefix, ment->filename, "", myrank, flag_rank);
-			} else if(subdir_on) {
+			} else if(subdir_on && ment->type == HECMW_CTRL_FTYPE_HECMW_DIST ) {
+				fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank, flag_rank);
+			} else if(subdir_on && nrank > 1) {
 				fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank, flag_rank);
 			} else {
 				fname = make_filename(NULL, NULL, NULL, ment->filename, "", myrank, flag_rank);

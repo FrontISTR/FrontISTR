@@ -18,6 +18,7 @@ SERIAL=1
 WITHREFINER=0
 WITHPARACON=0
 WITHMUMPS=0
+WITHMKL=0
 WITHML=0
 WITHLAPACK=0
 
@@ -35,6 +36,7 @@ TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
 BUILDTARGET_MUMPS="build-default"
+BUILDTARGET_MKL="build-default"
 BUILDTARGET_LAPACK="build-default"
 
 #
@@ -63,38 +65,39 @@ UTILDIRS="\
 	util"
 
 LIBSRCDIRS="\
-    src \
-    src/common \
-    src/operations \
-    src/operations/adaptation \
-    src/operations/dynamic_load_balancing \
-    src/operations/jacobian \
-    src/couple \
-    src/solver \
-    src/solver/matrix \
-    src/solver/solver_11 \
-    src/solver/solver_22 \
-    src/solver/solver_33 \
-    src/solver/solver_44 \
-    src/solver/solver_66 \
-    src/solver/solver_direct \
-    src/solver/solver_direct_parallel \
-    src/solver/solver_direct_lag \
-    src/solver/sparse_matrix \
-    src/solver/solver_direct_mumps \
-    src/solver/communication \
-    src/solver/init \
-    src/visualizer \
-    src/hecmw \
+	src \
+	src/common \
+	src/operations \
+	src/operations/adaptation \
+	src/operations/dynamic_load_balancing \
+	src/operations/jacobian \
+	src/couple \
+	src/solver \
+	src/solver/matrix \
+	src/solver/solver_11 \
+	src/solver/solver_22 \
+	src/solver/solver_33 \
+	src/solver/solver_44 \
+	src/solver/solver_66 \
+	src/solver/solver_direct \
+	src/solver/solver_direct_parallel \
+	src/solver/solver_direct_lag \
+	src/solver/sparse_matrix \
+	src/solver/solver_direct_mumps \
+	src/solver/solver_direct_clustermkl \
+	src/solver/communication \
+	src/solver/init \
+	src/visualizer \
+	src/hecmw \
 	src/etc"
 
 TOOLSDIRS="\
-    tools \
-    tools/partitioner \
-    tools/visualizer \
-    tools/hec2rcap \
-    tools/result_type_converter \
-    tools/result_file_merger"
+	tools \
+	tools/partitioner \
+	tools/visualizer \
+	tools/hec2rcap \
+	tools/result_type_converter \
+	tools/result_file_merger"
 
 BUILDDIRS="${UTILDIRS} ${LIBSRCDIRS} ${TOOLSDIRS} ."
 
@@ -124,6 +127,8 @@ do
 		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-with-mumps\"" -o "\"$i\"" = "\"--with-mumps\"" ]; then
 		WITHMUMPS=1
+	elif [ "\"$i\"" = "\"-with-mkl\"" -o "\"$i\"" = "\"--with-mkl\"" ]; then
+		WITHMKL=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
@@ -161,6 +166,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			--only-message          only create error message files
@@ -181,6 +187,7 @@ do
 			--with-refiner          compile with REVOCAP_Refiner
 			--with-paracon          for parallel contact
 			--with-mumps            compile with MUMPS
+			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
 			-h, --help              show help (this message)
@@ -374,6 +381,18 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	fi
 
 	#
+	# with MKL PARDISO
+	#
+	if [ ${WITHMKL} -eq 1 && ${SERIAL} -eq 0 ]; then
+		BUILDTARGET_MKL="build-with-mkl"
+	else
+		MKL_CFLAGS=""
+		MKL_LDFLAGS=""
+		MKL_F90FLAGS=""
+		MKL_F90LDFLAGS=""
+	fi
+
+	#
 	# with ML
 	#
 	if [ ${WITHML} -ne 1 ]; then
@@ -496,6 +515,14 @@ do
 		-e "s!@mumps_ldflags@!${MUMPS_LDFLAGS}!" \
 		-e "s!@mumps_f90flags@!${MUMPS_F90FLAGS}!" \
 		-e "s!@mumps_f90ldflags@!${MUMPS_F90LDFLAGS}!" \
+		-e "s!@mkldir@!${MKLDIR}!" \
+		-e "s!@mkllibdir@!${MKLLIBDIR}!" \
+		-e "s!@mklincdir@!${MKLINCDIR}!" \
+		-e "s!@mkllibs@!${MKLLIBS}!" \
+		-e "s!@mkl_cflags@!${MKL_CFLAGS}!" \
+		-e "s!@mkl_ldflags@!${MKL_LDFLAGS}!" \
+		-e "s!@mkl_f90flags@!${MKL_F90FLAGS}!" \
+		-e "s!@mkl_f90ldflags@!${MKL_F90LDFLAGS}!" \
 		-e "s!@mldir@!${MLDIR}!" \
 		-e "s!@mllibdir@!${MLLIBDIR}!" \
 		-e "s!@mlincdir@!${MLINCDIR}!" \
@@ -507,6 +534,7 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
+		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done

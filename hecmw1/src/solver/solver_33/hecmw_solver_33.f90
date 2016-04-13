@@ -63,7 +63,8 @@ contains
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
 
-    type (hecmwST_matrix), pointer :: hecTKT
+    type (hecmwST_matrix), pointer, save :: hecTKT
+    logical, save :: first_call = .true.
     integer(kind=kint) :: totalmpc, MPC_METHOD
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal)::t_max,t_min,t_avg,t_sd
@@ -205,14 +206,25 @@ contains
         hecTKT => hecMAT
       else if (MPC_METHOD == 3) then  ! elimination
         !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
-        allocate(hecTKT)
-        call hecmw_mat_init(hecTKT)
-        call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
+        if (hecMAT%Iarray(97)>=1) then
+          if (first_call) then
+            allocate(hecTKT)
+            first_call = .false.
+          else
+            call hecmw_mat_finalize(hecTKT)
+          endif
+          call hecmw_mat_init(hecTKT)
+          call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
+        endif
         call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, time_dumm)
       endif
     else
       hecTKT => hecMAT
     endif
+
+    !C
+    !C-- RECYCLE SETTING OF PRECONDITIONER
+    call hecmw_mat_recycle_precond_setting(hecMAT)
 
     E_TIME= HECMW_WTIME()
     if (TIMElog.eq.2) then
@@ -389,8 +401,10 @@ contains
         do i=1,hecMAT%NP * hecMAT%NDOF
           hecMAT%X(i)=hecTKT%X(i)
         enddo
-        call hecmw_mat_finalize(hecTKT)
-        deallocate(hecTKT)
+        hecMAT%Iarray(:)=hecTKT%Iarray(:)
+        hecMAT%Rarray(:)=hecTKT%Rarray(:)
+        ! call hecmw_mat_finalize(hecTKT)
+        ! deallocate(hecTKT)
       endif
     endif
 

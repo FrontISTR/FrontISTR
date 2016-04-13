@@ -53,7 +53,7 @@ contains
 subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
         use mMaterial
-        character(len=HECMW_FILENAME_LEN) :: cntl_filename
+        character(len=HECMW_FILENAME_LEN) :: cntl_filename, input_filename
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
@@ -63,7 +63,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(fstr_couple),target  :: fstrCPL
         type(fstr_freqanalysis), target :: fstrFREQ
 
-        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: ctrl, ctrl_list(20), ictrl
         type(fstr_param_pack) :: P
 
         integer, parameter :: MAXOUTFILE = 10
@@ -94,6 +94,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
+        integer(kind=kint) :: c_elemopt
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -121,8 +122,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_mpc      = 0; c_weldline = 0
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
+        c_elemopt  = 0;
 
-        ctrl = fstr_ctrl_open( cntl_filename)
+        ctrl_list = 0
+        ictrl = 1
+        ctrl  = fstr_ctrl_open( cntl_filename )
         if( ctrl < 0 ) then
                 write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
                 write(ILOG,*) '### Error: Cannot open FSTR control file : ', cntl_filename
@@ -246,8 +250,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!ACCELERATION' ) then
                         c_acceleration = c_acceleration + 1
                         call fstr_setup_ACCELERATION( ctrl, c_eigen, P )
-
-                !--------------- for dynamic -------------------------
                 else if( header_name == '!FLOAD' ) then
                         c_fload = c_fload + 1
                         call fstr_setup_FLOAD( ctrl , c_fload, P )
@@ -260,11 +262,27 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!COUPLE' ) then
                         c_couple = c_couple + 1
                         call fstr_setup_COUPLE( ctrl, c_couple, P )
+
                 !--------------- for mpc -------------------------
 
                 else if( header_name == '!MPC' ) then
                         c_mpc = c_mpc + 1
                         call fstr_setup_MPC( ctrl, c_mpc, P )
+
+                !--------------------- for input -------------------------
+
+                else if( header_name == '!INCLUDE' ) then
+                        ctrl_list(ictrl) = ctrl
+                        input_filename   = ""
+                        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+                        ctrl   = fstr_ctrl_open( input_filename )
+                        if( ctrl < 0 ) then
+                            write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
+                            STOP
+                        end if
+                        ictrl = ictrl + 1
+                        cycle
 
                 !--------------------- END -------------------------
 
@@ -273,7 +291,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 end if
 
                 ! next
-                if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
+                if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
+                    if( ictrl == 1 )then
+                        exit
+                    else
+                        ierror= fstr_ctrl_close( ctrl )
+                        ictrl = ictrl - 1
+                        ctrl  = ctrl_list(ictrl)
+                        if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+                    endif
+                endif
         end do
 
 ! -----
@@ -350,6 +377,9 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_localcoord = 0
         c_section = 0
         fstrHEAT%WL_tot = 0
+        c_elemopt = 0
+        fstrSOLID%elemopt361 = 0
+        ictrl = 1
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -425,6 +455,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
                 stop
             endif
+
+          else if( header_name == '!ELEMOPT'  ) then
+            c_elemopt = c_elemopt+1
+            if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
+                write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
+                write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
+                stop
+            endif
+
 
 !== following material proerties ==
           else if( header_name == '!MATERIAL' ) then
@@ -610,11 +649,35 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               stop
             endif
 
+          else if( header_name == '!INCLUDE' ) then
+                  ctrl_list(ictrl) = ctrl
+                  input_filename   = ""
+                  ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+                  ctrl   = fstr_ctrl_open( input_filename )
+                  if( ctrl < 0 ) then
+                      write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
+                      write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
+                      STOP
+                  end if
+                  ictrl = ictrl + 1
+                  cycle
+
           else if( header_name == '!END' ) then
                         exit
           endif
 
-          if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
+          ! next
+          if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
+              if( ictrl == 1 )then
+                  exit
+              else
+                  ierror= fstr_ctrl_close( ctrl )
+                  ictrl = ictrl - 1
+                  ctrl  = ctrl_list(ictrl)
+                  if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+              endif
+          endif
+
         end do
 
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
@@ -662,7 +725,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               call hecmw_abort( hecmw_comm_get_comm())
            endif
 
-           print *, "Step control not defined! Using default step=1"
+           if( myrank==0 ) write(*,*)"Step control not defined! Using default step=1"
            fstrSOLID%nstep_tot = 1
            allocate( fstrSOLID%step_ctrl(1) )
            call init_stepInfo( fstrSOLID%step_ctrl(1) )
@@ -690,6 +753,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
              n = n + 1
              fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
            enddo
+        endif
+
+        if( fstrSOLID%elemopt361==0 ) then
+          if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+            write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
+            fstrSOLID%elemopt361 = 1
+          endif
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
@@ -1234,7 +1304,7 @@ end subroutine
                     P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
                     P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
                 end if
-                
+
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
                 P%SOLID%MISES  = 0.d0

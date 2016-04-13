@@ -103,9 +103,12 @@ module m_fstr_NonLinearMethod
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-      if( iter >= 1 ) then
+      if( iter == 1 ) then
+        hecMAT%Iarray(97) = 2   !Force numerical factorization
+      else
         hecMAT%Iarray(97) = 1   !Need numerical factorization
-      end if
+      endif
+      hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -275,9 +278,12 @@ module m_fstr_NonLinearMethod
 
         !----- SOLVE [Kt]{du}={R}
         if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-        if( iter >= 1 ) then
+        if( iter == 1 ) then
+          hecMAT%Iarray(97) = 2   !Force numerical factorization
+        else
           hecMAT%Iarray(97) = 1   !Need numerical factorization
-        end if
+        endif
+        hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         CALL solve_LINEQ(hecMESH,hecMAT,imsg)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -526,6 +532,7 @@ module m_fstr_NonLinearMethod
 
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
+        hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)

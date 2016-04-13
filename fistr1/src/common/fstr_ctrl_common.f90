@@ -89,7 +89,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, st
         real(kind=kreal) :: filter
         integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-        character(72) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS '
+        character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,PARADISO '
         character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
         integer(kind=kint) :: number_number = 5
@@ -508,5 +508,27 @@ end function fstr_ctrl_get_CONTACTALGO
       fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
 
+!> Read in !ELEMOPT
+function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
+        integer(kind=kint) :: ctrl
+        integer(kind=kint) :: elemopt361
+        integer(kind=kint) :: fstr_ctrl_get_ELEMOPT
+
+        character(72) :: o361list = 'IC,Bbar '
+
+        integer(kind=kint) :: o361
+
+        fstr_ctrl_get_ELEMOPT = -1
+
+        o361 = elemopt361 + 1
+
+        !* parameter in header line -----------------------------------------------------------------*!
+        if( fstr_ctrl_get_param_ex( ctrl, '361 ', o361list, 0, 'P', o361 ) /= 0) return
+
+        elemopt361 = o361 - 1
+
+        fstr_ctrl_get_ELEMOPT = 0
+
+end function fstr_ctrl_get_ELEMOPT
 
 end module fstr_ctrl_common

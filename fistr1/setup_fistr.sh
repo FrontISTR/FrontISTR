@@ -243,7 +243,7 @@ fi
 #
 # with mkl
 #
-if [ ${WITHMKL} -eq 1 ]; then
+if [ ${WITHMKL} -eq 1 -a ${SERIAL} -eq 1 ]; then
 	BUILDTARGET_MKL="build-default"
 fi
 

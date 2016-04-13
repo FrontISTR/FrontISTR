@@ -111,22 +111,6 @@ contains
         perm(i) = i
         iperm(i) = i
       end do
-
-      D => hecMAT%D
-      AL => hecMAT%AL
-      AU => hecMAT%AU
-      indexL => hecMAT%indexL
-      indexU => hecMAT%indexU
-      itemL => hecMAT%itemL
-      itemU => hecMAT%itemU
-      if (NContact.gt.0) then
-        CAL => hecMAT%CAL
-        CAU => hecMAT%CAU
-        indexCL => hecMAT%indexCL
-        indexCU => hecMAT%indexCU
-        itemCL => hecMAT%itemCL
-        itemCU => hecMAT%itemCU
-      end if
     else
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
@@ -139,46 +123,45 @@ contains
       deallocate(perm_tmp)
 
       !call write_debug_info
+    endif
 
-      NPL = hecMAT%indexL(N)
-      NPU = hecMAT%indexU(N)
-      allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    NPL = hecMAT%indexL(N)
+    NPU = hecMAT%indexU(N)
+    allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    call hecmw_matrix_reorder_profile(N, perm, iperm, &
+         hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+         indexL, indexU, itemL, itemU)
+    !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+
+    !call check_ordering
+
+    allocate(D(9*N), AL(9*NPL), AU(9*NPU))
+    call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+         hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+         hecMAT%AL, hecMAT%AU, hecMAT%D, &
+         indexL, indexU, itemL, itemU, AL, AU, D)
+    !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+
+    call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
+    call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
+
+    if (NContact.gt.0) then
+      NPCL = hecMAT%indexCL(N)
+      NPCU = hecMAT%indexCU(N)
+      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
       call hecmw_matrix_reorder_profile(N, perm, iperm, &
-           hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-           indexL, indexU, itemL, itemU)
-      !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+           hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+           indexCL, indexCU, itemCL, itemCU)
 
-      call check_ordering
-
-      allocate(D(9*N), AL(9*NPL), AU(9*NPU))
+      allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
       call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
-           hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-           hecMAT%AL, hecMAT%AU, hecMAT%D, &
-           indexL, indexU, itemL, itemU, AL, AU, D)
-      !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+           hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+           hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
+           indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
+      deallocate(CD)
 
-      call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
-
-      if (NContact.gt.0) then
-        NPCL = hecMAT%indexCL(N)
-        NPCU = hecMAT%indexCU(N)
-        allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
-        call hecmw_matrix_reorder_profile(N, perm, iperm, &
-             hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-             indexCL, indexCU, itemCL, itemCU)
-
-        allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
-        call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
-             hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-             hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-             indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
-        deallocate(CD)
-
-        call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
-        call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
-      end if
-
+      call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
+      call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
     end if
 
     allocate(ALU(9*N))
