@@ -374,12 +374,14 @@ module m_fstr_precheck
 
     integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
     real(kind=kreal) :: rnum, dens, cond
-
-    fio = 72
+    character :: fileid*3
+  
+    fio = 70 + hecMESH%my_rank
+    write(fileid,"(i3.3)")hecMESH%my_rank
 
     !ftype = 2: eps
     !ftype = 4: png
-    ftype = 2
+    ftype = 4
 
     n = hecMAT%N
     ndof = 3*n
@@ -389,26 +391,27 @@ module m_fstr_precheck
     cond = 1.0d0
     !rnum = (7.25d0)*10.0d0/dble(hecMAT%N)
 
-    open(fio,file='nonzero.dat',status='replace')
-      write(fio,"(a,f12.5,i0)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
+    open(fio,file='nonzero.dat.'//fileid, status='replace')
+      !write(fio,"(a,f12.5,i0)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
       do i= 1, n
         jS= hecMAT%indexL(i-1) + 1
         jE= hecMAT%indexL(i  )
-        write(fio,"(i0,a,i0)")i,"    ",i
+        write(fio,"(i0,a,i0)")i,"  ",i
         do j= jS, jE
           in = hecMAT%itemL(j)
-          write(fio,"(i0,a,i0)")i,"    ",in
-          write(fio,"(i0,a,i0)")in,"    ",i
+          write(fio,"(i0,a,i0)")i, "  ",in
+          write(fio,"(i0,a,i0)")in,"  ",i
         enddo
       enddo
     close(fio)
 
-    open(fio,file='nonzero.plt',status='replace')
+    open(fio,file='nonzero.plt.'//fileid, status='replace')
       if(ftype == 4)then
-        write(fio,"(a)")'set terminal png'
+        write(fio,"(a)")'set terminal png size 1500,1500'
       else
         write(fio,"(a)")'set terminal postscript eps enhanced color solid "TimesNewRomanPSMT" 20'
       endif
+
       write(fio,"(a)")'unset key'
       write(fio,"(a)")'unset xtics'
       write(fio,"(a)")'unset ytics'
@@ -416,17 +419,16 @@ module m_fstr_precheck
       write(fio,"(a)")'set border lw 1.0'
       write(fio,"(a,i0,a)")'set xrange[0.5:',n,'.5]'
       write(fio,"(a,i0,a)")'set yrange[0.5:',n,'.5] reverse '
-      if(ftype == 4)then
-        write(fio,"(a)")'set out "image.png"'
-      else
-        write(fio,"(a)")'set out "image.eps"'
 
+      if(ftype == 4)then
+        write(fio,"(a)")'set out "image.'//fileid//'.png"'
+      else
+        write(fio,"(a)")'set out "image.'//fileid//'.eps"'
         write(fio,"(a)"     )'set label 1 "Name" at graph 1.1,0.9'
         write(fio,"(a)")'set label 2 "N" at graph 1.1,0.85'
         write(fio,"(a)")'set label 3 "Non-Zero Elem." at graph 1.1,0.8'
         write(fio,"(a)")'set label 4 "Density [%]" at graph 1.1,0.75'
         write(fio,"(a)")'set label 9 "Condition Num." at graph 1.1,0.7'
-
         write(fio,"(a)"     )'set label 5 ":  matrix" at graph 1.4,0.9'
         write(fio,"(a,i0,a)")'set label 6 ":  ',ndof,'" at graph 1.4,0.85'
         write(fio,"(a,i0,a)")'set label 7 ":  ',nnz,'" at graph 1.4,0.8'
@@ -434,7 +436,7 @@ module m_fstr_precheck
         write(fio,"(a,1pe9.2,a)")'set label 10 ": ',cond,'" at graph 1.4,0.7'
       endif
 
-      write(fio,"(a,f12.5,a)")'plot "nonzero.dat" pointtype 5 pointsize ',rnum,' linecolor rgb "#F96566"'
+      write(fio,"(a,f12.5,a)")'plot "nonzero.dat.'//fileid//'" pointtype 5 pointsize ',rnum,' linecolor rgb "#F96566"'
     close(fio)
 
     write(*,*)''
@@ -442,10 +444,7 @@ module m_fstr_precheck
     write(*,*)' gnuplot -persist "nonzero.plt"'
 
     !call system('gnuplot -persist "nonzero.plt"')
-
     !open(fio,file='nonzero.dat',status='old')
-    !close(fio,status="delete")
-    !open(fio,file='nonzero.plt',status='old')
     !close(fio,status="delete")
   end subroutine hecmw_nonzero_profile
 end module m_fstr_precheck

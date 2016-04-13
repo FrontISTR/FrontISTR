@@ -36,6 +36,7 @@ module m_solve_LINEQ
       USE hecmw_solver_direct
       USE hecmw_solver_direct_parallel
       USE hecmw_solver_direct_MUMPS
+      USE hecmw_solver_direct_clusterMKL
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
       INTEGER(kind=kint) imsg, i, myrank
@@ -83,6 +84,8 @@ module m_solve_LINEQ
 
         if (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
+        elseif (hecMAT%Iarray(2) .eq. 105) then
+          call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
         else
           IF(hecMESH%PETOT.GT.1) THEN
             CALL hecmw_solve_direct_parallel(hecMESH,hecMAT,imsg)
