@@ -379,6 +379,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
         fstrSOLID%elemopt361 = 0
+        ictrl = 1
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
 
@@ -648,11 +649,35 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               stop
             endif
 
+          else if( header_name == '!INCLUDE' ) then
+                  ctrl_list(ictrl) = ctrl
+                  input_filename   = ""
+                  ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+                  ctrl   = fstr_ctrl_open( input_filename )
+                  if( ctrl < 0 ) then
+                      write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
+                      write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
+                      STOP
+                  end if
+                  ictrl = ictrl + 1
+                  cycle
+
           else if( header_name == '!END' ) then
                         exit
           endif
 
-          if( fstr_ctrl_seek_next_header(ctrl) == 0) exit
+          ! next
+          if( fstr_ctrl_seek_next_header(ctrl) == 0 )then
+              if( ictrl == 1 )then
+                  exit
+              else
+                  ierror= fstr_ctrl_close( ctrl )
+                  ictrl = ictrl - 1
+                  ctrl  = ctrl_list(ictrl)
+                  if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+              endif
+          endif
+
         end do
 
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
@@ -1279,7 +1304,7 @@ end subroutine
                     P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
                     P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
                 end if
-                
+
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
                 P%SOLID%MISES  = 0.d0
