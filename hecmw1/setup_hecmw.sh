@@ -383,7 +383,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with MKL PARDISO
 	#
-	if [ ${WITHMKL} -eq 1 && ${SERIAL} -eq 0 ]; then
+	if [ ${WITHMKL} -eq 1 ] && [ ${SERIAL} -eq 0 ]; then
 		BUILDTARGET_MKL="build-with-mkl"
 	else
 		MKL_CFLAGS=""
