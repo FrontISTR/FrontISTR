@@ -1,4 +1,4 @@
-/*=====================================================================*
+*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
  *         Version : 2.7                                               *
@@ -344,7 +344,7 @@ static int
 read_amplitude(void)
 {
 	int token,state;
-	int type;
+	int type = -1;
 	int definition = HECMW_AMP_TYPEDEF_TABULAR;
 	int time = HECMW_AMP_TYPETIME_STEP;
 	int value = HECMW_AMP_TYPEVAL_RELATIVE;
