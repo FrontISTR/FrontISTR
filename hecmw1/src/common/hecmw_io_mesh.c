@@ -3201,6 +3201,7 @@ setup_contact(struct hecmwST_local_mesh *mesh)
 	size_t size;
 	struct hecmwST_contact_pair *cpair;
 	struct hecmw_io_contact *p;
+	slave_gid = 0;
 
 	HECMW_assert(mesh);
 

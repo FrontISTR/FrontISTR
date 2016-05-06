@@ -992,6 +992,7 @@ read_elset_data(int *nelem, int **elem_array)
 	struct hecmw_io_id *head,*prev,*p,*q;
 
 	n = 0;
+	prev = NULL;
 	head = NULL;
 	elem = NULL;
 	while(1) {
@@ -1409,7 +1410,8 @@ static int
 read_element(void)
 {
 	int token,state;
-	int id,nnode;
+	int id;
+	int nnode = 0;
 	int node[HECMW_MAX_NODE_MAX];
 	int type = -1;			/* ABAQUS element type by LEX parameter */
 	int hecmw_etype = -1;	/* HEC-MW element type */
@@ -2110,6 +2112,8 @@ static int
 read_conductivity_data(int type, int dependencies, struct hecmw_io_matitem **matitem)
 {
 	int n,temp_col;
+	n = 0;
+	temp_col = 0;
 
 	switch(type) {
 		case HECMW_ABLEX_K_ISOTROPIC:
@@ -2363,6 +2367,8 @@ static int
 read_elastic_data(int type, int dependencies, struct hecmw_io_matitem **matitem)
 {
 	int n,temp_col;
+	n = 0;
+	temp_col = 0;
 
 	switch(type) {
 		case HECMW_ABLEX_K_ISOTROPIC:
@@ -4647,4 +4653,3 @@ HECMW_get_abaqus_mesh(const char *filename)
 
 	return local_mesh;
 }
-

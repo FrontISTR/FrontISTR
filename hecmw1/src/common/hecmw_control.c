@@ -848,12 +848,13 @@ read_mesh_data(char *name, int type, int io, int refine)
 static int
 read_mesh(void)
 {
-	int token,state;
+	int state;
+	int token = -1;
 	int flag_name = 0;	/* flag for NAME */
 	int flag_type = 0;	/* flag for TYPE */
 	int flag_io = 0;	/* flag for IO */
 	int flag_refine = 0;	/* flag for REFINE */
-	int type;
+	int type = -1;
 	int io = HECMW_CTRL_FILE_IO_IN;
 	int refine = 0;
 	char name[HECMW_NAME_LEN+1] = "";
