@@ -320,10 +320,14 @@ module m_static_output
         call hecmw_allREDUCE_R(hecMESH,Emin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Smax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Smin,3,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,EEmax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,EEmin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,ESmax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,ESmin,3,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
@@ -384,10 +388,14 @@ module m_static_output
         call hecmw_allREDUCE_R(hecMESH,Emin,6,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Smax,6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Smin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,EEmax,6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,EEmin,6,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,ESmax,6,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,ESmin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
@@ -490,10 +498,14 @@ module m_static_output
         call hecmw_allREDUCE_R(hecMESH,Emin,12,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Smax,12,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Smin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,EEmax,12,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,EEmin,12,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,ESmax,12,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,ESmin,12,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
           write(ILOG,1019) '//U1    ',Umax(1),Umin(1)

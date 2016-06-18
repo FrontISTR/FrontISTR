@@ -27,6 +27,7 @@
 #include "hecmw_io_abaqus.h"
 #include "hecmw_io_dist.h"
 #include "hecmw_dist_refine.h"
+#include "hecmw_dist_free.h"
 
 
 static struct hecmwST_local_mesh *

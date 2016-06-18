@@ -344,7 +344,7 @@ static int
 read_amplitude(void)
 {
 	int token,state;
-	int type;
+	int type = -1;
 	int definition = HECMW_AMP_TYPEDEF_TABULAR;
 	int time = HECMW_AMP_TYPETIME_STEP;
 	int value = HECMW_AMP_TYPEVAL_RELATIVE;
@@ -772,6 +772,7 @@ read_egrp_data(char *egrp)
 	struct hecmw_io_id *head,*prev,*p,*q;
 
 	n = 0;
+	prev = NULL;
 	head = NULL;
 	while(1) {
 		struct hecmw_io_id *id;
@@ -1241,7 +1242,8 @@ static int
 read_element(void)
 {
 	int token,state;
-	int id,nnode;
+	int id;
+	int nnode = 0;
 	int *node = NULL;
 	double *matitem = NULL;
 	int nmatitem = 0;
@@ -1682,7 +1684,7 @@ read_equation(void)
 {
 	int token,state;
 	int neq = -1;
-	double cnst;
+	double cnst = 0.0;
 	int flag_input = 0;			/* flag for INPUT */
 	char *p;
 	enum {
@@ -2617,6 +2619,7 @@ read_ngrp_data(char *ngrp)
 	struct hecmw_io_id *head,*prev,*p,*q;
 
 	n = 0;
+	prev = NULL;
 	head = NULL;
 	while(1) {
 		struct hecmw_io_id *id;
@@ -4670,4 +4673,3 @@ HECMW_get_entire_mesh(const char *filename)
 
 	return local_mesh;
 }
-

@@ -855,6 +855,7 @@ mask_node_dof( struct hecmwST_local_mesh *local_mesh, char *node_flag )
   int n_comp, n_dof;
   int is, ie;
   int i;
+  n_dof = -1;
 
   for( i=0; i<local_mesh->n_elem_type; i++ ) {
     is = local_mesh->elem_type_index[i];
