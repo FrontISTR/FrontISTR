@@ -17,15 +17,15 @@
 
 !C
 !C***
-!C*** module hecmw_solver_SR_22
+!C*** module hecmw_solver_SR_33i
 !C***
 !C
-      module hecmw_solver_SR_22
+      module hecmw_solver_SR_33i
       contains
 !C
 !C*** SOLVER_SEND_RECV
 !C
-      subroutine  HECMW_SOLVE_SEND_RECV_22                              &
+      subroutine  HECMW_SOLVE_SEND_RECV_33i                             &
      &                ( N, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
      &                                        STACK_EXPORT, NOD_EXPORT, &
      &                  WS, WR, X, SOLVER_COMM,my_rank)
@@ -42,12 +42,13 @@
       integer(kind=kint ), pointer :: NOD_IMPORT  (:)
       integer(kind=kint ), pointer :: STACK_EXPORT(:)
       integer(kind=kint ), pointer :: NOD_EXPORT  (:)
-      real   (kind=kreal), dimension(:  ), intent(inout):: WS
-      real   (kind=kreal), dimension(:  ), intent(inout):: WR
-      real   (kind=kreal), dimension(:  ), intent(inout):: X
+      integer(kind=kint ), dimension(:  ), intent(inout):: WS
+      integer(kind=kint ), dimension(:  ), intent(inout):: WR
+      integer(kind=kint ), dimension(:  ), intent(inout):: X
       integer(kind=kint )                , intent(in)   ::SOLVER_COMM
       integer(kind=kint )                , intent(in)   :: my_rank
 
+#ifndef HECMW_SERIAL
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
@@ -71,12 +72,13 @@
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
         do k= istart+1, istart+inum
-               ii   = 2*NOD_EXPORT(k)
-           WS(2*k-1)= X(ii-1)
-           WS(2*k  )= X(ii  )
+               ii   = 3*NOD_EXPORT(k)
+           WS(3*k-2)= X(ii-2)
+           WS(3*k-1)= X(ii-1)
+           WS(3*k  )= X(ii  )
         enddo
 
-        call MPI_ISEND (WS(2*istart+1), 2*inum,MPI_DOUBLE_PRECISION,    &
+        call MPI_ISEND (WS(3*istart+1), 3*inum, MPI_INTEGER,            &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
       enddo
 
@@ -85,7 +87,7 @@
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-        call MPI_IRECV (WR(2*istart+1), 2*inum, MPI_DOUBLE_PRECISION,   &
+        call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_INTEGER,            &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
       enddo
 
@@ -95,17 +97,15 @@
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
       do k= istart+1, istart+inum
-          ii   = 2*NOD_IMPORT(k)
-        X(ii-1)= WR(2*k-1)
-        X(ii  )= WR(2*k  )
+          ii   = 3*NOD_IMPORT(k)
+        X(ii-2)= WR(3*k-2)
+        X(ii-1)= WR(3*k-1)
+        X(ii  )= WR(3*k  )
       enddo
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
       deallocate (sta1, sta2, req1, req2)
-
-      end subroutine hecmw_solve_send_recv_22
-      end module     hecmw_solver_SR_22
-
-
-
+#endif
+      end subroutine hecmw_solve_send_recv_33i
+      end module     hecmw_solver_SR_33i

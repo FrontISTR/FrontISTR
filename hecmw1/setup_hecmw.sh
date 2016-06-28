@@ -322,8 +322,9 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	if [ ${WITHFORTRAN} -eq 1 ]; then
 		HECMWLIBS="-lfhecmw -lhecmw"
 		if [ ${SERIAL} -eq 1 ]; then
-			BUILDTARGET="build-serial"
+			BUILDTARGET="build-default"
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
+			F90OPTFLAGS="${F90OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			MPI_CFLAGS=""
 			MPI_LDFLAGS=""
 			MPI_F90FLAGS=""
@@ -344,6 +345,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 		ALLBUILDTARGET="${ALLBUILDTARGET} ${BUILDTARGET}"
 		if [ ${SERIAL} -eq 1 ]; then
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
+			F90OPTFLAGS="${F90OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			MPI_CFLAGS=""
 			MPI_LDFLAGS=""
 			MPI_F90FLAGS=""
@@ -444,6 +446,7 @@ do
 		-e "s!@f90@!${F90}!" \
 		-e "s!@f90flags@!${F90FLAGS}!" \
 		-e "s!@f90ldflags@!${F90LDFLAGS}!" \
+		-e "s!@f90fpp@!${F90FPP}!" \
 		-e "s!@f90optflags@!${F90OPTFLAGS}!" \
 		-e "s!@make@!${MAKE}!" \
 		-e "s!@ar@!${AR}!" \

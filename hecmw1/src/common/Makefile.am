@@ -41,6 +41,7 @@ F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
 ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -61,13 +62,16 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
@@ -139,6 +143,7 @@ OBJS = \
 	hecmw_time.@cobjfilepostfix@
 
 OBJSF = \
+	hecmw_util_f.@f90objfilepostfix@ \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \
 	hecmw_msg_f.@f90objfilepostfix@ \
@@ -152,9 +157,6 @@ OBJSF = \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
 	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_io.@f90objfilepostfix@
-
-OBJF_UTIL = hecmw_util_f.@f90objfilepostfix@
-OBJF_UTIL_DUMM = hecmw_util_f_dumm.@f90objfilepostfix@
 
 HEADERS = \
 	hecmw_hash.h\
@@ -213,11 +215,9 @@ HEADERS = \
 	hecmw_time.h
 
 #-----------------------------------------------------------------------------#
-all: @build_target@
+all: build-default
 
-build-default: $(TARGET) with-mpi $(F90TARGET) install-module
-
-build-serial: $(TARGET) without-mpi $(F90TARGET) install-module
+build-default: $(TARGET) $(F90TARGET) install-module
 
 build-without-f: $(TARGET)
 
@@ -226,12 +226,6 @@ $(TARGET): $(OBJS)
 
 $(F90TARGET): $(OBJSF)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
-
-with-mpi: $(OBJF_UTIL)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJF_UTIL)
-
-without-mpi: $(OBJF_UTIL_DUMM)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJF_UTIL_DUMM)
 
 $(OBJS): $(HEADERS)
 

@@ -32,6 +32,7 @@
       public :: HECMW_SOLVE_ISEND_IRECV_33
       public :: HECMW_SOLVE_ISEND_IRECV_33_WAIT
 
+#ifndef HECMW_SERIAL
       type async_buf
         integer(kind=kint )   ::  NEIBPETOT = 0
         integer(kind=kint ), pointer :: STACK_IMPORT(:)
@@ -45,6 +46,7 @@
 
       integer(kind=kint), parameter :: MAX_NREQ = 8
       type(async_buf), save :: abuf(MAX_NREQ)
+#endif
 
       contains
 !C
@@ -70,6 +72,7 @@
       integer(kind=kint )                , intent(in)   ::SOLVER_COMM
       integer(kind=kint )                , intent(in)   :: my_rank
 
+#ifndef HECMW_SERIAL
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
@@ -124,7 +127,7 @@
 
       call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
       deallocate (sta1, sta2, req1, req2)
-
+#endif
       end subroutine hecmw_solve_send_recv_33
 
 !C
@@ -146,6 +149,8 @@
       integer(kind=kint )        , intent(in)   ::SOLVER_COMM
       integer(kind=kint )        , intent(in)   :: my_rank
       integer(kind=kint )        , intent(out)  :: ireq
+
+#ifndef HECMW_SERIAL
       ! local valiables
       real   (kind=kreal), pointer :: WS(:)
       real   (kind=kreal), pointer :: WR(:)
@@ -202,6 +207,7 @@
       abuf(ireq)%X           => X
       abuf(ireq)%req1        => req1
       abuf(ireq)%req2        => req2
+#endif
       end subroutine hecmw_solve_isend_irecv_33
 
 !C
@@ -210,6 +216,8 @@
       subroutine  HECMW_SOLVE_ISEND_IRECV_33_WAIT( ireq )
       implicit none
       integer(kind=kint ), intent(in)   :: ireq
+
+#ifndef HECMW_SERIAL
       ! local valiables
       integer(kind=kint ) ::  NEIBPETOT
       integer(kind=kint ), pointer :: STACK_IMPORT(:)
@@ -258,9 +266,7 @@
       deallocate (sta1, sta2)
       deallocate (req1, req2)
       deallocate (WS, WR)
+#endif
       end subroutine hecmw_solve_isend_irecv_33_wait
 
       end module     hecmw_solver_SR_33
-
-
-

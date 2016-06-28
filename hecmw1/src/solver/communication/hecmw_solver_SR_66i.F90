@@ -49,6 +49,7 @@
       integer(kind=kint )                , intent(in)   ::SOLVER_COMM
       integer(kind=kint )                , intent(in)   :: my_rank
 
+#ifndef HECMW_SERIAL
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
@@ -112,9 +113,6 @@
 
       call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
       deallocate (sta1, sta2, req1, req2)
-
+#endif
       end subroutine hecmw_solve_send_recv_66i
       end module     hecmw_solver_SR_66i
-
-
-
