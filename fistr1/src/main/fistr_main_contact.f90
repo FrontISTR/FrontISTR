@@ -347,7 +347,7 @@ subroutine fstr_static_analysis( flag )
                 write(IMSG,*)
                 write(IMSG,*)
                 if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Nonl inear static analysis   **'
+                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
 
         if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
