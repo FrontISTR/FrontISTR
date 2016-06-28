@@ -96,7 +96,7 @@ OBJSF = \
 HEADERS =
 
 #-----------------------------------------------------------------------------#
-all: build-default
+all: @build_target@
 
 build-default: $(TARGET) $(F90TARGET) install-module
 

@@ -50,6 +50,7 @@ F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
 ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -68,7 +69,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
@@ -76,41 +77,33 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
+.F90.@f90objfilepostfix@:
+	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
+
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
 #-----------------------------------------------------------------------------#
 OBJS =
 
-OBJSF = hecmw_solver_direct_MUMPS.@f90objfilepostfix@
-
-OBJSF_MUMPS = hecmw_MUMPS_wrapper.@f90objfilepostfix@
-
-OBJSF_MUMPS_DUMM = hecmw_MUMPS_wrapper_dumm.@f90objfilepostfix@
+OBJSF = \
+	hecmw_MUMPS_wrapper.@f90objfilepostfix@ \
+	hecmw_solver_direct_MUMPS.@f90objfilepostfix@
 
 HEADERS =
 
 #-----------------------------------------------------------------------------#
-all: @build_target_mumps@
+all: @build_target@
 
 build-default: $(TARGET) $(F90TARGET) install-module
-
-build-serial: $(TARGET) $(F90TARGET) install-module
-
-build-with-mumps: $(TARGET) F90TARGET_MUMPS install-module
-
-build-serial-with-mumps: $(TARGET) F90TARGET_MUMPS install-module
 
 build-without-f: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF_MUMPS_DUMM) $(OBJSF)
+$(F90TARGET): $(OBJSF_MUMPS) $(OBJSF)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF_MUMPS_DUMM) $(OBJSF)
-
-F90TARGET_MUMPS: $(OBJSF_MUMPS) $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJSF_MUMPS) $(OBJSF)
 
 $(OBJS): $(HEADERS)
 

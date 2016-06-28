@@ -35,7 +35,6 @@ LIBSTARGET="build-libs"
 TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
-BUILDTARGET_MUMPS="build-default"
 BUILDTARGET_MKL="build-default"
 BUILDTARGET_LAPACK="build-default"
 
@@ -321,8 +320,8 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	if [ ${WITHFORTRAN} -eq 1 ]; then
 		HECMWLIBS="-lfhecmw -lhecmw"
+		BUILDTARGET="build-default"
 		if [ ${SERIAL} -eq 1 ]; then
-			BUILDTARGET="build-default"
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			F90OPTFLAGS="${F90OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			MPI_CFLAGS=""
@@ -330,7 +329,6 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 			MPI_F90FLAGS=""
 			MPI_F90LDFLAGS=""
 		else
-			BUILDTARGET="build-default"
 			if [ -z ${MPIDIR} ]; then
 				MPI_CFLAGS=""
 				MPI_LDFLAGS=""
@@ -374,7 +372,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MUMPS
 	#
 	if [ ${WITHMUMPS} -eq 1 ]; then
-		BUILDTARGET_MUMPS="build-with-mumps"
+		MUMPS_F90FLAGS="${MUMPS_F90FLAGS} -DWITH_MUMPS"
 	else
 		MUMPS_CFLAGS=""
 		MUMPS_LDFLAGS=""
@@ -536,7 +534,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
-		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}

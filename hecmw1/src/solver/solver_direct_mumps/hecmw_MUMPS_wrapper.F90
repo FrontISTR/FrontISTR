@@ -17,14 +17,19 @@
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_hecmw_MUMPS_wrapper
   use hecmw_util
-  use m_hecmw_comm_f
   use m_sparse_matrix
+
+#ifdef WITH_MUMPS
+  use m_hecmw_comm_f
   include 'dmumps_struc.h'
+#endif
 
   private
   public :: hecmw_mumps_wrapper
 
+#ifdef WITH_MUMPS
   type (dmumps_struc), save :: mumps_par
+#endif
 
 contains
 
@@ -33,6 +38,8 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in) :: job
     integer(kind=kint), intent(out) :: istat
+
+#ifdef WITH_MUMPS
     integer(kind=kint) :: ierr,myrank
 
     myrank=hecmw_comm_get_rank()
@@ -119,8 +126,13 @@ contains
        call sparse_matrix_scatter_rhs(spMAT, mumps_par%RHS)
        deallocate(mumps_par%RHS)
     endif
+
+#else
+    stop "MUMPS not available"
+#endif
   end subroutine hecmw_mumps_wrapper
 
+#ifdef WITH_MUMPS
   subroutine set_mumps_pointers(mumps_par, spMAT)
     implicit none
     type (dmumps_struc), intent(inout) :: mumps_par
@@ -133,5 +145,6 @@ contains
     mumps_par%JCN_loc => spMAT%JCN
     mumps_par%A_loc => spMAT%A
   end subroutine set_mumps_pointers
+#endif
 
 end module m_hecmw_MUMPS_wrapper
