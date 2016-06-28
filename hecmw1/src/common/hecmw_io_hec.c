@@ -200,11 +200,11 @@ read_amp_param_type(int *type)
 		return -1;
 	}
 	token = HECMW_heclex_next_token();
-	if(token != HECMW_HECLEX_K_ABAQUS) {
+	if(token != HECMW_HECLEX_K_TIMEVALUE) {
 		set_err_token(token, HECMW_IO_HEC_E0100, "Invalid TYPE");
 		return -1;
 	}
-	*type = HECMW_HECLEX_K_ABAQUS;
+	*type = HECMW_HECLEX_K_TIMEVALUE;
 	return 0;
 }
 
@@ -307,7 +307,7 @@ read_amp_data(char *name, int type, int definition, int time, int value)
 		t = HECMW_heclex_get_number();
 
 		/* type ABAQUS*/
-		if(type == HECMW_HECLEX_K_ABAQUS){
+		if(type == HECMW_HECLEX_K_TIMEVALUE){
 			tmp = val;
 			val = t;
 			t   = tmp;
