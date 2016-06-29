@@ -19,7 +19,6 @@ NOBUILDTARGET="no-build"
 BUILDTARGET_SERIAL="build-serial"
 TOOLSTARGET="build-tools"
 ALLBUILDTARGET=""
-BUILDTARGET_MKL="build-without-mkl"
 BUILDTARGET_MUMPS="build-default"
 BUILDTARGET_PARACON="build-default"
 
@@ -243,7 +242,7 @@ fi
 # with mkl
 #
 if [ ${WITHMKL} -eq 1 -a ${SERIAL} -eq 1 ]; then
-	BUILDTARGET_MKL="build-default"
+	F90FLAGS="${F90FLAGS} -DWITH_MKL"
 fi
 
 #
@@ -385,7 +384,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
-		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		-e "s!@build_target_paracon@!${BUILDTARGET_PARACON}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
