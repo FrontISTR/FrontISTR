@@ -19,7 +19,6 @@ NOBUILDTARGET="no-build"
 BUILDTARGET_SERIAL="build-serial"
 TOOLSTARGET="build-tools"
 ALLBUILDTARGET=""
-BUILDTARGET_MUMPS="build-default"
 BUILDTARGET_PARACON="build-default"
 
 SETUPFILE="setup_fistr.sh"
@@ -248,9 +247,7 @@ fi
 #
 # with mumps
 #
-if [ ${WITHMUMPS} -eq 1 ]; then
-	BUILDTARGET_MUMPS="build-with-mumps"
-else
+if [ ${WITHMUMPS} -eq 0 ]; then
 	MUMPS_CFLAGS=""
 	MUMPS_LDFLAGS=""
 	MUMPS_F90FLAGS=""
@@ -384,7 +381,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
-		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		-e "s!@build_target_paracon@!${BUILDTARGET_PARACON}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \
