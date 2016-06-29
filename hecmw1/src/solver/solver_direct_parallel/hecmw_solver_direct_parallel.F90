@@ -17,19 +17,27 @@
 ! module for Parallel Direct Solver
 module hecmw_solver_direct_parallel
 
+#ifndef HECMW_SERIAL
 use m_child_matrix
 use m_irjc_matrix
 use m_matrix_partition_info
 use m_elap
+#endif
+
 use hecmw_util
+
+#ifndef HECMW_SERIAL
 use hecmw_matrix_ass
 use hecmw_matrix_dump
+#endif
 
 ! access control !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 private                            ! default
 
 public hecmw_solve_direct_parallel ! only entry point of Parallel Direct Solver is public
+
+#ifndef HECMW_SERIAL
 
 ! internal type definition !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -78,17 +86,23 @@ logical, parameter :: ldbg  = .false.
 integer, parameter :: idbg  = 52 ! according to FSTR
 logical :: lelap = .false.
 
+#endif
+
 contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine hecmw_solve_direct_parallel(hecMESH, hecMAT, ii)
 
 implicit none
 
+#ifndef HECMW_SERIAL
 include 'mpif.h'
+#endif
 
 type (hecmwST_local_mesh), intent(inout) :: hecMESH
 type (hecmwST_matrix    ), intent(inout) :: hecMAT
 integer(kind=kint), intent(in) :: ii ! output file handler
+
+#ifndef HECMW_SERIAL
 
 logical, save :: first_time = .true.
 
@@ -137,8 +151,13 @@ call MPI_BCAST(hecMAT%b, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp,
 
 call hecmw_mat_dump_solution(hecMAT)
 
+#endif
+
 return
 end subroutine hecmw_solve_direct_parallel
+
+
+#ifndef HECMW_SERIAL
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -5429,4 +5448,7 @@ end subroutine lduDecomposeC
       end subroutine vxprod
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#endif
+
 end module hecmw_solver_direct_parallel
