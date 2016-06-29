@@ -370,7 +370,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MUMPS
 	#
 	if [ ${WITHMUMPS} -eq 1 ]; then
-		MUMPS_F90FLAGS="${MUMPS_F90FLAGS} -DWITH_MUMPS"
+		F90FLAGS="${F90FLAGS} -DWITH_MUMPS"
 	else
 		MUMPS_CFLAGS=""
 		MUMPS_LDFLAGS=""
