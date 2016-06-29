@@ -36,7 +36,6 @@ TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
 BUILDTARGET_MKL="build-default"
-BUILDTARGET_LAPACK="build-default"
 
 #
 # Files
@@ -406,7 +405,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with LAPACK
 	#
 	if [ ${WITHLAPACK} -eq 1 ]; then
-		BUILDTARGET_LAPACK="build-with-lapack"
+		F90FLAGS="${F90FLAGS} -DWITH_LAPACK"
 	fi
 
 	#
@@ -535,7 +534,6 @@ do
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
-		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
 

@@ -24,6 +24,8 @@ contains
     implicit none
     integer(kind=kint), intent(in) :: ITER
     real(kind=kreal), intent(in) :: D(:), E(:)
+
+#ifdef WITH_LAPACK
     character(len=1) :: JOBZ, RANGE
     ! character(len=1) :: COMPZ
     real(kind=kreal) :: VL, VU, ABSTOL, Z(1,1)
@@ -101,7 +103,7 @@ contains
 
 
     deallocate(D1,E1)
-
+#endif
   end subroutine hecmw_estimate_condition_CG
 
 
@@ -110,6 +112,8 @@ contains
     implicit none
     integer(kind=kint), intent(in) :: I
     real(kind=kreal), intent(in) :: H(:,:)
+
+#ifdef WITH_LAPACK
     ! character(len=1) :: JOBU, JOBVT
     character(len=1) :: JOBZ
     integer(kind=kint) :: N, LDH, LDZ=1, LWORK, INFO
@@ -195,6 +199,7 @@ contains
 
     deallocate(WR)
     deallocate(H1)
+#endif
   end subroutine hecmw_estimate_condition_GMRES
 
 end module hecmw_estimate_condition

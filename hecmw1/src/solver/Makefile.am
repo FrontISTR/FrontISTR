@@ -13,7 +13,7 @@ install-header:
 	@cd solver_direct_clustermkl && $(MAKE) @build_target_mkl@
 	@cd solver_11     && $(MAKE) @build_target@
 	@cd solver_22     && $(MAKE) @build_target@
-	@cd solver_33     && $(MAKE) @build_target_lapack@
+	@cd solver_33     && $(MAKE) @build_target@
 	@cd solver_44     && $(MAKE) @build_target@
 	@cd solver_66     && $(MAKE) @build_target@
 	@cd solver_direct && $(MAKE) @build_target@
