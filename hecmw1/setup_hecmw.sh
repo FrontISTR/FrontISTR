@@ -35,7 +35,6 @@ LIBSTARGET="build-libs"
 TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
-BUILDTARGET_MKL="build-default"
 
 #
 # Files
@@ -383,7 +382,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MKL PARDISO
 	#
 	if [ ${WITHMKL} -eq 1 ] && [ ${SERIAL} -eq 0 ]; then
-		BUILDTARGET_MKL="build-with-mkl"
+		F90FLAGS="${F90FLAGS} -DWITH_MKL"
 	else
 		MKL_CFLAGS=""
 		MKL_LDFLAGS=""
@@ -533,7 +532,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
-		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
 
