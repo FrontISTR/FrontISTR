@@ -337,7 +337,7 @@ end subroutine fstr_init_condition
 
 subroutine fstr_static_analysis( flag )
         implicit none
-        integer(knid=kint), intent(in) :: flag
+        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
