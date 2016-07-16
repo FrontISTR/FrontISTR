@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 4.4                                   !
+! Software Name : FrontISTR Ver. 4.5                                   !
 !                                                                      !
 !      Module Name : Data structure                                    !
 !                                                                      !

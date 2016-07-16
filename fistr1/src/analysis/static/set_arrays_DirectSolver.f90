@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.6                                   !
+! Software Name : FrontISTR Ver. 3.7                                   !
 !                                                                      !
 !      Module Name : m_set_arrays_directsolver_contact                 !
 !                                                                      !

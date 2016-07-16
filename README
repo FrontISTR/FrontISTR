@@ -2,9 +2,9 @@
 
   README of FrontISTR on HEC-MW (in English)
 
-  2015.02.17  Version 4.4
+  2016.07.22  Version 4.5
 
-  IIS,The University of Tokyo, CISS
+  FrontISTR Forum ,The University of Tokyo
 
   Comments, Questions, Problems etc.
     e-mail: fstr_seminar@multi.k.u-tokyo.ac.jp
@@ -18,8 +18,6 @@
   README                      : README (in English : this file)
   README.ja                   : README (in Japanese)
   VERSION                     : version information
-  CISS_lic_agree2013_en.pdf   : grant of license to CISS free software (in English)
-  CISS_lic_agree2013_ja.pdf   : grant of license to CISS free software (in Japanese)
   METIS-copyright.txt         : METIS library copyright
   METIS-manual.pdf            : METIS library manual
   setup.sh & setup_fistr.sh   : shell script to create makefiles
@@ -32,10 +30,10 @@
                               : installation manual for FrontISTR
   doc/FrontISTR_tutorial_guide_en.pdf
                               : tutorial guide for FrontISTR
-  doc/FrontISTR_user_manual_Ver36_en.pdf
-                              : user's manual for FrontISTR Ver.3.6
-  doc/FrontISTR_user_manual_Ver44_en.pdf
-                              : user's manual for FrontISTR Ver.4.4
+  doc/FrontISTR_user_manual_Ver37_en.pdf
+                              : user's manual for FrontISTR Ver.3.7
+  doc/FrontISTR_user_manual_Ver45_en.pdf
+                              : user's manual for FrontISTR Ver.4.5
 
   tutorial/                   : tutorial data
 
@@ -43,16 +41,16 @@
 
   fistr/                      : starter program
 
-  fisrt1/                     : FrontISTR Ver.3.6
+  fisrt1/                     : FrontISTR Ver.3.7
 
-  fistr2/                     : FrontISTR Ver.4.4
+  fistr2/                     : FrontISTR Ver.4.5
 
-  hecmw1/                     : HEC-MW Ver.2.7
+  hecmw1/                     : HEC-MW Ver.2.8
 
-  hecmw2/                     : HEC-MW Ver.4.4
+  hecmw2/                     : HEC-MW Ver.4.5
 
   etc/                        : various setting files
 
 ************************************ NOTICE *************************************
-Please read "CISS_lic_agree.pdf" carefully BEFORE you start to use this software.
+Please read "License.txt" carefully BEFORE you start to use this software.
 *********************************************************************************

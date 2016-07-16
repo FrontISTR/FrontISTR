@@ -2,9 +2,9 @@
 
   README of HEC-MW (in English)
 
-  2015.02.17  Version 2.7
+  2016.07.22  Version 2.8
 
-  IIS,The University of Tokyo, CISS
+  FrontISTR Forum ,The University of Tokyo
 
   Comments, Questions, Problems etc.
     e-mail: fstr_seminar@multi.k.u-tokyo.ac.jp
@@ -50,5 +50,5 @@
   util/                       : setup files
 
 ************************************ NOTICE *************************************
-Please read "CISS_lic_agree.pdf" carefully BEFORE you start to use this software.
+Please read "License.txt" carefully BEFORE you start to use this software.
 *********************************************************************************
