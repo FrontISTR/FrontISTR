@@ -35,3 +35,4 @@ hecmw1/include
 examples/*/ex?/hecmw_ctrl.dat
 examples/static/1elem/hecmw_ctrl.dat
 examples/static/thermal/hecmw_ctrl.dat
+build/

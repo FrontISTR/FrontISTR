@@ -143,6 +143,8 @@ UNSORTED	{ set_flag_header(0); return HECMW_ABLEX_K_UNSORTED; }
 VALUE		{ set_flag_header(0); return HECMW_ABLEX_K_VALUE; }
 ZERO		{ set_flag_header(0); return HECMW_ABLEX_K_ZERO; }
 PRONY		{ set_flag_header(0); return HECMW_ABLEX_K_PRONY; }
+VALUETIME		{ set_flag_header(0); return HECMW_ABLEX_K_VALUETIME; }
+TIMEVALUE		{ set_flag_header(0); return HECMW_ABLEX_K_TIMEVALUE; }
 
 B31		{ set_flag_header(0); return HECMW_ABLEX_E_B31; }
 B32		{ set_flag_header(0); return HECMW_ABLEX_E_B32; }

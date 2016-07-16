@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.6                                   !
+! Software Name : FrontISTR Ver. 3.7                                   !
 !                                                                      !
 !     Last Update : 2006/06/01                                         !
 !        Category : Dynamic Transit Analysis                           !

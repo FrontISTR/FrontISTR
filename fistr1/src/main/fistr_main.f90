@@ -1,6 +1,6 @@
 !======================================================================!
 !                                                                      !
-! Software Name : FrontISTR Ver. 3.6                                   !
+! Software Name : FrontISTR Ver. 3.7                                   !
 !                                                                      !
 !      Module Name : Main Program                                       !
 !                                                                      !
@@ -77,20 +77,18 @@ use m_fstr_freqdata
         ! =============== ANALYSIS =====================
 
         select case( fstrPR%solution_type )
-        case ( kstPRECHECK, kstNZPROF )
-                call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
-        case ( kstSTATIC )
-                call fstr_linear_static_analysis
-        case ( kstNLSTATIC )
-                call fstr_nonlinear_static_analysis
+        case ( kstSTATIC, kstNLSTATIC)
+                call fstr_static_analysis( fstrPR%solution_type )
+        case ( kstDYNAMIC )
+                call fstr_dynamic_analysis
         case ( kstEIGEN )
                 call fstr_eigen_analysis
         case ( kstHEAT )
                 call fstr_heat_analysis
-        case ( kstDYNAMIC )
-                call fstr_linear_dynamic_analysis
         case ( kstSTATICEIGEN )
                 call fstr_static_eigen_analysis
+        case ( kstPRECHECK, kstNZPROF )
+                call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
         end select
 
         T3 = hecmw_Wtime()
@@ -135,7 +133,7 @@ subroutine fstr_init
 
         call fstr_init_file
 
-		! ----  default setting of global params ---
+        ! ----  default setting of global params ---
         DT = 1
         ETIME = 1
         ITMAX = 20
@@ -294,11 +292,12 @@ subroutine fstr_init_condition
 end subroutine fstr_init_condition
 
 !=============================================================================!
-!> Master subroutine of linear static analysis                                !
+!> Master subroutine of linear/nonlinear static analysis                                !
 !=============================================================================!
 
-subroutine fstr_linear_static_analysis
+subroutine fstr_static_analysis( flag )
         implicit none
+        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -307,33 +306,16 @@ subroutine fstr_linear_static_analysis
                 write(IMSG,*)
                 write(IMSG,*)
                 write(IMSG,*)
-                write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-        end if
-        call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
-        call fstr_solid_finalize( fstrSOLID )
-
-end subroutine fstr_linear_static_analysis
-
-!=============================================================================!
-!> Master subroutine of nonlinear static analysis                             !
-!=============================================================================!
-
-subroutine fstr_nonlinear_static_analysis
-        implicit none
-
-        if( IECHO.eq.1 ) call fstr_echo(hecMESH)
-        if(myrank .EQ. 0) THEN
-                write(IMSG,*)
-                write(IMSG,*)
-                write(IMSG,*)
-                write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
+                if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
+                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
         end if
 
-        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
+        if(flag == kstNLSTATIC) call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
 
         call fstr_solid_finalize( fstrSOLID )
 
-end subroutine fstr_nonlinear_static_analysis
+end subroutine fstr_static_analysis
 
 !=============================================================================!
 !> Master subroutine of eigen analysis                                        !
@@ -380,7 +362,7 @@ end subroutine fstr_heat_analysis
 !> Master subroutine of dynamic analysis                                      !
 !=============================================================================!
 
-subroutine fstr_linear_dynamic_analysis
+subroutine fstr_dynamic_analysis
         implicit none
 
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -400,7 +382,7 @@ subroutine fstr_linear_dynamic_analysis
         call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG    &
                                  ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
 
-end subroutine fstr_linear_dynamic_analysis
+end subroutine fstr_dynamic_analysis
 
 !=============================================================================!
 !> Master subroutine of static -> eigen anaylsis                              !

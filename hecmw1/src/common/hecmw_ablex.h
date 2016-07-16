@@ -2,7 +2,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.7                                               *
+ *         Version : 2.8                                               *
  *                                                                     *
  *     Last Update : 2007/12/03                                        *
  *        Category : I/O and Utility                                   *
@@ -86,6 +86,8 @@ enum {
 	HECMW_ABLEX_K_VALUE,
 	HECMW_ABLEX_K_ZERO,
 	HECMW_ABLEX_K_PRONY,
+	HECMW_ABLEX_K_TIMEVALUE,
+	HECMW_ABLEX_K_VALUETIME,
 
 	/* element type */
 	HECMW_ABLEX_E_B31 = 4000,

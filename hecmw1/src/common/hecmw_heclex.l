@@ -152,6 +152,8 @@ TEMPERATURE	{ set_flag_header(0); return HECMW_HECLEX_K_TEMPERATURE; }
 TIME		{ set_flag_header(0); return HECMW_HECLEX_K_TIME; }
 TYPE		{ set_flag_header(0); return HECMW_HECLEX_K_TYPE; }
 VALUE		{ set_flag_header(0); return HECMW_HECLEX_K_VALUE; }
+TIMEVALUE		{ set_flag_header(0); return HECMW_HECLEX_K_TIMEVALUE; }
+VALUETIME		{ set_flag_header(0); return HECMW_HECLEX_K_VALUETIME; }
 
 =			{ set_flag_header(0); return '='; }
 ,			{ set_flag_header(0); return ','; }

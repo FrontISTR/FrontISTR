@@ -1,7 +1,7 @@
 /*=====================================================================*
  *                                                                     *
  *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.7                                               *
+ *         Version : 2.8                                               *
  *                                                                     *
  *     Last Update : 2006/06/01                                        *
  *        Category : I/O and Utility                                   *
@@ -87,7 +87,9 @@ enum {
 	HECMW_HECLEX_K_TEMPERATURE,
 	HECMW_HECLEX_K_TIME,
 	HECMW_HECLEX_K_TYPE,
-	HECMW_HECLEX_K_VALUE
+	HECMW_HECLEX_K_VALUE,
+	HECMW_HECLEX_K_TIMEVALUE,
+	HECMW_HECLEX_K_VALUETIME
 };
 
 
