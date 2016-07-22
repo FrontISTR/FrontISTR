@@ -20,10 +20,10 @@
   VERSION                     : バージョン情報
   METIS-copyright.txt         : METIS使用許諾書
   METIS-manual.pdf            : METISライブラリマニュアル
-  setup.sh & setup_fistr.sh　 : makefile作成用シェルスクリプト
-  Makefile.am        　　　　 : makefileベースファイル
-  Makefile.conf.org  　　　　 : 環境設定ファイル (ユーザ定義用雛型)
-  Makefile.dev       　　　　 : 環境設定ファイル (開発者用)
+  setup.sh & setup_fistr.sh   : makefile作成用シェルスクリプト
+  Makefile.am                 : makefileベースファイル
+  Makefile.conf.org           : 環境設定ファイル (ユーザ定義用雛型)
+  Makefile.dev                : 環境設定ファイル (開発者用)
 
   doc/                        : ドキュメント
   doc/FrontISTR_install_manual.pdf
@@ -45,9 +45,9 @@
 
   fistr2/                     : FrontISTR Ver.4.5
 
-  hecmw1/                     : HEC-MW Ver.2.7
+  hecmw1/                     : HEC-MW Ver.3.7
 
-  hecmw2/                     : HEC-MW Ver.4.4
+  hecmw2/                     : HEC-MW Ver.4.5
 
   etc/                        : 各種環境設定ファイル
 
