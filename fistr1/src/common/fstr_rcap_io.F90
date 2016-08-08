@@ -15,16 +15,21 @@
 
 module m_fstr_rcap_io
 use m_fstr
+
+#ifdef WITH_REVOCAP
 use rcapf
+#endif
 
       public :: fstr_rcap_initialize ! call after fstr_setup
       public :: fstr_rcap_finalize   ! call before hecmw_finalize
       public :: fstr_rcap_send
       public :: fstr_rcap_get
 
+#ifdef WITH_REVOCAP
       integer(kind=kint), private :: n_iter, n_rcap
       real(kind=kreal), private :: t_start, t_end, t_rcap
       real(kind=kreal), private :: t_start_all, t_end_all, t_rcap_all
+#endif
 
 contains
 
@@ -34,6 +39,8 @@ subroutine fstr_rcap_initialize( hecMESH, fstrPARAM, fstrCPL )
       type( hecmwST_local_mesh ) :: hecMESH
       type( fstr_param  ) :: fstrPARAM
       type( fstr_couple ) :: fstrCPL
+
+#ifdef WITH_REVOCAP
       character( len=16)  :: portfile
       integer(kind=kint)  :: myrank
       integer(kind=kint)  :: i,err,nid,nid_old
@@ -111,6 +118,16 @@ subroutine fstr_rcap_initialize( hecMESH, fstrPARAM, fstrCPL )
       return
 1000  write(*,*) "##Error : not enough memory"
       call hecmw_abort( hecmw_comm_get_comm() )
+
+#else
+
+      if( fstrPARAM%fg_couple == 0 ) return
+
+      if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+#endif
 end subroutine fstr_rcap_initialize
 
 !------------------------------------------------------------------------------
@@ -118,6 +135,8 @@ subroutine fstr_rcap_finalize( fstrPARAM, fstrCPL )
       implicit none
       type( fstr_param  ) :: fstrPARAM
       type( fstr_couple ) :: fstrCPL
+
+#ifdef WITH_REVOCAP
       real(kind=kreal) :: t_tot, t_tot_avg, t_rcap_avg, tr
       real(kind=kreal) :: t_tot_all, tr_all
       real(kind=kreal) :: t_s, t_e
@@ -162,12 +181,22 @@ subroutine fstr_rcap_finalize( fstrPARAM, fstrCPL )
 
       write(IDBG,*) "fstr_rcap_finalize: end"
 
+#else
+
+      if( fstrPARAM%fg_couple == 0 ) return
+
+      if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+#endif
 end subroutine fstr_rcap_finalize
 !------------------------------------------------------------------------------
 subroutine fstr_rcap_send( fstrCPL )
       implicit none
       type( fstr_couple ) :: fstrCPL
 
+#ifdef WITH_REVOCAP
       write(IDBG,*) "fstr_rcap_send: start"
 
 !      call rcapf_set_disp( fstrCPL%coupled_node,       &
@@ -184,11 +213,20 @@ subroutine fstr_rcap_send( fstrCPL )
 
       write(IDBG,*) "fstr_rcap_send: end"
 
+#else
+
+      if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+#endif
 end subroutine fstr_rcap_send
 !------------------------------------------------------------------------------
 subroutine fstr_rcap_get( fstrCPL )
       implicit none
       type( fstr_couple ) :: fstrCPL
+
+#ifdef WITH_REVOCAP
       real(kind=kreal) :: t_s, t_e
 
       write(IDBG,*) "fstr_rcap_get: start"
@@ -216,18 +254,33 @@ subroutine fstr_rcap_get( fstrCPL )
 
       write(IDBG,*) "fstr_rcap_get: end"
 
+#else
+
+      if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+#endif
 end subroutine fstr_rcap_get
 !------------------------------------------------------------------------------
 subroutine fstr_get_convergence( revocap_flag )
       implicit none
       integer(kind=kint)  :: revocap_flag
 
+#ifdef WITH_REVOCAP
       write(IDBG,*) "fstr_get_convergence: start"
 
       call rcapf_get_convergence( revocap_flag )
 
       write(IDBG,*) "fstr_get_convergence: end"
 
+#else
+
+      if( hecmw_comm_get_rank() == 0 ) then
+        write(*,*) "##Error : REVOCAP functions are not supported"
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+#endif
 end subroutine fstr_get_convergence
 !------------------------------------------------------------------------------
 

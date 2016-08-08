@@ -26,10 +26,11 @@ contains
       subroutine hecmw_barrier (hecMESH)
       use hecmw_util
       implicit none
-      integer(kind=kint):: ierr
       type (hecmwST_local_mesh) :: hecMESH
-
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BARRIER (hecMESH%MPI_COMM, ierr)
+#endif
       end subroutine hecmw_barrier
 
       subroutine hecmw_scatterv_DP(sbuf, sc, disp, rbuf, rc, root, comm)
@@ -42,14 +43,17 @@ contains
       double precision   :: rbuf(rc) !receive buffer
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
-
       CALL MPI_scatterv( sbuf, sc, disp, MPI_DOUBLE_PRECISION, &
                          rbuf, rc, MPI_DOUBLE_PRECISION, &
                          root, comm, ierr )
-
+#else
+      rbuf(1) = sbuf(1)
+#endif
       end subroutine hecmw_scatterv_DP
 
+#ifndef HECMW_SERIAL
       function hecmw_operation_hec2mpi(operation)
       use hecmw_util
       implicit none
@@ -65,6 +69,7 @@ contains
         hecmw_operation_hec2mpi = MPI_MIN
       endif
       end function hecmw_operation_hec2mpi
+#endif
 
       subroutine hecmw_scatter_int_1(sbuf, rval, root, comm)
       use hecmw_util
@@ -73,9 +78,13 @@ contains
       integer(kind=kint) :: rval !receive value
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       CALL MPI_scatter( sbuf, 1, MPI_INTEGER, &
-     &     rval, 1, MPI_INTEGER, root, comm, ierr )
+           &     rval, 1, MPI_INTEGER, root, comm, ierr )
+#else
+      rval=sbuf(1)
+#endif
       end subroutine hecmw_scatter_int_1
 
       subroutine hecmw_gather_int_1(sval, rbuf, root, comm)
@@ -85,9 +94,13 @@ contains
       integer(kind=kint) :: rbuf(*) !receive buffer
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       CALL MPI_gather( sval, 1, MPI_INTEGER, &
-     &     rbuf, 1, MPI_INTEGER, root, comm, ierr )
+           &     rbuf, 1, MPI_INTEGER, root, comm, ierr )
+#else
+      rbuf(1)=sval
+#endif
       end subroutine hecmw_gather_int_1
 
       subroutine hecmw_allgather_int_1(sval, rbuf, comm)
@@ -96,9 +109,13 @@ contains
       integer(kind=kint) :: sval !send buffer
       integer(kind=kint) :: rbuf(*) !receive buffer
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       CALL MPI_allgather( sval, 1, MPI_INTEGER, &
-     &     rbuf, 1, MPI_INTEGER, comm, ierr )
+           &     rbuf, 1, MPI_INTEGER, comm, ierr )
+#else
+      rbuf(1)=sval
+#endif
       end subroutine hecmw_allgather_int_1
 
       subroutine hecmw_scatterv_real(sbuf, scs, disp, &
@@ -112,9 +129,13 @@ contains
       integer(kind=kint) :: rc  !receive counts
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       CALL MPI_scatterv( sbuf, scs, disp, MPI_REAL8, &
-     &     rbuf, rc, MPI_REAL8, root, comm, ierr )
+           &     rbuf, rc, MPI_REAL8, root, comm, ierr )
+#else
+      rbuf(1:rc)=sbuf(1:rc)
+#endif
       end subroutine hecmw_scatterv_real
 
       subroutine hecmw_gatherv_real(sbuf, sc, &
@@ -128,9 +149,13 @@ contains
       integer(kind=kint) :: disp(*) !displacement
       integer(kind=kint) :: root
       integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       CALL MPI_gatherv( sbuf, sc, MPI_REAL8, &
-     &     rbuf, rcs, disp, MPI_REAL8, root, comm, ierr )
+           &     rbuf, rcs, disp, MPI_REAL8, root, comm, ierr )
+#else
+      rbuf(1:sc)=sbuf(1:sc)
+#endif
       end subroutine hecmw_gatherv_real
 
       subroutine hecmw_allreduce_int_1(sval, rval, op, comm)
@@ -139,8 +164,12 @@ contains
       integer(kind=kint)   :: sval !send val
       integer(kind=kint)   :: rval !receive val
       integer(kind=kint):: op, comm, ierr
+#ifndef HECMW_SERIAL
       call MPI_ALLREDUCE(sval, rval, 1, MPI_INTEGER, &
-     &     hecmw_operation_hec2mpi(op), comm, ierr)
+           &     hecmw_operation_hec2mpi(op), comm, ierr)
+#else
+      rval=sval
+#endif
       end subroutine hecmw_allreduce_int_1
 
       subroutine hecmw_isend_int(sbuf, sc, dest, &
@@ -153,9 +182,11 @@ contains
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
       integer(kind=kint) :: req
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_ISEND(sbuf, sc, MPI_INTEGER, &
-     &     dest, tag, comm, req, ierr)
+           &     dest, tag, comm, req, ierr)
+#endif
       end subroutine hecmw_isend_int
 
       subroutine hecmw_isend_r(sbuf, sc, dest, &
@@ -168,9 +199,11 @@ contains
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
       integer(kind=kint) :: req
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_ISEND(sbuf, sc, MPI_DOUBLE_PRECISION, &
-     &     dest, tag, comm, req, ierr)
+           &     dest, tag, comm, req, ierr)
+#endif
       end subroutine hecmw_isend_r
 
       subroutine hecmw_irecv_int(rbuf, rc, source, &
@@ -183,9 +216,11 @@ contains
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
       integer(kind=kint) :: req
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_IRECV(rbuf, rc, MPI_INTEGER, &
-     &     source, tag, comm, req, ierr)
+           &     source, tag, comm, req, ierr)
+#endif
       end subroutine hecmw_irecv_int
 
       subroutine hecmw_irecv_r(rbuf, rc, source, &
@@ -198,9 +233,11 @@ contains
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
       integer(kind=kint) :: req
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_IRECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
-     &     source, tag, comm, req, ierr)
+           &     source, tag, comm, req, ierr)
+#endif
       end subroutine hecmw_irecv_r
 
       subroutine hecmw_waitall(cnt, reqs, stats)
@@ -208,9 +245,11 @@ contains
       implicit none
       integer(kind=kint) :: cnt
       integer(kind=kint) :: reqs(*)
-      integer(kind=kint) :: stats(MPI_STATUS_SIZE,*)
+      integer(kind=kint) :: stats(HECMW_STATUS_SIZE,*)
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_WAITALL(cnt, reqs, stats, ierr)
+#endif
       end subroutine hecmw_waitall
 
       subroutine hecmw_recv_int(rbuf, rc, source, &
@@ -222,10 +261,12 @@ contains
       integer(kind=kint) :: source
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
-      integer(kind=kint) :: stat(MPI_STATUS_SIZE)
+      integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_RECV(rbuf, rc, MPI_INTEGER, &
-     &     source, tag, comm, stat, ierr)
+           &     source, tag, comm, stat, ierr)
+#endif
       end subroutine hecmw_recv_int
 
       subroutine hecmw_recv_r(rbuf, rc, source, &
@@ -237,10 +278,12 @@ contains
       integer(kind=kint) :: source
       integer(kind=kint) :: tag
       integer(kind=kint) :: comm
-      integer(kind=kint) :: stat(MPI_STATUS_SIZE)
+      integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
+#ifndef HECMW_SERIAL
       integer(kind=kint) :: ierr
       call MPI_RECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
-     &     source, tag, comm, stat, ierr)
+           &     source, tag, comm, stat, ierr)
+#endif
       end subroutine hecmw_recv_r
 !C
 !C***
@@ -253,7 +296,7 @@ contains
       integer(kind=kint) :: n, hec_op,op, comm, ierr
       double precision, dimension(n) :: VAL
       double precision, dimension(n) :: VALM
-
+#ifndef HECMW_SERIAL
       select case( hec_op )
       case ( hecmw_sum )
           op = MPI_SUM
@@ -265,7 +308,12 @@ contains
           op = MPI_MIN
       end select
       call MPI_allREDUCE(VAL,VALM,n,MPI_DOUBLE_PRECISION,op,comm,ierr)
-
+#else
+      integer(kind=kint) :: i
+      do i=1,n
+          VALM(i) = VAL(i)
+      end do
+#endif
       end subroutine hecmw_allREDUCE_DP
 
       subroutine hecmw_allreduce_DP1(s1,s2,hec_op,comm )
@@ -275,11 +323,15 @@ contains
       double precision :: s1, s2
       double precision, dimension(1) :: VAL
       double precision, dimension(1) :: VALM
+#ifndef HECMW_SERIAL
       VAL(1) = s1
       VALM(1) = s2
       call hecmw_allreduce_DP(VAL,VALM,1,hec_op,comm )
       s1 = VAL(1)
       s2 = VALM(1)
+#else
+      s2 = s1
+#endif
       end subroutine hecmw_allreduce_DP1
 !C
 !C***
@@ -289,10 +341,12 @@ contains
       subroutine hecmw_allreduce_R (hecMESH, VAL, n, ntag)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, ntag, ierr
+      integer(kind=kint):: n, ntag
       real(kind=kreal), dimension(n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: VALM
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
+      real(kind=kreal), dimension(:), allocatable :: VALM
 
       allocate (VALM(n))
       VALM= 0.d0
@@ -316,7 +370,7 @@ contains
 
       VAL= VALM
       deallocate (VALM)
-
+#endif
       end subroutine hecmw_allreduce_R
 
       subroutine hecmw_allreduce_R1 (hecMESH, s, ntag)
@@ -324,11 +378,13 @@ contains
       implicit none
       integer(kind=kint):: ntag
       real(kind=kreal) :: s
-      real(kind=kreal), dimension(1) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      real(kind=kreal), dimension(1) :: VAL
       VAL(1) = s
       call hecmw_allreduce_R(hecMESH, VAL, 1, ntag )
       s = VAL(1)
+#endif
       end subroutine hecmw_allreduce_R1
 
 !C
@@ -339,10 +395,12 @@ contains
       subroutine hecmw_allreduce_I(hecMESH, VAL, n, ntag)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, ntag, ierr
+      integer(kind=kint):: n, ntag
       integer(kind=kint), dimension(n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: VALM
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
+      integer(kind=kint), dimension(:), allocatable :: VALM
 
       allocate (VALM(n))
       VALM= 0
@@ -367,18 +425,21 @@ contains
 
       VAL= VALM
       deallocate (VALM)
+#endif
       end subroutine hecmw_allreduce_I
 
       subroutine hecmw_allreduce_I1 (hecMESH, s, ntag)
       use hecmw_util
       implicit none
       integer(kind=kint)::  ntag, s
-      integer(kind=kint), dimension(1) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint), dimension(1) :: VAL
 
       VAL(1) = s
       call hecmw_allreduce_I(hecMESH, VAL, 1, ntag )
       s = VAL(1)
+#endif
       end subroutine hecmw_allreduce_I1
 
 !C
@@ -389,19 +450,25 @@ contains
       subroutine hecmw_bcast_R (hecMESH, VAL, n, nbase)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nbase, ierr
+      integer(kind=kint):: n, nbase
       real(kind=kreal), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
+#endif
       end subroutine hecmw_bcast_R
 
       subroutine hecmw_bcast_R_comm (VAL, n, nbase, comm)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nbase, ierr
+      integer(kind=kint):: n, nbase
       real(kind=kreal), dimension(n) :: VAL
       integer(kind=kint):: comm
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
+#endif
       end subroutine hecmw_bcast_R_comm
 
       subroutine hecmw_bcast_R1 (hecMESH, s, nbase)
@@ -409,23 +476,28 @@ contains
       implicit none
       integer(kind=kint):: nbase, ierr
       real(kind=kreal) :: s
-      real(kind=kreal), dimension(1) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      real(kind=kreal), dimension(1) :: VAL
       VAL(1)=s
       call MPI_BCAST (VAL, 1, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
+#endif
       end subroutine hecmw_bcast_R1
 
       subroutine hecmw_bcast_R1_comm (s, nbase, comm)
       use hecmw_util
       implicit none
-      integer(kind=kint):: nbase, ierr
+      integer(kind=kint):: nbase
       real(kind=kreal) :: s
-      real(kind=kreal), dimension(1) :: VAL
       integer(kind=kint):: comm
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
+      real(kind=kreal), dimension(1) :: VAL
       VAL(1)=s
       call MPI_BCAST (VAL, 1, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
       s = VAL(1)
+#endif
       end subroutine hecmw_bcast_R1_comm
 !C
 !C***
@@ -435,41 +507,53 @@ contains
       subroutine hecmw_bcast_I (hecMESH, VAL, n, nbase)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nbase, ierr
+      integer(kind=kint):: n, nbase
       integer(kind=kint), dimension(n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
+#endif
       end subroutine hecmw_bcast_I
 
       subroutine hecmw_bcast_I_comm (VAL, n, nbase, comm)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nbase, ierr
+      integer(kind=kint):: n, nbase
       integer(kind=kint), dimension(n) :: VAL
       integer(kind=kint):: comm
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n, MPI_INTEGER, nbase, comm, ierr)
+#endif
       end subroutine hecmw_bcast_I_comm
 
       subroutine hecmw_bcast_I1 (hecMESH, s, nbase)
       use hecmw_util
       implicit none
-      integer(kind=kint):: nbase, ierr,s
-      integer(kind=kint), dimension(1) :: VAL
+      integer(kind=kint):: nbase, s
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
+      integer(kind=kint), dimension(1) :: VAL
       VAL(1) = s
       call MPI_BCAST (VAL, 1, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
       s = VAL(1)
+#endif
       end subroutine hecmw_bcast_I1
 
       subroutine hecmw_bcast_I1_comm (s, nbase, comm)
       use hecmw_util
       implicit none
-      integer(kind=kint):: nbase, ierr,s
-      integer(kind=kint), dimension(1) :: VAL
+      integer(kind=kint):: nbase, s
       integer(kind=kint):: comm
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
+      integer(kind=kint), dimension(1) :: VAL
       VAL(1) = s
       call MPI_BCAST (VAL, 1, MPI_INTEGER, nbase, comm, ierr)
       s = VAL(1)
+#endif
       end subroutine hecmw_bcast_I1_comm
 !C
 !C***
@@ -479,23 +563,27 @@ contains
       subroutine hecmw_bcast_C (hecMESH, VAL, n, nn, nbase)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nn, nbase, ierr
+      integer(kind=kint):: n, nn, nbase
       character(len=n) :: VAL(nn)
       type (hecmwST_local_mesh) :: hecMESH
-
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n*nn, MPI_CHARACTER, nbase, hecMESH%MPI_COMM,&
      &                                                 ierr)
+#endif
       end subroutine hecmw_bcast_C
 
       subroutine hecmw_bcast_C_comm (VAL, n, nn, nbase, comm)
       use hecmw_util
       implicit none
-      integer(kind=kint):: n, nn, nbase, ierr
+      integer(kind=kint):: n, nn, nbase
       character(len=n) :: VAL(nn)
       integer(kind=kint):: comm
-
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ierr
       call MPI_BCAST (VAL, n*nn, MPI_CHARACTER, nbase, comm,&
      &                                                 ierr)
+#endif
       end subroutine hecmw_bcast_C_comm
 
 !C
@@ -510,10 +598,12 @@ contains
       use  hecmw_solver_SR_11
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       real(kind=kreal), dimension(n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -527,7 +617,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_1_R
 
 !C
@@ -542,10 +632,12 @@ contains
       use  hecmw_solver_SR_22
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       real(kind=kreal), dimension(2*n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -559,7 +651,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_2_R
 
 !C
@@ -574,10 +666,12 @@ contains
       use  hecmw_solver_SR_33
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       real(kind=kreal), dimension(3*n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -591,7 +685,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_3_R
 
 !C
@@ -608,7 +702,7 @@ contains
       integer(kind=kint):: n, ireq
       real(kind=kreal), dimension(3*n) :: VAL
       type (hecmwST_local_mesh) :: hecMESH
-
+#ifndef HECMW_SERIAL
       if( hecMESH%n_neighbor_pe == 0 ) return
 
       call hecmw_solve_ISEND_IRECV_33                                   &
@@ -616,7 +710,7 @@ contains
      &     hecMESH%import_index, hecMESH%import_item,                   &
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     VAL , hecMESH%MPI_COMM, hecMESH%my_rank, ireq)
-
+#endif
       end subroutine hecmw_update_3_R_async
 
 !C
@@ -632,11 +726,11 @@ contains
       implicit none
       integer(kind=kint):: ireq
       type (hecmwST_local_mesh) :: hecMESH
-
+#ifndef HECMW_SERIAL
       if( hecMESH%n_neighbor_pe == 0 ) return
 
       call hecmw_solve_ISEND_IRECV_33_WAIT( ireq )
-
+#endif
       end subroutine hecmw_update_3_R_wait
 
 !C
@@ -651,10 +745,12 @@ contains
       use hecmw_solver_SR_44
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       real(kind=kreal), dimension(4*n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -668,7 +764,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_4_R
 
 !C
@@ -683,10 +779,12 @@ contains
       use hecmw_solver_SR_66
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       real(kind=kreal), dimension(6*n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -700,7 +798,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_6_R
 
 !C
@@ -715,10 +813,12 @@ contains
       use  hecmw_solver_SR_mm
 
       implicit none
-      integer(kind=kint):: n, m, ns, nr
+      integer(kind=kint):: n, m
       real(kind=kreal), dimension(m*n) :: VAL
-      real(kind=kreal), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      real(kind=kreal), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -732,7 +832,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_m_R
 
 !C
@@ -747,10 +847,12 @@ contains
       use  hecmw_solver_SR_11i
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       integer(kind=kint), dimension(n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -764,7 +866,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_1_I
 
 !C
@@ -779,10 +881,12 @@ contains
       use  hecmw_solver_SR_22i
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       integer(kind=kint), dimension(2*n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -796,7 +900,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_2_I
 
 !C
@@ -811,10 +915,12 @@ contains
       use  hecmw_solver_SR_33i
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       integer(kind=kint), dimension(3*n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -828,7 +934,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_3_I
 
 !C
@@ -843,10 +949,12 @@ contains
       use  hecmw_solver_SR_44i
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       integer(kind=kint), dimension(4*n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -860,7 +968,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_4_I
 
 !C
@@ -875,10 +983,12 @@ contains
       use  hecmw_solver_SR_66i
 
       implicit none
-      integer(kind=kint):: n, ns, nr
+      integer(kind=kint):: n
       integer(kind=kint), dimension(6*n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -892,7 +1002,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_6_I
 
 !C
@@ -907,10 +1017,12 @@ contains
       use  hecmw_solver_SR_mmi
 
       implicit none
-      integer(kind=kint):: n, m, ns, nr
+      integer(kind=kint):: n, m
       integer(kind=kint), dimension(m*n) :: VAL
-      integer(kind=kint), dimension(:), allocatable :: WS, WR
       type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+      integer(kind=kint):: ns, nr
+      integer(kind=kint), dimension(:), allocatable :: WS, WR
 
       if( hecMESH%n_neighbor_pe == 0 ) return
 
@@ -924,9 +1036,7 @@ contains
      &     hecMESH%export_index, hecMESH%export_item,                   &
      &     WS, WR, VAL , hecMESH%MPI_COMM, hecMESH%my_rank)
       deallocate (WS, WR)
-
+#endif
       end subroutine hecmw_update_m_I
 
 end module m_hecmw_comm_f
-
-

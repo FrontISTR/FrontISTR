@@ -50,6 +50,7 @@ F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
 ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(ML_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -68,13 +69,16 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
@@ -84,6 +88,7 @@ OBJS = \
 	hecmw_ML_wrapper.@cobjfilepostfix@ \
 
 OBJSF = \
+	hecmw_estimate_condition.@f90objfilepostfix@ \
 	hecmw_jadm.@f90objfilepostfix@ \
 	hecmw_tuning_fx.@f90objfilepostfix@ \
 	hecmw_solver_las_33.@f90objfilepostfix@ \
@@ -103,10 +108,6 @@ OBJSF = \
 	hecmw_solver_GPBiCG_33.@f90objfilepostfix@ \
 	hecmw_solver_33.@f90objfilepostfix@
 
-OBJSF_LAPACK = hecmw_estimate_condition.@f90objfilepostfix@
-
-OBJSF_LAPACK_DUMM = hecmw_estimate_condition_dumm.@f90objfilepostfix@
-
 HEADERS =
 
 #-----------------------------------------------------------------------------#
@@ -114,22 +115,13 @@ all: @build_target@
 
 build-default: $(TARGET) $(F90TARGET) install-module
 
-build-serial: $(TARGET) $(F90TARGET) install-module
-
-build-with-lapack: $(TARGET) F90TARGET_LAPACK install-module
-
-build-serial-with-lapack: $(TARGET) F90TARGET_LAPACK install-module
-
 build-without-f: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF_LAPACK_DUMM) $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF_LAPACK_DUMM) $(OBJSF)
-
-F90TARGET_LAPACK: $(OBJSF_LAPACK) $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJSF_LAPACK) $(OBJSF)
+$(F90TARGET): $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
 
 $(OBJS): $(HEADERS)
 

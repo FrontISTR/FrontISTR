@@ -19,7 +19,9 @@
 
       module hecmw_util
         implicit none
+#ifndef HECMW_SERIAL
         include 'mpif.h'
+#endif
         private :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
         public
 
@@ -40,7 +42,11 @@
         integer(kind=kint),parameter :: hecmw_double_precision = 53953
         integer(kind=kint),parameter :: hecmw_character        = 53954
 
+#ifndef HECMW_SERIAL
         integer(kind=kint),parameter :: hecmw_status_size = MPI_STATUS_SIZE
+#else
+        integer(kind=kint),parameter :: hecmw_status_size = 1
+#endif
 
         integer(kind=kint) :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
 !C
@@ -491,11 +497,19 @@
       character(len=HECMW_FILENAME_LEN):: ctrlfile
       integer(kind=kint) :: ierr
 
+#ifndef HECMW_SERIAL
       call MPI_INIT (ierr)
       call MPI_COMM_SIZE (MPI_COMM_WORLD, hecmw_PETOT, ierr)
       call MPI_COMM_RANK (MPI_COMM_WORLD, hecmw_rank,  ierr)
       call MPI_COMM_DUP  (MPI_COMM_WORLD, hecmw_comm,  ierr)
       call MPI_COMM_GROUP(MPI_COMM_WORLD, hecmw_group, ierr)
+#else
+      hecmw_PETOT=1
+      hecmw_rank=0
+      hecmw_comm=0
+      hecmw_group=0
+      ierr=0
+#endif
 
       call hecmw_comm_init_if(hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group)
 
@@ -522,7 +536,10 @@
       integer(kind=kint) :: ierr
 
       call hecmw_ctrl_finalize_if()
+
+#ifndef HECMW_SERIAL
       call MPI_FINALIZE(ierr)
+#endif
 
       end subroutine hecmw_finalize
 
@@ -536,7 +553,11 @@
       subroutine hecmw_abort(comm)
       integer(kind=kint) :: comm, errorcode, ierror
 
+#ifndef HECMW_SERIAL
       call MPI_ABORT(comm, errorcode, ierror)
+#else
+      stop
+#endif
       end subroutine hecmw_abort
 
 !C

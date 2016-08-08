@@ -15,20 +15,27 @@
 !      Simulations Using High End Computing Middleware (HEC-MW)"       !
 !                                                                      !
 !======================================================================!
+#ifdef WITH_MKL
   include 'mkl_cluster_sparse_solver.f90'
+#endif
 
   module m_hecmw_ClusterMKL_wrapper
   use hecmw_util
+
+#ifdef WITH_MKL
   use m_sparse_matrix
   use m_sparse_matrix_hec
   use hecmw_matrix_ass
   use hecmw_matrix_dump
   use mkl_cluster_sparse_solver
+#endif
+
   implicit none
 
   private                            ! default
   public hecmw_clustermkl_wrapper ! only entry point of Parallel Direct Solver is public
 
+#ifdef WITH_MKL
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
   TYPE(MKL_CLUSTER_SPARSE_SOLVER_HANDLE) :: pt(64)
@@ -46,13 +53,15 @@
   REAL*8, allocatable, dimension(:) :: x
   
   integer myrank0
+#endif
 
   contains
 
   subroutine hecmw_clustermkl_wrapper(hecMESH, hecMAT)
   type (hecmwST_local_mesh), intent(in) :: hecMESH
   type (hecmwST_matrix    ), intent(inout) :: hecMAT
-  
+
+#ifdef WITH_MKL
   integer(kind=kint) :: spmat_type
   integer(kind=kint) :: spmat_symtype
   integer(kind=kint) :: istat,myrank
@@ -175,7 +184,13 @@
   endif
 
   call hecmw_mat_dump_solution(hecMAT)
+
+#else
+  stop "PARADISO not available"
+#endif
   end subroutine hecmw_clustermkl_wrapper
+
+#ifdef WITH_MKL
 
   subroutine hecmw_MKL_wrapper(spMAT, job, istat)
   type (sparse_matrix), intent(inout) :: spMAT
@@ -338,6 +353,8 @@
   enddo
   
   end subroutine myinssort
-  
+
+#endif
+
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   end module m_hecmw_ClusterMKL_wrapper

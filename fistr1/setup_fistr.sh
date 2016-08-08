@@ -18,10 +18,7 @@ BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
 BUILDTARGET_SERIAL="build-serial"
 TOOLSTARGET="build-tools"
-BUILDTARGET_RCAP="build-with-rcap"
 ALLBUILDTARGET=""
-BUILDTARGET_MKL="build-without-mkl"
-BUILDTARGET_MUMPS="build-default"
 BUILDTARGET_PARACON="build-default"
 
 SETUPFILE="setup_fistr.sh"
@@ -217,8 +214,8 @@ fi
 # with revocap
 #
 if [ ${WITHRCAP} -eq 1 ]; then
-	BUILDTARGET=${BUILDTARGET_RCAP}
-	ALLBUILDTARGET=${BUILDTARGET_RCAP}
+	F90FLAGS="${F90FLAGS} -DWITH_REVOCAP"
+	ALLBUILDTARGET=${BUILDTARGET}
 else
 	ALLBUILDTARGET=${BUILDTARGET}
 	REVOCAP_F90FLAGS=""
@@ -244,15 +241,13 @@ fi
 # with mkl
 #
 if [ ${WITHMKL} -eq 1 -a ${SERIAL} -eq 1 ]; then
-	BUILDTARGET_MKL="build-default"
+	F90FLAGS="${F90FLAGS} -DWITH_MKL"
 fi
 
 #
 # with mumps
 #
-if [ ${WITHMUMPS} -eq 1 ]; then
-	BUILDTARGET_MUMPS="build-with-mumps"
-else
+if [ ${WITHMUMPS} -eq 0 ]; then
 	MUMPS_CFLAGS=""
 	MUMPS_LDFLAGS=""
 	MUMPS_F90FLAGS=""
@@ -386,8 +381,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
-		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
-		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
 		-e "s!@build_target_paracon@!${BUILDTARGET_PARACON}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \

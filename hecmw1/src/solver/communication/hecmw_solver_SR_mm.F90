@@ -17,15 +17,15 @@
 
 !C
 !C***
-!C*** module hecmw_solver_SR_mmi
+!C*** module hecmw_solver_SR_mm
 !C***
 !C
-      module hecmw_solver_SR_mmi
+      module hecmw_solver_SR_mm
       contains
 !C
 !C*** SOLVER_SEND_RECV
 !C
-      subroutine  HECMW_SOLVE_SEND_RECV_mmi                             &
+      subroutine  HECMW_SOLVE_SEND_RECV_mm                              &
      &                ( N, m, NEIBPETOT, NEIBPE,                        &
      &                  STACK_IMPORT, NOD_IMPORT,                       &
      &                  STACK_EXPORT, NOD_EXPORT, WS, WR, X,            &
@@ -43,12 +43,13 @@
       integer(kind=kint ), pointer :: NOD_IMPORT  (:)
       integer(kind=kint ), pointer :: STACK_EXPORT(:)
       integer(kind=kint ), pointer :: NOD_EXPORT  (:)
-      integer(kind=kint ), dimension(:  ), intent(inout):: WS
-      integer(kind=kint ), dimension(:  ), intent(inout):: WR
-      integer(kind=kint ), dimension(:  ), intent(inout):: X
+      real   (kind=kreal), dimension(:  ), intent(inout):: WS
+      real   (kind=kreal), dimension(:  ), intent(inout):: WR
+      real   (kind=kreal), dimension(:  ), intent(inout):: X
       integer(kind=kint )                , intent(in)   ::SOLVER_COMM
       integer(kind=kint )                , intent(in)   :: my_rank
 
+#ifndef HECMW_SERIAL
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
       integer(kind=kint ), dimension(:  ), allocatable :: req1
@@ -77,7 +78,7 @@
           enddo
         enddo
 
-        call MPI_ISEND (WS(m*istart+1), m*inum, MPI_INTEGER,            &
+        call MPI_ISEND (WS(m*istart+1), m*inum,MPI_DOUBLE_PRECISION,    &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
       enddo
 
@@ -86,7 +87,7 @@
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-        call MPI_IRECV (WR(m*istart+1), m*inum, MPI_INTEGER,            &
+        call MPI_IRECV (WR(m*istart+1), m*inum, MPI_DOUBLE_PRECISION,   &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
       enddo
 
@@ -106,9 +107,6 @@
       call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
 
       deallocate (sta1, sta2, req1, req2)
-
-      end subroutine hecmw_solve_send_recv_mmi
-      end module     hecmw_solver_SR_mmi
-
-
-
+#endif
+      end subroutine hecmw_solve_send_recv_mm
+      end module     hecmw_solver_SR_mm

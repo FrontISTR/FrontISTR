@@ -35,9 +35,6 @@ LIBSTARGET="build-libs"
 TOOLSTARGET="build-tools"
 MESSAGETARGET="setup-msg"
 LEXTARGET="setup-lex"
-BUILDTARGET_MUMPS="build-default"
-BUILDTARGET_MKL="build-default"
-BUILDTARGET_LAPACK="build-default"
 
 #
 # Files
@@ -321,15 +318,15 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	if [ ${WITHFORTRAN} -eq 1 ]; then
 		HECMWLIBS="-lfhecmw -lhecmw"
+		BUILDTARGET="build-default"
 		if [ ${SERIAL} -eq 1 ]; then
-			BUILDTARGET="build-serial"
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
+			F90OPTFLAGS="${F90OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			MPI_CFLAGS=""
 			MPI_LDFLAGS=""
 			MPI_F90FLAGS=""
 			MPI_F90LDFLAGS=""
 		else
-			BUILDTARGET="build-default"
 			if [ -z ${MPIDIR} ]; then
 				MPI_CFLAGS=""
 				MPI_LDFLAGS=""
@@ -344,6 +341,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 		ALLBUILDTARGET="${ALLBUILDTARGET} ${BUILDTARGET}"
 		if [ ${SERIAL} -eq 1 ]; then
 			OPTFLAGS="${OPTFLAGS} ${SERIAL_OPTFLAGS}"
+			F90OPTFLAGS="${F90OPTFLAGS} ${SERIAL_OPTFLAGS}"
 			MPI_CFLAGS=""
 			MPI_LDFLAGS=""
 			MPI_F90FLAGS=""
@@ -372,7 +370,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MUMPS
 	#
 	if [ ${WITHMUMPS} -eq 1 ]; then
-		BUILDTARGET_MUMPS="build-with-mumps"
+		F90FLAGS="${F90FLAGS} -DWITH_MUMPS"
 	else
 		MUMPS_CFLAGS=""
 		MUMPS_LDFLAGS=""
@@ -384,7 +382,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MKL PARDISO
 	#
 	if [ ${WITHMKL} -eq 1 ] && [ ${SERIAL} -eq 0 ]; then
-		BUILDTARGET_MKL="build-with-mkl"
+		F90FLAGS="${F90FLAGS} -DWITH_MKL"
 	else
 		MKL_CFLAGS=""
 		MKL_LDFLAGS=""
@@ -406,7 +404,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with LAPACK
 	#
 	if [ ${WITHLAPACK} -eq 1 ]; then
-		BUILDTARGET_LAPACK="build-with-lapack"
+		F90FLAGS="${F90FLAGS} -DWITH_LAPACK"
 	fi
 
 	#
@@ -444,6 +442,7 @@ do
 		-e "s!@f90@!${F90}!" \
 		-e "s!@f90flags@!${F90FLAGS}!" \
 		-e "s!@f90ldflags@!${F90LDFLAGS}!" \
+		-e "s!@f90fpp@!${F90FPP}!" \
 		-e "s!@f90optflags@!${F90OPTFLAGS}!" \
 		-e "s!@make@!${MAKE}!" \
 		-e "s!@ar@!${AR}!" \
@@ -533,9 +532,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
-		-e "s!@build_target_mumps@!${BUILDTARGET_MUMPS}!" \
-		-e "s!@build_target_mkl@!${BUILDTARGET_MKL}!" \
-		-e "s!@build_target_lapack@!${BUILDTARGET_LAPACK}!" \
 		$i/${MAKEFILE_SETUPFILE} > $i/${MAKEFILE_NAME}
 done
 
