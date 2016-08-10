@@ -98,7 +98,7 @@
 
       totalmpc = hecMESH%mpc%n_mpc
       call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-      call hecmw_mpc_scale(hecMESH)
+      call hecmw_mpc_scale_44(hecMESH)
 
       ERROR = 0
 
