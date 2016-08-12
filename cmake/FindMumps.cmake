@@ -5,14 +5,13 @@
 # MUMPS_LIBRARIES
 #
 set(LIB_SEARCH_PATH
-	$ENV{MUMPS_ROOT}
-	${CMAKE_SOURCE_DIR}/../MUMPS_5.0.1/lib
+  $ENV{MUMPS_ROOT}
+  ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.1/lib
   $ENV{HOME}/local/lib
   $ENV{HOME}/.local/lib
   /usr/local/lib
-	/usr/lib
+  /usr/lib
 )
-
 
 find_library(MUMPS_D_LIB
   NAMES dmumps
@@ -43,6 +42,6 @@ else()
   set(MUMPS_D_LIB "MUMPS_D_LIB-NOTFOUND" CACHE FILEPATH "libdmumps")
   set(MUMPS_COMMON_LIB "MUMPS_COMMON_LIB-NOTFOUND" CACHE FILEPATH "libmumps_common")
   set(MUMPS_PORD_LIB "MUMPS_PORD_LIB-NOTFOUND" CACHE FILEPATH "libpord")
-	set(MUMPS_INCLUDE_PATH "MUMPS_INCLUDE_PATH-NOTFOUND" CACHE FILEPATH "mumps include directory")
-	set(MUMPS_FOUND OFF)
+  set(MUMPS_INCLUDE_PATH "MUMPS_INCLUDE_PATH-NOTFOUND" CACHE FILEPATH "mumps include directory")
+  set(MUMPS_FOUND OFF)
 endif()

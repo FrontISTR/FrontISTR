@@ -12,6 +12,7 @@ find_library(SCALAPACK_LIBRARIES
     /usr/lib
     NO_DEFAULT_PATH
 )
+
 if(SCALAPACK_LIBRARIES)
   set(SCALAPACK_FOUND ON)
 else()

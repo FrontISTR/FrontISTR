@@ -1,17 +1,24 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 if(WITH_METIS)
-	set(EXTRA_LIBS ${EXTRA_LIBS} ${METIS_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${METIS_LIBRARIES})
+endif()
+
+if(WITH_REVOCAP)
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${REVOCAP_LIBRARIES})
+endif()
+
+if(WITH_REFINER)
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${REFINER_LIBRARIES})
 endif()
 
 if(WITH_MPI)
-	set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
 endif()
-
 
 # hec2rcap
 add_executable(hec2rcap
-	hec2rcap/hec2rcap.c
+  hec2rcap/hec2rcap.c
 )
 target_link_libraries(hec2rcap hecmw ${EXTRA_LIBS})
 
@@ -31,8 +38,8 @@ target_link_libraries(hecmw_part1 hecmw ${EXTRA_LIBS})
 
 # rmerge
 add_executable(rmerge
-	result_file_merger/fstr_rmerge.c
-	result_file_merger/fstr_rmerge_util.c
+  result_file_merger/fstr_rmerge.c
+  result_file_merger/fstr_rmerge_util.c
 )
 target_link_libraries(rmerge hecmw ${EXTRA_LIBS})
 
@@ -46,4 +53,15 @@ target_link_libraries(rconv hecmw ${EXTRA_LIBS})
 add_executable(hecmw_vis1
   visualizer/visualizer.c
 )
+
 target_link_libraries(hecmw_vis1 hecmw ${EXTRA_LIBS})
+
+if(WITH_REVOCAP OR WITH_REFINER)
+  set_target_properties(hec2rcap PROPERTIES LINKER_LANGUAGE "CXX")
+  set_target_properties(hecmw_part1 PROPERTIES LINKER_LANGUAGE "CXX")
+  set_target_properties(rmerge PROPERTIES LINKER_LANGUAGE "CXX")
+  set_target_properties(rconv PROPERTIES LINKER_LANGUAGE "CXX")
+  set_target_properties(hecmw_vis1 PROPERTIES LINKER_LANGUAGE "CXX")
+endif()
+
+install(TARGETS hec2rcap hecmw_part1 rmerge rconv hecmw_vis1 DESTINATION bin CONFIGURATIONS ${CMAKE_BUILD_TYPE})
