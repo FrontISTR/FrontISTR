@@ -5,7 +5,7 @@
 #
 require 'fileutils'
 
-$fistr = File.join(File.expand_path(ARGV[0]),'fistr')
+$fistr = File.join(File.expand_path(ARGV[0]),'fistr1')
 
 def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   base = File.basename(mesh,".*")
