@@ -1,94 +1,131 @@
-# FrontISTRのインストール {#mainpage}
+# FrontISTR のコンパイル
 
-FrontISTRの一般的なインストール方法を説明します。<br>
-オプションを指定する事で、様々な機能を有効にする事ができます。 詳細はマニュアルを参照して下さい。
+FrontISTRをソースからコンパイルする手順を説明します。
 
-## Quick Start
+## 準備
 
-FrontISTRは、以下の手順でインストールすることが出来ます。
-
-~~~txt
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-$ make test
-$ sudo make install
-~~~
-
-## cmake のオプション
-
-オプションを指定してビルドすることで、様々な機能が有効になります。
-
-- ツールをビルドする `-DWITH_TOOLS=ON`
-- MPI を有効にする `-DWITH_MPI=ON`
-- Metis を有効にする `-DWITH_METIS=ON`
-
-  - Metis のライブラリを指定する `-DMETIS_LIBRARY=/path/libmetis.a`
-  - Metis のインクルードパスを指定する `-DMETIS_INCLUDE_DIR=/path/include`
-  - Metis-4系列を利用する `-DMETIS_VER_4=ON` (Metis-5系列の場合、指定する必要なし)
-
-- OpenMP を有効にする `-DWITH_OPENMP=ON`
-
-- REVOCAP_Refiner を有効にする `-DWITH_REFINER=ON`
-
-- REVOCAP_Coupler を有効にする `-DWITH_COUPLER=ON`
-
-- LaPACK を有効にする `-DWITH_LAPACK=ON`
-
-- ML を有効にする `-DWITH_ML=ON`
-
-- Doxygen によるドキュメントの生成 `-DBUILD_DOCUMENTATION=ON`
-
-  - ドキュメントを生成するには `$ make doc`
-  - 生成されたドキュメントは `firefox doc/html/index.html` としてブラウザで開くことが出来る。
-
-- インストール先の指定 `-DCMAKE_INSTALL_PREFIX=$HOME/local`
-
-  - METISやMLなどの外部ライブラリのインストール先を `${CMAKE_INSTALL_PREFIX}` にすると、自動でライブラリとインクルードファイルの場所を認識する( `${CMAKE_INSTALL_PREFIX}/lib` や `${CMAKE_INSTALL_PREFIX}/include` にファイルが有る場合)。
-
-## 構築例
-
-代表的な構築例を示します。
-
-### Linux (Parallel)
-
-MPI実行可能なソルバを構築します。
+FrontISTRは、コンパイルに`cmake`を使います。`cmake`はバージョン 2.8.11よりも新しいものが必要です。
 
 ~~~txt
-$ cmake -DWITH_MPI=ON ..
+% cmake --version
+cmake version 2.8.12.2
 ~~~
 
-### Linux (Parallel with Metis)
+## コンパイル
 
-ソルバに加えて、メッシュファイルを分割するためのパーティショナも構築します。
+最小限のFrontISTRは、以下の手順でコンパイルすることができます。
 
 ~~~txt
-$ cmake -DWITH_TOOLS=ON -DWITH_MPI=ON -DWITH_METIS -DMETIS_INCLUDE_DIR=$HOME/metis-4.0.3/Lib -DMETIS_LIBRARY=$HOME/metis-4.0.3/libmetis.a ..
+% tar xvf FrontISTR.tar.gz
+% cd FrontISTR
+% mkdir build
+% cd build
+% cmake ..
+% make
+% sudo make install
 ~~~
 
-### Linux (Parallel with OpenMP Metis LaPACK and ML)
+`/usr/local/bin`以下にコンパイルされた`fistr1`がインストールされます。
 
-高性能な反復法ソルバのプリコンディショナーMLを有効にします。
+## `cmake`のオプション
+
+他の機能を有効にしたい場合、`cmake`に以下のオプションを付けてください。ライブラリが既にインストールされていれば、自動的にその場所を探します。
+
+| オプション         | 説明                                            | 備考                    |
+|--------------------|-------------------------------------------------|-------------------------|
+| -DWITH_TOOLS=ON    | パーティショナなどのツールもコンパイルします。  | hecmw_part1など         |
+| -DWITH_MPI=ON      | MPIを有効にします。                             | ライブラリが必要        |
+| -DWITH_OPENMP=ON   | OpenMPを有効にします。                          | コンパイラの対応が必要  |
+| -DWITH_REFINER=ON  | REVOCAP_Refinerの機能を有効にします。           | ライブラリが必要        |
+| -DWITH_REVOCAP=ON  | REVOCAP_Couplerの機能を有効にします。           | ライブラリが必要        |
+| -DWITH_PARACON=ON  | 並列接触解析の機能を有効にします。              | (未実装)                |
+| -DWITH_METIS=ON    | METISの機能を有効にします。                     | 4.0.3と5.1.0に対応      |
+| -DMETIS_VER_4=ON   | metis-4.0.3を使う場合に設定                     | metis-5.1.0の場合不要   |
+| -DWITH_PARMETIS=ON | ParMETISの機能を有効にします。                  | (未実装)                |
+| -DWITH_MKL=ON      | MKL PARDISOの機能を有効にします。               | (未実装)                |
+| -DWITH_MUMPS=ON    | MUMPSの機能を有効にします。                     | ライブラリが必要        |
+| -DWITH_LAPACK=ON   | LAPACKの機能を有効にします。                    | ライブラリが必要        |
+| -DWITH_ML=ON       | Trilinos MLの機能を有効にします。               | ライブラリが必要        |
+| -DBUILD_DOC=ON     | FrontISTRのソースコードをドキュメント化します。 | doxygenとgraphvizが必要 |
+
+例えば、以下のようにオプションを指定して`cmake`を実行してください。
 
 ~~~txt
-$ cmake -DWITH_TOOLS=ON -DWITH_MPI=ON -DWITH_OPENMP=ON -DWITH_METIS=ON -DWITH_LAPACK=ON -DWITH_ML=ON ..
+% cmake -DWITH_TOOLS=ON -DWITH_MPI=ON -DWITH_OPENMP_ON= -DWITH_LAPACK=ON ..
 ~~~
 
-### MSYS
-
-Windowsで実行可能なバイナリを作成します。
+また、インストールする場所は`-DCMAKE_INSTALL_PREFIX`で指定することができます。デフォルトでは`/usr/local`です。
 
 ~~~txt
-$ cmake -G "MinGW Makefiles" ..
-$ mingw32-make
+% cmake -DCMAKE_INSTALL_PREFIX=$HOME/local ..
 ~~~
 
-### Mac
+`-DBUILD_DOC=ON`の結果はHTMLで生成され、ブラウザで参照することができます。ただし、予め `doxygen`と`graphviz` をインストールしておく必要があります。
+
+~~~txt
+% cmake -DBUILD_DOC=ON ..
+% make doc
+% firefox doc/html/index.html
+~~~
+
+デバッグフラグを有効にしてコンパイルしたい場合は
+
+~~~txt
+% cmake -DCMAKE_BUILD_TYPE="DEBUG" ..
+~~~
+
+としてください。
+
+## ライブラリをインストールする場合のTips
+
+上記に示した機能を有効にする場合、予めライブラリをインストールしておく必要があります。
+
+ライブラリやヘッダファイルは
+
+1. システム上のパス(`/usr/lib`, `/usr/include`, `/usr/local/lib`, `/usr/local/include` など)
+2. ホームディレクトリ上のパス(`$HOME/local/lib`, `$HOME/.local/lib` など)
+3. 環境変数で指定したディレクトリを起点とするパス (`$METIS_ROOT`, `$MUMPS_ROOT` など)
+4. FrontISTRのソースを展開した場所と同レベルのパス
+
+などを探索します。
+
+見つからない場合や、意図しないパスの場合、手動で指定する必要があります。
+
+例えば、LAPACKにOpenBLASを利用して、`$HOME/local`にインストールした場合、以下のような指定が必要になります。
+
+~~~txt
+% cmake -DBLAS_LIBRARIES=$HOME/local/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/local/lib/libopenblas.a -DWITH_LAPACK=ON ..
+~~~
+
+`ccmake`や`cmake-gui`を使うと、これらを簡単に設定することができます。
+
+## Windows上でコンパイルする場合
+
+MSYS2による、MinGW-w64でコンパイルが出来ることを確認しています。
+
+~~~txt
+% cmake -G "MSYS Makefiles" ..
+% make
+~~~
+
+または
+
+~~~txt
+% cmake -G "MinGW Makefiles" ..
+% mingw32-make
+~~~
+
+でコンパイルしてください。
+
+## OS X上でコンパイルする場合
+
+(未検証)
 
 ## 外部ライブラリ (参考)
 
-オプションを指定する際、予めライブラリをインストールしておく必要があるものがある。
+オプションを指定する際、予めライブラリをインストールしておく必要があるものがあります。
+
+外部ライブラリは、`$HOME/local`へインストールするか、`FrontISTR`と同じディレクトリに置いておくと自動的に検索することができます。
 
 ### OpenBLAS
 

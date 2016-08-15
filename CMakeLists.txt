@@ -1,13 +1,37 @@
-cmake_minimum_required(VERSION 2.8.11)
+# Copyright (c) 2016 The University of Tokyo
+# This software is released under the MIT License, see License.txt
 
-project(FrontISTR Fortran C CXX)
 ###############################################################################
-# Version number
+# CMakeLists.txt for FrontISTR
+#
+# FrontISTR
+# ├── CMakeLists.txt
+# ├── cmake
+# │   ├── FindMetis.cmake
+# │   ├── FindMumps.cmake
+# │   ├── FindRefiner.cmake
+# │   ├── FindRevocap.cmake
+# │   └── FindScalapack.cmake
+# ├── examples
+# │   ├── CMakeLists.txt
+# │   └── test_FrontISTR.rb
+# ├── fistr
+# │   └── CMakeLists.txt
+# ├── fistr1
+# │   ├── CMakeLists.txt
+# │   ├── src
+# │   │   └── CMakeLists.txt
+# │   └── tools
+# │       └── CMakeLists.txt
+# └── hecmw1
+#      ├── CMakeLists.txt
+#      ├── src
+#      │   └── CMakeLists.txt
+#      └── tools
+#         └── CMakeLists.txt
 ###############################################################################
-set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
-set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
-set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+
+cmake_minimum_required(VERSION 2.8.11)
 
 ###############################################################################
 # Build type (Release or Debug)
@@ -23,6 +47,19 @@ elseif(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   add_definitions(-DDEBUG)
   set(DEBUG ON)
 endif()
+
+###############################################################################
+# Project name
+###############################################################################
+project(FrontISTR Fortran C CXX)
+
+###############################################################################
+# Version number
+###############################################################################
+set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
+set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
+set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
 ###############################################################################
 # Windows (MinGW) specific setting
@@ -41,8 +78,11 @@ endif()
 # -DWITH_OPENMP      : for multi-(core|processor) environment
 # -DWITH_REFINER     : compile with REVOCAP_Refiner
 # -DWITH_REVOCAP     : compile with REVOCAP_Coupler
+# -DWITH_PARACON     : for parallel contact (unimplemented)
 # -DWITH_METIS       : compile with METIS graph partitioning package
 #   -DMETIS_VER_4    : uses METIS-4
+# -DWITH_PARMETIS    : compile with ParMETIS (unimplemented)
+# -DWITH_MKL         : compile with MKL PARDISO (unimplemented)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
@@ -101,6 +141,9 @@ if(WITH_REVOCAP)
   endif()
 endif()
 
+# -DWITH_PARACON (unimplemented)
+#option(WITH_PARACON "for parallel contact" OFF)
+
 # -DWITH_METIS, -DMETIS_VER_4
 option(WITH_METIS "compile with METIS graph partitioning package" OFF)
 if(WITH_METIS)
@@ -121,6 +164,12 @@ if(WITH_METIS)
     endif()
   endif()
 endif()
+
+# -DWITH_PARMETIS (unimplemented)
+#option(WITH_PARMETIS "compile with ParMETIS" OFF)
+
+# -DWITH_MKL (unimplemented)
+#option(WITH_MKL "compile with MKL PARDISO" OFF)
 
 # -DWITH_MUMPS
 option(WITH_MUMPS "compile with MUMPS direct solver" OFF)
@@ -205,13 +254,24 @@ configure_file(
 ###############################################################################
 # Build hecmw1, fistr1 and fistr
 ###############################################################################
+# Build targets
+# hecmw (libhecmw.a)
+# fistr (libfistr.a)
+# fistr1 (fistr1)
+#
+# Optional : rmerge, hecmw_part, hec2rcap, rconv, hecmw_vis1, neu2fstr
+#
 add_subdirectory(hecmw1)
 add_subdirectory(fistr1)
 add_subdirectory(fistr)
+
+# libfistr.a depends on libhecmw.a
+add_dependencies(fistr hecmw)
+# fistr1 depends on libfistr.a and libhecmw.a
+add_dependencies(fistr1 fistr hecmw)
 
 ###############################################################################
 # Tests
 ###############################################################################
 enable_testing()
 add_subdirectory(examples)
-
