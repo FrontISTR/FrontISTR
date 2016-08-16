@@ -1,6 +1,11 @@
+###############################################################################
+# Copyright (c) 2016 The University of Tokyo
+# This software is released under the MIT License, see License.txt
+###############################################################################
+
+# Variables:
 #
 # env REVINER_ROOT
-#
 # REFINER_FOUND
 # REFINER_INCLUDE_PATH
 # REFINER_LIBRARIES

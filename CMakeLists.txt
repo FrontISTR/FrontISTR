@@ -1,5 +1,7 @@
-# Copyright (c) 2016 The University of Tokyo
+###############################################################################
+# Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
 # This software is released under the MIT License, see License.txt
+###############################################################################
 
 ###############################################################################
 # CMakeLists.txt for FrontISTR
@@ -214,24 +216,17 @@ endif()
 # -DBUILD_DOC
 option(BUILD_DOC "Generate API documents." OFF)
 if(BUILD_DOC)
-  file(COPY
-    ${CMAKE_SOURCE_DIR}/doc/fistr.css
-    DESTINATION
-    ${CMAKE_BINARY_DIR}/doc/
-  )
-  file(COPY
-    ${CMAKE_SOURCE_DIR}/doc/fistr_logo.png
-    DESTINATION
-    ${CMAKE_BINARY_DIR}/doc/
-  )
-  set(doxyfile_in ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
-  set(doxyfile ${CMAKE_BINARY_DIR}/doc/Doxyfile)
-  configure_file(${doxyfile_in} ${doxyfile} @ONLY)
-
   find_package(Doxygen)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
+    file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
+    file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr_logo.png DESTINATION ${CMAKE_BINARY_DIR}/doc/)
+
     set(doxy_main_page "${CMAKE_SOURCE_DIR}/INSTALL.md")
+    set(doxyfile_in ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
+    set(doxyfile ${CMAKE_BINARY_DIR}/doc/Doxyfile)
+    configure_file(${doxyfile_in} ${doxyfile} @ONLY)
+
     add_custom_target(doc
       COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -275,3 +270,28 @@ add_dependencies(fistr1 fistr hecmw)
 ###############################################################################
 enable_testing()
 add_subdirectory(examples)
+
+###############################################################################
+# Package generator (deb, rpm, exe etc.)
+###############################################################################
+include(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/INSTALL.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
+set(CPACK_BINARY_DEB ON)
+set(CPACK_BINARY_RPM ON)
+set(CPACK_GENERATOR "TBZ2;DEB;RPM")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+set(CPACK_PACKAGE_CONTACT "${CPACK_PACKAGE_VENDOR}")
+if(WIN32 AND NOT UNIX)
+  # Windows
+else()
+  # Unix
+  set(CPACK_STRIP_FILES ON)
+endif()
+include(CPack)
