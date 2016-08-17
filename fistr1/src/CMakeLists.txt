@@ -208,6 +208,10 @@ if(WITH_MPI)
   set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
 endif()
 
+if(_WINDOWS)
+  set(EXTRA_LIBS ${EXTRA_LIBS} "ws2_32")
+endif()
+
 target_link_libraries(fistr1 fistr hecmw ${EXTRA_LIBS})
 
 install(TARGETS fistr1 DESTINATION bin CONFIGURATIONS ${CMAKE_BUILD_TYPE})
