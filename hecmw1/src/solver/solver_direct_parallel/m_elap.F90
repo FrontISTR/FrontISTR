@@ -14,6 +14,8 @@
 !      Simulations Using High End Computing Middleware (HEC-MW)"       !
 !                                                                      !
 !======================================================================!
+#ifndef HECMW_SERIAL
+
 module m_elap
 use hecmw_util
 ! for elaps time
@@ -65,3 +67,5 @@ return
 end subroutine ptime
 
 end module m_elap
+
+#endif

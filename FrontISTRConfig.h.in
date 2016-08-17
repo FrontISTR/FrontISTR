@@ -1,0 +1,37 @@
+/**
+ * Configuration header for FrontISTR
+ */
+#ifndef _FRONTISTRCONFIG_H_
+#define _FRONTISTRCONFIG_H_
+
+#define VERSION_MAJOR @VERSION_MAJOR@
+#define VERSION_MINOR @VERSION_MINOR@
+#define VERSION_PATCH @VERSION_PATCH@
+
+#cmakedefine _WINDOWS
+#cmakedefine NDEBUG
+#cmakedefine DEBUG
+
+#cmakedefine WITH_TOOLS
+#cmakedefine WITH_MPI
+#cmakedefine WITH_OPENMP
+#cmakedefine WITH_REFINER
+#cmakedefine WITH_REVOCAP
+#cmakedefine WITH_METIS
+#cmakedefine WITH_METIS_VER_4
+#cmakedefine WITH_MUMPS
+#cmakedefine WITH_LAPACK
+#cmakedefine WITH_ML
+#cmakedefine WITH_PARMETIS
+#cmakedefine WITH_MKL
+#cmakedefine WITH_PARACON
+#cmakedefine WITH_PARADISO
+
+#cmakedefine HECMW_SERIAL
+#cmakedefine HECMW_WITH_REFINER
+#cmakedefine HECMW_WITH_METIS
+#cmakedefine HECMW_PART_WITH_METIS
+#cmakedefine HECMW_METIS_VER @HECMW_METIS_VER@
+#cmakedefine HECMW_WITH_ML
+
+#endif /* _FRONTISTRCONFIG_H_ */
