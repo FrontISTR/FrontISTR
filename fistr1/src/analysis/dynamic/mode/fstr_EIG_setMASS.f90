@@ -127,6 +127,10 @@ contains
             CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
           elseif( ic_type.EQ.341 ) then
             CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+          ! Fluid (2016/09/08) <
+          elseif( ic_type.EQ.3414 ) then
+            ss = 0.0D0
+            ! > Fluid (2016/09/08)
           elseif( ic_type.EQ.342 ) then
             CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ic_type.EQ.351 ) then

@@ -29,7 +29,7 @@ module m_dynamic_mat_ass_load
 !> This function sets boundary condition of external load
 !C***
 !C
-    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC )
+    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter)
 
       use m_fstr
       use m_static_lib
@@ -41,6 +41,7 @@ module m_dynamic_mat_ass_load
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid        ) :: fstrSOLID
       type ( fstr_dynamic     ) :: fstrDYNAMIC
+      integer(kind=kint), optional :: iter
 
       real(kind=kreal) :: xx(20), yy(20), zz(20)
       real(kind=kreal) :: params(0:6)
@@ -58,6 +59,14 @@ module m_dynamic_mat_ass_load
       integer(kind=kint) :: flag_u, ierror
       real(kind=kreal) :: f_t
 
+      ! Fluid (2016/09/08) <
+      integer(kind=kint) :: iiS, idofS, idofE, idof
+      real(kind=kreal) :: ecoord(3, 20)
+      real(kind=kreal) :: v(6, 20),  dv(6, 20), r(6*20)
+      real(kind=kreal) :: RHS
+      real(kind=kreal) :: unode_tmp(hecMAT%NDOF*hecMESH%n_node)
+      ! > Fluid (2016/09/08)
+      
       ndof = hecMAT%NDOF
       hecMAT%B(:) = 0.0d0
 !C
@@ -174,6 +183,133 @@ module m_dynamic_mat_ass_load
           enddo
         enddo
       enddo
+
+! Fluid (2016/09/08) <
+!--------------------------------------------------------------------
+      
+      IF( iter .EQ. 1 ) THEN
+       
+       !--------------------------------------------------------
+       
+       Do i = 1, ndof*hecMESH%n_node
+        
+        unode_tmp(i) = fstrSOLID%unode(i)
+        
+       END DO
+       
+       DO ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+        
+        ig = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+        RHS = fstrSOLID%BOUNDARY_ngrp_val(ig0)
+        
+        ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
+        idofS = ityp/10
+        idofE = ityp-idofS*10
+        
+        iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+        iE0 = hecMESH%node_group%grp_index(ig  )
+        
+        DO ik = iS0, iE0
+         in = hecMESH%node_group%grp_item(ik)
+         DO idof = idofS, idofE
+          unode_tmp( ndof*(in-1)+idof ) = RHS
+         END DO
+        END DO
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+       DO itype = 1, hecMESH%n_elem_type
+        
+        ic_type = hecMESH%elem_type_item(itype)
+        
+        IF( ic_type == 3414 ) THEN
+         
+         nn = hecmw_get_max_node(ic_type)
+         IF( nn > 20 ) STOP "The number of elemental nodes > 20"
+         
+         iS = hecMESH%elem_type_index(itype-1)+1
+         iE = hecMESH%elem_type_index(itype  )
+         
+         DO icel = iS, iE
+          
+          iiS = hecMESH%elem_node_index(icel-1)
+          DO j = 1, nn
+           nodLOCAL(j) = hecMESH%elem_node_item(iiS+j)
+           DO i = 1, 3
+            ! nodal coordinates
+            ecoord(i,j) = hecMESH%node( 3*nodLOCAL(j)+i-3 )
+            ! nodal velocity
+            v(i,j) = unode_tmp( ndof*nodLOCAL(j)+i-ndof )
+            fstrSOLID%unode( ndof*nodLOCAL(j)+i-ndof ) = v(i,j)
+            ! nodal velocity increment
+            dv(i,j) = fstrSOLID%dunode( ndof*nodLOCAL(j)+i-ndof )
+           END DO
+          END DO
+          
+          CALL LOAD_C3_vp                                                &
+               ( ic_type, nn, ecoord(:,1:nn), v(1:4,1:nn), dv(1:4,1:nn), &
+                 r(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:),      &
+                 fstrDYNAMIC%t_delta )                                   
+          
+          DO j = 1, nn
+           DO i = 1, ndof
+            hecMAT%B(ndof*(nodLOCAL(j)-1)+i)                   &
+            = hecMAT%B(ndof*(nodLOCAL(j)-1)+i)+r(ndof*(j-1)+i) 
+           END DO
+          END DO
+           
+         END DO ! icel
+         
+        END IF
+        
+       END DO ! itype
+       
+       !--------------------------------------------------------
+       
+      ELSE
+       
+       !--------------------------------------------------------
+       
+       DO itype = 1, hecMESH%n_elem_type
+        
+        ic_type = hecMESH%elem_type_item(itype)
+        
+        IF( ic_type == 3414 ) THEN
+         
+         nn = hecmw_get_max_node(ic_type)
+         IF( nn > 20 ) STOP "The number of elemental nodes > 20"
+         
+         iS = hecMESH%elem_type_index(itype-1)+1
+         iE = hecMESH%elem_type_index(itype  )
+         
+         DO icel = iS, iE
+          
+          iiS = hecMESH%elem_node_index(icel-1)
+          DO j = 1, nn
+           nodLOCAL(j) = hecMESH%elem_node_item(iiS+j)
+          END DO
+          
+          DO j = 1, nn
+           DO i = 1, ndof
+            hecMAT%B(ndof*(nodLOCAL(j)-1)+i) = 0.0D0
+           END DO
+          END DO
+          
+         END DO
+         
+        END IF
+        
+       END DO
+       
+       !--------------------------------------------------------
+       
+      END IF
+      
+!--------------------------------------------------------------------
+! > Fluid (2016/09/08)
+
 !C
 !C THERMAL LOAD USING TEMPERATURE
 !C

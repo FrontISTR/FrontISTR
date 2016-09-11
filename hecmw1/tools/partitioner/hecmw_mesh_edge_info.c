@@ -1328,6 +1328,11 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_TET1:  /* tetrahedron ( 1st order ) */
             if( edge_info_tet1( local_mesh, is, ie ) )  goto error;
             break;
+        /* Fluid (2016/09/11) < */
+        case HECMW_ETYPE_TET1_4:  /* tetrahedron ( 1st order, 4 DOFs for each node) */
+            if( edge_info_tet1( local_mesh, is, ie ) )  goto error;
+            break;
+        /* > Fluid (2016/09/11) */
         case HECMW_ETYPE_TET2:  /* tetrahedron ( 2nd order ) */
             if( edge_info_tet2( local_mesh, is, ie ) )  goto error;
             break;
@@ -1346,6 +1351,11 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_HEX1:  /* hexahedron ( 1st order ) */
             if( edge_info_hex1( local_mesh, is, ie ) )  goto error;
             break;
+        /* Fluid (2016/09/11) < */
+        case HECMW_ETYPE_HEX1_4:  /* hexahedron ( 1st order ) */
+            if( edge_info_hex1( local_mesh, is, ie ) )  goto error;
+            break;
+        /* > Fluid (2016/09/11) */
         case HECMW_ETYPE_HEX2:  /* hexahedron ( 2nd order ) */
             if( edge_info_hex2( local_mesh, is, ie ) )  goto error;
             break;

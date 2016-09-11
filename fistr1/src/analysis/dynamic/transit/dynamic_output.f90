@@ -63,6 +63,9 @@ module m_dynamic_output
         call fstr_Update2D( hecMESH, fstrSOLID )
       else if( ndof==6) then
         call fstr_Update6D( hecMESH, fstrSOLID )
+      else if( ndof== 4) then
+        write(*,*)'Error: This routine is not implemented'
+        stop
       endif
     endif
 
@@ -73,10 +76,13 @@ module m_dynamic_output
        else if( ndof==2 ) then
           allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
           allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
+       else if( ndof==4 ) then
+         write(*, *)'Error: This routine is not implemented'
+         stop
        endif
     endif
 
-    if( ndof==3 ) then
+    if( ndof==3 .or. ndof == 4 ) then
           call fstr_NodalStress3D( hecMESH, fstrSOLID )
     else if( ndof==2 ) then
           call fstr_NodalStress2D( hecMESH, fstrSOLID )
@@ -204,6 +210,7 @@ module m_dynamic_output
 !C*** Show Strain
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
+      if( ndof==4 ) mdof = 6
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
@@ -258,6 +265,7 @@ module m_dynamic_output
 !C*** Show Stress
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
+      if( ndof==4 ) mdof = 6
       if( ndof==6 ) mdof = 6
 !C @node
       do i = 1, hecMESH%nn_internal
@@ -396,11 +404,14 @@ module m_dynamic_output
           write(ILOG,1019) '//S12',ESmax(3),ESmin(3)
           write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
         endif
-      else if( ndof==3 .or. ndof==6 ) then
+      else if( ndof==3 .or. ndof==6 .or. ndof==4 ) then
         write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
         write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
         write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
         write(ILOG,1009) '//U3 ',Umax(3),IUmax(3),Umin(3),IUmin(3)
+        if( ndof== 4) then
+          write(ILOG,1009) '//U3 ',Umax(4),IUmax(4),Umin(4),IUmin(4)
+        endif
         write(ILOG,1009) '//V1 ',Vmax(1),IVmax(1),Vmin(1),IVmin(1)
         write(ILOG,1009) '//V2 ',Vmax(2),IVmax(2),Vmin(2),IVmin(2)
         write(ILOG,1009) '//V3 ',Vmax(3),IVmax(3),Vmin(3),IVmin(3)
@@ -435,8 +446,13 @@ module m_dynamic_output
         write(ILOG,1009) '//S13',ESmax(6),IESmax(6),ESmin(6),IESmin(6)
         write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
 !C*** Show Summary
-        call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
+        if(ndof /= 4) then
+          call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
+          call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
+        else
+          call hecmw_allREDUCE_R(hecMESH,Umax,4,hecmw_max)
+          call hecmw_allREDUCE_R(hecMESH,Umin,4,hecmw_min)
+        end if
         call hecmw_allREDUCE_R(hecMESH,Vmax,3,hecmw_max)
         call hecmw_allREDUCE_R(hecMESH,Vmin,3,hecmw_min)
         call hecmw_allREDUCE_R(hecMESH,Amax,3,hecmw_max)
@@ -454,6 +470,9 @@ module m_dynamic_output
           write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
           write(ILOG,1019) '//U2 ',Umax(2),Umin(2)
           write(ILOG,1019) '//U3 ',Umax(3),Umin(3)
+          if( ndof == 4 ) then
+            write(ILOG,1019) '//U4 ',Umax(4),Umin(4)
+          endif
           write(ILOG,1019) '//V1 ',Vmax(1),Vmin(1)
           write(ILOG,1019) '//V2 ',Vmax(2),Vmin(2)
           write(ILOG,1019) '//V3 ',Vmax(3),Vmin(3)
@@ -714,7 +733,7 @@ module m_dynamic_output
 
 !C-- strain
       if( fstrDYNAMIC%iout_list(5) > 0 ) then
-        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+        if (hecMESH%n_dof == 4 .or. hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
           ncmp = 6
         else
           ncmp = 12
@@ -726,7 +745,7 @@ module m_dynamic_output
       end if
 !C-- stress
       if( fstrDYNAMIC%iout_list(6) > 0 ) then
-        if (hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
+        if (hecMESH%n_dof == 4 .or. hecMESH%n_dof == 3 .or. hecMESH%n_dof == 2) then
           ncmp = 6
         else
           ncmp = 12

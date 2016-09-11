@@ -182,8 +182,12 @@ integer function n_comp_valtype( vtype, ndim )
   else if( vtype==-2 ) then
     n_comp_valtype = ndim
   else if( vtype==-3 ) then
-    n_comp_valtype = ndim*(ndim+1)/2
-    if(ndim == 6)n_comp_valtype=6
+    if (ndim == 4)then
+      n_comp_valtype = 6
+    else 
+      n_comp_valtype = ndim*(ndim+1)/2
+      if(ndim == 6)n_comp_valtype=6
+    end if
   else if( vtype==-4 ) then
     n_comp_valtype = ndim*ndim
   else
