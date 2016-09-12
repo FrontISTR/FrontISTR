@@ -66,20 +66,47 @@ module m_dynamic_make_result
         call hecmw_result_init( hecMESH, maxstep, istep, header )
 ! --- DISPLACEMENT
         if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
-          id = 1
-          nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-          allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
-          unode = 0.0d0
-          unode(:) = fstrDYNAMIC%DISP(:,idx)
-          label = 'DISPLACEMENT'
-          if(is_33beam == 1)then
-            call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+          if(ndof /= 4) then
+            id = 1
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+            allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
+            unode = 0.0d0
+            unode(:) = fstrDYNAMIC%DISP(:,idx)
+            label = 'DISPLACEMENT'
+            if(is_33beam == 1)then
+              call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+            endif
+            if(is_33shell == 1)then
+              call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+            endif
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
+          else
+            id = 1
+            ! for VELOCITY
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
+            allocate( unode(3*hecMESH%n_node) )
+            unode = 0.0d0
+            do i=1, hecMESH%n_node
+              do j = 1, 3
+                unode((i-1)*3 + j) = fstrDYNAMIC%DISP((i-1)*4 + j, idx)
+              enddo
+            enddo
+            label = 'VELOCITY'
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
+            ! for PRESSURE
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 1 )
+            allocate( unode(hecMESH%n_node) )
+            unode = 0.0d0
+            do i=1, hecMESH%n_node
+              unode(i) = fstrDYNAMIC%DISP(i*4, idx)
+            enddo
+            label = 'PRESSURE'
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
+
           endif
-          if(is_33shell == 1)then
-            call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
-          endif
-          call hecmw_result_add( id, nitem, label, unode )
-          deallocate( unode )
         endif
 ! --- VELOCITY
         if( fstrSOLID%output_ctrl(3)%outinfo%on(15) ) then
