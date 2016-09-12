@@ -355,7 +355,7 @@ module m_dynamic_make_result
             ncomp = ncomp + 1
             nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
             fstrRESULT%nn_dof(ncomp) = nn
-            fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
+            fstrRESULT%node_label(ncomp) = 'VELOCITY'
             do i = 1, hecMESH%n_node
               do j = 1, 3
                 fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%DISP(4*(i-1)+j,idx)
