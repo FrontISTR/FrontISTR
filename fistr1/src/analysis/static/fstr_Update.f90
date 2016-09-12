@@ -207,9 +207,17 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
               endif
             else if ( ic_type == 3414 ) then
               ! Fluid (2016/09/08) <
+              if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+                write(*, *) '###ERROR### : This element is not supported for this material'
+                write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+                stop
+                call hecmw_abort(hecmw_comm_get_comm())
+              endif
               call UPDATE_C3_vp                                                       &
                    ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
                      fstrSOLID%elements(icel)%gausses(:) )                            
+              
+
               ! > Fluid (2016/09/08)
 !            else if ( ic_type==731) then
 !              call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)

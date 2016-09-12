@@ -142,7 +142,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = mu+wg*gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = mu+wg*gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      rho = rho+wg*gausses(LX)%pMaterial%variables(M_DENSITY)
      
@@ -212,7 +212,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      rho = gausses(LX)%pMaterial%variables(M_DENSITY)
      rho_inv = 1.0D0/rho
@@ -528,7 +528,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      !----------------------------------------------------------
      
@@ -717,7 +717,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = mu+wg*gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = mu+wg*gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      !----------------------------------------------------------
      
@@ -784,7 +784,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      rho = gausses(LX)%pMaterial%variables(M_DENSITY)
      rho_inv = 1.0D0/rho
@@ -1061,7 +1061,7 @@ MODULE m_static_LIB_3d_vp
      
      !----------------------------------------------------------
      
-     mu = gausses(LX)%pMaterial%variables(M_YOUNGS)
+     mu = gausses(LX)%pMaterial%variables(M_VISCOCITY)
      
      rho = gausses(LX)%pMaterial%variables(M_DENSITY)
      rho_inv = 1.0D0/rho

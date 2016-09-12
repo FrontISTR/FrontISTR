@@ -137,6 +137,12 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         endif
       ! Fluid (2016/9/08) <
       else if ( ic_type==3414 ) then
+        if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+          write(*, *) '###ERROR### : This element is not supported for this material'
+          write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+          stop
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
         call STF_C3_vp                                                           &
              ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
                stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )       

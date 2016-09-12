@@ -225,7 +225,7 @@ module m_dynamic_mat_ass_load
         ic_type = hecMESH%elem_type_item(itype)
         
         IF( ic_type == 3414 ) THEN
-         
+
          nn = hecmw_get_max_node(ic_type)
          IF( nn > 20 ) STOP "The number of elemental nodes > 20"
          
@@ -233,6 +233,12 @@ module m_dynamic_mat_ass_load
          iE = hecMESH%elem_type_index(itype  )
          
          DO icel = iS, iE
+          if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+            write(*, *) '###ERROR### : This element is not supported for this material'
+            write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+            stop
+            call hecmw_abort(hecmw_comm_get_comm())
+          endif
           
           iiS = hecMESH%elem_node_index(icel-1)
           DO j = 1, nn
