@@ -1,4 +1,3 @@
-! Fluid (2016/09/08) <
 MODULE m_static_LIB_3d_vp
     
     USE hecmw, ONLY : kint, kreal
@@ -1241,4 +1240,3 @@ MODULE m_static_LIB_3d_vp
     
     
 END MODULE m_static_LIB_3d_vp
-! > Fluid (2016/09/08) 

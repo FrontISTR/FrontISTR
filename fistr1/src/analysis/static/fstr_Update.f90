@@ -67,9 +67,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         real(kind=kreal), optional :: strainEnergy
         real(kind=kreal) :: tmp
 
-        ! Fluid (2016/08/09) <
         integer(kind=kint) :: ndim
-        ! > Fluid (2016/08/09)
         
         ndof = hecMAT%NDOF
         fstrSOLID%QFORCE=0.0d0
@@ -206,7 +204,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                        qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr )
               endif
             else if ( ic_type == 3414 ) then
-              ! Fluid (2016/09/08) <
               if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
                 write(*, *) '###ERROR### : This element is not supported for this material'
                 write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
@@ -218,7 +215,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                      fstrSOLID%elements(icel)%gausses(:) )                            
               
 
-              ! > Fluid (2016/09/08)
 !            else if ( ic_type==731) then
 !              call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
 !              call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
@@ -243,7 +239,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
               enddo
             enddo
 ! ----- calculate strain energy
-            ! Fluid (2016/09/09) <
             ndim = getSpaceDimension( fstrSOLID%elements(icel)%etype )
             if(present(strainEnergy))then
               do j = 1, nn
@@ -256,7 +251,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                 enddo
               enddo
             endif
-            ! > Fluid (2016/09/09)
 
           enddo ! icel
 !$omp end do

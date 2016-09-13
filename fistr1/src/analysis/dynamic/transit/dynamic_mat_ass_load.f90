@@ -59,13 +59,11 @@ module m_dynamic_mat_ass_load
       integer(kind=kint) :: flag_u, ierror
       real(kind=kreal) :: f_t
 
-      ! Fluid (2016/09/08) <
       integer(kind=kint) :: iiS, idofS, idofE, idof
       real(kind=kreal) :: ecoord(3, 20)
       real(kind=kreal) :: v(6, 20),  dv(6, 20), r(6*20)
       real(kind=kreal) :: RHS
       real(kind=kreal) :: unode_tmp(hecMAT%NDOF*hecMESH%n_node)
-      ! > Fluid (2016/09/08)
       
       ndof = hecMAT%NDOF
       hecMAT%B(:) = 0.0d0
@@ -184,7 +182,6 @@ module m_dynamic_mat_ass_load
         enddo
       enddo
 
-! Fluid (2016/09/08) <
 !--------------------------------------------------------------------
       
       IF( iter .EQ. 1 ) THEN
@@ -314,8 +311,6 @@ module m_dynamic_mat_ass_load
       END IF
       
 !--------------------------------------------------------------------
-! > Fluid (2016/09/08)
-
 !C
 !C THERMAL LOAD USING TEMPERATURE
 !C
