@@ -647,7 +647,8 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 	n_elem_ref_tot = 0;
 	n_enode_ref_tot = 0;
 	for( i=0; i < mesh->n_elem_type; i++ ) {
-		int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn;
+		int etype, istart, iend, n_elem, etype_rcap, nn;
+		size_t n_elem_ref;
 		int *elem_node_item;
 		int ndiv, ierror;
 		etype = mesh->elem_type_item[i];
@@ -670,7 +671,7 @@ refine_element( struct hecmwST_local_mesh *mesh, struct hecmwST_local_mesh *ref_
 		HECMW_assert( n_elem_ref == n_elem * ndiv );
 		n_elem_ref_tot += n_elem_ref;
 		nn = HECMW_get_max_node( etype );
-		n_enode_ref_tot += nn * n_elem_ref;
+		n_enode_ref_tot += n_elem_ref * nn;
 	}
 	ref_mesh->n_elem_gross = n_elem_ref_tot;
 
