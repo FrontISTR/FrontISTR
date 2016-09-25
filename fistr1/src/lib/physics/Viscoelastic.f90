@@ -73,7 +73,11 @@ module mViscoElastic
 
       endif
 
-      trsinc = (asn1-asn)/(hsn1-hsn)
+      if(dabs(hsn1-hsn) < 1.d-04) then
+        trsinc = dexp( (hsn+hsn1)/2.d0 )
+      else
+        trsinc = (asn1-asn)/(hsn1-hsn)
+      endif
 
   end function
 
