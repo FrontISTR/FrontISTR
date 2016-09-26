@@ -18,7 +18,7 @@
 !>  \author                date              version
 !>  X.Yuan(Advancesoft)    2010/10/06        original
 !>  X.Yuan                 2012/09/18        add trs function(WLF, ARRHENIUS)
-!>
+!>  X.Yuan                 2016/09/26        abnormal processing in TRS
 !
 !======================================================================!
 module mViscoElastic
@@ -59,24 +59,36 @@ module mViscoElastic
 
       if(mtype==VISCOELASTIC+2) then   ! Arrhenius
 
-        hsn1 = mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-        hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-        asn1 = dexp(-hsn1)
-        asn = dexp(-hsn)
+        if( tn1==tn ) then
+          hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+          trsinc = dexp(hsn)
+        else
+          hsn1 = mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+          hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+          asn1 = dexp(-hsn1)
+          asn = dexp(-hsn)
+          trsinc = (asn1-asn)/(hsn1-hsn)
+        endif
 
       else   ! WLF
 
-        hsn1 = mvar(2)*( tn1-mvar(1) )/ (mvar(3)+tn1-mvar(1) )*dlog(10.d0)
-        hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
-        asn1 = dexp(hsn1)
-        asn = dexp(hsn)
+        if( mvar(3)+tn1-mvar(1)<=0.d0 ) then
+           trsinc= -1.d0; return
+        endif
+        if( mvar(3)+tn-mvar(1)<=0.d0 ) then
+           trsinc= -1.d0; return
+        endif
+        if( tn1==tn ) then
+          hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
+          trsinc = dexp(hsn)
+        else
+          hsn1 = mvar(2)*( tn1-mvar(1) )/ (mvar(3)+tn1-mvar(1) )*dlog(10.d0)
+          hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
+          asn1 = dexp(hsn1)
+          asn = dexp(hsn)
+          trsinc = (asn1-asn)/(hsn1-hsn)
+        endif
 
-      endif
-
-      if(dabs(hsn1-hsn) < 1.d-04) then
-        trsinc = dexp( (hsn+hsn1)/2.d0 )
-      else
-        trsinc = (asn1-asn)/(hsn1-hsn)
       endif
 
   end function
@@ -194,6 +206,7 @@ module mViscoElastic
 !-------------------------------------------------------------------------------
 !> This subroutine provides to update stress for viscoelastic material
   subroutine UpdateViscoelastic(matl, sectType, eps, sig, vsig, dt, temp, tempn)
+      use m_ElasticLinear
       TYPE( tMaterial ), INTENT(IN)   :: matl      !< material properties
       INTEGER, INTENT(IN)             :: sectType  !< not used currently
       REAL(KIND=kreal), INTENT(IN)    :: eps(6)    !< strain after this step
@@ -207,7 +220,7 @@ module mViscoElastic
       real(kind=kreal) :: G,Gg,K,Kg,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
       real(kind=kreal) :: ina(1), outa(2), EE, PP, ddt
 
-      real(kind=kreal) :: devstrain(6), en(6)
+      real(kind=kreal) :: devstrain(6), en(6), D(6,6)
       type(tTable), pointer  :: dicval
       logical :: ierr
 
@@ -223,6 +236,12 @@ module mViscoElastic
           PP = outa(2)
         endif
         if( matl%mtype>VISCOELASTIC ) ddt=trsinc(temp,tempn, matl%mtype, matl%variables)*dt
+        if( ddt<=0.d0 ) then
+           call calElasticMatrix( matl, sectType, D, temp  )
+           sig = matmul( D(:,:), eps(:) )
+           vsig = 0.d0
+           return
+        endif
       else
         EE = matl%variables(M_YOUNGS)
         PP = matl%variables(M_POISSON)
