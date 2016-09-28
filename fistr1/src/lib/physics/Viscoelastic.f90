@@ -59,16 +59,8 @@ module mViscoElastic
 
       if(mtype==VISCOELASTIC+2) then   ! Arrhenius
 
-        if( tn1==tn ) then
-          hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-          trsinc = dexp(hsn)
-        else
-          hsn1 = mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-          hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-          asn1 = dexp(-hsn1)
-          asn = dexp(-hsn)
-          trsinc = (asn1-asn)/(hsn1-hsn)
-        endif
+        hsn = -mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+        hsn1 = -mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
 
       else   ! WLF
 
@@ -78,17 +70,17 @@ module mViscoElastic
         if( mvar(3)+tn-mvar(1)<=0.d0 ) then
            trsinc= -1.d0; return
         endif
-        if( tn1==tn ) then
-          hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
-          trsinc = dexp(hsn)
-        else
-          hsn1 = mvar(2)*( tn1-mvar(1) )/ (mvar(3)+tn1-mvar(1) )*dlog(10.d0)
-          hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
-          asn1 = dexp(hsn1)
-          asn = dexp(hsn)
-          trsinc = (asn1-asn)/(hsn1-hsn)
-        endif
+        hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
+        hsn1 = mvar(2)*( tn1-mvar(1) )/ (mvar(3)+tn1-mvar(1) )*dlog(10.d0)
 
+      endif
+
+      if( dabs(hsn1-hsn)<1.d-5 ) then
+        trsinc = dexp((hsn1+hsn)*0.5d0)
+      else
+        asn1 = dexp(hsn1)
+        asn = dexp(hsn)
+        trsinc = (asn1-asn)/(hsn1-hsn)
       endif
 
   end function
