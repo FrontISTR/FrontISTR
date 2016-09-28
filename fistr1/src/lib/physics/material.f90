@@ -80,6 +80,8 @@ MODULE mMaterial
       INTEGER(kind=kint), PARAMETER :: VISCOELASTIC          = 140000
       INTEGER(kind=kint), PARAMETER :: NORTON                = 150000
 
+      INTEGER(kind=kint), PARAMETER :: INCOMP_NEWTONIAN      = 160000
+
   ! Following section type
       INTEGER(kind=kint), PARAMETER :: D3            = -1
       INTEGER(kind=kint), PARAMETER :: PlaneStress   = 1
@@ -114,6 +116,8 @@ MODULE mMaterial
       INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE5 = 27
       INTEGER(kind=kint), PARAMETER :: M_BEAM_ANGLE6 = 28
 
+      INTEGER(kind=kint), PARAMETER :: M_VISCOCITY = 29
+
    ! Dictionary constants
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -122,6 +126,7 @@ MODULE mMaterial
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_ORTHOEXP = 'ORTHOEXP'         ! thermo expansion coefficient
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
       CHARACTER(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
+      CHARACTER(len=DICT_KEY_LENGTH) :: MC_INCOMP_NEWTONIAN = 'INCOMP_FLUID' ! viscocity
 
   TYPE tshellmat
     integer(kind=kint)         :: ortho

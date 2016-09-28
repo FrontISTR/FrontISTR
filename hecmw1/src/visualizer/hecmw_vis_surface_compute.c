@@ -156,7 +156,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh, str
 						}
 					}
 				}
-				else if((mesh->elem_type[tmp_int]==341) || (mesh->elem_type[tmp_int]==342)) {
+				else if((mesh->elem_type[tmp_int]==341) || (mesh->elem_type[tmp_int]==342) || (mesh->elem_type[tmp_int]==3414)) {
 					/* tetrahedra */
 					if(flag_tetra==0) {
 						flag_tetra=1;
