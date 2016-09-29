@@ -27,7 +27,7 @@ module hecmw_solver_las_44
   public :: hecmw_Tvec_44
   public :: hecmw_Ttvec_44
   public :: hecmw_TtmatTvec_44
-  public :: hecmw_mpc_scale
+  public :: hecmw_mpc_scale_44
   public :: hecmw_trans_b_44
   public :: hecmw_tback_x_44
   public :: hecmw_matvec_44_clear_timer
@@ -377,7 +377,7 @@ contains
   !C*** hecmw_mpc_scale
   !C***
   !C
-  subroutine hecmw_mpc_scale(hecMESH)
+  subroutine hecmw_mpc_scale_44(hecMESH)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
@@ -394,7 +394,7 @@ contains
       hecMESH%mpc%mpc_const(i) = hecMESH%mpc%mpc_const(i) * WVAL
     enddo
 
-  end subroutine hecmw_mpc_scale
+  end subroutine hecmw_mpc_scale_44
 
   !C
   !C***

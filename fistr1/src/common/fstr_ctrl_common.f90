@@ -89,7 +89,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, st
         real(kind=kreal) :: filter
         integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-        character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,PARADISO '
+        character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
         character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
         integer(kind=kint) :: number_number = 5
