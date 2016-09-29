@@ -95,9 +95,13 @@
            WS(3*k-1)= X(ii-1)
            WS(3*k  )= X(ii  )
         enddo
-
+        if(inum > 0) then
         call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+        else
+        call MPI_ISEND (WS(1         ), 3*inum,MPI_DOUBLE_PRECISION,    &
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+        endif
       enddo
 
 !C
@@ -105,8 +109,13 @@
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
+        if(inum > 0) then
         call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
      &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+        else
+        call MPI_IRECV (WR(1         ), 3*inum, MPI_DOUBLE_PRECISION,   &
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+        endif
       enddo
 
       call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)

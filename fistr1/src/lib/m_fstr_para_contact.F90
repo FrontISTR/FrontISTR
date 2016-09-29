@@ -76,6 +76,9 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
       call Mak_MeshToNodal(mak,xadj,adjncy)
       allocate(part(hecMESH_G%n_node),stat=istat)
       nparts = nprocs
+      if(nprocs == 1) then
+        part(:) = 1
+      else
       nvtxs = mak%nn
       allocate(options(5),stat=istat)
       options(:) = 0
@@ -85,6 +88,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !      goto 133
       ncon = 2
       allocate(vwgt(hecMESH_G%n_node*ncon),stat=istat)
+      vwgt(:) = 0
       allocate(help(hecMESH_G%n_node),stat=istat)
       help(:) = 0
       call paraContact_MarkMasterNode(hecMESH_G,help)
@@ -173,7 +177,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 #endif
 !
 !      call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
-      print *,myrank,'Metis Over'
+      endif
     else
 !     Restart and read existing partition for local mesh construction
       allocate(part(hecMESH_G%n_node),stat=istat)
@@ -263,12 +267,12 @@ subroutine paraContact_GetFSTR2Makrose(hecMESH,mak)
       print *,'myrank',myrank,' is not a global mesh!'
       stop
     endif
-    do i=1,hecMESH%n_node
-      if(i /= hecMESH%global_node_ID(i)) then
-        print *,'myrank',myrank,' Global nodeIDs are not consecutive!'
-        stop
-      endif
-    enddo
+    !do i=1,hecMESH%n_node
+    !  if(i /= hecMESH%global_node_ID(i)) then
+    !    print *,'myrank',myrank,' Global nodeIDs are not consecutive!'
+    !    stop
+    !  endif
+    !enddo
     call Mak_init(mak,ndim=hecMESH%n_dof,nn=hecMESH%n_node,ne=hecMESH%n_elem)
     do i=1,hecMESH%n_node
       mak%x(1:hecMESH%n_dof,i) = hecMESH%node((i-1)*hecMESH%n_dof+1:i*hecMESH%n_dof)
@@ -319,8 +323,9 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
       if(etype /= mak%etyp(i)) then
           ntype = ntype + 1
           etype = mak%etyp(i)
+      else
+        counter(ntype) = counter(ntype) + 1
       endif
-      counter(ntype) = counter(ntype) + 1
     enddo
     if(associated(ptrtype)) deallocate(ptrtype,stat=istat)
     allocate(ptrtype(0:ntype),stat=istat)
@@ -390,6 +395,38 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
   integer(kint)           ::  nHangingNode = 0,nOtherSlaveNode = 0,count
   logical ::  sameflag
   integer ::  buf(2),rev(2),ierr
+  integer(kint) :: minOrigNodeID, maxOrigNodeID, minOrigElmtID, maxOrigElmtID
+  integer(kint), allocatable :: indexNodeO2G(:), indexElmtO2G(:)
+!
+    do i = 1, hecMESH_G%n_node
+      if(i == 1) then
+        minOrigNodeID = hecMESH_G%global_node_ID(i)
+        maxOrigNodeID = hecMESH_G%global_node_ID(i)
+      else
+        if(hecMESH_G%global_node_ID(i) < minOrigNodeID) minOrigNodeID = hecMESH_G%global_node_ID(i)
+        if(hecMESH_G%global_node_ID(i) > maxOrigNodeID) maxOrigNodeID = hecMESH_G%global_node_ID(i)
+      endif
+    enddo
+    allocate(indexNodeO2G(maxOrigNodeID), stat=istat)
+    indexNodeO2G(:) = 0
+    do i = 1, hecMESH_G%n_node
+      indexNodeO2G(hecMESH_G%global_node_ID(i)) = i
+    enddo
+!
+    do i = 1, hecMESH_G%n_elem
+      if(i == 1) then
+        minOrigElmtID = hecMESH_G%global_elem_ID(i)
+        maxOrigElmtID = hecMESH_G%global_elem_ID(i)
+      else
+        if(hecMESH_G%global_elem_ID(i) < minOrigElmtID) minOrigElmtID = hecMESH_G%global_elem_ID(i)
+        if(hecMESH_G%global_elem_ID(i) > maxOrigElmtID) maxOrigElmtID = hecMESH_G%global_elem_ID(i)
+      endif
+    enddo
+    allocate(indexElmtO2G(maxOrigElmtID), stat=istat)
+    indexElmtO2G(:) = 0
+    do i = 1, hecMESH_G%n_elem
+      indexElmtO2G(hecMESH_G%global_elem_ID(i)) = i
+    enddo
 !
     call hecmw_nullify_mesh(hecMESH_L)
 !-- General data
@@ -447,12 +484,12 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     allocate(hecMESH_L%node_ID(hecMESH_L%n_node*2),stat=istat)
     do i=1,hecMESH_L%n_node
       if(i <= mak_loc%nn) then
-        if(part(mak_loc%ngid(i)) == partID) then
+        if(part(indexNodeO2G(mak_loc%ngid(i))) == partID) then
           hecMESH_L%node_ID((i-1)*2+1)  = i
         else
-          hecMESH_L%node_ID((i-1)*2+1)  = indexNodeG2L(mak_loc%ngid(i),part(mak_loc%ngid(i)))
+          hecMESH_L%node_ID((i-1)*2+1)  = indexNodeG2L(indexNodeO2G(mak_loc%ngid(i)),part(indexNodeO2G(mak_loc%ngid(i))))
         endif
-        hecMESH_L%node_ID(i*2)        = part(mak_loc%ngid(i)) - 1
+        hecMESH_L%node_ID(i*2)        = part(indexNodeO2G(mak_loc%ngid(i))) - 1
       else
         j = i - mak_loc%nn
         if(part(indexHangingNode(j)) == partID) then
@@ -467,7 +504,10 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     hecMESH_L%global_node_ID(1:hecMESH_L%nn_middle) = mak_loc%ngid(1:mak_loc%nn)
 !   debug
     if(nHangingNode > 0.and.size(indexHangingNode) == nHangingNode) then
-      hecMESH_L%global_node_ID(hecMESH_L%nn_middle+1:hecMESH_L%n_node) = indexHangingNode(1:nHangingNode)
+      do i = 1, nHangingNode
+        hecMESH_L%global_node_ID(hecMESH_L%nn_middle+i) = hecMESH_G%global_node_ID(indexHangingNode(i))
+      enddo
+!      hecMESH_L%global_node_ID(hecMESH_L%nn_middle+1:hecMESH_L%n_node) = indexHangingNode(1:nHangingNode)
     endif
     allocate(hecMESH_L%node_dof_index(0:hecMESH_L%n_dof_grp),stat=istat)
     hecMESH_L%node_dof_index(0) = 0
@@ -478,7 +518,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     n = 0
     do i=1,hecMESH_L%n_node
       if(i > mak_loc%nn) exit
-      if(part(mak_loc%ngid(i)) == partID) then
+      if(part(indexNodeO2G(mak_loc%ngid(i))) == partID) then
         n = n + 1
         hecMESH_L%node_internal_list(n) = i
       endif
@@ -539,7 +579,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     hecMESH_L%elem_node_item(:) = mak_loc%eind(:)
     allocate(hecMESH_L%global_elem_ID(hecMESH_L%n_elem),stat=istat)
     do i=1,hecMESH_L%n_elem
-      hecMESH_L%global_elem_ID(i) = hecMESH_G%global_elem_ID(mak_loc%egid(i))
+!      hecMESH_L%global_elem_ID(i) = hecMESH_G%global_elem_ID(mak_loc%egid(i))
+      hecMESH_L%global_elem_ID(i) = mak_loc%egid(i)
     enddo
     allocate(hecMESH_L%elem_ID(hecMESH_L%n_elem*2),stat=istat)
 !    allocate(hecMESH_L%elem_internal_list(hecMESH_L%ne_internal),stat=istat)
@@ -547,11 +588,11 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     n = 0
     next_elem : do i=1,hecMESH_L%n_elem
        sameflag = .true.
-       pid = part(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(hecMESH_L%elem_node_index(i-1)+1)))
+       pid = part(indexNodeO2G(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(hecMESH_L%elem_node_index(i-1)+1))))
        do j=hecMESH_L%elem_node_index(i-1)+1,hecMESH_L%elem_node_index(i)
-         if(pid /= part(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(j)))) then
+         if(pid /= part(indexNodeO2G(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(j))))) then
            if(sameflag) sameflag = .false.
-           pid = min(pid,part(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(j))))
+           pid = min(pid,part(indexNodeO2G(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(j)))))
          endif
        enddo
 !       if(sameflag) then
@@ -564,7 +605,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
          temp(n) = i
          hecMESH_L%elem_ID((i-1)*2+1) = n
        else
-         hecMESH_L%elem_ID((i-1)*2+1) = indexElmtG2L(mak_loc%egid(i),pid)
+         hecMESH_L%elem_ID((i-1)*2+1) = indexElmtG2L(indexElmtO2G(mak_loc%egid(i)),pid)
 !         hecMESH_L%elem_internal_list(n) = i
        endif
 
@@ -577,7 +618,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 
     allocate(hecMESH_L%section_ID(hecMESH_L%n_elem),stat=istat)
     do i=1,hecMESH_L%n_elem
-      hecMESH_L%section_ID(i) = hecMESH_G%section_ID(mak_loc%egid(i))
+      hecMESH_L%section_ID(i) = hecMESH_G%section_ID(indexElmtO2G(mak_loc%egid(i)))
     enddo
 
 !    write(myrank+30,*)'elements'
@@ -610,7 +651,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
 !   Count Neighboring Processors
 !   import_index, import_item
     do i=1,hecMESH_L%n_node
-      pid = part(hecMESH_L%global_node_ID(i))
+      pid = part(indexNodeO2G(hecMESH_L%global_node_ID(i)))
       if(pid /= partID) then
         help(pid) = help(pid) + 1
         helpnode(help(pid),pid) = i
@@ -704,8 +745,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
         help(:) = 0
         n = 0
         do k=mak_loc%eptr(elemID),mak_loc%eptr(elemID+1)-1
-          if(help(part(mak_loc%ngid(mak_loc%eind(k)))) == 0) then
-            help(part(mak_loc%ngid(mak_loc%eind(k)))) = 1
+          if(help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(k))))) == 0) then
+            help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(k))))) = 1
             n = n + 1
           endif
         enddo
@@ -737,8 +778,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
         help(:) = 0
         n = 0
         do k=mak_loc%eptr(elemID),mak_loc%eptr(elemID+1)-1
-          if(help(part(mak_loc%ngid(mak_loc%eind(k)))) == 0) then
-            help(part(mak_loc%ngid(mak_loc%eind(k)))) = 1
+          if(help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(k))))) == 0) then
+            help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(k))))) = 1
             n = n + 1
           endif
         enddo
@@ -750,7 +791,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
           markPE(k) = 1
         enddo
       enddo
-      if(paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,i,exportSlavePE)) then
+      if(paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,i,exportSlavePE,indexNodeO2G)) then
 !        write(myrank+30,'(A,   32I5)')'nodeLID ',i,markPE(:)
 !        write(myrank+30,'(A,A5,32I5)')'        ','     ',exportSlavePE(:)
 !        print *,myrank,i,'expPE',exportSlavePE(:)
@@ -798,9 +839,9 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     do i=1,hecMESH_L%n_elem
       n = 0; help(:) = 0
       do j=mak_loc%eptr(i),mak_loc%eptr(i+1)-1
-        if(help(part(mak_loc%ngid(mak_loc%eind(j)))) /= 0) cycle
+        if(help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(j))))) /= 0) cycle
         n = n + 1
-        help(part(mak_loc%ngid(mak_loc%eind(j)))) = 1
+        help(part(indexNodeO2G(mak_loc%ngid(mak_loc%eind(j))))) = 1
       enddo
       if(n == 1) cycle
       do j=1,hecMESH_L%PETOT
@@ -1286,7 +1327,7 @@ subroutine paraContact_GetHangingSlaveNode(hecMESH_G,hecMesh_L,indexNodeG2L,inde
 !
     do i=1,hecMESH_L%contact_pair%n_pair
       surf_grp_ID = hecMESH_L%contact_pair%master_grp_id(i)
-      if(hecMESH_L%surf_group%grp_index(surf_grp_ID) == hecMESH_L%surf_group%grp_index(surf_grp_ID-1)+1) cycle
+      if(hecMESH_L%surf_group%grp_index(surf_grp_ID) == hecMESH_L%surf_group%grp_index(surf_grp_ID-1)) cycle
 !     This partation has contact pair master group
       node_grp_ID = hecMESH_L%contact_pair%slave_grp_id(i)
       do j=hecMESH_G%node_group%grp_index(node_grp_ID-1)+1,hecMESH_G%node_group%grp_index(node_grp_ID)
@@ -1307,7 +1348,7 @@ subroutine paraContact_GetHangingSlaveNode(hecMESH_G,hecMesh_L,indexNodeG2L,inde
     help(:) = 0
     do i=1,hecMESH_L%contact_pair%n_pair
       surf_grp_ID = hecMESH_L%contact_pair%master_grp_id(i)
-      if(hecMESH_L%surf_group%grp_index(surf_grp_ID) == hecMESH_L%surf_group%grp_index(surf_grp_ID-1)+1) cycle
+      if(hecMESH_L%surf_group%grp_index(surf_grp_ID) == hecMESH_L%surf_group%grp_index(surf_grp_ID-1)) cycle
 !     This partation has contact pair master group
       node_grp_ID = hecMESH_L%contact_pair%slave_grp_id(i)
       do j=hecMESH_G%node_group%grp_index(node_grp_ID-1)+1,hecMESH_G%node_group%grp_index(node_grp_ID)
@@ -1321,12 +1362,13 @@ subroutine paraContact_GetHangingSlaveNode(hecMESH_G,hecMesh_L,indexNodeG2L,inde
     deallocate(help,stat=istat)
 end subroutine paraContact_GetHangingSlaveNode
 
-function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportSlavePE) result(yes)
+function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportSlavePE,indexNodeO2G) result(yes)
   type(hecmwST_local_mesh),intent(in)   ::  hecMESH_G
   type(hecmwST_local_mesh),intent(in)   ::  hecMESH_L
   integer(kint),intent(in)              ::  part(:)
   integer(kint),intent(in)              ::  nodeLID   ! Local internal nodeID
   integer,intent(out)                   ::  exportSlavePE(:)
+  integer(kint),intent(in)              ::  indexNodeO2G(:)
   logical   ::  yes
 !
   integer(kint)   ::  i,j,surf_grp_ID,node_grp_ID,nodeGID
@@ -1336,6 +1378,7 @@ function paraContact_isContactSlaveNode(hecMESH_G,hecMesh_L,part,nodeLID,exportS
     exportSlavePE(:) = 0
 !
     nodeGID = hecMESH_L%global_node_ID(nodeLID)
+    nodeGID = indexNodeO2G(nodeGID)
     if(hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair)  &
        stop 'hecMESH_L%contact_pair%n_pair /= hecMESH_G%contact_pair%n_pair'
     do i=1,hecMESH_L%contact_pair%n_pair
@@ -1693,13 +1736,29 @@ end subroutine copyClearMatrix
 !Update external nodal data
 subroutine paraContact_CreateExportImport(hecMESH)
   use hecmw_util
-  type (hecmwST_local_mesh),intent(in)  ::  hecMESH
+  type (hecmwST_local_mesh),intent(inout)  ::  hecMESH
 !
   integer(kint)   ::  i,j,pid,count,istat,ierr,inum
   integer(kint),allocatable ::  help(:)
   integer(kint),allocatable ::  expMap(:)
   integer(kint),allocatable ::  req_s(:),  req_r(:)
   integer(kint),allocatable ::  sta_s(:,:),sta_r(:,:)
+!
+    hecMESH%n_neighbor_pe = hecMESH%PETOT - 1
+    if(associated(hecMESH%neighbor_pe))  deallocate(hecMESH%neighbor_pe, stat=istat)
+    if(associated(hecMESH%import_index)) deallocate(hecMESH%import_index, stat=istat)
+    if(associated(hecMESH%import_item))  deallocate(hecMESH%import_item, stat=istat)
+    if(associated(hecMESH%export_index)) deallocate(hecMESH%export_index, stat=istat)
+    if(associated(hecMESH%export_item))  deallocate(hecMESH%export_item, stat=istat)
+    allocate(hecMESH%neighbor_pe(hecMESH%n_neighbor_pe), stat=istat)
+    inum = 0
+    do i=0,nprocs-1
+      if(hecMESH%my_rank /= myrank) stop 'wrong my_rank'
+      if(i == myrank) cycle
+      inum = inum + 1
+      hecMESH%neighbor_pe(inum) = i
+    enddo
+
 !
     allocate(expMap(nprocs),stat=istat)
     expMap(:) = 0
@@ -1717,7 +1776,12 @@ subroutine paraContact_CreateExportImport(hecMESH)
     allocate(import_pe(npe_import),stat=istat)
     allocate(import_index(0:npe_import),stat=istat)
     allocate(import_item(hecMESH%n_node - hecMESH%nn_internal),stat=istat)
+!
+    allocate(hecMESH%import_index(0:hecMESH%n_neighbor_pe), stat=istat)
+    allocate(hecMESH%import_item(hecMESH%n_node - hecMESH%nn_internal),stat=istat)
 
+    hecMESH%import_index(0) = 0
+    inum  = 0
     import_index(0) = 0
     count = 0
     do i=0,nprocs-1
@@ -1726,6 +1790,9 @@ subroutine paraContact_CreateExportImport(hecMESH)
         import_pe(count) = i
         import_index(count) = import_index(count-1) + help(i)
       endif
+      if(i == myrank) cycle
+      inum = inum + 1
+      hecMESH%import_index(inum) = hecMESH%import_index(inum-1) + help(i)     
     enddo
     help(:) = 0
     do i=hecMESH%nn_internal+1,hecMESH%n_node
@@ -1735,6 +1802,10 @@ subroutine paraContact_CreateExportImport(hecMESH)
         if(import_pe(j) == pid) exit
       enddo
       import_item(import_index(j-1) + help(pid)) = hecMESH%node_ID(i*2-1)
+      do j=1,hecMESH%n_neighbor_pe
+        if(hecMESH%neighbor_pe(j) ==  pid) exit
+      enddo
+      hecMESH%import_item(hecMESH%import_index(j-1)+help(pid)) = i
     enddo
     call hecmw_BARRIER(hecMESH)
 !
@@ -1758,6 +1829,12 @@ subroutine paraContact_CreateExportImport(hecMESH)
       allocate(export_pe(npe_export),stat=istat)
       allocate(export_index(0:npe_export),stat=istat)
       allocate(export_item(count),stat=istat)
+      allocate(hecMESH%export_index(0:hecMESH%n_neighbor_pe), stat=istat)
+      allocate(hecMESH%export_item(count),stat=istat)
+
+      hecMESH%export_index(0) = 0
+      inum = 0
+
       export_index(0) = 0
       count = 0
       do i=1,nprocs
@@ -1766,6 +1843,9 @@ subroutine paraContact_CreateExportImport(hecMESH)
           export_pe(count) = i - 1
           export_index(count) = export_index(count-1) + expMap(i)
         endif
+        if(i - 1 == myrank) cycle
+        inum = inum + 1
+        hecMESH%export_index(inum) = hecMESH%export_index(inum-1) + expMap(i)
       enddo
 !      print *,myrank,'ext_idx',export_index(:)
     endif
@@ -1793,6 +1873,15 @@ subroutine paraContact_CreateExportImport(hecMESH)
     endif
     call hecmw_waitall(npe_import,req_s,sta_s)
 !    call MPI_WAITALL(npe_import,req_s,sta_s,ierr)
+
+    if(npe_export > 0) then
+      do i=1,npe_export
+        do j=1,hecMESH%n_neighbor_pe
+          if(hecMESH%neighbor_pe(j) == export_pe(i)) exit
+        enddo
+        hecMESH%export_item(hecMESH%export_index(j-1)+1:hecMESH%export_index(j)) = export_item(export_index(i-1)+1:export_index(i))
+      enddo
+    endif
 
     call hecmw_BARRIER(hecMESH)
 !

@@ -658,33 +658,40 @@ subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak
   integer(kint)   ::  i,j,istat,n,egid
   integer(kint),allocatable         ::  indexNodeL2G(:),indexElmtL2G(:)
 !
+    allocate(indexNodeL2G(ni+nx), stat=istat)
+    indexNodeL2G(:) = 0
+    allocate(indexElmtL2G(ei+ex), stat=istat)
+    indexElmtL2G(:) = 0
     call Mak_Init(mak_loc,mak%ndim,ni+nx,ei+ex)
     mak_loc%nn_i = ni
     mak_loc%ne_i = ei
     do i=1,mak%nn
       if(indexNodeG2L(i) == 0) cycle
       mak_loc%x(1:3,indexNodeG2L(i)) = mak%x(1:3,i)
-!      if(associated(mak%ngid)) then
-!        mak_loc%ngid(indexNodeG2L(i)) = mak%ngid(i)
-!      else
+      if(associated(mak%ngid)) then
+        mak_loc%ngid(indexNodeG2L(i)) = mak%ngid(i)
+      else
         mak_loc%ngid(indexNodeG2L(i)) = i
-!      endif
+      endif
+      indexNodeL2G(indexNodeG2L(i)) = i
     enddo
     allocate(mak_loc%eptr(mak_loc%ne+1),stat=istat)
     do i=1,mak%ne
       if(indexElmtG2L(i) == 0) cycle
-!      if(associated(mak%egid)) then
-!        mak_loc%egid(indexElmtG2L(i)) = mak%egid(i)
-!      else
+      if(associated(mak%egid)) then
+        mak_loc%egid(indexElmtG2L(i)) = mak%egid(i)
+      else
         mak_loc%egid(indexElmtG2L(i)) = i
-!      endif
+      endif
+      indexElmtL2G(indexElmtG2L(i)) = i
       mak_loc%etyp(indexElmtG2L(i)) = mak%etyp(i)
       mak_loc%egrp(indexElmtG2L(i)) = mak%egrp(i)
       mak_loc%emat(indexElmtG2L(i)) = mak%emat(i)
     enddo
     mak_loc%eptr(1) = 1
     do i=1,mak_loc%ne
-      egid = mak_loc%egid(i)
+!      egid = mak_loc%egid(i)
+      egid = indexElmtL2G(i)
       if(egid < 1.or.egid > mak%ne) then
         print *,partID,i,egid
       endif
@@ -693,7 +700,8 @@ subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak
     allocate(mak_loc%eind(mak_loc%eptr(mak_loc%ne+1)-1),stat=istat)
     n = 0
     do i=1,mak_loc%ne
-      egid = mak_loc%egid(i)
+!      egid = mak_loc%egid(i)
+      egid = indexElmtL2G(i)
       do j=mak%eptr(egid),mak%eptr(egid+1)-1
         n = n + 1
         if(i == 280) then
@@ -705,6 +713,8 @@ subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak
         mak_loc%eind(n) = indexNodeG2L(mak%eind(j))
       enddo
     enddo
+    if(allocated(indexElmtL2G)) deallocate(indexElmtL2G)
+    if(allocated(indexNodeL2G)) deallocate(indexNodeL2G)
 end subroutine Mak_SetLocalMesh
 
 !< Element-based partition
