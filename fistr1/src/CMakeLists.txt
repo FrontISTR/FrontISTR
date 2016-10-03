@@ -213,6 +213,7 @@ if(_WINDOWS)
   set(EXTRA_LIBS ${EXTRA_LIBS} "ws2_32")
 endif()
 
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(fistr1 fistr hecmw ${EXTRA_LIBS})
 
 install(TARGETS fistr1 DESTINATION bin CONFIGURATIONS ${CMAKE_BUILD_TYPE})
