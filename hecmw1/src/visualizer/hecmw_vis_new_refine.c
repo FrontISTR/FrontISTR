@@ -504,7 +504,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 										}
 										if((mesh->elem_type[i]==361) || (mesh->elem_type[i]==362))
 											inside=judge_inner_voxel_361(vv, in_point);
-										else if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414))
+										else if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342))
 											inside=judge_inner_voxel_341(vv, in_point);
 										else if((mesh->elem_type[i]==351) || (mesh->elem_type[i]==352))
 											inside=judge_inner_voxel_351(vv, in_point);

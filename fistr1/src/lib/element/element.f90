@@ -89,7 +89,6 @@ module elementInfo
     integer, parameter :: fe_tet4n    = 341
     integer, parameter :: fe_tet10n   = 342
     integer, parameter :: fe_tet10nc  = 3422
-    integer, parameter :: fe_tet4n_p1p1 = 3414
     integer, parameter :: fe_prism6n  = 351
     integer, parameter :: fe_prism15n = 352
     integer, parameter :: fe_hex8n    = 361
@@ -150,7 +149,7 @@ module elementInfo
         getNumberOfNodes = 8
       case ( fe_mitc9_shell )
         getNumberOfNodes = 9
-      case ( fe_tet4n, fe_tet4n_p1p1, fe_beam341 )
+      case ( fe_tet4n, fe_beam341 )
         getNumberOfNodes = 4
       case ( fe_tet10n, fe_tet10nc )
         getNumberOfNodes = 10
@@ -200,7 +199,7 @@ module elementInfo
 
       if( innumber>getNumberOfSubface( intype ) ) stop "Error in getting subface"
       select case ( intype )
-      case (fe_tet4n, fe_beam341, fe_tet4n_p1p1)
+      case (fe_tet4n, fe_beam341)
         outtype = fe_tri3n
         select case ( innumber )
         case (1)
@@ -440,7 +439,7 @@ module elementInfo
         NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
         NumOfQuadPoints = 9
-      case ( fe_tet10n, fe_tet4n_p1p1 )
+      case ( fe_tet10n)
         NumOfQuadPoints = 4
       case ( fe_tet10nc )
         NumOfQuadPoints = 12
@@ -483,7 +482,7 @@ module elementInfo
         pos(1:3)=gauss3d8(:,np)
       case ( fe_tet4n, fe_beam341 )
         pos(1:3)=gauss3d4(:,np)
-      case ( fe_tet10n, fe_tet4n_p1p1 )
+      case ( fe_tet10n )
         pos(1:3)=gauss3d5(:,np)
       case ( fe_tet10nc )
         pos(1:3)=np
@@ -525,7 +524,7 @@ module elementInfo
         getWeight = weight3d8(np)
       case ( fe_tet4n, fe_beam341 )
         getWeight = weight3d4(1)
-      case ( fe_tet10n, fe_tet4n_p1p1 )
+      case ( fe_tet10n )
         getWeight = weight3d5(np)
       case ( fe_line2n )
         getWeight = weight1d1(1)
@@ -572,7 +571,7 @@ module elementInfo
         call ShapeDeriv_prism6n(localcoord,shapederiv(1:6,1:3))
       case (fe_prism15n)
         call ShapeDeriv_prism15n(localcoord,shapederiv(1:15,1:3))
-      case (fe_tet4n, fe_tet4n_p1p1, fe_beam341)
+      case (fe_tet4n, fe_beam341)
         ! error check
         call ShapeDeriv_tet4n(shapederiv(1:4,1:3))
       case (fe_tet10n)
@@ -641,7 +640,7 @@ module elementInfo
         call ShapeFunc_prism6n(localcoord,func(1:6))
       case (fe_prism15n)
         call ShapeFunc_prism15n(localcoord,func(1:15))
-      case (fe_tet4n, fe_tet4n_p1p1, fe_beam341)
+      case (fe_tet4n, fe_beam341)
         ! error check
         call ShapeFunc_tet4n(localcoord,func(1:4))
       case (fe_tet10n)

@@ -33,7 +33,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   use m_fstr
   use m_static_LIB
   use mMechGauss
-  
+
   type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
   type (hecmwST_matrix)      :: hecMAT       !< linear equation, its right side modified here
   type (fstr_solid)          :: fstrSOLID    !< we need boundary conditions of curr step
@@ -46,7 +46,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   real(kind=kreal)   :: tt(20), ecoord(3,20)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
-  real(kind=kreal)   :: u(4,20), du(4,20), coords(3,3), u_prev(4,20)
+  real(kind=kreal)   :: u(3,20), du(3,20), coords(3,3)
   integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
 
 ! ----- initialize
@@ -64,7 +64,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
 
 ! ----- element loop
 !$omp parallel default(none), &
-!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u_prev,u,tt,cdsys_ID,coords, &
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,tt,cdsys_ID,coords, &
 !$omp&          material,thick,stiffness,isect,ihead), &
 !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,tincr)
 !$omp do
@@ -79,7 +79,6 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         enddo
         do i=1,ndof
           du(i,j) = fstrSOLID%dunode(ndof*nodLOCAL(j)+i-ndof)
-          u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
           u(i,j)  = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(i,j)
         enddo
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
@@ -131,16 +130,8 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
                  stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
         endif
-      else if ( ic_type==3414 ) then
-        if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
-          write(*, *) '###ERROR### : This element is not supported for this material'
-          write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-          stop
-          call hecmw_abort(hecmw_comm_get_comm())
-        endif
-        call STF_C3_vp                                                           &
-             ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
-               stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )       
+
+
 !
 !      else if ( ic_type==731) then
 !        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
