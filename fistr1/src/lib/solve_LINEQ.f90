@@ -105,9 +105,7 @@ module m_solve_LINEQ
           resid=hecmw_rel_resid_L2_22(hecMESH,hecMAT)
         CASE(3)
           resid=hecmw_rel_resid_L2_33(hecMESH,hecMAT)
-        CASE(4)
-          resid=hecmw_rel_resid_L2_44(hecMESH, hecMAT)
-        CASE(5:)
+        CASE(4:)
           !resid=hecmw_rel_resid_L2_mm(hecMESH,hecMAT)
           resid=0.d0 !! TEMPORARY
         END SELECT
