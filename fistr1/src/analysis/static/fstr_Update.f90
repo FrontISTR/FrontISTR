@@ -67,8 +67,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         real(kind=kreal), optional :: strainEnergy
         real(kind=kreal) :: tmp
 
-        integer(kind=kint) :: ndim
-        
         ndof = hecMAT%NDOF
         fstrSOLID%QFORCE=0.0d0
 
@@ -103,7 +101,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 ! element loop
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-!$omp&          cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim), &
+!$omp&          cdsys_ID,coords,thick,qf,isect,ihead,tmp), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
 !$omp&         strainEnergy,iter,tincr), &
 !$omp&  firstprivate(tt0,ttn,tt)
@@ -203,17 +201,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                      ( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
                        qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), iter, tincr )
               endif
-            else if ( ic_type == 3414 ) then
-              if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
-                write(*, *) '###ERROR### : This element is not supported for this material'
-                write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-                stop
-                call hecmw_abort(hecmw_comm_get_comm())
-              endif
-              call UPDATE_C3_vp                                                       &
-                   ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
-                     fstrSOLID%elements(icel)%gausses(:) )                            
-              
 
 !            else if ( ic_type==731) then
 !              call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
@@ -238,16 +225,16 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
                 = fstrSOLID%QFORCE(ndof*(nodLOCAL(j)-1)+i)+qf(ndof*(j-1)+i)
               enddo
             enddo
+
 ! ----- calculate strain energy
-            ndim = getSpaceDimension( fstrSOLID%elements(icel)%etype )
             if(present(strainEnergy))then
               do j = 1, nn
-                do i = 1, ndim
-                  tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i) &
-                               +qf(ndof*(j-1)+i) )*ddu(i,j)                    
+                do i = 1, ndof
+                  tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i) &
+                               +qf(ndof*(j-1)+i) )*ddu(i,j)
 !$omp atomic
                   strainEnergy = strainEnergy+tmp
-                  fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i) = qf(ndof*(j-1)+i)
+                  fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i) = qf(ndof*(j-1)+i)
                 enddo
               enddo
             endif

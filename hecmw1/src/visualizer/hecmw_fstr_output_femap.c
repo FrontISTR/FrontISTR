@@ -171,7 +171,7 @@ femap_write_elem(FILE *outfp, int mynode,
 			for (m = 0; m < 8; m++)
 				nna[m] = nn[m];
 		}
-		else if (ietyp == 341 || ietyp == 3414)
+		else if (ietyp == 341)
 		{
 			istyp = 25;
 			itopo = 6;
@@ -992,7 +992,7 @@ avs_elem_node_order(int elem_type)
 
 	if (elem_type == 232 || elem_type == 732)
 		ii = i232;
-	else if (elem_type == 341 || elem_type == 342 || elem_type == 3414)
+	else if (elem_type == 341 || elem_type == 342)
 		ii = i342;
 	else if (elem_type == 351 || elem_type == 352)
 		ii = i352;
@@ -1030,9 +1030,7 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 		etype = elem_type[i];
 		if (flag_oldUCD && etype % 2 == 0) {
 			/* old UCD format does not support second order elements */
-      if(etype != 3414 && etype != 3614){
-			  etype--;
-      }
+			etype--;
 		}
 		node_num = HECMW_get_max_node(etype);
 		if (HECMW_is_etype_33struct(etype)) node_num /= 2;
@@ -1527,8 +1525,6 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 
 	HECMW_Comm_rank (VIS_COMM, &mynode);
 	HECMW_Comm_size (VIS_COMM, &pesize);
-  printf("koko");
-  exit(0);
 	if ((mesh->elem_type[0] == 231) || (mesh->elem_type[0] == 232)
 			|| (mesh->elem_type[0] == 731) || (mesh->elem_type[0] == 732))
 	{
@@ -1541,12 +1537,10 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 		elem_type_bin = 3;
 		node_num = 4;
 	}
-	else if ((mesh->elem_type[0] == 341) || (mesh->elem_type[0] == 342) || (mesh->elem_type[0] == 3414))
+	else if ((mesh->elem_type[0] == 341) || (mesh->elem_type[0] == 342))
 	{
 		elem_type_bin = 4;
 		node_num = 4;
-    printf("yeah");
-    exit(0);
 	}
 	else if ((mesh->elem_type[0] == 351) || (mesh->elem_type[0] == 352))
 	{
