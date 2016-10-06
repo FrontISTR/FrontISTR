@@ -64,13 +64,16 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 
 #------------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $(ALL_CFLAGS) $(OPTFLAGS) $< -o $@
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $(ALL_F90FLAGS) $(HECMW_METIS_VER) $(F90FPP) $(F90OPTFLAGS) $< -o $@
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
