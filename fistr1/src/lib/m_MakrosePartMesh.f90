@@ -596,11 +596,11 @@ subroutine Mak_ResetIndexElmtG2L_Type(mak,indexElmtG2L)
   integer(kint),intent(inout)       ::  indexElmtG2L(:) ! Reorder the local mesh elementID by element types
 !
   integer(kint)   ::  i,j,n,istat
-  integer(kint),allocatable   ::  indexType(:),counter(:),indexElmtG2L_tmp(:),ptr(:)
+  integer(kint),allocatable   ::  indexType(:),counter(:),indexElmtG2L_tmp(:),ptr(:),idx(:)
 !
-    allocate(indexType(20),stat=istat)
+    allocate(indexType(50),stat=istat)
     indexType(:) = 0
-    allocate(counter(20),stat=istat)
+    allocate(counter(50),stat=istat)
     counter(:) = 0
     allocate(indexElmtG2L_tmp(mak%ne),stat=istat)
     indexElmtG2L_tmp(:) = 0
@@ -625,16 +625,21 @@ subroutine Mak_ResetIndexElmtG2L_Type(mak,indexElmtG2L)
     if(n == 0) then
       print *,'number of element types',n
     endif
+
+    allocate(idx(n),stat=istat)
+    call qSortInt(indexType,idx,n)
+
     allocate(ptr(n),stat=istat)
     ptr(1) = 1
     do i=1,n-1
-      ptr(i+1) = counter(i) + ptr(i)
+      !ptr(i+1) = counter(i) + ptr(i)
+      ptr(i+1) = counter(idx(i)) + ptr(i)
     enddo
     counter(:) = 0
     do i=1,mak%ne
       if(indexElmtG2L(i) == 0) cycle
       do j=1,n
-        indexType(j) = mak%etyp(i)
+        indexType(idx(j)) = mak%etyp(i)
         exit
       enddo
       counter(j) = counter(j) + 1
@@ -646,6 +651,7 @@ subroutine Mak_ResetIndexElmtG2L_Type(mak,indexElmtG2L)
     deallocate(indexType,stat=istat)
     deallocate(counter,stat=istat)
     deallocate(ptr,stat=istat)
+    deallocate(idx,stat=istat)
 end subroutine Mak_ResetIndexElmtG2L_Type
 
 subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak_loc)
@@ -704,9 +710,6 @@ subroutine Mak_SetLocalMesh(mak,ni,nx,ei,ex,indexNodeG2L,indexElmtG2L,partID,mak
       egid = indexElmtL2G(i)
       do j=mak%eptr(egid),mak%eptr(egid+1)-1
         n = n + 1
-        if(i == 280) then
-          continue
-        endif
         if(indexNodeG2L(mak%eind(j)) > mak_loc%nn.or.indexNodeG2L(mak%eind(j)) == 0) then
           continue
         endif

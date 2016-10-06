@@ -90,6 +90,7 @@ use m_fstr_freqdata
 !        myrank = hecMESH%my_rank
 !        nprocs = hecMESH%PETOT
 !#endif
+        call hecmw_barrier(hecMESH)
         if(myrank == 0) then
           print *,'paraContactFlag',paraContactFlag
         endif
@@ -188,6 +189,8 @@ subroutine fstr_init
         NPRINT   => fstrPR%nprint
 
         call hecmw_mat_con(hecMESH, hecMAT)
+        !call hecmw_barrier(hecMESH)
+        !stop
 
         ! ------- initial value setting -------------
 

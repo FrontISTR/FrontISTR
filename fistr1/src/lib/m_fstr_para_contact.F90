@@ -67,7 +67,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 
   character(len=256)      ::  filename,lmsh_file,name
   integer(kint)   ::  partMethod = PARTITION_DEFAULT
-  character(len=6)        ::  actualPartMethod
+  character(len=8)        ::  actualPartMethod
 !
     call paraContact_GetFSTR2Makrose(hecMESH_G,mak)
 
@@ -113,7 +113,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 #elif(HECMW_METIS_VER == 4)
       select case(partMethod)
       case(PARTITION_DEFAULT)
-        if(nparts < 8) then
+        if(nparts < 800) then
           if(ncon < 2) then
             ierr = METIS_PartGraphRecursive                   &
                         (nvtxs,   xadj,   adjncy,             &
@@ -218,8 +218,10 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
     partID = myrank + 1
 !    call Mak_GetLocalMesh_NodeBase1_all(mak,nparts,part,partID,mak_loc,indexNodeG2L,indexElmtG2L)
 !    do partID=1,nparts
-!    print *,myrank,'mak',mak%nn,mak%ne,nparts,partID
     call Mak_GetLocalMesh_NodeBase1_FrontISTR(mak,nparts,part,partID,mak_loc,indexNodeG2L,indexElmtG2L)
+
+    !print '(I3,A,20I4)',partID,'indexNodeG2L ',indexNodeG2L(:,partID)
+    !print '(I3,A,20I4)',partID,'indexElmtG2L ',indexElmtG2L(:,partID)
 
 
 !    call rtri_GetLocalMesh_all(hecMESH_G,mak_loc,part,partID,hecMESH_L,indexNodeG2L,indexElmtG2L)
@@ -228,7 +230,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
     call paraContact_CreateExportImport(hecMESH_L)
     if(myrank == 0) then
 !      write(*,'(A,I15,A,I15)')'number of edgecut :',objval,'/',size(adjncy)/2
-      write(*,'(A,A)')'Partition Method: ',actualPartMethod(1:6)
+      write(*,'(A,A)')'Partition Method: ',actualPartMethod
       write(*,'(A8,4A15)')' rankID','          nodes',' internal nodes','          elems',' internal elems'
     endif
 !
@@ -296,8 +298,10 @@ subroutine paraContact_GetFSTR2Makrose(hecMESH,mak)
         mak%etyp(i) = MAKROSE_PRI6
       case(361)
         mak%etyp(i) = MAKROSE_HEXA8
+      case(911:916,921:926,931:936,941:946,951:956,961:966)
+        mak%etyp(i) = hecMESH%elem_type(i)
       case default
-        print *,'Element type ID ',hecMESH%elem_type(i),' is not yet implemented for RTRI applications!'
+        print *,'Element type ID ',hecMESH%elem_type(i),' is not yet implemented!'
         stop
       end select
     enddo
@@ -323,6 +327,7 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
       if(etype /= mak%etyp(i)) then
           ntype = ntype + 1
           etype = mak%etyp(i)
+          counter(ntype) = counter(ntype) + 1
       else
         counter(ntype) = counter(ntype) + 1
       endif
@@ -345,8 +350,10 @@ subroutine paraContact_GetLocalElementType(mak,ntype,ptrtype,itemtype)
         itemtype(i) = 351
       case(MAKROSE_HEXA8)
         itemtype(i) = 361
+      case(911:916,921:926,931:936,941:946,951:956,961:966)
+        itemtype(i) = mak%etyp(ptrtype(i))
       case default
-        print *,'Element type ID ',mak%etyp(ptrtype(i)),' is not yet implemented for RTRI applications!'
+        print *,'Element type ID ',mak%etyp(ptrtype(i)),' is not yet implemented!'
         stop
       end select
     enddo
@@ -359,6 +366,10 @@ subroutine paraContact_MarkMasterNode(hecMESH,help)
   integer(kint)   ::  i,j,ic,ic_type,iss,mm,surf_grp_ID,node_grp_ID
 !
     help(:) = 0
+    if(hecMESH%contact_pair%n_pair == 0) then
+      help(:) = 1
+      return
+    endif
 !
     do i=1,hecMESH%contact_pair%n_pair
       surf_grp_ID = hecMESH%contact_pair%master_grp_id(i)
@@ -595,10 +606,7 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
            pid = min(pid,part(indexNodeO2G(hecMESH_L%global_node_ID(hecMESH_L%elem_node_item(j)))))
          endif
        enddo
-!       if(sameflag) then
-!         n = n + 1
-!         hecMESH_L%elem_internal_list(n) = i
-!       endif
+
        hecMESH_L%elem_ID(i*2) = pid - 1
        if(hecMESH_L%elem_ID(i*2) + 1 == partID) then
          n = n + 1
@@ -606,7 +614,6 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
          hecMESH_L%elem_ID((i-1)*2+1) = n
        else
          hecMESH_L%elem_ID((i-1)*2+1) = indexElmtG2L(indexElmtO2G(mak_loc%egid(i)),pid)
-!         hecMESH_L%elem_internal_list(n) = i
        endif
 
     enddo next_elem
@@ -614,7 +621,6 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     allocate(hecMESH_L%elem_internal_list(hecMESH_L%ne_internal),stat=istat)
     hecMESH_L%elem_internal_list(1:n) = temp(1:n)
     deallocate(temp,stat=istat)
-!    print *,'my_rank',partID-1, hecMESH_L%ne_internal,hecMESH_L%n_elem,hecMESH_L%nn_internal,hecMESH_L%n_node
 
     allocate(hecMESH_L%section_ID(hecMESH_L%n_elem),stat=istat)
     do i=1,hecMESH_L%n_elem
@@ -888,7 +894,8 @@ subroutine paraContact_GetLocalMesh_all_new(hecMESH_G,mak_loc,part,partID,hecMES
     call paraContact_copyHecmwSection(hecMESH_G%section,hecMESH_L%section)
 
 !-- MPC data (is not supported)
-    hecMESH_L%mpc%n_mpc = 0
+    !hecMESH_L%mpc%n_mpc = 0
+    call paraContact_copyHecmwMPC(hecMESH_G%mpc,hecMESH_L%mpc,indexNodeG2L(:,partID))
 
 !-- Amplitude data
     call paraContact_copyHecmwAmplitude(hecMESH_G%amp,hecMESH_L%amp)
@@ -1479,6 +1486,57 @@ subroutine paraContact_copyHecmwSection(sectIn,sectOut)
     endif
 
 end subroutine paraContact_copyHecmwSection
+
+subroutine paraContact_copyHecmwMPC(mpcIn,mpcOut,indexNodeG2L)
+  type(hecmwST_mpc),intent(in)    ::  mpcIn
+  type(hecmwST_mpc),intent(inout) ::  mpcOut
+  integer(kint), intent(in)       ::  indexNodeG2L(:)
+!
+  integer :: istat, n_item, i, is, ie, j
+
+    call hecmw_nullify_mpc(mpcOut)
+    mpcOut%n_mpc = 0
+    n_item = 0
+    if(mpcIn%n_mpc == 0) return
+    next1 : do i = 1, mpcIn%n_mpc
+      is = mpcIn%mpc_index(i-1) + 1
+      ie = mpcIn%mpc_index(i)
+      do j = is, ie
+        if(indexNodeG2L(mpcIn%mpc_item(j)) == 0) cycle next1
+      enddo
+      mpcOut%n_mpc = mpcOut%n_mpc + 1
+      n_item = n_item + ie - is + 1
+    enddo next1
+!
+    if(mpcOut%n_mpc == 0) return
+!
+    allocate(mpcOut%mpc_index(0:mpcOut%n_mpc), stat=istat)
+    allocate(mpcOut%mpc_item (n_item),         stat=istat)
+    allocate(mpcOut%mpc_dof  (n_item),         stat=istat)
+    allocate(mpcOut%mpc_val  (n_item),         stat=istat)
+    allocate(mpcOut%mpc_const(mpcOut%n_mpc),   stat=istat)
+!
+    mpcOut%n_mpc = 0
+    n_item = 0
+    mpcOut%mpc_index(0) = 0
+    next2 : do i = 1, mpcIn%n_mpc
+      is = mpcIn%mpc_index(i-1) + 1
+      ie = mpcIn%mpc_index(i)
+      do j = is, ie
+        if(indexNodeG2L(mpcIn%mpc_item(j)) == 0) cycle next2
+      enddo
+      mpcOut%n_mpc = mpcOut%n_mpc + 1
+      mpcOut%mpc_index(mpcOut%n_mpc) = mpcOut%mpc_index(mpcOut%n_mpc-1) + ie - is + 1
+      do j = is, ie
+        n_item = n_item + 1
+        mpcOut%mpc_item(n_item) = indexNodeG2L(mpcIn%mpc_item(j))
+        mpcOut%mpc_dof (n_item) = mpcIn%mpc_dof (j)
+        mpcOut%mpc_val (n_item) = mpcIn%mpc_val (j)
+      enddo
+      mpcOut%mpc_const(mpcOut%n_mpc) = mpcIn%mpc_const(i)
+    enddo next2
+    
+end subroutine paraContact_copyHecmwMPC
 
 subroutine paraContact_copyHecmwAmplitude(ampIn,ampOut)
   type(hecmwST_amplitude),intent(in)    ::  ampIn

@@ -413,7 +413,7 @@ function METIS_PartGraphRecursive                   &
     else
       part_ptr  = c_null_ptr
     endif
-
+    ierr = 0
     ierr = METIS_PartGraphRecursive_f                       &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
@@ -474,7 +474,7 @@ function METIS_PartGraphKway                        &
     else
       part_ptr  = c_null_ptr
     endif
-
+    ierr = 0
     ierr = METIS_PartGraphKway_f                            &
               (nvtxs,     xadj_ptr,   adjncy_ptr,           &
                vwgt_ptr,  adjwgt_ptr, wgtflag,    numflag,  &
