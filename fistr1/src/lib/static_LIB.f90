@@ -21,7 +21,6 @@ use m_solve_LINEQ
 use m_static_LIB_1d
 use m_static_LIB_2d
 use m_static_LIB_3d
-use m_static_LIB_3d_vp
 use m_static_LIB_C3D8
 use m_static_LIB_3dIC
 

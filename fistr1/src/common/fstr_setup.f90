@@ -498,18 +498,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  stop
               endif
             endif
-          else if( header_name == '!FLUID' ) then
-            if( c_material >0 ) then
-               if( fstr_ctrl_get_FLUID( ctrl,                                        &
-                                        fstrSOLID%materials(cid)%mtype,       &
-                                        fstrSOLID%materials(cid)%nlgeom_flag, &
-                                        fstrSOLID%materials(cid)%variables,   &
-                                        fstrSOLID%materials(cid)%dict)/=0 ) then
-                 write(*,*) '### Error: Fail in read in fluid definition : ' , cid
-                 write(ILOG,*) '### Error: Fail in read in fluid definition : ', cid
-                 stop
-              endif
-            endif
           else if( header_name == '!PLASTIC' ) then
             if( cid >0 ) then
                if( fstr_ctrl_get_PLASTICITY( ctrl,                                        &
