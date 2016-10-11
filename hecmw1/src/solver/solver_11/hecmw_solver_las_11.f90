@@ -118,8 +118,11 @@ contains
 
     Tcomm = 0.d0
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
-      call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
-      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
+    if (bnorm2 == 0.d0) then
+      bnorm2 = 1.d0
+    endif
+    call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+    call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     hecmw_rel_resid_L2_11 = sqrt(rnorm2 / bnorm2)
 

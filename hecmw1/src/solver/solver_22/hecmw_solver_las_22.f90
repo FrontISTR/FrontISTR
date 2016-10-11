@@ -129,6 +129,9 @@ contains
 
     Tcomm = 0.d0
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+    if (bnorm2 == 0.d0) then
+      bnorm2 = 1.d0
+    endif
     call hecmw_matresid_22(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
