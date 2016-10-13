@@ -120,7 +120,7 @@ module m_solve_LINEQ_mkl
       real(kind=kreal)                          :: ddum
       real(kind=kreal), allocatable            :: x(:)           !< solution vector
 
-      call hecmw_mat_ass_equation(hecMESH, hecMAT)
+      !call hecmw_mat_ass_equation(hecMESH, hecMAT)
       call hecmw_mat_dump(hecMAT, hecMESH)
 
       call initialize_solver_mkl(hecMAT,fstrMAT)

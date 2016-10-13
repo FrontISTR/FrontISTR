@@ -461,6 +461,7 @@
           !integer(kind=kint ), pointer:: IVECT(:), ICHK(:)
           integer(kind=kint ), dimension(100) :: Iarray
           real   (kind=kreal), dimension(100) :: Rarray
+          real   (kind=kreal)                 :: ALPHA = 0.0D0 ! save maximum diagonal item in hecMAT%D(* penalty)
           !real   (kind=kreal) :: RESIDactual
 !          type(hecmwST_matrix_comm) :: comm
           type(hecmwST_matrix_contact) :: cmat

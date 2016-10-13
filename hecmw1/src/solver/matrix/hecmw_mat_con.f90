@@ -44,6 +44,7 @@ module hecmw_matrix_con
       call hecmw_mat_con0  (hecMESH, hecMAT)
       call hecmw_mat_con1  (         hecMAT)
       call hecmw_cmat_init (hecMAT%cmat)
+      print *,'hecmw_cmat_init', hecMAT%cmat%n_val
 
    end subroutine hecmw_mat_con
 !C

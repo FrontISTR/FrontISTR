@@ -159,6 +159,12 @@ contains
 !C-- matrix [KL]
 
       call fstr_mat_ass_main (hecMESH, hecMAT, fstrSOLID)
+      ! Set MPC equation penalty matrix
+      if(hecMAT%Iarray(99) >= 2) then
+        call hecmw_mat_set_penalized_b(hecMAT, 1)
+        call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      endif
+
 
     do j = 1 ,nn*hecMAT%NP
       MAT0%D(j)   = hecMAT%D(j)
@@ -283,6 +289,14 @@ contains
         hecMAT%B(j) = hecMAT%B(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j) + fstrDYNAMIC%ray_m*  &
                     fstrDYNAMIC%VEC2(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
       end do
+
+      ! Set MPC equation before BC for direct solvers
+      if(hecMAT%Iarray(99) >= 2) then
+        do j = 1, hecMESH%n_node*ndof
+          hecMAT%X(j) = fstrDYNAMIC%DISP(j,2)
+        enddo
+        call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      endif
 
 !C ********************************************************************************
 !C for couple analysis

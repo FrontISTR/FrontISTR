@@ -212,6 +212,14 @@ contains
 		     + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
          end do
 
+         ! Set MPC equation before BC for direct solvers
+         if(hecMAT%Iarray(99) >= 2) then
+           do j = 1, hecMESH%n_node*ndof
+             hecMAT%X(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
+           enddo
+           call hecmw_mat_ass_equation( hecMESH, hecMAT )
+         endif
+
 !C ********************************************************************************
 !C for couple analysis
          if( fstrPARAM%fg_couple == 1) then
@@ -644,6 +652,15 @@ contains
              hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
            end do
+
+           ! Set MPC equation before BC for direct solvers
+           if(hecMAT%Iarray(99) >= 2) then
+             do j = 1, hecMESH%n_node*ndof
+               hecMAT%X(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
+             enddo
+             call hecmw_mat_ass_equation( hecMESH, hecMAT )
+           endif
+
            do j = 1 ,nn*hecMAT%NP
              hecMAT%D(j)  = c1* hecMAT%D(j)
            end do

@@ -59,6 +59,7 @@ module m_dynamic_mat_ass_load
       real(kind=kreal) :: f_t
 
       ndof = hecMAT%NDOF
+      call hecmw_mat_clear_b( hecMAT )
       hecMAT%B(:) = 0.0d0
 !C
 !C CLOAD

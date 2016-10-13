@@ -81,6 +81,14 @@ module m_static_mat_ass
 
       ENDIF
 
+      ! Set MPC equation before BC for direct solvers
+      if(hecMAT%Iarray(99) >= 2) then
+        do i = 1, hecMESH%n_node*ndof
+          hecMAT%X(i) = fstrSOLID%unode(i)
+        enddo
+        call hecmw_mat_ass_equation( hecMESH, hecMAT )
+      endif
+
       call fstr_AddBC(1, 1, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,1)
       write(IDBG,*) 'fstr_mat_ass_bc: OK'
 !C

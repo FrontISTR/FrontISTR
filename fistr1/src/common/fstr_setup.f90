@@ -882,6 +882,8 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
         fstrSOLID%n_fix_mpc = hecMESH%mpc%n_mpc
         if( fstrSOLID%n_fix_mpc>0 ) then
           allocate( fstrSOLID%mpc_const( fstrSOLID%n_fix_mpc ) )
+          allocate( fstrSOLID%mpc_lamda( fstrSOLID%n_fix_mpc ) )
+          fstrSOLID%mpc_lamda(:) = 0.0D0
           fstrSOLID%mpc_const(:) = hecMESH%mpc%mpc_const(:)
         endif
 
@@ -961,6 +963,9 @@ subroutine fstr_solid_finalize( fstrSOLID )
         deallocate( fstrSOLID%elements )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
+        endif
+        if( associated( fstrSOLID%mpc_lamda ) ) then
+          deallocate( fstrSOLID%mpc_lamda )
         endif
         if( associated(fstrSOLID%step_ctrl) ) then
           do i=1,size(fstrSOLID%step_ctrl)

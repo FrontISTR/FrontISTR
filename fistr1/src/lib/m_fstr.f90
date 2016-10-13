@@ -365,6 +365,7 @@ public
                 type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
+                real(kind=kreal), pointer :: mpc_lamda(:)  =>null()  !< augmented lagrange multiplier update
 !
         end type fstr_solid
 !

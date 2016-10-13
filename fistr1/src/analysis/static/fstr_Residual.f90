@@ -37,7 +37,7 @@ module m_fstr_Residual
   contains
 
 !C---------------------------------------------------------------------*
-      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT)
+      subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,iter,conMAT)
 !C---------------------------------------------------------------------*
 !> In this subroutine, nodal force arose from prescribed displacement constarints
 !> are cleared and nodal force residual is calculated.
@@ -54,6 +54,7 @@ module m_fstr_Residual
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
       type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
+      integer(kint), intent(in)            :: iter
       type (hecmwST_matrix),intent(inout),optional  :: conMAT
 !    Local variables
       integer(kind=kint) ndof,idof,num
@@ -73,7 +74,11 @@ module m_fstr_Residual
       call uResidual( cstep, factor, hecMAT%B )
 
 !    Consider EQUATION condition
-      call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+      if(hecMAT%Iarray(99) >= 2) then
+        call fstr_Update_NDForce_MPC_penalty( hecMESH, hecMAT, fstrSOLID, iter )
+      else
+        call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+      endif
 
 !    Consider SPC condition
       call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
@@ -120,6 +125,59 @@ module m_fstr_Residual
         enddo
       enddo
       end subroutine fstr_Update_NDForce_MPC
+
+      subroutine fstr_Update_NDForce_MPC_penalty( hecMESH, hecMAT, fstrSOLID, iter )
+      use m_fstr
+      use hecmw_matrix_misc
+      type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+      type (hecmwST_matrix),intent(inout), target  :: hecMAT   !< linear equation, its right side modified here
+      type (fstr_solid), intent(inout)     :: fstrSOLID
+      integer(kint), intent(in)            :: iter
+!    Local variables
+      integer(kind=kint) ndof,ig0,iS0,iE0,ik,i,j,inod,idof,jnod,jdof
+      real(kind=kreal) :: rhs, lambda,ai,aj,a1_2inv,factor, ALPHA,ci
+      real(kind=kreal), pointer :: penalty
+
+      penalty => hecMAT%Rarray(11)
+
+      if (penalty < 0.0) stop "ERROR: negative penalty"
+      if (penalty < 1.0) write(*,*) "WARNING: penalty ", penalty, " smaller than 1"
+
+      ALPHA= hecMAT%ALPHA
+
+      ndof = hecMESH%n_dof
+      do ig0=1,hecMESH%mpc%n_mpc
+        iS0= hecMESH%mpc%mpc_index(ig0-1)+1
+        iE0= hecMESH%mpc%mpc_index(ig0)
+        a1_2inv = 1.0D0 / hecMESH%mpc%mpc_val(iS0)**2
+
+        ci = -hecMESH%mpc%mpc_const(ig0)
+        ci = ci * fstrSOLID%factor(2)
+        do j = iS0, iE0
+          jnod = hecMESH%mpc%mpc_item(j)
+          jdof = hecMESH%mpc%mpc_dof(j)
+          aj = hecMESH%mpc%mpc_val(j)
+          ci = ci + aj*hecMAT%X(ndof*(jnod-1)+jdof)
+        enddo
+        if(iter == 1) then
+          fstrSOLID%mpc_lamda(ig0) = ci*ALPHA
+        else
+          fstrSOLID%mpc_lamda(ig0) = fstrSOLID%mpc_lamda(ig0) + ci*ALPHA
+        endif
+        !print '(I4,A,3ES20.12)',ig0,' lamda/ci/sum', fstrSOLID%mpc_lamda(ig0), ci*ALPHA, fstrSOLID%mpc_lamda(ig0)+ci*ALPHA
+
+        do i = iS0, iE0
+          inod = hecMESH%mpc%mpc_item(i)
+          idof = hecMESH%mpc%mpc_dof(i)
+          ai = hecMESH%mpc%mpc_val(i)
+          factor = ai * a1_2inv
+          hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) - (fstrSOLID%mpc_lamda(ig0)+ci*ALPHA)*factor
+          !hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) - (ci*ALPHA)*factor
+
+        enddo
+      enddo
+      call hecmw_mat_set_penalized_b(hecMAT, 1)
+      end subroutine fstr_Update_NDForce_MPC_penalty
 
       subroutine fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, B )
       use m_fstr

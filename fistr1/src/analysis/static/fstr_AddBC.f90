@@ -102,6 +102,7 @@ module m_fstr_AddBC
 
 !
 !   ------ Equation boundary conditions
+      if(hecMAT%Iarray(99) >= 2) return
       do ig0=1,fstrSOLID%n_fix_mpc
           if( fstrSOLID%mpc_const(ig0) == 0.d0 ) cycle
       ! we need to confirm if it is active in curr step here

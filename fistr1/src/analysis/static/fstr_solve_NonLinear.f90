@@ -112,6 +112,12 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
+      ! Set MPC equation before BC for direct solvers
+      if(hecMAT%Iarray(99) >= 2) then
+        call hecmw_mat_set_penalized_b(hecMAT, 1)
+        call hecmw_mat_ass_equation( hecMESH, hecMAT ) ! , fstrSOLID%factor(2), fstrSOLID%mpc_lamda)
+      endif
+
       ! ----- Set Boundary condition
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
 
@@ -143,11 +149,16 @@ subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
       ! ----- update the strain, stress, and internal force
       call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, tincr, iter)
 
+      ! Save current disp into hecMAT%X temporarily for MPC rhs calculation
+      do i = 1, hecMESH%n_node*ndof
+        hecMAT%X(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+      enddo
+
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 )                                  &
        call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
-      call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+      call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, iter)
       res = fstr_get_residual(hecMAT%B, hecMESH)
 
       ! ----- Gather global residual
@@ -354,7 +365,7 @@ subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         if( fstrSOLID%DLOAD_follow /= 0 )                                 &
          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, iter )
 
         if( fstr_is_contact_active() ) then
           call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
@@ -591,6 +602,12 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
           endif
         endif
 
+        ! Set MPC equation before BC for direct solvers
+        if(hecMAT%Iarray(99) >= 2) then
+          call hecmw_mat_set_penalized_b(hecMAT, 1)
+          call hecmw_mat_ass_equation( hecMESH, hecMAT)
+        endif
+
         ! ----- Set Boundary condition
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
@@ -646,11 +663,16 @@ subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM
         ! ----- update the strain, stress, and internal force (only QFORCE)
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID,tincr,iter)
 
+        ! Save current disp into hecMAT%X temporarily for MPC rhs calculation
+        do i = 1, hecMESH%n_node*ndof
+          hecMAT%X(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+        enddo
+
         ! ----- Set residual
         if(paraContactFlag.and.present(conMAT)) then
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,iter,conMAT  )
         else
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
+          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,iter)
         endif
 
         if( fstr_is_contact_active() )  then
