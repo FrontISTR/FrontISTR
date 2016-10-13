@@ -217,7 +217,7 @@ contains
            do j = 1, hecMESH%n_node*ndof
              hecMAT%X(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
            enddo
-           call hecmw_mat_ass_equation( hecMESH, hecMAT )
+           call hecmw_mat_ass_equation( hecMESH, hecMAT, mpc_lamda=fstrSOLID%mpc_lamda, iter=iter )
          endif
 
 !C ********************************************************************************
@@ -658,7 +658,7 @@ contains
              do j = 1, hecMESH%n_node*ndof
                hecMAT%X(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
              enddo
-             call hecmw_mat_ass_equation( hecMESH, hecMAT )
+             call hecmw_mat_ass_equation( hecMESH, hecMAT, mpc_lamda=fstrSOLID%mpc_lamda, iter=iter )
            endif
 
            do j = 1 ,nn*hecMAT%NP

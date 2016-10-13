@@ -41,7 +41,6 @@ contains
     integer(kind=kint) :: istat,myrank
     real(kind=kreal) :: t1,t2,t3
 
-    print *,'hecmw_solve_direct_MUMPS'
     !call hecmw_mat_ass_equation( hecMESH, hecMAT )
     call hecmw_mat_dump(hecMAT, hecMESH)
 

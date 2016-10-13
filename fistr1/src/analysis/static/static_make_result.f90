@@ -191,7 +191,11 @@ module m_static_make_result
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
+         if( size(fstrSOLID%elements(i)%gausses) .lt. ngauss ) then
+          work(i) = 0.0D0
+         else
           work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+         endif
         enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo

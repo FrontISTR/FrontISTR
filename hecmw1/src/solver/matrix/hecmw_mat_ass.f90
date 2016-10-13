@@ -184,18 +184,19 @@ module hecmw_matrix_ass
 !C*** MAT_ASS_EQUATION
 !C***
 !C
-   subroutine hecmw_mat_ass_equation ( hecMESH, hecMAT, f, mpc_lamda )
+   subroutine hecmw_mat_ass_equation ( hecMESH, hecMAT, f, mpc_lamda, iter )
       type (hecmwST_matrix), target :: hecMAT
       type (hecmwST_local_mesh)     :: hecMESH
       real (kreal), intent(in),optional :: f
       real (kreal), intent(inout), optional :: mpc_lamda(:)
+      integer (kint), intent(in),  optional :: iter
       !** Local variables
       real(kind=kreal), pointer :: penalty
       real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor, ci
       integer(kind=kint) :: NDIAG, impc, iS, iE, i, j, inod, idof, jnod, jdof, ndof
       logical :: is_internal_i, is_internal_j
 
-      print *,'penalty',hecmw_mat_get_penalized(hecMAT),hecmw_mat_get_penalized_b(hecMAT)
+      !print *,'penalty',hecmw_mat_get_penalized(hecMAT),hecmw_mat_get_penalized_b(hecMAT)
       if( hecmw_mat_get_penalized(hecMAT) == 1 .and. hecmw_mat_get_penalized_b(hecMAT) == 1) return
 
       ! write(*,*) "INFO: imposing MPC by penalty"
@@ -229,7 +230,17 @@ module hecmw_matrix_ass
             aj = hecMESH%mpc%mpc_val(j)
             ci = ci + aj*hecMAT%X(ndof*(jnod-1)+jdof)
           enddo
-          if(present(mpc_lamda)) mpc_lamda(impc) = ci*ALPHA
+          if(present(mpc_lamda)) then
+            if(present(iter)) then
+              if(iter == 1) then
+                mpc_lamda(impc) = ci*ALPHA
+              else
+                mpc_lamda(impc) = mpc_lamda(impc) + ci*ALPHA
+              endif
+            else
+              mpc_lamda(impc) = ci*ALPHA
+            endif
+          endif
         endif
 
         do i = iS, iE
@@ -259,7 +270,11 @@ module hecmw_matrix_ass
             !ci = hecMESH%mpc%mpc_const(impc)
 !$omp atomic
             !hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
-            hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) - ci*factor*ALPHA
+            if(present(mpc_lamda)) then
+              hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) - (mpc_lamda(impc) + ci*ALPHA)*factor
+            else
+              hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) - ci*factor*ALPHA
+            endif
           endif
         enddo
       enddo
