@@ -103,7 +103,7 @@ module m_solve_LINEQ_contact
       resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
       if (myrank==0) then
         write(*,*) ' maximum residual = ', resid
-        if( resid >= 1.0d-8) then
+        if( hecMAT%Iarray(99)/=1 .and. resid >= 1.0d-8) then
           write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
 !          stop
         endif
