@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Library                                           !
-!                                                                      !
-!            Written by Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module provides function to check input data of IFSTR solver
 module m_fstr_precheck
    contains
@@ -375,7 +365,7 @@ module m_fstr_precheck
     integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
     real(kind=kreal) :: rnum, dens, cond
     character :: fileid*3
-  
+
     fio = 70 + hecMESH%my_rank
     write(fileid,"(i3.3)")hecMESH%my_rank
 
