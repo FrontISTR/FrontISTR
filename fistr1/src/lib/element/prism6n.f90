@@ -1,26 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by X. YUAN                                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!!======================================================================!
-!                                                                      !
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module contains functions for interpolation in 6 node
 !!    prism element  (Langrange  interpolation)
-!                                                                      !
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/04/27
-!>  \version    0.00
-!======================================================================!
-
 module shape_prism6n
   integer, parameter, private :: kreal = kind(0.0d0)
 
