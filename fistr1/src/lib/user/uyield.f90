@@ -1,25 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This subroutine read in used-defined material properties
 !>  tangent
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/01/12
-!>  \version    0.00
-!======================================================================!
-
 !> This subroutine calculates elastoplastic constitutive relation
 subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, D  )
      use hecmw
@@ -29,7 +13,6 @@ subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, D  )
      INTEGER, INTENT(IN)           :: istat     !< plastic state
      REAL(KIND=kreal), INTENT(IN)  :: fstat(:)  !< plastic strain, back stress
      REAL(KIND=kreal), INTENT(OUT) :: D(:,:)    !< strain-stress relation
-
 end subroutine
 
 !> This subroutine does backward-Euler return calculation
