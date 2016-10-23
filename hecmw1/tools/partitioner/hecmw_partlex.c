@@ -1,3 +1,8 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
 #define yy_create_buffer HECMW_part_create_buffer
 #define yy_delete_buffer HECMW_part_delete_buffer
 #define yy_scan_buffer HECMW_part_scan_buffer
