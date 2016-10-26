@@ -97,8 +97,10 @@ module m_fstr_NonLinearMethod
 
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+      call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
       ! ----- Set Boundary condition
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
 
       !----- SOLVE [Kt]{du}={R}
@@ -111,6 +113,7 @@ module m_fstr_NonLinearMethod
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
       if( hecMESH%n_dof == 3 ) then

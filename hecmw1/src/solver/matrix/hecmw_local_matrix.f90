@@ -162,13 +162,12 @@ contains
   end subroutine hecmw_localmat_free
 
   subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, &
-       iwS, num_lagrange, hecTKT)
+       iwS, num_lagrange)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
-    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTtKT
 
     ! perform three matrices multiplication for elimination
@@ -181,8 +180,8 @@ contains
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! make new HECMW matrix
-    call make_new_hecmat(hecMAT, BTtKT, hecTKT)
+    ! set new values to HECMW matrix
+    call set_to_hecmat(hecMAT, BTtKT)
     call hecmw_localmat_free(BTtKT)
   end subroutine hecmw_trimatmul_TtKT
 
@@ -609,6 +608,34 @@ contains
     enddo
   end subroutine make_new_hecmat
 
+  subroutine set_to_hecmat(hecMAT, BTtKT)
+    implicit none
+    type(hecmwST_matrix), intent(inout) :: hecMAT
+    type(hecmwST_local_matrix), intent(in) :: BTtKT
+    integer(kind=kint) :: nr, nc, ndof, ndof2, i
+
+    if (associated(hecMAT%indexL_org2)) then
+      stop 'ERROR: too many matrix backups'
+    endif
+    if (associated(hecMAT%indexL_org1)) then
+      hecMAT%indexL_org2 => hecMAT%indexL_org1
+      hecMAT%indexU_org2 => hecMAT%indexU_org1
+      hecMAT%itemL_org2 => hecMAT%itemL_org1
+      hecMAT%itemU_org2 => hecMAT%itemU_org1
+    endif
+    hecMAT%indexL_org1 => hecMAT%indexL
+    hecMAT%indexU_org1 => hecMAT%indexU
+    hecMAT%itemL_org1 => hecMAT%itemL
+    hecMAT%itemU_org1 => hecMAT%itemU
+
+    allocate(hecMAT%indexL(0:hecMAT%NP))
+    allocate(hecMAT%indexU(0:hecMAT%NP))
+    hecMAT%itemL => null()
+    hecMAT%itemU => null()
+
+    call replace_hecmat(hecMAT, BTtKT)
+  end subroutine set_to_hecmat
+
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: BTmat
@@ -653,11 +680,10 @@ contains
 !$omp end parallel
   end subroutine hecmw_localmat_mulvec
 
-  subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
+  subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in) :: hecMAT
-    type (hecmwST_matrix), intent(inout) :: hecTKT
+    type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_matrix) :: BTmat, BTtmat
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: n_mpc, ndof
@@ -682,7 +708,7 @@ contains
     ! endif
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
-    call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
+    call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc)
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
     ! call hecmw_localmat_free(BTtmat2)

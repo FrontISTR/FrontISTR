@@ -44,7 +44,6 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    type (hecmwST_matrix) :: hecMATmpc
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
     real(kind=kreal)::t_max,t_min,t_avg,t_sd
@@ -71,14 +70,7 @@ contains
       call hecmw_matvec_set_mpcmatvec_flg(hecMAT%NDOF, .true.)  !!! TODO: should this be here or in trans_rhs??
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
-      !if (hecMAT%Iarray(97)>=1) then
-      !allocate(hecMATmpc)
-      call hecmw_mat_init(hecMATmpc)
-      call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecMATmpc)
-      !endif
-      call hecmw_mat_finalize(hecMAT)
-      call hecmw_mat_substitute(hecMAT, hecMATmpc)
-      !deallocate(hecMATmpc)
+      call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT)
     end select
 
   end subroutine hecmw_mpc_mat_ass

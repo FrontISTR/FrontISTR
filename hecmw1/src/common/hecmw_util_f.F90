@@ -450,6 +450,8 @@
           !real(kind=kreal), pointer :: ALUG_L(:), ALUG_U(:)
           integer(kind=kint), pointer :: indexL(:), indexU(:), indexCL(:), indexCU(:)
           integer(kind=kint), pointer ::  itemL(:),  itemU(:), itemCL(:),  itemCU(:)
+          integer(kind=kint), pointer :: indexL_org1(:), indexU_org1(:), itemL_org1(:), itemU_org1(:)
+          integer(kind=kint), pointer :: indexL_org2(:), indexU_org2(:), itemL_org2(:), itemU_org2(:)
           !integer(kind=kint), pointer :: INL  (:), INU  (:)  ! used only in mat_con
           !integer(kind=kint), pointer :: INLmc(:), INUmc(:)
           !integer(kind=kint), pointer :: IAL  (:,:), IAU  (:,:)  ! used only in mat_con
@@ -855,6 +857,14 @@
         nullify( P%indexCU )
         nullify( P%itemCL )
         nullify( P%itemCU )
+        nullify( P%indexL_org1 )
+        nullify( P%indexU_org1 )
+        nullify( P%itemL_org1 )
+        nullify( P%itemU_org1 )
+        nullify( P%indexL_org2 )
+        nullify( P%indexU_org2 )
+        nullify( P%itemL_org2 )
+        nullify( P%itemU_org2 )
         !nullify( P%INL   )
         !nullify( P%INU   )
         !nullify( P%INLmc )

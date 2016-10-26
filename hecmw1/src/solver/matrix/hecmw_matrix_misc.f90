@@ -25,6 +25,38 @@ module hecmw_matrix_misc
   subroutine hecmw_mat_clear( hecMAT )
     implicit none
     type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: ndof, ndof2
+
+    if (associated(hecMAT%indexL_org1)) then
+      if (associated(hecMAT%indexL_org2)) then
+        hecMAT%indexL => hecMAT%indexL_org2
+        hecMAT%indexU => hecMAT%indexU_org2
+        hecMAT%itemL => hecMAT%itemL_org2
+        hecMAT%itemU => hecMAT%itemU_org2
+      else
+        hecMAT%indexL => hecMAT%indexL_org1
+        hecMAT%indexU => hecMAT%indexU_org1
+        hecMAT%itemL => hecMAT%itemL_org1
+        hecMAT%itemU => hecMAT%itemU_org1
+      endif
+      hecMAT%indexL_org2 => null()
+      hecMAT%indexU_org2 => null()
+      hecMAT%itemL_org2 => null()
+      hecMAT%itemU_org2 => null()
+      hecMAT%indexL_org1 => null()
+      hecMAT%indexU_org1 => null()
+      hecMAT%itemL_org1 => null()
+      hecMAT%itemU_org1 => null()
+
+      hecMAT%NPL = hecMAT%indexL(hecMAT%NP)
+      hecMAT%NPU = hecMAT%indexU(hecMAT%NP)
+      if (associated(hecMAT%AL)) deallocate(hecMAT%AL)
+      if (associated(hecMAT%AU)) deallocate(hecMAT%AU)
+      ndof = hecMAT%ndof
+      ndof2 = ndof * ndof
+      allocate(hecMAT%AL(hecMAT%NPL * ndof2))
+      allocate(hecMAT%AU(hecMAT%NPU * ndof2))
+    endif
 
     hecMAT%D = 0.0d0
     hecMAT%AL = 0.0d0
