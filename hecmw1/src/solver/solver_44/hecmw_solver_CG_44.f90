@@ -101,8 +101,8 @@
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
 
-      call hecmw_mpc_scale(hecMESH)
-      write (*,'(a)') '### hecmw_mpc_scale_finished'
+      call hecmw_mpc_scale_44(hecMESH)
+      write (*,'(a)') '### hecmw_mpc_scale_44_finished'
 
 !C
 !C-- SCALING

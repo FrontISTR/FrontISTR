@@ -710,7 +710,10 @@ contains
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
       call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
     else
-      call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
+      call fstr_mat_ass(hecMESH, hecMAT, fstrSOLID)
+      call fstr_mat_ass_load(hecMESH, hecMAT, myEIG, fstrSOLID)
+      call fstr_mat_ass_bc(hecMESH, hecMAT, fstrSOLID)
+      call fstr_mat_ass_check_rhs(hecMESH, hecMAT, myEIG)
     endif
     if( myrank == 0 ) then
        write(IMSG,*) 'fstr_mat_ass: OK'

@@ -604,6 +604,7 @@ contains
 
     ! copy internal part only
     do i=1,hecMAT%N*ndof
+      hecTKT%B(i)=hecMAT%B(i)
       hecTKT%X(i)=hecMAT%X(i)
     enddo
   end subroutine make_new_hecmat

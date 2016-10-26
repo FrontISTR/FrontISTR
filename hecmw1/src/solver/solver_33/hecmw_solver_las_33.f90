@@ -29,7 +29,6 @@ module hecmw_solver_las_33
   public :: hecmw_Tvec_33
   public :: hecmw_Ttvec_33
   public :: hecmw_TtmatTvec_33
-  public :: hecmw_mpc_scale
   public :: hecmw_trans_b_33
   public :: hecmw_tback_x_33
   public :: hecmw_matvec_33_clear_timer
@@ -537,34 +536,6 @@ contains
 
   !C
   !C***
-  !C*** hecmw_mpc_scale
-  !C***
-  !C
-  subroutine hecmw_mpc_scale(hecMESH)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    integer(kind=kint) :: i, j, k
-    real(kind=kreal) :: WVAL
-
-!$omp parallel default(none),private(i,j,k,WVAL),shared(hecMESH)
-!$omp do
-    do i = 1, hecMESH%mpc%n_mpc
-      k = hecMESH%mpc%mpc_index(i-1)+1
-      WVAL = 1.d0 / hecMESH%mpc%mpc_val(k)
-      hecMESH%mpc%mpc_val(k) = 1.d0
-      do j = hecMESH%mpc%mpc_index(i-1)+2, hecMESH%mpc%mpc_index(i)
-        hecMESH%mpc%mpc_val(j) = hecMESH%mpc%mpc_val(j) * WVAL
-      enddo
-      hecMESH%mpc%mpc_const(i) = hecMESH%mpc%mpc_const(i) * WVAL
-    enddo
-!$omp end do
-!$omp end parallel
-
-  end subroutine hecmw_mpc_scale
-
-  !C
-  !C***
   !C*** hecmw_trans_b_33
   !C***
   !C
@@ -580,6 +551,7 @@ contains
     real(kind=kreal), allocatable :: W(:)
     real(kind=kreal), pointer :: XG(:)
     integer(kind=kint) :: i, k, kk
+    logical :: flg_bak
 
     allocate(W(hecMESH%n_node * 3))
 
@@ -603,7 +575,10 @@ contains
 !$omp end parallel
 
     !C-- {w} = {b} - [A]{xg}
+    flg_bak = mpcmatvec_flg
+    mpcmatvec_flg = .false.
     call hecmw_matresid_33 (hecMESH, hecMAT, XG, B, W, COMMtime)
+    mpcmatvec_flg = flg_bak
 
     !C-- {bt} = [T'] {w}
     call hecmw_Ttvec_33(hecMESH, W, BT, COMMtime)

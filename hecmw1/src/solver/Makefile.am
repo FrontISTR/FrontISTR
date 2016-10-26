@@ -19,6 +19,7 @@ install-header:
 	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
+	@cd mpc           && $(MAKE) @build_target@
 
 clean:
 	@cd communication && $(MAKE) clean
@@ -35,6 +36,7 @@ clean:
 	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
+	@cd mpc           && $(MAKE) clean
 
 distclean:
 	@cd communication && $(MAKE) distclean
@@ -51,6 +53,7 @@ distclean:
 	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
+	@cd mpc           && $(MAKE) distclean
 
 maintainer-clean:
 	@cd communication && $(MAKE) maintainer-clean
@@ -67,6 +70,7 @@ maintainer-clean:
 	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
+	@cd mpc           && $(MAKE) maintainer-clean
 
 install:
 	@cd communication && $(MAKE) install
@@ -83,3 +87,4 @@ install:
 	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install
+	@cd mpc           && $(MAKE) install

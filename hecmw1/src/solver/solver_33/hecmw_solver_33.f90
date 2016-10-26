@@ -32,11 +32,8 @@ contains
     use hecmw_solver_GPBiCG_33
     use m_hecmw_solve_error
     use m_hecmw_comm_f
-    use hecmw_matrix_ass
-    use hecmw_matrix_contact
     use hecmw_solver_las_33
     use hecmw_precond_33
-    use hecmw_local_matrix
     use hecmw_matrix_misc
     use hecmw_matrix_dump
     use hecmw_solver_misc
@@ -55,19 +52,12 @@ contains
 
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal) :: TIME_setup, TIME_comm, TIME_sol, TR
-    real(kind=kreal) :: time_Ax, time_precond, time_dumm
-    real(kind=kreal) :: S_TIME, E_TIME, TIME_mpc_pre, TIME_mpc_post
+    real(kind=kreal) :: time_Ax, time_precond
     real(kind=kreal),    dimension(1) :: RHS
     integer (kind=kint), dimension(1) :: IFLAG
 
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
-
-    type (hecmwST_matrix), pointer, save :: hecTKT
-    logical, save :: first_call = .true.
-    integer(kind=kint) :: totalmpc, MPC_METHOD
-    real(kind=kreal), allocatable :: Btmp(:)
-    real(kind=kreal)::t_max,t_min,t_avg,t_sd
 
     integer(kind=kint) :: auto_sigma_diag
 
@@ -118,11 +108,6 @@ contains
       RHS(1)= RHS(1) + hecMAT%B(3*i-2)**2 + hecMAT%B(3*i-1)**2       &
            &                   + hecMAT%B(3*i  )**2
     enddo
-    if (hecMESH%mpc%n_mpc > 0) then
-      do i= 1, hecMESH%mpc%n_mpc
-        RHS(1)= RHS(1) + hecMESH%mpc%mpc_const(i)**2
-      enddo
-    endif
     call hecmw_allreduce_R (hecMESH, RHS, 1, hecmw_sum)
 
     if (RHS(1).eq.0.d0) then
@@ -175,79 +160,16 @@ contains
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
-    !C===
-    !C +-------------+
-    !C | MPC Preproc |
-    !C +-------------+
-    !C===
-    totalmpc = hecMESH%mpc%n_mpc
-    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-
-    S_TIME= HECMW_WTIME()
-
-    if (totalmpc > 0) then
-      call hecmw_mpc_scale(hecMESH)
-
-      MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-      if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
-
-      if (MPC_METHOD == 1) then  ! penalty
-        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Penalty"
-        call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-        hecTKT => hecMAT
-      else if (MPC_METHOD == 2) then  ! MPCCG
-        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: MPC-CG"
-        call hecmw_matvec_33_set_mpcmatvec_flg (.true.)
-        allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
-        do i=1,hecMAT%NP * hecMAT%NDOF
-          Btmp(i) = hecMAT%B(i)
-        enddo
-        call hecmw_trans_b_33(hecMESH, hecMAT, Btmp, hecMAT%B, time_dumm)
-        hecTKT => hecMAT
-      else if (MPC_METHOD == 3) then  ! elimination
-        !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
-        if (hecMAT%Iarray(97)>=1) then
-          if (first_call) then
-            allocate(hecTKT)
-            first_call = .false.
-          else
-            call hecmw_mat_finalize(hecTKT)
-          endif
-          call hecmw_mat_init(hecTKT)
-          call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
-        endif
-        call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, hecTKT%B, time_dumm)
-      endif
-    else
-      hecTKT => hecMAT
-    endif
-
     !C
     !C-- RECYCLE SETTING OF PRECONDITIONER
     call hecmw_mat_recycle_precond_setting(hecMAT)
 
-    E_TIME= HECMW_WTIME()
-    if (TIMElog.eq.2) then
-      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
-           t_max, t_min, t_avg, t_sd)
-      if (hecMESH%my_rank.eq.0) then
-        write(*,*) 'Time MPC pre'
-        write(*,*) '  Max     :',t_max
-        write(*,*) '  Min     :',t_min
-        write(*,*) '  Avg     :',t_avg
-        write(*,*) '  Std Dev :',t_sd
-      endif
-      TIME_mpc_pre = t_max
-    else
-      TIME_mpc_pre = E_TIME - S_TIME
-    endif
-
     ! exchange diagonal elements of overlap region
-    !call hecmw_mat_diag_sr_33(hecMESH, hecTKT)
+    !call hecmw_mat_diag_sr_33(hecMESH, hecMAT)
 
-    call hecmw_mat_dump(hecTKT, hecMESH)
+    call hecmw_mat_dump(hecMAT, hecMESH)
 
-    call hecmw_matvec_33_set_async(hecTKT)
+    call hecmw_matvec_33_set_async(hecMAT)
 
     !C===
     !C +------------------+
@@ -257,7 +179,7 @@ contains
 
     do
 
-    if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, SIGMA_DIAG)
+    if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecMAT, SIGMA_DIAG)
 
     call hecmw_matvec_33_clear_timer()
     call hecmw_precond_33_clear_timer()
@@ -279,7 +201,7 @@ contains
         if (PRECOND.eq.5) &
              write (*,'(a,i3)') '### 3x3 ML-CG  ',iterPREmax
       endif
-      call hecmw_solve_CG_33( hecMESH,  hecTKT, ITER, RESID, ERROR,   &
+      call hecmw_solve_CG_33( hecMESH,  hecMAT, ITER, RESID, ERROR,   &
            &                          TIME_setup, TIME_sol, TIME_comm )
     endif
 
@@ -301,7 +223,7 @@ contains
              write (*,'(a,i3)') '### 3x3 ML-BiCGSTAB  ',iterPREmax
       endif
 
-      call hecmw_solve_BiCGSTAB_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
+      call hecmw_solve_BiCGSTAB_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
            &                                TIME_setup, TIME_sol, TIME_comm )
     endif
 
@@ -323,7 +245,7 @@ contains
              write (*,'(a,i3)') '### 3x3 ML-GMRES  ',iterPREmax
       endif
 
-      call hecmw_solve_GMRES_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
+      call hecmw_solve_GMRES_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
            &                             TIME_setup, TIME_sol, TIME_comm )
     endif
 
@@ -345,7 +267,7 @@ contains
              write (*,'(a,i3)') '### 3x3 ML-GPBiCG  ',iterPREmax
       endif
 
-      call hecmw_solve_GPBiCG_33( hecMESH,  hecTKT, ITER, RESID, ERROR, &
+      call hecmw_solve_GPBiCG_33( hecMESH,  hecMAT, ITER, RESID, ERROR, &
            &                              TIME_setup, TIME_sol, TIME_comm )
     endif
 
@@ -357,7 +279,7 @@ contains
       SIGMA_DIAG = SIGMA_DIAG + 0.1
       if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
     else
-      if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
+      if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecMAT, -1.d0)
       exit
     endif
 
@@ -367,7 +289,7 @@ contains
       call hecmw_solve_error (hecMESH, ERROR)
     endif
 
-    resid2=hecmw_rel_resid_L2_33(hecMESH,hecTKT)
+    resid2=hecmw_rel_resid_L2_33(hecMESH,hecMAT)
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
       write(*,"(a,1pe12.5)")'### Relative residual =', resid2
       ! if( resid2 >= 1.0d-8) then
@@ -375,42 +297,9 @@ contains
       ! endif
     endif
 
-    call hecmw_mat_dump_solution(hecTKT)
+    call hecmw_mat_dump_solution(hecMAT)
 
     call hecmw_matvec_33_unset_async
-
-    !C===
-    !C +--------------+
-    !C | MPC Postproc |
-    !C +--------------+
-    !C===
-    call hecmw_barrier(hecMESH)
-    S_TIME= HECMW_WTIME()
-
-    if (totalmpc > 0) then
-      if (MPC_METHOD == 1) then  ! penalty
-        ! do nothing
-      else if (MPC_METHOD == 2) then  ! MPCCG
-        call hecmw_tback_x_33(hecMESH, hecTKT%X, time_dumm)
-        do i=1,hecMAT%NP * hecMAT%NDOF
-          hecMAT%B(i) = Btmp(i)
-        enddo
-        deallocate(Btmp)
-      else if (MPC_METHOD == 3) then  ! elimination
-        call hecmw_tback_x_33(hecMESH, hecTKT%X, time_dumm)
-        do i=1,hecMAT%NP * hecMAT%NDOF
-          hecMAT%X(i)=hecTKT%X(i)
-        enddo
-        hecMAT%Iarray(:)=hecTKT%Iarray(:)
-        hecMAT%Rarray(:)=hecTKT%Rarray(:)
-        ! call hecmw_mat_finalize(hecTKT)
-        ! deallocate(hecTKT)
-      endif
-    endif
-
-    call hecmw_barrier(hecMESH)
-    E_TIME= HECMW_WTIME()
-    TIME_mpc_post = E_TIME - S_TIME
 
     time_Ax = hecmw_matvec_33_get_timer()
     time_precond = hecmw_precond_33_get_timer()
@@ -426,10 +315,6 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
       if (ITER > 0) &
       write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
-      if (totalmpc > 0) then
-        write (*,'(a, 1pe16.6 )') '    MPC pre          : ', TIME_mpc_pre
-        write (*,'(a, 1pe16.6 )') '    MPC post         : ', TIME_mpc_post
-      endif
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 

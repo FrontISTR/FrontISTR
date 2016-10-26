@@ -49,7 +49,12 @@ module m_fstr_solve_LINEAR
 !C
 !C-- MATRIX ASSEMBLING
 !C
-      call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
+      call fstr_mat_ass(hecMESH, hecMAT, fstrSOLID)
+      call hecmw_mpc_mat_ass(hecMESH, hecMAT)
+      call fstr_mat_ass_load(hecMESH, hecMAT, myEIG, fstrSOLID)
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
+      call fstr_mat_ass_bc(hecMESH, hecMAT, fstrSOLID)
+      call fstr_mat_ass_check_rhs(hecMESH, hecMAT, myEIG)
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)
@@ -65,6 +70,7 @@ module m_fstr_solve_LINEAR
       hecMAT%Iarray(98) = 1   !Assmebly complete
       hecMAT%Iarray(97) = 1   !Need numerical factorization
       CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT)
 
       IF(myrank .EQ. 0) THEN
         IF(hecMAT%Iarray(99) .EQ. 1) THEN

@@ -18,35 +18,25 @@
 !C***
 !C
 module m_static_mat_ass
+
+   private
+   public :: fstr_mat_ass
+   public :: fstr_mat_ass_load
+   public :: fstr_mat_ass_bc
+   public :: fstr_mat_ass_check_rhs
+
    contains
 
-   SUBROUTINE fstr_mat_ass (hecMESH, hecMAT, myEIG, fstrSOLID)
-
+   SUBROUTINE fstr_mat_ass (hecMESH, hecMAT, fstrSOLID)
       USE m_fstr
-      USE lczparm
-      use m_static_lib
       use m_static_mat_ass_main
       use m_fstr_spring
-      use m_fstr_ass_load
-      use m_fstr_AddBC
-      use fstr_matrix_con_contact
-
       implicit none
-      integer(kind=kint) :: IFLAG, numnp, ndof, i
-      real(kind=kreal) :: bsize
-      data IFLAG/0/
-
-      type (hecmwST_matrix)     :: hecMAT
       type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix)     :: hecMAT
       type (fstr_solid)         :: fstrSOLID
       type (fstr_param       )  :: fstrPARAM
-      type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-!* LCZ
-      type(lczparam) :: myEIG
 
-      INTEGER(kind=kint) :: n1, n2
-
-      iexit = 0
       IF(myrank == 0) THEN
         WRITE(IMSG,*)
         WRITE(IMSG,*) ' ****   STAGE Stiffness Matrix assembly  **'
@@ -54,19 +44,24 @@ module m_static_mat_ass
 
       hecMAT%NDOF = hecMESH%n_dof
 
-      if (IFLAG==0) then
-!        CALL memget(masbr,n2*hecMAT%NPL,8)
-!        CALL memget(masbr,n2*hecMAT%NPU,8)
-!        CALL memget(masbr,(n1*2+n2)*hecMAT%NP,8)
-!        CALL memget(masbr,n2*hecMAT%N,8)
-
-        IFLAG= 1
-      endif
-
       fstrSOLID%factor(1)=0.d0; fstrSOLID%factor(2)=1.d0
       call fstr_mat_ass_main (hecMESH, hecMAT, fstrSOLID)
       call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
       write(IDBG,*) 'fstr_mat_ass_main: OK'
+      return
+      end subroutine FSTR_MAT_ASS
+
+
+      subroutine FSTR_MAT_ASS_LOAD(hecMESH, hecMAT, myEIG, fstrSOLID)
+      USE m_fstr
+      USE lczparm
+      use m_fstr_ass_load
+      implicit none
+      type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix)     :: hecMAT
+      type (lczparam)           :: myEIG
+      type (fstr_solid)         :: fstrSOLID
+      type (fstr_param       )  :: fstrPARAM
 
       IF(myEIG%eqset==0) THEN
         call fstr_ass_load (1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
@@ -80,9 +75,34 @@ module m_static_mat_ass
         ENDIF
 
       ENDIF
+      end subroutine FSTR_MAT_ASS_LOAD
 
+
+      subroutine FSTR_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID)
+      USE m_fstr
+      use m_fstr_AddBC
+      use fstr_matrix_con_contact
+      implicit none
+      type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix)     :: hecMAT
+      type (fstr_solid)         :: fstrSOLID
+      type (fstr_param       )  :: fstrPARAM
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT
       call fstr_AddBC(1, 1, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,1)
       write(IDBG,*) 'fstr_mat_ass_bc: OK'
+      end subroutine FSTR_MAT_ASS_BC
+
+
+      subroutine FSTR_MAT_ASS_CHECK_RHS(hecMESH, hecMAT, myEIG)
+      USE m_fstr
+      USE lczparm
+      implicit none
+      type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix)     :: hecMAT
+      type (lczparam)           :: myEIG
+      integer(kind=kint) :: numnp, ndof, i
+      real(kind=kreal) :: bsize
+      iexit = 0
 !C
 !C  RHS LOAD VECTOR CHECK
 !C
@@ -110,7 +130,6 @@ module m_static_mat_ass
         endif
 
       ENDIF
+      end subroutine FSTR_MAT_ASS_CHECK_RHS
 
-      return
-      end subroutine FSTR_MAT_ASS
 end module m_static_mat_ass

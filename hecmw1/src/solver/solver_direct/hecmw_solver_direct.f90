@@ -119,7 +119,6 @@ CONTAINS
     iseed=1
     ir=0
 
-    CALL hecmw_mat_ass_equation( hecMESH, hecMAT )
     CALL hecmw_mat_dump(hecMAT, hecMESH)
 
     !WRITE(IFMSG,*) "Interface to ADS from HECMW..."
