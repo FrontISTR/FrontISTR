@@ -275,8 +275,10 @@ module m_fstr_NonLinearMethod
         if( fstr_is_contact_active() ) then
           call fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
         endif
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
         call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
 
         !----- SOLVE [Kt]{du}={R}
@@ -289,6 +291,7 @@ module m_fstr_NonLinearMethod
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         if( hecMESH%n_dof == 3 ) then
@@ -523,8 +526,10 @@ module m_fstr_NonLinearMethod
             call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)
           endif
         endif
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
         else
@@ -544,6 +549,7 @@ module m_fstr_NonLinearMethod
           q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
           call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT)
         endif
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)

@@ -88,7 +88,6 @@ contains
     integer(kind=kint) :: mumps_job
     integer(kind=kint) :: istat
 
-    call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     ! FACTORIZATION and SOLUTION

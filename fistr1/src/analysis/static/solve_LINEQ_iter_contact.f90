@@ -172,20 +172,20 @@ contains
     hecMAT%B => Bnew
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated RHS', hecmw_wtime()-t1
 
-    ! use CG when the matrix is symmetric
-    if (SymType == 1) then
-      method_org = hecmw_mat_get_method(hecMAT)
-      call hecmw_mat_set_method(hecMAT, 1)
-    endif
+    ! ! use CG when the matrix is symmetric
+    ! if (SymType == 1) then
+    !   method_org = hecmw_mat_get_method(hecMAT)
+    !   call hecmw_mat_set_method(hecMAT, 1)
+    ! endif
 
     ! solve
     call hecmw_solve_33(hecMESHtmp, hecMAT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
 
-    ! restore original method
-    if (SymType == 1) then
-      call hecmw_mat_set_method(hecMAT, method_org)
-    endif
+    ! ! restore original method
+    ! if (SymType == 1) then
+    !   call hecmw_mat_set_method(hecMAT, method_org)
+    ! endif
 
     ! restore RHS
     hecMAT%B => Borg
