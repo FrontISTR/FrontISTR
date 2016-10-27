@@ -120,6 +120,7 @@ contains
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
     type(hecmwST_local_matrix), target :: BTmat
     type(hecmwST_local_matrix) :: BTtmat, BTtKT
+    type(hecmwST_matrix) :: hecTKT
     type(hecmwST_local_mesh), pointer :: hecMESHtmp
     type (hecmwST_local_matrix), pointer :: BT_all
     real(kind=kreal) :: t1
@@ -161,42 +162,27 @@ contains
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: Making BTtmat done', hecmw_wtime()-t1
 
     ! calc trimatmul in hecmwST_matrix data structure
-    call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange)
-    if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated trimatmul', hecmw_wtime()-t1
+    call hecmw_mat_init(hecTKT)
+    call hecmw_trimatmul_TtKT(hecMESHtmp, BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange, hecTKT)
+    if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated hecTKT', hecmw_wtime()-t1
 
     ! make new RHS
-    allocate(Bnew(hecMAT%NP*ndof))
-    call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
-         fstrMAT%num_lagrange, Bnew)
-    Borg => hecMAT%B
-    hecMAT%B => Bnew
+    call make_new_b(hecMESHtmp, hecMAT, BTtmat, iwS, wSL, &
+         fstrMAT%num_lagrange, hecTKT%B)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated RHS', hecmw_wtime()-t1
 
     ! ! use CG when the matrix is symmetric
-    ! if (SymType == 1) then
-    !   method_org = hecmw_mat_get_method(hecMAT)
-    !   call hecmw_mat_set_method(hecMAT, 1)
-    ! endif
+    ! if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
-    call hecmw_solve_33(hecMESHtmp, hecMAT)
+    call hecmw_solve_33(hecMESHtmp, hecTKT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
 
-    ! ! restore original method
-    ! if (SymType == 1) then
-    !   call hecmw_mat_set_method(hecMAT, method_org)
-    ! endif
-
-    ! restore RHS
-    hecMAT%B => Borg
-    deallocate(Bnew)
+    hecMAT%Iarray=hecTKT%Iarray
+    hecMAT%Rarray=hecTKT%Rarray
 
     ! calc u_s
-    allocate(Xtmp(hecMAT%NP*ndof))
-    call hecmw_localmat_mulvec(BT_all, hecMAT%X, Xtmp) !!!<== maybe, BT_all should be BTmat ???
-    do i = 1, hecMAT%NP*ndof
-      hecMAT%X(i) = Xtmp(i)
-    enddo
+    call hecmw_localmat_mulvec(BT_all, hecTKT%X, hecMAT%X) !!!<== maybe, BT_all should be BTmat ???
     call subst_Blag(hecMAT, iwS, wSL, fstrMAT%num_lagrange)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated disp', hecmw_wtime()-t1
 
@@ -207,6 +193,7 @@ contains
     ! free matrices
     call hecmw_localmat_free(BT_all)
     call hecmw_localmat_free(BTtmat)
+    call hecmw_mat_finalize(hecTKT)
     if (hecMESH%n_neighbor_pe > 0) then
       hecMESHtmp%node => null()
       call hecmw_dist_free(hecMESHtmp)

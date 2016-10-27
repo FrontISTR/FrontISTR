@@ -161,27 +161,32 @@ contains
     Tmat%ndof=0
   end subroutine hecmw_localmat_free
 
-  subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, &
-       iwS, num_lagrange)
+  subroutine hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, &
+       iwS, num_lagrange, hecTKT)
+    use hecmw_matrix_misc
     implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
-    type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
+    type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTtKT
+    real(kind=kreal) :: num
 
     ! perform three matrices multiplication for elimination
     call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! place 1s where the DOF is eliminated
-    call place_one_on_diag(BTtKT, iwS, num_lagrange)
+    ! place small numbers where the DOF is eliminated
+    num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-8
+    call place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! set new values to HECMW matrix
-    call set_to_hecmat(hecMAT, BTtKT)
+    ! make_new HECMW matrix
+    call make_new_hecmat(hecMAT, BTtKT, hecTKT)
     call hecmw_localmat_free(BTtKT)
   end subroutine hecmw_trimatmul_TtKT
 
@@ -436,11 +441,12 @@ contains
     deallocate(AB)
   end subroutine blk_trimatmul_add
 
-  subroutine place_one_on_diag(BTtKT, iwS, num_lagrange)
+  subroutine place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     implicit none
     type (hecmwST_local_matrix), intent(inout) :: BTtKT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
+    real(kind=kreal), intent(in) :: num
     integer(kind=kint) :: ndof, ndof2, ilag, i, idof, js, je, j, jj
 
     ndof=BTtKT%ndof
@@ -455,12 +461,12 @@ contains
         jj=BTtKT%item(j)
         if (jj==i) then
           !write(0,*) ilag, i, idof
-          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=1.d0
+          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=num
           cycle outer
         endif
       enddo
     enddo outer
-  end subroutine place_one_on_diag
+  end subroutine place_num_on_diag
 
   subroutine replace_hecmat(hecMAT, BTtKT)
     implicit none
@@ -590,8 +596,6 @@ contains
     hecTKT%NDOF=ndof
 
     allocate(hecTKT%D(nc*ndof2))
-    allocate(hecTKT%B(nc*ndof))
-    allocate(hecTKT%X(nc*ndof))
 
     allocate(hecTKT%indexL(0:nc))
     allocate(hecTKT%indexU(0:nc))
@@ -601,40 +605,15 @@ contains
 
     call replace_hecmat(hecTKT, BTtKT)
 
-    ! copy internal part only
-    do i=1,hecMAT%N*ndof
+    allocate(hecTKT%B(size(hecMAT%B)))
+    allocate(hecTKT%X(size(hecMAT%X)))
+    do i=1,size(hecMAT%B)
       hecTKT%B(i)=hecMAT%B(i)
-      hecTKT%X(i)=hecMAT%X(i)
     enddo
+    ! do i=1,size(hecMAT%X)
+    !   hecTKT%X(i)=hecMAT%X(i)
+    ! enddo
   end subroutine make_new_hecmat
-
-  subroutine set_to_hecmat(hecMAT, BTtKT)
-    implicit none
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    type(hecmwST_local_matrix), intent(in) :: BTtKT
-    integer(kind=kint) :: nr, nc, ndof, ndof2, i
-
-    if (associated(hecMAT%indexL_org2)) then
-      stop 'ERROR: too many matrix backups'
-    endif
-    if (associated(hecMAT%indexL_org1)) then
-      hecMAT%indexL_org2 => hecMAT%indexL_org1
-      hecMAT%indexU_org2 => hecMAT%indexU_org1
-      hecMAT%itemL_org2 => hecMAT%itemL_org1
-      hecMAT%itemU_org2 => hecMAT%itemU_org1
-    endif
-    hecMAT%indexL_org1 => hecMAT%indexL
-    hecMAT%indexU_org1 => hecMAT%indexU
-    hecMAT%itemL_org1 => hecMAT%itemL
-    hecMAT%itemU_org1 => hecMAT%itemU
-
-    allocate(hecMAT%indexL(0:hecMAT%NP))
-    allocate(hecMAT%indexU(0:hecMAT%NP))
-    hecMAT%itemL => null()
-    hecMAT%itemU => null()
-
-    call replace_hecmat(hecMAT, BTtKT)
-  end subroutine set_to_hecmat
 
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)
     implicit none
@@ -680,10 +659,11 @@ contains
 !$omp end parallel
   end subroutine hecmw_localmat_mulvec
 
-  subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT)
+  subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTmat, BTtmat
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: n_mpc, ndof
@@ -708,7 +688,7 @@ contains
     ! endif
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
-    call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc)
+    call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
     ! call hecmw_localmat_free(BTtmat2)

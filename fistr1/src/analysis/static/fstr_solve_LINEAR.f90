@@ -30,7 +30,7 @@ module m_fstr_solve_LINEAR
       use m_static_output
       use m_hecmw2fstr_mesh_conv
 
-      implicit REAL(kind=kreal) (A-H,O-Z)
+      implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
       type ( lczparam            ) :: myEIG
@@ -38,7 +38,10 @@ module m_fstr_solve_LINEAR
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
 
-      integer(kind=kint) :: i
+      type ( hecmwST_matrix ), pointer :: hecMATmpc
+      integer(kind=kint) :: i, j
+
+      call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
       if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
         do j=1, hecMESH%n_node
@@ -50,9 +53,7 @@ module m_fstr_solve_LINEAR
 !C-- MATRIX ASSEMBLING
 !C
       call fstr_mat_ass(hecMESH, hecMAT, fstrSOLID)
-      call hecmw_mpc_mat_ass(hecMESH, hecMAT)
       call fstr_mat_ass_load(hecMESH, hecMAT, myEIG, fstrSOLID)
-      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
       call fstr_mat_ass_bc(hecMESH, hecMAT, fstrSOLID)
       call fstr_mat_ass_check_rhs(hecMESH, hecMAT, myEIG)
 
@@ -69,8 +70,10 @@ module m_fstr_solve_LINEAR
 !C
       hecMAT%Iarray(98) = 1   !Assmebly complete
       hecMAT%Iarray(97) = 1   !Need numerical factorization
-      CALL solve_LINEQ(hecMESH,hecMAT,imsg)
-      call hecmw_mpc_tback_sol(hecMESH, hecMAT)
+      call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+      CALL solve_LINEQ(hecMESH,hecMATmpc,imsg)
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       IF(myrank .EQ. 0) THEN
         IF(hecMAT%Iarray(99) .EQ. 1) THEN
@@ -110,5 +113,7 @@ module m_fstr_solve_LINEAR
 !C
       call fstr_static_Output( 1, 1, hecMESH, fstrSOLID, fstrPR%solution_type )
 
-      end subroutine FSTR_SOLVE_LINEAR
+      call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+
+    end subroutine FSTR_SOLVE_LINEAR
 end module m_fstr_solve_LINEAR

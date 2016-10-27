@@ -58,6 +58,7 @@ module m_fstr_NonLinearMethod
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
+    type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
@@ -65,6 +66,8 @@ module m_fstr_NonLinearMethod
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
     real(kind=kreal), pointer :: coord(:)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -97,11 +100,9 @@ module m_fstr_NonLinearMethod
 
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-      call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
       ! ----- Set Boundary condition
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
-      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
@@ -112,8 +113,10 @@ module m_fstr_NonLinearMethod
       endif
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-      CALL solve_LINEQ(hecMESH,hecMAT,imsg)
-      call hecmw_mpc_tback_sol(hecMESH, hecMAT)
+      call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+      CALL solve_LINEQ(hecMESH,hecMATmpc,imsg)
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
       if( hecMESH%n_dof == 3 ) then
@@ -185,6 +188,7 @@ module m_fstr_NonLinearMethod
     endif
 
     deallocate(coord)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_Newton
 
 
@@ -204,6 +208,7 @@ module m_fstr_NonLinearMethod
     type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
     type (fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
 
+    type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter
@@ -213,6 +218,8 @@ module m_fstr_NonLinearMethod
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
     real(kind=kreal), pointer :: coord(:)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -275,11 +282,9 @@ module m_fstr_NonLinearMethod
         if( fstr_is_contact_active() ) then
           call fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
         endif
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
         call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
         !----- SOLVE [Kt]{du}={R}
         if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
@@ -290,8 +295,10 @@ module m_fstr_NonLinearMethod
         endif
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        CALL solve_LINEQ(hecMESH,hecMAT,imsg)
-        call hecmw_mpc_tback_sol(hecMESH, hecMAT)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+        CALL solve_LINEQ(hecMESH,hecMATmpc,imsg)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         if( hecMESH%n_dof == 3 ) then
@@ -394,6 +401,7 @@ module m_fstr_NonLinearMethod
     endif
 
     deallocate(coord)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_Newton_contactALag
 
 
@@ -416,6 +424,7 @@ module m_fstr_NonLinearMethod
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
     type (hecmwST_matrix), optional        :: conMAT
 
+    type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter, max_iter_contact
@@ -428,6 +437,8 @@ module m_fstr_NonLinearMethod
     integer(kint)      :: nndof
     real(kreal)        :: q_residual,x_residual
     real(kind=kreal), pointer :: coord(:)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -526,7 +537,6 @@ module m_fstr_NonLinearMethod
             call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)
           endif
         endif
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
         if(paraContactFlag.and.present(conMAT)) then
@@ -534,7 +544,6 @@ module m_fstr_NonLinearMethod
         else
           call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
         endif
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
         nndof = hecMAT%N*hecMAT%ndof
 
@@ -542,14 +551,16 @@ module m_fstr_NonLinearMethod
         ! ----  For Parallel Contact with Multi-Partition Domains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         if(paraContactFlag.and.present(conMAT)) then
-          q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
-          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT, 1.0D0, conMAT)
+          q_residual = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
+          call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT, 1.0D0, conMAT)
         else
-          q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
-          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT)
+          q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMATmpc,fstrSOLID,fstrMAT)
+          call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT)
         endif
-        call hecmw_mpc_tback_sol(hecMESH, hecMAT)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
@@ -689,6 +700,7 @@ module m_fstr_NonLinearMethod
     endif
 
     deallocate(coord)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_Newton_contactSLag
 
 
