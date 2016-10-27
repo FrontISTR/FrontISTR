@@ -65,7 +65,7 @@ contains
     ! set if use eliminate version or not
     fg_amg = .false.
     precond_org = hecmw_mat_get_precond(hecMAT)
-    if (precond_org >= 30) then
+    if (precond_org >= 30 .and. precond_org <= 32) then
       fg_eliminate = .false.
       call hecmw_mat_set_precond(hecMAT, precond_org - 20)
     else
@@ -874,10 +874,7 @@ contains
     allocate(dst%node_ID(2*dst%n_node))
     dst%node_ID(:)     = src%node_ID(:)
     !dst%mpc            = src%mpc
-    if (src%mpc%n_mpc > 0) then
-      write(0,*) src%mpc%n_mpc
-      stop 'ERROR: MPC not supported with contact'
-    endif
+    ! MPC is already set outside of here
     dst%mpc%n_mpc = 0
     dst%node => src%node
   end subroutine copy_mesh
