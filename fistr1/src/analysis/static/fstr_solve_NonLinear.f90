@@ -100,8 +100,8 @@ module m_fstr_NonLinearMethod
       call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
       ! ----- Set Boundary condition
-      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
       call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
@@ -278,8 +278,8 @@ module m_fstr_NonLinearMethod
         call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
         call fstr_AddBC(cstep, sub_step, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
         !----- SOLVE [Kt]{du}={R}
         if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
@@ -529,12 +529,12 @@ module m_fstr_NonLinearMethod
         call hecmw_mpc_mat_ass(hecMESH, hecMAT)
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
         else
           call fstr_AddBC(cstep, sub_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
         endif
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT)
 
         nndof = hecMAT%N*hecMAT%ndof
 
