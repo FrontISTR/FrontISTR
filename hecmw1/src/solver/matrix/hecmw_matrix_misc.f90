@@ -63,6 +63,7 @@ module hecmw_matrix_misc
     hecMAT%AU = 0.0d0
     call hecmw_cmat_clear( hecMAT%cmat )
     call hecmw_mat_set_penalized( hecMAT, 0 )
+    call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
   end subroutine hecmw_mat_clear
 
   subroutine hecmw_mat_clear_b( hecMAT )
@@ -106,6 +107,7 @@ module hecmw_matrix_misc
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
+    call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
     call hecmw_mat_set_mpc_method( hecMAT, 3 )
 
     call hecmw_mat_reset_nrecycle_precond( hecMAT )
@@ -588,6 +590,22 @@ module hecmw_matrix_misc
 
     hecmw_mat_get_penalty = hecMAT%Rarray(11)
   end function hecmw_mat_get_penalty
+
+  subroutine hecmw_mat_set_penalty_alpha( hecMAT, alpha )
+    implicit none
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: alpha
+
+    hecMAT%Rarray(12) = alpha
+  end subroutine hecmw_mat_set_penalty_alpha
+
+  function hecmw_mat_get_penalty_alpha( hecMAT )
+    implicit none
+    real(kind=kreal) :: hecmw_mat_get_penalty_alpha
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_penalty_alpha = hecMAT%Rarray(12)
+  end function hecmw_mat_get_penalty_alpha
 
   function hecmw_mat_diag_max(hecMAT, hecMESH)
     implicit none

@@ -93,7 +93,7 @@ contains
 
     select case (MPC_METHOD)
     case (1)  ! penalty
-      ! do nothing
+      call hecmw_mat_ass_equation_rhs ( hecMESH, hecMAT )
     case (2:3) ! MPCCG or elimination
       allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
       do i=1,hecMAT%NP * hecMAT%NDOF
