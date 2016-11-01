@@ -236,6 +236,9 @@ public
 !               integer(kind=kint), pointer :: BOUNDARY_ngrp_iftype (:)  =>null()
                 integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
                 real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
+                integer(kind=kint) :: BOUNDARY_ngrp_rot                   !< number of rotational boundary conditions
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_rotID     (:) =>null()
+                integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
 
                 !!VELOCITY
                 integer(kind=kint) :: VELOCITY_type
@@ -262,6 +265,9 @@ public
                 integer(kind=kint), pointer :: CLOAD_ngrp_DOF       (:)
                 integer(kind=kint), pointer :: CLOAD_ngrp_amp       (:)
                 real(kind=kreal), pointer   :: CLOAD_ngrp_val       (:)
+                integer(kind=kint) :: CLOAD_ngrp_rot                   !< number of torque load conditions
+                integer(kind=kint), pointer :: CLOAD_ngrp_rotID     (:) =>null()
+                integer(kind=kint), pointer :: CLOAD_ngrp_centerID  (:) =>null()
 
                 !!DLOAD
                 integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distrubuted external load
@@ -605,9 +611,13 @@ contains
 !       nullify( S%BOUNDARY_ngrp_iftype )
         nullify( S%BOUNDARY_ngrp_amp )
         nullify( S%BOUNDARY_ngrp_val)
+        nullify( S%BOUNDARY_ngrp_rotID )
+        nullify( S%BOUNDARY_ngrp_centerID )
         nullify( S%CLOAD_ngrp_ID )
         nullify( S%CLOAD_ngrp_DOF )
         nullify( S%CLOAD_ngrp_amp )
+        nullify( S%CLOAD_ngrp_rotID )
+        nullify( S%CLOAD_ngrp_centerID )
         nullify( S%CLOAD_ngrp_val )
         nullify( S%DLOAD_ngrp_ID )
         nullify( S%DLOAD_ngrp_LID )
