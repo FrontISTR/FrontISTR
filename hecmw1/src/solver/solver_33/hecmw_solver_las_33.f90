@@ -561,7 +561,9 @@ contains
     !C +---------------------------+
     !C===
     XG => BT
-    XG = 0.d0
+    do i = 1, hecMAT%N * 3
+      XG(i) = 0.d0
+    enddo
 
 !$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG)
 !$omp do

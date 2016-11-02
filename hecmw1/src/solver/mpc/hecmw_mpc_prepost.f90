@@ -133,7 +133,6 @@ contains
       call hecmw_mat_ass_equation ( hecMESH, hecMATmpc )
     case (2)  ! MPCCG
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: MPC-CG"
-      call hecmw_matvec_set_mpcmatvec_flg(hecMAT%NDOF, .true.)  !!! TODO: should this be here or in trans_rhs??
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
       call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecMATmpc)

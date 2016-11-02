@@ -59,6 +59,7 @@ contains
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
 
+    integer(kind=kint) :: totalmpc, MPC_METHOD
     integer(kind=kint) :: auto_sigma_diag
 
     !C===
@@ -158,6 +159,15 @@ contains
     if (IFLAG(1).ne.0) then
       ERROR= HECMW_SOLVER_ERROR_INCONS_PC
       call hecmw_solve_error (hecMESH, ERROR)
+    endif
+
+    !C
+    !C-- IN CASE OF MPC-CG
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+    if (totalmpc > 0 .and. MPC_METHOD == 2) then
+      call hecmw_matvec_33_set_mpcmatvec_flg (.true.)
     endif
 
     !C
@@ -300,6 +310,12 @@ contains
     call hecmw_mat_dump_solution(hecMAT)
 
     call hecmw_matvec_33_unset_async
+
+    !C
+    !C-- IN CASE OF MPC-CG
+    if (totalmpc > 0 .and. MPC_METHOD == 2) then
+      call hecmw_matvec_33_set_mpcmatvec_flg (.false.)
+    endif
 
     time_Ax = hecmw_matvec_33_get_timer()
     time_precond = hecmw_precond_33_get_timer()

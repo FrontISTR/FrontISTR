@@ -180,13 +180,14 @@ contains
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
     ! place small numbers where the DOF is eliminated
-    num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-8
+    !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
+    num = 1.d0
     call place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
     ! make_new HECMW matrix
-    call make_new_hecmat(hecMAT, BTtKT, hecTKT)
+    call make_new_hecmat(hecMAT, BTtKT, hecTKT, iwS, num_lagrange)
     call hecmw_localmat_free(BTtKT)
   end subroutine hecmw_trimatmul_TtKT
 
@@ -574,12 +575,14 @@ contains
     ! enddo
   end subroutine replace_hecmat
 
-  subroutine make_new_hecmat(hecMAT, BTtKT, hecTKT)
+  subroutine make_new_hecmat(hecMAT, BTtKT, hecTKT, iwS, num_lagrange)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_matrix), intent(in) :: BTtKT
     type(hecmwST_matrix), intent(inout) :: hecTKT
-    integer(kind=kint) :: nr, nc, ndof, ndof2, i
+    integer(kind=kint), intent(in) :: iwS(:)
+    integer(kind=kint), intent(in) :: num_lagrange
+    integer(kind=kint) :: nr, nc, ndof, ndof2, i, ilag
 
     nr=BTtKT%nr
     nc=BTtKT%nc
@@ -610,9 +613,12 @@ contains
     do i=1,size(hecMAT%B)
       hecTKT%B(i)=hecMAT%B(i)
     enddo
-    ! do i=1,size(hecMAT%X)
-    !   hecTKT%X(i)=hecMAT%X(i)
-    ! enddo
+    do i=1,size(hecMAT%X)
+      hecTKT%X(i)=hecMAT%X(i)
+    enddo
+    do ilag=1,num_lagrange
+      hecTKT%X(iwS(ilag)) = 0.d0
+    enddo
   end subroutine make_new_hecmat
 
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)

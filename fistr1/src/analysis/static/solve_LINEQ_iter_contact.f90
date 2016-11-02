@@ -483,7 +483,6 @@ contains
 
     !B2=-Bs^-1*Blag
     Bnew=0.d0
-    !write(0,*) hecMAT%B(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
     do i=1,num_lagrange
       Bnew(iwS(i))=wSL(i)*hecMAT%B(npndof+i)
     enddo
