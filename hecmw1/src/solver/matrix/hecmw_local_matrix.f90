@@ -582,7 +582,7 @@ contains
     type(hecmwST_matrix), intent(inout) :: hecTKT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: nr, nc, ndof, ndof2, i, ilag
+    integer(kind=kint) :: nr, nc, ndof, ndof2
 
     nr=BTtKT%nr
     nc=BTtKT%nc
@@ -607,18 +607,6 @@ contains
     hecTKT%Rarray=hecMAT%Rarray
 
     call replace_hecmat(hecTKT, BTtKT)
-
-    allocate(hecTKT%B(size(hecMAT%B)))
-    allocate(hecTKT%X(size(hecMAT%X)))
-    do i=1,size(hecMAT%B)
-      hecTKT%B(i)=hecMAT%B(i)
-    enddo
-    do i=1,size(hecMAT%X)
-      hecTKT%X(i)=hecMAT%X(i)
-    enddo
-    do ilag=1,num_lagrange
-      hecTKT%X(iwS(ilag)) = 0.d0
-    enddo
   end subroutine make_new_hecmat
 
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)
@@ -673,7 +661,7 @@ contains
     type (hecmwST_local_matrix) :: BTmat, BTtmat
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: n_mpc, ndof
-    integer(kind=kint) :: i, k, kk
+    integer(kind=kint) :: i, k, kk, ilag
     n_mpc=hecMESH%mpc%n_mpc
     ndof=hecMAT%NDOF
     allocate(iwS(n_mpc))
@@ -695,6 +683,19 @@ contains
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
     call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
+
+    allocate(hecTKT%B(size(hecMAT%B)))
+    allocate(hecTKT%X(size(hecMAT%X)))
+    do i=1, size(hecMAT%B)
+      hecTKT%B(i) = hecMAT%B(i)
+    enddo
+    do i=1, size(hecMAT%X)
+      hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do ilag=1,n_mpc
+      hecTKT%X(iwS(ilag)) = 0.d0
+    enddo
+
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
     ! call hecmw_localmat_free(BTtmat2)

@@ -124,7 +124,7 @@ contains
     type(hecmwST_local_mesh), pointer :: hecMESHtmp
     type (hecmwST_local_matrix), pointer :: BT_all
     real(kind=kreal) :: t1
-    integer(kind=kint) :: method_org, i
+    integer(kind=kint) :: method_org, i, ilag
     real(kind=kreal), pointer :: Bnew(:), Borg(:), Xtmp(:)
 
     t1 = hecmw_wtime()
@@ -166,8 +166,23 @@ contains
     call hecmw_trimatmul_TtKT(hecMESHtmp, BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange, hecTKT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated hecTKT', hecmw_wtime()-t1
 
+    allocate(hecTKT%B(hecTKT%NP*ndof + fstrMAT%num_lagrange))
+    allocate(hecTKT%X(hecTKT%NP*ndof + fstrMAT%num_lagrange))
+    do i=1, hecTKT%N*ndof
+      hecTKT%B(i) = hecMAT%B(i)
+    enddo
+    do ilag=1, fstrMAT%num_lagrange
+      hecTKT%B(hecTKT%NP*ndof + ilag) = hecMAT%B(hecMAT%NP*ndof + ilag)
+    enddo
+    do i=1, hecTKT%N*ndof
+      hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do ilag=1,fstrMAT%num_lagrange
+      hecTKT%X(iwS(ilag)) = 0.d0
+    enddo
+
     ! make new RHS
-    call make_new_b(hecMESHtmp, hecMAT, BTtmat, iwS, wSL, &
+    call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
          fstrMAT%num_lagrange, hecTKT%B)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated RHS', hecmw_wtime()-t1
 
