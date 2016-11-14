@@ -1,20 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : neu2fstr                                          *
- *         Version : 1.1                                               *
- *                                                                     *
- *     Last Update : 2006/09/27                                        *
- *        Category : FrontSTR Input File Converter                     *
- *                                                                     *
- *            Written by Noboru Imai (Univ. of Tokyo)                  *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using Hight End Computing Middleware (HEC-MW)"     *
- *                                                                     *
- *=====================================================================*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 /*
 	CNFDataBlock Ver. 3.6
 */

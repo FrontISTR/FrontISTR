@@ -1,3 +1,8 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
 #define HECMW_STATUS_SIZE 4
 int HECMW_ANY_TAG;
 

@@ -1,30 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : m_solve_LINEQ_mkl                                 !
-!                                                                      !
-!            Written by Z. Sun(ASTOM)                                  !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions to solve sparse system of
 !> \linear equitions using intel MKL direct sparse solver
-!>
-!>  \author     Z. Sun(ASTOM)
-!>  \date       2010/11
-!>  \version    0.00
-!!
-!======================================================================!
-
 module m_solve_LINEQ_mkl
-
 
    use m_fstr
    use m_set_arrays_directsolver_contact

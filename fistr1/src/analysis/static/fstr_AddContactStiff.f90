@@ -1,19 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : m_addContactStiffness                             !
-!                                                                      !
-!            Written by Z. Sun(ASTOM)                                  !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions:
 !!  1) obtain contact stiffness matrix of each contact pair and assemble
 !!     it into global stiffness matrix.
@@ -21,12 +9,7 @@
 !!      it into right-hand side vector to update non-equilibrated nodal force vector.
 !!  3) Modify Lagrange multiplier-related part of stiffness matrix and right-hand side
 !!     vector for dealing with prescribed displacement boundary condition.
-!
-!>  \author     Z. Sun(ASTOM)
-!>  \date       2010/11
-!>  \version    0.00
-!!
-!======================================================================!
+
 module m_addContactStiffness
 
 use m_fstr

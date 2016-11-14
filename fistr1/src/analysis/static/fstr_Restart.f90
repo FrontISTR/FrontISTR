@@ -1,31 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
-!                       Z. Sun(ASTOM)                                  !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to read in and write out
 !>         restart fiels
-!!
-!>  \author     X. YUAN(AdavanceSoft)
-!>  \date       2010/12/26
-!>  \version    0.00
-!>  \author     Z. Sun(ASTOM)
-!>  \date       2011/11
-!>  \version    0.00
-!!
-!======================================================================!
+
 module m_fstr_Restart
    use m_utilities
    use m_fstr

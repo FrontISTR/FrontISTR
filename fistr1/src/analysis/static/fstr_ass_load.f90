@@ -1,27 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by X. YUAN(AdavanceSoft), K. Sato(Advancesoft)    !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to take into acount external load
-!!
-!>  \author                date                  version
-!>  X.Yuan(Advancesoft)    2009/08/26        original
-!>  X.Yuan                 2013/03/18        consider anisotropic expansion
-!
-!======================================================================!
-!======================================================================!
+
 module m_fstr_ass_load
     implicit none
     contains
@@ -389,7 +371,7 @@ module m_fstr_ass_load
           enddo
         enddo
       endif
-      
+
 ! ----- Spring force
       call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 

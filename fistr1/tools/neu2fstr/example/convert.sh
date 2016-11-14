@@ -1,8 +1,8 @@
 #!/bin/sh
-# convert.sh ver.1.0
-# 2006.04.20 by N.Imai
-# ----------------------------
-# FrontSTR Test for NEU Examples
+#-------------------------------------------------------------------------------
+# Copyright (c) 2016 The University of Tokyo
+# This software is released under the MIT License, see LICENSE.txt
+#-------------------------------------------------------------------------------
 
 test_log="test_neu.log"
 

@@ -1,4 +1,9 @@
-#ifndef MATRIX2GRAPH_H
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
+_#ifndef MATRIX2GRAPH_H
 #define MATRIX2GRAPH_H
 
 typedef struct {
