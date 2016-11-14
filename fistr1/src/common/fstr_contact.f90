@@ -1,22 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Contact Analysis                                  !
-!                                                                      !
-!            Written by X. YUAN(AdavanceSoft)                          !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This module provides functions to calcualte contact stiff matrix
-!>
-
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/10/12
-!>  \version    0.00
 module mContact
 
 use mContactDef

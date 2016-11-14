@@ -1,34 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
-!C================================================================C
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  This module contains subroutines used in 3d eigen analysis for
 !!  elements 341, 351, 361
-!C================================================================C
-
-!***********************************************************************
-!  3D SOLID Element:
-!  MASS_C3D8(XX,YY,ZZ,EE,PP,SS,IFLG)
-!  MASS_C3D6(XX,YY,ZZ,EE,PP,SS)
-!  MASS_C3D4(XX,YY,ZZ,EE,PP,SS)
-!***********************************************************************
-
 module m_eigen_LIB_3d1mass
-
 contains
-
 
 !----------------------------------------------------------------------*
       SUBROUTINE MASS_C3D8(XX,YY,ZZ,EE,PP,RHO,SS,myEIG)

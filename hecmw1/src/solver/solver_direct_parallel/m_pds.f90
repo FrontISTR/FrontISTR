@@ -1,19 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 1.00                                               !
-!                                                                      !
-!     Last Update : 2007/11/21                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Takeshi Kitayama  (Univ. of Tokyo)             !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using Hight End Computing Middleware (HEC-MW)"      !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 
 ! module for Parallel Direct Solver
 module m_pds

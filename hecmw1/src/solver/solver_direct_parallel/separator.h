@@ -1,22 +1,7 @@
-/*=====================================================================!
-!                                                                      !
-!  Software Name : hpcmw-PC-cluster-ver.0.10                           !
-!                                                                      !
-!    main program:                                                     !
-!    subroutine  :                                                     !
-!    fuction     :                                                     !
-!    module      :                                                     !
-!    class       :                                                     !
-!    library     : Dynamic Load Balancing                                       !
-!                                                                      !
-!    coded by Li Chen   (RIST)   2003/12/15                            !
-!                                                                      !
-!    Contact address :  The University of Tokyo, FSIS project          !
-!                                                                      !
-!    "High-Performance Computing Middleware (HPC-MW)" Group.           !
-!                                                                      !
-!=====================================================================*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #define NUM_CONTROL_PARAS 9
 /*

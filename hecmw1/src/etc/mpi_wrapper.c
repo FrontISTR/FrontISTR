@@ -1,7 +1,10 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 /*
 	Lowercast and double under score wrapper of single under score MPI wrappers
 */
-
 
 #include <mpi.h>
 

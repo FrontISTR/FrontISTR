@@ -1,13 +1,8 @@
 #!/bin/sh
-############################################################
-# hecmw_ctrl.dat generator
-# 2006.07.27 by N.Imai
-# ----------------------------------------------------------
-# This B shell script automatically generates hecmw_ctrl.dat
-# with command parameters
-# ----------------------------------------------------------
-# Copyright (C) 2006 RSS21 Project (Univ. of Tokyo)
-############################################################
+#-------------------------------------------------------------------------------
+# Copyright (c) 2016 The University of Tokyo
+# This software is released under the MIT License, see LICENSE.txt
+#-------------------------------------------------------------------------------
 
 this=gen_hecmw_ctrl.sh
 fg_p=0

@@ -1,19 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Giri Prabhakar (RIST)                          !
-!                       Kazuya Goto (PExProCS LLC)                     !
-!                       Naoki Morita (Univ. of Tokyo)                  !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This program is a HECMW interface to a set of linear iterative and direct
 !! solvers. The interface may be called from within a HECMW application, with
 !! an appropriate choice of TYPE (iterative, direct), and METHOD (depending

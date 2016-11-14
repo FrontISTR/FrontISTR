@@ -1,32 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!                                                                      !
-!   Software Name : FrontSOLID                                         !
-!         Version : 0.00                                               !
-!                                                                      !
-!     Last Update : 2009/06/10                                         !
-!        Category : FE of mechanical analysis                          !
-!                                                                      !
-!            Written by Xi YUAN (AdvanceSoft)                          !
-!                                                                      !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This modules defines a structure to record history dependent parameter in static analysis
 MODULE mMechGauss
   use hecmw_util

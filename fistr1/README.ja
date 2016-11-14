@@ -18,9 +18,9 @@
   README                      : README (英語版)
   README.ja                   : README (日本語版:このファイル)
   VERSION                     : バージョン情報
-  setup_fistr.sh       　　   : makefile作成用シェルスクリプト
-  Makefile.am        　　　　 : makefileベースファイル
-  Makefile.dev       　　　　 : 環境設定ファイル (開発者用)
+  setup_fistr.sh              : makefile作成用シェルスクリプト
+  Makefile.am                 : makefileベースファイル
+  Makefile.dev                : 環境設定ファイル (開発者用)
 
   src/                        : ソースコード
 

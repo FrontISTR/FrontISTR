@@ -1,25 +1,12 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2007/06/29                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Kazuaki Sakane (RIST)                         *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdbool.h>
 #include "hecmw_util.h"
 #include "hecmw_heclex.h"
 #include "hecmw_io_hec.h"
@@ -1513,6 +1500,7 @@ read_equation_data_line2(int neq, double cnst)
 	const int NITEM = 7;
 	char *p;
 	struct hecmw_io_mpcitem *mpcitem;
+	bool isAllDof = false;
 
 	mpcitem = HECMW_malloc(sizeof(*mpcitem)*neq);
 	if(mpcitem == NULL) {
@@ -1530,6 +1518,7 @@ read_equation_data_line2(int neq, double cnst)
 	HECMW_heclex_unput_token();
 
 	if(is_link == 0){
+		isAllDof = false;
 		for(i=0; i < neq; i++) {
 			token = HECMW_heclex_next_token();
 			if(i != 0 && token == HECMW_HECLEX_NL) break;
@@ -1580,6 +1569,10 @@ read_equation_data_line2(int neq, double cnst)
 				return -1;
 			}
 			mpcitem[i].dof = HECMW_heclex_get_number();
+			if(mpcitem[i].dof == 0){
+				isAllDof = true;
+				mpcitem[i].dof = 1;
+			}
 			if(HECMW_io_check_mpc_dof(mpcitem[i].dof)) {
 				set_err(HECMW_IO_HEC_E0703, "");
 				return -1;
@@ -1618,7 +1611,23 @@ read_equation_data_line2(int neq, double cnst)
 		}
 
 		/* add */
-		if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		if(isAllDof){
+			for(i=0; i < neq; i++) {
+				mpcitem[i].dof = 1;
+			}
+			if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+			for(i=0; i < neq; i++) {
+				mpcitem[i].dof = 2;
+			}
+			if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+			for(i=0; i < neq; i++) {
+				mpcitem[i].dof = 3;
+			}
+			if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+
+		} else {
+			if(HECMW_io_add_mpc(neq, mpcitem, cnst) == NULL) return -1;
+		}
 		HECMW_free(mpcitem);
 
 	/* link */

@@ -1,40 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.5                                                !
-!                                                                      !
-!     Last Update : 2006/06/01                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kengo Nakajima (Univ. of Tokyo)                !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
-
-!      implicit REAL*8 (A-H,O-Z)
-!
-!      real*8 AHAT(16), BHAT(4), WORK(1000)
-!      LWORK= 1000
-!
-!      AHAT     = 0.d0
-!      AHAT ( 1)= 1.d0
-!      AHAT ( 6)= 1.d0
-!      AHAT (11)= 1.d0
-!      AHAT (16)= 1.d0
-!
-!      BHAT     = 0.d0
-!      BHAT ( 2)= 0.25d0
-!
-!      call DGELS ('N', 4, 4, 1, AHAT, 4, BHAT, 4, WORK, LWORK, INFO)
-!
-!      write (*,*) BHAT
-!
-!      stop
-!      end
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 
       subroutine  dcopy(n,dx,incx,dy,incy)
 c
@@ -7199,7 +7166,7 @@ c
       ILAENV = 2
       RETURN
 *
-  600 CONTINUE 
+  600 CONTINUE
 *
 *     ISPEC = 6:  crossover point for SVD (used by xGELSS and xGESVD)
 *
@@ -7236,7 +7203,7 @@ c
 C     ILAENV = 0
       ILAENV = 1
       IF( ILAENV.EQ.1 ) THEN
-         ILAENV = IEEECK( 0, 0.0, 1.0 ) 
+         ILAENV = IEEECK( 0, 0.0, 1.0 )
       END IF
       RETURN
 *
@@ -7247,7 +7214,7 @@ C     ILAENV = 0
 C     ILAENV = 0
       ILAENV = 1
       IF( ILAENV.EQ.1 ) THEN
-         ILAENV = IEEECK( 1, 0.0, 1.0 ) 
+         ILAENV = IEEECK( 1, 0.0, 1.0 )
       END IF
       RETURN
 *
