@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Suemitsu(Advancesoft)                       !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module provide a function to prepare output of static analysis
 module m_static_make_result
   private
@@ -21,8 +11,8 @@ module m_static_make_result
   public:: fstr_reorder_node_shell
   public:: fstr_reorder_rot_shell
   public:: fstr_reorder_node_beam
-  
-  
+
+
   contains
 
 !C***
@@ -34,7 +24,7 @@ module m_static_make_result
     use m_static_lib
     use mMaterial
     use hecmw_util
-    
+
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -62,7 +52,7 @@ module m_static_make_result
     is_33beam  = fstrSOLID%is_33beam
 
     nn = mm * mdof
-    
+
     allocate( work(nn) )
 
     ! --- INITIALIZE
@@ -252,7 +242,7 @@ module m_static_make_result
     use m_static_lib
     use mMaterial
     use hecmw_util
-    
+
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -291,7 +281,7 @@ module m_static_make_result
       label = 'NodalMISES'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%MISES )
     endif
-    
+
     ! --- NODAL PRINC STRESS
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) ) then
       id = 1
@@ -370,7 +360,7 @@ module m_static_make_result
       label = 'ElementalPrincipalSTRAIN'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%EPSTRAIN )
     endif
-    
+
     ! --- ELEM PRINC STRESS VECTOR
     if( fstrSOLID%output_ctrl(3)%outinfo%on(24) ) then
       id = 2
@@ -401,7 +391,7 @@ module m_static_make_result
   subroutine fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
     use m_fstr
     use hecmw_util
-    
+
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -612,7 +602,7 @@ module m_static_make_result
     use m_static_lib
     use mMaterial
     use hecmw_util
-    
+
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -713,7 +703,7 @@ module m_static_make_result
           enddo
           iitem = iitem + nn
         endif
-    
+
 ! --- Princ STRAIN Vector @node
         if( fstrSOLID%output_ctrl(4)%outinfo%on(25)) then
           do k=1,3
@@ -737,7 +727,7 @@ module m_static_make_result
     use m_fstr
     use m_out
     use m_static_lib
-    
+
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
@@ -780,7 +770,7 @@ module m_static_make_result
     use m_fstr
     use m_out
     use m_static_lib
-    
+
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
@@ -830,7 +820,7 @@ module m_static_make_result
     use m_fstr
     use m_out
     use m_static_lib
-    
+
     implicit none
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
@@ -857,5 +847,5 @@ module m_static_make_result
     enddo
 
   end subroutine fstr_reorder_node_beam
-  
+
 end module m_static_make_result

@@ -1,26 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN (AdavanceSoft)                         !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module provide common functions of Plane deformation elements
-!>
-!!
-!>  \author     X. YUAN (AdavanceSoft)
-!>  \date       2009/06/12
-!>  \version    0.00
-!!
-!======================================================================!
 module m_static_LIB_2d
    use hecmw, only : kint, kreal
    use elementInfo

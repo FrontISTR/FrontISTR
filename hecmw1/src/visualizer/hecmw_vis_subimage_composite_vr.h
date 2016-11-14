@@ -1,3 +1,8 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
 #ifndef HECMW_VIS_SUBIMAGE_COMPOSITE_VR_H
 #define HECMW_VIS_SUBIMAGE_COMPOSITE_VR_H
 

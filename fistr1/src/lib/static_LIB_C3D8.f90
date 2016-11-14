@@ -1,15 +1,9 @@
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module contains several strategy to free locking problem
 !> in Eight-node hexagonal element
-!>
-
-!>  \author     Xi YUAN (AdavanceSoft), K. Inagaki(Univ. of Tokyo)
-!>  \date       2010/04/01
-!>  \date       2014/10/31 K. Inagaki modified Total Lagrange method
-!>  \version    0.00
-!                                                                      !
-!======================================================================!
 MODULE m_static_LIB_C3D8
 
    USE hecmw, only : kint, kreal

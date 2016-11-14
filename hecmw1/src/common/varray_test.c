@@ -1,3 +1,8 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
 #include <stdio.h>
 #include "hecmw_config.h"
 #include "hecmw_varray_int.h"

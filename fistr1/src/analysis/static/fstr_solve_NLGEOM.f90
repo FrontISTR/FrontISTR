@@ -1,28 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
-!                       Z. Sun(ASTOM)                                  !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides main suboruitne for nonliear calculation.
-!
-!>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
-!>  \date       2009/01/30
-!>  \author     Z. Sun(ASTOM)
-!>  \date       2010/11
-!>  \version    0.00
-!
-!======================================================================!
+
 module m_fstr_solve_NLGEOM
 
 use m_fstr

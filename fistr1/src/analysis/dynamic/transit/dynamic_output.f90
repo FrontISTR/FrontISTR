@@ -1,29 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Suemits(Advancesoft)                        !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to output result.
-!!
-!>  \author     K. Suemitsu(AdavanceSoft)
-!>  \date       2012/01/16
-!>  \version    0.00
-!!
-!======================================================================!
 module m_dynamic_output
   implicit none
-
   contains
 
 !> Output result

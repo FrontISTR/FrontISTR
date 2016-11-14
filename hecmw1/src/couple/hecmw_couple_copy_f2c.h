@@ -1,22 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 1.00                                              *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : Coupling Interface                                *
- *                                                                     *
- *            Written by Shin'ichi Ezure (RIST)                        *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using Hight End Computing Middleware (HEC-MW)"     *
- *                                                                     *
- *=====================================================================*/
-
-
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #ifndef INC_HECMW_COUPLE_COPY_F2C
 #define INC_HECMW_COUPLE_COPY_F2C

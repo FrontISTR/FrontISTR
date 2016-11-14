@@ -1,10 +1,7 @@
-/*
-	hec2rcap ver.1.0
-	2007.01.18 by N.Imai
-	-------------------------------------
-	HEC-MW Mesh -> REVOCAP Mesh Converter
-*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <string.h>

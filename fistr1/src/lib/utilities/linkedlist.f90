@@ -1,3 +1,7 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 ! linkedlist.f90 --
 !     Include file for defining linked lists where each element holds
 !     the same kind of data

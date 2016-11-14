@@ -1,26 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                   Written by Gaku Hashimoto, The University of Tokyo !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!                                                                      !
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module contains functions for interpolation in 9 node
 !!   quadrilateral element
-!                                                                      !
-!>  \author     Gaku Hashimoto, The University of Tokyo
-!>  \date       2012/11/15
-!>  \version    0.00
-!======================================================================!
-
       MODULE shape_quad9n
 !####################################################################
 

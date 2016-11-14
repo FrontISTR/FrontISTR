@@ -1,27 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Data structure                                    !
-!                                                                      !
-!            Written by Xi Yuan (AdvanceSoft) with reference to FLIBS  !
-!                 http://fortranwiki.org/fortran/show/FLIBS            !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides data structure table which would be
 !>       dictionaried afterwards
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/08/28
-!>  \version    0.00
-!
-!======================================================================!
 module m_table
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
