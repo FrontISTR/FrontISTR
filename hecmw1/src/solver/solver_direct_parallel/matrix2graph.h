@@ -3,7 +3,7 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
-_#ifndef MATRIX2GRAPH_H
+#ifndef MATRIX2GRAPH_H
 #define MATRIX2GRAPH_H
 
 typedef struct {

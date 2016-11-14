@@ -16,8 +16,7 @@
 enum { MAP_MAX_VAL_INIT = 1024, MAP_MAX_VAL_GROW = 2 };
 
 
-int H
-ECMW_map_int_init(struct hecmw_map_int *map, void (*free_fnc)(void *))
+int HECMW_map_int_init(struct hecmw_map_int *map, void (*free_fnc)(void *))
 {
   HECMW_assert(map);
 
