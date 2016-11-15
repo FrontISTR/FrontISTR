@@ -1,20 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *  Software Name : HPC-MW Library for PC-cluster                      *
- *        Version : 1.00                                               *
- *                                                                     *
- *    Last Update : 2010/06/16                                         *
- *    Modified by : KITAYAMA Takeshi (Univ. of Tokyo)                  *
- *                                                                     *
- *       Category : Dynamic Load Balancing                             *
- *         Author : Li Chen (RIST)                                     *
- *                                                                     *
- *                                                                     *
- *                The University of Tokyo, FSIS Project                *
- *                                                                     *
- *       "High-Performance Computing Middleware (HPC-MW)" Group.       *
- *                                                                     *
- *=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>

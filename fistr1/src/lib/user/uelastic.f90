@@ -1,28 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This module provides interface for elastic or hyperelastic
 !>  calculation
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/02/16
-!>  \version    0.00
-!======================================================================!
 module mUElastic
-
 implicit none
-
 contains
 
 !> This subroutine calculates constitutive relation

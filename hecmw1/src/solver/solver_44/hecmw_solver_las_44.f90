@@ -1,20 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/11/02                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuya Goto (PExProCS LLC)                     !
-!                       Tatsuhiro Shono (Univ. of Tokyo)               !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module hecmw_solver_las_44
   use hecmw_util
   implicit none
@@ -27,7 +15,7 @@ module hecmw_solver_las_44
   public :: hecmw_Tvec_44
   public :: hecmw_Ttvec_44
   public :: hecmw_TtmatTvec_44
-  public :: hecmw_mpc_scale
+  public :: hecmw_mpc_scale_44
   public :: hecmw_trans_b_44
   public :: hecmw_tback_x_44
   public :: hecmw_matvec_44_clear_timer
@@ -380,7 +368,7 @@ contains
   !C*** hecmw_mpc_scale
   !C***
   !C
-  subroutine hecmw_mpc_scale(hecMESH)
+  subroutine hecmw_mpc_scale_44(hecMESH)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
@@ -397,7 +385,7 @@ contains
       hecMESH%mpc%mpc_const(i) = hecMESH%mpc%mpc_const(i) * WVAL
     enddo
 
-  end subroutine hecmw_mpc_scale
+  end subroutine hecmw_mpc_scale_44
 
   !C
   !C***

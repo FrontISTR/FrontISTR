@@ -1,13 +1,8 @@
 #!/bin/sh
-############################################################
-# FrontSTR Launcher Ver.1.0
-# 2006.04.12 by N.Imai
-# ----------------------------------------------------------
-# This B shell script automatically generates hecmw_ctrl.dat
-# with command parameters, and launch serial FrontSTR
-# ----------------------------------------------------------
-# Copyright (C) 2006 RSS21 Project (Univ. of Tokyo)
-############################################################
+#-------------------------------------------------------------------------------
+# Copyright (c) 2016 The University of Tokyo
+# This software is released under the MIT License, see LICENSE.txt
+#-------------------------------------------------------------------------------
 
 fstr=fistr1
 this=fstr_srun.sh

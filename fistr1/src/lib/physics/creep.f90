@@ -1,25 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions for creep calculation
-!
-!>  Author     date       version
-!>  X.Yuan   2010/10/06     0.0     Original
-!>  X.Yuan   2013/08/20     1.0     Bug fixed thanks to indication from K.Inagaki
-!
-!======================================================================!
 module mCreep
   use hecmw_util
   use mMaterial

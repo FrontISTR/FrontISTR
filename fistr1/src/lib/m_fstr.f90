@@ -1,21 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Noboru Imai (Univ. of Tokyo)                   !
-!                       Tomotaka Ogasawara (Univ. of Tokyo)            !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 ! If new header is supported, change according to following method.    !
 !  1) Increase FSTR_CTRL_HEADER_NUMBER                                 !
 !  2) Add new header name to fstr_ctrl_header_names                    !
@@ -25,8 +11,6 @@
 !     in fstr_setup.f90                                                !
 !  5) If initial values are necessary, set the value                   !
 !     in subroutine fstr_setup_init in fstr_setup.f90                  !
-!                                                                      !
-!======================================================================!
 !> This module defined coomon data and basic structures for analysis
 module m_fstr
 use hecmw
@@ -207,10 +191,10 @@ public
 !> Data for STATIC ANSLYSIS  (fstrSOLID)
 !C
         type fstr_solid_physic_val
-                ! If using shell, substitute average value for this structure. and Substitute Plus and Minus for SHELL_PLUS and SHELL_MINUS 
-                ! If using laminated shell, substitute average whole laminated elements value for this structure. and Substitute whole average plus and minus for SHELL_PLUS and SHELL_MINUS 
+                ! If using shell, substitute average value for this structure. and Substitute Plus and Minus for SHELL_PLUS and SHELL_MINUS
+                ! If using laminated shell, substitute average whole laminated elements value for this structure. and Substitute whole average plus and minus for SHELL_PLUS and SHELL_MINUS
                 ! And substitute each laminated shell's value for layer(1,2,3,4,)
-                
+
                 real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
                 real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
                 real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
@@ -232,7 +216,7 @@ public
                 type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
                 type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
                 type(fstr_solid_physic_val), pointer :: MINUS    !< for SHELL MINUS
-                
+
         end type fstr_solid_physic_val
 
         type fstr_solid
@@ -334,12 +318,12 @@ public
                 type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
                 type(fstr_solid_physic_val), pointer       :: SHELL=>null()     !< for shell physical value stracture
                 type(fstr_solid_physic_val), pointer       :: BEAM =>null()     !< for beam physical value stracture
-                
+
                 ! ANALYSIS CONTROL for NLGEOM
                 integer(kind=kint) :: restart_nout   !< output interval of restart file
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
-                integer(kind=kint) :: restart_nin    !< input number of restart 
+                integer(kind=kint) :: restart_nin    !< input number of restart
 
                 integer(kind=kint) :: max_lyr        !< maximun num of layer
                 integer(kind=kint) :: is_33shell

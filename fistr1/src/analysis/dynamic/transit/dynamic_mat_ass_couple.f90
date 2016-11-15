@@ -1,18 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!     Last Update : 2006/06/01                                         !
-!        Category : Dynamic Transit Analysis                           !
-!                                                                      !
-!                    Written by Noburu Imai (Univ. of Tokyo)           !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module contains functions relates to coupling analysis
 module m_dynamic_mat_ass_couple
 use m_fstr

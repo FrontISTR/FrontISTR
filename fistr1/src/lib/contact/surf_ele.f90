@@ -1,25 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN                                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module manage surface elements in 3D
-!!
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
 !!  and functions for fetch its neighborhood information
-
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/07/16
-!>  \version    0.00
-
 module mSurfElement
 implicit none
 integer, parameter, private :: kreal = kind(0.0d0)

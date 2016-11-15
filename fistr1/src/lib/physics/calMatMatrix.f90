@@ -1,24 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This module manages calculation relates with materials
-!!
-!>  \author                date                  version
-!>  X.Yuan(Advancesoft)    2010/01/12        original
-!>  X.Yuan                 2013/03/18        consider anisotropic & temp dependent
-!======================================================================!
-
 module m_MatMatrix
   use hecmw_util
   use mMaterial
@@ -75,7 +59,7 @@ module m_MatMatrix
       else
         i = getElasticType(gauss%pMaterial%mtype)
       endif
-      
+
       if( i==0 ) then
         if( present(temperature) ) then
           call calElasticMatrix( matl, sectTYPE, matrix, temperature  )

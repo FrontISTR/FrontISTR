@@ -1,29 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN (AdavanceSoft)                         !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  Eight-node hexagonal element with imcompatible mode
-!>
 !> \see R.L.Taylor,P.J.Bereford, and E.L.Wilson, "A Nonconforming element
 !>  for Stress Analysis", Intl. J. Numer. Methods Engng, 10(6), pp1211-1219
 !>  ,1976
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/08/12
-!>  \version    0.00
-!                                                                    !
-!======================================================================!
 MODULE m_static_LIB_3dIC
 
    USE hecmw, only : kint, kreal

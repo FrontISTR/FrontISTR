@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by X. YUAN                                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module contains Gauss point information
 !!
 !>     gauss1d1: line, 1-point integration
@@ -34,11 +24,7 @@
 !>     gauss3d10: wedge, 6 integration points
 !>     gauss3d11: wedge, 18 integration points
 !>     gauss3d12: tet, 5 integration points
-
-!
 !>     weight2d1,... contains the weights
-!
-!
 MODULE Quadrature
 
       integer, parameter, private :: kreal = kind(0.0d0)

@@ -1,3 +1,8 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
+
 #ifndef HECMW_VIS_ENDIAN_H_INCLUDED
 #define HECMW_VIS_ENDIAN_H_INCLUDED
 

@@ -1,20 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Main Program                                       !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Noboru Imai (Univ. of Tokyo)                   !
-!                       Tomotaka Ogasawara (Univ. of Tokyo)            !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 program fstr_main
 
 use hecmw

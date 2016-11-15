@@ -1,28 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
-!C================================================================C
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  This module contains subroutines used in 2d eigen analysis for elements
 !!  232, 242
-!C================================================================C
-
 module m_eigen_LIB_2d2mass
-
 contains
-
-
 
 !----------------------------------------------------------------------*
       SUBROUTINE MASS_C2D8(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)

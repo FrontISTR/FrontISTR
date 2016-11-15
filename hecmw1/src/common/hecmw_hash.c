@@ -1,16 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *                                                                     *
- *     Last Update : 2014/07/29                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Naoki MORITA (GSFS, the Univ. of Tokyo)       *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include "hecmw_hash.h"
 #include "hecmw_io_struct.h"

@@ -1,41 +1,18 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by K. Satoh (Advancesoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides function on NEO-HOOKEAN hyperelastic material
-!
-!>  \author     K. Sato(Advancesoft)
-!>  \date       2009/12/16
-!>  \version    0.00
-!!
 !> \par neo-Hookean hyperelastic material
 !>  - potential function : \f$ \Psi = \frac{\mu}{2} ( I_{c}-3 ) - \mu \ln J + \frac{\lambda}{2} ( \ln J )^2 \f$
 !>  - 2nd Piola-Kirchhoff stress : \f$ \mathbf{S} = \mu ( \mathbf{I} - \mathbf{C}^{-1} ) + \lambda ( \ln J ) \mathbf{C}^{-1} \f$
 !>  - elastic tangent coefficient : \f$ \mathbf{\mathsf{C}} = \lambda \mathbf{C}^{-1} \otimes \mathbf{C}^{-1} + 2 ( \mu - \lambda \ln J ) \mathbf{I} \f$
-!
-!======================================================================!
 module m_ElasticNeoHooke
-!
   use mMaterial
-!
   implicit none
   integer, parameter, private :: kreal = kind(0.0d0)
-!
   contains
-!
-!
-!
+
 !-------------------------------------------------------------------------------
 !> \brief This subroutine provides elastic tangent coefficient for neo-Hookean material
 !-------------------------------------------------------------------------------

@@ -1,23 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by X. YUAN (AdvanceSoft)                  !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provide common functions of beam elements
-!
-!>  \author                date              version
-!>  X.Yuan(Advancesoft)    2012/11/16        original
-!>
-!======================================================================!
 module m_static_LIB_beam
 
 use hecmw
