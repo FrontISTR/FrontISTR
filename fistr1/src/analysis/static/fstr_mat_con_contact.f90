@@ -1,28 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : fstr_matrix_con_contact                           !
-!                                                                      !
-!      Written by Z. Sun(ASTOM)                                        !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions of reconstructing
 !         stiffness matrix structure for the contact analysis
 !         employing standard Lagrange multiplier algorithm
-!
-!>  \author     Z. Sun(ASTOM)
-!>  \date       2010/11
-!>  \version    0.00
-!!
-!======================================================================!
+
 module fstr_matrix_con_contact
 
       use m_fstr

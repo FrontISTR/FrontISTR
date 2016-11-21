@@ -1,24 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : m_dynamic_init_variables                          !
-!                                                                      !
-!            Written by Z. Sun(ASTOM)                                  !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-
-!C================================================================C
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions to initialize variables
 !> when initial velocity or acceleration boundary conditions are given.
 !> attention : just for rigid motion in the initial state.
-!C================================================================C
 
 module m_dynamic_init_variables
 

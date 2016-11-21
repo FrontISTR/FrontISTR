@@ -3,7 +3,7 @@ MAKE = @make@
 all: @build_target@
 
 @build_target@:
-	@cd static  && $(MAKE) @build_target_mkl@
+	@cd static  && $(MAKE) @build_target@
 	@cd dynamic && $(MAKE) @build_target@
 	@cd heat    && $(MAKE) @build_target@
 

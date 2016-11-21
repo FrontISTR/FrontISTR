@@ -1,3 +1,7 @@
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #ifndef HECMW_MSGNO_INCLUDED
 #define HECMW_MSGNO_INCLUDED

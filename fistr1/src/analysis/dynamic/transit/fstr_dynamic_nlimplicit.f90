@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Dynamic Transit Analysis                          !
-!                                                                      !
-!            Written by Xi YUAN (AdvanceSoft)                          !
-!                       Zhigang Sun(ASTOM)                             !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module contains subroutines for nonlinear implicit dynamic analysis
 
 module fstr_dynamic_nlimplicit
@@ -206,7 +196,7 @@ contains
          endif
 !C
 !C-- mechanical boundary condition
-         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter)
+         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
          do j=1, hecMESH%n_node*  hecMESH%n_dof
            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		     + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -299,7 +289,9 @@ contains
           else
             hecMAT%Iarray(97) = 1   !Need numerical factorization
           endif
+          call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+          call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         end if
 
         do j=1,hecMESH%n_node*ndof

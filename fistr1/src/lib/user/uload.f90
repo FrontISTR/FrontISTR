@@ -1,28 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This subroutine read in used-defined loading
 !>  tangent
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/01/30
-!>  \version    0.00
-!======================================================================!
 module mULoad
-
 use hecmw
-
 implicit none
 
    !> Structure for user defines load. User may need to fill in it
@@ -30,7 +13,7 @@ implicit none
    type tULoad
       integer, pointer :: nodeID(:)=>null()    !< nodes' ID
       integer, pointer :: dof(:)=>null()       !< dof to be loaded
-	  ! == add futher defintiions here ==
+      ! == add futher defintiions here ==
    end type
 
    type(tULoad), pointer, save :: uloads(:)=>null()
@@ -39,7 +22,7 @@ contains
 
 !> This suborutine read in variables needs to define user-defined external loads
    integer function ureadload( fname )
-	 character(len=*), intent(in)    :: fname   !< input file name
+   character(len=*), intent(in)    :: fname   !< input file name
      ureadload = 0
    end function
 

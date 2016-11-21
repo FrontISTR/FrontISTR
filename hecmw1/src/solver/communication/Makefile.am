@@ -41,6 +41,7 @@ F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
 ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -59,13 +60,16 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
@@ -74,12 +78,6 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_solver_misc.@f90objfilepostfix@
-
-OBJF_COMM = hecmw_comm_f.@f90objfilepostfix@
-OBJF_COMM_DUMM = hecmw_comm_f_dumm.@f90objfilepostfix@
-
-OBJSF_SR = \
 	hecmw_solver_SR_11.@f90objfilepostfix@ \
 	hecmw_solver_SR_11i.@f90objfilepostfix@ \
 	hecmw_solver_SR_22.@f90objfilepostfix@ \
@@ -91,30 +89,16 @@ OBJSF_SR = \
 	hecmw_solver_SR_66.@f90objfilepostfix@ \
 	hecmw_solver_SR_66i.@f90objfilepostfix@ \
 	hecmw_solver_SR_mm.@f90objfilepostfix@ \
-	hecmw_solver_SR_mmi.@f90objfilepostfix@
-
-OBJSF_SR_DUMM = \
-	hecmw_solver_SR_11_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_11i_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_22_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_22i_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_33_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_33i_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_44_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_44i_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_66_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_66i_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_mm_dumm.@f90objfilepostfix@ \
-	hecmw_solver_SR_mmi_dumm.@f90objfilepostfix@
+	hecmw_solver_SR_mmi.@f90objfilepostfix@ \
+	hecmw_comm_f.@f90objfilepostfix@ \
+	hecmw_solver_misc.@f90objfilepostfix@
 
 HEADERS =
 
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: $(TARGET) with-mpi $(F90TARGET) install-module
-
-build-serial: $(TARGET) without-mpi $(F90TARGET) install-module
+build-default: $(TARGET) $(F90TARGET) install-module
 
 build-without-f: $(TARGET)
 
@@ -123,12 +107,6 @@ $(TARGET): $(OBJS)
 
 $(F90TARGET): $(OBJSF)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
-
-with-mpi: $(OBJSF_SR) $(OBJF_COMM)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJF_COMM) $(OBJSF_SR)
-
-without-mpi: $(OBJSF_SR_DUMM) $(OBJF_COMM_DUMM)
-	$(AR) $(HECMWLIBDIR)/$(F90TARGET) $(OBJF_COMM_DUMM) $(OBJSF_SR_DUMM)
 
 $(OBJS): $(HEADERS)
 

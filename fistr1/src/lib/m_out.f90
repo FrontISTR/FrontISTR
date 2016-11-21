@@ -1,25 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by K. SATOH (Advancesoft), X. YUAN (AdavanceSoft) !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module manages step infomation
-!>
-!>  \author     K. SATOH (Advancesoft), X. YUAN (AdavanceSoft)
-!>  \date       2009/11/09
-!>  \version    0.00
-!!
-!======================================================================!
 module m_out
   use hecmw
   implicit none
@@ -182,12 +165,8 @@ integer function n_comp_valtype( vtype, ndim )
   else if( vtype==-2 ) then
     n_comp_valtype = ndim
   else if( vtype==-3 ) then
-    if (ndim == 4)then
-      n_comp_valtype = 6
-    else 
-      n_comp_valtype = ndim*(ndim+1)/2
-      if(ndim == 6)n_comp_valtype=6
-    end if
+    n_comp_valtype = ndim*(ndim+1)/2
+    if(ndim == 6)n_comp_valtype=6
   else if( vtype==-4 ) then
     n_comp_valtype = ndim*ndim
   else

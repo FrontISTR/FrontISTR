@@ -1,19 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : Visualization                                     *
- *                                                                     *
- *            Written by Li Chen (Univ. of Tokyo)                      *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"     *
- *                                                                     *
- *=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include "hecmw_vis_connectivity_build.h"
 
@@ -29,7 +17,7 @@ void find_index_connectivity(struct hecmwST_local_mesh *mesh, int *index_connect
 
 	index_connect[0]=0;
 	for(i=0;i<mesh->n_elem;i++) {
-		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414))
+		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342))
 			index_connect[i+1]=index_connect[i]+4;
 		else if((mesh->elem_type[i]==351) || (mesh->elem_type[i]==352))
 			index_connect[i+1]=index_connect[i]+5;
@@ -48,8 +36,7 @@ void find_index_a_connect(struct hecmwST_local_mesh *mesh, int num_export, int p
 	index_a_connect[0]=0;
 	for(i=0;i<num_export;i++) {
 		if((mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==341) ||
-				(mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==342) ||
-        (mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==3414))
+				(mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==342))
 			index_a_connect[i+1]=index_a_connect[i]+4;
 		else if((mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==351) ||
 				(mesh->elem_type[export_element[pe_no*mesh->n_elem+i]]==352))
@@ -126,7 +113,7 @@ void build_hash_table(struct hecmwST_local_mesh *mesh, int *index_connect, Hash_
 	for(i=0;i<n_elem;i++) {
 		for(j=0;j<mesh->elem_node_index[i+1]-mesh->elem_node_index[i];j++)
 			node[j]=mesh->elem_node_item[mesh->elem_node_index[i]+j];
-		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414))  {
+		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342))  {
 			for(j=0;j<4;j++) {
 				nodesum=0;
 				for(k=index_face_tetra[j];k<index_face_tetra[j+1];k++)
@@ -190,7 +177,7 @@ int is_connect(int elemID1, int faceID1, int elemID2, int faceID2, struct hecmwS
 	for(j=0;j<mesh->elem_node_index[elemID2+1]-mesh->elem_node_index[elemID2];j++)
 		node2[j]=mesh->elem_node_item[mesh->elem_node_index[elemID2]+j];
 
-	if((mesh->elem_type[elemID1]==341) || (mesh->elem_type[elemID1]==342) || (mesh->elem_type[elemID1]==3414)){
+	if((mesh->elem_type[elemID1]==341) || (mesh->elem_type[elemID1]==342)){
 		f_num1=index_face_tetra[faceID1+1]-index_face_tetra[faceID1];
 		for(k=0;k<f_num1;k++)
 			face1[k]=node1[face_tetra[index_face_tetra[faceID1]+k]];
@@ -206,7 +193,7 @@ int is_connect(int elemID1, int faceID1, int elemID2, int faceID2, struct hecmwS
 		for(k=0;k<f_num1;k++)
 			face1[k]=node1[face_hexa[index_face_hexa[faceID1]+k]];
 	}
-	if((mesh->elem_type[elemID2]==341) || (mesh->elem_type[elemID2]==342) || (mesh->elem_type[elemID2]==3414)){
+	if((mesh->elem_type[elemID2]==341) || (mesh->elem_type[elemID2]==342)){
 		f_num2=index_face_tetra[faceID2+1]-index_face_tetra[faceID2];
 		for(k=0;k<f_num2;k++)
 			face2[k]=node2[face_tetra[index_face_tetra[faceID2]+k]];
@@ -307,7 +294,7 @@ void  build_connectivity(struct hecmwST_local_mesh *mesh, Hash_table *h_table, i
 	for(i=0;i<n_elem;i++) {
 		for(j=0;j<mesh->elem_node_index[i+1]-mesh->elem_node_index[i];j++)
 			node[j]=mesh->elem_node_item[mesh->elem_node_index[i]+j];
-		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414)) {
+		if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342)) {
 			for(j=0;j<4;j++) {
 				nodesum=0;
 				for(k=index_face_tetra[j];k<index_face_tetra[j+1];k++) {
@@ -843,7 +830,7 @@ void HECMW_vis_find_boundary_surface(Surface *sff, struct hecmwST_local_mesh *me
 		if(mesh->elem_ID[i*2+1]==mynode) {
 			for(j=0;j<index_connect[i+1]-index_connect[i];j++) {
 				if(connect[(index_connect[i]+j)*3]==-1) {
-					if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414)){
+					if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342)){
 						for(k=0;k<index_face_tetra[j+1]-index_face_tetra[j];k++)
 							node[k]=mesh->elem_node_item[mesh->elem_node_index[i]+face_tetra[index_face_tetra[j]+k]];
 						add_one_patch(sff, mesh, data, node_hit, b_point, head_b_patch, node, c_base, d_base, tn_component);

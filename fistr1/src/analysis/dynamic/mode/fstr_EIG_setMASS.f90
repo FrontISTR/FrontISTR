@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Eigen Analysis                                    !
-!                                                                      !
-!            Written by Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Giri Prabhakar (RIST)                          !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> Set up lumped mass matrix
 module m_fstr_EIG_setMASS
 
@@ -127,8 +117,6 @@ contains
             CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
           elseif( ic_type.EQ.341 ) then
             CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
-          elseif( ic_type.EQ.3414 ) then
-            ss = 0.0D0
           elseif( ic_type.EQ.342 ) then
             CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ic_type.EQ.351 ) then

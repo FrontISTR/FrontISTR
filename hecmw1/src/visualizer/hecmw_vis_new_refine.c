@@ -1,19 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : Visualization                                     *
- *                                                                     *
- *            Written by Li Chen (Univ. of Tokyo)                      *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include "hecmw_vis_new_refine.h"
 
@@ -504,7 +492,7 @@ void refinement(struct hecmwST_local_mesh *mesh, double *node1,
 										}
 										if((mesh->elem_type[i]==361) || (mesh->elem_type[i]==362))
 											inside=judge_inner_voxel_361(vv, in_point);
-										else if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342) || (mesh->elem_type[i]==3414))
+										else if((mesh->elem_type[i]==341) || (mesh->elem_type[i]==342))
 											inside=judge_inner_voxel_341(vv, in_point);
 										else if((mesh->elem_type[i]==351) || (mesh->elem_type[i]==352))
 											inside=judge_inner_voxel_351(vv, in_point);

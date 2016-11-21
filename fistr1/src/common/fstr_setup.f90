@@ -1,16 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : I/O and Utility                                   !
-!                                                                      !
-!            Written by Noboru Imai (Univ. of Tokyo)                   !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions to read in data from control file
 !! and do neccessary preparation for following calculation
 module m_fstr_setup
@@ -495,18 +486,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                                              fstrSOLID%materials(cid)%dict)/=0 ) then
                  write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
                  write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
-                 stop
-              endif
-            endif
-          else if( header_name == '!FLUID' ) then
-            if( c_material >0 ) then
-               if( fstr_ctrl_get_FLUID( ctrl,                                        &
-                                        fstrSOLID%materials(cid)%mtype,       &
-                                        fstrSOLID%materials(cid)%nlgeom_flag, &
-                                        fstrSOLID%materials(cid)%variables,   &
-                                        fstrSOLID%materials(cid)%dict)/=0 ) then
-                 write(*,*) '### Error: Fail in read in fluid definition : ' , cid
-                 write(ILOG,*) '### Error: Fail in read in fluid definition : ', cid
                  stop
               endif
             endif

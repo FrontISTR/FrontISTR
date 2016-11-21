@@ -1,20 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : HEC-MW Utility                                    *
- *                                                                     *
- *            Written by Shin'ichi Ezure (RIST)                        *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1328,9 +1315,6 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
         case HECMW_ETYPE_TET1:  /* tetrahedron ( 1st order ) */
             if( edge_info_tet1( local_mesh, is, ie ) )  goto error;
             break;
-        case HECMW_ETYPE_TET1_4:  /* tetrahedron ( 1st order, 4 DOFs for each node) */
-            if( edge_info_tet1( local_mesh, is, ie ) )  goto error;
-            break;
         case HECMW_ETYPE_TET2:  /* tetrahedron ( 2nd order ) */
             if( edge_info_tet2( local_mesh, is, ie ) )  goto error;
             break;
@@ -1347,9 +1331,6 @@ HECMW_mesh_edge_info( struct hecmwST_local_mesh *local_mesh,
             if( edge_info_pri2( local_mesh, is, ie ) )  goto error;
             break;
         case HECMW_ETYPE_HEX1:  /* hexahedron ( 1st order ) */
-            if( edge_info_hex1( local_mesh, is, ie ) )  goto error;
-            break;
-        case HECMW_ETYPE_HEX1_4:  /* hexahedron ( 1st order ) */
             if( edge_info_hex1( local_mesh, is, ie ) )  goto error;
             break;
         case HECMW_ETYPE_HEX2:  /* hexahedron ( 2nd order ) */
