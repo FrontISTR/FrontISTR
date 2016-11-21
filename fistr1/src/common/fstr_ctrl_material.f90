@@ -1,26 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : I/O and Utility                                   !
-!                                                                      !
-!            Written by X. YUAN (AdavanceSoft)                         !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module manages read in of various material properties
-!>
-!!
-!>  \author     X. YUAN (AdavanceSoft)
-!>  \date       2009/10/31
-!>  \version    0.00
-!!
-!======================================================================!
 module fstr_ctrl_material
    use hecmw
    use mMaterial

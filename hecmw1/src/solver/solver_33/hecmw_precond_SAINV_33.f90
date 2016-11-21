@@ -1,3 +1,8 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module hecmw_precond_SAINV_33
   use hecmw_util
   use m_hecmw_comm_f

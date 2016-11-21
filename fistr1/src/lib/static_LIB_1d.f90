@@ -1,25 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN, K.Inagaki(Univ. of .Tokyo)            !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module provide common functions of 3D truss elements
-!>
-!>  \author     X. YUAN (AdavanceSoft)
-!>  \date       2012/01/06
-!>  \version    0.00
-!!
-!======================================================================!
 module m_static_LIB_1d
    use hecmw, only : kint, kreal
    use elementInfo

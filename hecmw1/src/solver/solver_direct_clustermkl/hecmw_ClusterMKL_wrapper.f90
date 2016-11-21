@@ -1,20 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/01/25                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuhisa Inagaki (Univ. of Tokyo)              !
-!                       Naoki Morita (Univ. of Tokyo)                  !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
   include 'mkl_cluster_sparse_solver.f90'
 
   module m_hecmw_ClusterMKL_wrapper
@@ -44,7 +32,7 @@
   REAL*8, allocatable, dimension(:) :: a
   REAL*8, allocatable, dimension(:) :: b
   REAL*8, allocatable, dimension(:) :: x
-  
+
   integer myrank0
 
   contains
@@ -52,7 +40,7 @@
   subroutine hecmw_clustermkl_wrapper(hecMESH, hecMAT)
   type (hecmwST_local_mesh), intent(in) :: hecMESH
   type (hecmwST_matrix    ), intent(inout) :: hecMAT
-  
+
   integer(kind=kint) :: spmat_type
   integer(kind=kint) :: spmat_symtype
   integer(kind=kint) :: istat,myrank
@@ -171,7 +159,7 @@
     write(imsg,'(A,i8)') 'number of positive eigenvalues',iparm(22)
     write(imsg,'(A,i8)') 'number of negative eigenvalues',iparm(23)
     write(imsg,'(A,i8)') 'number of perturbed pivots',iparm(14)
-    write(imsg,'(A)') '############ END MATRIX SOLVER TIME INFORMATION ############'        
+    write(imsg,'(A)') '############ END MATRIX SOLVER TIME INFORMATION ############'
   endif
 
   call hecmw_mat_dump_solution(hecMAT)
@@ -233,12 +221,12 @@
   logical, intent(in)   :: ordered
 
   integer(kind=kint) :: i, j, iS, iE
-  
+
   do i=2,nloc+1
     if(spMAT%IRN(i)-spMAT%IRN(i-1)>10000) &
       &  write(*,*) 'warning: n may be too large for set_mkl_set_prof0 for row ',i-1
   enddo
-  
+
   !!$omp parallel private(i, iS, iE)
   !!$omp do
   do i=1,nloc
@@ -254,32 +242,32 @@
   integer(kind=kint), intent(in) :: n
   integer(kind=kint), intent(inout) :: ja(:)
   real(kind=kreal), intent(inout) :: a(:)
-  
+
   integer(kind=kint) :: i, j, work(2,n)
   real(kind=kreal)   :: oa(n)
-  
+
   do i=1,n
     work(1,i) = ja(i)
     work(2,i) = i
     oa(i) = a(i)
   enddo
-  
+
   call myqsort(n,work)
-  
+
   do i=1,n
     ja(i) = work(1,i)
     a(i) = oa(work(2,i))
   enddo
-  
+
   end subroutine set_mkl_set_val0
-  
+
   recursive subroutine myqsort(n,work)
   integer(kind=kint), intent(in) :: n
   integer(kind=kint), intent(inout) :: work(:,:)
-  
+
   integer(kind=kint) :: i, j, key, work1(2,n), n_low, n_high
   logical :: sorted
-  
+
   if(n<2) return
   !return if work is already sorted
   sorted = .true.
@@ -295,7 +283,7 @@
     call myinssort(n,work)
     return
   endif
-  
+
   n_low=0
   do i=1,n
     if(work(1,i)<key) then
@@ -303,7 +291,7 @@
       work1(1:2,n_low) = work(1:2,i)
     endif
   enddo
-  
+
   n_high=0
   do i=1,n
     if(work(1,i)>=key) then
@@ -311,22 +299,22 @@
       work1(1:2,n_low+n_high) = work(1:2,i)
     endif
   enddo
-  
+
   if(n_low>0) call myqsort(n_low,work1(1:2,1:n_low))
   if(n_high>0) call myqsort(n_high,work1(1:2,n_low+1:n_low+n_high))
-  
+
   do i=1,n
     work(1:2,i) = work1(1:2,i)
   enddo
-  
+
   end subroutine myqsort
-  
+
   subroutine myinssort(n,work)
   integer(kind=kint), intent(in) :: n
   integer(kind=kint), intent(inout) :: work(:,:)
-  
+
   integer(kind=kint) :: i,j,tmp(2)
-  
+
   do i=2,n
     do j=i,2,-1
       if(work(1,j)<work(1,j-1)) then
@@ -336,8 +324,8 @@
       endif
     enddo
   enddo
-  
+
   end subroutine myinssort
-  
+
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   end module m_hecmw_ClusterMKL_wrapper

@@ -1,23 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   FrontISTR Ver. 3.7                                                 !
-!                                                                      !
-!     Last Update : 2012/10/22                                         !
-!        Category : Data stucture                                      !
-!                                                                      !
-!                    Written by Xi YUAN (AdvanceSoft)                  !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!======================================================================!
-!  History
-!  -------------------------------------------
-!  Date            MODIFIER           COMMENT
-!  2012/10/22       X. YUAN           original
-!======================================================================!
-
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This modules defines common structures for fem analysis
 MODULE m_common_struct
   IMPLICIT NONE
