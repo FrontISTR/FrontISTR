@@ -1,16 +1,7 @@
-/*=====================================================================*
-!                                                                      !
-! Software Name : FrontISTR Ver. 4.2                                   !
-!                                                                      !
-!      Module Name : Starter Main                                      !
-!                                                                      !
-!            Written by Keiji Suemitsu (Advancesoft)                   !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-*=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <string.h>

@@ -1,24 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This subroutine read in used-defined material properties
 !>  tangent
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2010/01/12
-!>  \version    0.00
-!======================================================================!
 module mUmat
 implicit none
 
@@ -37,7 +22,7 @@ subroutine uMatlMatrix( mname, matl, strain, stress, fstat, D  &
      REAL(KIND=kreal), INTENT(OUT) :: D(:,:)    !< strain-stress relation
      REAL(KIND=kreal), INTENT(IN)  :: dtime     !< time increment
      REAL(KIND=kreal), INTENT(IN)  :: ttime     !< total time at the start of the current increment
-	 REAL(KIND=kreal), optional    :: temperature !< temprature
+     REAL(KIND=kreal), optional    :: temperature !< temprature
 
 end subroutine
 

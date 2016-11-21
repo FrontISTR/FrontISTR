@@ -1,19 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2006/06/01                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Takamichi Arakawa (Univ. of Tokyo)             !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 MODULE hecmw_solver_direct
   INTEGER (KIND=4),PRIVATE :: len_colno
   INTEGER (KIND=4),PRIVATE :: nstop

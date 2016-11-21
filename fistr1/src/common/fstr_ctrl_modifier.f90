@@ -1,23 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by Xi YUAN (AdavanceSoft)                         !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to modify MPC conditions
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/08/12
-!>  \version    0.00
-!======================================================================!
 module fstr_ctrl_modifier
 
 use fstr_setup_util

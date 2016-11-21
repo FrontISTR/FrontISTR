@@ -1,19 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/12/16                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuya Goto (PExProCS LLC)                     !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module hecmw_solver_las_33
   use hecmw_util
   implicit none
@@ -415,6 +404,9 @@ contains
     Tcomm = 0.d0
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
          hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+    if (bnorm2 == 0.d0) then
+      bnorm2 = 1.d0
+    endif
     call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     hecmw_rel_resid_L2_33 = sqrt(rnorm2 / bnorm2)

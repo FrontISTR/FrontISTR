@@ -1,25 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN (AdavanceSoft), K. SATOH (Advancesoft) !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module manages step infomation
-!>
-!>  \author     X. YUAN (AdavanceSoft), K. SATOH (Advancesoft)
-!>  \date       2009/10/29
-!>  \version    0.00
-!!
-!======================================================================!
 module m_step
    use hecmw
    implicit none

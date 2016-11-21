@@ -1,23 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2014/11/14                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Kazuaki Sakane (RIST)                         *
- *                       Shin'ichi Ezure (RIST)                        *
- *                       Tatsuhiro Shono (The University of Tokyo)     *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1425,22 +1409,22 @@ set_mpc_block( struct hecmwST_local_mesh *local_mesh,
     js = local_mesh->mpc->mpc_index[i];
     je = local_mesh->mpc->mpc_index[i+1];
 
-    /* MPC¥°¥ë¡¼¥×¤Î³ÆÀáÅÀ¤¬½êÂ°¤¹¤ë¥°¥ë¡¼¥×¤ò mpc_node_flag ¤Ë³ÊÇ¼   */
-    /* ³ÆMPC¥°¥ë¡¼¥×¤Î½êÂ°¤¹¤ë¥Ö¥í¥Ã¥¯¤ò mpc_index_flag ¤Ë³ÊÇ¼ (»ÃÄê) */
+    /* MPC???ë¡¼?×¤Î³???????????ë¥°?ë¡¼?×¤?mpc_node_flag ?Ë³??   */
+    /* ??PC???ë¡¼?×¤Î½????????Ã¥???mpc_index_flag ?Ë³?? (??? */
     min_group = i;
     for( j=js; j<je; j++ ) {
       node = local_mesh->mpc->mpc_item[j];
 
-      /* ÃíÌÜ¤·¤Æ¤¤¤ëÀáÅÀ¤¬´û¤ËÂ¾¤Î¥°¥ë¡¼¥×¤Ë½êÂ°¤·¤Æ¤¤¤ë¾ì¹ç  ¡§group >= 0 */
-      /*                       Â¾¤Î¥°¥ë¡¼¥×¤Ë½êÂ°¤·¤Æ¤¤¤Ê¤¤¾ì¹ç¡§group <  0 */
+      /* ?????Æ¤?????????????Î¥??ë¡¼?×¤Ë½?????Æ¤????? ??group >= 0 */
+      /*                       Â¾?Î¥??ë¡¼?×¤Ë½?????Æ¤??Ê¤?????group <  0 */
       group = mpc_node_flag[node-1];
       mpc_node_flag[node-1] = ( group < 0 ) ? i : group;
 
-      /* iÈÖÌÜ¤ÎMPC¥°¥ë¡¼¥×¤Î³ÆÀáÅÀ¤Î½êÂ°¤¹¤ë¥°¥ë¡¼¥×¤ÎºÇ¾®¥°¥ë¡¼¥×¤ò·èÄê */
+      /* i????PC???ë¡¼?×¤Î³????Î½?????ë¥°?ë¡¼?×¤ÎºÇ¾????ë¡¼?×¤?? */
       min_group = ( mpc_index_flag[mpc_node_flag[node-1]] < min_group ) ? mpc_index_flag[mpc_node_flag[node-1]] : min_group;
     }
 
-    /* iÈÖÌÜ¤ÎMPC¥°¥ë¡¼¥×¤Î³ÆÀáÅÀ¤¬½êÂ°¤·¤Æ¤¤¤ë¥°¥ë¡¼¥×¤ÏºÇ¾®¥°¥ë¡¼¥×¤ËÅý°ì */
+    /* i????PC???ë¡¼?×¤Î³???????????Æ¤??ë¥°?ë¡¼?×¤ÏºÇ¾????ë¡¼?×¤????*/
     for( j=js; j<je; j++ ) {
       node  = local_mesh->mpc->mpc_item[j];
       group = mpc_node_flag[node-1];
@@ -1450,7 +1434,7 @@ set_mpc_block( struct hecmwST_local_mesh *local_mesh,
     mpc_index_flag[i] = min_group;
   }
 
-  /* ¥°¥ë¡¼¥×¤ÎÀ°¹çÀ­¤ò¼è¤ë */
+  /* ???ë¡¼?×¤?????????*/
   for( i=0; i<local_mesh->mpc->n_mpc; i++ ) {
     group = mpc_index_flag[i];
     mpc_index_flag[i] = mpc_index_flag[group];

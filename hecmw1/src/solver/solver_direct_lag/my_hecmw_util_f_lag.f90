@@ -1,3 +1,8 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module my_hecmw_util_lag
   implicit none
 

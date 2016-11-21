@@ -1,18 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module provide a function to fetch material properties from hecmw
 module m_static_get_prop
 contains
@@ -74,8 +63,8 @@ contains
     write(IMSG,*) '###Error 1'
     stop
   endif
-    
-    
+
+
   if ( n_item.ge.1 ) then
     !C** Number of Sub Item
     n_subitem = hecMESH%material%mat_subITEM_index(ihead+1)                          &
@@ -194,7 +183,7 @@ contains
 
   elseif( n_subitem >= 4) then
     n_totlyr=0
-      
+
     i=1
     do
       if(i >= n_subitem) exit
@@ -253,6 +242,6 @@ contains
       write(IMSG,"(a)")"### NOTICCE: Total thickness is not equal to the sum of laminated layers' thickness"
     endif
   endif
-  
+
   end subroutine fstr_get_prop_shell
 end module m_static_get_prop

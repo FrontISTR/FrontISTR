@@ -1,26 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Sato(Advancesoft), X. YUAN(AdavanceSoft)    !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides function to calcualte tangent stiffness matrix.
-!!
-!>  \author                date                  version
-!>  X.Yuan(Advancesoft)    2010/08/26        original
-!>  X.Yuan                 2013/03/18        consider anisotropic materials
-!
-!======================================================================!
+
 module m_fstr_StiffMatrix
    implicit none
 
