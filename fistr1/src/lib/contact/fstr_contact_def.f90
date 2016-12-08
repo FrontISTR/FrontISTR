@@ -365,7 +365,10 @@ contains
             endif
           enddo
 
-          if(nMaster == 0) cycle
+          if(nMaster == 0) then
+            deallocate(indexMaster)
+            cycle
+          endif
 !          do id= 1, size(contact%master)
           do idm = 1,nMaster
             id = indexMaster(idm)
