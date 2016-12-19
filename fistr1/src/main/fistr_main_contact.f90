@@ -116,6 +116,12 @@ use m_fstr_freqdata
           write(*,'(a,f10.2)') '           pre (sec) :', T2 - T1
           write(*,'(a,f10.2)') '         solve (sec) :', T3 - T2
           write(*,*)           '===================================='
+
+          write(IMSG,*)           '===================================='
+          write(IMSG,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
+          write(IMSG,'(a,f10.2)') '           pre (sec) :', T2 - T1
+          write(IMSG,'(a,f10.2)') '         solve (sec) :', T3 - T2
+          write(IMSG,*)           '===================================='
         end if
 
         ! =============== FINALIZE =====================

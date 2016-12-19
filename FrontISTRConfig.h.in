@@ -27,6 +27,7 @@
 #cmakedefine WITH_PARACON
 #cmakedefine WITH_PARADISO
 
+#cmakedefine PARA_CONTACT
 #cmakedefine HECMW_SERIAL
 #cmakedefine HECMW_WITH_REFINER
 #cmakedefine HECMW_WITH_METIS
