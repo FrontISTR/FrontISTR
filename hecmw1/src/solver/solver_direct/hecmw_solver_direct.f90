@@ -18,42 +18,42 @@ MODULE HECMW_SOLVER_DIRECT
   INTEGER(KIND=4), PRIVATE :: len_iv
   INTEGER(KIND=4), PRIVATE :: total
 
-  INTEGER(KIND=4), PRIVATE, POINTER :: jcol(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: irow(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: zpiv(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: iperm(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: invp(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: parent(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: nch(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: xlnzr(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: colno(:)
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: jcol
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: irow
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: zpiv
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: iperm
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: invp
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: parent
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: nch
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: xlnzr
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: colno
   !*Work arrays
-  INTEGER(KIND=4), PRIVATE, POINTER :: jcpt(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: jcolno(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: ia(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: ja(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: deg(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: marker(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: rchset(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: nbrhd(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: qsize(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: qlink(:)
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: jcpt
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: jcolno
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: ia
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: ja
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: deg
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: marker
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: rchset
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: nbrhd
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: qsize
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: qlink
   INTEGER(KIND=4), PRIVATE :: nofsub
-  INTEGER(KIND=4), PRIVATE, POINTER :: adjncy(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: btree(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: pordr(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: adjncp(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: xleaf(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: leaf(:)
-  INTEGER(KIND=4), PRIVATE, POINTER :: indx(:)
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: adjncy
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: btree
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: pordr
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: adjncp
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: xleaf
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: leaf
+  INTEGER(KIND=4), PRIVATE, DIMENSION(:), POINTER :: indx
 
-  REAL(KIND=8), PRIVATE, POINTER :: val(:)
-  REAL(KIND=8), PRIVATE, POINTER :: temp(:)
-  REAL(KIND=8), PRIVATE, POINTER :: diag(:)
-  REAL(KIND=8), PRIVATE, POINTER :: zln(:)
-  REAL(KIND=8), PRIVATE, POINTER :: dsln(:)
+  REAL(KIND=8), PRIVATE, DIMENSION(:), POINTER :: val
+  REAL(KIND=8), PRIVATE, DIMENSION(:), POINTER :: temp
+  REAL(KIND=8), PRIVATE, DIMENSION(:), POINTER :: diag
+  REAL(KIND=8), PRIVATE, DIMENSION(:), POINTER :: zln
+  REAL(KIND=8), PRIVATE, DIMENSION(:), POINTER :: dsln
   !*Timing
-  REAL(KIND=8), PRIVATE :: tom(10)
+  REAL(KIND=8), PRIVATE, DIMENSION(10) :: tom
   !*Allocation variables
   INTEGER(KIND=4), PRIVATE :: ialoc
   INTEGER(KIND=4), PRIVATE :: raloc
@@ -61,7 +61,7 @@ MODULE HECMW_SOLVER_DIRECT
 
 CONTAINS
   !----------------------------------------------------------------------
-  !     this is a program for the matrix solver
+  !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
   !     and is also available for performance tests
   !
   !     to solve Ax=b for x, nozero pattern and values must be give.
@@ -82,6 +82,16 @@ CONTAINS
     USE HECMW_MATRIX_DUMP
     IMPLICIT NONE
 
+    TYPE (HECMWST_LOCAL_MESH), INTENT(IN)::Hecmesh
+    INTEGER, INTENT(IN):: Ifmsg
+    TYPE (HECMWST_MATRIX), INTENT(OUT)::Hecmat
+
+    INTEGER:: ISEed
+    INTEGER:: IXXx
+    INTEGER:: LRAtio
+    INTEGER:: i98
+    INTEGER:: i97
+    INTEGER:: ir
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -90,15 +100,6 @@ CONTAINS
     DOUBLE PRECISION:: t3
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
-    INTEGER:: ISEed
-    INTEGER:: IXXx
-    INTEGER:: LRAtio
-    TYPE (HECMWST_LOCAL_MESH)::Hecmesh
-    TYPE (HECMWST_MATRIX)::Hecmat
-    INTEGER:: i98
-    INTEGER:: i97
-    INTEGER:: ir
-    INTEGER:: Ifmsg
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
     COMMON /QAZ   / ISEed, IXXx
 
@@ -189,35 +190,36 @@ CONTAINS
   END SUBROUTINE HECMW_SOLVE_DIRECT
 
   !======================================================================!
-  !                                                                      !
+  !> @brief ADDR0
   !======================================================================!
   SUBROUTINE ADDR0(Isw,I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg2,Ndeg2l,Ir)
     IMPLICIT NONE
 
-    INTEGER:: I
+    INTEGER, INTENT(IN):: I
+    INTEGER, INTENT(IN):: Isw
+    INTEGER, INTENT(IN):: J
+    INTEGER, INTENT(IN):: Ndeg2
+    INTEGER, INTENT(IN):: Ndeg2l
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Aij(Ndeg2)
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg2,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndeg2l,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg2,*)
+
     INTEGER:: i0
     INTEGER:: idbg
     INTEGER:: ii
-    INTEGER:: Ir
-    INTEGER:: Isw
     INTEGER:: itrans
-    INTEGER:: J
     INTEGER:: j0
     INTEGER:: jj
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: Ndeg2
-    INTEGER:: Ndeg2l
-    INTEGER:: Nstop
-    INTEGER:: Invp(*)
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(Ndeg2,*)
-    DOUBLE PRECISION:: Diag(Ndeg2l,*)
-    DOUBLE PRECISION:: Dsln(Ndeg2,*)
-    DOUBLE PRECISION:: Aij(Ndeg2)
 
     DATA idbg/0/
 
@@ -313,18 +315,27 @@ CONTAINS
   END SUBROUTINE ADDR0
 
   !======================================================================!
-  !                                                                      !
+  !> @brief ADDR3
   !======================================================================!
   SUBROUTINE ADDR3(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ir)
     IMPLICIT NONE
 
-    INTEGER:: I
+    INTEGER, INTENT(IN):: I
+    INTEGER, INTENT(IN):: J
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Aij(9)
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+
     INTEGER:: i0
     INTEGER:: idbg
     INTEGER:: ii
-    INTEGER:: Ir
     INTEGER:: itrans
-    INTEGER:: J
     INTEGER:: j0
     INTEGER:: jj
     INTEGER:: k
@@ -333,14 +344,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: ndeg2
     INTEGER:: ndeg2l
-    INTEGER:: Nstop
-    INTEGER:: Invp(*)
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(9,*)
-    DOUBLE PRECISION:: Diag(6,*)
-    DOUBLE PRECISION:: Dsln(9,*)
-    DOUBLE PRECISION:: Aij(9)
     DATA idbg, ndeg2, ndeg2l/0, 9, 6/
 
     Ir = 0
@@ -408,19 +411,31 @@ CONTAINS
     ENDDO
     Ir = 20
   END SUBROUTINE ADDR3
+
   !======================================================================!
-  !                                                                      !
+  !> @brief ADDRX
   !======================================================================!
   SUBROUTINE ADDRX(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg,Ndeg2l,Ir)
     IMPLICIT NONE
 
-    INTEGER:: I
+    INTEGER, INTENT(IN):: I
+    INTEGER, INTENT(IN):: J
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndeg2l
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Aij(Ndeg,Ndeg)
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndeg2l,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+
     INTEGER:: i0
     INTEGER:: idbg
     INTEGER:: ii
-    INTEGER:: Ir
     INTEGER:: itrans
-    INTEGER:: J
     INTEGER:: j0
     INTEGER:: jj
     INTEGER:: k
@@ -429,16 +444,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Ndeg2l
-    INTEGER:: Nstop
-    INTEGER:: Invp(*)
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: Diag(Ndeg2l,*)
-    DOUBLE PRECISION:: Dsln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: Aij(Ndeg,Ndeg)
     DATA idbg/0/
 
     Ir = 0
@@ -503,35 +508,31 @@ CONTAINS
     ENDDO
     Ir = 20
   END SUBROUTINE ADDRX
+
   !======================================================================!
-  !                                                                      !
+  !> @brief BRINGU  brings up zero pivots from bottom of the elimination tree to higher nodes
+  !
+  !      irr = 0     complete
+  !          = 1     impossible
   !======================================================================!
   SUBROUTINE BRINGU(Zpiv,Iperm,Invp,Parent,Izz,Neqns,Irr)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Izz
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Zpiv(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Irr
+    INTEGER, INTENT(OUT):: Iperm(*)
+    INTEGER, INTENT(OUT):: Invp(*)
 
     INTEGER:: i
     INTEGER:: ib
     INTEGER:: ib0
     INTEGER:: ibp
     INTEGER:: idbg
-    INTEGER:: Irr
-    INTEGER:: Izz
     INTEGER:: izzp
-    INTEGER:: Neqns
-    INTEGER:: Zpiv(*)
-    INTEGER:: Iperm(*)
-    INTEGER:: Invp(*)
-    INTEGER:: Parent(*)
-    !----------------------------------------------------------------------
-    !
-    !      bringu brings up zero pivots from bottom of the elimination tree
-    !      to higher nodes
-    !
-    !      irr = 0     complete
-    !          = 1     impossible
-    !
-    !
-    !----------------------------------------------------------------------
+
     idbg = 0
     Irr = 0
     ib0 = Invp(Izz)
@@ -560,25 +561,21 @@ CONTAINS
     ENDDO
     Irr = 1
   END SUBROUTINE BRINGU
+
   !======================================================================!
-  !                                                                      !
+  !> @brief D2DOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE D2DOT(T,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(4,*)
+    DOUBLE PRECISION, INTENT(IN):: B(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(4)
+
     INTEGER:: jj
-    INTEGER:: N
-    DOUBLE PRECISION:: T(4)
-    DOUBLE PRECISION:: A(4,*)
-    DOUBLE PRECISION:: B(4,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     T(1) = 0.0D0
     T(2) = 0.0D0
     T(3) = 0.0D0
@@ -590,50 +587,42 @@ CONTAINS
        T(4) = T(4) + A(2,jj)*B(2,jj) + A(4,jj)*B(4,jj)
     ENDDO
   END SUBROUTINE D2DOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief D2SDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE D2SDOT(Wi,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(2,*)
+    DOUBLE PRECISION, INTENT(IN):: B(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wi(2)
+
     INTEGER:: jj
-    INTEGER:: N
-    DOUBLE PRECISION:: Wi(2)
-    DOUBLE PRECISION:: A(2,*)
-    DOUBLE PRECISION:: B(4,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO jj = 1, N
        Wi(1) = Wi(1) - A(1,jj)*B(1,jj) - A(2,jj)*B(3,jj)
        Wi(2) = Wi(2) - A(1,jj)*B(2,jj) - A(2,jj)*B(4,jj)
     ENDDO
   END SUBROUTINE D2SDOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief D3DOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE D3DOT(T,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(9,*)
+    DOUBLE PRECISION, INTENT(IN):: B(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(9)
+
     INTEGER:: jj
     INTEGER:: l
-    INTEGER:: N
-    DOUBLE PRECISION:: T(9)
-    DOUBLE PRECISION:: A(9,*)
-    DOUBLE PRECISION:: B(9,*)
-    !    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     !$dir max_trips(9)
     DO l = 1, 9
        T(l) = 0.0D0
@@ -650,26 +639,22 @@ CONTAINS
        T(9) = T(9) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
     ENDDO
   END SUBROUTINE D3DOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief D3DOTL performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE D3DOTL(T,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(9,*)
+    DOUBLE PRECISION, INTENT(IN):: B(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(6)
+
     INTEGER:: jj
     INTEGER:: l
-    INTEGER:: N
-    DOUBLE PRECISION:: T(6)
-    DOUBLE PRECISION:: A(9,*)
-    DOUBLE PRECISION:: B(9,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO l = 1, 6
        T(l) = 0.0D0
     ENDDO
@@ -682,25 +667,21 @@ CONTAINS
        T(6) = T(6) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
     ENDDO
   END SUBROUTINE D3DOTL
+
   !======================================================================!
-  !                                                                      !
+  !> @brief D3SDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE D3SDOT(Wi,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(3,*)
+    DOUBLE PRECISION, INTENT(IN):: B(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wi(3)
+
     INTEGER:: jj
-    INTEGER:: N
-    DOUBLE PRECISION:: Wi(3)
-    DOUBLE PRECISION:: A(3,*)
-    DOUBLE PRECISION:: B(9,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO jj = 1, N
        Wi(1) = Wi(1) - A(1,jj)*B(1,jj) - A(2,jj)*B(4,jj) - A(3,jj)*B(7,jj)
        Wi(2) = Wi(2) - A(1,jj)*B(2,jj) - A(2,jj)*B(5,jj) - A(3,jj)*B(8,jj)
@@ -709,45 +690,43 @@ CONTAINS
   END SUBROUTINE D3SDOT
 
   !======================================================================!
-  !                                                                      !
+  !> @brief DDOT performs inner product of sparse vectors
   !======================================================================!
   DOUBLE PRECISION FUNCTION DDOT(A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(N)
+    DOUBLE PRECISION, INTENT(IN):: B(N)
+
     INTEGER:: i
-    INTEGER:: N
-    DOUBLE PRECISION:: A(N)
-    DOUBLE PRECISION:: B(N)
     DOUBLE PRECISION:: s
+
     s = 0.0D0
     DO i = 1, N
        s = s + A(i)*B(i)
     ENDDO
     DDOT = s
   END FUNCTION DDOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief DXDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE DXDOT(Ndeg,T,A,B,L)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: L
+    INTEGER, INTENT(IN):: Ndeg
+    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
+
     INTEGER:: jj
     INTEGER:: k
-    INTEGER:: L
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    DOUBLE PRECISION:: T(Ndeg,Ndeg)
-    DOUBLE PRECISION:: A(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: B(Ndeg,Ndeg,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO n = 1, Ndeg
        DO m = 1, Ndeg
           T(n,m) = 0.0D0
@@ -759,29 +738,25 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE DXDOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief DXDOTL performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE DXDOTL(Ndeg,T,A,B,L)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: L
+    INTEGER, INTENT(IN):: Ndeg
+    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
+
     INTEGER:: jj
     INTEGER:: k
-    INTEGER:: L
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    DOUBLE PRECISION:: T(Ndeg,Ndeg)
-    DOUBLE PRECISION:: A(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: B(Ndeg,Ndeg,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO n = 1, Ndeg
        DO m = 1, n
           T(n,m) = 0.0D0
@@ -793,27 +768,23 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE DXDOTL
+
   !======================================================================!
-  !                                                                      !
+  !> @brief DXSDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE DXSDOT(Ndeg,Wi,A,B,N)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Ndeg
+    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,*)
+    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wi(Ndeg)
+    INTEGER, INTENT(INOUT):: N
+ 
     INTEGER:: jj
     INTEGER:: m
-    INTEGER:: N
-    INTEGER:: Ndeg
-    DOUBLE PRECISION:: Wi(Ndeg)
-    DOUBLE PRECISION:: A(Ndeg,*)
-    DOUBLE PRECISION:: B(Ndeg,Ndeg,*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     DO jj = 1, N
        DO m = 1, Ndeg
           DO N = 1, Ndeg
@@ -822,19 +793,166 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE DXSDOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S3PDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
+  !======================================================================!
+  SUBROUTINE S3PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Ke
+    INTEGER, INTENT(IN):: Ks
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(9,*)
+    DOUBLE PRECISION, INTENT(IN):: B(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Bi(3)
+
+    INTEGER:: j
+    INTEGER:: jj
+
+    DO jj = Ks, Ke
+       j = Colno(jj)
+       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(4,jj)*B(2,j) - Zln(7,jj)*B(3,j)
+       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(5,jj)*B(2,j) - Zln(8,jj)*B(3,j)
+       Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(6,jj)*B(2,j) - Zln(9,jj)*B(3,j)
+    ENDDO
+  END SUBROUTINE S3PDOT
+
+  !======================================================================!
+  !> @brief S2PDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
+  !======================================================================!
+  SUBROUTINE S2PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Ke
+    INTEGER, INTENT(IN):: Ks
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(4,*)
+    DOUBLE PRECISION, INTENT(IN):: B(2,*)
+    DOUBLE PRECISION, INTENT(OUT):: Bi(2)
+
+    INTEGER:: j
+    INTEGER:: jj
+
+    DO jj = Ks, Ke
+       j = Colno(jj)
+       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(3,jj)*B(2,j)
+       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(4,jj)*B(2,j)
+    ENDDO
+  END SUBROUTINE S2PDOT
+
+  !======================================================================!
+  !> @brief S6PDOT  performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
+  !======================================================================!
+  SUBROUTINE S6PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Ke
+    INTEGER, INTENT(IN):: Ks
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(36,*)
+    DOUBLE PRECISION, INTENT(IN):: B(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Bi(6)
+
+    INTEGER:: j
+    INTEGER:: jj
+
+    DO jj = Ks, Ke
+       j = Colno(jj)
+       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j)&
+            - Zln(13,jj)*B(3,j) - Zln(19,jj)*B(4,j) - Zln(25,jj)&
+            *B(5,j) - Zln(31,jj)*B(6,j)
+       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j)&
+            - Zln(14,jj)*B(3,j) - Zln(20,jj)*B(4,j) - Zln(26,jj)&
+            *B(5,j) - Zln(32,jj)*B(6,j)
+       Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j)&
+            - Zln(15,jj)*B(3,j) - Zln(21,jj)*B(4,j) - Zln(27,jj)&
+            *B(5,j) - Zln(33,jj)*B(6,j)
+       Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j)&
+            - Zln(16,jj)*B(3,j) - Zln(22,jj)*B(4,j) - Zln(28,jj)&
+            *B(5,j) - Zln(34,jj)*B(6,j)
+       Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j)&
+            - Zln(17,jj)*B(3,j) - Zln(23,jj)*B(4,j) - Zln(29,jj)&
+            *B(5,j) - Zln(35,jj)*B(6,j)
+       Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j)&
+            - Zln(18,jj)*B(3,j) - Zln(25,jj)*B(4,j) - Zln(30,jj)&
+            *B(5,j) - Zln(36,jj)*B(6,j)
+    ENDDO
+  END SUBROUTINE S6PDOT
+
+  !======================================================================!
+  !> @brief SPDOT2 performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
+  !======================================================================!
+  DOUBLE PRECISION FUNCTION SPDOT2(B,Zln,Colno,Ks,Ke)
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Ke
+    INTEGER, INTENT(IN):: Ks
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(*)
+    DOUBLE PRECISION, INTENT(IN):: B(*)
+
+    INTEGER:: j
+    INTEGER:: jj
+    DOUBLE PRECISION:: s
+
+    s = 0.0D0
+    DO jj = Ks, Ke
+       j = Colno(jj)
+       s = s + Zln(jj)*B(j)
+    ENDDO
+    SPDOT2 = s
+  END FUNCTION SPDOT2
+
+  !======================================================================!
+  !> @brief SXPDOT performs inner product of sparse vectors
+  !      #coded by t.arakawa of RIST on 040510
+  !======================================================================!
+  SUBROUTINE SXPDOT(Ndeg,Bi,B,Zln,Colno,Ks,Ke)
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Ke
+    INTEGER, INTENT(IN):: Ks
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Colno(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Bi(Ndeg)
+
+    INTEGER:: j
+    INTEGER:: jj
+    INTEGER:: m
+    INTEGER:: n
+
+    DO jj = Ks, Ke
+       j = Colno(jj)
+       DO m = 1, Ndeg
+          DO n = 1, Ndeg
+             Bi(n) = Bi(n) - Zln(n,m,jj)*B(m,j)
+          ENDDO
+       ENDDO
+    ENDDO
+  END SUBROUTINE SXPDOT
+
+  !======================================================================!
+  !> @brief FORPAR
   !======================================================================!
   SUBROUTINE FORPAR(Neqns,Parent,Nch,Nstop)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Nstop
+    INTEGER, INTENT(OUT):: Nch(*)
+
     INTEGER:: i
     INTEGER:: idens
     INTEGER:: ii
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
+
     DO i = 1, Neqns
        Nch(i) = 0
     ENDDO
@@ -856,13 +974,14 @@ CONTAINS
   END SUBROUTINE FORPAR
 
   !======================================================================!
-  !                                                                      !
+  !> @brief SETIJ
   !======================================================================!
-
-
   SUBROUTINE SETIJ(Hecmesh,Hecmat)
     USE HECMW_UTIL
     IMPLICIT NONE
+
+    TYPE (HECMWST_LOCAL_MESH), INTENT(IN)::Hecmesh
+    TYPE (HECMWST_MATRIX), INTENT(IN)::Hecmat
 
     INTEGER:: i
     INTEGER:: ierr
@@ -870,9 +989,6 @@ CONTAINS
     INTEGER:: k
     INTEGER:: kk
     INTEGER:: ntotal
-
-    TYPE (HECMWST_LOCAL_MESH)::Hecmesh
-    TYPE (HECMWST_MATRIX)::Hecmat
     INTEGER(KIND=kint):: numnp
     INTEGER(KIND=kint):: ndof
     INTEGER(KIND=kint):: ndof2
@@ -908,12 +1024,19 @@ CONTAINS
           JCOl(kk) = i
        ENDDO
     ENDDO
-
   END SUBROUTINE SETIJ
 
+  !======================================================================!
+  !> @brief NUFORM
+  !======================================================================!
   SUBROUTINE NUFORM(Hecmesh,Hecmat,Ir)
     USE HECMW_UTIL
     IMPLICIT NONE
+
+    TYPE (HECMWST_LOCAL_MESH), INTENT(IN)::Hecmesh
+    TYPE (HECMWST_MATRIX), INTENT(IN)::Hecmat
+    INTEGER(KIND=kint), INTENT(OUT):: Ir
+
     INTEGER:: i
     INTEGER:: idbg
     INTEGER:: ierr
@@ -921,9 +1044,6 @@ CONTAINS
     INTEGER:: k
     INTEGER:: kk
     INTEGER:: ntotal
-    TYPE (HECMWST_LOCAL_MESH)::Hecmesh
-    TYPE (HECMWST_MATRIX)::Hecmat
-    INTEGER(KIND=kint):: Ir
     INTEGER(KIND=kint):: numnp
     INTEGER(KIND=kint):: ndof
     INTEGER(KIND=kint):: ndof2
@@ -970,17 +1090,17 @@ CONTAINS
   END SUBROUTINE NUFORM
 
   !======================================================================!
-  !                                                                      !
+  !> @brief VLCPY
   !======================================================================!
   SUBROUTINE VLCPY(A,B,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: A
-    DOUBLE PRECISION:: B
-    INTEGER:: N
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: B(N,N)
+    DOUBLE PRECISION, INTENT(OUT):: A(N,N)
+
     INTEGER:: i
     INTEGER:: j
-    DIMENSION A(N,N), B(N,N)
 
     DO i = 1, N
        DO j = 1, N
@@ -988,11 +1108,19 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE VLCPY
+
   !======================================================================!
-  !                                                                      !
+  !> @brief GENBTQ
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE GENBTQ(Invp,Parent,Btree,Zpiv,Izz,Neqns)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Zpiv(*)
+    INTEGER, INTENT(OUT):: Btree(2,*)
 
     INTEGER:: i
     INTEGER:: ib
@@ -1000,15 +1128,8 @@ CONTAINS
     INTEGER:: inext
     INTEGER:: ip
     INTEGER:: Izz
-    INTEGER:: Neqns
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Parent(*)
-    INTEGER:: Btree(2,*)
-    INTEGER:: Invp(*)
-    INTEGER:: Zpiv(*)
     COMMON /DEBUG / IDBg1
+
     DO i = 1, Neqns + 1
        Btree(1,i) = 0
        Btree(2,i) = 0
@@ -1045,19 +1166,25 @@ CONTAINS
        ENDIF
     ENDDO
     Izz = 0
-100 IF ( IDBg1/=0 ) WRITE (6,99001)
-99001 FORMAT (' binary tree')
-    IF ( IDBg1/=0 ) WRITE (6,99002) (i,Btree(1,i),Btree(2,i),i=1,Neqns)
-99002 FORMAT (i6,'(',2I6,')')
-    IF ( IDBg1/=0 ) WRITE (6,99003) Izz
-99003 FORMAT (' the first zero pivot is ',i4)
+100 IF ( IDBg1/=0 ) WRITE (6,"(' binary tree')")
+    IF ( IDBg1/=0 ) WRITE (6,"(i6,'(',2I6,')')") (i,Btree(1,i),Btree(2,i),i=1,Neqns)
+    IF ( IDBg1/=0 ) WRITE (6,"(' the first zero pivot is ',i4)") Izz
   END SUBROUTINE GENBTQ
-  
+
   !======================================================================!
-  !                                                                      !
+  !> @brief GENPAQ
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE GENPAQ(Xadj,Adjncy,Invp,Iperm,Parent,Neqns,Ancstr)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    INTEGER, INTENT(OUT):: Parent(*)
+    INTEGER, INTENT(OUT):: Ancstr(*)
 
     INTEGER:: i
     INTEGER:: IDBg1
@@ -1065,16 +1192,6 @@ CONTAINS
     INTEGER:: it
     INTEGER:: k
     INTEGER:: l
-    INTEGER:: Neqns
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Xadj(*)
-    INTEGER:: Adjncy(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Invp(*)
-    INTEGER:: Iperm(*)
-    INTEGER:: Ancstr(*)
     COMMON /DEBUG / IDBg1
 
     DO i = 1, Neqns
@@ -1099,42 +1216,40 @@ CONTAINS
        IF ( Parent(i)==0 ) Parent(i) = Neqns + 1
     ENDDO
     Parent(Neqns+1) = 0
-    IF ( IDBg1/=0 ) WRITE (6,99001)
-99001 FORMAT (' parent')
-    IF ( IDBg1/=0 ) WRITE (6,99002) (i,Parent(i),i=1,Neqns)
-99002 FORMAT (2I6)
+    IF ( IDBg1/=0 ) WRITE (6,"(' parent')")
+    IF ( IDBg1/=0 ) WRITE (6,"(2I6)") (i,Parent(i),i=1,Neqns)
   END SUBROUTINE GENPAQ
+
   !======================================================================!
-  !                                                                      !
+  !> @brief GENQMD
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE GENQMD(Neqns,Xadj,Adj0,Perm,Invp,Deg,Marker,Rchset,Nbrhd,Qsize,Qlink,Nofsub,Adjncy)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Adj0(*)
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(OUT):: Nofsub
+    INTEGER, INTENT(OUT):: Adjncy(*)
+    INTEGER, INTENT(OUT):: Perm(*)
+    INTEGER, INTENT(OUT):: Invp(*)
+    INTEGER, INTENT(OUT):: Deg(*)
+    INTEGER, INTENT(OUT):: Marker(*)
+    INTEGER, INTENT(OUT):: Rchset(*)
+    INTEGER, INTENT(OUT):: Nbrhd(*)
+    INTEGER, INTENT(OUT):: Qsize(*)
+    INTEGER, INTENT(OUT):: Qlink(*)
+
     INTEGER:: i
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Adjncy(*)
-    INTEGER:: Perm(*)
-    INTEGER:: Invp(*)
-    INTEGER:: Deg(*)
-    INTEGER:: Marker(*)
-    INTEGER:: Rchset(*)
-    INTEGER:: Nbrhd(*)
-    INTEGER:: Qsize(*)
-    INTEGER:: Qlink(*)
-    INTEGER:: Adj0(*)
-    INTEGER:: Xadj(*)
     INTEGER:: inode
     INTEGER:: ip
     INTEGER:: irch
     INTEGER:: j
     INTEGER:: mindeg
     INTEGER:: ndeg
-    INTEGER:: Neqns
     INTEGER:: nhdsze
     INTEGER:: node
-    INTEGER:: Nofsub
     INTEGER:: np
     INTEGER:: num
     INTEGER:: nump1
@@ -1192,7 +1307,6 @@ CONTAINS
        nxnode = Qlink(nxnode)
        IF ( nxnode<=0 ) THEN
           IF ( rchsze>0 ) THEN
-             !
              CALL QMDUPD(Xadj,Adjncy,rchsze,Rchset,Deg,Qsize,Qlink,Marker,Rchset(rchsze+1),Nbrhd(nhdsze+1))
              Marker(node) = 0
              DO irch = 1, rchsze
@@ -1215,30 +1329,32 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE GENQMD
+
   !======================================================================!
-  !                                                                      !
+  !> @brief GNCLNO
   !======================================================================!
   SUBROUTINE GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Colno,Neqns,Nstop,Lncol,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(IN):: Xleaf(*)
+    INTEGER, INTENT(IN):: Leaf(*)
+    INTEGER, INTENT(OUT):: Ir
+    INTEGER, INTENT(OUT):: Lncol
+    INTEGER, INTENT(OUT):: Xlnzr(*)
+    INTEGER, INTENT(OUT):: Colno(*)
+
     INTEGER:: i
     INTEGER:: IDBg1
-    INTEGER:: Ir
     INTEGER:: j
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: Lncol
     INTEGER:: nc
-    INTEGER:: Neqns
-    INTEGER:: Nstop
     INTEGER:: nxleaf
-    INTEGER:: Parent(*)
-    INTEGER:: Xleaf(*)
-    INTEGER:: Leaf(*)
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
     COMMON /DEBUG / IDBg1
 
     nc = 0
@@ -1271,24 +1387,33 @@ CONTAINS
 100 ENDDO
     Xlnzr(Neqns+1) = l
     Lncol = l - 1
-    IF ( IDBg1/=0 ) WRITE (6,99001)
-99001 FORMAT (' xlnzr')
-    IF ( IDBg1/=0 ) WRITE (6,99002) Lncol
-99002 FORMAT (' colno (lncol =',i10,')')
+    IF ( IDBg1/=0 ) WRITE (6,"(' xlnzr')")
+    IF ( IDBg1/=0 ) WRITE (6,"(' colno (lncol =',i10,')')") Lncol
     IF ( IDBg1/=0 ) THEN
        DO k = 1, Neqns
-          WRITE (6,99003) k
-99003     FORMAT (/' row = ',i6)
-          WRITE (6,99004) (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
-99004     FORMAT (10I4)
+          WRITE (6,"(/' row = ',i6)") k
+          WRITE (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
        ENDDO
     ENDIF
   END SUBROUTINE GNCLNO
+
   !======================================================================!
-  !                                                                      !
+  !> @brief GNLEAF
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE GNLEAF(Xadj,Adjncy,Invp,Iperm,Nch,Adjncp,Xleaf,Leaf,Neqns,Lnleaf)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: Nch(*)
+    INTEGER, INTENT(IN):: Invp(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    INTEGER, INTENT(OUT):: Lnleaf
+    INTEGER, INTENT(OUT):: Adjncp(*)
+    INTEGER, INTENT(OUT):: Xleaf(*)
+    INTEGER, INTENT(OUT):: Leaf(*)
 
     INTEGER:: i
     INTEGER:: IDBg1
@@ -1300,20 +1425,7 @@ CONTAINS
     INTEGER:: l
     INTEGER:: lc
     INTEGER:: lc1
-    INTEGER:: Lnleaf
     INTEGER:: m
-    INTEGER:: Neqns
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Xadj(*)
-    INTEGER:: Adjncy(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Adjncp(*)
-    INTEGER:: Xleaf(*)
-    INTEGER:: Leaf(*)
-    INTEGER:: Invp(*)
-    INTEGER:: Iperm(*)
     COMMON /DEBUG / IDBg1
 
     l = 1
@@ -1361,19 +1473,19 @@ CONTAINS
   END SUBROUTINE GNLEAF
 
   !======================================================================!
-  !                                                                      !
+  !> @brief INV2
   !======================================================================!
   SUBROUTINE INV2(Dsln,Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Dsln
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(3)
+
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
     DOUBLE PRECISION:: t
-    INTEGER:: Ir
-    INTEGER:: LRAtio
-    DIMENSION Dsln(3)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     Ir = 0
@@ -1391,16 +1503,16 @@ CONTAINS
     ENDIF
     Dsln(3) = 1.0D0/Dsln(3)
   END SUBROUTINE INV2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INV22
   !======================================================================!
   SUBROUTINE INV22(Zln,Zz,Diag)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
-    DIMENSION Zln(4), Zz(4), Diag(3)
+    DOUBLE PRECISION, INTENT(IN):: Diag(3)
+    DOUBLE PRECISION, INTENT(IN):: Zz(4)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(4)
 
     Zln(3) = Zz(3) - Zz(1)*Diag(2)
     Zln(1) = Zz(1)*Diag(1)
@@ -1412,20 +1524,21 @@ CONTAINS
     Zln(4) = Zln(4)*Diag(3)
     Zln(2) = Zln(2) - Zln(4)*Diag(2)
   END SUBROUTINE INV22
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INV3
   !======================================================================!
   SUBROUTINE INV3(Dsln,Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Dsln
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(6)
+
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    INTEGER:: Ir
-    INTEGER:: LRAtio
-    DIMENSION Dsln(6), t(2)
+    DOUBLE PRECISION:: t(2)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     Ir = 0
@@ -1452,16 +1565,16 @@ CONTAINS
     Dsln(5) = 0.0D0
     Dsln(6) = 1.0D0
   END SUBROUTINE INV3
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INV33
   !======================================================================!
   SUBROUTINE INV33(Zln,Zz,Diag)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
-    DIMENSION Zln(9), Zz(9), Diag(6)
+    DOUBLE PRECISION, INTENT(IN):: Diag(6)
+    DOUBLE PRECISION, INTENT(IN):: Zz(9)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9)
 
     Zln(4) = Zz(4) - Zz(1)*Diag(2)
     Zln(7) = Zz(7) - Zz(1)*Diag(4) - Zln(4)*Diag(5)
@@ -1487,20 +1600,21 @@ CONTAINS
     Zln(6) = Zln(6) - Zln(9)*Diag(5)
     Zln(3) = Zln(3) - Zln(6)*Diag(2) - Zln(9)*Diag(4)
   END SUBROUTINE INV33
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INV6
   !======================================================================!
   SUBROUTINE INV6(Dsln,Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Dsln
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(21)
+
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    INTEGER:: Ir
-    INTEGER:: LRAtio
-    DIMENSION Dsln(21), t(5)
+    DOUBLE PRECISION:: t(5)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     Ir = 0
@@ -1551,19 +1665,19 @@ CONTAINS
     Dsln(19) = t(4)
     Dsln(20) = t(5)
   END SUBROUTINE INV6
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INV66
   !======================================================================!
   SUBROUTINE INV66(Zln,Zz,Diag)
     IMPLICIT NONE
-    !*--INV661679
-    !*** Start of declarations inserted by SPAG
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
+
+    DOUBLE PRECISION, INTENT(IN):: Diag(21)
+    DOUBLE PRECISION, INTENT(IN):: Zz(36)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(36)
+
     INTEGER:: i
-    !*** End of declarations inserted by SPAG
-    DIMENSION Zln(36), Zz(36), Diag(21)
+
     DO i = 0, 5
        Zln(i+7) = Zz(i+7) - Zz(i+1)*Diag(2)
        Zln(i+13) = Zz(i+13) - Zz(i+1)*Diag(4) - Zln(i+7)*Diag(5)
@@ -1583,20 +1697,18 @@ CONTAINS
        Zln(i+1) = Zln(i+1) - Zln(i+31)*Diag(16) - Zln(i+25)*Diag(11)- Zln(i+19)*Diag(7) - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
     ENDDO
   END SUBROUTINE INV66
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INVX
   !======================================================================!
   SUBROUTINE INVX(Dsln,Ndeg,Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: tem
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+
     INTEGER:: i
-    INTEGER:: Ir
     INTEGER:: j
     INTEGER:: k
     INTEGER:: k0
@@ -1605,8 +1717,11 @@ CONTAINS
     INTEGER:: ld
     INTEGER:: ll
     INTEGER:: LRAtio
-    INTEGER:: Ndeg
-    DIMENSION Dsln(*)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: t
+    DOUBLE PRECISION:: tem
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     Ir = 0
@@ -1638,22 +1753,23 @@ CONTAINS
        Dsln(l) = 1.0D0/Dsln(l)
     ENDDO
   END SUBROUTINE INVX
+
   !======================================================================!
-  !                                                                      !
+  !> @brief INVXX
   !======================================================================!
   SUBROUTINE INVXX(Zln,Zz,Diag,Ndeg)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
+    INTEGER, INTENT(IN):: Ndeg
+    DOUBLE PRECISION, INTENT(IN):: Diag(*)
+    DOUBLE PRECISION, INTENT(IN):: Zz(Ndeg,Ndeg)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg)
+
     INTEGER:: joc
     INTEGER:: l
     INTEGER:: loc1
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    DIMENSION Zln(Ndeg,Ndeg), Zz(Ndeg,Ndeg), Diag(*)
 
     Zln = Zz
     DO l = 1, Ndeg, 2
@@ -1685,7 +1801,7 @@ CONTAINS
   END SUBROUTINE INVXX
 
   !======================================================================!
-  !> @brief matini initializes storage for sparse matrix solver.
+  !> @brief MATINI initializes storage for sparse matrix solver.
   !     this routine is used for both symmetric and asymmetric matrices
   !     and must be called once at the beginning
   !
@@ -1726,11 +1842,9 @@ CONTAINS
   SUBROUTINE MATINI(Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
+    INTEGER, INTENT(OUT):: Ir
+
     INTEGER:: IDBg
-    INTEGER:: Ir
     INTEGER:: ir1
     INTEGER:: iv1
     INTEGER:: izz
@@ -1762,12 +1876,12 @@ CONTAINS
     INTEGER:: maxl
     INTEGER:: neqns1
     INTEGER:: neqnsz
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     COMMON /DEBUG / IDBg
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    !     rmax=8.988d+307
-    !     rmin=4.941d-324
-    !     epsm=2.220d-16
-    !     lratio=2
+
     IDBg = 0
     izz0 = 0
 
@@ -1982,12 +2096,34 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE MATINI
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUFCT performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !         #coded by t.arakawa of RIST on 040329
   !======================================================================!
   SUBROUTINE NUFCT(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Ir
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+
+    INTEGER:: ic
+    INTEGER:: ISEm
+    INTEGER:: l
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -1997,36 +2133,9 @@ CONTAINS
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
     DOUBLE PRECISION:: tt
-    INTEGER:: ic
-    INTEGER:: Ir
-    INTEGER:: ISEm
-    INTEGER:: l
-    INTEGER:: LRAtio
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Indx(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
-    DOUBLE PRECISION:: Zln(*)
-    DOUBLE PRECISION:: Diag(*)
-    DOUBLE PRECISION:: Temp(*)
-    DOUBLE PRECISION:: Dsln(*)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
     COMMON ISEm
-    !----------------------------------------------------------------------
-    !
-    !     nufct performs cholesky factorization in row order
-    !
-    !     (i) xlnzr,colno,zln,diag
-    !         symbolicaly factorized
-    !
-    !     (o) zln,diag,dsln
-    !
-    !         #coded by t.arakawa of RIST on 040329
-    !
-    !----------------------------------------------------------------------
+
     ISEm = 1
     !
     ! phase I
@@ -2065,30 +2174,26 @@ CONTAINS
     RETURN
     Ir = 30
   END SUBROUTINE NUFCT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUFCT0 performs Cholesky factorization
+  !          if(iv(22).eq.0)    normal type
+  !          if(iv(22).gt.0)    code generation type
   !======================================================================!
   SUBROUTINE NUFCT0(Ir)
     USE HECMW_UTIL
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    INTEGER:: Ir
+    INTEGER, INTENT(OUT):: Ir
+
     INTEGER:: ISEed
     INTEGER:: IXXx
     INTEGER:: LRAtio
     INTEGER:: ndeg2
     INTEGER:: ndegl
-    !----------------------------------------------------------------------
-    !
-    !     this performs Cholesky factorization
-    !
-    !          if(iv(22).eq.0)    normal type
-    !          if(iv(22).gt.0)    code generation type
-    !
-    !----------------------------------------------------------------------
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
     COMMON /QAZ   / ISEed, IXXx
 
@@ -2133,12 +2238,33 @@ CONTAINS
     DEALLOCATE (TEMp)
     DEALLOCATE (INDx)
   END SUBROUTINE NUFCT0
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUFCT2  performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !         #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE NUFCT2(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Ir
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
+
+    INTEGER:: ic
+    INTEGER:: l
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -2148,34 +2274,8 @@ CONTAINS
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
     DOUBLE PRECISION:: tt
-    INTEGER:: ic
-    INTEGER:: Ir
-    INTEGER:: l
-    INTEGER:: LRAtio
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Indx(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
-    DOUBLE PRECISION:: Zln(4,*)
-    DOUBLE PRECISION:: Diag(3,*)
-    DOUBLE PRECISION:: Temp(4,*)
-    DOUBLE PRECISION:: Dsln(4,*)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    !----------------------------------------------------------------------
-    !
-    !     nufct performs cholesky factorization in row order
-    !
-    !     (i) xlnzr,colno,zln,diag
-    !         symbolicaly factorized
-    !
-    !     (o) zln,diag,dsln
-    !
-    !         #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     !
     ! phase I
     !
@@ -2212,12 +2312,33 @@ CONTAINS
     t3 = t4 - t3
     t4 = t5 - t4
   END SUBROUTINE NUFCT2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUFCT3 performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !         #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE NUFCT3(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Ir
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+
+    INTEGER:: ic
+    INTEGER:: l
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -2227,34 +2348,8 @@ CONTAINS
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
     DOUBLE PRECISION:: tt
-    INTEGER:: ic
-    INTEGER:: Ir
-    INTEGER:: l
-    INTEGER:: LRAtio
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Indx(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
-    DOUBLE PRECISION:: Zln(9,*)
-    DOUBLE PRECISION:: Diag(6,*)
-    DOUBLE PRECISION:: Temp(*)
-    DOUBLE PRECISION:: Dsln(9,*)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    !----------------------------------------------------------------------
-    !
-    !     nufct performs cholesky factorization in row order
-    !
-    !     (i) xlnzr,colno,zln,diag
-    !         symbolicaly factorized
-    !
-    !     (o) zln,diag,dsln
-    !
-    !         #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
+
     !
     ! phase I
     !
@@ -2293,17 +2388,29 @@ CONTAINS
 
   !======================================================================!
   !> @brief NUFCT6 performs cholesky factorization in row order
-  !
   !     (i) xlnzr,colno,zln,diag
   !         symbolicaly factorized
-  !
   !     (o) zln,diag,dsln
-  !
   !         #coded by t.arakawa of RIST 040331
   !======================================================================!
   SUBROUTINE NUFCT6(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(36,*)
+    INTEGER:: ic
+    INTEGER:: Ir
+    INTEGER:: l
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -2313,22 +2420,8 @@ CONTAINS
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
     DOUBLE PRECISION:: tt
-    INTEGER:: ic
-    INTEGER:: Ir
-    INTEGER:: l
-    INTEGER:: LRAtio
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Indx(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
-    DOUBLE PRECISION:: Zln(36,*)
-    DOUBLE PRECISION:: Diag(21,*)
-    DOUBLE PRECISION:: Temp(*)
-    DOUBLE PRECISION:: Dsln(36,*)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+
     !
     ! phase I
     !
@@ -2366,20 +2459,33 @@ CONTAINS
   END SUBROUTINE NUFCT6
 
   !======================================================================!
-  !
   !> @brief NUFCTX performs cholesky factorization in row order
-  !
   !     (i) xlnzr,colno,zln,diag
   !         symbolicaly factorized
-  !
   !     (o) zln,diag,dsln
-  !
   !         #coded by t.arakawa of RIST on 040510
-  !
   !======================================================================!
   SUBROUTINE NUFCTX(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ndeg,Ndegl,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg*Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg*Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg*Ndeg,*)
+
+    INTEGER:: ic
+    INTEGER:: Ir
+    INTEGER:: l
+    INTEGER:: LRAtio
     DOUBLE PRECISION:: EPSm
     DOUBLE PRECISION:: RMAx
     DOUBLE PRECISION:: RMIn
@@ -2389,23 +2495,6 @@ CONTAINS
     DOUBLE PRECISION:: t4
     DOUBLE PRECISION:: t5
     DOUBLE PRECISION:: tt
-    INTEGER:: ic
-    INTEGER:: Ir
-    INTEGER:: l
-    INTEGER:: LRAtio
-    INTEGER:: Ndeg
-    INTEGER:: Ndegl
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Indx(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Nch(*)
-    DOUBLE PRECISION:: Zln(Ndeg*Ndeg,*)
-    DOUBLE PRECISION:: Diag(Ndegl,*)
-    DOUBLE PRECISION:: Temp(Ndeg*Ndeg,*)
-    DOUBLE PRECISION:: Dsln(Ndeg*Ndeg,*)
     DOUBLE PRECISION:: zz(100)
     DOUBLE PRECISION:: t(100)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
@@ -2447,32 +2536,29 @@ CONTAINS
   END SUBROUTINE NUFCTX
 
   !======================================================================!
-  !> @brief NUSOL0
-  !     this performs forward elimination and backward substitution
-  !
+  !> @brief NUSOL0 performs forward elimination and backward substitution
   !     (i/o)
-  !           r_h_s        on entry     right hand side vector
+  !           r_h_s    on entry     right hand side vector
   !                    on exit      solution vector
   !           iv       communication array
-  !
   !      #coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE NUSOL0(R_h_s,Ir)
     USE HECMW_UTIL
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: R_h_s
+    INTEGER, INTENT(OUT):: Ir
+    DOUBLE PRECISION, INTENT(OUT):: R_h_s(*)
+
     INTEGER:: ISEed
     INTEGER:: IXXx
     INTEGER:: LRAtio
     INTEGER:: lwk
     INTEGER:: ndegl
-    DIMENSION R_h_s(*)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     DOUBLE PRECISION, POINTER :: wk(:)
-    INTEGER:: Ir
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
     COMMON /QAZ   / ISEed, IXXx
 
@@ -2506,27 +2592,30 @@ CONTAINS
     STAge = 40
     DEALLOCATE (wk)
   END SUBROUTINE NUSOL0
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUSOL1 performs forward elimination and backward substitution
   !======================================================================!
   SUBROUTINE NUSOL1(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(*)
+    DOUBLE PRECISION, INTENT(IN):: Diag(*)
+    DOUBLE PRECISION, INTENT(IN):: Dsln(*)
+    DOUBLE PRECISION, INTENT(OUT):: B(*)
+    DOUBLE PRECISION, INTENT(OUT):: Wk(*)
+
     INTEGER:: i
     INTEGER:: j
     INTEGER:: joc
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Iperm(*)
-    DOUBLE PRECISION:: Zln(*)
-    DOUBLE PRECISION:: Diag(*)
-    DOUBLE PRECISION:: B(*)
-    DOUBLE PRECISION:: Wk(*)
-    DOUBLE PRECISION:: Dsln(*)
 
     ! forward
     DO i = 1, Neqns
@@ -2567,11 +2656,23 @@ CONTAINS
        B(Iperm(i)) = Wk(i)
     ENDDO
   END SUBROUTINE NUSOL1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUSOL2 performs forward elimination and backward substitution
   !======================================================================!
   SUBROUTINE NUSOL2(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(4,*)
+    DOUBLE PRECISION, INTENT(IN):: Diag(3,*)
+    DOUBLE PRECISION, INTENT(IN):: Dsln(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: B(2,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wk(2,*)
 
     INTEGER:: i
     INTEGER:: j
@@ -2579,16 +2680,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Iperm(*)
-    DOUBLE PRECISION:: Zln(4,*)
-    DOUBLE PRECISION:: Diag(3,*)
-    DOUBLE PRECISION:: B(2,*)
-    DOUBLE PRECISION:: Wk(2,*)
-    DOUBLE PRECISION:: Dsln(4,*)
+
     ! forward
     DO i = 1, Neqns
        Wk(1,i) = B(1,Iperm(i))
@@ -2635,11 +2727,23 @@ CONTAINS
        B(2,Iperm(i)) = Wk(2,i)
     ENDDO
   END SUBROUTINE NUSOL2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief NUSOL3 performs forward elimination and backward substitution
   !======================================================================!
   SUBROUTINE NUSOL3(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(9,*)
+    DOUBLE PRECISION, INTENT(IN):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(IN):: Dsln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: B(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wk(3,*)
 
     INTEGER:: i
     INTEGER:: j
@@ -2647,16 +2751,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Iperm(*)
-    DOUBLE PRECISION:: Zln(9,*)
-    DOUBLE PRECISION:: Diag(6,*)
-    DOUBLE PRECISION:: B(3,*)
-    DOUBLE PRECISION:: Wk(3,*)
-    DOUBLE PRECISION:: Dsln(9,*)
+
     ! forward
     DO i = 1, Neqns
        Wk(1,i) = B(1,Iperm(i))
@@ -2712,14 +2807,28 @@ CONTAINS
   END SUBROUTINE NUSOL3
 
   !======================================================================!
-  !                                                                      !
+  !> @brief NUSOLX performs forward elimination and backward substitution
   !======================================================================!
   SUBROUTINE NUSOLX(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop,Ndeg,Ndegl)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Iperm(*)
+    DOUBLE PRECISION, INTENT(IN):: Zln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(IN):: Diag(Ndegl,*)
+    DOUBLE PRECISION, INTENT(OUT):: B(Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Wk(Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+
     INTEGER:: i
     INTEGER:: j
     INTEGER:: joc
+    INTEGER:: joc1
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
@@ -2728,18 +2837,7 @@ CONTAINS
     INTEGER:: locd
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Ndegl
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Iperm(*)
-    DOUBLE PRECISION:: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: Diag(Ndegl,*)
-    DOUBLE PRECISION:: B(Ndeg,*)
-    DOUBLE PRECISION:: Wk(Ndeg,*)
-    DOUBLE PRECISION:: Dsln(Ndeg,Ndeg,*)
+
     ! forward
     DO l = 1, Ndeg
        DO i = 1, Neqns
@@ -2752,8 +2850,9 @@ CONTAINS
        ke = Xlnzr(i+1) - 1
        IF ( ke>=ks ) CALL SXPDOT(Ndeg,Wk(1,i),Wk,Zln,Colno,ks,ke)
        IF ( i>Nstop ) THEN
-          CALL DXSDOT(Ndeg,Wk(1,i),Wk(1,Nstop),Dsln(1,1,joc),i-Nstop)
-          joc = joc + i - Nstop
+          joc1 = i - Nstop
+          CALL DXSDOT(Ndeg,Wk(1,i),Wk(1,Nstop),Dsln(1,1,joc),joc1)
+          joc = joc + joc1
        ENDIF
     ENDDO
     DO i = 1, Neqns
@@ -2811,11 +2910,23 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE NUSOLX
+
   !======================================================================!
-  !                                                                      !
+  !> @brief POSORD
   !======================================================================!
   SUBROUTINE POSORD(Parent,Btree,Invp,Iperm,Pordr,Nch,Neqns,Iw,Qarent,Mch)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Btree(2,*)
+    INTEGER, INTENT(IN):: Qarent(*)
+    INTEGER, INTENT(OUT):: Parent(*)
+    INTEGER, INTENT(OUT):: Pordr(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    INTEGER, INTENT(OUT):: Invp(*)
+    INTEGER, INTENT(OUT):: Iperm(*)
+    INTEGER, INTENT(OUT):: Iw(*)
+    INTEGER, INTENT(OUT):: Mch(0:Neqns+1)
 
     INTEGER:: i
     INTEGER:: IDBg1
@@ -2826,16 +2937,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: locc
     INTEGER:: locp
-    INTEGER:: Neqns
-    INTEGER:: Parent(*)
-    INTEGER:: Pordr(*)
-    INTEGER:: Btree(2,*)
-    INTEGER:: Nch(*)
-    INTEGER:: Invp(*)
-    INTEGER:: Iperm(*)
-    INTEGER:: Iw(*)
-    INTEGER:: Qarent(*)
-    INTEGER:: Mch(0:Neqns+1)
     COMMON /DEBUG / IDBg1
 
     DO i = 1, Neqns
@@ -2869,20 +2970,18 @@ CONTAINS
                       Parent(i) = Qarent(invpos)
                    ENDIF
                 ENDDO
-                IF ( IDBg1/=0 ) WRITE (6,"(' post order')")
-                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Pordr(i),i=1,Neqns)
-                IF ( IDBg1/=0 ) WRITE (6,99002)
-99002           FORMAT (/' invp ')
-                IF ( IDBg1/=0 ) WRITE (6,99003)
-99003           FORMAT (/' parent')
-                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Parent(i),i=1,Neqns)
-                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Invp(i),i=1,Neqns)
-                IF ( IDBg1/=0 ) WRITE (6,99004)
-99004           FORMAT (/' iperm ')
-                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Iperm(i),i=1,Neqns)
-                IF ( IDBg1/=0 ) WRITE (6,99005)
-99005           FORMAT (' nch')
-                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Nch(i),i=1,Neqns)
+                IF ( IDBg1/=0 ) THEN
+                   WRITE (6,"(' post order')")
+                   WRITE (6,"(10I6)") (Pordr(i),i=1,Neqns)
+                   WRITE (6,"(/' invp ')")
+                   WRITE (6,"(/' parent')")
+                   WRITE (6,"(10I6)") (Parent(i),i=1,Neqns)
+                   WRITE (6,"(10I6)") (Invp(i),i=1,Neqns)
+                   WRITE (6,"(/' iperm ')")
+                   WRITE (6,"(10I6)") (Iperm(i),i=1,Neqns)
+                   WRITE (6,"(' nch')")
+                   WRITE (6,"(10I6)") (Nch(i),i=1,Neqns)
+                ENDIF
                 RETURN
              ELSE
                 l = l + 1
@@ -2896,11 +2995,20 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE POSORD
+
   !======================================================================!
-  !                                                                      !
+  !> @brief PRE_GNCLNO
   !======================================================================!
   SUBROUTINE PRE_GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Neqns,Nstop,Lncol,Ir)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(IN):: Xleaf(*)
+    INTEGER, INTENT(IN):: Leaf(*)
+    INTEGER, INTENT(OUT):: Lncol
+    INTEGER, INTENT(OUT):: Xlnzr(*)
 
     INTEGER:: i
     INTEGER:: IDBg1
@@ -2910,15 +3018,8 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: Lncol
     INTEGER:: nc
-    INTEGER:: Neqns
-    INTEGER:: Nstop
     INTEGER:: nxleaf
-    INTEGER:: Parent(*)
-    INTEGER:: Xleaf(*)
-    INTEGER:: Leaf(*)
-    INTEGER:: Xlnzr(*)
     COMMON /DEBUG / IDBg1
 
     nc = 0
@@ -2952,24 +3053,36 @@ CONTAINS
   END SUBROUTINE PRE_GNCLNO
 
   !======================================================================!
-  !                                                                      !
+  !> @brief PTIME
   !======================================================================!
   SUBROUTINE PTIME(Cputim)
     USE HECMW_UTIL
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Cputim
+    DOUBLE PRECISION, INTENT(OUT):: Cputim
 
     ! cpu time by hour
     Cputim = HECMW_WTIME()
   END SUBROUTINE PTIME
+
   !======================================================================!
-  !                                                                      !
+  !> @brief QMDMRG
   !======================================================================!
   SUBROUTINE QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,Deg0,Nhdsze,Nbrhd,Rchset,Ovrlp)
     IMPLICIT NONE
 
-    INTEGER:: Deg0
+    INTEGER, INTENT(IN):: Deg0
+    INTEGER, INTENT(IN):: Nhdsze
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: Nbrhd(*)
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(OUT):: Deg(*)
+    INTEGER, INTENT(OUT):: Qsize(*)
+    INTEGER, INTENT(OUT):: Qlink(*)
+    INTEGER, INTENT(OUT):: Marker(*)
+    INTEGER, INTENT(OUT):: Rchset(*)
+    INTEGER, INTENT(OUT):: Ovrlp(*)
+
     INTEGER:: deg1
     INTEGER:: head
     INTEGER:: inhd
@@ -2983,20 +3096,10 @@ CONTAINS
     INTEGER:: mark
     INTEGER:: mrgsze
     INTEGER:: nabor
-    INTEGER:: Nhdsze
     INTEGER:: node
     INTEGER:: novrlp
     INTEGER:: rchsze
     INTEGER:: root
-    INTEGER:: Adjncy(*)
-    INTEGER:: Deg(*)
-    INTEGER:: Qsize(*)
-    INTEGER:: Qlink(*)
-    INTEGER:: Marker(*)
-    INTEGER:: Rchset(*)
-    INTEGER:: Nbrhd(*)
-    INTEGER:: Ovrlp(*)
-    INTEGER:: Xadj(*)
 
     IF ( Nhdsze<=0 ) RETURN
     DO inhd = 1, Nhdsze
@@ -3076,11 +3179,20 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE QMDMRG
+
   !======================================================================!
-  !                                                                      !
+  !> @brief QMDOT
   !======================================================================!
   SUBROUTINE QMDOT(Root,Xadj,Adjncy,Marker,Rchsze,Rchset,Nbrhd)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Rchsze
+    INTEGER, INTENT(IN):: Root
+    INTEGER, INTENT(IN):: Marker(*)
+    INTEGER, INTENT(IN):: Rchset(*)
+    INTEGER, INTENT(IN):: Nbrhd(*)
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(OUT):: Adjncy(*)
 
     INTEGER:: inhd
     INTEGER:: irch
@@ -3090,13 +3202,6 @@ CONTAINS
     INTEGER:: link
     INTEGER:: nabor
     INTEGER:: node
-    INTEGER:: Rchsze
-    INTEGER:: Root
-    INTEGER:: Adjncy(*)
-    INTEGER:: Marker(*)
-    INTEGER:: Rchset(*)
-    INTEGER:: Nbrhd(*)
-    INTEGER:: Xadj(*)
 
     irch = 0
     inhd = 0
@@ -3134,11 +3239,22 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE QMDOT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief QMDRCH
   !======================================================================!
   SUBROUTINE QMDRCH(Root,Xadj,Adjncy,Deg,Marker,Rchsze,Rchset,Nhdsze,Nbrhd)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Root
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: Deg(*)
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(OUT):: Nhdsze
+    INTEGER, INTENT(OUT):: Rchsze
+    INTEGER, INTENT(OUT):: Marker(*)
+    INTEGER, INTENT(OUT):: Rchset(*)
+    INTEGER, INTENT(OUT):: Nbrhd(*)
 
     INTEGER:: i
     INTEGER:: istrt
@@ -3147,16 +3263,7 @@ CONTAINS
     INTEGER:: jstrt
     INTEGER:: jstop
     INTEGER:: nabor
-    INTEGER:: Nhdsze
     INTEGER:: node
-    INTEGER:: Rchsze
-    INTEGER:: Root
-    INTEGER:: Adjncy(*)
-    INTEGER:: Deg(*)
-    INTEGER:: Marker(*)
-    INTEGER:: Rchset(*)
-    INTEGER:: Nbrhd(*)
-    INTEGER:: Xadj(*)
 
     Nhdsze = 0
     Rchsze = 0
@@ -3195,11 +3302,23 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE QMDRCH
+
   !======================================================================!
-  !                                                                      !
+  !> @brief QMDUPD
   !======================================================================!
-  SUBROUTINE QMDUPD(Xadj,Adjncy,Nlist,List,Deg,Qsize,Qlink,Marker, Rchset,Nbrhd)
+  SUBROUTINE QMDUPD(Xadj,Adjncy,Nlist,List,Deg,Qsize,Qlink,Marker,Rchset,Nbrhd)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Nlist
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: List(*)
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(OUT):: Deg(*)
+    INTEGER, INTENT(OUT):: Marker(*)
+    INTEGER, INTENT(OUT):: Rchset(*)
+    INTEGER, INTENT(OUT):: Nbrhd(*)
+    INTEGER, INTENT(OUT):: Qsize(*)
+    INTEGER, INTENT(OUT):: Qlink(*)
 
     INTEGER:: deg0
     INTEGER:: deg1
@@ -3213,18 +3332,8 @@ CONTAINS
     INTEGER:: mark
     INTEGER:: nabor
     INTEGER:: nhdsze
-    INTEGER:: Nlist
     INTEGER:: node
     INTEGER:: rchsze
-    INTEGER:: Adjncy(*)
-    INTEGER:: List(*)
-    INTEGER:: Deg(*)
-    INTEGER:: Marker(*)
-    INTEGER:: Rchset(*)
-    INTEGER:: Nbrhd(*)
-    INTEGER:: Qsize(*)
-    INTEGER:: Qlink(*)
-    INTEGER:: Xadj(*)
 
     IF ( Nlist<=0 ) RETURN
     deg0 = 0
@@ -3243,9 +3352,8 @@ CONTAINS
           ENDIF
        ENDDO
     ENDDO
-    !
-    IF ( nhdsze>0 ) CALL QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,&
-         deg0,nhdsze,Nbrhd,Rchset,Nbrhd(nhdsze+1))
+
+    IF ( nhdsze>0 ) CALL QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,deg0,nhdsze,Nbrhd,Rchset,Nbrhd(nhdsze+1))
     DO il = 1, Nlist
        node = List(il)
        mark = Marker(node)
@@ -3269,30 +3377,27 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE QMDUPD
+
   !======================================================================!
-  !                                                                      !
+  !> @brief QQSORT
+  ! sort in increasing order up to i
+  !     iw   array
+  !     ik   number of input/output
+  !     i    deal with numbers less than this numberi
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE QQSORT(Iw,Ik)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Ik
+    INTEGER, INTENT(OUT):: Iw(*)
+
     INTEGER:: IDBg1
-    INTEGER:: Ik
     INTEGER:: itemp
     INTEGER:: l
     INTEGER:: m
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Iw(*)
     COMMON /DEBUG / IDBg1
-    !----------------------------------------------------------------------
-    !     sort in increasing order up to i
-    !
-    !     iw   array
-    !     ik   number of input/output
-    !     i    deal with numbers less than this numberi
-    !
-    !----------------------------------------------------------------------
+
     IF ( Ik<=1 ) RETURN
     DO l = 1, Ik - 1
        DO m = l + 1, Ik
@@ -3304,17 +3409,32 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE QQSORT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief ROTATE
+  ! irr return code irr=0 node izz is not a bottom node
+  !                     irr=1          is a bottom node then rotation is
+  !                                    performed
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE ROTATE(Xadj,Adjncy,Invp,Iperm,Parent,Btree,Izz,Neqns,Anc,Adjt,Irr)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Izz
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Xadj(*)
+    INTEGER, INTENT(IN):: Adjncy(*)
+    INTEGER, INTENT(IN):: Parent(*)
+    INTEGER, INTENT(IN):: Btree(2,*)
+    INTEGER, INTENT(OUT):: Irr
+    INTEGER, INTENT(OUT):: Invp(*)
+    INTEGER, INTENT(OUT):: Iperm(*)
+    INTEGER, INTENT(OUT):: Anc(*)
+    INTEGER, INTENT(OUT):: Adjt(*)
+
     INTEGER:: i
     INTEGER:: IDBg1
-    INTEGER:: Irr
     INTEGER:: iy
-    INTEGER:: Izz
     INTEGER:: izzz
     INTEGER:: joc
     INTEGER:: k
@@ -3323,25 +3443,8 @@ CONTAINS
     INTEGER:: ll
     INTEGER:: locc
     INTEGER:: nanc
-    INTEGER:: Neqns
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Xadj(*)
-    INTEGER:: Adjncy(*)
-    INTEGER:: Parent(*)
-    INTEGER:: Btree(2,*)
-    INTEGER:: Invp(*)
-    INTEGER:: Iperm(*)
-    INTEGER:: Anc(*)
-    INTEGER:: Adjt(*)
     COMMON /DEBUG / IDBg1
-    !----------------------------------------------------------------------
-    !     irr return code irr=0 node izz is not a bottom node
-    !                     irr=1          is a bottom node then rotation is
-    !                                    performed
-    !
-    !----------------------------------------------------------------------
+
     IF ( Izz==0 ) THEN
        Irr = 0
        RETURN
@@ -3399,7 +3502,6 @@ CONTAINS
                    ENDDO
                    Invp(Iperm(izzz)) = Neqns
                 ELSE
-
                    !
                    !  anc(l-1) is the eligible node
                    !
@@ -3461,8 +3563,7 @@ CONTAINS
 105             DO i = 1, Neqns
                    Iperm(Invp(i)) = i
                 ENDDO
-                IF ( IDBg1/=0 ) WRITE (6,99001) (Invp(i),i=1,Neqns)
-99001           FORMAT (10I6)
+                IF ( IDBg1/=0 ) WRITE (6,"(10I6)") (Invp(i),i=1,Neqns)
                 RETURN
              ELSE
                 locc = Btree(2,joc)
@@ -3473,51 +3574,23 @@ CONTAINS
        ENDIF
     ENDDO
   END SUBROUTINE ROTATE
-  !======================================================================!
-  !                                                                      !
-  !======================================================================!
-  SUBROUTINE S2PDOT(Bi,B,Zln,Colno,Ks,Ke)
-    IMPLICIT NONE
 
-    INTEGER:: j
-    INTEGER:: jj
-    INTEGER:: Ke
-    INTEGER:: Ks
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(4,*)
-    DOUBLE PRECISION:: B(2,*)
-    DOUBLE PRECISION:: Bi(2)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj = Ks, Ke
-       j = Colno(jj)
-       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(3,jj)*B(2,j)
-       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(4,jj)*B(2,j)
-    ENDDO
-  END SUBROUTINE S2PDOT
   !======================================================================!
-  !                                                                      !
+  !> @brief S2UM
   !======================================================================!
   SUBROUTINE S2UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Par(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: jc
@@ -3528,13 +3601,14 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Par(*)
-    DIMENSION Zln(4,*), Diag(3,*), Temp(4,*), Indx(*)
-    DIMENSION s(4), zz(4), t(3)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s(4)
+    DOUBLE PRECISION:: t(3)
+    DOUBLE PRECISION:: zz(4)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
     t(1) = 0.0D0
@@ -3572,20 +3646,20 @@ CONTAINS
     kk = Par(Ic)
     Nch(kk) = Nch(kk) - 1
   END SUBROUTINE S2UM
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S2UM1
   !======================================================================!
   SUBROUTINE S2UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -3594,11 +3668,12 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(4,*), Temp(4,*), Indx(*)
-    DIMENSION s(4)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s(4)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
     DO l = 1, 4
@@ -3623,18 +3698,24 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S2UM1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S2UM2
   !======================================================================!
   SUBROUTINE S2UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+
     INTEGER:: ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -3642,11 +3723,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(4,*), Diag(3,*), Temp(4,*), Indx(*), Dsln(4,*)
+
     joc = 0
     DO ic = Nstop, Neqns
        ks = Xlnzr(ic)
@@ -3687,23 +3764,24 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S2UM2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S2UM3
   !======================================================================!
   SUBROUTINE S2UM3(N,Dsln,Diag,Indx,Temp)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
+    INTEGER, INTENT(IN):: N
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+
     INTEGER:: i
-    INTEGER:: Indx
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
-    INTEGER:: N
-    DIMENSION Dsln(4,*), Diag(3,*), Indx(*), Temp(4,*), t(4)
+    DOUBLE PRECISION:: t(4)
 
     IF ( N>0 ) THEN
        Indx(1) = 0
@@ -3729,51 +3807,23 @@ CONTAINS
        ENDDO
     ENDIF
   END SUBROUTINE S2UM3
-  !======================================================================!
-  !                                                                      !
-  !======================================================================!
-  SUBROUTINE S3PDOT(Bi,B,Zln,Colno,Ks,Ke)
-    IMPLICIT NONE
 
-    INTEGER:: j
-    INTEGER:: jj
-    INTEGER:: Ke
-    INTEGER:: Ks
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(9,*)
-    DOUBLE PRECISION:: B(3,*)
-    DOUBLE PRECISION:: Bi(3)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj = Ks, Ke
-       j = Colno(jj)
-       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(4,jj)*B(2,j) - Zln(7,jj)*B(3,j)
-       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(5,jj)*B(2,j) - Zln(8,jj)*B(3,j)
-       Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(6,jj)*B(2,j) - Zln(9,jj)*B(3,j)
-    ENDDO
-  END SUBROUTINE S3PDOT
   !======================================================================!
-  !                                                                      !
+  !> @brief S3UM
   !======================================================================!
   SUBROUTINE S3UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Par(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: jc
@@ -3784,12 +3834,11 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Par(*)
-    DIMENSION Zln(9,*), Diag(6,*), Temp(9,*), Indx(*)
-    DIMENSION zz(9), t(6)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: t(6)
+    DOUBLE PRECISION:: zz(9)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
@@ -3840,20 +3889,20 @@ CONTAINS
     kk = Par(Ic)
     Nch(kk) = Nch(kk) - 1
   END SUBROUTINE S3UM
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S3UM1
   !======================================================================!
   SUBROUTINE S3UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -3862,11 +3911,12 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(9,*), Temp(9,*), Indx(*)
-    DIMENSION s(9)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s(9)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
     !$dir max_trip(9)
@@ -3898,18 +3948,24 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S3UM1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S3UM1
   !======================================================================!
   SUBROUTINE S3UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Neqns,9)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+
     INTEGER:: ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: j1
     INTEGER:: j2
@@ -3919,11 +3975,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(9,*), Diag(6,*), Temp(Neqns,9), Dsln(9,*), Indx(*)
+
     joc = 0
     DO ic = Nstop, Neqns
        ks = Xlnzr(ic)
@@ -3998,23 +4050,24 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S3UM2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S3UM3
   !======================================================================!
   SUBROUTINE S3UM3(N,Dsln,Diag,Indx,Temp)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
+    INTEGER, INTENT(IN):: N
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+
     INTEGER:: i
-    INTEGER:: Indx
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
-    INTEGER:: N
-    DIMENSION Dsln(9,*), Diag(6,*), Indx(*), Temp(9,*), t(9)
+    DOUBLE PRECISION:: t(9)
 
     IF ( N>0 ) THEN
        Indx(1) = 0
@@ -4035,66 +4088,23 @@ CONTAINS
        ENDDO
     ENDIF
   END SUBROUTINE S3UM3
-  !======================================================================!
-  !                                                                      !
-  !======================================================================!
-  SUBROUTINE S6PDOT(Bi,B,Zln,Colno,Ks,Ke)
-    IMPLICIT NONE
 
-    INTEGER:: j
-    INTEGER:: jj
-    INTEGER:: Ke
-    INTEGER:: Ks
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(36,*)
-    DOUBLE PRECISION:: B(6,*)
-    DOUBLE PRECISION:: Bi(6)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj = Ks, Ke
-       j = Colno(jj)
-       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j)&
-            - Zln(13,jj)*B(3,j) - Zln(19,jj)*B(4,j) - Zln(25,jj)&
-            *B(5,j) - Zln(31,jj)*B(6,j)
-       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j)&
-            - Zln(14,jj)*B(3,j) - Zln(20,jj)*B(4,j) - Zln(26,jj)&
-            *B(5,j) - Zln(32,jj)*B(6,j)
-       Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j)&
-            - Zln(15,jj)*B(3,j) - Zln(21,jj)*B(4,j) - Zln(27,jj)&
-            *B(5,j) - Zln(33,jj)*B(6,j)
-       Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j)&
-            - Zln(16,jj)*B(3,j) - Zln(22,jj)*B(4,j) - Zln(28,jj)&
-            *B(5,j) - Zln(34,jj)*B(6,j)
-       Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j)&
-            - Zln(17,jj)*B(3,j) - Zln(23,jj)*B(4,j) - Zln(29,jj)&
-            *B(5,j) - Zln(35,jj)*B(6,j)
-       Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j)&
-            - Zln(18,jj)*B(3,j) - Zln(25,jj)*B(4,j) - Zln(30,jj)&
-            *B(5,j) - Zln(36,jj)*B(6,j)
-    ENDDO
-  END SUBROUTINE S6PDOT
   !======================================================================!
-  !                                                                      !
+  !> @brief S6UM
   !======================================================================!
   SUBROUTINE S6UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Par(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(36,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
+
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: jc
@@ -4105,12 +4115,11 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Par(*)
-    DIMENSION Zln(36,*), Diag(21,*), Temp(36,*), Indx(*)
-    DIMENSION zz(36), t(21)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: t(21)
+    DOUBLE PRECISION:: zz(36)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
@@ -4345,20 +4354,20 @@ CONTAINS
     kk = Par(Ic)
     Nch(kk) = Nch(kk) - 1
   END SUBROUTINE S6UM
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S6UM1
   !======================================================================!
   SUBROUTINE S6UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -4367,10 +4376,10 @@ CONTAINS
     INTEGER:: ks
     INTEGER:: l
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(9,*), Temp(9,*), Indx(*)
-    DIMENSION s(9)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s(9)
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
@@ -4404,18 +4413,24 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S6UM1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S6UM2
   !======================================================================!
   SUBROUTINE S6UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(36,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(36,Neqns)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
+
     INTEGER:: ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: j1
     INTEGER:: j2
@@ -4426,11 +4441,7 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: m
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(36,*), Diag(21,*), Temp(36,Neqns), Dsln(36,*), Indx(*)
+
     joc = 0
     DO ic = Nstop, Neqns
        DO m = 1, 36
@@ -4498,24 +4509,25 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE S6UM2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief S6UM3
   !======================================================================!
   SUBROUTINE S6UM3(N,Dsln,Diag,Indx,Temp)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
+    INTEGER, INTENT(IN):: N
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+
     INTEGER:: i
-    INTEGER:: Indx
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
     INTEGER:: l
-    INTEGER:: N
-    DIMENSION Dsln(9,*), Diag(6,*), Indx(*), Temp(9,*), t(9)
+    DOUBLE PRECISION:: t(9)
 
     IF ( N>0 ) THEN
        Indx(1) = 0
@@ -4542,74 +4554,36 @@ CONTAINS
        ENDDO
     ENDIF
   END SUBROUTINE S6UM3
-  !======================================================================!
-  !                                                                      !
-  !======================================================================!
-  DOUBLE PRECISION FUNCTION SPDOT2(B,Zln,Colno,Ks,Ke)
-    IMPLICIT NONE
 
-    INTEGER:: j
-    INTEGER:: jj
-    INTEGER:: Ke
-    INTEGER:: Ks
-    DOUBLE PRECISION:: s
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(*)
-    DOUBLE PRECISION:: B(*)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    s = 0.0D0
-    DO jj = Ks, Ke
-       j = Colno(jj)
-       s = s + Zln(jj)*B(j)
-    ENDDO
-    SPDOT2 = s
-  END FUNCTION SPDOT2
   !======================================================================!
-  !                                                                      !
+  !> @brief STAIJ1 routine sets an non-zero entry  of the matrix.
+  !      (symmetric version)
+  !      (i)
+  !          isw      =0    set the value
+  !                   =1    add the value
+  !          i        row entry
+  !          j        column entry
+  !          aij      value
+  !      (o)
+  !          iv       communication array
+  !        #coded by t.arakawa of RIST on 040510
   !======================================================================!
-
-
   SUBROUTINE STAIJ1(Isw,I,J,Aij,Ir)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Aij
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    INTEGER:: I
+    INTEGER, INTENT(IN):: I
+    INTEGER, INTENT(IN):: Isw
+    INTEGER, INTENT(IN):: J
+    DOUBLE PRECISION, INTENT(IN):: Aij(NDEg*NDEg)
+    INTEGER, INTENT(OUT):: Ir
+
     INTEGER:: IDBg
-    INTEGER:: Ir
-    INTEGER:: Isw
-    INTEGER:: J
     INTEGER:: LRAtio
     INTEGER:: ndeg2
     INTEGER:: ndeg2l
-    !----------------------------------------------------------------------
-    !
-    !      this routine sets an non-zero entry  of the matrix.
-    !      (symmetric version)
-    !
-    !      (i)
-    !          isw      =0    set the value
-    !                   =1    add the value
-    !          i        row entry
-    !          j        column entry
-    !          aij      value
-    !
-    !      (o)
-    !          iv       communication array
-    !
-    !        #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DIMENSION Aij(NDEg*NDEg)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     COMMON /DEBUG / IDBg
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
@@ -4655,11 +4629,20 @@ CONTAINS
        CALL ADDRX(I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,NDEg,ndeg2l,Ir)
     ENDIF
   END SUBROUTINE STAIJ1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief STIAJA routine sets an non-zero entry  of the matrix.
+  !      (asymmetric version)
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE STIAJA(Neqns,Ia,Ja,Jcpt,Jcolno)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Jcpt(*)
+    INTEGER, INTENT(IN):: Jcolno(*)
+    INTEGER, INTENT(OUT):: Ia(*)
+    INTEGER, INTENT(OUT):: Ja(*)
 
     INTEGER:: i
     INTEGER:: IDBg
@@ -4667,14 +4650,6 @@ CONTAINS
     INTEGER:: joc
     INTEGER:: k
     INTEGER:: l
-    INTEGER:: Neqns
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Ia(*)
-    INTEGER:: Ja(*)
-    INTEGER:: Jcpt(*)
-    INTEGER:: Jcolno(*)
     COMMON /DEBUG / IDBg
     !
     Ia(1) = 1
@@ -4693,17 +4668,25 @@ CONTAINS
     ENDDO
     IF ( IDBg/=0 ) THEN
        WRITE (6,*) 'ia '
-       WRITE (6,99001) (Ia(i),i=1,Neqns)
+       WRITE (6,"(10I7)") (Ia(i),i=1,Neqns)
        WRITE (6,*) 'ja '
-       WRITE (6,99001) (Ja(i),i=1,Ia(Neqns+1))
+       WRITE (6,"(10I7)") (Ja(i),i=1,Ia(Neqns+1))
     ENDIF
-99001 FORMAT (10I7)
   END SUBROUTINE STIAJA
+
   !======================================================================!
-  !                                                                      !
+  !> @brief STSMAT
+  !     coded by t.arakawa of RIST on 040510
   !======================================================================!
   SUBROUTINE STSMAT(Neqns,Nttbr,Irow,Jcol,Jcpt,Jcolno)
     IMPLICIT NONE
+
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nttbr
+    INTEGER, INTENT(IN):: Irow(*)
+    INTEGER, INTENT(IN):: Jcol(*)
+    INTEGER, INTENT(OUT):: Jcpt(*)
+    INTEGER, INTENT(OUT):: Jcolno(*)
 
     INTEGER:: i
     INTEGER:: IDBg
@@ -4712,15 +4695,6 @@ CONTAINS
     INTEGER:: k
     INTEGER:: l
     INTEGER:: locr
-    INTEGER:: Neqns
-    INTEGER:: Nttbr
-    !
-    !     coded by t.arakawa of RIST on 040510
-    !
-    INTEGER:: Irow(*)
-    INTEGER:: Jcol(*)
-    INTEGER:: Jcpt(*)
-    INTEGER:: Jcolno(*)
     COMMON /DEBUG / IDBg
 
     DO i = 1, 2*Nttbr
@@ -4776,30 +4750,28 @@ CONTAINS
 100 ENDDO
     IF ( IDBg/=0 ) THEN
        WRITE (6,*) 'jcolno'
-       WRITE (6,99001) (Jcolno(i),i=1,k)
+       WRITE (6,"(10I7)") (Jcolno(i),i=1,k)
        WRITE (6,*) 'jcpt'
-       WRITE (6,99001) (Jcpt(i),i=1,k)
+       WRITE (6,"(10I7)") (Jcpt(i),i=1,k)
     ENDIF
-99001 FORMAT (10I7)
   END SUBROUTINE STSMAT
+
   !======================================================================!
-  !                                                                      !
+  !> @brief SUM
   !======================================================================!
   SUBROUTINE SUM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: piv
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Par(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+
     INTEGER:: ISEm
     INTEGER:: j
     INTEGER:: jc
@@ -4809,11 +4781,13 @@ CONTAINS
     INTEGER:: kk
     INTEGER:: ks
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Par(*)
-    DIMENSION Zln(*), Diag(*), Temp(*), Indx(*)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: piv
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s
+    DOUBLE PRECISION:: t
+    DOUBLE PRECISION:: zz
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
     COMMON ISEm
 
@@ -4845,22 +4819,20 @@ CONTAINS
     Nch(kk) = Nch(kk) - 1
     ISEm = 1
   END SUBROUTINE SUM
+
   !======================================================================!
-  !                                                                      !
+  !> @brief SUM1
   !======================================================================!
   SUBROUTINE SUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -4868,9 +4840,12 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: LRAtio
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(*), Temp(*), Indx(*)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
+    DOUBLE PRECISION:: s
+    DOUBLE PRECISION:: t
+    DOUBLE PRECISION:: zz
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
@@ -4891,20 +4866,25 @@ CONTAINS
        Temp(jc) = zz
     ENDDO
   END SUBROUTINE SUM1
+
   !======================================================================!
-  !                                                                      !
+  !> @brief SUM2
   !======================================================================!
   SUBROUTINE SUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+
     INTEGER:: i
     INTEGER:: ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -4912,11 +4892,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(*), Diag(*), Temp(*), Indx(*), Dsln(*)
+    DOUBLE PRECISION:: s
 
     joc = 0
     DO ic = Nstop, Neqns
@@ -4944,20 +4920,23 @@ CONTAINS
        ENDDO
     ENDDO
   END SUBROUTINE SUM2
+
   !======================================================================!
-  !                                                                      !
+  !> @brief SUM3
   !======================================================================!
   SUBROUTINE SUM3(N,Dsln,Diag,Indx,Temp)
     IMPLICIT NONE
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: Temp
+
+    INTEGER, INTENT(IN):: N
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+
     INTEGER:: i
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: joc
-    INTEGER:: N
-    DIMENSION Dsln(*), Diag(*), Indx(*), Temp(*)
+
     IF ( N>0 ) THEN
        Indx(1) = 0
        joc = 1
@@ -4975,40 +4954,6 @@ CONTAINS
        ENDDO
     ENDIF
   END SUBROUTINE SUM3
-  !======================================================================!
-  !                                                                      !
-  !======================================================================!
-  SUBROUTINE SXPDOT(Ndeg,Bi,B,Zln,Colno,Ks,Ke)
-    IMPLICIT NONE
-
-    INTEGER:: j
-    INTEGER:: jj
-    INTEGER:: Ke
-    INTEGER:: Ks
-    INTEGER:: m
-    INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Colno(*)
-    DOUBLE PRECISION:: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION:: B(Ndeg,*)
-    DOUBLE PRECISION:: Bi(Ndeg)
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj = Ks, Ke
-       j = Colno(jj)
-       DO m = 1, Ndeg
-          DO n = 1, Ndeg
-             Bi(n) = Bi(n) - Zln(n,m,jj)*B(m,j)
-          ENDDO
-       ENDDO
-    ENDDO
-  END SUBROUTINE SXPDOT
 
   !======================================================================!
   !> @brief SXUM
@@ -5016,16 +4961,20 @@ CONTAINS
   SUBROUTINE SXUM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx,Ndeg,Ndegl,Zz,T)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: T
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
-    INTEGER:: Ic
-    INTEGER:: Indx
+    INTEGER, INTENT(IN):: Ic
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(IN):: Par(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    INTEGER, INTENT(OUT):: Nch(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(Ndegl)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zz(Ndeg,Ndeg)
+
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: jc
@@ -5038,15 +4987,10 @@ CONTAINS
     INTEGER:: LRAtio
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
     INTEGER:: ndeg22
-    INTEGER:: Ndegl
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    INTEGER:: Nch(*)
-    INTEGER:: Par(*)
-    DIMENSION Zln(Ndeg,Ndeg,*), Diag(Ndegl,*), Temp(Ndeg,Ndeg,*), Indx(*)
-    DIMENSION Zz(Ndeg,Ndeg), T(Ndegl)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ndeg22 = Ndeg*Ndeg
@@ -5063,17 +5007,10 @@ CONTAINS
              DO m = 1, Ndeg, 2
                 DO n = 1, Ndeg, 2
                    DO kk = 1, Ndeg, 2
-                      Zz(n,m) = Zz(n,m) - Temp(n,kk,j)*Zln(m,kk,jj)&
-                           - Temp(n,kk+1,j)*Zln(m,kk+1,jj)
-                      Zz(n,m+1) = Zz(n,m+1) - Temp(n,kk,j)&
-                           *Zln(m+1,kk,jj) - Temp(n,kk+1,j)&
-                           *Zln(m+1,kk+1,jj)
-                      Zz(n+1,m) = Zz(n+1,m) - Temp(n+1,kk,j)&
-                           *Zln(m,kk,jj) - Temp(n+1,kk+1,j)&
-                           *Zln(m,kk+1,jj)
-                      Zz(n+1,m+1) = Zz(n+1,m+1) - Temp(n+1,kk,j)&
-                           *Zln(m+1,kk,jj) - Temp(n+1,kk+1,j)&
-                           *Zln(m+1,kk+1,jj)
+                      Zz(n,m) = Zz(n,m) - Temp(n,kk,j)*Zln(m,kk,jj) - Temp(n,kk+1,j)*Zln(m,kk+1,jj)
+                      Zz(n,m+1) = Zz(n,m+1) - Temp(n,kk,j)*Zln(m+1,kk,jj) - Temp(n,kk+1,j)*Zln(m+1,kk+1,jj)
+                      Zz(n+1,m) = Zz(n+1,m) - Temp(n+1,kk,j)*Zln(m,kk,jj) - Temp(n+1,kk+1,j)*Zln(m,kk+1,jj)
+                      Zz(n+1,m+1) = Zz(n+1,m+1) - Temp(n+1,kk,j)*Zln(m+1,kk,jj) - Temp(n+1,kk+1,j)*Zln(m+1,kk+1,jj)
                    ENDDO
                 ENDDO
              ENDDO
@@ -5106,14 +5043,15 @@ CONTAINS
   SUBROUTINE SXUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx,Ndeg,S)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: S
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: S(Ndeg,Ndeg)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+
     INTEGER:: Ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -5124,11 +5062,9 @@ CONTAINS
     INTEGER:: LRAtio
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(Ndeg,Ndeg,*), Temp(Ndeg,Ndeg,*), Indx(*)
-    DIMENSION S(Ndeg,Ndeg)
+    DOUBLE PRECISION:: EPSm
+    DOUBLE PRECISION:: RMAx
+    DOUBLE PRECISION:: RMIn
     COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
@@ -5169,12 +5105,19 @@ CONTAINS
   SUBROUTINE SXUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx,Ndeg,Ndegl)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: Temp
-    DOUBLE PRECISION:: Zln
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nstop
+    INTEGER, INTENT(IN):: Xlnzr(*)
+    INTEGER, INTENT(IN):: Colno(*)
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+
     INTEGER:: ic
-    INTEGER:: Indx
     INTEGER:: j
     INTEGER:: j1
     INTEGER:: j2
@@ -5188,13 +5131,6 @@ CONTAINS
     INTEGER:: locd
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Ndegl
-    INTEGER:: Neqns
-    INTEGER:: Nstop
-    INTEGER:: Xlnzr(*)
-    INTEGER:: Colno(*)
-    DIMENSION Zln(Ndeg,Ndeg,*), Diag(Ndegl,*), Temp(Ndeg,Ndeg,*), Dsln(Ndeg,Ndeg,*), Indx(*)
 
     joc = 0
     DO ic = Nstop, Neqns
@@ -5247,27 +5183,27 @@ CONTAINS
   END SUBROUTINE SXUM2
 
   !======================================================================!
-  !>@ brief SXUM3
+  !> @brief SXUM3
   !======================================================================!
   SUBROUTINE SXUM3(Nn,Dsln,Diag,Indx,Temp,Ndeg,Ndegl,T)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Dsln
-    DOUBLE PRECISION:: T
-    DOUBLE PRECISION:: Temp
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    INTEGER, INTENT(IN):: Nn
+    INTEGER, INTENT(OUT):: Indx(*)
+    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
+    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
+    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+
     INTEGER:: i
-    INTEGER:: Indx
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
     INTEGER:: locd
     INTEGER:: m
     INTEGER:: n
-    INTEGER:: Ndeg
-    INTEGER:: Ndegl
-    INTEGER:: Nn
-    DIMENSION Dsln(Ndeg,Ndeg,*), Diag(Ndegl,*), Indx(*), Temp(Ndeg,Ndeg,*), T(Ndeg,Ndeg)
 
     IF ( Nn>0 ) THEN
        Indx(1) = 0
@@ -5305,12 +5241,12 @@ CONTAINS
   SUBROUTINE V2PROD(A,B,C,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: A
-    DOUBLE PRECISION:: B
-    DOUBLE PRECISION:: C
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(4,N)
+    DOUBLE PRECISION, INTENT(IN):: B(3,N)
+    DOUBLE PRECISION, INTENT(OUT):: C(4,N)
+
     INTEGER:: i
-    INTEGER:: N
-    DIMENSION A(4,N), B(3,N), C(4,N)
 
     DO i = 1, N
        C(3,i) = A(3,i) - A(1,i)*B(2,i)
@@ -5331,12 +5267,12 @@ CONTAINS
   SUBROUTINE V3PROD(Zln,Diag,Zz,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: Diag(6,N)
+    DOUBLE PRECISION, INTENT(IN):: Zln(9,N)
+    DOUBLE PRECISION, INTENT(OUT):: Zz(9,N)
+
     INTEGER:: i
-    INTEGER:: N
-    DIMENSION Zln(9,N), Diag(6,N), Zz(9,N)
 
     DO i = 1, N
        Zz(4,i) = Zln(4,i) - Zln(1,i)*Diag(2,i)
@@ -5371,10 +5307,9 @@ CONTAINS
   SUBROUTINE VCOPY(A,C,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: A
-    DOUBLE PRECISION:: C
-    INTEGER:: N
-    DIMENSION A(N), C(N)
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(N)
+    DOUBLE PRECISION, INTENT(OUT):: C(N)
 
     C = A
   END SUBROUTINE VCOPY
@@ -5385,31 +5320,32 @@ CONTAINS
   SUBROUTINE VPROD(A,B,C,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: A
-    DOUBLE PRECISION:: B
-    DOUBLE PRECISION:: C
+    INTEGER, INTENT(IN):: N
+    DOUBLE PRECISION, INTENT(IN):: A(N)
+    DOUBLE PRECISION, INTENT(IN):: B(N)
+    DOUBLE PRECISION, INTENT(OUT):: C(N)
+
     INTEGER:: i
-    INTEGER:: N
-    DIMENSION A(N), B(N), C(N)
 
     DO i = 1, N
        C(i) = A(i)*B(i)
     ENDDO
   END SUBROUTINE VPROD
+
   !======================================================================!
   !> @brief VXPROD
   !======================================================================!
   SUBROUTINE VXPROD(Ndeg,Ndegl,Zln,Diag,Zz,N)
     IMPLICIT NONE
 
-    DOUBLE PRECISION:: Diag
-    DOUBLE PRECISION:: Zln
-    DOUBLE PRECISION:: Zz
+    INTEGER, INTENT(IN):: Ndeg
+    INTEGER, INTENT(IN):: Ndegl
+    DOUBLE PRECISION, INTENT(IN):: Diag(Ndegl,N)
+    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg*Ndeg,N)
+    DOUBLE PRECISION, INTENT(OUT):: Zz(Ndeg*Ndeg,N)
+
     INTEGER:: i
     INTEGER:: N
-    INTEGER:: Ndeg
-    INTEGER:: Ndegl
-    DIMENSION Zln(Ndeg*Ndeg,N), Diag(Ndegl,N), Zz(Ndeg*Ndeg,N)
 
     DO i = 1, N
        CALL INVXX(Zz(1,i),Zln(1,i),Diag(1,i),Ndeg)
@@ -5422,17 +5358,18 @@ CONTAINS
   SUBROUTINE ZPIVOT(Neqns,Neqnsz,Nttbr,Jcol,Irow,Zpiv,Ir)
     IMPLICIT NONE
 
+    INTEGER, INTENT(IN):: Neqns
+    INTEGER, INTENT(IN):: Nttbr
+    INTEGER, INTENT(IN):: Jcol(*)
+    INTEGER, INTENT(IN):: Irow(*)
+    INTEGER, INTENT(OUT):: Ir
+    INTEGER, INTENT(OUT):: Neqnsz
+    INTEGER, INTENT(OUT):: Zpiv(*)
+
     INTEGER:: i
     INTEGER:: IDBg
-    INTEGER:: Ir
     INTEGER:: j
     INTEGER:: l
-    INTEGER:: Neqns
-    INTEGER:: Neqnsz
-    INTEGER:: Nttbr
-    INTEGER:: Jcol(*)
-    INTEGER:: Irow(*)
-    INTEGER:: Zpiv(*)
     COMMON /DEBUG / IDBg
     !
     Ir = 0
