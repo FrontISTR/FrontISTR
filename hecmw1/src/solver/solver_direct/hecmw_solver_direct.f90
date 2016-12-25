@@ -66,7 +66,18 @@ MODULE HECMW_SOLVER_DIRECT
   INTEGER(KIND=4), PRIVATE :: ialoc
   INTEGER(KIND=4), PRIVATE :: raloc
   INTEGER(KIND=4), PRIVATE :: ierror
-
+  !*MCHDPN
+  INTEGER:: LRAtio
+  REAL(KIND=8), PRIVATE:: EPSm
+  REAL(KIND=8), PRIVATE:: RMAx
+  REAL(KIND=8), PRIVATE:: RMIn
+  !*QAZ
+  INTEGER, PRIVATE:: ISEed
+  INTEGER, PRIVATE:: ISEm
+  INTEGER, PRIVATE:: IXXx
+  !*DEBUG
+  INTEGER, PRIVATE:: IDBg
+  INTEGER, PRIVATE:: IDBg1
 CONTAINS
   !----------------------------------------------------------------------
   !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
@@ -89,22 +100,14 @@ CONTAINS
     INTEGER, INTENT(IN):: Ifmsg
     TYPE (HECMWST_MATRIX), INTENT(OUT)::Hecmat
     !------
-    INTEGER:: ISEed
-    INTEGER:: IXXx
-    INTEGER:: LRAtio
     INTEGER:: i98
     INTEGER:: i97
     INTEGER:: ir
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    COMMON /QAZ   / ISEed, IXXx
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
 
     RMAx = 8.988D+307
     RMIn = 4.941D-300
@@ -198,7 +201,7 @@ CONTAINS
     USE HECMW_UTIL
     IMPLICIT NONE
     !------
-    DOUBLE PRECISION, INTENT(OUT):: Cputim
+    REAL(KIND=8), INTENT(OUT):: Cputim
     !------
     ! cpu time by hour
     Cputim = HECMW_WTIME()
@@ -261,7 +264,6 @@ CONTAINS
   !> @brief MATINI initializes storage for sparse matrix solver.
   !     this routine is used for both symmetric and asymmetric matrices
   !     and must be called once at the beginning
-  !
   !    (i)
   !        neqns     number of unknowns
   !        nttbr     number of non0s, pattern of non-zero elements are
@@ -270,7 +272,6 @@ CONTAINS
   !        irow
   !        jcol      to define non-zero pattern
   !        lenv      length of the array v (iv)
-  !
   !    (o)
   !        iv        comunication array. v is the original name
   !        ir        return code
@@ -278,7 +279,6 @@ CONTAINS
   !                              =-1   non positive index
   !                              =1    too big index
   !                              =10   insufficient storage
-  !
   !        contents of iv
   !               pointers 1 &zpiv(1)  2 &iperm(1)  3 &invp(1)
   !                        4 &parent(1)5 &nch(1)    6 &xlnzr(1)
@@ -288,7 +288,6 @@ CONTAINS
   !               scalars 21 len(colno)  22 nstop     23 stage
   !                       24 neqns       25 len(iv) 26 len(dsln)
   !                       27 total
-  !
   !        stage   10  after initialization
   !                20  building up matrix
   !                30  after LU decomposition
@@ -299,7 +298,6 @@ CONTAINS
     !------
     INTEGER, INTENT(OUT):: Ir
     !------
-    INTEGER:: IDBg
     INTEGER:: ir1
     INTEGER:: iv1
     INTEGER:: izz
@@ -318,7 +316,6 @@ CONTAINS
     INTEGER:: lncol
     INTEGER:: lnleaf
     INTEGER:: lpordr
-    INTEGER:: LRAtio
     INTEGER:: lwk1
     INTEGER:: lwk2
     INTEGER:: lwk3
@@ -331,11 +328,6 @@ CONTAINS
     INTEGER:: maxl
     INTEGER:: neqns1
     INTEGER:: neqnsz
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    COMMON /DEBUG / IDBg
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     IDBg = 0
     izz0 = 0
@@ -525,7 +517,7 @@ CONTAINS
         !Scalar assignments
         LEN_colno = lncol
         !
-        !   area for double precision values
+        !   area for REAL(KIND=8) values
         !
         IF ( MOD(left,2)==0 ) left = left + 1
 
@@ -624,16 +616,8 @@ CONTAINS
     !------
     INTEGER, INTENT(OUT):: Ir
     !------
-    INTEGER:: ISEed
-    INTEGER:: IXXx
-    INTEGER:: LRAtio
     INTEGER:: ndeg2
     INTEGER:: ndegl
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    COMMON /QAZ   / ISEed, IXXx
 
     IF ( STAge/=20 ) THEN
       PRINT *, '*********Setting Stage 40!*********'
@@ -693,26 +677,19 @@ CONTAINS
     INTEGER, INTENT(OUT):: Ir
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+    REAL(KIND=8), INTENT(OUT):: Zln(*)
+    REAL(KIND=8), INTENT(OUT):: Diag(*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(*)
     !------
     INTEGER:: ic
-    INTEGER:: ISEm
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    DOUBLE PRECISION:: tt
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    COMMON ISEm
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
+    REAL(KIND=8):: tt
 
     ISEm = 1
     !
@@ -770,24 +747,19 @@ CONTAINS
     INTEGER, INTENT(OUT):: Ir
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(3,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(4,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(4,*)
     !------
     INTEGER:: ic
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    DOUBLE PRECISION:: tt
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
+    REAL(KIND=8):: tt
 
     !
     ! phase I
@@ -843,24 +815,19 @@ CONTAINS
     INTEGER, INTENT(OUT):: Ir
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(9,*)
     !------
     INTEGER:: ic
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    DOUBLE PRECISION:: tt
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
+    REAL(KIND=8):: tt
 
     !
     ! phase I
@@ -914,25 +881,20 @@ CONTAINS
     INTEGER, INTENT(IN):: Parent(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(36,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(36,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(21,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(36,*)
     !------
     INTEGER:: ic
     INTEGER:: Ir
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    DOUBLE PRECISION:: tt
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
+    REAL(KIND=8):: tt
 
     !
     ! phase I
@@ -988,27 +950,22 @@ CONTAINS
     INTEGER, INTENT(IN):: Parent(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg*Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg*Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg*Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg*Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndegl,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(Ndeg*Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg*Ndeg,*)
     !------
     INTEGER:: ic
     INTEGER:: Ir
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t1
-    DOUBLE PRECISION:: t2
-    DOUBLE PRECISION:: t3
-    DOUBLE PRECISION:: t4
-    DOUBLE PRECISION:: t5
-    DOUBLE PRECISION:: tt
-    DOUBLE PRECISION:: zz(100)
-    DOUBLE PRECISION:: t(100)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t1
+    REAL(KIND=8):: t2
+    REAL(KIND=8):: t3
+    REAL(KIND=8):: t4
+    REAL(KIND=8):: t5
+    REAL(KIND=8):: tt
+    REAL(KIND=8):: zz(100)
+    REAL(KIND=8):: t(100)
 
     !
     ! phase I
@@ -1058,19 +1015,11 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: R_h_s(*)
+    REAL(KIND=8), INTENT(OUT):: R_h_s(*)
     !------
-    INTEGER:: ISEed
-    INTEGER:: IXXx
-    INTEGER:: LRAtio
     INTEGER:: lwk
     INTEGER:: ndegl
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION, POINTER :: wk(:)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    COMMON /QAZ   / ISEed, IXXx
+    REAL(KIND=8), POINTER :: wk(:)
 
     IF ( STAge/=30 .AND. STAge/=40 ) THEN
       Ir = 50
@@ -1117,11 +1066,11 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(IN):: Iperm(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(*)
-    DOUBLE PRECISION, INTENT(IN):: Diag(*)
-    DOUBLE PRECISION, INTENT(IN):: Dsln(*)
-    DOUBLE PRECISION, INTENT(OUT):: B(*)
-    DOUBLE PRECISION, INTENT(OUT):: Wk(*)
+    REAL(KIND=8), INTENT(IN):: Zln(*)
+    REAL(KIND=8), INTENT(IN):: Diag(*)
+    REAL(KIND=8), INTENT(IN):: Dsln(*)
+    REAL(KIND=8), INTENT(OUT):: B(*)
+    REAL(KIND=8), INTENT(OUT):: Wk(*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -1181,11 +1130,11 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(IN):: Iperm(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(4,*)
-    DOUBLE PRECISION, INTENT(IN):: Diag(3,*)
-    DOUBLE PRECISION, INTENT(IN):: Dsln(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: B(2,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wk(2,*)
+    REAL(KIND=8), INTENT(IN):: Zln(4,*)
+    REAL(KIND=8), INTENT(IN):: Diag(3,*)
+    REAL(KIND=8), INTENT(IN):: Dsln(4,*)
+    REAL(KIND=8), INTENT(OUT):: B(2,*)
+    REAL(KIND=8), INTENT(OUT):: Wk(2,*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -1252,11 +1201,11 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(IN):: Iperm(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(9,*)
-    DOUBLE PRECISION, INTENT(IN):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(IN):: Dsln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: B(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wk(3,*)
+    REAL(KIND=8), INTENT(IN):: Zln(9,*)
+    REAL(KIND=8), INTENT(IN):: Diag(6,*)
+    REAL(KIND=8), INTENT(IN):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: B(3,*)
+    REAL(KIND=8), INTENT(OUT):: Wk(3,*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -1332,11 +1281,11 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(IN):: Iperm(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(IN):: Diag(Ndegl,*)
-    DOUBLE PRECISION, INTENT(OUT):: B(Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wk(Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: Diag(Ndegl,*)
+    REAL(KIND=8), INTENT(OUT):: B(Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Wk(Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -1435,10 +1384,8 @@ CONTAINS
     INTEGER, INTENT(OUT):: Zpiv(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg
     INTEGER:: j
     INTEGER:: l
-    COMMON /DEBUG / IDBg
 
     Ir = 0
     Zpiv(1:Neqns) = 1
@@ -1478,13 +1425,11 @@ CONTAINS
     INTEGER, INTENT(OUT):: Jcolno(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg
     INTEGER:: j
     INTEGER:: joc
     INTEGER:: k
     INTEGER:: l
     INTEGER:: locr
-    COMMON /DEBUG / IDBg
 
     Jcpt(1:2*Nttbr) = 0
     Jcolno(1:2*Nttbr) = 0
@@ -1558,12 +1503,10 @@ CONTAINS
     INTEGER, INTENT(OUT):: Ja(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg
     INTEGER:: ii
     INTEGER:: joc
     INTEGER:: k
     INTEGER:: l
-    COMMON /DEBUG / IDBg
 
     Ia(1) = 1
     l = 0
@@ -1708,12 +1651,10 @@ CONTAINS
     INTEGER, INTENT(OUT):: Ancstr(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: ip
     INTEGER:: it
     INTEGER:: k
     INTEGER:: l
-    COMMON /DEBUG / IDBg1
 
     DO i = 1, Neqns
       Parent(i) = 0
@@ -1758,11 +1699,9 @@ CONTAINS
     !------
     INTEGER:: i
     INTEGER:: ib
-    INTEGER:: IDBg1
     INTEGER:: inext
     INTEGER:: ip
     INTEGER:: Izz
-    COMMON /DEBUG / IDBg1
 
     Btree(1,1:Neqns + 1) = 0
     Btree(2,1:Neqns + 1) = 0
@@ -1825,7 +1764,6 @@ CONTAINS
     INTEGER, INTENT(OUT):: Mch(0:Neqns+1)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: ii
     INTEGER:: invpos
     INTEGER:: ipinv
@@ -1833,7 +1771,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: locc
     INTEGER:: locp
-    COMMON /DEBUG / IDBg1
 
     Mch(1:Neqns) = 0
     Pordr(1:Neqns) = 0
@@ -1908,7 +1845,6 @@ CONTAINS
     INTEGER, INTENT(OUT):: Leaf(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: ik
     INTEGER:: ip
     INTEGER:: iq
@@ -1918,7 +1854,6 @@ CONTAINS
     INTEGER:: lc
     INTEGER:: lc1
     INTEGER:: m
-    COMMON /DEBUG / IDBg1
 
     l = 1
     ik = 0
@@ -2015,7 +1950,6 @@ CONTAINS
     INTEGER, INTENT(OUT):: Xlnzr(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: Ir
     INTEGER:: j
     INTEGER:: k
@@ -2024,7 +1958,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: nc
     INTEGER:: nxleaf
-    COMMON /DEBUG / IDBg1
 
     nc = 0
     Ir = 0
@@ -2073,7 +2006,6 @@ CONTAINS
     INTEGER, INTENT(OUT):: Colno(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: j
     INTEGER:: k
     INTEGER:: ke
@@ -2081,7 +2013,6 @@ CONTAINS
     INTEGER:: l
     INTEGER:: nc
     INTEGER:: nxleaf
-    COMMON /DEBUG / IDBg1
 
     nc = 0
     Ir = 0
@@ -2126,7 +2057,6 @@ CONTAINS
 
   !======================================================================!
   !> @brief BRINGU  brings up zero pivots from bottom of the elimination tree to higher nodes
-  !
   !      irr = 0     complete
   !          = 1     impossible
   !======================================================================!
@@ -2199,7 +2129,6 @@ CONTAINS
     INTEGER, INTENT(OUT):: Adjt(*)
     !------
     INTEGER:: i
-    INTEGER:: IDBg1
     INTEGER:: iy
     INTEGER:: izzz
     INTEGER:: joc
@@ -2208,7 +2137,6 @@ CONTAINS
     INTEGER:: ll
     INTEGER:: locc
     INTEGER:: nanc
-    COMMON /DEBUG / IDBg1
 
     IF ( Izz==0 ) THEN
       Irr = 0
@@ -2235,6 +2163,7 @@ CONTAINS
         EXIT
       ENDIF
     ENDDO
+
 100 CONTINUE
     Adjt(1:Neqns) = 0
     locc = Anc(l)
@@ -2345,14 +2274,13 @@ CONTAINS
     INTEGER, INTENT(IN):: Invp(*)
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Aij(Ndeg2)
+    REAL(KIND=8), INTENT(IN):: Aij(Ndeg2)
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg2,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndeg2l,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg2,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg2,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndeg2l,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg2,*)
     !------
     INTEGER:: i0
-    INTEGER:: idbg
     INTEGER:: ii
     INTEGER:: itrans
     INTEGER:: j0
@@ -2360,8 +2288,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-
-    DATA idbg/0/
+    INTEGER, PARAMETER:: idbg = 0
 
     Ir = 0
     ii = Invp(I)
@@ -2460,14 +2387,13 @@ CONTAINS
     INTEGER, INTENT(IN):: Invp(*)
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Aij(9)
+    REAL(KIND=8), INTENT(IN):: Aij(9)
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(9,*)
     !------
     INTEGER:: i0
-    INTEGER:: idbg
     INTEGER:: ii
     INTEGER:: itrans
     INTEGER:: j0
@@ -2476,9 +2402,9 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: ndeg2
-    INTEGER:: ndeg2l
-    DATA idbg, ndeg2, ndeg2l/0, 9, 6/
+    INTEGER, PARAMETER:: idbg = 0
+    INTEGER, PARAMETER:: ndeg2 = 9
+    INTEGER, PARAMETER:: ndeg2l = 6
 
     Ir = 0
     ii = Invp(I)
@@ -2558,14 +2484,13 @@ CONTAINS
     INTEGER, INTENT(IN):: Invp(*)
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Aij(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(IN):: Aij(Ndeg,Ndeg)
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndeg2l,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndeg2l,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
     !------
     INTEGER:: i0
-    INTEGER:: idbg
     INTEGER:: ii
     INTEGER:: itrans
     INTEGER:: j0
@@ -2576,7 +2501,7 @@ CONTAINS
     INTEGER:: l
     INTEGER:: m
     INTEGER:: n
-    DATA idbg/0/
+    INTEGER, PARAMETER:: idbg = 0
 
     Ir = 0
     ii = Invp(I)
@@ -2640,9 +2565,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(4,*)
-    DOUBLE PRECISION, INTENT(IN):: B(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(4)
+    REAL(KIND=8), INTENT(IN):: A(4,*)
+    REAL(KIND=8), INTENT(IN):: B(4,*)
+    REAL(KIND=8), INTENT(OUT):: T(4)
     !------
     INTEGER:: jj
 
@@ -2663,9 +2588,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(2,*)
-    DOUBLE PRECISION, INTENT(IN):: B(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wi(2)
+    REAL(KIND=8), INTENT(IN):: A(2,*)
+    REAL(KIND=8), INTENT(IN):: B(4,*)
+    REAL(KIND=8), INTENT(OUT):: Wi(2)
     !------
     INTEGER:: jj
 
@@ -2682,21 +2607,22 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(9,*)
-    DOUBLE PRECISION, INTENT(IN):: B(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(9)
+    REAL(KIND=8), INTENT(IN):: A(9,*)
+    REAL(KIND=8), INTENT(IN):: B(9,*)
+    REAL(KIND=8), INTENT(OUT):: T(9)
     !------
     INTEGER:: jj
 
-    !$dir max_trips(9)
     T(1:9) = 0.0D0
     DO jj = 1, N
       T(1) = T(1) + A(1,jj)*B(1,jj) + A(4,jj)*B(4,jj) + A(7,jj)*B(7,jj)
       T(2) = T(2) + A(2,jj)*B(1,jj) + A(5,jj)*B(4,jj) + A(8,jj)*B(7,jj)
       T(3) = T(3) + A(3,jj)*B(1,jj) + A(6,jj)*B(4,jj) + A(9,jj)*B(7,jj)
+
       T(4) = T(4) + A(1,jj)*B(2,jj) + A(4,jj)*B(5,jj) + A(7,jj)*B(8,jj)
       T(5) = T(5) + A(2,jj)*B(2,jj) + A(5,jj)*B(5,jj) + A(8,jj)*B(8,jj)
       T(6) = T(6) + A(3,jj)*B(2,jj) + A(6,jj)*B(5,jj) + A(9,jj)*B(8,jj)
+
       T(7) = T(7) + A(1,jj)*B(3,jj) + A(4,jj)*B(6,jj) + A(7,jj)*B(9,jj)
       T(8) = T(8) + A(2,jj)*B(3,jj) + A(5,jj)*B(6,jj) + A(8,jj)*B(9,jj)
       T(9) = T(9) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
@@ -2710,9 +2636,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(9,*)
-    DOUBLE PRECISION, INTENT(IN):: B(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(6)
+    REAL(KIND=8), INTENT(IN):: A(9,*)
+    REAL(KIND=8), INTENT(IN):: B(9,*)
+    REAL(KIND=8), INTENT(OUT):: T(6)
     !------
     INTEGER:: jj
 
@@ -2720,8 +2646,10 @@ CONTAINS
     DO jj = 1, N
       T(1) = T(1) + A(1,jj)*B(1,jj) + A(4,jj)*B(4,jj) + A(7,jj)*B(7,jj)
       T(2) = T(2) + A(2,jj)*B(1,jj) + A(5,jj)*B(4,jj) + A(8,jj)*B(7,jj)
+
       T(3) = T(3) + A(2,jj)*B(2,jj) + A(5,jj)*B(5,jj) + A(8,jj)*B(8,jj)
       T(4) = T(4) + A(3,jj)*B(1,jj) + A(6,jj)*B(4,jj) + A(9,jj)*B(7,jj)
+
       T(5) = T(5) + A(3,jj)*B(2,jj) + A(6,jj)*B(5,jj) + A(9,jj)*B(8,jj)
       T(6) = T(6) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
     ENDDO
@@ -2734,9 +2662,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(3,*)
-    DOUBLE PRECISION, INTENT(IN):: B(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wi(3)
+    REAL(KIND=8), INTENT(IN):: A(3,*)
+    REAL(KIND=8), INTENT(IN):: B(9,*)
+    REAL(KIND=8), INTENT(OUT):: Wi(3)
     !------
     INTEGER:: jj
 
@@ -2750,15 +2678,15 @@ CONTAINS
   !======================================================================!
   !> @brief DDOT performs inner product of sparse vectors
   !======================================================================!
-  DOUBLE PRECISION FUNCTION DDOT(A,B,N)
+  REAL(KIND=8) FUNCTION DDOT(A,B,N)
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(N)
-    DOUBLE PRECISION, INTENT(IN):: B(N)
+    REAL(KIND=8), INTENT(IN):: A(N)
+    REAL(KIND=8), INTENT(IN):: B(N)
     !------
     INTEGER:: i
-    DOUBLE PRECISION:: s
+    REAL(KIND=8):: s
 
     s = 0.0D0
     DO i = 1, N
@@ -2775,9 +2703,9 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: L
     INTEGER, INTENT(IN):: Ndeg
-    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(IN):: A(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: B(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: T(Ndeg,Ndeg)
     !------
     INTEGER:: jj
     INTEGER:: k
@@ -2804,9 +2732,9 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: L
     INTEGER, INTENT(IN):: Ndeg
-    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(IN):: A(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: B(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: T(Ndeg,Ndeg)
     !------
     INTEGER:: jj
     INTEGER:: k
@@ -2832,9 +2760,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: Ndeg
-    DOUBLE PRECISION, INTENT(IN):: A(Ndeg,*)
-    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Wi(Ndeg)
+    REAL(KIND=8), INTENT(IN):: A(Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: B(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Wi(Ndeg)
     INTEGER, INTENT(INOUT):: N
     !------
     INTEGER:: jj
@@ -2858,9 +2786,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Ke
     INTEGER, INTENT(IN):: Ks
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(9,*)
-    DOUBLE PRECISION, INTENT(IN):: B(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Bi(3)
+    REAL(KIND=8), INTENT(IN):: Zln(9,*)
+    REAL(KIND=8), INTENT(IN):: B(3,*)
+    REAL(KIND=8), INTENT(OUT):: Bi(3)
     !------
     INTEGER:: j
     INTEGER:: jj
@@ -2882,9 +2810,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Ke
     INTEGER, INTENT(IN):: Ks
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(4,*)
-    DOUBLE PRECISION, INTENT(IN):: B(2,*)
-    DOUBLE PRECISION, INTENT(OUT):: Bi(2)
+    REAL(KIND=8), INTENT(IN):: Zln(4,*)
+    REAL(KIND=8), INTENT(IN):: B(2,*)
+    REAL(KIND=8), INTENT(OUT):: Bi(2)
     !------
     INTEGER:: j
     INTEGER:: jj
@@ -2905,45 +2833,45 @@ CONTAINS
     INTEGER, INTENT(IN):: Ke
     INTEGER, INTENT(IN):: Ks
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(36,*)
-    DOUBLE PRECISION, INTENT(IN):: B(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Bi(6)
+    REAL(KIND=8), INTENT(IN):: Zln(36,*)
+    REAL(KIND=8), INTENT(IN):: B(6,*)
+    REAL(KIND=8), INTENT(OUT):: Bi(6)
     !------
     INTEGER:: j
     INTEGER:: jj
 
     DO jj = Ks, Ke
       j = Colno(jj)
-      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j)&
-          - Zln(13,jj)*B(3,j) - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
-      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j)&
-          - Zln(14,jj)*B(3,j) - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
-      Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j)&
-          - Zln(15,jj)*B(3,j) - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
-      Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j)&
-          - Zln(16,jj)*B(3,j) - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
-      Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j)&
-          - Zln(17,jj)*B(3,j) - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
-      Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j)&
-          - Zln(18,jj)*B(3,j) - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
+      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j) - Zln(13,jj)*B(3,j)&
+          - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
+      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j) - Zln(14,jj)*B(3,j)&
+          - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
+      Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j) - Zln(15,jj)*B(3,j)&
+          - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
+      Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j) - Zln(16,jj)*B(3,j)&
+          - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
+      Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j) - Zln(17,jj)*B(3,j)&
+          - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
+      Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j) - Zln(18,jj)*B(3,j)&
+          - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
     ENDDO
   END SUBROUTINE S6PDOT
 
   !======================================================================!
   !> @brief SPDOT2 performs inner product of sparse vectors
   !======================================================================!
-  DOUBLE PRECISION FUNCTION SPDOT2(B,Zln,Colno,Ks,Ke)
+  REAL(KIND=8) FUNCTION SPDOT2(B,Zln,Colno,Ks,Ke)
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: Ke
     INTEGER, INTENT(IN):: Ks
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(*)
-    DOUBLE PRECISION, INTENT(IN):: B(*)
+    REAL(KIND=8), INTENT(IN):: Zln(*)
+    REAL(KIND=8), INTENT(IN):: B(*)
     !------
     INTEGER:: j
     INTEGER:: jj
-    DOUBLE PRECISION:: s
+    REAL(KIND=8):: s
 
     s = 0.0D0
     DO jj = Ks, Ke
@@ -2963,9 +2891,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Ks
     INTEGER, INTENT(IN):: Ndeg
     INTEGER, INTENT(IN):: Colno(*)
-    DOUBLE PRECISION, INTENT(IN):: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(IN):: B(Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Bi(Ndeg)
+    REAL(KIND=8), INTENT(IN):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(IN):: B(Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Bi(Ndeg)
     !------
     INTEGER:: j
     INTEGER:: jj
@@ -2989,14 +2917,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(3)
+    REAL(KIND=8), INTENT(OUT):: Dsln(3)
     !------
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t
 
     Ir = 0
     IF ( DABS(Dsln(1))<RMIn ) THEN
@@ -3020,9 +2943,9 @@ CONTAINS
   SUBROUTINE INV22(Zln,Zz,Diag)
     IMPLICIT NONE
     !------
-    DOUBLE PRECISION, INTENT(IN):: Diag(3)
-    DOUBLE PRECISION, INTENT(IN):: Zz(4)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(4)
+    REAL(KIND=8), INTENT(IN):: Diag(3)
+    REAL(KIND=8), INTENT(IN):: Zz(4)
+    REAL(KIND=8), INTENT(OUT):: Zln(4)
     !------
     Zln(3) = Zz(3) - Zz(1)*Diag(2)
     Zln(1) = Zz(1)*Diag(1)
@@ -3042,14 +2965,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(6)
+    REAL(KIND=8), INTENT(OUT):: Dsln(6)
     !------
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t(2)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t(2)
 
     Ir = 0
     IF ( DABS(Dsln(1))<RMIn ) GOTO 100
@@ -3068,6 +2986,7 @@ CONTAINS
     IF ( DABS(Dsln(6))<RMIn ) GOTO 100
     Dsln(6) = 1.0D0/Dsln(6)
     RETURN
+
 100 Dsln(1) = 1.0D0
     Dsln(2) = 0.0D0
     Dsln(3) = 1.0D0
@@ -3082,9 +3001,9 @@ CONTAINS
   SUBROUTINE INV33(Zln,Zz,Diag)
     IMPLICIT NONE
     !------
-    DOUBLE PRECISION, INTENT(IN):: Diag(6)
-    DOUBLE PRECISION, INTENT(IN):: Zz(9)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9)
+    REAL(KIND=8), INTENT(IN):: Diag(6)
+    REAL(KIND=8), INTENT(IN):: Zz(9)
+    REAL(KIND=8), INTENT(OUT):: Zln(9)
     !------
     Zln(4) = Zz(4) - Zz(1)*Diag(2)
     Zln(7) = Zz(7) - Zz(1)*Diag(4) - Zln(4)*Diag(5)
@@ -3118,14 +3037,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(21)
+    REAL(KIND=8), INTENT(OUT):: Dsln(21)
     !------
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t(5)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t(5)
 
     Ir = 0
     Dsln(1) = 1.0D0/Dsln(1)
@@ -3182,9 +3096,9 @@ CONTAINS
   SUBROUTINE INV66(Zln,Zz,Diag)
     IMPLICIT NONE
     !------
-    DOUBLE PRECISION, INTENT(IN):: Diag(21)
-    DOUBLE PRECISION, INTENT(IN):: Zz(36)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(36)
+    REAL(KIND=8), INTENT(IN):: Diag(21)
+    REAL(KIND=8), INTENT(IN):: Zz(36)
+    REAL(KIND=8), INTENT(OUT):: Zln(36)
     !------
     INTEGER:: i
 
@@ -3192,8 +3106,10 @@ CONTAINS
       Zln(i+7) = Zz(i+7) - Zz(i+1)*Diag(2)
       Zln(i+13) = Zz(i+13) - Zz(i+1)*Diag(4) - Zln(i+7)*Diag(5)
       Zln(i+19) = Zz(i+19) - Zz(i+1)*Diag(7) - Zln(i+7)*Diag(8) - Zln(i+13)*Diag(9)
-      Zln(i+25) = Zz(i+25) - Zz(i+1)*Diag(11) - Zln(i+7)*Diag(12) - Zln(i+13)*Diag(13) - Zln(i+19)*Diag(14)
-      Zln(i+31) = Zz(i+31) - Zz(i+1)*Diag(16) - Zln(i+7)*Diag(17) - Zln(i+13)*Diag(18) - Zln(i+19)*Diag(19) - Zln(i+25)*Diag(20)
+      Zln(i+25) = Zz(i+25) - Zz(i+1)*Diag(11) - Zln(i+7)*Diag(12) - Zln(i+13)*Diag(13)&
+          - Zln(i+19)*Diag(14)
+      Zln(i+31) = Zz(i+31) - Zz(i+1)*Diag(16) - Zln(i+7)*Diag(17) - Zln(i+13)*Diag(18)&
+          - Zln(i+19)*Diag(19) - Zln(i+25)*Diag(20)
       Zln(i+1) = Zz(i+1)*Diag(1)
       Zln(i+7) = Zln(i+7)*Diag(3)
       Zln(i+13) = Zln(i+13)*Diag(6)
@@ -3203,8 +3119,10 @@ CONTAINS
       Zln(i+25) = Zln(i+25) - Zln(i+31)*Diag(20)
       Zln(i+19) = Zln(i+19) - Zln(i+31)*Diag(19) - Zln(i+25)*Diag(14)
       Zln(i+13) = Zln(i+13) - Zln(i+31)*Diag(18) - Zln(i+25)*Diag(13)- Zln(i+19)*Diag(9)
-      Zln(i+7) = Zln(i+7) - Zln(i+31)*Diag(17) - Zln(i+25)*Diag(12)- Zln(i+19)*Diag(8) - Zln(i+13)*Diag(5)
-      Zln(i+1) = Zln(i+1) - Zln(i+31)*Diag(16) - Zln(i+25)*Diag(11)- Zln(i+19)*Diag(7) - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
+      Zln(i+7) = Zln(i+7) - Zln(i+31)*Diag(17) - Zln(i+25)*Diag(12)- Zln(i+19)*Diag(8)&
+          - Zln(i+13)*Diag(5)
+      Zln(i+1) = Zln(i+1) - Zln(i+31)*Diag(16) - Zln(i+25)*Diag(11)- Zln(i+19)*Diag(7)&
+          - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
     ENDDO
   END SUBROUTINE INV66
 
@@ -3216,7 +3134,7 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: Ndeg
     INTEGER, INTENT(OUT):: Ir
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -3226,13 +3144,8 @@ CONTAINS
     INTEGER:: l0
     INTEGER:: ld
     INTEGER:: ll
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: tem
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t
+    REAL(KIND=8):: tem
 
     Ir = 0
     l = 1
@@ -3271,9 +3184,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: Ndeg
-    DOUBLE PRECISION, INTENT(IN):: Diag(*)
-    DOUBLE PRECISION, INTENT(IN):: Zz(Ndeg,Ndeg)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(IN):: Diag(*)
+    REAL(KIND=8), INTENT(IN):: Zz(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg,Ndeg)
     !------
     INTEGER:: joc
     INTEGER:: l
@@ -3468,6 +3381,7 @@ CONTAINS
       Adjncy(jstop+1) = -node
     ENDIF
     GOTO 100
+
 200 Adjncy(j+1) = 0
     DO irch = 1, Rchsze
       node = Rchset(irch)
@@ -3636,11 +3550,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Ik
     INTEGER, INTENT(OUT):: Iw(*)
     !------
-    INTEGER:: IDBg1
     INTEGER:: itemp
     INTEGER:: l
     INTEGER:: m
-    COMMON /DEBUG / IDBg1
 
     IF ( Ik<=1 ) RETURN
     DO l = 1, Ik - 1
@@ -3666,9 +3578,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Par(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(3,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(4,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(4,*)
     !------
     INTEGER:: ir
     INTEGER:: j
@@ -3678,14 +3590,9 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: kk
     INTEGER:: ks
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s(4)
-    DOUBLE PRECISION:: t(3)
-    DOUBLE PRECISION:: zz(4)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: s(4)
+    REAL(KIND=8):: t(3)
+    REAL(KIND=8):: zz(4)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3729,8 +3636,8 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(4,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(4,*)
     !------
     INTEGER:: j
     INTEGER:: jc
@@ -3739,12 +3646,7 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s(4)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: s(4)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3780,10 +3682,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(3,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(4,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(4,*)
     !------
     INTEGER:: ic
     INTEGER:: j
@@ -3843,15 +3745,15 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: N
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(3,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(4,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(4,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(3,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(4,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(4,*)
     !------
     INTEGER:: i
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
-    DOUBLE PRECISION:: t(4)
+    REAL(KIND=8):: t(4)
 
     IF ( N>0 ) THEN
       Indx(1) = 0
@@ -3890,9 +3792,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Par(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(9,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
     !------
     INTEGER:: ir
     INTEGER:: j
@@ -3903,22 +3805,15 @@ CONTAINS
     INTEGER:: kk
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t(6)
-    DOUBLE PRECISION:: zz(9)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t(6)
+    REAL(KIND=8):: zz(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
-    !$dir max_trips(6)
     t(1:6) = 0.0D0
     DO k = ks, ke - 1
       jc = Colno(k)
       Indx(jc) = Ic
-      !$dir max_trips(9)
       zz(1:9) = Zln(1:9,k)
       DO jj = Xlnzr(jc), Xlnzr(jc+1) - 1
         j = Colno(jj)
@@ -3937,7 +3832,6 @@ CONTAINS
         ENDIF
       ENDDO
       CALL INV33(Zln(1,k),zz,Diag(1,jc))
-      !$dir max_trips(9)
       Temp(1:9,jc) = zz(1:9)
       t(1) = t(1) + zz(1)*Zln(1,k) + zz(4)*Zln(4,k) + zz(7)*Zln(7,k)
       t(2) = t(2) + zz(1)*Zln(2,k) + zz(4)*Zln(5,k) + zz(7)*Zln(8,k)
@@ -3946,7 +3840,6 @@ CONTAINS
       t(5) = t(5) + zz(2)*Zln(3,k) + zz(5)*Zln(6,k) + zz(8)*Zln(9,k)
       t(6) = t(6) + zz(3)*Zln(3,k) + zz(6)*Zln(6,k) + zz(9)*Zln(9,k)
     ENDDO
-    !$dir max_trips(6)
     DO l = 1, 6
       Diag(l,Ic) = Diag(l,Ic) - t(l)
     ENDDO
@@ -3966,8 +3859,8 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(9,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
     !------
     INTEGER:: j
     INTEGER:: jc
@@ -3976,16 +3869,10 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s(9)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: s(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
-    !$dir max_trip(9)
     s(1:9) = 0.0D0
     DO k = ks, ke - 1
       jc = Colno(k)
@@ -4006,7 +3893,6 @@ CONTAINS
           s(9) = s(9) + Temp(3,j)*Zln(3,jj) + Temp(6,j)*Zln(6,jj) + Temp(9,j)*Zln(9,jj)
         ENDIF
       ENDDO
-      !$dir max_trip(9)
       DO l = 1, 9
         Temp(l,jc) = Zln(l,k) - s(l)
         Zln(l,k) = Temp(l,jc)
@@ -4026,10 +3912,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Neqns,9)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(Neqns,9)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
     !------
     INTEGER:: ic
     INTEGER:: j
@@ -4129,15 +4015,15 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: N
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(9,*)
     !------
     INTEGER:: i
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
-    DOUBLE PRECISION:: t(9)
+    REAL(KIND=8):: t(9)
 
     IF ( N>0 ) THEN
       Indx(1) = 0
@@ -4171,9 +4057,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Par(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(36,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(21,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(36,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(36,*)
     !------
     INTEGER:: ir
     INTEGER:: j
@@ -4184,13 +4070,8 @@ CONTAINS
     INTEGER:: kk
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: t(21)
-    DOUBLE PRECISION:: zz(36)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: t(21)
+    REAL(KIND=8):: zz(36)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4313,7 +4194,6 @@ CONTAINS
         ENDIF
       ENDDO
       CALL INV66(Zln(1,k),zz,Diag(1,jc))
-      !$dir max_trips(9)
       Temp(1:36,jc) = zz(1:36)
 
       t(1) = t(1) + zz(1)*Zln(1,k) + zz(7)*Zln(7,k) + zz(13)*Zln(13,k)&
@@ -4359,7 +4239,6 @@ CONTAINS
       t(21) = t(21) + zz(6)*Zln(6,k) + zz(12)*Zln(12,k) + zz(18)*Zln(18,k)&
           + zz(24)*Zln(24,k) + zz(30)*Zln(30,k) + zz(36)*Zln(36,k)
     ENDDO
-    !$dir max_trips(6)
     DO l = 1, 21
       Diag(l,Ic) = Diag(l,Ic) - t(l)
     ENDDO
@@ -4379,8 +4258,8 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(9,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(9,*)
     !------
     INTEGER:: j
     INTEGER:: jc
@@ -4389,16 +4268,10 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: ks
     INTEGER:: l
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s(9)
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: s(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
-    !$dir max_trip(9)
     s(1:9) = 0.0D0
     DO k = ks, ke - 1
       jc = Colno(k)
@@ -4419,7 +4292,6 @@ CONTAINS
           s(9) = s(9) + Temp(3,j)*Zln(3,jj) + Temp(6,j)*Zln(6,jj) + Temp(9,j)*Zln(9,jj)
         ENDIF
       ENDDO
-      !$dir max_trip(9)
       DO l = 1, 9
         Temp(l,jc) = Zln(l,k) - s(l)
         Zln(l,k) = Temp(l,jc)
@@ -4439,10 +4311,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(21,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(36,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(36,Neqns)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(36,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(21,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(36,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(36,Neqns)
+    REAL(KIND=8), INTENT(OUT):: Zln(36,*)
     !------
     INTEGER:: ic
     INTEGER:: j
@@ -4511,16 +4383,16 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: N
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(6,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(9,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(9,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(6,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(9,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(9,*)
     !------
     INTEGER:: i
     INTEGER:: ir
     INTEGER:: j
     INTEGER:: joc
     INTEGER:: l
-    DOUBLE PRECISION:: t(9)
+    REAL(KIND=8):: t(9)
 
     IF ( N>0 ) THEN
       Indx(1) = 0
@@ -4530,7 +4402,6 @@ CONTAINS
         Indx(i) = joc
         DO j = 1, i - 1
           CALL D3DOT(t,Dsln(1,Indx(i)),Dsln(1,Indx(j)),j-1)
-          !$dir max_trips(9)
           DO l = 1, 9
             Dsln(l,joc) = Dsln(l,joc) - t(l)
           ENDDO
@@ -4538,7 +4409,6 @@ CONTAINS
         ENDDO
         CALL V3PROD(Dsln(1,Indx(i)),Diag,Temp,i-1)
         CALL D3DOTL(t,Temp,Dsln(1,Indx(i)),i-1)
-        !$dir max_trips(6)
         DO l = 1, 6
           Diag(l,i) = Diag(l,i) - t(l)
         ENDDO
@@ -4566,18 +4436,11 @@ CONTAINS
     INTEGER, INTENT(IN):: I
     INTEGER, INTENT(IN):: Isw
     INTEGER, INTENT(IN):: J
-    DOUBLE PRECISION, INTENT(IN):: Aij(NDEg*NDEg)
+    REAL(KIND=8), INTENT(IN):: Aij(NDEg*NDEg)
     INTEGER, INTENT(OUT):: Ir
     !------
-    INTEGER:: IDBg
-    INTEGER:: LRAtio
     INTEGER:: ndeg2
     INTEGER:: ndeg2l
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    COMMON /DEBUG / IDBg
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     Ir = 0
     ndeg2 = NDEg*NDEg
@@ -4634,11 +4497,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Par(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+    REAL(KIND=8), INTENT(OUT):: Diag(*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Zln(*)
     !------
-    INTEGER:: ISEm
     INTEGER:: j
     INTEGER:: jc
     INTEGER:: jj
@@ -4646,16 +4508,10 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: kk
     INTEGER:: ks
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: piv
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: zz
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
-    COMMON ISEm
+    REAL(KIND=8):: piv
+    REAL(KIND=8):: s
+    REAL(KIND=8):: t
+    REAL(KIND=8):: zz
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4695,8 +4551,8 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Zln(*)
     !------
     INTEGER:: j
     INTEGER:: jc
@@ -4704,14 +4560,9 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    INTEGER:: LRAtio
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    DOUBLE PRECISION:: s
-    DOUBLE PRECISION:: t
-    DOUBLE PRECISION:: zz
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
+    REAL(KIND=8):: s
+    REAL(KIND=8):: t
+    REAL(KIND=8):: zz
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4743,10 +4594,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(*)
+    REAL(KIND=8), INTENT(OUT):: Diag(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Zln(*)
     !------
     INTEGER:: ic
     INTEGER:: j
@@ -4756,7 +4607,7 @@ CONTAINS
     INTEGER:: k
     INTEGER:: ke
     INTEGER:: ks
-    DOUBLE PRECISION:: s
+    REAL(KIND=8):: s
 
     joc = 0
     DO ic = Nstop, Neqns
@@ -4791,9 +4642,9 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: N
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(*)
+    REAL(KIND=8), INTENT(OUT):: Diag(*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(*)
+    REAL(KIND=8), INTENT(OUT):: Temp(*)
     !------
     INTEGER:: i
     INTEGER:: j
@@ -4831,11 +4682,11 @@ CONTAINS
     INTEGER, INTENT(IN):: Par(*)
     INTEGER, INTENT(OUT):: Indx(*)
     INTEGER, INTENT(OUT):: Nch(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(Ndegl)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zz(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndegl,*)
+    REAL(KIND=8), INTENT(OUT):: T(Ndegl)
+    REAL(KIND=8), INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zz(Ndeg,Ndeg)
     !------
     INTEGER:: ir
     INTEGER:: j
@@ -4846,14 +4697,9 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: kk
     INTEGER:: ks
-    INTEGER:: LRAtio
     INTEGER:: m
     INTEGER:: n
     INTEGER:: ndeg22
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ndeg22 = Ndeg*Ndeg
     ks = Xlnzr(Ic)
@@ -4909,9 +4755,9 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: S(Ndeg,Ndeg)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: S(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg,Ndeg,*)
     !------
     INTEGER:: Ic
     INTEGER:: j
@@ -4921,13 +4767,8 @@ CONTAINS
     INTEGER:: ke
     INTEGER:: kk
     INTEGER:: ks
-    INTEGER:: LRAtio
     INTEGER:: m
     INTEGER:: n
-    DOUBLE PRECISION:: EPSm
-    DOUBLE PRECISION:: RMAx
-    DOUBLE PRECISION:: RMIn
-    COMMON /MCHDPN/ RMAx, RMIn, EPSm, LRAtio
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4971,10 +4812,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Xlnzr(*)
     INTEGER, INTENT(IN):: Colno(*)
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndegl,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg,Ndeg,*)
     !------
     INTEGER:: ic
     INTEGER:: j
@@ -5049,10 +4890,10 @@ CONTAINS
     INTEGER, INTENT(IN):: Ndegl
     INTEGER, INTENT(IN):: Nn
     INTEGER, INTENT(OUT):: Indx(*)
-    DOUBLE PRECISION, INTENT(OUT):: Diag(Ndegl,*)
-    DOUBLE PRECISION, INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
-    DOUBLE PRECISION, INTENT(OUT):: T(Ndeg,Ndeg)
-    DOUBLE PRECISION, INTENT(OUT):: Temp(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: Diag(Ndegl,*)
+    REAL(KIND=8), INTENT(OUT):: Dsln(Ndeg,Ndeg,*)
+    REAL(KIND=8), INTENT(OUT):: T(Ndeg,Ndeg)
+    REAL(KIND=8), INTENT(OUT):: Temp(Ndeg,Ndeg,*)
     !------
     INTEGER:: i
     INTEGER:: ir
@@ -5097,9 +4938,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(4,N)
-    DOUBLE PRECISION, INTENT(IN):: B(3,N)
-    DOUBLE PRECISION, INTENT(OUT):: C(4,N)
+    REAL(KIND=8), INTENT(IN):: A(4,N)
+    REAL(KIND=8), INTENT(IN):: B(3,N)
+    REAL(KIND=8), INTENT(OUT):: C(4,N)
     !------
     INTEGER:: i
 
@@ -5123,9 +4964,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: Diag(6,N)
-    DOUBLE PRECISION, INTENT(IN):: Zln(9,N)
-    DOUBLE PRECISION, INTENT(OUT):: Zz(9,N)
+    REAL(KIND=8), INTENT(IN):: Diag(6,N)
+    REAL(KIND=8), INTENT(IN):: Zln(9,N)
+    REAL(KIND=8), INTENT(OUT):: Zz(9,N)
     !------
     INTEGER:: i
 
@@ -5163,8 +5004,8 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: B(N,N)
-    DOUBLE PRECISION, INTENT(OUT):: A(N,N)
+    REAL(KIND=8), INTENT(IN):: B(N,N)
+    REAL(KIND=8), INTENT(OUT):: A(N,N)
     !------
     INTEGER:: i
 
@@ -5180,8 +5021,8 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(N)
-    DOUBLE PRECISION, INTENT(OUT):: C(N)
+    REAL(KIND=8), INTENT(IN):: A(N)
+    REAL(KIND=8), INTENT(OUT):: C(N)
     !------
     C = A
   END SUBROUTINE VCOPY
@@ -5193,9 +5034,9 @@ CONTAINS
     IMPLICIT NONE
     !------
     INTEGER, INTENT(IN):: N
-    DOUBLE PRECISION, INTENT(IN):: A(N)
-    DOUBLE PRECISION, INTENT(IN):: B(N)
-    DOUBLE PRECISION, INTENT(OUT):: C(N)
+    REAL(KIND=8), INTENT(IN):: A(N)
+    REAL(KIND=8), INTENT(IN):: B(N)
+    REAL(KIND=8), INTENT(OUT):: C(N)
     !------
     C(1:N) = A(1:N)*B(1:N)
   END SUBROUTINE VPROD
@@ -5208,9 +5049,9 @@ CONTAINS
     !------
     INTEGER, INTENT(IN):: Ndeg
     INTEGER, INTENT(IN):: Ndegl
-    DOUBLE PRECISION, INTENT(IN):: Diag(Ndegl,N)
-    DOUBLE PRECISION, INTENT(OUT):: Zln(Ndeg*Ndeg,N)
-    DOUBLE PRECISION, INTENT(OUT):: Zz(Ndeg*Ndeg,N)
+    REAL(KIND=8), INTENT(IN):: Diag(Ndegl,N)
+    REAL(KIND=8), INTENT(OUT):: Zln(Ndeg*Ndeg,N)
+    REAL(KIND=8), INTENT(OUT):: Zz(Ndeg*Ndeg,N)
     !------
     INTEGER:: i
     INTEGER:: N
