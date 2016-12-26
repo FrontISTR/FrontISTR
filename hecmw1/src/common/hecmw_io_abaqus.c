@@ -3557,7 +3557,7 @@ read_solidsect_keyword(void)
 
 	token = HECMW_ablex_next_token();
 	if(token != ',') {
-		set_err_token(token, HECMW_IO_ABAQUS_E2100, "',' required after *SHELL SECTION");
+		set_err_token(token, HECMW_IO_ABAQUS_E2100, "',' required after *SOLID SECTION");
 		return -1;
 	}
 	return 0;
