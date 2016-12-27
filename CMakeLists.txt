@@ -67,14 +67,13 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 # Windows (MinGW) specific setting
 ###############################################################################
 if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
-  add_definitions(-D_WINDOWS)
-  set(CMAKE_Fortran_FLAGS "-fno-range-check")
-  set(_WINDOWS ON)
+  set(WINDOWS ON)
 endif()
 
 ###############################################################################
 # Options
 ###############################################################################
+# -DWINDOWS          : build on Windows
 # -DWITH_TOOLS       : compile tools
 # -DWITH_MPI         : for parallel environment with MPI
 # -DWITH_OPENMP      : for multi-(core|processor) environment
@@ -92,6 +91,14 @@ endif()
 
 # add module path for FindPackage.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+
+# -DWINDOWS
+option(WINDOWS "build on windows" OFF)
+if(WINDOWS)
+  add_definitions(-D_WINDOWS)
+  set(CMAKE_Fortran_FLAGS "-fno-range-check")
+  set(_WINDOWS ON)
+endif()
 
 # -DWITH_TOOLS
 option(WITH_TOOLS "compile tools" OFF)
