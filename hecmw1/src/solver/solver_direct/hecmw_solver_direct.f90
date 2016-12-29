@@ -77,6 +77,7 @@ module HECMW_SOLVER_DIRECT
   !*DEBUG
   integer, private:: IDBg
   integer, private:: IDBg1
+
 contains
   !----------------------------------------------------------------------
   !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
@@ -529,7 +530,6 @@ contains
       else
         if ( izz0==0 ) izz0 = izz
         if ( izz0/=izz ) then
-
           call BRINGU(ZPIv,IPErm,INVp,MARker,izz,NEQns,IRR)
         else
           lwk4 = last - neqns1
@@ -643,17 +643,19 @@ contains
     ndegl = ndegl/2
     ndeg2 = NDEg*NDEg
     !rmiv
-    if ( NDEg==1 ) then
+    select case (NDEg)
+    case (1)
       call NUFCT(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    elseif ( NDEg==2 ) then
+    case (2)
       call NUFCT2(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    elseif ( NDEg==3 ) then
+    case (3)
       call NUFCT3(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    elseif ( NDEg==6 ) then
+    case (6)
       call NUFCT6(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    else
+    case default
       call NUFCTX(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,NDEg,ndegl,Ir)
-    endif
+    endselect
+
     STAge = 30
     deallocate (TEMp)
     deallocate (INDx)
