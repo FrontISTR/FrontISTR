@@ -13,63 +13,63 @@
 module HECMW_SOLVER_DIRECT
   implicit none
 
-  integer(KIND=4), private :: len_colno
-  integer(KIND=4), private :: nstop
-  integer(KIND=4), private :: stage
-  integer(KIND=4), private :: neqns
-  integer(KIND=4), private :: nttbr
-  integer(KIND=4), private :: isym
-  integer(KIND=4), private :: ndeg
-  integer(KIND=4), private :: irr
-  integer(KIND=4), private :: len_dsln
-  integer(KIND=4), private :: len_iv
-  integer(KIND=4), private :: total
+  integer(kind=4), private :: len_colno
+  integer(kind=4), private :: nstop
+  integer(kind=4), private :: stage
+  integer(kind=4), private :: neqns
+  integer(kind=4), private :: nttbr
+  integer(kind=4), private :: isym
+  integer(kind=4), private :: ndeg
+  integer(kind=4), private :: irr
+  integer(kind=4), private :: len_dsln
+  integer(kind=4), private :: len_iv
+  integer(kind=4), private :: total
 
-  integer(KIND=4), private, dimension(:), pointer :: jcol
-  integer(KIND=4), private, dimension(:), pointer :: irow
-  integer(KIND=4), private, dimension(:), pointer :: zpiv
-  integer(KIND=4), private, dimension(:), pointer :: iperm
-  integer(KIND=4), private, dimension(:), pointer :: invp
-  integer(KIND=4), private, dimension(:), pointer :: parent
-  integer(KIND=4), private, dimension(:), pointer :: nch
-  integer(KIND=4), private, dimension(:), pointer :: xlnzr
-  integer(KIND=4), private, dimension(:), pointer :: colno
+  integer(kind=4), private, dimension(:), pointer :: jcol
+  integer(kind=4), private, dimension(:), pointer :: irow
+  integer(kind=4), private, dimension(:), pointer :: zpiv
+  integer(kind=4), private, dimension(:), pointer :: iperm
+  integer(kind=4), private, dimension(:), pointer :: invp
+  integer(kind=4), private, dimension(:), pointer :: parent
+  integer(kind=4), private, dimension(:), pointer :: nch
+  integer(kind=4), private, dimension(:), pointer :: xlnzr
+  integer(kind=4), private, dimension(:), pointer :: colno
   !*Work arrays
-  integer(KIND=4), private, dimension(:), pointer :: jcpt
-  integer(KIND=4), private, dimension(:), pointer :: jcolno
-  integer(KIND=4), private, dimension(:), pointer :: ia
-  integer(KIND=4), private, dimension(:), pointer :: ja
-  integer(KIND=4), private, dimension(:), pointer :: deg
-  integer(KIND=4), private, dimension(:), pointer :: marker
-  integer(KIND=4), private, dimension(:), pointer :: rchset
-  integer(KIND=4), private, dimension(:), pointer :: nbrhd
-  integer(KIND=4), private, dimension(:), pointer :: qsize
-  integer(KIND=4), private, dimension(:), pointer :: qlink
-  integer(KIND=4), private :: nofsub
-  integer(KIND=4), private, dimension(:), pointer :: adjncy
-  integer(KIND=4), private, dimension(:), pointer :: btree
-  integer(KIND=4), private, dimension(:), pointer :: pordr
-  integer(KIND=4), private, dimension(:), pointer :: adjncp
-  integer(KIND=4), private, dimension(:), pointer :: xleaf
-  integer(KIND=4), private, dimension(:), pointer :: leaf
-  integer(KIND=4), private, dimension(:), pointer :: indx
+  integer(kind=4), private, dimension(:), pointer :: jcpt
+  integer(kind=4), private, dimension(:), pointer :: jcolno
+  integer(kind=4), private, dimension(:), pointer :: ia
+  integer(kind=4), private, dimension(:), pointer :: ja
+  integer(kind=4), private, dimension(:), pointer :: deg
+  integer(kind=4), private, dimension(:), pointer :: marker
+  integer(kind=4), private, dimension(:), pointer :: rchset
+  integer(kind=4), private, dimension(:), pointer :: nbrhd
+  integer(kind=4), private, dimension(:), pointer :: qsize
+  integer(kind=4), private, dimension(:), pointer :: qlink
+  integer(kind=4), private :: nofsub
+  integer(kind=4), private, dimension(:), pointer :: adjncy
+  integer(kind=4), private, dimension(:), pointer :: btree
+  integer(kind=4), private, dimension(:), pointer :: pordr
+  integer(kind=4), private, dimension(:), pointer :: adjncp
+  integer(kind=4), private, dimension(:), pointer :: xleaf
+  integer(kind=4), private, dimension(:), pointer :: leaf
+  integer(kind=4), private, dimension(:), pointer :: indx
 
-  real(KIND=8), private, dimension(:), pointer :: val
-  real(KIND=8), private, dimension(:), pointer :: temp
-  real(KIND=8), private, dimension(:), pointer :: diag
-  real(KIND=8), private, dimension(:), pointer :: zln
-  real(KIND=8), private, dimension(:), pointer :: dsln
+  real(kind=8), private, dimension(:), pointer :: val
+  real(kind=8), private, dimension(:), pointer :: temp
+  real(kind=8), private, dimension(:), pointer :: diag
+  real(kind=8), private, dimension(:), pointer :: zln
+  real(kind=8), private, dimension(:), pointer :: dsln
   !*Timing
-  real(KIND=8), private, dimension(10) :: tom
+  real(kind=8), private, dimension(10) :: tom
   !*Allocation variables
-  integer(KIND=4), private :: ialoc
-  integer(KIND=4), private :: raloc
-  integer(KIND=4), private :: ierror
+  integer(kind=4), private :: ialoc
+  integer(kind=4), private :: raloc
+  integer(kind=4), private :: ierror
   !*MCHDPN
   integer:: LRAtio
-  real(KIND=8), private:: EPSm
-  real(KIND=8), private:: RMAx
-  real(KIND=8), private:: RMIn
+  real(kind=8), private:: EPSm
+  real(kind=8), private:: RMAx
+  real(kind=8), private:: RMIn
   !*QAZ
   integer, private:: ISEed
   integer, private:: ISEm
@@ -77,7 +77,6 @@ module HECMW_SOLVER_DIRECT
   !*DEBUG
   integer, private:: IDBg
   integer, private:: IDBg1
-  
 contains
   !----------------------------------------------------------------------
   !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
@@ -96,18 +95,18 @@ contains
     use HECMW_MATRIX_DUMP
     implicit none
     !------
-    type (HECMWST_LOCAL_MESH), intent(IN)::hecMESH
-    integer, intent(IN):: Ifmsg
-    type (HECMWST_MATRIX), intent(OUT)::hecMAT
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    integer, intent(in):: Ifmsg
+    type (HECMWST_MATRIX), intent(out)::hecMAT
     !------
     integer:: i98
     integer:: i97
     integer:: ir
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
 
     RMAx = 8.988D+307
     RMIn = 4.941D-300
@@ -201,7 +200,7 @@ contains
     use HECMW_UTIL
     implicit none
     !------
-    real(KIND=8), intent(OUT):: Cputim
+    real(kind=8), intent(out):: Cputim
     !------
     ! cpu time by hour
     Cputim = HECMW_WTIME()
@@ -214,8 +213,8 @@ contains
     use HECMW_UTIL
     implicit none
     !------
-    type (HECMWST_LOCAL_MESH), intent(IN)::hecMESH
-    type (HECMWST_MATRIX), intent(IN)::hecMAT
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    type (HECMWST_MATRIX), intent(in)::hecMAT
     !------
     integer:: i
     integer:: ierr
@@ -223,9 +222,9 @@ contains
     integer:: k
     integer:: kk
     integer:: ntotal
-    integer(KIND=kint):: numnp
-    integer(KIND=kint):: ndof
-    integer(KIND=kint):: ndof2
+    integer(kind=kint):: numnp
+    integer(kind=kint):: ndof
+    integer(kind=kint):: ndof2
 
     numnp = hecMAT%NP
     ndof = hecMESH%N_DOF
@@ -296,7 +295,7 @@ contains
   subroutine MATINI(Ir)
     implicit none
     !------
-    integer, intent(OUT):: Ir
+    integer, intent(out):: Ir
     !------
     integer:: ir1
     integer:: iv1
@@ -517,7 +516,7 @@ contains
         !Scalar assignments
         LEN_colno = lncol
         !
-        !   area for REAL(KIND=8) values
+        !   area for REAL(kind=8) values
         !
         if ( mod(left,2)==0 ) left = left + 1
 
@@ -549,9 +548,9 @@ contains
     use HECMW_UTIL
     implicit none
     !------
-    type (HECMWST_LOCAL_MESH), intent(IN)::hecMESH
-    type (HECMWST_MATRIX), intent(IN)::hecMAT
-    integer(KIND=kint), intent(OUT):: Ir
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    type (HECMWST_MATRIX), intent(in)::hecMAT
+    integer(kind=kint), intent(out):: Ir
     !------
     integer:: i
     integer:: idbg
@@ -560,9 +559,9 @@ contains
     integer:: k
     integer:: kk
     integer:: ntotal
-    integer(KIND=kint):: numnp
-    integer(KIND=kint):: ndof
-    integer(KIND=kint):: ndof2
+    integer(kind=kint):: numnp
+    integer(kind=kint):: ndof
+    integer(kind=kint):: ndof2
 
     idbg = 0
     numnp = hecMAT%NP
@@ -614,7 +613,7 @@ contains
     use HECMW_UTIL
     implicit none
     !------
-    integer, intent(OUT):: Ir
+    integer, intent(out):: Ir
     !------
     integer:: ndeg2
     integer:: ndegl
@@ -669,27 +668,27 @@ contains
   subroutine NUFCT(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Ir
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Zln(*)
-    real(KIND=8), intent(OUT):: Diag(*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Dsln(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(*)
     !------
     integer:: ic
     integer:: l
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
-    real(KIND=8):: tt
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
 
     ISEm = 1
     !
@@ -739,27 +738,27 @@ contains
   subroutine NUFCT2(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Ir
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Zln(4,*)
-    real(KIND=8), intent(OUT):: Diag(3,*)
-    real(KIND=8), intent(OUT):: Temp(4,*)
-    real(KIND=8), intent(OUT):: Dsln(4,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(4,*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Dsln(4,*)
     !------
     integer:: ic
     integer:: l
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
-    real(KIND=8):: tt
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
 
     !
     ! phase I
@@ -807,27 +806,27 @@ contains
   subroutine NUFCT3(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Ir
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Zln(9,*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Dsln(9,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(9,*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(9,*)
     !------
     integer:: ic
     integer:: l
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
-    real(KIND=8):: tt
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
 
     !
     ! phase I
@@ -874,27 +873,27 @@ contains
   subroutine NUFCT6(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Zln(36,*)
-    real(KIND=8), intent(OUT):: Diag(21,*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Dsln(36,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(36,*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(36,*)
     !------
     integer:: ic
     integer:: Ir
     integer:: l
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
-    real(KIND=8):: tt
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
 
     !
     ! phase I
@@ -941,31 +940,31 @@ contains
   subroutine NUFCTX(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ndeg,Ndegl,Ir)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Zln(Ndeg*Ndeg,*)
-    real(KIND=8), intent(OUT):: Diag(Ndegl,*)
-    real(KIND=8), intent(OUT):: Temp(Ndeg*Ndeg,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg*Ndeg,*)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Temp(Ndeg*Ndeg,*)
+    real(kind=8), intent(out):: Dsln(Ndeg*Ndeg,*)
     !------
     integer:: ic
     integer:: Ir
     integer:: l
-    real(KIND=8):: t1
-    real(KIND=8):: t2
-    real(KIND=8):: t3
-    real(KIND=8):: t4
-    real(KIND=8):: t5
-    real(KIND=8):: tt
-    real(KIND=8):: zz(100)
-    real(KIND=8):: t(100)
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+    real(kind=8):: zz(100)
+    real(kind=8):: t(100)
 
     !
     ! phase I
@@ -1014,12 +1013,12 @@ contains
     use HECMW_UTIL
     implicit none
     !------
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: R_h_s(*)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: R_h_s(*)
     !------
     integer:: lwk
     integer:: ndegl
-    real(KIND=8), pointer :: wk(:)
+    real(kind=8), pointer :: wk(:)
 
     if ( STAge/=30 .and. STAge/=40 ) then
       Ir = 50
@@ -1061,16 +1060,16 @@ contains
   subroutine NUSOL1(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Iperm(*)
-    real(KIND=8), intent(IN):: Zln(*)
-    real(KIND=8), intent(IN):: Diag(*)
-    real(KIND=8), intent(IN):: Dsln(*)
-    real(KIND=8), intent(OUT):: B(*)
-    real(KIND=8), intent(OUT):: Wk(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(*)
+    real(kind=8), intent(in):: Diag(*)
+    real(kind=8), intent(in):: Dsln(*)
+    real(kind=8), intent(out):: B(*)
+    real(kind=8), intent(out):: Wk(*)
     !------
     integer:: i
     integer:: j
@@ -1125,16 +1124,16 @@ contains
   subroutine NUSOL2(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Iperm(*)
-    real(KIND=8), intent(IN):: Zln(4,*)
-    real(KIND=8), intent(IN):: Diag(3,*)
-    real(KIND=8), intent(IN):: Dsln(4,*)
-    real(KIND=8), intent(OUT):: B(2,*)
-    real(KIND=8), intent(OUT):: Wk(2,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(4,*)
+    real(kind=8), intent(in):: Diag(3,*)
+    real(kind=8), intent(in):: Dsln(4,*)
+    real(kind=8), intent(out):: B(2,*)
+    real(kind=8), intent(out):: Wk(2,*)
     !------
     integer:: i
     integer:: j
@@ -1196,16 +1195,16 @@ contains
   subroutine NUSOL3(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Iperm(*)
-    real(KIND=8), intent(IN):: Zln(9,*)
-    real(KIND=8), intent(IN):: Diag(6,*)
-    real(KIND=8), intent(IN):: Dsln(9,*)
-    real(KIND=8), intent(OUT):: B(3,*)
-    real(KIND=8), intent(OUT):: Wk(3,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(9,*)
+    real(kind=8), intent(in):: Diag(6,*)
+    real(kind=8), intent(in):: Dsln(9,*)
+    real(kind=8), intent(out):: B(3,*)
+    real(kind=8), intent(out):: Wk(3,*)
     !------
     integer:: i
     integer:: j
@@ -1274,18 +1273,18 @@ contains
   subroutine NUSOLX(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop,Ndeg,Ndegl)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Iperm(*)
-    real(KIND=8), intent(IN):: Zln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(IN):: Diag(Ndegl,*)
-    real(KIND=8), intent(OUT):: B(Ndeg,*)
-    real(KIND=8), intent(OUT):: Wk(Ndeg,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg,Ndeg,*)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: B(Ndeg,*)
+    real(kind=8), intent(out):: Wk(Ndeg,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
     !------
     integer:: i
     integer:: j
@@ -1375,13 +1374,13 @@ contains
   subroutine ZPIVOT(Neqns,Neqnsz,Nttbr,Jcol,Irow,Zpiv,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nttbr
-    integer, intent(IN):: Jcol(*)
-    integer, intent(IN):: Irow(*)
-    integer, intent(OUT):: Ir
-    integer, intent(OUT):: Neqnsz
-    integer, intent(OUT):: Zpiv(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nttbr
+    integer, intent(in):: Jcol(*)
+    integer, intent(in):: Irow(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Neqnsz
+    integer, intent(out):: Zpiv(*)
     !------
     integer:: i
     integer:: j
@@ -1417,12 +1416,12 @@ contains
   subroutine STSMAT(Neqns,Nttbr,Irow,Jcol,Jcpt,Jcolno)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nttbr
-    integer, intent(IN):: Irow(*)
-    integer, intent(IN):: Jcol(*)
-    integer, intent(OUT):: Jcpt(*)
-    integer, intent(OUT):: Jcolno(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nttbr
+    integer, intent(in):: Irow(*)
+    integer, intent(in):: Jcol(*)
+    integer, intent(out):: Jcpt(*)
+    integer, intent(out):: Jcolno(*)
     !------
     integer:: i
     integer:: j
@@ -1496,11 +1495,11 @@ contains
   subroutine STIAJA(Neqns,Ia,Ja,Jcpt,Jcolno)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Jcpt(*)
-    integer, intent(IN):: Jcolno(*)
-    integer, intent(OUT):: Ia(*)
-    integer, intent(OUT):: Ja(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Jcpt(*)
+    integer, intent(in):: Jcolno(*)
+    integer, intent(out):: Ia(*)
+    integer, intent(out):: Ja(*)
     !------
     integer:: i
     integer:: ii
@@ -1536,19 +1535,19 @@ contains
   subroutine GENQMD(Neqns,Xadj,Adj0,Perm,Invp,Deg,Marker,Rchset,Nbrhd,Qsize,Qlink,Nofsub,Adjncy)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Adj0(*)
-    integer, intent(IN):: Xadj(*)
-    integer, intent(OUT):: Nofsub
-    integer, intent(OUT):: Adjncy(*)
-    integer, intent(OUT):: Perm(*)
-    integer, intent(OUT):: Invp(*)
-    integer, intent(OUT):: Deg(*)
-    integer, intent(OUT):: Marker(*)
-    integer, intent(OUT):: Rchset(*)
-    integer, intent(OUT):: Nbrhd(*)
-    integer, intent(OUT):: Qsize(*)
-    integer, intent(OUT):: Qlink(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Adj0(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Nofsub
+    integer, intent(out):: Adjncy(*)
+    integer, intent(out):: Perm(*)
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
     !------
     integer:: inode
     integer:: ip
@@ -1642,13 +1641,13 @@ contains
   subroutine GENPAQ(Xadj,Adjncy,Invp,Iperm,Parent,Neqns,Ancstr)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Xadj(*)
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Iperm(*)
-    integer, intent(OUT):: Parent(*)
-    integer, intent(OUT):: Ancstr(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Iperm(*)
+    integer, intent(out):: Parent(*)
+    integer, intent(out):: Ancstr(*)
     !------
     integer:: i
     integer:: ip
@@ -1691,11 +1690,11 @@ contains
   subroutine GENBTQ(Invp,Parent,Btree,Zpiv,Izz,Neqns)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Parent(*)
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Zpiv(*)
-    integer, intent(OUT):: Btree(2,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Zpiv(*)
+    integer, intent(out):: Btree(2,*)
     !------
     integer:: i
     integer:: ib
@@ -1752,16 +1751,16 @@ contains
   subroutine POSORD(Parent,Btree,Invp,Iperm,Pordr,Nch,Neqns,Iw,Qarent,Mch)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Btree(2,*)
-    integer, intent(IN):: Qarent(*)
-    integer, intent(OUT):: Parent(*)
-    integer, intent(OUT):: Pordr(*)
-    integer, intent(OUT):: Nch(*)
-    integer, intent(OUT):: Invp(*)
-    integer, intent(OUT):: Iperm(*)
-    integer, intent(OUT):: Iw(*)
-    integer, intent(OUT):: Mch(0:Neqns+1)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Btree(2,*)
+    integer, intent(in):: Qarent(*)
+    integer, intent(out):: Parent(*)
+    integer, intent(out):: Pordr(*)
+    integer, intent(out):: Nch(*)
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Iw(*)
+    integer, intent(out):: Mch(0:Neqns+1)
     !------
     integer:: i
     integer:: ii
@@ -1833,16 +1832,16 @@ contains
   subroutine GNLEAF(Xadj,Adjncy,Invp,Iperm,Nch,Adjncp,Xleaf,Leaf,Neqns,Lnleaf)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Xadj(*)
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: Nch(*)
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Iperm(*)
-    integer, intent(OUT):: Lnleaf
-    integer, intent(OUT):: Adjncp(*)
-    integer, intent(OUT):: Xleaf(*)
-    integer, intent(OUT):: Leaf(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Nch(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Iperm(*)
+    integer, intent(out):: Lnleaf
+    integer, intent(out):: Adjncp(*)
+    integer, intent(out):: Xleaf(*)
+    integer, intent(out):: Leaf(*)
     !------
     integer:: i
     integer:: ik
@@ -1908,10 +1907,10 @@ contains
   subroutine FORPAR(Neqns,Parent,Nch,Nstop)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Nstop
-    integer, intent(OUT):: Nch(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Nstop
+    integer, intent(out):: Nch(*)
     !------
     integer:: i
     integer:: idens
@@ -1941,13 +1940,13 @@ contains
   subroutine PRE_GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Neqns,Nstop,Lncol,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Parent(*)
-    integer, intent(IN):: Xleaf(*)
-    integer, intent(IN):: Leaf(*)
-    integer, intent(OUT):: Lncol
-    integer, intent(OUT):: Xlnzr(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Xleaf(*)
+    integer, intent(in):: Leaf(*)
+    integer, intent(out):: Lncol
+    integer, intent(out):: Xlnzr(*)
     !------
     integer:: i
     integer:: Ir
@@ -1995,15 +1994,15 @@ contains
   subroutine GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Colno,Neqns,Nstop,Lncol,Ir)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Parent(*)
-    integer, intent(IN):: Xleaf(*)
-    integer, intent(IN):: Leaf(*)
-    integer, intent(OUT):: Ir
-    integer, intent(OUT):: Lncol
-    integer, intent(OUT):: Xlnzr(*)
-    integer, intent(OUT):: Colno(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Xleaf(*)
+    integer, intent(in):: Leaf(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Lncol
+    integer, intent(out):: Xlnzr(*)
+    integer, intent(out):: Colno(*)
     !------
     integer:: i
     integer:: j
@@ -2063,13 +2062,13 @@ contains
   subroutine BRINGU(Zpiv,Iperm,Invp,Parent,Izz,Neqns,Irr)
     implicit none
     !------
-    integer, intent(IN):: Izz
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Zpiv(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(OUT):: Irr
-    integer, intent(OUT):: Iperm(*)
-    integer, intent(OUT):: Invp(*)
+    integer, intent(in):: Izz
+    integer, intent(in):: Neqns
+    integer, intent(in):: Zpiv(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Irr
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Invp(*)
     !------
     integer:: i
     integer:: ib
@@ -2116,17 +2115,17 @@ contains
   subroutine ROTATE(Xadj,Adjncy,Invp,Iperm,Parent,Btree,Izz,Neqns,Anc,Adjt,Irr)
     implicit none
     !------
-    integer, intent(IN):: Izz
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Xadj(*)
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: Parent(*)
-    integer, intent(IN):: Btree(2,*)
-    integer, intent(OUT):: Irr
-    integer, intent(OUT):: Invp(*)
-    integer, intent(OUT):: Iperm(*)
-    integer, intent(OUT):: Anc(*)
-    integer, intent(OUT):: Adjt(*)
+    integer, intent(in):: Izz
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Btree(2,*)
+    integer, intent(out):: Irr
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Anc(*)
+    integer, intent(out):: Adjt(*)
     !------
     integer:: i
     integer:: iy
@@ -2265,20 +2264,20 @@ contains
   subroutine ADDR0(Isw,I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg2,Ndeg2l,Ir)
     implicit none
     !------
-    integer, intent(IN):: I
-    integer, intent(IN):: Isw
-    integer, intent(IN):: J
-    integer, intent(IN):: Ndeg2
-    integer, intent(IN):: Ndeg2l
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Aij(Ndeg2)
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Zln(Ndeg2,*)
-    real(KIND=8), intent(OUT):: Diag(Ndeg2l,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg2,*)
+    integer, intent(in):: I
+    integer, intent(in):: Isw
+    integer, intent(in):: J
+    integer, intent(in):: Ndeg2
+    integer, intent(in):: Ndeg2l
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(Ndeg2)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(Ndeg2,*)
+    real(kind=8), intent(out):: Diag(Ndeg2l,*)
+    real(kind=8), intent(out):: Dsln(Ndeg2,*)
     !------
     integer:: i0
     integer:: ii
@@ -2381,17 +2380,17 @@ contains
   subroutine ADDR3(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ir)
     implicit none
     !------
-    integer, intent(IN):: I
-    integer, intent(IN):: J
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Aij(9)
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Zln(9,*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Dsln(9,*)
+    integer, intent(in):: I
+    integer, intent(in):: J
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(9)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(9,*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
     !------
     integer:: i0
     integer:: ii
@@ -2476,19 +2475,19 @@ contains
   subroutine ADDRX(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg,Ndeg2l,Ir)
     implicit none
     !------
-    integer, intent(IN):: I
-    integer, intent(IN):: J
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndeg2l
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Invp(*)
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Aij(Ndeg,Ndeg)
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Zln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Diag(Ndeg2l,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg,Ndeg,*)
+    integer, intent(in):: I
+    integer, intent(in):: J
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndeg2l
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(Ndeg,Ndeg)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Diag(Ndeg2l,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
     !------
     integer:: i0
     integer:: ii
@@ -2564,10 +2563,10 @@ contains
   subroutine D2DOT(T,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(4,*)
-    real(KIND=8), intent(IN):: B(4,*)
-    real(KIND=8), intent(OUT):: T(4)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(4,*)
+    real(kind=8), intent(in):: B(4,*)
+    real(kind=8), intent(out):: T(4)
     !------
     integer:: jj
 
@@ -2587,10 +2586,10 @@ contains
   subroutine D2SDOT(Wi,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(2,*)
-    real(KIND=8), intent(IN):: B(4,*)
-    real(KIND=8), intent(OUT):: Wi(2)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(2,*)
+    real(kind=8), intent(in):: B(4,*)
+    real(kind=8), intent(out):: Wi(2)
     !------
     integer:: jj
 
@@ -2606,10 +2605,10 @@ contains
   subroutine D3DOT(T,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(9,*)
-    real(KIND=8), intent(IN):: B(9,*)
-    real(KIND=8), intent(OUT):: T(9)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(9,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: T(9)
     !------
     integer:: jj
 
@@ -2635,10 +2634,10 @@ contains
   subroutine D3DOTL(T,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(9,*)
-    real(KIND=8), intent(IN):: B(9,*)
-    real(KIND=8), intent(OUT):: T(6)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(9,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: T(6)
     !------
     integer:: jj
 
@@ -2661,10 +2660,10 @@ contains
   subroutine D3SDOT(Wi,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(3,*)
-    real(KIND=8), intent(IN):: B(9,*)
-    real(KIND=8), intent(OUT):: Wi(3)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(3,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: Wi(3)
     !------
     integer:: jj
 
@@ -2678,15 +2677,15 @@ contains
   !======================================================================!
   !> @brief DDOT performs inner product of sparse vectors
   !======================================================================!
-  real(KIND=8) function DDOT(A,B,N)
+  real(kind=8) function DDOT(A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(N)
-    real(KIND=8), intent(IN):: B(N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(in):: B(N)
     !------
     integer:: i
-    real(KIND=8):: s
+    real(kind=8):: s
 
     s = 0.0D0
     do i = 1, N
@@ -2701,11 +2700,11 @@ contains
   subroutine DXDOT(Ndeg,T,A,B,L)
     implicit none
     !------
-    integer, intent(IN):: L
-    integer, intent(IN):: Ndeg
-    real(KIND=8), intent(IN):: A(Ndeg,Ndeg,*)
-    real(KIND=8), intent(IN):: B(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: T(Ndeg,Ndeg)
+    integer, intent(in):: L
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
     !------
     integer:: jj
     integer:: k
@@ -2730,11 +2729,11 @@ contains
   subroutine DXDOTL(Ndeg,T,A,B,L)
     implicit none
     !------
-    integer, intent(IN):: L
-    integer, intent(IN):: Ndeg
-    real(KIND=8), intent(IN):: A(Ndeg,Ndeg,*)
-    real(KIND=8), intent(IN):: B(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: T(Ndeg,Ndeg)
+    integer, intent(in):: L
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
     !------
     integer:: jj
     integer:: k
@@ -2759,10 +2758,10 @@ contains
   subroutine DXSDOT(Ndeg,Wi,A,B,N)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    real(KIND=8), intent(IN):: A(Ndeg,*)
-    real(KIND=8), intent(IN):: B(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Wi(Ndeg)
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Wi(Ndeg)
     integer, intent(INOUT):: N
     !------
     integer:: jj
@@ -2783,12 +2782,12 @@ contains
   subroutine S3PDOT(Bi,B,Zln,Colno,Ks,Ke)
     implicit none
     !------
-    integer, intent(IN):: Ke
-    integer, intent(IN):: Ks
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Zln(9,*)
-    real(KIND=8), intent(IN):: B(3,*)
-    real(KIND=8), intent(OUT):: Bi(3)
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(9,*)
+    real(kind=8), intent(in):: B(3,*)
+    real(kind=8), intent(out):: Bi(3)
     !------
     integer:: j
     integer:: jj
@@ -2807,12 +2806,12 @@ contains
   subroutine S2PDOT(Bi,B,Zln,Colno,Ks,Ke)
     implicit none
     !------
-    integer, intent(IN):: Ke
-    integer, intent(IN):: Ks
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Zln(4,*)
-    real(KIND=8), intent(IN):: B(2,*)
-    real(KIND=8), intent(OUT):: Bi(2)
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(4,*)
+    real(kind=8), intent(in):: B(2,*)
+    real(kind=8), intent(out):: Bi(2)
     !------
     integer:: j
     integer:: jj
@@ -2830,12 +2829,12 @@ contains
   subroutine S6PDOT(Bi,B,Zln,Colno,Ks,Ke)
     implicit none
     !------
-    integer, intent(IN):: Ke
-    integer, intent(IN):: Ks
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Zln(36,*)
-    real(KIND=8), intent(IN):: B(6,*)
-    real(KIND=8), intent(OUT):: Bi(6)
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(36,*)
+    real(kind=8), intent(in):: B(6,*)
+    real(kind=8), intent(out):: Bi(6)
     !------
     integer:: j
     integer:: jj
@@ -2860,18 +2859,18 @@ contains
   !======================================================================!
   !> @brief SPDOT2 performs inner product of sparse vectors
   !======================================================================!
-  real(KIND=8) function SPDOT2(B,Zln,Colno,Ks,Ke)
+  real(kind=8) function SPDOT2(B,Zln,Colno,Ks,Ke)
     implicit none
     !------
-    integer, intent(IN):: Ke
-    integer, intent(IN):: Ks
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Zln(*)
-    real(KIND=8), intent(IN):: B(*)
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(*)
+    real(kind=8), intent(in):: B(*)
     !------
     integer:: j
     integer:: jj
-    real(KIND=8):: s
+    real(kind=8):: s
 
     s = 0.0D0
     do jj = Ks, Ke
@@ -2887,13 +2886,13 @@ contains
   subroutine SXPDOT(Ndeg,Bi,B,Zln,Colno,Ks,Ke)
     implicit none
     !------
-    integer, intent(IN):: Ke
-    integer, intent(IN):: Ks
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Colno(*)
-    real(KIND=8), intent(IN):: Zln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(IN):: B(Ndeg,*)
-    real(KIND=8), intent(OUT):: Bi(Ndeg)
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,*)
+    real(kind=8), intent(out):: Bi(Ndeg)
     !------
     integer:: j
     integer:: jj
@@ -2916,10 +2915,10 @@ contains
   subroutine INV2(Dsln,Ir)
     implicit none
     !------
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Dsln(3)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(3)
     !------
-    real(KIND=8):: t
+    real(kind=8):: t
 
     Ir = 0
     if ( DABS(Dsln(1))<RMIn ) then
@@ -2943,9 +2942,9 @@ contains
   subroutine INV22(Zln,Zz,Diag)
     implicit none
     !------
-    real(KIND=8), intent(IN):: Diag(3)
-    real(KIND=8), intent(IN):: Zz(4)
-    real(KIND=8), intent(OUT):: Zln(4)
+    real(kind=8), intent(in):: Diag(3)
+    real(kind=8), intent(in):: Zz(4)
+    real(kind=8), intent(out):: Zln(4)
     !------
     Zln(3) = Zz(3) - Zz(1)*Diag(2)
     Zln(1) = Zz(1)*Diag(1)
@@ -2964,10 +2963,10 @@ contains
   subroutine INV3(Dsln,Ir)
     implicit none
     !------
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Dsln(6)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(6)
     !------
-    real(KIND=8):: t(2)
+    real(kind=8):: t(2)
 
     Ir = 0
     if ( DABS(Dsln(1))<RMIn ) goto 100
@@ -3001,9 +3000,9 @@ contains
   subroutine INV33(Zln,Zz,Diag)
     implicit none
     !------
-    real(KIND=8), intent(IN):: Diag(6)
-    real(KIND=8), intent(IN):: Zz(9)
-    real(KIND=8), intent(OUT):: Zln(9)
+    real(kind=8), intent(in):: Diag(6)
+    real(kind=8), intent(in):: Zz(9)
+    real(kind=8), intent(out):: Zln(9)
     !------
     Zln(4) = Zz(4) - Zz(1)*Diag(2)
     Zln(7) = Zz(7) - Zz(1)*Diag(4) - Zln(4)*Diag(5)
@@ -3036,10 +3035,10 @@ contains
   subroutine INV6(Dsln,Ir)
     implicit none
     !------
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Dsln(21)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(21)
     !------
-    real(KIND=8):: t(5)
+    real(kind=8):: t(5)
 
     Ir = 0
     Dsln(1) = 1.0D0/Dsln(1)
@@ -3096,9 +3095,9 @@ contains
   subroutine INV66(Zln,Zz,Diag)
     implicit none
     !------
-    real(KIND=8), intent(IN):: Diag(21)
-    real(KIND=8), intent(IN):: Zz(36)
-    real(KIND=8), intent(OUT):: Zln(36)
+    real(kind=8), intent(in):: Diag(21)
+    real(kind=8), intent(in):: Zz(36)
+    real(kind=8), intent(out):: Zln(36)
     !------
     integer:: i
 
@@ -3132,9 +3131,9 @@ contains
   subroutine INVX(Dsln,Ndeg,Ir)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(OUT):: Ir
-    real(KIND=8), intent(OUT):: Dsln(*)
+    integer, intent(in):: Ndeg
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(*)
     !------
     integer:: i
     integer:: j
@@ -3144,8 +3143,8 @@ contains
     integer:: l0
     integer:: ld
     integer:: ll
-    real(KIND=8):: t
-    real(KIND=8):: tem
+    real(kind=8):: t
+    real(kind=8):: tem
 
     Ir = 0
     l = 1
@@ -3183,10 +3182,10 @@ contains
   subroutine INVXX(Zln,Zz,Diag,Ndeg)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    real(KIND=8), intent(IN):: Diag(*)
-    real(KIND=8), intent(IN):: Zz(Ndeg,Ndeg)
-    real(KIND=8), intent(OUT):: Zln(Ndeg,Ndeg)
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: Diag(*)
+    real(kind=8), intent(in):: Zz(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg)
     !------
     integer:: joc
     integer:: l
@@ -3229,17 +3228,17 @@ contains
   subroutine QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,Deg0,Nhdsze,Nbrhd,Rchset,Ovrlp)
     implicit none
     !------
-    integer, intent(IN):: Deg0
-    integer, intent(IN):: Nhdsze
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: Nbrhd(*)
-    integer, intent(IN):: Xadj(*)
-    integer, intent(OUT):: Deg(*)
-    integer, intent(OUT):: Qsize(*)
-    integer, intent(OUT):: Qlink(*)
-    integer, intent(OUT):: Marker(*)
-    integer, intent(OUT):: Rchset(*)
-    integer, intent(OUT):: Ovrlp(*)
+    integer, intent(in):: Deg0
+    integer, intent(in):: Nhdsze
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Nbrhd(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Ovrlp(*)
     !------
     integer:: deg1
     integer:: head
@@ -3344,13 +3343,13 @@ contains
   subroutine QMDOT(Root,Xadj,Adjncy,Marker,Rchsze,Rchset,Nbrhd)
     implicit none
     !------
-    integer, intent(IN):: Rchsze
-    integer, intent(IN):: Root
-    integer, intent(IN):: Marker(*)
-    integer, intent(IN):: Rchset(*)
-    integer, intent(IN):: Nbrhd(*)
-    integer, intent(IN):: Xadj(*)
-    integer, intent(OUT):: Adjncy(*)
+    integer, intent(in):: Rchsze
+    integer, intent(in):: Root
+    integer, intent(in):: Marker(*)
+    integer, intent(in):: Rchset(*)
+    integer, intent(in):: Nbrhd(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Adjncy(*)
     !------
     integer:: inhd
     integer:: irch
@@ -3405,15 +3404,15 @@ contains
   subroutine QMDRCH(Root,Xadj,Adjncy,Deg,Marker,Rchsze,Rchset,Nhdsze,Nbrhd)
     implicit none
     !------
-    integer, intent(IN):: Root
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: Deg(*)
-    integer, intent(IN):: Xadj(*)
-    integer, intent(OUT):: Nhdsze
-    integer, intent(OUT):: Rchsze
-    integer, intent(OUT):: Marker(*)
-    integer, intent(OUT):: Rchset(*)
-    integer, intent(OUT):: Nbrhd(*)
+    integer, intent(in):: Root
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Deg(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Nhdsze
+    integer, intent(out):: Rchsze
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
     !------
     integer:: i
     integer:: istrt
@@ -3468,16 +3467,16 @@ contains
   subroutine QMDUPD(Xadj,Adjncy,Nlist,List,Deg,Qsize,Qlink,Marker,Rchset,Nbrhd)
     implicit none
     !------
-    integer, intent(IN):: Nlist
-    integer, intent(IN):: Adjncy(*)
-    integer, intent(IN):: List(*)
-    integer, intent(IN):: Xadj(*)
-    integer, intent(OUT):: Deg(*)
-    integer, intent(OUT):: Marker(*)
-    integer, intent(OUT):: Rchset(*)
-    integer, intent(OUT):: Nbrhd(*)
-    integer, intent(OUT):: Qsize(*)
-    integer, intent(OUT):: Qlink(*)
+    integer, intent(in):: Nlist
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: List(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
     !------
     integer:: deg0
     integer:: deg1
@@ -3547,8 +3546,8 @@ contains
   subroutine QQSORT(Iw,Ik)
     implicit none
     !------
-    integer, intent(IN):: Ik
-    integer, intent(OUT):: Iw(*)
+    integer, intent(in):: Ik
+    integer, intent(out):: Iw(*)
     !------
     integer:: itemp
     integer:: l
@@ -3572,15 +3571,15 @@ contains
   subroutine S2UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Par(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Diag(3,*)
-    real(KIND=8), intent(OUT):: Temp(4,*)
-    real(KIND=8), intent(OUT):: Zln(4,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
     !------
     integer:: ir
     integer:: j
@@ -3590,9 +3589,9 @@ contains
     integer:: ke
     integer:: kk
     integer:: ks
-    real(KIND=8):: s(4)
-    real(KIND=8):: t(3)
-    real(KIND=8):: zz(4)
+    real(kind=8):: s(4)
+    real(kind=8):: t(3)
+    real(kind=8):: zz(4)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3632,12 +3631,12 @@ contains
   subroutine S2UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Temp(4,*)
-    real(KIND=8), intent(OUT):: Zln(4,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
     !------
     integer:: j
     integer:: jc
@@ -3646,7 +3645,7 @@ contains
     integer:: ke
     integer:: ks
     integer:: l
-    real(KIND=8):: s(4)
+    real(kind=8):: s(4)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3677,15 +3676,15 @@ contains
   subroutine S2UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(3,*)
-    real(KIND=8), intent(OUT):: Dsln(4,*)
-    real(KIND=8), intent(OUT):: Temp(4,*)
-    real(KIND=8), intent(OUT):: Zln(4,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
     !------
     integer:: ic
     integer:: j
@@ -3743,17 +3742,17 @@ contains
   subroutine S2UM3(N,Dsln,Diag,Indx,Temp)
     implicit none
     !------
-    integer, intent(IN):: N
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(3,*)
-    real(KIND=8), intent(OUT):: Dsln(4,*)
-    real(KIND=8), intent(OUT):: Temp(4,*)
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(out):: Temp(4,*)
     !------
     integer:: i
     integer:: ir
     integer:: j
     integer:: joc
-    real(KIND=8):: t(4)
+    real(kind=8):: t(4)
 
     if ( N>0 ) then
       Indx(1) = 0
@@ -3786,15 +3785,15 @@ contains
   subroutine S3UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Par(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Temp(9,*)
-    real(KIND=8), intent(OUT):: Zln(9,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
     !------
     integer:: ir
     integer:: j
@@ -3805,8 +3804,8 @@ contains
     integer:: kk
     integer:: ks
     integer:: l
-    real(KIND=8):: t(6)
-    real(KIND=8):: zz(9)
+    real(kind=8):: t(6)
+    real(kind=8):: zz(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3855,12 +3854,12 @@ contains
   subroutine S3UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Temp(9,*)
-    real(KIND=8), intent(OUT):: Zln(9,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
     !------
     integer:: j
     integer:: jc
@@ -3869,7 +3868,7 @@ contains
     integer:: ke
     integer:: ks
     integer:: l
-    real(KIND=8):: s(9)
+    real(kind=8):: s(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -3907,15 +3906,15 @@ contains
   subroutine S3UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Dsln(9,*)
-    real(KIND=8), intent(OUT):: Temp(Neqns,9)
-    real(KIND=8), intent(OUT):: Zln(9,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(Neqns,9)
+    real(kind=8), intent(out):: Zln(9,*)
     !------
     integer:: ic
     integer:: j
@@ -4013,17 +4012,17 @@ contains
   subroutine S3UM3(N,Dsln,Diag,Indx,Temp)
     implicit none
     !------
-    integer, intent(IN):: N
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Dsln(9,*)
-    real(KIND=8), intent(OUT):: Temp(9,*)
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(9,*)
     !------
     integer:: i
     integer:: ir
     integer:: j
     integer:: joc
-    real(KIND=8):: t(9)
+    real(kind=8):: t(9)
 
     if ( N>0 ) then
       Indx(1) = 0
@@ -4051,15 +4050,15 @@ contains
   subroutine S6UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Par(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Diag(21,*)
-    real(KIND=8), intent(OUT):: Temp(36,*)
-    real(KIND=8), intent(OUT):: Zln(36,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Temp(36,*)
+    real(kind=8), intent(out):: Zln(36,*)
     !------
     integer:: ir
     integer:: j
@@ -4070,8 +4069,8 @@ contains
     integer:: kk
     integer:: ks
     integer:: l
-    real(KIND=8):: t(21)
-    real(KIND=8):: zz(36)
+    real(kind=8):: t(21)
+    real(kind=8):: zz(36)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4254,12 +4253,12 @@ contains
   subroutine S6UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Temp(9,*)
-    real(KIND=8), intent(OUT):: Zln(9,*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
     !------
     integer:: j
     integer:: jc
@@ -4268,7 +4267,7 @@ contains
     integer:: ke
     integer:: ks
     integer:: l
-    real(KIND=8):: s(9)
+    real(kind=8):: s(9)
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4306,15 +4305,15 @@ contains
   subroutine S6UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(21,*)
-    real(KIND=8), intent(OUT):: Dsln(36,*)
-    real(KIND=8), intent(OUT):: Temp(36,Neqns)
-    real(KIND=8), intent(OUT):: Zln(36,*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Dsln(36,*)
+    real(kind=8), intent(out):: Temp(36,Neqns)
+    real(kind=8), intent(out):: Zln(36,*)
     !------
     integer:: ic
     integer:: j
@@ -4381,18 +4380,18 @@ contains
   subroutine S6UM3(N,Dsln,Diag,Indx,Temp)
     implicit none
     !------
-    integer, intent(IN):: N
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(6,*)
-    real(KIND=8), intent(OUT):: Dsln(9,*)
-    real(KIND=8), intent(OUT):: Temp(9,*)
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(9,*)
     !------
     integer:: i
     integer:: ir
     integer:: j
     integer:: joc
     integer:: l
-    real(KIND=8):: t(9)
+    real(kind=8):: t(9)
 
     if ( N>0 ) then
       Indx(1) = 0
@@ -4433,11 +4432,11 @@ contains
   subroutine STAIJ1(Isw,I,J,Aij,Ir)
     implicit none
     !------
-    integer, intent(IN):: I
-    integer, intent(IN):: Isw
-    integer, intent(IN):: J
-    real(KIND=8), intent(IN):: Aij(NDEg*NDEg)
-    integer, intent(OUT):: Ir
+    integer, intent(in):: I
+    integer, intent(in):: Isw
+    integer, intent(in):: J
+    real(kind=8), intent(in):: Aij(NDEg*NDEg)
+    integer, intent(out):: Ir
     !------
     integer:: ndeg2
     integer:: ndeg2l
@@ -4491,15 +4490,15 @@ contains
   subroutine sum(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Par(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Diag(*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Zln(*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
     !------
     integer:: j
     integer:: jc
@@ -4508,10 +4507,10 @@ contains
     integer:: ke
     integer:: kk
     integer:: ks
-    real(KIND=8):: piv
-    real(KIND=8):: s
-    real(KIND=8):: t
-    real(KIND=8):: zz
+    real(kind=8):: piv
+    real(kind=8):: s
+    real(kind=8):: t
+    real(kind=8):: zz
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4547,12 +4546,12 @@ contains
   subroutine SUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Zln(*)
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
     !------
     integer:: j
     integer:: jc
@@ -4560,9 +4559,9 @@ contains
     integer:: k
     integer:: ke
     integer:: ks
-    real(KIND=8):: s
-    real(KIND=8):: t
-    real(KIND=8):: zz
+    real(kind=8):: s
+    real(kind=8):: t
+    real(kind=8):: zz
 
     ks = Xlnzr(Ic)
     ke = Xlnzr(Ic+1)
@@ -4589,15 +4588,15 @@ contains
   subroutine SUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
     implicit none
     !------
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(*)
-    real(KIND=8), intent(OUT):: Dsln(*)
-    real(KIND=8), intent(OUT):: Temp(*)
-    real(KIND=8), intent(OUT):: Zln(*)
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
     !------
     integer:: ic
     integer:: j
@@ -4607,7 +4606,7 @@ contains
     integer:: k
     integer:: ke
     integer:: ks
-    real(KIND=8):: s
+    real(kind=8):: s
 
     joc = 0
     do ic = Nstop, Neqns
@@ -4640,11 +4639,11 @@ contains
   subroutine SUM3(N,Dsln,Diag,Indx,Temp)
     implicit none
     !------
-    integer, intent(IN):: N
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(*)
-    real(KIND=8), intent(OUT):: Dsln(*)
-    real(KIND=8), intent(OUT):: Temp(*)
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(out):: Temp(*)
     !------
     integer:: i
     integer:: j
@@ -4674,19 +4673,19 @@ contains
   subroutine SXUM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx,Ndeg,Ndegl,Zz,T)
     implicit none
     !------
-    integer, intent(IN):: Ic
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(IN):: Par(*)
-    integer, intent(OUT):: Indx(*)
-    integer, intent(OUT):: Nch(*)
-    real(KIND=8), intent(OUT):: Diag(Ndegl,*)
-    real(KIND=8), intent(OUT):: T(Ndegl)
-    real(KIND=8), intent(OUT):: Temp(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Zln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Zz(Ndeg,Ndeg)
+    integer, intent(in):: Ic
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: T(Ndegl)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zz(Ndeg,Ndeg)
     !------
     integer:: ir
     integer:: j
@@ -4751,13 +4750,13 @@ contains
   subroutine SXUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx,Ndeg,S)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: S(Ndeg,Ndeg)
-    real(KIND=8), intent(OUT):: Temp(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Zln(Ndeg,Ndeg,*)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: S(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
     !------
     integer:: Ic
     integer:: j
@@ -4805,17 +4804,17 @@ contains
   subroutine SXUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx,Ndeg,Ndegl)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    integer, intent(IN):: Neqns
-    integer, intent(IN):: Nstop
-    integer, intent(IN):: Xlnzr(*)
-    integer, intent(IN):: Colno(*)
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(Ndegl,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Temp(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: Zln(Ndeg,Ndeg,*)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
     !------
     integer:: ic
     integer:: j
@@ -4886,14 +4885,14 @@ contains
   subroutine SXUM3(Nn,Dsln,Diag,Indx,Temp,Ndeg,Ndegl,T)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    integer, intent(IN):: Nn
-    integer, intent(OUT):: Indx(*)
-    real(KIND=8), intent(OUT):: Diag(Ndegl,*)
-    real(KIND=8), intent(OUT):: Dsln(Ndeg,Ndeg,*)
-    real(KIND=8), intent(OUT):: T(Ndeg,Ndeg)
-    real(KIND=8), intent(OUT):: Temp(Ndeg,Ndeg,*)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Nn
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
     !------
     integer:: i
     integer:: ir
@@ -4937,10 +4936,10 @@ contains
   subroutine V2PROD(A,B,C,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(4,N)
-    real(KIND=8), intent(IN):: B(3,N)
-    real(KIND=8), intent(OUT):: C(4,N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(4,N)
+    real(kind=8), intent(in):: B(3,N)
+    real(kind=8), intent(out):: C(4,N)
     !------
     integer:: i
 
@@ -4963,10 +4962,10 @@ contains
   subroutine V3PROD(Zln,Diag,Zz,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: Diag(6,N)
-    real(KIND=8), intent(IN):: Zln(9,N)
-    real(KIND=8), intent(OUT):: Zz(9,N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: Diag(6,N)
+    real(kind=8), intent(in):: Zln(9,N)
+    real(kind=8), intent(out):: Zz(9,N)
     !------
     integer:: i
 
@@ -5003,9 +5002,9 @@ contains
   subroutine VLCPY(A,B,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: B(N,N)
-    real(KIND=8), intent(OUT):: A(N,N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: B(N,N)
+    real(kind=8), intent(out):: A(N,N)
     !------
     integer:: i
 
@@ -5020,9 +5019,9 @@ contains
   subroutine VCOPY(A,C,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(N)
-    real(KIND=8), intent(OUT):: C(N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(out):: C(N)
     !------
     C = A
   end subroutine VCOPY
@@ -5033,10 +5032,10 @@ contains
   subroutine VPROD(A,B,C,N)
     implicit none
     !------
-    integer, intent(IN):: N
-    real(KIND=8), intent(IN):: A(N)
-    real(KIND=8), intent(IN):: B(N)
-    real(KIND=8), intent(OUT):: C(N)
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(in):: B(N)
+    real(kind=8), intent(out):: C(N)
     !------
     C(1:N) = A(1:N)*B(1:N)
   end subroutine VPROD
@@ -5047,11 +5046,11 @@ contains
   subroutine VXPROD(Ndeg,Ndegl,Zln,Diag,Zz,N)
     implicit none
     !------
-    integer, intent(IN):: Ndeg
-    integer, intent(IN):: Ndegl
-    real(KIND=8), intent(IN):: Diag(Ndegl,N)
-    real(KIND=8), intent(OUT):: Zln(Ndeg*Ndeg,N)
-    real(KIND=8), intent(OUT):: Zz(Ndeg*Ndeg,N)
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    real(kind=8), intent(in):: Diag(Ndegl,N)
+    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,N)
+    real(kind=8), intent(out):: Zz(Ndeg*Ndeg,N)
     !------
     integer:: i
     integer:: N
