@@ -10,13 +10,19 @@
 # METIS_LIBRARIES
 # METIS_VER_4
 #
+if(METIS_LIBRARIES)
+  set(METIS_FOUND TRUE)
+  RETURN()
+endif()
+
 if(NOT METIS_VER_4)
   find_path(METIS_INCLUDE_PATH
     NAMES metis.h
-    PATHS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/include
+    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/include
     $ENV{HOME}/metis-5.0.1/build/include
     $ENV{HOME}/local/include
     $ENV{HOME}/.local/include
+    ${CMAKE_INCLUDE_PATH}
     /usr/local/metis/include
     /usr/local/include
     /usr/metis/include
@@ -24,10 +30,11 @@ if(NOT METIS_VER_4)
   )
   find_library(METIS_LIBRARIES
     NAMES metis
-    PATHS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/libmetis
+    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/libmetis
     $ENV{HOME}/metis-5.0.1/build/libmetis
     $ENV{HOME}/local/lib
     $ENV{HOME}/.local/lib
+    ${CMAKE_LIBRARY_PATH}
     /usr/local/metis/lib
     /usr/local/lib
     /usr/metis/lib
@@ -40,6 +47,7 @@ else()
     $ENV{HOME}/metis-4.0.3/
     $ENV{HOME}/local/include
     $ENV{HOME}/.local/include
+    ${CMAKE_INCLUDE_PATH}
     /usr/local/metis/include
     /usr/local/include
     /usr/metis/include
@@ -51,6 +59,7 @@ else()
     $ENV{HOME}/metis-4.0.3
     $ENV{HOME}/local/lib
     $ENV{HOME}/.local/lib
+    ${CMAKE_LIBRARY_PATH}
     /usr/local/metis/lib
     /usr/local/lib
     /usr/metis/lib
@@ -59,5 +68,6 @@ else()
 endif()
 
 if(METIS_INCLUDE_PATH AND METIS_LIBRARIES)
+  message(STATUS "Found metis")
   set(METIS_FOUND TRUE)
 endif()

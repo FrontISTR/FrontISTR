@@ -55,6 +55,17 @@ cmake version 2.8.12.2
 
 ## LinuxなどのUnix系プラットフォームでの構築例
 
+### 外部ライブラリの場所の指定
+
+例えば`$HOME/tools`以下に、`include/`,`lib/`のようなディレクトリ構造で外部ライブラリをインストール
+している場合
+
+~~~txt
+% CMAKE_INSTALL_PATH=$HOME/tools cmake ..
+~~~
+
+`$HOME/local`や`$HOME/.local`にインストールしている場合、指定は不要
+
 ### パーティショナ、MPI、OpenMPを有効にする
 
 ~~~txt
@@ -72,6 +83,9 @@ cmake version 2.8.12.2
 ~~~txt
 % cmake -DWITH_ML=1 -DWITH_MPI=1 ..
 ~~~
+
+### LaPACK, BLASを指定する
+% cmake -DWITH_LAPACK=1 -DBLAS_LIBRARIES=$HOME/tools/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/tools/lib/libopenblas.a ..
 
 
 ### ソースコードのドキュメントを構築し参照する
