@@ -85,8 +85,20 @@ cmake version 2.8.12.2
 ~~~
 
 ### LaPACK, BLASを指定する
-% cmake -DWITH_LAPACK=1 -DBLAS_LIBRARIES=$HOME/tools/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/tools/lib/libopenblas.a ..
 
+~~~txt
+% cmake -DWITH_LAPACK=1 -DBLAS_LIBRARIES=$HOME/tools/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/tools/lib/libopenblas.a ..
+~~~txt
+
+### MKLをLaPACK, BLASとして利用する
+
+~~~txt
+% source /opt/intel/mkl/bin/mklvar.sh intel64
+% source /opt/intel/bin/compilervars.sh intel64
+% echo $LD_LIBRARY_PATH (ライブラリが見えていることを確認)
+% export BLA_VENDOR="Intel"
+% cmake -DWITH_LAPACK=1 ..
+~~~
 
 ### ソースコードのドキュメントを構築し参照する
 
