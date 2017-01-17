@@ -90,6 +90,12 @@ cmake version 2.8.12.2
 % cmake -DWITH_LAPACK=1 -DBLAS_LIBRARIES=$HOME/tools/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/tools/lib/libopenblas.a ..
 ~~~txt
 
+### Intel コンパイラを使う
+
+~~~txt
+% cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_Fortran_COMPILER=ifort ..
+~~~
+
 ### MKLをLaPACK, BLASとして利用する
 
 ~~~txt
