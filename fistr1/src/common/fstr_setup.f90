@@ -737,6 +737,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
         if( associated(fstrSOLID%step_ctrl) )  then
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
+           call setup_stepInfo_starttime( fstrSOLID%step_ctrl )
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
            if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then

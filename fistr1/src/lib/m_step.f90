@@ -25,6 +25,7 @@ module m_step
       integer :: amp_id                         !< id of amplitude definition
       real(kind=kreal) :: initdt                !< time increment
       real(kind=kreal) :: elapsetime            !< elapse time of this step
+      real(kind=kreal) :: starttime             !< start time of this step
       integer, pointer :: Boundary(:)=>null()   !< active group of boundary conditions of current step
       integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
       integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
@@ -41,7 +42,19 @@ module m_step
         stepinfo%amp_id = -1
         stepinfo%initdt = 1.d0
         stepinfo%elapsetime = 1.d0
+        stepinfo%starttime = 0.d0
         stepinfo%converg = 1.d-3
+     end subroutine
+
+     subroutine setup_stepInfo_starttime( stepinfos )
+        type( step_info ), pointer, intent(inout) :: stepinfos(:) !< step info
+
+        integer :: i
+
+        stepinfos(1)%starttime = 0.d0
+        do i=1,size(stepinfos)-1
+          stepinfos(i+1)%starttime = stepinfos(i)%starttime + stepinfos(i)%elapsetime
+        end do
      end subroutine
 
      !> Is boundary condition in this step active

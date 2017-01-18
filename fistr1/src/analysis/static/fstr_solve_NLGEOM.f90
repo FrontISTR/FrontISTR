@@ -14,6 +14,7 @@ module m_fstr_solve_NLGEOM
   use m_fstr_Restart
 
   use fstr_matrix_con_contact
+  use m_fstr_TimeInc
 
   implicit none
 
@@ -39,7 +40,7 @@ module m_fstr_solve_NLGEOM
 
     integer(kind=kint) :: j, tot_step, step_count
     integer(kind=kint) :: sub_step, ss_end
-    real(kind=kreal)   :: factor
+    real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged
     integer(kind=kint) :: restart_step_num, restart_substep_num
@@ -73,6 +74,9 @@ module m_fstr_solve_NLGEOM
           infoCTChange%contactNode_previous)
       endif
       hecMAT%Iarray(98) = 1
+      ctime = fstrSOLID%step_ctrl(restart_step_num)%starttime
+      ctime = ctime + dble(restart_substep_num-1)*fstrSOLID%step_ctrl(restart_step_num)%initdt
+      call fstr_set_time( ctime )
     endif
 
     fstrSOLID%FACTOR    =0.0
@@ -80,6 +84,8 @@ module m_fstr_solve_NLGEOM
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
       if(hecMESH%my_rank==0) write(*,*) ''
       if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
+
+      endtime = fstrSOLID%step_ctrl(tot_step)%starttime + fstrSOLID%step_ctrl(tot_step)%elapsetime
 
       if( fstrSOLID%TEMP_ngrp_tot>0 ) then
         do j=1, hecMESH%n_node
@@ -98,13 +104,14 @@ module m_fstr_solve_NLGEOM
       do sub_step = restart_substep_num, ss_end
 
         ! ----- time history of factor
+        call fstr_set_timeinc_base( dmin1(fstrSOLID%step_ctrl(tot_step)%initdt, endtime-fstr_get_time()) )
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
         else
-          call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step-1,factor)
+          call table_nlsta(hecMESH,fstrSOLID,tot_step,fstr_get_time(),factor)
           fstrSOLID%FACTOR(1) = factor
-          call table_nlsta(hecMESH,fstrSOLID,tot_step,sub_step, factor)
+          call table_nlsta(hecMESH,fstrSOLID,tot_step,fstr_get_time()+fstr_get_timeinc(), factor)
           fstrSOLID%FACTOR(2) = factor
         endif
 
@@ -115,7 +122,11 @@ module m_fstr_solve_NLGEOM
           exit
         end if
 
-        if(hecMESH%my_rank==0) write(*,*) ' substep=',sub_step,fstrSOLID%FACTOR
+        if(hecMESH%my_rank==0) then
+          write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
+            &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
+          write(*,'(A,2f12.7)') ' loading_factor= ', fstrSOLID%FACTOR
+        endif
         if( fstrSOLID%TEMP_irres > 0 ) then
           if( hecMESH%my_rank == 0 ) then
             write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
@@ -148,6 +159,8 @@ module m_fstr_solve_NLGEOM
           endif
         endif
 
+        call fstr_proceed_time() ! current time += time increment
+
         ! ----- Restart
         if( fstrSOLID%restart_nout < 0 ) then
           fstrSOLID%restart_nout = - fstrSOLID%restart_nout
@@ -170,6 +183,14 @@ module m_fstr_solve_NLGEOM
           write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1
         end if
 
+        if( (endtime-fstr_get_time())/fstrSOLID%step_ctrl(tot_step)%elapsetime < 1.d-12 ) exit
+        if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
+          if( hecMESH%my_rank == 0 ) then
+            write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
+              & tot_step, '  time=', fstr_get_time()
+          end if
+          stop
+        end if
       enddo    !--- end of substep  loop
 
       restart_substep_num = 1
@@ -190,11 +211,11 @@ module m_fstr_solve_NLGEOM
 !> \brief This subroutine decide the loading increment considering
 !>        the amplitude definition
 !C================================================================C
-  subroutine table_nlsta(hecMESH, fstrSOLID, cstep, substep, f_t)
+    subroutine table_nlsta(hecMESH, fstrSOLID, cstep, time, f_t)
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH    !< hecmw mesh
     type ( fstr_solid         ), intent(in) :: fstrSOLID  !< fstr_solid
     integer(kind=kint), intent(in)          :: cstep      !< curr loading step
-    integer(kind=kint), intent(in)          :: substep    !< curr substep number
+    real(kind=kreal), intent(in)            :: time       !< loading time(total time)
     real(kind=kreal), intent(out)           :: f_t        !< loading factor
 
     integer(kind=kint) :: i
@@ -206,17 +227,15 @@ module m_fstr_solve_NLGEOM
     jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
     if( jj_n_amp <= 0 ) then  ! Amplitude not defined
-      tincre = 1.d0 / fstrSOLID%step_ctrl( cstep )%num_substep
-      f_t = tincre*substep
+          f_t = (time-fstrSOLID%step_ctrl(cstep)%starttime)/fstrSOLID%step_ctrl(cstep)%elapsetime
       if( f_t>1.d0 ) f_t=1.d0
-
     else
       tincre = fstrSOLID%step_ctrl( cstep )%initdt
       jj1 = hecMESH%amp%amp_index(jj_n_amp - 1)
       jj2 = hecMESH%amp%amp_index(jj_n_amp)
 
       jj1 = jj1 + 2
-      t_t = tincre*substep
+          t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
 
       !      if(jj2 .eq. 0) then
       !         f_t = 1.0

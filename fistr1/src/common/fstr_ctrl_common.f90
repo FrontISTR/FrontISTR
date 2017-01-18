@@ -228,7 +228,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( ierr==0 ) then
           steps%initdt = fn
           steps%elapsetime = f1
-          steps%num_substep = int((f1+0.1*fn)/fn)
+          steps%num_substep = int((f1+0.999999999d0*fn)/fn)
           !if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
           sn = 2
         endif
