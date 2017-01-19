@@ -36,22 +36,23 @@ cmake version 2.8.12.2
 
 他の機能を有効にしたい場合、`cmake`に以下のオプションを付けてください。ライブラリが既にインストールされていれば、自動的にその場所を探します。
 
-| オプション        | 説明                                          | 備考                      |
-|-------------------|-----------------------------------------------|---------------------------|
-| -DWITH_TOOLS=1    | パーティショナなどのツールもコンパイルします  | hecmw_part1など           |
-| -DWITH_MPI=1      | MPIを有効にします                             | ライブラリが必要          |
-| -DWITH_OPENMP=1   | OpenMPを有効にします                          | コンパイラの対応が必要    |
-| -DWITH_REFINER=1  | REVOCAP_Refinerの機能を有効にします           | ライブラリが必要          |
-| -DWITH_REVOCAP=1  | REVOCAP_Couplerの機能を有効にします           | ライブラリが必要          |
-| -DWITH_PARAC1=1   | 並列接触解析の機能を有効にします              | (未実装)                  |
-| -DWITH_METIS=1    | METISの機能を有効にします                     | 4.0.3と5.1.0に対応        |
-| -DMETIS_VER_4=1   | metis-4.0.3を使う場合に設定                   | metis-5.1.0の場合指定不要 |
-| -DWITH_PARMETIS=1 | ParMETISの機能を有効にします                  | (未実装)                  |
-| -DWITH_MKL=1      | MKL PARDISOの機能を有効にします               | (未実装)                  |
-| -DWITH_MUMPS=1    | MUMPSの機能を有効にします                     | ライブラリが必要          |
-| -DWITH_LAPACK=1   | LAPACKの機能を有効にします                    | ライブラリが必要          |
-| -DWITH_ML=1       | Trilinos MLの機能を有効にします               | ライブラリが必要          |
-| -DBUILD_DOC=1     | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要   |
+| オプション        | 説明                                          | 備考                         |
+|-------------------|-----------------------------------------------|------------------------------|
+| -DWITH_TOOLS=1    | パーティショナなどのツールもコンパイルします  | hecmw_part1など              |
+| -DWITH_MPI=1      | MPIを有効にします                             | ライブラリが必要             |
+| -DWITH_OPENMP=1   | OpenMPを有効にします                          | コンパイラの対応が必要       |
+| -DWITH_REFINER=1  | REVOCAP_Refinerの機能を有効にします           | ライブラリが必要             |
+| -DWITH_REVOCAP=1  | REVOCAP_Couplerの機能を有効にします           | ライブラリが必要             |
+| -DWITH_PARAC1=1   | 並列接触解析の機能を有効にします              | (未実装)                     |
+| -DWITH_METIS=1    | METISの機能を有効にします                     | 4.0.3と5.1.0に対応           |
+| -DMETIS_VER_4=1   | metis-4.0.3を使う場合に設定                   | metis-5.1.0の場合指定不要    |
+| -DWITH_PARMETIS=1 | ParMETISの機能を有効にします                  | 3.2.0と4.0.3に対応           |
+| -DMETIS_VER_3=1   | ParMetis-3.2.0を使う場合に設定                | parmetis-4.0.3の場合指定不要 |
+| -DWITH_MKL=1      | MKL PARDISOの機能を有効にします               | (未実装)                     |
+| -DWITH_MUMPS=1    | MUMPSの機能を有効にします                     | ライブラリが必要             |
+| -DWITH_LAPACK=1   | LAPACKの機能を有効にします                    | ライブラリが必要             |
+| -DWITH_ML=1       | Trilinos MLの機能を有効にします               | ライブラリが必要             |
+| -DBUILD_DOC=1     | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要      |
 
 ## LinuxなどのUnix系プラットフォームでの構築例
 
@@ -76,6 +77,18 @@ cmake version 2.8.12.2
 
 ~~~txt
 % cmake -DWITH_MUMPS=1 -DWITH_MPI=1 ..
+~~~
+
+### Metisを有効にする
+
+~~~txt
+% cmake -DWITH_METIS=1 ..
+~~~
+
+### ParMetisを有効にする
+
+~~~txt
+% cmake -DWITH_METIS=1 -DWITH_PARMETIS=1 -DWITH_MPI=1 ..
 ~~~
 
 ### MLを有効にする
@@ -273,23 +286,20 @@ OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分を
 
 ### Metis-5.1.0
 
-Metis-5.1.0の`CMakeList.txt`には不具合があるため、トップディレクトリにある`CMakeLists.txt`を修正してからライブラリを構築してください。
+Metis-5.1.0コンパイルするにはcmakeが必要です。
 
 ~~~txt
-set(GKLIB_PATH "GKlib" CACHE PATH "path to GKlib")
+% make config openmp=1 prefix=$HOME/local
+% make
+% make install
 ~~~
 
-の部分を
+### parmetis-4.0.3
+
+parmetis-4.0.3コンパイルするにはcmakeが必要です。また、MPIを予めインストールしておく必要があります。
 
 ~~~txt
-set(GKLIB_PATH "${CMAKE_SOURCE_DIR}/GKlib" CACHE PATH "path to GKlib")
-~~~
-
-と修正してください。構築は一般的な `cmake` を使ったソフトウェアと同じです。
-
-~~~txt
-% cd build
-% cmake -DCMAKE_INSTALL_PREFIX=$HOME/local -DOPENMP=1 ..
+% make config openmp=1 prefix=$HOME/local
 % make
 % make install
 ~~~

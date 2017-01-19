@@ -2,7 +2,7 @@
 # Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-
+message(STATUS ${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}${CMAKE_SYSTEM_VERSION})
 ###############################################################################
 # CMakeLists.txt for FrontISTR
 #
@@ -10,6 +10,7 @@
 # ├── CMakeLists.txt
 # ├── cmake
 # │   ├── FindMetis.cmake
+# │   ├── FindParMetis.cmake
 # │   ├── FindMumps.cmake
 # │   ├── FindRefiner.cmake
 # │   └── FindRevocap.cmake
@@ -33,7 +34,7 @@
 ###############################################################################
 
 cmake_minimum_required(VERSION 2.8.11)
-
+include(CMakeDependentOption)
 ###############################################################################
 # Build type (Release or Debug)
 ###############################################################################
@@ -82,6 +83,7 @@ endif()
 # -DWITH_METIS       : compile with METIS graph partitioning package
 #   -DMETIS_VER_4    : uses METIS-4
 # -DWITH_PARMETIS    : compile with ParMETIS (unimplemented)
+#   -DPARMETIS_VER_3 : uses PARMETIS-3
 # -DWITH_MKL         : compile with MKL PARDISO (unimplemented)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
@@ -197,7 +199,13 @@ if(WITH_METIS)
 endif()
 
 # -DWITH_PARMETIS (unimplemented)
-#option(WITH_PARMETIS "compile with ParMETIS" OFF)
+# W.I.P.
+option(WITH_PARMETIS "compile with ParMETIS" OFF)
+CMAKE_DEPENDENT_OPTION(WITH_PARMETIS "compile with ParMETIS" ON
+  "WITH_METIS;WITH_MPI" ON)
+if(WITH_PARMETIS)
+  find_package(ParMetis)
+endif()
 
 # -DWITH_MKL (unimplemented)
 # W.I.P.

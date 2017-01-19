@@ -18,8 +18,8 @@ endif()
 if(NOT METIS_VER_4)
   find_path(METIS_INCLUDE_PATH
     NAMES metis.h
-    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/include
-    $ENV{HOME}/metis-5.0.1/build/include
+    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/include
+    $ENV{HOME}/metis-5.0.1/include
     $ENV{HOME}/local/include
     $ENV{HOME}/.local/include
     ${CMAKE_INCLUDE_PATH}
@@ -30,8 +30,8 @@ if(NOT METIS_VER_4)
   )
   find_library(METIS_LIBRARIES
     NAMES metis
-    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/libmetis
-    $ENV{HOME}/metis-5.0.1/build/libmetis
+    HINTS ${CMAKE_SOURCE_DIR}/../metis-5.1.0/build/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}/libmetis
+    $ENV{HOME}/metis-5.0.1/build/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}/libmetis
     $ENV{HOME}/local/lib
     $ENV{HOME}/.local/lib
     ${CMAKE_LIBRARY_PATH}
