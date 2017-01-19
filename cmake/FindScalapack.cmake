@@ -3,6 +3,9 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
+# please use scalapack-config.cmake
+# Exists in ${SCALAPACK_INSTALL_DIR}/lib/cmake/scalapack-2.0.2/
+#
 # Variables:
 #
 # SCALAPACK_FOUND

@@ -12,8 +12,7 @@
 # │   ├── FindMetis.cmake
 # │   ├── FindMumps.cmake
 # │   ├── FindRefiner.cmake
-# │   ├── FindRevocap.cmake
-# │   └── FindScalapack.cmake
+# │   └── FindRevocap.cmake
 # ├── examples
 # │   ├── CMakeLists.txt
 # │   └── test_FrontISTR.rb
@@ -210,7 +209,7 @@ endif()
 option(WITH_MUMPS "compile with MUMPS direct solver" OFF)
 if(WITH_MUMPS)
   find_package(Mumps)
-  find_package(Scalapack)
+  find_package(scalapack)
   if(MUMPS_FOUND)
     add_definitions(-DWITH_MUMPS)
     include_directories(${MUMPS_INCLUDE_PATH})
@@ -245,7 +244,8 @@ if(WITH_ML)
     set(HECMW_WITH_ML ON)
     add_definitions(-DHECMW_WITH_ML)
   else()
-    message(WARNING "Please turn on WITH_MPI")
+    #message(WARNING "Please turn on WITH_MPI")
+    message(WARNING "Trilinos not found")
     set(WITH_ML OFF)
     remove_definitions(-DHECMW_WITH_ML)
   endif()
