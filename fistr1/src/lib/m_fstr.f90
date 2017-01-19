@@ -182,6 +182,7 @@ public
 
                 ! for restart control
                 integer( kind=kint ) :: restart_out_type   !< output type of restart file
+                integer( kind=kint ) :: restart_version    !< version of restart file
 
                 ! for contact analysis
                 integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
@@ -954,6 +955,9 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%fg_couple_type = 0
         fstrPARAM%fg_couple_first= 0
         fstrPARAM%fg_couple_window= 0
+
+        ! for restart control
+        fstrPARAM%restart_version = 4
 
         ! index table for global node ID sorting
 

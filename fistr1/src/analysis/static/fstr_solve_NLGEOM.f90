@@ -68,14 +68,12 @@ module m_fstr_solve_NLGEOM
     infoCTChange%contactNode_previous = 0
     if(fstrSOLID%restart_nout <0 ) then
       if( .not. associated( fstrSOLID%contacts ) ) then
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM)
+        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM)
       else
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,hecMESH,fstrSOLID,fstrPARAM, &
+        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM, &
           infoCTChange%contactNode_previous)
       endif
       hecMAT%Iarray(98) = 1
-      ctime = fstrSOLID%step_ctrl(restart_step_num)%starttime
-      ctime = ctime + dble(restart_substep_num-1)*fstrSOLID%step_ctrl(restart_step_num)%initdt
       call fstr_set_time( ctime )
     endif
 
@@ -133,7 +131,7 @@ module m_fstr_solve_NLGEOM
             write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
           endif
         endif
-        
+
         step_count = step_count+1
         call cpu_time(time_1)
 
@@ -167,10 +165,11 @@ module m_fstr_solve_NLGEOM
         end if
         if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
           if( .not. associated( fstrSOLID%contacts ) ) then
-            call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM)
+            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc(), &
+                 &  hecMESH,fstrSOLID,fstrPARAM )
           else
-            call fstr_write_restart(tot_step,sub_step,step_count,hecMESH,fstrSOLID,fstrPARAM, &
-              infoCTChange%contactNode_current)
+            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc(), &
+                 &  hecMESH,fstrSOLID,fstrPARAM, infoCTChange%contactNode_current)
           endif
         end if
         ! ----- Result output (include visualize output)

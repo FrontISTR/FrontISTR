@@ -153,7 +153,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_echo = c_echo + 1
                         call fstr_setup_ECHO( ctrl, c_echo, P )
                 else if( header_name == '!RESTART' ) then
-                        call fstr_setup_RESTART( ctrl, nout )
+                        call fstr_setup_RESTART( ctrl, nout, P%PARAM%restart_version )
                         fstrSOLID%restart_nout= nout
                         fstrDYNAMIC%restart_nout= nout
                         fstrHEAT%restart_nout= nout
@@ -1598,14 +1598,18 @@ end subroutine fstr_setup_ECHO
 !-----------------------------------------------------------------------------!
 !> Read in !RESTART                                                         !
 !-----------------------------------------------------------------------------!
-subroutine fstr_setup_RESTART( ctrl, nout )
+subroutine fstr_setup_RESTART( ctrl, nout, version )
         implicit none
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: nout
+        integer(kind=kint) :: version
 
         integer(kind=kint) :: rcode
         nout = 0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', nout )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        version = 4
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'VERSION ', '# ', 0, 'I', version )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_RESTART
