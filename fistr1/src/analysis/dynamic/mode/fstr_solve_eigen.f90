@@ -99,7 +99,7 @@ contains
 
 !C*------------ Assemble stiffness matrix ----------*
       fstrSOLID%dunode = 0.d0
-      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
+        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
       call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
       if( myrank == 0 ) then

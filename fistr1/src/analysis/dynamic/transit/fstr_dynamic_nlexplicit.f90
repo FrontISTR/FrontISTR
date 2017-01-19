@@ -289,7 +289,7 @@ contains
       end do
 
 ! ----- update strain, stress, and internal force
-      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1 )
+      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, 1 )
 
       do j = 1 ,ndof*nnod
         fstrSOLID%unode(j)  = fstrSOLID%unode(j) + fstrSOLID%dunode(j)

@@ -140,20 +140,20 @@ module m_fstr_solve_NLGEOM
         !       analysis algorithm ( Newton-Rapshon Method )
         if( .not. associated( fstrSOLID%contacts ) ) then
           call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
-            restart_step_num, sub_step  )
+            restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
             !     ----  For Parallel Contact with Multi-Partition Domains
             if(paraContactFlag.and.present(conMAT)) then
               call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
+                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
             else
               call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, infoCTChange )
+                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
             endif
           else if( fstrPARAM%contact_algo == kcaALagrange ) then
             call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
-              restart_step_num, restart_substep_num, sub_step, infoCTChange )
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
           endif
         endif
 

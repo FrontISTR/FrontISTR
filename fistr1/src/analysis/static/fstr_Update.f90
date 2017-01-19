@@ -22,7 +22,7 @@ module m_fstr_Update
 !>    -# ひずみ・応力の更新       \f$ \varepsilon_{n+1}^{(k)} = \varepsilon_{n+1}^{(k-1)} + \delta \varepsilon^{(k)} \f$, \f$ \sigma_{n+1}^{(k)} = \sigma_{n+1}^{(k-1)} + \delta \sigma^{(k)} \f$
 !>    -# 内力（等価節点力）の計算 \f$ Q_{n+1}^{(k-1)} ( u_{n+1}^{(k-1)} ) \f$
 !> \endif
-subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)
+subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
 !=====================================================================*
   use m_static_lib
 !#ifdef PARA_CONTACT
@@ -32,6 +32,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
   type (fstr_solid)           :: fstrSOLID !< we need boundary conditions of curr step
+  real(kind=kreal),intent(in) :: time      !< current time
   real(kind=kreal),intent(in) :: tincr     !< time increment
   integer, intent(in)         :: iter      !< NR iterations
 

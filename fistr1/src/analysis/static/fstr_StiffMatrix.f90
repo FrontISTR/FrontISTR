@@ -15,7 +15,7 @@ module m_fstr_StiffMatrix
 
 !---------------------------------------------------------------------*
 !> \brief 接線剛性マトリックスを作成するサブルーチン
-subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
+subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
 !---------------------------------------------------------------------*
   use m_static_LIB
   use mMechGauss
@@ -23,6 +23,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
   type (hecmwST_matrix)      :: hecMAT       !< linear equation, its right side modified here
   type (fstr_solid)          :: fstrSOLID    !< we need boundary conditions of curr step
+  real(kind=kreal),intent(in) :: time        !< current time
   real(kind=kreal),intent(in) :: tincr       !< time increment
 
   type( tMaterial ), pointer :: material     !< material information

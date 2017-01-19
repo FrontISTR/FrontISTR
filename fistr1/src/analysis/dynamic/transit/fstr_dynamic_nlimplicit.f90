@@ -180,7 +180,7 @@ contains
 !C ********************************************************************************
 
        do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_delta )
+         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
 
          if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
            do j = 1 ,ndof*nnod
@@ -291,7 +291,8 @@ contains
           fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
         enddo
 ! ----- update the strain, stress, and internal force
-        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
+        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
+          &  fstrDYNAMIC%t_delta, iter, fstrDYNAMIC%strainEnergy )
 
         if(ndof == 4) exit
       enddo
@@ -606,7 +607,7 @@ contains
          count_step = count_step + 1
          do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
            stepcnt=stepcnt+1
-           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_delta )
+           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
            if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
              do j = 1 ,ndof*nnod
                 hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
@@ -740,11 +741,11 @@ contains
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
 
 ! ----- update the strain, stress, and internal force
-!          call fstr_UpdateNewton( hecMESH, hecMAT, !fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy )
           do j=1,hecMESH%n_node*ndof
             fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
           enddo
-          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
+          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
+            &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
 
 
 ! ----- update the Lagrange multipliers

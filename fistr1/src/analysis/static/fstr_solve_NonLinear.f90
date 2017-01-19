@@ -28,13 +28,15 @@ module m_fstr_NonLinearMethod
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
   !> method
   subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-    restrt_step_num, sub_step )
+    restrt_step_num, sub_step, ctime, dtime )
 
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
     type (fstr_solid)                     :: fstrSOLID !< fstr_solid
     integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
@@ -75,7 +77,7 @@ module m_fstr_NonLinearMethod
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
 
-      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
+      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
       ! ----- Set Boundary condition
@@ -107,7 +109,7 @@ module m_fstr_NonLinearMethod
       enddo
 
       ! ----- update the strain, stress, and internal force
-      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, tincr, iter)
+      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 )                                  &
@@ -169,7 +171,7 @@ module m_fstr_NonLinearMethod
   !> method combined with Nested iteration of augmentation calculation as suggested
   !> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
   subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
-    restart_step_num, restart_substep_num, sub_step, infoCTChange )
+    restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange )
   use mContact
 
     integer, intent(in)                   :: cstep     !< current loading step
@@ -177,6 +179,8 @@ module m_fstr_NonLinearMethod
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
     type (fstr_solid)                     :: fstrSOLID !< fstr_solid
     integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
     type (fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
@@ -241,7 +245,7 @@ module m_fstr_NonLinearMethod
       do iter = 1,fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt = stepcnt+1
 
-        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr )
+        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         ! ----- Contact
@@ -288,7 +292,7 @@ module m_fstr_NonLinearMethod
         enddo
 
         ! ----- update the strain, stress, and internal force
-        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, tincr, iter)
+        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 )                                 &
@@ -374,7 +378,7 @@ module m_fstr_NonLinearMethod
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson method.
   !> Standard Lagrange multiplier algorithm for contact analysis is incoluded in this subroutine.
   subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,                  &
-    restart_step_num, restart_substep_num, sub_step, infoCTChange, conMAT )
+    restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
 
     use mContact
     use m_addContactStiffness
@@ -385,6 +389,8 @@ module m_fstr_NonLinearMethod
     type (hecmwST_matrix)                  :: hecMAT       !< hecmw matrix
     type (fstr_solid)                      :: fstrSOLID    !< fstr_solid
     integer, intent(in)                    :: sub_step     !< substep number of current loading step
+    real(kind=kreal), intent(in)           :: ctime     !< current time
+    real(kind=kreal), intent(in)           :: dtime     !< time increment
     type (fstr_param)                      :: fstrPARAM    !< type fstr_param
     type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
@@ -485,7 +491,7 @@ module m_fstr_NonLinearMethod
         call hecmw_BARRIER(hecMESH)
         stepcnt = stepcnt+1
 
-        call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, tincr)
+        call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if( paraContactFlag .and. present(conMAT) ) then
@@ -554,7 +560,7 @@ module m_fstr_NonLinearMethod
         endif
 
         ! ----- update the strain, stress, and internal force (only QFORCE)
-        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID,tincr,iter)
+        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
         if(paraContactFlag.and.present(conMAT)) then
