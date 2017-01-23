@@ -201,10 +201,12 @@ endif()
 # -DWITH_PARMETIS (unimplemented)
 # W.I.P.
 option(WITH_PARMETIS "compile with ParMETIS" OFF)
-CMAKE_DEPENDENT_OPTION(WITH_PARMETIS "compile with ParMETIS" ON
-  "WITH_METIS;WITH_MPI" ON)
 if(WITH_PARMETIS)
+  option(PARMETIS_VER_3 "uses METIS-3" OFF)
   find_package(ParMetis)
+  if(PARMETIS_FOUND)
+    include_directories(${PARMETIS_INCLUDE_PATH})
+  endif()
 endif()
 
 # -DWITH_MKL (unimplemented)
