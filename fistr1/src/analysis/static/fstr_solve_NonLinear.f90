@@ -57,7 +57,7 @@ module m_fstr_NonLinearMethod
 
     allocate(coord(hecMESH%n_node*ndof))
 
-    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
     call cpu_time(tt0)
@@ -206,7 +206,7 @@ module m_fstr_NonLinearMethod
 
     allocate(coord(hecMESH%n_node*ndof))
 
-    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
     call cpu_time(tt0)
@@ -426,7 +426,7 @@ module m_fstr_NonLinearMethod
 
     allocate(coord(hecMESH%n_node*ndof))
 
-    tincr = fstrSOLID%step_ctrl(cstep)%initdt
+    tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
     call cpu_time(tt0)
