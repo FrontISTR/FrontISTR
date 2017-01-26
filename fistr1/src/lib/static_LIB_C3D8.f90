@@ -22,7 +22,7 @@ MODULE m_static_LIB_C3D8
 !----------------------------------------------------------------------*
    SUBROUTINE STF_C3D8Bbar                                          &
               (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               tincr, u, temperature)
+               time, tincr, u, temperature)
 !----------------------------------------------------------------------*
 
     USE mMechGauss
@@ -39,7 +39,8 @@ MODULE m_static_LIB_C3D8
     REAL(kind=kreal), INTENT(OUT)   :: stiff(:,:)             !< stiff matrix
     INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)           !< variables to define matreial coordinate system
-    REAL(kind=kreal), INTENT(IN) :: tincr                     !< time increment
+    REAL(kind=kreal), INTENT(IN)    :: time                   !< current time
+    REAL(kind=kreal), INTENT(IN)    :: tincr                  !< time increment
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: u(:, :)         !< nodal displacemwent
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: temperature(nn) !< temperature
 
@@ -87,9 +88,9 @@ MODULE m_static_LIB_C3D8
       IF( PRESENT(temperature) ) THEN
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         temp = DOT_PRODUCT( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
       ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
       END IF
 
       IF( flag == UPDATELAG ) then
@@ -201,7 +202,7 @@ MODULE m_static_LIB_C3D8
 !----------------------------------------------------------------------*
    SUBROUTINE Update_C3D8Bbar                              &
               (etype, nn, ecoord, u, du, cdsys_ID, coords, &
-               qf ,gausses, iter, tincr, TT,T0, TN  )
+               qf ,gausses, iter, time, tincr, TT,T0, TN  )
 !----------------------------------------------------------------------*
 
     USE m_fstr
@@ -224,7 +225,8 @@ MODULE m_static_LIB_C3D8
     REAL(kind=kreal), INTENT(OUT)     :: qf(nn*3)      !< \param [out] Internal Force
     TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)    !< \param [out] status of qudrature points
     INTEGER, INTENT(IN) :: iter
-    REAL(kind=kreal), INTENT(IN) :: tincr              !< time increment
+    REAL(kind=kreal), INTENT(IN)      :: time          !< current time
+    REAL(kind=kreal), INTENT(IN)      :: tincr         !< time increment
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: TT(nn)   !< current temperature
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: T0(nn)   !< reference temperature
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: TN(nn)   !< reference temperature
@@ -310,7 +312,7 @@ MODULE m_static_LIB_C3D8
         ttc = DOT_PRODUCT(TT, spfunc)
         tt0 = DOT_PRODUCT(T0, spfunc)
         ttn = DOT_PRODUCT(TN, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, ttc, isEp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
 
         ina(1) = ttc
         IF( matlaniso ) THEN
@@ -343,7 +345,7 @@ MODULE m_static_LIB_C3D8
 
       ELSE
 
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, isEp=isEp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp )
 
       END IF
 
@@ -362,9 +364,9 @@ MODULE m_static_LIB_C3D8
         gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
         IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
           END IF
           gausses(LX)%stress = REAL( gausses(LX)%stress )
         END IF
@@ -391,9 +393,9 @@ MODULE m_static_LIB_C3D8
           gausses(LX)%stress(1:6) = MATMUL( D(1:6, 1:6), dstrain(1:6) )
           !gausses(LX)%pMaterial%mtype = mtype
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
           END IF
         ELSE
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
@@ -432,9 +434,9 @@ MODULE m_static_LIB_C3D8
           !gausses(LX)%pMaterial%mtype = mtype
           IF( tincr /= 0.0D0 .AND. any(gausses(LX)%stress /= 0.0D0) ) THEN
             IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
+              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
             ELSE
-              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
+              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
             END IF
           END IF
         END IF

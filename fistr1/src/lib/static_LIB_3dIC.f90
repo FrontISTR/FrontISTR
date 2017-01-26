@@ -20,7 +20,7 @@ MODULE m_static_LIB_3dIC
 !----------------------------------------------------------------------*
    SUBROUTINE STF_C3D8IC                                            &
               (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               tincr, nddisp, ehdisp, temperature)
+               time, tincr, nddisp, ehdisp, temperature)
 !----------------------------------------------------------------------*
 
     USE mMechGauss
@@ -37,6 +37,7 @@ MODULE m_static_LIB_3dIC
     REAL(kind=kreal), INTENT(OUT)   :: stiff(:, :)          !< stiffness matrix
     INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)         !< variables to define matreial coordinate system
+    REAL(kind=kreal), INTENT(IN)    :: time                 !< current time
     REAL(kind=kreal), INTENT(IN)    :: tincr                !< time increment
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn) !< nodal displacemwent
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: ehdisp(3, 3)  !< enhanced disp of bending mode
@@ -101,9 +102,9 @@ MODULE m_static_LIB_3dIC
       IF( PRESENT(temperature) ) THEN
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         temp = DOT_PRODUCT( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
       ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
       END IF
 
       IF( flag == UPDATELAG ) then

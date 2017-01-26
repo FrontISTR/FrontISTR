@@ -53,7 +53,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
 !$omp&          material,thick,stiffness,isect,ihead), &
-!$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,tincr)
+!$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
 !$omp do
     do icel= iS, iE
 
@@ -99,26 +99,26 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
             call STF_C3                                                                              &
                  ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3,1:nn), tt(1:nn) )
+                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
         else
             call STF_C3                                                                     &
                  ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
+                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
           endif
         else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
             call STF_C3D8Bbar                                                                        &
                  ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                   stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn), tt(1:nn) )
+                 stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           else
             call STF_C3D8Bbar                                                               &
                  ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
-                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
+                   stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
           endif
         else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
           if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 3 )
           call STF_C3D8IC( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
-               &           stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr )
+               &           stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr )
         endif
 
       elseif (ic_type==341 .or. ic_type==351 .or.                     &
@@ -126,11 +126,11 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3                                                                              &
                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3,1:nn), tt(1:nn) )
+                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
         else
           call STF_C3                                                                     &
                ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
+                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
         endif
 
       else if( ic_type == 611) then

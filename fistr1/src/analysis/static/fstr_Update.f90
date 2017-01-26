@@ -79,7 +79,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, str
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
 !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
-!$omp&  strainEnergy,iter,tincr), &
+!$omp&         strainEnergy,iter,time,tincr), &
 !$omp&  firstprivate(tt0,ttn,tt)
 !$omp do
     do icel = iS, iE
@@ -147,18 +147,18 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, str
         if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else
             call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
           endif
         else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else
             call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
           endif
         else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 3 )
@@ -177,10 +177,10 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, str
       else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
           call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
         else
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
         endif
 
       else if( ic_type == 611) then
