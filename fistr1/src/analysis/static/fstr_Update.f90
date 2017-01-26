@@ -325,14 +325,12 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
       elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
         if( tincr>0.d0 ) then
           do i = 1, ngauss
-            fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
             call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
           enddo
         endif
       elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
         if( tincr > 0.d0 ) then
           do i = 1, ngauss
-            fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
             call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
           enddo
         endif
