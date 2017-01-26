@@ -57,7 +57,7 @@ module m_static_LIB_2d
       ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
       DO LX=1,NumOfQuadPoints( ETYPE )
-        CALL MatlMatrix( gausses(LX), ISET, D,1.d0,cdsys )
+        CALL MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
         if( .not. present(u) ) flag=INFINITE    ! enforce to infinite deformation analysis
 
         if( flag==1 .and. ISET == 2 ) then
@@ -456,7 +456,7 @@ module m_static_LIB_2d
     ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1, NumOfQuadPoints(etype)
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, cdsys  )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys  )
 
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )

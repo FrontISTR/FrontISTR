@@ -87,9 +87,9 @@ MODULE m_static_LIB_C3D8
       IF( PRESENT(temperature) ) THEN
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         temp = DOT_PRODUCT( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, temp )
       ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys )
       END IF
 
       IF( flag == UPDATELAG ) then
@@ -310,7 +310,7 @@ MODULE m_static_LIB_C3D8
         ttc = DOT_PRODUCT(TT, spfunc)
         tt0 = DOT_PRODUCT(T0, spfunc)
         ttn = DOT_PRODUCT(TN, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc, isEp )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, ttc, isEp )
 
         ina(1) = ttc
         IF( matlaniso ) THEN
@@ -343,7 +343,7 @@ MODULE m_static_LIB_C3D8
 
       ELSE
 
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, isEp=isEp )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, isEp=isEp )
 
       END IF
 
@@ -362,9 +362,9 @@ MODULE m_static_LIB_C3D8
         gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
         IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
           END IF
           gausses(LX)%stress = REAL( gausses(LX)%stress )
         END IF
@@ -391,9 +391,9 @@ MODULE m_static_LIB_C3D8
           gausses(LX)%stress(1:6) = MATMUL( D(1:6, 1:6), dstrain(1:6) )
           !gausses(LX)%pMaterial%mtype = mtype
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
           END IF
         ELSE
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
@@ -432,9 +432,9 @@ MODULE m_static_LIB_C3D8
           !gausses(LX)%pMaterial%mtype = mtype
           IF( tincr /= 0.0D0 .AND. any(gausses(LX)%stress /= 0.0D0) ) THEN
             IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr, ttc, ttn )
+              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, gausses(LX)%ttime, tincr, ttc, ttn )
             ELSE
-              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+              CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, gausses(LX)%ttime, tincr )
             END IF
           END IF
         END IF
@@ -650,7 +650,7 @@ MODULE m_static_LIB_C3D8
       TEMPC = DOT_PRODUCT( H(1:nn),TT(1:nn) )
       TEMP0 = DOT_PRODUCT( H(1:nn),T0(1:nn) )
 
-      CALL MatlMatrix( gausses(LX), D3, D, 0.0D0, coordsys, TEMPC )
+      CALL MatlMatrix( gausses(LX), D3, D, 1.d0, 0.0D0, coordsys, TEMPC )
 
       ina(1) = TEMPC
       IF( matlaniso ) THEN

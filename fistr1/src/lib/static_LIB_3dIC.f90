@@ -101,9 +101,9 @@ MODULE m_static_LIB_3dIC
       IF( PRESENT(temperature) ) THEN
         CALL getShapeFunc( etype, naturalcoord, spfunc )
         temp = DOT_PRODUCT( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys, temp )
       ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, gausses(LX)%ttime, tincr, coordsys )
       END IF
 
       IF( flag == UPDATELAG ) then
@@ -293,9 +293,9 @@ MODULE m_static_LIB_3dIC
       if( present(tt) .and. present(t0) ) then
         CALL getShapeFunc( fetype, naturalcoord, H(1:nn) )
         TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
-        CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys, TEMPC )
+        CALL MatlMatrix( gausses(IC), D3, D, 1.d0, 1.0D0, coordsys, TEMPC )
       else
-        CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys )
+        CALL MatlMatrix( gausses(IC), D3, D, 1.d0, 1.0D0, coordsys )
       endif
 
       ! -- Derivative of shape function of imcompatible mode --
@@ -389,7 +389,7 @@ MODULE m_static_LIB_3dIC
              WRITE(*,*) "WARNING! Cannot setup local coordinate, it is modified automatically"
           END IF
         END IF
-        CALL MatlMatrix( gausses(IC), D3, D, 0.0D0, coordsys, TEMPC )
+      CALL MatlMatrix( gausses(IC), D3, D, 1.d0, 0.0D0, coordsys, TEMPC )
 
         ina(1) = TEMPC
         IF( matlaniso ) THEN
@@ -428,7 +428,7 @@ MODULE m_static_LIB_3dIC
         END IF
       else
         EPSTH = 0.d0
-        CALL MatlMatrix( gausses(IC), D3, D, 0.0D0, coordsys )
+        CALL MatlMatrix( gausses(IC), D3, D, 1.d0, 0.0D0, coordsys )
       endif
       !**
       !** SET EPS  {e}=[B]{u}
@@ -534,7 +534,7 @@ MODULE m_static_LIB_3dIC
       CALL getShapeFunc( fetype, naturalcoord, H(1:nn) )
       TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
       TEMP0 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
-      CALL MatlMatrix( gausses(IC), D3, D, 1.0D0, coordsys, TEMPC )
+      CALL MatlMatrix( gausses(IC), D3, D, 1.d0, 1.0D0, coordsys, TEMPC )
 
       ! -- Derivative of shape function of imcompatible mode --
       !     [ -2*a   0,   0   ]
