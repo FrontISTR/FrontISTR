@@ -32,9 +32,9 @@ message(STATUS ${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}${CMAKE_SYSTEM_VERSI
 #      └── tools
 #         └── CMakeLists.txt
 ###############################################################################
-
 cmake_minimum_required(VERSION 2.8.11)
 include(CMakeDependentOption)
+
 ###############################################################################
 # Build type (Release or Debug)
 ###############################################################################
@@ -90,27 +90,52 @@ endif()
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
 # -DBUILD_DOC        : generate API documents
 
+# includes standard macros
+include(FeatureSummary)
+
 # add module path for FindPackage.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
-# -DWINDOWS
+# Find external packages
+find_package(MPI)
+find_package(OpenMP)
+find_package(Refiner)
+find_package(Revocap)
+find_package(Metis)
+find_package(ParMetis)
+find_package(Mumps)
+find_package(scalapack)
+find_package(LAPACK)
+find_package(Trilinos)
+find_package(Doxygen)
+feature_summary(WHAT ALL)
+message(STATUS "Installation path is ${CMAKE_INSTALL_PREFIX}")
+
+# Options
 option(WINDOWS "build on windows" OFF)
+option(WITH_TOOLS "compile tools" ON)
+option(WITH_MPI "for parallel environment with MPI" ${MPI_Fortran_FOUND})
+option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
+option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
+option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
+option(WITH_PARACON "for parallel contact" OFF)
+option(WITH_METIS "compile with METIS" ${METIS_FOUND})
+option(METIS_VER_4 "uses METIS-4" OFF)
+option(WITH_PARMETIS "compile with ParMETIS" ${PARMETIS_FOUND})
+option(PARMETIS_VER_3 "uses METIS-3" OFF)
+option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
+option(WITH_ML "compile with Trilinos multigrid preconditioning package" ${Trilinos_FOUND})
+option(BUILD_DOC "Generate API documents." ${DOXYGEN_FOUND})
+
+# -DWINDOWS
 if(WINDOWS)
   add_definitions(-D_WINDOWS)
   set(CMAKE_Fortran_FLAGS "-fno-range-check")
   set(_WINDOWS ON)
 endif()
 
-# -DWITH_TOOLS
-option(WITH_TOOLS "compile tools" OFF)
-
 # -DWITH_MPI
-option(WITH_MPI "for parallel environment with MPI" OFF)
-if(NOT WITH_MPI)
-  add_definitions(-DHECMW_SERIAL)
-  set(HECMW_SERIAL ON)
-else()
-  find_package(MPI REQUIRED)
+if(WITH_MPI)
   if(MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
     include_directories(${MPI_C_INCLUDE_PATH})
     set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
@@ -119,12 +144,13 @@ else()
   else()
     set(WITH_MPI OFF)
   endif()
+else()
+  add_definitions(-DHECMW_SERIAL)
+  set(HECMW_SERIAL ON)
 endif()
 
 # -DWITH_OPENMP
-option(WITH_OPENMP "for multi-(core|processor) environment" OFF)
 if(WITH_OPENMP)
-  find_package(OpenMP)
   if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -136,9 +162,7 @@ if(WITH_OPENMP)
 endif()
 
 # -DWITH_REFINER
-option(WITH_REFINER "compile with REVOCAP_Refiner" OFF)
 if(WITH_REFINER)
-  find_package(Refiner)
   if(REFINER_FOUND)
     include_directories(${REFINER_INCLUDE_PATH})
     add_definitions(-DHECMW_WITH_REFINER)
@@ -151,9 +175,7 @@ if(WITH_REFINER)
 endif()
 
 # -DWITH_REVOCAP
-option(WITH_REVOCAP "compile with REVOCAP_Coupler" OFF)
 if(WITH_REVOCAP)
-  find_package(Revocap)
   if(REVOCAP_FOUND)
     include_directories(${REVOCAP_INCLUDE_PATH})
   else()
@@ -162,7 +184,6 @@ if(WITH_REVOCAP)
 endif()
 
 # -DWITH_PARACON (unimplemented)
-option(WITH_PARACON "for parallel contact" OFF)
 if(WITH_PARACON)
   add_definitions(-DPARA_CONTACT)
   set(PARA_CONTACT ON)
@@ -173,10 +194,7 @@ else()
 endif()
 
 # -DWITH_METIS, -DMETIS_VER_4
-option(WITH_METIS "compile with METIS graph partitioning package" OFF)
 if(WITH_METIS)
-  option(METIS_VER_4 "uses METIS-4" OFF)
-  find_package(Metis)
   if(METIS_FOUND)
     include_directories(${METIS_INCLUDE_PATH})
     add_definitions(-DHECMW_WITH_METIS)
@@ -199,11 +217,7 @@ if(WITH_METIS)
 endif()
 
 # -DWITH_PARMETIS (unimplemented)
-# W.I.P.
-option(WITH_PARMETIS "compile with ParMETIS" OFF)
 if(WITH_PARMETIS)
-  option(PARMETIS_VER_3 "uses METIS-3" OFF)
-  find_package(ParMetis)
   if(PARMETIS_FOUND)
     include_directories(${PARMETIS_INCLUDE_PATH})
   endif()
@@ -216,10 +230,7 @@ endif()
 #set(WITH_LAPACK ON)
 
 # -DWITH_MUMPS
-option(WITH_MUMPS "compile with MUMPS direct solver" OFF)
 if(WITH_MUMPS)
-  find_package(Mumps)
-  find_package(scalapack)
   if(MUMPS_FOUND)
     add_definitions(-DWITH_MUMPS)
     include_directories(${MUMPS_INCLUDE_PATH})
@@ -231,9 +242,7 @@ else()
 endif()
 
 # -DWITH_LAPACK
-option(WITH_LAPACK "compile with LAPACK" OFF)
 if(WITH_LAPACK)
-  find_package(LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
     add_definitions(-DWITH_LAPACK)
   else()
@@ -246,9 +255,7 @@ if(WITH_LAPACK)
 endif()
 
 # -DWITH_ML
-option(WITH_ML "compile with Trilinos multigrid preconditioning package" OFF)
 if(WITH_ML)
-  find_package(Trilinos)
   if(Trilinos_FOUND)
     include_directories(${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
     set(HECMW_WITH_ML ON)
@@ -262,9 +269,7 @@ if(WITH_ML)
 endif()
 
 # -DBUILD_DOC
-option(BUILD_DOC "Generate API documents." OFF)
 if(BUILD_DOC)
-  find_package(Doxygen)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
