@@ -71,3 +71,5 @@ if(METIS_INCLUDE_PATH AND METIS_LIBRARIES)
   message(STATUS "Found metis")
   set(METIS_FOUND TRUE)
 endif()
+
+mark_as_advanced(METIS_INCLUDE_PATH METIS_LIBRARIES)

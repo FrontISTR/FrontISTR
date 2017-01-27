@@ -10,10 +10,11 @@ message(STATUS ${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}${CMAKE_SYSTEM_VERSI
 # ├── CMakeLists.txt
 # ├── cmake
 # │   ├── FindMetis.cmake
-# │   ├── FindParMetis.cmake
 # │   ├── FindMumps.cmake
+# │   ├── FindParMetis.cmake
 # │   ├── FindRefiner.cmake
-# │   └── FindRevocap.cmake
+# │   ├── FindRevocap.cmake
+# │   └── FindScalapack.cmake
 # ├── examples
 # │   ├── CMakeLists.txt
 # │   └── test_FrontISTR.rb
@@ -63,12 +64,6 @@ set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
-###############################################################################
-# Windows (MinGW) specific setting
-###############################################################################
-if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
-  set(WINDOWS ON)
-endif()
 
 ###############################################################################
 # Options
@@ -92,6 +87,7 @@ endif()
 
 # includes standard macros
 include(FeatureSummary)
+include(CMakeDependentOption)
 
 # add module path for FindPackage.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
@@ -110,9 +106,20 @@ find_package(Trilinos)
 find_package(Doxygen)
 feature_summary(WHAT ALL)
 message(STATUS "Installation path is ${CMAKE_INSTALL_PREFIX}")
+if(${CMAKE_PREFIX_PATH})
+  message(STATUS "Library search path is ${CMAKE_PREFIX_PATH}")
+else()
+  message(STATUS "Library search path is $ENV{HOME}/local /usr/local /usr etc.")
+endif()
 
 # Options
-option(WINDOWS "build on windows" OFF)
+###############################################################################
+# Windows (MinGW) specific setting
+###############################################################################
+if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
+  set(WINDOWS ON)
+endif()
+option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_MPI "for parallel environment with MPI" ${MPI_Fortran_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -141,6 +148,7 @@ if(WITH_MPI)
     set(CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
     set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
     set(CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortra_LINK_FLAGS})
+    mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
   else()
     set(WITH_MPI OFF)
   endif()
@@ -234,6 +242,7 @@ if(WITH_MUMPS)
   if(MUMPS_FOUND)
     add_definitions(-DWITH_MUMPS)
     include_directories(${MUMPS_INCLUDE_PATH})
+    mark_as_advanced(scalapack_DIR)
   else()
     message(FATAL_ERROR "MUMPS could not found")
   endif()
@@ -260,6 +269,7 @@ if(WITH_ML)
     include_directories(${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
     set(HECMW_WITH_ML ON)
     add_definitions(-DHECMW_WITH_ML)
+    mark_as_advanced(Trilinos_DIR)
   else()
     #message(WARNING "Please turn on WITH_MPI")
     message(WARNING "Trilinos not found")
