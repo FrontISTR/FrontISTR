@@ -44,14 +44,10 @@ module m_static_output
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
-    if( fstrSOLID%TEMP_irres>0 ) then
-          maxstep = fstrSOLID%TEMP_irres
-    else
-          maxstep = 0
-          do i = 1, cstep
-            maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
-          end do
-    endif
+    maxstep = 0
+    do i = 1, cstep
+      maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
+    end do
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &

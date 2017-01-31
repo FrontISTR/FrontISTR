@@ -831,6 +831,7 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%TEMP_irres        = 0
         fstrSOLID%TEMP_tstep        = 1
         fstrSOLID%TEMP_interval     = 1
+        fstrSOLID%TEMP_factor       = 1.d0
         fstrSOLID%VELOCITY_ngrp_tot = 0
         fstrSOLID%ACCELERATION_ngrp_tot = 0
         fstrSOLID%COUPLE_ngrp_tot   = 0

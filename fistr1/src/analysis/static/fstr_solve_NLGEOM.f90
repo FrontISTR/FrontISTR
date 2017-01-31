@@ -39,7 +39,7 @@ module m_fstr_solve_NLGEOM
     integer(kind=kint) :: ndof, nn
 
     integer(kind=kint) :: j, tot_step, step_count
-    integer(kind=kint) :: sub_step, ss_end
+    integer(kind=kint) :: sub_step
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged
@@ -94,18 +94,15 @@ module m_fstr_solve_NLGEOM
       ! -------------------------------------------------------------------------
       !      STEP LOOP
       ! -------------------------------------------------------------------------
-      ss_end = fstrSOLID%step_ctrl(tot_step)%num_substep
-      if( fstrSOLID%TEMP_irres > 0 ) then
-        ss_end = (fstrSOLID%TEMP_irres-fstrSOLID%TEMP_tstep)/fstrSOLID%TEMP_interval + 1
-        fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep + step_count*fstrSOLID%TEMP_interval
-      endif
-      do sub_step = restart_substep_num, ss_end
+      do sub_step = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
 
         ! ----- time history of factor
         call fstr_set_timeinc_base( dmin1(fstrSOLID%step_ctrl(tot_step)%initdt, endtime-fstr_get_time()) )
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
+          call table_nlsta(hecMESH,fstrSOLID,tot_step,fstr_get_time()+fstr_get_timeinc(), factor)
+          fstrSOLID%TEMP_FACTOR = factor
         else
           call table_nlsta(hecMESH,fstrSOLID,tot_step,fstr_get_time(),factor)
           fstrSOLID%FACTOR(1) = factor
@@ -124,12 +121,7 @@ module m_fstr_solve_NLGEOM
           write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
             &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
           write(*,'(A,2f12.7)') ' loading_factor= ', fstrSOLID%FACTOR
-        endif
-        if( fstrSOLID%TEMP_irres > 0 ) then
-          if( hecMESH%my_rank == 0 ) then
-            write(*,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-            write(ISTA,*) " - Read in temperature in time step", fstrSOLID%TEMP_tstep
-          endif
+          if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
         endif
 
         step_count = step_count+1
@@ -174,8 +166,6 @@ module m_fstr_solve_NLGEOM
         end if
         ! ----- Result output (include visualize output)
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
-
-        if( fstrSOLID%TEMP_irres > 1 ) fstrSOLID%TEMP_tstep = fstrSOLID%TEMP_tstep + fstrSOLID%TEMP_interval
 
         call cpu_time(time_2)
         if( hecMESH%my_rank==0) then
