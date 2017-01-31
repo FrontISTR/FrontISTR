@@ -3,4824 +3,5062 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
-MODULE hecmw_solver_direct
-  INTEGER (KIND=4),PRIVATE :: len_colno
-  INTEGER (KIND=4),PRIVATE :: nstop
-  INTEGER (KIND=4),PRIVATE :: stage
-  INTEGER (KIND=4),PRIVATE :: neqns
-  INTEGER (KIND=4),PRIVATE :: nttbr
-  INTEGER (KIND=4),PRIVATE :: isym
-  INTEGER (KIND=4),PRIVATE :: ndeg
-  INTEGER (KIND=4),PRIVATE :: irr
-  INTEGER (KIND=4),PRIVATE :: len_dsln
-  INTEGER (KIND=4),PRIVATE :: len_iv
-  INTEGER (KIND=4),PRIVATE :: tot_dof
-  INTEGER (KIND=4),PRIVATE :: total
-  INTEGER (KIND=4),PRIVATE :: tmpmax
-  !        INTEGER (KIND=4),private :: maxdeg
-  INTEGER (KIND=4),PRIVATE, POINTER  :: jcol(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: irow(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: zpiv(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: iperm(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: invp(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: parent(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: nch(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: xlnzr(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: colno(:)
+!----------------------------------------------------------------------
+!> @brief HECMW_SOLVE_DIRECT is a program for the matrix direct solver
+!         SOLVER=DIRECT
+!
+!> @author coded by t.arakawa of RIST on 040316
+!>         Modified G. Prabhakar, RIST, June 7 2004
+!----------------------------------------------------------------------
+module HECMW_SOLVER_DIRECT
+  implicit none
+
+  integer(kind=4), private :: len_colno
+  integer(kind=4), private :: nstop
+  integer(kind=4), private :: stage
+  integer(kind=4), private :: neqns
+  integer(kind=4), private :: nttbr
+  integer(kind=4), private :: isym
+  integer(kind=4), private :: ndeg
+  integer(kind=4), private :: irr
+  integer(kind=4), private :: len_dsln
+  integer(kind=4), private :: len_iv
+  integer(kind=4), private :: total
+
+  integer(kind=4), private, dimension(:), pointer :: jcol
+  integer(kind=4), private, dimension(:), pointer :: irow
+  integer(kind=4), private, dimension(:), pointer :: zpiv
+  integer(kind=4), private, dimension(:), pointer :: iperm
+  integer(kind=4), private, dimension(:), pointer :: invp
+  integer(kind=4), private, dimension(:), pointer :: parent
+  integer(kind=4), private, dimension(:), pointer :: nch
+  integer(kind=4), private, dimension(:), pointer :: xlnzr
+  integer(kind=4), private, dimension(:), pointer :: colno
   !*Work arrays
-  INTEGER (KIND=4),PRIVATE, POINTER  :: jcpt(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: jcolno(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: ia(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: ja(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: deg(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: marker(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: rchset(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: nbrhd(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: qsize(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: qlink(:)
-  !WINDEBUG
-  !        INTEGER (KIND=4),private, POINTER  :: nofsub(:)
-  INTEGER (KIND=4),PRIVATE :: nofsub
-  INTEGER (KIND=4),PRIVATE, POINTER  :: adjncy(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: btree(:)
-  !DEBUGWIN
-  !INTEGER (KIND=4),private :: btree(100000)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: pordr(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: adjncp(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: xleaf(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: leaf(:)
-  INTEGER (KIND=4),PRIVATE, POINTER  :: indx(:)
+  integer(kind=4), private, dimension(:), pointer :: jcpt
+  integer(kind=4), private, dimension(:), pointer :: jcolno
+  integer(kind=4), private, dimension(:), pointer :: ia
+  integer(kind=4), private, dimension(:), pointer :: ja
+  integer(kind=4), private, dimension(:), pointer :: deg
+  integer(kind=4), private, dimension(:), pointer :: marker
+  integer(kind=4), private, dimension(:), pointer :: rchset
+  integer(kind=4), private, dimension(:), pointer :: nbrhd
+  integer(kind=4), private, dimension(:), pointer :: qsize
+  integer(kind=4), private, dimension(:), pointer :: qlink
+  integer(kind=4), private :: nofsub
+  integer(kind=4), private, dimension(:), pointer :: adjncy
+  integer(kind=4), private, dimension(:), pointer :: btree
+  integer(kind=4), private, dimension(:), pointer :: pordr
+  integer(kind=4), private, dimension(:), pointer :: adjncp
+  integer(kind=4), private, dimension(:), pointer :: xleaf
+  integer(kind=4), private, dimension(:), pointer :: leaf
+  integer(kind=4), private, dimension(:), pointer :: indx
 
-  REAL(KIND=8),PRIVATE, POINTER  :: v(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: val(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: rhs(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: b(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: temp(:)
-  !       REAL(KIND=8),private, POINTER  :: wk(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: diag(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: zln(:)
-  REAL(KIND=8),PRIVATE, POINTER  :: dsln(:)
+  real(kind=8), private, dimension(:), pointer :: val
+  real(kind=8), private, dimension(:), pointer :: temp
+  real(kind=8), private, dimension(:), pointer :: diag
+  real(kind=8), private, dimension(:), pointer :: zln
+  real(kind=8), private, dimension(:), pointer :: dsln
   !*Timing
-  REAL(KIND=8),PRIVATE  :: tom(10)
-  REAL(KIND=8),PRIVATE  :: iv(1)
+  real(kind=8), private, dimension(10) :: tom
   !*Allocation variables
-  INTEGER(KIND=4),PRIVATE :: ialoc
-  INTEGER(KIND=4),PRIVATE :: raloc
-  INTEGER(KIND=4),PRIVATE :: ierror
+  integer(kind=4), private :: ialoc
+  integer(kind=4), private :: raloc
+  integer(kind=4), private :: ierror
+  !*MCHDPN
+  integer:: LRAtio
+  real(kind=8), private:: EPSm
+  real(kind=8), private:: RMAx
+  real(kind=8), private:: RMIn
+  !*QAZ
+  integer, private:: ISEed
+  integer, private:: ISEm
+  integer, private:: IXXx
+  !*DEBUG
+  integer, private:: IDBg
+  integer, private:: IDBg1
 
-CONTAINS
-  !======================================================================!
-  !> hecmw_solve_direct
-  !======================================================================!
-  SUBROUTINE hecmw_solve_direct(hecMESH,hecMAT,ifmsg)
-    USE hecmw_util
-    USE hecmw_matrix_ass
-    USE hecmw_matrix_dump
-    !     USE sp_direct_solver
-    IMPLICIT DOUBLE PRECISION(a-h, o-z)
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    TYPE (hecmwST_matrix    ) :: hecMAT
-    INTEGER i98,i97,ir,ifmsg
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-    COMMON /qaz/ iseed,ixxx
-    INTEGER, POINTER :: memchk(:)
+contains
+  !----------------------------------------------------------------------
+  !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
+  !     and is also available for performance tests
+  !     to solve Ax=b for x, nozero pattern and values must be give.
+  !   arrays
+  !     jcol     column entrys
+  !     irow     row entrys
+  !     val      its value
+  !     v        interface array used through matini, staijx, nufctx,
+  !              nusolx
+  !----------------------------------------------------------------------
+  subroutine HECMW_SOLVE_DIRECT(hecMESH,hecMAT,Ifmsg)
+    use HECMW_UTIL
+    use HECMW_MATRIX_ASS
+    use HECMW_MATRIX_DUMP
+    implicit none
+    !------
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    integer, intent(in):: Ifmsg
+    type (HECMWST_MATRIX), intent(out)::hecMAT
+    !------
+    integer:: i98
+    integer:: i97
+    integer:: ir
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
 
-    !----------------------------------------------------------------------
-    !     this is a sample program for the matrix solver
-    !     and is also available for performance tests
-    !
-    !     to solve Ax=b for x, nozero pattern and values must be give.
-    !
-    !   arrays
-    !     jcol     column entrys
-    !     irow     row entrys
-    !     val      its value
-    !     v        interface array used through matini, staijx, nufctx,
-    !              nusolx
-    !
-    !     #coded by t.arakawa of RIST on 040316
-    !     Modified G. Prabhakar, RIST, June 7 2004
-    !----------------------------------------------------------------------
-    rmax=8.988d+307
-    rmin=4.941d-300
-    epsm=2.220d-16
-    lratio=2
-    iseed=1
-    ir=0
+    RMAx = 8.988D+307
+    RMIn = 4.941D-300
+    EPSm = 2.220D-16
+    LRAtio = 2
+    ISEed = 1
+    ir = 0
 
-    CALL hecmw_mat_ass_equation( hecMESH, hecMAT )
-    CALL hecmw_mat_dump(hecMAT, hecMESH)
+    call HECMW_MAT_ASS_EQUATION(hecMESH,hecMAT)
+    call HECMW_MAT_DUMP(hecMAT,hecMESH)
 
-    !WRITE(IFMSG,*) "Interface to ADS from HECMW..."
-    CALL ptime(t1)
+    call PTIME(t1)
 
     !*EHM HECMW June 7 2004
+    i98 = hecMAT%IARRAY(98)
+    if ( hecMAT%IARRAY(98)==1 ) then
+      !* Interface to symbolic factorization
+      call SETIJ(hecMESH,hecMAT)
 
-    i98 = hecMAT%Iarray(98)
-    IF(hecMAT%Iarray(98)==1) THEN
-       !* Interface to symbolic factorization
-       CALL setij(hecMESH,hecMAT)
+      !* Symbolic factorization
+      call MATINI(ir)
+      hecMAT%IARRAY(98) = 0
+      write (6,*) "symbolic fct done"
+    endif
+    call PTIME(t2)
+    t3 = t2
 
-       !* Symbolic factorization
-       CALL matini(ir)
-       hecMAT%Iarray(98) = 0
-       WRITE(6,*)"symbolic fct done"
-    ENDIF
-    CALL ptime(t2)
-    t3=t2
+    i97 = hecMAT%IARRAY(97)
+    if ( hecMAT%IARRAY(97)==1 ) then
+      !* Interface to numeric factorization
+      call NUFORM(hecMESH,hecMAT,ir)
+      call PTIME(t3)
 
-    i97 = hecMAT%Iarray(97)
-    IF(hecMAT%Iarray(97)==1) THEN
-       !* Interface to numeric factorization
-       CALL nuform(hecMESH,hecMAT,ir)
-       CALL ptime(t3)
+      !* Numeric factorization
+      call NUFCT0(ir)
+      hecMAT%IARRAY(97) = 0
 
-       !* Numeric factorization
-       CALL nufct0(ir)
-       hecMAT%Iarray(97) = 0
-
-       !*Memory Details
-       WRITE(*,*) '*-----------------------------------*'
-       WRITE(*,*) '|   Direct  Solver  Memory  Usage   |'
-       WRITE(*,*) '*-----------------------------------*'
-       WRITE(*,*) 'INTEGER memory: ',REAL(ialoc*4)/REAL(1048576),'MB'
-       WRITE(*,*) 'REAL*8  memory: ',REAL(raloc*8)/REAL(1048576),'MB'
-       WRITE(*,*) 'TOTAL   memory: ',REAL((raloc*2+ialoc)*4)/REAL(1048576),'MB'
-       WRITE(*,*) '*-----------------------------------*'
-    ENDIF
-    CALL ptime(t4)
+      !*Memory Details
+      write (*,*) '*-----------------------------------*'
+      write (*,*) '|   Direct  Solver  Memory  Usage   |'
+      write (*,*) '*-----------------------------------*'
+      write (*,*) 'INTEGER memory: ', real(IALoc*4)/real(1048576), 'MB'
+      write (*,*) 'REAL*8  memory: ', real(RALoc*8)/real(1048576), 'MB'
+      write (*,*) 'TOTAL   memory: ', real((RALoc*2+IALoc)*4)/real(1048576), 'MB'
+      write (*,*) '*-----------------------------------*'
+    endif
+    call PTIME(t4)
 
     !* Finalize
-    !      tom(5)=tt2-tt1
     !*  Errors 1
-    IF(i98/=0.AND.i98/=1) THEN
-       WRITE(IFMSG,*) 'ERROR in symb. fact. flag: Should be 1 or 0'
-       STOP 'ERROR in symb. fact. flag: Should be 1 or 0'
-    ENDIF
-    IF(i97/=0.AND.i97/=1) THEN
-       WRITE(IFMSG,*) 'ERROR in numer. fact. flag: Should be 1 or 0'
-       STOP 'ERROR in numer. fact. flag: Should be 1 or 0'
-    ENDIF
-    IF(i98==1.AND.i97==0) THEN
-       WRITE(IFMSG,*) 'WARNING: Numeric factorization not performed!'
-       STOP 'WARNING: Numeric factorization not performed! Solve will not be performed'
-       RETURN
-    ENDIF
+    if ( i98/=0 .and. i98/=1 ) then
+      write (Ifmsg,*) 'ERROR in symb. fact. flag: Should be 1 or 0'
+      stop 'ERROR in symb. fact. flag: Should be 1 or 0'
+    endif
+    if ( i97/=0 .and. i97/=1 ) then
+      write (Ifmsg,*) 'ERROR in numer. fact. flag: Should be 1 or 0'
+      stop 'ERROR in numer. fact. flag: Should be 1 or 0'
+    endif
+    if ( i98==1 .and. i97==0 ) then
+      write (Ifmsg,*) 'WARNING: Numeric factorization not performed!'
+      stop 'WARNING: Numeric factorization not performed! Solve will not be performed'
+    endif
     !*  Errors 2
-    IF(ir/=0) THEN
-       !WINDEBUG
-       WRITE(IFMSG,*) 'ERROR in nufct0. ir = ',ir
-       STOP
-    ENDIF
+    if ( ir/=0 ) then
+      !WINDEBUG
+      write (Ifmsg,*) 'ERROR in nufct0. ir = ', ir
+      stop
+    endif
 
-    tom(1)=t2-t1
-    tom(2)=t3-t2
-    tom(3)=t4-t3
+    TOM(1) = t2-t1
+    TOM(2) = t3-t2
+    TOM(3) = t4-t3
 
     !* Solve
     !* Backsubstitute
-    CALL nusol0(hecMAT%B,ir)
-    CALL ptime(t5)
+    call NUSOL0(hecMAT%B,ir)
+    call PTIME(t5)
     !* Errors 4
-    IF(ir/=0) THEN
-       !WINDEBUG
-       WRITE(IFMSG,*) 'error in nusol0. irr = ',ir
-       STOP
-    ENDIF
-    CALL hecmw_mat_dump_solution(hecMAT)
-    RETURN
-  END SUBROUTINE hecmw_solve_direct
-
-  !======================================================================!
-  !> ddot
-  !======================================================================!
-  DOUBLE PRECISION FUNCTION ddot(a,b,n)
-    DOUBLE PRECISION a(n),b(n),s
-
-    s=0.0d0
-    DO i=1,n
-       s=s+a(i)*b(i)
-    ENDDO
-    ddot=s
-    RETURN
-  END FUNCTION ddot
-
-  !======================================================================!
-  !> spdot2
-  !======================================================================!
-  DOUBLE PRECISION FUNCTION spdot2(b,zln,colno,ks,ke)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER colno(*)
-    DOUBLE PRECISION zln(*),b(*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    s=0.0d0
-    DO jj=ks,ke
-       j=colno(jj)
-       s=s+zln(jj)*b(j)
-    ENDDO
-    spdot2=s
-  END FUNCTION spdot2
-
-  !======================================================================!
-  !> addr0
-  !======================================================================!
-  SUBROUTINE addr0(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg2,ndeg2l,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER invp(*),xlnzr(*),colno(*)
-    DOUBLE PRECISION zln(ndeg2,*),diag(ndeg2l,*),dsln(ndeg2,*), aij(ndeg2)
-
-    DATA idbg/0/
-    ir=0
-    ii=invp(i)
-    jj=invp(j)
-    IF(idbg/=0) WRITE(6,*) ii,jj,aij
-    IF(ii==jj) THEN
-       IF(ndeg2==1) THEN
-          IF(isw==0) THEN
-             diag(1,ii)=aij(1)
-          ELSE
-             diag(1,ii)=diag(1,ii)+aij(1)
-          ENDIF
-       ELSEIF(ndeg2==4) THEN
-          IF(isw==0) THEN
-             diag(1,ii)=aij(1)
-             diag(2,ii)=aij(2)
-             diag(3,ii)=aij(4)
-          ELSE
-             diag(1,ii)=diag(1,ii)+aij(1)
-             diag(2,ii)=diag(2,ii)+aij(2)
-             diag(3,ii)=diag(3,ii)+aij(4)
-          ENDIF
-       ENDIF
-       RETURN
-    ENDIF
-    itrans=0
-    IF(jj>ii) THEN
-       k=jj
-       jj=ii
-       ii=k
-       itrans=1
-    ENDIF
-    IF(jj>=nstop) THEN
-       i0=ii-nstop
-       j0=jj-nstop+1
-       k=i0*(i0-1)/2+j0
-       IF(ndeg2==1) THEN
-          dsln(1,k)=aij(1)
-          RETURN
-       ELSEIF(ndeg2==4) THEN
-          IF(itrans==0) THEN
-             DO l=1,ndeg2
-                dsln(l,k)=aij(l)
-             ENDDO
-             RETURN
-          ELSE
-             dsln(1,k)=aij(1)
-             dsln(2,k)=aij(3)
-             dsln(3,k)=aij(2)
-             dsln(4,k)=aij(4)
-             RETURN
-          ENDIF
-       ENDIF
-    ENDIF
-    ks=xlnzr(ii)
-    ke=xlnzr(ii+1)-1
-    DO k=ks,ke
-       IF(colno(k)==jj) THEN
-          IF(isw==0) THEN
-             IF(ndeg2==1) THEN
-                zln(1,k)=aij(1)
-             ELSEIF(ndeg2==4) THEN
-                IF(itrans==0) THEN
-                   DO l=1,ndeg2
-                      zln(l,k)=aij(l)
-                   ENDDO
-                ELSE
-                   zln(1,k)=aij(1)
-                   zln(2,k)=aij(3)
-                   zln(3,k)=aij(2)
-                   zln(4,k)=aij(4)
-                ENDIF
-             ENDIF
-          ELSE
-             IF(ndeg2==1) THEN
-                zln(1,k)=zln(1,k)+aij(1)
-             ELSEIF(ndeg2==4) THEN
-                IF(itrans==0) THEN
-                   DO l=1,ndeg2
-                      zln(l,k)=zln(l,k)+aij(l)
-                   ENDDO
-                ELSE
-                   zln(1,k)=zln(1,k)+aij(1)
-                   zln(2,k)=zln(2,k)+aij(3)
-                   zln(3,k)=zln(3,k)+aij(2)
-                   zln(4,k)=zln(4,k)+aij(4)
-                ENDIF
-             ENDIF
-          ENDIF
-          RETURN
-       ENDIF
-    ENDDO
-    ir=20
-    RETURN
-  END SUBROUTINE addr0
-
-  !======================================================================!
-  !> addr3
-  !======================================================================!
-  SUBROUTINE addr3(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER invp(*),xlnzr(*),colno(*)
-    DOUBLE PRECISION zln(9,*),diag(6,*),dsln(9,*),aij(9)
-
-    DATA idbg,ndeg2,ndeg2l/0,9,6/
-    ir=0
-    ii=invp(i)
-    jj=invp(j)
-    IF(idbg/=0) WRITE(6,*) ii,jj,aij
-    IF(ii==jj) THEN
-       diag(1,ii)=aij(1)
-       diag(2,ii)=aij(2)
-       diag(3,ii)=aij(5)
-       diag(4,ii)=aij(3)
-       diag(5,ii)=aij(6)
-       diag(6,ii)=aij(9)
-       RETURN
-    ENDIF
-    itrans=0
-    IF(jj>ii) THEN
-       k=jj
-       jj=ii
-       ii=k
-       itrans=1
-    ENDIF
-    IF(jj>=nstop) THEN
-       i0=ii-nstop
-       j0=jj-nstop+1
-       k=i0*(i0-1)/2+j0
-       IF(itrans==0) THEN
-          DO l=1,ndeg2
-             dsln(l,k)=aij(l)
-          ENDDO
-          RETURN
-       ELSE
-          dsln(1,k)=aij(1)
-          dsln(2,k)=aij(4)
-          dsln(3,k)=aij(7)
-          dsln(4,k)=aij(2)
-          dsln(5,k)=aij(5)
-          dsln(6,k)=aij(8)
-          dsln(7,k)=aij(3)
-          dsln(8,k)=aij(6)
-          dsln(9,k)=aij(9)
-          RETURN
-       ENDIF
-    ENDIF
-    ks=xlnzr(ii)
-    ke=xlnzr(ii+1)-1
-    DO k=ks,ke
-       IF(colno(k)==jj) THEN
-          IF(itrans==0) THEN
-             DO l=1,ndeg2
-                zln(l,k)=aij(l)
-             ENDDO
-          ELSE
-             zln(1,k)=aij(1)
-             zln(2,k)=aij(4)
-             zln(3,k)=aij(7)
-             zln(4,k)=aij(2)
-             zln(5,k)=aij(5)
-             zln(6,k)=aij(8)
-             zln(7,k)=aij(3)
-             zln(8,k)=aij(6)
-             zln(9,k)=aij(9)
-          ENDIF
-          RETURN
-       ENDIF
-    ENDDO
-    ir=20
-
-    RETURN
-  END SUBROUTINE addr3
-
-  !======================================================================!
-  !> addrx
-  !======================================================================!
-  SUBROUTINE addrx(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER invp(*),xlnzr(*),colno(*)
-    DOUBLE PRECISION zln(ndeg,ndeg,*),diag(ndeg2l,*),dsln(ndeg,ndeg,*),aij(ndeg,ndeg)
-    DATA idbg/0/
-
-    ir=0
-    ii=invp(i)
-    jj=invp(j)
-    IF(idbg/=0) WRITE(6,*) ii,jj,aij
-    IF(ii==jj) THEN
-       l=0
-       DO n=1,ndeg
-          DO m=1,n
-             l=l+1
-             diag(l,ii)=aij(n,m)
-          ENDDO
-       ENDDO
-       RETURN
-    ENDIF
-    itrans=0
-    IF(jj>ii) THEN
-       k=jj
-       jj=ii
-       ii=k
-       itrans=1
-    ENDIF
-    IF(jj>=nstop) THEN
-       i0=ii-nstop
-       j0=jj-nstop+1
-       k=i0*(i0-1)/2+j0
-       IF(itrans==0) THEN
-          DO m=1,ndeg
-             DO n=1,ndeg
-                dsln(n,m,k)=aij(n,m)
-             ENDDO
-          ENDDO
-          RETURN
-       ELSE
-          DO m=1,ndeg
-             DO n=1,ndeg
-                dsln(n,m,k)=aij(m,n)
-             ENDDO
-          ENDDO
-          RETURN
-       ENDIF
-    ENDIF
-    ks=xlnzr(ii)
-    ke=xlnzr(ii+1)-1
-    DO k=ks,ke
-       IF(colno(k)==jj) THEN
-          IF(itrans==0) THEN
-             DO m=1,ndeg
-                DO n=1,ndeg
-                   zln(n,m,k)=aij(n,m)
-                ENDDO
-             ENDDO
-          ELSE
-             DO m=1,ndeg
-                DO n=1,ndeg
-                   zln(n,m,k)=aij(m,n)
-                ENDDO
-             ENDDO
-          ENDIF
-          RETURN
-       ENDIF
-    ENDDO
-    ir=20
-    RETURN
-  END SUBROUTINE addrx
-
-  !======================================================================!
-  !> bringu
-  !======================================================================!
-  SUBROUTINE bringu(zpiv,iperm,invp,parent,izz, neqns,irr)
-    INTEGER zpiv(*),iperm(*),invp(*),parent(*)
-
-    !----------------------------------------------------------------------
-    !
-    !      bringu brings up zero pivots from bottom of the elimination tree
-    !      to higher nodes
-    !
-    !      irr = 0     complete
-    !          = 1     impossible
-    !
-    !
-    !----------------------------------------------------------------------
-    idbg=0
-    irr=0
-    ib0=invp(izz)
-    ib=ib0
-    DO
-       IF(ib<=0) THEN
-          irr=1
-          RETURN
-       ENDIF
-       ibp=parent(ib)
-       izzp=iperm(ibp)
-       IF(zpiv(izzp)==0) EXIT
-       ib=ibp
-    ENDDO
-
-    invp(izz)=ibp
-    invp(izzp)=ib0
-    iperm(ibp)=izz
-    iperm(ib0)=izzp
-    IF(idbg/=0) THEN
-       DO i=1,neqns
-          IF((invp(iperm(i))/=i).OR.(iperm(invp(i))/=i)) THEN
-             WRITE(6,*) 'permutation error'
-             STOP
-          ENDIF
-       ENDDO
-       RETURN
-    ENDIF
-    RETURN
-  END SUBROUTINE bringu
-
-  !======================================================================!
-  !> d2dot
-  !======================================================================!
-  SUBROUTINE d2dot(t,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(4),a(4,*),b(4,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    t(1)=0.0d0
-    t(2)=0.0d0
-    t(3)=0.0d0
-    t(4)=0.0d0
-    DO jj=1,n
-       t(1)=t(1)+a(1,jj)*b(1,jj)+a(3,jj)*b(3,jj)
-       t(2)=t(2)+a(2,jj)*b(1,jj)+a(4,jj)*b(3,jj)
-       t(3)=t(3)+a(1,jj)*b(2,jj)+a(3,jj)*b(4,jj)
-       t(4)=t(4)+a(2,jj)*b(2,jj)+a(4,jj)*b(4,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d2dot
-
-  !======================================================================!
-  !> d2sdot
-  !======================================================================!
-  SUBROUTINE d2sdot(wi,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION wi(2),a(2,*),b(4,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj=1,n
-       wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(3,jj)
-       wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(4,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d2sdot
-
-  !======================================================================!
-  !> d3dot
-  !======================================================================!
-  SUBROUTINE d3dot(t,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(9),a(9,*),b(9,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    !$dir max_trips(9)
-    DO l=1,9
-       t(l)=0.0d0
-    ENDDO
-    DO jj=1,n
-       t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-       t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-       t(3)=t(3)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-       t(4)=t(4)+a(1,jj)*b(2,jj)+a(4,jj)*b(5,jj)+a(7,jj)*b(8,jj)
-       t(5)=t(5)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-       t(6)=t(6)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-       t(7)=t(7)+a(1,jj)*b(3,jj)+a(4,jj)*b(6,jj)+a(7,jj)*b(9,jj)
-       t(8)=t(8)+a(2,jj)*b(3,jj)+a(5,jj)*b(6,jj)+a(8,jj)*b(9,jj)
-       t(9)=t(9)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d3dot
-
-  !======================================================================!
-  !> d3dotl
-  !======================================================================!
-  SUBROUTINE d3dotl(t,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(6),a(9,*),b(9,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO l=1,6
-       t(l)=0.0d0
-    ENDDO
-    DO jj=1,n
-       t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-       t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-       t(3)=t(3)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-       t(4)=t(4)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-       t(5)=t(5)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-       t(6)=t(6)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d3dotl
-
-  !======================================================================!
-  !> d3sdot
-  !======================================================================!
-  SUBROUTINE d3sdot(wi,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION wi(3),a(3,*),b(9,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO jj=1,n
-       wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(4,jj)-a(3,jj)*b(7,jj)
-       wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(5,jj)-a(3,jj)*b(8,jj)
-       wi(3)=wi(3)-a(1,jj)*b(3,jj)-a(2,jj)*b(6,jj)-a(3,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d3sdot
-
-  !======================================================================!
-  !> d6dot
-  !======================================================================!
-  SUBROUTINE d6dot(t,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(9),a(9,*),b(9,*)
-
-    !----------------------------------------------------------------------
-    !
-    !      spdot1 performs inner product of sparse vectors
-    !
-    !
-    !      #coded by t.arakawa of RIST on 040510
-    !
-    !----------------------------------------------------------------------
-    DO l=1,9
-       t(l)=0.0d0
-    ENDDO
-    DO jj=1,n
-       t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-       t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-       t(3)=t(3)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-       t(4)=t(4)+a(1,jj)*b(2,jj)+a(4,jj)*b(5,jj)+a(7,jj)*b(8,jj)
-       t(5)=t(5)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-       t(6)=t(6)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-       t(7)=t(7)+a(1,jj)*b(3,jj)+a(4,jj)*b(6,jj)+a(7,jj)*b(9,jj)
-       t(8)=t(8)+a(2,jj)*b(3,jj)+a(5,jj)*b(6,jj)+a(8,jj)*b(9,jj)
-       t(9)=t(9)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d6dot
-
-  !======================================================================!
-  !> d6dotl
-  !======================================================================!
-  SUBROUTINE d6dotl(t,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(6),a(9,*),b(9,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    !c$dir max_trips(6)
-    DO l=1,6
-       t(l)=0.0d0
-    ENDDO
-    DO jj=1,n
-       t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-       t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-       t(3)=t(3)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-       t(4)=t(4)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-       t(5)=t(5)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-       t(6)=t(6)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d6dotl
-
-  !======================================================================!
-  !> d6sdot
-  !======================================================================!
-  SUBROUTINE d6sdot(wi,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION wi(3),a(3,*),b(9,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=1,n
-       wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(4,jj)-a(3,jj)*b(7,jj)
-       wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(5,jj)-a(3,jj)*b(8,jj)
-       wi(3)=wi(3)-a(1,jj)*b(3,jj)-a(2,jj)*b(6,jj)-a(3,jj)*b(9,jj)
-    ENDDO
-    RETURN
-  END SUBROUTINE d6sdot
-
-  !======================================================================!
-  !> dxdot
-  !======================================================================!
-  SUBROUTINE dxdot(ndeg,t,a,b,l)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(ndeg,ndeg),a(ndeg,ndeg,*),b(ndeg,ndeg,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO n=1,ndeg
-       DO  m=1,ndeg
-          t(n,m)=0.0d0
-          DO k=1,ndeg
-             DO jj=1,l
-                t(n,m)=t(n,m)+a(n,k,jj)*b(m,k,jj)
-             ENDDO
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE dxdot
-
-  !======================================================================!
-  !> dxdotl
-  !======================================================================!
-  SUBROUTINE dxdotl(ndeg,t,a,b,l)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION t(ndeg,ndeg),a(ndeg,ndeg,*),b(ndeg,ndeg,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO n=1,ndeg
-       DO m=1,n
-          t(n,m)=0.0d0
-          DO k=1,ndeg
-             DO jj=1,l
-                t(n,m)=t(n,m)+a(n,k,jj)*b(m,k,jj)
-             ENDDO
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE dxdotl
-
-  !======================================================================!
-  !> dxsdot
-  !======================================================================!
-  SUBROUTINE dxsdot(ndeg,wi,a,b,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DOUBLE PRECISION wi(ndeg),a(ndeg,*),b(ndeg,ndeg,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=1,n
-       DO m=1,ndeg
-          DO n=1,ndeg
-             wi(n)=wi(n)-b(n,m,jj)*a(m,jj)
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE dxsdot
-
-  !======================================================================!
-  !> forpar
-  !======================================================================!
-  SUBROUTINE forpar(neqns,parent,nch,nstop)
-    !WINDEBUG
-    !integer parent(neqns),nch(neqns)
-    INTEGER parent(*),nch(*)
-
-    DO i=1,neqns
-       nch(i)=0
-    ENDDO
-    nch(neqns+1)=0
-    DO i=1,neqns
-       ii=parent(i)
-       nch(ii)=nch(ii)+1
-    ENDDO
-    DO i=neqns,1,-1
-       IF(nch(i)/=1) EXIT
-    ENDDO
-    !310 continue
-    !write(6,*) 'denseform 1 no 0'
-    !read(5,*) idens
-    idens = 0
-    IF(idens==1) THEN
-       nstop=i
-    ELSE
-       nstop=neqns+1
-    ENDIF
-    RETURN
-  END SUBROUTINE forpar
-
-  !======================================================================!
-  !> genbtq
-  !======================================================================!
-  SUBROUTINE genbtq(xadj,adjncy,invp,parent,btree, zpiv,izz,neqns)
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    INTEGER  xadj(*),adjncy(*),parent(*),btree(2,*),invp(*), zpiv(*)
-    COMMON /debug/ idbg1
-    DO i=1,neqns+1
-       btree(1,i)=0
-       btree(2,i)=0
-    ENDDO
-    DO i=1,neqns+1
-       ip=parent(i)
-       IF(ip<=0) CYCLE
-       ib=btree(1,ip)
-       IF(ib==0) THEN
-          btree(1,ip)=i
-       ELSE
-          DO
-             inext=btree(2,ib)
-             IF(inext/=0) THEN
-                ib=inext
-             ELSE
-                btree(2,ib)=i
-                EXIT
-             ENDIF
-          ENDDO
-
-       ENDIF
-    ENDDO
-    !c
-    !c find zeropivot
-    !c
-    DO i=1,neqns
-       IF(zpiv(i)/=0) THEN
-          IF(btree(1,invp(i))==0) THEN
-             izz=i
-             GOTO 210
-          ENDIF
-       ENDIF
-    ENDDO
-    izz=0
-210 CONTINUE
-    IF(idbg1/=0) WRITE(6,6010)
-    IF(idbg1/=0) WRITE(6,6000) (i,btree(1,i),btree(2,i),i=1,neqns)
-    IF(idbg1/=0) WRITE(6,6020) izz
-    RETURN
-
-6000 FORMAT(i6,'(',2i6,')')
-6010 FORMAT(' binary tree')
-6020 FORMAT(' the first zero pivot is ',i4)
-  END SUBROUTINE genbtq
-
-  !======================================================================!
-  !> genpaq
-  !======================================================================!
-  SUBROUTINE genpaq(xadj,adjncy,invp,iperm,parent,neqns,ancstr)
-    INTEGER xadj(*),adjncy(*),parent(*),invp(*),iperm(*),ancstr(*)
-    COMMON /debug/ idbg1
-
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    DO i=1,neqns
-       parent(i)=0
-       ancstr(i)=0
-       ip=iperm(i)
-       DO k=xadj(ip),xadj(ip+1)-1
-          l=invp(adjncy(k))
-          IF(l>=i) GOTO 110
-          DO
-             !112       continue
-             IF(ancstr(l)==0) EXIT!GOTO 111
-             IF(ancstr(l)==i) GOTO 110
-             it=ancstr(l)
-             ancstr(l)=i
-             l=it
-             !goto 112
-          ENDDO
-          !111     CONTINUE
-          ancstr(l)=i
-          parent(l)=i
-110       CONTINUE
-       ENDDO
-    ENDDO
-    DO i=1,neqns
-       IF(parent(i)==0) parent(i)=neqns+1
-    ENDDO
-    parent(neqns+1)=0
-    IF(idbg1/=0) WRITE(6,6010)
-    IF(idbg1/=0) WRITE(6,6000) (i,parent(i),i=1,neqns)
-    RETURN
-
-6000 FORMAT(2i6)
-6010 FORMAT(' parent')
-  END SUBROUTINE genpaq
-
-  !======================================================================!
-  !> genqmd
-  !======================================================================!
-  SUBROUTINE genqmd(neqns,xadj,adj0,perm,invp,deg,marker,rchset,nbrhd,qsize,qlink,nofsub,adjncy)
-    INTEGER adjncy(*),perm(*),invp(*),deg(*),marker(*),rchset(*),nbrhd(*),qsize(*),qlink(*),adj0(*)
-    INTEGER xadj(*),inode,ip,irch,j,mindeg,ndeg,neqns,nhdsze,node,nofsub,np,num,nump1
-    INTEGER nxnode,rchsze,search,thresh
-
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    mindeg=neqns
-    nofsub=0
-    DO i=1,xadj(neqns+1)-1
-       adjncy(i)=adj0(i)
-    ENDDO
-    DO node=1,neqns
-       perm(node)=node
-       invp(node)=node
-       marker(node)=0
-       qsize(node)=1
-       qlink(node)=0
-       ndeg=xadj(node+1)-xadj(node)
-       deg(node)=ndeg
-       IF(ndeg<mindeg) mindeg=ndeg
-    ENDDO
-    !c
-    num=0
-    DO
-       search=1
-       thresh=mindeg
-       mindeg=neqns
-
-300    CONTINUE
-       nump1=num+1
-       IF(nump1>search) search=nump1
-       DO j=search,neqns
-          node=perm(j)
-          IF(marker(node)<0) CYCLE
-          ndeg=deg(node)
-          IF(ndeg<=thresh) GOTO 500
-          IF(ndeg<mindeg) mindeg=ndeg
-       ENDDO
-    ENDDO
-    !c
-500 CONTINUE
-    search=j
-    nofsub=nofsub+deg(node)
-    marker(node)=1
-    CALL qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-    nxnode=node
-
-
-    DO
-       num=num+1
-       np=invp(nxnode)
-       ip=perm(num)
-       perm(np)=ip
-       invp(ip)=np
-       perm(num)=nxnode
-       invp(nxnode)=num
-       deg(nxnode)=-1
-       nxnode=qlink(nxnode)
-       IF(nxnode<=0) EXIT
-    ENDDO
-
-    IF(rchsze<=0) GOTO 800
-    !c
-    CALL qmdupd(xadj,adjncy,rchsze,rchset,deg,qsize,qlink,marker,rchset(rchsze+1),nbrhd(nhdsze+1))
-    marker(node)=0
-    DO irch=1,rchsze
-       inode=rchset(irch)
-       IF(marker(inode)<0) CYCLE
-       marker(inode)=0
-       ndeg=deg(inode)
-       IF(ndeg<mindeg) mindeg=ndeg
-       IF(ndeg>thresh) CYCLE
-       mindeg=thresh
-       thresh=ndeg
-       search=invp(inode)
-    ENDDO
-    IF(nhdsze>0) CALL qmdot(node,xadj,adjncy,marker,rchsze,rchset,nbrhd)
-
-800 CONTINUE
-    IF(num<neqns) GOTO 300
-
-    RETURN
-  END SUBROUTINE genqmd
-
-  !======================================================================!
-  !> gnclno
-  !======================================================================!
-  SUBROUTINE gnclno(parent,pordr,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir)
-    INTEGER parent(*),pordr(*),xleaf(*),leaf(*),xlnzr(*),colno(*)
-    COMMON /debug/ idbg1
-
-    nc=0
-    ir=0
-    l=1
-    DO i=1,neqns
-       xlnzr(i)=l
-       ks=xleaf(i)
-       ke=xleaf(i+1)-1
-       IF(ke<ks) CYCLE
-       nxleaf=leaf(ks)
-       DO k=ks,ke-1
-          j=nxleaf
-          nxleaf=leaf(k+1)
-          DO
-             IF(j>=nxleaf) EXIT
-             IF(j>=nstop) THEN
-                GOTO 100
-             ENDIF
-             colno(l)=j
-             l=l+1
-             j=parent(j)
-          ENDDO
-       ENDDO
-       j=leaf(ke)
-
-       DO
-          !115  CONTINUE
-          IF(j>=nstop) GOTO 100
-          IF(j>=i.OR.j==0) GOTO 100
-          colno(l)=j
-          l=l+1
-          j=parent(j)
-          !GOTO 115
-       ENDDO
-100    CONTINUE
-    ENDDO
-
-    xlnzr(neqns+1)=l
-    lncol=l-1
-    IF(idbg1/=0) WRITE(6,6010)
-    IF(idbg1/=0) WRITE(6,6020) lncol
-    IF(idbg1/=0) THEN
-       DO k=1,neqns
-          WRITE(6,6100) k
-          WRITE(6,6000) (colno(i),i=xlnzr(k),xlnzr(k+1)-1)
-       ENDDO
-    ENDIF
-    RETURN
-
-6000 FORMAT(10i4)
-6010 FORMAT(' xlnzr')
-6020 FORMAT(' colno (lncol =',i10,')')
-6100 FORMAT(/' row = ',i6)
-  END SUBROUTINE gnclno
-
-  !======================================================================!
-  !> gnleaf
-  !======================================================================!
-  SUBROUTINE gnleaf(xadj,adjncy,invp,iperm,pordr,nch,adjncp,xleaf,leaf,neqns,lnleaf)
-    INTEGER xadj(*),adjncy(*),pordr(*),nch(*),adjncp(*),xleaf(*),leaf(*),invp(*),iperm(*)
-    COMMON /debug/ idbg1
-
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    l=1
-    ik=0
-    istart=0
-    DO i=1,neqns
-       xleaf(i)=l
-       ip=iperm(i)
-       DO k=xadj(ip),xadj(ip+1)-1
-          iq=invp(adjncy(k))
-          IF(iq<i) THEN
-             ik=ik+1
-             adjncp(ik)=iq
-          ENDIF
-       ENDDO
-       m=ik-istart
-
-       IF(m==0) CYCLE
-       CALL qqsort(adjncp(istart+1),m)
-       lc1=adjncp(istart+1)
-       IF(lc1>=i) CYCLE
-       leaf(l)=lc1
-       l=l+1
-       DO k=istart+2,ik
-          lc=adjncp(k)
-          IF(lc1<lc-nch(lc)) THEN
-             leaf(l)=lc
-             l=l+1
-          ENDIF
-
-          lc1=lc
-       ENDDO
-       ik=1
-       istart=ik
-
-    ENDDO
-    xleaf(neqns+1)=l
-    lnleaf=l-1
-    IF(idbg1/=0) WRITE(6,6020)
-    IF(idbg1/=0) WRITE(6,6000) (xleaf(i),i=1,neqns+1)
-    IF(idbg1/=0) WRITE(6,6010) lnleaf
-    IF(idbg1/=0) WRITE(6,6000) (leaf(i),i=1,lnleaf)
-    RETURN
-
-6000 FORMAT(10i6)
-6010 FORMAT(' leaf (len = ',i6,')')
-6020 FORMAT(' xleaf')
-  END SUBROUTINE gnleaf
-
-  !======================================================================!
-  !> idntty
-  !======================================================================!
-  SUBROUTINE idntty(neqns,invp,iperm)
-    INTEGER invp(*),iperm(*)
-    COMMON /debug/ idbg1
-
-    i=1
-    DO
-       IF(i>neqns) THEN
-          DO i=1,neqns
-             iperm(invp(i))=i
-          ENDDO
-          RETURN
-       ENDIF
-
-       WRITE(6,*) 'invp(',i,')'
-       READ(5,*) invp(i)
-
-       IF(invp(i)==0) THEN
-          DO i=1,neqns
-             invp(i)=i
-             iperm(i)=i
-          ENDDO
-          RETURN
-       ENDIF
-
-       IF(invp(i)<0) THEN
-          READ(11,*) (invp(i),i=1,neqns)
-          DO i=1,neqns
-             iperm(invp(i))=i
-          ENDDO
-          RETURN
-       ENDIF
-       i=i+1
-    ENDDO
-    RETURN
-  END SUBROUTINE idntty
-
-  !======================================================================!
-  !> inv2
-  !======================================================================!
-  SUBROUTINE inv2(dsln,ir)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    DIMENSION dsln(3)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ir=0
-    IF(dabs(dsln(1))<rmin) THEN
-       ir=10
-       RETURN
-    ENDIF
-    dsln(1)=1.0d0/dsln(1)
-    t=dsln(2)*dsln(1)
-    dsln(3)=dsln(3)-t*dsln(2)
-    dsln(2)=t
-    IF(dabs(dsln(3))<rmin) THEN
-       ir=10
-       RETURN
-    ENDIF
-    dsln(3)=1.0d0/dsln(3)
-    RETURN
-  END SUBROUTINE inv2
-
-  !======================================================================!
-  !> inv22
-  !======================================================================!
-  SUBROUTINE inv22(zln,zz,diag)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(4),zz(4),diag(3)
-
-    zln(3)=zz(3)-zz(1)*diag(2)
-    zln(1)=zz(1)*diag(1)
-    zln(3)=zln(3)*diag(3)
-    zln(1)=zln(1)-zln(3)*diag(2)
-
-    zln(4)=zz(4)-zz(2)*diag(2)
-    zln(2)=zz(2)*diag(1)
-    zln(4)=zln(4)*diag(3)
-    zln(2)=zln(2)-zln(4)*diag(2)
-
-    RETURN
-  END SUBROUTINE inv22
-
-  !======================================================================!
-  !> inv3
-  !======================================================================!
-  SUBROUTINE inv3(dsln,ir)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    DIMENSION dsln(6),t(2)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ir=0
-
-    IF(dabs(dsln(1))<rmin) GOTO 1000
-
-    dsln(1)=1.0d0/dsln(1)
-    t(1)=dsln(2)*dsln(1)
-    dsln(3)=dsln(3)-t(1)*dsln(2)
-    dsln(2)=t(1)
-
-    IF(dabs(dsln(3))<rmin) GOTO 1000
-
-    dsln(3)=1.0d0/dsln(3)
-    t(1)=dsln(4)*dsln(1)
-    dsln(5)=dsln(5)-dsln(2)*dsln(4)
-    t(2)=dsln(5)*dsln(3)
-    dsln(6)=dsln(6)-t(1)*dsln(4)-t(2)*dsln(5)
-    dsln(4)=t(1)
-    dsln(5)=t(2)
-
-    IF(dabs(dsln(6))<rmin) GOTO 1000
-
-    dsln(6)=1.0d0/dsln(6)
-    RETURN
-
-1000 CONTINUE
-    dsln(1)=1.0d0
-    dsln(2)=0.0d0
-    dsln(3)=1.0d0
-    dsln(4)=0.0d0
-    dsln(5)=0.0d0
-    dsln(6)=1.0d0
-    RETURN
-  END SUBROUTINE inv3
-
-  !======================================================================!
-  !> inv33
-  !======================================================================!
-  SUBROUTINE inv33(zln,zz,diag)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(9),zz(9),diag(6)
-
-    zln(4)=zz(4)-zz(1)*diag(2)
-    zln(7)=zz(7)-zz(1)*diag(4)-zln(4)*diag(5)
-    zln(1)=zz(1)*diag(1)
-    zln(4)=zln(4)*diag(3)
-    zln(7)=zln(7)*diag(6)
-    zln(4)=zln(4)-zln(7)*diag(5)
-    zln(1)=zln(1)-zln(4)*diag(2)-zln(7)*diag(4)
-
-    zln(5)=zz(5)-zz(2)*diag(2)
-    zln(8)=zz(8)-zz(2)*diag(4)-zln(5)*diag(5)
-    zln(2)=zz(2)*diag(1)
-    zln(5)=zln(5)*diag(3)
-    zln(8)=zln(8)*diag(6)
-    zln(5)=zln(5)-zln(8)*diag(5)
-    zln(2)=zln(2)-zln(5)*diag(2)-zln(8)*diag(4)
-
-    zln(6)=zz(6)-zz(3)*diag(2)
-    zln(9)=zz(9)-zz(3)*diag(4)-zln(6)*diag(5)
-    zln(3)=zz(3)*diag(1)
-    zln(6)=zln(6)*diag(3)
-    zln(9)=zln(9)*diag(6)
-    zln(6)=zln(6)-zln(9)*diag(5)
-    zln(3)=zln(3)-zln(6)*diag(2)-zln(9)*diag(4)
-    RETURN
-  END SUBROUTINE inv33
-
-  !======================================================================!
-  !> inv6
-  !======================================================================!
-  SUBROUTINE inv6(dsln,ir)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    DIMENSION dsln(21),t(5)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ir=0
-    dsln(1)=1.0d0/dsln(1)
-    t(1)=dsln(2)*dsln(1)
-    dsln(3)=1.0d0/(dsln(3)-t(1)*dsln(2))
-    dsln(2)=t(1)
-    dsln(5)=dsln(5)-dsln(4)*dsln(2)
-    t(1)=dsln(4)*dsln(1)
-    t(2)=dsln(5)*dsln(3)
-    dsln(6)=1.0d0/(dsln(6)-t(1)*dsln(4)-t(2)*dsln(5))
-    dsln(4)=t(1)
-    dsln(5)=t(2)
-    dsln(8)=dsln(8)-dsln(7)*dsln(2)
-    dsln(9)=dsln(9)-dsln(7)*dsln(4)-dsln(8)*dsln(5)
-    t(1)=dsln(7)*dsln(1)
-    t(2)=dsln(8)*dsln(3)
-    t(3)=dsln(9)*dsln(6)
-    dsln(10)=1.0d0  /(dsln(10)-t(1)*dsln(7)-t(2)*dsln(8)-t(3)*dsln(9))
-    dsln(7)=t(1)
-    dsln(8)=t(2)
-    dsln(9)=t(3)
-    dsln(12)=dsln(12)-dsln(11)*dsln(2)
-    dsln(13)=dsln(13)-dsln(11)*dsln(4)-dsln(12)*dsln(5)
-    dsln(14)=dsln(14)-dsln(11)*dsln(7)-dsln(12)*dsln(8)-dsln(13)*dsln(9)
-    t(1)=dsln(11)*dsln(1)
-    t(2)=dsln(12)*dsln(3)
-    t(3)=dsln(13)*dsln(6)
-    t(4)=dsln(14)*dsln(10)
-    dsln(15)=1.0d0/(dsln(15)-t(1)*dsln(11)-t(2)*dsln(12)-t(3)*dsln(13)-t(4)*dsln(14))
-    dsln(11)=t(1)
-    dsln(12)=t(2)
-    dsln(13)=t(3)
-    dsln(14)=t(4)
-    dsln(17)=dsln(17)-dsln(16)*dsln(2)
-    dsln(18)=dsln(18)-dsln(16)*dsln(4)-dsln(17)*dsln(5)
-    dsln(19)=dsln(19)-dsln(16)*dsln(7)-dsln(17)*dsln(8)-dsln(18)*dsln(9)
-    dsln(20)=dsln(20)-dsln(16)*dsln(11)-dsln(17)*dsln(12)-dsln(18)*dsln(13)-dsln(19)*dsln(14)
-    t(1)=dsln(16)*dsln(1)
-    t(2)=dsln(17)*dsln(3)
-    t(3)=dsln(18)*dsln(6)
-    t(4)=dsln(19)*dsln(10)
-    t(5)=dsln(20)*dsln(15)
-    dsln(21)=1.0d0/(dsln(21)-t(1)*dsln(16)-t(2)*dsln(17)-t(3)*dsln(18)-t(4)*dsln(19)-t(5)*dsln(20))
-    dsln(16)=t(1)
-    dsln(17)=t(2)
-    dsln(18)=t(3)
-    dsln(19)=t(4)
-    dsln(20)=t(5)
-    RETURN
-  END SUBROUTINE inv6
-
-  !======================================================================!
-  !> inv66
-  !======================================================================!
-  SUBROUTINE inv66(zln,zz,diag)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(36),zz(36),diag(21)
-
-    DO i=0,5
-       zln(i+7)=zz(i+7)-zz(i+1)*diag(2)
-       zln(i+13)=zz(i+13)-zz(i+1)*diag(4)-zln(i+7)*diag(5)
-       zln(i+19)=zz(i+19)-zz(i+1)*diag(7)-zln(i+7)*diag(8)-zln(i+13)*diag(9)
-       zln(i+25)=zz(i+25)-zz(i+1)*diag(11)-zln(i+7)*diag(12)-zln(i+13)*diag(13)-zln(i+19)*diag(14)
-       zln(i+31)=zz(i+31)-zz(i+1)*diag(16)-zln(i+7)*diag(17)-zln(i+13)*diag(18)-zln(i+19)*diag(19)-zln(i+25)*diag(20)
-       zln(i+1)=zz(i+1)*diag(1)
-       zln(i+7)=zln(i+7)*diag(3)
-       zln(i+13)=zln(i+13)*diag(6)
-       zln(i+19)=zln(i+19)*diag(10)
-       zln(i+25)=zln(i+25)*diag(15)
-       zln(i+31)=zln(i+31)*diag(21)
-       zln(i+25)=zln(i+25)-zln(i+31)*diag(20)
-       zln(i+19)=zln(i+19)-zln(i+31)*diag(19)-zln(i+25)*diag(14)
-       zln(i+13)=zln(i+13)-zln(i+31)*diag(18)-zln(i+25)*diag(13)-zln(i+19)*diag(9)
-       zln(i+7)=zln(i+7)-zln(i+31)*diag(17)-zln(i+25)*diag(12)-zln(i+19)*diag(8)-zln(i+13)*diag(5)
-       zln(i+1)=zln(i+1)-zln(i+31)*diag(16)-zln(i+25)*diag(11)-zln(i+19)*diag(7)-zln(i+13)*diag(4)-zln(i+7)*diag(2)
-    ENDDO
-    RETURN
-  END SUBROUTINE inv66
-
-  !======================================================================!
-  !> invx
-  !======================================================================!
-  SUBROUTINE invx(dsln,ndeg,ir)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    DIMENSION dsln(*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ir=0
-    l=1
-    dsln(1)=1.0d0/dsln(1)
-    DO i=2,ndeg
-       ld=0
-       l0=l
-       DO j=1,i-1
-          l=l+1
-          DO k=1,j-1
-             ld=ld+1
-             dsln(l)=dsln(l)-dsln(l0+k)*dsln(ld)
-          ENDDO
-          ld=ld+1
-       ENDDO
-       t=0.0d0
-       k0=0
-       ll=0
-       DO k=l-i+2,l
-          ll=ll+1
-          k0=k0+ll
-          tem=dsln(k)*dsln(k0)
-          t=t+tem*dsln(k)
-          dsln(k)=tem
-       ENDDO
-       l=l+1
-       dsln(l)=dsln(l)-t
-       dsln(l)=1.0d0/dsln(l)
-    ENDDO
-    RETURN
-  END SUBROUTINE invx
-
-  !======================================================================!
-  !> invxx
-  !======================================================================!
-  SUBROUTINE invxx(zln,zz,diag,ndeg)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(ndeg,ndeg),zz(ndeg,ndeg),diag(*)
-
-    zln=zz
-    DO l=1,ndeg,2
-       joc=0
-       DO m=1,ndeg-1
-          joc=joc+m
-          loc1=joc+m
-          DO n=m+1,ndeg
-             zln(l,n)=zln(l,n)-zln(l,m)*diag(loc1)
-             zln(l+1,n)=zln(l+1,n)-zln(l+1,m)*diag(loc1)
-             loc1=loc1+n
-          ENDDO
-       ENDDO
-       joc=0
-       DO m=1,ndeg
-          joc=joc+m
-          zln(l,m)=zln(l,m)*diag(joc)
-          zln(l+1,m)=zln(l+1,m)*diag(joc)
-       ENDDO
-       DO n=ndeg,2,-1
-          joc=joc-1
-          DO m=n-1,1,-1
-             zln(l,m)=zln(l,m)-zln(l,n)*diag(joc)
-             zln(l+1,m)=zln(l+1,m)-zln(l+1,n)*diag(joc)
-             joc=joc-1
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE invxx
-
-  !======================================================================!
-  !> matini
-  !======================================================================!
-  SUBROUTINE matini(ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    COMMON /debug/ idbg
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     matini initializes storage for sparse matrix solver.
-    !c     this routine is used for both symmetric and asymmetric matrices
-    !c     and must be called once at the beginning
-    !c
-    !c    (i)
-    !c        neqns     number of unknowns
-    !c        nttbr     number of non0s, pattern of non-zero elements are
-    !c                  given like following.
-    !c                  nonz(A)={(i,j);i=irow(l),j=jcol(l); 1<= l <= nttbr}
-    !c        irow
-    !c        jcol      to define non-zero pattern
-    !c        lenv      length of the array v (iv)
-    !c
-    !c    (o)
-    !c        iv        comunication array. v is the original name
-    !c        ir        return code
-    !c                              =0    normal
-    !c                              =-1   non positive index
-    !c                              =1    too big index
-    !c                              =10   insufficient storage
-    !c
-    !c        contents of iv
-    !c               pointers 1 &zpiv(1)  2 &iperm(1)  3 &invp(1)
-    !c                        4 &parent(1)5 &nch(1)    6 &xlnzr(1)
-    !c                        7 &colno(1) 8 &diag(1)   9 &zln(1)
-    !c                       10 &dsln(1)
-    !c
-    !c               scalars 21 len(colno)  22 nstop     23 stage
-    !c                       24 neqns       25 len(iv) 26 len(dsln)
-    !c                       27 total
-    !c
-    !c        stage   10  after initialization
-    !c                20  building up matrix
-    !c                30  after LU decomposition
-    !c                40  after solving
-    !c
-    !c         #coded by t.arakawa of RIST on 040329
-    !c
-    !c----------------------------------------------------------------------
-    !c     rmax=8.988d+307
-    !c     rmin=4.941d-324
-    !c     epsm=2.220d-16
-    !c     lratio=2
-    idbg=0
-    !c
-    ir=0
+    if ( ir/=0 ) then
+      !WINDEBUG
+      write (Ifmsg,*) 'error in nusol0. irr = ', ir
+      stop
+    endif
+    call HECMW_MAT_DUMP_SOLUTION(hecMAT)
+  end subroutine HECMW_SOLVE_DIRECT
+
+  !======================================================================!
+  !> @brief PTIME
+  !======================================================================!
+  subroutine PTIME(Cputim)
+    use HECMW_UTIL
+    implicit none
+    !------
+    real(kind=8), intent(out):: Cputim
+    !------
+    ! cpu time by hour
+    Cputim = HECMW_WTIME()
+  end subroutine PTIME
+
+  !======================================================================!
+  !> @brief SETIJ
+  !======================================================================!
+  subroutine SETIJ(hecMESH,hecMAT)
+    use HECMW_UTIL
+    implicit none
+    !------
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    type (HECMWST_MATRIX), intent(in)::hecMAT
+    !------
+    integer:: i
+    integer:: ierr
+    integer:: j
+    integer:: k
+    integer:: kk
+    integer:: ntotal
+    integer(kind=kint):: numnp
+    integer(kind=kint):: ndof
+    integer(kind=kint):: ndof2
+
+    numnp = hecMAT%NP
+    ndof = hecMESH%N_DOF
+    ntotal = numnp*ndof
+
+    !*NUFACT variables
+    NEQns = numnp
+    NDEg = ndof
+    NTTbr = hecMAT%NP + hecMAT%NPL
+    !+hecMAT%NPU if unsymmetric
+    ISYm = 0
+
+    !*Allocations
+    allocate (IROw(NTTbr),STAT=ierr)
+    allocate (JCOl(NTTbr),STAT=ierr)
+    if ( ierr/=0 ) stop "Allocation error: irow/jcol"
+
+    kk = 0
+    ndof2 = ndof*ndof
+    do j = 1, numnp
+      !*Diagonal
+      kk = kk + 1
+      IROw(kk) = j
+      JCOl(kk) = j
+      !*Lower
+      do k = hecMAT%INDEXL(j-1) + 1, hecMAT%INDEXL(j)
+        i = hecMAT%ITEML(k)
+        kk = kk + 1
+        IROw(kk) = j
+        JCOl(kk) = i
+      enddo
+    enddo
+  end subroutine SETIJ
+
+  !======================================================================!
+  !> @brief MATINI initializes storage for sparse matrix solver.
+  !     this routine is used for both symmetric and asymmetric matrices
+  !     and must be called once at the beginning
+  !    (i)
+  !        neqns     number of unknowns
+  !        nttbr     number of non0s, pattern of non-zero elements are
+  !                  given like following.
+  !                  nonz(A)={(i,j);i=irow(l),j=jcol(l); 1<= l <= nttbr}
+  !        irow
+  !        jcol      to define non-zero pattern
+  !        lenv      length of the array v (iv)
+  !    (o)
+  !        iv        comunication array. v is the original name
+  !        ir        return code
+  !                              =0    normal
+  !                              =-1   non positive index
+  !                              =1    too big index
+  !                              =10   insufficient storage
+  !        contents of iv
+  !               pointers 1 &zpiv(1)  2 &iperm(1)  3 &invp(1)
+  !                        4 &parent(1)5 &nch(1)    6 &xlnzr(1)
+  !                        7 &colno(1) 8 &diag(1)   9 &zln(1)
+  !                       10 &dsln(1)
+  !
+  !               scalars 21 len(colno)  22 nstop     23 stage
+  !                       24 neqns       25 len(iv) 26 len(dsln)
+  !                       27 total
+  !        stage   10  after initialization
+  !                20  building up matrix
+  !                30  after LU decomposition
+  !                40  after solving
+  !======================================================================!
+  subroutine MATINI(Ir)
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    !------
+    integer:: ir1
+    integer:: iv1
+    integer:: izz
+    integer:: izz0
+    integer:: ladp
+    integer:: last
+    integer:: lbtree
+    integer:: lcolno
+    integer:: lcpt
+    integer:: left
+    integer:: lenv
+    integer:: lenv2
+    integer:: lia
+    integer:: lja
+    integer:: lleaf
+    integer:: lncol
+    integer:: lnleaf
+    integer:: lpordr
+    integer:: lwk1
+    integer:: lwk2
+    integer:: lwk3
+    integer:: lwk4
+    integer:: lwk5
+    integer:: lwk6
+    integer:: lwk7
+    integer:: lwk8
+    integer:: lxleaf
+    integer:: maxl
+    integer:: neqns1
+    integer:: neqnsz
+
+    IDBg = 0
+    izz0 = 0
+
+    Ir = 0
     lenv = 1000000000
-    lenv2=lratio*lenv
-    neqns1=neqns+2
-    len_dsln = lenv2
-
-    !c
-    !rmiv
-    !      iv(1)=51
-    !      iv(24)=neqns
-    !      iv(25)=lenv2
-
-    len_iv = lenv2
-
+    lenv2 = LRAtio*lenv
+    neqns1 = NEQns + 2
+    LEN_dsln = lenv2
+    LEN_iv = lenv2
     iv1 = 51
 
     !*Initialize allocation measure variables
-    ialoc = 0
-    raloc = 0
-    !c
-    !c  set z pivot
-    !c
-    ALLOCATE(zpiv(neqns),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, zpiv: SUB. matini"
-    CALL zpivot(neqns,neqnsz,nttbr,jcol,irow,zpiv,ir1)
-    IF(ir1/=0) THEN
-       ir=ir1
-       RETURN
-    ENDIF
-    !c
-    !c  build jcpt,jcolno
-    !c
+    IALoc = 0
+    RALoc = 0
+    !
+    !  set z pivot
+    !
+    allocate (ZPIv(NEQns),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, zpiv: SUB. matini"
+    call ZPIVOT(NEQns,neqnsz,NTTbr,JCOl,IROw,ZPIv,ir1)
+    if ( ir1/=0 ) then
+      Ir = ir1
+      return
+    endif
+
+    !
+    !  build jcpt,jcolno
+    !
     !rmiv
-    lcpt=iv1+neqns1
-    lcolno=lcpt+2*nttbr
-    left=lcolno+2*nttbr
-    last=lenv2
-
+    lcpt = iv1 + neqns1
+    lcolno = lcpt + 2*NTTbr
+    left = lcolno + 2*NTTbr
+    last = lenv2
     !rmem
-    ALLOCATE(jcpt(2*nttbr),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, jcpt: SUB. matini"
-    ALLOCATE(jcolno(2*nttbr),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, jcolno: SUB. matini"
-    !ialoc = ialoc + 4*nttbr
-    CALL stsmat(neqns,nttbr,irow,jcol,jcpt,jcolno)
-
-    !c
-    !c  build ia,ja
-    !c
-    lia=last-neqns1
-    lja=lia-nttbr*2
-    last=lja
+    allocate (JCPt(2*NTTbr),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, jcpt: SUB. matini"
+    allocate (JCOlno(2*NTTbr),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, jcolno: SUB. matini"
+    call STSMAT(NEQns,NTTbr,IROw,JCOl,JCPt,JCOlno)
+    !
+    !  build ia,ja
+    !
+    lia = last - neqns1
+    lja = lia - NTTbr*2
+    last = lja
     !rmem
-    ALLOCATE(ia(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, ia: SUB. matini"
-    !ialoc = ialoc + neqns+1
+    allocate (IA(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, ia: SUB. matini"
     !WINDEBUG
-    ALLOCATE(ja(2*nttbr),STAT=ierror)
-    !ALLOCATE(ja(ndeg*ndeg*nttbr),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, ja: SUB. matini"
-    !ialoc = ialoc + 2*nttbr
-    CALL stiaja(neqns,ia,ja,jcpt,jcolno)
+    allocate (JA(2*NTTbr),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, ja: SUB. matini"
+    call STIAJA(NEQns,IA,JA,JCPt,JCOlno)
 
     !*Deallocation of work array
-    DEALLOCATE(jcpt)
-    DEALLOCATE(jcolno)
-    !c
-    !c  get permutation vector iperm,invp
-    !c
-    lwk1=lja-neqns1
-    lwk2=lwk1-neqns1
-    lwk3=lwk2-neqns1
-    lwk4=lwk3-neqns1
-    lwk5=lwk4-neqns1
-    lwk6=lwk5-neqns1
-    lwk7=lwk6-neqns1
-    lwk8=lwk7-2*nttbr
-    last=lwk8
+    deallocate (JCPt)
+    deallocate (JCOlno)
+    !
+    !  get permutation vector iperm,invp
+    !
+    lwk1 = lja - neqns1
+    lwk2 = lwk1 - neqns1
+    lwk3 = lwk2 - neqns1
+    lwk4 = lwk3 - neqns1
+    lwk5 = lwk4 - neqns1
+    lwk6 = lwk5 - neqns1
+    lwk7 = lwk6 - neqns1
+    lwk8 = lwk7 - 2*NTTbr
+    last = lwk8
 
-    left = iv1+5*neqns1
+    left = iv1 + 5*neqns1
 
-    ALLOCATE(iperm(neqns),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, iperm: SUB. matini"
-    ALLOCATE(invp(neqns),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, invp: SUB. matini"
-    ALLOCATE(deg(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, deg: SUB. matini"
-    ALLOCATE(marker(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, marker: SUB. matini"
-    !WINDEBUG
-    !      ALLOCATE(rchset(neqns+1),STAT=ierror)
-    ALLOCATE(rchset(0:neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, rchset: SUB. matini"
-    ALLOCATE(nbrhd(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, nbrhd: SUB. matini"
-    ALLOCATE(qsize(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, qsize: SUB. matini"
-    ALLOCATE(qlink(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, qlink: SUB. matini"
-    !WINDEBUG
-    ALLOCATE(adjncy(2*nttbr),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, adjncy: SUB. matini"
+    allocate (IPErm(NEQns),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, iperm: SUB. matini"
+    allocate (INVp(NEQns),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, invp: SUB. matini"
+    allocate (DEG(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, deg: SUB. matini"
+    allocate (MARker(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, marker: SUB. matini"
+    allocate (RCHset(0:NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, rchset: SUB. matini"
+    allocate (NBRhd(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, nbrhd: SUB. matini"
+    allocate (QSIze(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, qsize: SUB. matini"
+    allocate (QLInk(NEQns+1),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, qlink: SUB. matini"
+    allocate (ADJncy(2*NTTbr),STAT=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. matini"
+    call GENQMD(neqnsz,IA,JA,IPErm,INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
+    do
+      !   build up the parent vector parent vector will be saved in
+      !   work2 for a while
+      call GENPAQ(IA,JA,INVp,IPErm,MARker,NEQns,RCHset)
+      !
+      !   build up the binary tree
+      !
+      lbtree = lwk3 - 2*NEQns
+      last = lbtree
+      !rmem
+      allocate (BTRee(2*(NEQns+1)),STAT=IERror)
+      if ( IERror/=0 ) stop "ALLOCATION ERROR, btree: SUB. matini"
+      call GENBTQ(INVp,MARker,BTRee,ZPIv,izz,NEQns)
+      !
+      !   rotate the binary tree to avoid a zero pivot
+      !
+      if ( izz==0 ) then
+        !
+        !   post ordering
+        !
+        lpordr = last - neqns1
+        last = lpordr
+        !rmem
+        allocate (PARent(NEQns),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
+        allocate (NCH(NEQns+1),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
+        allocate (PORdr(NEQns+1),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. matini.f"
+        call POSORD(PARent,BTRee,INVp,IPErm,PORdr,NCH,NEQns,DEG,MARker,RCHset)
+        !
+        !   generate skelton graph
+        !
+        lleaf = last - NTTbr
+        lxleaf = lleaf - neqns1
+        ladp = lxleaf - neqns1
+        last = ladp
+        !rmem
+        allocate (ADJncp(NEQns+1),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. matini.f"
+        allocate (XLEaf(NEQns+1),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, xleaf: SUB. matini.f"
+        allocate (LEAf(NTTbr),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, leaf: SUB. matini.f"
+        call GNLEAF(IA,JA,INVp,IPErm,NCH,ADJncp,XLEaf,LEAf,NEQns,lnleaf)
+        call FORPAR(NEQns,PARent,NCH,NSTop)
+        !*Deallocation of work arrays
+        deallocate (IA)
+        deallocate (JA)
+        deallocate (DEG)
+        deallocate (MARker)
+        deallocate (RCHset)
+        deallocate (NBRhd)
+        deallocate (QSIze)
+        deallocate (QLInk)
+        deallocate (ADJncy)
+        deallocate (ZPIv)
+        !*Nullify pointers
+        nullify (IA)
+        nullify (JA)
+        nullify (DEG)
+        nullify (MARker)
+        nullify (RCHset)
+        nullify (NBRhd)
+        nullify (QSIze)
+        nullify (QLInk)
+        nullify (ADJncy)
+        nullify (ZPIv)
+        !
+        !   build up xlnzr,colno  (this is the symbolic fct.)
+        !
+        maxl = lxleaf - (left+neqns1)
+        allocate (XLNzr(NEQns+1),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, xlnzr: SUB. matini.f"
+        call PRE_GNCLNO(PARent,XLEaf,LEAf,XLNzr,NEQns,NSTop,lncol,ir1)
+        allocate (COLno(lncol),STAT=IERror)
+        if ( IERror/=0 ) stop "ALLOCATION ERROR, colno: SUB. matini.f"
+        call GNCLNO(PARent,XLEaf,LEAf,XLNzr,COLno,NEQns,NSTop,lncol,ir1)
+        !*Deallocate work arrays
+        deallocate (PORdr)
+        deallocate (ADJncp)
+        deallocate (XLEaf)
+        deallocate (LEAf)
+        deallocate (BTRee)
+        !*Nullify pointers
+        nullify (PORdr)
+        nullify (ADJncp)
+        nullify (XLEaf)
+        nullify (LEAf)
+        nullify (BTRee)
+        !rmem
+        left = (left+neqns1) + lncol
+        !rmiv
+        LEN_dsln = (NEQns-NSTop+1)*(NEQns-NSTop)/2
 
-    CALL genqmd(neqnsz,ia,ja,iperm,invp,deg,marker,rchset,nbrhd,qsize,qlink,nofsub,adjncy)
-    !rmiv
-    !c
-    !c   build up the parent vector parent vector will be saved in
-    !c   work2 for a while
-    !c
-    DO
-       CALL genpaq(ia,ja,invp,iperm,marker, neqns,rchset)
-       !c
-       !c   build up the binary tree
-       !c
-       lbtree=lwk3-2*neqns
-       last=lbtree
-       !rmem
-       !WINDEBUG
-       ALLOCATE(btree(2*(neqns+1)),STAT=ierror)
-       IF(ierror/=0) STOP "ALLOCATION ERROR, btree: SUB. matini"
+        !Scalar assignments
+        LEN_colno = lncol
+        !
+        !   area for REAL(kind=8) values
+        !
+        if ( mod(left,2)==0 ) left = left + 1
 
-       CALL genbtq(ia,ja,invp,marker, btree,zpiv,izz,neqns)
-       !c
-       !c   rotate the binary tree to avoid a zero pivot
-       !c
-       IF(izz==0) EXIT
-       IF(izz0==0) izz0=izz
-       IF(izz0/=izz) THEN
-          CALL bringu(zpiv,iperm,invp,marker,izz,neqns,irr)
-          CYCLE
-       ENDIF
-       lwk4=last-neqns1
-       lwk5=lwk4-neqns1
-       last=lwk5
-       CALL rotate(ia,ja,invp,iperm,marker,btree,izz,neqns,nbrhd,qsize,irr)
-    ENDDO
-
-    !c
-    !c   post ordering
-    !c
-    lpordr=last-neqns1
-    last=lpordr
-    !rmem
-    ALLOCATE(parent(neqns),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, parent: SUB. matini.f"
-    ALLOCATE(nch(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, nch: SUB. matini.f"
-    ALLOCATE(pordr(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, pordr: SUB. matini.f"
-    CALL posord(parent,btree,invp,iperm,pordr,nch,neqns,deg,marker,rchset)
-    !c
-    !c   generate skelton graph
-    !c
-    lleaf=last-nttbr
-    lxleaf=lleaf-neqns1
-    ladp=lxleaf-neqns1
-    last=ladp
-    !rmem
-    ALLOCATE(adjncp(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, adjncp: SUB. matini.f"
-    ALLOCATE(xleaf(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, xleaf: SUB. matini.f"
-    ALLOCATE(leaf(nttbr),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, leaf: SUB. matini.f"
-    CALL gnleaf(ia,ja,invp,iperm,pordr,&
-         nch,adjncp,xleaf,leaf,neqns,lnleaf)
-    CALL forpar(neqns,parent,nch,nstop)
-
-    !*Deallocation of work arrays
-    DEALLOCATE(ia)
-    DEALLOCATE(ja)
-    DEALLOCATE(deg)
-    DEALLOCATE(marker)
-    DEALLOCATE(rchset)
-    DEALLOCATE(nbrhd)
-    DEALLOCATE(qsize)
-    DEALLOCATE(qlink)
-    DEALLOCATE(adjncy)
-    DEALLOCATE(zpiv)
-    !*Nullify pointers
-    NULLIFY(ia)
-    NULLIFY(ja)
-    NULLIFY(deg)
-    NULLIFY(marker)
-    NULLIFY(rchset)
-    NULLIFY(nbrhd)
-    NULLIFY(qsize)
-    NULLIFY(qlink)
-    NULLIFY(adjncy)
-    NULLIFY(zpiv)
-
-    !c
-    !c   build up xlnzr,colno  (this is the symbolic fct.)
-    !c
-
-    !rmiv
-    maxl=lxleaf-(left+neqns1)
-    ALLOCATE(xlnzr(neqns+1),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, xlnzr: SUB. matini.f"
-    CALL pre_gnclno(parent,pordr,xleaf,leaf,xlnzr,neqns,nstop,lncol,ir1)
-    ALLOCATE(colno(lncol),STAT=ierror)
-    IF(ierror/=0) STOP "ALLOCATION ERROR, colno: SUB. matini.f"
-    CALL gnclno(parent,pordr,xleaf,leaf,xlnzr,colno,neqns,nstop,lncol,ir1)
-
-    !*Deallocate work arrays
-    DEALLOCATE(pordr)
-    DEALLOCATE(adjncp)
-    DEALLOCATE(xleaf)
-    DEALLOCATE(leaf)
-    DEALLOCATE(btree)
-    !*Nullify pointers
-    NULLIFY(pordr)
-    NULLIFY(adjncp)
-    NULLIFY(xleaf)
-    NULLIFY(leaf)
-    NULLIFY(btree)
-    !rmem
-    !rmiv
-    left=(left+neqns1)+lncol
-    !rmiv
-    len_dsln =(neqns-nstop+1)*(neqns-nstop)/2
-
-    !Scalar assignments
-    len_colno = lncol
-    !c
-    !c   area for double precision values
-    !c
-    IF(MOD(left,2)==0) left=left+1
-
-    !rmiv
-    total = left
-
-    !rmiv
-    stage = 10
-    ialoc = 5*neqns+lncol+1
-
-    RETURN
-  END SUBROUTINE matini
+        !rmiv
+        TOTal = left
+        !rmiv
+        STAge = 10
+        IALoc = 5*NEQns + lncol + 1
+        exit
+      else
+        if ( izz0==0 ) izz0 = izz
+        if ( izz0/=izz ) then
+          call BRINGU(ZPIv,IPErm,INVp,MARker,izz,NEQns,IRR)
+        else
+          lwk4 = last - neqns1
+          lwk5 = lwk4 - neqns1
+          last = lwk5
+          call ROTATE(IA,JA,INVp,IPErm,MARker,BTRee,izz,NEQns,NBRhd,QSIze,IRR)
+        endif
+      endif
+    enddo
+  end subroutine MATINI
 
   !======================================================================!
-  !> nufct
+  !> @brief NUFORM
   !======================================================================!
-  SUBROUTINE nufct(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),indx(*),parent(*),nch(*)
-    DOUBLE PRECISION zln(*),diag(*),temp(*),dsln(*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-    COMMON isem
+  subroutine NUFORM(hecMESH,hecMAT,Ir)
+    use HECMW_UTIL
+    implicit none
+    !------
+    type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
+    type (HECMWST_MATRIX), intent(in)::hecMAT
+    integer(kind=kint), intent(out):: Ir
+    !------
+    integer:: i
+    integer:: idbg
+    integer:: ierr
+    integer:: j
+    integer:: k
+    integer:: kk
+    integer:: ntotal
+    integer(kind=kint):: numnp
+    integer(kind=kint):: ndof
+    integer(kind=kint):: ndof2
 
-    !c----------------------------------------------------------------------
-    !c
-    !c     nufct performs cholesky factorization in row order
-    !c
-    !c     (i) xlnzr,colno,zln,diag
-    !c         symbolicaly factorized
-    !c
-    !c     (o) zln,diag,dsln
-    !c
-    !c         #coded by t.arakawa of RIST on 040329
-    !c
-    !c----------------------------------------------------------------------
-    isem=1
-    !c
-    !c phase I
-    !c
-    CALL ptime(t1)
-    diag(1)=1.0d0/diag(1)
-    l=parent(1)
-    nch(l)=nch(l)-1
-    nch(1)=-1
-    DO ic=2,nstop-1
-       CALL SUM(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase II
-    !c
-    CALL ptime(t2)
-    DO ic=nstop,neqns
-       CALL sum1(ic,xlnzr,colno,zln,diag,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase III
-    !c
-    CALL ptime(t3)
-    CALL sum2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    !c
-    !c phase IV
-    !c
-    CALL ptime(t4)
-    CALL sum3(neqns-nstop+1,dsln,diag(nstop),indx,temp)
-    CALL ptime(t5)
-    tt=t5-t1
-    t1=t2-t1
-    t2=t3-t2
-    t3=t4-t3
-    t4=t5-t4
-    RETURN
-    ir=30
-    RETURN
-  END SUBROUTINE nufct
-
-  !======================================================================!
-  !> nufct0
-  !======================================================================!
-  SUBROUTINE nufct0(ir)
-    USE hecmw_util
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-    COMMON /qaz/iseed,ixxx
-    !dimension iv(*)
-    ! caution) under def. may cause stack overflow.
-    !dimension temp(ndeg,ndeg,neqns),indx(neqns)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     this performs Cholesky factorization
-    !c
-    !c          if(iv(22)==0)    normal type
-    !c          if(iv(22)>0)    code generation type
-    !c
-    !c----------------------------------------------------------------------
-    IF(stage/=20) THEN
-       PRINT *,'*********Setting Stage 40!*********'
-       ir=40
-       RETURN
-    ELSE
-       ir=0
-    ENDIF
-
-    ALLOCATE(temp(ndeg*ndeg*neqns), stat=irr)
-    IF(irr /= 0) THEN
-       WRITE(*,*) '##Error : Not enough memory'
-       CALL hecmw_abort( hecmw_comm_get_comm())
-       !stop
-    ENDIF
-    ALLOCATE(indx(neqns), stat=irr)
-    IF(irr /= 0) THEN
-       WRITE(*,*) '##Error : Not enough memory'
-       CALL hecmw_abort( hecmw_comm_get_comm())
-       !stop
-    ENDIF
-    !rmiv
-    ndegl=ndeg*(ndeg+1)
-    ndegl=ndegl/2
-    ndeg2=ndeg*ndeg
-    !rmiv
-    IF(ndeg==1) THEN
-       CALL nufct(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    ELSEIF(ndeg==2) THEN
-       CALL nufct2(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    ELSEIF(ndeg==3) THEN
-       CALL nufct3(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    ELSEIF(ndeg==6) THEN
-       CALL nufct6(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    ELSE
-       CALL nufctx(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ndeg,ndegl,ir)
-    ENDIF
-    stage=30
-    DEALLOCATE( temp )
-    DEALLOCATE( indx )
-    RETURN
-  END SUBROUTINE nufct0
-
-  !======================================================================!
-  !> nufct2
-  !======================================================================!
-  SUBROUTINE nufct2(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),indx(*),parent(*),nch(*)
-    DOUBLE PRECISION zln(4,*),diag(3,*),temp(4,*),dsln(4,*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     nufct performs cholesky factorization in row order
-    !c
-    !c     (i) xlnzr,colno,zln,diag
-    !c         symbolicaly factorized
-    !c
-    !c     (o) zln,diag,dsln
-    !c
-    !c         #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    !c
-    !c phase I
-    !c
-    ir=0
-    CALL ptime(t1)
-    IF(nstop>1) CALL inv2(diag(1,1),ir)
-    l=parent(1)
-    nch(l)=nch(l)-1
-    nch(1)=-1
-    DO ic=2,nstop-1
-       CALL s2um(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase II
-    !c
-    CALL ptime(t2)
-    DO ic=nstop,neqns
-       CALL s2um1(ic,xlnzr,colno,zln,diag,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase III
-    !c
-    CALL ptime(t3)
-    CALL s2um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    !c
-    !c phase IV
-    !c
-    CALL ptime(t4)
-    CALL s2um3(neqns-nstop+1,dsln,diag(1,nstop),indx,temp)
-    CALL ptime(t5)
-    tt=t5-t1
-    t1=t2-t1
-    t2=t3-t2
-    t3=t4-t3
-    t4=t5-t4
-    RETURN
-  END SUBROUTINE nufct2
-
-  !======================================================================!
-  !> nufct3
-  !======================================================================!
-  SUBROUTINE nufct3(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),indx(*),parent(*),nch(*)
-    DOUBLE PRECISION zln(9,*),diag(6,*),temp(*),dsln(9,*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     nufct performs cholesky factorization in row order
-    !c
-    !c     (i) xlnzr,colno,zln,diag
-    !c         symbolicaly factorized
-    !c
-    !c     (o) zln,diag,dsln
-    !c
-    !c         #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    !c
-    !c phase I
-    !c
-    CALL ptime(t1)
-    IF(nstop>1) CALL inv3(diag(1,1),ir)
-    l=parent(1)
-    nch(l)=nch(l)-1
-    nch(1)=-1
-    DO ic=2,nstop-1
-       CALL s3um(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase II
-    !c
-    CALL ptime(t2)
-    DO ic=nstop,neqns
-       CALL s3um1(ic,xlnzr,colno,zln,diag,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase III
-    !c
-    CALL ptime(t3)
-    CALL s3um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    !c
-    !c phase IV
-    !c
-    CALL ptime(t4)
-    CALL s3um3(neqns-nstop+1,dsln,diag(1,nstop),indx,temp)
-    CALL ptime(t5)
-    tt=t5-t1
-    t1=t2-t1
-    t2=t3-t2
-    t3=t4-t3
-    t4=t5-t4
-    RETURN
-  END SUBROUTINE nufct3
-
-  !======================================================================!
-  !> nufct6
-  !======================================================================!
-  SUBROUTINE nufct6(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),indx(*),parent(*),nch(*)
-    DOUBLE PRECISION zln(36,*),diag(21,*),temp(*),dsln(36,*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     nufct performs cholesky factorization in row order
-    !c
-    !c     (i) xlnzr,colno,zln,diag
-    !c         symbolicaly factorized
-    !c
-    !c     (o) zln,diag,dsln
-    !c
-    !c         #coded by t.arakawa of RIST 040331
-    !c
-    !c----------------------------------------------------------------------
-    !c
-    !c phase I
-    !c
-    CALL ptime(t1)
-    IF(nstop>1) CALL inv6(diag(1,1),ir)
-    l=parent(1)
-    nch(l)=nch(l)-1
-    nch(1)=-1
-    DO ic=2,nstop-1
-       CALL s6um(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase II
-    !c
-    CALL ptime(t2)
-    DO ic=nstop,neqns
-       CALL s6um1(ic,xlnzr,colno,zln,diag,parent,temp,indx)
-    ENDDO
-    !c
-    !c phase III
-    !c
-    CALL ptime(t3)
-    CALL s6um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    !c
-    !c phase IV
-    !c
-    CALL ptime(t4)
-    CALL s6um3(neqns-nstop+1,dsln,diag(1,nstop),indx,temp)
-    CALL ptime(t5)
-    tt=t5-t1
-    t1=t2-t1
-    t2=t3-t2
-    t3=t4-t3
-    t4=t5-t4
-    RETURN
-  END SUBROUTINE nufct6
-
-  !======================================================================!
-  !> nufctx
-  !======================================================================!
-  SUBROUTINE nufctx(xlnzr,colno,dsln,zln,diag,indx,temp,neqns,parent,nch,nstop,ndeg,ndegl,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),indx(*),parent(*),nch(*)
-    DOUBLE PRECISION zln(ndeg*ndeg,*),diag(ndegl,*),temp(ndeg*ndeg,*),dsln(ndeg*ndeg,*),zz(100),t(100)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     nufct performs cholesky factorization in row order
-    !c
-    !c     (i) xlnzr,colno,zln,diag
-    !c         symbolicaly factorized
-    !c
-    !c     (o) zln,diag,dsln
-    !c
-    !c         #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    !c
-    !c phase I
-    !c
-    CALL ptime(t1)
-    IF(nstop>1) CALL invx(diag(1,1),ndeg,ir)
-    l=parent(1)
-    nch(l)=nch(l)-1
-    nch(1)=-1
-    DO ic=2,nstop-1
-       CALL sxum(ic,xlnzr,colno,zln,diag,nch,parent,temp,indx,ndeg, ndegl,zz,t)
-    ENDDO
-    !c
-    !c phase II
-    !c
-    CALL ptime(t2)
-    DO ic=nstop,neqns
-       CALL sxum1(ic,xlnzr,colno,zln,diag,parent,temp,indx, ndeg,ndegl,t)
-    ENDDO
-    !c
-    !c phase III
-    !c
-    CALL ptime(t3)
-    CALL sxum2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx,ndeg,ndegl)
-    !c
-    !c phase IV
-    !c
-    CALL ptime(t4)
-    CALL sxum3(neqns-nstop+1,dsln,diag(1,nstop),indx,temp,ndeg,ndegl,t)
-    CALL ptime(t5)
-    tt=t5-t1
-    t1=t2-t1
-    t2=t3-t2
-    t3=t4-t3
-    t4=t5-t4
-    RETURN
-  END SUBROUTINE nufctx
-
-  !======================================================================!
-  !> nuform
-  !======================================================================!
-  SUBROUTINE nuform(hecMESH,hecMAT,ir)
-    USE hecmw_util
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    TYPE (hecmwST_matrix    ) :: hecMAT
-    INTEGER(kind=kint)  l,ir,numnp,ndof
-    INTEGER(kind=kint) iiS,iiE,kki,kkj,ndof2
-
-    NUMNP = hecMAT%NP
-    NDOF  = hecMESH%n_dof
-    ntotal = NUMNP*NDOF
-
+    idbg = 0
+    numnp = hecMAT%NP
+    ndof = hecMESH%N_DOF
+    ntotal = numnp*ndof
 
     !*NUFACT variables
-    neqns = NUMNP
-    ndeg = NDOF
-    nttbr = hecMAT%NP+hecMAT%NPL !+hecMAT%NPU if unsymmetric
-    isym = 0
+    NEQns = numnp
+    NDEg = ndof
+    NTTbr = hecMAT%NP + hecMAT%NPL
+    !+hecMAT%NPU if unsymmetric
+    ISYm = 0
 
     !*Allocations
-!!!@      ALLOCATE(val(ndeg*ndeg),STAT=ierror)
-!!!@      IF(ierror/=0) STOP "Allocation error:val"
-    ALLOCATE(val(ndeg*ndeg),STAT=ierr)
-    IF(ierr/=0) STOP "Allocation error:val"
-    WRITE(6,*) "nuform:stage = ",stage
-    !     if(stage>=30)then
-    !         DEALLOCATE(diag,stat = ierror1)
-    !         DEALLOCATE(zln,STAT = ierror2)
-    !         DEALLOCATE(dsln,STAT = ierror3)
-    !         raloc = raloc - neqns*ndeg*(ndeg+1)/2
-    !         raloc = raloc - len_colno*ndeg*ndeg
-    !         raloc = raloc - len_dsln*ndeg*ndeg
-    !     write(6,*) "nuform:ierror = ",ierror1,ierror2,ierror3
-    !     endif
+    allocate (VAL(NDEg*NDEg),STAT=ierr)
+    if ( ierr/=0 ) stop "Allocation error:val"
+    write (6,*) "nuform:stage = ", STAge
     kk = 0
-    ndof2 = NDOF*NDOF
-    DO j= 1, NUMNP
-       !*Diagonal
-       kk = kk + 1
-       CALL vlcpy(val,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
-       !call staij1(0,j,j,val,v,ndof,ir)
-       CALL staij1(0,j,j,val,ir)
+    ndof2 = ndof*ndof
 
-       DO i = 1,NDOF
-          IF(val((i-1)*ndof+i)<=0) THEN
-             WRITE(IDBG,*)'j,j,val:',j,i,val((i-1)*ndof+i)
-             !          PAUSE 'Error?'
-          ENDIF
-       END DO
+    do j = 1, numnp
+      !*Diagonal
+      kk = kk + 1
+      call VLCPY(VAL,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
+      call STAIJ1(0,j,j,VAL,Ir)
 
-       !*Lower
-       DO k= hecMAT%indexL(j-1)+1, hecMAT%indexL(j)
-          i= hecMAT%itemL(k)
-          kk = kk + 1
-          CALL vlcpy(val,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
+      do i = 1, ndof
+        if ( VAL((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, VAL((i-1)*ndof+i)
+      enddo
 
-          !call staij1(0,j,i,val,v,ndof,ir)
-          CALL staij1(0,j,i,val,ir)
-       ENDDO
-    ENDDO
+      !*Lower
+      do k = hecMAT%INDEXL(j-1) + 1, hecMAT%INDEXL(j)
+        i = hecMAT%ITEML(k)
+        kk = kk + 1
+        call VLCPY(VAL,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
+        call STAIJ1(0,j,i,VAL,Ir)
+      enddo
+    enddo
 
-    DEALLOCATE(val)
-    RETURN
-  END SUBROUTINE nuform
+    deallocate (VAL)
+  end subroutine NUFORM
 
   !======================================================================!
-  !> nusol0
+  !> @brief NUFCT0 performs Cholesky factorization
+  !          if(iv(22).eq.0)    normal type
+  !          if(iv(22).gt.0)    code generation type
   !======================================================================!
-  SUBROUTINE nusol0(r_h_s,ir)
-    USE hecmw_util
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION r_h_s(*)
-    ! dimention wk(ndeg*neqns) -> leading stack overflow
-    DOUBLE PRECISION,POINTER :: wk(:)
-    INTEGER ir
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-    COMMON /qaz/iseed,ixxx
+  subroutine NUFCT0(Ir)
+    use HECMW_UTIL
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    !------
+    integer:: ndeg2
+    integer:: ndegl
 
-    !c----------------------------------------------------------------------
-    !c
-    !c     this performs forward elimination and backward substitution
-    !c
-    !c     (i/o)
-    !c           r_h_s        on entry     right hand side vector
-    !c                    on exit      solution vector
-    !c           iv       communication array
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    IF(stage/=30.AND.stage/=40) THEN
-       ir=50
-       RETURN
-    ELSE
-       ir=0
-    ENDIF
-    lwk=total
+    if ( STAge/=20 ) then
+      print *, '*********Setting Stage 40!*********'
+      Ir = 40
+      return
+    else
+      Ir = 0
+    endif
 
-    ALLOCATE( wk(ndeg*neqns), stat=ierror )
-    IF( ierror /= 0 ) THEN
-       WRITE(*,*) "##Error: not enough memory"
-       CALL hecmw_abort( hecmw_comm_get_comm() )
-    ENDIF
+    allocate (TEMp(NDEg*NDEg*NEQns),STAT=IRR)
+    if ( IRR/=0 ) then
+      write (*,*) '##Error : Not enough memory'
+      call HECMW_ABORT(HECMW_COMM_GET_COMM())
+      !stop
+    endif
+    allocate (INDx(NEQns),STAT=IRR)
+    if ( IRR/=0 ) then
+      write (*,*) '##Error : Not enough memory'
+      call HECMW_ABORT(HECMW_COMM_GET_COMM())
+      !stop
+    endif
     !rmiv
-    !      ndeg=iv(28)
-    ndegl=ndeg*(ndeg+1)
-    ndegl=ndegl/2
-    IF(ndeg==1) THEN
-       CALL nusol1(xlnzr,colno,dsln,zln,diag,iperm,r_h_s,wk,neqns,nstop)
-    ELSEIF(ndeg==2) THEN
-       CALL nusol2(xlnzr,colno,dsln,zln,diag,iperm,r_h_s,wk,neqns,nstop)
-    ELSEIF(ndeg==3) THEN
-       CALL nusol3(xlnzr,colno,dsln,zln,diag,iperm,r_h_s,wk,neqns,nstop)
-    ELSEIF(ndeg==6) THEN
-       CALL nusolx(xlnzr,colno,dsln,zln,diag, iperm,r_h_s,wk,neqns,nstop,ndeg,ndegl)
-    ELSE
-       CALL nusolx(xlnzr,colno,dsln,zln,diag,iperm,r_h_s,wk,neqns,nstop,ndeg,ndegl)
-    ENDIF
-    stage=40
-    DEALLOCATE( wk )
-    RETURN
-  END SUBROUTINE nusol0
-
-  !======================================================================!
-  !> nusol1
-  !======================================================================!
-  SUBROUTINE nusol1(xlnzr,colno,dsln,zln,diag,iperm,b,wk,neqns,nstop)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),iperm(*)
-    DOUBLE PRECISION zln(*),diag(*),b(*),wk(*),dsln(*)
-
-    !c forward
-    DO i=1,neqns
-       wk(i)=b(iperm(i))
-    ENDDO
-    joc=1
-    DO i=1,neqns
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) GOTO 110
-       wk(i)=wk(i)-spdot2(wk,zln,colno,ks,ke)
-
-110    CONTINUE
-       IF(i<=nstop) CYCLE
-       wk(i)=wk(i)-ddot(wk(nstop),dsln(joc),i-nstop)
-       joc=joc+i-nstop
-    ENDDO
-    DO i=1,neqns
-       wk(i)=wk(i)*diag(i)
-    ENDDO
-    !c back ward
-    DO i=neqns,1,-1
-       IF(i<nstop) GOTO 206
-       DO j=i-1,nstop,-1
-          joc=joc-1
-          wk(j)=wk(j)-wk(i)*dsln(joc)
-       ENDDO
-
-206    CONTINUE
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) CYCLE
-       DO k=ks,ke
-          j=colno(k)
-          wk(j)=wk(j)-wk(i)*zln(k)
-       ENDDO
-    ENDDO
-    !c permutaion
-    DO i=1,neqns
-       b(iperm(i))=wk(i)
-    ENDDO
-    RETURN
-  END SUBROUTINE nusol1
-
-  !======================================================================!
-  !> nusol2
-  !======================================================================!
-  SUBROUTINE nusol2(xlnzr,colno,dsln,zln,diag,iperm,b,wk,neqns,nstop)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),iperm(*)
-    DOUBLE PRECISION zln(4,*),diag(3,*),b(2,*),wk(2,*),dsln(4,*)
-
-    !c forward
-    DO i=1,neqns
-       wk(1,i)=b(1,iperm(i))
-       wk(2,i)=b(2,iperm(i))
-    ENDDO
-    joc=1
-    DO i=1,neqns
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) GOTO 110
-       CALL s2pdot(wk(1,i),wk,zln,colno,ks,ke)
-110    CONTINUE
-       IF(i<=nstop) CYCLE
-       CALL d2sdot(wk(1,i),wk(1,nstop),dsln(1,joc),i-nstop)
-       joc=joc+i-nstop
-    ENDDO
-    DO i=1,neqns
-       wk(2,i)=wk(2,i)-wk(1,i)*diag(2,i)
-       wk(1,i)=wk(1,i)*diag(1,i)
-       wk(2,i)=wk(2,i)*diag(3,i)
-       wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)
-    ENDDO
-    !c back ward
-    DO i=neqns,1,-1
-       IF(i<nstop) GOTO 206
-       DO j=i-1,nstop,-1
-          joc=joc-1
-          wk(1,j)=wk(1,j)-wk(1,i)*dsln(1,joc)-wk(2,i)*dsln(2,joc)
-          wk(2,j)=wk(2,j)-wk(1,i)*dsln(3,joc)-wk(2,i)*dsln(4,joc)
-       ENDDO
-206    CONTINUE
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) CYCLE
-       DO k=ks,ke
-          j=colno(k)
-          wk(1,j)=wk(1,j)-wk(1,i)*zln(1,k)-wk(2,i)*zln(2,k)
-          wk(2,j)=wk(2,j)-wk(1,i)*zln(3,k)-wk(2,i)*zln(4,k)
-       ENDDO
-    ENDDO
-    !c permutaion
-    DO i=1,neqns
-       b(1,iperm(i))=wk(1,i)
-       b(2,iperm(i))=wk(2,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE nusol2
-
-  !======================================================================!
-  !> nusol3
-  !======================================================================!
-  SUBROUTINE nusol3(xlnzr,colno,dsln,zln,diag,iperm,b,wk,neqns,nstop)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),iperm(*)
-    DOUBLE PRECISION zln(9,*),diag(6,*),b(3,*),wk(3,*),dsln(9,*)
-
-    !c forward
-    DO i=1,neqns
-       wk(1,i)=b(1,iperm(i))
-       wk(2,i)=b(2,iperm(i))
-       wk(3,i)=b(3,iperm(i))
-    ENDDO
-    joc=1
-    DO i=1,neqns
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) GOTO 110
-       CALL s3pdot(wk(1,i),wk,zln,colno,ks,ke)
-
-110    CONTINUE
-       IF(i<=nstop) CYCLE
-       CALL d3sdot(wk(1,i),wk(1,nstop),dsln(1,joc),i-nstop)
-       joc=joc+i-nstop
-    ENDDO
-    DO i=1,neqns
-       wk(2,i)=wk(2,i)-wk(1,i)*diag(2,i)
-       wk(3,i)=wk(3,i)-wk(1,i)*diag(4,i)-wk(2,i)*diag(5,i)
-       wk(1,i)=wk(1,i)*diag(1,i)
-       wk(2,i)=wk(2,i)*diag(3,i)
-       wk(3,i)=wk(3,i)*diag(6,i)
-       wk(2,i)=wk(2,i)-wk(3,i)*diag(5,i)
-       wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)-wk(3,i)*diag(4,i)
-    ENDDO
-    !c back ward
-    DO i=neqns,1,-1
-       IF(i<nstop) GOTO 206
-       DO j=i-1,nstop,-1
-          joc=joc-1
-          wk(1,j)=wk(1,j)-wk(1,i)*dsln(1,joc)-wk(2,i)*dsln(2,joc)-wk(3,i)*dsln(3,joc)
-          wk(2,j)=wk(2,j)-wk(1,i)*dsln(4,joc)-wk(2,i)*dsln(5,joc)-wk(3,i)*dsln(6,joc)
-          wk(3,j)=wk(3,j)-wk(1,i)*dsln(7,joc)-wk(2,i)*dsln(8,joc)-wk(3,i)*dsln(9,joc)
-       ENDDO
-
-206    CONTINUE
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) CYCLE
-       DO k=ks,ke
-          j=colno(k)
-          wk(1,j)=wk(1,j)-wk(1,i)*zln(1,k)-wk(2,i)*zln(2,k)-wk(3,i)*zln(3,k)
-          wk(2,j)=wk(2,j)-wk(1,i)*zln(4,k)-wk(2,i)*zln(5,k)-wk(3,i)*zln(6,k)
-          wk(3,j)=wk(3,j)-wk(1,i)*zln(7,k)-wk(2,i)*zln(8,k)-wk(3,i)*zln(9,k)
-       ENDDO
-    ENDDO
-    !c permutaion
-    DO i=1,neqns
-       b(1,iperm(i))=wk(1,i)
-       b(2,iperm(i))=wk(2,i)
-       b(3,iperm(i))=wk(3,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE nusol3
-
-  !======================================================================!
-  !> nusol6
-  !======================================================================!
-  SUBROUTINE nusol6(xlnzr,colno,dsln,zln,diag,iperm,b,wk,neqns,nstop)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),iperm(*)
-    !GP: DEBUG 13May04  wk(3 ---> wk(6, b(3 ---> b(6, diag(6 ---> diag(21,
-    !GP: DEBUG 13May04  zln(9 ---> zln(36, dsln(9 ---> dsln(36
-    !      double precision zln(9,*),diag(6,*),b(3,*),wk(3,*),dsln(9,*)
-    DOUBLE PRECISION zln(36,*),diag(21,*),b(6,*),wk(6,*),dsln(36,*)
-
-    !c forward
-    DO i=1,neqns
-       wk(1,i)=b(1,iperm(i))
-       wk(2,i)=b(2,iperm(i))
-       wk(3,i)=b(3,iperm(i))
-       wk(4,i)=b(4,iperm(i))
-       wk(5,i)=b(5,iperm(i))
-       wk(6,i)=b(6,iperm(i))
-    ENDDO
-    joc=1
-    DO i=1,neqns
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) GOTO 110
-       CALL s6pdot(wk(1,i),wk,zln,colno,ks,ke)
-
-110    CONTINUE
-       IF(i<=nstop) EXIT
-       CALL dxsdot(6,wk(1,i),wk(1,nstop),dsln(1,joc),i-nstop)
-       joc=joc+i-nstop
-    ENDDO
-    DO i=1,neqns
-       wk(2,i)=wk(2,i)-wk(1,i)*diag(2,i)
-       wk(3,i)=wk(3,i)-wk(1,i)*diag(4,i)-wk(2,i)*diag(5,i)
-       wk(4,i)=wk(4,i)-wk(1,i)*diag(7,i)-wk(2,i)*diag(8,i)-wk(3,i)*diag(9,i)
-       wk(5,i)=wk(5,i)-wk(1,i)*diag(11,i)-wk(2,i)*diag(12,i)-wk(3,i)*diag(13,i)-wk(4,i)*diag(14,i)
-       wk(6,i)=wk(6,i)-wk(1,i)*diag(16,i)-wk(2,i)*diag(17,i)-wk(3,i)*diag(18,i)-wk(4,i)*diag(19,i)-wk(6,i)*diag(20,i)
-       wk(1,i)=wk(1,i)*diag(1,i)
-       wk(2,i)=wk(2,i)*diag(3,i)
-       wk(3,i)=wk(3,i)*diag(6,i)
-       wk(4,i)=wk(4,i)*diag(10,i)
-       wk(5,i)=wk(5,i)*diag(15,i)
-       wk(6,i)=wk(6,i)*diag(21,i)
-       wk(5,i)=wk(5,i)-wk(6,i)*diag(20,i)
-       wk(4,i)=wk(4,i)-wk(6,i)*diag(19,i)-wk(5,i)*diag(14,i)
-       wk(3,i)=wk(3,i)-wk(6,i)*diag(18,i)-wk(5,i)*diag(13,i)-wk(4,i)*diag(9,i)
-       wk(2,i)=wk(2,i)-wk(6,i)*diag(17,i)-wk(5,i)*diag(12,i)-wk(4,i)*diag(8,i)-wk(3,i)*diag(5,i)
-       wk(1,i)=wk(1,i)-wk(6,i)*diag(16,i)-wk(5,i)*diag(11,i)-wk(4,i)*diag(7,i)-wk(3,i)*diag(4,i)-wk(2,i)*diag(2,i)
-    ENDDO
-    !c back ward
-    DO i=neqns,1,-1
-       IF(i<nstop) EXIT
-       DO j=i-1,nstop,-1
-          joc=joc-1
-          wk(1,j)=wk(1,j)-wk(1,i)*dsln(1,joc)-wk(2,i)*dsln(2,joc) &
-               -wk(3,i)*dsln(3,joc)-wk(4,i)*dsln(4,joc)-wk(5,i)*dsln(5,joc)-wk(6,i)*dsln(6,joc)
-          wk(2,j)=wk(2,j)-wk(1,i)*dsln(7,joc)-wk(2,i)*dsln(8,joc) &
-               -wk(3,i)*dsln(9,joc)-wk(4,i)*dsln(10,joc)-wk(5,i)*dsln(11,joc)-wk(6,i)*dsln(12,joc)
-          wk(3,j)=wk(3,j)-wk(1,i)*dsln(13,joc)-wk(2,i)*dsln(14,joc) &
-               -wk(3,i)*dsln(15,joc)-wk(4,i)*dsln(16,joc)-wk(5,i)*dsln(17,joc)-wk(6,i)*dsln(18,joc)
-          wk(4,j)=wk(4,j)-wk(1,i)*dsln(19,joc)-wk(2,i)*dsln(20,joc) &
-               -wk(3,i)*dsln(21,joc)-wk(4,i)*dsln(22,joc)-wk(5,i)*dsln(23,joc)-wk(6,i)*dsln(24,joc)
-          wk(5,j)=wk(5,j)-wk(1,i)*dsln(25,joc)-wk(2,i)*dsln(26,joc) &
-               -wk(3,i)*dsln(27,joc)-wk(4,i)*dsln(28,joc)-wk(5,i)*dsln(29,joc)-wk(6,i)*dsln(30,joc)
-          wk(6,j)=wk(6,j)-wk(1,i)*dsln(31,joc)-wk(2,i)*dsln(32,joc) &
-               -wk(3,i)*dsln(33,joc)-wk(4,i)*dsln(34,joc)-wk(5,i)*dsln(35,joc)-wk(6,i)*dsln(36,joc)
-       ENDDO
-
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) EXIT
-       DO k=ks,ke
-          j=colno(k)
-          wk(1,j)=wk(1,j)-wk(1,i)*zln(1,joc)-wk(2,i)*zln(2,joc) &
-               -wk(3,i)*zln(3,joc)-wk(4,i)*zln(4,joc)-wk(5,i)*zln(5,joc)-wk(6,i)*zln(6,joc)
-          wk(2,j)=wk(2,j)-wk(1,i)*zln(7,joc)-wk(2,i)*zln(8,joc) &
-               -wk(3,i)*zln(9,joc)-wk(4,i)*zln(10,joc)-wk(5,i)*zln(11,joc)-wk(6,i)*zln(12,joc)
-          wk(3,j)=wk(3,j)-wk(1,i)*zln(13,joc)-wk(2,i)*zln(14,joc) &
-               -wk(3,i)*zln(15,joc)-wk(4,i)*zln(16,joc)-wk(5,i)*zln(17,joc)-wk(6,i)*zln(18,joc)
-          wk(4,j)=wk(4,j)-wk(1,i)*zln(19,joc)-wk(2,i)*zln(20,joc) &
-               -wk(3,i)*zln(21,joc)-wk(4,i)*zln(22,joc)-wk(5,i)*zln(23,joc)-wk(6,i)*zln(24,joc)
-          wk(5,j)=wk(5,j)-wk(1,i)*zln(25,joc)-wk(2,i)*zln(26,joc) &
-               -wk(3,i)*zln(27,joc)-wk(4,i)*zln(28,joc)-wk(5,i)*zln(29,joc)-wk(6,i)*zln(30,joc)
-          wk(6,j)=wk(6,j)-wk(1,i)*zln(31,joc)-wk(2,i)*zln(32,joc) &
-               -wk(3,i)*zln(33,joc)-wk(4,i)*zln(34,joc)-wk(5,i)*zln(35,joc)-wk(6,i)*zln(36,joc)
-       ENDDO
-    ENDDO
-    !c permutaion
-    DO i=1,neqns
-       b(1,iperm(i))=wk(1,i)
-       b(2,iperm(i))=wk(2,i)
-       b(3,iperm(i))=wk(3,i)
-       b(4,iperm(i))=wk(4,i)
-       b(5,iperm(i))=wk(5,i)
-       b(6,iperm(i))=wk(6,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE nusol6
-
-  !======================================================================!
-  !> nusolx
-  !======================================================================!
-  SUBROUTINE nusolx(xlnzr,colno,dsln,zln,diag,iperm,b,wk,neqns,nstop,ndeg,ndegl)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),iperm(*)
-    DOUBLE PRECISION zln(ndeg,ndeg,*),diag(ndegl,*),b(ndeg,*),wk(ndeg,*),dsln(ndeg,ndeg,*)
-
-    !c forward
-    DO l=1,ndeg
-       DO i=1,neqns
-          wk(l,i)=b(l,iperm(i))
-       ENDDO
-    ENDDO
-    joc=1
-    DO i=1,neqns
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) GOTO 110
-       CALL sxpdot(ndeg,wk(1,i),wk,zln,colno,ks,ke)
-110    CONTINUE
-       IF(i<=nstop) EXIT
-       CALL dxsdot(ndeg,wk(1,i),wk(1,nstop),dsln(1,1,joc),i-nstop)
-       joc=joc+i-nstop
-    ENDDO
-    DO i=1,neqns
-       locd=0
-       DO m=1,ndeg-1
-          locd=locd+m
-          loc1=locd+m
-          DO n=m+1,ndeg
-             wk(n,i)=wk(n,i)-wk(m,i)*diag(loc1,i)
-             loc1=loc1+n
-          ENDDO
-       ENDDO
-       locd=0
-       DO m=1,ndeg
-          locd=locd+m
-          wk(m,i)=wk(m,i)*diag(locd,i)
-       ENDDO
-       DO n=ndeg,2,-1
-          locd=locd-1
-          DO m=n-1,1,-1
-             wk(m,i)=wk(m,i)-wk(n,i)*diag(locd,i)
-             locd=locd-1
-          ENDDO
-       ENDDO
-    ENDDO
-    !c back ward
-    DO i=neqns,1,-1
-       IF(i<nstop) GOTO 208
-       DO j=i-1,nstop,-1
-          joc=joc-1
-          DO m=1,ndeg
-             DO n=1,ndeg
-                wk(m,j)=wk(m,j)-wk(n,i)*dsln(n,m,joc)
-             ENDDO
-          ENDDO
-       ENDDO
-
-208    CONTINUE
-       ks=xlnzr(i)
-       ke=xlnzr(i+1)-1
-       IF(ke<ks) CYCLE
-       DO k=ks,ke
-          j=colno(k)
-          DO m=1,ndeg
-             DO n=1,ndeg
-                wk(m,j)=wk(m,j)-wk(n,i)*zln(n,m,k)
-             ENDDO
-          ENDDO
-       ENDDO
-    ENDDO
-    !c permutaion
-    DO l=1,ndeg
-       DO i=1,neqns
-          b(l,iperm(i))=wk(l,i)
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE nusolx
-
-  !======================================================================!
-  !> posord
-  !======================================================================!
-  SUBROUTINE posord(parent,btree,invp,iperm,pordr,nch,neqns,iw,qarent,mch)
-    INTEGER  parent(*),pordr(*),btree(2,*),nch(*),invp(*),iperm(*),iw(*),qarent(*),mch(0:neqns+1)
-    COMMON /debug/ idbg1
-    !c
-    DO i=1,neqns
-       mch(i)=0
-       pordr(i)=0
-    ENDDO
-    l=1
-    locc=neqns+1
-
-10  CONTINUE
-    DO
-       joc=locc
-       locc=btree(1,joc)
-       IF(locc==0) EXIT
-    ENDDO
-
-    locp=qarent(joc)
-    mch(locp)=mch(locp)+1
-
-    DO
-       pordr(joc)=l
-       IF(l>=neqns) GOTO 1000
-       l=l+1
-       locc=btree(2,joc)
-       IF(locc/=0) GOTO 10
-       joc=qarent(joc)
-       locp=qarent(joc)
-       mch(locp)=mch(locp)+mch(joc)+1
-    ENDDO
-
-1000 CONTINUE
-    DO i=1,neqns
-       ipinv=pordr(invp(i))
-       invp(i)=ipinv
-       iperm(ipinv)=i
-       iw(pordr(i))=i
-    ENDDO
-    DO i=1,neqns
-       invpos=iw(i)
-       nch(i)=mch(invpos)
-       ii=qarent(invpos)
-       IF(ii>0.AND.ii<=neqns) THEN
-          parent(i)=pordr(ii)
-       ELSE
-          parent(i)=qarent(invpos)
-       ENDIF
-    ENDDO
-    IF(idbg1/=0) WRITE(6,6020)
-    IF(idbg1/=0) WRITE(6,6000) (pordr(i),i=1,neqns)
-    IF(idbg1/=0) WRITE(6,6030)
-    IF(idbg1/=0) WRITE(6,6050)
-    IF(idbg1/=0) WRITE(6,6000) (parent(i),i=1,neqns)
-    IF(idbg1/=0) WRITE(6,6000) (invp(i),i=1,neqns)
-    IF(idbg1/=0) WRITE(6,6040)
-    IF(idbg1/=0) WRITE(6,6000) (iperm(i),i=1,neqns)
-    IF(idbg1/=0) WRITE(6,6010)
-    IF(idbg1/=0) WRITE(6,6000) (nch(i),i=1,neqns)
-    RETURN
-
-6000 FORMAT(10i6)
-6010 FORMAT(' nch')
-6020 FORMAT(' post order')
-6030 FORMAT(/' invp ')
-6040 FORMAT(/' iperm ')
-6050 FORMAT(/' parent')
-  END SUBROUTINE posord
-
-  !======================================================================!
-  !> pre_gnclno
-  !======================================================================!
-  SUBROUTINE pre_gnclno(parent,pordr,xleaf,leaf,xlnzr,neqns,nstop,lncol,ir)
-    INTEGER parent(*),pordr(*),xleaf(*),leaf(*),xlnzr(*)
-    COMMON /debug/ idbg1
-
-    nc=0
-    ir=0
-    l=1
-    DO i=1,neqns
-       xlnzr(i)=l
-       ks=xleaf(i)
-       ke=xleaf(i+1)-1
-       IF(ke<ks) CYCLE
-       nxleaf=leaf(ks)
-       DO k=ks,ke-1
-          j=nxleaf
-          nxleaf=leaf(k+1)
-          DO
-             IF(j>=nxleaf) EXIT
-             IF(j>=nstop) GOTO 100
-             l=l+1
-             j=parent(j)
-          ENDDO
-       ENDDO
-
-       j=leaf(ke)
-       DO
-          IF(j>=i.OR.j==0.OR.j>=nstop) EXIT
-          l=l+1
-          j=parent(j)
-       ENDDO
-100    CONTINUE
-    ENDDO
-    xlnzr(neqns+1)=l
-    lncol=l-1
-    RETURN
-  END SUBROUTINE pre_gnclno
-
-  !======================================================================!
-  !> prt
-  !======================================================================!
-  SUBROUTINE prt(ip,n)
-    DIMENSION ip(n)
-
-    WRITE(6,6000) (ip(i),i=1,n)
-    RETURN
-
-6000 FORMAT(10(2x,i4))
-  END SUBROUTINE prt
-
-  !======================================================================!
-  !> ptime
-  !======================================================================!
-  SUBROUTINE ptime(cputim)
-    USE hecmw_util
-    DOUBLE PRECISION cputim,elaptime
-    REAL x(2)
-
-    !c machine dependent
-    !c**********************************************************************
-    !c cpu time by hour
-    !c     cputim=etime(x)
-    !c     cputim=x(1)
-    cputim=hecmw_Wtime()
-    !c**********************************************************************
-    RETURN
-  END SUBROUTINE ptime
-
-  !======================================================================!
-  !> qmdmrg
-  !======================================================================!
-  SUBROUTINE qmdmrg(xadj,adjncy,deg,qsize,qlink,marker,deg0,nhdsze,nbrhd,rchset,ovrlp)
-    IMPLICIT NONE
-    INTEGER adjncy(*),deg(*),qsize(*),qlink(*),marker(*),rchset(*),nbrhd(*),ovrlp(*)
-    INTEGER xadj(*),deg0,deg1,head,inhd,iov,irch,j,jstrt,jstop
-    INTEGER link,lnode,mark,mrgsze,nabor,nhdsze,node,novrlp,rchsze,root
-
-    IF(nhdsze<=0) RETURN
-    DO inhd=1,nhdsze
-       root=nbrhd(inhd)
-       marker(root)=0
-    ENDDO
-
-    DO inhd=1,nhdsze
-       root=nbrhd(inhd)
-       marker(root)=-1
-       rchsze=0
-       novrlp=0
-       deg1=0
-
-200    jstrt=xadj(root)
-       jstop=xadj(root+1)-1
-
-       DO j=jstrt,jstop
-          nabor=adjncy(j)
-          root=-nabor
-          IF(nabor<0) GOTO 200
-          IF(nabor==0) EXIT
-          mark=marker(nabor)
-
-          IF(mark<0) CYCLE
-          IF(mark>0) THEN
-             !GOTO 500
-             IF(mark>1) CYCLE
-             novrlp=novrlp+1
-             ovrlp(novrlp)=nabor
-             marker(nabor)=2
-             CYCLE
-          ENDIF
-          rchsze=rchsze+1
-          rchset(rchsze)=nabor
-          deg1=deg1+qsize(nabor)
-          marker(nabor)=1
-       ENDDO
-
-       head=0
-       mrgsze=0
-
-       DO iov=1,novrlp
-          node=ovrlp(iov)
-          jstrt=xadj(node)
-          jstop=xadj(node+1)-1
-          DO j=jstrt,jstop
-             nabor=adjncy(j)
-             IF(marker(nabor)/=0) CYCLE
-             marker(node)=1
-             GOTO 1100
-          ENDDO
-
-          mrgsze=mrgsze+qsize(node)
-          marker(node)=-1
-          lnode=node
-
-          DO
-             link=qlink(lnode)
-             link=qlink(lnode)
-             IF(link<=0) EXIT
-             lnode=link
-          ENDDO
-          qlink(lnode)=head
-          head=node
-1100      CONTINUE
-       ENDDO
-
-       IF(head<=0) GOTO 1200
-       qsize(head)=mrgsze
-       deg(head)=deg0+deg1-1
-       marker(head)=2
-
-1200   CONTINUE
-       root=nbrhd(inhd)
-       marker(root)=0
-       IF(rchsze<=0) CYCLE
-       DO irch=1,rchsze
-          node=rchset(irch)
-          marker(node)=0
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE qmdmrg
-
-  !======================================================================!
-  !> qmdot
-  !======================================================================!
-  SUBROUTINE qmdot(root,xadj,adjncy,marker,rchsze,rchset,nbrhd)
-    INTEGER adjncy(*),marker(*),rchset(*),nbrhd(*)
-    INTEGER xadj(*),inhd,irch,j,jstrt,jstop,link,nabor,node,rchsze,root
-
-    irch=0
-    inhd=0
-    node=root
-
-    DO
-       jstrt=xadj(node)
-       jstop=xadj(node+1)-2
-
-       IF(jstop<jstrt) GOTO 300
-
-       DO j=jstrt,jstop
-          irch=irch+1
-          adjncy(j)=rchset(irch)
-          IF(irch>=rchsze) GOTO 400
-       ENDDO
-
-300    CONTINUE
-       link=adjncy(jstop+1)
-       node=-link
-       IF(link<0) CYCLE
-
-       inhd=inhd+1
-       node=nbrhd(inhd)
-       adjncy(jstop+1)=-node
-    ENDDO
-
-400 CONTINUE
-    adjncy(j+1)=0
-    DO irch=1,rchsze
-       node=rchset(irch)
-       IF(marker(node)<0) CYCLE
-       jstrt=xadj(node)
-       jstop=xadj(node+1)-1
-       DO j=jstrt,jstop
-          nabor=adjncy(j)
-          IF(marker(nabor)>=0) CYCLE
-          adjncy(j)=root
-          EXIT
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE qmdot
-
-  !======================================================================!
-  !> qmdrch
-  !======================================================================!
-  SUBROUTINE qmdrch(root,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-    INTEGER adjncy(*),deg(*),marker(*),rchset(*),nbrhd(*)
-    INTEGER xadj(*),i,istrt,istop,j,jstrt,jstop,nabor,nhdsze,node,rchsze,root
-
-    nhdsze=0
-    rchsze=0
-    istrt=xadj(root)
-    istop=xadj(root+1)-1
-    IF(istop<istrt) RETURN
-    DO i=istrt,istop
-       nabor=adjncy(i)
-       IF(nabor==0) RETURN
-       IF(marker(nabor)/=0) CYCLE
-       IF(deg(nabor)<0) GOTO 200
-       rchsze=rchsze+1
-       rchset(rchsze)=nabor
-       marker(nabor)=1
-       CYCLE
-
-200    marker(nabor)=-1
-       nhdsze=nhdsze+1
-       nbrhd(nhdsze)=nabor
-
-300    jstrt=xadj(nabor)
-       jstop=xadj(nabor+1)-1
-       DO j=jstrt,jstop
-          node=adjncy(j)
-          nabor=-node
-          IF(node<0) GOTO 300
-          IF(node==0) EXIT
-          IF(marker(node)/=0) CYCLE
-          rchsze=rchsze+1
-          rchset(rchsze)=node
-          marker(node)=1
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE qmdrch
-
-  !======================================================================!
-  !> qmdupd
-  !======================================================================!
-  SUBROUTINE qmdupd(xadj,adjncy,nlist,list,deg,qsize,qlink,marker,rchset,nbrhd)
-    INTEGER adjncy(*),list(*),deg(*),marker(*),rchset(*),nbrhd(*),qsize(*),qlink(*)
-    INTEGER xadj(*),deg0,deg1,il,inhd,inode,irch,j,jstrt,jstop,mark,nabor,nhdsze,nlist,node,rchsze
-
-    IF(nlist<=0) RETURN
-    deg0=0
-    nhdsze=0
-    DO il=1,nlist
-       node=list(il)
-       deg0=deg0+qsize(node)
-       jstrt=xadj(node)
-       jstop=xadj(node+1)-1
-       DO j=jstrt,jstop
-          nabor=adjncy(j)
-          IF(marker(nabor)/=0.OR.deg(nabor)>=0) CYCLE
-          marker(nabor)=-1
-          nhdsze=nhdsze+1
-          nbrhd(nhdsze)=nabor
-       ENDDO
-    ENDDO
-
-    IF(nhdsze>0) CALL qmdmrg(xadj,adjncy,deg,qsize,qlink,marker,deg0,nhdsze,nbrhd,rchset,nbrhd(nhdsze+1))
-    DO il=1,nlist
-       node=list(il)
-       mark=marker(node)
-       IF(mark>1.OR.mark<0) CYCLE
-       CALL qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-       deg1=deg0
-       IF(rchsze<=0) GOTO 400
-
-       DO irch=1,rchsze
-          inode=rchset(irch)
-          deg1=deg1+qsize(inode)
-          marker(inode)=0
-       ENDDO
-
-400    CONTINUE
-       deg(node)=deg1-1
-       IF(nhdsze<=0) CYCLE
-       DO inhd=1,nhdsze
-          inode=nbrhd(inhd)
-          marker(inode)=0
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE qmdupd
-
-  !======================================================================!
-  !> qqsort
-  !======================================================================!
-  SUBROUTINE qqsort(iw,ik)
-    INTEGER iw(*)
-    COMMON /debug/ idbg1
-
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    !c     sort in increasing order up to i
-    !c
-    !c     iw   array
-    !c     ik   number of input/output
-    !c     i    deal with numbers less than this numberi
-    !c
-    !c----------------------------------------------------------------------
-    IF(ik<=1) RETURN
-    DO l=1,ik-1
-       DO m=l+1,ik
-          IF(iw(l)<iw(m)) CYCLE
-          itemp=iw(l)
-          iw(l)=iw(m)
-          iw(m)=itemp
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE qqsort
-
-  !======================================================================!
-  !> rotate
-  !======================================================================!
-  SUBROUTINE rotate(xadj,adjncy,invp,iperm,parent,btree,izz,neqns,anc,adjt,irr)
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    INTEGER  xadj(*),adjncy(*),parent(*),btree(2,*),invp(*),iperm(*),anc(*),adjt(*)
-    COMMON /debug/ idbg1
-    !c----------------------------------------------------------------------
-    !c     irr return code irr=0 node izz is not a bottom node
-    !c                     irr=1          is a bottom node then rotation is
-    !c                                    performed
-    !c
-    !c----------------------------------------------------------------------
-    IF(izz==0) THEN
-       irr=0
-       RETURN
-    ENDIF
-    izzz=invp(izz)
-    IF(btree(1,izzz)/=0) THEN
-       irr=0
-       !c         return
-    ENDIF
-    irr=1
-    !c
-    !c  ancestors of izzz
-    !c
-    nanc=0
-    joc=izzz
-
-    !100 CONTINUE
-    !nanc=nanc+1
-    !anc(nanc)=joc
-    !joc=parent(joc)
-    !IF(joc/=0) GOTO 100
-    DO
-       nanc=nanc+1
-       anc(nanc)=joc
-       joc=parent(joc)
-       IF(joc==0) EXIT
-    ENDDO
-    !c
-    !c  to find the eligible node from ancestors of izz
-    !c
-    !c     adjt = Adj(Tree(y))
-    l=1
-200 CONTINUE
-    DO i=1,neqns
-       adjt(i)=0
-    ENDDO
-    locc=anc(l)
-
-220 CONTINUE
-    !joc=locc
-    !locc=btree(1,joc)
-    !IF(locc/=0) GOTO 220
-    DO
-       joc=locc
-       locc=btree(1,joc)
-       IF(locc==0) EXIT
-    ENDDO
-
-    DO
-       !230 CONTINUE
-       DO k=xadj(iperm(joc)),xadj(iperm(joc)+1)-1
-          adjt(invp(adjncy(k)))=1
-       ENDDO
-
-       IF(joc>=anc(l)) GOTO 250
-       locc=btree(2,joc)
-       IF(locc/=0) GOTO 220
-       joc=parent(joc)
-       !GOTO 230
-    ENDDO
-
-250 CONTINUE
-    DO ll=l+1,nanc
-       IF(adjt(anc(ll))==0) THEN
-          l=l+1
-          GOTO 200
-       ENDIF
-    ENDDO
-    IF(l==1) GOTO 500
-
-    !c
-    !c  anc(l-1) is the eligible node
-    !c
-    !c (1) number the node not in Ancestor(iy)
-    iy=anc(l-1)
-    DO i=1,neqns
-       adjt(i)=0
-    ENDDO
-    DO ll=l,nanc
-       adjt(anc(ll))=1
-    ENDDO
-    k=0
-    DO ll=1,neqns
-       IF(adjt(ll)==0) THEN
-          k=k+1
-          invp(iperm(ll))=k
-       ENDIF
-    ENDDO
-    !c (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-    DO i=1,neqns
-       adjt(i)=0
-    ENDDO
-    locc=iy
-
-350 CONTINUE
-    !joc=locc
-    !locc=btree(1,joc)
-    !IF(locc/=0) GOTO 350
-    DO
-       joc=locc
-       locc=btree(1,joc)
-       IF(locc==0) EXIT
-    ENDDO
-
-    DO
-       !360 continue
-       DO kk=xadj(iperm(joc)),xadj(iperm(joc)+1)-1
-          adjt(invp(adjncy(kk)))=1
-       ENDDO
-       IF(joc>=iy) GOTO 380
-       locc=btree(2,joc)
-       IF(locc/=0) GOTO 350
-       joc=parent(joc)
-       !goto 360
-    ENDDO
-
-380 CONTINUE
-    DO ll=l,nanc
-       IF(adjt(anc(ll))==0) THEN
-          k=k+1
-          invp(iperm(anc(ll)))=k
-       ENDIF
-    ENDDO
-    !c (3) and finally number the node in Adj(t(iy))
-    DO ll=l,nanc
-       IF(adjt(anc(ll))/=0) THEN
-          k=k+1
-          invp(iperm(anc(ll)))=k
-       ENDIF
-    ENDDO
-    GOTO 600
-    !c
-    !c izz can be numbered last
-    !c
-500 CONTINUE
-    k=0
-    DO i=1,neqns
-       IF(i==izzz) GOTO 510
-       k=k+1
-       invp(iperm(i))=k
-510    CONTINUE
-    ENDDO
-    invp(iperm(izzz))=neqns
-    !c
-    !c set iperm
-    !c
-600 CONTINUE
-    DO i=1,neqns
-       iperm(invp(i))=i
-    ENDDO
-    IF(idbg1/=0) WRITE(6,6000) (invp(i),i=1,neqns)
-    RETURN
-
-6000 FORMAT(10i6)
-  END SUBROUTINE rotate
-
-  !======================================================================!
-  !> s2pdot
-  !======================================================================!
-  SUBROUTINE s2pdot(bi,b,zln,colno,ks,ke)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER colno(*)
-    DOUBLE PRECISION zln(4,*),b(2,*),bi(2)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=ks,ke
-       j=colno(jj)
-       bi(1)=bi(1)-zln(1,jj)*b(1,j)-zln(3,jj)*b(2,j)
-       bi(2)=bi(2)-zln(2,jj)*b(1,j)-zln(4,jj)*b(2,j)
-    ENDDO
-    RETURN
-  END SUBROUTINE s2pdot
-
-  !======================================================================!
-  !> s2um
-  !======================================================================!
-  SUBROUTINE s2um(ic,xlnzr,colno,zln,diag,nch,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),nch(*),par(*)
-    DIMENSION zln(4,*),diag(3,*),temp(4,*),indx(*)
-    DIMENSION s(4),zz(4),t(3)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    t(1)=0.0d0
-    t(2)=0.0d0
-    t(3)=0.0d0
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO l=1,4
-          s(l)=0.0d0
-          zz(l)=zln(l,k)
-       ENDDO
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(3,j)*zln(3,jj)
-             zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(4,j)*zln(3,jj)
-             zz(3)=zz(3)-temp(1,j)*zln(2,jj)-temp(3,j)*zln(4,jj)
-             zz(4)=zz(4)-temp(2,j)*zln(2,jj)-temp(4,j)*zln(4,jj)
-          ENDIF
-       ENDDO
-       CALL inv22(zln(1,k),zz,diag(1,jc))
-       DO l=1,4
-          temp(l,jc)=zz(l)
-       ENDDO
-       t(1)=t(1)+zz(1)*zln(1,k)+zz(3)*zln(3,k)
-       t(2)=t(2)+zz(1)*zln(2,k)+zz(3)*zln(4,k)
-       t(3)=t(3)+zz(2)*zln(2,k)+zz(4)*zln(4,k)
-    ENDDO
-    diag(1,ic)=diag(1,ic)-t(1)
-    diag(2,ic)=diag(2,ic)-t(2)
-    diag(3,ic)=diag(3,ic)-t(3)
-    CALL inv2(diag(1,ic),ir)
-    nch(ic)=-1
-    kk=par(ic)
-    nch(kk)=nch(kk)-1
-    RETURN
-  END SUBROUTINE s2um
-
-  !======================================================================!
-  !> s2um1
-  !======================================================================!
-  SUBROUTINE s2um1(ic,xlnzr,colno,zln,diag,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),par(*)
-    DIMENSION zln(4,*),diag(3,*),temp(4,*),indx(*)
-    DIMENSION s(4),zz(4)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    DO l=1,4
-       s(l)=0.0d0
-    ENDDO
-
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj)
-             s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj)
-             s(3)=s(3)+temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj)
-             s(4)=s(4)+temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj)
-          ENDIF
-       ENDDO
-       DO l=1,4
-          temp(l,jc)=zln(l,k)-s(l)
-          zln(l,k)=temp(l,jc)
-          s(l)=0.0d0
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s2um1
-
-  !======================================================================!
-  !> s2um2
-  !======================================================================!
-  SUBROUTINE s2um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*)
-    DIMENSION zln(4,*),diag(3,*),temp(4,*),indx(*),dsln(4,*)
-
-    joc=0
-    DO ic=nstop,neqns
-       ks=xlnzr(ic)
-       ke=xlnzr(ic+1)-1
-       DO k=ks,ke
-          jj=colno(k)
-          temp(1,jj)=zln(1,k)
-          temp(2,jj)=zln(2,k)
-          temp(3,jj)=zln(3,k)
-          temp(4,jj)=zln(4,k)
-          !c           call inv22(zln(1,k),temp(1,jj),diag(1,jj))
-          zln(3,k)=temp(3,jj)-temp(1,jj)*diag(2,jj)
-          zln(1,k)=temp(1,jj)*diag(1,jj)
-          zln(3,k)=zln(3,k)*diag(3,jj)
-          zln(1,k)=zln(1,k)-zln(3,k)*diag(2,jj)
-          !c
-          zln(4,k)=temp(4,jj)-temp(2,jj)*diag(2,jj)
-          zln(2,k)=temp(2,jj)*diag(1,jj)
-          zln(4,k)=zln(4,k)*diag(3,jj)
-          zln(2,k)=zln(2,k)-zln(4,k)*diag(2,jj)
-          !c
-          diag(1,ic)=diag(1,ic)-(temp(1,jj)*zln(1,k)+temp(3,jj)*zln(3,k))
-          diag(2,ic)=diag(2,ic)-(temp(1,jj)*zln(2,k)+temp(3,jj)*zln(4,k))
-          diag(3,ic)=diag(3,ic)-(temp(2,jj)*zln(2,k)+temp(4,jj)*zln(4,k))
-          indx(jj)=ic
-       ENDDO
-       DO jc=nstop,ic-1
-          joc=joc+1
-          DO jj=xlnzr(jc),xlnzr(jc+1)-1
-             j=colno(jj)
-             IF(indx(j)==ic) THEN
-                dsln(1,joc)=dsln(1,joc)-(temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj))
-                dsln(2,joc)=dsln(2,joc)-(temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj))
-                dsln(3,joc)=dsln(3,joc)-(temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj))
-                dsln(4,joc)=dsln(4,joc)-(temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj))
-             ENDIF
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s2um2
-
-  !======================================================================!
-  !> s2um3
-  !======================================================================!
-  SUBROUTINE s2um3(n,dsln,diag,indx,temp)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION dsln(4,*),diag(3,*),indx(*),temp(4,*),t(4)
-
-    IF(n<=0) RETURN
-
-    indx(1)=0
-    joc=1
-    CALL inv2(diag(1,1),ir)
-    DO i=2,n
-       indx(i)=joc
-       DO j=1,i-1
-          CALL d2dot(t,dsln(1,indx(i)),dsln(1,indx(j)),j-1)
-          dsln(1,joc)=dsln(1,joc)-t(1)
-          dsln(2,joc)=dsln(2,joc)-t(2)
-          dsln(3,joc)=dsln(3,joc)-t(3)
-          dsln(4,joc)=dsln(4,joc)-t(4)
-          joc=joc+1
-       ENDDO
-       CALL v2prod(dsln(1,indx(i)),diag,temp,i-1)
-       CALL d2dot(t,temp,dsln(1,indx(i)),i-1)
-       diag(1,i)=diag(1,i)-t(1)
-       diag(2,i)=diag(2,i)-t(2)
-       diag(3,i)=diag(3,i)-t(4)
-       CALL vcopy(temp,dsln(1,indx(i)),4*(i-1))
-       CALL inv2(diag(1,i),ir)
-    ENDDO
-    RETURN
-  END SUBROUTINE s2um3
-
-  !======================================================================!
-  !> s3pdot
-  !======================================================================!
-  SUBROUTINE s3pdot(bi,b,zln,colno,ks,ke)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER colno(*)
-    DOUBLE PRECISION zln(9,*),b(3,*),bi(3)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=ks,ke
-       j=colno(jj)
-       bi(1)=bi(1)-zln(1,jj)*b(1,j)-zln(4,jj)*b(2,j)-zln(7,jj)*b(3,j)
-       bi(2)=bi(2)-zln(2,jj)*b(1,j)-zln(5,jj)*b(2,j)-zln(8,jj)*b(3,j)
-       bi(3)=bi(3)-zln(3,jj)*b(1,j)-zln(6,jj)*b(2,j)-zln(9,jj)*b(3,j)
-    ENDDO
-    RETURN
-  END SUBROUTINE s3pdot
-
-  !======================================================================!
-  !> s3um
-  !======================================================================!
-  SUBROUTINE s3um(ic,xlnzr,colno,zln,diag,nch,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),nch(*),par(*)
-    DIMENSION zln(9,*),diag(6,*),temp(9,*),indx(*)
-    DIMENSION zz(9),t(6)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    !c$dir max_trips(6)
-    DO l=1,6
-       t(l)=0.0d0
-    ENDDO
-
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       !c$dir max_trips(9)
-       DO l=1,9
-          zz(l)=zln(l,k)
-       ENDDO
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(4,j)*zln(4,jj)-temp(7,j)*zln(7,jj)
-             zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(5,j)*zln(4,jj)-temp(8,j)*zln(7,jj)
-             zz(3)=zz(3)-temp(3,j)*zln(1,jj)-temp(6,j)*zln(4,jj)-temp(9,j)*zln(7,jj)
-             zz(4)=zz(4)-temp(1,j)*zln(2,jj)-temp(4,j)*zln(5,jj)-temp(7,j)*zln(8,jj)
-             zz(5)=zz(5)-temp(2,j)*zln(2,jj)-temp(5,j)*zln(5,jj)-temp(8,j)*zln(8,jj)
-             zz(6)=zz(6)-temp(3,j)*zln(2,jj)-temp(6,j)*zln(5,jj)-temp(9,j)*zln(8,jj)
-             zz(7)=zz(7)-temp(1,j)*zln(3,jj)-temp(4,j)*zln(6,jj)-temp(7,j)*zln(9,jj)
-             zz(8)=zz(8)-temp(2,j)*zln(3,jj)-temp(5,j)*zln(6,jj)-temp(8,j)*zln(9,jj)
-             zz(9)=zz(9)-temp(3,j)*zln(3,jj)-temp(6,j)*zln(6,jj)-temp(9,j)*zln(9,jj)
-          ENDIF
-       ENDDO
-       CALL inv33(zln(1,k),zz,diag(1,jc))
-       !c$dir max_trips(9)
-       DO l=1,9
-          temp(l,jc)=zz(l)
-       ENDDO
-       t(1)=t(1)+zz(1)*zln(1,k)+zz(4)*zln(4,k)+zz(7)*zln(7,k)
-       t(2)=t(2)+zz(1)*zln(2,k)+zz(4)*zln(5,k)+zz(7)*zln(8,k)
-       t(3)=t(3)+zz(2)*zln(2,k)+zz(5)*zln(5,k)+zz(8)*zln(8,k)
-       t(4)=t(4)+zz(1)*zln(3,k)+zz(4)*zln(6,k)+zz(7)*zln(9,k)
-       t(5)=t(5)+zz(2)*zln(3,k)+zz(5)*zln(6,k)+zz(8)*zln(9,k)
-       t(6)=t(6)+zz(3)*zln(3,k)+zz(6)*zln(6,k)+zz(9)*zln(9,k)
-    ENDDO
-    !c$dir max_trips(6)
-    DO l=1,6
-       diag(l,ic)=diag(l,ic)-t(l)
-    ENDDO
-
-    CALL inv3(diag(1,ic),ir)
-    nch(ic)=-1
-    kk=par(ic)
-    nch(kk)=nch(kk)-1
-    RETURN
-  END SUBROUTINE s3um
-
-  !======================================================================!
-  !> s3um1
-  !======================================================================!
-  SUBROUTINE s3um1(ic,xlnzr,colno,zln,diag,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),par(*)
-    DIMENSION zln(9,*),diag(6,*),temp(9,*),indx(*)
-    DIMENSION s(9),zz(9)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    !c$dir max_trip(9)
-    DO l=1,9
-       s(l)=0.0d0
-    ENDDO
-
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(4,j)*zln(4,jj)+temp(7,j)*zln(7,jj)
-             s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(5,j)*zln(4,jj)+temp(8,j)*zln(7,jj)
-             s(3)=s(3)+temp(3,j)*zln(1,jj)+temp(6,j)*zln(4,jj)+temp(9,j)*zln(7,jj)
-             s(4)=s(4)+temp(1,j)*zln(2,jj)+temp(4,j)*zln(5,jj)+temp(7,j)*zln(8,jj)
-             s(5)=s(5)+temp(2,j)*zln(2,jj)+temp(5,j)*zln(5,jj)+temp(8,j)*zln(8,jj)
-             s(6)=s(6)+temp(3,j)*zln(2,jj)+temp(6,j)*zln(5,jj)+temp(9,j)*zln(8,jj)
-             s(7)=s(7)+temp(1,j)*zln(3,jj)+temp(4,j)*zln(6,jj)+temp(7,j)*zln(9,jj)
-             s(8)=s(8)+temp(2,j)*zln(3,jj)+temp(5,j)*zln(6,jj)+temp(8,j)*zln(9,jj)
-             s(9)=s(9)+temp(3,j)*zln(3,jj)+temp(6,j)*zln(6,jj)+temp(9,j)*zln(9,jj)
-          ENDIF
-       ENDDO
-       !c$dir max_trip(9)
-       DO l=1,9
-          temp(l,jc)=zln(l,k)-s(l)
-          zln(l,k)=temp(l,jc)
-          s(l)=0.0d0
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s3um1
-
-  !======================================================================!
-  !> s3um2
-  !======================================================================!
-  SUBROUTINE s3um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*)
-    DIMENSION zln(9,*),diag(6,*),temp(neqns,9),dsln(9,*),indx(*)
-
-    joc=0
-    DO ic=nstop,neqns
-       ks=xlnzr(ic)
-       ke=xlnzr(ic+1)-1
-       DO k=ks,ke
-          jj=colno(k)
-          temp(jj,1)=zln(1,k)
-          temp(jj,2)=zln(2,k)
-          temp(jj,3)=zln(3,k)
-          temp(jj,4)=zln(4,k)
-          temp(jj,5)=zln(5,k)
-          temp(jj,6)=zln(6,k)
-          temp(jj,7)=zln(7,k)
-          temp(jj,8)=zln(8,k)
-          temp(jj,9)=zln(9,k)
-          indx(jj)=ic
-       ENDDO
-       DO k=ks,ke
-          jj=colno(k)
-          zln(4,k)=temp(jj,4)-temp(jj,1)*diag(2,jj)
-          zln(7,k)=temp(jj,7)-temp(jj,1)*diag(4,jj)-zln(4,k)*diag(5,jj)
-          zln(1,k)=temp(jj,1)*diag(1,jj)
-          zln(4,k)=zln(4,k)*diag(3,jj)
-          zln(7,k)=zln(7,k)*diag(6,jj)
-          zln(4,k)=zln(4,k)-zln(7,k)*diag(5,jj)
-          zln(1,k)=zln(1,k)-zln(4,k)*diag(2,jj)-zln(7,k)*diag(4,jj)
-          !c
-          zln(5,k)=temp(jj,5)-temp(jj,2)*diag(2,jj)
-          zln(8,k)=temp(jj,8)-temp(jj,2)*diag(4,jj)-zln(5,k)*diag(5,jj)
-          zln(2,k)=temp(jj,2)*diag(1,jj)
-          zln(5,k)=zln(5,k)*diag(3,jj)
-          zln(8,k)=zln(8,k)*diag(6,jj)
-          zln(5,k)=zln(5,k)-zln(8,k)*diag(5,jj)
-          zln(2,k)=zln(2,k)-zln(5,k)*diag(2,jj)-zln(8,k)*diag(4,jj)
-          !c
-          zln(6,k)=temp(jj,6)-temp(jj,3)*diag(2,jj)
-          zln(9,k)=temp(jj,9)-temp(jj,3)*diag(4,jj)-zln(6,k)*diag(5,jj)
-          zln(3,k)=temp(jj,3)*diag(1,jj)
-          zln(6,k)=zln(6,k)*diag(3,jj)
-          zln(9,k)=zln(9,k)*diag(6,jj)
-          zln(6,k)=zln(6,k)-zln(9,k)*diag(5,jj)
-          zln(3,k)=zln(3,k)-zln(6,k)*diag(2,jj)-zln(9,k)*diag(4,jj)
-          !c        write(60,6000) k,(zln(llll,k),llll=1,9)
-          !c6000    format(i6,3d20.10/6x,3d20.10/6x,3d20.10)
-       ENDDO
-       !c
-       DO k=ks,ke
-          jj=colno(k)
-          diag(1,ic)=diag(1,ic)-temp(jj,1)*zln(1,k)-temp(jj,4)*zln(4,k)-temp(jj,7)*zln(7,k)
-          diag(2,ic)=diag(2,ic)-temp(jj,1)*zln(2,k)-temp(jj,4)*zln(5,k)-temp(jj,7)*zln(8,k)
-          diag(3,ic)=diag(3,ic)-temp(jj,2)*zln(2,k)-temp(jj,5)*zln(5,k)-temp(jj,8)*zln(8,k)
-          diag(4,ic)=diag(4,ic)-temp(jj,1)*zln(3,k)-temp(jj,4)*zln(6,k)-temp(jj,7)*zln(9,k)
-          diag(5,ic)=diag(5,ic)-temp(jj,2)*zln(3,k)-temp(jj,5)*zln(6,k)-temp(jj,8)*zln(9,k)
-          diag(6,ic)=diag(6,ic)-temp(jj,3)*zln(3,k)-temp(jj,6)*zln(6,k)-temp(jj,9)*zln(9,k)
-       ENDDO
-       DO jc=nstop,ic-1
-          joc=joc+1
-          j1=xlnzr(jc)
-          j2=xlnzr(jc+1)
-          DO jj=xlnzr(jc),xlnzr(jc+1)-1
-             j=colno(jj)
-             IF(indx(j)==ic) THEN
-                dsln(1,joc)=dsln(1,joc)-temp(j,1)*zln(1,jj)-temp(j,4)*zln(4,jj)-temp(j,7)*zln(7,jj)
-                dsln(2,joc)=dsln(2,joc)-temp(j,2)*zln(1,jj)-temp(j,5)*zln(4,jj)-temp(j,8)*zln(7,jj)
-                dsln(3,joc)=dsln(3,joc)-temp(j,3)*zln(1,jj)-temp(j,6)*zln(4,jj)-temp(j,9)*zln(7,jj)
-                dsln(4,joc)=dsln(4,joc)-temp(j,1)*zln(2,jj)-temp(j,4)*zln(5,jj)-temp(j,7)*zln(8,jj)
-                dsln(5,joc)=dsln(5,joc)-temp(j,2)*zln(2,jj)-temp(j,5)*zln(5,jj)-temp(j,8)*zln(8,jj)
-                dsln(6,joc)=dsln(6,joc)-temp(j,3)*zln(2,jj)-temp(j,6)*zln(5,jj)-temp(j,9)*zln(8,jj)
-                dsln(7,joc)=dsln(7,joc)-temp(j,1)*zln(3,jj)-temp(j,4)*zln(6,jj)-temp(j,7)*zln(9,jj)
-                dsln(8,joc)=dsln(8,joc)-temp(j,2)*zln(3,jj)-temp(j,5)*zln(6,jj)-temp(j,8)*zln(9,jj)
-                dsln(9,joc)=dsln(9,joc)-temp(j,3)*zln(3,jj)-temp(j,6)*zln(6,jj)-temp(j,9)*zln(9,jj)
-             ENDIF
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s3um2
-
-  !======================================================================!
-  !> s3um3
-  !======================================================================!
-  SUBROUTINE s3um3(n,dsln,diag,indx,temp)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION dsln(9,*),diag(6,*),indx(*),temp(9,*),t(9)
-
-    IF(n<=0) RETURN
-
-    indx(1)=0
-    joc=1
-    CALL inv3(diag(1,1),ir)
-    DO i=2,n
-       indx(i)=joc
-       DO j=1,i-1
-          CALL d3dot(t,dsln(1,indx(i)),dsln(1,indx(j)),j-1)
-          !c$dir max_trips(9)
-          dsln(:,joc)=dsln(:,joc)-t(:)
-          joc=joc+1
-       ENDDO
-       CALL v3prod(dsln(1,indx(i)),diag,temp,i-1)
-       CALL d3dotl(t,temp,dsln(1,indx(i)),i-1)
-       !c$dir max_trips(6)
-       diag(:,i)=diag(:,i)-t(1:6)
-       CALL vcopy(temp,dsln(1,indx(i)),9*(i-1))
-       CALL inv3(diag(1,i),ir)
-    ENDDO
-    RETURN
-  END SUBROUTINE s3um3
-
-  !======================================================================!
-  !> s6pdot
-  !======================================================================!
-  SUBROUTINE s6pdot(bi,b,zln,colno,ks,ke)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER colno(*)
-    DOUBLE PRECISION zln(36,*),b(6,*),bi(6)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=ks,ke
-       j=colno(jj)
-       bi(1)=bi(1)-zln(1,jj)*b(1,j)-zln(7,jj)*b(2,j)-zln(13,jj)*b(3,j)-zln(19,jj)*b(4,j)-zln(25,jj)*b(5,j)-zln(31,jj)*b(6,j)
-       bi(2)=bi(2)-zln(2,jj)*b(1,j)-zln(8,jj)*b(2,j)-zln(14,jj)*b(3,j)-zln(20,jj)*b(4,j)-zln(26,jj)*b(5,j)-zln(32,jj)*b(6,j)
-       bi(3)=bi(3)-zln(3,jj)*b(1,j)-zln(9,jj)*b(2,j)-zln(15,jj)*b(3,j)-zln(21,jj)*b(4,j)-zln(27,jj)*b(5,j)-zln(33,jj)*b(6,j)
-       bi(4)=bi(4)-zln(4,jj)*b(1,j)-zln(10,jj)*b(2,j)-zln(16,jj)*b(3,j)-zln(22,jj)*b(4,j)-zln(28,jj)*b(5,j)-zln(34,jj)*b(6,j)
-       bi(5)=bi(5)-zln(5,jj)*b(1,j)-zln(11,jj)*b(2,j)-zln(17,jj)*b(3,j)-zln(23,jj)*b(4,j)-zln(29,jj)*b(5,j)-zln(35,jj)*b(6,j)
-       bi(6)=bi(6)-zln(6,jj)*b(1,j)-zln(12,jj)*b(2,j)-zln(18,jj)*b(3,j)-zln(25,jj)*b(4,j)-zln(30,jj)*b(5,j)-zln(36,jj)*b(6,j)
-    ENDDO
-    RETURN
-  END SUBROUTINE s6pdot
-
-  !======================================================================!
-  !> s6um
-  !======================================================================!
-  SUBROUTINE s6um(ic,xlnzr,colno,zln,diag,nch,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),nch(*),par(*)
-    DIMENSION zln(36,*),diag(21,*),temp(36,*),indx(*)
-    DIMENSION zz(36),t(21)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    DO l=1,21
-       t(l)=0.0d0
-    ENDDO
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO l=1,36
-          zz(l)=zln(l,k)
-       ENDDO
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(7,j)*zln(7,jj)-temp(13,j)*zln(13,jj)-temp(19,j)*zln(19,jj) &
-                  -temp(25,j)*zln(25,jj)-temp(31,j)*zln(31,jj)
-             zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(8,j)*zln(7,jj)-temp(14,j)*zln(13,jj)-temp(20,j)*zln(19,jj) &
-                  -temp(26,j)*zln(25,jj)-temp(32,j)*zln(31,jj)
-             zz(3)=zz(3)-temp(3,j)*zln(1,jj)-temp(9,j)*zln(7,jj)-temp(15,j)*zln(13,jj)-temp(21,j)*zln(19,jj) &
-                  -temp(27,j)*zln(25,jj)-temp(33,j)*zln(31,jj)
-             zz(4)=zz(4)-temp(4,j)*zln(1,jj)-temp(10,j)*zln(7,jj)-temp(16,j)*zln(13,jj)-temp(22,j)*zln(19,jj) &
-                  -temp(28,j)*zln(25,jj)-temp(34,j)*zln(31,jj)
-             zz(5)=zz(5)-temp(5,j)*zln(1,jj)-temp(11,j)*zln(7,jj)-temp(17,j)*zln(13,jj)-temp(23,j)*zln(19,jj) &
-                  -temp(29,j)*zln(25,jj)-temp(35,j)*zln(31,jj)
-             zz(6)=zz(6)-temp(6,j)*zln(1,jj)-temp(12,j)*zln(7,jj)-temp(18,j)*zln(13,jj)-temp(24,j)*zln(19,jj) &
-                  -temp(30,j)*zln(25,jj)-temp(36,j)*zln(31,jj)
-             zz(7)=zz(7)-temp(1,j)*zln(2,jj)-temp(7,j)*zln(8,jj)-temp(13,j)*zln(14,jj)-temp(19,j)*zln(20,jj) &
-                  -temp(25,j)*zln(26,jj)-temp(31,j)*zln(32,jj)
-             zz(8)=zz(8)-temp(2,j)*zln(2,jj)-temp(8,j)*zln(8,jj)-temp(14,j)*zln(14,jj)-temp(20,j)*zln(20,jj) &
-                  -temp(26,j)*zln(26,jj)-temp(32,j)*zln(32,jj)
-             zz(9)=zz(9)-temp(3,j)*zln(2,jj)-temp(9,j)*zln(8,jj)-temp(15,j)*zln(14,jj)-temp(21,j)*zln(20,jj) &
-                  -temp(27,j)*zln(26,jj)-temp(33,j)*zln(32,jj)
-             zz(10)=zz(10)-temp(4,j)*zln(2,jj)-temp(10,j)*zln(8,jj)-temp(16,j)*zln(14,jj)-temp(22,j)*zln(20,jj) &
-                  -temp(28,j)*zln(26,jj)-temp(34,j)*zln(32,jj)
-             zz(11)=zz(11)-temp(5,j)*zln(2,jj)-temp(11,j)*zln(8,jj)-temp(17,j)*zln(14,jj)-temp(23,j)*zln(20,jj) &
-                  -temp(29,j)*zln(26,jj)-temp(35,j)*zln(32,jj)
-             zz(12)=zz(12)-temp(6,j)*zln(2,jj)-temp(12,j)*zln(8,jj)-temp(18,j)*zln(14,jj)-temp(24,j)*zln(20,jj) &
-                  -temp(30,j)*zln(26,jj)-temp(36,j)*zln(32,jj)
-             zz(13)=zz(13)-temp(1,j)*zln(3,jj)-temp(7,j)*zln(9,jj)-temp(13,j)*zln(15,jj)-temp(19,j)*zln(21,jj) &
-                  -temp(25,j)*zln(27,jj)-temp(31,j)*zln(33,jj)
-             zz(14)=zz(14)-temp(2,j)*zln(3,jj)-temp(8,j)*zln(9,jj)-temp(14,j)*zln(15,jj)-temp(20,j)*zln(21,jj) &
-                  -temp(26,j)*zln(27,jj)-temp(32,j)*zln(33,jj)
-             zz(15)=zz(15)-temp(3,j)*zln(3,jj)-temp(9,j)*zln(9,jj)-temp(15,j)*zln(15,jj)-temp(21,j)*zln(21,jj) &
-                  -temp(27,j)*zln(27,jj)-temp(33,j)*zln(33,jj)
-             zz(16)=zz(16)-temp(4,j)*zln(3,jj)-temp(10,j)*zln(9,jj)-temp(16,j)*zln(15,jj)-temp(22,j)*zln(21,jj) &
-                  -temp(28,j)*zln(27,jj)-temp(34,j)*zln(33,jj)
-             zz(17)=zz(17)-temp(5,j)*zln(3,jj)-temp(11,j)*zln(9,jj)-temp(17,j)*zln(15,jj)-temp(23,j)*zln(21,jj) &
-                  -temp(29,j)*zln(27,jj)-temp(35,j)*zln(33,jj)
-             zz(18)=zz(18)-temp(6,j)*zln(3,jj)-temp(12,j)*zln(9,jj)-temp(18,j)*zln(15,jj)-temp(24,j)*zln(21,jj) &
-                  -temp(30,j)*zln(27,jj)-temp(36,j)*zln(33,jj)
-             zz(19)=zz(19)-temp(1,j)*zln(4,jj)-temp(7,j)*zln(10,jj)-temp(13,j)*zln(16,jj)-temp(19,j)*zln(22,jj) &
-                  -temp(25,j)*zln(28,jj)-temp(31,j)*zln(34,jj)
-             zz(20)=zz(20)-temp(2,j)*zln(4,jj)-temp(8,j)*zln(10,jj)-temp(14,j)*zln(16,jj)-temp(20,j)*zln(22,jj) &
-                  -temp(26,j)*zln(28,jj)-temp(32,j)*zln(34,jj)
-             zz(21)=zz(21)-temp(3,j)*zln(4,jj)-temp(9,j)*zln(10,jj)-temp(15,j)*zln(16,jj)-temp(21,j)*zln(22,jj) &
-                  -temp(27,j)*zln(28,jj)-temp(33,j)*zln(34,jj)
-             zz(22)=zz(22)-temp(4,j)*zln(4,jj)-temp(10,j)*zln(10,jj)-temp(16,j)*zln(16,jj)-temp(22,j)*zln(22,jj) &
-                  -temp(28,j)*zln(28,jj)-temp(34,j)*zln(34,jj)
-             zz(23)=zz(23)-temp(5,j)*zln(4,jj)-temp(11,j)*zln(10,jj)-temp(17,j)*zln(16,jj)-temp(23,j)*zln(22,jj) &
-                  -temp(29,j)*zln(28,jj)-temp(35,j)*zln(34,jj)
-             zz(24)=zz(24)-temp(6,j)*zln(4,jj)-temp(12,j)*zln(10,jj)-temp(18,j)*zln(16,jj)-temp(24,j)*zln(22,jj) &
-                  -temp(30,j)*zln(28,jj)-temp(36,j)*zln(34,jj)
-             zz(25)=zz(25)-temp(1,j)*zln(5,jj)-temp(7,j)*zln(11,jj)-temp(13,j)*zln(17,jj)-temp(19,j)*zln(23,jj) &
-                  -temp(25,j)*zln(29,jj)-temp(31,j)*zln(35,jj)
-             zz(26)=zz(26)-temp(2,j)*zln(5,jj)-temp(8,j)*zln(11,jj)-temp(14,j)*zln(17,jj)-temp(20,j)*zln(23,jj) &
-                  -temp(26,j)*zln(29,jj)-temp(32,j)*zln(35,jj)
-             zz(27)=zz(27)-temp(3,j)*zln(5,jj)-temp(9,j)*zln(11,jj)-temp(15,j)*zln(17,jj)-temp(21,j)*zln(23,jj) &
-                  -temp(27,j)*zln(29,jj)-temp(33,j)*zln(35,jj)
-             zz(28)=zz(28)-temp(4,j)*zln(5,jj)-temp(10,j)*zln(11,jj)-temp(16,j)*zln(17,jj)-temp(22,j)*zln(23,jj) &
-                  -temp(28,j)*zln(29,jj)-temp(34,j)*zln(35,jj)
-             zz(29)=zz(29)-temp(5,j)*zln(5,jj)-temp(11,j)*zln(11,jj)-temp(17,j)*zln(17,jj)-temp(23,j)*zln(23,jj) &
-                  -temp(29,j)*zln(29,jj)-temp(35,j)*zln(35,jj)
-             zz(30)=zz(30)-temp(6,j)*zln(5,jj)-temp(12,j)*zln(11,jj)-temp(18,j)*zln(17,jj)-temp(24,j)*zln(23,jj) &
-                  -temp(30,j)*zln(29,jj)-temp(36,j)*zln(35,jj)
-             zz(31)=zz(31)-temp(1,j)*zln(6,jj)-temp(7,j)*zln(12,jj)-temp(13,j)*zln(18,jj)-temp(19,j)*zln(24,jj) &
-                  -temp(25,j)*zln(30,jj)-temp(31,j)*zln(36,jj)
-             zz(32)=zz(32)-temp(2,j)*zln(6,jj)-temp(8,j)*zln(12,jj)-temp(14,j)*zln(18,jj)-temp(20,j)*zln(24,jj) &
-                  -temp(26,j)*zln(30,jj)-temp(32,j)*zln(36,jj)
-             zz(33)=zz(33)-temp(3,j)*zln(6,jj)-temp(9,j)*zln(12,jj)-temp(15,j)*zln(18,jj)-temp(21,j)*zln(24,jj) &
-                  -temp(27,j)*zln(30,jj)-temp(33,j)*zln(36,jj)
-             zz(34)=zz(34)-temp(4,j)*zln(6,jj)-temp(10,j)*zln(12,jj)-temp(16,j)*zln(18,jj)-temp(22,j)*zln(24,jj) &
-                  -temp(28,j)*zln(30,jj)-temp(34,j)*zln(36,jj)
-             zz(35)=zz(35)-temp(5,j)*zln(6,jj)-temp(11,j)*zln(12,jj)-temp(17,j)*zln(18,jj)-temp(23,j)*zln(24,jj) &
-                  -temp(29,j)*zln(30,jj)-temp(35,j)*zln(36,jj)
-             zz(36)=zz(36)-temp(6,j)*zln(6,jj)-temp(12,j)*zln(12,jj)-temp(18,j)*zln(18,jj)-temp(24,j)*zln(24,jj) &
-                  -temp(30,j)*zln(30,jj)-temp(36,j)*zln(36,jj)
-          ENDIF
-       ENDDO
-       CALL inv66(zln(1,k),zz,diag(1,jc))
-       !c$dir max_trips(9)
-       DO l=1,36
-          temp(l,jc)=zz(l)
-       ENDDO
-       t(1)=t(1)+zz(1)*zln(1,k)+zz(7)*zln(7,k)+zz(13)*zln(13,k)+zz(19)*zln(19,k)+zz(25)*zln(25,k)+zz(31)*zln(31,k)
-       t(2)=t(2)+zz(1)*zln(2,k)+zz(7)*zln(8,k)+zz(13)*zln(14,k)+zz(19)*zln(20,k)+zz(25)*zln(26,k)+zz(31)*zln(32,k)
-       t(3)=t(3)+zz(2)*zln(2,k)+zz(8)*zln(8,k)+zz(14)*zln(14,k)+zz(20)*zln(20,k)+zz(26)*zln(26,k)+zz(32)*zln(32,k)
-       t(4)=t(4)+zz(1)*zln(3,k)+zz(7)*zln(9,k)+zz(13)*zln(15,k)+zz(19)*zln(21,k)+zz(25)*zln(27,k)+zz(31)*zln(33,k)
-       t(5)=t(5)+zz(2)*zln(3,k)+zz(8)*zln(9,k)+zz(14)*zln(15,k)+zz(20)*zln(21,k)+zz(26)*zln(27,k)+zz(32)*zln(33,k)
-       t(6)=t(6)+zz(3)*zln(3,k)+zz(9)*zln(9,k)+zz(15)*zln(15,k)+zz(21)*zln(21,k)+zz(27)*zln(27,k)+zz(33)*zln(33,k)
-       t(7)=t(7)+zz(1)*zln(4,k)+zz(7)*zln(10,k)+zz(13)*zln(16,k)+zz(19)*zln(22,k)+zz(25)*zln(28,k)+zz(31)*zln(34,k)
-       t(8)=t(8)+zz(2)*zln(4,k)+zz(8)*zln(10,k)+zz(14)*zln(16,k)+zz(20)*zln(22,k)+zz(26)*zln(28,k)+zz(32)*zln(34,k)
-       t(9)=t(9)+zz(3)*zln(4,k)+zz(9)*zln(10,k)+zz(15)*zln(16,k)+zz(21)*zln(22,k)+zz(27)*zln(28,k)+zz(33)*zln(34,k)
-       t(10)=t(10)+zz(4)*zln(4,k)+zz(10)*zln(10,k)+zz(16)*zln(16,k)+zz(22)*zln(22,k)+zz(28)*zln(28,k)+zz(34)*zln(34,k)
-       t(11)=t(11)+zz(1)*zln(5,k)+zz(7)*zln(11,k)+zz(13)*zln(17,k)+zz(19)*zln(23,k)+zz(25)*zln(29,k)+zz(31)*zln(35,k)
-       t(12)=t(12)+zz(2)*zln(5,k)+zz(8)*zln(11,k)+zz(14)*zln(17,k)+zz(20)*zln(23,k)+zz(26)*zln(29,k)+zz(32)*zln(35,k)
-       t(13)=t(13)+zz(3)*zln(5,k)+zz(9)*zln(11,k)+zz(15)*zln(17,k)+zz(21)*zln(23,k)+zz(27)*zln(29,k)+zz(33)*zln(35,k)
-       t(14)=t(14)+zz(4)*zln(5,k)+zz(10)*zln(11,k)+zz(16)*zln(17,k)+zz(22)*zln(23,k)+zz(28)*zln(29,k)+zz(34)*zln(35,k)
-       t(15)=t(15)+zz(5)*zln(5,k)+zz(11)*zln(11,k)+zz(17)*zln(17,k)+zz(23)*zln(23,k)+zz(29)*zln(29,k)+zz(35)*zln(35,k)
-       t(16)=t(16)+zz(1)*zln(6,k)+zz(7)*zln(12,k)+zz(13)*zln(18,k)+zz(19)*zln(24,k)+zz(25)*zln(30,k)+zz(31)*zln(36,k)
-       t(17)=t(17)+zz(2)*zln(6,k)+zz(8)*zln(12,k)+zz(14)*zln(18,k)+zz(20)*zln(24,k)+zz(26)*zln(30,k)+zz(32)*zln(36,k)
-       t(18)=t(18)+zz(3)*zln(6,k)+zz(9)*zln(12,k)+zz(15)*zln(18,k)+zz(21)*zln(24,k)+zz(27)*zln(30,k)+zz(33)*zln(36,k)
-       t(19)=t(19)+zz(4)*zln(6,k)+zz(10)*zln(12,k)+zz(16)*zln(18,k)+zz(22)*zln(24,k)+zz(28)*zln(30,k)+zz(34)*zln(36,k)
-       t(20)=t(20)+zz(5)*zln(6,k)+zz(11)*zln(12,k)+zz(17)*zln(18,k)+zz(23)*zln(24,k)+zz(29)*zln(30,k)+zz(35)*zln(36,k)
-       t(21)=t(21)+zz(6)*zln(6,k)+zz(12)*zln(12,k)+zz(18)*zln(18,k)+zz(24)*zln(24,k)+zz(30)*zln(30,k)+zz(36)*zln(36,k)
-    ENDDO
-    !c$dir max_trips(6)
-    DO l=1,21
-       diag(l,ic)=diag(l,ic)-t(l)
-    ENDDO
-    CALL inv6(diag(1,ic),ir)
-    nch(ic)=-1
-    kk=par(ic)
-    nch(kk)=nch(kk)-1
-    RETURN
-  END SUBROUTINE s6um
-
-  !======================================================================!
-  !> s6um1
-  !======================================================================!
-  SUBROUTINE s6um1(ic,xlnzr,colno,zln,diag,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),par(*)
-    DIMENSION zln(9,*),diag(6,*),temp(9,*),indx(*)
-    DIMENSION s(9),zz(9)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    !c$dir max_trip(9)
-    DO l=1,9
-       s(l)=0.0d0
-    ENDDO
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(4,j)*zln(4,jj)+temp(7,j)*zln(7,jj)
-             s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(5,j)*zln(4,jj)+temp(8,j)*zln(7,jj)
-             s(3)=s(3)+temp(3,j)*zln(1,jj)+temp(6,j)*zln(4,jj)+temp(9,j)*zln(7,jj)
-             s(4)=s(4)+temp(1,j)*zln(2,jj)+temp(4,j)*zln(5,jj)+temp(7,j)*zln(8,jj)
-             s(5)=s(5)+temp(2,j)*zln(2,jj)+temp(5,j)*zln(5,jj)+temp(8,j)*zln(8,jj)
-             s(6)=s(6)+temp(3,j)*zln(2,jj)+temp(6,j)*zln(5,jj)+temp(9,j)*zln(8,jj)
-             s(7)=s(7)+temp(1,j)*zln(3,jj)+temp(4,j)*zln(6,jj)+temp(7,j)*zln(9,jj)
-             s(8)=s(8)+temp(2,j)*zln(3,jj)+temp(5,j)*zln(6,jj)+temp(8,j)*zln(9,jj)
-             s(9)=s(9)+temp(3,j)*zln(3,jj)+temp(6,j)*zln(6,jj)+temp(9,j)*zln(9,jj)
-          ENDIF
-       ENDDO
-       !c$dir max_trip(9)
-       DO l=1,9
-          temp(l,jc)=zln(l,k)-s(l)
-          zln(l,k)=temp(l,jc)
-          s(l)=0.0d0
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s6um1
-
-  !======================================================================!
-  !> s6um2
-  !======================================================================!
-  SUBROUTINE s6um2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*)
-    DIMENSION zln(36,*),diag(21,*),temp(36,neqns),dsln(36,*),indx(*)
-
-    joc=0
-    DO ic=nstop,neqns
-       DO m=1,36
-          DO jj=1,nstop
-             temp(jj,m)=0.0d0
-          ENDDO
-       ENDDO
-       ks=xlnzr(ic)
-       ke=xlnzr(ic+1)-1
-       DO k=ks,ke
-          jj=colno(k)
-          temp(:,jj)=zln(:,k)
-          indx(jj)=ic
-       ENDDO
-       DO k=ks,ke
-          jj=colno(k)
-          CALL inv66(zln(1,k),temp,diag(1,jj))
-       ENDDO
-
-       DO k=ks,ke
-          jj=colno(k)
-          diag(1,ic)=diag(1,ic)-temp(jj,1)*zln(1,k)-temp(jj,4)*zln(4,k)-temp(jj,7)*zln(7,k)
-          diag(2,ic)=diag(2,ic)-temp(jj,1)*zln(2,k)-temp(jj,4)*zln(5,k)-temp(jj,7)*zln(8,k)
-          diag(3,ic)=diag(3,ic)-temp(jj,2)*zln(2,k)-temp(jj,5)*zln(5,k)-temp(jj,8)*zln(8,k)
-          diag(4,ic)=diag(4,ic)-temp(jj,1)*zln(3,k)-temp(jj,4)*zln(6,k)-temp(jj,7)*zln(9,k)
-          diag(5,ic)=diag(5,ic)-temp(jj,2)*zln(3,k)-temp(jj,5)*zln(6,k)-temp(jj,8)*zln(9,k)
-          diag(6,ic)=diag(6,ic)-temp(jj,3)*zln(3,k)-temp(jj,6)*zln(6,k)-temp(jj,9)*zln(9,k)
-       ENDDO
-       DO jc=nstop,ic-1
-          joc=joc+1
-          j1=xlnzr(jc)
-          j2=xlnzr(jc+1)
-          DO jj=xlnzr(jc),xlnzr(jc+1)-1
-             j=colno(jj)
-             IF(indx(j)==ic) THEN
-                dsln(1,joc)=dsln(1,joc)-temp(j,1)*zln(1,jj)-temp(j,4)*zln(4,jj)-temp(j,7)*zln(7,jj)
-                dsln(2,joc)=dsln(2,joc)-temp(j,2)*zln(1,jj)-temp(j,5)*zln(4,jj)-temp(j,8)*zln(7,jj)
-                dsln(3,joc)=dsln(3,joc)-temp(j,3)*zln(1,jj)-temp(j,6)*zln(4,jj)-temp(j,9)*zln(7,jj)
-                dsln(4,joc)=dsln(4,joc)-temp(j,1)*zln(2,jj)-temp(j,4)*zln(5,jj)-temp(j,7)*zln(8,jj)
-                dsln(5,joc)=dsln(5,joc)-temp(j,2)*zln(2,jj)-temp(j,5)*zln(5,jj)-temp(j,8)*zln(8,jj)
-                dsln(6,joc)=dsln(6,joc)-temp(j,3)*zln(2,jj)-temp(j,6)*zln(5,jj)-temp(j,9)*zln(8,jj)
-                dsln(7,joc)=dsln(7,joc)-temp(j,1)*zln(3,jj)-temp(j,4)*zln(6,jj)-temp(j,7)*zln(9,jj)
-                dsln(8,joc)=dsln(8,joc)-temp(j,2)*zln(3,jj)-temp(j,5)*zln(6,jj)-temp(j,8)*zln(9,jj)
-                dsln(9,joc)=dsln(9,joc)-temp(j,3)*zln(3,jj)-temp(j,6)*zln(6,jj)-temp(j,9)*zln(9,jj)
-             ENDIF
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE s6um2
-
-  !======================================================================!
-  !> s6um3
-  !======================================================================!
-  SUBROUTINE s6um3(n,dsln,diag,indx,temp)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION dsln(9,*),diag(6,*),indx(*),temp(9,*),t(9)
-
-    IF(n<=0) RETURN
-
-    indx(1)=0
-    joc=1
-    CALL inv3(diag(1,1),ir)
-    DO i=2,n
-       indx(i)=joc
-       DO j=1,i-1
-          CALL d3dot(t,dsln(1,indx(i)),dsln(1,indx(j)),j-1)
-          !c$dir max_trips(9)
-          DO l=1,9
-             dsln(l,joc)=dsln(l,joc)-t(l)
-          ENDDO
-          joc=joc+1
-       ENDDO
-       CALL v3prod(dsln(1,indx(i)),diag,temp,i-1)
-       CALL d3dotl(t,temp,dsln(1,indx(i)),i-1)
-       !c$dir max_trips(6)
-       DO l=1,6
-          diag(l,i)=diag(l,i)-t(l)
-       ENDDO
-       CALL vcopy(temp,dsln(1,indx(i)),9*(i-1))
-       CALL inv3(diag(1,i),ir)
-    ENDDO
-    RETURN
-  END SUBROUTINE s6um3
-
-  !======================================================================!
-  !> setij
-  !======================================================================!
-  SUBROUTINE setij(hecMESH,hecMAT)
-    USE hecmw_util
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    TYPE (hecmwST_matrix    ) :: hecMAT
-    INTEGER(kind=kint)  l,ir,numnp,ndof
-    INTEGER(kind=kint) iiS,iiE,kki,kkj,ndof2
-
-    NUMNP = hecMAT%NP
-    NDOF  = hecMESH%n_dof
-    ntotal = NUMNP*NDOF
-
-    !*NUFACT variables
-    neqns = NUMNP
-    ndeg = NDOF
-    nttbr = hecMAT%NP+hecMAT%NPL !+hecMAT%NPU if unsymmetric
-    isym = 0
-
-    !*Allocations
-    ALLOCATE(irow(nttbr),STAT=ierr)
-    ALLOCATE(jcol(nttbr),STAT=ierr)
-    IF(ierr/=0) STOP "Allocation error: irow/jcol"
-
-    kk = 0
-    ndof2 = NDOF*NDOF
-    DO j= 1, NUMNP
-       !*Diagonal
-       kk = kk + 1
-       irow(kk) = j
-       jcol(kk) = j
-       !*Lower
-       DO k= hecMAT%indexL(j-1)+1, hecMAT%indexL(j)
-          i= hecMAT%itemL(k)
-          kk = kk + 1
-          irow(kk) = j
-          jcol(kk) = i
-       ENDDO
-
-       !!*Upper if unsymmetric
-
-    ENDDO
-
-    RETURN
-  END SUBROUTINE setij
-
-  !======================================================================!
-  !> staij1
-  !======================================================================!
-  SUBROUTINE staij1(isw,i,j,aij,ir)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION aij(ndeg*ndeg)
-    COMMON /debug/ idbg
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    !----------------------------------------------------------------------
+    ndegl = NDEg*(NDEg+1)
+    ndegl = ndegl/2
+    ndeg2 = NDEg*NDEg
+    !rmiv
+    select case (NDEg)
+    case (1)
+      call NUFCT(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+    case (2)
+      call NUFCT2(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+    case (3)
+      call NUFCT3(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+    case (6)
+      call NUFCT6(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+    case default
+      call NUFCTX(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,NDEg,ndegl,Ir)
+    endselect
+
+    STAge = 30
+    deallocate (TEMp)
+    deallocate (INDx)
+  end subroutine NUFCT0
+
+  !======================================================================!
+  !> @brief NUFCT performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !======================================================================!
+  subroutine NUFCT(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(*)
+    !------
+    integer:: ic
+    integer:: l
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+
+    ISEm = 1
     !
-    !      this routine sets an non-zero entry  of the matrix.
-    !      (symmetric version)
+    ! phase I
     !
-    !      (i)
-    !          isw      =0    set the value
-    !                   =1    add the value
-    !          i        row entry
-    !          j        column entry
-    !          aij      value
+    call PTIME(t1)
+    Diag(1) = 1.0D0/Diag(1)
+    l = Parent(1)
+    Nch(l) = Nch(l) - 1
+    Nch(1) = -1
+    do ic = 2, Nstop - 1
+      call sum(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx)
+    enddo
     !
-    !      (o)
-    !          iv       communication array
+    ! phase II
     !
-    !        #coded by t.arakawa of RIST on 040510
+    call PTIME(t2)
+    do ic = Nstop, Neqns
+      call SUM1(ic,Xlnzr,Colno,Zln,Temp,Indx)
+    enddo
     !
-    !----------------------------------------------------------------------
-    ir=0
-    ndeg2=ndeg*ndeg
-    ndeg2l=ndeg*(ndeg+1)/2
-    IF(stage==30) WRITE(6,*) 'warning a matrix was build up '//'but never solved.'
-    IF(stage==10) THEN
-       ALLOCATE(diag(neqns*ndeg2l),STAT = ierror)
-       raloc = raloc + neqns*ndeg2l
-       ALLOCATE(zln(len_colno*ndeg2),STAT = ierror)
-       !@         CALL hecmw_ALLOCATE(51,'zln','dbl',1,1,len_colno*ndeg2,
-       !@     &                       stat=ierror)
-       !@         IF(ierror/=0) STOP "Allocation error zln"
-       !        iv(27)=iv(10)+len_dsln*ndeg2*lratio
-       !rmiv
-       !         iv(27)=iv(8)
-       raloc = raloc + len_colno*ndeg2
-       ALLOCATE(dsln(len_dsln*ndeg2),STAT = ierror)
-       !         CALL hecmw_ALLOCATE(imsg,'dsln','dbl',1,1,len_dsln*ndeg2,
-       !     &                       stat=ierror)
-       IF(ierror/=0) STOP "Allocation error dsln"
-       !CALL hecmw_ALLOCATE(0,'dsln','dbl',1,1,len_dsln*ndeg2,0,0,0,0)
-       raloc = raloc + len_dsln*ndeg2
-    ENDIF
-    IF(stage/=20) THEN
-       !
-       ! for diagonal
-       !
-       diag = 0.
-       !         call clear(neqns*ndeg2,diag)
-       !
-       ! for lower triangle
-       !
-       zln = 0.
-       !         call clear(iv(21)*ndeg2,zln)
-       !
-       ! for dense window
-       !
-       dsln = 0.
-       !         call clear(len_dsln*ndeg2,dsln)
-       stage=20
-    ENDIF
+    ! phase III
+    !
+    call PTIME(t3)
+    call SUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    !
+    ! phase IV
+    !
+    call PTIME(t4)
+    call SUM3(Neqns-Nstop+1,Dsln,Diag(Nstop),Indx,Temp)
+    call PTIME(t5)
+    tt = t5 - t1
+    t1 = t2 - t1
+    t2 = t3 - t2
+    t3 = t4 - t3
+    t4 = t5 - t4
+    return
+    Ir = 30
+  end subroutine NUFCT
+
+  !======================================================================!
+  !> @brief NUFCT2  performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !======================================================================!
+  subroutine NUFCT2(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(4,*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Dsln(4,*)
+    !------
+    integer:: ic
+    integer:: l
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+
+    !
+    ! phase I
+    !
+    Ir = 0
+    call PTIME(t1)
+    if ( Nstop>1 ) call INV2(Diag(1,1),Ir)
+    l = Parent(1)
+    Nch(l) = Nch(l) - 1
+    Nch(1) = -1
+    do ic = 2, Nstop - 1
+      call S2UM(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx)
+    enddo
+    !
+    ! phase II
+    !
+    call PTIME(t2)
+    do ic = Nstop, Neqns
+      call S2UM1(ic,Xlnzr,Colno,Zln,Temp,Indx)
+    enddo
+    !
+    ! phase III
+    !
+    call PTIME(t3)
+    call S2UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    !
+    ! phase IV
+    !
+    call PTIME(t4)
+    call S2UM3(Neqns-Nstop+1,Dsln,Diag(1,Nstop),Indx,Temp)
+    call PTIME(t5)
+    tt = t5 - t1
+    t1 = t2 - t1
+    t2 = t3 - t2
+    t3 = t4 - t3
+    t4 = t5 - t4
+  end subroutine NUFCT2
+
+  !======================================================================!
+  !> @brief NUFCT3 performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !======================================================================!
+  subroutine NUFCT3(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(9,*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    !------
+    integer:: ic
+    integer:: l
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+
+    !
+    ! phase I
+    !
+    call PTIME(t1)
+    if ( Nstop>1 ) call INV3(Diag(1,1),Ir)
+    l = Parent(1)
+    Nch(l) = Nch(l) - 1
+    Nch(1) = -1
+    do ic = 2, Nstop - 1
+      call S3UM(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx)
+    enddo
+    !
+    ! phase II
+    !
+    call PTIME(t2)
+    do ic = Nstop, Neqns
+      call S3UM1(ic,Xlnzr,Colno,Zln,Temp,Indx)
+    enddo
+    !
+    ! phase III
+    !
+    call PTIME(t3)
+    call S3UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    !
+    ! phase IV
+    !
+    call PTIME(t4)
+    call S3UM3(Neqns-Nstop+1,Dsln,Diag(1,Nstop),Indx,Temp)
+    call PTIME(t5)
+    tt = t5 - t1
+    t1 = t2 - t1
+    t2 = t3 - t2
+    t3 = t4 - t3
+    t4 = t5 - t4
+  end subroutine NUFCT3
+
+  !======================================================================!
+  !> @brief NUFCT6 performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !======================================================================!
+  subroutine NUFCT6(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(36,*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Dsln(36,*)
+    !------
+    integer:: ic
+    integer:: Ir
+    integer:: l
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+
+    !
+    ! phase I
+    !
+    call PTIME(t1)
+    if ( Nstop>1 ) call INV6(Diag(1,1),Ir)
+    l = Parent(1)
+    Nch(l) = Nch(l) - 1
+    Nch(1) = -1
+    do ic = 2, Nstop - 1
+      call S6UM(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx)
+    enddo
+    !
+    ! phase II
+    !
+    call PTIME(t2)
+    do ic = Nstop, Neqns
+      call S6UM1(ic,Xlnzr,Colno,Zln,Temp,Indx)
+    enddo
+    !
+    ! phase III
+    !
+    call PTIME(t3)
+    call S6UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    !
+    ! phase IV
+    !
+    call PTIME(t4)
+    call S6UM3(Neqns-Nstop+1,Dsln,Diag(1,Nstop),Indx,Temp)
+    call PTIME(t5)
+    tt = t5 - t1
+    t1 = t2 - t1
+    t2 = t3 - t2
+    t3 = t4 - t3
+    t4 = t5 - t4
+  end subroutine NUFCT6
+
+  !======================================================================!
+  !> @brief NUFCTX performs cholesky factorization in row order
+  !     (i) xlnzr,colno,zln,diag
+  !         symbolicaly factorized
+  !     (o) zln,diag,dsln
+  !======================================================================!
+  subroutine NUFCTX(Xlnzr,Colno,Dsln,Zln,Diag,Indx,Temp,Neqns,Parent,Nch,Nstop,Ndeg,Ndegl,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Temp(Ndeg*Ndeg,*)
+    real(kind=8), intent(out):: Dsln(Ndeg*Ndeg,*)
+    !------
+    integer:: ic
+    integer:: Ir
+    integer:: l
+    real(kind=8):: t1
+    real(kind=8):: t2
+    real(kind=8):: t3
+    real(kind=8):: t4
+    real(kind=8):: t5
+    real(kind=8):: tt
+    real(kind=8):: zz(100)
+    real(kind=8):: t(100)
+
+    !
+    ! phase I
+    !
+    call PTIME(t1)
+    if ( Nstop>1 ) call INVX(Diag(1,1),Ndeg,Ir)
+    l = Parent(1)
+    Nch(l) = Nch(l) - 1
+    Nch(1) = -1
+    do ic = 2, Nstop - 1
+      call SXUM(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx,Ndeg,Ndegl,zz,t)
+    enddo
+    !
+    ! phase II
+    !
+    call PTIME(t2)
+    do ic = Nstop, Neqns
+      call SXUM1(ic,Xlnzr,Colno,Zln,Temp,Indx,Ndeg,t)
+    enddo
+    !
+    ! phase III
+    !
+    call PTIME(t3)
+    call SXUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx,Ndeg,Ndegl)
+    !
+    ! phase IV
+    !
+    call PTIME(t4)
+    call SXUM3(Neqns-Nstop+1,Dsln,Diag(1,Nstop),Indx,Temp,Ndeg,Ndegl,t)
+    call PTIME(t5)
+    tt = t5 - t1
+    t1 = t2 - t1
+    t2 = t3 - t2
+    t3 = t4 - t3
+    t4 = t5 - t4
+  end subroutine NUFCTX
+
+  !======================================================================!
+  !> @brief NUSOL0 performs forward elimination and backward substitution
+  !     (i/o)
+  !           r_h_s    on entry     right hand side vector
+  !                    on exit      solution vector
+  !           iv       communication array
+  !======================================================================!
+  subroutine NUSOL0(R_h_s,Ir)
+    use HECMW_UTIL
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: R_h_s(*)
+    !------
+    integer:: lwk
+    integer:: ndegl
+    real(kind=8), pointer :: wk(:)
+
+    if ( STAge/=30 .and. STAge/=40 ) then
+      Ir = 50
+      return
+    else
+      Ir = 0
+    endif
+    lwk = TOTal
+
+    allocate (wk(NDEg*NEQns),STAT=IERror)
+    if ( IERror/=0 ) then
+      write (*,*) "##Error: not enough memory"
+      call HECMW_ABORT(HECMW_COMM_GET_COMM())
+    endif
+    !rmiv
+    ndegl = NDEg*(NDEg+1)
+    ndegl = ndegl/2
+
+    select case( NDEg )
+    case (1)
+      call NUSOL1(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+    case (2)
+      call NUSOL2(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+    case (3)
+      call NUSOL3(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+    case (6)
+      call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+    case DEFAULT
+      call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+    ENDSELECT
+
+    STAge = 40
+    deallocate (wk)
+  end subroutine NUSOL0
+
+  !======================================================================!
+  !> @brief NUSOL1 performs forward elimination and backward substitution
+  !======================================================================!
+  subroutine NUSOL1(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(*)
+    real(kind=8), intent(in):: Diag(*)
+    real(kind=8), intent(in):: Dsln(*)
+    real(kind=8), intent(out):: B(*)
+    real(kind=8), intent(out):: Wk(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    ! forward
+    do i = 1, Neqns
+      Wk(i) = B(Iperm(i))
+    enddo
+    joc = 1
+    do i = 1, Neqns
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) Wk(i) = Wk(i) - SPDOT2(Wk,Zln,Colno,ks,ke)
+      if ( i>Nstop ) then
+        Wk(i) = Wk(i) - DDOT(Wk(Nstop),Dsln(joc),i-Nstop)
+        joc = joc + i - Nstop
+      endif
+    enddo
+    do i = 1, Neqns
+      Wk(i) = Wk(i)*Diag(i)
+    enddo
+    ! back ward
+    do i = Neqns, 1, -1
+      if ( i>=Nstop ) then
+        do j = i - 1, Nstop, -1
+          joc = joc - 1
+          Wk(j) = Wk(j) - Wk(i)*Dsln(joc)
+        enddo
+      endif
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) then
+        do k = ks, ke
+          j = Colno(k)
+          Wk(j) = Wk(j) - Wk(i)*Zln(k)
+        enddo
+      endif
+    enddo
+    ! permutaion
+    do i = 1, Neqns
+      B(Iperm(i)) = Wk(i)
+    enddo
+  end subroutine NUSOL1
+
+  !======================================================================!
+  !> @brief NUSOL2 performs forward elimination and backward substitution
+  !======================================================================!
+  subroutine NUSOL2(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(4,*)
+    real(kind=8), intent(in):: Diag(3,*)
+    real(kind=8), intent(in):: Dsln(4,*)
+    real(kind=8), intent(out):: B(2,*)
+    real(kind=8), intent(out):: Wk(2,*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    ! forward
+    do i = 1, Neqns
+      Wk(1,i) = B(1,Iperm(i))
+      Wk(2,i) = B(2,Iperm(i))
+    enddo
+    joc = 1
+    do i = 1, Neqns
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) call S2PDOT(Wk(1,i),Wk,Zln,Colno,ks,ke)
+      if ( i>Nstop ) then
+        call D2SDOT(Wk(1,i),Wk(1,Nstop),Dsln(1,joc),i-Nstop)
+        joc = joc + i - Nstop
+      endif
+    enddo
+    do i = 1, Neqns
+      Wk(2,i) = Wk(2,i) - Wk(1,i)*Diag(2,i)
+      Wk(1,i) = Wk(1,i)*Diag(1,i)
+      Wk(2,i) = Wk(2,i)*Diag(3,i)
+      Wk(1,i) = Wk(1,i) - Wk(2,i)*Diag(2,i)
+    enddo
+    ! back ward
+    do i = Neqns, 1, -1
+      if ( i>=Nstop ) then
+        do j = i - 1, Nstop, -1
+          joc = joc - 1
+          Wk(1,j) = Wk(1,j) - Wk(1,i)*Dsln(1,joc) - Wk(2,i)*Dsln(2,joc)
+          Wk(2,j) = Wk(2,j) - Wk(1,i)*Dsln(3,joc) - Wk(2,i)*Dsln(4,joc)
+        enddo
+      endif
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) then
+        do k = ks, ke
+          j = Colno(k)
+          Wk(1,j) = Wk(1,j) - Wk(1,i)*Zln(1,k) - Wk(2,i)*Zln(2,k)
+          Wk(2,j) = Wk(2,j) - Wk(1,i)*Zln(3,k) - Wk(2,i)*Zln(4,k)
+        enddo
+      endif
+    enddo
+    ! permutaion
+    do i = 1, Neqns
+      B(1,Iperm(i)) = Wk(1,i)
+      B(2,Iperm(i)) = Wk(2,i)
+    enddo
+  end subroutine NUSOL2
+
+  !======================================================================!
+  !> @brief NUSOL3 performs forward elimination and backward substitution
+  !======================================================================!
+  subroutine NUSOL3(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(9,*)
+    real(kind=8), intent(in):: Diag(6,*)
+    real(kind=8), intent(in):: Dsln(9,*)
+    real(kind=8), intent(out):: B(3,*)
+    real(kind=8), intent(out):: Wk(3,*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    ! forward
+    do i = 1, Neqns
+      Wk(1,i) = B(1,Iperm(i))
+      Wk(2,i) = B(2,Iperm(i))
+      Wk(3,i) = B(3,Iperm(i))
+    enddo
+    joc = 1
+    do i = 1, Neqns
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) call S3PDOT(Wk(1,i),Wk,Zln,Colno,ks,ke)
+      if ( i>Nstop ) then
+        call D3SDOT(Wk(1,i),Wk(1,Nstop),Dsln(1,joc),i-Nstop)
+        joc = joc + i - Nstop
+      endif
+    enddo
+    do i = 1, Neqns
+      Wk(2,i) = Wk(2,i) - Wk(1,i)*Diag(2,i)
+      Wk(3,i) = Wk(3,i) - Wk(1,i)*Diag(4,i) - Wk(2,i)*Diag(5,i)
+      Wk(1,i) = Wk(1,i)*Diag(1,i)
+      Wk(2,i) = Wk(2,i)*Diag(3,i)
+      Wk(3,i) = Wk(3,i)*Diag(6,i)
+      Wk(2,i) = Wk(2,i) - Wk(3,i)*Diag(5,i)
+      Wk(1,i) = Wk(1,i) - Wk(2,i)*Diag(2,i) - Wk(3,i)*Diag(4,i)
+    enddo
+    ! back ward
+    do i = Neqns, 1, -1
+      if ( i>=Nstop ) then
+        do j = i - 1, Nstop, -1
+          joc = joc - 1
+          Wk(1,j) = Wk(1,j) - Wk(1,i)*Dsln(1,joc) - Wk(2,i)*Dsln(2,joc) - Wk(3,i)*Dsln(3,joc)
+          Wk(2,j) = Wk(2,j) - Wk(1,i)*Dsln(4,joc) - Wk(2,i)*Dsln(5,joc) - Wk(3,i)*Dsln(6,joc)
+          Wk(3,j) = Wk(3,j) - Wk(1,i)*Dsln(7,joc) - Wk(2,i)*Dsln(8,joc) - Wk(3,i)*Dsln(9,joc)
+        enddo
+      endif
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) then
+        do k = ks, ke
+          j = Colno(k)
+          Wk(1,j) = Wk(1,j) - Wk(1,i)*Zln(1,k) - Wk(2,i)*Zln(2,k) - Wk(3,i)*Zln(3,k)
+          Wk(2,j) = Wk(2,j) - Wk(1,i)*Zln(4,k) - Wk(2,i)*Zln(5,k) - Wk(3,i)*Zln(6,k)
+          Wk(3,j) = Wk(3,j) - Wk(1,i)*Zln(7,k) - Wk(2,i)*Zln(8,k) - Wk(3,i)*Zln(9,k)
+        enddo
+      endif
+    enddo
+    ! permutaion
+    do i = 1, Neqns
+      B(1,Iperm(i)) = Wk(1,i)
+      B(2,Iperm(i)) = Wk(2,i)
+      B(3,Iperm(i)) = Wk(3,i)
+    enddo
+  end subroutine NUSOL3
+
+  !======================================================================!
+  !> @brief NUSOLX performs forward elimination and backward substitution
+  !======================================================================!
+  subroutine NUSOLX(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop,Ndeg,Ndegl)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Iperm(*)
+    real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: B(Ndeg,*)
+    real(kind=8), intent(out):: Wk(Ndeg,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
+    integer:: joc1
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    integer:: loc1
+    integer:: locd
+    integer:: m
+    integer:: n
+
+    ! forward
+    do l = 1, Ndeg
+      Wk(l,1:Neqns) = B(l,Iperm(1:Neqns))
+    enddo
+    joc = 1
+    do i = 1, Neqns
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) call SXPDOT(Ndeg,Wk(1,i),Wk,Zln,Colno,ks,ke)
+      if ( i>Nstop ) then
+        joc1 = i - Nstop
+        call DXSDOT(Ndeg,Wk(1,i),Wk(1,Nstop),Dsln(1,1,joc),joc1)
+        joc = joc + joc1
+      endif
+    enddo
+    do i = 1, Neqns
+      locd = 0
+      do m = 1, Ndeg - 1
+        locd = locd + m
+        loc1 = locd + m
+        do n = m + 1, Ndeg
+          Wk(n,i) = Wk(n,i) - Wk(m,i)*Diag(loc1,i)
+          loc1 = loc1 + n
+        enddo
+      enddo
+      locd = 0
+      do m = 1, Ndeg
+        locd = locd + m
+        Wk(m,i) = Wk(m,i)*Diag(locd,i)
+      enddo
+      do n = Ndeg, 2, -1
+        locd = locd - 1
+        do m = n - 1, 1, -1
+          Wk(m,i) = Wk(m,i) - Wk(n,i)*Diag(locd,i)
+          locd = locd - 1
+        enddo
+      enddo
+    enddo
+    ! back ward
+    do i = Neqns, 1, -1
+      if ( i>=Nstop ) then
+        do j = i - 1, Nstop, -1
+          joc = joc - 1
+          do m = 1, Ndeg
+            do n = 1, Ndeg
+              Wk(m,j) = Wk(m,j) - Wk(n,i)*Dsln(n,m,joc)
+            enddo
+          enddo
+        enddo
+      endif
+      ks = Xlnzr(i)
+      ke = Xlnzr(i+1) - 1
+      if ( ke>=ks ) then
+        do k = ks, ke
+          j = Colno(k)
+          do m = 1, Ndeg
+            do n = 1, Ndeg
+              Wk(m,j) = Wk(m,j) - Wk(n,i)*Zln(n,m,k)
+            enddo
+          enddo
+        enddo
+      endif
+    enddo
+    ! permutaion
+    do l = 1, Ndeg
+      B(l,Iperm(1:Neqns)) = Wk(l,1:Neqns)
+    enddo
+  end subroutine NUSOLX
+
+  !======================================================================!
+  !> @brief ZPIVOT
+  !======================================================================!
+  subroutine ZPIVOT(Neqns,Neqnsz,Nttbr,Jcol,Irow,Zpiv,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nttbr
+    integer, intent(in):: Jcol(*)
+    integer, intent(in):: Irow(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Neqnsz
+    integer, intent(out):: Zpiv(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: l
+
+    Ir = 0
+    Zpiv(1:Neqns) = 1
+
+    do l = 1, Nttbr
+      i = Irow(l)
+      j = Jcol(l)
+      if ( i<=0 .or. j<=0 ) then
+        Ir = -1
+        goto 100
+      elseif ( i>Neqns .or. j>Neqns ) then
+        Ir = 1
+        goto 100
+      endif
+      if ( i==j ) Zpiv(i) = 0
+    enddo
+    do i = Neqns, 1, -1
+      if ( Zpiv(i)==0 ) then
+        Neqnsz = i
+        exit
+      endif
+    enddo
+100 if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
+  end subroutine ZPIVOT
+
+  !======================================================================!
+  !> @brief STSMAT
+  !======================================================================!
+  subroutine STSMAT(Neqns,Nttbr,Irow,Jcol,Jcpt,Jcolno)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nttbr
+    integer, intent(in):: Irow(*)
+    integer, intent(in):: Jcol(*)
+    integer, intent(out):: Jcpt(*)
+    integer, intent(out):: Jcolno(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
+    integer:: k
+    integer:: l
+    integer:: locr
+
+    Jcpt(1:2*Nttbr) = 0
+    Jcolno(1:2*Nttbr) = 0
+    do i = 1, Neqns
+      Jcpt(i) = i + Neqns
+      Jcolno(i+Neqns) = i
+    enddo
+
+    k = 2*Neqns
+
+    do l = 1, Nttbr
+      i = Irow(l)
+      j = Jcol(l)
+      if ( i/=j ) then
+        joc = Jcpt(i)
+        locr = i
+        do while ( joc/=0 )
+          if ( Jcolno(joc)==j ) goto 100
+          if ( Jcolno(joc)>j ) then
+            k = k + 1
+            Jcpt(locr) = k
+            Jcpt(k) = joc
+            Jcolno(k) = j
+            goto 20
+          endif
+          locr = joc
+          joc = Jcpt(joc)
+        enddo
+        k = k + 1
+        Jcpt(locr) = k
+        Jcolno(k) = j
+
+20      joc = Jcpt(j)
+        locr = j
+        do while ( joc/=0 )
+          if ( Jcolno(joc)==i ) goto 100
+          if ( Jcolno(joc)>i ) then
+            k = k + 1
+            Jcpt(locr) = k
+            Jcpt(k) = joc
+            Jcolno(k) = i
+            goto 100
+          endif
+          locr = joc
+          joc = Jcpt(joc)
+        enddo
+        k = k + 1
+        Jcpt(locr) = k
+        Jcolno(k) = i
+      endif
+100 enddo
+    if ( IDBg/=0 ) then
+      write (6,*) 'jcolno'
+      write (6,"(10I7)") (Jcolno(i),i=1,k)
+      write (6,*) 'jcpt'
+      write (6,"(10I7)") (Jcpt(i),i=1,k)
+    endif
+  end subroutine STSMAT
+
+  !======================================================================!
+  !> @brief STIAJA routine sets an non-zero entry  of the matrix.
+  !      (asymmetric version)
+  !======================================================================!
+  subroutine STIAJA(Neqns,Ia,Ja,Jcpt,Jcolno)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Jcpt(*)
+    integer, intent(in):: Jcolno(*)
+    integer, intent(out):: Ia(*)
+    integer, intent(out):: Ja(*)
+    !------
+    integer:: i
+    integer:: ii
+    integer:: joc
+    integer:: k
+    integer:: l
+
+    Ia(1) = 1
+    l = 0
+    do k = 1, Neqns
+      joc = Jcpt(k)
+      do while ( joc/=0 )
+        ii = Jcolno(joc)
+        if ( ii/=k ) then
+          l = l + 1
+          Ja(l) = ii
+        endif
+        joc = Jcpt(joc)
+      enddo
+      Ia(k+1) = l + 1
+    enddo
+    if ( IDBg/=0 ) then
+      write (6,*) 'ia '
+      write (6,"(10I7)") (Ia(i),i=1,Neqns)
+      write (6,*) 'ja '
+      write (6,"(10I7)") (Ja(i),i=1,Ia(Neqns+1))
+    endif
+  end subroutine STIAJA
+
+  !======================================================================!
+  !> @brief GENQMD
+  !======================================================================!
+  subroutine GENQMD(Neqns,Xadj,Adj0,Perm,Invp,Deg,Marker,Rchset,Nbrhd,Qsize,Qlink,Nofsub,Adjncy)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Adj0(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Nofsub
+    integer, intent(out):: Adjncy(*)
+    integer, intent(out):: Perm(*)
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
+    !------
+    integer:: inode
+    integer:: ip
+    integer:: irch
+    integer:: j
+    integer:: mindeg
+    integer:: ndeg
+    integer:: nhdsze
+    integer:: node
+    integer:: np
+    integer:: num
+    integer:: nump1
+    integer:: nxnode
+    integer:: rchsze
+    integer:: search
+    integer:: thresh
+
+    mindeg = Neqns
+    Nofsub = 0
+    Adjncy(1:Xadj(Neqns+1) - 1) = Adj0(1:Xadj(Neqns+1) - 1)
+    do node = 1, Neqns
+      Perm(node) = node
+      Invp(node) = node
+      Marker(node) = 0
+      Qsize(node) = 1
+      Qlink(node) = 0
+      ndeg = Xadj(node+1) - Xadj(node)
+      Deg(node) = ndeg
+      if ( ndeg<mindeg ) mindeg = ndeg
+    enddo
+
+    num = 0
+100 search = 1
+    thresh = mindeg
+    mindeg = Neqns
+200 nump1 = num + 1
+    if ( nump1>search ) search = nump1
+    do j = search, Neqns
+      node = Perm(j)
+      if ( Marker(node)>=0 ) then
+        ndeg = Deg(node)
+        if ( ndeg<=thresh ) goto 300
+        if ( ndeg<mindeg ) mindeg = ndeg
+      endif
+    enddo
+    goto 100
+
+300 search = j
+    Nofsub = Nofsub + Deg(node)
+    Marker(node) = 1
+    call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
+    nxnode = node
+    do
+      num = num + 1
+      np = Invp(nxnode)
+      ip = Perm(num)
+      Perm(np) = ip
+      Invp(ip) = np
+      Perm(num) = nxnode
+      Invp(nxnode) = num
+      Deg(nxnode) = -1
+      nxnode = Qlink(nxnode)
+      if ( nxnode<=0 ) then
+        if ( rchsze>0 ) then
+          call QMDUPD(Xadj,Adjncy,rchsze,Rchset,Deg,Qsize,Qlink,Marker,Rchset(rchsze+1),Nbrhd(nhdsze+1))
+          Marker(node) = 0
+          do irch = 1, rchsze
+            inode = Rchset(irch)
+            if ( Marker(inode)>=0 ) then
+              Marker(inode) = 0
+              ndeg = Deg(inode)
+              if ( ndeg<mindeg ) mindeg = ndeg
+              if ( ndeg<=thresh ) then
+                mindeg = thresh
+                thresh = ndeg
+                search = Invp(inode)
+              endif
+            endif
+          enddo
+          if ( nhdsze>0 ) call QMDOT(node,Xadj,Adjncy,Marker,rchsze,Rchset,Nbrhd)
+        endif
+        if ( num>=Neqns ) exit
+        goto 200
+      endif
+    enddo
+  end subroutine GENQMD
+
+  !======================================================================!
+  !> @brief GENPAQ
+  !======================================================================!
+  subroutine GENPAQ(Xadj,Adjncy,Invp,Iperm,Parent,Neqns,Ancstr)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Iperm(*)
+    integer, intent(out):: Parent(*)
+    integer, intent(out):: Ancstr(*)
+    !------
+    integer:: i
+    integer:: ip
+    integer:: it
+    integer:: k
+    integer:: l
+
+    do i = 1, Neqns
+      Parent(i) = 0
+      Ancstr(i) = 0
+      ip = Iperm(i)
+      do k = Xadj(ip), Xadj(ip+1) - 1
+        l = Invp(Adjncy(k))
+        if ( l<i ) then
+          do while ( Ancstr(l)/=0 )
+            if ( Ancstr(l)==i ) goto 50
+            it = Ancstr(l)
+            Ancstr(l) = i
+            l = it
+          enddo
+          Ancstr(l) = i
+          Parent(l) = i
+        endif
+50    enddo
+    enddo
+    do i = 1, Neqns
+      if ( Parent(i)==0 ) Parent(i) = Neqns + 1
+    enddo
+    Parent(Neqns+1) = 0
+
+    if ( IDBg1/=0 ) then
+      write (6,"(' parent')")
+      write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
+    endif
+  end subroutine GENPAQ
+
+  !======================================================================!
+  !> @brief GENBTQ
+  !======================================================================!
+  subroutine GENBTQ(Invp,Parent,Btree,Zpiv,Izz,Neqns)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Zpiv(*)
+    integer, intent(out):: Btree(2,*)
+    !------
+    integer:: i
+    integer:: ib
+    integer:: inext
+    integer:: ip
+    integer:: Izz
+
+    Btree(1,1:Neqns + 1) = 0
+    Btree(2,1:Neqns + 1) = 0
+    do i = 1, Neqns + 1
+      ip = Parent(i)
+      if ( ip>0 ) then
+        ib = Btree(1,ip)
+        if ( ib==0 ) then
+          Btree(1,ip) = i
+        else
+          do
+            inext = Btree(2,ib)
+            if ( inext==0 ) then
+              Btree(2,ib) = i
+            else
+              ib = inext
+              cycle
+            endif
+            exit
+          enddo
+        endif
+      endif
+    enddo
+    !
+    ! find zeropivot
+    !
+    do i = 1, Neqns
+      if ( Zpiv(i)/=0 ) then
+        if ( Btree(1,Invp(i))==0 ) then
+          Izz = i
+          goto 100
+        endif
+      endif
+    enddo
+    Izz = 0
+
+100 continue
+    if ( IDBg1/=0 ) then
+      write (6,"(' binary tree')")
+      write (6,"(i6,'(',2I6,')')") (i,Btree(1,i),Btree(2,i),i=1,Neqns)
+      write (6,"(' the first zero pivot is ',i4)") Izz
+    endif
+  end subroutine GENBTQ
+
+  !======================================================================!
+  !> @brief POSORD
+  !======================================================================!
+  subroutine POSORD(Parent,Btree,Invp,Iperm,Pordr,Nch,Neqns,Iw,Qarent,Mch)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Btree(2,*)
+    integer, intent(in):: Qarent(*)
+    integer, intent(out):: Parent(*)
+    integer, intent(out):: Pordr(*)
+    integer, intent(out):: Nch(*)
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Iw(*)
+    integer, intent(out):: Mch(0:Neqns+1)
+    !------
+    integer:: i
+    integer:: ii
+    integer:: invpos
+    integer:: ipinv
+    integer:: joc
+    integer:: l
+    integer:: locc
+    integer:: locp
+
+    Mch(1:Neqns) = 0
+    Pordr(1:Neqns) = 0
+    l = 1
+    locc = Neqns + 1
+    do
+      joc = locc
+      locc = Btree(1,joc)
+      if ( locc==0 ) then
+        locp = Qarent(joc)
+        Mch(locp) = Mch(locp) + 1
+        do
+          Pordr(joc) = l
+          if ( l>=Neqns ) then
+            do i = 1, Neqns
+              ipinv = Pordr(Invp(i))
+              Invp(i) = ipinv
+              Iperm(ipinv) = i
+              Iw(Pordr(i)) = i
+            enddo
+            do i = 1, Neqns
+              invpos = Iw(i)
+              Nch(i) = Mch(invpos)
+              ii = Qarent(invpos)
+              if ( ii>0 .and. ii<=Neqns ) then
+                Parent(i) = Pordr(ii)
+              else
+                Parent(i) = Qarent(invpos)
+              endif
+            enddo
+            if ( IDBg1/=0 ) then
+              write (6,"(' post order')")
+              write (6,"(10I6)") (Pordr(i),i=1,Neqns)
+              write (6,"(/' invp ')")
+              write (6,"(/' parent')")
+              write (6,"(10I6)") (Parent(i),i=1,Neqns)
+              write (6,"(10I6)") (Invp(i),i=1,Neqns)
+              write (6,"(/' iperm ')")
+              write (6,"(10I6)") (Iperm(i),i=1,Neqns)
+              write (6,"(' nch')")
+              write (6,"(10I6)") (Nch(i),i=1,Neqns)
+            endif
+            return
+          else
+            l = l + 1
+            locc = Btree(2,joc)
+            if ( locc/=0 ) exit
+            joc = Qarent(joc)
+            locp = Qarent(joc)
+            Mch(locp) = Mch(locp) + Mch(joc) + 1
+          endif
+        enddo
+      endif
+    enddo
+  end subroutine POSORD
+
+  !======================================================================!
+  !> @brief GNLEAF
+  !======================================================================!
+  subroutine GNLEAF(Xadj,Adjncy,Invp,Iperm,Nch,Adjncp,Xleaf,Leaf,Neqns,Lnleaf)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Nch(*)
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Iperm(*)
+    integer, intent(out):: Lnleaf
+    integer, intent(out):: Adjncp(*)
+    integer, intent(out):: Xleaf(*)
+    integer, intent(out):: Leaf(*)
+    !------
+    integer:: i
+    integer:: ik
+    integer:: ip
+    integer:: iq
+    integer:: istart
+    integer:: k
+    integer:: l
+    integer:: lc
+    integer:: lc1
+    integer:: m
+
+    l = 1
+    ik = 0
+    istart = 0
+    do i = 1, Neqns
+      Xleaf(i) = l
+      ip = Iperm(i)
+      do k = Xadj(ip), Xadj(ip+1) - 1
+        iq = Invp(Adjncy(k))
+        if ( iq<i ) then
+          ik = ik + 1
+          Adjncp(ik) = iq
+        endif
+      enddo
+      m = ik - istart
+      if ( m/=0 ) then
+        call QQSORT(Adjncp(istart+1),m)
+        lc1 = Adjncp(istart+1)
+        if ( lc1<i ) then
+          Leaf(l) = lc1
+          l = l + 1
+          do k = istart + 2, ik
+            lc = Adjncp(k)
+            if ( lc1<lc-Nch(lc) ) then
+              Leaf(l) = lc
+              l = l + 1
+            endif
+
+            lc1 = lc
+          enddo
+          ik = 1
+          istart = ik
+        endif
+      endif
+    enddo
+    Xleaf(Neqns+1) = l
+    Lnleaf = l - 1
+
+    if ( IDBg1/=0 ) then
+      write (6,"(' xleaf')")
+      write (6,"(10I6)") (Xleaf(i),i=1,Neqns+1)
+      write (6,"(' leaf (len = ',i6,')')") Lnleaf
+      write (6,"(10I6)") (Leaf(i),i=1,Lnleaf)
+    endif
+
+    return
+  end subroutine GNLEAF
+
+  !======================================================================!
+  !> @brief FORPAR
+  !======================================================================!
+  subroutine FORPAR(Neqns,Parent,Nch,Nstop)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Nstop
+    integer, intent(out):: Nch(*)
+    !------
+    integer:: i
+    integer:: idens
+    integer:: ii
+
+    Nch(1:Neqns) = 0
+    Nch(Neqns+1) = 0
+    do i = 1, Neqns
+      ii = Parent(i)
+      Nch(ii) = Nch(ii) + 1
+    enddo
+    do i = Neqns, 1, -1
+      if ( Nch(i)/=1 ) exit
+    enddo
+
+    idens = 0
+    if ( idens==1 ) then
+      Nstop = i
+    else
+      Nstop = Neqns + 1
+    endif
+  end subroutine FORPAR
+
+  !======================================================================!
+  !> @brief PRE_GNCLNO
+  !======================================================================!
+  subroutine PRE_GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Neqns,Nstop,Lncol,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Xleaf(*)
+    integer, intent(in):: Leaf(*)
+    integer, intent(out):: Lncol
+    integer, intent(out):: Xlnzr(*)
+    !------
+    integer:: i
+    integer:: Ir
+    integer:: j
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    integer:: nc
+    integer:: nxleaf
+
+    nc = 0
+    Ir = 0
+    l = 1
+    do i = 1, Neqns
+      Xlnzr(i) = l
+      ks = Xleaf(i)
+      ke = Xleaf(i+1) - 1
+      if ( ke>=ks ) then
+        nxleaf = Leaf(ks)
+        do k = ks, ke - 1
+          j = nxleaf
+          nxleaf = Leaf(k+1)
+          do while ( j<nxleaf )
+            if ( j>=Nstop ) goto 100
+            l = l + 1
+            j = Parent(j)
+          enddo
+        enddo
+        j = Leaf(ke)
+        do while ( j<Nstop )
+          if ( j>=i .or. j==0 ) exit
+          l = l + 1
+          j = Parent(j)
+        enddo
+      endif
+100 enddo
+    Xlnzr(Neqns+1) = l
+    Lncol = l - 1
+  end subroutine PRE_GNCLNO
+
+  !======================================================================!
+  !> @brief GNCLNO
+  !======================================================================!
+  subroutine GNCLNO(Parent,Xleaf,Leaf,Xlnzr,Colno,Neqns,Nstop,Lncol,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Xleaf(*)
+    integer, intent(in):: Leaf(*)
+    integer, intent(out):: Ir
+    integer, intent(out):: Lncol
+    integer, intent(out):: Xlnzr(*)
+    integer, intent(out):: Colno(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    integer:: nc
+    integer:: nxleaf
+
+    nc = 0
+    Ir = 0
+    l = 1
+    do i = 1, Neqns
+      Xlnzr(i) = l
+      ks = Xleaf(i)
+      ke = Xleaf(i+1) - 1
+      if ( ke>=ks ) then
+        nxleaf = Leaf(ks)
+        do k = ks, ke - 1
+          j = nxleaf
+          nxleaf = Leaf(k+1)
+          do while ( j<nxleaf )
+            if ( j>=Nstop ) goto 100
+            Colno(l) = j
+            l = l + 1
+            j = Parent(j)
+          enddo
+        enddo
+        j = Leaf(ke)
+        do while ( j<Nstop )
+          if ( j>=i .or. j==0 ) exit
+          Colno(l) = j
+          l = l + 1
+          j = Parent(j)
+        enddo
+      endif
+100 enddo
+    Xlnzr(Neqns+1) = l
+    Lncol = l - 1
+
+    if ( IDBg1/=0 ) then
+      write (6,"(' xlnzr')")
+      write (6,"(' colno (lncol =',i10,')')") Lncol
+      do k = 1, Neqns
+        write (6,"(/' row = ',i6)") k
+        write (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
+      enddo
+    endif
+  end subroutine GNCLNO
+
+  !======================================================================!
+  !> @brief BRINGU  brings up zero pivots from bottom of the elimination tree to higher nodes
+  !      irr = 0     complete
+  !          = 1     impossible
+  !======================================================================!
+  subroutine BRINGU(Zpiv,Iperm,Invp,Parent,Izz,Neqns,Irr)
+    implicit none
+    !------
+    integer, intent(in):: Izz
+    integer, intent(in):: Neqns
+    integer, intent(in):: Zpiv(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(out):: Irr
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Invp(*)
+    !------
+    integer:: i
+    integer:: ib
+    integer:: ib0
+    integer:: ibp
+    integer:: idbg
+    integer:: izzp
+
+    idbg = 0
+    Irr = 0
+    ib0 = Invp(Izz)
+    ib = ib0
+    do while ( ib>0 )
+      ibp = Parent(ib)
+      izzp = Iperm(ibp)
+      if ( Zpiv(izzp)==0 ) then
+        Invp(Izz) = ibp
+        Invp(izzp) = ib0
+        Iperm(ibp) = Izz
+        Iperm(ib0) = izzp
+        if ( idbg/=0 ) then
+          do i = 1, Neqns
+            if ( Invp(Iperm(i))/=i .or. Iperm(Invp(i))/=i) then
+              write (6,*) 'permutation error'
+              stop
+            endif
+          enddo
+          return
+        endif
+        return
+      else
+        ib = ibp
+      endif
+    enddo
+    Irr = 1
+  end subroutine BRINGU
+
+  !======================================================================!
+  !> @brief ROTATE
+  ! irr return code irr=0 node izz is not a bottom node
+  !                     irr=1          is a bottom node then rotation is
+  !                                    performed
+  !======================================================================!
+  subroutine ROTATE(Xadj,Adjncy,Invp,Iperm,Parent,Btree,Izz,Neqns,Anc,Adjt,Irr)
+    implicit none
+    !------
+    integer, intent(in):: Izz
+    integer, intent(in):: Neqns
+    integer, intent(in):: Xadj(*)
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Parent(*)
+    integer, intent(in):: Btree(2,*)
+    integer, intent(out):: Irr
+    integer, intent(out):: Invp(*)
+    integer, intent(out):: Iperm(*)
+    integer, intent(out):: Anc(*)
+    integer, intent(out):: Adjt(*)
+    !------
+    integer:: i
+    integer:: iy
+    integer:: izzz
+    integer:: joc
+    integer:: k
+    integer:: l
+    integer:: ll
+    integer:: locc
+    integer:: nanc
+
+    if ( Izz==0 ) then
+      Irr = 0
+      return
+    endif
+    izzz = Invp(Izz)
+
+    if ( Btree(1,izzz)/=0 ) Irr = 0
+    Irr = 1
+    !
+    !  ancestors of izzz
+    !
+    nanc = 0
+    joc = izzz
+    do
+      nanc = nanc + 1
+      Anc(nanc) = joc
+      joc = Parent(joc)
+      if ( joc==0 ) then
+        !
+        !  to find the eligible node from ancestors of izz
+        !
+        l = 1
+        exit
+      endif
+    enddo
+
+100 continue
+    Adjt(1:Neqns) = 0
+    locc = Anc(l)
+    do
+      joc = locc
+      locc = Btree(1,joc)
+      if ( locc==0 ) then
+        do
+          Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1) - 1))) = 1
+          if ( joc>=Anc(l) ) then
+            do ll = l + 1, nanc
+              if ( Adjt(Anc(ll))==0 ) then
+                l = l + 1
+                goto 100
+              endif
+            enddo
+            if ( l==1 ) then
+              !
+              ! izz can be numbered last
+              !
+              k = 0
+              do i = 1, Neqns
+                if ( i/=izzz ) then
+                  k = k + 1
+                  Invp(Iperm(i)) = k
+                endif
+              enddo
+              Invp(Iperm(izzz)) = Neqns
+            else
+              !
+              !  anc(l-1) is the eligible node
+              !
+              ! (1) number the node not in Ancestor(iy)
+              iy = Anc(l-1)
+              Adjt(1:Neqns) = 0
+              Adjt(Anc(l:nanc)) = 1
+              k = 0
+              do ll = 1, Neqns
+                if ( Adjt(ll)==0 ) then
+                  k = k + 1
+                  Invp(Iperm(ll)) = k
+                endif
+              enddo
+              ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
+              Adjt(1:Neqns) = 0
+              locc = iy
+              do
+                joc = locc
+                locc = Btree(1,joc)
+                if ( locc==0 ) then
+                  do
+                    Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1)-1))) = 1
+                    if ( joc>=iy ) then
+                      do ll = l, nanc
+                        if ( Adjt(Anc(ll))==0 ) then
+                          k = k + 1
+                          Invp(Iperm(Anc(ll))) = k
+                        endif
+                      enddo
+                      ! (3) and finally number the node in Adj(t(iy))
+                      do ll = l, nanc
+                        if ( Adjt(Anc(ll))/=0 ) then
+                          k = k + 1
+                          Invp(Iperm(Anc(ll))) = k
+                        endif
+                      enddo
+                      goto 105
+                    else
+                      locc = Btree(2,joc)
+                      if ( locc/=0 ) exit
+                      joc = Parent(joc)
+                    endif
+                  enddo
+                endif
+              enddo
+            endif
+            !
+            ! set iperm
+            !
+105         do i = 1, Neqns
+              Iperm(Invp(i)) = i
+            enddo
+
+            if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
+            return
+          else
+            locc = Btree(2,joc)
+            if ( locc/=0 ) exit
+            joc = Parent(joc)
+          endif
+        enddo
+      endif
+    enddo
+  end subroutine ROTATE
+
+  !======================================================================!
+  !> @brief ADDR0
+  !======================================================================!
+  subroutine ADDR0(Isw,I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg2,Ndeg2l,Ir)
+    implicit none
+    !------
+    integer, intent(in):: I
+    integer, intent(in):: Isw
+    integer, intent(in):: J
+    integer, intent(in):: Ndeg2
+    integer, intent(in):: Ndeg2l
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(Ndeg2)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(Ndeg2,*)
+    real(kind=8), intent(out):: Diag(Ndeg2l,*)
+    real(kind=8), intent(out):: Dsln(Ndeg2,*)
+    !------
+    integer:: i0
+    integer:: ii
+    integer:: itrans
+    integer:: j0
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer, parameter:: idbg = 0
+
+    Ir = 0
+    ii = Invp(I)
+    jj = Invp(J)
+    if ( idbg/=0 ) write (6,*) ii, jj, Aij
+    if ( ii==jj ) then
+      if ( Ndeg2==1 ) then
+        if ( Isw==0 ) then
+          Diag(1,ii) = Aij(1)
+        else
+          Diag(1,ii) = Diag(1,ii) + Aij(1)
+        endif
+      elseif ( Ndeg2==4 ) then
+        if ( Isw==0 ) then
+          Diag(1,ii) = Aij(1)
+          Diag(2,ii) = Aij(2)
+          Diag(3,ii) = Aij(4)
+        else
+          Diag(1,ii) = Diag(1,ii) + Aij(1)
+          Diag(2,ii) = Diag(2,ii) + Aij(2)
+          Diag(3,ii) = Diag(3,ii) + Aij(4)
+        endif
+      endif
+      return
+    endif
+    itrans = 0
+    if ( jj>ii ) then
+      k = jj
+      jj = ii
+      ii = k
+      itrans = 1
+    endif
+    if ( jj>=Nstop ) then
+      i0 = ii-Nstop
+      j0 = jj-Nstop + 1
+      k = i0*(i0-1)/2 + j0
+      if ( Ndeg2==1 ) then
+        Dsln(1,k) = Aij(1)
+        return
+      elseif ( Ndeg2==4 ) then
+        if ( itrans==0 ) then
+          Dsln(1:Ndeg2,k) = Aij(1:Ndeg2)
+        else
+          Dsln(1,k) = Aij(1)
+          Dsln(2,k) = Aij(3)
+          Dsln(3,k) = Aij(2)
+          Dsln(4,k) = Aij(4)
+        endif
+        return
+      endif
+    endif
+    ks = Xlnzr(ii)
+    ke = Xlnzr(ii+1) - 1
+    do k = ks, ke
+      if ( Colno(k)==jj ) then
+        if ( Isw==0 ) then
+          if ( Ndeg2==1 ) then
+            Zln(1,k) = Aij(1)
+          elseif ( Ndeg2==4 ) then
+            if ( itrans==0 ) then
+              Zln(1:Ndeg2,k) = Aij(1:Ndeg2)
+            else
+              Zln(1,k) = Aij(1)
+              Zln(2,k) = Aij(3)
+              Zln(3,k) = Aij(2)
+              Zln(4,k) = Aij(4)
+            endif
+          endif
+        elseif ( Ndeg2==1 ) then
+          Zln(1,k) = Zln(1,k) + Aij(1)
+        elseif ( Ndeg2==4 ) then
+          if ( itrans==0 ) then
+            Zln(1:Ndeg2,k) = Zln(1:Ndeg2,k) + Aij(1:Ndeg2)
+          else
+            Zln(1,k) = Zln(1,k) + Aij(1)
+            Zln(2,k) = Zln(2,k) + Aij(3)
+            Zln(3,k) = Zln(3,k) + Aij(2)
+            Zln(4,k) = Zln(4,k) + Aij(4)
+          endif
+        endif
+        return
+      endif
+    enddo
+    Ir = 20
+  end subroutine ADDR0
+
+  !======================================================================!
+  !> @brief ADDR3
+  !======================================================================!
+  subroutine ADDR3(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ir)
+    implicit none
+    !------
+    integer, intent(in):: I
+    integer, intent(in):: J
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(9)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(9,*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    !------
+    integer:: i0
+    integer:: ii
+    integer:: itrans
+    integer:: j0
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    integer, parameter:: idbg = 0
+    integer, parameter:: ndeg2 = 9
+    integer, parameter:: ndeg2l = 6
+
+    Ir = 0
+    ii = Invp(I)
+    jj = Invp(J)
+    if ( idbg/=0 ) write (6,*) ii, jj, Aij
+    if ( ii==jj ) then
+      Diag(1,ii) = Aij(1)
+      Diag(2,ii) = Aij(2)
+      Diag(3,ii) = Aij(5)
+      Diag(4,ii) = Aij(3)
+      Diag(5,ii) = Aij(6)
+      Diag(6,ii) = Aij(9)
+      return
+    endif
+    itrans = 0
+    if ( jj>ii ) then
+      k = jj
+      jj = ii
+      ii = k
+      itrans = 1
+    endif
+    if ( jj>=Nstop ) then
+      i0 = ii - Nstop
+      j0 = jj - Nstop + 1
+      k = i0*(i0-1)/2 + j0
+      if ( itrans==0 ) then
+        Dsln(1:ndeg2,k) = Aij(1:ndeg2)
+      else
+        Dsln(1,k) = Aij(1)
+        Dsln(2,k) = Aij(4)
+        Dsln(3,k) = Aij(7)
+        Dsln(4,k) = Aij(2)
+        Dsln(5,k) = Aij(5)
+        Dsln(6,k) = Aij(8)
+        Dsln(7,k) = Aij(3)
+        Dsln(8,k) = Aij(6)
+        Dsln(9,k) = Aij(9)
+      endif
+      return
+    endif
+    ks = Xlnzr(ii)
+    ke = Xlnzr(ii+1) - 1
+    do k = ks, ke
+      if ( Colno(k)==jj ) then
+        if ( itrans==0 ) then
+          do l = 1, ndeg2
+            Zln(l,k) = Aij(l)
+          enddo
+        else
+          Zln(1,k) = Aij(1)
+          Zln(2,k) = Aij(4)
+          Zln(3,k) = Aij(7)
+          Zln(4,k) = Aij(2)
+          Zln(5,k) = Aij(5)
+          Zln(6,k) = Aij(8)
+          Zln(7,k) = Aij(3)
+          Zln(8,k) = Aij(6)
+          Zln(9,k) = Aij(9)
+        endif
+        return
+      endif
+    enddo
+    Ir = 20
+  end subroutine ADDR3
+
+  !======================================================================!
+  !> @brief ADDRX
+  !======================================================================!
+  subroutine ADDRX(I,J,Aij,Invp,Xlnzr,Colno,Diag,Zln,Dsln,Nstop,Ndeg,Ndeg2l,Ir)
+    implicit none
+    !------
+    integer, intent(in):: I
+    integer, intent(in):: J
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndeg2l
+    integer, intent(in):: Nstop
+    integer, intent(in):: Invp(*)
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Aij(Ndeg,Ndeg)
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Diag(Ndeg2l,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    !------
+    integer:: i0
+    integer:: ii
+    integer:: itrans
+    integer:: j0
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    integer:: m
+    integer:: n
+    integer, parameter:: idbg = 0
+
+    Ir = 0
+    ii = Invp(I)
+    jj = Invp(J)
+    if ( idbg/=0 ) write (6,*) ii, jj, Aij
+    if ( ii==jj ) then
+      l = 0
+      do n = 1, Ndeg
+        do m = 1, n
+          l = l + 1
+          Diag(l,ii) = Aij(n,m)
+        enddo
+      enddo
+      return
+    endif
+    itrans = 0
+    if ( jj>ii ) then
+      k = jj
+      jj = ii
+      ii = k
+      itrans = 1
+    endif
+    if ( jj>=Nstop ) then
+      i0 = ii - Nstop
+      j0 = jj - Nstop + 1
+      k = i0*(i0-1)/2 + j0
+      if ( itrans==0 ) then
+        do m = 1, Ndeg
+          Dsln(1:Ndeg,m,k) = Aij(1:Ndeg,m)
+        enddo
+      else
+        do m = 1, Ndeg
+          Dsln(1:Ndeg,m,k) = Aij(m,1:Ndeg)
+        enddo
+      endif
+      return
+    endif
+    ks = Xlnzr(ii)
+    ke = Xlnzr(ii+1) - 1
+    do k = ks, ke
+      if ( Colno(k)==jj ) then
+        if ( itrans==0 ) then
+          do m = 1, Ndeg
+            Zln(1:Ndeg,m,k) = Aij(1:Ndeg,m)
+          enddo
+        else
+          do m = 1, Ndeg
+            Zln(1:Ndeg,m,k) = Aij(m,1:Ndeg)
+          enddo
+        endif
+        return
+      endif
+    enddo
+    Ir = 20
+  end subroutine ADDRX
+
+  !======================================================================!
+  !> @brief D2DOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine D2DOT(T,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(4,*)
+    real(kind=8), intent(in):: B(4,*)
+    real(kind=8), intent(out):: T(4)
+    !------
+    integer:: jj
+
+    T(1:4) = 0.0D0
+
+    do jj = 1, N
+      T(1) = T(1) + A(1,jj)*B(1,jj) + A(3,jj)*B(3,jj)
+      T(2) = T(2) + A(2,jj)*B(1,jj) + A(4,jj)*B(3,jj)
+      T(3) = T(3) + A(1,jj)*B(2,jj) + A(3,jj)*B(4,jj)
+      T(4) = T(4) + A(2,jj)*B(2,jj) + A(4,jj)*B(4,jj)
+    enddo
+  end subroutine D2DOT
+
+  !======================================================================!
+  !> @brief D2SDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine D2SDOT(Wi,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(2,*)
+    real(kind=8), intent(in):: B(4,*)
+    real(kind=8), intent(out):: Wi(2)
+    !------
+    integer:: jj
+
+    do jj = 1, N
+      Wi(1) = Wi(1) - A(1,jj)*B(1,jj) - A(2,jj)*B(3,jj)
+      Wi(2) = Wi(2) - A(1,jj)*B(2,jj) - A(2,jj)*B(4,jj)
+    enddo
+  end subroutine D2SDOT
+
+  !======================================================================!
+  !> @brief D3DOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine D3DOT(T,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(9,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: T(9)
+    !------
+    integer:: jj
+
+    T(1:9) = 0.0D0
+    do jj = 1, N
+      T(1) = T(1) + A(1,jj)*B(1,jj) + A(4,jj)*B(4,jj) + A(7,jj)*B(7,jj)
+      T(2) = T(2) + A(2,jj)*B(1,jj) + A(5,jj)*B(4,jj) + A(8,jj)*B(7,jj)
+      T(3) = T(3) + A(3,jj)*B(1,jj) + A(6,jj)*B(4,jj) + A(9,jj)*B(7,jj)
+
+      T(4) = T(4) + A(1,jj)*B(2,jj) + A(4,jj)*B(5,jj) + A(7,jj)*B(8,jj)
+      T(5) = T(5) + A(2,jj)*B(2,jj) + A(5,jj)*B(5,jj) + A(8,jj)*B(8,jj)
+      T(6) = T(6) + A(3,jj)*B(2,jj) + A(6,jj)*B(5,jj) + A(9,jj)*B(8,jj)
+
+      T(7) = T(7) + A(1,jj)*B(3,jj) + A(4,jj)*B(6,jj) + A(7,jj)*B(9,jj)
+      T(8) = T(8) + A(2,jj)*B(3,jj) + A(5,jj)*B(6,jj) + A(8,jj)*B(9,jj)
+      T(9) = T(9) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
+    enddo
+  end subroutine D3DOT
+
+  !======================================================================!
+  !> @brief D3DOTL performs inner product of sparse vectors
+  !======================================================================!
+  subroutine D3DOTL(T,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(9,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: T(6)
+    !------
+    integer:: jj
+
+    T(1:6) = 0.0D0
+    do jj = 1, N
+      T(1) = T(1) + A(1,jj)*B(1,jj) + A(4,jj)*B(4,jj) + A(7,jj)*B(7,jj)
+      T(2) = T(2) + A(2,jj)*B(1,jj) + A(5,jj)*B(4,jj) + A(8,jj)*B(7,jj)
+
+      T(3) = T(3) + A(2,jj)*B(2,jj) + A(5,jj)*B(5,jj) + A(8,jj)*B(8,jj)
+      T(4) = T(4) + A(3,jj)*B(1,jj) + A(6,jj)*B(4,jj) + A(9,jj)*B(7,jj)
+
+      T(5) = T(5) + A(3,jj)*B(2,jj) + A(6,jj)*B(5,jj) + A(9,jj)*B(8,jj)
+      T(6) = T(6) + A(3,jj)*B(3,jj) + A(6,jj)*B(6,jj) + A(9,jj)*B(9,jj)
+    enddo
+  end subroutine D3DOTL
+
+  !======================================================================!
+  !> @brief D3SDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine D3SDOT(Wi,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(3,*)
+    real(kind=8), intent(in):: B(9,*)
+    real(kind=8), intent(out):: Wi(3)
+    !------
+    integer:: jj
+
+    do jj = 1, N
+      Wi(1) = Wi(1) - A(1,jj)*B(1,jj) - A(2,jj)*B(4,jj) - A(3,jj)*B(7,jj)
+      Wi(2) = Wi(2) - A(1,jj)*B(2,jj) - A(2,jj)*B(5,jj) - A(3,jj)*B(8,jj)
+      Wi(3) = Wi(3) - A(1,jj)*B(3,jj) - A(2,jj)*B(6,jj) - A(3,jj)*B(9,jj)
+    enddo
+  end subroutine D3SDOT
+
+  !======================================================================!
+  !> @brief DDOT performs inner product of sparse vectors
+  !======================================================================!
+  real(kind=8) function DDOT(A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(in):: B(N)
+    !------
+    integer:: i
+    real(kind=8):: s
+
+    s = 0.0D0
+    do i = 1, N
+      s = s + A(i)*B(i)
+    enddo
+    DDOT = s
+  end function DDOT
+
+  !======================================================================!
+  !> @brief DXDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine DXDOT(Ndeg,T,A,B,L)
+    implicit none
+    !------
+    integer, intent(in):: L
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
+    !------
+    integer:: jj
+    integer:: k
+    integer:: m
+    integer:: n
+
+    do n = 1, Ndeg
+      do m = 1, Ndeg
+        T(n,m) = 0.0D0
+        do k = 1, Ndeg
+          do jj = 1, L
+            T(n,m) = T(n,m) + A(n,k,jj)*B(m,k,jj)
+          enddo
+        enddo
+      enddo
+    enddo
+  end subroutine DXDOT
+
+  !======================================================================!
+  !> @brief DXDOTL performs inner product of sparse vectors
+  !======================================================================!
+  subroutine DXDOTL(Ndeg,T,A,B,L)
+    implicit none
+    !------
+    integer, intent(in):: L
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
+    !------
+    integer:: jj
+    integer:: k
+    integer:: m
+    integer:: n
+
+    do n = 1, Ndeg
+      do m = 1, n
+        T(n,m) = 0.0D0
+        do k = 1, Ndeg
+          do jj = 1, L
+            T(n,m) = T(n,m) + A(n,k,jj)*B(m,k,jj)
+          enddo
+        enddo
+      enddo
+    enddo
+  end subroutine DXDOTL
+
+  !======================================================================!
+  !> @brief DXSDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine DXSDOT(Ndeg,Wi,A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: A(Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Wi(Ndeg)
+    integer, intent(INOUT):: N
+    !------
+    integer:: jj
+    integer:: m
+
+    do jj = 1, N
+      do m = 1, Ndeg
+        do N = 1, Ndeg
+          Wi(N) = Wi(N) - B(N,m,jj)*A(m,jj)
+        enddo
+      enddo
+    enddo
+  end subroutine DXSDOT
+
+  !======================================================================!
+  !> @brief S3PDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine S3PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    implicit none
+    !------
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(9,*)
+    real(kind=8), intent(in):: B(3,*)
+    real(kind=8), intent(out):: Bi(3)
+    !------
+    integer:: j
+    integer:: jj
+
+    do jj = Ks, Ke
+      j = Colno(jj)
+      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(4,jj)*B(2,j) - Zln(7,jj)*B(3,j)
+      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(5,jj)*B(2,j) - Zln(8,jj)*B(3,j)
+      Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(6,jj)*B(2,j) - Zln(9,jj)*B(3,j)
+    enddo
+  end subroutine S3PDOT
+
+  !======================================================================!
+  !> @brief S2PDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine S2PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    implicit none
+    !------
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(4,*)
+    real(kind=8), intent(in):: B(2,*)
+    real(kind=8), intent(out):: Bi(2)
+    !------
+    integer:: j
+    integer:: jj
+
+    do jj = Ks, Ke
+      j = Colno(jj)
+      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(3,jj)*B(2,j)
+      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(4,jj)*B(2,j)
+    enddo
+  end subroutine S2PDOT
+
+  !======================================================================!
+  !> @brief S6PDOT  performs inner product of sparse vectors
+  !======================================================================!
+  subroutine S6PDOT(Bi,B,Zln,Colno,Ks,Ke)
+    implicit none
+    !------
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(36,*)
+    real(kind=8), intent(in):: B(6,*)
+    real(kind=8), intent(out):: Bi(6)
+    !------
+    integer:: j
+    integer:: jj
+
+    do jj = Ks, Ke
+      j = Colno(jj)
+      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j) - Zln(13,jj)*B(3,j)&
+          - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
+      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j) - Zln(14,jj)*B(3,j)&
+          - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
+      Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j) - Zln(15,jj)*B(3,j)&
+          - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
+      Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j) - Zln(16,jj)*B(3,j)&
+          - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
+      Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j) - Zln(17,jj)*B(3,j)&
+          - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
+      Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j) - Zln(18,jj)*B(3,j)&
+          - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
+    enddo
+  end subroutine S6PDOT
+
+  !======================================================================!
+  !> @brief SPDOT2 performs inner product of sparse vectors
+  !======================================================================!
+  real(kind=8) function SPDOT2(B,Zln,Colno,Ks,Ke)
+    implicit none
+    !------
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(*)
+    real(kind=8), intent(in):: B(*)
+    !------
+    integer:: j
+    integer:: jj
+    real(kind=8):: s
+
+    s = 0.0D0
+    do jj = Ks, Ke
+      j = Colno(jj)
+      s = s + Zln(jj)*B(j)
+    enddo
+    SPDOT2 = s
+  end function SPDOT2
+
+  !======================================================================!
+  !> @brief SXPDOT performs inner product of sparse vectors
+  !======================================================================!
+  subroutine SXPDOT(Ndeg,Bi,B,Zln,Colno,Ks,Ke)
+    implicit none
+    !------
+    integer, intent(in):: Ke
+    integer, intent(in):: Ks
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Colno(*)
+    real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(in):: B(Ndeg,*)
+    real(kind=8), intent(out):: Bi(Ndeg)
+    !------
+    integer:: j
+    integer:: jj
+    integer:: m
+    integer:: n
+
+    do jj = Ks, Ke
+      j = Colno(jj)
+      do m = 1, Ndeg
+        do n = 1, Ndeg
+          Bi(n) = Bi(n) - Zln(n,m,jj)*B(m,j)
+        enddo
+      enddo
+    enddo
+  end subroutine SXPDOT
+
+  !======================================================================!
+  !> @brief INV2
+  !======================================================================!
+  subroutine INV2(Dsln,Ir)
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(3)
+    !------
+    real(kind=8):: t
+
+    Ir = 0
+    if ( DABS(Dsln(1))<RMIn ) then
+      Ir = 10
+      return
+    endif
+    Dsln(1) = 1.0D0/Dsln(1)
+    t = Dsln(2)*Dsln(1)
+    Dsln(3) = Dsln(3) - t*Dsln(2)
+    Dsln(2) = t
+    if ( DABS(Dsln(3))<RMIn ) then
+      Ir = 10
+      return
+    endif
+    Dsln(3) = 1.0D0/Dsln(3)
+  end subroutine INV2
+
+  !======================================================================!
+  !> @brief INV22
+  !======================================================================!
+  subroutine INV22(Zln,Zz,Diag)
+    implicit none
+    !------
+    real(kind=8), intent(in):: Diag(3)
+    real(kind=8), intent(in):: Zz(4)
+    real(kind=8), intent(out):: Zln(4)
+    !------
+    Zln(3) = Zz(3) - Zz(1)*Diag(2)
+    Zln(1) = Zz(1)*Diag(1)
+    Zln(3) = Zln(3)*Diag(3)
+    Zln(1) = Zln(1) - Zln(3)*Diag(2)
+
+    Zln(4) = Zz(4) - Zz(2)*Diag(2)
+    Zln(2) = Zz(2)*Diag(1)
+    Zln(4) = Zln(4)*Diag(3)
+    Zln(2) = Zln(2) - Zln(4)*Diag(2)
+  end subroutine INV22
+
+  !======================================================================!
+  !> @brief INV3
+  !======================================================================!
+  subroutine INV3(Dsln,Ir)
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(6)
+    !------
+    real(kind=8):: t(2)
+
+    Ir = 0
+    if ( DABS(Dsln(1))<RMIn ) goto 100
+    Dsln(1) = 1.0D0/Dsln(1)
+    t(1) = Dsln(2)*Dsln(1)
+    Dsln(3) = Dsln(3) - t(1)*Dsln(2)
+    Dsln(2) = t(1)
+    if ( DABS(Dsln(3))<RMIn ) goto 100
+    Dsln(3) = 1.0D0/Dsln(3)
+    t(1) = Dsln(4)*Dsln(1)
+    Dsln(5) = Dsln(5) - Dsln(2)*Dsln(4)
+    t(2) = Dsln(5)*Dsln(3)
+    Dsln(6) = Dsln(6) - t(1)*Dsln(4) - t(2)*Dsln(5)
+    Dsln(4) = t(1)
+    Dsln(5) = t(2)
+    if ( DABS(Dsln(6))<RMIn ) goto 100
+    Dsln(6) = 1.0D0/Dsln(6)
+    return
+
+100 Dsln(1) = 1.0D0
+    Dsln(2) = 0.0D0
+    Dsln(3) = 1.0D0
+    Dsln(4) = 0.0D0
+    Dsln(5) = 0.0D0
+    Dsln(6) = 1.0D0
+  end subroutine INV3
+
+  !======================================================================!
+  !> @brief INV33
+  !======================================================================!
+  subroutine INV33(Zln,Zz,Diag)
+    implicit none
+    !------
+    real(kind=8), intent(in):: Diag(6)
+    real(kind=8), intent(in):: Zz(9)
+    real(kind=8), intent(out):: Zln(9)
+    !------
+    Zln(4) = Zz(4) - Zz(1)*Diag(2)
+    Zln(7) = Zz(7) - Zz(1)*Diag(4) - Zln(4)*Diag(5)
+    Zln(1) = Zz(1)*Diag(1)
+    Zln(4) = Zln(4)*Diag(3)
+    Zln(7) = Zln(7)*Diag(6)
+    Zln(4) = Zln(4) - Zln(7)*Diag(5)
+    Zln(1) = Zln(1) - Zln(4)*Diag(2) - Zln(7)*Diag(4)
+
+    Zln(5) = Zz(5) - Zz(2)*Diag(2)
+    Zln(8) = Zz(8) - Zz(2)*Diag(4) - Zln(5)*Diag(5)
+    Zln(2) = Zz(2)*Diag(1)
+    Zln(5) = Zln(5)*Diag(3)
+    Zln(8) = Zln(8)*Diag(6)
+    Zln(5) = Zln(5) - Zln(8)*Diag(5)
+    Zln(2) = Zln(2) - Zln(5)*Diag(2) - Zln(8)*Diag(4)
+
+    Zln(6) = Zz(6) - Zz(3)*Diag(2)
+    Zln(9) = Zz(9) - Zz(3)*Diag(4) - Zln(6)*Diag(5)
+    Zln(3) = Zz(3)*Diag(1)
+    Zln(6) = Zln(6)*Diag(3)
+    Zln(9) = Zln(9)*Diag(6)
+    Zln(6) = Zln(6) - Zln(9)*Diag(5)
+    Zln(3) = Zln(3) - Zln(6)*Diag(2) - Zln(9)*Diag(4)
+  end subroutine INV33
+
+  !======================================================================!
+  !> @brief INV6
+  !======================================================================!
+  subroutine INV6(Dsln,Ir)
+    implicit none
+    !------
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(21)
+    !------
+    real(kind=8):: t(5)
+
+    Ir = 0
+    Dsln(1) = 1.0D0/Dsln(1)
+    t(1) = Dsln(2)*Dsln(1)
+    Dsln(3) = 1.0D0/(Dsln(3)-t(1)*Dsln(2))
+    Dsln(2) = t(1)
+    Dsln(5) = Dsln(5) - Dsln(4)*Dsln(2)
+    t(1) = Dsln(4)*Dsln(1)
+    t(2) = Dsln(5)*Dsln(3)
+    Dsln(6) = 1.0D0/(Dsln(6)-t(1)*Dsln(4)-t(2)*Dsln(5))
+    Dsln(4) = t(1)
+    Dsln(5) = t(2)
+    Dsln(8) = Dsln(8) - Dsln(7)*Dsln(2)
+    Dsln(9) = Dsln(9) - Dsln(7)*Dsln(4) - Dsln(8)*Dsln(5)
+    t(1) = Dsln(7)*Dsln(1)
+    t(2) = Dsln(8)*Dsln(3)
+    t(3) = Dsln(9)*Dsln(6)
+    Dsln(10) = 1.0D0/(Dsln(10)-t(1)*Dsln(7)-t(2)*Dsln(8)-t(3)*Dsln(9))
+    Dsln(7) = t(1)
+    Dsln(8) = t(2)
+    Dsln(9) = t(3)
+    Dsln(12) = Dsln(12) - Dsln(11)*Dsln(2)
+    Dsln(13) = Dsln(13) - Dsln(11)*Dsln(4) - Dsln(12)*Dsln(5)
+    Dsln(14) = Dsln(14) - Dsln(11)*Dsln(7) - Dsln(12)*Dsln(8) - Dsln(13)*Dsln(9)
+    t(1) = Dsln(11)*Dsln(1)
+    t(2) = Dsln(12)*Dsln(3)
+    t(3) = Dsln(13)*Dsln(6)
+    t(4) = Dsln(14)*Dsln(10)
+    Dsln(15) = 1.0D0/(Dsln(15)-t(1)*Dsln(11)-t(2)*Dsln(12)-t(3)*Dsln(13)-t(4)*Dsln(14))
+    Dsln(11) = t(1)
+    Dsln(12) = t(2)
+    Dsln(13) = t(3)
+    Dsln(14) = t(4)
+    Dsln(17) = Dsln(17) - Dsln(16)*Dsln(2)
+    Dsln(18) = Dsln(18) - Dsln(16)*Dsln(4) - Dsln(17)*Dsln(5)
+    Dsln(19) = Dsln(19) - Dsln(16)*Dsln(7) - Dsln(17)*Dsln(8) - Dsln(18)*Dsln(9)
+    Dsln(20) = Dsln(20) - Dsln(16)*Dsln(11) - Dsln(17)*Dsln(12) - Dsln(18)*Dsln(13) - Dsln(19)*Dsln(14)
+    t(1) = Dsln(16)*Dsln(1)
+    t(2) = Dsln(17)*Dsln(3)
+    t(3) = Dsln(18)*Dsln(6)
+    t(4) = Dsln(19)*Dsln(10)
+    t(5) = Dsln(20)*Dsln(15)
+    Dsln(21) = 1.0D0/(Dsln(21)-t(1)*Dsln(16)-t(2)*Dsln(17)-t(3) *Dsln(18)-t(4)*Dsln(19)-t(5)*Dsln(20))
+    Dsln(16) = t(1)
+    Dsln(17) = t(2)
+    Dsln(18) = t(3)
+    Dsln(19) = t(4)
+    Dsln(20) = t(5)
+  end subroutine INV6
+
+  !======================================================================!
+  !> @brief INV66
+  !======================================================================!
+  subroutine INV66(Zln,Zz,Diag)
+    implicit none
+    !------
+    real(kind=8), intent(in):: Diag(21)
+    real(kind=8), intent(in):: Zz(36)
+    real(kind=8), intent(out):: Zln(36)
+    !------
+    integer:: i
+
+    do i = 0, 5
+      Zln(i+7) = Zz(i+7) - Zz(i+1)*Diag(2)
+      Zln(i+13) = Zz(i+13) - Zz(i+1)*Diag(4) - Zln(i+7)*Diag(5)
+      Zln(i+19) = Zz(i+19) - Zz(i+1)*Diag(7) - Zln(i+7)*Diag(8) - Zln(i+13)*Diag(9)
+      Zln(i+25) = Zz(i+25) - Zz(i+1)*Diag(11) - Zln(i+7)*Diag(12) - Zln(i+13)*Diag(13)&
+          - Zln(i+19)*Diag(14)
+      Zln(i+31) = Zz(i+31) - Zz(i+1)*Diag(16) - Zln(i+7)*Diag(17) - Zln(i+13)*Diag(18)&
+          - Zln(i+19)*Diag(19) - Zln(i+25)*Diag(20)
+      Zln(i+1) = Zz(i+1)*Diag(1)
+      Zln(i+7) = Zln(i+7)*Diag(3)
+      Zln(i+13) = Zln(i+13)*Diag(6)
+      Zln(i+19) = Zln(i+19)*Diag(10)
+      Zln(i+25) = Zln(i+25)*Diag(15)
+      Zln(i+31) = Zln(i+31)*Diag(21)
+      Zln(i+25) = Zln(i+25) - Zln(i+31)*Diag(20)
+      Zln(i+19) = Zln(i+19) - Zln(i+31)*Diag(19) - Zln(i+25)*Diag(14)
+      Zln(i+13) = Zln(i+13) - Zln(i+31)*Diag(18) - Zln(i+25)*Diag(13)- Zln(i+19)*Diag(9)
+      Zln(i+7) = Zln(i+7) - Zln(i+31)*Diag(17) - Zln(i+25)*Diag(12)- Zln(i+19)*Diag(8)&
+          - Zln(i+13)*Diag(5)
+      Zln(i+1) = Zln(i+1) - Zln(i+31)*Diag(16) - Zln(i+25)*Diag(11)- Zln(i+19)*Diag(7)&
+          - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
+    enddo
+  end subroutine INV66
+
+  !======================================================================!
+  !> @brief INVX
+  !======================================================================!
+  subroutine INVX(Dsln,Ndeg,Ir)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(out):: Ir
+    real(kind=8), intent(out):: Dsln(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: k
+    integer:: k0
+    integer:: l
+    integer:: l0
+    integer:: ld
+    integer:: ll
+    real(kind=8):: t
+    real(kind=8):: tem
+
+    Ir = 0
+    l = 1
+    Dsln(1) = 1.0D0/Dsln(1)
+    do i = 2, Ndeg
+      ld = 0
+      l0 = l
+      do j = 1, i - 1
+        l = l + 1
+        do k = 1, j - 1
+          ld = ld + 1
+          Dsln(l) = Dsln(l) - Dsln(l0+k)*Dsln(ld)
+        enddo
+        ld = ld + 1
+      enddo
+      t = 0.0D0
+      k0 = 0
+      ll = 0
+      do k = l - i + 2, l
+        ll = ll + 1
+        k0 = k0 + ll
+        tem = Dsln(k)*Dsln(k0)
+        t = t + tem*Dsln(k)
+        Dsln(k) = tem
+      enddo
+      l = l + 1
+      Dsln(l) = Dsln(l) - t
+      Dsln(l) = 1.0D0/Dsln(l)
+    enddo
+  end subroutine INVX
+
+  !======================================================================!
+  !> @brief INVXX
+  !======================================================================!
+  subroutine INVXX(Zln,Zz,Diag,Ndeg)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    real(kind=8), intent(in):: Diag(*)
+    real(kind=8), intent(in):: Zz(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg)
+    !------
+    integer:: joc
+    integer:: l
+    integer:: loc1
+    integer:: m
+    integer:: n
+
+    Zln = Zz
+    do l = 1, Ndeg, 2
+      joc = 0
+      do m = 1, Ndeg - 1
+        joc = joc + m
+        loc1 = joc + m
+        do n = m + 1, Ndeg
+          Zln(l,n) = Zln(l,n) - Zln(l,m)*Diag(loc1)
+          Zln(l+1,n) = Zln(l+1,n) - Zln(l+1,m)*Diag(loc1)
+          loc1 = loc1 + n
+        enddo
+      enddo
+      joc = 0
+      do m = 1, Ndeg
+        joc = joc + m
+        Zln(l,m) = Zln(l,m)*Diag(joc)
+        Zln(l+1,m) = Zln(l+1,m)*Diag(joc)
+      enddo
+      do n = Ndeg, 2, -1
+        joc = joc - 1
+        do m = n - 1, 1, -1
+          Zln(l,m) = Zln(l,m) - Zln(l,n)*Diag(joc)
+          Zln(l+1,m) = Zln(l+1,m) - Zln(l+1,n)*Diag(joc)
+          joc = joc - 1
+        enddo
+      enddo
+    enddo
+  end subroutine INVXX
+
+  !======================================================================!
+  !> @brief QMDMRG
+  !======================================================================!
+  subroutine QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,Deg0,Nhdsze,Nbrhd,Rchset,Ovrlp)
+    implicit none
+    !------
+    integer, intent(in):: Deg0
+    integer, intent(in):: Nhdsze
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Nbrhd(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Ovrlp(*)
+    !------
+    integer:: deg1
+    integer:: head
+    integer:: inhd
+    integer:: iov
+    integer:: irch
+    integer:: j
+    integer:: jstrt
+    integer:: jstop
+    integer:: link
+    integer:: lnode
+    integer:: mark
+    integer:: mrgsze
+    integer:: nabor
+    integer:: node
+    integer:: novrlp
+    integer:: rchsze
+    integer:: root
+
+    if ( Nhdsze<=0 ) return
+    do inhd = 1, Nhdsze
+      root = Nbrhd(inhd)
+      Marker(root) = 0
+    enddo
+    do inhd = 1, Nhdsze
+      root = Nbrhd(inhd)
+      Marker(root) = -1
+      rchsze = 0
+      novrlp = 0
+      deg1 = 0
+      do
+        jstrt = Xadj(root)
+        jstop = Xadj(root+1) - 1
+        do j = jstrt, jstop
+          nabor = Adjncy(j)
+          root = -nabor
+          if ( nabor<0 ) goto 50
+          if ( nabor==0 ) exit
+          mark = Marker(nabor)
+
+          if ( mark>=0 ) then
+            if ( mark<=0 ) then
+              rchsze = rchsze + 1
+              Rchset(rchsze) = nabor
+              deg1 = deg1 + Qsize(nabor)
+              Marker(nabor) = 1
+            elseif ( mark<=1 ) then
+              novrlp = novrlp + 1
+              Ovrlp(novrlp) = nabor
+              Marker(nabor) = 2
+            endif
+          endif
+        enddo
+        exit
+50    enddo
+      head = 0
+      mrgsze = 0
+      do iov = 1, novrlp
+        node = Ovrlp(iov)
+        jstrt = Xadj(node)
+        jstop = Xadj(node+1) - 1
+        do j = jstrt, jstop
+          nabor = Adjncy(j)
+          if ( Marker(nabor)==0 ) then
+            Marker(node) = 1
+            goto 100
+          endif
+        enddo
+        mrgsze = mrgsze + Qsize(node)
+        Marker(node) = -1
+        lnode = node
+        do
+          link = Qlink(lnode)
+          if ( link<=0 ) then
+            Qlink(lnode) = head
+            head = node
+            exit
+          else
+            lnode = link
+          endif
+        enddo
+100   enddo
+      if ( head>0 ) then
+        Qsize(head) = mrgsze
+        Deg(head) = Deg0 + deg1 - 1
+        Marker(head) = 2
+      endif
+      root = Nbrhd(inhd)
+      Marker(root) = 0
+      if ( rchsze>0 ) then
+        do irch = 1, rchsze
+          node = Rchset(irch)
+          Marker(node) = 0
+        enddo
+      endif
+    enddo
+  end subroutine QMDMRG
+
+  !======================================================================!
+  !> @brief QMDOT
+  !======================================================================!
+  subroutine QMDOT(Root,Xadj,Adjncy,Marker,Rchsze,Rchset,Nbrhd)
+    implicit none
+    !------
+    integer, intent(in):: Rchsze
+    integer, intent(in):: Root
+    integer, intent(in):: Marker(*)
+    integer, intent(in):: Rchset(*)
+    integer, intent(in):: Nbrhd(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Adjncy(*)
+    !------
+    integer:: inhd
+    integer:: irch
+    integer:: j
+    integer:: jstrt
+    integer:: jstop
+    integer:: link
+    integer:: nabor
+    integer:: node
+
+    irch = 0
+    inhd = 0
+    node = Root
+100 jstrt = Xadj(node)
+    jstop = Xadj(node+1) - 2
+    if ( jstop>=jstrt ) then
+      do j = jstrt, jstop
+        irch = irch + 1
+        Adjncy(j) = Rchset(irch)
+        if ( irch>=Rchsze ) goto 200
+      enddo
+    endif
+    link = Adjncy(jstop+1)
+    node = -link
+    if ( link>=0 ) then
+      inhd = inhd + 1
+      node = Nbrhd(inhd)
+      Adjncy(jstop+1) = -node
+    endif
+    goto 100
+
+200 Adjncy(j+1) = 0
+    do irch = 1, Rchsze
+      node = Rchset(irch)
+      if ( Marker(node)>=0 ) then
+        jstrt = Xadj(node)
+        jstop = Xadj(node+1) - 1
+        do j = jstrt, jstop
+          nabor = Adjncy(j)
+          if ( Marker(nabor)<0 ) then
+            Adjncy(j) = Root
+            exit
+          endif
+        enddo
+      endif
+    enddo
+  end subroutine QMDOT
+
+  !======================================================================!
+  !> @brief QMDRCH
+  !======================================================================!
+  subroutine QMDRCH(Root,Xadj,Adjncy,Deg,Marker,Rchsze,Rchset,Nhdsze,Nbrhd)
+    implicit none
+    !------
+    integer, intent(in):: Root
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: Deg(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Nhdsze
+    integer, intent(out):: Rchsze
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
+    !------
+    integer:: i
+    integer:: istrt
+    integer:: istop
+    integer:: j
+    integer:: jstrt
+    integer:: jstop
+    integer:: nabor
+    integer:: node
+
+    Nhdsze = 0
+    Rchsze = 0
+    istrt = Xadj(Root)
+    istop = Xadj(Root+1) - 1
+    if ( istop<istrt ) return
+    do i = istrt, istop
+      nabor = Adjncy(i)
+      if ( nabor==0 ) return
+      if ( Marker(nabor)==0 ) then
+        if ( Deg(nabor)<0 ) then
+          Marker(nabor) = -1
+          Nhdsze = Nhdsze + 1
+          Nbrhd(Nhdsze) = nabor
+          do
+            jstrt = Xadj(nabor)
+            jstop = Xadj(nabor+1) - 1
+            do j = jstrt, jstop
+              node = Adjncy(j)
+              nabor = -node
+              if ( node<0 ) goto 10
+              if ( node==0 ) exit
+              if ( Marker(node)==0 ) then
+                Rchsze = Rchsze + 1
+                Rchset(Rchsze) = node
+                Marker(node) = 1
+              endif
+            enddo
+            exit
+10        enddo
+        else
+          Rchsze = Rchsze + 1
+          Rchset(Rchsze) = nabor
+          Marker(nabor) = 1
+        endif
+      endif
+    enddo
+  end subroutine QMDRCH
+
+  !======================================================================!
+  !> @brief QMDUPD
+  !======================================================================!
+  subroutine QMDUPD(Xadj,Adjncy,Nlist,List,Deg,Qsize,Qlink,Marker,Rchset,Nbrhd)
+    implicit none
+    !------
+    integer, intent(in):: Nlist
+    integer, intent(in):: Adjncy(*)
+    integer, intent(in):: List(*)
+    integer, intent(in):: Xadj(*)
+    integer, intent(out):: Deg(*)
+    integer, intent(out):: Marker(*)
+    integer, intent(out):: Rchset(*)
+    integer, intent(out):: Nbrhd(*)
+    integer, intent(out):: Qsize(*)
+    integer, intent(out):: Qlink(*)
+    !------
+    integer:: deg0
+    integer:: deg1
+    integer:: il
+    integer:: inhd
+    integer:: inode
+    integer:: irch
+    integer:: j
+    integer:: jstrt
+    integer:: jstop
+    integer:: mark
+    integer:: nabor
+    integer:: nhdsze
+    integer:: node
+    integer:: rchsze
+
+    if ( Nlist<=0 ) return
+    deg0 = 0
+    nhdsze = 0
+    do il = 1, Nlist
+      node = List(il)
+      deg0 = deg0 + Qsize(node)
+      jstrt = Xadj(node)
+      jstop = Xadj(node+1) - 1
+      do j = jstrt, jstop
+        nabor = Adjncy(j)
+        if ( Marker(nabor)==0 .and. Deg(nabor)<0 ) then
+          Marker(nabor) = -1
+          nhdsze = nhdsze + 1
+          Nbrhd(nhdsze) = nabor
+        endif
+      enddo
+    enddo
+
+    if ( nhdsze>0 ) call QMDMRG(Xadj,Adjncy,Deg,Qsize,Qlink,Marker,deg0,nhdsze,Nbrhd,Rchset,Nbrhd(nhdsze+1))
+    do il = 1, Nlist
+      node = List(il)
+      mark = Marker(node)
+      if ( mark<=1 .and. mark>=0 ) then
+        call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
+        deg1 = deg0
+        if ( rchsze>0 ) then
+          do irch = 1, rchsze
+            inode = Rchset(irch)
+            deg1 = deg1 + Qsize(inode)
+            Marker(inode) = 0
+          enddo
+        endif
+        Deg(node) = deg1 - 1
+        if ( nhdsze>0 ) then
+          do inhd = 1, nhdsze
+            inode = Nbrhd(inhd)
+            Marker(inode) = 0
+          enddo
+        endif
+      endif
+    enddo
+  end subroutine QMDUPD
+
+  !======================================================================!
+  !> @brief QQSORT
+  ! sort in increasing order up to i
+  !     iw   array
+  !     ik   number of input/output
+  !     i    deal with numbers less than this numberi
+  !======================================================================!
+  subroutine QQSORT(Iw,Ik)
+    implicit none
+    !------
+    integer, intent(in):: Ik
+    integer, intent(out):: Iw(*)
+    !------
+    integer:: itemp
+    integer:: l
+    integer:: m
+
+    if ( Ik<=1 ) return
+    do l = 1, Ik - 1
+      do m = l + 1, Ik
+        if ( Iw(l)>=Iw(m) ) then
+          itemp = Iw(l)
+          Iw(l) = Iw(m)
+          Iw(m) = itemp
+        endif
+      enddo
+    enddo
+  end subroutine QQSORT
+
+  !======================================================================!
+  !> @brief S2UM
+  !======================================================================!
+  subroutine S2UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
+    !------
+    integer:: ir
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    real(kind=8):: s(4)
+    real(kind=8):: t(3)
+    real(kind=8):: zz(4)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    t(1:3) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      s(1:4) = 0.0D0
+      zz(1:4) = Zln(1:4,k)
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          zz(1) = zz(1) - Temp(1,j)*Zln(1,jj) - Temp(3,j)*Zln(3,jj)
+          zz(2) = zz(2) - Temp(2,j)*Zln(1,jj) - Temp(4,j)*Zln(3,jj)
+          zz(3) = zz(3) - Temp(1,j)*Zln(2,jj) - Temp(3,j)*Zln(4,jj)
+          zz(4) = zz(4) - Temp(2,j)*Zln(2,jj) - Temp(4,j)*Zln(4,jj)
+        endif
+      enddo
+      call INV22(Zln(1,k),zz,Diag(1,jc))
+      Temp(1:4,jc) = zz(1:4)
+      t(1) = t(1) + zz(1)*Zln(1,k) + zz(3)*Zln(3,k)
+      t(2) = t(2) + zz(1)*Zln(2,k) + zz(3)*Zln(4,k)
+      t(3) = t(3) + zz(2)*Zln(2,k) + zz(4)*Zln(4,k)
+    enddo
+    Diag(1,Ic) = Diag(1,Ic) - t(1)
+    Diag(2,Ic) = Diag(2,Ic) - t(2)
+    Diag(3,Ic) = Diag(3,Ic) - t(3)
+    call INV2(Diag(1,Ic),ir)
+    Nch(Ic) = -1
+    kk = Par(Ic)
+    Nch(kk) = Nch(kk) - 1
+  end subroutine S2UM
+
+  !======================================================================!
+  !> @brief S2UM1
+  !======================================================================!
+  subroutine S2UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
+    !------
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    real(kind=8):: s(4)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    s(1:4) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          s(1) = s(1) + Temp(1,j)*Zln(1,jj) + Temp(3,j)*Zln(3,jj)
+          s(2) = s(2) + Temp(2,j)*Zln(1,jj) + Temp(4,j)*Zln(3,jj)
+          s(3) = s(3) + Temp(1,j)*Zln(2,jj) + Temp(3,j)*Zln(4,jj)
+          s(4) = s(4) + Temp(2,j)*Zln(2,jj) + Temp(4,j)*Zln(4,jj)
+        endif
+      enddo
+      do l = 1, 4
+        Temp(l,jc) = Zln(l,k) - s(l)
+        Zln(l,k) = Temp(l,jc)
+        s(l) = 0.0D0
+      enddo
+    enddo
+  end subroutine S2UM1
+
+  !======================================================================!
+  !> @brief S2UM2
+  !======================================================================!
+  subroutine S2UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    real(kind=8), intent(out):: Zln(4,*)
+    !------
+    integer:: ic
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    joc = 0
+    do ic = Nstop, Neqns
+      ks = Xlnzr(ic)
+      ke = Xlnzr(ic+1) - 1
+      do k = ks, ke
+        jj = Colno(k)
+        Temp(1,jj) = Zln(1,k)
+        Temp(2,jj) = Zln(2,k)
+        Temp(3,jj) = Zln(3,k)
+        Temp(4,jj) = Zln(4,k)
+
+        Zln(3,k) = Temp(3,jj) - Temp(1,jj)*Diag(2,jj)
+        Zln(1,k) = Temp(1,jj)*Diag(1,jj)
+        Zln(3,k) = Zln(3,k)*Diag(3,jj)
+        Zln(1,k) = Zln(1,k) - Zln(3,k)*Diag(2,jj)
+
+        Zln(4,k) = Temp(4,jj) - Temp(2,jj)*Diag(2,jj)
+        Zln(2,k) = Temp(2,jj)*Diag(1,jj)
+        Zln(4,k) = Zln(4,k)*Diag(3,jj)
+        Zln(2,k) = Zln(2,k) - Zln(4,k)*Diag(2,jj)
+
+        Diag(1,ic) = Diag(1,ic) - (Temp(1,jj)*Zln(1,k)+Temp(3,jj)*Zln(3,k))
+        Diag(2,ic) = Diag(2,ic) - (Temp(1,jj)*Zln(2,k)+Temp(3,jj)*Zln(4,k))
+        Diag(3,ic) = Diag(3,ic) - (Temp(2,jj)*Zln(2,k)+Temp(4,jj)*Zln(4,k))
+        Indx(jj) = ic
+      enddo
+      do jc = Nstop, ic - 1
+        joc = joc + 1
+        do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+          j = Colno(jj)
+          if ( Indx(j)==ic ) then
+            Dsln(1,joc) = Dsln(1,joc) - (Temp(1,j)*Zln(1,jj)+Temp(3,j)*Zln(3,jj))
+            Dsln(2,joc) = Dsln(2,joc) - (Temp(2,j)*Zln(1,jj)+Temp(4,j)*Zln(3,jj))
+            Dsln(3,joc) = Dsln(3,joc) - (Temp(1,j)*Zln(2,jj)+Temp(3,j)*Zln(4,jj))
+            Dsln(4,joc) = Dsln(4,joc) - (Temp(2,j)*Zln(2,jj)+Temp(4,j)*Zln(4,jj))
+          endif
+        enddo
+      enddo
+    enddo
+  end subroutine S2UM2
+
+  !======================================================================!
+  !> @brief S2UM3
+  !======================================================================!
+  subroutine S2UM3(N,Dsln,Diag,Indx,Temp)
+    implicit none
+    !------
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(3,*)
+    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(out):: Temp(4,*)
+    !------
+    integer:: i
+    integer:: ir
+    integer:: j
+    integer:: joc
+    real(kind=8):: t(4)
+
+    if ( N>0 ) then
+      Indx(1) = 0
+      joc = 1
+      call INV2(Diag(1,1),ir)
+      do i = 2, N
+        Indx(i) = joc
+        do j = 1, i - 1
+          call D2DOT(t,Dsln(1,Indx(i)),Dsln(1,Indx(j)),j-1)
+          Dsln(1,joc) = Dsln(1,joc) - t(1)
+          Dsln(2,joc) = Dsln(2,joc) - t(2)
+          Dsln(3,joc) = Dsln(3,joc) - t(3)
+          Dsln(4,joc) = Dsln(4,joc) - t(4)
+          joc = joc + 1
+        enddo
+        call V2PROD(Dsln(1,Indx(i)),Diag,Temp,i-1)
+        call D2DOT(t,Temp,Dsln(1,Indx(i)),i-1)
+        Diag(1,i) = Diag(1,i) - t(1)
+        Diag(2,i) = Diag(2,i) - t(2)
+        Diag(3,i) = Diag(3,i) - t(4)
+        call VCOPY(Temp,Dsln(1,Indx(i)),4*(i-1))
+        call INV2(Diag(1,i),ir)
+      enddo
+    endif
+  end subroutine S2UM3
+
+  !======================================================================!
+  !> @brief S3UM
+  !======================================================================!
+  subroutine S3UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
+    !------
+    integer:: ir
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    integer:: l
+    real(kind=8):: t(6)
+    real(kind=8):: zz(9)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    t(1:6) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      zz(1:9) = Zln(1:9,k)
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          zz(1) = zz(1) - Temp(1,j)*Zln(1,jj) - Temp(4,j)*Zln(4,jj) - Temp(7,j)*Zln(7,jj)
+          zz(2) = zz(2) - Temp(2,j)*Zln(1,jj) - Temp(5,j)*Zln(4,jj) - Temp(8,j)*Zln(7,jj)
+          zz(3) = zz(3) - Temp(3,j)*Zln(1,jj) - Temp(6,j)*Zln(4,jj) - Temp(9,j)*Zln(7,jj)
+
+          zz(4) = zz(4) - Temp(1,j)*Zln(2,jj) - Temp(4,j)*Zln(5,jj) - Temp(7,j)*Zln(8,jj)
+          zz(5) = zz(5) - Temp(2,j)*Zln(2,jj) - Temp(5,j)*Zln(5,jj) - Temp(8,j)*Zln(8,jj)
+          zz(6) = zz(6) - Temp(3,j)*Zln(2,jj) - Temp(6,j)*Zln(5,jj) - Temp(9,j)*Zln(8,jj)
+
+          zz(7) = zz(7) - Temp(1,j)*Zln(3,jj) - Temp(4,j)*Zln(6,jj) - Temp(7,j)*Zln(9,jj)
+          zz(8) = zz(8) - Temp(2,j)*Zln(3,jj) - Temp(5,j)*Zln(6,jj) - Temp(8,j)*Zln(9,jj)
+          zz(9) = zz(9) - Temp(3,j)*Zln(3,jj) - Temp(6,j)*Zln(6,jj) - Temp(9,j)*Zln(9,jj)
+        endif
+      enddo
+      call INV33(Zln(1,k),zz,Diag(1,jc))
+      Temp(1:9,jc) = zz(1:9)
+      t(1) = t(1) + zz(1)*Zln(1,k) + zz(4)*Zln(4,k) + zz(7)*Zln(7,k)
+      t(2) = t(2) + zz(1)*Zln(2,k) + zz(4)*Zln(5,k) + zz(7)*Zln(8,k)
+      t(3) = t(3) + zz(2)*Zln(2,k) + zz(5)*Zln(5,k) + zz(8)*Zln(8,k)
+      t(4) = t(4) + zz(1)*Zln(3,k) + zz(4)*Zln(6,k) + zz(7)*Zln(9,k)
+      t(5) = t(5) + zz(2)*Zln(3,k) + zz(5)*Zln(6,k) + zz(8)*Zln(9,k)
+      t(6) = t(6) + zz(3)*Zln(3,k) + zz(6)*Zln(6,k) + zz(9)*Zln(9,k)
+    enddo
+    do l = 1, 6
+      Diag(l,Ic) = Diag(l,Ic) - t(l)
+    enddo
+    call INV3(Diag(1,Ic),ir)
+    Nch(Ic) = -1
+    kk = Par(Ic)
+    Nch(kk) = Nch(kk) - 1
+  end subroutine S3UM
+
+  !======================================================================!
+  !> @brief S3UM1
+  !======================================================================!
+  subroutine S3UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
+    !------
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    real(kind=8):: s(9)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    s(1:9) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          s(1) = s(1) + Temp(1,j)*Zln(1,jj) + Temp(4,j)*Zln(4,jj) + Temp(7,j)*Zln(7,jj)
+          s(2) = s(2) + Temp(2,j)*Zln(1,jj) + Temp(5,j)*Zln(4,jj) + Temp(8,j)*Zln(7,jj)
+          s(3) = s(3) + Temp(3,j)*Zln(1,jj) + Temp(6,j)*Zln(4,jj) + Temp(9,j)*Zln(7,jj)
+
+          s(4) = s(4) + Temp(1,j)*Zln(2,jj) + Temp(4,j)*Zln(5,jj) + Temp(7,j)*Zln(8,jj)
+          s(5) = s(5) + Temp(2,j)*Zln(2,jj) + Temp(5,j)*Zln(5,jj) + Temp(8,j)*Zln(8,jj)
+          s(6) = s(6) + Temp(3,j)*Zln(2,jj) + Temp(6,j)*Zln(5,jj) + Temp(9,j)*Zln(8,jj)
+
+          s(7) = s(7) + Temp(1,j)*Zln(3,jj) + Temp(4,j)*Zln(6,jj) + Temp(7,j)*Zln(9,jj)
+          s(8) = s(8) + Temp(2,j)*Zln(3,jj) + Temp(5,j)*Zln(6,jj) + Temp(8,j)*Zln(9,jj)
+          s(9) = s(9) + Temp(3,j)*Zln(3,jj) + Temp(6,j)*Zln(6,jj) + Temp(9,j)*Zln(9,jj)
+        endif
+      enddo
+      do l = 1, 9
+        Temp(l,jc) = Zln(l,k) - s(l)
+        Zln(l,k) = Temp(l,jc)
+        s(l) = 0.0D0
+      enddo
+    enddo
+  end subroutine S3UM1
+
+  !======================================================================!
+  !> @brief S3UM1
+  !======================================================================!
+  subroutine S3UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(Neqns,9)
+    real(kind=8), intent(out):: Zln(9,*)
+    !------
+    integer:: ic
+    integer:: j
+    integer:: j1
+    integer:: j2
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    joc = 0
+    do ic = Nstop, Neqns
+      ks = Xlnzr(ic)
+      ke = Xlnzr(ic+1) - 1
+      do k = ks, ke
+        jj = Colno(k)
+        Temp(jj,1) = Zln(1,k)
+        Temp(jj,2) = Zln(2,k)
+        Temp(jj,3) = Zln(3,k)
+        Temp(jj,4) = Zln(4,k)
+        Temp(jj,5) = Zln(5,k)
+        Temp(jj,6) = Zln(6,k)
+        Temp(jj,7) = Zln(7,k)
+        Temp(jj,8) = Zln(8,k)
+        Temp(jj,9) = Zln(9,k)
+        Indx(jj) = ic
+      enddo
+
+      do k = ks, ke
+        jj = Colno(k)
+        Zln(4,k) = Temp(jj,4) - Temp(jj,1)*Diag(2,jj)
+        Zln(7,k) = Temp(jj,7) - Temp(jj,1)*Diag(4,jj) - Zln(4,k)*Diag(5,jj)
+        Zln(1,k) = Temp(jj,1)*Diag(1,jj)
+        Zln(4,k) = Zln(4,k)*Diag(3,jj)
+        Zln(7,k) = Zln(7,k)*Diag(6,jj)
+        Zln(4,k) = Zln(4,k) - Zln(7,k)*Diag(5,jj)
+        Zln(1,k) = Zln(1,k) - Zln(4,k)*Diag(2,jj) - Zln(7,k)*Diag(4,jj)
+
+        Zln(5,k) = Temp(jj,5) - Temp(jj,2)*Diag(2,jj)
+        Zln(8,k) = Temp(jj,8) - Temp(jj,2)*Diag(4,jj) - Zln(5,k)*Diag(5,jj)
+        Zln(2,k) = Temp(jj,2)*Diag(1,jj)
+        Zln(5,k) = Zln(5,k)*Diag(3,jj)
+        Zln(8,k) = Zln(8,k)*Diag(6,jj)
+        Zln(5,k) = Zln(5,k) - Zln(8,k)*Diag(5,jj)
+        Zln(2,k) = Zln(2,k) - Zln(5,k)*Diag(2,jj) - Zln(8,k)*Diag(4,jj)
+
+        Zln(6,k) = Temp(jj,6) - Temp(jj,3)*Diag(2,jj)
+        Zln(9,k) = Temp(jj,9) - Temp(jj,3)*Diag(4,jj) - Zln(6,k)*Diag(5,jj)
+        Zln(3,k) = Temp(jj,3)*Diag(1,jj)
+        Zln(6,k) = Zln(6,k)*Diag(3,jj)
+        Zln(9,k) = Zln(9,k)*Diag(6,jj)
+        Zln(6,k) = Zln(6,k) - Zln(9,k)*Diag(5,jj)
+        Zln(3,k) = Zln(3,k) - Zln(6,k)*Diag(2,jj) - Zln(9,k)*Diag(4,jj)
+      enddo
+
+      do k = ks, ke
+        jj = Colno(k)
+        Diag(1,ic) = Diag(1,ic) - Temp(jj,1)*Zln(1,k) - Temp(jj,4)*Zln(4,k) - Temp(jj,7)*Zln(7,k)
+        Diag(2,ic) = Diag(2,ic) - Temp(jj,1)*Zln(2,k) - Temp(jj,4)*Zln(5,k) - Temp(jj,7)*Zln(8,k)
+        Diag(3,ic) = Diag(3,ic) - Temp(jj,2)*Zln(2,k) - Temp(jj,5)*Zln(5,k) - Temp(jj,8)*Zln(8,k)
+        Diag(4,ic) = Diag(4,ic) - Temp(jj,1)*Zln(3,k) - Temp(jj,4)*Zln(6,k) - Temp(jj,7)*Zln(9,k)
+        Diag(5,ic) = Diag(5,ic) - Temp(jj,2)*Zln(3,k) - Temp(jj,5)*Zln(6,k) - Temp(jj,8)*Zln(9,k)
+        Diag(6,ic) = Diag(6,ic) - Temp(jj,3)*Zln(3,k) - Temp(jj,6)*Zln(6,k) - Temp(jj,9)*Zln(9,k)
+      enddo
+
+      do jc = Nstop, ic - 1
+        joc = joc + 1
+        j1 = Xlnzr(jc)
+        j2 = Xlnzr(jc+1)
+        do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+          j = Colno(jj)
+          if ( Indx(j)==ic ) then
+            Dsln(1,joc) = Dsln(1,joc) - Temp(j,1)*Zln(1,jj) - Temp(j,4)*Zln(4,jj) - Temp(j,7)*Zln(7,jj)
+            Dsln(2,joc) = Dsln(2,joc) - Temp(j,2)*Zln(1,jj) - Temp(j,5)*Zln(4,jj) - Temp(j,8)*Zln(7,jj)
+            Dsln(3,joc) = Dsln(3,joc) - Temp(j,3)*Zln(1,jj) - Temp(j,6)*Zln(4,jj) - Temp(j,9)*Zln(7,jj)
+
+            Dsln(4,joc) = Dsln(4,joc) - Temp(j,1)*Zln(2,jj) - Temp(j,4)*Zln(5,jj) - Temp(j,7)*Zln(8,jj)
+            Dsln(5,joc) = Dsln(5,joc) - Temp(j,2)*Zln(2,jj) - Temp(j,5)*Zln(5,jj) - Temp(j,8)*Zln(8,jj)
+            Dsln(6,joc) = Dsln(6,joc) - Temp(j,3)*Zln(2,jj) - Temp(j,6)*Zln(5,jj) - Temp(j,9)*Zln(8,jj)
+
+            Dsln(7,joc) = Dsln(7,joc) - Temp(j,1)*Zln(3,jj) - Temp(j,4)*Zln(6,jj) - Temp(j,7)*Zln(9,jj)
+            Dsln(8,joc) = Dsln(8,joc) - Temp(j,2)*Zln(3,jj) - Temp(j,5)*Zln(6,jj) - Temp(j,8)*Zln(9,jj)
+            Dsln(9,joc) = Dsln(9,joc) - Temp(j,3)*Zln(3,jj) - Temp(j,6)*Zln(6,jj) - Temp(j,9)*Zln(9,jj)
+          endif
+        enddo
+      enddo
+    enddo
+  end subroutine S3UM2
+
+  !======================================================================!
+  !> @brief S3UM3
+  !======================================================================!
+  subroutine S3UM3(N,Dsln,Diag,Indx,Temp)
+    implicit none
+    !------
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(9,*)
+    !------
+    integer:: i
+    integer:: ir
+    integer:: j
+    integer:: joc
+    real(kind=8):: t(9)
+
+    if ( N>0 ) then
+      Indx(1) = 0
+      joc = 1
+      call INV3(Diag(1,1),ir)
+      do i = 2, N
+        Indx(i) = joc
+        do j = 1, i - 1
+          call D3DOT(t,Dsln(1,Indx(i)),Dsln(1,Indx(j)),j-1)
+          Dsln(:,joc) = Dsln(:,joc) - t(:)
+          joc = joc + 1
+        enddo
+        call V3PROD(Dsln(1,Indx(i)),Diag,Temp,i-1)
+        call D3DOTL(t,Temp,Dsln(1,Indx(i)),i-1)
+        Diag(:,i) = Diag(:,i) - t(1:6)
+        call VCOPY(Temp,Dsln(1,Indx(i)),9*(i-1))
+        call INV3(Diag(1,i),ir)
+      enddo
+    endif
+  end subroutine S3UM3
+
+  !======================================================================!
+  !> @brief S6UM
+  !======================================================================!
+  subroutine S6UM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Temp(36,*)
+    real(kind=8), intent(out):: Zln(36,*)
+    !------
+    integer:: ir
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    integer:: l
+    real(kind=8):: t(21)
+    real(kind=8):: zz(36)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    t(1:21) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      zz(1:36) = Zln(1:36,k)
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          zz(1) = zz(1) - Temp(1,j)*Zln(1,jj) - Temp(7,j)*Zln(7,jj)&
+              - Temp(13,j)*Zln(13,jj) - Temp(19,j)*Zln(19,jj)&
+              - Temp(25,j)*Zln(25,jj) - Temp(31,j)*Zln(31,jj)
+          zz(2) = zz(2) - Temp(2,j)*Zln(1,jj) - Temp(8,j)*Zln(7,jj)&
+              - Temp(14,j)*Zln(13,jj) - Temp(20,j)*Zln(19,jj)&
+              - Temp(26,j)*Zln(25,jj) - Temp(32,j)*Zln(31,jj)
+          zz(3) = zz(3) - Temp(3,j)*Zln(1,jj) - Temp(9,j)*Zln(7,jj)&
+              - Temp(15,j)*Zln(13,jj) - Temp(21,j)*Zln(19,jj)&
+              - Temp(27,j)*Zln(25,jj) - Temp(33,j)*Zln(31,jj)
+          zz(4) = zz(4) - Temp(4,j)*Zln(1,jj) - Temp(10,j)*Zln(7,jj)&
+              - Temp(16,j)*Zln(13,jj) - Temp(22,j)*Zln(19,jj)&
+              - Temp(28,j)*Zln(25,jj) - Temp(34,j)*Zln(31,jj)
+          zz(5) = zz(5) - Temp(5,j)*Zln(1,jj) - Temp(11,j)*Zln(7,jj)&
+              - Temp(17,j)*Zln(13,jj) - Temp(23,j)*Zln(19,jj)&
+              - Temp(29,j)*Zln(25,jj) - Temp(35,j)*Zln(31,jj)
+          zz(6) = zz(6) - Temp(6,j)*Zln(1,jj) - Temp(12,j)*Zln(7,jj)&
+              - Temp(18,j)*Zln(13,jj) - Temp(24,j)*Zln(19,jj)&
+              - Temp(30,j)*Zln(25,jj) - Temp(36,j)*Zln(31,jj)
+          zz(7) = zz(7) - Temp(1,j)*Zln(2,jj) - Temp(7,j)*Zln(8,jj)&
+              - Temp(13,j)*Zln(14,jj) - Temp(19,j)*Zln(20,jj)&
+              - Temp(25,j)*Zln(26,jj) - Temp(31,j)*Zln(32,jj)
+          zz(8) = zz(8) - Temp(2,j)*Zln(2,jj) - Temp(8,j)*Zln(8,jj)&
+              - Temp(14,j)*Zln(14,jj) - Temp(20,j)*Zln(20,jj)&
+              - Temp(26,j)*Zln(26,jj) - Temp(32,j)*Zln(32,jj)
+          zz(9) = zz(9) - Temp(3,j)*Zln(2,jj) - Temp(9,j)*Zln(8,jj)&
+              - Temp(15,j)*Zln(14,jj) - Temp(21,j)*Zln(20,jj)&
+              - Temp(27,j)*Zln(26,jj) - Temp(33,j)*Zln(32,jj)
+          zz(10) = zz(10) - Temp(4,j)*Zln(2,jj) - Temp(10,j)*Zln(8,jj)&
+              - Temp(16,j)*Zln(14,jj) - Temp(22,j)*Zln(20,jj)&
+              - Temp(28,j)*Zln(26,jj) - Temp(34,j)*Zln(32,jj)
+          zz(11) = zz(11) - Temp(5,j)*Zln(2,jj) - Temp(11,j)*Zln(8,jj)&
+              - Temp(17,j)*Zln(14,jj) - Temp(23,j)*Zln(20,jj)&
+              - Temp(29,j)*Zln(26,jj) - Temp(35,j)*Zln(32,jj)
+          zz(12) = zz(12) - Temp(6,j)*Zln(2,jj) - Temp(12,j)*Zln(8,jj)&
+              - Temp(18,j)*Zln(14,jj) - Temp(24,j)*Zln(20,jj)&
+              - Temp(30,j)*Zln(26,jj) - Temp(36,j)*Zln(32,jj)
+          zz(13) = zz(13) - Temp(1,j)*Zln(3,jj) - Temp(7,j)*Zln(9,jj)&
+              - Temp(13,j)*Zln(15,jj) - Temp(19,j)*Zln(21,jj)&
+              - Temp(25,j)*Zln(27,jj) - Temp(31,j)*Zln(33,jj)
+          zz(14) = zz(14) - Temp(2,j)*Zln(3,jj) - Temp(8,j)*Zln(9,jj)&
+              - Temp(14,j)*Zln(15,jj) - Temp(20,j)*Zln(21,jj)&
+              - Temp(26,j)*Zln(27,jj) - Temp(32,j)*Zln(33,jj)
+          zz(15) = zz(15) - Temp(3,j)*Zln(3,jj) - Temp(9,j)*Zln(9,jj)&
+              - Temp(15,j)*Zln(15,jj) - Temp(21,j)*Zln(21,jj)&
+              - Temp(27,j)*Zln(27,jj) - Temp(33,j)*Zln(33,jj)
+          zz(16) = zz(16) - Temp(4,j)*Zln(3,jj) - Temp(10,j)*Zln(9,jj)&
+              - Temp(16,j)*Zln(15,jj) - Temp(22,j)*Zln(21,jj)&
+              - Temp(28,j)*Zln(27,jj) - Temp(34,j)*Zln(33,jj)
+          zz(17) = zz(17) - Temp(5,j)*Zln(3,jj) - Temp(11,j)*Zln(9,jj)&
+              - Temp(17,j)*Zln(15,jj) - Temp(23,j)*Zln(21,jj)&
+              - Temp(29,j)*Zln(27,jj) - Temp(35,j)*Zln(33,jj)
+          zz(18) = zz(18) - Temp(6,j)*Zln(3,jj) - Temp(12,j)*Zln(9,jj)&
+              - Temp(18,j)*Zln(15,jj) - Temp(24,j)*Zln(21,jj)&
+              - Temp(30,j)*Zln(27,jj) - Temp(36,j)*Zln(33,jj)
+          zz(19) = zz(19) - Temp(1,j)*Zln(4,jj) - Temp(7,j)*Zln(10,jj)&
+              - Temp(13,j)*Zln(16,jj) - Temp(19,j)*Zln(22,jj)&
+              - Temp(25,j)*Zln(28,jj) - Temp(31,j)*Zln(34,jj)
+          zz(20) = zz(20) - Temp(2,j)*Zln(4,jj) - Temp(8,j)*Zln(10,jj)&
+              - Temp(14,j)*Zln(16,jj) - Temp(20,j)*Zln(22,jj)&
+              - Temp(26,j)*Zln(28,jj) - Temp(32,j)*Zln(34,jj)
+          zz(21) = zz(21) - Temp(3,j)*Zln(4,jj) - Temp(9,j)*Zln(10,jj)&
+              - Temp(15,j)*Zln(16,jj) - Temp(21,j)*Zln(22,jj)&
+              - Temp(27,j)*Zln(28,jj) - Temp(33,j)*Zln(34,jj)
+          zz(22) = zz(22) - Temp(4,j)*Zln(4,jj) - Temp(10,j)*Zln(10,jj)&
+              - Temp(16,j)*Zln(16,jj) - Temp(22,j)*Zln(22,jj)&
+              - Temp(28,j)*Zln(28,jj) - Temp(34,j)*Zln(34,jj)
+          zz(23) = zz(23) - Temp(5,j)*Zln(4,jj) - Temp(11,j)*Zln(10,jj)&
+              - Temp(17,j)*Zln(16,jj) - Temp(23,j)*Zln(22,jj)&
+              - Temp(29,j)*Zln(28,jj) - Temp(35,j)*Zln(34,jj)
+          zz(24) = zz(24) - Temp(6,j)*Zln(4,jj) - Temp(12,j)*Zln(10,jj)&
+              - Temp(18,j)*Zln(16,jj) - Temp(24,j)*Zln(22,jj)&
+              - Temp(30,j)*Zln(28,jj) - Temp(36,j)*Zln(34,jj)
+          zz(25) = zz(25) - Temp(1,j)*Zln(5,jj) - Temp(7,j)*Zln(11,jj)&
+              - Temp(13,j)*Zln(17,jj) - Temp(19,j)*Zln(23,jj)&
+              - Temp(25,j)*Zln(29,jj) - Temp(31,j)*Zln(35,jj)
+          zz(26) = zz(26) - Temp(2,j)*Zln(5,jj) - Temp(8,j)*Zln(11,jj)&
+              - Temp(14,j)*Zln(17,jj) - Temp(20,j)*Zln(23,jj)&
+              - Temp(26,j)*Zln(29,jj) - Temp(32,j)*Zln(35,jj)
+          zz(27) = zz(27) - Temp(3,j)*Zln(5,jj) - Temp(9,j)*Zln(11,jj)&
+              - Temp(15,j)*Zln(17,jj) - Temp(21,j)*Zln(23,jj)&
+              - Temp(27,j)*Zln(29,jj) - Temp(33,j)*Zln(35,jj)
+          zz(28) = zz(28) - Temp(4,j)*Zln(5,jj) - Temp(10,j)*Zln(11,jj)&
+              - Temp(16,j)*Zln(17,jj) - Temp(22,j)*Zln(23,jj)&
+              - Temp(28,j)*Zln(29,jj) - Temp(34,j)*Zln(35,jj)
+          zz(29) = zz(29) - Temp(5,j)*Zln(5,jj) - Temp(11,j)*Zln(11,jj)&
+              - Temp(17,j)*Zln(17,jj) - Temp(23,j)*Zln(23,jj)&
+              - Temp(29,j)*Zln(29,jj) - Temp(35,j)*Zln(35,jj)
+          zz(30) = zz(30) - Temp(6,j)*Zln(5,jj) - Temp(12,j)*Zln(11,jj)&
+              - Temp(18,j)*Zln(17,jj) - Temp(24,j)*Zln(23,jj)&
+              - Temp(30,j)*Zln(29,jj) - Temp(36,j)*Zln(35,jj)
+          zz(31) = zz(31) - Temp(1,j)*Zln(6,jj) - Temp(7,j)*Zln(12,jj)&
+              - Temp(13,j)*Zln(18,jj) - Temp(19,j)*Zln(24,jj)&
+              - Temp(25,j)*Zln(30,jj) - Temp(31,j)*Zln(36,jj)
+          zz(32) = zz(32) - Temp(2,j)*Zln(6,jj) - Temp(8,j)*Zln(12,jj)&
+              - Temp(14,j)*Zln(18,jj) - Temp(20,j)*Zln(24,jj)&
+              - Temp(26,j)*Zln(30,jj) - Temp(32,j)*Zln(36,jj)
+          zz(33) = zz(33) - Temp(3,j)*Zln(6,jj) - Temp(9,j)*Zln(12,jj)&
+              - Temp(15,j)*Zln(18,jj) - Temp(21,j)*Zln(24,jj)&
+              - Temp(27,j)*Zln(30,jj) - Temp(33,j)*Zln(36,jj)
+          zz(34) = zz(34) - Temp(4,j)*Zln(6,jj) - Temp(10,j)*Zln(12,jj)&
+              - Temp(16,j)*Zln(18,jj) - Temp(22,j)*Zln(24,jj)&
+              - Temp(28,j)*Zln(30,jj) - Temp(34,j)*Zln(36,jj)
+          zz(35) = zz(35) - Temp(5,j)*Zln(6,jj) - Temp(11,j)*Zln(12,jj)&
+              - Temp(17,j)*Zln(18,jj) - Temp(23,j)*Zln(24,jj)&
+              - Temp(29,j)*Zln(30,jj) - Temp(35,j)*Zln(36,jj)
+          zz(36) = zz(36) - Temp(6,j)*Zln(6,jj) - Temp(12,j)*Zln(12,jj)&
+              - Temp(18,j)*Zln(18,jj) - Temp(24,j)*Zln(24,jj)&
+              - Temp(30,j)*Zln(30,jj) - Temp(36,j)*Zln(36,jj)
+        endif
+      enddo
+      call INV66(Zln(1,k),zz,Diag(1,jc))
+      Temp(1:36,jc) = zz(1:36)
+
+      t(1) = t(1) + zz(1)*Zln(1,k) + zz(7)*Zln(7,k) + zz(13)*Zln(13,k)&
+          + zz(19)*Zln(19,k) + zz(25)*Zln(25,k) + zz(31)*Zln(31,k)
+      t(2) = t(2) + zz(1)*Zln(2,k) + zz(7)*Zln(8,k) + zz(13)*Zln(14,k)&
+          + zz(19)*Zln(20,k) + zz(25)*Zln(26,k) + zz(31)*Zln(32,k)
+      t(3) = t(3) + zz(2)*Zln(2,k) + zz(8)*Zln(8,k) + zz(14)*Zln(14,k)&
+          + zz(20)*Zln(20,k) + zz(26)*Zln(26,k) + zz(32)*Zln(32,k)
+      t(4) = t(4) + zz(1)*Zln(3,k) + zz(7)*Zln(9,k) + zz(13)*Zln(15,k)&
+          + zz(19)*Zln(21,k) + zz(25)*Zln(27,k) + zz(31)*Zln(33,k)
+      t(5) = t(5) + zz(2)*Zln(3,k) + zz(8)*Zln(9,k) + zz(14)*Zln(15,k)&
+          + zz(20)*Zln(21,k) + zz(26)*Zln(27,k) + zz(32)*Zln(33,k)
+      t(6) = t(6) + zz(3)*Zln(3,k) + zz(9)*Zln(9,k) + zz(15)*Zln(15,k)&
+          + zz(21)*Zln(21,k) + zz(27)*Zln(27,k) + zz(33)*Zln(33,k)
+      t(7) = t(7) + zz(1)*Zln(4,k) + zz(7)*Zln(10,k) + zz(13)*Zln(16,k)&
+          + zz(19)*Zln(22,k) + zz(25)*Zln(28,k) + zz(31)*Zln(34,k)
+      t(8) = t(8) + zz(2)*Zln(4,k) + zz(8)*Zln(10,k) + zz(14)*Zln(16,k)&
+          + zz(20)*Zln(22,k) + zz(26)*Zln(28,k) + zz(32)*Zln(34,k)
+      t(9) = t(9) + zz(3)*Zln(4,k) + zz(9)*Zln(10,k) + zz(15)*Zln(16,k)&
+          + zz(21)*Zln(22,k) + zz(27)*Zln(28,k) + zz(33)*Zln(34,k)
+      t(10) = t(10) + zz(4)*Zln(4,k) + zz(10)*Zln(10,k) + zz(16)*Zln(16,k)&
+          + zz(22)*Zln(22,k) + zz(28)*Zln(28,k) + zz(34)*Zln(34,k)
+      t(11) = t(11) + zz(1)*Zln(5,k) + zz(7)*Zln(11,k) + zz(13)*Zln(17,k)&
+          + zz(19)*Zln(23,k) + zz(25)*Zln(29,k) + zz(31)*Zln(35,k)
+      t(12) = t(12) + zz(2)*Zln(5,k) + zz(8)*Zln(11,k) + zz(14)*Zln(17,k)&
+          + zz(20)*Zln(23,k) + zz(26)*Zln(29,k) + zz(32)*Zln(35,k)
+      t(13) = t(13) + zz(3)*Zln(5,k) + zz(9)*Zln(11,k) + zz(15)*Zln(17,k)&
+          + zz(21)*Zln(23,k) + zz(27)*Zln(29,k) + zz(33)*Zln(35,k)
+      t(14) = t(14) + zz(4)*Zln(5,k) + zz(10)*Zln(11,k) + zz(16)*Zln(17,k)&
+          + zz(22)*Zln(23,k) + zz(28)*Zln(29,k) + zz(34)*Zln(35,k)
+      t(15) = t(15) + zz(5)*Zln(5,k) + zz(11)*Zln(11,k) + zz(17)*Zln(17,k)&
+          + zz(23)*Zln(23,k) + zz(29)*Zln(29,k) + zz(35)*Zln(35,k)
+      t(16) = t(16) + zz(1)*Zln(6,k) + zz(7)*Zln(12,k) + zz(13)*Zln(18,k)&
+          + zz(19)*Zln(24,k) + zz(25)*Zln(30,k) + zz(31)*Zln(36,k)
+      t(17) = t(17) + zz(2)*Zln(6,k) + zz(8)*Zln(12,k) + zz(14)*Zln(18,k)&
+          + zz(20)*Zln(24,k) + zz(26)*Zln(30,k) + zz(32)*Zln(36,k)
+      t(18) = t(18) + zz(3)*Zln(6,k) + zz(9)*Zln(12,k) + zz(15)*Zln(18,k)&
+          + zz(21)*Zln(24,k) + zz(27)*Zln(30,k) + zz(33)*Zln(36,k)
+      t(19) = t(19) + zz(4)*Zln(6,k) + zz(10)*Zln(12,k) + zz(16)*Zln(18,k)&
+          + zz(22)*Zln(24,k) + zz(28)*Zln(30,k) + zz(34)*Zln(36,k)
+      t(20) = t(20) + zz(5)*Zln(6,k) + zz(11)*Zln(12,k) + zz(17)*Zln(18,k)&
+          + zz(23)*Zln(24,k) + zz(29)*Zln(30,k) + zz(35)*Zln(36,k)
+      t(21) = t(21) + zz(6)*Zln(6,k) + zz(12)*Zln(12,k) + zz(18)*Zln(18,k)&
+          + zz(24)*Zln(24,k) + zz(30)*Zln(30,k) + zz(36)*Zln(36,k)
+    enddo
+    do l = 1, 21
+      Diag(l,Ic) = Diag(l,Ic) - t(l)
+    enddo
+    call INV6(Diag(1,Ic),ir)
+    Nch(Ic) = -1
+    kk = Par(Ic)
+    Nch(kk) = Nch(kk) - 1
+  end subroutine S6UM
+
+  !======================================================================!
+  !> @brief S6UM1
+  !======================================================================!
+  subroutine S6UM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(9,*)
+    real(kind=8), intent(out):: Zln(9,*)
+    !------
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    integer:: l
+    real(kind=8):: s(9)
+
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    s(1:9) = 0.0D0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          s(1) = s(1) + Temp(1,j)*Zln(1,jj) + Temp(4,j)*Zln(4,jj) + Temp(7,j)*Zln(7,jj)
+          s(2) = s(2) + Temp(2,j)*Zln(1,jj) + Temp(5,j)*Zln(4,jj) + Temp(8,j)*Zln(7,jj)
+          s(3) = s(3) + Temp(3,j)*Zln(1,jj) + Temp(6,j)*Zln(4,jj) + Temp(9,j)*Zln(7,jj)
+
+          s(4) = s(4) + Temp(1,j)*Zln(2,jj) + Temp(4,j)*Zln(5,jj) + Temp(7,j)*Zln(8,jj)
+          s(5) = s(5) + Temp(2,j)*Zln(2,jj) + Temp(5,j)*Zln(5,jj) + Temp(8,j)*Zln(8,jj)
+          s(6) = s(6) + Temp(3,j)*Zln(2,jj) + Temp(6,j)*Zln(5,jj) + Temp(9,j)*Zln(8,jj)
+
+          s(7) = s(7) + Temp(1,j)*Zln(3,jj) + Temp(4,j)*Zln(6,jj) + Temp(7,j)*Zln(9,jj)
+          s(8) = s(8) + Temp(2,j)*Zln(3,jj) + Temp(5,j)*Zln(6,jj) + Temp(8,j)*Zln(9,jj)
+          s(9) = s(9) + Temp(3,j)*Zln(3,jj) + Temp(6,j)*Zln(6,jj) + Temp(9,j)*Zln(9,jj)
+        endif
+      enddo
+      do l = 1, 9
+        Temp(l,jc) = Zln(l,k) - s(l)
+        Zln(l,k) = Temp(l,jc)
+        s(l) = 0.0D0
+      enddo
+    enddo
+  end subroutine S6UM1
+
+  !======================================================================!
+  !> @brief S6UM2
+  !======================================================================!
+  subroutine S6UM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(21,*)
+    real(kind=8), intent(out):: Dsln(36,*)
+    real(kind=8), intent(out):: Temp(36,Neqns)
+    real(kind=8), intent(out):: Zln(36,*)
+    !------
+    integer:: ic
+    integer:: j
+    integer:: j1
+    integer:: j2
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+
+    joc = 0
+    do ic = Nstop, Neqns
+      Temp(1:Nstop,1:36) = 0.0D0
+      ks = Xlnzr(ic)
+      ke = Xlnzr(ic+1) - 1
+      do k = ks, ke
+        jj = Colno(k)
+        Temp(:,jj) = Zln(:,k)
+        Indx(jj) = ic
+      enddo
+      do k = ks, ke
+        jj = Colno(k)
+        call INV66(Zln(1,k),Temp,Diag(1,jj))
+      enddo
+
+      do k = ks, ke
+        jj = Colno(k)
+        Diag(1,ic) = Diag(1,ic) - Temp(jj,1)*Zln(1,k) - Temp(jj,4)*Zln(4,k) - Temp(jj,7)*Zln(7,k)
+        Diag(2,ic) = Diag(2,ic) - Temp(jj,1)*Zln(2,k) - Temp(jj,4)*Zln(5,k) - Temp(jj,7)*Zln(8,k)
+        Diag(3,ic) = Diag(3,ic) - Temp(jj,2)*Zln(2,k) - Temp(jj,5)*Zln(5,k) - Temp(jj,8)*Zln(8,k)
+        Diag(4,ic) = Diag(4,ic) - Temp(jj,1)*Zln(3,k) - Temp(jj,4)*Zln(6,k) - Temp(jj,7)*Zln(9,k)
+        Diag(5,ic) = Diag(5,ic) - Temp(jj,2)*Zln(3,k) - Temp(jj,5)*Zln(6,k) - Temp(jj,8)*Zln(9,k)
+        Diag(6,ic) = Diag(6,ic) - Temp(jj,3)*Zln(3,k) - Temp(jj,6)*Zln(6,k) - Temp(jj,9)*Zln(9,k)
+      enddo
+      do jc = Nstop, ic - 1
+        joc = joc + 1
+        j1 = Xlnzr(jc)
+        j2 = Xlnzr(jc+1)
+        do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+          j = Colno(jj)
+          if ( Indx(j)==ic ) then
+            Dsln(1,joc) = Dsln(1,joc) - Temp(j,1)*Zln(1,jj) - Temp(j,4)*Zln(4,jj) - Temp(j,7)*Zln(7,jj)
+            Dsln(2,joc) = Dsln(2,joc) - Temp(j,2)*Zln(1,jj) - Temp(j,5)*Zln(4,jj) - Temp(j,8)*Zln(7,jj)
+            Dsln(3,joc) = Dsln(3,joc) - Temp(j,3)*Zln(1,jj) - Temp(j,6)*Zln(4,jj) - Temp(j,9)*Zln(7,jj)
+
+            Dsln(4,joc) = Dsln(4,joc) - Temp(j,1)*Zln(2,jj) - Temp(j,4)*Zln(5,jj) - Temp(j,7)*Zln(8,jj)
+            Dsln(5,joc) = Dsln(5,joc) - Temp(j,2)*Zln(2,jj) - Temp(j,5)*Zln(5,jj) - Temp(j,8)*Zln(8,jj)
+            Dsln(6,joc) = Dsln(6,joc) - Temp(j,3)*Zln(2,jj) - Temp(j,6)*Zln(5,jj) - Temp(j,9)*Zln(8,jj)
+
+            Dsln(7,joc) = Dsln(7,joc) - Temp(j,1)*Zln(3,jj) - Temp(j,4)*Zln(6,jj) - Temp(j,7)*Zln(9,jj)
+            Dsln(8,joc) = Dsln(8,joc) - Temp(j,2)*Zln(3,jj) - Temp(j,5)*Zln(6,jj) - Temp(j,8)*Zln(9,jj)
+            Dsln(9,joc) = Dsln(9,joc) - Temp(j,3)*Zln(3,jj) - Temp(j,6)*Zln(6,jj) - Temp(j,9)*Zln(9,jj)
+          endif
+        enddo
+      enddo
+    enddo
+  end subroutine S6UM2
+
+  !======================================================================!
+  !> @brief S6UM3
+  !======================================================================!
+  subroutine S6UM3(N,Dsln,Diag,Indx,Temp)
+    implicit none
+    !------
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(6,*)
+    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(out):: Temp(9,*)
+    !------
+    integer:: i
+    integer:: ir
+    integer:: j
+    integer:: joc
+    integer:: l
+    real(kind=8):: t(9)
+
+    if ( N>0 ) then
+      Indx(1) = 0
+      joc = 1
+      call INV3(Diag(1,1),ir)
+      do i = 2, N
+        Indx(i) = joc
+        do j = 1, i - 1
+          call D3DOT(t,Dsln(1,Indx(i)),Dsln(1,Indx(j)),j-1)
+          do l = 1, 9
+            Dsln(l,joc) = Dsln(l,joc) - t(l)
+          enddo
+          joc = joc + 1
+        enddo
+        call V3PROD(Dsln(1,Indx(i)),Diag,Temp,i-1)
+        call D3DOTL(t,Temp,Dsln(1,Indx(i)),i-1)
+        do l = 1, 6
+          Diag(l,i) = Diag(l,i) - t(l)
+        enddo
+        call VCOPY(Temp,Dsln(1,Indx(i)),9*(i-1))
+        call INV3(Diag(1,i),ir)
+      enddo
+    endif
+  end subroutine S6UM3
+
+  !======================================================================!
+  !> @brief STAIJ1 routine sets an non-zero entry  of the matrix.
+  !      (symmetric version)
+  !      (i)
+  !          isw      =0    set the value
+  !                   =1    add the value
+  !          i        row entry
+  !          j        column entry
+  !          aij      value
+  !      (o)
+  !          iv       communication array
+  !======================================================================!
+  subroutine STAIJ1(Isw,I,J,Aij,Ir)
+    implicit none
+    !------
+    integer, intent(in):: I
+    integer, intent(in):: Isw
+    integer, intent(in):: J
+    real(kind=8), intent(in):: Aij(NDEg*NDEg)
+    integer, intent(out):: Ir
+    !------
+    integer:: ndeg2
+    integer:: ndeg2l
+
+    Ir = 0
+    ndeg2 = NDEg*NDEg
+    ndeg2l = NDEg*(NDEg+1)/2
+    if ( STAge==30 ) write (6,*) 'warning a matrix was build up '//'but never solved.'
+    if ( STAge==10 ) then
+      allocate (DIAg(NEQns*ndeg2l),STAT=IERror)
+      RALoc = RALoc + NEQns*ndeg2l
+      allocate (ZLN(LEN_colno*ndeg2),STAT=IERror)
+
+      RALoc = RALoc + LEN_colno*ndeg2
+      allocate (DSLn(LEN_dsln*ndeg2),STAT=IERror)
+
+      if ( IERror/=0 ) stop "Allocation error dsln"
+
+      RALoc = RALoc + LEN_dsln*ndeg2
+    endif
+    if ( STAge/=20 ) then
+      !
+      ! for diagonal
+      !
+      DIAg = 0.
+      !
+      ! for lower triangle
+      !
+      ZLN = 0.
+      !
+      ! for dense window
+      !
+      DSLn = 0.
+
+      STAge = 20
+    endif
     !         Print *,'********Set Stage 20 *********'
     !
-    IF(ndeg<=2) THEN
-       CALL addr0(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg2,ndeg2l,ir)
-    ELSEIF(ndeg==3) THEN
-       CALL addr3(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ir)
-    ELSE
-       CALL addrx(isw,i,j,aij,invp,xlnzr,colno,diag,zln,dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
-    ENDIF
-    RETURN
-  END SUBROUTINE staij1
+    if ( NDEg<=2 ) then
+      call ADDR0(Isw,I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,ndeg2,ndeg2l,Ir)
+    elseif ( NDEg==3 ) then
+      call ADDR3(I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,Ir)
+    else
+      call ADDRX(I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,NDEg,ndeg2l,Ir)
+    endif
+  end subroutine STAIJ1
 
   !======================================================================!
-  !> stiaja
+  !> @brief SUM
   !======================================================================!
-  SUBROUTINE stiaja(neqns,ia,ja,jcpt,jcolno)
-    INTEGER ia(*),ja(*),jcpt(*),jcolno(*)
-    COMMON /debug/idbg
+  subroutine sum(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
+    !------
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    real(kind=8):: piv
+    real(kind=8):: s
+    real(kind=8):: t
+    real(kind=8):: zz
 
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    ia(1)=1
-    l=0
-    DO k=1,neqns
-       joc=jcpt(k)
-       DO
-          IF(joc==0) EXIT
-          ii=jcolno(joc)
-          IF(ii==k) GOTO 130
-          l=l+1
-          ja(l)=ii
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    t = 0.0D0
 
-130       CONTINUE
-          joc=jcpt(joc)
-       ENDDO
-
-       ia(k+1)=l+1
-    ENDDO
-    IF(idbg/=0) THEN
-       WRITE(6,*) 'ia '
-       WRITE(6,60) (ia(i),i=1,neqns)
-       WRITE(6,*) 'ja '
-       WRITE(6,60) (ja(i),i=1,ia(neqns+1))
-    ENDIF
-    RETURN
-
-60  FORMAT(10i7)
-  END SUBROUTINE stiaja
-
-  !======================================================================!
-  !> stsmat
-  !======================================================================!
-  SUBROUTINE stsmat(neqns,nttbr,irow,jcol,jcpt,jcolno)
-    INTEGER irow(*),jcol(*),jcpt(*),jcolno(*)
-    COMMON /debug/idbg
-
-    !c
-    !c     coded by t.arakawa of RIST on 040510
-    !c
-    DO i=1,2*nttbr
-       jcpt(i)=0
-       jcolno(i)=0
-    ENDDO
-    DO i=1,neqns
-       jcpt(i)=i+neqns
-       jcolno(i+neqns)=i
-    ENDDO
-
-    k=2*neqns
-
-    DO l=1,nttbr
-       i=irow(l)
-       j=jcol(l)
-       IF(i==j) CYCLE!GOTO 100
-       joc=jcpt(i)
-       locr=i
-
-       DO
-          IF(joc==0) THEN
-             !GOTO 120
-             k=k+1
-             jcpt(locr)=k
-             jcolno(k)=j
-             GOTO 150
-          ENDIF
-
-          IF(jcolno(joc)==j) THEN
-             GOTO 100
-          ELSEIF(jcolno(joc)>j) THEN
-             !GOTO 130
-             k=k+1
-             jcpt(locr)=k
-             jcpt(k)=joc
-             jcolno(k)=j
-             GOTO 150
-          ENDIF
-          locr=joc
-          joc=jcpt(joc)
-       ENDDO
-
-       !120  CONTINUE
-       !     k=k+1
-       !     jcpt(locr)=k
-       !     jcolno(k)=j
-       !     GOTO 150
-
-       !130  CONTINUE
-       !     k=k+1
-       !     jcpt(locr)=k
-       !     jcpt(k)=joc
-       !     jcolno(k)=j
-
-150    CONTINUE
-       joc=jcpt(j)
-       locr=j
-
-       DO
-          IF(joc==0) THEN
-             !GOTO 170
-             k=k+1
-             jcpt(locr)=k
-             jcolno(k)=i
-             GOTO 100
-          ENDIF
-
-          IF(jcolno(joc)==i) THEN
-             GOTO 100
-          ELSEIF(jcolno(joc)>i) THEN
-             !GOTO 180
-             k=k+1
-             jcpt(locr)=k
-             jcpt(k)=joc
-             jcolno(k)=i
-             GOTO 100
-          ENDIF
-          locr=joc
-          joc=jcpt(joc)
-       ENDDO
-
-       !170  CONTINUE
-       !     k=k+1
-       !     jcpt(locr)=k
-       !     jcolno(k)=i
-       !     cycle!GOTO 100
-
-       !180  CONTINUE
-       !     k=k+1
-       !     jcpt(locr)=k
-       !     jcpt(k)=joc
-       !     jcolno(k)=i
-
-100    CONTINUE
-    ENDDO
-
-    IF(idbg/=0) THEN
-       WRITE(6,*) 'jcolno'
-       WRITE(6,60) (jcolno(i),i=1,k)
-       WRITE(6,*) 'jcpt'
-       WRITE(6,60) (jcpt(i),i=1,k)
-    ENDIF
-    RETURN
-
-60  FORMAT(10i7)
-  END SUBROUTINE stsmat
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      s = 0.0D0
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) s = s + Temp(j)*Zln(jj)
+      enddo
+      zz = Zln(k) - s
+      Zln(k) = zz*Diag(jc)
+      Temp(jc) = zz
+      t = t + zz*Zln(k)
+    enddo
+    piv = Diag(Ic) - t
+    if ( DABS(piv)>RMIn ) Diag(Ic) = 1.0D0/piv
+    do while ( ISEm/=1 )
+    enddo
+    ISEm = 0
+    Nch(Ic) = -1
+    kk = Par(Ic)
+    Nch(kk) = Nch(kk) - 1
+    ISEm = 1
+  end subroutine SUM
 
   !======================================================================!
-  !> sum
+  !> @brief SUM1
   !======================================================================!
-  SUBROUTINE SUM(ic,xlnzr,colno,zln,diag,nch,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),nch(*),par(*)
-    DIMENSION zln(*),diag(*),temp(*),indx(*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-    COMMON isem
+  subroutine SUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
+    !------
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: ks
+    real(kind=8):: s
+    real(kind=8):: t
+    real(kind=8):: zz
 
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    t=0.0d0
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       s=0.0d0
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             s=s+temp(j)*zln(jj)
-          ENDIF
-       ENDDO
-       zz=zln(k)-s
-       zln(k)=zz*diag(jc)
-       temp(jc)=zz
-       t=t+zz*zln(k)
-    ENDDO
-    piv=diag(ic)-t
-    IF(dabs(piv)>rmin) THEN
-       diag(ic)=1.0d0/piv
-    ENDIF
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    t = 0.0D0
 
-    DO
-       IF(isem==1) THEN
-          isem=0
-          nch(ic)=-1
-          kk=par(ic)
-          nch(kk)=nch(kk)-1
-          isem=1
-          EXIT
-       ENDIF
-    ENDDO
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      s = 0.0D0
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) s = s + Temp(j)*Zln(jj)
+      enddo
+      zz = Zln(k) - s
 
-    RETURN
-  END SUBROUTINE sum
+      Zln(k) = zz
+      Temp(jc) = zz
+    enddo
+  end subroutine SUM1
 
   !======================================================================!
-  !> sum1
+  !> @brief SUM2
   !======================================================================!
-  SUBROUTINE sum1(ic,xlnzr,colno,zln,diag,par,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),par(*)
-    DIMENSION zln(*),diag(*),temp(*),indx(*)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
+  subroutine SUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx)
+    implicit none
+    !------
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(out):: Temp(*)
+    real(kind=8), intent(out):: Zln(*)
+    !------
+    integer:: ic
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: ks
+    real(kind=8):: s
 
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    t=0.0d0
-
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       s=0.0d0
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             s=s+temp(j)*zln(jj)
-          ENDIF
-       ENDDO
-       zz=zln(k)-s
-
-       zln(k)=zz
-       temp(jc)=zz
-    ENDDO
-    RETURN
-  END SUBROUTINE sum1
-
-  !======================================================================!
-  !> sum2
-  !======================================================================!
-  SUBROUTINE sum2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*)
-    DIMENSION zln(*),diag(*),temp(*),indx(*),dsln(*)
-
-    joc=0
-    DO ic=nstop,neqns
-       DO i=1,nstop
-          temp(i)=0.0d0
-       ENDDO
-       ks=xlnzr(ic)
-       ke=xlnzr(ic+1)-1
-       DO k=ks,ke
-          jj=colno(k)
-          temp(jj)=zln(k)
-          zln(k)=temp(jj)*diag(jj)
-          indx(jj)=ic
-          diag(ic)=diag(ic)-temp(jj)*zln(k)
-       ENDDO
-       DO jc=nstop,ic-1
-          s=0.0d0
-          joc=joc+1
-          DO jj=xlnzr(jc),xlnzr(jc+1)-1
-             j=colno(jj)
-             IF(indx(j)==ic) THEN
-                s=s+temp(j)*zln(jj)
-             ENDIF
-          ENDDO
-          IF(s==0.0) WRITE(16,*) ic,jc
-          dsln(joc)=dsln(joc)-s
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE sum2
+    joc = 0
+    do ic = Nstop, Neqns
+      Temp(1:Nstop) = 0.0D0
+      ks = Xlnzr(ic)
+      ke = Xlnzr(ic+1) - 1
+      do k = ks, ke
+        jj = Colno(k)
+        Temp(jj) = Zln(k)
+        Zln(k) = Temp(jj)*Diag(jj)
+        Indx(jj) = ic
+        Diag(ic) = Diag(ic) - Temp(jj)*Zln(k)
+      enddo
+      do jc = Nstop, ic - 1
+        s = 0.0D0
+        joc = joc + 1
+        do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+          j = Colno(jj)
+          if ( Indx(j)==ic ) s = s + Temp(j)*Zln(jj)
+        enddo
+        if ( s==0.0D0 ) write (16,*) ic, jc
+        Dsln(joc) = Dsln(joc) - s
+      enddo
+    enddo
+  end subroutine SUM2
 
   !======================================================================!
-  !> sum3
+  !> @brief SUM3
   !======================================================================!
-  SUBROUTINE sum3(n,dsln,diag,indx,temp)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION dsln(*),diag(*),indx(*),temp(*)
+  subroutine SUM3(N,Dsln,Diag,Indx,Temp)
+    implicit none
+    !------
+    integer, intent(in):: N
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(*)
+    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(out):: Temp(*)
+    !------
+    integer:: i
+    integer:: j
+    integer:: joc
 
-    IF(n<=0) RETURN
-    indx(1)=0
-    joc=1
-    diag(1)=1.0d0/diag(1)
-    DO i=2,n
-       indx(i)=joc
-       DO j=1,i-1
-          dsln(joc)=dsln(joc)-ddot(dsln(indx(i)),dsln(indx(j)),j-1)
-          joc=joc+1
-       ENDDO
-       CALL vprod(dsln(indx(i)),diag,temp,i-1)
-       diag(i)=diag(i)-ddot(temp,dsln(indx(i)),i-1)
-       CALL vcopy(temp,dsln(indx(i)),i-1)
-       diag(i)=1.0d0/diag(i)
-    ENDDO
-    RETURN
-  END SUBROUTINE sum3
-
-  !======================================================================!
-  !> sxpdot
-  !======================================================================!
-  SUBROUTINE sxpdot(ndeg,bi,b,zln,colno,ks,ke)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER colno(*)
-    DOUBLE PRECISION zln(ndeg,ndeg,*),b(ndeg,*),bi(ndeg)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c      spdot1 performs inner product of sparse vectors
-    !c
-    !c
-    !c      #coded by t.arakawa of RIST on 040510
-    !c
-    !c----------------------------------------------------------------------
-    DO jj=ks,ke
-       j=colno(jj)
-       DO m=1,ndeg
-          DO n=1,ndeg
-             bi(n)=bi(n)-zln(n,m,jj)*b(m,j)
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE sxpdot
+    if ( N>0 ) then
+      Indx(1) = 0
+      joc = 1
+      Diag(1) = 1.0D0/Diag(1)
+      do i = 2, N
+        Indx(i) = joc
+        do j = 1, i - 1
+          Dsln(joc) = Dsln(joc) - DDOT(Dsln(Indx(i)),Dsln(Indx(j)),j-1)
+          joc = joc + 1
+        enddo
+        call VPROD(Dsln(Indx(i)),Diag,Temp,i-1)
+        Diag(i) = Diag(i) - DDOT(Temp,Dsln(Indx(i)),i-1)
+        call VCOPY(Temp,Dsln(Indx(i)),i-1)
+        Diag(i) = 1.0D0/Diag(i)
+      enddo
+    endif
+  end subroutine SUM3
 
   !======================================================================!
-  !> sxum
+  !> @brief SXUM
   !======================================================================!
-  SUBROUTINE sxum(ic,xlnzr,colno,zln,diag,nch,par,temp,indx,ndeg,ndegl,zz,t)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),nch(*),par(*)
-    DIMENSION zln(ndeg,ndeg,*),diag(ndegl,*),temp(ndeg,ndeg,*),indx(*)
-    DIMENSION zz(ndeg,ndeg),t(ndegl)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
+  subroutine SXUM(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx,Ndeg,Ndegl,Zz,T)
+    implicit none
+    !------
+    integer, intent(in):: Ic
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(in):: Par(*)
+    integer, intent(out):: Indx(*)
+    integer, intent(out):: Nch(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: T(Ndegl)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zz(Ndeg,Ndeg)
+    !------
+    integer:: ir
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    integer:: m
+    integer:: n
+    integer:: ndeg22
 
-    ndeg22=ndeg*ndeg
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    t=0.0
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       zz=zln(:,:,k)
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             DO m=1,ndeg,2
-                DO n=1,ndeg,2
-                   DO kk=1,ndeg,2
-                      zz(n,m)=zz(n,m)-temp(n,kk,j)*zln(m,kk,jj)-temp(n,kk+1,j)*zln(m,kk+1,jj)
-                      zz(n,m+1)=zz(n,m+1)-temp(n,kk,j)*zln(m+1,kk,jj)-temp(n,kk+1,j)*zln(m+1,kk+1,jj)
-                      zz(n+1,m)=zz(n+1,m)-temp(n+1,kk,j)*zln(m,kk,jj)-temp(n+1,kk+1,j)*zln(m,kk+1,jj)
-                      zz(n+1,m+1)=zz(n+1,m+1)-temp(n+1,kk,j)*zln(m+1,kk,jj)-temp(n+1,kk+1,j)*zln(m+1,kk+1,jj)
-                   ENDDO
-                ENDDO
-             ENDDO
-          ENDIF
-       ENDDO
+    ndeg22 = Ndeg*Ndeg
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    T = 0.0
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      Zz = Zln(:,:,k)
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          do m = 1, Ndeg, 2
+            do n = 1, Ndeg, 2
+              do kk = 1, Ndeg, 2
+                Zz(n,m) = Zz(n,m) - Temp(n,kk,j)*Zln(m,kk,jj) - Temp(n,kk+1,j)*Zln(m,kk+1,jj)
+                Zz(n,m+1) = Zz(n,m+1) - Temp(n,kk,j)*Zln(m+1,kk,jj) - Temp(n,kk+1,j)*Zln(m+1,kk+1,jj)
+                Zz(n+1,m) = Zz(n+1,m) - Temp(n+1,kk,j)*Zln(m,kk,jj) - Temp(n+1,kk+1,j)*Zln(m,kk+1,jj)
+                Zz(n+1,m+1) = Zz(n+1,m+1) - Temp(n+1,kk,j)*Zln(m+1,kk,jj) - Temp(n+1,kk+1,j)*Zln(m+1,kk+1,jj)
+              enddo
+            enddo
+          enddo
+        endif
+      enddo
+      call INVXX(Zln(1,1,k),Zz,Diag(1,jc),Ndeg)
 
-       CALL invxx(zln(1,1,k),zz,diag(1,jc),ndeg)
+      Temp(:,:,jc) = Zz
+      joc = 0
+      do n = 1, Ndeg
+        do m = 1, n
+          joc = joc + 1
+          do kk = 1, Ndeg, 2
+            T(joc) = T(joc) + Zz(n,kk)*Zln(m,kk,k) + Zz(n,kk+1)*Zln(m,kk+1,k)
+          enddo
+        enddo
+      enddo
+    enddo
 
-       temp(:,:,jc)=zz
-       joc=0
-       DO n=1,ndeg
-          DO m=1,n
-             joc=joc+1
-             DO kk=1,ndeg,2
-                t(joc)=t(joc)+zz(n,kk)*zln(m,kk,k)+zz(n,kk+1)*zln(m,kk+1,k)
-             ENDDO
-          ENDDO
-       ENDDO
-    ENDDO
-
-    diag(:,ic)=diag(:,ic)-t
-    CALL invx(diag(1,ic),ndeg,ir)
-    nch(ic)=-1
-    kk=par(ic)
-    nch(kk)=nch(kk)-1
-    RETURN
-  END SUBROUTINE sxum
-
-  !======================================================================!
-  !> sxum1
-  !======================================================================!
-  SUBROUTINE sxum1(ic,xlnzr,colno,zln,diag,par,temp,indx,ndeg,ndegl,s)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*),par(*)
-    DIMENSION zln(ndeg,ndeg,*),diag(ndegl,*),temp(ndeg,ndeg,*),indx(*)
-    DIMENSION s(ndeg,ndeg)
-    COMMON /mchdpn/ rmax,rmin,epsm,lratio
-
-    ks=xlnzr(ic)
-    ke=xlnzr(ic+1)
-    DO m=1,ndeg
-       DO n=1,ndeg
-          s(n,m)=0.0d0
-       ENDDO
-    ENDDO
-
-    DO k=ks,ke-1
-       jc=colno(k)
-       indx(jc)=ic
-       DO jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          IF(indx(j)==ic) THEN
-             DO m=1,ndeg
-                DO n=1,ndeg
-                   DO kk=1,ndeg
-                      s(n,m)=s(n,m)+temp(n,kk,j)*zln(m,kk,jj)
-                   ENDDO
-                ENDDO
-             ENDDO
-          ENDIF
-       ENDDO
-       DO m=1,ndeg
-          DO n=1,ndeg
-             temp(n,m,jc)=zln(n,m,k)-s(n,m)
-             zln(n,m,k)=temp(n,m,jc)
-             s(n,m)=0.0d0
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE sxum1
+    Diag(:,Ic) = Diag(:,Ic) - T
+    call INVX(Diag(1,Ic),Ndeg,ir)
+    Nch(Ic) = -1
+    kk = Par(Ic)
+    Nch(kk) = Nch(kk) - 1
+  end subroutine SXUM
 
   !======================================================================!
-  !> sxum2
+  !> @brief SXUM1
   !======================================================================!
-  SUBROUTINE sxum2(neqns,nstop,xlnzr,colno,zln,diag,dsln,temp,indx,ndeg,ndegl)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    INTEGER xlnzr(*),colno(*)
-    DIMENSION zln(ndeg,ndeg,*),diag(ndegl,*),temp(ndeg,ndeg,*)
-    DIMENSION dsln(ndeg,ndeg,*),indx(*)
+  subroutine SXUM1(Ic,Xlnzr,Colno,Zln,Temp,Indx,Ndeg,S)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: S(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    !------
+    integer:: Ic
+    integer:: j
+    integer:: jc
+    integer:: jj
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    integer:: m
+    integer:: n
 
-    joc=0
-    DO ic=nstop,neqns
-       ks=xlnzr(ic)
-       ke=xlnzr(ic+1)-1
-       DO k=ks,ke
-          jj=colno(k)
-          DO m=1,ndeg
-             DO n=1,ndeg
-                temp(n,m,jj)=zln(n,m,k)
-                indx(jj)=ic
-             ENDDO
-          ENDDO
-       ENDDO
-       DO k=ks,ke
-          jj=colno(k)
-          CALL invxx(zln(1,1,k),temp(1,1,jj),diag(1,jj),ndeg)
-       ENDDO
+    ks = Xlnzr(Ic)
+    ke = Xlnzr(Ic+1)
+    S(1:Ndeg,1:Ndeg) = 0.0D0
 
-       locd=0
-       DO n=1,ndeg
-          DO m=1,n
-             locd=locd+1
-             DO k=ks,ke
-                jj=colno(k)
-                DO kk=1,ndeg
-                   diag(locd,ic)=diag(locd,ic)-temp(n,kk,jj)*zln(m,kk,k)
-                ENDDO
-             ENDDO
-          ENDDO
-       ENDDO
-       DO jc=nstop,ic-1
-          joc=joc+1
-          j1=xlnzr(jc)
-          j2=xlnzr(jc+1)
-          DO jj=xlnzr(jc),xlnzr(jc+1)-1
-             j=colno(jj)
-             IF(indx(j)==ic) THEN
-                DO m=1,ndeg
-                   DO n=1,ndeg
-                      DO k=1,ndeg
-                         dsln(n,m,joc)=dsln(n,m,joc)-temp(n,k,j)*zln(m,k,jj)
-                      ENDDO
-                   ENDDO
-                ENDDO
-             ENDIF
-          ENDDO
-       ENDDO
-    ENDDO
-    RETURN
-  END SUBROUTINE sxum2
+    do k = ks, ke - 1
+      jc = Colno(k)
+      Indx(jc) = Ic
+      do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+        j = Colno(jj)
+        if ( Indx(j)==Ic ) then
+          do m = 1, Ndeg
+            do n = 1, Ndeg
+              do kk = 1, Ndeg
+                S(n,m) = S(n,m) + Temp(n,kk,j)*Zln(m,kk,jj)
+              enddo
+            enddo
+          enddo
+        endif
+      enddo
+      do m = 1, Ndeg
+        do n = 1, Ndeg
+          Temp(n,m,jc) = Zln(n,m,k) - S(n,m)
+          Zln(n,m,k) = Temp(n,m,jc)
+          S(n,m) = 0.0D0
+        enddo
+      enddo
+    enddo
+  end subroutine SXUM1
 
   !======================================================================!
-  !> sxum3
+  !> @brief SXUM2
   !======================================================================!
-  SUBROUTINE sxum3(nn,dsln,diag,indx,temp,ndeg,ndegl,t)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION dsln(ndeg,ndeg,*),diag(ndegl,*),indx(*),temp(ndeg,ndeg,*),t(ndeg,ndeg)
+  subroutine SXUM2(Neqns,Nstop,Xlnzr,Colno,Zln,Diag,Dsln,Temp,Indx,Ndeg,Ndegl)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Neqns
+    integer, intent(in):: Nstop
+    integer, intent(in):: Xlnzr(*)
+    integer, intent(in):: Colno(*)
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    !------
+    integer:: ic
+    integer:: j
+    integer:: j1
+    integer:: j2
+    integer:: jc
+    integer:: jj
+    integer:: joc
+    integer:: k
+    integer:: ke
+    integer:: kk
+    integer:: ks
+    integer:: locd
+    integer:: m
+    integer:: n
 
-    IF(nn<=0) RETURN
+    joc = 0
+    do ic = Nstop, Neqns
+      ks = Xlnzr(ic)
+      ke = Xlnzr(ic+1) - 1
+      do k = ks, ke
+        jj = Colno(k)
+        do m = 1, Ndeg
+          Temp(1:Ndeg,m,jj) = Zln(1:Ndeg,m,k)
+          Indx(jj) = ic
+        enddo
+      enddo
+      do k = ks, ke
+        jj = Colno(k)
+        call INVXX(Zln(1,1,k),Temp(1,1,jj),Diag(1,jj),Ndeg)
+      enddo
 
-    indx(1)=0
-    joc=1
-    CALL invx(diag(1,1),ndeg,ir)
-    DO i=2,nn
-       indx(i)=joc
-       DO j=1,i-1
-          CALL dxdot(ndeg,t,dsln(1,1,indx(i)),dsln(1,1,indx(j)),j-1)
-          DO m=1,ndeg
-             DO n=1,ndeg
-                dsln(n,m,joc)=dsln(n,m,joc)-t(n,m)
-             ENDDO
-          ENDDO
-          joc=joc+1
-       ENDDO
-       CALL vxprod(ndeg,ndegl,dsln(1,1,indx(i)),diag,temp,i-1)
-       CALL dxdotl(ndeg,t,temp,dsln(1,1,indx(i)),i-1)
-       locd=0
-       DO n=1,ndeg
-          DO m=1,n
-             locd=locd+1
-             diag(locd,i)=diag(locd,i)-t(n,m)
-          ENDDO
-       ENDDO
-       CALL vcopy(temp,dsln(1,1,indx(i)),ndeg*ndeg*(i-1))
-       CALL invx(diag(1,i),ndeg,ir)
-    ENDDO
-    RETURN
-  END SUBROUTINE sxum3
-
-  !======================================================================!
-  !> v2prod
-  !======================================================================!
-  SUBROUTINE v2prod(a,b,c,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION a(4,n),b(3,n),c(4,n)
-
-    DO i=1,n
-       c(3,i)=a(3,i)-a(1,i)*b(2,i)
-       c(1,i)=a(1,i)*b(1,i)
-       c(3,i)=c(3,i)*b(3,i)
-       c(1,i)=c(1,i)-c(3,i)*b(2,i)
-
-       c(4,i)=a(4,i)-a(2,i)*b(2,i)
-       c(2,i)=a(2,i)*b(1,i)
-       c(4,i)=c(4,i)*b(3,i)
-       c(2,i)=c(2,i)-c(4,i)*b(2,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE v2prod
-
-  !======================================================================!
-  !> v3prod
-  !======================================================================!
-  SUBROUTINE v3prod(zln,diag,zz,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(9,n),diag(6,n),zz(9,n)
-
-    DO i=1,n
-       zz(4,i)=zln(4,i)-zln(1,i)*diag(2,i)
-       zz(7,i)=zln(7,i)-zln(1,i)*diag(4,i)-zz(4,i)*diag(5,i)
-       zz(1,i)=zln(1,i)*diag(1,i)
-       zz(4,i)=zz(4,i)*diag(3,i)
-       zz(7,i)=zz(7,i)*diag(6,i)
-       zz(4,i)=zz(4,i)-zz(7,i)*diag(5,i)
-       zz(1,i)=zz(1,i)-zz(4,i)*diag(2,i)-zz(7,i)*diag(4,i)
-
-       zz(5,i)=zln(5,i)-zln(2,i)*diag(2,i)
-       zz(8,i)=zln(8,i)-zln(2,i)*diag(4,i)-zz(5,i)*diag(5,i)
-       zz(2,i)=zln(2,i)*diag(1,i)
-       zz(5,i)=zz(5,i)*diag(3,i)
-       zz(8,i)=zz(8,i)*diag(6,i)
-       zz(5,i)=zz(5,i)-zz(8,i)*diag(5,i)
-       zz(2,i)=zz(2,i)-zz(5,i)*diag(2,i)-zz(8,i)*diag(4,i)
-
-       zz(6,i)=zln(6,i)-zln(3,i)*diag(2,i)
-       zz(9,i)=zln(9,i)-zln(3,i)*diag(4,i)-zz(6,i)*diag(5,i)
-       zz(3,i)=zln(3,i)*diag(1,i)
-       zz(6,i)=zz(6,i)*diag(3,i)
-       zz(9,i)=zz(9,i)*diag(6,i)
-       zz(6,i)=zz(6,i)-zz(9,i)*diag(5,i)
-       zz(3,i)=zz(3,i)-zz(6,i)*diag(2,i)-zz(9,i)*diag(4,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE v3prod
+      locd = 0
+      do n = 1, Ndeg
+        do m = 1, n
+          locd = locd + 1
+          do k = ks, ke
+            jj = Colno(k)
+            do kk = 1, Ndeg
+              Diag(locd,ic) = Diag(locd,ic) - Temp(n,kk,jj)*Zln(m,kk,k)
+            enddo
+          enddo
+        enddo
+      enddo
+      do jc = Nstop, ic - 1
+        joc = joc + 1
+        j1 = Xlnzr(jc)
+        j2 = Xlnzr(jc+1)
+        do jj = Xlnzr(jc), Xlnzr(jc+1) - 1
+          j = Colno(jj)
+          if ( Indx(j)==ic ) then
+            do m = 1, Ndeg
+              do n = 1, Ndeg
+                do k = 1, Ndeg
+                  Dsln(n,m,joc) = Dsln(n,m,joc) - Temp(n,k,j)*Zln(m,k,jj)
+                enddo
+              enddo
+            enddo
+          endif
+        enddo
+      enddo
+    enddo
+  end subroutine SXUM2
 
   !======================================================================!
-  !> v6prod
+  !> @brief SXUM3
   !======================================================================!
-  SUBROUTINE v6prod(zln,diag,zz,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(9,n),diag(6,n),zz(9,n)
+  subroutine SXUM3(Nn,Dsln,Diag,Indx,Temp,Ndeg,Ndegl,T)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    integer, intent(in):: Nn
+    integer, intent(out):: Indx(*)
+    real(kind=8), intent(out):: Diag(Ndegl,*)
+    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(out):: T(Ndeg,Ndeg)
+    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
+    !------
+    integer:: i
+    integer:: ir
+    integer:: j
+    integer:: joc
+    integer:: locd
+    integer:: m
+    integer:: n
 
-    DO i=1,n
-       zz(4,i)=zln(4,i)-zln(1,i)*diag(2,i)
-       zz(7,i)=zln(7,i)-zln(1,i)*diag(4,i)-zz(4,i)*diag(5,i)
-       zz(1,i)=zln(1,i)*diag(1,i)
-       zz(4,i)=zz(4,i)*diag(3,i)
-       zz(7,i)=zz(7,i)*diag(6,i)
-       zz(4,i)=zz(4,i)-zz(7,i)*diag(5,i)
-       zz(1,i)=zz(1,i)-zz(4,i)*diag(2,i)-zz(7,i)*diag(4,i)
-
-       zz(5,i)=zln(5,i)-zln(2,i)*diag(2,i)
-       zz(8,i)=zln(8,i)-zln(2,i)*diag(4,i)-zz(5,i)*diag(5,i)
-       zz(2,i)=zln(2,i)*diag(1,i)
-       zz(5,i)=zz(5,i)*diag(3,i)
-       zz(8,i)=zz(8,i)*diag(6,i)
-       zz(5,i)=zz(5,i)-zz(8,i)*diag(5,i)
-       zz(2,i)=zz(2,i)-zz(5,i)*diag(2,i)-zz(8,i)*diag(4,i)
-
-       zz(6,i)=zln(6,i)-zln(3,i)*diag(2,i)
-       zz(9,i)=zln(9,i)-zln(3,i)*diag(4,i)-zz(6,i)*diag(5,i)
-       zz(3,i)=zln(3,i)*diag(1,i)
-       zz(6,i)=zz(6,i)*diag(3,i)
-       zz(9,i)=zz(9,i)*diag(6,i)
-       zz(6,i)=zz(6,i)-zz(9,i)*diag(5,i)
-       zz(3,i)=zz(3,i)-zz(6,i)*diag(2,i)-zz(9,i)*diag(4,i)
-    ENDDO
-    RETURN
-  END SUBROUTINE v6prod
-
-  !======================================================================!
-  !> vcopy
-  !======================================================================!
-  SUBROUTINE vcopy(a,c,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION a(n),c(n)
-
-    c=a
-    RETURN
-  END SUBROUTINE vcopy
-
-  !======================================================================!
-  !> verif0
-  !======================================================================!
-  SUBROUTINE verif0(neqns,ndeg,nttbr,irow,jcol,val,rhs,x)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION irow(*),jcol(*),val(ndeg,ndeg,*),rhs(ndeg,*),x(ndeg,*)
-
-    !c----------------------------------------------------------------------
-    !c
-    !c     verify the solution(symmetric matrix)
-    !c
-    !c----------------------------------------------------------------------
-    rel=0.0d0
-    DO i=1,neqns
-       DO l=1,ndeg
-          rel=rel+dabs(rhs(l,i))
-       ENDDO
-    ENDDO
-    DO k=1,nttbr
-       i=irow(k)
-       j=jcol(k)
-       DO l=1,ndeg
-          DO m=1,ndeg
-             rhs(l,i)=rhs(l,i)-val(l,m,k)*x(m,j)
-             IF(i/=j) rhs(l,j)=rhs(l,j)-val(m,l,k)*x(m,i)
-          ENDDO
-       ENDDO
-    ENDDO
-    err=0.0d0
-    DO i=1,neqns
-       DO l=1,ndeg
-          err=err+dabs(rhs(l,i))
-       ENDDO
-    ENDDO
-    WRITE(6,6000) err,rel,err/rel
-    !WINDEBUG
-    !      write(16,6000) err,rel,err/rel
-    RETURN
-
-6000 FORMAT(' ***verification***(symmetric)'/ &
-         'norm(Ax-b)            =  ',1pd20.10/ &
-         'norm(b)               =  ',1pd20.10/ &
-         'norm(Ax-b)/norm(b)    =  ',1pd20.10)
-  END SUBROUTINE verif0
+    if ( Nn>0 ) then
+      Indx(1) = 0
+      joc = 1
+      call INVX(Diag(1,1),Ndeg,ir)
+      do i = 2, Nn
+        Indx(i) = joc
+        do j = 1, i - 1
+          call DXDOT(Ndeg,T,Dsln(1,1,Indx(i)),Dsln(1,1,Indx(j)),j-1)
+          do m = 1, Ndeg
+            Dsln(1:Ndeg,m,joc) = Dsln(1:Ndeg,m,joc) - T(1:Ndeg,m)
+          enddo
+          joc = joc + 1
+        enddo
+        call VXPROD(Ndeg,Ndegl,Dsln(1,1,Indx(i)),Diag,Temp,i-1)
+        call DXDOTL(Ndeg,T,Temp,Dsln(1,1,Indx(i)),i-1)
+        locd = 0
+        do n = 1, Ndeg
+          do m = 1, n
+            locd = locd + 1
+            Diag(locd,i) = Diag(locd,i) - T(n,m)
+          enddo
+        enddo
+        call VCOPY(Temp,Dsln(1,1,Indx(i)),Ndeg*Ndeg*(i-1))
+        call INVX(Diag(1,i),Ndeg,ir)
+      enddo
+    endif
+  end subroutine SXUM3
 
   !======================================================================!
-  !> vlcpy
+  !> @brief V2PROD
   !======================================================================!
-  SUBROUTINE vlcpy(a,b,n)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    INTEGER i,j
-    DIMENSION a(n,n), b(n,n)
+  subroutine V2PROD(A,B,C,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(4,N)
+    real(kind=8), intent(in):: B(3,N)
+    real(kind=8), intent(out):: C(4,N)
+    !------
+    integer:: i
 
-    DO i = 1,n
-       DO j = 1,n
-          a(j,i) = b(i,j)
-       END DO
-    END DO
-    RETURN
-  END SUBROUTINE vlcpy
+    do i = 1, N
+      C(3,i) = A(3,i) - A(1,i)*B(2,i)
+      C(1,i) = A(1,i)*B(1,i)
+      C(3,i) = C(3,i)*B(3,i)
+      C(1,i) = C(1,i) - C(3,i)*B(2,i)
 
-  !======================================================================!
-  !> vlcpy1
-  !======================================================================!
-  SUBROUTINE vlcpy1(a,n)
-    IMPLICIT DOUBLE PRECISION (a-h,o-z)
-    DIMENSION a(n)
-    INTEGER i,j
-
-    a(n)=0
-    RETURN
-  END SUBROUTINE vlcpy1
+      C(4,i) = A(4,i) - A(2,i)*B(2,i)
+      C(2,i) = A(2,i)*B(1,i)
+      C(4,i) = C(4,i)*B(3,i)
+      C(2,i) = C(2,i) - C(4,i)*B(2,i)
+    enddo
+  end subroutine V2PROD
 
   !======================================================================!
-  !> vprod
+  !> @brief V3PROD
   !======================================================================!
-  SUBROUTINE vprod(a,b,c,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION a(n),b(n),c(n)
+  subroutine V3PROD(Zln,Diag,Zz,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: Diag(6,N)
+    real(kind=8), intent(in):: Zln(9,N)
+    real(kind=8), intent(out):: Zz(9,N)
+    !------
+    integer:: i
 
-    DO i=1,n
-       c(i)=a(i)*b(i)
-    ENDDO
-    RETURN
-  END SUBROUTINE vprod
+    do i = 1, N
+      Zz(4,i) = Zln(4,i) - Zln(1,i)*Diag(2,i)
+      Zz(7,i) = Zln(7,i) - Zln(1,i)*Diag(4,i) - Zz(4,i)*Diag(5,i)
+      Zz(1,i) = Zln(1,i)*Diag(1,i)
+      Zz(4,i) = Zz(4,i)*Diag(3,i)
+      Zz(7,i) = Zz(7,i)*Diag(6,i)
+      Zz(4,i) = Zz(4,i) - Zz(7,i)*Diag(5,i)
+      Zz(1,i) = Zz(1,i) - Zz(4,i)*Diag(2,i) - Zz(7,i)*Diag(4,i)
+
+      Zz(5,i) = Zln(5,i) - Zln(2,i)*Diag(2,i)
+      Zz(8,i) = Zln(8,i) - Zln(2,i)*Diag(4,i) - Zz(5,i)*Diag(5,i)
+      Zz(2,i) = Zln(2,i)*Diag(1,i)
+      Zz(5,i) = Zz(5,i)*Diag(3,i)
+      Zz(8,i) = Zz(8,i)*Diag(6,i)
+      Zz(5,i) = Zz(5,i) - Zz(8,i)*Diag(5,i)
+      Zz(2,i) = Zz(2,i) - Zz(5,i)*Diag(2,i) - Zz(8,i)*Diag(4,i)
+
+      Zz(6,i) = Zln(6,i) - Zln(3,i)*Diag(2,i)
+      Zz(9,i) = Zln(9,i) - Zln(3,i)*Diag(4,i) - Zz(6,i)*Diag(5,i)
+      Zz(3,i) = Zln(3,i)*Diag(1,i)
+      Zz(6,i) = Zz(6,i)*Diag(3,i)
+      Zz(9,i) = Zz(9,i)*Diag(6,i)
+      Zz(6,i) = Zz(6,i) - Zz(9,i)*Diag(5,i)
+      Zz(3,i) = Zz(3,i) - Zz(6,i)*Diag(2,i) - Zz(9,i)*Diag(4,i)
+    enddo
+  end subroutine V3PROD
 
   !======================================================================!
-  !> vxprod
+  !> @brief VLCPY
   !======================================================================!
-  SUBROUTINE vxprod(ndeg,ndegl,zln,diag,zz,n)
-    IMPLICIT DOUBLE PRECISION(a-h,o-z)
-    DIMENSION zln(ndeg*ndeg,n),diag(ndegl,n),zz(ndeg*ndeg,n)
+  subroutine VLCPY(A,B,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: B(N,N)
+    real(kind=8), intent(out):: A(N,N)
+    !------
+    integer:: i
 
-    DO i=1,n
-       CALL invxx(zz(1,i),zln(1,i),diag(1,i),ndeg)
-    ENDDO
-    RETURN
-  END SUBROUTINE vxprod
+    do i = 1, N
+      A(1:N,i) = B(i,1:N)
+    enddo
+  end subroutine VLCPY
 
   !======================================================================!
-  !> zpivot
+  !> @brief VCOPY
   !======================================================================!
-  SUBROUTINE zpivot(neqns,neqnsz,nttbr,jcol,irow,zpiv,ir)
-    INTEGER jcol(*),irow(*),zpiv(*)
-    COMMON /debug/idbg
+  subroutine VCOPY(A,C,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(out):: C(N)
+    !------
+    C = A
+  end subroutine VCOPY
 
-    ir=0
-    DO l=1,neqns
-       zpiv(l)=1
-    ENDDO
+  !======================================================================!
+  !> @brief VPROD
+  !======================================================================!
+  subroutine VPROD(A,B,C,N)
+    implicit none
+    !------
+    integer, intent(in):: N
+    real(kind=8), intent(in):: A(N)
+    real(kind=8), intent(in):: B(N)
+    real(kind=8), intent(out):: C(N)
+    !------
+    C(1:N) = A(1:N)*B(1:N)
+  end subroutine VPROD
 
-    DO l=1,nttbr
-       i=irow(l)
-       j=jcol(l)
-       IF(i<=0.OR.j<=0) THEN
-          ir=-1
-          GOTO 1000
-       ELSEIF(i>neqns.OR.j>neqns) THEN
-          ir=1
-          GOTO 1000
-       ENDIF
-       IF(i==j) zpiv(i)=0
-    ENDDO
-    DO i=neqns,1,-1
-       IF(zpiv(i)==0) THEN
-          neqnsz=i
-          EXIT
-       ENDIF
-    ENDDO
-1000 CONTINUE
-    IF(idbg/=0) WRITE(6,60) (zpiv(i),i=1,neqns)
-    RETURN
+  !======================================================================!
+  !> @brief VXPROD
+  !======================================================================!
+  subroutine VXPROD(Ndeg,Ndegl,Zln,Diag,Zz,N)
+    implicit none
+    !------
+    integer, intent(in):: Ndeg
+    integer, intent(in):: Ndegl
+    real(kind=8), intent(in):: Diag(Ndegl,N)
+    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,N)
+    real(kind=8), intent(out):: Zz(Ndeg*Ndeg,N)
+    !------
+    integer:: i
+    integer:: N
 
-60  FORMAT(20i3)
-  END SUBROUTINE zpivot
-
-END MODULE hecmw_solver_direct
+    do i = 1, N
+      call INVXX(Zz(1,i),Zln(1,i),Diag(1,i),Ndeg)
+    enddo
+  end subroutine VXPROD
+end module HECMW_SOLVER_DIRECT
