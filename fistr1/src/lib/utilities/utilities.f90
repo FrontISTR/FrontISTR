@@ -489,5 +489,41 @@ module m_utilities
     end if
 
   end subroutine cardano
+  
+  subroutine rotate_3dvector_by_Rodrigues_formula(r,v)
+    real(kind=kreal),intent(in)    :: r(3)  !< rotational vector
+    real(kind=kreal),intent(inout) :: v(3)  !< vector to be rotated
+    
+    real(kind=kreal) :: rotv(3), rv
+    real(kind=kreal) :: cosx, sinc(2) !< sinc(1)=sin(x)/x, sinc(2)=(1-cos(x))/x^2
+    real(kind=kreal) :: x, x2, x4, x6
+    real(kind=kreal), parameter :: c0 = 0.5d0
+    real(kind=kreal), parameter :: c2 = -4.166666666666666d-002
+    real(kind=kreal), parameter :: c4 = 1.388888888888889d-003
+    real(kind=kreal), parameter :: c6 = -2.480158730158730d-005
+    
+    x2 = dot_product(r,r)
+    x = dsqrt(x2)
+    cosx = dcos(x)
+    if( x < 1.d-4 ) then
+      x4 = x2*x2
+      x6 = x4*x2
+      sinc(1) = 1.d0-x2/6.d0+x4/120.d0
+      sinc(2) = c0+c2*x2+c4*x4+c6*x6
+    else
+      sinc(1) = dsin(x)/x 
+      sinc(2) = (1.d0-cosx)/x2
+    endif
+    
+    ! calc Rot*v
+    rv = dot_product(r,v)
+    rotv(1:3) = cosx*v(1:3)
+    rotv(1:3) = rotv(1:3)+rv*sinc(2)*r(1:3)
+    rotv(1) = rotv(1) + (-v(2)*r(3)+v(3)*r(2))*sinc(1)
+    rotv(2) = rotv(2) + (-v(3)*r(1)+v(1)*r(3))*sinc(1)
+    rotv(3) = rotv(3) + (-v(1)*r(2)+v(2)*r(1))*sinc(1)
+    v = rotv
+    
+  end subroutine
 
 end module
