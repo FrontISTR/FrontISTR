@@ -67,6 +67,11 @@ public
         integer(kind=kint),parameter :: restart_outLast = 1
         integer(kind=kint),parameter :: restart_outAll  = 2
 
+        ! statistics of newton iteration
+        integer(kind=kint),parameter :: knstMAXIT  = 1 ! maximum number of newton iteration
+        integer(kind=kint),parameter :: knstSUMIT  = 2 ! total number of newton iteration
+        integer(kind=kint),parameter :: knstCITER  = 3 ! number of contact iteration
+
         ! section control
         integer(kind=kint),parameter :: kel361FI     =  1
         integer(kind=kint),parameter :: kel361BBAR   =  2
@@ -349,6 +354,9 @@ public
 
                 real(kind=kreal)          :: FACTOR     (2)      !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
+                ! for increment control
+                integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
+                real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
                 real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force

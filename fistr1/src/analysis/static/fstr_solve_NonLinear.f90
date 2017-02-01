@@ -55,6 +55,8 @@ module m_fstr_NonLinearMethod
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%NDOF
 
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
+
     allocate(coord(hecMESH%n_node*ndof))
 
     tincr = dtime
@@ -139,6 +141,9 @@ module m_fstr_NonLinearMethod
     enddo
     ! ----- end of inner loop
 
+    fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+    fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+
     ! -----  not convergence
     if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
       if( hecMESH%my_rank == 0 ) then
@@ -203,6 +208,8 @@ module m_fstr_NonLinearMethod
 
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%NDOF
+
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     allocate(coord(hecMESH%n_node*ndof))
 
@@ -328,6 +335,9 @@ module m_fstr_NonLinearMethod
       enddo
       ! ----- end of inner loop
 
+      fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+
       ! -----  not convergence
       if( iter>fstrSOLID%step_ctrl(cstep)%max_iter ) then
         if( hecMESH%my_rank==0) then
@@ -362,6 +372,8 @@ module m_fstr_NonLinearMethod
 
     enddo
     ! ----- end of augmentation loop
+
+    fstrSOLID%NRstat_i(knstCITER) = al_step-1 ! logging contact iteration
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
@@ -423,6 +435,8 @@ module m_fstr_NonLinearMethod
 
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%NDOF
+
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     allocate(coord(hecMESH%n_node*ndof))
 
@@ -604,6 +618,9 @@ module m_fstr_NonLinearMethod
       enddo
       ! ----- end of inner loop
 
+      fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+
       ! -----  not convergence
       if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
         if( hecMESH%my_rank == 0) then
@@ -651,6 +668,8 @@ module m_fstr_NonLinearMethod
       if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
 
     ENDDO loopFORcontactAnalysis
+
+    fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 
     ! ----- update the total displacement
     !       u_{n+1} = u_{n} + \Delta u_{n+1}

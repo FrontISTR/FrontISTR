@@ -388,6 +388,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
         fstrSOLID%elemopt361 = 0
+        fstrSOLID%NRstat_i(:) = 0
+        fstrSOLID%NRstat_r(:) = 0.d0
         ictrl = 1
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
