@@ -75,6 +75,7 @@ module m_fstr_solve_NLGEOM
       endif
       hecMAT%Iarray(98) = 1
       call fstr_set_time( ctime )
+      call fstr_set_timeinc_base( dtime )
     endif
 
     fstrSOLID%FACTOR    =0.0
@@ -82,8 +83,6 @@ module m_fstr_solve_NLGEOM
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
       if(hecMESH%my_rank==0) write(*,*) ''
       if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
-
-      endtime = fstrSOLID%step_ctrl(tot_step)%starttime + fstrSOLID%step_ctrl(tot_step)%elapsetime
 
       if( fstrSOLID%TEMP_ngrp_tot>0 ) then
         do j=1, hecMESH%n_node
@@ -97,7 +96,8 @@ module m_fstr_solve_NLGEOM
       do sub_step = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
 
         ! ----- time history of factor
-        call fstr_set_timeinc_base( dmin1(fstrSOLID%step_ctrl(tot_step)%initdt, endtime-fstr_get_time()) )
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
+          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat )
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
@@ -109,13 +109,6 @@ module m_fstr_solve_NLGEOM
           call table_nlsta(hecMESH,fstrSOLID,tot_step,fstr_get_time()+fstr_get_timeinc(), factor)
           fstrSOLID%FACTOR(2) = factor
         endif
-
-        if( dabs(fstrSOLID%FACTOR(2)-fstrSOLID%FACTOR(1))<1.0e-20 ) then
-          if( hecMESH%my_rank==0) then
-            write(imsg,*) 'loading increment finished due to f_2-f_1 = 0.0'
-          end if
-          exit
-        end if
 
         if(hecMESH%my_rank==0) then
           write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
@@ -172,13 +165,15 @@ module m_fstr_solve_NLGEOM
           write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1
         end if
 
-        if( (endtime-fstr_get_time())/fstrSOLID%step_ctrl(tot_step)%elapsetime < 1.d-12 ) exit
+        !if time reached the end time of step, exit loop.
+        if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
+
         if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
           if( hecMESH%my_rank == 0 ) then
             write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
               & tot_step, '  time=', fstr_get_time()
           end if
-          stop
+          stop !stop if # of substeps reached upper bound.
         end if
       enddo    !--- end of substep  loop
 

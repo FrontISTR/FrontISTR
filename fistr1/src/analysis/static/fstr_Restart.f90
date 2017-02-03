@@ -26,7 +26,7 @@ module m_fstr_Restart
       type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
-      integer :: i,j,restrt_step(3),nif(2)
+      integer :: i,j,restrt_step(3),nif(2),istat(1)
       real(kind=kreal) :: times(2)
 
       call hecmw_restart_open()
@@ -35,6 +35,9 @@ module m_fstr_Restart
       if( fstrPARAM%restart_version >= 5 ) then
         write(*,*) 'Reading restart file as new format(>=ver5.0)'
         call hecmw_restart_read_real(times)
+        call hecmw_restart_read_int(fstrSOLID%NRstat_i)
+        call hecmw_restart_read_real(fstrSOLID%NRstat_r)
+        call hecmw_restart_read_int(istat)
       else
         write(*,*) 'Reading restart file as old format(<ver5.0)'
       endif
@@ -76,13 +79,14 @@ module m_fstr_Restart
       if( fstrPARAM%restart_version >= 5 ) then
         ctime = times(1)
         dtime = times(2)
+        fstrSOLID%AutoINC_stat = istat(1)
       else
         ctime = fstrSOLID%step_ctrl(cstep)%starttime
         ctime = ctime + dble(substep-1)*fstrSOLID%step_ctrl(cstep)%initdt
         dtime = fstrSOLID%step_ctrl(cstep)%initdt
       endif
       if( fstrPARAM%solution_type==kstSTATIC .and. fstrPARAM%nlgeom ) then
-        if(restrt_step(2)==fstrSOLID%step_ctrl(cstep)%num_substep) then
+        if( dabs(ctime-fstrSOLID%step_ctrl(cstep)%starttime-fstrSOLID%step_ctrl(cstep)%elapsetime) < 1.d-10 ) then
           cstep = cstep + 1
           substep = 1
         endif
@@ -104,7 +108,7 @@ module m_fstr_Restart
       type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
-      integer :: i,j,restrt_step(3),nif(2)
+      integer :: i,j,restrt_step(3),nif(2),istat(1)
       real(kind=kreal) :: times(2)
 
       restrt_step(1) = cstep
@@ -112,8 +116,14 @@ module m_fstr_Restart
 	  restrt_step(3) = step_count
       times(1) = ctime
       times(2) = dtime
+      istat(1) = fstrSOLID%AutoINC_stat
       call hecmw_restart_add_int(restrt_step,size(restrt_step))
-      if( fstrPARAM%restart_version >= 5 ) call hecmw_restart_add_real(times,size(times))
+      if( fstrPARAM%restart_version >= 5 ) then
+        call hecmw_restart_add_real(times,size(times))
+        call hecmw_restart_add_int(fstrSOLID%NRstat_i,size(fstrSOLID%NRstat_i))
+        call hecmw_restart_add_real(fstrSOLID%NRstat_r,size(fstrSOLID%NRstat_r))
+        call hecmw_restart_add_int(istat,1)
+      endif
       call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
       call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
