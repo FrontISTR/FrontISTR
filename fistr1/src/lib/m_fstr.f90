@@ -191,6 +191,14 @@ public
 
                 ! for contact analysis
                 integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
+
+                ! for auto increment and cutback
+                real(kind=kreal)     :: ainc_Rs            !< time increment decreasing ratio
+                real(kind=kreal)     :: ainc_Rl            !< time increment increasing ratio
+                integer( kind=kint ) :: NRbound_s(10)      !< # of NR iteration bound to decrease time increment
+                integer( kind=kint ) :: NRbound_l(10)      !< # of NR iteration bound to increase time increment
+                integer( kind=kint ) :: NRtimes_s          !< # of times that decreasing condition is satisfied
+                integer( kind=kint ) :: NRtimes_l          !< # of times that increasing condition is satisfied
 !
         end type fstr_param
 !
@@ -357,6 +365,7 @@ public
                 ! for increment control
                 integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
                 real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
+                integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
                 real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
@@ -967,6 +976,20 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
 
         ! for restart control
         fstrPARAM%restart_version = 4
+
+        ! for auto increment and cutback
+        fstrPARAM%ainc_Rs   = 0.25d0
+        fstrPARAM%ainc_Rl   = 1.25d0
+        fstrPARAM%NRbound_s = 0
+        fstrPARAM%NRbound_s(knstMAXIT) = 10
+        fstrPARAM%NRbound_s(knstSUMIT) = 50
+        fstrPARAM%NRbound_s(knstCITER) = 10
+        fstrPARAM%NRbound_l = 0
+        fstrPARAM%NRbound_l(knstMAXIT) = 1
+        fstrPARAM%NRbound_l(knstSUMIT) = 1
+        fstrPARAM%NRbound_l(knstCITER) = 1
+        fstrPARAM%NRtimes_s = 1
+        fstrPARAM%NRtimes_l = 2
 
         ! index table for global node ID sorting
 

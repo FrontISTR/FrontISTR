@@ -159,6 +159,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         fstrHEAT%restart_nout= nout
                 else if( header_name == '!ORIENTATION' ) then
                         c_localcoord = c_localcoord + 1
+                else if( header_name == '!AUTOINC_PARAM' ) then
+                        call fstr_setup_AUTOINC( ctrl, P )
 
                 !--------------- for static -------------------------
 
@@ -388,6 +390,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
         fstrSOLID%elemopt361 = 0
+        fstrSOLID%AutoINC_stat = 0
         fstrSOLID%NRstat_i(:) = 0
         fstrSOLID%NRstat_r(:) = 0.d0
         ictrl = 1
@@ -1556,6 +1559,70 @@ subroutine fstr_setup_STEP( ctrl, counter, P )
     !    P%SOLID%NLSTATIC_ngrp_amp = amp_id;
 
 end subroutine fstr_setup_STEP
+
+
+!-----------------------------------------------------------------------------!
+!> Read in !AUTOINC_PARAM                                                             !
+!-----------------------------------------------------------------------------!
+
+subroutine fstr_setup_AUTOINC( ctrl, P )
+        implicit none
+        integer(kind=kint) :: ctrl
+        type(fstr_param_pack) :: P
+
+        integer(kind=kint) :: rcode
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        character(len=128) :: msg
+        integer(kind=kint) :: bound_s(10), bound_l(10)
+        real(kind=kreal) :: Rs, Rl
+
+        bound_s(:) = 0
+        bound_l(:) = 0
+
+        !read first line ( decrease criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, Rs, &
+          &  bound_s(1), bound_s(2), bound_s(3), P%PARAM%NRtimes_s )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        P%PARAM%ainc_Rs = Rs
+        P%PARAM%NRbound_s(knstMAXIT) = bound_s(1)
+        P%PARAM%NRbound_s(knstSUMIT) = bound_s(2)
+        P%PARAM%NRbound_s(knstCITER) = bound_s(3)
+
+        !read second line ( increase criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, Rl, &
+          &  bound_l(1), bound_l(2), bound_l(3), P%PARAM%NRtimes_l )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        P%PARAM%ainc_Rl = Rl
+        P%PARAM%NRbound_l(knstMAXIT) = bound_l(1)
+        P%PARAM%NRbound_l(knstSUMIT) = bound_l(2)
+        P%PARAM%NRbound_l(knstCITER) = bound_l(3)
+
+        !input check
+        rcode = 1
+        if( Rs<0.d0 .or. Rs>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
+        else if( any(bound_s<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
+        else if( P%PARAM%NRtimes_s < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
+        else if( Rl<1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
+        else if( any(bound_l<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
+        else if( P%PARAM%NRtimes_l < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+        else
+          rcode =0
+        end if
+        if( rcode /= 0 ) then
+          write(*,*) trim(msg)
+          write(ILOG,*) trim(msg)
+          call fstr_ctrl_err_stop
+        endif
+
+end subroutine fstr_setup_AUTOINC
 
 
 !-----------------------------------------------------------------------------!
