@@ -11,10 +11,13 @@ module m_step
 
    integer, parameter :: stepStatic = 1
    integer, parameter :: stepVisco  = 2
+   integer, parameter :: stepFixedInc = 1
+   integer, parameter :: stepAutoInc  = 2
 
    !> Step control such as active boundary condition, convergent condition etc.
    type step_info
       integer             :: solution           !< solution type; 1: static;  2:visco
+      integer             :: inc_type           !< increment type; 1: fixed;  2:auto
       character( len=80 ) :: CONTROL            !< control type, such as arclength etc
       character( len=80 ) :: ConvControl        !< Judgement of convergency, such as nodal force residual
                                                 !< disp increment, energy
@@ -25,6 +28,8 @@ module m_step
       integer :: amp_id                         !< id of amplitude definition
       real(kind=kreal) :: initdt                !< time increment
       real(kind=kreal) :: elapsetime            !< elapse time of this step
+      real(kind=kreal) :: mindt                 !< lower bound of time increment
+      real(kind=kreal) :: maxdt                 !< upper bound of time increment
       real(kind=kreal) :: starttime             !< start time of this step
       integer, pointer :: Boundary(:)=>null()   !< active group of boundary conditions of current step
       integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
@@ -37,10 +42,13 @@ module m_step
      subroutine init_stepInfo( stepinfo )
         type( step_info ), intent(out) :: stepinfo !< step info
         stepinfo%solution = stepStatic
+        stepinfo%solution = stepFixedInc
         stepinfo%num_substep = 1
         stepinfo%max_iter = 50
         stepinfo%amp_id = -1
         stepinfo%initdt = 1.d0
+        stepinfo%mindt = 1.d-4
+        stepinfo%maxdt = 1.d0
         stepinfo%elapsetime = 1.d0
         stepinfo%starttime = 0.d0
         stepinfo%converg = 1.d-3

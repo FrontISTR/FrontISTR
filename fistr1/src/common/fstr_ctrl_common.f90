@@ -204,8 +204,10 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         write( data_fmt1, '(a,a,a)') 'S', trim(adjustl(ss)),'rrr '
 
         call init_stepInfo(steps)
-		steps%solution = stepStatic
+        steps%solution = stepStatic
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STATIC,VISCO ', 0, 'P', steps%solution )/= 0) return
+        steps%inc_type = stepFixedInc
+        if( fstr_ctrl_get_param_ex( ctrl, 'INC_TYPE ', 'FIXED,AUTO ', 0, 'P', steps%inc_type )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'SUBSTEPS ',  '# ',  0, 'I', steps%num_substep )/= 0) return
         steps%initdt = 1.d0/steps%num_substep
         if( fstr_ctrl_get_param_ex( ctrl, 'ITMAX ',  '# ',  0, 'I', steps%max_iter )/= 0) return
@@ -222,13 +224,19 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
           fstr_ctrl_get_ISTEP = .true.;  return
         endif
 
+        f2 = steps%mindt
+        f3 = steps%maxdt
         if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt1, ss, f1, f2, f3  )/= 0) return
         read( ss, * , iostat=ierr ) fn
         sn=1
         if( ierr==0 ) then
           steps%initdt = fn
           steps%elapsetime = f1
-          steps%num_substep = int((f1+0.999999999d0*fn)/fn)
+          if( steps%inc_type == stepAutoInc ) then
+            steps%mindt = min(f2,steps%initdt)
+            steps%maxdt = f3
+          endif
+          steps%num_substep = max(int((f1+0.999999999d0*fn)/fn),steps%num_substep)
           !if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
           sn = 2
         endif
