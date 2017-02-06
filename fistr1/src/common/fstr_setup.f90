@@ -391,6 +391,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_elemopt = 0
         fstrSOLID%elemopt361 = 0
         fstrSOLID%AutoINC_stat = 0
+        fstrSOLID%CutBack_stat = 0
         fstrSOLID%NRstat_i(:) = 0
         fstrSOLID%NRstat_r(:) = 0.d0
         ictrl = 1
@@ -1599,6 +1600,12 @@ subroutine fstr_setup_AUTOINC( ctrl, P )
         P%PARAM%NRbound_l(knstSUMIT) = bound_l(2)
         P%PARAM%NRbound_l(knstCITER) = bound_l(3)
 
+        !read third line ( cutback criteria )
+        data_fmt = 'ri '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 3, data_fmt, &
+          &  P%PARAM%ainc_Rc, P%PARAM%CBbound )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+
         !input check
         rcode = 1
         if( Rs<0.d0 .or. Rs>1.d0 ) then
@@ -1613,6 +1620,10 @@ subroutine fstr_setup_AUTOINC( ctrl, P )
           write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
         else if( P%PARAM%NRtimes_l < 1 ) then
           write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+        elseif( P%PARAM%ainc_Rc<0.d0 .or. P%PARAM%ainc_Rc>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
+        else if( P%PARAM%CBbound < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
         else
           rcode =0
         end if

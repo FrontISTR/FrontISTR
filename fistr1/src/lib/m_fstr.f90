@@ -199,6 +199,8 @@ public
                 integer( kind=kint ) :: NRbound_l(10)      !< # of NR iteration bound to increase time increment
                 integer( kind=kint ) :: NRtimes_s          !< # of times that decreasing condition is satisfied
                 integer( kind=kint ) :: NRtimes_l          !< # of times that increasing condition is satisfied
+                real(kind=kreal)     :: ainc_Rc            !< time increment decreasing ratio for cutback
+                integer( kind=kint ) :: CBbound            !< maximum # of successive cutback
 !
         end type fstr_param
 !
@@ -366,6 +368,7 @@ public
                 integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
                 real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
                 integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
+                integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
                 real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
@@ -990,6 +993,8 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%NRbound_l(knstCITER) = 1
         fstrPARAM%NRtimes_s = 1
         fstrPARAM%NRtimes_l = 2
+        fstrPARAM%ainc_Rc   = 0.25d0
+        fstrPARAM%CBbound   = 5
 
         ! index table for global node ID sorting
 
