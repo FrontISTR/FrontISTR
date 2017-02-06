@@ -386,6 +386,19 @@ public
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
                 type(tSection), pointer   :: sections(:)   =>null()  !< definition of setion referred by elements(i)%sectionID
+
+                ! for cutback
+                ! ####################### Notice #######################
+                ! # If you add new variables to store analysis status, #
+                ! # - backup variables with postfix "_bkup" here       #
+                ! # - backup process to module m_fstr_Cutback          #
+                ! # must be added if necessary.                        #
+                ! ######################################################
+                real(kind=kreal), pointer :: unode_bkup(:)     => null() !< disp at the beginning of curr step (backup)
+                real(kind=kreal), pointer :: QFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
+                real(kind=kreal), pointer :: last_temp_bkup(:) => null()
+                type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
+                type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
 !
         end type fstr_solid
 !

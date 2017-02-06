@@ -75,6 +75,27 @@ MODULE mMechGauss
      if( associated( gauss%fstatus ) ) deallocate( gauss%fstatus )
   end subroutine
 
+  !> Copy
+  subroutine fstr_copy_gauss( gauss1, gauss2 )
+    type( tGaussStatus ), intent(in)    :: gauss1
+    type( tGaussStatus ), intent(inout) :: gauss2
+
+    integer :: n
+    gauss2%strain     = gauss1%strain
+    gauss2%stress     = gauss1%stress
+    gauss2%strain_bak = gauss1%strain_bak
+    gauss2%stress_bak = gauss1%stress_bak
+    gauss2%plstrain   = gauss1%plstrain
+
+    if( associated(gauss1%istatus) .and. associated(gauss2%istatus) ) then
+      gauss2%istatus   = gauss1%istatus
+    end if
+    if( associated(gauss1%fstatus) .and. associated(gauss2%fstatus) ) then
+      gauss2%fstatus   = gauss1%fstatus
+    end if
+  end subroutine fstr_copy_gauss
+
+
 END MODULE
 
 

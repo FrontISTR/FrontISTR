@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Ctrl_TimeInc.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_Cutback.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Spring.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Restart.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_NodalStress.f90

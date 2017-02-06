@@ -84,6 +84,7 @@ OBJS =
 
 OBJSF = \
         fstr_Ctrl_TimeInc.@f90objfilepostfix@ \
+        fstr_Cutback.@f90objfilepostfix@ \
         fstr_Spring.@f90objfilepostfix@ \
         fstr_Restart.@f90objfilepostfix@ \
         fstr_NodalStress.@f90objfilepostfix@ \
