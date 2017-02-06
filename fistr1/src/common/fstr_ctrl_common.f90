@@ -213,6 +213,7 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( fstr_ctrl_get_param_ex( ctrl, 'ITMAX ',  '# ',  0, 'I', steps%max_iter )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'MAXITER ',  '# ',  0, 'I', steps%max_iter )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'MAXRES ',  '# ',  0, 'R', steps%maxres )/= 0) return
         amp = ""
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         if( len( trim(amp) )>0 ) then

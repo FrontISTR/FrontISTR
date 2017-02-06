@@ -22,6 +22,7 @@ module m_step
       character( len=80 ) :: ConvControl        !< Judgement of convergency, such as nodal force residual
                                                 !< disp increment, energy
       real(kind=kreal)    :: converg            !< value of convergent judgement
+      real(kind=kreal)    :: maxres             !< upper bound of NR residual
 
       integer :: num_substep                    !< substeps user given
       integer :: max_iter                       !< max number of iteration
@@ -52,6 +53,7 @@ module m_step
         stepinfo%elapsetime = 1.d0
         stepinfo%starttime = 0.d0
         stepinfo%converg = 1.d-3
+        stepinfo%maxres = 1.d+10
      end subroutine
 
      subroutine setup_stepInfo_starttime( stepinfos )

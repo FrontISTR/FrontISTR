@@ -138,21 +138,21 @@ module m_fstr_NonLinearMethod
         relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
       res1 = res
 
+      ! ----- check divergence
+      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+        if( hecMESH%my_rank == 0) then
+          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        stop
+      end if
+
     enddo
     ! ----- end of inner loop
 
     fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
     fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
-
-    ! -----  not convergence
-    if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
-      if( hecMESH%my_rank == 0 ) then
-        write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-      end if
-      stop
-    end if
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
@@ -332,21 +332,21 @@ module m_fstr_NonLinearMethod
           relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         res1 = res
 
+        ! ----- check divergence
+        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+          if( hecMESH%my_rank == 0) then
+            write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+            write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          end if
+          stop
+        end if
+
       enddo
       ! ----- end of inner loop
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
-
-      ! -----  not convergence
-      if( iter>fstrSOLID%step_ctrl(cstep)%max_iter ) then
-        if( hecMESH%my_rank==0) then
-          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        end if
-        stop
-      end if
 
       ! ----- deal with contact boundary
       convg = .true.
@@ -615,21 +615,21 @@ module m_fstr_NonLinearMethod
           relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         res1 = res
 
+        ! ----- check divergence
+        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+          if( hecMESH%my_rank == 0) then
+            write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+            write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          end if
+          stop
+        end if
+
       enddo
       ! ----- end of inner loop
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
-
-      ! -----  not convergence
-      if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) then
-        if( hecMESH%my_rank == 0) then
-          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        end if
-        stop
-      end if
 
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
