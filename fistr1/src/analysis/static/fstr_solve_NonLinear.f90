@@ -145,14 +145,17 @@ module m_fstr_NonLinearMethod
           write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
         end if
-        stop
+        fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+        fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        return
       end if
 
     enddo
     ! ----- end of inner loop
 
     fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-    fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+    fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
@@ -168,6 +171,7 @@ module m_fstr_NonLinearMethod
       write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
     endif
 
+    fstrSOLID%CutBack_stat = 0
     deallocate(coord)
   end subroutine fstr_Newton
 
@@ -339,14 +343,17 @@ module m_fstr_NonLinearMethod
             write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
-          stop
+          fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+          fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          return
         end if
 
       enddo
       ! ----- end of inner loop
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
       ! ----- deal with contact boundary
       convg = .true.
@@ -384,6 +391,7 @@ module m_fstr_NonLinearMethod
     endif
 
     deallocate(coord)
+    fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactALag
 
 
@@ -622,14 +630,17 @@ module m_fstr_NonLinearMethod
             write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
-          stop
+          fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+          fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          return
         end if
 
       enddo
       ! ----- end of inner loop
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter     ! logging newton iteration(sumofiter)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
@@ -685,6 +696,7 @@ module m_fstr_NonLinearMethod
     endif
 
     deallocate(coord)
+    fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactSLag
 
 

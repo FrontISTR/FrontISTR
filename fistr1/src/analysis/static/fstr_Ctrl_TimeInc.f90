@@ -59,13 +59,14 @@ module m_fstr_TimeInc
   end function
 
   !! set time_inc from stepinfo and Newton Raphson iteration status
-  subroutine fstr_TimeInc_SetTimeIncrement( stepinfo, fstrPARAM, substep, NRstatI, NRstatR, AutoINC_stat )
+  subroutine fstr_TimeInc_SetTimeIncrement( stepinfo, fstrPARAM, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
     type(step_info), intent(in)       ::  stepinfo
     type(fstr_param), intent(in)      ::  fstrPARAM
     integer(kind=kint), intent(in)    ::  substep
     integer(kind=kint), intent(in)    ::  NRstatI(:)  !previous Newton Raphson Iteration Log
     real(kind=kreal), intent(in)      ::  NRstatR(:)  !previous Newton Raphson Iteration Log
     integer(kind=kint), intent(inout) ::  AutoINC_stat
+    integer(kind=kint), intent(in)    ::  Cutback_stat
 
     real(kind=kreal) :: timeinc0
     real(kind=kreal) :: endtime
@@ -76,35 +77,41 @@ module m_fstr_TimeInc
     else ! INCTYPE==AUTO and substep > 2
       timeinc0 = time_inc
 
-      !decrease condition
-      to_be_decreased = .false.
-      if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
-      if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
-      if( NRstatI(knstCITER) > fstrPARAM%NRbound_s(knstCITER) ) to_be_decreased = .true.
-
-      !increase condition
-      to_be_increased = .true.
-      if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_l(knstMAXIT) ) to_be_increased = .false.
-      if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_l(knstSUMIT) ) to_be_increased = .false.
-      if( NRstatI(knstCITER) > fstrPARAM%NRbound_l(knstCITER) ) to_be_increased = .false.
-
-      ! count # of times that increase/decrease condition has been satisfied
-      ! AutoINC_stat < 0 ... decrease condition has been satisfied -AutoINC_stat times
-      ! AutoINC_stat > 0 ... increase condition has been satisfied AutoINC_stat times
-      if(to_be_decreased) then
-        AutoINC_stat = min(AutoINC_stat,0) - 1
-      else if(to_be_increased) then
-        AutoINC_stat = max(AutoINC_stat,0) + 1
-      else
-        AutoINC_stat = 0
-      end if
-
-      if( AutoINC_stat <= -fstrPARAM%NRtimes_s ) then
-        timeinc0 = fstrPARAM%ainc_Rs*time_inc
+      if( Cutback_stat > 0 ) then
+        timeinc0 = fstrPARAM%ainc_Rc*time_inc
         write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc, ' to ', timeinc0
-      else if( AutoINC_stat >= fstrPARAM%NRtimes_l ) then
-        timeinc0 = dmin1(fstrPARAM%ainc_Rl*time_inc,stepinfo%maxdt)
-        write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc, ' to ', timeinc0
+        AutoINC_stat = -1
+      else
+        !decrease condition
+        to_be_decreased = .false.
+        if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
+        if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
+        if( NRstatI(knstCITER) > fstrPARAM%NRbound_s(knstCITER) ) to_be_decreased = .true.
+
+        !increase condition
+        to_be_increased = .true.
+        if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_l(knstMAXIT) ) to_be_increased = .false.
+        if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_l(knstSUMIT) ) to_be_increased = .false.
+        if( NRstatI(knstCITER) > fstrPARAM%NRbound_l(knstCITER) ) to_be_increased = .false.
+
+        ! count # of times that increase/decrease condition has been satisfied
+        ! AutoINC_stat < 0 ... decrease condition has been satisfied -AutoINC_stat times
+        ! AutoINC_stat > 0 ... increase condition has been satisfied AutoINC_stat times
+        if(to_be_decreased) then
+          AutoINC_stat = min(AutoINC_stat,0) - 1
+        else if(to_be_increased) then
+          AutoINC_stat = max(AutoINC_stat,0) + 1
+        else
+          AutoINC_stat = 0
+        end if
+
+        if( AutoINC_stat <= -fstrPARAM%NRtimes_s ) then
+          timeinc0 = fstrPARAM%ainc_Rs*time_inc
+          write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc, ' to ', timeinc0
+        else if( AutoINC_stat >= fstrPARAM%NRtimes_l ) then
+          timeinc0 = dmin1(fstrPARAM%ainc_Rl*time_inc,stepinfo%maxdt)
+          write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc, ' to ', timeinc0
+        end if
       end if
     end if
 

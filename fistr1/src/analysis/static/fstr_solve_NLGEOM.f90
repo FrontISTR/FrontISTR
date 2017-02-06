@@ -15,6 +15,8 @@ module m_fstr_solve_NLGEOM
 
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
+  use m_fstr_Cutback
+  use m_solve_LINEQ_contact
 
   implicit none
 
@@ -33,7 +35,7 @@ module m_fstr_solve_NLGEOM
     type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
     type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-    type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
+    type (fstr_info_contactChange)         :: infoCTChange, infoCTChange_bak !< type fstr_info_contactChange
     type (hecmwST_matrix    ),optional     :: conMAT
 
     integer(kind=kint) :: ndof, nn
@@ -64,9 +66,10 @@ module m_fstr_solve_NLGEOM
     restart_step_num = 1
     restart_substep_num = 1
     fstrSOLID%unode = 0.0
-    step_count = 0 !**
+    step_count = 1 !**
     infoCTChange%contactNode_previous = 0
-    if(fstrSOLID%restart_nout <0 ) then
+    infoCTChange%contactNode_current = 0
+    if( fstrSOLID%restart_nout < 0 ) then
       if( .not. associated( fstrSOLID%contacts ) ) then
         call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM)
       else
@@ -79,6 +82,8 @@ module m_fstr_solve_NLGEOM
     endif
 
     fstrSOLID%FACTOR    =0.0
+    call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
       if(hecMESH%my_rank==0) write(*,*) ''
@@ -89,15 +94,17 @@ module m_fstr_solve_NLGEOM
           fstrSOLID%temp_bak(j) = fstrSOLID%temperature(j)
         end do
       endif
+      call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
       ! -------------------------------------------------------------------------
       !      STEP LOOP
       ! -------------------------------------------------------------------------
-      do sub_step = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
+      sub_step = restart_substep_num
+      do while(.true.)
 
         ! ----- time history of factor
         call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
-          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat )
+          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
         if( fstrSOLID%TEMP_irres > 0 ) then
           fstrSOLID%FACTOR(1) = 0.d0
           fstrSOLID%FACTOR(2) = 1.d0
@@ -117,10 +124,7 @@ module m_fstr_solve_NLGEOM
           if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
         endif
 
-        step_count = step_count+1
         call cpu_time(time_1)
-
-        call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
 
         !       analysis algorithm ( Newton-Rapshon Method )
         if( .not. associated( fstrSOLID%contacts ) ) then
@@ -142,7 +146,43 @@ module m_fstr_solve_NLGEOM
           endif
         endif
 
-        call fstr_proceed_time() ! current time += time increment
+        ! ------- Time Increment
+        if( fstr_cutback_active() ) then
+
+          if( fstrSOLID%CutBack_stat == 0 ) then ! converged
+            call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )  ! save analysis state
+            call fstr_proceed_time()             ! current time += time increment
+
+          else                                   ! not converged
+            call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
+            call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
+
+            ! restore matrix structure for slagrange contact analysis
+            if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+              if(paraContactFlag.and.present(conMAT)) then
+                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+                conMAT%B(:) = 0.0D0
+              else
+                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
+              endif
+              call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
+            endif
+            if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()
+
+            !stop if # of substeps reached upper bound.
+            if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
+              if( hecMESH%my_rank == 0 ) then
+                write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
+                  & tot_step, '  time=', fstr_get_time()
+              end if
+              stop
+            end if
+            cycle
+          endif
+        else
+          if( fstrSOLID%CutBack_stat > 0 ) stop
+          call fstr_proceed_time() ! current time += time increment
+        endif
 
         ! ----- Restart
         if( fstrSOLID%restart_nout < 0 ) then
@@ -157,8 +197,11 @@ module m_fstr_solve_NLGEOM
                  &  hecMESH,fstrSOLID,fstrPARAM, infoCTChange%contactNode_current)
           endif
         end if
+
         ! ----- Result output (include visualize output)
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
+
+        step_count = step_count + 1
 
         call cpu_time(time_2)
         if( hecMESH%my_rank==0) then
@@ -175,11 +218,15 @@ module m_fstr_solve_NLGEOM
           end if
           stop !stop if # of substeps reached upper bound.
         end if
+
+        sub_step = sub_step + 1
       enddo    !--- end of substep  loop
 
       restart_substep_num = 1
       if( fstrSOLID%TEMP_irres > 0 ) exit
     enddo      !--- end of tot_step loop
+
+    call fstr_cutback_finalize( fstrSOLID )
     !
     !  message
     !
