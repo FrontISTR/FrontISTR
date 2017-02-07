@@ -35,6 +35,7 @@ module m_step
       integer, pointer :: Boundary(:)=>null()   !< active group of boundary conditions of current step
       integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
       integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
+      integer :: timepoint_id                   !< id of timepoint
    end type
 
    contains
@@ -54,6 +55,7 @@ module m_step
         stepinfo%starttime = 0.d0
         stepinfo%converg = 1.d-3
         stepinfo%maxres = 1.d+10
+        stepinfo%timepoint_id = 0
      end subroutine
 
      subroutine setup_stepInfo_starttime( stepinfos )

@@ -183,12 +183,13 @@ function fstr_ctrl_get_STEP( ctrl, amp, iproc )
 end function fstr_ctrl_get_STEP
 
 !> Read in !STEP and !ISTEP
-logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
+logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname )
         use fstr_setup_util
         use m_step
         integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
         type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
         type(step_info), intent(out)          :: steps     !< step control info
+        character(len=*), intent(out)         :: tpname    !< name of timepoints
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss, data_fmt1
         character(len=HECMW_NAME_LEN) :: amp
@@ -220,6 +221,8 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         if( len( trim(amp) )>0 ) then
           call amp_name_to_id( hecMESH, '!STEP', amp, steps%amp_id )
         endif
+        tpname=""
+        if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
 
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) then

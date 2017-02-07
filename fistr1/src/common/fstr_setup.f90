@@ -447,19 +447,32 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
           else if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
+            endif
+            if( associated(fstrPARAM%timepoints) ) then
+              do i=1,size(fstrPARAM%timepoints)
+                if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+                endif
+              enddo
             endif
           else if( header_name == '!STEP' .and. version>=1 ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
             endif
-
+            if( associated(fstrPARAM%timepoints) ) then
+              do i=1,size(fstrPARAM%timepoints)
+                if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+                endif
+              enddo
+            endif
           else if( header_name == '!WELD_LINE'  ) then
             fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
             if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
