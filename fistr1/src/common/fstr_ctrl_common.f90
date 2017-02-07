@@ -8,6 +8,7 @@ module fstr_ctrl_common
 use m_fstr
 use hecmw
 use mContact
+use m_timepoint
 
 implicit none
 
@@ -549,5 +550,49 @@ function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
         fstr_ctrl_get_ELEMOPT = 0
 
 end function fstr_ctrl_get_ELEMOPT
+
+!> Read in !TIME_POINTS
+function fstr_ctrl_get_TIMEPOINTS( ctrl, tp )
+        integer(kind=kint) :: ctrl
+        type(time_points)  :: tp
+        integer(kind=kint) :: fstr_ctrl_get_TIMEPOINTS
+
+        integer(kind=kint) :: i, n, rcode
+        logical            :: generate
+        real(kind=kreal)   :: stime, etime, interval
+
+        fstr_ctrl_get_TIMEPOINTS = -1
+
+        tp%name = ''
+        if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', tp%name ) /=0 ) return
+        tp%range_type = 1
+        if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP,TOTAL', 0, 'P', tp%range_type ) /= 0 ) return
+        generate = .false.
+        if( fstr_ctrl_get_param_ex( ctrl, 'GENERATE ',  '# ', 0, 'E', generate ) /= 0) return
+
+        if( generate ) then
+          stime = 0.d0;  etime = 0.d0;  interval = 1.d0
+          if( fstr_ctrl_get_data_ex( ctrl, 1, 'rrr ', stime, etime, interval ) /= 0) return
+          tp%n_points = int((etime-stime)/interval)+1
+          allocate(tp%points(tp%n_points))
+          do i=1,tp%n_points
+            tp%points(i) = stime + dble(i-1)*interval
+          end do
+        else
+          n = fstr_ctrl_get_data_line_n( ctrl )
+          if( n == 0 ) return
+          tp%n_points = n
+          allocate(tp%points(tp%n_points))
+          if( fstr_ctrl_get_data_array_ex( ctrl, 'r ', tp%points ) /= 0 ) return
+          do i=1,tp%n_points-1
+            if( tp%points(i) < tp%points(i+1) ) cycle
+            write(*,*) 'Error in reading !TIME_POINT: time points must be given in ascending order.'
+            return
+          end do
+        end if
+
+        fstr_ctrl_get_TIMEPOINTS = 0
+end function fstr_ctrl_get_TIMEPOINTS
+
 
 end module fstr_ctrl_common

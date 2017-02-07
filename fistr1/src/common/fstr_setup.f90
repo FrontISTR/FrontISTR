@@ -85,7 +85,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
-        integer(kind=kint) :: c_elemopt
+        integer(kind=kint) :: c_elemopt, c_timepoints
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -114,6 +114,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
         c_elemopt  = 0;
+        c_timepoints = 0
 
         ctrl_list = 0
         ictrl = 1
@@ -161,6 +162,8 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_localcoord = c_localcoord + 1
                 else if( header_name == '!AUTOINC_PARAM' ) then
                         call fstr_setup_AUTOINC( ctrl, P )
+                else if( header_name == '!TIME_POINTS' ) then
+                        c_timepoints = c_timepoints + 1
 
                 !--------------- for static -------------------------
 
@@ -301,6 +304,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
+        if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
 
         P%SOLID%is_33shell = 0
         P%SOLID%is_33beam  = 0
@@ -389,6 +393,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_section = 0
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
+        c_timepoints = 0
         fstrSOLID%elemopt361 = 0
         fstrSOLID%AutoINC_stat = 0
         fstrSOLID%CutBack_stat = 0
@@ -478,7 +483,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
                 stop
             endif
-
 
 !== following material proerties ==
           else if( header_name == '!MATERIAL' ) then
@@ -668,6 +672,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                    fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
                  endif
                enddo
+            endif
+          else if( header_name == '!TIME_POINTS'  ) then
+            c_timepoints = c_timepoints + 1
+            if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
+                write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
+                write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+                stop
             endif
           else if( header_name == '!ULOAD' ) then
             if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then

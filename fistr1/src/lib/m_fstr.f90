@@ -18,6 +18,7 @@ use lczparm
 use m_common_struct
 use m_step
 use m_out
+use m_timepoint
 use mMechGauss
 use mContactDef
 
@@ -201,6 +202,7 @@ public
                 integer( kind=kint ) :: NRtimes_l          !< # of times that increasing condition is satisfied
                 real(kind=kreal)     :: ainc_Rc            !< time increment decreasing ratio for cutback
                 integer( kind=kint ) :: CBbound            !< maximum # of successive cutback
+                type(time_points), pointer :: timepoints(:)  !< time points data
 !
         end type fstr_param
 !
@@ -658,6 +660,7 @@ contains
         nullify( P%itmax )
         nullify( P%eps )
         nullify( P%global_local_ID)
+        nullify( P%timepoints )
         end subroutine fstr_nullify_fstr_param
 !C ----------------------------------------------------------------------------
         subroutine fstr_nullify_fstr_solid( S )
