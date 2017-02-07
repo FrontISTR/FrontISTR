@@ -6,11 +6,13 @@
 
 module m_fstr_TimeInc
   use m_fstr
+  use m_timepoint
 
   implicit none
 
   real(kind=kreal), private :: current_time  = 0.d0  !< current time
-  real(kind=kreal), private :: time_inc = 0.d0  !< current increment of time
+  real(kind=kreal), private :: time_inc      = 0.d0  !< current increment of time
+  real(kind=kreal), private :: time_inc_base = 0.d0  !< base increment of time
 
   contains
 
@@ -24,7 +26,7 @@ module m_fstr_TimeInc
   end function
 
   real(kind=kreal) function fstr_get_timeinc_base()
-    fstr_get_timeinc_base = time_inc
+    fstr_get_timeinc_base = time_inc_base
   end function
 
   !! basic functions to set/update time/timeinc
@@ -40,14 +42,14 @@ module m_fstr_TimeInc
 
   subroutine fstr_set_timeinc_base( dtime_base )
     real(kind=kreal), intent(in) :: dtime_base  !< input increment of time
-    time_inc = dtime_base
+    time_inc_base = dtime_base
   end subroutine
 
   subroutine fstr_proceed_time()
-    call fstr_set_time( current_time+time_inc )
+    current_time = current_time + time_inc
   end subroutine
 
-  !! return if step finished
+  !! true if step finished
   logical function fstr_TimeInc_isStepFinished( stepinfo )
     type(step_info), intent(in)  :: stepinfo
 
@@ -56,6 +58,19 @@ module m_fstr_TimeInc
     endtime = stepinfo%starttime + stepinfo%elapsetime
     remain_time = (endtime-current_time)/stepinfo%elapsetime
     fstr_TimeInc_isStepFinished = (remain_time < 1.d-12)
+  end function
+
+  !! true if current time is time point
+  logical function fstr_TimeInc_isTimePoint( stepinfo, fstrPARAM )
+    type(step_info), intent(in)    :: stepinfo
+    type(fstr_param), intent(in)   :: fstrPARAM
+
+    fstr_TimeInc_isTimePoint = .false.
+    if( stepinfo%inc_type == stepFixedInc ) return
+    if( stepinfo%timepoint_id == 0 ) return
+
+    fstr_TimeInc_isTimePoint = is_at_timepoints(current_time,stepinfo%starttime, &
+      &  fstrPARAM%timepoints(stepinfo%timepoint_id))
   end function
 
   !! set time_inc from stepinfo and Newton Raphson iteration status
@@ -69,17 +84,17 @@ module m_fstr_TimeInc
     integer(kind=kint), intent(in)    ::  Cutback_stat
 
     real(kind=kreal) :: timeinc0
-    real(kind=kreal) :: endtime
+    real(kind=kreal) :: endtime, remain
     logical          :: to_be_decreased, to_be_increased
 
     if( substep == 1 .or. stepinfo%inc_type == stepFixedInc ) then
       timeinc0 = stepinfo%initdt
     else ! INCTYPE==AUTO and substep > 2
-      timeinc0 = time_inc
+      timeinc0 = time_inc_base
 
       if( Cutback_stat > 0 ) then
-        timeinc0 = fstrPARAM%ainc_Rc*time_inc
-        write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc, ' to ', timeinc0
+        timeinc0 = fstrPARAM%ainc_Rc*timeinc0
+        write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         AutoINC_stat = -1
       else
         !decrease condition
@@ -106,11 +121,11 @@ module m_fstr_TimeInc
         end if
 
         if( AutoINC_stat <= -fstrPARAM%NRtimes_s ) then
-          timeinc0 = fstrPARAM%ainc_Rs*time_inc
-          write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc, ' to ', timeinc0
+          timeinc0 = fstrPARAM%ainc_Rs*timeinc0
+          write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         else if( AutoINC_stat >= fstrPARAM%NRtimes_l ) then
-          timeinc0 = dmin1(fstrPARAM%ainc_Rl*time_inc,stepinfo%maxdt)
-          write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc, ' to ', timeinc0
+          timeinc0 = dmin1(fstrPARAM%ainc_Rl*timeinc0,stepinfo%maxdt)
+          write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc_base, ' to ', timeinc0
         end if
       end if
     end if
@@ -121,9 +136,14 @@ module m_fstr_TimeInc
     end if
 
     endtime = stepinfo%starttime + stepinfo%elapsetime
-    time_inc = dmin1(timeinc0,endtime-current_time)
+    time_inc_base = dmin1(timeinc0,endtime-current_time)
+    if( stepinfo%timepoint_id > 0 ) then
+      remain = get_remain_to_next_timepoints(current_time,stepinfo%starttime,fstrPARAM%timepoints(stepinfo%timepoint_id))
+      time_inc = dmin1(time_inc_base,remain)
+    else
+      time_inc = time_inc_base
+    end if
 
   end subroutine
-
 
 end module m_fstr_TimeInc

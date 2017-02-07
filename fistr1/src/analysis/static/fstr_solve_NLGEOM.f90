@@ -44,7 +44,7 @@ module m_fstr_solve_NLGEOM
     integer(kind=kint) :: sub_step
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
-    logical            :: ctchanged
+    logical            :: ctchanged, is_OutPoint
     integer(kind=kint) :: restart_step_num, restart_substep_num
 
     hecMAT%NDOF = hecMESH%n_dof
@@ -199,7 +199,9 @@ module m_fstr_solve_NLGEOM
         end if
 
         ! ----- Result output (include visualize output)
-        call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type )
+        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
+          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+        call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type, is_OutPoint )
 
         step_count = step_count + 1
 
