@@ -47,6 +47,8 @@ module m_fstr_solve_NLGEOM
     logical            :: ctchanged, is_OutPoint
     integer(kind=kint) :: restart_step_num, restart_substep_num
 
+    if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
+
     hecMAT%NDOF = hecMESH%n_dof
 
     ndof = hecMAT%NDOF
@@ -125,7 +127,7 @@ module m_fstr_solve_NLGEOM
           if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
         endif
 
-        call cpu_time(time_1)
+        time_1 = hecmw_Wtime()
 
         !       analysis algorithm ( Newton-Rapshon Method )
         if( .not. associated( fstrSOLID%contacts ) ) then
@@ -148,6 +150,8 @@ module m_fstr_solve_NLGEOM
         endif
 
         ! ------- Time Increment
+        if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( tot_step, sub_step, fstrSOLID%NRstat_i, &
+               &               fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -178,6 +182,11 @@ module m_fstr_solve_NLGEOM
               end if
               stop
             end if
+
+            ! output time
+            time_2 = hecmw_Wtime()
+            if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &
+              &  'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
             cycle
           endif
         else
@@ -206,10 +215,9 @@ module m_fstr_solve_NLGEOM
 
         step_count = step_count + 1
 
-        call cpu_time(time_2)
-        if( hecMESH%my_rank==0) then
-          write(ISTA,'(a,f10.2)') '         solve (sec) :', time_2 - time_1
-        end if
+        time_2 = hecmw_Wtime()
+        if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &
+          &  'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
 
         !if time reached the end time of step, exit loop.
         if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
@@ -219,6 +227,7 @@ module m_fstr_solve_NLGEOM
             write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
               & tot_step, '  time=', fstr_get_time()
           end if
+          if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
           stop !stop if # of substeps reached upper bound.
         end if
 
@@ -234,6 +243,7 @@ module m_fstr_solve_NLGEOM
     !  message
     !
     IF(myrank == 0)THEN
+      call fstr_TimeInc_PrintSTATUS_final(.true.)
       WRITE(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
       WRITE(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
     ENDIF

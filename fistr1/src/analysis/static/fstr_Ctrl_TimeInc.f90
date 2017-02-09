@@ -49,6 +49,59 @@ module m_fstr_TimeInc
     current_time = current_time + time_inc
   end subroutine
 
+  !! functions to print status
+  subroutine fstr_TimeInc_PrintSTATUS_init
+    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
+    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') '     ', '     ', ' ', ' # of',  'MAX #', 'TOT #',  '', '', ''
+    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A7,A23)') 'STEP', 'SUB', 'STAT', ' CONT', 'NEWTON', 'NEWTON', 'START', 'TIME', 'MESSAGE',''
+    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') '     ', 'STEP', '  ', 'ITER',  'ITER', 'ITER',  'TIME',   'INC', ''
+    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
+  end subroutine
+
+  subroutine fstr_TimeInc_PrintSTATUS( totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
+    integer(kind=kint), intent(in)    ::  totstep
+    integer(kind=kint), intent(in)    ::  substep
+    integer(kind=kint), intent(in)    ::  NRstatI(:)  !previous Newton Raphson Iteration Log
+    real(kind=kreal), intent(in)      ::  NRstatR(:)  !previous Newton Raphson Iteration Log
+    integer(kind=kint), intent(inout) ::  AutoINC_stat
+    integer(kind=kint), intent(in)    ::  Cutback_stat
+
+    character(len=5) :: cstep, csstep, cstate, ccont
+    character(len=7) :: cmaxn, ctotn
+    character(len=9) :: ctime, cdtime
+    character(len=30) :: message
+
+    write(cstep,'(I5)') totstep
+    write(csstep,'(I5)') substep
+    write(ccont,'(I5)') NRstatI(knstCITER)
+    write(cmaxn,'(I7)') NRstatI(knstMAXIT)
+    write(ctotn,'(I7)') NRstatI(knstSUMIT)
+    write(ctime,'(f9.2)') current_time
+    write(cdtime,'(f9.4)') time_inc
+
+    if( Cutback_stat > 0 ) then
+      write(cstate,'(I4,A)') Cutback_stat,'F'
+      write(message,'(A)') 'Failed to converge.'
+    else
+      write(cstate,'(A5)') 'S'
+      write(message,'(A)') ''
+    endif
+
+    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') cstep, csstep, cstate, ccont, &
+      &  cmaxn, ctotn, ctime, cdtime, message
+
+  end subroutine
+
+  subroutine fstr_TimeInc_PrintSTATUS_final(success_flag)
+    logical, intent(in) :: success_flag
+    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
+    if(success_flag) then
+      write(ISTA,'(A)') 'FSTR_SOLVE_NLGEOM HAS COMPLETED SUCCESSFULLY'
+    else
+      write(ISTA,'(A)') 'FSTR_SOLVE_NLGEOM HAS NOT COMPLETED SUCCESSFULLY'
+    end if
+  end subroutine
+
   !! true if step finished
   logical function fstr_TimeInc_isStepFinished( stepinfo )
     type(step_info), intent(in)  :: stepinfo
@@ -94,7 +147,7 @@ module m_fstr_TimeInc
 
       if( Cutback_stat > 0 ) then
         timeinc0 = fstrPARAM%ainc_Rc*timeinc0
-        write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
+        if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         AutoINC_stat = -1
       else
         !decrease condition
@@ -122,16 +175,19 @@ module m_fstr_TimeInc
 
         if( AutoINC_stat <= -fstrPARAM%NRtimes_s ) then
           timeinc0 = fstrPARAM%ainc_Rs*timeinc0
-          write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
+          if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         else if( AutoINC_stat >= fstrPARAM%NRtimes_l ) then
           timeinc0 = dmin1(fstrPARAM%ainc_Rl*timeinc0,stepinfo%maxdt)
-          write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc_base, ' to ', timeinc0
+          if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc_base, ' to ', timeinc0
         end if
       end if
     end if
 
     if( timeinc0 < stepinfo%mindt ) then
-      write(*,'(2(A,E10.3))') 'Error: current time increment ',timeinc0,' is smaller than lower bound',stepinfo%mindt
+      if(myrank == 0) then
+        write(*,'(2(A,E10.3))') 'Error: current time increment ',timeinc0,' is smaller than lower bound',stepinfo%mindt
+        call fstr_TimeInc_PrintSTATUS_final(.false.)
+      endif
       stop
     end if
 

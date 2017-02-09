@@ -62,8 +62,6 @@ module m_fstr_NonLinearMethod
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
-    call cpu_time(tt0)
-
     hecMAT%X = 0.0d0
 
     stepcnt = 0
@@ -130,7 +128,6 @@ module m_fstr_NonLinearMethod
       endif
       if( hecMESH%my_rank == 0 ) then
         write(*, '(a, i3, a, 2e15.7)') ' - Residual(', iter, ') =', res, relres
-        write(ista, '(''iter='', i5, ''res/res0='', 2e15.7)') iter, res, relres
       endif
 
       ! ----- check convergence
@@ -142,7 +139,6 @@ module m_fstr_NonLinearMethod
       if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
         if( hecMESH%my_rank == 0) then
           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
         end if
         fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
@@ -164,12 +160,6 @@ module m_fstr_NonLinearMethod
     enddo
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
-
-    call cpu_time(tt)
-
-    if( hecMESH%my_rank == 0 ) then
-      write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
-    endif
 
     fstrSOLID%CutBack_stat = 0
     deallocate(coord)
@@ -219,8 +209,6 @@ module m_fstr_NonLinearMethod
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
-
-    call cpu_time(tt0)
 
     if( cstep == restart_step_num .and. sub_step == restart_substep_num ) then
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
@@ -345,6 +333,7 @@ module m_fstr_NonLinearMethod
           end if
           fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
           fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+          fstrSOLID%NRstat_i(knstCITER) = al_step                                 ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
           return
         end if
@@ -383,12 +372,6 @@ module m_fstr_NonLinearMethod
     fstrSOLID%NRstat_i(knstCITER) = al_step-1 ! logging contact iteration
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
-
-    call cpu_time(tt)
-
-    if( hecMESH%my_rank == 0 ) then
-      write(ISTA,'("### Converged in NR ietration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
-    endif
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
@@ -450,8 +433,6 @@ module m_fstr_NonLinearMethod
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
-
-    call cpu_time(tt0)
 
     fstrSOLID%dunode(:)  = 0.0d0
 
@@ -615,7 +596,6 @@ module m_fstr_NonLinearMethod
         endif
         if( hecMESH%my_rank == 0 ) then
           write(*, '(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
-          write(ISTA, '(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
         endif
 
         ! ----- check convergence
@@ -627,11 +607,11 @@ module m_fstr_NonLinearMethod
         if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
           if( hecMESH%my_rank == 0) then
             write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-            write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
           fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
           fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+          fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
           return
         end if
@@ -689,11 +669,6 @@ module m_fstr_NonLinearMethod
     enddo
 
     call fstr_UpdateState(hecMESH, fstrSOLID, tincr)
-
-    call cpu_time(tt)
-    if( hecMESH%my_rank == 0) then
-      write(ISTA,'("### Converged in contact iteration : CPU time=",E11.4,"   iter=",I6)') tt-tt0,iter
-    endif
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
