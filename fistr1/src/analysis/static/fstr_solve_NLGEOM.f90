@@ -61,6 +61,7 @@ module m_fstr_solve_NLGEOM
 
     if( fstrSOLID%restart_nout == 0 ) then
       fstrSOLID%restart_nout = 999999999
+      call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPR%solution_type, .true. )
     end if
 
     restart_step_num = 1
