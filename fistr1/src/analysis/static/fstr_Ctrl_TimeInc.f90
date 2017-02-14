@@ -140,16 +140,20 @@ module m_fstr_TimeInc
     real(kind=kreal) :: endtime, remain
     logical          :: to_be_decreased, to_be_increased
 
-    if( substep == 1 .or. stepinfo%inc_type == stepFixedInc ) then
+    if( stepinfo%inc_type == stepFixedInc ) then
       timeinc0 = stepinfo%initdt
-    else ! INCTYPE==AUTO and substep > 2
-      timeinc0 = time_inc_base
-
+    else ! INCTYPE==AUTO
       if( Cutback_stat > 0 ) then
-        timeinc0 = fstrPARAM%ainc_Rc*timeinc0
+        timeinc0 = fstrPARAM%ainc_Rc*time_inc_base
         if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         AutoINC_stat = -1
       else
+        if( substep == 1 ) then
+          timeinc0 = stepinfo%initdt
+        else
+          timeinc0 = time_inc_base
+        end if
+
         !decrease condition
         to_be_decreased = .false.
         if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
