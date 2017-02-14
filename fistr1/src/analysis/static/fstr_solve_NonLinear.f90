@@ -144,6 +144,8 @@ module m_fstr_NonLinearMethod
         fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
         fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+        if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
         return
       end if
 
@@ -335,6 +337,8 @@ module m_fstr_NonLinearMethod
           fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
           fstrSOLID%NRstat_i(knstCITER) = al_step                                 ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+          if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
           return
         end if
 
@@ -613,6 +617,8 @@ module m_fstr_NonLinearMethod
           fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
           fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+          if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
           return
         end if
 

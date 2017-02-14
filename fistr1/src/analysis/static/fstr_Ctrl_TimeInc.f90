@@ -51,11 +51,11 @@ module m_fstr_TimeInc
 
   !! functions to print status
   subroutine fstr_TimeInc_PrintSTATUS_init
-    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
-    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') '     ', '     ', ' ', ' # of',  'MAX #', 'TOT #',  '', '', ''
-    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A7,A23)') 'STEP', 'SUB', 'STAT', ' CONT', 'NEWTON', 'NEWTON', 'START', 'TIME', 'MESSAGE',''
-    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') '     ', 'STEP', '  ', 'ITER',  'ITER', 'ITER',  'TIME',   'INC', ''
-    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
+    write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A40)') '     ', '     ', ' ', ' # of',  'MAX #', 'TOT #',  '','', '', ''
+    write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A7,A33)') 'STEP', 'SUB', 'STAT', ' CONT', 'NEWTON', 'NEWTON', 'START', 'TIME','END', 'MESSAGE',''
+    write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A40)') '     ', 'STEP', '  ', 'ITER',  'ITER', 'ITER',  'TIME', 'INC', 'TIME',''
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
   end subroutine
 
   subroutine fstr_TimeInc_PrintSTATUS( totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
@@ -68,33 +68,36 @@ module m_fstr_TimeInc
 
     character(len=5) :: cstep, csstep, cstate, ccont
     character(len=7) :: cmaxn, ctotn
-    character(len=9) :: ctime, cdtime
-    character(len=30) :: message
+    character(len=12) :: ctime, cdtime, etime
+    character(len=40) :: message
 
     write(cstep,'(I5)') totstep
     write(csstep,'(I5)') substep
     write(ccont,'(I5)') NRstatI(knstCITER)
     write(cmaxn,'(I7)') NRstatI(knstMAXIT)
     write(ctotn,'(I7)') NRstatI(knstSUMIT)
-    write(ctime,'(f9.2)') current_time
-    write(cdtime,'(f9.4)') time_inc
+    write(ctime,'(1pE12.4)') current_time
+    write(cdtime,'(1pE12.4)') time_inc
 
     if( Cutback_stat > 0 ) then
+      write(etime,'(1pE12.4)') current_time
       write(cstate,'(I4,A)') Cutback_stat,'F'
-      write(message,'(A)') 'Failed to converge.'
+      if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
+      if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
     else
+      write(etime,'(1pE12.4)') current_time+time_inc
       write(cstate,'(A5)') 'S'
       write(message,'(A)') ''
     endif
 
-    write(ISTA,'(2A5," | ",2A5,2A7,2A9," | ",A30)') cstep, csstep, cstate, ccont, &
-      &  cmaxn, ctotn, ctime, cdtime, message
+    write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A40)') cstep, csstep, cstate, ccont, &
+      &  cmaxn, ctotn, ctime, cdtime, etime, message
 
   end subroutine
 
   subroutine fstr_TimeInc_PrintSTATUS_final(success_flag)
     logical, intent(in) :: success_flag
-    write(ISTA,'(A10,"-+-",A42,"-+-",A30)') REPEAT("-",10),REPEAT("-",42),REPEAT("-",30)
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
     if(success_flag) then
       write(ISTA,'(A)') 'FSTR_SOLVE_NLGEOM HAS COMPLETED SUCCESSFULLY'
     else

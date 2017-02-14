@@ -72,6 +72,7 @@ public
         integer(kind=kint),parameter :: knstMAXIT  = 1 ! maximum number of newton iteration
         integer(kind=kint),parameter :: knstSUMIT  = 2 ! total number of newton iteration
         integer(kind=kint),parameter :: knstCITER  = 3 ! number of contact iteration
+        integer(kind=kint),parameter :: knstDRESN  = 4 ! reason of not to converged
 
         ! section control
         integer(kind=kint),parameter :: kel361FI     =  1
