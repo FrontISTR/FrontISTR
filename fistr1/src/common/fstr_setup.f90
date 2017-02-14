@@ -1713,7 +1713,6 @@ subroutine fstr_setup_RESTART( ctrl, nout, version )
         nout = 0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', nout )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        version = 4
         rcode = fstr_ctrl_get_param_ex( ctrl, 'VERSION ', '# ', 0, 'I', version )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 

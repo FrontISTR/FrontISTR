@@ -61,15 +61,10 @@ module m_fstr_solve_NLGEOM
       end do
     endif
 
-    if( fstrSOLID%restart_nout == 0 ) then
-      fstrSOLID%restart_nout = 999999999
-      call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPR%solution_type, .true. )
-    end if
-
     restart_step_num = 1
     restart_substep_num = 1
     fstrSOLID%unode = 0.0
-    step_count = 1 !**
+    step_count = 0 !**
     infoCTChange%contactNode_previous = 0
     infoCTChange%contactNode_current = 0
     if( fstrSOLID%restart_nout < 0 ) then
@@ -82,6 +77,9 @@ module m_fstr_solve_NLGEOM
       hecMAT%Iarray(98) = 1
       call fstr_set_time( ctime )
       call fstr_set_timeinc_base( dtime )
+    else
+      if( fstrSOLID%restart_nout == 0 ) fstrSOLID%restart_nout = 999999999
+      call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPR%solution_type, .true. )
     endif
 
     fstrSOLID%FACTOR    =0.0
@@ -194,16 +192,18 @@ module m_fstr_solve_NLGEOM
           call fstr_proceed_time() ! current time += time increment
         endif
 
+        step_count = step_count + 1
+
         ! ----- Restart
         if( fstrSOLID%restart_nout < 0 ) then
           fstrSOLID%restart_nout = - fstrSOLID%restart_nout
         end if
         if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
           if( .not. associated( fstrSOLID%contacts ) ) then
-            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc(), &
+            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
                  &  hecMESH,fstrSOLID,fstrPARAM )
           else
-            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc(), &
+            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
                  &  hecMESH,fstrSOLID,fstrPARAM, infoCTChange%contactNode_current)
           endif
         end if
@@ -212,8 +212,6 @@ module m_fstr_solve_NLGEOM
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
           & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type, is_OutPoint )
-
-        step_count = step_count + 1
 
         time_2 = hecmw_Wtime()
         if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &

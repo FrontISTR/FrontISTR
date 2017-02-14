@@ -994,7 +994,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%fg_couple_window= 0
 
         ! for restart control
-        fstrPARAM%restart_version = 4
+        fstrPARAM%restart_version = 5
 
         ! for auto increment and cutback
         fstrPARAM%ainc_Rs   = 0.25d0
