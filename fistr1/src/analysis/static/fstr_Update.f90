@@ -281,7 +281,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
   type (fstr_solid)  :: fstrSOLID
 !C** local variables
   integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, isect, ihead, iflag, mixflag
-  integer(kind=kint) :: nodLOCAL(20), flag_dof
+  integer(kind=kint) :: nodLOCAL(20), flag_dof, ityp, idofS, idofE, idof, in
   real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), edisp(60), force(60)
   real(kind=kreal)   :: ecoord(3, 20), stiff(60, 60)
   real(kind=kreal)   :: thick, coords(3, 3)
@@ -309,14 +309,19 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 !C set boundary force
 !C
   fstrSOLID%QFORCE = 0.0d0
-  allocate ( id_spc(hecMESH%n_node) )
+  allocate ( id_spc(3*hecMESH%n_node) )
   id_spc = 0
   do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
     ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
+    ityp = fstrSOLID%BOUNDARY_ngrp_type(i)
+    idofS = ityp/10
+    idofE = ityp - idofS*10
     iS = hecMESH%node_group%grp_index(ig-1) + 1
     iE = hecMESH%node_group%grp_index(ig  )
     do j = iS, iE
-      id_spc( hecMESH%node_group%grp_item(j) ) = 1
+      do idof = idofS, idofE
+        id_spc( 3*(hecMESH%node_group%grp_item(j)-1) + idof ) = 1
+      enddo
     enddo
   enddo
 
@@ -388,8 +393,11 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
         CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
                          & hecMESH%section%sect_R_item(ihead+1:), stiff )
         iflag = 0
-        DO j = 1, nn
-          IF( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+        DO j = 1, 3*nn
+          in = nodLOCAL(j)
+          IF( id_spc( 3*in-2 ) == 1 ) iflag = 1
+          IF( id_spc( 3*in-1 ) == 1 ) iflag = 1
+          IF( id_spc( 3*in   ) == 1 ) iflag = 1
         END DO
         if( iflag == 1 ) THEN
           IF( ic_type == 641 ) THEN
@@ -400,14 +408,13 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
           END IF
           force(1:nn*3) = MATMUL( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
           DO j = 1, nn
-            IF( id_spc( nodLOCAL(j) ) == 1 ) THEN
+            in = nodLOCAL(j)
 !$omp atomic
-              fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-2 )+force(3*j-2)
+            IF(id_spc(3*in-2) == 1) fstrSOLID%QFORCE(3*in-2) = fstrSOLID%QFORCE(3*in-2) + force(3*j-2)
 !$omp atomic
-              fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)-1 )+force(3*j-1)
+            IF(id_spc(3*in-1) == 1) fstrSOLID%QFORCE(3*in-1) = fstrSOLID%QFORCE(3*in-1) + force(3*j-1)
 !$omp atomic
-              fstrSOLID%QFORCE( 3*nodLOCAL(j)   ) = fstrSOLID%QFORCE( 3*nodLOCAL(j)   )+force(3*j  )
-            END IF
+            IF(id_spc(3*in  ) == 1) fstrSOLID%QFORCE(3*in  ) = fstrSOLID%QFORCE(3*in  ) + force(3*j  )
           END DO
         ENDIF
         CYCLE
@@ -428,7 +435,10 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 !--- calculate reaction force
       iflag = 0
       do j = 1, nn
-        if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
+          in = nodLOCAL(j)
+          IF( id_spc( 3*in-2 ) == 1 ) iflag = 1
+          IF( id_spc( 3*in-1 ) == 1 ) iflag = 1
+          IF( id_spc( 3*in   ) == 1 ) iflag = 1
       enddo
       if( iflag == 1 ) then
         if( ic_type == 361 ) then
@@ -447,14 +457,13 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
         endif
         force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
         do j = 1, nn
-          if( id_spc( nodLOCAL(j) ) == 1 ) then
+          in = nodLOCAL(j)
 !$omp atomic
-          fstrSOLID%QFORCE(3*nodLOCAL(j)-2) = fstrSOLID%QFORCE(3*nodLOCAL(j)-2) + force(3*j-2)
+          IF(id_spc(3*in-2) == 1) fstrSOLID%QFORCE(3*in-2) = fstrSOLID%QFORCE(3*in-2) + force(3*j-2)
 !$omp atomic
-          fstrSOLID%QFORCE(3*nodLOCAL(j)-1) = fstrSOLID%QFORCE(3*nodLOCAL(j)-1) + force(3*j-1)
+          IF(id_spc(3*in-1) == 1) fstrSOLID%QFORCE(3*in-1) = fstrSOLID%QFORCE(3*in-1) + force(3*j-1)
 !$omp atomic
-          fstrSOLID%QFORCE(3*nodLOCAL(j)  ) = fstrSOLID%QFORCE(3*nodLOCAL(j)  ) + force(3*j  )
-          endif
+          IF(id_spc(3*in  ) == 1) fstrSOLID%QFORCE(3*in  ) = fstrSOLID%QFORCE(3*in  ) + force(3*j  )
         enddo
       endif
     enddo
