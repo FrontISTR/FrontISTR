@@ -138,6 +138,7 @@ public
 !C
         type fstr_param
                 integer(kind=kint) :: solution_type !< solution type number
+                logical            :: nlgeom        !< is geometrical nonlinearity considered
                 integer(kind=kint) :: solver_method !< solver method number
 
                 !!STATIC !HEAT
@@ -909,6 +910,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         external fstr_sort_index
 
         fstrPARAM%solution_type = kstSTATIC
+        fstrPARAM%nlgeom        = .false.
         fstrPARAM%solver_method = ksmCG
 
         !!STATIC !HEAT
