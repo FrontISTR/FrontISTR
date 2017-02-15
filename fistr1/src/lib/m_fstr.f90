@@ -461,9 +461,6 @@ public
 !C
         type fstr_dynamic
 
-                ! control parameter
-                integer(kind=kint) :: nlflag        ! linear or nonlinear
-
                 ! ANALYSIS TYPE CONTROL
                 integer(kind=kint) :: idx_eqa       ! implicit or explicit
                 integer(kind=kint) :: idx_resp      ! time history or steady-state harmonic response analysis

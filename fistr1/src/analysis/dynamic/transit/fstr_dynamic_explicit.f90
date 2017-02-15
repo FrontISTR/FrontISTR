@@ -135,7 +135,7 @@ contains
       end do
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
@@ -172,7 +172,7 @@ contains
 !C
 !C-- mechanical boundary condition
 
-        call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+        call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C
 !C Eq. (1.1.22) but without Aj
@@ -377,7 +377,7 @@ contains
     end if
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)

@@ -167,7 +167,7 @@ contains
         call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
       endif
 
-      if(fstrDYNAMIC%nlflag==0) then
+      if( .not. fstrPARAM%nlgeom ) then
         if(fstrDYNAMIC%restart_nout < 0 ) then
           call fstr_read_restart_dyna_linear(restrt_step_num,fstrDYNAMIC)
           restrt_step_num = restrt_step_num + 1

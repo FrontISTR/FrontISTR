@@ -412,10 +412,10 @@ subroutine fstr_dynamic_analysis
            write(IMSG,*)
            write(IMSG,*)
            write(IMSG,*)
-           if( fstrDYNAMIC%nlflag==0 ) then
-                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
-           else
+           if( fstrPR%nlgeom ) then
                 write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
+           else
+                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
            endif
         end if
 

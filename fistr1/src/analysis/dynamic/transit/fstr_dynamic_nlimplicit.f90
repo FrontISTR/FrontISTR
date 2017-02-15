@@ -140,7 +140,7 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
@@ -198,7 +198,7 @@ contains
          endif
 !C
 !C-- mechanical boundary condition
-         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter)
+         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
          do j=1, hecMESH%n_node*  hecMESH%n_dof
            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
          + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -397,7 +397,7 @@ contains
       end if
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
@@ -531,7 +531,7 @@ contains
 !C-- initialize variables
 !C
       if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
-      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC )
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, fstrPARAM )
 !C
 !C
 !C-- time step loop
@@ -548,7 +548,7 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
@@ -623,7 +623,7 @@ contains
            endif
 !C
 !C-- mechanical boundary condition
-           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
            do j=1, hecMESH%n_node*  hecMESH%n_dof
              hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -827,7 +827,7 @@ contains
       end if
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)

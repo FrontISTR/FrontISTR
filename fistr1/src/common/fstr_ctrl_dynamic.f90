@@ -82,7 +82,7 @@ function fstr_ctrl_get_ACCELERATION( ctrl, aType, amp, node_id, node_id_len, dof
 end function fstr_ctrl_get_ACCELERATION
 
 !> Read in !DYNAMIC
-function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
+function fstr_ctrl_get_DYNAMIC( ctrl, nlgeom,      &
                 idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
                 ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
                 nout, node_id, node_id_len, nout_monit, iout_list )
@@ -90,7 +90,7 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         integer(kind=kint) :: ctrl
 
         ! ANALYSIS TYPE CONTROL
-        integer(kind=kint) :: nlflag
+        logical            :: nlgeom
         integer(kind=kint) :: idx_eqa
         integer(kind=kint) :: idx_resp
 
@@ -119,7 +119,7 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         integer(kind=kint) :: nout_monit
         integer(kind=kint) :: iout_list(6)
 
-        integer(kind=kint) :: rcode
+        integer(kind=kint) :: rcode, nlflag
         character(len=80) :: s
         character(len=HECMW_NAME_LEN) :: data_fmt,ss
 
@@ -131,7 +131,7 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlflag,      &
         s = 'LINEAR,NONLINEAR '
         nlflag=1
         rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', nlflag )
-        nlflag=nlflag-1
+        nlgeom = (nlflag==2)
 
         if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return

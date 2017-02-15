@@ -118,7 +118,7 @@ contains
                             + fstrDYNAMIC%ACC (j,1)/ (2.d0*a1) * 4.d0
       end do
 
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
@@ -130,7 +130,7 @@ contains
 !C
 !C-- mechanical boundary condition
 
-        call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+        call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
         do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
         end do
@@ -302,7 +302,7 @@ contains
       end if
 !
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
 
     enddo

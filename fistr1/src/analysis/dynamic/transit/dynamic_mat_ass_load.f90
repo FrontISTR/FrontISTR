@@ -12,7 +12,7 @@ module m_dynamic_mat_ass_load
 !> This function sets boundary condition of external load
 !C***
 !C
-    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter )
+    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
 
       use m_fstr
       use m_static_lib
@@ -26,6 +26,7 @@ module m_dynamic_mat_ass_load
       type (hecmwST_local_mesh) :: hecMESH
       type (fstr_solid        ) :: fstrSOLID
       type ( fstr_dynamic     ) :: fstrDYNAMIC
+      type (fstr_param        ) :: fstrPARAM
 
       real(kind=kreal) :: xx(20), yy(20), zz(20)
       real(kind=kreal) :: params(0:6)
@@ -404,7 +405,7 @@ module m_dynamic_mat_ass_load
 			     fstrSOLID%elements(icel)%gausses,pa1,iset, vect(1:nn*2) )
 
             elseif( ic_type == 361 ) then
-              if(fstrDYNAMIC%nlflag==0) then
+              if( .not. fstrPARAM%nlgeom ) then
                 if( fstrSOLID%elemopt361 == 1 ) then
                   call TLOAD_C3D8Bbar                                                          &
                        ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &

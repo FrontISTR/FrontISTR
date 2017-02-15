@@ -9,7 +9,7 @@ module m_dynamic_output
 
 !> Output result
 !----------------------------------------------------------------------*
-  subroutine fstr_dynamic_Output( hecMESH, fstrSOLID, fstrDYNAMIC )
+  subroutine fstr_dynamic_Output( hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
 !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_Update
@@ -19,6 +19,7 @@ module m_dynamic_output
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (fstr_solid), intent(inout)      :: fstrSOLID
     type (fstr_dynamic), intent(in)       :: fstrDYNAMIC
+    type (fstr_param), intent(in)         :: fstrPARAM
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid, istep, idx
@@ -32,7 +33,7 @@ module m_dynamic_output
     else
       idx = 1
     endif
-    if( fstrDYNAMIC%nlflag==0 ) then
+    if( .not. fstrPARAM%nlgeom ) then
       do i = 1, hecMESH%n_node
         do j = 1, ndof
           fstrSOLID%unode(ndof*(i-1)+j) = fstrDYNAMIC%DISP(ndof*(i-1)+j,idx)

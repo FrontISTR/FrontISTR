@@ -720,7 +720,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( P%PARAM%nlgeom .or. P%DYN%nlflag/=0 ) then
+           if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -758,7 +758,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         if( fstrSOLID%elemopt361==0 ) then
-          if( P%PARAM%nlgeom .or. P%DYN%nlflag/=0 ) then
+          if( P%PARAM%nlgeom ) then
             write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
             fstrSOLID%elemopt361 = 1
           endif
@@ -1098,7 +1098,6 @@ end subroutine fstr_eigen_init
 subroutine fstr_dynamic_init( fstrDYNAMIC )
         use m_fstr
         type(fstr_dynamic) :: fstrDYNAMIC
-        fstrDYNAMIC%nlflag   = 0
         fstrDYNAMIC%idx_eqa  = 1
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
@@ -2868,7 +2867,7 @@ subroutine fstr_setup_DYNAMIC( ctrl, counter, P )
         integer(kind=kint) :: grp_id(1)
 
         rcode = fstr_ctrl_get_DYNAMIC( ctrl, &
-                P%DYN%nlflag,  &
+                P%PARAM%nlgeom,  &
                 P%DYN%idx_eqa, &
                 P%DYN%idx_resp,&
                 P%DYN%n_step,  &
