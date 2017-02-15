@@ -26,6 +26,7 @@ module m_step
 
       integer :: num_substep                    !< substeps user given
       integer :: max_iter                       !< max number of iteration
+      integer :: max_contiter                   !< max number of contact iteration
       integer :: amp_id                         !< id of amplitude definition
       real(kind=kreal) :: initdt                !< time increment
       real(kind=kreal) :: elapsetime            !< elapse time of this step
@@ -47,6 +48,7 @@ module m_step
         stepinfo%solution = stepFixedInc
         stepinfo%num_substep = 1
         stepinfo%max_iter = 50
+        stepinfo%max_contiter = 10
         stepinfo%amp_id = -1
         stepinfo%initdt = 1.d0
         stepinfo%mindt = 1.d-4

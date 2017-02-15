@@ -225,7 +225,7 @@ module m_fstr_NonLinearMethod
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
-    n_al_step = 10
+    n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
     if( .not. fstr_is_contact_active() ) n_al_step = 1
 
     do al_step = 1, n_al_step
@@ -481,8 +481,6 @@ module m_fstr_NonLinearMethod
 
     fstrSOLID%dunode(:) = 0.0d0
 
-    max_iter_contact = 10
-
     count_step = 0
 
     loopFORcontactAnalysis: DO WHILE( .TRUE. )
@@ -662,7 +660,7 @@ module m_fstr_NonLinearMethod
         endif
         call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
       endif
-      if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
+      if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) exit loopFORcontactAnalysis
 
     ENDDO loopFORcontactAnalysis
 
