@@ -94,7 +94,7 @@ module m_fstr_AddBC
             else
               call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
             endif
-            if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstNLSTATIC   &
+            if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
                                          .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               if(present(conMAT)) then
                 call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
@@ -140,7 +140,7 @@ module m_fstr_AddBC
             else
               call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
             endif
-            if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstNLSTATIC   &
+            if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
                                          .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               if(present(conMAT)) then
                 call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)

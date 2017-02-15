@@ -64,8 +64,8 @@ use m_fstr_freqdata
         ! =============== ANALYSIS =====================
 
         select case( fstrPR%solution_type )
-        case ( kstSTATIC, kstNLSTATIC)
-                call fstr_static_analysis( fstrPR%solution_type )
+        case ( kstSTATIC )
+                call fstr_static_analysis
         case ( kstDYNAMIC )
                 call fstr_dynamic_analysis
         case ( kstEIGEN )
@@ -288,9 +288,8 @@ end subroutine fstr_init_condition
 !> Master subroutine of linear/nonlinear static analysis                                !
 !=============================================================================!
 
-subroutine fstr_static_analysis( flag )
+subroutine fstr_static_analysis
         implicit none
-        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -299,12 +298,15 @@ subroutine fstr_static_analysis( flag )
                 write(IMSG,*)
                 write(IMSG,*)
                 write(IMSG,*)
-                if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
         end if
 
-        if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
-        if(flag == kstNLSTATIC) call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        if( fstrPR%nlgeom ) then
+                if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
+                call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        else
+                if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
+                call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
+        end if
 
         call fstr_solid_finalize( fstrSOLID )
 

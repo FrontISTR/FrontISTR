@@ -35,9 +35,10 @@ end subroutine pc_strupr
 
 
 !> Read in !SOLUTION
-function fstr_ctrl_get_SOLUTION( ctrl, type )
+function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: type
+        logical            :: nlgeom
         integer(kind=kint) :: fstr_ctrl_get_SOLUTION
 
         integer(kind=kint) :: rcode
@@ -46,6 +47,11 @@ function fstr_ctrl_get_SOLUTION( ctrl, type )
         s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF'
         rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', type )
         type = type -1
+
+        if( type == 5 ) then !if type == NLSTATIC
+          type = kstSTATIC
+          nlgeom = .true.
+        end if
         fstr_ctrl_get_SOLUTION = rcode
 end function fstr_ctrl_get_SOLUTION
 

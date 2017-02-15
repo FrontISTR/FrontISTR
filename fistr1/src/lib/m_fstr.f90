@@ -40,7 +40,7 @@ public
         integer(kind=kint),parameter :: kstEIGEN     =   2
         integer(kind=kint),parameter :: kstHEAT      =   3
         integer(kind=kint),parameter :: kstDYNAMIC   =   4
-        integer(kind=kint),parameter :: kstNLSTATIC  =   5
+        !integer(kind=kint),parameter :: kstNLSTATIC  =   5
         integer(kind=kint),parameter :: kstSTATICEIGEN = 6
         integer(kind=kint),parameter :: kstNZPROF    =   7
 

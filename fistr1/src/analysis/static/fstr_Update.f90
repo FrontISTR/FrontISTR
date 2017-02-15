@@ -132,7 +132,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
              qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
 
       else if( ic_type == 361 ) then
-        if( fstrPR%solution_type == kstSTATIC ) then
+        if( .not. fstrPR%nlgeom ) then
           if( fstrSOLID%elemopt361 == 1 ) then
             call UpdateST_C3D8Bbar( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
                                     ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )

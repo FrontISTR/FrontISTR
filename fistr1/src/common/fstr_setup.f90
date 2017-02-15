@@ -88,7 +88,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_elemopt
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
-        integer(kind=kint) :: cache = 1
 
         write( logfileNAME, '(i5,''.log'')' ) myrank
 
@@ -323,8 +322,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               cid = hecMESH%section%sect_mat_ID_item(i)
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
-              if( fstrPARAM%solution_type == kstNLSTATIC &
-                   .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
+              if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
               nullify(shmat)
               call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
@@ -465,21 +463,12 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
                 stop
             endif
-
             cid = 0
-            if(cache < hecMESH%material%n_mat .and. &
-               fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
-              cid = cache
-              cache = cache + 1
-            else
-              do i=1,hecMESH%material%n_mat
-                if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
-                  cid = i
-                  cache = i + 1
-                  exit
-                endif
-              enddo
-            endif
+            do i=1,hecMESH%material%n_mat
+              if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
+                cid = i; exit
+              endif
+            enddo
             if(cid == 0)then
                 write(*,*) '### Error: Fail in read in material definition : ' , c_material
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
@@ -487,7 +476,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             endif
             fstrSOLID%materials(cid)%name = mName
             if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
-
           else if( header_name == '!ELASTIC' ) then
             if( c_material >0 ) then
                if( fstr_ctrl_get_ELASTICITY( ctrl,                                        &
@@ -695,7 +683,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         end do
 
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
-        if( P%PARAM%solution_type == kstSTATIC ) then
+        if( .not. P%PARAM%nlgeom ) then
           do i=1, c_material
             fstrSOLID%materials(i)%nlgeom_flag = 0
           enddo
@@ -732,7 +720,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+           if( P%PARAM%nlgeom .or. P%DYN%nlflag/=0 ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -770,16 +758,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         if( fstrSOLID%elemopt361==0 ) then
-          if( P%PARAM%solution_type==kstNLSTATIC .or. P%PARAM%solution_type==kstSTATICEIGEN .or. P%DYN%nlflag/=0 ) then
+          if( P%PARAM%nlgeom .or. P%DYN%nlflag/=0 ) then
             write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
             fstrSOLID%elemopt361 = 1
           endif
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
-        if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
-           p%PARAM%solution_type==kstSTATICEIGEN )            &
+        if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
+            p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
 
         if( p%PARAM%solution_type == kstHEAT) then
@@ -1294,7 +1281,6 @@ end subroutine fstr_setup_post_phys_alloc
         type(fstr_solid_physic_val), pointer :: phys => null()
 
         if( P%PARAM%solution_type == kstSTATIC &
-         .or. P%PARAM%solution_type == kstNLSTATIC  &
          .or. P%PARAM%solution_type == kstEIGEN  &
          .or. P%PARAM%solution_type == kstDYNAMIC &
          .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
@@ -1380,7 +1366,7 @@ subroutine fstr_setup_SOLUTION( ctrl, counter, P )
 
         integer(kind=kint) :: rcode
 
-        rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type )
+        rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type, P%PARAM%nlgeom )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_SOLUTION
@@ -1669,7 +1655,7 @@ subroutine fstr_setup_STATIC( ctrl, counter, P )
         ipt = 0
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITE,NLGEOM ', 0, 'P', ipt  )/=0 )  &
            return
-        if( ipt == 2 ) P%PARAM%solution_type = kstNLSTATIC
+        if( ipt == 2 ) P%PARAM%nlgeom = .true.
 
         rcode = fstr_ctrl_get_STATIC( ctrl, &
                         DT, ETIME, ITMAX, EPS, P%SOLID%restart_nout, &

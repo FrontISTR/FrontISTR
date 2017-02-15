@@ -390,7 +390,7 @@ module m_fstr_ass_load
                              fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) )
 
             else if( ic_type == 361 ) then
-              if( fstrPR%solution_type == kstSTATIC ) then
+              if( .not. fstrPR%nlgeom ) then
                 if( fstrSOLID%elemopt361 == 1 ) then
                   call TLOAD_C3D8Bbar                                                          &
                        ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &

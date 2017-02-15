@@ -64,7 +64,7 @@ module m_fstr_Restart
       cstep = restrt_step(1)
       substep = restrt_step(2) + 1
       step_count = restrt_step(3)
-      if(fstrPARAM%solution_type==kstNLSTATIC) then
+      if( fstrPARAM%solution_type==kstSTATIC .and. fstrPARAM%nlgeom ) then
         if(restrt_step(2)==fstrSOLID%step_ctrl(cstep)%num_substep) then
           cstep = cstep + 1
           substep = 1
