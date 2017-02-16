@@ -342,15 +342,14 @@ subroutine fstr_static_analysis
 
         if( fstrPR%nlgeom ) then
                 if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
-                if(paraContactFlag)then
-                        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
-                else
-                        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-                endif
         else
                 if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
         end if
+        if(paraContactFlag)then
+                call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
+        else
+                call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        endif
 
         call fstr_solid_finalize( fstrSOLID )
 
