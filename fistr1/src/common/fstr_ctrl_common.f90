@@ -41,18 +41,26 @@ function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
         logical            :: nlgeom
         integer(kind=kint) :: fstr_ctrl_get_SOLUTION
 
-        integer(kind=kint) :: rcode
+        integer(kind=kint) :: ipt
         character(len=80) :: s
 
+        fstr_ctrl_get_SOLUTION = -1
+
         s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF'
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', type )
+        if( fstr_ctrl_get_param_ex( ctrl,      'TYPE ',     s,    1,   'P',  type )/= 0) return
         type = type -1
+
+        ipt=0
+        if( fstr_ctrl_get_param_ex( ctrl,    'NLGEOM ',  '# ',    0,   'E',   ipt )/= 0) return
+        if( ipt/=0 .and. ( type == kstSTATIC .or. type == kstDYNAMIC )) nlgeom = .true.
 
         if( type == 5 ) then !if type == NLSTATIC
           type = kstSTATIC
           nlgeom = .true.
         end if
-        fstr_ctrl_get_SOLUTION = rcode
+        if( type == kstSTATICEIGEN ) nlgeom = .true.
+
+        fstr_ctrl_get_SOLUTION = 0
 end function fstr_ctrl_get_SOLUTION
 
 

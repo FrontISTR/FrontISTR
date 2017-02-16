@@ -129,9 +129,9 @@ function fstr_ctrl_get_DYNAMIC( ctrl, nlgeom,      &
 
 
         s = 'LINEAR,NONLINEAR '
-        nlflag=1
+        nlflag=0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', nlflag )
-        nlgeom = (nlflag==2)
+        if( nlflag/=0 ) nlgeom = (nlflag==2)
 
         if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
         if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
