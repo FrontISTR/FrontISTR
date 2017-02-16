@@ -407,10 +407,12 @@ module m_static_LIB_2d
    end subroutine TLOAD_C2
 !
 !
+!> Update strain and stress inside element
 !---------------------------------------------------------------------*
   SUBROUTINE UPDATE_C2( etype,nn,ecoord,gausses,PARAM1,iset,         &
-                        u, ddu, qf  )
+                        u, ddu, qf, TT, T0, TN )
 !---------------------------------------------------------------------*
+    use m_fstr
     use mMechGauss
     use m_MatMatrix
 ! I/F VARIAVLES
@@ -421,6 +423,9 @@ module m_static_LIB_2d
     real(kind=kreal),   INTENT(IN)     :: u(2,nn)
     real(kind=kreal),   INTENT(IN)     :: ddu(2,nn)
     real(kind=kreal),   INTENT(OUT)    :: qf(:)
+    real(kind=kreal), INTENT(IN), optional :: TT(nn)   !< current temperature
+    real(kind=kreal), INTENT(IN), optional :: T0(nn)   !< reference temperature
+    real(kind=kreal), INTENT(IN), optional :: TN(nn)   !< reference temperature
 
 
     integer(kind=kint), parameter :: ndof=2
@@ -429,10 +434,12 @@ module m_static_LIB_2d
     real(kind=kreal)   :: thick,pai,rr
     real(kind=kreal)   :: det, WG
     real(kind=kreal)   :: localCoord(2)
-    real(kind=kreal)   :: gderiv(nn,2), dstrain(4)
+    real(kind=kreal)   :: gderiv(nn,2), dstrain(4), ttc, tt0, ttn
     real(kind=kreal)   :: gdispderiv(2,2), cdsys(3,3)
     integer(kind=kint) :: j, LX
     real(kind=kreal)   :: totaldisp(2*nn)
+    real(kind=kreal)   :: EPSTH(4), alp, alp0, ina(1), outa(1)
+    logical            :: ierr
 !
     qf(:)              = 0.d0
     do j=1,nn
@@ -454,6 +461,23 @@ module m_static_LIB_2d
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
 !
+      EPSTH = 0.d0
+      if( present(TT) .AND. present(T0) ) then
+        CALL getShapeFunc( ETYPE, localcoord, H(:) )
+        ttc = DOT_PRODUCT(TT(:), H(:))
+        tt0 = DOT_PRODUCT(T0(:), H(:))
+        ttn = DOT_PRODUCT(TN(:), H(:))
+        ina(1) = ttc
+        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        alp = outa(1)
+        ina(1) = tt0
+        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        alp0 = outa(1)
+        EPSTH(1:2)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+      end if
+!
       WG=getWeight( etype, LX )*DET
       IF(ISET==2) THEN
         CALL getShapeFunc( ETYPE, localcoord, H(:) )
@@ -474,7 +498,7 @@ module m_static_LIB_2d
       ENDDO
 
       gausses(LX)%strain(1:4) = matmul( B(:,:), totaldisp )
-	  gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4) )
+	    gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4)-EPSTH(1:4) )
 
 !
 !    ----- calculate the Internal Force

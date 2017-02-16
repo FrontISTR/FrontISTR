@@ -120,9 +120,17 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
 
       if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
-        call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-             thick,fstrSOLID%elements(icel)%iset,           &
-             total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
+
+        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+                          thick,fstrSOLID%elements(icel)%iset,                             &
+                          total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+                          tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+        else
+          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+               thick,fstrSOLID%elements(icel)%iset,           &
+               total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
+        endif
 
       else if( ic_type == 301 ) then
         isect= hecMESH%section_ID(icel)
