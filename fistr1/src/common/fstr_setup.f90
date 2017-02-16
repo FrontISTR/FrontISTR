@@ -1921,6 +1921,7 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         new_params = 0
         amp = ' '
         follow = P%SOLID%DLOAD_follow
+        if( .not. P%PARAM%nlgeom ) follow = 0
         lid_ptr => P%SOLID%DLOAD_ngrp_LID(old_size+1:)
         rcode = fstr_ctrl_get_DLOAD( ctrl, amp, follow, &
                         grp_id_name, HECMW_NAME_LEN,    &
