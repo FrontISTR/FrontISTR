@@ -3110,4 +3110,82 @@
       END SUBROUTINE DL_Shell_33
 
 !####################################################################
+! this subroutine can be used only for linear analysis
+      SUBROUTINE UpdateST_Shell_MITC                                           &
+                 (etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, nddisp)
+!####################################################################
+
+      USE mMechGauss
+      USE gauss_integration
+      USE m_MatMatrix
+
+!--------------------------------------------------------------------
+
+      INTEGER(KIND = kint), INTENT(IN) :: etype
+      INTEGER(KIND = kint), INTENT(IN) :: nn, mixflag
+      INTEGER(KIND = kint), INTENT(IN) :: ndof
+      REAL(KIND = kreal), INTENT(IN)   :: ecoord(3, nn)
+      REAL(KIND = kreal), INTENT(IN)   :: u(:, :)
+      REAL(KIND = kreal), INTENT(IN)   :: du(:, :)
+      TYPE(tGaussStatus), INTENT(IN)   :: gausses(:)
+      REAL(KIND = kreal), INTENT(OUT)  :: qf(:)
+      REAL(KIND = kreal), INTENT(IN)   :: thick
+
+      REAL(KIND = kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn)
+!--------------------------------------------------------------------
+
+      REAL(KIND = kreal)   :: stiff(nn*ndof, nn*ndof), totaldisp(nn*ndof)
+      INTEGER(KIND = kint) :: i
+
+      call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, nddisp)
+
+      totaldisp = 0.d0
+      do i=1,nn
+        totaldisp(ndof*(i-1)+1:ndof*i) = u(1:ndof,i) + du(1:ndof,i)
+      end do
+
+      qf = matmul(stiff,totaldisp)
+
+      END SUBROUTINE UpdateST_Shell_MITC
+
+!####################################################################
+! this subroutine can be used only for linear analysis
+      SUBROUTINE UpdateST_Shell_MITC33                                         &
+                 (etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, nddisp)
+!####################################################################
+
+      USE mMechGauss
+      USE gauss_integration
+      USE m_MatMatrix
+
+!--------------------------------------------------------------------
+
+      INTEGER(KIND = kint), INTENT(IN) :: etype
+      INTEGER(KIND = kint), INTENT(IN) :: nn, mixflag
+      INTEGER(KIND = kint), INTENT(IN) :: ndof
+      REAL(KIND = kreal), INTENT(IN)   :: ecoord(3, nn)
+      REAL(KIND = kreal), INTENT(IN)   :: u(3, nn*2)
+      REAL(KIND = kreal), INTENT(IN)   :: du(3, nn*2)
+      TYPE(tGaussStatus), INTENT(IN)   :: gausses(:)
+      REAL(KIND = kreal), INTENT(OUT)  :: qf(:)
+      REAL(KIND = kreal), INTENT(IN)   :: thick
+
+      REAL(KIND = kreal), INTENT(IN), OPTIONAL :: nddisp(3, nn)
+!--------------------------------------------------------------------
+
+      REAL(KIND = kreal)   :: stiff(nn*ndof, nn*ndof), totaldisp(nn*ndof)
+      INTEGER(KIND = kint) :: i
+
+      call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, nddisp)
+
+      totaldisp = 0.d0
+      do i=1,nn
+        totaldisp(ndof*(i-1)+1:ndof*(i-1)+3) = u(1:3,2*i-1) + du(1:3,2*i-1)
+        totaldisp(ndof*(i-1)+4:ndof*(i-1)+6) = u(1:3,2*i) + du(1:3,2*i)
+      end do
+
+      qf = matmul(stiff,totaldisp)
+
+      END SUBROUTINE UpdateST_Shell_MITC33
+
       END MODULE m_static_LIB_shell

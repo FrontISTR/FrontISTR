@@ -1010,7 +1010,7 @@ end subroutine fstr_param_init
           real(kind=kreal), pointer :: coord(:)
           integer(kind=kint) :: i
           if(hecMESH%n_dof == 4) return
-          do i = 1, hecMESH%n_node*hecMESH%n_dof
+          do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
             coord(i) = hecMESH%node(i)
             hecMESH%node(i) = coord(i)+fstrSOLID%unode(i)+fstrSOLID%dunode(i)
           enddo
@@ -1024,7 +1024,7 @@ end subroutine fstr_param_init
           real(kind=kreal), pointer :: coord(:)
           integer(kind=kint) :: i
           if(hecMESH%n_dof == 4) return
-          do i = 1, hecMESH%n_node*hecMESH%n_dof
+          do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
             hecMESH%node(i) = coord(i)
           enddo
         end subroutine fstr_recover_initial_config_to_mesh

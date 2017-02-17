@@ -4,7 +4,10 @@
 !-------------------------------------------------------------------------------
 !> \brief  This module provides function to calcualte to do updates
 module m_fstr_Update
+  use m_fstr
   implicit none
+
+  private :: Update_abort
 
   contains
 
@@ -21,7 +24,6 @@ module m_fstr_Update
 !> \endif
 subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)
 !=====================================================================*
-  use m_fstr
   use m_static_lib
 !#ifdef PARA_CONTACT
   use m_fstr_para_contact
@@ -34,7 +36,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   integer, intent(in)         :: iter      !< NR iterations
 
   integer(kind=kint) :: nodLOCAL(20)
-  real(kind=kreal)   :: ecoord(3, 20)
+  real(kind=kreal)   :: ecoord(3, 20), stiff(60, 60)
   real(kind=kreal)   :: thick
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
 
@@ -140,19 +142,20 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
              qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
 
       else if( ic_type == 361 ) then
-        if( .not. fstrPR%nlgeom ) then
-          if( fstrSOLID%elemopt361 == 1 ) then
-            call UpdateST_C3D8Bbar( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
-                                    ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
+
+        if( fstrSOLID%elemopt361 /= 1 ) then
+          if( fstrPR%nlgeom ) call Update_abort( ic_type, 3 )
+          total_disp(1:3, 1:nn) = total_disp(1:3, 1:nn) + du(1:3, 1:nn)
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UpdateST_C3D8IC                                                                        &
+                 ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
+                   fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof), tt=tt(1:nn), t0=tt0(1:nn) )
           else
-            call UpdateST_C3D8IC( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
-                                  ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
+            call UpdateST_C3D8IC                                                                        &
+                 ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
+                   fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof) )
           endif
         else
-          if( fstrSOLID%elemopt361 /= 1 ) then
-            write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
-            call hecmw_abort(hecmw_comm_get_comm())
-          endif
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
                    qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
@@ -170,6 +173,44 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
         endif
+
+      else if( ic_type == 611) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        !CALL STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
+        !     &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiffness(1:nn*ndof,1:nn*ndof))
+      
+      else if( ic_type == 641 ) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        CALL UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
+      
+      else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+      
+      else if( ic_type == 761 ) then   !for shell-solid mixed analysis
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 2)
+      
+      else if( ic_type == 781 ) then   !for shell-solid mixed analysis
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 1)
 
       else if ( ic_type == 3414 ) then
         if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
@@ -444,7 +485,9 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
         if( fstrSOLID%elemopt361 == 1 ) then
           call UpdateST_C3D8Bbar( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
         else
-          call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
+          call UpdateST_C3D8IC                                        &
+               ( ic_type, nn, xx, yy, zz, edisp,             &
+                 fstrSOLID%elements(icel)%gausses, cdsys_ID, coords, tt=tt, t0=tt0)
         endif
       else if( ic_type == 301 ) then
         isect = hecMESH%section_ID(icel)
@@ -686,4 +729,20 @@ subroutine fstr_Update6D( hecMESH, fstrSOLID )
   deallocate( id_spc )
 
 end subroutine fstr_Update6D
+
+subroutine Update_abort( ic_type, flag )
+  integer(kind=kint), intent(in) :: ic_type
+  integer(kind=kint), intent(in) :: flag
+
+  if( flag == 1 ) then
+    write(*,*) '###ERROR### : Element type not supported for static analysis'
+  else if( flag == 2 ) then
+    write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
+  else if( flag == 3 ) then !361IC element cannot be used for nonlinear analysis
+    write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
+  endif
+  write(*,*) ' ic_type = ', ic_type
+  call hecmw_abort(hecmw_comm_get_comm())
+end subroutine
+
 end module m_fstr_Update
