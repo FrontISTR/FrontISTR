@@ -65,10 +65,10 @@ module m_fstr_precheck
 
 !** Local variables
       integer(kind=kint) :: nelem, mid, j, isect, nline, tline, icel, iiS
-      integer(kind=kint) :: ndof2
+      integer(kind=kint) :: ndof2, nelem_wo_mpc
       integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
       integer(kind=kint) :: nodLOCAL(20),NTOTsum(1)
-      integer(kind=8)    :: ntdof2,nonzero
+      integer(kind=8)    :: ntdof2, nonzero
       real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
       real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
       real(kind=kreal)   :: xx(20),yy(20),zz(20)
@@ -96,6 +96,15 @@ module m_fstr_precheck
       ntdof2 = (hecMESH%n_node*hecMESH%n_dof)**2
       write(ILOG,"(a,i12)") '  Num of elem:',hecMESH%n_elem
       write(*   ,"(a,i12)") '  Num of elem:',hecMESH%n_elem
+      nelem_wo_mpc = 0
+      do itype = 1, hecMESH%n_elem_type
+        jS = hecMESH%elem_type_index(itype-1)
+        jE = hecMESH%elem_type_index(itype  )
+        ic_type = hecMESH%elem_type_item(itype)
+        if(.not. hecmw_is_etype_link(ic_type)) nelem_wo_mpc = nelem_wo_mpc + jE-jS
+      enddo
+      write(ILOG,"(a,i12)") '   ** w/o MPC:',nelem_wo_mpc
+      write(*   ,"(a,i12)") '   ** w/o MPC:',nelem_wo_mpc
       do itype = 1, hecMESH%n_elem_type
         jS = hecMESH%elem_type_index(itype-1)
         jE = hecMESH%elem_type_index(itype  )
@@ -106,8 +115,6 @@ module m_fstr_precheck
       nonzero = ndof2*(hecMAT%NP + hecMAT%NPU + hecMAT%NPL)
       write(ILOG,"(a,i12)") '  Num of NZ  :',nonzero
       write(*   ,"(a,i12)") '  Num of NZ  :',nonzero
-      write(ILOG,"(a,i12)") '  Num of DOF2:',ntdof2
-      write(*   ,"(a,i12)") '  Num of DOF2:',ntdof2
       write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
       write(*   ,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
 

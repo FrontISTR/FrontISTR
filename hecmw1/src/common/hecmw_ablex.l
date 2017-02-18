@@ -79,6 +79,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"ELASTIC	{ return flag_header ? HECMW_ABLEX_H_ELASTIC : ' '; }
 ^"*"EXPANSION	{ set_flag_header(1); return HECMW_ABLEX_H_EXPANSION; }
 "*"EXPANSION	{ return flag_header ? HECMW_ABLEX_H_EXPANSION : ' '; }
+^"*"ELEMENT" "?OUTPUT	{ set_flag_header(1); return HECMW_ABLEX_H_ELEMENT_OUTPUT; }
+"*"ELEMENT" "?OUTPUT		{ return flag_header ? HECMW_ABLEX_H_ELEMENT_OUTPUT : ' '; }
 ^"*"ELEMENT	{ set_flag_header(1); return HECMW_ABLEX_H_ELEMENT; }
 "*"ELEMENT	{ return flag_header ? HECMW_ABLEX_H_ELEMENT : ' '; }
 ^"*"ELSET	{ set_flag_header(1); return HECMW_ABLEX_H_ELSET; }
@@ -96,6 +98,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"INITIAL" "?CONDITIONS	{ return flag_header ? HECMW_ABLEX_H_INITIAL : ' '; }
 ^"*"MATERIAL	{ set_flag_header(1); return HECMW_ABLEX_H_MATERIAL; }
 "*"MATERIAL		{ return flag_header ? HECMW_ABLEX_H_MATERIAL : ' '; }
+^"*"NODE" "?OUTPUT	{ set_flag_header(1); return HECMW_ABLEX_H_NODE_OUTPUT; }
+"*"NODE" "?OUTPUT		{ return flag_header ? HECMW_ABLEX_H_NODE_OUTPUT : ' '; }
 ^"*"NODE	{ set_flag_header(1); return HECMW_ABLEX_H_NODE; }
 "*"NODE		{ return flag_header ? HECMW_ABLEX_H_NODE : ' '; }
 ^"*"NSET	{ set_flag_header(1); return HECMW_ABLEX_H_NSET; }
