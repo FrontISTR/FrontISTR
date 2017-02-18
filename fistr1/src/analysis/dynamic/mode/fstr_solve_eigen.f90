@@ -565,13 +565,13 @@ contains
       myEIG%effmass    = 0.0d0
       myEIG%partfactor = 0.0d0
 
-      DO i=1,NGET
-        r1 = 0.0d0
-        r2 = 0.0d0
-        r3 = 0.0d0
-        gm = 0.0d0
-        do j = 1, numn
-          !if(isnode33(j)==0)then
+      if(NDOF == 3)then
+        DO i=1,NGET
+          r1 = 0.0d0
+          r2 = 0.0d0
+          r3 = 0.0d0
+          gm = 0.0d0
+          do j = 1, numn
             in1 = 3*j-2
             in2 = 3*j-1
             in3 = 3*j
@@ -581,20 +581,40 @@ contains
             gm = gm + mass(in1)*ewk(in1,i)*ewk(in1,i) &
             & + mass(in2)*ewk(in2,i)*ewk(in2,i) &
             & + mass(in3)*ewk(in3,i)*ewk(in3,i)
-          !endif
-        enddo
-        CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
-        CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
-        CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
-        CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
-        myEIG%partfactor(3*i-2) = r1/gm
-        myEIG%partfactor(3*i-1) = r2/gm
-        myEIG%partfactor(3*i  ) = r3/gm
-        myEIG%effmass(3*i-2) = r1*r1/gm
-        myEIG%effmass(3*i-1) = r2*r2/gm
-        myEIG%effmass(3*i  ) = r3*r3/gm
-      END DO
+          enddo
+          CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+          myEIG%partfactor(3*i-2) = r1/gm
+          myEIG%partfactor(3*i-1) = r2/gm
+          myEIG%partfactor(3*i  ) = r3/gm
+          myEIG%effmass(3*i-2) = r1*r1/gm
+          myEIG%effmass(3*i-1) = r2*r2/gm
+          myEIG%effmass(3*i  ) = r3*r3/gm
+        END DO
 
+      elseif(NDOF == 2)then
+        DO i=1,NGET
+          r1 = 0.0d0
+          r2 = 0.0d0
+          gm = 0.0d0
+          do j = 1, numn
+            in1 = 2*j-1
+            in2 = 2*j
+            r1 = r1 + mass(in1)*ewk(in1,i)
+            r2 = r2 + mass(in2)*ewk(in2,i)
+            gm = gm + r1*ewk(in1,i) + r2*ewk(in2,i)
+          enddo
+          CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+          myEIG%partfactor(3*i-2) = r1/gm
+          myEIG%partfactor(3*i-1) = r2/gm
+          myEIG%effmass(3*i-2) = r1*r1/gm
+          myEIG%effmass(3*i-1) = r2*r2/gm
+        END DO
+      endif
 
 !*------------------
 !*Eigensolver output

@@ -175,7 +175,9 @@ module m_heat_solve_SS
         allocate(fstrRESULT%node_val_item(hecMESH%n_node))
         fstrRESULT%nn_dof(1) = 1
         fstrRESULT%node_label(1) = 'TEMPERATURE'
-        fstrRESULT%node_val_item = fstrHEAT%TEMP
+        do i=1,hecMESH%n_node
+          fstrRESULT%node_val_item(i) = fstrHEAT%TEMP(i)
+        enddo
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
         call hecmw_visualize (hecMESH,fstrRESULT,1,1,1)
