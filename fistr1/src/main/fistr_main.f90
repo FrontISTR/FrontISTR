@@ -8,7 +8,6 @@ use hecmw
 use m_fstr
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
-use m_fstr_solve_linear
 use m_fstr_solve_heat
 use m_fstr_solve_nlgeom
 use m_fstr_solve_eigen

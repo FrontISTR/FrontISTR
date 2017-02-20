@@ -56,7 +56,6 @@ module fstr_frequency_analysis
 use m_fstr
 use m_fstr_StiffMatrix
 use m_fstr_AddBC
-use m_static_mat_ass
 use fstr_matrix_con_contact
 use m_fstr_freqdata
 use m_fstr_EIG_setMASS
@@ -694,16 +693,10 @@ contains
   !---- body
 
     myEIG%eqset = 1
-    if( fstrPARAM%solution_type==kstSTATICEIGEN ) then
-      fstrSOLID%dunode = 0.d0
-      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
-      call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
-    else
-      call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
-    endif
-    if( myrank == 0 ) then
-       write(IMSG,*) 'fstr_mat_ass: OK'
-    endif
+
+    fstrSOLID%dunode = 0.d0
+    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
+    call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
     call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, myEIG)
 

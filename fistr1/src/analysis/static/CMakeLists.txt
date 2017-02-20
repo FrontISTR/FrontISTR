@@ -21,7 +21,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddContactStiff.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddBC.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_mat_ass.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_LINEAR.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_mat_resid_contact.f90
   ${CMAKE_CURRENT_LIST_DIR}/sparse_matrix_contact.f90
   ${CMAKE_CURRENT_LIST_DIR}/solve_LINEQ_MUMPS_contact.f90

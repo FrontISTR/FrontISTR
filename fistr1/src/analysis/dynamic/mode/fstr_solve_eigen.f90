@@ -29,7 +29,6 @@ contains
       use m_fstr_EIG_setMASS
       use m_fstr_EIG_tridiag
       use m_static_lib
-      use m_static_mat_ass
       use m_static_make_result
       use m_hecmw2fstr_mesh_conv
 
@@ -99,13 +98,9 @@ contains
       ntotal = numnp*NDOF
 
 !C*------------ Assemble stiffness matrix ----------*
-      if( fstrPARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%dunode = 0.d0
-        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
-        call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
-      else
-        call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
-      endif
+      fstrSOLID%dunode = 0.d0
+      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
+      call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
       if( myrank == 0 ) then
          write(IMSG,*) 'fstr_mat_ass: OK'
