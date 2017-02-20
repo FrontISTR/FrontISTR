@@ -8,7 +8,7 @@
 *.lst
 *.bak
 *.BAK
-*.DS_store
+*.DS_Store
 lib/**/*
 *.neu
 dyna_*.txt
