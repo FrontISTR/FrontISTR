@@ -6,6 +6,7 @@ use hecmw_dist_copy_f2c_f
 use hecmw_dist_free_f
 use hecmw_dist_print_f
 use hecmw_etype
+use hecmw_comm_group
 use hecmw_io
 use hecmw_logging
 use hecmw_matrix_ass

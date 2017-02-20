@@ -74,6 +74,7 @@ common/hecmw_visual_if.c
 common/hecmw_visualizer_f.f90
 hecmw/hecmw.f90
 solver/communication/hecmw_comm_f.F90
+solver/communication/hecmw_comm_group.f90
 solver/communication/hecmw_solver_SR_11.F90
 solver/communication/hecmw_solver_SR_11i.F90
 solver/communication/hecmw_solver_SR_22.F90

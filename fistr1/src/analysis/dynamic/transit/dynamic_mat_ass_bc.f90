@@ -32,6 +32,7 @@ contains
       use fstr_matrix_con_contact
       use m_addContactStiffness
       use mContact
+      use m_utilities
 
       implicit none
       type (hecmwST_matrix)     :: hecMAT
@@ -47,6 +48,16 @@ contains
 
       INTEGER(kind=kint) flag_u
       real(kind=kreal) RHS, f_t, f_t1
+      
+      !for rotation
+      integer(kind=kint) :: n_rot, rid, n_nodes
+      type(tRotInfo) :: rinfo
+      real(kind=kreal) :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
+      real(kind=kreal) :: cdisp(3), cddisp(3)
+!
+      ndof = hecMAT%NDOF
+      n_rot = fstrSOLID%BOUNDARY_ngrp_rot
+      if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
 
       flag_u = 1
 !C=============================C
@@ -59,7 +70,7 @@ contains
           RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
           if( present(iter) ) then
-		    if( iter>1 ) then
+            if( iter>1 ) then
               RHS=0.d0
             else
               fstrDYNAMIC%i_step = fstrDYNAMIC%i_step-1
@@ -81,6 +92,23 @@ contains
 
           iS0 = hecMESH%node_group%grp_index(ig-1) + 1
           iE0 = hecMESH%node_group%grp_index(ig  )
+        
+          if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then ! setup rotation information
+            rid = fstrSOLID%BOUNDARY_ngrp_rotID(ig0)
+            if( .not. rinfo%conds(rid)%active ) then
+              rinfo%conds(rid)%active = .true.
+              rinfo%conds(rid)%center_ngrp_id = fstrSOLID%BOUNDARY_ngrp_centerID(ig0)
+              rinfo%conds(rid)%torque_ngrp_id = ig
+            endif
+            do idof=idofS,idofE
+              if( idof>ndof ) then
+                rinfo%conds(rid)%vec(idof-ndof) = RHS
+              else
+                rinfo%conds(rid)%vec(idof) = RHS
+              endif
+            enddo
+            cycle
+          endif
 
           do ik = iS0, iE0
             in = hecMESH%node_group%grp_item(ik)
@@ -102,6 +130,52 @@ contains
             enddo
           enddo
 
+        enddo
+      
+        !Apply rotational boundary condition
+        do rid = 1, n_rot
+          if( .not. rinfo%conds(rid)%active ) cycle
+          cdiff = 0.d0
+          cdiff0 = 0.d0
+          cddisp = 0.d0
+          
+          if( f_t > 0.d0 ) then
+            ig = rinfo%conds(rid)%center_ngrp_id
+            do idof = 1, ndof
+              ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+              cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
+              cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMAT%B)
+            enddo
+            ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof) 
+          endif
+          
+          ig = rinfo%conds(rid)%torque_ngrp_id
+          iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+          iE0 = hecMESH%node_group%grp_index(ig  )
+          do ik = iS0, iE0
+            in = hecMESH%node_group%grp_item(ik)
+            if( f_t > 0.d0 ) then
+              cdiff0(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
+              cdiff(1:ndof) = cdiff0(1:ndof)
+              call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:ndof),cdiff(1:ndof))
+            endif
+            do idof = 1, ndof
+              RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
+              if(present(conMAT)) then
+                call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
+              else
+                call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
+              endif
+              if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstNLSTATIC   &
+                                           .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+                if(present(conMAT)) then
+                  call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+                else
+                  call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+                endif
+              endif
+            enddo
+          enddo
         enddo
 !C
 !C-- end of implicit dynamic analysis
@@ -140,6 +214,8 @@ contains
 !C-- end of explicit dynamic analysis
 !C
       end if
+      
+      if( n_rot > 0 ) call fstr_RotInfo_finalize(rinfo)
 
       end subroutine DYNAMIC_MAT_ASS_BC
 

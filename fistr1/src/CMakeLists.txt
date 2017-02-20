@@ -186,11 +186,16 @@ if(WITH_ML)
 endif()
 
 if(WITH_MUMPS)
-  set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+  #set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} scalapack)
 endif()
 
 if(WITH_LAPACK)
   set(EXTRA_LIBS ${EXTRA_LIBS} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+endif()
+
+if(WITH_PARMETIS)
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${PARMETIS_LIBRARIES})
 endif()
 
 if(WITH_METIS)
@@ -213,7 +218,7 @@ if(_WINDOWS)
   set(EXTRA_LIBS ${EXTRA_LIBS} "ws2_32")
 endif()
 
-set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE Fortran)
 target_link_libraries(fistr1 fistr hecmw ${EXTRA_LIBS})
 
 install(TARGETS fistr1 DESTINATION bin CONFIGURATIONS ${CMAKE_BUILD_TYPE})
