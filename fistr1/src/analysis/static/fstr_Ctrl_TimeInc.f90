@@ -86,6 +86,7 @@ module m_fstr_TimeInc
       write(cstate,'(I4,A)') Cutback_stat,'F'
       if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
       if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
+      if( NRstatI(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
     else
       write(etime,'(1pE12.4)') current_time+time_inc
       write(cstate,'(A5)') 'S'

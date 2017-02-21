@@ -214,8 +214,10 @@ module m_fstr_solve_NLGEOM
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPR%solution_type, is_OutPoint )
 
         time_2 = hecmw_Wtime()
-        if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &
-          &  'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
+        if( hecMESH%my_rank==0 ) then
+          write(IMSG,'(A,",",2(I8,","),f10.2)') 'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
+          write(IMSG,'(A,I0,",",1pE15.8)') '### stepcount (for output), time :', step_count, fstr_get_time()
+        endif
 
         !if time reached the end time of step, exit loop.
         if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit

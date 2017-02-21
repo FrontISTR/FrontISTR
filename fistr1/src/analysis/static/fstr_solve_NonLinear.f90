@@ -370,6 +370,18 @@ module m_fstr_NonLinearMethod
 
       if( convg .and. (.not.ctchange) ) exit
 
+      ! ----- check divergence
+      if( al_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
+        if( hecMESH%my_rank == 0) then
+          write(ILOG,'(a,i5,a,i5)') '### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        fstrSOLID%NRstat_i(knstCITER) = al_step                              ! logging contact iteration
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        fstrSOLID%NRstat_i(knstDRESN) = 3
+        return
+      end if
+
     enddo
     ! ----- end of augmentation loop
 
@@ -660,7 +672,18 @@ module m_fstr_NonLinearMethod
         endif
         call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
       endif
-      if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) exit loopFORcontactAnalysis
+
+      ! ----- check divergence
+      if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
+        if( hecMESH%my_rank == 0) then
+          write(ILOG,'(a,i5,a,i5)') '### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        fstrSOLID%NRstat_i(knstDRESN) = 3
+        return
+      end if
 
     ENDDO loopFORcontactAnalysis
 
