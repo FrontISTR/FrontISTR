@@ -280,15 +280,21 @@ contains
                                   + fstrDYNAMIC%DISP(j,3))
         fstrDYNAMIC%VEL (j,1) = a2*(hecMAT%X(j) - fstrDYNAMIC%DISP(j,3))
 
+        fstrSOLID%unode(j)  = fstrDYNAMIC%DISP(j,1)
+        fstrSOLID%dunode(j)  = hecMAT%X(j)-fstrDYNAMIC%DISP(j,1)
+
         fstrDYNAMIC%DISP(j,3) = fstrDYNAMIC%DISP(j,1)
         fstrDYNAMIC%DISP(j,1) = hecMAT%X(j)
 
-        fstrSOLID%unode(j)  = fstrDYNAMIC%DISP(j,3)
-        hecMAT%X(j) = fstrDYNAMIC%DISP(j,1)-fstrDYNAMIC%DISP(j,3)
       end do
 
 ! ----- update strain, stress, and internal force
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,1 )
+
+      do j = 1 ,ndof*nnod
+        fstrSOLID%unode(j)  = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
+      end do
+      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
       if( fstrDYNAMIC%restart_nout > 0 .and. &
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
@@ -298,8 +304,6 @@ contains
 !C-- output new displacement, velocity and accelaration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
-
-      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
     enddo
 
