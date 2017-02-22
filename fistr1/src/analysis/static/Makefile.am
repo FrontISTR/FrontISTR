@@ -93,12 +93,10 @@ OBJSF = \
         static_make_result.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
-        static_mat_ass_main.@f90objfilepostfix@ \
         fstr_mat_con_contact.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
         fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
-        static_mat_ass.@f90objfilepostfix@ \
         fstr_mat_resid_contact.@f90objfilepostfix@ \
         sparse_matrix_contact.@f90objfilepostfix@ \
         solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
