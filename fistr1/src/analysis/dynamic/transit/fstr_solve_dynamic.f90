@@ -176,7 +176,7 @@ contains
         endif
         if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
-                 call fstr_solve_dynamic_implicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
+                 call fstr_solve_dynamic_nlimplicit(1,hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then
@@ -190,7 +190,7 @@ contains
 
         else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
              if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
-                call fstr_solve_dynamic_explicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
+                call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, restrt_step_num )
              else if(fstrDYNAMIC%idx_resp == 2) then

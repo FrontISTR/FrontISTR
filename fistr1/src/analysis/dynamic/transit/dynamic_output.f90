@@ -33,23 +33,6 @@ module m_dynamic_output
     else
       idx = 1
     endif
-    if( .not. fstrPARAM%nlgeom ) then
-      do i = 1, hecMESH%n_node
-        do j = 1, ndof
-          fstrSOLID%unode(ndof*(i-1)+j) = fstrDYNAMIC%DISP(ndof*(i-1)+j,idx)
-        enddo
-      enddo
-      if( ndof==3 ) then
-        call fstr_Update3D( hecMESH, fstrSOLID )
-      else if( ndof==2 ) then
-        call fstr_Update2D( hecMESH, fstrSOLID )
-      else if( ndof== 4) then
-        write(*,*)'Error: This routine is not implemented'
-        stop
-      else if( ndof==6) then
-        call fstr_Update6D( hecMESH, fstrSOLID )
-      endif
-    endif
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
