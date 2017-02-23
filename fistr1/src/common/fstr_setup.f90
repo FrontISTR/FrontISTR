@@ -1023,6 +1023,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
         endif
+        call free_stepInfo( fstrSOLID%step_ctrl_restart )
         if( associated(fstrSOLID%step_ctrl) ) then
           do i=1,size(fstrSOLID%step_ctrl)
             call free_stepInfo( fstrSOLID%step_ctrl(i) )

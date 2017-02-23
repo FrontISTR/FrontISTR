@@ -40,7 +40,7 @@ module m_fstr_solve_NLGEOM
 
     integer(kind=kint) :: ndof, nn
 
-    integer(kind=kint) :: j, tot_step, step_count
+    integer(kind=kint) :: j, tot_step, step_count, tot_step_print
     integer(kind=kint) :: sub_step
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
@@ -73,8 +73,8 @@ module m_fstr_solve_NLGEOM
       hecMAT%Iarray(98) = 1
       call fstr_set_time( ctime )
       call fstr_set_timeinc_base( dtime )
+      fstrSOLID%restart_nout = - fstrSOLID%restart_nout
     else
-      if( fstrSOLID%restart_nout == 0 ) fstrSOLID%restart_nout = 999999999
       call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPR%solution_type, .true. )
     endif
 
@@ -82,9 +82,10 @@ module m_fstr_solve_NLGEOM
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
-    do tot_step=restart_step_num, fstrSOLID%nstep_tot
+    do tot_step=1, fstrSOLID%nstep_tot
+      tot_step_print = tot_step+restart_step_num-1
       if(hecMESH%my_rank==0) write(*,*) ''
-      if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
+      if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step_print
 
       if( fstrSOLID%TEMP_ngrp_tot>0 ) then
         do j=1, hecMESH%n_node
@@ -145,7 +146,8 @@ module m_fstr_solve_NLGEOM
 
         ! ------- Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
-            tot_step, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+            &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
+            &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -179,7 +181,7 @@ module m_fstr_solve_NLGEOM
             if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
               if( hecMESH%my_rank == 0 ) then
                 write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
-                  & tot_step, '  time=', fstr_get_time()
+                  & tot_step_print, '  time=', fstr_get_time()
               end if
               call hecmw_abort( hecmw_comm_get_comm())
             end if
@@ -187,7 +189,7 @@ module m_fstr_solve_NLGEOM
             ! output time
             time_2 = hecmw_Wtime()
             if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &
-              &  'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
+              &  'step, substep, solve (sec) :', tot_step_print, sub_step, time_2 - time_1
             cycle
           endif
         else
@@ -198,12 +200,9 @@ module m_fstr_solve_NLGEOM
         step_count = step_count + 1
 
         ! ----- Restart
-        if( fstrSOLID%restart_nout < 0 ) then
-          fstrSOLID%restart_nout = - fstrSOLID%restart_nout
-        end if
-        if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-          call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
-               &  hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+        if( fstrSOLID%restart_nout > 0 .and. mod(step_count,fstrSOLID%restart_nout) == 0 ) then
+          call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
+          &  fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
         end if
 
         ! ----- Result output (include visualize output)
@@ -213,7 +212,7 @@ module m_fstr_solve_NLGEOM
 
         time_2 = hecmw_Wtime()
         if( hecMESH%my_rank==0 ) then
-          write(IMSG,'(A,",",2(I8,","),f10.2)') 'step, substep, solve (sec) :', tot_step, sub_step, time_2 - time_1
+          write(IMSG,'(A,",",2(I8,","),f10.2)') 'step, substep, solve (sec) :', tot_step_print, sub_step, time_2 - time_1
           write(IMSG,'(A,I0,",",1pE15.8)') '### stepcount (for output), time :', step_count, fstr_get_time()
         endif
 
@@ -223,7 +222,7 @@ module m_fstr_solve_NLGEOM
         if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
           if( hecMESH%my_rank == 0 ) then
             write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
-              & tot_step, '  time=', fstr_get_time()
+              & tot_step_print, '  time=', fstr_get_time()
           end if
           if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
           stop !stop if # of substeps reached upper bound.
@@ -233,8 +232,10 @@ module m_fstr_solve_NLGEOM
       enddo    !--- end of substep  loop
 
       ! ----- Restart at the end of step
-      call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
+      if( fstrSOLID%restart_nout > 0 ) then
+        call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
            &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
+      endif
       restart_substep_num = 1
       if( fstrSOLID%TEMP_irres > 0 ) exit
     enddo      !--- end of tot_step loop

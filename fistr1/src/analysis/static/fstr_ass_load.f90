@@ -70,9 +70,7 @@ module m_fstr_ass_load
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
-        endif
+        if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
         fval = fstrSOLID%CLOAD_ngrp_val(ig0)
@@ -144,9 +142,7 @@ module m_fstr_ass_load
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
-        endif
+        if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
         ltype = fstrSOLID%DLOAD_ngrp_LID(ig0)
         do i = 0, 6
@@ -300,9 +296,7 @@ module m_fstr_ass_load
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
           factor = fstrSOLID%factor(2)
-          if( cstep > 1 ) then
-            if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
-          endif
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
           ig = fstrSOLID%TEMP_ngrp_ID(ig0)
           fval =fstrSOLID%TEMP_ngrp_val(ig0)
           iS0 = hecMESH%node_group%grp_index(ig-1)+1

@@ -357,6 +357,7 @@ public
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
                 integer(kind=kint) :: restart_nin    !< input number of restart
+                type(step_info)    :: step_ctrl_restart  !< step information for restart
 
                 integer(kind=kint) :: max_lyr        !< maximun num of layer
                 integer(kind=kint) :: is_33shell
@@ -1042,9 +1043,13 @@ end subroutine fstr_param_init
           integer, intent(in) :: nbc    !< group id of boundary condition
           integer, intent(in) :: cstep  !< current step number
           fstr_isLoadActive = .true.
-          if( .not. associated(fstrSOLID%step_ctrl) ) return
-          if( cstep>fstrSOLID%nstep_tot ) return
-          fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
+          if( cstep > 0 ) then
+            if( .not. associated(fstrSOLID%step_ctrl) ) return
+            if( cstep>fstrSOLID%nstep_tot ) return
+            fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
+          else
+            fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl_restart )
+          endif
         end function
 
         logical function fstr_isContactActive( fstrSOLID, nbc, cstep )

@@ -26,7 +26,7 @@ module m_fstr_Restart
       type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
-      integer :: i,j,restrt_step(3),nif(2),istat(1)
+      integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1)
       real(kind=kreal) :: times(3)
 
       call hecmw_restart_open()
@@ -41,6 +41,12 @@ module m_fstr_Restart
       else
         write(*,*) 'Reading restart file as old format(<ver5.0)'
       endif
+      call hecmw_restart_read_int(nload_prev) !load info at previous step
+      if( nload_prev(1)>0 ) then
+        allocate(fstrSOLID%step_ctrl_restart%Load(nload_prev(1)))
+        call hecmw_restart_read_int(fstrSOLID%step_ctrl_restart%Load)
+      endif
+
       call hecmw_restart_read_real(fstrSOLID%unode)
       call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
@@ -84,6 +90,9 @@ module m_fstr_Restart
           cstep = cstep + 1
           substep = 1
         endif
+        do i=1,size(fstrSOLID%step_ctrl)  !shift start time
+          fstrSOLID%step_ctrl(i)%starttime = fstrSOLID%step_ctrl(i)%starttime + times(3)
+        end do
       else
         ctime = fstrSOLID%step_ctrl(cstep)%starttime
         ctime = ctime + dble(substep-1)*fstrSOLID%step_ctrl(cstep)%initdt
@@ -98,10 +107,11 @@ module m_fstr_Restart
 
 !> write out restart file
 !----------------------------------------------------------------------*
-      subroutine fstr_write_restart(cstep,substep,step_count,ctime,dtime,hecMESH,  &
+      subroutine fstr_write_restart(cstep,cstep_ext,substep,step_count,ctime,dtime,hecMESH,  &
                                      &  fstrSOLID,fstrPARAM,is_StepFinished,contactNode)
 !----------------------------------------------------------------------*
-      integer, intent(in)                   :: cstep      !< current step
+      integer, intent(in)                   :: cstep       !< current step (internal step id)
+      integer, intent(in)                   :: cstep_ext   !< current step (external step id)
       integer, intent(in)                   :: substep    !< current sub step
       integer, intent(in)                   :: step_count !< current through step
       real(kind=kreal), intent(in)          :: ctime       !< current time
@@ -112,10 +122,10 @@ module m_fstr_Restart
       type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
-      integer :: i,j,restrt_step(3),nif(2),istat(1)
+      integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1)
       real(kind=kreal) :: times(3)
 
-      restrt_step(1) = cstep
+      restrt_step(1) = cstep_ext
       restrt_step(2) = substep
 	  restrt_step(3) = step_count
       times(1) = ctime
@@ -133,6 +143,23 @@ module m_fstr_Restart
         call hecmw_restart_add_real(fstrSOLID%NRstat_r,size(fstrSOLID%NRstat_r))
         call hecmw_restart_add_int(istat,1)
       endif
+      nload_prev(1) = 0
+      if( is_StepFinished ) then
+        if( associated(fstrSOLID%step_ctrl(cstep)%Load) ) nload_prev(1) = size(fstrSOLID%step_ctrl(cstep)%Load)
+        call hecmw_restart_add_int(nload_prev,1)
+        if( nload_prev(1)>0 ) call hecmw_restart_add_int(fstrSOLID%step_ctrl(cstep)%Load,nload_prev(1))
+      else
+        if( cstep>1 ) then
+          if( associated(fstrSOLID%step_ctrl(cstep-1)%Load) ) nload_prev(1) = size(fstrSOLID%step_ctrl(cstep-1)%Load)
+          call hecmw_restart_add_int(nload_prev,1)
+          if( nload_prev(1)>0 ) call hecmw_restart_add_int(fstrSOLID%step_ctrl(cstep-1)%Load,nload_prev(1))
+        else
+          if( associated(fstrSOLID%step_ctrl_restart%Load) ) nload_prev(1) = size(fstrSOLID%step_ctrl_restart%Load)
+          call hecmw_restart_add_int(nload_prev,1)
+          if( nload_prev(1)>0 ) call hecmw_restart_add_int(fstrSOLID%step_ctrl_restart%Load,nload_prev(1))
+        endif
+      end if
+
       call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
       call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
