@@ -68,12 +68,8 @@ module m_fstr_solve_NLGEOM
     infoCTChange%contactNode_previous = 0
     infoCTChange%contactNode_current = 0
     if( fstrSOLID%restart_nout < 0 ) then
-      if( .not. associated( fstrSOLID%contacts ) ) then
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM)
-      else
-        call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM, &
-          infoCTChange%contactNode_previous)
-      endif
+      call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID, &
+                             fstrPARAM,infoCTChange%contactNode_previous)
       hecMAT%Iarray(98) = 1
       call fstr_set_time( ctime )
       call fstr_set_timeinc_base( dtime )
@@ -206,13 +202,8 @@ module m_fstr_solve_NLGEOM
           fstrSOLID%restart_nout = - fstrSOLID%restart_nout
         end if
         if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-          if( .not. associated( fstrSOLID%contacts ) ) then
-            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
-                 &  hecMESH,fstrSOLID,fstrPARAM )
-          else
-            call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
-                 &  hecMESH,fstrSOLID,fstrPARAM, infoCTChange%contactNode_current)
-          endif
+          call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
+               &  hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
         end if
 
         ! ----- Result output (include visualize output)
@@ -241,6 +232,9 @@ module m_fstr_solve_NLGEOM
         sub_step = sub_step + 1
       enddo    !--- end of substep  loop
 
+      ! ----- Restart at the end of step
+      call fstr_write_restart(tot_step,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
+           &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
       restart_substep_num = 1
       if( fstrSOLID%TEMP_irres > 0 ) exit
     enddo      !--- end of tot_step loop

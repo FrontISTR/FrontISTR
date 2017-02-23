@@ -21,13 +21,13 @@ module m_fstr_Restart
       integer, intent(out)                  :: step_count  !< current through step
       real(kind=kreal), intent(out)         :: ctime       !< current time
       real(kind=kreal), intent(out)         :: dtime       !< current time increment
-      integer, intent(out), optional        :: contactNode !< total number of contact nodes
+      integer, intent(out)                  :: contactNode !< total number of contact nodes
       type (hecmwST_local_mesh), intent(in) :: hecMESH     !< hecmw mesh
       type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
       integer :: i,j,restrt_step(3),nif(2),istat(1)
-      real(kind=kreal) :: times(2)
+      real(kind=kreal) :: times(3)
 
       call hecmw_restart_open()
 
@@ -54,7 +54,7 @@ module m_fstr_Restart
         enddo
       enddo
 
-      if(present(contactNode)) then
+      if( associated( fstrSOLID%contacts ) ) then
         call hecmw_restart_read_int(nif)
         contactNode = nif(1)
         do i= 1, size(fstrSOLID%contacts)
@@ -80,12 +80,14 @@ module m_fstr_Restart
         ctime = times(1)
         dtime = times(2)
         fstrSOLID%AutoINC_stat = istat(1)
+        if( dabs(times(1)-times(3)) < 1.d-10 ) then
+          cstep = cstep + 1
+          substep = 1
+        endif
       else
         ctime = fstrSOLID%step_ctrl(cstep)%starttime
         ctime = ctime + dble(substep-1)*fstrSOLID%step_ctrl(cstep)%initdt
         dtime = fstrSOLID%step_ctrl(cstep)%initdt
-      endif
-      if( fstrPARAM%solution_type==kstSTATIC .and. fstrPARAM%nlgeom ) then
         if( dabs(ctime-fstrSOLID%step_ctrl(cstep)%starttime-fstrSOLID%step_ctrl(cstep)%elapsetime) < 1.d-10 ) then
           cstep = cstep + 1
           substep = 1
@@ -96,26 +98,33 @@ module m_fstr_Restart
 
 !> write out restart file
 !----------------------------------------------------------------------*
-      subroutine fstr_write_restart(cstep,substep,step_count,ctime,dtime,hecMESH,fstrSOLID,fstrPARAM,contactNode)
+      subroutine fstr_write_restart(cstep,substep,step_count,ctime,dtime,hecMESH,  &
+                                     &  fstrSOLID,fstrPARAM,is_StepFinished,contactNode)
 !----------------------------------------------------------------------*
       integer, intent(in)                   :: cstep      !< current step
       integer, intent(in)                   :: substep    !< current sub step
       integer, intent(in)                   :: step_count !< current through step
       real(kind=kreal), intent(in)          :: ctime       !< current time
       real(kind=kreal), intent(in)          :: dtime       !< current time increment
-      integer, intent(in),optional          :: contactNode!< number of contact nodes
+      logical, intent(in)                   :: is_StepFinished
+      integer, intent(in)                   :: contactNode!< number of contact nodes
       type (hecmwST_local_mesh), intent(in) :: hecMESH    !< hecmw mesh
       type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
       type(fstr_param), intent(in)          :: fstrPARAM
 
       integer :: i,j,restrt_step(3),nif(2),istat(1)
-      real(kind=kreal) :: times(2)
+      real(kind=kreal) :: times(3)
 
       restrt_step(1) = cstep
       restrt_step(2) = substep
 	  restrt_step(3) = step_count
       times(1) = ctime
       times(2) = dtime
+      if( is_StepFinished ) then
+        times(3) = ctime
+      else
+        times(3) = fstrSOLID%step_ctrl(cstep)%starttime
+      end if
       istat(1) = fstrSOLID%AutoINC_stat
       call hecmw_restart_add_int(restrt_step,size(restrt_step))
       if( fstrPARAM%restart_version >= 5 ) then
@@ -144,7 +153,7 @@ module m_fstr_Restart
         enddo
       enddo
 
-      if(present(contactNode)) then
+      if( associated( fstrSOLID%contacts ) ) then
         nif(1) = contactNode
         call hecmw_restart_add_int(nif,size(nif))
         do i= 1, size(fstrSOLID%contacts)
