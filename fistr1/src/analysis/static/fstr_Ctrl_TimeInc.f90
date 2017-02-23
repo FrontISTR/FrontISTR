@@ -60,7 +60,9 @@ module m_fstr_TimeInc
     write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
   end subroutine
 
-  subroutine fstr_TimeInc_PrintSTATUS( totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
+  subroutine fstr_TimeInc_PrintSTATUS( stepinfo, fstrPARAM, totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
+    type(step_info), intent(in)       ::  stepinfo
+    type(fstr_param), intent(in)      ::  fstrPARAM
     integer(kind=kint), intent(in)    ::  totstep
     integer(kind=kint), intent(in)    ::  substep
     integer(kind=kint), intent(in)    ::  NRstatI(:)  !previous Newton Raphson Iteration Log
@@ -87,6 +89,7 @@ module m_fstr_TimeInc
       if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
       if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
       if( NRstatI(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
+      if( Cutback_stat == fstrPARAM%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
     else
       write(etime,'(1pE12.4)') current_time+time_inc
       write(cstate,'(A5)') 'S'

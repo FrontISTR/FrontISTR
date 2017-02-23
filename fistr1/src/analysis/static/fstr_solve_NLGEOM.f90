@@ -148,8 +148,8 @@ module m_fstr_solve_NLGEOM
         endif
 
         ! ------- Time Increment
-        if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( tot_step, sub_step, fstrSOLID%NRstat_i, &
-               &               fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
+            tot_step, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -157,6 +157,13 @@ module m_fstr_solve_NLGEOM
             call fstr_proceed_time()             ! current time += time increment
 
           else                                   ! not converged
+            if( fstrSOLID%CutBack_stat == fstrPARAM%CBbound ) then
+              if( hecMESH%my_rank == 0 ) then
+                write(*,*) 'Number of successive cutback reached max number: ',fstrPARAM%CBbound
+                call fstr_TimeInc_PrintSTATUS_final(.false.)
+              endif
+              call hecmw_abort( hecmw_comm_get_comm() )
+            end if
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
 
@@ -178,7 +185,7 @@ module m_fstr_solve_NLGEOM
                 write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
                   & tot_step, '  time=', fstr_get_time()
               end if
-              stop
+              call hecmw_abort( hecmw_comm_get_comm())
             end if
 
             ! output time
