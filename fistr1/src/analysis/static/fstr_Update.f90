@@ -143,7 +143,23 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
       else if( ic_type == 361 ) then
 
-        if( fstrSOLID%elemopt361 /= 1 ) then
+        if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+          else
+            call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+          endif
+        else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+          else
+            call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+          endif
+        else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 3 )
           total_disp(1:3, 1:nn) = total_disp(1:3, 1:nn) + du(1:3, 1:nn)
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
@@ -154,14 +170,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
             call UpdateST_C3D8IC                                                                        &
                  ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
                    fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof) )
-          endif
-        else
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-            call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          else
-            call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
           endif
         endif
 

@@ -274,23 +274,30 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
     end function fstr_ctrl_get_ISTEP
 
 !> Read in !SECTION
-integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
+integer function fstr_ctrl_get_SECTION( ctrl, hecMESH, sections )
         integer(kind=kint), intent(in)           :: ctrl
         type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
+        type (tSection), pointer, intent(inout)  :: sections(:)
 
-        integer(kind=kint)            :: j, k, sect_id, ori_id
+        integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
         integer(kind=kint),SAVE       :: cache = 1
         character(len=HECMW_NAME_LEN) :: sect_orien
+        character(11) :: form361list = 'FI,BBAR,IC '
 
         fstr_ctrl_get_SECTION = -1
 
-        if( .not. associated(g_LocalCoordSys) ) return
-
         if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
         if( sect_id > hecMESH%section%n_sect ) return
-        hecMESH%section%sect_orien_ID(sect_id) = -1
-        if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  1, 'S', sect_orien )/= 0) return
 
+        elemopt = 0
+        if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
+        if( elemopt > 0 ) sections(sect_id)%elemopt361 = elemopt
+
+        ! sectional orientation ID
+        hecMESH%section%sect_orien_ID(sect_id) = -1
+        if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  0, 'S', sect_orien )/= 0) return
+
+        if( associated(g_LocalCoordSys) ) then
         k = size(g_LocalCoordSys)
 
         if(cache < k)then
@@ -309,8 +316,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
             exit
           endif
         enddo
-
-        if( hecMESH%section%sect_orien_ID(sect_id) == -1 ) return
+        endif
 
         fstr_ctrl_get_SECTION = 0
 

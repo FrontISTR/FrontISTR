@@ -66,6 +66,12 @@ public
         ! restart type
         integer(kind=kint),parameter :: restart_outLast = 1
         integer(kind=kint),parameter :: restart_outAll  = 2
+
+        ! section control
+        integer(kind=kint),parameter :: kel361FI     =  1
+        integer(kind=kint),parameter :: kel361BBAR   =  2
+        integer(kind=kint),parameter :: kel361IC     =  3
+
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -357,6 +363,7 @@ public
                 type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
+                type(tSection), pointer   :: sections(:)   =>null()  !< definition of setion referred by elements(i)%sectionID
 !
         end type fstr_solid
 !
@@ -561,6 +568,22 @@ public
         real(kind=kreal)     :: distol
         real(kind=kreal)     :: tstart
     end type tWeldLine
+
+!C ----------------------------------------------------------------------------
+!> Data for section control
+!C
+    type tSection
+        !integer              :: mat_ID
+        !integer              :: iset
+        !integer              :: orien_ID
+        !real(kind=kreal)     :: thickness
+        !integer              :: elemopt341
+        !integer              :: elemopt342
+        !integer              :: elemopt351
+        !integer              :: elemopt352
+        integer              :: elemopt361
+        !integer              :: elemopt362
+    end type tSection
 
 !C ----------------------------------------------------------------------------
 !C-- GROBAL VARIABLES for MEMORY MANAGEMENT or TIME RECORDING

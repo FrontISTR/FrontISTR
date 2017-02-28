@@ -349,6 +349,25 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            enddo
          endif
 
+        ! for section control
+        allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+        do i=1,hecMESH%section%n_sect
+          ! set default 361 element formulation
+          if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
+            if( p%PARAM%nlgeom ) then
+              fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+            else
+              fstrSOLID%sections(i)%elemopt361 = kel361IC
+            end if
+          else if( p%PARAM%solution_type==kstEIGEN ) then
+            fstrSOLID%sections(i)%elemopt361 = kel361IC
+          else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
+            fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+          else
+            fstrSOLID%sections(i)%elemopt361 = kel361FI
+          end if
+        enddo
+
          allocate( fstrSOLID%output_ctrl( 4 ) )
          call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
          fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
@@ -440,7 +459,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
           else if( header_name == '!SECTION'  ) then
             c_section = c_section+1
-            if( fstr_ctrl_get_SECTION( ctrl, hecMESH )/=0 ) then
+            if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
                 write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
                 write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
                 stop
@@ -984,6 +1003,9 @@ subroutine fstr_solid_finalize( fstrSOLID )
                 close(fstrSOLID%output_ctrl(i)%filenum)
            enddo
            deallocate(fstrSOLID%output_ctrl)
+        endif
+        if( associated( fstrSOLID%sections ) ) then
+          deallocate( fstrSOLID%sections )
         endif
 
         if( associated(fstrSOLID%GL) ) then
