@@ -40,7 +40,7 @@ module m_fstr_solve_NLGEOM
 
     integer(kind=kint) :: ndof, nn
 
-    integer(kind=kint) :: j, tot_step, step_count, tot_step_print
+    integer(kind=kint) :: j, tot_step, step_count, tot_step_print, CBbound
     integer(kind=kint) :: sub_step
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
@@ -155,9 +155,10 @@ module m_fstr_solve_NLGEOM
             call fstr_proceed_time()             ! current time += time increment
 
           else                                   ! not converged
-            if( fstrSOLID%CutBack_stat == fstrPARAM%CBbound ) then
+            CBbound = fstrPARAM%ainc(fstrSOLID%step_ctrl(tot_step)%AincParam_id)%CBbound
+            if( fstrSOLID%CutBack_stat == CBbound ) then
               if( hecMESH%my_rank == 0 ) then
-                write(*,*) 'Number of successive cutback reached max number: ',fstrPARAM%CBbound
+                write(*,*) 'Number of successive cutback reached max number: ',CBbound
                 call fstr_TimeInc_PrintSTATUS_final(.false.)
               endif
               call hecmw_abort( hecmw_comm_get_comm() )

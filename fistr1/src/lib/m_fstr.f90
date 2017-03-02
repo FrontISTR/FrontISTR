@@ -68,12 +68,6 @@ public
         integer(kind=kint),parameter :: restart_outLast = 1
         integer(kind=kint),parameter :: restart_outAll  = 2
 
-        ! statistics of newton iteration
-        integer(kind=kint),parameter :: knstMAXIT  = 1 ! maximum number of newton iteration
-        integer(kind=kint),parameter :: knstSUMIT  = 2 ! total number of newton iteration
-        integer(kind=kint),parameter :: knstCITER  = 3 ! number of contact iteration
-        integer(kind=kint),parameter :: knstDRESN  = 4 ! reason of not to converged
-
         ! section control
         integer(kind=kint),parameter :: kel361FI     =  1
         integer(kind=kint),parameter :: kel361BBAR   =  2
@@ -195,14 +189,7 @@ public
                 integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
 
                 ! for auto increment and cutback
-                real(kind=kreal)     :: ainc_Rs            !< time increment decreasing ratio
-                real(kind=kreal)     :: ainc_Rl            !< time increment increasing ratio
-                integer( kind=kint ) :: NRbound_s(10)      !< # of NR iteration bound to decrease time increment
-                integer( kind=kint ) :: NRbound_l(10)      !< # of NR iteration bound to increase time increment
-                integer( kind=kint ) :: NRtimes_s          !< # of times that decreasing condition is satisfied
-                integer( kind=kint ) :: NRtimes_l          !< # of times that increasing condition is satisfied
-                real(kind=kreal)     :: ainc_Rc            !< time increment decreasing ratio for cutback
-                integer( kind=kint ) :: CBbound            !< maximum # of successive cutback
+                type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
                 type(time_points), pointer :: timepoints(:)  !< time points data
 !
         end type fstr_param
@@ -997,22 +984,6 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
 
         ! for restart control
         fstrPARAM%restart_version = 5
-
-        ! for auto increment and cutback
-        fstrPARAM%ainc_Rs   = 0.25d0
-        fstrPARAM%ainc_Rl   = 1.25d0
-        fstrPARAM%NRbound_s = 0
-        fstrPARAM%NRbound_s(knstMAXIT) = 10
-        fstrPARAM%NRbound_s(knstSUMIT) = 50
-        fstrPARAM%NRbound_s(knstCITER) = 10
-        fstrPARAM%NRbound_l = 0
-        fstrPARAM%NRbound_l(knstMAXIT) = 1
-        fstrPARAM%NRbound_l(knstSUMIT) = 1
-        fstrPARAM%NRbound_l(knstCITER) = 1
-        fstrPARAM%NRtimes_s = 1
-        fstrPARAM%NRtimes_l = 2
-        fstrPARAM%ainc_Rc   = 0.25d0
-        fstrPARAM%CBbound   = 5
 
         ! index table for global node ID sorting
 

@@ -6,6 +6,7 @@
 
 module m_fstr_TimeInc
   use m_fstr
+  use m_step
   use m_timepoint
 
   implicit none
@@ -74,6 +75,9 @@ module m_fstr_TimeInc
     character(len=7) :: cmaxn, ctotn
     character(len=12) :: ctime, cdtime, etime
     character(len=40) :: message
+    type(tParamAutoInc) :: pAinc
+
+    pAinc = fstrPARAM%ainc(stepinfo%AincParam_id)
 
     write(cstep,'(I5)') totstep
     write(csstep,'(I5)') substep
@@ -89,7 +93,7 @@ module m_fstr_TimeInc
       if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
       if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
       if( NRstatI(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
-      if( Cutback_stat == fstrPARAM%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
+      if( Cutback_stat == pAinc%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
     else
       write(etime,'(1pE12.4)') current_time+time_inc
       write(cstate,'(A5)') 'S'
@@ -148,12 +152,15 @@ module m_fstr_TimeInc
     real(kind=kreal) :: timeinc0
     real(kind=kreal) :: endtime, remain
     logical          :: to_be_decreased, to_be_increased
+    type(tParamAutoInc) :: pAinc
+
+    pAinc = fstrPARAM%ainc(stepinfo%AincParam_id)
 
     if( stepinfo%inc_type == stepFixedInc ) then
       timeinc0 = stepinfo%initdt
     else ! INCTYPE==AUTO
       if( Cutback_stat > 0 ) then
-        timeinc0 = fstrPARAM%ainc_Rc*time_inc_base
+        timeinc0 = pAinc%ainc_Rc*time_inc_base
         if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         AutoINC_stat = -1
       else
@@ -165,15 +172,15 @@ module m_fstr_TimeInc
 
           !decrease condition
           to_be_decreased = .false.
-          if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
-          if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
-          if( NRstatI(knstCITER) > fstrPARAM%NRbound_s(knstCITER) ) to_be_decreased = .true.
+          if( NRstatI(knstMAXIT) > pAinc%NRbound_s(knstMAXIT) ) to_be_decreased = .true.
+          if( NRstatI(knstSUMIT) > pAinc%NRbound_s(knstSUMIT) ) to_be_decreased = .true.
+          if( NRstatI(knstCITER) > pAinc%NRbound_s(knstCITER) ) to_be_decreased = .true.
 
           !increase condition
           to_be_increased = .true.
-          if( NRstatI(knstMAXIT) > fstrPARAM%NRbound_l(knstMAXIT) ) to_be_increased = .false.
-          if( NRstatI(knstSUMIT) > fstrPARAM%NRbound_l(knstSUMIT) ) to_be_increased = .false.
-          if( NRstatI(knstCITER) > fstrPARAM%NRbound_l(knstCITER) ) to_be_increased = .false.
+          if( NRstatI(knstMAXIT) > pAinc%NRbound_l(knstMAXIT) ) to_be_increased = .false.
+          if( NRstatI(knstSUMIT) > pAinc%NRbound_l(knstSUMIT) ) to_be_increased = .false.
+          if( NRstatI(knstCITER) > pAinc%NRbound_l(knstCITER) ) to_be_increased = .false.
 
           ! count # of times that increase/decrease condition has been satisfied
           ! AutoINC_stat < 0 ... decrease condition has been satisfied -AutoINC_stat times
@@ -186,11 +193,11 @@ module m_fstr_TimeInc
             AutoINC_stat = 0
           end if
 
-          if( AutoINC_stat <= -fstrPARAM%NRtimes_s ) then
-            timeinc0 = fstrPARAM%ainc_Rs*timeinc0
+          if( AutoINC_stat <= -pAinc%NRtimes_s ) then
+            timeinc0 = pAinc%ainc_Rs*timeinc0
             if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
-          else if( AutoINC_stat >= fstrPARAM%NRtimes_l ) then
-            timeinc0 = dmin1(fstrPARAM%ainc_Rl*timeinc0,stepinfo%maxdt)
+          else if( AutoINC_stat >= pAinc%NRtimes_l ) then
+            timeinc0 = dmin1(pAinc%ainc_Rl*timeinc0,stepinfo%maxdt)
             if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is increased from ', time_inc_base, ' to ', timeinc0
           end if
         end if

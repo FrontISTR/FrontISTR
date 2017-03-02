@@ -183,13 +183,14 @@ function fstr_ctrl_get_STEP( ctrl, amp, iproc )
 end function fstr_ctrl_get_STEP
 
 !> Read in !STEP and !ISTEP
-logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname )
+logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname, apname )
         use fstr_setup_util
         use m_step
         integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
         type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
         type(step_info), intent(out)          :: steps     !< step control info
         character(len=*), intent(out)         :: tpname    !< name of timepoints
+        character(len=*), intent(out)         :: apname    !< name of auto increment parameter
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss, data_fmt1
         character(len=HECMW_NAME_LEN) :: amp
@@ -224,6 +225,8 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname )
         endif
         tpname=""
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
+        apname=""
+        if( fstr_ctrl_get_param_ex( ctrl, 'AUTOINCPARAM ',  '# ',  0, 'S', apname )/= 0) return
 
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) then
@@ -554,6 +557,85 @@ function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
         fstr_ctrl_get_ELEMOPT = 0
 
 end function fstr_ctrl_get_ELEMOPT
+
+
+!> Read in !AUTOINC_PARAM                                                             !
+function fstr_get_AUTOINC( ctrl, aincparam )
+        implicit none
+        integer(kind=kint)    :: ctrl
+        type( tParamAutoInc ) :: aincparam !< auto increment paramter
+        integer(kind=kint) :: fstr_get_AUTOINC
+
+        integer(kind=kint) :: rcode
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        character(len=128) :: msg
+        integer(kind=kint) :: bound_s(10), bound_l(10)
+        real(kind=kreal) :: Rs, Rl
+
+        fstr_get_AUTOINC = -1
+
+        bound_s(:) = 0
+        bound_l(:) = 0
+
+        !parameters
+        aincparam%name = ''
+        if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', aincparam%name ) /=0 ) return
+
+        !read first line ( decrease criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, Rs, &
+          &  bound_s(1), bound_s(2), bound_s(3), aincparam%NRtimes_s )
+        if( rcode /= 0 ) return
+        aincparam%ainc_Rs = Rs
+        aincparam%NRbound_s(knstMAXIT) = bound_s(1)
+        aincparam%NRbound_s(knstSUMIT) = bound_s(2)
+        aincparam%NRbound_s(knstCITER) = bound_s(3)
+
+        !read second line ( increase criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, Rl, &
+          &  bound_l(1), bound_l(2), bound_l(3), aincparam%NRtimes_l )
+        if( rcode /= 0 ) return
+        aincparam%ainc_Rl = Rl
+        aincparam%NRbound_l(knstMAXIT) = bound_l(1)
+        aincparam%NRbound_l(knstSUMIT) = bound_l(2)
+        aincparam%NRbound_l(knstCITER) = bound_l(3)
+
+        !read third line ( cutback criteria )
+        data_fmt = 'ri '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 3, data_fmt, &
+          &  aincparam%ainc_Rc, aincparam%CBbound )
+        if( rcode /= 0 ) return
+
+        !input check
+        rcode = 1
+        if( Rs<0.d0 .or. Rs>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
+        else if( any(bound_s<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
+        else if( aincparam%NRtimes_s < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
+        else if( Rl<1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
+        else if( any(bound_l<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
+        else if( aincparam%NRtimes_l < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+        elseif( aincparam%ainc_Rc<0.d0 .or. aincparam%ainc_Rc>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
+        else if( aincparam%CBbound < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
+        else
+          rcode =0
+        end if
+        if( rcode /= 0 ) then
+          write(*,*) trim(msg)
+          write(ILOG,*) trim(msg)
+          return
+        endif
+
+        fstr_get_AUTOINC = 0
+end function fstr_get_AUTOINC
 
 !> Read in !TIME_POINTS
 function fstr_ctrl_get_TIMEPOINTS( ctrl, tp )

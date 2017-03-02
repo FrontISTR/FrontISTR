@@ -73,7 +73,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
         type(tshellmat),pointer :: shmat(:)
-        character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
+        character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
         ! counters
         integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
@@ -85,7 +85,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
-        integer(kind=kint) :: c_elemopt, c_timepoints
+        integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -114,7 +114,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
         c_elemopt  = 0;
-        c_timepoints = 0
+        c_aincparam= 0; c_timepoints = 0
 
         ctrl_list = 0
         ictrl = 1
@@ -161,7 +161,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 else if( header_name == '!ORIENTATION' ) then
                         c_localcoord = c_localcoord + 1
                 else if( header_name == '!AUTOINC_PARAM' ) then
-                        call fstr_setup_AUTOINC( ctrl, P )
+                        c_aincparam = c_aincparam + 1
                 else if( header_name == '!TIME_POINTS' ) then
                         c_timepoints = c_timepoints + 1
 
@@ -304,6 +304,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
+        allocate( fstrPARAM%ainc(0:c_aincparam) )
+        do i=0,c_aincparam
+          call init_AincParam( fstrPARAM%ainc(i) )
+        end do
         if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
 
         P%SOLID%is_33shell = 0
@@ -393,6 +397,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_section = 0
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
+        c_aincparam = 0
         c_timepoints = 0
         fstrSOLID%elemopt361 = 0
         fstrSOLID%AutoINC_stat = 0
@@ -447,7 +452,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
           else if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
@@ -459,9 +464,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 endif
               enddo
             endif
+            if( associated(fstrPARAM%ainc) ) then
+              do i=1,size(fstrPARAM%ainc)
+                if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+                endif
+              enddo
+            endif
           else if( header_name == '!STEP' .and. version>=1 ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
@@ -470,6 +482,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               do i=1,size(fstrPARAM%timepoints)
                 if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
                   fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+                endif
+              enddo
+            endif
+            if( associated(fstrPARAM%ainc) ) then
+              do i=1,size(fstrPARAM%ainc)-1
+                if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
                 endif
               enddo
             endif
@@ -685,6 +704,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                    fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = i; exit
                  endif
                enddo
+            endif
+          else if( header_name == '!AUTOINC_PARAM' ) then
+            c_aincparam = c_aincparam + 1
+            if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
+                write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
+                write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
+                stop
             endif
           else if( header_name == '!TIME_POINTS'  ) then
             c_timepoints = c_timepoints + 1
@@ -1585,80 +1611,6 @@ subroutine fstr_setup_STEP( ctrl, counter, P )
     !    P%SOLID%NLSTATIC_ngrp_amp = amp_id;
 
 end subroutine fstr_setup_STEP
-
-
-!-----------------------------------------------------------------------------!
-!> Read in !AUTOINC_PARAM                                                             !
-!-----------------------------------------------------------------------------!
-
-subroutine fstr_setup_AUTOINC( ctrl, P )
-        implicit none
-        integer(kind=kint) :: ctrl
-        type(fstr_param_pack) :: P
-
-        integer(kind=kint) :: rcode
-        character(len=HECMW_NAME_LEN) :: data_fmt
-        character(len=128) :: msg
-        integer(kind=kint) :: bound_s(10), bound_l(10)
-        real(kind=kreal) :: Rs, Rl
-
-        bound_s(:) = 0
-        bound_l(:) = 0
-
-        !read first line ( decrease criteria )
-        data_fmt = 'riiii '
-        rcode = fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, Rs, &
-          &  bound_s(1), bound_s(2), bound_s(3), P%PARAM%NRtimes_s )
-        if( rcode /= 0 ) call fstr_ctrl_err_stop
-        P%PARAM%ainc_Rs = Rs
-        P%PARAM%NRbound_s(knstMAXIT) = bound_s(1)
-        P%PARAM%NRbound_s(knstSUMIT) = bound_s(2)
-        P%PARAM%NRbound_s(knstCITER) = bound_s(3)
-
-        !read second line ( increase criteria )
-        data_fmt = 'riiii '
-        rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, Rl, &
-          &  bound_l(1), bound_l(2), bound_l(3), P%PARAM%NRtimes_l )
-        if( rcode /= 0 ) call fstr_ctrl_err_stop
-        P%PARAM%ainc_Rl = Rl
-        P%PARAM%NRbound_l(knstMAXIT) = bound_l(1)
-        P%PARAM%NRbound_l(knstSUMIT) = bound_l(2)
-        P%PARAM%NRbound_l(knstCITER) = bound_l(3)
-
-        !read third line ( cutback criteria )
-        data_fmt = 'ri '
-        rcode = fstr_ctrl_get_data_ex( ctrl, 3, data_fmt, &
-          &  P%PARAM%ainc_Rc, P%PARAM%CBbound )
-        if( rcode /= 0 ) call fstr_ctrl_err_stop
-
-        !input check
-        rcode = 1
-        if( Rs<0.d0 .or. Rs>1.d0 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
-        else if( any(bound_s<0) ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
-        else if( P%PARAM%NRtimes_s < 1 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
-        else if( Rl<1.d0 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
-        else if( any(bound_l<0) ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
-        else if( P%PARAM%NRtimes_l < 1 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
-        elseif( P%PARAM%ainc_Rc<0.d0 .or. P%PARAM%ainc_Rc>1.d0 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
-        else if( P%PARAM%CBbound < 1 ) then
-          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
-        else
-          rcode =0
-        end if
-        if( rcode /= 0 ) then
-          write(*,*) trim(msg)
-          write(ILOG,*) trim(msg)
-          call fstr_ctrl_err_stop
-        endif
-
-end subroutine fstr_setup_AUTOINC
 
 
 !-----------------------------------------------------------------------------!
