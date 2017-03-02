@@ -212,7 +212,7 @@ module m_fstr_NonLinearMethod
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
-    if( cstep == restart_step_num .and. sub_step == restart_substep_num ) then
+    if( cstep == 1 .and. sub_step == restart_substep_num ) then
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       if(hecMESH%my_rank==0) write(*,*)
@@ -452,7 +452,7 @@ module m_fstr_NonLinearMethod
 
     fstrSOLID%dunode(:)  = 0.0d0
 
-    if( cstep==restart_step_num.and.sub_step==restart_substep_num  ) then
+    if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       if(paraContactFlag.and.present(conMAT)) then
