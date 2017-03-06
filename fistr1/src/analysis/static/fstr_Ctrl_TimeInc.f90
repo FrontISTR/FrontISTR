@@ -160,7 +160,7 @@ module m_fstr_TimeInc
       timeinc0 = stepinfo%initdt
     else ! INCTYPE==AUTO
       if( Cutback_stat > 0 ) then
-        timeinc0 = pAinc%ainc_Rc*time_inc_base
+        timeinc0 = pAinc%ainc_Rc*time_inc
         if(myrank == 0) write(*,'(2(A,E10.3))') 'time increment is decreased from ', time_inc_base, ' to ', timeinc0
         AutoINC_stat = -1
       else
