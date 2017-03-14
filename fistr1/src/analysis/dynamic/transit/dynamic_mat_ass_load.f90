@@ -1,28 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Dynamic Transit Analysis                          !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Tomotaka Ogasawara (Univ. of Tokyo)            !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
-!C================================================================C
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module contains function to set boundary condition of external load in dynamic analysis
-!C================================================================C
 
 module m_dynamic_mat_ass_load
-
     contains
-
 
 !C
 !C***
@@ -35,6 +18,8 @@ module m_dynamic_mat_ass_load
       use m_static_lib
       use m_fstr_precheck
       use m_table_dyn
+      use m_common_struct
+      use m_utilities
 
       implicit none
       type (hecmwST_matrix)     :: hecMAT
@@ -58,11 +43,19 @@ module m_dynamic_mat_ass_load
       integer(kind=kint) :: flag_u, ierror
       real(kind=kreal) :: f_t
 
+      !for torque load
+      integer(kind=kint) :: n_rot, rid, n_nodes, idof
+      type(tRotInfo) :: rinfo
+      real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
+      
       ndof = hecMAT%NDOF
       hecMAT%B(:) = 0.0d0
 !C
 !C CLOAD
 !C
+      n_rot = fstrSOLID%CLOAD_ngrp_rot
+      if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
+      
       do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
         ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
@@ -74,11 +67,65 @@ module m_dynamic_mat_ass_load
 
         iS0= hecMESH%node_group%grp_index(ig-1)+1
         iE0= hecMESH%node_group%grp_index(ig  )
+        
+        if( fstrSOLID%CLOAD_ngrp_rotID(ig0) > 0 ) then ! setup torque load information
+          rid = fstrSOLID%CLOAD_ngrp_rotID(ig0)
+          if( .not. rinfo%conds(rid)%active ) then
+            rinfo%conds(rid)%active = .true.
+            rinfo%conds(rid)%center_ngrp_id = fstrSOLID%CLOAD_ngrp_centerID(ig0)
+            rinfo%conds(rid)%torque_ngrp_id = ig
+          endif
+          if( ityp>ndof ) ityp = ityp-ndof
+          rinfo%conds(rid)%vec(ityp) = val
+          cycle
+        endif
+        
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           hecMAT%B( ndof*(in-1)+ityp ) = hecMAT%B( ndof*(in-1)+ityp )+val
         enddo
       enddo
+
+      !Add torque load to hecMAT%B
+      do rid = 1, n_rot
+        if( .not. rinfo%conds(rid)%active ) cycle
+        !get number of slave nodes
+        n_nodes = hecmw_ngrp_get_number(hecMESH, rinfo%conds(rid)%torque_ngrp_id)
+        
+        !get center node
+        ig = rinfo%conds(rid)%center_ngrp_id
+        do idof = 1, ndof
+          ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+          cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
+        enddo
+        ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof) 
+        
+        tval = dsqrt(dot_product(rinfo%conds(rid)%vec(1:ndof),rinfo%conds(rid)%vec(1:ndof)))
+        if( tval < 1.d-16 ) then
+          write(*,*) '###ERROR### : norm of torque vector must be > 0.0'
+          call hecmw_abort( hecmw_comm_get_comm() )
+        endif
+        normal(1:ndof) = rinfo%conds(rid)%vec(1:ndof)/tval
+        tval = tval/dble(n_nodes)
+        
+        ig = rinfo%conds(rid)%torque_ngrp_id
+        iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+        iE0 = hecMESH%node_group%grp_index(ig  )
+        do ik = iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          cdiff(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
+          call cross_product(normal,cdiff,vect(1:ndof))
+          val = dot_product(vect(1:ndof),vect(1:ndof))
+          if( val < 1.d-16 ) then
+            write(*,*) '###ERROR### : torque node is at the same position as that of center node in rotational surface.'
+            call hecmw_abort( hecmw_comm_get_comm() )
+          endif
+          vect(1:ndof) = (tval/val)*vect(1:ndof)
+          hecMAT%B(ndof*(in-1)+1:ndof*in) = hecMAT%B(ndof*(in-1)+1:ndof*in)+vect(1:ndof)
+        enddo
+      enddo
+      if( n_rot > 0 ) call fstr_RotInfo_finalize(rinfo)
+
 !C
 !C DLOAD
 !C

@@ -1,19 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Noboru Imai (Univ. of Tokyo)                  *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 /* JP-0 */
 
@@ -1272,7 +1260,7 @@ static void free_to_iff_format( char* line, char* iff)
 		if(*line_p == ','){
 			*token_p = 0;
 			if( i>=FIELD_NUMBER ){
-				printf("¥Õ¥£¡¼¥ë¥É¤¬Â¿¤¹¤®¤ë");
+				printf("?Õ¥???????Â¿??????);
 				break;
 			}
 			iff_set_field( iff, i, token );
@@ -1309,7 +1297,7 @@ static void small_to_iff_format( char* line, char* iff)
 		iff_set_field( iff, i, token );
 	}else{
 		/* JP-198 */
-		printf("¥Õ¥£¡¼¥ë¥É¤¬Â¿¤¹¤®¤ë");
+		printf("?Õ¥???????Â¿??????);
 	}
 
 	i++;
@@ -3777,7 +3765,7 @@ static int nastran_file_open( const char* filename )
 
 	if(file_stack_check( filename )){
 		/* JP-457 */
-		printf("¥¨¥é¡¼¡§Â¿½Å¥ª¡¼¥×¥ó¤ò¤·¤è¤¦¤È¤·¤¿\n");
+		printf("???é¡¼??Â¿?Å¥????×¥????è¤¦?È¤???\n");
 		return -1;
 	}
 

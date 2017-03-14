@@ -1,26 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides aux functions
-!!
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/11/16
-!>  \version    0.00
-!
-!======================================================================!
 module m_utilities
   use hecmw
   implicit none
@@ -366,7 +348,7 @@ module m_utilities
   end subroutine transformation
 
   SUBROUTINE get_principal (tensor, eigval, princmatrix)
-  
+
     implicit none
     integer i,j
     real(kind=kreal) :: tensor(1:6)
@@ -375,9 +357,9 @@ module m_utilities
     real(kind=kreal) :: princnormal(3,3)
     real(kind=kreal) :: tempv(3)
     real(kind=kreal) :: temps
-  
+
     call eigen3(tensor,eigval,princnormal)
-    
+
     if (eigval(1)<eigval(2)) then
       temps=eigval(1)
       eigval(1)=eigval(2)
@@ -402,15 +384,15 @@ module m_utilities
       princnormal(:,2)=princnormal(:,3)
       princnormal(:,3)=tempv(:)
     end if
-    
+
     do j=1,3
       do i=1,3
         princmatrix(i,j) = princnormal(i,j) * eigval(j)
       end do
     end do
-  
+
   end subroutine get_principal
-  
+
   SUBROUTINE eigen3d (tensor, eigval, princ)
     implicit none
 
@@ -422,7 +404,7 @@ module m_utilities
     real(kind=kreal) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
     complex(kind=kreal):: x1,x2,x3
     real(kind=kreal):: rtemp
-    real(kind=kreal) :: mat(3,4)   
+    real(kind=kreal) :: mat(3,4)
     integer :: i
     s11 = tensor(1)
     s22 = tensor(2)
@@ -439,7 +421,7 @@ module m_utilities
     ! x^3+ ax^2   + bx  +c =0
     ! s^3 - J1*s^2 -J2s -J3 =0
     !より
-    call cardano(-j1, -j2, -j3, x1, x2, x3)   
+    call cardano(-j1, -j2, -j3, x1, x2, x3)
     eigval(1)= real(x1)
     eigval(2)= real(x2)
     eigval(3)= real(x3)
@@ -466,13 +448,13 @@ module m_utilities
         exit
       end if
       ml = ( s23*s13 - s12*(s33-eigval(i)) ) / ( -s23**2 + (s22-eigval(i))*(s33-eigval(i)) )
-       nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) ) 
+       nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) )
       if (abs(ml) >= huge(ml)) then
        ml=0.0d0
       end if
       if (abs(nl) >= huge(nl)) then
        nl=0.0d0
-      end if      
+      end if
       princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
       princ(i,2) = ml * princ(i,1)
       princ(i,3) = nl * princ(i,1)
@@ -480,7 +462,7 @@ module m_utilities
 
     write(*,*)
   end subroutine eigen3d
-  
+
   subroutine cardano(a,b,c,x1,x2,x3)
     real(kind=kreal):: a,b,c
     real(kind=kreal):: p,q,d
@@ -505,7 +487,43 @@ module m_utilities
       x2 = y*w -dcmplx(a)/3.0d0
       x3 = y*w**2 -dcmplx(a)/3.0d0
     end if
-    
+
   end subroutine cardano
+  
+  subroutine rotate_3dvector_by_Rodrigues_formula(r,v)
+    real(kind=kreal),intent(in)    :: r(3)  !< rotational vector
+    real(kind=kreal),intent(inout) :: v(3)  !< vector to be rotated
+    
+    real(kind=kreal) :: rotv(3), rv
+    real(kind=kreal) :: cosx, sinc(2) !< sinc(1)=sin(x)/x, sinc(2)=(1-cos(x))/x^2
+    real(kind=kreal) :: x, x2, x4, x6
+    real(kind=kreal), parameter :: c0 = 0.5d0
+    real(kind=kreal), parameter :: c2 = -4.166666666666666d-002
+    real(kind=kreal), parameter :: c4 = 1.388888888888889d-003
+    real(kind=kreal), parameter :: c6 = -2.480158730158730d-005
+    
+    x2 = dot_product(r,r)
+    x = dsqrt(x2)
+    cosx = dcos(x)
+    if( x < 1.d-4 ) then
+      x4 = x2*x2
+      x6 = x4*x2
+      sinc(1) = 1.d0-x2/6.d0+x4/120.d0
+      sinc(2) = c0+c2*x2+c4*x4+c6*x6
+    else
+      sinc(1) = dsin(x)/x 
+      sinc(2) = (1.d0-cosx)/x2
+    endif
+    
+    ! calc Rot*v
+    rv = dot_product(r,v)
+    rotv(1:3) = cosx*v(1:3)
+    rotv(1:3) = rotv(1:3)+rv*sinc(2)*r(1:3)
+    rotv(1) = rotv(1) + (-v(2)*r(3)+v(3)*r(2))*sinc(1)
+    rotv(2) = rotv(2) + (-v(3)*r(1)+v(1)*r(3))*sinc(1)
+    rotv(3) = rotv(3) + (-v(1)*r(2)+v(2)*r(1))*sinc(1)
+    v = rotv
+    
+  end subroutine
 
 end module

@@ -1,26 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by Xi YUAN (AdavanceSoft)                 !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions for viscoelastic calculation
-!
-!>  \author                date              version
-!>  X.Yuan(Advancesoft)    2010/10/06        original
-!>  X.Yuan                 2012/09/18        add trs function(WLF, ARRHENIUS)
-!>  X.Yuan                 2016/09/26        abnormal processing in TRS
-!
-!======================================================================!
 module mViscoElastic
   use hecmw_util
   use mMaterial

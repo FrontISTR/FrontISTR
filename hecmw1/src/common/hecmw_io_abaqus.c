@@ -1,22 +1,7 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2007/06/29                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Kazuaki Sakane (RIST)                         *
- *            Written by Naoki Morita (The University of Tokyo)        *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1788,21 +1773,23 @@ read_heading(void)
 	if(token != HECMW_ABLEX_HEADER) {
 		set_err_token(token, HECMW_IO_ABAQUS_E0800, "TITLE required after *HEADING");
 		return -1;
+		/* set_err_token(token, HECMW_IO_ABAQUS_E0800, "TITLE ignored after *HEADING");
+		header->header[0] = ' ';
+		header->header[1] = '\0';*/
+	} else {
+		p = HECMW_ablex_get_text();
+		while(*p && *p == ' ') p++;
+		if(p == NULL) p = "";
+		len = strlen(p);
+		if(len > HECMW_HEADER_LEN) len = HECMW_HEADER_LEN;
+		strncpy(header->header, p, len);
+		header->header[len] = '\0';
 	}
-	p = HECMW_ablex_get_text();
-	while(*p && *p == ' ') p++;
-	if(p == NULL) p = "";
-	len = strlen(p);
-	if(len > HECMW_HEADER_LEN) len = HECMW_HEADER_LEN;
-	strncpy(header->header, p, len);
-	header->header[len] = '\0';
 
-	/* Note:
-	 * NL is ignored by LEX until the end of the header data.
-	 */
+	/* Note: * NL is ignored by LEX until the end of the header data. */
 
 	/* Ignore the rest of the header data */
-	while(HECMW_ablex_next_token() == HECMW_ABLEX_HEADER) ;
+	while(HECMW_ablex_next_token() == HECMW_ABLEX_HEADER);
 	HECMW_ablex_unput_token();
 
 	/* set */
@@ -3572,7 +3559,7 @@ read_solidsect_keyword(void)
 
 	token = HECMW_ablex_next_token();
 	if(token != ',') {
-		set_err_token(token, HECMW_IO_ABAQUS_E2100, "',' required after *SHELL SECTION");
+		set_err_token(token, HECMW_IO_ABAQUS_E2100, "',' required after *SOLID SECTION");
 		return -1;
 	}
 	return 0;

@@ -1,3 +1,7 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 ! dictionary.f90 --
 !     Include file for defining dictionaries:
 !     a mapping of strings to some data

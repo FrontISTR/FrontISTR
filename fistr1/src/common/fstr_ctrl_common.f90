@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : I/O and Utility                                   !
-!                                                                      !
-!            Written by Noboru Imai (Univ. of Tokyo)                   !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module contains fstr control file data obtaining functions
 
 module fstr_ctrl_common
@@ -89,7 +79,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, st
         real(kind=kreal) :: filter
         integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-        character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,PARADISO '
+        character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
         character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
         integer(kind=kint) :: number_number = 5

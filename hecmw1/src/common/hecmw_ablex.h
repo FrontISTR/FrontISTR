@@ -1,22 +1,7 @@
-
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2007/12/03                                        *
- *        Category : I/O and Utility                                   *
- *                                                                     *
- *            Written by Kazuaki Sakane (RIST)                         *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #ifndef HECMW_ABLEX_INCLUDED
 #define HECMW_ABLEX_INCLUDED
@@ -56,6 +41,8 @@ enum {
 	HECMW_ABLEX_H_TIE,
 	HECMW_ABLEX_H_TRS,
 	HECMW_ABLEX_H_VISCOELASTIC,
+	HECMW_ABLEX_H_NODE_OUTPUT,
+	HECMW_ABLEX_H_ELEMENT_OUTPUT,
 
 	HECMW_ABLEX_K_ABSOLUTE = 3000,
 	HECMW_ABLEX_K_ANISOTROPIC,

@@ -1,22 +1,11 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Eigen Analysis                                    !
-!                                                                      !
-!            Written by Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Giri Prabhakar (RIST)                          !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!> THis module contains subroutine of matrix multply for skyline matrix
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+!> This module contains subroutine of matrix multply for skyline matrix
 module m_fstr_EIG_matmult
 contains
 
-!----------------------------------------------------------------------*
       SUBROUTINE MATMULTS(A,NSUM,X,NN)
 
 !MATRIX MULTIPLY FOR SKYLINE MATRIX

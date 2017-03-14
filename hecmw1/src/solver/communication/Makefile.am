@@ -91,7 +91,8 @@ OBJSF = \
 	hecmw_solver_SR_mm.@f90objfilepostfix@ \
 	hecmw_solver_SR_mmi.@f90objfilepostfix@ \
 	hecmw_comm_f.@f90objfilepostfix@ \
-	hecmw_solver_misc.@f90objfilepostfix@
+	hecmw_solver_misc.@f90objfilepostfix@ \
+	hecmw_comm_group.@f90objfilepostfix@
 
 HEADERS =
 

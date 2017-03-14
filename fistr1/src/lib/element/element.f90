@@ -1,18 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by X. YUAN                                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module encapsulate the basic functions of all elements
 !!      provide by this software.
 !!
@@ -51,9 +40,6 @@
 !!    Quadrature.
 !!-    If you introduce new surface geometry and do contact calculation also,
 !!    you may need do some modification in MODULE mSurfElement.
-!
-!======================================================================!
-
 module elementInfo
 
   use shape_line2n

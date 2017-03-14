@@ -1,25 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Suemitsu(AdavanceSoft)                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to caluclation nodal stress
-!!
-!>  \author     K. Suemitsu(AdavanceSoft)
-!>  \date       2012/01/16
-!>  \version    0.00
-!!
-!======================================================================!
 module m_fstr_NodalStress
   implicit none
   private :: NodalStress_INV3, NodalStress_INV2, inverse_func
@@ -250,7 +233,7 @@ contains
         tnstrain(6*(i-1)+1:6*(i-1)+6) = tnstrain(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
       endif
     enddo
-  
+
     if( flag33 == 1 )then
       do nlyr = 1, ntot_lyr
         do i = 1, hecMESH%n_node
@@ -274,7 +257,7 @@ contains
     do i = 1, hecMESH%n_elem
       fstrSOLID%EMISES(i) = get_mises(fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6))
     enddo
-		
+
     if( flag33 == 1 )then
 			if( fstrSOLID%output_ctrl(3)%outinfo%on(27) .or. fstrSOLID%output_ctrl(4)%outinfo%on(27) ) then
 				do nlyr = 1, ntot_lyr
@@ -286,11 +269,11 @@ contains
 		else
 			call make_principal(fstrSOLID, hecMESH, fstrSOLID%SOLID)
     endif
-    
+
     deallocate( nnumber )
 
   end subroutine fstr_NodalStress3D
-  
+
   subroutine fstr_Stress_add_shelllyr(nn,fstrSOLID,icel,nodLOCAL,nlyr,strain,stress,flag)
     use m_fstr
     implicit none
@@ -894,7 +877,7 @@ contains
       !  tnstrain(6*(i-1)+1:6*(i-1)+6) = tnstrain(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
       !endif
     enddo
-  
+
     do nlyr = 1, ntot_lyr
       do i = 1, hecMESH%n_node
         fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  = &
@@ -918,19 +901,19 @@ contains
     deallocate( nnumber )
 
   end subroutine fstr_NodalStress6D
-  
+
   subroutine make_principal(fstrSOLID, hecMESH, RES)
     use hecmw_util
     use m_fstr
     use m_out
     use m_static_lib
-    
+
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid_physic_val) :: RES
     integer(kind=kint) :: i,flag
     real(kind=kreal) :: tmat(3,3), tvec(3)
-    
+
     flag=ieor(flag,flag)
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) .or. fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then
       if ( .not. associated(RES%PSTRESS) ) then
@@ -995,7 +978,7 @@ contains
         if (iand(flag,B'00001000') /= 0) RES%PSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
     end if
-    
+
     if (iand(flag,B'00110000') /= 0) then
       do i = 1, hecMESH%n_elem
         call get_principal( RES%ESTRESS(6*(i-1)+1:6*(i-1)+6), tvec, tmat)
@@ -1009,7 +992,7 @@ contains
         if (iand(flag,B'01000000') /= 0) RES%EPSTRAIN(3*(i-1)+1:3*(i-1)+3)=tvec
         if (iand(flag,B'10000000') /= 0) RES%EPSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
-    end if 
+    end if
   end subroutine make_principal
-  
+
 end module m_fstr_NodalStress

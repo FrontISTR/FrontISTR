@@ -1,16 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!                    Written by X. YUAN                                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>  \brief   This module manage the data structure for contact calculation
 !!
 !!  Contact calculation takes into act after calling the following three
@@ -18,10 +9,6 @@
 !!-#      Reading contact definition with subroutine: fstr_ctrl_get_CONTACT
 !!-#      Check its consistency with mesh definition: fstr_contact_check
 !!-#      Initilizing the contact calculation       : fstr_contact_init
-
-!>  \author     Xi YUAN (AdavanceSoft)
-!>  \date       2009/01/26
-!>  \version    0.00
 module mContactDef
 
 use hecmw
@@ -378,7 +365,10 @@ contains
             endif
           enddo
 
-          if(nMaster == 0) cycle
+          if(nMaster == 0) then
+            deallocate(indexMaster)
+            cycle
+          endif
 !          do id= 1, size(contact%master)
           do idm = 1,nMaster
             id = indexMaster(idm)

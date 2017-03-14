@@ -1,24 +1,12 @@
-/*=====================================================================*
- *                                                                     *
- *   Software Name : HEC-MW Library for PC-cluster                     *
- *         Version : 2.8                                               *
- *                                                                     *
- *     Last Update : 2006/06/01                                        *
- *        Category : Visualization                                     *
- *                                                                     *
- *            Written by Li Chen (Univ. of Tokyo)                      *
- *                                                                     *
- *     Contact address :  IIS,The University of Tokyo RSS21 project    *
- *                                                                     *
- *     "Structural Analysis System for General-purpose Coupling        *
- *      Simulations Using High End Computing Middleware (HEC-MW)"      *
- *                                                                     *
- *=====================================================================*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 /*----------------------------------------------------------------------
-#     Subroutines in this file on isosurface generation for hexahedra by Marching Cubes is based
-	  on the revision of Dr. Yuriko Takeshima's codes when she was working part time in RIST
-#---------------------------------------------------------------------- */
+ * Subroutines in this file on isosurface generation for hexahedra by Marching Cubes is based
+ * on the revision of Dr. Yuriko Takeshima's codes when she was working part time in RIST
+/*---------------------------------------------------------------------- */
+
 #include "hecmw_vis_surface_compute.h"
 
 #include <math.h>

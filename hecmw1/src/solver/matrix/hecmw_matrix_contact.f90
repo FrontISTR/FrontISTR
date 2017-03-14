@@ -1,12 +1,7 @@
-!======================================================================!
-!
-!> \brief  This module provides functions to deal with contact condition
-!
-!>  \author     K. Goto(Advancesoft), X. YUAN(AdavanceSoft)
-!>  \date       2010/11/26
-!>  \version    1.00
-!!
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 module hecmw_matrix_contact
   use hecmw_util
   implicit none

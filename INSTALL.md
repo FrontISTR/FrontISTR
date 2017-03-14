@@ -8,7 +8,7 @@ FrontISTRはMITライセンスで提供されています。詳しくは`License
 
 ## 準備
 
-FrontISTRは、コンパイルに`cmake`を使います。`cmake`はバージョン 2.8.11よりも新しいものが必要です。
+FrontISTRは、コンパイルに`cmake`を使います。`cmake`はバージョン 2.8.11 以上のものが必要です。
 
 ~~~txt
 % cmake --version
@@ -17,7 +17,7 @@ cmake version 2.8.12.2
 
 ## コンパイル
 
-最小限のFrontISTRは、以下の手順でコンパイルすることができます。
+最小限のFrontISTRは、以下の手順でコンパイルすることができます。既にライブラリがインストールされている場合、機能が有効になります。
 
 ~~~txt
 % tar xvf FrontISTR.tar.gz
@@ -36,35 +36,87 @@ cmake version 2.8.12.2
 
 他の機能を有効にしたい場合、`cmake`に以下のオプションを付けてください。ライブラリが既にインストールされていれば、自動的にその場所を探します。
 
-| オプション         | 説明                                            | 備考                      |
-|--------------------|-------------------------------------------------|---------------------------|
-| -DWITH_TOOLS=ON    | パーティショナなどのツールもコンパイルします。  | hecmw_part1など           |
-| -DWITH_MPI=ON      | MPIを有効にします。                             | ライブラリが必要          |
-| -DWITH_OPENMP=ON   | OpenMPを有効にします。                          | コンパイラの対応が必要    |
-| -DWITH_REFINER=ON  | REVOCAP_Refinerの機能を有効にします。           | ライブラリが必要          |
-| -DWITH_REVOCAP=ON  | REVOCAP_Couplerの機能を有効にします。           | ライブラリが必要          |
-| -DWITH_PARACON=ON  | 並列接触解析の機能を有効にします。              | (未実装)                  |
-| -DWITH_METIS=ON    | METISの機能を有効にします。                     | 4.0.3と5.1.0に対応        |
-| -DMETIS_VER_4=ON   | metis-4.0.3を使う場合に設定                     | metis-5.1.0の場合指定不要 |
-| -DWITH_PARMETIS=ON | ParMETISの機能を有効にします。                  | (未実装)                  |
-| -DWITH_MKL=ON      | MKL PARDISOの機能を有効にします。               | (未実装)                  |
-| -DWITH_MUMPS=ON    | MUMPSの機能を有効にします。                     | ライブラリが必要          |
-| -DWITH_LAPACK=ON   | LAPACKの機能を有効にします。                    | ライブラリが必要          |
-| -DWITH_ML=ON       | Trilinos MLの機能を有効にします。               | ライブラリが必要          |
-| -DBUILD_DOC=ON     | FrontISTRのソースコードをドキュメント化します。 | doxygenとgraphvizが必要   |
+| オプション        | 説明                                          | 備考                         |
+|-------------------|-----------------------------------------------|------------------------------|
+| -DWITH_TOOLS=1    | パーティショナなどのツールもコンパイルします  | hecmw_part1など              |
+| -DWITH_MPI=1      | MPIを有効にします                             | ライブラリが必要             |
+| -DWITH_OPENMP=1   | OpenMPを有効にします                          | コンパイラの対応が必要       |
+| -DWITH_REFINER=1  | REVOCAP_Refinerの機能を有効にします           | ライブラリが必要             |
+| -DWITH_REVOCAP=1  | REVOCAP_Couplerの機能を有効にします           | ライブラリが必要             |
+| -DWITH_PARAC1=1   | 並列接触解析の機能を有効にします              | (未実装)                     |
+| -DWITH_METIS=1    | METISの機能を有効にします                     | 4.0.3と5.1.0に対応           |
+| -DMETIS_VER_4=1   | metis-4.0.3を使う場合に設定                   | metis-5.1.0の場合指定不要    |
+| -DWITH_PARMETIS=1 | ParMETISの機能を有効にします                  | 3.2.0と4.0.3に対応           |
+| -DMETIS_VER_3=1   | ParMetis-3.2.0を使う場合に設定                | parmetis-4.0.3の場合指定不要 |
+| -DWITH_MKL=1      | MKL PARDISOの機能を有効にします               | (未実装)                     |
+| -DWITH_MUMPS=1    | MUMPSの機能を有効にします                     | ライブラリが必要             |
+| -DWITH_LAPACK=1   | LAPACKの機能を有効にします                    | ライブラリが必要             |
+| -DWITH_ML=1       | Trilinos MLの機能を有効にします               | ライブラリが必要             |
+| -DBUILD_DOC=1     | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要      |
 
 ## LinuxなどのUnix系プラットフォームでの構築例
+
+### 外部ライブラリの場所の指定
+
+例えば`$HOME/tools`以下に、`include/`,`lib/`のようなディレクトリ構造で外部ライブラリをインストール
+している場合
+
+~~~txt
+% CMAKE_INSTALL_PATH=$HOME/tools cmake ..
+~~~
+
+`$HOME/local`や`$HOME/.local`にインストールしている場合、指定は不要
 
 ### パーティショナ、MPI、OpenMPを有効にする
 
 ~~~txt
-% cmake -DWITH_TOOLS=ON -DWITH_MPI=ON -DWITH_OPENMP=ON ..
+% cmake -DWITH_TOOLS=1 -DWITH_METIS=1 -DWITH_MPI=1 -DWITH_OPENMP=1 ..
 ~~~
 
 ### MUMPSを有効にする
 
 ~~~txt
-% cmake -DWITH_MUMPS=ON ..
+% cmake -DWITH_MUMPS=1 -DWITH_MPI=1 ..
+~~~
+
+### Metisを有効にする
+
+~~~txt
+% cmake -DWITH_METIS=1 ..
+~~~
+
+### ParMetisを有効にする
+
+~~~txt
+% cmake -DWITH_METIS=1 -DWITH_PARMETIS=1 -DWITH_MPI=1 ..
+~~~
+
+### MLを有効にする
+
+~~~txt
+% cmake -DWITH_ML=1 -DWITH_MPI=1 ..
+~~~
+
+### LaPACK, BLASを指定する
+
+~~~txt
+% cmake -DWITH_LAPACK=1 -DBLAS_LIBRARIES=$HOME/tools/lib/libopenblas.a -DLAPACK_LIBRARIES=$HOME/tools/lib/libopenblas.a ..
+~~~txt
+
+### Intel コンパイラを使う
+
+~~~txt
+% cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_Fortran_COMPILER=ifort ..
+~~~
+
+### MKLをLaPACK, BLASとして利用する
+
+~~~txt
+% source /opt/intel/mkl/bin/mklvar.sh intel64
+% source /opt/intel/bin/compilervars.sh intel64
+% echo $LD_LIBRARY_PATH (ライブラリが見えていることを確認)
+% export BLA_VENDOR="Intel"
+% cmake -DWITH_LAPACK=1 ..
 ~~~
 
 ### ソースコードのドキュメントを構築し参照する
@@ -72,7 +124,7 @@ cmake version 2.8.12.2
 FrontISTRのソースコードのドキュメンテーションを参照することができます。ただし、予め `doxygen`と`graphviz` をインストールしておく必要があります。
 
 ~~~txt
-% cmake -DBUILD_DOC=ON ..
+% cmake -DBUILD_DOC=1 ..
 % make doc
 % firefox doc/html/index.html
 ~~~
@@ -80,9 +132,9 @@ FrontISTRのソースコードのドキュメンテーションを参照する�
 ### 全てのオプションを有効にする
 
 ~~~txt
-% cmake -DWITH_TOOLS=ON -DWITH_MPI=ON -DWITH_OPENMP=ON \
-        -DWITH_REFINER=ON -DWITH_REVOCAP=ON -DWITH_METIS=ON \
-        -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_ML=ON -DBUILD_DOC=ON ..
+% cmake -DWITH_TOOLS=1 -DWITH_MPI=1 -DWITH_OPENMP=1 \
+        -DWITH_REFINER=1 -DWITH_REVOCAP=1 -DWITH_METIS=1 \
+        -DWITH_MUMPS=1 -DWITH_LAPACK=1 -DWITH_ML=1 -DBUILD_DOC=1 ..
 ~~~
 
 ### インストールディレクトリを変更する
@@ -101,19 +153,65 @@ FrontISTRのソースコードのドキュメンテーションを参照する�
 % cmake -DCMAKE_BUILD_TYPE="DEBUG" ..
 ~~~
 
-## Windows上でコンパイルする場合
+## Windowsでの構築例
 
-MSYS2による、MinGW-w64でコンパイルが出来ることを確認しています。
+FrontISTRは、MSYS2によるMinGW-w64でコンパイルが出来ることを確認しています。
+
+MPIにMicrosoft MPIを使った場合の例を示します。
+
+### Microsoft MPIのインストール
+
+msmpisdk.msiとMSMpiSetup.exeを予めインストールしておきます。
 
 ~~~txt
-% cmake -G "MSYS Makefiles" ..
+% mkdir -p $HOME/local/lib
+% mkdir $HOME/local/include
+% cd $HOME/local/lib
+% gendef /c/Windows/System32/msmpi.dll
+% dlltool -d msmpi.def -l libmsmpi.a -D /c/Windows/System32/msmpi.dll
+% cd $HOME/local/include
+% cp "/c/Program Files (x86)/Microsoft SDKs/MPI/Include/"*.h .
+% cp "/c/Program Files (x86)/Microsoft SDKs/MPI/Include/x64/"*.h .
+~~~
+
+コピーした `mpi.h` と `mpif.h` に変更を加えます。
+
+~~~txt
+% vi mpi.h
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED
+のすぐ下に
+#include <stdint.h>
+を追加
+
+% vi mpif.h
+PARAMETER (MPI_ADDRESS_KIND=INT_PTR_KIND())
+を
+PARAMETER (MPI_ADDRESS_KIND=8)
+に修正
+~~~
+
+変更が済んだらコンパイルしてください。
+
+~~~txt
+% cmake -G "MSYS Makefiles" -DWITH_MPI=1 \
+        -DMPI_C_INCLUDE_PATH=$HOME/local/include \
+        -DMPI_C_LIBRARIES=$HOME/local/lib/libmsmpi.a \
+        -DMPI_CXX_INCLUDE_PATH=$HOME/local/include \
+        -DMPI_CXX_LIBRARIES=$HOME/local/lib/libmsmpi.a \
+        ..
 % make
 ~~~
 
 または
 
 ~~~txt
-% cmake -G "MinGW Makefiles" ..
+% cmake -G "MinGW Makefiles" -DWITH_MPI=1 \
+        -DMPI_C_INCLUDE_PATH=$HOME/local/include \
+        -DMPI_C_LIBRARIES=$HOME/local/lib/libmsmpi.a \
+        -DMPI_CXX_INCLUDE_PATH=$HOME/local/include \
+        -DMPI_CXX_LIBRARIES=$HOME/local/lib/libmsmpi.a \
+        ..
 % mingw32-make
 ~~~
 
@@ -131,17 +229,15 @@ MSYS2による、MinGW-w64でコンパイルが出来ることを確認してい
 
 1. システム上のパス(`/usr/lib`, `/usr/include`, `/usr/local/lib`, `/usr/local/include` など)
 2. ホームディレクトリ上のパス(`$HOME/local/lib`, `$HOME/.local/lib` など)
-3. 環境変数で指定したディレクトリを起点とするパス (`$METIS_ROOT`, `$MUMPS_ROOT` など)
+3. 環境変数で指定したディレクトリを起点とするパス(`$METIS_ROOT`, `$MUMPS_ROOT` など)
 4. FrontISTRのソースを展開した場所と同レベルのパス
 
-などを探索します。
-
-見つからない場合や、意図しないパスの場合、手動で指定する必要があります。
+などを探索します。見つからない場合や、意図しないパスの場合、手動で指定する必要があります。
 
 例えば、LAPACKにOpenBLASを利用して、`$HOME/local`にインストールした場合、以下のような指定が必要になります。
 
 ~~~txt
-% cmake -DWITH_LAPACK=ON \
+% cmake -DWITH_LAPACK=1 \
         -DBLAS_LIBRARIES=$HOME/local/lib/libopenblas.a \
         -DLAPACK_LIBRARIES=$HOME/local/lib/libopenblas.a ..
 ~~~
@@ -155,65 +251,58 @@ MSYS2による、MinGW-w64でコンパイルが出来ることを確認してい
 
 外部ライブラリは、`$HOME/local`へインストールするか、`FrontISTR`と同じディレクトリに置いておくと自動的に検索することができます。
 
+### REVOCAP_Refiner
+
+メッシュの細分化機能を有効にするには、REVOCAP_Refinerを構築する必要があります。
+
+~~~txt
+% tar xvf REVOCAP_Refiner-1.1.04.tar.gz
+% cd REVOCAP_Refiner-1.1.04
+% make
+~~~
+
+### REVOCAP_Coupler
+
+FrontFlowなどと連成を行うためのカップラーです。
+
+~~~txt
+% tar xvf REVOCAP_Coupler-2.1.tar.gz
+% cd REVOCAP_Coupler-2.1
+% env REFINER_INCLUDE="-I$HOME/work/REVOCAP_Refiner-1.1.04/Refiner" \
+     REFINER_LIBS="-L$HOME/work/REVOCAP_Refiner-1.1.04/lib/x86_64-linux -lRcapRefiner -lstdc++" \
+     ./configure
+~~~
+
 ### OpenBLAS
 
-OpenBLASにはLaPACKも含まれているので、LAPACKを指定する部分をこれに置き換えることもできます。
+OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分をこれに置き換えることもできます。
 
 ~~~txt
 % tar xvf OpenBLAS-0.2.18.tar.gz
 % cd OpenBLAS-0.2.18
 % make BINARY=64 NO_SHARED=1 USE_OPENMP=1
-% make PREFIX=/path/to/install install
+% make PREFIX=$HOME/local install
 ~~~
-
-### Trilinos ML
-
-FrontISTR で ML による疎行列のプリコンディショナーを利用する場合、以下の方法で Trilinos ML を構築してください。
-
-~~~txt
-% cmake -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF -DTrilinos_ENABLE_ML=ON \
-        -DTrilinos_ENABLE_Zoltan=ON -DTrilinos_ENABLE_OpenMP=ON -DTPL_ENABLE_MPI=ON ..
-~~~
-
-ただし、シリアル版を作成する場合は `-DTPL_ENABLE_MPI=ON` の指定は不要。
 
 ### Metis-5.1.0
 
-Metis-5.1.0の CMakeList.txt には不具合があるため、CMakeLists.txtを修正してからライブラリを構築する必要がある。 トップディレクトリにある CMakeLists.txt を修正する。
+Metis-5.1.0コンパイルするにはcmakeが必要です。
 
 ~~~txt
-set(GKLIB_PATH "GKlib" CACHE PATH "path to GKlib")
-~~~
-
-となっているところを
-
-~~~txt
-set(GKLIB_PATH "${CMAKE_SOURCE_DIR}/GKlib" CACHE PATH "path to GKlib")
-~~~
-
-と修正してください。構築は一般的な `cmake` を使ったソフトウェアと同じです。
-
-~~~txt
-% cd build
-% cmake -DOPENMP=ON ..
+% make config openmp=1 prefix=$HOME/local
 % make
 % make install
 ~~~
 
-### scalapack-2.0.2
+### parmetis-4.0.3
 
-MPIを有効にしたMUMPSを構築するには、scalapackを事前に構築しておく必要があります。
-また、現在blacsとscalapackは統合されているため、blacsを別途インストールする必要はありません。
+parmetis-4.0.3コンパイルするにはcmakeが必要です。また、MPIを予めインストールしておく必要があります。
 
 ~~~txt
-% cd scalapack-2.0.2
-% mkdir build
-% cmake ..
+% make config openmp=1 prefix=$HOME/local
 % make
 % make install
 ~~~
-
-MinGWの場合、cmakeでビルド出来ないので`SLmake.inc`を編集する旧来の方法を用いる方が良いようです。
 
 ### MUMPS-5.0.1
 
@@ -251,37 +340,39 @@ OPTL    = -O
 % make
 ~~~
 
-### REVOCAP_Refiner
+### scalapack-2.0.2
 
-メッシュの細分化機能を有効にするには、REVOCAP_Refinerを構築する必要があります。
+MPIを有効にしたMUMPSを構築するには、scalapack を事前に構築しておく必要があります。
+また、現在の blacs は scalapack に統合されているため、別途 blacs をインストールする必要はありません。
 
 ~~~txt
-% tar xvf REVOCAP_Refiner-1.1.04.tar.gz
-% cd REVOCAP_Refiner-1.1.04
+% cd scalapack-2.0.2
+% mkdir build
+% cmake ..
 % make
+% cp libscalapack.a $HOME/local/lib
 ~~~
 
-### REVOCAP_Coupler
+MinGWの場合、cmakeでビルド出来ないので`SLmake.inc`を編集する旧来の方法を用いる方が良いようです。
 
-FrontFlowなどと連成を行うためのカップラーです。
+### Trilinos ML
+
+FrontISTR で ML による疎行列のプリコンディショナーを利用する場合、以下の方法で Trilinos ML を構築してください。
 
 ~~~txt
-% tar xvf REVOCAP_Coupler-2.1.tar.gz
-% cd REVOCAP_Coupler-2.1
-% env REFINER_INCLUDE="-I../REVOCAP_Refiner-1.1.04/Refiner" \
-     REFINER_LIBS="-L../REVOCAP_Refiner-1.1.04/lib/x86_64-linux -lRcapRefiner -lstdc++" \
-     ./configure
+% cmake -DTrilinos_ENABLE_ALL_OPTI1AL_PACKAGES=OFF -DTrilinos_ENABLE_ML=1 \
+        -DTrilinos_ENABLE_Zoltan=1 -DTrilinos_ENABLE_OpenMP=1 -DTPL_ENABLE_MPI=1 ..
 ~~~
+
+ただし、シリアル版を作成する場合は `-DTPL_ENABLE_MPI=1` の指定は不要です。
 
 ### パッケージの作成 (初期サポート)
 
 構築したバイナリを、各プラットフォームでサポートするパッケージにすることできます。
 
-TBZ2, DEB, RPM, 
+TBZ2, DEB, RPM,
 
 ~~~txt
 % cd build
 % cpack
 ~~~
-
-

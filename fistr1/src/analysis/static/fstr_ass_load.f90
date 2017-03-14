@@ -1,27 +1,9 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by X. YUAN(AdavanceSoft), K. Sato(Advancesoft)    !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to take into acount external load
-!!
-!>  \author                date                  version
-!>  X.Yuan(Advancesoft)    2009/08/26        original
-!>  X.Yuan                 2013/03/18        consider anisotropic expansion
-!
-!======================================================================!
-!======================================================================!
+
 module m_fstr_ass_load
     implicit none
     contains
@@ -42,6 +24,8 @@ module m_fstr_ass_load
       use mReadTemp
       use mULoad
       use m_fstr_spring
+      use m_common_struct
+      use m_utilities
 !#ifdef PARA_CONTACT
       use m_fstr_para_contact
 !#endif
@@ -66,12 +50,20 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
+      
+      !for torque load
+      integer(kind=kint) :: n_rot, rid, n_nodes, idof
+      type(tRotInfo) :: rinfo
+      real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
 
       ndof = hecMAT%NDOF
 
 ! -------------------------------------------------------------------
 !  CLOAD
 ! -------------------------------------------------------------------
+      n_rot = fstrSOLID%CLOAD_ngrp_rot
+      if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
+      
       fstrSOLID%GL(:) = 0.0d0
       do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
@@ -85,12 +77,64 @@ module m_fstr_ass_load
         fval = fstrSOLID%CLOAD_ngrp_val(ig0)
         iS0 = hecMESH%node_group%grp_index(ig-1) + 1
         iE0 = hecMESH%node_group%grp_index(ig  )
+        
+        if( fstrSOLID%CLOAD_ngrp_rotID(ig0) > 0 ) then ! setup torque load information
+          rid = fstrSOLID%CLOAD_ngrp_rotID(ig0)
+          if( .not. rinfo%conds(rid)%active ) then
+            rinfo%conds(rid)%active = .true.
+            rinfo%conds(rid)%center_ngrp_id = fstrSOLID%CLOAD_ngrp_centerID(ig0)
+            rinfo%conds(rid)%torque_ngrp_id = ig
+          endif
+          if( ityp>ndof ) ityp = ityp-ndof
+          rinfo%conds(rid)%vec(ityp) = factor*fval
+          cycle
+        endif
+        
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           fstrSOLID%GL(ndof*(in-1)+ityp) = fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
         enddo
       enddo
-!
+
+      !Add torque load to fstrSOLID%GL
+      do rid = 1, n_rot
+        if( .not. rinfo%conds(rid)%active ) cycle
+        !get number of slave nodes
+        n_nodes = hecmw_ngrp_get_number(hecMESH, rinfo%conds(rid)%torque_ngrp_id)
+        
+        !get center node
+        ig = rinfo%conds(rid)%center_ngrp_id
+        do idof = 1, ndof
+          ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+          cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
+        enddo
+        ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof) 
+        
+        tval = dsqrt(dot_product(rinfo%conds(rid)%vec(1:ndof),rinfo%conds(rid)%vec(1:ndof)))
+        if( tval < 1.d-16 ) then
+          write(*,*) '###ERROR### : norm of torque vector must be > 0.0'
+          call hecmw_abort( hecmw_comm_get_comm() )
+        endif
+        normal(1:ndof) = rinfo%conds(rid)%vec(1:ndof)/tval
+        tval = tval/dble(n_nodes)
+        
+        ig = rinfo%conds(rid)%torque_ngrp_id
+        iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+        iE0 = hecMESH%node_group%grp_index(ig  )
+        do ik = iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          cdiff(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
+          call cross_product(normal,cdiff,vect(1:ndof))
+          fval = dot_product(vect(1:ndof),vect(1:ndof))
+          if( fval < 1.d-16 ) then
+            write(*,*) '###ERROR### : torque node is at the same position as that of center node in rotational surface.'
+            call hecmw_abort( hecmw_comm_get_comm() )
+          endif
+          vect(1:ndof) = (tval/fval)*vect(1:ndof)
+          fstrSOLID%GL(ndof*(in-1)+1:ndof*in) = fstrSOLID%GL(ndof*(in-1)+1:ndof*in)+vect(1:ndof)
+        enddo
+      enddo
+      if( n_rot > 0 ) call fstr_RotInfo_finalize(rinfo)
 !
 ! -------------------------------------------------------------------
 !  DLOAD
@@ -389,7 +433,7 @@ module m_fstr_ass_load
           enddo
         enddo
       endif
-      
+
 ! ----- Spring force
       call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 

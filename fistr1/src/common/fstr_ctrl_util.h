@@ -1,25 +1,12 @@
-/*=====================================================================*
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : I/O and Utility                                   !
-!                                                                      !
-!            Written by Noboru Imai (Univ. of Tokyo)                   !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-*=====================================================================*/
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 /**
  * @file fstr_ctrl_util.h
  * Utility for open/close and parse of fstr control file
  * caution: define parameter 'ctrl' as integer for call from fortran
- * @date 2004/08/11
- * @author Noboru Imai
 */
-
 
 #ifndef fstr_ctrl_utilH
 #define fstr_ctrl_utilH

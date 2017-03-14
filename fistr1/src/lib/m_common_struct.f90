@@ -1,23 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   FrontISTR Ver. 3.7                                                 !
-!                                                                      !
-!     Last Update : 2012/10/22                                         !
-!        Category : Data stucture                                      !
-!                                                                      !
-!                    Written by Xi YUAN (AdvanceSoft)                  !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!======================================================================!
-!  History
-!  -------------------------------------------
-!  Date            MODIFIER           COMMENT
-!  2012/10/22       X. YUAN           original
-!======================================================================!
-
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This modules defines common structures for fem analysis
 MODULE m_common_struct
   IMPLICIT NONE
@@ -33,7 +17,19 @@ MODULE m_common_struct
         end type tLocalCoordSys
 
         type( tLocalCoordSys ), pointer, save :: g_LocalCoordSys(:) => null()
+        
+        type tRotInfo
+          integer  ::  n_rot
+          type(tRotCond), pointer :: conds(:)
+        end type
 
+        type tRotCond
+          logical  ::  active
+          integer  ::  center_ngrp_id
+          integer  ::  torque_ngrp_id
+          real(kind=kreal) :: vec(3)
+        end type
+        
   contains
 
 		!> Initializer of global data
@@ -98,5 +94,30 @@ MODULE m_common_struct
                  call cross_product(outsys(3,:), outsys(1,:), outsys(2,:) )
               endif
         end subroutine
+        
+        subroutine fstr_RotInfo_init(n, rinfo)
+          integer, intent(in) :: n
+          type( tRotInfo ), intent(inout) :: rinfo
+          
+          integer :: i
+          
+          if( n < 1 ) return
+          
+          rinfo%n_rot = n
+          allocate(rinfo%conds(n))
+          do i=1,n
+            rinfo%conds(i)%active = .false.
+            rinfo%conds(i)%center_ngrp_id = -1
+            rinfo%conds(i)%torque_ngrp_id = -1
+            rinfo%conds(i)%vec(1:3) = 0.d0
+          enddo
+        end subroutine
 
+        subroutine fstr_RotInfo_finalize(rinfo)
+          type( tRotInfo ), intent(inout) :: rinfo
+          
+          rinfo%n_rot = 0
+          if( associated(rinfo%conds)) deallocate(rinfo%conds)
+        end subroutine
+        
 END MODULE

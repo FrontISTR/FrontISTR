@@ -29,6 +29,7 @@ lib/static_LIB_3dIC.f90
 lib/static_LIB_beam.f90
 lib/static_LIB_shell.f90
 lib/heat_LIB_CAPACITY.f90
+lib/heat_LIB_CONDUCTIVITY.f90
 lib/heat_LIB_DFLUX.f90
 lib/heat_LIB_FILM.f90
 lib/heat_LIB_NEUTRAL.f90
@@ -185,11 +186,16 @@ if(WITH_ML)
 endif()
 
 if(WITH_MUMPS)
-  set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+  #set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${MUMPS_LIBRARIES} scalapack)
 endif()
 
 if(WITH_LAPACK)
   set(EXTRA_LIBS ${EXTRA_LIBS} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+endif()
+
+if(WITH_PARMETIS)
+  set(EXTRA_LIBS ${EXTRA_LIBS} ${PARMETIS_LIBRARIES})
 endif()
 
 if(WITH_METIS)
@@ -208,6 +214,11 @@ if(WITH_MPI)
   set(EXTRA_LIBS ${EXTRA_LIBS} ${MPI_Fortran_LIBRARIES} ${MPI_CXX_LIBRARIES})
 endif()
 
+if(_WINDOWS)
+  set(EXTRA_LIBS ${EXTRA_LIBS} "ws2_32")
+endif()
+
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE Fortran)
 target_link_libraries(fistr1 fistr hecmw ${EXTRA_LIBS})
 
 install(TARGETS fistr1 DESTINATION bin CONFIGURATIONS ${CMAKE_BUILD_TYPE})

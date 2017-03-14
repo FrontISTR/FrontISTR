@@ -1,11 +1,7 @@
-/*
-	fstr_rmerge Ver.1.4
-	2011.05.11 by K.Suemitsu (AdvanceSoft)
-	2004.21.10 by N.Imai (RIST)
-	--------------------------------------------------
-	FISTR result 出力ファイルを１つのファイルに統合する。
-	計算に用いたコントロールファイル、メッシュデータが必要
-*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include "fstr_rmerge_util.h"
 

@@ -1,19 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/05/19                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuya Goto (PExProCS LLC)                     !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 
 module hecmw_matrix_dump
   use hecmw_util
@@ -302,8 +290,7 @@ contains
     do i = 1, n
       ! Lower
       do j = hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
-        jj = hecMAT%itemL(j)
-        idxL0 = (jj-1)*ndof2
+        idxL0 = (j-1)*ndof2
         write(iDump,lineFormat) hecMAT%AL(idxL0+1:idxL0+ndof2)
       end do
       ! Diagonal
@@ -311,8 +298,7 @@ contains
       idxD0 = idxD0 + ndof2
       ! Upper
       do j = hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
-        jj = hecMAT%itemU(j)
-        idxU0 = (jj-1)*ndof2
+        idxU0 = (j-1)*ndof2
         write(iDump,lineFormat) hecMAT%AU(idxU0+1:idxU0+ndof2)
       end do
     end do

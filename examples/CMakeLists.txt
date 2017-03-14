@@ -141,8 +141,8 @@ add_test(
  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_test(
- NAME Dynamic_exX_Test
- COMMAND ruby ./test_FrontISTR.rb ${Fistr_BINARY_DIR}/src dynamic/exX
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#add_test(
+# NAME Dynamic_exX_Test
+# COMMAND ruby ./test_FrontISTR.rb ${Fistr_BINARY_DIR}/src dynamic/exX
+# WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#)

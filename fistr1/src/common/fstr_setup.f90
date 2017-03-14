@@ -1,16 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : I/O and Utility                                   !
-!                                                                      !
-!            Written by Noboru Imai (Univ. of Tokyo)                   !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module provides functions to read in data from control file
 !! and do neccessary preparation for following calculation
 module m_fstr_setup
@@ -800,7 +791,9 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%file_type  = kbcfFSTR
 
         fstrSOLID%BOUNDARY_ngrp_tot = 0
+        fstrSOLID%BOUNDARY_ngrp_rot = 0
         fstrSOLID%CLOAD_ngrp_tot    = 0
+        fstrSOLID%CLOAD_ngrp_rot    = 0
         fstrSOLID%DLOAD_ngrp_tot    = 0
         fstrSOLID%DLOAD_follow      = 1
         fstrSOLID%TEMP_ngrp_tot     = 0
@@ -1686,8 +1679,8 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
 
   integer(kind=kint) :: rcode
   integer(kind=kint) :: type = 0
-  character(HECMW_NAME_LEN) :: amp
-  integer(kind=kint) :: amp_id
+  character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+  integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
   character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
   integer(kind=kint),pointer :: dof_ids (:)
   integer(kind=kint),pointer :: dof_ide (:)
@@ -1703,6 +1696,19 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
 !  if( rcode == 1 ) type = 0 ! PARAM_NOTHING
 
 !  if( type == 0 ) then
+  
+    ! get center of torque load
+    rotc_name = ' '
+    rotc_id = -1
+    n_rotc = -1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if(  rotc_name(1) /= ' ' ) then
+      P%SOLID%BOUNDARY_ngrp_rot = P%SOLID%BOUNDARY_ngrp_rot + 1
+      n_rotc = P%SOLID%BOUNDARY_ngrp_rot
+      call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY,ROT_CENTER=', 1, rotc_name, rotc_id)
+    endif
+  
 
     ! ENTIRE -----------------------------------------------
     P%SOLID%file_type = kbcfFSTR
@@ -1717,6 +1723,8 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
 
     allocate( grp_id_name(n) )
     allocate( dof_ids (n) )
@@ -1731,6 +1739,10 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
 
+    ! set up infomation abount rotation ( default value is set if ROT_CENTER is not given.)
+    P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc
+    P%SOLID%BOUNDARY_ngrp_centerID(old_size+1:) = rotc_id(1)
+    
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
         write(*,*) 'fstr contol file error : !BOUNDRAY : range of dof_ids and dof_ide is from 1 to 6'
@@ -1765,8 +1777,8 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         type(fstr_param_pack) :: P
 
         integer(kind=kint) :: rcode
-        character(HECMW_NAME_LEN) :: amp
-        integer(kind=kint) :: amp_id
+        character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+        integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
         character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
         real(kind=kreal),pointer :: val_ptr(:)
         integer(kind=kint),pointer :: id_ptr(:)
@@ -1776,8 +1788,20 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         if( P%SOLID%file_type /= kbcfFSTR ) return
         gid = 1
         rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
-!        P%SOLID%CLOAD_ngrp_tot = 0
-!
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        
+        ! get center of torque load
+        rotc_name = ' '
+        rotc_id = -1
+        n_rotc = -1
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        if(  rotc_name(1) /= ' ' ) then
+          P%SOLID%CLOAD_ngrp_rot = P%SOLID%CLOAD_ngrp_rot + 1
+          n_rotc = P%SOLID%CLOAD_ngrp_rot
+          call node_grp_name_to_id_ex( P%MESH, '!CLOAD,ROT_CENTER=', 1, rotc_name, rotc_id)
+        endif
+        
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) return
         old_size = P%SOLID%CLOAD_ngrp_tot
@@ -1789,6 +1813,8 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_DOF, old_size, new_size )
         call fstr_expand_real_array    ( P%SOLID%CLOAD_ngrp_val, old_size, new_size )
         call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_amp, old_size, new_size )
+        call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_rotID, old_size, new_size )
+        call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_centerID, old_size, new_size )
         ! > Keiji Suemitsu (20140624)
 
         allocate( grp_id_name(n))
@@ -1798,6 +1824,10 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         val_ptr = 0
         rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
+        
+        ! set up infomation abount torque load ( default value is set if ROT_CENTER is not given.)
+        P%SOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
+        P%SOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)
 
         call amp_name_to_id( P%MESH, '!CLOAD', amp, amp_id )
         do i=1,n

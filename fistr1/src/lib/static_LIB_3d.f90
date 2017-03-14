@@ -1,24 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : lib                                               !
-!                                                                      !
-!            Written by X. YUAN, K. SATO (AdavanceSoft)                !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !>   This module provide common functions of Solid elements
-!>
-!>  \author                date                  version
-!>  X.Yuan(Advancesoft)    2009/08/03        original
-!>  X.Yuan                 2013/03/18        consider anisotropic materials
-!======================================================================!
 MODULE m_static_LIB_3d
 
    USE hecmw, only : kint, kreal

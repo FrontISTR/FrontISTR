@@ -1,29 +1,10 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Static Analysis                                   !
-!                                                                      !
-!            Written by K. Suemitsu(Advancesoft)                       !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-!======================================================================!
-!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides functions to output result.
-!!
-!>  \author     K. Suemitsu(AdavanceSoft)
-!>  \date       2012/01/16
-!>  \version    0.00
-!!
-!======================================================================!
 module m_static_output
   implicit none
-
   contains
 
 !> Output result
@@ -44,7 +25,7 @@ module m_static_output
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
 
     ndof = hecMESH%n_dof
-    
+
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
        if( ndof==3 ) then
           allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )

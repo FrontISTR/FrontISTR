@@ -1,16 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/07/09                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuya Goto (PExProCS LLC)                     !
-!                                                                      !
-!     Contact address :  FrontISTR Forum,The University of Tokyo       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 
 module hecmw_local_matrix
   use hecmw_util

@@ -1,19 +1,7 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2014/01/25                                         !
-!        Category : Linear Solver                                      !
-!                                                                      !
-!            Written by Kazuya Goto (PExProCS LLC)                     !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module provides wrapper for parallel sparse direct solver MUMPS
 module m_hecmw_MUMPS_wrapper
   use hecmw_util
@@ -76,7 +64,12 @@ contains
        endif
     endif
 
-    if (spMAT%timelog > 0) then
+    if (spMAT%timelog == 2) then
+       mumps_par%ICNTL(1)=6
+       mumps_par%ICNTL(2)=0
+       mumps_par%ICNTL(3)=6
+       mumps_par%ICNTL(4)=2
+    elseif (spMAT%timelog == 1) then
        mumps_par%ICNTL(1)=6
        mumps_par%ICNTL(2)=0
        mumps_par%ICNTL(3)=6

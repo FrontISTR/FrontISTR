@@ -1,17 +1,7 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Heat Analysis                                     !
-!                                                                      !
-!            Written by Yasuji Fukahori (Univ. of Tokyo)               !
-!                                                                      !
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> This module provides a function for stationary heat analysis
 module m_heat_solve_SS
    contains
@@ -185,7 +175,9 @@ module m_heat_solve_SS
         allocate(fstrRESULT%node_val_item(hecMESH%n_node))
         fstrRESULT%nn_dof(1) = 1
         fstrRESULT%node_label(1) = 'TEMPERATURE'
-        fstrRESULT%node_val_item = fstrHEAT%TEMP
+        do i=1,hecMESH%n_node
+          fstrRESULT%node_val_item(i) = fstrHEAT%TEMP(i)
+        enddo
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
         call hecmw_visualize (hecMESH,fstrRESULT,1,1,1)

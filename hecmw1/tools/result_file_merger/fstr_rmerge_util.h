@@ -1,10 +1,7 @@
-/*
-	fstr_res_util Ver.1.4
-	2011.05.11 by K.Suemitsu (AdvanceSoft)
-	2004.20.26 by N.Imai (RIST)
-	--------------------------------------------------------
-	Ê¬»¶¤Ç·×»»¤µ¤ì¤¿·ë²Ì¤òÆÉ¹þ¤ß½èÍý¤¹¤ë¤¿¤á¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£
-*/
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +22,7 @@
 #include "hecmw_io_get_mesh.h"
 
 
-/* ²òÀÏ·ë²Ì¥Õ¥¡¥¤¥ë¾ðÊó */
+/* ??Ï·??Õ¥?????? */
 typedef struct {
 	int nnode_gid;
 	int nelem_gid;
@@ -34,14 +31,14 @@ typedef struct {
 	struct hecmwST_result_data* result;
 } fstr_res_info;
 
-/* ¥°¥í¡¼¥Ð¥ë¡¦¥í¡¼¥«¥ëID ÂÐ±þ */
+/* ??????Ð¥ë¡¦???????D ??? */
 typedef struct {
 	int global;
 	int local;
 	int area;
 } fstr_gl_rec;
 
-/* ¥°¥í¡¼¥Ð¥ë¡¦¥í¡¼¥«¥ëÂÐ±þÉ½ */
+/* ??????Ð¥ë¡¦???????Ð±?É½ */
 typedef struct {
 	fstr_gl_rec* nrec;
 	fstr_gl_rec* erec;
@@ -50,33 +47,33 @@ typedef struct {
 } fstr_glt;
 
 
-/* Á´Ê¬»¶¥á¥Ã¥·¥å¤ÎÆÉ¹þ¤ß */
+/* ??Ê¬?????????????*/
 struct hecmwST_local_mesh** fstr_get_all_local_mesh( char* name_ID, int* area_n, int* refine );
 
-/* ¥á¥Ã¥·¥å¤Îºï½ü */
+/* ???????? */
 void fstr_free_mesh( struct hecmwST_local_mesh** mesh, int area_n );
 
-/* ¥¹¥Æ¥Ã¥×¿ô¤òÄ´¤Ù¤ë¡Ê¥Õ¥¡¥¤¥ë¤ÎÂ¸ºß¤òÄ´¤Ù¤ë¡Ë */
+/* ???Æ¥Ã¥×¿????Ù¤??Õ¥?????Â¸?ß¤???Ù¤? */
 int fstr_get_step_n( char* name_ID );
 
-/* ¥¹¥Æ¥Ã¥×¤ÎÁ´ÎÎ°è¥Ç¡¼¥¿¤ÎÆÉ¤ß¹þ¤ß */
+/* ???Æ¥Ã¥×¤???????????É¤ß¹???*/
 fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int refine );
 
-/* ¥¹¥Æ¥Ã¥×¤ÎÁ´ÎÎ°è¥Ç¡¼¥¿¤Î·ë¹ç */
+/* ???Æ¥Ã¥×¤??????????Î·? */
 struct hecmwST_result_data* fstr_all_result( fstr_glt* glt, fstr_res_info** res, int refine );
 
-/* fstr_res_info ¤Îºï½ü */
+/* fstr_res_info ?Îº? */
 void fstr_free_result( fstr_res_info** res, int area_n );
 
-/* ¥Æ¡¼¥Ö¥ë fstr_glt ¤ÎºîÀ® */
+/* ?Æ¡??Ö¥?fstr_glt ?Îº?? */
 fstr_glt* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n );
 
-/* fstr_glt ¤Îºï½ü */
+/* fstr_glt ?Îº? */
 void fstr_free_glt( fstr_glt* glt );
 
-/* Ã±°ìÎÎ°è¥á¥Ã¥·¥å¤ÎºîÀ® */
+/* Ã±??Î°??Ã¥?????? */
 struct hecmwST_local_mesh* fstr_create_glmesh( fstr_glt* glt );
 
-/* Ã±°ìÎÎ°è¥á¥Ã¥·¥å¤Îºï½ü */
+/* Ã±??Î°??Ã¥????? */
 void fstr_free_glmesh( struct hecmwST_local_mesh* mp );
 
