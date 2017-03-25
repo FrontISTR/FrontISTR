@@ -50,7 +50,7 @@ module m_fstr_ass_load
       type( tMaterial ), pointer :: material     !< material information
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
-      
+
       !for torque load
       integer(kind=kint) :: n_rot, rid, n_nodes, idof
       type(tRotInfo) :: rinfo
@@ -63,8 +63,9 @@ module m_fstr_ass_load
 ! -------------------------------------------------------------------
       n_rot = fstrSOLID%CLOAD_ngrp_rot
       if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-      
+
       fstrSOLID%GL(:) = 0.0d0
+      fstrSOLID%EFORCE(:) = 0.0d0
       do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -77,7 +78,7 @@ module m_fstr_ass_load
         fval = fstrSOLID%CLOAD_ngrp_val(ig0)
         iS0 = hecMESH%node_group%grp_index(ig-1) + 1
         iE0 = hecMESH%node_group%grp_index(ig  )
-        
+
         if( fstrSOLID%CLOAD_ngrp_rotID(ig0) > 0 ) then ! setup torque load information
           rid = fstrSOLID%CLOAD_ngrp_rotID(ig0)
           if( .not. rinfo%conds(rid)%active ) then
@@ -89,7 +90,7 @@ module m_fstr_ass_load
           rinfo%conds(rid)%vec(ityp) = factor*fval
           cycle
         endif
-        
+
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
           fstrSOLID%GL(ndof*(in-1)+ityp) = fstrSOLID%GL(ndof*(in-1)+ityp)+factor*fval
@@ -101,15 +102,15 @@ module m_fstr_ass_load
         if( .not. rinfo%conds(rid)%active ) cycle
         !get number of slave nodes
         n_nodes = hecmw_ngrp_get_number(hecMESH, rinfo%conds(rid)%torque_ngrp_id)
-        
+
         !get center node
         ig = rinfo%conds(rid)%center_ngrp_id
         do idof = 1, ndof
           ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
           cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
         enddo
-        ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof) 
-        
+        ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
+
         tval = dsqrt(dot_product(rinfo%conds(rid)%vec(1:ndof),rinfo%conds(rid)%vec(1:ndof)))
         if( tval < 1.d-16 ) then
           write(*,*) '###ERROR### : norm of torque vector must be > 0.0'
@@ -117,7 +118,7 @@ module m_fstr_ass_load
         endif
         normal(1:ndof) = rinfo%conds(rid)%vec(1:ndof)/tval
         tval = tval/dble(n_nodes)
-        
+
         ig = rinfo%conds(rid)%torque_ngrp_id
         iS0 = hecMESH%node_group%grp_index(ig-1) + 1
         iE0 = hecMESH%node_group%grp_index(ig  )
@@ -282,8 +283,12 @@ module m_fstr_ass_load
       do i=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
-!
-!
+
+      do i=1, 3*hecMAT%NP
+        !thermal load is not considered
+        fstrSOLID%EFORCE(i) = fstrSOLID%GL(i)
+      enddo
+
 ! -------------------------------------------------------------------
 !  TLOAD : THERMAL LOAD USING TEMPERATURE
 ! -------------------------------------------------------------------

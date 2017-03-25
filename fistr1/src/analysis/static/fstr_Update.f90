@@ -460,7 +460,7 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
           do k = 1, 3
             if( id_spc(3*in-3+k) == 0 ) cycle
             !$omp atomic
-            fstrSOLID%QFORCE(3*in-3+k) = fstrSOLID%QFORCE(3*in-3+k) + force(3*j-3+k)
+            fstrSOLID%QFORCE(3*in-3+k) = fstrSOLID%QFORCE(3*in-3+k) + force(3*j-3+k) - fstrSOLID%EFORCE(3*in-3+k)
           enddo
         enddo
       endif
