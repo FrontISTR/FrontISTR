@@ -827,6 +827,13 @@ subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
+        allocate ( fstrSOLID%EFORCE( ntotal )      ,STAT=ierror )
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to allocation error <FSTR_SOLID, EFORCE>'
+              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
 !        allocate ( fstrSOLID%TOTAL_DISP( ntotal )  ,STAT=ierror )
 !            if( ierror /= 0 ) then
 !              write(idbg,*) 'stop due to allocation error <FSTR_SOLID, TOTAL_DISP>'
@@ -973,6 +980,14 @@ subroutine fstr_solid_finalize( fstrSOLID )
             deallocate(fstrSOLID%GL               ,STAT=ierror)
             if( ierror /= 0 ) then
               write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, GL>'
+              call flush(idbg)
+              call hecmw_abort( hecmw_comm_get_comm())
+            end if
+        endif
+        if( associated(fstrSOLID%EFORCE) ) then
+            deallocate(fstrSOLID%EFORCE           ,STAT=ierror)
+            if( ierror /= 0 ) then
+              write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, EFORCE>'
               call flush(idbg)
               call hecmw_abort( hecmw_comm_get_comm())
             end if
@@ -1696,7 +1711,7 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
 !  if( rcode == 1 ) type = 0 ! PARAM_NOTHING
 
 !  if( type == 0 ) then
-  
+
     ! get center of torque load
     rotc_name = ' '
     rotc_id = -1
@@ -1708,7 +1723,7 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
       n_rotc = P%SOLID%BOUNDARY_ngrp_rot
       call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY,ROT_CENTER=', 1, rotc_name, rotc_id)
     endif
-  
+
 
     ! ENTIRE -----------------------------------------------
     P%SOLID%file_type = kbcfFSTR
@@ -1742,7 +1757,7 @@ subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
     ! set up infomation abount rotation ( default value is set if ROT_CENTER is not given.)
     P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc
     P%SOLID%BOUNDARY_ngrp_centerID(old_size+1:) = rotc_id(1)
-    
+
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
         write(*,*) 'fstr contol file error : !BOUNDRAY : range of dof_ids and dof_ide is from 1 to 6'
@@ -1789,7 +1804,7 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         gid = 1
         rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        
+
         ! get center of torque load
         rotc_name = ' '
         rotc_id = -1
@@ -1801,7 +1816,7 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
           n_rotc = P%SOLID%CLOAD_ngrp_rot
           call node_grp_name_to_id_ex( P%MESH, '!CLOAD,ROT_CENTER=', 1, rotc_name, rotc_id)
         endif
-        
+
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) return
         old_size = P%SOLID%CLOAD_ngrp_tot
@@ -1824,7 +1839,7 @@ subroutine fstr_setup_CLOAD( ctrl, counter, P )
         val_ptr = 0
         rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
-        
+
         ! set up infomation abount torque load ( default value is set if ROT_CENTER is not given.)
         P%SOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
         P%SOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)

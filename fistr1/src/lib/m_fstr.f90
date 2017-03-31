@@ -342,6 +342,7 @@ public
                                                                  !< 1:time t  2: time t+dt
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
+                real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
                 real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
                 real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
                 real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
