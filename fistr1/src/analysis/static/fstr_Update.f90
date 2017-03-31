@@ -469,6 +469,12 @@ subroutine fstr_Update3D( hecMESH, fstrSOLID )
 !$omp end parallel
   enddo
 
+  do i=1,hecMESH%n_node
+    if(id_spc(3*i-2) /= 0) fstrSOLID%QFORCE(3*i-2) = fstrSOLID%QFORCE(3*i-2) - fstrSOLID%EFORCE(3*i-2)
+    if(id_spc(3*i-1) /= 0) fstrSOLID%QFORCE(3*i-1) = fstrSOLID%QFORCE(3*i-1) - fstrSOLID%EFORCE(3*i-1)
+    if(id_spc(3*i  ) /= 0) fstrSOLID%QFORCE(3*i  ) = fstrSOLID%QFORCE(3*i  ) - fstrSOLID%EFORCE(3*i  )
+  enddo
+
   call hecmw_update_3_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )
 
   deallocate( temp )
