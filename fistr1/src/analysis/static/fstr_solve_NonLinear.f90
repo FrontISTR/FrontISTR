@@ -643,10 +643,7 @@ module m_fstr_NonLinearMethod
 
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       contact_changed_global = 0
-
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
-        exit loopFORcontactAnalysis
-      elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
+      if( fstr_is_matrixStructure_changed(infoCTChange) ) then
         ! ----  For Parallel Contact with Multi-Partition Domains
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
@@ -654,9 +651,9 @@ module m_fstr_NonLinearMethod
           call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
         endif
         contact_changed_global = 1
-      else
-
       endif
+
+      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) exit loopFORcontactAnalysis
 
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
 
