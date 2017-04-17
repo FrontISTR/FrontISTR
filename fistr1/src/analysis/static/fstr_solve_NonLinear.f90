@@ -318,7 +318,6 @@ module m_fstr_NonLinearMethod
 
         if( hecMESH%my_rank == 0 ) then
           write(*, '(a,i3,a,2e15.7)') ' - Residual(',iter,') =', res, relres
-          write(ISTA, '(''iter='',I5,''res/res0='',2E15.7)') iter, res, relres
         endif
 
         ! ----- check convergence
@@ -329,8 +328,6 @@ module m_fstr_NonLinearMethod
         ! ----- check divergence
         if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
           if( hecMESH%my_rank == 0) then
-            write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-            write(ISTA,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
           fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
@@ -373,7 +370,6 @@ module m_fstr_NonLinearMethod
       ! ----- check divergence
       if( al_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
         if( hecMESH%my_rank == 0) then
-          write(ILOG,'(a,i5,a,i5)') '### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
         end if
         fstrSOLID%NRstat_i(knstCITER) = al_step                              ! logging contact iteration
@@ -620,7 +616,6 @@ module m_fstr_NonLinearMethod
         ! ----- check divergence
         if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
           if( hecMESH%my_rank == 0) then
-            write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
           fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
@@ -676,7 +671,6 @@ module m_fstr_NonLinearMethod
       ! ----- check divergence
       if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
         if( hecMESH%my_rank == 0) then
-          write(ILOG,'(a,i5,a,i5)') '### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', sub_step
         end if
         fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
