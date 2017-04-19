@@ -731,9 +731,9 @@ contains
           hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           if(paraContactFlag.and.present(conMAT)) then
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,1.0D0,conMAT)
+            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,1.0D0,conMAT)
           else
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
+            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,rf)
           endif
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 

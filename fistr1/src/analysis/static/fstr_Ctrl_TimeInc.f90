@@ -93,6 +93,7 @@ module m_fstr_TimeInc
       if( NRstatI(knstDRESN) == 1 ) write(message,'(A)') 'Failed to converge due to MAXITER.'
       if( NRstatI(knstDRESN) == 2 ) write(message,'(A)') 'Failed to converge due to MAXRES.'
       if( NRstatI(knstDRESN) == 3 ) write(message,'(A)') 'Failed to converge due to MAXCONTITER.'
+      if( NRstatI(knstDRESN) == 4 ) write(message,'(A)') 'Failed to converge due to MatSolveError.'
       if( Cutback_stat == pAinc%CBbound ) write(message,'(A)') '# of successive cutback reached max.'
     else
       write(etime,'(1pE12.4)') current_time+time_inc

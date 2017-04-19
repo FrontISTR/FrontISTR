@@ -83,13 +83,14 @@ module m_solve_LINEQ_mkl
 
 !> \brief This subroutine executes phase 22 and phase 33 of the MKL solver
 !> \(see Intel(R) MKL Reference Manual)
-    subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT)
+    subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,ierr)
 
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
+      integer(kind=kint), intent(out)          :: ierr
       integer(kind=kint)                       :: ntdf           !< total degree of freedom
-      integer(kind=kint)                       :: idum(1), ierr
+      integer(kind=kint)                       :: idum(1)
       real(kind=kreal)                          :: ddum(1)
       real(kind=kreal), allocatable            :: x(:)           !< solution vector
 
@@ -106,7 +107,7 @@ module m_solve_LINEQ_mkl
                    nrhs, iparm, msglvl, ddum, ddum, ierr)
         if(ierr /= 0) then
           write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-          stop
+          return
         endif
         write(*,*) ' [Pardiso_MKL]: Factorization completed ! '
 
@@ -119,7 +120,8 @@ module m_solve_LINEQ_mkl
                      nrhs, iparm, msglvl, hecMAT%B, X, ierr)
           if(ierr /= 0) then
             write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-            stop
+            deallocate(x)
+            return
           endif
         write(*,*) ' [Pardiso_MKL]: Solve completed ... '
 

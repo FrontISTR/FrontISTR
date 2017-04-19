@@ -423,6 +423,7 @@ module m_fstr_NonLinearMethod
     integer(kint)      :: nndof
     real(kreal)        :: q_residual,x_residual
     real(kind=kreal), pointer :: coord(:)
+    integer(kind=kint)  :: istat
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -535,12 +536,21 @@ module m_fstr_NonLinearMethod
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
-          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT, 1.0D0, conMAT)
+          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT, istat, 1.0D0, conMAT)
         else
           q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
-          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT)
+          call solve_LINEQ_contact(hecMESH, hecMAT, fstrMAT, istat)
         endif
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        ! ----- check matrix solver error
+        if( istat /= 0 ) then
+          if( hecMESH%my_rank == 0) then
+            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          end if
+          fstrSOLID%NRstat_i(knstDRESN) = 4
+          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          return
+        end if
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 
