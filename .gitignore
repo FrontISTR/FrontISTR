@@ -13,6 +13,7 @@ lib/**/*
 *.neu
 dyna_*.txt
 Makefile
+fistr1.dSYM
 *~
 FSTR.dbg.[0-9]*
 FSTR.msg
