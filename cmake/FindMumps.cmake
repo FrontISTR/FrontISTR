@@ -17,6 +17,8 @@ endif()
 
 set(LIB_SEARCH_PATH
   $ENV{MUMPS_ROOT}
+  ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/lib
+  ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/lib
   ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.2/lib
   ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.1/lib
   $ENV{HOME}/local/lib
@@ -41,6 +43,8 @@ find_library(MUMPS_PORD_LIB
 find_path(MUMPS_INCLUDE_PATH
   NAMES mumps_compat.h
   HINTS $ENV{MUMPS_ROOT}
+    ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/include
+    ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.2/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.1/include
     $ENV{HOME}/local/include
