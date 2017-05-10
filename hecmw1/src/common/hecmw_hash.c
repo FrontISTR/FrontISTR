@@ -34,6 +34,7 @@ struct hecmw_hash_p {
 hecmw_hash_p *hash_ng; /* node group */
 hecmw_hash_p *hash_eg; /* element group */
 hecmw_hash_p *hash_sg; /* surface group */
+hecmw_hash_p *hash_mat; /* material group */
 
 static const unsigned int hecmw_hashsize_template[] =
 {

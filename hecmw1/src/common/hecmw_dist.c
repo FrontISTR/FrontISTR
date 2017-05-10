@@ -16,7 +16,7 @@ HECMW_dist_get_mat_id(const struct hecmwST_material *mat, const char *name)
 {
 	static int i;
 
-	if(mat == NULL) return -1;
+	if(mat  == NULL) return -1;
 	if(name == NULL) return -1;
 
 	if(i < mat->n_mat) {
