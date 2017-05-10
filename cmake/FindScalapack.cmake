@@ -16,20 +16,30 @@ if(SCALAPACK_LIBRARIES)
   RETURN()
 endif()
 
-set(SCALAPACK_LIB
-  "${SCALAPACK_ROOT}"
-  "${SCALAPACK_ROOT}/lib"
-  "$ENV{SCALAPACK_ROOT}"
-  "$ENV{SCALAPACK_ROOT}/lib"
-  "${CMAKE_LIBRARY_PREFIX}"
-  "${CMAKE_SOURCE_DIR}/scalapack"
-  "${CMAKE_SOURCE_DIR}/scalapack/lib")
-
-find_library(SCALAPACK_LIBRARIES
-  NAMES
-  "scalapack" "scalapack-mpi"
-  HINTS
-  ${SCALAPACKLIB})
+if(WITH_MKL)
+  message(STATUS "LAPACK Vendor is ${BLA_VENDOR}")
+  find_library(_MKL_SCALAPACK
+    NAMES mkl_scalapack_lp64
+    HINTS $ENV{MKLROOT}/lib/inel64
+  )
+  find_library(_MKL_BLACS_INTELMPI
+    NAMES mkl_blacs_intelmpi_lp64
+    HINTS $ENV{MKLROOT}/lib/intel64
+  )
+  set(SCALAPACK_LIBRARIES ${_MKL_SCALAPACK} ${_MKL_BLACS_INTELMPI} FORCE)
+else()
+  find_library(SCALAPACK_LIBRARIES
+    NAMES scalapack
+    HINTS ${CMAKE_SOURCE_DIR}/../scalapack-2.0.2/build/lib
+    $ENV{HOME}/metis-5.0.1/build/lib
+    $ENV{HOME}/local/lib
+    $ENV{HOME}/.local/lib
+    ${CMAKE_LIBRARY_PATH}
+    /usr/local/metis/lib
+    /usr/local/lib
+    /usr/lib
+  )
+endif()
 
 if(SCALAPACK_LIBRARIES)
   message(STATUS "Found SCALAPACK")

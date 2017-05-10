@@ -95,22 +95,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 # Find external packages
 find_package(MPI)
 find_package(OpenMP)
+find_package(LAPACK)
 find_package(Refiner)
 find_package(Revocap)
 find_package(Metis)
 find_package(ParMetis)
 find_package(Mumps)
-find_package(scalapack)
-find_package(LAPACK)
+find_package(Scalapack)
 find_package(Trilinos)
 find_package(Doxygen)
 feature_summary(WHAT ALL)
-message(STATUS "Installation path is ${CMAKE_INSTALL_PREFIX}")
-if(${CMAKE_PREFIX_PATH})
-  message(STATUS "Library search path is ${CMAKE_PREFIX_PATH}")
-else()
-  message(STATUS "Library search path is $ENV{HOME}/local /usr/local /usr etc.")
-endif()
 
 # Options
 ###############################################################################
@@ -224,7 +218,7 @@ if(WITH_METIS)
   endif()
 endif()
 
-# -DWITH_PARMETIS (unimplemented)
+# -DWITH_PARMETIS
 if(WITH_PARMETIS)
   if(PARMETIS_FOUND)
     include_directories(${PARMETIS_INCLUDE_PATH})
@@ -233,8 +227,18 @@ endif()
 
 # -DWITH_MKL (unimplemented)
 # W.I.P.
-#option(WITH_MKL "compile with MKL PARDISO" OFF)
-#set(BLA_VENDOR "Intel")
+option(WITH_MKL "compile with MKL PARDISO" OFF)
+if(WITH_MKL)
+  get_filename_component(ICC icc PROGRAM)
+  set(CMAKE_C_COMPILER ${ICC} CACHE FILEPATH "Intel C Compiler" FORCE)
+  get_filename_component(ICPC icpc PROGRAM)
+  set(CMAKE_CXX_COMPILER ${ICPC} CACHE FILEPATH "Intel C++ Compiler" FORCE)
+  get_filename_component(IFORT ifort PROGRAM)
+  set(CMAKE_Fortran_COMPILER ${IFORT} CACHE FILEPATH "Intel Fortran Compiler" FORCE)
+  set(BLA_VENDOR "Intel")
+  find_package(LAPACK)
+  find_package(Scalapack)
+endif()
 #set(WITH_LAPACK ON)
 
 # -DWITH_MUMPS
@@ -299,6 +303,19 @@ if(BUILD_DOC)
   else()
     message(WARNING "doxygen not found.")
   endif()
+endif()
+
+###############################################################################
+# Print STATUS
+###############################################################################
+message(STATUS "C compiler is ${CMAKE_C_COMPILER}")
+message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER}")
+message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER}")
+message(STATUS "Installation path is ${CMAKE_INSTALL_PREFIX}")
+if(${CMAKE_PREFIX_PATH})
+  message(STATUS "Library search path is ${CMAKE_PREFIX_PATH}")
+else()
+  message(STATUS "Library search path is $ENV{HOME}/local /usr/local /usr etc.")
 endif()
 
 ###############################################################################
