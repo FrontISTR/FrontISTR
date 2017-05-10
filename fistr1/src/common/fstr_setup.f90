@@ -88,6 +88,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_elemopt
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
+        integer(kind=kint) :: cache = 1
 
         write( logfileNAME, '(i5,''.log'')' ) myrank
 
@@ -464,12 +465,21 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
                 stop
             endif
+
             cid = 0
-            do i=1,hecMESH%material%n_mat
-              if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
-                cid = i; exit
-              endif
-            enddo
+            if(cache < hecMESH%material%n_mat .and. &
+               fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
+              cid = cache
+              cache = cache + 1
+            else
+              do i=1,hecMESH%material%n_mat
+                if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
+                  cid = i
+                  cache = i + 1
+                  exit
+                endif
+              enddo
+            endif
             if(cid == 0)then
                 write(*,*) '### Error: Fail in read in material definition : ' , c_material
                 write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
@@ -477,6 +487,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
             endif
             fstrSOLID%materials(cid)%name = mName
             if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
+
           else if( header_name == '!ELASTIC' ) then
             if( c_material >0 ) then
                if( fstr_ctrl_get_ELASTICITY( ctrl,                                        &
