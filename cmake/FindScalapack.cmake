@@ -16,17 +16,45 @@ if(SCALAPACK_LIBRARIES)
   RETURN()
 endif()
 
-if(WITH_MKL)
-  message(STATUS "LAPACK Vendor is ${BLA_VENDOR}")
-  find_library(_MKL_SCALAPACK
+find_file(_MKL_SCALAPACK_INCLUDE
+  NAMES "mkl_scalapack.h"
+  HINTS "$ENV{MKLROOT}/include"
+  NO_SYSTEM_ENVIRONMENT_PATH
+)
+message(STATUS "MKL Scalapack FOUND")
+
+if(_MKL_SCALAPACK_INCLUDE)
+  find_library(_MKL_SCALAPACK_LP64
     NAMES mkl_scalapack_lp64
-    HINTS $ENV{MKLROOT}/lib/inel64
+    HINTS $ENV{MKLROOT}/lib/intel64
   )
-  find_library(_MKL_BLACS_INTELMPI
+  find_library(_MKL_INTEL_LP64
+    NAMES mkl_intel_lp64
+    HINTS $ENV{MKLROOT}/lib/intel64
+  )
+  find_library(_MKL_INTEL_THREAD
+    NAMES mkl_intel_thread
+    HINTS $ENV{MKLROOT}/lib/intel64
+  )
+  find_library(_MKL_CORE
+    NAMES mkl_core
+    HINTS $ENV{MKLROOT}/lib/intel64
+  )
+  find_library(_MKL_BLACS_INTELMPI_LP64
     NAMES mkl_blacs_intelmpi_lp64
     HINTS $ENV{MKLROOT}/lib/intel64
   )
-  set(SCALAPACK_LIBRARIES ${_MKL_SCALAPACK} ${_MKL_BLACS_INTELMPI} FORCE)
+  set(SCALAPACK_LIBRARIES
+    ${_MKL_SCALAPACK_LP64}
+    ${_MKL_INTEL_LP64}
+    ${_MKL_INTEL_THREAD}
+    ${_MKL_CORE}
+    ${_MKL_BLACS_INTELMPI_LP64}
+    iomp5
+    pthread
+    m
+    dl
+    CACHE STRING "MKL ScaLAPACK")
 else()
   find_library(SCALAPACK_LIBRARIES
     NAMES scalapack
