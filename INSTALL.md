@@ -17,7 +17,7 @@ cmake version 2.8.12.2
 
 ## コンパイル
 
-最小限のFrontISTRは、以下の手順でコンパイルすることができます。既にライブラリがインストールされている場合、機能が有効になります。
+最小限のFrontISTRは、以下の手順でコンパイルすることができます。既にライブラリがインストールされている場合、ライブラリを自動検出して各機能が有効になります。
 
 ~~~txt
 % tar xvf FrontISTR.tar.gz
@@ -53,8 +53,41 @@ cmake version 2.8.12.2
 | -DWITH_LAPACK=1   | LAPACKの機能を有効にします                    | ライブラリが必要             |
 | -DWITH_ML=1       | Trilinos MLの機能を有効にします               | ライブラリが必要             |
 | -DBUILD_DOC=1     | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要      |
+これらの設定できるオプションの一覧は`% cmake -L`で表示されます。
+~~~txt
+-- Cache values
+BASH_PROGRAM:FILEPATH=/bin/bash
+BUILD_DOC:BOOL=ON
+CMAKE_BUILD_TYPE:STRING=RELEASE
+CMAKE_INSTALL_PREFIX:PATH=/usr/local
+METIS_VER_4:BOOL=OFF
+PARMETIS_VER_3:BOOL=OFF
+WINDOWS:BOOL=OFF
+WITH_METIS:BOOL=ON
+WITH_ML:BOOL=ON
+WITH_MPI:BOOL=ON
+WITH_MUMPS:BOOL=ON
+WITH_OPENMP:BOOL=ON
+WITH_PARACON:BOOL=OFF
+WITH_PARMETIS:BOOL=ON
+WITH_REFINER:BOOL=ON
+WITH_REVOCAP:BOOL=OFF
+WITH_TOOLS:BOOL=ON
+~~~
+### その他のオプション
+その他、よく利用されるcmakeのオプションを示します。必要に応じて利用してください。
+
+| オプション | 説明 | 例 |
+|---------|------|----|
+| -DCMAKE_INSTALL_PREFIX=<intall path> | インストールするパスを設定。デフォルトは`/usr/local` | -DCMAKE_INSTALL_PREFIX=$HOME/local で $HOME/local/bin などにプログラムがインストールされる　|
+| -DCMAKE_C_COMPILER= | Cコンパイラを指定 | -DCMAKE_C_COMPILER=icc  (Intel Cコンパイラ） |
+| -DCMAKE_CXX_COMPILER= | C++コンパイラを指定 | -DCMAKE_CXX_COMPILER=icpc  (Intel C++コンパイラ) |
+| -DCMAKE_Fortran_COMPILER= | Fortranコンパイラを指定 | -DCMAKE_Fortran_COMPILER=ifort  (Intel Fortranコンパイラ) |
+| -DCMAKE_PREFIX_PATH= | ライブラリ等の格納場所を指定 | -DCMAKE_PREFIX_PATH=$HOME/tools (ライブラリやインクルードファイルを探索するパス) |
 
 ## LinuxなどのUnix系プラットフォームでの構築例
+
+`cmake`による設定の具体例を示します。予めライブラリがインストールされている場合、明示する必要はありません。
 
 ### 外部ライブラリの場所の指定
 
@@ -217,9 +250,17 @@ PARAMETER (MPI_ADDRESS_KIND=8)
 
 でコンパイルしてください。
 
-## OS X上でコンパイルする場合
+## Mac OS X上でコンパイルする場合
 
-(未検証)
+Xcode上で`cmake`を動かすと、Cコンパイラとして`clang`が選ばれる様です。コンパイラを変更を`gcc`に変更して構築してください。
+
+~~~txt
+ % cmake -DCMAKE_C_COMPILER=gcc \
+         -DCMAKE_CXX_COMPILER=g++ \
+         -DCMAKE_Fortran_COMPILER=gfortran
+         ..
+~~~
+
 
 ## ライブラリをインストールする場合のTips
 
