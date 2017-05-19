@@ -8,10 +8,10 @@ cmake_minimum_required(VERSION 2.8.11)
 project(Fistr C CXX Fortran)
 
 include_directories(
-  ${Hecmw_SOURCE_DIR}/src/common
-  ${Hecmw_SOURCE_DIR}/src/hecmw
-  ${Hecmw_SOURCE_DIR}/src/visualizer
-  ${Hecmw_BINARY_DIR}/src
+  ${hecmw_SOURCE_DIR}/src/common
+  ${hecmw_SOURCE_DIR}/src/hecmw
+  ${hecmw_SOURCE_DIR}/src/visualizer
+  ${hecmw_BINARY_DIR}/src
   ${Fistr_SOURCE_DIR}/src/common
   ${Fistr_SOURCE_DIR}/src/lib
   ${Fistr_BINARY_DIR}/src

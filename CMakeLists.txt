@@ -2,38 +2,13 @@
 # Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-message(STATUS ${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}${CMAKE_SYSTEM_VERSION})
+
 ###############################################################################
 # CMakeLists.txt for FrontISTR
-#
-# FrontISTR
-# ├── CMakeLists.txt
-# ├── cmake
-# │   ├── FindMetis.cmake
-# │   ├── FindMumps.cmake
-# │   ├── FindParMetis.cmake
-# │   ├── FindRefiner.cmake
-# │   ├── FindRevocap.cmake
-# │   └── FindScalapack.cmake
-# ├── examples
-# │   ├── CMakeLists.txt
-# │   └── test_FrontISTR.rb
-# ├── fistr
-# │   └── CMakeLists.txt
-# ├── fistr1
-# │   ├── CMakeLists.txt
-# │   ├── src
-# │   │   └── CMakeLists.txt
-# │   └── tools
-# │       └── CMakeLists.txt
-# └── hecmw1
-#      ├── CMakeLists.txt
-#      ├── src
-#      │   └── CMakeLists.txt
-#      └── tools
-#         └── CMakeLists.txt
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
+project(FrontISTR)
+
 include(CMakeDependentOption)
 
 ###############################################################################
