@@ -5,17 +5,20 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-project(Hecmw C CXX Fortran)
+project(hecmw C CXX Fortran)
 
-include_directories(
-  ${Hecmw_SOURCE_DIR}/src/common
-  ${Hecmw_SOURCE_DIR}/src/hecmw
-  ${Hecmw_SOURCE_DIR}/src/visualizer
-  ${Hecmw_BINARY_DIR}
-)
+set(hecmw_SOURCES)
+set(hecmw_INCLUDE_DIR)
+set(hecmw_DEFINITIONS)
 
-add_subdirectory(src)
+# build for libhecmw.a
+include(src/CMakeLists.txt)
 
+add_library(hecmw STATIC ${hecmw_SOURCES})
+target_include_directories(hecmw PUBLIC ${hecmw_INCLUDE_DIRS})
+target_compile_definitions(hecmw PUBLIC ${hecmw_DEFINITIONS})
+
+# build for tools
 if(WITH_TOOLS)
   add_subdirectory(tools)
 endif()
