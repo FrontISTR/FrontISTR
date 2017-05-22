@@ -3,10 +3,6 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
-)
-
-list(APPEND hecmw_INCLUDE_DIRS
-  "${CMAKE_CURRENT_LIST_DIR}"
-)
+include(${CMAKE_CURRENT_LIST_DIR}/freq/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mode/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/transit/CMakeLists.txt)

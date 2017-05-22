@@ -7,12 +7,19 @@ cmake_minimum_required(VERSION 2.8.11)
 project(hecmw C CXX Fortran)
 
 set(hecmw_SOURCES)
-set(hecmw_INCLUDE_DIR)
+set(hecmw_INCLUDE_DIRS)
 set(hecmw_DEFINITIONS)
+set(hecmw_LIBRARIES)
 
 #
 # Inherit definitions from fistr options
 #
+set(hecmw_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS})
+message(STATUS "hecmw-includes ${FrontISTR_INCLUDE_DIRS}")
+set(hecmw_DEFINITIONS ${FrontISTR_DEFINITIONS})
+message(STATUS "hecmw-definitions ${FrontISTR_DEFINITIONS}")
+set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
+message(STATUS "hecmw-libraries ${FrontISTR_LIBRARIES}")
 
 #
 # Build for libhecmw.a
@@ -20,7 +27,7 @@ set(hecmw_DEFINITIONS)
 include(src/CMakeLists.txt)
 
 add_library(hecmw STATIC ${hecmw_SOURCES})
-target_link_libraries(hecmw ${MPI_CXX_LIBRARIES})
+target_link_libraries(hecmw ${hecmw_LIBRARIES})
 target_include_directories(hecmw PUBLIC ${hecmw_INCLUDE_DIRS})
 target_compile_definitions(hecmw PUBLIC ${hecmw_DEFINITIONS})
 

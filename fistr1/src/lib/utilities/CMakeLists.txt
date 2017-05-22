@@ -3,10 +3,9 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
-)
-
-list(APPEND hecmw_INCLUDE_DIRS
-  "${CMAKE_CURRENT_LIST_DIR}"
+list(APPEND fistr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/dictionary.f90
+  ${CMAKE_CURRENT_LIST_DIR}/linkedlist.f90
+  ${CMAKE_CURRENT_LIST_DIR}/ttable.f90
+  ${CMAKE_CURRENT_LIST_DIR}/utilities.f90
 )

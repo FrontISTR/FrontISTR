@@ -3,10 +3,10 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
-)
-
-list(APPEND hecmw_INCLUDE_DIRS
-  "${CMAKE_CURRENT_LIST_DIR}"
+list(APPEND fistr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/uelastic.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uhardening.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uload.f90
+  ${CMAKE_CURRENT_LIST_DIR}/umat.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uyield.f90
 )

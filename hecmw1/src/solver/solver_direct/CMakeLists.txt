@@ -6,3 +6,4 @@
 list(APPEND hecmw_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_direct.f90"
 )
+

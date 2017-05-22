@@ -15,3 +15,4 @@ list(APPEND hecmw_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_dump.f90"
   "${CMAKE_CURRENT_LIST_DIR}/hecmw_local_matrix.f90"
 )
+
