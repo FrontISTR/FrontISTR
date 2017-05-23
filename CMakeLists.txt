@@ -15,6 +15,7 @@ project(FrontISTR Fortran C CXX)
 ###############################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
+include(CMakeDetermineFortranCompiler)
 
 ###############################################################################
 # Add module path for FindPackage.cmake
@@ -32,6 +33,18 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 set(FrontISTR_DEFINITIONS)
 set(FrontISTR_LIBRARIES)
 set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY})
+
+###############################################################################
+# Build type (RELEASE or DEBUG)
+###############################################################################
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)")
+endif()
+if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
+  list(APPEND FrontISTR_DEFINITIONS "DEBUG")
+elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
+  list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
+endif()
 
 ###############################################################################
 # Options
@@ -76,49 +89,34 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 else()
 endif()
 
-###############################################################################
-# Build type (RELEASE or DEBUG)
-###############################################################################
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)")
-endif()
-if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
-  list(APPEND FrontISTR_DEFINITIONS "DEBUG")
-elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
-  list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
-endif()
-
-###############################################################################
-# Find external libraries and set WITH_XX=ON if found libraries
-###############################################################################
 # Find external packages
+find_package(MPI)
+find_package(OpenMP)
 find_package(LAPACK)
 find_package(Metis)
-find_package(MPI)
 find_package(Mumps)
-find_package(OpenMP)
 find_package(Parmetis)
 find_package(Refiner)
 find_package(Revocap)
 find_package(Scalapack)
 find_package(Trilinos)
 find_package(Doxygen)
-feature_summary(WHAT ALL)
-
-option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_TOOLS "compile tools" ON)
-option(WITH_MPI "for parallel environment with MPI" ${MPI_C_FOUND})
-option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
-option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
-option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_PARACON "for parallel contact" OFF)
+option(BUILD_DOC "Generate API documents." OFF})
+option(WINDOWS "build on windows" ${WINDOWS})
+option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
+option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
+option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
 option(WITH_METIS "compile with METIS" ${METIS_FOUND})
 option(METIS_VER_4 "uses METIS-4" OFF)
+option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
 option(WITH_PARMETIS "compile with ParMETIS" ${PARMETIS_FOUND})
 option(PARMETIS_VER_3 "uses METIS-3" OFF)
-option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
+option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
+option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
-option(BUILD_DOC "Generate API documents." ${DOXYGEN_FOUND})
+feature_summary(WHAT ALL)
 
 ##############
 # -DWINDOWS
@@ -212,9 +210,9 @@ if(WITH_MKL)
   set(BLA_VENDOR "Intel")
   find_package(LAPACK)
   find_package(Scalapack)
-  add_definitions(-DWITH_MKL)
+  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
+  set(WITH_LAPACK ON)
 endif()
-#set(WITH_LAPACK ON)
 
 # -DWITH_MUMPS
 if(WITH_MUMPS)
@@ -233,13 +231,14 @@ endif()
 # -DWITH_LAPACK
 if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
-    add_definitions(-DWITH_LAPACK)
+    list(APPEND FrontISTR_DEFINITIONS "WITH_LAPACK")
+    list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
   else()
     set(BLAS_LIBRARIES "BLAS_LIBRARIES-NOTFOUND" CACHE FILEPATH "BLAS Library")
     set(LAPACK_LIBRARIES "LAPACK_LIBRARIES-NOTFOUND" CACHE FILEPATH "LAPACK Library")
-    message(WARNING "Please specify -DBLAS_LIBRARIES and -DLAPACK_LIBRARIES manually.")
+    message(WARNING "Please specify -DBLAS_LIBRARIES and -DLAPACK_LIBRARES manually.")
     set(WITH_LAPACK OFF)
-    remove_definitions(-DWITH_LAPACK)
+    list(REMOVE_ITEM FrontISTR_DEFINITIONS "WITH_LAPACK")
   endif()
 endif()
 

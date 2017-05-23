@@ -36,6 +36,10 @@ if(_MKL_SCALAPACK_INCLUDE)
     NAMES mkl_intel_thread
     HINTS $ENV{MKLROOT}/lib/intel64
   )
+  find_library(_MKL_GNU_THREAD
+    NAMES mkl_gnu_thread
+    HINTS $ENV{MKLROOT}/lib/intel64
+  )
   find_library(_MKL_CORE
     NAMES mkl_core
     HINTS $ENV{MKLROOT}/lib/intel64
@@ -44,17 +48,33 @@ if(_MKL_SCALAPACK_INCLUDE)
     NAMES mkl_blacs_intelmpi_lp64
     HINTS $ENV{MKLROOT}/lib/intel64
   )
-  set(SCALAPACK_LIBRARIES
-    ${_MKL_SCALAPACK_LP64}
-    ${_MKL_INTEL_LP64}
-    ${_MKL_INTEL_THREAD}
-    ${_MKL_CORE}
-    ${_MKL_BLACS_INTELMPI_LP64}
-    iomp5
-    pthread
-    m
-    dl
-    CACHE STRING "MKL ScaLAPACK")
+  if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+    set(SCALAPACK_LIBRARIES
+      ${_MKL_SCALAPACK_LP64}
+      ${_MKL_INTEL_LP64}
+      ${_MKL_INTEL_THREAD}
+      ${_MKL_CORE}
+      ${_MKL_BLACS_INTELMPI_LP64}
+      iomp5
+      pthread
+      m
+      dl
+      CACHE STRING "MKL ScaLAPACK"
+    )
+  elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    set(SCALAPACK_LIBRARIES
+      ${_MKL_SCALAPACK_LP64}
+      ${_MKL_INTEL_LP64}
+      ${_MKL_GNU_THREAD}
+      ${_MKL_CORE}
+      ${_MKL_BLACS_INTELMPI_LP64}
+      iomp5
+      pthread
+      m
+      dl
+      CACHE STRING "MKL ScaLAPACK"
+    )
+  endif()
 else()
   find_library(SCALAPACK_LIBRARIES
     NAMES scalapack
