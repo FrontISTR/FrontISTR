@@ -4,5 +4,5 @@
 ###############################################################################
 
 list(APPEND hecmw_vis1_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/visualizer.c"
+  ${CMAKE_CURRENT_LIST_DIR}/visualizer.c
 )

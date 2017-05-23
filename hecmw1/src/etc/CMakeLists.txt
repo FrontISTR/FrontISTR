@@ -4,6 +4,6 @@
 ###############################################################################
 
 list(APPEND hecmw_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/mpi_wrapper.c"
+  ${CMAKE_CURRENT_LIST_DIR}/mpi_wrapper.c
 )
 

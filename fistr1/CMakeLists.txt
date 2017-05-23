@@ -11,6 +11,7 @@ set(fistr_SOURCES)
 set(fistr_INCLUDE_DIRS)
 set(fistr_DEFINITIONS)
 set(fistr_LIBRARIES)
+set(fistr1_SOURCES)
 
 #
 # Inherit definitions from fistr options
@@ -24,24 +25,38 @@ set(fistr_LIBRARIES ${FrontISTR_LIBRARIES})
 #
 include(src/CMakeLists.txt)
 add_library(fistr STATIC ${fistr_SOURCES})
-target_include_directories(fistr PUBLIC ${fistr_INCLUDE_DIRS})
-target_compile_definitions(fistr PUBLIC ${fistr_DEFINITIONS})
+target_link_libraries(fistr hecmw)
+target_include_directories(fistr PUBLIC
+  ${fistr_INCLUDE_DIRS} ${hecmw_INCLUDE_DIRS}
+)
+target_compile_definitions(fistr PUBLIC
+  ${fistr_DEFINITIONS} ${hecmw_DEFINITIONS}
+)
 
 #
 # Build for fistr1 (executable)
 #
-
-#include_directories(
-#  ${hecmw_SOURCE_DIR}/src/common
-#  ${hecmw_SOURCE_DIR}/src/hecmw
-#  ${hecmw_SOURCE_DIR}/src/visualizer
-#  ${hecmw_BINARY_DIR}/src
-#  ${Fistr_SOURCE_DIR}/src/common
-#  ${Fistr_SOURCE_DIR}/src/lib
-#  ${Fistr_BINARY_DIR}/src
-#)
-
-#add_subdirectory(src)
+message(STATUS "fistr_LIBRARIES ${fistr_LIBRARIES}")
+message(STATUS "hecmw_LIBRARIES ${hecmw_LIBRARIES}")
+message(STATUS "FrontISTR_LIBRARIES ${FrontISTR_LIBRARIES}")
+include(src/main/CMakeLists.txt)
+add_executable(fistr1 ${fistr1_SOURCES})
+target_link_libraries(fistr1
+  fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
+)
+target_include_directories(fistr1 PUBLIC
+  ${fistr_INCLUDE_DIRS}
+  ${hecmw_INCLUDE_DIRS}
+  ${CMAKE_Fortran_MODULE_DIRECTORY}
+)
+target_compile_definitions(fistr1 PUBLIC
+  ${fistr_DEFINITIONS}
+  ${hecmw_DEFINITIONS}
+)
+install(TARGETS fistr1
+  DESTINATION bin
+  CONFIGURATIONS ${CMAKE_BUILD_TYPE}
+)
 
 #if(WITH_TOOLS)
 #  add_subdirectory(tools)

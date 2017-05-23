@@ -15,11 +15,8 @@ set(hecmw_LIBRARIES)
 # Inherit definitions from fistr options
 #
 set(hecmw_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS})
-message(STATUS "hecmw-includes ${FrontISTR_INCLUDE_DIRS}")
 set(hecmw_DEFINITIONS ${FrontISTR_DEFINITIONS})
-message(STATUS "hecmw-definitions ${FrontISTR_DEFINITIONS}")
 set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
-message(STATUS "hecmw-libraries ${FrontISTR_LIBRARIES}")
 
 #
 # Build for libhecmw.a

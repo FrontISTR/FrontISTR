@@ -4,6 +4,6 @@
 ###############################################################################
 
 list(APPEND hecmw_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/sparse_matrix.f90"
-  "${CMAKE_CURRENT_LIST_DIR}/sparse_matrix_hec.f90"
+  ${CMAKE_CURRENT_LIST_DIR}/sparse_matrix.f90
+  ${CMAKE_CURRENT_LIST_DIR}/sparse_matrix_hec.f90
 )

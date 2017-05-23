@@ -8,34 +8,34 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-project(FrontISTR)
+project(FrontISTR Fortran C CXX)
 
-###############################
+###############################################################################
 # Includes standard macros
-###############################
+###############################################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
 
-###############################
+###############################################################################
 # Add module path for FindPackage.cmake
-###############################
+###############################################################################
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
-###############################
+###############################################################################
 # Add Fortran module path
-###############################
+###############################################################################
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 
-###############################
+###############################################################################
 # Initialize variable of definitions, link libraries, includes
-###############################
+###############################################################################
 set(FrontISTR_DEFINITIONS)
 set(FrontISTR_LIBRARIES)
 set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY})
 
-###############################
-# Initialize variables of options
-###############################
+###############################################################################
+# Options
+###############################################################################
 # -DWINDOWS          : build on Windows
 # -DWITH_TOOLS       : compile tools
 # -DWITH_MPI         : for parallel environment with MPI
@@ -80,12 +80,12 @@ endif()
 # Build type (RELEASE or DEBUG)
 ###############################################################################
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type(RELEASE or DEBUG)")
+  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)")
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+  list(APPEND FrontISTR_DEFINITIONS "DEBUG")
+elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
+  list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
 endif()
 
 ###############################################################################
@@ -97,7 +97,7 @@ find_package(Metis)
 find_package(MPI)
 find_package(Mumps)
 find_package(OpenMP)
-find_package(ParMetis)
+find_package(Parmetis)
 find_package(Refiner)
 find_package(Revocap)
 find_package(Scalapack)
@@ -107,7 +107,7 @@ feature_summary(WHAT ALL)
 
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_TOOLS "compile tools" ON)
-option(WITH_MPI "for parallel environment with MPI" ${MPI_Fortran_FOUND})
+option(WITH_MPI "for parallel environment with MPI" ${MPI_C_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
@@ -120,11 +120,17 @@ option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 option(BUILD_DOC "Generate API documents." ${DOXYGEN_FOUND})
 
+##############
+# -DWINDOWS
+##############
+if(WINDOWS)
+  list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
+endif()
 # -DWITH_MPI
 if(WITH_MPI)
   list(APPEND FrontISTR_INCLUDE_DIRS ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
   list(APPEND FrontISTR_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
-  set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 else()
   set(WITH_MPI OFF)
   list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
@@ -175,7 +181,7 @@ if(WITH_METIS)
     list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
     list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
     if(NOT METIS_VER_4)
-      list(APPEND FrontISTR_DEFINITIONS "DHECMW_METIS_VER=5")
+      list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
     else()
       list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
     endif()
@@ -189,7 +195,7 @@ endif()
 if(WITH_PARMETIS)
   if(PARMETIS_FOUND)
     list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-    list(APPEND FrontISTR_LIBRARIES ${PARMTTIS_LIBRARIES})
+    list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
   endif()
 endif()
 
@@ -213,8 +219,9 @@ endif()
 # -DWITH_MUMPS
 if(WITH_MUMPS)
   if(MUMPS_FOUND)
-    add_definitions(-DWITH_MUMPS)
-    include_directories(${MUMPS_INCLUDE_PATH})
+    list(APPEND FrontISTR_DEFINITIONS "WITH_MUMPS")
+    list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
     mark_as_advanced(scalapack_DIR)
   else()
     message(FATAL_ERROR "MUMPS could not found")
@@ -241,6 +248,7 @@ if(WITH_ML)
   if(Trilinos_FOUND)
     list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
     list(APPEND FrontISTR_DEFINITIONS HECMW_WITH_ML)
+    list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
   else()
     #message(WARNING "Please turn on WITH_MPI")
     message(WARNING "Trilinos not found")
@@ -305,12 +313,6 @@ configure_file(
 #
 add_subdirectory(hecmw1)
 add_subdirectory(fistr1)
-#add_subdirectory(fistr)
-
-# libfistr.a depends on libhecmw.a
-#add_dependencies(fistr hecmw)
-# fistr1 depends on libfistr.a and libhecmw.a
-#add_dependencies(fistr1 fistr hecmw)
 
 ###############################################################################
 # Tests

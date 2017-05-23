@@ -4,8 +4,6 @@
 ###############################################################################
 
 list(APPEND fistr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/dictionary.f90
-  ${CMAKE_CURRENT_LIST_DIR}/linkedlist.f90
   ${CMAKE_CURRENT_LIST_DIR}/ttable.f90
   ${CMAKE_CURRENT_LIST_DIR}/utilities.f90
 )

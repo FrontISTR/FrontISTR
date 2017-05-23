@@ -4,5 +4,5 @@
 ###############################################################################
 
 list(APPEND rconv_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/hecmw_res_type_conv.c"
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_res_type_conv.c
 )

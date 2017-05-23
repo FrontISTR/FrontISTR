@@ -3,10 +3,13 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
-)
+if(NOT WITH_PARACON)
+  list(APPEND fistr1_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/fistr_main.f90
+  )
+else()
+  list(APPEND fistr1_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/fistr_main_contact.f90
+  )
+endif()
 
-list(APPEND hecmw_INCLUDE_DIRS
-  ${CMAKE_CURRENT_LIST_DIR}
-)

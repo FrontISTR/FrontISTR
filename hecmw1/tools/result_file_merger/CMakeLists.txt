@@ -4,7 +4,7 @@
 ###############################################################################
 
 list(APPEND rmerge_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/fstr_rmerge_util.c"
-  "${CMAKE_CURRENT_LIST_DIR}/fstr_rmerge.c"
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_rmerge_util.c
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_rmerge.c
 )
 
