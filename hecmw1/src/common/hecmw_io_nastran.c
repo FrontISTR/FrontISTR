@@ -2428,7 +2428,7 @@ int iff_bulk_parse_MAT1( iff_bulk_t* bulk )
 		data[i++] = 0; /* temp */
 
 		mat = create_mat_struct( name, item_n, sub_n, data );
-		if(HECMW_io_add_mat(mat) == NULL) return -1;
+		if(HECMW_io_add_mat(name, mat) == NULL) return -1;
 
 		#undef item_n
 	}
@@ -2486,7 +2486,7 @@ int iff_bulk_parse_MAT4( iff_bulk_t* bulk )
 		data[i++] = 0; /* temp */
 
 		mat = create_mat_struct( name, item_n, sub_n, data );
-		if(HECMW_io_add_mat(mat) == NULL) return -1;
+		if(HECMW_io_add_mat(name, mat) == NULL) return -1;
 
 		#undef item_n
 	}
