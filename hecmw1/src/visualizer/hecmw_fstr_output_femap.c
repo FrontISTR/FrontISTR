@@ -1038,7 +1038,7 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 
 		fprintf (outfp, "%8d %d %s  ",
 				flag_global_ID ? global_elem_ID[i] : eid + eid_offset,
-				HECMW_get_etype_class(etype),HECMW_get_ucd_label(etype));
+				HECMW_get_etype_class(etype), HECMW_get_ucd_label(etype));
 
 		ii = avs_elem_node_order(etype);
 		for (j = 0; j < node_num; j++)
@@ -1339,7 +1339,7 @@ avs_output (struct hecmwST_local_mesh *mesh,
 					tmp_global_node_ID = NULL;
 
 					tmp_node_ID = (int *) HECMW_calloc (tmp_n_node * 2, sizeof (int));
-					if ((tmp_node_ID == NULL))
+					if (tmp_node_ID == NULL)
 						HECMW_vis_memory_exit("tmp recv: node_ID");
 
 					HECMW_Recv (tmp_node_ID, tmp_n_node * 2, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);

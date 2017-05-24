@@ -991,63 +991,62 @@ CONTAINS
     ENDDO
     !c
     num=0
-    DO
-      search=1
-      thresh=mindeg
-      mindeg=neqns
+    search=1
+    thresh=mindeg
+    mindeg=neqns
 
-300 CONTINUE
-    nump1=num+1
-    IF(nump1>search) search=nump1
-    DO j=search,neqns
-      node=perm(j)
-      IF(marker(node)<0) CYCLE
-      ndeg=deg(node)
-      IF(ndeg<=thresh) GOTO 500
-      IF(ndeg<mindeg) mindeg=ndeg
-    ENDDO
-  ENDDO
-!c
-500 CONTINUE
-    search=j
-    nofsub=nofsub+deg(node)
-    marker(node)=1
-    CALL qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-    nxnode=node
+    do
+      DO
+        nump1=num+1
+        IF(nump1>search) search=nump1
+        DO j=search,neqns
+          node=perm(j)
+          IF(marker(node)<0) CYCLE
+          ndeg=deg(node)
+          IF(ndeg<=thresh) exit
+          IF(ndeg<mindeg) mindeg=ndeg
+        ENDDO
+      ENDDO
 
+      search=j
+      nofsub=nofsub+deg(node)
+      marker(node)=1
+      CALL qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
+      nxnode=node
 
-    DO
-      num=num+1
-      np=invp(nxnode)
-      ip=perm(num)
-      perm(np)=ip
-      invp(ip)=np
-      perm(num)=nxnode
-      invp(nxnode)=num
-      deg(nxnode)=-1
-      nxnode=qlink(nxnode)
-      IF(nxnode<=0) EXIT
-    ENDDO
+      DO
+        num=num+1
+        np=invp(nxnode)
+        ip=perm(num)
+        perm(np)=ip
+        invp(ip)=np
+        perm(num)=nxnode
+        invp(nxnode)=num
+        deg(nxnode)=-1
+        nxnode=qlink(nxnode)
+        IF(nxnode<=0) EXIT
+      ENDDO
 
-    IF(rchsze<=0) GOTO 800
-    !c
-    CALL qmdupd(xadj,adjncy,rchsze,rchset,deg,qsize,qlink,marker,rchset(rchsze+1),nbrhd(nhdsze+1))
-    marker(node)=0
-    DO irch=1,rchsze
-      inode=rchset(irch)
-      IF(marker(inode)<0) CYCLE
-      marker(inode)=0
-      ndeg=deg(inode)
-      IF(ndeg<mindeg) mindeg=ndeg
-      IF(ndeg>thresh) CYCLE
-      mindeg=thresh
-      thresh=ndeg
-      search=invp(inode)
-    ENDDO
-    IF(nhdsze>0) CALL qmdot(node,xadj,adjncy,marker,rchsze,rchset,nbrhd)
+      IF(rchsze > 0)then
+        !c
+        CALL qmdupd(xadj,adjncy,rchsze,rchset,deg,qsize,qlink,marker,rchset(rchsze+1),nbrhd(nhdsze+1))
+        marker(node)=0
+        DO irch=1,rchsze
+          inode=rchset(irch)
+          IF(marker(inode)<0) CYCLE
+          marker(inode)=0
+          ndeg=deg(inode)
+          IF(ndeg<mindeg) mindeg=ndeg
+          IF(ndeg>thresh) CYCLE
+          mindeg=thresh
+          thresh=ndeg
+          search=invp(inode)
+        ENDDO
+        IF(nhdsze>0) CALL qmdot(node,xadj,adjncy,marker,rchsze,rchset,nbrhd)
+      ENDIF
 
-800 CONTINUE
-    IF(num<neqns) GOTO 300
+      IF(num >= neqns) exit
+    enddo
 
     RETURN
   END SUBROUTINE genqmd

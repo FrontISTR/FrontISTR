@@ -208,7 +208,7 @@ print_init(FILE *fp)
 	fprintf(fp, "INITIAL CONDITION:\n");
 	for(p=_init; p; p=p->next) {
 		fprintf(fp, "TYPE: %d, NODE: %d, NGRP: %s, VAL: %E\n",
-				p->type, p->node, p->ngrp ? p->ngrp : "none", p->val);
+				p->type, p->node, (*p->ngrp != '\0') ? p->ngrp : "none", p->val);
 	}
 	fprintf(fp, "END of INITIAL CONDITION\n");
 }

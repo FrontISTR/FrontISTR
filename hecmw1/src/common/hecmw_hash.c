@@ -296,8 +296,10 @@ static unsigned int hash_key(const char *c)
   unsigned int hash_key = 5381;
   int i;
 
-  while (i = *c++) {
+  while (*c != '\0') {
+    i = *c;
     hash_key = ((hash_key << 5) + hash_key) + i;
+    ++c;
   }
 
   return hash_key;
