@@ -26,13 +26,14 @@ module hecmw_precond_BILU_44
   integer(kind=kint), pointer :: inumFI1U(:) => null()
   integer(kind=kint), pointer :: FI1L(:) => null()
   integer(kind=kint), pointer :: FI1U(:) => null()
-  real(kind=kreal), pointer :: ALU(:) => null()
+
+  logical, save :: INITIALIZED = .false.
 
 contains
 
   subroutine hecmw_precond_BILU_44_setup(hecMAT)
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NP, NPU, NPL
     integer(kind=kint ) :: PRECOND
     real   (kind=kreal) :: SIGMA, SIGMA_DIAG
@@ -45,8 +46,15 @@ contains
     integer(kind=kint ), pointer :: IAL(:)
     integer(kind=kint ), pointer :: IAU(:)
 
-    real   (kind=kreal):: ALUtmp(4,4)
-    integer(kind=kint ):: ip
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+        call hecmw_precond_BILU_44_clear()
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_BILU_44_clear() ! TEMPORARY
+      else
+        return
+      endif
+    endif
 
     N = hecMAT%N
     NP = hecMAT%NP
@@ -63,41 +71,21 @@ contains
     SIGMA = hecmw_mat_get_sigma(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
-    if (PRECOND.eq.10) call FORM_ILU0_44 &
+    !if (PRECOND.eq.10) call FORM_ILU0_44 &
+    call FORM_ILU0_44 &
          &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
          &    SIGMA, SIGMA_DIAG)
-    if (PRECOND.eq.11) call FORM_ILU1_44 &
-         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
-    if (PRECOND.eq.12) call FORM_ILU2_44 &
-         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+    !if (PRECOND.eq.11) call FORM_ILU1_44 &
+    !     &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+    !     &    SIGMA, SIGMA_DIAG)
+    !if (PRECOND.eq.12) call FORM_ILU2_44 &
+    !     &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+    !     &    SIGMA, SIGMA_DIAG)
 
-    allocate(ALU(16*NP))
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
 
-    do ip= 1, N
-      call ILU1a44 (ALUtmp,                                    &
-     &              Dlu0(16*ip-15), Dlu0(16*ip-14), Dlu0(16*ip-13), Dlu0(16*ip-12),  &
-     &              Dlu0(16*ip-11), Dlu0(16*ip-10), Dlu0(16*ip- 9), Dlu0(16*ip- 8),  &
-     &              Dlu0(16*ip- 7), Dlu0(16*ip- 6), Dlu0(16*ip- 5), Dlu0(16*ip- 4),  &
-     &              Dlu0(16*ip- 3), Dlu0(16*ip- 2), Dlu0(16*ip- 1), Dlu0(16*ip- 0))
-      ALU(16*ip-15)= ALUtmp(1,1)
-      ALU(16*ip-14)= ALUtmp(1,2)
-      ALU(16*ip-13)= ALUtmp(1,3)
-      ALU(16*ip-12)= ALUtmp(1,4)
-      ALU(16*ip-11)= ALUtmp(2,1)
-      ALU(16*ip-10)= ALUtmp(2,2)
-      ALU(16*ip- 9)= ALUtmp(2,3)
-      ALU(16*ip- 8)= ALUtmp(2,4)
-      ALU(16*ip- 7)= ALUtmp(3,1)
-      ALU(16*ip- 6)= ALUtmp(3,2)
-      ALU(16*ip- 5)= ALUtmp(3,3)
-      ALU(16*ip- 4)= ALUtmp(3,4)
-      ALU(16*ip- 3)= ALUtmp(4,1)
-      ALU(16*ip- 2)= ALUtmp(4,2)
-      ALU(16*ip- 1)= ALUtmp(4,3)
-      ALU(16*ip- 0)= ALUtmp(4,4)
-    enddo
   end subroutine hecmw_precond_BILU_44_setup
 
   subroutine hecmw_precond_BILU_44_apply(WW)
@@ -124,20 +112,20 @@ contains
         SW1= SW1 - ALlu0(16*j-15)*X1-ALlu0(16*j-14)*X2-ALlu0(16*j-13)*X3-ALlu0(16*j-12)*X4
         SW2= SW2 - ALlu0(16*j-11)*X1-ALlu0(16*j-10)*X2-ALlu0(16*j- 9)*X3-ALlu0(16*j- 8)*X4
         SW3= SW3 - ALlu0(16*j- 7)*X1-ALlu0(16*j- 6)*X2-ALlu0(16*j- 5)*X3-ALlu0(16*j- 4)*X4
-        SW4= SW4 - ALlu0(16*j- 3)*X1-ALlu0(16*j- 2)*X2-ALlu0(16*j- 1)*X3-ALlu0(16*j- 0)*X4
+        SW4= SW4 - ALlu0(16*j- 3)*X1-ALlu0(16*j- 2)*X2-ALlu0(16*j- 1)*X3-ALlu0(16*j   )*X4
       enddo
 
       X1= SW1
       X2= SW2
       X3= SW3
       X4= SW4
-      X2= X2 - ALU(16*i-11)*X1
-      X3= X3 - ALU(16*i- 7)*X1 - ALU(16*i-6)*X2
-      X4= X4 - ALU(16*i- 3)*X1 - ALU(16*i-2)*X2 - ALU(16*i-1)*X3
-      X4= ALU(16*i   )* X4
-      X3= ALU(16*i- 5)*(X3 - ALU(16*i- 4)*X4)
-      X2= ALU(16*i-10)*(X2 - ALU(16*i- 8)*X4 - ALU(16*i- 9)*X3 )
-      X1= ALU(16*i-15)*(X1 - ALU(16*i-12)*X4 - ALU(16*i-13)*X3 - ALU(16*i-14)*X2)
+      X2= X2 - Dlu0(16*i-11)*X1
+      X3= X3 - Dlu0(16*i- 7)*X1 - Dlu0(16*i-6)*X2
+      X4= X4 - Dlu0(16*i- 3)*X1 - Dlu0(16*i-2)*X2 - Dlu0(16*i-1)*X3
+      X4= Dlu0(16*i   )* X4
+      X3= Dlu0(16*i- 5)*(X3 - Dlu0(16*i- 4)*X4)
+      X2= Dlu0(16*i-10)*(X2 - Dlu0(16*i- 8)*X4 - Dlu0(16*i- 9)*X3 )
+      X1= Dlu0(16*i-15)*(X1 - Dlu0(16*i-12)*X4 - Dlu0(16*i-13)*X3 - Dlu0(16*i-14)*X2)
 
       WW(4*i-3)= X1
       WW(4*i-2)= X2
@@ -160,23 +148,23 @@ contains
         X1= WW(4*k-3)
         X2= WW(4*k-2)
         X3= WW(4*k-1)
-        X4= WW(4*k)
+        X4= WW(4*k  )
         SW1= SW1 + AUlu0(16*j-15)*X1+AUlu0(16*j-14)*X2+AUlu0(16*j-13)*X3+AUlu0(16*j-12)*X4
         SW2= SW2 + AUlu0(16*j-11)*X1+AUlu0(16*j-10)*X2+AUlu0(16*j- 9)*X3+AUlu0(16*j- 8)*X4
         SW3= SW3 + AUlu0(16*j- 7)*X1+AUlu0(16*j- 6)*X2+AUlu0(16*j- 5)*X3+AUlu0(16*j- 4)*X4
-        SW4= SW4 + AUlu0(16*j- 3)*X1+AUlu0(16*j- 2)*X2+AUlu0(16*j- 1)*X3+AUlu0(16*j- 0)*X4
+        SW4= SW4 + AUlu0(16*j- 3)*X1+AUlu0(16*j- 2)*X2+AUlu0(16*j- 1)*X3+AUlu0(16*j   )*X4
       enddo
       X1= SW1
       X2= SW2
       X3= SW3
       X4= SW4
-      X2= X2 - ALU(16*i-11)*X1
-      X3= X3 - ALU(16*i-7)*X1 - ALU(16*i-6)*X2
-      X4= X4 - ALU(16*i-3)*X1 - ALU(16*i-2)*X2 - ALU(16*i-1)*X3
-      X4= ALU(16*i   )*  X4
-      X3= ALU(16*i- 5)*( X3 - ALU(16*i-4)*X4 )
-      X2= ALU(16*i-10)*( X2 - ALU(16*i- 8)*X4 - ALU(16*i- 9)*X3 )
-      X1= ALU(16*i-15)*( X1 - ALU(16*i-12)*X4 - ALU(16*i-13)*X3 - ALU(16*i-14)*X2)
+      X2= X2 - Dlu0(16*i-11)*X1
+      X3= X3 - Dlu0(16*i- 7)*X1 - Dlu0(16*i-6)*X2
+      X4= X4 - Dlu0(16*i- 3)*X1 - Dlu0(16*i-2)*X2 - Dlu0(16*i-1)*X3
+      X4= Dlu0(16*i   )*  X4
+      X3= Dlu0(16*i- 5)*( X3 - Dlu0(16*i- 4)*X4 )
+      X2= Dlu0(16*i-10)*( X2 - Dlu0(16*i- 8)*X4 - Dlu0(16*i- 9)*X3 )
+      X1= Dlu0(16*i-15)*( X1 - Dlu0(16*i-12)*X4 - Dlu0(16*i-13)*X3 - Dlu0(16*i-14)*X2)
       WW(4*i-3)=  WW(4*i-3) - X1
       WW(4*i-2)=  WW(4*i-2) - X2
       WW(4*i-1)=  WW(4*i-1) - X3
@@ -193,7 +181,6 @@ contains
     if (associated(inumFI1U)) deallocate(inumFI1U)
     if (associated(FI1L)) deallocate(FI1L)
     if (associated(FI1U)) deallocate(FI1U)
-    if (associated(ALU)) deallocate(ALU)
     nullify(Dlu0)
     nullify(ALlu0)
     nullify(AUlu0)
@@ -201,7 +188,7 @@ contains
     nullify(inumFI1U)
     nullify(FI1L)
     nullify(FI1U)
-    nullify(ALU)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_BILU_44_clear
 
   !C
@@ -228,11 +215,10 @@ contains
 
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     real (kind=kreal),  dimension(4,4) :: RHS_Aij, DkINV, Aik, Akj
-    real (kind=kreal)  :: D11,D12,D13,D14,D21,D22,D23,D24,D31,D32,D33,D34,D41,D42,D43,D44
     integer(kind=kint) :: i,jj,jj1,ij0,kk,kk1
     integer(kind=kint) :: j,k
     allocate (IW1(NP) , IW2(NP))
-    allocate(Dlu0(16*NP), ALlu0(16*NPL), AUlu0(16*NPU))
+    allocate(Dlu0(9*NP), ALlu0(9*NPL), AUlu0(9*NPU))
     allocate(inumFI1L(0:NP), inumFI1U(0:NP), FI1L(NPL), FI1U(NPU))
 
     do i=1,16*NP
@@ -267,6 +253,29 @@ contains
       Dlu0(16*i   )=Dlu0(16*i   )*SIGMA_DIAG
     enddo
 
+    i = 1
+    call ILU1a44 (DkINV, &
+         Dlu0(16*i-15), Dlu0(16*i-14), Dlu0(16*i-13), Dlu0(16*i-12), &
+         Dlu0(16*i-11), Dlu0(16*i-10), Dlu0(16*i- 9), Dlu0(16*i- 8), &
+         Dlu0(16*i- 7), Dlu0(16*i- 6), Dlu0(16*i- 5), Dlu0(16*i- 4), &
+         Dlu0(16*i- 3), Dlu0(16*i- 2), Dlu0(16*i- 1), Dlu0(16*i   ) )
+    Dlu0(16*i-15)= DkINV(1,1)
+    Dlu0(16*i-14)= DkINV(1,2)
+    Dlu0(16*i-13)= DkINV(1,3)
+    Dlu0(16*i-12)= DkINV(1,4)
+    Dlu0(16*i-11)= DkINV(2,1)
+    Dlu0(16*i-10)= DkINV(2,2)
+    Dlu0(16*i- 9)= DkINV(2,3)
+    Dlu0(16*i- 8)= DkINV(2,4)
+    Dlu0(16*i- 7)= DkINV(3,1)
+    Dlu0(16*i- 6)= DkINV(3,2)
+    Dlu0(16*i- 5)= DkINV(3,3)
+    Dlu0(16*i- 4)= DkINV(3,4)
+    Dlu0(16*i- 3)= DkINV(4,1)
+    Dlu0(16*i- 2)= DkINV(4,2)
+    Dlu0(16*i- 1)= DkINV(4,3)
+    Dlu0(16*i   )= DkINV(4,4)
+
     do i= 2, NP
       IW1= 0
       IW2= 0
@@ -281,23 +290,23 @@ contains
 
       do kk= INL(i-1)+1, INL(i)
         k= IAL(kk)
-        D11= Dlu0(16*k-15)
-        D12= Dlu0(16*k-14)
-        D13= Dlu0(16*k-13)
-        D14= Dlu0(16*k-12)
-        D21= Dlu0(16*k-11)
-        D22= Dlu0(16*k-10)
-        D23= Dlu0(16*k- 9)
-        D24= Dlu0(16*k- 8)
-        D31= Dlu0(16*k- 7)
-        D32= Dlu0(16*k- 6)
-        D33= Dlu0(16*k- 5)
-        D34= Dlu0(16*k- 4)
-        D41= Dlu0(16*k- 3)
-        D42= Dlu0(16*k- 2)
-        D43= Dlu0(16*k- 1)
-        D44= Dlu0(16*k- 0)
-        call ILU1a44 (DkINV, D11,D12,D13,D14,D21,D22,D23,D24,D31,D32,D33,D34,D41,D42,D43,D44)
+
+        DkINV(1,1)= Dlu0(16*k-15)
+        DkINV(1,2)= Dlu0(16*k-14)
+        DkINV(1,3)= Dlu0(16*k-13)
+        DkINV(1,4)= Dlu0(16*k-12)
+        DkINV(2,1)= Dlu0(16*k-11)
+        DkINV(2,2)= Dlu0(16*k-10)
+        DkINV(2,3)= Dlu0(16*k- 9)
+        DkINV(2,4)= Dlu0(16*k- 8)
+        DkINV(3,1)= Dlu0(16*k- 7)
+        DkINV(3,2)= Dlu0(16*k- 6)
+        DkINV(3,3)= Dlu0(16*k- 5)
+        DkINV(3,4)= Dlu0(16*k- 4)
+        DkINV(4,1)= Dlu0(16*k- 3)
+        DkINV(4,2)= Dlu0(16*k- 2)
+        DkINV(4,3)= Dlu0(16*k- 1)
+        DkINV(4,4)= Dlu0(16*k   )
 
         Aik(1,1)= ALlu0(16*kk-15)
         Aik(1,2)= ALlu0(16*kk-14)
@@ -314,7 +323,7 @@ contains
         Aik(4,1)= ALlu0(16*kk- 3)
         Aik(4,2)= ALlu0(16*kk- 2)
         Aik(4,3)= ALlu0(16*kk- 1)
-        Aik(4,4)= ALlu0(16*kk- 0)
+        Aik(4,4)= ALlu0(16*kk   )
 
         do jj= INU(k-1)+1, INU(k)
           j= IAU(jj)
@@ -335,7 +344,7 @@ contains
           Akj(4,1)= AUlu0(16*jj- 3)
           Akj(4,2)= AUlu0(16*jj- 2)
           Akj(4,3)= AUlu0(16*jj- 1)
-          Akj(4,4)= AUlu0(16*jj- 0)
+          Akj(4,4)= AUlu0(16*jj   )
 
           call ILU1b44 (RHS_Aij, DkINV, Aik, Akj)
 
@@ -355,51 +364,73 @@ contains
             Dlu0(16*i- 3)= Dlu0(16*i- 3) - RHS_Aij(4,1)
             Dlu0(16*i- 2)= Dlu0(16*i- 2) - RHS_Aij(4,2)
             Dlu0(16*i- 1)= Dlu0(16*i- 1) - RHS_Aij(4,3)
-            Dlu0(16*i- 0)= Dlu0(16*i- 0) - RHS_Aij(4,4)
+            Dlu0(16*i   )= Dlu0(16*i   ) - RHS_Aij(4,4)
           endif
 
           if (j.lt.i) then
             ij0= IW1(j)
-            ALlu0(16*i-15)= ALlu0(16*i-15) - RHS_Aij(1,1)
-            ALlu0(16*i-14)= ALlu0(16*i-14) - RHS_Aij(1,2)
-            ALlu0(16*i-13)= ALlu0(16*i-13) - RHS_Aij(1,3)
-            ALlu0(16*i-12)= ALlu0(16*i-12) - RHS_Aij(1,4)
-            ALlu0(16*i-11)= ALlu0(16*i-11) - RHS_Aij(2,1)
-            ALlu0(16*i-10)= ALlu0(16*i-10) - RHS_Aij(2,2)
-            ALlu0(16*i- 9)= ALlu0(16*i- 9) - RHS_Aij(2,3)
-            ALlu0(16*i- 8)= ALlu0(16*i- 8) - RHS_Aij(2,4)
-            ALlu0(16*i- 7)= ALlu0(16*i- 7) - RHS_Aij(3,1)
-            ALlu0(16*i- 6)= ALlu0(16*i- 6) - RHS_Aij(3,2)
-            ALlu0(16*i- 5)= ALlu0(16*i- 5) - RHS_Aij(3,3)
-            ALlu0(16*i- 4)= ALlu0(16*i- 4) - RHS_Aij(3,4)
-            ALlu0(16*i- 3)= ALlu0(16*i- 3) - RHS_Aij(4,1)
-            ALlu0(16*i- 2)= ALlu0(16*i- 2) - RHS_Aij(4,2)
-            ALlu0(16*i- 1)= ALlu0(16*i- 1) - RHS_Aij(4,3)
-            ALlu0(16*i- 0)= ALlu0(16*i- 0) - RHS_Aij(4,4)
+            ALlu0(16*ij0-15)= ALlu0(16*ij0-15) - RHS_Aij(1,1)
+            ALlu0(16*ij0-14)= ALlu0(16*ij0-14) - RHS_Aij(1,2)
+            ALlu0(16*ij0-13)= ALlu0(16*ij0-13) - RHS_Aij(1,3)
+            ALlu0(16*ij0-12)= ALlu0(16*ij0-12) - RHS_Aij(1,4)
+            ALlu0(16*ij0-11)= ALlu0(16*ij0-11) - RHS_Aij(2,1)
+            ALlu0(16*ij0-10)= ALlu0(16*ij0-10) - RHS_Aij(2,2)
+            ALlu0(16*ij0- 9)= ALlu0(16*ij0- 9) - RHS_Aij(2,3)
+            ALlu0(16*ij0- 8)= ALlu0(16*ij0- 8) - RHS_Aij(2,4)
+            ALlu0(16*ij0- 7)= ALlu0(16*ij0- 7) - RHS_Aij(3,1)
+            ALlu0(16*ij0- 6)= ALlu0(16*ij0- 6) - RHS_Aij(3,2)
+            ALlu0(16*ij0- 5)= ALlu0(16*ij0- 5) - RHS_Aij(3,3)
+            ALlu0(16*ij0- 4)= ALlu0(16*ij0- 4) - RHS_Aij(3,4)
+            ALlu0(16*ij0- 3)= ALlu0(16*ij0- 3) - RHS_Aij(4,1)
+            ALlu0(16*ij0- 2)= ALlu0(16*ij0- 2) - RHS_Aij(4,2)
+            ALlu0(16*ij0- 1)= ALlu0(16*ij0- 1) - RHS_Aij(4,3)
+            ALlu0(16*ij0   )= ALlu0(16*ij0   ) - RHS_Aij(4,4)
           endif
 
           if (j.gt.i) then
             ij0= IW2(j)
-            AUlu0(16*i-15)= AUlu0(16*i-15) - RHS_Aij(1,1)
-            AUlu0(16*i-14)= AUlu0(16*i-14) - RHS_Aij(1,2)
-            AUlu0(16*i-13)= AUlu0(16*i-13) - RHS_Aij(1,3)
-            AUlu0(16*i-12)= AUlu0(16*i-12) - RHS_Aij(1,4)
-            AUlu0(16*i-11)= AUlu0(16*i-11) - RHS_Aij(2,1)
-            AUlu0(16*i-10)= AUlu0(16*i-10) - RHS_Aij(2,2)
-            AUlu0(16*i- 9)= AUlu0(16*i- 9) - RHS_Aij(2,3)
-            AUlu0(16*i- 8)= AUlu0(16*i- 8) - RHS_Aij(2,4)
-            AUlu0(16*i- 7)= AUlu0(16*i- 7) - RHS_Aij(3,1)
-            AUlu0(16*i- 6)= AUlu0(16*i- 6) - RHS_Aij(3,2)
-            AUlu0(16*i- 5)= AUlu0(16*i- 5) - RHS_Aij(3,3)
-            AUlu0(16*i- 4)= AUlu0(16*i- 4) - RHS_Aij(3,4)
-            AUlu0(16*i- 3)= AUlu0(16*i- 3) - RHS_Aij(4,1)
-            AUlu0(16*i- 2)= AUlu0(16*i- 2) - RHS_Aij(4,2)
-            AUlu0(16*i- 1)= AUlu0(16*i- 1) - RHS_Aij(4,3)
-            AUlu0(16*i- 0)= AUlu0(16*i- 0) - RHS_Aij(4,4)
+            AUlu0(16*ij0-15)= AUlu0(16*ij0-15) - RHS_Aij(1,1)
+            AUlu0(16*ij0-14)= AUlu0(16*ij0-14) - RHS_Aij(1,2)
+            AUlu0(16*ij0-13)= AUlu0(16*ij0-13) - RHS_Aij(1,3)
+            AUlu0(16*ij0-12)= AUlu0(16*ij0-12) - RHS_Aij(1,4)
+            AUlu0(16*ij0-11)= AUlu0(16*ij0-11) - RHS_Aij(2,1)
+            AUlu0(16*ij0-10)= AUlu0(16*ij0-10) - RHS_Aij(2,2)
+            AUlu0(16*ij0- 9)= AUlu0(16*ij0- 9) - RHS_Aij(2,3)
+            AUlu0(16*ij0- 8)= AUlu0(16*ij0- 8) - RHS_Aij(2,4)
+            AUlu0(16*ij0- 7)= AUlu0(16*ij0- 7) - RHS_Aij(3,1)
+            AUlu0(16*ij0- 6)= AUlu0(16*ij0- 6) - RHS_Aij(3,2)
+            AUlu0(16*ij0- 5)= AUlu0(16*ij0- 5) - RHS_Aij(3,3)
+            AUlu0(16*ij0- 4)= AUlu0(16*ij0- 4) - RHS_Aij(3,4)
+            AUlu0(16*ij0- 3)= AUlu0(16*ij0- 3) - RHS_Aij(4,1)
+            AUlu0(16*ij0- 2)= AUlu0(16*ij0- 2) - RHS_Aij(4,2)
+            AUlu0(16*ij0- 1)= AUlu0(16*ij0- 1) - RHS_Aij(4,3)
+            AUlu0(16*ij0   )= AUlu0(16*ij0   ) - RHS_Aij(4,4)
           endif
 
         enddo
       enddo
+
+      call ILU1a44 (DkINV, &
+         Dlu0(16*i-15), Dlu0(16*i-14), Dlu0(16*i-13), Dlu0(16*i-12), &
+         Dlu0(16*i-11), Dlu0(16*i-10), Dlu0(16*i- 9), Dlu0(16*i- 8), &
+         Dlu0(16*i- 7), Dlu0(16*i- 6), Dlu0(16*i- 5), Dlu0(16*i- 4), &
+         Dlu0(16*i- 3), Dlu0(16*i- 2), Dlu0(16*i- 1), Dlu0(16*i   ) )
+      Dlu0(16*i-15)= DkINV(1,1)
+      Dlu0(16*i-14)= DkINV(1,2)
+      Dlu0(16*i-13)= DkINV(1,3)
+      Dlu0(16*i-12)= DkINV(1,4)
+      Dlu0(16*i-11)= DkINV(2,1)
+      Dlu0(16*i-10)= DkINV(2,2)
+      Dlu0(16*i- 9)= DkINV(2,3)
+      Dlu0(16*i- 8)= DkINV(2,4)
+      Dlu0(16*i- 7)= DkINV(3,1)
+      Dlu0(16*i- 6)= DkINV(3,2)
+      Dlu0(16*i- 5)= DkINV(3,3)
+      Dlu0(16*i- 4)= DkINV(3,4)
+      Dlu0(16*i- 3)= DkINV(4,1)
+      Dlu0(16*i- 2)= DkINV(4,2)
+      Dlu0(16*i- 1)= DkINV(4,3)
+      Dlu0(16*i   )= DkINV(4,4)
     enddo
 
     deallocate (IW1, IW2)
