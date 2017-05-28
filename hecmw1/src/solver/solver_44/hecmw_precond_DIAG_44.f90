@@ -20,18 +20,25 @@ module hecmw_precond_DIAG_44
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: ALU(:) => null()
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_DIAG_44_setup(hecMAT)
     use hecmw_matrix_misc
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NP
     real   (kind=kreal) :: SIGMA_DIAG
     real(kind=kreal), pointer:: D(:)
 
     real   (kind=kreal):: ALUtmp(4,4), PW(4)
     integer(kind=kint ):: ii, i, j, k
+
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) return
+      call hecmw_precond_DIAG_44_clear()
+    endif
 
     N = hecMAT%N
     NP = hecMAT%NP
@@ -111,6 +118,10 @@ contains
       ALU(16*ii- 1)= ALUtmp(4,3)
       ALU(16*ii   )= ALUtmp(4,4)
     enddo
+
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
   end subroutine hecmw_precond_DIAG_44_setup
 
   subroutine hecmw_precond_DIAG_44_apply(WW)
@@ -144,6 +155,7 @@ contains
     implicit none
     if (associated(ALU)) deallocate(ALU)
     nullify(ALU)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_DIAG_44_clear
 
 end module     hecmw_precond_DIAG_44
