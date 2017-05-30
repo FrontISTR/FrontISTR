@@ -93,7 +93,7 @@ module elementInfo
     integer, parameter :: fe_mitc8_shell  = 742
     integer, parameter :: fe_mitc9_shell  = 743
 
-	integer, parameter :: fe_mitc3_shell361  = 761
+    integer, parameter :: fe_mitc3_shell361  = 761
     integer, parameter :: fe_mitc4_shell361  = 781
 
  ! ---------------------------------------------
@@ -404,7 +404,7 @@ module elementInfo
   integer function NumOfQuadPoints( fetype )
       integer, intent(in) :: fetype         !< element type
       select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n, fe_tet4n_pipi, fe_beam2n , fe_beam341, fe_truss )
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341, fe_truss )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
@@ -426,7 +426,7 @@ module elementInfo
         NumOfQuadPoints = 3
       case ( fe_prism15n, fe_tri6n_shell )
         NumOfQuadPoints = 9
-      case ( fe_tet10n)
+      case ( fe_tet10n, fe_tet4n_pipi )
         NumOfQuadPoints = 4
       case ( fe_tet10nc )
         NumOfQuadPoints = 12
@@ -467,9 +467,9 @@ module elementInfo
         pos(1:3)=gauss3d7(:,np)
       case ( fe_prism15n, fe_tri6n_shell )
         pos(1:3)=gauss3d8(:,np)
-      case ( fe_tet4n, fe_tet4n_pipi, fe_beam341 )
+      case ( fe_tet4n, fe_beam341 )
         pos(1:3)=gauss3d4(:,np)
-      case ( fe_tet10n )
+      case ( fe_tet10n, fe_tet4n_pipi )
         pos(1:3)=gauss3d5(:,np)
       case ( fe_tet10nc )
         pos(1:3)=np
@@ -509,9 +509,9 @@ module elementInfo
         getWeight = weight3d7(np)
       case ( fe_prism15n )
         getWeight = weight3d8(np)
-      case ( fe_tet4n, fe_tet4n_pipi, fe_beam341 )
+      case ( fe_tet4n, fe_beam341 )
         getWeight = weight3d4(1)
-      case ( fe_tet10n )
+      case ( fe_tet10n, fe_tet4n_pipi )
         getWeight = weight3d5(np)
       case ( fe_line2n )
         getWeight = weight1d1(1)

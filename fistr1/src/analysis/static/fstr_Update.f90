@@ -167,7 +167,6 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
           write(*, *) '###ERROR### : This element is not supported for this material'
           write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-          stop
           call hecmw_abort(hecmw_comm_get_comm())
         endif
         call UPDATE_C3_vp                                                       &

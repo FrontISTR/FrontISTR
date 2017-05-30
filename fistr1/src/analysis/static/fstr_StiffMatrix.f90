@@ -29,7 +29,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   real(kind=kreal)   :: tt(20), ecoord(3,20)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
-  real(kind=kreal)   :: u(4,20), du(3,20), coords(3,3), u_prev(4,20)
+  real(kind=kreal)   :: u(4,20), du(4,20), coords(3,3), u_prev(4,20)
   integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
 
 ! ----- initialize
@@ -119,7 +119,6 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
           write(*, *) '###ERROR### : This element is not supported for this material'
           write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-          stop
           call hecmw_abort(hecmw_comm_get_comm())
         endif
         call STF_C3_vp                                                           &

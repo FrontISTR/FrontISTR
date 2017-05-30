@@ -60,7 +60,7 @@ contains
     integer(kind=kint) :: kkk0, kkk1
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
-    real(kind=kreal) :: bsize, res
+    real(kind=kreal) :: bsize, res, resb
     real :: time_1, time_2
 
     integer(kind=kint) :: restrt_step_num
@@ -156,6 +156,7 @@ contains
        fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
        if(hecMESH%my_rank==0) then
+         !write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
        endif
 
@@ -262,20 +263,16 @@ contains
           bsize=bsize+hecMAT%B(iiii5)**2
         enddo
 !C-- Gather RHS vector
-        if (.not. ds) then !In case of Direct Solver prevent MPI
-          call hecmw_allREDUCE_R1( hecMESH,bsize,hecmw_sum )
-        end if
+        call hecmw_allREDUCE_R1( hecMESH,bsize,hecmw_sum )
 
-        iexit = 0
-        if( bsize < 1.0e-31 ) then
-          iexit = 1
-          if( hecMESH%my_rank .eq. 0 ) then
-            WRITE(IMSG,*) '###Load Vector Error!'
-          endif
+        if(iter == 1)then
+          resb = bsize
         endif
 
-        res = dsqrt(bsize)/n_node_global
+        !res = dsqrt(bsize)/n_node_global
+        res = dsqrt(bsize/resb)
         if( hecMESH%my_rank==0 ) then
+          write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
           write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
         endif
         if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit

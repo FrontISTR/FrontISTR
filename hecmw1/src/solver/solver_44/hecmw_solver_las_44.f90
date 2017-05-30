@@ -250,10 +250,10 @@ contains
             X2= X(4*in-2)
             X3= X(4*in-1)
             X4= X(4*in  )
-            YV1= YV1 + AL(16*j-15)*X1 + AL(16*j-14)*X2 + AL(16*j-13)*X3 + D(16*i-12)*X4
-            YV2= YV2 + AL(16*j-11)*X1 + AL(16*j-10)*X2 + AL(16*j- 9)*X3 + D(16*i- 8)*X4
-            YV3= YV3 + AL(16*j- 7)*X1 + AL(16*j- 6)*X2 + AL(16*j- 5)*X3 + D(16*i- 4)*X4
-            YV4= YV4 + AL(16*j- 3)*X1 + AL(16*j- 2)*X2 + AL(16*j- 1)*X3 + D(16*i   )*X4
+            YV1= YV1 + AL(16*j-15)*X1 + AL(16*j-14)*X2 + AL(16*j-13)*X3 + AL(16*j-12)*X4
+            YV2= YV2 + AL(16*j-11)*X1 + AL(16*j-10)*X2 + AL(16*j- 9)*X3 + AL(16*j- 8)*X4
+            YV3= YV3 + AL(16*j- 7)*X1 + AL(16*j- 6)*X2 + AL(16*j- 5)*X3 + AL(16*j- 4)*X4
+            YV4= YV4 + AL(16*j- 3)*X1 + AL(16*j- 2)*X2 + AL(16*j- 1)*X3 + AL(16*j   )*X4
           enddo
           jS= indexU(i-1) + 1
           jE= indexU(i  )
@@ -264,10 +264,10 @@ contains
             X2= X(4*in-2)
             X3= X(4*in-1)
             X4= X(4*in  )
-            YV1= YV1 + AU(16*j-15)*X1 + AU(16*j-14)*X2 + AU(16*j-13)*X3 + D(16*i-12)*X4
-            YV2= YV2 + AU(16*j-11)*X1 + AU(16*j-10)*X2 + AU(16*j- 9)*X3 + D(16*i- 8)*X4
-            YV3= YV3 + AU(16*j- 7)*X1 + AU(16*j- 6)*X2 + AU(16*j- 5)*X3 + D(16*i- 4)*X4
-            YV4= YV4 + AU(16*j- 3)*X1 + AU(16*j- 2)*X2 + AU(16*j- 1)*X3 + D(16*i   )*X4
+            YV1= YV1 + AU(16*j-15)*X1 + AU(16*j-14)*X2 + AU(16*j-13)*X3 + AU(16*j-12)*X4
+            YV2= YV2 + AU(16*j-11)*X1 + AU(16*j-10)*X2 + AU(16*j- 9)*X3 + AU(16*j- 8)*X4
+            YV3= YV3 + AU(16*j- 7)*X1 + AU(16*j- 6)*X2 + AU(16*j- 5)*X3 + AU(16*j- 4)*X4
+            YV4= YV4 + AU(16*j- 3)*X1 + AU(16*j- 2)*X2 + AU(16*j- 1)*X3 + AU(16*j   )*X4
           enddo
           Y(4*i-3)= YV1
           Y(4*i-2)= YV2
@@ -512,7 +512,7 @@ contains
     real(kind=kreal), pointer :: XG(:)
     integer(kind=kint) :: i, k, kk
 
-    allocate(W(hecMESH%n_node * 3))
+    allocate(W(hecMESH%n_node * 4))
 
     !C===
     !C +---------------------------+
@@ -574,7 +574,7 @@ contains
 !$omp do
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = 4 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
+      kk = 4 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 4
       X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
     enddo
 !$omp end do
