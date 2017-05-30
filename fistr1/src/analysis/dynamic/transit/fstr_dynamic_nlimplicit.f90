@@ -144,13 +144,14 @@ contains
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
-	fstrDYNAMIC%VEC3(:) =0.d0
-	hecMAT%X(:) =0.d0
+    fstrDYNAMIC%VEC3(:) =0.d0
+    hecMAT%X(:) =0.d0
 
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
 !!
     do i= restrt_step_num, fstrDYNAMIC%n_step
+        if(ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
 
        fstrDYNAMIC%i_step = i
        fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
@@ -200,7 +201,7 @@ contains
          call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
          do j=1, hecMESH%n_node*  hecMESH%n_dof
            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-		     + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+         + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
          end do
 
 !C ********************************************************************************
@@ -258,12 +259,7 @@ contains
 !C-- RHS LOAD VECTOR CHECK
 !C
         numnp=hecMAT%NP
-        bsize=0.0
-        do iiii5 = 1,numnp*ndof
-          bsize=bsize+hecMAT%B(iiii5)**2
-        enddo
-!C-- Gather RHS vector
-        call hecmw_allREDUCE_R1( hecMESH,bsize,hecmw_sum )
+        call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, bsize)
 
         if(iter == 1)then
           resb = bsize
@@ -271,11 +267,11 @@ contains
 
         !res = dsqrt(bsize)/n_node_global
         res = dsqrt(bsize/resb)
-        if( hecMESH%my_rank==0 ) then
-          write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
-          write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+        if( ndof /= 4 ) then
+          if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+          if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+          if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
         endif
-        if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
 !C
 !C-- linear solver [A]{X} = {B}
 !C
@@ -297,6 +293,7 @@ contains
 ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
 
+        if(ndof == 4) exit
       enddo
 
 ! -----  not convergence
