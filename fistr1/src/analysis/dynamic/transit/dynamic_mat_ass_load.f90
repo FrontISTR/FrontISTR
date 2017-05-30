@@ -12,7 +12,7 @@ module m_dynamic_mat_ass_load
 !> This function sets boundary condition of external load
 !C***
 !C
-    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC )
+    subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter )
 
       use m_fstr
       use m_static_lib
@@ -42,6 +42,7 @@ module m_dynamic_mat_ass_load
       logical, save :: isFirst = .true.
 
       integer(kind=kint) :: flag_u, ierror
+      integer(kind=kint), optional :: iter
       real(kind=kreal) :: f_t
 
       integer(kind=kint) :: iiS, idofS, idofE
@@ -229,7 +230,7 @@ module m_dynamic_mat_ass_load
         enddo
       enddo
 
-      IF( isFirst ) THEN
+      IF( iter == 1 ) THEN
         DO i = 1, ndof*hecMESH%n_node
          unode_tmp(i) = fstrSOLID%unode(i)
         enddo
@@ -294,7 +295,6 @@ module m_dynamic_mat_ass_load
             enddo ! icel
           endif
         enddo ! itype
-        isFirst = .false.
 
       ELSE
         DO itype = 1, hecMESH%n_elem_type
