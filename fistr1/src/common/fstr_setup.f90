@@ -758,7 +758,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         if( fstrSOLID%elemopt361==0 ) then
-          if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+          if( P%PARAM%solution_type==kstNLSTATIC .or. P%PARAM%solution_type==kstSTATICEIGEN .or. P%DYN%nlflag/=0 ) then
             write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
             fstrSOLID%elemopt361 = 1
           endif
