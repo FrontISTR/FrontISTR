@@ -265,7 +265,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
         type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
 
         integer(kind=kint)            :: j, k, sect_id, ori_id
-        integer(kind=kint),SAVE       :: chash = 1
+        integer(kind=kint),SAVE       :: cache = 1
         character(len=HECMW_NAME_LEN) :: sect_orien
 
         fstr_ctrl_get_SECTION = -1
@@ -279,19 +279,19 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
 
         k = size(g_LocalCoordSys)
 
-        if(chash < k)then
-        if( sect_orien == g_LocalCoordSys(chash)%sys_name ) then
-          hecMESH%section%sect_orien_ID(sect_id) = chash
-          chash = chash + 1
-          fstr_ctrl_get_SECTION = 0
-          return
-        endif
+        if(cache < k)then
+          if( sect_orien == g_LocalCoordSys(cache)%sys_name ) then
+            hecMESH%section%sect_orien_ID(sect_id) = cache
+            cache = cache + 1
+            fstr_ctrl_get_SECTION = 0
+            return
+          endif
         endif
 
         do j=1, k
           if( sect_orien == g_LocalCoordSys(j)%sys_name ) then
             hecMESH%section%sect_orien_ID(sect_id) = j
-            chash = j + 1
+            cache = j + 1
             exit
           endif
         enddo

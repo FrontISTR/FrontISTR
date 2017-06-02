@@ -24,14 +24,15 @@ contains
   !C*** hecmw_precond_44_setup
   !C***
   !C
-  subroutine hecmw_precond_44_setup(hecMAT)
+  subroutine hecmw_precond_44_setup(hecMAT, hecMESH)
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_44
-!    use hecmw_precond_DIAG_44
+    use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
     implicit none
-    type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_matrix),     intent(inout) :: hecMAT
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
 
     integer(kind=kint ) :: PRECOND, iterPREmax
 
@@ -42,8 +43,8 @@ contains
 
     if (PRECOND.le.2) then
       call hecmw_precond_SSOR_44_setup(hecMAT)
-!    else if (PRECOND.eq.3) then
-!      call hecmw_precond_DIAG_44_setup(hecMAT)
+    else if (PRECOND.eq.3) then
+      call hecmw_precond_DIAG_44_setup(hecMAT)
     else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
       call hecmw_precond_BILU_44_setup(hecMAT)
     endif
@@ -59,7 +60,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_44
-!    use hecmw_precond_DIAG_44
+    use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
@@ -73,8 +74,8 @@ contains
 
     if (PRECOND.le.2) then
       call hecmw_precond_SSOR_44_clear(hecMAT)
-!    else if (PRECOND.eq.3) then
-!      call hecmw_precond_DIAG_44_clear()
+    else if (PRECOND.eq.3) then
+      call hecmw_precond_DIAG_44_clear()
     else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
       call hecmw_precond_BILU_44_clear()
     endif
@@ -90,7 +91,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_44
-!    use hecmw_precond_DIAG_44
+    use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
     use hecmw_solver_las_44
     implicit none
@@ -142,8 +143,8 @@ contains
 
       if (PRECOND.le.2) then
         call hecmw_precond_SSOR_44_apply(ZP)
-!      else if (PRECOND.eq.3) then
-!        call hecmw_precond_DIAG_44_apply(ZP)
+      else if (PRECOND.eq.3) then
+        call hecmw_precond_DIAG_44_apply(ZP)
       else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
         call hecmw_precond_BILU_44_apply(ZP)
       endif

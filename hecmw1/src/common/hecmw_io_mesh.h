@@ -99,7 +99,7 @@ extern struct hecmw_io_section *HECMW_io_add_sect(struct hecmw_io_section *sect)
 extern struct hecmw_io_material *HECMW_io_get_mat(const char *name);
 
 
-extern struct hecmw_io_material *HECMW_io_add_mat(struct hecmw_io_material *mat);
+extern struct hecmw_io_material *HECMW_io_add_mat(const char *name, struct hecmw_io_material *mat);
 
 
 extern void HECMW_io_set_header(struct hecmw_io_header *header);
