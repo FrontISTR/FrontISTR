@@ -49,7 +49,7 @@ contains
       SCALE (4*i-3)= 1.d0/dsqrt(dabs(D(16*i-15)))
       SCALE (4*i-2)= 1.d0/dsqrt(dabs(D(16*i-10)))
       SCALE (4*i-1)= 1.d0/dsqrt(dabs(D(16*i- 5)))
-      SCALE (4*i  )= 1.d0/dsqrt(dabs(D(16*i- 0)))
+      SCALE (4*i  )= 1.d0/dsqrt(dabs(D(16*i   )))
     enddo
 
     START_TIME= HECMW_WTIME()

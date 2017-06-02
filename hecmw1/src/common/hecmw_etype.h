@@ -35,38 +35,32 @@ HECMW_get_max_qsuf( int etype );
 extern char
 *HECMW_get_ucd_label( int etype );
 
+extern int
+HECMW_get_etype_class( int etype );
 
 extern int
 HECMW_is_etype_rod(int etype);
 
-
 extern int
 HECMW_is_etype_surface(int etype);
-
 
 extern int
 HECMW_is_etype_solid(int etype);
 
-
 extern int
 HECMW_is_etype_interface(int etype);
-
 
 extern int
 HECMW_is_etype_beam(int etype);
 
-
 extern int
 HECMW_is_etype_shell(int etype);
-
 
 extern int
 HECMW_is_etype_link(int etype);
 
-
 extern int
 HECMW_is_etype_33struct(int etype);
-
 
 extern int
 HECMW_is_etype_truss(int etype);
