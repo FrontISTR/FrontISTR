@@ -148,6 +148,7 @@ else()
   set(HECMW_SERIAL ON)
   list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
 endif()
+mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 ###################
 # -DWITH_OPENMP
@@ -286,6 +287,7 @@ if(WITH_ML)
     set(WITH_ML OFF)
   endif()
 endif()
+mark_as_advanced(Trilinos_DIR)
 
 ###################
 # -DBUILD_DOC
