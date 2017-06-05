@@ -145,10 +145,9 @@ WITH_TOOLS:BOOL=ON
 ### MKLをLaPACK, BLASとして利用する
 
 ~~~txt
-% source /opt/intel/mkl/bin/mklvar.sh intel64
 % source /opt/intel/bin/compilervars.sh intel64
 % echo $LD_LIBRARY_PATH (ライブラリが見えていることを確認)
-% export BLA_VENDOR="Intel"
+% export BLA_VENDOR="Intel10_64lp"
 % cmake -DWITH_LAPACK=1 ..
 ~~~
 

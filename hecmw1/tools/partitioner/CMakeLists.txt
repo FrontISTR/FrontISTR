@@ -3,6 +3,8 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
+cmake_minimum_required(VERSION 2.8.11)
+
 list(APPEND hecmw_part1_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_partlex.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_part_log.c

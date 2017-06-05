@@ -48,7 +48,7 @@ if(_MKL_SCALAPACK_INCLUDE)
     NAMES mkl_blacs_intelmpi_lp64
     HINTS $ENV{MKLROOT}/lib/intel64
   )
-  if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+  if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     set(SCALAPACK_LIBRARIES
       ${_MKL_SCALAPACK_LP64}
       ${_MKL_INTEL_LP64}

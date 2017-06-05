@@ -5,8 +5,11 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solve_init.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solve_error.f90
+include(${CMAKE_CURRENT_LIST_DIR}/HECD/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/NFD/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/converter/CMakeLists.txt)
+
+list(APPEND neu2fstr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/neu2fstr.cpp
 )
 

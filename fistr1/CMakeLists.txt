@@ -36,9 +36,6 @@ target_compile_definitions(fistr PUBLIC
 #
 # Build for fistr1 (executable)
 #
-message(STATUS "fistr_LIBRARIES ${fistr_LIBRARIES}")
-message(STATUS "hecmw_LIBRARIES ${hecmw_LIBRARIES}")
-message(STATUS "FrontISTR_LIBRARIES ${FrontISTR_LIBRARIES}")
 include(src/main/CMakeLists.txt)
 add_executable(fistr1 ${fistr1_SOURCES})
 target_link_libraries(fistr1
@@ -53,11 +50,20 @@ target_compile_definitions(fistr1 PUBLIC
   ${fistr_DEFINITIONS}
   ${hecmw_DEFINITIONS}
 )
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "Fortran")
+#set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
+
+#
+# Set installing files
+#
 install(TARGETS fistr1
   DESTINATION bin
   CONFIGURATIONS ${CMAKE_BUILD_TYPE}
 )
 
-#if(WITH_TOOLS)
-#  add_subdirectory(tools)
-#endif()
+#
+# Bulid tools
+#
+if(WITH_TOOLS)
+  add_subdirectory(tools)
+endif()

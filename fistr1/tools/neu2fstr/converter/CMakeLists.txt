@@ -5,10 +5,16 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
+list(APPEND neu2fstr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/cconv_mat.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/CConvMessage.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/conv_neu2hec.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_static.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_dynamic.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_heat.cpp
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+list(APPEND neu2fstr_INCLUDE_DIRS
   ${CMAKE_CURRENT_LIST_DIR}
 )
+

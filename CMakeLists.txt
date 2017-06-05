@@ -9,7 +9,6 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 project(FrontISTR Fortran C CXX)
-
 ###############################################################################
 # Includes standard macros
 ###############################################################################
@@ -47,6 +46,15 @@ elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
 endif()
 
 ###############################################################################
+# Version number
+###############################################################################
+set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
+set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
+set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+
+
+###############################################################################
 # Options
 ###############################################################################
 # -DWINDOWS          : build on Windows
@@ -66,11 +74,12 @@ endif()
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
 # -DBUILD_DOC        : generate API documents
 
-###############################################################################
+#############################################
 # Archtecture and compiler dependent options
-###############################################################################
+#############################################
 if(CMAKE_C_COMPILER_ID MATCHES "Intel")
-  set(BLA_VENDOR "Intel")
+  set(BLA_VENDOR "Intel10_64lp")
+  set(WITH_MKL ON)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -89,7 +98,9 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 else()
 endif()
 
+#
 # Find external packages
+#
 find_package(MPI)
 find_package(OpenMP)
 find_package(LAPACK)
@@ -118,25 +129,30 @@ option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 feature_summary(WHAT ALL)
 
-##############
+###################
 # -DWINDOWS
-##############
+###################
 if(WINDOWS)
   list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
 endif()
+
+###################
 # -DWITH_MPI
-if(WITH_MPI)
+###################
+if(WITH_MPI AND MPI_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
   list(APPEND FrontISTR_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 else()
   set(WITH_MPI OFF)
+  set(HECMW_SERIAL ON)
   list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
 endif()
 
-
+###################
 # -DWITH_OPENMP
-if(WITH_OPENMP)
+###################
+if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
@@ -145,33 +161,42 @@ else()
   set(WITH_OPENMP OFF)
 endif()
 
+###################
 # -DWITH_REFINER
-if(WITH_REFINER)
+###################
+if(WITH_REFINER AND REFINER_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${REFINER_INCLUDE_PATH})
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_REFINER")
   list(APPEND FrontISTR_LIBRARIES ${REFINER_LIBRARIES})
 else()
   set(WITH_REFINER OFF)
   set(HECMW_WITH_REFINER OFF)
-  list(REMOVE_ITEM FrontISTR_DEFINITIONS "HECMW_WITH_REFINER")
 endif()
 
+###################
 # -DWITH_REVOCAP
-if(WITH_REVOCAP)
+###################
+if(WITH_REVOCAP AND REVOCAP_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${REVOCAP_INCLUDE_PATH})
 else()
   set(WITH_REVOCAP OFF)
 endif()
 
+###################
 # -DWITH_PARACON
+###################
 if(WITH_PARACON)
   list(APPEND FrontISTR_DEFINITIONS "PARA_CONTACT")
+  set(PARA_CONTACT ON)
 else()
   set(WITH_PARACON OFF)
-  list(REMOVE_ITEM FrontISTR_DEFINITIONS "PARA_CONTACT")
+  set(PARA_CONTACT OFF)
 endif()
 
-# -DWITH_METIS, -DMETIS_VER_4
+###################
+# -DWITH_METIS
+# -DMETIS_VER_4
+###################
 if(WITH_METIS)
   if(METIS_FOUND)
     list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
@@ -189,7 +214,9 @@ if(WITH_METIS)
   endif()
 endif()
 
+###################
 # -DWITH_PARMETIS
+###################
 if(WITH_PARMETIS)
   if(PARMETIS_FOUND)
     list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
@@ -197,8 +224,9 @@ if(WITH_PARMETIS)
   endif()
 endif()
 
-# -DWITH_MKL (unimplemented)
-# W.I.P.
+###################
+# -DWITH_MKL
+###################
 option(WITH_MKL "compile with MKL PARDISO" OFF)
 if(WITH_MKL)
   get_filename_component(ICC icc PROGRAM)
@@ -207,14 +235,16 @@ if(WITH_MKL)
   set(CMAKE_CXX_COMPILER ${ICPC} CACHE FILEPATH "Intel C++ Compiler" FORCE)
   get_filename_component(IFORT ifort PROGRAM)
   set(CMAKE_Fortran_COMPILER ${IFORT} CACHE FILEPATH "Intel Fortran Compiler" FORCE)
-  set(BLA_VENDOR "Intel")
+  set(BLA_VENDOR "Intel10_64lp")
   find_package(LAPACK)
   find_package(Scalapack)
   list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
   set(WITH_LAPACK ON)
 endif()
 
+###################
 # -DWITH_MUMPS
+###################
 if(WITH_MUMPS)
   if(MUMPS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "WITH_MUMPS")
@@ -228,7 +258,9 @@ else()
   set(WITH_MUMPS OFF)
 endif()
 
+###################
 # -DWITH_LAPACK
+###################
 if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "WITH_LAPACK")
@@ -238,25 +270,26 @@ if(WITH_LAPACK)
     set(LAPACK_LIBRARIES "LAPACK_LIBRARIES-NOTFOUND" CACHE FILEPATH "LAPACK Library")
     message(WARNING "Please specify -DBLAS_LIBRARIES and -DLAPACK_LIBRARES manually.")
     set(WITH_LAPACK OFF)
-    list(REMOVE_ITEM FrontISTR_DEFINITIONS "WITH_LAPACK")
   endif()
 endif()
 
+###################
 # -DWITH_ML
+###################
 if(WITH_ML)
   if(Trilinos_FOUND)
     list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
-    list(APPEND FrontISTR_DEFINITIONS HECMW_WITH_ML)
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
     list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
   else()
-    #message(WARNING "Please turn on WITH_MPI")
     message(WARNING "Trilinos not found")
     set(WITH_ML OFF)
-    list(REMOVE_ITEM FrontISTR_DEFINITIONS HECMW_WITH_ML)
   endif()
 endif()
 
+###################
 # -DBUILD_DOC
+###################
 if(BUILD_DOC)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
@@ -282,6 +315,8 @@ endif()
 ###############################################################################
 # Print STATUS
 ###############################################################################
+message(STATUS
+  "Build FrontISTR for ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_VERSION}")
 message(STATUS "C compiler is ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER}")
@@ -291,6 +326,9 @@ if(${CMAKE_PREFIX_PATH})
 else()
   message(STATUS "Library search path is $ENV{HOME}/local /usr/local /usr etc.")
 endif()
+message(STATUS "Linking libraries are ${FrontISTR_LIBRARIES}.")
+message(STATUS "Include paths are ${FrontISTR_INCLUDE_DIRS}.")
+message(STATUS "DEFINES are ${FrontISTR_DEFINITIONS}.")
 
 ###############################################################################
 # Make configuration header
