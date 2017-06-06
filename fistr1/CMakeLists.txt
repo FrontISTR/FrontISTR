@@ -2,10 +2,9 @@
 # Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-
 cmake_minimum_required(VERSION 2.8.11)
 
-project(fistr C CXX Fortran)
+project(fistr CXX Fortran C)
 
 set(fistr_SOURCES)
 set(fistr_INCLUDE_DIRS)
@@ -40,7 +39,10 @@ include(src/main/CMakeLists.txt)
 add_executable(fistr1 ${fistr1_SOURCES})
 target_link_libraries(fistr1
   fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
+  ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
 )
+#set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "Fortran")
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
 target_include_directories(fistr1 PUBLIC
   ${fistr_INCLUDE_DIRS}
   ${hecmw_INCLUDE_DIRS}
@@ -50,8 +52,6 @@ target_compile_definitions(fistr1 PUBLIC
   ${fistr_DEFINITIONS}
   ${hecmw_DEFINITIONS}
 )
-set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "Fortran")
-#set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
 
 #
 # Set installing files

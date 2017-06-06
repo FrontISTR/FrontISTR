@@ -3,39 +3,39 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-###############################################################################
+###############################################################
 # CMakeLists.txt for FrontISTR
-###############################################################################
+###############################################################
 cmake_minimum_required(VERSION 2.8.11)
 
 project(FrontISTR Fortran C CXX)
-###############################################################################
+###############################################################
 # Includes standard macros
-###############################################################################
+###############################################################
 include(FeatureSummary)
 include(CMakeDependentOption)
 include(CMakeDetermineFortranCompiler)
 
-###############################################################################
+###############################################################
 # Add module path for FindPackage.cmake
-###############################################################################
+###############################################################
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
-###############################################################################
+###############################################################
 # Add Fortran module path
-###############################################################################
+###############################################################
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 
-###############################################################################
+###############################################################
 # Initialize variable of definitions, link libraries, includes
-###############################################################################
+###############################################################
 set(FrontISTR_DEFINITIONS)
 set(FrontISTR_LIBRARIES)
 set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY})
 
-###############################################################################
+###############################################################
 # Build type (RELEASE or DEBUG)
-###############################################################################
+###############################################################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)")
 endif()
@@ -45,18 +45,17 @@ elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
   list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
 endif()
 
-###############################################################################
+###############################################################
 # Version number
-###############################################################################
+###############################################################
 set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
 set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
-
-###############################################################################
+###############################################################
 # Options
-###############################################################################
+###############################################################
 # -DWINDOWS          : build on Windows
 # -DWITH_TOOLS       : compile tools
 # -DWITH_MPI         : for parallel environment with MPI
@@ -74,33 +73,9 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
 # -DBUILD_DOC        : generate API documents
 
-#############################################
-# Archtecture and compiler dependent options
-#############################################
-if(CMAKE_C_COMPILER_ID MATCHES "Intel")
-  set(BLA_VENDOR "Intel10_64lp")
-  set(WITH_MKL ON)
-endif()
-
-if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-  #
-  # MinGW specific options
-  #
-  if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
-    list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
-    set(CMAKE_Fortran_FLAGS "-fno-range-check")
-    set(WINDOWS ON)
-  endif()
-elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  set(CMAKE_C_COMPILER "gcc")
-  set(CMAKE_CXX_COMPILER "g++")
-  set(CMAKE_Fortran_COMPILER "gfortran")
-else()
-endif()
-
-#
+###################
 # Find external packages
-#
+###################
 find_package(MPI)
 find_package(OpenMP)
 find_package(LAPACK)
@@ -118,6 +93,7 @@ option(BUILD_DOC "Generate API documents." OFF})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
+option(WITH_MKL "compile with MKL PARDISO" ${SCALAPACK_MKL})
 option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
 option(WITH_METIS "compile with METIS" ${METIS_FOUND})
 option(METIS_VER_4 "uses METIS-4" OFF)
@@ -129,20 +105,42 @@ option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 feature_summary(WHAT ALL)
 
-###################
-# -DWINDOWS
-###################
-if(WINDOWS)
-  list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
+#############################################
+# Archtecture and compiler dependent options
+#############################################
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
+    if(WINDOWS)
+      ###################
+      # -DWINDOWS
+      ###################
+      list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
+    endif()
+  endif()
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  ###################
+  # Macintosh
+  ###################
+  set(CMAKE_C_COMPILER "gcc")
+  set(CMAKE_CXX_COMPILER "g++")
+  set(CMAKE_Fortran_COMPILER "gfortran")
 endif()
 
 ###################
 # -DWITH_MPI
 ###################
-if(WITH_MPI AND MPI_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH} ${MPI_Fortran_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
+if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_INCLUDE_PATH})
+
+  list(APPEND FrontISTR_LIBRARIES
+    ${MPI_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    ${MPI_Fortran_LIBRARIES})
+
 else()
   set(WITH_MPI OFF)
   set(HECMW_SERIAL ON)
@@ -198,48 +196,27 @@ endif()
 # -DWITH_METIS
 # -DMETIS_VER_4
 ###################
-if(WITH_METIS)
-  if(METIS_FOUND)
-    list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
-    list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
-    if(NOT METIS_VER_4)
-      list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
-    else()
-      list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
-    endif()
+if(WITH_METIS AND METIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
+  list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
+  if(NOT METIS_VER_4)
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
   else()
-    list(REMOVE_ITEM FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
-    list(REMOVE_ITEM FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
   endif()
 endif()
 
 ###################
 # -DWITH_PARMETIS
 ###################
-if(WITH_PARMETIS)
-  if(PARMETIS_FOUND)
-    list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-    list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
   endif()
-endif()
-
-###################
-# -DWITH_MKL
-###################
-option(WITH_MKL "compile with MKL PARDISO" OFF)
-if(WITH_MKL)
-  get_filename_component(ICC icc PROGRAM)
-  set(CMAKE_C_COMPILER ${ICC} CACHE FILEPATH "Intel C Compiler" FORCE)
-  get_filename_component(ICPC icpc PROGRAM)
-  set(CMAKE_CXX_COMPILER ${ICPC} CACHE FILEPATH "Intel C++ Compiler" FORCE)
-  get_filename_component(IFORT ifort PROGRAM)
-  set(CMAKE_Fortran_COMPILER ${IFORT} CACHE FILEPATH "Intel Fortran Compiler" FORCE)
-  set(BLA_VENDOR "Intel10_64lp")
-  list(APPEND FrontISTR_LIBRARIES ${SCALAPACK_LIBRARIES})
-  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
-  set(WITH_LAPACK ON)
 endif()
 
 ###################
@@ -272,6 +249,21 @@ if(WITH_LAPACK)
     set(WITH_LAPACK OFF)
   endif()
 endif()
+
+###################
+# -DWITH_MKL
+###################
+if(WITH_MKL)
+  message(STATUS "scalapack libraries ${SCALAPACK_LIBRARIES}")
+  set(BLA_VENDOR "Intel10_64lp")
+  list(APPEND FrontISTR_INCLUDE_DIRS $ENV{MKLROOT}/include)
+  list(APPEND FrontISTR_LIBRARIES ${SCALAPACK_LIBRARIES})
+  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
+  set(WITH_LAPACK ON)
+else()
+  set(WITH_MKL OFF)
+endif()
+
 
 ###################
 # -DWITH_ML
@@ -318,18 +310,18 @@ endif()
 ###############################################################################
 message(STATUS
   "Build FrontISTR for ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_VERSION}")
-message(STATUS "C compiler is ${CMAKE_C_COMPILER}")
-message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER}")
-message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER}")
-message(STATUS "Installation path is ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
+message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
+message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
+message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
 if(${CMAKE_PREFIX_PATH})
-  message(STATUS "Library search path is ${CMAKE_PREFIX_PATH}")
+  message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 else()
-  message(STATUS "Library search path is $ENV{HOME}/local /usr/local /usr etc.")
+  message(STATUS "Library search path\t: $ENV{HOME}/local /usr/local /usr etc.")
 endif()
-message(STATUS "Linking libraries are ${FrontISTR_LIBRARIES}.")
-message(STATUS "Include paths are ${FrontISTR_INCLUDE_DIRS}.")
-message(STATUS "DEFINES are ${FrontISTR_DEFINITIONS}.")
+message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
+message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 
 ###############################################################################
 # Make configuration header
