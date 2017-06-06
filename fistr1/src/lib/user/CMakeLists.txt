@@ -4,6 +4,10 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+list(APPEND fistr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/uelastic.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uhardening.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uload.f90
+  ${CMAKE_CURRENT_LIST_DIR}/umat.f90
+  ${CMAKE_CURRENT_LIST_DIR}/uyield.f90
+)

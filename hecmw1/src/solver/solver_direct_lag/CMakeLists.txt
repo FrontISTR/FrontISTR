@@ -4,6 +4,10 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+list(APPEND hecmw_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/my_hecmw_util_f_lag.f90
+  ${CMAKE_CURRENT_LIST_DIR}/m_irjc_matrix_lag.f90
+  ${CMAKE_CURRENT_LIST_DIR}/m_child_matrix_lag.f90
+  ${CMAKE_CURRENT_LIST_DIR}/m_crs_matrix_lag.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_direct_serial_lag.f90
+)

@@ -4,6 +4,11 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/HECD/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/NFD/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/converter/CMakeLists.txt)
+
+list(APPEND neu2fstr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/neu2fstr.cpp
+)
+
