@@ -4,6 +4,6 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+include(${CMAKE_SOURCE_LIST_DIR}/adaptation/CMakeLists.txt)
+include(${CMAKE_SOURCE_LIST_DIR}/dynamic_balancing/CMakeLists.txt)
+include(${CMAKE_SOURCE_LIST_DIR}/jacobian/CMakeLists.txt)
