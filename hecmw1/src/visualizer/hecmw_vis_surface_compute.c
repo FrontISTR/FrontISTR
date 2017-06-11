@@ -5,7 +5,7 @@
 /*----------------------------------------------------------------------
  * Subroutines in this file on isosurface generation for hexahedra by Marching Cubes is based
  * on the revision of Dr. Yuriko Takeshima's codes when she was working part time in RIST
-/*---------------------------------------------------------------------- */
+ *----------------------------------------------------------------------*/
 
 #include "hecmw_vis_surface_compute.h"
 

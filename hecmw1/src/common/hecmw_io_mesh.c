@@ -208,7 +208,7 @@ print_init(FILE *fp)
 	fprintf(fp, "INITIAL CONDITION:\n");
 	for(p=_init; p; p=p->next) {
 		fprintf(fp, "TYPE: %d, NODE: %d, NGRP: %s, VAL: %E\n",
-				p->type, p->node, p->ngrp ? p->ngrp : "none", p->val);
+				p->type, p->node, (*p->ngrp != '\0') ? p->ngrp : "none", p->val);
 	}
 	fprintf(fp, "END of INITIAL CONDITION\n");
 }
@@ -1579,36 +1579,49 @@ struct hecmw_io_material *
 HECMW_io_get_mat(const char *name)
 {
 	struct hecmw_io_material *p;
+	extern hecmw_hash_p *hash_mat;
 
 	if(name == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_get_mat(): name");
 		return NULL;
 	}
 
-	for(p=_mat; p; p=p->next) {
+	p = (struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, name);
+
+	/* for(p=_mat; p; p=p->next) {
 		if(strcmp(p->name, name) == 0) break;
-	}
+	}*/
+
 	return p;
 }
 
 
 struct hecmw_io_material *
-HECMW_io_add_mat(struct hecmw_io_material *mat)
+HECMW_io_add_mat(const char *name, struct hecmw_io_material *mat)
 {
 	static struct hecmw_io_material *prev_mat = NULL;
 	struct hecmw_io_material *p;
+	extern hecmw_hash_p *hash_mat;
 
 	if(mat == NULL) {
 		set_err(HECMW_ALL_E0101, "HECMW_io_add_mat(): mat");
 		return NULL;
 	}
 
-	if(prev_mat == NULL) {
-		_mat = mat;
-	} else {
-		prev_mat->next = mat;
+	p = (struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, name);
+	if(p == NULL) {
+		if(hecmw_hash_p_put(hash_mat, name, (void *)mat) == 0) {
+			printf("HECMW HASH TABEL PUT ERROR\n");
+			return NULL;
+		}else{
+			if(prev_mat == NULL) {
+				_mat = mat;
+			} else {
+				prev_mat->next = mat;
+			}
+			prev_mat = mat;
+		}
 	}
-	prev_mat = mat;
 
 	return mat;
 }
@@ -3436,7 +3449,7 @@ post_elem_make_mat(void)
 		strcpy(mat->name, name);
 		mat->next = NULL;
 
-		if(HECMW_io_add_mat(mat) == NULL) return -1;
+		if(HECMW_io_add_mat(name, mat) == NULL) return -1;
 	}
 	return 0;
 }
@@ -4044,14 +4057,18 @@ post_section_check_mat_exists(void)
 	int found;
 	struct hecmw_io_section *p;
 	struct hecmw_io_material *mat;
+	extern hecmw_hash_p *hash_mat;
 
 	for(p=_sect; p; p=p->next) {
 		found = 0;
-		for(mat=_mat; mat; mat=mat->next) {
+		/* for(mat=_mat; mat; mat=mat->next) {
 			if(strcmp(p->material, mat->name) == 0) {
 				found = 1;
 				break;
 			}
+		}*/
+		if((struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, p->material) != NULL){
+			found = 1;
 		}
 		if(p->type != HECMW_SECT_TYPE_INTERFACE && !found) {
 			set_err(HECMW_IO_E1025, "MATERIAL %s not found", p->material);
@@ -4154,6 +4171,7 @@ HECMW_hash_init(void)
 	extern hecmw_hash_p *hash_ng;
 	extern hecmw_hash_p *hash_eg;
 	extern hecmw_hash_p *hash_sg;
+	extern hecmw_hash_p *hash_mat;
 
 	hash_ng = hecmw_hash_p_new(1);
 	if (hash_ng == NULL) return 1;
@@ -4161,6 +4179,8 @@ HECMW_hash_init(void)
 	if (hash_eg == NULL) return 1;
 	hash_sg = hecmw_hash_p_new(3);
 	if (hash_sg == NULL) return 1;
+	hash_mat = hecmw_hash_p_new(4);
+	if (hash_mat == NULL) return 1;
 
 	return 0;
 }
@@ -4171,10 +4191,12 @@ HECMW_hash_finalize(void)
 	extern hecmw_hash_p *hash_ng;
 	extern hecmw_hash_p *hash_eg;
 	extern hecmw_hash_p *hash_sg;
+	extern hecmw_hash_p *hash_mat;
 
 	hecmw_hash_p_delete(hash_ng);
 	hecmw_hash_p_delete(hash_eg);
 	hecmw_hash_p_delete(hash_sg);
+	hecmw_hash_p_delete(hash_mat);
 
 	return 0;
 }

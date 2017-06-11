@@ -278,7 +278,7 @@ regist_material(void)
 		HECMW_free(p);
 	}
 
-	if(HECMW_io_add_mat(mat) == NULL) goto error;
+	if(HECMW_io_add_mat(matname, mat) == NULL) goto error;
 
 	strcpy(matname, "");
 	matdata = NULL;
