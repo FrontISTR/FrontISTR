@@ -7,10 +7,12 @@ cmake_minimum_required(VERSION 2.8.11)
 if(NOT WITH_PARACON)
   list(APPEND fistr1_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/fistr_main.f90
+    ${CMAKE_CURRENT_LIST_DIR}/main.c
   )
 else()
   list(APPEND fistr1_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/fistr_main_contact.f90
+    ${CMAKE_CURRENT_LIST_DIR}/main.c
   )
 endif()
 

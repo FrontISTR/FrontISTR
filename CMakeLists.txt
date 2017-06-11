@@ -39,7 +39,7 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
 ###############################################################
 set(FrontISTR_DEFINITIONS)
 set(FrontISTR_LIBRARIES)
-set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY})
+set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY} ${PROJECT_BINARY_DIR})
 
 ###############################################################
 # Build type (RELEASE or DEBUG)
