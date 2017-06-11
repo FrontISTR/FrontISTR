@@ -130,9 +130,9 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   ###################
   # Macintosh
   ###################
-  set(CMAKE_C_COMPILER "gcc")
-  set(CMAKE_CXX_COMPILER "g++")
-  set(CMAKE_Fortran_COMPILER "gfortran")
+  #set(CMAKE_C_COMPILER "gcc")
+  #set(CMAKE_CXX_COMPILER "g++")
+  #set(CMAKE_Fortran_COMPILER "gfortran")
 endif()
 
 ###################
@@ -323,7 +323,7 @@ message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
 message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
-#message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
 #message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
 #message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 
