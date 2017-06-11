@@ -9,6 +9,14 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 project(FrontISTR Fortran C CXX)
+# set default libraries search path
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH "$ENV{HOME}/local" CACHE PATH "Search Path" FORCE)
+endif()
+# set default installation path
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/local" CACHE PATH "Install Path" FORCE)
+endif()
 ###############################################################
 # Includes standard macros
 ###############################################################
@@ -37,7 +45,7 @@ set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY})
 # Build type (RELEASE or DEBUG)
 ###############################################################
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)")
+  set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)" FORCE)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   list(APPEND FrontISTR_DEFINITIONS "DEBUG")
@@ -71,7 +79,7 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
-# -DWITH_DOC         : generate API documents
+# -DBUILD_DOC        : generate API documents
 
 ###################
 # Find external packages
@@ -89,7 +97,7 @@ find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_PARACON "for parallel contact" OFF)
-option(WITH_DOC "Generate API documents." OFF})
+option(BUILD_DOC "Generate API documents." OFF})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -122,9 +130,9 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   ###################
   # Macintosh
   ###################
-  #set(CMAKE_C_COMPILER "gcc")
-  #set(CMAKE_CXX_COMPILER "g++")
-  #set(CMAKE_Fortran_COMPILER "gfortran")
+  set(CMAKE_C_COMPILER "gcc")
+  set(CMAKE_CXX_COMPILER "g++")
+  set(CMAKE_Fortran_COMPILER "gfortran")
 endif()
 
 ###################
@@ -281,9 +289,9 @@ endif()
 mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DWITH_DOC
+# -DBUILD_DOC
 ###################
-if(WITH_DOC)
+if(BUILD_DOC)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
@@ -313,15 +321,11 @@ message(STATUS
 message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
+message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
-if(${CMAKE_PREFIX_PATH})
-  message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
-else()
-  message(STATUS "Library search path\t: $ENV{HOME}/local /usr/local /usr etc.")
-endif()
-message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
-message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
-message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
+#message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+#message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
+#message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 
 ###############################################################################
 # Make configuration header
