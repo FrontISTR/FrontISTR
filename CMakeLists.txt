@@ -122,9 +122,9 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   ###################
   # Macintosh
   ###################
-  set(CMAKE_C_COMPILER "gcc")
-  set(CMAKE_CXX_COMPILER "g++")
-  set(CMAKE_Fortran_COMPILER "gfortran")
+  #set(CMAKE_C_COMPILER "gcc")
+  #set(CMAKE_CXX_COMPILER "g++")
+  #set(CMAKE_Fortran_COMPILER "gfortran")
 endif()
 
 ###################
