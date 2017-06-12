@@ -2,7 +2,8 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-program fstr_main
+
+module m_fstr_main
 
 use hecmw
 use m_fstr
@@ -25,23 +26,25 @@ use fstr_debug_dump
 use fstr_matrix_con_contact
 use m_fstr_freqdata
 
-
-        implicit none
-        type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
-        type (hecmwST_matrix )                 :: hecMAT
+type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
+type (hecmwST_matrix )                 :: hecMAT
 !#ifdef PARA_CONTACT
-        type (hecmwST_matrix )                 :: conMAT
+type (hecmwST_matrix )                 :: conMAT
 !#endif
-        type (fstr_solid )                     :: fstrSOLID
-        type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-        type (fstr_heat )                      :: fstrHEAT
-        type (lczparam)                        :: fstrEIG
-        type (fstr_dynamic )                   :: fstrDYNAMIC
-        type ( hecmwST_result_data )           :: fstrRESULT
-        type (fstr_couple )                    :: fstrCPL
-        type (fstr_freqanalysis)               :: fstrFREQ
-        character(len=HECMW_FILENAME_LEN)     :: name_ID
+type (fstr_solid )                     :: fstrSOLID
+type (fstrST_matrix_contact_lagrange)  :: fstrMAT
+type (fstr_heat )                      :: fstrHEAT
+type (lczparam)                        :: fstrEIG
+type (fstr_dynamic )                   :: fstrDYNAMIC
+type ( hecmwST_result_data )           :: fstrRESULT
+type (fstr_couple )                    :: fstrCPL
+type (fstr_freqanalysis)               :: fstrFREQ
+character(len=HECMW_FILENAME_LEN)      :: name_ID
 
+contains
+
+subroutine fstr_main() BIND(C,NAME='fstr_main')
+        implicit none
         real(kind=kreal):: T1,T2,T3
         integer :: is_entire
 
@@ -131,9 +134,7 @@ use m_fstr_freqdata
         call hecmw_finalize
         if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 
-contains
-
-
+end subroutine fstr_main
 
 !=============================================================================!
 !> Initializer                                                                  !
