@@ -268,6 +268,8 @@ module m_dynamic_mat_ass_load
                 call hecmw_abort(hecmw_comm_get_comm())
               endif
 
+              v = 0.0d0
+              dv= 0.0d0
               iiS = hecMESH%elem_node_index(icel-1)
               DO j = 1, nn
                 nodLOCAL(j) = hecMESH%elem_node_item(iiS+j)
