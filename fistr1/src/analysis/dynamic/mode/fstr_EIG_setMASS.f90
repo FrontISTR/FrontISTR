@@ -117,6 +117,8 @@ contains
             CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
           elseif( ic_type.EQ.341 ) then
             CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+          elseif( ic_type.EQ.3414 ) then
+            ss = 0.0d0
           elseif( ic_type.EQ.342 ) then
             CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,myEIG )
           elseif( ic_type.EQ.351 ) then
@@ -241,6 +243,8 @@ contains
        CALL hecmw_update_3_R( hecMESH,myEIG%mass,numnp )
       elseif( NDOF.eq.2 ) then
        CALL hecmw_update_2_R( hecMESH,myEIG%mass,numnp )
+      elseif( NDOF.eq.4 ) then
+       CALL hecmw_update_4_R( hecMESH,myEIG%mass,numnp )
       elseif( NDOF.eq.6 ) then
        CALL hecmw_update_m_R( hecMESH,myEIG%mass,numnp,NDOF )
       endif
