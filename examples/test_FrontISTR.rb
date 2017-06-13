@@ -18,7 +18,7 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
-## HEC-MW control file for FrontSTR
+## HEC-MW control file for FrontISTR
 ## Auto created
 ## #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}
 ##
@@ -39,7 +39,7 @@ end
 # 回答の名前を name で与える
 # 回答がなければ今回の結果を回答にする
 #
-def exec_test(dirname,mesh,cnt,name)
+def exec_test(dirname,mesh,cnt,name,correctLog=nil)
   Dir.chdir(dirname){
     create_hecmw_ctrl(mesh,cnt)
     FileUtils.rm('0.log') if File.exists?('0.log')
@@ -48,7 +48,7 @@ def exec_test(dirname,mesh,cnt,name)
     puts "return value = #{$?.exitstatus}"
     return 1 if $?.exitstatus != 0
     currentLog = name+".log"
-    correctLog = name+"_correct.log"
+    correctLog = name+"_correct.log" if correctLog==nil
     if File.exists? correctLog
       FileUtils.cp('0.log',currentLog)
       res = compare_log(currentLog,correctLog)
@@ -195,10 +195,14 @@ when("static/exA")
 ["static/exA","A342.msh","A300.cnt"],
 ["static/exA","A351.msh","A300.cnt"],
 ["static/exA","A352.msh","A300.cnt"],
-["static/exA","A361.msh","A300.cnt"],
+["static/exA","A361.msh","A300.cnt","A361_MUMPS_V4_5.log"],
 ["static/exA","A362.msh","A300.cnt"],
+["static/exA","A731.msh","A700.cnt","A731_MUMPS_V4_5.log"],
+["static/exA","A741.msh","A700.cnt","A741_MUMPS_V4_5.log"],
+["static/exA","A761.msh","A700_33.cnt","A761_MUMPS_V4_5.log"],
+["static/exA","A781.msh","A700_33.cnt","A781_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exB")
@@ -213,10 +217,10 @@ when("static/exB")
 ["static/exB","B352.msh","B352.cnt"],
 ["static/exB","B361.msh","B361.cnt"],
 ["static/exB","B362.msh","B362.cnt"],
-["static/exB","B731.msh","B731.cnt"],
-["static/exB","B741.msh","B741.cnt"],
+["static/exB","B731.msh","B731.cnt","B731_MUMPS_V4_5.log"],
+["static/exB","B741.msh","B741.cnt","B741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exC")
@@ -231,10 +235,10 @@ when("static/exC")
 ["static/exC","C352.msh","C300.cnt"],
 ["static/exC","C361.msh","C300.cnt"],
 ["static/exC","C362.msh","C300.cnt"],
-["static/exC","C731.msh","C700.cnt"],
-["static/exC","C741.msh","C700.cnt"],
+["static/exC","C731.msh","C700.cnt","C731_MUMPS_V4_5.log"],
+["static/exC","C741.msh","C700.cnt","C741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exD")
@@ -249,10 +253,10 @@ when("static/exD")
 ["static/exD","D352.msh","D300.cnt"],
 ["static/exD","D361.msh","D300.cnt"],
 ["static/exD","D362.msh","D300.cnt"],
-["static/exD","D731.msh","D700.cnt"],
-["static/exD","D741.msh","D700.cnt"],
+["static/exD","D731.msh","D700.cnt","D731_MUMPS_V4_5.log"],
+["static/exD","D741.msh","D700.cnt","D741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exE")
@@ -267,10 +271,10 @@ when("static/exE")
 ["static/exE","E352.msh","E300.cnt"],
 ["static/exE","E361.msh","E300.cnt"],
 ["static/exE","E362.msh","E300.cnt"],
-["static/exE","E731.msh","E700.cnt"],
-["static/exE","E741.msh","E700.cnt"],
+["static/exE","E731.msh","E700.cnt","D731_MUMPS_V4_5.log"],
+["static/exE","E741.msh","E700.cnt","D741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exF")
@@ -291,20 +295,20 @@ when("static/exF")
 }
 when("static/exG")
 [
-["static/exG","A231.msh","G200.cnt"],
-["static/exG","A232.msh","G200.cnt"],
-["static/exG","A241.msh","G200.cnt"],
-["static/exG","A242.msh","G200.cnt"],
-["static/exG","A341.msh","G300.cnt"],
-["static/exG","A342.msh","G300.cnt"],
-["static/exG","A351.msh","G300.cnt"],
-["static/exG","A352.msh","G300.cnt"],
-["static/exG","A361.msh","G300.cnt"],
-["static/exG","A362.msh","G300.cnt"],
-["static/exG","A731.msh","G700.cnt"],
-["static/exG","A741.msh","G700.cnt"],
+["static/exG","A231.msh","G200.cnt","A231_MUMPS_V4_5.log"],
+["static/exG","A232.msh","G200.cnt","A232_MUMPS_V4_5.log"],
+["static/exG","A241.msh","G200.cnt","A241_MUMPS_V4_5.log"],
+["static/exG","A242.msh","G200.cnt","A242_MUMPS_V4_5.log"],
+["static/exG","A341.msh","G300.cnt","A341_MUMPS_V4_5.log"],
+["static/exG","A342.msh","G300.cnt","A342_MUMPS_V4_5.log"],
+["static/exG","A351.msh","G300.cnt","A351_MUMPS_V4_5.log"],
+["static/exG","A352.msh","G300.cnt","A352_MUMPS_V4_5.log"],
+["static/exG","A361.msh","G300.cnt","A361_MUMPS_V4_5.log"],
+["static/exG","A362.msh","G300.cnt","A362_MUMPS_V4_5.log"],
+["static/exG","A731.msh","G700.cnt","A731_MUMPS_V4_5.log"],
+["static/exG","A741.msh","G700.cnt","A741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("static/exI")
@@ -340,20 +344,20 @@ when("eigen/exJ")
 }
 when("eigen/exK")
 [
-["eigen/exK","A231.msh","K200.cnt"],
-["eigen/exK","A232.msh","K200.cnt"],
-["eigen/exK","A241.msh","K200.cnt"],
-["eigen/exK","A242.msh","K200.cnt"],
-["eigen/exK","A341.msh","K300.cnt"],
-["eigen/exK","A342.msh","K300.cnt"],
-["eigen/exK","A351.msh","K300.cnt"],
-["eigen/exK","A352.msh","K300.cnt"],
-["eigen/exK","A361.msh","K300.cnt"],
-["eigen/exK","A362.msh","K300.cnt"],
-["eigen/exK","A731.msh","K700.cnt"],
-["eigen/exK","A741.msh","K700.cnt"],
+["eigen/exK","A231.msh","K200.cnt","A231_MUMPS_V4_5.log"],
+["eigen/exK","A232.msh","K200.cnt","A232_MUMPS_V4_5.log"],
+["eigen/exK","A241.msh","K200.cnt","A241_MUMPS_V4_5.log"],
+["eigen/exK","A242.msh","K200.cnt","A242_MUMPS_V4_5.log"],
+["eigen/exK","A341.msh","K300.cnt","A341_MUMPS_V4_5.log"],
+["eigen/exK","A342.msh","K300.cnt","A342_MUMPS_V4_5.log"],
+["eigen/exK","A351.msh","K300.cnt","A351_MUMPS_V4_5.log"],
+["eigen/exK","A352.msh","K300.cnt","A352_MUMPS_V4_5.log"],
+["eigen/exK","A361.msh","K300.cnt","A361_MUMPS_V4_5.log"],
+["eigen/exK","A362.msh","K300.cnt","A362_MUMPS_V4_5.log"],
+["eigen/exK","A731.msh","K700.cnt","A731_MUMPS_V4_5.log"],
+["eigen/exK","A741.msh","K700.cnt","A741_MUMPS_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
 }
 when("heat/exM")
@@ -521,12 +525,12 @@ when("dynamic/exW")
 }
 when("dynamic/exX")
 [
-["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt"],
-["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt"],
-["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt"],
-["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt"],
+["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_CG_V4_5.log"],
+["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt","W361_c0_im_m2_t1_CG_V4_5.log"],
 ].each{|param|
-	res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"))
+	res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"),param[3])
 	exit res if res != 0
 }
 else
