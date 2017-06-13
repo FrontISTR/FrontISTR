@@ -4,6 +4,10 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+list(APPEND hecmw_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_22.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_CG_22.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_BLCG_22.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_22.f90
+)
+

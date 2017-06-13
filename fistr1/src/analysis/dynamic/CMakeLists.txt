@@ -4,6 +4,6 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/freq/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mode/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/transit/CMakeLists.txt)

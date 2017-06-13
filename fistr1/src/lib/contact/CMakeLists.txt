@@ -4,6 +4,8 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+list(APPEND fistr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/contact_lib.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_def.F90
+  ${CMAKE_CURRENT_LIST_DIR}/surf_ele.f90
+)

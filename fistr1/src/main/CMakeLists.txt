@@ -4,6 +4,13 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/analysis/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/common/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/lib/CMakeLists.txt)
+if(NOT WITH_PARACON)
+  list(APPEND fistr1_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/fistr_main.f90
+  )
+else()
+  list(APPEND fistr1_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/fistr_main_contact.f90
+  )
+endif()
+
