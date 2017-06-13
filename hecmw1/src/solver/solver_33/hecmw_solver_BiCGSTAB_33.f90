@@ -81,8 +81,8 @@
 
       ITERlog = hecmw_mat_get_iterlog( hecMAT )
       TIMElog = hecmw_mat_get_timelog( hecMAT )
-      MAXIT  = hecmw_mat_get_iter( hecMAT )
-       TOL   = hecmw_mat_get_resid( hecMAT )
+      MAXIT   = hecmw_mat_get_iter( hecMAT )
+      TOL     = hecmw_mat_get_resid( hecMAT )
 
       ERROR = 0
 

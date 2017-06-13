@@ -41,6 +41,7 @@ module m_dynamic_make_result
       if( hecMESH%n_elem>hecMESH%n_node ) nn = hecMESH%n_elem
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
+      if( ndof==4 ) mdof = 6
       if( ndof==6 ) mdof = 6
 
       ntot_lyr   = fstrSOLID%max_lyr
@@ -55,20 +56,46 @@ module m_dynamic_make_result
         call hecmw_result_init( hecMESH, maxstep, istep, header )
 ! --- DISPLACEMENT
         if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
-          id = 1
-          nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-          allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
-          unode = 0.0d0
-          unode(:) = fstrDYNAMIC%DISP(:,idx)
-          label = 'DISPLACEMENT'
-          if(is_33beam == 1)then
-            call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+          if(ndof /= 4) then
+            id = 1
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+            allocate( unode(hecMESH%n_dof*hecMESH%n_node) )
+            unode = 0.0d0
+            unode(:) = fstrDYNAMIC%DISP(:,idx)
+            label = 'DISPLACEMENT'
+            if(is_33beam == 1)then
+              call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+            endif
+            if(is_33shell == 1)then
+              call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+            endif
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
+          else
+            id = 1
+            ! for VELOCITY
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
+            allocate( unode(3*hecMESH%n_node) )
+            unode = 0.0d0
+            do i=1, hecMESH%n_node
+              do j = 1, 3
+                unode((i-1)*3 + j) = fstrDYNAMIC%DISP((i-1)*4 + j, idx)
+              enddo
+            enddo
+            label = 'VELOCITY'
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
+            ! for PRESSURE
+            nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 1 )
+            allocate( unode(hecMESH%n_node) )
+            unode = 0.0d0
+            do i=1, hecMESH%n_node
+              unode(i) = fstrDYNAMIC%DISP(i*4, idx)
+            enddo
+            label = 'PRESSURE'
+            call hecmw_result_add( id, nitem, label, unode )
+            deallocate( unode )
           endif
-          if(is_33shell == 1)then
-            call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
-          endif
-          call hecmw_result_add( id, nitem, label, unode )
-          deallocate( unode )
         endif
 ! --- VELOCITY
         if( fstrSOLID%output_ctrl(3)%outinfo%on(15) ) then
@@ -247,6 +274,7 @@ module m_dynamic_make_result
       ndof = hecMESH%n_dof
       if( ndof==2 ) mdof = 3
       if( ndof==3 ) mdof = 6
+      if( ndof==4 ) mdof = 6
       if( ndof==6 ) mdof = 6
 
       call hecmw_nullify_result_data( fstrRESULT )
@@ -257,8 +285,15 @@ module m_dynamic_make_result
 
 ! --- DISPLACEMENT
         if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
-          ncomp = ncomp + 1
-          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+          if(ndof /= 4) then
+            ncomp = ncomp + 1
+            nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+          else
+            ncomp = ncomp + 1
+            nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
+            ncomp = ncomp + 1
+            nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 1 )
+          endif
         endif
 ! --- VELOCITY
         if( fstrSOLID%output_ctrl(4)%outinfo%on(15) ) then
@@ -320,16 +355,39 @@ module m_dynamic_make_result
 
 ! --- DISPLACEMENT
         if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
-          ncomp = ncomp + 1
-          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
-          fstrRESULT%nn_dof(ncomp) = nn
-          fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
-          do i = 1, hecMESH%n_node
-            do j = 1, nn
-              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%DISP(nn*(i-1)+j,idx)
+          if(ndof /= 4) then
+            ncomp = ncomp + 1
+            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+            fstrRESULT%nn_dof(ncomp) = nn
+            fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
+            do i = 1, hecMESH%n_node
+              do j = 1, nn
+                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%DISP(nn*(i-1)+j,idx)
+              enddo
             enddo
-          enddo
-          iitem = iitem + nn
+            iitem = iitem + nn
+          else
+            ! DIPLACEMENT
+            ncomp = ncomp + 1
+            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
+            fstrRESULT%nn_dof(ncomp) = nn
+            fstrRESULT%node_label(ncomp) = 'VELOCITY'
+            do i = 1, hecMESH%n_node
+              do j = 1, 3
+                fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%DISP(4*(i-1)+j,idx)
+              enddo
+            enddo
+            iitem = iitem + nn
+            ! PRESSURE
+            ncomp = ncomp + 1
+            nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 1 )
+            fstrRESULT%nn_dof(ncomp) = nn
+            fstrRESULT%node_label(ncomp) = 'PRESSURE'
+            do i = 1, hecMESH%n_node
+              fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrDYNAMIC%DISP(4*i,idx)
+            enddo
+            iitem = iitem + nn
+          endif
         endif
 ! --- VELOCITY
         if( fstrSOLID%output_ctrl(4)%outinfo%on(15) ) then
