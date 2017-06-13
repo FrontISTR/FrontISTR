@@ -271,8 +271,8 @@ when("static/exE")
 ["static/exE","E352.msh","E300.cnt"],
 ["static/exE","E361.msh","E300.cnt"],
 ["static/exE","E362.msh","E300.cnt"],
-["static/exE","E731.msh","E700.cnt","D731_MUMPS_V4_5.log"],
-["static/exE","E741.msh","E700.cnt","D741_MUMPS_V4_5.log"],
+["static/exE","E731.msh","E700.cnt","E731_MUMPS_V4_5.log"],
+["static/exE","E741.msh","E700.cnt","E741_MUMPS_V4_5.log"],
 ].each{|param|
 	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"),param[3])
 	exit res if res != 0
