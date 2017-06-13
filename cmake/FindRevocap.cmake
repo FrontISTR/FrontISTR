@@ -5,10 +5,13 @@
 
 # Variables:
 #
-# env REVOCAP_ROOT
-# REVOCAP_FOUND
-# REVOCAP_INCLUDE_PATH
-# REVOCAP_LIBRARIES
+# REVOCAP_FOUND         TRUE if FindRevocap found REVOCAP_Coupler
+# REVOCAP_INCLUDE_PATH  Include path of REVOCAP_Coupler
+# REVOCAP_LIBRARIES     REVOCAP_Coupler libraries
+#
+# env REVOCAP_ROOT      Set REVOCAP_ROOT envionment variable,
+#                       where REVOCAP_Coupler are.
+#    ex. REVOCAP_ROOT=/home/someone/somewhere/REVOCAP_Coupler-2.1
 #
 if(REVOCAP_LIBRARIES)
   set(REVOCAP_FOUND TRUE)
@@ -60,3 +63,8 @@ if(REVOCAP_INCLUDE_PATH AND REVOCAP_RCAP_LIBRARY AND REVOCAP_RCAPF_LIBRARY)
 endif()
 
 mark_as_advanced(REVOCAP_INCLUDE_PATH REVOCAP_RCAP_LIBRARY REVOCAP_RCAPF_LIBRARY)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(REVOCAP_Coupler
+  DEFAULT_MSG REVOCAP_LIBRARIES REVOCAP_INCLUDE_PATH)
+
