@@ -86,6 +86,39 @@ WITH_REVOCAP:BOOL=OFF
 WITH_TOOLS:BOOL=ON
 ~~~
 
+### ライブラリの場所の指定方法
+
+`$HOME/local`以下にライブラリをインストールしていて、`$HOME/local/bin`に`$PATH`が通っていれば自動的にライブラリは見つかります。
+
+ライブラリをインストールしたくない場合、コンパイルをしたライブラリの場所を環境変数で指定することも出来ます。
+
+環境変数　     | ライブラリ                           |
+---------------|--------------------------------------|
+METIS_ROOT     | metis-5.1.0 または metis-4.0.3       |
+PARMETIS_ROOT  | parmetis-4.0.3 または parmetis-3.1.1 |
+MUMPS_ROOT     | MUMPS_5.1.1 - 5.0.1                  |
+REFINER_ROOT   | REVOCAP_Refiner-1.1.04               |
+REVOCAP_ROOT   | REVOCAP_Coupler-2.1                  |
+SCALAPACK_ROOT | scalapack-2.0.2                      |
+
+例)
+
+~~~txt
+% export METIS_ROOT=$HOME/abc/metis-5.1.0
+~~~
+
+ライブラリをコンパイルしたディレクトリを各環境変数に設定します。
+
+注意)
+
+metis-4.0.3 を利用する場合、ディレクトリを指定した上で`cmake`実行時に
+
+~~~txt
+% cmake -DMETIS_VER_4=ON ..
+~~~
+
+を指定してください。
+
 ### その他のオプション
 
 その他、よく利用されるcmakeのオプションを示します。必要に応じて利用してください。
