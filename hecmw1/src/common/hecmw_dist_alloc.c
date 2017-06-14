@@ -48,6 +48,7 @@ init_struct_node( struct hecmwST_local_mesh *mesh )
 
   mesh->n_node             = 0;
   mesh->n_node_gross       = 0;
+  mesh->nn_middle          = 0;
   mesh->nn_internal        = 0;
   mesh->node_internal_list = NULL;
 

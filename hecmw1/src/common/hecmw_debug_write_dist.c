@@ -23,6 +23,24 @@ HECMW_dbg_n_node_( struct hecmwST_local_mesh *local_mesh, char *file, int line )
 }
 
 /*----------------------------------------------------------------------------*/
+/*  number of nodes including extra overlap after refinement < n_node_gross > */
+/*----------------------------------------------------------------------------*/
+extern void
+HECMW_dbg_n_node_gross_( struct hecmwST_local_mesh *local_mesh, char *file, int line )
+{
+  HECMW_log( HECMW_LOG_DEBUG, "%s:%d: n_node_gross = %d", file, line, local_mesh->n_node_gross );
+}
+
+/*----------------------------------------------------------------------------*/
+/*  number of nodes without extra slave nodes < nn_middle >                   */
+/*----------------------------------------------------------------------------*/
+extern void
+HECMW_dbg_nn_middle_( struct hecmwST_local_mesh *local_mesh, char *file, int line )
+{
+  HECMW_log( HECMW_LOG_DEBUG, "%s:%d: nn_middle = %d", file, line, local_mesh->nn_middle );
+}
+
+/*----------------------------------------------------------------------------*/
 /*  number of internal nodes < nn_internal >                                  */
 /*----------------------------------------------------------------------------*/
 extern void

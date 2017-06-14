@@ -137,6 +137,14 @@ set_n_node_gross(void *src)
 
 
 static int
+set_nn_middle(void *src)
+{
+	mesh->nn_middle = *((int *)src);
+	return 0;
+}
+
+
+static int
 set_nn_internal(void *src)
 {
 	mesh->nn_internal = *((int *)src);
@@ -2226,6 +2234,7 @@ static struct func_table {
 
 	{"hecmwST_local_mesh","n_node",              set_n_node              },
 	{"hecmwST_local_mesh","n_node_gross",        set_n_node_gross        },
+	{"hecmwST_local_mesh","nn_middle",           set_nn_middle           },
 	{"hecmwST_local_mesh","nn_internal",         set_nn_internal         },
 	{"hecmwST_local_mesh","node_internal_list",  set_node_internal_list  },
 	{"hecmwST_local_mesh","node_ID",             set_node_ID             },

@@ -1861,6 +1861,9 @@ setup_node(struct hecmwST_local_mesh *mesh)
 	/* n_node_gross */
 	mesh->n_node_gross = mesh->n_node;
 
+	/* nn_middle */
+	mesh->nn_middle = mesh->n_node;
+
 	/* nn_internal */
 	mesh->nn_internal = mesh->n_node;
 

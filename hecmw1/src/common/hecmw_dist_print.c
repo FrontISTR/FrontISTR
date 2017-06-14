@@ -88,6 +88,8 @@ HECMW_dist_print_node(const struct hecmwST_local_mesh *mesh, FILE *fp)
 
 	fprintf(fp, "NODE:\n");
 	fprintf(fp, "n_node: %d\n", mesh->n_node);
+	fprintf(fp, "n_node_gross: %d\n", mesh->n_node_gross);
+	fprintf(fp, "nn_middle: %d\n", mesh->nn_middle);
 	fprintf(fp, "nn_internal: %d\n", mesh->nn_internal);
 
 	fprintf(fp, "node_internal_list:%s\n",

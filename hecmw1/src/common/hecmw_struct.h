@@ -163,6 +163,7 @@ struct hecmwST_local_mesh {
     /* Node */
     int n_node;
     int n_node_gross;
+    int nn_middle;
     int nn_internal;
     int *node_internal_list;
 

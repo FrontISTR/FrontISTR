@@ -156,6 +156,10 @@ module hecmw_dist_copy_f2c_f
         call hecmw_dist_copy_f2c_set_if(sname, vname, mesh%n_node_gross, ierr)
         if(ierr /= 0) return
 
+        vname = 'nn_middle'
+        call hecmw_dist_copy_f2c_set_if(sname, vname, mesh%nn_middle, ierr)
+        if(ierr /= 0) return
+
         vname = 'nn_internal'
         call hecmw_dist_copy_f2c_set_if(sname, vname, mesh%nn_internal, ierr)
         if(ierr /= 0) return
