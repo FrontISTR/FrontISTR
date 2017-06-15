@@ -26,6 +26,7 @@ if(EXISTS $ENV{MKLROOT})
     NO_SYSTEM_ENVIRONMENT_PATH)
 
   if(_MKL_SCALAPACK_INCLUDE)
+    set(SCALAPACK_INCLUDE_PATH ${_MKL_SCALAPACK_INCLUDE})
     find_library(_MKL_SCALAPACK_LP64
       NAMES mkl_scalapack_lp64
       HINTS $ENV{MKLROOT}/lib/intel64)
@@ -94,7 +95,6 @@ else()
     /usr/local/scalapack/lib
     /usr/local/lib
     /usr/lib)
-
   unset(WITH_MKL)
 endif()
 
