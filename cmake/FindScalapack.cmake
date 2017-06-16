@@ -19,6 +19,8 @@ if(SCALAPACK_LIBRARIES)
   RETURN()
 endif()
 
+include(FindPackageHandleStandardArgs)
+
 if(EXISTS $ENV{MKLROOT})
   find_file(_MKL_SCALAPACK_INCLUDE
     NAMES "mkl_scalapack.h"
@@ -82,6 +84,8 @@ if(EXISTS $ENV{MKLROOT})
         CACHE STRING "MKL ScaLAPACK for GCC")
     endif()
     set(SCALAPACK_MKL ON)
+    find_package_handle_standard_args(Scalapack
+      DEFAULT_MSG SCALAPACK_LIBRARIES SCALAPACK_INCLUDE_PATH)
   endif()
 else()
   find_library(SCALAPACK_LIBRARIES
@@ -96,18 +100,15 @@ else()
     /usr/local/lib
     /usr/lib)
   unset(WITH_MKL)
+  find_package_handle_standard_args(Scalapack
+    DEFAULT_MSG SCALAPACK_LIBRARIES)
 endif()
 
 if(SCALAPACK_LIBRARIES)
   set(SCALAPACK_FOUND TRUE)
-  message(STATUS "Found SCALAPACK (MKL : ${SCALAPACK_MKL})")
 endif()
 
 mark_as_advanced(_MKL_SCALAPACK_LP64 _MKL_INTEL_LP64
   _MKL_GNU_THREAD _MKL_INTEL_THREAD _MKL_CORE
   _MKL_BLACS_INTELMPI_LP64 _MKL_SCALAPACK_INCLUDE _MKL_BLACS_OPENMPI_LP64)
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Scalapack
-  DEFAULT_MSG SCALAPACK_LIBRARIES SCALAPACK_INCLUDE_PATH)
 
