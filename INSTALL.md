@@ -138,7 +138,9 @@ metis-4.0.3 を利用する場合、ディレクトリを指定した上で`cmak
 コンパイラにicc, icpc, ifort、MPIライブラリにIntel MPI、LapackにMKL、OpenMPにiomp5を利用します。
 
 ~~~txt
-% cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_Fortran_COMPILER=ifort -DBLA_VENDOR="Intel10_64lp" -DWITH_MKL=1 ..
+% cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_Fortran_COMPILER=ifort -DBLA_VENDOR="Intel10_64lp" ..
+または
+% CC=icc CXX=icpc FC=ifort cmake -DBLA_VENDOR="Intel10_64lp" ..
 ~~~
 
 ### 外部ライブラリの場所の指定

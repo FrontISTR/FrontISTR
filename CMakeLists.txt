@@ -201,6 +201,17 @@ else()
 endif()
 
 ###################
+# -DWITH_PARMETIS
+###################
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
+  endif()
+endif()
+
+###################
 # -DWITH_METIS
 # -DMETIS_VER_4
 ###################
@@ -213,17 +224,6 @@ if(WITH_METIS AND METIS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
   else()
     list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
-  endif()
-endif()
-
-###################
-# -DWITH_PARMETIS
-###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
   endif()
 endif()
 
