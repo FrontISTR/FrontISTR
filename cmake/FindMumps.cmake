@@ -5,10 +5,13 @@
 
 # Variables:
 #
-# env MUMPS_ROOT
-# MUMPS_FOUND
-# MUMPS_INCLUDE_PATH
-# MUMPS_LIBRARIES
+# MUMPS_FOUND         TRUE if FindMumps found mumps
+# MUMPS_INCLUDE_PATH  Include path of mumps
+# MUMPS_LIBRARIES     mumps libraries
+#
+# env MUMPS_ROOT      Set MUMPS_ROOT environment variable,
+#                     where mumps are.
+#    ex. export MUMPS_ROOT=/home/someone/somewhere/MUMPS_5.1.1
 #
 if(MUMPS_LIBRARIES)
   set(MUMPS_LIBRARIES TRUE)
@@ -16,7 +19,7 @@ if(MUMPS_LIBRARIES)
 endif()
 
 set(LIB_SEARCH_PATH
-  $ENV{MUMPS_ROOT}
+  $ENV{MUMPS_ROOT}/lib
   ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/lib
   ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/lib
   ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.2/lib
@@ -42,7 +45,7 @@ find_library(MUMPS_PORD_LIB
 )
 find_path(MUMPS_INCLUDE_PATH
   NAMES mumps_compat.h
-  HINTS $ENV{MUMPS_ROOT}
+  HINTS $ENV{MUMPS_ROOT}/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.2/include
@@ -55,15 +58,13 @@ find_path(MUMPS_INCLUDE_PATH
     NO_DEFAULT_PATH
 )
 if(MUMPS_D_LIB AND MUMPS_COMMON_LIB AND MUMPS_PORD_LIB AND MUMPS_INCLUDE_PATH)
-  message(STATUS "Found MUMPS")
-  set(MUMPS_LIBRARIES ${MUMPS_D_LIB} ${MUMPS_COMMON_LIB} ${MUMPS_PORD_LIB} ${SCALAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${METIS_LIBRARIES})
+#  message(STATUS "Found MUMPS")
+  set(MUMPS_LIBRARIES ${MUMPS_D_LIB} ${MUMPS_COMMON_LIB} ${MUMPS_PORD_LIB})
   set(MUMPS_FOUND ON)
-else()
-  set(MUMPS_D_LIB "MUMPS_D_LIB-NOTFOUND" CACHE FILEPATH "libdmumps")
-  set(MUMPS_COMMON_LIB "MUMPS_COMMON_LIB-NOTFOUND" CACHE FILEPATH "libmumps_common")
-  set(MUMPS_PORD_LIB "MUMPS_PORD_LIB-NOTFOUND" CACHE FILEPATH "libpord")
-  set(MUMPS_INCLUDE_PATH "MUMPS_INCLUDE_PATH-NOTFOUND" CACHE FILEPATH "mumps include directory")
-  set(MUMPS_FOUND OFF)
 endif()
 
 mark_as_advanced(MUMPS_INCLUDE_PATH MUMPS_LIBRARIES MUMPS_D_LIB MUMPS_COMMON_LIB MUMPS_PORD_LIB)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MUMPS
+  DEFAULT_MSG MUMPS_LIBRARIES MUMPS_INCLUDE_PATH)

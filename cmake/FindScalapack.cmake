@@ -6,9 +6,13 @@
 #
 # Variables:
 #
-# SCALAPACK_FOUND
-# SCALAPACK_MKL
-# SCALAPACK_LIBRARIES
+# SCALAPACK_FOUND      TRUE if FindScalapack found scalapack
+# SCALAPACK_MKL        TRUE if FindScalapack found Intel MKL scalapack
+# SCALAPACK_LIBRARIES  scalapack libraries
+#
+# env SCALAPACK_ROOT   Set SCALAPACK_ROOT environment variable,
+#                      where scalapack are.
+#    ex. export SCALAPACK_ROOT=/home/someone/somewhere/scalapack-2.0.2
 #
 if(SCALAPACK_LIBRARIES)
   set(SCALAPACK_FOUND TRUE)
@@ -22,6 +26,7 @@ if(EXISTS $ENV{MKLROOT})
     NO_SYSTEM_ENVIRONMENT_PATH)
 
   if(_MKL_SCALAPACK_INCLUDE)
+    set(SCALAPACK_INCLUDE_PATH ${_MKL_SCALAPACK_INCLUDE})
     find_library(_MKL_SCALAPACK_LP64
       NAMES mkl_scalapack_lp64
       HINTS $ENV{MKLROOT}/lib/intel64)
@@ -81,15 +86,15 @@ if(EXISTS $ENV{MKLROOT})
 else()
   find_library(SCALAPACK_LIBRARIES
     NAMES scalapack
-    HINTS ${CMAKE_SOURCE_DIR}/../scalapack-2.0.2/build/lib
-    $ENV{HOME}/metis-5.0.1/build/lib
+    HINTS $ENV{SCALAPACK_ROOT}/build/lib
+    ${CMAKE_SOURCE_DIR}/../scalapack-2.0.2/build/lib
+    $ENV{HOME}/scalapack-2.0.2/build/lib
     $ENV{HOME}/local/lib
     $ENV{HOME}/.local/lib
     ${CMAKE_LIBRARY_PATH}
-    /usr/local/metis/lib
+    /usr/local/scalapack/lib
     /usr/local/lib
     /usr/lib)
-
   unset(WITH_MKL)
 endif()
 
@@ -101,3 +106,8 @@ endif()
 mark_as_advanced(_MKL_SCALAPACK_LP64 _MKL_INTEL_LP64
   _MKL_GNU_THREAD _MKL_INTEL_THREAD _MKL_CORE
   _MKL_BLACS_INTELMPI_LP64 _MKL_SCALAPACK_INCLUDE _MKL_BLACS_OPENMPI_LP64)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Scalapack
+  DEFAULT_MSG SCALAPACK_LIBRARIES SCALAPACK_INCLUDE_PATH)
+

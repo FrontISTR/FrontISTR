@@ -201,6 +201,17 @@ else()
 endif()
 
 ###################
+# -DWITH_PARMETIS
+###################
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
+  endif()
+endif()
+
+###################
 # -DWITH_METIS
 # -DMETIS_VER_4
 ###################
@@ -217,27 +228,17 @@ if(WITH_METIS AND METIS_FOUND)
 endif()
 
 ###################
-# -DWITH_PARMETIS
-###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
-  endif()
-endif()
-
-###################
 # -DWITH_MUMPS
 ###################
 if(WITH_MUMPS)
-  if(MUMPS_FOUND)
+  if(MUMPS_FOUND AND SCALAPACK_FOUND AND LAPACK_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "WITH_MUMPS")
     list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
-    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
+    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
     mark_as_advanced(scalapack_DIR)
   else()
-    message(FATAL_ERROR "MUMPS could not found")
+    message(FATAL_ERROR "MUMPS could not enable. Please also install scalapack and lapack.")
+    set(WITH_MUMPS OFF)
   endif()
 else()
   set(WITH_MUMPS OFF)
