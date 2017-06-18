@@ -30,13 +30,7 @@ contains
 !C** Shell33 variables
     integer(kind=kint) :: isect, ihead, ntot_lyr, nlyr, flag33, cid, truss
     real(kind=kreal)   :: thick, thick_lyr, dtot_lyr
-
-    fstrSOLID%STRAIN  = 0.0d0
-    fstrSOLID%STRESS  = 0.0d0
-    fstrSOLID%MISES   = 0.0d0
-    fstrSOLID%ESTRAIN = 0.0d0
-    fstrSOLID%ESTRESS = 0.0d0
-    fstrSOLID%EMISES  = 0.0d0
+    call fstr_solid_phys_clear(fstrSOLID)
 
     allocate( nnumber(hecMESH%n_node) )
     allocate( fstrSOLID%is_rot(hecMESH%n_node) )
@@ -520,9 +514,8 @@ contains
 
     tnstrain => fstrSOLID%tnstrain
     testrain => fstrSOLID%testrain
+    call fstr_solid_phys_clear(fstrSOLID)
 
-    fstrSOLID%STRAIN = 0.0d0
-    fstrSOLID%STRESS = 0.0d0
     allocate( nnumber(hecMESH%n_node) )
     allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
@@ -779,8 +772,7 @@ contains
     integer(kind=kint), allocatable :: nnumber(:)
     type(fstr_solid_physic_val), pointer :: layer => null()
 
-    fstrSOLID%ESTRAIN = 0.0d0
-    fstrSOLID%ESTRESS = 0.0d0
+    call fstr_solid_phys_clear(fstrSOLID)
 
     n_totlyr = fstrSOLID%max_lyr
 
@@ -994,5 +986,6 @@ contains
       end do
     end if
   end subroutine make_principal
+
 
 end module m_fstr_NodalStress
