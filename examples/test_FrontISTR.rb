@@ -5,7 +5,7 @@
 #
 require 'fileutils'
 
-$fistr = File.join(File.expand_path(ARGV[0]),'fistr1')
+$fistr = File.join(File.expand_path(ARGV[0]),'/fistr1/fistr1')
 $threshold = 1.0e-4
 
 #
