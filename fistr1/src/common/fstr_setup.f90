@@ -1261,14 +1261,28 @@ end subroutine
 
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
-
+subroutine fstr_setup_post_phys_init( phys ,n_node,n_elem )
+  implicit none
+  type(fstr_solid_physic_val), pointer :: phys
+  integer(kind=kint) :: n_node,n_elem
+  allocate ( phys%STRAIN  (6*n_node))
+  allocate ( phys%STRESS  (6*n_node))
+  allocate ( phys%MISES   (  n_node))
+  allocate ( phys%ESTRAIN (6*n_elem))
+  allocate ( phys%ESTRESS (6*n_elem))
+  allocate ( phys%EMISES  (  n_elem))
+  phys%STRAIN=0.0d0
+  phys%STRESS=0.0d0
+  phys%MISES=0.0d0
+  phys%ESTRAIN=0.0d0
+  phys%ESTRESS=0.0d0
+  phys%EMISES=0.0d0
+end subroutine fstr_setup_post_phys_init
  subroutine fstr_setup_post( ctrl, P )
         implicit none
-        integer(kind=kint) :: ctrl, ntot_lyr, i
+        integer(kind=kint) :: ctrl, i
         type(fstr_param_pack) :: P
-
-        ! JP-6
-        ntot_lyr = P%SOLID%max_lyr
+        type(fstr_solid_physic_val), pointer :: phys => null()
 
         if( P%PARAM%solution_type == kstSTATIC &
          .or. P%PARAM%solution_type == kstNLSTATIC  &
@@ -1278,52 +1292,26 @@ end subroutine
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
                     allocate ( P%SOLID%SHELL )
-                    allocate ( P%SOLID%SHELL%STRAIN  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%STRESS  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%MISES   (  P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%ESTRAIN (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%ESTRESS (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%EMISES  (  P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%LAYER(ntot_lyr) )
-                    do i=1,ntot_lyr
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRESS  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%MISES   (  P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRAIN (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRESS (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%EMISES  (  P%MESH%n_elem))
-
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRESS  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%MISES   (  P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRAIN (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRESS (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%EMISES  (  P%MESH%n_elem))
+                    call fstr_setup_post_phys_init(P%SOLID%SHELL,P%MESH%n_node,P%MESH%n_elem)
+                    allocate ( P%SOLID%SHELL%LAYER(P%SOLID%max_lyr) )
+                    do i=1,P%SOLID%max_lyr
+                      allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
+                      allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
+                      call fstr_setup_post_phys_init(P%SOLID%SHELL%LAYER(i)%PLUS,P%MESH%n_node,P%MESH%n_elem)
+                      call fstr_setup_post_phys_init(P%SOLID%SHELL%LAYER(i)%MINUS,P%MESH%n_node,P%MESH%n_elem)
                     enddo
-                    P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
-                    P%SOLID%STRESS => P%SOLID%SHELL%STRESS
-                    P%SOLID%MISES  => P%SOLID%SHELL%MISES
-                    P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
-                    P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
-                    P%SOLID%EMISES  => P%SOLID%SHELL%EMISES
+                    phys => P%SOLID%SHELL
                 else
                     allocate ( P%SOLID%SOLID )
-                    allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%STRESS  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%MISES   (P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%ESTRESS  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_elem))
-                    P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
-                    P%SOLID%STRESS => P%SOLID%SOLID%STRESS
-                    P%SOLID%MISES  => P%SOLID%SOLID%MISES
-                    P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
-                    P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
-                    P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
+                    phys => P%SOLID%SOLID
+                    call fstr_setup_post_phys_init(phys,P%MESH%n_node,P%MESH%n_elem)
                 end if
-
+                P%SOLID%STRAIN => phys%STRAIN
+                P%SOLID%STRESS => phys%STRESS
+                P%SOLID%MISES  => phys%MISES
+                P%SOLID%ESTRAIN => phys%ESTRAIN
+                P%SOLID%ESTRESS => phys%ESTRESS
+                P%SOLID%EMISES  => phys%EMISES
                 P%SOLID%STRAIN = 0.d0
                 P%SOLID%STRESS = 0.d0
                 P%SOLID%MISES  = 0.d0
