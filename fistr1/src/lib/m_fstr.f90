@@ -1030,4 +1030,37 @@ end subroutine fstr_param_init
         end subroutine fstr_recover_initial_config_to_mesh
 
 
+subroutine fstr_solid_phys_zero(phys)
+  implicit none
+  type(fstr_solid_physic_val), pointer :: phys
+  phys%STRAIN  = 0.0d0
+  phys%STRESS  = 0.0d0
+  phys%MISES   = 0.0d0
+  phys%ESTRAIN = 0.0d0
+  phys%ESTRESS = 0.0d0
+  phys%EMISES  = 0.0d0
+end subroutine fstr_solid_phys_zero
+
+subroutine fstr_solid_phys_clear(fstrSOLID)
+
+  implicit none
+  type (fstr_solid)         :: fstrSOLID
+  type(fstr_solid_physic_val), pointer :: phys
+  integer(kind=kint) :: i
+  
+  if (associated(fstrSOLID%SOLID)) then
+    call fstr_solid_phys_zero(fstrSOLID%SOLID)
+  end if 
+  if (associated(fstrSOLID%SHELL)) then
+    call fstr_solid_phys_zero(fstrSOLID%SHELL)
+    do i=1,fstrSOLID%max_lyr
+      call fstr_solid_phys_zero(fstrSOLID%SHELL%LAYER(i)%PLUS)
+      call fstr_solid_phys_zero(fstrSOLID%SHELL%LAYER(i)%MINUS)
+    end do
+  end if 
+  if (associated(fstrSOLID%BEAM)) then
+    call fstr_solid_phys_zero(fstrSOLID%BEAM)
+  end if 
+  
+end subroutine fstr_solid_phys_clear
 end module m_fstr
