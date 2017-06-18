@@ -59,41 +59,40 @@ function fstr_str2index( s, x )
         fstr_str2index = .true.
 end function fstr_str2index
 
-subroutine fstr_strupr( s )
-        implicit none
-        character(*) :: s
-        integer :: i, n, a, da
 
-        n = len_trim(s)
-        da = iachar('a') - iachar('A')
-        do i = 1, n
-                a = iachar(s(i:i))
-                if( a > iachar('Z')) then
-                        a = a - da
-                       s(i:i) = achar(a)
-                end if
-        end do
+subroutine fstr_strupr( s )
+  implicit none
+  character(*) :: s
+  integer :: i, n, a
+
+  n = len_trim(s)
+  do i = 1, n
+    a = iachar(s(i:i))
+    if( a >= iachar('a') .and. a <= iachar('z')) then
+      s(i:i) = achar(a - 32)
+    end if
+  end do
 end subroutine fstr_strupr
 
 function fstr_streqr( s1, s2 )
-        implicit none
-        character(*) :: s1, s2
-        logical :: fstr_streqr
-        integer :: i, n, a1,a2, da
+  implicit none
+  character(*) :: s1, s2
+  logical :: fstr_streqr
+  integer :: i, n, a1, a2
 
-        fstr_streqr = .false.
-        n = len_trim(s1)
-        if( n /= len_trim(s2)) return
-
-        da = iachar('a') - iachar('A')
-        do i = 1, n
-                a1 = iachar(s1(i:i))
-                a2 = iachar(s2(i:i))
-                if( a1 /= a2 ) then
-                        if((a1 - da /= a2) .and. (a1 /= a2 - da)) return
-                end if
-        end do
-        fstr_streqr = .true.
+  fstr_streqr = .false.
+  n = len_trim(s1)
+  if( n /= len_trim(s2)) return
+  call fstr_strupr(s1)
+  call fstr_strupr(s2)
+  do i = 1, n
+    a1 = iachar(s1(i:i))
+    a2 = iachar(s2(i:i))
+    if( a1 /= a2 ) then
+      return
+    end if 
+  end do
+  fstr_streqr = .true.
 end function fstr_streqr
 
 !------------------------------------------------------------------------------
