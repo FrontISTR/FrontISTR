@@ -31,6 +31,13 @@ contains
     integer(kind=kint) :: isect, ihead, ntot_lyr, nlyr, flag33, cid, truss
     real(kind=kreal)   :: thick, thick_lyr, dtot_lyr
 
+    fstrSOLID%STRAIN  = 0.0d0
+    fstrSOLID%STRESS  = 0.0d0
+    fstrSOLID%MISES   = 0.0d0
+    fstrSOLID%ESTRAIN = 0.0d0
+    fstrSOLID%ESTRESS = 0.0d0
+    fstrSOLID%EMISES  = 0.0d0
+
     allocate( nnumber(hecMESH%n_node) )
     allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
@@ -514,6 +521,8 @@ contains
     tnstrain => fstrSOLID%tnstrain
     testrain => fstrSOLID%testrain
 
+    fstrSOLID%STRAIN = 0.0d0
+    fstrSOLID%STRESS = 0.0d0
     allocate( nnumber(hecMESH%n_node) )
     allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
@@ -769,6 +778,9 @@ contains
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
     integer(kind=kint), allocatable :: nnumber(:)
     type(fstr_solid_physic_val), pointer :: layer => null()
+
+    fstrSOLID%ESTRAIN = 0.0d0
+    fstrSOLID%ESTRESS = 0.0d0
 
     n_totlyr = fstrSOLID%max_lyr
 
