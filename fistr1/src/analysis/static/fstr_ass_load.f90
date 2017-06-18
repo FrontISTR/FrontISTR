@@ -284,7 +284,7 @@ module m_fstr_ass_load
           hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
 
-      do i=1, 3*hecMAT%NP
+      do i=1, hecMAT%NDOF*hecMAT%NP
         !thermal load is not considered
         fstrSOLID%EFORCE(i) = fstrSOLID%GL(i)
       enddo
