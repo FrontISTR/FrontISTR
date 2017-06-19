@@ -1,13 +1,14 @@
 #!/usr/bin/ruby
 #
 # USAGE
-# ruby test_FrontISTR.rb <pathname of fistr> <pathname of data>
+# ruby test_FrontISTR.rb <pathname of fistr> <pathname of data> <np>
 #
 require 'fileutils'
 
+$part = File.join(File.expand_path(ARGV[0]),'/hecmw1/tools/hecmw_part1')
 $fistr = File.join(File.expand_path(ARGV[0]),'/fistr1/fistr1')
 $threshold = 1.0e-4
-
+$np = ARGV[2]
 #
 # mesh と cnt ファイルを与えて自動的に hecmw_ctrl.dat を生成する
 #
@@ -22,7 +23,7 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
 ## Auto created
 ## #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}
 ##
-!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST
 #{mesh}
 !CONTROL,NAME=fstrCNT
 #{cnt}
@@ -30,7 +31,17 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
 #{res}
 !RESULT,NAME=vis_out,IO=OUT
 #{vis}
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+#{mesh}
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+#{mesh}
 END_OF_HECMW_CTRL
+}
+  File.open("hecmw_part_ctrl.dat","w"){|aFile|
+    aFile.print <<END_OF_HECMW_CTRL
+!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=#{$np}
+END_OF_HECMW_CTRL
+
   }
 end
 
@@ -43,8 +54,11 @@ def exec_test(dirname,mesh,cnt,name)
   Dir.chdir(dirname){
     create_hecmw_ctrl(mesh,cnt)
     FileUtils.rm('0.log') if File.exists?('0.log')
-    puts $fistr
-    system($fistr)
+    puts $part
+    system($part)
+    execcmd = "mpirun -np " + $np + " " + $fistr
+    puts execcmd
+    system(execcmd)
     puts "return value = #{$?.exitstatus}"
     return 1 if $?.exitstatus != 0
     currentLog = name+".log"

@@ -35,6 +35,8 @@ fistr1/tools/neu2fstr/include
 hecmw1/bin
 hecmw1/include
 examples/*/ex?/hecmw_ctrl.dat
+examples/*/ex?/hecmw_part_ctrl.dat
+examples/*/ex?/*.msh.*
 examples/static/1elem/hecmw_ctrl.dat
 examples/static/thermal/hecmw_ctrl.dat
 build/
