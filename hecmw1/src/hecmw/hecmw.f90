@@ -29,6 +29,7 @@ use hecmw_result
 use hecmw_solver_11
 use hecmw_solver_22
 use hecmw_solver_33
+use hecmw_solver_44
 use hecmw_solver_bicgstab_33
 use hecmw_solver_blcg_22
 use hecmw_solver_cg_11
@@ -42,6 +43,7 @@ use hecmw_solver_misc
 use hecmw_solver_las_11
 use hecmw_solver_las_22
 use hecmw_solver_las_33
+use hecmw_solver_las_44
 !use hecmw_solver_sai_bicgstab_33
 !use hecmw_solver_sai_gmres_33
 !use hecmw_solver_sai_gpbicg_33

@@ -41,6 +41,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   real(kind=kreal)   :: total_disp(6, 20), du(6, 20), ddu(6, 20)
   real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3)
   integer            :: ig0, ig, ik, in, ierror, isect, ihead, cdsys_ID
+  integer            :: ndim
 
   real(kind=kreal), optional :: strainEnergy
   real(kind=kreal) :: tmp
@@ -73,7 +74,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 !element loop
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-!$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp), &
+!$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
 !$omp&  strainEnergy,iter,tincr), &
 !$omp&  firstprivate(tt0,ttn,tt)
@@ -161,6 +162,17 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
         endif
+
+      else if ( ic_type == 3414 ) then
+        if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+          write(*, *) '###ERROR### : This element is not supported for this material'
+          write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call UPDATE_C3_vp                                                       &
+             ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
+               fstrSOLID%elements(icel)%gausses(:) )
+
 !      else if ( ic_type==731) then
 !        call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
 !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
@@ -185,12 +197,13 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
 ! ----- calculate strain energy
       if(present(strainEnergy))then
+        ndim = getSpaceDimension( fstrSOLID%elements(icel)%etype )
         do j = 1, nn
-          do i = 1, ndof
-            tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)+qf(ndof*(j-1)+i) )*ddu(i,j)
+          do i = 1, ndim
+            tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i)+qf(ndim*(j-1)+i) )*ddu(i,j)
 !$omp atomic
             strainEnergy = strainEnergy+tmp
-            fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i) = qf(ndof*(j-1)+i)
+            fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i) = qf(ndim*(j-1)+i)
           enddo
         enddo
       endif
@@ -211,6 +224,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
     endif
   else if( ndof==2 ) then
     call hecmw_update_2_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
+  else if( ndof==4 ) then
+    call hecmw_update_4_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
   else if( ndof==6 ) then
     call hecmw_update_m_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node,6)
   endif

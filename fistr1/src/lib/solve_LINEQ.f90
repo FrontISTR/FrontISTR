@@ -94,8 +94,7 @@ module m_solve_LINEQ
         CASE(3)
           resid=hecmw_rel_resid_L2_33(hecMESH,hecMAT)
         CASE(4:)
-          !resid=hecmw_rel_resid_L2_mm(hecMESH,hecMAT)
-          resid=0.d0 !! TEMPORARY
+          resid=hecmw_rel_resid_L2_44(hecMESH,hecMAT)
         END SELECT
         myrank=hecmw_comm_get_rank()
         if (myrank==0) then

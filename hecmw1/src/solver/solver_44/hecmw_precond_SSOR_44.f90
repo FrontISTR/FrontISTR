@@ -122,8 +122,8 @@ contains
 
     !call check_ordering
 
-    allocate(D(9*N), AL(9*NPL), AU(9*NPU))
-    call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+    allocate(D(16*N), AL(16*NPL), AU(16*NPU))
+    call hecmw_matrix_reorder_values(N, 4, perm, iperm, &
          hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
          hecMAT%AL, hecMAT%AU, hecMAT%D, &
          indexL, indexU, itemL, itemU, AL, AU, D)
@@ -140,8 +140,8 @@ contains
            hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
            indexCL, indexCU, itemCL, itemCU)
 
-      allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
-      call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+      allocate(CD(16*N), CAL(16*NPCL), CAU(16*NPCU))
+      call hecmw_matrix_reorder_values(N, 4, perm, iperm, &
            hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
            hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
            indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
