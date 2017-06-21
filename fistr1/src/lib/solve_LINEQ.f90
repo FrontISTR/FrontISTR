@@ -27,6 +27,8 @@ module m_solve_LINEQ
       USE hecmw_solver_direct_clusterMKL
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
+      type (hecmwST_matrix),allocatable :: hecMAT2
+
       INTEGER(kind=kint) imsg, i, myrank
       real(kind=kreal) :: resid
 !C
@@ -41,7 +43,84 @@ module m_solve_LINEQ
           CALL hecmw_solve_11(hecMESH,hecMAT)
         CASE(2)
 !          WRITE(*,*) "Calling 2x2 Iterative Solver..."
-          CALL hecmw_solve_22(hecMESH,hecMAT)
+          allocate(hecMAT2)
+          call hecmw_nullify_matrix( hecMAT2 )
+          call hecmw_cmat_init(hecMAT2%cmat)
+
+          allocate(hecMAT2%B(3*hecMAT%NP))
+          allocate(hecMAT2%X(3*hecMAT%NP))
+          allocate(hecMAT2%D(9*hecMAT%NP))
+          allocate(hecMAT2%AL(9*hecMAT%NPL))
+          allocate(hecMAT2%AU(9*hecMAT%NPU))
+          hecMAT2%indexL => hecMAT%indexL
+          hecMAT2%indexU => hecMAT%indexU
+          hecMAT2%itemL  => hecMAT%itemL
+          hecMAT2%itemU  => hecMAT%itemU
+          hecMAT2%N    = hecMAT%N
+          hecMAT2%NP   = hecMAT%NP
+          hecMAT2%NPL  = hecMAT%NPL
+          hecMAT2%NPU  = hecMAT%NPU
+          hecMAT2%NDOF = 3
+          hecMAT2%Iarray = hecMAT%Iarray
+          hecMAT2%Rarray = hecMAT%Rarray
+          
+          do i = 1, hecMAT%NP
+            hecMAT2%D(9*i-8) = hecMAT%D(4*i-3)
+            hecMAT2%D(9*i-7) = hecMAT%D(4*i-2)
+            hecMAT2%D(9*i-6) = 0
+            hecMAT2%D(9*i-5) = hecMAT%D(4*i-1)
+            hecMAT2%D(9*i-4) = hecMAT%D(4*i-0)
+            hecMAT2%D(9*i-3) = 0
+            hecMAT2%D(9*i-2) = 0
+            hecMAT2%D(9*i-1) = 0
+            hecMAT2%D(9*i-0) = 1
+            hecMAT2%B(3*i-2) = hecMAT%B(2*i-1)
+            hecMAT2%B(3*i-1) = hecMAT%B(2*i)
+            hecMAT2%B(3*i-0) = 0
+            hecMAT2%X(3*i-2) = hecMAT%X(2*i-1)
+            hecMAT2%X(3*i-1) = hecMAT%X(2*i)
+            hecMAT2%X(3*i-0) = 0
+          end do 
+          do i = 1, hecMAT%NPL
+            hecMAT2%AL(9*i-8) = hecMAT%AL(4*i-3)
+            hecMAT2%AL(9*i-7) = hecMAT%AL(4*i-2)
+            hecMAT2%AL(9*i-6) = 0
+            hecMAT2%AL(9*i-5) = hecMAT%AL(4*i-1)
+            hecMAT2%AL(9*i-4) = hecMAT%AL(4*i-0)
+            hecMAT2%AL(9*i-3) = 0
+            hecMAT2%AL(9*i-2) = 0
+            hecMAT2%AL(9*i-1) = 0
+            hecMAT2%AL(9*i-0) = 0
+          end do 
+          do i = 1, hecMAT%NPU
+            hecMAT2%AU(9*i-8) = hecMAT%AU(4*i-3)
+            hecMAT2%AU(9*i-7) = hecMAT%AU(4*i-2)
+            hecMAT2%AU(9*i-6) = 0
+            hecMAT2%AU(9*i-5) = hecMAT%AU(4*i-1)
+            hecMAT2%AU(9*i-4) = hecMAT%AU(4*i-0)
+            hecMAT2%AU(9*i-3) = 0
+            hecMAT2%AU(9*i-2) = 0
+            hecMAT2%AU(9*i-1) = 0
+            hecMAT2%AU(9*i-0) = 0
+          end do 
+
+          call hecmw_solve_33 (hecMESH, hecMAT2)
+          do i = 1, hecMAT%NP
+            hecMAT%X(2*i-1) = hecMAT2%X(3*i-2)
+            hecMAT%X(2*i-0) = hecMAT2%X(3*i-1)
+          end do 
+
+          hecMAT%Iarray = hecMAT2%Iarray
+          hecMAT%Rarray = hecMAT2%Rarray
+          deallocate(hecMAT2%B)
+          deallocate(hecMAT2%D)
+          deallocate(hecMAT2%X)
+          deallocate(hecMAT2%AL)
+          deallocate(hecMAT2%AU)
+          deallocate(hecMAT2)
+
+
+!          CALL hecmw_solve_22(hecMESH,hecMAT)
         CASE(3)
 !          WRITE(*,*) "Calling 3x3 Iterative Solver..."
           CALL hecmw_solve_33(hecMESH,hecMAT)
