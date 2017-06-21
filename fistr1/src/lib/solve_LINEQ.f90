@@ -27,7 +27,6 @@ module m_solve_LINEQ
       USE hecmw_solver_direct_clusterMKL
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
-      type (hecmwST_matrix),pointer :: hecMAT2
 
       INTEGER(kind=kint) imsg, i, myrank
       real(kind=kreal) :: resid
@@ -43,11 +42,7 @@ module m_solve_LINEQ
           CALL hecmw_solve_11(hecMESH,hecMAT)
         CASE(2)
 !          WRITE(*,*) "Calling 2x2 Iterative Solver..."
-          call blockmatrix_expand  (hecMAT,hecMAT2,3)
-          call hecmw_solve_33 (hecMESH, hecMAT2)
-          call vector_contract(hecMAT,hecMAT2,3)
-
-!          CALL hecmw_solve_22(hecMESH,hecMAT)
+          CALL hecmw_solve_22(hecMESH,hecMAT)
         CASE(3)
 !          WRITE(*,*) "Calling 3x3 Iterative Solver..."
           CALL hecmw_solve_33(hecMESH,hecMAT)
@@ -58,9 +53,7 @@ module m_solve_LINEQ
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
           !call hecmw_abort( hecmw_comm_get_comm() )
-          call blockmatrix_expand  (hecMAT,hecMAT2,6)
-          call hecmw_solve_66 (hecMESH, hecMAT2)
-          call vector_contract(hecMAT,hecMAT2,6)
+          call fstr_substitute_hecmw_solver(hecMESH,hecMAT,6)
         CASE(6)
 !          WRITE(*,*) "Calling 6x6 Iterative Solver..."
           CALL hecmw_solve_66(hecMESH,hecMAT)
@@ -119,101 +112,43 @@ module m_solve_LINEQ
       RETURN
 
    end subroutine solve_LINEQ
-   
-   subroutine blockmatrix_expand(hecMAT,hecMAT2,NDOF)
-      USE hecmw
-
-      type (hecmwST_matrix    ) :: hecMAT
-      type (hecmwST_matrix    ),pointer :: hecMAT2
-      INTEGER(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
-      
-      NDOF2 = NDOF*NDOF
-      oNDOF = hecMAT%NDOF
-      oNDOF2 = oNDOF*oNDOF
-      allocate(hecMAT2)
-      call hecmw_nullify_matrix( hecMAT2 )
-      call hecmw_cmat_init(hecMAT2%cmat)
-
-      allocate(hecMAT2%B(NDOF*hecMAT%NP))
-      allocate(hecMAT2%X(NDOF*hecMAT%NP))
-      allocate(hecMAT2%D(NDOF2*hecMAT%NP))
-      allocate(hecMAT2%AL(NDOF2*hecMAT%NPL))
-      allocate(hecMAT2%AU(NDOF2*hecMAT%NPU))
-      hecMAT2%indexL => hecMAT%indexL
-      hecMAT2%indexU => hecMAT%indexU
-      hecMAT2%itemL  => hecMAT%itemL
-      hecMAT2%itemU  => hecMAT%itemU
-      hecMAT2%N    = hecMAT%N
-      hecMAT2%NP   = hecMAT%NP
-      hecMAT2%NPL  = hecMAT%NPL
-      hecMAT2%NPU  = hecMAT%NPU
-      hecMAT2%NDOF = NDOF
-      hecMAT2%Iarray = hecMAT%Iarray
-      hecMAT2%Rarray = hecMAT%Rarray
-      hecMAT2%X=0.0d0
-      do i = 1, hecMAT%NP
-        do j = 1, NDOF
-          do k = 1, NDOF
-            if (j<=oNDOF .and. k<=oNDOF) then 
-              hecMAT2%D(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMAT%D(oNDOF2*(i-1) + (j-1)*oNDOF + k)
-            else
-              if(j==k) then 
-                hecMAT2%D(NDOF2*(i-1) + (j-1)*NDOF + k)=1
-              else
-                hecMAT2%D(NDOF2*(i-1) + (j-1)*NDOF + k)=0
-              end if 
-            end if
-          end do
-          if (j<=oNDOF) then 
-            hecMAT2%B(NDOF*(i-1) + j) = hecMAT%B(oNDOF*(i-1) + j)
-          else
-            hecMAT2%B(NDOF*(i-1) + j)=0
-          end if
-        end do 
-      end do 
-      do i = 1, hecMAT%NPL
-        do j = 1, NDOF
-          do k = 1, NDOF
-            if (j<=oNDOF .and. k<=oNDOF) then 
-              hecMAT2%AL(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMAT%AL(oNDOF2*(i-1) + (j-1)*oNDOF + k)
-            else
-              hecMAT2%AL(NDOF2*(i-1) + (j-1)*NDOF + k) = 0
-            end if 
-          end do 
-        end do 
-      end do 
-      do i = 1, hecMAT%NPU
-        do j = 1, NDOF
-          do k = 1, NDOF
-            if (j<=oNDOF .and. k<=oNDOF) then 
-              hecMAT2%AU(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMAT%AU(oNDOF2*(i-1) + (j-1)*oNDOF + k)
-            else
-              hecMAT2%AU(NDOF2*(i-1) + (j-1)*NDOF + k) = 0
-            end if 
-          end do 
-        end do 
-      end do 
-   end subroutine blockmatrix_expand
-   subroutine vector_contract(hecMAT,hecMAT2,NDOF)
-      USE hecmw
-
-      type (hecmwST_matrix    ) :: hecMAT
-      type (hecmwST_matrix    ),pointer :: hecMAT2
-      INTEGER(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
-      NDOF2 = NDOF*NDOF
-      oNDOF = hecMAT%NDOF
-      do i = 1, hecMAT%NP
-        do j = 1, oNDOF
-          hecMAT%X(oNDOF*(i-1) + j) = hecMAT2%X(NDOF*(i-1) + j)
-        end do 
-      end do 
-      hecMAT%Iarray = hecMAT2%Iarray
-      hecMAT%Rarray = hecMAT2%Rarray
-      deallocate(hecMAT2%B)
-      deallocate(hecMAT2%D)
-      deallocate(hecMAT2%X)
-      deallocate(hecMAT2%AL)
-      deallocate(hecMAT2%AU)
-      deallocate(hecMAT2)
-   end subroutine vector_contract
+  subroutine fstr_substitute_hecmw_solver(hecMESH,hecMATorig,NDOF)
+    use hecmw
+    use hecmw_solver_11
+    use hecmw_solver_22
+    use hecmw_solver_33
+    use hecmw_solver_44
+    use hecmw_solver_66
+    type (hecmwST_local_mesh)     :: hecMESH
+    type (hecmwST_matrix)         :: hecMATorig
+    type (hecmwST_matrix),pointer :: hecMAT => null()
+    integer(kind=kint) NDOF
+    if (NDOF == hecMATorig%NDOF) then
+      call hecmw_clone_matrix(hecMATorig,hecMAT)
+    else if (NDOF < hecMATorig%NDOF) then
+      call hecmw_abort( hecmw_comm_get_comm() ) 
+    else
+      call hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
+      call hecmw_cmat_init(hecMAT%cmat)    
+    end if
+    select case(NDOF)
+      case(1)
+        call hecmw_solve_11(hecMESH,hecMAT)
+      case(2)
+        call hecmw_solve_22(hecMESH,hecMAT)
+      case(3)
+        call hecmw_solve_33(hecMESH,hecMAT)
+      case(4)
+        call hecmw_solve_44(hecMESH,hecMAT)
+      case(5)
+        call hecmw_abort( hecmw_comm_get_comm() )
+      case(6)
+        call hecmw_solve_66(hecMESH,hecMAT)
+      case(7:)
+        call hecmw_abort( hecmw_comm_get_comm() )
+    end select
+    if (NDOF /= hecMATorig%NDOF) then
+      call hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
+    end if 
+  end subroutine fstr_substitute_hecmw_solver  
 end module m_solve_LINEQ
