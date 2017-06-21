@@ -83,6 +83,7 @@ contains
     real(kind=kreal), intent(inout) :: WW(:)
     integer(kind=kint) :: i,NDOF,j,k
     real(kind=kreal) :: X(NDOF)
+    real(kind=kreal) :: X1, X2, X3, X4, X5, X6
 
 !C
 !C== Block SCALING
@@ -91,8 +92,8 @@ contains
         X(j)=WW(NDOF*(i-1)+j)
       end do 
       do j=2,NDOF
-        do k = 1,j
-          X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)
+        do k = 1,j-1
+           X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)
         end do 
       end do
       do j=NDOF,1,-1
@@ -100,7 +101,7 @@ contains
           X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)          
         end do 
         X(j)=ALU(NDOF*NDOF*(i-1)+(NDOF+1)*(j-1)+1 )*X(j)
-      end do      
+      end do     
       do j=1,NDOF
         WW(NDOF*(i-1)+j)=X(j)
       end do 
