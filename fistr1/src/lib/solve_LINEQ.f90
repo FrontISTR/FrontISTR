@@ -21,6 +21,7 @@ module m_solve_LINEQ
       USE hecmw_solver_33
       USE hecmw_solver_44
       USE hecmw_solver_66
+      USE hecmw_solver_nn
       USE hecmw_solver_direct
       USE hecmw_solver_direct_parallel
       USE hecmw_solver_direct_MUMPS
@@ -53,14 +54,15 @@ module m_solve_LINEQ
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
           !call hecmw_abort( hecmw_comm_get_comm() )
-          call fstr_substitute_hecmw_solver(hecMESH,hecMAT,6)
+          !call fstr_substitute_hecmw_solver(hecMESH,hecMAT,6)
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         CASE(6)
 !          WRITE(*,*) "Calling 6x6 Iterative Solver..."
           CALL hecmw_solve_66(hecMESH,hecMAT)
         CASE(7:)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-          call hecmw_abort( hecmw_comm_get_comm() )
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         END SELECT
 !C
 !* Call Direct Solver
@@ -119,6 +121,7 @@ module m_solve_LINEQ
     use hecmw_solver_33
     use hecmw_solver_44
     use hecmw_solver_66
+    use hecmw_solver_nn
     type (hecmwST_local_mesh)     :: hecMESH
     type (hecmwST_matrix)         :: hecMATorig
     type (hecmwST_matrix),pointer :: hecMAT => null()
@@ -141,11 +144,11 @@ module m_solve_LINEQ
       case(4)
         call hecmw_solve_44(hecMESH,hecMAT)
       case(5)
-        call hecmw_abort( hecmw_comm_get_comm() )
+        call hecmw_solve_nn(hecMESH,hecMAT)
       case(6)
         call hecmw_solve_66(hecMESH,hecMAT)
       case(7:)
-        call hecmw_abort( hecmw_comm_get_comm() )
+        call hecmw_solve_nn(hecMESH,hecMAT)
     end select
     if (NDOF /= hecMATorig%NDOF) then
       call hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
