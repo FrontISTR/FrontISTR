@@ -1274,16 +1274,17 @@ end subroutine
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
 
-subroutine fstr_setup_post_phys_alloc(phys,n_node,n_elem)
+subroutine fstr_setup_post_phys_alloc(phys, NDOF, n_node, n_elem)
   implicit none
   type(fstr_solid_physic_val), pointer :: phys
-  integer(kind=kint) :: n_node,n_elem
-  allocate ( phys%STRAIN  (6*n_node))
-  allocate ( phys%STRESS  (6*n_node))
-  allocate ( phys%MISES   (  n_node))
-  allocate ( phys%ESTRAIN (6*n_elem))
-  allocate ( phys%ESTRESS (6*n_elem))
-  allocate ( phys%EMISES  (  n_elem))
+  integer(kind=kint) :: NDOF, n_node, n_elem, mdof
+  mdof = (NDOF*NDOF+NDOF)/2;
+  allocate ( phys%STRAIN  (mdof*n_node))
+  allocate ( phys%STRESS  (mdof*n_node))
+  allocate ( phys%MISES   (     n_node))
+  allocate ( phys%ESTRAIN (mdof*n_elem))
+  allocate ( phys%ESTRESS (mdof*n_elem))
+  allocate ( phys%EMISES  (     n_elem))
 end subroutine fstr_setup_post_phys_alloc
 
  subroutine fstr_setup_post( ctrl, P )
@@ -1300,19 +1301,19 @@ end subroutine fstr_setup_post_phys_alloc
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
                     allocate ( P%SOLID%SHELL )
-                    call fstr_setup_post_phys_alloc(P%SOLID%SHELL,P%MESH%n_node,P%MESH%n_elem)
+                    call fstr_setup_post_phys_alloc(P%SOLID%SHELL,3, P%MESH%n_node,P%MESH%n_elem)
                     allocate ( P%SOLID%SHELL%LAYER(P%SOLID%max_lyr) )
                     do i=1,P%SOLID%max_lyr
                       allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
                       allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
-                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%PLUS,P%MESH%n_node,P%MESH%n_elem)
-                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%MINUS,P%MESH%n_node,P%MESH%n_elem)
+                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%PLUS , 3, P%MESH%n_node, P%MESH%n_elem)
+                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%MINUS, 3, P%MESH%n_node, P%MESH%n_elem)
                     enddo
                     phys => P%SOLID%SHELL
                 else
                     allocate ( P%SOLID%SOLID )
                     phys => P%SOLID%SOLID
-                    call fstr_setup_post_phys_alloc(phys,P%MESH%n_node,P%MESH%n_elem)
+                    call fstr_setup_post_phys_alloc(phys, P%MESH%n_dof, P%MESH%n_node,  P%MESH%n_elem)
                 end if
                 P%SOLID%STRAIN => phys%STRAIN
                 P%SOLID%STRESS => phys%STRESS
