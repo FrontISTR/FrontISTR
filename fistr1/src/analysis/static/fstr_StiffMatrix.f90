@@ -29,7 +29,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
   real(kind=kreal)   :: tt(20), ecoord(3,20)
   real(kind=kreal)   :: thick, val, pa1
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
-  real(kind=kreal)   :: u(3,20), du(3,20), coords(3,3)
+  real(kind=kreal)   :: u(4,20), du(4,20), coords(3,3), u_prev(4,20)
   integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
 
 ! ----- initialize
@@ -47,7 +47,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
 
 ! ----- element loop
 !$omp parallel default(none), &
-!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,tt,cdsys_ID,coords, &
+!$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
 !$omp&          material,thick,stiffness,isect,ihead), &
 !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,tincr)
 !$omp do
@@ -63,6 +63,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
         do i=1,ndof
           du(i,j) = fstrSOLID%dunode(ndof*nodLOCAL(j)+i-ndof)
           u(i,j)  = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(i,j)
+          u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
         enddo
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
            tt(j)=fstrSOLID%temperature( nodLOCAL(j) )
@@ -74,20 +75,20 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
 
       material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
       thick = material%variables(M_THICK)
-      if(  getSpaceDimension( ic_type )==2 ) thick =1.d0
-      if ( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
+      if( getSpaceDimension( ic_type )==2 ) thick =1.d0
+      if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
         call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
                      stiffness(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &
                      u(1:2,1:nn) )
 
-      else if ( ic_type==301 ) then
+      elseif ( ic_type==301 ) then
         isect= hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
         call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
             stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
-      else if ( ic_type==361 ) then
+      elseif ( ic_type==361 ) then
         if( fstrSOLID%elemopt361 /= 1 ) then
           write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
           call hecmw_abort(hecmw_comm_get_comm())
@@ -102,7 +103,7 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                  stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
         endif
 
-      else if (ic_type==341 .or. ic_type==351 .or.                     &
+      elseif (ic_type==341 .or. ic_type==351 .or.                     &
                ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
           call STF_C3                                                                              &
@@ -114,12 +115,20 @@ subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, tincr)
                  stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, tincr, u(1:3, 1:nn) )
         endif
 
-
+      elseif ( ic_type==3414 ) then
+        if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+          write(*, *) '###ERROR### : This element is not supported for this material'
+          write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call STF_C3_vp                                                           &
+             ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
+               stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
 !
-!      else if ( ic_type==731) then
+!      elseif ( ic_type==731) then
 !        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
 !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
-!      else if ( ic_type==741) then
+!      elseif ( ic_type==741) then
 !        call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
 !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
       else
