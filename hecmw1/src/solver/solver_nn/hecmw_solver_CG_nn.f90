@@ -9,6 +9,9 @@
 !C***
 !C
       module hecmw_solver_CG_nn
+
+      public :: hecmw_solve_CG_nn
+
       contains
 !C
 !C*** CG_nn
@@ -24,7 +27,8 @@
       use hecmw_solver_las_nn
       use hecmw_solver_scaling_nn
       use hecmw_precond_nn
-      use hecmw_jad_type
+      use hecmw_jad_type_nn
+      use hecmw_estimate_condition
 
       implicit none
 
@@ -44,22 +48,27 @@
       integer(kind=kint), parameter ::  Z= 2
       integer(kind=kint), parameter ::  Q= 2
       integer(kind=kint), parameter ::  P= 3
-      integer(kind=kint), parameter :: BT= 1
-      integer(kind=kint), parameter ::TATX=2
       integer(kind=kint), parameter :: WK= 4
 
       integer(kind=kint ) :: MAXIT
-      integer(kind=kint ) :: totalmpc
 
 ! local variables
       real   (kind=kreal) :: TOL
-      real   (kind=kreal) ::S_TIME,S1_TIME,E_TIME,E1_TIME, START_TIME, END_TIME
-      real   (kind=kreal) ::BNRM2
-      real   (kind=kreal) ::RHO,RHO1,BETA,C1,ALPHA,DNRM2
-      integer(kind=kint) ::i, condition, Mmarket
+      integer(kind=kint )::i
+      real   (kind=kreal)::S_TIME,S1_TIME,E_TIME,E1_TIME, START_TIME, END_TIME
+      real   (kind=kreal)::BNRM2
+      real   (kind=kreal)::RHO,RHO1,BETA,C1,ALPHA,DNRM2
+      real   (kind=kreal)::t_max,t_min,t_avg,t_sd
+      integer(kind=kint) ::ESTCOND
+      real   (kind=kreal), allocatable::D(:),E(:)
+      real   (kind=kreal)::ALPHA1
+      integer(kind=kint) :: n_indef_precond
 
+      integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 50
+
+      call hecmw_barrier(hecMESH)
       S_TIME= HECMW_WTIME()
-
+      
 !C===
 !C +-------+
 !C | INIT. |
@@ -77,50 +86,41 @@
       TIMElog = hecmw_mat_get_timelog( hecMAT )
       MAXIT  = hecmw_mat_get_iter( hecMAT )
       TOL   = hecmw_mat_get_resid( hecMAT )
-      Mmarket = hecMAT%Iarray(37)
-
-      totalmpc = hecMESH%mpc%n_mpc
-      call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+      ESTCOND = hecmw_mat_get_estcond( hecMAT )
 
       ERROR = 0
+      n_indef_precond = 0
 
       allocate (WW(NDOF*NP, 4))
       WW = 0.d0
-
-      call hecmw_mpc_scale_nn(hecMESH)
-
+      
 !C
 !C-- SCALING
       call hecmw_solver_scaling_fw_nn(hecMESH, hecMAT, Tcomm)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call hecmw_JAD_INIT(hecMAT)
+        call hecmw_JAD_INIT_nn(hecMAT)
       ENDIF
 
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        allocate(D(MAXIT),E(MAXIT-1))
+      endif
 !C===
 !C +----------------------+
 !C | SETUP PRECONDITIONER |
 !C +----------------------+
 !C===
-      call hecmw_precond_nn_setup(hecMAT)
+      call hecmw_precond_nn_setup(hecMAT, hecMESH, 1)
 
 !C===
-!C +----------------------------------------------+
-!C | {r0}= [T']({b} - [A]{xg}) - [T'][A][T]{xini} |
-!C +----------------------------------------------+
+!C +---------------------+
+!C | {r0}= {b} - [A]{x0} |
+!C +---------------------+
 !C===
+      call hecmw_matresid_nn(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
-!C-- {bt}= [T']({b} - [A]{xg})
-      if (totalmpc.eq.0) then
-        do i = 1, NNDOF
-          WW(i,BT) = B(i)
-        enddo
-       else
-        call hecmw_trans_b_nn(hecMESH, hecMAT, B, WW(:,BT), WW(:,WK), Tcomm)
-      endif
-
-!C-- compute ||{bt}||
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,BT), WW(:,BT), BNRM2, Tcomm)
+!C-- compute ||{b}||
+      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
       if (BNRM2.eq.0.d0) then
         iter = 0
         MAXIT = 0
@@ -128,23 +128,24 @@
         X = 0.d0
       endif
 
-!C
-!C-- {tatx} = [T'] [A] [T]{x}
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_nn(hecMESH, hecMAT, X, WW(:,TATX), Tcomm)
-       else
-        call hecmw_TtmatTvec_nn(hecMESH, hecMAT, X, WW(:,TATX), WW(:,WK), Tcomm)
+      E_TIME = HECMW_WTIME()
+      if (TIMElog.eq.2) then
+        call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
+             t_max, t_min, t_avg, t_sd)
+        if (hecMESH%my_rank.eq.0) then
+          write(*,*) 'Time solver setup'
+          write(*,*) '  Max     :',t_max
+          write(*,*) '  Min     :',t_min
+          write(*,*) '  Avg     :',t_avg
+          write(*,*) '  Std Dev :',t_sd
+        endif
+        Tset = t_max
+      else
+        Tset = E_TIME - S_TIME
       endif
 
-!C-- {r} = {bt} - {tatx}
-      do i = 1, NNDOF
-        WW(i,R) = WW(i,BT) - WW(i,TATX)
-      enddo
-
-      E_TIME = HECMW_WTIME()
-      Tset = Tset + E_TIME - S_TIME
-
       Tcomm = 0.d0
+      call hecmw_barrier(hecMESH)
       S1_TIME = HECMW_WTIME()
 !C
 !C************************************************* Conjugate Gradient Iteration start
@@ -158,13 +159,26 @@
 !C===
       call hecmw_precond_nn_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
 
+
 !C===
 !C +---------------+
 !C | {RHO}= {r}{z} |
 !C +---------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,Z), RHO, Tcomm)
-
+      ! if RHO is NaN or Inf then no converge
+      if (RHO == 0.d0) then
+        ! converged due to RHO==0
+        exit
+      elseif (iter > 1 .and. RHO*RHO1 <= 0) then
+        n_indef_precond = n_indef_precond + 1
+        if (n_indef_precond >= 3) then
+          ! diverged due to indefinite preconditioner
+          ERROR = HECMW_SOLVER_ERROR_DIVERGE_PC
+          exit
+        endif
+      endif
+      
 !C===
 !C +-----------------------------+
 !C | {p} = {z} if      ITER=1    |
@@ -183,15 +197,11 @@
       endif
 
 !C===
-!C +---------------------+
-!C | {q}= [T'][A][T] {p} |
-!C +---------------------+
+!C +--------------+
+!C | {q}= [A] {p} |
+!C +--------------+
 !C===
-      if (totalmpc.eq.0) then
-        call hecmw_matvec_nn(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
-       else
-        call hecmw_TtmatTvec_nn(hecMESH, hecMAT, WW(:,P), WW(:,Q), WW(:,WK), Tcomm)
-      endif
+      call hecmw_matvec_nn(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
 
 !C===
 !C +---------------------+
@@ -199,6 +209,12 @@
 !C +---------------------+
 !C===
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,P), WW(:,Q), C1, Tcomm)
+      ! if C1 is NaN or Inf, no converge
+      if (C1 <= 0) then
+        ! diverged due to indefinite or negative definite matrix
+        ERROR = HECMW_SOLVER_ERROR_DIVERGE_MAT
+        exit
+      endif
 
       ALPHA= RHO / C1
 
@@ -210,8 +226,16 @@
 !C===
       do i = 1, NNDOF
          X(i)  = X(i)    + ALPHA * WW(i,P)
-        WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
+
+      if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
+        call hecmw_matresid_nn(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+      else
+        do i = 1, NNDOF
+          WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+        enddo
+      endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
@@ -221,8 +245,26 @@
       if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(i7, 1pe16.6)') ITER, RESID
 !C#####
 
-      if ( RESID.le.TOL   ) exit
-      if ( ITER .eq.MAXIT ) ERROR = -300
+      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+        if (ITER == 1) then
+          D(1) = 1.d0 / ALPHA
+        else
+          D(ITER) = 1.d0 / ALPHA + BETA / ALPHA1
+          E(ITER-1) = sqrt(BETA) / ALPHA1
+        endif
+        ALPHA1 = ALPHA
+        if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_CG(ITER, D, E)
+      endif
+
+      if ( RESID.le.TOL   ) then
+        if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
+!C----- recompute R to make sure it is really converged
+        call hecmw_matresid_nn(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        RESID= dsqrt(DNRM2/BNRM2)
+        if ( RESID.le.TOL ) exit
+      endif
+      if ( ITER .eq.MAXIT ) ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
 
       RHO1 = RHO
 
@@ -230,28 +272,43 @@
 !C
 !C************************************************* Conjugate Gradient Iteration end
 !C
-      if (totalmpc.ne.0) then
-        call hecmw_tback_x_nn(hecMESH, X, WW(:,WK), Tcomm)
-      endif
-
       call hecmw_solver_scaling_bk_nn(hecMAT)
 !C
 !C-- INTERFACE data EXCHANGE
 !C
       START_TIME= HECMW_WTIME()
-      call hecmw_update_m_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+      call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
       END_TIME = HECMW_WTIME()
       Tcomm = Tcomm + END_TIME - START_TIME
 
-      E1_TIME = HECMW_WTIME()
-      Tsol = E1_TIME - S1_TIME
-
       deallocate (WW)
-      call hecmw_precond_nn_clear(hecMAT)
+      !call hecmw_precond_nn_clear(hecMAT)
 
       IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
-        call hecmw_JAD_FINALIZE()
+        call hecmw_JAD_FINALIZE_nn()
       ENDIF
 
+      if (ESTCOND /= 0 .and. ERROR == 0 .and. hecMESH%my_rank == 0) then
+        call hecmw_estimate_condition_CG(ITER, D, E)
+        deallocate(D, E)
+      endif
+
+      E1_TIME = HECMW_WTIME()
+      if (TIMElog.eq.2) then
+        call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
+             t_max, t_min, t_avg, t_sd)
+        if (hecMESH%my_rank.eq.0) then
+          write(*,*) 'Time solver iterations'
+          write(*,*) '  Max     :',t_max
+          write(*,*) '  Min     :',t_min
+          write(*,*) '  Avg     :',t_avg
+          write(*,*) '  Std Dev :',t_sd
+        endif
+        Tsol = t_max
+      else
+        Tsol = E1_TIME - S1_TIME
+      endif
+
       end subroutine hecmw_solve_CG_nn
+
       end module     hecmw_solver_CG_nn

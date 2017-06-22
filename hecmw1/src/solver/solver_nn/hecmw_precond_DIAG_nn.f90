@@ -20,18 +20,25 @@ module hecmw_precond_DIAG_nn
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: ALU(:) => null()
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
   subroutine hecmw_precond_DIAG_nn_setup(hecMAT)
     use hecmw_matrix_misc
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NP,NDOF,NDOF2
     real   (kind=kreal) :: SIGMA_DIAG
     real(kind=kreal), pointer:: D(:)
 
     real   (kind=kreal):: ALUtmp(hecMAT%NDOF,hecMAT%NDOF), PW(hecMAT%NDOF)
     integer(kind=kint ):: ii, i, j, k
+
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) return
+      call hecmw_precond_DIAG_nn_clear()
+    endif
 
     N = hecMAT%N
     NDOF = hecMAT%NDOF
@@ -49,14 +56,28 @@ contains
       end do 
     enddo
 
+    if (hecMAT%cmat%n_val.gt.0) then
+      do k= 1, hecMAT%cmat%n_val
+        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
+        ii = hecMAT%cmat%pair(k)%i
+        do i = 1,NDOF
+          do j = 1,NDOF
+            ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) + hecMAT%cmat%pair(k)%val(i, j)
+          enddo   
+        enddo 
+      enddo
+    endif
+    
+!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
+!$omp do
     do ii= 1, N
+    
       do i = 1, NDOF
         do j =  1, NDOF
-          ALUtmp(i,j)= ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
+          ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
           if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
         end do
       end do 
-
       do k= 1, NDOF
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
         do i= k+1, NDOF
@@ -69,25 +90,32 @@ contains
           enddo
         enddo
       enddo
-      
       do i = 1, NDOF
         do j =  1, NDOF
           ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)= ALUtmp(i,j)
         end do
       end do 
     enddo
+!$omp end do
+!$omp end parallel
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
+    
   end subroutine hecmw_precond_DIAG_nn_setup
 
   subroutine hecmw_precond_DIAG_nn_apply(WW,NDOF)
     implicit none
     real(kind=kreal), intent(inout) :: WW(:)
-    integer(kind=kint) :: i,NDOF,j,k
+    integer(kind=kint) :: i,j,k,NDOF
     real(kind=kreal) :: X(NDOF)
-    real(kind=kreal) :: X1, X2, X3, X4, X5, X6
 
 !C
 !C== Block SCALING
+!$omp parallel default(none),private(i,j,k,X),shared(N,WW,ALU,NDOF)
+!$omp do
     do i= 1, N
+      
       do j=1,NDOF
         X(j)=WW(NDOF*(i-1)+j)
       end do 
@@ -105,13 +133,18 @@ contains
       do j=1,NDOF
         WW(NDOF*(i-1)+j)=X(j)
       end do 
+      
     enddo
+!$omp end do
+!$omp end parallel
+
   end subroutine hecmw_precond_DIAG_nn_apply
 
   subroutine hecmw_precond_DIAG_nn_clear()
     implicit none
     if (associated(ALU)) deallocate(ALU)
     nullify(ALU)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_DIAG_nn_clear
 
 end module     hecmw_precond_DIAG_nn

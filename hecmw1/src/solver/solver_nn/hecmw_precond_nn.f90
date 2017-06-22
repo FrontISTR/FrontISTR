@@ -24,12 +24,19 @@ contains
   !C*** hecmw_precond_nn_setup
   !C***
   !C
-  subroutine hecmw_precond_nn_setup(hecMAT)
+  subroutine hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
     use hecmw_util
     use hecmw_matrix_misc
+    use hecmw_precond_BILU_nn
     use hecmw_precond_DIAG_nn
+    use hecmw_precond_SSOR_nn
+    use hecmw_precond_ML_nn
+    use hecmw_precond_SAINV_nn
+    use hecmw_precond_RIF_nn
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: sym
 
     integer(kind=kint ) :: PRECOND, iterPREmax
 
@@ -38,9 +45,18 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.eq.3) then
+    if (PRECOND.le.2) then
+      call hecmw_precond_SSOR_nn_setup(hecMAT)
+    else if (PRECOND.eq.3) then
       call hecmw_precond_DIAG_nn_setup(hecMAT)
-    
+    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+      call hecmw_precond_BILU_nn_setup(hecMAT)
+    else if (PRECOND.eq.5) then
+      call hecmw_precond_ML_nn_setup(hecMAT, hecMESH, sym)
+    else if (PRECOND.eq.20) then
+      call hecmw_precond_nn_SAINV_setup(hecMAT)
+    else if (PRECOND.eq.21) then
+      call hecmw_precond_RIF_nn_setup(hecMAT)
     endif
 
   end subroutine hecmw_precond_nn_setup
@@ -56,6 +72,9 @@ contains
     use hecmw_precond_BILU_nn
     use hecmw_precond_DIAG_nn
     use hecmw_precond_SSOR_nn
+    use hecmw_precond_ML_nn
+    use hecmw_precond_SAINV_nn
+    use hecmw_precond_RIF_nn
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
@@ -66,8 +85,18 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.eq.3) then
+    if (PRECOND.le.2) then
+      call hecmw_precond_SSOR_nn_clear(hecMAT)
+    else if (PRECOND.eq.3) then
       call hecmw_precond_DIAG_nn_clear()
+    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+      call hecmw_precond_BILU_nn_clear()
+    else if (PRECOND.eq.5) then
+      call hecmw_precond_ML_nn_clear()
+    else if (PRECOND.eq.20) then
+      call hecmw_precond_nn_SAINV_clear()
+    else if (PRECOND.eq.21) then
+      call hecmw_precond_RIF_nn_clear()
     endif
 
   end subroutine hecmw_precond_nn_clear
@@ -83,11 +112,14 @@ contains
     use hecmw_precond_BILU_nn
     use hecmw_precond_DIAG_nn
     use hecmw_precond_SSOR_nn
+    use hecmw_precond_ML_nn
+    use hecmw_precond_SAINV_nn
+    use hecmw_precond_RIF_nn
     use hecmw_solver_las_nn
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix) :: hecMAT
-    real(kind=kreal), intent(inout) :: R(:)
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    real(kind=kreal), intent(in) :: R(:)
     real(kind=kreal), intent(out) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
@@ -110,15 +142,15 @@ contains
       return
     endif
 
-    do i= 1, NNDOF
-      ZP(i)= R(i)
-    enddo
     !C===
     !C +----------------+
     !C | {z}= [Minv]{r} |
     !C +----------------+
     !C===
 
+    do i= 1, NNDOF
+      ZP(i)= R(i)
+    enddo
     do i= NNDOF+1, NPNDOF
       ZP(i) = 0.d0
     enddo
@@ -131,8 +163,18 @@ contains
 
       START_TIME = hecmw_Wtime()
 
-      if (PRECOND.eq.3) then
+      if (PRECOND.le.2) then
+        call hecmw_precond_SSOR_nn_apply(ZP)
+      else if (PRECOND.eq.3) then
         call hecmw_precond_DIAG_nn_apply(ZP,hecMAT%NDOF)
+      else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
+        call hecmw_precond_BILU_nn_apply(ZP,hecMAT%NDOF)
+      else if (PRECOND.eq.5) then
+        call hecmw_precond_ML_nn_apply(ZP)
+      else if (PRECOND.eq.20) then
+        call hecmw_precond_nn_SAINV_apply(R,ZP)
+      else if (PRECOND.eq.21) then
+        call hecmw_precond_RIF_nn_apply(ZP)
       endif
 
       END_TIME = hecmw_Wtime()

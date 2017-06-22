@@ -46,7 +46,7 @@ module m_solve_LINEQ
           CALL hecmw_solve_22(hecMESH,hecMAT)
         CASE(3)
 !          WRITE(*,*) "Calling 3x3 Iterative Solver..."
-          CALL hecmw_solve_33(hecMESH,hecMAT)
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         CASE(4)
 !          WRITE(*,*) "Calling 4x4 Iterative Solver..."
           CALL hecmw_solve_44(hecMESH,hecMAT)
@@ -58,7 +58,7 @@ module m_solve_LINEQ
           CALL hecmw_solve_nn(hecMESH,hecMAT)
         CASE(6)
 !          WRITE(*,*) "Calling 6x6 Iterative Solver..."
-          CALL hecmw_solve_66(hecMESH,hecMAT)
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         CASE(7:)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
