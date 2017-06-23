@@ -51,7 +51,7 @@ function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
         type = type -1
 
         ipt=0
-        if( fstr_ctrl_get_param_ex( ctrl,    'NLGEOM ',  '# ',    0,   'E',   ipt )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl,    'NONLINEAR ',  '# ',    0,   'E',   ipt )/= 0) return
         if( ipt/=0 .and. ( type == kstSTATIC .or. type == kstDYNAMIC )) nlgeom = .true.
 
         if( type == 5 ) then !if type == NLSTATIC
