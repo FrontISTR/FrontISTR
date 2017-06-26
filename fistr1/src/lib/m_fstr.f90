@@ -18,6 +18,7 @@ use lczparm
 use m_common_struct
 use m_step
 use m_out
+use m_timepoint
 use mMechGauss
 use mContactDef
 
@@ -40,7 +41,7 @@ public
         integer(kind=kint),parameter :: kstEIGEN     =   2
         integer(kind=kint),parameter :: kstHEAT      =   3
         integer(kind=kint),parameter :: kstDYNAMIC   =   4
-        integer(kind=kint),parameter :: kstNLSTATIC  =   5
+        !integer(kind=kint),parameter :: kstNLSTATIC  =   5
         integer(kind=kint),parameter :: kstSTATICEIGEN = 6
         integer(kind=kint),parameter :: kstNZPROF    =   7
 
@@ -66,6 +67,12 @@ public
         ! restart type
         integer(kind=kint),parameter :: restart_outLast = 1
         integer(kind=kint),parameter :: restart_outAll  = 2
+
+        ! section control
+        integer(kind=kint),parameter :: kel361FI     =  1
+        integer(kind=kint),parameter :: kel361BBAR   =  2
+        integer(kind=kint),parameter :: kel361IC     =  3
+
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -138,6 +145,7 @@ public
 !C
         type fstr_param
                 integer(kind=kint) :: solution_type !< solution type number
+                logical            :: nlgeom        !< is geometrical nonlinearity considered
                 integer(kind=kint) :: solver_method !< solver method number
 
                 !!STATIC !HEAT
@@ -175,9 +183,14 @@ public
 
                 ! for restart control
                 integer( kind=kint ) :: restart_out_type   !< output type of restart file
+                integer( kind=kint ) :: restart_version    !< version of restart file
 
                 ! for contact analysis
                 integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
+
+                ! for auto increment and cutback
+                type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
+                type(time_points), pointer :: timepoints(:)  !< time points data
 !
         end type fstr_param
 !
@@ -283,6 +296,7 @@ public
                 integer(kind=kint) :: TEMP_irres
                 integer(kind=kint) :: TEMP_tstep
                 integer(kind=kint) :: TEMP_interval
+                real(kind=kreal)   :: TEMP_FACTOR
                 integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
                 integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
                 real(kind=kreal), pointer   :: TEMP_ngrp_val       (:)
@@ -330,6 +344,7 @@ public
                                                      !< (if  .gt.0) restart file write
                                                      !< (if  .lt.0) restart file read and write
                 integer(kind=kint) :: restart_nin    !< input number of restart
+                type(step_info)    :: step_ctrl_restart  !< step information for restart
 
                 integer(kind=kint) :: max_lyr        !< maximun num of layer
                 integer(kind=kint) :: is_33shell
@@ -340,6 +355,11 @@ public
 
                 real(kind=kreal)          :: FACTOR     (2)      !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
+                ! for increment control
+                integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
+                real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
+                integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
+                integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
                 real(kind=kreal), pointer :: GL          (:)           !< exnternal force
                 real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
@@ -356,6 +376,20 @@ public
                 type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
                 integer                   :: n_fix_mpc               !< number mpc conditions user defined
                 real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
+                type(tSection), pointer   :: sections(:)   =>null()  !< definition of setion referred by elements(i)%sectionID
+
+                ! for cutback
+                ! ####################### Notice #######################
+                ! # If you add new variables to store analysis status, #
+                ! # - backup variables with postfix "_bkup" here       #
+                ! # - backup process to module m_fstr_Cutback          #
+                ! # must be added if necessary.                        #
+                ! ######################################################
+                real(kind=kreal), pointer :: unode_bkup(:)     => null() !< disp at the beginning of curr step (backup)
+                real(kind=kreal), pointer :: QFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
+                real(kind=kreal), pointer :: last_temp_bkup(:) => null()
+                type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
+                type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
 !
         end type fstr_solid
 !
@@ -460,9 +494,6 @@ public
 !C
         type fstr_dynamic
 
-                ! control parameter
-                integer(kind=kint) :: nlflag        ! linear or nonlinear
-
                 ! ANALYSIS TYPE CONTROL
                 integer(kind=kint) :: idx_eqa       ! implicit or explicit
                 integer(kind=kint) :: idx_resp      ! time history or steady-state harmonic response analysis
@@ -565,6 +596,22 @@ public
     end type tWeldLine
 
 !C ----------------------------------------------------------------------------
+!> Data for section control
+!C
+    type tSection
+        !integer              :: mat_ID
+        !integer              :: iset
+        !integer              :: orien_ID
+        !real(kind=kreal)     :: thickness
+        !integer              :: elemopt341
+        !integer              :: elemopt342
+        !integer              :: elemopt351
+        !integer              :: elemopt352
+        integer              :: elemopt361
+        !integer              :: elemopt362
+    end type tSection
+
+!C ----------------------------------------------------------------------------
 !C-- GROBAL VARIABLES for MEMORY MANAGEMENT or TIME RECORDING
 !C
 
@@ -602,6 +649,7 @@ contains
         nullify( P%itmax )
         nullify( P%eps )
         nullify( P%global_local_ID)
+        nullify( P%timepoints )
         end subroutine fstr_nullify_fstr_param
 !C ----------------------------------------------------------------------------
         subroutine fstr_nullify_fstr_solid( S )
@@ -909,6 +957,7 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         external fstr_sort_index
 
         fstrPARAM%solution_type = kstSTATIC
+        fstrPARAM%nlgeom        = .false.
         fstrPARAM%solver_method = ksmCG
 
         !!STATIC !HEAT
@@ -932,6 +981,9 @@ subroutine fstr_param_init( fstrPARAM, hecMESH )
         fstrPARAM%fg_couple_type = 0
         fstrPARAM%fg_couple_first= 0
         fstrPARAM%fg_couple_window= 0
+
+        ! for restart control
+        fstrPARAM%restart_version = 5
 
         ! index table for global node ID sorting
 
@@ -962,9 +1014,13 @@ end subroutine fstr_param_init
           integer, intent(in) :: nbc    !< group id of boundary condition
           integer, intent(in) :: cstep  !< current step number
           fstr_isLoadActive = .true.
-          if( .not. associated(fstrSOLID%step_ctrl) ) return
-          if( cstep>fstrSOLID%nstep_tot ) return
-          fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
+          if( cstep > 0 ) then
+            if( .not. associated(fstrSOLID%step_ctrl) ) return
+            if( cstep>fstrSOLID%nstep_tot ) return
+            fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl(cstep) )
+          else
+            fstr_isLoadActive = isLoadActive( nbc, fstrSOLID%step_ctrl_restart )
+          endif
         end function
 
         logical function fstr_isContactActive( fstrSOLID, nbc, cstep )
@@ -1011,7 +1067,7 @@ end subroutine fstr_param_init
           real(kind=kreal), pointer :: coord(:)
           integer(kind=kint) :: i
           if(hecMESH%n_dof == 4) return
-          do i = 1, hecMESH%n_node*hecMESH%n_dof
+          do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
             coord(i) = hecMESH%node(i)
             hecMESH%node(i) = coord(i)+fstrSOLID%unode(i)+fstrSOLID%dunode(i)
           enddo
@@ -1025,7 +1081,7 @@ end subroutine fstr_param_init
           real(kind=kreal), pointer :: coord(:)
           integer(kind=kint) :: i
           if(hecMESH%n_dof == 4) return
-          do i = 1, hecMESH%n_node*hecMESH%n_dof
+          do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
             hecMESH%node(i) = coord(i)
           enddo
         end subroutine fstr_recover_initial_config_to_mesh

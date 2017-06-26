@@ -70,14 +70,15 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
-  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in),optional :: conMAT
+
     integer(kind=kint) :: mumps_job
-    integer(kind=kint) :: istat
 
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
@@ -96,7 +97,7 @@ contains
     call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then
       write(*,*) 'ERROR: MUMPS returned with error', istat
-      stop
+      return
     endif
     call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
     if (myrank==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
