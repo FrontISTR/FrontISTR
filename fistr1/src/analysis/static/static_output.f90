@@ -108,9 +108,14 @@ module m_static_output
 
       real(kind=kreal)   :: Umax(6), Umin(6), Emax(14), Emin(14), Smax(14), Smin(14)
       real(kind=kreal)   :: Mmax(1), Mmin(1), EMmax(1), EMmin(1)
+      real(kind=kreal)   :: EEmax(14), EEmin(14), ESmax(14), ESmin(14)
+
+      real(kind=kreal)   :: GUmax(6), GUmin(6), GEmax(14), GEmin(14), GSmax(14), GSmin(14)
+      real(kind=kreal)   :: GMmax(1), GMmin(1), GEMmax(1), GEMmin(1)
+      real(kind=kreal)   :: GEEmax(14), GEEmin(14), GESmax(14), GESmin(14)
+
       integer(kind=kint) :: IUmax(6), IUmin(6), IEmax(14), IEmin(14), ISmax(14), ISmin(14)
       integer(kind=kint) :: IMmax(1), IMmin(1), IEMmax(1), IEMmin(1)
-      real(kind=kreal)   :: EEmax(14), EEmin(14), ESmax(14), ESmin(14)
       integer(kind=kint) :: IEEmax(14), IEEmin(14), IESmax(14), IESmin(14)
       integer(kind=kint) :: i, j, k, ndof, mdof, ID_area
 
@@ -362,53 +367,128 @@ module m_static_output
         write(ILOG,1009) '//S23',ESmax(5),IESmax(5),ESmin(5),IESmin(5)
         write(ILOG,1009) '//S13',ESmax(6),IESmax(6),ESmin(6),IESmin(6)
         write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
+
         !C*** Show Summary
-        call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
+        GUmax  = Umax
+        GUmin  = Umin
+        GEmax  = Emax
+        GEmin  = Emin
+        GSmax  = Smax
+        GSmin  = Smin
+        GMmax  = Mmax
+        GMmin  = Mmin
+        GEEmax = EEmax
+        GEEmin = EEmin
+        GESmax = ESmax
+        GESmin = ESmin
+        GEMmax = EMmax
+        GEMmin = EMmin
+
+        call hecmw_allREDUCE_R(hecMESH,GUmax,3,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GUmin,3,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GEmax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GEmin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GSmax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GSmin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GMmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GMmin,1,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GEEmax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GEEmin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GESmax,6,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GESmin,6,hecmw_min)
+        call hecmw_allREDUCE_R(hecMESH,GEMmax,1,hecmw_max)
+        call hecmw_allREDUCE_R(hecMESH,GEMmin,1,hecmw_min)
+
+        do i=1,3
+          if(GUmax (i) > Umax (i)) IUmax (i) = 0
+        enddo
+        do i=1,3
+          if(GUmin (i) < Umin (i)) IUmin (i) = 0
+        enddo
+        do i=1,6
+          if(GEmax (i) > Emax (i)) IEmax (i) = 0
+        enddo
+        do i=1,6
+          if(GEmin (i) < Emin (i)) IEmin (i) = 0
+        enddo
+        do i=1,6
+          if(GSmax (i) > Smax (i)) ISmax (i) = 0
+        enddo
+        do i=1,6
+          if(GSmin (i) < Smin (i)) ISmin (i) = 0
+        enddo
+        do i=1,1
+          if(GMmax (i) > Mmax (i)) IMmax (i) = 0
+        enddo
+        do i=1,1
+          if(GMmin (i) < Mmin (i)) IMmin (i) = 0
+        enddo
+        do i=1,6
+          if(GEEmax(i) > EEmax(i)) IEEmax(i) = 0
+        enddo
+        do i=1,6
+          if(GEEmin(i) < EEmin(i)) IEEmin(i) = 0
+        enddo
+        do i=1,6
+          if(GESmax(i) > ESmax(i)) IESmax(i) = 0
+        enddo
+        do i=1,6
+          if(GESmin(i) < ESmin(i)) IESmin(i) = 0
+        enddo
+        do i=1,1
+          if(GEMmax(i) > EMmax(i)) IEMmax(i) = 0
+        enddo
+        do i=1,1
+          if(GEMmin(i) < EMmin(i)) IEMmin(i) = 0
+        enddo
+
+        call hecmw_allREDUCE_I(hecMESH,IUmax,3,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IUmin,3,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEmax,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEmin,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,ISmax,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,ISmin,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IMmax,1,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IMmin,1,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEEmax,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEEmin,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IESmax,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IESmin,6,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEMmax,1,hecmw_max)
+        call hecmw_allREDUCE_I(hecMESH,IEMmin,1,hecmw_max)
+
         if( hecMESH%my_rank==0 ) then
           write(ILOG,*) '##### Global Summary :Max/Min####'
-          write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
-          write(ILOG,1019) '//U2 ',Umax(2),Umin(2)
-          write(ILOG,1019) '//U3 ',Umax(3),Umin(3)
-          write(ILOG,1019) '//E11',Emax(1),Emin(1)
-          write(ILOG,1019) '//E22',Emax(2),Emin(2)
-          write(ILOG,1019) '//E33',Emax(3),Emin(3)
-          write(ILOG,1019) '//E12',Emax(4),Emin(4)
-          write(ILOG,1019) '//E23',Emax(5),Emin(5)
-          write(ILOG,1019) '//E13',Emax(6),Emin(6)
-          write(ILOG,1019) '//S11',Smax(1),Smin(1)
-          write(ILOG,1019) '//S22',Smax(2),Smin(2)
-          write(ILOG,1019) '//S33',Smax(3),Smin(3)
-          write(ILOG,1019) '//S12',Smax(4),Smin(4)
-          write(ILOG,1019) '//S23',Smax(5),Smin(5)
-          write(ILOG,1019) '//S13',Smax(6),Smin(6)
-          write(ILOG,1019) '//SMS',Mmax(1),Mmin(1)
+          write(ILOG,1009) '//U1 ',GUmax(1),IUmax(1),GUmin(1),IUmin(1)
+          write(ILOG,1009) '//U2 ',GUmax(2),IUmax(2),GUmin(2),IUmin(2)
+          write(ILOG,1009) '//U3 ',GUmax(3),IUmax(3),GUmin(3),IUmin(3)
+          write(ILOG,1009) '//E11',GEmax(1),IEmax(1),GEmin(1),IEmin(1)
+          write(ILOG,1009) '//E22',GEmax(2),IEmax(2),GEmin(2),IEmin(2)
+          write(ILOG,1009) '//E33',GEmax(3),IEmax(3),GEmin(3),IEmin(3)
+          write(ILOG,1009) '//E12',GEmax(4),IEmax(4),GEmin(4),IEmin(4)
+          write(ILOG,1009) '//E23',GEmax(5),IEmax(5),GEmin(5),IEmin(5)
+          write(ILOG,1009) '//E13',GEmax(6),IEmax(6),GEmin(6),IEmin(6)
+          write(ILOG,1009) '//S11',GSmax(1),ISmax(1),GSmin(1),ISmin(1)
+          write(ILOG,1009) '//S22',GSmax(2),ISmax(2),GSmin(2),ISmin(2)
+          write(ILOG,1009) '//S33',GSmax(3),ISmax(3),GSmin(3),ISmin(3)
+          write(ILOG,1009) '//S12',GSmax(4),ISmax(4),GSmin(4),ISmin(4)
+          write(ILOG,1009) '//S23',GSmax(5),ISmax(5),GSmin(5),ISmin(5)
+          write(ILOG,1009) '//S13',GSmax(6),ISmax(6),GSmin(6),ISmin(6)
+          write(ILOG,1009) '//SMS',GMmax(1),IMmax(1),GMmin(1),IMmin(1)
           write(ILOG,*) '##### @Element :Max/Min####'
-          write(ILOG,1019) '//E11',EEmax(1),EEmin(1)
-          write(ILOG,1019) '//E22',EEmax(2),EEmin(2)
-          write(ILOG,1019) '//E33',EEmax(3),EEmin(3)
-          write(ILOG,1019) '//E12',EEmax(4),EEmin(4)
-          write(ILOG,1019) '//E23',EEmax(5),EEmin(5)
-          write(ILOG,1019) '//E13',EEmax(6),EEmin(6)
-          write(ILOG,1019) '//S11',ESmax(1),ESmin(1)
-          write(ILOG,1019) '//S22',ESmax(2),ESmin(2)
-          write(ILOG,1019) '//S33',ESmax(3),ESmin(3)
-          write(ILOG,1019) '//S12',ESmax(4),ESmin(4)
-          write(ILOG,1019) '//S23',ESmax(5),ESmin(5)
-          write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
-          write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
+          write(ILOG,1009) '//E11',GEEmax(1),IEEmax(1),GEEmin(1),IEEmin(1)
+          write(ILOG,1009) '//E22',GEEmax(2),IEEmax(2),GEEmin(2),IEEmin(2)
+          write(ILOG,1009) '//E33',GEEmax(3),IEEmax(3),GEEmin(3),IEEmin(3)
+          write(ILOG,1009) '//E12',GEEmax(4),IEEmax(4),GEEmin(4),IEEmin(4)
+          write(ILOG,1009) '//E23',GEEmax(5),IEEmax(5),GEEmin(5),IEEmin(5)
+          write(ILOG,1009) '//E13',GEEmax(6),IEEmax(6),GEEmin(6),IEEmin(6)
+          write(ILOG,1009) '//S11',GESmax(1),IESmax(1),GESmin(1),IESmin(1)
+          write(ILOG,1009) '//S22',GESmax(2),IESmax(2),GESmin(2),IESmin(2)
+          write(ILOG,1009) '//S33',GESmax(3),IESmax(3),GESmin(3),IESmin(3)
+          write(ILOG,1009) '//S12',GESmax(4),IESmax(4),GESmin(4),IESmin(4)
+          write(ILOG,1009) '//S23',GESmax(5),IESmax(5),GESmin(5),IESmin(5)
+          write(ILOG,1009) '//S13',GESmax(6),IESmax(6),GESmin(6),IESmin(6)
+          write(ILOG,1009) '//SMS',GEMmax(1),IEMmax(1),GEMmin(1),IEMmin(1)
         endif
 !C*** Show 6DOF
       else if( 1 == 0 ) then
