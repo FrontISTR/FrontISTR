@@ -172,6 +172,7 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
         call UPDATE_C3_vp                                                       &
              ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
                fstrSOLID%elements(icel)%gausses(:) )
+        qf = 0.0d0
 
 !      else if ( ic_type==731) then
 !        call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
