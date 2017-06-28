@@ -21,12 +21,14 @@ module m_solve_LINEQ
       USE hecmw_solver_33
       USE hecmw_solver_44
       USE hecmw_solver_66
+      USE hecmw_solver_nn
       USE hecmw_solver_direct
       USE hecmw_solver_direct_parallel
       USE hecmw_solver_direct_MUMPS
       USE hecmw_solver_direct_clusterMKL
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
+
       INTEGER(kind=kint) imsg, i, myrank
       real(kind=kreal) :: resid
 !C
@@ -51,14 +53,16 @@ module m_solve_LINEQ
         CASE(5)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-          call hecmw_abort( hecmw_comm_get_comm() )
+          !call hecmw_abort( hecmw_comm_get_comm() )
+          !call fstr_substitute_hecmw_solver(hecMESH,hecMAT,6)
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         CASE(6)
 !          WRITE(*,*) "Calling 6x6 Iterative Solver..."
           CALL hecmw_solve_66(hecMESH,hecMAT)
         CASE(7:)
           !CALL hecmw_solve_mm(hecMESH,hecMAT)
 !          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-          call hecmw_abort( hecmw_comm_get_comm() )
+          CALL hecmw_solve_nn(hecMESH,hecMAT)
         END SELECT
 !C
 !* Call Direct Solver
@@ -110,5 +114,44 @@ module m_solve_LINEQ
       RETURN
 
    end subroutine solve_LINEQ
-
+  subroutine fstr_substitute_hecmw_solver(hecMESH,hecMATorig,NDOF)
+    use hecmw
+    use hecmw_solver_11
+    use hecmw_solver_22
+    use hecmw_solver_33
+    use hecmw_solver_44
+    use hecmw_solver_66
+    use hecmw_solver_nn
+    type (hecmwST_local_mesh)     :: hecMESH
+    type (hecmwST_matrix)         :: hecMATorig
+    type (hecmwST_matrix),pointer :: hecMAT => null()
+    integer(kind=kint) NDOF
+    if (NDOF == hecMATorig%NDOF) then
+      call hecmw_clone_matrix(hecMATorig,hecMAT)
+    else if (NDOF < hecMATorig%NDOF) then
+      call hecmw_abort( hecmw_comm_get_comm() ) 
+    else
+      call hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
+      call hecmw_cmat_init(hecMAT%cmat)    
+    end if
+    select case(NDOF)
+      case(1)
+        call hecmw_solve_11(hecMESH,hecMAT)
+      case(2)
+        call hecmw_solve_22(hecMESH,hecMAT)
+      case(3)
+        call hecmw_solve_33(hecMESH,hecMAT)
+      case(4)
+        call hecmw_solve_44(hecMESH,hecMAT)
+      case(5)
+        call hecmw_solve_nn(hecMESH,hecMAT)
+      case(6)
+        call hecmw_solve_66(hecMESH,hecMAT)
+      case(7:)
+        call hecmw_solve_nn(hecMESH,hecMAT)
+    end select
+    if (NDOF /= hecMATorig%NDOF) then
+      call hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
+    end if 
+  end subroutine fstr_substitute_hecmw_solver  
 end module m_solve_LINEQ
