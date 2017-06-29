@@ -172,7 +172,7 @@ contains
       enddo
     endif
 
-!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
 !$omp do
     do ii= 1, N
       do i = 1, NDOF
@@ -284,8 +284,8 @@ contains
 !$omp parallel default(none) &
 !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
 !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
-!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-!$omp&private(ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,id,jd)
+!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
+!$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
 
     !C-- FORWARD
     do ic=1,NColor
