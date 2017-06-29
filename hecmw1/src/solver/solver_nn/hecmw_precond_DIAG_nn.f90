@@ -33,7 +33,7 @@ contains
     real(kind=kreal), pointer:: D(:)
 
     real   (kind=kreal):: ALUtmp(hecMAT%NDOF,hecMAT%NDOF), PW(hecMAT%NDOF)
-    integer(kind=kint ):: ii, i, j, k
+    integer(kind=kint ):: i, j, k, ii
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) return
@@ -115,7 +115,6 @@ contains
 !$omp parallel default(none),private(i,j,k,X),shared(N,WW,ALU,NDOF)
 !$omp do
     do i= 1, N
-      
       do j=1,NDOF
         X(j)=WW(NDOF*(i-1)+j)
       end do 

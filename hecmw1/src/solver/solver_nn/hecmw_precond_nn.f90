@@ -164,7 +164,7 @@ contains
       START_TIME = hecmw_Wtime()
 
       if (PRECOND.le.2) then
-        call hecmw_precond_SSOR_nn_apply(ZP)
+        call hecmw_precond_SSOR_nn_apply(ZP,hecMAT%NDOF)
       else if (PRECOND.eq.3) then
         call hecmw_precond_DIAG_nn_apply(ZP,hecMAT%NDOF)
       else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then

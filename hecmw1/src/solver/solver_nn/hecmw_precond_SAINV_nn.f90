@@ -20,6 +20,7 @@ module hecmw_precond_SAINV_nn
 
   integer(kind=kint) :: NPFIU, NPFIL
   integer(kind=kint) :: N
+  integer(kind=kint) :: NDOF, NDOF2
   integer(kind=kint), pointer :: inumFI1L(:) => null()
   integer(kind=kint), pointer :: inumFI1U(:) => null()
   integer(kind=kint), pointer :: FI1L(:) => null()
@@ -56,6 +57,8 @@ contains
     real(kind=krealp) :: FILTER
 
     N = hecMAT%N
+    NDOF = hecmat%NDOF
+    NDOF2 = NDOF*NDOF
     PRECOND = hecmw_mat_get_precond(hecMAT)
 
     D => hecMAT%D
@@ -68,9 +71,9 @@ contains
 
     if (PRECOND.eq.20) call FORM_ILU1_SAINV_nn(hecMAT)
 
-    allocate (SAINVD(9*hecMAT%NP))
-    allocate (SAINVL(9*NPFIU))
-    allocate (T(3*hecMAT%NP))
+    allocate (SAINVD(NDOF2*hecMAT%NP))
+    allocate (SAINVL(NDOF2*NPFIU))
+    allocate (T(NDOF*hecMAT%NP))
     SAINVD  = 0.0d0
     SAINVL  = 0.0d0
     T = 0.0d0
@@ -81,7 +84,7 @@ contains
 
     call hecmw_sainv_nn(hecMAT)
 
-    allocate (SAINVU(9*NPFIU))
+    allocate (SAINVU(NDOF2*NPFIU))
     SAINVU  = 0.0d0
 
     call hecmw_sainv_make_u_nn(hecMAT)
@@ -91,9 +94,10 @@ contains
   subroutine hecmw_sainv_lu_nn()
     implicit none
     integer(kind=kint) :: i,j,js,je,in
-    real(kind=kreal) :: X1, X2, X3
+    real(kind=kreal) :: X1, X2, X3, X(NDOF)
 
     do i=1, N
+      write(*,*)NDOF
       SAINVD(9*i-5) = SAINVD(9*i-5)*SAINVD(9*i-4)
       SAINVD(9*i-2) = SAINVD(9*i-2)*SAINVD(9*i  )
       SAINVD(9*i-1) = SAINVD(9*i-1)*SAINVD(9*i  )
@@ -206,8 +210,8 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    allocate (vv(3*hecMAT%NP))
-    allocate (zz(3*hecMAT%NP))
+    allocate (vv(NDOF*hecMAT%NP))
+    allocate (zz(NDOF*hecMAT%NP))
     dO itr=1,N
 
     !------------------------------ iitr = 1 ----------------------------------------
@@ -645,7 +649,7 @@ contains
   subroutine hecmw_sainv_make_u_nn(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) i,j,k,kk,n,m,o
+    integer(kind=kint) i,j,k,kk,n,m,o,idof,jdof
     integer(kind=kint) is,ie,js,je
 
     n = 1
@@ -659,6 +663,11 @@ contains
         do j= js,je
           o = FI1L(j)
           if (o == i)then
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+!              SAINVU(NDOF2*(n-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(n-1)+NDOF*(jdof-1)+idof)
+              end do 
+            end do 
             SAINVU(9*n-8)=SAINVL(9*j-8)
             SAINVU(9*n-7)=SAINVL(9*j-5)
             SAINVU(9*n-6)=SAINVL(9*j-2)
@@ -767,8 +776,8 @@ contains
     allocate (IWsL(0:hecMAT%NP), IWsU(0:hecMAT%NP))
     allocate (FI1L (hecMAT%NPL+NPLf1), FI1U (hecMAT%NPU+NPUf1))
 
-  NPFIU = hecMAT%NPU+NPUf1
-  NPFIL = hecMAT%NPL+NPLf1
+    NPFIU = hecMAT%NPU+NPUf1
+    NPFIL = hecMAT%NPL+NPLf1
 
     FI1L= 0
     FI1U= 0
