@@ -833,7 +833,7 @@ contains
                                 +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(3, 2)  &
                                 +(  2.0D0/le-6.0D0*x1_hat/l2 )*edisp_hat(2, 4) )
 
-       IF( PRESENT( tt ) ) THEN
+       IF( ntemp .EQ. 1 ) THEN
 
         t_hat(1, 1)                                             &
         = t_hat(1, 1)                                           &
@@ -880,7 +880,7 @@ contains
                                 +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(3, 2)  &
                                 +(  2.0D0/le-6.0D0*x1_hat/l2 )*edisp_hat(2, 4) )
 
-       IF( PRESENT( tt ) ) THEN
+       IF( ntemp .EQ. 1 ) THEN
 
         t_hat(1, 1)                                             &
         = t_hat(1, 1)                                           &
@@ -915,7 +915,7 @@ contains
                                 +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(3, 2)  &
                                 +(  2.0D0/le-6.0D0*x1_hat/l2 )*edisp_hat(2, 4) )
 
-       IF( PRESENT( tt ) ) THEN
+       IF( ntemp .EQ. 1 ) THEN
 
         t_hat(1, 1)                                             &
         = t_hat(1, 1)                                           &
@@ -965,5 +965,39 @@ contains
       estress(1:6) = gausses(1)%stress(1:6)
 
       END SUBROUTINE ElementalStress_Beam_641
+
+!####################################################################
+      SUBROUTINE UpdateST_Beam_641                                &
+                 (etype, nn, ecoord, u, du, gausses, section, qf, tt, t0)
+!####################################################################
+
+      USE mMechGauss
+
+!--------------------------------------------------------------------
+
+      INTEGER, INTENT(IN)            :: etype              !< element type
+      INTEGER, INTENT(IN)            :: nn                 !< the total number of elemental nodes
+      REAL(kind=kreal), INTENT(IN)   :: ecoord(3, nn)      !< coordinates of elemental nodes
+      REAL(kind=kreal), INTENT(IN)   :: u(3, nn)           !< \param [in] nodal dislplacements
+      REAL(kind=kreal), INTENT(IN)   :: du(3, nn)          !< \param [in] nodal dislplacement increment
+      TYPE(tGaussStatus), INTENT(IN) :: gausses(:)         !< status of Gaussian qudrature points
+      REAL(kind=kreal), INTENT(IN)   :: section(:)         !< section parameters
+      REAL(kind=kreal), INTENT(OUT)  :: qf(nn*3)           !< elemental stiffness matrix
+      REAL(kind=kreal), INTENT(IN), OPTIONAL :: tt(nn), t0(nn)
+
+!--------------------------------------------------------------------
+      REAL(KIND = kreal)   :: stiff(nn*3, nn*3), totaldisp(nn*3)
+      INTEGER(KIND = kint) :: i
+
+      call STF_Beam_641(etype, nn, ecoord, gausses, section, stiff, tt, t0)
+
+      totaldisp = 0.d0
+      do i=1,nn
+        totaldisp(3*i-2:3*i) = u(1:3,i) + du(1:3,i)
+      end do
+
+      qf = matmul(stiff,totaldisp)
+
+      END SUBROUTINE UpdateST_Beam_641
 
 end module

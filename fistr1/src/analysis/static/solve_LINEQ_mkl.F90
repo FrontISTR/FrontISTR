@@ -33,7 +33,8 @@ module m_solve_LINEQ_mkl
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT      !< type fstrST_matrix_contact_lagrange
       logical                                  :: is_sym       !< symmetry of matrix
 
-        call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+      call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+      phase = -1
 
     end subroutine solve_LINEQ_mkl_init
 
@@ -57,13 +58,7 @@ module m_solve_LINEQ_mkl
         iparm(11) = 1; iparm(13) = 1; iparm(18) =-1; iparm(19) =-1
 !        iparm(21) = 1
 
-        if (allocated(values)) deallocate(values)
-        allocate(values(numNon0), stat=ierr)
-        if( ierr /= 0 ) stop " Allocation error, mkl%values "
-        values = 0.0D0
-
-        if(phase==33)then
-          phase = -1
+        if(phase==-1)then
           call pardiso(pt, maxfct, mnum, mtype, phase, ntdf_previous, ddum, idum, idum, &
                        idum, nrhs, iparm, msglvl, ddum, ddum, ierr)
         endif
@@ -83,28 +78,27 @@ module m_solve_LINEQ_mkl
         endif
         write(*,*) ' [Pardiso_MKL]: Initialization completed ! '
 
-        deallocate(values)
-
     end subroutine initialize_solver_mkl
 
 
 !> \brief This subroutine executes phase 22 and phase 33 of the MKL solver
 !> \(see Intel(R) MKL Reference Manual)
-    subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT)
+    subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,ierr)
 
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
+      integer(kind=kint), intent(out)          :: ierr
       integer(kind=kint)                       :: ntdf           !< total degree of freedom
-      integer(kind=kint)                       :: idum(1), ierr
+      integer(kind=kint)                       :: idum(1)
       real(kind=kreal)                          :: ddum(1)
       real(kind=kreal), allocatable            :: x(:)           !< solution vector
 
       call hecmw_mat_ass_equation(hecMESH, hecMAT)
       call hecmw_mat_dump(hecMAT, hecMESH)
 
-      call initialize_solver_mkl(hecMAT,fstrMAT)
       call set_values_directsolver(hecMAT,fstrMAT)
+      if( phase == -1 ) call initialize_solver_mkl(hecMAT,fstrMAT)
 
       ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
 
@@ -113,7 +107,7 @@ module m_solve_LINEQ_mkl
                    nrhs, iparm, msglvl, ddum, ddum, ierr)
         if(ierr /= 0) then
           write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-          stop
+          return
         endif
         write(*,*) ' [Pardiso_MKL]: Factorization completed ! '
 
@@ -126,7 +120,8 @@ module m_solve_LINEQ_mkl
                      nrhs, iparm, msglvl, hecMAT%B, X, ierr)
           if(ierr /= 0) then
             write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-            stop
+            deallocate(x)
+            return
           endif
         write(*,*) ' [Pardiso_MKL]: Solve completed ... '
 
@@ -163,7 +158,7 @@ module m_solve_LINEQ_mkl
    real(kind=kreal)               :: ddum1(:), ddum2(:)
    integer (kind=kint)           :: ierr
 
-   write(*,*) "paradiso: ERROR was detected. Please install MKL library and try again."
+   write(*,*) "pardiso: ERROR was detected. Please install MKL library and try again."
    stop
 
    end subroutine

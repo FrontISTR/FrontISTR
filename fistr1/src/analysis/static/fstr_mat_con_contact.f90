@@ -59,6 +59,7 @@ module fstr_matrix_con_contact
 
        NPL_org = hecMAT%NPL;  NPU_org = hecMAT%NPU
 
+      if( associated(list_nodeRelated_org) ) return
       allocate(list_nodeRelated_org(hecMAT%NP), stat=ierr)
        if( ierr /= 0) stop " Allocation error, list_nodeRelated_org "
 

@@ -9,7 +9,7 @@ module m_static_output
 
 !> Output result
 !----------------------------------------------------------------------*
-  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag )
+  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag, outflag )
 !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -20,6 +20,7 @@ module m_static_output
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (fstr_solid), intent(inout)      :: fstrSOLID
     integer, intent(in)                   :: flag
+    logical, intent(in)                   :: outflag     !< if true, result will be output regardless of istep
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
@@ -44,31 +45,28 @@ module m_static_output
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
-    if( fstrSOLID%TEMP_irres>0 ) then
-          maxstep = fstrSOLID%TEMP_irres
-    else
-          maxstep = 0
-          do i = 1, cstep
-            maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
-          end do
-    endif
+    maxstep = 0
+    do i = 1, cstep
+      maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
+    end do
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
+          if( outflag ) interval = 1
 
           call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
           call fstr2hecmw_mesh_conv( hecMESH )
@@ -79,13 +77,13 @@ module m_static_output
           call hecmw_result_free( fstrRESULT )
     endif
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           fnum = fstrSOLID%output_ctrl(1)%filenum
           call fstr_static_post( fnum, hecMESH, fstrSOLID, istep )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
       iS = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(iS-1)+1, hecMESH%node_group%grp_index(iS)
@@ -152,19 +150,19 @@ module m_static_output
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
-            Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+            Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
+            Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             IEmax(k)= j
             IEmin(k)= j
           enddo
         else
           do k = 1, mdof
-            if( fstrSOLID%STRAIN(6*(i-1)+k) > Emax(k) ) then
-              Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+            if( fstrSOLID%STRAIN(mdof*(i-1)+k) > Emax(k) ) then
+              Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
               IEmax(k)= j
             endif
-            if( fstrSOLID%STRAIN(6*(i-1)+k) < Emin(k) ) then
-              Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+            if( fstrSOLID%STRAIN(mdof*(i-1)+k) < Emin(k) ) then
+              Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
               IEmin(k)= j
             endif
           enddo
@@ -177,19 +175,19 @@ module m_static_output
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
-              EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
+              EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
               IEEmax(k)= j
               IEEmin(k)= j
             enddo
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRAIN(6*(i-1)+k) > EEmax(k) ) then
-                EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) > EEmax(k) ) then
+                EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
                 IEEmax(k)= j
               endif
-              if( fstrSOLID%ESTRAIN(6*(i-1)+k) < EEmin(k) ) then
-                EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
+              if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) < EEmin(k) ) then
+                EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
                 IEEmin(k)= j
               endif
             enddo
@@ -206,8 +204,8 @@ module m_static_output
         j = hecMESH%global_node_ID(i)
         if( i==1 ) then
           do k = 1, mdof
-            Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
-            Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
+            Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
+            Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
             ISmax(k)= j
             ISmin(k)= j
           enddo
@@ -217,12 +215,12 @@ module m_static_output
           IMmin(1)= j
         else
           do k = 1, mdof
-            if( fstrSOLID%STRESS(6*(i-1)+k) > Smax(k) ) then
-              Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
+            if( fstrSOLID%STRESS(mdof*(i-1)+k) > Smax(k) ) then
+              Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
               ISmax(k)= j
             endif
-            if( fstrSOLID%STRESS(6*(i-1)+k) < Smin(k) ) then
-              Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
+            if( fstrSOLID%STRESS(mdof*(i-1)+k) < Smin(k) ) then
+              Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
               ISmin(k)= j
             endif
           enddo
@@ -239,12 +237,12 @@ module m_static_output
 !C @element
       do i = 1, hecMESH%n_elem
         ID_area = hecMESH%elem_ID(i*2)
-        if( ID_area==hecMESH%my_rank ) then
+        !if( ID_area==hecMESH%my_rank ) then
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
-              ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
-              ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+              ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
+              ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
               IESmax(k)= j
               IESmin(k)= j
             enddo
@@ -254,12 +252,12 @@ module m_static_output
             IEMmin(1)= j
           else
             do k = 1, mdof
-              if( fstrSOLID%ESTRESS(6*(i-1)+k) > ESmax(k) ) then
-                ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) > ESmax(k) ) then
+                ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
                 IESmax(k)= j
               endif
-              if( fstrSOLID%ESTRESS(6*(i-1)+k) < ESmin(k) ) then
-                ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+              if( fstrSOLID%ESTRESS(mdof*(i-1)+k) < ESmin(k) ) then
+                ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
                 IESmin(k)= j
               endif
             enddo
@@ -272,7 +270,7 @@ module m_static_output
               IEMmin(1)= j
             endif
           endif
-        endif
+        !endif
       enddo
 !C*** Show 2DOF
       if( ndof==2 ) then

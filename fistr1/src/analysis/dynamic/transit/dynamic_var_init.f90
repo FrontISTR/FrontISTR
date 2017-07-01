@@ -14,7 +14,7 @@ use m_dynamic_mat_ass_load
 
 contains
 
-   subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC )
+   subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, fstrPARAM )
 
     implicit none
 
@@ -23,10 +23,11 @@ contains
     type ( lczparam            ) :: myEIG
     type ( fstr_solid          ) :: fstrSOLID
     type ( fstr_dynamic        ) :: fstrDYNAMIC
+    type (fstr_param           ) :: fstrPARAM
 
     integer(kind=kint) :: j
 
-    call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+    call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
     if( fstrSOLID%VELOCITY_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
