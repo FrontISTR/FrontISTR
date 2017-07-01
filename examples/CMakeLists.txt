@@ -56,11 +56,11 @@ add_test(
  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_test(
- NAME Static_restart_Test
- COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/restart
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#add_test(
+# NAME Static_restart_Test
+# COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/restart
+# WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#)
 
 add_test(
  NAME Static_spring_boundary_Test
@@ -68,17 +68,17 @@ add_test(
  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_test(
- NAME Static_thermal_Test
- COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/thermal
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#add_test(
+# NAME Static_thermal_Test
+# COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/thermal
+# WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#)
 
-add_test(
- NAME Static_torque_rot_Test
- COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/torque_rot
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#add_test(
+# NAME Static_torque_rot_Test
+# COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/torque_rot
+# WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#)
 
 add_test(
  NAME Eigen_exJ_Test
