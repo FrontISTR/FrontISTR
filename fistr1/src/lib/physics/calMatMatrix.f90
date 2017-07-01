@@ -26,11 +26,12 @@ module m_MatMatrix
   end function
 
 !> Calculate constituive matrix
-  subroutine MatlMatrix( gauss, sectType, matrix, dt, cdsys, temperature, isEp )
+  subroutine MatlMatrix( gauss, sectType, matrix, time, dtime, cdsys, temperature, isEp )
     type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
     INTEGER, INTENT(IN)              :: sectType       !> plane strain/stress or 3D
     REAL(KIND=kreal), INTENT(OUT)    :: matrix(:,:)    !> constitutive matrix
-    REAL(KIND=kreal), INTENT(IN)     :: dt             !> time increment
+    REAL(KIND=kreal), INTENT(IN)     :: time           !> current time
+    REAL(KIND=kreal), INTENT(IN)     :: dtime          !> time increment
     REAL(kind=kreal), INTENT(IN)     :: cdsys(3,3)     !> material coordinate system
     REAL(KIND=kreal), INTENT(IN), optional  :: temperature   !> temperature
     INTEGER(KIND=kint), INTENT(IN), optional :: isEp
@@ -49,9 +50,9 @@ module m_MatMatrix
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isViscoelastic(matl%mtype) ) then
       if( present(temperature) ) then
-        call calViscoelasticMatrix( matl, sectTYPE, dt, matrix, temperature )
+        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, temperature )
       else
-        call calViscoelasticMatrix( matl, sectTYPE, dt, matrix )
+        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix )
       endif
     elseif( isElastic(matl%mtype) .or. flag==1 ) then
       if(flag==1)then
@@ -95,14 +96,14 @@ module m_MatMatrix
       endif
     elseif( matl%mtype==USERMATERIAL ) then
       call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
-          gauss%stress, gauss%fstatus, matrix, dt, gauss%ttime )
+          gauss%stress, gauss%fstatus, matrix, dtime, time )
     elseif( matl%mtype==NORTON ) then
       if( present( temperature ) ) then
         call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-         gauss%plstrain, dt, gauss%ttime, matrix, temperature  )
+         gauss%plstrain, dtime, time, matrix, temperature  )
       else
          call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-         gauss%plstrain, dt, gauss%ttime, matrix  )
+         gauss%plstrain, dtime, time, matrix  )
       endif
     else
       stop "Material type not supported!"
@@ -112,12 +113,13 @@ module m_MatMatrix
 
 !
 !> Update strain and stress for elastic and hyperelastic materials
-    subroutine StressUpdate( gauss, sectType, strain, stress, dt, temp, tempn )
+    subroutine StressUpdate( gauss, sectType, strain, stress, time, dtime, temp, tempn )
       type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
       integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
       real(kind=kreal), intent(in)        :: strain(6)  !> strain
       real(kind=kreal), intent(out)       :: stress(6)  !> stress
-      real(kind=kreal), intent(in), optional  :: dt         !> time increment
+      real(kind=kreal), intent(in), optional  :: time   !> current time
+      real(kind=kreal), intent(in), optional  :: dtime  !> time increment
       REAL(KIND=kreal), OPTIONAL          :: temp       !> current temprature
       REAL(KIND=kreal), OPTIONAL          :: tempn      !> temperature at last step
 
@@ -128,22 +130,22 @@ module m_MatMatrix
       elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
           call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
       elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
-          if( .not. present(dt) ) stop "error in viscoelastic update!"
+          if( .not. present(dtime) ) stop "error in viscoelastic update!"
           if( present(temp) .and. present(tempn) ) then
-            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dt, temp, tempn )
+            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
           else
-            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dt )
+            call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime )
           endif
       elseif ( gauss%pMaterial%mtype==NORTON ) then
-          if( .not. present(dt)  ) stop "error in viscoelastic update!"
+          if( .not. present(dtime)  ) stop "error in viscoelastic update!"
           if( present(temp) ) then
-            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime, temp )
+            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, temp )
           else
-            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus,gauss%plstrain, dt, gauss%ttime )
+            call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time )
           endif
       elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
           call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
-             strain, stress, gauss%fstatus, dt, gauss%ttime )
+             strain, stress, gauss%fstatus, dtime, time )
       end if
 
   end subroutine StressUpdate

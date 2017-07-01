@@ -1,0 +1,14 @@
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+C3D8beam.msh
+!MESH, NAME=mesh,TYPE=HECMW-ENTIRE
+C3D8beam.msh
+!CONTROL,NAME=fstrCNT
+C3D8beam_res.cnt
+!RESTART,NAME=restart_out,IO=INOUT
+C3D8beam.restart
+!RESULT,NAME=fstrRES,IO=OUT
+C3D8beam.res
+!RESULT,NAME=result,IO=IN
+C3D8beam.res
+!RESULT,NAME=vis_out,IO=OUT
+C3D8beam.vis
