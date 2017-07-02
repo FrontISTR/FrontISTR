@@ -12,10 +12,6 @@ module hecmw_precond_44
   public :: hecmw_precond_44_setup
   public :: hecmw_precond_44_clear
   public :: hecmw_precond_44_apply
-  public :: hecmw_precond_44_clear_timer
-  public :: hecmw_precond_44_get_timer
-
-  real(kind=kreal) :: time_precond = 0.d0
 
 contains
 
@@ -97,7 +93,7 @@ contains
   !C*** hecmw_precond_44_apply
   !C***
   !C
-  subroutine hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+  subroutine hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_44
@@ -111,6 +107,7 @@ contains
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: R(:)
     real(kind=kreal), intent(out) :: Z(:), ZP(:)
+    real(kind=kreal), intent(inout) :: time_precond
     real(kind=kreal), intent(inout) :: COMMtime
 
     integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
@@ -161,7 +158,7 @@ contains
         CASE(10,11,12)
           call hecmw_precond_BILU_44_apply(ZP)
         CASE DEFAULT
-          call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+          call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
           return 
       END SELECT
       END_TIME = hecmw_Wtime()
@@ -183,26 +180,5 @@ contains
     enddo
 
   end subroutine hecmw_precond_44_apply
-
-  !C
-  !C***
-  !C*** hecmw_precond_44_clear_timer
-  !C***
-  !C
-  subroutine hecmw_precond_44_clear_timer
-    implicit none
-    time_precond = 0.d0
-  end subroutine hecmw_precond_44_clear_timer
-
-  !C
-  !C***
-  !C*** hecmw_precond_44_get_timer
-  !C***
-  !C
-  function hecmw_precond_44_get_timer()
-    implicit none
-    real(kind=kreal) :: hecmw_precond_44_get_timer
-    hecmw_precond_44_get_timer = time_precond
-  end function hecmw_precond_44_get_timer
 
 end module hecmw_precond_44

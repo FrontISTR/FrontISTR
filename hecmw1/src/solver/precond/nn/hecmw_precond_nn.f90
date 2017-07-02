@@ -13,8 +13,6 @@ module hecmw_precond_nn
   public :: hecmw_precond_nn_clear
   public :: hecmw_precond_nn_apply
 
-  real(kind=kreal) :: time_precond = 0.d0
-
 contains
 
   !C
@@ -115,7 +113,7 @@ contains
   !C*** hecmw_precond_nn_apply
   !C***
   !C
-  subroutine hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+  subroutine hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_nn
@@ -130,6 +128,7 @@ contains
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: R(:)
     real(kind=kreal), intent(out) :: Z(:), ZP(:)
+    real(kind=kreal), intent(inout) :: time_precond
     real(kind=kreal), intent(inout) :: COMMtime
 
     integer(kind=kint ) :: N, NP, NNDOF, NPNDOF

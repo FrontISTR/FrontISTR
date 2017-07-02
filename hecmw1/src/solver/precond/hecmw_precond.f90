@@ -94,13 +94,13 @@ contains
 
     SELECT CASE(hecMAT%NDOF)
       CASE(3)
-        call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+        call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
       CASE(4)
-        call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+        call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
 !      CASE(6)
-!        call hecmw_precond_66_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+!        call hecmw_precond_66_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
       case default
-        call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+        call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
     END SELECT
 
   end subroutine hecmw_precond_apply
