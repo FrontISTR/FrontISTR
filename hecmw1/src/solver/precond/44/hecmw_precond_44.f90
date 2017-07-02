@@ -24,15 +24,17 @@ contains
   !C*** hecmw_precond_44_setup
   !C***
   !C
-  subroutine hecmw_precond_44_setup(hecMAT, hecMESH)
+  subroutine hecmw_precond_44_setup(hecMAT, hecMESH, sym)
     use hecmw_util
     use hecmw_matrix_misc
     use hecmw_precond_BILU_44
     use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
+    use hecmw_precond_nn
     implicit none
     type (hecmwST_matrix),     intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    integer(kind=kint), intent(in) :: sym
 
     integer(kind=kint ) :: PRECOND, iterPREmax
 
@@ -41,13 +43,16 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.le.2) then
-      call hecmw_precond_SSOR_44_setup(hecMAT)
-    else if (PRECOND.eq.3) then
-      call hecmw_precond_DIAG_44_setup(hecMAT)
-    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-      call hecmw_precond_BILU_44_setup(hecMAT)
-    endif
+    SELECT CASE(PRECOND)
+      CASE(1,2)
+        call hecmw_precond_SSOR_44_setup(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_44_setup(hecMAT)
+      CASE(10,11,12)
+        call hecmw_precond_BILU_44_setup(hecMAT)
+      CASE DEFAULT
+        call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
+    END SELECT
 
   end subroutine hecmw_precond_44_setup
 
@@ -62,6 +67,8 @@ contains
     use hecmw_precond_BILU_44
     use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
+    use hecmw_precond_nn
+
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
@@ -72,14 +79,17 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.le.2) then
-      call hecmw_precond_SSOR_44_clear(hecMAT)
-    else if (PRECOND.eq.3) then
-      call hecmw_precond_DIAG_44_clear()
-    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-      call hecmw_precond_BILU_44_clear()
-    endif
-
+    SELECT CASE(PRECOND)
+      CASE(1,2)
+        call hecmw_precond_SSOR_44_clear(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_44_clear()
+      CASE(10,11,12)
+        call hecmw_precond_BILU_44_clear()
+      CASE DEFAULT
+        call hecmw_precond_nn_clear(hecMAT)
+    END SELECT
+    
   end subroutine hecmw_precond_44_clear
 
   !C
@@ -94,6 +104,8 @@ contains
     use hecmw_precond_DIAG_44
     use hecmw_precond_SSOR_44
     use hecmw_solver_las_44
+    use hecmw_precond_nn
+
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
@@ -141,14 +153,17 @@ contains
 
       START_TIME = hecmw_Wtime()
 
-      if (PRECOND.le.2) then
-        call hecmw_precond_SSOR_44_apply(ZP)
-      else if (PRECOND.eq.3) then
-        call hecmw_precond_DIAG_44_apply(ZP)
-      else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-        call hecmw_precond_BILU_44_apply(ZP)
-      endif
-
+      SELECT CASE(PRECOND)
+        CASE(1,2)
+          call hecmw_precond_SSOR_44_apply(ZP)
+        CASE(3)
+          call hecmw_precond_DIAG_44_apply(ZP)
+        CASE(10,11,12)
+          call hecmw_precond_BILU_44_apply(ZP)
+        CASE DEFAULT
+          call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+          return 
+      END SELECT
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 

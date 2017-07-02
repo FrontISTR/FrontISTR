@@ -36,10 +36,10 @@ contains
     integer(kind=kint) :: sym
 
     SELECT CASE(hecMAT%NDOF)
-!      CASE(3)
-!        call hecmw_precond_33_setup(hecMAT, hecMESH, sym)
-!      CASE(4)
-!        call hecmw_precond_44_setup(hecMAT, hecMESH)
+      CASE(3)
+        call hecmw_precond_33_setup(hecMAT, hecMESH, sym)
+      CASE(4)
+        call hecmw_precond_44_setup(hecMAT, hecMESH, sym)
 !      CASE(6)
 !        call hecmw_precond_66_setup(hecMAT)
       case default
@@ -62,10 +62,10 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
  
     SELECT CASE(hecMAT%NDOF)
-!      CASE(3)
-!        call hecmw_precond_33_clear(hecMAT)
-!      CASE(4)
-!        call hecmw_precond_44_clear(hecMAT)
+      CASE(3)
+        call hecmw_precond_33_clear(hecMAT)
+      CASE(4)
+        call hecmw_precond_44_clear(hecMAT)
 !      CASE(6)
 !        call hecmw_precond_66_clear(hecMAT)
       case default
@@ -95,10 +95,10 @@ contains
 
     call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
     SELECT CASE(hecMAT%NDOF)
-!      CASE(3)
-!        call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
-!      CASE(4)
-!        call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+      CASE(3)
+        call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
+      CASE(4)
+        call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
 !      CASE(6)
 !        call hecmw_precond_66_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
       case default
