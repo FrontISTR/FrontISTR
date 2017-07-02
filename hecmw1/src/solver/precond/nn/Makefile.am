@@ -88,7 +88,6 @@ OBJS = \
 	hecmw_ML_wrapper.@cobjfilepostfix@ \
 
 OBJSF = \
-	hecmw_jadm_nn.@f90objfilepostfix@ \
 	hecmw_precond_BILU_nn.@f90objfilepostfix@ \
 	hecmw_precond_DIAG_nn.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_nn.@f90objfilepostfix@ \

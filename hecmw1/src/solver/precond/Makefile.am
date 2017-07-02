@@ -105,42 +105,42 @@ install-module:
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 @build_target@_subdir:
+	@cd nn     && $(MAKE) @build_target@
 	@cd 11     && $(MAKE) @build_target@
 	@cd 22     && $(MAKE) @build_target@
 	@cd 33     && $(MAKE) @build_target@
 	@cd 44     && $(MAKE) @build_target@
 	@cd 66     && $(MAKE) @build_target@
-	@cd nn     && $(MAKE) @build_target@
   
 install:
+	@cd nn     && $(MAKE) install
 	@cd 11     && $(MAKE) install
 	@cd 22     && $(MAKE) install
 	@cd 33     && $(MAKE) install
 	@cd 44     && $(MAKE) install
 	@cd 66     && $(MAKE) install
-	@cd nn     && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
+	@cd nn     && $(MAKE) clean
 	@cd 11     && $(MAKE) clean
 	@cd 22     && $(MAKE) clean
 	@cd 33     && $(MAKE) clean
 	@cd 44     && $(MAKE) clean
 	@cd 66     && $(MAKE) clean
-	@cd nn     && $(MAKE) clean
   
 distclean: clean
+	@cd nn     && $(MAKE) distclean
 	@cd 11     && $(MAKE) distclean
 	@cd 22     && $(MAKE) distclean
 	@cd 33     && $(MAKE) distclean
 	@cd 44     && $(MAKE) distclean
 	@cd 66     && $(MAKE) distclean
-	@cd nn     && $(MAKE) distclean
 
 maintainer-clean:
+	@cd nn     && $(MAKE) maintainer-clean
 	@cd 11     && $(MAKE) maintainer-clean
 	@cd 22     && $(MAKE) maintainer-clean
 	@cd 33     && $(MAKE) maintainer-clean
 	@cd 44     && $(MAKE) maintainer-clean
 	@cd 66     && $(MAKE) maintainer-clean
-	@cd nn     && $(MAKE) maintainer-clean
