@@ -109,6 +109,7 @@ OBJSF = \
         m_step.@f90objfilepostfix@ \
         m_Makrose.@f90objfilepostfix@ \
         m_MakrosePartMesh.@f90objfilepostfix@ \
+        m_timepoint.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \

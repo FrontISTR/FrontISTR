@@ -48,7 +48,7 @@ MODULE m_static_LIB_3d
 !----------------------------------------------------------------------*
    SUBROUTINE STF_C3                                                &
               (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               tincr, u ,temperature)
+               time, tincr, u ,temperature)
 !----------------------------------------------------------------------*
 
     USE mMechGauss
@@ -64,6 +64,7 @@ MODULE m_static_LIB_3d
     REAL(kind=kreal),   INTENT(OUT) :: stiff(:,:)             !< stiff matrix
     INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
     REAL(kind=kreal), INTENT(INOUT) :: coords(3,3)            !< variables to define matreial coordinate system
+    REAL(kind=kreal), INTENT(IN)    :: time                   !< current time
     REAL(kind=kreal), INTENT(IN)    :: tincr                  !< time increment
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: temperature(nn) !< temperature
     REAL(kind=kreal), INTENT(IN), OPTIONAL :: u(:,:)          !< nodal displacemwent
@@ -107,9 +108,9 @@ MODULE m_static_LIB_3d
       IF( PRESENT(temperature) ) THEN
         CALL getShapeFunc(etype, naturalcoord, spfunc)
         temp = DOT_PRODUCT(temperature, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, temp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
       ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
       END IF
 
       IF( flag == UPDATELAG ) then
@@ -460,7 +461,7 @@ MODULE m_static_LIB_3d
       TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
       TEMP0 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
 
-      CALL MatlMatrix( gausses(LX), D3, D, 0.0D0, coordsys, tempc )
+      CALL MatlMatrix( gausses(LX), D3, D, 1.d0, 0.0D0, coordsys, tempc )
 
       ina(1) = TEMPC
       IF( matlaniso ) THEN
@@ -516,7 +517,7 @@ MODULE m_static_LIB_3d
 !---------------------------------------------------------------------*
    SUBROUTINE UPDATE_C3                                       &
               (etype,nn,ecoord, u, ddu, cdsys_ID, coords, qf, &
-               gausses, iter, tincr, TT, T0, TN)
+               gausses, iter, time, tincr, TT, T0, TN)
 !---------------------------------------------------------------------*
 
     use m_fstr
@@ -536,6 +537,7 @@ MODULE m_static_LIB_3d
     real(kind=kreal), INTENT(OUT)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), INTENT(INOUT) :: gausses(:)    !< \param [out] status of qudrature points
     integer, intent(in)               :: iter
+    REAL(kind=kreal), INTENT(IN)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
     REAL(kind=kreal), INTENT(IN), optional :: TT(nn)   !< current temperature
     REAL(kind=kreal), INTENT(IN), optional :: T0(nn)   !< reference temperature
@@ -605,7 +607,7 @@ MODULE m_static_LIB_3d
         ttc = DOT_PRODUCT(TT, spfunc)
         tt0 = DOT_PRODUCT(T0, spfunc)
         ttn = DOT_PRODUCT(TN, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, ttc, isEp )
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
 
         ina(1) = ttc
         IF( matlaniso ) THEN
@@ -638,7 +640,7 @@ MODULE m_static_LIB_3d
 
       ELSE
 
-        CALL MatlMatrix( gausses(LX), D3, D, tincr, coordsys, isEp=isEp)
+        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp)
 
       END IF
 
@@ -658,9 +660,9 @@ MODULE m_static_LIB_3d
         gausses(LX)%stress(1:6) = MATMUL( D(1:6, 1:6), dstrain(1:6) )
         IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
           END IF
           gausses(LX)%stress = real(gausses(LX)%stress)
         END IF
@@ -686,9 +688,9 @@ MODULE m_static_LIB_3d
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%pMaterial%mtype=mtype
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, ttn )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
           END IF
         ELSE
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
@@ -709,9 +711,9 @@ MODULE m_static_LIB_3d
         IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
           !(LX)%pMaterial%mtype = mtype
           IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr, ttc, tt0 )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, tt0 )
           ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, tincr )
+            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
           END IF
         ELSE
 
@@ -738,9 +740,9 @@ MODULE m_static_LIB_3d
             IF( tincr /= 0.0D0 .AND. ANY( gausses(LX)%stress /= 0.0D0 ) ) THEN
               !gausses(LX)%pMaterial%mtype = mtype
               IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr, ttc, ttn )
+                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
               ELSE
-                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, tincr )
+                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
               END IF
             END IF
           END IF
@@ -835,149 +837,7 @@ MODULE m_static_LIB_3d
     END DO
 
    END SUBROUTINE UPDATE_C3
-
-
-!----------------------------------------------------------------------*
-   SUBROUTINE UpdateST_C3                            &
-              (etype, nn, XX, YY, ZZ, TT, T0, edisp, &
-               gausses, cdsys_ID, coords)
-!----------------------------------------------------------------------*
-    !
-    ! Calculate Strain and Stress increment of solid elements
-    !
-    USE m_fstr
-    USE mMechGauss
-    USE m_MatMatrix
-    USE m_utilities
-
-!---------------------------------------------------------------------
-
-    INTEGER(kind=kint), PARAMETER :: ndof = 3
-    ! I/F VARIABLES
-    INTEGER(kind=kint), INTENT(IN)    :: etype, nn
-    REAL(kind=kreal), INTENT(IN)      :: XX(nn), YY(nn), ZZ(nn)
-    REAL(kind=kreal), INTENT(IN)      :: TT(nn), T0(nn), edisp(nn*ndof)
-    TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)
-    INTEGER(kind=kint), INTENT(IN)    :: cdsys_ID
-    REAL(kind=kreal), INTENT(INOUT)   :: coords(3, 3)
-
-!---------------------------------------------------------------------
-
-    ! LOCAL VARIABLES
-    REAL(kind=kreal) :: ALP, ALP0,D(6, 6), B(6, ndof*nn)
-    REAL(kind=kreal) :: det, ecoord(3, nn)
-    INTEGER(kind=kint) :: j, k, IC, serr
-    REAL(kind=kreal) :: EPSA(6), EPSTH(6), SGM(6), H(nn), alpo(3), alpo0(3), coordsys(3, 3)
-    REAL(kind=kreal) :: naturalcoord(3), gderiv(nn, 3)
-    REAL(kind=kreal) :: TEMPC, TEMP0, THERMAL_EPS, tm(6, 6),outa(1),ina(1)
-    LOGICAL :: ierr, matlaniso
-
-!---------------------------------------------------------------------
-
-    matlaniso = .FALSE.
-
-    IF( cdsys_ID > 0 ) THEN   ! cannot define aniso exapansion when no local coord defined
-      ina = TT(1)
-      CALL fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      IF( .NOT. ierr ) matlaniso = .TRUE.
-    END IF
-
-    ecoord(1, :) = XX(:)
-    ecoord(2, :) = YY(:)
-    ecoord(3, :) = ZZ(:)
-
-    ! LOOP FOR INTEGRATION POINTS
-    DO IC = 1, NumOfQuadPoints(etype)
-
-      CALL getQuadPoint( etype, IC, naturalCoord(:) )
-      CALL getShapeFunc( etype, naturalcoord, H(1:nn) )
-      CALL getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
-
-      IF( matlaniso ) THEN
-        CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys, serr )
-        IF( serr == -1 ) STOP "Fail to setup local coordinate"
-        IF( serr == -2 ) THEN
-          WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
-        END IF
-      END IF
-
-      B(1:6, 1:nn*ndof) = 0.0D0
-      DO j = 1, nn
-        B(1,3*j-2) = gderiv(j,1)
-        B(2,3*j-1) = gderiv(j,2)
-        B(3,3*j  ) = gderiv(j,3)
-        B(4,3*j-2) = gderiv(j,2)
-        B(4,3*j-1) = gderiv(j,1)
-        B(5,3*j-1) = gderiv(j,3)
-        B(5,3*j  ) = gderiv(j,2)
-        B(6,3*j-2) = gderiv(j,3)
-        B(6,3*j  ) = gderiv(j,1)
-      END DO
-
-      TEMPC = DOT_PRODUCT( H(1:nn), TT(1:nn) )
-      TEMP0 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
-
-      CALL MatlMatrix( gausses(IC), D3, D, 0.0D0, coordsys, TEMPC )
-
-      ina(1) = TEMPC
-      IF( matlaniso ) THEN
-        CALL fetch_TableData( MC_ORTHOEXP, gausses(IC)%pMaterial%dict, alpo(:), ierr, ina )
-        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-      ELSE
-        CALL fetch_TableData( MC_THEMOEXP, gausses(IC)%pMaterial%dict, outa(:), ierr, ina )
-        IF( ierr ) outa(1) = gausses(IC)%pMaterial%variables(M_EXAPNSION)
-        alp = outa(1)
-      END IF
-      ina(1) = TEMP0
-      IF( matlaniso  ) THEN
-        CALL fetch_TableData( MC_ORTHOEXP, gausses(IC)%pMaterial%dict, alpo0(:), ierr, ina )
-        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-      ELSE
-        CALL fetch_TableData( MC_THEMOEXP, gausses(IC)%pMaterial%dict, outa(:), ierr, ina )
-        IF( ierr ) outa(1) = gausses(IC)%pMaterial%variables(M_EXAPNSION)
-        alp0 = outa(1)
-      END IF
-
-      !**
-      !** THERMAL strain
-      !**
-      IF( matlaniso ) THEN
-        DO j = 1,3
-          EPSTH(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
-        END DO
-        EPSTH(4:6) = 0.0D0
-        CALL transformation(coordsys, tm)
-        EPSTH(:) = MATMUL( EPSTH(:), tm  )      ! to global coord
-        EPSTH(4:6) = EPSTH(4:6)*2.0D0
-      ELSE
-        THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
-        EPSTH(1:3) = THERMAL_EPS
-        EPSTH(4:6) = 0.0D0
-      END IF
-      !**
-      !** SET EPS  {e}=[B]{u}
-      !**
-      EPSA(1:6) = MATMUL( B(1:6, :), edisp )
-      !**
-      !** SET SGM  {S}=[D]{e}
-      !**
-      DO j = 1, 6
-        SGM(j) = 0.0D0
-        DO k = 1, 6
-          SGM(j) = SGM(j)+D(j, k)*( EPSA(k)-EPSTH(k) )
-        END DO
-      END DO
-      !**
-      !** Adding stress in each gauss points
-      !**
-      gausses(IC)%strain(1:6) = EPSA(1:6)
-      gausses(IC)%stress(1:6) = SGM(1:6)
-
-    END DO
-
-   END SUBROUTINE UpdateST_C3
-
-
+!
 !----------------------------------------------------------------------*
    SUBROUTINE NodalStress_C3(etype, nn, gausses, ndstrain, ndstress)
 !----------------------------------------------------------------------*

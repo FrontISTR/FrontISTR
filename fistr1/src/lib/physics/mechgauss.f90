@@ -17,7 +17,6 @@ MODULE mMechGauss
             integer, pointer          :: istatus(:) =>null()    !< status variables (integer type)
             real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
             real(kind=kreal)          :: plstrain               !< plastic strain
-            real(kind=kreal)          :: ttime                  !< total time at the start of the current increment
             real(kind=kreal)          :: strain_bak(6)          !< strain
             real(kind=kreal)          :: stress_bak(6)              !< stress
         end type
@@ -40,7 +39,6 @@ MODULE mMechGauss
     gauss%strain=0.d0; gauss%stress=0.d0
     gauss%strain_bak=0.d0; gauss%stress_bak=0.d0
     gauss%plstrain =0.d0
-    gauss%ttime = 0.d0
     if( gauss%pMaterial%mtype==USERMATERIAL ) then
       if( gauss%pMaterial%nfstatus> 0 ) then
         allocate( gauss%fstatus(gauss%pMaterial%nfstatus) )
@@ -76,6 +74,27 @@ MODULE mMechGauss
      if( associated( gauss%istatus ) ) deallocate( gauss%istatus )
      if( associated( gauss%fstatus ) ) deallocate( gauss%fstatus )
   end subroutine
+
+  !> Copy
+  subroutine fstr_copy_gauss( gauss1, gauss2 )
+    type( tGaussStatus ), intent(in)    :: gauss1
+    type( tGaussStatus ), intent(inout) :: gauss2
+
+    integer :: n
+    gauss2%strain     = gauss1%strain
+    gauss2%stress     = gauss1%stress
+    gauss2%strain_bak = gauss1%strain_bak
+    gauss2%stress_bak = gauss1%stress_bak
+    gauss2%plstrain   = gauss1%plstrain
+
+    if( associated(gauss1%istatus) .and. associated(gauss2%istatus) ) then
+      gauss2%istatus   = gauss1%istatus
+    end if
+    if( associated(gauss1%fstatus) .and. associated(gauss2%fstatus) ) then
+      gauss2%fstatus   = gauss1%fstatus
+    end if
+  end subroutine fstr_copy_gauss
+
 
 END MODULE
 

@@ -1,0 +1,47 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!NODE_OUTPUT
+DISP,OFF
+REAC,OFF
+STRAIN,OFF
+STRESS,OFF
+!ELEMENT_OUTPUT, POSITION=INTEG
+STRAIN,OFF
+STRESS,OFF
+PLSTRAIN,OFF
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 20000, 1
+ 1.00e-06, 1.00, 0.0
+ 0.100, 0.100
+!AUTOINC_PARAM, NAME=AP1
+0.25, 2, 50, 5, 1
+2.0, 2, 5, 2, 2
+0.5, 6
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ _PickedSet4,1,1
+ _PickedSet4,2,2
+ _PickedSet4,3,3
+!CLOAD, GRPID=1
+_PickedSet5, 2, -0.01
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL-1
+!ELASTIC
+1000., 0.3
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=10, MAXITER=3, CONVERG=1.000E-08, INC_TYPE=AUTO, AUTOINCPARAM=AP1
+1.0,1.0
+BOUNDARY,1
+LOAD,1
+!END
