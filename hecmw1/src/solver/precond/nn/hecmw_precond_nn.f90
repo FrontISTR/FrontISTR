@@ -5,6 +5,15 @@
 
 module hecmw_precond_nn
   use hecmw_util
+  use hecmw_matrix_misc
+  use hecmw_precond_BILU_nn
+  use hecmw_precond_DIAG_nn
+  use hecmw_precond_SSOR_nn
+  use hecmw_precond_ML_nn
+  use hecmw_precond_SAINV_nn
+  use hecmw_precond_RIF_nn
+  USE hecmw_solver_direct_MUMPS
+  use hecmw_solver_las_nn
   implicit none
 
   private
@@ -15,34 +24,13 @@ module hecmw_precond_nn
 
 contains
 
-  !C
-  !C***
-  !C*** hecmw_precond_nn_setup
-  !C***
-  !C
   subroutine hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
-    use hecmw_util
-    use hecmw_matrix_misc
-    use hecmw_precond_BILU_nn
-    use hecmw_precond_DIAG_nn
-    use hecmw_precond_SSOR_nn
-    use hecmw_precond_ML_nn
-    use hecmw_precond_SAINV_nn
-    use hecmw_precond_RIF_nn
-    USE hecmw_solver_direct_MUMPS
-
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: sym
 
-    integer(kind=kint ) :: PRECOND, iterPREmax
-
-    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
-    if (iterPREmax.le.0) return
-
-    PRECOND = hecmw_mat_get_precond( hecMAT )
-    SELECT CASE(PRECOND)
+    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
       CASE(1,2)
         call hecmw_precond_SSOR_nn_setup(hecMAT)
       CASE(3)
@@ -66,30 +54,11 @@ contains
 
   end subroutine hecmw_precond_nn_setup
 
-  !C
-  !C***
-  !C*** hecmw_precond_nn_clear
-  !C***
-  !C
   subroutine hecmw_precond_nn_clear(hecMAT)
-    use hecmw_util
-    use hecmw_matrix_misc
-    use hecmw_precond_BILU_nn
-    use hecmw_precond_DIAG_nn
-    use hecmw_precond_SSOR_nn
-    use hecmw_precond_ML_nn
-    use hecmw_precond_SAINV_nn
-    use hecmw_precond_RIF_nn
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
-    integer(kind=kint ) :: PRECOND, iterPREmax
-
-    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
-    if (iterPREmax.le.0) return
-
-    PRECOND = hecmw_mat_get_precond( hecMAT )
-    SELECT CASE(PRECOND)
+    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
       CASE(1,2)
         call hecmw_precond_SSOR_nn_clear(hecMAT)
       CASE(3)
@@ -105,7 +74,6 @@ contains
       CASE DEFAULT
     END SELECT
 
-
   end subroutine hecmw_precond_nn_clear
 
   !C
@@ -114,15 +82,6 @@ contains
   !C***
   !C
   subroutine hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-    use hecmw_util
-    use hecmw_matrix_misc
-    use hecmw_precond_BILU_nn
-    use hecmw_precond_DIAG_nn
-    use hecmw_precond_SSOR_nn
-    use hecmw_precond_ML_nn
-    use hecmw_precond_SAINV_nn
-    use hecmw_precond_RIF_nn
-    use hecmw_solver_las_nn
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
@@ -130,47 +89,13 @@ contains
     real(kind=kreal), intent(out) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: time_precond
     real(kind=kreal), intent(inout) :: COMMtime
-
-    integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
-    integer(kind=kint ) :: PRECOND, iterPREmax
-    integer(kind=kint ) :: i, iterPRE
+    integer(kind=kint ) :: i, iterPRE, iterPREmax
     real(kind=kreal) :: START_TIME, END_TIME
 
-    N = hecMAT%N
-    NP = hecMAT%NP
-    NNDOF = N * hecMAT%NDOF
-    NPNDOF = NP * hecMAT%NDOF
-    PRECOND = hecmw_mat_get_precond( hecMAT )
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
-
-    if (iterPREmax.le.0) then
-      do i= 1, NNDOF
-        Z(i)= R(i)
-      enddo
-      return
-    endif
-
-    !C===
-    !C +----------------+
-    !C | {z}= [Minv]{r} |
-    !C +----------------+
-    !C===
-
-    do i= 1, NNDOF
-      ZP(i)= R(i)
-    enddo
-    do i= NNDOF+1, NPNDOF
-      ZP(i) = 0.d0
-    enddo
-    do i= 1, NPNDOF
-      Z(i)= 0.d0
-    enddo
-
     do iterPRE= 1, iterPREmax
-
       START_TIME = hecmw_Wtime()
-
-      SELECT CASE(PRECOND)
+      SELECT CASE(hecmw_mat_get_precond( hecMAT ))
         CASE(1,2)
           call hecmw_precond_SSOR_nn_apply(ZP,hecMAT%NDOF)
         CASE(3)
@@ -184,26 +109,18 @@ contains
         CASE(21)
           call hecmw_precond_RIF_nn_apply(ZP,hecMAT%NDOF)
         CASE DEFAULT
-
-      END SELECT
-      
+      END SELECT     
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 
-      !C
       !C-- additive Schwartz
-      !C
-      do i= 1, NNDOF
+      do i= 1, hecMAT%N * hecMAT%NDOF
         Z(i)= Z(i) + ZP(i)
       enddo
-
       if (iterPRE.eq.iterPREmax) exit
 
       !C--    {ZP} = {R} - [A] {Z}
       call hecmw_matresid_nn (hecMESH, hecMAT, Z, R, ZP, COMMtime)
-
     enddo
-
   end subroutine hecmw_precond_nn_apply
-
 end module hecmw_precond_nn
