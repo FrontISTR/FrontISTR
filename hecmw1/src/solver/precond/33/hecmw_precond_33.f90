@@ -33,6 +33,8 @@ contains
     use hecmw_precond_ML_33
     use hecmw_precond_SAINV_33
     use hecmw_precond_RIF_33
+    use hecmw_precond_nn
+    
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -45,20 +47,23 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.le.2) then
-      call hecmw_precond_SSOR_33_setup(hecMAT)
-    else if (PRECOND.eq.3) then
-      call hecmw_precond_DIAG_33_setup(hecMAT)
-    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-      call hecmw_precond_BILU_33_setup(hecMAT)
-    else if (PRECOND.eq.5) then
-      call hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
-    else if (PRECOND.eq.20) then
-      call hecmw_precond_33_SAINV_setup(hecMAT)
-    else if (PRECOND.eq.21) then
-      call hecmw_precond_RIF_33_setup(hecMAT)
-    endif
-
+    SELECT CASE(PRECOND)
+      CASE(1,2)
+        call hecmw_precond_SSOR_33_setup(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_33_setup(hecMAT)
+      CASE(5)
+        call hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
+      CASE(10,11,12)
+        call hecmw_precond_BILU_33_setup(hecMAT)
+      CASE(20)
+        call hecmw_precond_33_SAINV_setup(hecMAT)
+      CASE(21)
+        call hecmw_precond_RIF_33_setup(hecMAT)
+      CASE DEFAULT
+        call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
+    END SELECT
+    
   end subroutine hecmw_precond_33_setup
 
   !C
@@ -85,19 +90,21 @@ contains
 
     PRECOND = hecmw_mat_get_precond( hecMAT )
 
-    if (PRECOND.le.2) then
-      call hecmw_precond_SSOR_33_clear(hecMAT)
-    else if (PRECOND.eq.3) then
-      call hecmw_precond_DIAG_33_clear()
-    else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-      call hecmw_precond_BILU_33_clear()
-    else if (PRECOND.eq.5) then
-      call hecmw_precond_ML_33_clear()
-    else if (PRECOND.eq.20) then
-      call hecmw_precond_33_SAINV_clear()
-    else if (PRECOND.eq.21) then
-      call hecmw_precond_RIF_33_clear()
-    endif
+    SELECT CASE(PRECOND)
+      CASE(1,2)
+        call hecmw_precond_SSOR_33_clear(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_33_clear()
+      CASE(5)
+        call hecmw_precond_ML_33_clear()
+      CASE(10:12)
+        call hecmw_precond_BILU_33_clear()
+      CASE(20)
+        call hecmw_precond_33_SAINV_clear()
+      CASE(21)
+        call hecmw_precond_RIF_33_clear()
+      CASE DEFAULT
+    END SELECT
 
   end subroutine hecmw_precond_33_clear
 
@@ -162,21 +169,22 @@ contains
     do iterPRE= 1, iterPREmax
 
       START_TIME = hecmw_Wtime()
+      SELECT CASE(PRECOND)
+        CASE(1,2)
+          call hecmw_precond_SSOR_33_apply(ZP)
+        CASE(3)
+          call hecmw_precond_DIAG_33_apply(ZP)
+        CASE(5)
+          call hecmw_precond_ML_33_apply(ZP)
+        CASE(10:12)
+          call hecmw_precond_BILU_33_apply(ZP)
+        CASE(20)
+          call hecmw_precond_33_SAINV_apply(R,ZP)
+        CASE(21)
+          call hecmw_precond_RIF_33_apply(ZP)
+        CASE DEFAULT
 
-      if (PRECOND.le.2) then
-        call hecmw_precond_SSOR_33_apply(ZP)
-      else if (PRECOND.eq.3) then
-        call hecmw_precond_DIAG_33_apply(ZP)
-      else if (PRECOND.eq.10.or.PRECOND.eq.11.or.PRECOND.eq.12) then
-        call hecmw_precond_BILU_33_apply(ZP)
-      else if (PRECOND.eq.5) then
-        call hecmw_precond_ML_33_apply(ZP)
-      else if (PRECOND.eq.20) then
-        call hecmw_precond_33_SAINV_apply(R,ZP)
-      else if (PRECOND.eq.21) then
-        call hecmw_precond_RIF_33_apply(ZP)
-      endif
-
+      END SELECT
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 
