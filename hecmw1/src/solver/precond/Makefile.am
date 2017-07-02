@@ -48,6 +48,7 @@ CP                = @cp@
 RM                = @rm@
 RANLIB            = @ranlib@
 MKDIR             = @mkdir@
+MAKE = @make@
 
 #-----------------------------------------------------------------------------#
 TARGET            = @hecmwlib_targetfile@
@@ -59,7 +60,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
@@ -67,10 +68,6 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
-.F90.@f90objfilepostfix@:
-	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
-
-  
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
@@ -78,25 +75,14 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_allocate.@f90objfilepostfix@ \
-	hecmw_matrix_contact.@f90objfilepostfix@ \
-	hecmw_matrix_misc.@f90objfilepostfix@ \
-	hecmw_matrix_ordering_CM.@f90objfilepostfix@ \
-	hecmw_matrix_ordering_MC.@f90objfilepostfix@ \
-	hecmw_matrix_reorder.@f90objfilepostfix@ \
-	hecmw_mat_con.@f90objfilepostfix@ \
-	hecmw_mat_ass.@f90objfilepostfix@ \
-	hecmw_matrix_dump.@f90objfilepostfix@ \
-	hecmw_local_matrix.@f90objfilepostfix@ \
-	hecmw_mat_id.@f90objfilepostfix@ \
-	hecmw_estimate_condition.@f90objfilepostfix@
-
+	hecmw_precond.@f90objfilepostfix@
+  
 HEADERS =
 
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: $(TARGET) $(F90TARGET) install-module
+build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
 
 build-serial: $(TARGET) $(F90TARGET) install-module
 
@@ -118,9 +104,43 @@ install-header: $(HEADERS)
 install-module:
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
+@build_target@_subdir:
+	@cd 11     && $(MAKE) @build_target@
+	@cd 22     && $(MAKE) @build_target@
+	@cd 33     && $(MAKE) @build_target@
+	@cd 44     && $(MAKE) @build_target@
+	@cd 66     && $(MAKE) @build_target@
+	@cd nn     && $(MAKE) @build_target@
+  
 install:
+	@cd 11     && $(MAKE) install
+	@cd 22     && $(MAKE) install
+	@cd 33     && $(MAKE) install
+	@cd 44     && $(MAKE) install
+	@cd 66     && $(MAKE) install
+	@cd nn     && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
-
+	@cd 11     && $(MAKE) clean
+	@cd 22     && $(MAKE) clean
+	@cd 33     && $(MAKE) clean
+	@cd 44     && $(MAKE) clean
+	@cd 66     && $(MAKE) clean
+	@cd nn     && $(MAKE) clean
+  
 distclean: clean
+	@cd 11     && $(MAKE) distclean
+	@cd 22     && $(MAKE) distclean
+	@cd 33     && $(MAKE) distclean
+	@cd 44     && $(MAKE) distclean
+	@cd 66     && $(MAKE) distclean
+	@cd nn     && $(MAKE) distclean
+
+maintainer-clean:
+	@cd 11     && $(MAKE) maintainer-clean
+	@cd 22     && $(MAKE) maintainer-clean
+	@cd 33     && $(MAKE) maintainer-clean
+	@cd 44     && $(MAKE) maintainer-clean
+	@cd 66     && $(MAKE) maintainer-clean
+	@cd nn     && $(MAKE) maintainer-clean

@@ -9,9 +9,9 @@ BINDIR            = @bindir@
 LIBDIR            = @libdir@
 INCLUDEDIR        = @includedir@
 
-HECMWBINDIR       = ../../../bin
-HECMWLIBDIR       = ../../../lib
-HECMWINCDIR       = ../../../include
+HECMWBINDIR       = ../../../../bin
+HECMWLIBDIR       = ../../../../lib
+HECMWINCDIR       = ../../../../include
 HECMWLIBS         = @hecmwlibs@
 
 REFINERDIR        = @refinerdir@
@@ -59,7 +59,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
@@ -67,10 +67,6 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
-.F90.@f90objfilepostfix@:
-	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
-
-  
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
@@ -78,19 +74,12 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_allocate.@f90objfilepostfix@ \
-	hecmw_matrix_contact.@f90objfilepostfix@ \
-	hecmw_matrix_misc.@f90objfilepostfix@ \
-	hecmw_matrix_ordering_CM.@f90objfilepostfix@ \
-	hecmw_matrix_ordering_MC.@f90objfilepostfix@ \
-	hecmw_matrix_reorder.@f90objfilepostfix@ \
-	hecmw_mat_con.@f90objfilepostfix@ \
-	hecmw_mat_ass.@f90objfilepostfix@ \
-	hecmw_matrix_dump.@f90objfilepostfix@ \
-	hecmw_local_matrix.@f90objfilepostfix@ \
-	hecmw_mat_id.@f90objfilepostfix@ \
-	hecmw_estimate_condition.@f90objfilepostfix@
-
+	hecmw_solver_scaling_66.@f90objfilepostfix@ \
+	hecmw_precond_BILU_66.@f90objfilepostfix@ \
+	hecmw_precond_DIAG_66.@f90objfilepostfix@ \
+	hecmw_precond_SSOR_66.@f90objfilepostfix@ \
+	hecmw_precond_66.@f90objfilepostfix@ 
+  
 HEADERS =
 
 #-----------------------------------------------------------------------------#

@@ -32,7 +32,7 @@ contains
       r(i)=0.d0
     enddo
     ! r = b - K x
-    call hecmw_matresid_33(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+    call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
     if (fstrMAT%num_lagrange > 0) then
       ! r = r - Ulag lag
       do i=1,hecMAT%N

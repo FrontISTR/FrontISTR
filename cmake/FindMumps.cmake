@@ -18,7 +18,6 @@ if(MUMPS_LIBRARIES)
   RETURN()
 endif()
 
-set(LIB_SEARCH_PATH)
 if($ENV{MUMPS_ROOT})
 set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} $ENV{MUMPS_ROOT}/lib)
 endif()
@@ -44,6 +43,7 @@ find_library(MUMPS_PORD_LIB
   NAMES pord
   HINTS ${LIB_SEARCH_PATH} NO_DEFAULT_PATH
 )
+
 find_path(MUMPS_INCLUDE_PATH
   NAMES mumps_compat.h
   HINTS $ENV{MUMPS_ROOT}/include

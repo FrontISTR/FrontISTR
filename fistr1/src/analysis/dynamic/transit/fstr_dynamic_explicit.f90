@@ -156,9 +156,9 @@ contains
          fstrDYNAMIC%VEC1(j) = fstrDYNAMIC%DISP(j,1)
       end do
       if( hecMESH%n_dof .eq. 3 ) then
-        call hecmw_matvec_33 (hecMESH, hecMAT, fstrDYNAMIC%VEC1, fstrDYNAMIC%VEC3)
+        call hecmw_matvec (hecMESH, hecMAT, fstrDYNAMIC%VEC1, fstrDYNAMIC%VEC3)
       else if( hecMESH%n_dof .eq. 2 ) then
-        call hecmw_matvec_22 (hecMESH, hecMAT, fstrDYNAMIC%VEC1, fstrDYNAMIC%VEC3, nnod)
+        call hecmw_matvec (hecMESH, hecMAT, fstrDYNAMIC%VEC1, fstrDYNAMIC%VEC3)
       else if( hecMESH%n_dof .eq. 6 ) then
         call matvec(fstrDYNAMIC%VEC3, fstrDYNAMIC%VEC1, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
       end if

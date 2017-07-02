@@ -257,9 +257,9 @@ contains
 
 !       call matvec(fstrDYNAMIC%VEC3,fstrDYNAMIC%VEC2,hecMAT,ndof,D,AU,AL)
       if( hecMESH%n_dof .eq. 3 ) then
-        call hecmw_matvec_33 (hecMESH, MAT0, fstrDYNAMIC%VEC2, fstrDYNAMIC%VEC3)
+        call hecmw_matvec (hecMESH, MAT0, fstrDYNAMIC%VEC2, fstrDYNAMIC%VEC3)
       else if( hecMESH%n_dof .eq. 2 ) then
-        call hecmw_matvec_22 (hecMESH, MAT0, fstrDYNAMIC%VEC2, fstrDYNAMIC%VEC3, nnod)
+        call hecmw_matvec (hecMESH, MAT0, fstrDYNAMIC%VEC2, fstrDYNAMIC%VEC3)
       else if( hecMESH%n_dof .eq. 6 ) then
 !!      call hecmw_matvec_11 (hecMESH, MAT0, fstrDYNAMIC%VEC2, fstrDYNAMIC%VEC3, n_nod_dof)
         call matvec(fstrDYNAMIC%VEC3, fstrDYNAMIC%VEC2, hecMAT, ndof, MAT0%D, MAT0%AU, MAT0%AL)

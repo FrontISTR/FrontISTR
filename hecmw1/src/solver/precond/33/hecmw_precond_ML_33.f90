@@ -1,0 +1,70 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
+!C
+!C***
+!C*** module hecmw_precond_ML_33
+!C***
+!C
+module hecmw_precond_ML_33
+  use  hecmw_util
+
+  private
+
+  public:: hecmw_precond_ML_33_setup
+  public:: hecmw_precond_ML_33_apply
+  public:: hecmw_precond_ML_33_clear
+
+  integer(kind=kint), save :: id
+
+  logical, save :: INITIALIZED = .false.
+
+contains
+
+  subroutine hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
+    use hecmw_matrix_misc
+    use hecmw_mat_id
+    implicit none
+    type(hecmwST_matrix), intent(inout) :: hecMAT
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: sym
+    integer(kind=kint) :: ierr
+    integer(kind=kint), save :: n_recycle = 0
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then      ! need symbolic and numerical setup
+        call hecmw_precond_ML_33_clear()
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_ML_33_clear()
+      else                                  ! no need to setup or skip setup
+        call hecmw_mat_id_clear(id)
+        call hecmw_mat_id_set(hecMAT, hecMESH, id)
+        return
+      endif
+    endif
+    call hecmw_mat_id_set(hecMAT, hecMESH, id)
+    call hecmw_ML_wrapper_setup_33(id, sym, ierr)
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
+    n_recycle = 0
+  end subroutine hecmw_precond_ML_33_setup
+
+  subroutine hecmw_precond_ML_33_apply(WW)
+    implicit none
+    real(kind=kreal), intent(inout) :: WW(:)
+    integer(kind=kint) :: ierr
+    call hecmw_ML_wrapper_apply_33(id, WW, ierr)
+  end subroutine hecmw_precond_ML_33_apply
+
+  subroutine hecmw_precond_ML_33_clear()
+    use hecmw_mat_id
+    implicit none
+    integer(kind=kint) :: ierr
+    call hecmw_ML_wrapper_clear_33(id, ierr)
+    call hecmw_mat_id_clear(id)
+    INITIALIZED = .false.
+  end subroutine hecmw_precond_ML_33_clear
+
+end module     hecmw_precond_ML_33

@@ -189,9 +189,9 @@ contains
          endif
          if( fstrDYNAMIC%ray_k/=0.d0 ) then
            if( hecMESH%n_dof == 3 ) then
-             call hecmw_matvec_33 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
            else if( hecMESH%n_dof == 2 ) then
-             call hecmw_matvec_22 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3, nnod)
+             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
            else if( hecMESH%n_dof == 6 ) then
              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
            end if
@@ -614,9 +614,9 @@ contains
            endif
            if( fstrDYNAMIC%ray_k/=0.d0 ) then
              if( hecMESH%n_dof == 3 ) then
-               call hecmw_matvec_33 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+               call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
              else if( hecMESH%n_dof == 2 ) then
-               call hecmw_matvec_22 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3, nnod)
+               call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
              else if( hecMESH%n_dof == 6 ) then
                call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
              end if

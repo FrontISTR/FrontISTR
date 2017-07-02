@@ -15,5 +15,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_ass.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_dump.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_local_matrix.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_id.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_estimate_condition.F90
 )
 
