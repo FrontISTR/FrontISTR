@@ -114,7 +114,11 @@ def read_log(filename)
             ary = line.chomp.split
             key = ary[0].gsub("//","")
             max = to_float(ary[1])
-            min = to_float(ary[2])
+            if (ary[3]) then 
+              min = to_float(ary[3])
+            else
+              min = to_float(ary[2])
+            end
             g[key] = [max,min]
           else
             break
@@ -127,7 +131,11 @@ def read_log(filename)
             ary = line.chomp.split
             key = ary[0].gsub("//","")
             max = to_float(ary[1])
-            min = to_float(ary[2])
+            if (ary[3]) then 
+              min = to_float(ary[3])
+            else
+              min = to_float(ary[2])
+            end
             e[key] = [max,min]
           else
             break
