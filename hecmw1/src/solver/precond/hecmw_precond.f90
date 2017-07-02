@@ -92,8 +92,6 @@ contains
     real(kind=kreal), intent(inout) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
-
-    call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
     SELECT CASE(hecMAT%NDOF)
       CASE(3)
         call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, COMMtime)
