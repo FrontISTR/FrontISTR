@@ -74,6 +74,8 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
+	hecmw_precond_DIAG_22.@f90objfilepostfix@ \
+	hecmw_precond_SSOR_22.@f90objfilepostfix@ \
 	hecmw_precond_22.@f90objfilepostfix@
 
 HEADERS =

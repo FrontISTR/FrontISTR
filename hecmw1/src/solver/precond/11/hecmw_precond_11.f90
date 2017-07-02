@@ -7,8 +7,8 @@ module hecmw_precond_11
   use hecmw_util
   use hecmw_matrix_misc
   !use hecmw_precond_BILU_11
-  !use hecmw_precond_DIAG_11
-  !use hecmw_precond_SSOR_11
+  use hecmw_precond_DIAG_11
+  use hecmw_precond_SSOR_11
   use hecmw_precond_nn
   use hecmw_solver_las_11
   implicit none
@@ -28,10 +28,10 @@ contains
     integer(kind=kint), intent(in) :: sym
 
     SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      !CASE(1,2)
-      !  call hecmw_precond_SSOR_11_setup(hecMAT)
-      !CASE(3)
-      !  call hecmw_precond_DIAG_11_setup(hecMAT)
+      CASE(1,2)
+        call hecmw_precond_SSOR_11_setup(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_11_setup(hecMAT)
       !CASE(10,11,12)
       !  call hecmw_precond_BILU_11_setup(hecMAT)
       CASE DEFAULT
@@ -45,10 +45,10 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
     SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      !CASE(1,2)
-      !  call hecmw_precond_SSOR_11_clear(hecMAT)
-      !CASE(3)
-      !  call hecmw_precond_DIAG_11_clear()
+      CASE(1,2)
+        call hecmw_precond_SSOR_11_clear(hecMAT)
+      CASE(3)
+        call hecmw_precond_DIAG_11_clear()
       !CASE(10,11,12)
       !  call hecmw_precond_BILU_11_clear()
       CASE DEFAULT
@@ -72,10 +72,10 @@ contains
     do iterPRE= 1, iterPREmax
       START_TIME = hecmw_Wtime()
       SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-        !CASE(1,2)
-        !  call hecmw_precond_SSOR_11_apply(ZP)
-        !CASE(3)
-        !  call hecmw_precond_DIAG_11_apply(ZP)
+        CASE(1,2)
+          call hecmw_precond_SSOR_11_apply(ZP)
+        CASE(3)
+          call hecmw_precond_DIAG_11_apply(ZP)
         !CASE(10,11,12)
         !  call hecmw_precond_BILU_11_apply(ZP)
         CASE DEFAULT

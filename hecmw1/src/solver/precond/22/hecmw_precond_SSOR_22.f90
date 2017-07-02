@@ -5,10 +5,10 @@
 
 !C
 !C***
-!C*** module hecmw_precond_SSOR_nn
+!C*** module hecmw_precond_SSOR_22
 !C***
 !C
-module hecmw_precond_SSOR_nn
+module hecmw_precond_SSOR_22
   use hecmw_util
   use hecmw_matrix_misc
   use m_hecmw_matrix_ordering_CM
@@ -18,9 +18,9 @@ module hecmw_precond_SSOR_nn
 
   private
 
-  public:: hecmw_precond_SSOR_nn_setup
-  public:: hecmw_precond_SSOR_nn_apply
-  public:: hecmw_precond_SSOR_nn_clear
+  public:: hecmw_precond_SSOR_22_setup
+  public:: hecmw_precond_SSOR_22_apply
+  public:: hecmw_precond_SSOR_22_clear
 
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: D(:) => null()
@@ -51,15 +51,15 @@ module hecmw_precond_SSOR_nn
 
 contains
 
-  subroutine hecmw_precond_SSOR_nn_setup(hecMAT)
+  subroutine hecmw_precond_SSOR_22_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
-    real   (kind=kreal) :: ALUtmp(hecMAT%NDOF,hecMAT%NDOF), PW(hecMAT%NDOF)
-    integer(kind=kint ) :: ii, i, j, k, NDOF, NDOF2
+    real   (kind=kreal) :: ALUtmp(2,2), PW(2)
+    integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
     !real   (kind=kreal) :: t0
@@ -69,9 +69,9 @@ contains
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
-        call hecmw_precond_SSOR_nn_clear(hecMAT)
+        call hecmw_precond_SSOR_22_clear(hecMAT)
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
-        call hecmw_precond_SSOR_nn_clear(hecMAT) ! TEMPORARY
+        call hecmw_precond_SSOR_22_clear(hecMAT) ! TEMPORARY
       else
         return
       endif
@@ -80,9 +80,7 @@ contains
     !$ nthreads = omp_get_max_threads()
 
     N = hecMAT%N
-    NDOF=hecMAT%NDOF
-    NDOF2=NDOF*NDOF
-
+    ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
     NContact = hecMAT%cmat%n_val
@@ -124,8 +122,8 @@ contains
 
     !call check_ordering
 
-    allocate(D(NDOF2*N), AL(NDOF2*NPL), AU(NDOF2*NPU))
-    call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
+    allocate(D(4*N), AL(4*NPL), AU(4*NPU))
+    call hecmw_matrix_reorder_values(N, 2, perm, iperm, &
          hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
          hecMAT%AL, hecMAT%AU, hecMAT%D, &
          indexL, indexU, itemL, itemU, AL, AU, D)
@@ -142,8 +140,8 @@ contains
            hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
            indexCL, indexCU, itemCL, itemCU)
 
-      allocate(CD(NDOF2*N), CAL(NDOF2*NPCL), CAU(NDOF2*NPCU))
-      call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
+      allocate(CD(4*N), CAL(4*NPCL), CAU(4*NPCU))
+      call hecmw_matrix_reorder_values(N, 2, perm, iperm, &
            hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
            hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
            indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
@@ -153,10 +151,10 @@ contains
       call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
     end if
 
-    allocate(ALU(NDOF2*N))
+    allocate(ALU(4*N))
     ALU  = 0.d0
 
-    do ii= 1, NDOF2*N
+    do ii= 1, 4*N
       ALU(ii) = D(ii)
     enddo
 
@@ -164,40 +162,36 @@ contains
       do k= 1, hecMAT%cmat%n_val
         if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
         ii = iperm( hecMAT%cmat%pair(k)%i )
-        do i = 1, NDOF
-          do j = 1, NDOF
-            ALU(NDOF2*(ii-1)+NDOF*(i-1)+j) = ALU(NDOF2*(ii-1)+NDOF*(i-1)+j) + hecMAT%cmat%pair(k)%val(i, j)
-          end do
-        end do 
+        ALU(4*ii-3) = ALU(4*ii-3) + hecMAT%cmat%pair(k)%val(1, 1)
+        ALU(4*ii-2) = ALU(4*ii-2) + hecMAT%cmat%pair(k)%val(1, 2)
+        ALU(4*ii-1) = ALU(4*ii-1) + hecMAT%cmat%pair(k)%val(2, 1)
+        ALU(4*ii-0) = ALU(4*ii-0) + hecMAT%cmat%pair(k)%val(2, 2)
       enddo
     endif
 
-!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
+!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
 !$omp do
     do ii= 1, N
-      do i = 1, NDOF
-        do j =  1, NDOF
-          ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
-          if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
-        end do
-      end do 
-      do k= 1, NDOF
+      ALUtmp(1,1)= ALU(4*ii-3) * SIGMA_DIAG
+      ALUtmp(1,2)= ALU(4*ii-2)
+      ALUtmp(2,1)= ALU(4*ii-1)
+      ALUtmp(2,2)= ALU(4*ii-0) * SIGMA_DIAG
+      do k= 1, 2
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
-        do i= k+1, NDOF
+        do i= k+1, 2
           ALUtmp(i,k)= ALUtmp(i,k) * ALUtmp(k,k)
-          do j= k+1, NDOF
+          do j= k+1, 2
             PW(j)= ALUtmp(i,j) - ALUtmp(i,k)*ALUtmp(k,j)
           enddo
-          do j= k+1, NDOF
+          do j= k+1, 2
             ALUtmp(i,j)= PW(j)
           enddo
         enddo
       enddo
-      do i = 1, NDOF
-        do j =  1, NDOF
-          ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)= ALUtmp(i,j)
-        end do
-      end do 
+      ALU(4*ii-3)= ALUtmp(1,1)
+      ALU(4*ii-2)= ALUtmp(1,2)
+      ALU(4*ii-1)= ALUtmp(2,1)
+      ALU(4*ii-0)= ALUtmp(2,2)
     enddo
 !$omp end do
 !$omp end parallel
@@ -210,15 +204,15 @@ contains
 
     !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
-  end subroutine hecmw_precond_SSOR_nn_setup
+  end subroutine hecmw_precond_SSOR_22_setup
 
-  subroutine hecmw_precond_SSOR_nn_apply(ZP, NDOF)
+  subroutine hecmw_precond_SSOR_22_apply(ZP)
     use hecmw_tuning_fx
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
-    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k, NDOF, NDOF2, idof,jdof
-    real(kind=kreal) :: SW(NDOF), X(NDOF)
-
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
+    real(kind=kreal) :: SW(2), X(2)
+    
     ! added for turning >>>
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
     integer(kind=kint), save :: numOfThread = 1, numOfBlock
@@ -229,7 +223,6 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     integer(kind=kint) :: my_rank
 
-    NDOF2=NDOF*NDOF
     if (isFirst .eqv. .true.) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
@@ -269,7 +262,7 @@ contains
       enddo
       numOfBlock = blockIndex
 
-      call hecmw_tuning_fx_calc_sector_cache( N, NDOF, &
+      call hecmw_tuning_fx_calc_sector_cache( N, 2, &
            sectorCacheSize0, sectorCacheSize1 )
 
       isFirst = .false.
@@ -284,8 +277,8 @@ contains
 !$omp parallel default(none) &
 !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
 !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
-!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
-!$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
+!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
+!$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
     !C-- FORWARD
     do ic=1,NColor
@@ -294,21 +287,16 @@ contains
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
              blockIndexToColorIndex(blockIndex)
           iold = perm(i)
-          do idof = 1, NDOF
-            SW(idof) = ZP(NDOF*(iold-1)+idof)
-          end do 
+          SW(1)= ZP(2*iold-1)
+          SW(2)= ZP(2*iold-0)
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
             k= itemL(j)
-            do idof = 1, NDOF
-              X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
-            do idof = 1, NDOF
-              do jdof = 1, NDOF
-                SW(idof) = SW(idof) - AL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+            X(1)= ZP(2*k-1)
+            X(2)= ZP(2*k-0)
+            SW(1)= SW(1) - AL(4*j-3)*X(1) - AL(4*j-2)*X(2)
+            SW(2)= SW(2) - AL(4*j-1)*X(1) - AL(4*j-0)*X(2)
           enddo ! j
 
           if (NContact.ne.0) then
@@ -316,31 +304,19 @@ contains
             ieL= indexCL(i)
             do j= isL, ieL
              k= itemCL(j)
-              do idof = 1, NDOF
-                X(idof) = ZP(NDOF*(k-1)+idof)
-              end do 
-              do idof = 1, NDOF
-                do jdof = 1, NDOF
-                  SW(idof) = SW(idof) - CAL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-                end do 
-              end do 
+              X(1)= ZP(2*k-1)
+              X(2)= ZP(2*k-0)
+              SW(1)= SW(1) - CAL(4*j-3)*X(1) - CAL(4*j-2)*X(2)
+              SW(2)= SW(2) - CAL(4*j-1)*X(1) - CAL(4*j-0)*X(2)
             enddo ! j
           endif
 
           X = SW
-          do idof = 2,NDOF
-            do jdof = 1, idof-1
-               X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
-            end do 
-          end do
-          do idof = NDOF, 1, -1
-            do jdof = NDOF, idof+1, -1
-              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)          
-            end do 
-            X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
-          end do
-          ZP(NDOF*(iold-1)+1:NDOF*(iold-1)+NDOF) = X(1:NDOF)
-
+          X(2)= X(2) - ALU(4*i-1)*X(1)
+          X(2)= ALU(4*i  )*  X(2)
+          X(1)= ALU(4*i-3)*( X(1) - ALU(4*i-2)*X(2))
+          ZP(2*iold-1)= X(1)
+          ZP(2*iold-0)= X(2)
         enddo ! i
       enddo ! blockIndex
 !$omp end do
@@ -361,14 +337,10 @@ contains
           ieU= indexU(i)
           do j= ieU, isU, -1
             k= itemU(j)
-            do idof = 1, NDOF
-              X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
-            do idof = 1, NDOF
-              do jdof = 1, NDOF
-                SW(idof) = SW(idof) + AU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+            X(1)= ZP(2*k-1)
+            X(2)= ZP(2*k-0)
+            SW(1)= SW(1) + AU(4*j-3)*X(1) + AU(4*j-2)*X(2)
+            SW(2)= SW(2) + AU(4*j-1)*X(1) + AU(4*j-0)*X(2)
           enddo ! j
 
           if (NContact.gt.0) then
@@ -376,33 +348,23 @@ contains
             ieU= indexCU(i)
             do j= ieU, isU, -1
               k= itemCU(j)
-            do idof = 1, NDOF
-              X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
-            do idof = 1, NDOF
-              do jdof = 1, NDOF
-                SW(idof) = SW(idof) + CAU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+            X(1)= ZP(2*k-1)
+            X(2)= ZP(2*k-0)
+            SW(1)= SW(1) + CAU(4*j-3)*X(1) + CAU(4*j-2)*X(2)
+            SW(2)= SW(2) + CAU(4*j-1)*X(1) + CAU(4*j-0)*X(2)
             enddo ! j
           endif
 
           X = SW
-          do idof = 2, NDOF
-            do k = 1,idof-1
-               X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
-            end do 
-          end do
-          do idof = NDOF, 1, -1
-            do k = NDOF, idof+1, -1
-              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)          
-            end do 
-            X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
-          end do
+          X(2)= X(2) - ALU(4*i-1)*X(1)
+
+
+          X(2)= ALU(4*i  )*  X(2)
+          X(1)= ALU(4*i-3)*( X(1) - ALU(4*i-2)*X(2) )
+          
           iold = perm(i)
-          do idof = 1, NDOF
-            ZP(NDOF*(iold-1)+idof) = ZP(NDOF*(iold-1)+idof) - X(idof)
-          end do 
+          ZP(2*iold-1)=  ZP(2*iold-1) - X(1)
+          ZP(2*iold  )=  ZP(2*iold  ) - X(2)
         enddo ! i
       enddo ! blockIndex
 !$omp end do
@@ -414,9 +376,9 @@ contains
 
     !call stop_collection("loopInPrecond33")
 
-  end subroutine hecmw_precond_SSOR_nn_apply
+  end subroutine hecmw_precond_SSOR_22_apply
 
-  subroutine hecmw_precond_SSOR_nn_clear(hecMAT)
+  subroutine hecmw_precond_SSOR_22_clear(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: nthreads = 1
@@ -464,7 +426,7 @@ contains
     endif
     NContact = 0
     INITIALIZED = .false.
-  end subroutine hecmw_precond_SSOR_nn_clear
+  end subroutine hecmw_precond_SSOR_22_clear
 
   subroutine write_debug_info
     implicit none
@@ -530,4 +492,4 @@ contains
     !--------------------< debug: shizawa
   end subroutine check_ordering
 
-end module     hecmw_precond_SSOR_nn
+end module     hecmw_precond_SSOR_22
