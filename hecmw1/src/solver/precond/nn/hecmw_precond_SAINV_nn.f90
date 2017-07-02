@@ -81,6 +81,7 @@ contains
     FILTER= hecMAT%Rarray(5)
 
     Write(*,"(a,F15.8)")"### SAINV FILTER   :",FILTER
+    Write(*,"(a)")"This precoditioner is incomplete implementation. Please use other preconditioner"
 
     call hecmw_sainv_nn(hecMAT)
 
