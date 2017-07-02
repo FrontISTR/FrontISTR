@@ -23,4 +23,3 @@
  cavityflow.res
 !RESULT, NAME=vis_out, IO=OUT
  cavityflow_vis
-!SUBDIR,ON
