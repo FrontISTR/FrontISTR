@@ -57,7 +57,7 @@ module m_static_LIB_2d
       ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
       DO LX=1,NumOfQuadPoints( ETYPE )
-        CALL MatlMatrix( gausses(LX), ISET, D,1.d0,cdsys )
+        CALL MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
         if( .not. present(u) ) flag=INFINITE    ! enforce to infinite deformation analysis
 
         if( flag==1 .and. ISET == 2 ) then
@@ -407,10 +407,12 @@ module m_static_LIB_2d
    end subroutine TLOAD_C2
 !
 !
+!> Update strain and stress inside element
 !---------------------------------------------------------------------*
   SUBROUTINE UPDATE_C2( etype,nn,ecoord,gausses,PARAM1,iset,         &
-                        u, ddu, qf  )
+                        u, ddu, qf, TT, T0, TN )
 !---------------------------------------------------------------------*
+    use m_fstr
     use mMechGauss
     use m_MatMatrix
 ! I/F VARIAVLES
@@ -421,6 +423,9 @@ module m_static_LIB_2d
     real(kind=kreal),   INTENT(IN)     :: u(2,nn)
     real(kind=kreal),   INTENT(IN)     :: ddu(2,nn)
     real(kind=kreal),   INTENT(OUT)    :: qf(:)
+    real(kind=kreal), INTENT(IN), optional :: TT(nn)   !< current temperature
+    real(kind=kreal), INTENT(IN), optional :: T0(nn)   !< reference temperature
+    real(kind=kreal), INTENT(IN), optional :: TN(nn)   !< reference temperature
 
 
     integer(kind=kint), parameter :: ndof=2
@@ -429,10 +434,12 @@ module m_static_LIB_2d
     real(kind=kreal)   :: thick,pai,rr
     real(kind=kreal)   :: det, WG
     real(kind=kreal)   :: localCoord(2)
-    real(kind=kreal)   :: gderiv(nn,2), dstrain(4)
+    real(kind=kreal)   :: gderiv(nn,2), dstrain(4), ttc, tt0, ttn
     real(kind=kreal)   :: gdispderiv(2,2), cdsys(3,3)
     integer(kind=kint) :: j, LX
     real(kind=kreal)   :: totaldisp(2*nn)
+    real(kind=kreal)   :: EPSTH(4), alp, alp0, ina(1), outa(1)
+    logical            :: ierr
 !
     qf(:)              = 0.d0
     do j=1,nn
@@ -449,10 +456,27 @@ module m_static_LIB_2d
     ENDIF
 !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1, NumOfQuadPoints(etype)
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, cdsys  )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys  )
 
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
+!
+      EPSTH = 0.d0
+      if( present(TT) .AND. present(T0) ) then
+        CALL getShapeFunc( ETYPE, localcoord, H(:) )
+        ttc = DOT_PRODUCT(TT(:), H(:))
+        tt0 = DOT_PRODUCT(T0(:), H(:))
+        ttn = DOT_PRODUCT(TN(:), H(:))
+        ina(1) = ttc
+        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        alp = outa(1)
+        ina(1) = tt0
+        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        alp0 = outa(1)
+        EPSTH(1:2)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+      end if
 !
       WG=getWeight( etype, LX )*DET
       IF(ISET==2) THEN
@@ -474,7 +498,7 @@ module m_static_LIB_2d
       ENDDO
 
       gausses(LX)%strain(1:4) = matmul( B(:,:), totaldisp )
-	  gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4) )
+	    gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4)-EPSTH(1:4) )
 
 !
 !    ----- calculate the Internal Force
@@ -485,134 +509,6 @@ module m_static_LIB_2d
 !
 end subroutine UPDATE_C2
 !
-
-!
-!
-!----------------------------------------------------------------------*
-   SUBROUTINE UpdateST_C2(ETYPE,NN,XX,YY,TT,T0,PARAM1,ISET,EDISP,gauss)
-!----------------------------------------------------------------------*
-!
-! Update strain and stress of PLANE ELEMENT
-!
-      use mMechGauss
-      use m_MatMatrix
-! I/F VARIABLES
-      INTEGER(kind=kint), INTENT(IN) :: ETYPE, NN
-      REAL(kind=kreal), INTENT(IN)   :: XX(NN),YY(NN),TT(NN),T0(NN),EDISP(NN*2)
-      TYPE(tGaussStatus), INTENT(INOUT)  :: gauss(:)
-      REAL(kind=kreal) ALP,PARAM1
-      INTEGER(kind=kint) ISET
-! LOCAL VARIABLES
-      INTEGER(kind=kint) NDOF
-      PARAMETER(NDOF=2)
-      REAL(kind=kreal) D(4,4),B(4,NDOF*NN)
-      REAL(kind=kreal) H(NN)
-      REAL(kind=kreal) EPS(4),SGM(4),EPSTH(4),deriv(NN,2)
-      REAL(kind=kreal) XJ(2,2),DNDE(2,NN),DET,RR,DUM
-      REAL(kind=kreal) XJI(2,2),localcoord(2)
-      REAL(kind=kreal) PAI,THICK,EE,PP, cdsys(3,3)
-      INTEGER(kind=kint) J,K
-      REAL(kind=kreal) TEMPC,TEMP0,THERMAL_EPS
-      REAL(kind=kreal) ARRAY_TEMP(8)
-      INTEGER(kind=kint) IC
-!*************************
-!  CONSTANT
-!*************************
-      PAI=4.d0*ATAN(1.d0)
-      ARRAY_TEMP=0.d0
-! THICKNESS
-      THICK=PARAM1
-!  FOR AX-SYM. ANALYSIS
-      IF(ISET==2) THICK=1.d0
-!* LOOP OVER INTEGRATION POINT
-      DO IC=1,NumOfQuadPoints( ETYPE )
-          EE = gauss(IC)%pMaterial%variables(M_YOUNGS)
-          PP = gauss(IC)%pMaterial%variables(M_POISSON)
-          ALP = gauss(IC)%pMaterial%variables(M_EXAPNSION)
-          CALL MatlMatrix( gauss(IC), ISET, D, 1.d0, cdsys  )
-          CALL getQuadPoint( ETYPE, IC, localcoord )
-          CALL getShapeDeriv( ETYPE, localcoord, deriv(:,:) )
-          CALL getShapeFunc( ETYPE, localcoord, H(1:NN) )
-
-          XJ(1,1:2)=MATMUL( XX(1:NN), deriv(1:NN,1:2) )
-          XJ(2,1:2)=MATMUL( YY(1:NN), deriv(1:NN,1:2) )
-          DET=XJ(1,1)*XJ(2,2)-XJ(2,1)*XJ(1,2)
-          DUM=1.d0/DET
-          XJI(1,1)= XJ(2,2)*DUM
-          XJI(1,2)=-XJ(2,1)*DUM
-          XJI(2,1)=-XJ(1,2)*DUM
-          XJI(2,2)= XJ(1,1)*DUM
-
-          DNDE=MATMUL( XJI, TRANSPOSE(deriv) )
-
-          TEMPC=DOT_PRODUCT( H(1:NN),TT(1:NN) )
-          TEMP0=DOT_PRODUCT( H(1:NN),T0(1:NN) )
-          IF(ISET==2) THEN
-            RR=DOT_PRODUCT( H(1:NN),XX(1:NN) )
-          ELSE
-            RR=THICK
-          END IF
-          DO J=1,NN
-            B(1,2*J-1)=DNDE(1,J)
-            B(2,2*J-1)=0.d0
-            B(3,2*J-1)=DNDE(2,J)
-            B(1,2*J  )=0.d0
-            B(2,2*J  )=DNDE(2,J)
-            B(3,2*J  )=DNDE(1,J)
-            B(4,2*J-1)=0.d0
-            B(4,2*J  )=0.d0
-            IF( ISET==2 ) THEN
-              B(4,2*J-1)=H(J)/RR
-            ENDIF
-          ENDDO
-!**
-!** THERMAL EPS
-!**
-          THERMAL_EPS=ALP*(TEMPC-TEMP0)
-          IF( ISET .EQ. 2 ) THEN
-            EPSTH(1)=THERMAL_EPS
-            EPSTH(2)=THERMAL_EPS
-            EPSTH(3)=0.d0
-            EPSTH(4)=THERMAL_EPS
-          ELSE IF( ISET.EQ.0 ) THEN
-            EPSTH(1)=THERMAL_EPS*(1.0+PP)
-            EPSTH(2)=THERMAL_EPS*(1.0+PP)
-            EPSTH(3)=0.d0
-            EPSTH(4)=0.d0
-          ELSE IF( ISET.EQ.1 ) THEN
-            EPSTH(1)=THERMAL_EPS
-            EPSTH(2)=THERMAL_EPS
-            EPSTH(3)=0.d0
-            EPSTH(4)=0.d0
-          ENDIF
-!**
-!** SET EPS  {e}=[B]{u}
-!**
-          EPS(1:4)=MATMUL( B(1:4,1:NN*NDOF), EDISP(1:NN*NDOF) )
-!**
-!** SET SGM  {S}=[D]{e}
-!**
-          DO J=1,4
-            SGM(J)=0.d0
-            DO K=1,4
-              SGM(J)=SGM(J)+D(J,K)*(EPS(K)-EPSTH(K))
-            ENDDO
-          ENDDO
-!**
-!** FOR PLANE STRAIN
-!**
-          IF( ISET==0 ) THEN
-            SGM(4)=PP*(SGM(1)+SGM(2))-EE*THERMAL_EPS
-          ENDIF
-!**
-!** Elemental average
-!**
-          gauss(IC)%strain(1:4)=EPS(1:4)
-          gauss(IC)%stress(1:4)=SGM(1:4)
-       ENDDO
-
-   end subroutine UpdateST_C2
-
 !----------------------------------------------------------------------*
    SUBROUTINE NodalStress_C2(ETYPE,NN,gausses,ndstrain,ndstress)
 !----------------------------------------------------------------------*

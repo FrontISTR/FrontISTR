@@ -9,7 +9,7 @@ module m_static_output
 
 !> Output result
 !----------------------------------------------------------------------*
-  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag )
+  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag, outflag )
 !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -20,6 +20,7 @@ module m_static_output
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (fstr_solid), intent(inout)      :: fstrSOLID
     integer, intent(in)                   :: flag
+    logical, intent(in)                   :: outflag     !< if true, result will be output regardless of istep
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
@@ -44,31 +45,28 @@ module m_static_output
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
-    if( fstrSOLID%TEMP_irres>0 ) then
-          maxstep = fstrSOLID%TEMP_irres
-    else
-          maxstep = 0
-          do i = 1, cstep
-            maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
-          end do
-    endif
+    maxstep = 0
+    do i = 1, cstep
+      maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
+    end do
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
+          if( outflag ) interval = 1
 
           call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
           call fstr2hecmw_mesh_conv( hecMESH )
@@ -79,13 +77,13 @@ module m_static_output
           call hecmw_result_free( fstrRESULT )
     endif
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           fnum = fstrSOLID%output_ctrl(1)%filenum
           call fstr_static_post( fnum, hecMESH, fstrSOLID, istep )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
       iS = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(iS-1)+1, hecMESH%node_group%grp_index(iS)
