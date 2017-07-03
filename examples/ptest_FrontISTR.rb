@@ -56,7 +56,7 @@ def exec_test(dirname,mesh,cnt,name)
     FileUtils.rm('0.log') if File.exists?('0.log')
     puts $part
     system($part)
-    execcmd = "mpirun -np " + $np + " " + $fistr
+    execcmd = "mpirun -np " + $np + " -x OMP_NUM_THREADS=1 " + $fistr
     puts execcmd
     system(execcmd)
     puts "return value = #{$?.exitstatus}"
