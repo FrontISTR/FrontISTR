@@ -12,11 +12,9 @@ module hecmw_precond
   use hecmw_precond_66
   use hecmw_precond_nn
   use hecmw_matrix_misc
-
   implicit none
 
   private
-
   public :: hecmw_precond_setup
   public :: hecmw_precond_clear
   public :: hecmw_precond_apply
@@ -32,10 +30,8 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     integer(kind=kint) :: sym
-    integer(kind=kint ) :: PRECOND, iterPREmax
 
-    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
-    if (iterPREmax.le.0) return
+    if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
     
     SELECT CASE(hecMAT%NDOF)
       CASE(3)
@@ -56,10 +52,8 @@ contains
   subroutine hecmw_precond_clear(hecMAT)
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint ) :: PRECOND, iterPREmax
 
-    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
-    if (iterPREmax.le.0) return
+    if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
     
     SELECT CASE(hecMAT%NDOF)
       CASE(3)
@@ -86,17 +80,14 @@ contains
     real(kind=kreal), intent(inout) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: COMMtime
     integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
-    integer(kind=kint ) :: PRECOND, iterPREmax
     integer(kind=kint ) :: i, iterPRE
     real(kind=kreal) :: START_TIME, END_TIME
     N = hecMAT%N
     NP = hecMAT%NP
     NNDOF = N * hecMAT%NDOF
     NPNDOF = NP * hecMAT%NDOF
-    PRECOND = hecmw_mat_get_precond( hecMAT )
-    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     
-    if (iterPREmax.le.0) then
+    if (hecmw_mat_get_iterpremax( hecMAT ).le.0) then
       do i= 1, NNDOF
         Z(i)= R(i)
       enddo
