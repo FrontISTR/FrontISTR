@@ -224,15 +224,15 @@ module m_static_output
       enddo
 
 
-                      write(ILOG,*)    '##### Local Summary :Max/IdMax/Min/IdMin####'
+                      write(ILOG,*)    '##### Local Summary @Node    :Max/IdMax/Min/IdMin####'
       do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',Umax(i),IUmax(i),Umin(i),IUmin(i);     end do 
       do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',Emax(i),IEmax(i),Emin(i),IEmin(i);     end do 
       do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',Smax(i),ISmax(i),Smin(i),ISmin(i);     end do 
-                      write(ILOG,1009) '//SMS ',Mmax(1),IMmax(1),Mmin(1),IMmin(1)
-                      write(ILOG,*)    '##### @Element :Max/IdMax/Min/IdMin####'
+                      write(ILOG,1009) '//SMS '           ,Mmax(1),IMmax(1),Mmin(1),IMmin(1)
+                      write(ILOG,*)    '##### Local Summary @Element :Max/IdMax/Min/IdMin####'
       do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',EEmax(i),IEEmax(i),EEmin(i),IEEmin(i); end do 
       do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',ESmax(i),IESmax(i),ESmin(i),IESmin(i); end do 
-                      write(ILOG,1009) '//SMS ',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
+                      write(ILOG,1009) '//SMS '           ,EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
 
       !C*** Show Summary
       GUmax  = Umax; GUmin  = Umin; 
@@ -255,11 +255,11 @@ module m_static_output
       call hecmw_allREDUCE_R(hecMESH,GEMmax,1,hecmw_max)
       call hecmw_allREDUCE_R(hecMESH,GEMmin,1,hecmw_min)
 
-      do i=1,3
+      do i=1,ndof
         if(GUmax (i) > Umax (i)) IUmax (i) = 0
         if(GUmin (i) < Umin (i)) IUmin (i) = 0
       enddo
-      do i=1,6
+      do i=1,mdof
         if(GEmax (i) > Emax (i)) IEmax (i) = 0
         if(GSmax (i) > Smax (i)) ISmax (i) = 0
         if(GEEmax(i) > EEmax(i)) IEEmax(i) = 0
@@ -292,15 +292,15 @@ module m_static_output
       call hecmw_allREDUCE_I(hecMESH,IEMmin,1,hecmw_max)
 
       if( hecMESH%my_rank==0 ) then          
-                        write(ILOG,*)    '##### Global Summary :Max/IdMax/Min/IdMin####'
+                        write(ILOG,*)    '##### Global Summary @Node    :Max/IdMax/Min/IdMin####'
         do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',GUmax(i),IUmax(i),GUmin(i),IUmin(i);     end do 
         do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEmax(i),IEmax(i),GEmin(i),IEmin(i);     end do 
         do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GSmax(i),ISmax(i),GSmin(i),ISmin(i);     end do 
-                        write(ILOG,1009) '//SMS ',GMmax(1),IMmax(1),GMmin(1),IMmin(1)
-                        write(ILOG,*)    '##### @Element :Max/IdMax/Min/IdMin####'
+                        write(ILOG,1009) '//SMS '           ,GMmax(1),IMmax(1),GMmin(1),IMmin(1)
+                        write(ILOG,*)    '##### Global Summary @Element :Max/IdMax/Min/IdMin####'
         do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEEmax(i),IEEmax(i),GEEmin(i),IEEmin(i); end do 
         do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GESmax(i),IESmax(i),GESmin(i),IESmin(i); end do 
-                        write(ILOG,1009) '//SMS ',GEMmax(1),IEMmax(1),GEMmin(1),IEMmin(1)
+                        write(ILOG,1009) '//SMS '           ,GEMmax(1),IEMmax(1),GEMmin(1),IEMmin(1)
       endif
 
  1009 format(a7,1pe12.4,i10,1pe12.4,i10)
