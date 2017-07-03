@@ -242,7 +242,7 @@ module m_static_output
 !C @element
       do i = 1, hecMESH%n_elem
         ID_area = hecMESH%elem_ID(i*2)
-        !if( ID_area==hecMESH%my_rank ) then
+        if( ID_area==hecMESH%my_rank ) then
           j = hecMESH%global_elem_ID(i)
           if( hecMESH%elem_ID(i*2-1)==1 ) then
             do k = 1, mdof
@@ -275,7 +275,7 @@ module m_static_output
               IEMmin(1)= j
             endif
           endif
-        !endif
+        endif
       enddo
 !C*** Show 2DOF
       if( ndof==2 ) then
