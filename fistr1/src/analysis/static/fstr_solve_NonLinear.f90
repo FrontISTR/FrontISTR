@@ -43,37 +43,33 @@ module m_fstr_NonLinearMethod
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
-    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
     integer(kind=kint) :: restrt_step_num
-    integer(kind=kint) :: n_node_global
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal)   :: tt0, tt, res, resb, rres, tincr
+    real(kind=kreal), pointer :: coord(:), P(:)
+    logical :: isLinear = .false.
 
-    ! sum of n_node among all subdomains (to be used to calc res)
-    n_node_global = hecMESH%nn_internal
-    call hecmw_allreduce_I1(hecMESH, n_node_global, HECMW_SUM)
+    if(.not. fstrPR%nlgeom)then
+      isLinear = .true.
+    endif
 
     hecMAT%NDOF = hecMESH%n_dof
-    ndof = hecMAT%NDOF
+    NDOF = hecMAT%NDOF
 
-    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
-
+    allocate(P(hecMESH%n_node*NDOF))
     allocate(coord(hecMESH%n_node*ndof))
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
-    hecMAT%X = 0.0d0
-
+    P = 0.0d0
     stepcnt = 0
+    fstrSOLID%dunode(:) = 0.0d0
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
+    hecMAT%X = 0.0d0
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-    fstrSOLID%dunode(:) = 0.0d0
-
     ! ----- Inner Iteration, lagrange multiplier constant
-    res1   = 0.0d0
-    relres = 1.0d0
-
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
 
@@ -85,58 +81,47 @@ module m_fstr_NonLinearMethod
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-      if( iter == 1 ) then
-        hecMAT%Iarray(97) = 2   !Force numerical factorization
-      else
-        hecMAT%Iarray(97) = 1   !Need numerical factorization
-      endif
+
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-      CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+      call solve_LINEQ(hecMESH,hecMAT,imsg)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
-
-      if( hecMESH%n_dof == 3 ) then
-        call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
-      else if( hecMESH%n_dof == 2 ) then
-        call hecmw_update_2_R (hecMESH, hecMAT%X, hecMAT%NP)
-      endif
 
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
       do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i)+hecMAT%X(i)
+        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
       enddo
 
       ! ----- update the strain, stress, and internal force
       call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
       ! ----- Set residual
-      if( fstrSOLID%DLOAD_follow /= 0 )                                  &
-        call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+      if( fstrSOLID%DLOAD_follow /= 0 ) call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
-      res = fstr_get_residual(hecMAT%B, hecMESH)
 
-      ! ----- Gather global residual
-      res = dsqrt( res )/n_node_global
-      if( iter == 1 ) res0 = res
-      if( res0 == 0.0d0 ) then
-        res0 = 1.0d0
+      !call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, P, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+
+      if(iter == 1)then
+        if(res == 0.0d0)then
+          resb = 1.0d0
+        else
+          resb = res
+        endif
+        if( isLinear ) exit
       else
-        relres = dabs( res1-res )/res0
+        rres = dsqrt(res/resb)
+        if( hecMESH%my_rank == 0 ) then
+          write(*,"(a,i8,a,1pe11.4)")" iter:", iter-1, ", residual:", rres
+        endif
+        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
       endif
-      if( hecMESH%my_rank == 0 ) then
-        write(*, '(a, i3, a, 2e15.7)') ' - Residual(', iter, ') =', res, relres
-      endif
-
-      ! ----- check convergence
-      if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-        relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-      res1 = res
 
       ! ----- check divergence
-      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres ) then
         if( hecMESH%my_rank == 0) then
           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
@@ -145,7 +130,7 @@ module m_fstr_NonLinearMethod
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
         fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
         if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-        if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
+        if( rres > fstrSOLID%step_ctrl(cstep)%maxres    ) fstrSOLID%NRstat_i(knstDRESN) = 2
         return
       end if
 
@@ -158,13 +143,14 @@ module m_fstr_NonLinearMethod
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
     do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i)+fstrSOLID%dunode(i)
+      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
     enddo
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
     fstrSOLID%CutBack_stat = 0
     deallocate(coord)
+    deallocate(P)
   end subroutine fstr_Newton
 
 

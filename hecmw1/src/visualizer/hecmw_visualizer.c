@@ -87,7 +87,7 @@ HECMW_visualize( struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		for(visual_id=0;visual_id<psf->num_of_psf;visual_id++) {
 			if(((timestep%interval)==0) || (timestep==max_timestep)) {
 				if(mynode==0)
-					fprintf(stderr, "Start visualize PSF %d at timestep %d\n", visual_id+1, timestep);
+					fprintf(stderr, " Start visualize PSF %d at timestep %d\n", visual_id+1, timestep);
 				sf=tp1->sf;
 				sr=tp1->sr;
 				for(ii=0;ii<NUM_CONTROL_PSF;ii++)
@@ -124,7 +124,7 @@ HECMW_visualize( struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		for(visual_id=0;visual_id<pvr->num_of_pvr;visual_id++) {
 			if(((timestep%interval)==0) || (timestep==max_timestep)) {
 				if(mynode==0)
-					fprintf(stderr, "Start visualize PVR %d at timestep %d\n", visual_id+1, timestep);
+					fprintf(stderr, " Start visualize PVR %d at timestep %d\n", visual_id+1, timestep);
 				vr=tv1->vr;
 				for(ii=0;ii<NUM_CONTROL_PVR;ii++)
 					stat_para_vr[ii]=tv1->stat_para[ii];
