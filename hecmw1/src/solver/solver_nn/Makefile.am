@@ -79,6 +79,7 @@ OBJSF = \
 	hecmw_precond_DIAG_nn.@f90objfilepostfix@ \
 	hecmw_precond_BILU_nn.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_nn.@f90objfilepostfix@ \
+	hecmw_precond_ML_nn.@f90objfilepostfix@ \
 	hecmw_precond_nn.@f90objfilepostfix@ \
 	hecmw_solver_CG_nn.@f90objfilepostfix@ \
 	hecmw_solver_nn.@f90objfilepostfix@

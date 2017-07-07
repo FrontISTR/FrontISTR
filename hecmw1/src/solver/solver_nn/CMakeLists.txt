@@ -16,6 +16,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SSOR_nn.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_SAINV_nn.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_RIF_nn.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_ML_nn.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_id.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_ML_helper.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_ML_nn.f90
