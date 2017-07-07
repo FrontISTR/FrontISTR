@@ -151,7 +151,7 @@ contains
 
     real(kind=kreal) :: START_TIME, END_TIME, Tcomm
     integer(kind=kint) :: i, j, k, l, jS, jE, in
-    real(kind=kreal),allocatable :: YV(:), XV(:)
+    real(kind=kreal) :: YV(hecMAT%NDOF), XV(hecMAT%NDOF)
 
     integer(kind=kint) :: N, NP, NDOF, NDOF2
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
@@ -256,8 +256,6 @@ contains
 
 !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
 !OCL CACHE_SUBSECTOR_ASSIGN(X)
-      allocate(XV(NDOF))
-      allocate(YV(NDOF))
 
 !$OMP PARALLEL DEFAULT(NONE) &
 !$OMP&PRIVATE(i,XV,YV,jS,jE,j,k,l,in,threadNum,blockNum,blockIndex) &
@@ -308,9 +306,6 @@ contains
           end do 
         enddo
       enddo
-    deallocate(XV)
-    deallocate(YV)
-
 !$OMP END PARALLEL
 
 !OCL END_CACHE_SUBSECTOR
