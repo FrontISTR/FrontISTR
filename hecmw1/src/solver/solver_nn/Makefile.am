@@ -76,6 +76,7 @@ OBJS =
 OBJSF = \
 	hecmw_solver_las_nn.@f90objfilepostfix@ \
 	hecmw_solver_scaling_nn.@f90objfilepostfix@ \
+	hecmw_jadm_nn.@f90objfilepostfix@ \
 	hecmw_precond_DIAG_nn.@f90objfilepostfix@ \
 	hecmw_precond_BILU_nn.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_nn.@f90objfilepostfix@ \
@@ -84,9 +85,9 @@ OBJSF = \
 	hecmw_precond_RIF_nn.@f90objfilepostfix@ \
 	hecmw_precond_nn.@f90objfilepostfix@ \
 	hecmw_solver_CG_nn.@f90objfilepostfix@ \
-  hecmw_solver_BiCGSTAB_nn.@f90objfilepostfix@ \
-  hecmw_solver_GMRES_nn.@f90objfilepostfix@ \
-  hecmw_solver_GPBiCG_nn.@f90objfilepostfix@ \
+	hecmw_solver_BiCGSTAB_nn.@f90objfilepostfix@ \
+	hecmw_solver_GMRES_nn.@f90objfilepostfix@ \
+	hecmw_solver_GPBiCG_nn.@f90objfilepostfix@ \
 	hecmw_solver_nn.@f90objfilepostfix@
 
 HEADERS =
