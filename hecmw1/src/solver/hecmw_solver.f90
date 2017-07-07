@@ -15,8 +15,6 @@ subroutine hecmw_solve (hecMESH, hecMAT, imsg)
   USE hecmw_solver_direct_parallel
   USE hecmw_solver_direct_MUMPS
   USE hecmw_solver_direct_clusterMKL
-
-
   implicit none
 
   type (hecmwST_matrix), target :: hecMAT
@@ -25,45 +23,11 @@ subroutine hecmw_solve (hecMESH, hecMAT, imsg)
   real(kind=kreal) :: resid
   INTEGER(kind=kint) imsg, i, myrank, NDOF
   NDOF=hecMAT%NDOF 
-  NDOF=7
 !C
     SELECT CASE(hecMAT%Iarray(99))
-!C
 !* Call Iterative Solver
     CASE (1)
-      SELECT CASE(NDOF)
-      CASE(1)
-!          WRITE(*,*) "Calling 1x1 Iterative Solver..."
-        !CALL hecmw_solve_11(hecMESH,hecMAT)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE(2)
-!          WRITE(*,*) "Calling 2x2 Iterative Solver..."
-        !CALL hecmw_solve_22(hecMESH,hecMAT)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE(3)
-!          WRITE(*,*) "Calling 3x3 Iterative Solver..."
-        !CALL hecmw_solve_33(hecMESH,hecMAT)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE(4)
-!          WRITE(*,*) "Calling 4x4 Iterative Solver..."
-        !CALL hecmw_solve_44(hecMESH,hecMAT)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE(5)
-        !CALL hecmw_solve_mm(hecMESH,hecMAT)
-!          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-        !call hecmw_abort( hecmw_comm_get_comm() )
-        !call hecmw_substitute_solver(hecMESH,hecMAT,4)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE(6)
-!          WRITE(*,*) "Calling 6x6 Iterative Solver..."
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      CASE DEFAULT
-        !CALL hecmw_solve_mm(hecMESH,hecMAT)
-!          WRITE(*,*) "FATAL: Solve_mm not yet available..."
-!        call hecmw_substitute_solver(hecMESH,hecMAT,6)
-        CALL hecmw_solve_iterative(hecMESH,hecMAT)
-      END SELECT
-!C
+      CALL hecmw_solve_iterative(hecMESH,hecMAT)
 !* Call Direct Solver
     CASE(2:)
 !C
