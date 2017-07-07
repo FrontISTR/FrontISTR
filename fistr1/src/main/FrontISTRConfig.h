@@ -1,0 +1,14 @@
+
+#define VERSION_MAJOR 5
+#define VERSION_MINOR 0
+#define VERSION_PATCH 0
+#define GIT_HASH "4c720b460740b6ff79db7b6510bc384355c1246c"
+#define OPENMP_UNKNOWN
+#define WITH_MPI
+#define WITH_TOOLS
+#define WITH_REFINER
+#define WITH_METIS
+#define WITH_MUMPS
+#define WITH_LAPACK
+#define WITH_ML
+#define WITH_PARMETIS

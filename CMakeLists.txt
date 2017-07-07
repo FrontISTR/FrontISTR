@@ -56,10 +56,13 @@ endif()
 ###############################################################
 # Version number
 ###############################################################
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
 set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
 
 ###############################################################
 # Options
@@ -201,6 +204,17 @@ else()
 endif()
 
 ###################
+# -DWITH_PARMETIS
+###################
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
+  endif()
+endif()
+
+###################
 # -DWITH_METIS
 # -DMETIS_VER_4
 ###################
@@ -217,27 +231,17 @@ if(WITH_METIS AND METIS_FOUND)
 endif()
 
 ###################
-# -DWITH_PARMETIS
-###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
-  endif()
-endif()
-
-###################
 # -DWITH_MUMPS
 ###################
 if(WITH_MUMPS)
-  if(MUMPS_FOUND)
-    list(APPEND FrontISTR_DEFINITIONS "WITH_MUMPS")
+  if(MUMPS_FOUND AND ( (SCALAPACK_FOUND AND LAPACK_FOUND) OR SCALAPACK_MKL ) )
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
     list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
-    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
+    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
     mark_as_advanced(scalapack_DIR)
   else()
-    message(FATAL_ERROR "MUMPS could not found")
+    message(FATAL_ERROR "MUMPS could not enable. Please also install scalapack and lapack.")
+    set(WITH_MUMPS OFF)
   endif()
 else()
   set(WITH_MUMPS OFF)
@@ -248,12 +252,9 @@ endif()
 ###################
 if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
-    list(APPEND FrontISTR_DEFINITIONS "WITH_LAPACK")
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_LAPACK")
     list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
   else()
-    set(BLAS_LIBRARIES "BLAS_LIBRARIES-NOTFOUND" CACHE FILEPATH "BLAS Library")
-    set(LAPACK_LIBRARIES "LAPACK_LIBRARIES-NOTFOUND" CACHE FILEPATH "LAPACK Library")
-    message(WARNING "Please specify -DBLAS_LIBRARIES and -DLAPACK_LIBRARES manually.")
     set(WITH_LAPACK OFF)
   endif()
 endif()

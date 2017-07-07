@@ -273,7 +273,7 @@ integer function fstr_ctrl_get_VISCOELASTICITY( ctrl, mattype, nlgeom, dict )
         depends = 0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
         if( depends>1 ) depends=1   ! temperature depends only currently
-        depends = 0
+        !depends = 0
         nlgeom = TOTALLAG   !default value
         if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
         if( ipt/=0 ) nlgeom = INFINITE
@@ -656,6 +656,61 @@ integer function read_user_matl( ctrl, matval )
         read_user_matl = 0
 end function read_user_matl
 
+!----------------------------------------------------------------------
+!> Read in !FLUID
+integer function fstr_ctrl_get_FLUID( ctrl, mattype, nlgeom, matval, dict )
+        integer(kind=kint), intent(in)    :: ctrl
+        integer(kind=kint), intent(inout) :: mattype
+        integer(kind=kint), intent(out)   :: nlgeom
+        real(kind=kreal),intent(out)      :: matval(:)
+        type(DICT_STRUCT), pointer        :: dict
 
-!* ----------------------------------------------------------------------------------------------- *!
+        integer(kind=kint) :: i,j, rcode, depends, ipt, n
+        real(kind=kreal),pointer :: fval(:,:)
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        type( tTable )        :: mattable
+        logical            :: isok
+        character(len=256) :: s
+
+        fstr_ctrl_get_FLUID = -1
+        depends = 0
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+        if( depends>1 ) depends=1   ! temperature depends only currently
+        if( depends > 3 ) stop "We cannot read dependencies>3 right now"
+        nlgeom = TOTALLAG   !default value
+
+        ipt=1
+        s = 'INCOMP_NEWTONIAN '
+        if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
+
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        ! ISOTROPIC
+        if( ipt==1 ) then
+            allocate( fval(1+depends,n) )
+            if( depends==0 ) then
+              data_fmt = "R "
+              fstr_ctrl_get_FLUID = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+            endif
+            if( depends==1 ) then
+              data_fmt = "RR "
+              fstr_ctrl_get_FLUID = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+            endif
+            if( fstr_ctrl_get_FLUID ==0 ) then
+              matval(M_VISCOCITY) = fval(1,1)
+              call init_table( mattable, depends, 1+depends,n, fval )
+              call dict_add_key( dict, MC_INCOMP_NEWTONIAN, mattable )
+                !         call print_table( mattable, 6 ); pause
+            endif
+            mattype = INCOMP_NEWTONIAN
+
+        else
+            stop "ERROR: Material type not supported"
+
+        endif
+
+        if( associated(fval) ) deallocate(fval)
+end function fstr_ctrl_get_FLUID
+
 end module fstr_ctrl_material

@@ -70,9 +70,7 @@ module m_fstr_ass_load
         grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
-        endif
+        if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
         ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
         fval = fstrSOLID%CLOAD_ngrp_val(ig0)
@@ -144,9 +142,7 @@ module m_fstr_ass_load
         grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
         factor = fstrSOLID%factor(2)
-        if( cstep > 1 ) then
-          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
-        endif
+        if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
         ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
         ltype = fstrSOLID%DLOAD_ngrp_LID(ig0)
         do i = 0, 6
@@ -284,7 +280,7 @@ module m_fstr_ass_load
           hecMAT%B(i)=fstrSOLID%GL(i)-fstrSOLID%QFORCE(i)
       enddo
 
-      do i=1, 3*hecMAT%NP
+      do i=1, hecMAT%NDOF*hecMAT%NP
         !thermal load is not considered
         fstrSOLID%EFORCE(i) = fstrSOLID%GL(i)
       enddo
@@ -300,9 +296,7 @@ module m_fstr_ass_load
           grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
           if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
           factor = fstrSOLID%factor(2)
-          if( cstep > 1 ) then
-            if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.d0
-          endif
+          if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
           ig = fstrSOLID%TEMP_ngrp_ID(ig0)
           fval =fstrSOLID%TEMP_ngrp_val(ig0)
           iS0 = hecMESH%node_group%grp_index(ig-1)+1
@@ -315,7 +309,8 @@ module m_fstr_ass_load
         enddo
 
         if( fstrSOLID%TEMP_irres > 0 ) then
-          call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, fstrSOLID%temperature)
+          call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, &
+            &  fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, fstrSOLID%temperature, fstrSOLID%temp_bak)
         endif
 
 ! ----- element TYPE loop.
@@ -390,7 +385,7 @@ module m_fstr_ass_load
                              fstrSOLID%elements(icel)%gausses,pa1, iset, vect(1:nn*2) )
 
             else if( ic_type == 361 ) then
-              if( fstrPR%solution_type == kstSTATIC ) then
+              if( .not. fstrPR%nlgeom ) then
                 if( fstrSOLID%elemopt361 == 1 ) then
                   call TLOAD_C3D8Bbar                                                          &
                        ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &

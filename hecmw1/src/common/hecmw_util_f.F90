@@ -17,7 +17,7 @@
 !                                                                      !
 !======================================================================!
 
-      module hecmw_util
+module hecmw_util
         implicit none
 #ifndef HECMW_SERIAL
         include 'mpif.h'
@@ -467,6 +467,7 @@
           !integer(kind=kint ), pointer:: IVECT(:), ICHK(:)
           integer(kind=kint ), dimension(100) :: Iarray
           real   (kind=kreal), dimension(100) :: Rarray
+          logical :: symmetric = .true.
           !real   (kind=kreal) :: RESIDactual
 !          type(hecmwST_matrix_comm) :: comm
           type(hecmwST_matrix_contact) :: cmat
@@ -997,5 +998,156 @@
 
         close( nf )
         end subroutine
+  subroutine hecmw_clone_matrix(hecMATorig,hecMAT)
+    type (hecmwST_matrix    ) :: hecMATorig
+    type (hecmwST_matrix    ),pointer :: hecMAT
+    allocate(hecMAT)
+    call hecmw_nullify_matrix( hecMAT )
 
-      end module hecmw_util
+    hecMAT%B => hecMATorig%B
+    hecMAT%X => hecMATorig%X
+    hecMAT%D => hecMATorig%D
+    hecMAT%AL => hecMATorig%AL
+    hecMAT%AU => hecMATorig%AU
+    hecMAT%indexL => hecMATorig%indexL
+    hecMAT%indexU => hecMATorig%indexU
+    hecMAT%itemL  => hecMATorig%itemL
+    hecMAT%itemU  => hecMATorig%itemU
+    hecMAT%N    = hecMATorig%N
+    hecMAT%NP   = hecMATorig%NP
+    hecMAT%NPL  = hecMATorig%NPL
+    hecMAT%NPU  = hecMATorig%NPU
+    hecMAT%NDOF = hecMATorig%NDOF
+    hecMAT%Iarray = hecMATorig%Iarray
+    hecMAT%Rarray = hecMATorig%Rarray
+
+  end subroutine hecmw_clone_matrix
+  subroutine hecmw_copy_matrix(hecMATorig,hecMAT)
+    type (hecmwST_matrix    ) :: hecMATorig
+    type (hecmwST_matrix    ),pointer :: hecMAT
+    INTEGER(kind=kint) NDOF,NDOF2,N,NP,NPL,NPU
+
+    allocate(hecMAT)
+    call hecmw_nullify_matrix( hecMAT )
+    N = hecMATorig%N
+    NDOF = hecMATorig%NDOF
+    NDOF2 = NDOF*NDOF
+    NP = hecMATorig%NP
+    NPL = hecMATorig%NPL
+    NPU = hecMATorig%NPU
+    hecMAT%N    = N
+    hecMAT%NP   = NP
+    hecMAT%NPL  = NPL
+    hecMAT%NPU  = NPU
+
+    allocate(hecMAT%B(NDOF*NP))
+    allocate(hecMAT%X(NDOF*NP))
+    allocate(hecMAT%D(NDOF2*NP))
+    allocate(hecMAT%AU(NDOF2*NPU))
+    allocate(hecMAT%AL(NDOF2*NPL))
+    allocate(hecMAT%indexL(0:N), hecMAT%indexU(0:N), hecMAT%itemL(NPL), hecMAT%itemU(NPU))
+    hecMAT%B       = hecMATorig%B
+    hecMAT%X       = hecMATorig%X
+    hecMAT%D       = hecMATorig%D
+    hecMAT%AU      = hecMATorig%AU
+    hecMAT%AL      = hecMATorig%AL    
+    hecMAT%indexL  = hecMATorig%indexL
+    hecMAT%indexU  = hecMATorig%indexU
+    hecMAT%itemL   = hecMATorig%itemL
+    hecMAT%itemU   = hecMATorig%itemU
+    hecMAT%Iarray  = hecMATorig%Iarray
+    hecMAT%Rarray  = hecMATorig%Rarray
+
+  end subroutine hecmw_copy_matrix
+  subroutine hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
+    type (hecmwST_matrix    ) :: hecMATorig
+    type (hecmwST_matrix    ),pointer :: hecMAT
+    INTEGER(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
+    
+    NDOF2 = NDOF*NDOF
+    oNDOF = hecMATorig%NDOF
+    oNDOF2 = oNDOF*oNDOF
+    allocate(hecMAT)
+    call hecmw_nullify_matrix( hecMAT )
+
+    allocate(hecMAT%B(NDOF*hecMATorig%NP))
+    allocate(hecMAT%X(NDOF*hecMATorig%NP))
+    allocate(hecMAT%D(NDOF2*hecMATorig%NP))
+    allocate(hecMAT%AL(NDOF2*hecMATorig%NPL))
+    allocate(hecMAT%AU(NDOF2*hecMATorig%NPU))
+    hecMAT%indexL => hecMATorig%indexL
+    hecMAT%indexU => hecMATorig%indexU
+    hecMAT%itemL  => hecMATorig%itemL
+    hecMAT%itemU  => hecMATorig%itemU
+    hecMAT%N    = hecMATorig%N
+    hecMAT%NP   = hecMATorig%NP
+    hecMAT%NPL  = hecMATorig%NPL
+    hecMAT%NPU  = hecMATorig%NPU
+    hecMAT%NDOF = NDOF
+    hecMAT%Iarray = hecMATorig%Iarray
+    hecMAT%Rarray = hecMATorig%Rarray
+    hecMAT%X = 0.0d0
+    do i = 1, hecMATorig%NP
+      do j = 1, NDOF
+        do k = 1, NDOF
+          if (j<=oNDOF .and. k<=oNDOF) then 
+            hecMAT%D(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMATorig%D(oNDOF2*(i-1) + (j-1)*oNDOF + k)
+          else
+            if(j==k) then 
+              hecMAT%D(NDOF2*(i-1) + (j-1)*NDOF + k)=1
+            else
+              hecMAT%D(NDOF2*(i-1) + (j-1)*NDOF + k)=0
+            end if 
+          end if
+        end do
+        if (j<=oNDOF) then 
+          hecMAT%B(NDOF*(i-1) + j) = hecMATorig%B(oNDOF*(i-1) + j)
+        else
+          hecMAT%B(NDOF*(i-1) + j)=0
+        end if
+      end do 
+    end do 
+    do i = 1, hecMATorig%NPL
+      do j = 1, NDOF
+        do k = 1, NDOF
+          if (j<=oNDOF .and. k<=oNDOF) then 
+            hecMAT%AL(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMATorig%AL(oNDOF2*(i-1) + (j-1)*oNDOF + k)
+          else
+            hecMAT%AL(NDOF2*(i-1) + (j-1)*NDOF + k) = 0
+          end if 
+        end do 
+      end do 
+    end do 
+    do i = 1, hecMATorig%NPU
+      do j = 1, NDOF
+        do k = 1, NDOF
+          if (j<=oNDOF .and. k<=oNDOF) then 
+            hecMAT%AU(NDOF2*(i-1) + (j-1)*NDOF + k) = hecMATorig%AU(oNDOF2*(i-1) + (j-1)*oNDOF + k)
+          else
+            hecMAT%AU(NDOF2*(i-1) + (j-1)*NDOF + k) = 0
+          end if 
+        end do 
+      end do 
+    end do 
+  end subroutine hecmw_blockmatrix_expand
+  subroutine hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
+    type (hecmwST_matrix    ) :: hecMATorig
+    type (hecmwST_matrix    ),pointer :: hecMAT
+    INTEGER(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
+    NDOF2 = NDOF*NDOF
+    oNDOF = hecMATorig%NDOF
+    do i = 1, hecMATorig%NP
+      do j = 1, oNDOF
+        hecMATorig%X(oNDOF*(i-1) + j) = hecMAT%X(NDOF*(i-1) + j)
+      end do 
+    end do 
+    hecMATorig%Iarray = hecMAT%Iarray
+    hecMATorig%Rarray = hecMAT%Rarray
+    deallocate(hecMAT%B)
+    deallocate(hecMAT%D)
+    deallocate(hecMAT%X)
+    deallocate(hecMAT%AL)
+    deallocate(hecMAT%AU)
+    deallocate(hecMAT)
+  end subroutine hecmw_vector_contract
+end module hecmw_util

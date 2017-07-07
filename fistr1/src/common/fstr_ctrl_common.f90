@@ -8,6 +8,7 @@ module fstr_ctrl_common
 use m_fstr
 use hecmw
 use mContact
+use m_timepoint
 
 implicit none
 
@@ -35,18 +36,32 @@ end subroutine pc_strupr
 
 
 !> Read in !SOLUTION
-function fstr_ctrl_get_SOLUTION( ctrl, type )
+function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: type
+        logical            :: nlgeom
         integer(kind=kint) :: fstr_ctrl_get_SOLUTION
 
-        integer(kind=kint) :: rcode
+        integer(kind=kint) :: ipt
         character(len=80) :: s
 
+        fstr_ctrl_get_SOLUTION = -1
+
         s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF'
-        rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 1, 'P', type )
+        if( fstr_ctrl_get_param_ex( ctrl,      'TYPE ',     s,    1,   'P',  type )/= 0) return
         type = type -1
-        fstr_ctrl_get_SOLUTION = rcode
+
+        ipt=0
+        if( fstr_ctrl_get_param_ex( ctrl,    'NONLINEAR ',  '# ',    0,   'E',   ipt )/= 0) return
+        if( ipt/=0 .and. ( type == kstSTATIC .or. type == kstDYNAMIC )) nlgeom = .true.
+
+        if( type == 5 ) then !if type == NLSTATIC
+          type = kstSTATIC
+          nlgeom = .true.
+        end if
+        if( type == kstSTATICEIGEN ) nlgeom = .true.
+
+        fstr_ctrl_get_SOLUTION = 0
 end function fstr_ctrl_get_SOLUTION
 
 
@@ -99,7 +114,7 @@ function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, st
 
         ! JP-0
         if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ',   mlist,              1,   'P',   method  ) /= 0) return
-        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,5,10,11,12,20,21,30,31,32',0,   'I',   precond ) /= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,4,5,6,7,8,9,10,11,12,20,21,30,31,32',0,   'I',   precond ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES,VERBOSE ',   0,   'P',   time ) /= 0) return
@@ -168,12 +183,14 @@ function fstr_ctrl_get_STEP( ctrl, amp, iproc )
 end function fstr_ctrl_get_STEP
 
 !> Read in !STEP and !ISTEP
-logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
+logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname, apname )
         use fstr_setup_util
         use m_step
         integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
         type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
         type(step_info), intent(out)          :: steps     !< step control info
+        character(len=*), intent(out)         :: tpname    !< name of timepoints
+        character(len=*), intent(out)         :: apname    !< name of auto increment parameter
 
         character(len=HECMW_NAME_LEN) :: data_fmt,ss, data_fmt1
         character(len=HECMW_NAME_LEN) :: amp
@@ -190,31 +207,45 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
         write( data_fmt1, '(a,a,a)') 'S', trim(adjustl(ss)),'rrr '
 
         call init_stepInfo(steps)
-		steps%solution = stepStatic
+        steps%solution = stepStatic
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STATIC,VISCO ', 0, 'P', steps%solution )/= 0) return
+        steps%inc_type = stepFixedInc
+        if( fstr_ctrl_get_param_ex( ctrl, 'INC_TYPE ', 'FIXED,AUTO ', 0, 'P', steps%inc_type )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'SUBSTEPS ',  '# ',  0, 'I', steps%num_substep )/= 0) return
         steps%initdt = 1.d0/steps%num_substep
         if( fstr_ctrl_get_param_ex( ctrl, 'ITMAX ',  '# ',  0, 'I', steps%max_iter )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'MAXITER ',  '# ',  0, 'I', steps%max_iter )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'MAXCONTITER ',  '# ',  0, 'I', steps%max_contiter )/= 0) return
         if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
+        if( fstr_ctrl_get_param_ex( ctrl, 'MAXRES ',  '# ',  0, 'R', steps%maxres )/= 0) return
         amp = ""
         if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
         if( len( trim(amp) )>0 ) then
           call amp_name_to_id( hecMESH, '!STEP', amp, steps%amp_id )
         endif
+        tpname=""
+        if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
+        apname=""
+        if( fstr_ctrl_get_param_ex( ctrl, 'AUTOINCPARAM ',  '# ',  0, 'S', apname )/= 0) return
 
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( n == 0 ) then
           fstr_ctrl_get_ISTEP = .true.;  return
         endif
 
+        f2 = steps%mindt
+        f3 = steps%maxdt
         if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt1, ss, f1, f2, f3  )/= 0) return
         read( ss, * , iostat=ierr ) fn
         sn=1
         if( ierr==0 ) then
           steps%initdt = fn
           steps%elapsetime = f1
-          steps%num_substep = int((f1+0.1*fn)/fn)
+          if( steps%inc_type == stepAutoInc ) then
+            steps%mindt = min(f2,steps%initdt)
+            steps%maxdt = f3
+          endif
+          steps%num_substep = max(int((f1+0.999999999d0*fn)/fn),steps%num_substep)
           !if( mod(f1,fn)/=0 ) steps%num_substep =steps%num_substep+1
           sn = 2
         endif
@@ -260,23 +291,30 @@ logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps )
     end function fstr_ctrl_get_ISTEP
 
 !> Read in !SECTION
-integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
+integer function fstr_ctrl_get_SECTION( ctrl, hecMESH, sections )
         integer(kind=kint), intent(in)           :: ctrl
         type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
+        type (tSection), pointer, intent(inout)  :: sections(:)
 
-        integer(kind=kint)            :: j, k, sect_id, ori_id
+        integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
         integer(kind=kint),SAVE       :: cache = 1
         character(len=HECMW_NAME_LEN) :: sect_orien
+        character(11) :: form361list = 'FI,BBAR,IC '
 
         fstr_ctrl_get_SECTION = -1
 
-        if( .not. associated(g_LocalCoordSys) ) return
-
         if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
         if( sect_id > hecMESH%section%n_sect ) return
-        hecMESH%section%sect_orien_ID(sect_id) = -1
-        if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  1, 'S', sect_orien )/= 0) return
 
+        elemopt = 0
+        if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
+        if( elemopt > 0 ) sections(sect_id)%elemopt361 = elemopt
+
+        ! sectional orientation ID
+        hecMESH%section%sect_orien_ID(sect_id) = -1
+        if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  0, 'S', sect_orien )/= 0) return
+
+        if( associated(g_LocalCoordSys) ) then
         k = size(g_LocalCoordSys)
 
         if(cache < k)then
@@ -295,8 +333,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH )
             exit
           endif
         enddo
-
-        if( hecMESH%section%sect_orien_ID(sect_id) == -1 ) return
+        endif
 
         fstr_ctrl_get_SECTION = 0
 
@@ -520,5 +557,128 @@ function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
         fstr_ctrl_get_ELEMOPT = 0
 
 end function fstr_ctrl_get_ELEMOPT
+
+
+!> Read in !AUTOINC_PARAM                                                             !
+function fstr_get_AUTOINC( ctrl, aincparam )
+        implicit none
+        integer(kind=kint)    :: ctrl
+        type( tParamAutoInc ) :: aincparam !< auto increment paramter
+        integer(kind=kint) :: fstr_get_AUTOINC
+
+        integer(kind=kint) :: rcode
+        character(len=HECMW_NAME_LEN) :: data_fmt
+        character(len=128) :: msg
+        integer(kind=kint) :: bound_s(10), bound_l(10)
+        real(kind=kreal) :: Rs, Rl
+
+        fstr_get_AUTOINC = -1
+
+        bound_s(:) = 0
+        bound_l(:) = 0
+
+        !parameters
+        aincparam%name = ''
+        if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', aincparam%name ) /=0 ) return
+
+        !read first line ( decrease criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, Rs, &
+          &  bound_s(1), bound_s(2), bound_s(3), aincparam%NRtimes_s )
+        if( rcode /= 0 ) return
+        aincparam%ainc_Rs = Rs
+        aincparam%NRbound_s(knstMAXIT) = bound_s(1)
+        aincparam%NRbound_s(knstSUMIT) = bound_s(2)
+        aincparam%NRbound_s(knstCITER) = bound_s(3)
+
+        !read second line ( increase criteria )
+        data_fmt = 'riiii '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, Rl, &
+          &  bound_l(1), bound_l(2), bound_l(3), aincparam%NRtimes_l )
+        if( rcode /= 0 ) return
+        aincparam%ainc_Rl = Rl
+        aincparam%NRbound_l(knstMAXIT) = bound_l(1)
+        aincparam%NRbound_l(knstSUMIT) = bound_l(2)
+        aincparam%NRbound_l(knstCITER) = bound_l(3)
+
+        !read third line ( cutback criteria )
+        data_fmt = 'ri '
+        rcode = fstr_ctrl_get_data_ex( ctrl, 3, data_fmt, &
+          &  aincparam%ainc_Rc, aincparam%CBbound )
+        if( rcode /= 0 ) return
+
+        !input check
+        rcode = 1
+        if( Rs<0.d0 .or. Rs>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
+        else if( any(bound_s<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
+        else if( aincparam%NRtimes_s < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
+        else if( Rl<1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
+        else if( any(bound_l<0) ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
+        else if( aincparam%NRtimes_l < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+        elseif( aincparam%ainc_Rc<0.d0 .or. aincparam%ainc_Rc>1.d0 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
+        else if( aincparam%CBbound < 1 ) then
+          write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
+        else
+          rcode =0
+        end if
+        if( rcode /= 0 ) then
+          write(*,*) trim(msg)
+          write(ILOG,*) trim(msg)
+          return
+        endif
+
+        fstr_get_AUTOINC = 0
+end function fstr_get_AUTOINC
+
+!> Read in !TIME_POINTS
+function fstr_ctrl_get_TIMEPOINTS( ctrl, tp )
+        integer(kind=kint) :: ctrl
+        type(time_points)  :: tp
+        integer(kind=kint) :: fstr_ctrl_get_TIMEPOINTS
+
+        integer(kind=kint) :: i, n, rcode
+        logical            :: generate
+        real(kind=kreal)   :: stime, etime, interval
+
+        fstr_ctrl_get_TIMEPOINTS = -1
+
+        tp%name = ''
+        if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', tp%name ) /=0 ) return
+        tp%range_type = 1
+        if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP,TOTAL', 0, 'P', tp%range_type ) /= 0 ) return
+        generate = .false.
+        if( fstr_ctrl_get_param_ex( ctrl, 'GENERATE ',  '# ', 0, 'E', generate ) /= 0) return
+
+        if( generate ) then
+          stime = 0.d0;  etime = 0.d0;  interval = 1.d0
+          if( fstr_ctrl_get_data_ex( ctrl, 1, 'rrr ', stime, etime, interval ) /= 0) return
+          tp%n_points = int((etime-stime)/interval)+1
+          allocate(tp%points(tp%n_points))
+          do i=1,tp%n_points
+            tp%points(i) = stime + dble(i-1)*interval
+          end do
+        else
+          n = fstr_ctrl_get_data_line_n( ctrl )
+          if( n == 0 ) return
+          tp%n_points = n
+          allocate(tp%points(tp%n_points))
+          if( fstr_ctrl_get_data_array_ex( ctrl, 'r ', tp%points ) /= 0 ) return
+          do i=1,tp%n_points-1
+            if( tp%points(i) < tp%points(i+1) ) cycle
+            write(*,*) 'Error in reading !TIME_POINT: time points must be given in ascending order.'
+            return
+          end do
+        end if
+
+        fstr_ctrl_get_TIMEPOINTS = 0
+end function fstr_ctrl_get_TIMEPOINTS
+
 
 end module fstr_ctrl_common

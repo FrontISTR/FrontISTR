@@ -43,12 +43,13 @@ module m_solve_LINEQ_contact
 
 
 !> \brief This subroutine
-    subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf,conMAT)
+    subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,rf,conMAT)
 
       type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
       type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
       type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
-      real(kind=kreal), optional              :: rf
+      integer(kind=kint), intent(out)          :: istat
+      real(kind=kreal), optional               :: rf
       type (hecmwST_matrix),optional           :: conMAT
 
       real(kind=kreal)                         :: factor
@@ -60,18 +61,19 @@ module m_solve_LINEQ_contact
 
       t1 = hecmw_wtime()
 
+      istat = 0
       if( hecMAT%Iarray(99)==1 )then
         call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==3 )then
-        call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT)
+        call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,istat)
       elseif( hecMAT%Iarray(99)==4 )then
         call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
       elseif( hecMAT%Iarray(99)==5 ) then
 ! ----  For Parallel Contact with Multi-Partition Domains
         if(paraContactFlag.and.present(conMAT)) then
-          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
         else
-          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT)
+          call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat)
         endif
       endif
 

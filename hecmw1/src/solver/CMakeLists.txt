@@ -5,17 +5,18 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 include(${CMAKE_CURRENT_LIST_DIR}/communication/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/las/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/matrix/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/init/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/sparse_matrix/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_mumps/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_clustermkl/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_11/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_22/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_33/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_44/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_66/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mumps/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/clustermkl/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/precond/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/iterative/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_parallel/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_lag/CMakeLists.txt)
 
+list(APPEND hecmw_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver.f90
+)

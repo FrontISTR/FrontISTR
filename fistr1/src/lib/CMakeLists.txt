@@ -36,6 +36,7 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr_freqdata.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr_para_contact.F90
+  ${CMAKE_CURRENT_LIST_DIR}/m_timepoint.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_out.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_step.f90
   ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_2d.f90
@@ -47,6 +48,7 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_2d.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3dIC.f90
+  ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d_vp.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_C3D8.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_beam.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_shell.f90

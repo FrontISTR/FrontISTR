@@ -60,7 +60,7 @@ contains
     integer(kind=kint) :: kkk0, kkk1
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
-    real(kind=kreal) :: bsize, res
+    real(kind=kreal) :: bsize, res, resb
     real :: time_1, time_2
 
     integer(kind=kint) :: restrt_step_num
@@ -140,22 +140,24 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
-	fstrDYNAMIC%VEC3(:) =0.d0
-	hecMAT%X(:) =0.d0
+    fstrDYNAMIC%VEC3(:) =0.d0
+    hecMAT%X(:) =0.d0
 
 !!
 !!    step = 1,2,....,fstrDYNAMIC%n_step
 !!
     do i= restrt_step_num, fstrDYNAMIC%n_step
+        if(ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
 
        fstrDYNAMIC%i_step = i
        fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
        if(hecMESH%my_rank==0) then
+         !write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
          write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
        endif
 
@@ -178,7 +180,7 @@ contains
 !C ********************************************************************************
 
        do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_delta )
+         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
 
          if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
            do j = 1 ,ndof*nnod
@@ -187,19 +189,19 @@ contains
          endif
          if( fstrDYNAMIC%ray_k/=0.d0 ) then
            if( hecMESH%n_dof == 3 ) then
-             call hecmw_matvec_33 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
            else if( hecMESH%n_dof == 2 ) then
-             call hecmw_matvec_22 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3, nnod)
+             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
            else if( hecMESH%n_dof == 6 ) then
              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
            end if
          endif
 !C
 !C-- mechanical boundary condition
-         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
          do j=1, hecMESH%n_node*  hecMESH%n_dof
            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-		     + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+         + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
          end do
 
 !C ********************************************************************************
@@ -257,28 +259,19 @@ contains
 !C-- RHS LOAD VECTOR CHECK
 !C
         numnp=hecMAT%NP
-        bsize=0.0
-        do iiii5 = 1,numnp*ndof
-          bsize=bsize+hecMAT%B(iiii5)**2
-        enddo
-!C-- Gather RHS vector
-        if (.not. ds) then !In case of Direct Solver prevent MPI
-          call hecmw_allREDUCE_R1( hecMESH,bsize,hecmw_sum )
-        end if
+        call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, bsize)
 
-        iexit = 0
-        if( bsize < 1.0e-31 ) then
-          iexit = 1
-          if( hecMESH%my_rank .eq. 0 ) then
-            WRITE(IMSG,*) '###Load Vector Error!'
-          endif
+        if(iter == 1)then
+          resb = bsize
         endif
 
-        res = dsqrt(bsize)/n_node_global
-        if( hecMESH%my_rank==0 ) then
-          write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+        !res = dsqrt(bsize)/n_node_global
+        res = dsqrt(bsize/resb)
+        if( ndof /= 4 ) then
+          if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+          if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+          if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
         endif
-        if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
 !C
 !C-- linear solver [A]{X} = {B}
 !C
@@ -298,8 +291,10 @@ contains
           fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
         enddo
 ! ----- update the strain, stress, and internal force
-        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
+        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
+          &  fstrDYNAMIC%t_delta, iter, fstrDYNAMIC%strainEnergy )
 
+        if(ndof == 4) exit
       enddo
 
 ! -----  not convergence
@@ -403,7 +398,7 @@ contains
       end if
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
@@ -537,7 +532,7 @@ contains
 !C-- initialize variables
 !C
       if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
-      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC )
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, fstrPARAM )
 !C
 !C
 !C-- time step loop
@@ -554,7 +549,7 @@ contains
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
     end if
 
@@ -612,7 +607,7 @@ contains
          count_step = count_step + 1
          do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
            stepcnt=stepcnt+1
-           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_delta )
+           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
            if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
              do j = 1 ,ndof*nnod
                 hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
@@ -620,16 +615,16 @@ contains
            endif
            if( fstrDYNAMIC%ray_k/=0.d0 ) then
              if( hecMESH%n_dof == 3 ) then
-               call hecmw_matvec_33 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+               call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
              else if( hecMESH%n_dof == 2 ) then
-               call hecmw_matvec_22 (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3, nnod)
+               call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
              else if( hecMESH%n_dof == 6 ) then
                call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
              end if
            endif
 !C
 !C-- mechanical boundary condition
-           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
            do j=1, hecMESH%n_node*  hecMESH%n_dof
              hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -736,9 +731,9 @@ contains
           hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           if(paraContactFlag.and.present(conMAT)) then
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,1.0D0,conMAT)
+            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,1.0D0,conMAT)
           else
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,rf)
+            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,rf)
           endif
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
@@ -746,11 +741,11 @@ contains
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
 
 ! ----- update the strain, stress, and internal force
-!          call fstr_UpdateNewton( hecMESH, hecMAT, !fstrSOLID,fstrDYNAMIC%t_delta,1,fstrDYNAMIC%strainEnergy )
           do j=1,hecMESH%n_node*ndof
             fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
           enddo
-          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID,fstrDYNAMIC%t_delta,iter,fstrDYNAMIC%strainEnergy )
+          call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
+            &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
 
 
 ! ----- update the Lagrange multipliers
@@ -833,7 +828,7 @@ contains
       end if
 
 !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC)
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)

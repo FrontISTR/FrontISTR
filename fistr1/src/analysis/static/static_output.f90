@@ -9,7 +9,7 @@ module m_static_output
 
 !> Output result
 !----------------------------------------------------------------------*
-  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag )
+  subroutine fstr_static_Output( cstep, istep, hecMESH, fstrSOLID, flag, outflag )
 !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -20,6 +20,7 @@ module m_static_output
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (fstr_solid), intent(inout)      :: fstrSOLID
     integer, intent(in)                   :: flag
+    logical, intent(in)                   :: outflag     !< if true, result will be output regardless of istep
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, iS, iE, gid
@@ -44,31 +45,28 @@ module m_static_output
           call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
-    if( fstrSOLID%TEMP_irres>0 ) then
-          maxstep = fstrSOLID%TEMP_irres
-    else
-          maxstep = 0
-          do i = 1, cstep
-            maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
-          end do
-    endif
+    maxstep = 0
+    do i = 1, cstep
+      maxstep = maxstep + fstrSOLID%step_ctrl(i)%num_substep
+    end do
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           call fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           interval = fstrSOLID%output_ctrl(4)%freqency
+          if( outflag ) interval = 1
 
           call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
           call fstr2hecmw_mesh_conv( hecMESH )
@@ -79,13 +77,13 @@ module m_static_output
           call hecmw_result_free( fstrRESULT )
     endif
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
           fnum = fstrSOLID%output_ctrl(1)%filenum
           call fstr_static_post( fnum, hecMESH, fstrSOLID, istep )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
       iS = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(iS-1)+1, hecMESH%node_group%grp_index(iS)
@@ -108,451 +106,205 @@ module m_static_output
 
       real(kind=kreal)   :: Umax(6), Umin(6), Emax(14), Emin(14), Smax(14), Smin(14)
       real(kind=kreal)   :: Mmax(1), Mmin(1), EMmax(1), EMmin(1)
+      real(kind=kreal)   :: EEmax(14), EEmin(14), ESmax(14), ESmin(14)
+
+      real(kind=kreal)   :: GUmax(6), GUmin(6), GEmax(14), GEmin(14), GSmax(14), GSmin(14)
+      real(kind=kreal)   :: GMmax(1), GMmin(1), GEMmax(1), GEMmin(1)
+      real(kind=kreal)   :: GEEmax(14), GEEmin(14), GESmax(14), GESmin(14)
+
       integer(kind=kint) :: IUmax(6), IUmin(6), IEmax(14), IEmin(14), ISmax(14), ISmin(14)
       integer(kind=kint) :: IMmax(1), IMmin(1), IEMmax(1), IEMmin(1)
-      real(kind=kreal)   :: EEmax(14), EEmin(14), ESmax(14), ESmin(14)
       integer(kind=kint) :: IEEmax(14), IEEmin(14), IESmax(14), IESmin(14)
       integer(kind=kint) :: i, j, k, ndof, mdof, ID_area
+      integer(kind=kint) :: label(6)
 
       ndof = hecMESH%n_dof
 
       write( fnum, '(''#### Result step='',I6)') istep
+      SELECT CASE (ndof)
+        CASE (2)
+          mdof = 3
+          label(1)=11;label(2)=22
+          label(3)=12
+        CASE (3,6)
+          mdof = 6
+          label(1)=11;label(2)=22;label(3)=33;
+          label(4)=12;label(5)=23;label(6)=31;
+      END SELECT
 
+      
+      do k = 1, ndof
+        Umax(k) = fstrSOLID%unode(k); Umin(k) = fstrSOLID%unode(k)
+        IUmax(k)= j; IUmin(k)= j
+      enddo
+      do k = 1, mdof
+         Emax(k) = fstrSOLID%STRAIN(k);   Emin(k) = fstrSOLID%STRAIN(k)
+         Smax(k) = fstrSOLID%STRESS(k);   Smin(k) = fstrSOLID%STRESS(k)
+        EEmax(k) = fstrSOLID%ESTRAIN(k); EEmin(k) = fstrSOLID%ESTRAIN(k)
+        ESmax(k) = fstrSOLID%ESTRESS(k); ESmin(k) = fstrSOLID%ESTRESS(k)
+         IEmax(k)= j;  IEmin(k)= j;  ISmax(k)= j;  ISmin(k)= j
+        IEEmax(k)= j; IEEmin(k)= j; IESmax(k)= j; IESmin(k)= j
+      enddo
+      Mmax(1) = fstrSOLID%MISES(1); Mmin(1) = fstrSOLID%MISES(1)
+      EMmax(1) = fstrSOLID%EMISES(1); EMmin(1) = fstrSOLID%EMISES(1)
+      IMmax(1)= j; IMmin(1)= j; IEMmax(1)= j; IEMmin(1)= j
+      
 !C*** Show Displacement
       do i = 1, hecMESH%nn_internal
         if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
-        if( i==1 ) then
-          do k = 1, ndof
+        do k = 1, ndof
+          if     ( fstrSOLID%unode(ndof*(i-1)+k) > Umax(k) ) then
             Umax(k) = fstrSOLID%unode(ndof*(i-1)+k)
-            Umin(k) = fstrSOLID%unode(ndof*(i-1)+k)
             IUmax(k)= j
+          else if( fstrSOLID%unode(ndof*(i-1)+k) < Umin(k) ) then
+            Umin(k) = fstrSOLID%unode(ndof*(i-1)+k)
             IUmin(k)= j
-          enddo
-        else
-          do k = 1, ndof
-            if( fstrSOLID%unode(ndof*(i-1)+k) > Umax(k) ) then
-              Umax(k) = fstrSOLID%unode(ndof*(i-1)+k)
-              IUmax(k)= j
-            endif
-            if( fstrSOLID%unode(ndof*(i-1)+k) < Umin(k) ) then
-              Umin(k) = fstrSOLID%unode(ndof*(i-1)+k)
-              IUmin(k)= j
-            endif
-          enddo
-        endif
+          endif
+        enddo
       enddo
-!C*** Show Strain
-      if( ndof==2 ) mdof = 3
-      if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 6
+!C*** Nodal Strain / Stress / MISES
 !C @node
       do i = 1, hecMESH%nn_internal
         if(fstrSOLID%is_rot(i)==1)cycle
         j = hecMESH%global_node_ID(i)
-        if( i==1 ) then
-          do k = 1, mdof
-            Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
-            Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
+        do k = 1, mdof
+          if     ( fstrSOLID%STRAIN(mdof*(i-1)+k) > Emax(k) ) then
+            Emax(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             IEmax(k)= j
+          else if( fstrSOLID%STRAIN(mdof*(i-1)+k) < Emin(k) ) then
+            Emin(k) = fstrSOLID%STRAIN(mdof*(i-1)+k)
             IEmin(k)= j
-          enddo
-        else
-          do k = 1, mdof
-            if( fstrSOLID%STRAIN(6*(i-1)+k) > Emax(k) ) then
-              Emax(k) = fstrSOLID%STRAIN(6*(i-1)+k)
-              IEmax(k)= j
-            endif
-            if( fstrSOLID%STRAIN(6*(i-1)+k) < Emin(k) ) then
-              Emin(k) = fstrSOLID%STRAIN(6*(i-1)+k)
-              IEmin(k)= j
-            endif
-          enddo
-        endif
-      enddo
-!C @element
-      do i = 1, hecMESH%n_elem
-        ID_area = hecMESH%elem_ID(i*2)
-        if( ID_area==hecMESH%my_rank ) then
-          j = hecMESH%global_elem_ID(i)
-          if( hecMESH%elem_ID(i*2-1)==1 ) then
-            do k = 1, mdof
-              EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
-              EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
-              IEEmax(k)= j
-              IEEmin(k)= j
-            enddo
-          else
-            do k = 1, mdof
-              if( fstrSOLID%ESTRAIN(6*(i-1)+k) > EEmax(k) ) then
-                EEmax(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
-                IEEmax(k)= j
-              endif
-              if( fstrSOLID%ESTRAIN(6*(i-1)+k) < EEmin(k) ) then
-                EEmin(k) = fstrSOLID%ESTRAIN(6*(i-1)+k)
-                IEEmin(k)= j
-              endif
-            enddo
           endif
-        endif
-      enddo
-!C*** Show Stress
-      if( ndof==2 ) mdof = 3
-      if( ndof==3 ) mdof = 6
-      if( ndof==6 ) mdof = 6
-!C @node
-      do i = 1, hecMESH%nn_internal
-        if(fstrSOLID%is_rot(i)==1)cycle
-        j = hecMESH%global_node_ID(i)
-        if( i==1 ) then
-          do k = 1, mdof
-            Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
-            Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
+          if     ( fstrSOLID%STRESS(mdof*(i-1)+k) > Smax(k) ) then
+            Smax(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
             ISmax(k)= j
+          else if( fstrSOLID%STRESS(mdof*(i-1)+k) < Smin(k) ) then
+            Smin(k) = fstrSOLID%STRESS(mdof*(i-1)+k)
             ISmin(k)= j
-          enddo
-          Mmax(1) = fstrSOLID%MISES(1)
-          Mmin(1) = fstrSOLID%MISES(1)
+          endif
+        enddo
+        if     ( fstrSOLID%MISES(i) > Mmax(1) ) then
+          Mmax(1) = fstrSOLID%MISES(i)
           IMmax(1)= j
+        else if( fstrSOLID%MISES(i) < Mmin(1) ) then
+          Mmin(1) = fstrSOLID%MISES(i)
           IMmin(1)= j
-        else
-          do k = 1, mdof
-            if( fstrSOLID%STRESS(6*(i-1)+k) > Smax(k) ) then
-              Smax(k) = fstrSOLID%STRESS(6*(i-1)+k)
-              ISmax(k)= j
-            endif
-            if( fstrSOLID%STRESS(6*(i-1)+k) < Smin(k) ) then
-              Smin(k) = fstrSOLID%STRESS(6*(i-1)+k)
-              ISmin(k)= j
-            endif
-          enddo
-          if( fstrSOLID%MISES(i) > Mmax(1) ) then
-            Mmax(1) = fstrSOLID%MISES(i)
-            IMmax(1)= j
-          endif
-          if( fstrSOLID%MISES(i) < Mmin(1) ) then
-            Mmin(1) = fstrSOLID%MISES(i)
-            IMmin(1)= j
-          endif
         endif
       enddo
-!C @element
+!C*** Elemental Strain / STRESS
       do i = 1, hecMESH%n_elem
         ID_area = hecMESH%elem_ID(i*2)
         if( ID_area==hecMESH%my_rank ) then
           j = hecMESH%global_elem_ID(i)
-          if( hecMESH%elem_ID(i*2-1)==1 ) then
-            do k = 1, mdof
-              ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
-              ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
+          do k = 1, mdof
+            if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) > EEmax(k) ) then
+              EEmax(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              IEEmax(k)= j
+            else if( fstrSOLID%ESTRAIN(mdof*(i-1)+k) < EEmin(k) ) then
+              EEmin(k) = fstrSOLID%ESTRAIN(mdof*(i-1)+k)
+              IEEmin(k)= j
+            endif
+            if( fstrSOLID%ESTRESS(mdof*(i-1)+k) > ESmax(k) ) then
+              ESmax(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
               IESmax(k)= j
+            else if( fstrSOLID%ESTRESS(mdof*(i-1)+k) < ESmin(k) ) then
+              ESmin(k) = fstrSOLID%ESTRESS(mdof*(i-1)+k)
               IESmin(k)= j
-            enddo
-            EMmax(1) = fstrSOLID%EMISES(1)
-            EMmin(1) = fstrSOLID%EMISES(1)
+            endif
+          enddo
+          if( fstrSOLID%EMISES(i) > EMmax(1) ) then
+            EMmax(1) = fstrSOLID%EMISES(i)
             IEMmax(1)= j
+          else if( fstrSOLID%EMISES(i) < EMmin(1) ) then
+            EMmin(1) = fstrSOLID%EMISES(i)
             IEMmin(1)= j
-          else
-            do k = 1, mdof
-              if( fstrSOLID%ESTRESS(6*(i-1)+k) > ESmax(k) ) then
-                ESmax(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
-                IESmax(k)= j
-              endif
-              if( fstrSOLID%ESTRESS(6*(i-1)+k) < ESmin(k) ) then
-                ESmin(k) = fstrSOLID%ESTRESS(6*(i-1)+k)
-                IESmin(k)= j
-              endif
-            enddo
-            if( fstrSOLID%EMISES(i) > EMmax(1) ) then
-              EMmax(1) = fstrSOLID%EMISES(i)
-              IEMmax(1)= j
-            endif
-            if( fstrSOLID%EMISES(i) < EMmin(1) ) then
-              EMmin(1) = fstrSOLID%EMISES(i)
-              IEMmin(1)= j
-            endif
           endif
         endif
       enddo
-!C*** Show 2DOF
-      if( ndof==2 ) then
-        write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
-        write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
-        write(ILOG,1009) '//E11',Emax(1),IEmax(1),Emin(1),IEmin(1)
-        write(ILOG,1009) '//E22',Emax(2),IEmax(2),Emin(2),IEmin(2)
-        write(ILOG,1009) '//E12',Emax(3),IEmax(3),Emin(3),IEmin(3)
-        write(ILOG,1009) '//S11',Smax(1),ISmax(1),Smin(1),ISmin(1)
-        write(ILOG,1009) '//S22',Smax(2),ISmax(2),Smin(2),ISmin(2)
-        write(ILOG,1009) '//S12',Smax(3),ISmax(3),Smin(3),ISmin(3)
-        write(ILOG,1009) '//SMS',Mmax(1),IMmax(1),Mmin(1),IMmin(1)
-        write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009) '//E11',EEmax(1),IEEmax(1),EEmin(1),IEEmin(1)
-        write(ILOG,1009) '//E22',EEmax(2),IEEmax(2),EEmin(2),IEEmin(2)
-        write(ILOG,1009) '//E12',EEmax(3),IEEmax(3),EEmin(3),IEEmin(3)
-        write(ILOG,1009) '//S11',ESmax(1),IESmax(1),ESmin(1),IESmin(1)
-        write(ILOG,1009) '//S22',ESmax(2),IESmax(2),ESmin(2),IESmin(2)
-        write(ILOG,1009) '//S12',ESmax(3),IESmax(3),ESmin(3),IESmin(3)
-        write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
-        !C*** Show Summary
-        call hecmw_allREDUCE_R(hecMESH,Umax,2,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Umin,2,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
-        if( hecMESH%my_rank==0 ) then
-          write(ILOG,*) '##### Global Summary :Max/Min####'
-          write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
-          write(ILOG,1019) '//U2 ',Umax(2),Umin(2)
-          write(ILOG,1019) '//E11',Emax(1),Emin(1)
-          write(ILOG,1019) '//E22',Emax(2),Emin(2)
-          write(ILOG,1019) '//E12',Emax(3),Emin(3)
-          write(ILOG,1019) '//S11',Smax(1),Smin(1)
-          write(ILOG,1019) '//S22',Smax(2),Smin(2)
-          write(ILOG,1019) '//S12',Smax(3),Smin(3)
-          write(ILOG,1019) '//SMS',Mmax(1),Mmin(1)
-          write(ILOG,*) '##### @Element :Max/Min####'
-          write(ILOG,1019) '//E11',EEmax(1),EEmin(1)
-          write(ILOG,1019) '//E22',EEmax(2),EEmin(2)
-          write(ILOG,1019) '//E12',EEmax(3),EEmin(3)
-          write(ILOG,1019) '//S11',ESmax(1),ESmin(1)
-          write(ILOG,1019) '//S22',ESmax(2),ESmin(2)
-          write(ILOG,1019) '//S12',ESmax(3),ESmin(3)
-          write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
-        endif
-!C*** Show 3DOF
-      else if( ndof==3 .or. ndof==6 ) then
-        write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009) '//U1 ',Umax(1),IUmax(1),Umin(1),IUmin(1)
-        write(ILOG,1009) '//U2 ',Umax(2),IUmax(2),Umin(2),IUmin(2)
-        write(ILOG,1009) '//U3 ',Umax(3),IUmax(3),Umin(3),IUmin(3)
-        write(ILOG,1009) '//E11',Emax(1),IEmax(1),Emin(1),IEmin(1)
-        write(ILOG,1009) '//E22',Emax(2),IEmax(2),Emin(2),IEmin(2)
-        write(ILOG,1009) '//E33',Emax(3),IEmax(3),Emin(3),IEmin(3)
-        write(ILOG,1009) '//E12',Emax(4),IEmax(4),Emin(4),IEmin(4)
-        write(ILOG,1009) '//E23',Emax(5),IEmax(5),Emin(5),IEmin(5)
-        write(ILOG,1009) '//E13',Emax(6),IEmax(6),Emin(6),IEmin(6)
-        write(ILOG,1009) '//S11',Smax(1),ISmax(1),Smin(1),ISmin(1)
-        write(ILOG,1009) '//S22',Smax(2),ISmax(2),Smin(2),ISmin(2)
-        write(ILOG,1009) '//S33',Smax(3),ISmax(3),Smin(3),ISmin(3)
-        write(ILOG,1009) '//S12',Smax(4),ISmax(4),Smin(4),ISmin(4)
-        write(ILOG,1009) '//S23',Smax(5),ISmax(5),Smin(5),ISmin(5)
-        write(ILOG,1009) '//S13',Smax(6),ISmax(6),Smin(6),ISmin(6)
-        write(ILOG,1009) '//SMS',Mmax(1),IMmax(1),Mmin(1),IMmin(1)
-        write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009) '//E11',EEmax(1),IEEmax(1),EEmin(1),IEEmin(1)
-        write(ILOG,1009) '//E22',EEmax(2),IEEmax(2),EEmin(2),IEEmin(2)
-        write(ILOG,1009) '//E33',EEmax(3),IEEmax(3),EEmin(3),IEEmin(3)
-        write(ILOG,1009) '//E12',EEmax(4),IEEmax(4),EEmin(4),IEEmin(4)
-        write(ILOG,1009) '//E23',EEmax(5),IEEmax(5),EEmin(5),IEEmin(5)
-        write(ILOG,1009) '//E13',EEmax(6),IEEmax(6),EEmin(6),IEEmin(6)
-        write(ILOG,1009) '//S11',ESmax(1),IESmax(1),ESmin(1),IESmin(1)
-        write(ILOG,1009) '//S22',ESmax(2),IESmax(2),ESmin(2),IESmin(2)
-        write(ILOG,1009) '//S33',ESmax(3),IESmax(3),ESmin(3),IESmin(3)
-        write(ILOG,1009) '//S12',ESmax(4),IESmax(4),ESmin(4),IESmin(4)
-        write(ILOG,1009) '//S23',ESmax(5),IESmax(5),ESmin(5),IESmin(5)
-        write(ILOG,1009) '//S13',ESmax(6),IESmax(6),ESmin(6),IESmin(6)
-        write(ILOG,1009) '//SMS',EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
-        !C*** Show Summary
-        call hecmw_allREDUCE_R(hecMESH,Umax,3,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Umin,3,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
-        if( hecMESH%my_rank==0 ) then
-          write(ILOG,*) '##### Global Summary :Max/Min####'
-          write(ILOG,1019) '//U1 ',Umax(1),Umin(1)
-          write(ILOG,1019) '//U2 ',Umax(2),Umin(2)
-          write(ILOG,1019) '//U3 ',Umax(3),Umin(3)
-          write(ILOG,1019) '//E11',Emax(1),Emin(1)
-          write(ILOG,1019) '//E22',Emax(2),Emin(2)
-          write(ILOG,1019) '//E33',Emax(3),Emin(3)
-          write(ILOG,1019) '//E12',Emax(4),Emin(4)
-          write(ILOG,1019) '//E23',Emax(5),Emin(5)
-          write(ILOG,1019) '//E13',Emax(6),Emin(6)
-          write(ILOG,1019) '//S11',Smax(1),Smin(1)
-          write(ILOG,1019) '//S22',Smax(2),Smin(2)
-          write(ILOG,1019) '//S33',Smax(3),Smin(3)
-          write(ILOG,1019) '//S12',Smax(4),Smin(4)
-          write(ILOG,1019) '//S23',Smax(5),Smin(5)
-          write(ILOG,1019) '//S13',Smax(6),Smin(6)
-          write(ILOG,1019) '//SMS',Mmax(1),Mmin(1)
-          write(ILOG,*) '##### @Element :Max/Min####'
-          write(ILOG,1019) '//E11',EEmax(1),EEmin(1)
-          write(ILOG,1019) '//E22',EEmax(2),EEmin(2)
-          write(ILOG,1019) '//E33',EEmax(3),EEmin(3)
-          write(ILOG,1019) '//E12',EEmax(4),EEmin(4)
-          write(ILOG,1019) '//E23',EEmax(5),EEmin(5)
-          write(ILOG,1019) '//E13',EEmax(6),EEmin(6)
-          write(ILOG,1019) '//S11',ESmax(1),ESmin(1)
-          write(ILOG,1019) '//S22',ESmax(2),ESmin(2)
-          write(ILOG,1019) '//S33',ESmax(3),ESmin(3)
-          write(ILOG,1019) '//S12',ESmax(4),ESmin(4)
-          write(ILOG,1019) '//S23',ESmax(5),ESmin(5)
-          write(ILOG,1019) '//S13',ESmax(6),ESmin(6)
-          write(ILOG,1019) '//SMS',EMmax(1),EMmin(1)
-        endif
-!C*** Show 6DOF
-      else if( 1 == 0 ) then
-        write(ILOG,*) '##### Local Summary :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009)'//U1    ',Umax(1),IUmax(1),Umin(1),IUmin(1)
-        write(ILOG,1009)'//U2    ',Umax(2),IUmax(2),Umin(2),IUmin(2)
-        write(ILOG,1009)'//U3    ',Umax(3),IUmax(3),Umin(3),IUmin(3)
-        write(ILOG,1009)'//R1    ',Umax(4),IUmax(4),Umin(4),IUmin(4)
-        write(ILOG,1009)'//R2    ',Umax(5),IUmax(5),Umin(5),IUmin(5)
-        write(ILOG,1009)'//R3    ',Umax(6),IUmax(6),Umin(6),IUmin(6)
-        write(ILOG,1009)'//E11(+)',Emax( 1),IEmax( 1),Emin( 1),IEmin( 1)
-        write(ILOG,1009)'//E22(+)',Emax( 2),IEmax( 2),Emin( 2),IEmin( 2)
-        write(ILOG,1009)'//E33(+)',Emax( 3),IEmax( 3),Emin( 3),IEmin( 3)
-        write(ILOG,1009)'//E12(+)',Emax( 4),IEmax( 4),Emin( 4),IEmin( 4)
-        write(ILOG,1009)'//E23(+)',Emax( 5),IEmax( 5),Emin( 5),IEmin( 5)
-        write(ILOG,1009)'//E31(+)',Emax( 6),IEmax( 6),Emin( 6),IEmin( 6)
-        write(ILOG,1009)'//E11(-)',Emax( 7),IEmax( 7),Emin( 7),IEmin( 7)
-        write(ILOG,1009)'//E22(-)',Emax( 8),IEmax( 8),Emin( 8),IEmin( 8)
-        write(ILOG,1009)'//E33(-)',Emax( 9),IEmax( 9),Emin( 9),IEmin( 9)
-        write(ILOG,1009)'//E12(-)',Emax(10),IEmax(10),Emin(10),IEmin(10)
-        write(ILOG,1009)'//E23(-)',Emax(11),IEmax(11),Emin(11),IEmin(11)
-        write(ILOG,1009)'//E31(-)',Emax(12),IEmax(12),Emin(12),IEmin(12)
-        write(ILOG,1009)'//S11(+)',Smax( 1),ISmax( 1),Smin( 1),ISmin( 1)
-        write(ILOG,1009)'//S22(+)',Smax( 2),ISmax( 2),Smin( 2),ISmin( 2)
-        write(ILOG,1009)'//S33(+)',Smax( 3),ISmax( 3),Smin( 3),ISmin( 3)
-        write(ILOG,1009)'//S12(+)',Smax( 4),ISmax( 4),Smin( 4),ISmin( 4)
-        write(ILOG,1009)'//S23(+)',Smax( 5),ISmax( 5),Smin( 5),ISmin( 5)
-        write(ILOG,1009)'//S31(+)',Smax( 6),ISmax( 6),Smin( 6),ISmin( 6)
-        write(ILOG,1009)'//S11(-)',Smax( 7),ISmax( 7),Smin( 7),ISmin( 7)
-        write(ILOG,1009)'//S22(-)',Smax( 8),ISmax( 8),Smin( 8),ISmin( 8)
-        write(ILOG,1009)'//S33(-)',Smax( 9),ISmax( 9),Smin( 9),ISmin( 9)
-        write(ILOG,1009)'//S12(-)',Smax(10),ISmax(10),Smin(10),ISmin(10)
-        write(ILOG,1009)'//S23(-)',Smax(11),ISmax(11),Smin(11),ISmin(11)
-        write(ILOG,1009)'//S31(-)',Smax(12),ISmax(12),Smin(12),ISmin(12)
-        write(ILOG,1009)'//SMS(+)',Mmax( 1),IMmax( 1),Mmin( 1),IMmin( 1)
-        write(ILOG,1009)'//SMS(-)',Mmax( 1),IMmax( 1),Mmin( 1),IMmin( 1)
-        write(ILOG,*) '##### @Element :Max/IdMax/Min/IdMin####'
-        write(ILOG,1009)'//E11(+)',EEmax( 1),IEEmax( 1),EEmin( 1),IEEmin( 1)
-        write(ILOG,1009)'//E22(+)',EEmax( 2),IEEmax( 2),EEmin( 2),IEEmin( 2)
-        write(ILOG,1009)'//E33(+)',EEmax( 3),IEEmax( 3),EEmin( 3),IEEmin( 3)
-        write(ILOG,1009)'//E12(+)',EEmax( 4),IEEmax( 4),EEmin( 4),IEEmin( 4)
-        write(ILOG,1009)'//E23(+)',EEmax( 5),IEEmax( 5),EEmin( 5),IEEmin( 5)
-        write(ILOG,1009)'//E31(+)',EEmax( 6),IEEmax( 6),EEmin( 6),IEEmin( 6)
-        write(ILOG,1009)'//E11(-)',EEmax( 7),IEEmax( 7),EEmin( 7),IEEmin( 7)
-        write(ILOG,1009)'//E22(-)',EEmax( 8),IEEmax( 8),EEmin( 8),IEEmin( 8)
-        write(ILOG,1009)'//E33(-)',EEmax( 9),IEEmax( 9),EEmin( 9),IEEmin( 9)
-        write(ILOG,1009)'//E12(-)',EEmax(10),IEEmax(10),EEmin(10),IEEmin(10)
-        write(ILOG,1009)'//E23(-)',EEmax(11),IEEmax(11),EEmin(11),IEEmin(11)
-        write(ILOG,1009)'//E31(-)',EEmax(12),IEEmax(12),EEmin(12),IEEmin(12)
-        write(ILOG,1009)'//S11(+)',ESmax( 1),IESmax( 1),ESmin( 1),IESmin( 1)
-        write(ILOG,1009)'//S22(+)',ESmax( 2),IESmax( 2),ESmin( 2),IESmin( 2)
-        write(ILOG,1009)'//S33(+)',ESmax( 3),IESmax( 3),ESmin( 3),IESmin( 3)
-        write(ILOG,1009)'//S12(+)',ESmax( 4),IESmax( 4),ESmin( 4),IESmin( 4)
-        write(ILOG,1009)'//S23(+)',ESmax( 5),IESmax( 5),ESmin( 5),IESmin( 5)
-        write(ILOG,1009)'//S31(+)',ESmax( 6),IESmax( 6),ESmin( 6),IESmin( 6)
-        write(ILOG,1009)'//S11(-)',ESmax( 7),IESmax( 7),ESmin( 7),IESmin( 7)
-        write(ILOG,1009)'//S22(-)',ESmax( 8),IESmax( 8),ESmin( 8),IESmin( 8)
-        write(ILOG,1009)'//S33(-)',ESmax( 9),IESmax( 9),ESmin( 9),IESmin( 9)
-        write(ILOG,1009)'//S12(-)',ESmax(10),IESmax(10),ESmin(10),IESmin(10)
-        write(ILOG,1009)'//S23(-)',ESmax(11),IESmax(11),ESmin(11),IESmin(11)
-        write(ILOG,1009)'//S31(-)',ESmax(12),IESmax(12),ESmin(12),IESmin(12)
-        write(ILOG,1009)'//SMS(+)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
-        write(ILOG,1009)'//SMS(-)',EMmax( 1),IEMmax( 1),EMmin( 1),IEMmin( 1)
-        !C*** Show Summary
-        call hecmw_allREDUCE_R(hecMESH,Umax, 6,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Umin, 6,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Emax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Emin,12,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Smax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Smin,12,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,Mmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,Mmin,1,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EEmax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EEmin,12,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,ESmax,12,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,ESmin,12,hecmw_min)
-        call hecmw_allREDUCE_R(hecMESH,EMmax,1,hecmw_max)
-        call hecmw_allREDUCE_R(hecMESH,EMmin,1,hecmw_min)
-        if( hecMESH%my_rank==0 ) then
-          write(ILOG,*) '##### Global Summary :Max/Min####'
-          write(ILOG,1019) '//U1    ',Umax(1),Umin(1)
-          write(ILOG,1019) '//U2    ',Umax(2),Umin(2)
-          write(ILOG,1019) '//U3    ',Umax(3),Umin(3)
-          write(ILOG,1019) '//R1    ',Umax(4),Umin(4)
-          write(ILOG,1019) '//R2    ',Umax(5),Umin(5)
-          write(ILOG,1019) '//R3    ',Umax(6),Umin(6)
-          write(ILOG,1019) '//E11(+)',Emax( 1),Emin( 1)
-          write(ILOG,1019) '//E22(+)',Emax( 2),Emin( 2)
-          write(ILOG,1019) '//E33(+)',Emax( 3),Emin( 3)
-          write(ILOG,1019) '//E12(+)',Emax( 4),Emin( 4)
-          write(ILOG,1019) '//E23(+)',Emax( 5),Emin( 5)
-          write(ILOG,1019) '//E31(+)',Emax( 6),Emin( 6)
-          write(ILOG,1019) '//E11(-)',Emax( 7),Emin( 7)
-          write(ILOG,1019) '//E22(-)',Emax( 8),Emin( 8)
-          write(ILOG,1019) '//E33(-)',Emax( 9),Emin( 9)
-          write(ILOG,1019) '//E12(-)',Emax(10),Emin(10)
-          write(ILOG,1019) '//E23(-)',Emax(11),Emin(11)
-          write(ILOG,1019) '//E31(-)',Emax(12),Emin(12)
-          write(ILOG,1019) '//S11(+)',Smax( 1),Smin( 1)
-          write(ILOG,1019) '//S22(+)',Smax( 2),Smin( 2)
-          write(ILOG,1019) '//S33(+)',Smax( 3),Smin( 3)
-          write(ILOG,1019) '//S12(+)',Smax( 4),Smin( 4)
-          write(ILOG,1019) '//S23(+)',Smax( 5),Smin( 5)
-          write(ILOG,1019) '//S31(+)',Smax( 6),Smin( 6)
-          write(ILOG,1019) '//S11(-)',Smax( 7),Smin( 7)
-          write(ILOG,1019) '//S22(-)',Smax( 8),Smin( 8)
-          write(ILOG,1019) '//S33(-)',Smax( 9),Smin( 9)
-          write(ILOG,1019) '//S12(-)',Smax(10),Smin(10)
-          write(ILOG,1019) '//S23(-)',Smax(11),Smin(11)
-          write(ILOG,1019) '//S31(-)',Smax(12),Smin(12)
-          write(ILOG,1019) '//SMS(+)',Mmax( 1),Mmin( 1)
-          write(ILOG,1019) '//SMS(-)',Mmax( 1),Mmin( 1)
-          write(ILOG,*) '##### @Element :Max/Min####'
-          write(ILOG,1019) '//E11(+)',EEmax( 1),EEmin( 1)
-          write(ILOG,1019) '//E22(+)',EEmax( 2),EEmin( 2)
-          write(ILOG,1019) '//E33(+)',EEmax( 3),EEmin( 3)
-          write(ILOG,1019) '//E12(+)',EEmax( 4),EEmin( 4)
-          write(ILOG,1019) '//E23(+)',EEmax( 5),EEmin( 5)
-          write(ILOG,1019) '//E31(+)',EEmax( 6),EEmin( 6)
-          write(ILOG,1019) '//E11(-)',EEmax( 7),EEmin( 7)
-          write(ILOG,1019) '//E22(-)',EEmax( 8),EEmin( 8)
-          write(ILOG,1019) '//E33(-)',EEmax( 9),EEmin( 9)
-          write(ILOG,1019) '//E12(-)',EEmax(10),EEmin(10)
-          write(ILOG,1019) '//E23(-)',EEmax(11),EEmin(11)
-          write(ILOG,1019) '//E31(-)',EEmax(12),EEmin(12)
-          write(ILOG,1019) '//S11(+)',ESmax( 1),ESmin( 1)
-          write(ILOG,1019) '//S22(+)',ESmax( 2),ESmin( 2)
-          write(ILOG,1019) '//S33(+)',ESmax( 3),ESmin( 3)
-          write(ILOG,1019) '//S12(+)',ESmax( 4),ESmin( 4)
-          write(ILOG,1019) '//S23(+)',ESmax( 5),ESmin( 5)
-          write(ILOG,1019) '//S31(+)',ESmax( 6),ESmin( 6)
-          write(ILOG,1019) '//S11(-)',ESmax( 7),ESmin( 7)
-          write(ILOG,1019) '//S22(-)',ESmax( 8),ESmin( 8)
-          write(ILOG,1019) '//S33(-)',ESmax( 9),ESmin( 9)
-          write(ILOG,1019) '//S12(-)',ESmax(10),ESmin(10)
-          write(ILOG,1019) '//S23(-)',ESmax(11),ESmin(11)
-          write(ILOG,1019) '//S31(-)',ESmax(12),ESmin(12)
-          write(ILOG,1019) '//SMS(+)',EMmax( 1),EMmin( 1)
-          write(ILOG,1019) '//SMS(-)',EMmax( 1),EMmin( 1)
-        endif
+
+
+                      write(ILOG,*)    '##### Local Summary @Node    :Max/IdMax/Min/IdMin####'
+      do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',Umax(i),IUmax(i),Umin(i),IUmin(i);     end do 
+      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',Emax(i),IEmax(i),Emin(i),IEmin(i);     end do 
+      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',Smax(i),ISmax(i),Smin(i),ISmin(i);     end do 
+                      write(ILOG,1009) '//SMS '           ,Mmax(1),IMmax(1),Mmin(1),IMmin(1)
+                      write(ILOG,*)    '##### Local Summary @Element :Max/IdMax/Min/IdMin####'
+      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',EEmax(i),IEEmax(i),EEmin(i),IEEmin(i); end do 
+      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',ESmax(i),IESmax(i),ESmin(i),IESmin(i); end do 
+                      write(ILOG,1009) '//SMS '           ,EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
+
+      !C*** Show Summary
+      GUmax  = Umax; GUmin  = Umin; 
+      GEmax  = Emax; GEmin  = Emin; GEEmax = EEmax; GEEmin = EEmin;
+      GSmax  = Smax; GSmin  = Smin; GESmax = ESmax; GESmin = ESmin;
+      GMmax  = Mmax; GMmin  = Mmin; GEMmax = EMmax; GEMmin = EMmin; 
+
+      call hecmw_allREDUCE_R(hecMESH,GUmax,ndof,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GUmin,ndof,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GEmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GEmin,mdof,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GSmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GSmin,mdof,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GMmax,1,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GMmin,1,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GEEmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GEEmin,mdof,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GESmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GESmin,mdof,hecmw_min)
+      call hecmw_allREDUCE_R(hecMESH,GEMmax,1,hecmw_max)
+      call hecmw_allREDUCE_R(hecMESH,GEMmin,1,hecmw_min)
+
+      do i=1,ndof
+        if(GUmax (i) > Umax (i)) IUmax (i) = 0
+        if(GUmin (i) < Umin (i)) IUmin (i) = 0
+      enddo
+      do i=1,mdof
+        if(GEmax (i) > Emax (i)) IEmax (i) = 0
+        if(GSmax (i) > Smax (i)) ISmax (i) = 0
+        if(GEEmax(i) > EEmax(i)) IEEmax(i) = 0
+        if(GESmax(i) > ESmax(i)) IESmax(i) = 0
+        if(GEmin (i) < Emin (i)) IEmin (i) = 0
+        if(GSmin (i) < Smin (i)) ISmin (i) = 0
+        if(GEEmin(i) < EEmin(i)) IEEmin(i) = 0
+        if(GESmin(i) < ESmin(i)) IESmin(i) = 0
+      enddo
+      do i=1,1
+        if(GMmax (i) > Mmax (i)) IMmax (i) = 0
+        if(GEMmax(i) > EMmax(i)) IEMmax(i) = 0
+        if(GMmin (i) < Mmin (i)) IMmin (i) = 0
+        if(GEMmin(i) < EMmin(i)) IEMmin(i) = 0
+      enddo
+
+      call hecmw_allREDUCE_I(hecMESH,IUmax,ndof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IUmin,ndof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEmin,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,ISmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,ISmin,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IMmax,1,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IMmin,1,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEEmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEEmin,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IESmax,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IESmin,mdof,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEMmax,1,hecmw_max)
+      call hecmw_allREDUCE_I(hecMESH,IEMmin,1,hecmw_max)
+
+      if( hecMESH%my_rank==0 ) then          
+                        write(ILOG,*)    '##### Global Summary @Node    :Max/IdMax/Min/IdMin####'
+        do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',GUmax(i),IUmax(i),GUmin(i),IUmin(i);     end do 
+        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEmax(i),IEmax(i),GEmin(i),IEmin(i);     end do 
+        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GSmax(i),ISmax(i),GSmin(i),ISmin(i);     end do 
+                        write(ILOG,1009) '//SMS '           ,GMmax(1),IMmax(1),GMmin(1),IMmin(1)
+                        write(ILOG,*)    '##### Global Summary @Element :Max/IdMax/Min/IdMin####'
+        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEEmax(i),IEEmax(i),GEEmin(i),IEEmin(i); end do 
+        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GESmax(i),IESmax(i),GESmin(i),IESmin(i); end do 
+                        write(ILOG,1009) '//SMS '           ,GEMmax(1),IEMmax(1),GEMmin(1),IEMmin(1)
       endif
 
- 1009 format(a8,1pe12.4,i10,1pe12.4,i10)
- 1019 format(a8,1pe12.4,1pe12.4)
+ 1009 format(a7,1pe12.4,i10,1pe12.4,i10)
+ 1029 format(a,i0,a,1pe12.4,i10,1pe12.4,i10)
   end subroutine fstr_static_post
 
 end module m_static_output

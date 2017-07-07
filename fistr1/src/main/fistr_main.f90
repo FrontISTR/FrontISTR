@@ -2,14 +2,12 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-
 module m_fstr_main
 
 use hecmw
 use m_fstr
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
-use m_fstr_solve_linear
 use m_fstr_solve_heat
 use m_fstr_solve_nlgeom
 use m_fstr_solve_eigen
@@ -22,7 +20,6 @@ use fstr_solver_dynamic
 use fstr_debug_dump
 use fstr_matrix_con_contact
 use m_fstr_freqdata
-
 type (hecmwST_local_mesh)              :: hecMESH
 type (hecmwST_matrix )                 :: hecMAT
 type (fstr_solid )                     :: fstrSOLID
@@ -38,8 +35,8 @@ character(len=HECMW_FILENAME_LEN)      :: name_ID
 contains
 
 subroutine fstr_main() BIND(C,NAME='fstr_main')
-  implicit none
 
+  implicit none
   real(kind=kreal) :: T1,T2,T3
 
   T1=0.0; T2=0.0; T3=0.0
@@ -68,8 +65,8 @@ subroutine fstr_main() BIND(C,NAME='fstr_main')
   ! =============== ANALYSIS =====================
 
   select case( fstrPR%solution_type )
-  case ( kstSTATIC, kstNLSTATIC)
-          call fstr_static_analysis( fstrPR%solution_type )
+  case ( kstSTATIC )
+          call fstr_static_analysis
   case ( kstDYNAMIC )
           call fstr_dynamic_analysis
   case ( kstEIGEN )
@@ -105,8 +102,9 @@ subroutine fstr_main() BIND(C,NAME='fstr_main')
   call fstr_finalize()
   call hecmw_finalize
   if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
-
+  
 end subroutine fstr_main
+
 
 !=============================================================================!
 !> Initializer                                                                  !
@@ -290,9 +288,8 @@ end subroutine fstr_init_condition
 !> Master subroutine of linear/nonlinear static analysis                                !
 !=============================================================================!
 
-subroutine fstr_static_analysis( flag )
+subroutine fstr_static_analysis
         implicit none
-        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -301,12 +298,14 @@ subroutine fstr_static_analysis( flag )
                 write(IMSG,*)
                 write(IMSG,*)
                 write(IMSG,*)
-                if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
         end if
 
-        if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
-        if(flag == kstNLSTATIC) call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+        if( fstrPR%nlgeom ) then
+                if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
+        else
+                if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
+        end if
+        call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
 
         call fstr_solid_finalize( fstrSOLID )
 
@@ -367,10 +366,10 @@ subroutine fstr_dynamic_analysis
            write(IMSG,*)
            write(IMSG,*)
            write(IMSG,*)
-           if( fstrDYNAMIC%nlflag==0 ) then
-                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
-           else
+           if( fstrPR%nlgeom ) then
                 write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
+           else
+                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
            endif
         end if
 
@@ -443,4 +442,3 @@ end subroutine fstr_finalize
 
 !=============================================================================!
 end module m_fstr_main
-

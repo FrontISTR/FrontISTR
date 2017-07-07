@@ -12,7 +12,6 @@ use m_fstr_para_contact
 !#endif
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
-use m_fstr_solve_linear
 use m_fstr_solve_heat
 use m_fstr_solve_nlgeom
 use m_fstr_solve_eigen
@@ -96,8 +95,8 @@ subroutine fstr_main() BIND(C,NAME='fstr_main')
         ! =============== ANALYSIS =====================
 
         select case( fstrPR%solution_type )
-        case ( kstSTATIC, kstNLSTATIC)
-                call fstr_static_analysis( fstrPR%solution_type )
+        case ( kstSTATIC )
+                call fstr_static_analysis
         case ( kstDYNAMIC )
                 call fstr_dynamic_analysis
         case ( kstEIGEN )
@@ -329,9 +328,8 @@ end subroutine fstr_init_condition
 !> Master subroutine of linear/nonlinear static analysis                                !
 !=============================================================================!
 
-subroutine fstr_static_analysis( flag )
+subroutine fstr_static_analysis
         implicit none
-        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -340,18 +338,19 @@ subroutine fstr_static_analysis( flag )
                 write(IMSG,*)
                 write(IMSG,*)
                 write(IMSG,*)
-                if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
 
-        if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
-        if(flag == kstNLSTATIC)then
-            if(paraContactFlag)then
+        if( fstrPR%nlgeom ) then
+                if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
+        else
+                if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
+        end if
+        if(paraContactFlag)then
                 call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
-            else
+        else
                 call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-            endif
         endif
+
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_static_analysis
@@ -412,10 +411,10 @@ subroutine fstr_dynamic_analysis
            write(IMSG,*)
            write(IMSG,*)
            write(IMSG,*)
-           if( fstrDYNAMIC%nlflag==0 ) then
-                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
-           else
+           if( fstrPR%nlgeom ) then
                 write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
+           else
+                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
            endif
         end if
 

@@ -1,0 +1,25 @@
+#
+# for solver
+#
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST, REFINE=0
+ cavityflow
+!CONTROL,NAME=fstrCNT
+ cavityflow.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+ cavityflow.res
+#
+# for partitioner
+#
+!MESH, NAME=part_in, TYPE=HECMW-ENTIRE
+ cavityflow.msh
+!MESH, NAME=part_out, TYPE=HECMW-DIST
+ cavityflow
+#
+# for visualizer
+#
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+ cavityflow.msh
+!RESULT, NAME=result, IO=IN
+ cavityflow.res
+!RESULT, NAME=vis_out, IO=OUT
+ cavityflow_vis
