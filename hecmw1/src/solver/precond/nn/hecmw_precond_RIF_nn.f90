@@ -83,7 +83,6 @@ contains
     FILTER= hecMAT%Rarray(5)
 
     Write(*,"(a,F15.8)")"### RIF FILTER   :",FILTER
-    Write(*,"(a)")"This precoditioner is incomplete implementation. Please use other preconditioner"
 
     call hecmw_rif_nn(hecMAT)
 
@@ -98,69 +97,68 @@ contains
     implicit none
     real(kind=kreal), intent(inout)  :: ZP(:)
     integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU, k, iold, rcm,NDOF,NDOF2,idof,jdof
-    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
     real(kind=kreal) :: SW(NDOF),X(NDOF)
     NDOF2=NDOF*NDOF
-      !C-- FORWARD
-      do i= 1, N
+    !C-- FORWARD
+    do i= 1, N
+      do idof = 1, NDOF
+        SW(idof) = ZP(NDOF*(i-1)+idof)
+      end do 
+      isL= inumFI1L(i-1)+1
+      ieL= inumFI1L(i)
+      do j= isL, ieL
+        in= FI1L(j)
         do idof = 1, NDOF
-          SW(idof) = ZP(NDOF*(i-1)+idof)
+          X(idof) = ZP(NDOF*(in-1)+idof)
         end do 
-        isL= inumFI1L(i-1)+1
-        ieL= inumFI1L(i)
-        do j= isL, ieL
-          in= FI1L(j)
-          do idof = 1, NDOF
-            X(idof) = ZP(NDOF*(in-1)+idof)
+        do idof = 1, NDOF
+          do jdof = 1, NDOF
+            SW(idof) = SW(idof) - RIFL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
           end do 
-          do idof = 1, NDOF
-            do jdof = 1, NDOF
-              SW(idof) = SW(idof) - RIFL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-            end do 
-          end do 
-        enddo
-        X = SW
-        do idof = 2,NDOF
-          do jdof = 1, idof-1
-             X(idof) = X(idof) - RIFD(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
-          end do 
-        end do
-        ZP(NDOF*(i-1)+1:NDOF*(i-1)+NDOF) = X(1:NDOF)
+        end do 
       enddo
+      X = SW
+      do idof = 2,NDOF
+        do jdof = 1, idof-1
+           X(idof) = X(idof) - RIFD(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
+        end do 
+      end do
+      ZP(NDOF*(i-1)+1:NDOF*(i-1)+NDOF) = X(1:NDOF)
+    enddo
 
-      do i=1, N
-        do idof=1,NDOF
-          ZP(NDOF*(i-1)+idof)= ZP(NDOF*(i-1)+idof)*RIFD(NDOF2*(i-1)+(idof-1)*NDOF+idof)
-        end do
-      enddo
-    !C-- BACKWARD
-      do i= N, 1, -1
+    do i=1, N
+      do idof=1,NDOF
+        ZP(NDOF*(i-1)+idof)= ZP(NDOF*(i-1)+idof)*RIFD(NDOF2*(i-1)+(idof-1)*NDOF+idof)
+      end do
+    enddo
+  !C-- BACKWARD
+    do i= N, 1, -1
+      do idof = 1, NDOF
+        SW(idof) = ZP(NDOF*(i-1)+idof)
+      end do 
+      isL= inumFI1U(i-1) + 1
+      ieL= inumFI1U(i)
+      do j= ieL, isL, -1
+        in= FI1U(j)
         do idof = 1, NDOF
-          SW(idof) = ZP(NDOF*(i-1)+idof)
+          X(idof) = ZP(NDOF*(in-1)+idof)
         end do 
-        isL= inumFI1U(i-1) + 1
-        ieL= inumFI1U(i)
-        do j= ieL, isL, -1
-          in= FI1U(j)
-          do idof = 1, NDOF
-            X(idof) = ZP(NDOF*(in-1)+idof)
-          end do 
-          do idof = 1, NDOF
-            do jdof = 1, NDOF
-              SW(idof) = SW(idof) - RIFU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-            end do 
-          end do 
-        enddo
-        X=SW
-        do idof = NDOF, 1, -1
-          do jdof = NDOF, idof+1, -1
-            X(idof) = X(idof) - RIFD(NDOF*NDOF*(i-1)+NDOF*(jdof-1)+idof)*X(jdof)          
-          end do 
-        end do
         do idof = 1, NDOF
-          ZP(NDOF*(i-1)+idof) = X(idof)
+          do jdof = 1, NDOF
+            SW(idof) = SW(idof) - RIFU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+          end do 
         end do 
       enddo
+      X=SW
+      do idof = NDOF, 1, -1
+        do jdof = NDOF, idof+1, -1
+          X(idof) = X(idof) - RIFD(NDOF*NDOF*(i-1)+NDOF*(jdof-1)+idof)*X(jdof)          
+        end do 
+      end do
+      do idof = 1, NDOF
+        ZP(NDOF*(i-1)+idof) = X(idof)
+      end do 
+    enddo
   end subroutine hecmw_precond_RIF_nn_apply
 
 
@@ -170,9 +168,8 @@ contains
     subroutine hecmw_rif_nn(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) :: i, j, jS, jE, in, itr, iitr, ind(9), PRECOND, NP, NDOF, NDOF2,idof,jdof,k
-    real(kind=krealp) :: YV1, YV2, YV3, X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
-    real(kind=krealp) :: YV(hecMAT%NDOF), X(hecMAT%NDOF)
+    integer(kind=kint) :: i, j, k, jS, jE, in, itr, NP, NDOF, NDOF2, idof, jdof, iitr 
+    real(kind=krealp) :: dd, dtmp(hecMAT%NDOF), YV(hecMAT%NDOF), X(hecMAT%NDOF)
     real(kind=krealp) :: FILTER, SIGMA_DIAG
     real(kind=krealp), allocatable :: zz(:), vv(:)
 
@@ -185,553 +182,148 @@ contains
     allocate(zz(NDOF*NP))
 
     do itr=1,NP
-
-    !------------------------------ iitr = 1 ----------------------------------------
-
-    zz(:) = 0.0d0
-    vv(:) = 0.0d0
-
-    !{v}=[A]{zi}
-    do idof = 1,NDOF
-      jdof=1
-      zz(NDOF*(itr-1)+idof)= SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+jdof)
-    end do 
-
-    zz(3*itr-2)= 1.0d0
-
-    jS= inumFI1L(itr-1) + 1
-    jE= inumFI1L(itr  )
-    do j= jS, jE
-      in  = FI1L(j)
-      do idof = 1, NDOF
-        zz(NDOF*(in-1)+idof)=SAINVL(NDOF2*(j-1)+NDOF*(1-1)+idof)
-      end do 
-!      zz(3*in-2)= SAINVL(9*j-8)
-!      zz(3*in-1)= SAINVL(9*j-7)
-!      zz(3*in  )= SAINVL(9*J-6)
-    enddo
-
-    do i= 1, itr
-      do idof = 1,NDOF
-        X(idof)=zz(NDOF*(i-1)+idof)
-      end do 
-      !X(1)= zz(3*i-2)
-      !X(2)= zz(3*i-1)
-      !X(3)= zz(3*i  )
-      !vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X(1) + D(9*i-7)*X(2) + D(9*i-6)*X(3)
-      !vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X(1) + D(9*i-4)*X(2) + D(9*i-3)*X(3)
-      !vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X(1) + D(9*i-1)*X(2) + D(9*i  )*X(3)
-      do idof = 1, NDOF
-        do jdof = 1, NDOF
-          vv(NDOF*(i-1)+idof) = vv(NDOF*(i-1)+idof) + D(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
-        end do 
-      end do 
-
-      jS= indexL(i-1) + 1
-      jE= indexL(i  )
-      do j=jS,jE
-        in = itemL(j)
-!        vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X(1) + AL(9*j-5)*X(2) + AL(9*j-2)*X(3)
-!        vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X(1) + AL(9*j-4)*X(2) + AL(9*j-1)*X(3)
-!        vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X(1) + AL(9*j-3)*X(2) + AL(9*j  )*X(3)
-        do idof = 1, NDOF
-          do jdof = 1, NDOF
-            vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AL(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
-          end do 
-        end do 
-      enddo
-
-      jS= indexU(i-1) + 1
-      jE= indexU(i  )
-      do j= jS, jE
-        in = itemU(j)
-!        vv(3*in-2)= vv(3*in-2) + AU(9*j-8)*X(1) + AU(9*j-5)*X(2) + AU(9*j-2)*X(3)
-!        vv(3*in-1)= vv(3*in-1) + AU(9*j-7)*X(1) + AU(9*j-4)*X(2) + AU(9*j-1)*X(3)
-!        vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X(1) + AU(9*j-3)*X(2) + AU(9*j  )*X(3)
-        do idof = 1, NDOF
-          do jdof = 1, NDOF
-            vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AU(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
-          end do 
-        end do 
-      enddo
-    enddo
-
-    !{d}={v^t}{z_j}
-    do i= itr,NP
-      !SAINVD(9*i-8) = vv(3*i-2)
-      !SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
-      !SAINVD(9*i  ) = vv(3*i-2)*SAINVD(9*i-6)   + vv(3*i-1)*SAINVD(9*i-3)  + vv(3*i)      
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!ここからまだ未修正！！！
-
-
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do idof = 1,NDOF
-        SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = vv(NDOF*(i-1)+idof)
-        !1 5 9 (-8,-4,0) 1 2 3 (2 1 0)
-        if (idof==1 .and. (9*i-8)==NDOF2*(i-1)+NDOF*(idof-1)+idof) then 
-          write(*,*) idof,"OK"
-        else
-          write(*,*) idof,"NG"
-        end if
-        do jdof = 1, idof-1
-          !1 5 9         //     3*(2-1-1)+1 (1) 3*(3-1-1)+3(6)
-          SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)*vv(NDOF*(i-1)+jdof)
-        end do 
-      end do
-      !write(*,*)NDOF2*(i-1)+NDOF*(2-1)+3,9*i-6,9*i-3
-      !1
-      !2 1,2 (0*3+2)
-      !3 1,6 (1*3+3) 2,3(0*3+3)
-      
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      do j= jS, jE
-        in  = FI1L(j)
-        !X(1)= vv(3*in-2)
-        !X(2)= vv(3*in-1)
-        !X(3)= vv(3*in  )
+      do iitr=1,NDOF
+        zz(:) = 0.0d0
+        vv(:) = 0.0d0
+        !{v}=[A]{zi}
         do idof = 1,NDOF
-          X(idof)=vv(NDOF*(in-1)+idof)
+          zz(NDOF*(itr-1)+idof)= SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+iitr)
         end do 
-        !SAINVD(9*i-8)= SAINVD(9*i-8) + X(1)*SAINVL(9*j-8) + X(2)*SAINVL(9*j-7) + X(3)*SAINVL(9*j-6)
-        !SAINVD(9*i-4)= SAINVD(9*i-4) + X(1)*SAINVL(9*j-5) + X(2)*SAINVL(9*j-4) + X(3)*SAINVL(9*j-3)
-        !SAINVD(9*i  )= SAINVD(9*i  ) + X(1)*SAINVL(9*j-2) + X(2)*SAINVL(9*j-1) + X(3)*SAINVL(9*j  )
-        do idof = 1, NDOF
-          do jdof = 1, NDOF
-            SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) + &
-                   & SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-          end do 
-        end do 
-      enddo
-    enddo
+        zz(NDOF*(itr-1)+iitr)= 1.0d0
 
-    !Update D
-    !dd = 1.0d0/SAINVD(9*itr-8)
-    dd = 1.0d0/SAINVD(NDOF2*(itr-1)+1)
-    SAINVD(NDOF2*(itr-1)+NDOF*(1-1)+1)=dd
-    do idof = 2, NDOF
-      SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)*dd
-    end do 
-!    SAINVD(9*itr-4) =SAINVD(9*itr-4)*dd
-!    SAINVD(9*itr  ) =SAINVD(9*itr  )*dd
-
-    do i =itr+1,NP
-      do idof = 1, NDOF
-        SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)*dd
-      end do 
-!      SAINVD(9*i-8) = SAINVD(9*i-8)*dd
-!      SAINVD(9*i-4) = SAINVD(9*i-4)*dd
-!      SAINVD(9*i  ) = SAINVD(9*i  )*dd
-    enddo
-
-    do idof = 1, NDOF
-      RIFD(NDOF2*(itr-1)+NDOF*(idof-1)+1) = SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)
-    end do 
-!    write(*,*)SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof),dd
-    !RIFD(9*itr-8) = dd                       !RIF UPDATE
-    !RIFD(9*itr-5) = SAINVD(9*itr-4)          !RIF UPDATE
-    !RIFD(9*itr-2) = SAINVD(9*itr  )          !RIF UPDATE
-
-    jS= inumFI1U(itr-1) + 1
-    jE= inumFI1U(itr  )
-    do j= jS, jE
-      do idof = 1, NDOF
-        RIFU(NDOF2*(j-1)+NDOF*(1-1)+idof) = SAINVD(NDOF2*(FI1U(j)-1)+NDOF*(idof-1)+idof)
-      end do 
-!      RIFU(9*j-8) = SAINVD(9*FI1U(j)-8)
-!      RIFU(9*j-7) = SAINVD(9*FI1U(j)-4)
-!      RIFU(9*j-6) = SAINVD(9*FI1U(j)  )
-    enddo
-
-    !Update Z
-    do k=2,NDOF
-      dd = SAINVD(NDOF2*(itr-1)+NDOF*(k-1)+k)
-      if(abs(dd) > FILTER)then
-        SAINVD(NDOF2*(itr-1)+(1-1)+k)= SAINVD(NDOF2*(itr-1)+(1-1)+k) - dd*zz(NDOF*(itr-1)+1)
         jS= inumFI1L(itr-1) + 1
         jE= inumFI1L(itr  )
         do j= jS, jE
           in  = FI1L(j)
           do idof = 1, NDOF
-            SAINVL(NDOF2*(j-1)+NDOF*(k-1)+idof) = SAINVL(NDOF2*(j-1)+NDOF*(k-1)+idof)-dd*zz(NDOF*(in-1)+idof)
+            zz(NDOF*(in-1)+idof)=SAINVL(NDOF2*(j-1)+NDOF*(iitr-1)+idof)
+          end do 
+        enddo
+
+        do i= 1, itr
+          do idof = 1,NDOF
+            X(idof)=zz(NDOF*(i-1)+idof)
+          end do 
+          do idof = 1, NDOF
+            do jdof = 1, NDOF
+              vv(NDOF*(i-1)+idof) = vv(NDOF*(i-1)+idof) + D(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
+            end do 
+          end do 
+
+          jS= indexL(i-1) + 1
+          jE= indexL(i  )
+          do j=jS,jE
+            in = itemL(j)
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+                vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AL(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
+              end do 
+            end do 
+          enddo
+          jS= indexU(i-1) + 1
+          jE= indexU(i  )
+          do j= jS, jE
+            in = itemU(j)
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+                vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AU(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
+              end do 
+            end do 
+          enddo
+        enddo
+
+        !{d}={v^t}{z_j}
+        do idof = 1, NDOF
+          Dtmp(idof)= SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)
+        end do 
+        
+        do i= itr,NP
+          do idof = 1,NDOF
+            SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = vv(NDOF*(i-1)+idof)
+            do jdof = 1, idof-1
+              SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) + &
+               & SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)*vv(NDOF*(i-1)+jdof)
+            end do 
           end do
-        enddo
-      endif
-    end do 
-    
-    !dd2=SAINVD(9*itr-4)
-    !if(abs(dd2) > FILTER)then
-    !  SAINVD(9*itr-7)= SAINVD(9*itr-7) - dd2*zz(3*itr-2)
-    !  jS= inumFI1L(itr-1) + 1
-    !  jE= inumFI1L(itr  )
-    !  do j= jS, jE
-    !    in  = FI1L(j)
-    !    SAINVL(9*j-5) = SAINVL(9*j-5)-dd2*zz(3*in-2)
-    !    SAINVL(9*j-4) = SAINVL(9*j-4)-dd2*zz(3*in-1)
-    !    SAINVL(9*j-3) = SAINVL(9*j-3)-dd2*zz(3*in  )
-    !  enddo
-    !endif
-
-   ! dd3=SAINVD(9*itr  )
-   ! if(abs(dd3) > FILTER)then
-   !   SAINVD(9*itr-6)= SAINVD(9*itr-6) - dd3*zz(3*itr-2)
-   !   jS= inumFI1L(itr-1) + 1
-   !   jE= inumFI1L(itr  )
-   !   do j= jS, jE
-   !     in  = FI1L(j)
-   !     SAINVL(9*j-2) = SAINVL(9*j-2)-dd3*zz(3*in-2)
-   !     SAINVL(9*j-1) = SAINVL(9*j-1)-dd3*zz(3*in-1)
-   !     SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
-   !   enddo
-   ! endif
-    do i= itr +1,NP
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      do idof = 1, NDOF
-        dd = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
-        if(abs(dd) > FILTER)then
+          jS= inumFI1L(i-1) + 1
+          jE= inumFI1L(i  )
           do j= jS, jE
             in  = FI1L(j)
-            if (in > itr) exit
-            do jdof=1,NDOF
-            SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)-dd*zz(NDOF*(in-1)+jdof)
+            do idof = 1,NDOF
+              X(idof)=vv(NDOF*(in-1)+idof)
+            end do 
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+                SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) + &
+                       & SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+              end do 
             end do 
           enddo
-        endif
-      end do 
-      !dd1=SAINVD(9*i-8)
-      !if(abs(dd1) > FILTER)then
-      !  do j= jS, jE
-      !    in  = FI1L(j)
-      !    if (in > itr) exit
-      !    SAINVL(9*j-8) = SAINVL(9*j-8)-dd1*zz(3*in-2)
-      !    SAINVL(9*j-7) = SAINVL(9*j-7)-dd1*zz(3*in-1)
-      !    SAINVL(9*j-6) = SAINVL(9*j-6)-dd1*zz(3*in  )
-      !  enddo
-      !endif
-      !dd2=SAINVD(9*i-4)
-      !if(abs(dd2) > FILTER)then
-      !  do j= jS, jE
-      !    in  = FI1L(j)
-      !    if (in > itr) exit
-      !    SAINVL(9*j-5) = SAINVL(9*j-5)-dd2*zz(3*in-2)
-      !    SAINVL(9*j-4) = SAINVL(9*j-4)-dd2*zz(3*in-1)
-      !    SAINVL(9*j-3) = SAINVL(9*j-3)-dd2*zz(3*in  )
-      !  enddo
-      !endif
-      !dd3=SAINVD(9*i  )
-      !if(abs(dd3) > FILTER)then
-      !  do j= jS, jE
-      !    in  = FI1L(j)
-      !    if (in > itr) exit
-      !    SAINVL(9*j-2) = SAINVL(9*j-2)-dd3*zz(3*in-2)
-      !    SAINVL(9*j-1) = SAINVL(9*j-1)-dd3*zz(3*in-1)
-      !    SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
-      !  enddo
-      !endif
-    enddo
+        enddo
 
-    !------------------------------ iitr = 1 ----------------------------------------
-
-    zz(:) = 0.0d0
-    vv(:) = 0.0d0
-
-    !{v}=[A]{zi}
-
-    zz(3*itr-2)= SAINVD(9*itr-7)
-    zz(3*itr-1)= SAINVD(9*itr-4)
-    zz(3*itr  )= SAINVD(9*itr-1)
-
-    zz(3*itr-1)= 1.0d0
-
-    jS= inumFI1L(itr-1) + 1
-    jE= inumFI1L(itr  )
-    do j= jS, jE
-      in  = FI1L(j)
-      zz(3*in-2)= SAINVL(9*j-5)
-      zz(3*in-1)= SAINVL(9*j-4)
-      zz(3*in  )= SAINVL(9*J-3)
-    enddo
-
-    !do i= 1, itr
-    !  X(1)= zz(3*i-2)
-    !  X(2)= zz(3*i-1)
-    !  X(3)= zz(3*i  )
-    !  vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X(1) + D(9*i-7)*X(2) + D(9*i-6)*X(3)
-    !  vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X(1) + D(9*i-4)*X(2) + D(9*i-3)*X(3)
-    !  vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X(1) + D(9*i-1)*X(2) + D(9*i  )*X(3)
-    !
-    !  jS= indexL(i-1) + 1
-    !  jE= indexL(i  )
-    !  do j=jS,jE
-    !    in = itemL(j)
-    !    vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X(1) + AL(9*j-5)*X(2) + AL(9*j-2)*X(3)
-    !    vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X(1) + AL(9*j-4)*X(2) + AL(9*j-1)*X(3)
-    !    vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X(1) + AL(9*j-3)*X(2) + AL(9*j  )*X(3)
-    !  enddo
-    !
-    !  jS= indexU(i-1) + 1
-    !  jE= indexU(i  )
-    !  do j= jS, jE
-    !    in = itemU(j)
-    !    vv(3*in-2)= vv(3*in-2) + AU(9*j-8)*X(1) + AU(9*j-5)*X(2) + AU(9*j-2)*X(3)
-    !    vv(3*in-1)= vv(3*in-1) + AU(9*j-7)*X(1) + AU(9*j-4)*X(2) + AU(9*j-1)*X(3)
-    !    vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X(1) + AU(9*j-3)*X(2) + AU(9*j  )*X(3)
-    !  enddo
-    !enddo
-    do i= 1, itr
-      do idof = 1,NDOF
-        X(idof)=zz(NDOF*(i-1)+idof)
-      end do 
-      do idof = 1, NDOF
-        do jdof = 1, NDOF
-          vv(NDOF*(i-1)+idof) = vv(NDOF*(i-1)+idof) + D(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
+        !Update D
+        dd = 1.0d0/SAINVD(NDOF2*(itr-1)+NDOF*(iitr-1)+iitr)
+        do idof=1,iitr-1
+          SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) = Dtmp(idof)
         end do 
-      end do 
-      jS= indexL(i-1) + 1
-      jE= indexL(i  )
-      do j=jS,jE
-        in = itemL(j)
-        do idof = 1, NDOF
-          do jdof = 1, NDOF
-            vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AL(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
+        SAINVD(NDOF2*(itr-1)+NDOF*(iitr-1)+iitr)=dd
+        do idof = iitr+1, NDOF
+          SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)*dd
+        end do 
+
+        do i =itr+1,NP
+          do idof = 1, NDOF
+            SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)*dd
           end do 
+        enddo
+
+        do idof = iitr, NDOF
+          RIFD(NDOF2*(itr-1)+NDOF*(idof-1)+iitr) = SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) !RIF UPDATE
         end do 
-      enddo
-      jS= indexU(i-1) + 1
-      jE= indexU(i  )
-      do j= jS, jE
-        in = itemU(j)
-        do idof = 1, NDOF
-          do jdof = 1, NDOF
-            vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AU(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
+
+        jS= inumFI1U(itr-1) + 1
+        jE= inumFI1U(itr  )
+        do j= jS, jE
+          do idof = 1, NDOF
+            RIFU(NDOF2*(j-1)+NDOF*(iitr-1)+idof) = SAINVD(NDOF2*(FI1U(j)-1)+NDOF*(idof-1)+idof)
           end do 
+        enddo
+
+        !Update Z
+        do k=iitr+1,NDOF
+          dd = SAINVD(NDOF2*(itr-1)+NDOF*(k-1)+k)
+          if(abs(dd) > FILTER)then
+            do jdof = 1, iitr 
+              SAINVD(NDOF2*(itr-1)+NDOF*(jdof-1)+k)= SAINVD(NDOF2*(itr-1)+NDOF*(jdof-1)+k) - dd*zz(NDOF*(itr-1)+jdof)
+            end do
+            jS= inumFI1L(itr-1) + 1
+            jE= inumFI1L(itr  )
+            do j= jS, jE
+              in  = FI1L(j)
+              do idof = 1, NDOF
+                SAINVL(NDOF2*(j-1)+NDOF*(k-1)+idof) = SAINVL(NDOF2*(j-1)+NDOF*(k-1)+idof)-dd*zz(NDOF*(in-1)+idof)
+              end do
+            enddo
+          endif
         end do 
-      enddo
-    enddo
-
-    
-    
-    
-    !{d}={v^t}{z_j}
-    dtemp(1) = SAINVD(9*itr-8)
-
-    do i=itr,NP
-      SAINVD(9*i-8) = vv(3*i-2)
-      SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
-      SAINVD(9*i  ) = vv(3*i-2)*SAINVD(9*i-6)   + vv(3*i-1)*SAINVD(9*i-3)  + vv(3*i)
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      do j= jS, jE
-        in  = FI1L(j)
-        X(1)= vv(3*in-2)
-        X(2)= vv(3*in-1)
-        X(3)= vv(3*in  )
-        SAINVD(9*i-8)= SAINVD(9*i-8) + X(1)*SAINVL(9*j-8) + X(2)*SAINVL(9*j-7) + X(3)*SAINVL(9*j-6)
-        SAINVD(9*i-4)= SAINVD(9*i-4) + X(1)*SAINVL(9*j-5) + X(2)*SAINVL(9*j-4) + X(3)*SAINVL(9*j-3)
-        SAINVD(9*i  )= SAINVD(9*i  ) + X(1)*SAINVL(9*j-2) + X(2)*SAINVL(9*j-1) + X(3)*SAINVL(9*j  )
-      enddo
-    enddo
-
-    !Update D
-    dd = 1.0d0/SAINVD(9*itr-4)
-
-    SAINVD(9*itr-8) = dtemp(1)
-    SAINVD(9*itr  ) =SAINVD(9*itr  )*dd
-
-    do i =itr+1,NP
-      SAINVD(9*i-8) = SAINVD(9*i-8)*dd
-      SAINVD(9*i-4) = SAINVD(9*i-4)*dd
-      SAINVD(9*i  ) = SAINVD(9*i  )*dd
-    enddo
-
-    RIFD(9*itr-4) = dd                       !RIF UPDATE
-    RIFD(9*itr-1) = SAINVD(9*itr  )          !RIF UPDATE
-
-    jS= inumFI1U(itr-1) + 1
-    jE= inumFI1U(itr  )
-    do j= jS, jE
-      RIFU(9*j-5) = SAINVD(9*FI1U(j)-8)
-      RIFU(9*j-4) = SAINVD(9*FI1U(j)-4)
-      RIFU(9*j-3) = SAINVD(9*FI1U(j)  )
-    enddo
-
-    !Update Z
-
-    dd3=SAINVD(9*itr  )
-    if(abs(dd3) > FILTER)then
-      SAINVD(9*itr-6)= SAINVD(9*itr-6) - dd3*zz(3*itr-2)
-      SAINVD(9*itr-3)= SAINVD(9*itr-3) - dd3*zz(3*itr-1)
-
-      jS= inumFI1L(itr-1) + 1
-      jE= inumFI1L(itr  )
-      do j= jS, jE
-        in  = FI1L(j)
-        SAINVL(9*j-2) = SAINVL(9*j-2)-dd3*zz(3*in-2)
-        SAINVL(9*j-1) = SAINVL(9*j-1)-dd3*zz(3*in-1)
-        SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
-      enddo
-    endif
-    
-    
-    
-    
-    do i= itr +1,NP
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      do idof = 1, NDOF
-        dd = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
-        if(abs(dd) > FILTER)then
-          do j= jS, jE
-            in  = FI1L(j)
-            if (in > itr) exit
-            do jdof=1,NDOF
-            SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)-dd*zz(NDOF*(in-1)+jdof)
-            end do 
-          enddo
-        endif
-      end do 
-    enddo
-
-
-
-    !------------------------------ iitr = 1 ----------------------------------------
-
-    zz(:) = 0.0d0
-    vv(:) = 0.0d0
-
-    !{v}=[A]{zi}
-
-    zz(3*itr-2)= SAINVD(9*itr-6)
-    zz(3*itr-1)= SAINVD(9*itr-3)
-    zz(3*itr  )= SAINVD(9*itr  )
-
-    zz(3*itr  )= 1.0d0
-
-    jS= inumFI1L(itr-1) + 1
-    jE= inumFI1L(itr  )
-    do j= jS, jE
-      in  = FI1L(j)
-      zz(3*in-2)= SAINVL(9*j-2)
-      zz(3*in-1)= SAINVL(9*j-1)
-      zz(3*in  )= SAINVL(9*J  )
-    enddo
-
-    do i= 1, itr
-      X(1)= zz(3*i-2)
-      X(2)= zz(3*i-1)
-      X(3)= zz(3*i  )
-      vv(3*i-2) = vv(3*i-2) + D(9*i-8)*X(1) + D(9*i-7)*X(2) + D(9*i-6)*X(3)
-      vv(3*i-1) = vv(3*i-1) + D(9*i-5)*X(1) + D(9*i-4)*X(2) + D(9*i-3)*X(3)
-      vv(3*i  ) = vv(3*i  ) + D(9*i-2)*X(1) + D(9*i-1)*X(2) + D(9*i  )*X(3)
-
-      jS= indexL(i-1) + 1
-      jE= indexL(i  )
-      do j=jS,jE
-        in = itemL(j)
-        vv(3*in-2)= vv(3*in-2) + AL(9*j-8)*X(1) + AL(9*j-5)*X(2) + AL(9*j-2)*X(3)
-        vv(3*in-1)= vv(3*in-1) + AL(9*j-7)*X(1) + AL(9*j-4)*X(2) + AL(9*j-1)*X(3)
-        vv(3*in  )= vv(3*in  ) + AL(9*j-6)*X(1) + AL(9*j-3)*X(2) + AL(9*j  )*X(3)
-      enddo
-
-      jS= indexU(i-1) + 1
-      jE= indexU(i  )
-      do j= jS, jE
-        in = itemU(j)
-        vv(3*in-2)= vv(3*in-2) + AU(9*j-8)*X(1) + AU(9*j-5)*X(2) + AU(9*j-2)*X(3)
-        vv(3*in-1)= vv(3*in-1) + AU(9*j-7)*X(1) + AU(9*j-4)*X(2) + AU(9*j-1)*X(3)
-        vv(3*in  )= vv(3*in  ) + AU(9*j-6)*X(1) + AU(9*j-3)*X(2) + AU(9*j  )*X(3)
-      enddo
-    enddo
-
-    !{d}={v^t}{z_j}
-
-    dtemp(1) = SAINVD(9*itr-8)
-    dtemp(2) = SAINVD(9*itr-4)
-
-    do i=itr,NP
-      SAINVD(9*i-8) = vv(3*i-2)
-      SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
-      SAINVD(9*i  ) = vv(3*i-2)*SAINVD(9*i-6)   + vv(3*i-1)*SAINVD(9*i-3)  + vv(3*i)
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      do j= jS, jE
-        in  = FI1L(j)
-        X(1)= vv(3*in-2)
-        X(2)= vv(3*in-1)
-        X(3)= vv(3*in  )
-        SAINVD(9*i-8)= SAINVD(9*i-8) + X(1)*SAINVL(9*j-8) + X(2)*SAINVL(9*j-7) + X(3)*SAINVL(9*j-6)
-        SAINVD(9*i-4)= SAINVD(9*i-4) + X(1)*SAINVL(9*j-5) + X(2)*SAINVL(9*j-4) + X(3)*SAINVL(9*j-3)
-        SAINVD(9*i  )= SAINVD(9*i  ) + X(1)*SAINVL(9*j-2) + X(2)*SAINVL(9*j-1) + X(3)*SAINVL(9*j  )
-      enddo
-    enddo
-
-    !Update D
-    dd = 1.0d0/SAINVD(9*itr  )
-
-    SAINVD(9*itr-8) = dtemp(1)
-    SAINVD(9*itr-4) = dtemp(2)
-
-    do i =itr+1,NP
-      SAINVD(9*i-8) = SAINVD(9*i-8)*dd
-      SAINVD(9*i-4) = SAINVD(9*i-4)*dd
-      SAINVD(9*i  ) = SAINVD(9*i  )*dd
-    enddo
-
-    RIFD(9*itr) = dd   !RIF UPDATE
-
-    jS= inumFI1U(itr-1) + 1
-    jE= inumFI1U(itr  )
-    do j= jS, jE
-      RIFU(9*j-2) = SAINVD(9*FI1U(j)-8)
-      RIFU(9*j-1) = SAINVD(9*FI1U(j)-4)
-      RIFU(9*j  ) = SAINVD(9*FI1U(j)  )
-    enddo
-
-    !Update Z
-
-    do i= itr +1,NP
-      jS= inumFI1L(i-1) + 1
-      jE= inumFI1L(i  )
-      dd1=SAINVD(9*i-8)
-      if(abs(dd1) > FILTER)then
-        do j= jS, jE
-          in  = FI1L(j)
-          if (in > itr) exit
-          SAINVL(9*j-8) = SAINVL(9*j-8)-dd1*zz(3*in-2)
-          SAINVL(9*j-7) = SAINVL(9*j-7)-dd1*zz(3*in-1)
-          SAINVL(9*j-6) = SAINVL(9*j-6)-dd1*zz(3*in  )
+        
+        do i= itr +1,NP
+          jS= inumFI1L(i-1) + 1
+          jE= inumFI1L(i  )
+          do idof = 1, NDOF
+            dd = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
+            if(abs(dd) > FILTER)then
+              do j= jS, jE
+                in  = FI1L(j)
+                if (in > itr) exit
+                do jdof=1,NDOF
+                SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)-dd*zz(NDOF*(in-1)+jdof)
+                end do 
+              enddo
+            endif
+          end do 
         enddo
-      endif
-      dd2=SAINVD(9*i-4)
-      if(abs(dd2) > FILTER)then
-        do j= jS, jE
-          in  = FI1L(j)
-          if (in > itr) exit
-          SAINVL(9*j-5) = SAINVL(9*j-5)-dd2*zz(3*in-2)
-          SAINVL(9*j-4) = SAINVL(9*j-4)-dd2*zz(3*in-1)
-          SAINVL(9*j-3) = SAINVL(9*j-3)-dd2*zz(3*in  )
-        enddo
-      endif
-      dd3=SAINVD(9*i  )
-      if(abs(dd3) > FILTER)then
-        do j= jS, jE
-          in  = FI1L(j)
-          if (in > itr) exit
-          SAINVL(9*j-2) = SAINVL(9*j-2)-dd3*zz(3*in-2)
-          SAINVL(9*j-1) = SAINVL(9*j-1)-dd3*zz(3*in-1)
-          SAINVL(9*j  ) = SAINVL(9*j  )-dd3*zz(3*in  )
-        enddo
-      endif
-    enddo
+      end do
     enddo
     deallocate(vv)
     deallocate(zz)
