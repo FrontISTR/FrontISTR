@@ -71,18 +71,21 @@ LIBSRCDIRS="\
 	src/couple \
 	src/solver \
 	src/solver/matrix \
-	src/solver/solver_11 \
-	src/solver/solver_22 \
-	src/solver/solver_33 \
-	src/solver/solver_44 \
-	src/solver/solver_66 \
-	src/solver/solver_nn \
+	src/solver/las \
+	src/solver/iterative \
+	src/solver/precond/11 \
+	src/solver/precond/22 \
+	src/solver/precond/33 \
+	src/solver/precond/44 \
+	src/solver/precond/66 \
+	src/solver/precond/nn \
+	src/solver/precond \
 	src/solver/solver_direct \
 	src/solver/solver_direct_parallel \
 	src/solver/solver_direct_lag \
 	src/solver/sparse_matrix \
-	src/solver/solver_direct_mumps \
-	src/solver/solver_direct_clustermkl \
+	src/solver/mumps \
+	src/solver/clustermkl \
 	src/solver/communication \
 	src/solver/init \
 	src/visualizer \
@@ -371,7 +374,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with MUMPS
 	#
 	if [ ${WITHMUMPS} -eq 1 ]; then
-		F90FLAGS="${F90FLAGS} -DWITH_MUMPS"
+		F90FLAGS="${F90FLAGS} -DHECMW_WITH_MUMPS"
 	else
 		MUMPS_CFLAGS=""
 		MUMPS_LDFLAGS=""
@@ -405,7 +408,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	# with LAPACK
 	#
 	if [ ${WITHLAPACK} -eq 1 ]; then
-		F90FLAGS="${F90FLAGS} -DWITH_LAPACK"
+		F90FLAGS="${F90FLAGS} -DHECMW_WITH_LAPACK"
 	fi
 
 	#

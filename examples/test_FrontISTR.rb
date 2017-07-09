@@ -5,8 +5,10 @@
 #
 require 'fileutils'
 
+$part = File.join(File.expand_path(ARGV[0]),'/hecmw1/tools/hecmw_part1')
 $fistr = File.join(File.expand_path(ARGV[0]),'/fistr1/fistr1')
 $threshold = 1.0e-4
+$np = ARGV[2]
 
 #
 # mesh と cnt ファイルを与えて自動的に hecmw_ctrl.dat を生成する
@@ -15,7 +17,35 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   base = File.basename(mesh,".*")
   res = base + ".res" if res == nil
   vis = base + ".vis" if vis == nil
+  if $np then 
   File.open("hecmw_ctrl.dat","w"){|aFile|
+    aFile.print <<END_OF_HECMW_CTRL
+##
+## HEC-MW control file for FrontSTR
+## Auto created
+## #{Time.now.strftime("%Y-%m-%d %H:%M:%S")}
+##
+!MESH, NAME=fstrMSH,TYPE=HECMW-DIST
+#{mesh}
+!CONTROL,NAME=fstrCNT
+#{cnt}
+!RESULT,NAME=fstrRES,IO=OUT
+#{res}
+!RESULT,NAME=vis_out,IO=OUT
+#{vis}
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+#{mesh}
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+#{mesh}
+END_OF_HECMW_CTRL
+}
+  File.open("hecmw_part_ctrl.dat","w"){|aFile|
+    aFile.print <<END_OF_HECMW_CTRL
+!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=#{$np}
+END_OF_HECMW_CTRL
+}
+  else 
+    File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
 ## HEC-MW control file for FrontISTR
@@ -32,6 +62,9 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
 #{vis}
 END_OF_HECMW_CTRL
   }
+  
+  end 
+  
 end
 
 #
@@ -43,8 +76,17 @@ def exec_test(dirname,mesh,cnt,name,correctLog=nil)
   Dir.chdir(dirname){
     create_hecmw_ctrl(mesh,cnt)
     FileUtils.rm('0.log') if File.exists?('0.log')
-    puts $fistr
-    system($fistr)
+    if $np then
+      puts $part
+      system($part)
+      execcmd = "mpirun -np " + $np + " -x OMP_NUM_THREADS=1 " + $fistr
+      puts execcmd
+      system(execcmd)
+    else 
+      puts $fistr
+      system($fistr)
+    end 
+    
     puts "return value = #{$?.exitstatus}"
     return 1 if $?.exitstatus != 0
     currentLog = name+".log"
@@ -108,11 +150,11 @@ def read_log(filename)
     while line
       case(line)
       when /Global Summary :Max\/Min/
-        g = data['Global'] = {}
+        g = data['Node'] = {}
         while line=aFile.gets
           if line =~/\/\//
             ary = line.chomp.split
-            key = ary[0].gsub("//","")
+            key = ary[0].gsub("//","").gsub("13","31")
             max = to_float(ary[1])
             min = to_float(ary[2])
             g[key] = [max,min]
@@ -125,7 +167,7 @@ def read_log(filename)
         while line=aFile.gets
           if line =~/\/\//
             ary = line.chomp.split
-            key = ary[0].gsub("//","")
+            key = ary[0].gsub("//","").gsub("13","31")
             max = to_float(ary[1])
             min = to_float(ary[2])
             e[key] = [max,min]
@@ -133,14 +175,40 @@ def read_log(filename)
             break
           end
         end
+      when / Global Summary @Node/
+        g = data['Node'] = {}
+        while line=aFile.gets
+          if line =~/\/\//
+            ary = line.chomp.split
+            key = ary[0].gsub("//","")
+            max = to_float(ary[1])
+            min = to_float(ary[3])
+            g[key] = [max,min]
+          else
+            break
+          end
+        end
+      when /Global Summary @Element/
+        e = data['Element'] = {}
+        while line=aFile.gets
+          if line =~/\/\//
+            ary = line.chomp.split
+            key = ary[0].gsub("//","")
+            max = to_float(ary[1])
+            min = to_float(ary[3])
+            e[key] = [max,min]
+          else
+            break
+          end
+        end
       when /Maximum Temperature/
-        g = data['Global'] || data['Global']={}
+        g = data['Node'] || data['Node']={}
         g['Temperature'] = []
         ary = line.chomp.split(":")
         g['Temperature'] << ary[1].to_f
         line=aFile.gets
       when /Minimum Temperature/
-        g = data['Global'] || data['Global']={}
+        g = data['Node'] || data['Node']={}
         ary = line.chomp.split(":")
         g['Temperature'] << ary[1].to_f
         line=aFile.gets
@@ -154,11 +222,11 @@ end
 
 def compare_item(actual_g,correct_g,itemname)
   actual_g.each{|k,v|
-    if( (correct_g[k][0] - v[0]).abs > $threshold )
+    if( correct_g.has_key?(:k) && (correct_g[k][0] - v[0]).abs > $threshold )
       puts "#{itemname} #{k} max value not coincident actual #{v[0]} : correct #{correct_g[k][0]}"
       return 1
     end
-    if( (correct_g[k][1] - v[1]).abs > $threshold )
+    if( correct_g.has_key?(:k) && (correct_g[k][1] - v[1]).abs > $threshold )
       puts "#{itemname} #{k} min value not coincident actual #{v[1]} : correct #{correct_g[k][1]}"
       return 1
     end
@@ -169,10 +237,10 @@ end
 def compare_log(actual,correct)
   act_data = read_log(actual)
   correct_data = read_log(correct)
-  g = correct_data['Global']
+  g = correct_data['Node']
   e = correct_data['Element']
-  if act_data['Global']
-    res = compare_item(act_data['Global'],g,'Global')
+  if act_data['Node']
+    res = compare_item(act_data['Node'],g,'Node')
     return res if res != 0
   end
   if act_data['Element']

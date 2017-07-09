@@ -2,7 +2,7 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-program fstr_main
+module m_fstr_main
 
 use hecmw
 use m_fstr
@@ -20,89 +20,90 @@ use fstr_solver_dynamic
 use fstr_debug_dump
 use fstr_matrix_con_contact
 use m_fstr_freqdata
-
-
-        implicit none
-        type (hecmwST_local_mesh)              :: hecMESH
-        type (hecmwST_matrix )                 :: hecMAT
-        type (fstr_solid )                     :: fstrSOLID
-        type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-        type (fstr_heat )                      :: fstrHEAT
-        type (lczparam)                        :: fstrEIG
-        type (fstr_dynamic )                   :: fstrDYNAMIC
-        type ( hecmwST_result_data )           :: fstrRESULT
-        type (fstr_couple )                    :: fstrCPL
-        type (fstr_freqanalysis)               :: fstrFREQ
-        character(len=HECMW_FILENAME_LEN)      :: name_ID
-
-        real(kind=kreal) :: T1,T2,T3
-
-        T1=0.0; T2=0.0; T3=0.0
-
-        ! =============== INITIALIZE ===================
-
-        call hecmw_init
-        myrank = hecmw_comm_get_rank()
-        nprocs = hecmw_comm_get_size()
-
-        T1 = hecmw_Wtime()
-
-        name_ID = 'fstrMSH'
-        call hecmw_get_mesh( name_ID , hecMESH )
-
-        paraContactFlag = .false.
-
-        call hecmw2fstr_mesh_conv( hecMESH )
-
-        call fstr_init
-
-        call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
-
-        T2 = hecmw_Wtime()
-
-        ! =============== ANALYSIS =====================
-
-        select case( fstrPR%solution_type )
-        case ( kstSTATIC )
-                call fstr_static_analysis
-        case ( kstDYNAMIC )
-                call fstr_dynamic_analysis
-        case ( kstEIGEN )
-                call fstr_eigen_analysis
-        case ( kstHEAT )
-                call fstr_heat_analysis
-        case ( kstSTATICEIGEN )
-                call fstr_static_eigen_analysis
-        case ( kstPRECHECK, kstNZPROF )
-                call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
-        end select
-
-        T3 = hecmw_Wtime()
-
-        if(hecMESH%my_rank==0) then
-          write(*,*)
-          write(*,*)           '===================================='
-          write(*,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
-          write(*,'(a,f10.2)') '           pre (sec) :', T2 - T1
-          write(*,'(a,f10.2)') '         solve (sec) :', T3 - T2
-          write(*,*)           '===================================='
-
-          write(IMSG,*)           '===================================='
-          write(IMSG,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
-          write(IMSG,'(a,f10.2)') '           pre (sec) :', T2 - T1
-          write(IMSG,'(a,f10.2)') '         solve (sec) :', T3 - T2
-          write(IMSG,*)           '===================================='
-        end if
-
-        ! =============== FINALIZE =====================
-
-        call fstr_rcap_finalize( fstrPR, fstrCPL )
-        call fstr_finalize()
-        call hecmw_finalize
-        if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
+type (hecmwST_local_mesh)              :: hecMESH
+type (hecmwST_matrix )                 :: hecMAT
+type (fstr_solid )                     :: fstrSOLID
+type (fstrST_matrix_contact_lagrange)  :: fstrMAT
+type (fstr_heat )                      :: fstrHEAT
+type (lczparam)                        :: fstrEIG
+type (fstr_dynamic )                   :: fstrDYNAMIC
+type ( hecmwST_result_data )           :: fstrRESULT
+type (fstr_couple )                    :: fstrCPL
+type (fstr_freqanalysis)               :: fstrFREQ
+character(len=HECMW_FILENAME_LEN)      :: name_ID
 
 contains
 
+subroutine fstr_main() BIND(C,NAME='fstr_main')
+
+  implicit none
+  real(kind=kreal) :: T1,T2,T3
+
+  T1=0.0; T2=0.0; T3=0.0
+
+  ! =============== INITIALIZE ===================
+
+  call hecmw_init
+  myrank = hecmw_comm_get_rank()
+  nprocs = hecmw_comm_get_size()
+
+  T1 = hecmw_Wtime()
+
+  name_ID = 'fstrMSH'
+  call hecmw_get_mesh( name_ID , hecMESH )
+
+  paraContactFlag = .false.
+
+  call hecmw2fstr_mesh_conv( hecMESH )
+
+  call fstr_init
+
+  call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
+
+  T2 = hecmw_Wtime()
+
+  ! =============== ANALYSIS =====================
+
+  select case( fstrPR%solution_type )
+  case ( kstSTATIC )
+          call fstr_static_analysis
+  case ( kstDYNAMIC )
+          call fstr_dynamic_analysis
+  case ( kstEIGEN )
+          call fstr_eigen_analysis
+  case ( kstHEAT )
+          call fstr_heat_analysis
+  case ( kstSTATICEIGEN )
+          call fstr_static_eigen_analysis
+  case ( kstPRECHECK, kstNZPROF )
+          call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
+  end select
+
+  T3 = hecmw_Wtime()
+
+  if(hecMESH%my_rank==0) then
+    write(*,*)
+    write(*,*)           '===================================='
+    write(*,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
+    write(*,'(a,f10.2)') '           pre (sec) :', T2 - T1
+    write(*,'(a,f10.2)') '         solve (sec) :', T3 - T2
+    write(*,*)           '===================================='
+
+    write(IMSG,*)           '===================================='
+    write(IMSG,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
+    write(IMSG,'(a,f10.2)') '           pre (sec) :', T2 - T1
+    write(IMSG,'(a,f10.2)') '         solve (sec) :', T3 - T2
+    write(IMSG,*)           '===================================='
+  end if
+
+  ! =============== FINALIZE =====================
+
+  call fstr_rcap_finalize( fstrPR, fstrCPL )
+  call fstr_finalize()
+  call hecmw_finalize
+  if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
+  
+end subroutine fstr_main
 
 
 !=============================================================================!
@@ -440,5 +441,4 @@ subroutine fstr_finalize
 end subroutine fstr_finalize
 
 !=============================================================================!
-end program fstr_main
-
+end module m_fstr_main

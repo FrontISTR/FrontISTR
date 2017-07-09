@@ -467,6 +467,7 @@ module hecmw_util
           !integer(kind=kint ), pointer:: IVECT(:), ICHK(:)
           integer(kind=kint ), dimension(100) :: Iarray
           real   (kind=kreal), dimension(100) :: Rarray
+          logical :: symmetric = .true.
           !real   (kind=kreal) :: RESIDactual
 !          type(hecmwST_matrix_comm) :: comm
           type(hecmwST_matrix_contact) :: cmat
