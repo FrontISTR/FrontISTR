@@ -42,7 +42,7 @@ subroutine initOutInfo( outinfo )
   outinfo%grp_id_name = "ALL"
   outinfo%grp_id      = -1
   outinfo%on(:)       = .false.
-  outinfo%num_items   = 28
+  outinfo%num_items   = 29
 
   outinfo%keyWord(1)  = "DISP"
   outinfo%vtype(1)    = -2
@@ -132,6 +132,9 @@ subroutine initOutInfo( outinfo )
 
   outinfo%keyWord(28) = "SHELL_SURFACE"
   outinfo%vtype(28)   = -1
+
+  outinfo%keyWord(29) = "YIELD_RATIO"
+  outinfo%vtype(29)   = -1
 
 end subroutine initOutInfo
 

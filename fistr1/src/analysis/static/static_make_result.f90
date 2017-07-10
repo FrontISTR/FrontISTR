@@ -18,7 +18,7 @@ module m_static_make_result
 !C***
 !>  OUTPUT result file for static analysis
 !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, maxstep, istep, flag )
+  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, flag )
     use m_fstr
     use m_out
     use m_static_lib
@@ -28,10 +28,11 @@ module m_static_make_result
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
+    type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
     integer(kind=kint)        :: maxstep, istep, flag
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+    real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
@@ -39,6 +40,7 @@ module m_static_make_result
 
     tnstrain => fstrSOLID%TNSTRAIN
     testrain => fstrSOLID%TESTRAIN
+    yield_ratio => fstrSOLID%YIELD_RATIO
 
     ndof = hecMESH%n_dof
     mm   = hecMESH%n_node
@@ -219,6 +221,14 @@ module m_static_make_result
         enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
+    endif
+
+    ! --- YIELD RATIO
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(29) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(29), ndof )
+      label = "YIELD_RATIO"
+      call hecmw_result_add( id, nitem, label, yield_ratio )
     endif
 
 ! --- WRITE
