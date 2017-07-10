@@ -116,13 +116,13 @@ contains
       call hecmw_matvec_clear_timer()
       call hecmw_precond_clear_timer()
       call hecmw_solve_iterative_printmsg(hecMESH,hecMAT)
-      
-      if (METHOD == 1) then 
+
+      if (METHOD == 1) then
         hecTKT%symmetric = .true.
-      else 
+      else
         hecTKT%symmetric = .false.
-      end if 
-      
+      end if
+
       SELECT CASE(METHOD)
         CASE (1)  !--CG
           call hecmw_solve_CG( hecMESH, hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
@@ -130,7 +130,7 @@ contains
           call hecmw_solve_BiCGSTAB( hecMESH,hecTKT, ITER, RESID, ERROR,TIME_setup, TIME_sol, TIME_comm )
         CASE (3)  !--GMRES
           call hecmw_solve_GMRES( hecMESH,hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
-        CASE (4)  !--GPBiCG 
+        CASE (4)  !--GPBiCG
           call hecmw_solve_GPBiCG( hecMESH,hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
         CASE default
           ERROR = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
@@ -196,7 +196,7 @@ contains
     endif
 
   end subroutine hecmw_solve_iterative
- 
+
   subroutine hecmw_solve_check_zerodiag (hecMESH, hecMAT)
     use hecmw_util
     use hecmw_matrix_misc
@@ -215,8 +215,8 @@ contains
       do j = 1, hecMAT%NDOF
         if (dabs(hecMAT%D(hecMAT%NDOF*hecMAT%NDOF*(i-1)+(j-1)*(hecMAT%NDOF+1)+1)).eq.0.d0) then
           ERROR=HECMW_SOLVER_ERROR_ZERO_DIAG
-        end if 
-      end do 
+        end if
+      end do
     enddo
 
     call hecmw_allreduce_I1 (hecMESH, ERROR, hecmw_max)
@@ -245,7 +245,7 @@ contains
     do i= 1, hecMAT%N
       do j = 1, hecMAT%NDOF
         RHS(1)=RHS(1) + hecMAT%B(hecMAT%NDOF*(i-1)+j)**2
-      end do 
+      end do
     enddo
     if (hecMESH%mpc%n_mpc > 0) then
       do i= 1, hecMESH%mpc%n_mpc
@@ -262,14 +262,14 @@ contains
     endif
 
   end subroutine hecmw_solve_check_zerorhs
-  
+
   subroutine hecmw_solve_prempc (hecMESH, hecMAT, hecTKT, Btmp, first_call)
     use hecmw_util
     use hecmw_matrix_ass
     use hecmw_solver_misc
     use hecmw_matrix_misc
     use hecmw_local_matrix
-    use hecmw_solver_las    
+    use hecmw_solver_las
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -288,7 +288,7 @@ contains
       SELECT CASE(hecmw_mat_get_mpc_method(hecMAT))
         CASE(1) ! "1: MPC Method: Penalty"
           call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-          hecTKT => hecMAT        
+          hecTKT => hecMAT
         CASE(2) ! "2: MPC Method: MPC-CG"
           call hecmw_matvec_set_mpcmatvec_flg (.true.)
           allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
@@ -313,8 +313,8 @@ contains
     else
       hecTKT => hecMAT
     endif
-    
-    
+
+
   end subroutine hecmw_solve_prempc
   subroutine hecmw_solve_postmpc (hecMESH, hecMAT, hecTKT, Btmp)
     use hecmw_util
@@ -334,11 +334,11 @@ contains
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-    
+
     if (totalmpc > 0) then
       SELECT CASE(hecmw_mat_get_mpc_method(hecMAT))
         CASE(1) ! "MPC Method: Penalty"
-          !do nothing 
+          !do nothing
         CASE(2) ! "MPC Method: MPC-CG"
           call hecmw_tback_x(hecMESH, hecTKT%X, time_dumm)
           do i=1,hecMAT%NP * hecMAT%NDOF
@@ -362,7 +362,7 @@ contains
     use hecmw_util
     use hecmw_solver_misc
     use hecmw_matrix_misc
-    
+
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -371,7 +371,7 @@ contains
 
     character(len=30) :: msg_precond
     character(len=30) :: msg_method
-    
+
     ITER      = hecmw_mat_get_iter(hecMAT)
     METHOD    = hecmw_mat_get_method(hecMAT)
     PRECOND   = hecmw_mat_get_precond(hecMAT)
@@ -380,28 +380,29 @@ contains
     NREST     = hecmw_mat_get_nrest(hecMAT)
     ITERlog= hecmw_mat_get_iterlog(hecMAT)
     TIMElog= hecmw_mat_get_timelog(hecMAT)
-    
+
     SELECT CASE(METHOD)
       CASE (1)  !--CG
         msg_method="CG"
       CASE (2)  !--BiCGSTAB
-        msg_method="BiCGSTAB"     
+        msg_method="BiCGSTAB"
       CASE (3)  !--GMRES
         msg_method="GMRES"
-      CASE (4)  !--GPBiCG 
-        msg_method="GPBiCG"        
+      CASE (4)  !--GPBiCG
+        msg_method="GPBiCG"
       CASE DEFAULT
         msg_method="Unlabeled"
     END SELECT
+
     SELECT CASE(PRECOND)
-      CASE(2)
+      CASE(1,2)
         msg_precond="SSOR"
       CASE(3)
         msg_precond="DIAG"
       CASE(5)
         msg_precond="ML"
       CASE(7)
-        msg_precond="DirectMUMPS"
+        msg_precond="Direct MUMPS"
       CASE(10,11,12)
         write(msg_precond,"(a,i0,a)") "ILU(",PRECOND-10,")"
       CASE(20)
@@ -411,10 +412,11 @@ contains
       CASE DEFAULT
         msg_precond="Unlabeled"
     END SELECT
+
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
-      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,'(G) ', &
+      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,'BLOCK ', &
       &   TRIM(msg_method),", ",TRIM(msg_precond),", ", iterPREmax
-    end if 
+    end if
   end subroutine hecmw_solve_iterative_printmsg
-  
+
 end module hecmw_solver_iterative
