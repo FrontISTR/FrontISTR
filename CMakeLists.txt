@@ -82,7 +82,7 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
-# -DBUILD_DOC        : generate API documents
+# -DWITH_DOC        : generate API documents
 
 ###################
 # Find external packages
@@ -100,7 +100,7 @@ find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_PARACON "for parallel contact" OFF)
-option(BUILD_DOC "Generate API documents." OFF})
+option(WITH_DOC "Generate API documents." OFF})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -290,9 +290,9 @@ endif()
 mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DBUILD_DOC
+# -DWITH_DOC
 ###################
-if(BUILD_DOC)
+if(WITH_DOC)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
