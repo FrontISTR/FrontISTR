@@ -46,6 +46,7 @@ set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY} ${PROJECT_BINARY_DI
 ###############################################################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS RELEASE DEBUG)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   list(APPEND FrontISTR_DEFINITIONS "DEBUG")
@@ -325,8 +326,8 @@ message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
 message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 #message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
-#message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 
 ###############################################################################
 # Make configuration header
