@@ -70,7 +70,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 .F90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
-  
+
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 

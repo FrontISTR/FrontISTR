@@ -46,6 +46,7 @@ set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY} ${PROJECT_BINARY_DI
 ###############################################################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS RELEASE DEBUG)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   list(APPEND FrontISTR_DEFINITIONS "DEBUG")
@@ -82,7 +83,7 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
-# -DBUILD_DOC        : generate API documents
+# -DWITH_DOC        : generate API documents
 
 ###################
 # Find external packages
@@ -100,7 +101,7 @@ find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_PARACON "for parallel contact" OFF)
-option(BUILD_DOC "Generate API documents." OFF})
+option(WITH_DOC "Generate API documents." OFF})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -290,9 +291,9 @@ endif()
 mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DBUILD_DOC
+# -DWITH_DOC
 ###################
-if(BUILD_DOC)
+if(WITH_DOC)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
@@ -325,8 +326,8 @@ message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
 message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 #message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
-#message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
 
 ###############################################################################
 # Make configuration header

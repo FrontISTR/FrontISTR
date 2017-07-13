@@ -335,6 +335,8 @@ public
                 real(kind=kreal), pointer :: TNSTRAIN(:)   !< thermal nodal strain
                 real(kind=kreal), pointer :: TESTRAIN(:)   !< thermal elemental strain
 
+                real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
+
                 type(fstr_solid_physic_val), pointer       :: SOLID=>null()     !< for solid physical value stracture
                 type(fstr_solid_physic_val), pointer       :: SHELL=>null()     !< for shell physical value stracture
                 type(fstr_solid_physic_val), pointer       :: BEAM =>null()     !< for beam physical value stracture
@@ -352,6 +354,7 @@ public
                 integer(kind=kint) :: is_heat
                 integer(kind=kint), pointer :: is_rot(:)
                 integer(kind=kint) :: elemopt361
+
 
                 real(kind=kreal)          :: FACTOR     (2)      !< factor of incrementation
                                                                  !< 1:time t  2: time t+dt
@@ -1104,20 +1107,20 @@ subroutine fstr_solid_phys_clear(fstrSOLID)
   type (fstr_solid)         :: fstrSOLID
   type(fstr_solid_physic_val), pointer :: phys
   integer(kind=kint) :: i
-  
+
   if (associated(fstrSOLID%SOLID)) then
     call fstr_solid_phys_zero(fstrSOLID%SOLID)
-  end if 
+  end if
   if (associated(fstrSOLID%SHELL)) then
     call fstr_solid_phys_zero(fstrSOLID%SHELL)
     do i=1,fstrSOLID%max_lyr
       call fstr_solid_phys_zero(fstrSOLID%SHELL%LAYER(i)%PLUS)
       call fstr_solid_phys_zero(fstrSOLID%SHELL%LAYER(i)%MINUS)
     end do
-  end if 
+  end if
   if (associated(fstrSOLID%BEAM)) then
     call fstr_solid_phys_zero(fstrSOLID%BEAM)
-  end if 
-  
+  end if
+
 end subroutine fstr_solid_phys_clear
 end module m_fstr

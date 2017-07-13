@@ -52,7 +52,7 @@ cmake version 2.8.12.2
 | -DWITH_MUMPS=1          | MUMPSの機能を有効にします                     | ライブラリが必要               |
 | -DWITH_LAPACK=1         | LAPACKの機能を有効にします                    | ライブラリが必要               |
 | -DWITH_ML=1             | Trilinos MLの機能を有効にします               | ライブラリが必要               |
-| -DBUILD_DOC=1           | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
+| -DWITH_DOC=1           | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
 | -DBLA_VENDOR="Generic"  | 利用するBLASのベンダーを指定                  | FindBLAS.cmakeを参照           |
 | -DBLAS_LIBRARIES=".."   | BLASライブラリを直接指定                      | ライブラリを絶対パスで直接指定 |
 | -DLAPACK_LIBRARIES=".." | LaPACKライブラリを直接指定                    | ライブラリを絶対パスで直接指定 |
@@ -68,7 +68,7 @@ cmake version 2.8.12.2
 ~~~txt
 -- Cache values
 BASH_PROGRAM:FILEPATH=/bin/bash
-BUILD_DOC:BOOL=ON
+WITH_DOC:BOOL=ON
 CMAKE_BUILD_TYPE:STRING=RELEASE
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
 METIS_VER_4:BOOL=OFF
@@ -209,7 +209,7 @@ metis-4.0.3 を利用する場合、ディレクトリを指定した上で`cmak
 FrontISTRのソースコードのドキュメンテーションを参照することができます。ただし、予め `doxygen`と`graphviz` をインストールしておく必要があります。
 
 ~~~txt
-% cmake -DBUILD_DOC=1 ..
+% cmake -DWITH_DOC=1 ..
 % make doc
 % firefox doc/html/index.html
 ~~~

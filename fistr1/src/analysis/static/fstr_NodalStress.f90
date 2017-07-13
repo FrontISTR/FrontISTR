@@ -16,7 +16,7 @@ contains
     use m_static_lib
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:)
+    real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint), pointer :: is_rot(:)
 !C** local variables
     integer(kind=kint)   :: itype, icel, ic, iS, iE, jS, i, j, k, m, ic_type, nn, ni, ID_area
@@ -34,12 +34,15 @@ contains
 
     allocate( nnumber(hecMESH%n_node) )
     allocate( fstrSOLID%is_rot(hecMESH%n_node) )
+    !allocate( fstrSOLID%yield_ratio(hecMESH%n_elem) )
     nnumber = 0
     fstrSOLID%is_rot = 0
+    !fstrSOLID%yield_ratio = 0.0d0
 
     tnstrain => fstrSOLID%tnstrain
     testrain => fstrSOLID%testrain
     is_rot   => fstrSOLID%is_rot
+    yield_ratio => fstrSOLID%yield_ratio
 
     if( associated(tnstrain) ) tnstrain = 0.0d0
 
@@ -581,7 +584,7 @@ contains
           fstrSOLID%STRESS(3*ic-2) = fstrSOLID%STRESS(3*ic-2) + edstress(j,1)
           fstrSOLID%STRESS(3*ic-1) = fstrSOLID%STRESS(3*ic-1) + edstress(j,2)
           fstrSOLID%STRESS(3*ic-0) = fstrSOLID%STRESS(3*ic-0) + edstress(j,3)
-          
+
           if( associated(tnstrain) ) then
             tnstrain(3*ic-2) = tnstrain(3*ic-2) + tdstrain(j,1)
             tnstrain(3*ic-1) = tnstrain(3*ic-1) + tdstrain(j,2)
@@ -593,7 +596,7 @@ contains
 !        if( ID_area == hecMESH%my_rank ) then
           call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
           !          call ElementStress_C2( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress, tstrain )
-          
+
           fstrSOLID%ESTRAIN(3*icel-2) = estrain(1)
           fstrSOLID%ESTRAIN(3*icel-1) = estrain(2)
           fstrSOLID%ESTRAIN(3*icel-0) = estrain(3)
@@ -609,7 +612,7 @@ contains
           s11 = estress(1)
           s22 = estress(2)
           s12 = estress(3)
-          smises =  0.5d0 * ((s11-s22)**2+(s11)**2+(s22)**2) + 3*s12**2 
+          smises =  0.5d0 * ((s11-s22)**2+(s11)**2+(s22)**2) + 3*s12**2
           fstrSOLID%EMISES(icel) = sqrt( smises )
 !        endif
       enddo
@@ -628,7 +631,7 @@ contains
       s11 = fstrSOLID%STRESS(3*i-2)
       s22 = fstrSOLID%STRESS(3*i-1)
       s12 = fstrSOLID%STRESS(3*i-0)
-      smises =  0.5d0 * ((s11-s22)**2+(s11)**2+(s22)**2) + 3*s12**2 
+      smises =  0.5d0 * ((s11-s22)**2+(s11)**2+(s22)**2) + 3*s12**2
       fstrSOLID%MISES(i) = sqrt( smises )
     enddo
 
