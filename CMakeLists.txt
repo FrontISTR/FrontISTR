@@ -50,6 +50,30 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   list(APPEND FrontISTR_DEFINITIONS "DEBUG")
+  # Enable debug options
+  find_package(Backtrace)
+  if(Backtrace_FOUND)
+    list(APPEND FrontISTR_LIBRARIES ${Backtrace_LIBRARY}) 
+    list(APPEND FrontISTR_INCLUDE_DIR ${Backtrace_INCLUDE_DIR})
+    set(CMAKE_VERBOSE_MAKEFILE ON)
+    # GNU Compiler
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
+      set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
+      set(CMAKE_Fortran_FLAGS_DEBUG
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
+    # Intel Compiler
+    elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
+      set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
+      set(CMAKE_Fortran_FLAGS_DEBUG
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
+    endif()
+  endif()
 elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
   list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
 endif()
@@ -320,14 +344,18 @@ endif()
 ###############################################################################
 message(STATUS
   "Build FrontISTR for ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_VERSION}")
+message(STATUS "BUILD Type\t\t: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
-message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
-message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
-#message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
+
+if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
+  message(STATUS "Defines\t\t: ${FrontISTR_DEFINITIONS}")
+  message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
+  message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
+  message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+endif()
 
 ###############################################################################
 # Make configuration header
