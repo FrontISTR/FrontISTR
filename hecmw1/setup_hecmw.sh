@@ -64,6 +64,7 @@ UTILDIRS="\
 LIBSRCDIRS="\
 	src \
 	src/common \
+	src/common/metis \
 	src/operations \
 	src/operations/adaptation \
 	src/operations/dynamic_load_balancing \
@@ -484,6 +485,7 @@ do
 		-e "s!@metislibdir@!${METISLIBDIR}!" \
 		-e "s!@metisincdir@!${METISINCDIR}!" \
 		-e "s!@metislibs@!${METISLIBS}!" \
+		-e "s!@hecmw_metis_ver@!${HECMW_METIS_VER}!" \
 		-e "s!@metis_cflags@!${METIS_CFLAGS}!" \
 		-e "s!@metis_ldflags@!${METIS_LDFLAGS}!" \
 		-e "s!@metis_f90flags@!${METIS_F90FLAGS}!" \

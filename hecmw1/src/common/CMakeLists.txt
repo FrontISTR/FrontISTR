@@ -4,6 +4,8 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
+include(${CMAKE_CURRENT_LIST_DIR}/metis/CMakeLists.txt)
+
 list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_hash.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_init.c

@@ -144,13 +144,9 @@ OBJSF2 = \
         heat_LIB.@f90objfilepostfix@
 
 OBJSF_PARACON = \
-        m_Metis403API_f.@f90objfilepostfix@ \
-        m_Metis510API_f.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 OBJSF_PARACON_DUMM = \
-        m_Metis403API_f_dumm.@f90objfilepostfix@ \
-        m_Metis510API_f_dumm.@f90objfilepostfix@ \
         m_fstr_para_contact.@f90objfilepostfix@
 
 HEADERS =

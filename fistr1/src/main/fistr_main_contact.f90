@@ -495,5 +495,5 @@ subroutine fstr_finalize
 end subroutine fstr_finalize
 
 !=============================================================================!
-end program fstr_main
+end module m_fstr_main
 
