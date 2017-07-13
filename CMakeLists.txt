@@ -58,11 +58,20 @@ if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
     set(CMAKE_VERBOSE_MAKEFILE ON)
     # GNU Compiler
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-      set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pedantic")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
       set(CMAKE_CXX_FLAGS_DEBUG
-        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -pedantic")
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
       set(CMAKE_Fortran_FLAGS_DEBUG
-        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -pedantic -fbacktrace")
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
+    # Intel Compiler
+    elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
+      set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
+      set(CMAKE_Fortran_FLAGS_DEBUG
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
     endif()
   endif()
 elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
