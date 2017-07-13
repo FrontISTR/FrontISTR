@@ -41,11 +41,8 @@ target_link_libraries(fistr1
   fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
   ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
 )
-if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "Fortran")
-else()
-  set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
-endif()
+
+set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
 
 target_include_directories(fistr1 PUBLIC
   ${fistr_INCLUDE_DIRS}
