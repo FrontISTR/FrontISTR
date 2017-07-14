@@ -168,7 +168,7 @@ contains
     !C===
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
-    if (totalmpc>0) 
+    if (totalmpc>0) then
       call hecmw_solve_postmpc (hecMESH, hecMAT, hecTKT, Btmp)
     end if 
     call hecmw_barrier(hecMESH)
