@@ -59,19 +59,19 @@ if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
     # GNU Compiler
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
       set(CMAKE_C_FLAGS_DEBUG
-        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -Wpedantic")
       set(CMAKE_CXX_FLAGS_DEBUG
-        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wpedantic ")
       set(CMAKE_Fortran_FLAGS_DEBUG
-        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -Wpedantic -fbounds-check -fbacktrace")
     # Intel Compiler
     elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
       set(CMAKE_C_FLAGS_DEBUG
-        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wshadow -pedantic")
+        "${CMAKE_C_FLAGS_DEBUG} -warn all -check all -std")
       set(CMAKE_CXX_FLAGS_DEBUG
-        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wshadow -pedantic")
+        "${CMAKE_CXX_FLAGS_DEBUG} -warn all -check all -std")
       set(CMAKE_Fortran_FLAGS_DEBUG
-        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wshadow -pedantic -fbacktrace")
+        "${CMAKE_Fortran_FLAGS_DEBUG} -warn all -check all -std -traceback")
     endif()
   endif()
 elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
