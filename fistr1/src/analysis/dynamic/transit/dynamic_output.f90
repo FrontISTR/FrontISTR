@@ -139,7 +139,7 @@ module m_dynamic_output
           label(4)=12;label(5)=23;label(6)=31;
       END SELECT
 
-      
+      j = hecMESH%global_node_ID(1)
       do k = 1, ndof
         Umax(k) = fstrDYNAMIC%DISP(k,idx); Umin(k) = fstrDYNAMIC%DISP(k,idx)
         Vmax(k) = fstrDYNAMIC%VEL(k,idx); Vmin(k) = fstrDYNAMIC%VEL(k,idx)

@@ -133,7 +133,7 @@ module m_static_output
           label(4)=12;label(5)=23;label(6)=31;
       END SELECT
 
-
+      j = hecMESH%global_node_ID(1)
       do k = 1, ndof
         Umax(k) = fstrSOLID%unode(k); Umin(k) = fstrSOLID%unode(k)
         IUmax(k)= j; IUmin(k)= j
