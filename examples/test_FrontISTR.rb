@@ -222,11 +222,11 @@ end
 
 def compare_item(actual_g,correct_g,itemname)
   actual_g.each{|k,v|
-    if( correct_g.has_key?(:k) && (correct_g[k][0] - v[0]).abs > $threshold )
+    if( correct_g.has_key?(k) && (correct_g[k][0] - v[0]).abs > $threshold )
       puts "#{itemname} #{k} max value not coincident actual #{v[0]} : correct #{correct_g[k][0]}"
       return 1
     end
-    if( correct_g.has_key?(:k) && (correct_g[k][1] - v[1]).abs > $threshold )
+    if( correct_g.has_key?(k) && (correct_g[k][1] - v[1]).abs > $threshold )
       puts "#{itemname} #{k} min value not coincident actual #{v[1]} : correct #{correct_g[k][1]}"
       return 1
     end
@@ -237,6 +237,7 @@ end
 def compare_log(actual,correct)
   act_data = read_log(actual)
   correct_data = read_log(correct)
+
   g = correct_data['Node']
   e = correct_data['Element']
   if act_data['Node']
