@@ -75,6 +75,8 @@ end
 def exec_test(dirname,mesh,cnt,name,correctLog=nil)
   Dir.chdir(dirname){
     create_hecmw_ctrl(mesh,cnt)
+    print dirname,"/",mesh,", "
+    print dirname,"/",cnt,"\n"
     FileUtils.rm('0.log') if File.exists?('0.log')
     if $np then
       puts $part
@@ -595,7 +597,7 @@ when("dynamic/exW")
 when("dynamic/exX")
 [
 ["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMP_V4_5.log"],
-["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_CG_V4_5.log"],
+["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMP_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt","W361_c0_im_m2_t1_CG_V4_5.log"],
 ].each{|param|
