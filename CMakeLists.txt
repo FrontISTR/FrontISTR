@@ -46,9 +46,34 @@ set(FrontISTR_INCLUDE_DIRS ${CMAKE_Fortran_MODULE_DIRECTORY} ${PROJECT_BINARY_DI
 ###############################################################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RELEASE" CACHE STRING "Build type (RELEASE or DEBUG)" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS RELEASE DEBUG)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   list(APPEND FrontISTR_DEFINITIONS "DEBUG")
+  # Enable debug options
+  find_package(Backtrace)
+  if(Backtrace_FOUND)
+    list(APPEND FrontISTR_LIBRARIES ${Backtrace_LIBRARY}) 
+    list(APPEND FrontISTR_INCLUDE_DIR ${Backtrace_INCLUDE_DIR})
+    set(CMAKE_VERBOSE_MAKEFILE ON)
+    # GNU Compiler
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -Wpedantic")
+      set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wpedantic ")
+      set(CMAKE_Fortran_FLAGS_DEBUG
+        "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -Wpedantic -fbounds-check -fbacktrace")
+    # Intel Compiler
+    elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
+      set(CMAKE_C_FLAGS_DEBUG
+        "${CMAKE_C_FLAGS_DEBUG} -warn all -check all -std")
+      set(CMAKE_CXX_FLAGS_DEBUG
+        "${CMAKE_CXX_FLAGS_DEBUG} -warn all -check all -std")
+      set(CMAKE_Fortran_FLAGS_DEBUG
+        "${CMAKE_Fortran_FLAGS_DEBUG} -warn all -check all -std -traceback")
+    endif()
+  endif()
 elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
   list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
 endif()
@@ -82,7 +107,7 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
-# -DBUILD_DOC        : generate API documents
+# -DWITH_DOC        : generate API documents
 
 ###################
 # Find external packages
@@ -100,7 +125,7 @@ find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_PARACON "for parallel contact" OFF)
-option(BUILD_DOC "Generate API documents." OFF})
+option(WITH_DOC "Generate API documents." OFF})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -115,28 +140,6 @@ option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 feature_summary(WHAT ALL)
-
-#############################################
-# Archtecture and compiler dependent options
-#############################################
-if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-  if(CMAKE_GENERATOR MATCHES "(MinGW|MSYS)")
-    if(WINDOWS)
-      ###################
-      # -DWINDOWS
-      ###################
-      list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
-    endif()
-  endif()
-elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  ###################
-  # Macintosh
-  ###################
-  #set(CMAKE_C_COMPILER "gcc")
-  #set(CMAKE_CXX_COMPILER "g++")
-  #set(CMAKE_Fortran_COMPILER "gfortran")
-endif()
 
 ###################
 # -DWITH_MPI
@@ -204,6 +207,21 @@ else()
 endif()
 
 ###################
+# -DWITH_ML
+###################
+if(WITH_ML)
+  if(Trilinos_FOUND)
+    list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
+    list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+  else()
+    message(WARNING "Trilinos not found")
+    set(WITH_ML OFF)
+  endif()
+endif()
+mark_as_advanced(Trilinos_DIR)
+
+###################
 # -DWITH_PARMETIS
 ###################
 if(WITH_PARMETIS AND PARMETIS_FOUND)
@@ -211,22 +229,6 @@ if(WITH_PARMETIS AND PARMETIS_FOUND)
   list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
   if(NOT PARMETIS_VER_3)
   else()
-  endif()
-endif()
-
-###################
-# -DWITH_METIS
-# -DMETIS_VER_4
-###################
-if(WITH_METIS AND METIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
-  list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
-  list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
-  if(NOT METIS_VER_4)
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
-  else()
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
   endif()
 endif()
 
@@ -245,6 +247,22 @@ if(WITH_MUMPS)
   endif()
 else()
   set(WITH_MUMPS OFF)
+endif()
+
+###################
+# -DWITH_METIS
+# -DMETIS_VER_4
+###################
+if(WITH_METIS AND METIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
+  list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
+  if(NOT METIS_VER_4)
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
+  else()
+    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
+  endif()
 endif()
 
 ###################
@@ -273,26 +291,22 @@ else()
   set(WITH_MKL OFF)
 endif()
 
-
-###################
-# -DWITH_ML
-###################
-if(WITH_ML)
-  if(Trilinos_FOUND)
-    list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
-    list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
-  else()
-    message(WARNING "Trilinos not found")
-    set(WITH_ML OFF)
-  endif()
+#############################################
+# Archtecture and compiler dependent options
+#############################################
+if(WIN32)
+  ###################
+  # -DWINDOWS
+  ###################
+  list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
+  list(APPEND FrontISTR_LIBRARIES "ws2_32")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
 endif()
-mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DBUILD_DOC
+# -DWITH_DOC
 ###################
-if(BUILD_DOC)
+if(WITH_DOC)
   if(DOXYGEN_FOUND)
     message(STATUS "Generate API documents. Please type \"make doc\"")
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
@@ -319,14 +333,18 @@ endif()
 ###############################################################################
 message(STATUS
   "Build FrontISTR for ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_VERSION}")
+message(STATUS "BUILD Type\t\t: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
-message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
-#message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
-#message(STATUS "DEFINES\t: ${FrontISTR_DEFINITIONS}")
+
+if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
+  message(STATUS "Defines\t\t: ${FrontISTR_DEFINITIONS}")
+  message(STATUS "Include paths\t: ${FrontISTR_INCLUDE_DIRS}")
+  message(STATUS "Library search path\t: ${CMAKE_PREFIX_PATH}")
+  message(STATUS "Linking libraries\t: ${FrontISTR_LIBRARIES}")
+endif()
 
 ###############################################################################
 # Make configuration header

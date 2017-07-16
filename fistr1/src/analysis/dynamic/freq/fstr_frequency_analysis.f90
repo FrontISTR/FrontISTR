@@ -382,7 +382,7 @@ contains
     real(kind=kreal),       intent(inout) :: eigenvector(:,:) !intend (numdof*NN,nmode)
   !---- vals
     integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
-    integer(kind=kint)             :: imode, idx, ind, a, b, nallcomp, sti, j, nmode
+    integer(kind=kint)             :: imode, idx, ind, a, b, nallcomp, j, nmode
     type(hecmwST_result_data)      :: eigenres
     character(len=HECMW_NAME_LEN) :: name
   !---- body
@@ -397,15 +397,11 @@ contains
       do ind=1,eigenres%nn_component
         nallcomp = nallcomp + eigenres%nn_dof(ind)
       end do
-      sti = 0
-      do ind=1,(compidx-1)
-        sti = sti + eigenres%nn_dof(ind)
-      end do
 
       idx = imode - startmode + 1
       do ind=1, numnode
         do j=1, numdof
-          a = (ind-1)*nallcomp + sti + j  !src vector index
+          a = (ind-1)*nallcomp + j  !src vector index
           b = (ind-1)*numdof   + j
           eigenvector(b,imode) = eigenres%node_val_item(a)
         end do

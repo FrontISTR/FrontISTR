@@ -81,14 +81,20 @@ contains
 
     !C MPC Preproc
     S_TIME= HECMW_WTIME()
-    call hecmw_solve_prempc (hecMESH, hecMAT, hecTKT, Btmp,first_call)
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+    if (totalmpc > 0) then
+      call hecmw_solve_prempc (hecMESH, hecMAT, hecTKT, Btmp,first_call)
+    else
+      hecTKT=>hecMAT
+    end if 
+    
     !C-- RECYCLE SETTING OF PRECONDITIONER
     call hecmw_mat_recycle_precond_setting(hecMAT)
 
     E_TIME= HECMW_WTIME()
     if (TIMElog.eq.2) then
-      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
-           t_max, t_min, t_avg, t_sd)
+      call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, t_max, t_min, t_avg, t_sd)
       if (hecMESH%my_rank.eq.0) then
         write(*,*) 'Time MPC pre'
         write(*,*) '  Max     :',t_max
@@ -102,8 +108,6 @@ contains
     endif
 
     ! exchange diagonal elements of overlap region
-    !call hecmw_mat_diag_sr(hecMESH, hecTKT)
-
     call hecmw_mat_dump(hecTKT, hecMESH)
     call hecmw_matvec_set_async(hecTKT)
 
@@ -116,32 +120,27 @@ contains
       call hecmw_matvec_clear_timer()
       call hecmw_precond_clear_timer()
       call hecmw_solve_iterative_printmsg(hecMESH,hecMAT)
-
-      if (METHOD == 1) then
-        hecTKT%symmetric = .true.
-      else
-        hecTKT%symmetric = .false.
-      end if
-
+      
       SELECT CASE(METHOD)
         CASE (1)  !--CG
+          hecTKT%symmetric = .true.
           call hecmw_solve_CG( hecMESH, hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
         CASE (2)  !--BiCGSTAB
+          hecTKT%symmetric = .false.
           call hecmw_solve_BiCGSTAB( hecMESH,hecTKT, ITER, RESID, ERROR,TIME_setup, TIME_sol, TIME_comm )
         CASE (3)  !--GMRES
+          hecTKT%symmetric = .false.
           call hecmw_solve_GMRES( hecMESH,hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
-        CASE (4)  !--GPBiCG
+        CASE (4)  !--GPBiCG 
+          hecTKT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecTKT, ITER, RESID, ERROR, TIME_setup, TIME_sol, TIME_comm )
         CASE default
           ERROR = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, ERROR)
       END SELECT
 
-      if ((ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .or. &
-           ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) .and. &
-           (PRECOND.ge.10 .and. PRECOND.lt.20) .and. &
-           auto_sigma_diag.eq.1 .and. &
-           SIGMA_DIAG.lt.2.d0) then
+      if (  (ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .or. ERROR.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) .and. &
+           (PRECOND.ge.10 .and. PRECOND.lt.20) .and. auto_sigma_diag.eq.1 .and. SIGMA_DIAG.lt.2.d0) then
         SIGMA_DIAG = SIGMA_DIAG + 0.1
         if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
       else
@@ -169,7 +168,9 @@ contains
     !C===
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
-    call hecmw_solve_postmpc (hecMESH, hecMAT, hecTKT, Btmp)
+    if (totalmpc>0) then
+      call hecmw_solve_postmpc (hecMESH, hecMAT, hecTKT, Btmp)
+    end if 
     call hecmw_barrier(hecMESH)
     E_TIME= HECMW_WTIME()
     TIME_mpc_post = E_TIME - S_TIME
@@ -196,7 +197,7 @@ contains
     endif
 
   end subroutine hecmw_solve_iterative
-
+ 
   subroutine hecmw_solve_check_zerodiag (hecMESH, hecMAT)
     use hecmw_util
     use hecmw_matrix_misc
@@ -215,8 +216,8 @@ contains
       do j = 1, hecMAT%NDOF
         if (dabs(hecMAT%D(hecMAT%NDOF*hecMAT%NDOF*(i-1)+(j-1)*(hecMAT%NDOF+1)+1)).eq.0.d0) then
           ERROR=HECMW_SOLVER_ERROR_ZERO_DIAG
-        end if
-      end do
+        end if 
+      end do 
     enddo
 
     call hecmw_allreduce_I1 (hecMESH, ERROR, hecmw_max)
@@ -245,7 +246,7 @@ contains
     do i= 1, hecMAT%N
       do j = 1, hecMAT%NDOF
         RHS(1)=RHS(1) + hecMAT%B(hecMAT%NDOF*(i-1)+j)**2
-      end do
+      end do 
     enddo
     if (hecMESH%mpc%n_mpc > 0) then
       do i= 1, hecMESH%mpc%n_mpc
@@ -262,33 +263,30 @@ contains
     endif
 
   end subroutine hecmw_solve_check_zerorhs
-
+  
   subroutine hecmw_solve_prempc (hecMESH, hecMAT, hecTKT, Btmp, first_call)
     use hecmw_util
     use hecmw_matrix_ass
     use hecmw_solver_misc
     use hecmw_matrix_misc
     use hecmw_local_matrix
-    use hecmw_solver_las
+    use hecmw_solver_las    
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
     type (hecmwST_matrix), pointer :: hecTKT
     real(kind=kreal), pointer :: Btmp(:)
     real(kind=kreal) :: time_dumm
-    integer(kind=kint) :: totalmpc, MPC_METHOD
+    integer(kind=kint) :: MPC_METHOD
     integer(kind=kint) ::  i
     logical :: first_call
 
-    totalmpc = hecMESH%mpc%n_mpc
-    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-    if (totalmpc > 0) then
       call hecmw_mpc_scale(hecMESH)
 
       SELECT CASE(hecmw_mat_get_mpc_method(hecMAT))
         CASE(1) ! "1: MPC Method: Penalty"
           call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-          hecTKT => hecMAT
+          hecTKT => hecMAT        
         CASE(2) ! "2: MPC Method: MPC-CG"
           call hecmw_matvec_set_mpcmatvec_flg (.true.)
           allocate(Btmp(hecMAT%NP * hecMAT%NDOF))
@@ -309,12 +307,8 @@ contains
             call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
           endif
           call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecTKT%B, time_dumm)
-      END SELECT
-    else
-      hecTKT => hecMAT
-    endif
-
-
+      END SELECT   
+    
   end subroutine hecmw_solve_prempc
   subroutine hecmw_solve_postmpc (hecMESH, hecMAT, hecTKT, Btmp)
     use hecmw_util
@@ -329,16 +323,12 @@ contains
     real(kind=kreal), pointer :: Btmp(:)
     real(kind=kreal) :: time_dumm
 
-    integer(kind=kint) :: totalmpc, MPC_METHOD
+    integer(kind=kint) :: MPC_METHOD
     integer(kind=kint) ::  i
 
-    totalmpc = hecMESH%mpc%n_mpc
-    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-
-    if (totalmpc > 0) then
       SELECT CASE(hecmw_mat_get_mpc_method(hecMAT))
         CASE(1) ! "MPC Method: Penalty"
-          !do nothing
+          !do nothing 
         CASE(2) ! "MPC Method: MPC-CG"
           call hecmw_tback_x(hecMESH, hecTKT%X, time_dumm)
           do i=1,hecMAT%NP * hecMAT%NDOF
@@ -355,14 +345,13 @@ contains
           ! call hecmw_mat_finalize(hecTKT)
           ! deallocate(hecTKT)
       END SELECT
-    endif
   end subroutine hecmw_solve_postmpc
 
   subroutine hecmw_solve_iterative_printmsg (hecMESH, hecMAT)
     use hecmw_util
     use hecmw_solver_misc
     use hecmw_matrix_misc
-
+    
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -371,7 +360,7 @@ contains
 
     character(len=30) :: msg_precond
     character(len=30) :: msg_method
-
+    
     ITER      = hecmw_mat_get_iter(hecMAT)
     METHOD    = hecmw_mat_get_method(hecMAT)
     PRECOND   = hecmw_mat_get_precond(hecMAT)
@@ -380,29 +369,28 @@ contains
     NREST     = hecmw_mat_get_nrest(hecMAT)
     ITERlog= hecmw_mat_get_iterlog(hecMAT)
     TIMElog= hecmw_mat_get_timelog(hecMAT)
-
+    
     SELECT CASE(METHOD)
       CASE (1)  !--CG
         msg_method="CG"
       CASE (2)  !--BiCGSTAB
-        msg_method="BiCGSTAB"
+        msg_method="BiCGSTAB"     
       CASE (3)  !--GMRES
         msg_method="GMRES"
-      CASE (4)  !--GPBiCG
-        msg_method="GPBiCG"
+      CASE (4)  !--GPBiCG 
+        msg_method="GPBiCG"        
       CASE DEFAULT
         msg_method="Unlabeled"
     END SELECT
-
     SELECT CASE(PRECOND)
-      CASE(1,2)
+      CASE(2)
         msg_precond="SSOR"
       CASE(3)
         msg_precond="DIAG"
       CASE(5)
         msg_precond="ML"
       CASE(7)
-        msg_precond="Direct MUMPS"
+        msg_precond="DirectMUMPS"
       CASE(10,11,12)
         write(msg_precond,"(a,i0,a)") "ILU(",PRECOND-10,")"
       CASE(20)
@@ -412,11 +400,10 @@ contains
       CASE DEFAULT
         msg_precond="Unlabeled"
     END SELECT
-
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
-      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,'BLOCK ', &
+      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,'(G) ', &
       &   TRIM(msg_method),", ",TRIM(msg_precond),", ", iterPREmax
-    end if
+    end if 
   end subroutine hecmw_solve_iterative_printmsg
-
+  
 end module hecmw_solver_iterative

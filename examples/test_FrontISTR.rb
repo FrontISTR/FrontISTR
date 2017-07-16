@@ -75,6 +75,8 @@ end
 def exec_test(dirname,mesh,cnt,name,correctLog=nil)
   Dir.chdir(dirname){
     create_hecmw_ctrl(mesh,cnt)
+    print dirname,"/",mesh,", "
+    print dirname,"/",cnt,"\n"
     FileUtils.rm('0.log') if File.exists?('0.log')
     if $np then
       puts $part
@@ -222,11 +224,11 @@ end
 
 def compare_item(actual_g,correct_g,itemname)
   actual_g.each{|k,v|
-    if( correct_g.has_key?(:k) && (correct_g[k][0] - v[0]).abs > $threshold )
+    if( correct_g.has_key?(k) && (correct_g[k][0] - v[0]).abs > $threshold )
       puts "#{itemname} #{k} max value not coincident actual #{v[0]} : correct #{correct_g[k][0]}"
       return 1
     end
-    if( correct_g.has_key?(:k) && (correct_g[k][1] - v[1]).abs > $threshold )
+    if( correct_g.has_key?(k) && (correct_g[k][1] - v[1]).abs > $threshold )
       puts "#{itemname} #{k} min value not coincident actual #{v[1]} : correct #{correct_g[k][1]}"
       return 1
     end
@@ -237,6 +239,7 @@ end
 def compare_log(actual,correct)
   act_data = read_log(actual)
   correct_data = read_log(correct)
+
   g = correct_data['Node']
   e = correct_data['Element']
   if act_data['Node']
@@ -594,7 +597,7 @@ when("dynamic/exW")
 when("dynamic/exX")
 [
 ["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMP_V4_5.log"],
-["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_CG_V4_5.log"],
+["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMP_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt","W361_c0_im_m2_t1_CG_V4_5.log"],
 ].each{|param|
