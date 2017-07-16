@@ -3,251 +3,151 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
-!C***
-!C*** module hecmw_solver_GMRES
-!C***
-!
-      module hecmw_solver_GMRES
+module hecmw_solver_GMRES
+public :: hecmw_solve_GMRES
 
-      public :: hecmw_solve_GMRES
+contains
+subroutine hecmw_solve_GMRES( hecMESH, hecMAT, ITER, RESID, ERROR, Tset, Tsol, Tcomm )
 
-      contains
-!C
-!C*** hecmw_solve_GMRES
-!C
-      subroutine hecmw_solve_GMRES( hecMESH,  hecMAT, ITER, RESID, ERROR, &
-     &                                    Tset, Tsol, Tcomm )
-      use hecmw_util
-      use m_hecmw_solve_error
-      use m_hecmw_comm_f
-      use hecmw_matrix_misc
-      use hecmw_solver_misc
-      use hecmw_solver_las
-      use hecmw_solver_scaling
-      use hecmw_precond
-      use hecmw_estimate_condition
+  use hecmw_util
+  use m_hecmw_solve_error
+  use hecmw_matrix_misc
+  use hecmw_solver_misc
+  use hecmw_solver_las
+  use hecmw_solver_scaling
+  use hecmw_precond
+  use hecmw_estimate_condition
 
-      implicit none
 
-      type(hecmwST_local_mesh) :: hecMESH
-      type(hecmwST_matrix) :: hecMAT
-      integer(kind=kint ), intent(inout):: ITER, ERROR
-      real   (kind=kreal), intent(inout):: RESID, Tset, Tsol, Tcomm
+  implicit none
+  type(hecmwST_local_mesh) :: hecMESH
+  type(hecmwST_matrix) :: hecMAT
+  integer(kind=kint ), intent(inout):: ITER, ERROR
+  real   (kind=kreal), intent(inout):: RESID, Tset, Tsol, Tcomm
+  integer(kind=kint ) :: N, NP, NDOF, NNDOF, my_rank, ITERlog, TIMElog, MAXIT, ESTCOND
+  real   (kind=kreal) :: TOL, S1_TIME, S2_TIME
+  real   (kind=kreal), pointer :: B(:), X(:)
+  
+  integer(kind=kint), parameter :: iR=1, iZP=2, iZQ=3, iW=4, iY=4, iAV=5
+  real   (kind=kreal), pointer :: R(:), ZP(:), ZQ(:), W(:), Y(:), AV(:)
+  real   (kind=kreal), allocatable,target :: V(:,:), VCOS(:), VSIN(:)
+  real   (kind=kreal), allocatable,target :: SS(:), H(:,:), WW(:,:),S(:) 
+  integer(kind=kint ) :: NREST, i, j, k
+  real   (kind=kreal) :: BNRM2, DNRM2, RNORM
+  real   (kind=kreal) :: coef,VAL,DTEMP,AA,BB,R0,SCALE,RR
 
-      integer(kind=kint ) :: N, NP, NDOF, NNDOF
-      integer(kind=kint ) :: my_rank
-      integer(kind=kint ) :: ITERlog, TIMElog
-      real(kind=kreal), pointer :: B(:), X(:)
+  call hecmw_barrier(hecMESH)
+  S1_TIME= HECMW_WTIME()
 
-      real(kind=kreal), dimension(:,:),  allocatable :: WW
+  N = hecMAT%N
+  NP = hecMAT%NP
+  NDOF = hecMAT%NDOF
+  NNDOF = N * NDOF
+  my_rank = hecMESH%my_rank
+  X => hecMAT%X
+  B => hecMAT%B
 
-      integer(kind=kint ) :: MAXIT, NREST
+  ITERlog = hecmw_mat_get_iterlog( hecMAT )
+  TIMElog = hecmw_mat_get_timelog( hecMAT )
+  MAXIT   = hecmw_mat_get_iter   ( hecMAT )
+  TOL     = hecmw_mat_get_resid  ( hecMAT )
+  ESTCOND = hecmw_mat_get_estcond( hecMAT )
+  NREST   = hecmw_mat_get_nrest  ( hecMAT )
+  if (NREST >= NDOF*NP-1) NREST = NDOF*NP-2
 
-      real   (kind=kreal) :: TOL
+  ERROR= 0
+  allocate (H (NREST+1,NREST));
+  allocate (V (NDOF*NP,NREST+1))  
+  allocate (S (NREST+1))
+  allocate (SS(NREST));
+  allocate (VCOS(NREST));
+  allocate (VSIN(NREST)); 
+  allocate (WW(NDOF*NP,5 ))
+  WW=0.0d0
+  R  => WW(:, iR);
+  ZP => WW(:,iZP);
+  ZQ => WW(:,iZQ);
+  W  => WW(:, iW);
+  Y  => WW(:, iY);
+  AV => WW(:,iAV);
 
-      real   (kind=kreal), dimension(:),   allocatable :: SS
-      real   (kind=kreal), dimension(:,:), allocatable :: H
+  call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
+  call hecmw_precond_setup(hecMAT, hecMESH, 0)
 
-      integer(kind=kint ) :: CS, SN
+  !C | {r}= {b} - [A]{x0} |
+  call hecmw_matresid(hecMESH, hecMAT, X, B, R, Tcomm)
+  call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
+  if (BNRM2.eq.0.d0) then
+    iter = 0
+    MAXIT = 0
+    RESID = 0.d0
+    X = 0.d0
+  endif
 
-      real   (kind=kreal)   ZERO, ONE
-      parameter ( ZERO = 0.0D+0, ONE = 1.0D+0 )
+  Tset = HECMW_WTIME() - S1_TIME
+  if (TIMElog.eq.2) then
+    write(*,*) 'Time solver setup'
+    call hecmw_print_time_statistics(hecMESH, Tset)
+  endif
 
-      integer(kind=kint ) :: NRK,i,k,kk,jj,INFO,ik
-      integer(kind=kint ) :: IROW
-      real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
-      real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
-      real   (kind=kreal) :: COMMtime,COMPtime, coef,VAL,VCS,VSN,DTEMP,AA,BB,R0,SCALE,RR
-      integer(kind=kint ) :: ESTCOND
-      real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
+  call hecmw_barrier(hecMESH)
+  S1_TIME= HECMW_WTIME()
+  ITER= 0
 
-      integer(kind=kint), parameter :: R  = 1
-      integer(kind=kint), parameter :: ZP = R + 1
-      integer(kind=kint), parameter :: ZQ = R + 2
-      integer(kind=kint), parameter :: S  = R + 3
-      integer(kind=kint), parameter :: W  = S + 1
-      integer(kind=kint), parameter :: Y  = W
-      integer(kind=kint), parameter :: AV = Y  + 1
-      integer(kind=kint), parameter :: V  = AV + 1
+  OUTER: do
+  !C************************************************ GMRES Iteration
+    I= 0
+    !C | {v1}= {r}/|r| |
+    call hecmw_InnerProduct_R(hecMESH, NDOF, R, R, DNRM2, Tcomm)
+    if (DNRM2 == 0.d0) exit ! converged
+    RNORM= dsqrt(DNRM2)
+    coef= 1.0d0/RNORM
+    do j= 1, NNDOF
+      V(j,1)= WW(j,iR) * coef
+    enddo
+    !C | {s}= |r|{e1} |
+    S(1) = RNORM
+    do j = 2, NREST+1
+      S(j) = 0.0d0
+    enddo
 
-      call hecmw_barrier(hecMESH)
-      S_TIME= HECMW_WTIME()
-!C
-!C-- INIT.
-      N = hecMAT%N
-      NP = hecMAT%NP
-      NDOF = hecMAT%NDOF
-      NNDOF = N * NDOF
-      my_rank = hecMESH%my_rank
-      X => hecMAT%X
-      B => hecMAT%B
+    !C************************************************ GMRES(m) restart
+    do I = 1, NREST
+    ITER= ITER + 1
 
-      ITERlog = hecmw_mat_get_iterlog( hecMAT )
-      TIMElog = hecmw_mat_get_timelog( hecMAT )
-      MAXIT  = hecmw_mat_get_iter( hecMAT )
-       TOL   = hecmw_mat_get_resid( hecMAT )
-      NREST  = hecmw_mat_get_nrest( hecMAT )
-      ESTCOND = hecmw_mat_get_estcond( hecMAT )
+  !C | {w}= [A][Minv]{v} |
+      call hecmw_precond_apply(hecMESH, hecMAT, V(:,I), ZQ, ZP, Tcomm)
+      call hecmw_matvec(hecMESH, hecMAT, ZQ, W, Tcomm)
 
-      if (NREST >= NDOF*NP-1) NREST = NDOF*NP-2
-
-      ERROR= 0
-      NRK= NREST + 7
-
-      allocate (H (NRK,NRK))
-      allocate (WW(NDOF*NP,NRK))
-      allocate (SS(NRK))
-
-      COMMtime= 0.d0
-      COMPtime= 0.d0
-
-      LDH= NREST + 2
-      LDW= N
-
-!C
-!C-- Store the Givens parameters in matrix H.
-      CS= NREST + 1
-      SN= CS    + 1
-
-!C
-!C-- SCALING
-      call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
-
-!C===
-!C +----------------------+
-!C | SETUP PRECONDITIONER |
-!C +----------------------+
-!C===
-      call hecmw_precond_setup(hecMAT, hecMESH, 0)
-
-!C
-!C
-!C +--------------------+
-!C | {r}= {b} - [A]{x0} |
-!C +--------------------+
-!C===
-      call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
-!C===
-
-      call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
-      if (BNRM2.eq.0.d0) then
-        iter = 0
-        MAXIT = 0
-        RESID = 0.d0
-        X = 0.d0
-      endif
-
-      E_TIME= HECMW_WTIME()
-      if (TIMElog.eq.2) then
-        call hecmw_time_statistics(hecMESH, E_TIME - S_TIME, &
-             t_max, t_min, t_avg, t_sd)
-        if (hecMESH%my_rank.eq.0) then
-          write(*,*) 'Time solver setup'
-          write(*,*) '  Max     :',t_max
-          write(*,*) '  Min     :',t_min
-          write(*,*) '  Avg     :',t_avg
-          write(*,*) '  Std Dev :',t_sd
-        endif
-        Tset = t_max
-      else
-        Tset = E_TIME - S_TIME
-      endif
-!C===
-
-      call hecmw_barrier(hecMESH)
-      S1_TIME= HECMW_WTIME()
-      ITER= 0
-
-      OUTER: do
-
-!C
-!C************************************************ GMRES Iteration
-!C
-        I= 0
-!C
-!C +---------------+
-!C | {v1}= {r}/|r| |
-!C +---------------+
-!C===
-        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
-        if (DNRM2 == 0.d0) exit ! converged
-
-        RNORM= dsqrt(DNRM2)
-        coef= ONE/RNORM
-        do ik= 1, NNDOF
-          WW(ik,V)= WW(ik,R) * coef
+  !C ORTH. BASIS by GRAMM-SCHMIDT |
+  !C   Construct the I-th column of the upper Hessenberg matrix H
+  !C   using the Gram-Schmidt process on V and W.
+      do j= 1, I
+        call hecmw_InnerProduct_R(hecMESH, NDOF, W, V(:,j), VAL, Tcomm)
+        do k= 1, NNDOF
+          WW(k,iW)= WW(k,iW) - VAL * V(k,j)
         enddo
-!C===
-
-!C
-!C +--------------+
-!C | {s}= |r|{e1} |
-!C +--------------+
-!C===
-        WW(1 ,S) = RNORM
-        do k = 2, NNDOF
-          WW(k,S) = ZERO
-        enddo
-!C===
-
-!C************************************************ GMRES(m) restart
-        do I = 1, NREST
-        ITER= ITER + 1
-
-!C
-!C +-------------------+
-!C | {w}= [A][Minv]{v} |
-!C +-------------------+
-!C===
-      call hecmw_precond_apply(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
-
-      call hecmw_matvec(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
-!C===
-
-!C
-!C +------------------------------+
-!C | ORTH. BASIS by GRAMM-SCHMIDT |
-!C +------------------------------+
-!C   Construct the I-th column of the upper Hessenberg matrix H
-!C   using the Gram-Schmidt process on V and W.
-!C===
-      do K= 1, I
-        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,V+K-1), VAL, Tcomm)
-
-        do ik= 1, NNDOF
-          WW(ik,W)= WW(ik,W) - VAL * WW(ik,V+K-1)
-        enddo
-        H(K,I)= VAL
+        H(j,I)= VAL
       enddo
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,W), VAL, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, W, W, VAL, Tcomm)
       if (VAL == 0.d0) exit ! converged
 
       H(I+1,I)= dsqrt(VAL)
-      coef= ONE / H(I+1,I)
-      do ik= 1, NNDOF
-        WW(ik,V+I+1-1)= WW(ik,W) * coef
+      coef= 1.0d0 / H(I+1,I)
+      do j= 1, NNDOF
+        V(j,I+1)= WW(j,iW) * coef
       enddo
-!C===
 
-!C
-!C +-----------------+
-!C | GIVENS ROTARION |
-!C +-----------------+
-!C===
-
-!C
-!C-- Plane Rotation
+  !C GIVENS ROTARION 
+  !C-- Plane Rotation
       do k = 1, I-1
-        VCS= H(k,CS)
-        VSN= H(k,SN)
-        DTEMP   = VCS*H(k  ,I) + VSN*H(k+1,I)
-        H(k+1,I)= VCS*H(k+1,I) - VSN*H(k  ,I)
+        DTEMP   =  VCOS(k)*H(k  ,I) + VSIN(k)*H(k+1,I)
+        H(k+1,I)=  VCOS(k)*H(k+1,I) - VSIN(k)*H(k  ,I)
         H(k  ,I)= DTEMP
       enddo
 
-!C
-!C-- Construct Givens Plane Rotation
+  !C-- Construct Givens Plane Rotation
       AA = H(I  ,I)
       BB = H(I+1,I)
       R0= BB
@@ -255,206 +155,168 @@
       SCALE= dabs(AA) + dabs(BB)
 
       if (SCALE.ne.0.d0) then
-        RR= SCALE * dsqrt((AA/SCALE)**2+(BB/SCALE)**2)
-        RR= dsign(1.d0,R0)*RR
-        H(I,CS)= AA/RR
-        H(I,SN)= BB/RR
+        RR= dsign(1.d0,R0)* SCALE * dsqrt((AA/SCALE)**2+(BB/SCALE)**2)
+        VCOS(I)= AA/RR
+        VSIN(I)= BB/RR
        else
-        H(I,CS)= 1.d0
-        H(I,SN)= 0.d0
-        RR     = 0.d0
+        VCOS(I)= 1.d0
+        VSIN(I)= 0.d0
       endif
 
-!C
-!C-- Plane Rotation
-      VCS= H(I,CS)
-      VSN= H(I,SN)
-      DTEMP    = VCS*H(I  ,I) + VSN*H(I+1,I)
-      H (I+1,I)= VCS*H(I+1,I) - VSN*H(I  ,I)
+      !C-- Plane Rotation
+      DTEMP    = VCOS(I)*H(I  ,I) + VSIN(I)*H(I+1,I)
+      H (I+1,I)= VCOS(I)*H(I+1,I) - VSIN(I)*H(I  ,I)
       H (I  ,I)= DTEMP
 
-      DTEMP    = VCS*WW(I  ,S) + VSN*WW(I+1,S)
-      WW(I+1,S)= VCS*WW(I+1,S) - VSN*WW(I  ,S)
-      WW(I  ,S)= DTEMP
+      DTEMP    = VCOS(I)*S(I) + VSIN(I)*S(I+1)
+      S(I+1)= VCOS(I)*S(I+1) - VSIN(I)*S(I)
+      S(I)= DTEMP
+      RESID = dabs ( S(I+1))/dsqrt(BNRM2)
 
-      RESID = dabs ( WW(I+1,S))/dsqrt(BNRM2)
-
-      if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
-     &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
+      if (my_rank.eq.0 .and. ITERlog.eq.1) write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
 
       if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
         if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_GMRES(I, H)
       endif
 
-      if ( RESID.le.TOL ) then
-!C-- [H]{y}= {s_tld}
-         do ik= 1, I
-           SS(ik)= WW(ik,S)
+      if ( RESID .le. TOL ) then
+      !C-- [H]{y}= {s_tld}
+         do j= 1, I
+           SS(j)= S(j)
          enddo
-         IROW= I
-         WW(IROW,Y)= SS(IROW) / H(IROW,IROW)
+         WW(I,iY)= S(I) / H(I,I)
 
-         do kk= IROW-1, 1, -1
-           do jj= IROW, kk+1, -1
-             SS(kk)= SS(kk) - H(kk,jj)*WW(jj,Y)
+         do j= I-1, 1, -1
+           do k= I, j+1, -1
+             SS(j)= SS(j) - H(j,k)*WW(k,iY)
            enddo
-           WW(kk,Y)= SS(kk) / H(kk,kk)
+           WW(j,iY)= SS(j) / H(j,j)
          enddo
-
-!C-- {x}= {x} + {y}{V}
-         do kk= 1, NNDOF
-           WW(kk, AV)= 0.d0
+      !C-- {x}= {x} + {y}{V}
+         do j= 1, NNDOF
+           WW(j,iAV)= 0.d0
          enddo
-
-         jj= IROW
-         do jj= 1, IROW
-         do kk= 1, NNDOF
-           WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
+         do j= 1, I
+           do k= 1, NNDOF
+             WW(k,iAV)= WW(k,iAV) + WW(j,iY)*V(k,j)
+           enddo
          enddo
+         call hecmw_precond_apply(hecMESH, hecMAT, AV, ZQ, ZP, Tcomm)
+         do j= 1, NNDOF
+           X(j)= X(j) + WW(j,iZQ)
          enddo
-
-         call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
-
-         do kk= 1, NNDOF
-           X(kk)= X(kk) + WW(kk,ZQ)
-         enddo
-
          exit OUTER
       endif
-
       if ( ITER.gt.MAXIT ) then
         ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
         exit OUTER
       end if
-      end do
-!C===
+    end do
 
-!C
-!C +------------------+
-!C | CURRENT SOLUTION |
-!C +------------------+
-!C===
+  !C CURRENT SOLUTION |
+    !C-- [H]{y}= {s_tld}
+    do j= 1, NREST
+      SS(j)= S(j)
+    enddo
+    WW(NREST,iY)= SS(NREST) / H(NREST,NREST)
 
-!C-- [H]{y}= {s_tld}
-      do ik= 1, NREST
-        SS(ik)= WW(ik,S)
+    do j= NREST-1, 1, -1
+      do k= NREST, j+1, -1
+        SS(j)= SS(j) - H(j,k)*WW(k,iY)
       enddo
-      IROW= NREST
-      WW(IROW,Y)= SS(IROW) / H(IROW,IROW)
+      WW(j,iY)= SS(j) / H(j,j)
+    enddo
 
-      do kk= IROW-1, 1, -1
-        do jj= IROW, kk+1, -1
-          SS(kk)= SS(kk) - H(kk,jj)*WW(jj,Y)
-        enddo
-        WW(kk,Y)= SS(kk) / H(kk,kk)
+    !C-- {x}= {x} + {y}{V}
+    do j= 1, NNDOF
+      WW(j,iAV)= 0.d0
+    enddo
+
+    do j= 1, NREST
+      do k= 1, NNDOF
+        WW(k,iAV)= WW(k,iAV) + WW(j,iY)*V(k,j)
       enddo
+    enddo
 
-!C-- {x}= {x} + {y}{V}
-      do kk= 1, NNDOF
-        WW(kk, AV)= 0.d0
+    call hecmw_precond_apply(hecMESH, hecMAT, AV, ZQ, ZP, Tcomm)
+
+    do j= 1, NNDOF
+      X(j)= X(j) + ZQ(j)
+    enddo
+
+    !C-- Compute residual vector R, find norm, then check for tolerance.
+    call hecmw_matresid(hecMESH, hecMAT, X, B, R, Tcomm)
+    call hecmw_InnerProduct_R(hecMESH, NDOF, R, R, DNRM2, Tcomm)
+
+    RESID= dsqrt(DNRM2/BNRM2)
+    !S(I+1) = RESID
+
+    if ( RESID.le.TOL )   exit OUTER
+    if ( ITER .gt.MAXIT ) then
+      ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
+      exit OUTER
+    end if
+
+  !C-- RESTART
+  end do OUTER
+
+
+  !C-- iteration FAILED
+  if (ERROR == HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
+
+    !C-- [H]{y}= {s_tld}
+    do j= 1, I
+      SS(j)= S(j)
+    enddo
+    WW(I,iY)= SS(I) / H(I,I)
+
+    do j= I-1, 1, -1
+      do k= I, j+1, -1
+        SS(j)= SS(j) - H(j,k)*WW(k,iY)
       enddo
+      WW(j,iY)= SS(j) / H(j,j)
+    enddo
 
-      jj= IROW
-      do jj= 1, IROW
-      do kk= 1, NNDOF
-        WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
+    !C-- {x}= {x} + {y}{V}
+    do j= 1, NNDOF
+      WW(j,iAV)= 0.d0
+    enddo
+
+    do j= 1, I
+      do k= 1, NNDOF
+        WW(k,iAV)= WW(k,iAV) + WW(j,iY)*V(k  ,j)
       enddo
-      enddo
+    enddo
 
-      call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+    call hecmw_precond_apply(hecMESH, hecMAT, AV, ZQ, ZP, Tcomm)
 
-      do kk= 1, NNDOF
-        X(kk)= X(kk) + WW(kk,ZQ)
-      enddo
+    do j= 1, NNDOF
+      X(j)= X(j) + WW(j,iZQ)
+    enddo
+  end if
 
-!C
-!C-- Compute residual vector R, find norm, then check for tolerance.
-      call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+  call hecmw_solver_scaling_bk(hecMAT)
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+  if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
+    call hecmw_estimate_condition_GMRES(I, H)
+  endif
 
-      WW(I+1,S)= dsqrt(DNRM2/BNRM2)
-      RESID    = WW( I+1,S )
+  !C-- INTERFACE data EXCHANGE
+  S2_TIME = HECMW_WTIME()
+  call hecmw_update_m_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+  Tcomm = Tcomm + HECMW_WTIME() - S2_TIME
 
-      if ( RESID.le.TOL )   exit OUTER
-      if ( ITER .gt.MAXIT ) then
-        ERROR = HECMW_SOLVER_ERROR_NOCONV_MAXIT
-        exit OUTER
-      end if
-!C
-!C-- RESTART
-      end do OUTER
+  deallocate (H, SS, S)
+  deallocate (V,VCOS,VSIN)
+  deallocate (WW)
 
-!C
-!C-- iteration FAILED
+  !call hecmw_precond_clear(hecMAT)
 
-      if (ERROR == HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
-        INFO = ITER
+  Tsol = HECMW_WTIME() - S1_TIME
+  if (TIMElog.eq.2) then
+    write(*,*) 'Time solver iterations'
+    call hecmw_print_time_statistics(hecMESH, Tsol)
+  endif
 
-        !C-- [H]{y}= {s_tld}
-        do ik= 1, I
-          SS(ik)= WW(ik,S)
-        enddo
-        IROW= I
-        WW(IROW,Y)= SS(IROW) / H(IROW,IROW)
-
-        do kk= IROW-1, 1, -1
-          do jj= IROW, kk+1, -1
-            SS(kk)= SS(kk) - H(kk,jj)*WW(jj,Y)
-          enddo
-          WW(kk,Y)= SS(kk) / H(kk,kk)
-        enddo
-
-        !C-- {x}= {x} + {y}{V}
-        do kk= 1, NNDOF
-          WW(kk, AV)= 0.d0
-        enddo
-
-        jj= IROW
-        do jj= 1, IROW
-          do kk= 1, NNDOF
-            WW(kk,AV)= WW(kk  ,AV) + WW(jj,Y)*WW(kk  ,V+jj-1)
-          enddo
-        enddo
-
-        call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
-
-        do kk= 1, NNDOF
-          X(kk)= X(kk) + WW(kk,ZQ)
-        enddo
-      end if
-
-      call hecmw_solver_scaling_bk(hecMAT)
-
-      if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
-        call hecmw_estimate_condition_GMRES(I, H)
-      endif
-!C
-!C-- INTERFACE data EXCHANGE
-      S_TIME = HECMW_WTIME()
-      call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
-      E_TIME = HECMW_WTIME()
-      Tcomm = Tcomm + E_TIME - S_TIME
-
-      deallocate (H, WW, SS)
-      !call hecmw_precond_clear(hecMAT)
-
-      E1_TIME= HECMW_WTIME()
-      if (TIMElog.eq.2) then
-        call hecmw_time_statistics(hecMESH, E1_TIME - S1_TIME, &
-             t_max, t_min, t_avg, t_sd)
-        if (hecMESH%my_rank.eq.0) then
-          write(*,*) 'Time solver iterations'
-          write(*,*) '  Max     :',t_max
-          write(*,*) '  Min     :',t_min
-          write(*,*) '  Avg     :',t_avg
-          write(*,*) '  Std Dev :',t_sd
-        endif
-        Tsol = t_max
-      else
-        Tsol = E1_TIME - S1_TIME
-      endif
-
-      end subroutine  hecmw_solve_GMRES
-
-      end module     hecmw_solver_GMRES
+end subroutine  hecmw_solve_GMRES
+end module     hecmw_solver_GMRES

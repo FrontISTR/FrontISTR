@@ -97,8 +97,7 @@ module hecmw_solver_misc
 !C*** hecmw_time_statistics
 !C***
 !C
-      subroutine hecmw_time_statistics (hecMESH, time, &
-           t_max, t_min, t_avg, t_sd)
+      subroutine hecmw_time_statistics (hecMESH, time, t_max, t_min, t_avg, t_sd)
       use hecmw_util
       use m_hecmw_comm_f
 
@@ -131,5 +130,22 @@ module hecmw_solver_misc
 
       t_sd = dsqrt(t2_avg - t_avg*t_avg)
       end subroutine hecmw_time_statistics
+      
+      subroutine hecmw_print_time_statistics (hecMESH, time)
+      use hecmw_util
+      use m_hecmw_comm_f
 
+      implicit none
+      type (hecmwST_local_mesh), intent(in) :: hecMESH
+      real(kind=kreal), intent(in) :: time
+      real(kind=kreal) :: t_max, t_min, t_avg, t_sd
+
+      call hecmw_time_statistics(hecMESH, time, t_max, t_min, t_avg, t_sd)
+      if (hecMESH%my_rank.eq.0) then
+        write(*,*) '  Max     :',t_max
+        write(*,*) '  Min     :',t_min
+        write(*,*) '  Avg     :',t_avg
+        write(*,*) '  Std Dev :',t_sd
+      endif
+      end subroutine hecmw_print_time_statistics
 end module hecmw_solver_misc
