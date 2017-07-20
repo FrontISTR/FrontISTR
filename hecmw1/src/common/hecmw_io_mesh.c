@@ -23,7 +23,7 @@
 #include "hecmw_set_int.h"
 #include "hecmw_hash.h"
 
-#define HECMW_FLAG_VERSION 3
+#define HECMW_FLAG_VERSION 4
 
 static int global_node_ID_max = -1;
 static int global_elem_ID_max = -1;
