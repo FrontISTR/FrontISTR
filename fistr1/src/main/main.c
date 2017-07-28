@@ -3,38 +3,13 @@
 #include <FrontISTRConfig.h>
 
 extern void fstr_main();
-extern void version();
+
 void help(){
   printf("usage: [ mpirun -np <mpiprocs> ] fistr1 [options] \n");
   printf("-h: Show this help message.\n");
   printf("-c <Path of control file>: Use this control file. Default ./hecmw_ctrl.dat\n");
   printf("-v: Show version.\n");
   exit(0);
-}
-
-int main( int argc, char *argv[] ){
-  int i;
-  for(i = 0; i < argc; ++i){
-    if(*argv[i] == '-') {
-      switch(*(argv[i]+1)){
-        case 'h':
-        case 'H':
-          help();
-          break;
-        case 'v':
-        case 'V':
-          version();
-          break;
-        case 'c':
-          i++;
-          printf("Sorry this option cannot work yet. (%s)\n",argv[i]);
-          exit(0);
-          break;
-      }
-    }
-  }
-  fstr_main();
-  return 0;
 }
 
 void version(){
@@ -91,4 +66,29 @@ void version(){
   printf("\n");
 
   exit(0);
+}
+
+int main( int argc, char *argv[] ){
+  int i;
+  for(i = 0; i < argc; ++i){
+    if(*argv[i] == '-') {
+      switch(*(argv[i]+1)){
+        case 'h':
+        case 'H':
+          help();
+          break;
+        case 'v':
+        case 'V':
+          version();
+          break;
+        case 'c':
+          i++;
+          printf("Sorry this option cannot work yet. (%s)\n",argv[i]);
+          exit(0);
+          break;
+      }
+    }
+  }
+  fstr_main();
+  return 0;
 }
