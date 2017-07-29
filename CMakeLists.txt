@@ -89,6 +89,13 @@ set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
 
+#############################################
+# Archtecture and compiler dependent options
+#############################################
+if(WIN32)
+  set(WINDOWS TRUE)
+endif()
+
 ###############################################################
 # Options
 ###############################################################
@@ -125,7 +132,7 @@ find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_PARACON "for parallel contact" OFF)
-option(WITH_DOC "Generate API documents." OFF})
+option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
@@ -294,14 +301,15 @@ endif()
 #############################################
 # Archtecture and compiler dependent options
 #############################################
-if(WIN32)
-  ###################
-  # -DWINDOWS
-  ###################
+###################
+# -DWINDOWS
+###################
+if(WINDOWS)
   list(APPEND FrontISTR_DEFINITIONS "_WINDOWS")
   list(APPEND FrontISTR_LIBRARIES "ws2_32")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
 endif()
+
 
 ###################
 # -DWITH_DOC
