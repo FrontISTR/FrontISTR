@@ -5,14 +5,11 @@
 !> \brief This module provides main suboruitne for nonliear calculation.
 
 module m_fstr_solve_NLGEOM
-
   use m_fstr
   use m_static_lib
   use m_static_output
-
   use m_fstr_NonLinearMethod
   use m_fstr_Restart
-
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
   use m_fstr_Cutback
@@ -29,7 +26,6 @@ module m_fstr_solve_NLGEOM
 !>  \date       2009/08/31
 !>  \version    0.00
   subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)
-!======================================================================!
     type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
     type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
@@ -39,13 +35,12 @@ module m_fstr_solve_NLGEOM
     type (hecmwST_matrix    ),optional     :: conMAT
 
     integer(kind=kint) :: ndof, nn
-
     integer(kind=kint) :: j, tot_step, step_count, tot_step_print, CBbound
     integer(kind=kint) :: sub_step
+    integer(kind=kint) :: restart_step_num, restart_substep_num
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged, is_OutPoint
-    integer(kind=kint) :: restart_step_num, restart_substep_num
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
@@ -61,12 +56,12 @@ module m_fstr_solve_NLGEOM
       end do
     endif
 
-    restart_step_num = 1
+    restart_step_num    = 1
     restart_substep_num = 1
-    fstrSOLID%unode = 0.0
+    fstrSOLID%unode = 0.0d0
     step_count = 0 !**
     infoCTChange%contactNode_previous = 0
-    infoCTChange%contactNode_current = 0
+    infoCTChange%contactNode_current  = 0
     if( fstrSOLID%restart_nout < 0 ) then
       call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID, &
                              fstrPARAM,infoCTChange%contactNode_previous)
@@ -78,7 +73,7 @@ module m_fstr_solve_NLGEOM
       call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
     endif
 
-    fstrSOLID%FACTOR    =0.0
+    fstrSOLID%FACTOR = 0.0d0
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
@@ -92,7 +87,7 @@ module m_fstr_solve_NLGEOM
           fstrSOLID%temp_bak(j) = fstrSOLID%temperature(j)
         end do
       endif
-      call fstr_UpdateState( hecMESH, fstrSOLID, 0.d0 )
+      call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
 
       ! -------------------------------------------------------------------------
       !      STEP LOOP
@@ -124,13 +119,13 @@ module m_fstr_solve_NLGEOM
 
         time_1 = hecmw_Wtime()
 
-        !       analysis algorithm ( Newton-Rapshon Method )
+        ! analysis algorithm ( Newton-Rapshon Method )
         if( .not. associated( fstrSOLID%contacts ) ) then
           call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
-            !     ----  For Parallel Contact with Multi-Partition Domains
+            ! For Parallel Contact with Multi-Partition Domains
             if(paraContactFlag.and.present(conMAT)) then
               call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
                 restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
@@ -144,7 +139,7 @@ module m_fstr_solve_NLGEOM
           endif
         endif
 
-        ! ------- Time Increment
+        ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
             &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
             &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
@@ -162,7 +157,7 @@ module m_fstr_solve_NLGEOM
                 call fstr_TimeInc_PrintSTATUS_final(.false.)
               endif
               call hecmw_abort( hecmw_comm_get_comm() )
-            end if
+            endif
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
 
@@ -170,7 +165,7 @@ module m_fstr_solve_NLGEOM
             if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               if(paraContactFlag.and.present(conMAT)) then
                 call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-                conMAT%B(:) = 0.0D0
+                conMAT%B(:) = 0.0d0
               else
                 call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
               endif
@@ -183,9 +178,9 @@ module m_fstr_solve_NLGEOM
               if( hecMESH%my_rank == 0 ) then
                 write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
                   & tot_step_print, '  time=', fstr_get_time()
-              end if
+              endif
               call hecmw_abort( hecmw_comm_get_comm())
-            end if
+            endif
 
             ! output time
             time_2 = hecmw_Wtime()
@@ -203,12 +198,12 @@ module m_fstr_solve_NLGEOM
         ! ----- Restart
         if( fstrSOLID%restart_nout > 0 .and. mod(step_count,fstrSOLID%restart_nout) == 0 ) then
           call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
-          &  fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
-        end if
+             & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+        endif
 
         ! ----- Result output (include visualize output)
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
-          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+            & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, is_OutPoint )
 
         time_2 = hecmw_Wtime()
@@ -224,10 +219,10 @@ module m_fstr_solve_NLGEOM
           if( hecMESH%my_rank == 0 ) then
             write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
               & tot_step_print, '  time=', fstr_get_time()
-          end if
+          endif
           if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
           stop !stop if # of substeps reached upper bound.
-        end if
+        endif
 
         sub_step = sub_step + 1
       enddo    !--- end of substep  loop
@@ -235,16 +230,15 @@ module m_fstr_solve_NLGEOM
       ! ----- Restart at the end of step
       if( fstrSOLID%restart_nout > 0 ) then
         call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
-           &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
+                             &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
       endif
       restart_substep_num = 1
       if( fstrSOLID%TEMP_irres > 0 ) exit
     enddo      !--- end of tot_step loop
 
     call fstr_cutback_finalize( fstrSOLID )
-    !
+
     !  message
-    !
     IF(myrank == 0)THEN
       call fstr_TimeInc_PrintSTATUS_final(.true.)
       WRITE(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
@@ -252,7 +246,6 @@ module m_fstr_solve_NLGEOM
     ENDIF
 
   end subroutine FSTR_SOLVE_NLGEOM
-
 
 !C================================================================C
 !> \brief This subroutine decide the loading increment considering
@@ -269,7 +262,6 @@ module m_fstr_solve_NLGEOM
     integer(kind=kint) :: jj_n_amp, jj1, jj2
     integer(kind=kint) :: s1, s2, flag
     real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, tincre
-
 
     jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
@@ -295,7 +287,7 @@ module m_fstr_solve_NLGEOM
             s2 = i
             s1 = i - 1
             flag = 1
-          end if
+          endif
           if( flag == 1 ) exit
         end do
 
@@ -306,15 +298,14 @@ module m_fstr_solve_NLGEOM
         if( t_2-t_1 .lt. 1.0e-20) then
           if(myrank == 0) then
             write(imsg,*) 'stop due to t_2-t_1 <= 0'
-          end if
+          endif
           call hecmw_abort( hecmw_comm_get_comm())
-        end if
+        endif
         f_t = ((t_2*f_1 - t_1*f_2) + (f_2 - f_1)*t_t) / (t_2 - t_1)
-      end if
+      endif
 
-    end if
+    endif
 
   end subroutine table_nlsta
 
-!
 end module m_fstr_solve_NLGEOM

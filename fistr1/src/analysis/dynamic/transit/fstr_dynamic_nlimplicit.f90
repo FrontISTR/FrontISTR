@@ -5,259 +5,220 @@
 !> \brief This module contains subroutines for nonlinear implicit dynamic analysis
 
 module fstr_dynamic_nlimplicit
+  use m_fstr
+  use m_fstr_para_contact
+  use lczparm
+  use m_dynamic_output
+  use m_fstr_EIG_setMASS
+  use m_dynamic_mat_ass_bc_ac
+  use m_dynamic_mat_ass_bc
+  use m_dynamic_mat_ass_bc_vl
+  use m_dynamic_mat_ass_load
+  use m_fstr_StiffMatrix
+  use m_fstr_Update
+  use m_fstr_Restart
+  use fstr_matrix_con_contact
+  use m_fstr_Residual
 
-use m_fstr
-use m_fstr_para_contact
-use lczparm
-use m_dynamic_output
-use m_fstr_EIG_setMASS
-use m_dynamic_mat_ass_bc_ac
-use m_dynamic_mat_ass_bc
-use m_dynamic_mat_ass_bc_vl
-use m_dynamic_mat_ass_load
-use m_fstr_StiffMatrix
-use m_fstr_Update
-use m_fstr_Restart
-use fstr_matrix_con_contact
-use m_fstr_Residual
+  !-------- for couple -------
+  use m_dynamic_mat_ass_couple
+  use m_fstr_rcap_io
 
-!-------- for couple -------
-use m_dynamic_mat_ass_couple
-use m_fstr_rcap_io
-
-
-contains
+  contains
 
 !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
 
-  subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &
-                                      ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-                                      ,fstrCPL, restrt_step_num )
-
+  subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIGEN, &
+                                           fstrDYNAMIC,fstrRESULT,fstrPARAM,fstrCPL, restrt_step_num )
     implicit none
-!C
 !C-- global variable
-!C
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: myEIG
+    type ( lczparam            ) :: fstrEIGEN
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM
     type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+    type (fstrST_matrix_contact_lagrange)  :: fstrMAT !< type fstrST_matrix_contact_lagrange
     type ( fstr_couple         ) :: fstrCPL         !for COUPLE
 
-!C
 !C-- local variable
-!C
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
     integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: revocap_flag
     integer(kind=kint) :: kkk0, kkk1
-
-    real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
-    real(kind=kreal) :: bsize, res, resb
-    real :: time_1, time_2
-
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
 
+    real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
+    real(kind=kreal) :: bsize, res, resb
+    real(kind=kreal) :: time_1, time_2
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
-
     real(kind=kreal), pointer :: coord(:)
-
-
-!C*-------- solver control -----------*
-      logical :: ds = .false. !using Direct Solver or not
-
-! in case of direct solver
-      if (hecMAT%Iarray(99) .eq. 2) then
-        ds = .true.
-      end if
 
 ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
     call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     hecMAT%NDOF=hecMESH%n_dof
-
     nnod=hecMESH%n_node
     ndof=hecMAT%NDOF
-    nn=ndof*ndof
+    nn  =ndof*ndof
 
     allocate(coord(hecMESH%n_node*ndof))
 
-!!
 !!-- initial value
-!!
-      call cpu_time(time_1)
+    time_1 = hecmw_Wtime()
 
-!C
 !C-- check parameters
-!C
-         if(dabs(fstrDYNAMIC%beta) < 1.0e-20) then
-              if( hecMESH%my_rank == 0 ) then
-                 write(imsg,*) 'stop due to Newmark-beta = 0'
-              end if
-              call hecmw_abort( hecmw_comm_get_comm())
-         end if
+    if(dabs(fstrDYNAMIC%beta) < 1.0e-20) then
+      if( hecMESH%my_rank == 0 ) then
+        write(imsg,*) 'stop due to Newmark-beta = 0'
+      endif
+      call hecmw_abort( hecmw_comm_get_comm())
+    endif
 
-
-!C-- matrix [M]
-!C-- lumped mass matrix
-             if(fstrDYNAMIC%idx_mas == 1) then
-
-                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
+!C-- matrix [M] lumped mass matrix
+    if(fstrDYNAMIC%idx_mas == 1) then
+      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
 
 !C-- consistent mass matrix
-               else if(fstrDYNAMIC%idx_mas == 2) then
-                 if( hecMESH%my_rank .eq. 0 ) then
-                    write(imsg,*) 'stop: consistent mass matrix is not yet available !'
-                 end if
-                 call hecmw_abort( hecmw_comm_get_comm())
-             end if
-!C--
-      hecMAT%Iarray(98) = 1   !Assmebly complete
-      hecMAT%Iarray(97) = 1   !Need numerical factorization
+    else if(fstrDYNAMIC%idx_mas == 2) then
+      if( hecMESH%my_rank .eq. 0 ) then
+        write(imsg,*) 'stop: consistent mass matrix is not yet available !'
+      endif
+      call hecmw_abort( hecmw_comm_get_comm())
+    endif
 
-!C
-!C
+    hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%Iarray(97) = 1   !Need numerical factorization
+
 !C-- time step loop
-!C
-    a1 = .5d0/fstrDYNAMIC%beta - 1.d0
-    a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
-    b1 = ( .5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta
-    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0
+    a1 = 0.5d0/fstrDYNAMIC%beta - 1.0d0
+    a2 = 1.0d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    a3 = 1.0d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
+    b1 = (0.5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.0d0 )*fstrDYNAMIC%t_delta
+    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.0d0
     b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    c1 = 1.d0 + fstrDYNAMIC%ray_k*b3
+    c1 = 1.0d0 + fstrDYNAMIC%ray_k*b3
     c2 = a3 + fstrDYNAMIC%ray_m*b3
-
 
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
-    end if
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+    endif
 
-    fstrDYNAMIC%VEC3(:) =0.d0
-    hecMAT%X(:) =0.d0
+    fstrDYNAMIC%VEC3(:) =0.0d0
+    hecMAT%X(:) =0.0d0
 
-!!
-!!    step = 1,2,....,fstrDYNAMIC%n_step
-!!
+!! step = 1,2,....,fstrDYNAMIC%n_step
     do i= restrt_step_num, fstrDYNAMIC%n_step
-        if(ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
+      if(ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
 
-       fstrDYNAMIC%i_step = i
-       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
+      fstrDYNAMIC%i_step = i
+      fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
-       if(hecMESH%my_rank==0) then
-         !write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
-         write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
-       endif
+      if(hecMESH%my_rank==0) then
+        !write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
+        write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
+      endif
 
-       do j = 1 ,ndof*nnod
-           fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
-           fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
-       end do
+      do j = 1 ,ndof*nnod
+        fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
+        fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
+      enddo
 
 !C ********************************************************************************
 !C for couple analysis
       do
-       fstrSOLID%dunode(:) =0.d0
-      ! call fstr_UpdateEPState( hecMESH, fstrSOLID )
+        fstrSOLID%dunode(:) =0.d0
+        ! call fstr_UpdateEPState( hecMESH, fstrSOLID )
 
-       if( fstrPARAM%fg_couple == 1) then
-         if( fstrPARAM%fg_couple_type==1 .or. &
-             fstrPARAM%fg_couple_type==3 .or. &
-             fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
-       endif
-!C ********************************************************************************
+        if( fstrPARAM%fg_couple == 1) then
+          if( fstrPARAM%fg_couple_type==1 .or. &
+              fstrPARAM%fg_couple_type==3 .or. &
+              fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
+        endif
 
-       do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+        do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
+          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
 
-         if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
-           do j = 1 ,ndof*nnod
+          if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
+            do j = 1 ,ndof*nnod
               hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
-           end do
-         endif
-         if( fstrDYNAMIC%ray_k/=0.d0 ) then
-           if( hecMESH%n_dof == 3 ) then
-             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-           else if( hecMESH%n_dof == 2 ) then
-             call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-           else if( hecMESH%n_dof == 6 ) then
-             call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
-           end if
-         endif
-!C
+            enddo
+          endif
+          if( fstrDYNAMIC%ray_k/=0.d0 ) then
+            if( hecMESH%n_dof == 3 ) then
+              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+            else if( hecMESH%n_dof == 2 ) then
+              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+            else if( hecMESH%n_dof == 6 ) then
+              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
+            endif
+          endif
+
 !C-- mechanical boundary condition
-         call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
-         do j=1, hecMESH%n_node*  hecMESH%n_dof
-           hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-         + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
-         end do
+          call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
+          do j=1, hecMESH%n_node*  hecMESH%n_dof
+            hecMAT%B(j) = hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIGEN%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
+                       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+          enddo
 
 !C ********************************************************************************
 !C for couple analysis
-         if( fstrPARAM%fg_couple == 1) then
-           if( fstrPARAM%fg_couple_first /= 0 ) then
-             bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
-             if( bsize > 1.0 ) bsize = 1.0
-             do kkk0 = 1, fstrCPL%coupled_node_n
-               kkk1 = 3 * kkk0
-               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-               fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-               fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-             enddo
-           endif
-           if( fstrPARAM%fg_couple_window > 0 ) then
-             j = i - restrt_step_num + 1
-             kk = fstrDYNAMIC%n_step - restrt_step_num + 1
-             bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
-             do kkk0 = 1, fstrCPL%coupled_node_n
-               kkk1 = 3 * kkk0
-               fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-               fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-               fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-             enddo
-           endif
-           call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-         endif
-!C ********************************************************************************
+          if( fstrPARAM%fg_couple == 1) then
+            if( fstrPARAM%fg_couple_first /= 0 ) then
+              bsize = DFLOAT( i ) / DFLOAT( fstrPARAM%fg_couple_first )
+              if( bsize > 1.0 ) bsize = 1.0
+              do kkk0 = 1, fstrCPL%coupled_node_n
+                kkk1 = 3 * kkk0
+                fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+                fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+                fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+              enddo
+            endif
+            if( fstrPARAM%fg_couple_window > 0 ) then
+              j = i - restrt_step_num + 1
+              kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+              bsize = 0.5*(1.0-cos(2.0*PI*DFLOAT(j)/DFLOAT(kk)))
+              do kkk0 = 1, fstrCPL%coupled_node_n
+                kkk1 = 3 * kkk0
+                fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+                fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+                fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+              enddo
+            endif
+            call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+          endif
 
-         do j = 1 ,nn*hecMAT%NP
-           hecMAT%D(j)  = c1* hecMAT%D(j)
-         end do
-         do j = 1 ,nn*hecMAT%NPU
-           hecMAT%AU(j) = c1* hecMAT%AU(j)
-         end do
-         do j = 1 ,nn*hecMAT%NPL
-           hecMAT%AL(j) = c1*hecMAT%AL(j)
-         end do
-         do j=1,nnod
-         do kk=1,ndof
-           idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
-           imm = ndof*(j-1) + kk
-           hecMAT%D(idm) = hecMAT%D(idm) + c2*myEIG%mass(imm)
-         end do
-         end do
+          do j = 1 ,nn*hecMAT%NP
+            hecMAT%D(j)  = c1* hecMAT%D(j)
+          enddo
+          do j = 1 ,nn*hecMAT%NPU
+            hecMAT%AU(j) = c1* hecMAT%AU(j)
+          enddo
+          do j = 1 ,nn*hecMAT%NPL
+            hecMAT%AL(j) = c1*hecMAT%AL(j)
+          enddo
+          do j=1,nnod
+            do kk=1,ndof
+              idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
+              imm = ndof*(j-1) + kk
+              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIGEN%mass(imm)
+            enddo
+          enddo
 
 !C-- geometrical boundary condition
-
         call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
         call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
         call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
 
-!C
 !C-- RHS LOAD VECTOR CHECK
-!C
         numnp=hecMAT%NP
         call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, bsize)
 
@@ -272,9 +233,8 @@ contains
           if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
           if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
         endif
-!C
+
 !C-- linear solver [A]{X} = {B}
-!C
         hecMAT%X = 0.0d0
         if( iexit .ne. 1 ) then
           if( iter == 1 ) then
@@ -283,16 +243,16 @@ contains
             hecMAT%Iarray(97) = 1   !Need numerical factorization
           endif
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-          CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+          call solve_LINEQ(hecMESH,hecMAT,imsg)
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
-        end if
+        endif
 
         do j=1,hecMESH%n_node*ndof
           fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
         enddo
 ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
-          &  fstrDYNAMIC%t_delta, iter, fstrDYNAMIC%strainEnergy )
+                             &  fstrDYNAMIC%t_delta, iter, fstrDYNAMIC%strainEnergy )
 
         if(ndof == 4) exit
       enddo
@@ -303,9 +263,9 @@ contains
            write(ILOG,*) '### Fail to Converge  : at step=', i
            write(ISTA,*) '### Fail to Converge  : at step=', i
            write(   *,*) '     ### Fail to Converge  : at step=', i
-         end if
+         endif
          stop
-      end if
+      endif
 
 !C *****************************************************
 !C for couple analysis
@@ -348,7 +308,7 @@ contains
               fstrCPL%accel(kkk0  ) = -a1*fstrDYNAMIC%ACC(kkk1,1) - a2*fstrDYNAMIC%VEL(kkk1,1) + &
                                        a3*fstrSOLID%dunode(kkk1)
             endif
-          end do
+          enddo
           call fstr_rcap_send( fstrCPL )
         endif
 
@@ -372,54 +332,50 @@ contains
      enddo
 !C *****************************************************
 
-!
 !C-- new displacement, velocity and accelaration
-!C
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
-          fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
-                                  a3*fstrSOLID%dunode(j)
-          fstrDYNAMIC%VEL (j,2) = -b1*fstrDYNAMIC%ACC(j,1) - b2*fstrDYNAMIC%VEL(j,1) + &
-                                  b3*fstrSOLID%dunode(j)
-          fstrDYNAMIC%ACC (j,1) = fstrDYNAMIC%ACC (j,2)
-          fstrDYNAMIC%VEL (j,1) = fstrDYNAMIC%VEL (j,2)
+        fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
+                                 a3*fstrSOLID%dunode(j)
+        fstrDYNAMIC%VEL (j,2) = -b1*fstrDYNAMIC%ACC(j,1) - b2*fstrDYNAMIC%VEL(j,1) + &
+                                 b3*fstrSOLID%dunode(j)
+        fstrDYNAMIC%ACC (j,1) = fstrDYNAMIC%ACC (j,2)
+        fstrDYNAMIC%VEL (j,1) = fstrDYNAMIC%VEL (j,2)
 
-          fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
-          fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
+        fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
+        fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
 
-          fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-                                      0.5d0*myEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
+        fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
+                                    0.5d0*fstrEIGEN%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
 !---  Restart info
       if( fstrDYNAMIC%restart_nout > 0 .and. &
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
         call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
-      end if
+      endif
 
 !C-- output new displacement, velocity and accelaration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
-
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
     enddo
-!C
 !C-- end of time step loop
+    time_2 = hecmw_Wtime()
 
-    call cpu_time(time_2)
     if( hecMESH%my_rank == 0 ) then
         write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
-    end if
+    endif
 
     deallocate(coord)
   end subroutine fstr_solve_dynamic_nlimplicit
 
 !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
 !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
- subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,myEIG   &
+ subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIGEN   &
                                                        ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                                        ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange  &
                                                        ,conMAT )
@@ -436,7 +392,7 @@ contains
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: myEIG
+    type ( lczparam            ) :: fstrEIGEN
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM
@@ -500,31 +456,32 @@ contains
 !!
 !!-- initial value
 !!
-      call cpu_time(time_1)
+    time_1 = hecmw_Wtime()
+
 !C
 !C-- check parameters
 !C
          if(dabs(fstrDYNAMIC%beta) < 1.0e-20) then
               if( hecMESH%my_rank == 0 ) then
                  write(imsg,*) 'stop due to Newmark-beta = 0'
-              end if
+              endif
               call hecmw_abort( hecmw_comm_get_comm())
-         end if
+         endif
 
 
 !C-- matrix [M]
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas == 1) then
 
-                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
+                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas == 2) then
                  if( hecMESH%my_rank .eq. 0 ) then
                     write(imsg,*) 'stop: consistent mass matrix is not yet available !'
-                 end if
+                 endif
                  call hecmw_abort( hecmw_comm_get_comm())
-             end if
+             endif
 !C--
       hecMAT%Iarray(98) = 1   !Assmebly complete
       hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -532,7 +489,7 @@ contains
 !C-- initialize variables
 !C
       if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
-      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, fstrPARAM )
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIGEN, fstrDYNAMIC, fstrPARAM )
 !C
 !C
 !C-- time step loop
@@ -550,8 +507,8 @@ contains
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
-    end if
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+    endif
 
 	fstrDYNAMIC%VEC3(:) =0.d0
 	hecMAT%X(:) =0.d0
@@ -598,7 +555,7 @@ contains
        do j = 1 ,ndof*nnod
            fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
            fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
-       end do
+       enddo
 
        max_iter_contact = 6 !1
        count_step = 0
@@ -611,7 +568,7 @@ contains
            if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
              do j = 1 ,ndof*nnod
                 hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
-             end do
+             enddo
            endif
            if( fstrDYNAMIC%ray_k/=0.d0 ) then
              if( hecMESH%n_dof == 3 ) then
@@ -620,31 +577,31 @@ contains
                call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
              else if( hecMESH%n_dof == 6 ) then
                call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
-             end if
+             endif
            endif
 !C
 !C-- mechanical boundary condition
            call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
            do j=1, hecMESH%n_node*  hecMESH%n_dof
-             hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + myEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
+             hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIGEN%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
-           end do
+           enddo
            do j = 1 ,nn*hecMAT%NP
              hecMAT%D(j)  = c1* hecMAT%D(j)
-           end do
+           enddo
            do j = 1 ,nn*hecMAT%NPU
              hecMAT%AU(j) = c1* hecMAT%AU(j)
-           end do
+           enddo
            do j = 1 ,nn*hecMAT%NPL
              hecMAT%AL(j) = c1*hecMAT%AL(j)
-           end do
+           enddo
            do j=1,nnod
            do kk=1,ndof
              idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
              imm = ndof*(j-1) + kk
-             hecMAT%D(idm) = hecMAT%D(idm) + c2*myEIG%mass(imm)
-           end do
-           end do
+             hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIGEN%mass(imm)
+           enddo
+           enddo
 
 
            if(paraContactFlag.and.present(conMAT)) then
@@ -765,9 +722,9 @@ contains
              write(ILOG,*) '### Fail to Converge  : at step=', i
              write(ISTA,*) '### Fail to Converge  : at step=', i
              write(   *,*) '     ### Fail to Converge  : at step=', i
-           end if
+           endif
            stop
-        end if
+        endif
 
         call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
@@ -817,7 +774,7 @@ contains
           fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
 
           fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-                                      0.5d0*myEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
+                                      0.5d0*fstrEIGEN%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
 !---  Restart info
@@ -825,13 +782,13 @@ contains
           (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
         call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
                                      infoCTChange%contactNode_current)
-      end if
+      endif
 
 !C-- output new displacement, velocity and accelaration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
@@ -839,10 +796,10 @@ contains
 !C
 !C-- end of time step loop
 
-    call cpu_time(time_2)
+    time_2 = hecmw_Wtime()
     if( hecMESH%my_rank == 0 ) then
         write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
-    end if
+    endif
 
     deallocate(coord)
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
