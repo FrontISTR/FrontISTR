@@ -1,0 +1,57 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!NODE_OUTPUT
+DISP,OFF
+REAC,OFF
+STRAIN,OFF
+STRESS,OFF
+!ELEMENT_OUTPUT, POSITION=INTEG
+STRAIN,OFF
+STRESS,OFF
+PLSTRAIN,OFF
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.00e-10, 1.00, 0.0
+ 0.100, 0.100
+!OUTPUT_VIS
+REACTION,ON
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET-1,1,1
+!BOUNDARY, GRPID=2
+ SET-1,2,2
+!BOUNDARY, GRPID=3
+ SET-1,3,3
+!CLOAD, GRPID=1
+SET-2,2,-0.01
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=ELASTIC
+!ELASTIC, CAUCHY
+ 20, 0.3
+!SECTION, SECNUM=1, FORM361=FBAR
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, OUTFREQ=1, MAXITER=12, CONVERG=1E-7
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+LOAD,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = COMPLETE_REORDER_AVS
+!END

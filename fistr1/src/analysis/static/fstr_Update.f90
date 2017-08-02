@@ -169,6 +169,14 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, str
                  ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
                    fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof) )
           endif
+        else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+          else
+            call Update_C3D8Fbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
+          endif
         endif
 
       else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then

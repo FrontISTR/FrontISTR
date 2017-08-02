@@ -299,7 +299,7 @@ integer function fstr_ctrl_get_SECTION( ctrl, hecMESH, sections )
         integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
         integer(kind=kint),SAVE       :: cache = 1
         character(len=HECMW_NAME_LEN) :: sect_orien
-        character(11) :: form361list = 'FI,BBAR,IC '
+        character(16) :: form361list = 'FI,BBAR,IC,FBAR '
 
         fstr_ctrl_get_SECTION = -1
 
