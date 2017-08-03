@@ -383,7 +383,7 @@ contains
         msg_method="Unlabeled"
     END SELECT
     SELECT CASE(PRECOND)
-      CASE(2)
+      CASE(1,2)
         msg_precond="SSOR"
       CASE(3)
         msg_precond="DIAG"
