@@ -37,6 +37,7 @@ module m_contact_lib
     real(kind=kreal) :: tangentForce(3) !< friction force
     real(kind=kreal) :: tangentForce_trial(3) !< trial friction force
     real(kind=kreal) :: tangentForce_final(3) !< final friction force
+    real(kind=kreal)    :: reldisp(3)
   end type
 
 contains

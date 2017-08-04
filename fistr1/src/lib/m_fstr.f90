@@ -307,6 +307,11 @@ module m_fstr
 
     real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
 
+    real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
+    real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
+    real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
+    real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
+
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
     type(fstr_solid_physic_val), pointer :: BEAM =>null()     !< for beam physical value stracture

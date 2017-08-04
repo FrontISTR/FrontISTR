@@ -450,6 +450,7 @@ contains
     nn=ndof*ndof
 
     allocate(coord(hecMESH%n_node*ndof))
+    if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
 
     !!
     !!-- initial value
@@ -512,7 +513,7 @@ contains
     hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+    call fstr_scan_contact_state( cstep, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
     if(paraContactFlag.and.present(conMAT)) then
       call hecmw_mat_copy_profile( hecMAT, conMAT )
@@ -725,7 +726,7 @@ contains
           stop
         endif
 
-        call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+        call fstr_scan_contact_state( cstep, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
         if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
           write(*,*) ' This type of direct solver is not yet available in such case ! '
