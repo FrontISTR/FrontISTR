@@ -270,11 +270,7 @@ module m_fstr_ass_load
 !C Update for fstrSOLID%GL
 !C
       if( hecMESH%n_dof == 3 ) then
-        if(paraContactFlag) then
-          call paraContact_update_3_R (hecMESH,fstrSOLID%GL)
-        else
-          call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
-        endif
+        call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       else if( hecMESH%n_dof == 2 ) then
         call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
       endif

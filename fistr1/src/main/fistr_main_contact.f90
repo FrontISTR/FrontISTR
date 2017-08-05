@@ -71,6 +71,9 @@ use m_fstr_freqdata
         else
           paraContactFlag = .false.
           call hecmw_get_mesh( name_ID , hecMESH )
+          if( hecMESH%contact_pair%n_pair > 0 ) then
+            paraContactFlag = .true.
+          endif
         endif
 !#else
 !        call hecmw_get_mesh( name_ID , hecMESH )

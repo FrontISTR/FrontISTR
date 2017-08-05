@@ -64,11 +64,7 @@ module m_fstr_Residual
 
 !
       if( ndof==3 ) then
-        if(paraContactFlag) then
-          call paraContact_update_3_R(hecMESH,hecMAT%B)
-        else
-          call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
-        endif
+        call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
       else if( ndof==2 ) then
         call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
       else if( ndof==6 ) then
