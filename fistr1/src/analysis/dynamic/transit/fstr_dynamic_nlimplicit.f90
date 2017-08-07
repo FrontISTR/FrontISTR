@@ -34,7 +34,7 @@ module fstr_dynamic_nlimplicit
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: fstrEIGEN
+    type ( fstr_eigen            ) :: fstrEIGEN
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM
@@ -391,7 +391,7 @@ module fstr_dynamic_nlimplicit
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: fstrEIGEN
+    type ( fstr_eigen            ) :: fstrEIGEN
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM

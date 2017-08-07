@@ -36,7 +36,7 @@ contains
       !REAL(kind=kreal) RX(8),SX(8)
       !DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
       !DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -177,7 +177,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,NUM
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
       totdiag = 0.0
       totmass = 0.0
 !*************************

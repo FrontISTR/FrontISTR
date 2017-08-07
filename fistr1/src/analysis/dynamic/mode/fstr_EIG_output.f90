@@ -24,7 +24,7 @@ contains
       type (hecmwST_matrix    ) :: hecMAT
       type (fstr_solid       )  :: fstrSOLID
       type (hecmwST_result_data):: fstrRESULT
-      type (lczparam) :: fstrEIG
+      type (fstr_eigen) :: fstrEIG
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not

@@ -34,7 +34,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1, ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -162,7 +162,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1,ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
       totdiag = 0.0
       totmass = 0.0
 !C**************************

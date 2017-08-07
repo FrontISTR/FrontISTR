@@ -36,7 +36,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18Apr2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -246,7 +246,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -450,7 +450,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0

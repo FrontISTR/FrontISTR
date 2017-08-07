@@ -49,7 +49,7 @@ contains
             end type lczvec
 
 !C*-------- Parameters for Lanczos method -----------*
-      type (lczparam) :: fstrEIG
+      type (fstr_eigen) :: fstrEIG
 
             TYPE(lczvec), pointer :: lvecq(:)       !< Array of Q vectors
 

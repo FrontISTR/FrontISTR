@@ -19,7 +19,7 @@ contains
 
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: fstrEIG
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
     type ( fstr_dynamic        ) :: fstrDYNAMIC
     type (fstr_param           ) :: fstrPARAM

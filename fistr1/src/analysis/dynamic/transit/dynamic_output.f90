@@ -356,7 +356,7 @@ module m_dynamic_output
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( fstr_param          ) :: fstrPARAM
     type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type ( lczparam            ) :: fstrEIG
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
 
     integer(kind=kint) :: idx, ii, jj, ierr, ncmp

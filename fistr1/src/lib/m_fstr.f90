@@ -582,7 +582,7 @@ public
     character(len=HECMW_FILENAME_LEN) :: eigenlog_filename
     integer(kind=kint)                :: start_mode
     integer(kind=kint)                :: end_mode
-  end type
+  end type fstr_freqanalysis
 
   type fstr_freqanalysis_data
     integer(kind=kint)        :: numMode
@@ -590,25 +590,24 @@ public
     real(kind=kreal), pointer :: eigOmega(:)    => NULL()
     real(kind=kreal), pointer :: eigVector(:,:) => NULL()
     real(kind=kreal)           :: rayAlpha, rayBeta
-  end type
+  end type fstr_freqanalysis_data
 
         !> Package of data used by Lanczos eigenvalue solver
-        type lczparam
+        type fstr_eigen
             !> Allocatable array, used or Lanczos eigenvalue analysis
-
 
             integer   (kind=kint)  :: eqset         ! Flag (1:eigen analysis,  0:not eigen ana.)
             integer   (kind=kint)  :: nget          ! Solved eigen value number (default:5)
             real      (kind=kreal) :: lczsgm        ! 0.0
             integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
             real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
-            real      (kind=kreal) :: lczrod,lczrot ! lczrod = 1.0, lczrot = 0.0
+            real      (kind=kreal) :: lczrod, lczrot ! lczrod = 1.0, lczrot = 0.0
             real      (kind=kreal) :: iluetol
             real      (kind=kreal) :: totalmass
             real      (kind=kreal), pointer :: mass(:)
             real      (kind=kreal), pointer :: effmass(:)
             real      (kind=kreal), pointer :: partfactor(:)
-        end type lczparam
+        end type fstr_eigen
 
 
 !C ----------------------------------------------------------------------------
@@ -848,11 +847,11 @@ contains
 
   end subroutine
 
-        subroutine fstr_nullify_lczparam( E )
+        subroutine fstr_nullify_fstr_eigen( E )
         implicit none
-        type( lczparam ) :: E
+        type( fstr_eigen ) :: E
         nullify( E%mass )
-        end subroutine fstr_nullify_lczparam
+        end subroutine fstr_nullify_fstr_eigen
 
 !C ----------------------------------------------------------------------------
         subroutine fstr_nullify_fstr_couple( C )

@@ -25,7 +25,7 @@ contains
       implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
-      type ( lczparam            ) :: fstrEIG
+      type ( fstr_eigen            ) :: fstrEIG
       type ( fstr_solid          ) :: fstrSOLID
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM

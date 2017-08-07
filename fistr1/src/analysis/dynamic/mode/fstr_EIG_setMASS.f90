@@ -25,7 +25,7 @@ contains
       type(hecmwST_matrix)     :: hecMAT
       type(hecmwST_local_mesh) :: hecMESH
       type(fstr_solid)         :: fstrSOLID
-      type(lczparam)           :: fstrEIG
+      type(fstr_eigen)           :: fstrEIG
       type(tshellmat),pointer  :: shell_var(:)
 !C
       integer(kind=kint) nodLOCAL(20),itype,ic_type,icel,isect

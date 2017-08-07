@@ -196,7 +196,7 @@ contains
 !C
       type (hecmwST_local_mesh) :: hecMESH
       type (hecmwST_matrix    ) :: hecMAT
-      type (lczparam) :: fstrEIG
+      type (fstr_eigen) :: fstrEIG
 !C
 !*For parallel part reduction
       INTEGER(kind=kint) :: i, j, ii

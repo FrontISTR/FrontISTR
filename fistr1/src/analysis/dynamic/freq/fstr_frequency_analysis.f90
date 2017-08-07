@@ -73,7 +73,7 @@ contains
 !C
     type( hecmwST_local_mesh  ) :: hecMESH
     type( hecmwST_matrix      ) :: hecMAT
-    type( lczparam            ) :: fstrEIG
+    type( fstr_eigen            ) :: fstrEIG
     type( fstr_solid          ) :: fstrSOLID
     type( hecmwST_result_data ) :: fstrRESULT
     type( fstr_param          ) :: fstrPARAM
@@ -681,7 +681,7 @@ contains
     type(hecmwST_local_mesh),               intent(in) :: hecMESH
     type(hecmwST_matrix),                intent(inout) :: hecMAT
     type(fstr_solid),                    intent(inout) :: fstrSOLID
-    type(lczparam),                      intent(inout) :: fstrEIG
+    type(fstr_eigen),                      intent(inout) :: fstrEIG
     type(fstrST_matrix_contact_lagrange),intent(inout) :: fstrMAT
   !---- vals
     integer(kind=kint) :: ntotal
@@ -699,7 +699,7 @@ contains
 
   subroutine scaleEigenVector(fstrEIG, ntotaldof, nmode, eigenvector)
   !---- args
-    type(lczparam),     intent(in) :: fstrEIG
+    type(fstr_eigen),     intent(in) :: fstrEIG
     integer(kind=kint), intent(in) :: ntotaldof
     integer(kind=kint), intent(in) :: nmode
     real(kind=kreal), intent(inout) :: eigenvector(:,:)
@@ -721,7 +721,7 @@ contains
 
   subroutine checkOrthVector(fstrEIG, eigenvector, imode, jmode, prod)
   !---- args
-    type(lczparam),     intent(in) :: fstrEIG
+    type(fstr_eigen),     intent(in) :: fstrEIG
     real(kind=kreal),    intent(in) :: eigenvector(:,:)
     integer(kind=kint), intent(in) :: imode
     integer(kind=kint), intent(in) :: jmode

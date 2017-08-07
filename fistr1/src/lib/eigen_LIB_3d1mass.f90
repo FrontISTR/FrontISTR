@@ -40,7 +40,7 @@ contains
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
       REAL(kind=kreal) ej2, ej, sstest(NN*NDOF,NN*NDOF)
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       !print *,'RHO:',RHO
       !pause
@@ -223,7 +223,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -383,7 +383,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag,totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: fstrEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0

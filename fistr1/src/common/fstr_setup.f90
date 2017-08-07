@@ -29,7 +29,7 @@ include 'fstr_ctrl_util_f.inc'
                 type(fstr_param), pointer         :: PARAM
                 type(fstr_solid), pointer         :: SOLID
                 type(fstr_heat), pointer          :: HEAT
-                type(lczparam), pointer           :: EIGEN
+                type(fstr_eigen), pointer           :: EIGEN
                 type(fstr_dynamic), pointer       :: DYN
                 type(fstr_couple), pointer        :: CPL
                 type(fstr_freqanalysis), pointer  :: FREQ
@@ -47,7 +47,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
-        type(lczparam),target     :: fstrEIG
+        type(fstr_eigen),target     :: fstrEIG
         type(fstr_heat),target    :: fstrHEAT
         type(fstr_dynamic),target :: fstrDYNAMIC
         type(fstr_couple),target  :: fstrCPL
@@ -1161,7 +1161,7 @@ end subroutine fstr_heat_init
 !> Initial setting of eigen ca;culation
 subroutine fstr_eigen_init( fstrEIG )
         implicit none
-        type(lczparam) :: fstrEIG
+        type(fstr_eigen) :: fstrEIG
         ! type(fstr_eigen) :: fstrEIG
 
         fstrEIG%eqset       = 0

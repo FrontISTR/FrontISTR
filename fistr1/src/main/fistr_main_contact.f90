@@ -32,7 +32,7 @@ type (hecmwST_matrix )                 :: conMAT
 type (fstr_solid )                     :: fstrSOLID
 type (fstrST_matrix_contact_lagrange)  :: fstrMAT
 type (fstr_heat )                      :: fstrHEAT
-type (lczparam)                        :: fstrEIG
+type (fstr_eigen)                      :: fstrEIG
 type (fstr_dynamic )                   :: fstrDYNAMIC
 type ( hecmwST_result_data )           :: fstrRESULT
 type (fstr_couple )                    :: fstrCPL
@@ -148,7 +148,7 @@ subroutine fstr_init
         call fstr_nullify_fstr_param ( fstrPR     )
         call fstr_nullify_fstr_solid ( fstrSOLID  )
         call fstr_nullify_fstr_heat  ( fstrHEAT   )
-        call fstr_nullify_lczparam   ( fstrEIG    )
+        call fstr_nullify_fstr_eigen ( fstrEIG    )
         call fstr_nullify_fstr_dynamic ( fstrDYNAMIC  )
         call fstr_nullify_fstr_couple ( fstrCPL    )
 !        call fstr_nullify_fstr_mpc_rigid( fstrMPCRIGID )
