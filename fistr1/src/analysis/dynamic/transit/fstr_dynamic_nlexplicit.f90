@@ -94,7 +94,7 @@ contains
     a1 = 1.d0/fstrDYNAMIC%t_delta**2
     a2 = 1.d0/(2.d0*fstrDYNAMIC%t_delta)
 
-    call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIG)
+    call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
     do j = 1 ,ndof*nnod
         fstrDYNAMIC%VEC1(j) = (a1 + a2 *fstrDYNAMIC%ray_m) * fstrEIG%mass(j)

@@ -693,7 +693,7 @@ contains
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
-    call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, fstrEIG)
+    call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 
   end subroutine
 

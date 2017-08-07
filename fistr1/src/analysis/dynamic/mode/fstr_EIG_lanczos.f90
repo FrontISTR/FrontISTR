@@ -6,559 +6,482 @@
 module m_fstr_EIG_lanczos
 contains
 
-!C=====================================================================!
-!                       Description                                    !
-!C=====================================================================!
-!> Initialize Lanczos iterations
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE SETIVL( GMASS,EVEC,EFILT,WK,LVECP,q0,q1,BTA, &
-     &                         NTOT,NEIG,ISHF,hecMESH,hecMAT,NDOF,GTOT )
-!C---------------------------------------------------------------------*
-      USE m_fstr
-      USE hecmw_util
+!C***
+!C*** SOLVE EIGENVALUE PROBLEM
+!C***
 !C
-      implicit none
-      REAL(kind=kreal) :: GMASS(NTOT), EVEC(NTOT), EFILT(NTOT), WK(NTOT,1)
-
-!C --- Lanczos vector & coefficient ---
-      REAL(kind=kreal) :: LVECP(NTOT), BTA(NEIG), chk
-      REAL(kind=kreal), POINTER :: xvec(:), q0(:), q1(:)
-!C
-      INTEGER(kind=kint) :: GTOT, IRANK, NDOF, numnp, iov, IRTN, NNN, NN, NTOT, NEIG, i, ierror, j
-      INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), ISHF(0:NPROCS-1), IDISP(0:NPROCS-1)
-!C
-      TYPE (hecmwST_local_mesh) :: hecMESH
-      TYPE (hecmwST_matrix    ) :: hecMAT
-!C*-------- solver control -----------*
-      logical :: ds = .false. !using Direct Solver or not
-
-! in case of direct solver
-      if (hecMAT%Iarray(99) .eq. 2) then
-        ds = .true.
-      end if
-
-!C
-      IRANK = myrank
-!C
-!C** DEFINE NN
-      NN=NTOT
-!C
-!C** SET 1 TO ALL DOF OF FISRT VECTOR and 0 to first q vector (q0)
-      CALL URAND1(NN,EVEC,IRTN)
-      GO TO 10
-!C
-!*Shift to appropriate seed if in parallel mode
-      IRTN = 1
-      NNN  = 0
-      DO I = 0,IRANK-1
-        NNN = NNN + ISHF(I)
-      END DO
-!C
-      IF(IRANK.GT.0) THEN
-        call urand0(NNN,IRTN)
-      ENDIF
-!C
-!C*Then call URAND again from shift
-      ALLOCATE(xvec(gtot),STAT=ierror)
-      IF(ierror.NE.0)  STOP "Allocation error, SETIVL"
-!C
-      IF(IRANK.EQ.0) THEN
-        call urand1(GTOT,XVEC,IRTN)
-      ENDIF
-!C
-      IDISP(0) = 0
-      DO I = 1,NPROCS-1
-        IDISP(I) = IDISP(I-1)+ISHF(I-1)
-      ENDDO
-!C
-      if (.not. ds) then ! in case of Direct Solver prevent MPI.
-      CALL HECMW_scatterv_DP( XVEC,ISHF(0),IDISP(0), &
-     &                   EVEC,ISHF(IRANK), &
-     &                   0,hecMESH%MPI_COMM )
-      end if
-!C      CALL MPI_scatterv( XVEC,ISHF(0),IDISP(0),MPI_DOUBLE_PRECISION,
-!C     &                   EVEC(1),ISHF(IRANK),MPI_DOUBLE_PRECISION,
-!C     &                   0,hecMESH%MPI_COMM,IERROR )
-!C
-      if( associated(xvec) ) DEALLOCATE(xvec)
-!C
-!C*Update EVEC on boundaries
-      numnp = NN/NDOF
-      if (.not. ds) then ! in case of Direct Solver prevent MPI.
-      IF    ( NDOF.eq.3 ) THEN
-         CALL hecmw_update_m_R( hecMESH,EVEC(1),numnp,NDOF )
-      ELSEIF( NDOF.eq.2 ) THEN
-         CALL hecmw_update_2_R( hecMESH,EVEC(1),numnp )
-      ELSEIF( NDOF.EQ.6 ) THEN
-         CALL hecmw_update_m_R( hecMESH,EVEC(1),numnp,NDOF )
-      ENDIF
-      end if
-
- 10   CONTINUE
-!SPC Node
-       do i = 1,NTOT
-         EVEC(i) = EVEC(i)*EFILT(i)
-       end do
-!C
-!*Dot product only over nonoverlapping vectors
-!C
-      CALL VECPRO1(chk,EVEC(1),EVEC(1),ISHF(IRANK))
-      if (.not. ds) then ! in case of Direct Solver prevent MPI.
-        CALL hecmw_allreduce_R1(hecMESH,chk,hecmw_sum)
-      end if
-      EVEC(:) = EVEC(:)/sqrt(chk)
-!C
-      do J=1,NN
-        q0(j) = 0.0D0
-      enddo
-!C
-!C** {WK}={GMASS}T{EVEC}
-      CALL MATPRO(WK,GMASS,EVEC,NN,1)
-!C*
-!C* BTA(1)={EV}T[GM]{X}={EV}T{WK}
-      CALL VECPRO(BTA(1),EVEC(1),WK(1,1),ISHF(IRANK),1)
-      if (.not. ds) then ! in case of Direct Solver prevent MPI.
-        CALL hecmw_allreduce_R(hecMESH,BTA,1,hecmw_sum)
-      end if
-!C
-!Calculate the first beta value
-      BTA(1) = SQRT(BTA(1))
-!C
-!Calculate q1
-      IF( BTA(1).EQ.0.0D0 ) THEN
-        CALL hecmw_finalize()
-        STOP "EL1 Self-orthogonal r0!: file Lanczos.f"
-      ENDIF
-!C
-      do J=1,NN
-        q1(j) = EVEC(J)/BTA(1)
-      enddo
-!C
-!Calculate p1
-      CALL MATPRO(LVECP,GMASS,q1,NN,1)
-!C
-      RETURN
-      END SUBROUTINE SETIVL
-!C=====================================================================!
-!                       Description                                    !
-!C=====================================================================!
-!> Sort eigenvalues
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE EVSORT(EIG,NEW,NEIG)
-!C---------------------------------------------------------------------*
-!C*
-!C* REORDER EIGEN VALUE
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION EIG(NEIG),NEW(NEIG)
-
-      DO 10 I=1,NEIG
-        NEW(I)=I
-   10 CONTINUE
-!C
-      NM=NEIG-1
-      DO 20 I=1,NM
-        MINLOC=I
-        EMIN=ABS(EIG(NEW(I)))
-        IP=I+1
-        DO 30 J=IP,NEIG
-          IF(ABS(EIG(NEW(J))).LT.EMIN) THEN
-            MINLOC=J
-            EMIN=ABS(EIG(NEW(J)))
-          END IF
-   30   CONTINUE
-        IBAF=NEW(I)
-        NEW(I)=NEW(MINLOC)
-        NEW(MINLOC)=IBAF
-   20 CONTINUE
-!C
-      RETURN
-      END SUBROUTINE EVSORT
-!C=====================================================================!
-!                       Description                                    !
-!C=====================================================================!
-!> Output eigenvalues and vectors
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG,IOUT )
-!C---------------------------------------------------------------------*
-!C*
-!C* DISPLAY RESULTS OF EIGEN VALUE ANALYSIS
-!C*
+    subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrEIG, maxItr)
       use m_fstr
-      use lczeigen
+      use m_fstr_StiffMatrix
+      use m_fstr_AddBC
+      use fstr_matrix_con_contact
       use hecmw_util
-!C
+!C*-------- Modules for Lanczos method --------------*
+      use lczeigen
+      use m_eigen_lib
+      use m_fstr_EIG_getamat
+      use m_fstr_EIG_lanczos_util
+      use m_fstr_EIG_matmult
+      use m_fstr_EIG_mgs1
+      use m_fstr_EIG_output
+      use m_fstr_EIG_setMASS
+      use m_fstr_EIG_tridiag
+      use m_static_lib
+      use m_static_make_result
+      use m_hecmw2fstr_mesh_conv
+
       implicit none
-!C
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix    ) :: hecMAT
+
+      type (hecmwST_local_mesh ) :: hecMESH
+      type (hecmwST_matrix     ) :: hecMAT
+      type (hecmwST_result_data) :: fstrRESULT
+      type (fstr_param         ) :: fstrPARAM
+      type (fstrST_matrix_contact_lagrange)  :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+
+      character(len=HECMW_HEADER_LEN) :: header
+      character(len=HECMW_NAME_LEN)   :: label
+      character(len=HECMW_NAME_LEN)   :: nameID
+
+            type lczvec
+                     real(kind=kreal), pointer :: q(:) => null()
+            end type lczvec
+
+!C*-------- Parameters for Lanczos method -----------*
       type (fstr_eigen) :: fstrEIG
-!C
-!*For parallel part reduction
-      INTEGER(kind=kint) :: i, j, ii
-      INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot
-      INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, IOUT
-      INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
-      INTEGER(kind=kint), POINTER :: counts(:),disps(:)
-      REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
-      REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
-!C*-------- solver control -----------*
-      logical :: ds = .false. !using Direct Solver or not
 
-! in case of direct solver
-      if (hecMAT%Iarray(99) .eq. 2) then
-        ds = .true.
-      end if
-!C
-!C*--- Create local communication groups for contiguous eigenvector ---*
-      ALLOCATE( istarray(2,nprocs) )
-      ALLOCATE( grouping(0:nprocs-1) )
-      ALLOCATE( gmem(nprocs) )
-!C
-      DO i = 1,nprocs
-        istarray(:,i) = 0
-        grouping(i-1) = 0
-      ENDDO
-!C
-      istt = hecMESH%global_node_ID(1)
-      ied  = hecMESH%global_NODE_ID(numn)
-      istarray(1,myrank+1) = istt
-      istarray(2,myrank+1) = ied
-      if (.not. ds) then
-        CALL hecmw_allreduce_I( hecMESH,istarray,2*nprocs,hecmw_sum )
-      end if
+            TYPE(lczvec), pointer :: lvecq(:)       !< Array of Q vectors
 
-!C
-      nglobal = numn
-      if (.not. ds) then
-        CALL hecmw_allreduce_I1( hecMESH,nglobal,hecmw_sum )
-      end if
-!C
-      IF( myrank.EQ.0 ) ALLOCATE( xevec(nglobal*NDOF) )
-      ALLOCATE( xsend(Gntotal) )
-!C
-      GID = 0
-      DO i = 1,nprocs
-        IF(istt.EQ.istarray(1,i)) GO TO 10
-        GID = GID + 1
-      ENDDO
-   10 CONTINUE
-!C
-      GROUP = GID
-      grouping(myrank) = GID
-      if (.not. ds) then
-        CALL hecmw_allreduce_I( hecMESH,grouping(0:),nprocs,hecmw_sum )
-      end if
-      groupcount = 1
-      j = grouping(0)
-      gmem(1) = j
-!C
-      DO i = 1, nprocs-1
-        IF( j.NE.grouping(i) ) THEN
-          j = grouping(i)
-          groupcount = groupcount+1
-          gmem(groupcount) = j
+      integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
+      integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
+      integer(kind=kint) :: kk, jjiter, ppc
+      real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+
+      integer(kind=kint) IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
+      integer(kind=kint), allocatable :: isnode33(:)
+      real(kind=kreal), allocatable   :: gmass(:)
+
+
+      numnp  = hecMAT%NP
+      numn   = hecMAT%N
+      NDOF   = hecMESH%n_dof
+      ntotal = numnp*NDOF
+
+
+!C* Allocate mass matrix
+      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
+      write(IDBG,*) '*Allocated mass matrix of size: ',ntotal
+
+!C*----------- EHM 7Apr04: Memory monitor ----------*
+      CALL memget(mlczr,ntotal,8)
+
+      write(*,*)"allocations"
+      write(*,*)"neig", neig
+
+    allocate(lvecq(0:lvecq_size))
+!C*-------------------- Memory allocations -----------------------*
+      allocate( mass( ntotal ),            STAT=ierror )
+      allocate( EM( ntotal ),              STAT=ierror )
+      allocate( ewk( ntotal, neig),        STAT=ierror )
+      allocate( eval( neig ),              STAT=ierror )
+      allocate( modal( neig ),             STAT=ierror )
+      allocate( new( neig ),               STAT=ierror )
+      allocate( work( neig*(3*neig + 5) ), STAT=ierror )
+      allocate( LVECP(NTOTAL),             STAT=ierror )
+      allocate( LVECPP(NTOTAL),            STAT=ierror )
+      allocate( lvecq(0)%q(ntotal),        STAT=ierror )
+      allocate( lvecq(1)%q(ntotal),        STAT=ierror )
+      allocate( LWRK(NTOTAL),              STAT=ierror )
+      allocate( LLWRK(NTOTAL),             STAT=ierror )
+      allocate( LLLWRK(NTOTAL),            STAT=ierror )
+      allocate( ALF(NEIG+2),               STAT=ierror )
+      allocate( BTA(NEIG+2),               STAT=ierror )
+
+
+!C*------------ Number of DOF ----------------------*
+      ALLOCATE(my_ntotal(0:nprocs), STAT=ierror)
+      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
+
+      IF(myrank.GT.nprocs) THEN
+        WRITE(*,*) '+==================================+'
+        WRITE(*,*) ' Array my_ntotal needs larger size!'
+        WRITE(*,*) '+=================================+'
+        WRITE(*,*) ' ...Stopping in fstr_solve_eigen...'
+        IF( myrank == 0 ) then
+          WRITE(IMSG,*) '+==================================+'
+          WRITE(IMSG,*) ' Array my_ntotal needs larger size!'
+          WRITE(IMSG,*) '+=================================+'
+          WRITE(IMSG,*) ' ...Stopping in fstr_solve_eigen...'
         ENDIF
-      ENDDO
-!C
-      ALLOCATE( counts(groupcount) )
-      ALLOCATE( disps(groupcount) )
-!C
-      DO i = 1, groupcount
-        counts(i) = 0
-        disps(i)  = 0
-      ENDDO
-!C
-      disps(1) = 0
-      DO i = 1,groupcount
-        counts(i) = my_ntotal(gmem(i))
-        if( i.lt.groupcount ) then
-          disps(i+1) = disps(i) + counts(i)
-        endif
-      ENDDO
-!C
-!C comment out by imai 2005/08/29
-!C      CALL MPI_comm_group ( hecMESH%MPI_COMM,hecGROUP,ierror )
-!C      CALL MPI_group_incl ( hecGROUP,groupcount,gmem,GROUP,ierror )
-!C      CALL MPI_comm_create( hecMESH%MPI_COMM,GROUP,XDIFF,ierror )
-!C
-      PI = 4.0*ATAN(1.0)
-!C
-!C*EIGEN VALUE SORTING
-      CALL EVSORT(EVAL,NEW,LTRIAL)
-      IF(myrank==0) THEN
-        WRITE(IOUT,*)""
-        WRITE(IOUT,"(a)")"********************************"
-        WRITE(IOUT,"(a)")"*RESULT OF EIGEN VALUE ANALYSIS*"
-        WRITE(IOUT,"(a)")"********************************"
-        WRITE(IOUT,"(a)")""
-        WRITE(IOUT,"(a,i8)")"NUMBER OF ITERATIONS = ",LTRIAL
-        WRITE(IOUT,"(a,1pe12.4)")"TOTAL MASS = ",fstrEIG%totalmass
-        WRITE(IOUT,"(a)")""
-        WRITE(IOUT,"(3a)")"                   ANGLE       FREQUENCY   ",&
-        "PARTICIPATION FACTOR                EFFECTIVE MASS"
-        WRITE(IOUT,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
-        "X           Y           Z           X           Y           Z"
-        WRITE(IOUT,"(3a)")"  ---  ----------  ----------  ----------  ",&
-        "----------  ----------  ----------  ----------  ----------  ----------"
-        WRITE(*,*)""
-        WRITE(*,"(a)")"#----------------------------------#"
-        WRITE(*,"(a)")"#  RESULT OF EIGEN VALUE ANALYSIS  #"
-        WRITE(*,"(a)")"#----------------------------------#"
-        WRITE(*,"(a)")""
-        WRITE(*,"(a,i8)")"### NUMBER OF ITERATIONS = ",LTRIAL
-        WRITE(*,"(a,1pe12.4)")"### TOTAL MASS = ",fstrEIG%totalmass
-        WRITE(*,"(a)")""
-        WRITE(*,"(3a)")"       PERIOD     FREQUENCY  ",&
-        "PARTICIPATION FACTOR             EFFECTIVE MASS"
-        WRITE(*,"(3a)")"  NO.  [Sec]      [HZ]       ",&
-        "X          Y          Z          X          Y          Z"
-        WRITE(*,"(3a)")"  ---  ---------  ---------  ",&
-        "---------  ---------  ---------  ---------  ---------  ---------"
-
-        if(LTRIAL < NGET)then
-          j = LTRIAL
-        else
-          j = NGET
-        endif
-
-        kcount = 0
-        DO 40 i=1,LTRIAL
-          II=NEW(I)
-          if( modal(ii).eq.1 ) then
-            kcount = kcount + 1
-            EEE=EVAL(II)
-            IF(EEE.LT.0.0) EEE=0.0
-            WWW=DSQRT(EEE)
-            FFF=WWW*0.5/PI
-            PFX=fstrEIG%partfactor(3*i-2)
-            PFY=fstrEIG%partfactor(3*i-1)
-            PFZ=fstrEIG%partfactor(3*i  )
-            EMX=fstrEIG%effmass(3*i-2)
-            EMY=fstrEIG%effmass(3*i-1)
-            EMZ=fstrEIG%effmass(3*i  )
-            WRITE(IOUT,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
-            WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
-            if( kcount.EQ.j ) go to 41
-          endif
-   40   CONTINUE
-   41   continue
-        WRITE(IOUT,*)
-        WRITE(*,*)""
+        CALL hecmw_abort(hecmw_comm_get_comm())
+        STOP
       ENDIF
-      RETURN
-      END SUBROUTINE EGLIST
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Scalar product of two vectors
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE VECPRO(Z,X,Y,NN,NEIG)
-!C---------------------------------------------------------------------*
-!C*
-!C* PRODUCT OF VECTOR {X} ,{Y}: {Z}={X}T{Y}
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
+
+!C*----------- EHM 7Apr04: Memory monitor ----------*
+      I = 2*neig
+      CALL memget(mlczi,I,4)
+      I = (nget+9)*ntotal
+      CALL memget(mlczr,I,8)
+      I = 10*neig+3*neig**2+4
+      CALL memget(mlczr,I,8)
+      I = (2+(neig+1)*fstrEIG%lczrod)*ntotal
+      CALL memget(mreorr,I,8)
+
+!C*------------ Zero clear --------------------------------------------*
+      mass       = 0.0
+      ewk        = 0.0
+      eval       = 0.0
+      new        = 0.0
+      work       = 0.0
+      lwrk       = 0.0
+      LVECP      = 0.0
+      LVECPP     = 0.0
+      lvecq(0)%q = 0.0
+      lvecq(1)%q = 0.0
+      LWRK       = 0.0
+      LLWRK      = 0.0
+      ALF        = 0.0
+      BTA        = 0.0
+
+
+      do i=1,ntotal
+        mass(i) = fstrEIG%mass(i)
+      enddo
 !C
-      DIMENSION Z(NEIG),X(NN,NEIG),Y(NN,NEIG)
-      DO 10 I=1,NEIG
-        S=0.0D0
-        DO 20 J=1,NN
-          S=S+X(J,I)*Y(J,I)
-   20   CONTINUE
-          Z(I)=S
-   10 CONTINUE
+!C*------------- Set initial eigenvector guesses -----------------------*
+      my_ntotal(myrank) = Gntotal
+        DO I = 0,nprocs-1
+          CALL hecmw_bcast_I1(hecMESH,my_ntotal(I),I)
+        END DO
+
+      write(*,*)"SETIVL"
+      CALL SETIVL(mass,EM,EFILT,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,ntotal,&
+     &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,Gtotal)
+
+!C*------------ Main iteration loop for Lanczos method -----------------*
+      CONV = .FALSE.
 !C
-      RETURN
-      END SUBROUTINE VECPRO
-!> Scalar product of two vectors
-!C---------------------------------------------------------------------*
-      SUBROUTINE VECPRO1(Z,X,Y,NN)
-!C---------------------------------------------------------------------*
-!C*
-!C* PRODUCT OF VECTOR {X} ,{Y}: {Z}={X}T{Y}
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
+      do i=1,ntotal
+        hecMAT%B(i) = EM(i)
+      enddo
+      hecMAT%X = 0.
+      hecMAT%Iarray(98) = 1   !Assmebly complete
+      hecMAT%Iarray(97) = 1   !Need numerical factorization
+
+      hecMAT%Rarray(2)  = 1.0
+      hecMAT%Rarray(1)  = fstrEIG%iluetol
+
+      IF(myrank .EQ. 0) THEN
+        WRITE(IMSG,*)
+        WRITE(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
+      ENDIF
 !C
-      DIMENSION X(NN),Y(NN)
-        Z=0.0D0
-        DO 20 J=1,NN
-          Z=Z+X(J)*Y(J)
-   20   CONTINUE
+!C*---------- Begin Main loop ----------------
+      DO ITER=1,maxItr
+
+!C*---------- Copy p vector into r
+        CALL DUPL(EM,LVECP,ntotal)
+
+!C*---------- Set up RHS for solve
+        call hecmw_mat_clear_b(hecMAT)
+        do i=1,ntotal
+          hecMAT%B(i) = EM(i)
+        enddo
+        hecMAT%X = 0.0d0
+
+!C*---------- Call solver (direct/iterative)
+        CALL solve_LINEQ( hecMESH,hecMAT,IMSG )
+
+!C*---------- Get back RHS VECTOR
+        do i=1,ntotal
+          EM(i) = hecMAT%X(i)
+        enddo
+
+!C*---------- SPC vector filter
+        i = 0
+        do ii = 1,ntotal
+          IF(efilt(ii) .EQ. 0) i = i + 1
+        end do
+
+        do ii = 1,ntotal
+          EM(ii) = EM(ii)*EFILT(ii)
+        end do
+
+!C*---------- Allocate fresh lvecq
+        ALLOCATE( lvecq(iter+1)%q(ntotal), STAT=ierror )
+        IF(ierror.NE.0) THEN
+          IF( myrank==0 ) THEN
+             WRITE(IMSG,*)"*------- Lanczos Solver Message --------------*"
+             WRITE(IMSG,*)"Allocation failed for additional lanczos vector"
+             WRITE(IMSG,*)"Please increase memory, or decrease NGET."
+             WRITE(IMSG,*)"*---------------------------------------------*"
+          ENDIF
+          WRITE(*,*)"*------- Lanczos Solver Message --------------*"
+          WRITE(*,*)"Allocation failed for additional lanczos vector"
+          WRITE(*,*)"Please increase memory, or decrease NGET."
+          WRITE(*,*)"*---------------------------------------------*"
+          CALL hecmw_abort(hecmw_comm_get_comm())
+          STOP
+        ENDIF
+        CALL memget(mlczr,ntotal,8)
+
+!C* ///  ^rj = -rj - qj-1*btaj  ///
+        CALL SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),ntotal)
+
+!C* ///  alfj = qj^T[M][^rj] = pj^T[^rj]  ///
+        CALL VECPRO1(AALF,LVECP,EM,Gntotal)
+        ALF(ITER)=AALF
+          CALL hecmw_allreduce_R1(hecMESH,ALF(ITER),hecmw_sum)
+
+        WRITE(IDBG,*) '+-------------------------------------+'
+        WRITE(IDBG,*) ' ITER=',ITER,' ALPHA=',ALF(ITER)
+        WRITE(IDBG,*) '+-------------------------------------+'
+
+!C* ///  rj = ^rj - qj alfj  ///
+        CALL SCSHFT(EM,lvecq(iter)%q,ALF(ITER),ntotal)
+
+!C*---------- Reorthogonalization
+        LWRK = 0.
+        CALL MATPRO(LWRK,mass,EM,ntotal,1)
+        CALL VECPRO1(prechk,LWRK,LWRK,Gntotal)
+          CALL hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
+
+        prechk = sqrt(prechk)
+        IF(prechk.NE.0.0D0) LWRK = LWRK/prechk
+        IREOR = ITER*(1.0 - fstrEIG%lczrod)
+
+        DO KK = IREOR,ITER
+          prechk = 0.0D0
+          CALL VECPRO1(prechk,lvecq(kk)%q,LWRK,Gntotal)
+            CALL hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
+
+          prechk1 = 0.0D0
+          CALL VECPRO1(prechk1,lvecq(kk)%q,lvecq(kk)%q,Gntotal)
+            CALL hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
+
+          prechk1 = sqrt(prechk1)
+          if(prechk1.ne.0.0D0) prechk = prechk/prechk1
+          IF(abs(prechk).GT.fstrEIG%lczrot) THEN
+            CALL MGS1(lvecq(kk)%q,EM,mass,ntotal,my_ntotal,myrank,&
+     &                hecMESH,Gntotal)
+          ENDIF
+        ENDDO
+
+!C* ///  -pj = [M][rj]  ///
+        CALL MATPRO(LVECPP,mass,EM,ntotal,1)
+
+!C* ///  btaj+1 = (rj^T[M]rj)^(1/2) = (-pj^Trj)^(1/2)  ///
+        CALL VECPRO1(AALF,LVECPP,EM,Gntotal)
+        BTA(ITER+1) = AALF
+          CALL hecmw_allreduce_R1(hecMESH,BTA(ITER+1),hecmw_sum)
+
+        BTA(ITER+1) = SQRT(BTA(ITER+1))
+
+        WRITE(IDBG,*) '+-------------------------------------+'
+        WRITE(IDBG,*) ' ITER=',ITER,' BTA=',BTA(ITER+1)
+        WRITE(IDBG,*) '+-------------------------------------+'
+
+!C*---------- Update Lanczos vectors
+        CALL hecmw_barrier(hecMESH)
+        CALL UPLCZ(LVECP,lvecq(iter+1)%q,LVECPP,EM,BTA(ITER+1),ntotal)
+
+!C*---------- Set up tridiagonal Lanczos matrix
+        LTRIAL = ITER
+        ALLOCATE( LLDIAG(LTRIAL)        )
+        ALLOCATE( LNDIAG(LTRIAL)        ) !Unordered
+        ALLOCATE( LSUB(LTRIAL)          )
+        ALLOCATE( LZMAT(LTRIAL,LTRIAL)  )
+        ALLOCATE( LNZMAT(LTRIAL,LTRIAL) ) !Unordered
+
+        DO JITER = 1,LTRIAL
+          DO IITER = 1,LTRIAL
+            LZMAT(JITER,IITER)  = 0.0D0
+            LNZMAT(JITER,IITER) = 0.0D0 !Unordered
+          END DO
+        END DO
+
+        DO IITER = 1,LTRIAL
+          LLDIAG(IITER) = ALF(IITER)
+          LZMAT(IITER,IITER) = 1.0D0
+        END DO
+
+        LSUB(1) = 0.0
+        IITER   = 0
+        DO IITER = 2,LTRIAL
+          LSUB(IITER)  = BTA(IITER)
+        END DO
+
+        CALL TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,&
+     &                      LSUB,LZMAT,LNZMAT,IERROR) !Unordered
+
+!C*---------- Convergence check
+        DO IITER = 1, LTRIAL
+          IF( LLDIAG(IITER).NE.0.0D0 ) THEN
+            EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+          ENDIF
+        ENDDO
+        CALL EVSORT(EVAL,NEW,LTRIAL)
 !C
-      RETURN
-      END SUBROUTINE VECPRO1
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Copy vector
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE DUPL(X,Y,NN)
-!C---------------------------------------------------------------------*
-!C*
-!C* DUPLICATE VECTORS {Y} INTO {X}: {X} = {Y}
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION X(NN),Y(NN)
-        DO 20 J=1,NN
-          X(J) = Y(J)
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE DUPL
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Scalar shift vector
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE SCSHFT(X,Y,A,NN)
-!C---------------------------------------------------------------------*
-!C*
-!C* SCALAR SHIFT {X} BY A*{Y}: {X} := {X} - A*{Y}
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal)(A-H,O-Z)
-      DIMENSION X(NN),Y(NN)
-        DO 20 J=1,NN
-          X(J) = X(J) - A*Y(J)
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE SCSHFT
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Product of diagonal matrix and vector
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE MATPRO(Y,A,X,MM,NN)
-!C---------------------------------------------------------------------*
-!C*
-!C*  MATRIX PRODUCT [Y]=[A][X]
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION Y(MM,NN),A(MM),X(MM,NN)
-      DO 10 I=1,NN
-        DO 20 J=1,MM
-          Y(J,I)=A(J)*X(J,I)
-   20   CONTINUE
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE MATPRO
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Update Lanczos vectors
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE UPLCZ(X,Y,U,V,A,NN)
-!C---------------------------------------------------------------------*
-!C*
-!C* DUPLICATE VECTORS {Y} INTO {X}: {X} = {Y}
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION X(NN), Y(NN), U(NN), V(NN)
-        DO 20 J=1,NN
-          X(J) = U(J)/A
-          Y(J) = V(J)/A
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE UPLCZ
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Random number generator
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE URAND1(N,X,IR)
-!C---------------------------------------------------------------------*
-      use hecmw
-      REAL(kind=kreal) X(N), INVM
-      PARAMETER (M = 1664501, LAMBDA = 1229, MU = 351750)
-      PARAMETER (INVM = 1.0D0 / M)
-      INTEGER(kind=kint) IR
+        CCHK  = 0.0
+        KITER = NGET+2            !Extra 2 values as a safety feature
+        IF(LTRIAL .LT. KITER) KITER = LTRIAL
+
+        DO JJITER = 1,KITER
+          JITER = NEW(JJITER)
+          CALL VECPRO1(prechk1,LZMAT(1,JITER),LZMAT(1,JITER),LTRIAL)
+
+          IF(prechk1 .GT. 0.) THEN
+            prechk1 = SQRT(prechk1)
+          ELSE
+            prechk1 = 1.
+          ENDIF
+
+          CCHK1 = (BTA(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
+          IF(cchk .LT. ABS(cchk1)) THEN
+            cchk = ABS(cchk1)
+            iiter = jiter
+            ppc = prechk1
+          ENDIF
+        END DO
 !C
-      DO 10 I = 1, N
-        IR = MOD( LAMBDA * IR + MU, M)
-         X(I) = IR * INVM
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE URAND1
-!> Random number generator
-!C*--------------------------------------------------------------------*
-      SUBROUTINE URAND0(N,IR)
-!C*--------------------------------------------------------------------*
-      use hecmw
-      real(kind=kreal) INVM
-      PARAMETER (M = 1664501, LAMBDA = 1229, MU = 351750)
-      PARAMETER (INVM = 1.0D0 / M)
-!C*
-      DO 10 I = 1, N
-        IR = MOD( LAMBDA * IR + MU, M)
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE URAND0
-!C=====================================================================!
-!C                      Description                                    !
-!C=====================================================================!
-!> Eigenvector regularization
-!C======================================================================
-!C---------------------------------------------------------------------*
-      SUBROUTINE REGVEC(EVEC,GMASS,XMODE,NTOT,NEIG,NORMAL)
-!C---------------------------------------------------------------------*
-!C*
-!C* EIGEN VECTOR REGULARIZATION (MASS NORMAL)
-!C*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION EVEC(NTOT,NEIG),GMASS(NTOT),XMODE(2,NEIG)
-!C
-      IF( NORMAL.EQ.0 ) THEN
-        DO 100 I = 1, NEIG
-          SCALE = 0.0
-          DO 200 J = 1, NTOT
-            SCALE = SCALE + GMASS(J)*EVEC(J,I)**2
-  200     CONTINUE
-!C
-          DO 300 J = 1, NTOT
-            EVEC(J,I) = EVEC(J,I)/SQRT(SCALE)
-  300     CONTINUE
-          XMODE(1,I) = XMODE(1,I)/SCALE
-          XMODE(2,I) = XMODE(2,I)/SCALE
-  100   CONTINUE
-!C
-      ELSE IF( NORMAL.EQ.1 ) THEN
-!C**
-!C** MASS NORMALIZATION
-!C***
-        DO 1000 I = 1, NEIG
-          EMAX = 0.0
-          DO 1100 J = 1, NTOT
-            IF(ABS( EVEC(J,I)).GT.EMAX ) EMAX = ABS(EVEC(J,I))
- 1100     CONTINUE
-          DO 1200 J = 1, NTOT
-            EVEC(J,I) = EVEC(J,I)/EMAX
- 1200     CONTINUE
-!C***
-!C*** modal mass & stiffness
-!C***
-          XMODE(1,I)=XMODE(1,I)/EMAX**2
-          XMODE(2,I)=XMODE(2,I)/EMAX**2
- 1000   CONTINUE
-      END IF
-!C
-      RETURN
-      END SUBROUTINE REGVEC
+        IF(CCHK.LE.CTOL.AND.ITER.GE.NGET) THEN
+          WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
+          CONV = .TRUE.
+          GO TO 25
+        ENDIF
+
+        IF(ITER.LT.maxItr) THEN
+          if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
+          if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
+          if( allocated(LSUB) )   DEALLOCATE(LSUB)
+          if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
+          if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
+        ENDIF
+
+!* End of Main Lanczos Loop
+      END DO
+
+  25  CONTINUE
+      CERR = CCHK
+
+      DO IITER = 1, LTRIAL
+        IF(LLDIAG(IITER).NE.0.0D0) THEN
+          EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+        ENDIF
+      END DO
+      CALL evsort(eval,new,ltrial)
+
+!C*---------- Estimate eigenvectors
+      ewk = 0.0
+      k = nget
+      IF(k .GT. ltrial) k = ltrial
+      DO kk = 1,k
+        kiter = NEW(kk)
+        DO jiter = 1,ltrial
+          DO iiter =1,ntotal
+            ewk(iiter,kk) = ewk(iiter,kk) &
+     &                    + lvecq(jiter)%q(iiter)*LZMAT(jiter,kiter)
+          ENDDO
+        ENDDO
+      ENDDO
+
+!C*---------- Deallocate Lanczos vector array
+      DO iiter=0,ltrial
+        if( associated(lvecq(iiter)%q) ) DEALLOCATE(lvecq(iiter)%q)
+      END DO
+
+!C*---------- Temporarily set modal value to 1
+      modal = 0
+      do i = 1,LTRIAL
+        if(EVAL(i).NE.0) modal(i) = 1
+      end do
+
+      lczmult = .FALSE.
+      CALL memget(mlczr,LTRIAL*(LTRIAL+3),8)
+
+!C********************* End Lanczos ************************!
+
+      t2 = hecmw_Wtime() !DEBUG elap
+      write(idbg,'(a,f10.2)') 'Lanczos loop (sec) :', T2 - T1 ! elap
+
+      IF(myrank .EQ. 0) THEN
+        WRITE(IMSG,*)
+        WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
+      ENDIF
+
+      DO JITER=1,NGET
+        !prechk1 = 0.0
+!C        CALL VECPRO1(prechk1,ewk(1:,JITER:),ewk(1:,JITER:),Gntotal)
+        !do iii = 1, Gntotal
+        !    prechk1 = prechk1 + mass(iii)*ewk(iii,JITER)*ewk(iii,JITER)
+        !enddo
+        prechk1 = maxval(ewk(:,JITER))
+          CALL hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
+
+        !prechk1 = sqrt(prechk1)
+        if(prechk1.NE.0.0D0)then
+          do i = 1, Gntotal
+            ewk(i,JITER) = ewk(i,JITER)/prechk1
+          enddo
+        endif
+      END DO
+
+!C***** compute effective mass and participation factor
+      allocate(fstrEIG%effmass(3*NGET))
+      allocate(fstrEIG%partfactor(3*NGET))
+      fstrEIG%effmass    = 0.0d0
+      fstrEIG%partfactor = 0.0d0
+
+      if(NDOF == 3)then
+        DO i=1,NGET
+          r1 = 0.0d0
+          r2 = 0.0d0
+          r3 = 0.0d0
+          gm = 0.0d0
+          do j = 1, numn
+            in1 = 3*j-2
+            in2 = 3*j-1
+            in3 = 3*j
+            r1 = r1 + mass(in1)*ewk(in1,i)
+            r2 = r2 + mass(in2)*ewk(in2,i)
+            r3 = r3 + mass(in3)*ewk(in3,i)
+            gm = gm + mass(in1)*ewk(in1,i)*ewk(in1,i) &
+            & + mass(in2)*ewk(in2,i)*ewk(in2,i) &
+            & + mass(in3)*ewk(in3,i)*ewk(in3,i)
+          enddo
+          CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+          fstrEIG%partfactor(3*i-2) = r1/gm
+          fstrEIG%partfactor(3*i-1) = r2/gm
+          fstrEIG%partfactor(3*i  ) = r3/gm
+          fstrEIG%effmass(3*i-2) = r1*r1/gm
+          fstrEIG%effmass(3*i-1) = r2*r2/gm
+          fstrEIG%effmass(3*i  ) = r3*r3/gm
+        END DO
+
+      elseif(NDOF == 2)then
+        DO i=1,NGET
+          r1 = 0.0d0
+          r2 = 0.0d0
+          gm = 0.0d0
+          do j = 1, numn
+            in1 = 2*j-1
+            in2 = 2*j
+            r1 = r1 + mass(in1)*ewk(in1,i)
+            r2 = r2 + mass(in2)*ewk(in2,i)
+            gm = gm + r1*ewk(in1,i) + r2*ewk(in2,i)
+          enddo
+          CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+          CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+          fstrEIG%partfactor(3*i-2) = r1/gm
+          fstrEIG%partfactor(3*i-1) = r2/gm
+          fstrEIG%effmass(3*i-2) = r1*r1/gm
+          fstrEIG%effmass(3*i-1) = r2*r2/gm
+        END DO
+      endif
+
+    end subroutine fstr_solve_lanczos
 
 end module m_fstr_EIG_lanczos
-

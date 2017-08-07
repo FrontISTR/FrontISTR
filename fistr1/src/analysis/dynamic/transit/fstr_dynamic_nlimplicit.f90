@@ -82,7 +82,7 @@ module fstr_dynamic_nlimplicit
 
 !C-- matrix [M] lumped mass matrix
     if(fstrDYNAMIC%idx_mas == 1) then
-      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
+      call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
 
 !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
@@ -472,7 +472,7 @@ module fstr_dynamic_nlimplicit
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas == 1) then
 
-                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
+                call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas == 2) then

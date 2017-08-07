@@ -13,7 +13,7 @@ contains
 
 !C---------------------------------------------------------------------*
 !> Set up lumped mass matrix
-      subroutine setMASS(IOUT,fstrSOLID,hecMESH,hecMAT,fstrEIG)
+      subroutine setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 !C---------------------------------------------------------------------*
 !C*******************************************
 !C* SET MASS MATRIX (Lumped mass)
@@ -28,15 +28,14 @@ contains
       type(fstr_eigen)           :: fstrEIG
       type(tshellmat),pointer  :: shell_var(:)
 !C
-      integer(kind=kint) nodLOCAL(20),itype,ic_type,icel,isect
-      integer(kind=kint) IOUT
-      integer(kind=kint) i,j,k,ii,jj,iS,iE,jS,num
-      integer(kind=kint) j1,j2,j3,j4
-      integer(kind=kint) ix,jx,ll(4),ielm
-      integer(kind=kint) pind(20),istart
-      integer(kind=kint) npoin,head,nn,nid,numnp,numn,NDOF,cid
-      integer(kind=kint) ierror,kk,iax,jk,n_totlyr,shell_matltype
-      real(kind=kreal) xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
+      integer(kind=kint) :: nodLOCAL(20),itype,ic_type,icel,isect
+      integer(kind=kint) :: i,j,k,ii,jj,iS,iE,jS,num
+      integer(kind=kint) :: j1,j2,j3,j4
+      integer(kind=kint) :: ix,jx,ll(4),ielm
+      integer(kind=kint) :: pind(20),istart
+      integer(kind=kint) :: npoin,head,nn,nid,numnp,numn,NDOF,cid
+      integer(kind=kint) :: ierror,kk,iax,jk,n_totlyr,shell_matltype
+      real(kind=kreal) :: xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
       integer(kind=kint) :: ihead
       real(kind=kreal) :: a
       real(kind=kreal) :: beam_radius,                          &

@@ -12,11 +12,12 @@ contains
 !c
       use m_fstr
       use hecmw_util
-      use m_fstr_EIG_lanczos
-      implicit real(kind=kreal) (a-h,o-z)
-      DIMENSION a(m),b(m),amass(m)
+      use m_fstr_EIG_lanczos_util
+      implicit none
       REAL(kind=kreal), DIMENSION(:), POINTER :: q,p,qw
-      INTEGER(kind=kint) irank, ishf(0:irank),Gntotal, ierror
+      REAL(kind=kreal) :: a(m),b(m),amass(m)
+      REAL(kind=kreal) :: pp, t, y, z
+      INTEGER(kind=kint) :: irank, ishf(0:irank),Gntotal, ierror, m, i
       TYPE (hecmwST_local_mesh) :: hecMESH
 
 !*Allocate local working arrays

@@ -15,7 +15,7 @@ contains
 !C*
       use m_fstr
       use lczeigen
-      use m_fstr_EIG_lanczos
+      use m_fstr_EIG_lanczos_util
       use m_fstr_EIG_matmult
       implicit none
       integer(kind=kint) :: I, IOUT,IREOR,JJITER,JITER,IITER
