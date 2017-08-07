@@ -5,7 +5,6 @@
 !> This modules just summarizes all modules used in eigen analysis
 module m_eigen_LIB
 
-use lczparm
 use m_utilities
 use m_solve_lineq
 use m_eigen_lib_2d1mass

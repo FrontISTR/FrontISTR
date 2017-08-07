@@ -14,7 +14,6 @@
 !> This module defined coomon data and basic structures for analysis
 module m_fstr
 use hecmw
-use lczparm
 use m_common_struct
 use m_step
 use m_out
@@ -78,6 +77,9 @@ public
 
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
+
+      integer(kind=kint),parameter :: LENG = 256
+      integer(kind=kint),parameter :: lvecq_size = 1000
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -591,6 +593,27 @@ public
   end type
 
 
+        !> Allocatable array, used or Lanczos eigenvalue analysis
+        type lczvec
+                 real(kind=kreal), pointer, dimension(:) :: q
+        end type lczvec
+
+
+        !> Package of data used by Lanczos eigenvalue solver
+        type lczparam
+                integer   (kind=kint)  :: eqset         ! Flag (1:eigen analysis,  0:not eigen ana.)
+                integer   (kind=kint)  :: nget          ! Solved eigen value number (default:5)
+                real      (kind=kreal) :: lczsgm        ! 0.0
+                integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
+                real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
+                real      (kind=kreal) :: lczrod,lczrot ! lczrod = 1.0, lczrot = 0.0
+                real      (kind=kreal) :: iluetol
+                real      (kind=kreal) :: totalmass
+                real      (kind=kreal), pointer :: mass(:)
+                real      (kind=kreal), pointer :: effmass(:)
+                real      (kind=kreal), pointer :: partfactor(:)
+        end type lczparam
+
 
 !C ----------------------------------------------------------------------------
 !C
@@ -828,6 +851,12 @@ contains
     nullify( f%FLOAD_ngrp_valim )
 
   end subroutine
+
+        subroutine fstr_nullify_lczparam( E )
+        implicit none
+        type( lczparam ) :: E
+        nullify( E%mass )
+        end subroutine fstr_nullify_lczparam
 
 !C ----------------------------------------------------------------------------
         subroutine fstr_nullify_fstr_couple( C )

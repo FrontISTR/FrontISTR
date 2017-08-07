@@ -7,7 +7,6 @@
 module fstr_dynamic_nlexplicit
 
 use m_fstr
-use lczparm
 use m_static_lib
 use m_dynamic_output
 use m_fstr_EIG_setMASS

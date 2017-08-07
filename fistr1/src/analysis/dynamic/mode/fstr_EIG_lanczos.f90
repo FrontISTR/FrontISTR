@@ -17,7 +17,6 @@ contains
 !C---------------------------------------------------------------------*
       USE m_fstr
       USE hecmw_util
-      use lczparm
 !C
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
       DIMENSION GMASS(NTOT),EVEC(NTOT),EFILT(NTOT),WK(NTOT,1)
@@ -192,7 +191,6 @@ contains
 !C* DISPLAY RESULTS OF EIGEN VALUE ANALYSIS
 !C*
       use m_fstr
-      use lczparm
       use lczeigen
       use hecmw_util
 !C

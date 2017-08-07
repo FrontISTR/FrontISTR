@@ -6,7 +6,7 @@
 
       module lczeigen
       use hecmw
-      USE lczparm
+      use m_fstr
       IMPLICIT NONE
       PUBLIC
 

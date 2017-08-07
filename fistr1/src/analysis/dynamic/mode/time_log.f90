@@ -11,7 +11,6 @@ contains
 
        USE m_fstr
        USE lczeigen
-       USE lczparm
 
        IMPLICIT NONE
        TYPE (hecmwST_local_mesh) :: hecMESH

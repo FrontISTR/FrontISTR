@@ -7,7 +7,6 @@
 module fstr_dynamic_nlimplicit
   use m_fstr
   use m_fstr_para_contact
-  use lczparm
   use m_dynamic_output
   use m_fstr_EIG_setMASS
   use m_dynamic_mat_ass_bc_ac

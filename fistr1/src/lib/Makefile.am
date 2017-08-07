@@ -105,7 +105,6 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-        fstr_lczparm.@f90objfilepostfix@ \
         m_step.@f90objfilepostfix@ \
         m_Makrose.@f90objfilepostfix@ \
         m_MakrosePartMesh.@f90objfilepostfix@ \

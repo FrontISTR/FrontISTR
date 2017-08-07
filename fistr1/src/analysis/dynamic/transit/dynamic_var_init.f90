@@ -9,7 +9,6 @@
 module m_dynamic_init_variables
 
 use m_fstr
-use lczparm
 use m_dynamic_mat_ass_load
 
 contains

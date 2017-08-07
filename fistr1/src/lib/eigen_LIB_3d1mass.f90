@@ -14,8 +14,8 @@ contains
 ! CALCULATION 3D 8-NODE SOLID ELEMENT
 !
       use hecmw
+      use m_fstr
       USE gauss_integration
-      USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
@@ -204,8 +204,8 @@ contains
 ! CALCULATION 3D 6-NODE SOLID ELEMENT
 !
       use hecmw
+      use m_fstr
       USE gauss_integration
-      USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
@@ -363,8 +363,8 @@ contains
 ! CALCULATION 3D 4-NODE SOLID ELEMENT
 !
       use hecmw
+      use m_fstr
       USE gauss_integration
-      USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO

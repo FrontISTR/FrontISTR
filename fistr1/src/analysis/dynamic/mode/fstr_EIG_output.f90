@@ -14,7 +14,6 @@ contains
 !C* SHOW RESULTS
 !C*
       use m_fstr
-      use lczparm
       use lczeigen
       use m_fstr_EIG_lanczos
       use m_fstr_EIG_matmult

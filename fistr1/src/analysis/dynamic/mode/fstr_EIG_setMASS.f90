@@ -7,6 +7,7 @@ module m_fstr_EIG_setMASS
 
 use m_eigen_lib
 use m_static_get_prop
+use m_fstr
 
 contains
 
@@ -20,8 +21,6 @@ contains
       use hecmw_util
       use m_fstr
       use mMaterial
-      !use m_fstr_lib
-      !use lczparm
       implicit none
       type(hecmwST_matrix)     :: hecMAT
       type(hecmwST_local_mesh) :: hecMESH

@@ -14,8 +14,8 @@ contains
 !C* CALCULATION 2D 4 NODE PLANE ELEMENT
 !C*
       use hecmw
+      use m_fstr
       use gauss_integration
-      use lczparm
 
       IMPLICIT NONE
 !C* I/F VARIABLES
@@ -140,8 +140,8 @@ contains
 !C* CALCULATION 2D 3 NODE PLANE ELEMENT
 !C*
       use hecmw
+      use m_fstr
       use gauss_integration
-      use lczparm
       IMPLICIT NONE
 !C*I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1

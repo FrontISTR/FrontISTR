@@ -18,7 +18,6 @@ contains
       use fstr_matrix_con_contact
       use hecmw_util
 !C*-------- Modules for Lanczos method --------------*
-      use lczparm
       use lczeigen
       use m_eigen_lib
       use m_fstr_EIG_getamat
