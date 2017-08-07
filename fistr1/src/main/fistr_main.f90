@@ -252,7 +252,6 @@ module m_fstr_main
     implicit none
     character(len=HECMW_FILENAME_LEN) :: cntfileNAME
 
-    ! get fstr control & setup paramters -----------
     name_ID='fstrCNT'
     call hecmw_ctrl_get_control_file( name_ID, cntfileNAME )
 
@@ -260,21 +259,15 @@ module m_fstr_main
     ! and setup parameters ...
     svRarray(:) = hecMAT%Rarray(:)
     svIarray(:) = hecMAT%Iarray(:)
+
     call fstr_setup( cntfileNAME, hecMESH, fstrPR, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
     call flush(6)
-
-    ! Timing and memory monitor initializations
-     minit = .TRUE.
-     tinit = .TRUE.
-     tenditer = .FALSE.
-
-     !call time_log( hecMESH, hecMAT, fstrEIG )
-     !call memory_log( hecMESH, hecMAT, fstrEIG )
 
   end subroutine fstr_init_condition
 
@@ -285,7 +278,6 @@ module m_fstr_main
   subroutine fstr_static_analysis
     implicit none
 
-    teachiter = .TRUE.
     if( IECHO.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank .EQ. 0) then
@@ -323,9 +315,7 @@ module m_fstr_main
       write(IMSG,*) ' ***   STAGE Eigenvalue analysis     **'
     endif
 
-    teachiter = .TRUE.
     call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
-    tenditer = .TRUE.
 
   end subroutine fstr_eigen_analysis
 
@@ -356,7 +346,6 @@ module m_fstr_main
     implicit none
 
     if( IECHO.eq.1 ) call fstr_echo(hecMESH)
-    teachiter = .TRUE.
 
     if(myrank == 0) then
        write(IMSG,*)
@@ -393,16 +382,18 @@ module m_fstr_main
       write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
       write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
     endif
+
     call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-    teachiter = .TRUE.
+
     if(myrank == 0) then
       write(IMSG,*)
       write(IMSG,*) ' ***   Stage 2: Eigenvalue analysis  **'
       write(*,*)
       write(*,*) ' ***   Stage 2: Eigenvalue analysis   **'
     endif
+
     call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
-    tenditer = .TRUE.
+
     call fstr_solid_finalize( fstrSOLID )
 
   end subroutine fstr_static_eigen_analysis
