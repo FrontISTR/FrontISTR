@@ -11,7 +11,7 @@ contains
 
 
 !----------------------------------------------------------------------*
-      SUBROUTINE MASS_C3D20(XX,YY,ZZ,EE,PP,RHO,SS,myEIG)
+      SUBROUTINE MASS_C3D20(XX,YY,ZZ,EE,PP,RHO,SS,fstrEIG)
 !----------------------------------------------------------------------*
 !
 ! CALCULATION 3D 20-NODE SOLID ELEMENT
@@ -36,7 +36,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18Apr2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: myEIG
+      TYPE(lczparam) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -190,11 +190,11 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN
+!               IF(fstrEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,NDOF).EQ.MOD(j2,NDOF)) THEN
 !                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
 !                ENDIF
-!               ELSE IF(myEIG%mastyp.EQ.1) THEN
+!               ELSE IF(fstrEIG%mastyp.EQ.1) THEN
                 IF(j.EQ.j2) THEN
                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
                  totdiag=totdiag+H(ind1)*H(ind2)*WG*RHO
@@ -211,7 +211,7 @@ contains
         ENDDO
       ENDDO
 !DEBUG
-!      IF(myEIG%mastyp.EQ.1) THEN
+!      IF(fstrEIG%mastyp.EQ.1) THEN
        DO j = 1,nn*ndof
         num = j*(j+1)/2
         ss(num) = ss(num)*(2*totmass-totdiag)/(totdiag)
@@ -221,7 +221,7 @@ contains
       RETURN
       END SUBROUTINE MASS_C3D20
 !----------------------------------------------------------------------*
-      SUBROUTINE MASS_C3D15(XX,YY,ZZ,EE,PP,RHO,SS,myEIG)
+      SUBROUTINE MASS_C3D15(XX,YY,ZZ,EE,PP,RHO,SS,fstrEIG)
 !----------------------------------------------------------------------*
 !
 ! CALCULATION 3D 15-NODE SOLID ELEMENT
@@ -246,7 +246,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: myEIG
+      TYPE(lczparam) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -393,11 +393,11 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN
+!               IF(fstrEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,NDOF).EQ.MOD(j2,NDOF)) THEN
 !                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
 !                ENDIF
-!               ELSE IF(myEIG%mastyp.EQ.1) THEN
+!               ELSE IF(fstrEIG%mastyp.EQ.1) THEN
                 IF(j.EQ.j2) THEN
                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
                  totdiag=totdiag+H(ind1)*H(ind2)*WG*RHO
@@ -414,7 +414,7 @@ contains
         ENDDO
       ENDDO
 !DEBUG
-!      IF(myEIG%mastyp.EQ.1) THEN
+!      IF(fstrEIG%mastyp.EQ.1) THEN
        DO j = 1,nn*ndof
         num = j*(j+1)/2
         ss(num) = ss(num)*(2*totmass-totdiag)/(totdiag)
@@ -424,7 +424,7 @@ contains
       RETURN
       END SUBROUTINE MASS_C3D15
 !----------------------------------------------------------------------*
-      SUBROUTINE MASS_C3D10(XX,YY,ZZ,EE,PP,RHO,SS,myEIG)
+      SUBROUTINE MASS_C3D10(XX,YY,ZZ,EE,PP,RHO,SS,fstrEIG)
 !----------------------------------------------------------------------*
 !
 ! CALCULATION 3D 10-NODE SOLID ELEMENT
@@ -450,7 +450,7 @@ contains
 !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: myEIG
+      TYPE(lczparam) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -575,11 +575,11 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN
+!               IF(fstrEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,NDOF).EQ.MOD(j2,NDOF)) THEN
 !                 SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
 !                ENDIF
-!               ELSE IF(myEIG%mastyp.EQ.1) THEN
+!               ELSE IF(fstrEIG%mastyp.EQ.1) THEN
                 IF(j.EQ.j2) THEN
                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
                  totdiag=totdiag+H(ind1)*H(ind2)*WG*RHO
@@ -596,7 +596,7 @@ contains
         ENDDO
       ENDDO
 !DEBUG
-!      IF(myEIG%mastyp.EQ.1) THEN
+!      IF(fstrEIG%mastyp.EQ.1) THEN
        DO j = 1,nn*ndof
         num = j*(j+1)/2
         ss(num) = ss(num)*(2*totmass-totdiag)/(totdiag)

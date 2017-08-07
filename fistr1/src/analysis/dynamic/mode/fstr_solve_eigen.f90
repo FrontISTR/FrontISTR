@@ -10,7 +10,7 @@ contains
 !C*** SOLVE EIGENVALUE PROBLEM
 !C***
 !C
-      subroutine fstr_solve_eigen(hecMESH,hecMAT,myEIG,fstrSOLID, &
+      subroutine fstr_solve_eigen(hecMESH,hecMAT,fstrEIG,fstrSOLID, &
      &                            fstrRESULT,fstrPARAM, fstrMAT)
       use m_fstr
       use m_fstr_StiffMatrix
@@ -46,7 +46,7 @@ contains
       character(len=HECMW_NAME_LEN)   :: nameID
 
 !C*-------- Parameters for Lanczos method -----------*
-      type (lczparam) :: myEIG
+      type (lczparam) :: fstrEIG
 
       integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
       integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
@@ -178,7 +178,7 @@ contains
         call hecmw_allreduce_I1(hecMESH,kcount,hecmw_sum)
       end if
 
-      eITMAX  = myEIG%lczmax
+      eITMAX  = fstrEIG%lczmax
       ITLIMIT = Gtotal - kcount
       IF(eITMAX.GT.ITLIMIT) THEN
         IF(myrank .EQ. 0) THEN
@@ -190,12 +190,12 @@ contains
         eITMAX = ITLIMIT
       ENDIF
 
-      CTOL = myEIG%lcztol
-      NGET = myEIG%nget
+      CTOL = fstrEIG%lcztol
+      NGET = fstrEIG%nget
       neig = eITMAX + NGET
 
 !C* Allocate mass matrix
-      ALLOCATE(myEIG%mass(ntotal), STAT=ierror)
+      ALLOCATE(fstrEIG%mass(ntotal), STAT=ierror)
       IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       write(IDBG,*) '*Allocated mass matrix of size: ',ntotal
 
@@ -243,7 +243,7 @@ contains
       CALL memget(mlczr,I,8)
       I = 10*neig+3*neig**2+4
       CALL memget(mlczr,I,8)
-      I = (2+(neig+1)*myEIG%lczrod)*ntotal
+      I = (2+(neig+1)*fstrEIG%lczrod)*ntotal
       CALL memget(mreorr,I,8)
 
 !C*------------ Zero clear --------------------------------------------*
@@ -263,9 +263,9 @@ contains
       BTA        = 0.0
 
 !C*-------------- Create Mass Matrix -----------------------------------*
-      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
+      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIG)
       do i=1,ntotal
-        mass(i) = myEIG%mass(i)
+        mass(i) = fstrEIG%mass(i)
       enddo
 !C
 !C*------------- Set initial eigenvector guesses -----------------------*
@@ -290,7 +290,7 @@ contains
       hecMAT%Iarray(97) = 1   !Need numerical factorization
 
       hecMAT%Rarray(2)  = 1.0
-      hecMAT%Rarray(1)  = myEIG%iluetol
+      hecMAT%Rarray(1)  = fstrEIG%iluetol
 
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*)
@@ -372,7 +372,7 @@ contains
         end if
         prechk = sqrt(prechk)
         IF(prechk.NE.0.0D0) LWRK = LWRK/prechk
-        IREOR = ITER*(1.0 - myEIG%lczrod)
+        IREOR = ITER*(1.0 - fstrEIG%lczrod)
 
         DO KK = IREOR,ITER
           prechk = 0.0D0
@@ -387,7 +387,7 @@ contains
           end if
           prechk1 = sqrt(prechk1)
           if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          IF(abs(prechk).GT.myEIG%lczrot) THEN
+          IF(abs(prechk).GT.fstrEIG%lczrot) THEN
             CALL MGS1(lvecq(kk)%q,EM,mass,ntotal,my_ntotal,myrank,&
      &                hecMESH,Gntotal)
           ENDIF
@@ -444,7 +444,7 @@ contains
 !C*---------- Convergence check
         DO IITER = 1, LTRIAL
           IF( LLDIAG(IITER).NE.0.0D0 ) THEN
-            EVAL(IITER) = 1.0D0/LLDIAG(IITER) + myEIG%lczsgm
+            EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
           ENDIF
         ENDDO
         CALL EVSORT(EVAL,NEW,LTRIAL)
@@ -493,7 +493,7 @@ contains
 
       DO IITER = 1, LTRIAL
         IF(LLDIAG(IITER).NE.0.0D0) THEN
-          EVAL(IITER) = 1.0D0/LLDIAG(IITER) + myEIG%lczsgm
+          EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
         ENDIF
       END DO
       CALL evsort(eval,new,ltrial)
@@ -555,10 +555,10 @@ contains
       END DO
 
 !C***** compute effective mass and participation factor
-      allocate(myEIG%effmass(3*NGET))
-      allocate(myEIG%partfactor(3*NGET))
-      myEIG%effmass    = 0.0d0
-      myEIG%partfactor = 0.0d0
+      allocate(fstrEIG%effmass(3*NGET))
+      allocate(fstrEIG%partfactor(3*NGET))
+      fstrEIG%effmass    = 0.0d0
+      fstrEIG%partfactor = 0.0d0
 
       if(NDOF == 3)then
         DO i=1,NGET
@@ -581,12 +581,12 @@ contains
           CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
           CALL hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
           CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
-          myEIG%partfactor(3*i-2) = r1/gm
-          myEIG%partfactor(3*i-1) = r2/gm
-          myEIG%partfactor(3*i  ) = r3/gm
-          myEIG%effmass(3*i-2) = r1*r1/gm
-          myEIG%effmass(3*i-1) = r2*r2/gm
-          myEIG%effmass(3*i  ) = r3*r3/gm
+          fstrEIG%partfactor(3*i-2) = r1/gm
+          fstrEIG%partfactor(3*i-1) = r2/gm
+          fstrEIG%partfactor(3*i  ) = r3/gm
+          fstrEIG%effmass(3*i-2) = r1*r1/gm
+          fstrEIG%effmass(3*i-1) = r2*r2/gm
+          fstrEIG%effmass(3*i  ) = r3*r3/gm
         END DO
 
       elseif(NDOF == 2)then
@@ -604,19 +604,19 @@ contains
           CALL hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
           CALL hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
           CALL hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
-          myEIG%partfactor(3*i-2) = r1/gm
-          myEIG%partfactor(3*i-1) = r2/gm
-          myEIG%effmass(3*i-2) = r1*r1/gm
-          myEIG%effmass(3*i-1) = r2*r2/gm
+          fstrEIG%partfactor(3*i-2) = r1/gm
+          fstrEIG%partfactor(3*i-1) = r2/gm
+          fstrEIG%effmass(3*i-2) = r1*r1/gm
+          fstrEIG%effmass(3*i-1) = r2*r2/gm
         END DO
       endif
 
 !*------------------
 !*Eigensolver output
 !*------------------
-      CALL fstr_eigen_output(hecMESH,hecMAT,ILOG,myEIG)
+      CALL fstr_eigen_output(hecMESH,hecMAT,ILOG,fstrEIG)
 
-      nstep = myEIG%nget
+      nstep = fstrEIG%nget
 
       do istep = 1, nstep
         do i=1,ntotal

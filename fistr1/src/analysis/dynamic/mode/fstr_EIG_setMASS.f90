@@ -12,7 +12,7 @@ contains
 
 !C---------------------------------------------------------------------*
 !> Set up lumped mass matrix
-      subroutine setMASS(IOUT,fstrSOLID,hecMESH,hecMAT,myEIG)
+      subroutine setMASS(IOUT,fstrSOLID,hecMESH,hecMAT,fstrEIG)
 !C---------------------------------------------------------------------*
 !C*******************************************
 !C* SET MASS MATRIX (Lumped mass)
@@ -26,7 +26,7 @@ contains
       type(hecmwST_matrix)     :: hecMAT
       type(hecmwST_local_mesh) :: hecMESH
       type(fstr_solid)         :: fstrSOLID
-      type(lczparam)           :: myEIG
+      type(lczparam)           :: fstrEIG
       type(tshellmat),pointer  :: shell_var(:)
 !C
       integer(kind=kint) nodLOCAL(20),itype,ic_type,icel,isect
@@ -61,7 +61,7 @@ contains
       numn  = hecMAT%N
       NDOF  = hecMESH%n_dof
 !C
-      myEIG%mass = 0.0d0
+      fstrEIG%mass = 0.0d0
 !C
 !C**FOR ALL FINITE ELEMENTS
       head   = 0
@@ -108,27 +108,27 @@ contains
 !C
           ss = 0.0d0
           if    ( ic_type.EQ.231 ) then
-            CALL mass_c2d3 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
+            CALL mass_c2d3 ( xx,yy,ee,pp,rho,thick,ss,iax,fstrEIG )
           elseif( ic_type.EQ.232 ) then
-            CALL mass_c2d6 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
+            CALL mass_c2d6 ( xx,yy,ee,pp,rho,thick,ss,iax,fstrEIG )
           elseif( ic_type.EQ.241 ) then
-            CALL mass_c2d4 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
+            CALL mass_c2d4 ( xx,yy,ee,pp,rho,thick,ss,iax,fstrEIG )
           elseif( ic_type.EQ.242 ) then
-            CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,myEIG )
+            CALL mass_c2d8 ( xx,yy,ee,pp,rho,thick,ss,iax,fstrEIG )
           elseif( ic_type.EQ.341 ) then
-            CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL mass_c3d4 ( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.3414 ) then
             ss = 0.0d0
           elseif( ic_type.EQ.342 ) then
-            CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL mass_c3d10( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.351 ) then
-            CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL MASS_C3D6 ( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.352 ) then
-            CALL MASS_C3D15( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL MASS_C3D15( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.361 ) then
-            CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.362 ) then
-            CALL mass_c3d20( xx,yy,zz,ee,pp,rho,ss,myEIG )
+            CALL mass_c3d20( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
           elseif( ic_type.EQ.731 ) then
             call face3( xx,yy,zz,AA )
             val = AA/3.0d0*thick*rho
@@ -162,76 +162,76 @@ contains
             js = NDOF*(nid-1)
 !C
             if( ic_type.eq.731 .or. ic_type.eq.741 ) then
-              myEIG%mass(js+1) = myEIG%mass(js+1) + val
-              myEIG%mass(js+2) = myEIG%mass(js+2) + val
-              myEIG%mass(js+3) = myEIG%mass(js+3) + val
-              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0d0
-              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0d0
-              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0d0
-              !myEIG%mass(js+4) = myEIG%mass(js+4) + val*thick**2/12.0
-              !myEIG%mass(js+5) = myEIG%mass(js+5) + val*thick**2/12.0
-              !myEIG%mass(js+6) = myEIG%mass(js+6) + val*thick**2/12.0
+              fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
+              fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
+              fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
+              fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + 0.0d0
+              fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + 0.0d0
+              fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + 0.0d0
+              !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*thick**2/12.0
+              !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*thick**2/12.0
+              !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*thick**2/12.0
             else if( ic_type.eq.761 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR. ( j .EQ. 3 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + val
-               myEIG%mass(js+2) = myEIG%mass(js+2) + val
-               myEIG%mass(js+3) = myEIG%mass(js+3) + val
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
               ELSE IF( ( j .EQ. 4 ) .OR. ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + 0.0d0
-               myEIG%mass(js+2) = myEIG%mass(js+2) + 0.0d0
-               myEIG%mass(js+3) = myEIG%mass(js+3) + 0.0d0
-               !myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
-               !myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
-               !myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + 0.0d0
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + 0.0d0
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + 0.0d0
+               !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0
+               !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0
+               !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0
               END IF
             else if( ic_type.eq.781 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR.   &
                   ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + val
-               myEIG%mass(js+2) = myEIG%mass(js+2) + val
-               myEIG%mass(js+3) = myEIG%mass(js+3) + val
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
               ELSE IF( ( j .EQ. 5 ) .OR. ( j .EQ. 6 ) .OR.   &
                        ( j .EQ. 7 ) .OR. ( j .EQ. 8 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1) + 0.0d0
-               myEIG%mass(js+2) = myEIG%mass(js+2) + 0.0d0
-               myEIG%mass(js+3) = myEIG%mass(js+3) + 0.0d0
-               !myEIG%mass(js+1) = myEIG%mass(js+1) + val*thick**2/12.0
-               !myEIG%mass(js+2) = myEIG%mass(js+2) + val*thick**2/12.0
-               !myEIG%mass(js+3) = myEIG%mass(js+3) + val*thick**2/12.0
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + 0.0d0
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + 0.0d0
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + 0.0d0
+               !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0
+               !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0
+               !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0
               END IF
             elseif( ic_type.EQ.611 ) then
-              myEIG%mass(js+1) = myEIG%mass(js+1) + val
-              myEIG%mass(js+2) = myEIG%mass(js+2) + val
-              myEIG%mass(js+3) = myEIG%mass(js+3) + val
-              !myEIG%mass(js+4) = myEIG%mass(js+4) + val*beam_area/12.0
-              !myEIG%mass(js+5) = myEIG%mass(js+5) + val*beam_area/12.0
-              !myEIG%mass(js+6) = myEIG%mass(js+6) + val*beam_area/12.0
-              myEIG%mass(js+4) = myEIG%mass(js+4) + 0.0d0
-              myEIG%mass(js+5) = myEIG%mass(js+5) + 0.0d0
-              myEIG%mass(js+6) = myEIG%mass(js+6) + 0.0d0
+              fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
+              fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
+              fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
+              !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*beam_area/12.0
+              !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*beam_area/12.0
+              !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*beam_area/12.0
+              fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + 0.0d0
+              fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + 0.0d0
+              fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + 0.0d0
             elseif( ic_type.EQ.641 ) then
               IF( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) ) THEN
-               myEIG%mass(js+1) = myEIG%mass(js+1)+val
-               myEIG%mass(js+2) = myEIG%mass(js+2)+val
-               myEIG%mass(js+3) = myEIG%mass(js+3)+val
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val
               ELSE IF( ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) THEN
-               ! myEIG%mass(js+1) = myEIG%mass(js+1)+val*beam_area/12.0D0
-               ! myEIG%mass(js+2) = myEIG%mass(js+2)+val*beam_area/12.0D0
-               ! myEIG%mass(js+3) = myEIG%mass(js+3)+val*beam_area/12.0D0
-               myEIG%mass(js+1) = myEIG%mass(js+1)+0.0D0
-               myEIG%mass(js+2) = myEIG%mass(js+2)+0.0D0
-               myEIG%mass(js+3) = myEIG%mass(js+3)+0.0D0
+               ! fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val*beam_area/12.0D0
+               ! fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val*beam_area/12.0D0
+               ! fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val*beam_area/12.0D0
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+0.0D0
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+0.0D0
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+0.0D0
               END IF
             elseif( ic_type.EQ.301 ) then
-               myEIG%mass(js+1) = myEIG%mass(js+1)+val
-               myEIG%mass(js+2) = myEIG%mass(js+2)+val
-               myEIG%mass(js+3) = myEIG%mass(js+3)+val
+               fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val
+               fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val
+               fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val
             else
               jj = NDOF*( j-1 )
               do k = 1, NDOF
                 kk = jj + k
                 jk = kk*( kk + 1 )/2
-                myEIG%mass(js+k) = myEIG%mass(js+k) + ss(jk)
+                fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + ss(jk)
               enddo
             endif
           enddo
@@ -240,21 +240,21 @@ contains
       enddo
 !C
       if    ( NDOF.eq.3 ) then
-       CALL hecmw_update_3_R( hecMESH,myEIG%mass,numnp )
+       CALL hecmw_update_3_R( hecMESH,fstrEIG%mass,numnp )
       elseif( NDOF.eq.2 ) then
-       CALL hecmw_update_2_R( hecMESH,myEIG%mass,numnp )
+       CALL hecmw_update_2_R( hecMESH,fstrEIG%mass,numnp )
       elseif( NDOF.eq.4 ) then
-       CALL hecmw_update_4_R( hecMESH,myEIG%mass,numnp )
+       CALL hecmw_update_4_R( hecMESH,fstrEIG%mass,numnp )
       elseif( NDOF.eq.6 ) then
-       CALL hecmw_update_m_R( hecMESH,myEIG%mass,numnp,NDOF )
+       CALL hecmw_update_m_R( hecMESH,fstrEIG%mass,numnp,NDOF )
       endif
 !C
       chkmass = 0.
       do i = 1, numn
         ii = (i-1)*NDOF + 1
-        chkmass = chkmass + myEIG%mass(ii)
+        chkmass = chkmass + fstrEIG%mass(ii)
       end do
-      myEIG%totalmass = chkmass
+      fstrEIG%totalmass = chkmass
 !C
       CALL hecmw_allreduce_R1(hecMESH,chkmass,hecmw_sum)
       IF(myrank.EQ.0) THEN

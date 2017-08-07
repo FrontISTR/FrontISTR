@@ -7,7 +7,7 @@ module m_time_log
 contains
 
 
-       SUBROUTINE time_log(hecMESH,hecMAT,myEIG)
+       SUBROUTINE time_log(hecMESH,hecMAT,fstrEIG)
 
        USE m_fstr
        USE lczeigen
@@ -16,7 +16,7 @@ contains
        IMPLICIT NONE
        TYPE (hecmwST_local_mesh) :: hecMESH
        TYPE (hecmwST_matrix)     :: hecMAT
-       TYPE (lczparam)           :: myEIG
+       TYPE (lczparam)           :: fstrEIG
 
 
 
@@ -68,11 +68,11 @@ contains
       IF(myrank .EQ. 0) THEN
        IF(teachiter) THEN
 !*------------------------------- Solver timing Results --------------------------------*
-       IF(myEIG%eqset.EQ.0) THEN
+       IF(fstrEIG%eqset.EQ.0) THEN
        WRITE(IMSG,*) '*-----------------------------------------------*'
        WRITE(IMSG,*) '*                TIMING SUMMARY                 *'
        WRITE(IMSG,*) '*-----------------------------------------------*'
-       ELSE IF(myEIG%eqset.EQ.1) THEN
+       ELSE IF(fstrEIG%eqset.EQ.1) THEN
        WRITE(IMSG,*) '*-----------------------------------------------*'
        WRITE(IMSG,*) '* TIMING FOR LANCZOS ITERATION NUMBER: ',ITER ,'*'
        WRITE(IMSG,*) '*-----------------------------------------------*'
@@ -83,7 +83,7 @@ contains
        WRITE(IMSG,'(''CPU TIME SYSTEM  (SEC)='',F10.2)') tsolse - tsolss
        WRITE(IMSG,*) '+==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-+'
 !*---------------------------- Lanczos loop timing Results -----------------------------*
-       IF(myEIG%eqset.EQ.1) THEN
+       IF(fstrEIG%eqset.EQ.1) THEN
        WRITE(IMSG,*) '+=-=- LANCZOS LOOP TIME INFO.  -=-=-=-=-+'
        WRITE(IMSG,'(''CPU TIME TOTAL (SEC)='',F10.2)') tlczte - tlczts
        WRITE(IMSG,'(''CPU TIME USER   (SEC)='',F10.2)') tlczue - tlczus
@@ -113,7 +113,7 @@ contains
        WRITE(IMSG,'(''CPU TIME SYSTEM  (SEC)='',F10.2)') tasbse-tasbss
        WRITE(IMSG,*) '+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-+'
 !*-------------------------- Lanczos Routine Time --------------------------------------*
-       IF(myEIG%eqset.EQ.1) THEN
+       IF(fstrEIG%eqset.EQ.1) THEN
        WRITE(IMSG,*) '+=-=-MAIN LANCZOS ROUTINE TIME INFO. -=-=-+'
        WRITE(IMSG,'(''CPU TIME TOTAL (SEC)='',F10.2)') tmainte-tmaints
        WRITE(IMSG,'(''CPU TIME USER   (SEC)='',F10.2)') tmainue-tmainus

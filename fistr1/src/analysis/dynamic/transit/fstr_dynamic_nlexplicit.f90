@@ -29,7 +29,7 @@ contains
 !C================================================================C
 !C-- subroutine  fstr_solve_LINEAR_DYNAMIC
 !C================================================================C
-  subroutine fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
+  subroutine fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL, restrt_step_num )
 
@@ -39,7 +39,7 @@ contains
 !C
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
-      type ( lczparam            ) :: myEIG
+      type ( lczparam            ) :: fstrEIG
       type ( fstr_solid          ) :: fstrSOLID
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
@@ -95,10 +95,10 @@ contains
     a1 = 1.d0/fstrDYNAMIC%t_delta**2
     a2 = 1.d0/(2.d0*fstrDYNAMIC%t_delta)
 
-    call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,myEIG)
+    call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
     do j = 1 ,ndof*nnod
-        fstrDYNAMIC%VEC1(j) = (a1 + a2 *fstrDYNAMIC%ray_m) * myEIG%mass(j)
+        fstrDYNAMIC%VEC1(j) = (a1 + a2 *fstrDYNAMIC%ray_m) * fstrEIG%mass(j)
         if(dabs(fstrDYNAMIC%VEC1(j)) < 1.0e-20) then
           if( hecMESH%my_rank == 0 ) then
             write(*,*) 'stop due to fstrDYNAMIC%VEC(j) = 0 ,  j = ', j
@@ -119,7 +119,7 @@ contains
       end do
 
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     end if
 
 
@@ -136,8 +136,8 @@ contains
         end do
 
         do j = 1 ,ndof*nnod
-          hecMAT%B(j) = hecMAT%B(j) + 2.d0*a1* myEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
-                 + (- a1 + a2 * fstrDYNAMIC%ray_m) * myEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
+          hecMAT%B(j) = hecMAT%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
+                 + (- a1 + a2 * fstrDYNAMIC%ray_m) * fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
         end do
 
 !C ********************************************************************************
@@ -303,7 +303,7 @@ contains
 !
 !C-- output new displacement, velocity and accelaration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
     enddo
 

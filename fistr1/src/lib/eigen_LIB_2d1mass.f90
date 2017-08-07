@@ -8,7 +8,7 @@ module m_eigen_LIB_2d1mass
 contains
 
 !C*--------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D4(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D4(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !C*--------------------------------------------------------------------*
 !C*
 !C* CALCULATION 2D 4 NODE PLANE ELEMENT
@@ -34,7 +34,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1, ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: myEIG
+      TYPE(lczparam) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -134,7 +134,7 @@ contains
       RETURN
       END SUBROUTINE MASS_C2D4
 !C*--------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D3(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D3(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !C*--------------------------------------------------------------------*
 !C*
 !C* CALCULATION 2D 3 NODE PLANE ELEMENT
@@ -162,7 +162,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1,ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: myEIG
+      TYPE(lczparam) :: fstrEIG
       totdiag = 0.0
       totmass = 0.0
 !C**************************

@@ -8,7 +8,7 @@ contains
 
 !C======================================================================
 !C----------------------------------------------------------------------
-      subroutine fstr_eigen_output(hecMESH,hecMAT,IOUT,myEIG)
+      subroutine fstr_eigen_output(hecMESH,hecMAT,IOUT,fstrEIG)
 !C----------------------------------------------------------------------
 !C*
 !C* SHOW RESULTS
@@ -25,7 +25,7 @@ contains
       type (hecmwST_matrix    ) :: hecMAT
       type (fstr_solid       )  :: fstrSOLID
       type (hecmwST_result_data):: fstrRESULT
-      type (lczparam) :: myEIG
+      type (lczparam) :: fstrEIG
 
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
@@ -35,7 +35,7 @@ contains
         ds = .true.
       end if
 
-      CALL EGLIST(hecMESH,hecMAT,myEIG,IOUT)
+      CALL EGLIST(hecMESH,hecMAT,fstrEIG,IOUT)
       IF(myrank.EQ.0) THEN
         WRITE(IMSG,*) ''
         WRITE(IMSG,*) '*----------------------------------------------*'
@@ -52,7 +52,7 @@ contains
       ENDIF
 !C
       LLLWRK = 0.0D0
-      DO JJITER = 1,myEIG%nget
+      DO JJITER = 1,fstrEIG%nget
         JITER = NEW(JJITER)
 
         if( modal(JITER).eq.1 ) then
@@ -89,7 +89,7 @@ contains
           CCHK1 = 0.0D0
           DO IITER = 1,Gntotal
             CCHK1 = CCHK1 + ( LWRK(IITER) - (eval(JITER) &
-     &                      - myEIG%lczsgm)*LLWRK(IITER) )**2
+     &                      - fstrEIG%lczsgm)*LLWRK(IITER) )**2
           END DO
 !C
           if (.not. ds) then !In case of Direct Solver prevent MPI
