@@ -383,25 +383,25 @@ contains
         msg_method="Unlabeled"
     END SELECT
     SELECT CASE(PRECOND)
-      CASE(1,2)
+      CASE (1,2)
         msg_precond="SSOR"
-      CASE(3)
+      CASE (3)
         msg_precond="DIAG"
-      CASE(5)
+      CASE (5)
         msg_precond="ML"
-      CASE(7)
+      CASE (7)
         msg_precond="DirectMUMPS"
-      CASE(10,11,12)
+      CASE (10, 11, 12)
         write(msg_precond,"(a,i0,a)") "ILU(",PRECOND-10,")"
-      CASE(20)
+      CASE (20)
         msg_precond="SAINV"
-      CASE(21)
+      CASE (21)
         msg_precond="RIF"
       CASE DEFAULT
         msg_precond="Unlabeled"
     END SELECT
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
-      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,'(G) ', &
+      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,' BLOCK ', &
       &   TRIM(msg_method),", ",TRIM(msg_precond),", ", iterPREmax
     end if
   end subroutine hecmw_solve_iterative_printmsg

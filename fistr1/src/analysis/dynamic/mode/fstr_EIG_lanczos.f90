@@ -7,7 +7,7 @@ module m_fstr_EIG_lanczos
   contains
 
 !> SOLVE EIGENVALUE PROBLEM
-  subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrEIG, maxItr)
+  subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
     use m_fstr
     use m_fstr_StiffMatrix
     use m_fstr_AddBC
@@ -30,18 +30,13 @@ module m_fstr_EIG_lanczos
 
     type (hecmwST_local_mesh ) :: hecMESH
     type (hecmwST_matrix     ) :: hecMAT
-    type (hecmwST_result_data) :: fstrRESULT
-    type (fstr_param         ) :: fstrPARAM
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-    type (fstr_eigen)          :: fstrEIG
-
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN)   :: label
-    character(len=HECMW_NAME_LEN)   :: nameID
+    type (fstr_solid         ) :: fstrSOLID
+    type (fstr_eigen         ) :: fstrEIG
 
     type lczvec
       real(kind=kreal), pointer :: q(:) => null()
     end type lczvec
+
     TYPE(lczvec), pointer :: lvecq(:)       !< Array of Q vectors
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
@@ -57,6 +52,82 @@ module m_fstr_EIG_lanczos
     numn   = hecMAT%N
     NDOF   = hecMESH%n_dof
     ntotal = numnp*NDOF
+
+    if( myrank == 0 ) then
+      write(IMSG,*) 'fstr_mat_ass: OK'
+    endif
+
+    allocate(isnode33(numnp))
+    isnode33 = 0
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+      if(hecmw_is_etype_33struct(ic_type))then
+        nn = HECMW_get_max_node(ic_type)/2
+        do icel = iS, iE
+          jS = hecMESH%elem_node_index(icel-1)
+          do j = 1, nn
+            ii = hecMESH%elem_node_item(jS+j+nn)
+            isnode33(ii)=1
+          enddo
+        enddo
+      endif
+    enddo
+
+    allocate( EFILT( ntotal) )
+
+    efilt  = 1.0
+    kcount = 0
+
+    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      iS0  = hecMESH%node_group%grp_index(ig-1) + 1
+      iE0  = hecMESH%node_group%grp_index(ig  )
+      it   = fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      itS0 = (it - mod(it,10))/10
+      itE0 = mod(it,10)
+
+      do ik = iS0, iE0
+        in = hecMESH%node_group%grp_item(ik)
+        do i = itS0,itE0
+          EFILT((in-1)*NDOF+i)=0.0
+        enddo
+      enddo
+    enddo
+
+    call hecmw_update_m_R(hecMESH,EFILT,numnp,NDOF)
+
+    Gtotal  = numnp*NDOF
+    Gntotal = numn*NDOF
+    novl    = ( numnp - numn )*NDOF
+
+    kcount = 0
+    DO I = 1, Gntotal
+      IF(EFILT(I).EQ.0) kcount = kcount + 1
+    enddo
+
+    call hecmw_allreduce_I1(hecMESH,Gtotal,hecmw_sum)
+    call hecmw_allreduce_I1(hecMESH,kcount,hecmw_sum)
+
+    eITMAX  = fstrEIG%lczmax
+    ITLIMIT = Gtotal - kcount
+    IF(eITMAX.GT.ITLIMIT) THEN
+      IF(myrank .EQ. 0) THEN
+        WRITE(IMSG,*) '*-------------------------------------------*'
+        WRITE(IMSG,*) '  WARNING: LCZMAX exceeds system matrix size.'
+        WRITE(IMSG,*) '  Resetting LCZMAX to system matrix size.'
+        WRITE(IMSG,*) '*-------------------------------------------*'
+      endif
+      eITMAX = ITLIMIT
+    endif
+
+    CTOL = fstrEIG%lcztol
+    NGET = fstrEIG%nget
+    neig = eITMAX + NGET
+    !maxItr = ITLIMIT
+    maxItr = neig - 1
 
     allocate(lvecq(0:lvecq_size))
     allocate( mass( ntotal )            )

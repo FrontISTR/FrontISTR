@@ -48,15 +48,7 @@ contains
               call hecmw_abort( hecmw_comm_get_comm())
       end if
       call fstr_dynamic_alloc( hecMESH, fstrDYNAMIC )
-      allocate( fstrEIG%mass(hecMAT%NDOF*hecMESH%n_node)    ,STAT=ierror )
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <fstr_solve_LINEAR_DYNAMIC, mass>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
 
-!C
 !C-- file open for local use
 !C
       if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
@@ -237,13 +229,7 @@ contains
       call fstr_dynamic_finalize( fstrDYNAMIC )
       call hecMAT_finalize( hecMAT )
 
-	      deallocate( fstrEIG%mass    ,STAT=ierror )
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, mass>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
+      deallocate( fstrEIG%mass )
 
   end subroutine fstr_solve_DYNAMIC
 

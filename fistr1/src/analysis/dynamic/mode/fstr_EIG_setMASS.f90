@@ -13,7 +13,7 @@ contains
 
 !C---------------------------------------------------------------------*
 !> Set up lumped mass matrix
-      subroutine setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
+      subroutine setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 !C---------------------------------------------------------------------*
 !C*******************************************
 !C* SET MASS MATRIX (Lumped mass)
@@ -59,6 +59,7 @@ contains
       numn  = hecMAT%N
       NDOF  = hecMESH%n_dof
 !C
+      allocate(fstrEIG%mass(hecMAT%NP*hecMAT%NDOF))
       fstrEIG%mass = 0.0d0
 !C
 !C**FOR ALL FINITE ELEMENTS

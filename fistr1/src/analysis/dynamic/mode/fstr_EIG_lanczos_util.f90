@@ -183,7 +183,7 @@ contains
 !> Output eigenvalues and vectors
 !C======================================================================
 !C---------------------------------------------------------------------*
-      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG,IOUT )
+      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG )
 !C---------------------------------------------------------------------*
 !C*
 !C* DISPLAY RESULTS OF EIGEN VALUE ANALYSIS
@@ -201,7 +201,7 @@ contains
 !*For parallel part reduction
       INTEGER(kind=kint) :: i, j, ii
       INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot
-      INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, IOUT
+      INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP
       INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)
       REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
@@ -291,19 +291,19 @@ contains
 !C*EIGEN VALUE SORTING
       CALL EVSORT(EVAL,NEW,LTRIAL)
       IF(myrank==0) THEN
-        WRITE(IOUT,*)""
-        WRITE(IOUT,"(a)")"********************************"
-        WRITE(IOUT,"(a)")"*RESULT OF EIGEN VALUE ANALYSIS*"
-        WRITE(IOUT,"(a)")"********************************"
-        WRITE(IOUT,"(a)")""
-        WRITE(IOUT,"(a,i8)")"NUMBER OF ITERATIONS = ",LTRIAL
-        WRITE(IOUT,"(a,1pe12.4)")"TOTAL MASS = ",fstrEIG%totalmass
-        WRITE(IOUT,"(a)")""
-        WRITE(IOUT,"(3a)")"                   ANGLE       FREQUENCY   ",&
+        WRITE(ILOG,*)""
+        WRITE(ILOG,"(a)")"********************************"
+        WRITE(ILOG,"(a)")"*RESULT OF EIGEN VALUE ANALYSIS*"
+        WRITE(ILOG,"(a)")"********************************"
+        WRITE(ILOG,"(a)")""
+        WRITE(ILOG,"(a,i8)")"NUMBER OF ITERATIONS = ",LTRIAL
+        WRITE(ILOG,"(a,1pe12.4)")"TOTAL MASS = ",fstrEIG%totalmass
+        WRITE(ILOG,"(a)")""
+        WRITE(ILOG,"(3a)")"                   ANGLE       FREQUENCY   ",&
         "PARTICIPATION FACTOR                EFFECTIVE MASS"
-        WRITE(IOUT,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
+        WRITE(ILOG,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
         "X           Y           Z           X           Y           Z"
-        WRITE(IOUT,"(3a)")"  ---  ----------  ----------  ----------  ",&
+        WRITE(ILOG,"(3a)")"  ---  ----------  ----------  ----------  ",&
         "----------  ----------  ----------  ----------  ----------  ----------"
         WRITE(*,*)""
         WRITE(*,"(a)")"#----------------------------------#"
@@ -341,13 +341,13 @@ contains
             EMX=fstrEIG%effmass(3*i-2)
             EMY=fstrEIG%effmass(3*i-1)
             EMZ=fstrEIG%effmass(3*i  )
-            WRITE(IOUT,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            WRITE(ILOG,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
             WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
             if( kcount.EQ.j ) go to 41
           endif
    40   CONTINUE
    41   continue
-        WRITE(IOUT,*)
+        WRITE(ILOG,*)
         WRITE(*,*)""
       ENDIF
       RETURN
