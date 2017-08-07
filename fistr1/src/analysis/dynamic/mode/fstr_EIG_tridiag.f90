@@ -5,30 +5,35 @@
 !> \brief This module provides a subroutine to find the eigenvalues and eigenvectors
 !! of a symmetric tridiagonal matrix by the ql method.
 module m_fstr_EIG_tridiag
+  use hecmw
+
 contains
 
-      function a2b2(a,b)
-      use hecmw
-      real(kind=kreal) a,b
-      real(kind=kreal) a2b2
-!
-!     finds dsqrt(a**2+b**2) without overflow or destructive underflow
-!
-      real(kind=kreal) p,r,s,t,u
-      p = dmax1(dabs(a),dabs(b))
-      if (p .eq. 0.0d0) go to 20
-      r = (dmin1(dabs(a),dabs(b))/p)**2
-   10 continue
-         t = 4.0d0 + r
-         if (t .eq. 4.0d0) go to 20
-         s = r/t
-         u = 1.0d0 + 2.0d0*s
-         p = u*p
-         r = (s/u)**2 * r
-      go to 10
-   20 a2b2 = p
-      return
-      end function a2b2
+  function a2b2(a,b)
+    use hecmw
+    implicit none
+
+    real(kind=kreal) :: a2b2
+    real(kind=kreal) :: a, b
+    real(kind=kreal) :: p, q, r, s, t, u
+
+    p = dmax1(dabs(a), dabs(b))
+    if (p /= 0.0d0) then
+      r = (dmin1(dabs(a),dabs(b))/p) ** 2
+      do
+        t = 4.0d0 + r
+        if (t == 4.0d0) exit
+        s = r/t
+        u = 1.0d0 + 2.0d0*s
+        p = u * p
+        q = s/u
+        r = q * q * r
+      end do
+    end if
+    a2b2 = p
+    return
+
+  end function a2b2
 
 !======================================================================!
 !                       Description                                    !
@@ -93,24 +98,24 @@ contains
 !
 !calls a2b2 for  dsqrt(a*a + b*b) .
 !=======================================================================
-      subroutine TRIDIAG(nm,n,d,du,e,z,zu,ierror)
-!
+
+  subroutine TRIDIAG(nm, n, d, du, e, z, zu, ierror)
       use hecmw
-      integer(kind=kint) i,j,k,l,m,n,ii,l1,l2,nm,mml,ierror
-      real(kind=kreal) d(n),du(n),e(n),z(nm,n),zu(nm,n)
-      real(kind=kreal) c,c2,c3,dl1,el1,f,g,h,p,r,s,s2,tst1,tst2
+      integer(kind=kint) :: i, j, k, l, m, n, ii, l1, l2, nm, mml, ierror
+      real(kind=kreal) :: d(n), du(n), e(n), z(nm, n), zu(nm, n)
+      real(kind=kreal) :: c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, tst1, tst2
 
       ierror = 0
       if (n .eq. 1) go to 1001
-!
+
       do 100 i = 2, n
         e(i-1) = e(i)
   100 continue
-!
+
       f = 0.0d0
       tst1 = 0.0d0
       e(n) = 0.0d0
-!
+
       do 240 l = 1, n
          j = 0
          h = dabs(d(l)) + dabs(e(l))
@@ -122,7 +127,7 @@ contains
 !     .......... e(n) is always zero, so there is no exit
 !                through the bottom of the loop ..........
   110    continue
-!
+
   120    if (m .eq. l) go to 220
   130    if (j .eq. 30) go to 1000
          j = j + 1
@@ -137,11 +142,11 @@ contains
          dl1 = d(l1)
          h = g - d(l)
          if (l2 .gt. n) go to 145
-!
+
          do 140 i = l2, n
            d(i) = d(i) - h
   140    continue
-!
+
   145    f = f + h
 !     .......... ql transformation ..........
          p = d(m)
@@ -170,9 +175,8 @@ contains
                z(k,i+1) = s * z(k,i) + c * h
                z(k,i) = c * z(k,i) - s * h
   180       continue
-!
   200    continue
-!
+
          p = -s * s2 * c3 * el1 * e(l) / dl1
          e(l) = s * p
          d(l) = c * p
@@ -188,30 +192,30 @@ contains
         zu(j,i) = z(j,i)
        end do
       end do
-!--------------------------------------------------------------
+
       do 300 ii = 2, n
          i = ii - 1
          k = i
          p = d(i)
-!
+
          do 260 j = ii, n
             if (d(j) .ge. p) go to 260
             k = j
             p = d(j)
   260    continue
-!
+
          if (k .eq. i) go to 300
          d(k) = d(i)
          d(i) = p
-!
+
          do 280 j = 1, n
             p = z(j,i)
             z(j,i) = z(j,k)
             z(j,k) = p
   280    continue
-!
+
   300 continue
-!
+
       go to 1001
 !     .......... set error -- no convergence to an
 !                eigenvalue after 30 iterations ..........
@@ -219,6 +223,4 @@ contains
  1001 return
       end subroutine TRIDIAG
 
-
 end module m_fstr_EIG_tridiag
-

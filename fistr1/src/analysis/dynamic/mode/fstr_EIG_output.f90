@@ -26,6 +26,13 @@ contains
       type (hecmwST_result_data):: fstrRESULT
       type (fstr_eigen) :: fstrEIG
 
+
+    integer(kind=kint) :: j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
+    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
+    integer(kind=kint) :: kk, ppc
+    integer(kind=kint) IOUT,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
+    real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+
 !C*-------- solver control -----------*
       logical :: ds = .false. !using Direct Solver or not
 
@@ -33,6 +40,63 @@ contains
       if (hecMAT%Iarray(99) .eq. 2) then
         ds = .true.
       end if
+
+!C***** compute effective mass and participation factor
+    allocate(fstrEIG%effmass(3*NGET))
+    allocate(fstrEIG%partfactor(3*NGET))
+    fstrEIG%effmass    = 0.0d0
+    fstrEIG%partfactor = 0.0d0
+
+    if(NDOF == 3)then
+      DO i=1,NGET
+        r1 = 0.0d0
+        r2 = 0.0d0
+        r3 = 0.0d0
+        gm = 0.0d0
+        do j = 1, numn
+          in1 = 3*j-2
+          in2 = 3*j-1
+          in3 = 3*j
+          r1 = r1 + mass(in1)*ewk(in1,i)
+          r2 = r2 + mass(in2)*ewk(in2,i)
+          r3 = r3 + mass(in3)*ewk(in3,i)
+          gm = gm + mass(in1)*ewk(in1,i)*ewk(in1,i) &
+          & + mass(in2)*ewk(in2,i)*ewk(in2,i) &
+          & + mass(in3)*ewk(in3,i)*ewk(in3,i)
+        enddo
+        call hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+        call hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+        call hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
+        call hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+        fstrEIG%partfactor(3*i-2) = r1/gm
+        fstrEIG%partfactor(3*i-1) = r2/gm
+        fstrEIG%partfactor(3*i  ) = r3/gm
+        fstrEIG%effmass(3*i-2) = r1*r1/gm
+        fstrEIG%effmass(3*i-1) = r2*r2/gm
+        fstrEIG%effmass(3*i  ) = r3*r3/gm
+      enddo
+
+    elseif(NDOF == 2)then
+      DO i=1,NGET
+        r1 = 0.0d0
+        r2 = 0.0d0
+        gm = 0.0d0
+        do j = 1, numn
+          in1 = 2*j-1
+          in2 = 2*j
+          r1 = r1 + mass(in1)*ewk(in1,i)
+          r2 = r2 + mass(in2)*ewk(in2,i)
+          gm = gm + r1*ewk(in1,i) + r2*ewk(in2,i)
+        enddo
+        call hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
+        call hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
+        call hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+        fstrEIG%partfactor(3*i-2) = r1/gm
+        fstrEIG%partfactor(3*i-1) = r2/gm
+        fstrEIG%effmass(3*i-2) = r1*r1/gm
+        fstrEIG%effmass(3*i-1) = r2*r2/gm
+      enddo
+    endif
 
       CALL EGLIST(hecMESH,hecMAT,fstrEIG)
       IF(myrank.EQ.0) THEN
