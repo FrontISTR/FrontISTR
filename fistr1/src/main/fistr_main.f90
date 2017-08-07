@@ -19,7 +19,6 @@ module m_fstr_main
   use fstr_solver_dynamic
   use fstr_debug_dump
   use fstr_matrix_con_contact
-  use m_fstr_freqdata
 
   type (hecmwST_local_mesh)              :: hecMESH
   type (hecmwST_matrix )                 :: hecMAT

@@ -30,7 +30,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/m_MakrosePartMesh.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_common_struct.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr.f90
-  ${CMAKE_CURRENT_LIST_DIR}/m_fstr_freqdata.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr_para_contact.F90
   ${CMAKE_CURRENT_LIST_DIR}/m_timepoint.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_out.f90

@@ -18,7 +18,6 @@ use m_static_get_prop
 use m_out
 use m_step
 use m_utilities
-use m_fstr_freqdata, only : fstr_freqanalysis, kFLOADCASE_RE, kFLOADCASE_IM
 implicit none
 
 include 'fstr_ctrl_util_f.inc'

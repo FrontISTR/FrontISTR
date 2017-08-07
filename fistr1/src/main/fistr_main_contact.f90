@@ -23,7 +23,6 @@ use m_fstr_rcap_io
 use fstr_solver_dynamic
 use fstr_debug_dump
 use fstr_matrix_con_contact
-use m_fstr_freqdata
 
 type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
 type (hecmwST_matrix )                 :: hecMAT

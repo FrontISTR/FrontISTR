@@ -73,6 +73,11 @@ public
         integer(kind=kint),parameter :: kel361BBAR   =  2
         integer(kind=kint),parameter :: kel361IC     =  3
 
+  integer(kind=kint), parameter :: kFLOADTYPE_NODE = 1
+  integer(kind=kint), parameter :: kFLOADTYPE_SURF = 2
+
+  integer(kind=kint), parameter :: kFLOADCASE_RE = 1
+  integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 !C
 !C-- PARALLEL EXECUTION
 !C
@@ -562,6 +567,31 @@ public
                 integer(kind=kint) :: dynamic_IW9        =   209
 
         end type fstr_dynamic
+
+
+  type fstr_freqanalysis
+    integer(kind=kint)                :: FLOAD_ngrp_tot
+    integer(kind=kint), pointer      :: FLOAD_ngrp_GRPID(:) => NULL()
+    integer(kind=kint), pointer      :: FLOAD_ngrp_ID(:)    => NULL()
+    integer(kind=kint), pointer      :: FLOAD_ngrp_TYPE(:)  => NULL()
+    integer(kind=kint), pointer      :: FLOAD_ngrp_DOF(:)   => NULL()
+    real(kind=kreal), pointer         :: FLOAD_ngrp_valre(:) => NULL()
+    real(kind=kreal), pointer         :: FLOAD_ngrp_valim(:) => NULL()
+    character(len=HECMW_FILENAME_LEN) :: eigenlog_filename
+    integer(kind=kint)                :: start_mode
+    integer(kind=kint)                :: end_mode
+  end type
+
+  type fstr_freqanalysis_data
+    integer(kind=kint)        :: numMode
+    integer(kind=kint)        :: numNodeDOF
+    real(kind=kreal), pointer :: eigOmega(:)    => NULL()
+    real(kind=kreal), pointer :: eigVector(:,:) => NULL()
+    real(kind=kreal)           :: rayAlpha, rayBeta
+  end type
+
+
+
 !C ----------------------------------------------------------------------------
 !C
 !> Data for coupling analysis
@@ -784,6 +814,21 @@ contains
          nullify( DY%VEC3 )
 
         end subroutine fstr_nullify_fstr_dynamic
+
+  subroutine fstr_nullify_fstr_freqanalysis( f )
+  !---- args
+    type( fstr_freqanalysis ), intent(inout) :: f
+  !---- body
+    f%FLOAD_ngrp_tot = 0
+    nullify( f%FLOAD_ngrp_GRPID )
+    nullify( f%FLOAD_ngrp_ID )
+    nullify( f%FLOAD_ngrp_TYPE )
+    nullify( f%FLOAD_ngrp_DOF )
+    nullify( f%FLOAD_ngrp_valre )
+    nullify( f%FLOAD_ngrp_valim )
+
+  end subroutine
+
 !C ----------------------------------------------------------------------------
         subroutine fstr_nullify_fstr_couple( C )
         type( fstr_couple ) :: C

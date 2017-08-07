@@ -85,7 +85,7 @@ function fstr_streqr( s1, s2 )
     a2 = iachar(s2(i:i))
     if( a1 /= a2 ) then
       return
-    end if 
+    end if
   end do
   fstr_streqr = .true.
 end function fstr_streqr
@@ -612,7 +612,7 @@ end subroutine node_grp_name_to_id_ex
 !Find node/surf group from name or nodeid
 
  subroutine nodesurf_grp_name_to_id_ex(hecMESH, header_name, n, grp_id_name, grp_ID, grp_TYPE)
-  use m_fstr_freqdata
+  use m_fstr
   implicit none
   type (hecmwST_local_mesh),target :: hecMESH
   character(len=*)                 :: header_name
