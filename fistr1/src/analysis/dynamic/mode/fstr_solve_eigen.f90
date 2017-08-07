@@ -44,8 +44,14 @@ contains
       character(len=HECMW_NAME_LEN)   :: label
       character(len=HECMW_NAME_LEN)   :: nameID
 
+            type lczvec
+                     real(kind=kreal), pointer :: q(:) => null()
+            end type lczvec
+
 !C*-------- Parameters for Lanczos method -----------*
       type (lczparam) :: fstrEIG
+
+            TYPE(lczvec), pointer :: lvecq(:)       !< Array of Q vectors
 
       integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
       integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
@@ -64,10 +70,8 @@ contains
         ds = .true.
       end if
 
-!C -------- 22:11 2006/05/27 by n.imai
-      do i=0,lvecq_size
-        nullify( lvecq(i)%q )
-      enddo
+      allocate(lvecq(0:lvecq_size))
+
 !C ------------------------------------
 
 !C*------------ Number of DOF ----------------------*
@@ -203,37 +207,21 @@ contains
 
 !C*-------------------- Memory allocations -----------------------*
       allocate( mass( ntotal ),            STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( EM( ntotal ),              STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( ewk( ntotal, neig),        STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( eval( neig ),              STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( modal( neig ),             STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( new( neig ),               STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( work( neig*(3*neig + 5) ), STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( LVECP(NTOTAL),             STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( LVECPP(NTOTAL),            STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( lvecq(0)%q(ntotal),        STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( lvecq(1)%q(ntotal),        STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( LWRK(NTOTAL),              STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( LLWRK(NTOTAL),             STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( LLLWRK(NTOTAL),            STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( ALF(NEIG+2),               STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
       allocate( BTA(NEIG+2),               STAT=ierror )
-      IF(ierror.NE.0) STOP "Allocation error, fstr_solve_eigen"
 
 !C*----------- EHM 7Apr04: Memory monitor ----------*
       I = 2*neig
@@ -275,7 +263,7 @@ contains
         END DO
       end if
 
-      CALL SETIVL(mass,EM,EFILT,ewk,LVECP,lvecq,BTA,ntotal,&
+      CALL SETIVL(mass,EM,EFILT,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,ntotal,&
      &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,Gtotal)
 
 !C*------------ Main iteration loop for Lanczos method -----------------*

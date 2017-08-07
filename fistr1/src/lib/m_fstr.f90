@@ -592,26 +592,22 @@ public
     real(kind=kreal)           :: rayAlpha, rayBeta
   end type
 
-
-        !> Allocatable array, used or Lanczos eigenvalue analysis
-        type lczvec
-                 real(kind=kreal), pointer, dimension(:) :: q
-        end type lczvec
-
-
         !> Package of data used by Lanczos eigenvalue solver
         type lczparam
-                integer   (kind=kint)  :: eqset         ! Flag (1:eigen analysis,  0:not eigen ana.)
-                integer   (kind=kint)  :: nget          ! Solved eigen value number (default:5)
-                real      (kind=kreal) :: lczsgm        ! 0.0
-                integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
-                real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
-                real      (kind=kreal) :: lczrod,lczrot ! lczrod = 1.0, lczrot = 0.0
-                real      (kind=kreal) :: iluetol
-                real      (kind=kreal) :: totalmass
-                real      (kind=kreal), pointer :: mass(:)
-                real      (kind=kreal), pointer :: effmass(:)
-                real      (kind=kreal), pointer :: partfactor(:)
+            !> Allocatable array, used or Lanczos eigenvalue analysis
+
+
+            integer   (kind=kint)  :: eqset         ! Flag (1:eigen analysis,  0:not eigen ana.)
+            integer   (kind=kint)  :: nget          ! Solved eigen value number (default:5)
+            real      (kind=kreal) :: lczsgm        ! 0.0
+            integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
+            real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
+            real      (kind=kreal) :: lczrod,lczrot ! lczrod = 1.0, lczrot = 0.0
+            real      (kind=kreal) :: iluetol
+            real      (kind=kreal) :: totalmass
+            real      (kind=kreal), pointer :: mass(:)
+            real      (kind=kreal), pointer :: effmass(:)
+            real      (kind=kreal), pointer :: partfactor(:)
         end type lczparam
 
 

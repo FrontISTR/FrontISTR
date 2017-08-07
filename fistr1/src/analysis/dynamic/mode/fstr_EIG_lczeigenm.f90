@@ -21,7 +21,6 @@
       REAL (KIND=KREAL), DIMENSION (:,:), pointer :: XMODE
 
 !Lanczos parameters
-      TYPE(lczvec) :: lvecq(0:lvecq_size)      !< Array of Q vectors
       REAL(KIND=KREAL), pointer ::  LVECP(:)   !< Array of P vectors
       REAL(KIND=KREAL), pointer ::  LVECPP(:)  !< Array of modified P vectors
       REAL(KIND=KREAL), pointer ::  ALF(:),LWRK(:)

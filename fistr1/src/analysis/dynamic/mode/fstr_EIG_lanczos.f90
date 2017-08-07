@@ -12,23 +12,21 @@ contains
 !> Initialize Lanczos iterations
 !C======================================================================
 !C---------------------------------------------------------------------*
-      SUBROUTINE SETIVL( GMASS,EVEC,EFILT,WK,LVECP,lvecq,BTA, &
+      SUBROUTINE SETIVL( GMASS,EVEC,EFILT,WK,LVECP,q0,q1,BTA, &
      &                         NTOT,NEIG,ISHF,hecMESH,hecMAT,NDOF,GTOT )
 !C---------------------------------------------------------------------*
       USE m_fstr
       USE hecmw_util
 !C
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION GMASS(NTOT),EVEC(NTOT),EFILT(NTOT),WK(NTOT,1)
+      implicit none
+      REAL(kind=kreal) :: GMASS(NTOT), EVEC(NTOT), EFILT(NTOT), WK(NTOT,1)
 
-      TYPE(lczvec) :: lvecq(0:lvecq_size)
-!C
 !C --- Lanczos vector & coefficient ---
-      REAL(kind=kreal) :: LVECP(NTOT), BTA(NEIG)
-      REAL(kind=kreal), POINTER, DIMENSION(:) :: xvec
+      REAL(kind=kreal) :: LVECP(NTOT), BTA(NEIG), chk
+      REAL(kind=kreal), POINTER :: xvec(:), q0(:), q1(:)
 !C
-      INTEGER(kind=kint) GTOT, IRANK, NDOF, numnp, iov, IRTN, NNN, NN
-      INTEGER(kind=kint) IXVEC(0:NPROCS-1), ISHF(0:NPROCS-1), IDISP(0:NPROCS-1)
+      INTEGER(kind=kint) :: GTOT, IRANK, NDOF, numnp, iov, IRTN, NNN, NN, NTOT, NEIG, i, ierror, j
+      INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), ISHF(0:NPROCS-1), IDISP(0:NPROCS-1)
 !C
       TYPE (hecmwST_local_mesh) :: hecMESH
       TYPE (hecmwST_matrix    ) :: hecMAT
@@ -112,7 +110,7 @@ contains
       EVEC(:) = EVEC(:)/sqrt(chk)
 !C
       do J=1,NN
-        lvecq(0)%q(j) = 0.0D0
+        q0(j) = 0.0D0
       enddo
 !C
 !C** {WK}={GMASS}T{EVEC}
@@ -134,11 +132,11 @@ contains
       ENDIF
 !C
       do J=1,NN
-        lvecq(1)%q(j) = EVEC(J)/BTA(1)
+        q1(j) = EVEC(J)/BTA(1)
       enddo
 !C
 !Calculate p1
-      CALL MATPRO(LVECP,GMASS,lvecq(1)%q,NN,1)
+      CALL MATPRO(LVECP,GMASS,q1,NN,1)
 !C
       RETURN
       END SUBROUTINE SETIVL
