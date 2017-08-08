@@ -348,9 +348,10 @@ contains
             enddo
             x0(:) = coord(:)
             call getMinMaxBoxIDPassedByMultiPoint(elem(1:3,1:nn),x0,width,minID,maxID)
-            if(minID(1) <= 1.and.maxID(1) >= 1.and. &
-               minID(2) <= 1.and.maxID(2) >= 1.and. &
-               minID(3) <= 1.and.maxID(3) >= 1) then
+            !if(minID(1) <= 1.and.maxID(1) >= 1.and. &
+            !   minID(2) <= 1.and.maxID(2) >= 1.and. &
+            !   minID(3) <= 1.and.maxID(3) >= 1) then
+            if(any(minID > 1).or.any(maxID < 0)) cycle
               nMaster = nMaster + 1
               if(nMaster > size(indexMaster)) then
                 !stop 'Error: Too many master faces are possibly in contact!'
@@ -362,7 +363,7 @@ contains
                 write(*,*) 'Info: increased nMasterMax to ', nMasterMax
               endif
               indexMaster(nMaster) = id
-            endif
+            !endif
           enddo
 
           if(nMaster == 0) then
@@ -871,7 +872,8 @@ subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
   integer(kint) ::  i,j,boxID(3)
 !
     do i=1,size(x,2)
-      boxID(:) = (x(:,i)-x0(:))/width + 1
+      !boxID(:) = (x(:,i)-x0(:))/width + 1
+      boxID(:) = ceiling((x(:,i)-x0(:))/width)
       if(i == 1) then
         minID(:) = boxID(:)
         maxID(:) = boxID(:)
