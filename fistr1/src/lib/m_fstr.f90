@@ -561,7 +561,7 @@ module m_fstr
     real( kind=8 ),pointer :: trac(:)          ! input  (x,y,z,x,y,z ... )
     real( kind=8 ),pointer :: disp(:)          ! output (x,y,z,x,y,z ... )
     real( kind=8 ),pointer :: velo(:)          ! output (x,y,z,x,y,z ... )
-    real( kind=8 ),pointer :: accel(:)          ! output (x,y,z,x,y,z ... )
+    real( kind=8 ),pointer :: accel(:)         ! output (x,y,z,x,y,z ... )
     !> for inner use
     integer( kind=kint ),pointer :: index(:)   ! size:total node num.
     !>  -1:not relation, >1:index of coupled_node

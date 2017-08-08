@@ -16,6 +16,7 @@ contains
       use m_fstr
       use m_fstr_EIG_lanczos_util
       use m_fstr_EIG_matmult
+      use hecmw_solver_las
       implicit none
       integer(kind=kint) :: I,IREOR,JJITER,JITER,IITER
       real(kind=kreal) :: prechk0(1)
@@ -130,11 +131,9 @@ contains
         WRITE(IMSG,*) '   *-----*  *---------*  *--------------*'
       ENDIF
 !C
-      t = 0.0D0
       DO JJITER = 1,fstrEIG%nget
         JITER = NEW(JJITER)
 
-          t = 0.0D0
           prechk1=0.0
           do i = 1, NNDOF
             prechk1=prechk1+ewk(i,JJITER)**2
@@ -147,13 +146,7 @@ contains
             u(IITER) = ewk(IITER,JJITER)
           ENDDO
 !C
-          IF(NDOF.EQ.3) THEN
-            CALL MATMULT3( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
-          ELSE IF(NDOF.EQ.2) THEN
-            CALL MATMULT2( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
-          ELSE IF(NDOF.EQ.6) THEN
-            CALL MATMULT6( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
-          ENDIF
+          call hecmw_matvec(hecMESH, hecMAT, u, t)
 !C
           s = 0.0D0
           do i = 1, NNDOF
@@ -162,8 +155,7 @@ contains
 !C
           CCHK1 = 0.0D0
           DO IITER = 1,NNDOF
-            CCHK1 = CCHK1 + ( u(IITER) - (eigval(JITER) &
-     &                      - fstrEIG%sigma)*s(IITER) )**2
+            CCHK1 = CCHK1 + (t(IITER) - (eigval(JITER)-fstrEIG%sigma)*s(IITER))**2
           END DO
 !C
             CALL hecmw_allreduce_R1(hecMESH,CCHK1,hecmw_sum)
