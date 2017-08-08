@@ -40,11 +40,10 @@
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
 
 !*------------------- Extra variables for FSTR ---------------------------*
-      INTEGER (KIND=kint) numnp,NDOF,ntotal,iv
+      INTEGER (KIND=kint) iv
 
 !*------------------- For more than 1 CPU --------------------------------*
       INTEGER(KIND=kint), POINTER :: my_ntotal(:)
-      INTEGER(KIND=kint) numn,Gntotal,Gtotal,novl,iovl
 
 !----------------------- For Multiple Eigenvalues ------------------------!
       real(kind=kreal), pointer :: emwk(:,:,:)
@@ -52,7 +51,7 @@
       real(kind=kreal), pointer :: ev(:)
       real(kind=kreal)  res
       integer(kind=kint) isc, nume, nmode, it, kcount
-      logical lczmult
+
       character(len=32) :: fname
 
       END MODULE lczeigen

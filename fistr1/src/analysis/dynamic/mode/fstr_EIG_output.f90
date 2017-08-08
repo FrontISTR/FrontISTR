@@ -26,6 +26,7 @@ contains
       type (hecmwST_result_data):: fstrRESULT
       type (fstr_eigen) :: fstrEIG
 
+    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
 
     integer(kind=kint) :: j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
@@ -33,13 +34,11 @@ contains
     integer(kind=kint) IOUT,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
-!C*-------- solver control -----------*
-      logical :: ds = .false. !using Direct Solver or not
-
-! in case of direct solver
-      if (hecMAT%Iarray(99) .eq. 2) then
-        ds = .true.
-      end if
+    N      = hecMAT%N
+    NP     = hecMAT%NP
+    NDOF   = hecMESH%n_dof
+    NNDOF  = N *NDOF
+    NPNDOF = NP*NDOF
 
 !C***** compute effective mass and participation factor
     allocate(fstrEIG%effmass(3*NGET))
@@ -53,7 +52,7 @@ contains
         r2 = 0.0d0
         r3 = 0.0d0
         gm = 0.0d0
-        do j = 1, numn
+        do j = 1, N
           in1 = 3*j-2
           in2 = 3*j-1
           in3 = 3*j
@@ -81,7 +80,7 @@ contains
         r1 = 0.0d0
         r2 = 0.0d0
         gm = 0.0d0
-        do j = 1, numn
+        do j = 1, N
           in1 = 2*j-1
           in2 = 2*j
           r1 = r1 + mass(in1)*ewk(in1,i)
@@ -99,6 +98,7 @@ contains
     endif
 
       CALL EGLIST(hecMESH,hecMAT,fstrEIG)
+
       IF(myrank.EQ.0) THEN
         WRITE(IMSG,*) ''
         WRITE(IMSG,*) '*----------------------------------------------*'
@@ -120,44 +120,39 @@ contains
 
         if( modal(JITER).eq.1 ) then
           LWRK = 0.0D0
-!!!          CALL VECPRO( prechk1,ewk(1,JJITER),ewk(1,JJITER),Gntotal,1 )
           prechk1=0.0
-          do i = 1, Gntotal
+          do i = 1, NNDOF
             prechk1=prechk1+ewk(i,JJITER)**2
           enddo
-          if (.not. ds) then !In case of Direct Solver prevent MPI
             CALL hecmw_allreduce_R1( hecMESH,prechk1,hecmw_sum )
-          end if
           prechk1 = sqrt(prechk1)
           if( prechk1.NE.0.0D0 ) ewk(:,JJITER) = ewk(:,JJITER)/prechk1
 !C
-          DO IITER = 1, ntotal
+          DO IITER = 1, NNDOF
             LWRK(IITER) = ewk(IITER,JJITER)
           ENDDO
 !C
           IF(NDOF.EQ.3) THEN
-            CALL MATMULT3( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,numnp,NDOF )
+            CALL MATMULT3( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
           ELSE IF(NDOF.EQ.2) THEN
-            CALL MATMULT2( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,numnp,NDOF )
+            CALL MATMULT2( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
           ELSE IF(NDOF.EQ.6) THEN
-            CALL MATMULT6( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,numnp,NDOF )
+            CALL MATMULT6( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
           ENDIF
 !C
           LLWRK = 0.0D0
-!!!          CALL MATPRO(LLWRK,mass,ewk(1,JJITER),ntotal,1)
-          do i = 1, ntotal
+          do i = 1, NNDOF
             LLWRK(i) = mass(i)*ewk(i,JJITER)
           enddo
 !C
           CCHK1 = 0.0D0
-          DO IITER = 1,Gntotal
+          DO IITER = 1,NNDOF
             CCHK1 = CCHK1 + ( LWRK(IITER) - (eval(JITER) &
      &                      - fstrEIG%lczsgm)*LLWRK(IITER) )**2
           END DO
 !C
-          if (.not. ds) then !In case of Direct Solver prevent MPI
             CALL hecmw_allreduce_R1(hecMESH,CCHK1,hecmw_sum)
-          end if
+
           CCHK1 = SQRT(CCHK1)
           IF(myrank.EQ.0) THEN
              WRITE(IMSG,'(2X,I5,2X,5E15.6)') JITER,eval(JITER),CCHK1

@@ -1162,16 +1162,8 @@ end subroutine fstr_heat_init
 subroutine fstr_eigen_init( fstrEIG )
         implicit none
         type(fstr_eigen) :: fstrEIG
-        ! type(fstr_eigen) :: fstrEIG
 
-        fstrEIG%eqset       = 0
         fstrEIG%nget        = 5
-        fstrEIG%lczsgm      = 0.0
-        fstrEIG%lczmax      = 60
-        fstrEIG%lcztol      = 1.0e-8
-        fstrEIG%lczrod      = 1.0
-        fstrEIG%lczrot      = 0.0
-        fstrEIG%iluetol     = 0
 end subroutine fstr_eigen_init
 
 !> Initial setting of dynamic calculation
@@ -1387,13 +1379,6 @@ end subroutine fstr_setup_post_phys_alloc
                 P%SOLID%ESTRESS => phys%ESTRESS
                 P%SOLID%EMISES  => phys%EMISES
         end if
-
-        P%EIGEN%iluetol = svRarray(1) ! solver tolerance
-        if( P%PARAM%solution_type == kstEIGEN ) then
-            P%EIGEN%eqset = 1
-        else
-            P%EIGEN%eqset = 0
-        endif
 
         if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
                 call fstr_setup_visualize( ctrl )

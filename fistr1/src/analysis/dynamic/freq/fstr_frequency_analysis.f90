@@ -687,7 +687,6 @@ contains
     integer(kind=kint) :: ntotal
   !---- body
 
-    fstrEIG%eqset = 1
 
     fstrSOLID%dunode = 0.d0
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )

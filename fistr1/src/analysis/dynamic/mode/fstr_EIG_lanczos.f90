@@ -25,11 +25,15 @@ module m_fstr_EIG_lanczos
     type (fstr_solid         ) :: fstrSOLID
     type (fstr_eigen         ) :: fstrEIG
 
-    type lczvec
+    type fstr_eigen_vec
       real(kind=kreal), pointer :: q(:) => null()
-    end type lczvec
+    end type fstr_eigen_vec
 
-    TYPE(lczvec), pointer :: lvecq(:)       !< Array of Q vectors
+    TYPE(fstr_eigen_vec), pointer :: lvecq(:) !< Array of Q vectors
+
+    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
+
+
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
@@ -37,37 +41,14 @@ module m_fstr_EIG_lanczos
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
-    integer(kind=kint), allocatable :: isnode33(:)
-    real(kind=kreal), allocatable   :: gmass(:)
-
-    numnp  = hecMAT%NP
-    numn   = hecMAT%N
+    N      = hecMAT%N
+    NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
-    ntotal = numnp*NDOF
+    NNDOF  = N *NDOF
+    NPNDOF = NP*NDOF
 
-    allocate(isnode33(numnp))
-    isnode33 = 0
-
-    do itype = 1, hecMESH%n_elem_type
-      iS = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      if(hecmw_is_etype_33struct(ic_type))then
-        nn = HECMW_get_max_node(ic_type)/2
-        do icel = iS, iE
-          jS = hecMESH%elem_node_index(icel-1)
-          do j = 1, nn
-            ii = hecMESH%elem_node_item(jS+j+nn)
-            isnode33(ii)=1
-          enddo
-        enddo
-      endif
-    enddo
-
-    allocate( EFILT( ntotal) )
-
-    efilt  = 1.0
-    kcount = 0
+    allocate(fstrEIG%filter(NPNDOF))
+    fstrEIG%filter = 1.0d0
 
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
@@ -80,31 +61,26 @@ module m_fstr_EIG_lanczos
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         do i = itS0,itE0
-          EFILT((in-1)*NDOF+i)=0.0
+          fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
         enddo
       enddo
     enddo
 
-    call hecmw_update_m_R(hecMESH,EFILT,numnp,NDOF)
+    call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
-    Gtotal  = numnp*NDOF
-    Gntotal = numn*NDOF
-    novl    = ( numnp - numn )*NDOF
 
-    kcount = 0
-    DO I = 1, Gntotal
-      IF(EFILT(I).EQ.0) kcount = kcount + 1
+    in = 0
+    do i = 1, NNDOF
+      IF(fstrEIG%filter(i) == 1.0d0) in = in + 1
     enddo
-
-    call hecmw_allreduce_I1(hecMESH,Gtotal,hecmw_sum)
-    call hecmw_allreduce_I1(hecMESH,kcount,hecmw_sum)
+    call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
     eITMAX  = fstrEIG%lczmax
-    ITLIMIT = Gtotal - kcount
+    ITLIMIT = NPNDOF - in
     IF(eITMAX.GT.ITLIMIT) THEN
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*) '*-------------------------------------------*'
-        WRITE(IMSG,*) '  WARNING: LCZMAX exceeds system matrix size.'
+        WRITE(IMSG,*) '  WARNING: LCZMAX exceeds system matrix size. '
         WRITE(IMSG,*) '  Resetting LCZMAX to system matrix size.'
         WRITE(IMSG,*) '*-------------------------------------------*'
       endif
@@ -118,20 +94,20 @@ module m_fstr_EIG_lanczos
     maxItr = neig - 1
 
     allocate(lvecq(0:lvecq_size))
-    allocate( mass( ntotal )            )
-    allocate( EM( ntotal )              )
-    allocate( ewk( ntotal, neig)        )
+    allocate( mass( NPNDOF )            )
+    allocate( EM( NPNDOF )              )
+    allocate( ewk( NPNDOF, neig)        )
     allocate( eval( neig )              )
     allocate( modal( neig )             )
     allocate( new( neig )               )
     allocate( work( neig*(3*neig + 5) ) )
-    allocate( LVECP(NTOTAL)             )
-    allocate( LVECPP(NTOTAL)            )
-    allocate( lvecq(0)%q(ntotal)        )
-    allocate( lvecq(1)%q(ntotal)        )
-    allocate( LWRK(NTOTAL)              )
-    allocate( LLWRK(NTOTAL)             )
-    allocate( LLLWRK(NTOTAL)            )
+    allocate( LVECP(NPNDOF)             )
+    allocate( LVECPP(NPNDOF)            )
+    allocate( lvecq(0)%q(NPNDOF)        )
+    allocate( lvecq(1)%q(NPNDOF)        )
+    allocate( LWRK(NPNDOF)              )
+    allocate( LLWRK(NPNDOF)             )
+    allocate( LLLWRK(NPNDOF)            )
     allocate( ALF(NEIG+2)               )
     allocate( BTA(NEIG+2)               )
     ALLOCATE(my_ntotal(0:nprocs), STAT=ierror)
@@ -151,28 +127,27 @@ module m_fstr_EIG_lanczos
     ALF        = 0.0
     BTA        = 0.0
 
-    do i=1,ntotal
+    do i=1,NPNDOF
       mass(i) = fstrEIG%mass(i)
     enddo
 
-    my_ntotal(myrank) = Gntotal
+    my_ntotal(myrank) = NNDOF
       DO I = 0,nprocs-1
         call hecmw_bcast_I1(hecMESH,my_ntotal(I),I)
       enddo
 
-    call SETIVL(mass,EM,EFILT,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,ntotal,&
-   &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,Gtotal)
+    call SETIVL(mass,EM,fstrEIG%filter,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,NPNDOF,&
+   &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,NPNDOF)
 
     CONV = .FALSE.
 
-    do i=1,ntotal
+    do i=1,NPNDOF
       hecMAT%B(i) = EM(i)
     enddo
     hecMAT%X = 0.
     hecMAT%Iarray(98) = 1   !Assmebly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
     hecMAT%Rarray(2)  = 1.0
-    hecMAT%Rarray(1)  = fstrEIG%iluetol
 
     IF(myrank .EQ. 0) THEN
       WRITE(IMSG,*)
@@ -180,76 +155,75 @@ module m_fstr_EIG_lanczos
     ENDIF
 
     DO ITER=1,maxItr
-      call DUPL(EM,LVECP,ntotal)
+      call DUPL(EM,LVECP,NPNDOF)
       call hecmw_mat_clear_b(hecMAT)
 
-      do i=1,ntotal
+      do i=1,NPNDOF
         hecMAT%B(i) = EM(i)
       enddo
       hecMAT%X = 0.0d0
 
       call solve_LINEQ( hecMESH,hecMAT,IMSG )
 
-      do i=1,ntotal
+      do i=1,NPNDOF
         EM(i) = hecMAT%X(i)
       enddo
 
       i = 0
-      do ii = 1,ntotal
-        IF(efilt(ii) .EQ. 0) i = i + 1
+      do ii = 1,NPNDOF
+        IF(fstrEIG%filter(ii) .EQ. 0) i = i + 1
       enddo
 
-      do ii = 1,ntotal
-        EM(ii) = EM(ii)*EFILT(ii)
+      do ii = 1,NPNDOF
+        EM(ii) = EM(ii)*fstrEIG%filter(ii)
       enddo
 
-      ALLOCATE( lvecq(iter+1)%q(ntotal), STAT=ierror )
+      ALLOCATE( lvecq(iter+1)%q(NPNDOF), STAT=ierror )
 
-      call SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),ntotal)
+      call SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),NPNDOF)
 
-      call VECPRO1(AALF,LVECP,EM,Gntotal)
+      call VECPRO1(AALF,LVECP,EM,NNDOF)
       ALF(ITER)=AALF
 
       call hecmw_allreduce_R1(hecMESH,ALF(ITER),hecmw_sum)
 
-      call SCSHFT(EM,lvecq(iter)%q,ALF(ITER),ntotal)
+      call SCSHFT(EM,lvecq(iter)%q,ALF(ITER),NPNDOF)
 
       LWRK = 0.
-      call MATPRO(LWRK,mass,EM,ntotal,1)
-      call VECPRO1(prechk,LWRK,LWRK,Gntotal)
+      call MATPRO(LWRK,mass,EM,NPNDOF,1)
+      call VECPRO1(prechk,LWRK,LWRK,NNDOF)
         call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
       prechk = sqrt(prechk)
       IF(prechk.NE.0.0D0) LWRK = LWRK/prechk
-      IREOR = ITER*(1.0 - fstrEIG%lczrod)
+      !IREOR = ITER*(1.0 - fstrEIG%lczrod)
+      IREOR = 0
 
       DO KK = IREOR,ITER
         prechk = 0.0D0
-        call VECPRO1(prechk,lvecq(kk)%q,LWRK,Gntotal)
+        call VECPRO1(prechk,lvecq(kk)%q,LWRK,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
         prechk1 = 0.0D0
-        call VECPRO1(prechk1,lvecq(kk)%q,lvecq(kk)%q,Gntotal)
+        call VECPRO1(prechk1,lvecq(kk)%q,lvecq(kk)%q,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-        IF(abs(prechk).GT.fstrEIG%lczrot) THEN
-          call MGS1(lvecq(kk)%q,EM,mass,ntotal,my_ntotal,myrank,&
-   &                hecMESH,Gntotal)
-        ENDIF
+          call MGS1(lvecq(kk)%q,EM,mass,NPNDOF,my_ntotal,myrank,&
+   &                hecMESH,NNDOF)
       enddo
 
-      call MATPRO(LVECPP,mass,EM,ntotal,1)
+      call MATPRO(LVECPP,mass,EM,NPNDOF,1)
 
-      call VECPRO1(AALF,LVECPP,EM,Gntotal)
+      call VECPRO1(AALF,LVECPP,EM,NNDOF)
       BTA(ITER+1) = AALF
         call hecmw_allreduce_R1(hecMESH,BTA(ITER+1),hecmw_sum)
 
       BTA(ITER+1) = SQRT(BTA(ITER+1))
 
       call hecmw_barrier(hecMESH)
-      call UPLCZ(LVECP,lvecq(iter+1)%q,LVECPP,EM,BTA(ITER+1),ntotal)
+      call UPLCZ(LVECP,lvecq(iter+1)%q,LVECPP,EM,BTA(ITER+1),NPNDOF)
 
       LTRIAL = ITER
       ALLOCATE( LLDIAG(LTRIAL)        )
@@ -340,7 +314,7 @@ module m_fstr_EIG_lanczos
     DO kk = 1,k
       kiter = NEW(kk)
       DO jiter = 1,ltrial
-        DO iiter =1,ntotal
+        DO iiter =1,NPNDOF
           ewk(iiter,kk) = ewk(iiter,kk) &
    &                    + lvecq(jiter)%q(iiter)*LZMAT(jiter,kiter)
         enddo
@@ -356,8 +330,6 @@ module m_fstr_EIG_lanczos
       if(EVAL(i).NE.0) modal(i) = 1
     enddo
 
-    lczmult = .FALSE.
-
     t2 = hecmw_Wtime() !DEBUG elap
     write(idbg,'(a,f10.2)') 'Lanczos loop (sec) :', T2 - T1 ! elap
 
@@ -367,17 +339,11 @@ module m_fstr_EIG_lanczos
     ENDIF
 
     DO JITER=1,NGET
-      !prechk1 = 0.0
-!C        call VECPRO1(prechk1,ewk(1:,JITER:),ewk(1:,JITER:),Gntotal)
-      !do iii = 1, Gntotal
-      !    prechk1 = prechk1 + mass(iii)*ewk(iii,JITER)*ewk(iii,JITER)
-      !enddo
       prechk1 = maxval(ewk(:,JITER))
-        call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
+      call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
-      !prechk1 = sqrt(prechk1)
       if(prechk1.NE.0.0D0)then
-        do i = 1, Gntotal
+        do i = 1, NNDOF
           ewk(i,JITER) = ewk(i,JITER)/prechk1
         enddo
       endif
