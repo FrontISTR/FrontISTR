@@ -534,13 +534,11 @@ module m_fstr
 !> Package of data used by Lanczos eigenvalue solver
   type fstr_eigen
     !> Allocatable array, used or Lanczos eigenvalue analysis
-    integer(kind=kint)  :: nget          ! Solved eigen value number (default:5)
-    real   (kind=kreal) :: sigma        ! 0.0
-    integer(kind=kint)  :: maxiter        ! Max. Lcz iterations (default:60)
-    real   (kind=kreal) :: tolerance        ! Lcz tolerance (default:1.0e-8)
-
-    integer(kind=kint)  :: iter        ! Max. Lcz iterations (default:60)
-
+    integer(kind=kint)  :: nget      ! Solved eigen value number (default:5)
+    integer(kind=kint)  :: maxiter   ! Max. Lcz iterations (default:60)
+    integer(kind=kint)  :: iter      ! Max. Lcz iterations (default:60)
+    real   (kind=kreal) :: sigma     ! 0.0
+    real   (kind=kreal) :: tolerance ! Lcz tolerance (default:1.0e-8)
     real   (kind=kreal) :: totalmass
     real   (kind=kreal), pointer :: eigval(:)
     real   (kind=kreal), pointer :: eigvec(:,:)

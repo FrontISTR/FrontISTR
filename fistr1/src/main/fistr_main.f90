@@ -20,17 +20,17 @@ module m_fstr_main
   use fstr_debug_dump
   use fstr_matrix_con_contact
 
-  type (hecmwST_local_mesh)              :: hecMESH
-  type (hecmwST_matrix )                 :: hecMAT
-  type (fstr_solid )                     :: fstrSOLID
-  type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-  type (fstr_heat )                      :: fstrHEAT
-  type (fstr_eigen)                        :: fstrEIG
-  type (fstr_dynamic )                   :: fstrDYNAMIC
-  type ( hecmwST_result_data )           :: fstrRESULT
-  type (fstr_couple )                    :: fstrCPL
-  type (fstr_freqanalysis)               :: fstrFREQ
-  character(len=HECMW_FILENAME_LEN)      :: name_ID
+  type (hecmwST_local_mesh)             :: hecMESH
+  type (hecmwST_matrix )                :: hecMAT
+  type (fstr_solid )                    :: fstrSOLID
+  type (fstrST_matrix_contact_lagrange) :: fstrMAT
+  type (fstr_heat )                     :: fstrHEAT
+  type (fstr_eigen)                     :: fstrEIG
+  type (fstr_dynamic )                  :: fstrDYNAMIC
+  type ( hecmwST_result_data )          :: fstrRESULT
+  type (fstr_couple )                   :: fstrCPL
+  type (fstr_freqanalysis)              :: fstrFREQ
+  character(len=HECMW_FILENAME_LEN)     :: name_ID
 
   contains
 
@@ -358,8 +358,8 @@ module m_fstr_main
        endif
     endif
 
-    call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
-                            ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+    call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+                             fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT)
 
   end subroutine fstr_dynamic_analysis
 
@@ -405,12 +405,7 @@ module m_fstr_main
   subroutine fstr_finalize
     implicit none
 
-    close(ILOG)
-
-    if( myrank==0 ) then
-      close(ISTA)
-    endif
-    if( myrank .EQ. 0 ) then
+    if( myrank == 0 ) then
       write(IMSG,*)
       write(IMSG,*)
       write(IMSG,*)
@@ -418,11 +413,13 @@ module m_fstr_main
       write(IMSG,*) ':**            END of FSTR             **:'
       write(IMSG,*) ':========================================:'
       close(IMSG)
+      close(ISTA)
     endif
 
     call fstr_solid_finalize( fstrSOLID )
     call hecMAT_finalize( hecMAT )
 
+    close(ILOG)
     close(IDBG)
   end subroutine fstr_finalize
 

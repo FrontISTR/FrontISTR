@@ -76,7 +76,7 @@ contains
       ! avoid ML when no contact
       if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
-      call hecmw_solve(hecMESH, hecMAT, imsg)
+      call hecmw_solve(hecMESH, hecMAT)
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
       if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
@@ -88,7 +88,7 @@ contains
         if (fstrMAT%num_lagrange > 0) then
           call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
         else
-          call hecmw_solve(hecMESH, hecMAT, imsg)
+          call hecmw_solve(hecMESH, hecMAT)
         endif
       endif
     endif
@@ -165,7 +165,7 @@ contains
     if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
-    call hecmw_solve(hecMESHtmp, hecTKT, imsg)
+    call hecmw_solve(hecMESHtmp, hecTKT)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
 
     hecMAT%Iarray=hecTKT%Iarray
@@ -1394,7 +1394,7 @@ contains
       enddo
     endif
 
-    call hecmw_solve(hecMESH, hecMATLag, imsg)
+    call hecmw_solve(hecMESH, hecMATLag)
 
     hecMAT%Iarray=hecMATLag%Iarray
     hecMAT%Rarray=hecMATLag%Rarray

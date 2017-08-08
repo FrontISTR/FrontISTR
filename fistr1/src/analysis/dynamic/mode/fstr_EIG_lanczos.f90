@@ -12,7 +12,6 @@ module m_fstr_EIG_lanczos
     use hecmw_util
     use m_eigen_lib
     use m_fstr_EIG_lanczos_util
-    use m_fstr_EIG_matmult
     use m_fstr_EIG_mgs1
     use m_fstr_EIG_tridiag
 
@@ -86,27 +85,32 @@ module m_fstr_EIG_lanczos
     call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
 
+
     in = 0
     do i = 1, NNDOF
       IF(fstrEIG%filter(i) == 1.0d0) in = in + 1
     enddo
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
-    eITMAX  = fstrEIG%maxiter
-    i = NPNDOF - in
-    IF(eITMAX.GT.i) THEN
+    fstrEIG%maxiter = 60
+      eITMAX = 60
+    IF(in < fstrEIG%maxiter) THEN
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*) '*-------------------------------------------*'
         WRITE(IMSG,*) '  WARNING: maxiter exceeds system matrix size. '
         WRITE(IMSG,*) '  Resetting maxiter to system matrix size.'
         WRITE(IMSG,*) '*-------------------------------------------*'
       endif
-      eITMAX = i
-      fstrEIG%maxiter = i
+      eITMAX = in
+      fstrEIG%maxiter = in
     endif
 
-    CTOL = fstrEIG%tolerance
+    if(in < fstrEIG%nget)then
+      fstrEIG%nget = in
+    endif
+
     NGET = fstrEIG%nget
+    CTOL = fstrEIG%tolerance
     neig = eITMAX + NGET
     !maxItr = i
     maxItr = neig - 1
@@ -177,7 +181,7 @@ module m_fstr_EIG_lanczos
       enddo
       hecMAT%X = 0.0d0
 
-      call solve_LINEQ( hecMESH,hecMAT,IMSG )
+      call solve_LINEQ( hecMESH,hecMAT )
 
       do i=1,NPNDOF
         EM(i) = hecMAT%X(i)
@@ -296,7 +300,7 @@ module m_fstr_EIG_lanczos
         ENDIF
       enddo
 
-      IF(cchk.LE.CTOL.AND.ITER.GE.NGET) THEN
+      IF(cchk <= CTOL .and. NGET <= ITER)THEN
         WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
         GO TO 25
       ENDIF

@@ -242,7 +242,7 @@ module fstr_dynamic_nlimplicit
             hecMAT%Iarray(97) = 1   !Need numerical factorization
           endif
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-          call solve_LINEQ(hecMESH,hecMAT,imsg)
+          call solve_LINEQ(hecMESH,hecMAT)
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         endif
 

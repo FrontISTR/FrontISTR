@@ -6,7 +6,7 @@
 module m_fstr_solve_eigen
   contains
 
-!> SOLVE EIGENVALUE PROBLEM
+!> solve eigenvalue probrem
   subroutine fstr_solve_eigen( hecMESH, hecMAT, fstrEIG, fstrSOLID, &
                              & fstrRESULT, fstrPARAM, fstrMAT)
     use hecmw_util
@@ -49,11 +49,10 @@ module m_fstr_solve_eigen
 
     t2 = hecmw_Wtime()
 
-    IF(myrank == 0)THEN
-      WRITE(IMSG,'("### FSTR_SOLVE_EIGEN FINISHED!")')
-      WRITE(*,'("### FSTR_SOLVE_EIGEN FINISHED!")')
+    if(myrank == 0)THEN
+      write(IMSG,'("### FSTR_SOLVE_EIGEN FINISHED!")')
+      write(*,'("### FSTR_SOLVE_EIGEN FINISHED!")')
     endif
 
   end subroutine fstr_solve_eigen
-
 end module m_fstr_solve_eigen

@@ -15,7 +15,6 @@ contains
 !C*
       use m_fstr
       use m_fstr_EIG_lanczos_util
-      use m_fstr_EIG_matmult
       use hecmw_solver_las
       implicit none
       integer(kind=kint) :: I,IREOR,JJITER,JITER,IITER
