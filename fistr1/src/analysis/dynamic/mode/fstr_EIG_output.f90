@@ -264,7 +264,7 @@ contains
       type (fstr_eigen) :: fstrEIG
 
       INTEGER(kind=kint) :: i, j, ii
-      INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot
+      INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot, kcount
       INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, LTRIAL, NGET
       INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)

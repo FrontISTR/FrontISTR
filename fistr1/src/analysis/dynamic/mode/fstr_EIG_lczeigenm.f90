@@ -19,21 +19,17 @@
 
       REAL(KIND=KREAL), pointer ::  LVECP(:)   !< Array of P vectors
       REAL(KIND=KREAL), pointer ::  LVECPP(:)  !< Array of modified P vectors
-      REAL(KIND=KREAL), pointer ::  ALF(:),LWRK(:)
+      REAL(KIND=KREAL), pointer ::  ALF(:)
       REAL(KIND=KREAL), pointer ::  BTA(:)     !< Beta parameter
-      REAL(KIND=KREAL), pointer ::  LLWRK(:),LLLWRK(:)
-      REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
-      REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
+      REAL(KIND=KREAL), pointer ::  LLWRK(:),LLLWRK(:),LWRK(:)
+      REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
 
       INTEGER(kind=kint), pointer ::  modal(:)
-      REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
 
       INTEGER(KIND=kint), POINTER :: my_ntotal(:)
 
       real(kind=kreal), pointer :: emwk(:,:,:)
       real(kind=kreal), pointer :: ewt(:)
       real(kind=kreal), pointer :: ev(:)
-
-      integer(kind=kint) isc, nume, nmode, it, kcount
 
       END MODULE lczeigen

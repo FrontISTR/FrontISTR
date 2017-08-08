@@ -35,12 +35,17 @@ module m_fstr_EIG_lanczos
     integer(kind=kint) :: iter, ierr
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
-    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
+    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter, it
     integer(kind=kint) :: kk, jjiter, ppc, LTRIAL, nget, NEIG
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: CTOL, prechk
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+
+
+      REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
+      REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
+
 
     N      = hecMAT%N
     NP     = hecMAT%NP
