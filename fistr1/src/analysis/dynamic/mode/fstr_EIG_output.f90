@@ -203,7 +203,6 @@ contains
 
         do istep = 1, nget
           do i=1,NPNDOF
-            !X(i) = fstrEIG%evec(i,istep)
             X(i) = ewk(i,istep)
           enddo
 
@@ -270,7 +269,6 @@ contains
       INTEGER(kind=kint), allocatable :: new(:)
       INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)
-      REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
       REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
 
     real(kind=kreal), pointer :: mass(:), eigval(:)

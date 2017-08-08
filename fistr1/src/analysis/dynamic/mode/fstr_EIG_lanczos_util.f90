@@ -192,44 +192,6 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE URAND0
 
-!> Eigenvector regularization
-      SUBROUTINE REGVEC(EVEC,GMASS,XMODE,NTOT,NEIG,NORMAL)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION EVEC(NTOT,NEIG),GMASS(NTOT),XMODE(2,NEIG)
-
-      IF( NORMAL.EQ.0 ) THEN
-        DO 100 I = 1, NEIG
-          SCALE = 0.0
-          DO 200 J = 1, NTOT
-            SCALE = SCALE + GMASS(J)*EVEC(J,I)**2
-  200     CONTINUE
-
-          DO 300 J = 1, NTOT
-            EVEC(J,I) = EVEC(J,I)/SQRT(SCALE)
-  300     CONTINUE
-          XMODE(1,I) = XMODE(1,I)/SCALE
-          XMODE(2,I) = XMODE(2,I)/SCALE
-  100   CONTINUE
-
-      ELSE IF( NORMAL.EQ.1 ) THEN
-
-        DO 1000 I = 1, NEIG
-          EMAX = 0.0
-          DO 1100 J = 1, NTOT
-            IF(ABS( EVEC(J,I)).GT.EMAX ) EMAX = ABS(EVEC(J,I))
- 1100     CONTINUE
-          DO 1200 J = 1, NTOT
-            EVEC(J,I) = EVEC(J,I)/EMAX
- 1200     CONTINUE
-
-          XMODE(1,I)=XMODE(1,I)/EMAX**2
-          XMODE(2,I)=XMODE(2,I)/EMAX**2
- 1000   CONTINUE
-      END IF
-
-      RETURN
-      END SUBROUTINE REGVEC
 
 end module m_fstr_EIG_lanczos_util
 

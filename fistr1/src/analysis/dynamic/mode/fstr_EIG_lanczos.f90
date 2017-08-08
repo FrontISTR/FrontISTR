@@ -49,6 +49,9 @@ module m_fstr_EIG_lanczos
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
 
+      REAL(KIND=KREAL), ALLOCATABLE ::  EVEC(:,:)
+    real(kind=kreal), allocatable :: s(:)
+
       REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
 
