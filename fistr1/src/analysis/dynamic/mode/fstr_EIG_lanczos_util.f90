@@ -107,6 +107,7 @@ module m_fstr_EIG_lanczos_util
       REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
 
        PI = 4.0*ATAN(1.0)
+
 !C*EIGEN VALUE SORTING
       CALL EVSORT(EVAL,NEW,LTRIAL)
       IF(myrank==0) THEN

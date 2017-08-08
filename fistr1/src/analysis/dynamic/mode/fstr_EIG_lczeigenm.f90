@@ -10,17 +10,13 @@
       IMPLICIT NONE
       PUBLIC
 
-!Work arrays (EWK,EVEC carry eigenvectors, EVAL carries eigenvalues)
-
-      INTEGER (KIND=KINT) :: IERR
-      REAL (KIND=KREAL), DIMENSION (:), pointer :: MASS, EVAL
+      REAL (KIND=KREAL), DIMENSION (:), pointer :: EVAL
       REAL (KIND=KREAL), DIMENSION (:), pointer :: WORK, EGV0
       REAL (KIND=KREAL), DIMENSION (:,:), pointer :: EWK
       REAL (KIND=KREAL), DIMENSION (:,:), POINTER :: EVEC
       INTEGER (KIND=KINT), DIMENSION (:), pointer :: NEW
       REAL (KIND=KREAL), DIMENSION (:,:), pointer :: XMODE
 
-!Lanczos parameters
       REAL(KIND=KREAL), pointer ::  LVECP(:)   !< Array of P vectors
       REAL(KIND=KREAL), pointer ::  LVECPP(:)  !< Array of modified P vectors
       REAL(KIND=KREAL), pointer ::  ALF(:),LWRK(:)
@@ -28,30 +24,18 @@
       REAL(KIND=KREAL), pointer ::  LLWRK(:),LLLWRK(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
-      REAL(KIND=KREAL), pointer ::  EFILT(:)
+
       INTEGER(kind=kint), pointer ::  modal(:)
       REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
-      REAL(KIND=KREAL) SGM                     !< Shift
-      REAL(KIND=KREAL) CTOL                    !< Tolerance
-      REAL(KIND=KREAL) prechk
-      LOGICAL CONV                             !< Convergence flag
 
-      INTEGER(KIND=KINT) :: ITLIMIT,NEIG,NGET,ITER,IERROR,LTRIAL
-      REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
+      INTEGER(KIND=KINT) :: ITLIMIT, NEIG, NGET, LTRIAL
 
-!*------------------- Extra variables for FSTR ---------------------------*
-      INTEGER (KIND=kint) iv
-
-!*------------------- For more than 1 CPU --------------------------------*
       INTEGER(KIND=kint), POINTER :: my_ntotal(:)
 
-!----------------------- For Multiple Eigenvalues ------------------------!
       real(kind=kreal), pointer :: emwk(:,:,:)
       real(kind=kreal), pointer :: ewt(:)
       real(kind=kreal), pointer :: ev(:)
-      real(kind=kreal)  res
-      integer(kind=kint) isc, nume, nmode, it, kcount
 
-      character(len=32) :: fname
+      integer(kind=kint) isc, nume, nmode, it, kcount
 
       END MODULE lczeigen

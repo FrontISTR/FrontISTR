@@ -33,12 +33,17 @@ contains
     integer(kind=kint) :: kk, ppc
     integer(kind=kint) IOUT,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+    real(kind=kreal), pointer :: mass(:)
+
+      REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
 
     N      = hecMAT%N
     NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
+
+    mass => fstrEIG%mass
 
 !C***** compute effective mass and participation factor
     allocate(fstrEIG%effmass(3*NGET))

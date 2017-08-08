@@ -32,13 +32,15 @@ module m_fstr_EIG_lanczos
     TYPE(fstr_eigen_vec), pointer :: lvecq(:) !< Array of Q vectors
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-
+    integer(kind=kint) :: iter, ierr
 
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
     integer(kind=kint) :: kk, jjiter, ppc
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
+    real(kind=kreal)   :: CTOL, prechk
+      REAL(KIND=KREAL) :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
     N      = hecMAT%N
@@ -94,7 +96,6 @@ module m_fstr_EIG_lanczos
     maxItr = neig - 1
 
     allocate(lvecq(0:lvecq_size))
-    allocate( mass( NPNDOF )            )
     allocate( EM( NPNDOF )              )
     allocate( ewk( NPNDOF, neig)        )
     allocate( eval( neig )              )
@@ -110,9 +111,8 @@ module m_fstr_EIG_lanczos
     allocate( LLLWRK(NPNDOF)            )
     allocate( ALF(NEIG+2)               )
     allocate( BTA(NEIG+2)               )
-    ALLOCATE(my_ntotal(0:nprocs), STAT=ierror)
+    ALLOCATE(my_ntotal(0:nprocs) )
 
-    mass       = 0.0
     ewk        = 0.0
     eval       = 0.0
     new        = 0.0
@@ -127,19 +127,13 @@ module m_fstr_EIG_lanczos
     ALF        = 0.0
     BTA        = 0.0
 
-    do i=1,NPNDOF
-      mass(i) = fstrEIG%mass(i)
-    enddo
-
     my_ntotal(myrank) = NNDOF
       DO I = 0,nprocs-1
         call hecmw_bcast_I1(hecMESH,my_ntotal(I),I)
       enddo
 
-    call SETIVL(mass,EM,fstrEIG%filter,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,NPNDOF,&
+    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,NPNDOF,&
    &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,NPNDOF)
-
-    CONV = .FALSE.
 
     do i=1,NPNDOF
       hecMAT%B(i) = EM(i)
@@ -178,7 +172,7 @@ module m_fstr_EIG_lanczos
         EM(ii) = EM(ii)*fstrEIG%filter(ii)
       enddo
 
-      ALLOCATE( lvecq(iter+1)%q(NPNDOF), STAT=ierror )
+      ALLOCATE( lvecq(iter+1)%q(NPNDOF) )
 
       call SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),NPNDOF)
 
@@ -190,7 +184,7 @@ module m_fstr_EIG_lanczos
       call SCSHFT(EM,lvecq(iter)%q,ALF(ITER),NPNDOF)
 
       LWRK = 0.
-      call MATPRO(LWRK,mass,EM,NPNDOF,1)
+      call MATPRO(LWRK,fstrEIG%mass,EM,NPNDOF,1)
       call VECPRO1(prechk,LWRK,LWRK,NNDOF)
         call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
@@ -210,11 +204,11 @@ module m_fstr_EIG_lanczos
 
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(lvecq(kk)%q,EM,mass,NPNDOF,my_ntotal,myrank,&
+          call MGS1(lvecq(kk)%q,EM,fstrEIG%mass,NPNDOF,my_ntotal,myrank,&
    &                hecMESH,NNDOF)
       enddo
 
-      call MATPRO(LVECPP,mass,EM,NPNDOF,1)
+      call MATPRO(LVECPP,fstrEIG%mass,EM,NPNDOF,1)
 
       call VECPRO1(AALF,LVECPP,EM,NNDOF)
       BTA(ITER+1) = AALF
@@ -251,7 +245,7 @@ module m_fstr_EIG_lanczos
       enddo
 
       call TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,&
-   &                      LSUB,LZMAT,LNZMAT,IERROR) !Unordered
+   &                      LSUB,LZMAT,LNZMAT,ierr) !Unordered
 
       DO IITER = 1, LTRIAL
         IF( LLDIAG(IITER).NE.0.0D0 ) THEN
@@ -260,7 +254,7 @@ module m_fstr_EIG_lanczos
       enddo
       call EVSORT(EVAL,NEW,LTRIAL)
 
-      CCHK  = 0.0
+      cchk  = 0.0
       KITER = NGET+2            !Extra 2 values as a safety feature
       IF(LTRIAL .LT. KITER) KITER = LTRIAL
 
@@ -274,7 +268,7 @@ module m_fstr_EIG_lanczos
           prechk1 = 1.
         ENDIF
 
-        CCHK1 = (BTA(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
+        cchk1 = (BTA(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
         IF(cchk .LT. ABS(cchk1)) THEN
           cchk = ABS(cchk1)
           iiter = jiter
@@ -282,9 +276,8 @@ module m_fstr_EIG_lanczos
         ENDIF
       enddo
 
-      IF(CCHK.LE.CTOL.AND.ITER.GE.NGET) THEN
+      IF(cchk.LE.CTOL.AND.ITER.GE.NGET) THEN
         WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
-        CONV = .TRUE.
         GO TO 25
       ENDIF
 
@@ -299,7 +292,6 @@ module m_fstr_EIG_lanczos
     enddo
 
 25  CONTINUE
-    CERR = CCHK
 
     DO IITER = 1, LTRIAL
       IF(LLDIAG(IITER).NE.0.0D0) THEN
