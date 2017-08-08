@@ -10,7 +10,6 @@ module m_fstr_EIG_lanczos
   subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
     use m_fstr
     use hecmw_util
-    use lczeigen
     use m_eigen_lib
     use m_fstr_EIG_lanczos_util
     use m_fstr_EIG_matmult
@@ -19,10 +18,10 @@ module m_fstr_EIG_lanczos
 
     implicit none
 
-    type (hecmwST_local_mesh ) :: hecMESH
-    type (hecmwST_matrix     ) :: hecMAT
-    type (fstr_solid         ) :: fstrSOLID
-    type (fstr_eigen         ) :: fstrEIG
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix    ) :: hecMAT
+    type(fstr_solid        ) :: fstrSOLID
+    type(fstr_eigen        ) :: fstrEIG
 
     type fstr_eigen_vec
       real(kind=kreal), pointer :: q(:) => null()
@@ -30,11 +29,13 @@ module m_fstr_EIG_lanczos
 
     TYPE(fstr_eigen_vec), pointer :: Q(:) !< Array of Q vectors
 
+
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, ierr
 
 
     integer(kind=kint), allocatable  :: new(:)
+      REAL (KIND=KREAL), pointer :: EWK(:,:)
 
     real(kind=kreal), allocatable :: alpha(:), beta(:)
 
@@ -45,15 +46,15 @@ module m_fstr_EIG_lanczos
     integer(kind=kint) :: kk, jjiter, ppc, LTRIAL, nget, NEIG
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: CTOL, prechk
-      REAL(KIND=KREAL) :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
+    real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
 
-      REAL(KIND=KREAL), ALLOCATABLE ::  EVEC(:,:)
+    real(kind=kreal), allocatable ::  EVEC(:,:), em(:)
     real(kind=kreal), allocatable :: s(:), t(:), p(:), u(:)
 
-      REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
-      REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
+      REAL(KIND=KREAL), allocatable ::  LLDIAG(:), LNDIAG(:), LSUB(:)
+      REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
 
     real(kind=kreal), pointer :: eigval(:)
 
@@ -128,16 +129,16 @@ module m_fstr_EIG_lanczos
 
 
     allocate( EM( NPNDOF )              )
-    allocate( ewk( NPNDOF, neig)        )
-    allocate( work( neig*(3*neig + 5) ) )
+    allocate( fstrEIG%eigvec( NPNDOF, neig)        )
 
 
     fstrEIG%eigval       = 0.0
 
     eigval => fstrEIG%eigval
+    EWK => fstrEIG%eigvec
 
     ewk        = 0.0
-    work       = 0.0
+    !work       = 0.0
 
 
     p      = 0.0

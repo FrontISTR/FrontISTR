@@ -19,7 +19,6 @@ module m_fstr_solve_eigen
     use m_static_lib
     use m_hecmw2fstr_mesh_conv
     use fstr_matrix_con_contact
-    use lczeigen
 
     implicit none
 
@@ -46,7 +45,7 @@ module m_fstr_solve_eigen
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
 
-    call fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT, ewk)
+    call fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT)
 
     t2 = hecmw_Wtime()
 

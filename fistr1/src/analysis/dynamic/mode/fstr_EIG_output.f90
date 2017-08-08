@@ -14,7 +14,6 @@ contains
 !C* SHOW RESULTS
 !C*
       use m_fstr
-      use lczeigen
       use m_fstr_EIG_lanczos_util
       use m_fstr_EIG_matmult
       implicit none
@@ -36,6 +35,7 @@ contains
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
     real(kind=kreal), pointer :: mass(:), eigval(:)
 
+      REAL (KIND=KREAL), pointer :: EWK(:,:)
     real(kind=kreal), allocatable :: s(:), t(:), u(:)
 
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
@@ -49,6 +49,8 @@ contains
     nget =  fstrEIG%nget
     mass => fstrEIG%mass
     eigval => fstrEIG%eigval
+
+    EWK => fstrEIG%eigvec
 
 !C***** compute effective mass and participation factor
     allocate(fstrEIG%effmass(3*NGET))
@@ -180,7 +182,7 @@ contains
 
       end subroutine fstr_eigen_output
 
-      subroutine fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT, ewk)
+      subroutine fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT)
         use m_fstr
         use m_hecmw2fstr_mesh_conv
         use hecmw_util
@@ -191,7 +193,8 @@ contains
         type (hecmwST_result_data) :: fstrRESULT
 
         integer(kind=kint) :: i, istep, nget, NP, NDOF, NPNDOF, totalmpc, MPC_METHOD
-        real(kind=kreal)   :: t1, ewk(:,:)
+        real(kind=kreal)   :: t1
+        real(kind=kreal), pointer :: ewk(:,:)
         real(kind=kreal), allocatable :: X(:)
         character(len=HECMW_HEADER_LEN) :: header
         character(len=HECMW_NAME_LEN)   :: label
@@ -202,6 +205,8 @@ contains
         NPNDOF = hecMAT%NP*hecMAT%NDOF
         !totalmpc = hecMESH%mpc%n_mpc
         !call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    EWK => fstrEIG%eigvec
 
         allocate(X(NPNDOF))
         X = 0.0d0
@@ -260,7 +265,6 @@ contains
 !> Output eigenvalues and vectors
       SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG,new )
       use m_fstr
-      use lczeigen
       use hecmw_util
       use m_fstr_EIG_lanczos_util
       implicit none
