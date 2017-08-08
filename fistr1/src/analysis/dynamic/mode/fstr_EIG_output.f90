@@ -33,7 +33,7 @@ contains
     integer(kind=kint) :: kk, ppc, nget
     integer(kind=kint) IOUT,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
-    real(kind=kreal), pointer :: mass(:)
+    real(kind=kreal), pointer :: mass(:), eigval(:)
 
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
 
@@ -45,6 +45,7 @@ contains
 
     nget =  fstrEIG%nget
     mass => fstrEIG%mass
+    eigval => fstrEIG%eigval
 
 !C***** compute effective mass and participation factor
     allocate(fstrEIG%effmass(3*NGET))
@@ -152,7 +153,7 @@ contains
 !C
           CCHK1 = 0.0D0
           DO IITER = 1,NNDOF
-            CCHK1 = CCHK1 + ( LWRK(IITER) - (eval(JITER) &
+            CCHK1 = CCHK1 + ( LWRK(IITER) - (eigval(JITER) &
      &                      - fstrEIG%lczsgm)*LLWRK(IITER) )**2
           END DO
 !C
@@ -160,7 +161,7 @@ contains
 
           CCHK1 = SQRT(CCHK1)
           IF(myrank.EQ.0) THEN
-             WRITE(IMSG,'(2X,I5,2X,5E15.6)') JITER,eval(JITER),CCHK1
+             WRITE(IMSG,'(2X,I5,2X,5E15.6)') JITER,eigval(JITER),CCHK1
           ENDIF
       ENDDO
 !C
@@ -269,12 +270,14 @@ contains
       REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
       REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
 
+    real(kind=kreal), pointer :: mass(:), eigval(:)
       NGET = fstrEIG%nget
       LTRIAL =  fstrEIG%iter
        PI = 4.0*ATAN(1.0)
+    eigval => fstrEIG%eigval
 
 !C*EIGEN VALUE SORTING
-      CALL EVSORT(EVAL,NEW,LTRIAL)
+      CALL EVSORT(eigval,NEW,LTRIAL)
       IF(myrank==0) THEN
         WRITE(ILOG,*)""
         WRITE(ILOG,"(a)")"********************************"
@@ -315,7 +318,7 @@ contains
         DO 40 i=1,LTRIAL
           II=NEW(I)
             kcount = kcount + 1
-            EEE=EVAL(II)
+            EEE=eigval(II)
             IF(EEE.LT.0.0) EEE=0.0
             WWW=DSQRT(EEE)
             FFF=WWW*0.5/PI

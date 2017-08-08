@@ -29,10 +29,14 @@ module m_fstr_EIG_lanczos
       real(kind=kreal), pointer :: q(:) => null()
     end type fstr_eigen_vec
 
-    TYPE(fstr_eigen_vec), pointer :: lvecq(:) !< Array of Q vectors
+    TYPE(fstr_eigen_vec), pointer :: Q(:) !< Array of Q vectors
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, ierr
+
+    real(kind=kreal), allocatable :: alpha(:), beta(:)
+
+
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter, it
@@ -46,6 +50,7 @@ module m_fstr_EIG_lanczos
       REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
 
+    real(kind=kreal), pointer :: eigval(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -99,37 +104,44 @@ module m_fstr_EIG_lanczos
     !maxItr = i
     maxItr = neig - 1
 
-    allocate(lvecq(0:lvecq_size))
+    allocate(Q(0:neig))
+    allocate( fstrEIG%eigval( neig )              )
+    allocate( alpha(NEIG+2)               )
+    allocate( beta(NEIG+2)               )
+
+
+
     allocate( EM( NPNDOF )              )
     allocate( ewk( NPNDOF, neig)        )
-    allocate( eval( neig )              )
     allocate( new( neig )               )
     allocate( work( neig*(3*neig + 5) ) )
     allocate( LVECP(NPNDOF)             )
     allocate( LVECPP(NPNDOF)            )
-    allocate( lvecq(0)%q(NPNDOF)        )
-    allocate( lvecq(1)%q(NPNDOF)        )
+    allocate( Q(0)%q(NPNDOF)        )
+    allocate( Q(1)%q(NPNDOF)        )
     allocate( LWRK(NPNDOF)              )
     allocate( LLWRK(NPNDOF)             )
     allocate( LLLWRK(NPNDOF)            )
-    allocate( ALF(NEIG+2)               )
-    allocate( BTA(NEIG+2)               )
+
+
+    fstrEIG%eigval       = 0.0
+
+    eigval => fstrEIG%eigval
 
     ewk        = 0.0
-    eval       = 0.0
     new        = 0.0
     work       = 0.0
     lwrk       = 0.0
     LVECP      = 0.0
     LVECPP     = 0.0
-    lvecq(0)%q = 0.0
-    lvecq(1)%q = 0.0
+    Q(0)%q = 0.0
+    Q(1)%q = 0.0
     LWRK       = 0.0
     LLWRK      = 0.0
-    ALF        = 0.0
-    BTA        = 0.0
+    alpha        = 0.0
+    beta        = 0.0
 
-    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,NPNDOF,&
+    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,LVECP,Q(0)%q,Q(1)%q,beta,NPNDOF,&
    &                         neig,hecMESH,hecMAT,NDOF,NPNDOF)
 
     do i=1,NPNDOF
@@ -169,16 +181,16 @@ module m_fstr_EIG_lanczos
         EM(ii) = EM(ii)*fstrEIG%filter(ii)
       enddo
 
-      ALLOCATE( lvecq(iter+1)%q(NPNDOF) )
+      ALLOCATE( Q(iter+1)%q(NPNDOF) )
 
-      call SCSHFT(EM,lvecq(iter-1)%q,BTA(ITER),NPNDOF)
+      call SCSHFT(EM,Q(iter-1)%q,beta(ITER),NPNDOF)
 
       call VECPRO1(AALF,LVECP,EM,NNDOF)
-      ALF(ITER)=AALF
+      alpha(ITER)=AALF
 
-      call hecmw_allreduce_R1(hecMESH,ALF(ITER),hecmw_sum)
+      call hecmw_allreduce_R1(hecMESH,alpha(ITER),hecmw_sum)
 
-      call SCSHFT(EM,lvecq(iter)%q,ALF(ITER),NPNDOF)
+      call SCSHFT(EM,Q(iter)%q,alpha(ITER),NPNDOF)
 
       LWRK = 0.
       call MATPRO(LWRK,fstrEIG%mass,EM,NPNDOF,1)
@@ -192,29 +204,29 @@ module m_fstr_EIG_lanczos
 
       DO KK = IREOR,ITER
         prechk = 0.0D0
-        call VECPRO1(prechk,lvecq(kk)%q,LWRK,NNDOF)
+        call VECPRO1(prechk,Q(kk)%q,LWRK,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
         prechk1 = 0.0D0
-        call VECPRO1(prechk1,lvecq(kk)%q,lvecq(kk)%q,NNDOF)
+        call VECPRO1(prechk1,Q(kk)%q,Q(kk)%q,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(lvecq(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank,&
+          call MGS1(Q(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank,&
    &                hecMESH,NNDOF)
       enddo
 
       call MATPRO(LVECPP,fstrEIG%mass,EM,NPNDOF,1)
 
       call VECPRO1(AALF,LVECPP,EM,NNDOF)
-      BTA(ITER+1) = AALF
-        call hecmw_allreduce_R1(hecMESH,BTA(ITER+1),hecmw_sum)
+      beta(ITER+1) = AALF
+        call hecmw_allreduce_R1(hecMESH,beta(ITER+1),hecmw_sum)
 
-      BTA(ITER+1) = SQRT(BTA(ITER+1))
+      beta(ITER+1) = SQRT(beta(ITER+1))
 
       call hecmw_barrier(hecMESH)
-      call UPLCZ(LVECP,lvecq(iter+1)%q,LVECPP,EM,BTA(ITER+1),NPNDOF)
+      call UPLCZ(LVECP,Q(iter+1)%q,LVECPP,EM,beta(ITER+1),NPNDOF)
 
       LTRIAL = ITER
       fstrEIG%iter = ITER
@@ -233,14 +245,14 @@ module m_fstr_EIG_lanczos
       enddo
 
       DO IITER = 1,LTRIAL
-        LLDIAG(IITER) = ALF(IITER)
+        LLDIAG(IITER) = alpha(IITER)
         LZMAT(IITER,IITER) = 1.0D0
       enddo
 
       LSUB(1) = 0.0
       IITER   = 0
       DO IITER = 2,LTRIAL
-        LSUB(IITER)  = BTA(IITER)
+        LSUB(IITER)  = beta(IITER)
       enddo
 
       call TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,&
@@ -248,10 +260,10 @@ module m_fstr_EIG_lanczos
 
       DO IITER = 1, LTRIAL
         IF( LLDIAG(IITER).NE.0.0D0 ) THEN
-          EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+          eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
         ENDIF
       enddo
-      call EVSORT(EVAL,NEW,LTRIAL)
+      call EVSORT(eigval,NEW,LTRIAL)
 
       cchk  = 0.0
       KITER = NGET+2            !Extra 2 values as a safety feature
@@ -267,7 +279,7 @@ module m_fstr_EIG_lanczos
           prechk1 = 1.
         ENDIF
 
-        cchk1 = (BTA(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
+        cchk1 = (beta(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
         IF(cchk .LT. ABS(cchk1)) THEN
           cchk = ABS(cchk1)
           iiter = jiter
@@ -294,10 +306,10 @@ module m_fstr_EIG_lanczos
 
     DO IITER = 1, LTRIAL
       IF(LLDIAG(IITER).NE.0.0D0) THEN
-        EVAL(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+        eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
       ENDIF
     enddo
-    call evsort(eval,new,ltrial)
+    call evsort(eigval,new,ltrial)
 
     ewk = 0.0
     k = nget
@@ -307,13 +319,13 @@ module m_fstr_EIG_lanczos
       DO jiter = 1,ltrial
         DO iiter =1,NPNDOF
           ewk(iiter,kk) = ewk(iiter,kk) &
-   &                    + lvecq(jiter)%q(iiter)*LZMAT(jiter,kiter)
+   &                    + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
         enddo
       enddo
     enddo
 
     DO iiter=0,ltrial
-      if( associated(lvecq(iiter)%q) ) DEALLOCATE(lvecq(iiter)%q)
+      if( associated(Q(iiter)%q) ) DEALLOCATE(Q(iiter)%q)
     enddo
 
     t2 = hecmw_Wtime() !DEBUG elap

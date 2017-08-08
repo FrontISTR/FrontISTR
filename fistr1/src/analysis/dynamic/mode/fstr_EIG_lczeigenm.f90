@@ -10,7 +10,6 @@
       IMPLICIT NONE
       PUBLIC
 
-      REAL (KIND=KREAL), DIMENSION (:), pointer :: EVAL
       REAL (KIND=KREAL), DIMENSION (:), pointer :: WORK, EGV0
       REAL (KIND=KREAL), DIMENSION (:,:), pointer :: EWK
       REAL (KIND=KREAL), DIMENSION (:,:), POINTER :: EVEC
@@ -19,13 +18,8 @@
 
       REAL(KIND=KREAL), pointer ::  LVECP(:)   !< Array of P vectors
       REAL(KIND=KREAL), pointer ::  LVECPP(:)  !< Array of modified P vectors
-      REAL(KIND=KREAL), pointer ::  ALF(:)
-      REAL(KIND=KREAL), pointer ::  BTA(:)     !< Beta parameter
       REAL(KIND=KREAL), pointer ::  LLWRK(:),LLLWRK(:),LWRK(:)
       REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
 
-      real(kind=kreal), pointer :: emwk(:,:,:)
-      real(kind=kreal), pointer :: ewt(:)
-      real(kind=kreal), pointer :: ev(:)
 
       END MODULE lczeigen

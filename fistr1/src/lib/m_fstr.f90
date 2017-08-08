@@ -75,19 +75,16 @@ module m_fstr
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 
-  integer(kind=kint), parameter :: LENG       = 256
-  integer(kind=kint), parameter :: lvecq_size = 1000
-
 !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
   integer(kind = kint) :: nprocs
 
 !> PARALLEL CONTACT FLAG
-  logical   ::  paraContactFlag = .false.
+  logical :: paraContactFlag = .false.
 
 !> FILE NAME
-  character(len=HECMW_FILENAME_LEN):: cntfilNAME
-  character(len=HECMW_FILENAME_LEN):: restartfilNAME
+  character(len=HECMW_FILENAME_LEN) :: cntfilNAME
+  character(len=HECMW_FILENAME_LEN) :: restartfilNAME
 
 !> FILE HANDLER
   integer(kind=kint), parameter :: ILOG = 16 ! log
@@ -537,18 +534,20 @@ module m_fstr
 !> Package of data used by Lanczos eigenvalue solver
   type fstr_eigen
     !> Allocatable array, used or Lanczos eigenvalue analysis
-    integer   (kind=kint)  :: nget          ! Solved eigen value number (default:5)
-    real      (kind=kreal) :: lczsgm        ! 0.0
-    integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
-    real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
+    integer(kind=kint)  :: nget          ! Solved eigen value number (default:5)
+    real   (kind=kreal) :: lczsgm        ! 0.0
+    integer(kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
+    real   (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
 
-    integer   (kind=kint)  :: iter        ! Max. Lcz iterations (default:60)
+    integer(kind=kint)  :: iter        ! Max. Lcz iterations (default:60)
 
-    real      (kind=kreal) :: totalmass
-    real      (kind=kreal), pointer :: filter(:)
-    real      (kind=kreal), pointer :: mass(:)
-    real      (kind=kreal), pointer :: effmass(:)
-    real      (kind=kreal), pointer :: partfactor(:)
+    real   (kind=kreal) :: totalmass
+    real   (kind=kreal), pointer :: eigval(:)
+    real   (kind=kreal), pointer :: eigvec(:,:)
+    real   (kind=kreal), pointer :: filter(:)
+    real   (kind=kreal), pointer :: mass(:)
+    real   (kind=kreal), pointer :: effmass(:)
+    real   (kind=kreal), pointer :: partfactor(:)
   end type fstr_eigen
 
 !> Data for coupling analysis
