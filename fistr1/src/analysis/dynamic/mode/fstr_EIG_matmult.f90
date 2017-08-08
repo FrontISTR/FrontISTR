@@ -6,45 +6,6 @@
 module m_fstr_EIG_matmult
 contains
 
-      SUBROUTINE MATMULTS(A,NSUM,X,NN)
-
-!MATRIX MULTIPLY FOR SKYLINE MATRIX
-!
-!        A(NSUM(NN)):ARRAY FOR ELEMENTS OF SKYLINE MATRIX(I/O)
-!        NSUM(0:NN) :SKYLINE INDEX                       (I)
-!        WK(NN)     :WORK SPACE                          (*/O)
-!        NN         :DIMENSION OF SKYLINE MATRIX         (I)
-!----------------------------------------------------------------------*
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION A(1),NSUM(0:NN),X(NN)
-      REAL(kind=kreal), POINTER, DIMENSION(:) :: wk(:)  !NN
-      INTEGER(kind=kint) I,I1,I2,ierror
-
-!*Allocate work array
-      ALLOCATE(wk(nn),STAT=ierror)
-      IF(ierror.NE.0) STOP "Allocation error, matmults"
-
-      WK = 0.0
-      DO 10 K=1,NN
-        KFST=NSUM(K)-NSUM(K-1)
-        DO 20 I = 1,KFST
-          I1 = NSUM(K-1)+  I
-          I2 = K-KFST+I
-          WK(K) = WK(K) + A(I1)*X(I2)
-          IF(I2.LT.K) THEN
-          WK(I2) = WK(I2) + A(I1)*X(K)
-          ENDIF
- 20     CONTINUE
- 10    CONTINUE
-
-      DO J = 1,NN
-       X(J) = WK(J)
-      END DO
-
-      RETURN
-      END SUBROUTINE MATMULTS
-
       subroutine MATMULT2(hecMESH,hecMAT,BB,ALPA,XX,NUMNP,NDOF)
 
       use m_fstr

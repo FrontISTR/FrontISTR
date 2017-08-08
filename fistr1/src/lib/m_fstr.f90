@@ -535,9 +535,9 @@ module m_fstr
   type fstr_eigen
     !> Allocatable array, used or Lanczos eigenvalue analysis
     integer(kind=kint)  :: nget          ! Solved eigen value number (default:5)
-    real   (kind=kreal) :: lczsgm        ! 0.0
-    integer(kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
-    real   (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
+    real   (kind=kreal) :: sigma        ! 0.0
+    integer(kind=kint)  :: maxiter        ! Max. Lcz iterations (default:60)
+    real   (kind=kreal) :: tolerance        ! Lcz tolerance (default:1.0e-8)
 
     integer(kind=kint)  :: iter        ! Max. Lcz iterations (default:60)
 

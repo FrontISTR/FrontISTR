@@ -2912,7 +2912,7 @@ subroutine fstr_setup_EIGEN( ctrl, counter, P )
 
         integer(kind=kint) :: rcode
 
-        rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%lcztol, P%EIGEN%lczmax)
+        rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter)
         if( rcode /= 0) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_EIGEN

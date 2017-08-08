@@ -27,6 +27,7 @@ contains
       type (fstr_eigen) :: fstrEIG
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
+    integer(kind=kint), allocatable  :: new(:)
 
     integer(kind=kint) :: j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
@@ -50,6 +51,7 @@ contains
 !C***** compute effective mass and participation factor
     allocate(fstrEIG%effmass(3*NGET))
     allocate(fstrEIG%partfactor(3*NGET))
+    allocate(new(fstrEIG%iter))
     fstrEIG%effmass    = 0.0d0
     fstrEIG%partfactor = 0.0d0
 
@@ -104,7 +106,7 @@ contains
       enddo
     endif
 
-      CALL EGLIST(hecMESH,hecMAT,fstrEIG)
+      CALL EGLIST(hecMESH,hecMAT,fstrEIG,new)
 
       IF(myrank.EQ.0) THEN
         WRITE(IMSG,*) ''
@@ -154,7 +156,7 @@ contains
           CCHK1 = 0.0D0
           DO IITER = 1,NNDOF
             CCHK1 = CCHK1 + ( LWRK(IITER) - (eigval(JITER) &
-     &                      - fstrEIG%lczsgm)*LLWRK(IITER) )**2
+     &                      - fstrEIG%sigma)*LLWRK(IITER) )**2
           END DO
 !C
             CALL hecmw_allreduce_R1(hecMESH,CCHK1,hecmw_sum)
@@ -252,7 +254,7 @@ contains
       end subroutine fstr_eigen_make_result
 
 !> Output eigenvalues and vectors
-      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG )
+      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG,new )
       use m_fstr
       use lczeigen
       use hecmw_util
@@ -265,6 +267,7 @@ contains
       INTEGER(kind=kint) :: i, j, ii
       INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot, kcount
       INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, LTRIAL, NGET
+      INTEGER(kind=kint), allocatable :: new(:)
       INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
       INTEGER(kind=kint), POINTER :: counts(:),disps(:)
       REAL(kind=kreal), POINTER :: xevec(:),xsend(:)

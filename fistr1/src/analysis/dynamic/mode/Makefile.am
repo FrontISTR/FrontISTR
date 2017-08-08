@@ -80,7 +80,6 @@ OBJS =
 
 OBJSF = \
 	fstr_EIG_lczeigenm.@f90objfilepostfix@ \
-	fstr_EIG_getamat.@f90objfilepostfix@ \
 	fstr_EIG_lanczos_util.@f90objfilepostfix@ \
 	fstr_EIG_matmult.@f90objfilepostfix@ \
 	fstr_EIG_mgs1.@f90objfilepostfix@ \

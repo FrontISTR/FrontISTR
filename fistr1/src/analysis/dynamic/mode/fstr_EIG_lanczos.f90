@@ -12,7 +12,6 @@ module m_fstr_EIG_lanczos
     use hecmw_util
     use lczeigen
     use m_eigen_lib
-    use m_fstr_EIG_getamat
     use m_fstr_EIG_lanczos_util
     use m_fstr_EIG_matmult
     use m_fstr_EIG_mgs1
@@ -33,6 +32,9 @@ module m_fstr_EIG_lanczos
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, ierr
+
+
+    integer(kind=kint), allocatable  :: new(:)
 
     real(kind=kreal), allocatable :: alpha(:), beta(:)
 
@@ -86,39 +88,40 @@ module m_fstr_EIG_lanczos
     enddo
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
-    eITMAX  = fstrEIG%lczmax
+    eITMAX  = fstrEIG%maxiter
     i = NPNDOF - in
     IF(eITMAX.GT.i) THEN
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*) '*-------------------------------------------*'
-        WRITE(IMSG,*) '  WARNING: LCZMAX exceeds system matrix size. '
-        WRITE(IMSG,*) '  Resetting LCZMAX to system matrix size.'
+        WRITE(IMSG,*) '  WARNING: maxiter exceeds system matrix size. '
+        WRITE(IMSG,*) '  Resetting maxiter to system matrix size.'
         WRITE(IMSG,*) '*-------------------------------------------*'
       endif
       eITMAX = i
+      fstrEIG%maxiter = i
     endif
 
-    CTOL = fstrEIG%lcztol
+    CTOL = fstrEIG%tolerance
     NGET = fstrEIG%nget
     neig = eITMAX + NGET
     !maxItr = i
     maxItr = neig - 1
 
-    allocate(Q(0:neig))
+    allocate( Q(0:neig) )
+    allocate( Q(0)%q(NPNDOF)        )
+    allocate( Q(1)%q(NPNDOF)        )
     allocate( fstrEIG%eigval( neig )              )
     allocate( alpha(NEIG+2)               )
     allocate( beta(NEIG+2)               )
 
 
+    allocate(new(NEIG))
 
     allocate( EM( NPNDOF )              )
     allocate( ewk( NPNDOF, neig)        )
-    allocate( new( neig )               )
     allocate( work( neig*(3*neig + 5) ) )
     allocate( LVECP(NPNDOF)             )
     allocate( LVECPP(NPNDOF)            )
-    allocate( Q(0)%q(NPNDOF)        )
-    allocate( Q(1)%q(NPNDOF)        )
     allocate( LWRK(NPNDOF)              )
     allocate( LLWRK(NPNDOF)             )
     allocate( LLLWRK(NPNDOF)            )
@@ -129,7 +132,6 @@ module m_fstr_EIG_lanczos
     eigval => fstrEIG%eigval
 
     ewk        = 0.0
-    new        = 0.0
     work       = 0.0
     lwrk       = 0.0
     LVECP      = 0.0
@@ -213,8 +215,7 @@ module m_fstr_EIG_lanczos
 
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(Q(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank,&
-   &                hecMESH,NNDOF)
+          call MGS1(Q(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank, hecMESH,NNDOF)
       enddo
 
       call MATPRO(LVECPP,fstrEIG%mass,EM,NPNDOF,1)
@@ -255,12 +256,11 @@ module m_fstr_EIG_lanczos
         LSUB(IITER)  = beta(IITER)
       enddo
 
-      call TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,&
-   &                      LSUB,LZMAT,LNZMAT,ierr) !Unordered
+      call TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr) !Unordered
 
       DO IITER = 1, LTRIAL
         IF( LLDIAG(IITER).NE.0.0D0 ) THEN
-          eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+          eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%sigma
         ENDIF
       enddo
       call EVSORT(eigval,NEW,LTRIAL)
@@ -306,7 +306,7 @@ module m_fstr_EIG_lanczos
 
     DO IITER = 1, LTRIAL
       IF(LLDIAG(IITER).NE.0.0D0) THEN
-        eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%lczsgm
+        eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%sigma
       ENDIF
     enddo
     call evsort(eigval,new,ltrial)
@@ -318,8 +318,7 @@ module m_fstr_EIG_lanczos
       kiter = NEW(kk)
       DO jiter = 1,ltrial
         DO iiter =1,NPNDOF
-          ewk(iiter,kk) = ewk(iiter,kk) &
-   &                    + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
+          ewk(iiter,kk) = ewk(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
         enddo
       enddo
     enddo
