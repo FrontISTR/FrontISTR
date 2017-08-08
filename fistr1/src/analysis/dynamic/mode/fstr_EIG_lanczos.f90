@@ -50,7 +50,7 @@ module m_fstr_EIG_lanczos
 
 
       REAL(KIND=KREAL), ALLOCATABLE ::  EVEC(:,:)
-    real(kind=kreal), allocatable :: s(:), t(:), p(:)
+    real(kind=kreal), allocatable :: s(:), t(:), p(:), u(:)
 
       REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
@@ -120,14 +120,16 @@ module m_fstr_EIG_lanczos
     allocate( s(NPNDOF)            )
     allocate( t(NPNDOF)            )
     allocate( p(NPNDOF)            )
+    allocate( u(NPNDOF)              )
 
     allocate(new(NEIG))
+
+
+
 
     allocate( EM( NPNDOF )              )
     allocate( ewk( NPNDOF, neig)        )
     allocate( work( neig*(3*neig + 5) ) )
-    allocate( LVECP(NPNDOF)             )
-    allocate( LWRK(NPNDOF)              )
 
 
     fstrEIG%eigval       = 0.0
@@ -136,10 +138,11 @@ module m_fstr_EIG_lanczos
 
     ewk        = 0.0
     work       = 0.0
-    lwrk       = 0.0
-    LVECP      = 0.0
-    LWRK       = 0.0
 
+
+    p      = 0.0
+
+    u       = 0.0
     s     = 0.0
     t     = 0.0
     p     = 0.0
@@ -148,7 +151,7 @@ module m_fstr_EIG_lanczos
     alpha        = 0.0
     beta        = 0.0
 
-    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,LVECP,Q(0)%q,Q(1)%q,beta,NPNDOF,&
+    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,p,Q(0)%q,Q(1)%q,beta,NPNDOF,&
    &                         neig,hecMESH,hecMAT,NDOF,NPNDOF)
 
     do i=1,NPNDOF
@@ -165,7 +168,7 @@ module m_fstr_EIG_lanczos
     ENDIF
 
     DO ITER=1,maxItr
-      call DUPL(EM,LVECP,NPNDOF)
+      call DUPL(EM,p,NPNDOF)
       call hecmw_mat_clear_b(hecMAT)
 
       do i=1,NPNDOF
@@ -192,26 +195,26 @@ module m_fstr_EIG_lanczos
 
       call SCSHFT(EM,Q(iter-1)%q,beta(ITER),NPNDOF)
 
-      call VECPRO1(AALF,LVECP,EM,NNDOF)
+      call VECPRO1(AALF,p,EM,NNDOF)
       alpha(ITER)=AALF
 
       call hecmw_allreduce_R1(hecMESH,alpha(ITER),hecmw_sum)
 
       call SCSHFT(EM,Q(iter)%q,alpha(ITER),NPNDOF)
 
-      LWRK = 0.
-      call MATPRO(LWRK,fstrEIG%mass,EM,NPNDOF,1)
-      call VECPRO1(prechk,LWRK,LWRK,NNDOF)
+      u = 0.
+      call MATPRO(u,fstrEIG%mass,EM,NPNDOF,1)
+      call VECPRO1(prechk,u,u,NNDOF)
         call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
       prechk = sqrt(prechk)
-      IF(prechk.NE.0.0D0) LWRK = LWRK/prechk
+      IF(prechk.NE.0.0D0) u = u/prechk
       !IREOR = ITER*(1.0 - fstrEIG%lczrod)
       IREOR = 0
 
       DO KK = IREOR,ITER
         prechk = 0.0D0
-        call VECPRO1(prechk,Q(kk)%q,LWRK,NNDOF)
+        call VECPRO1(prechk,Q(kk)%q,u,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
 
         prechk1 = 0.0D0
@@ -232,7 +235,7 @@ module m_fstr_EIG_lanczos
       beta(ITER+1) = SQRT(beta(ITER+1))
 
       call hecmw_barrier(hecMESH)
-      call UPLCZ(LVECP,Q(iter+1)%q,s,EM,beta(ITER+1),NPNDOF)
+      call UPLCZ(p,Q(iter+1)%q,s,EM,beta(ITER+1),NPNDOF)
 
       LTRIAL = ITER
       fstrEIG%iter = ITER

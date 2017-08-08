@@ -13,8 +13,6 @@
       REAL (KIND=KREAL), DIMENSION (:), pointer :: WORK
       REAL (KIND=KREAL), DIMENSION (:,:), pointer :: EWK
 
-      REAL(KIND=KREAL), pointer ::  LVECP(:)   !< Array of P vectors
-      REAL(KIND=KREAL), pointer ::  LWRK(:)
       REAL(KIND=KREAL), pointer ::  EM(:)
 
       END MODULE lczeigen
