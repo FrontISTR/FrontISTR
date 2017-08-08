@@ -30,7 +30,7 @@ contains
 
     integer(kind=kint) :: j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
-    integer(kind=kint) :: kk, ppc
+    integer(kind=kint) :: kk, ppc, nget
     integer(kind=kint) IOUT,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
     real(kind=kreal), pointer :: mass(:)
@@ -43,6 +43,7 @@ contains
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
 
+    nget =  fstrEIG%nget
     mass => fstrEIG%mass
 
 !C***** compute effective mass and participation factor
@@ -251,6 +252,93 @@ contains
 
       end subroutine fstr_eigen_make_result
 
+!> Output eigenvalues and vectors
+      SUBROUTINE EGLIST( hecMESH,hecMAT,fstrEIG )
+      use m_fstr
+      use lczeigen
+      use hecmw_util
+      use m_fstr_EIG_lanczos_util
+      implicit none
+      type (hecmwST_local_mesh) :: hecMESH
+      type (hecmwST_matrix    ) :: hecMAT
+      type (fstr_eigen) :: fstrEIG
+
+      INTEGER(kind=kint) :: i, j, ii
+      INTEGER(kind=kint) :: nglobal, istt, ied, GID, gmyrank, groot
+      INTEGER(kind=kint) :: groupcount, GROUP, XDIFF, hecGROUP, LTRIAL, NGET
+      INTEGER(kind=kint), POINTER :: istarray(:,:), grouping(:), gmem(:)
+      INTEGER(kind=kint), POINTER :: counts(:),disps(:)
+      REAL(kind=kreal), POINTER :: xevec(:),xsend(:)
+      REAL(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
+
+      NGET = fstrEIG%nget
+      LTRIAL =  fstrEIG%iter
+       PI = 4.0*ATAN(1.0)
+
+!C*EIGEN VALUE SORTING
+      CALL EVSORT(EVAL,NEW,LTRIAL)
+      IF(myrank==0) THEN
+        WRITE(ILOG,*)""
+        WRITE(ILOG,"(a)")"********************************"
+        WRITE(ILOG,"(a)")"*RESULT OF EIGEN VALUE ANALYSIS*"
+        WRITE(ILOG,"(a)")"********************************"
+        WRITE(ILOG,"(a)")""
+        WRITE(ILOG,"(a,i8)")"NUMBER OF ITERATIONS = ",LTRIAL
+        WRITE(ILOG,"(a,1pe12.4)")"TOTAL MASS = ",fstrEIG%totalmass
+        WRITE(ILOG,"(a)")""
+        WRITE(ILOG,"(3a)")"                   ANGLE       FREQUENCY   ",&
+        "PARTICIPATION FACTOR                EFFECTIVE MASS"
+        WRITE(ILOG,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
+        "X           Y           Z           X           Y           Z"
+        WRITE(ILOG,"(3a)")"  ---  ----------  ----------  ----------  ",&
+        "----------  ----------  ----------  ----------  ----------  ----------"
+        WRITE(*,*)""
+        WRITE(*,"(a)")"#----------------------------------#"
+        WRITE(*,"(a)")"#  RESULT OF EIGEN VALUE ANALYSIS  #"
+        WRITE(*,"(a)")"#----------------------------------#"
+        WRITE(*,"(a)")""
+        WRITE(*,"(a,i8)")"### NUMBER OF ITERATIONS = ",LTRIAL
+        WRITE(*,"(a,1pe12.4)")"### TOTAL MASS = ",fstrEIG%totalmass
+        WRITE(*,"(a)")""
+        WRITE(*,"(3a)")"       PERIOD     FREQUENCY  ",&
+        "PARTICIPATION FACTOR             EFFECTIVE MASS"
+        WRITE(*,"(3a)")"  NO.  [Sec]      [HZ]       ",&
+        "X          Y          Z          X          Y          Z"
+        WRITE(*,"(3a)")"  ---  ---------  ---------  ",&
+        "---------  ---------  ---------  ---------  ---------  ---------"
+
+        if(LTRIAL < NGET)then
+          j = LTRIAL
+        else
+          j = NGET
+        endif
+
+        kcount = 0
+        DO 40 i=1,LTRIAL
+          II=NEW(I)
+          if( modal(ii).eq.1 ) then
+            kcount = kcount + 1
+            EEE=EVAL(II)
+            IF(EEE.LT.0.0) EEE=0.0
+            WWW=DSQRT(EEE)
+            FFF=WWW*0.5/PI
+            PFX=fstrEIG%partfactor(3*i-2)
+            PFY=fstrEIG%partfactor(3*i-1)
+            PFZ=fstrEIG%partfactor(3*i  )
+            EMX=fstrEIG%effmass(3*i-2)
+            EMY=fstrEIG%effmass(3*i-1)
+            EMZ=fstrEIG%effmass(3*i  )
+            WRITE(ILOG,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
+            if( kcount.EQ.j ) go to 41
+          endif
+   40   CONTINUE
+   41   continue
+        WRITE(ILOG,*)
+        WRITE(*,*)""
+      ENDIF
+      RETURN
+      END SUBROUTINE EGLIST
 end module m_fstr_EIG_output
 
 

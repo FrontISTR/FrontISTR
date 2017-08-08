@@ -34,10 +34,9 @@ module m_fstr_EIG_lanczos
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, ierr
 
-
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter
-    integer(kind=kint) :: kk, jjiter, ppc
+    integer(kind=kint) :: kk, jjiter, ppc, LTRIAL, nget, NEIG
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: CTOL, prechk
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
@@ -78,21 +77,21 @@ module m_fstr_EIG_lanczos
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
     eITMAX  = fstrEIG%lczmax
-    ITLIMIT = NPNDOF - in
-    IF(eITMAX.GT.ITLIMIT) THEN
+    i = NPNDOF - in
+    IF(eITMAX.GT.i) THEN
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*) '*-------------------------------------------*'
         WRITE(IMSG,*) '  WARNING: LCZMAX exceeds system matrix size. '
         WRITE(IMSG,*) '  Resetting LCZMAX to system matrix size.'
         WRITE(IMSG,*) '*-------------------------------------------*'
       endif
-      eITMAX = ITLIMIT
+      eITMAX = i
     endif
 
     CTOL = fstrEIG%lcztol
     NGET = fstrEIG%nget
     neig = eITMAX + NGET
-    !maxItr = ITLIMIT
+    !maxItr = i
     maxItr = neig - 1
 
     allocate(lvecq(0:lvecq_size))
@@ -220,6 +219,8 @@ module m_fstr_EIG_lanczos
       call UPLCZ(LVECP,lvecq(iter+1)%q,LVECPP,EM,BTA(ITER+1),NPNDOF)
 
       LTRIAL = ITER
+      fstrEIG%iter = ITER
+
       ALLOCATE( LLDIAG(LTRIAL)        )
       ALLOCATE( LNDIAG(LTRIAL)        ) !Unordered
       ALLOCATE( LSUB(LTRIAL)          )

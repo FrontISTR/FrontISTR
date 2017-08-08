@@ -28,8 +28,6 @@
       INTEGER(kind=kint), pointer ::  modal(:)
       REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
 
-      INTEGER(KIND=KINT) :: ITLIMIT, NEIG, NGET, LTRIAL
-
       INTEGER(KIND=kint), POINTER :: my_ntotal(:)
 
       real(kind=kreal), pointer :: emwk(:,:,:)

@@ -542,6 +542,8 @@ module m_fstr
     integer   (kind=kint)  :: lczmax        ! Max. Lcz iterations (default:60)
     real      (kind=kreal) :: lcztol        ! Lcz tolerance (default:1.0e-8)
 
+    integer   (kind=kint)  :: iter        ! Max. Lcz iterations (default:60)
+
     real      (kind=kreal) :: totalmass
     real      (kind=kreal), pointer :: filter(:)
     real      (kind=kreal), pointer :: mass(:)
