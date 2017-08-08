@@ -124,7 +124,6 @@ contains
       DO JJITER = 1,fstrEIG%nget
         JITER = NEW(JJITER)
 
-        if( modal(JITER).eq.1 ) then
           LWRK = 0.0D0
           prechk1=0.0
           do i = 1, NNDOF
@@ -163,7 +162,6 @@ contains
           IF(myrank.EQ.0) THEN
              WRITE(IMSG,'(2X,I5,2X,5E15.6)') JITER,eval(JITER),CCHK1
           ENDIF
-        endif
       ENDDO
 !C
       IF(myrank==0) THEN
@@ -316,7 +314,6 @@ contains
         kcount = 0
         DO 40 i=1,LTRIAL
           II=NEW(I)
-          if( modal(ii).eq.1 ) then
             kcount = kcount + 1
             EEE=EVAL(II)
             IF(EEE.LT.0.0) EEE=0.0
@@ -331,7 +328,6 @@ contains
             WRITE(ILOG,'(I5,1P9E12.4)') kcount,EEE,WWW,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
             WRITE(*   ,'(I5,1P8E11.3)') kcount,1.0d0/FFF,FFF,PFX,PFY,PFZ,EMX,EMY,EMZ
             if( kcount.EQ.j ) go to 41
-          endif
    40   CONTINUE
    41   continue
         WRITE(ILOG,*)

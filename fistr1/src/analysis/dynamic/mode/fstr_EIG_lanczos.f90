@@ -103,7 +103,6 @@ module m_fstr_EIG_lanczos
     allocate( EM( NPNDOF )              )
     allocate( ewk( NPNDOF, neig)        )
     allocate( eval( neig )              )
-    allocate( modal( neig )             )
     allocate( new( neig )               )
     allocate( work( neig*(3*neig + 5) ) )
     allocate( LVECP(NPNDOF)             )
@@ -115,7 +114,6 @@ module m_fstr_EIG_lanczos
     allocate( LLLWRK(NPNDOF)            )
     allocate( ALF(NEIG+2)               )
     allocate( BTA(NEIG+2)               )
-    ALLOCATE(my_ntotal(0:nprocs) )
 
     ewk        = 0.0
     eval       = 0.0
@@ -131,13 +129,8 @@ module m_fstr_EIG_lanczos
     ALF        = 0.0
     BTA        = 0.0
 
-    my_ntotal(myrank) = NNDOF
-      DO I = 0,nprocs-1
-        call hecmw_bcast_I1(hecMESH,my_ntotal(I),I)
-      enddo
-
     call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,LVECP,lvecq(0)%q,lvecq(1)%q,BTA,NPNDOF,&
-   &                         neig,my_ntotal,hecMESH,hecMAT,NDOF,NPNDOF)
+   &                         neig,hecMESH,hecMAT,NDOF,NPNDOF)
 
     do i=1,NPNDOF
       hecMAT%B(i) = EM(i)
@@ -208,7 +201,7 @@ module m_fstr_EIG_lanczos
 
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(lvecq(kk)%q,EM,fstrEIG%mass,NPNDOF,my_ntotal,myrank,&
+          call MGS1(lvecq(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank,&
    &                hecMESH,NNDOF)
       enddo
 
@@ -321,11 +314,6 @@ module m_fstr_EIG_lanczos
 
     DO iiter=0,ltrial
       if( associated(lvecq(iiter)%q) ) DEALLOCATE(lvecq(iiter)%q)
-    enddo
-
-    modal = 0
-    do i = 1,LTRIAL
-      if(EVAL(i).NE.0) modal(i) = 1
     enddo
 
     t2 = hecmw_Wtime() !DEBUG elap

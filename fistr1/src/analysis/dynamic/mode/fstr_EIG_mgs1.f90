@@ -6,7 +6,7 @@
 module m_fstr_EIG_mgs1
 contains
 
-      subroutine mgs1(b,a,amass,m,ishf,irank,hecMESH,Gntotal)
+      subroutine mgs1(b,a,amass,m,irank,hecMESH,Gntotal)
 !c
 !c     modified Gram-Schimdt
 !c
@@ -17,7 +17,7 @@ contains
       REAL(kind=kreal), DIMENSION(:), POINTER :: q,p,qw
       REAL(kind=kreal) :: a(m),b(m),amass(m)
       REAL(kind=kreal) :: pp, t, y, z
-      INTEGER(kind=kint) :: irank, ishf(0:irank),Gntotal, ierror, m, i
+      INTEGER(kind=kint) :: irank, Gntotal, ierror, m, i
       TYPE (hecmwST_local_mesh) :: hecMESH
 
 !*Allocate local working arrays

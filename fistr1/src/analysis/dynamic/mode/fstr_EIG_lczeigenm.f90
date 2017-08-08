@@ -24,10 +24,6 @@
       REAL(KIND=KREAL), pointer ::  LLWRK(:),LLLWRK(:),LWRK(:)
       REAL(KIND=KREAL), pointer ::  EVECQ(:,:),EM(:)
 
-      INTEGER(kind=kint), pointer ::  modal(:)
-
-      INTEGER(KIND=kint), POINTER :: my_ntotal(:)
-
       real(kind=kreal), pointer :: emwk(:,:,:)
       real(kind=kreal), pointer :: ewt(:)
       real(kind=kreal), pointer :: ev(:)

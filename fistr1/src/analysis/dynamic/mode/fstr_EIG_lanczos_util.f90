@@ -8,7 +8,7 @@ module m_fstr_EIG_lanczos_util
 
 !> Initialize Lanczos iterations
   SUBROUTINE SETIVL( GMASS, EVEC, EFILT, WK, LVECP, q0, q1, BTA, &
-                   & NTOT, NEIG, ISHF, hecMESH, hecMAT, NDOF, GTOT )
+                   & NTOT, NEIG, hecMESH, hecMAT, NDOF, GTOT )
     USE m_fstr
     USE hecmw_util
     implicit none
@@ -17,7 +17,7 @@ module m_fstr_EIG_lanczos_util
     REAL(kind=kreal) :: LVECP(NTOT), BTA(NEIG), chk
     REAL(kind=kreal), POINTER :: xvec(:), q0(:), q1(:)
     INTEGER(kind=kint) :: GTOT, IRANK, NDOF, numnp, iov, IRTN, NNN, NN, NTOT, NEIG, i, ierror, j
-    INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), ISHF(0:NPROCS-1), IDISP(0:NPROCS-1)
+    INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), IDISP(0:NPROCS-1)
     TYPE (hecmwST_local_mesh) :: hecMESH
     TYPE (hecmwST_matrix    ) :: hecMAT
 
@@ -30,7 +30,7 @@ module m_fstr_EIG_lanczos_util
        EVEC(i) = EVEC(i)*EFILT(i)
      end do
 
-    CALL VECPRO1(chk,EVEC(1),EVEC(1),ISHF(IRANK))
+    CALL VECPRO1(chk,EVEC(1),EVEC(1), NN)
       CALL hecmw_allreduce_R1(hecMESH,chk,hecmw_sum)
 
     EVEC(:) = EVEC(:)/sqrt(chk)
@@ -41,7 +41,7 @@ module m_fstr_EIG_lanczos_util
 
     CALL MATPRO(WK,GMASS,EVEC,NN,1)
 
-    CALL VECPRO(BTA(1),EVEC(1),WK(1,1),ISHF(IRANK),1)
+    CALL VECPRO(BTA(1),EVEC(1),WK(1,1), NN,1)
       CALL hecmw_allreduce_R(hecMESH,BTA,1,hecmw_sum)
 
     BTA(1) = SQRT(BTA(1))
