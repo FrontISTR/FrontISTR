@@ -36,6 +36,8 @@ contains
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
     real(kind=kreal), pointer :: mass(:), eigval(:)
 
+    real(kind=kreal), allocatable :: s(:), t(:), u(:)
+
       REAL(KIND=KREAL) :: PRECHK1,PRECHK2,CCHK0,CCHK1,CCHK,CERR
 
     N      = hecMAT%N
@@ -52,6 +54,9 @@ contains
     allocate(fstrEIG%effmass(3*NGET))
     allocate(fstrEIG%partfactor(3*NGET))
     allocate(new(fstrEIG%iter))
+    allocate(s(NPNDOF))
+    allocate(t(NPNDOF))
+    allocate(u(NPNDOF))
     fstrEIG%effmass    = 0.0d0
     fstrEIG%partfactor = 0.0d0
 
@@ -123,11 +128,11 @@ contains
         WRITE(IMSG,*) '   *-----*  *---------*  *--------------*'
       ENDIF
 !C
-      LLLWRK = 0.0D0
+      t = 0.0D0
       DO JJITER = 1,fstrEIG%nget
         JITER = NEW(JJITER)
 
-          LWRK = 0.0D0
+          t = 0.0D0
           prechk1=0.0
           do i = 1, NNDOF
             prechk1=prechk1+ewk(i,JJITER)**2
@@ -137,26 +142,26 @@ contains
           if( prechk1.NE.0.0D0 ) ewk(:,JJITER) = ewk(:,JJITER)/prechk1
 !C
           DO IITER = 1, NNDOF
-            LWRK(IITER) = ewk(IITER,JJITER)
+            u(IITER) = ewk(IITER,JJITER)
           ENDDO
 !C
           IF(NDOF.EQ.3) THEN
-            CALL MATMULT3( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
+            CALL MATMULT3( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
           ELSE IF(NDOF.EQ.2) THEN
-            CALL MATMULT2( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
+            CALL MATMULT2( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
           ELSE IF(NDOF.EQ.6) THEN
-            CALL MATMULT6( hecMESH,hecMAT,LLLWRK,1.0D0,LWRK,NP,NDOF )
+            CALL MATMULT6( hecMESH,hecMAT,t,1.0D0,u,NP,NDOF )
           ENDIF
 !C
-          LLWRK = 0.0D0
+          s = 0.0D0
           do i = 1, NNDOF
-            LLWRK(i) = mass(i)*ewk(i,JJITER)
+            s(i) = mass(i)*ewk(i,JJITER)
           enddo
 !C
           CCHK1 = 0.0D0
           DO IITER = 1,NNDOF
-            CCHK1 = CCHK1 + ( LWRK(IITER) - (eigval(JITER) &
-     &                      - fstrEIG%sigma)*LLWRK(IITER) )**2
+            CCHK1 = CCHK1 + ( u(IITER) - (eigval(JITER) &
+     &                      - fstrEIG%sigma)*s(IITER) )**2
           END DO
 !C
             CALL hecmw_allreduce_R1(hecMESH,CCHK1,hecmw_sum)

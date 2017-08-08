@@ -50,7 +50,7 @@ module m_fstr_EIG_lanczos
 
 
       REAL(KIND=KREAL), ALLOCATABLE ::  EVEC(:,:)
-    real(kind=kreal), allocatable :: s(:)
+    real(kind=kreal), allocatable :: s(:), t(:), p(:)
 
       REAL(KIND=KREAL), ALLOCATABLE ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), ALLOCATABLE ::  LZMAT(:,:), LNZMAT(:,:)
@@ -117,6 +117,9 @@ module m_fstr_EIG_lanczos
     allocate( alpha(NEIG+2)               )
     allocate( beta(NEIG+2)               )
 
+    allocate( s(NPNDOF)            )
+    allocate( t(NPNDOF)            )
+    allocate( p(NPNDOF)            )
 
     allocate(new(NEIG))
 
@@ -124,10 +127,7 @@ module m_fstr_EIG_lanczos
     allocate( ewk( NPNDOF, neig)        )
     allocate( work( neig*(3*neig + 5) ) )
     allocate( LVECP(NPNDOF)             )
-    allocate( LVECPP(NPNDOF)            )
     allocate( LWRK(NPNDOF)              )
-    allocate( LLWRK(NPNDOF)             )
-    allocate( LLLWRK(NPNDOF)            )
 
 
     fstrEIG%eigval       = 0.0
@@ -138,11 +138,13 @@ module m_fstr_EIG_lanczos
     work       = 0.0
     lwrk       = 0.0
     LVECP      = 0.0
-    LVECPP     = 0.0
+    LWRK       = 0.0
+
+    s     = 0.0
+    t     = 0.0
+    p     = 0.0
     Q(0)%q = 0.0
     Q(1)%q = 0.0
-    LWRK       = 0.0
-    LLWRK      = 0.0
     alpha        = 0.0
     beta        = 0.0
 
@@ -221,16 +223,16 @@ module m_fstr_EIG_lanczos
           call MGS1(Q(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank, hecMESH,NNDOF)
       enddo
 
-      call MATPRO(LVECPP,fstrEIG%mass,EM,NPNDOF,1)
+      call MATPRO(s,fstrEIG%mass,EM,NPNDOF,1)
 
-      call VECPRO1(AALF,LVECPP,EM,NNDOF)
+      call VECPRO1(AALF,s,EM,NNDOF)
       beta(ITER+1) = AALF
         call hecmw_allreduce_R1(hecMESH,beta(ITER+1),hecmw_sum)
 
       beta(ITER+1) = SQRT(beta(ITER+1))
 
       call hecmw_barrier(hecMESH)
-      call UPLCZ(LVECP,Q(iter+1)%q,LVECPP,EM,beta(ITER+1),NPNDOF)
+      call UPLCZ(LVECP,Q(iter+1)%q,s,EM,beta(ITER+1),NPNDOF)
 
       LTRIAL = ITER
       fstrEIG%iter = ITER
