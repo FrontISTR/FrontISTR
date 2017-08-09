@@ -52,7 +52,7 @@ cmake version 2.8.12.2
 | -DWITH_MUMPS=1          | MUMPSの機能を有効にします                     | ライブラリが必要               |
 | -DWITH_LAPACK=1         | LAPACKの機能を有効にします                    | ライブラリが必要               |
 | -DWITH_ML=1             | Trilinos MLの機能を有効にします               | ライブラリが必要               |
-| -DWITH_DOC=1           | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
+| -DWITH_DOC=1            | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
 | -DBLA_VENDOR="Generic"  | 利用するBLASのベンダーを指定                  | FindBLAS.cmakeを参照           |
 | -DBLAS_LIBRARIES=".."   | BLASライブラリを直接指定                      | ライブラリを絶対パスで直接指定 |
 | -DLAPACK_LIBRARIES=".." | LaPACKライブラリを直接指定                    | ライブラリを絶対パスで直接指定 |
@@ -363,8 +363,8 @@ FrontFlowなどと連成を行うためのカップラーです。
 OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分をこれに置き換えることもできます。
 
 ~~~txt
-% tar xvf OpenBLAS-0.2.18.tar.gz
-% cd OpenBLAS-0.2.18
+% tar xvf OpenBLAS-0.2.20.tar.gz
+% cd OpenBLAS-0.2.20
 % make BINARY=64 NO_SHARED=1 USE_OPENMP=1
 % make PREFIX=$HOME/local install
 ~~~
@@ -389,7 +389,7 @@ parmetis-4.0.3コンパイルするにはcmakeが必要です。また、MPIを�
 % make install
 ~~~
 
-### MUMPS-5.0.1
+### MUMPS-5.1.1
 
 直接法ソルバーMUMPSの構築方法です。
 
