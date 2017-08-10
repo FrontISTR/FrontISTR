@@ -1164,6 +1164,11 @@ subroutine fstr_eigen_init( fstrEIG )
         type(fstr_eigen) :: fstrEIG
 
         fstrEIG%nget        = 5
+        fstrEIG%maxiter     = 60
+        fstrEIG%iter        = 0
+        fstrEIG%sigma       = 0.0d0
+        fstrEIG%tolerance   = 1.0d-6
+        fstrEIG%totalmass   = 0.0d0
 end subroutine fstr_eigen_init
 
 !> Initial setting of dynamic calculation
@@ -1174,7 +1179,7 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
         fstrDYNAMIC%t_start  = 0.0
-        fstrDYNAMIC%t_curr = 0.0d0
+        fstrDYNAMIC%t_curr   = 0.0d0
         fstrDYNAMIC%t_end    = 1.0
         fstrDYNAMIC%t_delta  = 1.0
         fstrDYNAMIC%ganma    = 0.5

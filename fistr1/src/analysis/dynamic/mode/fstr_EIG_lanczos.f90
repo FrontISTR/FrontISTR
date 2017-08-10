@@ -30,21 +30,22 @@ module m_fstr_EIG_lanczos
 
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: iter, ierr
+    integer(kind=kint) :: iter, maxiter, ierr
+    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
 
 
-    integer(kind=kint), allocatable  :: new(:)
-      REAL (KIND=KREAL), pointer :: EWK(:,:)
+    integer(kind=kint), allocatable :: iparm(:)
+    real(kind=kreal),   allocatable :: alpha(:), beta(:)
 
-    real(kind=kreal), allocatable :: alpha(:), beta(:)
+    real(kind=kreal), pointer :: EWK(:,:)
 
 
 
-    integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
-    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter, it
-    integer(kind=kint) :: kk, jjiter, ppc, nget, NEIG
-    integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
-    real(kind=kreal)   :: CTOL, prechk
+
+    integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
+    integer(kind=kint) :: kk, jjiter, ppc, nget, jiter, iiter, kiter, it
+    integer(kind=kint) :: IOUT,IREOR,itype,iS,iE,ic_type,icel,jS,nn
+    real(kind=kreal)   :: tolerance, prechk
     real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
     real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
@@ -56,6 +57,14 @@ module m_fstr_EIG_lanczos
       REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
 
     real(kind=kreal), pointer :: eigval(:)
+
+
+
+
+
+
+
+
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -92,8 +101,6 @@ module m_fstr_EIG_lanczos
     enddo
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
-    fstrEIG%maxiter = 60
-      eITMAX = 60
     IF(in < fstrEIG%maxiter) THEN
       IF(myrank .EQ. 0) THEN
         WRITE(IMSG,*) '*-------------------------------------------*'
@@ -101,7 +108,6 @@ module m_fstr_EIG_lanczos
         WRITE(IMSG,*) '  Resetting maxiter to system matrix size.'
         WRITE(IMSG,*) '*-------------------------------------------*'
       endif
-      eITMAX = in
       fstrEIG%maxiter = in
     endif
 
@@ -109,31 +115,29 @@ module m_fstr_EIG_lanczos
       fstrEIG%nget = in
     endif
 
-    NGET = fstrEIG%nget
-    CTOL = fstrEIG%tolerance
-    neig = eITMAX + NGET
-    !maxItr = i
-    maxItr = neig - 1
+    nget      = fstrEIG%nget
+    tolerance = fstrEIG%tolerance
+    maxiter   = fstrEIG%maxiter
 
-    allocate( Q(0:neig) )
+    allocate( Q(0:maxiter) )
     allocate( Q(0)%q(NPNDOF)        )
     allocate( Q(1)%q(NPNDOF)        )
-    allocate( fstrEIG%eigval( neig )              )
-    allocate( alpha(NEIG+2)               )
-    allocate( beta(NEIG+2)               )
+    allocate( fstrEIG%eigval( maxiter )              )
+    allocate( alpha(maxiter+2)               )
+    allocate( beta(maxiter+2)               )
 
     allocate( s(NPNDOF)            )
     allocate( t(NPNDOF)            )
     allocate( p(NPNDOF)            )
     allocate( u(NPNDOF)              )
 
-    allocate( new(NEIG) )
+    allocate( iparm(maxiter) )
 
 
 
 
     allocate( EM( NPNDOF )              )
-    allocate( fstrEIG%eigvec( NPNDOF, neig)        )
+    allocate( fstrEIG%eigvec( NPNDOF, maxiter)        )
 
 
 
@@ -155,7 +159,7 @@ module m_fstr_EIG_lanczos
     beta   = 0.0d0
 
     call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,p,Q(0)%q,Q(1)%q,beta,NPNDOF,&
-   &                         neig,hecMESH,hecMAT,NDOF,NPNDOF)
+   &                         maxiter,hecMESH,hecMAT,NDOF,NPNDOF)
 
     do i=1,NPNDOF
       hecMAT%B(i) = EM(i)
@@ -170,7 +174,9 @@ module m_fstr_EIG_lanczos
       WRITE(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
     ENDIF
 
-    DO iter=1,maxItr
+
+
+    DO iter=1,maxiter-1
       call DUPL(EM,p,NPNDOF)
       call hecmw_mat_clear_b(hecMAT)
 
@@ -241,7 +247,7 @@ module m_fstr_EIG_lanczos
 
       fstrEIG%iter = iter
 
-      IF(beta(iter+1) <= CTOL .and. NGET <= iter)THEN
+      IF(beta(iter+1) <= tolerance .and. nget <= iter)THEN
         WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
         exit
       ENDIF
@@ -284,14 +290,14 @@ module m_fstr_EIG_lanczos
           eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
         ENDIF
       enddo
-      call EVSORT(eigval,NEW,iter)
+      call EVSORT(eigval,iparm,iter)
 
       cchk  = 0.0
-      Kiter = NGET+2            !Extra 2 values as a safety feature
+      Kiter = nget+2            !Extra 2 values as a safety feature
       IF(iter .LT. Kiter) Kiter = iter
 
       DO JJiter = 1,Kiter
-        Jiter = NEW(JJiter)
+        Jiter = iparm(JJiter)
         call VECPRO1(prechk1,LZMAT(1,Jiter),LZMAT(1,Jiter),iter)
 
         IF(prechk1 .GT. 0.) THEN
@@ -309,7 +315,7 @@ module m_fstr_EIG_lanczos
       enddo
 
 
-      !IF(iter.LT.maxItr) THEN
+      !IF(iter.LT.maxiter) THEN
       !  if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
       !  if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
       !  if( allocated(LSUB) )   DEALLOCATE(LSUB)
@@ -327,13 +333,13 @@ module m_fstr_EIG_lanczos
         eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
       ENDIF
     enddo
-    call evsort(eigval,new,iter)
+    call evsort(eigval,iparm,iter)
 
     ewk = 0.0
     k = nget
     IF(k .GT. iter) k = iter
     DO kk = 1,k
-      kiter = NEW(kk)
+      kiter = iparm(kk)
       DO jiter = 1,iter
         DO iiter =1,NPNDOF
           ewk(iiter,kk) = ewk(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
@@ -353,7 +359,7 @@ module m_fstr_EIG_lanczos
       WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
     ENDIF
 
-    DO Jiter=1,NGET
+    DO Jiter=1,nget
       prechk1 = maxval(ewk(:,Jiter))
       call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
