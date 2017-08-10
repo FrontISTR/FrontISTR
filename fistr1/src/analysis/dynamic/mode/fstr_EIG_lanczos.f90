@@ -42,7 +42,7 @@ module m_fstr_EIG_lanczos
 
     integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0, jiter, iiter, kiter, it
-    integer(kind=kint) :: kk, jjiter, ppc, LTRIAL, nget, NEIG
+    integer(kind=kint) :: kk, jjiter, ppc, nget, NEIG
     integer(kind=kint) :: IOUT,IREOR,eITMAX,itype,iS,iE,ic_type,icel,jS,nn
     real(kind=kreal)   :: CTOL, prechk
     real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
@@ -127,7 +127,7 @@ module m_fstr_EIG_lanczos
     allocate( p(NPNDOF)            )
     allocate( u(NPNDOF)              )
 
-    allocate(new(NEIG))
+    allocate( new(NEIG) )
 
 
 
@@ -136,25 +136,23 @@ module m_fstr_EIG_lanczos
     allocate( fstrEIG%eigvec( NPNDOF, neig)        )
 
 
-    fstrEIG%eigval       = 0.0
 
     eigval => fstrEIG%eigval
     EWK => fstrEIG%eigvec
 
-    ewk        = 0.0
+    fstrEIG%eigval = 0.0d0
+    ewk    = 0.0d0
     !work       = 0.0
 
-
-    p      = 0.0
-
-    u       = 0.0
-    s     = 0.0
-    t     = 0.0
-    p     = 0.0
-    Q(0)%q = 0.0
-    Q(1)%q = 0.0
-    alpha        = 0.0
-    beta        = 0.0
+    p      = 0.0d0
+    u      = 0.0d0
+    s      = 0.0d0
+    t      = 0.0d0
+    p      = 0.0d0
+    Q(0)%q = 0.0d0
+    Q(1)%q = 0.0d0
+    alpha  = 0.0d0
+    beta   = 0.0d0
 
     call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,p,Q(0)%q,Q(1)%q,beta,NPNDOF,&
    &                         neig,hecMESH,hecMAT,NDOF,NPNDOF)
@@ -172,7 +170,7 @@ module m_fstr_EIG_lanczos
       WRITE(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
     ENDIF
 
-    DO ITER=1,maxItr
+    DO iter=1,maxItr
       call DUPL(EM,p,NPNDOF)
       call hecmw_mat_clear_b(hecMAT)
 
@@ -198,14 +196,14 @@ module m_fstr_EIG_lanczos
 
       ALLOCATE( Q(iter+1)%q(NPNDOF) )
 
-      call SCSHFT(EM,Q(iter-1)%q,beta(ITER),NPNDOF)
+      call SCSHFT(EM,Q(iter-1)%q,beta(iter),NPNDOF)
 
       call VECPRO1(AALF,p,EM,NNDOF)
-      alpha(ITER)=AALF
+      alpha(iter)=AALF
 
-      call hecmw_allreduce_R1(hecMESH,alpha(ITER),hecmw_sum)
+      call hecmw_allreduce_R1(hecMESH,alpha(iter),hecmw_sum)
 
-      call SCSHFT(EM,Q(iter)%q,alpha(ITER),NPNDOF)
+      call SCSHFT(EM,Q(iter)%q,alpha(iter),NPNDOF)
 
       u = 0.
       call MATPRO(u,fstrEIG%mass,EM,NPNDOF,1)
@@ -214,10 +212,10 @@ module m_fstr_EIG_lanczos
 
       prechk = sqrt(prechk)
       IF(prechk.NE.0.0D0) u = u/prechk
-      !IREOR = ITER*(1.0 - fstrEIG%lczrod)
+      !IREOR = iter*(1.0 - fstrEIG%lczrod)
       IREOR = 0
 
-      DO KK = IREOR,ITER
+      DO KK = IREOR,iter
         prechk = 0.0D0
         call VECPRO1(prechk,Q(kk)%q,u,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
@@ -234,57 +232,67 @@ module m_fstr_EIG_lanczos
       call MATPRO(s,fstrEIG%mass,EM,NPNDOF,1)
 
       call VECPRO1(AALF,s,EM,NNDOF)
-      beta(ITER+1) = AALF
-        call hecmw_allreduce_R1(hecMESH,beta(ITER+1),hecmw_sum)
+      beta(iter+1) = AALF
+        call hecmw_allreduce_R1(hecMESH,beta(iter+1),hecmw_sum)
 
-      beta(ITER+1) = SQRT(beta(ITER+1))
+      beta(iter+1) = SQRT(beta(iter+1))
 
-      call hecmw_barrier(hecMESH)
-      call UPLCZ(p,Q(iter+1)%q,s,EM,beta(ITER+1),NPNDOF)
+      call UPLCZ(p,Q(iter+1)%q,s,EM,beta(iter+1),NPNDOF)
 
-      LTRIAL = ITER
-      fstrEIG%iter = ITER
+      fstrEIG%iter = iter
 
-      ALLOCATE( LLDIAG(LTRIAL)        )
-      ALLOCATE( LNDIAG(LTRIAL)        ) !Unordered
-      ALLOCATE( LSUB(LTRIAL)          )
-      ALLOCATE( LZMAT(LTRIAL,LTRIAL)  )
-      ALLOCATE( LNZMAT(LTRIAL,LTRIAL) ) !Unordered
+      IF(beta(iter+1) <= CTOL .and. NGET <= iter)THEN
+        WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
+        exit
+      ENDIF
 
-      DO JITER = 1,LTRIAL
-        DO IITER = 1,LTRIAL
-          LZMAT(JITER,IITER)  = 0.0D0
-          LNZMAT(JITER,IITER) = 0.0D0 !Unordered
+    enddo
+
+
+
+
+
+
+      ALLOCATE( LLDIAG(iter)        )
+      ALLOCATE( LNDIAG(iter)        ) !Unordered
+      ALLOCATE( LSUB(iter)          )
+      ALLOCATE( LZMAT(iter,iter)  )
+      ALLOCATE( LNZMAT(iter,iter) ) !Unordered
+
+      DO Jiter = 1,iter
+        DO Iiter = 1,iter
+          LZMAT(Jiter,Iiter)  = 0.0D0
+          LNZMAT(Jiter,Iiter) = 0.0D0 !Unordered
         enddo
       enddo
 
-      DO IITER = 1,LTRIAL
-        LLDIAG(IITER) = alpha(IITER)
-        LZMAT(IITER,IITER) = 1.0D0
+      DO Iiter = 1,iter
+        LLDIAG(Iiter) = alpha(Iiter)
+        LZMAT(Iiter,Iiter) = 1.0D0
       enddo
 
       LSUB(1) = 0.0
-      IITER   = 0
-      DO IITER = 2,LTRIAL
-        LSUB(IITER)  = beta(IITER)
+      Iiter   = 0
+      DO Iiter = 2,iter
+        LSUB(Iiter)  = beta(Iiter)
       enddo
 
-      call TRIDIAG(LTRIAL,LTRIAL,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr) !Unordered
+      call TRIDIAG(iter,iter,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr) !Unordered
 
-      DO IITER = 1, LTRIAL
-        IF( LLDIAG(IITER).NE.0.0D0 ) THEN
-          eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%sigma
+      DO Iiter = 1, iter
+        IF( LLDIAG(Iiter).NE.0.0D0 ) THEN
+          eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
         ENDIF
       enddo
-      call EVSORT(eigval,NEW,LTRIAL)
+      call EVSORT(eigval,NEW,iter)
 
       cchk  = 0.0
-      KITER = NGET+2            !Extra 2 values as a safety feature
-      IF(LTRIAL .LT. KITER) KITER = LTRIAL
+      Kiter = NGET+2            !Extra 2 values as a safety feature
+      IF(iter .LT. Kiter) Kiter = iter
 
-      DO JJITER = 1,KITER
-        JITER = NEW(JJITER)
-        call VECPRO1(prechk1,LZMAT(1,JITER),LZMAT(1,JITER),LTRIAL)
+      DO JJiter = 1,Kiter
+        Jiter = NEW(JJiter)
+        call VECPRO1(prechk1,LZMAT(1,Jiter),LZMAT(1,Jiter),iter)
 
         IF(prechk1 .GT. 0.) THEN
           prechk1 = SQRT(prechk1)
@@ -292,7 +300,7 @@ module m_fstr_EIG_lanczos
           prechk1 = 1.
         ENDIF
 
-        cchk1 = (beta(JITER))*(LZMAT(LTRIAL,JITER)/prechk)
+        cchk1 = (beta(Jiter))*(LZMAT(iter,Jiter)/prechk)
         IF(cchk .LT. ABS(cchk1)) THEN
           cchk = ABS(cchk1)
           iiter = jiter
@@ -300,43 +308,40 @@ module m_fstr_EIG_lanczos
         ENDIF
       enddo
 
-      IF(cchk <= CTOL .and. NGET <= ITER)THEN
-        WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
-        GO TO 25
-      ENDIF
 
-      IF(ITER.LT.maxItr) THEN
-        if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
-        if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
-        if( allocated(LSUB) )   DEALLOCATE(LSUB)
-        if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
-        if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
-      ENDIF
+      !IF(iter.LT.maxItr) THEN
+      !  if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
+      !  if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
+      !  if( allocated(LSUB) )   DEALLOCATE(LSUB)
+      !  if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
+      !  if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
+      !ENDIF
 
-    enddo
 
-25  CONTINUE
 
-    DO IITER = 1, LTRIAL
-      IF(LLDIAG(IITER).NE.0.0D0) THEN
-        eigval(IITER) = 1.0D0/LLDIAG(IITER) + fstrEIG%sigma
+
+
+
+    DO Iiter = 1, iter
+      IF(LLDIAG(Iiter).NE.0.0D0) THEN
+        eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
       ENDIF
     enddo
-    call evsort(eigval,new,ltrial)
+    call evsort(eigval,new,iter)
 
     ewk = 0.0
     k = nget
-    IF(k .GT. ltrial) k = ltrial
+    IF(k .GT. iter) k = iter
     DO kk = 1,k
       kiter = NEW(kk)
-      DO jiter = 1,ltrial
+      DO jiter = 1,iter
         DO iiter =1,NPNDOF
           ewk(iiter,kk) = ewk(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
         enddo
       enddo
     enddo
 
-    DO iiter=0,ltrial
+    DO iiter=0,iter
       if( associated(Q(iiter)%q) ) DEALLOCATE(Q(iiter)%q)
     enddo
 
@@ -348,13 +353,13 @@ module m_fstr_EIG_lanczos
       WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
     ENDIF
 
-    DO JITER=1,NGET
-      prechk1 = maxval(ewk(:,JITER))
+    DO Jiter=1,NGET
+      prechk1 = maxval(ewk(:,Jiter))
       call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
       if(prechk1.NE.0.0D0)then
         do i = 1, NNDOF
-          ewk(i,JITER) = ewk(i,JITER)/prechk1
+          ewk(i,Jiter) = ewk(i,Jiter)/prechk1
         enddo
       endif
     enddo
