@@ -7,6 +7,11 @@
 module m_fstr_EIG_tridiag
   use hecmw
 
+  type fstr_tri_diag
+    real(kind=kreal), allocatable :: alpha(:)
+    real(kind=kreal), allocatable :: beta(:)
+  end type fstr_tri_diag
+
 contains
 
   function a2b2(a,b)
@@ -108,9 +113,9 @@ contains
       ierror = 0
       if (n .eq. 1) go to 1001
 
-      do 100 i = 2, n
+      do i = 2, n
         e(i-1) = e(i)
-  100 continue
+      enddo
 
       f = 0.0d0
       tst1 = 0.0d0
@@ -121,14 +126,15 @@ contains
          h = dabs(d(l)) + dabs(e(l))
          if (tst1 .lt. h) tst1 = h
 !     .......... look for small sub-diagonal element ..........
-         do 110 m = l, n
+         bb:do m = l, n
             tst2 = tst1 + dabs(e(m))
-            if (tst2 .eq. tst1) go to 120
+            if (tst2 .eq. tst1) exit bb
 !     .......... e(n) is always zero, so there is no exit
 !                through the bottom of the loop ..........
-  110    continue
+         enddo bb
 
-  120    if (m .eq. l) go to 220
+         if (m .eq. l)  go to 220
+
   130    if (j .eq. 30) go to 1000
          j = j + 1
 !     .......... form shift ..........
@@ -143,9 +149,9 @@ contains
          h = g - d(l)
          if (l2 .gt. n) go to 145
 
-         do 140 i = l2, n
+         do i = l2, n
            d(i) = d(i) - h
-  140    continue
+         enddo
 
   145    f = f + h
 !     .......... ql transformation ..........
@@ -156,7 +162,7 @@ contains
          s = 0.0d0
          mml = m - l
 !     .......... for i=m-1 step -1 until l do -- ..........
-         do 200 ii = 1, mml
+         do ii = 1, mml
             c3 = c2
             c2 = c
             s2 = s
@@ -170,12 +176,12 @@ contains
             p = c * d(i) - s * g
             d(i+1) = h + s * (c * g + s * d(i))
 !     .......... form vector ..........
-            do 180 k = 1, n
+            do k = 1, n
                h = z(k,i+1)
                z(k,i+1) = s * z(k,i) + c * h
                z(k,i) = c * z(k,i) - s * h
-  180       continue
-  200    continue
+            enddo
+         enddo
 
          p = -s * s2 * c3 * el1 * e(l) / dl1
          e(l) = s * p
@@ -198,21 +204,21 @@ contains
          k = i
          p = d(i)
 
-         do 260 j = ii, n
-            if (d(j) .ge. p) go to 260
+         aa:do j = ii, n
+            if (d(j) .ge. p) exit aa
             k = j
             p = d(j)
-  260    continue
+         enddo aa
 
          if (k .eq. i) go to 300
          d(k) = d(i)
          d(i) = p
 
-         do 280 j = 1, n
+         do j = 1, n
             p = z(j,i)
             z(j,i) = z(j,k)
             z(j,k) = p
-  280    continue
+        enddo
 
   300 continue
 

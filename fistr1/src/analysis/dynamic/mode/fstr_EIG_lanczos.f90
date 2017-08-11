@@ -30,24 +30,29 @@ module m_fstr_EIG_lanczos
 
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: iter, maxiter, ierr
+    integer(kind=kint) :: iter, maxiter, nget, ierr
+    integer(kind=kint) :: i, j, k, in, jn, kn
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
+    real(kind=kreal) :: t1, t2, tolerance
 
 
     integer(kind=kint), allocatable :: iparm(:)
     real(kind=kreal),   allocatable :: alpha(:), beta(:)
 
-    real(kind=kreal), pointer :: EWK(:,:)
+    real(kind=kreal), pointer :: eigvec(:,:)
+    real(kind=kreal), pointer :: eigval(:)
 
 
 
 
-    integer(kind=kint) :: i, j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep
-    integer(kind=kint) :: kk, jjiter, ppc, nget, jiter, iiter, kiter, it
-    integer(kind=kint) :: IOUT,IREOR,itype,iS,iE,ic_type,icel,jS,nn
-    real(kind=kreal)   :: tolerance, prechk
+
+
+
+    integer(kind=kint) :: kk, jjiter, ppc, jiter, iiter, kiter, it
+    integer(kind=kint) :: IOUT,IREOR,itype,iS,iE,ic_type,icel,jS,nn , ii, iii, ik, in1, in2, in3, nstep, istep
+    real(kind=kreal)   :: prechk
     real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
-    real(kind=kreal)   :: t1, t2, aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
+    real(kind=kreal)   :: aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
 
     real(kind=kreal), allocatable ::  EVEC(:,:), em(:)
@@ -56,7 +61,6 @@ module m_fstr_EIG_lanczos
       REAL(KIND=KREAL), allocatable ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
 
-    real(kind=kreal), pointer :: eigval(:)
 
 
 
@@ -142,12 +146,10 @@ module m_fstr_EIG_lanczos
 
 
     eigval => fstrEIG%eigval
-    EWK => fstrEIG%eigvec
+    eigvec => fstrEIG%eigvec
 
-    fstrEIG%eigval = 0.0d0
-    ewk    = 0.0d0
-    !work       = 0.0
-
+    eigval = 0.0d0
+    eigvec = 0.0d0
     p      = 0.0d0
     u      = 0.0d0
     s      = 0.0d0
@@ -158,8 +160,7 @@ module m_fstr_EIG_lanczos
     alpha  = 0.0d0
     beta   = 0.0d0
 
-    call SETIVL(fstrEIG%mass,EM,fstrEIG%filter,ewk,p,Q(0)%q,Q(1)%q,beta,NPNDOF,&
-   &                         maxiter,hecMESH,hecMAT,NDOF,NPNDOF)
+    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, EM, eigvec, p, Q(0)%q, Q(1)%q, beta, maxiter)
 
     do i=1,NPNDOF
       hecMAT%B(i) = EM(i)
@@ -254,7 +255,7 @@ module m_fstr_EIG_lanczos
 
     enddo
 
-
+     iter = fstrEIG%iter
 
 
 
@@ -315,13 +316,6 @@ module m_fstr_EIG_lanczos
       enddo
 
 
-      !IF(iter.LT.maxiter) THEN
-      !  if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
-      !  if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
-      !  if( allocated(LSUB) )   DEALLOCATE(LSUB)
-      !  if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
-      !  if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
-      !ENDIF
 
 
 
@@ -335,14 +329,14 @@ module m_fstr_EIG_lanczos
     enddo
     call evsort(eigval,iparm,iter)
 
-    ewk = 0.0
+    eigvec = 0.0
     k = nget
     IF(k .GT. iter) k = iter
     DO kk = 1,k
       kiter = iparm(kk)
       DO jiter = 1,iter
         DO iiter =1,NPNDOF
-          ewk(iiter,kk) = ewk(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
+          eigvec(iiter,kk) = eigvec(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
         enddo
       enddo
     enddo
@@ -360,15 +354,21 @@ module m_fstr_EIG_lanczos
     ENDIF
 
     DO Jiter=1,nget
-      prechk1 = maxval(ewk(:,Jiter))
+      prechk1 = maxval(eigvec(:,Jiter))
       call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
 
       if(prechk1.NE.0.0D0)then
         do i = 1, NNDOF
-          ewk(i,Jiter) = ewk(i,Jiter)/prechk1
+          eigvec(i,Jiter) = eigvec(i,Jiter)/prechk1
         enddo
       endif
     enddo
+
+    if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
+    if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
+    if( allocated(LSUB) )   DEALLOCATE(LSUB)
+    if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
+    if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
 
   end subroutine fstr_solve_lanczos
 

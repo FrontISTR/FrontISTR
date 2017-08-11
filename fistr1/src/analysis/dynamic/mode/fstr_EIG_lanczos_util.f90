@@ -7,30 +7,47 @@ module m_fstr_EIG_lanczos_util
   contains
 
 !> Initialize Lanczos iterations
-  SUBROUTINE SETIVL( GMASS, EVEC, EFILT, WK, LVECP, q0, q1, BTA, &
-                   & NTOT, NEIG, hecMESH, hecMAT, NDOF, GTOT )
+  subroutine lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, EVEC, WK, LVECP, q0, q1, beta, maxiter)
     USE m_fstr
     USE hecmw_util
     implicit none
-    REAL(kind=kreal) :: GMASS(NTOT), EVEC(NTOT), EFILT(NTOT), WK(NTOT,1)
+    type(fstr_eigen) :: fstrEIG
+    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
 
-    REAL(kind=kreal) :: LVECP(NTOT), BTA(NEIG), chk
-    REAL(kind=kreal), POINTER :: xvec(:), q0(:), q1(:)
-    INTEGER(kind=kint) :: GTOT, IRANK, NDOF, numnp, iov, IRTN, NNN, NN, NTOT, NEIG, i, ierror, j
+
+
+    REAL(kind=kreal) :: EVEC(:), WK(:,:)
+
+    REAL(kind=kreal) :: LVECP(:), beta(maxiter), chk
+    REAL(kind=kreal), POINTER :: q0(:), q1(:), mass(:), filter(:)
+    INTEGER(kind=kint) :: GTOT, IRANK, numnp, iov, IRTN, NNN, NN, NTOT, maxiter, i, ierror, j
     INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), IDISP(0:NPROCS-1)
     TYPE (hecmwST_local_mesh) :: hecMESH
     TYPE (hecmwST_matrix    ) :: hecMAT
 
+
+
+    N      = hecMAT%N
+    NP     = hecMAT%NP
+    NDOF   = hecMESH%n_dof
+    NNDOF  = N *NDOF
+    NPNDOF = NP*NDOF
+
+    mass   => fstrEIG%mass
+    filter => fstrEIG%filter
+
     IRANK = myrank
+    NTOT = NNDOF
     NN=NTOT
+
 
     CALL URAND1(NN,EVEC,IRTN)
 
-     do i = 1,NTOT
-       EVEC(i) = EVEC(i)*EFILT(i)
+     do i = 1,NNDOF
+       EVEC(i) = EVEC(i)*filter(i)
      end do
 
-    CALL VECPRO1(chk,EVEC(1),EVEC(1), NN)
+    CALL VECPRO1(chk, EVEC, EVEC, NN)
       CALL hecmw_allreduce_R1(hecMESH,chk,hecmw_sum)
 
     EVEC(:) = EVEC(:)/sqrt(chk)
@@ -39,25 +56,27 @@ module m_fstr_EIG_lanczos_util
       q0(j) = 0.0D0
     enddo
 
-    CALL MATPRO(WK,GMASS,EVEC,NN,1)
+    CALL MATPRO(WK,mass,EVEC,NN,1)
 
-    CALL VECPRO(BTA(1),EVEC(1),WK(1,1), NN,1)
-      CALL hecmw_allreduce_R(hecMESH,BTA,1,hecmw_sum)
+    CALL VECPRO(beta(1),EVEC,WK,NN,1)
+      CALL hecmw_allreduce_R(hecMESH,beta(1),1,hecmw_sum)
 
-    BTA(1) = SQRT(BTA(1))
+    beta(1) = SQRT(beta(1))
 
-    IF( BTA(1).EQ.0.0D0 ) THEN
+    IF( beta(1).EQ.0.0D0 ) THEN
       CALL hecmw_finalize()
       STOP "EL1 Self-orthogonal r0!: file Lanczos.f"
     ENDIF
 
     do J=1,NN
-      q1(j) = EVEC(J)/BTA(1)
+      q1(j) = EVEC(J)/beta(1)
     enddo
 
-    CALL MATPRO(LVECP,GMASS,q1,NN,1)
-    RETURN
-  END SUBROUTINE SETIVL
+    CALL MATPRO(LVECP,mass,q1,NN,1)
+
+  end subroutine lanczos_set_initial_value
+
+
 
 !> Sort eigenvalues
       SUBROUTINE EVSORT(EIG,NEW,NEIG)
