@@ -52,7 +52,7 @@ cmake version 2.8.12.2
 | -DWITH_MUMPS=1          | MUMPSの機能を有効にします                     | ライブラリが必要               |
 | -DWITH_LAPACK=1         | LAPACKの機能を有効にします                    | ライブラリが必要               |
 | -DWITH_ML=1             | Trilinos MLの機能を有効にします               | ライブラリが必要               |
-| -DWITH_DOC=1           | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
+| -DWITH_DOC=1            | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
 | -DBLA_VENDOR="Generic"  | 利用するBLASのベンダーを指定                  | FindBLAS.cmakeを参照           |
 | -DBLAS_LIBRARIES=".."   | BLASライブラリを直接指定                      | ライブラリを絶対パスで直接指定 |
 | -DLAPACK_LIBRARIES=".." | LaPACKライブラリを直接指定                    | ライブラリを絶対パスで直接指定 |
@@ -92,14 +92,14 @@ WITH_TOOLS:BOOL=ON
 
 ライブラリをインストールしたくない場合、コンパイルをしたライブラリの場所を環境変数で指定することも出来ます。
 
-環境変数　     | ライブラリ                           |
----------------|--------------------------------------|
-METIS_ROOT     | metis-5.1.0 または metis-4.0.3       |
-PARMETIS_ROOT  | parmetis-4.0.3 または parmetis-3.1.1 |
-MUMPS_ROOT     | MUMPS_5.1.1 - 5.0.1                  |
-REFINER_ROOT   | REVOCAP_Refiner-1.1.04               |
-REVOCAP_ROOT   | REVOCAP_Coupler-2.1                  |
-SCALAPACK_ROOT | scalapack-2.0.2                      |
+|環境変数　     | ライブラリ                           |
+|---------------|--------------------------------------|
+|METIS_ROOT     | metis-5.1.0 または metis-4.0.3       |
+|PARMETIS_ROOT  | parmetis-4.0.3 または parmetis-3.1.1 |
+|MUMPS_ROOT     | MUMPS_5.1.1 - 5.0.1                  |
+|REFINER_ROOT   | REVOCAP_Refiner-1.1.04               |
+|REVOCAP_ROOT   | REVOCAP_Coupler-2.1                  |
+|SCALAPACK_ROOT | scalapack-2.0.2                      |
 
 例)
 
@@ -363,8 +363,8 @@ FrontFlowなどと連成を行うためのカップラーです。
 OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分をこれに置き換えることもできます。
 
 ~~~txt
-% tar xvf OpenBLAS-0.2.18.tar.gz
-% cd OpenBLAS-0.2.18
+% tar xvf OpenBLAS-0.2.20.tar.gz
+% cd OpenBLAS-0.2.20
 % make BINARY=64 NO_SHARED=1 USE_OPENMP=1
 % make PREFIX=$HOME/local install
 ~~~
@@ -389,7 +389,7 @@ parmetis-4.0.3コンパイルするにはcmakeが必要です。また、MPIを�
 % make install
 ~~~
 
-### MUMPS-5.0.1
+### MUMPS-5.1.1
 
 直接法ソルバーMUMPSの構築方法です。
 
@@ -451,7 +451,7 @@ FrontISTR で ML による疎行列のプリコンディショナーを利用す
 
 ただし、シリアル版を作成する場合は `-DTPL_ENABLE_MPI=1` の指定は不要です。
 
-### パッケージの作成 (初期サポート)
+## パッケージの作成 (初期サポート)
 
 構築したバイナリを、各プラットフォームでサポートするパッケージにすることできます。
 
@@ -461,3 +461,56 @@ TBZ2, DEB, RPM,
 % cd build
 % cpack
 ~~~
+
+## テスト
+
+コンパイルで作成されたバイナリが正しく動作するかのテストを行うことが出来ます。
+
+テストを行うためには、`ruby`を予めインストールしておく必要があります。
+
+`ruby`をインストールし、上記の手順でバイナリを作成したら以下のコマンドを実行してテストを走らせてみてください。
+
+~~~txt
+% make test
+~~~
+
+テストに成功すると、`Passed`が表示され、失敗すると`Failed`が表示されます。
+
+~~~txt
+      Start  1: Static_exA_Test
+ 1/23 Test  #1: Static_exA_Test ..................   Passed    2.56 sec
+      Start  2: Static_exB_Test
+ 2/23 Test  #2: Static_exB_Test ..................   Passed    2.20 sec
+~~~
+
+### 高度なオプション
+
+テスト中の様子を見たり、並列にテストを実行したい場合、オプションが指定できます。
+
+#### `make test`を使う場合
+
+上記のテストにオプションを付け加えます
+
+~~~txt
+% make test ARGS="-VV -j4 -O test_log.txt"
+~~~
+
+#### `ctest`を使う場合
+
+`make test`は`Makefile`の中で`ctest`を実行しています。`ctest`は直接起動することが出来ます。
+
+上記と同じ挙動をさせるには
+
+~~~txt
+% ctest -VV -j4 -O test_log.txt
+~~~
+
+と実行してください。上記のオプションは
+
+| オプション  | 動作                           |
+|-------------|--------------------------------|
+| `-VV`       | 冗長な出力を有効にする         |
+| `-j <jobs>` | テストを`<jobs>`並列で実行する |
+| `-O <file>' | ログを`<file>`へ出力する       |
+
+です。詳しくは `% ctest --help`で参照出来ます。
