@@ -17,16 +17,16 @@ module m_fstr_EIG_lanczos
 
     implicit none
 
-    type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_solid        ) :: fstrSOLID
-    type(fstr_eigen        ) :: fstrEIG
-
     type fstr_eigen_vec
       real(kind=kreal), pointer :: q(:) => null()
     end type fstr_eigen_vec
 
-    TYPE(fstr_eigen_vec), pointer :: Q(:) !< Array of Q vectors
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix    ) :: hecMAT
+    type(fstr_solid        ) :: fstrSOLID
+    type(fstr_eigen        ) :: fstrEIG
+    type(fstr_tri_diag     ) :: Tri
+    type(fstr_eigen_vec), pointer :: Q(:)
 
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
@@ -56,7 +56,7 @@ module m_fstr_EIG_lanczos
 
 
     real(kind=kreal), allocatable ::  EVEC(:,:), em(:)
-    real(kind=kreal), allocatable :: s(:), t(:), p(:), u(:)
+    real(kind=kreal), allocatable :: s(:), temp(:), p(:), u(:)
 
       REAL(KIND=KREAL), allocatable ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
@@ -127,10 +127,12 @@ module m_fstr_EIG_lanczos
     allocate( fstrEIG%eigval( maxiter )              )
     allocate( alpha(maxiter+2)               )
     allocate( beta(maxiter+2)               )
+    allocate( Tri%alpha(maxiter+2)               )
+    allocate( Tri%beta (maxiter+2)               )
     allocate( iparm(maxiter) )
 
     allocate( s(NPNDOF)            )
-    allocate( t(NPNDOF)            )
+    allocate( temp(NPNDOF)            )
     allocate( p(NPNDOF)            )
     allocate( u(NPNDOF)              )
 
@@ -151,14 +153,16 @@ module m_fstr_EIG_lanczos
     p      = 0.0d0
     u      = 0.0d0
     s      = 0.0d0
-    t      = 0.0d0
+    temp      = 0.0d0
     p      = 0.0d0
     Q(0)%q = 0.0d0
     Q(1)%q = 0.0d0
     alpha  = 0.0d0
     beta   = 0.0d0
+    Tri%alpha  = 0.0d0
+    Tri%beta   = 0.0d0
 
-    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, beta(1))
+    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, Tri%beta(1))
 
     hecMAT%Iarray(98) = 1   !Assmebly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -186,14 +190,14 @@ module m_fstr_EIG_lanczos
 
       allocate( Q(iter+1)%q(NPNDOF) )
 
-      call SCSHFT(EM,Q(iter-1)%q,beta(iter),NPNDOF)
+      call SCSHFT(EM,Q(iter-1)%q,Tri%beta(iter),NPNDOF)
 
       call VECPRO1(AALF, p, EM, NNDOF)
-      alpha(iter)=AALF
+      Tri%alpha(iter)=AALF
 
-      call hecmw_allreduce_R1(hecMESH,alpha(iter),hecmw_sum)
+      call hecmw_allreduce_R1(hecMESH,Tri%alpha(iter),hecmw_sum)
 
-      call SCSHFT(EM,Q(iter)%q,alpha(iter),NPNDOF)
+      call SCSHFT(EM,Q(iter)%q,Tri%alpha(iter),NPNDOF)
 
       u = 0.
       call MATPRO(u,fstrEIG%mass,EM,NPNDOF,1)
@@ -220,16 +224,16 @@ module m_fstr_EIG_lanczos
       call MATPRO(s,fstrEIG%mass,EM,NPNDOF,1)
 
       call VECPRO1(AALF,s,EM,NNDOF)
-      beta(iter+1) = AALF
-        call hecmw_allreduce_R1(hecMESH,beta(iter+1),hecmw_sum)
+      Tri%beta(iter+1) = AALF
+        call hecmw_allreduce_R1(hecMESH,Tri%beta(iter+1),hecmw_sum)
 
-      beta(iter+1) = SQRT(beta(iter+1))
+      Tri%beta(iter+1) = SQRT(Tri%beta(iter+1))
 
-      call UPLCZ(p,Q(iter+1)%q,s,EM,beta(iter+1),NPNDOF)
+      call UPLCZ(p,Q(iter+1)%q,s,EM,Tri%beta(iter+1),NPNDOF)
 
       fstrEIG%iter = iter
 
-      IF(beta(iter+1) <= tolerance .and. nget <= iter)THEN
+      IF(Tri%beta(iter+1) <= tolerance .and. nget <= iter)THEN
         WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
         exit
       ENDIF
@@ -255,14 +259,14 @@ module m_fstr_EIG_lanczos
       enddo
 
       DO Iiter = 1,iter
-        LLDIAG(Iiter) = alpha(Iiter)
+        LLDIAG(Iiter) = Tri%alpha(Iiter)
         LZMAT(Iiter,Iiter) = 1.0D0
       enddo
 
       LSUB(1) = 0.0
       Iiter   = 0
       DO Iiter = 2,iter
-        LSUB(Iiter)  = beta(Iiter)
+        LSUB(Iiter)  = Tri%beta(Iiter)
       enddo
 
       call TRIDIAG(iter,iter,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr) !Unordered
@@ -288,7 +292,7 @@ module m_fstr_EIG_lanczos
           prechk1 = 1.
         ENDIF
 
-        cchk1 = (beta(Jiter))*(LZMAT(iter,Jiter)/prechk)
+        cchk1 = (Tri%beta(Jiter))*(LZMAT(iter,Jiter)/prechk)
         IF(cchk .LT. ABS(cchk1)) THEN
           cchk = ABS(cchk1)
           iiter = jiter

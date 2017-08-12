@@ -7,6 +7,10 @@
 module m_fstr_EIG_tridiag
   use hecmw
 
+  implicit none
+
+  public
+
   type fstr_tri_diag
     real(kind=kreal), allocatable :: alpha(:)
     real(kind=kreal), allocatable :: beta(:)

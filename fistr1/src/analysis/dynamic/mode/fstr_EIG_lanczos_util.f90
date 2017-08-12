@@ -16,7 +16,7 @@ module m_fstr_EIG_lanczos_util
     type(fstr_eigen        ) :: fstrEIG
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j
-    real(kind=kreal) :: eigvec(:,:), p(:), beta, chk
+    real(kind=kreal) :: eigvec(:,:), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
     real(kind=kreal), pointer :: q(:), mass(:), filter(:)
 
@@ -26,11 +26,19 @@ module m_fstr_EIG_lanczos_util
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
 
+    sigma  =  fstrEIG%sigma
     mass   => fstrEIG%mass
     filter => fstrEIG%filter
 
     allocate(temp(NNDOF))
     temp = 0.0d0
+
+    !> shifting
+    !do i = 1,NP
+    !  hecMAT%D(9*i-8) = hecMAT%D(9*i-8) + sigma * mass(3*i-2)
+    !  hecMAT%D(9*i-4) = hecMAT%D(9*i-4) + sigma * mass(3*i-1)
+    !  hecMAT%D(9*i  ) = hecMAT%D(9*i  ) + sigma * mass(3*i  )
+    !end do
 
     call URAND1(NNDOF, temp, hecMESH%my_rank)
 
