@@ -104,6 +104,8 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE EVSORT
 
+
+
 !> Scalar product of two vectors
       SUBROUTINE VECPRO1(Z,X,Y,NN)
       use hecmw
@@ -131,17 +133,7 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE MATPRO
 
-!> Update Lanczos vectors
-      SUBROUTINE UPLCZ(X,Y,U,V,A,NN)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION X(NN), Y(NN), U(NN), V(NN)
-        DO 20 J=1,NN
-          X(J) = U(J)/A
-          Y(J) = V(J)/A
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE UPLCZ
+
 
 
   subroutine URAND1(N, X, SHIFT)

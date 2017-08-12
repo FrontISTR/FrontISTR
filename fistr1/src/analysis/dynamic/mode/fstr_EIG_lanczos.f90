@@ -38,6 +38,7 @@ module m_fstr_EIG_lanczos
 
 
     integer(kind=kint), allocatable :: iparm(:)
+    real(kind=kreal), allocatable :: s(:), temp(:), p(:), u(:)
 
     real(kind=kreal), pointer :: eigvec(:,:)
     real(kind=kreal), pointer :: eigval(:)
@@ -54,9 +55,6 @@ module m_fstr_EIG_lanczos
     real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
     real(kind=kreal)   :: aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
 
-
-    real(kind=kreal), allocatable ::  EVEC(:,:), em(:)
-    real(kind=kreal), allocatable :: s(:), temp(:), p(:), u(:)
 
       REAL(KIND=KREAL), allocatable ::  LLDIAG(:), LNDIAG(:), LSUB(:)
       REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
@@ -118,23 +116,22 @@ module m_fstr_EIG_lanczos
     endif
 
     nget      = fstrEIG%nget
-    tolerance = fstrEIG%tolerance
     maxiter   = fstrEIG%maxiter
+    tolerance = fstrEIG%tolerance
 
-    allocate( Q(0:maxiter) )
-    allocate( Q(0)%q(NPNDOF)        )
-    allocate( Q(1)%q(NPNDOF)        )
-    allocate( fstrEIG%eigval( maxiter )              )
-    allocate( Tri%alpha(maxiter+2)               )
-    allocate( Tri%beta (maxiter+2)               )
-    allocate( iparm(maxiter) )
+    allocate( Q(0:maxiter)                    )
+    allocate( Q(0)%q(NPNDOF)                  )
+    allocate( Q(1)%q(NPNDOF)                  )
+    allocate( fstrEIG%eigval(maxiter)         )
+    allocate( fstrEIG%eigvec(NPNDOF, maxiter) )
+    allocate( Tri%alpha(maxiter+2)            )
+    allocate( Tri%beta (maxiter+2)            )
+    allocate( iparm(maxiter)                  )
+    allocate( temp(NPNDOF) )
+    allocate( s(NPNDOF)    )
+    allocate( p(NPNDOF)    )
+    allocate( u(NPNDOF)    )
 
-    allocate( s(NPNDOF)            )
-    allocate( temp(NPNDOF)            )
-    allocate( p(NPNDOF)            )
-    allocate( u(NPNDOF)              )
-
-    allocate( fstrEIG%eigvec(NPNDOF, maxiter)        )
 
 
 
@@ -162,18 +159,17 @@ module m_fstr_EIG_lanczos
     endif
 
     do iter=1, maxiter-1
-
       do i=1,NPNDOF
         hecMAT%B(i) = p(i)
       enddo
 
       call solve_LINEQ( hecMESH, hecMAT )
 
+      allocate(Q(iter+1)%q(NPNDOF))
+
       do i=1, NPNDOF
         temp(i) = hecMAT%X(i) * fstrEIG%filter(i)
       enddo
-
-      allocate(Q(iter+1)%q(NPNDOF))
 
       do i=1, NPNDOF
         temp(i) = temp(i) - Tri%beta(iter) * Q(iter-1)%q(i)
@@ -214,7 +210,9 @@ module m_fstr_EIG_lanczos
 
 
 
-      call MATPRO(s, fstrEIG%mass, temp, NPNDOF, 1)
+      do i=1, NPNDOF
+        s(i) = fstrEIG%mass(i) * temp(i)
+      enddo
 
       beta = 0.0d0
       do i=1, NNDOF
@@ -223,8 +221,11 @@ module m_fstr_EIG_lanczos
       call hecmw_allreduce_R1(hecMESH, beta, hecmw_sum)
       Tri%beta(iter+1) = dsqrt(beta)
 
-
-      call UPLCZ(p,Q(iter+1)%q,s,temp,Tri%beta(iter+1),NPNDOF)
+      beta = 1.0d0/Tri%beta(iter+1)
+      do i=1, NPNDOF
+        p(i)           = s(i)    * beta
+        Q(iter+1)%q(i) = temp(i) * beta
+      enddo
 
       fstrEIG%iter = iter
 
@@ -232,7 +233,6 @@ module m_fstr_EIG_lanczos
         write(IDBG,*) '*=====Desired convergence was obtained =====*'
         exit
       endif
-
     enddo
 
      iter = fstrEIG%iter
