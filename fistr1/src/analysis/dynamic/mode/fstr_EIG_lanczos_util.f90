@@ -73,8 +73,6 @@ module m_fstr_EIG_lanczos_util
     enddo
   end subroutine lanczos_set_initial_value
 
-
-
 !> Sort eigenvalues
       SUBROUTINE EVSORT(EIG,NEW,NEIG)
       use hecmw

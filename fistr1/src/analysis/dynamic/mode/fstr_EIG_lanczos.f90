@@ -12,7 +12,6 @@ module m_fstr_EIG_lanczos
     use hecmw_util
     use m_eigen_lib
     use m_fstr_EIG_lanczos_util
-    use m_fstr_EIG_mgs1
     use m_fstr_EIG_tridiag
 
     implicit none
@@ -36,9 +35,8 @@ module m_fstr_EIG_lanczos
     real(kind=kreal) :: t1, t2, tolerance
     real(kind=kreal) :: alpha, beta
 
-
     integer(kind=kint), allocatable :: iparm(:)
-    real(kind=kreal), allocatable :: s(:), temp(:), p(:), u(:)
+    real(kind=kreal),   allocatable :: s(:), t(:), p(:)
 
     real(kind=kreal), pointer :: eigvec(:,:)
     real(kind=kreal), pointer :: eigval(:)
@@ -127,21 +125,16 @@ module m_fstr_EIG_lanczos
     allocate( Tri%alpha(maxiter+2)            )
     allocate( Tri%beta (maxiter+2)            )
     allocate( iparm(maxiter)                  )
-    allocate( temp(NPNDOF) )
+    allocate( t(NPNDOF) )
     allocate( s(NPNDOF)    )
     allocate( p(NPNDOF)    )
-    allocate( u(NPNDOF)    )
-
-
-
 
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
     eigval = 0.0d0
     eigvec = 0.0d0
-    temp   = 0.0d0
+    t   = 0.0d0
     p      = 0.0d0
-    u      = 0.0d0
     s      = 0.0d0
     Q(0)%q = 0.0d0
     Q(1)%q = 0.0d0
@@ -159,6 +152,7 @@ module m_fstr_EIG_lanczos
     endif
 
     do iter=1, maxiter-1
+      !> q = A^{-1} p
       do i=1,NPNDOF
         hecMAT%B(i) = p(i)
       enddo
@@ -168,63 +162,63 @@ module m_fstr_EIG_lanczos
       allocate(Q(iter+1)%q(NPNDOF))
 
       do i=1, NPNDOF
-        temp(i) = hecMAT%X(i) * fstrEIG%filter(i)
+        t(i) = hecMAT%X(i) * fstrEIG%filter(i)
       enddo
 
+      !> t = t - beta * q_{i-1}
+      !> alpha = p * t
       do i=1, NPNDOF
-        temp(i) = temp(i) - Tri%beta(iter) * Q(iter-1)%q(i)
+        t(i) = t(i) - Tri%beta(iter) * Q(iter-1)%q(i)
       enddo
 
       alpha = 0.0d0
       do i=1, NNDOF
-        alpha = alpha + p(i) * temp(i)
+        alpha = alpha + p(i) * t(i)
       enddo
       call hecmw_allreduce_R1(hecMESH, alpha, hecmw_sum)
       Tri%alpha(iter) = alpha
 
+      !> t = t - alpha * q_i
       do i=1, NPNDOF
-        temp(i) = temp(i) - Tri%alpha(iter) * Q(iter)%q(i)
+        t(i) = t(i) - Tri%alpha(iter) * Q(iter)%q(i)
       enddo
 
-
-
-
-
-      u = 0.0
-      call MATPRO(u,fstrEIG%mass,temp,NPNDOF,1)
-      call VECPRO1(prechk,u,u,NNDOF)
-        call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
-      prechk = sqrt(prechk)
-      IF(prechk.NE.0.0D0) u = u/prechk
-      DO KK = 0,iter
-        prechk = 0.0D0
-        call VECPRO1(prechk,Q(kk)%q,u,NNDOF)
-          call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
-        prechk1 = 0.0D0
-        call VECPRO1(prechk1,Q(kk)%q,Q(kk)%q,NNDOF)
-          call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
-        prechk1 = sqrt(prechk1)
-        if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(Q(kk)%q,temp,fstrEIG%mass,NPNDOF,myrank, hecMESH,NNDOF)
-      enddo
-
-
+      !> re-orthogonalization
+      s = 0.0d0
 
       do i=1, NPNDOF
-        s(i) = fstrEIG%mass(i) * temp(i)
+        s(i) = fstrEIG%mass(i) * t(i)
+      enddo
+
+      do j=0, iter
+        t1 = 0.0d0
+        do i=1, NNDOF
+          t1 = t1 + Q(j)%q(i) * s(i)
+        enddo
+        call hecmw_allreduce_R1(hecMESH, t1, hecmw_sum)
+        do i=1, NPNDOF
+          t(i) = t(i) - t1 * Q(j)%q(i)
+        enddo
+      enddo
+
+      !> beta = || {t}^t [M] {t} ||_2
+      do i=1, NPNDOF
+        s(i) = fstrEIG%mass(i) * t(i)
       enddo
 
       beta = 0.0d0
       do i=1, NNDOF
-        beta = beta + s(i) * temp(i)
+        beta = beta + s(i) * t(i)
       enddo
       call hecmw_allreduce_R1(hecMESH, beta, hecmw_sum)
       Tri%beta(iter+1) = dsqrt(beta)
 
+      !> p = s / beta
+      !> q = t / beta
       beta = 1.0d0/Tri%beta(iter+1)
       do i=1, NPNDOF
         p(i)           = s(i)    * beta
-        Q(iter+1)%q(i) = temp(i) * beta
+        Q(iter+1)%q(i) = t(i) * beta
       enddo
 
       fstrEIG%iter = iter
@@ -235,10 +229,7 @@ module m_fstr_EIG_lanczos
       endif
     enddo
 
-     iter = fstrEIG%iter
-
-
-
+    iter = fstrEIG%iter
 
       ALLOCATE( LLDIAG(iter)        )
       ALLOCATE( LNDIAG(iter)        ) !Unordered
