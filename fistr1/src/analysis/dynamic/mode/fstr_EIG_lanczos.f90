@@ -97,16 +97,14 @@ module m_fstr_EIG_lanczos
 
     call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
-
-
     in = 0
     do i = 1, NNDOF
-      IF(fstrEIG%filter(i) == 1.0d0) in = in + 1
+      if(fstrEIG%filter(i) == 1.0d0) in = in + 1
     enddo
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
-    IF(in < fstrEIG%maxiter) THEN
-      IF(myrank .EQ. 0) THEN
+    if(in < fstrEIG%maxiter)then
+      if(myrank == 0)then
         WRITE(IMSG,*) '*-------------------------------------------*'
         WRITE(IMSG,*) '  WARNING: maxiter exceeds system matrix size. '
         WRITE(IMSG,*) '  Resetting maxiter to system matrix size.'
@@ -129,19 +127,19 @@ module m_fstr_EIG_lanczos
     allocate( fstrEIG%eigval( maxiter )              )
     allocate( alpha(maxiter+2)               )
     allocate( beta(maxiter+2)               )
+    allocate( iparm(maxiter) )
 
     allocate( s(NPNDOF)            )
     allocate( t(NPNDOF)            )
     allocate( p(NPNDOF)            )
     allocate( u(NPNDOF)              )
 
-    allocate( iparm(maxiter) )
 
 
 
 
     allocate( EM( NPNDOF )              )
-    allocate( fstrEIG%eigvec( NPNDOF, maxiter)        )
+    allocate( fstrEIG%eigvec(NPNDOF, maxiter)        )
 
 
 
@@ -160,52 +158,37 @@ module m_fstr_EIG_lanczos
     alpha  = 0.0d0
     beta   = 0.0d0
 
-    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, EM, eigvec, p, Q(0)%q, Q(1)%q, beta, maxiter)
+    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, beta(1))
 
-    do i=1,NPNDOF
-      hecMAT%B(i) = EM(i)
-    enddo
-    hecMAT%X = 0.
     hecMAT%Iarray(98) = 1   !Assmebly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
-    hecMAT%Rarray(2)  = 1.0
 
-    IF(myrank .EQ. 0) THEN
-      WRITE(IMSG,*)
-      WRITE(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
-    ENDIF
+    if(myrank == 0)then
+      write(IMSG,*)
+      write(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
+    endif
 
-
-
-    DO iter=1,maxiter-1
-      call DUPL(EM,p,NPNDOF)
-      call hecmw_mat_clear_b(hecMAT)
+    do iter=1, maxiter-1
 
       do i=1,NPNDOF
-        hecMAT%B(i) = EM(i)
+        hecMAT%B(i) = p(i)
       enddo
-      hecMAT%X = 0.0d0
 
-      call solve_LINEQ( hecMESH,hecMAT )
+      call solve_LINEQ( hecMESH, hecMAT )
 
       do i=1,NPNDOF
         EM(i) = hecMAT%X(i)
-      enddo
-
-      i = 0
-      do ii = 1,NPNDOF
-        IF(fstrEIG%filter(ii) .EQ. 0) i = i + 1
       enddo
 
       do ii = 1,NPNDOF
         EM(ii) = EM(ii)*fstrEIG%filter(ii)
       enddo
 
-      ALLOCATE( Q(iter+1)%q(NPNDOF) )
+      allocate( Q(iter+1)%q(NPNDOF) )
 
       call SCSHFT(EM,Q(iter-1)%q,beta(iter),NPNDOF)
 
-      call VECPRO1(AALF,p,EM,NNDOF)
+      call VECPRO1(AALF, p, EM, NNDOF)
       alpha(iter)=AALF
 
       call hecmw_allreduce_R1(hecMESH,alpha(iter),hecmw_sum)
@@ -219,10 +202,8 @@ module m_fstr_EIG_lanczos
 
       prechk = sqrt(prechk)
       IF(prechk.NE.0.0D0) u = u/prechk
-      !IREOR = iter*(1.0 - fstrEIG%lczrod)
-      IREOR = 0
 
-      DO KK = IREOR,iter
+      DO KK = 0,iter
         prechk = 0.0D0
         call VECPRO1(prechk,Q(kk)%q,u,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
@@ -315,13 +296,6 @@ module m_fstr_EIG_lanczos
         ENDIF
       enddo
 
-
-
-
-
-
-
-
     DO Iiter = 1, iter
       IF(LLDIAG(Iiter).NE.0.0D0) THEN
         eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
@@ -341,25 +315,12 @@ module m_fstr_EIG_lanczos
       enddo
     enddo
 
-    DO iiter=0,iter
-      if( associated(Q(iiter)%q) ) DEALLOCATE(Q(iiter)%q)
-    enddo
-
-    t2 = hecmw_Wtime() !DEBUG elap
-    write(idbg,'(a,f10.2)') 'Lanczos loop (sec) :', T2 - T1 ! elap
-
-    IF(myrank .EQ. 0) THEN
-      WRITE(IMSG,*)
-      WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
-    ENDIF
-
-    DO Jiter=1,nget
-      prechk1 = maxval(eigvec(:,Jiter))
+    do j=1,nget
+      prechk1 = maxval(eigvec(:,j))
       call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
-
-      if(prechk1.NE.0.0D0)then
+      if(prechk1 /= 0.0d0)then
         do i = 1, NNDOF
-          eigvec(i,Jiter) = eigvec(i,Jiter)/prechk1
+          eigvec(i,j) = eigvec(i,j)/prechk1
         enddo
       endif
     enddo
@@ -369,6 +330,22 @@ module m_fstr_EIG_lanczos
     if( allocated(LSUB) )   DEALLOCATE(LSUB)
     if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
     if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
+
+
+
+
+
+    do iiter = 0, iter
+      if( associated(Q(iiter)%q) ) DEALLOCATE(Q(iiter)%q)
+    enddo
+
+    t2 = hecmw_Wtime()
+
+    if (myrank == 0) then
+      WRITE(IMSG,*)
+      WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
+      write(idbg,'(a,f10.2)') 'Lanczos loop (sec) :', T2 - T1
+    endif
 
   end subroutine fstr_solve_lanczos
 

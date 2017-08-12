@@ -2,32 +2,24 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> Display results in .out files
 module m_fstr_EIG_output
-contains
 
-!C======================================================================
-!C----------------------------------------------------------------------
-      subroutine fstr_eigen_output(hecMESH,hecMAT,fstrEIG)
-!C----------------------------------------------------------------------
-!C*
-!C* SHOW RESULTS
-!C*
-      use m_fstr
-      use m_fstr_EIG_lanczos_util
-      use hecmw_solver_las
-      implicit none
-      integer(kind=kint) :: I,IREOR,JJITER,JITER,IITER
-      real(kind=kreal) :: prechk0(1)
-      type (hecmwST_local_mesh) :: hecMESH
-      type (hecmwST_matrix    ) :: hecMAT
-      type (fstr_solid       )  :: fstrSOLID
-      type (hecmwST_result_data):: fstrRESULT
-      type (fstr_eigen) :: fstrEIG
+  contains
+
+  subroutine fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
+    use m_fstr
+    use m_fstr_EIG_lanczos_util
+    use hecmw_solver_las
+    implicit none
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix    ) :: hecMAT
+    type(fstr_eigen        ) :: fstrEIG
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint), allocatable  :: new(:)
 
+    integer(kind=kint) :: I,IREOR,JJITER,JITER,IITER
+    real(kind=kreal) :: prechk0(1)
     integer(kind=kint) :: j, k , ii, iii, ik, in, in1, in2, in3, nstep, istep, maxItr
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
     integer(kind=kint) :: kk, ppc, nget

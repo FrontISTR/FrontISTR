@@ -106,6 +106,7 @@ contains
 
   subroutine TRIDIAG(nm, n, d, du, e, z, zu, ierror)
       use hecmw
+      implicit none
       integer(kind=kint) :: i, j, k, l, m, n, ii, l1, l2, nm, mml, ierror
       real(kind=kreal) :: d(n), du(n), e(n), z(nm, n), zu(nm, n)
       real(kind=kreal) :: c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, tst1, tst2

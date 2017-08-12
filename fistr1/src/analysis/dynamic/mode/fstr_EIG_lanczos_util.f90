@@ -2,30 +2,23 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> Lanczos iteration calculation
 module m_fstr_EIG_lanczos_util
+
   contains
 
 !> Initialize Lanczos iterations
-  subroutine lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, EVEC, WK, LVECP, q0, q1, beta, maxiter)
-    USE m_fstr
-    USE hecmw_util
+  subroutine lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, q, beta)
+    use m_fstr
+    use hecmw_util
     implicit none
-    type(fstr_eigen) :: fstrEIG
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix    ) :: hecMAT
+    type(fstr_eigen        ) :: fstrEIG
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-
-
-
-    REAL(kind=kreal) :: EVEC(:), WK(:,:)
-
-    REAL(kind=kreal) :: LVECP(:), beta(maxiter), chk
-    REAL(kind=kreal), POINTER :: q0(:), q1(:), mass(:), filter(:)
-    INTEGER(kind=kint) :: GTOT, IRANK, numnp, iov, IRTN, NNN, NN, NTOT, maxiter, i, ierror, j
-    INTEGER(kind=kint) :: IXVEC(0:NPROCS-1), IDISP(0:NPROCS-1)
-    TYPE (hecmwST_local_mesh) :: hecMESH
-    TYPE (hecmwST_matrix    ) :: hecMAT
-
-
+    integer(kind=kint) :: i, j
+    real(kind=kreal) :: eigvec(:,:), p(:), beta, chk
+    real(kind=kreal), allocatable :: temp(:)
+    real(kind=kreal), pointer :: q(:), mass(:), filter(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -36,44 +29,40 @@ module m_fstr_EIG_lanczos_util
     mass   => fstrEIG%mass
     filter => fstrEIG%filter
 
-    IRANK = myrank
-    NTOT = NNDOF
-    NN=NTOT
+    allocate(temp(NNDOF))
+    temp = 0.0d0
 
+    call URAND1(NNDOF, temp, hecMESH%my_rank)
 
-    CALL URAND1(NN,EVEC,IRTN)
+    do i=1, NNDOF
+      temp(i) = temp(i) * filter(i)
+    end do
 
-     do i = 1,NNDOF
-       EVEC(i) = EVEC(i)*filter(i)
-     end do
-
-    CALL VECPRO1(chk, EVEC, EVEC, NN)
-      CALL hecmw_allreduce_R1(hecMESH,chk,hecmw_sum)
-
-    EVEC(:) = EVEC(:)/sqrt(chk)
-
-    do J=1,NN
-      q0(j) = 0.0D0
+    !> M-orthogonalization
+    do i=1, NNDOF
+      eigvec(i,1) = mass(i) * temp(i)
     enddo
 
-    CALL MATPRO(WK,mass,EVEC,NN,1)
+    chk = 0.0d0
+    do i=1, NNDOF
+      chk = chk + temp(i) * eigvec(i,1)
+    enddo
+    call hecmw_allreduce_R1(hecMESH, chk, hecmw_sum)
+    beta = dsqrt(chk)
 
-    CALL VECPRO(beta(1),EVEC,WK,NN,1)
-      CALL hecmw_allreduce_R(hecMESH,beta(1),1,hecmw_sum)
+    if(beta == 0.0d0)then
+      call hecmw_finalize()
+      stop "Self-orthogonal"
+    endif
 
-    beta(1) = SQRT(beta(1))
-
-    IF( beta(1).EQ.0.0D0 ) THEN
-      CALL hecmw_finalize()
-      STOP "EL1 Self-orthogonal r0!: file Lanczos.f"
-    ENDIF
-
-    do J=1,NN
-      q1(j) = EVEC(J)/beta(1)
+    chk = 1.0d0/beta
+    do i=1, NNDOF
+      q(i) = temp(i) * chk
     enddo
 
-    CALL MATPRO(LVECP,mass,q1,NN,1)
-
+    do i=1, NNDOF
+      p(i) = mass(i) * q(i)
+    enddo
   end subroutine lanczos_set_initial_value
 
 
@@ -108,21 +97,6 @@ module m_fstr_EIG_lanczos_util
       END SUBROUTINE EVSORT
 
 !> Scalar product of two vectors
-      SUBROUTINE VECPRO(Z,X,Y,NN,NEIG)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION Z(NEIG),X(NN,NEIG),Y(NN,NEIG)
-      DO 10 I=1,NEIG
-        S=0.0D0
-        DO 20 J=1,NN
-          S=S+X(J,I)*Y(J,I)
-   20   CONTINUE
-          Z(I)=S
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE VECPRO
-
-!> Scalar product of two vectors
       SUBROUTINE VECPRO1(Z,X,Y,NN)
       use hecmw
       IMPLICIT REAL(kind=kreal) (A-H,O-Z)
@@ -135,17 +109,6 @@ module m_fstr_EIG_lanczos_util
 
       RETURN
       END SUBROUTINE VECPRO1
-
-!> Copy vector
-      SUBROUTINE DUPL(X,Y,NN)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION X(NN),Y(NN)
-        DO 20 J=1,NN
-          X(J) = Y(J)
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE DUPL
 
 !> Scalar shift vector
       SUBROUTINE SCSHFT(X,Y,A,NN)
@@ -183,34 +146,26 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE UPLCZ
 
-!> Random number generator
-      SUBROUTINE URAND1(N,X,IR)
-      use hecmw
-      REAL(kind=kreal) X(N), INVM
-      PARAMETER (M = 1664501, LAMBDA = 1229, MU = 351750)
-      PARAMETER (INVM = 1.0D0 / M)
-      INTEGER(kind=kint) IR
 
-      DO 10 I = 1, N
-        IR = MOD( LAMBDA * IR + MU, M)
-         X(I) = IR * INVM
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE URAND1
+  subroutine URAND1(N, X, SHIFT)
+    use hecmw
+    implicit none
+    REAL(kind=kreal) :: X(N), INVM
+    INTEGER(kind=kint), parameter :: MM = 1664501
+    INTEGER(kind=kint), parameter :: LAMBDA = 1229
+    INTEGER(kind=kint), parameter :: MU = 351750
+    INTEGER(kind=kint) :: i, N, IR, SHIFT
 
-!> Random number generator
-      SUBROUTINE URAND0(N,IR)
-      use hecmw
-      real(kind=kreal) INVM
-      PARAMETER (M = 1664501, LAMBDA = 1229, MU = 351750)
-      PARAMETER (INVM = 1.0D0 / M)
-
-      DO 10 I = 1, N
-        IR = MOD( LAMBDA * IR + MU, M)
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE URAND0
-
+    IR = 9999991
+    INVM = 1.0D0 / MM
+    DO I = 1, SHIFT
+      IR = MOD( LAMBDA * IR + MU, MM)
+    enddo
+    DO I = SHIFT+1, SHIFT+N
+      IR = MOD( LAMBDA * IR + MU, MM)
+      X(I-SHIFT) = INVM * IR
+    enddo
+  end subroutine URAND1
 
 end module m_fstr_EIG_lanczos_util
 
