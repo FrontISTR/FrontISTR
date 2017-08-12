@@ -34,10 +34,10 @@ module m_fstr_EIG_lanczos
     integer(kind=kint) :: i, j, k, in, jn, kn
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
     real(kind=kreal) :: t1, t2, tolerance
+    real(kind=kreal) :: alpha, beta
 
 
     integer(kind=kint), allocatable :: iparm(:)
-    real(kind=kreal),   allocatable :: alpha(:), beta(:)
 
     real(kind=kreal), pointer :: eigvec(:,:)
     real(kind=kreal), pointer :: eigval(:)
@@ -125,8 +125,6 @@ module m_fstr_EIG_lanczos
     allocate( Q(0)%q(NPNDOF)        )
     allocate( Q(1)%q(NPNDOF)        )
     allocate( fstrEIG%eigval( maxiter )              )
-    allocate( alpha(maxiter+2)               )
-    allocate( beta(maxiter+2)               )
     allocate( Tri%alpha(maxiter+2)               )
     allocate( Tri%beta (maxiter+2)               )
     allocate( iparm(maxiter) )
@@ -136,31 +134,22 @@ module m_fstr_EIG_lanczos
     allocate( p(NPNDOF)            )
     allocate( u(NPNDOF)              )
 
-
-
-
-
-    allocate( EM( NPNDOF )              )
     allocate( fstrEIG%eigvec(NPNDOF, maxiter)        )
 
 
 
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
-
     eigval = 0.0d0
     eigvec = 0.0d0
+    temp   = 0.0d0
     p      = 0.0d0
     u      = 0.0d0
     s      = 0.0d0
-    temp      = 0.0d0
-    p      = 0.0d0
     Q(0)%q = 0.0d0
     Q(1)%q = 0.0d0
-    alpha  = 0.0d0
-    beta   = 0.0d0
-    Tri%alpha  = 0.0d0
-    Tri%beta   = 0.0d0
+    Tri%alpha = 0.0d0
+    Tri%beta  = 0.0d0
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, Tri%beta(1))
 
@@ -180,63 +169,69 @@ module m_fstr_EIG_lanczos
 
       call solve_LINEQ( hecMESH, hecMAT )
 
-      do i=1,NPNDOF
-        EM(i) = hecMAT%X(i)
+      do i=1, NPNDOF
+        temp(i) = hecMAT%X(i) * fstrEIG%filter(i)
       enddo
 
-      do ii = 1,NPNDOF
-        EM(ii) = EM(ii)*fstrEIG%filter(ii)
+      allocate(Q(iter+1)%q(NPNDOF))
+
+      do i=1, NPNDOF
+        temp(i) = temp(i) - Tri%beta(iter) * Q(iter-1)%q(i)
       enddo
 
-      allocate( Q(iter+1)%q(NPNDOF) )
+      alpha = 0.0d0
+      do i=1, NNDOF
+        alpha = alpha + p(i) * temp(i)
+      enddo
+      call hecmw_allreduce_R1(hecMESH, alpha, hecmw_sum)
+      Tri%alpha(iter) = alpha
 
-      call SCSHFT(EM,Q(iter-1)%q,Tri%beta(iter),NPNDOF)
+      do i=1, NPNDOF
+        temp(i) = temp(i) - Tri%alpha(iter) * Q(iter)%q(i)
+      enddo
 
-      call VECPRO1(AALF, p, EM, NNDOF)
-      Tri%alpha(iter)=AALF
 
-      call hecmw_allreduce_R1(hecMESH,Tri%alpha(iter),hecmw_sum)
 
-      call SCSHFT(EM,Q(iter)%q,Tri%alpha(iter),NPNDOF)
 
-      u = 0.
-      call MATPRO(u,fstrEIG%mass,EM,NPNDOF,1)
+
+      u = 0.0
+      call MATPRO(u,fstrEIG%mass,temp,NPNDOF,1)
       call VECPRO1(prechk,u,u,NNDOF)
         call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
-
       prechk = sqrt(prechk)
       IF(prechk.NE.0.0D0) u = u/prechk
-
       DO KK = 0,iter
         prechk = 0.0D0
         call VECPRO1(prechk,Q(kk)%q,u,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk,hecmw_sum)
-
         prechk1 = 0.0D0
         call VECPRO1(prechk1,Q(kk)%q,Q(kk)%q,NNDOF)
           call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
-
         prechk1 = sqrt(prechk1)
         if(prechk1.ne.0.0D0) prechk = prechk/prechk1
-          call MGS1(Q(kk)%q,EM,fstrEIG%mass,NPNDOF,myrank, hecMESH,NNDOF)
+          call MGS1(Q(kk)%q,temp,fstrEIG%mass,NPNDOF,myrank, hecMESH,NNDOF)
       enddo
 
-      call MATPRO(s,fstrEIG%mass,EM,NPNDOF,1)
 
-      call VECPRO1(AALF,s,EM,NNDOF)
-      Tri%beta(iter+1) = AALF
-        call hecmw_allreduce_R1(hecMESH,Tri%beta(iter+1),hecmw_sum)
 
-      Tri%beta(iter+1) = SQRT(Tri%beta(iter+1))
+      call MATPRO(s, fstrEIG%mass, temp, NPNDOF, 1)
 
-      call UPLCZ(p,Q(iter+1)%q,s,EM,Tri%beta(iter+1),NPNDOF)
+      beta = 0.0d0
+      do i=1, NNDOF
+        beta = beta + s(i) * temp(i)
+      enddo
+      call hecmw_allreduce_R1(hecMESH, beta, hecmw_sum)
+      Tri%beta(iter+1) = dsqrt(beta)
+
+
+      call UPLCZ(p,Q(iter+1)%q,s,temp,Tri%beta(iter+1),NPNDOF)
 
       fstrEIG%iter = iter
 
-      IF(Tri%beta(iter+1) <= tolerance .and. nget <= iter)THEN
-        WRITE(IDBG,*) '*=====Desired convergence was obtained =====*'
+      if(Tri%beta(iter+1) <= tolerance .and. nget <= iter)then
+        write(IDBG,*) '*=====Desired convergence was obtained =====*'
         exit
-      ENDIF
+      endif
 
     enddo
 
@@ -339,15 +334,15 @@ module m_fstr_EIG_lanczos
 
 
 
-    do iiter = 0, iter
-      if( associated(Q(iiter)%q) ) DEALLOCATE(Q(iiter)%q)
+    do i=0, iter
+      if( associated(Q(i)%q) ) deallocate(Q(i)%q)
     enddo
 
     t2 = hecmw_Wtime()
 
-    if (myrank == 0) then
-      WRITE(IMSG,*)
-      WRITE(IMSG,*) ' *     STAGE Output and postprocessing    **'
+    if(myrank == 0)then
+      write(IMSG,*)
+      write(IMSG,*) ' *     STAGE Output and postprocessing    **'
       write(idbg,'(a,f10.2)') 'Lanczos loop (sec) :', T2 - T1
     endif
 

@@ -118,17 +118,6 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE VECPRO1
 
-!> Scalar shift vector
-      SUBROUTINE SCSHFT(X,Y,A,NN)
-      use hecmw
-      IMPLICIT REAL(kind=kreal)(A-H,O-Z)
-      DIMENSION X(NN),Y(NN)
-        DO 20 J=1,NN
-          X(J) = X(J) - A*Y(J)
-   20   CONTINUE
-      RETURN
-      END SUBROUTINE SCSHFT
-
 !> Product of diagonal matrix and vector
       SUBROUTINE MATPRO(Y,A,X,MM,NN)
       use hecmw
