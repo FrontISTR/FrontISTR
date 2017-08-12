@@ -11,6 +11,10 @@ module m_fstr_EIG_tridiag
 
   public
 
+  type fstr_eigen_vec
+    real(kind=kreal), pointer :: q(:) => null()
+  end type fstr_eigen_vec
+
   type fstr_tri_diag
     real(kind=kreal), allocatable :: alpha(:)
     real(kind=kreal), allocatable :: beta(:)
@@ -18,31 +22,136 @@ module m_fstr_EIG_tridiag
 
 contains
 
-  function a2b2(a,b)
+  subroutine tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter)
     use hecmw
+    use m_fstr
+    use m_fstr_EIG_lanczos_util
     implicit none
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix    ) :: hecMAT
+    type(fstr_eigen        ) :: fstrEIG
+    type(fstr_tri_diag     ) :: Tri
+    type(fstr_eigen_vec), pointer :: Q(:)
 
-    real(kind=kreal) :: a2b2
-    real(kind=kreal) :: a, b
-    real(kind=kreal) :: p, q, r, s, t, u
+    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
+    integer(kind=kint) :: i, j, k, in, jn, kn, nget
+    integer(kind=kint) :: iter, iter2, ierr, maxiter
+    real(kind=kreal) :: cchk, cchk1, prechk, prechk1, ppc
+    real(kind=kreal), allocatable :: LLDIAG(:), LNDIAG(:), LSUB(:)
+    real(kind=kreal), allocatable :: LZMAT(:,:), LNZMAT(:,:)
 
-    p = dmax1(dabs(a), dabs(b))
-    if (p /= 0.0d0) then
-      r = (dmin1(dabs(a),dabs(b))/p) ** 2
-      do
-        t = 4.0d0 + r
-        if (t == 4.0d0) exit
-        s = r/t
-        u = 1.0d0 + 2.0d0*s
-        p = u * p
-        q = s/u
-        r = q * q * r
-      end do
-    end if
-    a2b2 = p
-    return
+    integer(kind=kint), allocatable :: iparm(:)
+    real(kind=kreal), pointer :: eigvec(:,:)
+    real(kind=kreal), pointer :: eigval(:)
 
-  end function a2b2
+    N      = hecMAT%N
+    NP     = hecMAT%NP
+    NDOF   = hecMESH%n_dof
+    NNDOF  = N *NDOF
+    NPNDOF = NP*NDOF
+    nget   = fstrEIG%nget
+    maxiter= fstrEIG%maxiter
+    eigval => fstrEIG%eigval
+    eigvec => fstrEIG%eigvec
+
+    allocate( iparm(maxiter)                  )
+
+      ALLOCATE( LLDIAG(iter)        )
+      ALLOCATE( LNDIAG(iter)        ) !Unordered
+      ALLOCATE( LSUB(iter)          )
+      ALLOCATE( LZMAT(iter,iter)  )
+      ALLOCATE( LNZMAT(iter,iter) ) !Unordered
+
+      DO j = 1,iter
+        DO i = 1,iter
+          LZMAT(j,i)  = 0.0D0
+          LNZMAT(j,i) = 0.0D0 !Unordered
+        enddo
+      enddo
+
+      DO i = 1,iter
+        LLDIAG(i) = Tri%alpha(i)
+        LZMAT(i,i) = 1.0D0
+      enddo
+
+      LSUB(1) = 0.0
+      i   = 0
+      DO i = 2,iter
+        LSUB(i)  = Tri%beta(i)
+      enddo
+
+    call QL_decomposition(iter,iter,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr)
+
+
+      DO i = 1, iter
+        IF( LLDIAG(i).NE.0.0D0 ) THEN
+          eigval(i) = 1.0D0/LLDIAG(i) + fstrEIG%sigma
+        ENDIF
+      enddo
+
+      call EVSORT(eigval,iparm,iter)
+
+      cchk  = 0.0
+      kn = nget+2
+      IF(iter .LT. kn) kn = iter
+
+      DO k = 1,kn
+        j = iparm(k)
+        call VECPRO1(prechk1,LZMAT(1,j),LZMAT(1,j),iter)
+
+        IF(prechk1 .GT. 0.) THEN
+          prechk1 = SQRT(prechk1)
+        ELSE
+          prechk1 = 1.
+        ENDIF
+
+        cchk1 = (Tri%beta(j))*(LZMAT(iter,j)/prechk)
+        IF(cchk .LT. ABS(cchk1)) THEN
+          cchk = ABS(cchk1)
+          i = j
+          ppc = prechk1
+        ENDIF
+      enddo
+
+    DO i = 1, iter
+      IF(LLDIAG(i).NE.0.0D0) THEN
+        eigval(i) = 1.0D0/LLDIAG(i) + fstrEIG%sigma
+      ENDIF
+    enddo
+    call evsort(eigval,iparm,iter)
+
+    eigvec = 0.0
+    k = nget
+    IF(k .GT. iter) k = iter
+    DO kn = 1,k
+      in = iparm(kn)
+      DO j = 1,iter
+        DO i =1,NPNDOF
+          eigvec(i,kn) = eigvec(i,kn) + Q(j)%q(i)*LZMAT(j,in)
+        enddo
+      enddo
+    enddo
+
+    do j=1,nget
+      prechk1 = maxval(eigvec(:,j))
+      call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
+      if(prechk1 /= 0.0d0)then
+        do i = 1, NNDOF
+          eigvec(i,j) = eigvec(i,j)/prechk1
+        enddo
+      endif
+    enddo
+
+    if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
+    if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
+    if( allocated(LSUB) )   DEALLOCATE(LSUB)
+    if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
+    if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
+
+
+
+
+  end subroutine tridiag
 
 !======================================================================!
 !                       Description                                    !
@@ -108,7 +217,7 @@ contains
 !calls a2b2 for  dsqrt(a*a + b*b) .
 !=======================================================================
 
-  subroutine TRIDIAG(nm, n, d, du, e, z, zu, ierror)
+  subroutine QL_decomposition(nm, n, d, du, e, z, zu, ierror)
       use hecmw
       implicit none
       integer(kind=kint) :: i, j, k, l, m, n, ii, l1, l2, nm, mml, ierror
@@ -195,6 +304,7 @@ contains
          if (tst2 .gt. tst1) go to 130
   220    d(l) = d(l) + f
   240 continue
+
 !     .......... order eigenvalues and eigenvectors ..........
 !GP: Get unordered eigenvalues and eigenvectors----------------
       do i = 1,n
@@ -232,6 +342,32 @@ contains
 !                eigenvalue after 30 iterations ..........
  1000 ierror = l
  1001 return
-      end subroutine TRIDIAG
+  end subroutine QL_decomposition
+
+  function a2b2(a,b)
+    use hecmw
+    implicit none
+
+    real(kind=kreal) :: a2b2
+    real(kind=kreal) :: a, b
+    real(kind=kreal) :: p, q, r, s, t, u
+
+    p = dmax1(dabs(a), dabs(b))
+    if (p /= 0.0d0) then
+      r = (dmin1(dabs(a),dabs(b))/p) ** 2
+      do
+        t = 4.0d0 + r
+        if (t == 4.0d0) exit
+        s = r/t
+        u = 1.0d0 + 2.0d0*s
+        p = u * p
+        q = s/u
+        r = q * q * r
+      end do
+    end if
+    a2b2 = p
+    return
+
+  end function a2b2
 
 end module m_fstr_EIG_tridiag

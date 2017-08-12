@@ -16,10 +16,6 @@ module m_fstr_EIG_lanczos
 
     implicit none
 
-    type fstr_eigen_vec
-      real(kind=kreal), pointer :: q(:) => null()
-    end type fstr_eigen_vec
-
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix    ) :: hecMAT
     type(fstr_solid        ) :: fstrSOLID
@@ -27,44 +23,16 @@ module m_fstr_EIG_lanczos
     type(fstr_tri_diag     ) :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
 
-
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, maxiter, nget, ierr
-    integer(kind=kint) :: i, j, k, in, jn, kn
+    integer(kind=kint) :: i, j, k, in, jn, kn, ik, it
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
     real(kind=kreal) :: t1, t2, tolerance
     real(kind=kreal) :: alpha, beta
 
-    integer(kind=kint), allocatable :: iparm(:)
-    real(kind=kreal),   allocatable :: s(:), t(:), p(:)
-
+    real(kind=kreal), allocatable :: s(:), t(:), p(:)
     real(kind=kreal), pointer :: eigvec(:,:)
     real(kind=kreal), pointer :: eigval(:)
-
-
-
-
-
-
-
-    integer(kind=kint) :: kk, jjiter, ppc, jiter, iiter, kiter, it
-    integer(kind=kint) :: IOUT,IREOR,itype,iS,iE,ic_type,icel,jS,nn , ii, iii, ik, in1, in2, in3, nstep, istep
-    real(kind=kreal)   :: prechk
-    real(kind=kreal)   :: PRECHK1,PRECHK2,cchk0,cchk1,cchk,CERR
-    real(kind=kreal)   :: aalf, tmp, tmp2, gm, gm2, r1, r2, r3, r4, r5, r6
-
-
-      REAL(KIND=KREAL), allocatable ::  LLDIAG(:), LNDIAG(:), LSUB(:)
-      REAL(KIND=KREAL), allocatable ::  LZMAT(:,:), LNZMAT(:,:)
-
-
-
-
-
-
-
-
-
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -101,10 +69,7 @@ module m_fstr_EIG_lanczos
 
     if(in < fstrEIG%maxiter)then
       if(myrank == 0)then
-        WRITE(IMSG,*) '*-------------------------------------------*'
-        WRITE(IMSG,*) '  WARNING: maxiter exceeds system matrix size. '
-        WRITE(IMSG,*) '  Resetting maxiter to system matrix size.'
-        WRITE(IMSG,*) '*-------------------------------------------*'
+        WRITE(IMSG,*) '** changed maxiter to system matrix size.'
       endif
       fstrEIG%maxiter = in
     endif
@@ -124,10 +89,9 @@ module m_fstr_EIG_lanczos
     allocate( fstrEIG%eigvec(NPNDOF, maxiter) )
     allocate( Tri%alpha(maxiter+2)            )
     allocate( Tri%beta (maxiter+2)            )
-    allocate( iparm(maxiter)                  )
     allocate( t(NPNDOF) )
-    allocate( s(NPNDOF)    )
-    allocate( p(NPNDOF)    )
+    allocate( s(NPNDOF) )
+    allocate( p(NPNDOF) )
 
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
@@ -230,103 +194,10 @@ module m_fstr_EIG_lanczos
     enddo
 
     iter = fstrEIG%iter
-
-      ALLOCATE( LLDIAG(iter)        )
-      ALLOCATE( LNDIAG(iter)        ) !Unordered
-      ALLOCATE( LSUB(iter)          )
-      ALLOCATE( LZMAT(iter,iter)  )
-      ALLOCATE( LNZMAT(iter,iter) ) !Unordered
-
-      DO Jiter = 1,iter
-        DO Iiter = 1,iter
-          LZMAT(Jiter,Iiter)  = 0.0D0
-          LNZMAT(Jiter,Iiter) = 0.0D0 !Unordered
-        enddo
-      enddo
-
-      DO Iiter = 1,iter
-        LLDIAG(Iiter) = Tri%alpha(Iiter)
-        LZMAT(Iiter,Iiter) = 1.0D0
-      enddo
-
-      LSUB(1) = 0.0
-      Iiter   = 0
-      DO Iiter = 2,iter
-        LSUB(Iiter)  = Tri%beta(Iiter)
-      enddo
-
-      call TRIDIAG(iter,iter,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr) !Unordered
-
-      DO Iiter = 1, iter
-        IF( LLDIAG(Iiter).NE.0.0D0 ) THEN
-          eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
-        ENDIF
-      enddo
-      call EVSORT(eigval,iparm,iter)
-
-      cchk  = 0.0
-      Kiter = nget+2            !Extra 2 values as a safety feature
-      IF(iter .LT. Kiter) Kiter = iter
-
-      DO JJiter = 1,Kiter
-        Jiter = iparm(JJiter)
-        call VECPRO1(prechk1,LZMAT(1,Jiter),LZMAT(1,Jiter),iter)
-
-        IF(prechk1 .GT. 0.) THEN
-          prechk1 = SQRT(prechk1)
-        ELSE
-          prechk1 = 1.
-        ENDIF
-
-        cchk1 = (Tri%beta(Jiter))*(LZMAT(iter,Jiter)/prechk)
-        IF(cchk .LT. ABS(cchk1)) THEN
-          cchk = ABS(cchk1)
-          iiter = jiter
-          ppc = prechk1
-        ENDIF
-      enddo
-
-    DO Iiter = 1, iter
-      IF(LLDIAG(Iiter).NE.0.0D0) THEN
-        eigval(Iiter) = 1.0D0/LLDIAG(Iiter) + fstrEIG%sigma
-      ENDIF
-    enddo
-    call evsort(eigval,iparm,iter)
-
-    eigvec = 0.0
-    k = nget
-    IF(k .GT. iter) k = iter
-    DO kk = 1,k
-      kiter = iparm(kk)
-      DO jiter = 1,iter
-        DO iiter =1,NPNDOF
-          eigvec(iiter,kk) = eigvec(iiter,kk) + Q(jiter)%q(iiter)*LZMAT(jiter,kiter)
-        enddo
-      enddo
-    enddo
-
-    do j=1,nget
-      prechk1 = maxval(eigvec(:,j))
-      call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
-      if(prechk1 /= 0.0d0)then
-        do i = 1, NNDOF
-          eigvec(i,j) = eigvec(i,j)/prechk1
-        enddo
-      endif
-    enddo
-
-    if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
-    if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
-    if( allocated(LSUB) )   DEALLOCATE(LSUB)
-    if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
-    if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
-
-
-
-
+    call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter)
 
     do i=0, iter
-      if( associated(Q(i)%q) ) deallocate(Q(i)%q)
+      if(associated(Q(i)%q)) deallocate(Q(i)%q)
     enddo
 
     t2 = hecmw_Wtime()
