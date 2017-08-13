@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter, iter2, ierr, maxiter
     real(kind=kreal) :: chk
-    real(kind=kreal), allocatable :: alpha(:), beta(:)
+    real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
     integer(kind=kint), allocatable :: iparm(:)
@@ -54,6 +54,7 @@ contains
     eigvec => fstrEIG%eigvec
 
     allocate( iparm(maxiter) )
+    allocate( temp(maxiter)  )
     allocate( alpha(iter)    )
     allocate( beta(iter)     )
     allocate( L(iter, iter)  )
@@ -84,9 +85,12 @@ contains
 
     call evsort(eigval, iparm, iter)
 
+    temp = eigval
+
     eigvec = 0.0d0
     do k=1, iter
       in = iparm(k)
+      eigval(k) = temp(in)
       do j=1, iter
         do i=1, NPNDOF
           eigvec(i, k) = eigvec(i, k) + Q(j)%q(i) * L(j, in)
@@ -105,9 +109,11 @@ contains
       endif
     enddo
 
-    if( allocated(alpha) ) deallocate(alpha)
-    if( allocated(beta)  ) deallocate(beta)
-    if( allocated(L)     ) deallocate(L)
+    deallocate(iparm)
+    deallocate(temp)
+    deallocate(alpha)
+    deallocate(beta)
+    deallocate(L)
   end subroutine tridiag
 
 !======================================================================!

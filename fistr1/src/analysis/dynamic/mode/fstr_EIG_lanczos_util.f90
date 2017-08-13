@@ -74,33 +74,32 @@ module m_fstr_EIG_lanczos_util
   end subroutine lanczos_set_initial_value
 
 !> Sort eigenvalues
-      SUBROUTINE EVSORT(EIG,NEW,NEIG)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION EIG(NEIG),NEW(NEIG)
+  subroutine EVSORT(EIG, NEW, NEIG)
+    use hecmw
+    implicit none
+    integer(kind=kint) :: i, j, n, ip, minloc, NEIG, IBAF, NEW(NEIG)
+    real(kind=kreal) :: EMIN, EIG(NEIG)
 
-      DO 10 I=1,NEIG
-        NEW(I)=I
-   10 CONTINUE
+    do i=1, NEIG
+      NEW(i) = i
+    enddo
 
-      NM=NEIG-1
-      DO 20 I=1,NM
-        MINLOC=I
-        EMIN=ABS(EIG(NEW(I)))
-        IP=I+1
-        DO 30 J=IP,NEIG
-          IF(ABS(EIG(NEW(J))).LT.EMIN) THEN
-            MINLOC=J
-            EMIN=ABS(EIG(NEW(J)))
-          END IF
-   30   CONTINUE
-        IBAF=NEW(I)
-        NEW(I)=NEW(MINLOC)
-        NEW(MINLOC)=IBAF
-   20 CONTINUE
-
-      RETURN
-      END SUBROUTINE EVSORT
+    n = NEIG-1
+    do i=1, n
+      minloc = i
+      EMIN = dabs(EIG(NEW(I)))
+      IP = I+1
+      do J=IP,NEIG
+        if(dabs(EIG(NEW(J))).LT.EMIN)then
+          minloc = J
+          EMIN = dabs(EIG(NEW(J)))
+        endif
+      enddo
+      IBAF = NEW(I)
+      NEW(I) = NEW(minloc)
+      NEW(minloc) = IBAF
+    enddo
+  end subroutine EVSORT
 
   subroutine URAND1(N, X, SHIFT)
     use hecmw
