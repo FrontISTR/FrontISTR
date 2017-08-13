@@ -379,8 +379,13 @@ add_subdirectory(fistr1)
 ###############################################################################
 # Tests
 ###############################################################################
-enable_testing()
-add_subdirectory(examples)
+find_package(Ruby)
+if (NOT ${RUBY_EXECUTABLE})
+  message(STATUS "Found ${RUBY_EXECUTABLE}. Enable tests.")
+  message("If you would like to test, please type 'make test' after build binaries.")
+  enable_testing()
+  add_subdirectory(examples)
+endif()
 
 ###############################################################################
 # Package generator (deb, rpm, exe etc.)
