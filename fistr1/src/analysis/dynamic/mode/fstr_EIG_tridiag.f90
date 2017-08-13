@@ -36,9 +36,9 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter, iter2, ierr, maxiter
-    real(kind=kreal) :: cchk, cchk1, prechk, prechk1, ppc
-    real(kind=kreal), allocatable :: LLDIAG(:), LNDIAG(:), LSUB(:)
-    real(kind=kreal), allocatable :: LZMAT(:,:), LNZMAT(:,:)
+    real(kind=kreal) :: chk
+    real(kind=kreal), allocatable :: alpha(:), beta(:)
+    real(kind=kreal), allocatable :: L(:,:)
 
     integer(kind=kint), allocatable :: iparm(:)
     real(kind=kreal), pointer :: eigvec(:,:)
@@ -49,108 +49,65 @@ contains
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
-    nget   = fstrEIG%nget
     maxiter= fstrEIG%maxiter
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
 
-    allocate( iparm(maxiter)                  )
+    allocate( iparm(maxiter) )
+    allocate( alpha(iter)    )
+    allocate( beta(iter)     )
+    allocate( L(iter, iter)  )
 
-      ALLOCATE( LLDIAG(iter)        )
-      ALLOCATE( LNDIAG(iter)        ) !Unordered
-      ALLOCATE( LSUB(iter)          )
-      ALLOCATE( LZMAT(iter,iter)  )
-      ALLOCATE( LNZMAT(iter,iter) ) !Unordered
-
-      DO j = 1,iter
-        DO i = 1,iter
-          LZMAT(j,i)  = 0.0D0
-          LNZMAT(j,i) = 0.0D0 !Unordered
-        enddo
+    do j=1, iter
+      do i = 1,iter
+        L(i,j)  = 0.0d0
       enddo
-
-      DO i = 1,iter
-        LLDIAG(i) = Tri%alpha(i)
-        LZMAT(i,i) = 1.0D0
-      enddo
-
-      LSUB(1) = 0.0
-      i   = 0
-      DO i = 2,iter
-        LSUB(i)  = Tri%beta(i)
-      enddo
-
-    call QL_decomposition(iter,iter,LLDIAG,LNDIAG,LSUB,LZMAT,LNZMAT,ierr)
-
-
-      DO i = 1, iter
-        IF( LLDIAG(i).NE.0.0D0 ) THEN
-          eigval(i) = 1.0D0/LLDIAG(i) + fstrEIG%sigma
-        ENDIF
-      enddo
-
-      call EVSORT(eigval,iparm,iter)
-
-      cchk  = 0.0
-      kn = nget+2
-      IF(iter .LT. kn) kn = iter
-
-      DO k = 1,kn
-        j = iparm(k)
-        call VECPRO1(prechk1,LZMAT(1,j),LZMAT(1,j),iter)
-
-        IF(prechk1 .GT. 0.) THEN
-          prechk1 = SQRT(prechk1)
-        ELSE
-          prechk1 = 1.
-        ENDIF
-
-        cchk1 = (Tri%beta(j))*(LZMAT(iter,j)/prechk)
-        IF(cchk .LT. ABS(cchk1)) THEN
-          cchk = ABS(cchk1)
-          i = j
-          ppc = prechk1
-        ENDIF
-      enddo
-
-    DO i = 1, iter
-      IF(LLDIAG(i).NE.0.0D0) THEN
-        eigval(i) = 1.0D0/LLDIAG(i) + fstrEIG%sigma
-      ENDIF
     enddo
-    call evsort(eigval,iparm,iter)
 
-    eigvec = 0.0
-    k = nget
-    IF(k .GT. iter) k = iter
-    DO kn = 1,k
-      in = iparm(kn)
-      DO j = 1,iter
-        DO i =1,NPNDOF
-          eigvec(i,kn) = eigvec(i,kn) + Q(j)%q(i)*LZMAT(j,in)
+    do i=1, iter
+      alpha(i) = Tri%alpha(i)
+      L(i,i)   = 1.0d0
+    enddo
+
+    beta(1) = 0.0d0
+    do i=2, iter
+      beta(i) = Tri%beta(i)
+    enddo
+
+    call QL_decomposition(iter, iter, alpha, beta, L, ierr)
+
+    do i = 1, iter
+      if(alpha(i) /= 0.0d0)then
+        eigval(i) = 1.0d0/alpha(i) + fstrEIG%sigma
+      endif
+    enddo
+
+    call evsort(eigval, iparm, iter)
+
+    eigvec = 0.0d0
+    do k=1, iter
+      in = iparm(k)
+      do j=1, iter
+        do i=1, NPNDOF
+          eigvec(i, k) = eigvec(i, k) + Q(j)%q(i) * L(j, in)
         enddo
       enddo
     enddo
 
-    do j=1,nget
-      prechk1 = maxval(eigvec(:,j))
-      call hecmw_allreduce_R1(hecMESH,prechk1,hecmw_sum)
-      if(prechk1 /= 0.0d0)then
+    do j=1, iter
+      chk = maxval(eigvec(:,j))
+      call hecmw_allreduce_R1(hecMESH, chk, hecmw_max)
+      if(chk /= 0.0d0)then
+        chk = 1.0d0/chk
         do i = 1, NNDOF
-          eigvec(i,j) = eigvec(i,j)/prechk1
+          eigvec(i,j) = eigvec(i,j) * chk
         enddo
       endif
     enddo
 
-    if( allocated(LLDIAG) ) DEALLOCATE(LLDIAG)
-    if( allocated(LNDIAG) ) DEALLOCATE(LNDIAG)
-    if( allocated(LSUB) )   DEALLOCATE(LSUB)
-    if( allocated(LZMAT) )  DEALLOCATE(LZMAT)
-    if( allocated(LNZMAT) ) DEALLOCATE(LNZMAT)
-
-
-
-
+    if( allocated(alpha) ) deallocate(alpha)
+    if( allocated(beta)  ) deallocate(beta)
+    if( allocated(L)     ) deallocate(L)
   end subroutine tridiag
 
 !======================================================================!
@@ -217,11 +174,11 @@ contains
 !calls a2b2 for  dsqrt(a*a + b*b) .
 !=======================================================================
 
-  subroutine QL_decomposition(nm, n, d, du, e, z, zu, ierror)
+  subroutine QL_decomposition(nm, n, d, e, z, ierror)
       use hecmw
       implicit none
       integer(kind=kint) :: i, j, k, l, m, n, ii, l1, l2, nm, mml, ierror
-      real(kind=kreal) :: d(n), du(n), e(n), z(nm, n), zu(nm, n)
+      real(kind=kreal) :: d(n), e(n), z(nm, n)
       real(kind=kreal) :: c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, tst1, tst2
 
       ierror = 0
@@ -307,12 +264,6 @@ contains
 
 !     .......... order eigenvalues and eigenvectors ..........
 !GP: Get unordered eigenvalues and eigenvectors----------------
-      do i = 1,n
-       du(i) = d(i)
-       do j = 1,n
-        zu(j,i) = z(j,i)
-       end do
-      end do
 
       do 300 ii = 2, n
          i = ii - 1

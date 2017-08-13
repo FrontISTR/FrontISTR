@@ -102,38 +102,6 @@ module m_fstr_EIG_lanczos_util
       RETURN
       END SUBROUTINE EVSORT
 
-
-
-!> Scalar product of two vectors
-      SUBROUTINE VECPRO1(Z,X,Y,NN)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-
-      DIMENSION X(NN),Y(NN)
-        Z=0.0D0
-        DO 20 J=1,NN
-          Z=Z+X(J)*Y(J)
-   20   CONTINUE
-
-      RETURN
-      END SUBROUTINE VECPRO1
-
-!> Product of diagonal matrix and vector
-      SUBROUTINE MATPRO(Y,A,X,MM,NN)
-      use hecmw
-      IMPLICIT REAL(kind=kreal) (A-H,O-Z)
-      DIMENSION Y(MM,NN),A(MM),X(MM,NN)
-      DO 10 I=1,NN
-        DO 20 J=1,MM
-          Y(J,I)=A(J)*X(J,I)
-   20   CONTINUE
-   10 CONTINUE
-      RETURN
-      END SUBROUTINE MATPRO
-
-
-
-
   subroutine URAND1(N, X, SHIFT)
     use hecmw
     implicit none

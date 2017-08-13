@@ -199,6 +199,11 @@ module m_fstr_EIG_lanczos
     do i=0, iter
       if(associated(Q(i)%q)) deallocate(Q(i)%q)
     enddo
+    deallocate( Tri%alpha )
+    deallocate( Tri%beta  )
+    deallocate( t )
+    deallocate( s )
+    deallocate( p )
 
     t2 = hecmw_Wtime()
 
