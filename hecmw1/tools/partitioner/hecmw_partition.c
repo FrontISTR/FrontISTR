@@ -2345,7 +2345,6 @@ pmetis_interface_with_weight( int n_vertex, int ncon, int n_domain, const int *x
     int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
-    /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
     int nparts=n_domain;         /* number of sub-domains */
 
@@ -2390,7 +2389,6 @@ kmetis_interface_with_weight( int n_vertex, int ncon, int n_domain, const int *x
     int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
-    /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
     int nparts=n_domain;         /* number of sub-domains */
 
@@ -2752,6 +2750,7 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
 
     HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
+    HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-aggregate\n");
 
     HECMW_log( HECMW_LOG_DEBUG, "Starting aggregation of contact pairs...\n");
 
@@ -2886,7 +2885,7 @@ metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
     int *belong_domain = NULL;
     int rtc;
     int i;
-    const int ncon = 2;
+    int ncon;
     int *node_weight = NULL;
     int *mark = NULL;
 
@@ -2908,26 +2907,41 @@ metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
 
     HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
-    mark = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
-    if( mark == NULL ) {
-        HECMW_set_error( errno, "" );
-        goto error;
+    if( cont_data->contact == HECMW_PART_CONTACT_SIMPLE ) {
+        HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-simple\n");
+
+        ncon = 1;
+        node_weight = NULL;
     }
+    else /* DISTRIBUTE or DEFAULT */
+    {
+        HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-distribute\n");
 
-    rtc = mark_contact_master_nodes( global_mesh, mark );
-    if( rtc != RTC_NORMAL ) goto error;
+        ncon = 2;
 
-    node_weight = (int *)HECMW_calloc( global_mesh->n_node * ncon, sizeof(int) );
-    if( node_weight == NULL ) {
-        HECMW_set_error( errno, "" );
-        goto error;
-    }
+        mark = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
+        if( mark == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
 
-    for( i=0; i<global_mesh->n_node; i++ ) {
-        /* 1st condition: distribute nodes equally */
-        node_weight[i*ncon  ] = 1;
-        /* 2nd condition: distribute master nodes equally */
-        node_weight[i*ncon+1] = mark[i];
+        rtc = mark_contact_master_nodes( global_mesh, mark );
+        if( rtc != RTC_NORMAL ) goto error;
+
+        node_weight = (int *)HECMW_calloc( global_mesh->n_node * ncon, sizeof(int) );
+        if( node_weight == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
+
+        for( i=0; i<global_mesh->n_node; i++ ) {
+            /* 1st condition: distribute nodes equally */
+            node_weight[i*ncon  ] = 1;
+            /* 2nd condition: distribute master nodes equally */
+            node_weight[i*ncon+1] = mark[i];
+        }
+
+        HECMW_free( mark );
     }
 
     belong_domain = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
@@ -2963,8 +2977,7 @@ metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
     HECMW_free( node_graph_index );
     HECMW_free( node_graph_item );
     HECMW_free( belong_domain );
-    HECMW_free( node_weight );
-    HECMW_free( mark );
+    if( node_weight ) HECMW_free( node_weight );
 
     return n_edgecut;
 
@@ -2972,6 +2985,8 @@ error:
     HECMW_free( node_graph_index );
     HECMW_free( node_graph_item );
     HECMW_free( belong_domain );
+    if( node_weight ) HECMW_free( node_weight );
+    if( mark ) HECMW_free( mark );
 
     return -1;
 }
@@ -3013,6 +3028,8 @@ metis_partition_nb_default( struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+
+    HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: default\n");
 
     switch( cont_data->method ) {
     case HECMW_PART_METHOD_PMETIS:  /* pMETIS */
