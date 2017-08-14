@@ -49,10 +49,11 @@ module m_Metis510API
       integer(idx_t)              ::  ierr
       integer(idx_t),intent(in)   ::  nvtxs,ncon,nparts
       integer(idx_t),intent(in)   ::  vsize
-      real(real_t),intent(in)     ::  tpwgt,ubvec
       type(c_ptr),value           ::  xadj,adjncy
       type(c_ptr),value           ::  vwgt,adjwgt
-      type(c_ptr),value           ::  options,objval
+      type(c_ptr),value           ::  tpwgt,ubvec
+      type(c_ptr),value           ::  options
+      integer(idx_t),intent(out)  ::  objval
       type(c_ptr),value           ::  part
     end function METIS_PartGraphRecursive_f
 
@@ -65,10 +66,11 @@ module m_Metis510API
       integer(idx_t)              ::  ierr
       integer(idx_t),intent(in)   ::  nvtxs,ncon,nparts
       integer(idx_t),intent(in)   ::  vsize
-      real(real_t),intent(in)     ::  tpwgt,ubvec
       type(c_ptr),value           ::  xadj,adjncy
       type(c_ptr),value           ::  vwgt,adjwgt
-      type(c_ptr),value           ::  options,objval
+      type(c_ptr),value           ::  tpwgt,ubvec
+      type(c_ptr),value           ::  options
+      integer(idx_t),intent(out)  ::  objval
       type(c_ptr),value           ::  part
     end function METIS_PartGraphKway_f
 
@@ -91,6 +93,13 @@ module m_Metis510API
       type(c_ptr),value           ::  perm
       type(c_ptr),value           ::  iperm
     end function METIS_NodeND_f
+
+    function METIS_SetDefaultOptions_f(options)  &
+      result(ierr) bind(C,name="METIS_SetDefaultOptions")
+      import
+      integer(idx_t)              ::  ierr
+      type(c_ptr),value           ::  options
+    end function METIS_SetDefaultOptions_f
   end interface
 
 
@@ -215,24 +224,24 @@ function METIS_PartGraphRecursive                   &
   integer(idx_t)                    ::  ierr
   integer(idx_t),intent(in)         ::  nvtxs,nparts
   integer(idx_t),intent(in)         ::  wgtflag,numflag
-  integer(idx_t)              ::  vsize,ncon
-  real(real_t)                ::  tpwgt,ubvec
-!  integer(idx_t),intent(in),target  ::  xadj(:),adjncy(:)
-!  integer(idx_t),intent(in),target  ::  vwgt(:),adjwgt(:)
-!  integer(idx_t),intent(in),target  ::  options(:)
-!  integer(idx_t),intent(out)        ::  edgecut
-!  integer(idx_t),intent(out),target ::  part(:)
-!
   integer(idx_t),pointer      ::  xadj(:),adjncy(:)
   integer(idx_t),pointer      ::  vwgt(:),adjwgt(:)
-  integer(idx_t),pointer      ::  options(:),objval(:)
+  integer(idx_t),pointer      ::  options(:)
   integer(idx_t),intent(out)  ::  edgecut
   integer(idx_t),pointer      ::  part(:)
 !
+  integer(idx_t)              ::  vsize, ncon
+  integer(idx_t),pointer      ::  options_v5(:)
   type(c_ptr)   ::  xadj_ptr,adjncy_ptr
   type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
-  type(c_ptr)   ::  options_ptr,objval_ptr
+  type(c_ptr)   ::  tpwgt_ptr,ubvec_ptr
+  type(c_ptr)   ::  options_ptr
   type(c_ptr)   ::  part_ptr
+!
+    ncon = 1
+    allocate(options_v5(40))
+    ierr = METIS_SetDefaultOptions(options_v5)
+    options_v5(18) = numflag   ! options[METIS_OPTION_NUMBERING] = 1
 !
     if(associated(xadj)) then
       xadj_ptr  = c_loc(xadj(1))
@@ -254,16 +263,9 @@ function METIS_PartGraphRecursive                   &
     else
       adjwgt_ptr  = c_null_ptr
     endif
-    if(associated(options)) then
-      options_ptr  = c_loc(options(1))
-    else
-      options_ptr  = c_null_ptr
-    endif
-    if(associated(objval)) then
-      objval_ptr  = c_loc(objval(1))
-    else
-      objval_ptr  = c_null_ptr
-    endif
+    tpwgt_ptr = c_null_ptr
+    ubvec_ptr = c_null_ptr
+    options_ptr = c_loc(options_v5(1))
     if(associated(part)) then
       part_ptr  = c_loc(part(1))
     else
@@ -273,7 +275,9 @@ function METIS_PartGraphRecursive                   &
     ierr = METIS_PartGraphRecursive_f                      &
                (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr,  &
                 vwgt_ptr, vsize, adjwgt_ptr,  nparts,      &
-                tpwgt,    ubvec, options_ptr, objval_ptr,  part_ptr)
+                tpwgt_ptr,ubvec_ptr, options_ptr, edgecut,  part_ptr)
+
+    deallocate(options_v5)
 end function METIS_PartGraphRecursive
 
 function METIS_PartGraphKway                        &
@@ -283,24 +287,24 @@ function METIS_PartGraphKway                        &
   integer(idx_t)                    ::  ierr
   integer(idx_t),intent(in)         ::  nvtxs,nparts
   integer(idx_t),intent(in)         ::  wgtflag,numflag
-  integer(idx_t)              ::  vsize, ncon
-  real(real_t)                ::  tpwgt, ubvec
-!  integer(idx_t),intent(in),target  ::  xadj(:),adjncy(:)
-!  integer(idx_t),intent(in),target  ::  vwgt(:),adjwgt(:)
-!  integer(idx_t),intent(in),target  ::  options(:)
-!  integer(idx_t),intent(out)        ::  edgecut
-!  integer(idx_t),intent(out),target ::  part(:)
-!
   integer(idx_t),pointer      ::  xadj(:),adjncy(:)
   integer(idx_t),pointer      ::  vwgt(:),adjwgt(:)
-  integer(idx_t),pointer      ::  options(:),objval(:)
+  integer(idx_t),pointer      ::  options(:)
   integer(idx_t),intent(out)  ::  edgecut
   integer(idx_t),pointer      ::  part(:)
 !
+  integer(idx_t)              ::  vsize,ncon
+  integer(idx_t),pointer      ::  options_v5(:)
   type(c_ptr)   ::  xadj_ptr,adjncy_ptr
   type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
-  type(c_ptr)   ::  options_ptr,objval_ptr
+  type(c_ptr)   ::  tpwgt_ptr,ubvec_ptr
+  type(c_ptr)   ::  options_ptr
   type(c_ptr)   ::  part_ptr
+!
+    ncon = 1
+    allocate(options_v5(40))
+    ierr = METIS_SetDefaultOptions(options_v5)
+    options_v5(18) = numflag   ! options[METIS_OPTION_NUMBERING] = 1
 !
     if(associated(xadj)) then
       xadj_ptr  = c_loc(xadj(1))
@@ -322,16 +326,9 @@ function METIS_PartGraphKway                        &
     else
       adjwgt_ptr  = c_null_ptr
     endif
-    if(associated(options)) then
-      options_ptr  = c_loc(options(1))
-    else
-      options_ptr  = c_null_ptr
-    endif
-    if(associated(objval)) then
-      objval_ptr  = c_loc(objval(1))
-    else
-      objval_ptr  = c_null_ptr
-    endif
+    tpwgt_ptr = c_null_ptr
+    ubvec_ptr = c_null_ptr
+    options_ptr = c_loc(options_v5(1))
     if(associated(part)) then
       part_ptr  = c_loc(part(1))
     else
@@ -341,8 +338,139 @@ function METIS_PartGraphKway                        &
     ierr = METIS_PartGraphKway_f                            &
                  (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr, &
                   vwgt_ptr, vsize, adjwgt_ptr,  nparts,     &
-                  tpwgt,    ubvec, options_ptr, objval_ptr, part_ptr)
+                  tpwgt_ptr,ubvec_ptr, options_ptr, edgecut, part_ptr)
+
+    deallocate(options_v5)
 end function METIS_PartGraphKway
+
+function METIS_mCPartGraphRecursive                 &
+              (nvtxs,   ncon,   xadj,     adjncy,   &
+                vwgt,   adjwgt, wgtflag,  numflag,  &
+               nparts,  options,edgecut,  part) result(ierr)
+  integer(idx_t)                    ::  ierr
+  integer(idx_t),intent(in)         ::  nvtxs,ncon,nparts
+  integer(idx_t),intent(in)         ::  wgtflag,numflag
+  integer(idx_t),pointer      ::  xadj(:),adjncy(:)
+  integer(idx_t),pointer      ::  vwgt(:),adjwgt(:)
+  integer(idx_t),pointer      ::  options(:)
+  integer(idx_t),intent(out)  ::  edgecut
+  integer(idx_t),pointer      ::  part(:)
+!
+  integer(idx_t)              ::  vsize
+  integer(idx_t),pointer      ::  options_v5(:)
+  type(c_ptr)   ::  xadj_ptr,adjncy_ptr
+  type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
+  type(c_ptr)   ::  tpwgt_ptr,ubvec_ptr
+  type(c_ptr)   ::  options_ptr
+  type(c_ptr)   ::  part_ptr
+!
+    allocate(options_v5(40))
+    ierr = METIS_SetDefaultOptions(options_v5)
+    options_v5(18) = numflag   ! options[METIS_OPTION_NUMBERING] = 1
+!
+    if(associated(xadj)) then
+      xadj_ptr  = c_loc(xadj(1))
+    else
+      xadj_ptr  = c_null_ptr
+    endif
+    if(associated(adjncy)) then
+      adjncy_ptr  = c_loc(adjncy(1))
+    else
+      adjncy_ptr  = c_null_ptr
+    endif
+    if(associated(vwgt)) then
+      vwgt_ptr  = c_loc(vwgt(1))
+    else
+      vwgt_ptr  = c_null_ptr
+    endif
+    if(associated(adjwgt)) then
+      adjwgt_ptr  = c_loc(adjwgt(1))
+    else
+      adjwgt_ptr  = c_null_ptr
+    endif
+    tpwgt_ptr = c_null_ptr
+    ubvec_ptr = c_null_ptr
+    options_ptr = c_loc(options_v5(1))
+    if(associated(part)) then
+      part_ptr  = c_loc(part(1))
+    else
+      part_ptr  = c_null_ptr
+    endif
+
+    ierr = METIS_PartGraphRecursive_f                      &
+               (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr,  &
+                vwgt_ptr, vsize, adjwgt_ptr,  nparts,      &
+                tpwgt_ptr,ubvec_ptr, options_ptr, edgecut,  part_ptr)
+
+    deallocate(options_v5)
+end function METIS_mCPartGraphRecursive
+
+function METIS_mCPartGraphKway                      &
+              (nvtxs,   ncon,   xadj,     adjncy,   &
+                vwgt,   adjwgt, wgtflag,  numflag,  &
+               nparts,  ubvec,  options,  edgecut,  part) result(ierr)
+  integer(idx_t)                    ::  ierr
+  integer(idx_t),intent(in)         ::  nvtxs,ncon,nparts
+  integer(idx_t),intent(in)         ::  wgtflag,numflag
+  integer(idx_t),pointer      ::  xadj(:),adjncy(:)
+  integer(idx_t),pointer      ::  vwgt(:),adjwgt(:)
+  real(real_t),pointer        ::  ubvec(:)
+  integer(idx_t),pointer      ::  options(:)
+  integer(idx_t),intent(out)  ::  edgecut
+  integer(idx_t),pointer      ::  part(:)
+!
+  integer(idx_t)              ::  vsize
+  integer(idx_t),pointer      ::  options_v5(:)
+  type(c_ptr)   ::  xadj_ptr,adjncy_ptr
+  type(c_ptr)   ::  vwgt_ptr,adjwgt_ptr
+  type(c_ptr)   ::  tpwgt_ptr,ubvec_ptr
+  type(c_ptr)   ::  options_ptr
+  type(c_ptr)   ::  part_ptr
+!
+    allocate(options_v5(40))
+    ierr = METIS_SetDefaultOptions(options_v5)
+    options_v5(18) = numflag   ! options[METIS_OPTION_NUMBERING] = 1
+!
+    if(associated(xadj)) then
+      xadj_ptr  = c_loc(xadj(1))
+    else
+      xadj_ptr  = c_null_ptr
+    endif
+    if(associated(adjncy)) then
+      adjncy_ptr  = c_loc(adjncy(1))
+    else
+      adjncy_ptr  = c_null_ptr
+    endif
+    if(associated(vwgt)) then
+      vwgt_ptr  = c_loc(vwgt(1))
+    else
+      vwgt_ptr  = c_null_ptr
+    endif
+    if(associated(adjwgt)) then
+      adjwgt_ptr  = c_loc(adjwgt(1))
+    else
+      adjwgt_ptr  = c_null_ptr
+    endif
+    tpwgt_ptr = c_null_ptr
+    ! if(associated(ubvec)) then
+    !   ubvec_prt   = c_loc(ubvec(1))
+    ! else
+      ubvec_ptr = c_null_ptr
+    ! endif
+    options_ptr = c_loc(options_v5(1))
+    if(associated(part)) then
+      part_ptr  = c_loc(part(1))
+    else
+      part_ptr  = c_null_ptr
+    endif
+
+    ierr = METIS_PartGraphKway_f                            &
+                 (nvtxs,    ncon,  xadj_ptr,    adjncy_ptr, &
+                  vwgt_ptr, vsize, adjwgt_ptr,  nparts,     &
+                  tpwgt_ptr,ubvec_ptr, options_ptr, edgecut, part_ptr)
+
+    deallocate(options_v5)
+end function METIS_mCPartGraphKway
 
 function METIS_NodeND                             &
               (nvtxs,   xadj,   adjncy, numflag,  &
@@ -399,5 +527,14 @@ function METIS_NodeND                             &
                           options_ptr,perm_ptr,iperm_ptr)
 end function METIS_NodeND
 
+function METIS_SetDefaultOptions(options) result(ierr)
+  integer(idx_t)                    ::  ierr
+  integer(idx_t),pointer            ::  options(:)
+  type(c_ptr)   ::  options_ptr
+
+  options_ptr = c_loc(options(1))
+
+  ierr = METIS_SetDefaultOptions_f(options_ptr)
+end function METIS_SetDefaultOptions
 #endif
 end module m_Metis510API
