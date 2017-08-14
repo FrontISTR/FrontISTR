@@ -139,67 +139,6 @@ module m_static_LIB_1d
 
   end subroutine UPDATE_C1
 
- !
-!> Update strain and stress inside element
-!---------------------------------------------------------------------*
-  SUBROUTINE UPDATEST_C1( etype, nn, XX, YY, ZZ, TT, T0, area, EDISP, gausses )
-!---------------------------------------------------------------------*
-    use m_fstr
-    USE mMechGauss
-! I/F VARIAVLES
-    integer(kind=kint), INTENT(IN)     :: etype           !< \param [in] element type
-    integer(kind=kint), INTENT(IN)     :: nn              !< \param [in] number of elemental nodes
-    REAL(kind=kreal), INTENT(IN)       :: XX(NN),YY(NN),ZZ(NN)
-    real(kind=kreal),   INTENT(IN)     :: area            !< section area
-    REAL(kind=kreal), INTENT(IN)       :: TT(NN),T0(NN),EDISP(NN*3)
-    type(tGaussStatus), INTENT(INOUT)  :: gausses(:)      !< \param [out] status of qudrature points
-
-
-! LCOAL VARIAVLES
-    real(kind=kreal)   :: direc(3), direc0(3)
-    real(kind=kreal)   :: llen, llen0, ina(1), outa(1)
-    real(kind=kreal)   :: elem(3,nn), ecoord(3,nn)
-    logical            :: ierr
-    real(kind=kreal)   :: young
-    real(kind=kreal)   :: ttc, tt0, alp, alp0, epsth
-
-    ecoord(1,:) = XX(:)
-    ecoord(2,:) = YY(:)
-    ecoord(3,:) = ZZ(:)
-    elem(:,1) = ecoord(:,1) + edisp(1:3)
-    elem(:,2) = ecoord(:,2) + edisp(4:6)
-
-    direc = elem(:,2)-elem(:,1)
-    llen = dsqrt( dot_product(direc, direc) )
-    direc0 = ecoord(:,2)-ecoord(:,1)
-    llen0 = dsqrt( dot_product(direc0, direc0) )
-
-    epsth = 0.d0
-    ttc = 0.5d0*(TT(1)+TT(2))
-    tt0 = 0.5d0*(T0(1)+T0(2))
-
-    ina(1) = ttc
-    call fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa, ierr, ina )
-    if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_YOUNGS)
-    young = outa(1)
-
-    call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
-    if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
-    alp = outa(1)
-
-    ina(1) = tt0
-    call fetch_TableData( MC_THEMOEXP, gausses(1)%pMaterial%dict, outa(:), ierr, ina )
-    if( ierr ) outa(1) = gausses(1)%pMaterial%variables(M_EXAPNSION)
-    alp0 = outa(1)
-
-    epsth=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
-
-    gausses(1)%strain(1) = (llen-llen0)/llen0
-    gausses(1)%stress(1) = young*(gausses(1)%strain(1)-epsth)
-
-  end subroutine UPDATEST_C1
-
-
 !----------------------------------------------------------------------*
    SUBROUTINE NodalStress_C1(ETYPE,NN,gausses,ndstrain,ndstress)
 !----------------------------------------------------------------------*

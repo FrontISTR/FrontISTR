@@ -36,28 +36,39 @@ cmake version 2.8.12.2
 
 他の機能を有効にしたい場合、`cmake`に以下のオプションを付けてください。ライブラリが既にインストールされていれば、自動的にその場所を探します。
 
-| オプション        | 説明                                          | 備考                         |
-|-------------------|-----------------------------------------------|------------------------------|
-| -DWITH_TOOLS=1    | パーティショナなどのツールもコンパイルします  | hecmw_part1など              |
-| -DWITH_MPI=1      | MPIを有効にします                             | ライブラリが必要             |
-| -DWITH_OPENMP=1   | OpenMPを有効にします                          | コンパイラの対応が必要       |
-| -DWITH_REFINER=1  | REVOCAP_Refinerの機能を有効にします           | ライブラリが必要             |
-| -DWITH_REVOCAP=1  | REVOCAP_Couplerの機能を有効にします           | ライブラリが必要             |
-| -DWITH_PARAC1=1   | 並列接触解析の機能を有効にします              | (未実装)                     |
-| -DWITH_METIS=1    | METISの機能を有効にします                     | 4.0.3と5.1.0に対応           |
-| -DMETIS_VER_4=1   | metis-4.0.3を使う場合に設定                   | metis-5.1.0の場合指定不要    |
-| -DWITH_PARMETIS=1 | ParMETISの機能を有効にします                  | 3.2.0と4.0.3に対応           |
-| -DMETIS_VER_3=1   | ParMetis-3.2.0を使う場合に設定                | parmetis-4.0.3の場合指定不要 |
-| -DWITH_MKL=1      | MKL PARDISOの機能を有効にします               | (未実装)                     |
-| -DWITH_MUMPS=1    | MUMPSの機能を有効にします                     | ライブラリが必要             |
-| -DWITH_LAPACK=1   | LAPACKの機能を有効にします                    | ライブラリが必要             |
-| -DWITH_ML=1       | Trilinos MLの機能を有効にします               | ライブラリが必要             |
-| -DBUILD_DOC=1     | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要      |
-これらの設定できるオプションの一覧は`% cmake -L`で表示されます。
+| オプション              | 説明                                          | 備考                           |
+|-------------------------|-----------------------------------------------|--------------------------------|
+| -DWITH_TOOLS=1          | パーティショナなどのツールもコンパイルします  | hecmw_part1など                |
+| -DWITH_MPI=1            | MPIを有効にします                             | ライブラリが必要               |
+| -DWITH_OPENMP=1         | OpenMPを有効にします                          | コンパイラの対応が必要         |
+| -DWITH_REFINER=1        | REVOCAP_Refinerの機能を有効にします           | ライブラリが必要               |
+| -DWITH_REVOCAP=1        | REVOCAP_Couplerの機能を有効にします           | ライブラリが必要               |
+| -DWITH_PARAC1=1         | 並列接触解析の機能を有効にします              | (未実装)                       |
+| -DWITH_METIS=1          | METISの機能を有効にします                     | 4.0.3と5.1.0に対応             |
+| -DMETIS_VER_4=1         | metis-4.0.3を使う場合に設定                   | metis-5.1.0の場合指定不要      |
+| -DWITH_PARMETIS=1       | ParMETISの機能を有効にします                  | 3.2.0と4.0.3に対応             |
+| -DMETIS_VER_3=1         | ParMetis-3.2.0を使う場合に設定                | parmetis-4.0.3の場合指定不要   |
+| -DWITH_MKL=1            | MKL PARDISOの機能を有効にします               | (未実装)                       |
+| -DWITH_MUMPS=1          | MUMPSの機能を有効にします                     | ライブラリが必要               |
+| -DWITH_LAPACK=1         | LAPACKの機能を有効にします                    | ライブラリが必要               |
+| -DWITH_ML=1             | Trilinos MLの機能を有効にします               | ライブラリが必要               |
+| -DWITH_DOC=1            | FrontISTRのソースコードをドキュメント化します | doxygenとgraphvizが必要        |
+| -DBLA_VENDOR="Generic"  | 利用するBLASのベンダーを指定                  | FindBLAS.cmakeを参照           |
+| -DBLAS_LIBRARIES=".."   | BLASライブラリを直接指定                      | ライブラリを絶対パスで直接指定 |
+| -DLAPACK_LIBRARIES=".." | LaPACKライブラリを直接指定                    | ライブラリを絶対パスで直接指定 |
+
+これらの設定できるオプションの一覧は
+
+~~~txt
+% cmake -L
+~~~
+
+で以下のように表示されます。
+
 ~~~txt
 -- Cache values
 BASH_PROGRAM:FILEPATH=/bin/bash
-BUILD_DOC:BOOL=ON
+WITH_DOC:BOOL=ON
 CMAKE_BUILD_TYPE:STRING=RELEASE
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
 METIS_VER_4:BOOL=OFF
@@ -74,25 +85,67 @@ WITH_REFINER:BOOL=ON
 WITH_REVOCAP:BOOL=OFF
 WITH_TOOLS:BOOL=ON
 ~~~
+
+### ライブラリの場所の指定方法
+
+`$HOME/local`以下にライブラリをインストールしていて、`$HOME/local/bin`に`$PATH`が通っていれば自動的にライブラリは見つかります。
+
+ライブラリをインストールしたくない場合、コンパイルをしたライブラリの場所を環境変数で指定することも出来ます。
+
+|環境変数　     | ライブラリ                           |
+|---------------|--------------------------------------|
+|METIS_ROOT     | metis-5.1.0 または metis-4.0.3       |
+|PARMETIS_ROOT  | parmetis-4.0.3 または parmetis-3.1.1 |
+|MUMPS_ROOT     | MUMPS_5.1.1 - 5.0.1                  |
+|REFINER_ROOT   | REVOCAP_Refiner-1.1.04               |
+|REVOCAP_ROOT   | REVOCAP_Coupler-2.1                  |
+|SCALAPACK_ROOT | scalapack-2.0.2                      |
+
+例)
+
+~~~txt
+% export METIS_ROOT=$HOME/abc/metis-5.1.0
+~~~
+
+ライブラリをコンパイルしたディレクトリを各環境変数に設定します。
+
+注意)
+
+metis-4.0.3 を利用する場合、ディレクトリを指定した上で`cmake`実行時に
+
+~~~txt
+% cmake -DMETIS_VER_4=ON ..
+~~~
+
+を指定してください。
+
 ### その他のオプション
+
 その他、よく利用されるcmakeのオプションを示します。必要に応じて利用してください。
 
-| オプション | 説明 | 例 |
-|---------|------|----|
-| -DCMAKE_INSTALL_PREFIX=<intall path> | インストールするパスを設定。デフォルトは`/usr/local` | -DCMAKE_INSTALL_PREFIX=$HOME/local で $HOME/local/bin などにプログラムがインストールされる　|
-| -DCMAKE_C_COMPILER= | Cコンパイラを指定 | -DCMAKE_C_COMPILER=icc  (Intel Cコンパイラ） |
-| -DCMAKE_CXX_COMPILER= | C++コンパイラを指定 | -DCMAKE_CXX_COMPILER=icpc  (Intel C++コンパイラ) |
-| -DCMAKE_Fortran_COMPILER= | Fortranコンパイラを指定 | -DCMAKE_Fortran_COMPILER=ifort  (Intel Fortranコンパイラ) |
-| -DCMAKE_PREFIX_PATH= | ライブラリ等の格納場所を指定 | -DCMAKE_PREFIX_PATH=$HOME/tools (ライブラリやインクルードファイルを探索するパス) |
+| オプション                | 説明                                                 | 例                                                                                          |
+|---------------------------|------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| -DCMAKE_INSTALL_PREFIX=   | インストールするパスを設定。デフォルトは`/usr/local` | -DCMAKE_INSTALL_PREFIX=$HOME/local で $HOME/local/bin などにプログラムがインストールされる　|
+| -DCMAKE_C_COMPILER=       | Cコンパイラを指定                                    | -DCMAKE_C_COMPILER=icc  (Intel Cコンパイラ）                                                |
+| -DCMAKE_CXX_COMPILER=     | C++コンパイラを指定                                  | -DCMAKE_CXX_COMPILER=icpc  (Intel C++コンパイラ)                                            |
+| -DCMAKE_Fortran_COMPILER= | Fortranコンパイラを指定                              | -DCMAKE_Fortran_COMPILER=ifort  (Intel Fortranコンパイラ)                                   |
+| -DCMAKE_PREFIX_PATH=      | ライブラリ等の格納場所を指定                         | -DCMAKE_PREFIX_PATH=$HOME/tools (ライブラリやインクルードファイルを探索するパス)            |
 
 ## LinuxなどのUnix系プラットフォームでの構築例
 
-`cmake`による設定の具体例を示します。予めライブラリがインストールされている場合、明示する必要はありません。
+### Intel Parallel Studio XEを利用したコンパイル
+
+コンパイラにicc, icpc, ifort、MPIライブラリにIntel MPI、LapackにMKL、OpenMPにiomp5を利用します。
+
+~~~txt
+% cmake -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_Fortran_COMPILER=ifort -DBLA_VENDOR="Intel10_64lp" ..
+または
+% CC=icc CXX=icpc FC=ifort cmake -DBLA_VENDOR="Intel10_64lp" ..
+~~~
 
 ### 外部ライブラリの場所の指定
 
-例えば`$HOME/tools`以下に、`include/`,`lib/`のようなディレクトリ構造で外部ライブラリをインストール
-している場合
+例えば`$HOME/tools`以下に、`include/`,`lib/`のようなディレクトリ構造で外部ライブラリをインストールしている場合
 
 ~~~txt
 % CMAKE_INSTALL_PATH=$HOME/tools cmake ..
@@ -145,10 +198,9 @@ WITH_TOOLS:BOOL=ON
 ### MKLをLaPACK, BLASとして利用する
 
 ~~~txt
-% source /opt/intel/mkl/bin/mklvar.sh intel64
 % source /opt/intel/bin/compilervars.sh intel64
 % echo $LD_LIBRARY_PATH (ライブラリが見えていることを確認)
-% export BLA_VENDOR="Intel"
+% export BLA_VENDOR="Intel10_64lp"
 % cmake -DWITH_LAPACK=1 ..
 ~~~
 
@@ -157,17 +209,9 @@ WITH_TOOLS:BOOL=ON
 FrontISTRのソースコードのドキュメンテーションを参照することができます。ただし、予め `doxygen`と`graphviz` をインストールしておく必要があります。
 
 ~~~txt
-% cmake -DBUILD_DOC=1 ..
+% cmake -DWITH_DOC=1 ..
 % make doc
 % firefox doc/html/index.html
-~~~
-
-### 全てのオプションを有効にする
-
-~~~txt
-% cmake -DWITH_TOOLS=1 -DWITH_MPI=1 -DWITH_OPENMP=1 \
-        -DWITH_REFINER=1 -DWITH_REVOCAP=1 -DWITH_METIS=1 \
-        -DWITH_MUMPS=1 -DWITH_LAPACK=1 -DWITH_ML=1 -DBUILD_DOC=1 ..
 ~~~
 
 ### インストールディレクトリを変更する
@@ -319,8 +363,8 @@ FrontFlowなどと連成を行うためのカップラーです。
 OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分をこれに置き換えることもできます。
 
 ~~~txt
-% tar xvf OpenBLAS-0.2.18.tar.gz
-% cd OpenBLAS-0.2.18
+% tar xvf OpenBLAS-0.2.20.tar.gz
+% cd OpenBLAS-0.2.20
 % make BINARY=64 NO_SHARED=1 USE_OPENMP=1
 % make PREFIX=$HOME/local install
 ~~~
@@ -330,7 +374,7 @@ OpenBLASにはLAPACKも含まれているので、LAPACKを指定する部分を
 Metis-5.1.0コンパイルするにはcmakeが必要です。
 
 ~~~txt
-% make config openmp=1 prefix=$HOME/local
+% make config openmp=1 cc=gcc prefix=$HOME/local
 % make
 % make install
 ~~~
@@ -340,12 +384,12 @@ Metis-5.1.0コンパイルするにはcmakeが必要です。
 parmetis-4.0.3コンパイルするにはcmakeが必要です。また、MPIを予めインストールしておく必要があります。
 
 ~~~txt
-% make config openmp=1 prefix=$HOME/local
+% make config openmp=1 cc=mpicc cxx=mpic++ prefix=$HOME/local
 % make
 % make install
 ~~~
 
-### MUMPS-5.0.1
+### MUMPS-5.1.1
 
 直接法ソルバーMUMPSの構築方法です。
 
@@ -407,7 +451,7 @@ FrontISTR で ML による疎行列のプリコンディショナーを利用す
 
 ただし、シリアル版を作成する場合は `-DTPL_ENABLE_MPI=1` の指定は不要です。
 
-### パッケージの作成 (初期サポート)
+## パッケージの作成 (初期サポート)
 
 構築したバイナリを、各プラットフォームでサポートするパッケージにすることできます。
 
@@ -417,3 +461,56 @@ TBZ2, DEB, RPM,
 % cd build
 % cpack
 ~~~
+
+## テスト
+
+コンパイルで作成されたバイナリが正しく動作するかのテストを行うことが出来ます。
+
+テストを行うためには、`ruby`を予めインストールしておく必要があります。
+
+`ruby`をインストールし、上記の手順でバイナリを作成したら以下のコマンドを実行してテストを走らせてみてください。
+
+~~~txt
+% make test
+~~~
+
+テストに成功すると、`Passed`が表示され、失敗すると`Failed`が表示されます。
+
+~~~txt
+      Start  1: Static_exA_Test
+ 1/23 Test  #1: Static_exA_Test ..................   Passed    2.56 sec
+      Start  2: Static_exB_Test
+ 2/23 Test  #2: Static_exB_Test ..................   Passed    2.20 sec
+~~~
+
+### 高度なオプション
+
+テスト中の様子を見たり、並列にテストを実行したい場合、オプションが指定できます。
+
+#### `make test`を使う場合
+
+上記のテストにオプションを付け加えます
+
+~~~txt
+% make test ARGS="-VV -j4 -O test_log.txt"
+~~~
+
+#### `ctest`を使う場合
+
+`make test`は`Makefile`の中で`ctest`を実行しています。`ctest`は直接起動することが出来ます。
+
+上記と同じ挙動をさせるには
+
+~~~txt
+% ctest -VV -j4 -O test_log.txt
+~~~
+
+と実行してください。上記のオプションは
+
+| オプション  | 動作                           |
+|-------------|--------------------------------|
+| `-VV`       | 冗長な出力を有効にする         |
+| `-j <jobs>` | テストを`<jobs>`並列で実行する |
+| `-O <file>' | ログを`<file>`へ出力する       |
+
+です。詳しくは `% ctest --help`で参照出来ます。

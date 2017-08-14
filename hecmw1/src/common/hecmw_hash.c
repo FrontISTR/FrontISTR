@@ -34,6 +34,7 @@ struct hecmw_hash_p {
 hecmw_hash_p *hash_ng; /* node group */
 hecmw_hash_p *hash_eg; /* element group */
 hecmw_hash_p *hash_sg; /* surface group */
+hecmw_hash_p *hash_mat; /* material group */
 
 static const unsigned int hecmw_hashsize_template[] =
 {
@@ -295,8 +296,10 @@ static unsigned int hash_key(const char *c)
   unsigned int hash_key = 5381;
   int i;
 
-  while (i = *c++) {
+  while (*c != '\0') {
+    i = *c;
     hash_key = ((hash_key << 5) + hash_key) + i;
+    ++c;
   }
 
   return hash_key;

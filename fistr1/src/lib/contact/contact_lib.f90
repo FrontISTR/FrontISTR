@@ -48,6 +48,13 @@ contains
     cstate%surface=-1
   end subroutine
 
+  !> Copy
+  subroutine contact_state_copy(cstate1, cstate2)
+    type(tContactState), intent(in)    :: cstate1   !< contact state
+    type(tContactState), intent(inout) :: cstate2   !< contact state
+    cstate2 = cstate1
+  end subroutine
+
   !> Print out contact state
   subroutine print_contact_state(fnum, cstate)
     integer, intent(in)             :: fnum        !< file number

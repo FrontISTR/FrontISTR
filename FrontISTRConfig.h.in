@@ -7,6 +7,7 @@
 #define VERSION_MAJOR @VERSION_MAJOR@
 #define VERSION_MINOR @VERSION_MINOR@
 #define VERSION_PATCH @VERSION_PATCH@
+#define GIT_HASH @GIT_HASH@
 
 #cmakedefine _WINDOWS
 #cmakedefine NDEBUG
@@ -27,7 +28,6 @@
 #cmakedefine WITH_PARACON
 #cmakedefine WITH_PARADISO
 
-#cmakedefine PARA_CONTACT
 #cmakedefine HECMW_SERIAL
 #cmakedefine HECMW_WITH_REFINER
 #cmakedefine HECMW_WITH_METIS

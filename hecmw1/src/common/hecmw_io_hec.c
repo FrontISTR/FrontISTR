@@ -2449,7 +2449,7 @@ read_material_data(int item, char *name)
 	mat->next = NULL;
 
 	/* add */
-	if(HECMW_io_add_mat(mat) == NULL) return -1;
+	if(HECMW_io_add_mat(name, mat) == NULL) return -1;
 
 	return 0;
 }

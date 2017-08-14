@@ -238,8 +238,15 @@ install-module:
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
+	@cd metis     && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
+	@cd metis     && $(MAKE) clean
 
 distclean: clean
+	@cd metis     && $(MAKE) distclean
+
+@build_target@:
+	@cd metis     && $(MAKE) install-header
+	@cd metis     && $(MAKE) @build_target@

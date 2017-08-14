@@ -56,7 +56,6 @@ module fstr_frequency_analysis
 use m_fstr
 use m_fstr_StiffMatrix
 use m_fstr_AddBC
-use m_static_mat_ass
 use fstr_matrix_con_contact
 use m_fstr_freqdata
 use m_fstr_EIG_setMASS
@@ -383,7 +382,7 @@ contains
     real(kind=kreal),       intent(inout) :: eigenvector(:,:) !intend (numdof*NN,nmode)
   !---- vals
     integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
-    integer(kind=kint)             :: imode, idx, ind, a, b, nallcomp, sti, j, nmode
+    integer(kind=kint)             :: imode, idx, ind, a, b, nallcomp, j, nmode
     type(hecmwST_result_data)      :: eigenres
     character(len=HECMW_NAME_LEN) :: name
   !---- body
@@ -398,15 +397,11 @@ contains
       do ind=1,eigenres%nn_component
         nallcomp = nallcomp + eigenres%nn_dof(ind)
       end do
-      sti = 0
-      do ind=1,(compidx-1)
-        sti = sti + eigenres%nn_dof(ind)
-      end do
 
       idx = imode - startmode + 1
       do ind=1, numnode
         do j=1, numdof
-          a = (ind-1)*nallcomp + sti + j  !src vector index
+          a = (ind-1)*nallcomp + j  !src vector index
           b = (ind-1)*numdof   + j
           eigenvector(b,imode) = eigenres%node_val_item(a)
         end do
@@ -694,16 +689,10 @@ contains
   !---- body
 
     myEIG%eqset = 1
-    if( fstrPARAM%solution_type==kstSTATICEIGEN ) then
-      fstrSOLID%dunode = 0.d0
-      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0 )
-      call fstr_AddBC(1, 1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
-    else
-      call fstr_mat_ass(hecMESH, hecMAT, myEIG, fstrSOLID)
-    endif
-    if( myrank == 0 ) then
-       write(IMSG,*) 'fstr_mat_ass: OK'
-    endif
+
+    fstrSOLID%dunode = 0.d0
+      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
     call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, myEIG)
 

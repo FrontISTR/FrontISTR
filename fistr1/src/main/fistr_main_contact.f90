@@ -2,7 +2,8 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-program fstr_main
+
+module m_fstr_main
 
 use hecmw
 use m_fstr
@@ -11,7 +12,6 @@ use m_fstr_para_contact
 !#endif
 use m_hecmw2fstr_mesh_conv
 use m_fstr_setup
-use m_fstr_solve_linear
 use m_fstr_solve_heat
 use m_fstr_solve_nlgeom
 use m_fstr_solve_eigen
@@ -25,23 +25,25 @@ use fstr_debug_dump
 use fstr_matrix_con_contact
 use m_fstr_freqdata
 
-
-        implicit none
-        type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
-        type (hecmwST_matrix )                 :: hecMAT
+type (hecmwST_local_mesh)              :: hecMESH,hecMESH_G
+type (hecmwST_matrix )                 :: hecMAT
 !#ifdef PARA_CONTACT
-        type (hecmwST_matrix )                 :: conMAT
+type (hecmwST_matrix )                 :: conMAT
 !#endif
-        type (fstr_solid )                     :: fstrSOLID
-        type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-        type (fstr_heat )                      :: fstrHEAT
-        type (lczparam)                        :: fstrEIG
-        type (fstr_dynamic )                   :: fstrDYNAMIC
-        type ( hecmwST_result_data )           :: fstrRESULT
-        type (fstr_couple )                    :: fstrCPL
-        type (fstr_freqanalysis)               :: fstrFREQ
-        character(len=HECMW_FILENAME_LEN)     :: name_ID
+type (fstr_solid )                     :: fstrSOLID
+type (fstrST_matrix_contact_lagrange)  :: fstrMAT
+type (fstr_heat )                      :: fstrHEAT
+type (lczparam)                        :: fstrEIG
+type (fstr_dynamic )                   :: fstrDYNAMIC
+type ( hecmwST_result_data )           :: fstrRESULT
+type (fstr_couple )                    :: fstrCPL
+type (fstr_freqanalysis)               :: fstrFREQ
+character(len=HECMW_FILENAME_LEN)      :: name_ID
 
+contains
+
+subroutine fstr_main() BIND(C,NAME='fstr_main')
+        implicit none
         real(kind=kreal):: T1,T2,T3
         integer :: is_entire
 
@@ -96,8 +98,8 @@ use m_fstr_freqdata
         ! =============== ANALYSIS =====================
 
         select case( fstrPR%solution_type )
-        case ( kstSTATIC, kstNLSTATIC)
-                call fstr_static_analysis( fstrPR%solution_type )
+        case ( kstSTATIC )
+                call fstr_static_analysis
         case ( kstDYNAMIC )
                 call fstr_dynamic_analysis
         case ( kstEIGEN )
@@ -134,9 +136,7 @@ use m_fstr_freqdata
         call hecmw_finalize
         if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 
-contains
-
-
+end subroutine fstr_main
 
 !=============================================================================!
 !> Initializer                                                                  !
@@ -331,9 +331,8 @@ end subroutine fstr_init_condition
 !> Master subroutine of linear/nonlinear static analysis                                !
 !=============================================================================!
 
-subroutine fstr_static_analysis( flag )
+subroutine fstr_static_analysis
         implicit none
-        integer(kind=kint), intent(in) :: flag
 
         teachiter = .TRUE.
         if( IECHO.eq.1 ) call fstr_echo(hecMESH)
@@ -342,18 +341,19 @@ subroutine fstr_static_analysis( flag )
                 write(IMSG,*)
                 write(IMSG,*)
                 write(IMSG,*)
-                if(flag == kstSTATIC)   write(IMSG,*) ' ***   STAGE Linear static analysis   **'
-                if(flag == kstNLSTATIC) write(IMSG,*) ' ***   STAGE Non linear static analysis   **'
         end if
 
-        if(flag == kstSTATIC)   call fstr_solve_LINEAR( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrPR )
-        if(flag == kstNLSTATIC)then
-            if(paraContactFlag)then
+        if( fstrPR%nlgeom ) then
+                if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
+        else
+                if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
+        end if
+        if(paraContactFlag)then
                 call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
-            else
+        else
                 call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-            endif
         endif
+
         call fstr_solid_finalize( fstrSOLID )
 
 end subroutine fstr_static_analysis
@@ -414,10 +414,10 @@ subroutine fstr_dynamic_analysis
            write(IMSG,*)
            write(IMSG,*)
            write(IMSG,*)
-           if( fstrDYNAMIC%nlflag==0 ) then
-                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
-           else
+           if( fstrPR%nlgeom ) then
                 write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
+           else
+                write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
            endif
         end if
 
@@ -498,5 +498,5 @@ subroutine fstr_finalize
 end subroutine fstr_finalize
 
 !=============================================================================!
-end program fstr_main
+end module m_fstr_main
 

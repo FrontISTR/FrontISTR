@@ -73,7 +73,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         logical          :: isOK
         type(t_output_ctrl) :: outctrl
         type(tshellmat),pointer :: shmat(:)
-        character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName
+        character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
         ! counters
         integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
@@ -85,7 +85,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         integer(kind=kint) :: c_couple, c_material
         integer(kind=kint) :: c_mpc, c_weldline
         integer(kind=kint) :: c_istep, c_localcoord, c_section
-        integer(kind=kint) :: c_elemopt
+        integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
         integer(kind=kint) :: c_output, islog
         integer(kind=kint) :: k
 
@@ -114,6 +114,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_istep    = 0; c_localcoord = 0
         c_fload    = 0; c_eigenread = 0
         c_elemopt  = 0;
+        c_aincparam= 0; c_timepoints = 0
 
         ctrl_list = 0
         ictrl = 1
@@ -153,12 +154,16 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                         c_echo = c_echo + 1
                         call fstr_setup_ECHO( ctrl, c_echo, P )
                 else if( header_name == '!RESTART' ) then
-                        call fstr_setup_RESTART( ctrl, nout )
+                        call fstr_setup_RESTART( ctrl, nout, P%PARAM%restart_version )
                         fstrSOLID%restart_nout= nout
                         fstrDYNAMIC%restart_nout= nout
                         fstrHEAT%restart_nout= nout
                 else if( header_name == '!ORIENTATION' ) then
                         c_localcoord = c_localcoord + 1
+                else if( header_name == '!AUTOINC_PARAM' ) then
+                        c_aincparam = c_aincparam + 1
+                else if( header_name == '!TIME_POINTS' ) then
+                        c_timepoints = c_timepoints + 1
 
                 !--------------- for static -------------------------
 
@@ -299,6 +304,11 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
         if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
         if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
+        allocate( fstrPARAM%ainc(0:c_aincparam) )
+        do i=0,c_aincparam
+          call init_AincParam( fstrPARAM%ainc(i) )
+        end do
+        if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
 
         P%SOLID%is_33shell = 0
         P%SOLID%is_33beam  = 0
@@ -322,8 +332,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
               cid = hecMESH%section%sect_mat_ID_item(i)
               if( cid>n ) stop "Error in material property definition!"
               call initMaterial(  fstrSOLID%materials(cid) )
-              if( fstrPARAM%solution_type == kstNLSTATIC &
-                   .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
+              if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
                       fstrSOLID%materials(cid)%nlgeom_flag = 1
               nullify(shmat)
               call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
@@ -350,6 +359,25 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
            enddo
          endif
 
+        ! for section control
+        allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+        do i=1,hecMESH%section%n_sect
+          ! set default 361 element formulation
+          if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
+            if( p%PARAM%nlgeom ) then
+              fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+            else
+              fstrSOLID%sections(i)%elemopt361 = kel361IC
+            end if
+          else if( p%PARAM%solution_type==kstEIGEN ) then
+            fstrSOLID%sections(i)%elemopt361 = kel361IC
+          else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
+            fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+          else
+            fstrSOLID%sections(i)%elemopt361 = kel361FI
+          end if
+        enddo
+
          allocate( fstrSOLID%output_ctrl( 4 ) )
          call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
          fstrSOLID%output_ctrl( 1 )%filename = trim(logfileNAME)
@@ -369,7 +397,13 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         c_section = 0
         fstrHEAT%WL_tot = 0
         c_elemopt = 0
+        c_aincparam = 0
+        c_timepoints = 0
         fstrSOLID%elemopt361 = 0
+        fstrSOLID%AutoINC_stat = 0
+        fstrSOLID%CutBack_stat = 0
+        fstrSOLID%NRstat_i(:) = 0
+        fstrSOLID%NRstat_r(:) = 0.d0
         ictrl = 1
         do
           rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
@@ -418,19 +452,46 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
           else if( header_name == '!ISTEP'  ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
+            endif
+            if( associated(fstrPARAM%timepoints) ) then
+              do i=1,size(fstrPARAM%timepoints)
+                if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+                endif
+              enddo
+            endif
+            if( associated(fstrPARAM%ainc) ) then
+              do i=1,size(fstrPARAM%ainc)
+                if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+                endif
+              enddo
             endif
           else if( header_name == '!STEP' .and. version>=1 ) then
             c_istep = c_istep+1
-            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep) ) ) then
+            if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
                 write(*,*) '### Error: Fail in read in step definition : ' , c_istep
                 write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
                 stop
             endif
-
+            if( associated(fstrPARAM%timepoints) ) then
+              do i=1,size(fstrPARAM%timepoints)
+                if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
+                endif
+              enddo
+            endif
+            if( associated(fstrPARAM%ainc) ) then
+              do i=1,size(fstrPARAM%ainc)-1
+                if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+                  fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
+                endif
+              enddo
+            endif
           else if( header_name == '!WELD_LINE'  ) then
             fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
             if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
@@ -441,7 +502,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
           else if( header_name == '!SECTION'  ) then
             c_section = c_section+1
-            if( fstr_ctrl_get_SECTION( ctrl, hecMESH )/=0 ) then
+            if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
                 write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
                 write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
                 stop
@@ -454,7 +515,6 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
                 stop
             endif
-
 
 !== following material proerties ==
           else if( header_name == '!MATERIAL' ) then
@@ -566,6 +626,18 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  stop
                endif
             endif
+          else if( header_name == '!FLUID' ) then
+            if( c_material >0 ) then
+               if( fstr_ctrl_get_FLUID( ctrl,                                 &
+                                        fstrSOLID%materials(cid)%mtype,       &
+                                        fstrSOLID%materials(cid)%nlgeom_flag, &
+                                        fstrSOLID%materials(cid)%variables,   &
+                                        fstrSOLID%materials(cid)%dict)/=0 ) then
+                 write(*,*) '### Error: Fail in read in fluid definition : ' , cid
+                 write(ILOG,*) '### Error: Fail in read in fluid definition : ', cid
+                 stop
+              endif
+            endif
           else if( header_name == '!USER_MATERIAL' ) then
             if( cid >0 ) then
                if( fstr_ctrl_get_USERMATERIAL( ctrl, fstrSOLID%materials(cid)%mtype,   &
@@ -633,6 +705,20 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                  endif
                enddo
             endif
+          else if( header_name == '!AUTOINC_PARAM' ) then
+            c_aincparam = c_aincparam + 1
+            if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
+                write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
+                write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
+                stop
+            endif
+          else if( header_name == '!TIME_POINTS'  ) then
+            c_timepoints = c_timepoints + 1
+            if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
+                write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
+                write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+                stop
+            endif
           else if( header_name == '!ULOAD' ) then
             if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
               write(*,*) '### Error: Fail in read in ULOAD definition : '
@@ -672,7 +758,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         end do
 
 ! ----- material type judgement. in case of infinitive analysis, nlgeom_flag=0
-        if( P%PARAM%solution_type == kstSTATIC ) then
+        if( .not. P%PARAM%nlgeom ) then
           do i=1, c_material
             fstrSOLID%materials(i)%nlgeom_flag = 0
           enddo
@@ -707,9 +793,10 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
 
         if( associated(fstrSOLID%step_ctrl) )  then
            fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
+           call setup_stepInfo_starttime( fstrSOLID%step_ctrl )
            !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
         else
-           if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+           if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then
               write( *,* ) " ERROR: STEP not defined!"
               write( idbg,* ) "ERROR: STEP not defined!"
               call flush(idbg)
@@ -747,16 +834,15 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         endif
 
         if( fstrSOLID%elemopt361==0 ) then
-          if( P%PARAM%solution_type==kstNLSTATIC .or. P%DYN%nlflag/=0 ) then
+          if( P%PARAM%nlgeom ) then
             write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
             fstrSOLID%elemopt361 = 1
           endif
         endif
 
         if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
-        if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstNLSTATIC .or. &
-           p%PARAM%solution_type==kstDYNAMIC .or. p%PARAM%solution_type==kstEIGEN .or.   &
-           p%PARAM%solution_type==kstSTATICEIGEN )            &
+        if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
+            p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
           call fstr_solid_alloc( hecMESH, fstrSOLID )
 
         if( p%PARAM%solution_type == kstHEAT) then
@@ -801,6 +887,7 @@ subroutine fstr_solid_init( hecMESH, fstrSOLID )
         fstrSOLID%TEMP_irres        = 0
         fstrSOLID%TEMP_tstep        = 1
         fstrSOLID%TEMP_interval     = 1
+        fstrSOLID%TEMP_factor       = 1.d0
         fstrSOLID%VELOCITY_ngrp_tot = 0
         fstrSOLID%ACCELERATION_ngrp_tot = 0
         fstrSOLID%COUPLE_ngrp_tot   = 0
@@ -962,6 +1049,7 @@ subroutine fstr_solid_finalize( fstrSOLID )
         if( associated( fstrSOLID%mpc_const ) ) then
           deallocate( fstrSOLID%mpc_const )
         endif
+        call free_stepInfo( fstrSOLID%step_ctrl_restart )
         if( associated(fstrSOLID%step_ctrl) ) then
           do i=1,size(fstrSOLID%step_ctrl)
             call free_stepInfo( fstrSOLID%step_ctrl(i) )
@@ -974,6 +1062,9 @@ subroutine fstr_solid_finalize( fstrSOLID )
                 close(fstrSOLID%output_ctrl(i)%filenum)
            enddo
            deallocate(fstrSOLID%output_ctrl)
+        endif
+        if( associated( fstrSOLID%sections ) ) then
+          deallocate( fstrSOLID%sections )
         endif
 
         if( associated(fstrSOLID%GL) ) then
@@ -1088,7 +1179,6 @@ end subroutine fstr_eigen_init
 subroutine fstr_dynamic_init( fstrDYNAMIC )
         use m_fstr
         type(fstr_dynamic) :: fstrDYNAMIC
-        fstrDYNAMIC%nlflag   = 0
         fstrDYNAMIC%idx_eqa  = 1
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
@@ -1251,74 +1341,52 @@ end subroutine
 !-----------------------------------------------------------------------------!
 !> Initial setting of postprecessor
 
+subroutine fstr_setup_post_phys_alloc(phys, NDOF, n_node, n_elem)
+  implicit none
+  type(fstr_solid_physic_val), pointer :: phys
+  integer(kind=kint) :: NDOF, n_node, n_elem, mdof
+  mdof = (NDOF*NDOF+NDOF)/2;
+  allocate ( phys%STRAIN  (mdof*n_node))
+  allocate ( phys%STRESS  (mdof*n_node))
+  allocate ( phys%MISES   (     n_node))
+  allocate ( phys%ESTRAIN (mdof*n_elem))
+  allocate ( phys%ESTRESS (mdof*n_elem))
+  allocate ( phys%EMISES  (     n_elem))
+end subroutine fstr_setup_post_phys_alloc
+
  subroutine fstr_setup_post( ctrl, P )
         implicit none
-        integer(kind=kint) :: ctrl, ntot_lyr, i
+        integer(kind=kint) :: ctrl, i
         type(fstr_param_pack) :: P
-
-        ! JP-6
-        ntot_lyr = P%SOLID%max_lyr
+        type(fstr_solid_physic_val), pointer :: phys => null()
 
         if( P%PARAM%solution_type == kstSTATIC &
-         .or. P%PARAM%solution_type == kstNLSTATIC  &
          .or. P%PARAM%solution_type == kstEIGEN  &
          .or. P%PARAM%solution_type == kstDYNAMIC &
          .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
                 ! Memory Allocation for Result Vectors ------------
                 if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
                     allocate ( P%SOLID%SHELL )
-                    allocate ( P%SOLID%SHELL%STRAIN  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%STRESS  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%MISES   (  P%MESH%n_node))
-                    allocate ( P%SOLID%SHELL%ESTRAIN (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%ESTRESS (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%EMISES  (  P%MESH%n_elem))
-                    allocate ( P%SOLID%SHELL%LAYER(ntot_lyr) )
-                    do i=1,ntot_lyr
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%STRESS  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%MISES   (  P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRAIN (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%ESTRESS (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%PLUS%EMISES  (  P%MESH%n_elem))
-
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRAIN  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%STRESS  (6*P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%MISES   (  P%MESH%n_node))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRAIN (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%ESTRESS (6*P%MESH%n_elem))
-                        allocate ( P%SOLID%SHELL%LAYER(i)%MINUS%EMISES  (  P%MESH%n_elem))
+                    call fstr_setup_post_phys_alloc(P%SOLID%SHELL,3, P%MESH%n_node,P%MESH%n_elem)
+                    allocate ( P%SOLID%SHELL%LAYER(P%SOLID%max_lyr) )
+                    do i=1,P%SOLID%max_lyr
+                      allocate ( P%SOLID%SHELL%LAYER(i)%PLUS )
+                      allocate ( P%SOLID%SHELL%LAYER(i)%MINUS )
+                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%PLUS , 3, P%MESH%n_node, P%MESH%n_elem)
+                      call fstr_setup_post_phys_alloc(P%SOLID%SHELL%LAYER(i)%MINUS, 3, P%MESH%n_node, P%MESH%n_elem)
                     enddo
-                    P%SOLID%STRAIN => P%SOLID%SHELL%STRAIN
-                    P%SOLID%STRESS => P%SOLID%SHELL%STRESS
-                    P%SOLID%MISES  => P%SOLID%SHELL%MISES
-                    P%SOLID%ESTRAIN => P%SOLID%SHELL%ESTRAIN
-                    P%SOLID%ESTRESS => P%SOLID%SHELL%ESTRESS
-                    P%SOLID%EMISES  => P%SOLID%SHELL%EMISES
+                    phys => P%SOLID%SHELL
                 else
                     allocate ( P%SOLID%SOLID )
-                    allocate ( P%SOLID%SOLID%STRAIN  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%STRESS  (6*P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%MISES   (P%MESH%n_node))
-                    allocate ( P%SOLID%SOLID%ESTRAIN  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%ESTRESS  (6*P%MESH%n_elem))
-                    allocate ( P%SOLID%SOLID%EMISES   (P%MESH%n_elem))
-                    P%SOLID%STRAIN => P%SOLID%SOLID%STRAIN
-                    P%SOLID%STRESS => P%SOLID%SOLID%STRESS
-                    P%SOLID%MISES  => P%SOLID%SOLID%MISES
-                    P%SOLID%ESTRAIN => P%SOLID%SOLID%ESTRAIN
-                    P%SOLID%ESTRESS => P%SOLID%SOLID%ESTRESS
-                    P%SOLID%EMISES  => P%SOLID%SOLID%EMISES
+                    phys => P%SOLID%SOLID
+                    call fstr_setup_post_phys_alloc(phys, P%MESH%n_dof, P%MESH%n_node,  P%MESH%n_elem)
                 end if
-
-                P%SOLID%STRAIN = 0.d0
-                P%SOLID%STRESS = 0.d0
-                P%SOLID%MISES  = 0.d0
-                P%SOLID%ESTRAIN = 0.d0
-                P%SOLID%ESTRESS = 0.d0
-                P%SOLID%EMISES  = 0.d0
+                P%SOLID%STRAIN => phys%STRAIN
+                P%SOLID%STRESS => phys%STRESS
+                P%SOLID%MISES  => phys%MISES
+                P%SOLID%ESTRAIN => phys%ESTRAIN
+                P%SOLID%ESTRESS => phys%ESTRESS
+                P%SOLID%EMISES  => phys%EMISES
         end if
 
         P%EIGEN%iluetol = svRarray(1) ! solver tolerance
@@ -1378,7 +1446,7 @@ subroutine fstr_setup_SOLUTION( ctrl, counter, P )
 
         integer(kind=kint) :: rcode
 
-        rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type )
+        rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type, P%PARAM%nlgeom )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_SOLUTION
@@ -1588,14 +1656,17 @@ end subroutine fstr_setup_ECHO
 !-----------------------------------------------------------------------------!
 !> Read in !RESTART                                                         !
 !-----------------------------------------------------------------------------!
-subroutine fstr_setup_RESTART( ctrl, nout )
+subroutine fstr_setup_RESTART( ctrl, nout, version )
         implicit none
         integer(kind=kint) :: ctrl
         integer(kind=kint) :: nout
+        integer(kind=kint) :: version
 
         integer(kind=kint) :: rcode
         nout = 0
         rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', nout )
+        if( rcode /= 0 ) call fstr_ctrl_err_stop
+        rcode = fstr_ctrl_get_param_ex( ctrl, 'VERSION ', '# ', 0, 'I', version )
         if( rcode /= 0 ) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_RESTART
@@ -1667,7 +1738,7 @@ subroutine fstr_setup_STATIC( ctrl, counter, P )
         ipt = 0
         if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITE,NLGEOM ', 0, 'P', ipt  )/=0 )  &
            return
-        if( ipt == 2 ) P%PARAM%solution_type = kstNLSTATIC
+        if( ipt == 2 ) P%PARAM%nlgeom = .true.
 
         rcode = fstr_ctrl_get_STATIC( ctrl, &
                         DT, ETIME, ITMAX, EPS, P%SOLID%restart_nout, &
@@ -1934,6 +2005,7 @@ subroutine fstr_setup_DLOAD( ctrl, counter, P )
         new_params = 0
         amp = ' '
         follow = P%SOLID%DLOAD_follow
+        if( .not. P%PARAM%nlgeom ) follow = 0
         lid_ptr => P%SOLID%DLOAD_ngrp_LID(old_size+1:)
         rcode = fstr_ctrl_get_DLOAD( ctrl, amp, follow, &
                         grp_id_name, HECMW_NAME_LEN,    &
@@ -2880,7 +2952,7 @@ subroutine fstr_setup_DYNAMIC( ctrl, counter, P )
         integer(kind=kint) :: grp_id(1)
 
         rcode = fstr_ctrl_get_DYNAMIC( ctrl, &
-                P%DYN%nlflag,  &
+                P%PARAM%nlgeom,  &
                 P%DYN%idx_eqa, &
                 P%DYN%idx_resp,&
                 P%DYN%n_step,  &

@@ -117,7 +117,7 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
 
 #------------------------------------------------------------------------------#
-OBJS =
+OBJS = main.@cobjfilepostfix@
 
 OBJSF = \
 	fistr_main.@f90objfilepostfix@
@@ -126,21 +126,21 @@ OBJSFP = \
 	fistr_main_contact.@f90objfilepostfix@
 
 
-HEADERS =
+HEADERS = FrontISTRConfig.h
 
 #------------------------------------------------------------------------------#
 all: @build_target_paracon@
 
-build-default: $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
+build-default: $(OBJS) $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
-	$(OBJSF) $(ALL_F90LDFLAGS)
+	$(OBJS) $(OBJSF) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
-build-with-paracon: $(OBJSFP) $(HECMWLIBDIR) $(FSTRLIBDIR)
+build-with-paracon: $(OBJS) $(OBJSFP) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
-	$(OBJSFP) $(ALL_F90LDFLAGS)
+	$(OBJS) $(OBJSFP) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
 $(OBJS): $(HEADERS)

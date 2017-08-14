@@ -159,7 +159,7 @@ femap_write_elem(FILE *outfp, int mynode,
 			for (m = 0; m < 8; m++)
 				nna[m] = nn[m];
 		}
-		else if (ietyp == 341)
+		else if (ietyp == 341 || ietyp == 3414)
 		{
 			istyp = 25;
 			itopo = 6;
@@ -980,7 +980,7 @@ avs_elem_node_order(int elem_type)
 
 	if (elem_type == 232 || elem_type == 732)
 		ii = i232;
-	else if (elem_type == 341 || elem_type == 342)
+	else if (elem_type == 341 || elem_type == 342 || elem_type == 3414)
 		ii = i342;
 	else if (elem_type == 351 || elem_type == 352)
 		ii = i352;
@@ -1018,7 +1018,9 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 		etype = elem_type[i];
 		if (flag_oldUCD && etype % 2 == 0) {
 			/* old UCD format does not support second order elements */
-			etype--;
+			if(etype != 3414 && etype != 3614){
+				etype--;
+			}
 		}
 		node_num = HECMW_get_max_node(etype);
 		if (HECMW_is_etype_33struct(etype)) node_num /= 2;
@@ -1038,7 +1040,7 @@ avs_write_elem_conn(FILE *outfp, int mynode,
 
 		fprintf (outfp, "%8d %d %s  ",
 				flag_global_ID ? global_elem_ID[i] : eid + eid_offset,
-				HECMW_get_etype_class(etype),HECMW_get_ucd_label(etype));
+				HECMW_get_etype_class(etype), HECMW_get_ucd_label(etype));
 
 		ii = avs_elem_node_order(etype);
 		for (j = 0; j < node_num; j++)
@@ -1339,7 +1341,7 @@ avs_output (struct hecmwST_local_mesh *mesh,
 					tmp_global_node_ID = NULL;
 
 					tmp_node_ID = (int *) HECMW_calloc (tmp_n_node * 2, sizeof (int));
-					if ((tmp_node_ID == NULL))
+					if (tmp_node_ID == NULL)
 						HECMW_vis_memory_exit("tmp recv: node_ID");
 
 					HECMW_Recv (tmp_node_ID, tmp_n_node * 2, HECMW_INT, j, HECMW_ANY_TAG, VIS_COMM, &stat);
@@ -1525,7 +1527,7 @@ HECMW_bin_avs_output (struct hecmwST_local_mesh *mesh,
 		elem_type_bin = 3;
 		node_num = 4;
 	}
-	else if ((mesh->elem_type[0] == 341) || (mesh->elem_type[0] == 342))
+	else if ((mesh->elem_type[0] == 341) || (mesh->elem_type[0] == 342) || (mesh->elem_type[0] == 3414))
 	{
 		elem_type_bin = 4;
 		node_num = 4;

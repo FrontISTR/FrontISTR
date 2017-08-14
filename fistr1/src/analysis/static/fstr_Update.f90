@@ -4,7 +4,10 @@
 !-------------------------------------------------------------------------------
 !> \brief  This module provides function to calcualte to do updates
 module m_fstr_Update
+  use m_fstr
   implicit none
+
+  private :: Update_abort
 
   contains
 
@@ -19,9 +22,8 @@ module m_fstr_Update
 !>    -# ひずみ・応力の更新       \f$ \varepsilon_{n+1}^{(k)} = \varepsilon_{n+1}^{(k-1)} + \delta \varepsilon^{(k)} \f$, \f$ \sigma_{n+1}^{(k)} = \sigma_{n+1}^{(k-1)} + \delta \sigma^{(k)} \f$
 !>    -# 内力（等価節点力）の計算 \f$ Q_{n+1}^{(k-1)} ( u_{n+1}^{(k-1)} ) \f$
 !> \endif
-subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEnergy)
+subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
 !=====================================================================*
-  use m_fstr
   use m_static_lib
 !#ifdef PARA_CONTACT
   use m_fstr_para_contact
@@ -30,17 +32,19 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
   type (fstr_solid)           :: fstrSOLID !< we need boundary conditions of curr step
+  real(kind=kreal),intent(in) :: time      !< current time
   real(kind=kreal),intent(in) :: tincr     !< time increment
   integer, intent(in)         :: iter      !< NR iterations
 
   integer(kind=kint) :: nodLOCAL(20)
-  real(kind=kreal)   :: ecoord(3, 20)
+  real(kind=kreal)   :: ecoord(3, 20), stiff(60, 60)
   real(kind=kreal)   :: thick
   integer(kind=kint) :: ndof, itype, iS, iE, ic_type, nn, icel, iiS, i, j
 
   real(kind=kreal)   :: total_disp(6, 20), du(6, 20), ddu(6, 20)
   real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3)
   integer            :: ig0, ig, ik, in, ierror, isect, ihead, cdsys_ID
+  integer            :: ndim
 
   real(kind=kreal), optional :: strainEnergy
   real(kind=kreal) :: tmp
@@ -73,9 +77,9 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 !element loop
 !$omp parallel default(none), &
 !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-!$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp), &
+!$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim), &
 !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
-!$omp&  strainEnergy,iter,tincr), &
+!$omp&         strainEnergy,iter,time,tincr), &
 !$omp&  firstprivate(tt0,ttn,tt)
 !$omp do
     do icel = iS, iE
@@ -119,9 +123,17 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
       if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
 
       if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
-        call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-             thick,fstrSOLID%elements(icel)%iset,           &
-             total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
+
+        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+                          thick,fstrSOLID%elements(icel)%iset,                             &
+                          total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+                          tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+        else
+          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+               thick,fstrSOLID%elements(icel)%iset,           &
+               total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
+        endif
 
       else if( ic_type == 301 ) then
         isect= hecMESH%section_ID(icel)
@@ -131,36 +143,95 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
              qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
 
       else if( ic_type == 361 ) then
-        if( fstrPR%solution_type == kstSTATIC ) then
-          if( fstrSOLID%elemopt361 == 1 ) then
-            call UpdateST_C3D8Bbar( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
-                                    ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
+
+        if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else
-            call UpdateST_C3D8IC( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), tt(1:nn), tt0(1:nn), &
-                                  ddu(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords )
+            call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
           endif
-        else
-          if( fstrSOLID%elemopt361 /= 1 ) then
-            write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
-            call hecmw_abort(hecmw_comm_get_comm())
-          endif
+        else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else
             call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+                   qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
+          endif
+        else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
+          if( fstrPR%nlgeom ) call Update_abort( ic_type, 3 )
+          total_disp(1:3, 1:nn) = total_disp(1:3, 1:nn) + du(1:3, 1:nn)
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            call UpdateST_C3D8IC                                                                        &
+                 ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
+                   fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof), tt=tt(1:nn), t0=tt0(1:nn) )
+          else
+            call UpdateST_C3D8IC                                                                        &
+                 ( ic_type, nn, ecoord(1, 1:nn), ecoord(2, 1:nn), ecoord(3, 1:nn), total_disp(1:3, 1:nn), &
+                   fstrSOLID%elements(icel)%gausses(:), cdsys_ID, coords, qf=qf(1:nn*ndof) )
           endif
         endif
 
       else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
         if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
           call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
         else
           call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr )
+           qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
         endif
+
+      else if( ic_type == 611) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        !CALL STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
+        !     &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiffness(1:nn*ndof,1:nn*ndof))
+
+      else if( ic_type == 641 ) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        CALL UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
+
+      else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+
+      else if( ic_type == 761 ) then   !for shell-solid mixed analysis
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 2)
+
+      else if( ic_type == 781 ) then   !for shell-solid mixed analysis
+        if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+        isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
+        thick = hecMESH%section%sect_R_item(ihead+1)
+        CALL UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 1)
+
+      else if ( ic_type == 3414 ) then
+        if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
+          write(*, *) '###ERROR### : This element is not supported for this material'
+          write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call UPDATE_C3_vp                                                       &
+             ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
+               fstrSOLID%elements(icel)%gausses(:) )
+        qf = 0.0d0
+
 !      else if ( ic_type==731) then
 !        call UPDATE_S3(xx,yy,zz,ee,pp,thick,local_stf)
 !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
@@ -185,12 +256,13 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
 
 ! ----- calculate strain energy
       if(present(strainEnergy))then
+        ndim = getSpaceDimension( fstrSOLID%elements(icel)%etype )
         do j = 1, nn
-          do i = 1, ndof
-            tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i)+qf(ndof*(j-1)+i) )*ddu(i,j)
+          do i = 1, ndim
+            tmp = 0.5d0*( fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i)+qf(ndim*(j-1)+i) )*ddu(i,j)
 !$omp atomic
             strainEnergy = strainEnergy+tmp
-            fstrSOLID%elements(icel)%equiForces(ndof*(j-1)+i) = qf(ndof*(j-1)+i)
+            fstrSOLID%elements(icel)%equiForces(ndim*(j-1)+i) = qf(ndim*(j-1)+i)
           enddo
         enddo
       endif
@@ -207,6 +279,8 @@ subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, tincr,iter, strainEne
     call hecmw_update_3_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
   else if( ndof==2 ) then
     call hecmw_update_2_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
+  else if( ndof==4 ) then
+    call hecmw_update_4_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
   else if( ndof==6 ) then
     call hecmw_update_m_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node,6)
   endif
@@ -248,14 +322,12 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
       elseif( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
         if( tincr>0.d0 ) then
           do i = 1, ngauss
-            fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
             call updateViscoState( fstrSOLID%elements(icel)%gausses(i) )
           enddo
         endif
       elseif( isViscoelastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
         if( tincr > 0.d0 ) then
           do i = 1, ngauss
-            fstrSOLID%elements(icel)%gausses(i)%ttime = fstrSOLID%elements(icel)%gausses(i)%ttime+tincr
             call updateViscoElasticState( fstrSOLID%elements(icel)%gausses(i) )
           enddo
         endif
@@ -269,394 +341,19 @@ subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
   enddo
 end subroutine fstr_UpdateState
 
-!> Update at linear static analysis ----------------------------------------------------------------------
-subroutine fstr_Update3D( hecMESH, fstrSOLID )
-  use m_fstr
-  use m_static_lib
-  type (hecmwST_local_mesh) :: hecMESH
-  type (fstr_solid)  :: fstrSOLID
-!C** local variables
-  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, k, ic_type, ig, nn, isect, ihead, iflag, mixflag
-  integer(kind=kint) :: nodLOCAL(20), flag_dof, ityp, idofS, idofE, idof, in
-  real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), edisp(60), force(60)
-  real(kind=kreal)   :: ecoord(3, 20), stiff(60, 60)
-  real(kind=kreal)   :: thick, coords(3, 3)
-  real(kind=kreal), allocatable :: temp(:)
-  integer(kind=kint), allocatable :: id_spc(:)
-  real(kind=kreal) :: a
-  integer(kind=kint) :: cdsys_ID
+subroutine Update_abort( ic_type, flag )
+  integer(kind=kint), intent(in) :: ic_type
+  integer(kind=kint), intent(in) :: flag
 
-  tt = 0.d0
-  tt0 = 0.d0
-!C
-!C set temperature
-!C
-  allocate( temp(hecMESH%n_node) )
-  temp = 0.0d0
-  do i = 1, fstrSOLID%TEMP_ngrp_tot
-    ig = fstrSOLID%TEMP_ngrp_ID(i)
-    iS = hecMESH%node_group%grp_index(ig-1) + 1
-    iE = hecMESH%node_group%grp_index(ig  )
-    do j = iS, iE
-      temp( hecMESH%node_group%grp_item(j) ) = fstrSOLID%TEMP_ngrp_val(i)
-    enddo
-  enddo
-!C
-!C set boundary force
-!C
-  fstrSOLID%QFORCE = 0.0d0
-  allocate ( id_spc(3*hecMESH%n_node) )
-  id_spc = 0
-  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
-    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
-    ityp = fstrSOLID%BOUNDARY_ngrp_type(i)
-    idofS = ityp/10
-    idofE = ityp - idofS*10
-    iS = hecMESH%node_group%grp_index(ig-1) + 1
-    iE = hecMESH%node_group%grp_index(ig  )
-    do j = iS, iE
-      do idof = idofS, idofE
-        id_spc( 3*(hecMESH%node_group%grp_item(j)-1) + idof ) = 1
-      enddo
-    enddo
-  enddo
+  if( flag == 1 ) then
+    write(*,*) '###ERROR### : Element type not supported for static analysis'
+  else if( flag == 2 ) then
+    write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
+  else if( flag == 3 ) then !361IC element cannot be used for nonlinear analysis
+    write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
+  endif
+  write(*,*) ' ic_type = ', ic_type
+  call hecmw_abort(hecmw_comm_get_comm())
+end subroutine
 
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-  do itype = 1, hecMESH%n_elem_type
-    iS = hecMESH%elem_type_index(itype-1) + 1
-    iE = hecMESH%elem_type_index(itype  )
-    ic_type = hecMESH%elem_type_item(itype)
-    if( ic_type == fe_tet10nc ) ic_type = fe_tet10n
-    if( .not. (hecmw_is_etype_solid(ic_type) .or. ic_type == 781 .or. ic_type == 761 .or. ic_type == 641 )) cycle
-    nn = hecmw_get_max_node( ic_type )
-!C element loop
-!$omp parallel default(none), &
-!$omp&  private(icel,js,j,k,in,nodLOCAL,xx,yy,zz,ecoord,edisp,isect,cdsys_ID,ihead,thick,mixflag,stiff,iflag,coords), &
-!$omp&  shared(iS,iE,hecMESH,temp,ref_temp,fstrSOLID,id_spc,force), &
-!$omp&  firstprivate(nn,ic_type,tt,tt0)
-!$omp do
-    do icel = iS, iE
-      jS = hecMESH%elem_node_index(icel-1)
-      do j = 1, nn
-        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-        xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
-        yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-        zz(j) = hecMESH%node(3*nodLOCAL(j)  )
-        if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-          if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
-              fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype==NORTON ) then
-          tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
-         else
-           tt0(j) = 0.d0
-           if( hecMESH%hecmw_flag_initcon==1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
-         endif
-         tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
-        endif
-        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
-        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
-        ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
-        edisp(3*j-2) = fstrSOLID%unode(3*nodLOCAL(j)-2)
-        edisp(3*j-1) = fstrSOLID%unode(3*nodLOCAL(j)-1)
-        edisp(3*j  ) = fstrSOLID%unode(3*nodLOCAL(j)  )
-      enddo
-
-      isect = hecMESH%section_ID(icel)
-      cdsys_ID = hecMESH%section%sect_orien_ID(isect)
-      if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
-
-!--- calculate stress and strain of gauss point
-      if( ic_type == 781 ) then   !for shell-solid mixed analysis
-        isect= hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1)
-        !nn = 4; ic_type = 741; mixflag = 1
-        call STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, stiff, thick, 1)
-        !ic_type = 781; nn = 8
-        CYCLE
-      else if( ic_type == 761 ) then   !for shell-solid mixed analysis
-        isect= hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1)
-        !nn = 3; ic_type = 731; mixflag = 2
-        call STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:8), fstrSOLID%elements(icel)%gausses, stiff, thick, 2)
-        !ic_type = 761; nn = 6
-        CYCLE
-      else if( ic_type == 641 ) THEN
-        isect = hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
-                         & hecMESH%section%sect_R_item(ihead+1:), stiff )
-        iflag = 0
-        DO j = 1, 3*nn
-          in = nodLOCAL(j)
-          IF( id_spc( 3*in-2 ) == 1 ) iflag = 1
-          IF( id_spc( 3*in-1 ) == 1 ) iflag = 1
-          IF( id_spc( 3*in   ) == 1 ) iflag = 1
-        END DO
-        if( iflag == 1 ) THEN
-          IF( ic_type == 641 ) THEN
-            isect = hecMESH%section_ID(icel)
-            ihead = hecMESH%section%sect_R_index(isect-1)
-            CALL STF_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
-                             & hecMESH%section%sect_R_item(ihead+1:), stiff )
-          END IF
-          force(1:nn*3) = MATMUL( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
-          do j = 1, nn
-            in = nodLOCAL(j)
-            do k = 1, 3
-              if( id_spc(3*in-3+k) == 0 ) cycle
-              !$omp atomic
-              fstrSOLID%QFORCE(3*in-3+k) = fstrSOLID%QFORCE(3*in-3+k) + force(3*j-3+k)
-            enddo
-          enddo
-        ENDIF
-        CYCLE
-      else if( ic_type == 361 ) then
-        if( fstrSOLID%elemopt361 == 1 ) then
-          call UpdateST_C3D8Bbar( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
-        else
-          call UpdateST_C3D8IC( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
-        endif
-      else if( ic_type == 301 ) then
-        isect = hecMESH%section_ID(icel)
-        ihead = hecMESH%section%sect_R_index(isect-1)
-        thick = hecMESH%section%sect_R_item(ihead+1)
-        call UpdateST_C1( ic_type, nn, xx, yy, zz, tt, tt0, thick, edisp, fstrSOLID%elements(icel)%gausses )
-      else
-        call UpdateST_C3( ic_type, nn, xx, yy, zz, tt, tt0, edisp, fstrSOLID%elements(icel)%gausses, cdsys_ID, coords )
-      endif
-!--- calculate reaction force
-      iflag = 0
-      do j = 1, nn
-          in = nodLOCAL(j)
-          IF( id_spc( 3*in-2 ) == 1 ) iflag = 1
-          IF( id_spc( 3*in-1 ) == 1 ) iflag = 1
-          IF( id_spc( 3*in   ) == 1 ) iflag = 1
-      enddo
-      if( iflag == 1 ) then
-        if( ic_type == 361 ) then
-           if( fstrSOLID%elemopt361 == 1 ) then
-             call STF_C3D8Bbar( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 )
-           else
-             call STF_C3D8IC( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0 )
-           endif
-        else if( ic_type == 301 ) then
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
-          call STF_C1(ic_type, nn, ecoord, thick, fstrSOLID%elements(icel)%gausses, stiff )
-        else
-          call STF_C3(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, stiff, cdsys_ID, coords, 1.0D0)
-        endif
-        force(1:nn*3) = matmul( stiff(1:nn*3,1:nn*3), edisp(1:nn*3) )
-        do j = 1, nn
-          in = nodLOCAL(j)
-          do k = 1, 3
-            if( id_spc(3*in-3+k) == 0 ) cycle
-            !$omp atomic
-            fstrSOLID%QFORCE(3*in-3+k) = fstrSOLID%QFORCE(3*in-3+k) + force(3*j-3+k)
-          enddo
-        enddo
-      endif
-    enddo
-!$omp end do
-!$omp end parallel
-  enddo
-
-  do i=1,hecMESH%n_node
-    if(id_spc(3*i-2) /= 0) fstrSOLID%QFORCE(3*i-2) = fstrSOLID%QFORCE(3*i-2) - fstrSOLID%EFORCE(3*i-2)
-    if(id_spc(3*i-1) /= 0) fstrSOLID%QFORCE(3*i-1) = fstrSOLID%QFORCE(3*i-1) - fstrSOLID%EFORCE(3*i-1)
-    if(id_spc(3*i  ) /= 0) fstrSOLID%QFORCE(3*i  ) = fstrSOLID%QFORCE(3*i  ) - fstrSOLID%EFORCE(3*i  )
-  enddo
-
-  call hecmw_update_3_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )
-
-  deallocate( temp )
-  deallocate( id_spc )
-
-end subroutine fstr_Update3D
-
-
-!> Update at linear static analysis
-subroutine fstr_Update2D( hecMESH, fstrSOLID )
-  use m_fstr
-  use m_static_lib
-  type (hecmwST_local_mesh) :: hecMESH
-  type (fstr_solid)  :: fstrSOLID
-!C** local variables
-  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, iflag
-  integer(kind=kint) :: nodLOCAL(8)
-  real(kind=kreal)   :: xx(8), yy(8), tt(8), tt0(8), edisp(16), force(16)
-  real(kind=kreal)   :: ecoord(2,8), stiff(16,16)
-  real(kind=kreal), allocatable :: temp(:)
-  integer(kind=kint), allocatable :: id_spc(:)
-
-!C
-!C set temperature
-!C
-  allocate( temp(hecMESH%n_node) )
-  temp = 0.0d0
-  do i = 1, fstrSOLID%TEMP_ngrp_tot
-    ig = fstrSOLID%TEMP_ngrp_ID(i)
-    iS = hecMESH%node_group%grp_index(ig-1)+1
-    iE = hecMESH%node_group%grp_index(ig  )
-    do j = iS, iE
-      temp( hecMESH%node_group%grp_item(j) ) = fstrSOLID%TEMP_ngrp_val(i)
-    enddo
-  enddo
-!C
-!C set boundary force
-!C
-  fstrSOLID%QFORCE = 0.0d0
-  allocate ( id_spc(hecMESH%n_node) )
-  id_spc = 0
-  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
-    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
-    iS = hecMESH%node_group%grp_index(ig-1) + 1
-    iE = hecMESH%node_group%grp_index(ig  )
-    do j = iS, iE
-      id_spc( hecMESH%node_group%grp_item(j) ) = 1
-    enddo
-  enddo
-
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-  do itype = 1, hecMESH%n_elem_type
-    iS = hecMESH%elem_type_index(itype-1) + 1
-    iE = hecMESH%elem_type_index(itype  )
-    ic_type = hecMESH%elem_type_item(itype)
-    if( .not. hecmw_is_etype_surface(ic_type) ) cycle
-    nn = hecmw_get_max_node( ic_type )
-!C element loop
-    do icel = iS, iE
-      jS = hecMESH%elem_node_index(icel-1)
-      do j = 1, nn
-        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-        xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
-        yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-        tt(j) = temp( nodLOCAL(j) )
-        tt0(j)= ref_temp
-        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
-        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
-        edisp(2*j-1) = fstrSOLID%unode(2*nodLOCAL(j)-1)
-        edisp(2*j  ) = fstrSOLID%unode(2*nodLOCAL(j)  )
-      enddo
-!--- calculate stress and strain of gauss points
-      call UpdateST_C2( ic_type, nn, xx, yy, tt, tt0, 1.0d0, fstrSOLID%elements(icel)%iset, &
-                      & edisp, fstrSOLID%elements(icel)%gausses )
-!--- calculate reaction force
-      iflag = 0
-      do j = 1, nn
-        if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
-      enddo
-      if( iflag == 1 ) then
-        call STF_C2( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, 1.0d0, stiff, &
-                   & fstrSOLID%elements(icel)%iset )
-        force(1:nn*2) = matmul( stiff(1:nn*2,1:nn*2), edisp(1:nn*2) )
-        do j = 1, nn
-          if( id_spc( nodLOCAL(j) ) == 1 ) then
-            fstrSOLID%QFORCE(2*nodLOCAL(j)-1) = fstrSOLID%QFORCE(2*nodLOCAL(j)-1) + force(2*j-1)
-            fstrSOLID%QFORCE(2*nodLOCAL(j)  ) = fstrSOLID%QFORCE(2*nodLOCAL(j)  ) + force(2*j  )
-          endif
-        enddo
-      endif
-    enddo
-  enddo
-
-  call hecmw_update_2_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node )
-
-  deallocate( temp )
-  deallocate( id_spc )
-
-end subroutine fstr_Update2D
-
-
-!> Update at linear static analysis
-subroutine fstr_Update6D( hecMESH, fstrSOLID )
-  use m_fstr
-  use m_static_lib
-  type (hecmwST_local_mesh) :: hecMESH
-  type (fstr_solid)   :: fstrSOLID
-!C** local variables
-  integer(kind=kint) :: itype, icel, iS, iE, jS, i, j, ic_type, ig, nn, isect, ihead, iflag, mixflag
-  integer(kind=kint) :: nodLOCAL(9)
-  real(kind=kreal)   :: ecoord(3,9), edisp(54), force(54), stiff(54,54)
-  real(kind=kreal)   :: thick, logr
-  integer(kind=kint), allocatable :: id_spc(:)
-
-!C
-!C set boundary force
-!C
-  fstrSOLID%QFORCE = 0.0d0
-  allocate ( id_spc(hecMESH%n_node) )
-  id_spc = 0
-  do i = 1, fstrSOLID%BOUNDARY_ngrp_tot
-    ig = fstrSOLID%BOUNDARY_ngrp_ID(i)
-    iS = hecMESH%node_group%grp_index(ig-1) + 1
-    iE = hecMESH%node_group%grp_index(ig  )
-    do j = iS, iE
-      id_spc( hecMESH%node_group%grp_item(j) ) = 1
-    enddo
-  enddo
-
-!C +-------------------------------+
-!C | according to ELEMENT TYPE     |
-!C +-------------------------------+
-  do itype = 1, hecMESH%n_elem_type
-    iS = hecMESH%elem_type_index(itype-1) + 1
-    iE = hecMESH%elem_type_index(itype  )
-    ic_type = hecMESH%elem_type_item(itype)
-    if( .not. hecmw_is_etype_shell(ic_type) ) cycle
-    nn = hecmw_get_max_node( ic_type )
-!C element loop
-    do icel = iS, iE
-      jS = hecMESH%elem_node_index(icel-1)
-      do j = 1, nn
-        nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
-        ecoord(1,j) = hecMESH%node(3*nodLOCAL(j)-2)
-        ecoord(2,j) = hecMESH%node(3*nodLOCAL(j)-1)
-        ecoord(3,j) = hecMESH%node(3*nodLOCAL(j)  )
-        edisp(6*j-5) = fstrSOLID%unode(6*nodLOCAL(j)-5)
-        edisp(6*j-4) = fstrSOLID%unode(6*nodLOCAL(j)-4)
-        edisp(6*j-3) = fstrSOLID%unode(6*nodLOCAL(j)-3)
-        edisp(6*j-2) = fstrSOLID%unode(6*nodLOCAL(j)-2)
-        edisp(6*j-1) = fstrSOLID%unode(6*nodLOCAL(j)-1)
-        edisp(6*j  ) = fstrSOLID%unode(6*nodLOCAL(j)  )
-      enddo
-      isect = hecMESH%section_ID(icel)
-      ihead = hecMESH%section%sect_R_index(isect-1)
-      thick = hecMESH%section%sect_R_item(ihead+1)
-!--- calculate reaction force
-      if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
-        iflag = 0
-        do j = 1, nn
-        if( id_spc( nodLOCAL(j) ) == 1 ) iflag = 1
-        enddo
-        if( iflag == 1 ) then
-          mixflag = 0
-          call STF_Shell_MITC( ic_type, nn, 6, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
-                             & stiff(1:nn*6,1:nn*6), thick, mixflag )
-          force(1:nn*6) = matmul( stiff(1:nn*6,1:nn*6), edisp(1:nn*6) )
-          do j = 1, nn
-            if( id_spc( nodLOCAL(j) ) == 1 ) then
-            fstrSOLID%QFORCE(6*nodLOCAL(j)-5) = fstrSOLID%QFORCE(6*nodLOCAL(j)-5) + force(6*j-5)
-            fstrSOLID%QFORCE(6*nodLOCAL(j)-4) = fstrSOLID%QFORCE(6*nodLOCAL(j)-4) + force(6*j-4)
-            fstrSOLID%QFORCE(6*nodLOCAL(j)-3) = fstrSOLID%QFORCE(6*nodLOCAL(j)-3) + force(6*j-3)
-            fstrSOLID%QFORCE(6*nodLOCAL(j)-2) = fstrSOLID%QFORCE(6*nodLOCAL(j)-2) + force(6*j-2)
-            fstrSOLID%QFORCE(6*nodLOCAL(j)-1) = fstrSOLID%QFORCE(6*nodLOCAL(j)-1) + force(6*j-1)
-            fstrSOLID%QFORCE(6*nodLOCAL(j)  ) = fstrSOLID%QFORCE(6*nodLOCAL(j)  ) + force(6*j  )
-            endif
-          enddo
-        endif
-      endif
-    enddo
-  enddo
-
-  call hecmw_update_m_R( hecMESH, fstrSOLID%QFORCE, hecMESH%n_node, 6 )
-  deallocate( id_spc )
-
-end subroutine fstr_Update6D
 end module m_fstr_Update

@@ -13,6 +13,7 @@ lib/**/*
 *.neu
 dyna_*.txt
 Makefile
+fistr1.dSYM
 *~
 FSTR.dbg.[0-9]*
 FSTR.msg
@@ -22,6 +23,7 @@ hecmw_vis.ini
 *.[0-9]
 Makefile.conf
 fistr1/src/main/fistr1
+fistr1/src/main/FrontISTRConfig.h
 fistr1/tools/neu2fstr/neu2fstr
 hecmw1/tools/hec2rcap/hec2rcap
 hecmw1/tools/partitioner/hecmw_part1
@@ -34,6 +36,10 @@ fistr1/tools/neu2fstr/include
 hecmw1/bin
 hecmw1/include
 examples/*/ex?/hecmw_ctrl.dat
+examples/*/ex?/hecmw_part_ctrl.dat
+examples/*/ex?/*.msh.*
 examples/static/1elem/hecmw_ctrl.dat
 examples/static/thermal/hecmw_ctrl.dat
 build/
+fistr/starter
+FrontISTRConfig.h

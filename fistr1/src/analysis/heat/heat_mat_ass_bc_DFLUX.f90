@@ -138,7 +138,7 @@ module m_heat_mat_ass_bc_DFLUX
            vol = vol + VOLUME_C3(ic_type,NN,XX,YY,ZZ)
            val = fstrHEAT%weldline(ig0)%I * fstrHEAT%weldline(ig0)%U *   &
               fstrHEAT%weldline(ig0)%coe
-           write(IDBG,*), "Element", hecMESH%global_elem_id(icel),"with dflux", val, vol
+           write(IDBG,*) "Element", hecMESH%global_elem_id(icel),"with dflux", val, vol
 
            if( ic_type.eq.341 ) then
              call heat_DFLUX_341(nn,xx,yy,zz,isuf,val,vect)

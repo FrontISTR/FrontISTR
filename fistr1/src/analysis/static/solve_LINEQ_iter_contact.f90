@@ -7,6 +7,7 @@
 module m_solve_LINEQ_iter_contact
   use m_fstr
   use fstr_matrix_con_contact
+  USE hecmw_solver
 
   private
   public :: solve_LINEQ_iter_contact_init
@@ -75,7 +76,7 @@ contains
       ! avoid ML when no contact
       if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
-      call hecmw_solve_33(hecMESH, hecMAT)
+      call hecmw_solve(hecMESH, hecMAT, imsg)
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
       if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
@@ -87,7 +88,7 @@ contains
         if (fstrMAT%num_lagrange > 0) then
           call solve_no_eliminate(hecMESH, hecMAT, fstrMAT)
         else
-          call hecmw_solve_33(hecMESH, hecMAT)
+          call hecmw_solve(hecMESH, hecMAT, imsg)
         endif
       endif
     endif
@@ -164,7 +165,7 @@ contains
     if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
-    call hecmw_solve_33(hecMESHtmp, hecTKT)
+    call hecmw_solve(hecMESHtmp, hecTKT, imsg)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: solver finished', hecmw_wtime()-t1
 
     hecMAT%Iarray=hecTKT%Iarray
@@ -475,7 +476,7 @@ contains
       Bnew(iwS(i))=wSL(i)*hecMAT%B(npndof+i)
     enddo
     !Btmp=B+K*B2
-    call hecmw_matvec_33(hecMESH, hecMAT, Bnew, Btmp)
+    call hecmw_matvec(hecMESH, hecMAT, Bnew, Btmp)
     do i=1,nndof
       Btmp(i)=hecMAT%B(i)+Btmp(i)
     enddo
@@ -1393,7 +1394,7 @@ contains
       enddo
     endif
 
-    call hecmw_solve_33(hecMESH, hecMATLag)
+    call hecmw_solve(hecMESH, hecMATLag, imsg)
 
     hecMAT%Iarray=hecMATLag%Iarray
     hecMAT%Rarray=hecMATLag%Rarray
