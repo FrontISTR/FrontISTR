@@ -4,10 +4,10 @@ all: @build_target@
 
 @build_target@:
 	@cd common   && $(MAKE) install-header
-	@cd lib      && $(MAKE) @build_target_paracon@
+	@cd lib      && $(MAKE) @build_target@
 	@cd common   && $(MAKE) @build_target@
 	@cd analysis && $(MAKE) @build_target@
-	@cd main     && $(MAKE) @build_target_paracon@
+	@cd main     && $(MAKE) @build_target@
 
 clean:
 	@cd lib      && $(MAKE) clean

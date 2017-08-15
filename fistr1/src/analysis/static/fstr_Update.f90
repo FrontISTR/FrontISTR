@@ -25,9 +25,6 @@ module m_fstr_Update
 subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
 !=====================================================================*
   use m_static_lib
-!#ifdef PARA_CONTACT
-  use m_fstr_para_contact
-!#endif
 
   type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
   type (hecmwST_local_mesh)   :: hecMESH   !< mesh information

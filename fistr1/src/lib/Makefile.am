@@ -107,8 +107,6 @@ OBJS =
 OBJSF = \
         fstr_lczparm.@f90objfilepostfix@ \
         m_step.@f90objfilepostfix@ \
-        m_Makrose.@f90objfilepostfix@ \
-        m_MakrosePartMesh.@f90objfilepostfix@ \
         m_timepoint.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \
@@ -135,26 +133,18 @@ OBJSF = \
         eigen_LIB_3d2mass.@f90objfilepostfix@ \
         precheck_LIB_2d.@f90objfilepostfix@ \
         precheck_LIB_3d.@f90objfilepostfix@ \
-        precheck_LIB_shell.@f90objfilepostfix@
-
-OBJSF2 = \
+        precheck_LIB_shell.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
         eigen_LIB.@f90objfilepostfix@ \
         heat_LIB.@f90objfilepostfix@
 
-OBJSF_PARACON = \
-        m_fstr_para_contact.@f90objfilepostfix@
-
-OBJSF_PARACON_DUMM = \
-        m_fstr_para_contact.@f90objfilepostfix@
-
 HEADERS =
 
 #------------------------------------------------------------------------------#
-all: @build_target_paracon@
+all: @build_target@
 
-build-default:
+@build_target@:
 	@cd utilities && $(MAKE) @build_target@
 	@cd user      && $(MAKE) @build_target@
 	@cd element   && $(MAKE) @build_target@
@@ -162,29 +152,15 @@ build-default:
 	@cd contact   && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
-build-with-paracon:
-	@cd utilities && $(MAKE) @build_target@
-	@cd user      && $(MAKE) @build_target@
-	@cd element   && $(MAKE) @build_target@
-	@cd physics   && $(MAKE) @build_target@
-	@cd contact   && $(MAKE) @build_target@
-	$(MAKE) BUILD_CURR_WITH_PARACON
-
-build-with-rcap: @build_target_paracon@
+build-with-rcap: @build_target@
 
 BUILD_CURR: $(TARGET) $(F90TARGET) install-module
-
-BUILD_CURR_WITH_PARACON: $(TARGET) F90TARGET_PARACON install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
 
-$(F90TARGET): $(OBJSF) $(OBJSF_PARACON_DUMM) $(OBJSF2)
-	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF) $(OBJSF_PARACON_DUMM) $(OBJSF2)
-	F90="$(F90)" F90FLAGS="$(F90FLAGS)" F90TARGET="$(FSTRLIBDIR)/$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
-
-F90TARGET_PARACON: $(OBJSF) $(OBJSF_PARACON) $(OBJSF2)
-	$(AR) $(FSTRLIBDIR)/$(F90TARGET) $(OBJSF) $(OBJSF_PARACON) $(OBJSF2)
+$(F90TARGET): $(OBJSF)
+	$(AR) $(FSTRLIBDIR)/$@ $(OBJSF)
 	F90="$(F90)" F90FLAGS="$(F90FLAGS)" F90TARGET="$(FSTRLIBDIR)/$(F90TARGET)" AR="$(AR)" RM="$(RM)" sh test_flush.sh
 
 install-header:

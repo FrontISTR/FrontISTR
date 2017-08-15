@@ -64,7 +64,6 @@ UTILDIRS="\
 LIBSRCDIRS="\
 	src \
 	src/common \
-	src/common/metis \
 	src/operations \
 	src/operations/adaptation \
 	src/operations/dynamic_load_balancing \

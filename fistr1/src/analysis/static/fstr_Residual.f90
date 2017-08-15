@@ -30,9 +30,6 @@ module m_fstr_Residual
       use m_fstr
       use mULoad
       use m_fstr_spring
-!#ifdef PARA_CONTACT
-      use m_fstr_para_contact
-!#endif
       integer(kind=kint), intent(in)       :: cstep      !< current step
       type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
       type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
