@@ -88,6 +88,20 @@ set_hecmw_flag_version(void *dst)
 
 
 static int
+set_hecmw_flag_partcontact(void *dst)
+{
+	void *src;
+	int size;
+
+	src = &mesh->hecmw_flag_partcontact;
+	size = sizeof(mesh->hecmw_flag_partcontact);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
 set_gridfile(void *dst)
 {
 	void *src;
@@ -2627,6 +2641,7 @@ static struct func_table {
 	{"hecmwST_local_mesh","hecmw_flag_parttype", set_hecmw_flag_parttype, NULL},
 	{"hecmwST_local_mesh","hecmw_flag_partdepth",set_hecmw_flag_partdepth,NULL},
 	{"hecmwST_local_mesh","hecmw_flag_version",  set_hecmw_flag_version,  NULL},
+	{"hecmwST_local_mesh","hecmw_flag_partcontact",set_hecmw_flag_partcontact,NULL},
 
 	{"hecmwST_local_mesh","gridfile",            set_gridfile,            NULL},
 	{"hecmwST_local_mesh","hecmw_n_file",        set_hecmw_n_file,        NULL},

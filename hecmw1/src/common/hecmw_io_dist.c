@@ -293,6 +293,15 @@ get_global_info( struct hecmwST_local_mesh *mesh, FILE *fp )
     return -1;
   }
 
+  /* hecmw_flag_partcontact */
+  if( mesh->hecmw_flag_version >= 4 ) {
+    if( get_int( &mesh->hecmw_flag_partcontact, fp ) ) {
+      return -1;
+    }
+  } else {
+    mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_UNKNOWN;
+  }
+
   /* gridfile */
   if( get_string( mesh->gridfile, sizeof(mesh->gridfile), fp ) < 0 ) {
     return -1;
@@ -1910,6 +1919,11 @@ print_global_info( const struct hecmwST_local_mesh *mesh, FILE *fp )
 
   /* hecmw_flag_version */
   if( print_int( mesh->hecmw_flag_version, fp ) ) {
+    return -1;
+  }
+
+  /* hecmw_flag_partcontact */
+  if( print_int( mesh->hecmw_flag_partcontact, fp ) ) {
     return -1;
   }
 

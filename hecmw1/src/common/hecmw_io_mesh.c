@@ -1721,6 +1721,7 @@ setup_flags(struct hecmwST_local_mesh *mesh)
 	mesh->hecmw_flag_parttype = HECMW_FLAG_PARTTYPE_UNKNOWN;
 	mesh->hecmw_flag_partdepth = 1;
 	mesh->hecmw_flag_version = HECMW_FLAG_VERSION;
+	mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_UNKNOWN;
 
 	return 0;
 }

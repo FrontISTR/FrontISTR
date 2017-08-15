@@ -102,6 +102,10 @@ module hecmw_dist_copy_c2f_f
         vname = 'hecmw_flag_version'
         call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%hecmw_flag_version, ierr)
         if(ierr /= 0) return
+
+        vname = 'hecmw_flag_partcontact'
+        call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%hecmw_flag_partcontact, ierr)
+        if(ierr /= 0) return
     end subroutine get_flags
 
 

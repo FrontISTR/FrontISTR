@@ -32,6 +32,7 @@ init_struct_global( struct hecmwST_local_mesh *mesh )
   mesh->hecmw_flag_parttype  = 0;
   mesh->hecmw_flag_partdepth = 0;
   mesh->hecmw_flag_version   = 0;
+  mesh->hecmw_flag_partcontact = 0;
 
   mesh->zero_temp = 0.0;
 

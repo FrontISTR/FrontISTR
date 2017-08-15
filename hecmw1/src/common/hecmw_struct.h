@@ -153,6 +153,11 @@ struct hecmwST_local_mesh {
 #define HECMW_FLAG_PARTTYPE_ELEMBASED 2 /* 2:Element-based */
     int hecmw_flag_partdepth;
     int hecmw_flag_version;
+    int hecmw_flag_partcontact;
+#define HECMW_FLAG_PARTCONTACT_UNKNOWN    0   /* 0:unknown */
+#define HECMW_FLAG_PARTCONTACT_AGGREGATE  1   /* 1:aggregate */
+#define HECMW_FLAG_PARTCONTACT_DISTRIBUTE 2   /* 2:distribute */
+#define HECMW_FLAG_PARTCONTACT_SIMPLE     3   /* 3:simple */
 
     char gridfile[HECMW_FILENAME_LEN+1];
     int hecmw_n_file;

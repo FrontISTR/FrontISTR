@@ -20,6 +20,7 @@ HECMW_dist_print_flags(const struct hecmwST_local_mesh *mesh, FILE *fp)
 	fprintf(fp, "hecmw_flag_initcon: %d\n", mesh->hecmw_flag_initcon);
 	fprintf(fp, "hecmw_flag_parttype: %d\n", mesh->hecmw_flag_parttype);
 	fprintf(fp, "hecmw_flag_version: %d\n", mesh->hecmw_flag_version);
+	fprintf(fp, "hecmw_flag_partcontact: %d\n", mesh->hecmw_flag_partcontact);
 	fprintf(fp, "END of FLAGS\n");
 }
 

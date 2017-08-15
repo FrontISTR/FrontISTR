@@ -110,6 +110,10 @@ module hecmw_dist_copy_f2c_f
         vname = 'hecmw_flag_version'
         call hecmw_dist_copy_f2c_set_if(sname, vname, mesh%hecmw_flag_version, ierr)
         if(ierr /= 0) return
+
+        vname = 'hecmw_flag_partcontact'
+        call hecmw_dist_copy_f2c_set_if(sname, vname, mesh%hecmw_flag_partcontact, ierr)
+        if(ierr /= 0) return
     end subroutine put_flags
 
 

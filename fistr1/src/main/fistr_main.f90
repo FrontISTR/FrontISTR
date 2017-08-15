@@ -53,7 +53,9 @@ module m_fstr_main
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
-    if( hecMESH%contact_pair%n_pair > 0 ) then
+    if( nprocs > 1 .and. &
+         hecMESH%contact_pair%n_pair > 0 .and. &
+         hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
       paraContactFlag = .true.
     else
       paraContactFlag = .false.

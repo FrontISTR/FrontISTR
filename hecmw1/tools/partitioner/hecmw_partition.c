@@ -870,6 +870,7 @@ init_struct_global( struct hecmwST_local_mesh *local_mesh )
     local_mesh->hecmw_flag_parttype  = 0;
     local_mesh->hecmw_flag_partdepth = 0;
     local_mesh->hecmw_flag_version   = 0;
+    local_mesh->hecmw_flag_partcontact = 0;
 
     local_mesh->zero_temp = 0.0;
 
@@ -2730,7 +2731,7 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     struct hecmw_graph graph1, graph2;
     const int ncon = 1;
 
-    HECMW_assert( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE );
+    HECMW_assert( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_AGGREGATE );
 
     node_graph_index = (int *)HECMW_calloc( global_mesh->n_node+1, sizeof(int) );
     if( node_graph_index == NULL ) {
@@ -2889,6 +2890,9 @@ metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
     int *node_weight = NULL;
     int *mark = NULL;
 
+    HECMW_assert( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE ||
+                  global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_DISTRIBUTE );
+
     node_graph_index = (int *)HECMW_calloc( global_mesh->n_node+1, sizeof(int) );
     if( node_graph_index == NULL ) {
         HECMW_set_error( errno, "" );
@@ -2907,13 +2911,13 @@ metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
 
     HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
-    if( cont_data->contact == HECMW_PART_CONTACT_SIMPLE ) {
+    if( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE ) {
         HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-simple\n");
 
         ncon = 1;
         node_weight = NULL;
     }
-    else /* DISTRIBUTE or DEFAULT */
+    else /* HECMW_FLAG_PARTCONTACT_DISTRIBUTE */
     {
         HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-distribute\n");
 
@@ -3074,10 +3078,16 @@ metis_partition_nb( struct hecmwST_local_mesh *global_mesh,
                     const struct hecmw_part_edge_data *edge_data )
 {
     if( global_mesh->contact_pair->n_pair > 0 ) {
-        if( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE ) {
+        switch( global_mesh->hecmw_flag_partcontact ) {
+        case HECMW_FLAG_PARTCONTACT_AGGREGATE:
             return metis_partition_nb_contact_agg( global_mesh, cont_data, edge_data );
-        } else {
+
+        case HECMW_FLAG_PARTCONTACT_DISTRIBUTE:
+        case HECMW_FLAG_PARTCONTACT_SIMPLE:
             return metis_partition_nb_contact_dist( global_mesh, cont_data, edge_data );
+
+        default:
+            return -1;
         }
     } else {
         return metis_partition_nb_default( global_mesh, cont_data, edge_data );
@@ -6045,6 +6055,16 @@ const_hecmw_flag_version( const struct hecmwST_local_mesh *global_mesh,
 
 
 static int
+const_hecmw_flag_partcontact( const struct hecmwST_local_mesh *global_mesh,
+                              struct hecmwST_local_mesh *local_mesh )
+{
+    local_mesh->hecmw_flag_partcontact  = global_mesh->hecmw_flag_partcontact;
+
+    return RTC_NORMAL;
+}
+
+
+static int
 const_zero_temp( const struct hecmwST_local_mesh *global_mesh,
                  struct hecmwST_local_mesh *local_mesh )
 {
@@ -6088,6 +6108,9 @@ const_global_info( const struct hecmwST_local_mesh *global_mesh,
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_hecmw_flag_version( global_mesh, local_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = const_hecmw_flag_partcontact( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_zero_temp( global_mesh, local_mesh );
@@ -9100,6 +9123,26 @@ init_partition( struct hecmwST_local_mesh *global_mesh,
 
     /* global_mesh->hecmw_flag_partdepth */
     global_mesh->hecmw_flag_partdepth = cont_data->depth;
+
+    /* global_mesh->hecmw_flag_partcontact */
+    if( global_mesh->contact_pair->n_pair > 0 ) {
+        switch( cont_data->contact ) {
+        case HECMW_PART_CONTACT_AGGREGATE:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_AGGREGATE;
+            break;
+
+        case HECMW_PART_CONTACT_SIMPLE:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
+            break;
+
+        case HECMW_PART_CONTACT_DISTRIBUTE:
+        case HECMW_PART_CONTACT_DEFAULT:
+        default:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_DISTRIBUTE;
+            break;
+
+        }
+    }
 
     HECMW_log( HECMW_LOG_DEBUG, "Initialization for partitioner done" );
 
