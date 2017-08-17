@@ -27,6 +27,8 @@
         real   (kind=kreal), pointer :: X(:)
         integer(kind=kint ), pointer :: req1(:)
         integer(kind=kint ), pointer :: req2(:)
+        integer(kind=kint )   ::  nreq1
+        integer(kind=kint )   ::  nreq2
       end type async_buf
 
       integer(kind=kint), parameter :: MAX_NREQ = 8
@@ -64,7 +66,7 @@
       integer(kind=kint ), dimension(:  ), allocatable :: req2
 
       ! local valiables
-      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr
+      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,nreq1,nreq2
 !C
 !C-- INIT.
       allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
@@ -74,9 +76,12 @@
 
 !C
 !C-- SEND
+      nreq1=0
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq1=nreq1+1
         do k= istart+1, istart+inum
                ii   = 3*NOD_EXPORT(k)
            WS(3*k-2)= X(ii-2)
@@ -85,32 +90,35 @@
         enddo
 
         call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
       enddo
 
 !C
 !C-- RECEIVE
+      nreq2=0
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq2=nreq2+1
         call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
       enddo
 
-      call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
+      call MPI_WAITALL (nreq2, req2, sta2, ierr)
 
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-      do k= istart+1, istart+inum
+        do k= istart+1, istart+inum
           ii   = 3*NOD_IMPORT(k)
-        X(ii-2)= WR(3*k-2)
-        X(ii-1)= WR(3*k-1)
-        X(ii  )= WR(3*k  )
-      enddo
+          X(ii-2)= WR(3*k-2)
+          X(ii-1)= WR(3*k-1)
+          X(ii  )= WR(3*k  )
+        enddo
       enddo
 
-      call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
+      call MPI_WAITALL (nreq1, req1, sta1, ierr)
       deallocate (sta1, sta2, req1, req2)
 #endif
       end subroutine hecmw_solve_send_recv_33
@@ -141,7 +149,7 @@
       real   (kind=kreal), pointer :: WR(:)
       integer(kind=kint ), pointer :: req1(:)
       integer(kind=kint ), pointer :: req2(:)
-      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,i
+      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,i,nreq1,nreq2
 !C
 !C-- INIT.
       allocate (WS(3*STACK_EXPORT(NEIBPETOT)))
@@ -150,9 +158,12 @@
       allocate (req2(NEIBPETOT))
 !C
 !C-- SEND
+      nreq1=0
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq1=nreq1+1
         do k= istart+1, istart+inum
                ii   = 3*NOD_EXPORT(k)
            WS(3*k-2)= X(ii-2)
@@ -160,15 +171,18 @@
            WS(3*k  )= X(ii  )
         enddo
         call MPI_ISEND (WS(3*istart+1), 3*inum,MPI_DOUBLE_PRECISION,    &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
       enddo
 !C
 !C-- RECEIVE
+      nreq2=0
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq2=nreq2+1
         call MPI_IRECV (WR(3*istart+1), 3*inum, MPI_DOUBLE_PRECISION,   &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
       enddo
 !C
 !C-- Find empty abuf
@@ -192,6 +206,8 @@
       abuf(ireq)%X           => X
       abuf(ireq)%req1        => req1
       abuf(ireq)%req2        => req2
+      abuf(ireq)%nreq1       =  nreq1
+      abuf(ireq)%nreq2       =  nreq2
 #endif
       end subroutine hecmw_solve_isend_irecv_33
 
@@ -214,7 +230,7 @@
       integer(kind=kint ), pointer :: req2(:)
       integer(kind=kint ), dimension(:,:), allocatable :: sta1
       integer(kind=kint ), dimension(:,:), allocatable :: sta2
-      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr
+      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,nreq1,nreq2
 !C-- Check ireq
       if (ireq < 0 .or. ireq > MAX_NREQ) then
         stop 'ERROR: hecmw_solve_isend_irecv_33_wait: invalid ireq'
@@ -228,25 +244,27 @@
       X           => abuf(ireq)%X
       req1        => abuf(ireq)%req1
       req2        => abuf(ireq)%req2
+      nreq1       =  abuf(ireq)%nreq1
+      nreq2       =  abuf(ireq)%nreq2
 !C-- Free abuf
       abuf(ireq)%NEIBPETOT = 0
 !C-- Allocate
       allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
       allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
 !C-- Wait irecv
-      call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
+      call MPI_WAITALL (nreq2, req2, sta2, ierr)
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-      do k= istart+1, istart+inum
+        do k= istart+1, istart+inum
           ii   = 3*NOD_IMPORT(k)
-        X(ii-2)= WR(3*k-2)
-        X(ii-1)= WR(3*k-1)
-        X(ii  )= WR(3*k  )
-      enddo
+          X(ii-2)= WR(3*k-2)
+          X(ii-1)= WR(3*k-1)
+          X(ii  )= WR(3*k  )
+        enddo
       enddo
 !C-- Wait isend
-      call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
+      call MPI_WAITALL (nreq1, req1, sta1, ierr)
 !C-- Deallocate
       deallocate (sta1, sta2)
       deallocate (req1, req2)

@@ -46,7 +46,7 @@
       integer(kind=kint ), save :: NFLAG
       data NFLAG/0/
       ! local valiables
-      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr
+      integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,nreq1,nreq2
 !C
 !C-- INIT.
       allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
@@ -56,9 +56,12 @@
 
 !C
 !C-- SEND
+      nreq1=0
       do neib= 1, NEIBPETOT
         istart= STACK_EXPORT(neib-1)
         inum  = STACK_EXPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq1=nreq1+1
         do k= istart+1, istart+inum
           ii   = m*NOD_EXPORT(k)
           do kk= 1, m
@@ -67,32 +70,35 @@
         enddo
 
         call MPI_ISEND (WS(m*istart+1), m*inum, MPI_INTEGER,            &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
       enddo
 
 !C
 !C-- RECEIVE
+      nreq2=0
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
+        if (inum==0) cycle
+        nreq2=nreq2+1
         call MPI_IRECV (WR(m*istart+1), m*inum, MPI_INTEGER,            &
-     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(neib), ierr)
+     &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
       enddo
 
-      call MPI_WAITALL (NEIBPETOT, req2, sta2, ierr)
+      call MPI_WAITALL (nreq2, req2, sta2, ierr)
 
       do neib= 1, NEIBPETOT
         istart= STACK_IMPORT(neib-1)
         inum  = STACK_IMPORT(neib  ) - istart
-      do k= istart+1, istart+inum
-        ii   = m*NOD_IMPORT(k)
-        do kk= 1, m
-          X(ii-kk+1)= WR(m*k-kk+1)
+        do k= istart+1, istart+inum
+          ii   = m*NOD_IMPORT(k)
+          do kk= 1, m
+            X(ii-kk+1)= WR(m*k-kk+1)
+          enddo
         enddo
       enddo
-      enddo
 
-      call MPI_WAITALL (NEIBPETOT, req1, sta1, ierr)
+      call MPI_WAITALL (nreq1, req1, sta1, ierr)
 
       deallocate (sta1, sta2, req1, req2)
 #endif
