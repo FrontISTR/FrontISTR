@@ -52,6 +52,10 @@
 
 #define HECMW_PARTLEX_V_AGGREGATE     3053
 
+#define HECMW_PARTLEX_V_DISTRIBUTE    3054
+
+#define HECMW_PARTLEX_V_SIMPLE        3055
+
 
 extern double HECMW_partlex_get_number( void );
 

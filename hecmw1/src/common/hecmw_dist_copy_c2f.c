@@ -88,6 +88,20 @@ set_hecmw_flag_version(void *dst)
 
 
 static int
+set_hecmw_flag_partcontact(void *dst)
+{
+	void *src;
+	int size;
+
+	src = &mesh->hecmw_flag_partcontact;
+	size = sizeof(mesh->hecmw_flag_partcontact);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
 set_gridfile(void *dst)
 {
 	void *src;
@@ -178,6 +192,20 @@ set_n_node_gross(void *dst)
 
 	src = &mesh->n_node_gross;
 	size = sizeof(mesh->n_node_gross);
+	memcpy(dst, src, size);
+
+	return 0;
+}
+
+
+static int
+set_nn_middle(void *dst)
+{
+	void *src;
+	int size;
+
+	src = &mesh->nn_middle;
+	size = sizeof(mesh->nn_middle);
 	memcpy(dst, src, size);
 
 	return 0;
@@ -2613,6 +2641,7 @@ static struct func_table {
 	{"hecmwST_local_mesh","hecmw_flag_parttype", set_hecmw_flag_parttype, NULL},
 	{"hecmwST_local_mesh","hecmw_flag_partdepth",set_hecmw_flag_partdepth,NULL},
 	{"hecmwST_local_mesh","hecmw_flag_version",  set_hecmw_flag_version,  NULL},
+	{"hecmwST_local_mesh","hecmw_flag_partcontact",set_hecmw_flag_partcontact,NULL},
 
 	{"hecmwST_local_mesh","gridfile",            set_gridfile,            NULL},
 	{"hecmwST_local_mesh","hecmw_n_file",        set_hecmw_n_file,        NULL},
@@ -2622,6 +2651,7 @@ static struct func_table {
 
 	{"hecmwST_local_mesh","n_node",              set_n_node,              NULL},
 	{"hecmwST_local_mesh","n_node_gross",        set_n_node_gross,        NULL},
+	{"hecmwST_local_mesh","nn_middle",           set_nn_middle,           NULL},
 	{"hecmwST_local_mesh","nn_internal",         set_nn_internal,         NULL},
 	{"hecmwST_local_mesh","node_internal_list",  set_node_internal_list,
 		                                         is_alloc_node_internal_list  },

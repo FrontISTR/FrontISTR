@@ -47,6 +47,8 @@ NODE-BASED	{ len += yyleng; return HECMW_PARTLEX_V_NODE_BASED; }
 ELEMENT-BASED	{ len += yyleng; return HECMW_PARTLEX_V_ELEMENT_BASED; }
 DEFAULT		{ len += yyleng; return HECMW_PARTLEX_V_DEFAULT; }
 AGGREGATE	{ len += yyleng; return HECMW_PARTLEX_V_AGGREGATE; }
+DISTRIBUTE	{ len += yyleng; return HECMW_PARTLEX_V_DISTRIBUTE; }
+SIMPLE		{ len += yyleng; return HECMW_PARTLEX_V_SIMPLE; }
 
 =		{ len += yyleng; return '='; }
 ,		{ len += yyleng; return ','; }

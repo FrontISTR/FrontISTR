@@ -237,7 +237,7 @@ part_cont_ucd( char *name )
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-/*  partitioning contact < CONTACT={ DEFAULT | AGGREGATE } >                  */
+/*  partitioning contact < CONTACT={ DEFAULT | AGGREGATE | DISTRIBUTE | SIMPLE } > */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int
 part_cont_contact( void )
@@ -261,6 +261,12 @@ part_cont_contact( void )
 
     case HECMW_PARTLEX_V_AGGREGATE:     /* CONTACT=AGGREGATE */
         return HECMW_PART_CONTACT_AGGREGATE;
+
+    case HECMW_PARTLEX_V_DISTRIBUTE:     /* CONTACT=DISTRIBUTE */
+        return HECMW_PART_CONTACT_DISTRIBUTE;
+
+    case HECMW_PARTLEX_V_SIMPLE:     /* CONTACT=SIMPLE */
+        return HECMW_PART_CONTACT_SIMPLE;
 
     default:
         HECMW_log( HECMW_LOG_ERROR, HECMW_strmsg( HECMW_PART_E_CTRL_CONTACT_INVAL ) );

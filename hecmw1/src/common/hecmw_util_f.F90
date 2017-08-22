@@ -256,6 +256,7 @@ module hecmw_util
           integer(kind=kint) :: hecmw_flag_parttype
           integer(kind=kint) :: hecmw_flag_partdepth
           integer(kind=kint) :: hecmw_flag_version
+          integer(kind=kint) :: hecmw_flag_partcontact
           real(kind=kreal)   :: zero_temp
 
 !C
@@ -396,6 +397,12 @@ module hecmw_util
         integer(kind=kint),parameter :: HECMW_FLAG_PARTTYPE_UNKNOWN   = 0
         integer(kind=kint),parameter :: HECMW_FLAG_PARTTYPE_NODEBASED = 1
         integer(kind=kint),parameter :: HECMW_FLAG_PARTTYPE_ELEMBASED = 2
+
+!C      for hecmwST_local_mesh%hecmw_flag_partcontact
+        integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_UNKNOWN    = 0
+        integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_AGGREGATE  = 1
+        integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_DISTRIBUTE = 2
+        integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_SIMPLE     = 3
 
 !C
 !C +--------+

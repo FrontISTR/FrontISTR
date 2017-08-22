@@ -62,6 +62,8 @@ module hecmw_dist_print_f
         write(*,*) mesh%hecmw_flag_parttype
         write(*,*) 'hecmw_flag_version:'
         write(*,*) mesh%hecmw_flag_version
+        write(*,*) 'hecmw_flag_partcontact:'
+        write(*,*) mesh%hecmw_flag_partcontact
         write(*,*) 'END of FLAGS'
         write(*,*)
         write(*,*) 'HEADER:'

@@ -76,10 +76,6 @@ static int subdir_on = 0;
 
 static int nlimit;
 
-#ifdef PARA_CONTACT
-static int is_entire;
-#endif
-
 static struct ctrl_entry *ctrl_ent;
 
 static struct mesh_entry *mesh_ent;
@@ -721,14 +717,8 @@ read_mesh_head_param_type(int *type)
 	token = HECMW_ctrllex_next_token();
 	if(token == HECMW_CTRLLEX_K_HECMW_DIST) {
 		*type = HECMW_CTRL_FTYPE_HECMW_DIST;
-#ifdef PARA_CONTACT
-		is_entire = 0;
-#endif
 	} else  if(token == HECMW_CTRLLEX_K_HECMW_ENTIRE) {
 		*type = HECMW_CTRL_FTYPE_HECMW_ENTIRE;
-#ifdef PARA_CONTACT
-		is_entire = 1;
-#endif
 	} else  if(token == HECMW_CTRLLEX_K_GEOFEM) {
 		*type = HECMW_CTRL_FTYPE_GEOFEM;
 	} else  if(token == HECMW_CTRLLEX_K_ABAQUS) {
@@ -912,12 +902,8 @@ read_mesh(void)
 
 	/* check */
 	if(!strcmp(name,"fstrMSH") && type==HECMW_CTRL_FTYPE_HECMW_ENTIRE && HECMW_comm_get_size()>1) {
-#ifdef PARA_CONTACT
-    return 0;
-#else
 		set_err_token(token, HECMW_UTIL_E0010, "Invalid TYPE");
 		return -1;
-#endif
 	}
 
 	return 0;
@@ -2508,29 +2494,3 @@ HECMW_CTRL_IS_SUBDIR(int *flag, int *limit)
 {
 	hecmw_ctrl_is_subdir(flag, limit);
 }
-
-#ifdef PARA_CONTACT
-void
-hecmw_mesh_is_entire(int *flag)
-{
-	*flag = is_entire;
-}
-
-void
-hecmw_mesh_is_entire_(int *flag)
-{
-	hecmw_mesh_is_entire(flag);
-}
-
-void
-hecmw_mesh_is_entire__(int *flag)
-{
-	hecmw_mesh_is_entire(flag);
-}
-
-void
-HECMW_MESH_IS_ENTIRE(int *flag)
-{
-	hecmw_mesh_is_entire(flag);
-}
-#endif

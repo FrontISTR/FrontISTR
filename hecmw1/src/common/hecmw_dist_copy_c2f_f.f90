@@ -102,6 +102,10 @@ module hecmw_dist_copy_c2f_f
         vname = 'hecmw_flag_version'
         call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%hecmw_flag_version, ierr)
         if(ierr /= 0) return
+
+        vname = 'hecmw_flag_partcontact'
+        call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%hecmw_flag_partcontact, ierr)
+        if(ierr /= 0) return
     end subroutine get_flags
 
 
@@ -148,6 +152,10 @@ module hecmw_dist_copy_c2f_f
 
         vname = 'n_node_gross'
         call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%n_node_gross, ierr)
+        if(ierr /= 0) return
+
+        vname = 'nn_middle'
+        call hecmw_dist_copy_c2f_set_if(sname, vname, mesh%nn_middle, ierr)
         if(ierr /= 0) return
 
         vname = 'nn_internal'
