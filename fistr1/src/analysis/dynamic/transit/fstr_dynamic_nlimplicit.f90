@@ -749,7 +749,7 @@ module fstr_dynamic_nlimplicit
         endif
         call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
         if (contact_changed_global > 0) then
-          hecMAT%B(:) = 0.0D0
+          call hecmw_mat_clear_b( hecMAT )
           if(paraContactFlag.and.present(conMAT)) call hecmw_mat_clear_b( conMAT )
           call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
         endif
