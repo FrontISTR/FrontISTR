@@ -53,15 +53,14 @@ module m_fstr_main
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
-    if( nprocs > 1 .and. &
-         hecMESH%contact_pair%n_pair > 0 .and. &
-         hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
-      paraContactFlag = .true.
-    else
-      paraContactFlag = .false.
-    endif
-    if( myrank == 0 ) then
-      print *,'paraContactFlag',paraContactFlag
+    if( hecMESH%contact_pair%n_pair > 0 ) then
+      if( nprocs > 1 .and. &
+           hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
+        paraContactFlag = .true.
+      endif
+      if( myrank == 0 ) then
+        print *,'paraContactFlag',paraContactFlag
+      endif
     endif
 
     call hecmw2fstr_mesh_conv( hecMESH )
