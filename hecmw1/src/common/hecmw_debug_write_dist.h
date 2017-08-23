@@ -10,6 +10,8 @@
 
 #ifdef DEBUG
 #define HECMW_dbg_n_node( mesh ) HECMW_dbg_n_node_( mesh, __FILE__, __LINE__ )
+#define HECMW_dbg_n_node_gross( mesh ) HECMW_dbg_n_node_gross_( mesh, __FILE__, __LINE__ )
+#define HECMW_dbg_nn_middle( mesh ) HECMW_dbg_nn_middle_( mesh, __FILE__, __LINE__ )
 #define HECMW_dbg_nn_internal( mesh ) HECMW_dbg_nn_internal_( mesh, __FILE__, __LINE__ )
 #define HECMW_dbg_n_dof( mesh ) HECMW_dbg_n_dof_( mesh, __FILE__, __LINE__ )
 #define HECMW_dbg_n_dof_grp( mesh ) HECMW_dbg_n_dof_grp_( mesh, __FILE__, __LINE__ )
@@ -63,6 +65,8 @@
 #define HECMW_dbg_surf_group( mesh ) HECMW_dbg_surf_group_( mesh, __FILE__, __LINE__ )
 #else
 #define HECMW_dbg_n_node( mesh )
+#define HECMW_dbg_n_node_gross( mesh )
+#define HECMW_dbg_nn_middle( mesh )
 #define HECMW_dbg_nn_internal( mesh )
 #define HECMW_dbg_n_dof( mesh )
 #define HECMW_dbg_n_dof_grp( mesh )

@@ -23,7 +23,7 @@
 #include "hecmw_set_int.h"
 #include "hecmw_hash.h"
 
-#define HECMW_FLAG_VERSION 3
+#define HECMW_FLAG_VERSION 4
 
 static int global_node_ID_max = -1;
 static int global_elem_ID_max = -1;
@@ -1721,6 +1721,7 @@ setup_flags(struct hecmwST_local_mesh *mesh)
 	mesh->hecmw_flag_parttype = HECMW_FLAG_PARTTYPE_UNKNOWN;
 	mesh->hecmw_flag_partdepth = 1;
 	mesh->hecmw_flag_version = HECMW_FLAG_VERSION;
+	mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_UNKNOWN;
 
 	return 0;
 }
@@ -1873,6 +1874,9 @@ setup_node(struct hecmwST_local_mesh *mesh)
 
 	/* n_node_gross */
 	mesh->n_node_gross = mesh->n_node;
+
+	/* nn_middle */
+	mesh->nn_middle = mesh->n_node;
 
 	/* nn_internal */
 	mesh->nn_internal = mesh->n_node;

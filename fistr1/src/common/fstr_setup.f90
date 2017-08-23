@@ -437,11 +437,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
                 stop
               else
                 if(paraContactFlag) then
-                  isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH   &
-!#ifdef PARA_CONTACT
-                                                                                  ,myrank &
-!#endif
-                                                                                    )
+                  isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, myrank)
                 else
                   isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH)
                 endif

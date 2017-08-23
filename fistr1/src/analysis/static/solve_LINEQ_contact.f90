@@ -31,6 +31,12 @@ module m_solve_LINEQ_contact
       logical :: is_sym
 
       if( hecMAT%Iarray(99)==1 )then
+        if( nprocs > 1 .and. hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
+          if( myrank == 0 ) then
+            write(*,'(a)') 'ERROR: to use iterative solver in parallel contact analysis, run partitioner with CONTACT=AGGREGATE'
+          endif
+          stop
+        endif
         call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
       else if( hecMAT%Iarray(99)==3 )then
         call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)

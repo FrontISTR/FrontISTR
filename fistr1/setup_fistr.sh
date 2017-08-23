@@ -12,14 +12,12 @@ WITHREFINER=0
 WITHMKL=0
 WITHMUMPS=0
 WITHML=0
-WITHPARACON=0
 
 BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
 BUILDTARGET_SERIAL="build-serial"
 TOOLSTARGET="build-tools"
 ALLBUILDTARGET=""
-BUILDTARGET_PARACON="build-default"
 
 SETUPFILE="setup_fistr.sh"
 USER_CONFIGFILE="Makefile.conf"
@@ -76,8 +74,6 @@ do
 		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
-	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
-		WITHPARACON=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	elif [ "\"$i\"" = "\"-gather-makefiles\"" -o "\"$i\"" = "\"--gather-makefiles\"" ]; then
@@ -95,7 +91,6 @@ do
 			--with-mkl              link mkl
 			--with-mumps            link mumps
 			--with-ml               link ml
-			--with-paracon          compile parallel contact
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
 			--show-all-options      print all options (show this message)
@@ -114,7 +109,6 @@ do
 			--with-mkl              link mkl
 			--with-mumps            link mumps
 			--with-ml               link ml
-			--with-paracon          compile parallel contact
 			-h, --help              show help(this message)
 		EOF
 		exit 1
@@ -263,13 +257,6 @@ if [ ${WITHML} -ne 1 ]; then
 fi
 
 #
-# with paracon
-#
-if [ ${WITHPARACON} -eq 1 ]; then
-	BUILDTARGET_PARACON="build-with-paracon"
-fi
-
-#
 # F90 linker
 #
 if [ "${F90LINKER}" = "" ]; then
@@ -381,7 +368,6 @@ do
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
-		-e "s!@build_target_paracon@!${BUILDTARGET_PARACON}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \
 		-e "s!@revocap_f90ldflags@!${REVOCAP_F90LDFLAGS}!" \
 		-e "s!@refiner_cflags@!${REFINER_CFLAGS}!" \

@@ -810,6 +810,16 @@ spdup_freelist( const struct hecmwST_local_mesh *global_mesh )
     HECMW_free( egrp_idx );
     HECMW_free( egrp_item );
 }
+
+static int
+is_spdup_available( const struct hecmwST_local_mesh *global_mesh )
+{
+    return global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED &&
+           global_mesh->hecmw_flag_partdepth == 1 &&
+           global_mesh->mpc->n_mpc == 0 &&
+           global_mesh->contact_pair->n_pair == 0;
+}
+
 /*================================================================================================*/
 
 static char *
@@ -860,6 +870,7 @@ init_struct_global( struct hecmwST_local_mesh *local_mesh )
     local_mesh->hecmw_flag_parttype  = 0;
     local_mesh->hecmw_flag_partdepth = 0;
     local_mesh->hecmw_flag_version   = 0;
+    local_mesh->hecmw_flag_partcontact = 0;
 
     local_mesh->zero_temp = 0.0;
 
@@ -2329,17 +2340,16 @@ kmetis_interface( const int n_vertex, const int n_domain, int *xadj, int *adjncy
 
 
 static int
-pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
+pmetis_interface_with_weight( int n_vertex, int ncon, int n_domain, const int *xadj,
+                              const int *adjncy, const int *vwgt, int *part )
 {
     int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
-    /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
     int nparts=n_domain;         /* number of sub-domains */
 
 #  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
-    int ncon=1;                  /* number of balancing constraints */
     int *vsize=NULL;
     real_t *tpwgts=NULL;
     real_t *ubvec=NULL;
@@ -2358,8 +2368,13 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
     if (vwgt != NULL) wgtflag = 2;
 
     HECMW_log( HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n" );
-    METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
-                              &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    if( ncon == 1 ) {
+        METIS_PartGraphRecursive( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                                  &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    } else {
+        METIS_mCPartGraphRecursive( &n, &ncon, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                                  &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    }
     HECMW_log( HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n" );
 #  endif
 #endif
@@ -2369,17 +2384,16 @@ pmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 
 
 static int
-kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const int *adjncy, const int *vwgt, int *part )
+kmetis_interface_with_weight( int n_vertex, int ncon, int n_domain, const int *xadj,
+                              const int *adjncy, const int *vwgt, int *part )
 {
     int edgecut=0;               /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
     int n=n_vertex;              /* number of vertices */
-    /* int *vwgt=NULL; */             /* weight for vertices */
     int *adjwgt=NULL;            /* weight for edges */
     int nparts=n_domain;         /* number of sub-domains */
 
 #  if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
-    int ncon=1;                  /* number of balancing constraints */
     int *vsize=NULL;
     real_t *tpwgts=NULL;
     real_t *ubvec=NULL;
@@ -2393,14 +2407,30 @@ kmetis_interface_with_weight( int n_vertex, int n_domain, const int *xadj, const
 #  else
     int wgtflag=0;               /* flag of weight for edges */
     int numflag=0;               /* flag of stating number of index */
+    float *ubvec=NULL;
     int options[5]={0,0,0,0,0};  /* options for kMETIS */
 
     if (vwgt != NULL) wgtflag = 2;
 
+    if( ncon > 1 ) {
+        ubvec = (float *)HECMW_malloc( ncon * sizeof(float) );
+        if( ubvec == NULL ) {
+            HECMW_set_error( errno, "" );
+            return -1;
+        }
+    }
+
     HECMW_log( HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n" );
-    METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
-                         &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    if( ncon == 1 ) {
+        METIS_PartGraphKway( &n, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                             &wgtflag, &numflag, &nparts, options, &edgecut, part );
+    } else {
+        METIS_mCPartGraphKway( &n, &ncon, (int *) xadj, (int *) adjncy, (int *) vwgt, adjwgt,
+                               &wgtflag, &numflag, &nparts, ubvec, options, &edgecut, part );
+    }
     HECMW_log( HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n" );
+
+    HECMW_free( ubvec );
 #  endif
 #endif
 
@@ -2589,6 +2619,49 @@ HECMW_fistr_get_surf_node(int etype, int sid)
     return NULL;
 }
 
+
+static int
+mark_contact_master_nodes( struct hecmwST_local_mesh *global_mesh,
+                           int *mark )
+{
+    int i, j, k;
+    struct hecmwST_contact_pair *cp = global_mesh->contact_pair;
+    struct hecmwST_surf_grp *sgrp = global_mesh->surf_group;
+
+    for( i=0; i<global_mesh->n_node; i++ ) {
+        mark[i] = 0;
+    }
+
+    for( i=0; i<cp->n_pair; i++ ) {
+        int gid = cp->master_grp_id[i];
+        int jstart = sgrp->grp_index[gid-1];
+        int jend = sgrp->grp_index[gid];
+        for( j=jstart; j<jend; j++ ) {
+            int eid = sgrp->grp_item[j*2] - 1;
+            int sid = sgrp->grp_item[j*2+1];
+            int *nop = global_mesh->elem_node_item + global_mesh->elem_node_index[eid];
+            int etype = global_mesh->elem_type[eid];
+
+            /** IF HEC-MW NUMBERING **/
+            /* int num_snode = HECMW_get_num_surf_node(etype, sid); */
+            /* const int *snode = HECMW_get_surf_node(etype, sid); */
+            /** ELSE IF FrontISTR NUMBERING **/
+            int num_snode = HECMW_fistr_get_num_surf_node(etype, sid);
+            const int *snode = HECMW_fistr_get_surf_node(etype, sid);
+            /** END IF **/
+
+            if (num_snode < 0 || snode == NULL) return RTC_ERROR;
+            for( k=0; k<num_snode; k++ ) {
+                int nid = nop[ snode[k] ] - 1;
+                HECMW_assert( 0 <= nid && nid < global_mesh->n_node );
+                mark[nid] = 1;
+            }
+        }
+    }
+    return RTC_NORMAL;
+}
+
+
 static int
 contact_agg_mark_surf_group(int *mark,
                 struct hecmwST_local_mesh *global_mesh,
@@ -2656,8 +2729,9 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
     const int *node_graph_item2;
     int *node_weight2;
     struct hecmw_graph graph1, graph2;
+    const int ncon = 1;
 
-    HECMW_assert( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE );
+    HECMW_assert( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_AGGREGATE );
 
     node_graph_index = (int *)HECMW_calloc( global_mesh->n_node+1, sizeof(int) );
     if( node_graph_index == NULL ) {
@@ -2677,6 +2751,7 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
 
     HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
+    HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-aggregate\n");
 
     HECMW_log( HECMW_LOG_DEBUG, "Starting aggregation of contact pairs...\n");
 
@@ -2758,14 +2833,14 @@ metis_partition_nb_contact_agg( struct hecmwST_local_mesh *global_mesh,
 
     switch( cont_data->method ) {
     case HECMW_PART_METHOD_PMETIS:  /* pMETIS */
-        n_edgecut = pmetis_interface_with_weight( n_node2, global_mesh->n_subdomain,
+        n_edgecut = pmetis_interface_with_weight( n_node2, ncon, global_mesh->n_subdomain,
                                                   node_graph_index2, node_graph_item2,
                                                   node_weight2, belong_domain );
         if( n_edgecut < 0 )  goto error;
         break;
 
     case HECMW_PART_METHOD_KMETIS:  /* kMETIS */
-        n_edgecut = kmetis_interface_with_weight( n_node2, global_mesh->n_subdomain,
+        n_edgecut = kmetis_interface_with_weight( n_node2, ncon, global_mesh->n_subdomain,
                                                   node_graph_index2, node_graph_item2,
                                                   node_weight2, belong_domain );
         if( n_edgecut < 0 )  goto error;
@@ -2795,6 +2870,127 @@ error:
     HECMW_free( mark );
     HECMW_free( node_weight2 );
     HECMW_free( belong_domain );
+
+    return -1;
+}
+
+
+static int
+metis_partition_nb_contact_dist( struct hecmwST_local_mesh *global_mesh,
+                                 const struct hecmw_part_cont_data *cont_data,
+                                 const struct hecmw_part_edge_data *edge_data )
+{
+    int n_edgecut;
+    int *node_graph_index = NULL;  /* index for nodal graph */
+    int *node_graph_item = NULL;   /* member of nodal graph */
+    int *belong_domain = NULL;
+    int rtc;
+    int i;
+    int ncon;
+    int *node_weight = NULL;
+    int *mark = NULL;
+
+    HECMW_assert( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE ||
+                  global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_DISTRIBUTE );
+
+    node_graph_index = (int *)HECMW_calloc( global_mesh->n_node+1, sizeof(int) );
+    if( node_graph_index == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+    node_graph_item = (int *)HECMW_malloc( sizeof(int)*edge_data->n_edge*2 );
+    if( node_graph_item == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
+    HECMW_log( HECMW_LOG_DEBUG, "Starting creation of node graph...\n");
+
+    rtc = create_node_graph( global_mesh, edge_data, node_graph_index, node_graph_item );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    HECMW_log( HECMW_LOG_DEBUG, "Creation of node graph done\n");
+
+    if( global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE ) {
+        HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-simple\n");
+
+        ncon = 1;
+        node_weight = NULL;
+    }
+    else /* HECMW_FLAG_PARTCONTACT_DISTRIBUTE */
+    {
+        HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: contact-distribute\n");
+
+        ncon = 2;
+
+        mark = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
+        if( mark == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
+
+        rtc = mark_contact_master_nodes( global_mesh, mark );
+        if( rtc != RTC_NORMAL ) goto error;
+
+        node_weight = (int *)HECMW_calloc( global_mesh->n_node * ncon, sizeof(int) );
+        if( node_weight == NULL ) {
+            HECMW_set_error( errno, "" );
+            goto error;
+        }
+
+        for( i=0; i<global_mesh->n_node; i++ ) {
+            /* 1st condition: distribute nodes equally */
+            node_weight[i*ncon  ] = 1;
+            /* 2nd condition: distribute master nodes equally */
+            node_weight[i*ncon+1] = mark[i];
+        }
+
+        HECMW_free( mark );
+    }
+
+    belong_domain = (int *)HECMW_calloc( global_mesh->n_node, sizeof(int) );
+    if( belong_domain == NULL ) {
+        HECMW_set_error( errno, "" );
+        goto error;
+    }
+
+    switch( cont_data->method ) {
+    case HECMW_PART_METHOD_PMETIS:  /* pMETIS */
+        n_edgecut = pmetis_interface_with_weight( global_mesh->n_node, ncon, global_mesh->n_subdomain,
+                                                  node_graph_index, node_graph_item,
+                                                  node_weight, belong_domain );
+        if( n_edgecut < 0 )  goto error;
+        break;
+
+    case HECMW_PART_METHOD_KMETIS:  /* kMETIS */
+        n_edgecut = kmetis_interface_with_weight( global_mesh->n_node, ncon, global_mesh->n_subdomain,
+                                                  node_graph_index, node_graph_item,
+                                                  node_weight, belong_domain );
+        if( n_edgecut < 0 )  goto error;
+        break;
+
+    default:
+        HECMW_set_error( HECMW_PART_E_INVALID_PMETHOD, "" );
+        goto error;
+    }
+
+    for( i=0; i<global_mesh->n_node; i++ ) {
+        global_mesh->node_ID[2*i+1] = belong_domain[i];
+    }
+
+    HECMW_free( node_graph_index );
+    HECMW_free( node_graph_item );
+    HECMW_free( belong_domain );
+    if( node_weight ) HECMW_free( node_weight );
+
+    return n_edgecut;
+
+error:
+    HECMW_free( node_graph_index );
+    HECMW_free( node_graph_item );
+    HECMW_free( belong_domain );
+    if( node_weight ) HECMW_free( node_weight );
+    if( mark ) HECMW_free( mark );
 
     return -1;
 }
@@ -2836,6 +3032,8 @@ metis_partition_nb_default( struct hecmwST_local_mesh *global_mesh,
         HECMW_set_error( errno, "" );
         goto error;
     }
+
+    HECMW_log( HECMW_LOG_DEBUG, "Partitioning mode: default\n");
 
     switch( cont_data->method ) {
     case HECMW_PART_METHOD_PMETIS:  /* pMETIS */
@@ -2879,8 +3077,18 @@ metis_partition_nb( struct hecmwST_local_mesh *global_mesh,
                     const struct hecmw_part_cont_data *cont_data,
                     const struct hecmw_part_edge_data *edge_data )
 {
-    if( cont_data->contact == HECMW_PART_CONTACT_AGGREGATE ) {
-        return metis_partition_nb_contact_agg( global_mesh, cont_data, edge_data );
+    if( global_mesh->contact_pair->n_pair > 0 ) {
+        switch( global_mesh->hecmw_flag_partcontact ) {
+        case HECMW_FLAG_PARTCONTACT_AGGREGATE:
+            return metis_partition_nb_contact_agg( global_mesh, cont_data, edge_data );
+
+        case HECMW_FLAG_PARTCONTACT_DISTRIBUTE:
+        case HECMW_FLAG_PARTCONTACT_SIMPLE:
+            return metis_partition_nb_contact_dist( global_mesh, cont_data, edge_data );
+
+        default:
+            return -1;
+        }
     } else {
         return metis_partition_nb_default( global_mesh, cont_data, edge_data );
     }
@@ -3618,6 +3826,79 @@ mask_additional_overlap_elem( const struct hecmwST_local_mesh *global_mesh,
 
 
 static int
+mask_contact_slave_node( const struct hecmwST_local_mesh *global_mesh,
+                         const char *elem_flag, char *node_flag )
+{
+    int i, j;
+    int elem, node;
+    int evalsum;
+    int master_gid, slave_gid;
+    int jstart, jend;
+    struct hecmwST_contact_pair *cp;
+    struct hecmwST_surf_grp *sgrp;
+    struct hecmwST_node_grp *ngrp;
+
+    cp = global_mesh->contact_pair;
+    sgrp = global_mesh->surf_group;
+    ngrp = global_mesh->node_group;
+
+    for( i=0; i < cp->n_pair; i++ ) {
+        /* if any elem of master surf is internal */
+        evalsum = 0;
+        master_gid = cp->master_grp_id[i];
+        jstart = sgrp->grp_index[master_gid - 1];
+        jend = sgrp->grp_index[master_gid];
+        for( j = jstart; j < jend; j++ ) {
+            elem = sgrp->grp_item[j*2];
+            if( EVAL_BIT( elem_flag[elem-1], INTERNAL ) ) {
+                evalsum++;
+                break;
+            }
+        }
+        if( evalsum ) {
+            /* mask all external slave nodes as BOUNDARY (but not OVERLAP) */
+            slave_gid = cp->slave_grp_id[i];
+            jstart = ngrp->grp_index[slave_gid - 1];
+            jend = ngrp->grp_index[slave_gid];
+            for( j = jstart; j < jend; j++ ) {
+                node = ngrp->grp_item[j];
+                if( !EVAL_BIT( node_flag[node-1], INTERNAL ) ) {
+                    MASK_BIT( node_flag[node-1], BOUNDARY );
+                }
+            }
+        }
+
+        /* if any elem of master surf is external */
+        evalsum = 0;
+        master_gid = cp->master_grp_id[i];
+        jstart = sgrp->grp_index[master_gid - 1];
+        jend = sgrp->grp_index[master_gid];
+        for( j = jstart; j < jend; j++ ) {
+            elem = sgrp->grp_item[j*2];
+            if( !EVAL_BIT( elem_flag[elem-1], INTERNAL ) ) {
+                evalsum++;
+                break;
+            }
+        }
+        if( evalsum ) {
+            /* mask all internal slave nodes as BOUNDARY (but not OVERLAP) */
+            slave_gid = cp->slave_grp_id[i];
+            jstart = ngrp->grp_index[slave_gid - 1];
+            jend = ngrp->grp_index[slave_gid];
+            for( j = jstart; j < jend; j++ ) {
+                node = ngrp->grp_item[j];
+                if( EVAL_BIT( node_flag[node-1], INTERNAL ) ) {
+                    MASK_BIT( node_flag[node-1], BOUNDARY );
+                }
+            }
+        }
+    }
+
+    return RTC_NORMAL;
+}
+
+
+static int
 mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
                      char *node_flag, char *elem_flag, int current_domain )
 {
@@ -3672,6 +3953,11 @@ mask_mesh_status_nb( const struct hecmwST_local_mesh *global_mesh,
 
         rtc = mask_boundary_node( global_mesh, node_flag, elem_flag );
         if( rtc != RTC_NORMAL )  goto error;
+    }
+
+    if( global_mesh->contact_pair->n_pair > 0 ) {
+        rtc = mask_contact_slave_node( global_mesh, elem_flag, node_flag );
+        if( rtc != RTC_NORMAL ) goto error;
     }
 
     return RTC_NORMAL;
@@ -3847,6 +4133,53 @@ mask_neighbor_domain_nb_mod( const struct hecmwST_local_mesh *global_mesh,
 
 
 static int
+mask_neighbor_domain_nb_contact( const struct hecmwST_local_mesh *global_mesh,
+                                 const char *node_flag, const char *elem_flag, char *domain_flag )
+{
+    int i, j;
+    int elem, node;
+    int evalsum;
+    int master_gid, slave_gid;
+    int jstart, jend;
+    struct hecmwST_contact_pair *cp;
+    struct hecmwST_surf_grp *sgrp;
+    struct hecmwST_node_grp *ngrp;
+
+    cp = global_mesh->contact_pair;
+    sgrp = global_mesh->surf_group;
+    ngrp = global_mesh->node_group;
+
+    for( i=0; i < cp->n_pair; i++ ) {
+        /* if any slave node is internal */
+        slave_gid = cp->slave_grp_id[i];
+        jstart = ngrp->grp_index[slave_gid - 1];
+        jend = ngrp->grp_index[slave_gid];
+        for( j = jstart; j < jend; j++ ) {
+            node = ngrp->grp_item[j];
+            if( EVAL_BIT( node_flag[node-1], INTERNAL ) ) {
+                evalsum++;
+                break;
+            }
+        }
+        /* the domain to which elems of the master surf belong is neighbor */
+        if( evalsum ) {
+            master_gid = cp->master_grp_id[i];
+            jstart = sgrp->grp_index[master_gid - 1];
+            jend = sgrp->grp_index[master_gid];
+            for( j = jstart; j < jend; j++ ) {
+                elem = sgrp->grp_item[j*2];
+                if( !EVAL_BIT( elem_flag[elem-1], INTERNAL ) ) {
+                    MASK_BIT( domain_flag[global_mesh->elem_ID[2*(elem-1)+1]], MASK );
+                }
+            }
+        }
+    }
+
+    return RTC_NORMAL;
+}
+
+
+static int
 mask_neighbor_domain_eb( const struct hecmwST_local_mesh *global_mesh,
                          const char *elem_flag, char *domain_flag )
 {
@@ -3923,12 +4256,14 @@ create_neighbor_info( const struct hecmwST_local_mesh *global_mesh,
         rtc = mask_mesh_status_nb( global_mesh, node_flag, elem_flag, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1) {
+        if( is_spdup_available( global_mesh ) ) {
             rtc = mask_neighbor_domain_nb_mod( global_mesh, node_flag, domain_flag, current_domain );
         } else {
             rtc = mask_neighbor_domain_nb( global_mesh, node_flag, domain_flag );
         }
+        if( rtc != RTC_NORMAL )  goto error;
 
+        rtc = mask_neighbor_domain_nb_contact( global_mesh, node_flag, elem_flag, domain_flag );
         if( rtc != RTC_NORMAL )  goto error;
 
         break;
@@ -4330,7 +4665,7 @@ create_shared_info_nb( const struct hecmwST_local_mesh *global_mesh,
 {
     int n_shared_elem, rtc;
 
-    if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
       n_shared_elem = count_masked_shared_elem_mod( global_mesh, elem_flag, neighbor_domain);
     } else {
       n_shared_elem = count_masked_shared_elem( global_mesh, elem_flag );
@@ -4346,7 +4681,7 @@ create_shared_info_nb( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
       rtc = create_shared_elem_pre_mod( global_mesh, elem_flag, shared_elem, neighbor_idx, neighbor_domain );
     } else {
       rtc = create_shared_elem_pre( global_mesh, elem_flag, shared_elem, neighbor_idx );
@@ -4434,7 +4769,7 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
                                    node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1) {
+        if( is_spdup_available( global_mesh ) ) {
             rtc = mask_comm_node_mod( global_mesh, node_flag, node_flag_neighbor, current_domain );
         } else {
             rtc = mask_comm_node( global_mesh, node_flag, node_flag_neighbor );
@@ -4442,7 +4777,7 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
 
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1) {
+        if( is_spdup_available( global_mesh ) ) {
             rtc = mask_comm_elem_mod( global_mesh, elem_flag, elem_flag_neighbor, current_domain );
         } else {
             rtc = mask_comm_elem( global_mesh, elem_flag, elem_flag_neighbor );
@@ -4464,7 +4799,7 @@ create_comm_info_nb( const struct hecmwST_local_mesh *global_mesh,
                                      shared_elem, i, neighbor_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+        if( is_spdup_available( global_mesh ) ) {
             /*K. Inagaki */
             rtc = spdup_clear_IEB( node_flag_neighbor, elem_flag_neighbor, neighbor_domain );
             if( rtc != RTC_NORMAL )  goto error;
@@ -4983,8 +5318,17 @@ set_node_global2local_external( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( node_flag );
     HECMW_assert( global_mesh->n_node > 0 );
 
+    /* ordinary external nodes are marked as BOUNDARY && OVERLAP */
     for( counter=local_mesh->nn_internal, i=0; i<global_mesh->n_node; i++ ) {
-        if( !EVAL_BIT( node_flag[i], INTERNAL ) && EVAL_BIT( node_flag[i], BOUNDARY ) ) {
+        if( !EVAL_BIT( node_flag[i], INTERNAL ) && EVAL_BIT( node_flag[i], BOUNDARY ) && EVAL_BIT( node_flag[i], OVERLAP ) ) {
+            node_global2local[i] = ++counter;
+        }
+    }
+    local_mesh->nn_middle = counter;
+
+    /* added external contact slave nodes are marked as BOUNDARY but not OVERLAP */
+    for( i=0; i<global_mesh->n_node; i++ ) {
+        if( !EVAL_BIT( node_flag[i], INTERNAL ) && EVAL_BIT( node_flag[i], BOUNDARY ) && !EVAL_BIT( node_flag[i], OVERLAP ) ) {
             node_global2local[i] = ++counter;
         }
     }
@@ -5134,7 +5478,7 @@ set_node_global2local( const struct hecmwST_local_mesh *global_mesh,
                                               node_global2local, node_flag, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+        if( is_spdup_available( global_mesh ) ) {
             rtc = set_node_global2local_external_mod( global_mesh, local_mesh,
                                                       node_global2local, node_flag, current_domain );
         } else {
@@ -5186,8 +5530,7 @@ clear_node_global2local( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( local_mesh );
     HECMW_assert( node_global2local );
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         for( i=0; i<n_int_nlist[domain]; i++ ){
             node = int_nlist[domain][i];
             node_global2local[node-1] = 0;
@@ -5476,7 +5819,7 @@ set_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
 
         local_mesh->ne_internal = n_int_elist[current_domain];
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+        if( is_spdup_available( global_mesh ) ) {
             rtc = set_elem_global2local_all_mod( global_mesh, local_mesh, elem_global2local, elem_flag, current_domain );
         } else {
             rtc = set_elem_global2local_all( global_mesh, local_mesh, elem_global2local, elem_flag );
@@ -5530,8 +5873,7 @@ clear_elem_global2local( const struct hecmwST_local_mesh *global_mesh,
     HECMW_assert( local_mesh );
     HECMW_assert( elem_global2local );
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         for( i=0; i<n_int_elist[domain]; i++){
             elem = int_elist[domain][i];
             elem_global2local[elem-1] = 0;
@@ -5713,6 +6055,16 @@ const_hecmw_flag_version( const struct hecmwST_local_mesh *global_mesh,
 
 
 static int
+const_hecmw_flag_partcontact( const struct hecmwST_local_mesh *global_mesh,
+                              struct hecmwST_local_mesh *local_mesh )
+{
+    local_mesh->hecmw_flag_partcontact  = global_mesh->hecmw_flag_partcontact;
+
+    return RTC_NORMAL;
+}
+
+
+static int
 const_zero_temp( const struct hecmwST_local_mesh *global_mesh,
                  struct hecmwST_local_mesh *local_mesh )
 {
@@ -5756,6 +6108,9 @@ const_global_info( const struct hecmwST_local_mesh *global_mesh,
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_hecmw_flag_version( global_mesh, local_mesh );
+    if( rtc != RTC_NORMAL )  goto error;
+
+    rtc = const_hecmw_flag_partcontact( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
     rtc = const_zero_temp( global_mesh, local_mesh );
@@ -6492,8 +6847,7 @@ const_elem_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_elem_type( global_mesh, local_mesh, elem_local2global );
     if( rtc != RTC_NORMAL )  goto error;
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         rtc = const_elem_type_index_mod( global_mesh, local_mesh,
                                         elem_global2local, current_domain );
     } else {
@@ -7898,8 +8252,7 @@ const_node_grp_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_node_grp_name( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         rtc = const_node_grp_index_mod( global_mesh, local_mesh, node_global2local,
                                         n_eqn_item, eqn_block_idx, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
@@ -8127,8 +8480,7 @@ const_elem_grp_info( const struct hecmwST_local_mesh *global_mesh,
     rtc = const_elem_grp_name( global_mesh, local_mesh );
     if( rtc != RTC_NORMAL )  goto error;
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         rtc = const_elem_grp_index_mod( global_mesh, local_mesh,
                                         elem_global2local, current_domain );
         if( rtc != RTC_NORMAL )  goto error;
@@ -8433,8 +8785,7 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         rtc = set_node_local2global_mod( global_mesh, local_mesh,
                                          node_global2local, node_local2global, current_domain );
     } else {
@@ -8453,8 +8804,7 @@ const_local_data( const struct hecmwST_local_mesh *global_mesh,
         goto error;
     }
 
-    if( global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED
-        && global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+    if( is_spdup_available( global_mesh ) ) {
         rtc = set_elem_local2global_mod( global_mesh, local_mesh,
                                          elem_global2local, elem_local2global, current_domain );
     } else {
@@ -8774,6 +9124,26 @@ init_partition( struct hecmwST_local_mesh *global_mesh,
     /* global_mesh->hecmw_flag_partdepth */
     global_mesh->hecmw_flag_partdepth = cont_data->depth;
 
+    /* global_mesh->hecmw_flag_partcontact */
+    if( global_mesh->contact_pair->n_pair > 0 ) {
+        switch( cont_data->contact ) {
+        case HECMW_PART_CONTACT_AGGREGATE:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_AGGREGATE;
+            break;
+
+        case HECMW_PART_CONTACT_SIMPLE:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
+            break;
+
+        case HECMW_PART_CONTACT_DISTRIBUTE:
+        case HECMW_PART_CONTACT_DEFAULT:
+        default:
+            global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_DISTRIBUTE;
+            break;
+
+        }
+    }
+
     HECMW_log( HECMW_LOG_DEBUG, "Initialization for partitioner done" );
 
     return RTC_NORMAL;
@@ -9055,7 +9425,7 @@ HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
         HECMW_ctrl_free_meshfiles( ofheader );
         ofheader = NULL;
 
-        if( global_mesh->mpc->n_mpc == 0 && global_mesh->hecmw_flag_partdepth == 1 ) {
+        if( is_spdup_available( global_mesh ) ) {
             /*K. Inagaki */
             spdup_clear_IEB( node_flag, elem_flag, current_domain );
         } else {

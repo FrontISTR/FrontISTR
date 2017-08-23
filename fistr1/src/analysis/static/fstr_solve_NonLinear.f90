@@ -7,7 +7,6 @@
 module m_fstr_NonLinearMethod
 
   use m_fstr
-  use m_fstr_para_contact
   use m_static_lib
   use m_static_output
 
@@ -439,7 +438,7 @@ module m_fstr_NonLinearMethod
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       if(paraContactFlag.and.present(conMAT)) then
-        call copyClearMatrix(hecMAT,conMAT)
+        call hecmw_mat_copy_profile( hecMAT, conMAT )
       endif
       if ( fstr_is_contact_active() ) then
         ! ----  For Parallel Contact with Multi-Partition Domains
@@ -462,7 +461,7 @@ module m_fstr_NonLinearMethod
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     if( paraContactFlag.and.present(conMAT) ) then
-      conMAT%B(:) = 0.0D0
+      call hecmw_mat_clear_b(conMAT)
     endif
 
     if( fstr_is_contact_active() )  then
@@ -495,7 +494,8 @@ module m_fstr_NonLinearMethod
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if( paraContactFlag .and. present(conMAT) ) then
-          call hecMAT_clear( conMAT )
+          call hecmw_mat_clear( conMAT )
+          conMAT%X = 0.0d0
         endif
 
         if( fstr_is_contact_active() ) then
@@ -541,11 +541,7 @@ module m_fstr_NonLinearMethod
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 
         ! ----- update external nodal displacement increments
-        if(paraContactFlag.and.present(conMAT)) then
-          call paraContact_update_3_R(hecMESH,hecMAT%X)
-        else
-          call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
-        endif
+        call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
         call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
 
         resX = sqrt(resX)/n_node_global
@@ -580,7 +576,7 @@ module m_fstr_NonLinearMethod
 
         if( fstr_is_contact_active() )  then
           if(paraContactFlag.and.present(conMAT)) then
-            conMAT%B(1:3*hecMAT%NP) = 0.0D0
+            call hecmw_mat_clear_b( conMAT )
             call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
           else
             call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)
@@ -654,9 +650,9 @@ module m_fstr_NonLinearMethod
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
 
       if (contact_changed_global > 0) then
-        hecMAT%B(:) = 0.0D0
+        call hecmw_mat_clear_b( hecMAT )
         if( paraContactFlag .and. present(conMAT) ) then
-          conMAT%B(:) = 0.0D0
+          call hecmw_mat_clear_b( conMAT )
         endif
         call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
       endif

@@ -23,6 +23,7 @@ module m_fstr_main
 
   type (hecmwST_local_mesh)              :: hecMESH
   type (hecmwST_matrix )                 :: hecMAT
+  type (hecmwST_matrix )                 :: conMAT
   type (fstr_solid )                     :: fstrSOLID
   type (fstrST_matrix_contact_lagrange)  :: fstrMAT
   type (fstr_heat )                      :: fstrHEAT
@@ -52,7 +53,15 @@ module m_fstr_main
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
-    paraContactFlag = .false.
+    if( hecMESH%contact_pair%n_pair > 0 ) then
+      if( nprocs > 1 .and. &
+           hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
+        paraContactFlag = .true.
+      endif
+      if( myrank == 0 ) then
+        print *,'paraContactFlag',paraContactFlag
+      endif
+    endif
 
     call hecmw2fstr_mesh_conv( hecMESH )
 
@@ -114,6 +123,7 @@ module m_fstr_main
 
     ! set pointer to null
     call hecmw_nullify_matrix     ( hecMAT      )
+    call hecmw_nullify_matrix     ( conMAT      )
     call hecmw_nullify_result_data( fstrRESULT  )
     call fstr_nullify_fstr_param  ( fstrPR      )
     call fstr_nullify_fstr_solid  ( fstrSOLID   )
@@ -301,7 +311,11 @@ module m_fstr_main
       if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+    if( paraContactFlag ) then
+      call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
+    else
+      call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+    endif
 
     call fstr_solid_finalize( fstrSOLID )
 
@@ -370,8 +384,14 @@ module m_fstr_main
        endif
     endif
 
-    call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
-                            ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+    if( paraContactFlag ) then
+      call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
+                              ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT &
+                              ,conMAT )
+    else
+      call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
+                              ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+    endif
 
   end subroutine fstr_dynamic_analysis
 

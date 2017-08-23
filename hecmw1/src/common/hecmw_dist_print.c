@@ -20,6 +20,7 @@ HECMW_dist_print_flags(const struct hecmwST_local_mesh *mesh, FILE *fp)
 	fprintf(fp, "hecmw_flag_initcon: %d\n", mesh->hecmw_flag_initcon);
 	fprintf(fp, "hecmw_flag_parttype: %d\n", mesh->hecmw_flag_parttype);
 	fprintf(fp, "hecmw_flag_version: %d\n", mesh->hecmw_flag_version);
+	fprintf(fp, "hecmw_flag_partcontact: %d\n", mesh->hecmw_flag_partcontact);
 	fprintf(fp, "END of FLAGS\n");
 }
 
@@ -88,6 +89,8 @@ HECMW_dist_print_node(const struct hecmwST_local_mesh *mesh, FILE *fp)
 
 	fprintf(fp, "NODE:\n");
 	fprintf(fp, "n_node: %d\n", mesh->n_node);
+	fprintf(fp, "n_node_gross: %d\n", mesh->n_node_gross);
+	fprintf(fp, "nn_middle: %d\n", mesh->nn_middle);
 	fprintf(fp, "nn_internal: %d\n", mesh->nn_internal);
 
 	fprintf(fp, "node_internal_list:%s\n",

@@ -7,6 +7,7 @@ module hecmw_matrix_misc
   use hecmw_util
   use hecmw_matrix_contact
   use m_hecmw_comm_f
+  implicit none
 
   contains
 
@@ -83,6 +84,34 @@ module hecmw_matrix_misc
     if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
     call hecmw_cmat_finalize( hecMAT%cmat )
   end subroutine hecmw_mat_finalize
+
+  subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
+    type(hecmwST_matrix), intent(in) :: hecMATorg
+    type(hecmwST_matrix), intent(out) :: hecMAT
+    hecMAT%N    = hecMATorg%N
+    hecMAT%NP   = hecMATorg%NP
+    hecMAT%NDOF = hecMATorg%NDOF
+    hecMAT%NPL  = hecMATorg%NPL
+    hecMAT%NPU  = hecMATorg%NPU
+    allocate(hecMAT%indexL(size(hecMATorg%indexL)))
+    allocate(hecMAT%indexU(size(hecMATorg%indexU)))
+    allocate(hecMAT%itemL (size(hecMATorg%itemL )))
+    allocate(hecMAT%itemU (size(hecMATorg%itemU )))
+    allocate(hecMAT%D (size(hecMATorg%D )))
+    allocate(hecMAT%AL(size(hecMATorg%AL)))
+    allocate(hecMAT%AU(size(hecMATorg%AU)))
+    allocate(hecMAT%B (size(hecMATorg%B )))
+    allocate(hecMAT%X (size(hecMATorg%X )))
+    hecMAT%indexL = hecMATorg%indexL
+    hecMAT%indexU = hecMATorg%indexU
+    hecMAT%itemL  = hecMATorg%itemL
+    hecMAT%itemU  = hecMATorg%itemU
+    hecMAT%D  = 0.d0
+    hecMAT%AL = 0.d0
+    hecMAT%AU = 0.d0
+    hecMAT%B  = 0.d0
+    hecMAT%X  = 0.d0
+  end subroutine hecmw_mat_copy_profile
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
     type(hecmwST_matrix) :: hecMAT

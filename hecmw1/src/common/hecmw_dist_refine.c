@@ -2269,6 +2269,7 @@ copy_global_info( const struct hecmwST_local_mesh *mesh, struct hecmwST_local_me
 	ref_mesh->hecmw_flag_parttype  = mesh->hecmw_flag_parttype;
 	ref_mesh->hecmw_flag_partdepth = mesh->hecmw_flag_partdepth;
 	ref_mesh->hecmw_flag_version   = mesh->hecmw_flag_version;
+	ref_mesh->hecmw_flag_partcontact = mesh->hecmw_flag_partcontact;
 	strcpy(ref_mesh->gridfile, mesh->gridfile);
 	ref_mesh->hecmw_n_file         = mesh->hecmw_n_file;
 	ref_mesh->n_node_refine_hist   = mesh->n_node_refine_hist;
