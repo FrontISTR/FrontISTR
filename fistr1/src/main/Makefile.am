@@ -122,25 +122,16 @@ OBJS = main.@cobjfilepostfix@
 OBJSF = \
 	fistr_main.@f90objfilepostfix@
 
-OBJSFP = \
-	fistr_main_contact.@f90objfilepostfix@
-
 
 HEADERS = FrontISTRConfig.h
 
 #------------------------------------------------------------------------------#
-all: @build_target_paracon@
+all: @build_target@
 
 build-default: $(OBJS) $(OBJSF) $(HECMWLIBDIR) $(FSTRLIBDIR)
 	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
 	-o $(TARGET) \
 	$(OBJS) $(OBJSF) $(ALL_F90LDFLAGS)
-	$(CP) $(TARGET) $(FSTRBINDIR)/.
-
-build-with-paracon: $(OBJS) $(OBJSFP) $(HECMWLIBDIR) $(FSTRLIBDIR)
-	$(F90LINKER) $(ALL_F90FLAGS) $(F90OPTFLAGS) \
-	-o $(TARGET) \
-	$(OBJS) $(OBJSFP) $(ALL_F90LDFLAGS)
 	$(CP) $(TARGET) $(FSTRBINDIR)/.
 
 $(OBJS): $(HEADERS)

@@ -57,6 +57,14 @@ set_hecmw_flag_version(void *src)
 
 
 static int
+set_hecmw_flag_partcontact(void *src)
+{
+	mesh->hecmw_flag_partcontact = *((int *)src);
+	return 0;
+}
+
+
+static int
 set_gridfile(void *src)
 {
 	void *dst = mesh->gridfile;
@@ -132,6 +140,14 @@ static int
 set_n_node_gross(void *src)
 {
 	mesh->n_node_gross = *((int *)src);
+	return 0;
+}
+
+
+static int
+set_nn_middle(void *src)
+{
+	mesh->nn_middle = *((int *)src);
 	return 0;
 }
 
@@ -2217,6 +2233,7 @@ static struct func_table {
 	{"hecmwST_local_mesh","hecmw_flag_parttype", set_hecmw_flag_parttype },
 	{"hecmwST_local_mesh","hecmw_flag_partdepth",set_hecmw_flag_partdepth},
 	{"hecmwST_local_mesh","hecmw_flag_version",  set_hecmw_flag_version  },
+	{"hecmwST_local_mesh","hecmw_flag_partcontact",set_hecmw_flag_partcontact},
 
 	{"hecmwST_local_mesh","gridfile",            set_gridfile            },
 	{"hecmwST_local_mesh","hecmw_n_file",        set_hecmw_n_file        },
@@ -2226,6 +2243,7 @@ static struct func_table {
 
 	{"hecmwST_local_mesh","n_node",              set_n_node              },
 	{"hecmwST_local_mesh","n_node_gross",        set_n_node_gross        },
+	{"hecmwST_local_mesh","nn_middle",           set_nn_middle           },
 	{"hecmwST_local_mesh","nn_internal",         set_nn_internal         },
 	{"hecmwST_local_mesh","node_internal_list",  set_node_internal_list  },
 	{"hecmwST_local_mesh","node_ID",             set_node_ID             },

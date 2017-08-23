@@ -137,7 +137,7 @@ contains
       integer(kint),intent(in),optional :: myrank
 
       integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
-      integer  :: count,nslave_bc=0,nodeID
+      integer  :: count,nodeID
 
       fstr_contact_init = .false.
       !  master surface
@@ -145,51 +145,49 @@ contains
       if( cgrp<=0 ) return
       is= hecMESH%surf_group%grp_index(cgrp-1) + 1
       ie= hecMESH%surf_group%grp_index(cgrp  )
-!#ifdef PARA_CONTACT
-      if(present(myrank)) then
 
-      count = 0
-      do i=is,ie
-        ic   = hecMESH%surf_group%grp_item(2*i-1)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
-        count = count + 1
-      enddo
-      allocate( contact%master(count) )
-      count = 0
-      do i=is,ie
-        ic   = hecMESH%surf_group%grp_item(2*i-1)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
-        count = count + 1
-        nsurf = hecMESH%surf_group%grp_item(2*i)
-        ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, nsurf, contact%master(count) )
-        iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( contact%master(count)%nodes )
-          nn = contact%master(count)%nodes(j)
-          contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+      if(present(myrank)) then
+        ! PARA_CONTACT
+        count = 0
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+          count = count + 1
         enddo
-      enddo
+        allocate( contact%master(count) )
+        count = 0
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+          count = count + 1
+          nsurf = hecMESH%surf_group%grp_item(2*i)
+          ic_type = hecMESH%elem_type(ic)
+          call initialize_surf( ic, ic_type, nsurf, contact%master(count) )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j=1, size( contact%master(count)%nodes )
+            nn = contact%master(count)%nodes(j)
+            contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+          enddo
+        enddo
 
       else
-!#else
-      allocate( contact%master(ie-is+1) )
-      do i=is,ie
-        ic   = hecMESH%surf_group%grp_item(2*i-1)
-        nsurf = hecMESH%surf_group%grp_item(2*i)
-        ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, nsurf, contact%master(i-is+1) )
-        iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( contact%master(i-is+1)%nodes )
-          nn = contact%master(i-is+1)%nodes(j)
-          contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        ! not PARA_CONTACT
+        allocate( contact%master(ie-is+1) )
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          nsurf = hecMESH%surf_group%grp_item(2*i)
+          ic_type = hecMESH%elem_type(ic)
+          call initialize_surf( ic, ic_type, nsurf, contact%master(i-is+1) )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j=1, size( contact%master(i-is+1)%nodes )
+            nn = contact%master(i-is+1)%nodes(j)
+            contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+          enddo
         enddo
-      enddo
 
       endif
-!#endif
 
     ! slave surface
-    nslave_bc = 0
 !    if( contact%ctype==1 ) then
         cgrp = contact%surf_id1
         if( cgrp<=0 ) return
@@ -199,16 +197,12 @@ contains
         do i=is,ie
           nodeID = hecMESH%global_node_ID(hecMESH%node_group%grp_item(i))
           if(present(myrank)) then
+            ! PARA_CONTACT
             nslave = nslave + 1
           else
+            ! not PARA_CONTACT
             if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal) then
               nslave = nslave + 1
-!#ifdef PARA_CONTACT
-!          elseif(hecMESH%node_group%grp_item(i) >  hecMESH%nn_internal) then
-!            nslave = nslave + 1
-!#endif
-!          else
-!            nslave_bc = nslave_bc + 1
             endif
           endif
         enddo
@@ -216,13 +210,10 @@ contains
         allocate( contact%states(nslave) )
         ii = 0
         do i=is,ie
-!#ifdef PARA_CONTACT
-          if(present(myrank)) then
-!#else
-          else
+          if(.not.present(myrank)) then
+            ! not PARA_CONTACT
             if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
           endif
-!#endif
           ii = ii + 1
           contact%slave(ii) = hecMESH%node_group%grp_item(i)
           contact%states(ii)%state = -1

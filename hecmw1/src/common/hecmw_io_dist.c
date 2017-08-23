@@ -293,6 +293,15 @@ get_global_info( struct hecmwST_local_mesh *mesh, FILE *fp )
     return -1;
   }
 
+  /* hecmw_flag_partcontact */
+  if( mesh->hecmw_flag_version >= 4 ) {
+    if( get_int( &mesh->hecmw_flag_partcontact, fp ) ) {
+      return -1;
+    }
+  } else {
+    mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_UNKNOWN;
+  }
+
   /* gridfile */
   if( get_string( mesh->gridfile, sizeof(mesh->gridfile), fp ) < 0 ) {
     return -1;
@@ -356,6 +365,15 @@ get_node_info( struct hecmwST_local_mesh *mesh, FILE *fp )
     }
   } else {
     mesh->n_node_gross = mesh->n_node;
+  }
+
+  if( mesh->hecmw_flag_version >= 4 ) {
+    /* nn_middle*/
+    if( get_int( &mesh->nn_middle, fp ) ) {
+      return -1;
+    }
+  } else {
+    mesh->nn_middle = mesh->n_node;
   }
 
   /* nn_internal */
@@ -1692,8 +1710,8 @@ HECMW_get_dist_mesh( char *fname )
 
   set_comm(mesh);
 
-  if( mesh->hecmw_flag_version < 3 ) {
-    mesh->hecmw_flag_version = 3;
+  if( mesh->hecmw_flag_version < 4 ) {
+    mesh->hecmw_flag_version = 4;
   }
 
   return mesh;
@@ -1904,6 +1922,11 @@ print_global_info( const struct hecmwST_local_mesh *mesh, FILE *fp )
     return -1;
   }
 
+  /* hecmw_flag_partcontact */
+  if( print_int( mesh->hecmw_flag_partcontact, fp ) ) {
+    return -1;
+  }
+
   /* gridfile */
   if( print_string( mesh->gridfile, fp ) ) {
     return -1;
@@ -1963,6 +1986,11 @@ print_node_info( const struct hecmwST_local_mesh *mesh, FILE *fp )
 
   /* n_node_gross */
   if( print_int( mesh->n_node_gross, fp ) ) {
+    return -1;
+  }
+
+  /* nn_middle */
+  if( print_int( mesh->nn_middle, fp ) ) {
     return -1;
   }
 

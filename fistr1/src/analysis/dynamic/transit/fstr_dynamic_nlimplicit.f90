@@ -6,7 +6,6 @@
 
 module fstr_dynamic_nlimplicit
   use m_fstr
-  use m_fstr_para_contact
   use m_dynamic_output
   use m_fstr_EIG_setMASS
   use m_dynamic_mat_ass_bc_ac
@@ -516,7 +515,7 @@ module fstr_dynamic_nlimplicit
     call fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
     if(paraContactFlag.and.present(conMAT)) then
-      call copyClearMatrix(hecMAT,conMAT)
+      call hecmw_mat_copy_profile( hecMAT, conMAT )
     endif
 
     if ( fstr_is_contact_active() ) then
@@ -604,8 +603,9 @@ module fstr_dynamic_nlimplicit
 
 
            if(paraContactFlag.and.present(conMAT)) then
-             call hecMAT_clear( conMAT )
-             conMAT%B(:) = 0.0D0
+             call hecmw_mat_clear( conMAT )
+             call hecmw_mat_clear_b( conMAT )
+             conMAT%X = 0.0d0
            endif
            if( fstr_is_contact_active() ) then
 !    ----  For Parallel Contact with Multi-Partition Domains
@@ -748,8 +748,8 @@ module fstr_dynamic_nlimplicit
         endif
         call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
         if (contact_changed_global > 0) then
-          hecMAT%B(:) = 0.0D0
-          if(paraContactFlag.and.present(conMAT)) conMAT%B(:) = 0.0D0
+          call hecmw_mat_clear_b( hecMAT )
+          if(paraContactFlag.and.present(conMAT)) call hecmw_mat_clear_b( conMAT )
           call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
         endif
 
