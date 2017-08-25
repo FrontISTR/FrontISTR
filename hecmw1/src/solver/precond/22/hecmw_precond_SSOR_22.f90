@@ -212,7 +212,7 @@ contains
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW(2), X(2)
-    
+
     ! added for turning >>>
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
     integer(kind=kint), save :: numOfThread = 1, numOfBlock
@@ -223,7 +223,7 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     integer(kind=kint) :: my_rank
 
-    if (isFirst .eqv. .true.) then
+    if (isFirst) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
       if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
@@ -361,7 +361,7 @@ contains
 
           X(2)= ALU(4*i  )*  X(2)
           X(1)= ALU(4*i-3)*( X(1) - ALU(4*i-2)*X(2) )
-          
+
           iold = perm(i)
           ZP(2*iold-1)=  ZP(2*iold-1) - X(1)
           ZP(2*iold  )=  ZP(2*iold  ) - X(2)
@@ -387,7 +387,7 @@ contains
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
     if (associated(ALU)) deallocate(ALU)
-    if (nthreads > 1) then
+    if (nthreads >= 1) then
       if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)
       if (associated(AU)) deallocate(AU)
