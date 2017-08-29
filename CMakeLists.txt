@@ -60,10 +60,13 @@ if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
     if(CMAKE_C_COMPILER_ID MATCHES "GNU")
       set(CMAKE_C_FLAGS_DEBUG
         "${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra")
+        #"${CMAKE_C_FLAGS_DEBUG} -Wall -Wextra -fsanitize=address")
       set(CMAKE_CXX_FLAGS_DEBUG
         "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
+        #"${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -fsanitize=address")
       set(CMAKE_Fortran_FLAGS_DEBUG
         "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -fbounds-check -fbacktrace")
+        #"${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -fbounds-check -fbacktrace -fsanitize=address")
     # Intel Compiler
     elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
       set(CMAKE_C_FLAGS_DEBUG
