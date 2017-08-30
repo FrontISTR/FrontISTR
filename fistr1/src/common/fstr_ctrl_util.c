@@ -1290,6 +1290,8 @@ int fstr_ctrl_get_param( int* ctrl, const char* param_name, const char* value_li
 	char p_name[STR_SIZE];
 	char v_list[STR_SIZE];
 
+    memset(p_name, '\0', sizeof(p_name));
+    memset(v_list, '\0', sizeof(v_list));
 	strcpy_f2c( p_name, param_name, STR_SIZE );
 	strcpy_f2c( v_list, value_list, STR_SIZE );
 
