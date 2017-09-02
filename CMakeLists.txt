@@ -30,11 +30,6 @@ include(CMakeDetermineFortranCompiler)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 ###############################################################
-# Add Fortran module path
-###############################################################
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
-
-###############################################################
 # Initialize variable of definitions, link libraries, includes
 ###############################################################
 set(FrontISTR_DEFINITIONS)
