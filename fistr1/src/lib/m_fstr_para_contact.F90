@@ -90,6 +90,7 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
 !
 !      if(myrank == 0) print *,'Part Method',partMethod
 
+#if(HECMW_METIS_VER == 4 || HECMW_METIS_VER == 5)
       select case(partMethod)
       case(PARTITION_DEFAULT)
         if(nparts < 8) then
@@ -153,7 +154,8 @@ subroutine paraContact_DomainPartition(hecMESH_G,hecMESH_L)
       case default
         stop 'Error: Undefined partition method!'
       end select
-!
+#endif
+
 !      call MPI_BARRIER(hecMESH_G%MPI_COMM,ierr)
       print *,myrank,'Metis Over'
     else
