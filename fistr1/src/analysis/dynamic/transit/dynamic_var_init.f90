@@ -9,18 +9,17 @@
 module m_dynamic_init_variables
 
 use m_fstr
-use lczparm
 use m_dynamic_mat_ass_load
 
 contains
 
-   subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, fstrPARAM )
+   subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 
     implicit none
 
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: myEIG
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
     type ( fstr_dynamic        ) :: fstrDYNAMIC
     type (fstr_param           ) :: fstrPARAM
@@ -31,13 +30,13 @@ contains
 
     if( fstrSOLID%VELOCITY_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
-        fstrDYNAMIC%ACC(j,1)=(hecMAT%B(j)-fstrDYNAMIC%ray_m*myEIG%mass(j)*fstrDYNAMIC%VEL(j,1))/&
-                              myEIG%mass(j)
+        fstrDYNAMIC%ACC(j,1)=(hecMAT%B(j)-fstrDYNAMIC%ray_m*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,1))/&
+                              fstrEIG%mass(j)
       enddo
     elseif( fstrSOLID%ACCELERATION_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
-        fstrDYNAMIC%VEL(j,1)=(hecMAT%B(j)-myEIG%mass(j)*fstrDYNAMIC%ACC(j,1))/&
-                             (fstrDYNAMIC%ray_m*myEIG%mass(j))
+        fstrDYNAMIC%VEL(j,1)=(hecMAT%B(j)-fstrEIG%mass(j)*fstrDYNAMIC%ACC(j,1))/&
+                             (fstrDYNAMIC%ray_m*fstrEIG%mass(j))
       enddo
     endif
 

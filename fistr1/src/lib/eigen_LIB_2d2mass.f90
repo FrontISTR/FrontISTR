@@ -8,14 +8,14 @@ module m_eigen_LIB_2d2mass
 contains
 
 !----------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D8(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D8(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !----------------------------------------------------------------------*
 !
 ! CALCULATION 2D 8 NODE PLANE ELEMENT
 !
       use hecmw
+      use m_fstr
       use gauss_integration
-      USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
@@ -36,7 +36,7 @@ contains
       !REAL(kind=kreal) RX(8),SX(8)
       !DATA RX/-1., 1.,1.,-1., 0., 1., 0., -1./
       !DATA SX/-1.,-1.,1., 1.,-1., 0., 1.,  0./
-      TYPE(lczparam) :: myEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -114,13 +114,13 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN
+!               IF(fstrEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,ndof).EQ.MOD(j2,ndof)) THEN
 !                 SS(NUM)=SS(NUM)+H(ind2)*H(ind1)*WG*RHO
 !!*EHM CONSISTENT MASS MATRIX 22 Apr 2004: Uncomment for debug
 !!                 sstest(j,j2) = SS(NUM)
 !                 ENDIF
-!               ELSE IF(myEIG%mastyp.EQ.1) THEN
+!               ELSE IF(fstrEIG%mastyp.EQ.1) THEN
                 IF(j.EQ.j2) THEN
                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
                  totdiag=totdiag+H(ind1)*H(ind2)*WG*RHO
@@ -138,7 +138,7 @@ contains
         ENDDO
       ENDDO
 !DEBUG
-!      IF(myEIG%mastyp.EQ.1) THEN
+!      IF(fstrEIG%mastyp.EQ.1) THEN
        DO j = 1,nn*ndof
         num = j*(j+1)/2
         ss(num) = ss(num)*(2*totmass-totdiag)/(totdiag)
@@ -149,14 +149,14 @@ contains
       RETURN
       END SUBROUTINE MASS_C2D8
 !----------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D6(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D6(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !----------------------------------------------------------------------*
 !
 ! CALCULATION 2D 6 NODE PLANE ELEMENT
 !
       use hecmw
+      use m_fstr
       use gauss_integration
-      USE lczparm
       IMPLICIT NONE
 ! I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
@@ -177,7 +177,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,NUM
       REAL(kind=kreal) totdiag, totmass
       INTEGER(kind=kint) ind1, ind2
-      TYPE(lczparam) :: myEIG
+      TYPE(fstr_eigen) :: fstrEIG
       totdiag = 0.0
       totmass = 0.0
 !*************************
@@ -259,13 +259,13 @@ contains
               DO J2=1,J
                NUM=(J-1)*J/2+J2
 !DEBUG
-!               IF(myEIG%mastyp.EQ.2) THEN
+!               IF(fstrEIG%mastyp.EQ.2) THEN
 !                IF(MOD(j,ndof).EQ.MOD(j2,ndof)) THEN
 !                 SS(NUM)=SS(NUM)+H(ind2)*H(ind1)*WG*RHO
 !!*EHM CONSISTENT MASS MATRIX 22 Apr 2004: Uncomment for debug
 !!                 sstest(j,j2) = SS(NUM)
 !                 ENDIF
-!               ELSE IF(myEIG%mastyp.EQ.1) THEN
+!               ELSE IF(fstrEIG%mastyp.EQ.1) THEN
                 IF(j.EQ.j2) THEN
                  SS(NUM)=SS(NUM)+H(ind1)*H(ind2)*WG*RHO
                  totdiag=totdiag+H(ind1)*H(ind2)*WG*RHO
@@ -284,7 +284,7 @@ contains
       ENDDO
 
 !DEBUG
-!      IF(myEIG%mastyp.EQ.1) THEN
+!      IF(fstrEIG%mastyp.EQ.1) THEN
        DO j = 1,nn*ndof
         num = j*(j+1)/2
         ss(num) = ss(num)*(2*totmass-totdiag)/(totdiag)

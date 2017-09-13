@@ -262,18 +262,11 @@ end subroutine dump_fstr_heat
 !> This subroutine prints out parameters for eigen analysis
 subroutine dump_fstr_eigen( e )
         implicit none
-        type( lczparam ) :: e
+        type( fstr_eigen ) :: e
 
         write(*,*) 'lczparam dump ********************'
         write(*,*)
-        write(*,*) 'eqset   ', e%eqset
         write(*,*) 'nget    ', e%nget
-        write(*,*) 'lczsgm  ', e%lczsgm
-        write(*,*) 'lczmax  ', e%lczmax
-        write(*,*) 'lcztol  ', e%lcztol
-        write(*,*) 'lczrod  ', e%lczrod
-        write(*,*) 'lczrot  ', e%lczrot
-        write(*,*) 'iluetol ', e%iluetol
         write(*,*)
 end subroutine dump_fstr_eigen
 

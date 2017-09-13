@@ -8,14 +8,14 @@ module m_eigen_LIB_2d1mass
 contains
 
 !C*--------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D4(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D4(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !C*--------------------------------------------------------------------*
 !C*
 !C* CALCULATION 2D 4 NODE PLANE ELEMENT
 !C*
       use hecmw
+      use m_fstr
       use gauss_integration
-      use lczparm
 
       IMPLICIT NONE
 !C* I/F VARIABLES
@@ -34,7 +34,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1, ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: myEIG
+      TYPE(fstr_eigen) :: fstrEIG
 
       totdiag = 0.0
       totmass = 0.0
@@ -134,14 +134,14 @@ contains
       RETURN
       END SUBROUTINE MASS_C2D4
 !C*--------------------------------------------------------------------*
-      SUBROUTINE MASS_C2D3(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,myEIG)
+      SUBROUTINE MASS_C2D3(XX,YY,EE,PP,RHO,PARAM1,SS,ISET,fstrEIG)
 !C*--------------------------------------------------------------------*
 !C*
 !C* CALCULATION 2D 3 NODE PLANE ELEMENT
 !C*
       use hecmw
+      use m_fstr
       use gauss_integration
-      use lczparm
       IMPLICIT NONE
 !C*I/F VARIABLES
       REAL(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
@@ -162,7 +162,7 @@ contains
       INTEGER(kind=kint) I,J,J2,K,LX,LY,NUM
       INTEGER(kind=kint) ind1,ind2
       REAL(kind=kreal) totdiag, totmass
-      TYPE(lczparam) :: myEIG
+      TYPE(fstr_eigen) :: fstrEIG
       totdiag = 0.0
       totmass = 0.0
 !C**************************

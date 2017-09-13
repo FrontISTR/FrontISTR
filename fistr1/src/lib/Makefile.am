@@ -105,13 +105,11 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-        fstr_lczparm.@f90objfilepostfix@ \
         m_step.@f90objfilepostfix@ \
         m_timepoint.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
-        m_fstr_freqdata.@f90objfilepostfix@ \
         GaussM.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \

@@ -17,7 +17,7 @@ contains
 !C================================================================C
 !> Master subroutine for dynamic analysis
 !C================================================================C
-  subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,myEIG   &
+  subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                       ,fstrCPL,fstrFREQ, fstrMAT  &
                                       ,conMAT )
@@ -25,7 +25,7 @@ contains
       implicit none
       type ( hecmwST_local_mesh  ) :: hecMESH
       type ( hecmwST_matrix      ) :: hecMAT
-      type ( lczparam            ) :: myEIG
+      type ( fstr_eigen            ) :: fstrEIG
       type ( fstr_solid          ) :: fstrSOLID
       type ( hecmwST_result_data ) :: fstrRESULT
       type ( fstr_param          ) :: fstrPARAM
@@ -48,15 +48,7 @@ contains
               call hecmw_abort( hecmw_comm_get_comm())
       end if
       call fstr_dynamic_alloc( hecMESH, fstrDYNAMIC )
-      allocate( myEIG%mass(hecMAT%NDOF*hecMESH%n_node)    ,STAT=ierror )
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to allocation error <fstr_solve_LINEAR_DYNAMIC, mass>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
 
-!C
 !C-- file open for local use
 !C
       if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
@@ -182,25 +174,25 @@ contains
 
         if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
           if(.not. associated( fstrSOLID%contacts ) ) then
-            call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
+            call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                 ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                 ,fstrCPL, restrt_step_num )
           elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
 !                ----  For Parallel Contact with Multi-Partition Domains
             if(paraContactFlag.and.present(conMAT)) then
-              call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
+              call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                 ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                 ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange   &
                                 ,conMAT )
             else
-              call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,myEIG   &
+              call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                 ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                 ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange )
             endif
           endif
 
         else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
-          call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,myEIG   &
+          call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                 ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                 ,fstrCPL, restrt_step_num )
         endif
@@ -215,7 +207,7 @@ contains
         end if
 
         if( hecMESH%my_rank .eq. 0 ) then
-           call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG, fstrDYNAMIC, &
+           call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, &
                                               fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, &
                                               restrt_step_num)
         end if
@@ -237,13 +229,7 @@ contains
       call fstr_dynamic_finalize( fstrDYNAMIC )
       call hecMAT_finalize( hecMAT )
 
-	      deallocate( myEIG%mass    ,STAT=ierror )
-            if( ierror /= 0 ) then
-              write(idbg,*) 'stop due to deallocation error <fstr_solve_LINEAR_DYNAMIC, mass>'
-              write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
-              call flush(idbg)
-              call hecmw_abort( hecmw_comm_get_comm())
-            end if
+      deallocate( fstrEIG%mass )
 
   end subroutine fstr_solve_DYNAMIC
 

@@ -107,7 +107,7 @@ module m_fstr_NonLinearMethod
 
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-      call solve_LINEQ(hecMESH,hecMAT,imsg)
+      call solve_LINEQ(hecMESH,hecMAT)
       call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
       ! ----- update the small displacement and the displacement for 1step
@@ -263,7 +263,7 @@ module m_fstr_NonLinearMethod
         endif
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+        CALL solve_LINEQ(hecMESH,hecMAT)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         if( hecMESH%n_dof == 3 ) then

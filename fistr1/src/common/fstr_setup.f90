@@ -18,7 +18,6 @@ use m_static_get_prop
 use m_out
 use m_step
 use m_utilities
-use m_fstr_freqdata, only : fstr_freqanalysis, kFLOADCASE_RE, kFLOADCASE_IM
 implicit none
 
 include 'fstr_ctrl_util_f.inc'
@@ -30,7 +29,7 @@ include 'fstr_ctrl_util_f.inc'
                 type(fstr_param), pointer         :: PARAM
                 type(fstr_solid), pointer         :: SOLID
                 type(fstr_heat), pointer          :: HEAT
-                type(lczparam), pointer           :: EIGEN
+                type(fstr_eigen), pointer           :: EIGEN
                 type(fstr_dynamic), pointer       :: DYN
                 type(fstr_couple), pointer        :: CPL
                 type(fstr_freqanalysis), pointer  :: FREQ
@@ -48,7 +47,7 @@ subroutine fstr_setup( cntl_filename, hecMESH, fstrPARAM,  &
         type(hecmwST_local_mesh),target :: hecMESH
         type(fstr_param),target   :: fstrPARAM
         type(fstr_solid),target   :: fstrSOLID
-        type(lczparam),target     :: fstrEIG
+        type(fstr_eigen),target     :: fstrEIG
         type(fstr_heat),target    :: fstrHEAT
         type(fstr_dynamic),target :: fstrDYNAMIC
         type(fstr_couple),target  :: fstrCPL
@@ -1158,17 +1157,14 @@ end subroutine fstr_heat_init
 !> Initial setting of eigen ca;culation
 subroutine fstr_eigen_init( fstrEIG )
         implicit none
-        type(lczparam) :: fstrEIG
-        ! type(fstr_eigen) :: fstrEIG
+        type(fstr_eigen) :: fstrEIG
 
-        fstrEIG%eqset       = 0
         fstrEIG%nget        = 5
-        fstrEIG%lczsgm      = 0.0
-        fstrEIG%lczmax      = 60
-        fstrEIG%lcztol      = 1.0e-8
-        fstrEIG%lczrod      = 1.0
-        fstrEIG%lczrot      = 0.0
-        fstrEIG%iluetol     = 0
+        fstrEIG%maxiter     = 60
+        fstrEIG%iter        = 0
+        fstrEIG%sigma       = 0.0d0
+        fstrEIG%tolerance   = 1.0d-6
+        fstrEIG%totalmass   = 0.0d0
 end subroutine fstr_eigen_init
 
 !> Initial setting of dynamic calculation
@@ -1179,7 +1175,7 @@ subroutine fstr_dynamic_init( fstrDYNAMIC )
         fstrDYNAMIC%idx_resp = 1
         fstrDYNAMIC%n_step   = 1
         fstrDYNAMIC%t_start  = 0.0
-        fstrDYNAMIC%t_curr = 0.0d0
+        fstrDYNAMIC%t_curr   = 0.0d0
         fstrDYNAMIC%t_end    = 1.0
         fstrDYNAMIC%t_delta  = 1.0
         fstrDYNAMIC%ganma    = 0.5
@@ -1384,13 +1380,6 @@ end subroutine fstr_setup_post_phys_alloc
                 P%SOLID%ESTRESS => phys%ESTRESS
                 P%SOLID%EMISES  => phys%EMISES
         end if
-
-        P%EIGEN%iluetol = svRarray(1) ! solver tolerance
-        if( P%PARAM%solution_type == kstEIGEN ) then
-            P%EIGEN%eqset = 1
-        else
-            P%EIGEN%eqset = 0
-        endif
 
         if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
                 call fstr_setup_visualize( ctrl )
@@ -2924,7 +2913,7 @@ subroutine fstr_setup_EIGEN( ctrl, counter, P )
 
         integer(kind=kint) :: rcode
 
-        rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%lcztol, P%EIGEN%lczmax)
+        rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter)
         if( rcode /= 0) call fstr_ctrl_err_stop
 
 end subroutine fstr_setup_EIGEN

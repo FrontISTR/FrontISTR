@@ -19,20 +19,19 @@ module m_fstr_main
   use fstr_solver_dynamic
   use fstr_debug_dump
   use fstr_matrix_con_contact
-  use m_fstr_freqdata
 
-  type (hecmwST_local_mesh)              :: hecMESH
-  type (hecmwST_matrix )                 :: hecMAT
+  type (hecmwST_local_mesh)             :: hecMESH
+  type (hecmwST_matrix )                :: hecMAT
   type (hecmwST_matrix )                 :: conMAT
-  type (fstr_solid )                     :: fstrSOLID
-  type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-  type (fstr_heat )                      :: fstrHEAT
-  type (lczparam)                        :: fstrEIG
-  type (fstr_dynamic )                   :: fstrDYNAMIC
-  type ( hecmwST_result_data )           :: fstrRESULT
-  type (fstr_couple )                    :: fstrCPL
-  type (fstr_freqanalysis)               :: fstrFREQ
-  character(len=HECMW_FILENAME_LEN)      :: name_ID
+  type (fstr_solid )                    :: fstrSOLID
+  type (fstrST_matrix_contact_lagrange) :: fstrMAT
+  type (fstr_heat )                     :: fstrHEAT
+  type (fstr_eigen)                     :: fstrEIG
+  type (fstr_dynamic )                  :: fstrDYNAMIC
+  type ( hecmwST_result_data )          :: fstrRESULT
+  type (fstr_couple )                   :: fstrCPL
+  type (fstr_freqanalysis)              :: fstrFREQ
+  character(len=HECMW_FILENAME_LEN)     :: name_ID
 
   contains
 
@@ -128,7 +127,7 @@ module m_fstr_main
     call fstr_nullify_fstr_param  ( fstrPR      )
     call fstr_nullify_fstr_solid  ( fstrSOLID   )
     call fstr_nullify_fstr_heat   ( fstrHEAT    )
-    call fstr_nullify_lczparam    ( fstrEIG     )
+    call fstr_nullify_fstr_eigen  ( fstrEIG     )
     call fstr_nullify_fstr_dynamic( fstrDYNAMIC )
     call fstr_nullify_fstr_couple ( fstrCPL     )
     call fstr_init_file
@@ -263,7 +262,6 @@ module m_fstr_main
     implicit none
     character(len=HECMW_FILENAME_LEN) :: cntfileNAME
 
-    ! get fstr control & setup paramters -----------
     name_ID='fstrCNT'
     call hecmw_ctrl_get_control_file( name_ID, cntfileNAME )
 
@@ -271,21 +269,15 @@ module m_fstr_main
     ! and setup parameters ...
     svRarray(:) = hecMAT%Rarray(:)
     svIarray(:) = hecMAT%Iarray(:)
+
     call fstr_setup( cntfileNAME, hecMESH, fstrPR, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
     call flush(6)
-
-    ! Timing and memory monitor initializations
-     minit = .TRUE.
-     tinit = .TRUE.
-     tenditer = .FALSE.
-
-     !call time_log( hecMESH, hecMAT, fstrEIG )
-     !call memory_log( hecMESH, hecMAT, fstrEIG )
 
   end subroutine fstr_init_condition
 
@@ -296,7 +288,6 @@ module m_fstr_main
   subroutine fstr_static_analysis
     implicit none
 
-    teachiter = .TRUE.
     if( IECHO.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank .EQ. 0) then
@@ -338,9 +329,7 @@ module m_fstr_main
       write(IMSG,*) ' ***   STAGE Eigenvalue analysis     **'
     endif
 
-    teachiter = .TRUE.
     call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
-    tenditer = .TRUE.
 
   end subroutine fstr_eigen_analysis
 
@@ -371,7 +360,6 @@ module m_fstr_main
     implicit none
 
     if( IECHO.eq.1 ) call fstr_echo(hecMESH)
-    teachiter = .TRUE.
 
     if(myrank == 0) then
        write(IMSG,*)
@@ -385,12 +373,12 @@ module m_fstr_main
     endif
 
     if( paraContactFlag ) then
-      call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
-                              ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT &
-                              ,conMAT )
+      call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+                               fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT, &
+                               conMAT )
     else
-      call fstr_solve_dynamic( hecMESH, hecMAT,fstrSOLID,fstrEIG &
-                              ,fstrDYNAMIC,fstrRESULT,fstrPR,fstrCPL,fstrFREQ,fstrMAT)
+      call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+                               fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT)
     endif
 
   end subroutine fstr_dynamic_analysis
@@ -414,16 +402,18 @@ module m_fstr_main
       write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
       write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
     endif
+
     call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-    teachiter = .TRUE.
+
     if(myrank == 0) then
       write(IMSG,*)
       write(IMSG,*) ' ***   Stage 2: Eigenvalue analysis  **'
       write(*,*)
       write(*,*) ' ***   Stage 2: Eigenvalue analysis   **'
     endif
+
     call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
-    tenditer = .TRUE.
+
     call fstr_solid_finalize( fstrSOLID )
 
   end subroutine fstr_static_eigen_analysis
@@ -435,12 +425,7 @@ module m_fstr_main
   subroutine fstr_finalize
     implicit none
 
-    close(ILOG)
-
-    if( myrank==0 ) then
-      close(ISTA)
-    endif
-    if( myrank .EQ. 0 ) then
+    if( myrank == 0 ) then
       write(IMSG,*)
       write(IMSG,*)
       write(IMSG,*)
@@ -448,11 +433,13 @@ module m_fstr_main
       write(IMSG,*) ':**            END of FSTR             **:'
       write(IMSG,*) ':========================================:'
       close(IMSG)
+      close(ISTA)
     endif
 
     call fstr_solid_finalize( fstrSOLID )
     call hecMAT_finalize( hecMAT )
 
+    close(ILOG)
     close(IDBG)
   end subroutine fstr_finalize
 

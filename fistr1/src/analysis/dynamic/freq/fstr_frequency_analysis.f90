@@ -57,7 +57,6 @@ use m_fstr
 use m_fstr_StiffMatrix
 use m_fstr_AddBC
 use fstr_matrix_con_contact
-use m_fstr_freqdata
 use m_fstr_EIG_setMASS
 use fstr_frequency_visout
 use m_hecmw2fstr_mesh_conv
@@ -66,7 +65,7 @@ implicit none
 
 contains
 
-  subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, myEIG,  &
+  subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG,  &
                                             fstrDYNAMIC, fstrRESULT, fstrPARAM, &
                                             fstrCPL, fstrFREQ, fstrMAT, restart_step_num)
 !C
@@ -74,7 +73,7 @@ contains
 !C
     type( hecmwST_local_mesh  ) :: hecMESH
     type( hecmwST_matrix      ) :: hecMAT
-    type( lczparam            ) :: myEIG
+    type( fstr_eigen            ) :: fstrEIG
     type( fstr_solid          ) :: fstrSOLID
     type( hecmwST_result_data ) :: fstrRESULT
     type( fstr_param          ) :: fstrPARAM
@@ -155,9 +154,9 @@ contains
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
     write(*,*) "calc mass matrix"
-    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, myEIG, fstrMAT)
+    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
     write(*,*) "scale eigenvector"
-    call scaleEigenVector(myEIG, ndof*numnode, nummode, freqData%eigVector)
+    call scaleEigenVector(fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
     write(*,   *) "start frequency:", f_start
     write(ilog,*) "start frequency:", f_start
@@ -676,31 +675,30 @@ contains
     return
   end subroutine
 
-  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, myEIG, fstrMAT)
+  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
   !---- args
     type(fstr_param)        ,               intent(in) :: fstrPARAM
     type(hecmwST_local_mesh),               intent(in) :: hecMESH
     type(hecmwST_matrix),                intent(inout) :: hecMAT
     type(fstr_solid),                    intent(inout) :: fstrSOLID
-    type(lczparam),                      intent(inout) :: myEIG
+    type(fstr_eigen),                      intent(inout) :: fstrEIG
     type(fstrST_matrix_contact_lagrange),intent(inout) :: fstrMAT
   !---- vals
     integer(kind=kint) :: ntotal
   !---- body
 
-    myEIG%eqset = 1
 
     fstrSOLID%dunode = 0.d0
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
-    call setMASS(IDBG, fstrSOLID, hecMESH, hecMAT, myEIG)
+    call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 
   end subroutine
 
-  subroutine scaleEigenVector(myEIG, ntotaldof, nmode, eigenvector)
+  subroutine scaleEigenVector(fstrEIG, ntotaldof, nmode, eigenvector)
   !---- args
-    type(lczparam),     intent(in) :: myEIG
+    type(fstr_eigen),     intent(in) :: fstrEIG
     integer(kind=kint), intent(in) :: ntotaldof
     integer(kind=kint), intent(in) :: nmode
     real(kind=kreal), intent(inout) :: eigenvector(:,:)
@@ -712,7 +710,7 @@ contains
     do imode=1,nmode
       mas = 0.0D0
       do idof=1,ntotaldof
-        mas = mas + myEIG%mass(idof)*eigenvector(idof,imode)**2
+        mas = mas + fstrEIG%mass(idof)*eigenvector(idof,imode)**2
       end do
       do idof=1,ntotaldof
         eigenvector(idof,imode) =  eigenvector(idof,imode) / sqrt(mas)
@@ -720,9 +718,9 @@ contains
     end do
   end subroutine
 
-  subroutine checkOrthVector(myEIG, eigenvector, imode, jmode, prod)
+  subroutine checkOrthVector(fstrEIG, eigenvector, imode, jmode, prod)
   !---- args
-    type(lczparam),     intent(in) :: myEIG
+    type(fstr_eigen),     intent(in) :: fstrEIG
     real(kind=kreal),    intent(in) :: eigenvector(:,:)
     integer(kind=kint), intent(in) :: imode
     integer(kind=kint), intent(in) :: jmode
@@ -734,7 +732,7 @@ contains
     prod = 0.0D0
 
     do idof=1, s
-      prod = prod + eigenvector(idof,imode)*myEIG%mass(idof)*eigenvector(idof,jmode)
+      prod = prod + eigenvector(idof,imode)*fstrEIG%mass(idof)*eigenvector(idof,jmode)
     end do
     return
   end subroutine

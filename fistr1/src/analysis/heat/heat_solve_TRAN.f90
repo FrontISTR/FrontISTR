@@ -142,7 +142,7 @@ module m_heat_solve_TRAN
           hecMAT%Iarray(97) = 1   !Need numerical factorization
           bup_n_dof = hecMESH%n_dof
           hecMESH%n_dof = 1
-          CALL solve_LINEQ(hecMESH,hecMAT,imsg)
+          CALL solve_LINEQ(hecMESH,hecMAT)
           hecMESH%n_dof=bup_n_dof
           write(IDBG,*) 'solve_LINEQ: OK'
           call flush(IDBG)

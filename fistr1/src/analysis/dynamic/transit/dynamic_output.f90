@@ -118,7 +118,7 @@ module m_dynamic_output
       integer(kind=kint) :: IEEmax(14), IEEmin(14), IESmax(14), IESmin(14)
       integer(kind=kint) :: i, j, k, ndof, mdof, ID_area, idx
       integer(kind=kint) :: label(6)
-      
+
       if( fstrDYNAMIC%i_step==0 ) return
       if( fstrDYNAMIC%idx_eqa==1 .and. fstrDYNAMIC%i_step>0 ) then
         idx = 2
@@ -157,7 +157,7 @@ module m_dynamic_output
       Mmax(1) = fstrSOLID%MISES(1); Mmin(1) = fstrSOLID%MISES(1)
       EMmax(1) = fstrSOLID%EMISES(1); EMmin(1) = fstrSOLID%EMISES(1)
       IMmax(1)= j; IMmin(1)= j; IEMmax(1)= j; IEMmin(1)= j
-      
+
 !C*** Show Displacement / Velosity / Acc
       do i = 1, hecMESH%nn_internal
         if(fstrSOLID%is_rot(i)==1)cycle
@@ -248,23 +248,23 @@ module m_dynamic_output
 
 
                       write(ILOG,*)    '##### Local Summary @Node    :Max/IdMax/Min/IdMin####'
-      do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',Umax(i),IUmax(i),Umin(i),IUmin(i);     end do 
-      if (ndof == 4)  write(ILOG,1009) ' //P  '           , Umax(4),IUmax(4),Umin(4),IUmin(4)      
-      do i = 1, ndof; write(ILOG,1029) ' //V',i,      '  ',Vmax(i),IVmax(i),Vmin(i),IVmin(i);     end do 
-      do i = 1, ndof; write(ILOG,1029) ' //A',i,      '  ',Amax(i),IAmax(i),Amin(i),IAmin(i);     end do 
-      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',Emax(i),IEmax(i),Emin(i),IEmin(i);     end do 
-      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',Smax(i),ISmax(i),Smin(i),ISmin(i);     end do 
+      do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',Umax(i),IUmax(i),Umin(i),IUmin(i);     end do
+      if (ndof == 4)  write(ILOG,1009) ' //P  '           , Umax(4),IUmax(4),Umin(4),IUmin(4)
+      do i = 1, ndof; write(ILOG,1029) ' //V',i,      '  ',Vmax(i),IVmax(i),Vmin(i),IVmin(i);     end do
+      do i = 1, ndof; write(ILOG,1029) ' //A',i,      '  ',Amax(i),IAmax(i),Amin(i),IAmin(i);     end do
+      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',Emax(i),IEmax(i),Emin(i),IEmin(i);     end do
+      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',Smax(i),ISmax(i),Smin(i),ISmin(i);     end do
                       write(ILOG,1009) '//SMS '           ,Mmax(1),IMmax(1),Mmin(1),IMmin(1)
                       write(ILOG,*)    '##### Local Summary @Element :Max/IdMax/Min/IdMin####'
-      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',EEmax(i),IEEmax(i),EEmin(i),IEEmin(i); end do 
-      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',ESmax(i),IESmax(i),ESmin(i),IESmin(i); end do 
+      do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',EEmax(i),IEEmax(i),EEmin(i),IEEmin(i); end do
+      do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',ESmax(i),IESmax(i),ESmin(i),IESmin(i); end do
                       write(ILOG,1009) '//SMS '           ,EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
 
       !C*** Show Summary
-      GUmax  = Umax; GUmin  = Umin; GVmax  = Vmax; GVmin  = Vmin; GAmax  = Amax; GAmin  = Amin; 
+      GUmax  = Umax; GUmin  = Umin; GVmax  = Vmax; GVmin  = Vmin; GAmax  = Amax; GAmin  = Amin;
       GEmax  = Emax; GEmin  = Emin; GEEmax = EEmax; GEEmin = EEmin;
       GSmax  = Smax; GSmin  = Smin; GESmax = ESmax; GESmin = ESmin;
-      GMmax  = Mmax; GMmin  = Mmin; GEMmax = EMmax; GEMmin = EMmin; 
+      GMmax  = Mmax; GMmin  = Mmin; GEMmax = EMmax; GEMmin = EMmin;
 
       call hecmw_allREDUCE_R(hecMESH,GUmax,ndof,hecmw_max)
       call hecmw_allREDUCE_R(hecMESH,GUmin,ndof,hecmw_min)
@@ -329,18 +329,18 @@ module m_dynamic_output
       call hecmw_allREDUCE_I(hecMESH,IEMmax,1,hecmw_max)
       call hecmw_allREDUCE_I(hecMESH,IEMmin,1,hecmw_max)
 
-      if( hecMESH%my_rank==0 ) then          
+      if( hecMESH%my_rank==0 ) then
                         write(ILOG,*)    '##### Global Summary @Node    :Max/IdMax/Min/IdMin####'
-        do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',GUmax(i),IUmax(i),GUmin(i),IUmin(i);     end do 
-        if (ndof == 4)  write(ILOG,1009) ' //P  '           ,GUmax(4),IUmax(4),GUmin(4),IUmin(4)      
-        do i = 1, ndof; write(ILOG,1029) ' //V',i,      '  ',GVmax(i),IVmax(i),GVmin(i),IVmin(i);     end do 
-        do i = 1, ndof; write(ILOG,1029) ' //A',i,      '  ',GAmax(i),IAmax(i),GAmin(i),IAmin(i);     end do 
-        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEmax(i),IEmax(i),GEmin(i),IEmin(i);     end do 
-        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GSmax(i),ISmax(i),GSmin(i),ISmin(i);     end do 
+        do i = 1, ndof; write(ILOG,1029) ' //U',i,      '  ',GUmax(i),IUmax(i),GUmin(i),IUmin(i);     end do
+        if (ndof == 4)  write(ILOG,1009) ' //P  '           ,GUmax(4),IUmax(4),GUmin(4),IUmin(4)
+        do i = 1, ndof; write(ILOG,1029) ' //V',i,      '  ',GVmax(i),IVmax(i),GVmin(i),IVmin(i);     end do
+        do i = 1, ndof; write(ILOG,1029) ' //A',i,      '  ',GAmax(i),IAmax(i),GAmin(i),IAmin(i);     end do
+        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEmax(i),IEmax(i),GEmin(i),IEmin(i);     end do
+        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GSmax(i),ISmax(i),GSmin(i),ISmin(i);     end do
                         write(ILOG,1009) '//SMS '           ,GMmax(1),IMmax(1),GMmin(1),IMmin(1)
                         write(ILOG,*)    '##### Global Summary @Element :Max/IdMax/Min/IdMin####'
-        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEEmax(i),IEEmax(i),GEEmin(i),IEEmin(i); end do 
-        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GESmax(i),IESmax(i),GESmin(i),IESmin(i); end do 
+        do i = 1, mdof; write(ILOG,1029) ' //E',label(i),' ',GEEmax(i),IEEmax(i),GEEmin(i),IEEmin(i); end do
+        do i = 1, mdof; write(ILOG,1029) ' //S',label(i),' ',GESmax(i),IESmax(i),GESmin(i),IESmin(i); end do
                         write(ILOG,1009) '//SMS '           ,GEMmax(1),IEMmax(1),GEMmin(1),IEMmin(1)
       endif
 
@@ -351,12 +351,12 @@ module m_dynamic_output
 !C================================================================C
 !C-- subroutine dynamic_output_monit
 !C================================================================C
-  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, myEIG, fstrSOLID)
+  subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     use m_fstr
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( fstr_param          ) :: fstrPARAM
     type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type ( lczparam            ) :: myEIG
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
 
     integer(kind=kint) :: idx, ii, jj, ierr, ncmp
@@ -446,7 +446,7 @@ module m_dynamic_output
            fstrDYNAMIC%kineticEnergy = 0.0d0
            do ii = 1, hecMESH%n_node*hecMESH%n_dof
              fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy &
-                        + 0.5d0 * myEIG%mass(ii) * fstrDYNAMIC%VEL(ii,idx) * fstrDYNAMIC%VEL(ii,idx)
+                        + 0.5d0 * fstrEIG%mass(ii) * fstrDYNAMIC%VEL(ii,idx) * fstrDYNAMIC%VEL(ii,idx)
            enddo
         endif
         fstrDYNAMIC%totalEnergy = fstrDYNAMIC%kineticEnergy + fstrDYNAMIC%strainEnergy

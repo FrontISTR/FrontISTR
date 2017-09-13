@@ -6,7 +6,6 @@
 
 module fstr_dynamic_nlimplicit
   use m_fstr
-  use lczparm
   use m_dynamic_output
   use m_fstr_EIG_setMASS
   use m_dynamic_mat_ass_bc_ac
@@ -27,14 +26,14 @@ module fstr_dynamic_nlimplicit
 
 !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
 
-  subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIGEN, &
+  subroutine fstr_solve_dynamic_nlimplicit(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIG, &
                                            fstrDYNAMIC,fstrRESULT,fstrPARAM,fstrCPL, restrt_step_num )
     implicit none
 !C-- global variable
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: fstrEIGEN
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM
@@ -82,7 +81,7 @@ module fstr_dynamic_nlimplicit
 
 !C-- matrix [M] lumped mass matrix
     if(fstrDYNAMIC%idx_mas == 1) then
-      call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
+      call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
 !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
@@ -108,7 +107,7 @@ module fstr_dynamic_nlimplicit
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
     fstrDYNAMIC%VEC3(:) =0.0d0
@@ -164,7 +163,7 @@ module fstr_dynamic_nlimplicit
 !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
-            hecMAT%B(j) = hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIGEN%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
+            hecMAT%B(j) = hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
                        + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
           enddo
 
@@ -208,7 +207,7 @@ module fstr_dynamic_nlimplicit
             do kk=1,ndof
               idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
               imm = ndof*(j-1) + kk
-              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIGEN%mass(imm)
+              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
             enddo
           enddo
 
@@ -242,7 +241,7 @@ module fstr_dynamic_nlimplicit
             hecMAT%Iarray(97) = 1   !Need numerical factorization
           endif
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-          call solve_LINEQ(hecMESH,hecMAT,imsg)
+          call solve_LINEQ(hecMESH,hecMAT)
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         endif
 
@@ -345,7 +344,7 @@ module fstr_dynamic_nlimplicit
         fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
 
         fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-                                    0.5d0*fstrEIGEN%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
+                                    0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
 !---  Restart info
@@ -358,7 +357,7 @@ module fstr_dynamic_nlimplicit
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
     enddo
@@ -374,7 +373,7 @@ module fstr_dynamic_nlimplicit
 
 !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
 !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
- subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIGEN   &
+ subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
                                                        ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
                                                        ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange  &
                                                        ,conMAT )
@@ -391,7 +390,7 @@ module fstr_dynamic_nlimplicit
     integer, intent(in)          :: cstep     !< current step
     type ( hecmwST_local_mesh  ) :: hecMESH
     type ( hecmwST_matrix      ) :: hecMAT
-    type ( lczparam            ) :: fstrEIGEN
+    type ( fstr_eigen            ) :: fstrEIG
     type ( fstr_solid          ) :: fstrSOLID
     type ( hecmwST_result_data ) :: fstrRESULT
     type ( fstr_param          ) :: fstrPARAM
@@ -472,7 +471,7 @@ module fstr_dynamic_nlimplicit
 !C-- lumped mass matrix
              if(fstrDYNAMIC%idx_mas == 1) then
 
-                call setMASS(IDBG,fstrSOLID,hecMESH,hecMAT,fstrEIGEN)
+                call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
 !C-- consistent mass matrix
                else if(fstrDYNAMIC%idx_mas == 2) then
@@ -488,7 +487,7 @@ module fstr_dynamic_nlimplicit
 !C-- initialize variables
 !C
       if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
-      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIGEN, fstrDYNAMIC, fstrPARAM )
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 !C
 !C
 !C-- time step loop
@@ -506,7 +505,7 @@ module fstr_dynamic_nlimplicit
 !C-- output of initial state
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
 	fstrDYNAMIC%VEC3(:) =0.d0
@@ -582,7 +581,7 @@ module fstr_dynamic_nlimplicit
 !C-- mechanical boundary condition
            call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
            do j=1, hecMESH%n_node*  hecMESH%n_dof
-             hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIGEN%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
+             hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
 		       + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
            enddo
            do j = 1 ,nn*hecMAT%NP
@@ -598,7 +597,7 @@ module fstr_dynamic_nlimplicit
            do kk=1,ndof
              idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
              imm = ndof*(j-1) + kk
-             hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIGEN%mass(imm)
+             hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
            enddo
            enddo
 
@@ -774,7 +773,7 @@ module fstr_dynamic_nlimplicit
           fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
 
           fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-                                      0.5d0*fstrEIGEN%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
+                                      0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
 !---  Restart info
@@ -788,7 +787,7 @@ module fstr_dynamic_nlimplicit
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
 !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIGEN, fstrSOLID)
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
