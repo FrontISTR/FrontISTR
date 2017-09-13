@@ -483,11 +483,43 @@ TBZ2, DEB, RPM,
  2/23 Test  #2: Static_exB_Test ..................   Passed    2.20 sec
 ~~~
 
-### 高度なオプション
+### 高度なオプション(主に開発者向け）
 
+ここからは、主に開発者向けの情報になります。
+
+#### メモリリークを検出する
+
+メモリリークを検出するためのバイナリを作成するには、
+
+~~~txt
+ % cmake -DCMAKE_BUILD_TYPE=DEBUG -DDEBUG_EXTRA=ON ..
+~~~
+
+を指定し`cmake`を実行してください。コンパイラは`gcc`が必要です。
+
+これらをONにしたバイナリを実行し、メモリリークが検出されると
+
+~~~txt
+Direct leak of 98124 byte(s) in 39 object(s) allocated from:
+    #0 0x7f63f782b8d0 in malloc (/usr/lib/x86_64-linux-gnu/libasan.so.4+0xde8d0)
+    #1 0x5641f5ade10d in __m_fstr_nodalstress_MOD_fstr_nodalstress3d .../fistr1/src/analysis/static/fstr_NodalStress.f90:36
+~~~
+
+のようなメッセージが出力されます。
+
+#### テストケースの実行
+
+作成されたバイナリが正常に実行出来ているかテストをすることが出来ます。
+通常は
+
+~~~txt
+% make test
+~~~
+
+とすることで、テストの成功・失敗を見ることが出来ますが、 
 テスト中の様子を見たり、並列にテストを実行したい場合、オプションが指定できます。
 
-#### `make test`を使う場合
+##### `make test`を使う場合
 
 上記のテストにオプションを付け加えます
 
@@ -495,7 +527,7 @@ TBZ2, DEB, RPM,
 % make test ARGS="-VV -j4 -O test_log.txt"
 ~~~
 
-#### `ctest`を使う場合
+##### `ctest`を使う場合
 
 `make test`は`Makefile`の中で`ctest`を実行しています。`ctest`は直接起動することが出来ます。
 

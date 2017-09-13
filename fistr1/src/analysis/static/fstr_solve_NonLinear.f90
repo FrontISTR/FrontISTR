@@ -61,6 +61,7 @@ module m_fstr_NonLinearMethod
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
     P = 0.0d0
+    rres = 0.0d0
     stepcnt = 0
     fstrSOLID%dunode(:) = 0.0d0
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
@@ -80,6 +81,29 @@ module m_fstr_NonLinearMethod
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
+
+      !call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, P, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+
+      if(iter == 1)then
+        if(res == 0.0d0)then
+          resb = 1.0d0
+        else
+          resb = res
+        endif
+      else
+        rres = dsqrt(res/resb)
+        if( hecMESH%my_rank == 0 ) then
+          write(*,"(a,i8,a,1pe11.4)")" iter:", iter-1, ", residual:", rres
+        endif
+        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+      endif
+
+      if( iter == 1 ) then
+        hecMAT%Iarray(97) = 2   !Force numerical factorization
+      else
+        hecMAT%Iarray(97) = 1   !Need numerical factorization
+      endif
 
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
@@ -101,23 +125,7 @@ module m_fstr_NonLinearMethod
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
-      !call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, P, tcomm)
-      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-
-      if(iter == 1)then
-        if(res == 0.0d0)then
-          resb = 1.0d0
-        else
-          resb = res
-        endif
-        if( isLinear ) exit
-      else
-        rres = dsqrt(res/resb)
-        if( hecMESH%my_rank == 0 ) then
-          write(*,"(a,i8,a,1pe11.4)")" iter:", iter-1, ", residual:", rres
-        endif
-        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-      endif
+      if( isLinear ) exit
 
       ! ----- check divergence
       if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres ) then

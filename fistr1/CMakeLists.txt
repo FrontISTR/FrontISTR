@@ -1,5 +1,4 @@
-###############################################################################
-# Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
+############################################################################### # Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
@@ -15,7 +14,7 @@ set(fistr1_SOURCES)
 #
 # Inherit definitions from fistr options
 #
-set(fistr_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS})
+set(fistr_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/hecmw1)
 set(fistr_DEFINITIONS ${FrontISTR_DEFINITIONS})
 set(fistr_LIBRARIES ${FrontISTR_LIBRARIES})
 

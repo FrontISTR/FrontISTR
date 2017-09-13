@@ -218,6 +218,18 @@ module m_utilities
            -XJ(1,1)*XJ(3,2)*XJ(2,3)
   end function Determinant
 
+    !> Compute determinant for 3*3 matrix
+  real(kind=kreal) function Determinant33( XJ )
+    real(kind=kreal) :: XJ(3,3)
+
+    Determinant33=XJ(1,1)*XJ(2,2)*XJ(3,3)               &
+           +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
+           +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
+           -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
+           -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
+           -XJ(1,1)*XJ(3,2)*XJ(2,3)
+  end function Determinant33
+
   subroutine fstr_chk_alloc( imsg, sub_name, ierr )
     use hecmw
     character(*) :: sub_name

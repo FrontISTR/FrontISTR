@@ -297,7 +297,7 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     integer(kind=kint) :: my_rank
 
-    if (isFirst .eqv. .true.) then
+    if (isFirst) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
       if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
@@ -538,7 +538,7 @@ contains
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
     if (associated(ALU)) deallocate(ALU)
-    if (nthreads > 1) then
+    if (nthreads >= 1) then
       if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)
       if (associated(AU)) deallocate(AU)

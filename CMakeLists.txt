@@ -30,11 +30,6 @@ include(CMakeDetermineFortranCompiler)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 ###############################################################
-# Add Fortran module path
-###############################################################
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod)
-
-###############################################################
 # Initialize variable of definitions, link libraries, includes
 ###############################################################
 set(FrontISTR_DEFINITIONS)
@@ -64,6 +59,14 @@ if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
         "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
       set(CMAKE_Fortran_FLAGS_DEBUG
         "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -Wextra -fbounds-check -fbacktrace")
+      if(${DEBUG_EXTRA})
+        set(CMAKE_C_FLAGS_DEBUG
+          "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address")
+        set(CMAKE_CXX_FLAGS_DEBUG
+          "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+        set(CMAKE_Fortran_FLAGS_DEBUG
+          "${CMAKE_Fortran_FLAGS_DEBUG} -fsanitize=address")
+      endif()
     # Intel Compiler
     elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
       set(CMAKE_C_FLAGS_DEBUG
@@ -147,6 +150,7 @@ option(PARMETIS_VER_3 "uses METIS-3" OFF)
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
+option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
 ###################

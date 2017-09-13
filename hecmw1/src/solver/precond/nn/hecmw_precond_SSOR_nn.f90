@@ -168,7 +168,7 @@ contains
           do j = 1, NDOF
             ALU(NDOF2*(ii-1)+NDOF*(i-1)+j) = ALU(NDOF2*(ii-1)+NDOF*(i-1)+j) + hecMAT%cmat%pair(k)%val(i, j)
           end do
-        end do 
+        end do
       enddo
     endif
 
@@ -180,7 +180,7 @@ contains
           ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
           if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
         end do
-      end do 
+      end do
       do k= 1, NDOF
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
         do i= k+1, NDOF
@@ -197,7 +197,7 @@ contains
         do j =  1, NDOF
           ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)= ALUtmp(i,j)
         end do
-      end do 
+      end do
     enddo
 !$omp end do
 !$omp end parallel
@@ -230,7 +230,7 @@ contains
     integer(kind=kint) :: my_rank
 
     NDOF2=NDOF*NDOF
-    if (isFirst .eqv. .true.) then
+    if (isFirst) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
       if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
@@ -296,19 +296,19 @@ contains
           iold = perm(i)
           do idof = 1, NDOF
             SW(idof) = ZP(NDOF*(iold-1)+idof)
-          end do 
+          end do
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
             k= itemL(j)
             do idof = 1, NDOF
               X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
+            end do
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 SW(idof) = SW(idof) - AL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+              end do
+            end do
           enddo ! j
 
           if (NContact.ne.0) then
@@ -318,12 +318,12 @@ contains
              k= itemCL(j)
               do idof = 1, NDOF
                 X(idof) = ZP(NDOF*(k-1)+idof)
-              end do 
+              end do
               do idof = 1, NDOF
                 do jdof = 1, NDOF
                   SW(idof) = SW(idof) - CAL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-                end do 
-              end do 
+                end do
+              end do
             enddo ! j
           endif
 
@@ -331,12 +331,12 @@ contains
           do idof = 2,NDOF
             do jdof = 1, idof-1
                X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
-            end do 
+            end do
           end do
           do idof = NDOF, 1, -1
             do jdof = NDOF, idof+1, -1
-              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)          
-            end do 
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
+            end do
             X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
           end do
           ZP(NDOF*(iold-1)+1:NDOF*(iold-1)+NDOF) = X(1:NDOF)
@@ -363,12 +363,12 @@ contains
             k= itemU(j)
             do idof = 1, NDOF
               X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
+            end do
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 SW(idof) = SW(idof) + AU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+              end do
+            end do
           enddo ! j
 
           if (NContact.gt.0) then
@@ -378,12 +378,12 @@ contains
               k= itemCU(j)
             do idof = 1, NDOF
               X(idof) = ZP(NDOF*(k-1)+idof)
-            end do 
+            end do
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 SW(idof) = SW(idof) + CAU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+              end do
+            end do
             enddo ! j
           endif
 
@@ -391,18 +391,18 @@ contains
           do idof = 2, NDOF
             do k = 1,idof-1
                X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
-            end do 
+            end do
           end do
           do idof = NDOF, 1, -1
             do k = NDOF, idof+1, -1
-              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)          
-            end do 
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
+            end do
             X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
           end do
           iold = perm(i)
           do idof = 1, NDOF
             ZP(NDOF*(iold-1)+idof) = ZP(NDOF*(iold-1)+idof) - X(idof)
-          end do 
+          end do
         enddo ! i
       enddo ! blockIndex
 !$omp end do
@@ -425,7 +425,7 @@ contains
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
     if (associated(ALU)) deallocate(ALU)
-    if (nthreads > 1) then
+    if (nthreads >= 1) then
       if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)
       if (associated(AU)) deallocate(AU)
