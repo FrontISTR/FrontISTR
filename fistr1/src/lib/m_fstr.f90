@@ -72,6 +72,7 @@ public
         integer(kind=kint),parameter :: kel361FI     =  1
         integer(kind=kint),parameter :: kel361BBAR   =  2
         integer(kind=kint),parameter :: kel361IC     =  3
+        integer(kind=kint),parameter :: kel361FBAR   =  4
 
 !C
 !C-- PARALLEL EXECUTION
