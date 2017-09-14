@@ -73,7 +73,7 @@ contains
           iunit = iunitS + fstrDYNAMIC%dynamic_IW4
           write(fname,'(a,i0,a)') trim(header)//'dyna_disp_',ing,'.txt'
           if(fstrDYNAMIC%restart_nout < 0 ) then
-            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+            OPEN(iunit,FILE=fname, position = 'append', iostat=ierror)
           else
             OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
           endif
@@ -85,7 +85,7 @@ contains
           iunit = iunitS + fstrDYNAMIC%dynamic_IW5
           write(fname,'(a,i0,a)') trim(header)//'dyna_velo_',ing,'.txt'
           if(fstrDYNAMIC%restart_nout < 0 ) then
-            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+            OPEN(iunit,FILE=fname, position = 'append', iostat=ierror)
           else
             OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
           endif
@@ -97,7 +97,7 @@ contains
           iunit = iunitS + fstrDYNAMIC%dynamic_IW6
           write(fname,'(a,i0,a)') trim(header)//'dyna_acce_',ing,'.txt'
           if(fstrDYNAMIC%restart_nout < 0 ) then
-            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+            OPEN(iunit,FILE=fname, position = 'append', iostat=ierror)
           else
             OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
           endif
@@ -109,7 +109,7 @@ contains
           iunit = iunitS + fstrDYNAMIC%dynamic_IW8
           write(fname,'(a,i0,a)') trim(header)//'dyna_strain_',ing,'.txt'
           if(fstrDYNAMIC%restart_nout < 0 ) then
-            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+            OPEN(iunit,FILE=fname, position = 'append', iostat=ierror)
           else
             OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
           endif
@@ -121,7 +121,7 @@ contains
           iunit = iunitS + fstrDYNAMIC%dynamic_IW9
           write(fname,'(a,i0,a)') trim(header)//'dyna_stress_',ing,'.txt'
           if(fstrDYNAMIC%restart_nout < 0 ) then
-            OPEN(iunit,FILE=fname, access = 'append', iostat=ierror)
+            OPEN(iunit,FILE=fname, position = 'append', iostat=ierror)
           else
             OPEN(iunit,FILE=fname, status = 'replace', iostat=ierror)
           endif
