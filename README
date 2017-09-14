@@ -2,7 +2,7 @@
 
   README of FrontISTR on HEC-MW (in English)
 
-  2016.07.22  Version 4.5
+  2017.09.14  Version 4.6
 
   FrontISTR Forum, The University of Tokyo
 
@@ -30,8 +30,8 @@
                               : installation manual for FrontISTR
   doc/FrontISTR_tutorial_guide_en.pdf
                               : tutorial guide for FrontISTR
-  doc/FrontISTR_user_manual_Ver37_en.pdf
-                              : user's manual for FrontISTR Ver.3.7
+  doc/FrontISTR_user_manual_Ver38_en.pdf
+                              : user's manual for FrontISTR Ver.3.8
   doc/FrontISTR_user_manual_Ver45_en.pdf
                               : user's manual for FrontISTR Ver.4.5
 
@@ -41,11 +41,11 @@
 
   fistr/                      : starter program
 
-  fisrt1/                     : FrontISTR Ver.3.7
+  fisrt1/                     : FrontISTR Ver.3.8
 
   fistr2/                     : FrontISTR Ver.4.5
 
-  hecmw1/                     : HEC-MW Ver.3.7
+  hecmw1/                     : HEC-MW Ver.3.8
 
   hecmw2/                     : HEC-MW Ver.4.5
 
