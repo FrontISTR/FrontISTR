@@ -3,6 +3,11 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
+/*
+ * FSTR result 出力ファイルを1つのファイルに統合する。
+ * 計算に用いたコントロールファイル、メッシュデータが必要
+ */
+
 #include "fstr_rmerge_util.h"
 
 FILE* log_fp;
