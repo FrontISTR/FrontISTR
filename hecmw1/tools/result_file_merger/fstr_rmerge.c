@@ -3,6 +3,11 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
+/*
+ * FSTR result 出力ファイルを1つのファイルに統合する。
+ * 計算に用いたコントロールファイル、メッシュデータが必要
+ */
+
 #include "fstr_rmerge_util.h"
 
 FILE* log_fp;
@@ -162,10 +167,8 @@ int main(int argc, char** argv )
 		fprintf( log_fp, "step:%d .. reading .. ", step );
 		res = fstr_get_all_result( "fstrRES", step, area_n, refine );
 		if( !res ){
-			fprintf( stderr, "ERROR : Cannot create result structure.\n" );
-			fstr_free_glt( glt );
-			fstr_free_glmesh( glmesh );
-			exit( -1 );
+			fstr_free_result( res, area_n );
+			continue;
 		}
 		fprintf( log_fp, "end\n" );
 

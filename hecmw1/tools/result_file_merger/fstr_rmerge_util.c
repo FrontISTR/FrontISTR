@@ -3,6 +3,10 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
+/**
+ * @brief 並列計算された結果を読込み処理するためのユーティリティ
+ */
+
 #include "fstr_rmerge_util.h"
 
 FILE* log_fp;
@@ -21,9 +25,9 @@ void out_log( const char* fmt, ... )
 }
 
 
-/*****************************************************************************/
-/* ??ʬ?????????????                                                   */
-/*****************************************************************************/
+/**
+ * @brief 全分散メッシュの読込み
+ */
 
 static
 int get_dist_fname( char* name_ID, char* fheader, int* fg_single, int* refine, int irank )
@@ -74,6 +78,10 @@ int get_area_n( char* fheader )
 	}
 }
 
+/**
+ * @brief 全分散メッシュの読込み
+ */
+
 struct hecmwST_local_mesh** fstr_get_all_local_mesh( char* name_ID, int* area_number, int* refine )
 {
 	int i;
@@ -119,9 +127,9 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh( char* name_ID, int* area_nu
 }
 
 
-/*****************************************************************************/
-/* ????????                                                            */
-/*****************************************************************************/
+/**
+ * @brief メッシュの削除
+ */
 
 void fstr_free_mesh( struct hecmwST_local_mesh** mesh, int area_n )
 {
@@ -137,9 +145,9 @@ void fstr_free_mesh( struct hecmwST_local_mesh** mesh, int area_n )
 }
 
 
-/*****************************************************************************/
-/* ???ƥå׿????٤??ե?????¸?ߤ???٤?                              */
-/*****************************************************************************/
+/**
+ * @brief ステップ数を調べる(ファイルの存在を調べる)
+ */
 
 int fstr_get_step_n( char* name_ID )
 {
@@ -176,9 +184,9 @@ int fstr_get_step_n( char* name_ID )
 }
 
 
-/*****************************************************************************/
-/* ???ƥåפ???????????ɤ߹???                                         */
-/*****************************************************************************/
+/**
+ * @brief ステップの全領域データの読み込み
+ */
 
 fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int refine )
 {
@@ -321,9 +329,9 @@ fstr_res_info** fstr_get_all_result( char* name_ID, int step, int area_n, int re
 }
 
 
-/*****************************************************************************/
-/* ???ƥåפ??????????η?                                              */
-/*****************************************************************************/
+/**
+ * @brief ステップの全領域データの結合
+ */
 
 struct hecmwST_result_data* fstr_all_result( fstr_glt* glt, fstr_res_info** res, int refine )
 {
@@ -386,9 +394,9 @@ struct hecmwST_result_data* fstr_all_result( fstr_glt* glt, fstr_res_info** res,
 }
 
 
-/*****************************************************************************/
-/* fstr_res_info ?κ?                                                      */
-/*****************************************************************************/
+/**
+ * @brief fstr_res_info の削除
+ */
 
 void fstr_free_result( fstr_res_info** res, int area_n )
 {
@@ -407,9 +415,9 @@ void fstr_free_result( fstr_res_info** res, int area_n )
 }
 
 
-/*****************************************************************************/
-/* ??????Х???????롢???????ơ??֥?fstr_glt ?κ??                  */
-/*****************************************************************************/
+/**
+ * @brief グローバルとローカル、所属領域のテーブル fstr_glt の作成
+ */
 
 static int cmp_global_glt( const fstr_gl_rec* g1, const fstr_gl_rec* g2)
 {
@@ -481,9 +489,9 @@ fstr_glt* fstr_create_glt( struct hecmwST_local_mesh** mesh, int area_n )
 }
 
 
-/*****************************************************************************/
-/* fstr_glt ?κ?                                                           */
-/*****************************************************************************/
+/**
+ * @brief fstr_glt の削除
+ */
 
 void fstr_free_glt( fstr_glt* glt )
 {
@@ -496,9 +504,9 @@ void fstr_free_glt( fstr_glt* glt )
 }
 
 
-/*****************************************************************************/
-/* ñ??ΰ??å??????                                                    */
-/*****************************************************************************/
+/**
+ * @brief 単一領域メッシュの作成
+ */
 
 struct hecmwST_local_mesh* fstr_create_glmesh( fstr_glt* glt )
 {
@@ -523,9 +531,9 @@ struct hecmwST_local_mesh* fstr_create_glmesh( fstr_glt* glt )
 }
 
 
-/*****************************************************************************/
-/* ñ??ΰ??å?????                                                    */
-/*****************************************************************************/
+/**
+ * @brief 単一領域メッシュの削除
+ */
 
 void fstr_free_glmesh( struct hecmwST_local_mesh* mesh )
 {
