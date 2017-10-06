@@ -15,6 +15,7 @@ contains
     use hecmw_solver_direct_parallel
     use hecmw_solver_direct_MUMPS
     use hecmw_solver_direct_clusterMKL
+    use hecmw_matrix_misc
     implicit none
 
     type (hecmwST_matrix), target :: hecMAT
@@ -37,6 +38,9 @@ contains
         !* Flag to activate numeric  factorization: 1(yes) 0(no)  hecMESH%Iarray(97)
 
         if (hecMAT%Iarray(97) .gt. 1) hecMAT%Iarray(97)=1
+
+        call hecmw_mat_set_flag_converged(hecMAT, 0)
+        call hecmw_mat_set_flag_diverged(hecMAT, 0)
 
         if (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
@@ -64,6 +68,9 @@ contains
             write(*,"(a)")'### Relative residual exceeded 1.0d-8---Direct Solver### '
             !            stop
           endif
+        endif
+        if (resid < hecmw_mat_get_resid(hecMAT)) then
+          call hecmw_mat_set_flag_converged(hecMAT, 1)
         endif
         !C
     end select

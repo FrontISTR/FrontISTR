@@ -115,6 +115,8 @@ contains
     error=0
     !! Auto Sigma_diag loop
     do
+      call hecmw_mat_set_flag_converged(hecTKT, 0)
+      call hecmw_mat_set_flag_diverged(hecTKT, 0)
       if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, SIGMA_DIAG)
 
       call hecmw_matvec_clear_timer()
@@ -139,14 +141,17 @@ contains
           call hecmw_solve_error (hecMESH, error)
       end select
 
-      if (  (error.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .or. error.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) .and. &
-          (PRECOND.ge.10 .and. PRECOND.lt.20) .and. auto_sigma_diag.eq.1 .and. SIGMA_DIAG.lt.2.d0) then
-        SIGMA_DIAG = SIGMA_DIAG + 0.1
-        if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
-      else
-        if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
-        exit
+      if (error==HECMW_SOLVER_ERROR_DIVERGE_PC .or. error==HECMW_SOLVER_ERROR_DIVERGE_MAT) then
+        call hecmw_mat_set_flag_diverged(hecTKT, 1)
+        if ((PRECOND>=10 .and. PRECOND<20) .and. auto_sigma_diag==1 .and. SIGMA_DIAG<2.d0) then
+          SIGMA_DIAG = SIGMA_DIAG + 0.1
+          if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
+          cycle
+        endif
       endif
+
+      if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
+      exit
     enddo
 
     if (error.ne.0) then
@@ -157,6 +162,7 @@ contains
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
       write(*,"(a,1pe12.5)")'### Relative residual =', resid2
     endif
+    if (resid2 < hecmw_mat_get_resid(hecTKT)) call hecmw_mat_set_flag_converged(hecTKT, 1)
 
     call hecmw_mat_dump_solution(hecTKT)
     call hecmw_matvec_unset_async

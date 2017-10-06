@@ -63,6 +63,11 @@ module hecmw_matrix_misc
   public :: hecmw_mat_set_solver_type
   public :: hecmw_mat_get_solver_type
 
+  public :: hecmw_mat_set_flag_converged
+  public :: hecmw_mat_get_flag_converged
+  public :: hecmw_mat_set_flag_diverged
+  public :: hecmw_mat_get_flag_diverged
+
   public :: hecmw_mat_set_resid
   public :: hecmw_mat_get_resid
   public :: hecmw_mat_set_sigma_diag
@@ -101,6 +106,9 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_FLAG_NUMFACT       = 97
   integer, parameter :: IDX_I_FLAG_SYMBFACT      = 98
   integer, parameter :: IDX_I_SOLVER_TYPE        = 99
+
+  integer, parameter :: IDX_I_FLAG_CONVERGED     = 81
+  integer, parameter :: IDX_I_FLAG_DIVERGED      = 82
 
   integer, parameter :: IDX_R_RESID      = 1
   integer, parameter :: IDX_R_SIGMA_DIAG = 2
@@ -513,6 +521,30 @@ contains
     integer(kind=kint) :: solver_type
     hecMAT%Iarray(IDX_I_SOLVER_TYPE) = solver_type
   end subroutine hecmw_mat_set_solver_type
+
+  subroutine hecmw_mat_set_flag_converged( hecMAT, flag_converged )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: flag_converged
+    hecMAT%Iarray(IDX_I_FLAG_CONVERGED) = flag_converged
+  end subroutine hecmw_mat_set_flag_converged
+
+  function hecmw_mat_get_flag_converged( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_flag_converged
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_flag_converged = hecMAT%Iarray(IDX_I_FLAG_CONVERGED)
+  end function hecmw_mat_get_flag_converged
+
+  subroutine hecmw_mat_set_flag_diverged( hecMAT, flag_diverged )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: flag_diverged
+    hecMAT%Iarray(IDX_I_FLAG_DIVERGED) = flag_diverged
+  end subroutine hecmw_mat_set_flag_diverged
+
+  function hecmw_mat_get_flag_diverged( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_flag_diverged
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_flag_diverged = hecMAT%Iarray(IDX_I_FLAG_DIVERGED)
+  end function hecmw_mat_get_flag_diverged
 
   subroutine hecmw_mat_set_resid( hecMAT, resid )
     type(hecmwST_matrix) :: hecMAT

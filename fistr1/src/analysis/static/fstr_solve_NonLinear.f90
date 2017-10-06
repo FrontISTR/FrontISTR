@@ -120,8 +120,10 @@ contains
       if( hecMESH%my_rank == 0 ) then
         write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
       endif
-      if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-      if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
+      if( hecmw_mat_get_flag_converged(hecMAT) == kYES ) then
+        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+        if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
+      endif
 
       ! ----- check divergence
       if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres ) then
