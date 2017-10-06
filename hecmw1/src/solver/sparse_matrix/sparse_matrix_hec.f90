@@ -40,6 +40,7 @@ contains
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
     call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF)
+    spMAT%iterlog = hecMAT%Iarray(21)
     spMAT%timelog = hecMAT%Iarray(22)
     call sparse_matrix_hec_set_prof(spMAT, hecMAT)
   end subroutine sparse_matrix_hec_init_prof

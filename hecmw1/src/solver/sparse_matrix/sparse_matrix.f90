@@ -46,6 +46,7 @@ module m_sparse_matrix
     integer(kind=kint), pointer :: N_COUNTS(:) => null()
     integer(kind=kint), pointer :: DISPLS(:) => null()
     integer(kind=kint), pointer :: conv_ext(:) => null()
+    integer(kind=kint) :: iterlog
     integer(kind=kint) :: timelog
     logical :: is_initialized = .false.
   end type sparse_matrix
@@ -258,6 +259,7 @@ contains
     spMAT%N_COUNTS => null()
     spMAT%DISPLS => null()
     spMAT%conv_ext => null()
+    spMAT%iterlog = 0
     spMAT%timelog = 0
   end subroutine sparse_matrix_clear
 
