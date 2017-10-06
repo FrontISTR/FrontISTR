@@ -104,7 +104,7 @@ contains
     integer(kind=kint), intent(in) :: I
     real(kind=kreal), intent(in) :: H(:,:)
 
-#ifdef WITH_LAPACK
+#ifdef HECMW_WITH_LAPACK
     ! character(len=1) :: JOBU, JOBVT
     character(len=1) :: JOBZ
     integer(kind=kint) :: N, LDH, LDZ=1, LWORK, INFO
