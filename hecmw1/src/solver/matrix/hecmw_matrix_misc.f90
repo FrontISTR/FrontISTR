@@ -9,6 +9,106 @@ module hecmw_matrix_misc
   use m_hecmw_comm_f
   implicit none
 
+  private
+  public :: hecmw_mat_clear
+  public :: hecmw_mat_clear_b
+  public :: hecmw_mat_init
+  public :: hecmw_mat_finalize
+  public :: hecmw_mat_copy_profile
+
+  public :: hecmw_mat_set_iter
+  public :: hecmw_mat_get_iter
+  public :: hecmw_mat_set_method
+  public :: hecmw_mat_get_method
+  public :: hecmw_mat_set_precond
+  public :: hecmw_mat_get_precond
+  public :: hecmw_mat_set_nset
+  public :: hecmw_mat_get_nset
+  public :: hecmw_mat_set_iterpremax
+  public :: hecmw_mat_get_iterpremax
+  public :: hecmw_mat_set_nrest
+  public :: hecmw_mat_get_nrest
+  public :: hecmw_mat_set_scaling
+  public :: hecmw_mat_get_scaling
+  public :: hecmw_mat_set_penalized
+  public :: hecmw_mat_get_penalized
+  public :: hecmw_mat_set_penalized_b
+  public :: hecmw_mat_get_penalized_b
+  public :: hecmw_mat_set_mpc_method
+  public :: hecmw_mat_get_mpc_method
+  public :: hecmw_mat_set_estcond
+  public :: hecmw_mat_get_estcond
+  public :: hecmw_mat_set_iterlog
+  public :: hecmw_mat_get_iterlog
+  public :: hecmw_mat_set_timelog
+  public :: hecmw_mat_get_timelog
+  public :: hecmw_mat_set_dump
+  public :: hecmw_mat_get_dump
+  public :: hecmw_mat_set_dump_exit
+  public :: hecmw_mat_get_dump_exit
+  public :: hecmw_mat_set_usejad
+  public :: hecmw_mat_get_usejad
+  public :: hecmw_mat_set_ncolor_in
+  public :: hecmw_mat_get_ncolor_in
+  public :: hecmw_mat_set_maxrecycle_precond
+  public :: hecmw_mat_get_maxrecycle_precond
+  public :: hecmw_mat_get_nrecycle_precond
+  public :: hecmw_mat_reset_nrecycle_precond
+  public :: hecmw_mat_incr_nrecycle_precond
+  public :: hecmw_mat_set_flag_numfact
+  public :: hecmw_mat_get_flag_numfact
+  public :: hecmw_mat_set_flag_symbfact
+  public :: hecmw_mat_get_flag_symbfact
+  public :: hecmw_mat_clear_flag_symbfact
+  public :: hecmw_mat_set_solver_type
+  public :: hecmw_mat_get_solver_type
+
+  public :: hecmw_mat_set_resid
+  public :: hecmw_mat_get_resid
+  public :: hecmw_mat_set_sigma_diag
+  public :: hecmw_mat_get_sigma_diag
+  public :: hecmw_mat_set_sigma
+  public :: hecmw_mat_get_sigma
+  public :: hecmw_mat_set_thresh
+  public :: hecmw_mat_get_thresh
+  public :: hecmw_mat_set_filter
+  public :: hecmw_mat_get_filter
+  public :: hecmw_mat_set_penalty
+  public :: hecmw_mat_get_penalty
+
+  public :: hecmw_mat_diag_max
+  public :: hecmw_mat_recycle_precond_setting
+
+  integer, parameter :: IDX_I_ITER               = 1
+  integer, parameter :: IDX_I_METHOD             = 2
+  integer, parameter :: IDX_I_PRECOND            = 3
+  integer, parameter :: IDX_I_NSET               = 4
+  integer, parameter :: IDX_I_ITERPREMAX         = 5
+  integer, parameter :: IDX_I_NREST              = 6
+  integer, parameter :: IDX_I_SCALING            = 7
+  integer, parameter :: IDX_I_PENALIZED          = 11
+  integer, parameter :: IDX_I_PENALIZED_B        = 12
+  integer, parameter :: IDX_I_MPC_METHOD         = 13
+  integer, parameter :: IDX_I_ESTCOND            = 14
+  integer, parameter :: IDX_I_ITERLOG            = 21
+  integer, parameter :: IDX_I_TIMELOG            = 22
+  integer, parameter :: IDX_I_DUMP               = 31
+  integer, parameter :: IDX_I_DUMP_EXIT          = 32
+  integer, parameter :: IDX_I_USEJAD             = 33
+  integer, parameter :: IDX_I_NCOLOR_IN          = 34
+  integer, parameter :: IDX_I_MAXRECYCLE_PRECOND = 35
+  integer, parameter :: IDX_I_NRECYCLE_PRECOND   = 96
+  integer, parameter :: IDX_I_FLAG_NUMFACT       = 97
+  integer, parameter :: IDX_I_FLAG_SYMBFACT      = 98
+  integer, parameter :: IDX_I_SOLVER_TYPE        = 99
+
+  integer, parameter :: IDX_R_RESID      = 1
+  integer, parameter :: IDX_R_SIGMA_DIAG = 2
+  integer, parameter :: IDX_R_SIGMA      = 3
+  integer, parameter :: IDX_R_THRESH     = 4
+  integer, parameter :: IDX_R_FILTER     = 5
+  integer, parameter :: IDX_R_PENALTY    = 11
+
 contains
 
   subroutine hecmw_mat_clear( hecMAT )
@@ -117,56 +217,56 @@ contains
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iter
 
-    hecMAT%Iarray(1) = iter
+    hecMAT%Iarray(IDX_I_ITER) = iter
   end subroutine hecmw_mat_set_iter
 
   function hecmw_mat_get_iter( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_iter
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_iter = hecMAT%Iarray(1)
+    hecmw_mat_get_iter = hecMAT%Iarray(IDX_I_ITER)
   end function hecmw_mat_get_iter
 
   subroutine hecmw_mat_set_method( hecMAT, method )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: method
 
-    hecMAT%Iarray(2) = method
+    hecMAT%Iarray(IDX_I_METHOD) = method
   end subroutine hecmw_mat_set_method
 
   function hecmw_mat_get_method( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_method
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_method = hecMAT%Iarray(2)
+    hecmw_mat_get_method = hecMAT%Iarray(IDX_I_METHOD)
   end function hecmw_mat_get_method
 
   subroutine hecmw_mat_set_precond( hecMAT, precond )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: precond
 
-    hecMAT%Iarray(3) = precond
+    hecMAT%Iarray(IDX_I_PRECOND) = precond
   end subroutine hecmw_mat_set_precond
 
   function hecmw_mat_get_precond( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_precond
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_precond = hecMAT%Iarray(3)
+    hecmw_mat_get_precond = hecMAT%Iarray(IDX_I_PRECOND)
   end function hecmw_mat_get_precond
 
   subroutine hecmw_mat_set_nset( hecMAT, nset )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: nset
 
-    hecMAT%Iarray(4) = nset
+    hecMAT%Iarray(IDX_I_NSET) = nset
   end subroutine hecmw_mat_set_nset
 
   function hecmw_mat_get_nset( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_nset
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_nset = hecMAT%Iarray(4)
+    hecmw_mat_get_nset = hecMAT%Iarray(IDX_I_NSET)
   end function hecmw_mat_get_nset
 
   subroutine hecmw_mat_set_iterpremax( hecMAT, iterpremax )
@@ -176,256 +276,256 @@ contains
     if (iterpremax.lt.0) iterpremax= 0
     if (iterpremax.gt.4) iterpremax= 4
 
-    hecMAT%Iarray(5) = iterpremax
+    hecMAT%Iarray(IDX_I_ITERPREMAX) = iterpremax
   end subroutine hecmw_mat_set_iterpremax
 
   function hecmw_mat_get_iterPREmax( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_iterPREmax
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_iterPREmax = hecMAT%Iarray(5)
+    hecmw_mat_get_iterPREmax = hecMAT%Iarray(IDX_I_ITERPREMAX)
   end function hecmw_mat_get_iterPREmax
 
   subroutine hecmw_mat_set_nrest( hecMAT, nrest )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: nrest
 
-    hecMAT%Iarray(6) = nrest
+    hecMAT%Iarray(IDX_I_NREST) = nrest
   end subroutine hecmw_mat_set_nrest
 
   function hecmw_mat_get_nrest( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_nrest
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_nrest = hecMAT%Iarray(6)
+    hecmw_mat_get_nrest = hecMAT%Iarray(IDX_I_NREST)
   end function hecmw_mat_get_nrest
 
   subroutine hecmw_mat_set_scaling( hecMAT, scaling )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: scaling
 
-    hecMAT%Iarray(7) = scaling
+    hecMAT%Iarray(IDX_I_SCALING) = scaling
   end subroutine hecmw_mat_set_scaling
 
   function hecmw_mat_get_scaling( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_scaling
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_scaling = hecMAT%Iarray(7)
+    hecmw_mat_get_scaling = hecMAT%Iarray(IDX_I_SCALING)
   end function hecmw_mat_get_scaling
 
   subroutine hecmw_mat_set_penalized( hecMAT, penalized )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: penalized
 
-    hecMAT%Iarray(11) = penalized
+    hecMAT%Iarray(IDX_I_PENALIZED) = penalized
   end subroutine hecmw_mat_set_penalized
 
   function hecmw_mat_get_penalized( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_penalized
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_penalized = hecMAT%Iarray(11)
+    hecmw_mat_get_penalized = hecMAT%Iarray(IDX_I_PENALIZED)
   end function hecmw_mat_get_penalized
 
   subroutine hecmw_mat_set_penalized_b( hecMAT, penalized_b )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: penalized_b
 
-    hecMAT%Iarray(12) = penalized_b
+    hecMAT%Iarray(IDX_I_PENALIZED_B) = penalized_b
   end subroutine hecmw_mat_set_penalized_b
 
   function hecmw_mat_get_penalized_b( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_penalized_b
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_penalized_b = hecMAT%Iarray(12)
+    hecmw_mat_get_penalized_b = hecMAT%Iarray(IDX_I_PENALIZED_B)
   end function hecmw_mat_get_penalized_b
 
   subroutine hecmw_mat_set_mpc_method( hecMAT, mpc_method )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: mpc_method
 
-    hecMAT%Iarray(13) = mpc_method
+    hecMAT%Iarray(IDX_I_MPC_METHOD) = mpc_method
   end subroutine hecmw_mat_set_mpc_method
 
   function hecmw_mat_get_mpc_method( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_mpc_method
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_mpc_method = hecMAT%Iarray(13)
+    hecmw_mat_get_mpc_method = hecMAT%Iarray(IDX_I_MPC_METHOD)
   end function hecmw_mat_get_mpc_method
 
   function hecmw_mat_get_estcond( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_estcond
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_estcond = hecMAT%Iarray(14)
+    hecmw_mat_get_estcond = hecMAT%Iarray(IDX_I_ESTCOND)
   end function hecmw_mat_get_estcond
 
   subroutine hecmw_mat_set_estcond( hecMAT, estcond )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: estcond
-    hecMAT%Iarray(14) = estcond
+    hecMAT%Iarray(IDX_I_ESTCOND) = estcond
   end subroutine hecmw_mat_set_estcond
 
   subroutine hecmw_mat_set_iterlog( hecMAT, iterlog )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterlog
 
-    hecMAT%Iarray(21) = iterlog
+    hecMAT%Iarray(IDX_I_ITERLOG) = iterlog
   end subroutine hecmw_mat_set_iterlog
 
   function hecmw_mat_get_iterlog( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_iterlog
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_iterlog = hecMAT%Iarray(21)
+    hecmw_mat_get_iterlog = hecMAT%Iarray(IDX_I_ITERLOG)
   end function hecmw_mat_get_iterlog
 
   subroutine hecmw_mat_set_timelog( hecMAT, timelog )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: timelog
 
-    hecMAT%Iarray(22) = timelog
+    hecMAT%Iarray(IDX_I_TIMELOG) = timelog
   end subroutine hecmw_mat_set_timelog
 
   function hecmw_mat_get_timelog( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_timelog
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_timelog = hecMAT%Iarray(22)
+    hecmw_mat_get_timelog = hecMAT%Iarray(IDX_I_TIMELOG)
   end function hecmw_mat_get_timelog
 
   function hecmw_mat_get_dump( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_dump
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_dump = hecMAT%Iarray(31)
+    hecmw_mat_get_dump = hecMAT%Iarray(IDX_I_DUMP)
   end function hecmw_mat_get_dump
 
   subroutine hecmw_mat_set_dump( hecMAT, dump_type )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: dump_type
-    hecMAT%Iarray(31) = dump_type
+    hecMAT%Iarray(IDX_I_DUMP) = dump_type
   end subroutine hecmw_mat_set_dump
 
   function hecmw_mat_get_dump_exit( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_dump_exit
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_dump_exit = hecMAT%Iarray(32)
+    hecmw_mat_get_dump_exit = hecMAT%Iarray(IDX_I_DUMP_EXIT)
   end function hecmw_mat_get_dump_exit
 
   subroutine hecmw_mat_set_dump_exit( hecMAT, dump_exit )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: dump_exit
-    hecMAT%Iarray(32) = dump_exit
+    hecMAT%Iarray(IDX_I_DUMP_EXIT) = dump_exit
   end subroutine hecmw_mat_set_dump_exit
 
   function hecmw_mat_get_usejad( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_usejad
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_usejad = hecMAT%Iarray(33)
+    hecmw_mat_get_usejad = hecMAT%Iarray(IDX_I_USEJAD)
   end function hecmw_mat_get_usejad
 
   subroutine hecmw_mat_set_usejad( hecMAT, usejad )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: usejad
-    hecMAT%Iarray(33) = usejad
+    hecMAT%Iarray(IDX_I_USEJAD) = usejad
   end subroutine hecmw_mat_set_usejad
 
   function hecmw_mat_get_ncolor_in( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_ncolor_in
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_ncolor_in = hecMAT%Iarray(34)
+    hecmw_mat_get_ncolor_in = hecMAT%Iarray(IDX_I_NCOLOR_IN)
   end function hecmw_mat_get_ncolor_in
 
   subroutine hecmw_mat_set_ncolor_in( hecMAT, ncolor_in )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: ncolor_in
-    hecMAT%Iarray(34) = ncolor_in
+    hecMAT%Iarray(IDX_I_NCOLOR_IN) = ncolor_in
   end subroutine hecmw_mat_set_ncolor_in
 
   function hecmw_mat_get_maxrecycle_precond( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_maxrecycle_precond
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_maxrecycle_precond = hecMAT%Iarray(35)
+    hecmw_mat_get_maxrecycle_precond = hecMAT%Iarray(IDX_I_MAXRECYCLE_PRECOND)
   end function hecmw_mat_get_maxrecycle_precond
 
   subroutine hecmw_mat_set_maxrecycle_precond( hecMAT, maxrecycle_precond )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: maxrecycle_precond
     if (maxrecycle_precond > 100) maxrecycle_precond = 100
-    hecMAT%Iarray(35) = maxrecycle_precond
+    hecMAT%Iarray(IDX_I_MAXRECYCLE_PRECOND) = maxrecycle_precond
   end subroutine hecmw_mat_set_maxrecycle_precond
 
   function hecmw_mat_get_nrecycle_precond( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_nrecycle_precond
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_nrecycle_precond = hecMAT%Iarray(96)
+    hecmw_mat_get_nrecycle_precond = hecMAT%Iarray(IDX_I_NRECYCLE_PRECOND)
   end function hecmw_mat_get_nrecycle_precond
 
   subroutine hecmw_mat_reset_nrecycle_precond( hecMAT )
     type(hecmwST_matrix) :: hecMAT
-    hecMAT%Iarray(96) = 0
+    hecMAT%Iarray(IDX_I_NRECYCLE_PRECOND) = 0
   end subroutine hecmw_mat_reset_nrecycle_precond
 
   subroutine hecmw_mat_incr_nrecycle_precond( hecMAT )
     type(hecmwST_matrix) :: hecMAT
-    hecMAT%Iarray(96) = hecMAT%Iarray(96) + 1
+    hecMAT%Iarray(IDX_I_NRECYCLE_PRECOND) = hecMAT%Iarray(IDX_I_NRECYCLE_PRECOND) + 1
   end subroutine hecmw_mat_incr_nrecycle_precond
 
   function hecmw_mat_get_flag_numfact( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_flag_numfact
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_flag_numfact = hecMAT%Iarray(97)
+    hecmw_mat_get_flag_numfact = hecMAT%Iarray(IDX_I_FLAG_NUMFACT)
   end function hecmw_mat_get_flag_numfact
 
   subroutine hecmw_mat_set_flag_numfact( hecMAT, flag_numfact )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: flag_numfact
-    hecMAT%Iarray(97) = flag_numfact
+    hecMAT%Iarray(IDX_I_FLAG_NUMFACT) = flag_numfact
   end subroutine hecmw_mat_set_flag_numfact
 
   function hecmw_mat_get_flag_symbfact( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_flag_symbfact
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_flag_symbfact = hecMAT%Iarray(98)
+    hecmw_mat_get_flag_symbfact = hecMAT%Iarray(IDX_I_FLAG_SYMBFACT)
   end function hecmw_mat_get_flag_symbfact
 
   subroutine hecmw_mat_set_flag_symbfact( hecMAT, flag_symbfact )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: flag_symbfact
-    hecMAT%Iarray(98) = flag_symbfact
+    hecMAT%Iarray(IDX_I_FLAG_SYMBFACT) = flag_symbfact
   end subroutine hecmw_mat_set_flag_symbfact
 
   subroutine hecmw_mat_clear_flag_symbfact( hecMAT )
     type(hecmwST_matrix) :: hecMAT
-    hecMAT%Iarray(98) = 0
+    hecMAT%Iarray(IDX_I_FLAG_SYMBFACT) = 0
   end subroutine hecmw_mat_clear_flag_symbfact
 
   function hecmw_mat_get_solver_type( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_solver_type
     type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_solver_type = hecMAT%Iarray(99)
+    hecmw_mat_get_solver_type = hecMAT%Iarray(IDX_I_SOLVER_TYPE)
   end function hecmw_mat_get_solver_type
 
   subroutine hecmw_mat_set_solver_type( hecMAT, solver_type )
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: solver_type
-    hecMAT%Iarray(99) = solver_type
+    hecMAT%Iarray(IDX_I_SOLVER_TYPE) = solver_type
   end subroutine hecmw_mat_set_solver_type
 
   subroutine hecmw_mat_set_resid( hecMAT, resid )
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: resid
 
-    hecMAT%Rarray(1) = resid
+    hecMAT%Rarray(IDX_R_RESID) = resid
   end subroutine hecmw_mat_set_resid
 
   function hecmw_mat_get_resid( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_resid
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_resid = hecMAT%Rarray(1)
+    hecmw_mat_get_resid = hecMAT%Rarray(IDX_R_RESID)
   end function hecmw_mat_get_resid
 
   subroutine hecmw_mat_set_sigma_diag( hecMAT, sigma_diag )
@@ -433,13 +533,13 @@ contains
     real(kind=kreal) :: sigma_diag
 
     if( sigma_diag < 0.d0 ) then
-      hecMAT%Rarray(2) = -1.d0
+      hecMAT%Rarray(IDX_R_SIGMA_DIAG) = -1.d0
     elseif( sigma_diag < 1.d0 ) then
-      hecMAT%Rarray(2) = 1.d0
+      hecMAT%Rarray(IDX_R_SIGMA_DIAG) = 1.d0
     elseif( sigma_diag > 2.d0 ) then
-      hecMAT%Rarray(2) = 2.d0
+      hecMAT%Rarray(IDX_R_SIGMA_DIAG) = 2.d0
     else
-      hecMAT%Rarray(2) = sigma_diag
+      hecMAT%Rarray(IDX_R_SIGMA_DIAG) = sigma_diag
     endif
   end subroutine hecmw_mat_set_sigma_diag
 
@@ -447,7 +547,7 @@ contains
     real(kind=kreal) :: hecmw_mat_get_sigma_diag
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_sigma_diag = hecMAT%Rarray(2)
+    hecmw_mat_get_sigma_diag = hecMAT%Rarray(IDX_R_SIGMA_DIAG)
   end function hecmw_mat_get_sigma_diag
 
   subroutine hecmw_mat_set_sigma( hecMAT, sigma )
@@ -455,11 +555,11 @@ contains
     real(kind=kreal) :: sigma
 
     if (sigma < 0.d0) then
-      hecMAT%Rarray(3) = 0.d0
+      hecMAT%Rarray(IDX_R_SIGMA) = 0.d0
     elseif (sigma > 1.d0) then
-      hecMAT%Rarray(3) = 1.d0
+      hecMAT%Rarray(IDX_R_SIGMA) = 1.d0
     else
-      hecMAT%Rarray(3) = sigma
+      hecMAT%Rarray(IDX_R_SIGMA) = sigma
     endif
   end subroutine hecmw_mat_set_sigma
 
@@ -467,49 +567,49 @@ contains
     real(kind=kreal) :: hecmw_mat_get_sigma
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_sigma = hecMAT%Rarray(3)
+    hecmw_mat_get_sigma = hecMAT%Rarray(IDX_R_SIGMA)
   end function hecmw_mat_get_sigma
 
   subroutine hecmw_mat_set_thresh( hecMAT, thresh )
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: thresh
 
-    hecMAT%Rarray(4) = thresh
+    hecMAT%Rarray(IDX_R_THRESH) = thresh
   end subroutine hecmw_mat_set_thresh
 
   function hecmw_mat_get_thresh( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_thresh
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_thresh = hecMAT%Rarray(4)
+    hecmw_mat_get_thresh = hecMAT%Rarray(IDX_R_THRESH)
   end function hecmw_mat_get_thresh
 
   subroutine hecmw_mat_set_filter( hecMAT, filter )
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: filter
 
-    hecMAT%Rarray(5) = filter
+    hecMAT%Rarray(IDX_R_FILTER) = filter
   end subroutine hecmw_mat_set_filter
 
   function hecmw_mat_get_filter( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_filter
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_filter = hecMAT%Rarray(5)
+    hecmw_mat_get_filter = hecMAT%Rarray(IDX_R_FILTER)
   end function hecmw_mat_get_filter
 
   subroutine hecmw_mat_set_penalty( hecMAT, penalty )
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: penalty
 
-    hecMAT%Rarray(11) = penalty
+    hecMAT%Rarray(IDX_R_PENALTY) = penalty
   end subroutine hecmw_mat_set_penalty
 
   function hecmw_mat_get_penalty( hecMAT )
     real(kind=kreal) :: hecmw_mat_get_penalty
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_penalty = hecMAT%Rarray(11)
+    hecmw_mat_get_penalty = hecMAT%Rarray(IDX_R_PENALTY)
   end function hecmw_mat_get_penalty
 
   function hecmw_mat_diag_max(hecMAT, hecMESH)
@@ -529,17 +629,17 @@ contains
   subroutine hecmw_mat_recycle_precond_setting( hecMAT )
     type (hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: nrecycle, maxrecycle
-    if (hecMAT%Iarray(98) >= 1) then
-      hecMAT%Iarray(97)=1
+    if (hecMAT%Iarray(IDX_I_FLAG_SYMBFACT) >= 1) then
+      hecMAT%Iarray(IDX_I_FLAG_NUMFACT)=1
       call hecmw_mat_reset_nrecycle_precond(hecMAT)
-    elseif (hecMAT%Iarray(97) > 1) then
+    elseif (hecMAT%Iarray(IDX_I_FLAG_NUMFACT) > 1) then
       call hecmw_mat_reset_nrecycle_precond(hecMAT)
-      hecMAT%Iarray(97) = 1
-    elseif (hecMAT%Iarray(97) == 1) then
+      hecMAT%Iarray(IDX_I_FLAG_NUMFACT) = 1
+    elseif (hecMAT%Iarray(IDX_I_FLAG_NUMFACT) == 1) then
       nrecycle = hecmw_mat_get_nrecycle_precond(hecMAT)
       maxrecycle = hecmw_mat_get_maxrecycle_precond(hecMAT)
       if ( nrecycle < maxrecycle ) then
-        hecMAT%Iarray(97) = 0
+        hecMAT%Iarray(IDX_I_FLAG_NUMFACT) = 0
         call hecmw_mat_incr_nrecycle_precond(hecMAT)
       else
         call hecmw_mat_reset_nrecycle_precond(hecMAT)

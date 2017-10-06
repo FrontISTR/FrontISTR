@@ -202,6 +202,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use m_hecmw_solve_error
+    use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -231,6 +232,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use m_hecmw_solve_error
+    use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
