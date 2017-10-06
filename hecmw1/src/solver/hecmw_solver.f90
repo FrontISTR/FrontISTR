@@ -57,7 +57,9 @@ contains
         resid=hecmw_rel_resid_L2_nn(hecMESH,hecMAT)
         myrank=hecmw_comm_get_rank()
         if (myrank==0) then
-          write(*,"(a,1pe12.5)")'### Relative residual =', resid
+          if (hecMAT%Iarray(21) > 0 .or. hecMAT%Iarray(22) > 0) then
+            write(*,"(a,1pe12.5)")'### Relative residual =', resid
+          endif
           if( resid >= 1.0d-8) then
             write(*,"(a)")'### Relative residual exceeded 1.0d-8---Direct Solver### '
             !            stop
