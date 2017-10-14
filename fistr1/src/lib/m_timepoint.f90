@@ -16,19 +16,19 @@ module m_timepoint
     integer                    :: n_points             !< # of time points
     integer                    :: range_type           !< 1: Step time, 2: Total time
     real(kind=kreal), pointer  :: points(:) => null()  !< values of time points
-   end type
+  end type
 
-   contains
+contains
 
-   subroutine init_time_points(tp)
+  subroutine init_time_points(tp)
     type(time_points), intent(inout) :: tp
 
     tp%name = ''
     tp%n_points = 0
     tp%range_type = tprSTEP
-   end subroutine
+  end subroutine
 
-   subroutine print_time_points(tp)
+  subroutine print_time_points(tp)
     type(time_points), intent(in)    :: tp
 
     write(*,*) 'timepoints name=',trim(tp%name)
@@ -39,9 +39,9 @@ module m_timepoint
     else
       write(*,*) ' not allocated.'
     endif
-   end subroutine
+  end subroutine
 
-   logical function is_at_timepoints(totaltime,starttime,tp)
+  logical function is_at_timepoints(totaltime,starttime,tp)
     real(kind=kreal), intent(in)  :: totaltime  !< current time
     real(kind=kreal), intent(in)  :: starttime  !< start time of current step
     type(time_points), intent(in) :: tp
@@ -59,7 +59,7 @@ module m_timepoint
       exit
     end do
 
-   end function
+  end function
 
   real(kind=kreal) function get_remain_to_next_timepoints(totaltime,starttime,tp)
     real(kind=kreal), intent(in)  :: totaltime  !< current time
@@ -83,6 +83,6 @@ module m_timepoint
       exit
     end do
 
-   end function
+  end function
 
 end module

@@ -4,9 +4,9 @@
 !-------------------------------------------------------------------------------
 !> Lanczos iteration calculation
 module m_fstr_EIG_lanczos
-  contains
+contains
 
-!> SOLVE EIGENVALUE PROBLEM
+  !> SOLVE EIGENVALUE PROBLEM
   subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
     use m_fstr
     use hecmw_util
@@ -69,7 +69,7 @@ module m_fstr_EIG_lanczos
 
     if(in < fstrEIG%maxiter)then
       if(myrank == 0)then
-        WRITE(IMSG,*) '** changed maxiter to system matrix size.'
+        write(IMSG,*) '** changed maxiter to system matrix size.'
       endif
       fstrEIG%maxiter = in
     endif

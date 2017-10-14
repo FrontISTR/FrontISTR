@@ -8,12 +8,12 @@
 
 module m_dynamic_init_variables
 
-use m_fstr
-use m_dynamic_mat_ass_load
+  use m_fstr
+  use m_dynamic_mat_ass_load
 
 contains
 
-   subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
+  subroutine dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 
     implicit none
 
@@ -31,15 +31,15 @@ contains
     if( fstrSOLID%VELOCITY_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
         fstrDYNAMIC%ACC(j,1)=(hecMAT%B(j)-fstrDYNAMIC%ray_m*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,1))/&
-                              fstrEIG%mass(j)
+          fstrEIG%mass(j)
       enddo
     elseif( fstrSOLID%ACCELERATION_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
         fstrDYNAMIC%VEL(j,1)=(hecMAT%B(j)-fstrEIG%mass(j)*fstrDYNAMIC%ACC(j,1))/&
-                             (fstrDYNAMIC%ray_m*fstrEIG%mass(j))
+          (fstrDYNAMIC%ray_m*fstrEIG%mass(j))
       enddo
     endif
 
-   end subroutine dynamic_init_varibles
+  end subroutine dynamic_init_varibles
 
 end module m_dynamic_init_variables

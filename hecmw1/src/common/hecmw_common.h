@@ -12,4 +12,3 @@
 #include "hecmw_reorder.h"
 
 #endif
-

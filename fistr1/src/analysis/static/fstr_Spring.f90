@@ -6,7 +6,7 @@
 
 module m_fstr_spring
   implicit none
-  contains
+contains
 
   subroutine fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     use m_fstr
@@ -48,7 +48,7 @@ module m_fstr_spring
     type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
     type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
     real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
-  !    Local variables
+    !    Local variables
     integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num
     integer(kind=kint) :: grpid
     real(kind=kreal) :: fval, factor

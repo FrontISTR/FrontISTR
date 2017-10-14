@@ -31,12 +31,12 @@ contains
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
     N_loc=hecMAT%N*ndof
     if (sparse_matrix_is_sym(spMAT)) then
-       NU=hecMAT%indexU(hecMAT%N)
-       NZ=hecMAT%N*(ndof2+ndof)/2+NU*ndof2
+      NU=hecMAT%indexU(hecMAT%N)
+      NZ=hecMAT%N*(ndof2+ndof)/2+NU*ndof2
     else
-       NL=hecMAT%indexL(hecMAT%N)
-       NU=hecMAT%indexU(hecMAT%N)
-       NZ=(hecMAT%N+NU+NL)*ndof2
+      NL=hecMAT%indexL(hecMAT%N)
+      NU=hecMAT%indexU(hecMAT%N)
+      NZ=(hecMAT%N+NU+NL)*ndof2
     endif
     call sparse_matrix_init(spMAT, N_loc, NZ)
     call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, hecMAT%NDOF)
@@ -80,66 +80,66 @@ contains
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
     m=1
     do i=1,hecMAT%N
-       do idof=1,ndof
-          i0=spMAT%OFFSET+ndof*(i-1)
-          ii=i0+idof
-          if (spMAT%type==SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii-spMAT%OFFSET)=m
-          ! Lower
-          if (.not. sparse_matrix_is_sym(spMAT)) then
-             ls=hecMAT%indexL(i-1)+1
-             le=hecMAT%indexL(i)
-             do l=ls,le
-                j=hecMAT%itemL(l)
-                !if (j <= hecMAT%N) then
-                j0=spMAT%OFFSET+ndof*(j-1)
-                !else
-                !   j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
-                !endif
-                !offset_l=ndof2*(l-1)+ndof*(idof-1)
-                do jdof=1,ndof
-                   if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
-                   spMAT%JCN(m)=j0+jdof
-                   !spMAT%A(m)=hecMAT%AL(offset_l+jdof)
-                   m=m+1
-                enddo
-             enddo
-          endif
-          ! Diag
-          !offset_d=ndof2*(i-1)+ndof*(idof-1)
-          if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
-          do jdof=jdofs,ndof
-             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
-             spMAT%JCN(m)=i0+jdof
-             !spMAT%A(m)=hecMAT%D(offset_d+jdof)
-             m=m+1
-          enddo
-          ! Upper
-          ls=hecMAT%indexU(i-1)+1
-          le=hecMAT%indexU(i)
+      do idof=1,ndof
+        i0=spMAT%offset+ndof*(i-1)
+        ii=i0+idof
+        if (spMAT%type==SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii-spMAT%offset)=m
+        ! Lower
+        if (.not. sparse_matrix_is_sym(spMAT)) then
+          ls=hecMAT%indexL(i-1)+1
+          le=hecMAT%indexL(i)
           do l=ls,le
-             j=hecMAT%itemU(l)
-             if (j <= hecMAT%N) then
-                j0=spMAT%OFFSET+ndof*(j-1)
-             else
-                j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
-                if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
-             endif
-             !offset_u=ndof2*(l-1)+ndof*(idof-1)
-             do jdof=1,ndof
-                if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
-                spMAT%JCN(m)=j0+jdof
-                !spMAT%A(m)=hecMAT%AU(offset_u+jdof)
-                m=m+1
-             enddo
+            j=hecMAT%itemL(l)
+            !if (j <= hecMAT%N) then
+            j0=spMAT%offset+ndof*(j-1)
+            !else
+            !   j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
+            !endif
+            !offset_l=ndof2*(l-1)+ndof*(idof-1)
+            do jdof=1,ndof
+              if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
+              spMAT%JCN(m)=j0+jdof
+              !spMAT%A(m)=hecMAT%AL(offset_l+jdof)
+              m=m+1
+            enddo
           enddo
-       enddo
+        endif
+        ! Diag
+        !offset_d=ndof2*(i-1)+ndof*(idof-1)
+        if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
+        do jdof=jdofs,ndof
+          if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
+          spMAT%JCN(m)=i0+jdof
+          !spMAT%A(m)=hecMAT%D(offset_d+jdof)
+          m=m+1
+        enddo
+        ! Upper
+        ls=hecMAT%indexU(i-1)+1
+        le=hecMAT%indexU(i)
+        do l=ls,le
+          j=hecMAT%itemU(l)
+          if (j <= hecMAT%N) then
+            j0=spMAT%offset+ndof*(j-1)
+          else
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
+            if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
+          endif
+          !offset_u=ndof2*(l-1)+ndof*(idof-1)
+          do jdof=1,ndof
+            if (spMAT%type==SPARSE_MATRIX_TYPE_COO) spMAT%IRN(m)=ii
+            spMAT%JCN(m)=j0+jdof
+            !spMAT%A(m)=hecMAT%AU(offset_u+jdof)
+            m=m+1
+          enddo
+        enddo
+      enddo
     enddo
-    if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii+1-spMAT%OFFSET)=m
+    if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii+1-spMAT%offset)=m
     if (sparse_matrix_is_sym(spMAT) .and. m-1 < spMAT%NZ) spMAT%NZ=m-1
     if (m-1 /= spMAT%NZ) then
-       write(*,*) 'ERROR: sparse_matrix_set_ij on rank ',hecmw_comm_get_rank()
-       write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ
-       stop
+      write(*,*) 'ERROR: sparse_matrix_set_ij on rank ',hecmw_comm_get_rank()
+      write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ
+      stop
     endif
   end subroutine sparse_matrix_hec_set_prof
 
@@ -152,70 +152,70 @@ contains
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
     m=1
     do i=1,hecMAT%N
-       do idof=1,ndof
-          i0=spMAT%OFFSET+ndof*(i-1)
-          ii=i0+idof
-          if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
-            if (spMAT%IRN(ii-spMAT%OFFSET)/=m) stop "ERROR: sparse_matrix_set_a1"
-          endif
-          ! Lower
-          if (.not. sparse_matrix_is_sym(spMAT)) then
-             ls=hecMAT%indexL(i-1)+1
-             le=hecMAT%indexL(i)
-             do l=ls,le
-                j=hecMAT%itemL(l)
-                !if (j <= hecMAT%N) then
-                j0=spMAT%OFFSET+ndof*(j-1)
-                !else
-                !   j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
-                !endif
-                offset_l=ndof2*(l-1)+ndof*(idof-1)
-                do jdof=1,ndof
-                   if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
-                     if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a2"
-                   endif
-                   if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a3"
-                   spMAT%A(m)=hecMAT%AL(offset_l+jdof)
-                   m=m+1
-                enddo
-             enddo
-          endif
-          ! Diag
-          offset_d=ndof2*(i-1)+ndof*(idof-1)
-          if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
-          do jdof=jdofs,ndof
-             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
-               if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a4"
-             endif
-             if (spMAT%JCN(m)/=i0+jdof) stop "ERROR: sparse_matrix_set_a5"
-             spMAT%A(m)=hecMAT%D(offset_d+jdof)
-             m=m+1
-          enddo
-          ! Upper
-          ls=hecMAT%indexU(i-1)+1
-          le=hecMAT%indexU(i)
+      do idof=1,ndof
+        i0=spMAT%offset+ndof*(i-1)
+        ii=i0+idof
+        if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
+          if (spMAT%IRN(ii-spMAT%offset)/=m) stop "ERROR: sparse_matrix_set_a1"
+        endif
+        ! Lower
+        if (.not. sparse_matrix_is_sym(spMAT)) then
+          ls=hecMAT%indexL(i-1)+1
+          le=hecMAT%indexL(i)
           do l=ls,le
-             j=hecMAT%itemU(l)
-             if (j <= hecMAT%N) then
-                j0=spMAT%OFFSET+ndof*(j-1)
-             else
-                j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
-                if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
-             endif
-             offset_u=ndof2*(l-1)+ndof*(idof-1)
-             do jdof=1,ndof
-                if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
-                  if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a6"
-                endif
-                if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a7"
-                spMAT%A(m)=hecMAT%AU(offset_u+jdof)
-                m=m+1
-             enddo
+            j=hecMAT%itemL(l)
+            !if (j <= hecMAT%N) then
+            j0=spMAT%offset+ndof*(j-1)
+            !else
+            !   j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
+            !endif
+            offset_l=ndof2*(l-1)+ndof*(idof-1)
+            do jdof=1,ndof
+              if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+                if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a2"
+              endif
+              if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a3"
+              spMAT%A(m)=hecMAT%AL(offset_l+jdof)
+              m=m+1
+            enddo
           enddo
-       enddo
+        endif
+        ! Diag
+        offset_d=ndof2*(i-1)+ndof*(idof-1)
+        if (sparse_matrix_is_sym(spMAT)) then; jdofs=idof; else; jdofs=1; endif
+        do jdof=jdofs,ndof
+          if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+            if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a4"
+          endif
+          if (spMAT%JCN(m)/=i0+jdof) stop "ERROR: sparse_matrix_set_a5"
+          spMAT%A(m)=hecMAT%D(offset_d+jdof)
+          m=m+1
+        enddo
+        ! Upper
+        ls=hecMAT%indexU(i-1)+1
+        le=hecMAT%indexU(i)
+        do l=ls,le
+          j=hecMAT%itemU(l)
+          if (j <= hecMAT%N) then
+            j0=spMAT%offset+ndof*(j-1)
+          else
+            j0=spMAT%conv_ext(ndof*(j-hecMAT%N))-ndof
+            if (sparse_matrix_is_sym(spMAT) .and. j0 < i0) cycle
+          endif
+          offset_u=ndof2*(l-1)+ndof*(idof-1)
+          do jdof=1,ndof
+            if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
+              if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a6"
+            endif
+            if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a7"
+            spMAT%A(m)=hecMAT%AU(offset_u+jdof)
+            m=m+1
+          enddo
+        enddo
+      enddo
     enddo
     if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
-      if (spMAT%IRN(ii+1-spMAT%OFFSET)/=m) stop "ERROR: sparse_matrix_set_a8"
+      if (spMAT%IRN(ii+1-spMAT%offset)/=m) stop "ERROR: sparse_matrix_set_a8"
     endif
     if (m-1 /= spMAT%NZ) stop "ERROR: sparse_matrix_set_a9"
   end subroutine sparse_matrix_hec_set_vals

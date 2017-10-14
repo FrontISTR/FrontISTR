@@ -9,25 +9,26 @@
 #include <stdio.h>
 
 /*---------------------------------------------------------------------------*/
-/* CAUTION) hecmw_set_endian_info must be executed before calling following functions. */
+/* CAUTION) hecmw_set_endian_info must be executed before calling following
+ * functions. */
 
 void hecmw_set_endian_info(void);
 
 /*---------------------------------------------------------------------------*/
 
-int hecmw_write_bin_value( unsigned char* x, int size, FILE* fp );
-int hecmw_write_bin_int( int x, FILE* fp );
-int hecmw_write_bin_int_arr( int* x, int n, FILE* fp );
-int hecmw_write_bin_double( double x, FILE* fp );
-int hecmw_write_bin_double_arr( double* x, int n, FILE* fp );
+int hecmw_write_bin_value(unsigned char* x, int size, FILE* fp);
+int hecmw_write_bin_int(int x, FILE* fp);
+int hecmw_write_bin_int_arr(int* x, int n, FILE* fp);
+int hecmw_write_bin_double(double x, FILE* fp);
+int hecmw_write_bin_double_arr(double* x, int n, FILE* fp);
 
 /*---------------------------------------------------------------------------*/
 
-int hecmw_read_bin_value( unsigned char* x, int size, FILE* fp );
-int hecmw_read_bin_int( int* x, FILE* fp );
-int hecmw_read_bin_int_arr( int* x, int n, FILE* fp );
-int hecmw_read_bin_double( double* x, FILE* fp );
-int hecmw_read_bin_double_arr( double* x, int n, FILE* fp );
+int hecmw_read_bin_value(unsigned char* x, int size, FILE* fp);
+int hecmw_read_bin_int(int* x, FILE* fp);
+int hecmw_read_bin_int_arr(int* x, int n, FILE* fp);
+int hecmw_read_bin_double(double* x, FILE* fp);
+int hecmw_read_bin_double_arr(double* x, int n, FILE* fp);
 
 /*---------------------------------------------------------------------------*/
 
@@ -44,8 +45,7 @@ int hecmw_read_bin_double_arr( double* x, int n, FILE* fp );
  *     hecmw_write_bin(fp, "II10S", n, i, s);
  */
 
-int hecmw_write_bin( FILE* fp, const char* fmt, ... );
-int hecmw_read_bin( FILE* fp, const char* fmt, ... );
-
+int hecmw_write_bin(FILE* fp, const char* fmt, ...);
+int hecmw_read_bin(FILE* fp, const char* fmt, ...);
 
 #endif

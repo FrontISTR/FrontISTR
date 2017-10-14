@@ -14,7 +14,7 @@ module hecmw_solver_scaling
   implicit none
 
   private
-  real(kind=kreal), private, allocatable :: SCALE(:)
+  real(kind=kreal), private, allocatable :: scale(:)
 
   public :: hecmw_solver_scaling_fw
   public :: hecmw_solver_scaling_bk
@@ -26,33 +26,33 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     real(kind=kreal), intent(inout) :: COMMtime
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_solver_scaling_fw_33(hecMESH, hecMAT, COMMtime)
-      CASE(4)
+      case(4)
         call hecmw_solver_scaling_fw_44(hecMESH, hecMAT, COMMtime)
-      CASE(6)
+      case(6)
         call hecmw_solver_scaling_fw_66(hecMESH, hecMAT, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_solver_scaling_fw_nn(hecMESH, hecMAT, COMMtime)
-    END SELECT
+    end select
   end subroutine hecmw_solver_scaling_fw
 
   subroutine hecmw_solver_scaling_bk(hecMAT)
     use hecmw_util
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_solver_scaling_bk_33(hecMAT)
-      CASE(4)
+      case(4)
         call hecmw_solver_scaling_bk_44(hecMAT)
-      CASE(6)
+      case(6)
         call hecmw_solver_scaling_bk_66(hecMAT)
-      CASE DEFAULT
+      case default
         call hecmw_solver_scaling_bk_nn(hecMAT)
-    END SELECT
-    
+    end select
+
   end subroutine hecmw_solver_scaling_bk
 
 end module hecmw_solver_scaling

@@ -11,11 +11,9 @@ struct hecmw_bit_array {
   unsigned long *vals;
 };
 
-
 extern int HECMW_bit_array_init(struct hecmw_bit_array *ba, size_t len);
 
 extern void HECMW_bit_array_finalize(struct hecmw_bit_array *ba);
-
 
 extern size_t HECMW_bit_array_len(struct hecmw_bit_array *ba);
 

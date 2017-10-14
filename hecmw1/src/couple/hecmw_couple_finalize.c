@@ -12,18 +12,15 @@
 #include "hecmw_couple_info.h"
 #include "hecmw_couple_finalize.h"
 
+extern int HECMW_couple_finalize(char *boundary_id) {
+  if (boundary_id == NULL) {
+    HECMW_set_error(HECMWCPL_E_INVALID_ARG,
+                    "HECMW_couple_finalize(): 'boundary_id' is NULL");
+    return -1;
+  }
 
+  HECMW_couple_free_init(boundary_id);
+  HECMW_couple_free_couple_info();
 
-extern int
-HECMW_couple_finalize(char *boundary_id)
-{
-	if(boundary_id == NULL) {
-		HECMW_set_error(HECMWCPL_E_INVALID_ARG, "HECMW_couple_finalize(): 'boundary_id' is NULL");
-		return -1;
-	}
-
-	HECMW_couple_free_init(boundary_id);
-	HECMW_couple_free_couple_info();
-
-	return 0;
+  return 0;
 }

@@ -27,16 +27,16 @@ contains
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     integer(kind=kint), intent(in) :: sym
 
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_11_setup(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_11_setup(hecMAT)
-      !CASE(10,11,12)
-      !  call hecmw_precond_BILU_11_setup(hecMAT)
-      CASE DEFAULT
+        !CASE(10,11,12)
+        !  call hecmw_precond_BILU_11_setup(hecMAT)
+      case default
         call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
-    END SELECT
+    end select
 
   end subroutine hecmw_precond_11_setup
 
@@ -44,17 +44,17 @@ contains
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_11_clear(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_11_clear()
-      !CASE(10,11,12)
-      !  call hecmw_precond_BILU_11_clear()
-      CASE DEFAULT
+        !CASE(10,11,12)
+        !  call hecmw_precond_BILU_11_clear()
+      case default
         call hecmw_precond_nn_clear(hecMAT)
-    END SELECT
-    
+    end select
+
   end subroutine hecmw_precond_11_clear
 
   subroutine hecmw_precond_11_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
@@ -71,17 +71,17 @@ contains
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     do iterPRE= 1, iterPREmax
       START_TIME = hecmw_Wtime()
-      SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-        CASE(1,2)
+      select case(hecmw_mat_get_precond( hecMAT ))
+        case(1,2)
           call hecmw_precond_SSOR_11_apply(ZP)
-        CASE(3)
+        case(3)
           call hecmw_precond_DIAG_11_apply(ZP)
-        !CASE(10,11,12)
-        !  call hecmw_precond_BILU_11_apply(ZP)
-        CASE DEFAULT
+          !CASE(10,11,12)
+          !  call hecmw_precond_BILU_11_apply(ZP)
+        case default
           call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-          return 
-      END SELECT
+          return
+      end select
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 

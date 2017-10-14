@@ -8,10 +8,8 @@
 
 #include "hecmw_couple_startup.h"
 
-extern int
-HECMW_couple_copy_f2c_init(struct hecmw_couple_value *_couple_value);
+extern int HECMW_couple_copy_f2c_init(struct hecmw_couple_value *_couple_value);
 
-extern int
-HECMW_couple_copy_f2c_finalize(void);
+extern int HECMW_couple_copy_f2c_finalize(void);
 
-#endif	/* INC_HECMW_COUPLE_COPY_F2C */
+#endif /* INC_HECMW_COUPLE_COPY_F2C */

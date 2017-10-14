@@ -24,30 +24,21 @@
 #define HECMW_free(ptr) free(ptr)
 #endif
 
-
-
 extern void *HECMW_malloc_(size_t size, char *file, int line);
 
 extern void *HECMW_calloc_(size_t nmemb, size_t size, char *file, int line);
 
-
 extern void *HECMW_realloc_(void *ptr, size_t size, char *file, int line);
-
 
 extern char *HECMW_strdup_(const char *s, char *file, int line);
 
-
 extern void HECMW_free_(void *ptr, char *file, int line);
-
 
 extern int HECMW_check_memleak(void);
 
-
 extern long HECMW_get_memsize(void);
 
-
 extern void HECMW_set_autocheck_memleak(int flag);
-
 
 extern int HECMW_list_meminfo(FILE *fp);
 

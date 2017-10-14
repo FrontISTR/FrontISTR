@@ -21,7 +21,7 @@ module hecmw_matrix_contact
   integer(kind=kint), parameter :: CMAT_MAX_VAL_INIT = 128
   integer(kind=kint), parameter :: CMAT_MAX_VAL_GROW = 2
 
-  contains
+contains
 
   subroutine hecmw_cmat_init( cmat )
     type(hecmwST_matrix_contact) :: cmat
@@ -215,7 +215,7 @@ module hecmw_matrix_contact
       do l = 1, ndof
         do k = 1, ndof
           Y(ii + k) =  &
-        & Y(ii + k) + cmat%pair(i)%val(k, l) * X(jj + l)
+            & Y(ii + k) + cmat%pair(i)%val(k, l) * X(jj + l)
         enddo
       enddo
     enddo
@@ -223,141 +223,141 @@ module hecmw_matrix_contact
 
   !< Assmble prescribed disp boundary condition into cmat
   subroutine hecmw_cmat_ass_bc(hecMAT, inode, idof, RHS )
-      type (hecmwST_matrix) :: hecMAT
-      integer(kind=kint)    :: inode, idof
-      real(kind=kreal)      :: RHS
-      integer(kind=kint) :: nval, i, cnode
-      integer(kind=kint), parameter :: NDOF=3
+    type (hecmwST_matrix) :: hecMAT
+    integer(kind=kint)    :: inode, idof
+    real(kind=kreal)      :: RHS
+    integer(kind=kint) :: nval, i, cnode
+    integer(kind=kint), parameter :: NDOF=3
 
-	!  NDOF = hecMAT%NDOF
-      if( NDOF < idof ) return
+    !  NDOF = hecMAT%NDOF
+    if( NDOF < idof ) return
 
-      !-- modify rhs
-      if( RHS /= 0.d0 ) then
-        do nval=1,hecMAT%cmat%n_val
-          if( hecMAT%cmat%pair(nval)%j /= inode ) cycle
-          cnode = hecMAT%cmat%pair(nval)%i
-          if( cnode == inode ) then
-            do i=1,NDOF
-              if( i==idof ) cycle
-              hecMAT%B(NDOF*(cnode-1)+i) = hecMAT%B(NDOF*(cnode-1)+i)      &
-                      - hecMAT%cmat%pair(nval)%val(i,idof)*RHS
-            enddo
-          else
-            do i=1, NDOF
-              hecMAT%B(NDOF*(cnode-1)+i) = hecMAT%B(NDOF*(cnode-1)+i)       &
-                      - hecMAT%cmat%pair(nval)%val(i,idof)*RHS
-            enddo
-          endif
-        enddo
-      endif
-
-      !-- clear cmat
-      do nval=1,hecMAT%cmat%n_val
-        if( hecMAT%cmat%pair(nval)%i /= inode ) cycle
-
-        hecMAT%cmat%pair(nval)%val(idof,:)=0.d0
-      enddo
-
+    !-- modify rhs
+    if( RHS /= 0.d0 ) then
       do nval=1,hecMAT%cmat%n_val
         if( hecMAT%cmat%pair(nval)%j /= inode ) cycle
-
-        hecMAT%cmat%pair(nval)%val(:,idof)=0.d0
-      enddo
-
-   end subroutine hecmw_cmat_ass_bc
-
-   !< number of new pair introduced by cmat ( symm only )
-   integer function hecmw_cmat_n_newpair(hecMAT, symm )
-      type(hecmwST_matrix), intent(in) :: hecMAT
-      integer, intent(in)              :: symm
-      integer(kind=kint) :: nval, ind, jnd, k, m, mnd
-      logical :: isfind
-
-        hecmw_cmat_n_newpair = 0
-        do nval=1,hecMAT%cmat%n_val
-          ind = hecMAT%cmat%pair(nval)%i
-          jnd = hecMAT%cmat%pair(nval)%j
-
-          if( (symm==1) .and. (ind<jnd) ) cycle
-          if( ind==jnd ) cycle
-          isfind = .false.
-          do k=1,hecMAT%NP
-            if( ind/=k .and. jnd/=k ) cycle
-		    do m= hecMAT%indexL(k-1)+1, hecMAT%indexL(k)
-              mnd= hecMAT%itemL(m)
-              if( (ind==k .and. jnd==mnd) .or. (ind==mnd .and. jnd==k) ) then
-			     isfind = .true.
-              endif
-              if ( isfind ) exit
-            enddo
-            if( isfind ) exit
+        cnode = hecMAT%cmat%pair(nval)%i
+        if( cnode == inode ) then
+          do i=1,NDOF
+            if( i==idof ) cycle
+            hecMAT%B(NDOF*(cnode-1)+i) = hecMAT%B(NDOF*(cnode-1)+i)      &
+              - hecMAT%cmat%pair(nval)%val(i,idof)*RHS
           enddo
-          if( .not. isfind ) hecmw_cmat_n_newpair = hecmw_cmat_n_newpair+1
-       enddo
-   end function hecmw_cmat_n_newpair
+        else
+          do i=1, NDOF
+            hecMAT%B(NDOF*(cnode-1)+i) = hecMAT%B(NDOF*(cnode-1)+i)       &
+              - hecMAT%cmat%pair(nval)%val(i,idof)*RHS
+          enddo
+        endif
+      enddo
+    endif
+
+    !-- clear cmat
+    do nval=1,hecMAT%cmat%n_val
+      if( hecMAT%cmat%pair(nval)%i /= inode ) cycle
+
+      hecMAT%cmat%pair(nval)%val(idof,:)=0.d0
+    enddo
+
+    do nval=1,hecMAT%cmat%n_val
+      if( hecMAT%cmat%pair(nval)%j /= inode ) cycle
+
+      hecMAT%cmat%pair(nval)%val(:,idof)=0.d0
+    enddo
+
+  end subroutine hecmw_cmat_ass_bc
+
+  !< number of new pair introduced by cmat ( symm only )
+  integer function hecmw_cmat_n_newpair(hecMAT, symm )
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    integer, intent(in)              :: symm
+    integer(kind=kint) :: nval, ind, jnd, k, m, mnd
+    logical :: isfind
+
+    hecmw_cmat_n_newpair = 0
+    do nval=1,hecMAT%cmat%n_val
+      ind = hecMAT%cmat%pair(nval)%i
+      jnd = hecMAT%cmat%pair(nval)%j
+
+      if( (symm==1) .and. (ind<jnd) ) cycle
+      if( ind==jnd ) cycle
+      isfind = .false.
+      do k=1,hecMAT%NP
+        if( ind/=k .and. jnd/=k ) cycle
+        do m= hecMAT%indexL(k-1)+1, hecMAT%indexL(k)
+          mnd= hecMAT%itemL(m)
+          if( (ind==k .and. jnd==mnd) .or. (ind==mnd .and. jnd==k) ) then
+            isfind = .true.
+          endif
+          if ( isfind ) exit
+        enddo
+        if( isfind ) exit
+      enddo
+      if( .not. isfind ) hecmw_cmat_n_newpair = hecmw_cmat_n_newpair+1
+    enddo
+  end function hecmw_cmat_n_newpair
 
   !< Assmble LU-part of cmat
   subroutine hecmw_cmat_LU( hecMAT )
-      type (hecmwST_matrix) :: hecMAT
-      integer(kind=kint)    :: i, j, k, l, countCAL, countCAU
+    type (hecmwST_matrix) :: hecMAT
+    integer(kind=kint)    :: i, j, k, l, countCAL, countCAU
 
-      allocate (hecMAT%indexCL(0:hecMAT%NP), hecMAT%indexCU(0:hecMAT%NP))
+    allocate (hecMAT%indexCL(0:hecMAT%NP), hecMAT%indexCU(0:hecMAT%NP))
 
-      hecMAT%indexCL = 0
-      hecMAT%indexCU = 0
+    hecMAT%indexCL = 0
+    hecMAT%indexCU = 0
 
-      do i= 1, hecMAT%NP
-        do j= 1, hecMAT%cmat%n_val
-          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
-            hecMAT%indexCL(i) = hecMAT%indexCL(i) + 1
-          endif
-          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
-            hecMAT%indexCU(i) = hecMAT%indexCU(i) + 1
-          endif
-        enddo
-        hecMAT%indexCL(i) = hecMAT%indexCL(i) + hecMAT%indexCL(i-1)
-        hecMAT%indexCU(i) = hecMAT%indexCU(i) + hecMAT%indexCU(i-1)
+    do i= 1, hecMAT%NP
+      do j= 1, hecMAT%cmat%n_val
+        if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
+          hecMAT%indexCL(i) = hecMAT%indexCL(i) + 1
+        endif
+        if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
+          hecMAT%indexCU(i) = hecMAT%indexCU(i) + 1
+        endif
       enddo
+      hecMAT%indexCL(i) = hecMAT%indexCL(i) + hecMAT%indexCL(i-1)
+      hecMAT%indexCU(i) = hecMAT%indexCU(i) + hecMAT%indexCU(i-1)
+    enddo
 
-      hecMAT%NPCL = hecMAT%indexCL(hecMAT%NP)
-      hecMAT%NPCU = hecMAT%indexCU(hecMAT%NP)
+    hecMAT%NPCL = hecMAT%indexCL(hecMAT%NP)
+    hecMAT%NPCU = hecMAT%indexCU(hecMAT%NP)
 
-      allocate (hecMAT%itemCL(hecMAT%NPCL), hecMAT%itemCU(hecMAT%NPCU))
-      allocate (hecMAT%CAL(9*hecMAT%NPCL), hecMAT%CAU(9*hecMAT%NPCU))
+    allocate (hecMAT%itemCL(hecMAT%NPCL), hecMAT%itemCU(hecMAT%NPCU))
+    allocate (hecMAT%CAL(9*hecMAT%NPCL), hecMAT%CAU(9*hecMAT%NPCU))
 
-      countCAL = 0
-      countCAU = 0
-      do i= 1, hecMAT%NP
-        do j= 1, hecMAT%cmat%n_val
-          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
-            countCAL = countCAL + 1
-            hecMAT%itemCL(countCAL) = hecMAT%cmat%pair(j)%j
-            do k= 1, 3
-              do l= 1, 3
-                hecMAT%CAL(9*(countCAL-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
-              enddo
+    countCAL = 0
+    countCAU = 0
+    do i= 1, hecMAT%NP
+      do j= 1, hecMAT%cmat%n_val
+        if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j < i) then
+          countCAL = countCAL + 1
+          hecMAT%itemCL(countCAL) = hecMAT%cmat%pair(j)%j
+          do k= 1, 3
+            do l= 1, 3
+              hecMAT%CAL(9*(countCAL-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
             enddo
-          endif
-          if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
-            countCAU = countCAU + 1
-            hecMAT%itemCU(countCAU) = hecMAT%cmat%pair(j)%j
-            do k= 1, 3
-              do l= 1, 3
-                hecMAT%CAU(9*(countCAU-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
-              enddo
+          enddo
+        endif
+        if (hecMAT%cmat%pair(j)%i == i .and. hecMAT%cmat%pair(j)%j > i) then
+          countCAU = countCAU + 1
+          hecMAT%itemCU(countCAU) = hecMAT%cmat%pair(j)%j
+          do k= 1, 3
+            do l= 1, 3
+              hecMAT%CAU(9*(countCAU-1)+3*(k-1)+l) = hecMAT%cmat%pair(j)%val(k,l)
             enddo
-          endif
-        enddo
+          enddo
+        endif
       enddo
+    enddo
   end subroutine hecmw_cmat_LU
 
   !< free LU-part of cmat
   subroutine hecmw_cmat_LU_free( hecMAT )
-      type (hecmwST_matrix) :: hecMAT
+    type (hecmwST_matrix) :: hecMAT
 
-      deallocate (hecMAT%indexCL, hecMAT%itemCL, hecMAT%CAL)
-      deallocate (hecMAT%indexCU, hecMAT%itemCU, hecMAT%CAU)
+    deallocate (hecMAT%indexCL, hecMAT%itemCL, hecMAT%CAL)
+    deallocate (hecMAT%indexCU, hecMAT%itemCU, hecMAT%CAU)
   end subroutine hecmw_cmat_LU_free
 
 end module hecmw_matrix_contact

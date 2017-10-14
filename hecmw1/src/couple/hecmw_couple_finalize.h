@@ -6,7 +6,6 @@
 #ifndef INC_HECMW_COUPLE_FINALIZE
 #define INC_HECMW_COUPLE_FINALIZE
 
-extern int
-HECMW_couple_finalize(char *boundary_id);
+extern int HECMW_couple_finalize(char *boundary_id);
 
-#endif	/* INC_HECMW_COUPLE_FINALIZE */
+#endif /* INC_HECMW_COUPLE_FINALIZE */

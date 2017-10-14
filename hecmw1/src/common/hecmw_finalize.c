@@ -6,18 +6,16 @@
 #include "hecmw_finalize.h"
 #include "hecmw_util.h"
 
-int
-HECMW_finalize(void)
-{
-	HECMW_log(HECMW_LOG_DEBUG, "Finalizing...");
+int HECMW_finalize(void) {
+  HECMW_log(HECMW_LOG_DEBUG, "Finalizing...");
 
-	HECMW_ctrl_finalize();
+  HECMW_ctrl_finalize();
 
 #ifndef HECMW_SERIAL
-	MPI_Finalize();
+  MPI_Finalize();
 
-	HECMW_log(HECMW_LOG_DEBUG, "MPI finalized");
+  HECMW_log(HECMW_LOG_DEBUG, "MPI finalized");
 #endif
 
-	return 0;
+  return 0;
 }

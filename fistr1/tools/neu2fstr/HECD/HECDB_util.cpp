@@ -3,9 +3,8 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 /*
-	Utility for CHECDB Ver.1.0
+  Utility for CHECDB Ver.1.0
 */
-
 
 #include <string.h>
 #include <ctype.h>
@@ -14,76 +13,75 @@
 
 using namespace hecd_util;
 
+CHECDataBlock *CreateHECDataBlock(const char *header_name) {
+  char name[80];
+  char *np = name;
+  char *p  = (char *)header_name;
 
-CHECDataBlock* CreateHECDataBlock( const char* header_name )
-{
-	char name[80];
-	char* np = name;
-	char* p = (char*)header_name;
+  if (*p == '!') p++;
 
-	if( *p == '!' ) p++;
-	*np = (char)toupper(*p);
-	p++;
-	np++;
-	while(*p) {
-		*np = (char)tolower(*p);
-		p++;
-		np++;
-	}
-	*np = 0;
+  *np = (char)toupper(*p);
+  p++;
+  np++;
 
-	#define GENERATE_CODE( x ) \
-		else if( strcmp( #x , name )==0 ){\
-			return new CHECDB_##x (); \
-		}
+  while (*p) {
+    *np = (char)tolower(*p);
+    p++;
+    np++;
+  }
 
-	if(false); // dummy
-	GENERATE_CODE( Header )
-	GENERATE_CODE( Node )
-	GENERATE_CODE( Element )
-	GENERATE_CODE( Material )
-	GENERATE_CODE( Section )
-	GENERATE_CODE( NGroup )
-	GENERATE_CODE( EGroup )
-	GENERATE_CODE( SGroup )
-	GENERATE_CODE( Amplitude )
-	GENERATE_CODE( Zero )
-	GENERATE_CODE( Visual )
+  *np = 0;
+#define GENERATE_CODE(x)            \
+  else if (strcmp(#x, name) == 0) { \
+    return new CHECDB_##x();        \
+  }
 
-	#undef 	GENERATE_CODE
+  if (false)
+    ;  // dummy
 
-	return 0;
+  GENERATE_CODE(Header)
+  GENERATE_CODE(Node)
+  GENERATE_CODE(Element)
+  GENERATE_CODE(Material)
+  GENERATE_CODE(Section)
+  GENERATE_CODE(NGroup)
+  GENERATE_CODE(EGroup)
+  GENERATE_CODE(SGroup)
+  GENERATE_CODE(Amplitude)
+  GENERATE_CODE(Zero)
+  GENERATE_CODE(Visual)
+#undef GENERATE_CODE
+  return 0;
 }
 
+bool IsHECDataBlockName(const char *name) {
+  char s[256];
 
-bool IsHECDataBlockName( const char* name )
-{
-	char s[256];
-	if(name[0]=='!')
-		toupper( &name[1], s );
-	else
-		toupper( name, s );
+  if (name[0] == '!')
+    toupper(&name[1], s);
 
-	#define GENERATE_CODE( x ) \
-		else if( strcmp( #x , name )==0 ){\
-			return true; \
-		}
+  else
+    toupper(name, s);
 
-	if(false); // dummy
-	GENERATE_CODE( HEADER )
-	GENERATE_CODE( NODE )
-	GENERATE_CODE( ELEMENT )
-	GENERATE_CODE( MATERIAL )
-	GENERATE_CODE( SECTION )
-	GENERATE_CODE( NGROUP )
-	GENERATE_CODE( EGROUP )
-	GENERATE_CODE( SGROUP )
-	GENERATE_CODE( AMPLITUDE )
-	GENERATE_CODE( ZERO )
-	GENERATE_CODE( VISUAL )
+#define GENERATE_CODE(x)            \
+  else if (strcmp(#x, name) == 0) { \
+    return true;                    \
+  }
 
-	#undef 	GENERATE_CODE
+  if (false)
+    ;  // dummy
 
-	return false;
+  GENERATE_CODE(HEADER)
+  GENERATE_CODE(NODE)
+  GENERATE_CODE(ELEMENT)
+  GENERATE_CODE(MATERIAL)
+  GENERATE_CODE(SECTION)
+  GENERATE_CODE(NGROUP)
+  GENERATE_CODE(EGROUP)
+  GENERATE_CODE(SGROUP)
+  GENERATE_CODE(AMPLITUDE)
+  GENERATE_CODE(ZERO)
+  GENERATE_CODE(VISUAL)
+#undef GENERATE_CODE
+  return false;
 }
-

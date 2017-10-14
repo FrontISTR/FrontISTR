@@ -4,11 +4,11 @@
 !-------------------------------------------------------------------------------
 !> This module provides a function to control eigen analysis
 module m_fstr_solve_eigen
-  contains
+contains
 
-!> solve eigenvalue probrem
+  !> solve eigenvalue probrem
   subroutine fstr_solve_eigen( hecMESH, hecMAT, fstrEIG, fstrSOLID, &
-                             & fstrRESULT, fstrPARAM, fstrMAT)
+      & fstrRESULT, fstrPARAM, fstrMAT)
     use hecmw_util
     use m_fstr
     use m_fstr_StiffMatrix
@@ -49,7 +49,7 @@ module m_fstr_solve_eigen
 
     t2 = hecmw_Wtime()
 
-    if(myrank == 0)THEN
+    if(myrank == 0)then
       write(IMSG,'("### FSTR_SOLVE_EIGEN FINISHED!")')
       write(*,'("### FSTR_SOLVE_EIGEN FINISHED!")')
     endif

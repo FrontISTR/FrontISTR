@@ -7,8 +7,7 @@
 #include "hecmw_config.h"
 #include "hecmw_varray_int.h"
 
-int main()
-{
+int main() {
   struct hecmw_varray_int va, vb;
   int i;
   int ndup;
@@ -20,7 +19,7 @@ int main()
   }
 
   for (i = 0; i < 1000; i += 7) {
-    if (HECMW_varray_int_append(&va, i%13) != HECMW_SUCCESS) {
+    if (HECMW_varray_int_append(&va, i % 13) != HECMW_SUCCESS) {
       perror("append va");
       return HECMW_EXIT_ERROR;
     }

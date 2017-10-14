@@ -10,7 +10,7 @@ module hecmw_solver_scaling_44
   implicit none
 
   private
-  real(kind=kreal), private, allocatable :: SCALE(:)
+  real(kind=kreal), private, allocatable :: scale(:)
 
   public :: hecmw_solver_scaling_fw_44
   public :: hecmw_solver_scaling_bk_44
@@ -43,17 +43,17 @@ contains
     IAU => hecMAT%itemU
     B => hecMAT%B
 
-    allocate(SCALE(NDOF*NP))
+    allocate(scale(NDOF*NP))
 
     do i= 1, N
-      SCALE (4*i-3)= 1.d0/dsqrt(dabs(D(16*i-15)))
-      SCALE (4*i-2)= 1.d0/dsqrt(dabs(D(16*i-10)))
-      SCALE (4*i-1)= 1.d0/dsqrt(dabs(D(16*i- 5)))
-      SCALE (4*i  )= 1.d0/dsqrt(dabs(D(16*i   )))
+      scale (4*i-3)= 1.d0/dsqrt(dabs(D(16*i-15)))
+      scale (4*i-2)= 1.d0/dsqrt(dabs(D(16*i-10)))
+      scale (4*i-1)= 1.d0/dsqrt(dabs(D(16*i- 5)))
+      scale (4*i  )= 1.d0/dsqrt(dabs(D(16*i   )))
     enddo
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, SCALE, hecMESH%n_node)
+    call hecmw_update_4_R (hecMESH, scale, hecMESH%n_node)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -62,22 +62,22 @@ contains
       ip2= 4*i-2
       ip3= 4*i-1
       ip4= 4*i
-      D(16*i-15)= D(16*i-15)*SCALE(ip1)*SCALE(ip1)
-      D(16*i-14)= D(16*i-14)*SCALE(ip1)*SCALE(ip2)
-      D(16*i-13)= D(16*i-13)*SCALE(ip1)*SCALE(ip3)
-      D(16*i-12)= D(16*i-12)*SCALE(ip1)*SCALE(ip4)
-      D(16*i-11)= D(16*i-11)*SCALE(ip2)*SCALE(ip1)
-      D(16*i-10)= D(16*i-10)*SCALE(ip2)*SCALE(ip2)
-      D(16*i- 9)= D(16*i- 9)*SCALE(ip2)*SCALE(ip3)
-      D(16*i- 8)= D(16*i- 8)*SCALE(ip2)*SCALE(ip4)
-      D(16*i- 7)= D(16*i- 7)*SCALE(ip3)*SCALE(ip1)
-      D(16*i- 6)= D(16*i- 6)*SCALE(ip3)*SCALE(ip2)
-      D(16*i- 5)= D(16*i- 5)*SCALE(ip3)*SCALE(ip3)
-      D(16*i- 4)= D(16*i- 4)*SCALE(ip3)*SCALE(ip4)
-      D(16*i- 3)= D(16*i- 3)*SCALE(ip4)*SCALE(ip1)
-      D(16*i- 2)= D(16*i- 2)*SCALE(ip4)*SCALE(ip2)
-      D(16*i- 1)= D(16*i- 1)*SCALE(ip4)*SCALE(ip3)
-      D(16*i- 0)= D(16*i- 0)*SCALE(ip4)*SCALE(ip4)
+      D(16*i-15)= D(16*i-15)*scale(ip1)*scale(ip1)
+      D(16*i-14)= D(16*i-14)*scale(ip1)*scale(ip2)
+      D(16*i-13)= D(16*i-13)*scale(ip1)*scale(ip3)
+      D(16*i-12)= D(16*i-12)*scale(ip1)*scale(ip4)
+      D(16*i-11)= D(16*i-11)*scale(ip2)*scale(ip1)
+      D(16*i-10)= D(16*i-10)*scale(ip2)*scale(ip2)
+      D(16*i- 9)= D(16*i- 9)*scale(ip2)*scale(ip3)
+      D(16*i- 8)= D(16*i- 8)*scale(ip2)*scale(ip4)
+      D(16*i- 7)= D(16*i- 7)*scale(ip3)*scale(ip1)
+      D(16*i- 6)= D(16*i- 6)*scale(ip3)*scale(ip2)
+      D(16*i- 5)= D(16*i- 5)*scale(ip3)*scale(ip3)
+      D(16*i- 4)= D(16*i- 4)*scale(ip3)*scale(ip4)
+      D(16*i- 3)= D(16*i- 3)*scale(ip4)*scale(ip1)
+      D(16*i- 2)= D(16*i- 2)*scale(ip4)*scale(ip2)
+      D(16*i- 1)= D(16*i- 1)*scale(ip4)*scale(ip3)
+      D(16*i- 0)= D(16*i- 0)*scale(ip4)*scale(ip4)
 
       isL= INL(i-1) + 1
       ieL= INL(i  )
@@ -88,22 +88,22 @@ contains
         iq2= 4*inod - 2
         iq3= 4*inod - 1
         iq4= 4*inod
-        AL(16*k-15)= AL(16*k-15)*SCALE(ip1)*SCALE(iq1)
-        AL(16*k-14)= AL(16*k-14)*SCALE(ip1)*SCALE(iq2)
-        AL(16*k-13)= AL(16*k-13)*SCALE(ip1)*SCALE(iq3)
-        AL(16*k-12)= AL(16*k-12)*SCALE(ip1)*SCALE(iq4)
-        AL(16*k-11)= AL(16*k-11)*SCALE(ip2)*SCALE(iq1)
-        AL(16*k-10)= AL(16*k-10)*SCALE(ip2)*SCALE(iq2)
-        AL(16*k- 9)= AL(16*k- 9)*SCALE(ip2)*SCALE(iq3)
-        AL(16*k- 8)= AL(16*k- 8)*SCALE(ip2)*SCALE(iq4)
-        AL(16*k- 7)= AL(16*k- 7)*SCALE(ip3)*SCALE(iq1)
-        AL(16*k- 6)= AL(16*k- 6)*SCALE(ip3)*SCALE(iq2)
-        AL(16*k- 5)= AL(16*k- 5)*SCALE(ip3)*SCALE(iq3)
-        AL(16*k- 4)= AL(16*k- 4)*SCALE(ip3)*SCALE(iq4)
-        AL(16*k- 3)= AL(16*k- 3)*SCALE(ip4)*SCALE(iq1)
-        AL(16*k- 2)= AL(16*k- 2)*SCALE(ip4)*SCALE(iq2)
-        AL(16*k- 1)= AL(16*k- 1)*SCALE(ip4)*SCALE(iq3)
-        AL(16*k- 0)= AL(16*k- 0)*SCALE(ip4)*SCALE(iq4)
+        AL(16*k-15)= AL(16*k-15)*scale(ip1)*scale(iq1)
+        AL(16*k-14)= AL(16*k-14)*scale(ip1)*scale(iq2)
+        AL(16*k-13)= AL(16*k-13)*scale(ip1)*scale(iq3)
+        AL(16*k-12)= AL(16*k-12)*scale(ip1)*scale(iq4)
+        AL(16*k-11)= AL(16*k-11)*scale(ip2)*scale(iq1)
+        AL(16*k-10)= AL(16*k-10)*scale(ip2)*scale(iq2)
+        AL(16*k- 9)= AL(16*k- 9)*scale(ip2)*scale(iq3)
+        AL(16*k- 8)= AL(16*k- 8)*scale(ip2)*scale(iq4)
+        AL(16*k- 7)= AL(16*k- 7)*scale(ip3)*scale(iq1)
+        AL(16*k- 6)= AL(16*k- 6)*scale(ip3)*scale(iq2)
+        AL(16*k- 5)= AL(16*k- 5)*scale(ip3)*scale(iq3)
+        AL(16*k- 4)= AL(16*k- 4)*scale(ip3)*scale(iq4)
+        AL(16*k- 3)= AL(16*k- 3)*scale(ip4)*scale(iq1)
+        AL(16*k- 2)= AL(16*k- 2)*scale(ip4)*scale(iq2)
+        AL(16*k- 1)= AL(16*k- 1)*scale(ip4)*scale(iq3)
+        AL(16*k- 0)= AL(16*k- 0)*scale(ip4)*scale(iq4)
       enddo
 
       isU= INU(i-1) + 1
@@ -115,30 +115,30 @@ contains
         iq2= 4*inod - 2
         iq3= 4*inod - 1
         iq4= 4*inod
-        AU(16*k-15)= AU(16*k-15)*SCALE(ip1)*SCALE(iq1)
-        AU(16*k-14)= AU(16*k-14)*SCALE(ip1)*SCALE(iq2)
-        AU(16*k-13)= AU(16*k-13)*SCALE(ip1)*SCALE(iq3)
-        AU(16*k-12)= AU(16*k-12)*SCALE(ip1)*SCALE(iq4)
-        AU(16*k-11)= AU(16*k-11)*SCALE(ip2)*SCALE(iq1)
-        AU(16*k-10)= AU(16*k-10)*SCALE(ip2)*SCALE(iq2)
-        AU(16*k- 9)= AU(16*k- 9)*SCALE(ip2)*SCALE(iq3)
-        AU(16*k- 8)= AU(16*k- 8)*SCALE(ip2)*SCALE(iq4)
-        AU(16*k- 7)= AU(16*k- 7)*SCALE(ip3)*SCALE(iq1)
-        AU(16*k- 6)= AU(16*k- 6)*SCALE(ip3)*SCALE(iq2)
-        AU(16*k- 5)= AU(16*k- 5)*SCALE(ip3)*SCALE(iq3)
-        AU(16*k- 4)= AU(16*k- 4)*SCALE(ip3)*SCALE(iq4)
-        AU(16*k- 3)= AU(16*k- 3)*SCALE(ip4)*SCALE(iq1)
-        AU(16*k- 2)= AU(16*k- 2)*SCALE(ip4)*SCALE(iq2)
-        AU(16*k- 1)= AU(16*k- 1)*SCALE(ip4)*SCALE(iq3)
-        AU(16*k- 0)= AU(16*k- 0)*SCALE(ip4)*SCALE(iq4)
+        AU(16*k-15)= AU(16*k-15)*scale(ip1)*scale(iq1)
+        AU(16*k-14)= AU(16*k-14)*scale(ip1)*scale(iq2)
+        AU(16*k-13)= AU(16*k-13)*scale(ip1)*scale(iq3)
+        AU(16*k-12)= AU(16*k-12)*scale(ip1)*scale(iq4)
+        AU(16*k-11)= AU(16*k-11)*scale(ip2)*scale(iq1)
+        AU(16*k-10)= AU(16*k-10)*scale(ip2)*scale(iq2)
+        AU(16*k- 9)= AU(16*k- 9)*scale(ip2)*scale(iq3)
+        AU(16*k- 8)= AU(16*k- 8)*scale(ip2)*scale(iq4)
+        AU(16*k- 7)= AU(16*k- 7)*scale(ip3)*scale(iq1)
+        AU(16*k- 6)= AU(16*k- 6)*scale(ip3)*scale(iq2)
+        AU(16*k- 5)= AU(16*k- 5)*scale(ip3)*scale(iq3)
+        AU(16*k- 4)= AU(16*k- 4)*scale(ip3)*scale(iq4)
+        AU(16*k- 3)= AU(16*k- 3)*scale(ip4)*scale(iq1)
+        AU(16*k- 2)= AU(16*k- 2)*scale(ip4)*scale(iq2)
+        AU(16*k- 1)= AU(16*k- 1)*scale(ip4)*scale(iq3)
+        AU(16*k- 0)= AU(16*k- 0)*scale(ip4)*scale(iq4)
       enddo
     enddo
     !*voption indep (B,SCALE)
     do i= 1, N
-      B(4*i-3)= B(4*i-3) * SCALE(4*i-3)
-      B(4*i-2)= B(4*i-2) * SCALE(4*i-2)
-      B(4*i-1)= B(4*i-1) * SCALE(4*i-1)
-      B(4*i  )= B(4*i  ) * SCALE(4*i  )
+      B(4*i-3)= B(4*i-3) * scale(4*i-3)
+      B(4*i-2)= B(4*i-2) * scale(4*i-2)
+      B(4*i-1)= B(4*i-1) * scale(4*i-1)
+      B(4*i  )= B(4*i  ) * scale(4*i  )
     enddo
   end subroutine hecmw_solver_scaling_fw_44
 
@@ -169,14 +169,14 @@ contains
 
     !*voption indep (X,B,SCALE)
     do i= 1, N
-      X(4*i-3)= X(4*i-3) * SCALE(4*i-3)
-      X(4*i-2)= X(4*i-2) * SCALE(4*i-2)
-      X(4*i-1)= X(4*i-1) * SCALE(4*i-1)
-      X(4*i  )= X(4*i  ) * SCALE(4*i  )
-      B(4*i-3)= B(4*i-3) / SCALE(4*i-3)
-      B(4*i-2)= B(4*i-2) / SCALE(4*i-2)
-      B(4*i-1)= B(4*i-1) / SCALE(4*i-1)
-      B(4*i  )= B(4*i  ) / SCALE(4*i  )
+      X(4*i-3)= X(4*i-3) * scale(4*i-3)
+      X(4*i-2)= X(4*i-2) * scale(4*i-2)
+      X(4*i-1)= X(4*i-1) * scale(4*i-1)
+      X(4*i  )= X(4*i  ) * scale(4*i  )
+      B(4*i-3)= B(4*i-3) / scale(4*i-3)
+      B(4*i-2)= B(4*i-2) / scale(4*i-2)
+      B(4*i-1)= B(4*i-1) / scale(4*i-1)
+      B(4*i  )= B(4*i  ) / scale(4*i  )
     enddo
 
     do i= 1, NP
@@ -184,22 +184,22 @@ contains
       ip2= 4*i-2
       ip3= 4*i-1
       ip4= 4*i
-      D(16*i-15)= D(16*i-15)/(SCALE(ip1)*SCALE(ip1))
-      D(16*i-14)= D(16*i-14)/(SCALE(ip1)*SCALE(ip2))
-      D(16*i-13)= D(16*i-13)/(SCALE(ip1)*SCALE(ip3))
-      D(16*i-12)= D(16*i-12)/(SCALE(ip1)*SCALE(ip4))
-      D(16*i-11)= D(16*i-11)/(SCALE(ip2)*SCALE(ip1))
-      D(16*i-10)= D(16*i-10)/(SCALE(ip2)*SCALE(ip2))
-      D(16*i- 9)= D(16*i- 9)/(SCALE(ip2)*SCALE(ip3))
-      D(16*i- 8)= D(16*i- 8)/(SCALE(ip2)*SCALE(ip4))
-      D(16*i- 7)= D(16*i- 7)/(SCALE(ip3)*SCALE(ip1))
-      D(16*i- 6)= D(16*i- 6)/(SCALE(ip3)*SCALE(ip2))
-      D(16*i- 5)= D(16*i- 5)/(SCALE(ip3)*SCALE(ip3))
-      D(16*i- 4)= D(16*i- 4)/(SCALE(ip3)*SCALE(ip4))
-      D(16*i- 3)= D(16*i- 3)/(SCALE(ip4)*SCALE(ip1))
-      D(16*i- 2)= D(16*i- 2)/(SCALE(ip4)*SCALE(ip2))
-      D(16*i- 1)= D(16*i- 1)/(SCALE(ip4)*SCALE(ip3))
-      D(16*i- 0)= D(16*i- 0)/(SCALE(ip4)*SCALE(ip4))
+      D(16*i-15)= D(16*i-15)/(scale(ip1)*scale(ip1))
+      D(16*i-14)= D(16*i-14)/(scale(ip1)*scale(ip2))
+      D(16*i-13)= D(16*i-13)/(scale(ip1)*scale(ip3))
+      D(16*i-12)= D(16*i-12)/(scale(ip1)*scale(ip4))
+      D(16*i-11)= D(16*i-11)/(scale(ip2)*scale(ip1))
+      D(16*i-10)= D(16*i-10)/(scale(ip2)*scale(ip2))
+      D(16*i- 9)= D(16*i- 9)/(scale(ip2)*scale(ip3))
+      D(16*i- 8)= D(16*i- 8)/(scale(ip2)*scale(ip4))
+      D(16*i- 7)= D(16*i- 7)/(scale(ip3)*scale(ip1))
+      D(16*i- 6)= D(16*i- 6)/(scale(ip3)*scale(ip2))
+      D(16*i- 5)= D(16*i- 5)/(scale(ip3)*scale(ip3))
+      D(16*i- 4)= D(16*i- 4)/(scale(ip3)*scale(ip4))
+      D(16*i- 3)= D(16*i- 3)/(scale(ip4)*scale(ip1))
+      D(16*i- 2)= D(16*i- 2)/(scale(ip4)*scale(ip2))
+      D(16*i- 1)= D(16*i- 1)/(scale(ip4)*scale(ip3))
+      D(16*i- 0)= D(16*i- 0)/(scale(ip4)*scale(ip4))
       isL= INL(i-1) + 1
       ieL= INL(i  )
       !*voption indep (IAL,AL,SCALE)
@@ -209,22 +209,22 @@ contains
         iq2= 4*inod - 2
         iq3= 4*inod - 1
         iq4= 4*inod
-        AL(16*k-15)= AL(16*k-15)/(SCALE(ip1)*SCALE(iq1))
-        AL(16*k-14)= AL(16*k-14)/(SCALE(ip1)*SCALE(iq2))
-        AL(16*k-13)= AL(16*k-13)/(SCALE(ip1)*SCALE(iq3))
-        AL(16*k-12)= AL(16*k-12)/(SCALE(ip1)*SCALE(iq4))
-        AL(16*k-11)= AL(16*k-11)/(SCALE(ip2)*SCALE(iq1))
-        AL(16*k-10)= AL(16*k-10)/(SCALE(ip2)*SCALE(iq2))
-        AL(16*k- 9)= AL(16*k- 9)/(SCALE(ip2)*SCALE(iq3))
-        AL(16*k- 8)= AL(16*k- 8)/(SCALE(ip2)*SCALE(iq4))
-        AL(16*k- 7)= AL(16*k- 7)/(SCALE(ip3)*SCALE(iq1))
-        AL(16*k- 6)= AL(16*k- 6)/(SCALE(ip3)*SCALE(iq2))
-        AL(16*k- 5)= AL(16*k- 5)/(SCALE(ip3)*SCALE(iq3))
-        AL(16*k- 4)= AL(16*k- 4)/(SCALE(ip3)*SCALE(iq4))
-        AL(16*k- 3)= AL(16*k- 3)/(SCALE(ip4)*SCALE(iq1))
-        AL(16*k- 2)= AL(16*k- 2)/(SCALE(ip4)*SCALE(iq2))
-        AL(16*k- 1)= AL(16*k- 1)/(SCALE(ip4)*SCALE(iq3))
-        AL(16*k- 0)= AL(16*k- 0)/(SCALE(ip4)*SCALE(iq4))
+        AL(16*k-15)= AL(16*k-15)/(scale(ip1)*scale(iq1))
+        AL(16*k-14)= AL(16*k-14)/(scale(ip1)*scale(iq2))
+        AL(16*k-13)= AL(16*k-13)/(scale(ip1)*scale(iq3))
+        AL(16*k-12)= AL(16*k-12)/(scale(ip1)*scale(iq4))
+        AL(16*k-11)= AL(16*k-11)/(scale(ip2)*scale(iq1))
+        AL(16*k-10)= AL(16*k-10)/(scale(ip2)*scale(iq2))
+        AL(16*k- 9)= AL(16*k- 9)/(scale(ip2)*scale(iq3))
+        AL(16*k- 8)= AL(16*k- 8)/(scale(ip2)*scale(iq4))
+        AL(16*k- 7)= AL(16*k- 7)/(scale(ip3)*scale(iq1))
+        AL(16*k- 6)= AL(16*k- 6)/(scale(ip3)*scale(iq2))
+        AL(16*k- 5)= AL(16*k- 5)/(scale(ip3)*scale(iq3))
+        AL(16*k- 4)= AL(16*k- 4)/(scale(ip3)*scale(iq4))
+        AL(16*k- 3)= AL(16*k- 3)/(scale(ip4)*scale(iq1))
+        AL(16*k- 2)= AL(16*k- 2)/(scale(ip4)*scale(iq2))
+        AL(16*k- 1)= AL(16*k- 1)/(scale(ip4)*scale(iq3))
+        AL(16*k- 0)= AL(16*k- 0)/(scale(ip4)*scale(iq4))
       enddo
 
       isU= INU(i-1) + 1
@@ -236,26 +236,26 @@ contains
         iq2= 4*inod - 2
         iq3= 4*inod - 1
         iq4= 4*inod
-        AU(16*k-15)= AU(16*k-15)/(SCALE(ip1)*SCALE(iq1))
-        AU(16*k-14)= AU(16*k-14)/(SCALE(ip1)*SCALE(iq2))
-        AU(16*k-13)= AU(16*k-13)/(SCALE(ip1)*SCALE(iq3))
-        AU(16*k-12)= AU(16*k-12)/(SCALE(ip1)*SCALE(iq4))
-        AU(16*k-11)= AU(16*k-11)/(SCALE(ip2)*SCALE(iq1))
-        AU(16*k-10)= AU(16*k-10)/(SCALE(ip2)*SCALE(iq2))
-        AU(16*k- 9)= AU(16*k- 9)/(SCALE(ip2)*SCALE(iq3))
-        AU(16*k- 8)= AU(16*k- 8)/(SCALE(ip2)*SCALE(iq4))
-        AU(16*k- 7)= AU(16*k- 7)/(SCALE(ip3)*SCALE(iq1))
-        AU(16*k- 6)= AU(16*k- 6)/(SCALE(ip3)*SCALE(iq2))
-        AU(16*k- 5)= AU(16*k- 5)/(SCALE(ip3)*SCALE(iq3))
-        AU(16*k- 4)= AU(16*k- 4)/(SCALE(ip3)*SCALE(iq4))
-        AU(16*k- 3)= AU(16*k- 3)/(SCALE(ip4)*SCALE(iq1))
-        AU(16*k- 2)= AU(16*k- 2)/(SCALE(ip4)*SCALE(iq2))
-        AU(16*k- 1)= AU(16*k- 1)/(SCALE(ip4)*SCALE(iq3))
-        AU(16*k- 0)= AU(16*k- 0)/(SCALE(ip4)*SCALE(iq4))
+        AU(16*k-15)= AU(16*k-15)/(scale(ip1)*scale(iq1))
+        AU(16*k-14)= AU(16*k-14)/(scale(ip1)*scale(iq2))
+        AU(16*k-13)= AU(16*k-13)/(scale(ip1)*scale(iq3))
+        AU(16*k-12)= AU(16*k-12)/(scale(ip1)*scale(iq4))
+        AU(16*k-11)= AU(16*k-11)/(scale(ip2)*scale(iq1))
+        AU(16*k-10)= AU(16*k-10)/(scale(ip2)*scale(iq2))
+        AU(16*k- 9)= AU(16*k- 9)/(scale(ip2)*scale(iq3))
+        AU(16*k- 8)= AU(16*k- 8)/(scale(ip2)*scale(iq4))
+        AU(16*k- 7)= AU(16*k- 7)/(scale(ip3)*scale(iq1))
+        AU(16*k- 6)= AU(16*k- 6)/(scale(ip3)*scale(iq2))
+        AU(16*k- 5)= AU(16*k- 5)/(scale(ip3)*scale(iq3))
+        AU(16*k- 4)= AU(16*k- 4)/(scale(ip3)*scale(iq4))
+        AU(16*k- 3)= AU(16*k- 3)/(scale(ip4)*scale(iq1))
+        AU(16*k- 2)= AU(16*k- 2)/(scale(ip4)*scale(iq2))
+        AU(16*k- 1)= AU(16*k- 1)/(scale(ip4)*scale(iq3))
+        AU(16*k- 0)= AU(16*k- 0)/(scale(ip4)*scale(iq4))
       enddo
     enddo
 
-    deallocate(SCALE)
+    deallocate(scale)
   end subroutine hecmw_solver_scaling_bk_44
 
 end module hecmw_solver_scaling_44

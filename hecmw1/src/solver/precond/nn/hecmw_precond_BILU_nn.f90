@@ -72,14 +72,14 @@ contains
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
     if (PRECOND.eq.10) call FORM_ILU0_nn &
-         &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_nn &
-         &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_nn &
-         &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
 
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
@@ -98,36 +98,36 @@ contains
     do i= 1, N
       do ii = 1, NDOF
         SW(ii)= WW(NDOF*(i-1)+ii)
-      end do 
+      end do
       isL= inumFI1L(i-1)+1
       ieL= inumFI1L(i)
       do j= isL, ieL
         k= FI1L(j)
         do ii = 1, NDOF
           X(ii)= WW(NDOF*(k-1)+ii)
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
             SW(ii)= SW(ii) - ALlu0(NDOF*NDOF*(j-1)+NDOF*(ii-1)+ij)*X(ij)
-          end do 
-        end do 
+          end do
+        end do
       enddo
 
       X= SW
       do ii=2,NDOF
         do ij = 1,ii-1
-           X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
-        end do 
+          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
+        end do
       end do
       do ii=NDOF,1,-1
         do ij = NDOF,ii+1,-1
-          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)          
-        end do 
+          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
+        end do
         X(ii)=Dlu0(NDOF*NDOF*(i-1)+(NDOF+1)*(ii-1)+1 )*X(ii)
-      end do  
+      end do
       do ii = 1, NDOF
         WW(NDOF*(i-1)+ii)=X(ii)
-      end do 
+      end do
     enddo
 
     !C
@@ -137,33 +137,33 @@ contains
       isU= inumFI1U(i-1) + 1
       ieU= inumFI1U(i)
       SW= 0.d0
-      
+
       do j= ieU, isU, -1
         k= FI1U(j)
         do ii = 1, NDOF
           X(ii)= WW(NDOF*(k-1)+ii)
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
             SW(ii)= SW(ii) + AUlu0(NDOF*NDOF*(j-1)+NDOF*(ii-1)+ij)*X(ij)
-          end do 
-        end do 
+          end do
+        end do
       enddo
       X= SW
       do ii=2,NDOF
         do ij = 1,ii-1
-           X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
-        end do 
+          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
+        end do
       end do
       do ii=NDOF,1,-1
         do ij = NDOF,ii+1,-1
-          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)          
-        end do 
+          X(ii)=X(ii)-Dlu0(NDOF*NDOF*(i-1)+NDOF*(ii-1)+ij )*X(ij)
+        end do
         X(ii)=Dlu0(NDOF*NDOF*(i-1)+(NDOF+1)*(ii-1)+1 )*X(ii)
-      end do  
+      end do
       do ii = 1, NDOF
         WW(NDOF*(i-1)+ii)= WW(NDOF*(i-1)+ii)-X(ii)
-      end do 
+      end do
     enddo
   end subroutine hecmw_precond_BILU_nn_apply
 
@@ -194,8 +194,8 @@ contains
   !C    form ILU(0) matrix
   !C
   subroutine FORM_ILU0_nn                                   &
-       &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -254,7 +254,7 @@ contains
       do ij=1,NDOF
         Dlu0(NDOF2*(i-1)+NDOF*(ii-1)+ij)= DkINV(ii,ij)
       end do
-    end do 
+    end do
 
     do i= 2, NP
       IW1= 0
@@ -274,12 +274,12 @@ contains
           do ij=1,NDOF
             DkINV(ii,ij) = Dlu0(NDOF2*(k-1)+NDOF*(ii-1)+ij)
           end do
-        end do 
+        end do
         do ii=1,NDOF
           do ij=1,NDOF
             Aik(ii,ij) = ALlu0(NDOF2*(kk-1)+NDOF*(ii-1)+ij)
           end do
-        end do 
+        end do
 
         do jj= INU(k-1)+1, INU(k)
           j= IAU(jj)
@@ -288,7 +288,7 @@ contains
             do ij=1,NDOF
               Akj(ii,ij) = AUlu0(NDOF2*(jj-1)+NDOF*(ii-1)+ij)
             end do
-          end do 
+          end do
 
           call ILU1bNN (RHS_Aij, DkINV, Aik, Akj,NDOF)
 
@@ -340,8 +340,8 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_nn                                   &
-       &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -577,9 +577,9 @@ contains
 
     i = 1
     call ILU1a33 (DkINV, &
-         Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-         Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-         Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
+      Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
+      Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
+      Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
     Dlu0(9*i-8)= DkINV(1,1)
     Dlu0(9*i-7)= DkINV(1,2)
     Dlu0(9*i-6)= DkINV(1,3)
@@ -691,9 +691,9 @@ contains
       enddo
 
       call ILU1a33 (DkINV, &
-           Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-           Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-           Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
+        Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
+        Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
+        Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
       Dlu0(9*i-8)= DkINV(1,1)
       Dlu0(9*i-7)= DkINV(1,2)
       Dlu0(9*i-6)= DkINV(1,3)
@@ -717,8 +717,8 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_nn &
-       &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NDOF, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NDOF, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -921,9 +921,9 @@ contains
     IWsU= 0
     do i= 1, NP
       IWsL(i)= INL(i)-INL(i-1) + inumFI2L(i)-inumFI2L(i-1) +          &
-           &                             inumFI1L(i) + IWsL(i-1)
+        &                             inumFI1L(i) + IWsL(i-1)
       IWsU(i)= INU(i)-INU(i-1) + inumFI2U(i)-inumFI2U(i-1) +          &
-           &                             inumFI1U(i) + IWsU(i-1)
+        &                             inumFI1U(i) + IWsU(i-1)
     enddo
 
     do i= 2, NP
@@ -1180,9 +1180,9 @@ contains
 
     i = 1
     call ILU1a33 (DkINV, &
-         Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-         Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-         Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
+      Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
+      Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
+      Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
     Dlu0(9*i-8)= DkINV(1,1)
     Dlu0(9*i-7)= DkINV(1,2)
     Dlu0(9*i-6)= DkINV(1,3)
@@ -1288,9 +1288,9 @@ contains
       enddo
 
       call ILU1a33 (DkINV, &
-           Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
-           Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
-           Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
+        Dlu0(9*i-8), Dlu0(9*i-7), Dlu0(9*i-6), &
+        Dlu0(9*i-5), Dlu0(9*i-4), Dlu0(9*i-3), &
+        Dlu0(9*i-2), Dlu0(9*i-1), Dlu0(9*i  ))
       Dlu0(9*i-8)= DkINV(1,1)
       Dlu0(9*i-7)= DkINV(1,2)
       Dlu0(9*i-6)= DkINV(1,3)
@@ -1332,7 +1332,7 @@ contains
     ir    = N
 
     ip= 0
-1   continue
+    1   continue
     ip= ip + 1
 
     if (ir-l.lt.M) then
@@ -1347,7 +1347,7 @@ contains
         end do
         i= 0
 
-2       continue
+        2       continue
         STEM(i+1)= ss
         INUM(i+1)= ii
       end do
@@ -1404,11 +1404,11 @@ contains
       ss= STEM(l)
       ii= INUM(l)
 
-3     continue
+      3     continue
       i= i + 1
       if (STEM(i).lt.ss) goto 3
 
-4     continue
+      4     continue
       j= j - 1
       if (STEM(j).gt.ss) goto 4
 
@@ -1424,7 +1424,7 @@ contains
 
       goto 3
 
-5     continue
+      5     continue
 
       STEM(l)= STEM(j)
       STEM(j)= ss
@@ -1507,8 +1507,8 @@ contains
     do i = 1, NDOF
       do j = 1, NDOF
         ALU(i,j) = D(NDOF*(i-1)+j)
-      end do 
-    end do 
+      end do
+    end do
 
     do k= 1, NDOF
       if (ALU(k,k) == 0.d0) then
@@ -1547,22 +1547,22 @@ contains
       X(1:NDOF)= Akj(1:NDOF,k)
       do i=2,NDOF
         do j = 1,i-1
-           X(i)=X(i)-DkINV(i,j)*X(j)
-        end do 
+          X(i)=X(i)-DkINV(i,j)*X(j)
+        end do
       end do
       do i=NDOF,1,-1
         do j = NDOF,i+1,-1
-          X(i)=X(i)-DkINV(i,j)*X(j)          
-        end do 
+          X(i)=X(i)-DkINV(i,j)*X(j)
+        end do
         X(i)=DkINV(i,i)*X(i)
-      end do     
+      end do
       RHS_Aij(:,k)=0.0d0
       do i=1,NDOF
         do j=1,NDOF
           RHS_Aij(i,k) = RHS_Aij(i,k)+Aik(i,j)*X(j)
-        end do 
-      end do    
-    end do 
+        end do
+      end do
+    end do
     return
   end subroutine ILU1bNN
 

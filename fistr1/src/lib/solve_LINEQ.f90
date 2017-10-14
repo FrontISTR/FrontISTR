@@ -10,7 +10,7 @@ module m_solve_LINEQ
 
   public :: solve_LINEQ
 
-  contains
+contains
 
   subroutine solve_LINEQ(hecMESH, hecMAT)
     use hecmw

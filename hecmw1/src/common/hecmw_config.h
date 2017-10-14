@@ -45,12 +45,11 @@ typedef MPI_Fint HECMW_Fint;
 
 #endif
 
-
-#define HECMW_INT    ((HECMW_Datatype)10001)
+#define HECMW_INT ((HECMW_Datatype)10001)
 
 #define HECMW_DOUBLE ((HECMW_Datatype)10002)
 
-#define HECMW_CHAR   ((HECMW_Datatype)10003)
+#define HECMW_CHAR ((HECMW_Datatype)10003)
 
 #define HECMW_MIN ((HECMW_Op)20001)
 
@@ -58,16 +57,13 @@ typedef MPI_Fint HECMW_Fint;
 
 #define HECMW_SUM ((HECMW_Op)20003)
 
-
 #define HECMW_EXIT_SUCCESS 0
 
-#define HECMW_EXIT_ERROR   1
-
+#define HECMW_EXIT_ERROR 1
 
 #define HECMW_SUCCESS 0
 
 #define HECMW_ERROR (-1)
-
 
 #define HECMW_HEADER_LEN 127
 
@@ -78,4 +74,3 @@ typedef MPI_Fint HECMW_Fint;
 #define HECMW_MSG_LEN 255
 
 #endif
-

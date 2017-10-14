@@ -16,7 +16,7 @@ module hecmw_JAD_TYPE_nn
   public :: hecmw_JAD_FINALIZE_nn
   public :: hecmw_JAD_IS_INITIALIZED_nn
   public :: hecmw_JAD_MATVEC_nn
-  
+
   !C---------------------- AU&AL
   real(kind=kreal), allocatable      :: AJAD(:)
   integer(kind=kint), allocatable    :: JAJAD(:)
@@ -30,24 +30,24 @@ contains
 
   subroutine hecmw_JAD_INIT_nn(hecMAT)
     type(hecmwST_matrix) :: hecMAT
-    ALLOCATE(WP(hecMAT%NDOF,hecMAT%NP))
-    ALLOCATE(AJAD((hecMAT%NPL+hecMAT%NPU)*hecMAT%NDOF*hecMAT%NDOF))
-    ALLOCATE(JAJAD(hecMAT%NPL+hecMAT%NPU))
-    ALLOCATE(JADORD(hecMAT%NP))
-    ALLOCATE(IAJAD(hecMAT%NP+1))
-    CALL REPACK(hecMAT%N, hecMAT, MJAD, AJAD, JAJAD, IAJAD, JADORD)
+    allocate(WP(hecMAT%NDOF,hecMAT%NP))
+    allocate(AJAD((hecMAT%NPL+hecMAT%NPU)*hecMAT%NDOF*hecMAT%NDOF))
+    allocate(JAJAD(hecMAT%NPL+hecMAT%NPU))
+    allocate(JADORD(hecMAT%NP))
+    allocate(IAJAD(hecMAT%NP+1))
+    call REPACK(hecMAT%N, hecMAT, MJAD, AJAD, JAJAD, IAJAD, JADORD)
     INITIALIZED = 1
   end subroutine hecmw_JAD_INIT_nn
 
   subroutine hecmw_JAD_FINALIZE_nn()
-    DEALLOCATE(AJAD)
-    DEALLOCATE(JAJAD)
-    DEALLOCATE(JADORD)
-    DEALLOCATE(IAJAD)
-    DEALLOCATE(WP)
+    deallocate(AJAD)
+    deallocate(JAJAD)
+    deallocate(JADORD)
+    deallocate(IAJAD)
+    deallocate(WP)
     INITIALIZED = 0
   end subroutine hecmw_JAD_FINALIZE_nn
-  
+
   function hecmw_JAD_IS_INITIALIZED_nn()
     integer(kind=kint) :: hecmw_JAD_IS_INITIALIZED_nn
     hecmw_JAD_IS_INITIALIZED_nn = INITIALIZED
@@ -76,10 +76,10 @@ contains
       do idof=1,hecMAT%NDOF
         do jdof=1,hecMAT%NDOF
           Y(NDOF*(i-1)+idof) = Y(NDOF*(i-1)+idof) + D(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(NDOF*(i-1)+jdof)
-        end do 
-      end do 
+        end do
+      end do
     enddo
-    CALL MATJAD(hecMAT%N,hecMAT%NDOF, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP)
+    call MATJAD(hecMAT%N,hecMAT%NDOF, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP)
   end subroutine hecmw_JAD_MATVEC_nn
 
   subroutine REPACK(N, hecMAT, MJAD,  AJAD, JAJAD, IAJAD, JADORD)
@@ -94,98 +94,98 @@ contains
     integer(kind = kint), dimension(*) :: JADORD
 
     integer(kind = kint) :: IJAD, MAXNZ, MINNZ,NDOF,NDOF2
-    integer(kind = kint) :: I, J, JS, JE, IN, JC
-    integer(kind = kint), allocatable :: LEN(:), LENZ(:), JADREORD(:)
+    integer(kind = kint) :: I, J, JS, JE, in, JC
+    integer(kind = kint), allocatable :: len(:), LENZ(:), JADREORD(:)
     NDOF = hecMAT%NDOF;NDOF2=NDOF*NDOF
-    ALLOCATE(LEN(N))
-    ALLOCATE(JADREORD(N))
-    DO I=1,N
-      LEN(I)= hecMAT%indexL(I) - hecMAT%indexL(I-1) &
-           &        + hecMAT%indexU(I) - hecMAT%indexU(I-1)
-    END DO
-    MAXNZ=MAXVAL(LEN(1:N))
-    MINNZ=MINVAL(LEN(1:N))
+    allocate(len(N))
+    allocate(JADREORD(N))
+    do I=1,N
+      len(I)= hecMAT%indexL(I) - hecMAT%indexL(I-1) &
+        &        + hecMAT%indexU(I) - hecMAT%indexU(I-1)
+    end do
+    MAXNZ=maxval(len(1:N))
+    MINNZ=minval(len(1:N))
     MJAD =MAXNZ
-    ALLOCATE(LENZ(0:MJAD))
+    allocate(LENZ(0:MJAD))
     LENZ = 0
-    DO I=1,N
-      LENZ(LEN(I))=LENZ(LEN(I))+1
-    ENDDO
-    DO I=MAXNZ-1,MINNZ,-1
+    do I=1,N
+      LENZ(len(I))=LENZ(len(I))+1
+    enddo
+    do I=MAXNZ-1,MINNZ,-1
       LENZ(I)=LENZ(I)+LENZ(I+1)
-    ENDDO
-    DO I=1,N
-      JADORD(I)=LENZ(LEN(I))
-      LENZ(LEN(I))=LENZ(LEN(I))-1
-    ENDDO
-    DO I=1,N
+    enddo
+    do I=1,N
+      JADORD(I)=LENZ(len(I))
+      LENZ(len(I))=LENZ(len(I))-1
+    enddo
+    do I=1,N
       JADREORD(JADORD(I))=I
-    ENDDO
-    DO I=1,N
-      LENZ(LEN(JADREORD(I)))=I
-    ENDDO
-    DO I=MAXNZ-1,1,-1
-      LENZ(I)=MAX(LENZ(I+1),LENZ(I))
-    ENDDO
+    enddo
+    do I=1,N
+      LENZ(len(JADREORD(I)))=I
+    enddo
+    do I=MAXNZ-1,1,-1
+      LENZ(I)=max(LENZ(I+1),LENZ(I))
+    enddo
     IAJAD(1)=1
-    DO I=1,MAXNZ
+    do I=1,MAXNZ
       IAJAD(I+1)=IAJAD(I)+LENZ(I)
-    ENDDO
-    LEN=0
-    DO I= 1, N
+    enddo
+    len=0
+    do I= 1, N
       IJAD=JADORD(I)
       JS= hecMAT%indexL(I-1) + 1
       JE= hecMAT%indexL(I  )
-      DO J=JS,JE
-        IN  = hecMAT%itemL(J)
-        LEN(IJAD)=LEN(IJAD)+1
-        JC=IAJAD(LEN(IJAD))+IJAD-1
+      do J=JS,JE
+        in  = hecMAT%itemL(J)
+        len(IJAD)=len(IJAD)+1
+        JC=IAJAD(len(IJAD))+IJAD-1
         AJAD(NDOF2*(JC-1)+1:NDOF2*(JC)) = hecMAT%AL(NDOF2*(J-1)+1:NDOF2*(J))
-        JAJAD(JC) = IN
-      END DO
-    END DO
-    DO I= 1, N
+        JAJAD(JC) = in
+      end do
+    end do
+    do I= 1, N
       IJAD=JADORD(I)
       JS= hecMAT%indexU(I-1) + 1
       JE= hecMAT%indexU(I  )
-      DO J=JS,JE
-        IN  = hecMAT%itemU(J)
-        LEN(IJAD)=LEN(IJAD)+1
-        JC=IAJAD(LEN(IJAD))+IJAD-1
+      do J=JS,JE
+        in  = hecMAT%itemU(J)
+        len(IJAD)=len(IJAD)+1
+        JC=IAJAD(len(IJAD))+IJAD-1
         AJAD(NDOF2*(JC-1)+1:NDOF2*(JC)) = hecMAT%AU(NDOF2*(J-1)+1:NDOF2*(J))
-        JAJAD(JC) = IN
-      END DO
-    END DO
-    DEALLOCATE(LEN)
-    DEALLOCATE(JADREORD)
-    DEALLOCATE(LENZ)
-  END SUBROUTINE REPACK
+        JAJAD(JC) = in
+      end do
+    end do
+    deallocate(len)
+    deallocate(JADREORD)
+    deallocate(LENZ)
+  end subroutine REPACK
 
-  SUBROUTINE MATJAD(N, NDOF,  MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, W)
+  subroutine MATJAD(N, NDOF,  MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, W)
     use hecmw_util
     integer(kind=kint) :: N,NDOF, MJAD,NDOF2
     integer(kind=kint) :: IAJAD(*), JAJAD(*), JADORD(*)
     real(kind=kreal)   :: AJAD(*), X(*), Y(*),  W(NDOF,N)
-    integer(kind=kint) :: I, K, NZ, IXX, idof,jdof 
+    integer(kind=kint) :: I, K, NZ, IXX, idof,jdof
     NDOF2=NDOF*NDOF
 
     W=0.0d0
-    DO NZ=1,MJAD
-      DO K=IAJAD(NZ),IAJAD(NZ+1)-1
+    do NZ=1,MJAD
+      do K=IAJAD(NZ),IAJAD(NZ+1)-1
         IXX = K-IAJAD(NZ)+1
         do idof = 1, NDOF
           do jdof = 1, NDOF
             W(idof,IXX)=W(idof,IXX)+AJAD(NDOF2*(K-1)+NDOF*(idof-1)+jdof)*X(NDOF*(JAJAD(K)-1)+jdof)
-          end do 
-        end do 
-      ENDDO
-    ENDDO
+          end do
+        end do
+      enddo
+    enddo
 
-    DO I=1,N
+    do I=1,N
       do idof = 1, NDOF
         Y(NDOF*(I-1)+idof)=Y(NDOF*(I-1)+idof)+W(idof,JADORD(I))
-      end do 
-    ENDDO
-  END SUBROUTINE MATJAD
+      end do
+    enddo
+  end subroutine MATJAD
 
 end module hecmw_JAD_TYPE_nn

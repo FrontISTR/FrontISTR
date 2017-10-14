@@ -15,12 +15,10 @@
 
 enum { VARRAY_MAX_VAL_INIT = 64, VARRAY_MAX_VAL_GROW = 2 };
 
-
-int HECMW_varray_int_init(struct hecmw_varray_int *varray)
-{
+int HECMW_varray_int_init(struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
 
-  varray->n_val = 0;
+  varray->n_val   = 0;
   varray->max_val = 0;
 
   varray->vals = NULL;
@@ -28,8 +26,7 @@ int HECMW_varray_int_init(struct hecmw_varray_int *varray)
   return HECMW_SUCCESS;
 }
 
-void HECMW_varray_int_finalize(struct hecmw_varray_int *varray)
-{
+void HECMW_varray_int_finalize(struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
 
   if (varray->max_val == 0) {
@@ -41,16 +38,13 @@ void HECMW_varray_int_finalize(struct hecmw_varray_int *varray)
   return;
 }
 
-
-size_t HECMW_varray_int_nval(const struct hecmw_varray_int *varray)
-{
+size_t HECMW_varray_int_nval(const struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
 
   return varray->n_val;
 }
 
-static int varray_resize(struct hecmw_varray_int *varray, size_t new_max_val)
-{
+static int varray_resize(struct hecmw_varray_int *varray, size_t new_max_val) {
   int *new_vals;
 
   HECMW_assert(varray);
@@ -62,25 +56,24 @@ static int varray_resize(struct hecmw_varray_int *varray, size_t new_max_val)
     HECMW_assert(varray->vals);
 
     free(varray->vals);
-    varray->vals = NULL;
+    varray->vals    = NULL;
     varray->max_val = 0;
 
     return HECMW_SUCCESS;
   }
 
-  new_vals = (int *) HECMW_realloc(varray->vals, sizeof(int) * new_max_val);
+  new_vals = (int *)HECMW_realloc(varray->vals, sizeof(int) * new_max_val);
   if (new_vals == NULL) {
     return HECMW_ERROR;
   }
 
-  varray->vals = new_vals;
+  varray->vals    = new_vals;
   varray->max_val = new_max_val;
 
   return HECMW_SUCCESS;
 }
 
-static int varray_grow(struct hecmw_varray_int *varray)
-{
+static int varray_grow(struct hecmw_varray_int *varray) {
   size_t new_max_val;
 
   HECMW_assert(varray);
@@ -93,13 +86,11 @@ static int varray_grow(struct hecmw_varray_int *varray)
   return varray_resize(varray, new_max_val);
 }
 
-int HECMW_varray_int_append(struct hecmw_varray_int *varray, int value)
-{
+int HECMW_varray_int_append(struct hecmw_varray_int *varray, int value) {
   HECMW_assert(varray);
 
   if (varray->n_val == varray->max_val)
-    if (varray_grow(varray) != HECMW_SUCCESS)
-      return HECMW_ERROR;
+    if (varray_grow(varray) != HECMW_SUCCESS) return HECMW_ERROR;
 
   varray->vals[varray->n_val] = value;
   varray->n_val++;
@@ -107,8 +98,7 @@ int HECMW_varray_int_append(struct hecmw_varray_int *varray, int value)
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_get(const struct hecmw_varray_int *varray, size_t index)
-{
+int HECMW_varray_int_get(const struct hecmw_varray_int *varray, size_t index) {
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index < varray->n_val);
 
@@ -116,16 +106,14 @@ int HECMW_varray_int_get(const struct hecmw_varray_int *varray, size_t index)
 }
 
 int HECMW_varray_int_cat(struct hecmw_varray_int *varray,
-                         const struct hecmw_varray_int *varray2)
-{
+                         const struct hecmw_varray_int *varray2) {
   size_t i;
 
   HECMW_assert(varray);
   HECMW_assert(varray2);
 
   while (varray->n_val + varray2->n_val > varray->max_val) {
-    if (varray_grow(varray) != HECMW_SUCCESS)
-      return HECMW_ERROR;
+    if (varray_grow(varray) != HECMW_SUCCESS) return HECMW_ERROR;
   }
   for (i = 0; i < varray2->n_val; i++) {
     varray->vals[varray->n_val] = varray2->vals[i];
@@ -134,26 +122,24 @@ int HECMW_varray_int_cat(struct hecmw_varray_int *varray,
   return HECMW_SUCCESS;
 }
 
-static int int_cmp(const void *v1, const void *v2)
-{
+static int int_cmp(const void *v1, const void *v2) {
   const int *i1, *i2;
 
-  i1 = (const int *) v1;
-  i2 = (const int *) v2;
+  i1 = (const int *)v1;
+  i2 = (const int *)v2;
 
   if (*i1 < *i2) return -1;
   if (*i1 > *i2) return 1;
   return 0;
 }
 
-void HECMW_varray_int_sort(struct hecmw_varray_int *varray)
-{
+void HECMW_varray_int_sort(struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
   qsort(varray->vals, varray->n_val, sizeof(int), int_cmp);
 }
 
-int HECMW_varray_int_search(struct hecmw_varray_int *varray, int value, size_t *index)
-{
+int HECMW_varray_int_search(struct hecmw_varray_int *varray, int value,
+                            size_t *index) {
   int *p;
   p = bsearch(&value, varray->vals, varray->n_val, sizeof(int), int_cmp);
   if (p == NULL) return HECMW_ERROR;
@@ -161,18 +147,17 @@ int HECMW_varray_int_search(struct hecmw_varray_int *varray, int value, size_t *
   return HECMW_SUCCESS;
 }
 
-size_t HECMW_varray_int_uniq(struct hecmw_varray_int *varray)
-{
+size_t HECMW_varray_int_uniq(struct hecmw_varray_int *varray) {
   size_t i, n_dup = 0;
 
   HECMW_assert(varray);
 
   for (i = 1; i < varray->n_val; i++) {
-    if (varray->vals[i-1] == varray->vals[i]) {
+    if (varray->vals[i - 1] == varray->vals[i]) {
       n_dup++;
     } else {
       if (n_dup > 0) {
-        varray->vals[i-n_dup] = varray->vals[i];
+        varray->vals[i - n_dup] = varray->vals[i];
       }
     }
   }
@@ -185,33 +170,28 @@ size_t HECMW_varray_int_uniq(struct hecmw_varray_int *varray)
   return n_dup;
 }
 
-int HECMW_varray_int_resize(struct hecmw_varray_int *varray, size_t len)
-{
+int HECMW_varray_int_resize(struct hecmw_varray_int *varray, size_t len) {
   HECMW_assert(varray);
 
   if (varray->max_val < len) {
-    if (varray_resize(varray, len) != HECMW_SUCCESS)
-      return HECMW_ERROR;
+    if (varray_resize(varray, len) != HECMW_SUCCESS) return HECMW_ERROR;
   }
   varray->n_val = len;
   return HECMW_SUCCESS;
 }
 
-int *HECMW_varray_int_get_v(struct hecmw_varray_int *varray)
-{
+int *HECMW_varray_int_get_v(struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
   return varray->vals;
 }
 
-const int *HECMW_varray_int_get_cv(const struct hecmw_varray_int *varray)
-{
+const int *HECMW_varray_int_get_cv(const struct hecmw_varray_int *varray) {
   HECMW_assert(varray);
   return varray->vals;
 }
 
 int HECMW_varray_int_copy(const struct hecmw_varray_int *varray,
-                          struct hecmw_varray_int *varray2)
-{
+                          struct hecmw_varray_int *varray2) {
   size_t i;
 
   HECMW_assert(varray);
@@ -219,14 +199,12 @@ int HECMW_varray_int_copy(const struct hecmw_varray_int *varray,
   if (HECMW_varray_int_resize(varray2, varray->n_val) != HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  for (i = 0; i < varray->n_val; i++)
-    varray2->vals[i] = varray->vals[i];
+  for (i = 0; i < varray->n_val; i++) varray2->vals[i] = varray->vals[i];
 
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
-{
+int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray) {
   struct hecmw_varray_int tmp_array;
 
   HECMW_assert(varray);
@@ -246,7 +224,8 @@ int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
     HECMW_bit_array_init(&ba, tmp_array.n_val);
     for (i = 0; i < varray->n_val; i++) {
       int *key = varray->vals + i;
-      int *res = bsearch(key, tmp_array.vals, tmp_array.n_val, sizeof(int), int_cmp);
+      int *res =
+          bsearch(key, tmp_array.vals, tmp_array.n_val, sizeof(int), int_cmp);
       size_t idx;
 
       HECMW_assert(res != NULL);
@@ -257,7 +236,7 @@ int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
         n_dup++;
       } else {
         HECMW_bit_array_set(&ba, idx);
-        varray->vals[i-n_dup] = varray->vals[i];
+        varray->vals[i - n_dup] = varray->vals[i];
       }
     }
     varray->n_val -= n_dup;
@@ -269,9 +248,8 @@ int HECMW_varray_int_rmdup(struct hecmw_varray_int *varray)
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_assign(struct hecmw_varray_int *varray,
-                            size_t begin, size_t end, int val)
-{
+int HECMW_varray_int_assign(struct hecmw_varray_int *varray, size_t begin,
+                            size_t end, int val) {
   size_t i;
 
   HECMW_assert(varray);
@@ -284,17 +262,15 @@ int HECMW_varray_int_assign(struct hecmw_varray_int *varray,
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_insert(struct hecmw_varray_int *varray,
-                            size_t index, int val)
-{
+int HECMW_varray_int_insert(struct hecmw_varray_int *varray, size_t index,
+                            int val) {
   size_t i;
 
   HECMW_assert(varray);
   HECMW_assert(0 <= index && index <= varray->n_val);
 
   if (varray->n_val == varray->max_val)
-    if (varray_grow(varray) != HECMW_SUCCESS)
-      return HECMW_ERROR;
+    if (varray_grow(varray) != HECMW_SUCCESS) return HECMW_ERROR;
 
   /* for (i = varray->n_val; i > index; i--) { */
   /*   varray->vals[i] = varray->vals[i-1]; */
@@ -308,9 +284,7 @@ int HECMW_varray_int_insert(struct hecmw_varray_int *varray,
   return HECMW_SUCCESS;
 }
 
-int HECMW_varray_int_delete(struct hecmw_varray_int *varray,
-                            size_t index)
-{
+int HECMW_varray_int_delete(struct hecmw_varray_int *varray, size_t index) {
   size_t i;
 
   HECMW_assert(varray);

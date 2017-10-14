@@ -14,7 +14,7 @@ module m_fstr_Cutback
 
   logical, private :: is_cutback_active = .false.
 
-  contains
+contains
 
   logical function fstr_cutback_active()
     fstr_cutback_active = is_cutback_active

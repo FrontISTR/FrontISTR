@@ -12,20 +12,18 @@
 !                                                                      !
  *=====================================================================*/
 
-
-
 /*
-	Index Sorting for FSTR
-	2004.10.18 by N.Imai
-	-------------------------
-	[Fortran]
-	integer(kind=4) :: index_data(2,:), n
-	call fstr_sort_index( index_data, n )
+        Index Sorting for FSTR
+        2004.10.18 by N.Imai
+        -------------------------
+        [Fortran]
+        integer(kind=4) :: index_data(2,:), n
+        call fstr_sort_index( index_data, n )
 */
 
 #ifndef fstr_sort_indexH
 #define fstr_sort_indexH
 
-void c_fstr_sort_index( int* index_data, int n);
+void c_fstr_sort_index(int* index_data, int n);
 
 #endif

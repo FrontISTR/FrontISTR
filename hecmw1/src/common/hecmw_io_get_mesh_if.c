@@ -13,91 +13,58 @@
 
 static struct hecmwST_local_mesh *mesh;
 
+void hecmw_get_mesh_init_if(char *name_ID, int *err, int len) {
+  char cname[HECMW_FILENAME_LEN + 1];
 
+  if (HECMW_strcpy_f2c_r(name_ID, len, cname, sizeof(cname)) == NULL) {
+    *err = 1;
+    return;
+  }
 
-void
-hecmw_get_mesh_init_if(char *name_ID, int *err, int len)
-{
-	char cname[HECMW_FILENAME_LEN+1];
+  mesh = HECMW_get_mesh(cname);
+  if (mesh == NULL) {
+    *err = 1;
+    return;
+  }
 
-	if(HECMW_strcpy_f2c_r(name_ID, len, cname, sizeof(cname)) == NULL) {
-		*err = 1;
-		return;
-	}
+  if (HECMW_dist_copy_c2f_init(mesh)) {
+    *err = 1;
+    return;
+  }
 
-	mesh = HECMW_get_mesh(cname);
-	if(mesh == NULL) {
-		*err = 1;
-		return;
-	}
-
-	if(HECMW_dist_copy_c2f_init(mesh)) {
-		*err = 1;
-		return;
-	}
-
-	*err = 0;
+  *err = 0;
 }
 
-
-
-void
-hecmw_get_mesh_init_if_(char *name_ID, int *err, int len)
-{
-	hecmw_get_mesh_init_if(name_ID, err, len);
+void hecmw_get_mesh_init_if_(char *name_ID, int *err, int len) {
+  hecmw_get_mesh_init_if(name_ID, err, len);
 }
 
-
-
-void
-hecmw_get_mesh_init_if__(char *name_ID, int *err, int len)
-{
-	hecmw_get_mesh_init_if(name_ID, err, len);
+void hecmw_get_mesh_init_if__(char *name_ID, int *err, int len) {
+  hecmw_get_mesh_init_if(name_ID, err, len);
 }
 
-
-void
-HECMW_GET_MESH_INIT_IF(char *name_ID, int *err, int len)
-{
-	hecmw_get_mesh_init_if(name_ID, err, len);
+void HECMW_GET_MESH_INIT_IF(char *name_ID, int *err, int len) {
+  hecmw_get_mesh_init_if(name_ID, err, len);
 }
-
 
 /*----------------------------------------------------------------------------*/
 
-
-void
-hecmw_get_mesh_finalize_if(int *ierr)
-{
-	if(HECMW_dist_copy_c2f_finalize()) {
-		*ierr = 1;
-		return;
-	}
-	HECMW_dist_free(mesh);
-	mesh = NULL;
-	*ierr = 0;
+void hecmw_get_mesh_finalize_if(int *ierr) {
+  if (HECMW_dist_copy_c2f_finalize()) {
+    *ierr = 1;
+    return;
+  }
+  HECMW_dist_free(mesh);
+  mesh  = NULL;
+  *ierr = 0;
 }
 
-
-
-void
-hecmw_get_mesh_finalize_if_(int *ierr)
-{
-	hecmw_get_mesh_finalize_if(ierr);
+void hecmw_get_mesh_finalize_if_(int *ierr) {
+  hecmw_get_mesh_finalize_if(ierr);
 }
 
-
-
-void
-hecmw_get_mesh_finalize_if__(int *ierr)
-{
-	hecmw_get_mesh_finalize_if(ierr);
+void hecmw_get_mesh_finalize_if__(int *ierr) {
+  hecmw_get_mesh_finalize_if(ierr);
 }
 
-
-
-void
-HECMW_GET_MESH_FINALIZE_IF(int *ierr)
-{
-	hecmw_get_mesh_finalize_if(ierr);
-}
+void HECMW_GET_MESH_FINALIZE_IF(int *ierr) { hecmw_get_mesh_finalize_if(ierr); }

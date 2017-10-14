@@ -8,46 +8,40 @@
 
 #include "hecmw_part_define.h"
 
-
 struct hecmw_part_edge_data {
+  long long int n_edge;
 
-    long long int n_edge;
-
-    int *edge_node_item;
+  int *edge_node_item;
 };
-
 
 struct hecmw_part_node_data {
+  int *node_elem_index;
 
-    int *node_elem_index;
-
-    int *node_elem_item;
+  int *node_elem_item;
 };
-
 
 struct hecmw_part_cont_data {
+  int n_domain;
 
-    int n_domain;
+  int depth;
 
-    int depth;
+  int type;
 
-    int type;
+  int method;
 
-    int method;
+  int n_rcb_div;
 
-    int n_rcb_div;
+  int *rcb_axis;
 
-    int *rcb_axis;
+  int is_print_ucd;
 
-    int is_print_ucd;
+  char ucd_file_name[HECMW_FILENAME_LEN + 1]; /* ucd file name */
 
-    char ucd_file_name[HECMW_FILENAME_LEN+1]; /* ucd file name */
+  int n_my_domain;
 
-    int n_my_domain;
+  int *my_domain;
 
-    int *my_domain;
-
-    int contact;
+  int contact;
 };
 
-#endif  /* INC_HECMW_PART_STRUCT */
+#endif /* INC_HECMW_PART_STRUCT */

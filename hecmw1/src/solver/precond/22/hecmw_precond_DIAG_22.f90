@@ -69,8 +69,8 @@ contains
 
     endif
 
-!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
-!$omp do
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(4*ii-3) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(4*ii-2)
@@ -94,8 +94,8 @@ contains
       ALU(4*ii-1)= ALUtmp(2,1)
       ALU(4*ii-0)= ALUtmp(2,2)
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
@@ -109,11 +109,11 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: X1, X2
 
-!C
-!C== Block SCALING
+    !C
+    !C== Block SCALING
 
-!$omp parallel default(none),private(i,X1,X2),shared(N,WW,ALU)
-!$omp do
+    !$omp parallel default(none),private(i,X1,X2),shared(N,WW,ALU)
+    !$omp do
     do i= 1, N
       X1= WW(2*i-1)
       X2= WW(2*i-0)
@@ -123,8 +123,8 @@ contains
       WW(2*i-1)= X1
       WW(2*i-0)= X2
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_precond_DIAG_22_apply
 

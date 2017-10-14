@@ -32,14 +32,14 @@ contains
     integer(kind=kint) :: istat
 
     if (INITIALIZED) then
-       mumps_job=-2
-       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
-       if (istat < 0) then
-         write(*,*) 'ERROR: MUMPS returned with error', istat
-         stop
-       endif
-       call sparse_matrix_finalize(spMAT)
-       INITIALIZED = .false.
+      mumps_job=-2
+      call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
+      if (istat < 0) then
+        write(*,*) 'ERROR: MUMPS returned with error', istat
+        stop
+      endif
+      call sparse_matrix_finalize(spMAT)
+      INITIALIZED = .false.
     endif
 
     if (is_sym) then
@@ -84,7 +84,7 @@ contains
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     ! FACTORIZATION and SOLUTION
-!  ----  For Parallel Contact with Multi-Partition Domains
+    !  ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
       call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
       call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)

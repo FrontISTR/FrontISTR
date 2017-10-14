@@ -25,7 +25,7 @@ module m_fstr
 
   public
 
-!> CONSTANTS
+  !> CONSTANTS
   !> general
   integer(kind=kint), parameter :: kYES         =   1
   integer(kind=kint), parameter :: kNO          =   0
@@ -76,18 +76,18 @@ module m_fstr
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 
-!> PARALLEL EXECUTION
+  !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
   integer(kind = kint) :: nprocs
 
-!> PARALLEL CONTACT FLAG
+  !> PARALLEL CONTACT FLAG
   logical :: paraContactFlag = .false.
 
-!> FILE NAME
+  !> FILE NAME
   character(len=HECMW_FILENAME_LEN) :: cntfilNAME
   character(len=HECMW_FILENAME_LEN) :: restartfilNAME
 
-!> FILE HANDLER
+  !> FILE HANDLER
   integer(kind=kint), parameter :: ILOG = 16 ! log
   integer(kind=kint), parameter :: ISTA = 17 ! status
   integer(kind=kint), parameter :: IUTB = 18 ! utable
@@ -97,11 +97,11 @@ module m_fstr
   integer(kind=kint), parameter :: INEU = 54 ! neutral file (heat)
   integer(kind=kint), parameter :: IRESOUT = 100 ! ~110, keeping for result output file
 
-!> SOLVER CONTROL
+  !> SOLVER CONTROL
   integer(kind=kint) :: svIarray(100)
   real(kind=kreal)   :: svRarray(100)
 
-!> FLAG for ECHO/RESULT/POST
+  !> FLAG for ECHO/RESULT/POST
   integer(kind=kint), pointer :: IECHO
   integer(kind=kint), pointer :: IRESULT
   integer(kind=kint), pointer :: IVISUAL
@@ -111,17 +111,17 @@ module m_fstr
   integer(kind=kint), pointer :: NRRES     ! position of restart read
   integer(kind=kint), pointer :: NPRINT    ! interval of write
 
-!> REFTEMP
+  !> REFTEMP
   real(kind=kreal), pointer :: REF_TEMP
 
-!> ANALYSIS CONTROL for NLGEOM and HEAT
+  !> ANALYSIS CONTROL for NLGEOM and HEAT
   real(kind=kreal)   :: DT    ! /=fstr_param%dtime
   real(kind=kreal)   :: ETIME ! /=fstr_param%etime
   integer(kind=kint) :: ITMAX
   real(kind=kreal)   :: EPS   ! /=fstr_param%eps
   real(kind=kreal)   :: TEMTOL
 
-!>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
+  !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
     integer(kind=kint) :: solver_method !< solver method number
@@ -172,10 +172,10 @@ module m_fstr
     type(time_points), pointer :: timepoints(:)  !< time points data
   end type fstr_param
 
-!> GLOBAL VARIABLE INITIALIZED IN FSTR_SETUP
+  !> GLOBAL VARIABLE INITIALIZED IN FSTR_SETUP
   type( fstr_param ),target :: fstrPR
 
-!> Data for STATIC ANSLYSIS  (fstrSOLID)
+  !> Data for STATIC ANSLYSIS  (fstrSOLID)
   type fstr_solid_physic_val
     real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
     real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
@@ -309,8 +309,8 @@ module m_fstr
 
     !> ANALYSIS CONTROL for NLGEOM
     integer(kind=kint) :: restart_nout   !< output interval of restart file
-                                         !< (if  .gt.0) restart file write
-                                         !< (if  .lt.0) restart file read and write
+    !< (if  .gt.0) restart file write
+    !< (if  .lt.0) restart file read and write
     integer(kind=kint) :: restart_nin    !< input number of restart
     type(step_info)    :: step_ctrl_restart  !< step information for restart
 
@@ -321,7 +321,7 @@ module m_fstr
     integer(kind=kint), pointer :: is_rot(:)
     integer(kind=kint) :: elemopt361
     real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
-                                                     !< 1:time t  2: time t+dt
+    !< 1:time t  2: time t+dt
     !> for increment control
     integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
     real(kind=kreal)   :: NRstat_r(10)     !< statistics of newton iteration (real)
@@ -359,7 +359,7 @@ module m_fstr
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
   end type fstr_solid
 
-!> Data for HEAT ANSLYSIS  (fstrHEAT)
+  !> Data for HEAT ANSLYSIS  (fstrHEAT)
   type fstr_heat
     !> TIME CONTROL
     real(kind=kreal) :: TEMTOL
@@ -393,7 +393,7 @@ module m_fstr
     real(kind=kreal), pointer :: TEMPW(:)
 
     !> Residual
-    real(kind=kreal), pointer :: RE(:)
+    real(kind=kreal), pointer :: re(:)
     real(kind=kreal), pointer :: QV(:)
     real(kind=kreal), pointer :: RR(:)
     real(kind=kreal), pointer :: RL(:)
@@ -444,7 +444,7 @@ module m_fstr
     type(tWeldLine), pointer :: weldline(:) => null()
   end type fstr_heat
 
-!> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
+  !> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
   type fstr_dynamic
     !> ANALYSIS TYPE CONTROL
     integer(kind=kint) :: idx_eqa       ! implicit or explicit
@@ -457,8 +457,8 @@ module m_fstr
     real(kind=kreal)   :: t_end         ! end time of analysis
     real(kind=kreal)   :: t_delta       ! time increment
     integer(kind=kint) :: restart_nout  ! output interval of restart file
-                                        ! (if  .gt.0) restart file write
-                                        ! (if  .lt.0) restart file read and write
+    ! (if  .gt.0) restart file write
+    ! (if  .lt.0) restart file read and write
     integer(kind=kint) :: restart_nin  !input number of restart file
 
     !> Newmark-beta parameter
@@ -482,12 +482,12 @@ module m_fstr
     integer(kind=kint) :: nout_monit     ! output interval of result monitoring
     integer(kind=kint) :: i_step         ! step number
     integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
-                                         ! iout_list(1): displacement
-                                         ! iout_list(2): velocity
-                                         ! iout_list(3): acceleration
-                                         ! iout_list(4): reaction force
-                                         ! iout_list(5): strain
-                                         ! iout_list(6): stress
+    ! iout_list(1): displacement
+    ! iout_list(2): velocity
+    ! iout_list(3): acceleration
+    ! iout_list(4): reaction force
+    ! iout_list(5): strain
+    ! iout_list(6): stress
 
     !> VALUE
     real(kind=kreal), pointer :: DISP  (:,:)     !> Displacement, U(t+dt), U(t), U(t-dt)
@@ -513,12 +513,12 @@ module m_fstr
 
   type fstr_freqanalysis
     integer(kind=kint)                :: FLOAD_ngrp_tot
-    integer(kind=kint), pointer       :: FLOAD_ngrp_GRPID(:) => NULL()
-    integer(kind=kint), pointer       :: FLOAD_ngrp_ID(:)    => NULL()
-    integer(kind=kint), pointer       :: FLOAD_ngrp_TYPE(:)  => NULL()
-    integer(kind=kint), pointer       :: FLOAD_ngrp_DOF(:)   => NULL()
-    real(kind=kreal), pointer         :: FLOAD_ngrp_valre(:) => NULL()
-    real(kind=kreal), pointer         :: FLOAD_ngrp_valim(:) => NULL()
+    integer(kind=kint), pointer       :: FLOAD_ngrp_GRPID(:) => null()
+    integer(kind=kint), pointer       :: FLOAD_ngrp_ID(:)    => null()
+    integer(kind=kint), pointer       :: FLOAD_ngrp_TYPE(:)  => null()
+    integer(kind=kint), pointer       :: FLOAD_ngrp_DOF(:)   => null()
+    real(kind=kreal), pointer         :: FLOAD_ngrp_valre(:) => null()
+    real(kind=kreal), pointer         :: FLOAD_ngrp_valim(:) => null()
     character(len=HECMW_FILENAME_LEN) :: eigenlog_filename
     integer(kind=kint)                :: start_mode
     integer(kind=kint)                :: end_mode
@@ -527,12 +527,12 @@ module m_fstr
   type fstr_freqanalysis_data
     integer(kind=kint)        :: numMode
     integer(kind=kint)        :: numNodeDOF
-    real(kind=kreal), pointer :: eigOmega(:)    => NULL()
-    real(kind=kreal), pointer :: eigVector(:,:) => NULL()
+    real(kind=kreal), pointer :: eigOmega(:)    => null()
+    real(kind=kreal), pointer :: eigVector(:,:) => null()
     real(kind=kreal)           :: rayAlpha, rayBeta
   end type fstr_freqanalysis_data
 
-!> Package of data used by Lanczos eigenvalue solver
+  !> Package of data used by Lanczos eigenvalue solver
   type fstr_eigen
     !> Allocatable array, used or Lanczos eigenvalue analysis
     integer(kind=kint)  :: nget      ! Solved eigen value number (default:5)
@@ -549,7 +549,7 @@ module m_fstr
     real   (kind=kreal), pointer :: partfactor(:)
   end type fstr_eigen
 
-!> Data for coupling analysis
+  !> Data for coupling analysis
   type fstr_couple
     !> for revocap
     integer( kind=kint )   :: dof              ! == 3
@@ -566,7 +566,7 @@ module m_fstr
     !>  -1:not relation, >1:index of coupled_node
   end type fstr_couple
 
-!> Data for weld line
+  !> Data for weld line
   type tWeldLine
     integer(kind=kint) :: egrpid
     real( kind=kreal ) :: I
@@ -579,7 +579,7 @@ module m_fstr
     real(kind=kreal)   :: tstart
   end type tWeldLine
 
-!> Data for section control
+  !> Data for section control
   type tSection
     !integer              :: mat_ID
     !integer              :: iset
@@ -593,9 +593,9 @@ module m_fstr
     !integer              :: elemopt362
   end type tSection
 
-  contains
+contains
 
-!> NULL POINTER SETTING TO AVOID RUNTIME ERROR
+  !> NULL POINTER SETTING TO AVOID RUNTIME ERROR
   subroutine fstr_nullify_fstr_param( P )
     implicit none
     type( fstr_param ) :: P
@@ -687,7 +687,7 @@ module m_fstr
     nullify( H%TEMPC )
     nullify( H%TEMP  )
     nullify( H%TEMPW )
-    nullify( H%RE )
+    nullify( H%re )
     nullify( H%QV )
     nullify( H%RR )
     nullify( H%RL )
@@ -759,7 +759,7 @@ module m_fstr
     nullify( C%index )
   end subroutine fstr_nullify_fstr_couple
 
-!> Initializer of structure hecmwST_matrix
+  !> Initializer of structure hecmwST_matrix
   subroutine fstr_mat_init( hecMAT )
     implicit none
     type(hecmwST_matrix) :: hecMAT
@@ -800,21 +800,21 @@ module m_fstr
     integer ::  ndof, nn, ierror
     ndof = hecMAT%NDOF
     nn = ndof*ndof
-    allocate (hecMAT%AL(nn*hecMAT%NPL)        ,STAT=ierror )
+    allocate (hecMAT%AL(nn*hecMAT%NPL)        ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%AU(nn*hecMAT%NPU)        ,STAT=ierror )
+    allocate (hecMAT%AU(nn*hecMAT%NPU)        ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%B(ndof*hecMAT%NP)          ,STAT=ierror )
+    allocate (hecMAT%B(ndof*hecMAT%NP)          ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
@@ -822,21 +822,21 @@ module m_fstr
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
     hecMAT%B(:)=0.d0
-    allocate (hecMAT%D(nn*hecMAT%NP)          ,STAT=ierror )
+    allocate (hecMAT%D(nn*hecMAT%NP)          ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%X(ndof*hecMAT%NP)          ,STAT=ierror )
+    allocate (hecMAT%X(ndof*hecMAT%NP)          ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%ALU(nn*hecMAT%N)         ,STAT=ierror )
+    allocate (hecMAT%ALU(nn*hecMAT%N)         ,stat=ierror )
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
@@ -853,57 +853,57 @@ module m_fstr
     ndof = hecMAT%NDOF
     nn = ndof*ndof
     if( associated(hecMAT%AL) ) then
-        deallocate(hecMAT%AL                  ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-          call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%AL                  ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     if( associated(hecMAT%AU) ) then
-        deallocate(hecMAT%AU                  ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-          call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%AU                  ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     if( associated(hecMAT%B) ) then
-        deallocate(hecMAT%B                   ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-         call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%B                   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     if( associated(hecMAT%D) ) then
-        deallocate(hecMAT%D                   ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-          call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%D                   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     if( associated(HECMAT%X) ) then
-        deallocate(hecMAT%X                   ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-          call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%X                   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     if( associated(hecMAT%ALU) ) then
-        deallocate(hecMAT%ALU                 ,STAT=ierror)
-        if( ierror /= 0 ) then
-          write(idbg,*) 'stop due to deallocation error'
-          call flush(idbg)
-          call hecmw_abort( hecmw_comm_get_comm())
-        end if
+      deallocate(hecMAT%ALU                 ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
     endif
     call hecmw_cmat_finalize(hecmAT%cmat)
   end subroutine hecMAT_finalize
 
-!> Initializer of structure fstr_param
+  !> Initializer of structure fstr_param
   subroutine fstr_param_init( fstrPARAM, hecMESH )
     implicit none
     type(fstr_param) :: fstrPARAM
@@ -946,8 +946,8 @@ module m_fstr
     fstrPARAM%nn_internal = hecMESH%nn_internal;
     allocate( fstrPARAM%global_local_ID(2,hecMESH%nn_internal))
     do i = 1, hecMESH%nn_internal
-            fstrPARAM%global_local_ID(1,i) = hecMESH%global_node_ID(i)
-            fstrPARAM%global_local_ID(2,i) = i
+      fstrPARAM%global_local_ID(1,i) = hecMESH%global_node_ID(i)
+      fstrPARAM%global_local_ID(2,i) = i
     end do
     call fstr_sort_index( fstrPARAM%global_local_ID, hecMESH%nn_internal )
   end subroutine fstr_param_init
@@ -986,7 +986,7 @@ module m_fstr
     fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
-!> This subroutine fetch coords defined by local coordinate system
+  !> This subroutine fetch coords defined by local coordinate system
   subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
     integer, intent(in)             :: cdsys_ID      !< id of local coordinate
     type(hecmwST_local_mesh)       :: hecMESH       !< mesh information
@@ -1001,13 +1001,13 @@ module m_fstr
       else
         ik=g_LocalCoordSys(cdsys_ID)%node_ID(1)
         coords(1,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
-                     + fstrSOLID%dunode(3*ik-2:3*ik)
+          + fstrSOLID%dunode(3*ik-2:3*ik)
         ik=g_LocalCoordSys(cdsys_ID)%node_ID(2)
         coords(2,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
-                     + fstrSOLID%dunode(3*ik-2:3*ik)
+          + fstrSOLID%dunode(3*ik-2:3*ik)
         ik=g_LocalCoordSys(cdsys_ID)%node_ID(3)
         if(ik>0) coords(3,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
-                     + fstrSOLID%dunode(3*ik-2:3*ik)
+          + fstrSOLID%dunode(3*ik-2:3*ik)
       endif
     endif
   end subroutine get_coordsys

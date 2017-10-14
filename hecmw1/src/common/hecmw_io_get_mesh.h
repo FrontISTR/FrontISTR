@@ -8,7 +8,6 @@
 
 #include "hecmw_struct.h"
 
-
 extern struct hecmwST_local_mesh *HECMW_get_mesh(char *name_ID);
 
 #endif

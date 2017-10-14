@@ -4,79 +4,79 @@
 !-------------------------------------------------------------------------------
 !> \brief  This module contains several strategy to free locking problem
 !> in Eight-node hexagonal element
-MODULE m_static_LIB_Fbar
+module m_static_LIB_Fbar
 
-   USE hecmw, only : kint, kreal
-   USE elementInfo
+  use hecmw, only : kint, kreal
+  use elementInfo
 
-   IMPLICIT NONE
+  implicit none
 
-   real(kind=kreal), private, parameter :: I33(3,3) = &
-     &  reshape( (/1.d0, 0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 0.d0, 0.d0, 1.d0/), (/3,3/) )
+  real(kind=kreal), private, parameter :: I33(3,3) = &
+    &  reshape( (/1.d0, 0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 0.d0, 0.d0, 1.d0/), (/3,3/) )
 
-   CONTAINS
+contains
 
 
-!>  This subroutine calculate stiff matrix using b-bar method
-!>
-!> \see Hughes, T. J. "Generalization of Selective Integration Procedures
-!>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15,
-!>  pp1413-1418,1980
-!----------------------------------------------------------------------*
-   SUBROUTINE STF_C3D8Fbar                                          &
-              (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-               time, tincr, u, temperature)
-!----------------------------------------------------------------------*
+  !>  This subroutine calculate stiff matrix using b-bar method
+  !>
+  !> \see Hughes, T. J. "Generalization of Selective Integration Procedures
+  !>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15,
+  !>  pp1413-1418,1980
+  !----------------------------------------------------------------------*
+  subroutine STF_C3D8Fbar                                          &
+      (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
+      time, tincr, u, temperature)
+    !----------------------------------------------------------------------*
 
-    USE mMechGauss
-    USE m_MatMatrix
-    USE m_common_struct
-    USE m_static_LIB_3d, ONLY: GEOMAT_C3
-    USE m_utilities
+    use mMechGauss
+    use m_MatMatrix
+    use m_common_struct
+    use m_static_LIB_3d, only: GEOMAT_C3
+    use m_utilities
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    INTEGER(kind=kint), INTENT(IN)  :: etype                  !< element type
-    INTEGER(kind=kint), INTENT(IN)  :: nn                     !< number of elemental nodes
-    REAL(kind=kreal), INTENT(IN)    :: ecoord(3, nn)          !< coordinates of elemental nodes
-    TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)             !< status of qudrature points
-    REAL(kind=kreal), INTENT(OUT)   :: stiff(:,:)             !< stiff matrix
-    INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
-    REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)           !< variables to define matreial coordinate system
-    REAL(kind=kreal), INTENT(IN)    :: time                   !< current time
-    REAL(kind=kreal), INTENT(IN)    :: tincr                  !< time increment
-    REAL(kind=kreal), INTENT(IN), OPTIONAL :: u(:, :)         !< nodal displacemwent
-    REAL(kind=kreal), INTENT(IN), OPTIONAL :: temperature(nn) !< temperature
+    integer(kind=kint), intent(in)  :: etype                  !< element type
+    integer(kind=kint), intent(in)  :: nn                     !< number of elemental nodes
+    real(kind=kreal), intent(in)    :: ecoord(3, nn)          !< coordinates of elemental nodes
+    type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
+    real(kind=kreal), intent(out)   :: stiff(:,:)             !< stiff matrix
+    integer(kind=kint), intent(in)  :: cdsys_ID
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
+    real(kind=kreal), intent(in)    :: time                   !< current time
+    real(kind=kreal), intent(in)    :: tincr                  !< time increment
+    real(kind=kreal), intent(in), optional :: u(:, :)         !< nodal displacemwent
+    real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    INTEGER(kind=kint) :: flag
-    INTEGER(kind=kint), PARAMETER :: ndof = 3
-    REAL(kind=kreal) :: D(6, 6),B(6, ndof*nn),DB(6, ndof*nn)
-    REAL(kind=kreal) :: gderiv(nn, 3),stress(6),mat(6, 6)
-    REAL(kind=kreal) :: det, wg, temp, spfunc(nn)
-    INTEGER(kind=kint) :: i, j, p, q, LX, serr
-    REAL(kind=kreal) :: naturalCoord(3)
-    REAL(kind=kreal) :: gdispderiv(3, 3)
-    REAL(kind=kreal) :: B1(6, ndof*nn)
-    REAL(kind=kreal) :: Smat(9, 9), elem(3, nn)
-    REAL(kind=kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
-    REAL(kind=kreal) :: coordsys(3, 3)
+    integer(kind=kint) :: flag
+    integer(kind=kint), parameter :: ndof = 3
+    real(kind=kreal) :: D(6, 6),B(6, ndof*nn),DB(6, ndof*nn)
+    real(kind=kreal) :: gderiv(nn, 3),stress(6),mat(6, 6)
+    real(kind=kreal) :: det, wg, temp, spfunc(nn)
+    integer(kind=kint) :: i, j, p, q, LX, serr
+    real(kind=kreal) :: naturalCoord(3)
+    real(kind=kreal) :: gdispderiv(3, 3)
+    real(kind=kreal) :: B1(6, ndof*nn)
+    real(kind=kreal) :: Smat(9, 9), elem(3, nn)
+    real(kind=kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
+    real(kind=kreal) :: coordsys(3, 3)
 
     real(kind=kreal) :: elem0(3,nn), elem1(3, nn), gderiv1(nn,ndof), B2(6, ndof*nn), Z1(3,2)
     real(kind=kreal) :: V0, jacob, jacob_ave, gderiv1_ave(nn,ndof)
     real(kind=kreal) :: gderiv2_ave(ndof*nn,ndof*nn)
     real(kind=kreal) :: Fbar(3,3), Jratio(8), coeff, sff, dstrain(6), ddFS, FS(3,3), GFS(3,2)
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    IF( .NOT. PRESENT(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
     elem(:, :) = ecoord(:, :)
     elem0(:, :) = ecoord(:, :)
-    IF( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
+    if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
     elem1(:, :) = ecoord(:, :)+u(:, :)
 
     !cal volumetric average of J=detF and dN/dx
@@ -92,7 +92,7 @@ MODULE m_static_LIB_Fbar
         jacob = 1.d0
         gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + jacob*wg*gderiv(1:nn, 1:ndof)
       else
-        gdispderiv(1:3, 1:3) = MATMUL( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+        gdispderiv(1:3, 1:3) = matmul( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
         jacob = Determinant33( I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof) )
         Jratio(LX) = jacob**(-1.d0/3.d0)
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv1)
@@ -102,7 +102,7 @@ MODULE m_static_LIB_Fbar
             do i=1,ndof
               do j=1,ndof
                 gderiv2_ave(3*p-3+i,3*q-3+j) = gderiv2_ave(3*p-3+i,3*q-3+j)  &
-                   & + jacob*wg*(gderiv1(p,i)*gderiv1(q,j)-gderiv1(q,i)*gderiv1(p,j))
+                  & + jacob*wg*(gderiv1(p,i)*gderiv1(q,j)-gderiv1(q,i)*gderiv1(p,j))
               end do
             end do
           end do
@@ -121,35 +121,35 @@ MODULE m_static_LIB_Fbar
       stop 'Error in Update_C3D8Fbar: too small element volume'
     end if
 
-    DO LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(etype)
 
-      CALL getQuadPoint( etype, LX, naturalCoord(:) )
-      CALL getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
+      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
-      IF( cdsys_ID > 0 ) THEN
-        CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
-        IF( serr == -1 ) STOP "Fail to setup local coordinate"
-        IF( serr == -2 ) THEN
-          WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
-        END IF
-      END IF
+      if( cdsys_ID > 0 ) then
+        call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
+        if( serr == -1 ) stop "Fail to setup local coordinate"
+        if( serr == -2 ) then
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        end if
+      end if
 
-      IF( PRESENT(temperature) ) THEN
-        CALL getShapeFunc( etype, naturalcoord, spfunc )
-        temp = DOT_PRODUCT( temperature, spfunc )
-        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
-      ELSE
-        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
-      END IF
+      if( present(temperature) ) then
+        call getShapeFunc( etype, naturalcoord, spfunc )
+        temp = dot_product( temperature, spfunc )
+        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
+      else
+        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
+      end if
 
-      IF( flag == UPDATELAG ) then
-        CALL GEOMAT_C3( gausses(LX)%stress, mat )
+      if( flag == UPDATELAG ) then
+        call GEOMAT_C3( gausses(LX)%stress, mat )
         D(:, :) = D(:, :)-mat
-      ENDIF
+      endif
 
       wg = getWeight(etype, LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
-      DO j = 1, nn
+      do j = 1, nn
         B(1, 3*j-2) = gderiv(j, 1)
         B(2, 3*j-1) = gderiv(j, 2)
         B(3, 3*j  ) = gderiv(j, 3)
@@ -159,31 +159,31 @@ MODULE m_static_LIB_Fbar
         B(5, 3*j  ) = gderiv(j, 2)
         B(6, 3*j-2) = gderiv(j, 3)
         B(6, 3*j  ) = gderiv(j, 1)
-      END DO
+      end do
 
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
-      if( flag == INFINITE ) THEN
+      if( flag == INFINITE ) then
         B2(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3,1) = (gderiv1_ave(j,1:3)-gderiv(j,1:3))/3.d0
           B2(1,3*j-2:3*j) = Z1(1:3,1)
           B2(2,3*j-2:3*j) = Z1(1:3,1)
           B2(3,3*j-2:3*j) = Z1(1:3,1)
-        END DO
+        end do
 
         ! BL = Jratio*(BL0 + BL1)+BL2
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(1:3, j) = B(1:3,j)+B2(1:3,j)
-        END DO
+        end do
 
-      else if( flag == TOTALLAG ) THEN
-        gdispderiv(1:ndof, 1:ndof) = MATMUL( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+      else if( flag == TOTALLAG ) then
+        gdispderiv(1:ndof, 1:ndof) = matmul( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
         Fbar(1:ndof, 1:ndof) = Jratio(LX)*(I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof))
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv1)
 
         ! ---dudx(i,j) ==> gdispderiv(i,j)
         B1(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           B1(1, 3*J-2) = gdispderiv(1, 1)*gderiv(J, 1)
           B1(1, 3*J-1) = gdispderiv(2, 1)*gderiv(J, 1)
           B1(1, 3*J  ) = gdispderiv(3, 1)*gderiv(J, 1)
@@ -202,7 +202,7 @@ MODULE m_static_LIB_Fbar
           B1(6, 3*j-2) = gdispderiv(1, 3)*gderiv(j, 1)+gdispderiv(1, 1)*gderiv(j, 3)
           B1(6, 3*j-1) = gdispderiv(2, 3)*gderiv(j, 1)+gdispderiv(2, 1)*gderiv(j, 3)
           B1(6, 3*j  ) = gdispderiv(3, 3)*gderiv(j, 1)+gdispderiv(3, 1)*gderiv(j, 3)
-        END DO
+        end do
 
         dstrain(1) = 0.5d0*(dot_product(Fbar(1:3,1),Fbar(1:3,1))-1.d0)
         dstrain(2) = 0.5d0*(dot_product(Fbar(1:3,2),Fbar(1:3,2))-1.d0)
@@ -212,7 +212,7 @@ MODULE m_static_LIB_Fbar
         dstrain(6) = dot_product(Fbar(1:3,3),Fbar(1:3,1))
 
         B2(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3,1) = (gderiv1_ave(j,1:3)-gderiv1(j,1:3))/3.d0
           B2(1,3*j-2:3*j) = (2.d0*dstrain(1)+1.d0)*Z1(1:3,1)
           B2(2,3*j-2:3*j) = (2.d0*dstrain(2)+1.d0)*Z1(1:3,1)
@@ -220,50 +220,50 @@ MODULE m_static_LIB_Fbar
           B2(4,3*j-2:3*j) = 2.d0*dstrain(4)*Z1(1:3,1)
           B2(5,3*j-2:3*j) = 2.d0*dstrain(5)*Z1(1:3,1)
           B2(6,3*j-2:3*j) = 2.d0*dstrain(6)*Z1(1:3,1)
-        END DO
+        end do
 
         ! BL = Jratio*(BL0 + BL1)+BL2
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(:, j) = Jratio(LX)*Jratio(LX)*(B(:,j)+B1(:,j))+B2(:,j)
-        END DO
+        end do
 
-      ELSE IF( flag == UPDATELAG ) THEN
+      else if( flag == UPDATELAG ) then
         wg = (Jratio(LX)**3.d0)*getWeight(etype, LX)*det
 
         B2(1:3, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3,1) = (gderiv1_ave(j,1:3)-gderiv(j,1:3))/3.d0
           B2(1, 3*j-2:3*j) = Z1(1:3,1)
           B2(2, 3*j-2:3*j) = Z1(1:3,1)
           B2(3, 3*j-2:3*j) = Z1(1:3,1)
-        END DO
+        end do
 
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(1:3, j) = B(1:3,j)+B2(1:3,j)
-        END DO
+        end do
 
-      END IF
+      end if
 
-      DB(1:6, 1:nn*ndof) = MATMUL( D, B(1:6, 1:nn*ndof) )
-      FORALL( i=1:nn*ndof, j=1:nn*ndof )
-        stiff(i, j) = stiff(i, j)+DOT_PRODUCT( B(:, i), DB(:, j) )*wg
-      END FORALL
+      DB(1:6, 1:nn*ndof) = matmul( D, B(1:6, 1:nn*ndof) )
+      forall( i=1:nn*ndof, j=1:nn*ndof )
+        stiff(i, j) = stiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
+      end forall
 
       ! calculate the initial stress matrix(1): dFbar*dFbar*Stress
-      IF( flag == TOTALLAG .or. flag == UPDATELAG ) THEN
+      if( flag == TOTALLAG .or. flag == UPDATELAG ) then
         stress(1:6) = gausses(LX)%stress
-        IF( flag == TOTALLAG ) THEN
+        if( flag == TOTALLAG ) then
           coeff = Jratio(LX)
           sff = dot_product(stress(1:6),dstrain(1:6))
-        ELSE IF( flag == UPDATELAG ) THEN
+        else if( flag == UPDATELAG ) then
           coeff = 1.d0
           sff = stress(1)+stress(2)+stress(3)
           gderiv1 = gderiv
           Fbar(1:3,1:3) = I33(1:3,1:3)
-        END IF
+        end if
 
         BN(1:9, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           BN(1, 3*j-2) = coeff*gderiv(j, 1)
           BN(2, 3*j-1) = coeff*gderiv(j, 1)
           BN(3, 3*j  ) = coeff*gderiv(j, 1)
@@ -283,9 +283,9 @@ MODULE m_static_LIB_Fbar
           BN(7, 3*j-2:3*j) = BN(7, 3*j-2:3*j) + Fbar(1,3)*Z1(1:3,1)
           BN(8, 3*j-2:3*j) = BN(8, 3*j-2:3*j) + Fbar(2,3)*Z1(1:3,1)
           BN(9, 3*j-2:3*j) = BN(9, 3*j-2:3*j) + Fbar(3,3)*Z1(1:3,1)
-        END DO
+        end do
         Smat(:, :) = 0.0D0
-        DO j= 1, 3
+        do j= 1, 3
           Smat(j  , j  ) = stress(1)
           Smat(j  , j+3) = stress(4)
           Smat(j  , j+6) = stress(6)
@@ -295,11 +295,11 @@ MODULE m_static_LIB_Fbar
           Smat(j+6, j  ) = stress(6)
           Smat(j+6, j+3) = stress(5)
           Smat(j+6, j+6) = stress(3)
-        END DO
-        SBN(1:9, 1:nn*ndof) = MATMUL( Smat(1:9, 1:9), BN(1:9, 1:nn*ndof) )
-        FORALL( i=1:nn*ndof, j=1:nn*ndof )
-          stiff(i, j) = stiff(i, j)+DOT_PRODUCT( BN(:, i), SBN(:, j) )*wg
-        END FORALL
+        end do
+        SBN(1:9, 1:nn*ndof) = matmul( Smat(1:9, 1:9), BN(1:9, 1:nn*ndof) )
+        forall( i=1:nn*ndof, j=1:nn*ndof )
+          stiff(i, j) = stiff(i, j)+dot_product( BN(:, i), SBN(:, j) )*wg
+        end forall
 
         ! calculate the initial stress matrix(2): d(dFbar)*Stress
         FS(1,1) = Fbar(1,1)*stress(1)+Fbar(1,2)*stress(4)+Fbar(1,3)*stress(6)
@@ -328,92 +328,92 @@ MODULE m_static_LIB_Fbar
             end do
           end do
         end do
-      END IF
+      end if
 
 
-    END DO ! gauss roop
+    end do ! gauss roop
 
-   END SUBROUTINE STF_C3D8Fbar
+  end subroutine STF_C3D8Fbar
 
 
-!>  Update Strain stress of this element
-!----------------------------------------------------------------------*
-   SUBROUTINE Update_C3D8Fbar                              &
-              (etype, nn, ecoord, u, du, cdsys_ID, coords, &
-               qf ,gausses, iter, time, tincr, TT,T0, TN  )
-!----------------------------------------------------------------------*
+  !>  Update Strain stress of this element
+  !----------------------------------------------------------------------*
+  subroutine Update_C3D8Fbar                              &
+      (etype, nn, ecoord, u, du, cdsys_ID, coords, &
+      qf ,gausses, iter, time, tincr, TT,T0, TN  )
+    !----------------------------------------------------------------------*
 
-    USE m_fstr
-    USE mMaterial
-    USE mMechGauss
-    USE m_MatMatrix
-    USE m_ElastoPlastic
-    USE mHyperElastic
-    USE m_utilities
+    use m_fstr
+    use mMaterial
+    use mMechGauss
+    use m_MatMatrix
+    use m_ElastoPlastic
+    use mHyperElastic
+    use m_utilities
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    INTEGER(kind=kint), INTENT(IN)    :: etype         !< \param [in] element type
-    INTEGER(kind=kint), INTENT(IN)    :: nn            !< \param [in] number of elemental nodes
-    REAL(kind=kreal), INTENT(IN)      :: ecoord(3, nn) !< \param [in] coordinates of elemental nodes
-    REAL(kind=kreal), INTENT(IN)      :: u(3, nn)      !< \param [in] nodal dislplacements
-    REAL(kind=kreal), INTENT(IN)      :: du(3, nn)     !< \param [in] nodal displacement increment
-    INTEGER(kind=kint), INTENT(IN)    :: cdsys_ID
-    REAL(kind=kreal), INTENT(INOUT)   :: coords(3, 3)  !< variables to define matreial coordinate system
-    REAL(kind=kreal), INTENT(OUT)     :: qf(nn*3)      !< \param [out] Internal Force
-    TYPE(tGaussStatus), INTENT(INOUT) :: gausses(:)    !< \param [out] status of qudrature points
-    INTEGER, INTENT(IN) :: iter
-    REAL(kind=kreal), INTENT(IN)      :: time          !< current time
-    REAL(kind=kreal), INTENT(IN)      :: tincr         !< time increment
-    REAL(kind=kreal), INTENT(IN), OPTIONAL :: TT(nn)   !< current temperature
-    REAL(kind=kreal), INTENT(IN), OPTIONAL :: T0(nn)   !< reference temperature
-    REAL(kind=kreal), INTENT(IN), OPTIONAL :: TN(nn)   !< reference temperature
+    integer(kind=kint), intent(in)    :: etype         !< \param [in] element type
+    integer(kind=kint), intent(in)    :: nn            !< \param [in] number of elemental nodes
+    real(kind=kreal), intent(in)      :: ecoord(3, nn) !< \param [in] coordinates of elemental nodes
+    real(kind=kreal), intent(in)      :: u(3, nn)      !< \param [in] nodal dislplacements
+    real(kind=kreal), intent(in)      :: du(3, nn)     !< \param [in] nodal displacement increment
+    integer(kind=kint), intent(in)    :: cdsys_ID
+    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
+    real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
+    type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
+    integer, intent(in) :: iter
+    real(kind=kreal), intent(in)      :: time          !< current time
+    real(kind=kreal), intent(in)      :: tincr         !< time increment
+    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
+    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
+    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    INTEGER(kind=kint) :: flag
-    INTEGER(kind=kint), PARAMETER :: ndof = 3
-    REAL(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
-    REAL(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
-    INTEGER(kind=kint) :: i, j, k, LX, mtype, serr
+    integer(kind=kint) :: flag
+    integer(kind=kint), parameter :: ndof = 3
+    real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
+    real(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
+    integer(kind=kint) :: i, j, k, LX, mtype, serr
     integer(kind=kint) :: isEp
-    REAL(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
-    REAL(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3), tm(6, 6)
-    REAL(kind=kreal) :: dstrain(6), dstress(6), dumstress(3, 3), dum(3, 3)
-    REAL(kind=kreal) :: dvol, derivdum(1:ndof, 1:ndof)
-    REAL(kind=kreal) :: ttc, tt0, ttn, alp, alp0, alpo(3), alpo0(3), outa(1), ina(1), EPSTH(6)
-    LOGICAL :: ierr, matlaniso
+    real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
+    real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3), tm(6, 6)
+    real(kind=kreal) :: dstrain(6), dstress(6), dumstress(3, 3), dum(3, 3)
+    real(kind=kreal) :: dvol, derivdum(1:ndof, 1:ndof)
+    real(kind=kreal) :: ttc, tt0, ttn, alp, alp0, alpo(3), alpo0(3), outa(1), ina(1), EPSTH(6)
+    logical :: ierr, matlaniso
 
     real(kind=kreal) :: elem0(3,nn), gderiv1(nn,ndof), B2(6, ndof*nn), Z1(3)
     real(kind=kreal) :: V0, jacob, jacob_ave, gderiv1_ave(nn,ndof)
     real(kind=kreal) :: Fbar(3,3), Jratio(8), coeff, sff
     real(kind=kreal) :: jacob_ave05, gderiv05_ave(nn,ndof)
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
     qf(:) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
     elem0(1:ndof,1:nn) = ecoord(1:ndof,1:nn)
     totaldisp(:, :) = u(:, :)+du(:, :)
-    if( flag == INFINITE ) THEN
+    if( flag == INFINITE ) then
       elem(:, :) = ecoord(:, :)
       elem1(:, :) = ecoord(:, :)
-    else if( flag == TOTALLAG ) THEN
+    else if( flag == TOTALLAG ) then
       elem(:, :) = ecoord(:, :)
       elem1(:, :) = ( du(:, :)+u(:, :) )+ecoord(:, :)
-    else if( flag == UPDATELAG ) THEN
+    else if( flag == UPDATELAG ) then
       elem(:, :) = ( 0.5D0*du(:, :)+u(:, :) )+ecoord(:, :)
       elem1(:, :) = ( du(:, :)+u(:, :) )+ecoord(:, :)
       totaldisp(:, :) = du(:, :)
-    END IF
+    end if
 
     matlaniso = .FALSE.
-    IF( cdsys_ID > 0 .AND. PRESENT(TT) ) THEN
+    if( cdsys_ID > 0 .AND. present(TT) ) then
       ina = TT(1)
-      CALL fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      IF( .NOT. ierr ) matlaniso = .TRUE.
-    END IF
+      call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+      if( .not. ierr ) matlaniso = .TRUE.
+    end if
 
     !cal volumetric average of J=detF and dN/dx
     V0 = 0.d0
@@ -424,14 +424,14 @@ MODULE m_static_LIB_Fbar
       gderiv05_ave(1:nn,1:ndof) = 0.d0
     endif
     do LX = 1, NumOfQuadPoints(etype)
-      CALL getQuadPoint( etype, LX, naturalCoord(:) )
+      call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv( etype, nn, naturalcoord, elem0, det, gderiv)
       wg = getWeight(etype, LX)*det
       if( flag == INFINITE ) then
         jacob = 1.d0
         gderiv1(1:nn, 1:ndof) = gderiv(1:nn, 1:ndof)
       else
-        gdispderiv(1:3, 1:3) = MATMUL( du(1:ndof, 1:nn)+u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+        gdispderiv(1:3, 1:3) = matmul( du(1:ndof, 1:nn)+u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
         jacob = Determinant33( I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof) )
         Jratio(LX) = jacob**(-1.d0/3.d0)
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv1)
@@ -456,22 +456,22 @@ MODULE m_static_LIB_Fbar
       stop 'Error in Update_C3D8Fbar: too small element volume'
     end if
 
-    DO LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(etype)
 
       mtype = gausses(LX)%pMaterial%mtype
 
-      CALL getQuadPoint( etype, LX, naturalCoord(:) )
-      CALL getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
+      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
-      IF( cdsys_ID > 0 ) THEN
-        CALL set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
-        IF( serr == -1 ) STOP "Fail to setup local coordinate"
-        IF( serr == -2 ) THEN
-          WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
-        END IF
-      END IF
+      if( cdsys_ID > 0 ) then
+        call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
+        if( serr == -1 ) stop "Fail to setup local coordinate"
+        if( serr == -2 ) then
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        end if
+      end if
 
-      gdispderiv(1:ndof, 1:ndof) = MATMUL( totaldisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+      gdispderiv(1:ndof, 1:ndof) = matmul( totaldisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
 
       ! ========================================================
       !     UPDATE STRAIN and STRESS
@@ -485,49 +485,49 @@ MODULE m_static_LIB_Fbar
       !gausses(LX)%pMaterial%mtype = ELASTIC
 
       EPSTH = 0.0D0
-      IF( PRESENT(tt) .AND. PRESENT(t0) ) THEN
-        CALL getShapeFunc(etype, naturalcoord, spfunc)
-        ttc = DOT_PRODUCT(TT, spfunc)
-        tt0 = DOT_PRODUCT(T0, spfunc)
-        ttn = DOT_PRODUCT(TN, spfunc)
-        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
+      if( present(tt) .AND. present(t0) ) then
+        call getShapeFunc(etype, naturalcoord, spfunc)
+        ttc = dot_product(TT, spfunc)
+        tt0 = dot_product(T0, spfunc)
+        ttn = dot_product(TN, spfunc)
+        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
 
         ina(1) = ttc
-        IF( matlaniso ) THEN
-          CALL fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
-          IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-        ELSE
-          CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( matlaniso ) then
+          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
+          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+        else
+          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
           alp = outa(1)
-        END IF
+        end if
         ina(1) = tt0
-        IF( matlaniso ) THEN
-          CALL fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
-          IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-        ELSE
-          CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+        if( matlaniso ) then
+          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
+          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+        else
+          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
           alp0 = outa(1)
-        END IF
-        IF( matlaniso ) THEN
-          DO j=1,3
+        end if
+        if( matlaniso ) then
+          do j=1,3
             EPSTH(j) = ALPO(j)*( ttc-ref_temp )-alpo0(j)*( tt0-ref_temp )
-          END DO
-          CALL transformation( coordsys(:,:), tm )
-          EPSTH(:) = MATMUL( EPSTH(:), tm  ) ! to global coord
+          end do
+          call transformation( coordsys(:,:), tm )
+          EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
           EPSTH(4:6) = EPSTH(4:6)*2.0D0
-        ELSE
+        else
           EPSTH(1:3) = ALP*( ttc-ref_temp )-alp0*( tt0-ref_temp )
-        END IF
+        end if
 
-      ELSE
+      else
 
-        CALL MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp )
+        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp )
 
-      END IF
+      end if
 
-      IF( flag == INFINITE ) THEN
+      if( flag == INFINITE ) then
 
         dvol = dot_product( totaldisp(1,1:nn), gderiv1_ave(1:nn,1) ) !du1/dx1
         dvol = dvol + dot_product( totaldisp(2,1:nn), gderiv1_ave(1:nn,2) ) !du2/dx2
@@ -542,16 +542,16 @@ MODULE m_static_LIB_Fbar
 
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
         gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
-          IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          END IF
-          gausses(LX)%stress = REAL( gausses(LX)%stress )
-        END IF
+        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
+          if( present(TT) .AND. present(T0) ) then
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
+          else
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
+          end if
+          gausses(LX)%stress = real( gausses(LX)%stress )
+        end if
 
-      ELSE IF( flag == TOTALLAG ) THEN
+      else if( flag == TOTALLAG ) then
         Fbar(1:ndof, 1:ndof) = Jratio(LX)*(I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof))
 
         ! Green-Lagrange strain
@@ -562,25 +562,25 @@ MODULE m_static_LIB_Fbar
         dstrain(5) = dot_product(Fbar(1:3,2),Fbar(1:3,3))
         dstrain(6) = dot_product(Fbar(1:3,3),Fbar(1:3,1))
 
-        IF( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.         &
-            mtype == USERELASTIC .OR. mtype == USERHYPERELASTIC .OR. mtype == USERMATERIAL ) THEN
+        if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.         &
+            mtype == USERELASTIC .OR. mtype == USERHYPERELASTIC .OR. mtype == USERMATERIAL ) then
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-        ELSE IF( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0  ) THEN
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%stress(1:6) = MATMUL( D(1:6, 1:6), dstrain(1:6) )
-          !gausses(LX)%pMaterial%mtype = mtype
-          IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          END IF
-        ELSE
+          call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
+        else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0  ) then
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
           gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        END IF
+          !gausses(LX)%pMaterial%mtype = mtype
+          if( present(TT) .AND. present(T0) ) then
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
+          else
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
+          end if
+        else
+          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
+          gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+        end if
 
-      ELSE IF( flag == UPDATELAG ) THEN
+      else if( flag == UPDATELAG ) then
 
         dvol = dot_product( totaldisp(1,1:nn), gderiv05_ave(1:nn,1) ) !du1/dx1
         dvol = dvol + dot_product( totaldisp(2,1:nn), gderiv05_ave(1:nn,2) ) !du2/dx2
@@ -600,16 +600,16 @@ MODULE m_static_LIB_Fbar
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 
-        IF( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) THEN
+        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
           !(LX)%pMaterial%mtype = mtype
-          IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, tt0 )
-          ELSE
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          END IF
-        ELSE
+          if( present(TT) .AND. present(T0) ) then
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, tt0 )
+          else
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
+          end if
+        else
 
-          dstress = MATMUL( D(1:6, 1:6), dstrain(1:6) )
+          dstress = matmul( D(1:6, 1:6), dstrain(1:6) )
           dumstress(1,1) = gausses(LX)%stress_bak(1)
           dumstress(2,2) = gausses(LX)%stress_bak(2)
           dumstress(3,3) = gausses(LX)%stress_bak(3)
@@ -617,7 +617,7 @@ MODULE m_static_LIB_Fbar
           dumstress(2,3) = gausses(LX)%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
           dumstress(3,1) = gausses(LX)%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
 
-          dum(:, :) = MATMUL(rot, dumstress)-MATMUL(dumstress, rot)
+          dum(:, :) = matmul(rot, dumstress)-matmul(dumstress, rot)
           gausses(LX)%stress(1) = gausses(LX)%stress_bak(1)+dstress(1)+dum(1,1)
           gausses(LX)%stress(2) = gausses(LX)%stress_bak(2)+dstress(2)+dum(2,2)
           gausses(LX)%stress(3) = gausses(LX)%stress_bak(3)+dstress(3)+dum(3,3)
@@ -625,38 +625,38 @@ MODULE m_static_LIB_Fbar
           gausses(LX)%stress(5) = gausses(LX)%stress_bak(5)+dstress(5)+dum(2,3)
           gausses(LX)%stress(6) = gausses(LX)%stress_bak(6)+dstress(6)+dum(3,1)
 
-          IF( mtype == USERMATERIAL ) THEN
-            CALL StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          ELSEIF( mtype == NORTON ) THEN
+          if( mtype == USERMATERIAL ) then
+            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
+          elseif( mtype == NORTON ) then
             !gausses(LX)%pMaterial%mtype = mtype
-            IF( tincr /= 0.0D0 .AND. any(gausses(LX)%stress /= 0.0D0) ) THEN
-              IF( PRESENT(TT) .AND. PRESENT(T0) ) THEN
-                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
-              ELSE
-                CALL StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
-              END IF
-            END IF
-          END IF
-        END IF
-      END IF
+            if( tincr /= 0.0D0 .AND. any(gausses(LX)%stress /= 0.0D0) ) then
+              if( present(TT) .AND. present(T0) ) then
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
+              else
+                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
+              end if
+            end if
+          end if
+        end if
+      end if
 
-      IF( isElastoplastic(mtype) ) THEN
+      if( isElastoplastic(mtype) ) then
         !gausses(LX)%pMaterial%mtype = mtype
-        IF( PRESENT(tt) ) THEN
-          CALL BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-                              gausses(LX)%istatus(1), gausses(LX)%fstatus, ttc )
-        ELSE
-          CALL BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-                              gausses(LX)%istatus(1), gausses(LX)%fstatus )
-        END IF
-      END IF
+        if( present(tt) ) then
+          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
+            gausses(LX)%istatus(1), gausses(LX)%fstatus, ttc )
+        else
+          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
+            gausses(LX)%istatus(1), gausses(LX)%fstatus )
+        end if
+      end if
 
       ! ========================================================
       ! calculate the internal force ( equivalent nodal force )
       ! ========================================================
       ! Small strain
       B(1:6, 1:nn*ndof) = 0.0D0
-      DO j = 1, nn
+      do j = 1, nn
         B(1,3*j-2) = gderiv(j, 1)
         B(2,3*j-1) = gderiv(j, 2)
         B(3,3*j  ) = gderiv(j, 3)
@@ -666,29 +666,29 @@ MODULE m_static_LIB_Fbar
         B(5,3*j  ) = gderiv(j, 2)
         B(6,3*j-2) = gderiv(j, 3)
         B(6,3*j  ) = gderiv(j, 1)
-      END DO
+      end do
 
       WG=getWeight( etype, LX )*DET
-      IF( flag == INFINITE ) THEN
+      if( flag == INFINITE ) then
         gderiv1(1:nn, 1:ndof) = gderiv(1:nn, 1:ndof)
 
         B2(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3) = (gderiv1_ave(j,1:3)-gderiv1(j,1:3))/3.d0
           B2(1,3*j-2:3*j) = Z1(1:3)
           B2(2,3*j-2:3*j) = Z1(1:3)
           B2(3,3*j-2:3*j) = Z1(1:3)
-        END DO
+        end do
 
         ! BL = BL0 + BL2
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(:, j) = B(:,j)+B2(:,j)
-        END DO
+        end do
 
-      ELSE IF( flag == TOTALLAG ) THEN
+      else if( flag == TOTALLAG ) then
 
         B1(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           B1(1, 3*j-2) = gdispderiv(1, 1)*gderiv(j, 1)
           B1(1, 3*j-1) = gdispderiv(2, 1)*gderiv(j, 1)
           B1(1, 3*j  ) = gdispderiv(3, 1)*gderiv(j, 1)
@@ -707,12 +707,12 @@ MODULE m_static_LIB_Fbar
           B1(6, 3*j-2) = gdispderiv(1, 3)*gderiv(j, 1)+gdispderiv(1, 1)*gderiv(j, 3)
           B1(6, 3*j-1) = gdispderiv(2, 3)*gderiv(j, 1)+gdispderiv(2, 1)*gderiv(j, 3)
           B1(6, 3*j  ) = gdispderiv(3, 3)*gderiv(j, 1)+gdispderiv(3, 1)*gderiv(j, 3)
-        END DO
+        end do
 
-        CALL getGlobalDeriv(etype, nn, naturalcoord, elem1, det, gderiv1)
+        call getGlobalDeriv(etype, nn, naturalcoord, elem1, det, gderiv1)
 
         B2(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3) = (gderiv1_ave(j,1:3)-gderiv1(j,1:3))/3.d0
           B2(1,3*j-2:3*j) = (2.d0*dstrain(1)+1.d0)*Z1(1:3)
           B2(2,3*j-2:3*j) = (2.d0*dstrain(2)+1.d0)*Z1(1:3)
@@ -720,19 +720,19 @@ MODULE m_static_LIB_Fbar
           B2(4,3*j-2:3*j) = 2.d0*dstrain(4)*Z1(1:3)
           B2(5,3*j-2:3*j) = 2.d0*dstrain(5)*Z1(1:3)
           B2(6,3*j-2:3*j) = 2.d0*dstrain(6)*Z1(1:3)
-        END DO
+        end do
 
         ! BL = R^2*(BL0 + BL1)+BL2
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(:, j) = Jratio(LX)*Jratio(LX)*(B(:,j)+B1(:,j))+B2(:,j)
-        END DO
+        end do
 
-      ELSE IF( flag == UPDATELAG ) THEN
+      else if( flag == UPDATELAG ) then
 
-        CALL getGlobalDeriv(etype, nn, naturalcoord, elem1, det, gderiv)
+        call getGlobalDeriv(etype, nn, naturalcoord, elem1, det, gderiv)
         wg = (Jratio(LX)**3.d0)*getWeight(etype, LX)*det
         B(1:6, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           B(1, 3*j-2) = gderiv(j, 1)
           B(2, 3*j-1) = gderiv(j, 2)
           B(3, 3*j  ) = gderiv(j, 3)
@@ -742,72 +742,72 @@ MODULE m_static_LIB_Fbar
           B(5, 3*j  ) = gderiv(j, 2)
           B(6, 3*j-2) = gderiv(j, 3)
           B(6, 3*j  ) = gderiv(j, 1)
-        END DO
+        end do
 
         B2(1:3, 1:nn*ndof) = 0.0D0
-        DO j = 1, nn
+        do j = 1, nn
           Z1(1:3) = (gderiv1_ave(j,1:3)-gderiv(j,1:3))/3.d0
           B2(1, 3*j-2:3*j) = Z1(1:3)
           B2(2, 3*j-2:3*j) = Z1(1:3)
           B2(3, 3*j-2:3*j) = Z1(1:3)
-        END DO
+        end do
 
-        DO j = 1, nn*ndof
+        do j = 1, nn*ndof
           B(1:3, j) = B(1:3,j)+B2(1:3,j)
-        END DO
+        end do
 
-      END IF
+      end if
 
       qf(1:nn*ndof)                                                          &
-      = qf(1:nn*ndof)+MATMUL( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
+        = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
-    END DO
+    end do
 
-   END SUBROUTINE Update_C3D8Fbar
+  end subroutine Update_C3D8Fbar
 
-   !> This subroutien calculate thermal loading
-!----------------------------------------------------------------------*
-   SUBROUTINE TLOAD_C3D8Fbar                    &
-              (etype, nn, XX, YY, ZZ, TT, T0,   &
-               gausses, VECT, cdsys_ID, coords)
-!----------------------------------------------------------------------*
+  !> This subroutien calculate thermal loading
+  !----------------------------------------------------------------------*
+  subroutine TLOAD_C3D8Fbar                    &
+      (etype, nn, XX, YY, ZZ, TT, T0,   &
+      gausses, VECT, cdsys_ID, coords)
+    !----------------------------------------------------------------------*
 
     use m_fstr
-    USE mMechGauss
+    use mMechGauss
     use m_MatMatrix
     use m_utilities
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    INTEGER(kind=kint), PARAMETER   :: ndof = 3
-    INTEGER(kind=kint), INTENT(IN)  :: etype, nn
-    TYPE(tGaussStatus), INTENT(IN)  :: gausses(:)             !< status of qudrature points
-    REAL(kind=kreal), INTENT(IN)    :: XX(nn), YY(nn), ZZ(nn)
-    REAL(kind=kreal), INTENT(IN)    :: TT(nn), T0(nn)
-    REAL(kind=kreal), INTENT(OUT)   :: VECT(nn*ndof)
-    INTEGER(kind=kint), INTENT(IN)  :: cdsys_ID
-    REAL(kind=kreal), INTENT(INOUT) :: coords(3, 3)           !< variables to define matreial coordinate system
+    integer(kind=kint), parameter   :: ndof = 3
+    integer(kind=kint), intent(in)  :: etype, nn
+    type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
+    real(kind=kreal), intent(in)    :: XX(nn), YY(nn), ZZ(nn)
+    real(kind=kreal), intent(in)    :: TT(nn), T0(nn)
+    real(kind=kreal), intent(out)   :: VECT(nn*ndof)
+    integer(kind=kint), intent(in)  :: cdsys_ID
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
-    REAL(kind=kreal) :: ALP, alp0, D(6, 6), B(6, ndof*nn)
-    REAL(kind=kreal) :: B4, B6, B8, det, ecoord(3, nn)
-    INTEGER(kind=kint) :: j, LX, serr
-    REAL(kind=kreal) :: estrain(6), SGM(6), H(nn)
-    REAL(kind=kreal) :: naturalcoord(3), gderiv(nn, 3)
-    REAL(kind=kreal) :: wg, outa(1), ina(1), Bbar(nn, 3), alpo(3), alpo0(3), coordsys(3, 3)
-    REAL(kind=kreal) :: TEMPC, TEMP0, TEMPC0, TEMP00, THERMAL_EPS, tm(6,6)
-    LOGICAL :: ierr, matlaniso
+    real(kind=kreal) :: ALP, alp0, D(6, 6), B(6, ndof*nn)
+    real(kind=kreal) :: B4, B6, B8, det, ecoord(3, nn)
+    integer(kind=kint) :: j, LX, serr
+    real(kind=kreal) :: estrain(6), SGM(6), H(nn)
+    real(kind=kreal) :: naturalcoord(3), gderiv(nn, 3)
+    real(kind=kreal) :: wg, outa(1), ina(1), Bbar(nn, 3), alpo(3), alpo0(3), coordsys(3, 3)
+    real(kind=kreal) :: TEMPC, TEMP0, TEMPC0, TEMP00, THERMAL_EPS, tm(6,6)
+    logical :: ierr, matlaniso
 
-!---------------------------------------------------------------------
+    !---------------------------------------------------------------------
 
     matlaniso = .FALSE.
 
-    IF( cdsys_ID > 0 ) THEN   ! cannot define aniso exapansion when no local coord defined
+    if( cdsys_ID > 0 ) then   ! cannot define aniso exapansion when no local coord defined
       ina = TT(1)
-      CALL fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      IF( .NOT. ierr ) matlaniso = .TRUE.
-    END IF
+      call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+      if( .not. ierr ) matlaniso = .TRUE.
+    end if
 
     VECT(:) = 0.0D0
 
@@ -816,30 +816,30 @@ MODULE m_static_LIB_Fbar
     ecoord(3, :) = ZZ(:)
 
     naturalCoord = 0.0D0
-    CALL getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, Bbar)
-    CALL getShapeFunc( etype, naturalcoord, H(1:nn) )
-    TEMPC0 = DOT_PRODUCT( H(1:nn), TT(1:nn) )
-    TEMP00 = DOT_PRODUCT( H(1:nn), T0(1:nn) )
+    call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, Bbar)
+    call getShapeFunc( etype, naturalcoord, H(1:nn) )
+    TEMPC0 = dot_product( H(1:nn), TT(1:nn) )
+    TEMP00 = dot_product( H(1:nn), T0(1:nn) )
 
     ! LOOP FOR INTEGRATION POINTS
-    DO LX = 1, NumOfQuadPoints(etype)
+    do LX = 1, NumOfQuadPoints(etype)
 
-      CALL getQuadPoint( etype, LX, naturalCoord(:) )
-      CALL getShapeFunc( etype, naturalcoord, H(1:nn) )
-      CALL getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
+      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getShapeFunc( etype, naturalcoord, H(1:nn) )
+      call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
-      IF( matlaniso ) THEN
-        CALL set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys, serr)
-        IF( serr == -1 ) STOP "Fail to setup local coordinate"
-        IF( serr == -2 ) THEN
-          WRITE(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
-        END IF
-      END IF
+      if( matlaniso ) then
+        call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys, serr)
+        if( serr == -1 ) stop "Fail to setup local coordinate"
+        if( serr == -2 ) then
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        end if
+      end if
 
       !  WEIGHT VALUE AT GAUSSIAN POINT
       wg = getWeight(etype, LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
-      DO j = 1, nn
+      do j = 1, nn
         B4 = ( Bbar(j, 1)-gderiv(j, 1) )/3.0D0
         B6 = ( Bbar(j, 2)-gderiv(j, 2) )/3.0D0
         B8 = ( Bbar(j, 3)-gderiv(j, 3) )/3.0D0
@@ -861,62 +861,62 @@ MODULE m_static_LIB_Fbar
         B(5, 3*j  ) = gderiv(j, 2)
         B(6, 3*j-2) = gderiv(j, 3)
         B(6, 3*j  ) = gderiv(j, 1)
-      END DO
+      end do
 
-      TEMPC = DOT_PRODUCT( H(1:nn),TT(1:nn) )
-      TEMP0 = DOT_PRODUCT( H(1:nn),T0(1:nn) )
+      TEMPC = dot_product( H(1:nn),TT(1:nn) )
+      TEMP0 = dot_product( H(1:nn),T0(1:nn) )
 
-      CALL MatlMatrix( gausses(LX), D3, D, 1.d0, 0.0D0, coordsys, TEMPC )
+      call MatlMatrix( gausses(LX), D3, D, 1.d0, 0.0D0, coordsys, TEMPC )
 
       ina(1) = TEMPC
-      IF( matlaniso ) THEN
-        CALL fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
-        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-      ELSE
-        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+      if( matlaniso ) then
+        call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
+        if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+      else
+        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
         alp = outa(1)
-      END IF
+      end if
       ina(1) = TEMP0
-      IF( matlaniso ) THEN
-        CALL fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
-        IF( ierr ) STOP "Fails in fetching orthotropic expansion coefficient!"
-      ELSE
-        CALL fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-        IF( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
+      if( matlaniso ) then
+        call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
+        if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+      else
+        call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
+        if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
         alp0 = outa(1)
-      END IF
+      end if
 
       !**
       !** THERMAL strain
       !**
-      IF( matlaniso ) THEN
-        DO j = 1, 3
+      if( matlaniso ) then
+        do j = 1, 3
           estrain(j) = ALPO(j)*(TEMPC0-ref_temp)-alpo0(j)*(TEMP00-ref_temp)
-        END DO
+        end do
         estrain(4:6) = 0.0D0
-        CALL transformation(coordsys, tm)
+        call transformation(coordsys, tm)
         estrain(:) = matmul( estrain(:), tm  )      ! to global coord
         estrain(4:6) = estrain(4:6)*2.0D0
-      ELSE
+      else
         THERMAL_EPS = ALP*(TEMPC0-ref_temp)-alp0*(TEMP00-ref_temp)
         estrain(1:3) = THERMAL_EPS
         estrain(4:6) = 0.0D0
-      END IF
+      end if
 
       !**
       !** SET SGM  {s}=[D]{e}
       !**
-      SGM(:) = MATMUL( D(:, :), estrain(:) )
+      SGM(:) = matmul( D(:, :), estrain(:) )
 
       !**
       !** CALCULATE LOAD {F}=[B]T{e}
       !**
-      VECT(1:nn*ndof) = VECT(1:nn*ndof)+MATMUL( SGM(:), B(:, :) )*wg
+      VECT(1:nn*ndof) = VECT(1:nn*ndof)+matmul( SGM(:), B(:, :) )*wg
 
-    END DO
+    end do
 
-  END SUBROUTINE TLOAD_C3D8Fbar
+  end subroutine TLOAD_C3D8Fbar
 
 
-END MODULE m_static_LIB_Fbar
+end module m_static_LIB_Fbar

@@ -239,8 +239,8 @@ contains
     ISYm = 0
 
     !*Allocations
-    allocate (IROw(NTTbr),STAT=ierr)
-    allocate (JCOl(NTTbr),STAT=ierr)
+    allocate (IROw(NTTbr),stat=ierr)
+    allocate (JCOl(NTTbr),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error: irow/jcol"
 
     kk = 0
@@ -346,7 +346,7 @@ contains
     !
     !  set z pivot
     !
-    allocate (ZPIv(NEQns),STAT=IERror)
+    allocate (ZPIv(NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, zpiv: SUB. matini"
     call ZPIVOT(NEQns,neqnsz,NTTbr,JCOl,IROw,ZPIv,ir1)
     if ( ir1/=0 ) then
@@ -363,9 +363,9 @@ contains
     left = lcolno + 2*NTTbr
     last = lenv2
     !rmem
-    allocate (JCPt(2*NTTbr),STAT=IERror)
+    allocate (JCPt(2*NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, jcpt: SUB. matini"
-    allocate (JCOlno(2*NTTbr),STAT=IERror)
+    allocate (JCOlno(2*NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, jcolno: SUB. matini"
     call STSMAT(NEQns,NTTbr,IROw,JCOl,JCPt,JCOlno)
     !
@@ -375,10 +375,10 @@ contains
     lja = lia - NTTbr*2
     last = lja
     !rmem
-    allocate (IA(NEQns+1),STAT=IERror)
+    allocate (IA(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ia: SUB. matini"
     !WINDEBUG
-    allocate (JA(2*NTTbr),STAT=IERror)
+    allocate (JA(2*NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ja: SUB. matini"
     call STIAJA(NEQns,IA,JA,JCPt,JCOlno)
 
@@ -400,23 +400,23 @@ contains
 
     left = iv1 + 5*neqns1
 
-    allocate (IPErm(NEQns),STAT=IERror)
+    allocate (IPErm(NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, iperm: SUB. matini"
-    allocate (INVp(NEQns),STAT=IERror)
+    allocate (INVp(NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, invp: SUB. matini"
-    allocate (DEG(NEQns+1),STAT=IERror)
+    allocate (DEG(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, deg: SUB. matini"
-    allocate (MARker(NEQns+1),STAT=IERror)
+    allocate (MARker(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, marker: SUB. matini"
-    allocate (RCHset(0:NEQns+1),STAT=IERror)
+    allocate (RCHset(0:NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, rchset: SUB. matini"
-    allocate (NBRhd(NEQns+1),STAT=IERror)
+    allocate (NBRhd(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, nbrhd: SUB. matini"
-    allocate (QSIze(NEQns+1),STAT=IERror)
+    allocate (QSIze(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, qsize: SUB. matini"
-    allocate (QLInk(NEQns+1),STAT=IERror)
+    allocate (QLInk(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, qlink: SUB. matini"
-    allocate (ADJncy(2*NTTbr),STAT=IERror)
+    allocate (ADJncy(2*NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. matini"
     call GENQMD(neqnsz,IA,JA,IPErm,INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
     do
@@ -429,7 +429,7 @@ contains
       lbtree = lwk3 - 2*NEQns
       last = lbtree
       !rmem
-      allocate (BTRee(2*(NEQns+1)),STAT=IERror)
+      allocate (BTRee(2*(NEQns+1)),stat=IERror)
       if ( IERror/=0 ) stop "ALLOCATION ERROR, btree: SUB. matini"
       call GENBTQ(INVp,MARker,BTRee,ZPIv,izz,NEQns)
       !
@@ -442,11 +442,11 @@ contains
         lpordr = last - neqns1
         last = lpordr
         !rmem
-        allocate (PARent(NEQns),STAT=IERror)
+        allocate (PARent(NEQns),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
-        allocate (NCH(NEQns+1),STAT=IERror)
+        allocate (NCH(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
-        allocate (PORdr(NEQns+1),STAT=IERror)
+        allocate (PORdr(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. matini.f"
         call POSORD(PARent,BTRee,INVp,IPErm,PORdr,NCH,NEQns,DEG,MARker,RCHset)
         !
@@ -457,11 +457,11 @@ contains
         ladp = lxleaf - neqns1
         last = ladp
         !rmem
-        allocate (ADJncp(NEQns+1),STAT=IERror)
+        allocate (ADJncp(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. matini.f"
-        allocate (XLEaf(NEQns+1),STAT=IERror)
+        allocate (XLEaf(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xleaf: SUB. matini.f"
-        allocate (LEAf(NTTbr),STAT=IERror)
+        allocate (LEAf(NTTbr),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, leaf: SUB. matini.f"
         call GNLEAF(IA,JA,INVp,IPErm,NCH,ADJncp,XLEaf,LEAf,NEQns,lnleaf)
         call FORPAR(NEQns,PARent,NCH,NSTop)
@@ -491,10 +491,10 @@ contains
         !   build up xlnzr,colno  (this is the symbolic fct.)
         !
         maxl = lxleaf - (left+neqns1)
-        allocate (XLNzr(NEQns+1),STAT=IERror)
+        allocate (XLNzr(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xlnzr: SUB. matini.f"
         call PRE_GNCLNO(PARent,XLEaf,LEAf,XLNzr,NEQns,NSTop,lncol,ir1)
-        allocate (COLno(lncol),STAT=IERror)
+        allocate (COLno(lncol),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, colno: SUB. matini.f"
         call GNCLNO(PARent,XLEaf,LEAf,XLNzr,COLno,NEQns,NSTop,lncol,ir1)
         !*Deallocate work arrays
@@ -576,7 +576,7 @@ contains
     ISYm = 0
 
     !*Allocations
-    allocate (VAL(NDEg*NDEg),STAT=ierr)
+    allocate (val(NDEg*NDEg),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error:val"
     write (6,*) "nuform:stage = ", STAge
     kk = 0
@@ -585,23 +585,23 @@ contains
     do j = 1, numnp
       !*Diagonal
       kk = kk + 1
-      call VLCPY(VAL,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
-      call STAIJ1(0,j,j,VAL,Ir)
+      call VLCPY(val,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
+      call STAIJ1(0,j,j,val,Ir)
 
       do i = 1, ndof
-        if ( VAL((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, VAL((i-1)*ndof+i)
+        if ( val((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, val((i-1)*ndof+i)
       enddo
 
       !*Lower
       do k = hecMAT%INDEXL(j-1) + 1, hecMAT%INDEXL(j)
         i = hecMAT%ITEML(k)
         kk = kk + 1
-        call VLCPY(VAL,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
-        call STAIJ1(0,j,i,VAL,Ir)
+        call VLCPY(val,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
+        call STAIJ1(0,j,i,val,Ir)
       enddo
     enddo
 
-    deallocate (VAL)
+    deallocate (val)
   end subroutine NUFORM
 
   !======================================================================!
@@ -626,13 +626,13 @@ contains
       Ir = 0
     endif
 
-    allocate (TEMp(NDEg*NDEg*NEQns),STAT=IRR)
+    allocate (TEMp(NDEg*NDEg*NEQns),stat=IRR)
     if ( IRR/=0 ) then
       write (*,*) '##Error : Not enough memory'
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
       !stop
     endif
-    allocate (INDx(NEQns),STAT=IRR)
+    allocate (INDx(NEQns),stat=IRR)
     if ( IRR/=0 ) then
       write (*,*) '##Error : Not enough memory'
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
@@ -644,16 +644,16 @@ contains
     ndeg2 = NDEg*NDEg
     !rmiv
     select case (NDEg)
-    case (1)
-      call NUFCT(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    case (2)
-      call NUFCT2(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    case (3)
-      call NUFCT3(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    case (6)
-      call NUFCT6(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
-    case default
-      call NUFCTX(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,NDEg,ndegl,Ir)
+      case (1)
+        call NUFCT(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+      case (2)
+        call NUFCT2(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+      case (3)
+        call NUFCT3(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+      case (6)
+        call NUFCT6(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+      case default
+        call NUFCTX(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,NDEg,ndegl,Ir)
     endselect
 
     STAge = 30
@@ -1030,7 +1030,7 @@ contains
     endif
     lwk = TOTal
 
-    allocate (wk(NDEg*NEQns),STAT=IERror)
+    allocate (wk(NDEg*NEQns),stat=IERror)
     if ( IERror/=0 ) then
       write (*,*) "##Error: not enough memory"
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
@@ -1040,17 +1040,17 @@ contains
     ndegl = ndegl/2
 
     select case( NDEg )
-    case (1)
-      call NUSOL1(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
-    case (2)
-      call NUSOL2(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
-    case (3)
-      call NUSOL3(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
-    case (6)
-      call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
-    case DEFAULT
-      call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
-    ENDSELECT
+      case (1)
+        call NUSOL1(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+      case (2)
+        call NUSOL2(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+      case (3)
+        call NUSOL3(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+      case (6)
+        call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+      case default
+        call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+    endselect
 
     STAge = 40
     deallocate (wk)
@@ -1409,7 +1409,7 @@ contains
         exit
       endif
     enddo
-100 if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
+    100 if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
   end subroutine ZPIVOT
 
   !======================================================================!
@@ -1463,7 +1463,7 @@ contains
         Jcpt(locr) = k
         Jcolno(k) = j
 
-20      joc = Jcpt(j)
+        20      joc = Jcpt(j)
         locr = j
         do while ( joc/=0 )
           if ( Jcolno(joc)==i ) goto 100
@@ -1481,13 +1481,13 @@ contains
         Jcpt(locr) = k
         Jcolno(k) = i
       endif
-100 enddo
-    if ( IDBg/=0 ) then
-      write (6,*) 'jcolno'
-      write (6,"(10I7)") (Jcolno(i),i=1,k)
-      write (6,*) 'jcpt'
-      write (6,"(10I7)") (Jcpt(i),i=1,k)
-    endif
+      100 enddo
+      if ( IDBg/=0 ) then
+        write (6,*) 'jcolno'
+        write (6,"(10I7)") (Jcolno(i),i=1,k)
+        write (6,*) 'jcpt'
+        write (6,"(10I7)") (Jcpt(i),i=1,k)
+      endif
   end subroutine STSMAT
 
   !======================================================================!
@@ -1582,10 +1582,10 @@ contains
     enddo
 
     num = 0
-100 search = 1
+    100 search = 1
     thresh = mindeg
     mindeg = Neqns
-200 nump1 = num + 1
+    200 nump1 = num + 1
     if ( nump1>search ) search = nump1
     do j = search, Neqns
       node = Perm(j)
@@ -1597,7 +1597,7 @@ contains
     enddo
     goto 100
 
-300 search = j
+    300 search = j
     Nofsub = Nofsub + Deg(node)
     Marker(node) = 1
     call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
@@ -1673,17 +1673,17 @@ contains
           Ancstr(l) = i
           Parent(l) = i
         endif
-50    enddo
-    enddo
-    do i = 1, Neqns
-      if ( Parent(i)==0 ) Parent(i) = Neqns + 1
-    enddo
-    Parent(Neqns+1) = 0
+        50    enddo
+      enddo
+      do i = 1, Neqns
+        if ( Parent(i)==0 ) Parent(i) = Neqns + 1
+      enddo
+      Parent(Neqns+1) = 0
 
-    if ( IDBg1/=0 ) then
-      write (6,"(' parent')")
-      write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
-    endif
+      if ( IDBg1/=0 ) then
+        write (6,"(' parent')")
+        write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
+      endif
   end subroutine GENPAQ
 
   !======================================================================!
@@ -1739,7 +1739,7 @@ contains
     enddo
     Izz = 0
 
-100 continue
+    100 continue
     if ( IDBg1/=0 ) then
       write (6,"(' binary tree')")
       write (6,"(i6,'(',2I6,')')") (i,Btree(1,i),Btree(2,i),i=1,Neqns)
@@ -1985,9 +1985,9 @@ contains
           j = Parent(j)
         enddo
       endif
-100 enddo
-    Xlnzr(Neqns+1) = l
-    Lncol = l - 1
+      100 enddo
+      Xlnzr(Neqns+1) = l
+      Lncol = l - 1
   end subroutine PRE_GNCLNO
 
   !======================================================================!
@@ -2042,18 +2042,18 @@ contains
           j = Parent(j)
         enddo
       endif
-100 enddo
-    Xlnzr(Neqns+1) = l
-    Lncol = l - 1
+      100 enddo
+      Xlnzr(Neqns+1) = l
+      Lncol = l - 1
 
-    if ( IDBg1/=0 ) then
-      write (6,"(' xlnzr')")
-      write (6,"(' colno (lncol =',i10,')')") Lncol
-      do k = 1, Neqns
-        write (6,"(/' row = ',i6)") k
-        write (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
-      enddo
-    endif
+      if ( IDBg1/=0 ) then
+        write (6,"(' xlnzr')")
+        write (6,"(' colno (lncol =',i10,')')") Lncol
+        do k = 1, Neqns
+          write (6,"(/' row = ',i6)") k
+          write (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
+        enddo
+      endif
   end subroutine GNCLNO
 
   !======================================================================!
@@ -2165,7 +2165,7 @@ contains
       endif
     enddo
 
-100 continue
+    100 continue
     Adjt(1:Neqns) = 0
     locc = Anc(l)
     do
@@ -2244,20 +2244,20 @@ contains
             !
             ! set iperm
             !
-105         do i = 1, Neqns
-              Iperm(Invp(i)) = i
-            enddo
-
-            if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
-            return
-          else
-            locc = Btree(2,joc)
-            if ( locc/=0 ) exit
-            joc = Parent(joc)
-          endif
+            105         do i = 1, Neqns
+            Iperm(Invp(i)) = i
         enddo
+
+        if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
+        return
+      else
+        locc = Btree(2,joc)
+        if ( locc/=0 ) exit
+        joc = Parent(joc)
       endif
     enddo
+  endif
+enddo
   end subroutine ROTATE
 
   !======================================================================!
@@ -2764,7 +2764,7 @@ contains
     real(kind=8), intent(in):: A(Ndeg,*)
     real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
     real(kind=8), intent(out):: Wi(Ndeg)
-    integer, intent(INOUT):: N
+    integer, intent(inout):: N
     !------
     integer:: jj
     integer:: m
@@ -2844,17 +2844,17 @@ contains
     do jj = Ks, Ke
       j = Colno(jj)
       Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j) - Zln(13,jj)*B(3,j)&
-          - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
+        - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
       Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j) - Zln(14,jj)*B(3,j)&
-          - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
+        - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
       Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j) - Zln(15,jj)*B(3,j)&
-          - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
+        - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
       Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j) - Zln(16,jj)*B(3,j)&
-          - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
+        - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
       Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j) - Zln(17,jj)*B(3,j)&
-          - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
+        - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
       Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j) - Zln(18,jj)*B(3,j)&
-          - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
+        - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
     enddo
   end subroutine S6PDOT
 
@@ -2923,7 +2923,7 @@ contains
     real(kind=8):: t
 
     Ir = 0
-    if ( DABS(Dsln(1))<RMIn ) then
+    if ( dabs(Dsln(1))<RMIn ) then
       Ir = 10
       return
     endif
@@ -2931,7 +2931,7 @@ contains
     t = Dsln(2)*Dsln(1)
     Dsln(3) = Dsln(3) - t*Dsln(2)
     Dsln(2) = t
-    if ( DABS(Dsln(3))<RMIn ) then
+    if ( dabs(Dsln(3))<RMIn ) then
       Ir = 10
       return
     endif
@@ -2971,12 +2971,12 @@ contains
     real(kind=8):: t(2)
 
     Ir = 0
-    if ( DABS(Dsln(1))<RMIn ) goto 100
+    if ( dabs(Dsln(1))<RMIn ) goto 100
     Dsln(1) = 1.0D0/Dsln(1)
     t(1) = Dsln(2)*Dsln(1)
     Dsln(3) = Dsln(3) - t(1)*Dsln(2)
     Dsln(2) = t(1)
-    if ( DABS(Dsln(3))<RMIn ) goto 100
+    if ( dabs(Dsln(3))<RMIn ) goto 100
     Dsln(3) = 1.0D0/Dsln(3)
     t(1) = Dsln(4)*Dsln(1)
     Dsln(5) = Dsln(5) - Dsln(2)*Dsln(4)
@@ -2984,11 +2984,11 @@ contains
     Dsln(6) = Dsln(6) - t(1)*Dsln(4) - t(2)*Dsln(5)
     Dsln(4) = t(1)
     Dsln(5) = t(2)
-    if ( DABS(Dsln(6))<RMIn ) goto 100
+    if ( dabs(Dsln(6))<RMIn ) goto 100
     Dsln(6) = 1.0D0/Dsln(6)
     return
 
-100 Dsln(1) = 1.0D0
+    100 Dsln(1) = 1.0D0
     Dsln(2) = 0.0D0
     Dsln(3) = 1.0D0
     Dsln(4) = 0.0D0
@@ -3108,9 +3108,9 @@ contains
       Zln(i+13) = Zz(i+13) - Zz(i+1)*Diag(4) - Zln(i+7)*Diag(5)
       Zln(i+19) = Zz(i+19) - Zz(i+1)*Diag(7) - Zln(i+7)*Diag(8) - Zln(i+13)*Diag(9)
       Zln(i+25) = Zz(i+25) - Zz(i+1)*Diag(11) - Zln(i+7)*Diag(12) - Zln(i+13)*Diag(13)&
-          - Zln(i+19)*Diag(14)
+        - Zln(i+19)*Diag(14)
       Zln(i+31) = Zz(i+31) - Zz(i+1)*Diag(16) - Zln(i+7)*Diag(17) - Zln(i+13)*Diag(18)&
-          - Zln(i+19)*Diag(19) - Zln(i+25)*Diag(20)
+        - Zln(i+19)*Diag(19) - Zln(i+25)*Diag(20)
       Zln(i+1) = Zz(i+1)*Diag(1)
       Zln(i+7) = Zln(i+7)*Diag(3)
       Zln(i+13) = Zln(i+13)*Diag(6)
@@ -3121,9 +3121,9 @@ contains
       Zln(i+19) = Zln(i+19) - Zln(i+31)*Diag(19) - Zln(i+25)*Diag(14)
       Zln(i+13) = Zln(i+13) - Zln(i+31)*Diag(18) - Zln(i+25)*Diag(13)- Zln(i+19)*Diag(9)
       Zln(i+7) = Zln(i+7) - Zln(i+31)*Diag(17) - Zln(i+25)*Diag(12)- Zln(i+19)*Diag(8)&
-          - Zln(i+13)*Diag(5)
+        - Zln(i+13)*Diag(5)
       Zln(i+1) = Zln(i+1) - Zln(i+31)*Diag(16) - Zln(i+25)*Diag(11)- Zln(i+19)*Diag(7)&
-          - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
+        - Zln(i+13)*Diag(4) - Zln(i+7)*Diag(2)
     enddo
   end subroutine INV66
 
@@ -3295,48 +3295,48 @@ contains
           endif
         enddo
         exit
-50    enddo
-      head = 0
-      mrgsze = 0
-      do iov = 1, novrlp
-        node = Ovrlp(iov)
-        jstrt = Xadj(node)
-        jstop = Xadj(node+1) - 1
-        do j = jstrt, jstop
-          nabor = Adjncy(j)
-          if ( Marker(nabor)==0 ) then
-            Marker(node) = 1
-            goto 100
+        50    enddo
+        head = 0
+        mrgsze = 0
+        do iov = 1, novrlp
+          node = Ovrlp(iov)
+          jstrt = Xadj(node)
+          jstop = Xadj(node+1) - 1
+          do j = jstrt, jstop
+            nabor = Adjncy(j)
+            if ( Marker(nabor)==0 ) then
+              Marker(node) = 1
+              goto 100
+            endif
+          enddo
+          mrgsze = mrgsze + Qsize(node)
+          Marker(node) = -1
+          lnode = node
+          do
+            link = Qlink(lnode)
+            if ( link<=0 ) then
+              Qlink(lnode) = head
+              head = node
+              exit
+            else
+              lnode = link
+            endif
+          enddo
+          100   enddo
+          if ( head>0 ) then
+            Qsize(head) = mrgsze
+            Deg(head) = Deg0 + deg1 - 1
+            Marker(head) = 2
+          endif
+          root = Nbrhd(inhd)
+          Marker(root) = 0
+          if ( rchsze>0 ) then
+            do irch = 1, rchsze
+              node = Rchset(irch)
+              Marker(node) = 0
+            enddo
           endif
         enddo
-        mrgsze = mrgsze + Qsize(node)
-        Marker(node) = -1
-        lnode = node
-        do
-          link = Qlink(lnode)
-          if ( link<=0 ) then
-            Qlink(lnode) = head
-            head = node
-            exit
-          else
-            lnode = link
-          endif
-        enddo
-100   enddo
-      if ( head>0 ) then
-        Qsize(head) = mrgsze
-        Deg(head) = Deg0 + deg1 - 1
-        Marker(head) = 2
-      endif
-      root = Nbrhd(inhd)
-      Marker(root) = 0
-      if ( rchsze>0 ) then
-        do irch = 1, rchsze
-          node = Rchset(irch)
-          Marker(node) = 0
-        enddo
-      endif
-    enddo
   end subroutine QMDMRG
 
   !======================================================================!
@@ -3365,7 +3365,7 @@ contains
     irch = 0
     inhd = 0
     node = Root
-100 jstrt = Xadj(node)
+    100 jstrt = Xadj(node)
     jstop = Xadj(node+1) - 2
     if ( jstop>=jstrt ) then
       do j = jstrt, jstop
@@ -3383,7 +3383,7 @@ contains
     endif
     goto 100
 
-200 Adjncy(j+1) = 0
+    200 Adjncy(j+1) = 0
     do irch = 1, Rchsze
       node = Rchset(irch)
       if ( Marker(node)>=0 ) then
@@ -3453,11 +3453,11 @@ contains
               endif
             enddo
             exit
-10        enddo
-        else
-          Rchsze = Rchsze + 1
-          Rchset(Rchsze) = nabor
-          Marker(nabor) = 1
+            10        enddo
+          else
+            Rchsze = Rchsze + 1
+            Rchset(Rchsze) = nabor
+            Marker(nabor) = 1
         endif
       endif
     enddo
@@ -4085,160 +4085,160 @@ contains
         j = Colno(jj)
         if ( Indx(j)==Ic ) then
           zz(1) = zz(1) - Temp(1,j)*Zln(1,jj) - Temp(7,j)*Zln(7,jj)&
-              - Temp(13,j)*Zln(13,jj) - Temp(19,j)*Zln(19,jj)&
-              - Temp(25,j)*Zln(25,jj) - Temp(31,j)*Zln(31,jj)
+            - Temp(13,j)*Zln(13,jj) - Temp(19,j)*Zln(19,jj)&
+            - Temp(25,j)*Zln(25,jj) - Temp(31,j)*Zln(31,jj)
           zz(2) = zz(2) - Temp(2,j)*Zln(1,jj) - Temp(8,j)*Zln(7,jj)&
-              - Temp(14,j)*Zln(13,jj) - Temp(20,j)*Zln(19,jj)&
-              - Temp(26,j)*Zln(25,jj) - Temp(32,j)*Zln(31,jj)
+            - Temp(14,j)*Zln(13,jj) - Temp(20,j)*Zln(19,jj)&
+            - Temp(26,j)*Zln(25,jj) - Temp(32,j)*Zln(31,jj)
           zz(3) = zz(3) - Temp(3,j)*Zln(1,jj) - Temp(9,j)*Zln(7,jj)&
-              - Temp(15,j)*Zln(13,jj) - Temp(21,j)*Zln(19,jj)&
-              - Temp(27,j)*Zln(25,jj) - Temp(33,j)*Zln(31,jj)
+            - Temp(15,j)*Zln(13,jj) - Temp(21,j)*Zln(19,jj)&
+            - Temp(27,j)*Zln(25,jj) - Temp(33,j)*Zln(31,jj)
           zz(4) = zz(4) - Temp(4,j)*Zln(1,jj) - Temp(10,j)*Zln(7,jj)&
-              - Temp(16,j)*Zln(13,jj) - Temp(22,j)*Zln(19,jj)&
-              - Temp(28,j)*Zln(25,jj) - Temp(34,j)*Zln(31,jj)
+            - Temp(16,j)*Zln(13,jj) - Temp(22,j)*Zln(19,jj)&
+            - Temp(28,j)*Zln(25,jj) - Temp(34,j)*Zln(31,jj)
           zz(5) = zz(5) - Temp(5,j)*Zln(1,jj) - Temp(11,j)*Zln(7,jj)&
-              - Temp(17,j)*Zln(13,jj) - Temp(23,j)*Zln(19,jj)&
-              - Temp(29,j)*Zln(25,jj) - Temp(35,j)*Zln(31,jj)
+            - Temp(17,j)*Zln(13,jj) - Temp(23,j)*Zln(19,jj)&
+            - Temp(29,j)*Zln(25,jj) - Temp(35,j)*Zln(31,jj)
           zz(6) = zz(6) - Temp(6,j)*Zln(1,jj) - Temp(12,j)*Zln(7,jj)&
-              - Temp(18,j)*Zln(13,jj) - Temp(24,j)*Zln(19,jj)&
-              - Temp(30,j)*Zln(25,jj) - Temp(36,j)*Zln(31,jj)
+            - Temp(18,j)*Zln(13,jj) - Temp(24,j)*Zln(19,jj)&
+            - Temp(30,j)*Zln(25,jj) - Temp(36,j)*Zln(31,jj)
           zz(7) = zz(7) - Temp(1,j)*Zln(2,jj) - Temp(7,j)*Zln(8,jj)&
-              - Temp(13,j)*Zln(14,jj) - Temp(19,j)*Zln(20,jj)&
-              - Temp(25,j)*Zln(26,jj) - Temp(31,j)*Zln(32,jj)
+            - Temp(13,j)*Zln(14,jj) - Temp(19,j)*Zln(20,jj)&
+            - Temp(25,j)*Zln(26,jj) - Temp(31,j)*Zln(32,jj)
           zz(8) = zz(8) - Temp(2,j)*Zln(2,jj) - Temp(8,j)*Zln(8,jj)&
-              - Temp(14,j)*Zln(14,jj) - Temp(20,j)*Zln(20,jj)&
-              - Temp(26,j)*Zln(26,jj) - Temp(32,j)*Zln(32,jj)
+            - Temp(14,j)*Zln(14,jj) - Temp(20,j)*Zln(20,jj)&
+            - Temp(26,j)*Zln(26,jj) - Temp(32,j)*Zln(32,jj)
           zz(9) = zz(9) - Temp(3,j)*Zln(2,jj) - Temp(9,j)*Zln(8,jj)&
-              - Temp(15,j)*Zln(14,jj) - Temp(21,j)*Zln(20,jj)&
-              - Temp(27,j)*Zln(26,jj) - Temp(33,j)*Zln(32,jj)
+            - Temp(15,j)*Zln(14,jj) - Temp(21,j)*Zln(20,jj)&
+            - Temp(27,j)*Zln(26,jj) - Temp(33,j)*Zln(32,jj)
           zz(10) = zz(10) - Temp(4,j)*Zln(2,jj) - Temp(10,j)*Zln(8,jj)&
-              - Temp(16,j)*Zln(14,jj) - Temp(22,j)*Zln(20,jj)&
-              - Temp(28,j)*Zln(26,jj) - Temp(34,j)*Zln(32,jj)
+            - Temp(16,j)*Zln(14,jj) - Temp(22,j)*Zln(20,jj)&
+            - Temp(28,j)*Zln(26,jj) - Temp(34,j)*Zln(32,jj)
           zz(11) = zz(11) - Temp(5,j)*Zln(2,jj) - Temp(11,j)*Zln(8,jj)&
-              - Temp(17,j)*Zln(14,jj) - Temp(23,j)*Zln(20,jj)&
-              - Temp(29,j)*Zln(26,jj) - Temp(35,j)*Zln(32,jj)
+            - Temp(17,j)*Zln(14,jj) - Temp(23,j)*Zln(20,jj)&
+            - Temp(29,j)*Zln(26,jj) - Temp(35,j)*Zln(32,jj)
           zz(12) = zz(12) - Temp(6,j)*Zln(2,jj) - Temp(12,j)*Zln(8,jj)&
-              - Temp(18,j)*Zln(14,jj) - Temp(24,j)*Zln(20,jj)&
-              - Temp(30,j)*Zln(26,jj) - Temp(36,j)*Zln(32,jj)
+            - Temp(18,j)*Zln(14,jj) - Temp(24,j)*Zln(20,jj)&
+            - Temp(30,j)*Zln(26,jj) - Temp(36,j)*Zln(32,jj)
           zz(13) = zz(13) - Temp(1,j)*Zln(3,jj) - Temp(7,j)*Zln(9,jj)&
-              - Temp(13,j)*Zln(15,jj) - Temp(19,j)*Zln(21,jj)&
-              - Temp(25,j)*Zln(27,jj) - Temp(31,j)*Zln(33,jj)
+            - Temp(13,j)*Zln(15,jj) - Temp(19,j)*Zln(21,jj)&
+            - Temp(25,j)*Zln(27,jj) - Temp(31,j)*Zln(33,jj)
           zz(14) = zz(14) - Temp(2,j)*Zln(3,jj) - Temp(8,j)*Zln(9,jj)&
-              - Temp(14,j)*Zln(15,jj) - Temp(20,j)*Zln(21,jj)&
-              - Temp(26,j)*Zln(27,jj) - Temp(32,j)*Zln(33,jj)
+            - Temp(14,j)*Zln(15,jj) - Temp(20,j)*Zln(21,jj)&
+            - Temp(26,j)*Zln(27,jj) - Temp(32,j)*Zln(33,jj)
           zz(15) = zz(15) - Temp(3,j)*Zln(3,jj) - Temp(9,j)*Zln(9,jj)&
-              - Temp(15,j)*Zln(15,jj) - Temp(21,j)*Zln(21,jj)&
-              - Temp(27,j)*Zln(27,jj) - Temp(33,j)*Zln(33,jj)
+            - Temp(15,j)*Zln(15,jj) - Temp(21,j)*Zln(21,jj)&
+            - Temp(27,j)*Zln(27,jj) - Temp(33,j)*Zln(33,jj)
           zz(16) = zz(16) - Temp(4,j)*Zln(3,jj) - Temp(10,j)*Zln(9,jj)&
-              - Temp(16,j)*Zln(15,jj) - Temp(22,j)*Zln(21,jj)&
-              - Temp(28,j)*Zln(27,jj) - Temp(34,j)*Zln(33,jj)
+            - Temp(16,j)*Zln(15,jj) - Temp(22,j)*Zln(21,jj)&
+            - Temp(28,j)*Zln(27,jj) - Temp(34,j)*Zln(33,jj)
           zz(17) = zz(17) - Temp(5,j)*Zln(3,jj) - Temp(11,j)*Zln(9,jj)&
-              - Temp(17,j)*Zln(15,jj) - Temp(23,j)*Zln(21,jj)&
-              - Temp(29,j)*Zln(27,jj) - Temp(35,j)*Zln(33,jj)
+            - Temp(17,j)*Zln(15,jj) - Temp(23,j)*Zln(21,jj)&
+            - Temp(29,j)*Zln(27,jj) - Temp(35,j)*Zln(33,jj)
           zz(18) = zz(18) - Temp(6,j)*Zln(3,jj) - Temp(12,j)*Zln(9,jj)&
-              - Temp(18,j)*Zln(15,jj) - Temp(24,j)*Zln(21,jj)&
-              - Temp(30,j)*Zln(27,jj) - Temp(36,j)*Zln(33,jj)
+            - Temp(18,j)*Zln(15,jj) - Temp(24,j)*Zln(21,jj)&
+            - Temp(30,j)*Zln(27,jj) - Temp(36,j)*Zln(33,jj)
           zz(19) = zz(19) - Temp(1,j)*Zln(4,jj) - Temp(7,j)*Zln(10,jj)&
-              - Temp(13,j)*Zln(16,jj) - Temp(19,j)*Zln(22,jj)&
-              - Temp(25,j)*Zln(28,jj) - Temp(31,j)*Zln(34,jj)
+            - Temp(13,j)*Zln(16,jj) - Temp(19,j)*Zln(22,jj)&
+            - Temp(25,j)*Zln(28,jj) - Temp(31,j)*Zln(34,jj)
           zz(20) = zz(20) - Temp(2,j)*Zln(4,jj) - Temp(8,j)*Zln(10,jj)&
-              - Temp(14,j)*Zln(16,jj) - Temp(20,j)*Zln(22,jj)&
-              - Temp(26,j)*Zln(28,jj) - Temp(32,j)*Zln(34,jj)
+            - Temp(14,j)*Zln(16,jj) - Temp(20,j)*Zln(22,jj)&
+            - Temp(26,j)*Zln(28,jj) - Temp(32,j)*Zln(34,jj)
           zz(21) = zz(21) - Temp(3,j)*Zln(4,jj) - Temp(9,j)*Zln(10,jj)&
-              - Temp(15,j)*Zln(16,jj) - Temp(21,j)*Zln(22,jj)&
-              - Temp(27,j)*Zln(28,jj) - Temp(33,j)*Zln(34,jj)
+            - Temp(15,j)*Zln(16,jj) - Temp(21,j)*Zln(22,jj)&
+            - Temp(27,j)*Zln(28,jj) - Temp(33,j)*Zln(34,jj)
           zz(22) = zz(22) - Temp(4,j)*Zln(4,jj) - Temp(10,j)*Zln(10,jj)&
-              - Temp(16,j)*Zln(16,jj) - Temp(22,j)*Zln(22,jj)&
-              - Temp(28,j)*Zln(28,jj) - Temp(34,j)*Zln(34,jj)
+            - Temp(16,j)*Zln(16,jj) - Temp(22,j)*Zln(22,jj)&
+            - Temp(28,j)*Zln(28,jj) - Temp(34,j)*Zln(34,jj)
           zz(23) = zz(23) - Temp(5,j)*Zln(4,jj) - Temp(11,j)*Zln(10,jj)&
-              - Temp(17,j)*Zln(16,jj) - Temp(23,j)*Zln(22,jj)&
-              - Temp(29,j)*Zln(28,jj) - Temp(35,j)*Zln(34,jj)
+            - Temp(17,j)*Zln(16,jj) - Temp(23,j)*Zln(22,jj)&
+            - Temp(29,j)*Zln(28,jj) - Temp(35,j)*Zln(34,jj)
           zz(24) = zz(24) - Temp(6,j)*Zln(4,jj) - Temp(12,j)*Zln(10,jj)&
-              - Temp(18,j)*Zln(16,jj) - Temp(24,j)*Zln(22,jj)&
-              - Temp(30,j)*Zln(28,jj) - Temp(36,j)*Zln(34,jj)
+            - Temp(18,j)*Zln(16,jj) - Temp(24,j)*Zln(22,jj)&
+            - Temp(30,j)*Zln(28,jj) - Temp(36,j)*Zln(34,jj)
           zz(25) = zz(25) - Temp(1,j)*Zln(5,jj) - Temp(7,j)*Zln(11,jj)&
-              - Temp(13,j)*Zln(17,jj) - Temp(19,j)*Zln(23,jj)&
-              - Temp(25,j)*Zln(29,jj) - Temp(31,j)*Zln(35,jj)
+            - Temp(13,j)*Zln(17,jj) - Temp(19,j)*Zln(23,jj)&
+            - Temp(25,j)*Zln(29,jj) - Temp(31,j)*Zln(35,jj)
           zz(26) = zz(26) - Temp(2,j)*Zln(5,jj) - Temp(8,j)*Zln(11,jj)&
-              - Temp(14,j)*Zln(17,jj) - Temp(20,j)*Zln(23,jj)&
-              - Temp(26,j)*Zln(29,jj) - Temp(32,j)*Zln(35,jj)
+            - Temp(14,j)*Zln(17,jj) - Temp(20,j)*Zln(23,jj)&
+            - Temp(26,j)*Zln(29,jj) - Temp(32,j)*Zln(35,jj)
           zz(27) = zz(27) - Temp(3,j)*Zln(5,jj) - Temp(9,j)*Zln(11,jj)&
-              - Temp(15,j)*Zln(17,jj) - Temp(21,j)*Zln(23,jj)&
-              - Temp(27,j)*Zln(29,jj) - Temp(33,j)*Zln(35,jj)
+            - Temp(15,j)*Zln(17,jj) - Temp(21,j)*Zln(23,jj)&
+            - Temp(27,j)*Zln(29,jj) - Temp(33,j)*Zln(35,jj)
           zz(28) = zz(28) - Temp(4,j)*Zln(5,jj) - Temp(10,j)*Zln(11,jj)&
-              - Temp(16,j)*Zln(17,jj) - Temp(22,j)*Zln(23,jj)&
-              - Temp(28,j)*Zln(29,jj) - Temp(34,j)*Zln(35,jj)
+            - Temp(16,j)*Zln(17,jj) - Temp(22,j)*Zln(23,jj)&
+            - Temp(28,j)*Zln(29,jj) - Temp(34,j)*Zln(35,jj)
           zz(29) = zz(29) - Temp(5,j)*Zln(5,jj) - Temp(11,j)*Zln(11,jj)&
-              - Temp(17,j)*Zln(17,jj) - Temp(23,j)*Zln(23,jj)&
-              - Temp(29,j)*Zln(29,jj) - Temp(35,j)*Zln(35,jj)
+            - Temp(17,j)*Zln(17,jj) - Temp(23,j)*Zln(23,jj)&
+            - Temp(29,j)*Zln(29,jj) - Temp(35,j)*Zln(35,jj)
           zz(30) = zz(30) - Temp(6,j)*Zln(5,jj) - Temp(12,j)*Zln(11,jj)&
-              - Temp(18,j)*Zln(17,jj) - Temp(24,j)*Zln(23,jj)&
-              - Temp(30,j)*Zln(29,jj) - Temp(36,j)*Zln(35,jj)
+            - Temp(18,j)*Zln(17,jj) - Temp(24,j)*Zln(23,jj)&
+            - Temp(30,j)*Zln(29,jj) - Temp(36,j)*Zln(35,jj)
           zz(31) = zz(31) - Temp(1,j)*Zln(6,jj) - Temp(7,j)*Zln(12,jj)&
-              - Temp(13,j)*Zln(18,jj) - Temp(19,j)*Zln(24,jj)&
-              - Temp(25,j)*Zln(30,jj) - Temp(31,j)*Zln(36,jj)
+            - Temp(13,j)*Zln(18,jj) - Temp(19,j)*Zln(24,jj)&
+            - Temp(25,j)*Zln(30,jj) - Temp(31,j)*Zln(36,jj)
           zz(32) = zz(32) - Temp(2,j)*Zln(6,jj) - Temp(8,j)*Zln(12,jj)&
-              - Temp(14,j)*Zln(18,jj) - Temp(20,j)*Zln(24,jj)&
-              - Temp(26,j)*Zln(30,jj) - Temp(32,j)*Zln(36,jj)
+            - Temp(14,j)*Zln(18,jj) - Temp(20,j)*Zln(24,jj)&
+            - Temp(26,j)*Zln(30,jj) - Temp(32,j)*Zln(36,jj)
           zz(33) = zz(33) - Temp(3,j)*Zln(6,jj) - Temp(9,j)*Zln(12,jj)&
-              - Temp(15,j)*Zln(18,jj) - Temp(21,j)*Zln(24,jj)&
-              - Temp(27,j)*Zln(30,jj) - Temp(33,j)*Zln(36,jj)
+            - Temp(15,j)*Zln(18,jj) - Temp(21,j)*Zln(24,jj)&
+            - Temp(27,j)*Zln(30,jj) - Temp(33,j)*Zln(36,jj)
           zz(34) = zz(34) - Temp(4,j)*Zln(6,jj) - Temp(10,j)*Zln(12,jj)&
-              - Temp(16,j)*Zln(18,jj) - Temp(22,j)*Zln(24,jj)&
-              - Temp(28,j)*Zln(30,jj) - Temp(34,j)*Zln(36,jj)
+            - Temp(16,j)*Zln(18,jj) - Temp(22,j)*Zln(24,jj)&
+            - Temp(28,j)*Zln(30,jj) - Temp(34,j)*Zln(36,jj)
           zz(35) = zz(35) - Temp(5,j)*Zln(6,jj) - Temp(11,j)*Zln(12,jj)&
-              - Temp(17,j)*Zln(18,jj) - Temp(23,j)*Zln(24,jj)&
-              - Temp(29,j)*Zln(30,jj) - Temp(35,j)*Zln(36,jj)
+            - Temp(17,j)*Zln(18,jj) - Temp(23,j)*Zln(24,jj)&
+            - Temp(29,j)*Zln(30,jj) - Temp(35,j)*Zln(36,jj)
           zz(36) = zz(36) - Temp(6,j)*Zln(6,jj) - Temp(12,j)*Zln(12,jj)&
-              - Temp(18,j)*Zln(18,jj) - Temp(24,j)*Zln(24,jj)&
-              - Temp(30,j)*Zln(30,jj) - Temp(36,j)*Zln(36,jj)
+            - Temp(18,j)*Zln(18,jj) - Temp(24,j)*Zln(24,jj)&
+            - Temp(30,j)*Zln(30,jj) - Temp(36,j)*Zln(36,jj)
         endif
       enddo
       call INV66(Zln(1,k),zz,Diag(1,jc))
       Temp(1:36,jc) = zz(1:36)
 
       t(1) = t(1) + zz(1)*Zln(1,k) + zz(7)*Zln(7,k) + zz(13)*Zln(13,k)&
-          + zz(19)*Zln(19,k) + zz(25)*Zln(25,k) + zz(31)*Zln(31,k)
+        + zz(19)*Zln(19,k) + zz(25)*Zln(25,k) + zz(31)*Zln(31,k)
       t(2) = t(2) + zz(1)*Zln(2,k) + zz(7)*Zln(8,k) + zz(13)*Zln(14,k)&
-          + zz(19)*Zln(20,k) + zz(25)*Zln(26,k) + zz(31)*Zln(32,k)
+        + zz(19)*Zln(20,k) + zz(25)*Zln(26,k) + zz(31)*Zln(32,k)
       t(3) = t(3) + zz(2)*Zln(2,k) + zz(8)*Zln(8,k) + zz(14)*Zln(14,k)&
-          + zz(20)*Zln(20,k) + zz(26)*Zln(26,k) + zz(32)*Zln(32,k)
+        + zz(20)*Zln(20,k) + zz(26)*Zln(26,k) + zz(32)*Zln(32,k)
       t(4) = t(4) + zz(1)*Zln(3,k) + zz(7)*Zln(9,k) + zz(13)*Zln(15,k)&
-          + zz(19)*Zln(21,k) + zz(25)*Zln(27,k) + zz(31)*Zln(33,k)
+        + zz(19)*Zln(21,k) + zz(25)*Zln(27,k) + zz(31)*Zln(33,k)
       t(5) = t(5) + zz(2)*Zln(3,k) + zz(8)*Zln(9,k) + zz(14)*Zln(15,k)&
-          + zz(20)*Zln(21,k) + zz(26)*Zln(27,k) + zz(32)*Zln(33,k)
+        + zz(20)*Zln(21,k) + zz(26)*Zln(27,k) + zz(32)*Zln(33,k)
       t(6) = t(6) + zz(3)*Zln(3,k) + zz(9)*Zln(9,k) + zz(15)*Zln(15,k)&
-          + zz(21)*Zln(21,k) + zz(27)*Zln(27,k) + zz(33)*Zln(33,k)
+        + zz(21)*Zln(21,k) + zz(27)*Zln(27,k) + zz(33)*Zln(33,k)
       t(7) = t(7) + zz(1)*Zln(4,k) + zz(7)*Zln(10,k) + zz(13)*Zln(16,k)&
-          + zz(19)*Zln(22,k) + zz(25)*Zln(28,k) + zz(31)*Zln(34,k)
+        + zz(19)*Zln(22,k) + zz(25)*Zln(28,k) + zz(31)*Zln(34,k)
       t(8) = t(8) + zz(2)*Zln(4,k) + zz(8)*Zln(10,k) + zz(14)*Zln(16,k)&
-          + zz(20)*Zln(22,k) + zz(26)*Zln(28,k) + zz(32)*Zln(34,k)
+        + zz(20)*Zln(22,k) + zz(26)*Zln(28,k) + zz(32)*Zln(34,k)
       t(9) = t(9) + zz(3)*Zln(4,k) + zz(9)*Zln(10,k) + zz(15)*Zln(16,k)&
-          + zz(21)*Zln(22,k) + zz(27)*Zln(28,k) + zz(33)*Zln(34,k)
+        + zz(21)*Zln(22,k) + zz(27)*Zln(28,k) + zz(33)*Zln(34,k)
       t(10) = t(10) + zz(4)*Zln(4,k) + zz(10)*Zln(10,k) + zz(16)*Zln(16,k)&
-          + zz(22)*Zln(22,k) + zz(28)*Zln(28,k) + zz(34)*Zln(34,k)
+        + zz(22)*Zln(22,k) + zz(28)*Zln(28,k) + zz(34)*Zln(34,k)
       t(11) = t(11) + zz(1)*Zln(5,k) + zz(7)*Zln(11,k) + zz(13)*Zln(17,k)&
-          + zz(19)*Zln(23,k) + zz(25)*Zln(29,k) + zz(31)*Zln(35,k)
+        + zz(19)*Zln(23,k) + zz(25)*Zln(29,k) + zz(31)*Zln(35,k)
       t(12) = t(12) + zz(2)*Zln(5,k) + zz(8)*Zln(11,k) + zz(14)*Zln(17,k)&
-          + zz(20)*Zln(23,k) + zz(26)*Zln(29,k) + zz(32)*Zln(35,k)
+        + zz(20)*Zln(23,k) + zz(26)*Zln(29,k) + zz(32)*Zln(35,k)
       t(13) = t(13) + zz(3)*Zln(5,k) + zz(9)*Zln(11,k) + zz(15)*Zln(17,k)&
-          + zz(21)*Zln(23,k) + zz(27)*Zln(29,k) + zz(33)*Zln(35,k)
+        + zz(21)*Zln(23,k) + zz(27)*Zln(29,k) + zz(33)*Zln(35,k)
       t(14) = t(14) + zz(4)*Zln(5,k) + zz(10)*Zln(11,k) + zz(16)*Zln(17,k)&
-          + zz(22)*Zln(23,k) + zz(28)*Zln(29,k) + zz(34)*Zln(35,k)
+        + zz(22)*Zln(23,k) + zz(28)*Zln(29,k) + zz(34)*Zln(35,k)
       t(15) = t(15) + zz(5)*Zln(5,k) + zz(11)*Zln(11,k) + zz(17)*Zln(17,k)&
-          + zz(23)*Zln(23,k) + zz(29)*Zln(29,k) + zz(35)*Zln(35,k)
+        + zz(23)*Zln(23,k) + zz(29)*Zln(29,k) + zz(35)*Zln(35,k)
       t(16) = t(16) + zz(1)*Zln(6,k) + zz(7)*Zln(12,k) + zz(13)*Zln(18,k)&
-          + zz(19)*Zln(24,k) + zz(25)*Zln(30,k) + zz(31)*Zln(36,k)
+        + zz(19)*Zln(24,k) + zz(25)*Zln(30,k) + zz(31)*Zln(36,k)
       t(17) = t(17) + zz(2)*Zln(6,k) + zz(8)*Zln(12,k) + zz(14)*Zln(18,k)&
-          + zz(20)*Zln(24,k) + zz(26)*Zln(30,k) + zz(32)*Zln(36,k)
+        + zz(20)*Zln(24,k) + zz(26)*Zln(30,k) + zz(32)*Zln(36,k)
       t(18) = t(18) + zz(3)*Zln(6,k) + zz(9)*Zln(12,k) + zz(15)*Zln(18,k)&
-          + zz(21)*Zln(24,k) + zz(27)*Zln(30,k) + zz(33)*Zln(36,k)
+        + zz(21)*Zln(24,k) + zz(27)*Zln(30,k) + zz(33)*Zln(36,k)
       t(19) = t(19) + zz(4)*Zln(6,k) + zz(10)*Zln(12,k) + zz(16)*Zln(18,k)&
-          + zz(22)*Zln(24,k) + zz(28)*Zln(30,k) + zz(34)*Zln(36,k)
+        + zz(22)*Zln(24,k) + zz(28)*Zln(30,k) + zz(34)*Zln(36,k)
       t(20) = t(20) + zz(5)*Zln(6,k) + zz(11)*Zln(12,k) + zz(17)*Zln(18,k)&
-          + zz(23)*Zln(24,k) + zz(29)*Zln(30,k) + zz(35)*Zln(36,k)
+        + zz(23)*Zln(24,k) + zz(29)*Zln(30,k) + zz(35)*Zln(36,k)
       t(21) = t(21) + zz(6)*Zln(6,k) + zz(12)*Zln(12,k) + zz(18)*Zln(18,k)&
-          + zz(24)*Zln(24,k) + zz(30)*Zln(30,k) + zz(36)*Zln(36,k)
+        + zz(24)*Zln(24,k) + zz(30)*Zln(30,k) + zz(36)*Zln(36,k)
     enddo
     do l = 1, 21
       Diag(l,Ic) = Diag(l,Ic) - t(l)
@@ -4448,12 +4448,12 @@ contains
     ndeg2l = NDEg*(NDEg+1)/2
     if ( STAge==30 ) write (6,*) 'warning a matrix was build up '//'but never solved.'
     if ( STAge==10 ) then
-      allocate (DIAg(NEQns*ndeg2l),STAT=IERror)
+      allocate (DIAg(NEQns*ndeg2l),stat=IERror)
       RALoc = RALoc + NEQns*ndeg2l
-      allocate (ZLN(LEN_colno*ndeg2),STAT=IERror)
+      allocate (ZLN(LEN_colno*ndeg2),stat=IERror)
 
       RALoc = RALoc + LEN_colno*ndeg2
-      allocate (DSLn(LEN_dsln*ndeg2),STAT=IERror)
+      allocate (DSLn(LEN_dsln*ndeg2),stat=IERror)
 
       if ( IERror/=0 ) stop "Allocation error dsln"
 
@@ -4532,7 +4532,7 @@ contains
       t = t + zz*Zln(k)
     enddo
     piv = Diag(Ic) - t
-    if ( DABS(piv)>RMIn ) Diag(Ic) = 1.0D0/piv
+    if ( dabs(piv)>RMIn ) Diag(Ic) = 1.0D0/piv
     do while ( ISEm/=1 )
     enddo
     ISEm = 0
@@ -4540,7 +4540,7 @@ contains
     kk = Par(Ic)
     Nch(kk) = Nch(kk) - 1
     ISEm = 1
-  end subroutine SUM
+  end subroutine sum
 
   !======================================================================!
   !> @brief SUM1

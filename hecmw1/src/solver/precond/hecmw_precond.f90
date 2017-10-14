@@ -32,21 +32,21 @@ contains
     integer(kind=kint) :: sym
 
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
-    
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_precond_33_setup(hecMAT, hecMESH, sym)
-      CASE(4)
+      case(4)
         call hecmw_precond_44_setup(hecMAT, hecMESH, sym)
-      CASE(6)
+      case(6)
         call hecmw_precond_66_setup(hecMAT, hecMESH, sym)
-      CASE(1)
+      case(1)
         call hecmw_precond_11_setup(hecMAT, hecMESH, sym)
-      CASE(2)
+      case(2)
         call hecmw_precond_22_setup(hecMAT, hecMESH, sym)
       case default
         call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
-    END SELECT
+    end select
   end subroutine hecmw_precond_setup
 
   subroutine hecmw_precond_clear(hecMAT)
@@ -54,21 +54,21 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
-    
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_precond_33_clear(hecMAT)
-      CASE(4)
+      case(4)
         call hecmw_precond_44_clear(hecMAT)
-      CASE(6)
+      case(6)
         call hecmw_precond_66_clear(hecMAT)
-      CASE(1)
+      case(1)
         call hecmw_precond_11_clear(hecMAT)
-      CASE(2)
+      case(2)
         call hecmw_precond_22_clear(hecMAT)
       case default
         call hecmw_precond_nn_clear(hecMAT)
-    END SELECT
+    end select
 
   end subroutine hecmw_precond_clear
 
@@ -86,7 +86,7 @@ contains
     NP = hecMAT%NP
     NNDOF = N * hecMAT%NDOF
     NPNDOF = NP * hecMAT%NDOF
-    
+
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) then
       do i= 1, NNDOF
         Z(i)= R(i)
@@ -94,7 +94,7 @@ contains
       return
     endif
 
-    !C {z}= [Minv]{r} 
+    !C {z}= [Minv]{r}
     do i= 1, NNDOF
       ZP(i)= R(i)
     enddo
@@ -105,20 +105,20 @@ contains
       Z(i)= 0.d0
     enddo
 
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      CASE(4)
+      case(4)
         call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      CASE(6)
+      case(6)
         call hecmw_precond_66_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      CASE(1)
+      case(1)
         call hecmw_precond_11_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      CASE(2)
+      case(2)
         call hecmw_precond_22_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
       case default
         call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-    END SELECT
+    end select
 
   end subroutine hecmw_precond_apply
 

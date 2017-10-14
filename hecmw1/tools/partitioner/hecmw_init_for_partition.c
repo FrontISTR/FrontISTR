@@ -19,60 +19,52 @@
 
 #define DEFAULT_CONTROL_FILE_NAME "hecmw_part_ctrl.dat"
 
-
-static void
-print_usage( void )
-{
-    fprintf( stderr, "Usage: hecmw_part [-f file]\n" );
-    fprintf( stderr, "\n" );
-    fprintf( stderr, "  -f  specify control file name\n" );
-    fprintf( stderr, "  -v  print verbose messages\n" );
-    fprintf( stderr, "  -h  print usage\n" );
+static void print_usage(void) {
+  fprintf(stderr, "Usage: hecmw_part [-f file]\n");
+  fprintf(stderr, "\n");
+  fprintf(stderr, "  -f  specify control file name\n");
+  fprintf(stderr, "  -v  print verbose messages\n");
+  fprintf(stderr, "  -h  print usage\n");
 }
 
+extern int HECMW_init_for_partition(int argc, char **argv) {
+  int counter;
+  char control_file_name[HECMW_FILENAME_LEN + 1];
 
-extern int
-HECMW_init_for_partition( int argc, char **argv )
-{
-    int counter;
-    char control_file_name[HECMW_FILENAME_LEN+1];
+  strcpy(control_file_name, DEFAULT_CONTROL_FILE_NAME);
 
-
-    strcpy( control_file_name, DEFAULT_CONTROL_FILE_NAME );
-
-    if( argc > 1 ) {
-        counter=1;
-        while( counter < argc ) {
-
-            if( !strcmp( argv[counter], "-f" ) ) {
-                counter++;
-                if( counter >= argc ) {
-                    print_usage( );
-                    goto error;
-                }
-                if( strlen( argv[counter] ) > HECMW_FILENAME_LEN ) {
-                    HECMW_set_error( HECMW_PART_E_TOO_LONG_FNAME,
-                                     "%s", "control file for partitioner" );
-                    goto error;
-                }
-                strcpy( control_file_name, argv[counter] );
-                counter++;
-
-            } else if( !strcmp( argv[counter], "-v" ) ) {
-                counter++;
-                HECMW_setloglv( HECMW_LOG_DEBUG );
-
-            } else {
-                print_usage( );
-                goto error;
-            }
+  if (argc > 1) {
+    counter = 1;
+    while (counter < argc) {
+      if (!strcmp(argv[counter], "-f")) {
+        counter++;
+        if (counter >= argc) {
+          print_usage();
+          goto error;
         }
+        if (strlen(argv[counter]) > HECMW_FILENAME_LEN) {
+          HECMW_set_error(HECMW_PART_E_TOO_LONG_FNAME, "%s",
+                          "control file for partitioner");
+          goto error;
+        }
+        strcpy(control_file_name, argv[counter]);
+        counter++;
+
+      } else if (!strcmp(argv[counter], "-v")) {
+        counter++;
+        HECMW_setloglv(HECMW_LOG_DEBUG);
+
+      } else {
+        print_usage();
+        goto error;
+      }
     }
+  }
 
-    if( HECMW_part_set_ctrl_file_name( control_file_name ) )  goto error;
+  if (HECMW_part_set_ctrl_file_name(control_file_name)) goto error;
 
-    return 0;
+  return 0;
 
 error:
-    return -1;
+  return -1;
 }

@@ -8,6 +8,8 @@
 
 #include "hecmw_struct.h"
 
-extern int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine, const char *cad_filename, const char *part_filename);
+extern int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
+                             const char *cad_filename,
+                             const char *part_filename);
 
 #endif

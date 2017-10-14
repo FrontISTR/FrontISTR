@@ -130,8 +130,8 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: X1, X2, X3, X4
 
-!C
-!C== Block SCALING
+    !C
+    !C== Block SCALING
     do i= 1, N
       X1= WW(4*i-3)
       X2= WW(4*i-2)

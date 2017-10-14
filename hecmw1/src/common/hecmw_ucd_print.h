@@ -9,14 +9,11 @@
 #include "hecmw_struct.h"
 #include "hecmw_result.h"
 
-extern int
-HECMW_ucd_print( const struct hecmwST_local_mesh *mesh,
-                 const struct hecmwST_result_data *result,
-                 const char *ofname );
-extern int
-HECMW_ucd_legacy_print( const struct hecmwST_local_mesh *mesh,
-                        const struct hecmwST_result_data *result,
-                        const char *ofname );
+extern int HECMW_ucd_print(const struct hecmwST_local_mesh *mesh,
+                           const struct hecmwST_result_data *result,
+                           const char *ofname);
+extern int HECMW_ucd_legacy_print(const struct hecmwST_local_mesh *mesh,
+                                  const struct hecmwST_result_data *result,
+                                  const char *ofname);
 
 #endif
-

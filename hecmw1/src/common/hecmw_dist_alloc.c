@@ -17,21 +17,19 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  global information                                                        */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_global( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_global(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
-  memset( mesh->gridfile, 0, sizeof(mesh->gridfile) );
+  memset(mesh->gridfile, 0, sizeof(mesh->gridfile));
   mesh->hecmw_n_file = 0;
   mesh->files        = NULL;
-  memset( mesh->header, 0, sizeof(mesh->header) );
+  memset(mesh->header, 0, sizeof(mesh->header));
 
-  mesh->hecmw_flag_adapt     = 0;
-  mesh->hecmw_flag_initcon   = 0;
-  mesh->hecmw_flag_parttype  = 0;
-  mesh->hecmw_flag_partdepth = 0;
-  mesh->hecmw_flag_version   = 0;
+  mesh->hecmw_flag_adapt       = 0;
+  mesh->hecmw_flag_initcon     = 0;
+  mesh->hecmw_flag_parttype    = 0;
+  mesh->hecmw_flag_partdepth   = 0;
+  mesh->hecmw_flag_version     = 0;
   mesh->hecmw_flag_partcontact = 0;
 
   mesh->zero_temp = 0.0;
@@ -42,10 +40,8 @@ init_struct_global( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  node information                                                          */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_node( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_node(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
   mesh->n_node             = 0;
   mesh->n_node_gross       = 0;
@@ -75,10 +71,8 @@ init_struct_node( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  element information                                                       */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_elem( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_elem(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
   mesh->n_elem             = 0;
   mesh->n_elem_gross       = 0;
@@ -114,10 +108,8 @@ init_struct_elem( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  domain & communication information                                        */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_comm( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_comm(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
   mesh->zero        = 0;
   mesh->PETOT       = 0;
@@ -142,10 +134,8 @@ init_struct_comm( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  adaptation information                                                    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_adapt( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_adapt(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
   mesh->coarse_grid_level       = 0;
   mesh->n_adapt                 = 0;
@@ -164,18 +154,16 @@ init_struct_adapt( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  refinement information                                                    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_refine( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh );
+static int init_struct_refine(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh);
 
-  mesh->n_refine     = 0;
-  mesh->node_old2new = NULL;
-  mesh->node_new2old = NULL;
-  mesh->elem_old2new = NULL;
-  mesh->elem_new2old = NULL;
+  mesh->n_refine           = 0;
+  mesh->node_old2new       = NULL;
+  mesh->node_new2old       = NULL;
+  mesh->elem_old2new       = NULL;
+  mesh->elem_new2old       = NULL;
   mesh->n_node_refine_hist = NULL;
-  mesh->refine_origin = NULL;
+  mesh->refine_origin      = NULL;
 
   return 0;
 }
@@ -183,10 +171,8 @@ init_struct_refine( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  section information                                                       */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_sect( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->section );
+static int init_struct_sect(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->section);
 
   mesh->section->n_sect            = 0;
   mesh->section->sect_type         = NULL;
@@ -204,10 +190,8 @@ init_struct_sect( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  material information                                                      */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_mat( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->material );
+static int init_struct_mat(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->material);
 
   mesh->material->n_mat             = 0;
   mesh->material->n_mat_item        = 0;
@@ -226,10 +210,8 @@ init_struct_mat( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  MPC information                                                           */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_mpc( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->mpc );
+static int init_struct_mpc(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->mpc);
 
   mesh->mpc->n_mpc     = 0;
   mesh->mpc->mpc_index = NULL;
@@ -244,10 +226,8 @@ init_struct_mpc( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  amplitude information                                                     */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_amp( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->amp );
+static int init_struct_amp(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->amp);
 
   mesh->amp->n_amp               = 0;
   mesh->amp->amp_name            = NULL;
@@ -264,10 +244,8 @@ init_struct_amp( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  node group information                                                    */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_node_grp( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->node_group );
+static int init_struct_node_grp(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->node_group);
 
   mesh->node_group->n_grp     = 0;
   mesh->node_group->grp_name  = NULL;
@@ -287,10 +265,8 @@ init_struct_node_grp( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  element group information                                                 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_elem_grp( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->elem_group );
+static int init_struct_elem_grp(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->elem_group);
 
   mesh->elem_group->n_grp     = 0;
   mesh->elem_group->grp_name  = NULL;
@@ -309,10 +285,8 @@ init_struct_elem_grp( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  surface group information                                                 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_surf_grp( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->surf_group );
+static int init_struct_surf_grp(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->surf_group);
 
   mesh->surf_group->n_grp     = 0;
   mesh->surf_group->grp_name  = NULL;
@@ -331,14 +305,12 @@ init_struct_surf_grp( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  contact information                                                       */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int
-init_struct_contact_pair( struct hecmwST_local_mesh *mesh )
-{
-  HECMW_assert( mesh && mesh->contact_pair );
+static int init_struct_contact_pair(struct hecmwST_local_mesh *mesh) {
+  HECMW_assert(mesh && mesh->contact_pair);
 
   mesh->contact_pair->n_pair        = 0;
-  mesh->contact_pair->name     = NULL;
-  mesh->contact_pair->type     = NULL;
+  mesh->contact_pair->name          = NULL;
+  mesh->contact_pair->type          = NULL;
   mesh->contact_pair->slave_grp_id  = NULL;
   mesh->contact_pair->master_grp_id = NULL;
 
@@ -348,78 +320,76 @@ init_struct_contact_pair( struct hecmwST_local_mesh *mesh )
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  initialize structures for local mesh                                      */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-int
-HECMW_dist_init( struct hecmwST_local_mesh *mesh )
-{
+int HECMW_dist_init(struct hecmwST_local_mesh *mesh) {
   HECMW_assert(mesh);
 
   /* global information */
-  if( init_struct_global( mesh ) ) {
+  if (init_struct_global(mesh)) {
     return -1;
   }
 
   /* node information */
-  if( init_struct_node( mesh ) ) {
+  if (init_struct_node(mesh)) {
     return -1;
   }
 
   /* element information */
-  if( init_struct_elem( mesh ) ) {
+  if (init_struct_elem(mesh)) {
     return -1;
   }
 
   /* domain & communication information */
-  if( init_struct_comm( mesh ) ) {
+  if (init_struct_comm(mesh)) {
     return -1;
   }
 
   /* adaptation information */
-  if( init_struct_adapt( mesh ) ) {
+  if (init_struct_adapt(mesh)) {
     return -1;
   }
 
   /* refinement information */
-  if( init_struct_refine( mesh ) ) {
+  if (init_struct_refine(mesh)) {
     return -1;
   }
 
   /* section information */
-  if( init_struct_sect( mesh ) ) {
+  if (init_struct_sect(mesh)) {
     return -1;
   }
 
   /* material information */
-  if( init_struct_mat( mesh ) ) {
+  if (init_struct_mat(mesh)) {
     return -1;
   }
 
   /* MPC information */
-  if( init_struct_mpc( mesh ) ) {
+  if (init_struct_mpc(mesh)) {
     return -1;
   }
 
   /* amplitude information */
-  if( init_struct_amp( mesh ) ) {
+  if (init_struct_amp(mesh)) {
     return -1;
   }
 
   /* node group information */
-  if( init_struct_node_grp( mesh ) ) {
+  if (init_struct_node_grp(mesh)) {
     return -1;
   }
 
   /* element group information */
-  if( init_struct_elem_grp( mesh ) ) {
+  if (init_struct_elem_grp(mesh)) {
     return -1;
   }
 
   /* surface group information */
-  if( init_struct_surf_grp( mesh ) ) {
+  if (init_struct_surf_grp(mesh)) {
     return -1;
   }
 
   /* contact information */
-  if( init_struct_contact_pair( mesh ) ) {
+  if (init_struct_contact_pair(mesh)) {
     return -1;
   }
 
@@ -429,67 +399,74 @@ HECMW_dist_init( struct hecmwST_local_mesh *mesh )
 /*============================================================================*/
 /*  allocate structures for local mesh                                        */
 /*============================================================================*/
-struct hecmwST_local_mesh *
-HECMW_dist_alloc( )
-{
+struct hecmwST_local_mesh *HECMW_dist_alloc() {
   struct hecmwST_local_mesh *mesh;
 
   /* local mesh < hecmwST_local_mesh > */
-  if( ( mesh = (struct hecmwST_local_mesh *)HECMW_calloc( 1, sizeof( struct hecmwST_local_mesh ) ) ) == NULL ) {
+  if ((mesh = (struct hecmwST_local_mesh *)HECMW_calloc(
+           1, sizeof(struct hecmwST_local_mesh))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* section information < hecmwST_section > */
-  if( ( mesh->section = (struct hecmwST_section *)HECMW_calloc( 1, sizeof( struct hecmwST_section ) ) ) == NULL ) {
+  if ((mesh->section = (struct hecmwST_section *)HECMW_calloc(
+           1, sizeof(struct hecmwST_section))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* material information < hecmwST_material > */
-  if( ( mesh->material = (struct hecmwST_material *)HECMW_calloc( 1, sizeof( struct hecmwST_material ) ) ) == NULL ) {
+  if ((mesh->material = (struct hecmwST_material *)HECMW_calloc(
+           1, sizeof(struct hecmwST_material))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* MPC information < hecmwST_mpc > */
-  if( ( mesh->mpc = (struct hecmwST_mpc *)HECMW_calloc( 1, sizeof( struct hecmwST_mpc ) ) ) == NULL ) {
+  if ((mesh->mpc = (struct hecmwST_mpc *)HECMW_calloc(
+           1, sizeof(struct hecmwST_mpc))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* amplitude information < hecmwST_amplitude > */
-  if( ( mesh->amp = (struct hecmwST_amplitude *)HECMW_calloc( 1, sizeof( struct hecmwST_amplitude ) ) ) == NULL ) {
+  if ((mesh->amp = (struct hecmwST_amplitude *)HECMW_calloc(
+           1, sizeof(struct hecmwST_amplitude))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* node group information < hecmwST_node_grp > */
-  if( ( mesh->node_group = (struct hecmwST_node_grp *)HECMW_calloc( 1, sizeof( struct hecmwST_node_grp ) ) ) == NULL ) {
+  if ((mesh->node_group = (struct hecmwST_node_grp *)HECMW_calloc(
+           1, sizeof(struct hecmwST_node_grp))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* element group information < hecmwST_elem_grp > */
-  if( ( mesh->elem_group = (struct hecmwST_elem_grp *)HECMW_calloc( 1, sizeof( struct hecmwST_elem_grp ) ) ) == NULL ) {
+  if ((mesh->elem_group = (struct hecmwST_elem_grp *)HECMW_calloc(
+           1, sizeof(struct hecmwST_elem_grp))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* surface group information < hecmwST_surf_grp > */
-  if( ( mesh->surf_group = (struct hecmwST_surf_grp *)HECMW_calloc( 1, sizeof( struct hecmwST_surf_grp ) ) ) == NULL ) {
+  if ((mesh->surf_group = (struct hecmwST_surf_grp *)HECMW_calloc(
+           1, sizeof(struct hecmwST_surf_grp))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* contact information < hecmwST_contact_pair > */
-  if( ( mesh->contact_pair = (struct hecmwST_contact_pair *)HECMW_calloc( 1, sizeof( struct hecmwST_contact_pair ) ) ) == NULL ) {
+  if ((mesh->contact_pair = (struct hecmwST_contact_pair *)HECMW_calloc(
+           1, sizeof(struct hecmwST_contact_pair))) == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
 
   /* initialization */
-  if( HECMW_dist_init( mesh ) ) {
+  if (HECMW_dist_init(mesh)) {
     return NULL;
   }
 

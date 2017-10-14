@@ -153,7 +153,7 @@ contains
   end subroutine hecmw_localmat_free
 
   subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, &
-       iwS, num_lagrange, hecTKT)
+      iwS, num_lagrange, hecTKT)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
@@ -200,11 +200,11 @@ contains
 
     ! tsym_s = hecmw_wtime()
 
-!$omp parallel default(none), &
-!$omp&         private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m), &
-!$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT)
+    !$omp parallel default(none), &
+      !$omp&         private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m), &
+      !$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT)
     allocate(iw(nc))
-!$omp do
+    !$omp do
     do i=1,nr
       icnt=0
       js=BTtmat%index(i-1)+1
@@ -262,9 +262,9 @@ contains
       !if (i==1) write(0,*) iw(1:icnt)
       BTtKT%index(i)=icnt
     enddo
-!$omp end do
+    !$omp end do
     deallocate(iw)
-!$omp end parallel
+    !$omp end parallel
 
     ! tsym_e = hecmw_wtime()
     ! write(0,*) 'tsym:',tsym_e-tsym_s
@@ -283,11 +283,11 @@ contains
 
     ! tnum_s = hecmw_wtime()
 
-!$omp parallel default(none), &
-!$omp&         private(i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m, &
-!$omp&                 ms,me,mm,Ttp,Kp,Tp,TtKTp), &
-!$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT,ndof,ndof2)
-!$omp do
+    !$omp parallel default(none), &
+      !$omp&         private(i,icnt,js,je,j,jj,ks,ke,k,kk,ls,le,l,ll,m, &
+      !$omp&                 ms,me,mm,Ttp,Kp,Tp,TtKTp), &
+      !$omp&         shared(nr,nc,BTtmat,hecMAT,BTmat,BTtKT,ndof,ndof2)
+    !$omp do
     do i=1,nr
       icnt=0
       ms=BTtKT%index(i-1)+1
@@ -380,8 +380,8 @@ contains
       !write(0,*) BTtKT%index(i)-BTtKT%index(i-1), icnt
       if (ms-1+icnt /= BTtKT%index(i)) stop 'ERROR: trimatmul'
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     ! tnum_e = hecmw_wtime()
     ! write(0,*) 'tnum:',tnum_e-tnum_s
@@ -475,9 +475,9 @@ contains
     hecMAT%indexU=0
 
     ! count NPL, NPU
-!$omp parallel default(none),private(i,nl,nu,js,je,j,jj), &
-!$omp&         shared(nr,BTtKT,hecMAT)
-!$omp do
+    !$omp parallel default(none),private(i,nl,nu,js,je,j,jj), &
+      !$omp&         shared(nr,BTtKT,hecMAT)
+    !$omp do
     do i=1,nr
       nl=0
       nu=0
@@ -496,8 +496,8 @@ contains
       hecMAT%indexL(i)=nl
       hecMAT%indexU(i)=nu
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     hecMAT%indexL(0)=0
     hecMAT%indexU(0)=0
@@ -518,9 +518,9 @@ contains
     hecMAT%AU=0.d0
 
     ! copy from BTtKT to hecMAT
-!$omp parallel default(none),private(i,nl,nu,js,je,ksl,ksu,j,jj,k), &
-!$omp&  shared(nr,BTtKT,hecMAT,ndof2)
-!$omp do
+    !$omp parallel default(none),private(i,nl,nu,js,je,ksl,ksu,j,jj,k), &
+      !$omp&  shared(nr,BTtKT,hecMAT,ndof2)
+    !$omp do
     do i=1,nr
       nl=0
       nu=0
@@ -547,8 +547,8 @@ contains
       ! if (ksl+nl /= hecMAT%indexL(i)+1) stop 'ERROR: indexL'
       ! if (ksu+nu /= hecMAT%indexU(i)+1) stop 'ERROR: indexU'
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     ! do i=1,hecMAT%NPL
     !   if (hecMAT%itemL(i) <= 0) stop 'ERROR: negative itemL'
@@ -606,7 +606,7 @@ contains
     real(kind=kreal), intent(out), target :: TV(:)
     real(kind=kreal), pointer :: TVp(:), Tp(:), Vp(:)
     integer :: nr, ndof, ndof2, i, js, je, j, jj, k, kl0, l
-!!$    real(kind=kreal) :: vnorm
+    !!$    real(kind=kreal) :: vnorm
 
     nr=BTmat%nr
     ndof=BTmat%ndof
@@ -614,15 +614,15 @@ contains
 
     TV=0.d0
 
-!!$    vnorm=0.d0
-!!$    do i=1,nr*ndof
-!!$      vnorm=vnorm+V(i)**2
-!!$    enddo
-!!$    write(0,*) 'vnorm:', sqrt(vnorm)
+    !!$    vnorm=0.d0
+    !!$    do i=1,nr*ndof
+    !!$      vnorm=vnorm+V(i)**2
+    !!$    enddo
+    !!$    write(0,*) 'vnorm:', sqrt(vnorm)
 
-!$omp parallel default(none),private(i,TVp,js,je,j,jj,Tp,Vp,k,kl0,l), &
-!$omp&  shared(nr,TV,ndof,BTmat,ndof2,V)
-!$omp do
+    !$omp parallel default(none),private(i,TVp,js,je,j,jj,Tp,Vp,k,kl0,l), &
+      !$omp&  shared(nr,TV,ndof,BTmat,ndof2,V)
+    !$omp do
     do i=1,nr
       TVp=>TV((i-1)*ndof+1:i*ndof)
       js=BTmat%index(i-1)+1
@@ -639,8 +639,8 @@ contains
         enddo
       enddo
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
   end subroutine hecmw_localmat_mulvec
 
   subroutine hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecTKT)
@@ -836,7 +836,7 @@ contains
         do idof = 1, ndof
           do jdof = 1, ndof
             Ttmat%A((k-1)*ndof2+(idof-1)*ndof+jdof) = &
-                 Tmat%A((j-1)*ndof2+(jdof-1)*ndof+idof)
+              Tmat%A((j-1)*ndof2+(jdof-1)*ndof+idof)
           enddo
         enddo
         iw(jj) = k + 1

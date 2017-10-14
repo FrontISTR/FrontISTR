@@ -48,7 +48,7 @@ contains
     logical, intent(in) :: flg
     mpcmatvec_flg = flg
   end subroutine hecmw_matvec_set_mpcmatvec_flg
-  
+
   !C
   !C***
   !C*** hecmw_matvec
@@ -63,16 +63,16 @@ contains
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout), optional :: COMMtime
-    SELECT CASE(hecMAT%NDOF)
-      CASE (3)
+    select case(hecMAT%NDOF)
+      case (3)
         call hecmw_matvec_33(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
-      CASE (4)
+      case (4)
         call hecmw_matvec_44(hecMESH, hecMAT, X, Y, time_Ax,COMMtime)
-      CASE (6)
+      case (6)
         call hecmw_matvec_66(hecMESH, hecMAT, X, Y, time_Ax,COMMtime)
-      CASE DEFAULT
-        call hecmw_matvec_nn(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)    
-    END SELECT
+      case default
+        call hecmw_matvec_nn(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+    end select
 
   end subroutine hecmw_matvec
 
@@ -96,7 +96,7 @@ contains
   subroutine hecmw_matvec_unset_async
     implicit none
   end subroutine hecmw_matvec_unset_async
-  
+
   !C
   !C***
   !C*** hecmw_matresid
@@ -113,12 +113,12 @@ contains
     real(kind=kreal), intent(out) :: R(:)
     real(kind=kreal), intent(inout), optional :: COMMtime
 
-    SELECT CASE(hecMAT%NDOF)
-      CASE (3)
+    select case(hecMAT%NDOF)
+      case (3)
         call hecmw_matresid_33(hecMESH, hecMAT, X, B, R, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_matresid_nn(hecMESH, hecMAT, X, B, R, COMMtime)
-    END SELECT
+    end select
   end subroutine hecmw_matresid
 
   !C
@@ -129,7 +129,7 @@ contains
   function hecmw_rel_resid_L2 (hecMESH, hecMAT, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
-    
+
     implicit none
     real(kind=kreal) :: hecmw_rel_resid_L2
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
@@ -144,7 +144,7 @@ contains
 
     Tcomm = 0.d0
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
-         hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+      hecMAT%B, hecMAT%B, bnorm2, Tcomm)
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
@@ -166,19 +166,19 @@ contains
     use hecmw_util
     use hecmw_solver_las_33
     use hecmw_solver_las_nn
-    
+
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
-    
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_Tvec_33(hecMESH, X, Y, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_Tvec_nn(hecMESH, X, Y, COMMtime)
-    END SELECT
+    end select
 
   end subroutine hecmw_Tvec
 
@@ -196,13 +196,13 @@ contains
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
-    
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_Ttvec_33(hecMESH, X, Y, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_Ttvec_nn(hecMESH, X, Y, COMMtime)
-    END SELECT
+    end select
 
   end subroutine hecmw_Ttvec
 
@@ -220,16 +220,16 @@ contains
     real(kind=kreal), intent(out) :: Y(:), W(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
-!    call hecmw_Tvec(hecMESH, X, Y, COMMtime)
-!    call hecmw_matvec(hecMESH, hecMAT, Y, W, COMMtime)
-!    call hecmw_Ttvec(hecMESH, W, Y, COMMtime)
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+    !    call hecmw_Tvec(hecMESH, X, Y, COMMtime)
+    !    call hecmw_matvec(hecMESH, hecMAT, Y, W, COMMtime)
+    !    call hecmw_Ttvec(hecMESH, W, Y, COMMtime)
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, COMMtime)
-    END SELECT
-    
+    end select
+
   end subroutine hecmw_TtmatTvec
 
   !C
@@ -244,8 +244,8 @@ contains
     integer(kind=kint) :: i, j, k
     real(kind=kreal) :: WVAL
 
-!$omp parallel default(none),private(i,j,k,WVAL),shared(hecMESH)
-!$omp do
+    !$omp parallel default(none),private(i,j,k,WVAL),shared(hecMESH)
+    !$omp do
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1)+1
       WVAL = 1.d0 / hecMESH%mpc%mpc_val(k)
@@ -255,8 +255,8 @@ contains
       enddo
       hecMESH%mpc%mpc_const(i) = hecMESH%mpc%mpc_const(i) * WVAL
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_mpc_scale
 
@@ -277,12 +277,12 @@ contains
     real(kind=kreal), intent(out), target :: BT(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_trans_b_33(hecMESH, hecMAT, B, BT, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_trans_b_nn(hecMESH, hecMAT, B, BT, COMMtime)
-    END SELECT
+    end select
 
   end subroutine hecmw_trans_b
 
@@ -301,12 +301,12 @@ contains
     real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal) :: COMMtime
 
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_tback_x_33(hecMESH, X, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_tback_x_nn(hecMESH, X, COMMtime)
-    END SELECT
+    end select
 
   end subroutine hecmw_tback_x
 
@@ -345,13 +345,13 @@ contains
     type (hecmwST_matrix), intent(inout), target :: hecMAT
     real(kind=kreal), intent(inout), optional :: COMMtime
 
-    SELECT CASE(hecMESH%n_dof)
-      CASE (3)
+    select case(hecMESH%n_dof)
+      case (3)
         call hecmw_mat_diag_sr_33(hecMESH, hecMAT, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_mat_diag_sr_nn(hecMESH, hecMAT, COMMtime)
-    END SELECT
-    
+    end select
+
   end subroutine hecmw_mat_diag_sr
-  
+
 end module hecmw_solver_las

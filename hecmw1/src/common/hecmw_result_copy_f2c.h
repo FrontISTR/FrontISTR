@@ -8,7 +8,8 @@
 
 #include "hecmw_result.h"
 
-extern int HECMW_result_copy_f2c_init( struct hecmwST_result_data *result_data, int n_node, int n_elem );
-extern int HECMW_result_copy_f2c_finalize( void );
+extern int HECMW_result_copy_f2c_init(struct hecmwST_result_data *result_data,
+                                      int n_node, int n_elem);
+extern int HECMW_result_copy_f2c_finalize(void);
 
 #endif

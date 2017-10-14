@@ -63,7 +63,7 @@ contains
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
   end subroutine hecmw_matvec_22
-  
+
   subroutine hecmw_matvec_22_set_async (hecMAT)
     use hecmw_util
     implicit none
@@ -72,7 +72,7 @@ contains
   subroutine hecmw_matvec_22_unset_async
     implicit none
   end subroutine hecmw_matvec_22_unset_async
-  
+
   !C
   !C***
   !C*** hecmw_matvec_22_inner ( private subroutine )
@@ -117,14 +117,14 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     ! <<< added for turning
 
-    IF (hecmw_JAD_IS_INITIALIZED().ne.0) THEN
+    if (hecmw_JAD_IS_INITIALIZED().ne.0) then
       Tcomm = 0.d0
       START_TIME = hecmw_Wtime()
       call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-    ELSE
+    else
 
       N = hecMAT%N
       NP = hecMAT%NP
@@ -172,7 +172,7 @@ contains
         end do
 
         call hecmw_tuning_fx_calc_sector_cache(NP, 2, &
-             sectorCacheSize0, sectorCacheSize1)
+          sectorCacheSize0, sectorCacheSize1)
 
         isFirst = .false.
       endif
@@ -188,12 +188,12 @@ contains
       !call fapp_start("loopInMatvec33", 1, 0)
       !call start_collection("loopInMatvec33")
 
-!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-!OCL CACHE_SUBSECTOR_ASSIGN(X)
+      !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+      !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
-!$OMP PARALLEL DEFAULT(NONE) &
-!$OMP&PRIVATE(i,X1,X2,YV1,YV2,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
+      !$OMP PARALLEL DEFAULT(NONE) &
+        !$OMP&PRIVATE(i,X1,X2,YV1,YV2,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -226,30 +226,30 @@ contains
           Y(2*i  )= YV2
         enddo
       enddo
-      
-!$OMP END PARALLEL
 
-!OCL END_CACHE_SUBSECTOR
-!OCL END_CACHE_SECTOR_SIZE
+      !$OMP END PARALLEL
+
+      !OCL END_CACHE_SUBSECTOR
+      !OCL END_CACHE_SECTOR_SIZE
 
 
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
 
 
-    ENDIF
+    endif
 
     if (hecMAT%cmat%n_val > 0) then
       call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * hecMAT%NDOF )
     end if
 
   end subroutine hecmw_matvec_22_inner
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   !C
   !C***
   !C*** hecmw_matresid_22
@@ -270,13 +270,13 @@ contains
     Tcomm = 0.d0
     call hecmw_matvec_22 (hecMESH, hecMAT, X, R, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-!$omp parallel default(none),private(i),shared(hecMAT,R,B)
-!$omp do
+    !$omp parallel default(none),private(i),shared(hecMAT,R,B)
+    !$omp do
     do i = 1, hecMAT%N * 2
       R(i) = B(i) - R(i)
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
   end subroutine hecmw_matresid_22
 
   !C
@@ -332,14 +332,14 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
-!$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
-!$omp do
+    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
+    !$omp do
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
-!$omp end do
+    !$omp end do
 
-!$omp do
+    !$omp do
     do i= 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 2 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
@@ -349,8 +349,8 @@ contains
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_Tvec_22
 
@@ -376,14 +376,14 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
-!$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
-!$omp do
+    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
+    !$omp do
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
-!$omp end do
+    !$omp end do
 
-!$omp do
+    !$omp do
     do i= 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 2 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
@@ -393,8 +393,8 @@ contains
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_Ttvec_22
 
@@ -447,16 +447,16 @@ contains
     XG => BT
     XG = 0.d0
 
-!$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG)
-!$omp do
+    !$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG)
+    !$omp do
     !C-- Generate {xg} from mpc_const
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 2 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 2
       XG(kk) = hecMESH%mpc%mpc_const(i)
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     !C-- {w} = {b} - [A]{xg}
     call hecmw_matresid_22 (hecMESH, hecMAT, XG, B, W, COMMtime)
@@ -489,21 +489,21 @@ contains
 
     !C-- {x} = {tx} + {xg}
 
-!$omp parallel default(none),private(i,k,kk),shared(hecMESH,X,W)
-!$omp do
+    !$omp parallel default(none),private(i,k,kk),shared(hecMESH,X,W)
+    !$omp do
     do i= 1, hecMESH%nn_internal * 2
       X(i)= W(i)
     enddo
-!$omp end do
+    !$omp end do
 
-!$omp do
+    !$omp do
     do i = 1, hecMESH%mpc%n_mpc
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 2 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 2
       X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     deallocate(W)
   end subroutine hecmw_tback_x_22

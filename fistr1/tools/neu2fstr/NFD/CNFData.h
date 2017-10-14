@@ -3,9 +3,8 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 /*
-	CNFData Ver. 3.6
+        CNFData Ver. 3.6
 */
-
 
 #ifndef CNFDataH
 #define CNFDataH
@@ -14,7 +13,6 @@
 #define TRUE 1
 #define FALSE 0
 #endif
-
 
 #include <set>
 #include <assert.h>
@@ -36,96 +34,95 @@
 const double DefaultCNFDataVersion = 8.0;
 
 // results of ReadLine method
-const int READLINE_SUCESS    =  1;
+const int READLINE_SUCESS    = 1;
 const int READLINE_SEPARATOR = -1;
 const int READLINE_EOF       = -2;
-const int READLINE_ERROR     =  0;
-
+const int READLINE_ERROR     = 0;
 
 const int NFD_SupportedBlockListSize = 9;
-const int NFD_SupportedBlockList[] = {
-	100, 402, 403, 404, 405, 408, 506, 507, 601 };
+const int NFD_SupportedBlockList[]   = {100, 402, 403, 404, 405,
+                                      408, 506, 507, 601};
 
 class CNFData {
-public:
-	double version;		// set by instance of CNFDB_100
-	char title[256];	// set by instance of CNFDB_100
+ public:
+  double version;   // set by instance of CNFDB_100
+  char title[256];  // set by instance of CNFDB_100
 
-	CNFData();
-	CNFData( const char* fname );
-	virtual ~CNFData();
+  CNFData();
+  CNFData(const char* fname);
+  virtual ~CNFData();
 
-	virtual void Clear();
-	virtual void Load( const char* fname );
-	virtual void Save( const char* fname );
+  virtual void Clear();
+  virtual void Load(const char* fname);
+  virtual void Save(const char* fname);
 
-public:
-	//-----------------------------------------------------
-	// Indivisual DataBlock Strage and Utilities
-	// CAUTION) No strage for CNFDB_100
-	//-----------------------------------------------------
+ public:
+//-----------------------------------------------------
+// Indivisual DataBlock Strage and Utilities
+// CAUTION) No strage for CNFDB_100
+//-----------------------------------------------------
 
-	#define GENRATE_CODE( x ) \
-		std::vector< CNFDB_##x *> DB_##x;\
-		void Clear_##x ();
+#define GENRATE_CODE(x)           \
+  std::vector<CNFDB_##x*> DB_##x; \
+  void Clear_##x();
 
-	GENRATE_CODE( 402 )
-	GENRATE_CODE( 403 )
-	GENRATE_CODE( 404 )
-	GENRATE_CODE( 405 )
-	GENRATE_CODE( 408 )
-	GENRATE_CODE( 506 )
-	GENRATE_CODE( 507 )
-	GENRATE_CODE( 601 )
-	#undef GENRATE_CODE
+  GENRATE_CODE(402)
+  GENRATE_CODE(403)
+  GENRATE_CODE(404)
+  GENRATE_CODE(405)
+  GENRATE_CODE(408)
+  GENRATE_CODE(506)
+  GENRATE_CODE(507)
+  GENRATE_CODE(601)
+#undef GENRATE_CODE
 
-public:
-	//-----------------------------------------------------
-	// DataBlock Utilities
-	//-----------------------------------------------------
-	virtual CNFDataBlock* CreateDataBlock( int block_id );
-	virtual void StoreDataBlock( CNFDataBlock* block );
-	virtual void SkipDataBlock();
-	//-----------------------------------------------------
-	// Basic Input/Output Methods
-	//-----------------------------------------------------
-	char neu_file[256];
-	FILE* log_fp;
-	FILE* fp;
-	int line;
-	char line_buff[512];
-	int fg_line_buff_empty;
-	// fmt: I:integer, B:bool, F:float
-	int EndOfFile() { return feof(fp); }
-	void ReadRecStart( char* buff );
-	int ReadRecNext( char type, void* value );
-	void ReadRecord( char* buff, const char* fmt, ... );
-	int ReadLine( char* buff, int size=255 );
-	void ReadLineEx( char* buff, int size=255 );
-	void ReadStr( char* buff, char* s, int size );
-	void PushBackLine( char* buff );
-	void ReadMultRec( char type, int n_in_rec, int val_n, void* val );
+ public:
+  //-----------------------------------------------------
+  // DataBlock Utilities
+  //-----------------------------------------------------
+  virtual CNFDataBlock* CreateDataBlock(int block_id);
+  virtual void StoreDataBlock(CNFDataBlock* block);
+  virtual void SkipDataBlock();
+  //-----------------------------------------------------
+  // Basic Input/Output Methods
+  //-----------------------------------------------------
+  char neu_file[256];
+  FILE* log_fp;
+  FILE* fp;
+  int line;
+  char line_buff[512];
+  int fg_line_buff_empty;
+  // fmt: I:integer, B:bool, F:float
+  int EndOfFile() { return feof(fp); }
+  void ReadRecStart(char* buff);
+  int ReadRecNext(char type, void* value);
+  void ReadRecord(char* buff, const char* fmt, ...);
+  int ReadLine(char* buff, int size = 255);
+  void ReadLineEx(char* buff, int size = 255);
+  void ReadStr(char* buff, char* s, int size);
+  void PushBackLine(char* buff);
+  void ReadMultRec(char type, int n_in_rec, int val_n, void* val);
 
-	void WriteStr( FILE* fp, const char* s );
-	void WriteData( FILE* fp, const char* fmt, ... );
-	void WriteBlockSeparator( FILE* fp);
+  void WriteStr(FILE* fp, const char* s);
+  void WriteData(FILE* fp, const char* fmt, ...);
+  void WriteBlockSeparator(FILE* fp);
 
-	bool WriteDataBlock( FILE* fp, int id );
+  bool WriteDataBlock(FILE* fp, int id);
 
-	//-----------------------------------------------------
-	// Report Status
-	//-----------------------------------------------------
-	void WriteSummary( FILE* fp=0 );
-protected:
-	char rec_buff[256];
-	int fg_rec_first;
-	int rec_column;
+  //-----------------------------------------------------
+  // Report Status
+  //-----------------------------------------------------
+  void WriteSummary(FILE* fp = 0);
 
-	virtual void PrintMessage( const char* msg );
+ protected:
+  char rec_buff[256];
+  int fg_rec_first;
+  int rec_column;
 
-protected:
-	std::set<int> non_supported_block_list;
+  virtual void PrintMessage(const char* msg);
+
+ protected:
+  std::set<int> non_supported_block_list;
 };
-
 
 #endif

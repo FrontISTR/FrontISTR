@@ -12,7 +12,7 @@ module hecmw_precond_33
   use hecmw_precond_ML_33
   use hecmw_precond_SAINV_33
   use hecmw_precond_RIF_33
-  use hecmw_precond_nn    
+  use hecmw_precond_nn
   use hecmw_solver_las_33
   implicit none
 
@@ -30,44 +30,44 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: sym
 
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_33_setup(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_33_setup(hecMAT)
-      CASE(5)
+      case(5)
         call hecmw_precond_ML_33_setup(hecMAT, hecMESH, sym)
-      CASE(10,11,12)
+      case(10,11,12)
         call hecmw_precond_BILU_33_setup(hecMAT)
-      CASE(20)
+      case(20)
         call hecmw_precond_33_SAINV_setup(hecMAT)
-      CASE(21)
+      case(21)
         call hecmw_precond_RIF_33_setup(hecMAT)
-      CASE DEFAULT
+      case default
         call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
-    END SELECT
-    
+    end select
+
   end subroutine hecmw_precond_33_setup
 
   subroutine hecmw_precond_33_clear(hecMAT)
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_33_clear(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_33_clear()
-      CASE(5)
+      case(5)
         call hecmw_precond_ML_33_clear()
-      CASE(10:12)
+      case(10:12)
         call hecmw_precond_BILU_33_clear()
-      CASE(20)
+      case(20)
         call hecmw_precond_33_SAINV_clear()
-      CASE(21)
+      case(21)
         call hecmw_precond_RIF_33_clear()
-      CASE DEFAULT
-    END SELECT
+      case default
+    end select
 
   end subroutine hecmw_precond_33_clear
 
@@ -85,21 +85,21 @@ contains
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     do iterPRE= 1, iterPREmax
       START_TIME = hecmw_Wtime()
-      SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-        CASE(1,2)
+      select case(hecmw_mat_get_precond( hecMAT ))
+        case(1,2)
           call hecmw_precond_SSOR_33_apply(ZP)
-        CASE(3)
+        case(3)
           call hecmw_precond_DIAG_33_apply(ZP)
-        CASE(5)
+        case(5)
           call hecmw_precond_ML_33_apply(ZP)
-        CASE(10:12)
+        case(10:12)
           call hecmw_precond_BILU_33_apply(ZP)
-        CASE(20)
+        case(20)
           call hecmw_precond_33_SAINV_apply(R,ZP)
-        CASE(21)
+        case(21)
           call hecmw_precond_RIF_33_apply(ZP)
-        CASE DEFAULT
-      END SELECT
+        case default
+      end select
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 
@@ -108,7 +108,7 @@ contains
         Z(i)= Z(i) + ZP(i)
       enddo
       if (iterPRE.eq.iterPREmax) exit
-      
+
       !C--    {ZP} = {R} - [A] {Z}
       call hecmw_matresid_33 (hecMESH, hecMAT, Z, R, ZP, COMMtime)
     enddo

@@ -3,7 +3,7 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 /*
-	CFSTRDB_Solution Ver.1.0
+  CFSTRDB_Solution Ver.1.0
 */
 
 #include "CFSTRDB.h"
@@ -12,62 +12,55 @@
 using namespace std;
 using namespace hecd_util;
 
-
 CFSTRDB_Solution::CFSTRDB_Solution()
- : CFSTRDataBlock(FSTRDB_SOLUTION), type(TYPE_STATIC)
-{
+    : CFSTRDataBlock(FSTRDB_SOLUTION), type(TYPE_STATIC) {}
+
+CFSTRDB_Solution::~CFSTRDB_Solution() { Clear(); }
+
+void CFSTRDB_Solution::Clear() { type = TYPE_STATIC; }
+
+void CFSTRDB_Solution::Write(CHECData *hecd) {
+  if (type == TYPE_UNKNOWN) return;
+
+  switch (type) {
+    case TYPE_STATIC:
+      hecd->WriteHeader("!SOLUTION", "S", "TYPE", "STATIC");
+      break;
+
+    case TYPE_HEAT:
+      hecd->WriteHeader("!SOLUTION", "S", "TYPE", "HEAT");
+      break;
+
+    case TYPE_EIGEN:
+      hecd->WriteHeader("!SOLUTION", "S", "TYPE", "EIGEN");
+      break;
+
+    default:
+      assert(0);
+  }
 }
 
-CFSTRDB_Solution::~CFSTRDB_Solution()
-{
-	Clear();
+bool CFSTRDB_Solution::Read(CHECData *hecd, char *header_line) {
+  int rcode[5];
+  char s[256];
+  char type_s[256];
+
+  if (!hecd->ParseHeader(header_line, rcode, "S", "TYPE", s)) return false;
+
+  cleanup_token(s, type_s);
+  toupper(type_s);
+
+  if (strcmp(type_s, "STATIC") == 0) {
+    type = TYPE_STATIC;
+
+  } else if (strcmp(type_s, "HEAT") == 0) {
+    type = TYPE_HEAT;
+
+  } else if (strcmp(type_s, "EIGEN") == 0) {
+    type = TYPE_EIGEN;
+
+  } else
+    return false;
+
+  return true;
 }
-
-void CFSTRDB_Solution::Clear()
-{
-	type = TYPE_STATIC;
-}
-
-void CFSTRDB_Solution::Write( CHECData* hecd )
-{
-	if( type == TYPE_UNKNOWN ) return;
-
-	switch(type){
-	case TYPE_STATIC:
-		hecd->WriteHeader( "!SOLUTION", "S", "TYPE", "STATIC" );
-		break;
-	case TYPE_HEAT:
-		hecd->WriteHeader( "!SOLUTION", "S", "TYPE", "HEAT" );
-		break;
-	case TYPE_EIGEN:
-		hecd->WriteHeader( "!SOLUTION", "S", "TYPE", "EIGEN" );
-		break;
-	default:
-		assert(0);
-	}
-}
-
-
-bool CFSTRDB_Solution::Read( CHECData* hecd, char* header_line )
-{
-	int rcode[5];
-	char s[256];
-	char type_s[256];
-
-	if(! hecd->ParseHeader( header_line, rcode, "S", "TYPE", s)) return false;
-
-	cleanup_token( s, type_s );
-	toupper( type_s );
-
-	if( strcmp(type_s, "STATIC") == 0 ){
-		type = TYPE_STATIC;
-	} else if( strcmp(type_s, "HEAT") == 0 ){
-		type = TYPE_HEAT;
-	} else if( strcmp(type_s, "EIGEN") == 0 ){
-		type = TYPE_EIGEN;
-	} else
-		return false;
-
-	return true;
-}
-
