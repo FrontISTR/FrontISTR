@@ -1,27 +1,13 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2006/06/01                                         !
-!        Category : I/O and Utility                                    !
-!                                                                      !
-!            Written by Kazuaki Sakane (RIST)                          !
-!                       Noboru Imai (Univ. of Tokyo)                   !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
-
-! memo)
-!   Intel 9 compiler generates codes to wast stack memory
-!   when an array of string is passed to external subroutines defined with C.
-!   Then the pointer of the head of the array is passed
-!   to avoid consumptions of stack memory.
-
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+!> \brief I/O and Utility
+!> memo)
+!>   Intel 9 compiler generates codes to wast stack memory
+!>   when an array of string is passed to external subroutines defined with C.
+!>   Then the pointer of the head of the array is passed
+!>   to avoid consumptions of stack memory.
 
 module hecmw_dist_copy_f2c_f
   use hecmw_util

@@ -1,24 +1,8 @@
-!======================================================================!
-!                                                                      !
-! Software Name : FrontISTR Ver. 3.7                                   !
-!                                                                      !
-!      Module Name : Dynamic Transit Analysis                          !
-!                                                                      !
-!            Written by Toshio Nagashima (Sophia University)           !
-!                       Yasuji Fukahori (Univ. of Tokyo)               !
-!                       Tomotaka Ogasawara (Univ. of Tokyo)            !
-!                       Xi YUAN( AdvanceSoft )                         !
-!                       Zhigang Sun(ASTOM)
-!                                                                      !
-!      Contact address :  IIS,The University of Tokyo, CISS            !
-!                                                                      !
-!      "Structural Analysis for Large Scale Assembly"                  !
-!                                                                      !
-!======================================================================!
-
-!C================================================================C
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief This module contains functions to set displacement boundary condition in dynamic analysis
-!C================================================================C
 
 module m_dynamic_mat_ass_bc
 
