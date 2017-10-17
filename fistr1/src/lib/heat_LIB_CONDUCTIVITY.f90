@@ -2322,7 +2322,8 @@ contains
           do I = 1, NN
             do J = 1, NN
               IJ = IJ + 1
-              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX &
+              SS(IJ)=SS(IJ) &
+                +BX(I)*BX(J)*WGX &
                 +BY(I)*BY(J)*WGY &
                 +BZ(I)*BZ(J)*WGZ
             enddo

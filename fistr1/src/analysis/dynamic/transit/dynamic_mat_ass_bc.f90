@@ -19,25 +19,25 @@ contains
     use m_utilities
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
-    type (fstr_param       )              :: fstrPARAM !< analysis control parameters
-    type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
-    integer, optional         :: iter
-    type (hecmwST_matrix),optional     :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(fstr_solid)                     :: fstrSOLID
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_param)                     :: fstrPARAM !< analysis control parameters
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer, optional                    :: iter
+    type(hecmwST_matrix), optional       :: conMAT
 
-    integer(kind=kint) ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
 
-    integer(kind=kint) flag_u
-    real(kind=kreal) RHS, f_t, f_t1
+    integer(kind=kint) :: flag_u
+    real(kind=kreal)   :: RHS, f_t, f_t1
 
     !for rotation
     integer(kind=kint) :: n_rot, rid, n_nodes
-    type(tRotInfo) :: rinfo
-    real(kind=kreal) :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
-    real(kind=kreal) :: cdisp(3), cddisp(3)
+    type(tRotInfo)     :: rinfo
+    real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
+    real(kind=kreal)   :: cdisp(3), cddisp(3)
     !
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
@@ -212,14 +212,14 @@ contains
     use m_table_dyn
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
 
-    integer(kind=kint) NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) flag_u
-    real(kind=kreal) RHS, f_t
+    integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: flag_u
+    real(kind=kreal)   :: RHS, f_t
 
     flag_u = 1
     NDOF = hecMAT%NDOF

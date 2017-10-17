@@ -11,9 +11,9 @@ module m_fstr_TimeInc
 
   implicit none
 
-  real(kind=kreal), private :: current_time  = 0.d0  !< current time
-  real(kind=kreal), private :: time_inc      = 0.d0  !< current increment of time
-  real(kind=kreal), private :: time_inc_base = 0.d0  !< base increment of time
+  real(kind=kreal), private :: current_time = 0.d0 !< current time
+  real(kind=kreal), private :: time_inc = 0.d0 !< current increment of time
+  real(kind=kreal), private :: time_inc_base = 0.d0 !< base increment of time
 
 contains
 
@@ -129,8 +129,8 @@ contains
 
   !! true if current time is time point
   logical function fstr_TimeInc_isTimePoint( stepinfo, fstrPARAM )
-    type(step_info), intent(in)    :: stepinfo
-    type(fstr_param), intent(in)   :: fstrPARAM
+    type(step_info), intent(in)  :: stepinfo
+    type(fstr_param), intent(in) :: fstrPARAM
 
     fstr_TimeInc_isTimePoint = .false.
     if( stepinfo%inc_type == stepFixedInc ) return

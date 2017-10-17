@@ -28,21 +28,21 @@ contains
     use m_fstr_EIG_lanczos_util
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_eigen        ) :: fstrEIG
-    type(fstr_tri_diag     ) :: Tri
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
+    type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter, iter2, ierr, maxiter
-    real(kind=kreal) :: chk
+    real(kind=kreal)   :: chk
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
     integer(kind=kint), allocatable :: iparm(:)
-    real(kind=kreal), pointer :: eigvec(:,:)
-    real(kind=kreal), pointer :: eigval(:)
+    real(kind=kreal), pointer       :: eigvec(:,:)
+    real(kind=kreal), pointer       :: eigval(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -184,8 +184,8 @@ contains
     use hecmw
     implicit none
     integer(kind=kint) :: i, j, k, l, m, n, ii, l1, l2, nm, mml, ierror
-    real(kind=kreal) :: d(n), e(n), z(nm, n)
-    real(kind=kreal) :: c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, tst1, tst2
+    real(kind=kreal)   :: d(n), e(n), z(nm, n)
+    real(kind=kreal)   :: c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, tst1, tst2
 
     ierror = 0
     if (n .eq. 1) go to 1001

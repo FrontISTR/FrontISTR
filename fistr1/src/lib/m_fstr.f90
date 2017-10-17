@@ -27,27 +27,27 @@ module m_fstr
 
   !> CONSTANTS
   !> general
-  integer(kind=kint), parameter :: kYES         =   1
-  integer(kind=kint), parameter :: kNO          =   0
-  integer(kind=kint), parameter :: kON          =   1
-  integer(kind=kint), parameter :: kOFF         =   0
+  integer(kind=kint), parameter :: kYES = 1
+  integer(kind=kint), parameter :: kNO  = 0
+  integer(kind=kint), parameter :: kON  = 1
+  integer(kind=kint), parameter :: kOFF = 0
 
   !> solution type (st)
-  integer(kind=kint), parameter :: kstPRECHECK  =   0
-  integer(kind=kint), parameter :: kstSTATIC    =   1
-  integer(kind=kint), parameter :: kstEIGEN     =   2
-  integer(kind=kint), parameter :: kstHEAT      =   3
-  integer(kind=kint), parameter :: kstDYNAMIC   =   4
+  integer(kind=kint), parameter :: kstPRECHECK = 0
+  integer(kind=kint), parameter :: kstSTATIC   = 1
+  integer(kind=kint), parameter :: kstEIGEN    = 2
+  integer(kind=kint), parameter :: kstHEAT     = 3
+  integer(kind=kint), parameter :: kstDYNAMIC  = 4
   !integer(kind=kint), parameter :: kstNLSTATIC  =   5
   integer(kind=kint), parameter :: kstSTATICEIGEN = 6
-  integer(kind=kint), parameter :: kstNZPROF    =   7
+  integer(kind=kint), parameter :: kstNZPROF      = 7
 
   !> solver method (sm)    !CAUTION : (<=100):indirect, (>100):direct
-  integer(kind=kint), parameter :: ksmCG        =   1
-  integer(kind=kint), parameter :: ksmBiCGSTAB  =   2
-  integer(kind=kint), parameter :: ksmGMRES     =   3
-  integer(kind=kint), parameter :: ksmGPBiCG    =   4
-  integer(kind=kint), parameter :: ksmDIRECT    = 101
+  integer(kind=kint), parameter :: ksmCG       = 1
+  integer(kind=kint), parameter :: ksmBiCGSTAB = 2
+  integer(kind=kint), parameter :: ksmGMRES    = 3
+  integer(kind=kint), parameter :: ksmGPBiCG   = 4
+  integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> contact analysis algorithm
   integer(kind=kint), parameter :: kcaSLagrange = 1

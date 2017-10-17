@@ -19,10 +19,10 @@ contains
     use m_heat_mat_ass_bc_RADIATE
 
     implicit none
-    real(kind=kreal)   ATIME,BTIME,CTIME, DTIME
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
+    real(kind=kreal) :: ATIME, BTIME, CTIME, DTIME
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
 
     CTIME = ATIME + BTIME
 

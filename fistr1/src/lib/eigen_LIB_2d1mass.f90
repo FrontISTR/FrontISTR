@@ -19,22 +19,22 @@ contains
 
     implicit none
     !C* I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
-    integer(kind=kint) ISET
+    real(kind=kreal)   :: XX(*), YY(*), SS(*), EE, PP, PARAM1
+    integer(kind=kint) :: ISET
     !C* LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=4,NDOF=2,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=3)
-    real(kind=kreal) D(4,4),B(4,NDOF*NN),DB(4,NDOF*NN)
-    real(kind=kreal) H(NN),HR(NN),HS(NN)
-    real(kind=kreal) RHO,THICK,COEF1,COEF2,PAI
-    real(kind=kreal) RI,SI,RP,SP,RM,SM
-    real(kind=kreal) XJ11,XJ21,XJ12,XJ22,DET,RR,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI12,XJI22
-    integer(kind=kint) I,J,J2,K,LX,LY,NUM
-    integer(kind=kint) ind1, ind2
-    real(kind=kreal) totdiag, totmass
-    type(fstr_eigen) :: fstrEIG
+    integer(kind=kint), parameter :: NN = 4, NDOF = 2, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 3
+    !parameter(NN=4, NDOF=2, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=3)
+    real(kind=kreal)   :: D(4, 4), B(4, NDOF*NN), DB(4, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HR(NN), HS(NN)
+    real(kind=kreal)   :: RHO, THICK, COEF1, COEF2, PAI
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: XJ11, XJ21, XJ12, XJ22, DET, RR, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI12, XJI22
+    integer(kind=kint) :: I, J, J2, K, LX, LY, NUM
+    integer(kind=kint) :: ind1, ind2
+    real(kind=kreal)   :: totdiag, totmass
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0
@@ -144,25 +144,25 @@ contains
     use gauss_integration
     implicit none
     !C*I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),SS(*),EE,PP,PARAM1
-    integer(kind=kint) ISET
+    real(kind=kreal)   :: XX(*), YY(*), SS(*), EE, PP, PARAM1
+    integer(kind=kint) :: ISET
     !C*LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=3,NDOF=2,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=2)
-    real(kind=kreal) D(4,4),B(4,NDOF*NN),DB(4,NDOF*NN)
-    real(kind=kreal) H(NN),HL1(NN),HL2(NN),HL3(NN)
-    integer(kind=kint) L1,L2
-    real(kind=kreal) X1,X2,X3,XL1,XL2
-    real(kind=kreal) DNDX,DNDY
-    real(kind=kreal) RHO,THICK,COEF1,COEF2,PAI
-    real(kind=kreal) RI,SI,RP,SP,RM,SM
-    real(kind=kreal) XJ11,XJ21,XJ12,XJ22,DET,RR,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI12,XJI22
-    integer(kind=kint) I,J,J2,K,LX,LY,NUM
-    integer(kind=kint) ind1,ind2
-    real(kind=kreal) totdiag, totmass
-    type(fstr_eigen) :: fstrEIG
+    integer(kind=kint), parameter :: NN = 3, NDOF = 2, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 2
+    !parameter(NN=3, NDOF=2, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=2)
+    real(kind=kreal)   :: D(4, 4), B(4, NDOF*NN), DB(4, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HL1(NN), HL2(NN), HL3(NN)
+    integer(kind=kint) :: L1, L2
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2
+    real(kind=kreal)   :: DNDX, DNDY
+    real(kind=kreal)   :: RHO, THICK, COEF1, COEF2, PAI
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: XJ11, XJ21, XJ12, XJ22, DET, RR, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI12, XJI22
+    integer(kind=kint) :: I, J, J2, K, LX, LY, NUM
+    integer(kind=kint) :: ind1, ind2
+    real(kind=kreal)   :: totdiag, totmass
+    type(fstr_eigen)   :: fstrEIG
     totdiag = 0.0
     totmass = 0.0
     !C**************************

@@ -13,10 +13,10 @@ contains
     use m_fstr
 
     implicit none
-    integer(kind=kint) id,nn,ii,ikk
-    real(kind=kreal)    TT,QQ
-    type (fstr_heat   ) :: fstrHEAT
-    logical, optional :: OutOfRange
+    integer(kind=kint) :: id, nn, ii, ikk
+    real(kind=kreal)   :: TT, QQ
+    type(fstr_heat)    :: fstrHEAT
+    logical, optional  :: OutOfRange
 
     QQ = 1.0
     if (present(OutOfRange)) OutOfRange = .false.

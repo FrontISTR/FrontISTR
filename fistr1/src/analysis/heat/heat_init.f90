@@ -13,10 +13,10 @@ contains
     use m_fstr
 
     implicit none
-    integer(kind=kint) namax,i,nn,is,iE,icou,j,k
-    real(kind=kreal) x1,y1,x2,y2
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: namax, i, nn, is, iE, icou, j, k
+    real(kind=kreal)   :: x1, y1, x2, y2
+    type(fstr_heat)    :: fstrHEAT
+    type(hecmwST_local_mesh) :: hecMESH
     !C
     !C===
     namax = 0
@@ -97,10 +97,10 @@ contains
     use m_fstr
 
     implicit none
-    integer(kind=kint) m1max,m2max,m3max,icou,im,jm,nn,ic,jS,jE,kc,km,k
-    real(kind=kreal)   aa,bb
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: m1max, m2max, m3max, icou, im, jm, nn, ic, jS, jE, kc, km, k
+    real(kind=kreal)   :: aa, bb
+    type(fstr_heat)    :: fstrHEAT
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C +----------+
@@ -123,14 +123,14 @@ contains
       enddo
     enddo
 
-    allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot),                       &
+    allocate (fstrHEAT%RHOtab  (fstrHEAT%MATERIALtot),               &
       fstrHEAT%CPtab   (fstrHEAT%MATERIALtot),                       &
       fstrHEAT%CONDtab (fstrHEAT%MATERIALtot))
-    allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max),                 &
+    allocate (fstrHEAT%RHO     (fstrHEAT%MATERIALtot,m1max),         &
       fstrHEAT%RHOtemp (fstrHEAT%MATERIALtot,m1max))
-    allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max),                 &
+    allocate (fstrHEAT%CP      (fstrHEAT%MATERIALtot,m2max),         &
       fstrHEAT%CPtemp  (fstrHEAT%MATERIALtot,m2max))
-    allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max),                 &
+    allocate (fstrHEAT%COND    (fstrHEAT%MATERIALtot,m3max),         &
       fstrHEAT%CONDtemp(fstrHEAT%MATERIALtot,m3max))
 
     fstrHEAT%RHO  = 0.d0

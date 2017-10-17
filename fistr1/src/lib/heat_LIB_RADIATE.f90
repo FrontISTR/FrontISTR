@@ -32,9 +32,9 @@ contains
     use hecmw
     implicit real(kind=kreal)(A-H,O-Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
-    real(kind=kreal)   XG(2),WGT(2),H(2),HR(2)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
 
@@ -94,11 +94,11 @@ contains
     !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
-    real(kind=kreal)   XG(3),WGT(3),H(3),HR(3)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !**************************
     !  GAUSS INTEGRATION POINT
     !**************************
@@ -171,11 +171,11 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
-    real(kind=kreal)   XG(2),WGT(2),H(2),HR(2)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
     !
@@ -239,11 +239,11 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
-    real(kind=kreal)   XG(3),WGT(3),H(3),HR(3)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !**************************
     !  GAUSS INTEGRATION POINT
     !**************************
@@ -320,10 +320,10 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     !
     if     ( LTYPE.EQ.1 ) then
       NOD(1) = 1
@@ -378,11 +378,11 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
-    real(kind=kreal) XG(3),WGT(3),H(6),HL1(6),HL2(6),HL3(6)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    real(kind=kreal)   :: XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
     !**************************
     !  GAUSS INTEGRATION POINT
     !**************************
@@ -499,14 +499,14 @@ contains
             XJ32=G3Y
             XJ33=G3Z
             !DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33    &
-              +XJ12*XJ23*XJ31    &
-              +XJ13*XJ21*XJ32    &
-              -XJ13*XJ22*XJ31    &
-              -XJ12*XJ21*XJ33    &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
-            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2))                         &
-              +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4))                         &
+            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2)) &
+              +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4)) &
               +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6))
             T1=TT-TZERO
             T2=SINK-TZERO
@@ -524,7 +524,7 @@ contains
 
   end subroutine heat_RADIATE_342
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_351( NN,XX,YY,ZZ,TEMP,LTYPE                         &
+  subroutine heat_RADIATE_351( NN,XX,YY,ZZ,TEMP,LTYPE &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -536,13 +536,13 @@ contains
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(4),HR(4),HS(4),HT(4)
-    real(kind=kreal) XG(2),WGT(2)
+    real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal) :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -640,7 +640,7 @@ contains
               G3Y=G1Z*G2X-G1X*G2Z
               G3Z=G1X*G2Y-G1Y*G2X
               XSUM=dsqrt(G3X**2+G3Y**2+G3Z**2)
-              TT=H(1)*TEMP(NOD(1))+H(2)*TEMP(NOD(2))                         &
+              TT=H(1)*TEMP(NOD(1))+H(2)*TEMP(NOD(2)) &
                 +H(3)*TEMP(NOD(3))+H(4)*TEMP(NOD(4))
               T1=TT-TZERO
               T2=SINK-TZERO
@@ -670,13 +670,13 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(8),HR(8),HS(8),HT(8)
-    real(kind=kreal) XG(3),WGT(3),HL1(6),HL2(6),HL3(6)
+    real(kind=kreal) :: H(8), HR(8), HS(8), HT(8)
+    real(kind=kreal) :: XG(3), WGT(3), HL1(6), HL2(6), HL3(6)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -812,14 +812,14 @@ contains
               XJ32=G3Y
               XJ33=G3Z
               ! DETERMINANT OF JACOBIAN
-              DET=XJ11*XJ22*XJ33    &
-                +XJ12*XJ23*XJ31    &
-                +XJ13*XJ21*XJ32    &
-                -XJ13*XJ22*XJ31    &
-                -XJ12*XJ21*XJ33    &
+              DET=XJ11*XJ22*XJ33 &
+                +XJ12*XJ23*XJ31 &
+                +XJ13*XJ21*XJ32 &
+                -XJ13*XJ22*XJ31 &
+                -XJ12*XJ21*XJ33 &
                 -XJ11*XJ23*XJ32
-              TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2))                       &
-                +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4))                       &
+              TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2)) &
+                +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4)) &
                 +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6))
               T1=TT-TZERO
               T2=SINK-TZERO
@@ -889,9 +889,9 @@ contains
               G3Y=G1Z*G2X-G1X*G2Z
               G3Z=G1X*G2Y-G1Y*G2X
               XSUM=dsqrt(G3X**2+G3Y**2+G3Z**2)
-              TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2))                       &
-                +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4))                       &
-                +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6))                       &
+              TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2)) &
+                +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4)) &
+                +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6)) &
                 +H(7)*TEMP(NOD(7)) + H(8)*TEMP(NOD(8))
               T1=TT-TZERO
               T2=SINK-TZERO
@@ -908,7 +908,7 @@ contains
 
   end subroutine heat_RADIATE_352
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_361( NN,XX,YY,ZZ,TEMP,LTYPE                         &
+  subroutine heat_RADIATE_361( NN,XX,YY,ZZ,TEMP,LTYPE &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -921,13 +921,13 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(4),HR(4),HS(4),HT(4)
-    real(kind=kreal) XG(2),WGT(2)
+    real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal) :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1006,7 +1006,7 @@ contains
             G3Y=G1Z*G2X-G1X*G2Z
             G3Z=G1X*G2Y-G1Y*G2X
             XSUM=dsqrt(G3X**2+G3Y**2+G3Z**2)
-            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2))                       &
+            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2)) &
               +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4))
             T1=TT-TZERO
             T2=SINK-TZERO
@@ -1022,7 +1022,7 @@ contains
 
   end subroutine heat_RADIATE_361
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_362( NN,XX,YY,ZZ,TEMP,LTYPE                         &
+  subroutine heat_RADIATE_362( NN,XX,YY,ZZ,TEMP,LTYPE &
       ,RR,SINK,TZERO,MM,TERM1,TERM2,NOD )
     !----------------------------------------------------------------------*
     !**
@@ -1035,13 +1035,13 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NOD(MM)
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(MM*MM),TERM2(MM)
+    integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(8),HR(8),HS(8),HT(8)
-    real(kind=kreal) XG(3),WGT(3)
+    real(kind=kreal) :: H(8), HR(8), HS(8), HT(8)
+    real(kind=kreal) :: XG(3), WGT(3)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1164,9 +1164,9 @@ contains
             G3Y=G1Z*G2X-G1X*G2Z
             G3Z=G1X*G2Y-G1Y*G2X
             XSUM=dsqrt(G3X**2+G3Y**2+G3Z**2)
-            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2))                       &
-              +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4))                       &
-              +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6))                       &
+            TT=H(1)*TEMP(NOD(1)) + H(2)*TEMP(NOD(2)) &
+              +H(3)*TEMP(NOD(3)) + H(4)*TEMP(NOD(4)) &
+              +H(5)*TEMP(NOD(5)) + H(6)*TEMP(NOD(6)) &
               +H(7)*TEMP(NOD(7)) + H(8)*TEMP(NOD(8))
             T1=TT-TZERO
             T2=SINK-TZERO
@@ -1182,7 +1182,7 @@ contains
 
   end subroutine heat_RADIATE_362
   !----------------------------------------------------------------------*
-  subroutine heat_RADIATE_731( NN,XX,YY,ZZ,TEMP,LTYPE                         &
+  subroutine heat_RADIATE_731( NN,XX,YY,ZZ,TEMP,LTYPE &
       ,RR,SINK,TZERO,TERM1,TERM2 )
     !----------------------------------------------------------------------*
     !**
@@ -1190,9 +1190,9 @@ contains
     !**
     !   R1   LTYPE=1  : SURFACE  RADIATE
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(NN*NN),TERM2(NN)
+    real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
     !
     AX = XX(2) - XX(1)
     AY = YY(2) - YY(1)
@@ -1228,12 +1228,12 @@ contains
     !**
     !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
     use hecmw
-    implicit real(kind=kreal) (A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),TEMP(NN),TERM1(NN*NN),TERM2(NN)
+    real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(4),HR(4),HS(4),HT(4)
-    real(kind=kreal) XG(2),WGT(2)
+    real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal) :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************

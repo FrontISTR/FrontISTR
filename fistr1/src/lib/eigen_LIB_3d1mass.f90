@@ -18,29 +18,29 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
-    integer(kind=kint) IFLG
+    real(kind=kreal)   :: XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
+    integer(kind=kint) :: IFLG
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=8,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=2)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HR(NN),HS(NN),HT(NN)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,LX,LY,LZ,NUM,J2,K1
-    real(kind=kreal) DNDX,DNDY,DNDZ
-    real(kind=kreal) DRDX,DRDY,DRDZ
-    real(kind=kreal) DSDX,DSDY,DSDZ
-    real(kind=kreal) DTDX,DTDY,DTDZ
+    integer(kind=kint), parameter :: NN = 8, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 2
+    !parameter(NN=8, NDOF=3, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=2)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HR(NN), HS(NN), HT(NN)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, LX, LY, LZ, NUM, J2, K1
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
+    real(kind=kreal)   :: DRDX, DRDY, DRDZ
+    real(kind=kreal)   :: DSDX, DSDY, DSDZ
+    real(kind=kreal)   :: DTDX, DTDY, DTDZ
     !**FOR CORRECTION
-    real(kind=kreal) C(6,9),DC(6,9),CC(9,9),V(9,24),CCV(9,24)
+    real(kind=kreal)   :: C(6, 9), DC(6, 9), CC(9, 9), V(9, 24), CCV(9, 24)
     !*EHM CONSISTENT MASS MATRIX 17Apr04
-    real(kind=kreal) totdiag, totmass
-    integer(kind=kint) ind1, ind2
-    real(kind=kreal) ej2, ej, sstest(NN*NDOF,NN*NDOF)
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    real(kind=kreal)   :: ej2, ej, sstest(NN*NDOF, NN*NDOF)
+    type(fstr_eigen)   :: fstrEIG
 
     !print *,'RHO:',RHO
     !pause
@@ -208,22 +208,22 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=6,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=2)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HL1(NN),HL2(NN),HL3(NN),HZ(NN)
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,L1,L2,LZ,NUM,J2
-    real(kind=kreal) X1,X2,X3,XL1,XL2,ZI
-    real(kind=kreal) DNDX,DNDY,DNDZ
+    integer(kind=kint), parameter :: NN = 6, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 2
+    !parameter(NN=6, NDOF=3, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=2)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HL1(NN), HL2(NN), HL3(NN), HZ(NN)
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, L1, L2, LZ, NUM, J2
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2, ZI
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
     !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
-    real(kind=kreal) totdiag, totmass
-    integer(kind=kint) ind1, ind2
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0
@@ -367,23 +367,23 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
+    real(kind=kreal) XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=4,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=2)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HL1(NN),HL2(NN),HL3(NN),HL4(NN)
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,L1,L2,L3,NUM,J2
-    real(kind=kreal) XL1,XL2,XL3
-    real(kind=kreal) X1,X2,X3,X4
-    real(kind=kreal) DNDX,DNDY,DNDZ
+    integer(kind=kint), parameter :: NN = 4, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 2
+    !parameter(NN=4,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=2)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HL1(NN), HL2(NN), HL3(NN), HL4(NN)
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, L1, L2, L3, NUM, J2
+    real(kind=kreal)   :: XL1, XL2, XL3
+    real(kind=kreal)   :: X1, X2, X3, X4
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
     !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
-    real(kind=kreal) totdiag,totmass
-    integer(kind=kint) ind1, ind2
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0

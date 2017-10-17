@@ -19,11 +19,11 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     dimension rdum(0:9)
     character(len=80) :: line
 
-    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C==put MATERIAL : ( BLOCK NO. = 601 )
@@ -117,10 +117,10 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     dimension idum(0:9)
 
-    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C==put Section : ( BLOCK NO. = 402 )
@@ -215,9 +215,9 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
 
-    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C==put NODE : ( BLOCK NO. = 403 )
@@ -247,10 +247,10 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A-H,O-Z)
-    dimension nn(20),nna(10),nnb(10)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension nn(20), nna(10), nnb(10)
 
-    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C==put ELEMENT : ( BLOCK NO. = 404 )
@@ -632,10 +632,10 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
 
-    type ( fstr_heat          ) :: hecHEAT
-    type ( hecmwST_local_mesh ) :: hecMESH
+    type(fstr_heat)          :: hecHEAT
+    type(hecmwST_local_mesh) :: hecMESH
 
     !C
     !C==put DISPLACEMENT : ( BLOCK NO. = 451 )

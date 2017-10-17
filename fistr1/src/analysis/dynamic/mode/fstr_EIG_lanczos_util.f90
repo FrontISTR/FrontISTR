@@ -12,13 +12,13 @@ contains
     use hecmw_util
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_eigen        ) :: fstrEIG
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j
-    real(kind=kreal) :: eigvec(:,:), p(:), beta, chk, sigma
+    real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
-    real(kind=kreal), pointer :: q(:), mass(:), filter(:)
+    real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP

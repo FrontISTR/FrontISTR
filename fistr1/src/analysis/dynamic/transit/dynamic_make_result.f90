@@ -15,8 +15,8 @@ contains
     use m_out
     use m_static_lib
     use m_static_make_result
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
     type (fstr_dynamic)       :: fstrDYNAMIC
     integer(kind=kint)        :: maxstep, istep
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
@@ -254,10 +254,10 @@ contains
   !C***
   subroutine fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
     use m_fstr
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
-    type (fstr_dynamic)       :: fstrDYNAMIC
-    type (hecmwST_result_data):: fstrRESULT
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(fstr_solid)          :: fstrSOLID
+    type(fstr_dynamic)        :: fstrDYNAMIC
+    type(hecmwST_result_data) :: fstrRESULT
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
     integer(kind=kint) :: i, j, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, idx

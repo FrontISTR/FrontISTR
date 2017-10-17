@@ -18,20 +18,20 @@ contains
     use mContact
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
-    type (fstr_param       )              :: fstrPARAM !< analysis control parameters
-    type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
-    type (hecmwST_matrix),optional     :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(fstr_solid)                     :: fstrSOLID
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_param)                     :: fstrPARAM !< analysis control parameters
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix), optional       :: conMAT
 
-    integer, optional         :: iter
+    integer, optional :: iter
 
-    integer(kind=kint) ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) dyn_step, flag_u
-    real(kind=kreal) b2, b3, b4, c1
-    real(kind=kreal) RHS, RHS0, f_t
+    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: dyn_step, flag_u
+    real(kind=kreal)   :: b2, b3, b4, c1
+    real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%VELOCITY_type == kbcInitial )return
 
@@ -90,7 +90,7 @@ contains
                   + b4*RHS0
               endif
             else
-              RHS =    fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),1)     &
+              RHS = fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),1)     &
                 + b2*fstrDYNAMIC%VEL (NDOF*in-(NDOF-idof),1)     &
                 + b3*fstrDYNAMIC%ACC (NDOF*in-(NDOF-idof),1)     &
                 + b4*RHS0
@@ -162,15 +162,15 @@ contains
     use m_table_dyn
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
 
-    integer(kind=kint) NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
 
-    integer(kind=kint) flag_u
-    real(kind=kreal) RHS, f_t
+    integer(kind=kint) :: flag_u
+    real(kind=kreal)   :: RHS, f_t
 
     if( fstrSOLID%VELOCITY_type == kbcTransit )return
 

@@ -22,12 +22,12 @@ contains
 
     implicit none
 
-    type(hecmwST_local_mesh ) :: hecMESH
-    type(hecmwST_matrix     ) :: hecMAT
-    type(fstr_solid         ) :: fstrSOLID
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
-    type(fstr_param         ) :: fstrPARAM
-    type(fstr_eigen         ) :: fstrEIG
+    type(fstr_param)          :: fstrPARAM
+    type(fstr_eigen)          :: fstrEIG
     type(fstrST_matrix_contact_lagrange) :: fstrMAT
 
     real(kind=kreal) :: t1, t2

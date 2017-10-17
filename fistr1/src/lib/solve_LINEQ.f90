@@ -17,7 +17,7 @@ contains
     use hecmw_solver
 
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
+    type(hecmwST_matrix)     :: hecMAT
 
     call hecmw_solve(hecMESH, hecMAT)
 

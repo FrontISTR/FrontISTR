@@ -17,12 +17,12 @@ contains
 
     implicit none
 
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( hecmwST_matrix      ) :: hecMAT
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type (fstr_param           ) :: fstrPARAM
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
+    type(fstr_param)         :: fstrPARAM
 
     integer(kind=kint) :: j
 

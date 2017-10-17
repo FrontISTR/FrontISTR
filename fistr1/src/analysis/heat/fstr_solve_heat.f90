@@ -13,13 +13,13 @@ contains
     use m_heat_solve_TRAN
 
     implicit none
-    integer(kind=kint) i,in,ISTEP,ISS
-    real(kind=kreal)   CTIME
-    type (hecmwST_local_mesh  ) :: hecMESH
-    type (hecmwST_matrix      ) :: hecMAT
-    type (hecmwST_result_data ) :: fstrRESULT
-    type (fstr_param          ) :: fstrPARAM
-    type (fstr_heat           ) :: fstrHEAT
+    integer(kind=kint) :: i, in, ISTEP, ISS
+    real(kind=kreal)   :: CTIME
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(hecmwST_result_data) :: fstrRESULT
+    type(fstr_param)          :: fstrPARAM
+    type(fstr_heat)           :: fstrHEAT
 
     !C !C#======================================
     !C !C#  Initialize  for Temperature Arrays

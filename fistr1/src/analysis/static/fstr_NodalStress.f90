@@ -14,13 +14,13 @@ contains
     !----------------------------------------------------------------------*
     use m_fstr
     use m_static_lib
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
-    real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    real(kind=kreal), pointer   :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint), pointer :: is_rot(:)
     !C** local variables
-    integer(kind=kint)   :: itype, icel, ic, is, iE, jS, i, j, k, m, ic_type, nn, ni, ID_area
-    integer(kind=kint)   :: nodlocal(20), ntemp
+    integer(kind=kint) :: itype, icel, ic, is, iE, jS, i, j, k, m, ic_type, nn, ni, ID_area
+    integer(kind=kint) :: nodlocal(20), ntemp
     integer(kind=kint), allocatable :: nnumber(:)
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
@@ -274,10 +274,10 @@ contains
   subroutine fstr_Stress_add_shelllyr(nn,fstrSOLID,icel,nodLOCAL,nlyr,strain,stress,flag)
     use m_fstr
     implicit none
-    type (fstr_solid)  :: fstrSOLID
+    type(fstr_solid)   :: fstrSOLID
     integer(kind=kint) :: nodLOCAL(20)
     integer(kind=kint) :: nn, i, j, k, m, nlyr, weight, icel, flag
-    real(kind=kreal)   :: strain(nn,6), stress(nn,6)
+    real(kind=kreal)   :: strain(nn, 6), stress(nn, 6)
     type(fstr_solid_physic_val), pointer :: layer => null()
 
     do j = 1, nn
@@ -340,7 +340,7 @@ contains
     use mMechGauss
     integer(kind=kint) :: etype, ni
     type(tGaussStatus) :: gausses(:)
-    real(kind=kreal)   :: func(:,:), edstrain(:,:), edstress(:,:), tdstrain(:,:)
+    real(kind=kreal)   :: func(:, :), edstrain(:, :), edstress(:, :), tdstrain(:, :)
     integer :: i, j, k, ic
 
     edstrain = 0.0d0
@@ -892,11 +892,11 @@ contains
     use m_out
     use m_static_lib
 
-    type (fstr_solid)         :: fstrSOLID
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid_physic_val) :: RES
-    integer(kind=kint) :: i,flag
-    real(kind=kreal) :: tmat(3,3), tvec(3)
+    type(fstr_solid)            :: fstrSOLID
+    type(hecmwST_local_mesh)    :: hecMESH
+    type(fstr_solid_physic_val) :: RES
+    integer(kind=kint) :: i, flag
+    real(kind=kreal)   :: tmat(3, 3), tvec(3)
 
     flag=ieor(flag,flag)
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) .or. fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then

@@ -16,30 +16,30 @@ contains
   subroutine DYNAMIC_MAT_ASS_COUPLE( hecMESH, hecMAT, fstrSOLID, fstrCPL )
     use m_fstr
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type (fstr_couple       ) :: fstrCPL
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_couple)        :: fstrCPL
     ! local
-    integer( kind=kint ) :: ig0,ig,is,ie,ik
-    integer( kind=kint ) :: i,j,count
-    integer( kind=kint ) :: eid, sid, etype
-    integer( kind=kint ) :: node(20)
-    integer( kind=kint ) :: node_n
-    real(kind=kreal) :: px, py, pz ! traction on surface
-    real(kind=kreal) :: vx, vy, vz ! force on vertex
+    integer(kind=kint) :: ig0, ig, is, ie, ik
+    integer(kind=kint) :: i, j, count
+    integer(kind=kint) :: eid, sid, etype
+    integer(kind=kint) :: node(20)
+    integer(kind=kint) :: node_n
+    real(kind=kreal)   :: px, py, pz ! traction on surface
+    real(kind=kreal)   :: vx, vy, vz ! force on vertex
 
     ! ================== modified by K. Tagami ============= 2010/02/25 ====
     !!!!      real(kind=kreal) :: xx(4), yy(4), zz(4)
-    integer :: MaxNumNodesOnSurf
-    parameter( MaxNumNodesOnSurf = 8 )
-    real(kind=kreal) :: xx( MaxNumNodesOnSurf )
-    real(kind=kreal) :: yy( MaxNumNodesOnSurf )
-    real(kind=kreal) :: zz( MaxNumNodesOnSurf )
+    integer, parameter :: MaxNumNodesOnSurf = 8
+    !parameter(MaxNumNodesOnSurf=8)
+    real(kind=kreal) :: xx(MaxNumNodesOnSurf)
+    real(kind=kreal) :: yy(MaxNumNodesOnSurf)
+    real(kind=kreal) :: zz(MaxNumNodesOnSurf)
     ! ================================================================
 
-    real(kind=kreal) :: area, wg
-    integer( kind=kint ) :: ierr
+    real(kind=kreal)   :: area, wg
+    integer(kind=kint) :: ierr
 
     ! ============= added by K. Tagami =========for debug ====== 2010/03/02 ====
     integer( kind=kint ) :: node_global
@@ -147,11 +147,12 @@ contains
 
   function area_of_triangle( XX,YY,ZZ )
     implicit none
-    real(kind=kreal) XX(*),YY(*),ZZ(*)
-    real(kind=kreal) V1X,V1Y,V1Z
-    real(kind=kreal) V2X,V2Y,V2Z
-    real(kind=kreal) V3X,V3Y,V3Z
-    real(kind=kreal) area_of_triangle
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*)
+    real(kind=kreal) :: V1X, V1Y, V1Z
+    real(kind=kreal) :: V2X, V2Y, V2Z
+    real(kind=kreal) :: V3X, V3Y, V3Z
+    real(kind=kreal) :: area_of_triangle
+
     V1X=XX(2)-XX(1)
     V1Y=YY(2)-YY(1)
     V1Z=ZZ(2)-ZZ(1)
@@ -166,9 +167,10 @@ contains
 
   function area_of_triangle2( XX,YY,ZZ )
     implicit none
-    real(kind=kreal) XX(*),YY(*),ZZ(*)
-    real(kind=kreal) area_of_triangle2
-    real(kind=kreal) x(3),y(3),z(3)
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*)
+    real(kind=kreal) :: area_of_triangle2
+    real(kind=kreal) :: x(3), y(3), z(3)
+
     x(1)=XX(1)
     x(2)=XX(3)
     x(3)=XX(5)
@@ -202,25 +204,25 @@ contains
   function area_of_squre ( XX,YY,ZZ )
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*)
-    real(kind=kreal) area_of_squre
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*)
+    real(kind=kreal) :: area_of_squre
     ! LOCAL VARIABLES
-    integer(kind=kint) NN
-    integer(kind=kint) NG
-    parameter(NN=8,NG=2)
-    real(kind=kreal) H(NN),HR(NN),HS(NN),HT(NN)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG
-    integer(kind=kint) IG1,IG2,LX,LY,LZ,I
-    real(kind=kreal) VX,VY,VZ,XCOD,YCOD,ZCOD
-    real(kind=kreal) AX,AY,AZ,RX,RY,RZ,HX,HY,HZ,val
-    real(kind=kreal) PHX,PHY,PHZ
-    real(kind=kreal) G1X,G1Y,G1Z
-    real(kind=kreal) G2X,G2Y,G2Z
-    real(kind=kreal) G3X,G3Y,G3Z
-    real(kind=kreal) XSUM,COEFX,COEFY,COEFZ
-    real(kind=kreal) area, XG(2),WGT(2)
-    data WGT/1.0,1.0/
+    integer(kind=kint), parameter :: NN = 8
+    integer(kind=kint), parameter :: NG = 2
+    !parameter(NN=8, NG=2)
+    real(kind=kreal)   :: H(NN), HR(NN), HS(NN), HT(NN)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG
+    integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
+    real(kind=kreal)   :: VX, VY, VZ, XCOD, YCOD, ZCOD
+    real(kind=kreal)   :: AX, AY, AZ, RX, RY, RZ, HX, HY, HZ, val
+    real(kind=kreal)   :: PHX, PHY, PHZ
+    real(kind=kreal)   :: G1X, G1Y, G1Z
+    real(kind=kreal)   :: G2X, G2Y, G2Z
+    real(kind=kreal)   :: G3X, G3Y, G3Z
+    real(kind=kreal)   :: XSUM, COEFX, COEFY, COEFZ
+    real(kind=kreal)   :: area, XG(2), WGT(2)
+    data WGT/1.0, 1.0/
     data XG/-0.5773502691896, 0.5773502691896/
 
     area = 0.0
@@ -273,11 +275,11 @@ contains
         XJ32=G3Y
         XJ33=G3Z
         !DETERMINANT OF JACOBIAN
-        DET=XJ11*XJ22*XJ33                                                 &
-          +XJ12*XJ23*XJ31                                                 &
-          +XJ13*XJ21*XJ32                                                 &
-          -XJ13*XJ22*XJ31                                                 &
-          -XJ12*XJ21*XJ33                                                 &
+        DET=XJ11*XJ22*XJ33 &
+          +XJ12*XJ23*XJ31 &
+          +XJ13*XJ21*XJ32 &
+          -XJ13*XJ22*XJ31 &
+          -XJ12*XJ21*XJ33 &
           -XJ11*XJ23*XJ32
         WG=WGT(IG1)*WGT(IG2)*DET
         do i = 1, NN
@@ -294,27 +296,27 @@ contains
 
   subroutine node_on_surface( hecMESH, etype, eid, sid, node, node_n )
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer( kind=kint ) :: eid
-    integer( kind=kint ) :: sid
-    integer( kind=kint ) :: node(*)
-    integer( kind=kint ) :: node_n
+    type(hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: eid
+    integer(kind=kint) :: sid
+    integer(kind=kint) :: node(*)
+    integer(kind=kint) :: node_n
     ! local parameters
-    integer( kind=kint ) :: etype
-    integer( kind=kint ) :: is
-    integer( kind=kint ) :: tbl341(3,4)
-    integer( kind=kint ) :: tbl342(6,4)
-    integer( kind=kint ) :: tbl361(4,6)
+    integer(kind=kint) :: etype
+    integer(kind=kint) :: is
+    integer(kind=kint) :: tbl341(3, 4)
+    integer(kind=kint) :: tbl342(6, 4)
+    integer(kind=kint) :: tbl361(4, 6)
     !! vertex id tables by definition of fstr
     data tbl341 / 1,2,3,  1,2,4,  2,3,4,  3,1,4 /
     data tbl342 / 1,5,2,6,3,7, 1,5,2,9,4,8, 2,6,3,10,4,9, 3,7,1,10,4,8 /
     data tbl361 / 1,2,3,4, 5,6,7,8, 1,2,6,5, 2,3,7,6, 3,4,8,7, 4,1,5,8 /
 
     ! =============== added by K. Tagami ======== experimental ==== 2010/02/25 ==
-    integer( kind=kint ) :: tbl351(4,5)
+    integer(kind=kint) :: tbl351(4,5)
     data tbl351 / 1,2,3,1, 4,5,6,4, 1,2,5,4, 2,3,6,5, 3,1,4,6 /
 
-    integer( kind=kint ) :: tbl362(8,6)
+    integer(kind=kint) :: tbl362(8,6)
     data tbl362 / 1, 9, 2,10, 3,11, 4,12, &
       &        5,13, 6,14, 7,15, 8,16, &
       &        1, 9, 2,18, 6,13, 5,17, &

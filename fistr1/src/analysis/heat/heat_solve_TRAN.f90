@@ -19,14 +19,14 @@ contains
     use m_solve_lineq
 
     implicit none
-    integer(kind=kint) ISTEP,ITM,incr,iend,iterALL,i,inod,mnod,max_step,tstep,interval,bup_n_dof
-    real(kind=kreal)   CTIME,ST,DTIME,EETIME,DELMAX,DELMIN,TT,BETA,val,CHK,tmpmax,dltmp,tmpmax_myrank
+    integer(kind=kint) :: ISTEP, ITM, incr, iend, iterALL, i, inod, mnod, max_step, tstep, interval, bup_n_dof
+    real(kind=kreal)   :: CTIME, ST, DTIME, EETIME, DELMAX, DELMIN, TT, BETA, val, CHK, tmpmax, dltmp, tmpmax_myrank
 
-    type (hecmwST_local_mesh ) :: hecMESH
-    type (hecmwST_matrix     ) :: hecMAT
-    type (hecmwST_result_data) :: fstrRESULT
-    type (fstr_param         ) :: fstrPARAM
-    type (fstr_heat          ) :: fstrHEAT
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(hecmwST_result_data) :: fstrRESULT
+    type(fstr_param)          :: fstrPARAM
+    type(fstr_heat)           :: fstrHEAT
 
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)

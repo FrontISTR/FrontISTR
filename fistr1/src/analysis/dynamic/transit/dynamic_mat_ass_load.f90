@@ -22,23 +22,23 @@ contains
     use m_utilities
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
-    type (fstr_param        ) :: fstrPARAM
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
+    type(fstr_param)         :: fstrPARAM
 
-    real(kind=kreal) :: xx(20), yy(20), zz(20)
-    real(kind=kreal) :: params(0:6)
-    real(kind=kreal) :: vect(60)
+    real(kind=kreal)   :: xx(20), yy(20), zz(20)
+    real(kind=kreal)   :: params(0:6)
+    real(kind=kreal)   :: vect(60)
     integer(kind=kint) :: iwk(60)
     integer(kind=kint) :: nodLocal(20)
-    real(kind=kreal) :: tt(20), tt0(20), coords(3,3)
+    real(kind=kreal)   :: tt(20), tt0(20), coords(3,3)
     real(kind=kreal),pointer:: temp(:)
     integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
     integer(kind=kint) :: icel, ic_type, nn, is, isect, id, iset, nsize
     integer(kind=kint) :: itype, iE, cdsys_ID
-    real(kind=kreal) :: val, rho, thick, pa1
+    real(kind=kreal)   :: val, rho, thick, pa1
     logical :: fg_surf
     logical, save :: isFirst = .true.
 
@@ -47,14 +47,14 @@ contains
     real(kind=kreal) :: f_t
 
     integer(kind=kint) :: iiS, idofS, idofE
-    real(kind=kreal) :: ecoord(3, 20)
-    real(kind=kreal) :: v(6, 20),  dv(6, 20), r(6*20)
-    real(kind=kreal) :: RHS
-    real(kind=kreal) :: unode_tmp(hecMAT%NDOF*hecMESH%n_node)
+    real(kind=kreal)   :: ecoord(3, 20)
+    real(kind=kreal)   :: v(6, 20),  dv(6, 20), r(6*20)
+    real(kind=kreal)   :: RHS
+    real(kind=kreal)   :: unode_tmp(hecMAT%NDOF*hecMESH%n_node)
 
     !for torque load
     integer(kind=kint) :: n_rot, rid, n_nodes, idof
-    type(tRotInfo) :: rinfo
+    type(tRotInfo)   :: rinfo
     real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
 
     ndof = hecMAT%NDOF

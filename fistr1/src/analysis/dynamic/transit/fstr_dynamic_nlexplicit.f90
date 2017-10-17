@@ -36,15 +36,15 @@ contains
     !C
     !C-- global variable
     !C
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( hecmwST_matrix      ) :: hecMAT
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( hecmwST_result_data ) :: fstrRESULT
-    type ( fstr_param          ) :: fstrPARAM
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT  !< type fstrST_matrix_contact_lagrange
-    type ( fstr_couple         ) :: fstrCPL         !for COUPLE
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_eigen)                     :: fstrEIG
+    type(fstr_solid)                     :: fstrSOLID
+    type(hecmwST_result_data)            :: fstrRESULT
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(fstr_couple)                    :: fstrCPL !for COUPLE
 
     !C
     !C-- local variable

@@ -18,7 +18,7 @@ contains
 
   !>  CALCULATION STIFF Matrix for C3D8IC ELEMENT
   !----------------------------------------------------------------------*
-  subroutine STF_C3D8IC                                            &
+  subroutine STF_C3D8IC &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
       time, tincr, nddisp, ehdisp, temperature)
     !----------------------------------------------------------------------*
@@ -217,7 +217,7 @@ contains
 
   !>  Update Strain stress of this element
   !----------------------------------------------------------------------*
-  subroutine UpdateST_C3D8IC                        &
+  subroutine UpdateST_C3D8IC &
       (etype, nn, xx, yy, zz, edisp, &
       gausses, cdsys_ID, coords, qf, tt, t0)
     !----------------------------------------------------------------------*
@@ -322,8 +322,8 @@ contains
       end do
 
       DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                     &
-        = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                   &
+      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
+        = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
         +matmul( transpose(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg
     end do
     xj(1:9,1:9)= stiff(nn*ndof+1:(nn+3)*ndof, nn*ndof+1:(nn+3)*ndof)
@@ -457,8 +457,8 @@ contains
 
   !>  This subroutine calculatess thermal loading
   !----------------------------------------------------------------------*
-  subroutine TLOAD_C3D8IC                      &
-      (etype, nn, xx, yy, zz, tt, t0,   &
+  subroutine TLOAD_C3D8IC &
+      (etype, nn, xx, yy, zz, tt, t0, &
       gausses, VECT, cdsys_ID, coords)
     !----------------------------------------------------------------------*
 
@@ -560,8 +560,8 @@ contains
       end do
 
       DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                     &
-        = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof)                                   &
+      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
+        = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
         +matmul( transpose(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg
 
       ina(1) = TEMPC

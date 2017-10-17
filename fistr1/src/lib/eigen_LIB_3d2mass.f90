@@ -7,9 +7,6 @@
 module m_eigen_LIB_3d2mass
 
 contains
-
-
-
   !----------------------------------------------------------------------*
   subroutine MASS_C3D20(XX,YY,ZZ,EE,PP,RHO,SS,fstrEIG)
     !----------------------------------------------------------------------*
@@ -21,22 +18,22 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=20,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=3)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HR(NN),HS(NN),HT(NN)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,LX,LY,LZ,NUM,J2
-    real(kind=kreal) DNDX,DNDY,DNDZ
+    integer(kind=kint), parameter :: NN = 20, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 3
+    !parameter(NN=20, NDOF=3, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=3)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HR(NN), HS(NN), HT(NN)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, LX, LY, LZ, NUM, J2
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
     !*EHM CONSISTENT MASS MATRIX 18Apr2004
-    real(kind=kreal) totdiag, totmass
-    integer(kind=kint) ind1, ind2
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0
@@ -164,11 +161,11 @@ contains
             XJ33=XJ33+HT(I)*ZZ(I)
           enddo
           !DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33   &
-            +XJ12*XJ23*XJ31      &
-            +XJ13*XJ21*XJ32      &
-            -XJ13*XJ22*XJ31      &
-            -XJ12*XJ21*XJ33      &
+          DET=XJ11*XJ22*XJ33 &
+            +XJ12*XJ23*XJ31  &
+            +XJ13*XJ21*XJ32  &
+            -XJ13*XJ22*XJ31  &
+            -XJ12*XJ21*XJ33  &
             -XJ11*XJ23*XJ32
           ! INVERSION OF JACOBIAN
           DUM=1.0/DET
@@ -231,22 +228,22 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=15,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=3)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HL1(NN),HL2(NN),HL3(NN),HZ(NN)
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,L1,L2,LZ,NUM,J2
-    real(kind=kreal) X1,X2,X3,XL1,XL2,ZI
-    real(kind=kreal) DNDX,DNDY,DNDZ
+    integer(kind=kint), parameter :: NN = 15, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF + 1)/2
+    integer(kind=kint), parameter :: NG = 3
+    !parameter(NN=15, NDOF=3, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=3)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HL1(NN), HL2(NN), HL3(NN), HZ(NN)
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, L1, L2, LZ, NUM, J2
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2, ZI
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
     !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
-    real(kind=kreal) totdiag, totmass
-    integer(kind=kint) ind1, ind2
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0
@@ -367,11 +364,11 @@ contains
             XJ33=XJ33+HZ(I)*ZZ(I)
           enddo
           !DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33    &
-            +XJ12*XJ23*XJ31    &
-            +XJ13*XJ21*XJ32    &
-            -XJ13*XJ22*XJ31    &
-            -XJ12*XJ21*XJ33    &
+          DET=XJ11*XJ22*XJ33 &
+            +XJ12*XJ23*XJ31  &
+            +XJ13*XJ21*XJ32  &
+            -XJ13*XJ22*XJ31  &
+            -XJ12*XJ21*XJ33  &
             -XJ11*XJ23*XJ32
           ! INVERSION OF JACOBIAN
           DUM=1.0/DET
@@ -434,23 +431,23 @@ contains
     use gauss_integration
     implicit none
     ! I/F VARIABLES
-    real(kind=kreal) XX(*),YY(*),ZZ(*),SS(*),EE,PP,RHO
+    real(kind=kreal) :: XX(*), YY(*), ZZ(*), SS(*), EE, PP, RHO
     ! LOCAL VARIABLES
-    integer(kind=kint) NN,NDOF,ISIZE
-    integer(kind=kint) NG
-    parameter(NN=10,NDOF=3,ISIZE=(NN*NDOF)*(NN*NDOF+1)/2,NG=3)
-    real(kind=kreal) D(6,6),B(6,NDOF*NN),DB(6,NDOF*NN)
-    real(kind=kreal) H(NN),HL1(NN),HL2(NN),HL3(NN),HL4(NN)
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG,DUM
-    real(kind=kreal) XJI11,XJI21,XJI31,XJI12,XJI22,XJI32,XJI13,XJI23,XJI33
-    integer(kind=kint) I,J,L,L1,L2,L3,NUM,J2
-    real(kind=kreal) XL1,XL2,XL3
-    real(kind=kreal) X1,X2,X3,X4
-    real(kind=kreal) DNDX,DNDY,DNDZ
+    integer(kind=kint), parameter :: NN = 10, NDOF = 3, ISIZE = (NN*NDOF)*(NN*NDOF +1)/2
+    integer(kind=kint), parameter :: NG = 3
+    !parameter(NN=10, NDOF=3, ISIZE=(NN*NDOF)*(NN*NDOF + 1)/2, NG=3)
+    real(kind=kreal)   :: D(6, 6), B(6, NDOF*NN), DB(6, NDOF*NN)
+    real(kind=kreal)   :: H(NN), HL1(NN), HL2(NN), HL3(NN), HL4(NN)
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG, DUM
+    real(kind=kreal)   :: XJI11, XJI21, XJI31, XJI12, XJI22, XJI32, XJI13, XJI23, XJI33
+    integer(kind=kint) :: I, J, L, L1, L2, L3, NUM, J2
+    real(kind=kreal)   :: XL1, XL2, XL3
+    real(kind=kreal)   :: X1, X2, X3, X4
+    real(kind=kreal)   :: DNDX, DNDY, DNDZ
     !*EHM CONSISTENT MASS MATRIX 18 Apr 2004
-    real(kind=kreal) totdiag, totmass
-    integer(kind=kint) ind1, ind2
-    type(fstr_eigen) :: fstrEIG
+    real(kind=kreal)   :: totdiag, totmass
+    integer(kind=kint) :: ind1, ind2
+    type(fstr_eigen)   :: fstrEIG
 
     totdiag = 0.0
     totmass = 0.0

@@ -155,7 +155,7 @@ contains
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !> Calculate stiff matrix of BEAM elements
   !####################################################################
-  subroutine STF_Beam_641                                         &
+  subroutine STF_Beam_641 &
       (etype, nn, ecoord, gausses, section, stiff, tt, t0)
     !####################################################################
 
@@ -449,8 +449,8 @@ contains
 
       if( ltype .EQ. 4 ) then
 
-        AA = dsqrt( ( xx(2)-xx(1) )*( xx(2)-xx(1) )   &
-          +( yy(2)-yy(1) )*( yy(2)-yy(1) )   &
+        AA = dsqrt( ( xx(2)-xx(1) )*( xx(2)-xx(1) ) &
+          +( yy(2)-yy(1) )*( yy(2)-yy(1) ) &
           +( zz(2)-zz(1) )*( zz(2)-zz(1) ) )
 
         a = section(4)
@@ -494,7 +494,7 @@ contains
 
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !####################################################################
-  subroutine TLOAD_Beam_641                        &
+  subroutine TLOAD_Beam_641 &
       (etype, nn, ndof, xx, yy, zz, tt, t0, &
       gausses, section, vect)
     !####################################################################
@@ -643,7 +643,7 @@ contains
 
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !####################################################################
-  subroutine NodalStress_Beam_641                         &
+  subroutine NodalStress_Beam_641 &
       (etype, nn, ecoord, gausses, section, edisp, &
       ndstrain, ndstress, tt, t0, ntemp)
     !####################################################################
@@ -823,7 +823,7 @@ contains
       e_hat(1, 1) = ( edisp_hat(1, 2)-edisp_hat(1, 1) )/le
 
       t_hat = 0.0D0
-      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le                   &
+      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le &
         -ee*x2_hat*( ( -6.0D0/l2+12.0D0*x1_hat/l3 )*edisp_hat(2, 1)  &
         +( -4.0D0/le+6.0D0*x1_hat/l2 )*edisp_hat(3, 3)   &
         +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(2, 2)  &
@@ -835,8 +835,8 @@ contains
 
       if( ntemp .EQ. 1 ) then
 
-        t_hat(1, 1)                                             &
-          = t_hat(1, 1)                                           &
+        t_hat(1, 1) &
+          = t_hat(1, 1) &
           -ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
 
       end if
@@ -870,7 +870,7 @@ contains
       e_hat(1, 1) = ( edisp_hat(1, 2)-edisp_hat(1, 1) )/le
 
       t_hat = 0.0D0
-      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le                   &
+      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le &
         -ee*x2_hat*( ( -6.0D0/l2+12.0D0*x1_hat/l3 )*edisp_hat(2, 1)  &
         +( -4.0D0/le+6.0D0*x1_hat/l2 )*edisp_hat(3, 3)   &
         +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(2, 2)  &
@@ -882,8 +882,8 @@ contains
 
       if( ntemp .EQ. 1 ) then
 
-        t_hat(1, 1)                                             &
-          = t_hat(1, 1)                                           &
+        t_hat(1, 1) &
+          = t_hat(1, 1) &
           -ee*( alp*( tempc-REF_TEMP )-alp0*( temp0-REF_TEMP ) )
 
       end if
@@ -905,7 +905,7 @@ contains
       e_hat(1, 1) = ( edisp_hat(1, 2)-edisp_hat(1, 1) )/le
 
       t_hat = 0.0D0
-      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le                   &
+      t_hat(1, 1) = ee*( edisp_hat(1, 2)-edisp_hat(1, 1) )/le &
         -ee*x2_hat*( ( -6.0D0/l2+12.0D0*x1_hat/l3 )*edisp_hat(2, 1)  &
         +( -4.0D0/le+6.0D0*x1_hat/l2 )*edisp_hat(3, 3)   &
         +(  6.0D0/l2-12.0D0*x1_hat/l3 )*edisp_hat(2, 2)  &

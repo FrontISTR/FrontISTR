@@ -15,13 +15,13 @@ contains
     use m_heat_lib
 
     implicit none
-    integer(kind=kint) itype,is,iE,ic_type,icel,isect,IMAT,ntab,itab
-    integer(kind=kint) in0,nn,i,nodLOCAL,jsect,ic,ip,inod,jp,jnod,isU,ieU,ik,isL,ieL
-    real(kind=kreal)   BETA,TZERO,ALFA,temp,funcA,funcB,XX,YY,ZZ,TT,T0,SS
-    real(kind=kreal)   asect,thick,GTH,GHH,GR1,GR2
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab
+    integer(kind=kint) :: in0, nn, i, nodLOCAL, jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
+    real(kind=kreal)   :: BETA, TZERO, ALFA, temp, funcA, funcB, XX, YY, ZZ, TT, T0, SS
+    real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
 
     !!    real (kind=kreal),pointer :: temp(:),funcA(:),funcB(:)
     dimension nodLOCAL(20),XX(20),YY(20),ZZ(20),TT(20),T0(20)                &

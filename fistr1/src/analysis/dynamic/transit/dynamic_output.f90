@@ -16,12 +16,12 @@ contains
     use m_fstr_NodalStress
     use m_dynamic_make_result
     use m_hecmw2fstr_mesh_conv
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (fstr_solid), intent(inout)      :: fstrSOLID
-    type (fstr_dynamic), intent(in)       :: fstrDYNAMIC
-    type (fstr_param), intent(in)         :: fstrPARAM
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(inout)      :: fstrSOLID
+    type(fstr_dynamic), intent(in)       :: fstrDYNAMIC
+    type(fstr_param), intent(in)         :: fstrPARAM
 
-    type ( hecmwST_result_data ) :: fstrRESULT
+    type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep, idx
 
     ndof = hecMESH%n_dof
@@ -97,10 +97,10 @@ contains
   subroutine fstr_dynamic_post( fnum, hecMESH, fstrSOLID, fstrDYNAMIC )
     !----------------------------------------------------------------------*
     use m_fstr
-    integer, intent(in)                   :: fnum
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (fstr_solid), intent(in)         :: fstrSOLID
-    type (fstr_dynamic), intent(in)       :: fstrDYNAMIC
+    integer, intent(in)                  :: fnum
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(in)         :: fstrSOLID
+    type(fstr_dynamic), intent(in)       :: fstrDYNAMIC
 
     real(kind=kreal)   :: Umax(6), Umin(6), Vmax(6), Vmin(6), Amax(6), Amin(6)
     real(kind=kreal)   :: Emax(14), Emin(14), Smax(14), Smin(14)
@@ -353,11 +353,11 @@ contains
   !C================================================================C
   subroutine dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     use m_fstr
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( fstr_param          ) :: fstrPARAM
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_param)         :: fstrPARAM
+    type(fstr_dynamic)       :: fstrDYNAMIC
+    type(fstr_eigen)         :: fstrEIG
+    type(fstr_solid)         :: fstrSOLID
 
     integer(kind=kint) :: idx, ii, jj, ierr, ncmp
     integer(kind=kint) :: num_monit, ig, is, iE, ik, iunitS, iunit
@@ -463,14 +463,14 @@ contains
   !C================================================================C
   subroutine matvec(y,x,hecMAT,ndof,D,AU,AL)
     use m_fstr
-    type (hecmwST_matrix) :: hecMAT
+    type(hecmwST_matrix) :: hecMAT
 
-    integer(kind=kint) :: ndof,i,is,ie,j,icol,ki,kj,ix,iy,ip,nn
-    real(kind=kreal) :: D(ndof*ndof*hecMAT%NP)
-    real(kind=kreal) :: AU(ndof*ndof*hecMAT%NPU)
-    real(kind=kreal) :: AL(ndof*ndof*hecMAT%NPL)
-    real(kind=kreal) :: x(ndof*hecMAT%NP)
-    real(kind=kreal) :: y(ndof*hecMAT%NP)
+    integer(kind=kint) :: ndof, i, is, ie, j, icol, ki, kj, ix, iy, ip, nn
+    real(kind=kreal)   :: D(ndof*ndof*hecMAT%NP)
+    real(kind=kreal)   :: AU(ndof*ndof*hecMAT%NPU)
+    real(kind=kreal)   :: AL(ndof*ndof*hecMAT%NPL)
+    real(kind=kreal)   :: x(ndof*hecMAT%NP)
+    real(kind=kreal)   :: y(ndof*hecMAT%NP)
 
     nn=ndof*ndof
 

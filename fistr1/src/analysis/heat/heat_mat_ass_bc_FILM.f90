@@ -18,18 +18,18 @@ contains
     use m_heat_LIB_FILM
 
     implicit none
-    integer(kind=kint) k,icel,isuf,iam1,iam2,ic_type,isect,nn,is,j,mm,m,ic,ip
-    integer(kind=kint) inod,jp,jnod,isU,ieU,ik,isL,ieL
-    real(kind=kreal)   CTIME,QQ,HH,SINK,thick
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
+    integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
+    real(kind=kreal)   :: CTIME, QQ, HH, SINK, thick
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
 
-    real(kind=kreal) xx(20),yy(20),zz(20),T0(20)
-    real(kind=kreal) term1(64), term2(20)
-    integer(kind=kint) nodLocal(20), nsuf(8)
+    real(kind=kreal)   :: xx(20), yy(20), zz(20), T0(20)
+    real(kind=kreal)   :: term1(64), term2(20)
+    integer(kind=kint) :: nodLocal(20), nsuf(8)
 
-    !C
+!C
     do k = 1, fstrHEAT%H_SUF_tot
       icel    = fstrHEAT%H_SUF_elem(k)
       isuf    = fstrHEAT%H_SUF_surf(k)

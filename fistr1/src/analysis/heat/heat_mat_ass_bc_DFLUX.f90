@@ -18,14 +18,14 @@ contains
     use m_heat_get_amplitude
     use m_heat_LIB_DFLUX
     use m_static_LIB_3d
-    integer(kind=kint) k,icel,ic_type,isect,isuf,iamp,nn,is,j
-    real(kind=kreal)   CTIME,DTIME, QQ,val,asect,thick, vol
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    real(kind=kreal) xx(20),yy(20),zz(20)
-    real(kind=kreal) vect(20), ss(2000)
-    integer(kind=kint) ig0, ig, iS0, iE0, nodLocal(20)
+    integer(kind=kint) :: k, icel, ic_type, isect, isuf, iamp, nn, is, j
+    real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    real(kind=kreal)   :: xx(20), yy(20), zz(20)
+    real(kind=kreal)   :: vect(20), ss(2000)
+    integer(kind=kint) :: ig0, ig, iS0, iE0, nodLocal(20)
     real(kind=kreal), allocatable :: Bbak(:)
 
     !C
@@ -184,7 +184,7 @@ contains
 
   logical function isWeldActive(nn, xx,yy,zz, weldline, ctime)
     integer, intent(in)          ::  nn
-    real(kind=kreal), intent(in) :: xx(:),yy(:),zz(:)
+    real(kind=kreal), intent(in) :: xx(:), yy(:), zz(:)
     type(tWeldLine), intent(in)  :: weldline
     real(kind=kreal), intent(in) :: ctime
 

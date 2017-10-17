@@ -17,10 +17,10 @@ contains
     use m_heat_get_amplitude
 
     implicit none
-    integer(kind=kint) ib,in,ia
-    real(kind=kreal)    CTIME,QQ
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
+    integer(kind=kint)   :: ib, in, ia
+    real(kind=kreal)     :: CTIME, QQ
+    type(fstr_heat)      :: fstrHEAT
+    type(hecmwST_matrix) :: hecMAT
 
     do ib = 1, fstrHEAT%Q_NOD_tot
       in = fstrHEAT%Q_NOD_node(ib)

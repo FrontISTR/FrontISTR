@@ -18,24 +18,24 @@ contains
     use mContact
     use m_static_LIB_1d
     use m_utilities
-    integer, intent(in)                  :: cstep     !< current step
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-    type (fstr_solid       )              :: fstrSOLID !< fstr_solid
-    type (fstr_param       )              :: fstrPARAM !< analysis control parameters
-    type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
-    integer(kind=kint)                    :: iter      !< NR iterations
-    type (hecmwST_matrix),optional        :: conMAT    !< hecmw matrix for contact only
+    integer, intent(in)                  :: cstep !< current step
+    type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
+    type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
+    type(fstr_solid)                     :: fstrSOLID !< fstr_solid
+    type(fstr_param)                     :: fstrPARAM !< analysis control parameters
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer(kind=kint)                   :: iter !< NR iterations
+    type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal) :: RHS,factor
+    real(kind=kreal)   :: RHS, factor
     integer(kind=kint) :: idof1, idof2, ndof, i, grpid
 
     !for rotation
     integer(kind=kint) :: n_rot, rid, n_nodes
-    type(tRotInfo) :: rinfo
-    real(kind=kreal) :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
-    real(kind=kreal) :: cdisp(3), cddisp(3)
+    type(tRotInfo)     :: rinfo
+    real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
+    real(kind=kreal)   :: cdisp(3), cddisp(3)
 
     !
     ndof = hecMAT%NDOF

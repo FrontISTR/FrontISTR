@@ -16,14 +16,14 @@ contains
     use m_solve_lineq
 
     implicit none
-    integer(kind=kint) ISTEP,iterALL,ITM,i,INCR,LMAX,LMIN,inod,ii,bup_n_dof
-    real(kind=kreal)   CTIME,BETA,STIME,val,CHK,TMAX,TMIN,temp
+    integer(kind=kint) :: ISTEP, iterALL, ITM, i, INCR, LMAX, LMIN, inod, ii, bup_n_dof
+    real(kind=kreal)   :: CTIME, BETA, STIME, val, CHK, TMAX, TMIN, temp
 
-    type (hecmwST_local_mesh  ) :: hecMESH
-    type (hecmwST_matrix      ) :: hecMAT
-    type (hecmwST_result_data ) :: fstrRESULT
-    type (fstr_param          ) :: fstrPARAM
-    type (fstr_heat           ) :: fstrHEAT
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(hecmwST_result_data) :: fstrRESULT
+    type(fstr_param)          :: fstrPARAM
+    type(fstr_heat)           :: fstrHEAT
 
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label

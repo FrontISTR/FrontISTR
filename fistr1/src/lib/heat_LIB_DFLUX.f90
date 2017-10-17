@@ -64,12 +64,12 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     !C* I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),THICK,val,VECT(NN)
-    real(kind=kreal) XG(2),WGT(2),H(4),HR(4),HS(4)
-    integer(kind=kint) NOD(2)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
+    integer(kind=kint) :: NOD(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -151,13 +151,13 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     !C* I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),THICK,val,VECT(NN)
-    real(kind=kreal) XG(3),WGT(3),H(6),HR(3)
-    real(kind=kreal) HL1(6),HL2(6),HL3(6)
-    integer(kind=kint) NOD(3)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XG(3), WGT(3), H(6), HR(3)
+    real(kind=kreal)   :: HL1(6), HL2(6), HL3(6)
+    integer(kind=kint) :: NOD(3)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -285,12 +285,12 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     !C* I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),THICK,val,VECT(NN)
-    real(kind=kreal) XG(2),WGT(2),H(4),HR(4),HS(4)
-    integer(kind=kint) NOD(2)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
+    integer(kind=kint) :: NOD(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -392,12 +392,12 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     !C* I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),THICK,val,VECT(NN)
-    real(kind=kreal) XG(3),WGT(3),H(8),HR(8),HS(8)
-    integer(kind=kint) NOD(3)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    real(kind=kreal)   :: XG(3), WGT(3), H(8), HR(8), HS(8)
+    integer(kind=kint) :: NOD(3)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -527,22 +527,22 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) NN,LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(4),HR(4),HS(4),HT(4)
-    real(kind=kreal) XG(2),WGT(2)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG
-    integer(kind=kint) IVOL,ISUF
-    integer(kind=kint) NOD(4)
-    integer(kind=kint) L1,L2,L3,I
-    real(kind=kreal) val,AA
-    real(kind=kreal) V1X,V1Y,V1Z
-    real(kind=kreal) V2X,V2Y,V2Z
-    real(kind=kreal) V3X,V3Y,V3Z
-    real(kind=kreal) XL1,XL2,XL3
-    real(kind=kreal) X1,X2,X3
+    real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4)
+    real(kind=kreal)   :: XG(2), WGT(2)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG
+    integer(kind=kint) :: IVOL, ISUF
+    integer(kind=kint) :: NOD(4)
+    integer(kind=kint) :: L1, L2, L3, I
+    real(kind=kreal)   :: val, AA
+    real(kind=kreal)   :: V1X, V1Y, V1Z
+    real(kind=kreal)   :: V2X, V2Y, V2Z
+    real(kind=kreal)   :: V3X, V3Y, V3Z
+    real(kind=kreal)   :: XL1, XL2, XL3
+    real(kind=kreal)   :: X1, X2, X3
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -637,11 +637,11 @@ contains
             XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)
             XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)
             ! DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33  &
-              +XJ12*XJ23*XJ31  &
-              +XJ13*XJ21*XJ32  &
-              -XJ13*XJ22*XJ31  &
-              -XJ12*XJ21*XJ33  &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
             !
             do I = 1, NN
@@ -670,24 +670,24 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) NN,LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(10)
-    real(kind=kreal) HL1(10),HL2(10),HL3(10),HL4(10)
-    real(kind=kreal) XG(3),WGT(3)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33
-    real(kind=kreal) DET,WG
-    integer(kind=kint) IVOL,ISUF
-    integer(kind=kint) NOD(10)
-    integer(kind=kint) LX,LY,LZ,I,IG1,IG2,L1,L2,L3
-    real(kind=kreal) val,XSUM
-    real(kind=kreal) G1X,G1Y,G1Z
-    real(kind=kreal) G2X,G2Y,G2Z
-    real(kind=kreal) G3X,G3Y,G3Z
-    real(kind=kreal) XL1,XL2,XL3
-    real(kind=kreal) X1,X2,X3,X4
+    real(kind=kreal)   :: H(10)
+    real(kind=kreal)   :: HL1(10), HL2(10), HL3(10), HL4(10)
+    real(kind=kreal)   :: XG(3), WGT(3)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
+    real(kind=kreal)   :: DET, WG
+    integer(kind=kint) :: IVOL, ISUF
+    integer(kind=kint) :: NOD(10)
+    integer(kind=kint) :: LX, LY, LZ, I, IG1, IG2, L1, L2, L3
+    real(kind=kreal)   :: val, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z
+    real(kind=kreal)   :: G2X, G2Y, G2Z
+    real(kind=kreal)   :: G3X, G3Y, G3Z
+    real(kind=kreal)   :: XL1, XL2, XL3
+    real(kind=kreal)   :: X1, X2, X3, X4
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -810,11 +810,11 @@ contains
           XJ32=G3Y
           XJ33=G3Z
           !DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33   &
-            +XJ12*XJ23*XJ31   &
-            +XJ13*XJ21*XJ32   &
-            -XJ13*XJ22*XJ31   &
-            -XJ12*XJ21*XJ33   &
+          DET=XJ11*XJ22*XJ33 &
+            +XJ12*XJ23*XJ31 &
+            +XJ13*XJ21*XJ32 &
+            -XJ13*XJ22*XJ31 &
+            -XJ12*XJ21*XJ33 &
             -XJ11*XJ23*XJ32
           WG=WGT(L1)*WGT(L2)*DET*(1.0-X2)*0.25
           do I=1,6
@@ -915,11 +915,11 @@ contains
               XJ23=XJ23+(HL2(I)-HL4(I))*ZZ(I)
               XJ33=XJ33+(HL3(I)-HL4(I))*ZZ(I)
             enddo
-            DET=XJ11*XJ22*XJ33   &
-              +XJ12*XJ23*XJ31   &
-              +XJ13*XJ21*XJ32   &
-              -XJ13*XJ22*XJ31   &
-              -XJ12*XJ21*XJ33   &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
             DET=-DET
             WG=DET*WGT(L1)*WGT(L2)*WGT(L3)*(1.-X3)*(1.0-X2-X3)*0.125
@@ -950,12 +950,12 @@ contains
     use hecmw
     implicit real(kind=kreal)(A-H,O-Z)
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(6),HR(6),HS(6),HT(6),PL(6)
-    real(kind=kreal) XG(2),WGT(2),XG1(3),XG2(3),WGT1(3)
-    integer(kind=kint) NOD(4)
+    real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6), PL(6)
+    real(kind=kreal)   :: XG(2), WGT(2), XG1(3), XG2(3), WGT1(3)
+    integer(kind=kint) :: NOD(4)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1104,30 +1104,30 @@ contains
           HT(5)=  0.5*X2
           HT(6)=  0.5*(1.0-X1-X2)
           !
-          XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)               &
+          XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4) &
             +HR(5)*XX(5)+HR(6)*XX(6)
-          XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)               &
+          XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4) &
             +HS(5)*XX(5)+HS(6)*XX(6)
-          XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4)               &
+          XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4) &
             +HT(5)*XX(5)+HT(6)*XX(6)
-          XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)               &
+          XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4) &
             +HR(5)*YY(5)+HR(6)*YY(6)
-          XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)               &
+          XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4) &
             +HS(5)*YY(5)+HS(6)*YY(6)
-          XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4)               &
+          XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4) &
             +HT(5)*YY(5)+HT(6)*YY(6)
-          XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)               &
+          XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4) &
             +HR(5)*ZZ(5)+HR(6)*ZZ(6)
-          XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)               &
+          XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4) &
             +HS(5)*ZZ(5)+HS(6)*ZZ(6)
-          XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)               &
+          XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
             +HT(5)*ZZ(5)+HT(6)*ZZ(6)
           !*DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33     &
-            +XJ12*XJ23*XJ31     &
-            +XJ13*XJ21*XJ32     &
-            -XJ13*XJ22*XJ31     &
-            -XJ12*XJ21*XJ33     &
+          DET=XJ11*XJ22*XJ33 &
+            +XJ12*XJ23*XJ31 &
+            +XJ13*XJ21*XJ32 &
+            -XJ13*XJ22*XJ31 &
+            -XJ12*XJ21*XJ33 &
             -XJ11*XJ23*XJ32
           WG=WGT1(L12)*WGT(LZ)*DET
           do I=1,NN
@@ -1156,12 +1156,12 @@ contains
     use hecmw
     implicit real(kind=kreal)(A-H,O-Z)
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(15),HR(15),HS(15),HT(15),PL(15)
-    real(kind=kreal) XG(3),WGT(3)
-    integer(kind=kint) NOD(8)
+    real(kind=kreal)   :: H(15), HR(15), HS(15), HT(15), PL(15)
+    real(kind=kreal)   :: XG(3), WGT(3)
+    integer(kind=kint) :: NOD(8)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1453,11 +1453,11 @@ contains
               XJ33=XJ33+HT(I)*ZZ(I)
             enddo
             !DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33    &
-              +XJ12*XJ23*XJ31    &
-              +XJ13*XJ21*XJ32    &
-              -XJ13*XJ22*XJ31    &
-              -XJ12*XJ21*XJ33    &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
             WG=DET*WGT(LX)*WGT(LY)*WGT(LZ)
             do I=1,NN
@@ -1486,21 +1486,21 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(8),HR(8),HS(8),HT(8),PL(8)
-    real(kind=kreal) XG(2),WGT(2)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33 ,DET,WG
-    integer(kind=kint) IVOL,ISUF
-    integer(kind=kint) NOD(4)
-    integer(kind=kint) IG1,IG2,LX,LY,LZ,I
-    real(kind=kreal) VX,VY,VZ
-    real(kind=kreal) G1X,G1Y,G1Z
-    real(kind=kreal) G2X,G2Y,G2Z
-    real(kind=kreal) G3X,G3Y,G3Z
-    real(kind=kreal) XSUM
+    real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8), PL(8)
+    real(kind=kreal)   :: XG(2), WGT(2)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33, DET, WG
+    integer(kind=kint) :: IVOL, ISUF
+    integer(kind=kint) :: NOD(4)
+    integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
+    real(kind=kreal)   :: VX, VY, VZ
+    real(kind=kreal)   :: G1X, G1Y, G1Z
+    real(kind=kreal)   :: G2X, G2Y, G2Z
+    real(kind=kreal)   :: G3X, G3Y, G3Z
+    real(kind=kreal)   :: XSUM
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1675,11 +1675,11 @@ contains
               XJ33=XJ33+HT(I)*ZZ(I)
             enddo
             !DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33    &
-              +XJ12*XJ23*XJ31    &
-              +XJ13*XJ21*XJ32    &
-              -XJ13*XJ22*XJ31    &
-              -XJ12*XJ21*XJ33    &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
             WG=WGT(LX)*WGT(LY)*WGT(LZ)*DET
             do I=1,NN
@@ -1709,22 +1709,22 @@ contains
     use hecmw
     implicit none
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(20),HR(20),HS(20),HT(20)
-    real(kind=kreal) XG(3),WGT(3)
-    real(kind=kreal) RI,SI,TI,RP,SP,TP,RM,SM,TM
-    real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33
-    real(kind=kreal) DET,WG
-    integer(kind=kint) IVOL,ISUF
-    integer(kind=kint) NOD(8)
-    integer(kind=kint) IG1,IG2,LX,LY,LZ,I
-    real(kind=kreal) VX,VY,VZ
-    real(kind=kreal) G1X,G1Y,G1Z
-    real(kind=kreal) G2X,G2Y,G2Z
-    real(kind=kreal) G3X,G3Y,G3Z
-    real(kind=kreal) XSUM
+    real(kind=kreal)   :: H(20), HR(20), HS(20), HT(20)
+    real(kind=kreal)   :: XG(3), WGT(3)
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
+    real(kind=kreal)   :: DET, WG
+    integer(kind=kint) :: IVOL, ISUF
+    integer(kind=kint) :: NOD(8)
+    integer(kind=kint) :: IG1, IG2, LX, LY, LZ, I
+    real(kind=kreal)   :: VX, VY, VZ
+    real(kind=kreal)   :: G1X, G1Y, G1Z
+    real(kind=kreal)   :: G2X, G2Y, G2Z
+    real(kind=kreal)   :: G3X, G3Y, G3Z
+    real(kind=kreal)   :: XSUM
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************
@@ -1988,11 +1988,11 @@ contains
               XJ33=XJ33+HT(I)*ZZ(I)
             enddo
             !DETERMINANT OF JACOBIAN
-            DET=XJ11*XJ22*XJ33     &
-              +XJ12*XJ23*XJ31     &
-              +XJ13*XJ21*XJ32     &
-              -XJ13*XJ22*XJ31     &
-              -XJ12*XJ21*XJ33     &
+            DET=XJ11*XJ22*XJ33 &
+              +XJ12*XJ23*XJ31 &
+              +XJ13*XJ21*XJ32 &
+              -XJ13*XJ22*XJ31 &
+              -XJ12*XJ21*XJ33 &
               -XJ11*XJ23*XJ32
             WG=WGT(LX)*WGT(LY)*WGT(LZ)*DET
             do I=1,NN
@@ -2015,10 +2015,10 @@ contains
     !   BF   LTYPE=0  :BODY FLUX
     !   S1   LTYPE=1  :SURFACE FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     !
     if( LTYPE.EQ.0 ) then
       THICK = THICK
@@ -2058,13 +2058,13 @@ contains
     !   BF   LTYPE=0  : BODY FLUX
     !   S1   LTYPE=1  : SURFACE FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
-    integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
-    real(kind=kreal) H(4),HR(4),HS(4),HT(4),PL(4)
-    real(kind=kreal) XG(2),WGT(2)
+    real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4), PL(4)
+    real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
     !  GAUSS INTEGRATION POINT
     !*************************

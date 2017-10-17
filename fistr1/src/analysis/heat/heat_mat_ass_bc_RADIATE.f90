@@ -18,16 +18,16 @@ contains
     use m_heat_LIB_RADIATE
 
     implicit none
-    integer(kind=kint) k,icel,isuf,iam1,iam2,ic_type,isect,nn,is,j,mm,m,ic,ip
-    integer(kind=kint) inod,jp,jnod,isU,ieU,ik,isL,ieL
-    real(kind=kreal)   CTIME,TZERO,QQ,RR,SINK,thick
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
+    integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
+    real(kind=kreal)   :: CTIME, TZERO, QQ, RR, SINK, thick
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
 
-    real(kind=kreal) xx(20),yy(20),zz(20),tt(20)
-    real(kind=kreal) term1(64), term2(8)
-    integer(kind=kint) nodLocal(20), nsuf(8)
+    real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20)
+    real(kind=kreal)   :: term1(64), term2(8)
+    integer(kind=kint) :: nodLocal(20), nsuf(8)
 
     TZERO = hecMESH%zero_temp
     !C

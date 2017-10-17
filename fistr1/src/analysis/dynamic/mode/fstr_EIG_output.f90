@@ -12,15 +12,15 @@ contains
     use hecmw_solver_las
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_eigen        ) :: fstrEIG
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, jn, nget
     integer(kind=kint) :: in1, in2, in3
     real(kind=kreal)   :: chk, gm, r1, r2, r3
     real(kind=kreal), allocatable :: s(:), t(:), u(:)
-    real(kind=kreal), pointer :: mass(:), eigval(:), eigvec(:,:)
+    real(kind=kreal), pointer     :: mass(:), eigval(:), eigvec(:,:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -128,10 +128,10 @@ contains
     use m_hecmw2fstr_mesh_conv
     use hecmw_util
     implicit none
-    type (hecmwST_local_mesh ) :: hecMESH
-    type (hecmwST_matrix     ) :: hecMAT
-    type (fstr_eigen         ) :: fstrEIG
-    type (hecmwST_result_data) :: fstrRESULT
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(fstr_eigen)          :: fstrEIG
+    type(hecmwST_result_data) :: fstrRESULT
 
     integer(kind=kint) :: i, istep, nget, NP, NDOF, NPNDOF, totalmpc, MPC_METHOD
     real(kind=kreal)   :: t1
@@ -209,12 +209,12 @@ contains
     use hecmw_util
     use m_fstr_EIG_lanczos_util
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    type (hecmwST_matrix    ) :: hecMAT
-    type (fstr_eigen        ) :: fstrEIG
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
 
     integer(kind=kint) :: i, j, in, iter ,nget
-    real(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
+    real(kind=kreal)   :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
     real(kind=kreal), pointer :: eigval(:)
 
     nget = fstrEIG%nget

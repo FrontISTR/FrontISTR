@@ -30,16 +30,16 @@ contains
       fstrDYNAMIC,fstrRESULT,fstrPARAM,fstrCPL, restrt_step_num )
     implicit none
     !C-- global variable
-    integer, intent(in)          :: cstep     !< current step
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( hecmwST_matrix      ) :: hecMAT
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( hecmwST_result_data ) :: fstrRESULT
-    type ( fstr_param          ) :: fstrPARAM
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    type ( fstr_couple         ) :: fstrCPL         !for COUPLE
+    integer, intent(in)                  :: cstep !< current step
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_eigen)                     :: fstrEIG
+    type(fstr_solid)                     :: fstrSOLID
+    type(hecmwST_result_data)            :: fstrRESULT
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(fstr_couple)                    :: fstrCPL !for COUPLE
 
     !C-- local variable
     integer(kind=kint) :: nnod, ndof, numnp, nn
@@ -387,18 +387,18 @@ contains
     !C
     !C-- global variable
     !C
-    integer, intent(in)          :: cstep     !< current step
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( hecmwST_matrix      ) :: hecMAT
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( hecmwST_result_data ) :: fstrRESULT
-    type ( fstr_param          ) :: fstrPARAM
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type ( fstr_couple         ) :: fstrCPL         !for COUPLE
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-    type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
-    type ( hecmwST_matrix      ),optional :: conMAT
+    integer, intent(in)                  :: cstep !< current step
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_eigen)                     :: fstrEIG
+    type(fstr_solid)                     :: fstrSOLID
+    type(hecmwST_result_data)            :: fstrRESULT
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_couple)                    :: fstrCPL !for COUPLE
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
+    type(hecmwST_matrix), optional       :: conMAT
 
     !C
     !C-- local variable
@@ -419,16 +419,16 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
-    real(kind=kreal)    :: maxDLag
+    real(kind=kreal)   :: maxDLag
 
     logical :: is_mat_symmetric
     integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
 
 
-    integer(kint)   ::  nndof,npdof
-    real(kreal),allocatable :: tmp_conB(:)
-    integer   ::  istat
+    integer(kind=kint) ::  nndof,npdof
+    real(kind=kreal),allocatable :: tmp_conB(:)
+    integer :: istat
     real(kind=kreal), pointer :: coord(:)
 
     ! sum of n_node among all subdomains (to be used to calc res)

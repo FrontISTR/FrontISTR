@@ -20,7 +20,7 @@ contains
   !>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15,
   !>  pp1413-1418,1980
   !----------------------------------------------------------------------*
-  subroutine STF_C3D8Bbar                                          &
+  subroutine STF_C3D8Bbar &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
       time, tincr, u, temperature)
     !----------------------------------------------------------------------*

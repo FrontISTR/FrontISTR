@@ -22,9 +22,9 @@ contains
 
   !> Initializer of cutback variables
   subroutine fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
-    type (hecmwST_local_mesh)   :: hecMESH
-    type (fstr_param       )    :: fstrPARAM
-    type (fstr_solid       )    :: fstrSOLID
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_param)         :: fstrPARAM
+    type(fstr_solid)         :: fstrSOLID
 
     integer(kind=kint) :: istep, i, j
     integer(kind=kint) :: ng
@@ -69,7 +69,7 @@ contains
 
   !> Finalizer of cutback variables
   subroutine fstr_cutback_finalize( fstrSOLID )
-    type (fstr_solid       )    :: fstrSOLID
+    type(fstr_solid) :: fstrSOLID
 
     integer(kind=kint) :: i, j
     integer(kind=kint) :: ng
@@ -106,9 +106,9 @@ contains
 
   !> Save analysis status
   subroutine fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
-    type (fstr_solid       ), intent(inout)          :: fstrSOLID
-    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
-    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange_bak !< contact change info
+    type(fstr_solid), intent(inout)              :: fstrSOLID
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange !< contact change info
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange_bak !< contact change info
 
     integer(kind=kint) :: i, j
     integer(kind=kint) :: ng
@@ -152,9 +152,9 @@ contains
 
   !> Load analysis status
   subroutine fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )
-    type (fstr_solid       ), intent(inout)          :: fstrSOLID
-    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
-    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange_bak !< contact change info
+    type(fstr_solid), intent(inout)              :: fstrSOLID
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange !< contact change info
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange_bak !< contact change info
 
     integer(kind=kint) :: i, j
     integer(kind=kint) :: ng

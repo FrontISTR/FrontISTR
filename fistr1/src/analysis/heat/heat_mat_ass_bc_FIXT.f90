@@ -17,10 +17,10 @@ contains
     use m_heat_get_amplitude
 
     implicit none
-    integer(kind=kint) ib,ii,id
-    real(kind=kreal)   CTIME,QQ
-    type (fstr_heat         ) :: fstrHEAT
-    type (hecmwST_matrix    ) :: hecMAT
+    integer(kind=kint) :: ib, ii, id
+    real(kind=kreal)   :: CTIME, QQ
+    type(fstr_heat)      :: fstrHEAT
+    type(hecmwST_matrix) :: hecMAT
     logical :: OutOfRange
 
     do ib= 1, fstrHEAT%T_FIX_tot

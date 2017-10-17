@@ -16,34 +16,34 @@ module fstr_matrix_con_contact
 
   !> Structure for defining stiffness matrix structure
   type nodeRelated
-    integer (kind=kint)             :: num_node=0, num_lagrange=0       !< total number of related nodes and Lagrange multipliers
-    integer (kind=kint), pointer   :: id_node(:) => null()         !< list of related nodes
-    integer (kind=kint), pointer   :: id_lagrange(:) => null()     !< list of related Lagrange multipliers
+    integer(kind=kint)          :: num_node = 0, num_lagrange = 0 !< total number of related nodes and Lagrange multipliers
+    integer(kind=kint), pointer :: id_node(:) => null() !< list of related nodes
+    integer(kind=kint), pointer :: id_lagrange(:) => null() !< list of related Lagrange multipliers
   end type
 
   !> Structure for Lagrange multiplier-related part of stiffness matrix
   !> (Lagrange multiplier-related matrix)
   type fstrST_matrix_contact_lagrange
-    integer (kind=kint)            :: num_lagrange=0                               !< total number of Lagrange multipliers
-    integer (kind=kint)            :: numL_lagrange=0, numU_lagrange=0               !< node-based number of non-zero items in lower triangular half of matrix
+    integer(kind=kint) :: num_lagrange = 0 !< total number of Lagrange multipliers
+    integer(kind=kint) :: numL_lagrange = 0, numU_lagrange = 0 !< node-based number of non-zero items in lower triangular half of matrix
     !< node-based number of non-zero items in upper triangular half of matrix
-    integer (kind=kint), pointer  :: indexL_lagrange(:) => null(), &
-      indexU_lagrange(:) => null()               !< node-based index of first non-zero item of each row
-    integer (kind=kint), pointer  :: itemL_lagrange(:) => null(), &
-      itemU_lagrange(:) => null()                !< node-based column number of non-zero items
-    real (kind=kreal),    pointer  :: AL_lagrange(:) => null(), &
-      AU_lagrange(:) => null()                   !< values of non-zero items
-    real (kind=kreal),    pointer  :: Lagrange(:) => null()                      !< values of Lagrange multipliers
+    integer(kind=kint), pointer  :: indexL_lagrange(:) => null(), &
+      indexU_lagrange(:) => null() !< node-based index of first non-zero item of each row
+    integer(kind=kint), pointer  :: itemL_lagrange(:) => null(), &
+      itemU_lagrange(:) => null() !< node-based column number of non-zero items
+    real(kind=kreal),    pointer  :: AL_lagrange(:) => null(), &
+      AU_lagrange(:) => null() !< values of non-zero items
+    real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
   end type fstrST_matrix_contact_lagrange
 
-  integer (kind=kint),          save    :: NPL_org, NPU_org                      !< original number of non-zero items
-  type (nodeRelated), pointer, save    :: list_nodeRelated_org(:) => null()     !< original structure of matrix
+  integer(kind=kint), save         :: NPL_org, NPU_org !< original number of non-zero items
+  type(nodeRelated), pointer, save :: list_nodeRelated_org(:) => null() !< original structure of matrix
 
-  type (nodeRelated), pointer          :: list_nodeRelated(:) => null()          !< current structure of matrix
+  type(nodeRelated), pointer       :: list_nodeRelated(:) => null() !< current structure of matrix
 
-  logical                               :: permission = .false.
+  logical                          :: permission = .false.
 
-  private                               :: insert_lagrange, insert_node, find_locationINarray, reallocate_memory
+  private                          :: insert_lagrange, insert_node, find_locationINarray, reallocate_memory
 
 contains
 
@@ -51,13 +51,13 @@ contains
   !> \brief This subroutine saves original matrix structure constructed originally by hecMW_matrix
   subroutine fstr_save_originalMatrixStructure(hecMAT)
 
-    type (hecmwST_matrix)           :: hecMAT                                !< type hecmwST_matrix
+    type(hecmwST_matrix) :: hecMAT !< type hecmwST_matrix
 
-    integer (kind=kint)             :: numL, numU, num_nodeRelated           !< original number of nodes related to each node
-    integer (kind=kint)             :: i, j
-    integer (kind=kint)             :: ierr
+    integer(kind=kint)   :: numL, numU, num_nodeRelated !< original number of nodes related to each node
+    integer(kind=kint)   :: i, j
+    integer(kind=kint)   :: ierr
 
-    NPL_org = hecMAT%NPL;  NPU_org = hecMAT%NPU
+    NPL_org = hecMAT%NPL; NPU_org = hecMAT%NPU
 
     if( associated(list_nodeRelated_org) ) return
     allocate(list_nodeRelated_org(hecMAT%NP), stat=ierr)
@@ -91,15 +91,15 @@ contains
   !> \corresponding to contact state
   subroutine fstr_mat_con_contact(cstep,hecMAT,fstrSOLID,fstrMAT,infoCTChange,conMAT)
 
-    integer (kind=kint)                     :: cstep                                  !< current loading step
-    type (hecmwST_matrix)                    :: hecMAT                                !< type hecmwST_matrix
-    type (fstr_solid)                        :: fstrSOLID                             !< type fstr_solid
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT                               !< type fstrST_matrix_contact_lagrange
-    type (fstr_info_contactChange)           :: infoCTChange                          !< type fstr_contactChange
+    integer(kind=kint)                   :: cstep !< current loading step
+    type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
+    type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(fstr_info_contactChange)        :: infoCTChange !< type fstr_contactChange
 
-    integer (kind=kint)                     :: num_lagrange                           !< number of Lagrange multipliers
-    integer (kind=kint)                     :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items
-    integer (kind=kint)                     :: numNon0_node, numNon0_lagrange         !< node-based number of displacement-related non-zero items in half of the matrix
+    integer(kind=kint)                   :: num_lagrange !< number of Lagrange multipliers
+    integer(kind=kint)                   :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items
+    integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of displacement-related non-zero items in half of the matrix
     !< node-based number of Lagrange multiplier-related non-zero items in half of the matrix
     type (hecmwST_matrix),optional          :: conMAT
 
@@ -134,9 +134,9 @@ contains
   !> Get original list of related nodes
   subroutine getOriginalListOFrelatedNodes(np,num_lagrange)
 
-    integer (kind=kint)            :: np, num_lagrange                    !< total number of nodes
-    integer (kind=kint)            :: num_nodeRelated_org                 !< original number of nodes related to each node
-    integer (kind=kint)            :: i, ierr
+    integer(kind=kint)            :: np, num_lagrange !< total number of nodes
+    integer(kind=kint)            :: num_nodeRelated_org !< original number of nodes related to each node
+    integer(kind=kint)            :: i, ierr
 
     allocate(list_nodeRelated(np+num_lagrange), stat=ierr)
     if( ierr /= 0) stop " Allocation error, list_nodeRelated "
@@ -164,16 +164,16 @@ contains
   !> Construct new list of related nodes and Lagrange multipliers. Here, a procedure similar to HEC_MW is used.
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers(cstep,np,fstrSOLID,countNon0LU_node,countNon0LU_lagrange)
 
-    type (fstr_solid)              :: fstrSOLID                                           !< type fstr_solid
+    type(fstr_solid)              :: fstrSOLID !< type fstr_solid
 
-    integer (kind=kint)            :: cstep                                               !< current loading step
-    integer (kind=kint)            :: np                                                  !< total number of nodes
-    integer (kind=kint)            :: countNon0LU_node, countNon0LU_lagrange              !< counters of node-based number of non-zero items
-    integer (kind=kint)            :: grpid                                               !< contact pairs group ID
-    integer (kind=kint)            :: count_lagrange                                      !< counter of Lagrange multiplier
-    integer (kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node+1) !< contants of type tContact
-    integer (kind=kint)            :: i, j, k, l, num, num_nodeRelated_org, ierr
-    real (kind=kreal)               :: fcoeff                                              !< friction coefficient
+    integer(kind=kint)            :: cstep !< current loading step
+    integer(kind=kint)            :: np !< total number of nodes
+    integer(kind=kint)            :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based number of non-zero items
+    integer(kind=kint)            :: grpid !< contact pairs group ID
+    integer(kind=kint)            :: count_lagrange !< counter of Lagrange multiplier
+    integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contants of type tContact
+    integer(kind=kint)            :: i, j, k, l, num, num_nodeRelated_org, ierr
+    real(kind=kreal)              :: fcoeff !< friction coefficient
 
     count_lagrange = 0
     do i = 1, size(fstrSOLID%contacts)
@@ -249,15 +249,15 @@ contains
   !> Construct new stiffness matrix structure
   subroutine constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT)
 
-    type (hecmwST_matrix)                    :: hecMAT                                  !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT                                 !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
 
-    integer (kind=kint)                      :: numNon0_node, numNon0_lagrange          !< node-based number of non-zero items in half of the matrix
-    integer (kind=kint)                      :: countNon0L_node, countNon0U_node, countNon0U_lagrange, countNon0L_lagrange  !< counters of node-based number ofnon-zero items
-    integer (kind=kint)                      :: i, j, ierr
-    integer (kind=kint)                      :: numI_node, numI_lagrange
-    integer (kind=kint)                      :: ndof, nn
-    type (hecmwST_matrix),optional           :: conMAT
+    integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of non-zero items in half of the matrix
+    integer(kind=kint)                   :: countNon0L_node, countNon0U_node, countNon0U_lagrange, countNon0L_lagrange !< counters of node-based number ofnon-zero items
+    integer(kind=kint)                   :: i, j, ierr
+    integer(kind=kint)                   :: numI_node, numI_lagrange
+    integer(kind=kint)                   :: ndof, nn
+    type(hecmwST_matrix), optional       :: conMAT
 
     !     ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
@@ -433,15 +433,15 @@ contains
   !> Insert a Lagrange multiplier in list of related Lagrange multipliers
   subroutine insert_lagrange(i,id_lagrange,list_node,countNon0_lagrange)
 
-    type (nodeRelated)             :: list_node                    !< type nodeRelated
-    integer (kind=kint)            :: i, id_lagrange               !< local number of node in current contact pair
+    type(nodeRelated)  :: list_node !< type nodeRelated
+    integer(kind=kint) :: i, id_lagrange !< local number of node in current contact pair
     !< Lagrange multiplier ID
-    integer (kind=kint)            :: countNon0_lagrange           !< counter of node-based number of non-zero items
+    integer(kind=kint) :: countNon0_lagrange !< counter of node-based number of non-zero items
     !< in Lagrange multiplier-related matrix
-    integer (kind=kint)            :: ierr, num_lagrange, location
-    integer (kind=kint)            :: id_lagrange_save(1000)
+    integer(kind=kint) :: ierr, num_lagrange, location
+    integer(kind=kint) :: id_lagrange_save(1000)
 
-    character(len=1)               :: answer
+    character(len=1)   :: answer
 
     ierr = 0
 
@@ -487,12 +487,12 @@ contains
   !> Insert a node in list of related nodes
   subroutine insert_node(id_node,list_node,countNon0_node)
 
-    type (nodeRelated)             :: list_node                        !< type nodeRelated
-    integer (kind=kint)            :: id_node                          !< local number of node in current contact pair
+    type(nodeRelated)  :: list_node !< type nodeRelated
+    integer(kind=kint) :: id_node !< local number of node in current contact pair
     !< global number of node
-    integer (kind=kint)            :: countNon0_node                   !< counter of node-based number of non-zero items in displacement-related matrix
-    integer (kind=kint)            :: ierr, num_node, location
-    integer (kind=kint)            :: id_node_save(1000)
+    integer(kind=kint) :: countNon0_node !< counter of node-based number of non-zero items in displacement-related matrix
+    integer(kind=kint) :: ierr, num_node, location
+    integer(kind=kint) :: id_node_save(1000)
 
     ierr = 0
 
@@ -520,9 +520,9 @@ contains
   !> Find location of an item in an array by bisection method
   integer function find_locationINarray(item,n,a)
 
-    integer (kind=kint)            :: item, n           !< item to be found; length of array
-    integer (kind=kint), pointer  :: a(:)              !< array
-    integer (kind=kint)            :: l, r, m
+    integer(kind=kint)           :: item, n !< item to be found; length of array
+    integer(kind=kint), pointer  :: a(:) !< array
+    integer(kind=kint)           :: l, r, m
 
     find_locationINarray = 0
 
@@ -557,12 +557,12 @@ contains
   !> Reallocate memory for list_relatedNodes
   subroutine reallocate_memory(num,list_node)
 
-    type(nodeRelated)       :: list_node            !< type nodeRelated
-    integer (kind=kint)     :: num                  !< length to be added
-    integer (kind=kint)     :: num_node_org         !< original number of related nodes
+    type(nodeRelated)  :: list_node !< type nodeRelated
+    integer(kind=kint) :: num !< length to be added
+    integer(kind=kint) :: num_node_org !< original number of related nodes
     !< before reallocation
-    integer (kind=kint)     :: id_save(1000)
-    integer (kind=kint)     :: ierr
+    integer(kind=kint) :: id_save(1000)
+    integer(kind=kint) :: ierr
 
     num_node_org = size(list_node%id_node)
     id_save(1:num_node_org) = list_node%id_node(1:num_node_org)

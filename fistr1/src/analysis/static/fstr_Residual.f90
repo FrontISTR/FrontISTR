@@ -30,14 +30,14 @@ contains
     use m_fstr
     use mULoad
     use m_fstr_spring
-    integer(kind=kint), intent(in)       :: cstep      !< current step
-    type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
-    type (hecmwST_matrix),intent(inout)  :: hecMAT     !< linear equation, its right side modified here
-    type (fstr_solid), intent(inout)     :: fstrSOLID  !< we need boundary conditions of curr step
-    type (hecmwST_matrix),intent(inout),optional  :: conMAT
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
+    type(hecmwST_matrix), intent(inout), optional  :: conMAT
     !    Local variables
-    integer(kind=kint) ndof,idof,num
-    real(kind=kreal) :: factor
+    integer(kind=kint) :: ndof, idof, num
+    real(kind=kreal)   :: factor
 
     factor = fstrSOLID%factor(2)
 
@@ -72,10 +72,10 @@ contains
 
   subroutine fstr_Update_NDForce_MPC( hecMESH, B )
     use m_fstr
-    type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
-    real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    real(kind=kreal), intent(inout)      :: B(:) !< right hand side
     !    Local variables
-    integer(kind=kint) ndof,ig0,iS0,iE0,ik,in,idof
+    integer(kind=kint) ndof, ig0, iS0, iE0, ik, in, idof
     real(kind=kreal) :: rhs, lambda
 
     ndof = hecMESH%n_dof
@@ -99,12 +99,12 @@ contains
 
   subroutine fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, B )
     use m_fstr
-    integer(kind=kint), intent(in)       :: cstep      !< current step
-    type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
-    type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
-    real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(fstr_solid), intent(in)         :: fstrSOLID !< we need boundary conditions of curr step
+    real(kind=kreal), intent(inout)      :: B(:) !< right hand side
     !    Local variables
-    integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idof1,idof2,idof
+    integer(kind=kint) ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
     integer(kind=kint) :: grpid
     real(kind=kreal) :: rhs
 
@@ -132,7 +132,7 @@ contains
   real(kind=kreal) function fstr_get_residual( force, hecMESH )
     use m_fstr
     real(kind=kreal), intent(in)         :: force(:)
-    type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
     integer :: ndof
     ndof = hecMESH%n_dof
     call hecmw_innerProduct_R(hecMESH,ndof,force,force,fstr_get_residual)
@@ -142,23 +142,23 @@ contains
   real(kind=kreal) function fstr_get_energy( force, displacement, hecMESH )
     use m_fstr
     real(kind=kreal), intent(in)         :: force(:), displacement(:)
-    type (hecmwST_local_mesh),intent(in) :: hecMESH    !< mesh information
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
     integer :: ndof
     ndof = hecMESH%n_dof
-    call hecmw_innerProduct_R(hecMESH,ndof,force,displacement,fstr_get_energy)
+    call hecmw_innerProduct_R(hecMESH, ndof, force, displacement, fstr_get_energy)
   end function
 
   !> Calculate square norm
   real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,fstrMAT)
     use m_fstr
     use fstr_matrix_con_contact
-    type (hecmwST_local_mesh),            intent(in) :: hecMESH    !< mesh information
-    type (hecmwST_matrix),                intent(in) :: hecMAT
-    type (fstr_solid),                    intent(in) :: fstrSOLID
-    type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
+    type(hecmwST_local_mesh), intent(in)             :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(in)                 :: hecMAT
+    type(fstr_solid), intent(in)                     :: fstrSOLID
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
     character(len=13)                                :: flag
-    real (kind=kreal) :: tmp1,tmp2,bi
-    integer :: i,i0,ndof
+    real(kind=kreal) :: tmp1, tmp2, bi
+    integer :: i, i0, ndof
     if( flag=='residualForce' )then
       ndof = hecMESH%n_dof
       call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
@@ -180,16 +180,16 @@ contains
     use m_fstr
     use fstr_matrix_con_contact
     implicit none
-    type (hecmwST_matrix),                intent(in) :: hecMAT
-    type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
-    type (hecmwST_matrix),                intent(in) :: conMAT
-    type (hecmwST_local_mesh),            intent(in) :: hecMESH
+    type(hecmwST_matrix), intent(in)                 :: hecMAT
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix), intent(in)                 :: conMAT
+    type(hecmwST_local_mesh), intent(in)             :: hecMESH
     !
     real(kind=kreal) ::  rhsB
     integer(kind=kint) ::  i,j,N,i0,ndof,N_loc,nndof
     integer(kind=kint) :: offset, pid, lid
     integer(kind=kint), allocatable :: displs(:)
-    real(kind=kreal), allocatable :: rhs_con_all(:), rhs_con(:)
+    real(kind=kreal), allocatable   :: rhs_con_all(:), rhs_con(:)
     !
     ndof = hecMAT%ndof
     nndof = hecMAT%N*ndof
@@ -246,10 +246,10 @@ contains
     use m_fstr
     use fstr_matrix_con_contact
     implicit none
-    type (hecmwST_matrix),                intent(in) :: hecMAT
-    type (fstrST_matrix_contact_lagrange),intent(in) :: fstrMAT
-    type (hecmwST_local_mesh),            intent(in) :: hecMESH
-    real(kind=kreal) ::  rhsX
+    type(hecmwST_matrix), intent(in)                 :: hecMAT
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_local_mesh), intent(in)             :: hecMESH
+    real(kind=kreal)   ::  rhsX
     integer(kind=kint) :: nndof, npndof, i
 
     nndof = hecMAT%N * hecMAT%NDOF

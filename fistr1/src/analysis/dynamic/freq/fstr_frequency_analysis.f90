@@ -10,8 +10,8 @@ module fstr_frequency_visout
 contains
   subroutine fstr_freq_result_init(hecMESH, numcomp, fstrRESULT)
     !---- args
-    type(hecmwST_local_mesh),     intent(in) :: hecMESH
-    integer(kind=kint),           intent(in) :: numcomp
+    type(hecmwST_local_mesh), intent(in)     :: hecMESH
+    integer(kind=kint), intent(in)           :: numcomp
     type(hecmwST_result_data), intent(inout) :: fstrRESULT
     !---- vals
     !---- body
@@ -26,12 +26,12 @@ contains
 
   subroutine fstr_freq_result_add(fstrRESULT, hecMESH, comp_index, ndof, label, vect)
     !---- args
-    type(hecmwST_result_data),  intent(inout) :: fstrRESULT
-    type(hecmwST_local_mesh),      intent(in) :: hecMESH
-    integer(kind=kint),            intent(in) :: comp_index
-    integer(kind=kint),            intent(in) :: ndof
+    type(hecmwST_result_data), intent(inout)  :: fstrRESULT
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    integer(kind=kint), intent(in)            :: comp_index
+    integer(kind=kint), intent(in)            :: ndof
     character(len=HECMW_NAME_LEN), intent(in) :: label
-    real(kind=kreal),               intent(in) :: vect(:)
+    real(kind=kreal), intent(in)              :: vect(:)
     !---- vals
     integer(kind=kint) :: i, k, alldof, offset
     !---- body
@@ -71,31 +71,31 @@ contains
     !C
     !C-- global variable
     !C
-    type( hecmwST_local_mesh  ) :: hecMESH
-    type( hecmwST_matrix      ) :: hecMAT
-    type( fstr_eigen            ) :: fstrEIG
-    type( fstr_solid          ) :: fstrSOLID
-    type( hecmwST_result_data ) :: fstrRESULT
-    type( fstr_param          ) :: fstrPARAM
-    type( fstr_dynamic        ) :: fstrDYNAMIC
-    type( fstr_couple         ) :: fstrCPL
-    type( fstr_freqanalysis   ) :: fstrFREQ
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT
-    integer( kind=kint       ) :: restart_step_num
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_eigen)                     :: fstrEIG
+    type(fstr_solid)                     :: fstrSOLID
+    type(hecmwST_result_data)            :: fstrRESULT
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_couple)                    :: fstrCPL
+    type(fstr_freqanalysis)              :: fstrFREQ
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT
+    integer(kind=kint)                   :: restart_step_num
 
     !C
     !C-- local variable
     !C
-    integer(kind=kint)             :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
-    integer(kind=kint)             :: numfreq, idnode, numdisp
-    integer(kind=kint)             :: freqiout(3)
-    integer(kind=kint), parameter :: ilogin=9056
+    integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
+    integer(kind=kint)            :: numfreq, idnode, numdisp
+    integer(kind=kint)            :: freqiout(3)
+    integer(kind=kint), parameter :: ilogin = 9056
     real(kind=kreal), allocatable :: eigenvalue(:), loadvecRe(:), loadvecIm(:)
     real(kind=kreal), allocatable :: bjre(:), bjim(:), dvaRe(:), dvaIm(:), disp(:), vel(:), acc(:)
     real(kind=kreal), allocatable :: dispRe(:), dispIm(:), velRe(:), velIm(:), accRe(:), accIm(:)
-    real(kind=kreal)                :: freq, omega, val, dx, dy, dz, f_start, f_end
-    real(kind=kreal)                :: t_start, t_end, time, dxi, dyi, dzi
-    type(fstr_freqanalysis_data)   :: freqData
+    real(kind=kreal)              :: freq, omega, val, dx, dy, dz, f_start, f_end
+    real(kind=kreal)              :: t_start, t_end, time, dxi, dyi, dzi
+    type(fstr_freqanalysis_data)  :: freqData
 
     numnode   = hecMESH%nn_internal
     numelm    = hecMESH%n_elem
@@ -263,15 +263,15 @@ contains
 
   subroutine read_eigen_values(logfile, startmode, endmode, eigenvalue, anglfreq)
     !---- args
-    integer(kind=kint), intent(in) :: logfile
-    integer(kind=kint), intent(in) :: startmode
-    integer(kind=kint), intent(in) :: endmode
-    real(kind=kreal), intent(inout) :: eigenvalue(:)  !intend(endmode-startmode+1)
+    integer(kind=kint), intent(in)  :: logfile
+    integer(kind=kint), intent(in)  :: startmode
+    integer(kind=kint), intent(in)  :: endmode
+    real(kind=kreal), intent(inout) :: eigenvalue(:) !intend(endmode-startmode+1)
     real(kind=kreal), intent(inout) :: anglfreq(:)
     !---- vals
     integer(kind=kint)           :: im, endflag, id
     character(len=HECMW_MSG_LEN) :: line
-    real(kind=kreal)              :: freq
+    real(kind=kreal)             :: freq
     !---- body
 
     rewind(logfile)
@@ -302,15 +302,15 @@ contains
 
   subroutine read_eigen_vector(logfile, startmode, endmode, numdof, numnode, eigenvector)
     !---- args
-    integer(kind=kint), intent(in) :: logfile
-    integer(kind=kint), intent(in) :: startmode
-    integer(kind=kint), intent(in) :: endmode
-    integer(kind=kint), intent(in) :: numdof
-    integer(kind=kint), intent(in) :: numnode
-    real(kind=kreal), intent(inout) :: eigenvector(:,:) !intend (numdof*NN,nmode)
+    integer(kind=kint), intent(in)  :: logfile
+    integer(kind=kint), intent(in)  :: startmode
+    integer(kind=kint), intent(in)  :: endmode
+    integer(kind=kint), intent(in)  :: numdof
+    integer(kind=kint), intent(in)  :: numnode
+    real(kind=kreal), intent(inout) :: eigenvector(:, :) !intend (numdof*NN,nmode)
     !---- vals
     integer(kind=kint)           :: im, in, gblid, j, idx
-    real(kind=kreal)              :: vec(6)
+    real(kind=kreal)             :: vec(6)
     character(len=HECMW_MSG_LEN) :: line
     !---- body
 
@@ -373,16 +373,16 @@ contains
 
   subroutine read_eigen_vector_res(hecMESH, startmode, endmode, numdof, numnode, eigenvector)
     !---- args
-    type( hecmwST_local_mesh ),     intent(in) :: hecMESH
-    integer(kind=kint),       intent(in) :: startmode
-    integer(kind=kint),       intent(in) :: endmode
-    integer(kind=kint),       intent(in) :: numdof
-    integer(kind=kint),       intent(in) :: numnode
-    real(kind=kreal),       intent(inout) :: eigenvector(:,:) !intend (numdof*NN,nmode)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: startmode
+    integer(kind=kint), intent(in)       :: endmode
+    integer(kind=kint), intent(in)       :: numdof
+    integer(kind=kint), intent(in)       :: numnode
+    real(kind=kreal), intent(inout)      :: eigenvector(:, :) !intend (numdof*NN,nmode)
     !---- vals
     integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
-    integer(kind=kint)             :: imode, idx, ind, a, b, nallcomp, j, nmode
-    type(hecmwST_result_data)      :: eigenres
+    integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j, nmode
+    type(hecmwST_result_data)     :: eigenres
     character(len=HECMW_NAME_LEN) :: name
     !---- body
 
@@ -465,17 +465,17 @@ contains
 
   subroutine output_resfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
     !---- args
-    type( hecmwST_local_mesh ),     intent(in) :: hecMESH
-    integer(kind=kint),            intent(in) :: ifreq
-    integer(kind=kint),            intent(in) :: numfreq
-    real(kind=kreal),               intent(in) :: disp(:) !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: vel(:)  !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: acc(:)  !intend (numnodeDOF)
-    integer(kind=kint),            intent(in) :: iout(3)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: ifreq
+    integer(kind=kint), intent(in)       :: numfreq
+    real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
+    integer(kind=kint), intent(in)       :: iout(3)
     !---- vals
-    integer(kind=kint) :: im
+    integer(kind=kint)              :: im
     character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_NAME_LEN) :: label, nameid
+    character(len=HECMW_NAME_LEN)   :: label, nameid
     !---- body
 
     nameid='fstrRES'
@@ -500,15 +500,15 @@ contains
 
   subroutine output_visfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
     !---- args
-    type( hecmwST_local_mesh ),     intent(in) :: hecMESH
-    integer(kind=kint),            intent(in) :: ifreq
-    integer(kind=kint),            intent(in) :: numfreq
-    real(kind=kreal),               intent(in) :: disp(:) !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: vel(:)  !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: acc(:)  !intend (numnodeDOF)
-    integer(kind=kint),            intent(in) :: iout(3)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: ifreq
+    integer(kind=kint), intent(in)       :: numfreq
+    real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
+    integer(kind=kint), intent(in)       :: iout(3)
     !---- vals
-    type( hecmwST_result_data)      :: fstrRESULT
+    type(hecmwST_result_data)      :: fstrRESULT
     character(len=HECMW_NAME_LEN)  :: label
     integer(kind=kint)             :: ncomp, i
     !---- body
@@ -546,18 +546,18 @@ contains
 
   subroutine extract_surf2node(hecMESH, freqData, numdof, loadvecRe, loadvecIm)
     !---- args
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type( fstr_freqanalysis  ), intent(in) :: freqData
-    integer(kind=kint),         intent(in) :: numdof
-    real(kind=kreal),         intent(inout) :: loadvecRe(:) !intend(numnode*ndof)
-    real(kind=kreal),         intent(inout) :: loadvecIm(:) !intend(numnode*ndof)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_freqanalysis), intent(in)  :: freqData
+    integer(kind=kint), intent(in)       :: numdof
+    real(kind=kreal), intent(inout)      :: loadvecRe(:) !intend(numnode*ndof)
+    real(kind=kreal), intent(inout)      :: loadvecIm(:) !intend(numnode*ndof)
     !---- vals
-    integer(kind=kint), parameter   :: MAXNODE=100
-    integer(kind=kint)               :: sgrpID, is, ie, ic, nsurf, ic_type, outtype, node_index(MAXNODE)
-    integer(kind=kint)               :: nn, iss, nodeid, dof_index, ndof
-    integer(kind=kint)               :: i, j, k, l, m, isn, nsize
-    integer(kind=kint)               :: iwk(60), nodLOCAL(20)
-    real(kind=kreal)                  :: vect(60), xx(20), yy(20), zz(20), forcere(3), forceim(3)
+    integer(kind=kint), parameter   :: MAXNODE = 100
+    integer(kind=kint)              :: sgrpID, is, ie, ic, nsurf, ic_type, outtype, node_index(MAXNODE)
+    integer(kind=kint)              :: nn, iss, nodeid, dof_index, ndof
+    integer(kind=kint)              :: i, j, k, l, m, isn, nsize
+    integer(kind=kint)              :: iwk(60), nodLOCAL(20)
+    real(kind=kreal)                :: vect(60), xx(20), yy(20), zz(20), forcere(3), forceim(3)
     !---- body
 
     ndof = 3
@@ -606,21 +606,21 @@ contains
 
   subroutine DL_C3_freq(ETYPE, NN, XX, YY, ZZ, LTYPE, force, VECT, nsize)
     !---- args
-    integer(kind=kint),    intent(in) :: ETYPE     !--solid element type
-    integer(kind=kint),    intent(in) :: NN        !--node num
-    integer(kind=kint),    intent(in) :: LTYPE     !--solid element face
-    real(kind=kreal),       intent(in) :: XX(:)     !--node x pos
-    real(kind=kreal),       intent(in) :: YY(:)     !--node y pos
-    real(kind=kreal),       intent(in) :: ZZ(:)     !--node z pos
-    real(kind=kreal),       intent(in) :: force(3)  !--node surfforce
-    real(kind=kreal),    intent(inout) :: VECT(:)
+    integer(kind=kint), intent(in)    :: ETYPE !--solid element type
+    integer(kind=kint), intent(in)    :: NN !--node num
+    integer(kind=kint), intent(in)    :: LTYPE !--solid element face
+    real(kind=kreal), intent(in)      :: XX(:) !--node x pos
+    real(kind=kreal), intent(in)      :: YY(:) !--node y pos
+    real(kind=kreal), intent(in)      :: ZZ(:) !--node z pos
+    real(kind=kreal), intent(in)      :: force(3) !--node surfforce
+    real(kind=kreal), intent(inout)   :: VECT(:)
     integer(kind=kint), intent(inout) :: nsize
     !---- vals
-    integer(kind=kint),parameter :: NDOF=3
-    real(kind=kreal)               :: WG
+    integer(kind=kint), parameter :: NDOF = 3
+    real(kind=kreal)              :: WG
     integer(kind=kint)            :: NOD(NN)
-    real(kind=kreal)               :: elecoord(3,NN), localcoord(3)
-    real(kind=kreal)               :: H(NN)
+    real(kind=kreal)              :: elecoord(3, NN), localcoord(3)
+    real(kind=kreal)              :: H(NN)
     integer(kind=kint)            :: I, IG2, NSUR, SURTYPE
     !---- body
 
@@ -649,13 +649,13 @@ contains
 
   subroutine assemble_nodeload(hecMESH, freqData, numdof, loadvecRe, loadvecIm)
     !---- args
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type( fstr_freqanalysis),   intent(in) :: freqData
-    integer(kind=kint),        intent(in) :: numdof
-    real(kind=kreal),        intent(inout) :: loadvecRe(:)
-    real(kind=kreal),        intent(inout) :: loadvecIm(:)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_freqanalysis), intent(in)  :: freqData
+    integer(kind=kint), intent(in)       :: numdof
+    real(kind=kreal), intent(inout)      :: loadvecRe(:)
+    real(kind=kreal), intent(inout)      :: loadvecIm(:)
     !---- vals
-    integer(kind=kint)            :: i, vecsize, ig, is, ie, in, nodeid, dof_index
+    integer(kind=kint) :: i, vecsize, ig, is, ie, in, nodeid, dof_index
 
     !---- body
 
@@ -677,12 +677,12 @@ contains
 
   subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
     !---- args
-    type(fstr_param)        ,               intent(in) :: fstrPARAM
-    type(hecmwST_local_mesh),               intent(in) :: hecMESH
-    type(hecmwST_matrix),                intent(inout) :: hecMAT
-    type(fstr_solid),                    intent(inout) :: fstrSOLID
-    type(fstr_eigen),                      intent(inout) :: fstrEIG
-    type(fstrST_matrix_contact_lagrange),intent(inout) :: fstrMAT
+    type(fstr_param), intent(in)         :: fstrPARAM
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(hecmwST_matrix), intent(inout)  :: hecMAT
+    type(fstr_solid), intent(inout)      :: fstrSOLID
+    type(fstr_eigen), intent(inout)      :: fstrEIG
+    type(fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT
     !---- vals
     integer(kind=kint) :: ntotal
     !---- body
@@ -698,13 +698,13 @@ contains
 
   subroutine scaleEigenVector(fstrEIG, ntotaldof, nmode, eigenvector)
     !---- args
-    type(fstr_eigen),     intent(in) :: fstrEIG
-    integer(kind=kint), intent(in) :: ntotaldof
-    integer(kind=kint), intent(in) :: nmode
-    real(kind=kreal), intent(inout) :: eigenvector(:,:)
+    type(fstr_eigen), intent(in)    :: fstrEIG
+    integer(kind=kint), intent(in)  :: ntotaldof
+    integer(kind=kint), intent(in)  :: nmode
+    real(kind=kreal), intent(inout) :: eigenvector(:, :)
     !---- vals
     integer(kind=kint) :: imode, idof
-    real(kind=kreal)    :: mas
+    real(kind=kreal)   :: mas
     !---- body
 
     do imode=1,nmode
@@ -720,10 +720,10 @@ contains
 
   subroutine checkOrthVector(fstrEIG, eigenvector, imode, jmode, prod)
     !---- args
-    type(fstr_eigen),     intent(in) :: fstrEIG
-    real(kind=kreal),    intent(in) :: eigenvector(:,:)
-    integer(kind=kint), intent(in) :: imode
-    integer(kind=kint), intent(in) :: jmode
+    type(fstr_eigen), intent(in)    :: fstrEIG
+    real(kind=kreal), intent(in)    :: eigenvector(:, :)
+    integer(kind=kint), intent(in)  :: imode
+    integer(kind=kint), intent(in)  :: jmode
     real(kind=kreal), intent(inout) :: prod
     !---- vals
     integer(kind=kint) :: idof, s
@@ -740,7 +740,7 @@ contains
   subroutine writeOutvector(im, vector)
     !---- args
     integer(kind=kint), intent(in) :: im
-    real(kind=kreal),    intent(in) :: vector(:)
+    real(kind=kreal), intent(in)   :: vector(:)
     !---- vals
     integer(kind=kint) :: i, s
     !---- body
@@ -773,14 +773,14 @@ contains
   subroutine calcFreqCoeff(freqData, loadRe, loadIm, inpOmega, bjRe, bjIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: loadRe(:) !intend (numNodeDOF)
-    real(kind=kreal),              intent(in) :: loadIm(:) !intend (numNodeDOF)
-    real(kind=kreal),              intent(in) :: inpOmega
-    real(kind=kreal),           intent(inout) :: bjRe(:)   !intend (numMode)
-    real(kind=kreal),           intent(inout) :: bjIm(:)   !intend (numMode)
+    real(kind=kreal), intent(in)             :: loadRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: loadIm(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: inpOmega
+    real(kind=kreal), intent(inout)          :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: bjIm(:) !intend (numMode)
     !---- vals
     integer(kind=kint) :: imode
-    real(kind=kreal)    :: ujfr, ujfi, a, b, alp, beta
+    real(kind=kreal)   :: ujfr, ujfi, a, b, alp, beta
     !---- body
 
     alp  = freqData%rayAlpha
@@ -804,10 +804,10 @@ contains
   subroutine calcDispVector(freqData, bjRe, bjIm, dispRe, dispIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
-    real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
-    real(kind=kreal),           intent(inout) :: dispRe(:)    !intend (numNodeDOF)
-    real(kind=kreal),           intent(inout) :: dispIm(:)    !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: dispRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: dispIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint) :: imode
     !---- body
@@ -825,11 +825,11 @@ contains
   subroutine calcVelVector(freqData, omega, bjRe, bjIm, velRe, velIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: omega
-    real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
-    real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
-    real(kind=kreal),           intent(inout) :: velRe(:)    !intend (numNodeDOF)
-    real(kind=kreal),           intent(inout) :: velIm(:)    !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: velRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: velIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint) :: imode
     !---- body
@@ -846,11 +846,11 @@ contains
   subroutine calcAccVector(freqData, omega, bjRe, bjIm, accRe, accIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),             intent(in) :: omega
-    real(kind=kreal),             intent(in) :: bjRe(:)       !intend (numMode)
-    real(kind=kreal),             intent(in) :: bjIm(:)       !intend (numMode)
-    real(kind=kreal),          intent(inout) :: accRe(:)      !intend (numNodeDOF)
-    real(kind=kreal),          intent(inout) :: accIm(:)      !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: accRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: accIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint) :: imode
     !---- body
@@ -867,15 +867,15 @@ contains
 
   subroutine setupFREQParam(fstrDYNAMIC, f_start, f_end, numfreq, raym, rayk, idnode, vistype, ioutl)
     !---- args
-    type( fstr_dynamic ),    intent(in) :: fstrDYNAMIC
-    real(kind=kreal),     intent(inout) :: f_start
-    real(kind=kreal),     intent(inout) :: f_end
-    integer(kind=kint),  intent(inout) :: numfreq
-    real(kind=kreal),     intent(inout) :: raym
-    real(kind=kreal),     intent(inout) :: rayk
-    integer(kind=kint),  intent(inout) :: idnode
-    integer(kind=kint),  intent(inout) :: vistype
-    integer(kind=kint),  intent(inout) :: ioutl(3)
+    type(fstr_dynamic), intent(in)    :: fstrDYNAMIC
+    real(kind=kreal), intent(inout)   :: f_start
+    real(kind=kreal), intent(inout)   :: f_end
+    integer(kind=kint), intent(inout) :: numfreq
+    real(kind=kreal), intent(inout)   :: raym
+    real(kind=kreal), intent(inout)   :: rayk
+    integer(kind=kint), intent(inout) :: idnode
+    integer(kind=kint), intent(inout) :: vistype
+    integer(kind=kint), intent(inout) :: ioutl(3)
     !---- vals
 
     !---- body
@@ -893,12 +893,12 @@ contains
   subroutine calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dispRe, dispIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: time
-    real(kind=kreal),              intent(in) :: omega
-    real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
-    real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
-    real(kind=kreal),           intent(inout) :: dispRe(:)    !intend (numNodeDOF)
-    real(kind=kreal),           intent(inout) :: dispIm(:)    !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: time
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: dispRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: dispIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint)  :: imode, idf, s
     complex(kind=kreal) :: a, b, c
@@ -923,12 +923,12 @@ contains
   subroutine calcVelVectorTime(freqData, time, omega, bjRe, bjIm, velRe, velIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: time
-    real(kind=kreal),              intent(in) :: omega
-    real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
-    real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
-    real(kind=kreal),           intent(inout) :: velRe(:)    !intend (numNodeDOF)
-    real(kind=kreal),           intent(inout) :: velIm(:)    !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: time
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: velRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: velIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint)  :: imode, idf, s
     complex(kind=kreal) :: a, b, c
@@ -953,12 +953,12 @@ contains
   subroutine calcAccVectorTime(freqData, time, omega, bjRe, bjIm, accRe, accIm)
     !---- args
     type(fstr_freqanalysis_data), intent(in) :: freqData
-    real(kind=kreal),              intent(in) :: time
-    real(kind=kreal),              intent(in) :: omega
-    real(kind=kreal),              intent(in) :: bjRe(:)      !intend (numMode)
-    real(kind=kreal),              intent(in) :: bjIm(:)      !intend (numMode)
-    real(kind=kreal),           intent(inout) :: accRe(:)     !intend (numNodeDOF)
-    real(kind=kreal),           intent(inout) :: accIm(:)     !intend (numNodeDOF)
+    real(kind=kreal), intent(in)             :: time
+    real(kind=kreal), intent(in)             :: omega
+    real(kind=kreal), intent(in)             :: bjRe(:) !intend (numMode)
+    real(kind=kreal), intent(in)             :: bjIm(:) !intend (numMode)
+    real(kind=kreal), intent(inout)          :: accRe(:) !intend (numNodeDOF)
+    real(kind=kreal), intent(inout)          :: accIm(:) !intend (numNodeDOF)
     !---- vals
     integer(kind=kint)  :: imode, idf, s
     complex(kind=kreal) :: a, b, c
@@ -982,10 +982,10 @@ contains
 
   subroutine setupDYNAParam(fstrDYNAMIC, t_start, t_end, dynafreq, numdisp)
     !---- args
-    type( fstr_dynamic ),  intent(in) :: fstrDYNAMIC
-    real(kind=kreal),    intent(inout) :: t_start
-    real(kind=kreal),    intent(inout) :: t_end
-    real(kind=kreal),    intent(inout) :: dynafreq
+    type(fstr_dynamic), intent(in)    :: fstrDYNAMIC
+    real(kind=kreal), intent(inout)   :: t_start
+    real(kind=kreal), intent(inout)   :: t_end
+    real(kind=kreal), intent(inout)   :: dynafreq
     integer(kind=kint), intent(inout) :: numdisp
     !---- vals
     !---- body
@@ -998,16 +998,16 @@ contains
 
   subroutine outputdyna_resfile(hecMESH, istp, numfreq, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
-    type( hecmwST_local_mesh ),     intent(in) :: hecMESH
-    integer(kind=kint),            intent(in) :: istp
-    integer(kind=kint),            intent(in) :: numfreq
-    real(kind=kreal),               intent(in) :: dispre(:) !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: dispim(:) !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: velre(:)  !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: velim(:)  !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: accre(:)  !intend (numnodeDOF)
-    real(kind=kreal),               intent(in) :: accim(:)  !intend (numnodeDOF)
-    integer(kind=kint),            intent(in) :: iout(3)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: istp
+    integer(kind=kint), intent(in) :: numfreq
+    real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: velre(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: velim(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: accre(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: accim(:) !intend (numnodeDOF)
+    integer(kind=kint), intent(in) :: iout(3)
     !---- vals
     integer(kind=kint)              :: im, s
     character(len=HECMW_HEADER_LEN) :: header
@@ -1062,20 +1062,20 @@ contains
 
   subroutine outputdyna_visfile(hecMESH, istp, numstep, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
-    type( hecmwST_local_mesh), intent(inout) :: hecMESH
-    integer(kind=kint),        intent(in) :: istp
-    integer(kind=kint),        intent(in) :: numstep
-    real(kind=kreal),          intent(in) :: dispre(:)
-    real(kind=kreal),          intent(in) :: dispim(:)
-    real(kind=kreal),          intent(in) :: velre(:)
-    real(kind=kreal),          intent(in) :: velim(:)
-    real(kind=kreal),          intent(in) :: accre(:)
-    real(kind=kreal),          intent(in) :: accim(:)
-    integer(kind=kint),       intent(in) :: iout(3)
+    type(hecmwST_local_mesh), intent(inout) :: hecMESH
+    integer(kind=kint), intent(in)          :: istp
+    integer(kind=kint), intent(in)          :: numstep
+    real(kind=kreal), intent(in)            :: dispre(:)
+    real(kind=kreal), intent(in)            :: dispim(:)
+    real(kind=kreal), intent(in)            :: velre(:)
+    real(kind=kreal), intent(in)            :: velim(:)
+    real(kind=kreal), intent(in)            :: accre(:)
+    real(kind=kreal), intent(in)            :: accim(:)
+    integer(kind=kint), intent(in)          :: iout(3)
     !---- vals
-    type( hecmwST_result_data)      :: fstrRESULT
-    character(len=HECMW_NAME_LEN)  :: label
-    integer(kind=kint)             :: s, ncomp, i
+    type(hecmwST_result_data)     :: fstrRESULT
+    character(len=HECMW_NAME_LEN) :: label
+    integer(kind=kint)            :: s, ncomp, i
     real(kind=kreal), allocatable :: absval(:)
     !---- body
 

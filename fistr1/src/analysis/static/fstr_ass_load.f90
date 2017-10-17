@@ -26,32 +26,32 @@ contains
     use m_fstr_spring
     use m_common_struct
     use m_utilities
-    integer, intent(in)                  :: cstep       !< current step
-    type (hecmwST_matrix),intent(inout)  :: hecMAT      !< hecmw matrix
-    type (hecmwST_local_mesh),intent(in) :: hecMESH     !< hecmw mesh
-    type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
-    type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
+    integer, intent(in)                  :: cstep !< current step
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< hecmw matrix
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< hecmw mesh
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< fstr_solid
+    type(fstr_param), intent(inout)      :: fstrPARAM !< analysis control parameters
 
-    real(kind=kreal) :: xx(20), yy(20), zz(20)
-    real(kind=kreal) :: params(0:6)
-    real(kind=kreal) :: vect(60)
+    real(kind=kreal)   :: xx(20), yy(20), zz(20)
+    real(kind=kreal)   :: params(0:6)
+    real(kind=kreal)   :: vect(60)
     integer(kind=kint) :: iwk(60)
     integer(kind=kint) :: nodLocal(20)
-    real(kind=kreal) :: tt(20), tt0(20), coords(3,3), factor
+    real(kind=kreal)   :: tt(20), tt0(20), coords(3, 3), factor
     integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
     integer(kind=kint) :: icel, ic_type, nn, is, isect, id, iset, nsize
     integer(kind=kint) :: itype, iE, ierror, grpid, cdsys_ID
-    real(kind=kreal) :: fval, rho, thick, pa1
+    real(kind=kreal)   :: fval, rho, thick, pa1
     logical :: fg_surf
     integer(kind=kint) :: tstep
-    type( tMaterial ), pointer :: material     !< material information
+    type(tMaterial), pointer :: material !< material information
     integer(kind=kint) :: ihead
-    real(kind=kreal) :: a
+    real(kind=kreal)   :: a
 
     !for torque load
     integer(kind=kint) :: n_rot, rid, n_nodes, idof
-    type(tRotInfo) :: rinfo
-    real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
+    type(tRotInfo)     :: rinfo
+    real(kind=kreal)   :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
 
     ndof = hecMAT%NDOF
 

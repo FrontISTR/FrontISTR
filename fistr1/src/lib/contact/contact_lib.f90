@@ -7,9 +7,9 @@ module m_contact_lib
   use elementInfo
   implicit none
 
-  integer, parameter, private    :: kreal = kind(0.0d0)
-  integer, parameter, private    :: l_max_surface_node =20
-  integer, parameter, private    :: l_max_elem_node = 100
+  integer, parameter, private :: kreal = kind(0.0d0)
+  integer, parameter, private :: l_max_surface_node = 20
+  integer, parameter, private :: l_max_elem_node = 100
 
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
@@ -25,40 +25,40 @@ module m_contact_lib
 
   !> This structure records contact status
   type tContactState
-    integer             :: state        !< -1:free, 1:in contact, or other needed
-    integer             :: surface      !< contacting surface number
-    real(kind=kreal)    :: distance      !< penetration value
-    real(kind=kreal)    :: wkdist        !< copy of penetration value
-    real(kind=kreal)    :: lpos(2)       !< contact position(local coordinate)
-    real(kind=kreal)    :: gpos(3)       !< contact position(global coordinate)
-    real(kind=kreal)    :: direction(3)  !< contact direction
-    real(kind=kreal)    :: multiplier(3) !< Lagrangian multiplier or contact force
+    integer          :: state !< -1:free, 1:in contact, or other needed
+    integer          :: surface !< contacting surface number
+    real(kind=kreal) :: distance !< penetration value
+    real(kind=kreal) :: wkdist !< copy of penetration value
+    real(kind=kreal) :: lpos(2) !< contact position(local coordinate)
+    real(kind=kreal) :: gpos(3) !< contact position(global coordinate)
+    real(kind=kreal) :: direction(3) !< contact direction
+    real(kind=kreal) :: multiplier(3) !< Lagrangian multiplier or contact force
     !< 1: normal 2:tangent component
-    real(kind=kreal)    :: tangentForce(3)                       !< friction force
-    real(kind=kreal)    :: tangentForce_trial(3)                 !< trial friction force
-    real(kind=kreal)    :: tangentForce_final(3)                 !< final friction force
+    real(kind=kreal) :: tangentForce(3) !< friction force
+    real(kind=kreal) :: tangentForce_trial(3) !< trial friction force
+    real(kind=kreal) :: tangentForce_final(3) !< final friction force
   end type
 
 contains
 
   !> Initializer
   subroutine contact_state_init(cstate)
-    type(tContactState), intent(inout) :: cstate   !< contact state
-    cstate%state=-1
-    cstate%surface=-1
+    type(tContactState), intent(inout) :: cstate !< contact state
+    cstate%state = -1
+    cstate%surface = -1
   end subroutine
 
   !> Copy
   subroutine contact_state_copy(cstate1, cstate2)
-    type(tContactState), intent(in)    :: cstate1   !< contact state
-    type(tContactState), intent(inout) :: cstate2   !< contact state
+    type(tContactState), intent(in)    :: cstate1 !< contact state
+    type(tContactState), intent(inout) :: cstate2 !< contact state
     cstate2 = cstate1
   end subroutine
 
   !> Print out contact state
   subroutine print_contact_state(fnum, cstate)
-    integer, intent(in)             :: fnum        !< file number
-    type(tContactState), intent(in) :: cstate      !< contact state
+    integer, intent(in)             :: fnum !< file number
+    type(tContactState), intent(in) :: cstate !< contact state
     write(fnum, *) "--Contact state=",cstate%state
     write(fnum, *) cstate%surface, cstate%distance
     write(fnum, *) cstate%lpos
@@ -68,10 +68,10 @@ contains
 
   !> Transfer contact condition int mpc bundary conditions
   subroutine contact2mpcval( cstate, etype, nnode, mpcval )
-    type(tContactState), intent(in) :: cstate              !< contact state
-    integer, intent(in)             :: etype               !< type of contacting surface
-    integer, intent(in)             :: nnode               !< number of elemental nodes
-    real(kind=kreal), intent(out)   :: mpcval(nnode*3+4)   !< MPC constraint
+    type(tContactState), intent(in) :: cstate !< contact state
+    integer, intent(in)             :: etype !< type of contacting surface
+    integer, intent(in)             :: nnode !< number of elemental nodes
+    real(kind=kreal), intent(out)   :: mpcval(nnode*3 + 4) !< MPC constraint
 
     integer          :: i,j
     real(kind=kreal) :: shapefunc(nnode)

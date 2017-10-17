@@ -25,26 +25,26 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
-    type(fstr_eigen)           :: fstrEIG
+    type(fstr_eigen)         :: fstrEIG
     type(tshellmat),pointer  :: shell_var(:)
     !C
-    integer(kind=kint) :: nodLOCAL(20),itype,ic_type,icel,isect
-    integer(kind=kint) :: i,j,k,ii,jj,is,iE,jS,num
-    integer(kind=kint) :: j1,j2,j3,j4
-    integer(kind=kint) :: ix,jx,ll(4),ielm
-    integer(kind=kint) :: pind(20),istart
-    integer(kind=kint) :: npoin,head,nn,nid,numnp,numn,NDOF,cid
-    integer(kind=kint) :: ierror,kk,iax,jk,n_totlyr,shell_matltype
-    real(kind=kreal) :: xx(20), yy(20), zz(20), ee,pp,rho,rho1,thick,alfa,alpha_over_mu
+    integer(kind=kint) :: nodLOCAL(20), itype, ic_type, icel, isect
+    integer(kind=kint) :: i, j, k, ii, jj, is, iE, jS, num
+    integer(kind=kint) :: j1, j2, j3, j4
+    integer(kind=kint) :: ix, jx, ll(4), ielm
+    integer(kind=kint) :: pind(20), istart
+    integer(kind=kint) :: npoin, head, nn, nid, numnp, numn, NDOF, cid
+    integer(kind=kint) :: ierror, kk, iax, jk, n_totlyr, shell_matltype
+    real(kind=kreal)   :: xx(20), yy(20), zz(20), ee, pp, rho, rho1, thick, alfa, alpha_over_mu
     integer(kind=kint) :: ihead
-    real(kind=kreal) :: a
-    real(kind=kreal) :: beam_radius,                          &
-      beam_angle1, beam_angle2, beam_angle3,&
-      beam_angle4, beam_angle5, beam_angle6
-    real(kind=kreal) xx1(20),yy1(20),zz1(20),Area
-    real(kind=kreal) x(20),  y(20),  z(20),  AA,Volume,val
-    real(kind=kreal) smax,chkmass,alpha
-    real(kind=kreal),pointer :: ss(:)
+    real(kind=kreal)  :: a
+    real(kind=kreal)  :: beam_radius
+    real(kind=kreal)  :: beam_angle1, beam_angle2, beam_angle3
+    real(kind=kreal)  :: beam_angle4, beam_angle5, beam_angle6
+    real(kind=kreal)  :: xx1(20), yy1(20), zz1(20), Area
+    real(kind=kreal)  :: x(20), y(20), z(20), AA, Volume, val
+    real(kind=kreal)  :: smax, chkmass, alpha
+    real(kind=kreal), pointer :: ss(:)
     !C
     !*Allocate work array
     allocate(ss(2000),stat=ierror)
@@ -273,8 +273,8 @@ contains
   subroutine FACE3(XX,YY,ZZ,AA)
     !C*--------------------------------------------------------------------*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(3),YY(3),ZZ(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(3), YY(3), ZZ(3)
     !C
     A1 = ( XX(2)-XX(1) )**2 + ( YY(2)-YY(1) )**2 + ( ZZ(2)-ZZ(1) )**2
     A2 = ( XX(1)-XX(3) )*( XX(2)-XX(1) ) &
@@ -290,9 +290,9 @@ contains
   subroutine FACE4(XX,YY,ZZ,AA)
     !C*--------------------------------------------------------------------*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(4),YY(4),ZZ(4)
-    dimension XG(2),H(4),HR(4),HS(4)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(4), YY(4), ZZ(4)
+    dimension XG(2), H(4), HR(4), HS(4)
     !C
     XG(1) =-0.5773502691896258D0
     XG(2) =-XG(1)

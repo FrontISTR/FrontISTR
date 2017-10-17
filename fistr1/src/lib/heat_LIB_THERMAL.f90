@@ -41,7 +41,6 @@ contains
     return
   end subroutine heat_GET_CONDUCTIVITY
 
-
   !C************************************************************************
   !C*  THERMAL_111 ( NN,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
   !C*  THERMAL_231 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
@@ -66,10 +65,10 @@ contains
     !* CALCULATION 1D 2 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
     DX = XX(2) - XX(1)
     DY = YY(2) - YY(1)
@@ -100,11 +99,11 @@ contains
     !C*CALCULATION 2D 3 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(3),HL1(3),HL2(3),HL3(3)
-    dimension BX(3),BY(3),BZ(3),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(3), HL1(3), HL2(3), HL3(3)
+    dimension BX(3), BY(3), BZ(3), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     data XG/-0.5773502691896D0,0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
     !C
@@ -184,12 +183,12 @@ contains
     !C*CALCULATION 2D 4 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4),HT(4)
-    dimension BX(4),BY(4),BZ(4),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    data XG/-0.5773502691896D0,0.5773502691896D0/
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4), HT(4)
+    dimension BX(4), BY(4), BZ(4), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    data XG/-0.5773502691896D0, 0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
     !C
     !C*LOOP OVER ALL INTEGRATION POINTS
@@ -263,11 +262,11 @@ contains
     !* CALCULATION 3D 4 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4),HT(4)
-    dimension BX(4),BY(4),BZ(4),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4), HT(4)
+    dimension BX(4), BY(4), BZ(4), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     data XG/-0.5773502691896D0,0.5773502691896D0/
     !*      DATA XG/-1.0,1.0/
     data WGT/1.0D0,1.0D0/
@@ -407,11 +406,11 @@ contains
     !* CALCULATION 3D 6 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),XG1(3),XG2(3),WGT1(3) &
-      ,H(6),HR(6),HS(6),HT(6)       &
-      ,BX(6),BY(6),BZ(6),CC(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), XG1(3), XG2(3), WGT1(3) &
+      , H(6), HR(6), HS(6), HT(6) &
+      , BX(6), BY(6), BZ(6), CC(3)
 
     dimension temp(*),funcA(*),funcB(*)
 
@@ -614,11 +613,11 @@ contains
     !* CALCULATION 3D 8 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(8),HR(8),HS(8),HT(8)
-    dimension BX(8),BY(8),BZ(8),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(8), HR(8), HS(8), HT(8)
+    dimension BX(8), BY(8), BZ(8), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !*      DATA XG/-1.0D0,1.0D0/
     data WGT/1.0D0,1.0D0/
     data XG/-0.5773502691896D0, 0.5773502691896D0/
@@ -891,9 +890,9 @@ contains
     !* CALCULATION 3D 6 NODE INTERFACE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XXX(NN),YYY(NN),ZZZ(NN),TEMP(NN),SS(NN*NN)
-    dimension XX(3),YY(3),ZZ(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
+    dimension XX(3), YY(3), ZZ(3)
 
     write(*,*) 'TYPE=531 not yet available..'
     stop
@@ -905,9 +904,9 @@ contains
     !* CALCULATION 3D 8 NODE INTERFACE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XXX(NN),YYY(NN),ZZZ(NN),TEMP(NN),SS(NN*NN)
-    dimension XX(4),YY(4),ZZ(4)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
+    dimension XX(4), YY(4), ZZ(4)
 
     XX(1)=XXX(1)
     XX(2)=XXX(2)
@@ -1073,16 +1072,16 @@ contains
     !* CALCULATION 4 NODE SHELL ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4)
-    dimension COD(3,4)
-    dimension G1(3),G2(3),G3(3),E1(3),E2(3),E3(3),REF(3)
-    dimension EN(3,4),THE(3,3),AMAT(3,3),BV(3),WK(3)
-    dimension DTDX(4),DTDY(4)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4)
+    dimension COD(3, 4)
+    dimension G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    dimension EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    dimension DTDX(4), DTDY(4)
     data XG/-0.5773502691896D0,0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
     !
@@ -1268,22 +1267,22 @@ contains
             BV(2) = HS(I)
             BV(3) = 0.0
 
-            WK(1) = AMAT(1,1)*BV(1)   &
+            WK(1) = AMAT(1,1)*BV(1) &
               + AMAT(1,2)*BV(2) &
               + AMAT(1,3)*BV(3)
-            WK(2) = AMAT(2,1)*BV(1)   &
+            WK(2) = AMAT(2,1)*BV(1) &
               + AMAT(2,2)*BV(2) &
               + AMAT(2,3)*BV(3)
-            WK(3) = AMAT(3,1)*BV(1)   &
+            WK(3) = AMAT(3,1)*BV(1) &
               + AMAT(3,2)*BV(2) &
               + AMAT(3,3)*BV(3)
-            BV(1) = THE(1,1)*WK(1)   &
+            BV(1) = THE(1,1)*WK(1) &
               + THE(1,2)*WK(2) &
               + THE(1,3)*WK(3)
-            BV(2) = THE(2,1)*WK(1)   &
+            BV(2) = THE(2,1)*WK(1) &
               + THE(2,2)*WK(2) &
               + THE(2,3)*WK(3)
-            BV(3) = THE(3,1)*WK(1)   &
+            BV(3) = THE(3,1)*WK(1) &
               + THE(3,2)*WK(2) &
               + THE(3,3)*WK(3)
 
@@ -1355,16 +1354,16 @@ contains
     !* CALCULATION 4 NODE SHELL ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4)
-    dimension COD(3,4)
-    dimension G1(3),G2(3),G3(3),E1(3),E2(3),E3(3),REF(3)
-    dimension EN(3,4),THE(3,3),AMAT(3,3),BV(3),WK(3)
-    dimension DTDX(4),DTDY(4)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4)
+    dimension COD(3, 4)
+    dimension G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    dimension EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    dimension DTDX(4), DTDY(4)
     data XG/-0.5773502691896D0,0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
 
@@ -1497,7 +1496,7 @@ contains
           !
           !*DETERMINANT OF JACOBIAN
           !
-          DET = XJ11*XJ22*XJ33  &
+          DET = XJ11*XJ22*XJ33 &
             + XJ12*XJ23*XJ31 &
             + XJ13*XJ21*XJ32 &
             - XJ13*XJ22*XJ31 &
@@ -1577,22 +1576,22 @@ contains
             BV(2) = HS(I)
             BV(3) = 0.0
 
-            WK(1) = AMAT(1,1)*BV(1)   &
+            WK(1) = AMAT(1,1)*BV(1) &
               + AMAT(1,2)*BV(2) &
               + AMAT(1,3)*BV(3)
-            WK(2) = AMAT(2,1)*BV(1)   &
+            WK(2) = AMAT(2,1)*BV(1) &
               + AMAT(2,2)*BV(2) &
               + AMAT(2,3)*BV(3)
-            WK(3) = AMAT(3,1)*BV(1)   &
+            WK(3) = AMAT(3,1)*BV(1) &
               + AMAT(3,2)*BV(2) &
               + AMAT(3,3)*BV(3)
-            BV(1) = THE(1,1)*WK(1)   &
+            BV(1) = THE(1,1)*WK(1) &
               + THE(1,2)*WK(2) &
               + THE(1,3)*WK(3)
-            BV(2) = THE(2,1)*WK(1)   &
+            BV(2) = THE(2,1)*WK(1) &
               + THE(2,2)*WK(2) &
               + THE(2,3)*WK(3)
-            BV(3) = THE(3,1)*WK(1)   &
+            BV(3) = THE(3,1)*WK(1) &
               + THE(3,2)*WK(2) &
               + THE(3,3)*WK(3)
 
@@ -1657,11 +1656,11 @@ contains
     !C*CALCULATION 2D 6 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(3),WGT(3),H(6),HL1(6),HL2(6),HL3(6)
-    dimension BX(6),BY(6),BZ(6),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
+    dimension BX(6), BY(6), BZ(6), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -1759,11 +1758,11 @@ contains
     !C*CALCULATION 2D 8 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(3),WGT(3),H(8),HR(8),HS(8),HT(8)
-    dimension BX(8),BY(8),BZ(8),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(3), WGT(3), H(8), HR(8), HS(8), HT(8)
+    dimension BX(8), BY(8), BZ(8), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -1856,12 +1855,12 @@ contains
     !C* CALCULATION 3D 10 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(10),HL1(10),HL2(10),HL3(10),HL4(10)
-    dimension BX(10),BY(10),BZ(10),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(10), HL1(10), HL2(10), HL3(10), HL4(10)
+    dimension BX(10), BY(10), BZ(10), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -2027,11 +2026,11 @@ contains
     !* CALCULATION 3D 15 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(15),HL1(15),HL2(15),HL3(15),HZ(15),BX(15),BY(15),BZ(15),CC(3)
-    dimension temp(*),funcA(*),funcB(*)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(15), HL1(15), HL2(15), HL3(15), HZ(15), BX(15), BY(15), BZ(15), CC(3)
+    dimension temp(*), funcA(*), funcB(*)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -2217,12 +2216,12 @@ contains
     !C* CALCULATION 3D 20 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(20),HR(20),HS(20),HT(20)
-    dimension BX(20),BY(20),BZ(20),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(20), HR(20), HS(20), HT(20)
+    dimension BX(20), BY(20), BZ(20), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0

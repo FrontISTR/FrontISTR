@@ -10,21 +10,20 @@ module m_table_dyn
 
   implicit none
 
-
 contains
 
   !C================================================================C
   !C-- subroutine table_dyn
   !C================================================================C
   subroutine table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
 
     integer(kind=kint) :: i, ig0
     integer(kind=kint) :: jj_n_amp, jj1, jj2
     integer(kind=kint) :: s1, s2, flag_u
-    real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, f_t
+    real(kind=kreal)   :: t_1, t_2, t_t, f_1, f_2, f_t
 
     if( flag_u .eq. 1 ) then
       jj_n_amp = fstrSOLID%BOUNDARY_ngrp_amp(ig0)

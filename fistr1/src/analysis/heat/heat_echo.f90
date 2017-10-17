@@ -13,15 +13,15 @@ contains
 
     implicit none
 
-    type( fstr_param        ):: p
-    type (hecmwST_local_mesh):: hecMESH
-    type (fstr_heat         ):: fstrHEAT
+    type(fstr_param)         :: p
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_heat)          :: fstrHEAT
 
     !** Local variables
-    integer(kind=kint) i,j,itype,is,iE,ic_type,nn,icel,isect,mid,ic,im,jm,jS,jE,kc,km
-    real(kind=kreal)   val,temp,aa,bb,time,x,y,z
-    integer(kind=kint) ig1,iS0,iE0,ik,in,inod,nid
-    integer(kind=kint) nids(20)
+    integer(kind=kint) :: i, j, itype, is, iE, ic_type, nn, icel, isect, mid, ic, im, jm, jS, jE, kc, km
+    real(kind=kreal)   :: val, temp, aa, bb, time, x, y, z
+    integer(kind=kint) :: ig1, iS0, iE0, ik, in, inod, nid
+    integer(kind=kint) :: nids(20)
 
 
     !C +-------------------------------+

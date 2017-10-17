@@ -8,25 +8,25 @@ module m_common_struct
   integer, parameter, private :: kreal = kind(0.0d0)
 
   type tLocalCoordSys
-    character(len=128)         :: sys_name
-    integer                    :: sys_type       !< type of material or local coordinate system;
+    character(len=128) :: sys_name
+    integer            :: sys_type !< type of material or local coordinate system;
     !< fisrt digit: 1- Cartensian 2- Cylinder 3- Sphere
     !< second digit: 0- coodinate; 1-nodes  2-local nodes
-    integer                    :: node_ID(3)     !< nodes' ID
-    real(kind=kreal)           :: CoordSys(3,3)  !< variables when second digit=0
+    integer            :: node_ID(3) !< nodes' ID
+    real(kind=kreal)   :: CoordSys(3, 3) !< variables when second digit=0
   end type tLocalCoordSys
 
-  type( tLocalCoordSys ), pointer, save :: g_LocalCoordSys(:) => null()
+  type(tLocalCoordSys), pointer, save :: g_LocalCoordSys(:) => null()
 
   type tRotInfo
-    integer  ::  n_rot
+    integer :: n_rot
     type(tRotCond), pointer :: conds(:)
   end type
 
   type tRotCond
-    logical  ::  active
-    integer  ::  center_ngrp_id
-    integer  ::  torque_ngrp_id
+    logical :: active
+    integer :: center_ngrp_id
+    integer :: torque_ngrp_id
     real(kind=kreal) :: vec(3)
   end type
 
@@ -47,8 +47,8 @@ contains
 
   !> output of coordinate system
   subroutine print_localcoordsys(nfile, coordsys)
-    integer, intent(in)                :: nfile
-    type( tLocalCoordSys ), intent(in) :: coordsys
+    integer, intent(in)              :: nfile
+    type(tLocalCoordSys), intent(in) :: coordsys
 
     write(nfile, *) coordsys%sys_type, coordsys%sys_name
     write(nfile, *) coordsys%node_ID(:)
@@ -59,7 +59,7 @@ contains
 
   !> if need to fetch global nodes' coodinate
   logical function isCoordNeeds( coordsys )
-    type( tLocalCoordSys ), intent(in) :: coordsys
+    type(tLocalCoordSys), intent(in) :: coordsys
 
     integer stype
     isCoordNeeds = .false.
@@ -70,10 +70,10 @@ contains
   !> setup of coordinate system
   subroutine set_localcoordsys(coords, coordsys, outsys, ierr)
     use m_utilities, only: cross_product
-    real(kind=kreal), intent(inout)    :: coords(:,:)    ! coord needs to define local coord sys
-    type( tLocalCoordSys ), intent(in) :: coordsys
-    real(kind=kreal), intent(out)      :: outsys(3,3)
-    integer, intent(out)               :: ierr
+    real(kind=kreal), intent(inout)  :: coords(:, :) ! coord needs to define local coord sys
+    type(tLocalCoordSys), intent(in) :: coordsys
+    real(kind=kreal), intent(out)    :: outsys(3, 3)
+    integer, intent(out)             :: ierr
 
     real(kind=kreal) :: dis,f, ff(3), xyza(3), xyzb(3), xyzc(3)
     integer :: ftype, stype
@@ -97,7 +97,7 @@ contains
 
   subroutine fstr_RotInfo_init(n, rinfo)
     integer, intent(in) :: n
-    type( tRotInfo ), intent(inout) :: rinfo
+    type(tRotInfo), intent(inout) :: rinfo
 
     integer :: i
 
@@ -114,7 +114,7 @@ contains
   end subroutine
 
   subroutine fstr_RotInfo_finalize(rinfo)
-    type( tRotInfo ), intent(inout) :: rinfo
+    type(tRotInfo), intent(inout) :: rinfo
 
     rinfo%n_rot = 0
     if( associated(rinfo%conds)) deallocate(rinfo%conds)

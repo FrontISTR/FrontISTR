@@ -23,19 +23,19 @@ contains
       ,conMAT )
     use m_fstr_setup
     implicit none
-    type ( hecmwST_local_mesh  ) :: hecMESH
-    type ( hecmwST_matrix      ) :: hecMAT
-    type ( fstr_eigen            ) :: fstrEIG
-    type ( fstr_solid          ) :: fstrSOLID
-    type ( hecmwST_result_data ) :: fstrRESULT
-    type ( fstr_param          ) :: fstrPARAM
-    type ( fstr_dynamic        ) :: fstrDYNAMIC
-    type ( fstr_couple         ) :: fstrCPL         !for COUPLE
-    type ( fstr_freqanalysis   ) :: fstrFREQ
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-    type (fstr_info_contactChange)         :: infoCTChange !< type fstr_info_contactChange
-    type ( hecmwST_matrix      ),optional :: conMAT
-    integer(kind=kint) :: i,j,num_monit,ig,is,iE,ik,in,ing,iunitS,iunit,ierror,flag,limit
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_eigen)                     :: fstrEIG
+    type(fstr_solid)                     :: fstrSOLID
+    type(hecmwST_result_data)            :: fstrRESULT
+    type(fstr_param)                     :: fstrPARAM
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_couple)                    :: fstrCPL !for COUPLE
+    type(fstr_freqanalysis)              :: fstrFREQ
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(fstr_info_contactChange)        :: infoCTChange !< type fstr_info_contactChange
+    type(hecmwST_matrix), optional       :: conMAT
+    integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step(1)

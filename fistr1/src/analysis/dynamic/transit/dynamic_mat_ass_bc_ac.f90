@@ -19,19 +19,19 @@ contains
     use mContact
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
-    type (fstr_param       )              :: fstrPARAM !< analysis control parameters
-    type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
-    integer, optional         :: iter
-    type (hecmwST_matrix),optional     :: conMAT
+    type(hecmwST_matrix)                 :: hecMAT
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(fstr_solid)                     :: fstrSOLID
+    type(fstr_dynamic)                   :: fstrDYNAMIC
+    type(fstr_param)                     :: fstrPARAM !< analysis control parameters
+    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer, optional :: iter
+    type(hecmwST_matrix), optional :: conMAT
 
-    integer(kind=kint) ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) dyn_step, flag_u
-    real(kind=kreal) b2, b3, b4, c1
-    real(kind=kreal) RHS, RHS0, f_t
+    integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: dyn_step, flag_u
+    real(kind=kreal)   :: b2, b3, b4, c1
+    real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
@@ -155,15 +155,15 @@ contains
     use m_table_dyn
 
     implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid        ) :: fstrSOLID
-    type ( fstr_dynamic     ) :: fstrDYNAMIC
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_dynamic)       :: fstrDYNAMIC
 
-    integer(kind=kint) NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
+    integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     !!!
-    integer(kind=kint) flag_u
-    real(kind=kreal) RHS, f_t
+    integer(kind=kint) :: flag_u
+    real(kind=kreal)   :: RHS, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcTransit )return
 
