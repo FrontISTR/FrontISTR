@@ -9,9 +9,7 @@
 #include <stdio.h>
 #include "hecmw_util.h"
 
-
 extern int HECMW_read_geofem_mesh(const char *filename);
-
 
 extern struct hecmwST_local_mesh *HECMW_get_geofem_mesh(const char *filename);
 

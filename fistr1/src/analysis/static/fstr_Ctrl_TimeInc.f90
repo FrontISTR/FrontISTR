@@ -11,11 +11,11 @@ module m_fstr_TimeInc
 
   implicit none
 
-  real(kind=kreal), private :: current_time  = 0.d0  !< current time
-  real(kind=kreal), private :: time_inc      = 0.d0  !< current increment of time
-  real(kind=kreal), private :: time_inc_base = 0.d0  !< base increment of time
+  real(kind=kreal), private :: current_time = 0.d0 !< current time
+  real(kind=kreal), private :: time_inc = 0.d0 !< current increment of time
+  real(kind=kreal), private :: time_inc_base = 0.d0 !< base increment of time
 
-  contains
+contains
 
   !! basic functions to get time/timeinc
   real(kind=kreal) function fstr_get_time()
@@ -52,13 +52,13 @@ module m_fstr_TimeInc
 
   !! functions to print status
   subroutine fstr_TimeInc_PrintSTATUS_init
-    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') repeat("-",10),repeat("-",60),repeat("-",40)
     write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A40)') '     ', '     ', ' ', ' # of',  'MAX #', 'TOT #',  '','', '', ''
     write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A7,A33)') &
       & 'STEP', 'SUB', 'STAT', ' CONT', 'NEWTON', 'NEWTON', 'START', 'TIME','END', 'MESSAGE',''
     write(ISTA,'(2A5," | ",2A5,2A7,3A12," | ",A40)') &
       & '', 'STEP', '  ', 'ITER',  'ITER', 'ITER',  'TIME', 'INC', 'TIME',''
-    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') repeat("-",10),repeat("-",60),repeat("-",40)
   end subroutine
 
   subroutine fstr_TimeInc_PrintSTATUS( stepinfo, fstrPARAM, totstep, substep, NRstatI, NRstatR, AutoINC_stat, Cutback_stat )
@@ -108,7 +108,7 @@ module m_fstr_TimeInc
 
   subroutine fstr_TimeInc_PrintSTATUS_final(success_flag)
     logical, intent(in) :: success_flag
-    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') REPEAT("-",10),REPEAT("-",60),REPEAT("-",40)
+    write(ISTA,'(A10,"-+-",A60,"-+-",A40)') repeat("-",10),repeat("-",60),repeat("-",40)
     if(success_flag) then
       write(ISTA,'(A)') 'FSTR_SOLVE_NLGEOM HAS COMPLETED SUCCESSFULLY'
     else
@@ -129,8 +129,8 @@ module m_fstr_TimeInc
 
   !! true if current time is time point
   logical function fstr_TimeInc_isTimePoint( stepinfo, fstrPARAM )
-    type(step_info), intent(in)    :: stepinfo
-    type(fstr_param), intent(in)   :: fstrPARAM
+    type(step_info), intent(in)  :: stepinfo
+    type(fstr_param), intent(in) :: fstrPARAM
 
     fstr_TimeInc_isTimePoint = .false.
     if( stepinfo%inc_type == stepFixedInc ) return

@@ -4,9 +4,9 @@
 !-------------------------------------------------------------------------------
 !> Lanczos iteration calculation
 module m_fstr_EIG_lanczos
-  contains
+contains
 
-!> SOLVE EIGENVALUE PROBLEM
+  !> SOLVE EIGENVALUE PROBLEM
   subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
     use m_fstr
     use hecmw_util
@@ -17,22 +17,22 @@ module m_fstr_EIG_lanczos
     implicit none
 
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_solid        ) :: fstrSOLID
-    type(fstr_eigen        ) :: fstrEIG
-    type(fstr_tri_diag     ) :: Tri
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_solid)         :: fstrSOLID
+    type(fstr_eigen)         :: fstrEIG
+    type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, maxiter, nget, ierr
     integer(kind=kint) :: i, j, k, in, jn, kn, ik, it
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
-    real(kind=kreal) :: t1, t2, tolerance
-    real(kind=kreal) :: alpha, beta
+    real(kind=kreal)   :: t1, t2, tolerance
+    real(kind=kreal)   :: alpha, beta
 
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
-    real(kind=kreal), pointer :: eigvec(:,:)
-    real(kind=kreal), pointer :: eigval(:)
+    real(kind=kreal), pointer     :: eigvec(:,:)
+    real(kind=kreal), pointer     :: eigval(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -69,7 +69,7 @@ module m_fstr_EIG_lanczos
 
     if(in < fstrEIG%maxiter)then
       if(myrank == 0)then
-        WRITE(IMSG,*) '** changed maxiter to system matrix size.'
+        write(IMSG,*) '** changed maxiter to system matrix size.'
       endif
       fstrEIG%maxiter = in
     endif
@@ -82,16 +82,16 @@ module m_fstr_EIG_lanczos
     maxiter   = fstrEIG%maxiter
     tolerance = fstrEIG%tolerance
 
-    allocate( Q(0:maxiter)                    )
-    allocate( Q(0)%q(NPNDOF)                  )
-    allocate( Q(1)%q(NPNDOF)                  )
-    allocate( fstrEIG%eigval(maxiter)         )
-    allocate( fstrEIG%eigvec(NPNDOF, maxiter) )
-    allocate( Tri%alpha(maxiter)            )
-    allocate( Tri%beta (maxiter)            )
-    allocate( t(NPNDOF) )
-    allocate( s(NPNDOF) )
-    allocate( p(NPNDOF) )
+    allocate(Q(0:maxiter))
+    allocate(Q(0)%q(NPNDOF))
+    allocate(Q(1)%q(NPNDOF))
+    allocate(fstrEIG%eigval(maxiter))
+    allocate(fstrEIG%eigvec(NPNDOF, maxiter))
+    allocate(Tri%alpha(maxiter))
+    allocate(Tri%beta(maxiter))
+    allocate(t(NPNDOF))
+    allocate(s(NPNDOF))
+    allocate(p(NPNDOF))
 
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
@@ -199,11 +199,11 @@ module m_fstr_EIG_lanczos
     do i=0, iter
       if(associated(Q(i)%q)) deallocate(Q(i)%q)
     enddo
-    deallocate( Tri%alpha )
-    deallocate( Tri%beta  )
-    deallocate( t )
-    deallocate( s )
-    deallocate( p )
+    deallocate(Tri%alpha)
+    deallocate(Tri%beta)
+    deallocate(t)
+    deallocate(s)
+    deallocate(p)
 
     t2 = hecmw_Wtime()
 

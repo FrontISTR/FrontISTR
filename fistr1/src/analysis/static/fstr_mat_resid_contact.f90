@@ -16,14 +16,14 @@ contains
 
   subroutine fstr_get_residual_contact(hecMESH, hecMAT, fstrMAT, r, rlag)
     implicit none
-    type (hecmwST_local_mesh  ) :: hecMESH
-    type (hecmwST_matrix      ) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrS  end subroutine fstr_get_residual_contact
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrS  end subroutine fstr_get_residual_contact
     real(kind=kreal), intent(out) :: r(:)
     real(kind=kreal), intent(out) :: rlag(:)
-    real(kind=kreal) :: Tcomm,sum
-    integer(kind=kint) :: i,idof,ii,i0,ls,le,l,loc0,ll,j,loc,l0,k
-    integer(kind=kint) :: ndof,npndof
+    real(kind=kreal)   :: Tcomm, sum
+    integer(kind=kint) :: i, idof, ii, i0, ls, le, l, loc0, ll, j, loc, l0, k
+    integer(kind=kint) :: ndof, npndof
     !! r    = b     - K    x  - Ulag lag
     !! rlag = blag  - Llag x
     ndof=hecMAT%NDOF
@@ -75,15 +75,15 @@ contains
   !> \brief This function calculates relative L2 residual
   function fstr_get_rel_resid_L2_contact(hecMESH, hecMAT, fstrMAT)
     implicit none
-    real(kind=kreal) :: fstr_get_rel_resid_L2_contact
-    type (hecmwST_local_mesh  ) :: hecMESH
-    type (hecmwST_matrix      ) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    real(kind=kreal)         :: fstr_get_rel_resid_L2_contact
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     real(kind=kreal), allocatable :: r(:)
     real(kind=kreal), allocatable :: rlag(:)
-    real(kind=kreal) :: bnorm2, rnorm2
-    real(kind=kreal) :: rlagnorm2
-    real(kind=kreal) :: Tcomm
+    real(kind=kreal)   :: bnorm2, rnorm2
+    real(kind=kreal)   :: rlagnorm2
+    real(kind=kreal)   :: Tcomm
     integer(kind=kint) :: i
     allocate(r(hecMAT%NDOF*hecMAT%NP),rlag(fstrMAT%num_lagrange))
     ! |b|^2
@@ -107,10 +107,10 @@ contains
   !> \brief This function calculates maximum residual
   function fstr_get_resid_max_contact(hecMESH, hecMAT, fstrMAT)
     implicit none
-    real(kind=kreal) :: fstr_get_resid_max_contact
-    type (hecmwST_local_mesh  ) :: hecMESH
-    type (hecmwST_matrix      ) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    real(kind=kreal)         :: fstr_get_resid_max_contact
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     real(kind=kreal), allocatable :: r(:)
     real(kind=kreal), allocatable :: rlag(:)
     real(kind=kreal) :: rmax, rlagmax

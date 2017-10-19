@@ -17,7 +17,7 @@ contains
     real(kind=kreal), intent(in) :: D(:), E(:)
 
 #ifdef HECMW_WITH_LAPACK
-    character(len=1) :: JOBZ, RANGE
+    character(len=1) :: JOBZ, range
     ! character(len=1) :: COMPZ
     real(kind=kreal) :: VL, VU, ABSTOL, Z(1,1)
     integer(kind=kint) :: N, IL, IU, M, LDZ=1, ISUPPZ(1)
@@ -44,15 +44,15 @@ contains
 
     ! prepare arguments for calling dstegr
     JOBZ='N'
-    RANGE='A'
+    range='A'
     N=ITER
     allocate(W(ITER))
     ! estimate optimal LWORK and LIWORK
     LWORK=-1
     LIWORK=-1
     allocate(WORK(1),IWORK(1))
-    call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
-         M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
+    call dstegr(JOBZ,range,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
+      M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
     if (INFO /= 0) then
       write(*,*) 'ERROR: dstegr returned with INFO=',INFO
       return
@@ -62,14 +62,14 @@ contains
     LIWORK=IWORK(1)
     deallocate(WORK,IWORK)
     allocate(WORK(LWORK),IWORK(LIWORK))
-    call dstegr(JOBZ,RANGE,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
-         M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
+    call dstegr(JOBZ,range,N,D1,E1,VL,VU,IL,IU,ABSTOL, &
+      M,W,Z,LDZ,ISUPPZ,WORK,LWORK,IWORK,LIWORK,INFO)
     if (INFO /= 0) then
       write(*,*) 'ERROR: dstegr returned with INFO=',INFO
       return
     endif
     write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-         W(1),W(N),W(N)/W(1)
+      W(1),W(N),W(N)/W(1)
     deallocate(WORK,IWORK)
     deallocate(W)
 
@@ -89,7 +89,7 @@ contains
     !   return
     ! endif
     ! write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-    !      D1(1),D1(N),D1(N)/D1(1)
+      !      D1(1),D1(N),D1(N)/D1(1)
     ! deallocate(WORK)
 
 
@@ -186,7 +186,7 @@ contains
 
 
     write(*,'("emin=",1pe13.6,", emax=",1pe13.6,", emax/emin=",1pe13.6)') &
-         WR(N), WR(1), WR(1)/WR(N)
+      WR(N), WR(1), WR(1)/WR(N)
 
     deallocate(WR)
     deallocate(H1)

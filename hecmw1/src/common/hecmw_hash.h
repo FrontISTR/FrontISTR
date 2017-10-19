@@ -10,7 +10,7 @@
 
 typedef struct hecmw_hash_p hecmw_hash_p;
 
-hecmw_hash_p * hecmw_hash_p_new(unsigned int capacity);
+hecmw_hash_p *hecmw_hash_p_new(unsigned int capacity);
 
 void hecmw_hash_p_delete(hecmw_hash_p *hash);
 

@@ -10,7 +10,6 @@
 #define HECMW_CONNTYPE_ABAQUS 2
 #define HECMW_CONNTYPE_NASTRAN 3
 
-
 extern int HECMW_convert_connectivity(int from, int hecmw_etype, int *conn);
 
 #endif

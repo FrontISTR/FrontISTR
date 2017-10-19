@@ -42,9 +42,9 @@ module hecmw_precond_SAINV_nn
 
 contains
 
-!C***
-!C*** hecmw_precond_nn_sainv_setup
-!C***
+  !C***
+  !C*** hecmw_precond_nn_sainv_setup
+  !C***
   subroutine hecmw_precond_nn_SAINV_setup(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
@@ -79,7 +79,7 @@ contains
 
     FILTER= hecMAT%Rarray(5)
 
-    Write(*,"(a,F15.8)")"### SAINV FILTER   :",FILTER
+    write(*,"(a,F15.8)")"### SAINV FILTER   :",FILTER
 
     call hecmw_sainv_nn(hecMAT)
 
@@ -101,37 +101,37 @@ contains
     do i= 1, N
       do idof = 1, NDOF
         SW(idof) = 0.0d0
-      end do 
+      end do
       isL= inumFI1L(i-1)+1
       ieL= inumFI1L(i)
       do j= isL, ieL
         in= FI1L(j)
         do idof = 1, NDOF
           X(idof) = R(NDOF*(in-1)+idof)
-        end do 
+        end do
         do idof = 1, NDOF
           do jdof = 1, NDOF
             SW(idof) = SW(idof) + SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-          end do 
-        end do 
+          end do
+        end do
       enddo
       do idof = 1, NDOF
         X(idof) = R(NDOF*(i-1)+idof)
         T(NDOF*(i-1)+idof)=X(idof)+SW(idof)
-      end do 
-      do idof = 1, NDOF     
+      end do
+      do idof = 1, NDOF
         do jdof = 1, idof-1
           T(NDOF*(i-1)+idof)=T(NDOF*(i-1)+idof)+SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)*X(jdof)
-        end do 
+        end do
         T(NDOF*(i-1)+idof)=T(NDOF*(i-1)+idof)*SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
-      end do 
+      end do
     enddo
 
     !C-- BACKWARD
     do i= 1, N
       do idof = 1, NDOF
         SW(idof) = 0.0d0
-      end do 
+      end do
 
       isU= inumFI1U(i-1) + 1
       ieU= inumFI1U(i)
@@ -139,36 +139,36 @@ contains
         in= FI1U(j)
         do idof = 1, NDOF
           X(idof) = T(NDOF*(in-1)+idof)
-        end do 
+        end do
         do idof = 1, NDOF
           do jdof = 1, NDOF
             SW(idof) = SW(idof) + SAINVU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-          end do 
-        end do 
+          end do
+        end do
       enddo
-      
+
       do idof = 1, NDOF
         X(idof) = T(NDOF*(i-1)+idof)
-      end do 
+      end do
       do idof = 1, NDOF
         ZP(NDOF*(i-1)+idof) = X(idof) + SW(idof)
         do jdof = NDOF, idof+1, -1
           ZP(NDOF*(i-1)+idof) = ZP(NDOF*(i-1)+idof)+SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
-        end do 
-      end do 
+        end do
+      end do
     enddo
 
   end subroutine hecmw_precond_nn_SAINV_apply
 
 
-!C***
-!C*** hecmw_rif_nn
-!C***
-    subroutine hecmw_sainv_nn(hecMAT)
+  !C***
+  !C*** hecmw_rif_nn
+  !C***
+  subroutine hecmw_sainv_nn(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, k, jS, jE, in, itr, NP, idof, jdof, iitr 
+    integer(kind=kint) :: i, j, k, jS, jE, in, itr, NP, idof, jdof, iitr
     real(kind=krealp) :: dd, dtmp(hecMAT%NDOF), YV(hecMAT%NDOF), X(hecMAT%NDOF)
 
     real(kind=krealp) :: FILTER, SIGMA_DIAG
@@ -185,7 +185,7 @@ contains
         !{v}=[A]{zi}
         do idof = 1,NDOF
           zz(NDOF*(itr-1)+idof)= SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+iitr)
-        end do 
+        end do
         zz(NDOF*(itr-1)+iitr)= 1.0d0
 
         jS= inumFI1L(itr-1) + 1
@@ -194,18 +194,18 @@ contains
           in  = FI1L(j)
           do idof = 1, NDOF
             zz(NDOF*(in-1)+idof)=SAINVL(NDOF2*(j-1)+NDOF*(iitr-1)+idof)
-          end do 
+          end do
         enddo
 
         do i= 1, itr
           do idof = 1,NDOF
             X(idof)=zz(NDOF*(i-1)+idof)
-          end do 
+          end do
           do idof = 1, NDOF
             do jdof = 1, NDOF
               vv(NDOF*(i-1)+idof) = vv(NDOF*(i-1)+idof) + D(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
-            end do 
-          end do 
+            end do
+          end do
 
           jS= indexL(i-1) + 1
           jE= indexL(i  )
@@ -214,8 +214,8 @@ contains
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AL(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
-              end do 
-            end do 
+              end do
+            end do
           enddo
           jS= indexU(i-1) + 1
           jE= indexU(i  )
@@ -224,23 +224,23 @@ contains
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 vv(NDOF*(in-1)+idof) = vv(NDOF*(in-1)+idof) + AU(NDOF2*(j-1)+NDOF*(jdof-1)+idof)*X(jdof)
-              end do 
-            end do 
+              end do
+            end do
           enddo
         enddo
 
         !{d}={v^t}{z_j}
         do idof = 1, NDOF
           Dtmp(idof)= SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)
-        end do 
-        
+        end do
+
         do i= itr,N
           do idof = 1,NDOF
             SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = vv(NDOF*(i-1)+idof)
             do jdof = 1, idof-1
               SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) + &
-               & SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)*vv(NDOF*(i-1)+jdof)
-            end do 
+                & SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)*vv(NDOF*(i-1)+jdof)
+            end do
           end do
           jS= inumFI1L(i-1) + 1
           jE= inumFI1L(i  )
@@ -248,13 +248,13 @@ contains
             in  = FI1L(j)
             do idof = 1,NDOF
               X(idof)=vv(NDOF*(in-1)+idof)
-            end do 
+            end do
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) + &
-                       & SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
-              end do 
-            end do 
+                  & SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+              end do
+            end do
           enddo
         enddo
 
@@ -262,23 +262,23 @@ contains
         dd = 1.0d0/SAINVD(NDOF2*(itr-1)+NDOF*(iitr-1)+iitr)
         do idof=1,iitr-1
           SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) = Dtmp(idof)
-        end do 
-!        SAINVD(NDOF2*(itr-1)+NDOF*(iitr-1)+iitr)=dd
+        end do
+        !        SAINVD(NDOF2*(itr-1)+NDOF*(iitr-1)+iitr)=dd
         do idof = iitr+1, NDOF
           SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(itr-1)+NDOF*(idof-1)+idof)*dd
-        end do 
+        end do
 
         do i =itr+1,N
           do idof = 1, NDOF
             SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof) = SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)*dd
-          end do 
+          end do
         enddo
 
         !Update Z
         do k=iitr+1,NDOF
           dd = SAINVD(NDOF2*(itr-1)+NDOF*(k-1)+k)
           if(abs(dd) > FILTER)then
-            do jdof = 1, iitr 
+            do jdof = 1, iitr
               SAINVD(NDOF2*(itr-1)+NDOF*(jdof-1)+k)= SAINVD(NDOF2*(itr-1)+NDOF*(jdof-1)+k) - dd*zz(NDOF*(itr-1)+jdof)
             end do
             jS= inumFI1L(itr-1) + 1
@@ -290,8 +290,8 @@ contains
               end do
             enddo
           endif
-        end do 
-        
+        end do
+
         do i= itr +1,N
           jS= inumFI1L(i-1) + 1
           jE= inumFI1L(i  )
@@ -302,11 +302,11 @@ contains
                 in  = FI1L(j)
                 if (in > itr) exit
                 do jdof=1,NDOF
-                SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)-dd*zz(NDOF*(in-1)+jdof)
-                end do 
+                  SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)-dd*zz(NDOF*(in-1)+jdof)
+                end do
               enddo
             endif
-          end do 
+          end do
         enddo
       end do
     enddo
@@ -318,8 +318,8 @@ contains
         SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)=1/SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
         do jdof = idof+1, NDOF
           SAINVD(NDOF2*(i-1)+NDOF*(jdof-1)+idof)=SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+jdof)
-        end do 
-      end do 
+        end do
+      end do
     enddo
   end subroutine hecmw_sainv_nn
 
@@ -343,8 +343,8 @@ contains
             do idof = 1, NDOF
               do jdof = 1, NDOF
                 SAINVU(NDOF2*(n-1)+NDOF*(jdof-1)+idof)=SAINVL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)
-              end do 
-            end do 
+              end do
+            end do
             n = n + 1
             cycle flag1
           endif
@@ -353,9 +353,9 @@ contains
     enddo
   end subroutine hecmw_sainv_make_u_nn
 
-!C***
-!C*** FORM_ILU1_nn
-!C*** form ILU(1) matrix
+  !C***
+  !C*** FORM_ILU1_nn
+  !C*** form ILU(1) matrix
   subroutine FORM_ILU0_SAINV_nn(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
@@ -378,9 +378,9 @@ contains
 
   end subroutine FORM_ILU0_SAINV_nn
 
-!C***
-!C*** FORM_ILU1_nn
-!C*** form ILU(1) matrix
+  !C***
+  !C*** FORM_ILU1_nn
+  !C*** form ILU(1) matrix
   subroutine FORM_ILU1_SAINV_nn(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
@@ -407,15 +407,15 @@ contains
     NPLf1= 0
     NPUf1= 0
     do i= 2, hecMAT%NP
-    icou= 0
-    IW1= 0
-    IW1(i)= 1
-    do L= indexL(i-1)+1, indexL(i)
-      IW1(itemL(L))= 1
-    enddo
-    do L= indexU(i-1)+1, indexU(i)
-      IW1(itemU(L))= 1
-    enddo
+      icou= 0
+      IW1= 0
+      IW1(i)= 1
+      do L= indexL(i-1)+1, indexL(i)
+        IW1(itemL(L))= 1
+      enddo
+      do L= indexU(i-1)+1, indexU(i)
+        IW1(itemU(L))= 1
+      enddo
 
       iSk= indexL(i-1) + 1
       iEk= indexL(i)
@@ -561,7 +561,7 @@ contains
     !C===
   end subroutine FORM_ILU1_SAINV_nn
 
- !C
+  !C
   !C***
   !C*** fill_in_S33_SORT
   !C***
@@ -585,7 +585,7 @@ contains
     ir    = N
 
     ip= 0
-1   continue
+    1   continue
     ip= ip + 1
 
     if (ir-l.lt.M) then
@@ -600,7 +600,7 @@ contains
         end do
         i= 0
 
-2       continue
+        2       continue
         STEM(i+1)= ss
         INUM(i+1)= ii
       end do
@@ -657,11 +657,11 @@ contains
       ss= STEM(l)
       ii= INUM(l)
 
-3     continue
+      3     continue
       i= i + 1
       if (STEM(i).lt.ss) goto 3
 
-4     continue
+      4     continue
       j= j - 1
       if (STEM(j).gt.ss) goto 4
 
@@ -677,7 +677,7 @@ contains
 
       goto 3
 
-5     continue
+      5     continue
 
       STEM(l)= STEM(j)
       STEM(j)= ss

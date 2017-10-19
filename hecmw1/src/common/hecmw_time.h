@@ -17,6 +17,3 @@ double HECMW_Wtime(void);
 double HECMW_Wtick(void);
 
 #endif
-
-
-

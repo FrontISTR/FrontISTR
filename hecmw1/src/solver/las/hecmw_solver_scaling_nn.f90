@@ -10,7 +10,7 @@ module hecmw_solver_scaling_nn
   implicit none
 
   private
-  real(kind=kreal), private, allocatable :: SCALE(:)
+  real(kind=kreal), private, allocatable :: scale(:)
 
   public :: hecmw_solver_scaling_fw_nn
   public :: hecmw_solver_scaling_bk_nn
@@ -44,28 +44,28 @@ contains
     IAU => hecMAT%itemU
     B => hecMAT%B
 
-    allocate(SCALE(NDOF*NP))
+    allocate(scale(NDOF*NP))
 
     do i= 1, N
       do k=1, NDOF
-        SCALE (NDOF*(i-1)+k)= 1.d0/dsqrt(dabs(D(NDOF*NDOF*(i-1)+(k-1)*(NDOF+1)+1)))
-      end do      
+        scale (NDOF*(i-1)+k)= 1.d0/dsqrt(dabs(D(NDOF*NDOF*(i-1)+(k-1)*(NDOF+1)+1)))
+      end do
     enddo
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, SCALE, hecMESH%n_node, NDOF)
+    call hecmw_update_m_R (hecMESH, scale, hecMESH%n_node, NDOF)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
     do i= 1, NP
       do j = 1, NDOF
         ip(j)=NDOF*(i-1)+j
-      end do 
+      end do
       do j = 1, NDOF
         do k = 1, NDOF
-          D(NDOF2*(i-1)+NDOF*(j-1)+k)=D(NDOF2*(i-1)+NDOF*(j-1)+k)*SCALE(ip(j))*SCALE(ip(k))
+          D(NDOF2*(i-1)+NDOF*(j-1)+k)=D(NDOF2*(i-1)+NDOF*(j-1)+k)*scale(ip(j))*scale(ip(k))
         end do
-      end do 
+      end do
 
       isL= INL(i-1) + 1
       ieL= INL(i  )
@@ -74,12 +74,12 @@ contains
         inod= IAL(k)
         do ii = 1, NDOF
           iq(ii) = NDOF*(inod-1)+ii
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
-            AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)*SCALE(ip(ii))*SCALE(iq(ij))
+            AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)*scale(ip(ii))*scale(iq(ij))
           end do
-        end do 
+        end do
       enddo
 
       isU= INU(i-1) + 1
@@ -89,19 +89,19 @@ contains
         inod= IAU(k)
         do ii = 1, NDOF
           iq(ii) = NDOF*(inod-1)+ii
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
-            AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)*SCALE(ip(ii))*SCALE(iq(ij))
+            AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)*scale(ip(ii))*scale(iq(ij))
           end do
-        end do 
+        end do
       enddo
     enddo
     !*voption indep (B,SCALE)
     do i= 1, N
       do k = 1, NDOF
-        B(NDOF*(i-1)+k)=B(NDOF*(i-1)+k)*SCALE(NDOF*(i-1)+k)
-      end do 
+        B(NDOF*(i-1)+k)=B(NDOF*(i-1)+k)*scale(NDOF*(i-1)+k)
+      end do
     enddo
   end subroutine hecmw_solver_scaling_fw_nn
 
@@ -135,44 +135,44 @@ contains
     !*voption indep (X,B,SCALE)
     do i= 1, N
       do k=1,NDOF
-        X(NDOF*(i-1)+k)=X(NDOF*(i-1)+k)*SCALE(NDOF*(i-1)+k)
-        B(NDOF*(i-1)+k)=B(NDOF*(i-1)+k)/SCALE(NDOF*(i-1)+k)
-      end do 
+        X(NDOF*(i-1)+k)=X(NDOF*(i-1)+k)*scale(NDOF*(i-1)+k)
+        B(NDOF*(i-1)+k)=B(NDOF*(i-1)+k)/scale(NDOF*(i-1)+k)
+      end do
     enddo
 
     do i= 1, NP
       do j = 1, NDOF
         ip(j)=NDOF*(i-1)+j
-      end do 
+      end do
       do j = 1, NDOF
         do k = 1, NDOF
-          D(NDOF2*(i-1)+NDOF*(j-1)+k)=D(NDOF2*(i-1)+NDOF*(j-1)+k)/(SCALE(ip(j))*SCALE(ip(k)))
+          D(NDOF2*(i-1)+NDOF*(j-1)+k)=D(NDOF2*(i-1)+NDOF*(j-1)+k)/(scale(ip(j))*scale(ip(k)))
         end do
-      end do 
+      end do
 
       isL= INL(i-1) + 1
       ieL= INL(i  )
-      
-        do ii = 1, NDOF
-          iq(ii) = NDOF*(inod-1)+ii
-        end do 
-        do ii = 1, NDOF
-          do ij = 1, NDOF
-            AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)*SCALE(ip(ii))*SCALE(iq(ij))
-          end do
-        end do 
-      
+
+      do ii = 1, NDOF
+        iq(ii) = NDOF*(inod-1)+ii
+      end do
+      do ii = 1, NDOF
+        do ij = 1, NDOF
+          AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)*scale(ip(ii))*scale(iq(ij))
+        end do
+      end do
+
       !*voption indep (IAL,AL,SCALE)
       do k= isL, ieL
         inod= IAL(k)
         do ii = 1, NDOF
           iq(ii) = NDOF*(inod-1)+ii
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
-            AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)/(SCALE(ip(ii))*SCALE(iq(ij)))
+            AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)/(scale(ip(ii))*scale(iq(ij)))
           end do
-        end do 
+        end do
       enddo
 
       isU= INU(i-1) + 1
@@ -182,16 +182,16 @@ contains
         inod= IAU(k)
         do ii = 1, NDOF
           iq(ii) = NDOF*(inod-1)+ii
-        end do 
+        end do
         do ii = 1, NDOF
           do ij = 1, NDOF
-            AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)/(SCALE(ip(ii))*SCALE(iq(ij)))
+            AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AU(NDOF2*(k-1)+NDOF*(ii-1)+ij)/(scale(ip(ii))*scale(iq(ij)))
           end do
-        end do 
+        end do
       enddo
     enddo
 
-    deallocate(SCALE)
+    deallocate(scale)
   end subroutine hecmw_solver_scaling_bk_nn
 
 end module hecmw_solver_scaling_nn

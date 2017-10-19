@@ -3,7 +3,7 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 /*
-	CFSTRDB_Radiate Ver.1.0
+  CFSTRDB_Radiate Ver.1.0
 */
 
 #include "CFSTRDB.h"
@@ -12,94 +12,85 @@
 using namespace std;
 using namespace hecd_util;
 
-
 // static method
 
+const char *CFSTRDB_Radiate::LoadTypeName(int type) {
+  const char *pn[] = {"R0", "R1", "R2", "R3", "R4", "R5", "R6", "unknown"};
 
-const char* CFSTRDB_Radiate::LoadTypeName( int type )
-{
-	const char* pn[] = {
-		"R0", "R1", "R2", "R3", "R4", "R5", "R6",
-		"unknown"
-	};
+  if (type < 0 || type >= TypeNumber()) return "";
 
-	if( type < 0 || type >= TypeNumber() ) return "";
-	return pn[type];
+  return pn[type];
 }
-
 
 CFSTRDB_Radiate::CFSTRDB_Radiate()
- : CFSTRDataBlock(FSTRDB_RADIATE), ItemList()
-{
-	amp1[0] = 0;
-	amp2[0] = 0;
+    : CFSTRDataBlock(FSTRDB_RADIATE), ItemList() {
+  amp1[0] = 0;
+  amp2[0] = 0;
 }
 
+CFSTRDB_Radiate::~CFSTRDB_Radiate() { Clear(); }
 
-CFSTRDB_Radiate::~CFSTRDB_Radiate()
-{
-	Clear();
+void CFSTRDB_Radiate::Clear() {
+  ItemList.clear();
+  amp1[0] = 0;
+  amp2[0] = 0;
 }
 
+void CFSTRDB_Radiate::Write(CHECData *hecd) {
+  char buff[256];
 
-void CFSTRDB_Radiate::Clear()
-{
-	ItemList.clear();
-	amp1[0] = 0;
-	amp2[0] = 0;
+  if (ItemList.size() == 0) return;
+
+  strcpy(buff, "!RADIATE");
+
+  if (amp1[0] != 0) {
+    strcat(buff, ",AMP1=");
+    strcat(buff, amp1);
+  }
+
+  if (amp2[0] != 0) {
+    strcat(buff, ",AMP2=");
+    strcat(buff, amp2);
+  }
+
+  hecd->WriteHeader(buff);
+  vector<CItem>::iterator iter;
+
+  for (iter = ItemList.begin(); iter != ItemList.end(); iter++) {
+    hecd->WriteData("SSFF", iter->egrp, LoadTypeName(iter->type), iter->value,
+                    iter->sink);
+  }
 }
 
+bool CFSTRDB_Radiate::Read(CHECData *hecd, char *header_line) {
+  int rcode[10];
+  char s[256];
+  int type;
+  amp1[0] = 0;
+  amp2[0] = 0;
 
-void CFSTRDB_Radiate::Write( CHECData* hecd )
-{
-	char buff[256];
+  if (!hecd->ParseHeader(header_line, rcode, "SS", "AMP1", amp1, "AMP2", amp2))
+    return false;
 
-	if( ItemList.size() == 0 ) return;
+  while (1) {
+    CItem item;
+    bool fg =
+        hecd->ReadData(rcode, "SSFF", item.egrp, s, &item.value, &item.sink);
 
-	strcpy( buff, "!RADIATE");
-	if( amp1[0] != 0 ) {
-		strcat( buff, ",AMP1=");
-		strcat( buff, amp1);
-	}
-	if( amp2[0] != 0 ) {
-		strcat( buff, ",AMP2=");
-		strcat( buff, amp2);
-	}
-	hecd->WriteHeader( buff );
+    if (!fg) break;
 
-	vector<CItem>::iterator iter;
-	for(iter = ItemList.begin(); iter != ItemList.end(); iter++){
-		hecd->WriteData( "SSFF",
-			iter->egrp, LoadTypeName( iter->type ), iter->value, iter->sink );
-	}
+    cleanup_token(s);
+    toupper(s);
+
+    for (type = 0; type < TypeNumber(); type++) {
+      if (strcmp(LoadTypeName(type), s) == 0) break;
+    }
+
+    if (type == TypeNumber()) return false;
+
+    item.type = type;
+    ItemList.push_back(item);
+  }
+
+  return true;
 }
-
-
-
-bool CFSTRDB_Radiate::Read( CHECData* hecd, char* header_line )
-{
-	int rcode[10];
-	char s[256];
-	int type;
-
-	amp1[0] = 0;
-	amp2[0] = 0;
-	if(!hecd->ParseHeader( header_line, rcode, "SS", "AMP1", amp1, "AMP2", amp2 )) return false;
-
-	while(1) {
-		CItem item;
-		bool fg = hecd->ReadData( rcode, "SSFF", item.egrp, s, &item.value, &item.sink );
-		if( !fg ) break;
-
-		cleanup_token(s);
-		toupper(s);
-		for( type=0; type<TypeNumber(); type++) {
-			if( strcmp( LoadTypeName(type), s )==0) break;
-		}
-		if( type == TypeNumber()) return false;
-		item.type = type;
-		ItemList.push_back( item );
-	}
-	return true;
-}
-

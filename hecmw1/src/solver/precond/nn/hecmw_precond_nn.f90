@@ -12,7 +12,7 @@ module hecmw_precond_nn
   use hecmw_precond_ML_nn
   use hecmw_precond_SAINV_nn
   use hecmw_precond_RIF_nn
-  USE hecmw_solver_direct_MUMPS
+  use hecmw_solver_direct_MUMPS
   use hecmw_solver_las_nn
   implicit none
 
@@ -30,26 +30,26 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: sym
 
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_nn_setup(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_nn_setup(hecMAT)
-      CASE(5)
+      case(5)
         call hecmw_precond_ML_nn_setup(hecMAT, hecMESH, sym)
-      CASE(7)
+      case(7)
         call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
-      CASE(10,11,12)
+      case(10,11,12)
         call hecmw_precond_BILU_nn_setup(hecMAT)
-      CASE(20)
+      case(20)
         call hecmw_precond_nn_SAINV_setup(hecMAT)
-      CASE(21)
+      case(21)
         call hecmw_precond_RIF_nn_setup(hecMAT)
-      CASE DEFAULT
+      case default
         write (*,'(/a )')'#### HEC-MW-SOLVER-E-1001'
         write (*,'( a/)')'    inconsistent solver/preconditioning'
         call hecmw_abort( hecmw_comm_get_comm())
-    END SELECT
+    end select
 
 
   end subroutine hecmw_precond_nn_setup
@@ -58,21 +58,21 @@ contains
     implicit none
     type (hecmwST_matrix), intent(inout) :: hecMAT
 
-    SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-      CASE(1,2)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
         call hecmw_precond_SSOR_nn_clear(hecMAT)
-      CASE(3)
+      case(3)
         call hecmw_precond_DIAG_nn_clear()
-      CASE(5)
+      case(5)
         call hecmw_precond_ML_nn_clear()
-      CASE(10:12)
+      case(10:12)
         call hecmw_precond_BILU_nn_clear()
-      CASE(20)
+      case(20)
         call hecmw_precond_nn_SAINV_clear()
-      CASE(21)
+      case(21)
         call hecmw_precond_RIF_nn_clear()
-      CASE DEFAULT
-    END SELECT
+      case default
+    end select
 
   end subroutine hecmw_precond_nn_clear
 
@@ -95,21 +95,21 @@ contains
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     do iterPRE= 1, iterPREmax
       START_TIME = hecmw_Wtime()
-      SELECT CASE(hecmw_mat_get_precond( hecMAT ))
-        CASE(1,2)
+      select case(hecmw_mat_get_precond( hecMAT ))
+        case(1,2)
           call hecmw_precond_SSOR_nn_apply(ZP,hecMAT%NDOF)
-        CASE(3)
+        case(3)
           call hecmw_precond_DIAG_nn_apply(ZP,hecMAT%NDOF)
-        CASE(5)
+        case(5)
           call hecmw_precond_ML_nn_apply(ZP)
-        CASE(10:12)
+        case(10:12)
           call hecmw_precond_BILU_nn_apply(ZP,hecMAT%NDOF)
-        CASE(20)
+        case(20)
           call hecmw_precond_nn_SAINV_apply(R,ZP)
-        CASE(21)
+        case(21)
           call hecmw_precond_RIF_nn_apply(ZP,hecMAT%NDOF)
-        CASE DEFAULT
-      END SELECT     
+        case default
+      end select
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME
 

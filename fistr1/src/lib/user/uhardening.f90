@@ -6,33 +6,33 @@
 !>  tangent
 !> This subroutine calculate isotropic hardening tangent
 function uhardening( matl, pstrain )
-    use hecmw
-    implicit none
-    real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
-    real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
-    real(kind=kreal) :: uhardening
+  use hecmw
+  implicit none
+  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: pstrain !< plastic strain
+  real(kind=kreal) :: uhardening
 
-    uhardening = 0.d0
+  uhardening = 0.d0
 end function
 
 !> This subroutine calculate kinematic hardening tangent
 function ukhardening( matl, pstrain )
-    use hecmw
-    implicit none
-    real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
-    real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
-    real(kind=kreal) :: ukhardening
+  use hecmw
+  implicit none
+  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: pstrain !< plastic strain
+  real(kind=kreal) :: ukhardening
 
-    ukhardening = 0.d0
+  ukhardening = 0.d0
 end function
 
 !> This subroutine calculate current yield value
 function uCurrYield( matl, pstrain )
-    use hecmw
-    implicit none
-    real( KIND=kreal ), INTENT(IN) :: matl(:) !< material proerties
-    real( KIND=kreal ), INTENT(IN) :: pstrain !< plastic strain
-    real(kind=kreal) :: uCurrYield
+  use hecmw
+  implicit none
+  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: pstrain !< plastic strain
+  real(kind=kreal) :: uCurrYield
 
-    uCurrYield = 0.d0
+  uCurrYield = 0.d0
 end function

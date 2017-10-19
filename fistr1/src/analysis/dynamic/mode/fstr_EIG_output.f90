@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 module m_fstr_EIG_output
 
-  contains
+contains
 
   subroutine fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
     use m_fstr
@@ -12,15 +12,15 @@ module m_fstr_EIG_output
     use hecmw_solver_las
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_eigen        ) :: fstrEIG
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, jn, nget
     integer(kind=kint) :: in1, in2, in3
     real(kind=kreal)   :: chk, gm, r1, r2, r3
     real(kind=kreal), allocatable :: s(:), t(:), u(:)
-    real(kind=kreal), pointer :: mass(:), eigval(:), eigvec(:,:)
+    real(kind=kreal), pointer     :: mass(:), eigval(:), eigvec(:,:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -55,8 +55,8 @@ module m_fstr_EIG_output
           r2 = r2 + mass(in2)*eigvec(in2,i)
           r3 = r3 + mass(in3)*eigvec(in3,i)
           gm = gm + mass(in1)*eigvec(in1,i)*eigvec(in1,i) &
-                & + mass(in2)*eigvec(in2,i)*eigvec(in2,i) &
-                & + mass(in3)*eigvec(in3,i)*eigvec(in3,i)
+            & + mass(in2)*eigvec(in2,i)*eigvec(in2,i) &
+            & + mass(in3)*eigvec(in3,i)*eigvec(in3,i)
         enddo
       elseif(NDOF == 2)then
         do j=1, N
@@ -65,7 +65,7 @@ module m_fstr_EIG_output
           r1 = r1 + mass(in1)*eigvec(in1,i)
           r2 = r2 + mass(in2)*eigvec(in2,i)
           gm = gm + mass(in1)*eigvec(in1,i)*eigvec(in1,i) &
-                & + mass(in2)*eigvec(in2,i)*eigvec(in2,i)
+            & + mass(in2)*eigvec(in2,i)*eigvec(in2,i)
         enddo
       endif
       call hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
@@ -113,7 +113,7 @@ module m_fstr_EIG_output
       chk = dsqrt(chk)
 
       if(myrank == 0)then
-         write(IMSG,'(2X,I5,2X,5E15.6)') jn, eigval(jn), chk
+        write(IMSG,'(2X,I5,2X,5E15.6)') jn, eigval(jn), chk
       endif
     enddo
 
@@ -128,10 +128,10 @@ module m_fstr_EIG_output
     use m_hecmw2fstr_mesh_conv
     use hecmw_util
     implicit none
-    type (hecmwST_local_mesh ) :: hecMESH
-    type (hecmwST_matrix     ) :: hecMAT
-    type (fstr_eigen         ) :: fstrEIG
-    type (hecmwST_result_data) :: fstrRESULT
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(hecmwST_matrix)      :: hecMAT
+    type(fstr_eigen)          :: fstrEIG
+    type(hecmwST_result_data) :: fstrRESULT
 
     integer(kind=kint) :: i, istep, nget, NP, NDOF, NPNDOF, totalmpc, MPC_METHOD
     real(kind=kreal)   :: t1
@@ -209,12 +209,12 @@ module m_fstr_EIG_output
     use hecmw_util
     use m_fstr_EIG_lanczos_util
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    type (hecmwST_matrix    ) :: hecMAT
-    type (fstr_eigen        ) :: fstrEIG
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
 
     integer(kind=kint) :: i, j, in, iter ,nget
-    real(kind=kreal) :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
+    real(kind=kreal)   :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
     real(kind=kreal), pointer :: eigval(:)
 
     nget = fstrEIG%nget
@@ -232,11 +232,11 @@ module m_fstr_EIG_output
       write(ILOG,"(a,1pe12.4)")"TOTAL MASS = ",fstrEIG%totalmass
       write(ILOG,"(a)")""
       write(ILOG,"(3a)")"                   ANGLE       FREQUENCY   ",&
-      "PARTICIPATION FACTOR                EFFECTIVE MASS"
+        "PARTICIPATION FACTOR                EFFECTIVE MASS"
       write(ILOG,"(3a)")"  NO.  EIGENVALUE  FREQUENCY   (HZ)        ",&
-      "X           Y           Z           X           Y           Z"
+        "X           Y           Z           X           Y           Z"
       write(ILOG,"(3a)")"  ---  ----------  ----------  ----------  ",&
-      "----------  ----------  ----------  ----------  ----------  ----------"
+        "----------  ----------  ----------  ----------  ----------  ----------"
       write(*,*)""
       write(*,"(a)")"#----------------------------------#"
       write(*,"(a)")"#  RESULT OF EIGEN VALUE ANALYSIS  #"
@@ -246,11 +246,11 @@ module m_fstr_EIG_output
       write(*,"(a,1pe12.4)")"### TOTAL MASS = ",fstrEIG%totalmass
       write(*,"(a)")""
       write(*,"(3a)")"       PERIOD     FREQUENCY  ",&
-      "PARTICIPATION FACTOR             EFFECTIVE MASS"
+        "PARTICIPATION FACTOR             EFFECTIVE MASS"
       write(*,"(3a)")"  NO.  [Sec]      [HZ]       ",&
-      "X          Y          Z          X          Y          Z"
+        "X          Y          Z          X          Y          Z"
       write(*,"(3a)")"  ---  ---------  ---------  ",&
-      "---------  ---------  ---------  ---------  ---------  ---------"
+        "---------  ---------  ---------  ---------  ---------  ---------"
 
       in = 0
       do i=1, nget

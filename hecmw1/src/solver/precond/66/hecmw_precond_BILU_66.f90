@@ -64,28 +64,28 @@ contains
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
     if (PRECOND.eq.10) call FORM_ILU0_66 &
-         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_66 &
-         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_66 &
-         &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-         &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
 
     allocate(ALU(36*NP))
 
     do ip= 1, N
       call ILU1a66 (ALUtmp,                                    &
-    & Dlu0(36*ip-35), Dlu0(36*ip-34), Dlu0(36*ip-33), Dlu0(36*ip-32),&
-    & Dlu0(36*ip-31), Dlu0(36*ip-30), Dlu0(36*ip-29), Dlu0(36*ip-28),&
-    & Dlu0(36*ip-27), Dlu0(36*ip-26), Dlu0(36*ip-25), Dlu0(36*ip-24),&
-    & Dlu0(36*ip-23), Dlu0(36*ip-22), Dlu0(36*ip-21), Dlu0(36*ip-20),&
-    & Dlu0(36*ip-19), Dlu0(36*ip-18), Dlu0(36*ip-17), Dlu0(36*ip-16),&
-    & Dlu0(36*ip-15), Dlu0(36*ip-14), Dlu0(36*ip-13), Dlu0(36*ip-12),&
-    & Dlu0(36*ip-11), Dlu0(36*ip-10), Dlu0(36*ip-9 ), Dlu0(36*ip-8 ),&
-    & Dlu0(36*ip-7), Dlu0(36*ip-6), Dlu0(36*ip-5), Dlu0(36*ip-4),&
-    & Dlu0(36*ip-3), Dlu0(36*ip-2), Dlu0(36*ip-1), Dlu0(36*ip  ))
+        & Dlu0(36*ip-35), Dlu0(36*ip-34), Dlu0(36*ip-33), Dlu0(36*ip-32),&
+        & Dlu0(36*ip-31), Dlu0(36*ip-30), Dlu0(36*ip-29), Dlu0(36*ip-28),&
+        & Dlu0(36*ip-27), Dlu0(36*ip-26), Dlu0(36*ip-25), Dlu0(36*ip-24),&
+        & Dlu0(36*ip-23), Dlu0(36*ip-22), Dlu0(36*ip-21), Dlu0(36*ip-20),&
+        & Dlu0(36*ip-19), Dlu0(36*ip-18), Dlu0(36*ip-17), Dlu0(36*ip-16),&
+        & Dlu0(36*ip-15), Dlu0(36*ip-14), Dlu0(36*ip-13), Dlu0(36*ip-12),&
+        & Dlu0(36*ip-11), Dlu0(36*ip-10), Dlu0(36*ip-9 ), Dlu0(36*ip-8 ),&
+        & Dlu0(36*ip-7), Dlu0(36*ip-6), Dlu0(36*ip-5), Dlu0(36*ip-4),&
+        & Dlu0(36*ip-3), Dlu0(36*ip-2), Dlu0(36*ip-1), Dlu0(36*ip  ))
       ALU(36*ip-35)= ALUtmp(1,1)
       ALU(36*ip-34)= ALUtmp(1,2)
       ALU(36*ip-33)= ALUtmp(1,3)
@@ -265,8 +265,8 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU0_66                                   &
-       &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -379,8 +379,8 @@ contains
         D66= Dlu0(36*k   )
 
         call ILU1a66 (DkINV,D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
-  & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
-  & D61,D62,D63,D64,D65,D66)
+          & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
+          & D61,D62,D63,D64,D65,D66)
 
         Aik(1,1)= ALlu0(36*kk-35)
         Aik(1,2)= ALlu0(36*kk-34)
@@ -596,8 +596,8 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_66                                   &
-       &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -946,8 +946,8 @@ contains
         D66= Dlu0(36*k   )
 
         call ILU1a66 (DkINV,D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
-  & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
-  & D61,D62,D63,D64,D65,D66)
+          & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
+          & D61,D62,D63,D64,D65,D66)
 
         do kk1= inumFI1L(i-1)+1, inumFI1L(i)
           if (k.eq.FI1L(kk1)) then
@@ -1172,8 +1172,8 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_66 &
-       &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-       &    SIGMA, SIGMA_DIAG)
+      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA, SIGMA_DIAG)
     implicit none
     integer(kind=kint ), intent(in):: N, NP, NPU, NPL
     real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
@@ -1382,9 +1382,9 @@ contains
     IWsU= 0
     do i= 1, NP
       IWsL(i)= INL(i)-INL(i-1) + inumFI2L(i)-inumFI2L(i-1) +          &
-           &                             inumFI1L(i) + IWsL(i-1)
+        &                             inumFI1L(i) + IWsL(i-1)
       IWsU(i)= INU(i)-INU(i-1) + inumFI2U(i)-inumFI2U(i-1) +          &
-           &                             inumFI1U(i) + IWsU(i-1)
+        &                             inumFI1U(i) + IWsU(i-1)
     enddo
 
     do i= 2, NP
@@ -1750,8 +1750,8 @@ contains
         D66= Dlu0(36*k   )
 
         call ILU1a66 (DkINV,D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
-  & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
-  & D61,D62,D63,D64,D65,D66)
+          & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
+          & D61,D62,D63,D64,D65,D66)
 
         Aik(1,1)= ALlu0(36*kk-35)
         Aik(1,2)= ALlu0(36*kk-34)
@@ -1987,7 +1987,7 @@ contains
     ir    = N
 
     ip= 0
-1   continue
+    1   continue
     ip= ip + 1
 
     if (ir-l.lt.M) then
@@ -2002,7 +2002,7 @@ contains
         end do
         i= 0
 
-2       continue
+        2       continue
         STEM(i+1)= ss
         INUM(i+1)= ii
       end do
@@ -2059,11 +2059,11 @@ contains
       ss= STEM(l)
       ii= INUM(l)
 
-3     continue
+      3     continue
       i= i + 1
       if (STEM(i).lt.ss) goto 3
 
-4     continue
+      4     continue
       j= j - 1
       if (STEM(j).gt.ss) goto 4
 
@@ -2079,7 +2079,7 @@ contains
 
       goto 3
 
-5     continue
+      5     continue
 
       STEM(l)= STEM(j)
       STEM(j)= ss
@@ -2117,8 +2117,8 @@ contains
   !C    computes LU factorization of 3*3 Diagonal Block
   !C
   subroutine ILU1a66 (ALU, D11,D12,D13,D14,D15,D16,D21,D22,D23,D24,D25,D26, &
-  & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
-  & D61,D62,D63,D64,D65,D66)
+      & D31,D32,D33,D34,D35,D36,D41,D42,D43,D44,D45,D46,D51,D52,D53,D54,D55,D56, &
+      & D61,D62,D63,D64,D65,D66)
     use hecmw_util
     implicit none
     real(kind=kreal) :: ALU(6,6), PW(6)

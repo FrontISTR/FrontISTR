@@ -6,12 +6,10 @@
 #ifndef HECMW_LIB_FC_INCLUDED
 #define HECMW_LIB_FC_INCLUDED
 
-
 extern char *HECMW_strcpy_f2c(const char *fstr, int flen);
 
-
-extern char *HECMW_strcpy_f2c_r(const char *fstr, int flen, char *buf, int bufsize);
-
+extern char *HECMW_strcpy_f2c_r(const char *fstr, int flen, char *buf,
+                                int bufsize);
 
 extern int HECMW_strcpy_c2f(const char *cstr, char *fstr, int flen);
 

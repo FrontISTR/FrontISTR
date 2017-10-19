@@ -22,23 +22,19 @@
 #include "hecmw_conn_conv.h"
 #include "hecmw_io_nastran.h"
 
-
 /* DUMMY */
-int HECMW_read_nastran_mesh(const char *filename)
-{
-	fprintf( stdout, "##FATAL : HEC-MW IO ERROR : Nastran data is not supported\n");
-	fflush( stdout );
-	HECMW_abort( HECMW_comm_get_comm() );
-	return -1;
+int HECMW_read_nastran_mesh(const char *filename) {
+  fprintf(stdout,
+          "##FATAL : HEC-MW IO ERROR : Nastran data is not supported\n");
+  fflush(stdout);
+  HECMW_abort(HECMW_comm_get_comm());
+  return -1;
 }
 
-
-struct hecmwST_local_mesh *
-HECMW_get_nastran_mesh(const char *filename)
-{
-	fprintf( stdout, "##FATAL : HEC-MW IO ERROR : Nastran data is not supported\n");
-	fflush( stdout );
-	HECMW_abort( HECMW_comm_get_comm() );
-	return NULL;
+struct hecmwST_local_mesh *HECMW_get_nastran_mesh(const char *filename) {
+  fprintf(stdout,
+          "##FATAL : HEC-MW IO ERROR : Nastran data is not supported\n");
+  fflush(stdout);
+  HECMW_abort(HECMW_comm_get_comm());
+  return NULL;
 }
-

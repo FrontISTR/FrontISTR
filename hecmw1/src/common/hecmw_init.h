@@ -10,4 +10,3 @@ extern int HECMW_init(int *argc, char ***argv);
 extern int HECMW_init_ex(int *argc, char ***argv, const char *ctrlfile);
 
 #endif
-

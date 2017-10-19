@@ -21,12 +21,15 @@ struct hecmw_varray_int;
  *
  */
 struct hecmw_graph {
-    int m_num_vertex; /**< number of vertices */
-    int m_num_edge;   /**< number of edges (double in both ways) */
-    struct hecmw_varray_int *m_edge_index;    /**< edge index array (length is m_num_vertex+1) */
-    struct hecmw_varray_int *m_edge_item;     /**< edge item array (length is m_edge_index[m_num_vertex]) */
-    struct hecmw_varray_int *m_vertex_weight; /**< vertex weight array (length is m_num_vertex) */
-    int is_ref;
+  int m_num_vertex; /**< number of vertices */
+  int m_num_edge;   /**< number of edges (double in both ways) */
+  struct hecmw_varray_int
+      *m_edge_index; /**< edge index array (length is m_num_vertex+1) */
+  struct hecmw_varray_int *m_edge_item; /**< edge item array (length is
+                                           m_edge_index[m_num_vertex]) */
+  struct hecmw_varray_int
+      *m_vertex_weight; /**< vertex weight array (length is m_num_vertex) */
+  int is_ref;
 };
 
 /** Initialize.
@@ -34,18 +37,15 @@ struct hecmw_graph {
  * @retval HECMW_SUCCESS normal return
  * @retval HECMW_ERROR   failed to initialize
  */
-extern int
-HECMW_graph_init(
-    struct hecmw_graph *graph /**< [inout] graph */
-    );
+extern int HECMW_graph_init(struct hecmw_graph *graph /**< [inout] graph */
+                            );
 
 /** Initialize with given index and item arrays.
  *
  * @retval HECMW_SUCCESS normal return
  * @retval HECMW_ERROR   failed to initialize
  */
-extern int
-HECMW_graph_init_with_arrays(
+extern int HECMW_graph_init_with_arrays(
     struct hecmw_graph *graph, /**< [inout] graph */
     int num_vertex,            /**< [in] number of vertices */
     int *edge_index,           /**< [in] edge index array */
@@ -54,10 +54,8 @@ HECMW_graph_init_with_arrays(
 
 /** Finalize.
  */
-extern void
-HECMW_graph_finalize(
-    struct hecmw_graph *graph /**< [inout] graph */
-    );
+extern void HECMW_graph_finalize(struct hecmw_graph *graph /**< [inout] graph */
+                                 );
 
 /** Set number of vertices.
  */
@@ -122,10 +120,11 @@ extern const int *HECMW_graph_getEdgeItem(
  * @retval HECMW_ERROR   failed to create degenerated graph
  */
 extern int HECMW_graph_degeneGraph(
-    struct hecmw_graph *graph,          /**< [inout] graph */
-    const struct hecmw_graph *refgraph, /**< [in] original graph to be degenerated */
-    int num_part,                       /**< [in] number of vertices after degeneration */
-    const int *parttab                  /**< [in] id of each vertex after degeneration */
+    struct hecmw_graph *graph, /**< [inout] graph */
+    const struct hecmw_graph
+        *refgraph,     /**< [in] original graph to be degenerated */
+    int num_part,      /**< [in] number of vertices after degeneration */
+    const int *parttab /**< [in] id of each vertex after degeneration */
     );
 
 #endif /* HECMW_GRAPH_INCLUDED */

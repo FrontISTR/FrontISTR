@@ -62,14 +62,14 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     ! <<< added for turning
 
-    IF (hecmw_mat_get_usejad(hecMAT).ne.0) THEN
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       Tcomm = 0.d0
       START_TIME = hecmw_Wtime()
       call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-    ELSE
+    else
 
       N = hecMAT%N
       NP = hecMAT%NP
@@ -98,7 +98,7 @@ contains
           if (elementCount > (blockNum + 1) * numOfElementPerBlock) then
             endPos(blockNum) = i
             ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
-            !      startPos(blockNum), endPos(blockNum)
+              !      startPos(blockNum), endPos(blockNum)
             blockNum = blockNum + 1
             startPos(blockNum) = i + 1
             if (blockNum == (numOfBlock - 1)) exit
@@ -106,17 +106,17 @@ contains
         enddo
         endPos(blockNum) = N
         ! write(9000+hecMESH%my_rank,*) mod(blockNum, numOfThread), &
-        !      startPos(blockNum), endPos(blockNum)
+          !      startPos(blockNum), endPos(blockNum)
         ! for irregular data
         do i= blockNum+1, numOfBlock-1
           startPos(i) = N
           endPos(i) = N-1
           ! write(9000+hecMESH%my_rank,*) mod(i, numOfThread), &
-          !      startPos(i), endPos(i)
+            !      startPos(i), endPos(i)
         end do
 
         call hecmw_tuning_fx_calc_sector_cache(NP, 6, &
-             sectorCacheSize0, sectorCacheSize1)
+          sectorCacheSize0, sectorCacheSize1)
 
         isFirst = .false.
       endif
@@ -132,12 +132,12 @@ contains
       !call fapp_start("loopInMatvec66", 1, 0)
       !call start_collection("loopInMatvec66")
 
-!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-!OCL CACHE_SUBSECTOR_ASSIGN(X)
+      !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+      !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
-!$OMP PARALLEL DEFAULT(NONE) &
-!$OMP&PRIVATE(i,X1,X2,X3,X4,X5,X6,YV1,YV2,YV3,YV4,YV5,YV6,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-!$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
+      !$OMP PARALLEL DEFAULT(NONE) &
+        !$OMP&PRIVATE(i,X1,X2,X3,X4,X5,X6,YV1,YV2,YV3,YV4,YV5,YV6,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -198,10 +198,10 @@ contains
           Y(6*i  )= YV6
         enddo
       enddo
-!$OMP END PARALLEL
+      !$OMP END PARALLEL
 
-!OCL END_CACHE_SUBSECTOR
-!OCL END_CACHE_SECTOR_SIZE
+      !OCL END_CACHE_SUBSECTOR
+      !OCL END_CACHE_SECTOR_SIZE
 
       !call stop_collection("loopInMatvec66")
       !call fapp_stop("loopInMatvec66", 1, 0)
@@ -209,7 +209,7 @@ contains
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
 
-    ENDIF
+    endif
 
     if (hecMAT%cmat%n_val > 0) then
       call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * hecMAT%NDOF )
@@ -265,7 +265,7 @@ contains
 
     Tcomm = 0.d0
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
-         hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+      hecMAT%B, hecMAT%B, bnorm2, Tcomm)
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
@@ -304,15 +304,15 @@ contains
       Y(i)= X(i)
     enddo
 
-!    do i= 1, hecMESH%mpc%n_mpc
-!      k = hecMESH%mpc%mpc_index(i-1) + 1
-!      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-!      Y(kk) = 0.d0
-!      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-!        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-!        Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
-!      enddo
-!    enddo
+    !    do i= 1, hecMESH%mpc%n_mpc
+    !      k = hecMESH%mpc%mpc_index(i-1) + 1
+    !      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+    !      Y(kk) = 0.d0
+    !      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
+    !        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+    !        Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
+    !      enddo
+    !    enddo
 
   end subroutine hecmw_Tvec_66
 
@@ -342,15 +342,15 @@ contains
       Y(i)= X(i)
     enddo
 
-!    do i= 1, hecMESH%mpc%n_mpc
-!      k = hecMESH%mpc%mpc_index(i-1) + 1
-!      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-!      Y(kk) = 0.d0
-!      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-!        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-!        Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
-!      enddo
-!    enddo
+    !    do i= 1, hecMESH%mpc%n_mpc
+    !      k = hecMESH%mpc%mpc_index(i-1) + 1
+    !      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+    !      Y(kk) = 0.d0
+    !      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
+    !        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+    !        Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
+    !      enddo
+    !    enddo
 
   end subroutine hecmw_Ttvec_66
 
@@ -403,11 +403,11 @@ contains
     XG = 0.d0
 
     !C-- Generate {xg} from mpc_const
-!    do i = 1, hecMESH%mpc%n_mpc
-!      k = hecMESH%mpc%mpc_index(i-1) + 1
-!      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-!      XG(kk) = hecMESH%mpc%mpc_const(i)
-!    enddo
+    !    do i = 1, hecMESH%mpc%n_mpc
+    !      k = hecMESH%mpc%mpc_index(i-1) + 1
+    !      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
+    !      XG(kk) = hecMESH%mpc%mpc_const(i)
+    !    enddo
 
     !C-- {w} = {b} - [A]{xg}
     call hecmw_matresid_66 (hecMESH, hecMAT, XG, B, W, COMMtime)
@@ -441,11 +441,11 @@ contains
       X(i)= W(i)
     enddo
 
-!    do i = 1, hecMESH%mpc%n_mpc
-!      k = hecMESH%mpc%mpc_index(i-1) + 1
-!      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-!      X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
-!    enddo
+    !    do i = 1, hecMESH%mpc%n_mpc
+    !      k = hecMESH%mpc%mpc_index(i-1) + 1
+    !      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
+    !      X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
+    !    enddo
 
   end subroutine hecmw_tback_x_66
 

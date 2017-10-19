@@ -1,19 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 1.00                                               !
-!                                                                      !
-!     Last Update : 2006/06/01                                         !
-!        Category : Adaptive Mesh Refinement                           !
-!                                                                      !
-!            Written by Kengo Nakajima (Univ. of Tokyo)                !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using Hight End Computing Middleware (HEC-MW)"      !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2016 The University of Tokyo
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+!> \brief Adaptive Mesh Refinement
 
 !C
 !C***
@@ -22,23 +11,23 @@
 !C
 !C    creates NEW BOUNDARY POINTERs
 !C
-      subroutine hecmw_adapt_bc_pointer (hecMESH)
+subroutine hecmw_adapt_bc_pointer (hecMESH)
 
-      use  hecmw_util
-      implicit REAL*8 (A-H,O-Z)
-      integer(kind=kint), dimension(:  ), allocatable :: IW1, IW2, IW3
-      integer(kind=kint), dimension(:,:), allocatable :: IUPD
-      type(hecmwST_local_mesh)             :: hecMESH
+  use  hecmw_util
+  implicit real*8 (A-H,O-Z)
+  integer(kind=kint), dimension(:  ), allocatable :: IW1, IW2, IW3
+  integer(kind=kint), dimension(:,:), allocatable :: IUPD
+  type(hecmwST_local_mesh)             :: hecMESH
 
-      if (hecMESH%node_group%n_grp.ne.0) then
-      if (hecMESH%node_group%grp_index(hecMESH%node_group%n_grp).ne.0) then
-!C
-!C +------------+
-!C | NODE-GROUP |
-!C +------------+
-!C===
+  if (hecMESH%node_group%n_grp.ne.0) then
+    if (hecMESH%node_group%grp_index(hecMESH%node_group%n_grp).ne.0) then
+      !C
+      !C +------------+
+      !C | NODE-GROUP |
+      !C +------------+
+      !C===
       allocate (IUPD(hecMESH%n_adapt_node_cur,                          &
-     &               hecMESH%node_group%n_grp))
+        &               hecMESH%node_group%n_grp))
       allocate (IW1 (hecMESH%n_adapt_node_cur))
       allocate (IW2 (hecMESH%node_group%n_grp))
 
@@ -48,10 +37,10 @@
 
       do ig= 1, hecMESH%node_group%n_grp
         icou0= 0
-          IW1= 0
+        IW1= 0
         do k= hecMESH%node_group%grp_index(ig-1)+1,                     &
-     &        hecMESH%node_group%grp_index(ig)
-               nod      = hecMESH%node_group%grp_item(k)
+            &        hecMESH%node_group%grp_index(ig)
+          nod      = hecMESH%node_group%grp_item(k)
           icou          = icou  + 1
           icou0         = icou0 + 1
           IW1 (nod     )= 1
@@ -63,7 +52,7 @@
           nod2= hecMESH%adapt_edge_node(2*ie  )
 
           if (IW1(nod1).eq.1  .and. IW1(nod2).eq.1 .and.                &
-     &        hecMESH%adapt_iemb(ie ).ne.0) then
+              &        hecMESH%adapt_iemb(ie ).ne.0) then
             nod3          = hecMESH%adapt_IWK(ie)
             icou          = icou + 1
             icou0         = icou0 + 1
@@ -73,16 +62,16 @@
         IW2(ig)= icou0
       enddo
 
-!C
-!C-- NEW POINTERs
+      !C
+      !C-- NEW POINTERs
       nnn1= hecMESH%node_group%grp_index(hecMESH%node_group%n_grp)
       deallocate (hecMESH%node_group%grp_item)
-        allocate (hecMESH%node_group%grp_item(icou))
+      allocate (hecMESH%node_group%grp_item(icou))
 
       hecMESH%node_group%grp_index= 0
       do ig= 1, hecMESH%node_group%n_grp
         hecMESH%node_group%grp_index(ig)=                               &
-     &  hecMESH%node_group%grp_index(ig-1) + IW2(ig)
+          &  hecMESH%node_group%grp_index(ig-1) + IW2(ig)
       enddo
       do ig= 1, hecMESH%node_group%n_grp
         do k= 1, IW2(ig)
@@ -92,22 +81,22 @@
       enddo
 
       nnn2= hecMESH%node_group%grp_index(hecMESH%node_group%n_grp)
-!      write (*,'(a, i5, 2i8)') '    node group', hecMESH%my_rank, nnn1, nnn2
+      !      write (*,'(a, i5, 2i8)') '    node group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2)
-!C===
-      endif
-      endif
+      !C===
+    endif
+  endif
 
-      if (hecMESH%elem_group%n_grp.ne.0) then
-      if (hecMESH%elem_group%grp_index(hecMESH%elem_group%n_grp).ne.0) then
-!C
-!C +---------------+
-!C | ELEMENT-GROUP |
-!C +---------------+
-!C===
+  if (hecMESH%elem_group%n_grp.ne.0) then
+    if (hecMESH%elem_group%grp_index(hecMESH%elem_group%n_grp).ne.0) then
+      !C
+      !C +---------------+
+      !C | ELEMENT-GROUP |
+      !C +---------------+
+      !C===
       allocate (IUPD(hecMESH%n_elem,                                    &
-     &               hecMESH%elem_group%n_grp))
+        &               hecMESH%elem_group%n_grp))
       allocate (IW1 (hecMESH%n_elem))
       allocate (IW2 (hecMESH%elem_group%n_grp))
 
@@ -117,10 +106,10 @@
 
       do ig= 1, hecMESH%elem_group%n_grp
         icou0= 0
-          IW1= 0
+        IW1= 0
         do k= hecMESH%elem_group%grp_index(ig-1)+1,                     &
-     &        hecMESH%elem_group%grp_index(ig)
-               icel     = hecMESH%elem_group%grp_item(k)
+            &        hecMESH%elem_group%grp_index(ig)
+          icel     = hecMESH%elem_group%grp_item(k)
           icou          = icou  + 1
           icou0         = icou0 + 1
           IW1 (icel    )= 1
@@ -129,13 +118,13 @@
 
         do icel= 1, hecMESH%n_elem
           if (hecMESH%adapt_type(icel).ne.0.and.IW1(icel).eq.1) then
-            iS= hecMESH%adapt_children_index(icel-1) + 1
+            is= hecMESH%adapt_children_index(icel-1) + 1
             iE= hecMESH%adapt_children_index(icel)
-            icS= hecMESH%adapt_children_local(iS)
+            icS= hecMESH%adapt_children_local(is)
 
             if (hecMESH%when_i_was_refined_elem(icS).eq.                &
-     &          hecMESH%n_adapt) then
-              do k= iS, iE
+                &          hecMESH%n_adapt) then
+              do k= is, iE
                 if (hecMESH%adapt_children_item(2*k-1).ne.0) then
                   iclocal= hecMESH%adapt_children_local(k)
                   icou          = icou  + 1
@@ -150,16 +139,16 @@
         IW2(ig)= icou0
       enddo
 
-!C
-!C-- NEW POINTERs
+      !C
+      !C-- NEW POINTERs
       nnn1= hecMESH%elem_group%grp_index(hecMESH%elem_group%n_grp)
       deallocate (hecMESH%elem_group%grp_item)
-        allocate (hecMESH%elem_group%grp_item(icou))
+      allocate (hecMESH%elem_group%grp_item(icou))
 
       hecMESH%elem_group%grp_index= 0
       do ig= 1, hecMESH%elem_group%n_grp
         hecMESH%elem_group%grp_index(ig)=                               &
-     &  hecMESH%elem_group%grp_index(ig-1) + IW2(ig)
+          &  hecMESH%elem_group%grp_index(ig-1) + IW2(ig)
       enddo
       do ig= 1, hecMESH%elem_group%n_grp
         do k= 1, IW2(ig)
@@ -168,22 +157,22 @@
         enddo
       enddo
       nnn2= hecMESH%elem_group%grp_index(hecMESH%elem_group%n_grp)
-!      write (*,'(a, i5, 2i8)') '    elem group', hecMESH%my_rank, nnn1, nnn2
+      !      write (*,'(a, i5, 2i8)') '    elem group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2)
-!C===
-      endif
-      endif
+      !C===
+    endif
+  endif
 
-      if (hecMESH%surf_group%n_grp.ne.0) then
-      if (hecMESH%surf_group%grp_index(hecMESH%surf_group%n_grp).ne.0) then
-!C
-!C +---------------+
-!C | SURFACE-GROUP |
-!C +---------------+
-!C===
+  if (hecMESH%surf_group%n_grp.ne.0) then
+    if (hecMESH%surf_group%grp_index(hecMESH%surf_group%n_grp).ne.0) then
+      !C
+      !C +---------------+
+      !C | SURFACE-GROUP |
+      !C +---------------+
+      !C===
       allocate (IUPD(2*hecMESH%n_node,                                  &
-     &                 hecMESH%surf_group%n_grp))
+        &                 hecMESH%surf_group%n_grp))
       allocate (IW1 (2*hecMESH%n_elem))
       allocate (IW2 (hecMESH%surf_group%n_grp))
       allocate (IW3 (hecMESH%n_node))
@@ -194,12 +183,12 @@
 
       do ig= 1, hecMESH%surf_group%n_grp
         icou0= 0
-          IW1= 0
-          IW3= 0
+        IW1= 0
+        IW3= 0
         do k= hecMESH%surf_group%grp_index(ig-1)+1,                     &
-     &        hecMESH%surf_group%grp_index(ig)
-               icel     = hecMESH%surf_group%grp_item(2*k-1)
-               isuf     = hecMESH%surf_group%grp_item(2*k  )
+            &        hecMESH%surf_group%grp_index(ig)
+          icel     = hecMESH%surf_group%grp_item(2*k-1)
+          isuf     = hecMESH%surf_group%grp_item(2*k  )
           icou          = icou  + 1
           icou0         = icou0 + 1
           IW1 (icel    )= isuf
@@ -220,21 +209,21 @@
               IW3(nP3)= 1
               IW3(nP5)= 1
               IW3(nP6)= 1
-             else if (isuf.eq.2) then
+            else if (isuf.eq.2) then
               IW3(nP3)= 1
               IW3(nP1)= 1
               IW3(nP6)= 1
               IW3(nP4)= 1
-             else if (isuf.eq.3) then
+            else if (isuf.eq.3) then
               IW3(nP1)= 1
               IW3(nP2)= 1
               IW3(nP4)= 1
               IW3(nP5)= 1
-             else if (isuf.eq.4) then
+            else if (isuf.eq.4) then
               IW3(nP1)= 1
               IW3(nP2)= 1
               IW3(nP3)= 1
-             else if (isuf.eq.5) then
+            else if (isuf.eq.5) then
               IW3(nP4)= 1
               IW3(nP5)= 1
               IW3(nP6)= 1
@@ -251,15 +240,15 @@
               IW3(nP2)= 1
               IW3(nP3)= 1
               IW3(nP4)= 1
-             else if (isuf.eq.2) then
+            else if (isuf.eq.2) then
               IW3(nP1)= 1
               IW3(nP3)= 1
               IW3(nP4)= 1
-             else if (isuf.eq.3) then
+            else if (isuf.eq.3) then
               IW3(nP1)= 1
               IW3(nP2)= 1
               IW3(nP4)= 1
-             else if (isuf.eq.4) then
+            else if (isuf.eq.4) then
               IW3(nP1)= 1
               IW3(nP2)= 1
               IW3(nP3)= 1
@@ -273,24 +262,24 @@
           nod2= hecMESH%adapt_edge_node(2*ie  )
 
           if (IW3(nod1).eq.1  .and. IW3(nod2).eq.1 .and.                &
-     &        hecMESH%adapt_iemb(ie).ne.0) then
+              &        hecMESH%adapt_iemb(ie).ne.0) then
             nod3     = hecMESH%adapt_IWK(ie)
             IW3(nod3)= 1
           endif
         enddo
 
         do kkk= hecMESH%surf_group%grp_index(ig-1)+1,                   &
-     &        hecMESH%surf_group%grp_index(ig)
+            &        hecMESH%surf_group%grp_index(ig)
           icel= hecMESH%surf_group%grp_item(2*kkk-1)
           if (hecMESH%adapt_type(icel).ne.0.and.IW1(icel).ne.0) then
             ip_type= hecMESH%elem_type(icel)
-            iS= hecMESH%adapt_children_index(icel-1) + 1
+            is= hecMESH%adapt_children_index(icel-1) + 1
             iE= hecMESH%adapt_children_index(icel)
-            icS= hecMESH%adapt_children_local(iS)
+            icS= hecMESH%adapt_children_local(is)
 
             if (hecMESH%when_i_was_refined_elem(icS).eq.                &
-     &          hecMESH%n_adapt) then
-              do k= iS, iE
+                &          hecMESH%n_adapt) then
+              do k= is, iE
                 if (hecMESH%adapt_children_item(2*k-1).ne.0) then
                   iclocal= hecMESH%adapt_children_local(k)
                   if (ip_type.eq.351) then
@@ -402,16 +391,16 @@
         IW2(ig)= icou0
       enddo
 
-!C
-!C-- NEW POINTERs
+      !C
+      !C-- NEW POINTERs
       nnn1= hecMESH%surf_group%grp_index(hecMESH%surf_group%n_grp)
       deallocate (hecMESH%surf_group%grp_item)
-        allocate (hecMESH%surf_group%grp_item(2*icou))
+      allocate (hecMESH%surf_group%grp_item(2*icou))
 
       hecMESH%surf_group%grp_index= 0
       do ig= 1, hecMESH%surf_group%n_grp
         hecMESH%surf_group%grp_index(ig)=                               &
-     &  hecMESH%surf_group%grp_index(ig-1) + IW2(ig)
+          &  hecMESH%surf_group%grp_index(ig-1) + IW2(ig)
       enddo
       do ig= 1, hecMESH%surf_group%n_grp
         do k= 1, IW2(ig)
@@ -421,15 +410,15 @@
         enddo
       enddo
       nnn2= hecMESH%surf_group%grp_index(hecMESH%surf_group%n_grp)
-!      write (*,'(a, i5, 2i8)') '    surf group', hecMESH%my_rank, nnn1, nnn2
+      !      write (*,'(a, i5, 2i8)') '    surf group', hecMESH%my_rank, nnn1, nnn2
 
       deallocate (IUPD, IW1, IW2, IW3)
-!C===
-      endif
-      endif
+      !C===
+    endif
+  endif
 
-      return
-      end
+  return
+end
 
 
 

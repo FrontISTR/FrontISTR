@@ -13,7 +13,7 @@ module m_hecmw_matrix_ordering_MC
 contains
 
   subroutine hecmw_matrix_ordering_MC(N, indexL, itemL, indexU, itemU, &
-       perm_cur, ncolor_in, ncolor_out, COLORindex, perm, iperm)
+      perm_cur, ncolor_in, ncolor_out, COLORindex, perm, iperm)
     implicit none
     integer(kind=kint), intent(in) :: N
     integer(kind=kint), intent(in) :: indexL(0:), indexU(0:)

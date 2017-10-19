@@ -8,9 +8,7 @@
 
 #include "hecmw_struct.h"
 
-
 extern void HECMW_dist_clean(struct hecmwST_local_mesh *mesh);
-
 
 extern void HECMW_dist_free(struct hecmwST_local_mesh *mesh);
 

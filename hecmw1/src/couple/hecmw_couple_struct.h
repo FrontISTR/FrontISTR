@@ -20,4 +20,4 @@ struct hecmw_couple_comm {
   int is_member;
 };
 
-#endif	/* INC_HECMW_COUPLE_STRUCT */
+#endif /* INC_HECMW_COUPLE_STRUCT */

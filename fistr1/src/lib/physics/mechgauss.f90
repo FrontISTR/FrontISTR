@@ -3,34 +3,34 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This modules defines a structure to record history dependent parameter in static analysis
-MODULE mMechGauss
+module mMechGauss
   use hecmw_util
   use mMaterial
-  IMPLICIT NONE
+  implicit none
 
-! ----------------------------------------------------------------------------
-        !> All data should be recorded in every quadrature points
-        type tGaussStatus
-            type(tMaterial), pointer  :: pMaterial => null()    !< point to material property definition
-            real(kind=kreal)          :: strain(6)              !< strain
-            real(kind=kreal)          :: stress(6)              !< stress
-            integer, pointer          :: istatus(:) =>null()    !< status variables (integer type)
-            real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
-            real(kind=kreal)          :: plstrain               !< plastic strain
-            real(kind=kreal)          :: strain_bak(6)          !< strain
-            real(kind=kreal)          :: stress_bak(6)              !< stress
-        end type
+  ! ----------------------------------------------------------------------------
+  !> All data should be recorded in every quadrature points
+  type tGaussStatus
+    type(tMaterial), pointer  :: pMaterial => null()    !< point to material property definition
+    real(kind=kreal)          :: strain(6)              !< strain
+    real(kind=kreal)          :: stress(6)              !< stress
+    integer, pointer          :: istatus(:) =>null()    !< status variables (integer type)
+    real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
+    real(kind=kreal)          :: plstrain               !< plastic strain
+    real(kind=kreal)          :: strain_bak(6)          !< strain
+    real(kind=kreal)          :: stress_bak(6)              !< stress
+  end type
 
-! ----------------------------------------------------------------------------
-        !> All data should be recorded in every elements
-        type tElement
-            integer                     :: etype                 !< element's type
-            integer                     :: iset                  !< plane strain, stress etc
-            real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
-            type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
-        end type
+  ! ----------------------------------------------------------------------------
+  !> All data should be recorded in every elements
+  type tElement
+    integer                     :: etype                 !< element's type
+    integer                     :: iset                  !< plane strain, stress etc
+    real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
+    type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
+  end type
 
-  CONTAINS
+contains
 
   !> Initializer
   subroutine fstr_init_gauss( gauss )
@@ -42,7 +42,7 @@ MODULE mMechGauss
     if( gauss%pMaterial%mtype==USERMATERIAL ) then
       if( gauss%pMaterial%nfstatus> 0 ) then
         allocate( gauss%fstatus(gauss%pMaterial%nfstatus) )
-         gauss%fstatus(:) = 0.d0
+        gauss%fstatus(:) = 0.d0
       endif
     else if( isElastoplastic(gauss%pMaterial%mtype) ) then
       allocate( gauss%istatus(1) )    ! 0:elastic 1:plastic
@@ -70,9 +70,9 @@ MODULE mMechGauss
 
   !> Finializer
   subroutine fstr_finalize_gauss( gauss )
-     type( tGaussStatus ), intent(inout) :: gauss
-     if( associated( gauss%istatus ) ) deallocate( gauss%istatus )
-     if( associated( gauss%fstatus ) ) deallocate( gauss%fstatus )
+    type( tGaussStatus ), intent(inout) :: gauss
+    if( associated( gauss%istatus ) ) deallocate( gauss%istatus )
+    if( associated( gauss%fstatus ) ) deallocate( gauss%fstatus )
   end subroutine
 
   !> Copy
@@ -96,7 +96,7 @@ MODULE mMechGauss
   end subroutine fstr_copy_gauss
 
 
-END MODULE
+end module
 
 
 

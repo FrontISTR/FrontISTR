@@ -12,7 +12,6 @@
 #include "CHECDB.h"
 #include "CFSTRDB.h"
 
-bool conv_neu2fstr_dynamic( CNFData& neu, CHECData& hec );
-
+bool conv_neu2fstr_dynamic(CNFData& neu, CHECData& hec);
 
 #endif

@@ -103,11 +103,11 @@ contains
     else
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
-           hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+        hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
       !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
-           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
-           NCOLOR_IN, NColor, COLORindex, perm, iperm)
+        hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+        NCOLOR_IN, NColor, COLORindex, perm, iperm)
       !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
@@ -118,17 +118,17 @@ contains
     NPU = hecMAT%indexU(N)
     allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
-         hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-         indexL, indexU, itemL, itemU)
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      indexL, indexU, itemL, itemU)
     !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
     !call check_ordering
 
     allocate(D(NDOF2*N), AL(NDOF2*NPL), AU(NDOF2*NPU))
     call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
-         hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-         hecMAT%AL, hecMAT%AU, hecMAT%D, &
-         indexL, indexU, itemL, itemU, AL, AU, D)
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      hecMAT%AL, hecMAT%AU, hecMAT%D, &
+      indexL, indexU, itemL, itemU, AL, AU, D)
     !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
@@ -139,14 +139,14 @@ contains
       NPCU = hecMAT%indexCU(N)
       allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
       call hecmw_matrix_reorder_profile(N, perm, iperm, &
-           hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-           indexCL, indexCU, itemCL, itemCU)
+        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+        indexCL, indexCU, itemCL, itemCU)
 
       allocate(CD(NDOF2*N), CAL(NDOF2*NPCL), CAU(NDOF2*NPCU))
       call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
-           hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-           hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-           indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
+        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+        hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
+        indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
       deallocate(CD)
 
       call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
@@ -172,8 +172,8 @@ contains
       enddo
     endif
 
-!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
-!$omp do
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
+    !$omp do
     do ii= 1, N
       do i = 1, NDOF
         do j =  1, NDOF
@@ -199,8 +199,8 @@ contains
         end do
       end do
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
     isFirst = .true.
 
@@ -236,7 +236,7 @@ contains
       if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
       if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
       allocate (icToBlockIndex(0:NColor), &
-           blockIndexToColorIndex(0:numOfBlock + NColor))
+        blockIndexToColorIndex(0:numOfBlock + NColor))
       numOfElement = N + indexL(N) + indexU(N)
       numOfElementPerBlock = dble(numOfElement) / numOfBlock
       blockIndex = 0
@@ -246,9 +246,9 @@ contains
       blockIndexToColorIndex(0) = 0
       my_rank = hecmw_comm_get_rank()
       ! write(9000+my_rank,*) &
-      !      '# numOfElementPerBlock =', numOfElementPerBlock
+        !      '# numOfElementPerBlock =', numOfElementPerBlock
       ! write(9000+my_rank,*) &
-      !      '# ic, blockIndex, colorIndex, elementCount'
+        !      '# ic, blockIndex, colorIndex, elementCount'
       do ic = 1, NColor
         elementCount = 0
         ii = 1
@@ -257,12 +257,12 @@ contains
           elementCount = elementCount + (indexL(i) - indexL(i-1))
           elementCount = elementCount + (indexU(i) - indexU(i-1))
           if (elementCount > ii * numOfElementPerBlock &
-               .or. i == COLORindex(ic)) then
+              .or. i == COLORindex(ic)) then
             ii = ii + 1
             blockIndex = blockIndex + 1
             blockIndexToColorIndex(blockIndex) = i
             ! write(9000+my_rank,*) ic, blockIndex, &
-            !      blockIndexToColorIndex(blockIndex), elementCount
+              !      blockIndexToColorIndex(blockIndex), elementCount
           endif
         enddo
         icToBlockIndex(ic) = blockIndex
@@ -270,7 +270,7 @@ contains
       numOfBlock = blockIndex
 
       call hecmw_tuning_fx_calc_sector_cache( N, NDOF, &
-           sectorCacheSize0, sectorCacheSize1 )
+        sectorCacheSize0, sectorCacheSize1 )
 
       isFirst = .false.
     endif
@@ -278,21 +278,21 @@ contains
 
     !call start_collection("loopInPrecond33")
 
-!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-!OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
-!$omp parallel default(none) &
-!$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-!$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
-!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
-!$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
+      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
+      !$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
 
     !C-- FORWARD
     do ic=1,NColor
-!$omp do schedule (static, 1)
+      !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
-             blockIndexToColorIndex(blockIndex)
+            blockIndexToColorIndex(blockIndex)
           iold = perm(i)
           do idof = 1, NDOF
             SW(idof) = ZP(NDOF*(iold-1)+idof)
@@ -315,7 +315,7 @@ contains
             isL= indexCL(i-1)+1
             ieL= indexCL(i)
             do j= isL, ieL
-             k= itemCL(j)
+              k= itemCL(j)
               do idof = 1, NDOF
                 X(idof) = ZP(NDOF*(k-1)+idof)
               end do
@@ -330,7 +330,7 @@ contains
           X = SW
           do idof = 2,NDOF
             do jdof = 1, idof-1
-               X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
             end do
           end do
           do idof = NDOF, 1, -1
@@ -343,18 +343,18 @@ contains
 
         enddo ! i
       enddo ! blockIndex
-!$omp end do
+      !$omp end do
     enddo ! ic
 
     !C-- BACKWARD
     do ic=NColor, 1, -1
-!$omp do schedule (static, 1)
+      !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
         do i = blockIndexToColorIndex(blockIndex), &
-             blockIndexToColorIndex(blockIndex-1)+1, -1
+            blockIndexToColorIndex(blockIndex-1)+1, -1
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
           !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
-          !        blockIndexToColorIndex(blockIndex)
+            !        blockIndexToColorIndex(blockIndex)
           !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
           SW= 0.d0
           isU= indexU(i-1) + 1
@@ -376,21 +376,21 @@ contains
             ieU= indexCU(i)
             do j= ieU, isU, -1
               k= itemCU(j)
-            do idof = 1, NDOF
-              X(idof) = ZP(NDOF*(k-1)+idof)
-            end do
-            do idof = 1, NDOF
-              do jdof = 1, NDOF
-                SW(idof) = SW(idof) + CAU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+              do idof = 1, NDOF
+                X(idof) = ZP(NDOF*(k-1)+idof)
               end do
-            end do
+              do idof = 1, NDOF
+                do jdof = 1, NDOF
+                  SW(idof) = SW(idof) + CAU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+                end do
+              end do
             enddo ! j
           endif
 
           X = SW
           do idof = 2, NDOF
             do k = 1,idof-1
-               X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
             end do
           end do
           do idof = NDOF, 1, -1
@@ -405,12 +405,12 @@ contains
           end do
         enddo ! i
       enddo ! blockIndex
-!$omp end do
+      !$omp end do
     enddo ! ic
-!$omp end parallel
+    !$omp end parallel
 
-!OCL END_CACHE_SUBSECTOR
-!OCL END_CACHE_SECTOR_SIZE
+    !OCL END_CACHE_SUBSECTOR
+    !OCL END_CACHE_SECTOR_SIZE
 
     !call stop_collection("loopInPrecond33")
 

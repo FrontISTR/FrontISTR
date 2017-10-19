@@ -53,7 +53,7 @@ contains
     do ii= 1, N
       do i = 1, NDOF2
         ALU(NDOF2*(ii-1)+i)=D(NDOF2*(ii-1)+i)
-      end do 
+      end do
     enddo
 
     if (hecMAT%cmat%n_val.gt.0) then
@@ -63,21 +63,21 @@ contains
         do i = 1,NDOF
           do j = 1,NDOF
             ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) + hecMAT%cmat%pair(k)%val(i, j)
-          enddo   
-        enddo 
+          enddo
+        enddo
       enddo
     endif
-    
-!$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
-!$omp do
+
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
+    !$omp do
     do ii= 1, N
-    
+
       do i = 1, NDOF
         do j =  1, NDOF
           ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
           if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
         end do
-      end do 
+      end do
       do k= 1, NDOF
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
         do i= k+1, NDOF
@@ -94,14 +94,14 @@ contains
         do j =  1, NDOF
           ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)= ALUtmp(i,j)
         end do
-      end do 
+      end do
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
-    
+
   end subroutine hecmw_precond_DIAG_nn_setup
 
   subroutine hecmw_precond_DIAG_nn_apply(WW,NDOF)
@@ -110,32 +110,32 @@ contains
     integer(kind=kint) :: i,j,k,NDOF
     real(kind=kreal) :: X(NDOF)
 
-!C
-!C== Block SCALING
-!$omp parallel default(none),private(i,j,k,X),shared(N,WW,ALU,NDOF)
-!$omp do
+    !C
+    !C== Block SCALING
+    !$omp parallel default(none),private(i,j,k,X),shared(N,WW,ALU,NDOF)
+    !$omp do
     do i= 1, N
       do j=1,NDOF
         X(j)=WW(NDOF*(i-1)+j)
-      end do 
+      end do
       do j=2,NDOF
         do k = 1,j-1
-           X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)
-        end do 
+          X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)
+        end do
       end do
       do j=NDOF,1,-1
         do k = NDOF,j+1,-1
-          X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)          
-        end do 
+          X(j)=X(j)-ALU(NDOF*NDOF*(i-1)+NDOF*(j-1)+k )*X(k)
+        end do
         X(j)=ALU(NDOF*NDOF*(i-1)+(NDOF+1)*(j-1)+1 )*X(j)
-      end do     
+      end do
       do j=1,NDOF
         WW(NDOF*(i-1)+j)=X(j)
-      end do 
-      
+      end do
+
     enddo
-!$omp end do
-!$omp end parallel
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_precond_DIAG_nn_apply
 

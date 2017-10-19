@@ -8,8 +8,6 @@
 
 #include "hecmw_part_get_control.h"
 
-extern int
-HECMW_init_for_partition( int argc, char **argv );
+extern int HECMW_init_for_partition(int argc, char **argv);
 
-#endif  /* INC_HECMW_INIT_FOR_PARTITION */
-
+#endif /* INC_HECMW_INIT_FOR_PARTITION */

@@ -34,14 +34,14 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     NumCall = NumCall + 1
     select case( hecmw_mat_get_dump(hecMAT) )
-    case (HECMW_MAT_DUMP_TYPE_NONE)
-      return
-    case (HECMW_MAT_DUMP_TYPE_MM)
-      call hecmw_mat_dump_mm(hecMAT)
-    case (HECMW_MAT_DUMP_TYPE_CSR)
-      call hecmw_mat_dump_csr(hecMAT)
-    case (HECMW_MAT_DUMP_TYPE_BSR)
-      call hecmw_mat_dump_bsr(hecMAT)
+      case (HECMW_MAT_DUMP_TYPE_NONE)
+        return
+      case (HECMW_MAT_DUMP_TYPE_MM)
+        call hecmw_mat_dump_mm(hecMAT)
+      case (HECMW_MAT_DUMP_TYPE_CSR)
+        call hecmw_mat_dump_csr(hecMAT)
+      case (HECMW_MAT_DUMP_TYPE_BSR)
+        call hecmw_mat_dump_bsr(hecMAT)
     end select
     call hecmw_mat_dump_rhs(hecMAT)
     if (hecmw_mat_get_dump_exit(hecMAT) /= 0) then
@@ -55,7 +55,7 @@ contains
     character(*) :: ext
     character(*) :: fname
     write(fname,"('dump_matrix_',I0,'_',I0,A)") &
-         NumCall, hecmw_comm_get_rank(), ext
+      NumCall, hecmw_comm_get_rank(), ext
   end subroutine make_file_name
 
   subroutine hecmw_mat_dump_mm( hecMAT )
@@ -157,7 +157,7 @@ contains
     write(iDump, "(I0)") idx
     do i = 1, n
       nnz1 = ndof * ((hecMAT%indexL(i)-hecMAT%indexL(i-1)) + &
-           1 + (hecMAT%indexU(i)-hecMAT%indexU(i-1)))
+        1 + (hecMAT%indexU(i)-hecMAT%indexU(i-1)))
       do idof = 1, ndof
         idx = idx + nnz1
         write(iDump, "(I0)") idx
@@ -266,7 +266,7 @@ contains
     write(iDump, "(I0)") idx
     do i = 1, n
       nnz1 = (hecMAT%indexL(i)-hecMAT%indexL(i-1)) + &
-           1 + (hecMAT%indexU(i)-hecMAT%indexU(i-1))
+        1 + (hecMAT%indexU(i)-hecMAT%indexU(i-1))
       idx = idx + nnz1
       write(iDump, "(I0)") idx
     end do

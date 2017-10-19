@@ -8,10 +8,8 @@
 
 #include "hecmw_struct.h"
 
+extern struct hecmwST_local_mesh *HECMW_dist_alloc(void);
 
-extern struct hecmwST_local_mesh *HECMW_dist_alloc( void );
-
-
-extern int HECMW_dist_init( struct hecmwST_local_mesh *mesh );
+extern int HECMW_dist_init(struct hecmwST_local_mesh *mesh);
 
 #endif

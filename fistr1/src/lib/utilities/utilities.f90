@@ -9,14 +9,14 @@ module m_utilities
 
   real(kind=kreal), parameter, private :: PI=3.14159265358979d0
 
-  contains
+contains
 
   !> Record used memeory
-  SUBROUTINE memget(var,dimn,syze)
-    INTEGER :: var,dimn,syze,bite
-    PARAMETER(bite=1)
+  subroutine memget(var,dimn,syze)
+    integer :: var,dimn,syze,bite
+    parameter(bite=1)
     var = var + dimn*syze*bite
-  END SUBROUTINE memget
+  end subroutine memget
 
 
   !> Insert an integer at end of a file name
@@ -71,13 +71,13 @@ module m_utilities
   end subroutine
 
   !> Given symmetric 3x3 matrix M, compute the eigenvalues
-  SUBROUTINE tensor_eigen3( tensor, eigval, eigproj )
-    REAL(kind=kreal), INTENT(IN)  :: tensor(6)          !< tensor
-    REAL(kind=kreal), INTENT(OUT) :: eigval(3)     !< eigenvalues
-    REAL(kind=kreal), INTENT(OUT) :: eigproj(3,3)  !< eigenprojectss
+  subroutine tensor_eigen3( tensor, eigval, eigproj )
+    real(kind=kreal), intent(in)  :: tensor(6)          !< tensor
+    real(kind=kreal), intent(out) :: eigval(3)     !< eigenvalues
+    real(kind=kreal), intent(out) :: eigproj(3,3)  !< eigenprojectss
 
-    INTEGER  :: i
-    REAL(kind=kreal) :: I1,I2,I3,R,sita,Q, X(3,3), XX(3,3), II(3,3)
+    integer  :: i
+    real(kind=kreal) :: I1,I2,I3,R,sita,Q, X(3,3), XX(3,3), II(3,3)
 
     II(:,:)=0.d0
     II(1,1)=1.d0;  II(2,2)=1.d0;  II(3,3)=1.d0
@@ -86,11 +86,11 @@ module m_utilities
     X(2,3)=tensor(5); X(3,2)=X(2,3)
     X(3,1)=tensor(6); X(1,3)=X(3,1)
 
-    XX= MATMUL( X,X )
+    XX= matmul( X,X )
     I1= X(1,1)+X(2,2)+X(3,3)
     I2= 0.5d0*( I1*I1 - (XX(1,1)+XX(2,2)+XX(3,3)) )
     I3= X(1,1)*X(2,2)*X(3,3)+X(2,1)*X(3,2)*X(1,3)+X(3,1)*X(1,2)*X(2,3)    &
-     -X(3,1)*X(2,2)*X(1,3)-X(2,1)*X(1,2)*X(3,3)-X(1,1)*X(3,2)*X(2,3)
+      -X(3,1)*X(2,2)*X(1,3)-X(2,1)*X(1,2)*X(3,3)-X(1,1)*X(3,2)*X(2,3)
 
     R=(-2.d0*I1*I1*I1+9.d0*I1*I2-27.d0*I3)/54.d0
     Q=(I1*I1-3.d0*I2)/9.d0
@@ -100,105 +100,105 @@ module m_utilities
     eigval(2) = -2.d0*Q*cos((sita+2.d0*PI)/3.d0)+I1/3.d0
     eigval(3) = -2.d0*Q*cos((sita-2.d0*PI)/3.d0)+I1/3.d0
 
-  END SUBROUTINE
+  end subroutine
 
   !> Compute eigenvalue and eigenvetor for symmetric 3*3 tensor using
   !> Jacobi iteration adapted from numerical recpies
-  SUBROUTINE eigen3 (tensor, eigval, princ)
+  subroutine eigen3 (tensor, eigval, princ)
     real(kind=kreal) :: tensor(6)     !< tensor
     real(kind=kreal) :: eigval(3)     !< vector containing the eigvalches
     real(kind=kreal) :: princ(3, 3)   !< matrix containing the three principal column vectors
 
-    INTEGER, PARAMETER :: msweep = 50
-    INTEGER :: i,j, is, ip, iq, ir
+    integer, parameter :: msweep = 50
+    integer :: i,j, is, ip, iq, ir
     real(kind=kreal) :: fsum, od, theta, t, c, s, tau, g, h, hd, btens(3,3)
 
     btens(1,1)=tensor(1); btens(2,2)=tensor(2); btens(3,3)=tensor(3)
     btens(1,2)=tensor(4); btens(2,1)=btens(1,2)
     btens(2,3)=tensor(5); btens(3,2)=btens(2,3)
     btens(3,1)=tensor(6); btens(1,3)=btens(3,1)
-!
-!     Initialise princ to the identity
-!
-      DO i = 1, 3
-        DO j = 1, 3
-          princ (i, j) = 0.d0
-        END DO
-        princ (i, i) = 1.d0
-        eigval (i) = btens (i, i)
-      END DO
-!
-!     Starts sweeping.
-!
-      DO is = 1, msweep
-        fsum = 0.d0
-        DO ip = 1, 2
-          DO iq = ip + 1, 3
-            fsum = fsum + abs( btens(ip, iq) )
-          END DO
-        END DO
-!
-!     If the fsum of off-diagonal terms is zero returns
-!
-        IF ( fsum < 1.d-10 ) RETURN
+    !
+    !     Initialise princ to the identity
+    !
+    do i = 1, 3
+      do j = 1, 3
+        princ (i, j) = 0.d0
+      end do
+      princ (i, i) = 1.d0
+      eigval (i) = btens (i, i)
+    end do
+    !
+    !     Starts sweeping.
+    !
+    do is = 1, msweep
+      fsum = 0.d0
+      do ip = 1, 2
+        do iq = ip + 1, 3
+          fsum = fsum + abs( btens(ip, iq) )
+        end do
+      end do
+      !
+      !     If the fsum of off-diagonal terms is zero returns
+      !
+      if ( fsum < 1.d-10 ) return
 
-!
-!     Performs the sweep in three rotations. One per off diagonal term
-!
-        DO ip = 1, 2
-          DO iq = ip + 1, 3
-            od = 100.d0 * abs (btens (ip, iq) )
-            IF ( (od+abs (eigval (ip) ) /= abs (eigval (ip) )) &
-                 .and. (od+abs (eigval (iq) ) /= abs (eigval (iq) ))) then
-                hd = eigval (iq) - eigval (ip)
-!
-!    Evaluates the rotation angle
-!
-              IF ( abs (hd) + od == abs (hd)  ) then
-                t = btens (ip, iq) / hd
-              ELSE
-                theta = 0.5d0 * hd / btens (ip, iq)
-                t = 1.d0 / (abs (theta) + sqrt (1.d0 + theta**2) )
-                IF ( theta < 0.d0 ) t = - t
-              END IF
-!
-!     Re-evaluates the diagonal terms
-!
-              c = 1.d0 / sqrt (1.d0 + t**2)
-              s = t * c
-              tau = s / (1.d0 + c)
-              h = t * btens (ip, iq)
-              eigval (ip) = eigval (ip) - h
-              eigval (iq) = eigval (iq) + h
-!
-!     Re-evaluates the remaining off-diagonal terms
-!
-              ir = 6 - ip - iq
-              g = btens (min (ir, ip), max (ir, ip) )
-              h = btens (min (ir, iq), max (ir, iq) )
-              btens (min (ir, ip), max (ir, ip) ) = g &
-                                                  - s * (h + g * tau)
-              btens (min (ir, iq), max (ir, iq) ) = h &
-                                                  + s * (g - h * tau)
-!
-!     Rotates the eigenvectors
-!
-              DO ir = 1, 3
-                g = princ (ir, ip)
-                h = princ (ir, iq)
-                princ (ir, ip) = g - s * (h + g * tau)
-                princ (ir, iq) = h + s * (g - h * tau)
-              END DO
-            END IF
-            btens (ip, iq) = 0.d0
-          END DO
-        END DO
-      END DO ! over sweeps
-!
-!     If convergence is not achieved stops
-!
-      STOP       ' Jacobi iteration unable to converge'
-  END SUBROUTINE eigen3
+      !
+      !     Performs the sweep in three rotations. One per off diagonal term
+      !
+      do ip = 1, 2
+        do iq = ip + 1, 3
+          od = 100.d0 * abs (btens (ip, iq) )
+          if ( (od+abs (eigval (ip) ) /= abs (eigval (ip) )) &
+              .and. (od+abs (eigval (iq) ) /= abs (eigval (iq) ))) then
+            hd = eigval (iq) - eigval (ip)
+            !
+            !    Evaluates the rotation angle
+            !
+            if ( abs (hd) + od == abs (hd)  ) then
+              t = btens (ip, iq) / hd
+            else
+              theta = 0.5d0 * hd / btens (ip, iq)
+              t = 1.d0 / (abs (theta) + sqrt (1.d0 + theta**2) )
+              if ( theta < 0.d0 ) t = - t
+            end if
+            !
+            !     Re-evaluates the diagonal terms
+            !
+            c = 1.d0 / sqrt (1.d0 + t**2)
+            s = t * c
+            tau = s / (1.d0 + c)
+            h = t * btens (ip, iq)
+            eigval (ip) = eigval (ip) - h
+            eigval (iq) = eigval (iq) + h
+            !
+            !     Re-evaluates the remaining off-diagonal terms
+            !
+            ir = 6 - ip - iq
+            g = btens (min (ir, ip), max (ir, ip) )
+            h = btens (min (ir, iq), max (ir, iq) )
+            btens (min (ir, ip), max (ir, ip) ) = g &
+              - s * (h + g * tau)
+            btens (min (ir, iq), max (ir, iq) ) = h &
+              + s * (g - h * tau)
+            !
+            !     Rotates the eigenvectors
+            !
+            do ir = 1, 3
+              g = princ (ir, ip)
+              h = princ (ir, iq)
+              princ (ir, ip) = g - s * (h + g * tau)
+              princ (ir, iq) = h + s * (g - h * tau)
+            end do
+          end if
+          btens (ip, iq) = 0.d0
+        end do
+      end do
+    end do ! over sweeps
+    !
+    !     If convergence is not achieved stops
+    !
+    stop       ' Jacobi iteration unable to converge'
+  end subroutine eigen3
 
   !> Compute determinant for symmetric 3*3 matrix
   real(kind=kreal) function Determinant( mat )
@@ -211,23 +211,23 @@ module m_utilities
     xj(3,1)=mat(6); xj(1,3)=xj(3,1)
 
     Determinant=XJ(1,1)*XJ(2,2)*XJ(3,3)               &
-           +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
-           +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
-           -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
-           -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
-           -XJ(1,1)*XJ(3,2)*XJ(2,3)
+      +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
+      +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
+      -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
+      -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
+      -XJ(1,1)*XJ(3,2)*XJ(2,3)
   end function Determinant
 
-    !> Compute determinant for 3*3 matrix
+  !> Compute determinant for 3*3 matrix
   real(kind=kreal) function Determinant33( XJ )
     real(kind=kreal) :: XJ(3,3)
 
     Determinant33=XJ(1,1)*XJ(2,2)*XJ(3,3)               &
-           +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
-           +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
-           -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
-           -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
-           -XJ(1,1)*XJ(3,2)*XJ(2,3)
+      +XJ(2,1)*XJ(3,2)*XJ(1,3)                   &
+      +XJ(3,1)*XJ(1,2)*XJ(2,3)                   &
+      -XJ(3,1)*XJ(2,2)*XJ(1,3)                   &
+      -XJ(2,1)*XJ(1,2)*XJ(3,3)                   &
+      -XJ(1,1)*XJ(3,2)*XJ(2,3)
   end function Determinant33
 
   subroutine fstr_chk_alloc( imsg, sub_name, ierr )
@@ -244,74 +244,74 @@ module m_utilities
   end subroutine fstr_chk_alloc
 
   !> calculate inverse of matrix a
-  SUBROUTINE calInverse(NN, A)
-    INTEGER, INTENT(IN)             :: NN
-    REAL(kind=kreal), intent(inout) :: A(NN,NN)
+  subroutine calInverse(NN, A)
+    integer, intent(in)             :: NN
+    real(kind=kreal), intent(inout) :: A(NN,NN)
 
-    INTEGER          :: I, J,K,IW,LR,IP(NN)
-    REAL(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
-    DATA EPS/1.0E-35/
+    integer          :: I, J,K,IW,LR,IP(NN)
+    real(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
+    data EPS/1.0E-35/
     DET=1.d0
-    DO I=1,NN
+    do I=1,NN
       IP(I)=I
-    ENDDO
-    DO K=1,NN
+    enddo
+    do K=1,NN
       WMAX=0.d0
-      DO I=K,NN
-        W=DABS(A(I,K))
-        IF (W.GT.WMAX) THEN
+      do I=K,NN
+        W=dabs(A(I,K))
+        if (W.GT.WMAX) then
           WMAX=W
           LR=I
-        ENDIF
-      ENDDO
+        endif
+      enddo
       PIVOT=A(LR,K)
-      API=ABS(PIVOT)
-      IF(API.LE.EPS) THEN
-        WRITE(*,'(''PIVOT ERROR AT'',I5)') K
-        STOP
-      END IF
+      API=abs(PIVOT)
+      if(API.LE.EPS) then
+        write(*,'(''PIVOT ERROR AT'',I5)') K
+        stop
+      end if
       DET=DET*PIVOT
-      IF (LR.NE.K) THEN
+      if (LR.NE.K) then
         DET=-DET
         IW=IP(K)
         IP(K)=IP(LR)
         IP(LR)=IW
-        DO J=1,NN
+        do J=1,NN
           W=A(K,J)
           A(K,J)=A(LR,J)
           A(LR,J)=W
-        ENDDO
-      ENDIF
-      DO I=1,NN
+        enddo
+      endif
+      do I=1,NN
         A(K,I)=A(K,I)/PIVOT
-      ENDDO
-      DO I=1,NN
-        IF (I.NE.K) THEN
+      enddo
+      do I=1,NN
+        if (I.NE.K) then
           W=A(I,K)
-          IF (W.NE.0.) THEN
-            DO J=1,NN
-              IF (J.NE.K) A(I,J)=A(I,J)-W*A(K,J)
-            ENDDO
+          if (W.NE.0.) then
+            do J=1,NN
+              if (J.NE.K) A(I,J)=A(I,J)-W*A(K,J)
+            enddo
             A(I,K)=-W/PIVOT
-          ENDIF
-        ENDIF
-      ENDDO
+          endif
+        endif
+      enddo
       A(K,K)=1.d0/PIVOT
-    ENDDO
+    enddo
 
-    DO I=1,NN
+    do I=1,NN
       K=IP(I)
-      IF (K.NE.I) THEN
+      if (K.NE.I) then
         IW=IP(K)
         IP(K)=IP(I)
         IP(I)=IW
-        DO J=1,NN
+        do J=1,NN
           W=A(J,I)
           A(J,I)=A(J,K)
           A(J,K)=W
-        ENDDO
-      ENDIF
-    ENDDO
+        enddo
+      endif
+    enddo
 
   end subroutine calInverse
 
@@ -325,10 +325,10 @@ module m_utilities
   end subroutine cross_product
 
   subroutine transformation(jacob, tm)
-  real(kind=kreal),intent(in)  ::  jacob(3,3)   !< Jacobian
-  real(kind=kreal),intent(out)  ::  tm(6,6)      !< transform matrix
+    real(kind=kreal),intent(in)  ::  jacob(3,3)   !< Jacobian
+    real(kind=kreal),intent(out)  ::  tm(6,6)      !< transform matrix
 
-  integer    ::  i,j,k,m,nDim,nTensorDim
+    integer    ::  i,j,k,m,nDim,nTensorDim
 
     do i=1,3
       do j=1,3
@@ -359,7 +359,7 @@ module m_utilities
 
   end subroutine transformation
 
-  SUBROUTINE get_principal (tensor, eigval, princmatrix)
+  subroutine get_principal (tensor, eigval, princmatrix)
 
     implicit none
     integer i,j
@@ -405,7 +405,7 @@ module m_utilities
 
   end subroutine get_principal
 
-  SUBROUTINE eigen3d (tensor, eigval, princ)
+  subroutine eigen3d (tensor, eigval, princ)
     implicit none
 
     real(kind=kreal) :: tensor(6)     !< tensor
@@ -460,12 +460,12 @@ module m_utilities
         exit
       end if
       ml = ( s23*s13 - s12*(s33-eigval(i)) ) / ( -s23**2 + (s22-eigval(i))*(s33-eigval(i)) )
-       nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) )
+      nl = ( s12**2 - (s22-eigval(i))*(s11-eigval(i)) ) / ( s12*s23 - s13*(s22-eigval(i)) )
       if (abs(ml) >= huge(ml)) then
-       ml=0.0d0
+        ml=0.0d0
       end if
       if (abs(nl) >= huge(nl)) then
-       nl=0.0d0
+        nl=0.0d0
       end if
       princ(i,1) = eigval(i)/sqrt( 1 + ml**2 + nl**2)
       princ(i,2) = ml * princ(i,1)
@@ -501,11 +501,11 @@ module m_utilities
     end if
 
   end subroutine cardano
-  
+
   subroutine rotate_3dvector_by_Rodrigues_formula(r,v)
     real(kind=kreal),intent(in)    :: r(3)  !< rotational vector
     real(kind=kreal),intent(inout) :: v(3)  !< vector to be rotated
-    
+
     real(kind=kreal) :: rotv(3), rv
     real(kind=kreal) :: cosx, sinc(2) !< sinc(1)=sin(x)/x, sinc(2)=(1-cos(x))/x^2
     real(kind=kreal) :: x, x2, x4, x6
@@ -513,7 +513,7 @@ module m_utilities
     real(kind=kreal), parameter :: c2 = -4.166666666666666d-002
     real(kind=kreal), parameter :: c4 = 1.388888888888889d-003
     real(kind=kreal), parameter :: c6 = -2.480158730158730d-005
-    
+
     x2 = dot_product(r,r)
     x = dsqrt(x2)
     cosx = dcos(x)
@@ -523,10 +523,10 @@ module m_utilities
       sinc(1) = 1.d0-x2/6.d0+x4/120.d0
       sinc(2) = c0+c2*x2+c4*x4+c6*x6
     else
-      sinc(1) = dsin(x)/x 
+      sinc(1) = dsin(x)/x
       sinc(2) = (1.d0-cosx)/x2
     endif
-    
+
     ! calc Rot*v
     rv = dot_product(r,v)
     rotv(1:3) = cosx*v(1:3)
@@ -535,7 +535,7 @@ module m_utilities
     rotv(2) = rotv(2) + (-v(3)*r(1)+v(1)*r(3))*sinc(1)
     rotv(3) = rotv(3) + (-v(1)*r(2)+v(2)*r(1))*sinc(1)
     v = rotv
-    
+
   end subroutine
 
 end module

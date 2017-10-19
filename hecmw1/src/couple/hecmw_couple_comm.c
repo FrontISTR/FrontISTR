@@ -20,353 +20,378 @@
 #include "hecmw_couple_info.h"
 #include "hecmw_couple_comm.h"
 
+extern int HECMW_couple_inter_send_recv(
+    int n_neighbor_pe_send, int *neighbor_pe_send, int *sendbuf_index,
+    void *sendbuf, int n_neighbor_pe_recv, int *neighbor_pe_recv,
+    int *recvbuf_index, void *recvbuf, HECMW_Datatype datatype,
+    HECMW_Comm comm) {
+  HECMW_Request *request_send = NULL, *request_recv = NULL;
+  HECMW_Status *status_send = NULL, *status_recv = NULL;
+  int rtc, i;
 
-extern int
-HECMW_couple_inter_send_recv(int n_neighbor_pe_send, int *neighbor_pe_send,
-		int *sendbuf_index, void *sendbuf, int n_neighbor_pe_recv, int *neighbor_pe_recv,
-		int *recvbuf_index, void *recvbuf, HECMW_Datatype datatype, HECMW_Comm comm)
-{
-	HECMW_Request *request_send = NULL, *request_recv = NULL;
-	HECMW_Status *status_send = NULL, *status_recv = NULL;
-	int rtc, i;
+  if (n_neighbor_pe_send > 0) {
+    request_send = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_send,
+                                                 sizeof(HECMW_Request));
+    if (request_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_send =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Status));
+    if (status_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+  }
+  if (n_neighbor_pe_recv > 0) {
+    request_recv = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_recv,
+                                                 sizeof(HECMW_Request));
+    if (request_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_recv =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Status));
+    if (status_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+  }
 
-	if(n_neighbor_pe_send > 0) {
-	  request_send = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Request));
-	  if(request_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_send = (HECMW_Status *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Status));
-	  if(status_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	}
-	if(n_neighbor_pe_recv > 0) {
-	  request_recv = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Request));
-	  if(request_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_recv = (HECMW_Status *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Status));
-	  if(status_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	}
+  if (datatype == HECMW_INT) {
+    int *_sendbuf = (int *)sendbuf;
+    int *_recvbuf = (int *)recvbuf;
 
-	if(datatype == HECMW_INT) {
-		int *_sendbuf = (int *)sendbuf;
-		int *_recvbuf = (int *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], HECMW_INT,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					HECMW_INT, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], HECMW_INT,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_DOUBLE) {
+    double *_sendbuf = (double *)sendbuf;
+    double *_recvbuf = (double *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					HECMW_INT, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_DOUBLE) {
-		double *_sendbuf = (double *)sendbuf;
-		double *_recvbuf = (double *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], HECMW_DOUBLE,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					HECMW_DOUBLE, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], HECMW_DOUBLE,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_CHAR) {
+    char *_sendbuf = (char *)sendbuf;
+    char *_recvbuf = (char *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					HECMW_DOUBLE, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_CHAR) {
-		char *_sendbuf = (char *)sendbuf;
-		char *_recvbuf = (char *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], HECMW_CHAR,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					HECMW_CHAR, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], HECMW_CHAR,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else {
+    HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
+    goto error;
+  }
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					HECMW_CHAR, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else {
-		HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
-		goto error;
-	}
+  /* wait */
+  if (n_neighbor_pe_recv > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe_recv, request_recv, status_recv);
+    if (rtc != 0) goto error;
+  }
 
-	/* wait */
-	if(n_neighbor_pe_recv > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe_recv, request_recv, status_recv);
-		if(rtc != 0)  goto error;
-	}
+  if (n_neighbor_pe_send > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe_send, request_send, status_send);
+    if (rtc != 0) goto error;
+  }
 
-	if(n_neighbor_pe_send > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe_send, request_send, status_send);
-		if(rtc != 0)  goto error;
-	}
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
 
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
-
-	return 0;
+  return 0;
 
 error:
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
 
-	return -1;
+  return -1;
 }
 
+extern int HECMW_couple_intra_send_recv(int n_neighbor_pe, int *neighbor_pe,
+                                        int *sendbuf_index, void *sendbuf,
+                                        int *recvbuf_index, void *recvbuf,
+                                        HECMW_Datatype datatype,
+                                        HECMW_Comm comm) {
+  HECMW_Request *request_send = NULL, *request_recv = NULL;
+  HECMW_Status *status_send = NULL, *status_recv = NULL;
+  int rtc, i;
 
-extern int
-HECMW_couple_intra_send_recv(int n_neighbor_pe, int *neighbor_pe, int *sendbuf_index,
-		void *sendbuf, int *recvbuf_index, void *recvbuf, HECMW_Datatype datatype, HECMW_Comm comm)
-{
-	HECMW_Request *request_send = NULL, *request_recv = NULL;
-	HECMW_Status *status_send = NULL, *status_recv = NULL;
-	int rtc, i;
+  if (n_neighbor_pe > 0) {
+    request_send =
+        (HECMW_Request *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Request));
+    if (request_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_send =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Status));
+    if (status_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    request_recv =
+        (HECMW_Request *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Request));
+    if (request_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_recv =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Status));
+    if (status_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+  }
 
-	if(n_neighbor_pe > 0) {
-	  request_send = (HECMW_Request *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Request));
-	  if(request_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_send = (HECMW_Status *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Status));
-	  if(status_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  request_recv = (HECMW_Request *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Request));
-	  if(request_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_recv = (HECMW_Status *)HECMW_calloc(n_neighbor_pe, sizeof(HECMW_Status));
-	  if(status_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	}
+  if (datatype == HECMW_INT) {
+    int *_sendbuf = (int *)sendbuf;
+    int *_recvbuf = (int *)recvbuf;
 
-	if(datatype == HECMW_INT) {
-		int *_sendbuf = (int *)sendbuf;
-		int *_recvbuf = (int *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_DOUBLE) {
+    double *_sendbuf = (double *)sendbuf;
+    double *_recvbuf = (double *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_DOUBLE) {
-		double *_sendbuf = (double *)sendbuf;
-		double *_recvbuf = (double *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_CHAR) {
+    char *_sendbuf = (char *)sendbuf;
+    char *_recvbuf = (char *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_CHAR) {
-		char *_sendbuf = (char *)sendbuf;
-		char *_recvbuf = (char *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]], sendbuf_index[i+1]-sendbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else {
+    HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
+    goto error;
+  }
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else {
-		HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
-		goto error;
-	}
+  /* wait */
+  if (n_neighbor_pe > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe, request_recv, status_recv);
+    if (rtc != 0) goto error;
+  }
 
-	/* wait */
-	if(n_neighbor_pe > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe, request_recv, status_recv);
-		if(rtc != 0)  goto error;
-	}
+  if (n_neighbor_pe > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe, request_send, status_send);
+    if (rtc != 0) goto error;
+  }
 
-	if(n_neighbor_pe > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe, request_send, status_send);
-		if(rtc != 0)  goto error;
-	}
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
 
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
-
-	return 0;
+  return 0;
 
 error:
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
 
-	return -1;
+  return -1;
 }
 
+extern int HECMW_couple_bcast(int n_neighbor_pe_send, int *neighbor_pe_send,
+                              int sendbuf_size, void *sendbuf,
+                              int n_neighbor_pe_recv, int *neighbor_pe_recv,
+                              int *recvbuf_index, void *recvbuf,
+                              HECMW_Datatype datatype, HECMW_Comm comm) {
+  HECMW_Request *request_send = NULL, *request_recv = NULL;
+  HECMW_Status *status_send = NULL, *status_recv = NULL;
+  int rtc, i;
 
-extern int
-HECMW_couple_bcast(int n_neighbor_pe_send, int *neighbor_pe_send,
-		int sendbuf_size, void *sendbuf, int n_neighbor_pe_recv, int *neighbor_pe_recv,
-		int *recvbuf_index, void *recvbuf, HECMW_Datatype datatype, HECMW_Comm comm)
-{
-	HECMW_Request *request_send = NULL, *request_recv = NULL;
-	HECMW_Status *status_send = NULL, *status_recv = NULL;
-	int rtc, i;
+  if (n_neighbor_pe_send > 0) {
+    request_send = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_send,
+                                                 sizeof(HECMW_Request));
+    if (request_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_send =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Status));
+    if (status_send == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+  }
+  if (n_neighbor_pe_recv > 0) {
+    request_recv = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_recv,
+                                                 sizeof(HECMW_Request));
+    if (request_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    status_recv =
+        (HECMW_Status *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Status));
+    if (status_recv == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+  }
 
-	if(n_neighbor_pe_send > 0) {
-	  request_send = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Request));
-	  if(request_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_send = (HECMW_Status *)HECMW_calloc(n_neighbor_pe_send, sizeof(HECMW_Status));
-	  if(status_send == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	}
-	if(n_neighbor_pe_recv > 0) {
-	  request_recv = (HECMW_Request *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Request));
-	  if(request_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	  status_recv = (HECMW_Status *)HECMW_calloc(n_neighbor_pe_recv, sizeof(HECMW_Status));
-	  if(status_recv == NULL) {
-		  HECMW_set_error(errno, "");
-		  goto error;
-	  }
-	}
+  if (datatype == HECMW_INT) {
+    int *_sendbuf = (int *)sendbuf;
+    int *_recvbuf = (int *)recvbuf;
 
-	if(datatype == HECMW_INT) {
-		int *_sendbuf = (int *)sendbuf;
-		int *_recvbuf = (int *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size, datatype,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size,
-					datatype, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_DOUBLE) {
+    double *_sendbuf = (double *)sendbuf;
+    double *_recvbuf = (double *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_DOUBLE) {
-		double *_sendbuf = (double *)sendbuf;
-		double *_recvbuf = (double *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size, datatype,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size,
-					datatype, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_CHAR) {
+    char *_sendbuf = (char *)sendbuf;
+    char *_recvbuf = (char *)recvbuf;
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else if(datatype == HECMW_CHAR) {
-		char *_sendbuf = (char *)sendbuf;
-		char *_recvbuf = (char *)recvbuf;
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size, datatype,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
 
-		/* send */
-		for(i=0; i<n_neighbor_pe_send; i++) {
-			rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size,
-					datatype, neighbor_pe_send[i], 0, comm, &request_send[i]);
-			if(rtc != 0)  goto error;
-		}
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else {
+    HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
+    goto error;
+  }
 
-		/* receive */
-		for(i=0; i<n_neighbor_pe_recv; i++) {
-			rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]], recvbuf_index[i+1]-recvbuf_index[i],
-					datatype, neighbor_pe_recv[i], 0, comm, &request_recv[i]);
-			if(rtc != 0)  goto error;
-		}
-	} else {
-		HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
-		goto error;
-	}
+  /* wait */
+  if (n_neighbor_pe_recv > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe_recv, request_recv, status_recv);
+    if (rtc != 0) goto error;
+  }
+  if (n_neighbor_pe_send > 0) {
+    rtc = HECMW_Waitall(n_neighbor_pe_send, request_send, status_send);
+    if (rtc != 0) goto error;
+  }
 
-	/* wait */
-	if(n_neighbor_pe_recv > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe_recv, request_recv, status_recv);
-		if(rtc != 0)  goto error;
-	}
-	if(n_neighbor_pe_send > 0) {
-		rtc = HECMW_Waitall(n_neighbor_pe_send, request_send, status_send);
-		if(rtc != 0)  goto error;
-	}
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
 
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
-
-	return 0;
+  return 0;
 
 error:
-	HECMW_free(request_send);
-	HECMW_free(request_recv);
-	HECMW_free(status_send);
-	HECMW_free(status_recv);
-	return -1;
+  HECMW_free(request_send);
+  HECMW_free(request_recv);
+  HECMW_free(status_send);
+  HECMW_free(status_recv);
+  return -1;
 }
 #if 0
 /*================================================================================================*/

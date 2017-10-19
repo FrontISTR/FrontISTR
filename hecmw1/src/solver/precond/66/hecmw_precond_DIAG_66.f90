@@ -80,24 +80,24 @@ contains
       ALU(36*ii   ) = D(36*ii   )
     enddo
 
-!    if (hecMAT%cmat%n_val.gt.0) then
-!      do k= 1, hecMAT%cmat%n_val
-!        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-!        ii = hecMAT%cmat%pair(k)%i
-!        ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
-!        ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
-!        ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
-!        ALU(9*ii-5) = ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
-!        ALU(9*ii-4) = ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
-!        ALU(9*ii-3) = ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
-!        ALU(9*ii-2) = ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
-!        ALU(9*ii-1) = ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
-!        ALU(9*ii  ) = ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
-!      enddo
-!
-!      !call hecmw_cmat_LU( hecMAT )
-!
-!    endif
+    !    if (hecMAT%cmat%n_val.gt.0) then
+    !      do k= 1, hecMAT%cmat%n_val
+    !        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
+    !        ii = hecMAT%cmat%pair(k)%i
+    !        ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
+    !        ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
+    !        ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
+    !        ALU(9*ii-5) = ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
+    !        ALU(9*ii-4) = ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
+    !        ALU(9*ii-3) = ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
+    !        ALU(9*ii-2) = ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
+    !        ALU(9*ii-1) = ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
+    !        ALU(9*ii  ) = ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
+    !      enddo
+    !
+    !      !call hecmw_cmat_LU( hecMAT )
+    !
+    !    endif
 
     do ii= 1, N
       ALUtmp(1,1)= ALU(36*ii-35) * SIGMA_DIAG
@@ -200,8 +200,8 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: X1, X2, X3, X4, X5, X6
 
-!C
-!C== Block SCALING
+    !C
+    !C== Block SCALING
     do i= 1, N
       X1= WW(6*i-5)
       X2= WW(6*i-4)

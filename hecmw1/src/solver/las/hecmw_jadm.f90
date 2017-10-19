@@ -33,28 +33,28 @@ contains
 
   subroutine hecmw_JAD_INIT(hecMAT)
     type(hecmwST_matrix) :: hecMAT
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_JAD_INIT_33(hecMAT)
-      CASE(4)
+      case(4)
         call hecmw_JAD_INIT_44(hecMAT)
-      CASE DEFAULT
+      case default
         call hecmw_JAD_INIT_nn(hecMAT)
-    END SELECT
+    end select
     INITIALIZED = 1
   end subroutine hecmw_JAD_INIT
 
   subroutine hecmw_JAD_FINALIZE(hecMAT)
     type(hecmwST_matrix) :: hecMAT
 
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_JAD_FINALIZE_33()
-      CASE(4)
+      case(4)
         call hecmw_JAD_FINALIZE_44()
-      CASE DEFAULT
+      case default
         call hecmw_JAD_FINALIZE_nn()
-    END SELECT
+    end select
     INITIALIZED = 0
   end subroutine hecmw_JAD_FINALIZE
 
@@ -73,14 +73,14 @@ contains
     real(kind=kreal) :: START_TIME, END_TIME
     real(kind=kreal), pointer :: D(:)
     integer(kind=kint) :: i,idof,jdof,NDOF,NDOF2
-    SELECT CASE(hecMAT%NDOF)
-      CASE(3)
+    select case(hecMAT%NDOF)
+      case(3)
         call hecmw_JAD_MATVEC_33(hecMESH, hecMAT, X, Y, COMMtime)
-      CASE(4)
+      case(4)
         call hecmw_JAD_MATVEC_44(hecMESH, hecMAT, X, Y, COMMtime)
-      CASE DEFAULT
+      case default
         call hecmw_JAD_MATVEC_nn(hecMESH, hecMAT, X, Y, COMMtime)
-    END SELECT
+    end select
   end subroutine hecmw_JAD_MATVEC
 
 end module hecmw_JAD_TYPE

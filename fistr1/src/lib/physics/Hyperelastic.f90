@@ -8,11 +8,11 @@ module mHyperElastic
   use mMaterial
   implicit none
 
-  contains
+contains
 
   !> This subroutine calculates derivative of the invariant with respect to Cauchy-Green tensor
   subroutine cderiv( matl, sectType, ctn, itn,               &
-              inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain    )
+      inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain    )
     type( tMaterial ), intent(in) :: matl                  !< material rpoperties
     integer, intent(in)           :: sectType              !< not used currently
     real(kind=kreal), intent(out) :: inv1b                 !< invariants
@@ -22,7 +22,7 @@ module mHyperElastic
     real(kind=kreal), intent(out) :: d2ibdc2(3,3,3,3,3)    !< derivative of the invariant with respect to c(i,j)
     real(kind=kreal), intent(in)  :: strain(6)             !< Cauchy-Lagrange strain tensor
     real(kind=kreal), intent(out) :: ctn(3,3)              !< right Cauchy-Green deformation tensor
-	real(kind=kreal), intent(out) :: itn(3,3)              !< identity tensor
+    real(kind=kreal), intent(out) :: itn(3,3)              !< identity tensor
 
 
     integer :: i, j, k, l, m, n
@@ -32,7 +32,7 @@ module mHyperElastic
     real(kind=kreal) :: didc(3,3,3), ctninv(3,3)
     real(kind=kreal) :: d2idc2(3,3,3,3,3)
 
-!   Kronecker's delta
+    !   Kronecker's delta
     delta(:,:) = 0.d0
     delta(1,1) = 1.d0
     delta(2,2) = 1.d0
@@ -48,19 +48,19 @@ module mHyperElastic
 
     itn(:,:) = delta(:,:)
 
-! ----- calculate the invariant of C
+    ! ----- calculate the invariant of C
     inv1 = ctn(1,1)+ctn(2,2)+ctn(3,3)
     inv2 = ctn(2,2)*ctn(3,3)+ctn(1,1)*ctn(3,3)+ctn(1,1)*ctn(2,2)                   &
-           -ctn(2,3)*ctn(2,3)-ctn(1,3)*ctn(1,3)-ctn(1,2)*ctn(1,2)
+      -ctn(2,3)*ctn(2,3)-ctn(1,3)*ctn(1,3)-ctn(1,2)*ctn(1,2)
     inv3 =  ctn(1,1)*ctn(2,2)*ctn(3,3)                                             &
-           +ctn(2,1)*ctn(3,2)*ctn(1,3)                                             &
-           +ctn(3,1)*ctn(1,2)*ctn(2,3)                                             &
-           -ctn(3,1)*ctn(2,2)*ctn(1,3)                                             &
-           -ctn(2,1)*ctn(1,2)*ctn(3,3)                                             &
-           -ctn(1,1)*ctn(3,2)*ctn(2,3)
+      +ctn(2,1)*ctn(3,2)*ctn(1,3)                                             &
+      +ctn(3,1)*ctn(1,2)*ctn(2,3)                                             &
+      -ctn(3,1)*ctn(2,2)*ctn(1,3)                                             &
+      -ctn(2,1)*ctn(1,2)*ctn(3,3)                                             &
+      -ctn(1,1)*ctn(3,2)*ctn(2,3)
     inv33 = inv3**(-1.d0/3.d0)
 
-! ----- calculate the inverse of C
+    ! ----- calculate the inverse of C
     ctninv(1,1)=(ctn(2,2)*ctn(3,3)-ctn(2,3)*ctn(2,3))/inv3
     ctninv(2,2)=(ctn(1,1)*ctn(3,3)-ctn(1,3)*ctn(1,3))/inv3
     ctninv(3,3)=(ctn(1,1)*ctn(2,2)-ctn(1,2)*ctn(1,2))/inv3
@@ -71,7 +71,7 @@ module mHyperElastic
     ctninv(3,1)=ctninv(1,3)
     ctninv(3,2)=ctninv(2,3)
 
-! ----- calculate the derivative of the C-invariant with respect to c(i,j)
+    ! ----- calculate the derivative of the C-invariant with respect to c(i,j)
     do i=1,3
       do j=1,3
         didc(i,j,1) = delta(i,j)
@@ -80,27 +80,27 @@ module mHyperElastic
       enddo
     enddo
 
-! ----- calculate the secont derivative of the C-invariant
+    ! ----- calculate the secont derivative of the C-invariant
     do k=1,3
-     do l=1,3
-      do m=1,3
-       do n=1,3
-         d2idc2(k,l,m,n,1)=0.d0
-         d2idc2(k,l,m,n,2)=delta(k,l)*delta(m,n)-             &
-            (delta(k,m)*delta(l,n)+delta(k,n)*delta(l,m))/2.d0
-         d2idc2(k,l,m,n,3)=inv3*(ctninv(m,n)*ctninv(k,l)-   &
-            (ctninv(k,m)*ctninv(n,l)+ctninv(k,n)*ctninv(m,l))/2.d0)
-       enddo
+      do l=1,3
+        do m=1,3
+          do n=1,3
+            d2idc2(k,l,m,n,1)=0.d0
+            d2idc2(k,l,m,n,2)=delta(k,l)*delta(m,n)-             &
+              (delta(k,m)*delta(l,n)+delta(k,n)*delta(l,m))/2.d0
+            d2idc2(k,l,m,n,3)=inv3*(ctninv(m,n)*ctninv(k,l)-   &
+              (ctninv(k,m)*ctninv(n,l)+ctninv(k,n)*ctninv(m,l))/2.d0)
+          enddo
+        enddo
       enddo
-     enddo
     enddo
 
-! ----- derivatives for the reduced invariants
+    ! ----- derivatives for the reduced invariants
     inv1b = inv1*inv33
     inv2b = inv2*inv33*inv33
     inv3b = dsqrt(inv3)
 
-!   --- first derivative the reduced c-invarians w.r.t. c(i,j)
+    !   --- first derivative the reduced c-invarians w.r.t. c(i,j)
     do i=1,3
       do j=1,3
         dibdc(i,j,1) = -inv33**4*inv1*didc(i,j,3)/3.d0 + inv33*didc(i,j,1)
@@ -109,32 +109,32 @@ module mHyperElastic
       enddo
     enddo
 
-!   --- second derivative of the reduced c-invariants w.r.t. c(i,j)
+    !   --- second derivative of the reduced c-invariants w.r.t. c(i,j)
     do i=1,3
-     do j=1,3
-      do k=1,3
-       do l=1,3
-         d2ibdc2(i,j,k,l,1) =  4.d0/9.d0*inv33**7*inv1*didc(i,j,3)*didc(k,l,3)                       &
-                              -inv33**4/3.d0*(didc(k,l,1)*didc(i,j,3)+didc(i,j,1)*didc(k,l,3))       &
-                              -inv33**4/3.d0*inv1*d2idc2(i,j,k,l,3)                                  &
-                              +inv33*d2idc2(i,j,k,l,1)
-         d2ibdc2(i,j,k,l,2) = 10.d0/9.d0*inv33**8*inv2*didc(i,j,3)*didc(k,l,3)                       &
-                              -2.d0/3.d0*inv33**5*(didc(k,l,2)*didc(i,j,3)+didc(i,j,2)*didc(k,l,3))  &
-                              -2.d0/3.d0*inv33**5*inv2*d2idc2(i,j,k,l,3)                             &
-                              +inv33**2*d2idc2(i,j,k,l,2)
-         d2ibdc2(i,j,k,l,3) = -didc(i,j,3)*didc(k,l,3)/(4.d0*inv3**1.5d0)                            &
-                              +d2idc2(i,j,k,l,3)/(2.d0*dsqrt(inv3))
-       enddo
+      do j=1,3
+        do k=1,3
+          do l=1,3
+            d2ibdc2(i,j,k,l,1) =  4.d0/9.d0*inv33**7*inv1*didc(i,j,3)*didc(k,l,3)                       &
+              -inv33**4/3.d0*(didc(k,l,1)*didc(i,j,3)+didc(i,j,1)*didc(k,l,3))       &
+              -inv33**4/3.d0*inv1*d2idc2(i,j,k,l,3)                                  &
+              +inv33*d2idc2(i,j,k,l,1)
+            d2ibdc2(i,j,k,l,2) = 10.d0/9.d0*inv33**8*inv2*didc(i,j,3)*didc(k,l,3)                       &
+              -2.d0/3.d0*inv33**5*(didc(k,l,2)*didc(i,j,3)+didc(i,j,2)*didc(k,l,3))  &
+              -2.d0/3.d0*inv33**5*inv2*d2idc2(i,j,k,l,3)                             &
+              +inv33**2*d2idc2(i,j,k,l,2)
+            d2ibdc2(i,j,k,l,3) = -didc(i,j,3)*didc(k,l,3)/(4.d0*inv3**1.5d0)                            &
+              +d2idc2(i,j,k,l,3)/(2.d0*dsqrt(inv3))
+          enddo
+        enddo
       enddo
-     enddo
     enddo
 
   end subroutine cderiv
 
-!-------------------------------------------------------------------------------
-!> This subroutine provides elastic tangent coefficient for Arruda-Boyce hyperelastic material
-!
-!-------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides elastic tangent coefficient for Arruda-Boyce hyperelastic material
+  !
+  !-------------------------------------------------------------------------------
   subroutine calElasticArrudaBoyce( matl, sectType, cijkl, strain )
     type( tMaterial ), intent(in) :: matl             !< material rpoperties
     integer, intent(in)           :: sectType         !< not used currently
@@ -149,30 +149,30 @@ module mHyperElastic
     real(kind=kreal) :: constant(3), coef
 
     call cderiv(  matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
-                             dibdc, d2ibdc2, strain    )
+      dibdc, d2ibdc2, strain    )
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
 
     forall( i=1:3, j=1:3, k=1:3, l=1:3 )
-        cijkl(i,j,k,l) =  constant(1)*(1.d0/(10.d0*coef**2)                            &
-                                        +66.d0*inv1b/(1050.d0*coef**4)                 &
-                                        +228.d0*inv1b**2/(7000.d0*coef**6)             &
-                                        +10380.d0*inv1b**3/(673750.d0*coef**8))        &
-                                      *dibdc(i,j,1)*dibdc(k,l,1)                       &
-                          +constant(1)*(0.5d0+inv1b/(10.d0*coef**2)                    &
-                                        +33.d0*inv1b**2/(1050.d0*coef**4)              &
-                                        +76.d0*inv1b**3/(7000.d0*coef**6)              &
-                                        +2595.d0*inv1b**4/(673750.d0*coef**8))         &
-                                      *d2ibdc2(i,j,k,l,1)                              &
-                          +(1.d0+1.d0/inv3b**2)*dibdc(i,j,3)*dibdc(k,l,3)/constant(3)  &
-                          +(inv3b-1.d0/inv3b)*d2ibdc2(i,j,k,l,3)/constant(3)
+      cijkl(i,j,k,l) =  constant(1)*(1.d0/(10.d0*coef**2)                            &
+        +66.d0*inv1b/(1050.d0*coef**4)                 &
+        +228.d0*inv1b**2/(7000.d0*coef**6)             &
+        +10380.d0*inv1b**3/(673750.d0*coef**8))        &
+        *dibdc(i,j,1)*dibdc(k,l,1)                       &
+        +constant(1)*(0.5d0+inv1b/(10.d0*coef**2)                    &
+        +33.d0*inv1b**2/(1050.d0*coef**4)              &
+        +76.d0*inv1b**3/(7000.d0*coef**6)              &
+        +2595.d0*inv1b**4/(673750.d0*coef**8))         &
+        *d2ibdc2(i,j,k,l,1)                              &
+        +(1.d0+1.d0/inv3b**2)*dibdc(i,j,3)*dibdc(k,l,3)/constant(3)  &
+        +(inv3b-1.d0/inv3b)*d2ibdc2(i,j,k,l,3)/constant(3)
     end forall
     cijkl(:,:,:,:) = 4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticArrudaBoyce
 
-!-------------------------------------------------------------------------------
-!> This subroutine provides to update stress and strain for Arrude-Royce material
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides to update stress and strain for Arrude-Royce material
   subroutine calUpdateElasticArrudaBoyce( matl, sectType, dstrain, dstress )
     type( tMaterial ), intent(in) :: matl         !> material properties
     integer, intent(in)           :: sectType     !> not used currently
@@ -191,19 +191,19 @@ module mHyperElastic
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
     call cderiv(  matl, sectType, ctn, itn,      &
-                             inv1b, inv2b, inv3b,           &
-                             dibdc, d2ibdc2, dstrain    )
+      inv1b, inv2b, inv3b,           &
+      dibdc, d2ibdc2, dstrain    )
 
 
-! ----- calculate the stress
+    ! ----- calculate the stress
     do i=1,3
-     do j=1,3
-       PKstress(i,j) = constant(1)*( 0.5d0+inv1b/(10.d0*coef**2)                     &
-                                +33.d0*inv1b*inv1b/(1050.d0*coef**4)                 &
-                                +76.d0*inv1b**3/(7000.d0*coef**6)                    &
-                                +2595.d0*inv1b**4/(673750.d0*coef**8))*dibdc(i,j,1)  &
-                      +(inv3b-1.d0/inv3b)*dibdc(i,j,3)/constant(3)
-       enddo
+      do j=1,3
+        PKstress(i,j) = constant(1)*( 0.5d0+inv1b/(10.d0*coef**2)                     &
+          +33.d0*inv1b*inv1b/(1050.d0*coef**4)                 &
+          +76.d0*inv1b**3/(7000.d0*coef**6)                    &
+          +2595.d0*inv1b**4/(673750.d0*coef**8))*dibdc(i,j,1)  &
+          +(inv3b-1.d0/inv3b)*dibdc(i,j,3)/constant(3)
+      enddo
     enddo
 
     dstress(1) = 2.d0*PKstress(1,1)
@@ -215,9 +215,9 @@ module mHyperElastic
 
   end subroutine calUpdateElasticArrudaBoyce
 
-!-------------------------------------------------------------------------------
-!> This subroutine provides elastic tangent coefficient for Mooney-Rivlin hyperelastic material
-!-------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides elastic tangent coefficient for Mooney-Rivlin hyperelastic material
+  !-------------------------------------------------------------------------------
   subroutine calElasticMooneyRivlin( matl, sectType, cijkl, strain )
     type( tMaterial ), intent(in) :: matl             !< material rpoperties
     integer, intent(in)           :: sectType         !< not used curr
@@ -234,21 +234,21 @@ module mHyperElastic
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
-                             dibdc, d2ibdc2, strain    )
+      dibdc, d2ibdc2, strain    )
 
-        forall( k=1:3, l=1:3, m=1:3, n=1:3 )
-            cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
-                             d2ibdc2(k,l,m,n,2)*constant(2) +  &
-		                     2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
-                (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))/constant(3)
-        end forall
-        cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
+    forall( k=1:3, l=1:3, m=1:3, n=1:3 )
+      cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
+        d2ibdc2(k,l,m,n,2)*constant(2) +  &
+        2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
+        (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))/constant(3)
+    end forall
+    cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticMooneyRivlin
 
-!-------------------------------------------------------------------------------
-!> This subroutine provides to update stress and strain for Mooney-Rivlin material
-!-------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides to update stress and strain for Mooney-Rivlin material
+  !-------------------------------------------------------------------------------
   subroutine calUpdateElasticMooneyRivlin( matl, sectType, strain, stress )
     type( tMaterial ), intent(in) :: matl        !< material properties
     integer, intent(in)           :: sectType    !< not used currently
@@ -265,16 +265,16 @@ module mHyperElastic
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
-                             dibdc, d2ibdc2, strain    )
+      dibdc, d2ibdc2, strain    )
 
 
-! ----- stress
-        do l=1,3
-        do k=1,3
-		    dudc(k,l) = dibdc(k,l,1)*constant(1)+dibdc(k,l,2)*constant(2)  &
-                            +2.d0*(inv3b-1.d0)*dibdc(k,l,3)/constant(3)
-        enddo
-        enddo
+    ! ----- stress
+    do l=1,3
+      do k=1,3
+        dudc(k,l) = dibdc(k,l,1)*constant(1)+dibdc(k,l,2)*constant(2)  &
+          +2.d0*(inv3b-1.d0)*dibdc(k,l,3)/constant(3)
+      enddo
+    enddo
 
     stress(1)=2.d0*dudc(1,1)
     stress(2)=2.d0*dudc(2,2)

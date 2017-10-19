@@ -105,11 +105,11 @@ contains
     else
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
-           hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+        hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
       !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
-           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
-           NCOLOR_IN, NColor, COLORindex, perm, iperm)
+        hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+        NCOLOR_IN, NColor, COLORindex, perm, iperm)
       !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
@@ -119,17 +119,17 @@ contains
       NPU = hecMAT%indexU(N)
       allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
       call hecmw_matrix_reorder_profile(N, perm, iperm, &
-           hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-           indexL, indexU, itemL, itemU)
+        hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+        indexL, indexU, itemL, itemU)
       !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
       call check_ordering
 
       allocate(D(36*N), AL(36*NPL), AU(36*NPU))
       call hecmw_matrix_reorder_values(N, 6, perm, iperm, &
-           hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-           hecMAT%AL, hecMAT%AU, hecMAT%D, &
-           indexL, indexU, itemL, itemU, AL, AU, D)
+        hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+        hecMAT%AL, hecMAT%AU, hecMAT%D, &
+        indexL, indexU, itemL, itemU, AL, AU, D)
       !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
       call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
@@ -140,14 +140,14 @@ contains
         NPCU = hecMAT%indexCU(N)
         allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
         call hecmw_matrix_reorder_profile(N, perm, iperm, &
-             hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-             indexCL, indexCU, itemCL, itemCU)
+          hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+          indexCL, indexCU, itemCL, itemCU)
 
         allocate(CD(36*N), CAL(36*NPCL), CAU(36*NPCU))
         call hecmw_matrix_reorder_values(N, 6, perm, iperm, &
-             hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-             hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-             indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
+          hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+          hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
+          indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
         deallocate(CD)
 
         call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
@@ -163,21 +163,21 @@ contains
       ALU(ii) = D(ii)
     enddo
 
-!    if (NContact.gt.0) then
-!      do k= 1, hecMAT%cmat%n_val
-!        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-!        ii = iperm( hecMAT%cmat%pair(k)%i )
-!        ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
-!        ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
-!        ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
-!        ALU(9*ii-5) = ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
-!        ALU(9*ii-4) = ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
-!        ALU(9*ii-3) = ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
-!        ALU(9*ii-2) = ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
-!        ALU(9*ii-1) = ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
-!        ALU(9*ii  ) = ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
-!      enddo
-!    endif
+    !    if (NContact.gt.0) then
+    !      do k= 1, hecMAT%cmat%n_val
+    !        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
+    !        ii = iperm( hecMAT%cmat%pair(k)%i )
+    !        ALU(9*ii-8) = ALU(9*ii-8) + hecMAT%cmat%pair(k)%val(1, 1)
+    !        ALU(9*ii-7) = ALU(9*ii-7) + hecMAT%cmat%pair(k)%val(1, 2)
+    !        ALU(9*ii-6) = ALU(9*ii-6) + hecMAT%cmat%pair(k)%val(1, 3)
+    !        ALU(9*ii-5) = ALU(9*ii-5) + hecMAT%cmat%pair(k)%val(2, 1)
+    !        ALU(9*ii-4) = ALU(9*ii-4) + hecMAT%cmat%pair(k)%val(2, 2)
+    !        ALU(9*ii-3) = ALU(9*ii-3) + hecMAT%cmat%pair(k)%val(2, 3)
+    !        ALU(9*ii-2) = ALU(9*ii-2) + hecMAT%cmat%pair(k)%val(3, 1)
+    !        ALU(9*ii-1) = ALU(9*ii-1) + hecMAT%cmat%pair(k)%val(3, 2)
+    !        ALU(9*ii  ) = ALU(9*ii  ) + hecMAT%cmat%pair(k)%val(3, 3)
+    !      enddo
+    !    endif
 
     do ii= 1, N
       ALUtmp(1,1)= ALU(36*ii-35) * SIGMA_DIAG
@@ -303,7 +303,7 @@ contains
       if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
       if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
       allocate (icToBlockIndex(0:NColor), &
-           blockIndexToColorIndex(0:numOfBlock + NColor))
+        blockIndexToColorIndex(0:numOfBlock + NColor))
       numOfElement = N + indexL(N) + indexU(N)
       numOfElementPerBlock = dble(numOfElement) / numOfBlock
       blockIndex = 0
@@ -313,9 +313,9 @@ contains
       blockIndexToColorIndex(0) = 0
       my_rank = hecmw_comm_get_rank()
       ! write(9000+my_rank,*) &
-      !      '# numOfElementPerBlock =', numOfElementPerBlock
+        !      '# numOfElementPerBlock =', numOfElementPerBlock
       ! write(9000+my_rank,*) &
-      !      '# ic, blockIndex, colorIndex, elementCount'
+        !      '# ic, blockIndex, colorIndex, elementCount'
       do ic = 1, NColor
         elementCount = 0
         ii = 1
@@ -324,12 +324,12 @@ contains
           elementCount = elementCount + (indexL(i) - indexL(i-1))
           elementCount = elementCount + (indexU(i) - indexU(i-1))
           if (elementCount > ii * numOfElementPerBlock &
-               .or. i == COLORindex(ic)) then
+              .or. i == COLORindex(ic)) then
             ii = ii + 1
             blockIndex = blockIndex + 1
             blockIndexToColorIndex(blockIndex) = i
             ! write(9000+my_rank,*) ic, blockIndex, &
-            !      blockIndexToColorIndex(blockIndex), elementCount
+              !      blockIndexToColorIndex(blockIndex), elementCount
           endif
         enddo
         icToBlockIndex(ic) = blockIndex
@@ -337,7 +337,7 @@ contains
       numOfBlock = blockIndex
 
       call hecmw_tuning_fx_calc_sector_cache( N, 3, &
-           sectorCacheSize0, sectorCacheSize1 )
+        sectorCacheSize0, sectorCacheSize1 )
 
       isFirst = .false.
     endif
@@ -345,21 +345,21 @@ contains
 
     !call start_collection("loopInPrecond66")
 
-!OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-!OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
-!$omp parallel default(none) &
-!$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-!$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
-!$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-!$omp&private(SW1,SW2,SW3,SW4,SW5,SW6,X1,X2,X3,X4,X5,X6,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
+      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
+      !$omp&private(SW1,SW2,SW3,SW4,SW5,SW6,X1,X2,X3,X4,X5,X6,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
     !C-- FORWARD
     do ic=1,NColor
-!$omp do schedule (static, 1)
+      !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
-             blockIndexToColorIndex(blockIndex)
+            blockIndexToColorIndex(blockIndex)
           ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
           iold = perm(i)
           SW1= ZP(6*iold-5)
@@ -433,18 +433,18 @@ contains
           ZP(6*iold  )= X6
         enddo ! i
       enddo ! blockIndex
-!$omp end do
+      !$omp end do
     enddo ! ic
 
     !C-- BACKWARD
     do ic=NColor, 1, -1
-!$omp do schedule (static, 1)
+      !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
         do i = blockIndexToColorIndex(blockIndex), &
-             blockIndexToColorIndex(blockIndex-1)+1, -1
+            blockIndexToColorIndex(blockIndex-1)+1, -1
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
           !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
-          !        blockIndexToColorIndex(blockIndex)
+            !        blockIndexToColorIndex(blockIndex)
           !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
           SW1= 0.d0
           SW2= 0.d0
@@ -518,12 +518,12 @@ contains
           ZP(6*iold  )= ZP(6*iold  ) -X6
         enddo ! i
       enddo ! blockIndex
-!$omp end do
+      !$omp end do
     enddo ! ic
-!$omp end parallel
+    !$omp end parallel
 
-!OCL END_CACHE_SUBSECTOR
-!OCL END_CACHE_SECTOR_SIZE
+    !OCL END_CACHE_SUBSECTOR
+    !OCL END_CACHE_SECTOR_SIZE
 
     !call stop_collection("loopInPrecond66")
 

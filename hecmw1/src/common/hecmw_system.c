@@ -9,19 +9,17 @@
 #include "hecmw_geometric.h"
 #include "hecmw_system.h"
 
-int
-HECMW_system(struct hecmw_system_param *param,
-			struct hecmw_coord *coord, struct hecmw_coord *result)
-{
-	if(param == NULL) {
-		/* do nothing */
-		*result = *coord;
-		return 0;
-	}
-	if(coord == NULL) return -1;
-	if(result == NULL) return -1;
+int HECMW_system(struct hecmw_system_param *param, struct hecmw_coord *coord,
+                 struct hecmw_coord *result) {
+  if (param == NULL) {
+    /* do nothing */
+    *result = *coord;
+    return 0;
+  }
+  if (coord == NULL) return -1;
+  if (result == NULL) return -1;
 
-	*result = *coord;
+  *result = *coord;
 
-	return 0;
+  return 0;
 }

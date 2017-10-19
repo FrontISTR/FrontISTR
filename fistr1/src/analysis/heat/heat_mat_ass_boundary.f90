@@ -5,58 +5,58 @@
 !> \brief This module provides a subroutine for all boundary conditions
 !! needed in heat anaylsis
 module m_heat_mat_ass_boundary
-   contains
-!C***
-!C*** MAT_ASS_BOUNDARY
-!C***
-   subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,ATIME, BTIME, DTIME )
+contains
+  !C***
+  !C*** MAT_ASS_BOUNDARY
+  !C***
+  subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,ATIME, BTIME, DTIME )
 
-      use m_fstr
-      use m_heat_mat_ass_bc_CFLUX
-      use m_heat_mat_ass_bc_DFLUX
-      use m_heat_mat_ass_bc_FIXT
-      use m_heat_mat_ass_bc_FILM
-      use m_heat_mat_ass_bc_RADIATE
+    use m_fstr
+    use m_heat_mat_ass_bc_CFLUX
+    use m_heat_mat_ass_bc_DFLUX
+    use m_heat_mat_ass_bc_FIXT
+    use m_heat_mat_ass_bc_FILM
+    use m_heat_mat_ass_bc_RADIATE
 
-      implicit none
-      real(kind=kreal)   ATIME,BTIME,CTIME, DTIME
-      type (fstr_heat         ) :: fstrHEAT
-      type (hecmwST_matrix    ) :: hecMAT
-      type (hecmwST_local_mesh) :: hecMESH
+    implicit none
+    real(kind=kreal) :: ATIME, BTIME, CTIME, DTIME
+    type(fstr_heat)          :: fstrHEAT
+    type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
 
-      CTIME = ATIME + BTIME
+    CTIME = ATIME + BTIME
 
-!C
-!C +---------+
-!C | !CFLUX  |
-!C +---------+
-!C===
-      call heat_mat_ass_bc_CFLUX ( hecMAT, fstrHEAT, CTIME )
-!C
-!C +---------+
-!C | !DFLUX  |
-!C +---------+
-!C===
-      call heat_mat_ass_bc_DFLUX ( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME )
-!C
-!C +--------+
-!C | !FILM  |
-!C +--------+
-!C===
-      call heat_mat_ass_bc_FILM ( hecMESH, hecMAT, fstrHEAT, CTIME )
-!C
-!C +-----------+
-!C | !RADIATE  |
-!C +-----------+
-!C===
-      call heat_mat_ass_bc_RADIATE ( hecMESH, hecMAT, fstrHEAT, CTIME )
-!C
-!C +------------+
-!C | !BOUNDARY  |
-!C +------------+
-!C===
-      call heat_mat_ass_bc_FIXT ( hecMAT, fstrHEAT, CTIME )
-      return
+    !C
+    !C +---------+
+    !C | !CFLUX  |
+    !C +---------+
+    !C===
+    call heat_mat_ass_bc_CFLUX ( hecMAT, fstrHEAT, CTIME )
+    !C
+    !C +---------+
+    !C | !DFLUX  |
+    !C +---------+
+    !C===
+    call heat_mat_ass_bc_DFLUX ( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME )
+    !C
+    !C +--------+
+    !C | !FILM  |
+    !C +--------+
+    !C===
+    call heat_mat_ass_bc_FILM ( hecMESH, hecMAT, fstrHEAT, CTIME )
+    !C
+    !C +-----------+
+    !C | !RADIATE  |
+    !C +-----------+
+    !C===
+    call heat_mat_ass_bc_RADIATE ( hecMESH, hecMAT, fstrHEAT, CTIME )
+    !C
+    !C +------------+
+    !C | !BOUNDARY  |
+    !C +------------+
+    !C===
+    call heat_mat_ass_bc_FIXT ( hecMAT, fstrHEAT, CTIME )
+    return
 
-   end subroutine heat_mat_ass_boundary
+  end subroutine heat_mat_ass_boundary
 end module m_heat_mat_ass_boundary

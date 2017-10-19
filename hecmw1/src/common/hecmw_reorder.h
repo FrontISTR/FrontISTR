@@ -8,13 +8,9 @@
 
 #include "hecmw_struct.h"
 
-extern int
-HECMW_reorder_node_mpc( struct hecmwST_local_mesh *local_mesh );
-extern int
-HECMW_reorder_node_dof( struct hecmwST_local_mesh *local_mesh );
-extern int
-HECMW_reorder_elem_type( struct hecmwST_local_mesh *local_mesh );
-extern int
-HECMW_reorder( struct hecmwST_local_mesh *local_mesh );
+extern int HECMW_reorder_node_mpc(struct hecmwST_local_mesh *local_mesh);
+extern int HECMW_reorder_node_dof(struct hecmwST_local_mesh *local_mesh);
+extern int HECMW_reorder_elem_type(struct hecmwST_local_mesh *local_mesh);
+extern int HECMW_reorder(struct hecmwST_local_mesh *local_mesh);
 
 #endif

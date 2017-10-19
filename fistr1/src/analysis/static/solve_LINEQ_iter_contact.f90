@@ -7,7 +7,7 @@
 module m_solve_LINEQ_iter_contact
   use m_fstr
   use fstr_matrix_con_contact
-  USE hecmw_solver
+  use hecmw_solver
 
   private
   public :: solve_LINEQ_iter_contact_init
@@ -27,7 +27,7 @@ contains
     logical, intent(in) :: is_sym
 
     if (INITIALIZED) then
-       INITIALIZED = .false.
+      INITIALIZED = .false.
     endif
 
     hecMAT%Iarray(98) = 1
@@ -123,7 +123,7 @@ contains
     ndof=hecMAT%NDOF
     allocate(iw2(hecMAT%N*ndof))
     allocate(iwS(fstrMAT%num_lagrange), wSL(fstrMAT%num_lagrange), &
-         wSU(fstrMAT%num_lagrange))
+      wSU(fstrMAT%num_lagrange))
 
     ! choose slave DOFs to be eliminated with Lag. DOFs
     call choose_slaves(hecMAT, fstrMAT, iw2, iwS, wSL, wSU)
@@ -158,7 +158,7 @@ contains
 
     ! make new RHS
     call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
-         fstrMAT%num_lagrange, hecTKT%B)
+      fstrMAT%num_lagrange, hecTKT%B)
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: calculated RHS', hecmw_wtime()-t1
 
     ! use CG when the matrix is symmetric
@@ -241,10 +241,10 @@ contains
         enddo
       enddo
     enddo
-!!$    write(0,*) 'iw1L, iw1U:'
-!!$    do i=1,hecMAT%N*ndof
-!!$      if (iw1L(i) > 0 .or. iw1U(i) > 0) write(0,*) i, iw1L(i), iw1U(i)
-!!$    enddo
+    !!$    write(0,*) 'iw1L, iw1U:'
+    !!$    do i=1,hecMAT%N*ndof
+    !!$      if (iw1L(i) > 0 .or. iw1U(i) > 0) write(0,*) i, iw1L(i), iw1U(i)
+    !!$    enddo
 
     ! Choose dofs that
     ! - appear only onece in both lower and upper Lag. and
@@ -269,12 +269,12 @@ contains
       iw2(imax)=i
       iwS(i)=imax; wSL(i)=-1.d0/vmax
     enddo
-!!$    write(0,*) 'iw2:'
-!!$    do i=1,hecMAT%N*ndof
-!!$      if (iw2(i) > 0) write(0,*) i, iw2(i), iw1L(i), iw1U(i)
-!!$    enddo
-!!$    write(0,*) 'iwS:'
-!!$    write(0,*) iwS(:)
+    !!$    write(0,*) 'iw2:'
+    !!$    do i=1,hecMAT%N*ndof
+    !!$      if (iw2(i) > 0) write(0,*) i, iw2(i), iw1L(i), iw1U(i)
+    !!$    enddo
+    !!$    write(0,*) 'iwS:'
+    !!$    write(0,*) iwS(:)
 
     deallocate(iw1L, iw1U)
 
@@ -507,7 +507,7 @@ contains
     integer(kind=kint), intent(in) :: iwS(:)
     real(kind=kreal), intent(in) :: wSU(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: ndof, ndof2, ilag, iS, i, idof
+    integer(kind=kint) :: ndof, ndof2, ilag, is, i, idof
     integer(kind=kint) :: js, je, j, jj, ij0, j0, jdof
     real(kind=kreal), pointer :: xlag(:)
 
@@ -517,10 +517,10 @@ contains
     xlag=>hecMAT%X(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
 
     do ilag=1,num_lagrange
-      iS=iwS(ilag)
-      i=(iS-1)/ndof+1
-      idof=mod(iS-1, ndof)+1
-      xlag(ilag)=hecMAT%B(iS)
+      is=iwS(ilag)
+      i=(is-1)/ndof+1
+      idof=mod(is-1, ndof)+1
+      xlag(ilag)=hecMAT%B(is)
       !lower
       js=hecMAT%indexL(i-1)+1
       je=hecMAT%indexL(i)
@@ -617,13 +617,13 @@ contains
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: reorder_current_export done'
       ! check consistency
       if (n_curexp /= n_orgexp - n_oldexp + n_newexp) &
-           stop 'ERROR: unknown error(num of export nodes)' !!! ASSERTION
+        stop 'ERROR: unknown error(num of export nodes)' !!! ASSERTION
       ! make item_exp from item of BT_exp by converting column id to place in cur_export
       call convert_BT_exp_col_id(BT_exp(idom), cur_export, n_curexp)
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: convert_BT_expx_col_id done'
       ! add current export list to commtable
       call append_commtable(hecMESHtmp%n_neighbor_pe, hecMESHtmp%export_index, &
-           hecMESHtmp%export_item, idom, cur_export, n_curexp)
+        hecMESHtmp%export_item, idom, cur_export, n_curexp)
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: append_commtable (export) done'
       deallocate(cur_export)
       cur_export => hecMESHtmp%export_item(hecMESHtmp%export_index(idom-1)+1:hecMESHtmp%export_index(idom))
@@ -632,12 +632,12 @@ contains
       sendbuf(2) = n_newexp
       tag = 1001
       call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
-           hecMESH%MPI_COMM, requests(idom))
+        hecMESH%MPI_COMM, requests(idom))
       if (n_oldexp > 0) then
         n_send = n_send + 1
         tag = 1002
         call HECMW_ISEND_INT(old_export, n_oldexp, irank, tag, &
-             hecMESH%MPI_COMM, requests(hecMESH%n_neighbor_pe+n_send))
+          hecMESH%MPI_COMM, requests(hecMESH%n_neighbor_pe+n_send))
       end if
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend n_oldexp, n_newexp, old_export done'
@@ -646,14 +646,14 @@ contains
       ! receive current import info from neighbor pe
       tag = 1001
       call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1))
+        hecMESH%MPI_COMM, statuses(:,1))
       n_oldimp = recvbuf(1)
       n_newimp = recvbuf(2)
       if (n_oldimp > 0) then
         allocate(old_import(n_oldimp))
         tag = 1002
         call HECMW_RECV_INT(old_import, n_oldimp, irank, tag, &
-             hecMESH%MPI_COMM, statuses(:,1))
+          hecMESH%MPI_COMM, statuses(:,1))
       end if
       !
       idx_0 = hecMESH%import_index(idom-1)
@@ -665,11 +665,11 @@ contains
       n_curimp = n_orgimp - n_oldimp + n_newimp
       allocate(cur_import(n_curimp))
       call make_cur_import(org_import, n_orgimp, old_import, n_oldimp, &
-           n_newimp, i0, cur_import)
+        n_newimp, i0, cur_import)
       if (n_oldimp > 0) deallocate(old_import)
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: make_cur_import done'
       call append_commtable(hecMESHtmp%n_neighbor_pe, hecMESHtmp%import_index, &
-           hecMESHtmp%import_item, idom, cur_import, n_curimp)
+        hecMESHtmp%import_item, idom, cur_import, n_curimp)
       if (DEBUG > 0) write(0,*) myrank, 'DEBUG: append_commtable (import) done'
       deallocate(cur_import)
       !cur_import => hecMESHtmp%import_item(hecMESHtmp%import_index(idom-1)+1:hecMESHtmp%import_index(idom))
@@ -685,10 +685,10 @@ contains
       sendbuf(2) = BT_exp(idom)%nnz
       tag = 1003
       call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
-           hecMESH%MPI_COMM, requests(2*idom-1))
+        hecMESH%MPI_COMM, requests(2*idom-1))
       tag = 1004
       call HECMW_ISEND_INT(BT_exp(idom)%index(0:BT_exp(idom)%nr), BT_exp(idom)%nr+1, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom))
+        irank, tag, hecMESH%MPI_COMM, requests(2*idom))
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend BT_exp (nnz and index) done'
     BT_imp%nr = 0
@@ -701,23 +701,23 @@ contains
       irank = hecMESH%neighbor_pe(idom)
       tag = 1003
       call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1))
+        hecMESH%MPI_COMM, statuses(:,1))
       nr_imp = recvbuf(1)
       nnz_imp(idom) = recvbuf(2)
       idx_0 = hecMESH%import_index(idom-1)
       idx_n = hecMESH%import_index(idom)
       if (nr_imp /= idx_n - idx_0) &
-           stop 'ERROR: num of rows of BT_imp incorrect' !!! ASSERTION
+        stop 'ERROR: num of rows of BT_imp incorrect' !!! ASSERTION
       BT_imp%nr = BT_imp%nr + nr_imp
       BT_imp%nnz = BT_imp%nnz + nnz_imp(idom)
       allocate(index_imp(0:nr_imp))
       tag = 1004
       call HECMW_RECV_INT(index_imp(0), nr_imp+1, irank, tag, &
-           hecMESH%MPI_COMM, statuses(:,1))
+        hecMESH%MPI_COMM, statuses(:,1))
       if (index_imp(nr_imp) /= nnz_imp(idom)) then !!! ASSERTION
         if (DEBUG > 0) write(0,*) myrank, 'ERROR: num of nonzero of BT_imp incorrect'
         if (DEBUG > 0) write(0,*) myrank, 'nr_imp, index_imp(nr_imp), nnz_imp', &
-             nr_imp, index_imp(nr_imp), nnz_imp(idom)
+          nr_imp, index_imp(nr_imp), nnz_imp(idom)
         stop
       endif
       do j = 1, nr_imp
@@ -731,7 +731,7 @@ contains
       BT_imp%index(j) = BT_imp%index(j-1) + BT_imp%index(j)
     end do
     if (BT_imp%index(hecMESH%import_index(hecMESH%n_neighbor_pe)) /= BT_imp%nnz) &
-         stop 'ERROR: total num of nonzero of BT_imp incorrect' !!! ASSERTION
+      stop 'ERROR: total num of nonzero of BT_imp incorrect' !!! ASSERTION
     ndof2 = BTmat%ndof ** 2
     allocate(BT_imp%item(BT_imp%nnz),BT_imp%A(BT_imp%nnz * ndof2))
     call HECMW_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses)
@@ -741,10 +741,10 @@ contains
       irank = hecMESH%neighbor_pe(idom)
       tag = 1005
       call HECMW_Isend_INT(BT_exp(idom)%item, BT_exp(idom)%nnz, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom-1))
+        irank, tag, hecMESH%MPI_COMM, requests(2*idom-1))
       tag = 1006
       call HECMW_Isend_R(BT_exp(idom)%A, BT_exp(idom)%nnz * ndof2, &
-           irank, tag, hecMESH%MPI_COMM, requests(2*idom))
+        irank, tag, hecMESH%MPI_COMM, requests(2*idom))
     end do
     if (DEBUG > 0) write(0,*) myrank, 'DEBUG: isend BT_exp (item and val) done'
     do idom = 1,hecMESH%n_neighbor_pe
@@ -754,11 +754,11 @@ contains
       allocate(item_imp(nnz_imp(idom)))
       tag = 1005
       call HECMW_Recv_INT(item_imp, nnz_imp(idom), &
-           irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+        irank, tag, hecMESH%MPI_COMM, statuses(:,1))
       allocate(val_imp(nnz_imp(idom) * ndof2))
       tag = 1006
       call HECMW_Recv_R(val_imp, nnz_imp(idom) * ndof2, &
-           irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+        irank, tag, hecMESH%MPI_COMM, statuses(:,1))
 
       ! convert column id of item_imp() to local id refering cur_import(:)
       idx_0_tmp = hecMESHtmp%import_index(idom-1)
@@ -775,7 +775,7 @@ contains
           cnt = cnt + 1
           iimp = item_imp(cnt)
           if (iimp <= 0 .or. n_curimp < iimp) &
-               stop 'ERROR: received column id out of range' !!! ASSERTION
+            stop 'ERROR: received column id out of range' !!! ASSERTION
           BT_imp%item(k) = cur_import(iimp)
           BT_imp%A((k-1)*ndof2+1:k*ndof2) = val_imp((cnt-1)*ndof2+1:cnt*ndof2)
         end do
@@ -803,7 +803,7 @@ contains
     end do
     do i = 1, BT_imp%nr
       BT_all%index(BTmat%nr+i) = BT_all%index(BTmat%nr+i-1) + &
-           BT_imp%index(i) - BT_imp%index(i-1)
+        BT_imp%index(i) - BT_imp%index(i-1)
     end do
     do i = 1, BTmat%nnz
       BT_all%item(i) = BTmat%item(i)
@@ -923,7 +923,7 @@ contains
     do j = 1,n_curexp
       jnod = cur_export(j)
       if (jnod > nn_internal) &
-           stop 'ERROR: unknown error (jnod)'  !!! ASSERTION
+        stop 'ERROR: unknown error (jnod)'  !!! ASSERTION
       if (.not. is_included(org_export, n_orgexp, jnod)) then
         n_newexp = n_newexp + 1
         new_export(n_newexp) = jnod
@@ -1006,7 +1006,7 @@ contains
   end subroutine append_nodes
 
   subroutine make_cur_import(org_import, n_orgimp, old_import, n_oldimp, &
-       n_newimp, i0, cur_import)
+      n_newimp, i0, cur_import)
     implicit none
     integer(kind=kint), intent(in) :: org_import(:), old_import(:)
     integer(kind=kint), intent(in) :: n_orgimp, n_oldimp, n_newimp, i0
@@ -1175,14 +1175,14 @@ contains
     hecMATLag%indexU(0) = 0
     do i = 1, hecMAT%N
       hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
-           (hecMAT%indexU(i) - hecMAT%indexU(i-1)) + iwUr(i)
+        (hecMAT%indexU(i) - hecMAT%indexU(i-1)) + iwUr(i)
     enddo
     do i = hecMAT%N+1, hecMATLag%N
       hecMATLag%indexU(i) = hecMATLag%indexU(i-1)
     enddo
     do i = hecMATLag%N+1, hecMATLag%NP
       hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
-           (hecMAT%indexU(i-nb_lag) - hecMAT%indexU(i-1-nb_lag))
+        (hecMAT%indexU(i-nb_lag) - hecMAT%indexU(i-1-nb_lag))
     enddo
     hecMATLag%NPU = hecMATLag%indexU(hecMATLag%NP)
     !write(0,*) 'DEBUG: hecMATLag%NPU=',hecMATLag%NPU
@@ -1197,7 +1197,7 @@ contains
     enddo
     do i = hecMATLag%N+1, hecMATLag%NP
       hecMATLag%indexL(i) = hecMATLag%indexL(i-1) + &
-           (hecMAT%indexL(i-nb_lag) - hecMAT%indexL(i-1-nb_lag))
+        (hecMAT%indexL(i-nb_lag) - hecMAT%indexL(i-1-nb_lag))
     enddo
     hecMATLag%NPL = hecMATLag%indexL(hecMATLag%NP)
     !write(0,*) 'DEBUG: hecMATLag%NPL=',hecMATLag%NPL
@@ -1248,7 +1248,7 @@ contains
           !if (hecMATLag%itemU(k) /= hecMAT%N + jb_lag) stop 'ERROR itemU jb_lag'
           do idof = 1, ndof
             hecMATLag%AU((k-1)*ndof2+(idof-1)*ndof+jdof) = &
-                 fstrMAT%AU_lagrange((l-1)*ndof+idof)
+              fstrMAT%AU_lagrange((l-1)*ndof+idof)
           enddo
         enddo
       enddo
@@ -1326,7 +1326,7 @@ contains
             !if (hecMATLag%itemL(k) /= j) stop 'ERROR itemL j'
             do jdof = 1, ndof
               hecMATLag%AL((k-1)*ndof2+(idof-1)*ndof+jdof) = &
-                   fstrMAT%AL_lagrange((l-1)*ndof+jdof)
+                fstrMAT%AL_lagrange((l-1)*ndof+jdof)
             enddo
           enddo
         enddo

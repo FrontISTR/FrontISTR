@@ -9,11 +9,11 @@
 #include "hecmw_struct.h"
 #include "hecmw_part_struct.h"
 
-extern struct hecmwST_local_mesh
-*HECMW_partition_inner( struct hecmwST_local_mesh *global_mesh,
-                        struct hecmw_part_cont_data *cont_data );
+extern struct hecmwST_local_mesh *HECMW_partition_inner(
+    struct hecmwST_local_mesh *global_mesh,
+    struct hecmw_part_cont_data *cont_data);
 
-extern struct hecmwST_local_mesh
-*HECMW_partition( struct hecmwST_local_mesh *local_mesh );
+extern struct hecmwST_local_mesh *HECMW_partition(
+    struct hecmwST_local_mesh *local_mesh);
 
-#endif  /* INC_HPWMC_PARTITION */
+#endif /* INC_HPWMC_PARTITION */

@@ -21,13 +21,13 @@ module m_fstr_NonLinearMethod
 
   implicit none
 
-  contains
+contains
 
 
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
   !> method
   subroutine fstr_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-    restrt_step_num, sub_step, ctime, dtime )
+      restrt_step_num, sub_step, ctime, dtime )
 
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -165,8 +165,8 @@ module m_fstr_NonLinearMethod
   !> method combined with Nested iteration of augmentation calculation as suggested
   !> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
   subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
-    restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange )
-  use mContact
+      restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange )
+    use mContact
 
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -263,7 +263,7 @@ module m_fstr_NonLinearMethod
         endif
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        CALL solve_LINEQ(hecMESH,hecMAT)
+        call solve_LINEQ(hecMESH,hecMAT)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
         if( hecMESH%n_dof == 3 ) then
@@ -386,7 +386,7 @@ module m_fstr_NonLinearMethod
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson method.
   !> Standard Lagrange multiplier algorithm for contact analysis is incoluded in this subroutine.
   subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,                  &
-    restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
+      restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
 
     use mContact
     use m_addContactStiffness
@@ -485,7 +485,7 @@ module m_fstr_NonLinearMethod
 
     count_step = 0
 
-    loopFORcontactAnalysis: DO WHILE( .TRUE. )
+    loopFORcontactAnalysis: do while( .TRUE. )
       count_step = count_step+1
 
       ! ----- Inner Iteration
@@ -676,7 +676,7 @@ module m_fstr_NonLinearMethod
         return
       end if
 
-    ENDDO loopFORcontactAnalysis
+    enddo loopFORcontactAnalysis
 
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 

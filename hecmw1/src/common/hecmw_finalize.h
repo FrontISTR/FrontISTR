@@ -6,7 +6,6 @@
 #ifndef HECMW_FINALIZE_INCLUDED
 #define HECMW_FINALIZE_INCLUDED
 
-
 extern int HECMW_finalize(void);
 
 #endif

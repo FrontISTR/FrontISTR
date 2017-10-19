@@ -8,7 +8,7 @@ module m_solve_LINEQ_direct_serial_lag
   use fstr_matrix_con_contact
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
-! use hecmw_solver_
+  ! use hecmw_solver_
 
 contains
 
@@ -42,7 +42,7 @@ contains
     ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
     numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(ndof+1)/2 &
-            + (fstrMAT%numU_lagrange)*hecMAT%NDOF+fstrMAT%num_lagrange
+      + (fstrMAT%numU_lagrange)*hecMAT%NDOF+fstrMAT%num_lagrange
 
     allocate(b(size(hecMAT%B)))
     b = hecMAT%B

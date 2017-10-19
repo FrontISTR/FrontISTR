@@ -9,7 +9,7 @@ module hecmw_matrix_misc
   use m_hecmw_comm_f
   implicit none
 
-  contains
+contains
 
   subroutine hecmw_mat_clear( hecMAT )
     type(hecmwST_matrix) :: hecMAT
@@ -173,8 +173,8 @@ module hecmw_matrix_misc
     type(hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: iterpremax
 
-        if (iterpremax.lt.0) iterpremax= 0
-        if (iterpremax.gt.4) iterpremax= 4
+    if (iterpremax.lt.0) iterpremax= 0
+    if (iterpremax.gt.4) iterpremax= 4
 
     hecMAT%Iarray(5) = iterpremax
   end subroutine hecmw_mat_set_iterpremax
@@ -516,7 +516,7 @@ module hecmw_matrix_misc
     real(kind=kreal) :: hecmw_mat_diag_max
     type (hecmwST_matrix) :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
-     integer(kind=kint) :: ndiag, i
+    integer(kind=kint) :: ndiag, i
 
     hecmw_mat_diag_max = -1.0e20
     ndiag = hecMAT%NDOF**2 * hecMAT%NP

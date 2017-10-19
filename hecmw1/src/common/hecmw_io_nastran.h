@@ -17,4 +17,3 @@ extern int HECMW_read_nastran_mesh(const char *filename);
 extern struct hecmwST_local_mesh *HECMW_get_nastran_mesh(const char *filename);
 
 #endif
-

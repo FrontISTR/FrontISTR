@@ -5,9 +5,9 @@
 !> \brief  This module provides functions to modify MPC conditions
 module fstr_ctrl_modifier
 
-use fstr_setup_util
-use hecmw_util
-implicit none
+  use fstr_setup_util
+  use hecmw_util
+  implicit none
 
 contains
 

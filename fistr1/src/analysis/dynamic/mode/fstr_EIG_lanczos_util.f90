@@ -4,21 +4,21 @@
 !-------------------------------------------------------------------------------
 module m_fstr_EIG_lanczos_util
 
-  contains
+contains
 
-!> Initialize Lanczos iterations
+  !> Initialize Lanczos iterations
   subroutine lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, q, beta)
     use m_fstr
     use hecmw_util
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
-    type(hecmwST_matrix    ) :: hecMAT
-    type(fstr_eigen        ) :: fstrEIG
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j
-    real(kind=kreal) :: eigvec(:,:), p(:), beta, chk, sigma
+    real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
-    real(kind=kreal), pointer :: q(:), mass(:), filter(:)
+    real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -73,7 +73,7 @@ module m_fstr_EIG_lanczos_util
     enddo
   end subroutine lanczos_set_initial_value
 
-!> Sort eigenvalues
+  !> Sort eigenvalues
   subroutine EVSORT(EIG, NEW, NEIG)
     use hecmw
     implicit none
@@ -104,19 +104,19 @@ module m_fstr_EIG_lanczos_util
   subroutine URAND1(N, X, SHIFT)
     use hecmw
     implicit none
-    REAL(kind=kreal) :: X(N), INVM
-    INTEGER(kind=kint), parameter :: MM = 1664501
-    INTEGER(kind=kint), parameter :: LAMBDA = 1229
-    INTEGER(kind=kint), parameter :: MU = 351750
-    INTEGER(kind=kint) :: i, N, IR, SHIFT
+    real(kind=kreal) :: X(N), INVM
+    integer(kind=kint), parameter :: MM = 1664501
+    integer(kind=kint), parameter :: LAMBDA = 1229
+    integer(kind=kint), parameter :: MU = 351750
+    integer(kind=kint) :: i, N, IR, SHIFT
 
     IR = 9999991
     INVM = 1.0D0 / MM
-    DO I = 1, SHIFT
-      IR = MOD( LAMBDA * IR + MU, MM)
+    do I = 1, SHIFT
+      IR = mod( LAMBDA * IR + MU, MM)
     enddo
-    DO I = SHIFT+1, SHIFT+N
-      IR = MOD( LAMBDA * IR + MU, MM)
+    do I = SHIFT+1, SHIFT+N
+      IR = mod( LAMBDA * IR + MU, MM)
       X(I-SHIFT) = INVM * IR
     enddo
   end subroutine URAND1

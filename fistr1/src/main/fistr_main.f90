@@ -20,22 +20,22 @@ module m_fstr_main
   use fstr_debug_dump
   use fstr_matrix_con_contact
 
-  type (hecmwST_local_mesh)             :: hecMESH
-  type (hecmwST_matrix )                :: hecMAT
-  type (hecmwST_matrix )                 :: conMAT
-  type (fstr_solid )                    :: fstrSOLID
-  type (fstrST_matrix_contact_lagrange) :: fstrMAT
-  type (fstr_heat )                     :: fstrHEAT
-  type (fstr_eigen)                     :: fstrEIG
-  type (fstr_dynamic )                  :: fstrDYNAMIC
-  type ( hecmwST_result_data )          :: fstrRESULT
-  type (fstr_couple )                   :: fstrCPL
-  type (fstr_freqanalysis)              :: fstrFREQ
-  character(len=HECMW_FILENAME_LEN)     :: name_ID
+  type(hecmwST_local_mesh)             :: hecMESH
+  type(hecmwST_matrix)                 :: hecMAT
+  type(hecmwST_matrix)                 :: conMAT
+  type(fstr_solid)                     :: fstrSOLID
+  type(fstrST_matrix_contact_lagrange) :: fstrMAT
+  type(fstr_heat)                      :: fstrHEAT
+  type(fstr_eigen)                     :: fstrEIG
+  type(fstr_dynamic)                   :: fstrDYNAMIC
+  type(hecmwST_result_data)            :: fstrRESULT
+  type(fstr_couple)                    :: fstrCPL
+  type(fstr_freqanalysis)              :: fstrFREQ
+  character(len=HECMW_FILENAME_LEN)    :: name_ID
 
-  contains
+contains
 
-  subroutine fstr_main() BIND(C,NAME='fstr_main')
+  subroutine fstr_main() bind(C,NAME='fstr_main')
     implicit none
     real(kind=kreal) :: T1, T2, T3
 
@@ -54,7 +54,7 @@ module m_fstr_main
 
     if( hecMESH%contact_pair%n_pair > 0 ) then
       if( nprocs > 1 .and. &
-           hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
+          hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
         paraContactFlag = .true.
       endif
       if( myrank == 0 ) then
@@ -73,18 +73,18 @@ module m_fstr_main
     ! =============== ANALYSIS =====================
 
     select case( fstrPR%solution_type )
-    case( kstSTATIC )
-      call fstr_static_analysis
-    case( kstDYNAMIC )
-      call fstr_dynamic_analysis
-    case( kstEIGEN )
-      call fstr_eigen_analysis
-    case( kstHEAT )
-      call fstr_heat_analysis
-    case( kstSTATICEIGEN )
-      call fstr_static_eigen_analysis
-    case( kstPRECHECK, kstNZPROF )
-      call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
+      case( kstSTATIC )
+        call fstr_static_analysis
+      case( kstDYNAMIC )
+        call fstr_dynamic_analysis
+      case( kstEIGEN )
+        call fstr_eigen_analysis
+      case( kstHEAT )
+        call fstr_heat_analysis
+      case( kstSTATICEIGEN )
+        call fstr_static_eigen_analysis
+      case( kstPRECHECK, kstNZPROF )
+        call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
     end select
 
     T3 = hecmw_Wtime()
@@ -113,9 +113,9 @@ module m_fstr_main
 
   end subroutine fstr_main
 
-!=============================================================================!
-!> Initializer                                                                !
-!=============================================================================!
+  !=============================================================================!
+  !> Initializer                                                                !
+  !=============================================================================!
 
   subroutine fstr_init
     implicit none
@@ -173,8 +173,8 @@ module m_fstr_main
 
   end subroutine fstr_init
 
-!------------------------------------------------------------------------------
-!> Open all files preparing calculation
+  !------------------------------------------------------------------------------
+  !> Open all files preparing calculation
   subroutine fstr_init_file
     implicit none
     character(len=HECMW_FILENAME_LEN) :: s, r
@@ -256,8 +256,8 @@ module m_fstr_main
     endif
   end subroutine fstr_init_file
 
-!------------------------------------------------------------------------------
-!> Read in control file and do all preparation
+  !------------------------------------------------------------------------------
+  !> Read in control file and do all preparation
   subroutine fstr_init_condition
     implicit none
     character(len=HECMW_FILENAME_LEN) :: cntfileNAME
@@ -281,9 +281,9 @@ module m_fstr_main
 
   end subroutine fstr_init_condition
 
-!=============================================================================!
-!> Master subroutine of linear/nonlinear static analysis                      !
-!=============================================================================!
+  !=============================================================================!
+  !> Master subroutine of linear/nonlinear static analysis                      !
+  !=============================================================================!
 
   subroutine fstr_static_analysis
     implicit none
@@ -312,9 +312,9 @@ module m_fstr_main
 
   end subroutine fstr_static_analysis
 
-!=============================================================================!
-!> Master subroutine of eigen analysis                                        !
-!=============================================================================!
+  !=============================================================================!
+  !> Master subroutine of eigen analysis                                        !
+  !=============================================================================!
 
   subroutine fstr_eigen_analysis
     use hecmw
@@ -333,9 +333,9 @@ module m_fstr_main
 
   end subroutine fstr_eigen_analysis
 
-!=============================================================================!
-!> Master subroutine of heat analysis                                         !
-!=============================================================================!
+  !=============================================================================!
+  !> Master subroutine of heat analysis                                         !
+  !=============================================================================!
 
   subroutine fstr_heat_analysis
     implicit none
@@ -352,9 +352,9 @@ module m_fstr_main
 
   end subroutine fstr_heat_analysis
 
-!=============================================================================!
-!> Master subroutine of dynamic analysis                                      !
-!=============================================================================!
+  !=============================================================================!
+  !> Master subroutine of dynamic analysis                                      !
+  !=============================================================================!
 
   subroutine fstr_dynamic_analysis
     implicit none
@@ -362,30 +362,30 @@ module m_fstr_main
     if( IECHO.eq.1 ) call fstr_echo(hecMESH)
 
     if(myrank == 0) then
-       write(IMSG,*)
-       write(IMSG,*)
-       write(IMSG,*)
-       if( fstrPR%nlgeom ) then
-         write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
-       else
-         write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
-       endif
+      write(IMSG,*)
+      write(IMSG,*)
+      write(IMSG,*)
+      if( fstrPR%nlgeom ) then
+        write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
+      else
+        write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
+      endif
     endif
 
     if( paraContactFlag ) then
       call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-                               fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT, &
-                               conMAT )
+        fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT, &
+        conMAT )
     else
       call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-                               fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT)
+        fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT)
     endif
 
   end subroutine fstr_dynamic_analysis
 
-!=============================================================================!
-!> Master subroutine of static -> eigen anaylsis                              !
-!=============================================================================!
+  !=============================================================================!
+  !> Master subroutine of static -> eigen anaylsis                              !
+  !=============================================================================!
 
   subroutine fstr_static_eigen_analysis
     implicit none
@@ -418,9 +418,9 @@ module m_fstr_main
 
   end subroutine fstr_static_eigen_analysis
 
-!=============================================================================!
-!> Finalizer                                                                  !
-!=============================================================================!
+  !=============================================================================!
+  !> Finalizer                                                                  !
+  !=============================================================================!
 
   subroutine fstr_finalize
     implicit none

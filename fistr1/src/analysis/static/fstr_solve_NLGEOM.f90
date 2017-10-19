@@ -17,14 +17,14 @@ module m_fstr_solve_NLGEOM
 
   implicit none
 
-  contains
+contains
 
-!======================================================================!
-!> \brief This module provides main suborutine for nonlinear calculation.
-!>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
-!>              Z. Sun(ASTOM)/2010/11
-!>  \date       2009/08/31
-!>  \version    0.00
+  !======================================================================!
+  !> \brief This module provides main suborutine for nonlinear calculation.
+  !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
+  !>              Z. Sun(ASTOM)/2010/11
+  !>  \date       2009/08/31
+  !>  \version    0.00
   subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)
     type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
@@ -64,7 +64,7 @@ module m_fstr_solve_NLGEOM
     infoCTChange%contactNode_current  = 0
     if( fstrSOLID%restart_nout < 0 ) then
       call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID, &
-                             fstrPARAM,infoCTChange%contactNode_previous)
+        fstrPARAM,infoCTChange%contactNode_previous)
       hecMAT%Iarray(98) = 1
       call fstr_set_time( ctime )
       call fstr_set_timeinc_base( dtime )
@@ -141,8 +141,8 @@ module m_fstr_solve_NLGEOM
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
-            &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
-            &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+          &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
+          &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
         if( fstr_cutback_active() ) then
 
           if( fstrSOLID%CutBack_stat == 0 ) then ! converged
@@ -198,12 +198,12 @@ module m_fstr_solve_NLGEOM
         ! ----- Restart
         if( fstrSOLID%restart_nout > 0 .and. mod(step_count,fstrSOLID%restart_nout) == 0 ) then
           call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
-             & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+            & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
         endif
 
         ! ----- Result output (include visualize output)
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
-            & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, is_OutPoint )
 
         time_2 = hecmw_Wtime()
@@ -230,7 +230,7 @@ module m_fstr_solve_NLGEOM
       ! ----- Restart at the end of step
       if( fstrSOLID%restart_nout > 0 ) then
         call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),fstr_get_timeinc_base(), &
-                             &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
+          &  hecMESH,fstrSOLID,fstrPARAM,.true.,infoCTChange%contactNode_current)
       endif
       restart_substep_num = 1
       if( fstrSOLID%TEMP_irres > 0 ) exit
@@ -239,19 +239,19 @@ module m_fstr_solve_NLGEOM
     call fstr_cutback_finalize( fstrSOLID )
 
     !  message
-    IF(myrank == 0)THEN
+    if(myrank == 0)then
       call fstr_TimeInc_PrintSTATUS_final(.true.)
-      WRITE(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
-      WRITE(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
-    ENDIF
+      write(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
+      write(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
+    endif
 
   end subroutine FSTR_SOLVE_NLGEOM
 
-!C================================================================C
-!> \brief This subroutine decide the loading increment considering
-!>        the amplitude definition
-!C================================================================C
-    subroutine table_nlsta(hecMESH, fstrSOLID, cstep, time, f_t)
+  !C================================================================C
+  !> \brief This subroutine decide the loading increment considering
+  !>        the amplitude definition
+  !C================================================================C
+  subroutine table_nlsta(hecMESH, fstrSOLID, cstep, time, f_t)
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH    !< hecmw mesh
     type ( fstr_solid         ), intent(in) :: fstrSOLID  !< fstr_solid
     integer(kind=kint), intent(in)          :: cstep      !< curr loading step
@@ -266,7 +266,7 @@ module m_fstr_solve_NLGEOM
     jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
     if( jj_n_amp <= 0 ) then  ! Amplitude not defined
-          f_t = (time-fstrSOLID%step_ctrl(cstep)%starttime)/fstrSOLID%step_ctrl(cstep)%elapsetime
+      f_t = (time-fstrSOLID%step_ctrl(cstep)%starttime)/fstrSOLID%step_ctrl(cstep)%elapsetime
       if( f_t>1.d0 ) f_t=1.d0
     else
       tincre = fstrSOLID%step_ctrl( cstep )%initdt
@@ -274,7 +274,7 @@ module m_fstr_solve_NLGEOM
       jj2 = hecMESH%amp%amp_index(jj_n_amp)
 
       jj1 = jj1 + 2
-          t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
+      t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
 
       !      if(jj2 .eq. 0) then
       !         f_t = 1.0
