@@ -41,7 +41,9 @@ contains
       mumps_par%COMM = hecmw_comm_get_comm()
       mumps_par%JOB = -1
       if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SPD) then
-        mumps_par%SYM = 1
+        ! mumps_par%SYM = 1
+        mumps_par%SYM = 2          ! general symmetric
+        mumps_par%CNTL(1) = 0.0d0  ! avoid numerical pivoting
       else if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SYM) then
         mumps_par%SYM = 2
       else
