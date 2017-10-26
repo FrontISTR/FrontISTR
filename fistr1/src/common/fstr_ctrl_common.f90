@@ -68,7 +68,7 @@ contains
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
       iterpremax, nrest, scaling, &
-      dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, &
+      dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, &
       resid, singma_diag, sigma, thresh, filter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -87,6 +87,7 @@ contains
     integer(kind=kint) :: ncolor_in
     integer(kind=kint) :: mpc_method
     integer(kind=kint) :: estcond
+    integer(kind=kint) :: method2
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
     real(kind=kreal) :: sigma
@@ -125,12 +126,20 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
     ! JP-1
     if( method > number_number ) then  ! JP-2
       method = method - number_number
       if( method > indirect_number ) then
         ! JP-3
         method = method - indirect_number + 100
+      end if
+    end if
+    if( method2 > number_number ) then  ! JP-2
+      method2 = method2 - number_number
+      if( method2 > indirect_number ) then
+        ! JP-3
+        method2 = method2 - indirect_number + 100
       end if
     end if
 

@@ -63,6 +63,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_set_solver_type
   public :: hecmw_mat_get_solver_type
 
+  public :: hecmw_mat_set_method2
+  public :: hecmw_mat_get_method2
   public :: hecmw_mat_set_flag_converged
   public :: hecmw_mat_get_flag_converged
   public :: hecmw_mat_set_flag_diverged
@@ -107,6 +109,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_FLAG_SYMBFACT      = 98
   integer, parameter :: IDX_I_SOLVER_TYPE        = 99
 
+  integer, parameter :: IDX_I_METHOD2            = 8
   integer, parameter :: IDX_I_FLAG_CONVERGED     = 81
   integer, parameter :: IDX_I_FLAG_DIVERGED      = 82
 
@@ -248,6 +251,20 @@ contains
 
     hecmw_mat_get_method = hecMAT%Iarray(IDX_I_METHOD)
   end function hecmw_mat_get_method
+
+  subroutine hecmw_mat_set_method2( hecMAT, method2 )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: method2
+
+    hecMAT%Iarray(IDX_I_METHOD2) = method2
+  end subroutine hecmw_mat_set_method2
+
+  function hecmw_mat_get_method2( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_method2
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_method2 = hecMAT%Iarray(IDX_I_METHOD2)
+  end function hecmw_mat_get_method2
 
   subroutine hecmw_mat_set_precond( hecMAT, precond )
     type(hecmwST_matrix) :: hecMAT
