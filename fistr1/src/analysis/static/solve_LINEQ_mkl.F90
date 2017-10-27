@@ -94,7 +94,6 @@ contains
     real(kind=kreal)                          :: ddum(1)
     real(kind=kreal), allocatable            :: x(:)           !< solution vector
 
-    call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     call set_values_directsolver(hecMAT,fstrMAT)
