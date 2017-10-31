@@ -108,17 +108,26 @@ contains
 
       ! ----- check convergence
       call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+      res = sqrt(res)
       call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
+      xnrm = sqrt(xnrm)
       call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
+      qnrm = sqrt(qnrm)
+      if (qnrm < 1.0d-8) qnrm = 1.0d0
       if( iter == 1 ) then
         dunrm = xnrm
       else
         call hecmw_InnerProduct_R(hecMESH, ndof, fstrSOLID%dunode, fstrSOLID%dunode, dunrm)
+        dunrm = sqrt(dunrm)
       endif
-      rres = dsqrt(res/qnrm)
-      rxnrm = dsqrt(xnrm/dunrm)
+      rres = res/qnrm
+      rxnrm = xnrm/dunrm
       if( hecMESH%my_rank == 0 ) then
-        write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
+        if (qnrm == 1.0d0) then
+          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
+        else
+          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
+        endif
       endif
       if( hecmw_mat_get_flag_converged(hecMAT) == kYES ) then
         if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
