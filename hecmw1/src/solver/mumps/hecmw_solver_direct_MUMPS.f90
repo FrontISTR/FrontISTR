@@ -78,7 +78,8 @@ contains
         write(*,*) 'ERROR: MUMPS returned with error', istat
         stop
       endif
-      if (myrank==0) write(*,*) ' [MUMPS]: Analysis and Factorization completed.'
+      if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
+           write(*,*) ' [MUMPS]: Analysis and Factorization completed.'
       hecMAT%Iarray(98) = 0
       hecMAT%Iarray(97) = 0
     endif
@@ -92,7 +93,8 @@ contains
         write(*,*) 'ERROR: MUMPS returned with error', istat
         stop
       endif
-      if (myrank==0) write(*,*) ' [MUMPS]: Factorization completed.'
+      if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
+           write(*,*) ' [MUMPS]: Factorization completed.'
       hecMAT%Iarray(97) = 0
     endif
 
@@ -107,7 +109,8 @@ contains
       stop
     endif
     call sparse_matrix_hec_get_rhs(spMAT, hecMAT)
-    if (myrank==0) write(*,*) ' [MUMPS]: Solution completed.'
+    if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
+         write(*,*) ' [MUMPS]: Solution completed.'
 
     t3=hecmw_wtime()
     if (myrank==0 .and. spMAT%timelog > 0) then

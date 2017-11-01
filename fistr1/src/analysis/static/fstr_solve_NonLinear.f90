@@ -43,7 +43,7 @@ contains
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
-    real(kind=kreal)   :: tt0, tt, res, resb, rres, tincr
+    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
     real(kind=kreal), pointer :: coord(:), P(:)
     logical :: isLinear = .false.
 
@@ -61,11 +61,9 @@ contains
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
     P = 0.0d0
-    rres = 0.0d0
     stepcnt = 0
     fstrSOLID%dunode(:) = 0.0d0
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
-    hecMAT%X = 0.0d0
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
@@ -81,30 +79,11 @@ contains
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-
-      !call hecmw_trans_b_33(hecMESH, hecMAT, hecMAT%B, P, tcomm)
-      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-
-      if(iter == 1)then
-        if(res == 0.0d0)then
-          resb = 1.0d0
-        else
-          resb = res
-        endif
-      else
-        rres = dsqrt(res/resb)
-        if( hecMESH%my_rank == 0 ) then
-          write(*,"(a,i8,a,1pe11.4)")" iter:", iter-1, ", residual:", rres
-        endif
-        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-      endif
-
       if( iter == 1 ) then
         hecMAT%Iarray(97) = 2   !Force numerical factorization
       else
         hecMAT%Iarray(97) = 1   !Need numerical factorization
       endif
-
       hecMAT%X = 0.0d0
       call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
       call solve_LINEQ(hecMESH,hecMAT)
@@ -127,6 +106,34 @@ contains
 
       if( isLinear ) exit
 
+      ! ----- check convergence
+      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+      res = sqrt(res)
+      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
+      xnrm = sqrt(xnrm)
+      call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
+      qnrm = sqrt(qnrm)
+      if (qnrm < 1.0d-8) qnrm = 1.0d0
+      if( iter == 1 ) then
+        dunrm = xnrm
+      else
+        call hecmw_InnerProduct_R(hecMESH, ndof, fstrSOLID%dunode, fstrSOLID%dunode, dunrm)
+        dunrm = sqrt(dunrm)
+      endif
+      rres = res/qnrm
+      rxnrm = xnrm/dunrm
+      if( hecMESH%my_rank == 0 ) then
+        if (qnrm == 1.0d0) then
+          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
+        else
+          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
+        endif
+      endif
+      if( hecmw_mat_get_flag_converged(hecMAT) == kYES ) then
+        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+        if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
+      endif
+
       ! ----- check divergence
       if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres ) then
         if( hecMESH%my_rank == 0) then
@@ -140,7 +147,6 @@ contains
         if( rres > fstrSOLID%step_ctrl(cstep)%maxres    ) fstrSOLID%NRstat_i(knstDRESN) = 2
         return
       end if
-
     enddo
     ! ----- end of inner loop
 

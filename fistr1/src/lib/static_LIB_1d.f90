@@ -248,7 +248,7 @@ contains
   subroutine truss_diag_modify(hecMAT,hecMESH)
     !----------------------------------------------------------------------*
     !
-    use hecmw_matrix_misc
+    use hecmw
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, jS, j, n
@@ -287,7 +287,7 @@ contains
   subroutine search_diag_modify(n,nn,hecMAT,hecMESH)
     !----------------------------------------------------------------------*
     !
-    use hecmw_matrix_misc
+    use hecmw
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
     integer :: n, nn, is, iE, i, j, in

@@ -230,7 +230,7 @@ contains
   end subroutine setup_mkl_parameters
 
   subroutine setup_mkl_set_val(spMAT,myrank,ordered)
-    type (sparse_matrix), intent(in) :: spMAT
+    type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in)   :: myrank
     logical, intent(in)   :: ordered
 

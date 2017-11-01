@@ -32,7 +32,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 
     integer(kind=kint) :: error
-    integer(kind=kint) :: ITER, METHOD, PRECOND, NSET
+    integer(kind=kint) :: ITER, METHOD, PRECOND, NSET, METHOD2
     integer(kind=kint) :: iterPREmax, i, j
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal)   :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
@@ -54,6 +54,7 @@ contains
     !C PARAMETERs
     ITER      = hecmw_mat_get_iter(hecMAT)
     METHOD    = hecmw_mat_get_method(hecMAT)
+    METHOD2   = hecmw_mat_get_method2(hecMAT)
     PRECOND   = hecmw_mat_get_precond(hecMAT)
     NSET      = hecmw_mat_get_nset(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
@@ -115,11 +116,13 @@ contains
     error=0
     !! Auto Sigma_diag loop
     do
+      call hecmw_mat_set_flag_converged(hecTKT, 0)
+      call hecmw_mat_set_flag_diverged(hecTKT, 0)
       if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, SIGMA_DIAG)
 
       call hecmw_matvec_clear_timer()
       call hecmw_precond_clear_timer()
-      call hecmw_solve_iterative_printmsg(hecMESH,hecMAT)
+      call hecmw_solve_iterative_printmsg(hecMESH,hecMAT,METHOD)
 
       select case(METHOD)
         case (1)  !--CG
@@ -139,14 +142,21 @@ contains
           call hecmw_solve_error (hecMESH, error)
       end select
 
-      if (  (error.eq.HECMW_SOLVER_ERROR_DIVERGE_PC .or. error.eq.HECMW_SOLVER_ERROR_DIVERGE_MAT) .and. &
-          (PRECOND.ge.10 .and. PRECOND.lt.20) .and. auto_sigma_diag.eq.1 .and. SIGMA_DIAG.lt.2.d0) then
-        SIGMA_DIAG = SIGMA_DIAG + 0.1
-        if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
-      else
-        if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
-        exit
+      if (error==HECMW_SOLVER_ERROR_DIVERGE_PC .or. error==HECMW_SOLVER_ERROR_DIVERGE_MAT) then
+        call hecmw_mat_set_flag_diverged(hecTKT, 1)
+        if ((PRECOND>=10 .and. PRECOND<20) .and. auto_sigma_diag==1 .and. SIGMA_DIAG<2.d0) then
+          SIGMA_DIAG = SIGMA_DIAG + 0.1
+          if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
+          cycle
+        elseif (METHOD==1 .and. METHOD2>1) then
+          if (auto_sigma_diag.eq.1) SIGMA_DIAG = 1.0
+          METHOD = METHOD2
+          cycle
+        endif
       endif
+
+      if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecTKT, -1.d0)
+      exit
     enddo
 
     if (error.ne.0) then
@@ -157,6 +167,7 @@ contains
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
       write(*,"(a,1pe12.5)")'### Relative residual =', resid2
     endif
+    if (resid2 < hecmw_mat_get_resid(hecTKT)) call hecmw_mat_set_flag_converged(hecTKT, 1)
 
     call hecmw_mat_dump_solution(hecTKT)
     call hecmw_matvec_unset_async
@@ -202,6 +213,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use m_hecmw_solve_error
+    use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -231,6 +243,7 @@ contains
     use hecmw_util
     use hecmw_matrix_misc
     use m_hecmw_solve_error
+    use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
@@ -347,7 +360,7 @@ contains
     end select
   end subroutine hecmw_solve_postmpc
 
-  subroutine hecmw_solve_iterative_printmsg (hecMESH, hecMAT)
+  subroutine hecmw_solve_iterative_printmsg (hecMESH, hecMAT, METHOD)
     use hecmw_util
     use hecmw_solver_misc
     use hecmw_matrix_misc
@@ -355,14 +368,15 @@ contains
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
-    integer(kind=kint) :: ITER, METHOD, PRECOND, NSET, iterPREmax, NREST
+    integer(kind=kint) :: METHOD
+    integer(kind=kint) :: ITER, PRECOND, NSET, iterPREmax, NREST
     integer(kind=kint) :: ITERlog, TIMElog
 
     character(len=30) :: msg_precond
     character(len=30) :: msg_method
 
     ITER      = hecmw_mat_get_iter(hecMAT)
-    METHOD    = hecmw_mat_get_method(hecMAT)
+    ! METHOD    = hecmw_mat_get_method(hecMAT)
     PRECOND   = hecmw_mat_get_precond(hecMAT)
     NSET      = hecmw_mat_get_nset(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
