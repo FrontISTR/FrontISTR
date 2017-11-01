@@ -1344,6 +1344,7 @@ contains
     allocate ( phys%ESTRAIN (mdof*n_elem))
     allocate ( phys%ESTRESS (mdof*n_elem))
     allocate ( phys%EMISES  (     n_elem))
+    allocate ( phys%ENQM    (12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
   subroutine fstr_setup_post( ctrl, P )
@@ -1379,6 +1380,7 @@ contains
       P%SOLID%ESTRAIN => phys%ESTRAIN
       P%SOLID%ESTRESS => phys%ESTRESS
       P%SOLID%EMISES  => phys%EMISES
+      P%SOLID%ENQM    => phys%ENQM
     end if
 
     if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
