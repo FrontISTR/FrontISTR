@@ -216,7 +216,7 @@ contains
           ihead = hecMESH%section%sect_R_index(isect-1)
           thick = hecMESH%section%sect_R_item(ihead+1)
           call UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 2)
+            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
@@ -224,7 +224,7 @@ contains
           ihead = hecMESH%section%sect_R_index(isect-1)
           thick = hecMESH%section%sect_R_item(ihead+1)
           call UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*6), thick, 1)
+            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1)
 
         else if ( ic_type == 3414 ) then
           if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
