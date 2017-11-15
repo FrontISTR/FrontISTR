@@ -28,6 +28,10 @@ extern char *HECMW_get_ucd_label(int etype);
 
 extern int HECMW_get_etype_class(int etype);
 
+extern int HECMW_get_etype_shape(int etype);
+
+extern int HECMW_get_etype_vtk_shape(int etype);
+
 extern int HECMW_is_etype_rod(int etype);
 
 extern int HECMW_is_etype_surface(int etype);

@@ -503,9 +503,9 @@ contains
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
-    allocate( fstrRESULT%ne_dof(ecomp) )
-    allocate( fstrRESULT%elem_label(ecomp) )
-    allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
+    !allocate( fstrRESULT%ne_dof(ecomp) )
+    !allocate( fstrRESULT%elem_label(ecomp) )
+    !allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
     ncomp = 0
     iitem = 0
     ecomp = 0
@@ -603,6 +603,8 @@ contains
       enddo
       iitem = iitem + nn
     endif
+
+    call hecmw_Update_m_R(hecMESH, fstrRESULT%node_val_item, hecMESH%n_node, nitem)
 
   end subroutine fstr_make_static_result
 

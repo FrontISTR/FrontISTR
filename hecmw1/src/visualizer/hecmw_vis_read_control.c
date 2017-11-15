@@ -1245,9 +1245,9 @@ exit(0);
               }
             }
             if (stat_para[20] == 0) sf[k].output_type = 1;
-            if ((sf[k].output_type < 1) || (sf[k].output_type > 10)) {
+            if ((sf[k].output_type < 1) || (sf[k].output_type > 16)) {
               if (mynode == 0)
-                fprintf(stderr, "the output_type only can be 1 -- 10\n");
+                fprintf(stderr, "the output_type only can be 1 -- 16\n");
               HECMW_vis_print_exit("pls input and run again");
             }
             if (stat_para[22] == 0) sf[k].normalize_flag    = 0;
