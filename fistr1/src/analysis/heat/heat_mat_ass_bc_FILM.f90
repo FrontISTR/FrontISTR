@@ -25,7 +25,7 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
 
-    real(kind=kreal)   :: xx(20), yy(20), zz(20), T0(20)
+    real(kind=kreal)   :: xx(20), yy(20), zz(20)
     real(kind=kreal)   :: term1(64), term2(20)
     integer(kind=kint) :: nodLocal(20), nsuf(8)
 
@@ -50,7 +50,6 @@ contains
         xx(j) = hecMESH%node( 3*nodLOCAL(j)-2 )
         yy(j) = hecMESH%node( 3*nodLOCAL(j)-1 )
         zz(j) = hecMESH%node( 3*nodLOCAL(j)   )
-        T0(j) = hecMESH%node(   nodLOCAL(j)   )
       enddo
       !C**
       if    ( ic_type.eq.231 ) then
