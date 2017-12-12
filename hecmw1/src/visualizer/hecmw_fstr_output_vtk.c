@@ -1,4 +1,7 @@
-
+/*****************************************************************************
+ * Copyright (c) 2016 The University of Tokyo
+ * This software is released under the MIT License, see LICENSE.txt
+ *****************************************************************************/
 #include "hecmw_fstr_output_vtk.h"
 
 #include <stdio.h>
@@ -9,10 +12,10 @@
 #include "hecmw_etype.h"
 #include "hecmw_vis_mem_util.h"
 #include "hecmw_vis_comm_util.h"
-#include "hecmw_vis_endian.h"
 #include "hecmw_vis_combine.h"
+#include "hecmw_fstr_endian.h"
 
-void vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
 	int jS, jE;
@@ -59,7 +62,7 @@ void vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		sprintf(file_pvtu, "%s.pvtu", outfile1);
 		outfp = fopen (file_pvtu, "w");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\">\n");
+		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
@@ -162,7 +165,7 @@ void vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	fclose (outfp);
 }
 
-void bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
 	int jS, jE;
@@ -195,7 +198,7 @@ void bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		sprintf(file_pvd,  "%s.pvd",  outfile1);
 		outfp = fopen (file_pvd, "w");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-		fprintf (outfp, "<VTKFile type=\"Collection\" version=\"1.0\" byte_order=\"LittleEndian\">\n");
+		fprintf (outfp, "<VTKFile type=\"Collection\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<Collection>\n");
 		for(i=0; i<*max_timestep ;i++){
 			fprintf (outfp, "<DataSet part=\"0\" timestep=\"%d\" file=\"mesh_vis_psf.%04d.pvtu\"/>\n", i+1, i+1);
@@ -210,7 +213,7 @@ void bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		sprintf(file_pvtu, "%s.pvtu", outfile1);
 		outfp = fopen (file_pvtu, "w");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\">\n");
+		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
@@ -241,7 +244,7 @@ void bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	/* outpu vtu file */
 	outfp = fopen (file_vtu, "w");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\">\n");
+	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 	fprintf (outfp, "<UnstructuredGrid>\n");
 	fprintf (outfp, "<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_node, n_elem);
 	fprintf (outfp, "<Points>\n");
@@ -315,12 +318,12 @@ void bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fclose (outfp);
 }
 
-void HECMW_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void HECMW_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
 {
-	vkt_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM);
+	vtk_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM);
 }
 
-void HECMW_bin_vkt_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void HECMW_bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
 {
-	/* bin_vkt_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM); */
+	/* bin_vtk_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM); */
 }

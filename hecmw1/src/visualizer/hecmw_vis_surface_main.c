@@ -104,10 +104,10 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
     HECMW_separate_avs_output(mesh, data, outfile1);
     return;
   } else if(sf[1].output_type==15) {
-    HECMW_vkt_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
+    HECMW_vtk_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
     return;
   } else if(sf[1].output_type==16) {
-    HECMW_bin_vkt_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
+    HECMW_bin_vtk_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
     return;
   }
 
