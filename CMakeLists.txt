@@ -9,14 +9,6 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 project(FrontISTR Fortran C CXX)
-# set default libraries search path
-if(NOT CMAKE_PREFIX_PATH)
-  set(CMAKE_PREFIX_PATH "$ENV{HOME}/local" CACHE PATH "Search Path" FORCE)
-endif()
-# set default installation path
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/local" CACHE PATH "Install Path" FORCE)
-endif()
 ###############################################################
 # Includes standard macros
 ###############################################################
