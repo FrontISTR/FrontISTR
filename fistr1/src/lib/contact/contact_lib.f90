@@ -35,6 +35,7 @@ module m_contact_lib
     real(kind=kreal) :: multiplier(3) !< Lagrangian multiplier or contact force
     !< 1: normal 2:tangent component
     real(kind=kreal) :: tangentForce(3) !< friction force
+    real(kind=kreal) :: tangentForce1(3) !< friction force rotated by element(for trial friction force)
     real(kind=kreal) :: tangentForce_trial(3) !< trial friction force
     real(kind=kreal) :: tangentForce_final(3) !< final friction force
     real(kind=kreal)    :: reldisp(3)
@@ -323,6 +324,40 @@ contains
       endif
     endif
   end subroutine project_Point2Element
+
+  !> This subroutine find the projection of a slave point onto master surface
+  subroutine update_TangentForce(etype,nn,elemt0,elemt,cstate)
+    integer, intent(in)                 :: etype         !< surface element type
+    integer, intent(in)                 :: nn            !< number of elemental nodes
+    real(kind=kreal),intent(in)         :: elemt0(3,nn)  !< nodes coordinates of surface element at t
+    real(kind=kreal),intent(in)         :: elemt(3,nn)   !< nodes coordinates of surface element at t+dt
+    type(tContactState), intent(inout)  :: cstate        !< Recorde of contact information
+
+    integer           ::  i
+    real(kind=kreal)  ::  tangent0(3,2), tangent(3,2)    ! base vectors in tangent space
+    real(kind=kreal)  ::  coeff(2), norm, norm_tmp
+    real(kind=kreal)  ::  tangentForce_tmp(3)
+
+    call TangentBase( etype, nn, cstate%lpos, elemt0, tangent0 )
+    call TangentBase( etype, nn, cstate%lpos, elemt, tangent )
+
+    !project tangentforce to base vector tangent0
+    do i=1,2
+      coeff(i) = dot_product(cstate%tangentForce(1:3),tangent0(1:3,i))
+      coeff(i) = coeff(i)/dot_product(tangent0(1:3,i),tangent0(1:3,i))
+    enddo
+    tangentForce_tmp(1:3) = coeff(1)*tangent0(1:3,1) + coeff(2)*tangent0(1:3,2)
+    norm_tmp = dsqrt(dot_product(tangentForce_tmp,tangentForce_tmp))
+    !adjust tangent force of slave point which moved over element boundary
+    if( norm_tmp > 1.d-6 ) then
+      norm = dsqrt(dot_product(cstate%tangentForce,cstate%tangentForce))
+      coeff(1:2) = (norm/norm_tmp)*coeff(1:2)
+    end if
+
+    !set rotated tangentforce to tangentforce1
+    cstate%tangentForce1(1:3) = coeff(1)*tangent(1:3,1) + coeff(2)*tangent(1:3,2)
+
+  end subroutine update_TangentForce
 
 end module m_contact_lib
 

@@ -407,7 +407,7 @@ contains
       enddo
       relativeDisp(i) = relativeDisp(i) - dotP*normal(i)
       ctstate%reldisp(i) = -relativeDisp(i)
-      ctstate%tangentForce_trial(i) = ctstate%tangentForce(i) -tPenalty*relativeDisp(i)
+      ctstate%tangentForce_trial(i) = ctstate%tangentForce1(i) -tPenalty*relativeDisp(i)
     enddo
 
     tf_yield = fcoeff*dabs(lagrange)
