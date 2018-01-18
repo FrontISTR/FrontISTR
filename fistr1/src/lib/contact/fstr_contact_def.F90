@@ -326,11 +326,6 @@ contains
         if( nlforce < -1.0d-8 ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
-          if( flag_ctAlgo=='SLagrange' ) then
-            contact%states(i)%tangentForce(:) =0.d0
-            contact%states(i)%tangentForce_trial(:) =0.d0
-            contact%states(i)%tangentForce_final(:) =0.d0
-          endif
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
@@ -563,8 +558,6 @@ contains
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
       if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
-      if( flag_ctAlgo=='SLagrange' )  &
-        contact%states(nslave)%tangentForce(1:3) = contact%states(nslave)%tangentForce_final(1:3)
       iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
@@ -572,11 +565,6 @@ contains
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
       contact%states(nslave)%state = CONTACTFREE
       contact%states(nslave)%multiplier(:) = 0.d0
-      if( flag_ctAlgo=='SLagrange' ) then
-        contact%states(nslave)%tangentForce(:) =0.d0
-        contact%states(nslave)%tangentForce_trial(:) =0.d0
-        contact%states(nslave)%tangentForce_final(:) =0.d0
-      endif
     endif
 
   end subroutine track_contact_position
@@ -944,5 +932,21 @@ contains
 
   end subroutine set_contact_state_vector
 
+  subroutine update_contact_TangentForce( contact )
+    type( tContact ), intent(inout)   :: contact        !< contact info
+
+    integer(kind=kint)  :: i
+
+    do i= 1, size(contact%slave)
+      if( contact%states(i)%state==CONTACTFREE ) then
+        contact%states(i)%tangentForce(1:3) = 0.d0
+        contact%states(i)%tangentForce_trial(1:3) = 0.d0
+        contact%states(i)%tangentForce_final(1:3) = 0.d0
+      else
+        contact%states(i)%tangentForce(1:3) = contact%states(i)%tangentForce_final(1:3)
+      end if
+      contact%states(i)%tangentForce1(1:3) = contact%states(i)%tangentForce(1:3)
+    enddo
+  end subroutine update_contact_TangentForce
 
 end module mContactDef

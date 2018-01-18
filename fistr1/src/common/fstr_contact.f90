@@ -306,6 +306,18 @@ contains
     if( nc>0 ) gnt = gnt/nc
   end subroutine
 
+  !> Update tangent force
+  subroutine fstr_update_contact_TangentForce( fstrSOLID )
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+
+    integer :: i, nc
+
+    nc = size(fstrSOLID%contacts)
+    do i=1, nc
+      call update_contact_TangentForce( fstrSOLID%contacts(i) )
+    enddo
+  end subroutine
+
   !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
   subroutine fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
     use fstr_ctrl_modifier
