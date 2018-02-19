@@ -661,7 +661,7 @@ contains
     tp%name = ''
     if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', tp%name ) /=0 ) return
     tp%range_type = 1
-    if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP,TOTAL', 0, 'P', tp%range_type ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP,TOTAL ', 0, 'P', tp%range_type ) /= 0 ) return
     generate = .false.
     if( fstr_ctrl_get_param_ex( ctrl, 'GENERATE ',  '# ', 0, 'E', generate ) /= 0) return
 
