@@ -31,12 +31,6 @@ contains
     logical :: is_sym
 
     if( hecMAT%Iarray(99)==1 )then
-      if( nprocs > 1 .and. hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
-        if( myrank == 0 ) then
-          write(*,'(a)') 'ERROR: to use iterative solver in parallel contact analysis, run partitioner with CONTACT=AGGREGATE'
-        endif
-        stop
-      endif
       call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
     else if( hecMAT%Iarray(99)==3 )then
       call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
@@ -69,7 +63,11 @@ contains
 
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
-      call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
+      if(paraContactFlag.and.present(conMAT)) then
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+      else
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
+      endif
     elseif( hecMAT%Iarray(99)==3 )then
       call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,istat)
     elseif( hecMAT%Iarray(99)==4 )then
@@ -93,7 +91,7 @@ contains
       resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
       if (myrank==0) then
         write(*,*) ' maximum residual = ', resid
-        if( resid >= 1.0d-8) then
+        if( hecmw_mat_get_solver_type(hecMAT) /= 1 .and. resid >= 1.0d-8) then
           write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
           !          stop
         endif
