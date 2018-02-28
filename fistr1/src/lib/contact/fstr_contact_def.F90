@@ -14,6 +14,7 @@ module mContactDef
   use hecmw
   use mSurfElement
   use m_contact_lib
+  use m_fstr_contact_comm
 
   implicit none
 
@@ -46,6 +47,8 @@ module mContactDef
 
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
+
+    type(fstrST_contact_comm)     :: comm                    !< contact communication table
   end type tContact
 
   type fstr_info_contactChange
@@ -100,6 +103,7 @@ contains
       deallocate(contact%master)
     endif
     if( associated(contact%states) ) deallocate(contact%states)
+    call fstr_contact_comm_finalize(contact%comm)
   end subroutine
 
   !>  Check the consistency with given mesh of contact defintiion
@@ -233,6 +237,9 @@ contains
     ! neighborhood of surface group
     call find_surface_neighbor( contact%master )
 
+    ! initialize contact communication table
+    call fstr_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
+
     contact%symmetric = .true.
     fstr_contact_init = .true.
   end function
@@ -276,10 +283,11 @@ contains
 
     real(kind=kreal)    :: clearance
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS
+    integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
     real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
+    integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
     !#ifdef CONTACT_FILTER
     !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
@@ -288,15 +296,21 @@ contains
     real(kreal) :: width = 4.0D0,x0(3)
     !#endif
 
-    active = .false.
     clearance = 1.d-6
     if( contact%algtype<=2 ) return
+
+    allocate(contact_surf(size(nodeID)))
+    allocate(states_prev(size(contact%slave)))
+    contact_surf(:) = size(elemID)+1
+    do i = 1, size(contact%slave)
+      states_prev(i) = contact%states(i)%state
+    enddo
+
     !$omp parallel do &
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,mu,nodeID,elemID,B,width,clearance) &
-      !$omp& reduction(.or.:active) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,mu,nodeID,elemID,B,width,clearance,contact_surf) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
       slave = contact%slave(i)
@@ -313,15 +327,18 @@ contains
             contact%states(i)%tangentForce_trial(:) =0.d0
             contact%states(i)%tangentForce_final(:) =0.d0
           endif
-          !$omp atomic
-          infoCTChange%contact2free = infoCTChange%contact2free + 1
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
         endif
-        active = .true.
-        if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) cycle   ! small slide problem
-        call track_contact_position( flag_ctAlgo, i, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
+        if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) then   ! small slide problem
+          contact_surf(contact%slave(i)) = -id
+        else
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
+          if( contact%states(i)%state /= CONTACTFREE ) then
+            contact_surf(contact%slave(i)) = -contact%states(i)%surface
+          endif
+        endif
 
       else if( contact%states(i)%state==CONTACTFREE ) then
         coord(:) = currpos(3*slave-2:3*slave)
@@ -377,9 +394,7 @@ contains
           contact%states(i)%multiplier(:) = 0.d0
           iSS = isInsideElement( etype, contact%states(i)%lpos, clearance )
           if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
-          !$omp atomic
-          infoCTChange%free2contact = infoCTChange%free2contact + 1
-          active = .true.
+          contact_surf(contact%slave(i)) = id
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
             " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
@@ -391,6 +406,27 @@ contains
     enddo
     !$omp end parallel do
 
+    call fstr_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
+    nactive = 0
+    do i = 1, size(contact%slave)
+      if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+        if (abs(contact_surf(contact%slave(i))) /= contact%states(i)%surface) then ! that is in contact with other surface
+          contact%states(i)%state = CONTACTFREE                           ! should be freed
+          write(*,'(A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
+            " in rank",hecmw_comm_get_rank()," freed due to duplication"
+        else
+          nactive = nactive + 1
+        endif
+      endif
+      if (states_prev(i) == CONTACTFREE .and. contact%states(i)%state /= CONTACTFREE) then
+        infoCTChange%free2contact = infoCTChange%free2contact + 1
+      elseif (states_prev(i) /= CONTACTFREE .and. contact%states(i)%state == CONTACTFREE) then
+        infoCTChange%contact2free = infoCTChange%contact2free + 1
+      endif
+    enddo
+    active = (nactive > 0)
+    deallocate(contact_surf)
+    deallocate(states_prev)
   end subroutine scan_contact_state
 
   !> Calculate averaged nodal normal
@@ -527,8 +563,6 @@ contains
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
-      !$omp atomic
-      infoCTChange%contact2free = infoCTChange%contact2free+1
       contact%states(nslave)%state = CONTACTFREE
       contact%states(nslave)%multiplier(:) = 0.d0
       if( flag_ctAlgo=='SLagrange' ) then
