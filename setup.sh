@@ -50,8 +50,6 @@ do
     echo "#define WITH_MUMPS" >> ./fistr1/src/main/FrontISTRConfig.h
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
     echo "#define WITH_ML" >> ./fistr1/src/main/FrontISTRConfig.h
-	elif [ "\"$i\"" = "\"-with-paracon\"" -o "\"$i\"" = "\"--with-paracon\"" ]; then
-    echo "#define WITH_PARACON" >> ./fistr1/src/main/FrontISTRConfig.h
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
     echo "#define WITH_LAPACK" >> ./fistr1/src/main/FrontISTRConfig.h
   fi
