@@ -164,16 +164,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(9), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          do j = 1, nitem
-            work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          work(:) = 0.d0
+        else
+          do i = 1, hecMESH%n_elem
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+            enddo
           enddo
-        enddo
+        end if
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -181,16 +185,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(10) .and. ndof/=6 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(10), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          do j = 1, nitem
-            work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          work(:) = 0.d0
+        else
+          do i = 1, hecMESH%n_elem
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+            enddo
           enddo
-        enddo
+        end if
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -198,14 +206,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-        enddo
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          do i = 1, hecMESH%n_elem
+            work(i) = 0.d0
+          enddo
+        else
+          do i = 1, hecMESH%n_elem
+            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          enddo
+        endif
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -227,7 +241,7 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(14) .and. associated(testrain) ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(14), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'THERMAL_GaussSTRAIN',trim(adjustl(s))

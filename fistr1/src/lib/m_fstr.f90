@@ -280,6 +280,8 @@ module m_fstr
     integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
 
     !> VALUE
+    integer(kind=kint) :: maxn_gauss
+
     real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
     real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
     real(kind=kreal), pointer :: MISES(:)     !< nodal MISES
