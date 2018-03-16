@@ -70,9 +70,6 @@ void version() {
 #ifdef WITH_MKL
   printf("--with-mkl ");
 #endif
-#ifdef WITH_PARACON
-  printf("--with-paracon ");
-#endif
   printf("\n");
   exit(0);
 }

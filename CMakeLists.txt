@@ -101,12 +101,11 @@ endif()
 # -DWITH_OPENMP      : for multi-(core|processor) environment
 # -DWITH_REFINER     : compile with REVOCAP_Refiner
 # -DWITH_REVOCAP     : compile with REVOCAP_Coupler
-# -DWITH_PARACON     : for parallel contact (unimplemented)
 # -DWITH_METIS       : compile with METIS graph partitioning package
 #   -DMETIS_VER_4    : uses METIS-4
-# -DWITH_PARMETIS    : compile with ParMETIS (unimplemented)
+# -DWITH_PARMETIS    : compile with ParMETIS
 #   -DPARMETIS_VER_3 : uses PARMETIS-3
-# -DWITH_MKL         : compile with MKL PARDISO (unimplemented)
+# -DWITH_MKL         : compile with MKL PARDISO
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
@@ -127,7 +126,6 @@ find_package(Scalapack)
 find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
-option(WITH_PARACON "for parallel contact" OFF)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
@@ -197,17 +195,6 @@ if(WITH_REVOCAP AND REVOCAP_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${REVOCAP_INCLUDE_PATH})
 else()
   set(WITH_REVOCAP OFF)
-endif()
-
-###################
-# -DWITH_PARACON
-###################
-if(WITH_PARACON)
-  list(APPEND FrontISTR_DEFINITIONS "PARA_CONTACT")
-  set(PARA_CONTACT ON)
-else()
-  set(WITH_PARACON OFF)
-  set(PARA_CONTACT OFF)
 endif()
 
 ###################
