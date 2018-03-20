@@ -539,6 +539,7 @@ contains
         dstrain(4) = ( gdispderiv(1, 2)+gdispderiv(2, 1) )
         dstrain(5) = ( gdispderiv(2, 3)+gdispderiv(3, 2) )
         dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
+        dstrain(:) = dstrain(:)-EPSTH(:)
 
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
         gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
@@ -561,6 +562,7 @@ contains
         dstrain(4) = dot_product(Fbar(1:3,1),Fbar(1:3,2))
         dstrain(5) = dot_product(Fbar(1:3,2),Fbar(1:3,3))
         dstrain(6) = dot_product(Fbar(1:3,3),Fbar(1:3,1))
+        dstrain(:) = dstrain(:)-EPSTH(:)
 
         if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.         &
             mtype == USERELASTIC .OR. mtype == USERHYPERELASTIC .OR. mtype == USERMATERIAL ) then
@@ -592,6 +594,7 @@ contains
         dstrain(4) = ( gdispderiv(1, 2)+gdispderiv(2, 1) )
         dstrain(5) = ( gdispderiv(2, 3)+gdispderiv(3, 2) )
         dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
+        dstrain(:) = dstrain(:)-EPSTH(:)
 
         rot = 0.0D0
         rot(1, 2)= 0.5D0*( Fbar(1, 2)-Fbar(2, 1) );  rot(2, 1) = -rot(1, 2)
@@ -791,12 +794,12 @@ contains
     !---------------------------------------------------------------------
 
     real(kind=kreal) :: ALP, alp0, D(6, 6), B(6, ndof*nn)
-    real(kind=kreal) :: B4, B6, B8, det, ecoord(3, nn)
+    real(kind=kreal) :: Z1(3), det, ecoord(3, nn)
     integer(kind=kint) :: j, LX, serr
     real(kind=kreal) :: estrain(6), SGM(6), H(nn)
     real(kind=kreal) :: naturalcoord(3), gderiv(nn, 3)
-    real(kind=kreal) :: wg, outa(1), ina(1), Bbar(nn, 3), alpo(3), alpo0(3), coordsys(3, 3)
-    real(kind=kreal) :: TEMPC, TEMP0, TEMPC0, TEMP00, THERMAL_EPS, tm(6,6)
+    real(kind=kreal) :: wg, outa(1), ina(1), gderiv1_ave(nn, 3), alpo(3), alpo0(3), coordsys(3, 3)
+    real(kind=kreal) :: TEMPC, TEMP0, V0, jacob_ave, THERMAL_EPS, tm(6,6)
     logical :: ierr, matlaniso
 
     !---------------------------------------------------------------------
@@ -815,11 +818,25 @@ contains
     ecoord(2, :) = YY(:)
     ecoord(3, :) = ZZ(:)
 
-    naturalCoord = 0.0D0
-    call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, Bbar)
-    call getShapeFunc( etype, naturalcoord, H(1:nn) )
-    TEMPC0 = dot_product( H(1:nn), TT(1:nn) )
-    TEMP00 = dot_product( H(1:nn), T0(1:nn) )
+    !cal volumetric average of J=detF and dN/dx
+    V0 = 0.d0
+    jacob_ave = 0.d0
+    gderiv1_ave(1:nn,1:ndof) = 0.d0
+    do LX = 1, NumOfQuadPoints(etype)
+      call getQuadPoint( etype, LX, naturalCoord(:) )
+      call getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv)
+      wg = getWeight(etype, LX)*det
+      V0 = V0 + wg
+      jacob_ave = jacob_ave + wg
+      gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + wg*gderiv(1:nn, 1:ndof)
+    enddo
+    if( dabs(V0) > 1.d-12 ) then
+      if( dabs(jacob_ave) < 1.d-12 ) stop 'Error in TLOAD_C3D8Fbar: too small average jacob'
+      jacob_ave = jacob_ave/V0
+      gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof)/(V0*jacob_ave)
+    else
+      stop 'Error in TLOAD_C3D8Fbar: too small element volume'
+    end if
 
     ! LOOP FOR INTEGRATION POINTS
     do LX = 1, NumOfQuadPoints(etype)
@@ -840,27 +857,22 @@ contains
       wg = getWeight(etype, LX)*det
       B(1:6, 1:nn*ndof) = 0.0D0
       do j = 1, nn
-        B4 = ( Bbar(j, 1)-gderiv(j, 1) )/3.0D0
-        B6 = ( Bbar(j, 2)-gderiv(j, 2) )/3.0D0
-        B8 = ( Bbar(j, 3)-gderiv(j, 3) )/3.0D0
-        B(1, 3*j-2) = gderiv(j, 1)+B4
-        B(1, 3*j-1) = B6
-        B(1, 3*j  ) = B8
+        B(1,3*j-2) = gderiv(j, 1)
+        B(2,3*j-1) = gderiv(j, 2)
+        B(3,3*j  ) = gderiv(j, 3)
+        B(4,3*j-2) = gderiv(j, 2)
+        B(4,3*j-1) = gderiv(j, 1)
+        B(5,3*j-1) = gderiv(j, 3)
+        B(5,3*j  ) = gderiv(j, 2)
+        B(6,3*j-2) = gderiv(j, 3)
+        B(6,3*j  ) = gderiv(j, 1)
+      end do
 
-        B(2, 3*j-2) = B4
-        B(2, 3*j-1) = gderiv(j, 2)+B6
-        B(2, 3*j  ) = B8
-
-        B(3, 3*j-2) = B4
-        B(3, 3*j-1) = B6
-        B(3, 3*j  ) = gderiv(j, 3)+B8
-
-        B(4, 3*j-2) = gderiv(j, 2)
-        B(4, 3*j-1) = gderiv(j, 1)
-        B(5, 3*j-1) = gderiv(j, 3)
-        B(5, 3*j  ) = gderiv(j, 2)
-        B(6, 3*j-2) = gderiv(j, 3)
-        B(6, 3*j  ) = gderiv(j, 1)
+      do j = 1, nn
+        Z1(1:3) = (gderiv1_ave(j,1:3)-gderiv(j,1:3))/3.d0
+        B(1,3*j-2:3*j) = B(1,3*j-2:3*j)+Z1(1:3)
+        B(2,3*j-2:3*j) = B(2,3*j-2:3*j)+Z1(1:3)
+        B(3,3*j-2:3*j) = B(3,3*j-2:3*j)+Z1(1:3)
       end do
 
       TEMPC = dot_product( H(1:nn),TT(1:nn) )
@@ -892,14 +904,14 @@ contains
       !**
       if( matlaniso ) then
         do j = 1, 3
-          estrain(j) = ALPO(j)*(TEMPC0-ref_temp)-alpo0(j)*(TEMP00-ref_temp)
+          estrain(j) = ALPO(j)*(TEMPC-ref_temp)-alpo0(j)*(TEMP0-ref_temp)
         end do
         estrain(4:6) = 0.0D0
         call transformation(coordsys, tm)
         estrain(:) = matmul( estrain(:), tm  )      ! to global coord
         estrain(4:6) = estrain(4:6)*2.0D0
       else
-        THERMAL_EPS = ALP*(TEMPC0-ref_temp)-alp0*(TEMP00-ref_temp)
+        THERMAL_EPS = ALP*(TEMPC-ref_temp)-alp0*(TEMP0-ref_temp)
         estrain(1:3) = THERMAL_EPS
         estrain(4:6) = 0.0D0
       end if
