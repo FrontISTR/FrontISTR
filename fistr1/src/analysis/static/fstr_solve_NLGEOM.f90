@@ -56,6 +56,8 @@ contains
       end do
     endif
 
+    if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+
     restart_step_num    = 1
     restart_substep_num = 1
     fstrSOLID%unode = 0.0d0

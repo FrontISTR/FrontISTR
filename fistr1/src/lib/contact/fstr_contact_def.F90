@@ -225,6 +225,7 @@ contains
       contact%states(ii)%tangentForce(:) = 0.d0
       contact%states(ii)%tangentForce_trial(:) = 0.d0
       contact%states(ii)%tangentForce_final(:) = 0.d0
+      contact%states(ii)%reldisp(:) = 0.d0
     enddo
     !    endif
 
@@ -909,5 +910,33 @@ contains
       enddo
     enddo
   end subroutine getMinMaxBoxIDPassedByMultiPoint
+
+  !>\brief This subroutine setup contact output nodal vectors
+  subroutine set_contact_state_vector( contact, dt, relvel_vec, state_vec )
+      type( tContact ), intent(in)      :: contact        !< contact info
+      real(kind=kreal), intent(in)      :: dt
+      real(kind=kreal), intent(inout)   :: relvel_vec(:)       !< mesh coordinate
+      real(kind=kreal), intent(inout)   :: state_vec(:)        !< disp till current now
+
+      integer(kind=kint)  :: slave,  etype, master
+      integer(kind=kint)  :: nn, i, j, k, iSS
+      real(kind=kreal)    :: fcoeff, nrlforce, tangent(3,2)
+      real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
+      real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
+      real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
+      real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
+
+      do i= 1, size(contact%slave)
+        slave = contact%slave(i)
+        if( state_vec(slave) < 0.1d0 .or. contact%states(i)%state > 0 ) &
+          &  state_vec(slave) = dble(contact%states(i)%state)
+
+        if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+        if( dt < 1.d-16 ) cycle ! too small delta t
+        relvel_vec(3*slave-2:3*slave) = contact%states(i)%reldisp(1:3)/dt
+      enddo
+
+  end subroutine set_contact_state_vector
+
 
 end module mContactDef
