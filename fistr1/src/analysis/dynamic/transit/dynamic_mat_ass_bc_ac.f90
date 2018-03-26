@@ -98,6 +98,9 @@ contains
                 call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
               endif
             endif
+
+            !for output reaction force
+            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           enddo
         enddo
 
