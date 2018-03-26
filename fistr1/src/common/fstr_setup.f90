@@ -1379,6 +1379,7 @@ contains
       P%SOLID%ESTRAIN => phys%ESTRAIN
       P%SOLID%ESTRESS => phys%ESTRESS
       P%SOLID%EMISES  => phys%EMISES
+      allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
     end if
 
     if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
