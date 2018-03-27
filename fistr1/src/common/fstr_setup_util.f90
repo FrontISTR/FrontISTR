@@ -172,25 +172,39 @@ contains
     implicit none
     type (hecmwST_local_mesh), target :: hecMESH
     integer(kind=kint) :: list(:)
-    integer(kind=kint) :: n, i, j
+    integer(kind=kint) :: n, i, j, cache
     logical:: fg
     integer(kind=kint):: node_global_to_local
 
     node_global_to_local = 0
-    do j=1, n
+    cache = 1
+    aa:do j=1, n
       fg = .false.
-      do i=1, hecMESH%n_node
+
+      do i=cache, hecMESH%n_node
         if( hecMESH%global_node_ID(i) == list(j)) then
           list(j) = i
+          cache = i+1
           fg = .true.
           node_global_to_local = node_global_to_local +1
-          exit
+          cycle aa
         endif
-      end do
+      enddo
+
+      do i=1, cache
+        if( hecMESH%global_node_ID(i) == list(j)) then
+          list(j) = i
+          cache = i+1
+          fg = .true.
+          node_global_to_local = node_global_to_local +1
+          cycle aa
+        endif
+      enddo
+
       if( .not. fg ) then
         list(j) = -list(j) ! not exist node
       endif
-    end do
+    enddo aa
   end function node_global_to_local
 
   function elem_global_to_local( hecMESH, list, n )

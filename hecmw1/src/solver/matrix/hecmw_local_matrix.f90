@@ -15,6 +15,13 @@ module hecmw_local_matrix
   public :: hecmw_trimatmul_TtKT
   public :: hecmw_trimatmul_TtKT_mpc
   public :: hecmw_localmat_transpose
+  public :: hecmw_localmat_assemble
+  public :: hecmw_localmat_add
+  public :: hecmw_localmat_init_with_hecmat
+  public :: hecmw_localmat_add_hecmat
+  public :: hecmw_localmat_multmat
+  public :: hecmw_localmat_make_hecmat
+  public :: hecmw_localmat_shrink_comm_table
 
   type hecmwST_local_matrix
     integer :: nr, nc, nnz, ndof
@@ -23,18 +30,25 @@ module hecmw_local_matrix
     real(kind=kreal), pointer :: A(:)
   end type hecmwST_local_matrix
 
+  integer(kind=kint), parameter :: cLID = 1
+  integer(kind=kint), parameter :: cRANK = 2
+  integer(kind=kint), parameter :: cGID = 3
+
+  integer(kind=kint), parameter :: DEBUG = 0
+
 contains
 
   subroutine hecmw_localmat_write(Tmat,iunit)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: Tmat
     integer(kind=kint), intent(in) :: iunit
-    integer(kind=kint) :: nr, ndof, ndof2, i, js, je, j, jj
-
+    integer(kind=kint) :: nr, nc, nnz, ndof, ndof2, i, js, je, j, jj
     nr=Tmat%nr
+    nc=Tmat%nc
+    nnz=Tmat%nnz
     ndof=Tmat%ndof
     ndof2=ndof*ndof
-
+    write(iunit,*) 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
     write(iunit,*) 'i, j, A'
     do i=1,nr
       js=Tmat%index(i-1)+1
@@ -144,35 +158,40 @@ contains
     implicit none
     type (hecmwST_local_matrix), intent(inout) :: Tmat
     deallocate(Tmat%index)
-    deallocate(Tmat%item)
-    deallocate(Tmat%A)
+    if (associated(Tmat%item)) deallocate(Tmat%item)
+    if (associated(Tmat%A)) deallocate(Tmat%A)
     Tmat%nr=0
     Tmat%nc=0
     Tmat%nnz=0
     Tmat%ndof=0
   end subroutine hecmw_localmat_free
 
-  subroutine hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, &
+  subroutine hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, &
       iwS, num_lagrange, hecTKT)
+    use hecmw_matrix_misc
     implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
     type (hecmwST_matrix), intent(inout) :: hecTKT
     type (hecmwST_local_matrix) :: BTtKT
+    real(kind=kreal) :: num
 
     ! perform three matrices multiplication for elimination
     call trimatmul_TtKT(BTtmat, hecMAT, BTmat, BTtKT)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! place 1s where the DOF is eliminated
-    call place_one_on_diag(BTtKT, iwS, num_lagrange)
+    ! place small numbers where the DOF is eliminated
+    !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
+    num = 1.d0
+    call place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! make new HECMW matrix
+    ! make_new HECMW matrix
     call make_new_hecmat(hecMAT, BTtKT, hecTKT)
     call hecmw_localmat_free(BTtKT)
   end subroutine hecmw_trimatmul_TtKT
@@ -428,11 +447,12 @@ contains
     deallocate(AB)
   end subroutine blk_trimatmul_add
 
-  subroutine place_one_on_diag(BTtKT, iwS, num_lagrange)
+  subroutine place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     implicit none
     type (hecmwST_local_matrix), intent(inout) :: BTtKT
     integer(kind=kint), intent(in) :: iwS(:)
     integer(kind=kint), intent(in) :: num_lagrange
+    real(kind=kreal), intent(in) :: num
     integer(kind=kint) :: ndof, ndof2, ilag, i, idof, js, je, j, jj
 
     ndof=BTtKT%ndof
@@ -447,12 +467,12 @@ contains
         jj=BTtKT%item(j)
         if (jj==i) then
           !write(0,*) ilag, i, idof
-          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=1.d0
+          BTtKT%A((j-1)*ndof2+(idof-1)*ndof+idof)=num
           cycle outer
         endif
       enddo
     enddo outer
-  end subroutine place_one_on_diag
+  end subroutine place_num_on_diag
 
   subroutine replace_hecmat(hecMAT, BTtKT)
     implicit none
@@ -565,7 +585,7 @@ contains
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_local_matrix), intent(in) :: BTtKT
     type(hecmwST_matrix), intent(inout) :: hecTKT
-    integer(kind=kint) :: nr, nc, ndof, ndof2, i
+    integer(kind=kint) :: nr, nc, ndof, ndof2
 
     nr=BTtKT%nr
     nc=BTtKT%nc
@@ -582,8 +602,6 @@ contains
     hecTKT%NDOF=ndof
 
     allocate(hecTKT%D(nc*ndof2))
-    allocate(hecTKT%B(nc*ndof))
-    allocate(hecTKT%X(nc*ndof))
 
     allocate(hecTKT%indexL(0:nc))
     allocate(hecTKT%indexU(0:nc))
@@ -592,11 +610,6 @@ contains
     hecTKT%Rarray=hecMAT%Rarray
 
     call replace_hecmat(hecTKT, BTtKT)
-
-    ! copy internal part only
-    do i=1,hecMAT%N*ndof
-      hecTKT%X(i)=hecMAT%X(i)
-    enddo
   end subroutine make_new_hecmat
 
   subroutine hecmw_localmat_mulvec(BTmat, V, TV)
@@ -651,7 +664,7 @@ contains
     type (hecmwST_local_matrix) :: BTmat, BTtmat
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: n_mpc, ndof
-    integer(kind=kint) :: i, k, kk
+    integer(kind=kint) :: i, k, kk, ilag
     n_mpc=hecMESH%mpc%n_mpc
     ndof=hecMAT%NDOF
     allocate(iwS(n_mpc))
@@ -672,7 +685,20 @@ contains
     ! endif
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
-    call hecmw_trimatmul_TtKT(BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
+    call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
+
+    allocate(hecTKT%B(size(hecMAT%B)))
+    allocate(hecTKT%X(size(hecMAT%X)))
+    do i=1, size(hecMAT%B)
+      hecTKT%B(i) = hecMAT%B(i)
+    enddo
+    do i=1, size(hecMAT%X)
+      hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do ilag=1,n_mpc
+      hecTKT%X(iwS(ilag)) = 0.d0
+    enddo
+
     call hecmw_localmat_free(BTmat)
     call hecmw_localmat_free(BTtmat)
     ! call hecmw_localmat_free(BTtmat2)
@@ -868,5 +894,2034 @@ contains
     enddo
     hecmw_localmat_equal = 1
   end function hecmw_localmat_equal
+
+!!!
+!!! Subroutines for parallel contact analysis with iterative linear solver
+!!!
+
+  subroutine hecmw_localmat_assemble(BTmat, hecMESH, hecMESHnew)
+    implicit none
+    type (hecmwST_local_matrix), intent(inout) :: BTmat
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint) :: nn_int, np, ndof, ndof2, nr_ext, nnz_ext
+    integer(kind=kint), allocatable :: exp_rows_index(:), exp_cols_index(:)
+    integer(kind=kint), allocatable :: exp_rows_item(:,:), exp_cols_item(:,:)
+    type (hecmwST_local_matrix), allocatable :: BT_ext(:)
+    type (hecmwST_local_matrix) :: BT_int
+    type (hecmwST_local_matrix) :: BTnew
+    ! some checks
+    if (DEBUG >= 1) write(0,*) 'DEBUG: nr,nc,nnz,ndof',BTmat%nr,BTmat%nc,BTmat%nnz,BTmat%ndof
+    if (BTmat%nr /= hecMESH%n_node) stop 'ERROR: invalid size in hecmw_localmat_assemble'
+    !
+    nn_int = hecMESH%nn_internal
+    np = hecMESH%n_node
+    ndof = BTmat%ndof
+    ndof2 = ndof*ndof
+    !
+    nr_ext = np - nn_int
+    nnz_ext = BTmat%index(np) - BTmat%index(nn_int)
+    !
+    call prepare_BT_ext(BTmat, hecMESH, exp_rows_index, exp_rows_item, BT_ext)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: prepare_BT_ext done'
+    !
+    call prepare_column_info(hecMESH, BT_ext, exp_cols_index, exp_cols_item)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: prepare_column info done'
+    !
+    call send_BT_ext_and_recv_BT_int(hecMESH, exp_rows_index, exp_rows_item, BT_ext, &
+         exp_cols_index, exp_cols_item, BT_int, hecMESHnew)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: send BT_ext and recv BT_int done'
+    !
+    !write(0,*) 'BTmat%ndof,BT_int%ndof',BTmat%ndof,BT_int%ndof
+    call hecmw_localmat_add(BTmat, BT_int, BTnew)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: localmat_add done'
+    !
+    call hecmw_localmat_free(BTmat)
+    call hecmw_localmat_free(BT_int)
+    !
+    BTmat%nr = BTnew%nr
+    BTmat%nc = BTnew%nc
+    BTmat%nnz = BTnew%nnz
+    BTmat%ndof = BTnew%ndof
+    BTmat%index => BTnew%index
+    BTmat%item => BTnew%item
+    BTmat%A => BTnew%A
+    !
+    ! hecMESH%n_node = hecMESHnew%n_node
+    ! hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
+    ! deallocate(hecMESH%neighbor_pe)
+    ! deallocate(hecMESH%import_index)
+    ! deallocate(hecMESH%export_index)
+    ! deallocate(hecMESH%import_item)
+    ! deallocate(hecMESH%export_item)
+    ! deallocate(hecMESH%node_ID)
+    ! deallocate(hecMESH%global_node_ID)
+    ! hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
+    ! hecMESH%import_index => hecMESHnew%import_index
+    ! hecMESH%export_index => hecMESHnew%export_index
+    ! hecMESH%import_item => hecMESHnew%import_item
+    ! hecMESH%export_item => hecMESHnew%export_item
+    ! hecMESH%node_ID => hecMESHnew%node_ID
+    ! hecMESH%global_node_ID => hecMESHnew%global_node_ID
+    !
+    if (DEBUG >= 1) write(0,*) 'DEBUG: update BTmat and hecMESH done'
+  end subroutine hecmw_localmat_assemble
+
+  subroutine prepare_BT_ext(BTmat, hecMESH, exp_rows_index, exp_rows_item, BT_ext)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), allocatable, intent(out) :: exp_rows_index(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_rows_item(:,:)
+    type (hecmwST_local_matrix), allocatable, intent(out) :: BT_ext(:)
+    integer(kind=kint), allocatable :: incl_nz(:), exp_cols_per_row(:), exp_rows_per_rank(:)
+    integer(kind=kint) :: nn_int
+    nn_int = hecMESH%nn_internal
+    !
+    call check_external_nz_blocks(BTmat, nn_int, incl_nz)
+    !
+    call count_ext_rows_with_nz(BTmat, nn_int, incl_nz, exp_cols_per_row)
+    !
+    call count_exp_rows_per_rank(hecMESH, exp_cols_per_row, exp_rows_per_rank)
+    !
+    allocate(exp_rows_index(0:hecMESH%n_neighbor_pe))
+    call make_index(hecMESH%n_neighbor_pe, exp_rows_per_rank, exp_rows_index)
+    !write(0,*) 'exp_rows_index',exp_rows_index(:)
+    !
+    deallocate(exp_rows_per_rank)
+    !
+    call make_exp_rows_item(hecMESH, exp_cols_per_row, exp_rows_index, exp_rows_item)
+    !
+    deallocate(exp_cols_per_row)
+    !
+    allocate(BT_ext(hecMESH%n_neighbor_pe))
+    call extract_BT_ext(hecMESH, BTmat, incl_nz, exp_rows_index, exp_rows_item, BT_ext)
+    !
+    deallocate(incl_nz)
+  end subroutine prepare_BT_ext
+
+  subroutine check_external_nz_blocks(BTmat, nn_internal, incl_nz)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    integer(kind=kint), intent(in) :: nn_internal
+    integer(kind=kint), allocatable, intent(out) :: incl_nz(:)
+    integer(kind=kint) :: ndof2, i0, nnz_ext, i, k, nnz_blk
+    if (nn_internal > BTmat%nr) stop 'ERROR: invalid nn_internal'
+    ndof2 = BTmat%ndof ** 2
+    i0 = BTmat%index(nn_internal)
+    nnz_ext = BTmat%index(BTmat%nr) - i0
+    allocate(incl_nz(nnz_ext))
+    nnz_blk = 0
+    do i = 1, nnz_ext
+      incl_nz(i) = 0
+      do k = 1, ndof2
+        if (BTmat%A(ndof2*(i0+i-1)+k) /= 0.0d0) then
+          incl_nz(i) = 1
+          nnz_blk = nnz_blk + 1
+          exit
+        endif
+      enddo
+    enddo
+    if (DEBUG >= 1) write(0,*) 'DEBUG: nnz_blk',nnz_blk
+  end subroutine check_external_nz_blocks
+
+  subroutine count_ext_rows_with_nz(BTmat, nn_internal, incl_nz, exp_cols_per_row)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    integer(kind=kint), intent(in) :: nn_internal
+    integer(kind=kint), intent(in) :: incl_nz(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_cols_per_row(:)
+    integer(kind=kint) :: nr_ext, nnz_int, i, irow, js, je, j, jcol
+    nr_ext = BTmat%nr - nn_internal
+    nnz_int = BTmat%index(nn_internal)
+    allocate(exp_cols_per_row(nr_ext))
+    exp_cols_per_row(:) = 0
+    do i = 1, nr_ext
+      irow = nn_internal+i
+      js = BTmat%index(irow-1)+1
+      je = BTmat%index(irow)
+      do j = js, je
+        jcol = BTmat%item(j)
+        if (incl_nz(j-nnz_int) == 1) exp_cols_per_row(i) = exp_cols_per_row(i) + 1
+      enddo
+    enddo
+    !write(0,*) 'exp_cols_per_row',exp_cols_per_row(:)
+  end subroutine count_ext_rows_with_nz
+
+  subroutine count_exp_rows_per_rank(hecMESH, exp_cols_per_row, exp_rows_per_rank)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: exp_cols_per_row(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_rows_per_rank(:)
+    integer(kind=kint) :: nn_int, np, nr_ext, i, irow, exp_rank, idom
+    allocate(exp_rows_per_rank(hecMESH%n_neighbor_pe))
+    exp_rows_per_rank(1:hecMESH%n_neighbor_pe) = 0
+    nn_int = hecMESH%nn_internal
+    np = hecMESH%n_node
+    nr_ext = np - nn_int
+    do i = 1, nr_ext
+      if (exp_cols_per_row(i) > 0) then
+        irow = nn_int + i
+        exp_rank = hecMESH%node_ID(2*irow)
+        call rank_to_idom(hecMESH, exp_rank, idom)
+        exp_rows_per_rank(idom) = exp_rows_per_rank(idom) + 1
+      endif
+    enddo
+    !write(0,*) 'exp_rows_per_rank',exp_rows_per_rank(:)
+  end subroutine count_exp_rows_per_rank
+
+  subroutine rank_to_idom(hecMESH, rank, idom)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: rank
+    integer(kind=kint), intent(out) :: idom
+    integer(kind=kint) :: i
+    do i = 1, hecMESH%n_neighbor_pe
+      if (hecMESH%neighbor_pe(i) == rank) then
+        idom = i
+        return
+      endif
+    enddo
+    stop 'ERROR: exp_rank not found in neighbor_pe'
+  end subroutine rank_to_idom
+
+  subroutine make_index(len, cnt, index)
+    implicit none
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(in) :: cnt(len)
+    integer(kind=kint), intent(out) :: index(0:)
+    integer(kind=kint) :: i
+    ! write(0,*) 'make_index: len',len
+    index(0) = 0
+    do i = 1,len
+      index(i) = index(i-1) + cnt(i)
+    enddo
+  end subroutine make_index
+
+  subroutine make_exp_rows_item(hecMESH, exp_cols_per_row, exp_rows_index, exp_rows_item)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: exp_cols_per_row(:)
+    integer(kind=kint), allocatable, intent(in) :: exp_rows_index(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_rows_item(:,:)
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint) :: nn_int, np, nr_ext, i, irow, exp_rank, idom, idx
+    allocate(exp_rows_item(2,exp_rows_index(hecMESH%n_neighbor_pe)))
+    allocate(cnt(hecMESH%n_neighbor_pe))
+    cnt(:) = 0
+    nn_int = hecMESH%nn_internal
+    np = hecMESH%n_node
+    nr_ext = np - nn_int
+    do i = 1, nr_ext
+      if (exp_cols_per_row(i) > 0) then
+        irow = nn_int + i
+        exp_rank = hecMESH%node_ID(2*irow)
+        call rank_to_idom(hecMESH, exp_rank, idom)
+        cnt(idom) = cnt(idom) + 1
+        idx = exp_rows_index(idom-1) + cnt(idom)
+        exp_rows_item(1,idx) = irow
+        exp_rows_item(2,idx) = exp_cols_per_row(i)
+      endif
+    enddo
+    !write(0,*) 'cnt',cnt(:)
+    do idom = 1, hecMESH%n_neighbor_pe
+      if (cnt(idom) /= exp_rows_index(idom)-exp_rows_index(idom-1)) stop 'ERROR: make exp_rows_item'
+    enddo
+    !write(0,*) 'exp_rows_item(1,:)',exp_rows_item(1,:)
+    !write(0,*) 'exp_rows_item(2,:)',exp_rows_item(2,:)
+  end subroutine make_exp_rows_item
+
+  subroutine extract_BT_ext(hecMESH, BTmat, incl_nz, exp_rows_index, exp_rows_item, BT_ext)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    integer(kind=kint), intent(in) :: incl_nz(:)
+    integer(kind=kint), allocatable, intent(in) :: exp_rows_index(:)
+    integer(kind=kint), intent(in) :: exp_rows_item(:,:)
+    type (hecmwST_local_matrix), allocatable, intent(out) :: BT_ext(:)
+    integer(kind=kint) :: ndof, ndof2, nn_int, nnz_int, idom, j, idx, ncol, cnt, jrow, ks, ke, k, kcol
+    allocate(BT_ext(hecMESH%n_neighbor_pe))
+    ndof = BTmat%ndof
+    ndof2 = ndof * ndof
+    nn_int = hecMESH%nn_internal
+    nnz_int = BTmat%index(nn_int)
+    do idom = 1, hecMESH%n_neighbor_pe
+      BT_ext(idom)%nr = exp_rows_index(idom) - exp_rows_index(idom-1)
+      BT_ext(idom)%nc = BTmat%nc
+      BT_ext(idom)%nnz = 0
+      BT_ext(idom)%ndof = ndof
+      allocate(BT_ext(idom)%index(0:BT_ext(idom)%nr))
+      BT_ext(idom)%index(0) = 0
+      do j = 1, BT_ext(idom)%nr
+        idx = exp_rows_index(idom-1) + j
+        ncol = exp_rows_item(2,idx)
+        BT_ext(idom)%index(j) = BT_ext(idom)%index(j-1) + ncol
+      enddo
+      BT_ext(idom)%nnz = BT_ext(idom)%index(BT_ext(idom)%nr)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: idom,nr,nc,nnz,ndof', &
+           idom,BT_ext(idom)%nr,BT_ext(idom)%nc,BT_ext(idom)%nnz,BT_ext(idom)%ndof
+      allocate(BT_ext(idom)%item(BT_ext(idom)%nnz))
+      allocate(BT_ext(idom)%A(BT_ext(idom)%nnz * ndof2))
+      cnt = 0
+      do j = 1, BT_ext(idom)%nr
+        idx = exp_rows_index(idom-1) + j
+        jrow = exp_rows_item(1,idx)
+        if (jrow < 1 .or. BTmat%nr < jrow) stop 'ERROR: extract BT_ext: jrow'
+        ks = BTmat%index(jrow-1)+1
+        ke = BTmat%index(jrow)
+        do k = ks, ke
+          kcol = BTmat%item(k)
+          if (incl_nz(k-nnz_int) == 0) cycle
+          cnt = cnt + 1
+          BT_ext(idom)%item(cnt) = kcol
+          BT_ext(idom)%A(ndof2*(cnt-1)+1:ndof2*cnt) = BTmat%A(ndof2*(k-1)+1:ndof2*k)
+        enddo
+        if (cnt /= BT_ext(idom)%index(j)) stop 'ERROR: extract BT_ext'
+      enddo
+      ! if (DEBUG >= 3) write(100+hecMESH%my_rank,*) 'BT_ext(',idom,')'
+      ! call hecmw_localmat_write(BT_ext(idom), 100+hecMESH%my_rank)
+    enddo
+  end subroutine extract_BT_ext
+
+  subroutine prepare_column_info(hecMESH, BT_ext, exp_cols_index, exp_cols_item)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_cols_index(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_cols_item(:,:)
+    !
+    call make_exp_cols_index(hecMESH%n_neighbor_pe, BT_ext, exp_cols_index)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: make exp_cols_index done'
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: exp_cols_index', exp_cols_index(0:hecMESH%n_neighbor_pe)
+    !
+    ! (col ID, rank, global ID)
+    !
+    call make_exp_cols_item(hecMESH, BT_ext, exp_cols_index, exp_cols_item)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: make exp_cols_item done'
+    ! if (DEBUG >= 3) write(0,*) '    DEBUG3: exp_cols_item', exp_cols_item(1:3,1:exp_cols_index(hecMESH%n_neighbor_pe))
+  end subroutine prepare_column_info
+
+  subroutine make_exp_cols_index(nnb, BT_ext, exp_cols_index)
+    implicit none
+    integer(kind=kint), intent(in) :: nnb
+    type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_cols_index(:)
+    integer(kind=kint) :: idom
+    allocate(exp_cols_index(0:nnb))
+    exp_cols_index(0) = 0
+    do idom = 1, nnb
+      exp_cols_index(idom) = exp_cols_index(idom-1) + BT_ext(idom)%nnz
+    enddo
+  end subroutine make_exp_cols_index
+
+  subroutine make_exp_cols_item(hecMESH, BT_ext, exp_cols_index, exp_cols_item)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
+    integer(kind=kint), allocatable, intent(in) :: exp_cols_index(:)
+    integer(kind=kint), allocatable, intent(out) :: exp_cols_item(:,:)
+    integer(kind=kint) :: cnt, idom, j, jcol
+    allocate(exp_cols_item(3,exp_cols_index(hecMESH%n_neighbor_pe)))
+    cnt = 0
+    do idom = 1, hecMESH%n_neighbor_pe
+      do j = 1, BT_ext(idom)%nnz
+        cnt = cnt + 1
+        jcol = BT_ext(idom)%item(j)
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: idom,j,cnt,jcol,nn_internal,n_node',&
+        !      idom,j,cnt,jcol,hecMESH%nn_internal,hecMESH%n_node
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: size of exp_cols_item',size(exp_cols_item)
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: size of node_ID',size(hecMESH%node_ID)
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: size of global_node_ID',size(hecMESH%global_node_ID)
+        exp_cols_item(cLID,cnt) = hecMESH%node_ID(2*jcol-1)
+        exp_cols_item(cRANK,cnt) = hecMESH%node_ID(2*jcol)
+        exp_cols_item(cGID,cnt) = hecMESH%global_node_ID(jcol)
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: lid,rank,gid',exp_cols_item(1:3,cnt)
+      enddo
+      if (cnt /= exp_cols_index(idom)) stop 'ERROR: make exp_cols_item'
+    enddo
+  end subroutine make_exp_cols_item
+
+  subroutine send_BT_ext_and_recv_BT_int(hecMESH, exp_rows_index, exp_rows_item, BT_ext, &
+       exp_cols_index, exp_cols_item, BT_int, hecMESHnew)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), allocatable, intent(inout) :: exp_rows_index(:), exp_cols_index(:)
+    integer(kind=kint), allocatable, intent(inout) :: exp_rows_item(:,:), exp_cols_item(:,:)
+    type (hecmwST_local_matrix), allocatable, intent(inout) :: BT_ext(:)
+    type (hecmwST_local_matrix), intent(out) :: BT_int
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint), allocatable :: imp_rows_index(:), imp_cols_index(:)
+    integer(kind=kint), allocatable :: imp_rows_item(:,:), imp_cols_item(:,:)
+    real(kind=kreal), allocatable :: imp_vals_item(:)
+    integer(kind=kint), allocatable :: map(:), add_nodes(:,:)
+    integer(kind=kint) :: ndof, ndof2, idom, n_add_node, i0
+    if (hecMESH%n_neighbor_pe == 0) return
+    ndof = BT_ext(1)%ndof
+    ndof2 = ndof*ndof
+    !
+    call convert_rowID_to_remote_localID(hecMESH, exp_rows_index(hecMESH%n_neighbor_pe), exp_rows_item)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: convert rowID to remote localID done'
+    !
+    call send_recv_BT_ext_nr_nnz(hecMESH, BT_ext, imp_rows_index, imp_cols_index)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: send recv BT_ext nr and nnz done'
+    !
+    call send_recv_BT_ext_contents(hecMESH, BT_ext, &
+         exp_rows_index, exp_cols_index, exp_rows_item, exp_cols_item, &
+         imp_rows_index, imp_cols_index, &
+         imp_rows_item, imp_cols_item, imp_vals_item)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: send recv BT_ext contents done'
+    !
+    do idom = 1, hecMESH%n_neighbor_pe
+      call hecmw_localmat_free(BT_ext(idom))
+    enddo
+    deallocate(BT_ext)
+    !
+    call allocate_BT_int(hecMESH, ndof, imp_rows_index, imp_rows_item, BT_int)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: allocate BT_int done'
+    !
+    ! call copy_mesh(hecMESH, hecMESHnew)
+    ! if (DEBUG >= 2) write(0,*) '  DEBUG2: copy mesh done'
+    !
+    call map_imported_cols(hecMESHnew, imp_cols_index(hecMESH%n_neighbor_pe), &
+         imp_cols_item, n_add_node, add_nodes, map, i0)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: map imported cols done'
+    !
+    call update_comm_table(hecMESHnew, n_add_node, add_nodes, i0)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: update comm_table done'
+    !
+    BT_int%nc = hecMESHnew%n_node
+    !
+    call copy_vals_to_BT_int(hecMESH%n_neighbor_pe, imp_rows_index, imp_cols_index, &
+         imp_rows_item, map, ndof2, imp_vals_item, BT_int)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: copy vals to BT_int done'
+    !
+    deallocate(imp_rows_index)
+    deallocate(imp_cols_index)
+    deallocate(imp_rows_item)
+    deallocate(imp_cols_item)
+    deallocate(imp_vals_item)
+    deallocate(map)
+    !
+    call sort_and_uniq_rows(BT_int)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: sort and uniq rows of BT_int done'
+  end subroutine send_BT_ext_and_recv_BT_int
+
+  subroutine convert_rowID_to_remote_localID(hecMESH, len, exp_rows_item)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(out) :: exp_rows_item(:,:)
+    integer(kind=kint) :: i
+    do i = 1, len
+      exp_rows_item(1,i) = hecMESH%node_ID(2 * exp_rows_item(1,i) - 1)
+    enddo
+  end subroutine convert_rowID_to_remote_localID
+
+  subroutine send_recv_BT_ext_nr_nnz(hecMESH, BT_ext, imp_rows_index, imp_cols_index)
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
+    integer(kind=kint), allocatable, intent(out) :: imp_rows_index(:), imp_cols_index(:)
+    integer(kind=kint) :: nnb, idom, irank, sendbuf(2), tag, recvbuf(2)
+    integer(kind=kint), allocatable :: requests(:)
+    integer(kind=kint), allocatable :: statuses(:,:)
+    nnb = hecMESH%n_neighbor_pe
+    allocate(imp_rows_index(0:nnb))
+    allocate(imp_cols_index(0:nnb))
+    allocate(requests(nnb))
+    allocate(statuses(HECMW_STATUS_SIZE, nnb))
+    do idom = 1, nnb
+      irank = hecMESH%neighbor_pe(idom)
+      ! nr = exp_rows_per_rank(idom)
+      sendbuf(1) = BT_ext(idom)%nr
+      sendbuf(2) = BT_ext(idom)%nnz
+      tag=2001
+      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, hecMESH%MPI_COMM, &
+           requests(idom))
+    enddo
+    imp_rows_index(0) = 0
+    imp_cols_index(0) = 0
+    do idom = 1, nnb
+      irank = hecMESH%neighbor_pe(idom)
+      tag = 2001
+      call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
+           hecMESH%MPI_COMM, statuses(:,1))
+      imp_rows_index(idom) = imp_rows_index(idom-1) + recvbuf(1)
+      imp_cols_index(idom) = imp_cols_index(idom-1) + recvbuf(2)
+    enddo
+    call HECMW_Waitall(nnb, requests, statuses)
+  end subroutine send_recv_BT_ext_nr_nnz
+
+  subroutine send_recv_BT_ext_contents(hecMESH, BT_ext, &
+       exp_rows_index, exp_cols_index, exp_rows_item, exp_cols_item, &
+       imp_rows_index, imp_cols_index, &
+       imp_rows_item, imp_cols_item, imp_vals_item)
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
+    integer(kind=kint), allocatable, intent(inout) :: exp_rows_index(:), exp_cols_index(:)
+    integer(kind=kint), allocatable, intent(inout) :: exp_rows_item(:,:), exp_cols_item(:,:)
+    integer(kind=kint), allocatable, intent(in) :: imp_rows_index(:), imp_cols_index(:)
+    integer(kind=kint), allocatable, intent(out) :: imp_rows_item(:,:), imp_cols_item(:,:)
+    real(kind=kreal), allocatable, intent(out) :: imp_vals_item(:)
+    integer(kind=kint) :: nnb, ndof2, n_send, idom, irank, tag, nr, nnz
+    integer(kind=kint), allocatable :: requests(:)
+    integer(kind=kint), allocatable :: statuses(:,:)
+    nnb = hecMESH%n_neighbor_pe
+    if (nnb < 1) return
+    ndof2 = BT_ext(1)%ndof ** 2
+    allocate(imp_rows_item(2,imp_rows_index(nnb)))
+    allocate(imp_cols_item(3,imp_cols_index(nnb)))
+    allocate(imp_vals_item(ndof2*imp_cols_index(nnb)))
+    allocate(requests(3*nnb))
+    allocate(statuses(HECMW_STATUS_SIZE, 3*nnb))
+    n_send = 0
+    do idom = 1, nnb
+      irank = hecMESH%neighbor_pe(idom)
+      if (BT_ext(idom)%nr > 0) then
+        n_send = n_send + 1
+        tag = 2002
+        call HECMW_ISEND_INT(exp_rows_item(1,exp_rows_index(idom-1)+1), &
+             2*BT_ext(idom)%nr, irank, tag, hecMESH%MPI_COMM, &
+             requests(n_send))
+        n_send = n_send + 1
+        tag = 2003
+        call HECMW_ISEND_INT(exp_cols_item(1,exp_cols_index(idom-1)+1), &
+             3*BT_ext(idom)%nnz, irank, tag, hecMESH%MPI_COMM, &
+             requests(n_send))
+        n_send = n_send + 1
+        tag = 2004
+        call HECMW_ISEND_R(BT_ext(idom)%A, ndof2*BT_ext(idom)%nnz, irank, &
+             tag, hecMESH%MPI_COMM, requests(n_send))
+      endif
+    enddo
+    do idom = 1, nnb
+      irank = hecMESH%neighbor_pe(idom)
+      nr = imp_rows_index(idom) - imp_rows_index(idom-1)
+      nnz = imp_cols_index(idom) - imp_cols_index(idom-1)
+      if (nr > 0) then
+        tag = 2002
+        call HECMW_RECV_INT(imp_rows_item(1,imp_rows_index(idom-1)+1), &
+             2*nr, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+        tag = 2003
+        call HECMW_RECV_INT(imp_cols_item(1,imp_cols_index(idom-1)+1), &
+             3*nnz, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+        tag = 2004
+        call HECMW_RECV_R(imp_vals_item(ndof2*imp_cols_index(idom-1)+1), &
+             ndof2*nnz, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+      endif
+    enddo
+    call HECMW_Waitall(n_send, requests, statuses)
+    deallocate(exp_rows_index)
+    deallocate(exp_rows_item)
+    deallocate(exp_cols_index)
+    deallocate(exp_cols_item)
+  end subroutine send_recv_BT_ext_contents
+
+  subroutine allocate_BT_int(hecMESH, ndof, imp_rows_index, imp_rows_item, BT_int)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: ndof
+    integer(kind=kint), allocatable, intent(in) :: imp_rows_index(:), imp_rows_item(:,:)
+    type (hecmwST_local_matrix), intent(out) :: BT_int
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint) :: idom, is, ie, i, irow, ncol, ndof2
+    ndof2 = ndof*ndof
+    BT_int%nr = hecMESH%nn_internal
+    BT_int%nc = hecMESH%n_node
+    BT_int%nnz = 0
+    BT_int%ndof = ndof
+    allocate(cnt(BT_int%nr))
+    cnt(:) = 0
+    do idom = 1, hecMESH%n_neighbor_pe
+      is = imp_rows_index(idom-1)+1
+      ie = imp_rows_index(idom)
+      do i = is, ie
+        irow = imp_rows_item(1,i)
+        ncol = imp_rows_item(2,i)
+        if (irow < 1 .or. BT_int%nr < irow) stop 'ERROR: allocate BT_int'
+        cnt(irow) = cnt(irow) + ncol   !!! might include duplicate cols
+      enddo
+    enddo
+    !
+    allocate(BT_int%index(0:BT_int%nr))
+    call make_index(BT_int%nr, cnt, BT_int%index)
+    !
+    BT_int%nnz = BT_int%index(BT_int%nr)
+    allocate(BT_int%item(BT_int%nnz))
+    allocate(BT_int%A(BT_int%nnz * ndof2))
+    BT_int%A(:) = 0.d0
+  end subroutine allocate_BT_int
+
+  subroutine copy_mesh(src, dst)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: src
+    type (hecmwST_local_mesh), intent(out) :: dst
+    dst%zero = src%zero
+    dst%MPI_COMM = src%MPI_COMM
+    dst%PETOT = src%PETOT
+    dst%PEsmpTOT = src%PEsmpTOT
+    dst%my_rank = src%my_rank
+    dst%n_subdomain = src%n_subdomain
+    dst%n_node = src%n_node
+    dst%nn_internal = src%nn_internal
+    dst%n_dof = src%n_dof
+    dst%n_neighbor_pe = src%n_neighbor_pe
+    allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+    dst%neighbor_pe(:) = src%neighbor_pe(:)
+    allocate(dst%import_index(0:dst%n_neighbor_pe))
+    allocate(dst%export_index(0:dst%n_neighbor_pe))
+    dst%import_index(:)= src%import_index(:)
+    dst%export_index(:)= src%export_index(:)
+    allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+    dst%import_item(:) = src%import_item(:)
+    allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+    dst%export_item(:) = src%export_item(:)
+    allocate(dst%node_ID(2*dst%n_node))
+    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*src%n_node)
+    allocate(dst%global_node_ID(dst%n_node))
+    dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:src%n_node)
+    dst%mpc%n_mpc = 0
+    dst%node => src%node
+  end subroutine copy_mesh
+
+  subroutine map_imported_cols(hecMESHnew, ncols, cols, n_add_node, add_nodes, map, i0)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint), intent(in) :: ncols
+    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), allocatable, intent(out) :: map(:)
+    integer(kind=kint), intent(out) :: n_add_node
+    integer(kind=kint), allocatable, intent(out) :: add_nodes(:,:)
+    integer(kind=kint), intent(out) :: i0
+    allocate(map(ncols))
+    !
+    call map_present_nodes(hecMESHnew, ncols, cols, map, n_add_node)
+    !
+    ! add nodes == unmapped nodes
+    !
+    call extract_add_nodes(ncols, cols, map, n_add_node, add_nodes)
+    !
+    call append_nodes(hecMESHnew, n_add_node, add_nodes, i0)
+    !
+    call map_additional_nodes(ncols, cols, n_add_node, add_nodes, i0, map)
+  end subroutine map_imported_cols
+
+  subroutine map_present_nodes(hecMESH, ncols, cols, map, n_add_node)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: ncols
+    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), intent(out) :: map(ncols)
+    integer(kind=kint), intent(out) :: n_add_node
+    integer(kind=kint) :: i, lid, rank, gid, llid
+    n_add_node = 0
+    do i = 1, ncols
+      lid = cols(cLID,i)
+      rank = cols(cRANK,i)
+      gid = cols(cGID,i)
+      !   check rank
+      if (rank == hecMESH%my_rank) then  !   internal: set mapping
+        map(i) = lid
+      else                               !   external
+        !     search global_ID in external nodes
+        llid = find_external_gid(hecMESH, gid)
+        if (llid > 0) then  !     found: set mapping
+          map(i) = llid
+        else                !     not found
+          map(i) = -1
+          n_add_node = n_add_node + 1
+        endif
+      endif
+    enddo
+  end subroutine map_present_nodes
+
+  function find_external_gid(hecMESH, gid)
+    implicit none
+    integer(kind=kint) :: find_external_gid
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: gid
+    integer(kind=kint) :: i
+    find_external_gid = -1
+    do i = hecMESH%nn_internal+1, hecMESH%n_node
+      if (hecMESH%global_node_ID(i) == gid) then
+        find_external_gid = i
+        return
+      endif
+    enddo
+  end function find_external_gid
+
+  subroutine extract_add_nodes(ncols, cols, map, n_add_node, add_nodes)
+    implicit none
+    integer(kind=kint), intent(in) :: ncols
+    integer(kind=kint), intent(in) :: cols(3,ncols), map(ncols)
+    integer(kind=kint), intent(inout) :: n_add_node
+    integer(kind=kint), allocatable, intent(out) :: add_nodes(:,:)
+    integer(kind=kint) :: cnt, i
+    allocate(add_nodes(3,n_add_node))
+    cnt = 0
+    do i = 1, ncols
+      if (map(i) == -1) then
+        cnt = cnt + 1
+        add_nodes(1:3,cnt) = cols(1:3,i)
+      endif
+    enddo
+    if (cnt /= n_add_node) stop 'ERROR: extract add_nodes'
+    call sort_and_uniq_add_nodes(n_add_node, add_nodes)
+  end subroutine extract_add_nodes
+
+  subroutine sort_and_uniq_add_nodes(n_add_node, add_nodes)
+    implicit none
+    integer(kind=kint), intent(inout) :: n_add_node
+    integer(kind=kint), intent(inout) :: add_nodes(3,n_add_node)
+    integer(kind=kint) :: ndup
+    call sort_add_nodes(add_nodes, 1, n_add_node)
+    call uniq_add_nodes(add_nodes, n_add_node, ndup)
+    n_add_node = n_add_node - ndup
+  end subroutine sort_and_uniq_add_nodes
+
+  recursive subroutine sort_add_nodes(add_nodes, id1, id2)
+    implicit none
+    integer(kind=kint), intent(inout) :: add_nodes(:,:)
+    integer(kind=kint), intent(in) :: id1, id2
+    integer(kind=kint) :: center, left, right
+    integer(kind=kint) :: pivot(3), tmp(3)
+    if (id1 >= id2) return
+    center = (id1 + id2) / 2
+    pivot(1:3) = add_nodes(1:3,center)
+    left = id1
+    right = id2
+    do
+      do while ((add_nodes(cRANK,left) < pivot(cRANK)) .or. &
+           (add_nodes(cRANK,left) == pivot(cRANK) .and. add_nodes(cLID,left) < pivot(cLID)))
+        left = left + 1
+      enddo
+      do while ((pivot(cRANK) < add_nodes(cRANK,right)) .or. &
+           (pivot(cRANK) == add_nodes(cRANK,right) .and. pivot(cLID) < add_nodes(cLID,right)))
+        right = right - 1
+      enddo
+      if (left >= right) exit
+      tmp(1:3) = add_nodes(1:3,left)
+      add_nodes(1:3,left) = add_nodes(1:3,right)
+      add_nodes(1:3,right) = tmp(1:3)
+      left = left + 1
+      right = right - 1
+    enddo
+    if (id1 < left-1) call sort_add_nodes(add_nodes, id1, left-1)
+    if (right+1 < id2) call sort_add_nodes(add_nodes, right+1, id2)
+    return
+  end subroutine sort_add_nodes
+
+  subroutine uniq_add_nodes(add_nodes, len, ndup)
+    implicit none
+    integer(kind=kint), intent(inout) :: add_nodes(:,:)
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(out) :: ndup
+    integer(kind=kint) :: i
+    ndup = 0
+    do i = 2,len
+      if (add_nodes(cLID,i) == add_nodes(cLID,i-1-ndup) .and. &
+           add_nodes(cRANK,i) == add_nodes(cRANK,i-1-ndup)) then
+        ndup = ndup + 1
+      else if (ndup > 0) then
+        add_nodes(1:3,i-ndup) = add_nodes(1:3,i)
+      endif
+    enddo
+  end subroutine uniq_add_nodes
+
+  subroutine append_nodes(hecMESHnew, n_add_node, add_nodes, i0)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(out) :: i0
+    integer(kind=kint) :: n_node, i, ii
+    integer(kind=kint), pointer :: node_ID(:), global_node_ID(:)
+    i0 = hecMESHnew%n_node
+    n_node = hecMESHnew%n_node + n_add_node
+    allocate(node_ID(2*n_node))
+    allocate(global_node_ID(n_node))
+    do i = 1, hecMESHnew%n_node
+      node_ID(2*i-1) = hecMESHnew%node_ID(2*i-1)
+      node_ID(2*i  ) = hecMESHnew%node_ID(2*i  )
+      global_node_ID(i) = hecMESHnew%global_node_ID(i)
+    enddo
+    do i = 1, n_add_node
+      ii = hecMESHnew%n_node + i
+      node_ID(2*ii-1) = add_nodes(cLID,i)
+      node_ID(2*ii  ) = add_nodes(cRANK,i)
+      global_node_ID(ii) = add_nodes(cGID,i)
+    enddo
+    deallocate(hecMESHnew%node_ID)
+    deallocate(hecMESHnew%global_node_ID)
+    hecMESHnew%n_node = n_node
+    hecMESHnew%node_ID => node_ID
+    hecMESHnew%global_node_ID => global_node_ID
+  end subroutine append_nodes
+
+  subroutine map_additional_nodes(ncols, cols, n_add_node, add_nodes, i0, map)
+    implicit none
+    integer(kind=kint), intent(in) :: ncols
+    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: i0
+    integer(kind=kint), intent(inout) :: map(ncols)
+    integer(kind=kint) :: i, j
+    do i = 1, ncols
+      if (map(i) > 0) cycle
+      do j = 1, n_add_node                                 !!! LINEAR SEARCH: MIGHT BE SLOW !!!
+        if (cols(cRANK,i) /= add_nodes(cRANK,j)) cycle
+        if (cols(cLID,i) /= add_nodes(cLID,j)) cycle
+        map(i) = i0 + j
+        exit
+      enddo
+      if (map(i) == -1) stop 'ERROR: map imported cols'
+    enddo
+  end subroutine map_additional_nodes
+
+  subroutine update_comm_table(hecMESHnew, n_add_node, add_nodes, i0)
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), allocatable, intent(inout) :: add_nodes(:,:)
+    integer(kind=kint), intent(in) :: i0
+    integer(kind=kint), allocatable :: n_add_imp(:), add_imp_index(:)
+    integer(kind=kint), allocatable :: add_imp_item_remote(:), add_imp_item_local(:)
+    integer(kind=kint), allocatable :: n_add_exp(:), add_exp_index(:), add_exp_item(:)
+    integer(kind=kint), allocatable :: n_new_imp(:), n_new_exp(:)
+    integer(kind=kint) :: npe, nnb, comm, new_nnb
+    integer(kind=kint), pointer :: nbpe(:), new_nbpe(:)
+    integer(kind=kint), pointer :: import_index(:), export_index(:), import_item(:), export_item(:)
+    integer(kind=kint), pointer :: new_import_index(:), new_export_index(:)
+    integer(kind=kint), pointer :: new_import_item(:), new_export_item(:)
+    npe = hecMESHnew%PETOT
+    nnb = hecMESHnew%n_neighbor_pe
+    comm = hecMESHnew%MPI_COMM
+    nbpe => hecMESHnew%neighbor_pe
+    import_index => hecMESHnew%import_index
+    export_index => hecMESHnew%export_index
+    import_item => hecMESHnew%import_item
+    export_item => hecMESHnew%export_item
+    !
+    call count_add_imp_per_rank(n_add_node, add_nodes, npe, n_add_imp)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: count add_imp per rank done'
+    !
+    allocate(add_imp_index(0:npe))
+    call make_index(npe, n_add_imp, add_imp_index)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: make add_imp_index done'
+    !
+    call make_add_imp_item(n_add_node, add_nodes, npe, i0, add_imp_index, &
+         add_imp_item_remote, add_imp_item_local)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: make add_imp_item done'
+    !
+    deallocate(add_nodes)
+    !
+    ! all_to_all n_add_imp -> n_add_exp
+    !
+    allocate(n_add_exp(npe))
+    call HECMW_ALLTOALL_INT(n_add_imp, 1, n_add_exp, 1, comm)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: alltoall n_add_imp to n_add_exp done'
+    !
+    allocate(add_exp_index(0:npe))
+    call make_index(npe, n_add_exp, add_exp_index)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: make add_exp_index done'
+    !
+    call send_recv_add_imp_exp_item(npe, add_imp_index, add_imp_item_remote, &
+         add_exp_index, add_exp_item, comm)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: send recv add_imp/exp_item done'
+    !
+    ! count new import
+    !
+    call count_new_comm_nodes(npe, nnb, nbpe, import_index, n_add_imp, n_new_imp)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: count new comm_nodes (import) done'
+    !
+    ! count new export
+    !
+    call count_new_comm_nodes(npe, nnb, nbpe, export_index, n_add_exp, n_new_exp)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: count new comm_nodes (export) done'
+    !
+    call update_neighbor_pe(npe, n_new_imp, n_new_exp, new_nnb, new_nbpe)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: update neighbor_pe done'
+    !
+    ! merge import table: import
+    !
+    call merge_comm_table(npe, nnb, nbpe, import_index, import_item, &
+         new_nnb, new_nbpe, add_imp_index, add_imp_item_local, n_add_imp, n_new_imp, &
+         new_import_index, new_import_item)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: merge comm_table (import) done'
+    !
+    deallocate(n_add_imp)
+    deallocate(add_imp_index)
+    deallocate(add_imp_item_remote, add_imp_item_local)
+    deallocate(n_new_imp)
+    !
+    ! merge export table: export
+    !
+    call merge_comm_table(npe, nnb, nbpe, export_index, export_item, &
+         new_nnb, new_nbpe, add_exp_index, add_exp_item, n_add_exp, n_new_exp, &
+         new_export_index, new_export_item)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: merge comm_table (export) done'
+    !
+    deallocate(n_add_exp)
+    deallocate(add_exp_index)
+    deallocate(add_exp_item)
+    deallocate(n_new_exp)
+    !
+    deallocate(nbpe)
+    deallocate(import_index,import_item)
+    deallocate(export_index,export_item)
+    hecMESHnew%n_neighbor_pe = new_nnb
+    hecMESHnew%neighbor_pe => new_nbpe
+    hecMESHnew%import_index => new_import_index
+    hecMESHnew%export_index => new_export_index
+    hecMESHnew%import_item => new_import_item
+    hecMESHnew%export_item => new_export_item
+  end subroutine update_comm_table
+
+  subroutine count_add_imp_per_rank(n_add_node, add_nodes, npe, n_add_imp)
+    implicit none
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: npe
+    integer(kind=kint), allocatable, intent(out) :: n_add_imp(:)
+    integer(kind=kint) :: i, rank
+    allocate(n_add_imp(npe))
+    n_add_imp(:) = 0
+    do i = 1, n_add_node
+      rank = add_nodes(cRANK,i)
+      n_add_imp(rank+1) = n_add_imp(rank+1) + 1
+    enddo
+  end subroutine count_add_imp_per_rank
+
+  subroutine make_add_imp_item(n_add_node, add_nodes, npe, i0, add_imp_index, &
+       add_imp_item_remote, add_imp_item_local)
+    implicit none
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: npe, i0
+    integer(kind=kint), allocatable, intent(in) :: add_imp_index(:)
+    integer(kind=kint), allocatable, intent(out) :: add_imp_item_remote(:), add_imp_item_local(:)
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint) :: i, lid, rank, ipe
+    allocate(add_imp_item_remote(add_imp_index(npe)))
+    allocate(add_imp_item_local(add_imp_index(npe)))
+    allocate(cnt(npe))
+    cnt(:) = 0
+    do i = 1, n_add_node
+      lid = add_nodes(cLID,i)
+      rank = add_nodes(cRANK,i)
+      ipe = rank + 1
+      cnt(ipe) = cnt(ipe) + 1
+      add_imp_item_remote(add_imp_index(ipe-1) + cnt(ipe)) = lid
+      add_imp_item_local(add_imp_index(ipe-1) + cnt(ipe)) = i0 + i
+    enddo
+    deallocate(cnt)
+  end subroutine make_add_imp_item
+
+  subroutine send_recv_add_imp_exp_item(npe, add_imp_index, add_imp_item_remote, &
+       add_exp_index, add_exp_item, mpi_comm)
+    use m_hecmw_comm_f
+    implicit none
+    integer(kind=kint), intent(in) :: npe
+    integer(kind=kint), allocatable, intent(in) :: add_imp_index(:), add_imp_item_remote(:)
+    integer(kind=kint), allocatable, intent(in) :: add_exp_index(:)
+    integer(kind=kint), allocatable, intent(out) :: add_exp_item(:)
+    integer(kind=kint), intent(in) :: mpi_comm
+    integer(kind=kint) :: n_send, i, irank, is, ie, len, tag
+    integer(kind=kint), allocatable :: requests(:)
+    integer(kind=kint), allocatable :: statuses(:,:)
+    allocate(add_exp_item(add_exp_index(npe)))
+    allocate(requests(npe))
+    allocate(statuses(HECMW_STATUS_SIZE, npe))
+    n_send = 0
+    do i = 1, npe
+      irank = i-1
+      is = add_imp_index(i-1)+1
+      ie = add_imp_index(i)
+      len = ie - is + 1
+      if (len == 0) cycle
+      tag = 4001
+      n_send = n_send + 1
+      call HECMW_ISEND_INT(add_imp_item_remote(is:ie), len, irank, tag, &
+           mpi_comm, requests(n_send))
+    enddo
+    !
+    do i = 1, npe
+      irank = i-1
+      is = add_exp_index(i-1)+1
+      ie = add_exp_index(i)
+      len = ie - is + 1
+      if (len == 0) cycle
+      tag = 4001
+      call HECMW_RECV_INT(add_exp_item(is:ie), len, irank, tag, &
+           mpi_comm, statuses(:,1))
+    enddo
+    call HECMW_Waitall(n_send, requests, statuses)
+  end subroutine send_recv_add_imp_exp_item
+
+  subroutine count_new_comm_nodes(npe, org_nnb, org_nbpe, org_index, n_add, n_new)
+    implicit none
+    integer(kind=kint), intent(in) :: npe, org_nnb
+    !integer(kind=kint), intent(in) :: org_nbpe(org_nnb), org_index(0:org_nnb), n_add(npe)
+    integer(kind=kint), pointer, intent(in) :: org_nbpe(:), org_index(:)
+    integer(kind=kint), intent(in) ::  n_add(:)
+    integer(kind=kint), allocatable, intent(out) :: n_new(:)
+    integer(kind=kint) :: i, irank, n_org
+    allocate(n_new(npe))
+    n_new(:) = n_add(:)
+    do i = 1, org_nnb
+      irank = org_nbpe(i)
+      n_org = org_index(i) - org_index(i-1)
+      n_new(irank+1) = n_new(irank+1) + n_org
+    enddo
+  end subroutine count_new_comm_nodes
+
+  subroutine update_neighbor_pe(npe, n_new_imp, n_new_exp, &
+       new_nnb, new_nbpe)
+    implicit none
+    integer(kind=kint), intent(in) :: npe
+    integer(kind=kint), intent(in) :: n_new_imp(npe), n_new_exp(npe)
+    integer(kind=kint), intent(out) :: new_nnb
+    integer(kind=kint), pointer, intent(out) :: new_nbpe(:)
+    integer(kind=kint) :: i
+    new_nnb = 0
+    do i = 1, npe
+      if (n_new_imp(i) > 0 .or. n_new_exp(i) > 0) new_nnb = new_nnb+1
+    enddo
+    allocate(new_nbpe(new_nnb))
+    new_nnb = 0
+    do i = 1, npe
+      if (n_new_imp(i) > 0 .or. n_new_exp(i) > 0) then
+        new_nnb = new_nnb+1
+        new_nbpe(new_nnb) = i-1
+      endif
+    enddo
+  end subroutine update_neighbor_pe
+
+  subroutine merge_comm_table(npe, org_nnb, org_nbpe, org_index, org_item, &
+       new_nnb, new_nbpe, add_index, add_item, n_add, n_new, new_index, new_item)
+    implicit none
+    integer(kind=kint), intent(in) :: npe, org_nnb
+    !integer(kind=kint), intent(in) :: org_nbpe(org_nnb), org_index(0:org_nnb), org_item(:)
+    integer(kind=kint), pointer, intent(in) :: org_nbpe(:), org_index(:), org_item(:)
+    integer(kind=kint), intent(in) :: new_nnb
+    !integer(kind=kint), intent(in) :: new_nbpe(new_nnb), add_index(0:npe), add_item(:)
+    integer(kind=kint), pointer, intent(in) :: new_nbpe(:)
+    integer(kind=kint), allocatable, intent(in) :: add_index(:), add_item(:)
+    integer(kind=kint), intent(in) :: n_add(npe), n_new(npe)
+    integer(kind=kint), pointer, intent(out) :: new_index(:), new_item(:)
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint) :: i, irank, j, jrank, i0, j0, len
+    ! if (associated(new_index)) deallocate(new_index)
+    ! if (associated(new_item)) deallocate(new_item)
+    allocate(new_index(0:new_nnb))
+    new_index(0) = 0
+    do i = 1, new_nnb
+      irank = new_nbpe(i)
+      new_index(i) = new_index(i-1) + n_new(irank+1)
+    enddo
+    allocate(new_item(new_index(new_nnb)))
+    allocate(cnt(npe))
+    cnt(:) = 0
+    j = 1
+    jrank = new_nbpe(j)
+    do i = 1, org_nnb
+      irank = org_nbpe(i)
+      do while (jrank < irank)
+        j = j + 1
+        jrank = new_nbpe(j)
+      enddo
+      if (jrank /= irank) then
+        if (org_index(i)-org_index(i-1) > 0) stop 'ERROR: merging comm table: org into new'
+        cycle
+      endif
+      i0 = org_index(i-1)
+      len = org_index(i) - i0
+      j0 = new_index(j-1)
+      new_item(j0+1:j0+len) = org_item(i0+1:i0+len)
+      cnt(jrank+1) = len
+    enddo
+    j = 1
+    jrank = new_nbpe(j)
+    do i = 1, npe
+      if (n_add(i) == 0) cycle
+      irank = i-1
+      do while (jrank < irank)
+        j = j + 1
+        jrank = new_nbpe(j)
+      enddo
+      if (jrank /= irank) stop 'ERROR: merging comm table: add into new'
+      i0 = add_index(i-1)
+      len = add_index(i) - i0
+      j0 = new_index(j-1) + cnt(jrank+1)
+      new_item(j0+1:j0+len) = add_item(i0+1:i0+len)
+      cnt(jrank+1) = cnt(jrank+1) + len
+      if (cnt(jrank+1) /= new_index(j)-new_index(j-1)) stop 'ERROR: merging comm table'
+    enddo
+    deallocate(cnt)
+  end subroutine merge_comm_table
+
+  subroutine copy_vals_to_BT_int(nnb, imp_rows_index, imp_cols_index, &
+       imp_rows_item, map, ndof2, imp_vals_item, BT_int)
+    implicit none
+    integer(kind=kint), intent(in) :: nnb
+    integer(kind=kint), allocatable, intent(in) :: imp_rows_index(:), imp_cols_index(:)
+    integer(kind=kint), intent(in) :: imp_rows_item(:,:), map(:)
+    integer(kind=kint), intent(in) :: ndof2
+    real(kind=kreal), intent(in) :: imp_vals_item(:)
+    type (hecmwST_local_matrix), intent(inout) :: BT_int
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint) :: idom, is, ie, ic0, i, irow, ncol, j0, j
+    allocate(cnt(BT_int%nr))
+    cnt(:) = 0
+    do idom = 1, nnb
+      is = imp_rows_index(idom-1)+1
+      ie = imp_rows_index(idom)
+      ic0 = imp_cols_index(idom-1)
+      do i = is, ie
+        irow = imp_rows_item(1,i)
+        ncol = imp_rows_item(2,i)
+        if (irow < 1 .or. BT_int%nr < irow) stop 'ERROR: copy vals to BT_int: irow'
+        j0 = BT_int%index(irow-1) + cnt(irow)
+        do j = 1, ncol
+          BT_int%item(j0+j) = map(ic0+j)
+          BT_int%A(ndof2*(j0+j-1)+1:ndof2*(j0+j)) = imp_vals_item(ndof2*(ic0+j-1)+1:ndof2*(ic0+j))
+        enddo
+        cnt(irow) = cnt(irow) + ncol
+        ic0 = ic0 + ncol
+      enddo
+      if (ic0 /= imp_cols_index(idom)) stop 'ERROR: copy vals to BT_int: ic0'
+    enddo
+    deallocate(cnt)
+  end subroutine copy_vals_to_BT_int
+
+  subroutine sort_and_uniq_rows(BTmat)
+    implicit none
+    type (hecmwST_local_matrix), intent(inout) :: BTmat
+    integer(kind=kint) :: nr, ndof, ndof2, ndup_tot, irow, is, ie, ndup, new_nnz, i0, j0, k
+    integer(kind=kint), allocatable :: cnt(:)
+    integer(kind=kint), pointer :: new_index(:), new_item(:)
+    real(kind=kreal), pointer :: new_A(:)
+    nr = BTmat%nr
+    ndof = BTmat%ndof
+    ndof2 = ndof*ndof
+    allocate(cnt(BTmat%nr))
+    ndup_tot = 0
+    do irow = 1, nr
+      is = BTmat%index(irow-1)+1
+      ie = BTmat%index(irow)
+      call sort_row(BTmat%item, BTmat%A, ndof2, is, ie)
+      call uniq_row(BTmat%item, BTmat%A, ndof2, is, ie, ndup)
+      cnt(irow) = (ie-is+1) - ndup
+      ndup_tot = ndup_tot + ndup
+    enddo
+    if (ndup_tot == 0) then
+      deallocate(cnt)
+      return
+    endif
+    allocate(new_index(0:nr))
+    call make_index(nr, cnt, new_index)
+    new_nnz = new_index(nr)
+    allocate(new_item(new_nnz))
+    allocate(new_A(ndof2*new_nnz))
+    do irow = 1, nr
+      i0 = BTmat%index(irow-1)
+      j0 = new_index(irow-1)
+      do k = 1, cnt(irow)
+        new_item(j0+k) = BTmat%item(i0+k)
+        new_A(ndof2*(j0+k-1)+1:ndof2*(j0+k)) = BTmat%A(ndof2*(i0+k-1)+1:ndof2*(i0+k))
+      enddo
+    enddo
+    deallocate(BTmat%index)
+    deallocate(BTmat%item)
+    deallocate(BTmat%A)
+    BTmat%nnz = new_nnz
+    BTmat%index => new_index
+    BTmat%item => new_item
+    BTmat%A => new_A
+    deallocate(cnt)
+  end subroutine sort_and_uniq_rows
+
+  recursive subroutine sort_row(item, vals, ndof2, is, ie)
+    implicit none
+    integer(kind=kint), intent(inout) :: item(:)
+    real(kind=kreal), intent(inout) :: vals(:)
+    integer(kind=kint), intent(in) :: ndof2, is, ie
+    integer(kind=kint) :: center, pivot, left, right, tmp_i
+    real(kind=kreal), allocatable :: tmp_v(:)
+    if (is >= ie) return
+    allocate(tmp_v(ndof2))
+    center = (is + ie) / 2
+    pivot = item(center)
+    left = is
+    right = ie
+    do
+      do while (item(left) < pivot)
+        left = left + 1
+      enddo
+      do while (pivot < item(right))
+        right = right - 1
+      enddo
+      if (left >= right) exit
+      tmp_i = item(left)
+      tmp_v(1:ndof2) = vals(ndof2*(left-1)+1:ndof2*left)
+      item(left) = item(right)
+      vals(ndof2*(left-1)+1:ndof2*left) = vals(ndof2*(right-1)+1:ndof2*right)
+      item(right) = tmp_i
+      vals(ndof2*(right-1)+1:ndof2*right) = tmp_v(1:ndof2)
+      left = left + 1
+      right = right - 1
+    enddo
+    if (is < left-1) call sort_row(item, vals, ndof2, is, left-1)
+    if (right+1 < ie) call sort_row(item, vals, ndof2, right+1, ie)
+    deallocate(tmp_v)
+  end subroutine sort_row
+
+  subroutine uniq_row(item, vals, ndof2, is, ie, ndup)
+    implicit none
+    integer(kind=kint), intent(inout) :: item(:)
+    real(kind=kreal), intent(inout) :: vals(:)
+    integer(kind=kint), intent(in) :: ndof2, is, ie
+    integer(kind=kint), intent(out) :: ndup
+    integer(kind=kint) :: i, j0, k0
+    ndup = 0
+    do i = is+1, ie
+      if (item(i) == item(i-1-ndup)) then
+        j0 = ndof2*(i-1-ndup-1)
+        k0 = ndof2*(i-1)
+        vals(j0+1:j0+ndof2) = vals(j0+1:j0+ndof2) + vals(k0+1:k0+ndof2)
+        !vals(k0+1:k0+ndof2) = 0.0d0
+        ndup = ndup + 1
+      elseif (ndup > 0) then
+        item(i-ndup) = item(i)
+        j0 = ndof2*(i-ndup-1)
+        k0 = ndof2*(i-1)
+        vals(j0+1:j0+ndof2) = vals(k0+1:k0+ndof2)
+      endif
+    enddo
+  end subroutine uniq_row
+
+  subroutine hecmw_localmat_add(Amat, Bmat, Cmat)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Amat
+    type (hecmwST_local_matrix), intent(in) :: Bmat
+    type (hecmwST_local_matrix), intent(out) :: Cmat
+    integer(kind=kint) :: ndof, ndof2, nr, nc, i, icnt, js, je, j, jcol, idx, i0, ks, ke, k, kcol
+    integer(kind=kint), allocatable :: iw(:)
+    logical :: fg_found
+    if (Amat%ndof /= Bmat%ndof) stop 'ERROR: hecmw_localmat_add: non-matching ndof'
+    ndof = Amat%ndof
+    ndof2 = ndof*ndof
+    nr = min(Amat%nr, Bmat%nr)
+    nc = max(Amat%nc, Bmat%nc)
+    Cmat%ndof = ndof
+    Cmat%nr = nr
+    Cmat%nc = nc
+    Cmat%nnz = 0
+    allocate(Cmat%index(0:nr))
+    Cmat%index(0) = 0
+    allocate(iw(nc))
+    do i = 1, nr
+      icnt = 0
+      ! Amat
+      js = Amat%index(i-1)+1
+      je = Amat%index(i)
+      do j = js, je
+        jcol = Amat%item(j)
+        icnt = icnt + 1
+        iw(icnt) = jcol
+      enddo
+      ! Bmat
+      js = Bmat%index(i-1)+1
+      je = Bmat%index(i)
+      lj1: do j = js, je
+        jcol = Bmat%item(j)
+        do k = 1, icnt
+          if (iw(k) == jcol) cycle lj1
+        enddo
+        icnt = icnt + 1
+        iw(icnt) = jcol
+      enddo lj1
+      Cmat%index(i) = Cmat%index(i-1) + icnt
+    enddo
+    Cmat%nnz = Cmat%index(nr)
+    allocate(Cmat%item(Cmat%nnz))
+    allocate(Cmat%A(ndof2*Cmat%nnz))
+    do i = 1, nr
+      i0 = Cmat%index(i-1)
+      icnt = 0
+      ! Amat
+      js = Amat%index(i-1)+1
+      je = Amat%index(i)
+      do j = js, je
+        jcol = Amat%item(j)
+        icnt = icnt + 1
+        idx = i0 + icnt
+        Cmat%item(idx) = jcol
+        Cmat%A(ndof2*(idx-1)+1:ndof2*idx) = Amat%A(ndof2*(j-1)+1:ndof2*j)
+      enddo
+      ! Bmat
+      js = Bmat%index(i-1)+1
+      je = Bmat%index(i)
+      lj2: do j = js, je
+        jcol = Bmat%item(j)
+        do k = 1, icnt
+          idx = i0 + k
+          if (Cmat%item(idx) == jcol) then
+            Cmat%A(ndof2*(idx-1)+1:ndof2*idx) = &
+                 Cmat%A(ndof2*(idx-1)+1:ndof2*idx) + Bmat%A(ndof2*(j-1)+1:ndof2*j)
+            cycle lj2
+          endif
+        enddo
+        icnt = icnt + 1
+        idx = i0 + icnt
+        Cmat%item(idx) = jcol
+        Cmat%A(ndof2*(idx-1)+1:ndof2*idx) = Bmat%A(ndof2*(j-1)+1:ndof2*j)
+      enddo lj2
+      if (i0 + icnt /= Cmat%index(i)) stop 'ERROR: merge localmat'
+    enddo
+    call sort_and_uniq_rows(Cmat)
+  end subroutine hecmw_localmat_add
+
+  ! subroutine hecmw_localmat_add(Amat, Bmat, Cmat)
+  !   implicit none
+  !   type (hecmwST_local_matrix), intent(in) :: Amat
+  !   type (hecmwST_local_matrix), intent(in) :: Bmat
+  !   type (hecmwST_local_matrix), intent(out) :: Cmat
+  !   integer(kind=kint) :: ndof, ndof2, nr, nc, i, js, je, j, jcol, nnz_row, idx, ks, ke, k, kcol
+  !   if (Amat%ndof /= Bmat%ndof) stop 'ERROR: hecmw_localmat_add: non-matching ndof'
+  !   ndof = Amat%ndof
+  !   ndof2 = ndof*ndof
+  !   nr = min(Amat%nr, Bmat%nr)
+  !   nc = max(Amat%nc, Bmat%nc)
+  !   Cmat%ndof = ndof
+  !   Cmat%nr = nr
+  !   Cmat%nc = nc
+  !   Cmat%nnz = Amat%index(nr) + Bmat%index(nr)
+  !   allocate(Cmat%index(0:nr))
+  !   allocate(Cmat%item(Cmat%nnz))
+  !   allocate(Cmat%A(ndof2 * Cmat%nnz))
+  !   Cmat%index(0) = 0
+  !   idx = 0
+  !   do i = 1, nr
+  !     ! Amat
+  !     js = Amat%index(i-1)+1
+  !     je = Amat%index(i)
+  !     do j = js, je
+  !       idx = idx + 1
+  !       Cmat%item(idx) = Amat%item(j)
+  !       Cmat%A(ndof2*(idx-1)+1:ndof2*idx) = Amat%A(ndof2*(j-1)+1:ndof2*j)
+  !     enddo
+  !     ! Bmat
+  !     js = Bmat%index(i-1)+1
+  !     je = Bmat%index(i)
+  !     do j = js, je
+  !       idx = idx + 1
+  !       Cmat%item(idx) = Bmat%item(j)
+  !       Cmat%A(ndof2*(idx-1)+1:ndof2*idx) = Bmat%A(ndof2*(j-1)+1:ndof2*j)
+  !     enddo
+  !     Cmat%index(i) = idx
+  !   enddo
+  !   if (Cmat%index(nr) /= Cmat%nnz) stop 'ERROR: merge localmat'
+  !   call sort_and_uniq_rows(Cmat)
+  ! end subroutine hecmw_localmat_add
+
+  subroutine hecmw_localmat_init_with_hecmat(BKmat, hecMAT, num_lagrange)
+    implicit none
+    type (hecmwST_local_matrix), intent(inout) :: BKmat
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    integer(kind=kint), optional, intent(in) :: num_lagrange
+    integer(kind=kint) :: ndof, ndof2, i, nnz, idx, js, je, j, k
+    integer(kind=kint), allocatable :: incl_nz(:)
+    ndof = hecMAT%NDOF
+    ndof2 = ndof*ndof
+    ! nr, nc, nnz
+    BKmat%nr = hecMAT%NP
+    BKmat%nc = hecMAT%NP
+    BKmat%ndof = ndof
+    !
+    if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG conMAT WHEN num_lagrange==0) !!!
+      if (num_lagrange == 0) then
+        BKmat%nnz = 0
+        allocate(BKmat%index(0:BKmat%nr))
+        BKmat%index(:) = 0
+        BKmat%item => null()
+        BKmat%A => null()
+        return
+      endif
+    endif
+    !
+    ! index
+    allocate(BKmat%index(0:BKmat%nr))
+    allocate(incl_nz(hecMAT%NPL + hecMAT%NPU + hecMAT%NP))
+    incl_nz(:) = 0
+    BKmat%index(0) = 0
+    nnz = 0
+    idx = 0
+    do i = 1, BKmat%nr
+      ! lower
+      js = hecMAT%indexL(i-1)+1
+      je = hecMAT%indexL(i)
+      do j = js, je
+        idx = idx + 1
+        do k = 1, ndof2
+          if (hecMAT%AL(ndof2*(j-1)+k) /= 0.0d0) then
+            incl_nz(idx) = 1
+            nnz = nnz + 1
+            exit
+          endif
+        enddo
+      enddo
+      ! diag
+      idx = idx + 1
+      do k = 1, ndof2
+        if (hecMAT%D(ndof2*(i-1)+k) /= 0.0d0) then
+          incl_nz(idx) = 1
+          nnz = nnz + 1
+          exit
+        endif
+      enddo
+      ! upper
+      js = hecMAT%indexU(i-1)+1
+      je = hecMAT%indexU(i)
+      do j = js, je
+        idx = idx + 1
+        do k = 1, ndof2
+          if (hecMAT%AU(ndof2*(j-1)+k) /= 0.0d0) then
+            incl_nz(idx) = 1
+            nnz = nnz + 1
+            exit
+          endif
+        enddo
+      enddo
+      BKmat%index(i) = nnz
+    enddo
+    BKmat%nnz = nnz
+    if (idx /= hecMAT%NPL + hecMAT%NPU + hecMAT%NP) stop 'ERROR: hecmw_localmat_init_with_hecmat: count'
+    ! item, A
+    allocate(BKmat%item(BKmat%nnz))
+    allocate(BKmat%A(ndof2 * BKmat%nnz))
+    nnz = 0
+    idx = 0
+    do i = 1, BKmat%nr
+      ! lower
+      js = hecMAT%indexL(i-1)+1
+      je = hecMAT%indexL(i)
+      do j = js, je
+        idx = idx + 1
+        if (incl_nz(idx) == 1) then
+          nnz = nnz + 1
+          BKmat%item(nnz) = hecMAT%itemL(j)
+          BKmat%A(ndof2*(nnz-1)+1:ndof2*nnz) = hecMAT%AL(ndof2*(j-1)+1:ndof2*j)
+        endif
+      enddo
+      ! diag
+      idx = idx + 1
+      if (incl_nz(idx) == 1) then
+        nnz = nnz + 1
+        BKmat%item(nnz) = i
+        BKmat%A(ndof2*(nnz-1)+1:ndof2*nnz) = hecMAT%D(ndof2*(i-1)+1:ndof2*i)
+      endif
+      ! upper
+      js = hecMAT%indexU(i-1)+1
+      je = hecMAT%indexU(i)
+      do j = js, je
+        idx = idx + 1
+        if (incl_nz(idx) == 1) then
+          nnz = nnz + 1
+          BKmat%item(nnz) = hecMAT%itemU(j)
+          BKmat%A(ndof2*(nnz-1)+1:ndof2*nnz) = hecMAT%AU(ndof2*(j-1)+1:ndof2*j)
+        endif
+      enddo
+      if (nnz /= BKmat%index(i)) stop 'ERROR: localmat init with hecmat: index'
+    enddo
+    if (idx /= hecMAT%NPL + hecMAT%NPU + hecMAT%NP) stop 'ERROR: hecmw_localmat_init_with_hecmat: copy'
+  end subroutine hecmw_localmat_init_with_hecmat
+
+  subroutine hecmw_localmat_add_hecmat(BKmat, hecMAT)
+    implicit none
+    type (hecmwST_local_matrix), intent(inout) :: BKmat
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_local_matrix) :: W1mat, W2mat
+    !! Should Be Simple If Non-Zero Profile Is Kept !!
+    call hecmw_localmat_init_with_hecmat(W1mat, hecMAT)
+    if (DEBUG >= 3) then
+      write(1000+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
+      call hecmw_localmat_write(W1mat, 1000+hecmw_comm_get_rank())
+    endif
+    call hecmw_localmat_add(BKmat, W1mat, W2mat)
+    call hecmw_localmat_free(BKmat)
+    call hecmw_localmat_free(W1mat)
+    BKmat%nr = W2mat%nr
+    BKmat%nc = W2mat%nc
+    BKmat%nnz = W2mat%nnz
+    BKmat%ndof = W2mat%ndof
+    BKmat%index => W2mat%index
+    BKmat%item => W2mat%item
+    BKmat%A => W2mat%A
+  end subroutine hecmw_localmat_add_hecmat
+
+  subroutine hecmw_localmat_multmat(BKmat, BTmat, hecMESH, BKTmat)
+    implicit none
+    type (hecmwST_local_matrix), intent(inout) :: BKmat
+    type (hecmwST_local_matrix), intent(inout) :: BTmat
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_local_matrix), intent(out) :: BKTmat
+    type (hecmwST_matrix_comm) :: hecCOMM
+    type (hecmwST_local_mesh) :: hecMESHnew
+    type (hecmwST_local_matrix), allocatable :: BT_exp(:)
+    type (hecmwST_local_matrix) :: BT_imp, BT_all
+    integer(kind=kint), allocatable :: exp_cols_index(:)
+    integer(kind=kint), allocatable :: exp_cols_item(:,:)
+    real(kind=kreal) :: t1
+    t1 = hecmw_wtime()
+    !
+    call make_comm_table(BKmat, hecMESH, hecCOMM)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: make_comm_table done',hecmw_wtime()-t1
+    !
+    call extract_BT_exp(BTmat, hecCOMM, BT_exp)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: extract_BT_exp done',hecmw_wtime()-t1
+    !
+    call prepare_column_info(hecMESH, BT_exp, exp_cols_index, exp_cols_item)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: prepare column info done',hecmw_wtime()-t1
+    !
+    call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: send BT_exp and recv BT_imp done',hecmw_wtime()-t1
+    !
+    call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: concat BTmat and BT_imp into BT_all done',hecmw_wtime()-t1
+    call hecmw_localmat_free(BT_imp)
+    !
+    call multiply_mat_mat(BKmat, BT_all, BKTmat)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: multiply BKmat and BT_all into BKTmat done',hecmw_wtime()-t1
+    call hecmw_localmat_free(BT_all)
+    !
+    hecMESH%n_node = hecMESHnew%n_node
+    hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
+    deallocate(hecMESH%neighbor_pe)
+    deallocate(hecMESH%import_index)
+    deallocate(hecMESH%export_index)
+    deallocate(hecMESH%import_item)
+    deallocate(hecMESH%export_item)
+    deallocate(hecMESH%node_ID)
+    deallocate(hecMESH%global_node_ID)
+    hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
+    hecMESH%import_index => hecMESHnew%import_index
+    hecMESH%export_index => hecMESHnew%export_index
+    hecMESH%import_item => hecMESHnew%import_item
+    hecMESH%export_item => hecMESHnew%export_item
+    hecMESH%node_ID => hecMESHnew%node_ID
+    hecMESH%global_node_ID => hecMESHnew%global_node_ID
+    if (DEBUG >= 1) write(0,*) 'DEBUG: update hecMESH done',hecmw_wtime()-t1
+  end subroutine hecmw_localmat_multmat
+
+  subroutine make_comm_table(BKmat, hecMESH, hecCOMM)
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BKmat
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix_comm), intent(out) :: hecCOMM
+    integer(kind=kint) :: nn_int, nn_ext, nnb, i, icol, irank, idom, idx, n_send, tag, js, je, len
+    integer(kind=kint), allocatable :: is_nz_col(:), imp_cnt(:), exp_cnt(:), import_item_remote(:)
+    integer(kind=kint), allocatable :: requests(:), statuses(:,:)
+    hecCOMM%zero = hecMESH%zero
+    hecCOMM%HECMW_COMM = hecMESH%MPI_COMM
+    hecCOMM%PETOT = hecMESH%PETOT
+    hecCOMM%PEsmpTOT = hecMESH%PEsmpTOT
+    hecCOMM%my_rank = hecMESH%my_rank
+    hecCOMM%errnof = hecMESH%errnof
+    hecCOMM%n_subdomain = hecMESH%n_subdomain
+    hecCOMM%n_neighbor_pe = hecMESH%n_neighbor_pe
+    allocate(hecCOMM%neighbor_pe(hecCOMM%n_neighbor_pe))
+    hecCOMM%neighbor_pe(:) = hecMESH%neighbor_pe(:)
+    !
+    nn_int = hecMESH%nn_internal
+    nn_ext = hecMESH%n_node - hecMESH%nn_internal
+    nnb = hecCOMM%n_neighbor_pe
+    !
+    ! check_external_nz_cols (by profile (not number))
+    allocate(is_nz_col(nn_ext))
+    do i = 1, BKmat%index(BKmat%nr)
+      icol = BKmat%item(i)
+      if (icol > nn_int) is_nz_col(icol - nn_int) = 1
+    enddo
+    !
+    ! count_nz_cols_per_rank
+    allocate(imp_cnt(nnb))
+    imp_cnt(:) = 0
+    do i = 1, nn_ext
+      if (is_nz_col(i) == 1) then
+        irank = hecMESH%node_ID(2*(nn_int+i))
+        call rank_to_idom(hecMESH, irank, idom)
+        imp_cnt(idom) = imp_cnt(idom) + 1
+      endif
+    enddo
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: imp_cnt',imp_cnt(:)
+    !
+    ! make_index
+    allocate(hecCOMM%import_index(0:nnb))
+    call make_index(nnb, imp_cnt, hecCOMM%import_index)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: import_index',hecCOMM%import_index(:)
+    !
+    ! fill item
+    allocate(hecCOMM%import_item(hecCOMM%import_index(nnb)))
+    imp_cnt(:) = 0
+    do i = 1, nn_ext
+      if (is_nz_col(i) == 1) then
+        irank = hecMESH%node_ID(2*(nn_int+i))
+        call rank_to_idom(hecMESH, irank, idom)
+        imp_cnt(idom) = imp_cnt(idom) + 1
+        idx = hecCOMM%import_index(idom-1)+imp_cnt(idom)
+        hecCOMM%import_item(idx) = nn_int+i
+      endif
+    enddo
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: import_item',hecCOMM%import_item(:)
+    !
+    allocate(import_item_remote(hecCOMM%import_index(nnb)))
+    do i = 1, hecCOMM%import_index(nnb)
+      import_item_remote(i) = hecMESH%node_ID(2*hecCOMM%import_item(i)-1)
+    enddo
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: import_item_remote',import_item_remote(:)
+    !
+    allocate(requests(2*nnb))
+    allocate(statuses(HECMW_STATUS_SIZE, 2*nnb))
+    !
+    ! send/recv
+    n_send = 0
+    do idom = 1, nnb
+      irank = hecCOMM%neighbor_pe(idom)
+      n_send = n_send + 1
+      tag = 6001
+      call HECMW_ISEND_INT(imp_cnt(idom), 1, irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
+      if (imp_cnt(idom) > 0) then
+        js = hecCOMM%import_index(idom-1)+1
+        je = hecCOMM%import_index(idom)
+        len = je-js+1
+        n_send = n_send + 1
+        tag = 6002
+        call HECMW_ISEND_INT(import_item_remote(js:je), len, irank, tag, &
+             hecCOMM%HECMW_COMM, requests(n_send))
+      endif
+    enddo
+    !
+    ! index
+    allocate(exp_cnt(nnb))
+    do idom = 1, nnb
+      irank = hecCOMM%neighbor_pe(idom)
+      tag = 6001
+      call HECMW_RECV_INT(exp_cnt(idom), 1, irank, tag, hecCOMM%HECMW_COMM, statuses(:,1))
+    enddo
+    allocate(hecCOMM%export_index(0:nnb))
+    call make_index(nnb, exp_cnt, hecCOMM%export_index)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: export_index',hecCOMM%export_index(:)
+    !
+    ! item
+    allocate(hecCOMM%export_item(hecCOMM%export_index(nnb)))
+    do idom = 1, nnb
+      if (exp_cnt(idom) <= 0) cycle
+      irank = hecCOMM%neighbor_pe(idom)
+      js = hecCOMM%export_index(idom-1)+1
+      je = hecCOMM%export_index(idom)
+      len = je-js+1
+      tag = 6002
+      call HECMW_RECV_INT(hecCOMM%export_item(js:je), len, irank, tag, &
+           hecCOMM%HECMW_COMM, statuses(:,1))
+    enddo
+    if (DEBUG >= 3) write(0,*) '    DEBUG3: export_item',hecCOMM%export_item(:)
+    call HECMW_Waitall(n_send, requests, statuses)
+    !
+    deallocate(imp_cnt)
+    deallocate(exp_cnt)
+    deallocate(import_item_remote)
+  end subroutine make_comm_table
+
+  subroutine free_comm_table(hecCOMM)
+    implicit none
+    type (hecmwST_matrix_comm), intent(inout) :: hecCOMM
+    deallocate(hecCOMM%neighbor_pe)
+    deallocate(hecCOMM%import_index)
+    deallocate(hecCOMM%import_item)
+    deallocate(hecCOMM%export_index)
+    deallocate(hecCOMM%export_item)
+  end subroutine free_comm_table
+
+  subroutine extract_BT_exp(BTmat, hecCOMM, BT_exp)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    type (hecmwST_matrix_comm), intent(in) :: hecCOMM
+    type (hecmwST_local_matrix), allocatable, intent(out) :: BT_exp(:)
+    integer(kind=kint) :: ndof, ndof2, idom, idx_0, idx_n, j, jrow, nnz_row, idx, ks, ke, k
+    allocate(BT_exp(hecCOMM%n_neighbor_pe))
+    ndof = BTmat%ndof
+    ndof2 = ndof * ndof
+    do idom = 1, hecCOMM%n_neighbor_pe
+      idx_0 = hecCOMM%export_index(idom-1)
+      idx_n = hecCOMM%export_index(idom)
+      BT_exp(idom)%nr = idx_n - idx_0
+      BT_exp(idom)%nc = BTmat%nc
+      BT_exp(idom)%nnz = 0
+      BT_exp(idom)%ndof = ndof
+      allocate(BT_exp(idom)%index(0:BT_exp(idom)%nr))
+      BT_exp(idom)%index(0) = 0
+      do j = 1, BT_exp(idom)%nr
+        jrow = hecCOMM%export_item(idx_0 + j)
+        nnz_row = BTmat%index(jrow) - BTmat%index(jrow-1)
+        BT_exp(idom)%index(j) = BT_exp(idom)%index(j-1) + nnz_row
+      enddo
+      BT_exp(idom)%nnz = BT_exp(idom)%index(BT_exp(idom)%nr)
+      allocate(BT_exp(idom)%item(BT_exp(idom)%nnz))
+      allocate(BT_exp(idom)%A(ndof2 * BT_exp(idom)%nnz))
+      idx = 0
+      do j = 1, BT_exp(idom)%nr
+        jrow = hecCOMM%export_item(idx_0 + j)
+        ks = BTmat%index(jrow-1) + 1
+        ke = BTmat%index(jrow)
+        do k = ks, ke
+          idx = idx + 1
+          BT_exp(idom)%item(idx) = BTmat%item(k)
+          BT_exp(idom)%A(ndof2*(idx-1)+1:ndof2*idx) = BTmat%A(ndof2*(k-1)+1:ndof2*k)
+        enddo
+        if (idx /= BT_exp(idom)%index(j)) stop 'ERROR: extract BT_exp'
+      enddo
+    enddo
+  end subroutine extract_BT_exp
+
+  subroutine send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
+    use m_hecmw_comm_f
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix_comm), intent(in) :: hecCOMM
+    type (hecmwST_local_matrix), allocatable, intent(inout) :: BT_exp(:)
+    integer(kind=kint), allocatable, intent(inout) :: exp_cols_index(:)
+    integer(kind=kint), allocatable, intent(inout) :: exp_cols_item(:,:)
+    type (hecmwST_local_matrix), intent(out) :: BT_imp
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
+    integer(kind=kint), allocatable :: nnz_imp(:), cnt(:), index_imp(:)
+    integer(kind=kint), allocatable :: imp_cols_index(:)
+    integer(kind=kint), allocatable :: imp_cols_item(:,:)
+    real(kind=kreal), allocatable :: imp_vals_item(:)
+    integer(kind=kint) :: nnb, ndof, ndof2, idom, irank, nr, n_send, tag, idx_0, idx_n, j, jj, nnz
+    integer(kind=kint), allocatable :: requests(:)
+    integer(kind=kint), allocatable :: statuses(:,:)
+    integer(kind=kint), allocatable :: map(:), add_nodes(:,:)
+    integer(kind=kint) :: n_add_node, i0
+    nnb = hecCOMM%n_neighbor_pe
+    if (nnb == 0) return
+    ndof = BT_exp(1)%ndof
+    ndof2 = ndof*ndof
+    allocate(requests(nnb*3))
+    allocate(statuses(HECMW_STATUS_SIZE, nnb*3))
+    n_send = 0
+    do idom = 1, nnb
+      irank = hecCOMM%neighbor_pe(idom)
+      nr = BT_exp(idom)%nr
+      if (nr == 0) cycle
+      n_send = n_send + 1
+      tag = 3001
+      call HECMW_ISEND_INT(BT_exp(idom)%index(0:BT_exp(idom)%nr), BT_exp(idom)%nr + 1, &
+           irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
+      if (BT_exp(idom)%nnz == 0) cycle
+      n_send = n_send + 1
+      tag = 3002
+      call HECMW_ISEND_INT(exp_cols_item(1,exp_cols_index(idom-1)+1), &
+           3 * BT_exp(idom)%nnz, irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
+      n_send = n_send + 1
+      tag = 3003
+      call HECMW_ISEND_R(BT_exp(idom)%A, ndof2 * BT_exp(idom)%nnz, &
+           irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
+    enddo
+    !
+    ! BT_imp%nr = hecCOMM%import_index(nnb)
+    BT_imp%nr = hecMESH%n_node - hecMESH%nn_internal
+    BT_imp%nc = 0  !!! TEMPORARY
+    BT_imp%nnz = 0
+    BT_imp%ndof = ndof
+    !
+    allocate(nnz_imp(nnb))
+    allocate(cnt(BT_imp%nr))
+    !
+    cnt(:) = 0
+    do idom = 1, nnb
+      irank = hecCOMM%neighbor_pe(idom)
+      idx_0 = hecCOMM%import_index(idom-1)
+      idx_n = hecCOMM%import_index(idom)
+      nr = idx_n - idx_0
+      if (nr == 0) then
+        nnz_imp(idom) = 0
+        cycle
+      endif
+      allocate(index_imp(0:nr))
+      tag = 3001
+      call HECMW_RECV_INT(index_imp(0:nr), nr+1, irank, tag, &
+           hecCOMM%HECMW_COMM, statuses(:,1))
+      nnz_imp(idom) = index_imp(nr)
+      do j = 1, nr
+        jj = hecCOMM%import_item(idx_0 + j) - hecMESH%nn_internal
+        if (jj < 1 .or. BT_imp%nr < jj) stop 'ERROR: jj out of range'
+        if (cnt(jj) /= 0) stop 'ERROR: duplicate import rows?'
+        cnt(jj) = index_imp(j) - index_imp(j-1)
+      enddo
+      deallocate(index_imp)
+    enddo
+    !
+    allocate(imp_cols_index(0:nnb))
+    call make_index(nnb, nnz_imp, imp_cols_index)
+    deallocate(nnz_imp)
+    !
+    allocate(BT_imp%index(0:BT_imp%nr))
+    call make_index(BT_imp%nr, cnt, BT_imp%index)
+    deallocate(cnt)
+    !
+    BT_imp%nnz = BT_imp%index(BT_imp%nr)
+    if (BT_imp%nnz /= imp_cols_index(nnb)) &
+         stop 'ERROR: total num of nonzero of BT_imp'
+    !
+    allocate(imp_cols_item(3, BT_imp%nnz))
+    allocate(imp_vals_item(ndof2 * BT_imp%nnz))
+    !
+    do idom = 1, nnb
+      irank = hecCOMM%neighbor_pe(idom)
+      idx_0 = imp_cols_index(idom-1)
+      idx_n = imp_cols_index(idom)
+      nnz = idx_n - idx_0
+      if (nnz == 0) cycle
+      tag = 3002
+      call HECMW_RECV_INT(imp_cols_item(1, idx_0 + 1), 3 * nnz, &
+           irank, tag, hecCOMM%HECMW_COMM, statuses(:,1))
+      tag = 3003
+      call HECMW_RECV_R(imp_vals_item(ndof2*idx_0 + 1), ndof2 * nnz, &
+           irank, tag, hecCOMM%HECMW_COMM, statuses(:,1))
+    enddo
+    call HECMW_Waitall(n_send, requests, statuses)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: send BT_imp and recv into temporary data done'
+    !
+    deallocate(requests)
+    deallocate(statuses)
+    !
+    do idom = 1, nnb
+      call hecmw_localmat_free(BT_exp(idom))
+    enddo
+    deallocate(BT_exp)
+    deallocate(exp_cols_index)
+    deallocate(exp_cols_item)
+    !
+    call copy_mesh(hecMESH, hecMESHnew)
+    !
+    call map_imported_cols(hecMESHnew, imp_cols_index(nnb), imp_cols_item, n_add_node, add_nodes, map, i0)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: map imported cols done'
+    !
+    call update_comm_table(hecMESHnew, n_add_node, add_nodes, i0)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: update comm_table done'
+    !
+    BT_imp%nc = hecMESHnew%n_node
+    !
+    allocate(BT_imp%item(BT_imp%nnz))
+    allocate(BT_imp%A(ndof2 * BT_imp%nnz))
+    call copy_vals_to_BT_imp(hecCOMM, hecMESH%nn_internal, imp_cols_index, map, imp_vals_item, BT_imp)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: copy vals to BT_imp done'
+    !
+    deallocate(imp_cols_index)
+    deallocate(imp_cols_item)
+    deallocate(imp_vals_item)
+    deallocate(map)
+  end subroutine send_BT_exp_and_recv_BT_imp
+
+  subroutine copy_vals_to_BT_imp(hecCOMM, nn_internal, imp_cols_index, map, imp_vals_item, BT_imp)
+    implicit none
+    type (hecmwST_matrix_comm), intent(in) :: hecCOMM
+    integer(kind=kint), intent(in) :: nn_internal
+    integer(kind=kint), allocatable, intent(in) :: imp_cols_index(:)
+    integer(kind=kint), intent(in) :: map(:)
+    real(kind=kreal), intent(in) :: imp_vals_item(:)
+    type (hecmwST_local_matrix), intent(inout) :: BT_imp
+    integer(kind=kint) :: nnb, ndof2, idx, idom, idx_0, idx_n, nr, j, jrow, ks, ke, k
+    nnb = hecCOMM%n_neighbor_pe
+    ndof2 = BT_imp%ndof ** 2
+    idx = 0
+    do idom = 1, nnb
+      idx_0 = hecCOMM%import_index(idom-1)
+      idx_n = hecCOMM%import_index(idom)
+      nr = idx_n - idx_0
+      if (nr == 0) cycle
+      do j = 1, nr
+        jrow = hecCOMM%import_item(idx_0 + j) - nn_internal
+        ks = BT_imp%index(jrow-1)+1
+        ke = BT_imp%index(jrow)
+        do k = ks, ke
+          idx = idx + 1
+          BT_imp%item(k) = map(idx)
+          BT_imp%A(ndof2*(k-1)+1:ndof2*k) = imp_vals_item(ndof2*(idx-1)+1:ndof2*idx)
+        enddo
+      enddo
+      if (idx /= imp_cols_index(idom)) stop 'ERROR: copy vals to BT_imp'
+    enddo
+  end subroutine copy_vals_to_BT_imp
+
+  subroutine concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    type (hecmwST_local_matrix), intent(in) :: BT_imp
+    type (hecmwST_local_matrix), intent(out) :: BT_all
+    integer(kind=kint) :: ndof, ndof2, i, ii
+    ndof = BTmat%ndof
+    if (BT_imp%ndof /= ndof) stop 'ERROR: contcat BTmat and BT_imp: ndof'
+    ndof2 = ndof*ndof
+    BT_all%nr = BTmat%nr + BT_imp%nr
+    BT_all%nc = max(BTmat%nc, BT_imp%nc)
+    BT_all%nnz = BTmat%nnz + BT_imp%nnz
+    BT_all%ndof = ndof
+    allocate(BT_all%index(0:BT_all%nr))
+    allocate(BT_all%item(BT_all%nnz))
+    allocate(BT_all%A(ndof2 * BT_all%nnz))
+    BT_all%index(0) = 0
+    do i = 1, BTmat%nr
+      BT_all%index(i) = BTmat%index(i)
+    enddo
+    do i = 1, BT_imp%nr
+      BT_all%index(BTmat%nr+i) = BT_all%index(BTmat%nr+i-1) + &
+           BT_imp%index(i) - BT_imp%index(i-1)
+    enddo
+    do i = 1, BTmat%nnz
+      BT_all%item(i) = BTmat%item(i)
+      BT_all%A(ndof2*(i-1)+1:ndof2*i) = BTmat%A(ndof2*(i-1)+1:ndof2*i)
+    enddo
+    do i = 1, BT_imp%nnz
+      ii = BTmat%nnz + i
+      BT_all%item(ii) = BT_imp%item(i)
+      BT_all%A(ndof2*(ii-1)+1:ndof2*ii) = BT_imp%A(ndof2*(i-1)+1:ndof2*i)
+    enddo
+  end subroutine concat_BTmat_and_BT_imp
+
+  subroutine multiply_mat_mat(Amat, Bmat, Cmat)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Amat
+    type (hecmwST_local_matrix), intent(in) :: Bmat
+    type (hecmwST_local_matrix), intent(out) :: Cmat
+    integer(kind=kint) :: ndof, ndof2, nr, nc, nnz, i, icnt
+    integer(kind=kint) :: js, je, j, jj, ks, ke, k, kk, ls, le, l, ll, l0
+    integer(kind=kint), allocatable :: iw(:)
+    real(kind=kreal), pointer :: Ap(:), Bp(:), Cp(:)
+    if (Amat%ndof /= Bmat%ndof) stop 'ERROR: multiply_mat_mat: unmatching ndof'
+    ndof = Amat%ndof
+    ndof2 = ndof*ndof
+    nr = Amat%nr
+    nc = Bmat%nc
+    if (Amat%nc /= Bmat%nr) stop 'ERROR: multiply_mat_mat: unmatching size'
+    Cmat%ndof = ndof
+    Cmat%nr = nr
+    Cmat%nc = nc
+    allocate(Cmat%index(0:nr))
+    Cmat%index(0) = 0
+    allocate(iw(nc))
+    do i = 1, nr
+      icnt = 0
+      js = Amat%index(i-1)+1
+      je = Amat%index(i)
+      do j = js, je
+        jj = Amat%item(j)
+        ks = Bmat%index(jj-1)+1
+        ke = Bmat%index(jj)
+        kl1: do k = ks, ke
+          kk = Bmat%item(k)
+          do l = 1, icnt
+            if (iw(l) == kk) cycle kl1
+          enddo
+          icnt = icnt + 1
+          iw(icnt) = kk
+        enddo kl1
+      enddo
+      Cmat%index(i) = Cmat%index(i-1) + icnt
+    enddo
+    nnz = Cmat%index(nr)
+    Cmat%nnz = nnz
+    !write(0,*) 'nnz',nnz
+    allocate(Cmat%item(nnz))
+    allocate(Cmat%A(ndof2 * nnz))
+    Cmat%A(:) = 0.0d0
+    do i = 1, nr
+      icnt = 0
+      l0 = Cmat%index(i-1)
+      ! item
+      js = Amat%index(i-1)+1
+      je = Amat%index(i)
+      do j = js, je
+        jj = Amat%item(j)
+        Ap => Amat%A(ndof2*(j-1)+1:ndof2*j)
+        ks = Bmat%index(jj-1)+1
+        ke = Bmat%index(jj)
+        do k = ks, ke
+          kk = Bmat%item(k)
+          Bp => Bmat%A(ndof2*(k-1)+1:ndof2*k)
+          ll = -1
+          do l = 1, icnt
+            if (Cmat%item(l0+l) == kk) then
+              ll = l0 + l
+              exit
+            endif
+          enddo
+          if (ll < 0) then
+            icnt = icnt + 1
+            ll = l0 + icnt
+            Cmat%item(ll) = kk
+          endif
+          Cp => Cmat%A(ndof2*(ll-1)+1:ndof2*ll)
+          call blk_matmul_add(ndof, Ap, Bp, Cp)
+        enddo
+      enddo
+      !write(0,*) 'l0,icnt,index(i)',Cmat%index(i-1),icnt,Cmat%index(i)
+      if (l0+icnt /= Cmat%index(i)) stop 'ERROR: multiply_mat_mat: unknown error'
+    enddo
+    call sort_and_uniq_rows(Cmat)
+  end subroutine multiply_mat_mat
+
+  subroutine blk_matmul_add(ndof, A, B, AB)
+    implicit none
+    integer, intent(in) :: ndof
+    real(kind=kreal), intent(in) :: A(:), B(:)
+    real(kind=kreal), intent(inout) :: AB(:)
+    integer :: ndof2, i, j, k, i0, j0, ij, ik, jk
+    ndof2=ndof*ndof
+    do i=1,ndof
+      i0=(i-1)*ndof
+      do j=1,ndof
+        ij=i0+j
+        j0=(j-1)*ndof
+        do k=1,ndof
+          ik=i0+k
+          jk=j0+k
+          AB(ik)=AB(ik)+A(ij)*B(jk)
+        enddo
+      enddo
+    enddo
+  end subroutine blk_matmul_add
+
+  subroutine hecmw_localmat_make_hecmat(hecMAT, BTtKTmat, hecTKT)
+    implicit none
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_local_matrix), intent(in) :: BTtKTmat
+    type (hecmwST_matrix), intent(inout) :: hecTKT
+    call make_new_hecmat(hecMAT, BTtKTmat, hecTKT)
+  end subroutine hecmw_localmat_make_hecmat
+
+  subroutine hecmw_localmat_shrink_comm_table(BKmat, hecMESH)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BKmat
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_matrix_comm) :: hecCOMM
+    call make_comm_table(BKmat, hecMESH, hecCOMM)
+    deallocate(hecMESH%import_index)
+    deallocate(hecMESH%import_item)
+    deallocate(hecMESH%export_index)
+    deallocate(hecMESH%export_item)
+    hecMESH%import_index => hecCOMM%import_index
+    hecMESH%import_item => hecCOMM%import_item
+    hecMESH%export_index => hecCOMM%export_index
+    hecMESH%export_item => hecCOMM%export_item
+    deallocate(hecCOMM%neighbor_pe)
+  end subroutine hecmw_localmat_shrink_comm_table
 
 end module hecmw_local_matrix

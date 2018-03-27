@@ -98,7 +98,7 @@ contains
       id = 1
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(2), ndof )
       label = 'REACTION_FORCE'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%QFORCE )
+      call hecmw_result_add( id, nitem, label, fstrSOLID%REACTION )
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -559,7 +559,7 @@ contains
       fstrRESULT%node_label(ncomp) = 'REACTION_FORCE'
       do i = 1, hecMESH%n_node
         do j = 1, nn
-          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%QFORCE(nn*(i-1)+j)
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%REACTION(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn

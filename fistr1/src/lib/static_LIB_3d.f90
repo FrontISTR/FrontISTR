@@ -567,7 +567,7 @@ contains
     end if
 
     matlaniso = .FALSE.
-    if( cdsys_ID > 0 ) then
+    if( present(TT) .and. cdsys_ID > 0 ) then
       ina = TT(1)
       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       if( .not. ierr ) matlaniso = .true.

@@ -25,7 +25,6 @@
 #cmakedefine WITH_ML
 #cmakedefine WITH_PARMETIS
 #cmakedefine WITH_MKL
-#cmakedefine WITH_PARACON
 #cmakedefine WITH_PARADISO
 
 #cmakedefine HECMW_SERIAL
