@@ -53,7 +53,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
                     struct hecmwST_result_data *data, int timestep,
                     int max_timestep, int interval) {
   int ii;
-  char *outfile, buf1[HECMW_FILENAME_LEN], outfile1[HECMW_FILENAME_LEN];
+  char *outfile, *buf1, outfile1[HECMW_FILENAME_LEN];
   char body[HECMW_FILENAME_LEN];
   PSF_link *tp1;
   PVR_link *tv1;
@@ -68,9 +68,10 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
   HECMW_Comm_dup(mesh->HECMW_COMM, &VIS_COMM);
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
-  sprintf(buf1, "mesh_vis");
-  outfile = HECMW_ctrl_get_result_fileheader("vis_out", max_timestep, timestep,
-                                             &fg_text);
+
+  outfile = HECMW_ctrl_get_result_fileheader("vis_out", max_timestep, timestep, &fg_text);
+  buf1 = HECMW_ctrl_get_result_filebody("vis_out");
+
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(outfile)) {
       HECMW_vis_print_exit(
@@ -98,15 +99,11 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
             sprintf(outfile1, "%s_psf%d.0%d", outfile, visual_id + 1, timestep);
             sprintf(body, "%s_psf%d.0%d", buf1, visual_id + 1, timestep);
           } else if ((timestep >= 10) && (timestep <= 99)) {
-            sprintf(outfile1, "%s_psf%d.00%d", outfile, visual_id + 1,
-                    timestep);
-            sprintf(body, "%s_psf%d.00%d", buf1, visual_id + 1,
-                    timestep);
+            sprintf(outfile1, "%s_psf%d.00%d", outfile, visual_id + 1, timestep);
+            sprintf(body, "%s_psf%d.00%d", buf1, visual_id + 1, timestep);
           } else if (timestep <= 9) {
-            sprintf(outfile1, "%s_psf%d.000%d", outfile, visual_id + 1,
-                    timestep);
-            sprintf(body, "%s_psf%d.000%d", buf1, visual_id + 1,
-                    timestep);
+            sprintf(outfile1, "%s_psf%d.000%d", outfile, visual_id + 1, timestep);
+            sprintf(body, "%s_psf%d.000%d", buf1, visual_id + 1, timestep);
           }
         } else {
           if (timestep >= 1000) {

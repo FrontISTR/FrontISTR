@@ -42,21 +42,21 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output directory");
 	}
 
-	if (myrank == 0 && is_first == 0) {
-		/* outpu pvd file */
+	/* outpu pvd file */
+	/* if (myrank == 0 && is_first == 0) {
 		sprintf(file_pvd, "%s.pvd", outfile1);
 		outfp = fopen (file_pvd, "w");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"Collection\" version=\"1.0\">\n");
 		fprintf (outfp, "<Collection>\n");
 		for(i=0; i < *max_timestep+1 ;i++){
-			fprintf (outfp, "<DataSet part=\"0\" timestep=\"%d\" file=\"mesh_vis_psf.%04d.pvtu\"/>\n", i, i);
+			fprintf (outfp, "<DataSet part=\"0\" timestep=\"%d\" file=\"%s.%04d.pvtu\"/>\n", i, outfile, i);
 		}
 		fprintf (outfp, "</Collection>\n");
 		fprintf (outfp, "</VTKFile>\n");
 		fclose (outfp);
 		is_first = 1;
-	}
+	}*/
 
 	if (myrank == 0) {
 		/* outpu pvtu file */
