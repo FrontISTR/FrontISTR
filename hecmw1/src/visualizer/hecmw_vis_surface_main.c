@@ -15,6 +15,7 @@
 #include "hecmw_vis_rendering.h"
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_output_femap.h"
+#include "hecmw_fstr_output_vtk.h"
 #include "hecmw_malloc.h"
 
 static void conv_compname_integer(struct surface_module *sf,

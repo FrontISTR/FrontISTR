@@ -85,7 +85,7 @@ PSF_OBJS = \
 	hecmw_vis_generate_histogram_sf.@cobjfilepostfix@ \
 	hecmw_vis_subimage_composite_sf.@cobjfilepostfix@ \
 	hecmw_fstr_output_femap.@cobjfilepostfix@ \
-	hecmw_fstr_output_vtk.@cobjfilepostfix@
+	hecmw_fstr_output_vtk.@cobjfilepostfix@ \
 	hecmw_fstr_endian.@cobjfilepostfix@
 
 PVR_OBJS = \
