@@ -53,7 +53,7 @@ contains
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
       do j=1, size(hecMESH%node_init_val_item)
-        in = hecMESH%node_init_val_index(i)
+        in = hecMESH%node_init_val_index(j)
         fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(in)
         fstrSOLID%temperature(j) = hecMESH%node_init_val_item(in)
       end do
