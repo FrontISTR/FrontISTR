@@ -121,6 +121,10 @@ contains
         in   = hecMESH%node_group%grp_item(ik)
         idof1 = ityp/10
         idof2 = ityp - idof1*10
+        if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
+          idof1 = 1
+          idof2 = ndof
+        end if
         do idof=idof1,idof2
           B( ndof*(in-1) + idof ) = 0.d0
         enddo

@@ -223,6 +223,7 @@ contains
       contact%states(ii)%state = -1
       contact%states(ii)%multiplier(:) = 0.d0
       contact%states(ii)%tangentForce(:) = 0.d0
+      contact%states(ii)%tangentForce1(:) = 0.d0
       contact%states(ii)%tangentForce_trial(:) = 0.d0
       contact%states(ii)%tangentForce_final(:) = 0.d0
       contact%states(ii)%reldisp(:) = 0.d0
@@ -269,12 +270,13 @@ contains
   !> This subroutine update contact states, which include
   !!-# Free to contact ot contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
-  subroutine scan_contact_state( flag_ctAlgo, contact, currpos, ndforce, infoCTChange, &
+  subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
       nodeID, elemID, active, mu, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
     real(kind=kreal), intent(in)                     :: currpos(:)    !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                     :: currdisp(:)    !< current displacement of each nodes
     real(kind=kreal), intent(in)                     :: ndforce(:)    !< nodal force
     integer(kind=kint), intent(in)                  :: nodeID(:)     !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)     !< global elemental ID, just for print out
@@ -311,7 +313,8 @@ contains
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,mu,nodeID,elemID,B,width,clearance,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,width,clearance,contact_surf) &
+      !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
       slave = contact%slave(i)
@@ -323,11 +326,6 @@ contains
         if( nlforce < -1.0d-8 ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
-          if( flag_ctAlgo=='SLagrange' ) then
-            contact%states(i)%tangentForce(:) =0.d0
-            contact%states(i)%tangentForce_trial(:) =0.d0
-            contact%states(i)%tangentForce_final(:) =0.d0
-          endif
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
@@ -335,7 +333,7 @@ contains
         if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) then   ! small slide problem
           contact_surf(contact%slave(i)) = -id
         else
-          call track_contact_position( flag_ctAlgo, i, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
           if( contact%states(i)%state /= CONTACTFREE ) then
             contact_surf(contact%slave(i)) = -contact%states(i)%surface
           endif
@@ -472,12 +470,13 @@ contains
   end subroutine
 
   !> This subroutine tracks down next contact position after a finite slide
-  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, mu, infoCTChange, nodeID, elemID, B )
+  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     integer, intent(in)                             :: nslave       !< slave node
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
     real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                     :: currdisp(:)    !< current displacement of each nodes
     real(kind=kreal), intent(in)                     :: mu           !< penalty
     integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
@@ -486,7 +485,7 @@ contains
     real(kind=kreal)    :: distclr, clearance
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
     logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
 
@@ -504,6 +503,7 @@ contains
     do j=1,nn
       iSS = contact%master(sid0)%nodes(j)
       elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+      elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
       contact%states(nslave)%lpos, clearance )
@@ -557,8 +557,7 @@ contains
         if( flag_ctAlgo=='ALagrange' )  &
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
-      if( flag_ctAlgo=='SLagrange' )  &
-        contact%states(nslave)%tangentForce(1:3) = contact%states(nslave)%tangentForce_final(1:3)
+      if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
       iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
@@ -566,11 +565,6 @@ contains
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
       contact%states(nslave)%state = CONTACTFREE
       contact%states(nslave)%multiplier(:) = 0.d0
-      if( flag_ctAlgo=='SLagrange' ) then
-        contact%states(nslave)%tangentForce(:) =0.d0
-        contact%states(nslave)%tangentForce_trial(:) =0.d0
-        contact%states(nslave)%tangentForce_final(:) =0.d0
-      endif
     endif
 
   end subroutine track_contact_position
@@ -938,5 +932,21 @@ contains
 
   end subroutine set_contact_state_vector
 
+  subroutine update_contact_TangentForce( contact )
+    type( tContact ), intent(inout)   :: contact        !< contact info
+
+    integer(kind=kint)  :: i
+
+    do i= 1, size(contact%slave)
+      if( contact%states(i)%state==CONTACTFREE ) then
+        contact%states(i)%tangentForce(1:3) = 0.d0
+        contact%states(i)%tangentForce_trial(1:3) = 0.d0
+        contact%states(i)%tangentForce_final(1:3) = 0.d0
+      else
+        contact%states(i)%tangentForce(1:3) = contact%states(i)%tangentForce_final(1:3)
+      end if
+      contact%states(i)%tangentForce1(1:3) = contact%states(i)%tangentForce(1:3)
+    enddo
+  end subroutine update_contact_TangentForce
 
 end module mContactDef

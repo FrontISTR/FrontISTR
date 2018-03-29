@@ -693,6 +693,7 @@ contains
     enddo
 
     call fstr_UpdateState(hecMESH, fstrSOLID, tincr)
+    call fstr_update_contact_TangentForce( fstrSOLID )
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0

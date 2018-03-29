@@ -255,10 +255,10 @@ contains
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
       endif
       if( present(B) ) then
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), fstrSOLID%QFORCE(:),   &
           infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
       else
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), fstrSOLID%QFORCE(:),   &
           infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
       endif
       if( .not. active ) active = iactive
@@ -304,6 +304,18 @@ contains
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
     enddo
     if( nc>0 ) gnt = gnt/nc
+  end subroutine
+
+  !> Update tangent force
+  subroutine fstr_update_contact_TangentForce( fstrSOLID )
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+
+    integer :: i, nc
+
+    nc = size(fstrSOLID%contacts)
+    do i=1, nc
+      call update_contact_TangentForce( fstrSOLID%contacts(i) )
+    enddo
   end subroutine
 
   !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
