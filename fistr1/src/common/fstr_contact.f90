@@ -255,11 +255,11 @@ contains
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
       endif
       if( present(B) ) then
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), fstrSOLID%QFORCE(:),   &
-          infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
       else
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), fstrSOLID%QFORCE(:),   &
-          infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
       endif
       if( .not. active ) active = iactive
 
