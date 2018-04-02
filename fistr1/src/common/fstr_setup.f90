@@ -985,12 +985,16 @@ contains
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
     endif
+
+    fstrSOLID%maxn_gauss = 0
+
     allocate( fstrSOLID%elements(hecMESH%n_elem) )
     do i=1,hecMESH%n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
+      if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
       isect= hecMESH%section_ID(i)
@@ -1019,6 +1023,8 @@ contains
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
     enddo
+
+    call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
   end subroutine
 
   !> Finalizer of fstr_solid
