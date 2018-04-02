@@ -280,6 +280,8 @@ module m_fstr
     integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
 
     !> VALUE
+    integer(kind=kint) :: maxn_gauss
+
     real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
     real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
     real(kind=kreal), pointer :: MISES(:)     !< nodal MISES
@@ -304,6 +306,11 @@ module m_fstr
     real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
 
     real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
+
+    real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
+    real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
+    real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
+    real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
