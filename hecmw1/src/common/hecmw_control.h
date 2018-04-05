@@ -64,6 +64,7 @@ extern char *HECMW_ctrl_get_result_file_sub(char *name_ID, int nstep, int istep,
 extern char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int nstep,
                                                   int istep, int n_rank,
                                                   int i_rank, int *fg_text);
+extern char *HECMW_ctrl_get_result_filebody(char *name_ID);
 extern char *HECMW_ctrl_get_restart_file(char *name_ID);
 extern char *HECMW_ctrl_get_restart_file_by_io(int io);
 extern char *HECMW_ctrl_get_control_file(char *name_ID);

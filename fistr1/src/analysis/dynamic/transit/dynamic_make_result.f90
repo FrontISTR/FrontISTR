@@ -415,9 +415,9 @@ contains
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
-    allocate( fstrRESULT%ne_dof(ecomp) )
-    allocate( fstrRESULT%elem_label(ecomp) )
-    allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
+    !allocate( fstrRESULT%ne_dof(ecomp) )
+    !allocate( fstrRESULT%elem_label(ecomp) )
+    !allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
     ncomp = 0
     iitem = 0
     ecomp = 0

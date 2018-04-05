@@ -15,6 +15,7 @@
 #include "hecmw_vis_rendering.h"
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_output_femap.h"
+#include "hecmw_fstr_output_vtk.h"
 #include "hecmw_malloc.h"
 
 static void conv_compname_integer(struct surface_module *sf,
@@ -30,9 +31,9 @@ static void shell2hexa(struct hecmwST_local_mesh *mesh,
 Connect_inf *global_connect;
 
 void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
-                             struct hecmwST_result_data *data, int *timestep,
+                             struct hecmwST_result_data *data, int *timestep, int *max_timestep,
                              struct surface_module *sf, Parameter_rendering *sr,
-                             int stat_para[NUM_CONTROL_PSF], char *outfile1,
+                             int stat_para[NUM_CONTROL_PSF], char *outfile1, char *body,
                              HECMW_Comm VIS_COMM) {
   int pesize, mynode;
   Surface *sff;
@@ -102,6 +103,12 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
     sprintf(buf, "_%d.inp", mynode);
     strcat(outfile1, buf);
     HECMW_separate_avs_output(mesh, data, outfile1);
+    return;
+  } else if(sf[1].output_type==15) {
+    HECMW_vtk_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
+    return;
+  } else if(sf[1].output_type==16) {
+    HECMW_bin_vtk_output(mesh, data, body, outfile1, max_timestep, VIS_COMM);
     return;
   }
 

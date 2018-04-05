@@ -53,7 +53,8 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
                     struct hecmwST_result_data *data, int timestep,
                     int max_timestep, int interval) {
   int ii;
-  char *outfile, buf1[HECMW_FILENAME_LEN], outfile1[HECMW_FILENAME_LEN];
+  char *outfile, *buf1, outfile1[HECMW_FILENAME_LEN];
+  char body[HECMW_FILENAME_LEN];
   PSF_link *tp1;
   PVR_link *tv1;
   int visual_id, init_flag, fg_text;
@@ -67,8 +68,10 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
   HECMW_Comm_dup(mesh->HECMW_COMM, &VIS_COMM);
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
-  outfile = HECMW_ctrl_get_result_fileheader("vis_out", max_timestep, timestep,
-                                             &fg_text);
+
+  outfile = HECMW_ctrl_get_result_fileheader("vis_out", max_timestep, timestep, &fg_text);
+  buf1 = HECMW_ctrl_get_result_filebody("vis_out");
+
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(outfile)) {
       HECMW_vis_print_exit(
@@ -89,28 +92,36 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
           stat_para_sf[ii] = tp1->stat_para[ii];
         tp1                = tp1->next_psf;
         if (psf->num_of_psf > 1) {
-          if (timestep >= 1000)
+          if (timestep >= 1000) {
             sprintf(outfile1, "%s_psf%d.%d", outfile, visual_id + 1, timestep);
-          else if ((timestep >= 100) && (timestep <= 999))
+            sprintf(body, "%s_psf%d.%d", buf1, visual_id + 1, timestep);
+          } else if ((timestep >= 100) && (timestep <= 999)) {
             sprintf(outfile1, "%s_psf%d.0%d", outfile, visual_id + 1, timestep);
-          else if ((timestep >= 10) && (timestep <= 99))
-            sprintf(outfile1, "%s_psf%d.00%d", outfile, visual_id + 1,
-                    timestep);
-          else if (timestep <= 9)
-            sprintf(outfile1, "%s_psf%d.000%d", outfile, visual_id + 1,
-                    timestep);
+            sprintf(body, "%s_psf%d.0%d", buf1, visual_id + 1, timestep);
+          } else if ((timestep >= 10) && (timestep <= 99)) {
+            sprintf(outfile1, "%s_psf%d.00%d", outfile, visual_id + 1, timestep);
+            sprintf(body, "%s_psf%d.00%d", buf1, visual_id + 1, timestep);
+          } else if (timestep <= 9) {
+            sprintf(outfile1, "%s_psf%d.000%d", outfile, visual_id + 1, timestep);
+            sprintf(body, "%s_psf%d.000%d", buf1, visual_id + 1, timestep);
+          }
         } else {
-          if (timestep >= 1000)
+          if (timestep >= 1000) {
             sprintf(outfile1, "%s_psf.%d", outfile, timestep);
-          else if ((timestep >= 100) && (timestep <= 999))
+            sprintf(body, "%s_psf.%d", buf1, timestep);
+          } else if ((timestep >= 100) && (timestep <= 999)) {
             sprintf(outfile1, "%s_psf.0%d", outfile, timestep);
-          else if ((timestep >= 10) && (timestep <= 99))
+            sprintf(body, "%s_psf.0%d", buf1, timestep);
+          } else if ((timestep >= 10) && (timestep <= 99)) {
             sprintf(outfile1, "%s_psf.00%d", outfile, timestep);
-          else if (timestep <= 9)
+            sprintf(body, "%s_psf.00%d", buf1, timestep);
+          } else if (timestep <= 9) {
             sprintf(outfile1, "%s_psf.000%d", outfile, timestep);
+            sprintf(body, "%s_psf.000%d", buf1, timestep);
+          }
         }
-        HECMW_vis_psf_rendering(mesh, data, &timestep, sf, sr, stat_para_sf,
-                                outfile1, VIS_COMM);
+        HECMW_vis_psf_rendering(mesh, data, &timestep, &max_timestep, sf, sr, stat_para_sf,
+                                outfile1, body, VIS_COMM);
         init_flag = 0;
       }
     }
