@@ -18,7 +18,7 @@ if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
  You may need to remove CMakeCache.txt file and CMakeFiles/ directory.
  Please make new directory such as build/ and run cmake in it again.
 [example]
- rm CMakeCache.txt; rm -rf CMakeFiles
+ rm CMakeCache.txt; rm -rf CMakeFiles/
  mkdir build/; cd build/
  cmake ..
  make")
