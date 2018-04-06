@@ -8,6 +8,22 @@
 ###############################################################
 cmake_minimum_required(VERSION 2.8.11)
 
+###############################################################
+# Check building mode whether out-of-source builds
+###############################################################
+if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "
+*************** ERROR ***************
+ Only support for out-of-source building.
+ You may need to remove CMakeCache.txt file and CMakeFiles/ directory.
+ Please make new directory such as build/ and run cmake in it again.
+[example]
+ rm CMakeCache.txt; rm -rf CMakeFiles/
+ mkdir build/; cd build/
+ cmake ..
+ make")
+endif()
+
 project(FrontISTR Fortran C CXX)
 ###############################################################
 # Includes standard macros
