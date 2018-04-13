@@ -11,10 +11,14 @@
 #include "hecmw_path.h"
 #include "hecmw_util.h"
 
-#ifdef __WIN32__
-#define PATH_SEPARATOR '\\'
+#ifdef __MINGW32__
+#define PATH_SEPARATOR '/'
+#elif __MINGW64__
+#define PATH_SEPARATOR '/'
 #elif __CYGWIN__
 #define PATH_SEPARATOR '/'
+#elif __WIN32__
+#define PATH_SEPARATOR '\\'
 #else
 #define PATH_SEPARATOR '/'
 #endif
