@@ -991,7 +991,8 @@ contains
        num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH, hecMESHtmp
-    type (hecmwST_matrix), intent(in) :: hecMAT, hecTKT
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: hecTKT
     real(kind=kreal), intent(in) :: Btot(:)
     type (hecmwST_local_matrix), intent(in) :: BTmat
     integer(kind=kint), intent(in) :: num_lagrange
