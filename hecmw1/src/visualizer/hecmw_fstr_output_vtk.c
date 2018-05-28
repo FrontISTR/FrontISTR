@@ -247,7 +247,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	}
 
 	/* outpu vtu file */
-	ioffset = 4;
+	ioffset = 5 + data->nn_component;
 	offset = HECMW_malloc(sizeof(int)*ioffset);
 
 	uint64 = 0;
@@ -265,6 +265,10 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	offset[1] = offset[0] + sizeof(int) + 3*n_node   *sizeof(float);
 	offset[2] = offset[1] + sizeof(int) + (int)uint64*sizeof(int);
 	offset[3] = offset[2] + sizeof(int) + n_elem     *sizeof(int);
+	offset[4] = offset[3] + sizeof(int) + n_elem     *sizeof(int);
+	for(i=0; i<data->nn_component; i++){
+		offset[5+i] = offset[4+i] + sizeof(int) + data->nn_dof[i]*n_node*sizeof(int);
+	}
 
 	outfp = fopen (file_vtu, "w");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
@@ -273,67 +277,26 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fprintf (outfp, "<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_node, n_elem);
 	fprintf (outfp, "<Points>\n");
 	fprintf (outfp, "<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\">\n", offset[0]);
-	/* for(i=0; i<n_node; i++){
-		fprintf (outfp, "%e %e %e\n", (float)mesh->node[3*i], (float)mesh->node[3*i+1], (float)mesh->node[3*i+2]);
-	} */
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "</Points>\n");
 	fprintf (outfp, "<Cells>\n");
 	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"appended\" offset=\"%d\">\n", offset[1]);
-	/* for(i=0; i<n_elem; i++){
-		jS=mesh->elem_node_index[i];
-		jE=mesh->elem_node_index[i+1];
-		shift=0;
-		if(mesh->elem_type[i]==641) shift=2;
-		if(mesh->elem_type[i]==761) shift=3;
-		if(mesh->elem_type[i]==781) shift=4;
-		for(j=jS; j<jE-shift; j++){
-			fprintf (outfp, "%d ", mesh->elem_node_item[j]-1);
-		}
-		fprintf (outfp, "\n");
-	} */
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"offsets\" format=\"appended\" offset=\"%d\">\n", offset[2]);
-	shift=0;
-	for(i=0; i<n_elem; i++){
-		if(mesh->elem_type[i]==641) shift+=2;
-		if(mesh->elem_type[i]==761) shift+=3;
-		if(mesh->elem_type[i]==781) shift+=4;
-		fprintf (outfp, "%d ", mesh->elem_node_index[i+1]-shift);
-	}
-	fprintf (outfp, "\n");
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"types\" format=\"appended\" offset=\"%d\">\n", offset[3]);
-	for(i=0; i<n_elem; i++){
-		fprintf (outfp, "%d ", HECMW_get_etype_vtk_shape(mesh->elem_type[i]));
-	}
-	fprintf (outfp, "\n");
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "</Cells>\n");
 	fprintf (outfp, "<PointData>\n");
 
 	for(i=0; i<data->nn_component; i++){
-		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"0\">\n", data->node_label[i], data->nn_dof[i]);
-		shift=0;
-		for(j=0; j<i; j++){
-			shift += data->nn_dof[j];
-		}
-		for(j=0; j<n_node; j++){
-			for(k=0; k<data->nn_dof[i]; k++){
-				val1 = (float)data->node_val_item[j*data_tot+k+shift];
-				fprintf (outfp, "%e ", val1);
-			}
-			fprintf (outfp, "\n");
-		}
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], data->nn_dof[i], offset[4+i]);
 		fprintf (outfp, "</DataArray>\n");
 	}
+
 	fprintf (outfp, "</PointData>\n");
 	fprintf (outfp, "<CellData>\n");
-	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\" offset=\"0\">\n");
-	for(i=0; i<n_elem; i++){
-		fprintf (outfp, "%d ", mesh->elem_type[i]);
-	}
-	fprintf (outfp, "\n");
+	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\">\n", offset[ioffset-1]);
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "</CellData>\n");
 	fprintf (outfp, "</Piece>\n");
@@ -367,7 +330,6 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		}
 	}
 
-/*
 	uint32 = (u_int32_t)(n_elem*sizeof(int));
 	fwrite (&uint32, sizeof(uint32), 1, outfp);
 	shift=0;
@@ -388,13 +350,10 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	  fwrite (&in, sizeof(int), 1, outfp);
 	}
 
-	shift=0;
 	for(i=0; i<data->nn_component; i++){
-		shift += data->nn_dof[i];
-	}
-	uint32 = (u_int32_t)(data->nn_component*n_node*shift);
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
-	for(i=0; i<data->nn_component; i++){
+		uint32 = (u_int32_t)(data->nn_dof[i]*n_node*sizeof(int));
+		fwrite (&uint32, sizeof(uint32), 1, outfp);
+
 		shift=0;
 		for(j=0; j<i; j++){
 			shift += data->nn_dof[j];
@@ -406,18 +365,15 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 			}
 		}
 	}
-*/
 
-/*
-	uint32 = n_elem;
-	fwrite (&uint32, sizeof(int), 1, outfp);
+	uint32 = (u_int32_t)(n_elem*sizeof(int));
+	fwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
 		//uint16 = (u_int16_t)mesh->elem_type[i];
 	  //fwrite (&uint16, sizeof(u_int16_t), 1, outfp);
 		in = (int)mesh->elem_type[i];
 	  fwrite (&in, sizeof(int), 1, outfp);
 	}
-*/
 
 	fprintf (outfp, "</AppendedData>\n");
 	fprintf (outfp, "</VTKFile>\n");
