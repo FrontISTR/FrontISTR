@@ -1898,6 +1898,9 @@ contains
     dst%n_subdomain   = src%n_subdomain
     dst%n_node        = src%n_node
     dst%nn_internal   = src%nn_internal
+    dst%n_elem        = src%n_elem
+    dst%ne_internal   = src%ne_internal
+    dst%n_elem_type   = src%n_elem_type
     dst%n_dof         = src%n_dof
     dst%n_neighbor_pe = src%n_neighbor_pe
     allocate(dst%neighbor_pe(dst%n_neighbor_pe))
@@ -1921,6 +1924,8 @@ contains
     endif
     allocate(dst%node_ID(2*dst%n_node))
     dst%node_ID(:)     = src%node_ID(:)
+    allocate(dst%elem_type_item(dst%n_elem_type))
+    dst%elem_type_item(:) = src%elem_type_item(:)
     !dst%mpc            = src%mpc
     ! MPC is already set outside of here
     dst%mpc%n_mpc = 0
@@ -1943,6 +1948,7 @@ contains
       if (associated(hecMESH%export_item)) deallocate(hecMESH%export_item)
     endif
     deallocate(hecMESH%node_ID)
+    deallocate(hecMESH%elem_type_item)
     !hecMESH%node => null()
   end subroutine free_mesh
 
