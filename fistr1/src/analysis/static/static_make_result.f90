@@ -566,15 +566,31 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
     endif
 
+    ! --- STRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )*coef33
+    endif
+    ! --- STRESS @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(7) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )*coef33
+    endif
+    ! --- MISES @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(8) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )*coef33
+    endif
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     fstrRESULT%nn_component = ncomp
     fstrRESULT%ne_component = ecomp
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
-    !allocate( fstrRESULT%ne_dof(ecomp) )
-    !allocate( fstrRESULT%elem_label(ecomp) )
-    !allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
+    allocate( fstrRESULT%ne_dof(ecomp) )
+    allocate( fstrRESULT%elem_label(ecomp) )
+    allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
     ncomp = 0
     iitem = 0
     ecomp = 0
@@ -733,6 +749,46 @@ contains
       iitem = iitem + nn
     endif
 
+    ! --- STRAIN @elem
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(6)) then
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )
+      ecomp = ecomp + 1
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalSTRAIN'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%ESTRAIN(nn*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- STRESS @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(7)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalSTRESS'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%ESTRESS((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- MISES @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(8)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalMISES'
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = fstrSOLID%SOLID%EMISES(i)
+      enddo
+      jitem = jitem + nn
+    endif
+
   end subroutine fstr_make_static_result
 
   subroutine fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, iitem, ncomp, nlyr, clyr )
@@ -772,6 +828,7 @@ contains
       enddo
       iitem = iitem + nn
     endif
+
     ! --- STRESS @node
     if(fstrSOLID%output_ctrl(4)%outinfo%on(4)) then
       ncomp = ncomp + 1
