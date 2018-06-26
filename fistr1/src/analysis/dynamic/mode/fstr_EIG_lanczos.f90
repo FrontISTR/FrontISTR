@@ -60,7 +60,12 @@ contains
     enddo
 
     call hecmw_allreduce_I1(hecMESH, jn, hecmw_sum)
-    if(0 < jn) fstrEIG%is_free = .true.
+    if(jn == 0)then
+      fstrEIG%is_free = .true.
+      if(myrank == 0)then
+        write(*,*) '** free modal analysis: shift factor = 0.1'
+      endif
+    endif
 
     call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
@@ -110,8 +115,8 @@ contains
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, Tri%beta(1))
 
-    hecMAT%Iarray(98) = 1   !Assmebly complete
-    hecMAT%Iarray(97) = 1   !Need numerical factorization
+    hecMAT%Iarray(98) = 1 !Assmebly complete
+    hecMAT%Iarray(97) = 1 !Need numerical factorization
 
     if(myrank == 0)then
       write(IMSG,*)

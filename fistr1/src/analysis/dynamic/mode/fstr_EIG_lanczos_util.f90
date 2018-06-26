@@ -36,7 +36,7 @@ contains
 
     !> shifting
     if(fstrEIG%is_free)then
-      do i = 1,NP
+      do i = 1, NP
         hecMAT%D(9*i-8) = hecMAT%D(9*i-8) + sigma * mass(3*i-2)
         hecMAT%D(9*i-4) = hecMAT%D(9*i-4) + sigma * mass(3*i-1)
         hecMAT%D(9*i  ) = hecMAT%D(9*i  ) + sigma * mass(3*i  )
