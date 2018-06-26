@@ -22,14 +22,12 @@ contains
     type(fstr_eigen)         :: fstrEIG
     type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
-
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, maxiter, nget, ierr
     integer(kind=kint) :: i, j, k, in, jn, kn, ik, it
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
     real(kind=kreal)   :: t1, t2, tolerance
     real(kind=kreal)   :: alpha, beta
-
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
     real(kind=kreal), pointer     :: eigvec(:,:)
     real(kind=kreal), pointer     :: eigval(:)
@@ -43,6 +41,7 @@ contains
     allocate(fstrEIG%filter(NPNDOF))
     fstrEIG%filter = 1.0d0
 
+    jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       iS0  = hecMESH%node_group%grp_index(ig-1) + 1
@@ -54,10 +53,14 @@ contains
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         do i = itS0,itE0
+          jn = jn + 1
           fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
         enddo
       enddo
     enddo
+
+    call hecmw_allreduce_I1(hecMESH, jn, hecmw_sum)
+    if(0 < jn) fstrEIG%is_free = .true.
 
     call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
@@ -97,7 +100,7 @@ contains
     eigvec => fstrEIG%eigvec
     eigval = 0.0d0
     eigvec = 0.0d0
-    t   = 0.0d0
+    t      = 0.0d0
     p      = 0.0d0
     s      = 0.0d0
     Q(0)%q = 0.0d0
@@ -115,63 +118,63 @@ contains
       write(IMSG,*) ' *****   STAGE Begin Lanczos loop     **'
     endif
 
-    do iter=1, maxiter-1
+    do iter = 1, maxiter-1
       !> q = A^{-1} p
-      do i=1,NPNDOF
+      do i = 1, NPNDOF
         hecMAT%B(i) = p(i)
       enddo
 
-      call solve_LINEQ( hecMESH, hecMAT )
+      call solve_LINEQ(hecMESH, hecMAT)
 
       allocate(Q(iter+1)%q(NPNDOF))
 
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         t(i) = hecMAT%X(i) * fstrEIG%filter(i)
       enddo
 
       !> t = t - beta * q_{i-1}
       !> alpha = p * t
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         t(i) = t(i) - Tri%beta(iter) * Q(iter-1)%q(i)
       enddo
 
       alpha = 0.0d0
-      do i=1, NNDOF
+      do i = 1, NNDOF
         alpha = alpha + p(i) * t(i)
       enddo
       call hecmw_allreduce_R1(hecMESH, alpha, hecmw_sum)
       Tri%alpha(iter) = alpha
 
       !> t = t - alpha * q_i
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         t(i) = t(i) - Tri%alpha(iter) * Q(iter)%q(i)
       enddo
 
       !> re-orthogonalization
       s = 0.0d0
 
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         s(i) = fstrEIG%mass(i) * t(i)
       enddo
 
-      do j=0, iter
+      do j = 0, iter
         t1 = 0.0d0
-        do i=1, NNDOF
+        do i = 1, NNDOF
           t1 = t1 + Q(j)%q(i) * s(i)
         enddo
         call hecmw_allreduce_R1(hecMESH, t1, hecmw_sum)
-        do i=1, NPNDOF
+        do i = 1, NPNDOF
           t(i) = t(i) - t1 * Q(j)%q(i)
         enddo
       enddo
 
       !> beta = || {t}^t [M] {t} ||_2
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         s(i) = fstrEIG%mass(i) * t(i)
       enddo
 
       beta = 0.0d0
-      do i=1, NNDOF
+      do i = 1, NNDOF
         beta = beta + s(i) * t(i)
       enddo
       call hecmw_allreduce_R1(hecMESH, beta, hecmw_sum)
@@ -180,7 +183,7 @@ contains
       !> p = s / beta
       !> q = t / beta
       beta = 1.0d0/Tri%beta(iter+1)
-      do i=1, NPNDOF
+      do i = 1, NPNDOF
         p(i)           = s(i)    * beta
         Q(iter+1)%q(i) = t(i) * beta
       enddo
@@ -196,7 +199,7 @@ contains
     iter = fstrEIG%iter
     call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter)
 
-    do i=0, iter
+    do i = 0, iter
       if(associated(Q(i)%q)) deallocate(Q(i)%q)
     enddo
     deallocate(Tri%alpha)

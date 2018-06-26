@@ -36,7 +36,7 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter, iter2, ierr, maxiter
-    real(kind=kreal)   :: chk
+    real(kind=kreal)   :: chk, sigma
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
@@ -77,9 +77,11 @@ contains
 
     call QL_decomposition(iter, iter, alpha, beta, L, ierr)
 
+    sigma = 0.0d0
+    if(fstrEIG%is_free) sigma = 0.1d0
     do i = 1, iter
       if(alpha(i) /= 0.0d0)then
-        eigval(i) = 1.0d0/alpha(i) + fstrEIG%sigma
+        eigval(i) = 1.0d0/alpha(i) + sigma
       endif
     enddo
 

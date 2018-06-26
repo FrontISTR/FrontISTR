@@ -35,7 +35,7 @@ contains
     t1 = hecmw_Wtime()
 
     fstrSOLID%dunode = 0.0d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0 )
+    call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
 
     call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
 

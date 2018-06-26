@@ -19,6 +19,7 @@ contains
     real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
     real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
+    logical :: is_free
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -26,7 +27,7 @@ contains
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
 
-    sigma  =  fstrEIG%sigma
+    sigma  = 0.1d0
     mass   => fstrEIG%mass
     filter => fstrEIG%filter
 
@@ -34,25 +35,27 @@ contains
     temp = 0.0d0
 
     !> shifting
-    !do i = 1,NP
-    !  hecMAT%D(9*i-8) = hecMAT%D(9*i-8) + sigma * mass(3*i-2)
-    !  hecMAT%D(9*i-4) = hecMAT%D(9*i-4) + sigma * mass(3*i-1)
-    !  hecMAT%D(9*i  ) = hecMAT%D(9*i  ) + sigma * mass(3*i  )
-    !end do
+    if(fstrEIG%is_free)then
+      do i = 1,NP
+        hecMAT%D(9*i-8) = hecMAT%D(9*i-8) + sigma * mass(3*i-2)
+        hecMAT%D(9*i-4) = hecMAT%D(9*i-4) + sigma * mass(3*i-1)
+        hecMAT%D(9*i  ) = hecMAT%D(9*i  ) + sigma * mass(3*i  )
+      enddo
+    endif
 
     call URAND1(NNDOF, temp, hecMESH%my_rank)
 
-    do i=1, NNDOF
+    do i = 1, NNDOF
       temp(i) = temp(i) * filter(i)
-    end do
+    enddo
 
     !> M-orthogonalization
-    do i=1, NNDOF
+    do i = 1, NNDOF
       eigvec(i,1) = mass(i) * temp(i)
     enddo
 
     chk = 0.0d0
-    do i=1, NNDOF
+    do i = 1, NNDOF
       chk = chk + temp(i) * eigvec(i,1)
     enddo
     call hecmw_allreduce_R1(hecMESH, chk, hecmw_sum)
@@ -64,11 +67,11 @@ contains
     endif
 
     chk = 1.0d0/beta
-    do i=1, NNDOF
+    do i = 1, NNDOF
       q(i) = temp(i) * chk
     enddo
 
-    do i=1, NNDOF
+    do i = 1, NNDOF
       p(i) = mass(i) * q(i)
     enddo
   end subroutine lanczos_set_initial_value
@@ -80,12 +83,12 @@ contains
     integer(kind=kint) :: i, j, n, ip, minloc, NEIG, IBAF, NEW(NEIG)
     real(kind=kreal) :: EMIN, EIG(NEIG)
 
-    do i=1, NEIG
+    do i = 1, NEIG
       NEW(i) = i
     enddo
 
     n = NEIG-1
-    do i=1, n
+    do i = 1, n
       minloc = i
       EMIN = dabs(EIG(NEW(I)))
       IP = I+1
