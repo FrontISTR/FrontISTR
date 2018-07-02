@@ -555,7 +555,124 @@ contains
     end if
   end subroutine
 
+  subroutine Update_Stress3D( flag, gauss, rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+    use m_fstr
+    use m_MatMatrix
+    use mMechGauss
 
+    type(tGaussStatus), intent(inout)       :: gauss
+    integer(kind=kint)                      :: flag
+    real(kind=kreal), intent(in)            :: rot(3,3)
+    real(kind=kreal), intent(in)            :: dstrain(6)
+    real(kind=kreal), intent(in)            :: coordsys(3,3)
+    real(kind=kreal), intent(in)            :: time
+    real(kind=kreal), intent(in)            :: tincr
+    real(kind=kreal), intent(in), optional  :: ttc
+    real(kind=kreal), intent(in), optional  :: tt0
+    real(kind=kreal), intent(in), optional  :: ttn
+
+    integer(kind=kint) :: mtype
+    integer(kind=kint) :: isEp
+    real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD
+
+    mtype = gauss%pMaterial%mtype
+
+    if( isElastoplastic(mtype) .OR. mtype == NORTON )then
+      isEp = 1
+    else
+      isEp = 0
+    endif
+
+    if( present(ttc) .AND. present(ttn) ) then
+      call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp )
+    else
+      call MatlMatrix( gauss, D3, D, time, tincr, coordsys, isEp=isEp)
+    end if
+
+    if( flag == INFINITE ) then
+
+      gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
+        if( present(ttc) .AND. present(ttn) ) then
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+        else
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+        end if
+        gauss%stress = real(gauss%stress)
+      end if
+
+    else if( flag == TOTALLAG ) then
+
+      if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
+          mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
+        call StressUpdate( gauss, D3, dstrain, gauss%stress )
+      else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
+        gauss%pMaterial%mtype=mtype
+        if( present(ttc) .AND. present(ttn) ) then
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+        else
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+        end if
+      else
+        gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      end if
+
+    else if( flag == UPDATELAG ) then
+      !  CALL GEOMAT_C3( gauss%stress, mat )
+      !  D(:, :) = D(:, :)+mat(:, :)
+
+      if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
+        if( present(ttc) .AND. present(ttn) ) then
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, tt0 )
+        else
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+        end if
+      else
+        dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
+        dumstress(1,1) = gauss%stress_bak(1)
+        dumstress(2,2) = gauss%stress_bak(2)
+        dumstress(3,3) = gauss%stress_bak(3)
+        dumstress(1,2) = gauss%stress_bak(4);  dumstress(2,1)=dumstress(1,2)
+        dumstress(2,3) = gauss%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
+        dumstress(3,1) = gauss%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
+
+        dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
+        trD = dstrain(1)+dstrain(2)+dstrain(3)
+        gauss%stress(1) = gauss%stress_bak(1) +dstress(1) +dum(1,1) +gauss%stress_bak(1)*trD
+        gauss%stress(2) = gauss%stress_bak(2) +dstress(2) +dum(2,2) +gauss%stress_bak(2)*trD
+        gauss%stress(3) = gauss%stress_bak(3) +dstress(3) +dum(3,3) +gauss%stress_bak(3)*trD
+        gauss%stress(4) = gauss%stress_bak(4) +dstress(4) +dum(1,2) +gauss%stress_bak(4)*trD
+        gauss%stress(5) = gauss%stress_bak(5) +dstress(5) +dum(2,3) +gauss%stress_bak(5)*trD
+        gauss%stress(6) = gauss%stress_bak(6) +dstress(6) +dum(3,1) +gauss%stress_bak(6)*trD
+
+        if( mtype == USERMATERIAL ) then
+          call StressUpdate( gauss, D3, dstrain, gauss%stress )
+        else if( mtype == NORTON ) then
+          !gauss%pMaterial%mtype = mtype
+          if( tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
+            !gauss%pMaterial%mtype = mtype
+            if( present(ttc) .AND. present(ttn) ) then
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr, ttc, ttn )
+            else
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr )
+            end if
+          end if
+        end if
+      end if
+
+    end if
+
+    if( isElastoplastic(mtype) ) then
+      if( present(ttc) ) then
+        call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
+          gauss%istatus(1), gauss%fstatus, ttc )
+      else
+        call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
+          gauss%istatus(1), gauss%fstatus )
+      end if
+    end if
+
+  end subroutine
 
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
@@ -592,11 +709,10 @@ contains
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
     real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, ttn,outa(1)
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
-    integer(kind=kint) :: isEp
+    integer(kind=kint) :: i, j, k, LX, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
-    real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
+    real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso
 
@@ -621,8 +737,6 @@ contains
 
     do LX = 1, NumOfQuadPoints(etype)
 
-      mtype = gausses(LX)%pMaterial%mtype
-
       call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv(etype, nn, naturalcoord, elem, det, gderiv)
 
@@ -638,26 +752,17 @@ contains
       ! UPDATE STRAIN and STRESS
       ! ========================================================
 
-      if( isElastoplastic(mtype) .OR. mtype == NORTON )then
-        isEp = 1
-      else
-        isEp = 0
-      endif
-      !gausses(LX)%pMaterial%mtype = ELASTIC
-
+      ! Thermal Strain
       EPSTH = 0.0D0
       if( present(tt) .AND. present(t0) ) then
         call getShapeFunc(etype, naturalcoord, spfunc)
         ttc = dot_product(TT, spfunc)
         tt0 = dot_product(T0, spfunc)
         ttn = dot_product(TN, spfunc)
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
-
         call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp)
       end if
 
+      ! Update strain
       ! Small strain
       gdispderiv(1:ndof, 1:ndof) = matmul( totaldisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
       dstrain(1) = gdispderiv(1, 1)
@@ -669,20 +774,9 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
       if( flag == INFINITE ) then
-
-        gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-        gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-          gausses(LX)%stress = real(gausses(LX)%stress)
-        end if
+        gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(1:6)
 
       else if( flag == TOTALLAG ) then
-
         ! Green-Lagrange strain
         dstrain(1) = dstrain(1)+0.5d0*dot_product( gdispderiv(:, 1), gdispderiv(:, 1) )
         dstrain(2) = dstrain(2)+0.5d0*dot_product( gdispderiv(:, 2), gdispderiv(:, 2) )
@@ -694,86 +788,23 @@ contains
         dstrain(6) = dstrain(6)+( gdispderiv(1, 1)*gdispderiv(1, 3)                                     &
           +gdispderiv(2, 1)*gdispderiv(2, 3)+gdispderiv(3, 1)*gdispderiv(3, 3) )
 
-        if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
-            mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-        else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%pMaterial%mtype=mtype
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-        else
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        end if
+        gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
 
       else if( flag == UPDATELAG ) then
-
-        !  CALL GEOMAT_C3( gausses(LX)%stress, mat )
-        !  D(:, :) = D(:, :)+mat(:, :)
         rot = 0.0D0
         rot(1, 2)= 0.5d0*(gdispderiv(1, 2)-gdispderiv(2, 1) );  rot(2, 1) = -rot(1, 2)
         rot(2, 3)= 0.5d0*(gdispderiv(2, 3)-gdispderiv(3, 2) );  rot(3, 2) = -rot(2, 3)
         rot(1, 3)= 0.5d0*(gdispderiv(1, 3)-gdispderiv(3, 1) );  rot(3, 1) = -rot(1, 3)
 
-        gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+ dstrain(1:6)+EPSTH(:)
-
-        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-          !(LX)%pMaterial%mtype = mtype
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, tt0 )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-        else
-
-          dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
-          dumstress(1,1) = gausses(LX)%stress_bak(1)
-          dumstress(2,2) = gausses(LX)%stress_bak(2)
-          dumstress(3,3) = gausses(LX)%stress_bak(3)
-          dumstress(1,2) = gausses(LX)%stress_bak(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
-
-          dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-          gausses(LX)%stress(1) = gausses(LX)%stress_bak(1)+dstress(1)+ dum(1,1)
-          gausses(LX)%stress(2) = gausses(LX)%stress_bak(2)+dstress(2)+ dum(2,2)
-          gausses(LX)%stress(3) = gausses(LX)%stress_bak(3)+dstress(3)+ dum(3,3)
-          gausses(LX)%stress(4) = gausses(LX)%stress_bak(4)+dstress(4)+ dum(1,2)
-          gausses(LX)%stress(5) = gausses(LX)%stress_bak(5)+dstress(5)+ dum(2,3)
-          gausses(LX)%stress(6) = gausses(LX)%stress_bak(6)+dstress(6)+ dum(3,1)
-
-          if( mtype == USERMATERIAL ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( mtype == NORTON ) then
-            !gausses(LX)%pMaterial%mtype = mtype
-            if( tincr /= 0.0D0 .AND. any( gausses(LX)%stress /= 0.0D0 ) ) then
-              !gausses(LX)%pMaterial%mtype = mtype
-              if( present(TT) .AND. present(T0) ) then
-                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
-              else
-                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
-              end if
-            end if
-          end if
-        end if
+        gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 
       end if
 
-      !gausses(LX)%pMaterial%mtype = mtype
-
-      if( isElastoplastic(mtype) ) then
-        if( present(tt) ) then
-          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-            gausses(LX)%istatus(1), gausses(LX)%fstatus, ttc )
-        else
-          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-            gausses(LX)%istatus(1), gausses(LX)%fstatus )
-        end if
+      ! Update stress
+      if( present(tt) .AND. present(t0) ) then
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+      else
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr )
       end if
 
       ! ========================================================
