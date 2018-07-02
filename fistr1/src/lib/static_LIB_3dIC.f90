@@ -228,7 +228,7 @@ contains
     use m_MatMatrix
     use m_ElastoPlastic
     use m_utilities
-    use m_static_LIB_3d, only: GEOMAT_C3
+    use m_static_LIB_3d
 
     integer(kind=kint), intent(in)    :: etype         !< \param [in] element type
     integer(kind=kint), intent(in)    :: nn            !< \param [in] number of elemental nodes
@@ -505,39 +505,9 @@ contains
         ttn = dot_product(TN, spfunc)
         call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
 
-        ina(1) = ttc
-        if( matlaniso ) then
-          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
-          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
-        else
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          alp = outa(1)
-        end if
-        ina(1) = tt0
-        if( matlaniso  ) then
-          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
-          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
-        else
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          alp0 = outa(1)
-        end if
-        if( matlaniso ) then
-          do j=1,3
-            EPSTH(j) = ALPO(j)*(ttc-ref_temp)-alpo0(j)*(tt0-ref_temp)
-          end do
-          call transformation( coordsys(:, :), tm)
-          EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
-          EPSTH(4:6) = EPSTH(4:6)*2.0D0
-        else
-          EPSTH(1:3)=ALP*(ttc-ref_temp)-alp0*(tt0-ref_temp)
-        end if
-
+        call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
       else
-
         call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp)
-
       end if
 
       ! -- Derivative of shape function of imcompatible mode --

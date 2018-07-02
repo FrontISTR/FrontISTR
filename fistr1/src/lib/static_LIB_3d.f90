@@ -510,6 +510,52 @@ contains
 
   end subroutine TLOAD_C3
 
+  subroutine Cal_Thermal_expansion_C3( tt0, ttc, material, coordsys, matlaniso, EPSTH )
+    use m_fstr
+    use m_utilities
+    real(kind=kreal),   INTENT(IN)     :: tt0
+    real(kind=kreal),   INTENT(IN)     :: ttc
+    type( tMaterial ),  INTENT(IN)     :: material
+    real(kind=kreal),   INTENT(IN)     :: coordsys(3,3)
+    logical,            INTENT(IN)     :: matlaniso
+    real(kind=kreal),   INTENT(OUT)    :: EPSTH(6)
+
+    integer(kind=kint) :: j
+    real(kind=kreal)   :: ina(1), outa(1)
+    logical            :: ierr
+    real(kind=kreal)   :: alp, alp0, alpo(3), alpo0(3), tm(6,6)
+
+    ina(1) = ttc
+    if( matlaniso ) then
+      call fetch_TableData( MC_ORTHOEXP, material%dict, alpo(:), ierr, ina )
+      if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+    else
+      call fetch_TableData( MC_THEMOEXP, material%dict, outa(:), ierr, ina )
+      if( ierr ) outa(1) = material%variables(M_EXAPNSION)
+      alp = outa(1)
+    end if
+    ina(1) = tt0
+    if( matlaniso  ) then
+      call fetch_TableData( MC_ORTHOEXP, material%dict, alpo0(:), ierr, ina )
+      if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
+    else
+      call fetch_TableData( MC_THEMOEXP, material%dict, outa(:), ierr, ina )
+      if( ierr ) outa(1) = material%variables(M_EXAPNSION)
+      alp0 = outa(1)
+    end if
+    if( matlaniso ) then
+      do j=1,3
+        EPSTH(j) = ALPO(j)*(ttc-ref_temp)-alpo0(j)*(tt0-ref_temp)
+      end do
+      call transformation( coordsys(:, :), tm)
+      EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
+      EPSTH(4:6) = EPSTH(4:6)*2.0D0
+    else
+      EPSTH(1:3)=alp*(ttc-ref_temp)-alp0*(tt0-ref_temp)
+    end if
+  end subroutine
+
+
 
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
@@ -549,9 +595,9 @@ contains
     integer(kind=kint) :: i, j, k, LX, mtype, serr
     integer(kind=kint) :: isEp
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
-    real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
+    real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
-    real(kind=kreal)   :: alp, alp0, alpo(3),alpo0(3)
+    real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso
 
     qf(:) = 0.0D0
@@ -607,39 +653,9 @@ contains
         ttn = dot_product(TN, spfunc)
         call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
 
-        ina(1) = ttc
-        if( matlaniso ) then
-          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo(:), ierr, ina )
-          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
-        else
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          alp = outa(1)
-        end if
-        ina(1) = tt0
-        if( matlaniso  ) then
-          call fetch_TableData( MC_ORTHOEXP, gausses(LX)%pMaterial%dict, alpo0(:), ierr, ina )
-          if( ierr ) stop "Fails in fetching orthotropic expansion coefficient!"
-        else
-          call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
-          if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)
-          alp0 = outa(1)
-        end if
-        if( matlaniso ) then
-          do j=1,3
-            EPSTH(j) = ALPO(j)*(ttc-ref_temp)-alpo0(j)*(tt0-ref_temp)
-          end do
-          call transformation( coordsys(:, :), tm)
-          EPSTH(:) = matmul( EPSTH(:), tm  ) ! to global coord
-          EPSTH(4:6) = EPSTH(4:6)*2.0D0
-        else
-          EPSTH(1:3)=ALP*(ttc-ref_temp)-alp0*(tt0-ref_temp)
-        end if
-
+        call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
       else
-
         call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp)
-
       end if
 
       ! Small strain
