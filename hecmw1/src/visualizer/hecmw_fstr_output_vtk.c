@@ -23,6 +23,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	int myrank, petot, steptot;
 	int n_node, n_elem, shift, etype;
 	int data_tot;
+	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	char *data_label;
 	static int is_first=0;
@@ -113,8 +114,14 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		if(mesh->elem_type[i]==641) shift=2;
 		if(mesh->elem_type[i]==761) shift=3;
 		if(mesh->elem_type[i]==781) shift=4;
-		for(j=jS; j<jE-shift; j++){
-			fprintf (outfp, "%d ", mesh->elem_node_item[j]-1);
+		if(mesh->elem_type[i]==342){
+			for(j=jS; j<jE-shift; j++){
+				fprintf (outfp, "%d ", mesh->elem_node_item[jS+table342[j-jS]]-1);
+			}
+		}else{
+			for(j=jS; j<jE-shift; j++){
+				fprintf (outfp, "%d ", mesh->elem_node_item[j]-1);
+			}
 		}
 		fprintf (outfp, "\n");
 	}
