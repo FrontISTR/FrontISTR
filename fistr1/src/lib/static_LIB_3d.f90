@@ -555,15 +555,17 @@ contains
     end if
   end subroutine
 
-  subroutine Update_Stress3D( flag, gauss, rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+  subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
     use m_fstr
     use m_MatMatrix
     use mMechGauss
+    use m_utilities
 
     type(tGaussStatus), intent(inout)       :: gauss
-    integer(kind=kint)                      :: flag
+    integer(kind=kint), intent(in)          :: flag
     real(kind=kreal), intent(in)            :: rot(3,3)
     real(kind=kreal), intent(in)            :: dstrain(6)
+    real(kind=kreal), intent(in)            :: F(3,3)        !deformation gradient (used for ss_out)
     real(kind=kreal), intent(in)            :: coordsys(3,3)
     real(kind=kreal), intent(in)            :: time
     real(kind=kreal), intent(in)            :: tincr
@@ -571,9 +573,12 @@ contains
     real(kind=kreal), intent(in), optional  :: tt0
     real(kind=kreal), intent(in), optional  :: ttn
 
-    integer(kind=kint) :: mtype
+    integer(kind=kint) :: mtype, i, j, k
     integer(kind=kint) :: isEp
-    real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD
+    real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD, det
+    real(kind=kreal)   :: tensor(6)     !< tensor
+    real(kind=kreal)   :: eigval(3)     !< vector containing the eigvalches
+    real(kind=kreal)   :: princ(3,3), norm !< matrix containing the three principal column vectors
 
     mtype = gauss%pMaterial%mtype
 
@@ -672,6 +677,76 @@ contains
       end if
     end if
 
+    !convert stress/strain measure for output
+    if( OPSSTYPE == kOPSS_SOLUTION ) then
+
+      if( flag == INFINITE ) then !linear
+        gauss%stress_out(1:6) = gauss%stress(1:6)
+        gauss%strain_out(1:6) = gauss%strain(1:6)
+      else !nonlinear
+        !convert stress
+        if( flag == TOTALLAG ) then
+          dumstress(1,1) = gauss%stress(1)
+          dumstress(2,2) = gauss%stress(2)
+          dumstress(3,3) = gauss%stress(3)
+          dumstress(1,2) = gauss%stress(4);  dumstress(2,1)=dumstress(1,2)
+          dumstress(2,3) = gauss%stress(5);  dumstress(3,2)=dumstress(2,3)
+          dumstress(3,1) = gauss%stress(6);  dumstress(1,3)=dumstress(3,1)
+
+          det = Determinant33(F)
+          if( det == 0.d0 ) stop "Fail to convert stress: detF=0"
+          ! cauchy stress = (1/detF)*F*(2ndPK stress)*F^T
+          dumstress(1:3,1:3) = matmul(dumstress(1:3,1:3),transpose(F(1:3,1:3)))
+          dumstress(1:3,1:3) = (1.d0/det)*matmul(F(1:3,1:3),dumstress(1:3,1:3))
+
+          gauss%stress_out(1) = dumstress(1,1)
+          gauss%stress_out(2) = dumstress(2,2)
+          gauss%stress_out(3) = dumstress(3,3)
+          gauss%stress_out(4) = dumstress(1,2)
+          gauss%stress_out(5) = dumstress(2,3)
+          gauss%stress_out(6) = dumstress(3,1)
+        else if( flag == UPDATELAG ) then
+          gauss%stress_out(1:6) = gauss%stress(1:6)
+        endif
+
+        !calc logarithmic strain
+        dum(1:3,1:3) = matmul(F(1:3,1:3),transpose(F(1:3,1:3)))
+        tensor(1) = dum(1,1)
+        tensor(2) = dum(2,2)
+        tensor(3) = dum(3,3)
+        tensor(4) = dum(1,2)
+        tensor(5) = dum(2,3)
+        tensor(6) = dum(3,1)
+        call get_principal(tensor, eigval, princ)
+
+        do k=1,3
+          if( eigval(k) <= 0.d0 ) stop "Fail to calc log strain: stretch<0"
+          eigval(k) = 0.5d0*dlog(eigval(k)) !log(sqrt(lambda))
+          norm = dsqrt(dot_product(princ(1:3,k),princ(1:3,k)))
+          if( norm <= 0.d0 ) stop "Fail to calc log strain: stretch direction vector=0"
+          princ(1:3,k) = princ(1:3,k)/norm
+        end do
+        do i=1,3
+          do j=1,3
+            dum(i,j) = 0.d0
+            do k=1,3
+              dum(i,j) = dum(i,j) + eigval(k)*princ(i,k)*princ(j,k)
+            end do
+          end do
+        end do
+        gauss%strain_out(1) = dum(1,1)
+        gauss%strain_out(2) = dum(2,2)
+        gauss%strain_out(3) = dum(3,3)
+        gauss%strain_out(4) = 2.d0*dum(1,2)
+        gauss%strain_out(5) = 2.d0*dum(2,3)
+        gauss%strain_out(6) = 2.d0*dum(3,1)
+      endif
+
+    else
+      gauss%stress_out(1:6) = gauss%stress(1:6)
+      gauss%strain_out(1:6) = gauss%strain(1:6)
+    end if
+
   end subroutine
 
   !> Update strain and stress inside element
@@ -708,7 +783,7 @@ contains
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gdispderiv(3,3), det, WG, ttc,tt0, ttn,outa(1)
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn,outa(1)
     integer(kind=kint) :: i, j, k, LX, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
@@ -773,6 +848,7 @@ contains
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
+      F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITE ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(1:6)
 
@@ -789,6 +865,7 @@ contains
           +gdispderiv(2, 1)*gdispderiv(2, 3)+gdispderiv(3, 1)*gdispderiv(3, 3) )
 
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
+        F(1:3,1:3) = F(1:3,1:3) + gdispderiv(1:3,1:3)
 
       else if( flag == UPDATELAG ) then
         rot = 0.0D0
@@ -798,13 +875,16 @@ contains
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 
+        call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det1, gderiv1)
+        F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn)+ddu(1:ndof, 1:nn), gderiv1(1:nn, 1:ndof) )
+
       end if
 
       ! Update stress
       if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
       else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
       end if
 
       ! ========================================================
@@ -910,8 +990,8 @@ contains
     IC = NumOfQuadPoints(etype)
 
     do i = 1, IC
-      TEMP(1:6)  = TEMP(1:6) +gausses(i)%strain(1:6)
-      TEMP(7:12) = TEMP(7:12)+gausses(i)%stress(1:6)
+      TEMP(1:6)  = TEMP(1:6) +gausses(i)%strain_out(1:6)
+      TEMP(7:12) = TEMP(7:12)+gausses(i)%stress_out(1:6)
     end do
 
     TEMP(1:12) = TEMP(1:12)/IC
@@ -950,8 +1030,8 @@ contains
     IC = NumOfQuadPoints(etype)
 
     do i = 1, IC
-      strain(:) = strain(:)+gausses(i)%strain(1:6)
-      stress(:) = stress(:)+gausses(i)%stress(1:6)
+      strain(:) = strain(:)+gausses(i)%strain_out(1:6)
+      stress(:) = stress(:)+gausses(i)%stress_out(1:6)
     enddo
 
     strain(:) = strain(:)/IC

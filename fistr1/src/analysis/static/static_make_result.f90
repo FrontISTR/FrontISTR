@@ -142,7 +142,7 @@ contains
             enddo
           else
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
             enddo
           endif
         enddo
@@ -166,7 +166,7 @@ contains
             enddo
           else
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
             enddo
           endif
         enddo

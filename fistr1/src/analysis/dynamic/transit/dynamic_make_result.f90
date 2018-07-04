@@ -174,7 +174,7 @@ contains
         else
           do i = 1, hecMESH%n_elem
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
             enddo
           enddo
         end if
@@ -195,7 +195,7 @@ contains
         else
           do i = 1, hecMESH%n_elem
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
             enddo
           enddo
         end if

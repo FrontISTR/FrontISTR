@@ -164,6 +164,8 @@ contains
         c_aincparam = c_aincparam + 1
       else if( header_name == '!TIME_POINTS' ) then
         c_timepoints = c_timepoints + 1
+      else if( header_name == '!OUTPUT_SSTYPE' ) then
+        call fstr_setup_OUTPUT_SSTYPE( ctrl, P )
 
         !--------------- for static -------------------------
 
@@ -3214,6 +3216,24 @@ contains
 
   end subroutine fstr_setup_CONTACTALGO
 
+  !-----------------------------------------------------------------------------!
+  !> Read in !OUTPUT_SSTYPE                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_OUTPUT_SSTYPE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, nid
+    character(len=HECMW_NAME_LEN) :: data_fmt
+
+    data_fmt = 'SOLUTION,MATERIAL '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', data_fmt, 0, 'P', nid )
+    OPSSTYPE = nid
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_OUTPUT_SSTYPE
 
 end module m_fstr_setup
 

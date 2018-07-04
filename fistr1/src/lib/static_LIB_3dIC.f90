@@ -254,18 +254,17 @@ contains
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: D(6,6), B(6,ndof*(nn+3)), B1(6,ndof*(nn+3)), spfunc(nn), ina(1)
     real(kind=kreal)   :: BN(9,ndof*(nn+3)), DB(6, ndof*(nn+3)), stress(6), Smat(9, 9), SBN(9, ndof*(nn+3))
-    real(kind=kreal)   :: gderiv(nn+3,3), gdispderiv(3,3), det, WG, ttc,tt0, ttn,outa(1)
+    real(kind=kreal)   :: gderiv(nn+3,3), gderiv0(nn+3,3), gdispderiv(3,3), F(3,3), det, det0, WG, ttc, tt0, ttn
     integer(kind=kint) :: i, j, LX, mtype, serr
-    integer(kind=kint) :: isEp
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
-    real(kind=kreal)   :: dstrain(6),dstress(6),dumstress(3,3),dum(3,3)
-    real(kind=kreal)   :: alp, alp0, alpo(3),alpo0(3)
+    real(kind=kreal)   :: dstrain(6)
+    real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso
     real(kind=kreal)   :: stiff_ad(9, nn*3), stiff_aa(9, 9), qf_a(9)
     real(kind=kreal)   :: xj(9, 9)
     real(kind=kreal)   :: tmpforce(9), tmpdisp(9), tmp_d(nn*3), tmp_a(9)
-    real(kind=kreal)   :: jacobian(3, 3), inverse(3, 3), inverse1(3, 3)
+    real(kind=kreal)   :: jacobian(3, 3), inverse(3, 3), inverse1(3, 3), inverse0(3, 3)
 
     !---------------------------------------------------------------------
 
@@ -469,6 +468,8 @@ contains
     if( flag == UPDATELAG ) then
       call getJacobian(etype, nn, naturalcoord, elem1, det, jacobian, inverse1)
       inverse1(:, :)= inverse1(:, :)*det
+      call getJacobian(etype, nn, naturalcoord, ecoord, det, jacobian, inverse0)
+      inverse0(:, :)= inverse0(:, :)*det !for deformation gradient F
     endif
 
     do LX = 1, NumOfQuadPoints(etype)
@@ -490,24 +491,14 @@ contains
       ! UPDATE STRAIN and STRESS
       ! ========================================================
 
-      if( isElastoplastic(mtype) .OR. mtype == NORTON )then
-        isEp = 1
-      else
-        isEp = 0
-      endif
-      !gausses(LX)%pMaterial%mtype = ELASTIC
-
+      ! Thermal Strain
       EPSTH = 0.0D0
       if( present(tt) .AND. present(t0) ) then
         call getShapeFunc(etype, naturalcoord, spfunc)
         ttc = dot_product(TT, spfunc)
         tt0 = dot_product(T0, spfunc)
         ttn = dot_product(TN, spfunc)
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc, isEp )
-
         call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, isEp=isEp)
       end if
 
       ! -- Derivative of shape function of imcompatible mode --
@@ -529,21 +520,12 @@ contains
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
+      F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITE ) then
-
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-        gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-          gausses(LX)%stress = real(gausses(LX)%stress)
-        end if
+        F(1:3,1:3) = F(1:3,1:3) + gdispderiv(1:3,1:3)
 
       else if( flag == TOTALLAG ) then
-
         ! Green-Lagrange strain
         dstrain(1) = dstrain(1)+0.5d0*dot_product( gdispderiv(:, 1), gdispderiv(:, 1) )
         dstrain(2) = dstrain(2)+0.5d0*dot_product( gdispderiv(:, 2), gdispderiv(:, 2) )
@@ -555,26 +537,9 @@ contains
         dstrain(6) = dstrain(6)+( gdispderiv(1, 1)*gdispderiv(1, 3)                                     &
           +gdispderiv(2, 1)*gdispderiv(2, 3)+gdispderiv(3, 1)*gdispderiv(3, 3) )
 
-        if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
-            mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-        else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-          !gausses(LX)%pMaterial%mtype=mtype
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-        else
-          gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-        end if
+        gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
 
       else if( flag == UPDATELAG ) then
-
         !  CALL GEOMAT_C3( gausses(LX)%stress, mat )
         !  D(:, :) = D(:, :)+mat(:, :)
         rot = 0.0D0
@@ -583,59 +548,19 @@ contains
         rot(1, 3)= 0.5d0*(gdispderiv(1, 3)-gdispderiv(3, 1) );  rot(3, 1) = -rot(1, 3)
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+ dstrain(1:6)+EPSTH(:)
-
-        if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-          !(LX)%pMaterial%mtype = mtype
-          if( present(TT) .AND. present(T0) ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, tt0 )
-          else
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr )
-          end if
-        else
-
-          dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
-          dumstress(1,1) = gausses(LX)%stress_bak(1)
-          dumstress(2,2) = gausses(LX)%stress_bak(2)
-          dumstress(3,3) = gausses(LX)%stress_bak(3)
-          dumstress(1,2) = gausses(LX)%stress_bak(4);  dumstress(2,1)=dumstress(1,2)
-          dumstress(2,3) = gausses(LX)%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
-          dumstress(3,1) = gausses(LX)%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
-
-          dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
-          gausses(LX)%stress(1) = gausses(LX)%stress_bak(1)+dstress(1)+ dum(1,1)
-          gausses(LX)%stress(2) = gausses(LX)%stress_bak(2)+dstress(2)+ dum(2,2)
-          gausses(LX)%stress(3) = gausses(LX)%stress_bak(3)+dstress(3)+ dum(3,3)
-          gausses(LX)%stress(4) = gausses(LX)%stress_bak(4)+dstress(4)+ dum(1,2)
-          gausses(LX)%stress(5) = gausses(LX)%stress_bak(5)+dstress(5)+ dum(2,3)
-          gausses(LX)%stress(6) = gausses(LX)%stress_bak(6)+dstress(6)+ dum(3,1)
-
-          if( mtype == USERMATERIAL ) then
-            call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
-          else if( mtype == NORTON ) then
-            !gausses(LX)%pMaterial%mtype = mtype
-            if( tincr /= 0.0D0 .AND. any( gausses(LX)%stress /= 0.0D0 ) ) then
-              !gausses(LX)%pMaterial%mtype = mtype
-              if( present(TT) .AND. present(T0) ) then
-                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr, ttc, ttn )
-              else
-                call StressUpdate( gausses(LX), D3, gausses(LX)%strain, gausses(LX)%stress, time, tincr )
-              end if
-            end if
-          end if
-        end if
+        call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det0, gderiv0)
+        gderiv0(nn+1, :) = -2.0D0*naturalcoord(1)*inverse0(1, :)/det0
+        gderiv0(nn+2, :) = -2.0D0*naturalcoord(2)*inverse0(2, :)/det0
+        gderiv0(nn+3, :) = -2.0D0*naturalcoord(3)*inverse0(3, :)/det0
+        F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn+3)+du(1:ndof, 1:nn+3), gderiv0(1:nn+3, 1:ndof) )
 
       end if
 
-      !gausses(LX)%pMaterial%mtype = mtype
-
-      if( isElastoplastic(mtype) ) then
-        if( present(tt) ) then
-          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-            gausses(LX)%istatus(1), gausses(LX)%fstatus, ttc )
-        else
-          call BackwardEuler( gausses(LX)%pMaterial, gausses(LX)%stress, gausses(LX)%plstrain, &
-            gausses(LX)%istatus(1), gausses(LX)%fstatus )
-        end if
+      ! Update stress
+      if( present(tt) .AND. present(t0) ) then
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
+      else
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
       end if
 
       ! ========================================================

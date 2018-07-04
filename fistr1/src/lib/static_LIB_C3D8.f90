@@ -237,7 +237,7 @@ contains
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
-    real(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
+    real(kind=kreal) :: gderiv(nn, 3), gderiv1(nn,3), gdispderiv(3, 3), F(3,3), det, det1, wg
     integer(kind=kint) :: i, j, k, LX, mtype, serr
     integer(kind=kint) :: isEp
     real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
@@ -320,6 +320,7 @@ contains
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
       dstrain(:) = dstrain(:)-EPSTH(:)
 
+      F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITE ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
 
@@ -336,6 +337,7 @@ contains
           +gdispderiv(2, 1)*gdispderiv(2, 3)+gdispderiv(3, 1)*gdispderiv(3, 3) )
 
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
+        F(1:3,1:3) = F(1:3,1:3) + gdispderiv(1:3,1:3)
 
       else if( flag == UPDATELAG ) then
         rot = 0.0D0
@@ -344,14 +346,16 @@ contains
         rot(1, 3)= 0.5D0*( gdispderiv(1, 3)-gdispderiv(3, 1) );  rot(3, 1) = -rot(1, 3)
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
+        call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det1, gderiv1)
+        F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn)+du(1:ndof, 1:nn), gderiv1(1:nn, 1:ndof) )
 
       end if
 
       ! Update stress
       if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
       else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
       end if
 
       ! ========================================================

@@ -133,6 +133,10 @@ contains
     gausses(1)%strain(1) = dlog(llen/llen0)
     gausses(1)%stress(1) = young*(gausses(1)%strain(1)-epsth)
 
+    !set stress and strain for output
+    gausses(1)%strain_out(1) = gausses(1)%strain(1)
+    gausses(1)%stress_out(1) = gausses(1)%stress(1)
+
     qf(1) = gausses(1)%stress(1)*area*llen0/llen
     qf(1:3) = -qf(1)*direc
     qf(4:6) = -qf(1:3)

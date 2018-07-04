@@ -536,13 +536,17 @@ contains
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 
+        call getGlobalDeriv( etype, nn, naturalcoord, elem0, det, gderiv1)
+        gdispderiv(1:ndof, 1:ndof) = matmul( du(1:ndof, 1:nn)+u(1:ndof, 1:nn), gderiv1(1:nn, 1:ndof) )
+        Fbar(1:ndof, 1:ndof) = Jratio(LX)*(I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof))
+
       end if
 
       ! Update stress
       if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr, ttc, tt0, ttn )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, Fbar, coordsys, time, tincr, ttc, tt0, ttn )
       else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, coordsys, time, tincr )
+        call Update_Stress3D( flag, gausses(LX), rot, dstrain, Fbar, coordsys, time, tincr )
       end if
 
       ! ========================================================
