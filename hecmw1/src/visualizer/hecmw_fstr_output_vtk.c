@@ -22,7 +22,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	int jS, jE;
 	int myrank, petot, steptot;
 	int n_node, n_elem, shift, etype;
-	int data_tot, data_tot_e;
+	int data_tot_n, data_tot_e;
 	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	char *data_label;
 	static int is_first=0;
@@ -33,9 +33,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	HECMW_Comm_size (VIS_COMM, &petot);
 	n_node = mesh->n_node;
 	n_elem = mesh->n_elem;
-	data_tot = 0;
+	data_tot_n = 0;
 	for(i=0; i<data->nn_component; i++){
-		data_tot += data->nn_dof[i];
+		data_tot_n += data->nn_dof[i];
 	}
 	data_tot_e = 0;
 	for(i=0; i<data->ne_component; i++){
@@ -152,7 +152,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		}
 		for(j=0; j<n_node; j++){
 			for(k=0; k<data->nn_dof[i]; k++){
-				fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot+k+shift]);
+				fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot_n+k+shift]);
 			}
 			fprintf (outfp, "\n");
 		}
@@ -193,7 +193,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	int jS, jE;
 	int myrank, petot, steptot;
 	int n_node, n_elem, shift, etype;
-	int data_tot, in, ioffset;
+	int data_tot_n, data_tot_e, in, ioffset;
 	int *offset;
 	uint8_t uint8;
 	uint16_t uint16;
@@ -210,9 +210,13 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	HECMW_Comm_size (VIS_COMM, &petot);
 	n_node = mesh->n_node;
 	n_elem = mesh->n_elem;
-	data_tot = 0;
+	data_tot_n = 0;
 	for(i=0; i<data->nn_component; i++){
-		data_tot += data->nn_dof[i];
+		data_tot_n += data->nn_dof[i];
+	}
+	data_tot_e = 0;
+	for(i=0; i<data->ne_component; i++){
+		data_tot_e += data->ne_dof[i];
 	}
 
 	sprintf(file_vtu,  "%s/%s.%d.vtu", outfile1, outfile, myrank);
@@ -256,6 +260,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		}
 		fprintf (outfp, "</PPointData>\n");
 		fprintf (outfp, "<PCellData>\n");
+		for(i=0; i<data->ne_component; i++){
+			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+		}
 		fprintf (outfp, "<PDataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\"/>\n");
 		fprintf (outfp, "</PCellData>\n");
 		for(i=0; i<petot; i++){
@@ -269,7 +276,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	}
 
 	/* outpu vtu file */
-	ioffset = 5 + data->nn_component;
+	ioffset = 5 + data->nn_component + data->ne_component;
 	offset = HECMW_malloc(sizeof(int)*ioffset);
 
 	uint64 = 0;
@@ -290,6 +297,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	offset[4] = offset[3] + sizeof(int) + n_elem     *sizeof(int);
 	for(i=0; i<data->nn_component; i++){
 		offset[5+i] = offset[4+i] + sizeof(int) + data->nn_dof[i]*n_node*sizeof(int);
+	}
+	for(i=0; i<data->ne_component; i++){
+		offset[5+data->nn_component+i] = offset[4+data->nn_component+i] + sizeof(int) + data->ne_dof[i]*n_elem*sizeof(int);
 	}
 
 	outfp = fopen (file_vtu, "w");
@@ -318,6 +328,11 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 
 	fprintf (outfp, "</PointData>\n");
 	fprintf (outfp, "<CellData>\n");
+	for(i=0; i<data->ne_component; i++){
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->elem_label[i], data->ne_dof[i], offset[4+data->nn_component+i]);
+		fprintf (outfp, "</DataArray>\n");
+	}
+
 	fprintf (outfp, "<DataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\" offset=\"%d\">\n", offset[ioffset-1]);
 	fprintf (outfp, "</DataArray>\n");
 	fprintf (outfp, "</CellData>\n");
@@ -382,7 +397,23 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		}
 		for(j=0; j<n_node; j++){
 			for(k=0; k<data->nn_dof[i]; k++){
-				val = (float)data->node_val_item[j*data_tot+k+shift];
+				val = (float)data->node_val_item[j*data_tot_n+k+shift];
+				fwrite (&val, sizeof(float), 1, outfp);
+			}
+		}
+	}
+
+	for(i=0; i<data->ne_component; i++){
+		uint32 = (uint32_t)(data->ne_dof[i]*n_elem*sizeof(int));
+		fwrite (&uint32, sizeof(uint32), 1, outfp);
+
+		shift=0;
+		for(j=0; j<i; j++){
+			shift += data->ne_dof[j];
+		}
+		for(j=0; j<n_elem; j++){
+			for(k=0; k<data->ne_dof[i]; k++){
+				val = (float)data->elem_val_item[j*data_tot_e+k+shift];
 				fwrite (&val, sizeof(float), 1, outfp);
 			}
 		}
