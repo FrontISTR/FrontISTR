@@ -177,7 +177,7 @@ contains
     !** Local variables
     real(kind=kreal), pointer :: penalty
     real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor, ci
-    integer(kind=kint) :: NDIAG, impc, is, iE, i, j, inod, idof, jnod, jdof
+    integer(kind=kint) :: NDIAG, impc, is, iE, i, j, inod, idof, jnod, jdof, ndof
     logical :: is_internal_i, is_internal_j
 
     if( hecmw_mat_get_penalized(hecMAT) == 1 .and. hecmw_mat_get_penalized_b(hecMAT) == 1) return
@@ -185,6 +185,7 @@ contains
     ! write(*,*) "INFO: imposing MPC by penalty"
 
     penalty => hecMAT%Rarray(11)
+    ndof = hecMAT%ndof
 
     if (penalty < 0.0) stop "ERROR: negative penalty"
     if (penalty < 1.0) write(*,*) "WARNING: penalty ", penalty, " smaller than 1"
@@ -202,6 +203,8 @@ contains
         is_internal_i = (hecMESH%node_ID(2*inod) == hecmw_comm_get_rank())
 
         idof = hecMESH%mpc%mpc_dof(i)
+        if(ndof < idof) cycle
+
         ai = hecMESH%mpc%mpc_val(i)
         factor = ai * a1_2inv
 
@@ -222,7 +225,7 @@ contains
         if( hecmw_mat_get_penalized_b(hecMAT) == 0) then
           ci = hecMESH%mpc%mpc_const(impc)
           !$omp atomic
-          hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
+          hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) + ci*factor*ALPHA
         endif
       enddo
     enddo
