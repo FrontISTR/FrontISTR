@@ -189,6 +189,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
 	char *data_label;
 	static int is_first=0;
+	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	FILE *outfp;
 	HECMW_Status stat;
 
@@ -332,9 +333,16 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		if(mesh->elem_type[i]==641) shift=2;
 		if(mesh->elem_type[i]==761) shift=3;
 		if(mesh->elem_type[i]==781) shift=4;
-		for(j=jS; j<jE-shift; j++){
-			in = (int)mesh->elem_node_item[j]-1;
-			fwrite (&in, sizeof(int), 1, outfp);
+		if(mesh->elem_type[i]==342){
+			for(j=jS; j<jE-shift; j++){
+				in = (int)mesh->elem_node_item[jS+table342[j-jS]]-1;
+				fwrite (&in, sizeof(int), 1, outfp);
+			}
+		}else{
+			for(j=jS; j<jE-shift; j++){
+				in = (int)mesh->elem_node_item[j]-1;
+				fwrite (&in, sizeof(int), 1, outfp);
+			}
 		}
 	}
 
