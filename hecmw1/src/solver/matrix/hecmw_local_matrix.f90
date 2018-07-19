@@ -601,8 +601,11 @@ contains
     hecTKT%NP=nc
     hecTKT%NDOF=ndof
 
+    if (associated(hecTKT%D)) deallocate(hecTKT%D)
     allocate(hecTKT%D(nc*ndof2))
 
+    if (associated(hecTKT%indexL)) deallocate(hecTKT%indexL)
+    if (associated(hecTKT%indexU)) deallocate(hecTKT%indexU)
     allocate(hecTKT%indexL(0:nc))
     allocate(hecTKT%indexU(0:nc))
 
@@ -673,10 +676,10 @@ contains
       kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
       iwS(i)=kk
     enddo
-    call make_BTmat_mpc(hecMESH, BTmat)
+    call make_BTmat_mpc(hecMESH, ndof, BTmat)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTmat(MPC)'
     !call hecmw_localmat_write(BTmat,700+hecmw_comm_get_rank())
-    ! call make_BTtmat_mpc(hecMESH, BTtmat)
+    ! call make_BTtmat_mpc(hecMESH, ndof, BTtmat)
     call hecmw_localmat_transpose(BTmat, BTtmat)
     ! if (hecmw_localmat_equal(BTtmat, BTtmat2) == 0) then
     !   write(0,*) 'ERROR: BTtmat2 is incorrect!!!'
@@ -687,8 +690,8 @@ contains
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
     call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
 
-    allocate(hecTKT%B(size(hecMAT%B)))
-    allocate(hecTKT%X(size(hecMAT%X)))
+    if (.not. associated(hecTKT%B)) allocate(hecTKT%B(size(hecMAT%B)))
+    if (.not. associated(hecTKT%X)) allocate(hecTKT%X(size(hecMAT%X)))
     do i=1, size(hecMAT%B)
       hecTKT%B(i) = hecMAT%B(i)
     enddo
@@ -705,15 +708,15 @@ contains
     deallocate(iwS)
   end subroutine hecmw_trimatmul_TtKT_mpc
 
-  subroutine make_BTmat_mpc(hecMESH, BTmat)
+  subroutine make_BTmat_mpc(hecMESH, ndof, BTmat)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: ndof
     type (hecmwST_local_matrix), intent(out) :: BTmat
     type (hecmwST_local_matrix) :: Tmat
-    integer(kind=kint) :: n_mpc, ndof
+    integer(kind=kint) :: n_mpc
     integer(kind=kint) :: i,j,k,js,jj,kk
     n_mpc=hecMESH%mpc%n_mpc
-    ndof=hecMESH%n_dof
     Tmat%nr=hecMESH%n_node*ndof
     Tmat%nc=Tmat%nr
     if (n_mpc > 0) then
@@ -760,16 +763,16 @@ contains
     call hecmw_localmat_free(Tmat)
   end subroutine make_BTmat_mpc
 
-  subroutine make_BTtmat_mpc(hecMESH, BTtmat)
+  subroutine make_BTtmat_mpc(hecMESH, ndof, BTtmat)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: ndof
     type (hecmwST_local_matrix), intent(out) :: BTtmat
     type (hecmwST_local_matrix) :: Ttmat
-    integer(kind=kint) :: n_mpc, ndof
+    integer(kind=kint) :: n_mpc
     integer(kind=kint) :: i,j,k,js,je,jj,kk
     integer(kind=kint), allocatable :: iw(:)
     n_mpc=hecMESH%mpc%n_mpc
-    ndof=hecMESH%n_dof
     Ttmat%nr=hecMESH%n_node*ndof
     Ttmat%nc=Ttmat%nr
     if (n_mpc > 0) then

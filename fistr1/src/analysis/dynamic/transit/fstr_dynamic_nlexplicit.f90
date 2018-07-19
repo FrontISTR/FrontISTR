@@ -49,6 +49,8 @@ contains
     !C
     !C-- local variable
     !C
+    type(hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint), allocatable :: mark(:)
     integer(kind=kint) :: nnod, ndof, nn, numnp
     integer(kind=kint) :: i, j, ids, ide, kk
     integer(kind=kint) :: kkk0, kkk1
@@ -67,6 +69,8 @@ contains
 
 
     call cpu_time( time_1 )
+
+    call hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
 
     !--
     hecMAT%NDOF=hecMESH%n_dof
@@ -95,9 +99,14 @@ contains
     a2 = 1.d0/(2.d0*fstrDYNAMIC%t_delta)
 
     call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
+    call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
+
+    allocate(mark(hecMAT%NP * hecMAT%NDOF))
+    call hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)
 
     do j = 1 ,ndof*nnod
       fstrDYNAMIC%VEC1(j) = (a1 + a2 *fstrDYNAMIC%ray_m) * fstrEIG%mass(j)
+      if(mark(j) == 1) fstrDYNAMIC%VEC1(j) = 1.d0
       if(dabs(fstrDYNAMIC%VEC1(j)) < 1.0e-20) then
         if( hecMESH%my_rank == 0 ) then
           write(*,*) 'stop due to fstrDYNAMIC%VEC(j) = 0 ,  j = ', j
@@ -106,6 +115,8 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       endif
     end do
+
+    deallocate(mark)
 
 
     !C-- output of initial state
@@ -134,8 +145,10 @@ contains
         hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
       end do
 
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+
       do j = 1 ,ndof*nnod
-        hecMAT%B(j) = hecMAT%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
+        hecMAT%B(j) = hecMATmpc%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
           + (- a1 + a2 * fstrDYNAMIC%ray_m) * fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
       end do
 
@@ -188,8 +201,8 @@ contains
 
         ! Finish the calculation
         do j = 1 ,ndof*nnod
-          hecMAT%X(j) = hecMAT%B(j) / fstrDYNAMIC%VEC1(j)
-          if(dabs(hecMAT%X(j)) > 1.0d+5) then
+          hecMATmpc%X(j) = hecMAT%B(j) / fstrDYNAMIC%VEC1(j)
+          if(dabs(hecMATmpc%X(j)) > 1.0d+5) then
             if( hecMESH%my_rank == 0 ) then
               print *, 'Displacement increment too large, please adjust your step size!',i
               write(imsg,*) 'Displacement increment too large, please adjust your step size!',i,hecMAT%B(j),fstrDYNAMIC%VEC1(j)
@@ -197,6 +210,7 @@ contains
             call hecmw_abort( hecmw_comm_get_comm())
           end if
         end do
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
         !C *****************************************************
         !C for couple analysis
@@ -318,6 +332,8 @@ contains
         endif
       endif
     endif
+
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
 
     call cpu_time(time_2)
     if( hecMESH%my_rank == 0 ) then

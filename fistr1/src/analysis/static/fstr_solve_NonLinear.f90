@@ -268,22 +268,22 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call fstr_AddBC(cstep, hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
-
-        !----- SOLVE [Kt]{du}={R}
-        if( sub_step == restart_step_num .and. iter == 1 ) hecMAT%Iarray(98) = 1
-        if( iter == 1 ) then
-          hecMAT%Iarray(97) = 2   !Force numerical factorization
-        else
-          hecMAT%Iarray(97) = 1   !Need numerical factorization
-        endif
-        hecMAT%X = 0.0d0
-        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+        call fstr_AddBC(cstep, hecMESH,hecMATmpc,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
+
+        !----- SOLVE [Kt]{du}={R}
+        if( sub_step == restart_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
+        if( iter == 1 ) then
+          hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+        else
+          hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+        endif
+        hecMATmpc%X = 0.0d0
+        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         call solve_LINEQ(hecMESH,hecMATmpc)
-        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
         if( hecMESH%n_dof == 3 ) then
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
@@ -539,20 +539,20 @@ contains
         endif
 
         ! ----- Set Boundary condition
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         if(paraContactFlag.and.present(conMAT)) then
-          call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
+          call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
         else
-          call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
+          call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
         endif
 
         nndof = hecMAT%N*hecMAT%ndof
 
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
-        hecMAT%X = 0.0d0
+        hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
           call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT, istat, 1.0D0, conMAT)
@@ -560,8 +560,8 @@ contains
           q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMATmpc,fstrSOLID,fstrMAT)
           call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT, istat)
         endif
-        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
         if( istat /= 0 ) then
           if( hecMESH%my_rank == 0) then

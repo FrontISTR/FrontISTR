@@ -14,10 +14,14 @@ module hecmw_mpc_prepost
 
   private
   public :: hecmw_mpc_mat_init
+  public :: hecmw_mpc_mat_init_explicit
   public :: hecmw_mpc_mat_finalize
   public :: hecmw_mpc_mat_ass
   public :: hecmw_mpc_trans_rhs
   public :: hecmw_mpc_tback_sol
+  public :: hecmw_mpc_trans_mass
+  public :: hecmw_mpc_tback_eigvec
+  public :: hecmw_mpc_mark_slave
 
 contains
 
@@ -46,14 +50,16 @@ contains
     MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
     if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
 
-    SOLVER_TYPE = hecmw_mat_get_solver_type(hecMAT)
-    if (SOLVER_TYPE > 1) then  ! DIRECT SOLVER
-      MPC_METHOD = 1
-      call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
-      ! if (MPC_METHOD == 2) then
-      !   MPC_METHOD = 3
-      !   call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
-      ! endif
+    ! SOLVER_TYPE = hecmw_mat_get_solver_type(hecMAT)
+    ! if (SOLVER_TYPE > 1) then  ! DIRECT SOLVER
+    !   MPC_METHOD = 1
+    !   call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
+    ! endif
+
+    if (MPC_METHOD == 2) then
+      write(*,*) 'WARNING: MPCMETHOD=2 (MPCCG) is deprecated; may not work correctly'
+      ! MPC_METHOD = 3
+      ! call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
     endif
 
     select case (MPC_METHOD)
@@ -67,6 +73,42 @@ contains
     end select
 
   end subroutine hecmw_mpc_mat_init
+
+  !C
+  !C***
+  !C*** hecmw_mpc_mat_init_explicit
+  !C***
+  !C
+  subroutine hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
+
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    if (totalmpc == 0) then
+      hecMATmpc => hecMAT
+      return
+    endif
+
+    call hecmw_mpc_scale(hecMESH)
+
+    ! Force MPC_METHOD=3
+    MPC_METHOD = 3
+    call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
+
+    allocate(hecMATmpc)
+    call hecmw_mat_init(hecMATmpc)
+
+    hecMATmpc%N = hecMAT%N
+    hecMATmpc%NP = hecMAT%NP
+    hecMATmpc%NDOF = hecMAT%NDOF
+    allocate(hecMATmpc%B(size(hecMAT%B)))
+    allocate(hecMATmpc%X(size(hecMAT%X)))
+  end subroutine hecmw_mpc_mat_init_explicit
 
   !C
   !C***
@@ -97,6 +139,7 @@ contains
       nullify(hecMATmpc)
     case (3) ! elimination
       call hecmw_mat_finalize(hecMATmpc)
+      deallocate(hecMATmpc)
       nullify(hecMATmpc)
     end select
 
@@ -207,6 +250,98 @@ contains
       hecMAT%Rarray=hecMATmpc%Rarray
     end select
   end subroutine hecmw_mpc_tback_sol
+
+  !C
+  !C***
+  !C*** hecmw_mpc_trans_mass
+  !C***
+  !C
+  subroutine hecmw_mpc_trans_mass(hecMESH, hecMAT, mass)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+    real(kind=kreal), intent(inout) :: mass(:)
+
+    real(kind=kreal), allocatable :: Mtmp(:)
+    real(kind=kreal) :: time_dumm
+    integer(kind=kint) :: totalmpc, MPC_METHOD, i
+
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    if (totalmpc == 0) return
+
+    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+
+    select case (MPC_METHOD)
+    case (1)  ! penalty
+      ! do nothing
+    case (2,3) ! MPCCG or elimination
+      allocate(Mtmp(hecMAT%NP*hecMAT%NDOF))
+      !C-- {Mt} = [T'] {w}
+      call hecmw_Ttvec(hecMESH, hecMAT%NDOF, mass, Mtmp, time_dumm)
+      do i = 1, hecMAT%NP*hecMAT%NDOF
+        mass(i) = Mtmp(i)
+      enddo
+      deallocate(Mtmp)
+    end select
+
+  end subroutine hecmw_mpc_trans_mass
+
+  !C
+  !C***
+  !C*** hecmw_mpc_tback_eigvec
+  !C***
+  !C
+  subroutine hecmw_mpc_tback_eigvec(hecMESH, hecMAT, neig, eigvec)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+    integer(kind=kint), intent(in) :: neig
+    real(kind=kreal), intent(inout) :: eigvec(:,:)
+
+    real(kind=kreal) :: time_dumm
+    integer(kind=kint) :: totalmpc, MPC_METHOD, i
+
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    if (totalmpc == 0) return
+
+    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+
+    select case (MPC_METHOD)
+    case (1)  ! penalty
+      ! do nothing
+    case (2,3)  ! MPCCG or elimination
+      do i = 1, neig
+        call hecmw_tback_x(hecMESH, hecMAT%NDOF, eigvec(:,i), time_dumm)
+        !!! need normalization???
+      enddo
+    end select
+  end subroutine hecmw_mpc_tback_eigvec
+
+  !C
+  !C***
+  !C*** hecmw_mpc_mark_slave
+  !C***
+  !C
+  subroutine hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+    integer(kind=kint), intent(out) :: mark(:)
+
+    integer(kind=kint) :: ndof, i, k, kk
+
+    ndof = hecMAT%NDOF
+    mark(:) = 0
+    do i = 1, hecMESH%mpc%n_mpc
+      k = hecMESH%mpc%mpc_index(i-1)+1
+      kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+      mark(kk) = 1
+    enddo
+  end subroutine hecmw_mpc_mark_slave
 
   !C
   !C***
