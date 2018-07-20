@@ -1652,7 +1652,7 @@ extern int HECMW_get_etype_vtk_shape(int etype) {
     case HECMW_ETYPE_TET1_4:
       return HECMW_VTK_SHAPE_TETRA;
     case HECMW_ETYPE_TET2:
-      return HECMW_VTK_SHAPE_TETRA;
+      return HECMW_VTK_SHAPE_TETRA2;
     case HECMW_ETYPE_TET22:
       return HECMW_VTK_SHAPE_TETRA;
     case HECMW_ETYPE_PRI1:
