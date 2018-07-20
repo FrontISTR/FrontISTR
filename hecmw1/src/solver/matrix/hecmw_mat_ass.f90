@@ -238,19 +238,21 @@ contains
     type (hecmwST_local_mesh)     :: hecMESH
     !** Local variables
     real(kind=kreal) :: ALPHA, a1_2inv, ai, factor, ci
-    integer(kind=kint) :: impc, iS, iE, i, inod, idof
+    integer(kind=kint) :: ndof, impc, iS, iE, i, inod, idof
 
     if( hecmw_mat_get_penalized_b(hecMAT) == 1) return
 
     ALPHA = hecmw_mat_get_penalty_alpha(hecMAT)
     if (ALPHA <= 0.0) stop "ERROR: penalty applied on vector before matrix"
 
+    ndof = hecMAT%NDOF
+
     OUTER: do impc = 1, hecMESH%mpc%n_mpc
       iS = hecMESH%mpc%mpc_index(impc-1) + 1
       iE = hecMESH%mpc%mpc_index(impc)
 
       do i = is, iE
-        if (hecMESH%mpc%mpc_dof(i) > hecMAT%NDOF) cycle OUTER
+        if (hecMESH%mpc%mpc_dof(i) > ndof) cycle OUTER
       enddo
 
       a1_2inv = 1.0 / hecMESH%mpc%mpc_val(iS)**2
@@ -264,7 +266,7 @@ contains
 
         ci = hecMESH%mpc%mpc_const(impc)
         !$omp atomic
-        hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
+        hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) + ci*factor*ALPHA
       enddo
     enddo OUTER
 

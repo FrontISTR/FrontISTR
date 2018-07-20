@@ -701,8 +701,10 @@ contains
     !call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
     call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
 
-    if (.not. associated(hecTKT%B)) allocate(hecTKT%B(size(hecMAT%B)))
-    if (.not. associated(hecTKT%X)) allocate(hecTKT%X(size(hecMAT%X)))
+    if (associated(hecTKT%B)) deallocate(hecTKT%B)
+    if (associated(hecTKT%X)) deallocate(hecTKT%X)
+    allocate(hecTKT%B(size(hecMAT%B)))
+    allocate(hecTKT%X(size(hecMAT%X)))
     do i=1, size(hecMAT%B)
       hecTKT%B(i) = hecMAT%B(i)
     enddo
