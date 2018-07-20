@@ -193,10 +193,16 @@ contains
     ALPHA= hecmw_mat_diag_max(hecMAT, hecMESH) * penalty
     call hecmw_mat_set_penalty_alpha(hecMAT, ALPHA)
 
-    do impc = 1, hecMESH%mpc%n_mpc
+    OUTER: do impc = 1, hecMESH%mpc%n_mpc
       is = hecMESH%mpc%mpc_index(impc-1) + 1
       iE = hecMESH%mpc%mpc_index(impc)
+
+      do i = is, iE
+        if (hecMESH%mpc%mpc_dof(i) > hecMAT%NDOF) cycle OUTER
+      enddo
+
       a1_2inv = 1.0 / hecMESH%mpc%mpc_val(is)**2
+
 
       do i = is, iE
         inod = hecMESH%mpc%mpc_item(i)
@@ -220,7 +226,7 @@ contains
         enddo
 
       enddo
-    enddo
+    enddo OUTER
 
     call hecmw_mat_set_penalized(hecMAT, 1)
 
@@ -239,9 +245,14 @@ contains
     ALPHA = hecmw_mat_get_penalty_alpha(hecMAT)
     if (ALPHA <= 0.0) stop "ERROR: penalty applied on vector before matrix"
 
-    do impc = 1, hecMESH%mpc%n_mpc
+    OUTER: do impc = 1, hecMESH%mpc%n_mpc
       iS = hecMESH%mpc%mpc_index(impc-1) + 1
       iE = hecMESH%mpc%mpc_index(impc)
+
+      do i = is, iE
+        if (hecMESH%mpc%mpc_dof(i) > hecMAT%NDOF) cycle OUTER
+      enddo
+
       a1_2inv = 1.0 / hecMESH%mpc%mpc_val(iS)**2
 
       do i = iS, iE
@@ -255,7 +266,7 @@ contains
         !$omp atomic
         hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
       enddo
-    enddo
+    enddo OUTER
 
     call hecmw_mat_set_penalized_b(hecMAT, 1)
 

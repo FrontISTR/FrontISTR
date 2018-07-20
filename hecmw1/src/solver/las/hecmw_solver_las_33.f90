@@ -429,7 +429,10 @@ contains
     !$omp end do
 
     !$omp do
-    do i= 1, hecMESH%mpc%n_mpc
+    OUTER: do i= 1, hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > 3) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
@@ -437,7 +440,7 @@ contains
         jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 
@@ -473,7 +476,10 @@ contains
     !$omp end do
 
     !$omp do
-    do i= 1, hecMESH%mpc%n_mpc
+    OUTER: do i= 1, hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > 3) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
@@ -481,7 +487,7 @@ contains
         jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 

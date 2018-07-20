@@ -332,15 +332,18 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint), intent(out) :: mark(:)
 
-    integer(kind=kint) :: ndof, i, k, kk
+    integer(kind=kint) :: ndof, i, j, k, kk
 
     ndof = hecMAT%NDOF
     mark(:) = 0
-    do i = 1, hecMESH%mpc%n_mpc
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1)+1
       kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       mark(kk) = 1
-    enddo
+    enddo OUTER
   end subroutine hecmw_mpc_mark_slave
 
   !C
@@ -386,7 +389,7 @@ contains
 
     real(kind=kreal), allocatable :: W(:)
     real(kind=kreal), pointer :: XG(:)
-    integer(kind=kint) :: ndof, i, k, kk, flg_bak
+    integer(kind=kint) :: ndof, i, j, k, kk, flg_bak
 
     ndof = hecMAT%NDOF
 
@@ -405,11 +408,14 @@ contains
     !C-- Generate {xg} from mpc_const
     !$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG),firstprivate(ndof)
     !$omp do
-    do i = 1, hecMESH%mpc%n_mpc
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       XG(kk) = hecMESH%mpc%mpc_const(i)
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 
@@ -439,7 +445,7 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal), allocatable :: W(:)
-    integer(kind=kint) :: i, k, kk
+    integer(kind=kint) :: i, j, k, kk
 
     allocate(W(hecMESH%n_node * ndof))
 
@@ -455,11 +461,14 @@ contains
     !$omp end do
 
     !$omp do
-    do i = 1, hecMESH%mpc%n_mpc
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 
