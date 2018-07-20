@@ -48,13 +48,15 @@ contains
     call hecmw_mpc_scale(hecMESH)
 
     MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-    if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
-
-    ! SOLVER_TYPE = hecmw_mat_get_solver_type(hecMAT)
-    ! if (SOLVER_TYPE > 1) then  ! DIRECT SOLVER
-    !   MPC_METHOD = 1
-    !   call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
-    ! endif
+    if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) then
+      SOLVER_TYPE = hecmw_mat_get_solver_type(hecMAT)
+      if (SOLVER_TYPE > 1) then  ! DIRECT SOLVER
+        MPC_METHOD = 1           !   default: penalty
+      else                       ! ITERATIVE SOLVER
+        MPC_METHOD = 3           !   default: elimination
+      endif
+      call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
+    endif
 
     if (MPC_METHOD == 2) then
       write(*,*) 'WARNING: MPCMETHOD=2 (MPCCG) is deprecated; may not work correctly'

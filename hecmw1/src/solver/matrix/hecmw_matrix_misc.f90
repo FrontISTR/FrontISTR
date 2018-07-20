@@ -179,7 +179,7 @@ contains
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
     call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
-    call hecmw_mat_set_mpc_method( hecMAT, 3 )
+    call hecmw_mat_set_mpc_method( hecMAT, 0 )
 
     call hecmw_mat_reset_nrecycle_precond( hecMAT )
     call hecmw_mat_set_flag_numfact( hecMAT, 1 )
