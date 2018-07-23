@@ -145,13 +145,6 @@ contains
         hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
       end do
 
-      call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-
-      do j = 1 ,ndof*nnod
-        hecMAT%B(j) = hecMATmpc%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
-          + (- a1 + a2 * fstrDYNAMIC%ray_m) * fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
-      end do
-
       !C ********************************************************************************
       !C for couple analysis
       if( fstrPARAM%fg_couple == 1 ) then
@@ -192,20 +185,27 @@ contains
         endif
         !C ********************************************************************************
 
+        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+
+        do j = 1 ,ndof*nnod
+          hecMATmpc%B(j) = hecMATmpc%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,1)  &
+            + (- a1 + a2 * fstrDYNAMIC%ray_m) * fstrEIG%mass(j) * fstrDYNAMIC%DISP(j,3)
+        end do
+
         !C
         !C-- geometrical boundary condition
 
-        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
-        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
-        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
+        call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT)
 
         ! Finish the calculation
         do j = 1 ,ndof*nnod
-          hecMATmpc%X(j) = hecMAT%B(j) / fstrDYNAMIC%VEC1(j)
+          hecMATmpc%X(j) = hecMATmpc%B(j) / fstrDYNAMIC%VEC1(j)
           if(dabs(hecMATmpc%X(j)) > 1.0d+5) then
             if( hecMESH%my_rank == 0 ) then
               print *, 'Displacement increment too large, please adjust your step size!',i
-              write(imsg,*) 'Displacement increment too large, please adjust your step size!',i,hecMAT%B(j),fstrDYNAMIC%VEC1(j)
+              write(imsg,*) 'Displacement increment too large, please adjust your step size!',i,hecMATmpc%B(j),fstrDYNAMIC%VEC1(j)
             end if
             call hecmw_abort( hecmw_comm_get_comm())
           end if

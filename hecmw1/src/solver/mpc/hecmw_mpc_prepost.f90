@@ -86,7 +86,7 @@ contains
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
     type (hecmwST_matrix), pointer :: hecMATmpc
-    integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
+    integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -214,6 +214,8 @@ contains
       deallocate(Btmp)
     case (3) ! elimination
       call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecMATmpc%B, time_dumm)
+      hecMATmpc%Iarray=hecMAT%Iarray
+      hecMATmpc%Rarray=hecMAT%Rarray
     end select
 
   end subroutine hecmw_mpc_trans_rhs
