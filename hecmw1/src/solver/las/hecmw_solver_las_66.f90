@@ -15,8 +15,6 @@ module hecmw_solver_las_66
   public :: hecmw_Tvec_66
   public :: hecmw_Ttvec_66
   public :: hecmw_TtmatTvec_66
-  public :: hecmw_trans_b_66
-  public :: hecmw_tback_x_66
 
 contains
 
@@ -373,81 +371,6 @@ contains
     call hecmw_Ttvec_66(hecMESH, W, Y, COMMtime)
 
   end subroutine hecmw_TtmatTvec_66
-
-
-
-  !C
-  !C***
-  !C*** hecmw_trans_b_66
-  !C***
-  !C
-  subroutine hecmw_trans_b_66(hecMESH, hecMAT, B, BT, W, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: B(:)
-    real(kind=kreal), intent(out), target :: BT(:)
-    real(kind=kreal), intent(out) :: W(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal), pointer :: XG(:)
-    integer(kind=kint) :: i, k, kk
-
-    !C===
-    !C +---------------------------+
-    !C | {bt}= [T']({b} - [A]{xg}) |
-    !C +---------------------------+
-    !C===
-    XG => BT
-    XG = 0.d0
-
-    !C-- Generate {xg} from mpc_const
-    !    do i = 1, hecMESH%mpc%n_mpc
-    !      k = hecMESH%mpc%mpc_index(i-1) + 1
-    !      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-    !      XG(kk) = hecMESH%mpc%mpc_const(i)
-    !    enddo
-
-    !C-- {w} = {b} - [A]{xg}
-    call hecmw_matresid_66 (hecMESH, hecMAT, XG, B, W, COMMtime)
-
-    !C-- {bt} = [T'] {w}
-    call hecmw_Ttvec_66(hecMESH, W, BT, COMMtime)
-
-  end subroutine hecmw_trans_b_66
-
-  !C
-  !C***
-  !C*** hecmw_tback_x_66
-  !C***
-  !C
-  subroutine hecmw_tback_x_66(hecMESH, X, W, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(inout) :: X(:)
-    real(kind=kreal), intent(out) :: W(:)
-    real(kind=kreal) :: COMMtime
-
-    integer(kind=kint) :: i, k, kk
-
-    !C-- {tx} = [T]{x}
-    call hecmw_Tvec_66(hecMESH, X, W, COMMtime)
-
-    !C-- {x} = {tx} + {xg}
-
-    do i= 1, hecMESH%nn_internal * 6
-      X(i)= W(i)
-    enddo
-
-    !    do i = 1, hecMESH%mpc%n_mpc
-    !      k = hecMESH%mpc%mpc_index(i-1) + 1
-    !      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-    !      X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
-    !    enddo
-
-  end subroutine hecmw_tback_x_66
 
 
 end module hecmw_solver_las_66

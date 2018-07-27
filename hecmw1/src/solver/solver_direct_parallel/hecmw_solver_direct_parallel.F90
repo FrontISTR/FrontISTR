@@ -98,7 +98,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! start !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    call hecmw_mat_ass_equation( hecMESH, hecMAT )
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     imsg=ii ! set message file

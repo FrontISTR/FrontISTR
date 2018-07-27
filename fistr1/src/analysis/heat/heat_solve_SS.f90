@@ -25,9 +25,12 @@ contains
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
 
+    type(hecmwST_matrix), pointer   :: hecMATmpc
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     BETA    = 1.0d0
     STIME   = 0.0d0
@@ -56,7 +59,7 @@ contains
       ! enddo
       call flush(IDBG)
 
-      call heat_mat_ass_boundary( hecMESH, hecMAT, fstrHEAT, STIME, ETIME, 0.d0 )
+      call heat_mat_ass_boundary( hecMESH, hecMAT, hecMATmpc, fstrHEAT, STIME, ETIME, 0.d0 )
       write(IDBG,*) 'mat_ass_boundary: OK'
       ! do i = 1, hecMESH%nn_internal
       !   write(IDBG,*) i, hecMAT%D(i)
@@ -67,13 +70,14 @@ contains
 
       !C
       !C-- SOLVER
-      hecMAT%Iarray(97) = 1   !Need numerical factorization
+      hecMATmpc%Iarray(97) = 1   !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
       hecMESH%n_dof = 1
-      call solve_LINEQ(hecMESH,hecMAT)
+      call solve_LINEQ(hecMESH,hecMATmpc)
       hecMESH%n_dof=bup_n_dof
       write(IDBG,*) 'solve_LINEQ: OK'
       call flush(IDBG)
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
       !C
       !C-- UPDATE
 
@@ -127,6 +131,8 @@ contains
       !C--------------------
     enddo
     !C--------------------  END OF STEADY STATE  ------------------
+
+    call hecmw_mpc_mat_finalize( hecMESH, hecMAT, hecMATmpc )
 
     TMAX = -1.0d10
     TMIN =  1.0d10
