@@ -940,6 +940,52 @@ int modify_element_information(const struct hecmwST_local_mesh *mesh) {
   return 0;
 }
 
+
+static void
+avs_write_elem_data_header(FILE *outfp, int te_component, struct hecmwST_result_data *data,
+    int flag_Scalar) {
+  int j, ii;
+
+  if (flag_Scalar) {
+    fprintf (outfp, "%8d", te_component);
+    for (j = 0; j < te_component; j++)
+      fprintf (outfp, " 1");
+    fprintf (outfp, "\n");
+    for (j = 0; j < data->ne_component; j++) {
+      for (ii = 0; ii < data->ne_dof[j]; ii++)
+        fprintf (outfp, "%s_%d, unit_unknown\n", data->elem_label[j], ii + 1);
+    }
+  } else {
+    fprintf (outfp, "%8d", data->ne_component);
+    for (j = 0; j < data->ne_component; j++)
+      fprintf (outfp, " %d", data->ne_dof[j]);
+    fprintf (outfp, "\n");
+    for (j = 0; j < data->ne_component; j++)
+      fprintf (outfp, "%s, unit_unknown\n", data->elem_label[j]);
+  }
+}
+
+static void
+avs_write_elem_data(FILE *outfp, int mynode,
+                    int n_elem, int *elem_ID, int *global_elem_ID, int te_component, double *elem_val_item,
+                    int flag_global_ID, int eid_offset) {
+  int i, in, k;
+  HECMW_assert(!flag_global_ID || global_elem_ID);
+
+  in = 0;
+  for (i = 0; i < n_elem; i++) {
+    if (elem_ID[i * 2 + 1] != mynode)
+      continue;
+
+    fprintf (outfp, "%8d ", flag_global_ID ? global_elem_ID[i] : in+1 + eid_offset);
+    for (k = 0; k < te_component; k++)
+      fprintf (outfp, "%15.7e ",
+          elem_val_item[i * te_component + k]);
+    fprintf (outfp, "\n");
+    in++;
+  }
+}
+
 static void avs_output(struct hecmwST_local_mesh *mesh,
                        struct hecmwST_result_data *data, char *outfile,
                        HECMW_Comm VIS_COMM, int flag_oldUCD, int flag_global_ID,
@@ -983,7 +1029,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
       HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 
     /* write header */
-    avs_write_header(outfp, total_n_node, total_n_elem, tn_component, 0,
+    avs_write_header(outfp, total_n_node, total_n_elem, tn_component, te_component,
                      flag_oldUCD);
   }
 
@@ -1179,7 +1225,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
 
   /* write header for data */
   if (mynode == 0) {
-    avs_write_data_header(outfp, tn_component, 0, flag_oldUCD);
+    avs_write_data_header(outfp, tn_component, te_component, flag_oldUCD);
     avs_write_node_data_header(outfp, tn_component, data, flag_Scalar);
   }
 
@@ -1233,6 +1279,68 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
 
         if (flag_global_ID) HECMW_free(tmp_global_node_ID);
         HECMW_free(tmp_node_val_item);
+      }
+    }
+  }
+
+  /* write elem data header*/
+  if (mynode == 0){
+    if (te_component > 0){
+      avs_write_elem_data_header(outfp, te_component, data, flag_Scalar);
+    }
+  }
+
+  /* write elem data */
+  if (mynode != 0) {
+    if (te_component > 0){
+      HECMW_Send (&mesh->n_elem, 1, HECMW_INT, MASTER_PE, 0, VIS_COMM);
+      if (mesh->n_elem > 0){
+        HECMW_Send (mesh->elem_ID, mesh->n_elem * 2, HECMW_INT, MASTER_PE, 0, VIS_COMM);
+        if (flag_global_ID)
+          HECMW_Send (mesh->global_elem_ID, mesh->n_elem, HECMW_INT, MASTER_PE, 0, VIS_COMM);
+        HECMW_Send (data->elem_val_item, mesh->n_elem * te_component, HECMW_DOUBLE, MASTER_PE, 0, VIS_COMM);
+      }
+    }
+  } else {
+    int i;
+    if (te_component > 0){
+      avs_write_elem_data(outfp, mynode, mesh->n_elem, mesh->elem_ID, mesh->global_elem_ID, te_component, data->elem_val_item, flag_global_ID, 0);
+      for (i = 1; i < pesize; i++){
+        int tmp_n_elem;
+        HECMW_Recv (&tmp_n_elem, 1, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
+
+        if (tmp_n_elem > 0){
+          int *tmp_elem_ID;
+          double *tmp_elem_val_item;
+          int *tmp_global_elem_ID = NULL;
+
+          tmp_elem_ID = (int *) HECMW_calloc (tmp_n_elem * 2, sizeof (int));
+          if (tmp_elem_ID == NULL)
+            HECMW_vis_memory_exit ("tmp recv: elem_ID");
+
+          HECMW_Recv (tmp_elem_ID, tmp_n_elem * 2, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
+
+          if (flag_global_ID){
+            tmp_global_elem_ID = (int *) HECMW_calloc (tmp_n_elem, sizeof (int));
+            if (tmp_global_elem_ID == NULL)
+              HECMW_vis_memory_exit ("tmp recv: global_elem_ID (for data)");
+
+            HECMW_Recv (tmp_global_elem_ID, tmp_n_elem, HECMW_INT, i, HECMW_ANY_TAG, VIS_COMM, &stat);
+          }
+
+          tmp_elem_val_item = (double *) HECMW_calloc (tmp_n_elem * te_component, sizeof (double));
+          if (tmp_elem_val_item == NULL)
+            HECMW_vis_memory_exit ("tmp recv: elem_val_item");
+
+          HECMW_Recv (tmp_elem_val_item, tmp_n_elem * te_component, HECMW_DOUBLE, i, HECMW_ANY_TAG, VIS_COMM, &stat);
+
+          avs_write_elem_data(outfp, i, tmp_n_elem, tmp_elem_ID, tmp_global_elem_ID, te_component, tmp_elem_val_item, flag_global_ID, eid_offsets[i]);
+
+          HECMW_free (tmp_elem_ID);
+          if (flag_global_ID)
+            HECMW_free (tmp_global_elem_ID);
+          HECMW_free (tmp_elem_val_item);
+        }
       }
     }
   }

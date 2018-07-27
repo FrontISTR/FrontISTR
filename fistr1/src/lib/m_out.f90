@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 33
+    outinfo%num_items   = 34
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -67,11 +67,9 @@ contains
 
     outinfo%keyWord(7)  = "ESTRESS"
     outinfo%vtype(7)    = -3
-    outinfo%on(7)       = .true.
 
     outinfo%keyWord(8)  = "EMISES"
     outinfo%vtype(8)    = -1
-    outinfo%on(8)       = .true.
 
     outinfo%keyWord(9)  = "ISTRAIN"
     outinfo%vtype(9)    = -3
@@ -138,16 +136,18 @@ contains
 
     outinfo%keyWord(30) = "CONTACT_NFORCE"
     outinfo%vtype(30)   = -2
-  
+
     outinfo%keyWord(31) = "CONTACT_FRICTION"
     outinfo%vtype(31)   = -2
-  
+
     outinfo%keyWord(32) = "CONTACT_RELVEL"
     outinfo%vtype(32)   = -2
-  
+
     outinfo%keyWord(33) = "CONTACT_STATE"
     outinfo%vtype(33)   = -1
 
+    outinfo%keyWord(34) = "MATERIAL_ID"
+    outinfo%vtype(34)   = -1
   end subroutine initOutInfo
 
 

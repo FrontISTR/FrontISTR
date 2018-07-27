@@ -546,24 +546,45 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(12), ndof )
     endif
     ! --- CONTACT NORMAL FORCE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(30), ndof )
     endif
     ! --- CONTACT FRICTION FORCE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(31), ndof )
     endif
     ! --- CONTACT RELATIVE VELOCITY @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(32), ndof )
     endif
     ! --- CONTACT STATE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
+    endif
+
+    ! --- STRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )*coef33
+    endif
+    ! --- STRESS @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(7) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )*coef33
+    endif
+    ! --- MISES @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(8) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )*coef33
+    endif
+    ! --- MATERIAL @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -572,9 +593,9 @@ contains
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
-    !allocate( fstrRESULT%ne_dof(ecomp) )
-    !allocate( fstrRESULT%elem_label(ecomp) )
-    !allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
+    allocate( fstrRESULT%ne_dof(ecomp) )
+    allocate( fstrRESULT%elem_label(ecomp) )
+    allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
     ncomp = 0
     iitem = 0
     ecomp = 0
@@ -643,7 +664,7 @@ contains
     endif
 
     !laminated shell
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(27) .and. is_33shell == 1 ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(27) .and. is_33shell == 1 ) then
       allocate(clyr(2*ntot_lyr))
       do i=1,ntot_lyr
         write(cnum,"(i0)")i
@@ -674,7 +695,7 @@ contains
     endif
 
     ! --- CONTACT NORMAL FORCE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
       if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(30), ndof )
@@ -689,7 +710,7 @@ contains
     endif
 
     ! --- CONTACT FRICTION FORCE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
       if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_FRIC,1)
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(31), ndof )
@@ -704,7 +725,7 @@ contains
     endif
 
     ! --- CONTACT RELATIVE VELOCITY @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
       if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_RELVEL,1)
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(32), ndof )
@@ -719,7 +740,7 @@ contains
     endif
 
     ! --- CONTACT STATE @node
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
       if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,1,fstrSOLID%CONT_STATE,2)
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
@@ -731,6 +752,58 @@ contains
         enddo
       enddo
       iitem = iitem + nn
+    endif
+
+    ! --- STRAIN @elem
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(6)) then
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )
+      ecomp = ecomp + 1
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalSTRAIN'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%ESTRAIN(nn*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- STRESS @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(7)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalSTRESS'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%ESTRESS((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- MISES @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(8)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalMISES'
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = fstrSOLID%SOLID%EMISES(i)
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- MATERIAL @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(34)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'Material_ID'
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section_ID(i)
+      enddo
+      jitem = jitem + nn
     endif
 
   end subroutine fstr_make_static_result
@@ -772,6 +845,7 @@ contains
       enddo
       iitem = iitem + nn
     endif
+
     ! --- STRESS @node
     if(fstrSOLID%output_ctrl(4)%outinfo%on(4)) then
       ncomp = ncomp + 1
