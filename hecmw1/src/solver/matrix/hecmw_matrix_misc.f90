@@ -69,6 +69,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_flag_converged
   public :: hecmw_mat_set_flag_diverged
   public :: hecmw_mat_get_flag_diverged
+  public :: hecmw_mat_set_flag_mpcmatvec
+  public :: hecmw_mat_get_flag_mpcmatvec
 
   public :: hecmw_mat_set_resid
   public :: hecmw_mat_get_resid
@@ -82,6 +84,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_filter
   public :: hecmw_mat_set_penalty
   public :: hecmw_mat_get_penalty
+  public :: hecmw_mat_set_penalty_alpha
+  public :: hecmw_mat_get_penalty_alpha
 
   public :: hecmw_mat_diag_max
   public :: hecmw_mat_recycle_precond_setting
@@ -112,13 +116,15 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_METHOD2            = 8
   integer, parameter :: IDX_I_FLAG_CONVERGED     = 81
   integer, parameter :: IDX_I_FLAG_DIVERGED      = 82
+  integer, parameter :: IDX_I_FLAG_MPCMATVEC     = 83
 
-  integer, parameter :: IDX_R_RESID      = 1
-  integer, parameter :: IDX_R_SIGMA_DIAG = 2
-  integer, parameter :: IDX_R_SIGMA      = 3
-  integer, parameter :: IDX_R_THRESH     = 4
-  integer, parameter :: IDX_R_FILTER     = 5
-  integer, parameter :: IDX_R_PENALTY    = 11
+  integer, parameter :: IDX_R_RESID         = 1
+  integer, parameter :: IDX_R_SIGMA_DIAG    = 2
+  integer, parameter :: IDX_R_SIGMA         = 3
+  integer, parameter :: IDX_R_THRESH        = 4
+  integer, parameter :: IDX_R_FILTER        = 5
+  integer, parameter :: IDX_R_PENALTY       = 11
+  integer, parameter :: IDX_R_PENALTY_ALPHA = 12
 
 contains
 
@@ -130,6 +136,7 @@ contains
     hecMAT%AU = 0.0d0
     call hecmw_cmat_clear( hecMAT%cmat )
     call hecmw_mat_set_penalized( hecMAT, 0 )
+    call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
   end subroutine hecmw_mat_clear
 
   subroutine hecmw_mat_clear_b( hecMAT )
@@ -171,7 +178,8 @@ contains
 
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty( hecMAT, 1.d+4 )
-    call hecmw_mat_set_mpc_method( hecMAT, 3 )
+    call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
+    call hecmw_mat_set_mpc_method( hecMAT, 0 )
 
     call hecmw_mat_reset_nrecycle_precond( hecMAT )
     call hecmw_mat_set_flag_numfact( hecMAT, 1 )
@@ -563,6 +571,18 @@ contains
     hecmw_mat_get_flag_diverged = hecMAT%Iarray(IDX_I_FLAG_DIVERGED)
   end function hecmw_mat_get_flag_diverged
 
+  subroutine hecmw_mat_set_flag_mpcmatvec( hecMAT, flag_mpcmatvec )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: flag_mpcmatvec
+    hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC) = flag_mpcmatvec
+  end subroutine hecmw_mat_set_flag_mpcmatvec
+
+  function hecmw_mat_get_flag_mpcmatvec( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_flag_mpcmatvec
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_flag_mpcmatvec = hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC)
+  end function hecmw_mat_get_flag_mpcmatvec
+
   subroutine hecmw_mat_set_resid( hecMAT, resid )
     type(hecmwST_matrix) :: hecMAT
     real(kind=kreal) :: resid
@@ -661,6 +681,20 @@ contains
     hecmw_mat_get_penalty = hecMAT%Rarray(IDX_R_PENALTY)
   end function hecmw_mat_get_penalty
 
+  subroutine hecmw_mat_set_penalty_alpha( hecMAT, alpha )
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: alpha
+
+    hecMAT%Rarray(IDX_R_PENALTY_ALPHA) = alpha
+  end subroutine hecmw_mat_set_penalty_alpha
+
+  function hecmw_mat_get_penalty_alpha( hecMAT )
+    real(kind=kreal) :: hecmw_mat_get_penalty_alpha
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_penalty_alpha = hecMAT%Rarray(IDX_R_PENALTY_ALPHA)
+  end function hecmw_mat_get_penalty_alpha
+
   function hecmw_mat_diag_max(hecMAT, hecMESH)
     real(kind=kreal) :: hecmw_mat_diag_max
     type (hecmwST_matrix) :: hecMAT
@@ -695,5 +729,34 @@ contains
       endif
     endif
   end subroutine hecmw_mat_recycle_precond_setting
+
+  subroutine hecmw_mat_substitute( dest, src )
+    type (hecmwST_matrix), intent(inout) :: dest
+    type (hecmwST_matrix), intent(inout) :: src
+    dest%N = src%N
+    dest%NP = src%NP
+    dest%NPL = src%NPL
+    dest%NPU = src%NPU
+    dest%NDOF = src%NDOF
+    dest%NPCL = src%NPCU
+    if (associated(src%D)) dest%D => src%D
+    if (associated(src%B)) dest%B => src%B
+    if (associated(src%X)) dest%X => src%X
+    if (associated(src%ALU)) dest%ALU => src%ALU
+    if (associated(src%AL)) dest%AL => src%AL
+    if (associated(src%AU)) dest%AU => src%AU
+    if (associated(src%CAL)) dest%CAL => src%CAL
+    if (associated(src%indexL)) dest%indexL => src%indexL
+    if (associated(src%indexU)) dest%indexU => src%indexU
+    if (associated(src%indexCL)) dest%indexCL => src%indexCL
+    if (associated(src%indexCU)) dest%indexCU => src%indexCU
+    if (associated(src%itemL)) dest%itemL => src%itemL
+    if (associated(src%itemU)) dest%itemU => src%itemU
+    if (associated(src%itemCL)) dest%itemCL => src%itemCL
+    if (associated(src%itemCU)) dest%itemCU => src%itemCU
+    dest%Iarray(:) = src%Iarray(:)
+    dest%Rarray(:) = src%Rarray(:)
+    call hecmw_cmat_substitute( dest%cmat, src%cmat )
+  end subroutine hecmw_mat_substitute
 
 end module hecmw_matrix_misc

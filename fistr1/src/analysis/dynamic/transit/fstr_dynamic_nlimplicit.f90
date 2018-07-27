@@ -42,6 +42,7 @@ contains
     type(fstr_couple)                    :: fstrCPL !for COUPLE
 
     !C-- local variable
+    type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
@@ -56,6 +57,8 @@ contains
     real(kind=kreal) :: time_1, time_2
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
     real(kind=kreal), pointer :: coord(:)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -212,13 +215,15 @@ contains
           enddo
 
           !C-- geometrical boundary condition
-          call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
-          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
-          call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
+          call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+          call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
+          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
 
           !C-- RHS LOAD VECTOR CHECK
-          numnp=hecMAT%NP
-          call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, bsize)
+          numnp=hecMATmpc%NP
+          call hecmw_InnerProduct_R(hecMESH, ndof, hecMATmpc%B, hecMATmpc%B, bsize)
 
           if(iter == 1)then
             resb = bsize
@@ -233,17 +238,18 @@ contains
           endif
 
           !C-- linear solver [A]{X} = {B}
-          hecMAT%X = 0.0d0
+          hecMATmpc%X = 0.0d0
           if( iexit .ne. 1 ) then
             if( iter == 1 ) then
-              hecMAT%Iarray(97) = 2   !Force numerical factorization
+              hecMATmpc%Iarray(97) = 2   !Force numerical factorization
             else
-              hecMAT%Iarray(97) = 1   !Need numerical factorization
+              hecMATmpc%Iarray(97) = 1   !Need numerical factorization
             endif
             call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-            call solve_LINEQ(hecMESH,hecMAT)
+            call solve_LINEQ(hecMESH,hecMATmpc)
             call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
           endif
+          call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
           do j=1,hecMESH%n_node*ndof
             fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
@@ -369,6 +375,7 @@ contains
     endif
 
     deallocate(coord)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_solve_dynamic_nlimplicit
 
   !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
@@ -404,6 +411,7 @@ contains
     !C-- local variable
     !C
 
+    type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
@@ -430,6 +438,8 @@ contains
     real(kind=kreal),allocatable :: tmp_conB(:)
     integer :: istat
     real(kind=kreal), pointer :: coord(:)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -631,22 +641,24 @@ contains
           !C ********************************************************************************
 
           !C-- geometrical boundary condition
+          call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+          call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
           if(paraContactFlag.and.present(conMAT)) then
-            call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
-            call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
-            call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
+            call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
+            call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
+            call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
           else
-            call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
-            call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
-            call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
+            call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
+            call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
+            call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
           endif
 
           ! ----- check convergence
           !   ----  For Parallel Contact with Multi-Partition Domains
           if(paraContactFlag.and.present(conMAT)) then
-            res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
+            res = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
           else
-            call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,res)
+            call hecmw_innerProduct_R(hecMESH,ndof,hecMATmpc%B,hecMATmpc%B,res)
           endif
           res = sqrt(res)/n_node_global
 
@@ -685,14 +697,15 @@ contains
           res1=res
 
           !   ----  For Parallel Contact with Multi-Partition Domains
-          hecMAT%X = 0.0d0
+          hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           if(paraContactFlag.and.present(conMAT)) then
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,1.0D0,conMAT)
+            call solve_LINEQ_contact(hecMESH,hecMATmpc,fstrMAT,istat,1.0D0,conMAT)
           else
-            call solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,rf)
+            call solve_LINEQ_contact(hecMESH,hecMATmpc,fstrMAT,istat,rf)
           endif
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
           ! ----- update external nodal displacement increments
           call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
@@ -802,6 +815,7 @@ contains
     endif
 
     deallocate(coord)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
 
 end module fstr_dynamic_nlimplicit

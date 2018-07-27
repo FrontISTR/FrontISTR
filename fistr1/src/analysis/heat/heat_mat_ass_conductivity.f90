@@ -45,7 +45,7 @@ contains
       is= hecMESH%elem_type_index(itype-1) + 1
       iE= hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
-	  if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_link(ic_type)) cycle
 
       do icel = is, iE
         isect = hecMESH%section_ID(icel)

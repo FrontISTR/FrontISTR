@@ -521,11 +521,13 @@ contains
           stop
         endif
         cid = 0
-        if(cache < hecMESH%material%n_mat .and. &
-          fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
-          cid = cache
-          cache = cache + 1
-        else
+        if(cache < hecMESH%material%n_mat) then
+          if(fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
+            cid = cache
+            cache = cache + 1
+          endif
+        endif
+        if(cid == 0)then
           do i=1,hecMESH%material%n_mat
             if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
               cid = i

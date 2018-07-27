@@ -787,7 +787,7 @@ contains
     hecMAT%Iarray(32)=    0    ! = dumpexit
     hecMAT%Iarray(33)=    0    ! = usejad
     hecMAT%Iarray(34)=   10    ! = ncolor_in
-    hecMAT%Iarray(13)=    3    ! = mpc_method
+    hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
 

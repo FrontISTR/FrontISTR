@@ -34,7 +34,6 @@ contains
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
 
-    call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     call set_values_directsolver(hecMAT,fstrMAT)

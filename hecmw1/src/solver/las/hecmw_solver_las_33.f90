@@ -9,7 +9,6 @@ module hecmw_solver_las_33
 
   private
 
-  public :: hecmw_matvec_33_set_mpcmatvec_flg
   public :: hecmw_matvec_33
   public :: hecmw_matvec_33_set_async
   public :: hecmw_matvec_33_unset_async
@@ -18,11 +17,7 @@ module hecmw_solver_las_33
   public :: hecmw_Tvec_33
   public :: hecmw_Ttvec_33
   public :: hecmw_TtmatTvec_33
-  public :: hecmw_trans_b_33
-  public :: hecmw_tback_x_33
   public :: hecmw_mat_diag_sr_33
-
-  logical, save :: mpcmatvec_flg = .false.
 
   ! ! for communication hiding in matvec
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
@@ -33,22 +28,12 @@ contains
 
   !C
   !C***
-  !C*** hecmw_matvec_33_set_mpcmatvec_flg
-  !C***
-  !C
-  subroutine hecmw_matvec_33_set_mpcmatvec_flg (flg)
-    implicit none
-    logical, intent(in) :: flg
-    mpcmatvec_flg = flg
-  end subroutine hecmw_matvec_33_set_mpcmatvec_flg
-
-  !C
-  !C***
   !C*** hecmw_matvec_33
   !C***
   !C
   subroutine hecmw_matvec_33 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
+    use hecmw_matrix_misc
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
@@ -62,7 +47,7 @@ contains
 
     Tcomm = 0.d0
 
-    if (mpcmatvec_flg) then
+    if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
       allocate(WK(hecMAT%NP * hecMAT%NDOF))
       call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, Y, WK, Tcomm)
       deallocate(WK)
@@ -444,7 +429,10 @@ contains
     !$omp end do
 
     !$omp do
-    do i= 1, hecMESH%mpc%n_mpc
+    OUTER: do i= 1, hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > 3) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
@@ -452,7 +440,7 @@ contains
         jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 
@@ -488,7 +476,10 @@ contains
     !$omp end do
 
     !$omp do
-    do i= 1, hecMESH%mpc%n_mpc
+    OUTER: do i= 1, hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > 3) cycle OUTER
+      enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
       kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
@@ -496,7 +487,7 @@ contains
         jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
-    enddo
+    enddo OUTER
     !$omp end do
     !$omp end parallel
 
@@ -522,95 +513,6 @@ contains
 
   end subroutine hecmw_TtmatTvec_33
 
-
-  !C
-  !C***
-  !C*** hecmw_trans_b_33
-  !C***
-  !C
-  subroutine hecmw_trans_b_33(hecMESH, hecMAT, B, BT, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: B(:)
-    real(kind=kreal), intent(out), target :: BT(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal), allocatable :: W(:)
-    real(kind=kreal), pointer :: XG(:)
-    integer(kind=kint) :: i, k, kk
-
-    allocate(W(hecMESH%n_node * 3))
-
-    !C===
-    !C +---------------------------+
-    !C | {bt}= [T']({b} - [A]{xg}) |
-    !C +---------------------------+
-    !C===
-    XG => BT
-    XG = 0.d0
-
-    !$omp parallel default(none),private(i,k,kk),shared(hecMESH,XG)
-    !$omp do
-    !C-- Generate {xg} from mpc_const
-    do i = 1, hecMESH%mpc%n_mpc
-      k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-      XG(kk) = hecMESH%mpc%mpc_const(i)
-    enddo
-    !$omp end do
-    !$omp end parallel
-
-    !C-- {w} = {b} - [A]{xg}
-    call hecmw_matresid_33 (hecMESH, hecMAT, XG, B, W, COMMtime)
-
-    !C-- {bt} = [T'] {w}
-    call hecmw_Ttvec_33(hecMESH, W, BT, COMMtime)
-
-    deallocate(W)
-  end subroutine hecmw_trans_b_33
-
-  !C
-  !C***
-  !C*** hecmw_tback_x_33
-  !C***
-  !C
-  subroutine hecmw_tback_x_33(hecMESH, X, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(inout) :: X(:)
-    real(kind=kreal) :: COMMtime
-
-    real(kind=kreal), allocatable :: W(:)
-    integer(kind=kint) :: i, k, kk
-
-    allocate(W(hecMESH%n_node * 3))
-
-    !C-- {tx} = [T]{x}
-    call hecmw_Tvec_33(hecMESH, X, W, COMMtime)
-
-    !C-- {x} = {tx} + {xg}
-
-    !$omp parallel default(none),private(i,k,kk),shared(hecMESH,X,W)
-    !$omp do
-    do i= 1, hecMESH%nn_internal * 3
-      X(i)= W(i)
-    enddo
-    !$omp end do
-
-    !$omp do
-    do i = 1, hecMESH%mpc%n_mpc
-      k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = 3 * hecMESH%mpc%mpc_item(k) + hecMESH%mpc%mpc_dof(k) - 3
-      X(kk) = X(kk) + hecMESH%mpc%mpc_const(i)
-    enddo
-    !$omp end do
-    !$omp end parallel
-
-    deallocate(W)
-  end subroutine hecmw_tback_x_33
 
   !C
   !C***
