@@ -16,6 +16,7 @@ module m_solve_LINEQ_MUMPS_contact
   public :: solve_LINEQ_MUMPS_contact
 
   logical, save :: INITIALIZED = .false.
+  logical, save :: NEED_ANALYSIS = .true.
   type (sparse_matrix), save :: spMAT
 
 contains
@@ -57,16 +58,7 @@ contains
       stop
     endif
 
-    ! ANALYSIS
-    call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
-    mumps_job=1
-    call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
-    if (istat < 0) then
-      write(*,*) 'ERROR: MUMPS returned with error', istat
-      stop
-    endif
-    if (myrank==0) write(*,*) ' [MUMPS]: Analysis completed.'
-
+    NEED_ANALYSIS = .true.
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
@@ -80,8 +72,20 @@ contains
 
     integer(kind=kint) :: mumps_job
 
-    call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
+
+    ! ANALYSIS
+    if (NEED_ANALYSIS) then
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
+      mumps_job=1
+      call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
+      if (istat < 0) then
+        write(*,*) 'ERROR: MUMPS returned with error', istat
+        stop
+      endif
+      if (myrank==0) write(*,*) ' [MUMPS]: Analysis completed.'
+      NEED_ANALYSIS = .false.
+    endif
 
     ! FACTORIZATION and SOLUTION
     !  ----  For Parallel Contact with Multi-Partition Domains

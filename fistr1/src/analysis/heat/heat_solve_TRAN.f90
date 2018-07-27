@@ -28,6 +28,7 @@ contains
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
 
+    type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: restrt_data_size
@@ -36,6 +37,8 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     if( ISTEP .eq. 1 ) then
       ST = 0.0d0
@@ -134,18 +137,19 @@ contains
         write(IDBG,*) 'mat_ass_capacity : OK'
         call flush(IDBG)
 
-        call heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,TT,ST, DTIME )
+        call heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,TT,ST, DTIME )
         write(IDBG,*) 'mat_ass_boundary: OK'
         call flush(IDBG)
         !C
         !C-- SOLVER
-        hecMAT%Iarray(97) = 1   !Need numerical factorization
+        hecMATmpc%Iarray(97) = 1   !Need numerical factorization
         bup_n_dof = hecMESH%n_dof
         hecMESH%n_dof = 1
-        call solve_LINEQ(hecMESH,hecMAT)
+        call solve_LINEQ(hecMESH,hecMATmpc)
         hecMESH%n_dof=bup_n_dof
         write(IDBG,*) 'solve_LINEQ: OK'
         call flush(IDBG)
+        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         !C
         !C-- UPDATE -----
 
@@ -292,6 +296,8 @@ contains
       if( iend.ne.0 ) exit
     enddo tr_loop
     !C--------------------   END TRANSIET LOOP   ------------------------
+
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
 
   end subroutine heat_solve_TRAN
 end module m_heat_solve_TRAN

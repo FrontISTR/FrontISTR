@@ -116,7 +116,6 @@ contains
     ISEed = 1
     ir = 0
 
-    call HECMW_MAT_ASS_EQUATION(hecMESH,hecMAT)
     call HECMW_MAT_DUMP(hecMAT,hecMESH)
 
     call PTIME(t1)
