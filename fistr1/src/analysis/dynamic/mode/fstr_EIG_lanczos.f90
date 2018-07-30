@@ -27,10 +27,9 @@ contains
     integer(kind=kint) :: i, j, k, in, jn, kn, ik, it
     integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
     real(kind=kreal)   :: t1, t2, tolerance
-    real(kind=kreal)   :: alpha, beta
+    real(kind=kreal)   :: alpha, beta, beta0
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
-    real(kind=kreal), pointer     :: eigvec(:,:)
-    real(kind=kreal), pointer     :: eigval(:)
+    logical :: is_converge
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -101,10 +100,8 @@ contains
     allocate(s(NPNDOF))
     allocate(p(NPNDOF))
 
-    eigval => fstrEIG%eigval
-    eigvec => fstrEIG%eigvec
-    eigval = 0.0d0
-    eigvec = 0.0d0
+    fstrEIG%eigval = 0.0d0
+    fstrEIG%eigvec = 0.0d0
     t      = 0.0d0
     p      = 0.0d0
     s      = 0.0d0
@@ -113,7 +110,7 @@ contains
     Tri%alpha = 0.0d0
     Tri%beta  = 0.0d0
 
-    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, eigvec, p, Q(1)%q, Tri%beta(1))
+    call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, fstrEIG%eigvec, p, Q(1)%q, Tri%beta(1))
 
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%Iarray(97) = 1 !Need numerical factorization
@@ -189,20 +186,17 @@ contains
       !> q = t / beta
       beta = 1.0d0/Tri%beta(iter+1)
       do i = 1, NPNDOF
-        p(i)           = s(i)    * beta
+        p(i)           = s(i) * beta
         Q(iter+1)%q(i) = t(i) * beta
       enddo
 
       fstrEIG%iter = iter
+      if(iter == 1) beta0 = Tri%beta(iter+1)
 
-      if(Tri%beta(iter+1) <= tolerance .and. nget <= iter)then
-        write(IDBG,*) '*=====Desired convergence was obtained =====*'
-        exit
-      endif
+      call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, tolerance, nget, is_converge)
+
+      if(is_converge) exit
     enddo
-
-    iter = fstrEIG%iter
-    call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter)
 
     do i = 0, iter
       if(associated(Q(i)%q)) deallocate(Q(i)%q)
