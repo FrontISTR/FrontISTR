@@ -92,7 +92,7 @@ contains
     if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
 
     if(iter < nget) is_converge = .false.
-    if(iter == maxiter) is_converge = .true.
+    if(iter == maxiter-1) is_converge = .true.
 
     if(is_converge)then
       sigma = 0.0d0

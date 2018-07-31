@@ -51,7 +51,8 @@ contains
 
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
-        do i = itS0,itE0
+        if(NDOF < itE0) itE0 = NDOF
+        do i = itS0, itE0
           jn = jn + 1
           fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
         enddo
@@ -74,6 +75,7 @@ contains
     enddo
     call hecmw_allreduce_I1(hecMESH, in, hecmw_sum)
 
+    fstrEIG%maxiter = fstrEIG%maxiter + 1
     if(in < fstrEIG%maxiter)then
       if(myrank == 0)then
         write(IMSG,*) '** changed maxiter to system matrix size.'

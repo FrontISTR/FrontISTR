@@ -167,9 +167,9 @@ contains
             fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + 0.0d0
             fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + 0.0d0
             fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + 0.0d0
-            !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*thick**2/12.0
-            !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*thick**2/12.0
-            !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*thick**2/12.0
+            !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*thick**2/12.0d0
+            !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*thick**2/12.0d0
+            !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*thick**2/12.0d0
           else if( ic_type.eq.761 ) then
             if( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR. ( j .EQ. 3 ) ) then
               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
@@ -179,9 +179,9 @@ contains
               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + 0.0d0
               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + 0.0d0
               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + 0.0d0
-              !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0
-              !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0
-              !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0
+              !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0d0
+              !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0d0
+              !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0d0
             end if
           else if( ic_type.eq.781 ) then
             if( ( j .EQ. 1 ) .OR. ( j .EQ. 2 ) .OR.   &
@@ -194,17 +194,17 @@ contains
               fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + 0.0d0
               fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + 0.0d0
               fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + 0.0d0
-              !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0
-              !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0
-              !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0
+              !fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val*thick**2/12.0d0
+              !fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val*thick**2/12.0d0
+              !fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val*thick**2/12.0d0
             end if
           elseif( ic_type.EQ.611 ) then
             fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
             fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
             fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
-            !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*beam_area/12.0
-            !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*beam_area/12.0
-            !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*beam_area/12.0
+            !fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + val*beam_area/12.0d0
+            !fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + val*beam_area/12.0d0
+            !fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + val*beam_area/12.0d0
             fstrEIG%mass(js+4) = fstrEIG%mass(js+4) + 0.0d0
             fstrEIG%mass(js+5) = fstrEIG%mass(js+5) + 0.0d0
             fstrEIG%mass(js+6) = fstrEIG%mass(js+6) + 0.0d0
@@ -214,12 +214,12 @@ contains
               fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val
               fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val
             else if( ( j .EQ. 3 ) .OR. ( j .EQ. 4 ) ) then
-              ! fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val*beam_area/12.0D0
-              ! fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val*beam_area/12.0D0
-              ! fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val*beam_area/12.0D0
-              fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+0.0D0
-              fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+0.0D0
-              fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+0.0D0
+              !fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val*beam_area/12.0d0
+              !fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+val*beam_area/12.0d0
+              !fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+val*beam_area/12.0d0
+              fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+0.0d0
+              fstrEIG%mass(js+2) = fstrEIG%mass(js+2)+0.0d0
+              fstrEIG%mass(js+3) = fstrEIG%mass(js+3)+0.0d0
             end if
           elseif( ic_type.EQ.301 ) then
             fstrEIG%mass(js+1) = fstrEIG%mass(js+1)+val
@@ -238,15 +238,7 @@ contains
       enddo
     enddo
     !C
-    if    ( NDOF.eq.3 ) then
-      call hecmw_update_3_R( hecMESH,fstrEIG%mass,numnp )
-    elseif( NDOF.eq.2 ) then
-      call hecmw_update_2_R( hecMESH,fstrEIG%mass,numnp )
-    elseif( NDOF.eq.4 ) then
-      call hecmw_update_4_R( hecMESH,fstrEIG%mass,numnp )
-    elseif( NDOF.eq.6 ) then
-      call hecmw_update_m_R( hecMESH,fstrEIG%mass,numnp,NDOF )
-    endif
+    call hecmw_update_m_R(hecMESH, fstrEIG%mass, numnp, NDOF)
     !C
     chkmass = 0.
     do i = 1, numn

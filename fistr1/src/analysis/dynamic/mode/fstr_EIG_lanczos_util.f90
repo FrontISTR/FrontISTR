@@ -14,7 +14,7 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
     type(fstr_eigen)         :: fstrEIG
-    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
+    integer(kind=kint) :: N, NP, NDOF, NDOF2, NNDOF, NPNDOF
     integer(kind=kint) :: i, j
     real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
@@ -24,6 +24,7 @@ contains
     N      = hecMAT%N
     NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
+    NDOF2  = NDOF*NDOF
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
 
@@ -37,9 +38,9 @@ contains
     !> shifting
     if(fstrEIG%is_free)then
       do i = 1, NP
-        hecMAT%D(9*i-8) = hecMAT%D(9*i-8) + sigma * mass(3*i-2)
-        hecMAT%D(9*i-4) = hecMAT%D(9*i-4) + sigma * mass(3*i-1)
-        hecMAT%D(9*i  ) = hecMAT%D(9*i  ) + sigma * mass(3*i  )
+        do j = 1, NDOF
+          hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) = hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j)
+        enddo
       enddo
     endif
 
