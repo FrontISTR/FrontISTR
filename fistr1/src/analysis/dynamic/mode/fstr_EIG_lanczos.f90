@@ -85,9 +85,7 @@ contains
       fstrEIG%nget = in
     endif
 
-    nget      = fstrEIG%nget
     maxiter   = fstrEIG%maxiter
-    tolerance = fstrEIG%tolerance
 
     allocate(Q(0:maxiter))
     allocate(Q(0)%q(NPNDOF))
@@ -193,7 +191,7 @@ contains
       fstrEIG%iter = iter
       if(iter == 1) beta0 = Tri%beta(iter+1)
 
-      call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, tolerance, nget, is_converge)
+      call tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, is_converge)
 
       if(is_converge) exit
     enddo

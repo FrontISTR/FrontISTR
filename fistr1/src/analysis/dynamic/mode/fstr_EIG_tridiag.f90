@@ -22,7 +22,7 @@ module m_fstr_EIG_tridiag
 
 contains
 
-  subroutine tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, tolerance, nget, is_converge)
+  subroutine tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, is_converge)
     use hecmw
     use m_fstr
     use m_fstr_EIG_lanczos_util
@@ -51,9 +51,11 @@ contains
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
-    maxiter= fstrEIG%maxiter
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
+    nget      = fstrEIG%nget
+    maxiter   = fstrEIG%maxiter
+    tolerance = fstrEIG%tolerance
 
     allocate( iparm(maxiter) )
     allocate( temp(maxiter)  )
@@ -88,7 +90,9 @@ contains
       if(tolerance < resid) is_converge = .false.
     enddo
     if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
+
     if(iter < nget) is_converge = .false.
+    if(iter == maxiter) is_converge = .true.
 
     if(is_converge)then
       sigma = 0.0d0
