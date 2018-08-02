@@ -49,7 +49,6 @@ contains
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    fstrSOLID%REACTION = 0.d0
 
     !   ----- Prescibed displacement Boundary Conditions
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -103,8 +102,6 @@ contains
             endif
           endif
 
-          !for output reaction force
-          fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
         enddo
       enddo
     enddo
@@ -151,9 +148,6 @@ contains
               call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
             endif
           endif
-
-          !for output reaction force
-          fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
         enddo
       enddo
     enddo

@@ -42,6 +42,7 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
+    fstrSOLID%REACTION = 0.d0
 
     flag_u = 1
     !C=============================C
