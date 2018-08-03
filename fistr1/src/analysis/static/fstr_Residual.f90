@@ -112,6 +112,8 @@ contains
     real(kind=kreal) :: rhs
 
     ndof = hecMESH%n_dof
+    fstrSOLID%REACTION = 0.d0
+
     do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -130,6 +132,8 @@ contains
         end if
         do idof=idof1,idof2
           B( ndof*(in-1) + idof ) = 0.d0
+          !for output reaction force
+          fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
         enddo
       enddo
     enddo
