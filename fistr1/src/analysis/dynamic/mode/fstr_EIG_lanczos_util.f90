@@ -114,7 +114,7 @@ contains
     integer(kind=kint), parameter :: MU = 351750
     integer(kind=kint) :: i, N, IR, SHIFT
 
-    IR = 9999991
+    IR = 0
     INVM = 1.0D0 / MM
     do I = 1, SHIFT
       IR = mod( LAMBDA * IR + MU, MM)

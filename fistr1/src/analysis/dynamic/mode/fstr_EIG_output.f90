@@ -71,6 +71,7 @@ contains
       write(IMSG,*) '*--E I G E N V A L U E  C O N V E R G E N C E--*'
       write(IMSG,*) 'Absolute residual =  |(||Kx - lambda*Mx||)|'
       write(IMSG,*) '   Iter.#   Eigenvalue    Abs. Residual  '
+      write(ILOG,*) '   Iter.#   Eigenvalue    Abs. Residual  '
       write(IMSG,*) '   *-----*  *---------*  *--------------*'
     endif
 
@@ -94,6 +95,7 @@ contains
 
       if(myrank == 0)then
         write(IMSG,'(2x,i5,2x,1p5e15.6)') j, eigval(j), chk
+        write(ILOG,'(i5,1p5e12.4)') j, eigval(j), chk
       endif
     enddo
 

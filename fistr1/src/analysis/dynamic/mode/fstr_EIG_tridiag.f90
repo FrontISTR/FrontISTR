@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter2, ierr, maxiter
-    real(kind=kreal)   :: resid, chk, sigma, tolerance
+    real(kind=kreal)   :: resid, chk, sigma, tolerance, max_eigval
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
@@ -83,9 +83,9 @@ contains
 
     is_converge = .true.
     chk = 0.0d0
+    max_eigval = maxval(alpha)
     do i = 1, min(nget, iter)
-      !write(*,"(1pe9.2,$)") dabs(Tri%beta(iter+1)*L(iter, i))/alpha(i)
-      resid = dabs(Tri%beta(iter+1)*L(iter,i))/alpha(i)
+      resid = dabs(Tri%beta(iter+1)*L(iter,i))/max_eigval
       chk = max(chk, resid)
       if(tolerance < resid) is_converge = .false.
     enddo
