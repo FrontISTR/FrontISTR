@@ -10,6 +10,9 @@ module m_static_LIB_3d
 
   implicit none
 
+  real(kind=kreal), parameter, private :: I3(3,3) = reshape((/ &
+      &  1.d0, 0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 0.d0, 0.d0, 1.d0/), (/3,3/))
+
 contains
   !----------------------------------------------------------------------*
   subroutine GEOMAT_C3(stress, mat)
@@ -555,6 +558,26 @@ contains
     end if
   end subroutine
 
+  !Hughes,  T. J. R., and J. Winget, gFinite Rotation Effects in Numerical Integration of
+  ! Rate Constitutive Equations Arising in Large Deformation Analysis,h
+  ! International Journal for Numerical Methods in Engineering, vol. 15, pp. 1862-1867, 1980.
+  subroutine Hughes_Winget_rotation_3D( rot, stress_in, stress_out )
+    use m_utilities
+    real(kind=kreal), intent(in)     :: rot(3,3)
+    real(kind=kreal), intent(in)     :: stress_in(3,3)
+    real(kind=kreal), intent(out)    :: stress_out(3,3)
+
+    real(kind=kreal) :: dr(3,3)
+
+    !calc dR=(I-0.5*dW)^-1*(I+0.5*dW)
+    dr = I3-0.5d0*rot
+    call calInverse(3, dr)
+    dr = matmul(dr,I3+0.5d0*rot)
+
+    stress_out = matmul(dr,stress_in)
+    stress_out = matmul(stress_out,transpose(dr))
+  end subroutine
+
   subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
     use m_fstr
     use m_MatMatrix
@@ -641,14 +664,17 @@ contains
         dumstress(2,3) = gauss%stress_bak(5);  dumstress(3,2)=dumstress(2,3)
         dumstress(3,1) = gauss%stress_bak(6);  dumstress(1,3)=dumstress(3,1)
 
-        dum(:,:) = matmul( rot,dumstress ) -matmul( dumstress, rot )
+        !stress integration
         trD = dstrain(1)+dstrain(2)+dstrain(3)
-        gauss%stress(1) = gauss%stress_bak(1) +dstress(1) +dum(1,1) +gauss%stress_bak(1)*trD
-        gauss%stress(2) = gauss%stress_bak(2) +dstress(2) +dum(2,2) +gauss%stress_bak(2)*trD
-        gauss%stress(3) = gauss%stress_bak(3) +dstress(3) +dum(3,3) +gauss%stress_bak(3)*trD
-        gauss%stress(4) = gauss%stress_bak(4) +dstress(4) +dum(1,2) +gauss%stress_bak(4)*trD
-        gauss%stress(5) = gauss%stress_bak(5) +dstress(5) +dum(2,3) +gauss%stress_bak(5)*trD
-        gauss%stress(6) = gauss%stress_bak(6) +dstress(6) +dum(3,1) +gauss%stress_bak(6)*trD
+        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) + dumstress*trD
+        !call Hughes_Winget_rotation_3D( rot, dumstress, dum )
+
+        gauss%stress(1) = dum(1,1) + dstress(1)
+        gauss%stress(2) = dum(2,2) + dstress(2)
+        gauss%stress(3) = dum(3,3) + dstress(3)
+        gauss%stress(4) = dum(1,2) + dstress(4)
+        gauss%stress(5) = dum(2,3) + dstress(5)
+        gauss%stress(6) = dum(3,1) + dstress(6)
 
         if( mtype == USERMATERIAL ) then
           call StressUpdate( gauss, D3, dstrain, gauss%stress )

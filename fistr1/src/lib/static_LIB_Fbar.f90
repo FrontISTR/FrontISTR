@@ -17,11 +17,7 @@ module m_static_LIB_Fbar
 contains
 
 
-  !>  This subroutine calculate stiff matrix using b-bar method
-  !>
-  !> \see Hughes, T. J. "Generalization of Selective Integration Procedures
-  !>  to Anisotropic and Nonlinear Media", Intl. J. Numer. Methods Engng, 15,
-  !>  pp1413-1418,1980
+  !>  This subroutine calculate stiff matrix using F-bar method
   !----------------------------------------------------------------------*
   subroutine STF_C3D8Fbar &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
