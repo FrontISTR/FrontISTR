@@ -37,11 +37,12 @@ contains
     integer(kind=kint), intent(in), optional :: isEp
 
     integer :: i
-    integer :: flag = 0
+    integer :: flag
     real(kind=kreal)            :: cijkl(3,3,3,3)
     type( tMaterial ), pointer  :: matl
     matl=>gauss%pMaterial
 
+    flag = 0
     if( present(isEp) )then
       if( isEp == 1 )flag = 1
     endif
