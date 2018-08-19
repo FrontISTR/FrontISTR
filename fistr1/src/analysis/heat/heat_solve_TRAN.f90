@@ -5,11 +5,8 @@
 !> This module provide a function to control nonsteady heat analysis
 module m_heat_solve_TRAN
 contains
-  !C
-  !C** TRANSIENT
-  !C
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
 
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -17,23 +14,19 @@ contains
     use m_heat_init
     use m_hecmw2fstr_mesh_conv
     use m_solve_lineq
-
     implicit none
     integer(kind=kint) :: ISTEP, ITM, incr, iend, iterALL, i, inod, mnod, max_step, tstep, interval, bup_n_dof
     real(kind=kreal)   :: CTIME, ST, DTIME, EETIME, DELMAX, DELMIN, TT, BETA, val, CHK, tmpmax, dltmp, tmpmax_myrank
-
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
-
     type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: restrt_data_size
     integer, parameter :: miniter = 4
-
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
@@ -65,7 +58,7 @@ contains
     write(*,*) '    TT=',TT
 
     max_step = ( EETIME + 0.1d0 * DTIME ) / DTIME
-    BETA = 0.5
+    BETA = 0.5d0
     incr = 0
     iend = 0
     tstep = 0
@@ -93,7 +86,6 @@ contains
 
     !C--------------------   START TRANSIET LOOP   ------------------------
     tr_loop: do
-      !C--------------------
       incr = incr + 1
       if( TT+DTIME*1.0000001d0 >= EETIME ) then
         DTIME = EETIME - TT
@@ -106,9 +98,7 @@ contains
       CTIME = TT
 
       if( hecMESH%my_rank.eq.0 ) then
-        write(IMSG,*)
         write(IMSG,*) '// INCREMENT NO. =', incr, TT, DTIME
-        write(*,*)
         write(*,*) '// INCREMENT NO. =', incr, TT, DTIME
         write(IDBG,*) '// INCREMENT NO. =',incr, TT, DTIME
       endif
@@ -116,28 +106,19 @@ contains
       if( DTIME .lt. DELMIN ) then
         if( hecMESH%my_rank.eq.0 ) then
           write(IMSG,*) ' !!! DELTA TIME EXCEEDED TOLERANCE OF TIME INCREMENT'
-          call flush(IMSG)
         endif
         call hecmw_abort( hecmw_comm_get_comm() )
       endif
 
-      iterALL= 0
+      iterALL = 0
       !C==============  START OF ITERATION LOOP  ===========
       do
         iterALL= iterALL + 1
 
         !C-- MATRIX ASSEMBLING -----
         call heat_mat_ass_conductivity ( hecMESH,hecMAT,fstrHEAT,BETA )
-        write(IDBG,*) 'mat_ass_conductivity: OK'
-        call flush(IDBG)
-
         call heat_mat_ass_capacity ( hecMESH,hecMAT,fstrHEAT,DTIME )
-        write(IDBG,*) 'mat_ass_capacity : OK'
-        call flush(IDBG)
-
         call heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,TT,ST, DTIME )
-        write(IDBG,*) 'mat_ass_boundary: OK'
-        call flush(IDBG)
 
         !C-- SOLVER
         hecMATmpc%Iarray(97) = 1   !Need numerical factorization
@@ -145,14 +126,12 @@ contains
         hecMESH%n_dof = 1
         call solve_LINEQ(hecMESH,hecMATmpc)
         hecMESH%n_dof=bup_n_dof
-        write(IDBG,*) 'solve_LINEQ: OK'
-        call flush(IDBG)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
         !C-- UPDATE -----
         do i= 1, hecMESH%n_node
-          fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
-          fstrHEAT%TEMP (i)= hecMAT%X(i)
+          fstrHEAT%TEMPC(i) = fstrHEAT%TEMP(i)
+          fstrHEAT%TEMP (i) = hecMAT%X(i)
         enddo
 
         !C-- GLOBAL RESIDUAL -----

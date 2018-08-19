@@ -7,14 +7,11 @@ module m_fstr_solve_heat
 contains
 
   subroutine fstr_solve_heat( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT )
-
     use m_fstr
     use m_heat_solve_SS
     use m_heat_solve_TRAN
-
     implicit none
     integer(kind=kint) :: i, in, ISTEP, ISS
-    real(kind=kreal)   :: CTIME
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(hecmwST_result_data) :: fstrRESULT
@@ -24,7 +21,6 @@ contains
     !C !C#======================================
     !C !C#  Initialize  for Temperature Arrays
     !C !C#======================================
-
     allocate ( fstrHEAT%TEMP0 ( hecMESH%n_node ) )
     allocate ( fstrHEAT%TEMPC ( hecMESH%n_node ) )
     allocate ( fstrHEAT%TEMP  ( hecMESH%n_node ) )
@@ -45,9 +41,7 @@ contains
     !C !C#====================================
     !C !C#  Select Steady State or Transient
     !C !C#====================================
-
     if( hecMESH%my_rank.eq.0 ) then
-      write(IMSG,*)
       write(IMSG,*) '============================='
       write(IMSG,*) '  H E A T   T R A N S F E R  '
       write(IMSG,*) '============================='
@@ -56,13 +50,11 @@ contains
       write(ISTA,*)'-------------------------------------------------'
     endif
 
-    CTIME = 0.0d0
     do ISTEP = 1, fstrHEAT%STEPtot
       ISS = 1
       if( fstrHEAT%STEP_DLTIME(ISTEP) .le. 0.0d0 ) ISS = 0
 
       if( hecMESH%my_rank.eq.0 ) then
-        write(IMSG,*)
         write(IMSG,*) ' NSTEP=',fstrHEAT%STEPtot
         write(IMSG,*) ' ISTEP=',ISTEP
         write(IMSG,*) ' ITMAX=',fstrPARAM%ITMAX(ISTEP)
@@ -70,19 +62,12 @@ contains
         write(IMSG,*) '   ISS=',ISS
         write(IMSG,*) '       ISS = 0 ; Steady State'
         write(IMSG,*) '       ISS = 1 ; Transient'
-        write(IMSG,*)
-        call flush(ISTA)
-        call flush(IMSG)
       endif
 
       if( ISS.eq.0 ) then
-        call heat_solve_SS( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
-        write(IDBG,*) ' heat_solve_SS: OK'
-        call flush(IDBG)
+        call heat_solve_SS( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
       else
-        call heat_solve_TRAN( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
-        write(IDBG,*) ' heat_solve_TRAN: OK'
-        call flush(IDBG)
+        call heat_solve_TRAN( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
       endif
     enddo
 

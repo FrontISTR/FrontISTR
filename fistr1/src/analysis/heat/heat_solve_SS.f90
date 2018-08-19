@@ -6,25 +6,21 @@
 module m_heat_solve_SS
 contains
 
-  subroutine heat_solve_SS ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
-
+  subroutine heat_solve_SS ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_boundary
     use m_heat_init
     use m_hecmw2fstr_mesh_conv
     use m_solve_lineq
-
     implicit none
     integer(kind=kint) :: ISTEP, iterALL, ITM, i, INCR, LMAX, LMIN, inod, ii, bup_n_dof
     real(kind=kreal)   :: CTIME, BETA, STIME, val, CHK, TMAX, TMIN, temp
-
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
-
     type(hecmwST_matrix), pointer   :: hecMATmpc
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
@@ -45,41 +41,31 @@ contains
 
     !C--------------------  START OF STEADY STATE  ----------------------------
     do
-      iterALL= iterALL + 1
-      hecMAT%X = 0.0d0
+      iterALL = iterALL + 1
 
       !C-- MATRIX ASSEMBLING
-      call hecmw_barrier(hecMESH)
       call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )
-      write(IDBG,*) 'mat_ass_conductivity: OK'
-      call flush(IDBG)
-
       call heat_mat_ass_boundary( hecMESH, hecMAT, hecMATmpc, fstrHEAT, STIME, ETIME, 0.d0 )
-      write(IDBG,*) 'mat_ass_boundary: OK'
-      call flush(IDBG)
 
       !C-- SOLVER
       hecMATmpc%Iarray(97) = 1   !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
       hecMESH%n_dof = 1
       call solve_LINEQ(hecMESH,hecMATmpc)
-      hecMESH%n_dof=bup_n_dof
-      write(IDBG,*) 'solve_LINEQ: OK'
-      call flush(IDBG)
+      hecMESH%n_dof = bup_n_dof
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       !C-- UPDATE
-      do i= 1, hecMESH%n_node
-        fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
-        fstrHEAT%TEMP (i)= hecMAT%X(i)
+      do i = 1, hecMESH%n_node
+        fstrHEAT%TEMPC(i) = fstrHEAT%TEMP(i)
+        fstrHEAT%TEMP (i) = hecMAT%X(i)
       enddo
 
       val = 0.0d0
       do i = 1, hecMESH%nn_internal
         val = val + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
       enddo
-
-      call hecmw_allREDUCE_R1 ( hecMESH, val, hecmw_sum )
+      call hecmw_allREDUCE_R1(hecMESH, val, hecmw_sum)
 
       CHK = dsqrt(val)
       if( hecMESH%my_rank.eq.0 ) then
@@ -88,23 +74,18 @@ contains
         call flush(IMSG)
       endif
 
-      if( CHK.lt.EPS ) then
+      if( CHK < EPS ) then
         if( hecMESH%my_rank.eq.0 ) then
-          write(*,*)
           write(*,*) ' !!! CONVERGENCE ACHIEVED '
-          write(IMSG,*)
           write(IMSG,*) ' !!! CONVERGENCE ACHIEVED '
-          INCR = 0
-          write(ISTA,'(3i8,1pE15.7)') ISTEP,INCR,iterALL-1,CHK
+          write(ISTA,'(2i8,1pE15.7)') ISTEP,iterALL-1,CHK
         endif
         exit
       endif
 
-      if ( iterALL.ge.ITM ) then
+      if(ITM <= iterALL)then
         if( hecMESH%my_rank.eq.0 ) then
-          write(*,*)
           write(*,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
-          write(IMSG,*)
           write(IMSG,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
         endif
         call hecmw_abort( hecmw_comm_get_comm() )
