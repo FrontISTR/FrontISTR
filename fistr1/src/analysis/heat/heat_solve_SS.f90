@@ -45,30 +45,19 @@ contains
 
     !C--------------------  START OF STEADY STATE  ----------------------------
     do
-      !C--------------------
       iterALL= iterALL + 1
       hecMAT%X = 0.0d0
-      !C
-      !C-- MATRIX ASSEMBLING
 
+      !C-- MATRIX ASSEMBLING
       call hecmw_barrier(hecMESH)
       call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )
       write(IDBG,*) 'mat_ass_conductivity: OK'
-      ! do i = 1, hecMESH%nn_internal
-      !   write(IDBG,*) i, hecMAT%D(i)
-      ! enddo
       call flush(IDBG)
 
       call heat_mat_ass_boundary( hecMESH, hecMAT, hecMATmpc, fstrHEAT, STIME, ETIME, 0.d0 )
       write(IDBG,*) 'mat_ass_boundary: OK'
-      ! do i = 1, hecMESH%nn_internal
-      !   write(IDBG,*) i, hecMAT%D(i)
-      ! enddo
       call flush(IDBG)
 
-      call hecmw_barrier(hecMESH)
-
-      !C
       !C-- SOLVER
       hecMATmpc%Iarray(97) = 1   !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
@@ -78,28 +67,22 @@ contains
       write(IDBG,*) 'solve_LINEQ: OK'
       call flush(IDBG)
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
-      !C
-      !C-- UPDATE
 
+      !C-- UPDATE
       do i= 1, hecMESH%n_node
         fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
-      enddo
-
-      do i= 1, hecMESH%n_node
         fstrHEAT%TEMP (i)= hecMAT%X(i)
       enddo
 
-      val= 0.d0
-      do i= 1, hecMESH%nn_internal
-        val= val + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
+      val = 0.0d0
+      do i = 1, hecMESH%nn_internal
+        val = val + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
       enddo
 
       call hecmw_allREDUCE_R1 ( hecMESH, val, hecmw_sum )
 
       CHK = dsqrt(val)
       if( hecMESH%my_rank.eq.0 ) then
-        !write(*,'(i8,1p2e16.6,i10)')    iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
-        !write(IMSG,'(i8,1p2e16.6,i10)') iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
         write(*,'(i8,1p1e16.6)')    iterALL,CHK
         write(IMSG,'(i8,1p1e16.6)') iterALL,CHK
         call flush(IMSG)
@@ -112,7 +95,6 @@ contains
           write(IMSG,*)
           write(IMSG,*) ' !!! CONVERGENCE ACHIEVED '
           INCR = 0
-          !write(ISTA,'(3i8,1pE15.7,i8)') ISTEP,INCR,iterALL-1,CHK,hecMAT%ITERactual
           write(ISTA,'(3i8,1pE15.7)') ISTEP,INCR,iterALL-1,CHK
         endif
         exit
@@ -127,8 +109,6 @@ contains
         endif
         call hecmw_abort( hecmw_comm_get_comm() )
       endif
-
-      !C--------------------
     enddo
     !C--------------------  END OF STEADY STATE  ------------------
 

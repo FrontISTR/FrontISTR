@@ -124,11 +124,9 @@ contains
       iterALL= 0
       !C==============  START OF ITERATION LOOP  ===========
       do
-        !C==============
         iterALL= iterALL + 1
-        !C
-        !C-- MATRIX ASSEMBLING -----
 
+        !C-- MATRIX ASSEMBLING -----
         call heat_mat_ass_conductivity ( hecMESH,hecMAT,fstrHEAT,BETA )
         write(IDBG,*) 'mat_ass_conductivity: OK'
         call flush(IDBG)
@@ -140,7 +138,7 @@ contains
         call heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,TT,ST, DTIME )
         write(IDBG,*) 'mat_ass_boundary: OK'
         call flush(IDBG)
-        !C
+
         !C-- SOLVER
         hecMATmpc%Iarray(97) = 1   !Need numerical factorization
         bup_n_dof = hecMESH%n_dof
@@ -150,18 +148,15 @@ contains
         write(IDBG,*) 'solve_LINEQ: OK'
         call flush(IDBG)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
-        !C
-        !C-- UPDATE -----
 
+        !C-- UPDATE -----
         do i= 1, hecMESH%n_node
           fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
           fstrHEAT%TEMP (i)= hecMAT%X(i)
         enddo
 
-        !C
         !C-- GLOBAL RESIDUAL -----
-
-        val= 0.d0
+        val= 0.0d0
         do i= 1, hecMESH%nn_internal
           val= val + (fstrHEAT%TEMP(i)-fstrHEAT%TEMPC(i))**2
         enddo
@@ -198,10 +193,8 @@ contains
             call hecmw_abort( hecmw_comm_get_comm() )
           endif
         endif
-        !C==============
       enddo
       !C==============  END OF ITERATION LOOP  ===========
-      !C
 
       if( DELMIN .gt. 0.d0 ) then
         tmpmax = 0.d0
