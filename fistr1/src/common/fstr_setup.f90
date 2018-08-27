@@ -1034,6 +1034,13 @@ contains
       nn = hecmw_get_max_node(hecMESH%elem_type(i))
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
+
+      if( hecMESH%elem_type(i)==361 ) then
+        if( fstrSOLID%sections(isect)%elemopt361==kel361IC ) then
+          allocate( fstrSOLID%elements(i)%aux(3,3) )
+          fstrSOLID%elements(i)%aux = 0.0d0
+        endif
+      endif
     enddo
 
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
@@ -1055,6 +1062,9 @@ contains
       endif
       if(associated(fstrSOLID%elements(i)%equiForces) ) then
         deallocate(fstrSOLID%elements(i)%equiForces)
+      endif
+      if( associated(fstrSOLID%elements(i)%aux) ) then
+        deallocate(fstrSOLID%elements(i)%aux)
       endif
     enddo
 

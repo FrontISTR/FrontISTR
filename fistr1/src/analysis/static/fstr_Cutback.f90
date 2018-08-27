@@ -53,6 +53,9 @@ contains
         fstrSOLID%elements_bkup(i)%gausses(j)%pMaterial => fstrSOLID%elements(i)%gausses(j)%pMaterial
         call fstr_init_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      if( associated( fstrSOLID%elements(i)%aux ) ) then
+        allocate( fstrSOLID%elements_bkup(i)%aux(3,3) )
+      endif
     end do
 
     !(3)contact values
@@ -91,6 +94,9 @@ contains
       do j=1,ng
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      if( associated( fstrSOLID%elements_bkup(i)%aux ) ) then
+        deallocate( fstrSOLID%elements_bkup(i)%aux )
+      endif
     end do
     deallocate(fstrSOLID%elements_bkup)
 
@@ -135,6 +141,7 @@ contains
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements(i)%gausses(j), fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      fstrSOLID%elements_bkup(i)%aux(:,:) = fstrSOLID%elements(i)%aux(:,:)
     end do
 
     !(3)contact values
@@ -181,6 +188,7 @@ contains
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements_bkup(i)%gausses(j), fstrSOLID%elements(i)%gausses(j) )
       end do
+      fstrSOLID%elements(i)%aux(:,:) = fstrSOLID%elements_bkup(i)%aux(:,:)
     end do
 
     !(3)contact values
