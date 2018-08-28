@@ -47,6 +47,7 @@ contains
     !(2)elemental values
     allocate(fstrSOLID%elements_bkup(hecMESH%n_elem))
     do i=1,hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       allocate( fstrSOLID%elements_bkup(i)%gausses(ng) )
       do j=1,ng
@@ -90,6 +91,7 @@ contains
 
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
@@ -137,11 +139,14 @@ contains
 
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements(i)%gausses(j), fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
-      fstrSOLID%elements_bkup(i)%aux(:,:) = fstrSOLID%elements(i)%aux(:,:)
+      if( associated( fstrSOLID%elements(i)%aux ) ) then
+        fstrSOLID%elements_bkup(i)%aux(:,:) = fstrSOLID%elements(i)%aux(:,:)
+      endif
     end do
 
     !(3)contact values
@@ -184,11 +189,14 @@ contains
 
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements_bkup(i)%gausses(j), fstrSOLID%elements(i)%gausses(j) )
       end do
-      fstrSOLID%elements(i)%aux(:,:) = fstrSOLID%elements_bkup(i)%aux(:,:)
+      if( associated( fstrSOLID%elements(i)%aux ) ) then
+        fstrSOLID%elements(i)%aux(:,:) = fstrSOLID%elements_bkup(i)%aux(:,:)
+      endif
     end do
 
     !(3)contact values

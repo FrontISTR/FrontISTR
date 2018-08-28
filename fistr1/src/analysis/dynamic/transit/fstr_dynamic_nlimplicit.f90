@@ -146,7 +146,7 @@ contains
         endif
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, iter )
+          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
@@ -573,7 +573,7 @@ contains
         count_step = count_step + 1
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
-          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, iter )
+          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
               hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)

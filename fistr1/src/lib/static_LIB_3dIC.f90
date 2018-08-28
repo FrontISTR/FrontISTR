@@ -20,7 +20,7 @@ contains
   !----------------------------------------------------------------------*
   subroutine STF_C3D8IC &
       (etype, nn, ecoord, gausses, stiff, cdsys_ID, coords, &
-      time, tincr, iter, u, aux, temperature)
+      time, tincr, u, aux, temperature)
     !----------------------------------------------------------------------*
 
     use mMechGauss
@@ -39,9 +39,8 @@ contains
     real(kind=kreal), intent(inout) :: coords(3, 3)         !< variables to define matreial coordinate system
     real(kind=kreal), intent(in)    :: time                 !< current time
     real(kind=kreal), intent(in)    :: tincr                !< time increment
-    integer(kind=kint), intent(in)  :: iter                 !< NR iteration
     real(kind=kreal), intent(in), optional :: u(3, nn)      !< nodal displacemwent
-    real(kind=kreal), intent(inout), optional :: aux(3, 3)  !< enhanced disp of bending mode
+    real(kind=kreal), intent(in), optional :: aux(3, 3)     !< enhanced disp of bending mode
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
 
     !---------------------------------------------------------------------
@@ -53,7 +52,7 @@ contains
     real(kind=kreal) :: xj(9, 9), jacobian(3, 3), inverse(3, 3)
     real(kind=kreal) :: tmpstiff((nn+3)*3, (nn+3)*3), tmpk(nn*3, 9)
     real(kind=kreal) :: det, wg, elem(3, nn), mat(6, 6)
-    integer(kind=kint) :: i, j, LX, fetype
+    integer(kind=kint) :: i, j, LX
     integer(kind=kint) :: serr
     real(kind=kreal) :: naturalCoord(3), unode(3, nn+3)
     real(kind=kreal) :: gdispderiv(3, 3), coordsys(3, 3)
@@ -64,7 +63,6 @@ contains
 
     !---------------------------------------------------------------------
 
-    fetype = fe_hex8n
     if( present(u) .AND. present(aux) ) then
       unode(:, 1:nn)      = u(:, :)
       unode(:, nn+1:nn+3) = aux(:, :)
@@ -74,17 +72,11 @@ contains
     flag = gausses(1)%pMaterial%nlgeom_flag
     if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
     elem(:, :) = ecoord(:, :)
-    if( flag == UPDATELAG ) then
-      elem(:, :) = ecoord(:, :)+unode(:, 1:nn)
-      if( iter == 1 ) then
-        aux(:, :) = 0.0D0
-        unode(:, nn+1:nn+3) = 0.0D0
-      endif
-    endif
+    if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+unode(:, 1:nn)
 
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
-    call getJacobian(fetype, nn, naturalcoord, elem, det, jacobian, inverse)
+    call getJacobian(etype, nn, naturalcoord, elem, det, jacobian, inverse)
     inverse(:, :)= inverse(:, :)*det
     ! ---- We now calculate stiff matrix include imcompatible mode
     !    [   Kdd   Kda ]
@@ -93,10 +85,10 @@ contains
     B1(1:6, 1:(nn+3)*ndof) = 0.0D0
     BN(1:9, 1:(nn+3)*ndof) = 0.0D0
 
-    do LX = 1, NumOfQuadPoints(fetype)
+    do LX = 1, NumOfQuadPoints(etype)
 
-      call getQuadPoint(fetype, LX, naturalCoord)
-      call getGlobalDeriv( fetype, nn, naturalcoord, elem, det, gderiv(1:nn, 1:3) )
+      call getQuadPoint(etype, LX, naturalCoord)
+      call getGlobalDeriv( etype, nn, naturalcoord, elem, det, gderiv(1:nn, 1:3) )
 
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
@@ -128,7 +120,7 @@ contains
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
 
-      wg = getWeight(fetype, LX)*det
+      wg = getWeight(etype, LX)*det
       B(1:6, 1:(nn+3)*ndof)=0.0D0
       do j = 1, nn+3
         B(1, 3*j-2) = gderiv(j, 1)
@@ -251,20 +243,19 @@ contains
     integer, intent(in)               :: iter
     real(kind=kreal), intent(in)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
-    real(kind=kreal), intent(in)      :: aux(3, 3)     !< \param [in] incompatible dof
+    real(kind=kreal), intent(inout)   :: aux(3, 3)     !< \param [in] incompatible dof
     real(kind=kreal), intent(out)     :: ddaux(3, 3)   !< \param [in] increment of incompatible dof
     real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
     real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
 
     ! LCOAL VARIAVLES
-    integer(kind=kint) :: fetype
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: D(6,6), B(6,ndof*(nn+3)), B1(6,ndof*(nn+3)), spfunc(nn), ina(1)
     real(kind=kreal)   :: BN(9,ndof*(nn+3)), DB(6, ndof*(nn+3)), stress(6), Smat(9, 9), SBN(9, ndof*(nn+3))
     real(kind=kreal)   :: gderiv(nn+3,3), gdispderiv(3,3), det, WG, ttc,tt0, ttn,outa(1)
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
+    integer(kind=kint) :: i, j, LX, mtype, serr
     integer(kind=kint) :: isEp
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
@@ -273,13 +264,11 @@ contains
     logical            :: ierr, matlaniso
     real(kind=kreal)   :: stiff_ad(9, nn*3), stiff_aa(9, 9), qf_a(9)
     real(kind=kreal)   :: xj(9, 9)
-    real(kind=kreal)   :: tmpforce(9), tmpdisp(9)
-    real(kind=kreal)   :: jacobian(3, 3), inverse(3, 3)
-    integer(kind=kint) :: in, idof, jn, jdof
+    real(kind=kreal)   :: tmpforce(9), tmpdisp(9), tmp_d(nn*3), tmp_a(9)
+    real(kind=kreal)   :: jacobian(3, 3), inverse(3, 3), inverse1(3, 3)
 
     !---------------------------------------------------------------------
 
-    fetype = fe_hex8n
     totaldisp(:, 1:nn)      = u(:, :) + du(:, :) - ddu(:, :)
     totaldisp(:, nn+1:nn+3) = aux(:, :)
 
@@ -290,7 +279,7 @@ contains
 
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
-    call getJacobian(fetype, nn, naturalcoord, elem, det, jacobian, inverse)
+    call getJacobian(etype, nn, naturalcoord, elem, det, jacobian, inverse)
     inverse(:, :)= inverse(:, :)*det
     ! ---- We now calculate stiff matrix include imcompatible mode
     !    [   Kdd   Kda ]
@@ -300,10 +289,10 @@ contains
     B1(1:6, 1:(nn+3)*ndof) = 0.0D0
     BN(1:9, 1:(nn+3)*ndof) = 0.0D0
 
-    do LX = 1, NumOfQuadPoints(fetype)
+    do LX = 1, NumOfQuadPoints(etype)
 
-      call getQuadPoint(fetype, LX, naturalCoord)
-      call getGlobalDeriv( fetype, nn, naturalcoord, elem, det, gderiv(1:nn, 1:3) )
+      call getQuadPoint(etype, LX, naturalCoord)
+      call getGlobalDeriv( etype, nn, naturalcoord, elem, det, gderiv(1:nn, 1:3) )
 
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
@@ -335,7 +324,7 @@ contains
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
 
-      wg = getWeight(fetype, LX)*det
+      wg = getWeight(etype, LX)*det
       B(1:6, 1:(nn+3)*ndof)=0.0D0
       do j = 1, nn+3
         B(1, 3*j-2) = gderiv(j, 1)
@@ -428,28 +417,19 @@ contains
     end do
 
     ! -----recover incompatible dof of nodal displacement
-    xj(1:9, 1:9)= stiff_aa(1:3*ndof, 1:3*ndof)
-    call calInverse(9, xj)
+    xj(1:3*ndof, 1:3*ndof)= stiff_aa(1:3*ndof, 1:3*ndof)
+    call calInverse(3*ndof, xj)
     ! ---  [Kad] * ddu
-    do i=1,3*ndof
-      tmpforce(i) = 0.0D0
-      do jn=1,nn
-        do jdof=1,ndof
-          j = (jn-1)*ndof+jdof
-          tmpforce(i) = tmpforce(i) + stiff_ad(i, j) * ddu(jdof, jn)
-        enddo
-      enddo
+    do i=1,nn
+      tmp_d((i-1)*ndof+1:i*ndof) = ddu(1:ndof, i)
     enddo
+    tmpforce(1:3*ndof) = matmul( stiff_ad(1:3*ndof, 1:nn*ndof), tmp_d(1:nn*ndof) )
     ! ---  ddaux = -[Kaa]-1 * ([Kad] * ddu)
-    do in=1,3
-      do idof=1,ndof
-        i = (in-1)*ndof+idof
-        ddaux(idof, in) = 0.0D0
-        do j=1,3*ndof
-          ddaux(idof, in) = ddaux(idof, in) - xj(i, j) * tmpforce(j)
-        enddo
-      enddo
+    tmp_a(1:3*ndof) = -matmul( xj(1:3*ndof, 1:3*ndof), tmpforce(1:3*ndof) )
+    do i=1,3
+      ddaux(1:ndof, i) = tmp_a((i-1)*ndof+1:i*ndof)
     enddo
+
 
     !---------------------------------------------------------------------
 
@@ -471,6 +451,7 @@ contains
       elem1(:,:) = (du(:,:)+u(:,:) ) +ecoord(:,:)
       ! elem = elem1
       totaldisp(:,1:nn) = du(:,:)
+      if( iter == 1 ) aux(:,:) = 0.0D0   !--- is this correct???
       totaldisp(:,nn+1:nn+3) = aux(:,:)
     end if
 
@@ -483,8 +464,12 @@ contains
 
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
-    call getJacobian(fetype, nn, naturalcoord, elem, det, jacobian, inverse)
+    call getJacobian(etype, nn, naturalcoord, elem, det, jacobian, inverse)
     inverse(:, :)= inverse(:, :)*det
+    if( flag == UPDATELAG ) then
+      call getJacobian(etype, nn, naturalcoord, elem1, det, jacobian, inverse1)
+      inverse1(:, :)= inverse1(:, :)*det
+    endif
 
     do LX = 1, NumOfQuadPoints(etype)
 
@@ -606,7 +591,8 @@ contains
           call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress )
         else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
           gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
-          gausses(LX)%pMaterial%mtype=mtype
+          gausses(LX)%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+          !gausses(LX)%pMaterial%mtype=mtype
           if( present(TT) .AND. present(T0) ) then
             call StressUpdate( gausses(LX), D3, dstrain, gausses(LX)%stress, time, tincr, ttc, ttn )
           else
@@ -740,9 +726,9 @@ contains
         !     [   0,  -2*b, 0   ]
         !     [   0,   0,  -2*c ]
         ! we don't call getShapeDeriv but use above value directly for computation efficiency
-        gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse(1, :)/det
-        gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
-        gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
+        gderiv(nn+1, :) = -2.0D0*naturalcoord(1)*inverse1(1, :)/det
+        gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse1(2, :)/det
+        gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse1(3, :)/det
 
         B(1:6, 1:(nn+3)*ndof) = 0.0D0
         do j = 1, nn+3
@@ -813,15 +799,15 @@ contains
     !---------------------------------------------------------------------
 
     real(kind=kreal) :: ALP, ALP0
-    real(kind=kreal) :: D(6, 6), B(6, ndof*(nn+3)), DB(6, ndof*(nn+3))
+    real(kind=kreal) :: D(6, 6), B(6, ndof*(nn+3)), DB_a(6, ndof*3)
     real(kind=kreal) :: det, wg, ecoord(3, nn)
-    integer(kind=kint) :: j, IC, serr, fetype
+    integer(kind=kint) :: i, j, IC, serr
     real(kind=kreal) :: EPSTH(6), SGM(6), H(nn), alpo(3), alpo0(3), coordsys(3, 3), xj(9, 9)
     real(kind=kreal) :: naturalcoord(3), gderiv(nn+3, 3)
     real(kind=kreal) :: jacobian(3, 3),inverse(3, 3)
-    real(kind=kreal) :: stiff((nn+3)*3, (nn+3)*3)
-    real(kind=kreal) :: tmpvect((nn+3)*3)
-    real(kind=kreal) :: tmpforce(nn*ndof), icdisp(9)
+    real(kind=kreal) :: stiff_da(nn*3, 3*3), stiff_aa(3*3, 3*3)
+    real(kind=kreal) :: VECT_a(3*3)
+    real(kind=kreal) :: icdisp(9)
     real(kind=kreal) :: TEMPC, TEMP0, THERMAL_EPS, tm(6, 6), outa(1), ina(1)
     logical :: ierr, matlaniso
 
@@ -834,26 +820,27 @@ contains
       if( .not. ierr ) matlaniso = .true.
     end if
 
-    fetype = fe_hex8n
     ecoord(1, :) = XX(:)
     ecoord(2, :) = YY(:)
     ecoord(3, :) = ZZ(:)
     ! ---- Calculate enhanced displacement at first
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
-    call getJacobian(fetype, nn, naturalcoord, ecoord, det, jacobian, inverse)
+    call getJacobian(etype, nn, naturalcoord, ecoord, det, jacobian, inverse)
     inverse(:, :) = inverse(:, :)*det
     ! ---- We now calculate stiff matrix include imcompatible mode
     !    [   Kdd   Kda ]
     !    [   Kad   Kaa ]
-    stiff(:, :) = 0.0D0
+    stiff_da(:, :) = 0.0D0
+    stiff_aa(:, :) = 0.0D0
     B(1:6, 1:(nn+3)*ndof) = 0.0D0
-    tmpvect(1:(nn+3)*ndof) = 0.0D0
+    VECT(1:nn*ndof) = 0.0D0
+    VECT_a(1:3*ndof) = 0.0D0
 
-    do IC = 1, NumOfQuadPoints(fetype)
+    do IC = 1, NumOfQuadPoints(etype)
 
-      call getQuadPoint(fetype, IC, naturalCoord)
-      call getGlobalDeriv( fetype, nn, naturalcoord, ecoord, det, gderiv(1:nn, 1:3) )
+      call getQuadPoint(etype, IC, naturalCoord)
+      call getGlobalDeriv( etype, nn, naturalcoord, ecoord, det, gderiv(1:nn, 1:3) )
 
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
@@ -863,7 +850,7 @@ contains
         end if
       end if
 
-      call getShapeFunc( fetype, naturalcoord, H(1:nn) )
+      call getShapeFunc( etype, naturalcoord, H(1:nn) )
       TEMPC = dot_product( H(1:nn), TT(1:nn) )
       TEMP0 = dot_product( H(1:nn), T0(1:nn) )
       call MatlMatrix( gausses(IC), D3, D, 1.d0, 1.0D0, coordsys, TEMPC )
@@ -877,7 +864,7 @@ contains
       gderiv(nn+2, :) = -2.0D0*naturalcoord(2)*inverse(2, :)/det
       gderiv(nn+3, :) = -2.0D0*naturalcoord(3)*inverse(3, :)/det
 
-      wg = getWeight(fetype, IC)*det
+      wg = getWeight(etype, IC)*det
       do j = 1, nn+3
         B(1, 3*j-2) = gderiv(j, 1)
         B(2, 3*j-1) = gderiv(j, 2)
@@ -890,10 +877,13 @@ contains
         B(6, 3*j  ) = gderiv(j, 1)
       end do
 
-      DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
-        = stiff(1:(nn+3)*ndof, 1:(nn+3)*ndof) &
-        +matmul( transpose(B(1:6, 1:(nn+3)*ndof)), DB(1:6, 1:(nn+3)*ndof) )*wg
+      DB_a(1:6, 1:3*ndof) = matmul( D, B(1:6, nn*ndof+1:(nn+3)*ndof) )
+      forall( i=1:nn*ndof, j=1:3*ndof )
+        stiff_da(i, j) = stiff_da(i, j) + dot_product( B(1:6, i), DB_a(1:6, j) ) * wg
+      end forall
+      forall( i=1:3*ndof, j=1:3*ndof )
+        stiff_aa(i, j) = stiff_aa(i, j) + dot_product( B(1:6, nn*ndof+i), DB_a(1:6, j) ) * wg
+      end forall
 
       ina(1) = TEMPC
       if( matlaniso ) then
@@ -939,19 +929,18 @@ contains
       !**
       !** CALCULATE LOAD {F}=[B]T{e}
       !**
-      TMPVECT(1:(nn+3)*ndof) = TMPVECT(1:(nn+3)*ndof)+matmul( SGM(1:6), B(1:6, 1:(nn+3)*ndof) )*wg
+      VECT(1:nn*ndof) = VECT(1:nn*ndof)+matmul( SGM(1:6), B(1:6, 1:nn*ndof) )*wg
+      VECT_a(1:3*ndof) = VECT_a(1:3*ndof)+matmul( SGM(1:6), B(1:6, nn*ndof+1:(nn+3)*ndof) )*wg
 
     end do
 
-    ! --- condense tmpvect to vect
-    xj(1:9,1:9)= stiff(nn*ndof+1:(nn+3)*ndof, nn*ndof+1:(nn+3)*ndof)
+    ! --- condense vect
+    xj(1:9,1:9)= stiff_aa(1:9, 1:9)
     call calInverse(9, xj)
     ! ---  [Kaa]-1 * fa
-    icdisp(1:9) = matmul( xj(:, :), tmpvect(nn*ndof+1:(nn+3)*ndof) )
-    ! ---  [Kda] * [Kaa]-1 * fa
-    tmpforce(1:nn*ndof) = matmul( stiff(1:nn*ndof, nn*3+1:(nn+3)*ndof), icdisp(1:9) )
+    icdisp(1:9) = matmul( xj(:, :), VECT_a(1:3*ndof) )
     ! ---  fd - [Kda] * [Kaa]-1 * fa
-    vect(1:nn*ndof) = tmpvect(1:nn*ndof) - tmpforce(1:nn*ndof)
+    VECT(1:nn*ndof) = VECT(1:nn*ndof) - matmul( stiff_da(1:nn*ndof, 1:3*ndof), icdisp(1:3*ndof) )
 
   end subroutine TLOAD_C3D8IC
 

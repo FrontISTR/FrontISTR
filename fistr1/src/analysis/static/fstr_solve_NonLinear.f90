@@ -74,7 +74,7 @@ contains
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
 
-      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter )
+      call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
       ! ----- Set Boundary condition
@@ -255,7 +255,7 @@ contains
       do iter = 1,fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt = stepcnt+1
 
-        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter )
+        call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         ! ----- Contact
@@ -521,7 +521,7 @@ contains
         call hecmw_BARRIER(hecMESH)
         stepcnt = stepcnt+1
 
-        call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+        call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if( paraContactFlag .and. present(conMAT) ) then
