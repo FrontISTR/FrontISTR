@@ -436,6 +436,10 @@ contains
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
             stop
           else
+            if(fstrSOLID%contacts(c_contact+i)%ctype == 2) then
+              ! convert SURF_SURF contact to NODE_SURF contact
+              call fstr_convert_contact_type(fstrSOLID%contacts(c_contact+i), P%MESH)
+            endif
             if(paraContactFlag) then
               isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, myrank)
             else
@@ -1004,7 +1008,7 @@ contains
     do i=1,hecMESH%n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
-      if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
+      if (hecmw_is_etype_special(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
@@ -3204,6 +3208,55 @@ contains
 
   end subroutine fstr_setup_CONTACTALGO
 
+  subroutine fstr_convert_contact_type( contact, hecMESH )
+    implicit none
+    type(tContact), intent(inout)     :: contact  !< contact definition
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint) :: sgrp_id, is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode, grp_id
+    integer(kind=kint) :: snode(20)
+    integer(kind=kint), allocatable :: node(:)
+    type(tSurfElement) :: surf
+    character(len=HECMW_NAME_LEN) :: grp_name
+    ! convert SURF_SURF to NODE_SURF
+    if (contact%ctype /= 2) return
+    sgrp_id = contact%surf_id1
+    is= hecMESH%surf_group%grp_index(sgrp_id-1) + 1
+    ie= hecMESH%surf_group%grp_index(sgrp_id  )
+    ! count num of nodes on surface incl duplication
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nnode = nnode + getNumberOfNodes( stype )
+    enddo
+    ! extract nodes on surface incl duplication
+    allocate( node(nnode) )
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nn = getNumberOfNodes( stype )
+      j0 = hecMESH%elem_node_index(ic-1)
+      do j=1,nn
+        node(nnode+j) = hecMESH%elem_node_item(j0+snode(j))
+      enddo
+      nnode = nnode + nn
+    enddo
+    ! sort and uniq node list
+    call qsort_int_array(node, 1, nnode)
+    call uniq_int_array(node, nnode, new_nnode)
+    ! append node group
+    write( grp_name, '(a,a)') trim(hecMESH%surf_group%grp_name(sgrp_id)), '_S'
+    call append_new_group(hecMESH, 'node_grp', grp_name, new_nnode, node, grp_id)
+    deallocate(node)
+    ! change type of contact and slave group ID
+    contact%ctype = 1
+    contact%surf_id1 = grp_id
+  end subroutine fstr_convert_contact_type
 
 end module m_fstr_setup
 

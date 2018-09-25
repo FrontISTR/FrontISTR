@@ -3796,8 +3796,90 @@ error:
   return -1;
 }
 
+static int post_contact_convert_sgroup(void)
+{
+  struct hecmw_io_contact *p;
+  int elem_id;
+
+  elem_id = HECMW_io_get_elem_max_id();
+  elem_id++;
+
+  for (p = _contact; p; p = p->next) {
+    struct hecmw_io_sgrp *sgrp;
+    int n_item, i, id, ret;
+    int *elem, *surf;
+    char new_sgrp_name[HECMW_NAME_LEN+1];
+
+    if (p->type != HECMW_CONTACT_TYPE_SURF_SURF) continue;
+
+    sgrp = HECMW_io_get_sgrp(p->slave_grp);
+    HECMW_assert(sgrp);
+
+    n_item = HECMW_set_int_nval(sgrp->item);
+    if (n_item == 0) continue;
+
+    elem = (int *) malloc(sizeof(int) * n_item);
+    surf = (int *) malloc(sizeof(int) * n_item);
+    if (!elem || !surf) {
+      set_err(errno, "");
+      return -1;
+    }
+
+    HECMW_set_int_iter_init(sgrp->item);
+    for (i = 0; HECMW_set_int_iter_next(sgrp->item, &id); i++) {
+      int eid, sid, etype, surf_etype, surf_nnode, j;
+      struct hecmw_io_element *element;
+      const int *surf_nodes;
+      int nodes[8];
+
+      decode_surf_key(id, &eid, &sid);
+
+      element = HECMW_io_get_elem(eid);
+      etype = element->type;
+
+      surf_nodes = HECMW_get_surf_nodes(etype, sid, &surf_etype);
+      HECMW_assert( HECMW_is_etype_patch(surf_etype) );
+
+      surf_nnode = HECMW_get_max_node(surf_etype);
+
+      for (j = 0; j < surf_nnode; j++) {
+        HECMW_assert( 0 < surf_nodes[j] && surf_nodes[j] <= surf_nnode );
+        nodes[j] = element->node[surf_nodes[j] - 1];
+      }
+
+      if (HECMW_io_add_elem(elem_id, surf_etype, nodes, 0, NULL) == NULL)
+        return -1;
+
+      elem[i] = elem_id;
+      surf[i] = 1;
+
+      elem_id++;
+    }
+
+    if (HECMW_io_add_egrp("ALL", n_item, elem) < 0)
+      return -1;
+
+    ret = snprintf(new_sgrp_name, sizeof(new_sgrp_name), "_PT_%s", sgrp->name);
+    if (ret >= sizeof(new_sgrp_name)) {
+      set_err(HECMW_IO_E0001, "Surface group name: %s", sgrp->name);
+      return -1;
+    } else if (HECMW_io_get_sgrp(new_sgrp_name) != NULL) {
+      set_err(HECMW_IO_E0003, "Surface group name: %s", new_sgrp_name);
+      return -1;
+    }
+
+    if (HECMW_io_add_sgrp(new_sgrp_name, n_item, elem, surf) < 0)
+      return -1;
+
+    free(elem);
+    free(surf);
+  }
+  return 0;
+}
+
 static int post_contact(void) {
   if (post_contact_check_grp()) return -1;
+  if (post_contact_convert_sgroup()) return -1;
 
   return 0;
 }

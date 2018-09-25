@@ -283,6 +283,43 @@ contains
     append_single_group = exist_n
   end function append_single_group
 
+  subroutine append_new_group(hecMESH, grp_type_name, name, count, list, grp_id)
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    character(len=*), intent(in) :: grp_type_name
+    character(len=HECMW_NAME_LEN), intent(in) :: name
+    integer(kind=kint), intent(in) :: count
+    integer(kind=kint), intent(in) :: list(:)
+    integer(kind=kint), intent(out) :: grp_id
+    integer(kind=kint) :: id, old_grp_number, new_grp_number, old_item_number, new_item_number, k
+
+    call set_group_pointers( hecMESH, grp_type_name )
+    do id = 1, n_grp
+      if( fstr_streqr(grp_name%s(id), name) ) then
+        write(msg,*) '### Error: Group already exists: ', name
+        stop
+      endif
+    enddo
+
+    old_grp_number = n_grp
+    new_grp_number = new_grp_number + 1
+
+    old_item_number = grp_index(n_grp)
+    new_item_number = old_item_number + count
+
+    call fstr_expand_name_array( grp_name, old_grp_number, new_grp_number )
+    call fstr_expand_index_array( grp_index, old_grp_number + 1, new_grp_number + 1)
+    call fstr_expand_integer_array( grp_item, old_item_number, new_item_number )
+
+    n_grp = new_grp_number
+    grp_id = new_grp_number
+    grp_name%s(grp_id) = name
+    do k = 1, count
+      grp_item(old_grp_item + k) = list(k)
+    enddo
+    grp_index(grp_id) = grp_index(grp_id-1) + count
+    call backset_group_pointers( hecMESH, grp_type_name )
+  end subroutine append_new_group
+
   !------------------------------------------------------------------------------
   ! JP-0
   ! grp_type_name : 'node_grp', 'elem_grp' or 'surf_grp'
@@ -508,6 +545,53 @@ contains
       end if
     end do
   end subroutine bsearch_int_array
+
+  recursive subroutine qsort_int_array(array, istart, iend)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: istart, iend
+    integer(kind=kint) :: pivot, center, left, right, tmp
+    if (istart >= iend) return
+    center = (istart + iend) / 2
+    pivot = array(center)
+    left = istart
+    right = iend
+    do
+      do while (array(left) < pivot)
+        left = left + 1
+      end do
+      do while (pivot < array(right))
+        right = right - 1
+      end do
+      if (left >= right) exit
+      tmp = array(left)
+      array(left) = array(right)
+      array(right) = tmp
+      left = left + 1
+      right = right - 1
+    end do
+    if (istart < left-1) call qsort_int_array(array, istart, left-1)
+    if (right+1 < iend) call qsort_int_array(array, right+1, iend)
+    return
+  end subroutine qsort_int_array
+
+  subroutine uniq_int_array(array, len, newlen)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(out) :: newlen
+    integer(kind=kint) :: i, ndup
+    ndup = 0
+    do i=2,len
+      if (array(i) == array(i - 1 - ndup)) then
+        ndup = ndup + 1
+      else if (ndup > 0) then
+        array(i - ndup) = array(i)
+      endif
+    end do
+    newlen = len - ndup
+  end subroutine uniq_int_array
+
   !-----------------------------------------------------------------------------!
 
   subroutine node_grp_name_to_id( hecMESH, header_name, n, grp_id_name, grp_ID )

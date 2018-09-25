@@ -144,6 +144,7 @@ contains
     integer  :: count,nodeID
 
     fstr_contact_init = .false.
+
     !  master surface
     cgrp = contact%surf_id2
     if( cgrp<=0 ) return

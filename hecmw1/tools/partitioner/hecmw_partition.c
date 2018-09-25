@@ -3630,9 +3630,9 @@ static int mask_additional_overlap_elem(
 }
 
 static int mask_contact_slave_node(const struct hecmwST_local_mesh *global_mesh,
-                                   const char *elem_flag, char *node_flag) {
-  int i, j;
-  int elem, node;
+                                   char *elem_flag, char *node_flag) {
+  int i, j, k;
+  int elem, node, selem;
   int evalsum;
   int master_gid, slave_gid;
   int jstart, jend;
@@ -3659,14 +3659,36 @@ static int mask_contact_slave_node(const struct hecmwST_local_mesh *global_mesh,
     }
     if (evalsum) {
       /* mask all external slave nodes as BOUNDARY (but not OVERLAP) */
-      slave_gid = cp->slave_grp_id[i];
-      jstart    = ngrp->grp_index[slave_gid - 1];
-      jend      = ngrp->grp_index[slave_gid];
-      for (j = jstart; j < jend; j++) {
-        node = ngrp->grp_item[j];
-        if (!EVAL_BIT(node_flag[node - 1], INTERNAL)) {
-          MASK_BIT(node_flag[node - 1], BOUNDARY);
+      switch (cp->type[i]) {
+      case HECMW_CONTACT_TYPE_NODE_SURF:
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = ngrp->grp_index[slave_gid - 1];
+        jend      = ngrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          node = ngrp->grp_item[j];
+          if (!EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+            MASK_BIT(node_flag[node - 1], BOUNDARY);
+          }
         }
+        break;
+      case HECMW_CONTACT_TYPE_SURF_SURF:
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = sgrp->grp_index[slave_gid - 1];
+        jend      = sgrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          selem = sgrp->grp_item[j * 2];
+          if (!EVAL_BIT(elem_flag[selem - 1], INTERNAL)) {
+            MASK_BIT(elem_flag[selem - 1], BOUNDARY);
+            for (k = global_mesh->elem_node_index[selem - 1];
+                 k < global_mesh->elem_node_index[selem]; k++) {
+              node = global_mesh->elem_node_item[k];
+              MASK_BIT(node_flag[node - 1], BOUNDARY);
+            }
+          }
+        }
+        break;
+      default:
+        return RTC_ERROR;
       }
     }
 
@@ -3684,14 +3706,36 @@ static int mask_contact_slave_node(const struct hecmwST_local_mesh *global_mesh,
     }
     if (evalsum) {
       /* mask all internal slave nodes as BOUNDARY (but not OVERLAP) */
-      slave_gid = cp->slave_grp_id[i];
-      jstart    = ngrp->grp_index[slave_gid - 1];
-      jend      = ngrp->grp_index[slave_gid];
-      for (j = jstart; j < jend; j++) {
-        node = ngrp->grp_item[j];
-        if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
-          MASK_BIT(node_flag[node - 1], BOUNDARY);
+      switch (cp->type[i]) {
+      case HECMW_CONTACT_TYPE_NODE_SURF:
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = ngrp->grp_index[slave_gid - 1];
+        jend      = ngrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          node = ngrp->grp_item[j];
+          if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+            MASK_BIT(node_flag[node - 1], BOUNDARY);
+          }
         }
+        break;
+      case HECMW_CONTACT_TYPE_SURF_SURF:
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = sgrp->grp_index[slave_gid - 1];
+        jend      = sgrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          selem = sgrp->grp_item[j * 2];
+          if (EVAL_BIT(elem_flag[selem - 1], INTERNAL)) {
+            MASK_BIT(elem_flag[selem - 1], BOUNDARY);
+            for (k = global_mesh->elem_node_index[selem - 1];
+                 k < global_mesh->elem_node_index[selem]; k++) {
+              node = global_mesh->elem_node_item[k];
+              MASK_BIT(node_flag[node - 1], BOUNDARY);
+            }
+          }
+        }
+        break;
+      default:
+        return RTC_ERROR;
       }
     }
   }
@@ -3921,8 +3965,8 @@ static int mask_neighbor_domain_nb_mod(
 static int mask_neighbor_domain_nb_contact(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
     const char *elem_flag, char *domain_flag) {
-  int i, j;
-  int elem, node;
+  int i, j, k;
+  int elem, node, selem;
   int evalsum;
   int master_gid, slave_gid;
   int jstart, jend;
@@ -3936,15 +3980,39 @@ static int mask_neighbor_domain_nb_contact(
 
   for (i = 0; i < cp->n_pair; i++) {
     /* if any slave node is internal */
-    slave_gid = cp->slave_grp_id[i];
-    jstart    = ngrp->grp_index[slave_gid - 1];
-    jend      = ngrp->grp_index[slave_gid];
-    for (j = jstart; j < jend; j++) {
-      node = ngrp->grp_item[j];
-      if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
-        evalsum++;
-        break;
+    evalsum = 0;
+    switch (cp->type[i]) {
+    case HECMW_CONTACT_TYPE_NODE_SURF:
+      slave_gid = cp->slave_grp_id[i];
+      jstart    = ngrp->grp_index[slave_gid - 1];
+      jend      = ngrp->grp_index[slave_gid];
+      for (j = jstart; j < jend; j++) {
+        node = ngrp->grp_item[j];
+        if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+          evalsum++;
+          break;
+        }
       }
+      break;
+    case HECMW_CONTACT_TYPE_SURF_SURF:
+      slave_gid = cp->slave_grp_id[i];
+      jstart    = sgrp->grp_index[slave_gid - 1];
+      jend      = sgrp->grp_index[slave_gid];
+      for (j = jstart; j < jend; j++) {
+        selem = sgrp->grp_item[j * 2];
+        for (k = global_mesh->elem_node_index[selem - 1];
+             k < global_mesh->elem_node_index[selem]; k++) {
+          node = global_mesh->elem_node_item[k];
+          if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+            evalsum++;
+            break;
+          }
+        }
+        if (evalsum) break;
+      }
+      break;
+    default:
+      return RTC_ERROR;
     }
     /* the domain to which elems of the master surf belong is neighbor */
     if (evalsum) {

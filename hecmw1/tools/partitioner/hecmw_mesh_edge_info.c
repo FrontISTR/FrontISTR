@@ -1328,6 +1328,12 @@ extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
         if (edge_info_shq8(local_mesh, is, ie)) goto error;
         break;
 
+      case HECMW_ETYPE_PTT1: /* triangular patch ( 1st order ) */
+      case HECMW_ETYPE_PTT2: /* triangular patch ( 2nd order ) */
+      case HECMW_ETYPE_PTQ1: /* quadrilateral patch ( 1st order ) */
+      case HECMW_ETYPE_PTQ2: /* quadrilateral patch ( 2nd order ) */
+        break; /* no need to add any edge */
+
       case HECMW_ETYPE_LN11:
       case HECMW_ETYPE_LN12:
       case HECMW_ETYPE_LN13:

@@ -67,7 +67,7 @@ contains
       is = hecMESH%elem_type_index(itype-1)+1
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
-      if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_special(ic_type)) cycle
       nn = hecmw_get_max_node(ic_type)
       if( nn>20 ) stop "Elemental nodes>20!"
 
@@ -316,7 +316,7 @@ contains
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if( ic_type == 301 ) ic_type = 111
-      if( hecmw_is_etype_link(ic_type) ) cycle
+      if( hecmw_is_etype_special(ic_type) ) cycle
 
       ngauss = NumOfQuadPoints( ic_type )
       do icel = is, iE

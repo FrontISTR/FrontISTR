@@ -44,10 +44,16 @@ extern int HECMW_is_etype_beam(int etype);
 
 extern int HECMW_is_etype_shell(int etype);
 
+extern int HECMW_is_etype_patch(int etype);
+
 extern int HECMW_is_etype_link(int etype);
 
 extern int HECMW_is_etype_33struct(int etype);
 
 extern int HECMW_is_etype_truss(int etype);
+
+extern int HECMW_is_etype_special(int etype);
+
+extern const int *HECMW_get_surf_nodes(int etype, int sid, int *surf_etype);
 
 #endif

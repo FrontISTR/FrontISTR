@@ -62,6 +62,10 @@ static const int *get_enode_h2r(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       enode_h2r = NULL;
       break;
     case HECMW_ETYPE_PYR1:
@@ -117,6 +121,10 @@ static const int *get_enode_r2h(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       enode_r2h = NULL;
       break;
     case HECMW_ETYPE_PYR1:
@@ -245,6 +253,10 @@ static const int *get_sid_h2r(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       sid_h2r = NULL;
       break;
     default:
@@ -310,6 +322,10 @@ static const int *get_sid_r2h(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       sid_r2h = NULL;
       break;
     default:
@@ -381,7 +397,8 @@ static int get_elem_ndiv(int etype, int *ierror) {
     ndiv = NDIV_OTHER;
   } else if (HECMW_is_etype_rod(etype) || HECMW_is_etype_beam(etype)) {
     ndiv = NDIV_SEG;
-  } else if (HECMW_is_etype_surface(etype) || HECMW_is_etype_shell(etype)) {
+  } else if (HECMW_is_etype_surface(etype) || HECMW_is_etype_shell(etype)
+             || HECMW_is_etype_patch(etype)) {
     ndiv = NDIV_SURF;
   } else if (HECMW_is_etype_solid(etype)) {
     ndiv = NDIV_BODY;
@@ -444,8 +461,8 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
       int surf  = array[j * 2 + 1];
       int etype = mesh->elem_type[elem - 1];
 
-      /* ignore shell surface */
-      if (HECMW_is_etype_shell(etype)) continue;
+      /* ignore shell/patch surface */
+      if (HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype)) continue;
 
       if (HECMW_varray_int_append(&other, elem) != HECMW_SUCCESS)
         return HECMW_ERROR;
@@ -486,7 +503,7 @@ static int prepare_refiner(struct hecmwST_local_mesh *mesh,
 
   /* element groups are refined by myself */
 
-  /* surface groups are refined by REVOCAP_Refiner except for shell surface */
+  /* surface groups are refined by REVOCAP_Refiner except for shell/patch surface */
   if (register_surf_groups(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n",
@@ -562,6 +579,14 @@ static int elem_type_hecmw2rcap(int etype) {
       return RCAP_QUAD2;
     case HECMW_ETYPE_SHQ8:
       return RCAP_QUAD;
+    case HECMW_ETYPE_PTT1:
+      return RCAP_TRIANGLE;
+    case HECMW_ETYPE_PTT2:
+      return RCAP_TRIANGLE2;
+    case HECMW_ETYPE_PTQ1:
+      return RCAP_QUAD;
+    case HECMW_ETYPE_PTQ2:
+      return RCAP_QUAD2;
   }
   return RCAP_UNKNOWNTYPE;
 }
@@ -981,9 +1006,9 @@ static int refine_elem_group_info(struct hecmwST_local_mesh *mesh,
 }
 
 /*
- * refinement of surface groups except for shell surface is done by
- * REVOCAP_Refiner
- * refinement of shell surfaces is done by myself
+ * refinement of surface groups except for shell/patch surface is done
+ * by REVOCAP_Refiner
+ * refinement of shell/patch surfaces is done by myself
  */
 
 static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
@@ -1022,16 +1047,16 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     int *array = grp->grp_item + start * 2;
     int num_sh, num_other;
 
-    /* count surfaces except for shell */
+    /* count surfaces except for shell/patch */
     sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
     num_other = rcapGetFaceGroupCount(rcap_name);
 
-    /* count shell surfaces */
+    /* count shell/patch surfaces */
     num_sh = 0;
     for (j = 0; j < num; j++) {
       int elem  = array[j * 2];
       int etype = mesh->elem_type[elem - 1];
-      if (!HECMW_is_etype_shell(etype)) continue;
+      if (!(HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype))) continue;
       num_sh += 1;
     }
     num_sh *= NDIV_SURF;
@@ -1072,13 +1097,13 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     array_ref += num_ref * 2;
 
     /*
-     * make refined shell surfaces by myself
+     * make refined shell/patch surfaces by myself
      */
 
     if (HECMW_varray_int_init(&sh1) != HECMW_SUCCESS) return HECMW_ERROR;
     if (HECMW_varray_int_init(&sh2) != HECMW_SUCCESS) return HECMW_ERROR;
 
-    /* collect shell surface */
+    /* collect shell/patch surface */
     start   = grp->grp_index[i];
     num_tot = grp->grp_index[i + 1] - start;
     array   = grp->grp_item + start * 2;
@@ -1087,7 +1112,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
       elem  = array[j * 2];
       surf  = array[j * 2 + 1];
       etype = mesh->elem_type[elem - 1];
-      if (!HECMW_is_etype_shell(etype)) continue;
+      if (!(HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype))) continue;
       if (surf == 1) {
         if (HECMW_varray_int_append(&sh1, elem) != HECMW_SUCCESS)
           return HECMW_ERROR;
@@ -1098,7 +1123,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
       }
     }
 
-    /* 1st surface of shells */
+    /* 1st surface of shells/patches */
     n_elem        = HECMW_varray_int_nval(&sh1);
     elem_list     = HECMW_varray_int_get_v(&sh1);
     n_elem_ref    = n_elem * NDIV_SURF;

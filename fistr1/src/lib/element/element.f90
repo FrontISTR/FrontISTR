@@ -96,6 +96,10 @@ module elementInfo
   integer, parameter :: fe_mitc3_shell361  = 761
   integer, parameter :: fe_mitc4_shell361  = 781
 
+  integer, parameter :: fe_tri3n_patch    = 831
+  integer, parameter :: fe_tri6n_patch    = 832
+  integer, parameter :: fe_quad4n_patch   = 841
+  integer, parameter :: fe_quad8n_patch   = 842
   ! ---------------------------------------------
 
 contains
@@ -126,13 +130,13 @@ contains
         getNumberOfNodes = 2
       case (fe_line3n, fe_beam3n)
         getNumberOfNodes = 3
-      case (fe_tri3n, fe_mitc3_shell, fe_mitc3_shell361 )
+      case (fe_tri3n, fe_mitc3_shell, fe_mitc3_shell361, fe_tri3n_patch )
         getNumberOfNodes = 3
-      case ( fe_tri6n, fe_tri6nc, fe_tri6n_shell )
+      case ( fe_tri6n, fe_tri6nc, fe_tri6n_shell, fe_tri6n_patch )
         getNumberOfNodes = 6
-      case ( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361  )
+      case ( fe_quad4n, fe_mitc4_shell, fe_mitc4_shell361, fe_quad4n_patch )
         getNumberOfnodes = 4
-      case ( fe_quad8n, fe_mitc8_shell)
+      case ( fe_quad8n, fe_mitc8_shell, fe_quad8n_patch)
         getNumberOfNodes = 8
       case ( fe_mitc9_shell )
         getNumberOfNodes = 9
@@ -171,6 +175,8 @@ contains
         getNumberOfSubface = 5
       case ( fe_hex8n, fe_hex20n)
         getNumberOfSubface = 8
+      case ( fe_tri3n_patch, fe_tri6n_patch, fe_quad4n_patch, fe_quad8n_patch )
+        getNumberOfSubface = 1
       case default
         getNumberOfSubface = -1
         ! error message
@@ -392,6 +398,40 @@ contains
             nodes(1)=8; nodes(2)=5; nodes(3)=1; nodes(4)=4
           case default
             ! error
+        end select
+      case ( fe_tri3n_patch )
+        outtype = fe_tri3n
+        select case ( innumber )
+          case (1)
+            nodes(1)=1; nodes(2)=2; nodes(3)=3
+          case default
+            !error
+        end select
+      case ( fe_tri6n_patch )
+        outtype = fe_tri6n
+        select case ( innumber )
+          case (1)
+            nodes(1)=1; nodes(2)=2; nodes(3)=3
+            nodes(4)=4; nodes(5)=5; nodes(6)=6
+          case default
+            !error
+        end select
+      case ( fe_quad4n_patch )
+        outtype = fe_quad4n
+        select case ( innumber )
+          case (1)
+            nodes(1)=1; nodes(2)=2; nodes(3)=3; nodes(4)=4
+          case default
+            !error
+        end select
+      case ( fe_quad8n_patch )
+        outtype = fe_quad8n
+        select case ( innumber )
+          case (1)
+            nodes(1)=1; nodes(2)=2; nodes(3)=3; nodes(4)=4
+            nodes(5)=5; nodes(6)=6; nodes(7)=7; nodes(8)=8
+          case default
+            !error
         end select
       case default
         outtype = fe_unknown
