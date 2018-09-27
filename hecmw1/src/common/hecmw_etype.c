@@ -85,14 +85,6 @@ extern int HECMW_get_etype_UTIL2HECMW(int etype) {
       return HECMW_ETYPE_SHT6; /* mixed shell-solid */
     case HECMW_MESH_ETYPE_SHQ8:
       return HECMW_ETYPE_SHQ8;
-    case HECMW_MESH_ETYPE_PTT1:
-      return HECMW_ETYPE_PTT1;
-    case HECMW_MESH_ETYPE_PTT2:
-      return HECMW_ETYPE_PTT2;
-    case HECMW_MESH_ETYPE_PTQ1:
-      return HECMW_ETYPE_PTQ1;
-    case HECMW_MESH_ETYPE_PTQ2:
-      return HECMW_ETYPE_PTQ2;
     case HECMW_MESH_ETYPE_LN11:
       return HECMW_ETYPE_LN11;
     case HECMW_MESH_ETYPE_LN12:
@@ -165,6 +157,14 @@ extern int HECMW_get_etype_UTIL2HECMW(int etype) {
       return HECMW_ETYPE_LN65;
     case HECMW_MESH_ETYPE_LN66:
       return HECMW_ETYPE_LN66;
+    case HECMW_MESH_ETYPE_PTT1:
+      return HECMW_ETYPE_PTT1;
+    case HECMW_MESH_ETYPE_PTT2:
+      return HECMW_ETYPE_PTT2;
+    case HECMW_MESH_ETYPE_PTQ1:
+      return HECMW_ETYPE_PTQ1;
+    case HECMW_MESH_ETYPE_PTQ2:
+      return HECMW_ETYPE_PTQ2;
     default:
       return -1;
   }
@@ -250,14 +250,6 @@ extern int HECMW_get_etype_HECMW2UTIL(int etype) {
       return HECMW_MESH_ETYPE_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MESH_ETYPE_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MESH_ETYPE_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MESH_ETYPE_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MESH_ETYPE_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MESH_ETYPE_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MESH_ETYPE_LN11;
     case HECMW_ETYPE_LN12:
@@ -330,6 +322,14 @@ extern int HECMW_get_etype_HECMW2UTIL(int etype) {
       return HECMW_MESH_ETYPE_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MESH_ETYPE_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MESH_ETYPE_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MESH_ETYPE_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MESH_ETYPE_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MESH_ETYPE_PTQ2;
     default:
       return -1;
   }
@@ -484,14 +484,6 @@ extern int HECMW_get_max_node(int etype) {
       return HECMW_MAX_NODE_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MAX_NODE_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MAX_NODE_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MAX_NODE_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MAX_NODE_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MAX_NODE_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MAX_NODE_LN11;
     case HECMW_ETYPE_LN12:
@@ -564,6 +556,14 @@ extern int HECMW_get_max_node(int etype) {
       return HECMW_MAX_NODE_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MAX_NODE_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MAX_NODE_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MAX_NODE_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MAX_NODE_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MAX_NODE_PTQ2;
     default:
       return -1;
   }
@@ -645,14 +645,6 @@ extern int HECMW_get_max_edge(int etype) {
       return HECMW_MAX_EDGE_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MAX_EDGE_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MAX_EDGE_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MAX_EDGE_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MAX_EDGE_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MAX_EDGE_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MAX_EDGE_LN11;
     case HECMW_ETYPE_LN12:
@@ -725,6 +717,14 @@ extern int HECMW_get_max_edge(int etype) {
       return HECMW_MAX_EDGE_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MAX_EDGE_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MAX_EDGE_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MAX_EDGE_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MAX_EDGE_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MAX_EDGE_PTQ2;
     default:
       return -1;
   }
@@ -806,14 +806,6 @@ extern int HECMW_get_max_surf(int etype) {
       return HECMW_MAX_SURF_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MAX_SURF_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MAX_SURF_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MAX_SURF_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MAX_SURF_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MAX_SURF_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MAX_SURF_LN11;
     case HECMW_ETYPE_LN12:
@@ -886,6 +878,14 @@ extern int HECMW_get_max_surf(int etype) {
       return HECMW_MAX_SURF_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MAX_SURF_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MAX_SURF_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MAX_SURF_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MAX_SURF_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MAX_SURF_PTQ2;
     default:
       return -1;
   }
@@ -965,14 +965,6 @@ extern int HECMW_get_max_tsuf(int etype) {
       return HECMW_MAX_TSUF_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MAX_TSUF_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MAX_TSUF_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MAX_TSUF_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MAX_TSUF_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MAX_TSUF_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MAX_TSUF_LN11;
     case HECMW_ETYPE_LN12:
@@ -1045,6 +1037,14 @@ extern int HECMW_get_max_tsuf(int etype) {
       return HECMW_MAX_TSUF_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MAX_TSUF_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MAX_TSUF_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MAX_TSUF_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MAX_TSUF_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MAX_TSUF_PTQ2;
     default:
       return -1;
   }
@@ -1126,14 +1126,6 @@ extern int HECMW_get_max_qsuf(int etype) {
       return HECMW_MAX_QSUF_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_MAX_QSUF_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_MAX_QSUF_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_MAX_QSUF_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_MAX_QSUF_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_MAX_QSUF_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_MAX_QSUF_LN11;
     case HECMW_ETYPE_LN12:
@@ -1206,6 +1198,14 @@ extern int HECMW_get_max_qsuf(int etype) {
       return HECMW_MAX_QSUF_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_MAX_QSUF_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_MAX_QSUF_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_MAX_QSUF_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_MAX_QSUF_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_MAX_QSUF_PTQ2;
     default:
       return -1;
   }
@@ -1291,14 +1291,6 @@ extern char *HECMW_get_ucd_label(int etype) {
       return HECMW_UCD_LABEL_SHT6; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_UCD_LABEL_SHQ8;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_UCD_LABEL_PTT1;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_UCD_LABEL_PTT2;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_UCD_LABEL_PTQ1;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_UCD_LABEL_PTQ2;
     case HECMW_ETYPE_LN11:
       return HECMW_UCD_LABEL_LN11;
     case HECMW_ETYPE_LN12:
@@ -1371,6 +1363,14 @@ extern char *HECMW_get_ucd_label(int etype) {
       return HECMW_UCD_LABEL_LN65;
     case HECMW_ETYPE_LN66:
       return HECMW_UCD_LABEL_LN66;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_UCD_LABEL_PTT1;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_UCD_LABEL_PTT2;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_UCD_LABEL_PTQ1;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_UCD_LABEL_PTQ2;
     default:
       return NULL;
   }
@@ -1456,14 +1456,6 @@ extern int HECMW_get_etype_class(int etype) {
       return HECMW_CLASS_SURF; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_CLASS_SURF;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_CLASS_SURF;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_CLASS_SURF;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_CLASS_SURF;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_CLASS_SURF;
     case HECMW_ETYPE_LN11:
       return HECMW_CLASS_LINK;
     case HECMW_ETYPE_LN12:
@@ -1536,6 +1528,14 @@ extern int HECMW_get_etype_class(int etype) {
       return HECMW_CLASS_LINK;
     case HECMW_ETYPE_LN66:
       return HECMW_CLASS_LINK;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_CLASS_SURF;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_CLASS_SURF;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_CLASS_SURF;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_CLASS_SURF;
     default:
       return -1;
   }
@@ -1621,14 +1621,6 @@ extern int HECMW_get_etype_shape(int etype) {
       return HECMW_SHAPE_TRI; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_SHAPE_QUAD;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_SHAPE_TRI;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_SHAPE_TRI;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_SHAPE_QUAD;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_SHAPE_QUAD;
     case HECMW_ETYPE_LN11:
       return HECMW_SHAPE_LINE;
     case HECMW_ETYPE_LN12:
@@ -1701,6 +1693,14 @@ extern int HECMW_get_etype_shape(int etype) {
       return HECMW_SHAPE_LINE;
     case HECMW_ETYPE_LN66:
       return HECMW_SHAPE_LINE;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_SHAPE_TRI;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_SHAPE_TRI;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_SHAPE_QUAD;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_SHAPE_QUAD;
     default:
       return -1;
   }
@@ -1789,14 +1789,6 @@ extern int HECMW_get_etype_vtk_shape(int etype) {
       return HECMW_VTK_SHAPE_TRI; /* mixed shell-solid */
     case HECMW_ETYPE_SHQ8:
       return HECMW_VTK_SHAPE_QUAD;
-    case HECMW_ETYPE_PTT1:
-      return HECMW_VTK_SHAPE_TRI;
-    case HECMW_ETYPE_PTT2:
-      return HECMW_VTK_SHAPE_TRI;
-    case HECMW_ETYPE_PTQ1:
-      return HECMW_VTK_SHAPE_QUAD;
-    case HECMW_ETYPE_PTQ2:
-      return HECMW_VTK_SHAPE_QUAD;
     case HECMW_ETYPE_LN11:
       return HECMW_VTK_SHAPE_LINE;
     case HECMW_ETYPE_LN12:
@@ -1869,6 +1861,14 @@ extern int HECMW_get_etype_vtk_shape(int etype) {
       return HECMW_VTK_SHAPE_LINE;
     case HECMW_ETYPE_LN66:
       return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_PTT1:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_PTT2:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_PTQ1:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_PTQ2:
+      return HECMW_VTK_SHAPE_QUAD;
     default:
       return -1;
   }
@@ -1961,17 +1961,6 @@ extern int HECMW_is_etype_shell(int etype) {
   return 0;
 }
 
-extern int HECMW_is_etype_patch(int etype) {
-  switch (etype) {
-    case 831: /* fall through */
-    case 832: /* fall through */
-    case 841: /* fall through */
-    case 842:
-      return 1;
-  }
-  return 0;
-}
-
 extern int HECMW_is_etype_link(int etype) {
   switch (etype) {
     case 911: /* fall through */
@@ -2028,6 +2017,17 @@ extern int HECMW_is_etype_33struct(int etype) {
 extern int HECMW_is_etype_truss(int etype) {
   switch (etype) {
     case 301:
+      return 1;
+  }
+  return 0;
+}
+
+extern int HECMW_is_etype_patch(int etype) {
+  switch (etype) {
+    case HECMW_ETYPE_PTT1: /* fall through */
+    case HECMW_ETYPE_PTT2: /* fall through */
+    case HECMW_ETYPE_PTQ1: /* fall through */
+    case HECMW_ETYPE_PTQ2:
       return 1;
   }
   return 0;
@@ -2186,11 +2186,6 @@ int hecmw_is_etype_shell_if__(int *etype) {
 }
 int HECMW_IS_ETYPE_SHELL_IF(int *etype) { return HECMW_is_etype_shell(*etype); }
 
-int hecmw_is_etype_patch_if(int *etype) { return HECMW_is_etype_patch(*etype); }
-int hecmw_is_etype_patch_if_(int *etype) { return HECMW_is_etype_patch(*etype); }
-int hecmw_is_etype_patch_if__(int *etype) { return HECMW_is_etype_patch(*etype); }
-int HECMW_IS_ETYPE_PATCH_IF(int *etype) { return HECMW_is_etype_patch(*etype); }
-
 int hecmw_is_etype_link_if(int *etype) { return HECMW_is_etype_link(*etype); }
 int hecmw_is_etype_link_if_(int *etype) { return HECMW_is_etype_link(*etype); }
 int hecmw_is_etype_link_if__(int *etype) { return HECMW_is_etype_link(*etype); }
@@ -2217,6 +2212,11 @@ int hecmw_is_etype_truss_if__(int *etype) {
   return HECMW_is_etype_truss(*etype);
 }
 int HECMW_IS_ETYPE_TRUSS_IF(int *etype) { return HECMW_is_etype_truss(*etype); }
+
+int hecmw_is_etype_patch_if(int *etype) { return HECMW_is_etype_patch(*etype); }
+int hecmw_is_etype_patch_if_(int *etype) { return HECMW_is_etype_patch(*etype); }
+int hecmw_is_etype_patch_if__(int *etype) { return HECMW_is_etype_patch(*etype); }
+int HECMW_IS_ETYPE_PATCH_IF(int *etype) { return HECMW_is_etype_patch(*etype); }
 
 int hecmw_is_etype_special_if(int *etype) { return HECMW_is_etype_special(*etype); }
 int hecmw_is_etype_special_if_(int *etype) { return HECMW_is_etype_special(*etype); }

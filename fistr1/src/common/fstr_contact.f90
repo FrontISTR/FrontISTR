@@ -238,7 +238,7 @@ contains
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
     !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
-    do i = 1, size(hecMESH%node)
+    do i = 1, size(fstrSOLID%unode)
       fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
     enddo
     active = .false.

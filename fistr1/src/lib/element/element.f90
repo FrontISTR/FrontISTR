@@ -96,10 +96,10 @@ module elementInfo
   integer, parameter :: fe_mitc3_shell361  = 761
   integer, parameter :: fe_mitc4_shell361  = 781
 
-  integer, parameter :: fe_tri3n_patch    = 831
-  integer, parameter :: fe_tri6n_patch    = 832
-  integer, parameter :: fe_quad4n_patch   = 841
-  integer, parameter :: fe_quad8n_patch   = 842
+  integer, parameter :: fe_tri3n_patch    = 1031
+  integer, parameter :: fe_tri6n_patch    = 1032
+  integer, parameter :: fe_quad4n_patch   = 1041
+  integer, parameter :: fe_quad8n_patch   = 1042
   ! ---------------------------------------------
 
 contains

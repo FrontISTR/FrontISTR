@@ -135,6 +135,19 @@ contains
     endif
   end function hecmw_is_etype_33struct
 
+  function hecmw_is_etype_patch(etype)
+    logical :: hecmw_is_etype_patch
+    integer(kind=kint) :: etype
+    external hecmw_is_etype_patch_if
+    integer(kind=kint) :: hecmw_is_etype_patch_if
+
+    if (hecmw_is_etype_patch_if(etype) /= 0) then
+      hecmw_is_etype_patch = .true.
+    else
+      hecmw_is_etype_patch = .false.
+    endif
+  end function hecmw_is_etype_patch
+
   function hecmw_is_etype_special(etype)
     logical :: hecmw_is_etype_special
     integer(kind=kint) :: etype

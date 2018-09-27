@@ -284,6 +284,7 @@ contains
   end function append_single_group
 
   subroutine append_new_group(hecMESH, grp_type_name, name, count, list, grp_id)
+    implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     character(len=*), intent(in) :: grp_type_name
     character(len=HECMW_NAME_LEN), intent(in) :: name
@@ -295,13 +296,13 @@ contains
     call set_group_pointers( hecMESH, grp_type_name )
     do id = 1, n_grp
       if( fstr_streqr(grp_name%s(id), name) ) then
-        write(msg,*) '### Error: Group already exists: ', name
+        write(*,*) '### Error: Group already exists: ', name
         stop
       endif
     enddo
 
     old_grp_number = n_grp
-    new_grp_number = new_grp_number + 1
+    new_grp_number = old_grp_number + 1
 
     old_item_number = grp_index(n_grp)
     new_item_number = old_item_number + count
@@ -314,7 +315,7 @@ contains
     grp_id = new_grp_number
     grp_name%s(grp_id) = name
     do k = 1, count
-      grp_item(old_grp_item + k) = list(k)
+      grp_item(old_item_number + k) = list(k)
     enddo
     grp_index(grp_id) = grp_index(grp_id-1) + count
     call backset_group_pointers( hecMESH, grp_type_name )

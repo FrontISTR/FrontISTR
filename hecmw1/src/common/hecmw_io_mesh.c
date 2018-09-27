@@ -3837,16 +3837,17 @@ static int post_contact_convert_sgroup(void)
       element = HECMW_io_get_elem(eid);
       etype = element->type;
 
+      /* extract surface */
       surf_nodes = HECMW_get_surf_nodes(etype, sid, &surf_etype);
       HECMW_assert( HECMW_is_etype_patch(surf_etype) );
 
       surf_nnode = HECMW_get_max_node(surf_etype);
 
       for (j = 0; j < surf_nnode; j++) {
-        HECMW_assert( 0 < surf_nodes[j] && surf_nodes[j] <= surf_nnode );
         nodes[j] = element->node[surf_nodes[j] - 1];
       }
 
+      /* add surface patch elem */
       if (HECMW_io_add_elem(elem_id, surf_etype, nodes, 0, NULL) == NULL)
         return -1;
 
@@ -3856,9 +3857,11 @@ static int post_contact_convert_sgroup(void)
       elem_id++;
     }
 
+    /* add newly added patch elems to egrp "ALL" */
     if (HECMW_io_add_egrp("ALL", n_item, elem) < 0)
       return -1;
 
+    /* generate name for new sgrp with patch elems */
     ret = snprintf(new_sgrp_name, sizeof(new_sgrp_name), "_PT_%s", sgrp->name);
     if (ret >= sizeof(new_sgrp_name)) {
       set_err(HECMW_IO_E0001, "Surface group name: %s", sgrp->name);
@@ -3868,11 +3871,15 @@ static int post_contact_convert_sgroup(void)
       return -1;
     }
 
+    /* add sgrp with patch elems */
     if (HECMW_io_add_sgrp(new_sgrp_name, n_item, elem, surf) < 0)
       return -1;
 
     free(elem);
     free(surf);
+
+    /* replace slave group by newly added sgrp with patch elems */
+    strcpy(p->slave_grp, new_sgrp_name);
   }
   return 0;
 }
