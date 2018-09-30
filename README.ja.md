@@ -2,7 +2,7 @@
 
   README of FrontISTR on HEC-MW (日本語版)
 
-  2016.07.22  Version 4.5
+  2018.10.01  Version 5.0b
 
   FrontISTR研究会, 東京大学
 
