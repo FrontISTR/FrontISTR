@@ -1,50 +1,33 @@
 ================================================================================
 
-  README of FrontISTR on HEC-MW (in English)
+  README of FrontISTR on HEC-MW
 
   2018.10.01  Version 5.0b
 
-  FrontISTR Forum, The University of Tokyo
+  FrontISTR Commons 
 
   Comments, Questions, Problems etc.
-    e-mail: fstr_seminar@multi.k.u-tokyo.ac.jp
+    e-mail: support@frontistr.com
 
 ================================================================================
 
 (1) Programs in this archive
-  - FrontISTR structual analysis program
+  - FrontISTR: Open-Source Large-Scale Parallel FEM Program for Nonlinear Structural Analysis
 
 (2) Files in this directory
-  README                      : README (in English : this file)
-  README.ja                   : README (in Japanese)
+  README.md                   : README (in English : this file)
+  README.ja.md                : README (in Japanese)
   VERSION                     : version information
-  METIS-copyright.txt         : METIS library copyright
-  METIS-manual.pdf            : METIS library manual
   setup.sh & setup_fistr.sh   : shell script to create makefiles
   Makefile.am                 : base file of makefile for installation
   Makefile.conf               : setting file for users
   Makefile.dev                : setting file for developers
 
   doc/                        : documents
-  doc/FrontISTR_instal_manual_en.pdf
-                              : installation manual for FrontISTR
-  doc/FrontISTR_tutorial_guide_en.pdf
-                              : tutorial guide for FrontISTR
-  doc/FrontISTR_user_manual_Ver37_en.pdf
-                              : user's manual for FrontISTR Ver.3.7
-  doc/FrontISTR_user_manual_Ver45_en.pdf
-                              : user's manual for FrontISTR Ver.4.5
-
   tutorial/                   : tutorial data
-
   examples/                   : some examples
-
-  fistr/                      : starter program
-
-  fisrt1/                     : FrontISTR Ver.3.7
-
-  hecmw1/                     : HEC-MW Ver.3.7
-
+  fisrt1/                     : FrontISTR
+  hecmw1/                     : HEC-MW
   etc/                        : various setting files
 
 ************************************ NOTICE *************************************
