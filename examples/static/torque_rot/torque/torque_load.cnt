@@ -43,8 +43,8 @@ LOAD,1
 #####      FOR VISUALIZER     #####
 ###################################
 !WRITE,VISUAL
-!VISUAL, method=PSR
+!VISUAL,metod=PSR
 !surface_num=1
 !surface 1
-!output_type = COMPLETE_REORDER_AVS
+!output_type=VTK
 !END

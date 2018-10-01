@@ -18,8 +18,8 @@
 ### Solver Setting
 !SOLVER,METHOD=DIRECT
 ## Post Control
-!VISUAL, method=PSR
-!surface_num = 1
+!VISUAL,metod=PSR
+!surface_num=1
 !surface 1
-!output_type = COMPLETE_AVS
+!output_type=VTK
 !END
