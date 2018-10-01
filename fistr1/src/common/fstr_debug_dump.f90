@@ -201,7 +201,6 @@ contains
       write(*,*) 'TEMP ',h%TEMP
       write(*,*) 'TEMP0 ',h%TEMP0
       write(*,*) 'TEMPC ',h%TEMPC
-      write(*,*) 'TEMPW ',h%TEMPW
     end if
     write(*,*)
     write(*,*) 'BOUNDARY CONDTIONS -------'

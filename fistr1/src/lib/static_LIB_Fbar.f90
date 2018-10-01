@@ -597,9 +597,9 @@ contains
         dstrain(:) = dstrain(:)-EPSTH(:)
 
         rot = 0.0D0
-        rot(1, 2)= 0.5D0*( Fbar(1, 2)-Fbar(2, 1) );  rot(2, 1) = -rot(1, 2)
-        rot(2, 3)= 0.5D0*( Fbar(2, 3)-Fbar(3, 2) );  rot(3, 2) = -rot(2, 3)
-        rot(1, 3)= 0.5D0*( Fbar(1, 3)-Fbar(3, 1) );  rot(3, 1) = -rot(1, 3)
+        rot(1, 2)= 0.5D0*( gdispderiv(1, 2)-gdispderiv(2, 1) );  rot(2, 1) = -rot(1, 2)
+        rot(2, 3)= 0.5D0*( gdispderiv(2, 3)-gdispderiv(3, 2) );  rot(3, 2) = -rot(2, 3)
+        rot(1, 3)= 0.5D0*( gdispderiv(1, 3)-gdispderiv(3, 1) );  rot(3, 1) = -rot(1, 3)
 
         gausses(LX)%strain(1:6) = gausses(LX)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 

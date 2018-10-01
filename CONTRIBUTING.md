@@ -1,0 +1,6 @@
+- Folking repository from master repository.
+- Developing
+- Check test
+- Write manuals
+- Verification
+- Merge request / Pull request for master branch.
