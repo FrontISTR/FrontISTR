@@ -49,5 +49,5 @@
 !VISUAL,metod=PSR
 !surface_num=1
 !surface 1
-!output_type=FSTR_FEMAP_NEUTRAL
+!output_type=VTK
 !END

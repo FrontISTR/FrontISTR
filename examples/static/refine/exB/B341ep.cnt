@@ -26,34 +26,8 @@
   10000,   1, 10, 10
  1.0e-8, 1.0, 0.0
 !WRITE,VISUAL
-!VISUAL,METHOD=PSR
+!VISUAL,metod=PSR
 !surface_num=1
-!surface, 1
-!surface_style = 1
-!color_comp_name = DISPLACEMENT
-!color_subcomp = 0
-#!color_comp_name = STRESS
-#!color_subcomp = 7
-!deform_display_on = 1
-!initial_style = 0
-#!initial_line_color = 1.0, 1.0, 1.0
-!deform_style = 3
-!deform_num_of_frames = 1
-!real_deform_scale = 0.3
-!output_type = bmp
-!x_resolution = 800
-!y_resolution = 800
-!viewpoint = 75, -100, 50
-!up_direction = 0, 0, 1
-!color_mapping_style = 1
-!color_mapping_bar_on = 1
-!scale_marking_on = 1
-!num_of_scale = 6
-!font_size = 1.5
-#!fixed_range_on = 1
-#!fixed_scale_mark = 1
-#!range_value = 0.0, 3.64
-#!font_color = 0.0, 0.0, 0.0
-#!background_color = 0.4, 0.4, 0.4
-!rotate_style = 3
+!surface 1
+!output_type=VTK
 !END
