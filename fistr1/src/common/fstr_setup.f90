@@ -367,14 +367,14 @@ contains
       ! set default 361 element formulation
       if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
         if( p%PARAM%nlgeom ) then
-          fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
         else
           fstrSOLID%sections(i)%elemopt361 = kel361IC
         end if
       else if( p%PARAM%solution_type==kstEIGEN ) then
         fstrSOLID%sections(i)%elemopt361 = kel361IC
       else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
