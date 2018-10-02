@@ -702,6 +702,22 @@ contains
         return
       end if
 
+      ! ----- Set residual for next newton iteration
+      if(paraContactFlag.and.present(conMAT)) then
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+      else
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
+      endif
+
+      if( fstr_is_contact_active() )  then
+        if(paraContactFlag.and.present(conMAT)) then
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
+        else
+          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)
+        endif
+      endif
+
     enddo loopFORcontactAnalysis
 
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
