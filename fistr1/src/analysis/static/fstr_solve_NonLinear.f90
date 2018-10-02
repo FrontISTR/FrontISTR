@@ -140,8 +140,8 @@ contains
         if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
       endif
 
-      ! ----- check divergence
-      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres ) then
+      ! ----- check divergence and NaN
+      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) then
         if( hecMESH%my_rank == 0) then
           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
@@ -150,7 +150,7 @@ contains
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
         fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
         if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-        if( rres > fstrSOLID%step_ctrl(cstep)%maxres    ) fstrSOLID%NRstat_i(knstDRESN) = 2
+        if( rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) fstrSOLID%NRstat_i(knstDRESN) = 2
         return
       end if
     enddo
@@ -337,8 +337,8 @@ contains
           relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         res1 = res
 
-        ! ----- check divergence
-        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+        ! ----- check divergence and NaN
+        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) then
           if( hecMESH%my_rank == 0) then
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
@@ -347,7 +347,7 @@ contains
           fstrSOLID%NRstat_i(knstCITER) = al_step                                 ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
           if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-          if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
+          if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
           return
         end if
 
@@ -639,8 +639,8 @@ contains
           relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         res1 = res
 
-        ! ----- check divergence
-        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres ) then
+        ! ----- check divergence and NaN
+        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) then
           if( hecMESH%my_rank == 0) then
             write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           end if
@@ -649,7 +649,7 @@ contains
           fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
           fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
           if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-          if( res > fstrSOLID%step_ctrl(cstep)%maxres     ) fstrSOLID%NRstat_i(knstDRESN) = 2
+          if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
           return
         end if
 
