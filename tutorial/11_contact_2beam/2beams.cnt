@@ -23,8 +23,8 @@
  500.0, 10.0
 !SOLVER,METHOD=MUMPS
 ## Post Control
-!VISUAL, method=PSR
+!VISUAL,metod=PSR
 !surface_num=1
 !surface 1
-!output_type = COMPLETE_AVS
+!output_type=VTK
 !END
