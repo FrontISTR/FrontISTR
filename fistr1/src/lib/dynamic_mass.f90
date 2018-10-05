@@ -167,4 +167,91 @@ contains
       enddo
     endif
   end subroutine mass_C3
+
+  function get_length(ecoord)
+    use hecmw
+    implicit none
+    real(kind=kreal) :: get_length, ecoord(3,20)
+
+    get_length = dsqrt( &
+      (ecoord(1,2) - ecoord(1,1))**2 + &
+      (ecoord(2,2) - ecoord(2,1))**2 + &
+      (ecoord(3,2) - ecoord(3,1))**2 )
+  end function get_length
+
+  function get_face3(ecoord)
+    use hecmw
+    implicit none
+    real(kind=kreal) :: get_face3, ecoord(3,20)
+    real(kind=kreal) :: a1, a2, a3
+    real(kind=kreal) :: X(3), Y(3), Z(3)
+
+    X(1) = ecoord(1,1); Y(1) = ecoord(2,1); Z(1) = ecoord(3,1)
+    X(2) = ecoord(1,2); Y(2) = ecoord(2,2); Z(2) = ecoord(3,2)
+    X(3) = ecoord(1,3); Y(3) = ecoord(2,3); Z(3) = ecoord(3,3)
+
+    a1 = (X(2) - X(1))**2 + (Y(2) - Y(1))**2 + (Z(2) - Z(1))**2
+    a2 = (X(1) - X(3))*(X(2) - X(1)) &
+     & + (Y(1) - Y(3))*(Y(2) - Y(1)) &
+     & + (Z(1) - Z(3))*(Z(2) - Z(1))
+    a3 = (X(3) - X(1))**2 + (Y(3) - Y(1))**2 + (Z(3) - Z(1))**2
+
+    get_face3 = 0.5d0*dsqrt(a1*a3 - a2*a2)
+  end function get_face3
+
+  function get_face4(ecoord)
+    use hecmw
+    implicit none
+    integer(kind=kint) :: LX, LY
+    real(kind=kreal) :: get_face4, ecoord(3,20)
+    real(kind=kreal) :: XG(2), RI, SI, RP, SP, RM, SM, HR(4), HS(4)
+    real(kind=kreal) :: XR, XS, YR, YS, ZR, ZS
+    real(kind=kreal) :: X(4), Y(4), Z(4), det
+
+    X(1) = ecoord(1,1); Y(1) = ecoord(2,1); Z(1) = ecoord(3,1)
+    X(2) = ecoord(1,2); Y(2) = ecoord(2,2); Z(2) = ecoord(3,2)
+    X(3) = ecoord(1,3); Y(3) = ecoord(2,3); Z(3) = ecoord(3,3)
+    X(4) = ecoord(1,4); Y(4) = ecoord(2,4); Z(4) = ecoord(3,4)
+
+    XG(1) = -0.5773502691896258D0
+    XG(2) = -XG(1)
+    get_face4 = 0.0d0
+
+    do LX = 1, 2
+      RI = XG(LX)
+      do LY = 1, 2
+        SI = XG(LY)
+        RP = 1.0d0 + RI
+        SP = 1.0d0 + SI
+        RM = 1.0d0 - RI
+        SM = 1.0d0 - SI
+
+        !C*  FOR R-COORDINATE
+        HR(1) =  0.25d0*SP
+        HR(2) = -0.25d0*SP
+        HR(3) = -0.25d0*SM
+        HR(4) =  0.25d0*SM
+
+        !C*  FOR S-COORDINATE
+        HS(1) =  0.25d0*RP
+        HS(2) =  0.25d0*RM
+        HS(3) = -0.25d0*RM
+        HS(4) = -0.25d0*RP
+
+        !C*JACOBI MATRIX
+        XR = HR(1)*X(1) + HR(2)*X(2) + HR(3)*X(3) + HR(4)*X(4)
+        XS = HS(1)*X(1) + HS(2)*X(2) + HS(3)*X(3) + HS(4)*X(4)
+        YR = HR(1)*Y(1) + HR(2)*Y(2) + HR(3)*Y(3) + HR(4)*Y(4)
+        YS = HS(1)*Y(1) + HS(2)*Y(2) + HS(3)*Y(3) + HS(4)*Y(4)
+        ZR = HR(1)*Z(1) + HR(2)*Z(2) + HR(3)*Z(3) + HR(4)*Z(4)
+        ZS = HS(1)*Z(1) + HS(2)*Z(2) + HS(3)*Z(3) + HS(4)*Z(4)
+
+        det = (YR*ZS - ZR*YS)**2 + (ZR*XS - XR*ZS)**2 + (XR*YS - YR*XS)**2
+        det = dsqrt(det)
+
+        get_face4 = get_face4 + det
+      enddo
+    enddo
+  end function get_face4
+
 end module m_dynamic_mass
