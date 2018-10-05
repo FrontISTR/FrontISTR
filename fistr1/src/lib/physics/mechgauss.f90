@@ -18,7 +18,8 @@ module mMechGauss
     real(kind=kreal), pointer :: fstatus(:) => null()   !< status variables (double precision type)
     real(kind=kreal)          :: plstrain               !< plastic strain
     real(kind=kreal)          :: strain_bak(6)          !< strain
-    real(kind=kreal)          :: stress_bak(6)              !< stress
+    real(kind=kreal)          :: stress_bak(6)          !< stress
+    real(kind=kreal)          :: nqm(12)                !< NQM
     real(kind=kreal)          :: strain_out(6)          !< strain
     real(kind=kreal)          :: stress_out(6)          !< stress
   end type
@@ -43,6 +44,7 @@ contains
     gauss%strain_bak=0.d0; gauss%stress_bak=0.d0
     gauss%strain_out=0.d0; gauss%stress_out=0.d0
     gauss%plstrain =0.d0
+    gauss%nqm =0.d0
     if( gauss%pMaterial%mtype==USERMATERIAL ) then
       if( gauss%pMaterial%nfstatus> 0 ) then
         allocate( gauss%fstatus(gauss%pMaterial%nfstatus) )

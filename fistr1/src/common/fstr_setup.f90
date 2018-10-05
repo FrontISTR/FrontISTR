@@ -1374,6 +1374,7 @@ contains
     allocate ( phys%ESTRAIN (mdof*n_elem))
     allocate ( phys%ESTRESS (mdof*n_elem))
     allocate ( phys%EMISES  (     n_elem))
+    allocate ( phys%ENQM    (12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
   subroutine fstr_setup_post( ctrl, P )
@@ -1409,6 +1410,7 @@ contains
       P%SOLID%ESTRAIN => phys%ESTRAIN
       P%SOLID%ESTRESS => phys%ESTRESS
       P%SOLID%EMISES  => phys%EMISES
+      P%SOLID%ENQM    => phys%ENQM
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
     end if
 

@@ -23,6 +23,7 @@ contains
     integer(kind=kint) :: nodlocal(20), ntemp
     integer(kind=kint), allocatable :: nnumber(:)
     real(kind=kreal)   :: estrain(6), estress(6), naturalCoord(3)
+    real(kind=kreal)   :: enqm(12)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
     real(kind=kreal)   :: ecoord(3, 20), edisp(60), tt(20), t0(20)
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
@@ -110,6 +111,7 @@ contains
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
         !initialize
+        enqm     = 0.0d0
         estrain  = 0.0d0
         estress  = 0.0d0
         ndstrain = 0.0d0
@@ -135,7 +137,9 @@ contains
           call NodalStress_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, &
             &     hecMESH%section%sect_R_item(ihead+1:), edisp,                               &
             &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), tt(1:nn), t0(1:nn), ntemp )
-          call ElementalStress_Beam_641( fstrSOLID%elements(icel)%gausses, estrain, estress )
+          call ElementalStress_Beam_641( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
+          fstrSOLID%SOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
+
 
         elseif( ic_type == 781) then !<3*3 shell section
           do j = 1, 4

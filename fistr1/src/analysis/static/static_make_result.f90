@@ -396,6 +396,15 @@ contains
       call hecmw_result_add( id, nitem, label, RES%ESTRESS )
     endif
 
+    ! --- NQM @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
+      label = 'ElementalNQM'//trim(clyr)
+!      write (6,*) 'RES%ENQM',RES%ENQM(1)
+      call hecmw_result_add( id, nitem, label, RES%ENQM )
+    endif
+
     ! --- MISES @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(8)) then
       id = 2

@@ -199,6 +199,8 @@ module m_fstr
     real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
     real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
     real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
+    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
+
 
     type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
     type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
@@ -310,6 +312,7 @@ module m_fstr
 
     real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
 
+    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
     real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
 
     real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
@@ -648,6 +651,7 @@ contains
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
+    nullify( S%ENQM )
     nullify( S%GL          )
     nullify( S%QFORCE      )
     nullify( S%VELOCITY_ngrp_ID )
@@ -1044,6 +1048,7 @@ contains
     phys%ESTRAIN = 0.0d0
     phys%ESTRESS = 0.0d0
     phys%EMISES  = 0.0d0
+    phys%ENQM    = 0.0d0
   end subroutine fstr_solid_phys_zero
 
   subroutine fstr_solid_phys_clear(fstrSOLID)
