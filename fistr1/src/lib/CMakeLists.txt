@@ -44,4 +44,5 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_Fbar.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_beam.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_shell.f90
+  ${CMAKE_CURRENT_LIST_DIR}/dynamic_mass.f90
 )

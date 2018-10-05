@@ -7,6 +7,7 @@ module m_fstr_EIG_setMASS
 
   use m_eigen_lib
   use m_static_get_prop
+  use m_dynamic_mass
   use m_fstr
 
 contains
@@ -45,6 +46,7 @@ contains
     real(kind=kreal)  :: x(20), y(20), z(20), AA, Volume, val
     real(kind=kreal)  :: smax, chkmass, alpha
     real(kind=kreal), pointer :: ss(:)
+    real(kind=kreal)  :: mass(20*6, 20*6),  ecoord(3,20)
     !C
     !*Allocate work array
     allocate(ss(2000),stat=ierror)
@@ -79,6 +81,9 @@ contains
         jS = hecMESH%elem_node_index(icel-1)
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
+          do i = 1, 3
+            ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)-3+i)
+          enddo
         enddo
         !C
         isect = hecMESH%section_ID(icel)
@@ -126,6 +131,7 @@ contains
           call MASS_C3D15( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
         elseif( ic_type.EQ.361 ) then
           call mass_c3d8 ( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
+          !call mass_C3(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, mass)
         elseif( ic_type.EQ.362 ) then
           call mass_c3d20( xx,yy,zz,ee,pp,rho,ss,fstrEIG )
         elseif( ic_type.EQ.731 ) then
